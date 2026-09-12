@@ -1,6 +1,7 @@
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { invoiceStamp } from "./invoice-status"
+import { formatMoney } from "@/lib/money"
 
 /**
  * Client-side invoice PDF, mirroring the "PDF studio" approach in report-pdf.ts
@@ -95,11 +96,7 @@ function orgAddressLines(b: InvoiceBranding): string[] {
 }
 
 function fmtMoney(n: number, currency: string): string {
-  try {
-    return new Intl.NumberFormat("en-IE", { style: "currency", currency: currency || "EUR" }).format(n || 0)
-  } catch {
-    return `${(n || 0).toFixed(2)} ${currency || ""}`.trim()
-  }
+  return formatMoney(n, currency)
 }
 
 function fmtDate(d?: string | Date | null): string {

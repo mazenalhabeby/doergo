@@ -11,6 +11,7 @@ import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { formatMoney } from "@/lib/money"
 
 /**
  * What this client pays for this person, per hour.
@@ -37,15 +38,7 @@ import { Input } from "@/components/ui/input"
 const toField = (cents?: number | null) => (cents == null ? "" : String(cents / 100))
 
 function useMoney(currency: string) {
-  return (cents: number) => {
-    try {
-      return new Intl.NumberFormat(undefined, {
-        style: "currency", currency, maximumFractionDigits: 2,
-      }).format(cents / 100)
-    } catch {
-      return `${(cents / 100).toFixed(2)} ${currency}`
-    }
-  }
+  return (cents: number) => formatMoney(cents / 100, currency)
 }
 
 /**

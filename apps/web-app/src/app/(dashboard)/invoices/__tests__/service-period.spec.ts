@@ -1,6 +1,8 @@
 import fs from "fs"
 import path from "path"
 
+import { createScreen, editScreen, strip } from "./_screen"
+
 /*
   AN INVOICE FOR HOURS HAS TO SAY WHICH DAYS.
 
@@ -34,16 +36,14 @@ const SERVICE = path.join(
 )
 
 const read = (p: string) => fs.readFileSync(p, "utf8")
-/*
-  Code only — see `new-invoice-sources.spec.ts` for why the comment opener has
-  to be preceded by whitespace OR a brace. Both traps are real and both were
-  hit here.
-*/
-const strip = (src: string) =>
-  src.replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
 
-const page = () => strip(read(path.join(WEB, "new/page.tsx")))
 const service = () => strip(read(SERVICE))
+/*
+  ⚠️ The SCREEN, not the page file. The document moved into `_components/` so
+  that creating an invoice and correcting one are the same screen — and these
+  assertions are about what a client receives, which is rendered there now.
+*/
+const page = () => createScreen()
 
 describe("the service period", () => {
   it("is inclusive at both ends of the day", () => {
@@ -119,6 +119,9 @@ describe("the service period", () => {
     const pdf = strip(read(path.join(WEB, "../../../lib/invoice-pdf.ts")))
     expect(pdf).toContain("Service period")
     expect(pdf).toContain("servicePeriodFrom")
+    // And the same statement reaches the EDIT screen, which shows the period
+    // the invoice was raised for rather than inventing a new one.
+    expect(editScreen()).toContain("invoices.create.servicePeriod")
   })
 
   it("says nothing where no period was chosen", () => {
@@ -129,6 +132,7 @@ describe("the service period", () => {
     */
     const pdf = strip(read(path.join(WEB, "../../../lib/invoice-pdf.ts")))
     expect(pdf).toMatch(/if \(inv\.servicePeriodFrom \|\| inv\.servicePeriodTo\)/)
-    expect(page()).toMatch(/periodLabel &&/)
+    // The document renders the row only when the caller gave it a label.
+    expect(page()).toMatch(/\{periodLabel && \(/)
   })
 })

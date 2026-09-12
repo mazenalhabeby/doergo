@@ -1,6 +1,11 @@
 import fs from "fs"
 import path from "path"
 
+import { code, createScreen } from "./_screen"
+
+/** Where the locale files live, for the two assertions that read them. */
+const ROOT = path.join(__dirname, "..")
+
 /*
   AN INVOICE HAS MORE THAN ONE STARTING POINT.
 
@@ -14,27 +19,18 @@ import path from "path"
   nothing at all (a charge that was never a task).
 */
 
-const ROOT = path.join(__dirname, "..")
-const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8")
-/*
-  Code only. A string containing a slash-star opens a comment as far as a regex
-  is concerned, so the opener must follow whitespace or a line start.
-*/
-/*
-  ⚠️ TWO TRAPS, ONE REGEX, AND I HAVE FALLEN INTO BOTH.
-
-  The naive `\/\*[\s\S]*?\*\/` treats the slash-star inside a string like a
-  media type as a comment opener and eats the code after it. Requiring
-  whitespace before the opener fixes that — and immediately stops stripping JSX
-  comments, which open as brace-slash-star and are therefore preceded by a
-  brace, so every warning written in this file's own prose counts as code.
-
-  So: whitespace OR a brace. Both forms are comments; neither appears mid-token.
-*/
-const code = (p: string) =>
-  read(p).replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
 
 const PAGE = "new/page.tsx"
+
+/*
+  ⚠️ `screen()`, not `code(PAGE)`, wherever the property is about what a person
+  SEES. The shell, the fields and the document live in `_components/` now so
+  that creating an invoice and correcting one are the same screen; a guard
+  reading only the page file would have gone quietly green on markup it can no
+  longer see. `code(PAGE)` stays for the things that genuinely belong to THIS
+  page — its sources, its gather, its grouping.
+*/
+const screen = createScreen
 
 describe("where the work comes from", () => {
   it("offers all three sources", () => {
@@ -152,8 +148,16 @@ describe("the CRM, when there is one", () => {
       the answer to "can I do this at all" was "type something and find out".
     */
     const src = code(PAGE)
-    // The option's visibility must NOT depend on what has been typed…
-    expect(src).toMatch(/hasCrm && mayAddClient && source === "none" && \(/)
+    /*
+      The option's visibility must NOT depend on what has been typed.
+
+      ⚠️ Asserted on the CONDITION alone, not on the JSX operator that follows
+      it. Pinning `&& (` broke when the block became a ternary passed as a prop
+      — a change that moved no logic at all, which is a guard failing on syntax
+      rather than on behaviour.
+    */
+    expect(src).toMatch(/hasCrm && mayAddClient && source === "none"/)
+    expect(src).not.toMatch(/clientName\.trim\(\)\.length > 1 &&[\s\S]{0,40}<label/)
     // …only whether it can be acted on.
     expect(src).toMatch(/disabled=\{clientName\.trim\(\)\.length <= 1\}/)
     expect(src).toContain("invoices.create.alsoAddClientNeedsName")
@@ -258,9 +262,9 @@ describe("how the labour is written up", () => {
       the invoice, the invoice.
     */
     const src = code(PAGE)
-    // The document renders `documentItems`, which is built FROM labourLines —
+    // The document is handed `documentItems`, which is built FROM labourLines —
     // so changing the grouping changes the rows on the page.
-    expect(src).toMatch(/documentItems\.map\(/)
+    expect(src).toMatch(/items=\{documentItems\}/)
     expect(src).toMatch(/for \(const line of labourLines\)[\s\S]{0,400}rows\.push/)
   })
 
@@ -280,7 +284,7 @@ describe("how the labour is written up", () => {
 
   it("marks a descriptive line as included rather than unpriced", () => {
     // A zero in the amount column reads as a line somebody forgot to price.
-    expect(code(PAGE)).toContain("invoices.create.included")
+    expect(screen()).toContain("invoices.create.included")
   })
 
   it("builds the lines with the SHARED rule, not a loop of its own", () => {
@@ -323,19 +327,32 @@ describe("the page has a shape", () => {
     figure they are deciding about is the one thing they cannot see while
     deciding.
   */
-  const src = () => code(PAGE)
+  const src = () => screen()
 
   it("keeps the total and the action in reach while the page scrolls", () => {
-    const s = src()
     /*
-      Asserted by ORDER, not by distance — a window broke the moment the markup
-      between them grew, which is a test failing on layout rather than on
-      behaviour and has already bitten twice in this repo.
+      ⚠️ Asserted INSIDE the bar component, not by order across the assembled
+      screen. Order was the right call while this was one file; once the shell
+      moved out, "the title comes after the sticky class" started depending on
+      which file the concatenation put first — a guard answering a question
+      about the test helper rather than about the page.
+
+      Within the bar, the property still holds: it is sticky, it carries the
+      title, and the actions are last.
     */
-    const sticky = s.indexOf("sticky top-0")
+    /*
+      Sliced to the bar itself: `SectionHead` in the same file also renders a
+      `{title}`, and an indexOf over the whole file finds that one first.
+    */
+    const shell = code("_components/invoice-shell.tsx")
+    const bar = shell.slice(shell.indexOf("export function InvoiceTopBar"))
+    const sticky = bar.indexOf("sticky top-0")
     expect(sticky).toBeGreaterThan(-1)
-    expect(s.indexOf("invoices.create.title")).toBeGreaterThan(sticky)
-    expect(s).toMatch(/lg:sticky/)
+    expect(bar.indexOf("{title}")).toBeGreaterThan(sticky)
+    expect(bar.indexOf("{children}")).toBeGreaterThan(bar.indexOf("{title}"))
+    // And the page is the thing that names it.
+    expect(code(PAGE)).toMatch(/title=\{t\("invoices\.create\.title"\)\}/)
+    expect(src()).toMatch(/lg:sticky/)
   })
 
   it("splits the tool from the artefact", () => {
@@ -358,7 +375,8 @@ describe("the page has a shape", () => {
     // ⚠️ Both faces render the SAME rows. A second rendering with its own
     // arithmetic is how a preview starts telling somebody something the
     // document does not say.
-    expect(s.match(/documentItems\.map\(/g) ?? []).toHaveLength(2)
+    // Both frames iterate the one `items` prop the page hands them.
+    expect(code("_components/invoice-document.tsx").match(/items\.map\(/g) ?? []).toHaveLength(2)
   })
 
   it("dresses the client's copy as a document, not as the app", () => {
@@ -379,8 +397,13 @@ describe("the page has a shape", () => {
   })
 
   it("numbers the sections so the eye has somewhere to land", () => {
-    expect(src()).toMatch(/<SectionHead step=\{1\}/)
-    expect(src()).toMatch(/<SectionHead step=\{2\}/)
+    /*
+      ⚠️ On the rail SECTION, not on the heading component. The number used to
+      go straight to `SectionHead`; sections are wrapped now, and a guard pinned
+      to the inner component would have gone green while a page numbered nothing.
+    */
+    expect(src()).toMatch(/<RailSection step=\{1\}/)
+    expect(src()).toMatch(/<RailSection step=\{2\}/)
   })
 
   it("has exactly one save action", () => {
@@ -399,14 +422,21 @@ describe("the document is the document", () => {
     the client and the hero total, a real line table, the reckoning
     right-aligned under the amounts column.
   */
-  const src = () => code(PAGE)
+  const src = () => screen()
 
   it("renders one list that is also what gets sent", () => {
     // A preview built separately from the payload is a preview that eventually
     // lies, and the lie is found by a customer holding both.
     const s = src()
     expect(s).toMatch(/const documentItems = useMemo/)
-    expect(s).toMatch(/documentItems\.map\(/)
+    /*
+      ⚠️ The SAME list is handed to the document and to the payload. The rows
+      are built once on the page, passed to the shared document as `items`, and
+      iterated again by the mutation — so "what is shown" and "what is sent"
+      cannot be two different computations.
+    */
+    expect(code(PAGE)).toMatch(/items=\{documentItems\}/)
+    expect(code("_components/invoice-document.tsx")).toMatch(/items\.map\(/)
     expect(s).toMatch(/for \(const row of documentItems\)/)
   })
 
@@ -426,8 +456,9 @@ describe("the document is the document", () => {
 
   it("aligns every number for comparison", () => {
     // Money in a column that does not line up is money nobody checks.
-    const s = src()
-    const table = s.slice(s.indexOf("documentItems.map("), s.indexOf("</table>", s.indexOf("documentItems.map(")))
+    const doc = code("_components/invoice-document.tsx")
+    const from = doc.indexOf("items.map(")
+    const table = doc.slice(from, doc.indexOf("</table>", from))
     expect(table.match(/tabular-nums/g)?.length ?? 0).toBeGreaterThanOrEqual(3)
     expect(table).toMatch(/text-right/)
   })
@@ -443,7 +474,7 @@ describe("the pickers", () => {
     query caps at 200, so the two hundredth client was unreachable by anything
     except scrolling.
   */
-  const src = () => code(PAGE)
+  const src = () => screen()
 
   it("are searchable, not native selects", () => {
     const s = src()
@@ -486,7 +517,7 @@ describe("the rail survives being narrow", () => {
     A layout is not portable just because it is responsive — `sm:grid-cols-2`
     asks about the VIEWPORT, and what got narrow here was the container.
   */
-  const src = () => code(PAGE)
+  const src = () => screen()
 
   it("does not ask the viewport about a 320px column", () => {
     const s = src()

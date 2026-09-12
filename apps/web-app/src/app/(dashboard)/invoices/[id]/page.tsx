@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { exportInvoicePdf, renderInvoicePdfUrl, type InvoicePdfData, type InvoiceBranding } from "@/lib/invoice-pdf"
+import { formatMoney } from "@/lib/money"
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   DRAFT: { bg: "bg-slate-100 dark:bg-slate-500/20", text: "text-slate-600 dark:text-slate-400" },
@@ -35,11 +36,7 @@ const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
 }
 
 function money(n: number, currency: string) {
-  try {
-    return new Intl.NumberFormat("en-IE", { style: "currency", currency: currency || "EUR" }).format(n || 0)
-  } catch {
-    return `${(n || 0).toFixed(2)} ${currency}`
-  }
+  return formatMoney(n, currency)
 }
 function fmtDate(d?: string | null) {
   if (!d) return "—"

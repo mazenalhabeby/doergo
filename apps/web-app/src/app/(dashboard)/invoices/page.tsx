@@ -51,6 +51,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { dateLocale } from "@/lib/format-date"
+import { formatMoney } from "@/lib/money"
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
   DRAFT: { bg: "bg-slate-100 dark:bg-slate-500/20", text: "text-slate-600 dark:text-slate-400", label: "Draft" },
@@ -64,7 +65,7 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }>
 function formatCurrency(amount: number, currency = "USD") {
   // Locale-aware: "1.234,56 €" in de/es/fr/it, "€1,234.56" in en. Was pinned to
   // en-US, which printed US currency convention on a European product.
-  return new Intl.NumberFormat(dateLocale(), { style: "currency", currency }).format(amount)
+  return formatMoney(amount, currency)
 }
 
 export default function InvoicesPage() {

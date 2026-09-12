@@ -83,13 +83,21 @@ describe("a full-bleed band holds a contained column", () => {
     both edges of the window, because a divider stopping in mid-air looks
     broken — and its CONTENTS line up with the navigation. That is two
     elements, and collapsing them into one is the bug this whole spec is about.
+
+    ⚠️ Read from the SHELL, not from a page. The bar, the notice and the
+    workbench moved into `invoices/_components/invoice-shell.tsx` so that
+    creating an invoice and correcting one are one screen — which also means
+    getting this right once fixes both, and getting it wrong once breaks both.
   */
-  const page = strip(
-    fs.readFileSync(path.join(SRC, "app/(dashboard)/invoices/new/page.tsx"), "utf8"),
+  const shell = strip(
+    fs.readFileSync(
+      path.join(SRC, "app/(dashboard)/invoices/_components/invoice-shell.tsx"),
+      "utf8",
+    ),
   )
 
   it("does not put the sticky bar's border on the contained element", () => {
-    const bar = page.match(/className="sticky top-0 z-30[^"]*"/)?.[0] ?? ""
+    const bar = shell.match(/className="sticky top-0 z-30[^"]*"/)?.[0] ?? ""
     expect(bar).toContain("border-b")
     // The band spans the window, so it must NOT be the thing that is centred.
     expect(bar).not.toContain("max-w")
@@ -97,11 +105,59 @@ describe("a full-bleed band holds a contained column", () => {
   })
 
   it("centres the bar's contents in the page column", () => {
-    expect(page).toMatch(/cn\(PAGE_WIDTH, "flex items-center/)
+    expect(shell).toMatch(/cn\(PAGE_WIDTH, "flex items-center/)
   })
 
   it("puts the rail and the canvas in that column too", () => {
     // Otherwise the bar lines up and the panel under it still sits on the bezel.
-    expect(page).toMatch(/cn\(PAGE_WIDTH, "grid items-start/)
+    expect(shell).toMatch(/cn\(PAGE_WIDTH, "grid items-start/)
+  })
+
+  it("is what BOTH invoice screens are built from", () => {
+    /*
+      The whole point: the edit screen was a stack of cards with native date
+      inputs and no sight of the document. It is the same shell now, so a
+      single fix reaches both — and neither can drift away on its own.
+    */
+    for (const page of ["app/(dashboard)/invoices/new/page.tsx", "app/(dashboard)/invoices/[id]/edit/page.tsx"]) {
+      const src = strip(fs.readFileSync(path.join(SRC, page), "utf8"))
+      expect(src).toContain("InvoiceTopBar")
+      expect(src).toContain("InvoiceWorkbench")
+      expect(src).toContain("InvoiceDocument")
+    }
+  })
+})
+
+describe("money reads the same everywhere", () => {
+  /*
+    ⚠️ SIX COPIES of the same formatter, all passing `en-IE` — and an Irish
+    locale disambiguates the dollar, so a USD invoice read "US$1,234.50" where
+    the person raising it expected "$1,234.50". Reported from the screen; it was
+    true on the list, the detail page, the document and the PDF as well, because
+    each had its own copy of the same four lines.
+  */
+  const files = walk(SRC).filter((f) => f !== path.join(SRC, "lib/money.ts"))
+
+  it("is formatted in exactly one place", () => {
+    const offenders = files
+      .filter((f) => /style:\s*["']currency["']/.test(strip(fs.readFileSync(f, "utf8"))))
+      .map((f) => path.relative(SRC, f))
+    expect(offenders).toEqual([])
+  })
+
+  it("asks for the symbol a reader of that currency would use", () => {
+    const src = fs.readFileSync(path.join(SRC, "lib/money.ts"), "utf8")
+    expect(src).toContain("narrowSymbol")
+  })
+
+  it("never throws on a currency code that came from real data", () => {
+    // Intl raises a RangeError on an unknown code, and a screen about money is
+    // the worst place to trade a wrong symbol for a blank page.
+    const { formatMoney } = require("../lib/money")
+    expect(formatMoney(1234.5, "USD")).toBe("$1,234.50")
+    expect(formatMoney(1234.5, "EUR")).toBe("€1,234.50")
+    expect(() => formatMoney(1, "NOT-A-CODE")).not.toThrow()
+    expect(() => formatMoney(1, "")).not.toThrow()
+    expect(formatMoney(NaN, "EUR")).toBe("€0.00")
   })
 })
