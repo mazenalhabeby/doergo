@@ -4327,7 +4327,11 @@
       "summary": "Summary",
       "needsClient": "Add a client name to save",
       "needsLines": "Add at least one line to save",
-      "clientSection": "Who it is for"
+      "clientSection": "Who it is for",
+      "documentEyebrow": "Invoice · draft",
+      "noClientYet": "No client yet",
+      "emptyDocument": "Nothing on this invoice yet",
+      "emptyDocumentHint": "Pick where the work comes from, or add a line below."
     },
     "oldestDebt": "Oldest unpaid",
     "nothingOutstanding": "Everything is settled — nothing outstanding.",

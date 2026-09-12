@@ -317,6 +317,53 @@ function NewInvoiceInner() {
   )
 
   const labourSubtotal = useMemo(() => labourTotalCents(labourLines) / 100, [labourLines])
+
+  /*
+    THE DOCUMENT — every line, in order, exactly as it will be filed.
+
+    ⚠️ One list, rendered AND sent. The sheet below is not a picture of the
+    invoice; it is the invoice, and the mutation maps straight off this. A
+    preview built separately from the payload is a preview that eventually lies,
+    and the lie is only found by a customer holding both.
+  */
+  const documentItems = useMemo(() => {
+    const rows: Array<InvoiceItemInput & { descriptive?: boolean }> = []
+
+    for (const line of labourLines) {
+      rows.push({
+        description: line.description,
+        quantity: line.quantity,
+        unitPrice: line.unitPriceCents / 100,
+        taskId: line.taskId || undefined,
+        reportId: line.reportId || undefined,
+        billRateCents: line.billRateCents,
+        costRateCents: line.costRateCents,
+        billedHours: line.billedHours,
+        descriptive: line.descriptive,
+      })
+    }
+    for (const e of entries) {
+      if (!e.include || !e.includeParts) continue
+      for (const part of e.parts) {
+        rows.push({
+          description: part.partNumber ? `${part.name} (${part.partNumber})` : part.name,
+          quantity: part.quantity,
+          unitPrice: part.unitCost,
+          taskId: e.taskId,
+          reportId: e.reportId || undefined,
+        })
+      }
+    }
+    for (const m of manualLines) {
+      if (!m.description.trim()) continue
+      rows.push({
+        description: m.description.trim(),
+        quantity: Number(m.quantity) || 0,
+        unitPrice: Number(m.unitPrice) || 0,
+      })
+    }
+    return rows
+  }, [labourLines, entries, manualLines])
   const partsSubtotal = useMemo(() => entries.reduce((s, e) => s + entryParts(e), 0), [entries])
   const workSubtotal = labourSubtotal + partsSubtotal
   const manualSubtotal = useMemo(
@@ -360,36 +407,15 @@ function NewInvoiceInner() {
         how the screen and the document drift apart, and the drift is invisible
         until a customer compares them.
       */
-      for (const line of labourLines) {
-        items.push({
-          description: line.description,
-          quantity: line.quantity,
-          unitPrice: line.unitPriceCents / 100,
-          taskId: line.taskId || undefined,
-          reportId: line.reportId || undefined,
-          billRateCents: line.billRateCents,
-          costRateCents: line.costRateCents,
-          billedHours: line.billedHours,
-        })
-      }
-
-      for (const e of entries) {
-        if (!e.include) continue
-        if (e.includeParts) {
-          for (const p of e.parts) {
-            items.push({
-              description: p.partNumber ? `${p.name} (${p.partNumber})` : p.name,
-              quantity: p.quantity,
-              unitPrice: p.unitCost,
-              taskId: e.taskId,
-              reportId: e.reportId || undefined,
-            })
-          }
-        }
-      }
-      for (const m of manualLines) {
-        if (!m.description.trim()) continue
-        items.push({ description: m.description.trim(), quantity: Number(m.quantity) || 0, unitPrice: Number(m.unitPrice) || 0 })
+      /*
+        ⚠️ Mapped off `documentItems`, the very list the sheet rendered — not
+        rebuilt. Rebuilt is how a preview and a document drift apart, and the
+        drift is invisible until a customer is holding both.
+      */
+      for (const row of documentItems) {
+        const { descriptive: _omit, ...item } = row
+        void _omit
+        items.push(item)
       }
       return invoicesApi.create({
         spaceId,
@@ -744,75 +770,130 @@ function NewInvoiceInner() {
         )}
 
         {/*
-          WHAT THE CLIENT WILL SEE — the actual lines, live.
+          THE DOCUMENT ITSELF.
 
-          ⚠️ This is the fix for "I don't see the change when I choose between
-          the three". The grouping used to alter only what was SENT, so picking
-          a different one moved nothing on screen and read as a dead control.
+          ⚠️ Not a "preview card" among other cards — the invoice, laid out as
+          one. The pattern every good invoicing tool converges on, and for a
+          reason: somebody building a bill is trying to answer "what will the
+          client receive", and nine equal panels of form controls never answer
+          it. A sheet does, and it makes a wrong line obvious at a glance.
 
-          These are not a rendering OF the invoice; they are the invoice. The
-          same array is handed to the mutation, so what is previewed and what is
-          filed cannot disagree — a second calculation for display is how a
-          shown total quietly stops matching the document it produced.
+          The total is the hero, deliberately. It is what the reader looks for
+          first on the finished document and what the author is deciding about
+          while building it.
         */}
-        {labourLines.length > 0 && (
-          <div className="bg-card rounded-2xl border border-border overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
-              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold tabular-nums text-muted-foreground">3</span>
-              <p className="text-sm font-semibold text-foreground">{t("invoices.create.preview")}</p>
-              <span className="text-xs text-muted-foreground ml-auto tabular-nums">
-                {t("invoices.create.totalHours", { hours: round2(totalHours) })}
-              </span>
+        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+          {/* ── The head band: who, when, how much ─────────────────────── */}
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-7 sm:py-6">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                {t("invoices.create.documentEyebrow")}
+              </p>
+              <p className="mt-1.5 truncate text-lg font-semibold text-foreground">
+                {clientName.trim() || t("invoices.create.noClientYet")}
+              </p>
+              {(clientEmail.trim() || clientAddress.trim()) && (
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                  {[clientEmail.trim(), clientAddress.trim()].filter(Boolean).join(" · ")}
+                </p>
+              )}
             </div>
 
-            <div className="scroll-x overflow-x-auto">
-              <table className="w-full text-sm min-w-[30rem]">
+            <div className="text-right">
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                {t("invoices.create.total")}
+              </p>
+              <p className="text-3xl font-semibold tabular-nums tracking-tight text-foreground">
+                {money(total, currency)}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+                {t("invoices.create.issueDate")} {fmtDate(issueDate)}
+                {dueDate && ` · ${t("invoices.create.dueDate")} ${fmtDate(dueDate)}`}
+              </p>
+            </div>
+          </div>
+
+          {/* ── The lines ──────────────────────────────────────────────── */}
+          {documentItems.length === 0 ? (
+            /*
+              An empty document says what to do next. A blank table with column
+              headings and no rows reads as something broken rather than as
+              something not started.
+            */
+            <div className="px-5 py-12 text-center sm:px-7">
+              <p className="text-sm text-muted-foreground">{t("invoices.create.emptyDocument")}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t("invoices.create.emptyDocumentHint")}</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[34rem] text-sm">
                 <thead>
-                  <tr className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    <th className="text-left font-medium px-4 py-2">{t("invoices.create.descriptionCol")}</th>
-                    <th className="text-right font-medium px-2 py-2 w-20">{t("invoices.create.qty")}</th>
-                    <th className="text-right font-medium px-2 py-2 w-24">{t("invoices.create.unitPrice")}</th>
-                    <th className="text-right font-medium px-4 py-2 w-28">{t("invoices.create.amount")}</th>
+                  <tr className="border-b border-border text-[11px] uppercase tracking-wider text-muted-foreground">
+                    <th className="px-5 py-2.5 text-left font-medium sm:px-7">{t("invoices.create.descriptionCol")}</th>
+                    <th className="w-20 px-2 py-2.5 text-right font-medium">{t("invoices.create.qty")}</th>
+                    <th className="w-28 px-2 py-2.5 text-right font-medium">{t("invoices.create.unitPrice")}</th>
+                    <th className="w-32 px-5 py-2.5 text-right font-medium sm:px-7">{t("invoices.create.amount")}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {labourLines.map((line, i) => (
+                  {documentItems.map((row, i) => (
                     <tr
-                      key={`${line.taskId ?? "sum"}-${i}`}
+                      key={`${row.taskId ?? "line"}-${i}`}
                       className={cn(
-                        "border-t border-border/60",
-                        // A descriptive line is work shown and NOT charged — it
-                        // must not look like a line somebody forgot to price.
-                        line.descriptive && "text-muted-foreground",
+                        "border-b border-border/50 last:border-0",
+                        row.descriptive && "text-muted-foreground",
                       )}
                     >
-                      <td className={cn("px-4 py-2", line.descriptive && "pl-9")}>
-                        {line.descriptive && <span className="mr-1.5 opacity-50">↳</span>}
-                        {line.description}
+                      <td className={cn("px-5 py-2.5 sm:px-7", row.descriptive && "pl-9 sm:pl-12")}>
+                        {row.descriptive && <span className="mr-1.5 opacity-40">↳</span>}
+                        {row.description}
                       </td>
-                      <td className="px-2 py-2 text-right tabular-nums">
-                        {line.descriptive ? "" : line.quantity}
+                      <td className="px-2 py-2.5 text-right tabular-nums">
+                        {row.descriptive ? "" : row.quantity}
                       </td>
-                      <td className="px-2 py-2 text-right tabular-nums">
-                        {line.descriptive ? "" : money(line.unitPriceCents / 100, currency)}
+                      <td className="px-2 py-2.5 text-right tabular-nums">
+                        {row.descriptive ? "" : money(row.unitPrice, currency)}
                       </td>
-                      <td className="px-4 py-2 text-right tabular-nums">
-                        {line.descriptive
+                      <td className="px-5 py-2.5 text-right tabular-nums sm:px-7">
+                        {row.descriptive
                           ? <span className="text-xs">{t("invoices.create.included")}</span>
-                          : money(line.amountCents / 100, currency)}
+                          : money((row.quantity || 0) * (row.unitPrice || 0), currency)}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+          )}
 
-            <div className="flex items-center justify-between px-4 py-2.5 border-t border-border bg-muted/30">
-              <span className="text-xs text-muted-foreground">{t("invoices.create.labourTotal")}</span>
-              <span className="text-sm font-semibold tabular-nums text-foreground">{money(labourSubtotal, currency)}</span>
+          {/* ── The reckoning, right-aligned under the amounts column ──── */}
+          {documentItems.length > 0 && (
+            <div className="flex justify-end border-t border-border bg-muted/20 px-5 py-4 sm:px-7">
+              <dl className="w-full max-w-xs space-y-1.5 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">{t("invoices.create.subtotal")}</dt>
+                  <dd className="tabular-nums">{money(subtotal, currency)}</dd>
+                </div>
+                {Number(discount) > 0 && (
+                  <div className="flex justify-between">
+                    <dt className="text-muted-foreground">{t("invoices.create.discount")}</dt>
+                    <dd className="tabular-nums">−{money(Number(discount), currency)}</dd>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">
+                    {t("invoices.create.tax")} {Number(taxPct) > 0 && `(${taxPct}%)`}
+                  </dt>
+                  <dd className="tabular-nums">{money(taxAmount, currency)}</dd>
+                </div>
+                <div className="flex justify-between border-t border-border pt-1.5 text-base font-semibold">
+                  <dt>{t("invoices.create.total")}</dt>
+                  <dd className="tabular-nums">{money(total, currency)}</dd>
+                </div>
+              </dl>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Billable work (system-sourced) */}
         {spaceId && (

@@ -4336,7 +4336,11 @@
       "summary": "Récapitulatif",
       "needsClient": "Nom du client manquant",
       "needsLines": "Ajoutez au moins une ligne",
-      "clientSection": "Destinataire"
+      "clientSection": "Destinataire",
+      "documentEyebrow": "Facture · brouillon",
+      "noClientYet": "Pas encore de client",
+      "emptyDocument": "Cette facture est encore vide",
+      "emptyDocumentHint": "Choisissez d’où vient le travail, ou ajoutez une ligne ci-dessous."
     },
     "oldestDebt": "Plus ancienne impayée",
     "nothingOutstanding": "Tout est réglé — rien en attente.",

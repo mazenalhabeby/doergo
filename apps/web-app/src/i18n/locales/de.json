@@ -4327,7 +4327,11 @@
       "summary": "Zusammenfassung",
       "needsClient": "Kundenname fehlt",
       "needsLines": "Mindestens eine Position hinzufügen",
-      "clientSection": "Für wen"
+      "clientSection": "Für wen",
+      "documentEyebrow": "Rechnung · Entwurf",
+      "noClientYet": "Noch kein Kunde",
+      "emptyDocument": "Diese Rechnung ist noch leer",
+      "emptyDocumentHint": "Wählen Sie, woher die Arbeit kommt, oder fügen Sie unten eine Position hinzu."
     },
     "oldestDebt": "Älteste offene",
     "nothingOutstanding": "Alles beglichen — nichts offen.",

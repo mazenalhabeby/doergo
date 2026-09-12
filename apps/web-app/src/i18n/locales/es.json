@@ -4327,7 +4327,11 @@
       "summary": "Resumen",
       "needsClient": "Falta el nombre del cliente",
       "needsLines": "Añada al menos una línea",
-      "clientSection": "Para quién"
+      "clientSection": "Para quién",
+      "documentEyebrow": "Factura · borrador",
+      "noClientYet": "Aún sin cliente",
+      "emptyDocument": "Esta factura está vacía",
+      "emptyDocumentHint": "Elija de dónde viene el trabajo o añada una línea abajo."
     },
     "oldestDebt": "Más antigua sin pagar",
     "nothingOutstanding": "Todo saldado: nada pendiente.",

@@ -232,8 +232,10 @@ describe("how the labour is written up", () => {
       the invoice, the invoice.
     */
     const src = code(PAGE)
-    expect(src).toContain("invoices.create.preview")
-    expect(src).toMatch(/labourLines\.map\(/)
+    // The document renders `documentItems`, which is built FROM labourLines —
+    // so changing the grouping changes the rows on the page.
+    expect(src).toMatch(/documentItems\.map\(/)
+    expect(src).toMatch(/for \(const line of labourLines\)[\s\S]{0,400}rows\.push/)
   })
 
   it("shows and sends ONE calculation", () => {
@@ -244,7 +246,8 @@ describe("how the labour is written up", () => {
     */
     const src = code(PAGE)
     expect(src).toMatch(/labourSubtotal[\s\S]{0,80}labourTotalCents\(labourLines\)/)
-    expect(src).toMatch(/for \(const line of labourLines\)/)
+    // The payload maps off the very list the sheet rendered.
+    expect(src).toMatch(/for \(const row of documentItems\)/)
     // The old independent sum must be gone, not merely unused.
     expect(src).not.toMatch(/entries\.reduce\(\(s, e\) => s \+ entryLabor\(e\)/)
   })
@@ -333,5 +336,47 @@ describe("the page has a shape", () => {
     // the first one had scrolled away.
     const s = src()
     expect(s.match(/invoices\.create\.saveDraft/g) ?? []).toHaveLength(2)
+  })
+})
+
+describe("the document is the document", () => {
+  /*
+    ⚠️ The research every invoicing tool converges on: somebody building a bill
+    is trying to answer "what will the client receive", and a stack of form
+    panels never answers it. So the screen renders the invoice — head band with
+    the client and the hero total, a real line table, the reckoning
+    right-aligned under the amounts column.
+  */
+  const src = () => code(PAGE)
+
+  it("renders one list that is also what gets sent", () => {
+    // A preview built separately from the payload is a preview that eventually
+    // lies, and the lie is found by a customer holding both.
+    const s = src()
+    expect(s).toMatch(/const documentItems = useMemo/)
+    expect(s).toMatch(/documentItems\.map\(/)
+    expect(s).toMatch(/for \(const row of documentItems\)/)
+  })
+
+  it("makes the total the hero", () => {
+    // What the reader looks for first on the finished document, and what the
+    // author is deciding about while building it.
+    expect(src()).toMatch(/text-3xl font-semibold tabular-nums/)
+  })
+
+  it("says what to do when the document is empty", () => {
+    // A blank table with headings and no rows reads as broken rather than as
+    // not started.
+    const s = src()
+    expect(s).toContain("invoices.create.emptyDocument")
+    expect(s).toContain("invoices.create.emptyDocumentHint")
+  })
+
+  it("aligns every number for comparison", () => {
+    // Money in a column that does not line up is money nobody checks.
+    const s = src()
+    const table = s.slice(s.indexOf("documentItems.map("), s.indexOf("</table>", s.indexOf("documentItems.map(")))
+    expect(table.match(/tabular-nums/g)?.length ?? 0).toBeGreaterThanOrEqual(3)
+    expect(table).toMatch(/text-right/)
   })
 })

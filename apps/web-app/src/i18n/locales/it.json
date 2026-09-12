@@ -4336,7 +4336,11 @@
       "summary": "Riepilogo",
       "needsClient": "Manca il nome del cliente",
       "needsLines": "Aggiunga almeno una voce",
-      "clientSection": "Per chi"
+      "clientSection": "Per chi",
+      "documentEyebrow": "Fattura · bozza",
+      "noClientYet": "Nessun cliente",
+      "emptyDocument": "Questa fattura è ancora vuota",
+      "emptyDocumentHint": "Scelga da dove viene il lavoro o aggiunga una voce sotto."
     },
     "oldestDebt": "Più vecchia non pagata",
     "nothingOutstanding": "Tutto saldato — nulla in sospeso.",
