@@ -217,7 +217,7 @@ function InvoiceDetailInner({ id }: { id: string }) {
         title={inv.invoiceNumber}
         subtitle={inv.clientName}
         status={{ label: statusLabel, className: cn(style.bg, style.text) }}
-        onBack={() => router.back()}
+        onBack={() => router.push("/invoices")}
       >
         <Button variant="outline" size="sm" className="gap-1.5" disabled={busy} onClick={print}>
           <Printer className="size-3.5" />

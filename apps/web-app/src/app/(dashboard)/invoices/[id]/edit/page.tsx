@@ -206,7 +206,7 @@ function EditInvoiceInner({ id }: { id: string }) {
   if (isLoading || !inv) {
     return (
       <div className="min-h-full bg-background">
-        <InvoiceTopBar title={t("invoices.edit.title", "Edit invoice")} onBack={() => router.back()} />
+        <InvoiceTopBar title={t("invoices.edit.title", "Edit invoice")} onBack={() => router.push("/invoices")} />
         <InvoiceWorkbench rail={<Skeleton className="h-64 w-full rounded-2xl" />}>
           <Skeleton className="h-[28rem] w-full rounded-2xl" />
         </InvoiceWorkbench>
@@ -241,7 +241,7 @@ function EditInvoiceInner({ id }: { id: string }) {
         title={t("invoices.edit.title", "Edit invoice")}
         subtitle={inv.invoiceNumber}
         status={{ label: t("invoices.status.draft", "Draft") }}
-        onBack={() => router.push(`/invoices/${id}`)}
+        onBack={() => router.push("/invoices")}
       >
         <Button variant="outline" className="shrink-0" onClick={() => router.push(`/invoices/${id}`)}>
           {t("common.cancel")}

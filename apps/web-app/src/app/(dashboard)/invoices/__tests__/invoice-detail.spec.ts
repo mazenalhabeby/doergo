@@ -92,3 +92,43 @@ describe("the issued invoice", () => {
     expect(typeof d.invoices?.detail?.overdueBy_other).toBe("string")
   })
 })
+
+describe("the way out", () => {
+  /*
+    ⚠️ THE ARROW GOES TO THE LIST, on all three screens.
+
+    `router.back()` is not a destination. Opened from a link, a notification or
+    a fresh tab there is nothing to go back TO and the arrow does nothing at
+    all — a control that is sometimes inert. Arrived at from the invoice you
+    just saved, it walks you back into the draft you already committed.
+
+    All three screens are ABOUT one invoice, and the place above them is the
+    same place.
+  */
+  const SCREENS = ["new/page.tsx", "[id]/page.tsx", "[id]/edit/page.tsx"]
+
+  it.each(SCREENS)("sends %s back to the list", (screen) => {
+    const src = code(screen)
+    const backs = src.match(/onBack=\{[^}]*\}/g) ?? []
+    expect(backs.length).toBeGreaterThan(0)
+    for (const back of backs) {
+      expect(back).toContain('router.push("/invoices")')
+    }
+  })
+
+  it.each(SCREENS)("never navigates by history on %s", (screen) => {
+    expect(code(screen)).not.toContain("router.back()")
+  })
+
+  it("still returns Cancel to the invoice being edited", () => {
+    /*
+      Deliberately NOT the list. Cancel means "do not save these changes", and
+      the thing a person wants to see next is the invoice as it stands —
+      unchanged. That is a different question from "I am finished here", which
+      is what the arrow answers.
+    */
+    const src = code("[id]/edit/page.tsx")
+    expect(src).toMatch(/common\.cancel[\s\S]{0,200}|[\s\S]{0,200}common\.cancel/)
+    expect(src).toMatch(/onClick=\{\(\) => router\.push\(`\/invoices\/\$\{id\}`\)\}/)
+  })
+})

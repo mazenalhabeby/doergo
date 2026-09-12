@@ -60,6 +60,15 @@ export function InvoiceTopBar({
    * is four months late says "in progress", which is the opposite of true.
    */
   status?: { label: string; className?: string }
+  /**
+   * Where the arrow goes.
+   *
+   * ⚠️ NEVER `router.back()`. History is not a place: opened from a link, a
+   * notification or a fresh tab there is nothing to go back TO and the arrow
+   * does nothing at all; arrived at from the invoice you just saved, it walks
+   * you into the draft you already committed. Every one of these screens is
+   * ABOUT one invoice, and the place above them is the list.
+   */
   onBack: () => void
   /** The actions. Right-aligned; the committing one goes last. */
   children?: ReactNode

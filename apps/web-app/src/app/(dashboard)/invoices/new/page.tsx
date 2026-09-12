@@ -548,7 +548,7 @@ function NewInvoiceInner() {
         title={t("invoices.create.title")}
         subtitle={clientName.trim() || t("invoices.create.noClientYet")}
         status={{ label: t("invoices.status.draft", "Draft") }}
-        onBack={() => router.back()}
+        onBack={() => router.push("/invoices")}
       >
         <Button
           className="shrink-0"
