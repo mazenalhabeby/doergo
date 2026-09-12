@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { ArrowLeft, Plus, Trash2, Loader2, Clock, Package, FileText, ChevronDown, ChevronRight } from "lucide-react"
 
-import { invoicesApi, locationsApi, customersApi, type Invoice, type InvoiceItemInput } from "@/lib/api"
+import { invoicesApi, locationsApi, customersApi, organizationsApi, type Invoice, type InvoiceItemInput } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { buildLabourLines, labourTotalCents, type LabourGrouping, type LabourEntry } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
@@ -123,6 +123,14 @@ function NewInvoiceInner() {
     the document rather than about the price.
   */
   const [grouping, setGrouping] = useState<LabourGrouping>("task")
+  /*
+    Which face of the document is showing.
+
+    ⚠️ Defaults to the WORKING view, not the client's copy. Somebody arriving
+    here is building, not proofing, and opening on a finished-looking letterhead
+    invites them to hunt for the controls that made it.
+  */
+  const [view, setView] = useState<"build" | "client">("build")
 
   const spaceId = source === "space" ? pickedSpaceId || undefined : undefined
 
@@ -160,6 +168,18 @@ function NewInvoiceInner() {
     queryKey: ["location", spaceId],
     queryFn: () => locationsApi.getById(spaceId!),
     enabled: !!spaceId,
+  })
+
+  /*
+    The letterhead — this organisation's own details, for the client's copy.
+
+    Cheap and shared: the same query key the rest of the app uses, so opening
+    this screen costs no extra request on a warm cache.
+  */
+  const { data: org } = useQuery({
+    queryKey: ["org-profile"],
+    queryFn: () => organizationsApi.getProfile(),
+    staleTime: 5 * 60_000,
   })
 
   /** The workspaces to choose from, only once somebody is choosing one. */
@@ -467,156 +487,83 @@ function NewInvoiceInner() {
   const canSave = clientName.trim().length > 0 && (includedCount > 0 || manualLines.some((m) => m.description.trim()))
 
   return (
+    /*
+      ⚠️ THE CHROME RECEDES AND THE DOCUMENT FLOATS ON IT.
+
+      The whole of what was wrong before: controls and invoice sat in identical
+      `rounded-2xl border bg-card` slabs, so nothing was more important than
+      anything else and the page read as a stack of unrelated panels. A tool and
+      the artefact it produces must not weigh the same.
+
+      So the workbench is the recessive ground, the rail holds the settings, and
+      the invoice is the only lifted surface on the page.
+    */
     <div className="min-h-full bg-background">
-      {/*
-        ⚠️ A STICKY HEAD, not a title that scrolls away. Building an invoice is a
-        long page — a source, a client, a table of work, extra lines — and the
-        way out and the way to save both used to disappear the moment somebody
-        started reading their own jobs.
-      */}
-      <div className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-3 sm:px-8">
-          <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={() => router.back()}>
-            <ArrowLeft className="size-4" />
-          </Button>
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-lg font-semibold leading-tight text-foreground">
-              {t("invoices.create.title")}
-            </h1>
-            {space && (
-              <p className="truncate text-xs text-muted-foreground">
-                {t("invoices.create.forSpace", { name: space.name })}
-              </p>
-            )}
-          </div>
-          {/* The total, in the head, because it is the number somebody is
-              actually watching while they tick jobs on and off. */}
-          <span className="hidden text-right sm:block">
-            <span className="block text-[11px] uppercase tracking-wider text-muted-foreground">
-              {t("invoices.create.total")}
-            </span>
-            <span className="block text-base font-semibold tabular-nums text-foreground">
-              {money(total, currency)}
-            </span>
-          </span>
-          <Button
-            className="shrink-0"
-            disabled={!canSave || createMutation.isPending}
-            onClick={() => createMutation.mutate()}
-          >
-            {createMutation.isPending && <Loader2 className="size-4 mr-1.5 animate-spin" />}
-            {t("invoices.create.saveDraft")}
-          </Button>
+      {/* ── The bar: the way out, what it is, and the way to commit ────── */}
+      <div className="sticky top-0 z-30 flex items-center gap-3.5 border-b border-border bg-background/85 px-4 py-2.5 backdrop-blur-md sm:px-5">
+        <Button variant="outline" size="icon" className="size-[30px] shrink-0" onClick={() => router.back()}>
+          <ArrowLeft className="size-4" />
+        </Button>
+        <div className="min-w-0">
+          <h1 className="truncate text-[15px] font-semibold leading-tight tracking-tight text-foreground">
+            {t("invoices.create.title")}
+          </h1>
+          <p className="truncate text-xs text-muted-foreground">
+            {clientName.trim() || t("invoices.create.noClientYet")}
+          </p>
         </div>
+        <span className="flex-1" />
+        <span className="hidden rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 sm:inline">
+          {t("invoices.status.draft", "Draft")}
+        </span>
+        <Button
+          className="shrink-0"
+          disabled={!canSave || createMutation.isPending}
+          onClick={() => createMutation.mutate()}
+        >
+          {createMutation.isPending && <Loader2 className="size-4 mr-1.5 animate-spin" />}
+          {t("invoices.create.saveDraft")}
+        </Button>
       </div>
 
-      <div className="mx-auto max-w-6xl p-6 sm:p-8">
+      {/*
+        ⚠️ SAYS WHY SAVE IS OFF, rather than only greying it. A disabled action
+        with no reason beside it is the commonest way a form wastes somebody's
+        afternoon — and on this page the missing thing is usually one field in a
+        rail they have already scrolled past.
+      */}
+      {!canSave && (
+        <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300 sm:px-5">
+          {clientName.trim().length === 0
+            ? t("invoices.create.needsClient")
+            : t("invoices.create.needsLines")}
+        </div>
+      )}
+
+      <div className="grid items-start lg:grid-cols-[320px_minmax(0,1fr)]">
         {/*
-          Two columns, and the money follows you.
-
-          ⚠️ It was ONE column of nine identically-weighted cards with the totals
-          at the bottom of the scroll — so the figure somebody is deciding about
-          was the one thing they could not see while deciding. A summary rail is
-          the standard shape for this screen for exactly that reason.
+          THE TOOL. Settings live here and stay put; the document never moves
+          while somebody changes them — which is the other half of what was
+          wrong, since the controls used to sit ABOVE the thing they change.
         */}
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_19rem]">
-          <div className="min-w-0 space-y-5">
-
-        {/* Where the work comes from */}
-        <div className="bg-card rounded-2xl border border-border p-5">
-          <SectionHead step={1} title={t("invoices.create.billFrom")} />
-          <div className="flex flex-wrap gap-2">
-            {([
-              ["space", t("invoices.create.fromSpace")],
-              ...(hasCrm ? [["client", t("invoices.create.fromClient")] as const] : []),
-              ["none", t("invoices.create.fromNothing")],
-            ] as const).map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setSource(key as typeof source)}
-                className={cn(
-                  "rounded-lg border px-3 py-1.5 text-sm transition-colors",
-                  source === key
-                    ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
-                    : "border-border text-muted-foreground hover:border-slate-400",
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {source === "space" && (
-            <div className="mt-3">
-              <Label className="text-xs">{t("invoices.create.workspace")}</Label>
-              <select
-                value={pickedSpaceId}
-                onChange={(e) => setPickedSpaceId(e.target.value)}
-                className="mt-1 h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
-              >
-                <option value="">{t("invoices.create.choose")}</option>
-                {billableSpaces.map((sp) => (
-                  <option key={sp.id} value={sp.id}>{sp.name}</option>
-                ))}
-              </select>
-              {billableSpaces.length === 0 && (
-                <p className="mt-1 text-xs text-muted-foreground">{t("invoices.create.noCustomerSpaces")}</p>
-              )}
-            </div>
-          )}
-
-          {source === "client" && (
-            <div className="mt-3">
-              <Label className="text-xs">{t("invoices.create.client")}</Label>
-              <select
-                value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
-                className="mt-1 h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
-              >
-                <option value="">{t("invoices.create.choose")}</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-              {/*
-                The client's details fill the header below, and stay editable —
-                an invoice sometimes goes to a different address than the one on
-                the record, and refusing that would send people back to the CRM
-                to edit a client in order to send one invoice.
-              */}
-              <p className="mt-1 text-xs text-muted-foreground">{t("invoices.create.clientFillsHeader")}</p>
-            </div>
-          )}
-
-          {source === "none" && (
-            <p className="mt-3 text-xs text-muted-foreground">{t("invoices.create.nothingHint")}</p>
-          )}
-
-          {/*
-            How the labour is written up — shown only once there is labour.
-
-            ⚠️ All three price the same work identically where the hours are
-            clean, so this is a choice about the DOCUMENT and never about the
-            amount. Offering it before any work has been gathered would be a
-            control with nothing to act on.
-          */}
-          {entries.some((e) => e.include && e.hours > 0) && (
-            <div className="mt-4 border-t border-border pt-3">
-              <Label className="text-xs">{t("invoices.create.groupBy")}</Label>
-              <div className="mt-2 flex flex-wrap gap-2">
+        <aside className="border-b border-border bg-muted/30 px-4 py-5 lg:sticky lg:top-[53px] lg:h-[calc(100dvh-53px)] lg:overflow-y-auto lg:border-b-0 lg:border-r">
+          <div className="space-y-5 [&>*+*]:border-t [&>*+*]:border-border [&>*+*]:pt-5">
+            {/* Where the work comes from */}
+            <div className="bg-card rounded-2xl border border-border p-5">
+              <SectionHead step={1} title={t("invoices.create.billFrom")} />
+              <div className="flex flex-wrap gap-2">
                 {([
-                  ["task", t("invoices.create.groupByTask")],
-                  ["member", t("invoices.create.groupByMember")],
-                  ["both", t("invoices.create.groupByBoth")],
+                  ["space", t("invoices.create.fromSpace")],
+                  ...(hasCrm ? [["client", t("invoices.create.fromClient")] as const] : []),
+                  ["none", t("invoices.create.fromNothing")],
                 ] as const).map(([key, label]) => (
                   <button
                     key={key}
                     type="button"
-                    onClick={() => setGrouping(key as LabourGrouping)}
+                    onClick={() => setSource(key as typeof source)}
                     className={cn(
                       "rounded-lg border px-3 py-1.5 text-sm transition-colors",
-                      grouping === key
+                      source === key
                         ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
                         : "border-border text-muted-foreground hover:border-slate-400",
                     )}
@@ -625,149 +572,224 @@ function NewInvoiceInner() {
                   </button>
                 ))}
               </div>
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                {grouping === "task"
-                  ? t("invoices.create.groupByTaskHint")
-                  : grouping === "member"
-                    ? t("invoices.create.groupByMemberHint")
-                    : t("invoices.create.groupByBothHint")}
-              </p>
-            </div>
-          )}
-        </div>
 
-        {/* Client + meta */}
-        <div className="bg-card rounded-2xl border border-border p-5">
-          <SectionHead step={2} title={t("invoices.create.clientSection")} />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-3">
-            <div>
-              <Label className="text-xs">{t("invoices.create.clientName")} *</Label>
-              <Input value={clientName} onChange={(e) => setClientName(e.target.value)} className="h-9 mt-1" />
-              {/*
-                Keep the client, when there is a CRM and a right to add to it.
-
-                ⚠️ VISIBLE BEFORE IT IS USABLE, and that is the fix. It first
-                appeared only once two characters had been typed, as muted text
-                the size of a footnote, and did nothing until Save — so somebody
-                filling in a client by hand had no way to know the option
-                existed at all, which is exactly how it was reported.
-
-                Shown as soon as the option APPLIES, disabled with its reason
-                until there is a name, and it says WHEN it will happen so nobody
-                waits for something that has not been asked for yet.
-
-                ⚠️ ONLY when the lines are being entered by hand, because that
-                is the only case where the client is genuinely new to us.
-
-                Picked FROM the CRM: it is already there, and offering to add it
-                would duplicate the record it was read from. Gathered from a
-                WORKSPACE: that customer already exists as a customer workspace,
-                and adding it again makes a second version of one relationship
-                for somebody to keep in step.
-
-                And never without `crmCaps` — the server's own answer about who
-                may create a client — so the offer cannot appear to somebody it
-                would then refuse.
-              */}
-              {hasCrm && mayAddClient && source === "none" && (
-                <label
-                  className={cn(
-                    "mt-2 flex items-start gap-2.5 rounded-lg border p-2.5 transition-colors",
-                    clientName.trim().length > 1
-                      ? "cursor-pointer border-border hover:border-slate-400"
-                      : "border-dashed border-border opacity-60",
+              {source === "space" && (
+                <div className="mt-3">
+                  <Label className="text-xs">{t("invoices.create.workspace")}</Label>
+                  <select
+                    value={pickedSpaceId}
+                    onChange={(e) => setPickedSpaceId(e.target.value)}
+                    className="mt-1 h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
+                  >
+                    <option value="">{t("invoices.create.choose")}</option>
+                    {billableSpaces.map((sp) => (
+                      <option key={sp.id} value={sp.id}>{sp.name}</option>
+                    ))}
+                  </select>
+                  {billableSpaces.length === 0 && (
+                    <p className="mt-1 text-xs text-muted-foreground">{t("invoices.create.noCustomerSpaces")}</p>
                   )}
-                >
-                  <Checkbox
-                    className="mt-0.5"
-                    disabled={clientName.trim().length <= 1}
-                    checked={addToCrm}
-                    onCheckedChange={(v) => setAddToCrm(v === true)}
-                  />
-                  <span className="min-w-0">
-                    <span className="block text-sm text-foreground">{t("invoices.create.alsoAddClient")}</span>
-                    <span className="mt-0.5 block text-xs text-muted-foreground">
-                      {clientName.trim().length > 1
-                        ? t("invoices.create.alsoAddClientWhen", { name: clientName.trim() })
-                        : t("invoices.create.alsoAddClientNeedsName")}
-                    </span>
-                  </span>
-                </label>
+                </div>
+              )}
+
+              {source === "client" && (
+                <div className="mt-3">
+                  <Label className="text-xs">{t("invoices.create.client")}</Label>
+                  <select
+                    value={customerId}
+                    onChange={(e) => setCustomerId(e.target.value)}
+                    className="mt-1 h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
+                  >
+                    <option value="">{t("invoices.create.choose")}</option>
+                    {clients.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                  {/*
+                    The client's details fill the header below, and stay editable —
+                    an invoice sometimes goes to a different address than the one on
+                    the record, and refusing that would send people back to the CRM
+                    to edit a client in order to send one invoice.
+                  */}
+                  <p className="mt-1 text-xs text-muted-foreground">{t("invoices.create.clientFillsHeader")}</p>
+                </div>
+              )}
+
+              {source === "none" && (
+                <p className="mt-3 text-xs text-muted-foreground">{t("invoices.create.nothingHint")}</p>
+              )}
+
+              {/*
+                How the labour is written up — shown only once there is labour.
+
+                ⚠️ All three price the same work identically where the hours are
+                clean, so this is a choice about the DOCUMENT and never about the
+                amount. Offering it before any work has been gathered would be a
+                control with nothing to act on.
+              */}
+              {entries.some((e) => e.include && e.hours > 0) && (
+                <div className="mt-4 border-t border-border pt-3">
+                  <Label className="text-xs">{t("invoices.create.groupBy")}</Label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {([
+                      ["task", t("invoices.create.groupByTask")],
+                      ["member", t("invoices.create.groupByMember")],
+                      ["both", t("invoices.create.groupByBoth")],
+                    ] as const).map(([key, label]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setGrouping(key as LabourGrouping)}
+                        className={cn(
+                          "rounded-lg border px-3 py-1.5 text-sm transition-colors",
+                          grouping === key
+                            ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+                            : "border-border text-muted-foreground hover:border-slate-400",
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    {grouping === "task"
+                      ? t("invoices.create.groupByTaskHint")
+                      : grouping === "member"
+                        ? t("invoices.create.groupByMemberHint")
+                        : t("invoices.create.groupByBothHint")}
+                  </p>
+                </div>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">{t("invoices.create.clientEmail")}</Label>
-                <Input value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} className="h-9 mt-1" />
-              </div>
-              <div>
-                <Label className="text-xs">{t("invoices.create.clientAddress")}</Label>
-                <Input value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} className="h-9 mt-1" />
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs">{t("invoices.create.issueDate")}</Label>
-              <Input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} className="h-9 mt-1" />
-            </div>
-            <div>
-              <Label className="text-xs">{t("invoices.create.dueDate")}</Label>
-              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="h-9 mt-1" />
-            </div>
-            <div>
-              <Label className="text-xs">{t("invoices.create.rate")}</Label>
-              <Input type="number" min={0} step="0.01" value={rate} onChange={(e) => setRate(e.target.value)} className="h-9 mt-1" placeholder={t("invoices.create.ratePlaceholder")} />
-            </div>
-            <div>
-              <Label className="text-xs">{t("invoices.create.currency")}</Label>
-              <Input value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase().slice(0, 3))} className="h-9 mt-1" />
-            </div>
-          </div>
-          </div>
-        </div>
 
-        {/*
-          What this invoice makes.
+            {/* Client + meta */}
+            <div className="bg-card rounded-2xl border border-border p-5">
+              <SectionHead step={2} title={t("invoices.create.clientSection")} />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs">{t("invoices.create.clientName")} *</Label>
+                  <Input value={clientName} onChange={(e) => setClientName(e.target.value)} className="h-9 mt-1" />
+                  {/*
+                    Keep the client, when there is a CRM and a right to add to it.
 
-          ⚠️ TWO CONDITIONS, both necessary. `twoRates` says the organisation
-          actually works with a cost — a one-rate company must never be shown a
-          row of dashes it has to learn to ignore. `canViewLabourCost` says this
-          person may know: raising an invoice is an office job, and what the
-          labour cost the company is a different question asked by a different
-          person.
+                    ⚠️ VISIBLE BEFORE IT IS USABLE, and that is the fix. It first
+                    appeared only once two characters had been typed, as muted text
+                    the size of a footnote, and did nothing until Save — so somebody
+                    filling in a client by hand had no way to know the option
+                    existed at all, which is exactly how it was reported.
 
-          The server strips cost from the response on the same permission, so
-          this is the screen agreeing with the boundary — not the boundary.
-        */}
-        {showMargin && (
-          <div className="bg-card rounded-2xl border border-border p-4">
-            <p className="text-sm font-medium text-foreground mb-3">{t("invoices.create.marginTitle")}</p>
-            <div className="flex flex-wrap gap-x-8 gap-y-3">
-              <div>
-                <p className="text-xs text-muted-foreground">{t("invoices.create.billed")}</p>
-                <p className="text-lg font-semibold tabular-nums text-foreground">{money(workSubtotal, currency)}</p>
+                    Shown as soon as the option APPLIES, disabled with its reason
+                    until there is a name, and it says WHEN it will happen so nobody
+                    waits for something that has not been asked for yet.
+
+                    ⚠️ ONLY when the lines are being entered by hand, because that
+                    is the only case where the client is genuinely new to us.
+
+                    Picked FROM the CRM: it is already there, and offering to add it
+                    would duplicate the record it was read from. Gathered from a
+                    WORKSPACE: that customer already exists as a customer workspace,
+                    and adding it again makes a second version of one relationship
+                    for somebody to keep in step.
+
+                    And never without `crmCaps` — the server's own answer about who
+                    may create a client — so the offer cannot appear to somebody it
+                    would then refuse.
+                  */}
+                  {hasCrm && mayAddClient && source === "none" && (
+                    <label
+                      className={cn(
+                        "mt-2 flex items-start gap-2.5 rounded-lg border p-2.5 transition-colors",
+                        clientName.trim().length > 1
+                          ? "cursor-pointer border-border hover:border-slate-400"
+                          : "border-dashed border-border opacity-60",
+                      )}
+                    >
+                      <Checkbox
+                        className="mt-0.5"
+                        disabled={clientName.trim().length <= 1}
+                        checked={addToCrm}
+                        onCheckedChange={(v) => setAddToCrm(v === true)}
+                      />
+                      <span className="min-w-0">
+                        <span className="block text-sm text-foreground">{t("invoices.create.alsoAddClient")}</span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                          {clientName.trim().length > 1
+                            ? t("invoices.create.alsoAddClientWhen", { name: clientName.trim() })
+                            : t("invoices.create.alsoAddClientNeedsName")}
+                        </span>
+                      </span>
+                    </label>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">{t("invoices.create.clientEmail")}</Label>
+                    <Input value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} className="h-9 mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{t("invoices.create.clientAddress")}</Label>
+                    <Input value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} className="h-9 mt-1" />
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{t("invoices.create.labourCost")}</p>
-                <p className="text-lg font-semibold tabular-nums text-amber-700 dark:text-amber-500">{money(workCost, currency)}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">{t("invoices.create.issueDate")}</Label>
+                  <Input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} className="h-9 mt-1" />
+                </div>
+                <div>
+                  <Label className="text-xs">{t("invoices.create.dueDate")}</Label>
+                  <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="h-9 mt-1" />
+                </div>
+                <div>
+                  <Label className="text-xs">{t("invoices.create.rate")}</Label>
+                  <Input type="number" min={0} step="0.01" value={rate} onChange={(e) => setRate(e.target.value)} className="h-9 mt-1" placeholder={t("invoices.create.ratePlaceholder")} />
+                </div>
+                <div>
+                  <Label className="text-xs">{t("invoices.create.currency")}</Label>
+                  <Input value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase().slice(0, 3))} className="h-9 mt-1" />
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{t("invoices.create.margin")}</p>
-                <p className={cn(
-                  "text-lg font-semibold tabular-nums",
-                  workSubtotal - workCost < 0 ? "text-red-600 dark:text-red-400" : "text-teal-700 dark:text-teal-400",
-                )}>
-                  {money(workSubtotal - workCost, currency)}
-                </p>
               </div>
             </div>
-            {/* Billing under cost is a real thing — a fixed price, a goodwill
-                rate — and hiding it is how somebody finds out at quarter end. */}
-            <p className="mt-2 text-[11px] text-muted-foreground">{t("invoices.create.marginHint")}</p>
+
           </div>
-        )}
+        </aside>
+
+        {/* THE ARTEFACT. */}
+        <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-[820px] space-y-5">
+            {/*
+              Working view vs the client's copy.
+
+              ⚠️ Both fill their tables from the SAME rows. The client's copy is
+              not a second rendering with its own idea of the numbers — it is
+              the same document in a different frame, which is the only version
+              of this that cannot start lying.
+            */}
+            <div className="flex justify-center">
+              <div className="inline-grid grid-flow-col gap-0.5 rounded-xl border border-border bg-muted/60 p-1">
+                {([
+                  ["build", t("invoices.create.viewWorking")],
+                  ["client", t("invoices.create.viewClient")],
+                ] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setView(key as typeof view)}
+                    className={cn(
+                      "rounded-lg px-4 py-1.5 text-[13px] transition-colors",
+                      view === key
+                        ? "bg-card font-semibold text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
         {/*
           THE DOCUMENT ITSELF.
@@ -782,7 +804,7 @@ function NewInvoiceInner() {
           first on the finished document and what the author is deciding about
           while building it.
         */}
-        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <div className={cn("overflow-hidden rounded-2xl border border-border bg-card shadow-sm", view !== "build" && "hidden")}>
           {/* ── The head band: who, when, how much ─────────────────────── */}
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-7 sm:py-6">
             <div className="min-w-0">
@@ -894,6 +916,231 @@ function NewInvoiceInner() {
             </div>
           )}
         </div>
+
+        {/*
+          THE CLIENT'S COPY — the only surface in this product a customer ever
+          sees, and deliberately NOT styled like the app.
+
+          ⚠️ No cards, no muted panels, no UI chrome. Anything that reads as
+          software here tells the recipient they are looking at somebody's
+          dashboard rather than at a bill. It carries what a real invoice has to
+          carry: a letterhead, a number, both parties, terms, and how to pay.
+
+          ⚠️ It renders `documentItems` — the same rows the working view shows
+          and the mutation sends. A second rendering with its own arithmetic is
+          how a preview starts telling somebody something the document does not.
+        */}
+        <div className={cn("overflow-hidden rounded-2xl border border-border bg-card shadow-sm", view !== "client" && "hidden")}>
+          <div className="px-6 py-8 sm:px-12 sm:py-11">
+            {/* Letterhead */}
+            <div className="flex flex-wrap justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <span className="grid size-7 place-items-center rounded-lg bg-brand-600 text-xs font-bold text-white">
+                    {(org?.name ?? "H").slice(0, 1).toUpperCase()}
+                  </span>
+                  <span className="text-[17px] font-bold tracking-tight text-foreground">
+                    {org?.name ?? t("invoices.create.yourCompany")}
+                  </span>
+                </div>
+                <p className="mt-2.5 whitespace-pre-line text-[11.5px] leading-relaxed text-muted-foreground">
+                  {[org?.addressLine1, [org?.postalCode, org?.city].filter(Boolean).join(" "), org?.country]
+                    .filter(Boolean).join("\n") || t("invoices.create.noCompanyAddress")}
+                  {org?.vatId ? `\n${org.vatId}` : ""}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[26px] font-bold uppercase leading-none tracking-[0.14em] text-foreground">
+                  {t("invoices.create.documentWord")}
+                </p>
+                <p className="mt-2 text-[12.5px] tabular-nums text-muted-foreground">
+                  {t("invoices.create.numberPending")}
+                </p>
+              </div>
+            </div>
+
+            {/* Both parties, side by side */}
+            <div className="mt-8 grid gap-6 border-t border-border pt-5 sm:grid-cols-2">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  {t("invoices.create.billedTo")}
+                </p>
+                <p className="mt-2 text-[14.5px] font-semibold text-foreground">
+                  {clientName.trim() || "—"}
+                </p>
+                <p className="mt-0.5 whitespace-pre-line text-[12.5px] leading-relaxed text-muted-foreground">
+                  {[clientAddress.trim(), clientEmail.trim()].filter(Boolean).join("\n")}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  {t("invoices.create.detailsCol")}
+                </p>
+                <dl className="mt-2 grid gap-1.5 text-[12.5px]">
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-muted-foreground">{t("invoices.create.issueDate")}</dt>
+                    <dd className="tabular-nums">{fmtDate(issueDate)}</dd>
+                  </div>
+                  {dueDate && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted-foreground">{t("invoices.create.dueDate")}</dt>
+                      <dd className="tabular-nums">{fmtDate(dueDate)}</dd>
+                    </div>
+                  )}
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-muted-foreground">{t("invoices.create.currency")}</dt>
+                    <dd className="tabular-nums">{currency}</dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+
+            {/* The lines */}
+            {documentItems.length === 0 ? (
+              <p className="py-14 text-center text-sm text-muted-foreground">
+                {t("invoices.create.emptyDocument")}
+              </p>
+            ) : (
+              <div className="mt-7 overflow-x-auto">
+                <table className="w-full min-w-[26rem] text-[13.5px]">
+                  <thead>
+                    <tr className="border-b border-border text-[10px] uppercase tracking-[0.11em] text-muted-foreground">
+                      <th className="py-2 text-left font-medium">{t("invoices.create.descriptionCol")}</th>
+                      <th className="w-16 py-2 text-right font-medium">{t("invoices.create.qty")}</th>
+                      <th className="w-24 py-2 text-right font-medium">{t("invoices.create.unitPrice")}</th>
+                      <th className="w-28 py-2 text-right font-medium">{t("invoices.create.amount")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {documentItems.map((row, i) => (
+                      <tr
+                        key={`c-${row.taskId ?? "line"}-${i}`}
+                        className={cn("border-b border-border/50 last:border-0", row.descriptive && "text-muted-foreground")}
+                      >
+                        <td className={cn("py-2.5", row.descriptive && "pl-5 text-[12.5px]")}>
+                          {row.descriptive && <span className="mr-1.5 opacity-40">↳</span>}
+                          {row.description}
+                        </td>
+                        <td className="py-2.5 text-right tabular-nums">{row.descriptive ? "" : row.quantity}</td>
+                        <td className="py-2.5 text-right tabular-nums">{row.descriptive ? "" : money(row.unitPrice, currency)}</td>
+                        <td className="py-2.5 text-right tabular-nums">
+                          {row.descriptive
+                            ? <span className="text-[11px]">{t("invoices.create.included")}</span>
+                            : money((row.quantity || 0) * (row.unitPrice || 0), currency)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {documentItems.length > 0 && (
+              <>
+                <div className="mt-2 flex justify-end">
+                  <dl className="w-full max-w-[264px] text-[13.5px]">
+                    <div className="flex justify-between py-1">
+                      <dt className="text-muted-foreground">{t("invoices.create.subtotal")}</dt>
+                      <dd className="tabular-nums">{money(subtotal, currency)}</dd>
+                    </div>
+                    {Number(discount) > 0 && (
+                      <div className="flex justify-between py-1">
+                        <dt className="text-muted-foreground">{t("invoices.create.discount")}</dt>
+                        <dd className="tabular-nums">−{money(Number(discount), currency)}</dd>
+                      </div>
+                    )}
+                    <div className="flex justify-between py-1">
+                      <dt className="text-muted-foreground">
+                        {t("invoices.create.tax")} {Number(taxPct) > 0 && `(${taxPct}%)`}
+                      </dt>
+                      <dd className="tabular-nums">{money(taxAmount, currency)}</dd>
+                    </div>
+                    <div className="mt-2 flex justify-between border-t border-border pt-2.5 text-[15.5px] font-semibold">
+                      <dt>{t("invoices.create.total")}</dt>
+                      <dd className="tabular-nums">{money(total, currency)}</dd>
+                    </div>
+                  </dl>
+                </div>
+
+                {/* What the recipient is actually looking for. */}
+                <div className="mt-4 flex items-baseline justify-between gap-5 rounded-xl bg-brand-600/10 px-4 py-3.5">
+                  <span className="text-sm font-semibold text-brand-700 dark:text-brand-300">
+                    {t("invoices.create.amountDue")}
+                  </span>
+                  <span className="text-[19px] font-semibold tabular-nums tracking-tight text-brand-700 dark:text-brand-300">
+                    {money(total, currency)}
+                  </span>
+                </div>
+              </>
+            )}
+
+            {/* Terms — how to pay, and anything the biller wanted to say. */}
+            <div className="mt-8 grid gap-6 border-t border-border pt-5 text-[12px] leading-relaxed text-muted-foreground sm:grid-cols-2">
+              <div>
+                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]">
+                  {t("invoices.create.payment")}
+                </p>
+                {/*
+                  ⚠️ The organisation profile carries no bank details, so this
+                  says where to add them rather than printing a blank line. An
+                  invoice with an empty Payment block is worse than one that
+                  admits the detail is missing — the client cannot pay either
+                  way, and only one of the two tells anybody why.
+                */}
+                <p>{t("invoices.create.noBankDetails")}</p>
+              </div>
+              {notes.trim() && (
+                <div>
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]">
+                    {t("invoices.create.notes")}
+                  </p>
+                  <p className="whitespace-pre-line">{notes.trim()}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/*
+          What this invoice makes.
+
+          ⚠️ TWO CONDITIONS, both necessary. `twoRates` says the organisation
+          actually works with a cost — a one-rate company must never be shown a
+          row of dashes it has to learn to ignore. `canViewLabourCost` says this
+          person may know: raising an invoice is an office job, and what the
+          labour cost the company is a different question asked by a different
+          person.
+
+          The server strips cost from the response on the same permission, so
+          this is the screen agreeing with the boundary — not the boundary.
+        */}
+        {showMargin && (
+          <div className="bg-card rounded-2xl border border-border p-4">
+            <p className="text-sm font-medium text-foreground mb-3">{t("invoices.create.marginTitle")}</p>
+            <div className="flex flex-wrap gap-x-8 gap-y-3">
+              <div>
+                <p className="text-xs text-muted-foreground">{t("invoices.create.billed")}</p>
+                <p className="text-lg font-semibold tabular-nums text-foreground">{money(workSubtotal, currency)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">{t("invoices.create.labourCost")}</p>
+                <p className="text-lg font-semibold tabular-nums text-amber-700 dark:text-amber-500">{money(workCost, currency)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">{t("invoices.create.margin")}</p>
+                <p className={cn(
+                  "text-lg font-semibold tabular-nums",
+                  workSubtotal - workCost < 0 ? "text-red-600 dark:text-red-400" : "text-teal-700 dark:text-teal-400",
+                )}>
+                  {money(workSubtotal - workCost, currency)}
+                </p>
+              </div>
+            </div>
+            {/* Billing under cost is a real thing — a fixed price, a goodwill
+                rate — and hiding it is how somebody finds out at quarter end. */}
+            <p className="mt-2 text-[11px] text-muted-foreground">{t("invoices.create.marginHint")}</p>
+          </div>
+        )}
 
         {/* Billable work (system-sourced) */}
         {spaceId && (
@@ -1007,104 +1254,8 @@ function NewInvoiceInner() {
             ))
           )}
         </div>
-
-            {/* Notes stay with the document — they are part of what is sent. */}
-            <div className="bg-card rounded-2xl border border-border p-5">
-              <Label className="text-xs">{t("invoices.create.notes")}</Label>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                className="mt-1 resize-none"
-                placeholder={t("invoices.create.notesPlaceholder")}
-              />
-            </div>
           </div>
-
-          {/*
-            THE SUMMARY RAIL — sticky, because this is the number being decided
-            about while somebody ticks jobs on and off further up the page.
-
-            ⚠️ `top-[4.5rem]` clears the sticky header above it. A rail that
-            slides under a header is worse than one that does not move at all.
-          */}
-          <aside className="lg:sticky lg:top-[4.5rem]">
-            <div className="rounded-2xl border border-border bg-card p-5">
-              <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                {t("invoices.create.summary")}
-              </p>
-
-              <dl className="space-y-2.5 text-sm">
-                <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">{t("invoices.create.subtotal")}</dt>
-                  <dd className="tabular-nums">{money(subtotal, currency)}</dd>
-                </div>
-
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="text-muted-foreground">{t("invoices.create.discount")}</dt>
-                  <dd>
-                    <Input
-                      type="number" min={0} value={discount}
-                      onChange={(e) => setDiscount(e.target.value)}
-                      className="h-8 w-24 text-right text-sm tabular-nums"
-                    />
-                  </dd>
-                </div>
-
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="text-muted-foreground">{t("invoices.create.taxRate")}</dt>
-                  <dd className="flex items-center gap-1">
-                    <Input
-                      type="number" min={0} value={taxPct}
-                      onChange={(e) => setTaxPct(e.target.value)}
-                      className="h-8 w-16 text-right text-sm tabular-nums"
-                    />
-                    <span className="text-xs text-muted-foreground">%</span>
-                  </dd>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">{t("invoices.create.tax")}</dt>
-                  <dd className="tabular-nums">{money(taxAmount, currency)}</dd>
-                </div>
-              </dl>
-
-              {/* The one number the page is about — sized so it reads as such. */}
-              <div className="mt-4 flex items-baseline justify-between border-t border-border pt-3">
-                <span className="text-sm font-medium">{t("invoices.create.total")}</span>
-                <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
-                  {money(total, currency)}
-                </span>
-              </div>
-
-              <Button
-                className="mt-4 w-full"
-                disabled={!canSave || createMutation.isPending}
-                onClick={() => createMutation.mutate()}
-              >
-                {createMutation.isPending && <Loader2 className="size-4 mr-1.5 animate-spin" />}
-                {t("invoices.create.saveDraft")}
-              </Button>
-
-              {/*
-                Says what is MISSING rather than only disabling the button. A
-                greyed-out action with no reason beside it is the commonest way
-                a form wastes somebody's afternoon.
-              */}
-              {!canSave && (
-                <p className="mt-2 text-center text-[11px] text-muted-foreground">
-                  {clientName.trim().length === 0
-                    ? t("invoices.create.needsClient")
-                    : t("invoices.create.needsLines")}
-                </p>
-              )}
-
-              <Button variant="ghost" className="mt-1 w-full" onClick={() => router.back()}>
-                {t("common.cancel")}
-              </Button>
-            </div>
-          </aside>
-        </div>
+        </main>
       </div>
     </div>
   )

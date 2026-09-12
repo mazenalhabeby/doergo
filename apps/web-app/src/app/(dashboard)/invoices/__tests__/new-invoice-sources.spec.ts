@@ -312,10 +312,36 @@ describe("the page has a shape", () => {
     expect(s).toMatch(/lg:sticky/)
   })
 
-  it("puts the money in a rail beside the document, not under it", () => {
+  it("splits the tool from the artefact", () => {
+    /*
+      ⚠️ The chrome recedes and the document floats on it. What was wrong before
+      was that controls and invoice sat in identical slabs, so nothing was more
+      important than anything else — and the settings sat ABOVE the thing they
+      change, so you scrolled away from it to alter it.
+    */
     const s = src()
-    expect(s).toContain("invoices.create.summary")
-    expect(s).toMatch(/lg:grid-cols-\[minmax\(0,1fr\)_19rem\]/)
+    expect(s).toMatch(/lg:grid-cols-\[320px_minmax\(0,1fr\)\]/)
+    // The rail stays put while the document does not move.
+    expect(s).toMatch(/lg:sticky lg:top-\[53px\]/)
+  })
+
+  it("offers the client's copy as well as the working view", () => {
+    const s = src()
+    expect(s).toContain("invoices.create.viewWorking")
+    expect(s).toContain("invoices.create.viewClient")
+    // ⚠️ Both faces render the SAME rows. A second rendering with its own
+    // arithmetic is how a preview starts telling somebody something the
+    // document does not say.
+    expect(s.match(/documentItems\.map\(/g) ?? []).toHaveLength(2)
+  })
+
+  it("dresses the client's copy as a document, not as the app", () => {
+    // The only surface a customer ever sees. Anything that reads as software
+    // tells them they are looking at somebody's dashboard rather than a bill.
+    const s = src()
+    for (const k of ["documentWord", "billedTo", "amountDue", "payment"]) {
+      expect(s).toContain(`invoices.create.${k}`)
+    }
   })
 
   it("says what is missing instead of only disabling Save", () => {
@@ -331,11 +357,11 @@ describe("the page has a shape", () => {
     expect(src()).toMatch(/<SectionHead step=\{2\}/)
   })
 
-  it("does not repeat the save action at the foot of the page", () => {
-    // The rail carries it; a second copy at the bottom was there only because
-    // the first one had scrolled away.
+  it("has exactly one save action", () => {
+    // It lives in the sticky bar, so a second copy at the foot — which only
+    // existed because the first scrolled away — is no longer needed.
     const s = src()
-    expect(s.match(/invoices\.create\.saveDraft/g) ?? []).toHaveLength(2)
+    expect(s.match(/invoices\.create\.saveDraft/g) ?? []).toHaveLength(1)
   })
 })
 
