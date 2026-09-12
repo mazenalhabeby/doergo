@@ -1264,7 +1264,10 @@
   "errors": {
     "somethingWentWrong": "Une erreur s'est produite",
     "unexpectedError": "Une erreur inattendue s'est produite",
-    "tryAgain": "Réessayer"
+    "tryAgain": "Réessayer",
+    "outdatedTitle": "Il est temps de mettre à jour",
+    "outdatedBody": "Cette version de l’application n’est plus à jour, ce qui explique probablement ce qui vient de se passer. La version {{version}} est prête.",
+    "updateNow": "Mettre à jour"
   },
   "support": {
     "title": "Assistance",

@@ -1264,7 +1264,10 @@
   "errors": {
     "somethingWentWrong": "Etwas ist schiefgelaufen",
     "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
-    "tryAgain": "Erneut versuchen"
+    "tryAgain": "Erneut versuchen",
+    "outdatedTitle": "Zeit für ein Update",
+    "outdatedBody": "Diese Version der App ist veraltet — vermutlich deshalb ist das passiert. Version {{version}} steht bereit.",
+    "updateNow": "Jetzt aktualisieren"
   },
   "support": {
     "title": "Support",

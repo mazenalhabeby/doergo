@@ -1264,7 +1264,10 @@
   "errors": {
     "somethingWentWrong": "Algo salió mal",
     "unexpectedError": "Ocurrió un error inesperado",
-    "tryAgain": "Volver a intentar"
+    "tryAgain": "Volver a intentar",
+    "outdatedTitle": "Toca actualizar",
+    "outdatedBody": "Esta versión de la aplicación está desactualizada, y probablemente por eso ha ocurrido. La versión {{version}} ya está lista.",
+    "updateNow": "Actualizar ahora"
   },
   "support": {
     "title": "Soporte",

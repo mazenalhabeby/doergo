@@ -1264,7 +1264,10 @@
   "errors": {
     "somethingWentWrong": "Qualcosa è andato storto",
     "unexpectedError": "Si è verificato un errore imprevisto",
-    "tryAgain": "Riprova"
+    "tryAgain": "Riprova",
+    "outdatedTitle": "È ora di aggiornare",
+    "outdatedBody": "Questa versione dell’app non è aggiornata, ed è probabilmente il motivo di quanto accaduto. La versione {{version}} è pronta.",
+    "updateNow": "Aggiorna ora"
   },
   "support": {
     "title": "Assistenza",

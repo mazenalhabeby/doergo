@@ -1264,7 +1264,10 @@
   "errors": {
     "somethingWentWrong": "Something went wrong",
     "unexpectedError": "An unexpected error occurred",
-    "tryAgain": "Try Again"
+    "tryAgain": "Try Again",
+    "outdatedTitle": "Time to update",
+    "outdatedBody": "This version of the app is out of date, which is probably why that happened. Version {{version}} is ready.",
+    "updateNow": "Update now"
   },
   "support": {
     "title": "Support",

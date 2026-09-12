@@ -23,6 +23,25 @@ import { checkVersion, type VersionStatus } from '../lib/version-gate';
 
 const RECHECK_AFTER_MS = 15 * 60_000;
 
+/**
+ * The last answer, at module scope.
+ *
+ * ⚠️ For the ERROR BOUNDARY, which cannot reach the context at all: it is a
+ * class component, so no hook is available to it, and it sits ABOVE this
+ * provider in the tree — so when it catches, the provider may already be part
+ * of the subtree that just came down.
+ *
+ * Module state survives that. It also means the crash screen can say "there is
+ * a newer version" INSTANTLY, off an answer fetched minutes ago, instead of
+ * making somebody watch a spinner on a screen that has already failed once.
+ */
+let lastKnown: VersionStatus | null = null;
+
+/** What the last check said, or null if none has landed yet. */
+export function lastKnownVersion(): VersionStatus | null {
+  return lastKnown;
+}
+
 interface VersionContextValue {
   status: VersionStatus | null;
   /** Force a check — for a screen that has reason to believe it changed. */
@@ -49,6 +68,7 @@ export function VersionProvider({ children }: { children: React.ReactNode }) {
     try {
       const next = await checkVersion();
       lastCheck.current = Date.now();
+      lastKnown = next;
       setStatus(next);
     } finally {
       inFlight.current = false;

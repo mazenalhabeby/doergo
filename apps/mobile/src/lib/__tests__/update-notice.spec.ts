@@ -48,8 +48,18 @@ describe('a new version is noticed more than once per launch', () => {
       }
       return out;
     };
+    /*
+      One NAMED exception: the error boundary.
+
+      It is a class component, so no hook reaches it, and it sits ABOVE the
+      provider in the tree — when it catches, the provider may be part of the
+      subtree that just came down. It reads `lastKnownVersion()` first and only
+      asks when nothing is known at all, which is the case where there is no
+      shared answer to reuse.
+    */
+    const EXEMPT = new Set(['src/components/error-boundary.tsx']);
     const callers = [...walk('app'), ...walk('src')]
-      .filter((f) => f !== CONTEXT && f !== 'src/lib/version-gate.ts')
+      .filter((f) => f !== CONTEXT && f !== 'src/lib/version-gate.ts' && !EXEMPT.has(f))
       .filter((f) => /\bcheckVersion\(/.test(stripComments(read(f))));
     expect(callers).toEqual([]);
   });
@@ -103,6 +113,61 @@ describe('the banner is not the only channel', () => {
         lang,
         label: expect.stringContaining('{{version}}'),
       });
+    }
+  });
+});
+
+describe('a crash on an outdated app says so, instead of quoting React', () => {
+  /*
+    ⚠️ Reported with a screenshot: a member on an old build was shown "Rendered
+    more hooks than during the previous render" — English text under a German
+    heading, above a button that retried the same broken render. That sentence
+    is React's internal vocabulary. It tells a driver nothing and cannot be
+    acted on.
+
+    And the cause was the build's AGE. An over-the-air update is pinned to the
+    native binary it was made for, so a phone that has not been updated in the
+    store keeps running months-old JavaScript, bugs included. A crash there is
+    not news; it is a version.
+  */
+  const BOUNDARY = 'src/components/error-boundary.tsx';
+
+  it('asks whether a newer version exists once something has broken', () => {
+    const src = stripComments(read(BOUNDARY));
+    expect(src).toContain('lastKnownVersion()');
+    expect(src).toMatch(/componentDidCatch[\s\S]{0,900}updateAvailable/);
+  });
+
+  it('prefers the answer the app already has to a fresh request', () => {
+    // A spinner on a screen that has already failed once is the second thing
+    // to go wrong in a row.
+    const src = stripComments(read(BOUNDARY));
+    expect(src.indexOf('lastKnownVersion()')).toBeLessThan(src.indexOf('checkVersion()'));
+  });
+
+  it('offers the update, and still lets them back in', () => {
+    const src = stripComments(read(BOUNDARY));
+    expect(src).toContain('openUpdate(');
+    expect(src).toContain('errors.updateNow');
+    // The update is a trip to the store; somebody in a van may need the screen
+    // back first, and refusing them that is not our call.
+    expect(src).toContain('errors.tryAgain');
+  });
+
+  it('never makes the exception the headline', () => {
+    const src = stripComments(read(BOUNDARY));
+    // Kept for support, demoted to a muted line — not the title, not the body.
+    expect(src).not.toMatch(/s\.title[\s\S]{0,120}error\?\.message/);
+    expect(src).not.toMatch(/s\.message[\s\S]{0,120}error\?\.message/);
+    expect(src).toMatch(/s\.detail[\s\S]{0,120}error\.message/);
+  });
+
+  it('is translated into all five languages', () => {
+    for (const lang of ['en', 'de', 'es', 'fr', 'it']) {
+      const dict = JSON.parse(read(`src/i18n/locales/${lang}.json`));
+      const missing = ['outdatedTitle', 'outdatedBody', 'updateNow', 'tryAgain']
+        .filter((k) => typeof dict.errors?.[k] !== 'string');
+      expect({ lang, missing }).toEqual({ lang, missing: [] });
     }
   });
 });
