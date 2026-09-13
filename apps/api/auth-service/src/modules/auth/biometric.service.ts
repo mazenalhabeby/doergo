@@ -1,6 +1,15 @@
 import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { createPublicKey, createVerify, randomBytes } from 'crypto';
-import { PrismaService } from '@hbcfield/shared';
+/*
+  ⚠️ The LOCAL PrismaService, not the one in @hbcfield/shared.
+
+  auth-service has its own, and Nest resolves providers by class identity — two
+  classes with the same name from different modules are two different DI tokens.
+  Importing the shared one compiles perfectly and then fails at BOOT with
+  "can't resolve dependency PrismaService", which takes the whole service down.
+  Every other provider here imports this path; so does this one.
+*/
+import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuthService, type AuthResult } from './auth.service';
 import { BiometricChallengeStore } from './biometric-challenge.store';
 
