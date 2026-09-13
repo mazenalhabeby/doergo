@@ -57,7 +57,12 @@ export async function resolveCapability(): Promise<Capability> {
     // A binary built before the key library shipped can hold no key, however
     // good its sensor. Hidden, like no sensor at all — an OTA must not offer a
     // switch that can only fail. See `native.ts`.
-    if (!deviceKeyModule()) return { kind: 'unavailable' };
+    if (!deviceKeyModule()) {
+      // Logged for the same reason as the catch below: without it, a stale
+      // binary looks exactly like a phone with no sensor.
+      console.warn('[biometrics] ReactNativeBiometrics is not in this binary — rebuild to enable');
+      return { kind: 'unavailable' };
+    }
     if (!(await LocalAuthentication.hasHardwareAsync())) return { kind: 'unavailable' };
     if (!(await LocalAuthentication.isEnrolledAsync())) return { kind: 'none-enrolled' };
 
