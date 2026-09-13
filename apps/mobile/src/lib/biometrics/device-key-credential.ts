@@ -12,7 +12,7 @@ import {
 } from '@sbaiahmed1/react-native-biometrics';
 import i18n from '../../i18n';
 import { API_URL, getAccessToken, saveTokens } from '../api/client';
-import { BiometricError, type BiometricCredential } from './credential';
+import { BiometricError, type BiometricCredential, type KeyOwner } from './types';
 
 /**
  * Sign-in with nothing to steal.
@@ -47,8 +47,6 @@ const DEVICE_ID_KEY = 'hbcfield_device_id';
   will open. A face cannot tell you that, so the screen has to.
 */
 const OWNER_KEY = 'hbcfield_device_key_owner';
-
-export interface KeyOwner { userId: string; name: string; email: string }
 
 export async function getKeyOwner(): Promise<KeyOwner | null> {
   try {

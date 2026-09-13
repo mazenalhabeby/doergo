@@ -2,62 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
 import i18n from '../../i18n';
 import { API_URL, getRefreshToken, saveTokens } from '../api/client';
-import { DeviceKeyCredential, type KeyOwner as DeviceKeyOwner } from './device-key-credential';
-
-/**
- * The thing biometrics protect — behind an interface, on purpose.
- *
- * Every screen depends on THIS, never on how the secret is held. That is the
- * whole point: the planned device-bound keypair (a private key generated inside
- * the Secure Enclave / StrongBox, signing a server challenge) is a second
- * implementation of these four methods and replaces the one below without a
- * screen changing a line. See the plan — §06 and §07.
- *
- * ⚠️ It is NOT a gate. A gate calls `authenticateAsync()`, gets a boolean and
- * trusts its own answer — patchable in a decompiled bundle, and Apple's
- * reviewers now push back on it. Here the OS will not release the secret at all
- * until a Class 3 biometric passes, so there is nothing for a patched build to
- * skip.
- */
-export interface KeyOwner { userId: string; name: string; email: string }
-
-export interface BiometricCredential {
-  /** Which implementation — recorded with enrolment so a migration can tell. */
-  readonly kind: 'secure-store' | 'device-key';
-  /**
-   * Is this phone bound — and to WHOM.
-   *
-   * ⚠️ `forUserId` is not optional decoration. A key belongs to a phone, an
-   * account does not: without scoping, enrolling as one member and signing in
-   * as another shows the second member a switch that is already "on" and
-   * unlocks into the FIRST member's account. Settings must always pass it.
-   */
-  isEnrolled(forUserId?: string): Promise<boolean>;
-  /** Bind this phone to a member. Requires a LIVE session — never from a login form. */
-  enroll(owner: KeyOwner): Promise<void>;
-  /** Prompt, and produce a session. Throws `BiometricError` on every failure. */
-  unlock(): Promise<void>;
-  /** Unbind. Must be safe to call when nothing is bound. */
-  forget(): Promise<void>;
-}
-
-/** Why an unlock failed, in the four shapes a screen actually branches on. */
-export type BiometricFailure =
-  /** The stored key is gone — enrolment changed, or the OS upgraded. Re-enrol. */
-  | 'invalidated'
-  /** The member cancelled, or fell back to the password. Say nothing. */
-  | 'cancelled'
-  /** Nothing was bound on this phone. Show the password form. */
-  | 'not-enrolled'
-  /** The server refused the credential — revoked, or the token expired. */
-  | 'rejected';
-
-export class BiometricError extends Error {
-  constructor(readonly failure: BiometricFailure, message?: string) {
-    super(message ?? failure);
-    this.name = 'BiometricError';
-  }
-}
+import { BiometricError, type BiometricCredential, type BiometricFailure, type KeyOwner } from './types';
 
 /**
  * A SEPARATE keychain item, and that separation is load-bearing.
@@ -101,7 +46,7 @@ function classify(err: unknown): BiometricFailure {
   return 'invalidated';
 }
 
-class SecureStoreCredential implements BiometricCredential {
+export class SecureStoreCredential implements BiometricCredential {
   readonly kind = 'secure-store' as const;
 
   async isEnrolled(_forUserId?: string): Promise<boolean> {
@@ -171,16 +116,6 @@ class SecureStoreCredential implements BiometricCredential {
   }
 }
 
-/**
- * The one instance the app uses — and the ONE line that chooses how the secret
- * is held. Nothing else in the app knows which implementation is live.
- *
- * ⚠️ `SecureStoreCredential` above is kept as the documented fallback: it needs
- * no server, so it is what a self-hosted deployment without the biometric
- * endpoints would use. The device key is the default because it prompts once
- * instead of twice and leaves nothing on the phone to steal.
- */
-export const biometricCredential: BiometricCredential = new DeviceKeyCredential();
 
 /**
  * The plain OS prompt, for RE-authorising an action inside a live session —
