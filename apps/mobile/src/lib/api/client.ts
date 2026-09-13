@@ -95,12 +95,21 @@ export async function getRefreshToken(): Promise<string | null> {
 }
 
 export async function saveTokens(accessToken: string, refreshToken: string): Promise<void> {
-  // AFTER_FIRST_UNLOCK: the keychain item stays readable while the phone is
-  // LOCKED (after the first unlock post-boot). The default (WHEN_UNLOCKED) throws
-  // errSecInteractionNotAllowed in headless background tasks on a locked device,
-  // so the background GPS/heartbeat task couldn't read the token → route gaps and
-  // a permanent tracker deregister. (Sec audit H12.)
-  const opts = { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK };
+  /*
+    AFTER_FIRST_UNLOCK: the keychain item stays readable while the phone is
+    LOCKED (after the first unlock post-boot). The default (WHEN_UNLOCKED) throws
+    errSecInteractionNotAllowed in headless background tasks on a locked device,
+    so the background GPS/heartbeat task couldn't read the token → route gaps and
+    a permanent tracker deregister. (Sec audit H12.)
+
+    ⚠️ _THIS_DEVICE_ONLY is the other half, and it is about a different attack.
+    Without it the item travels in an ENCRYPTED BACKUP: restore that backup onto
+    a second phone and it is silently signed in as the member, with a refresh
+    token that renews itself for 30 days. The suffix costs nothing — background
+    reads on a locked device work exactly the same — and it is the only thing
+    stopping a session from being cloned by a device migration.
+  */
+  const opts = { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY };
   await Promise.all([
     SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken, opts),
     SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken, opts),
