@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useBiometricUnlock } from '../../src/hooks/use-biometric-unlock';
+import { resolveCapability } from '../../src/lib/biometrics';
 import { BlurSheet, SheetPanel } from '../../src/components';
 import { useToast } from '../../src/contexts/toast-context';
 import { AnimatedLogo, centeredContent } from '../../src/components';
@@ -108,7 +109,16 @@ export default function LoginScreen() {
         else would have to send them back through this screen anyway. Declined,
         the switch still lives in Account.
       */
-      if (bio.capability?.kind === 'ready' && !bio.enrolled) {
+      /*
+        ⚠️ Resolved FRESH here, not read from hook state.
+
+        The hook resolves asynchronously on mount, and a fast sign-in finishes
+        first — so `bio.capability` is still null at this moment on exactly the
+        launch where somebody is most likely to be offered this. Reading it gave
+        a silent "no" and the offer never appeared.
+      */
+      const cap = await resolveCapability();
+      if (cap.kind === 'ready' && !bio.enrolled) {
         setOfferBiometric(true);
       } else {
         router.replace(ROUTES.home as Href);

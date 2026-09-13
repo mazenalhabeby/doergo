@@ -181,6 +181,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       // See the plugin for why this is required and what happens without it.
       './plugins/with-nav-app-queries',
       /*
+        ⚠️ Required, not optional. This plugin is what puts USE_BIOMETRIC and
+        USE_FINGERPRINT in the Android manifest (and NSFaceIDUsageDescription on
+        iOS). Without it the library autolinks and compiles perfectly, and then
+        cannot prompt at runtime — which `resolveCapability` catches and reports
+        as "unavailable", so the whole feature silently renders nothing.
+      */
+      '@sbaiahmed1/react-native-biometrics',
+      /*
         The on-device text reader used by the business-card scanner needs iOS
         16. Stated here rather than left to a default, because the failure is a
         build error deep in a pod install rather than anything about OCR.

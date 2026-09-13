@@ -61,13 +61,20 @@ export async function resolveCapability(): Promise<Capability> {
     if (level !== LocalAuthentication.SecurityLevel.BIOMETRIC_STRONG) return { kind: 'too-weak' };
 
     return { kind: 'ready', label: await resolveLabel() };
-  } catch {
+  } catch (err) {
     /*
-      Swallowed deliberately. Every caller is deciding whether to OFFER
-      something optional, and an unreadable capability is indistinguishable
-      from an absent one. A toast about a keystore on the login screen helps
+      Swallowed for the USER — every caller is deciding whether to offer
+      something optional, and a toast about a keystore on the login screen helps
       nobody.
+
+      ⚠️ But LOGGED, because a silent 'unavailable' is indistinguishable from a
+      phone with no sensor, and that cost a real debugging session: the config
+      plugin was missing, so the module could not prompt, so this caught and
+      reported "unavailable", so the entire feature rendered nothing anywhere
+      with no error to chase. If the switch is missing on a phone that clearly
+      has a fingerprint reader, this line is where to look.
     */
+    console.warn('[biometrics] capability check failed:', err);
     return { kind: 'unavailable' };
   }
 }
