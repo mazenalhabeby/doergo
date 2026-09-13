@@ -191,6 +191,23 @@ function ignoreLegacyFlags(): boolean {
   return process.env.ACCESS_IGNORE_LEGACY_FLAGS === 'true';
 }
 
+/**
+ * What the two sign-in doors return.
+ *
+ * Deliberately ONE type with optional members rather than a discriminated
+ * union: every caller and test reads `result.success` first and then the field
+ * it expects, and a discriminated union would force a type guard at forty call
+ * sites for no behaviour change. The optionality is the honest shape — a
+ * failure genuinely has no `data`.
+ */
+export type AuthResult = {
+  success: boolean;
+  data?: any;
+  statusCode?: HttpStatus;
+  message?: string;
+  code?: string;
+};
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -585,7 +602,7 @@ export class AuthService {
     }
   }
 
-  async login(data: { email: string; password: string; rememberMe?: boolean; client?: string; clientPlatform?: string; userAgent?: string; ipAddress?: string }) {
+  async login(data: { email: string; password: string; rememberMe?: boolean; client?: string; clientPlatform?: string; userAgent?: string; ipAddress?: string }): Promise<AuthResult> {
     try {
       // Normalize email to lowercase for lookup
       const email = data.email.trim().toLowerCase();
@@ -794,90 +811,12 @@ export class AuthService {
         })),
       });
 
-      const tokens = await this.generateTokens(user.id, user.email, user.role, user.organizationId, {
+      return this.buildSession(user, loginAccess, {
         userAgent: data.userAgent,
         ipAddress: data.ipAddress,
-      }, user.canViewAllTasks, refreshTtl, clientPlatform);
-
-      // Audit: successful login (fire-and-forget, never blocks response)
-      if (user.organizationId) {
-        this.auditLog.log({
-          eventType: 'USER_LOGIN' as any,
-          userId: user.id,
-          organizationId: user.organizationId as string,
-          ipAddress: data.ipAddress,
-          userAgent: data.userAgent,
-        });
-      }
-
-      return {
-        success: true,
-        data: {
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: normalizeRole(user.role),
-            organizationId: user.organizationId,
-            organizationName: user.organization?.name || null,
-            // Owner of this organization? Read here so the client never asks:
-            // it labels the owner and hides actions that would be refused.
-            isOwner: !!user.organization?.ownerId && user.organization.ownerId === user.id,
-            organizationTimezone: user.organization?.timezone || null,
-            orgUsesExternalWorkers: user.organization?.usesExternalWorkers ?? false,
-            onboardingCompleted: user.onboardingCompleted,
-            avatarUrl: user.avatarUrl,
-            // Permission fields come from resolved access, below — the client
-            // gates its own UI on them (useTaskPermissions reads
-            // user.canCreateTasks), so they must be the same answer the server
-            // will give, not the raw columns.
-            // taskCreationScope comes from orgPermissionFields below, reconciled
-            // with the grant — the raw column disagreed with it.
-            allowRemote: user.allowRemote,
-            presence: user.presence,
-            // Worker configuration
-            position: user.position,
-            scheduleType: user.scheduleType,
-            // Technician-specific fields
-            specialty: user.specialty,
-            // Profile badge visibility
-            profileBadges: resolveProfileBadges(user.profileBadges, user.organization?.profileBadges),
-            // Per-user clock display preference ("24h" | "12h") — display-only.
-            timeFormat: user.timeFormat ?? '24h',
-            // One-time welcome-tour flag (false = auto-run the welcome guide once).
-            guidesSeen: user.guidesSeen ?? false,
-            // Access Profile (mobile tabs / web screens) — per-user overrides org.
-            enabledModules: (user.enabledModules ?? user.organization?.enabledModules) || [],
-            // Org FEATURE modules (sprints, checklists, tracking…) — always the
-            // org's set, never the user's access profile. Drives hasModule/hasFeature.
-            orgModules: (user.organization?.enabledModules as string[] | null) || [],
-            // Modules switched on in workspaces this member can see — see
-            // visibleSpaceModules. Drives which top-level nav entries exist.
-            spaceModules: await this.visibleSpaceModules(
-              user.id,
-              user.organizationId!,
-              isAdmin(user as never),
-              (user.organization?.enabledModules as string[] | null) ?? [],
-            ),
-            // Billing tier + subscription status (lowercase) — drives plan gating.
-            subStatus: user.organization?.suspendedAt ? 'canceled' : (user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
-            planTier: user.organization?.planTier ? user.organization.planTier.toString().toLowerCase() : null,
-            // Capabilities the org has BOUGHT — the only thing PlanGuard reads.
-            // Resolved here, server-side, so it can never be a client claim.
-            orgAddOns: user.organization?.addOns ?? [],
-            // Unified resolved access (Phase 2): org-wide ∪ per-space grants.
-            access: loginAccess,
-            // …and the permission fields derived from it, so what the client
-            // gates its UI on is what the server will authorize. Last, to win
-            // over the individual fields set above.
-            ...orgPermissionFields(loginAccess, user.taskCreationScope),
-            // See validateToken: a document type may name the roles that see it.
-            memberRoleId: user.memberRoleId ?? null,
-          },
-          ...tokens,
-        },
-      };
+        refreshTtl,
+        clientPlatform,
+      });
 
     } catch (error) {
       this.logger.error('Login error:', error);
@@ -887,6 +826,172 @@ export class AuthService {
         message: 'Login failed. Please try again.',
       };
     }
+  }
+
+  /*
+    Everything after "this is definitely the member" — resolved access, the
+    tokens, and the payload the client is built against.
+
+    ⚠️ Extracted from `login()` so biometric sign-in mints an IDENTICAL session.
+    Two hand-written copies of a 70-line auth payload is how one path quietly
+    grants a permission the other does not, and the symptom is a member whose
+    screens differ depending on how they signed in that morning. There is one
+    copy, and both doors call it.
+  */
+  async buildSession(
+    user: any,
+    access: any,
+    opts: {
+      userAgent?: string;
+      ipAddress?: string;
+      refreshTtl?: string;
+      clientPlatform?: string;
+    },
+  ): Promise<AuthResult> {
+    const tokens = await this.generateTokens(user.id, user.email, user.role, user.organizationId, {
+      userAgent: opts.userAgent,
+    ipAddress: opts.ipAddress,
+    }, user.canViewAllTasks, opts.refreshTtl, opts.clientPlatform);
+
+    // Audit: successful login (fire-and-forget, never blocks response)
+    if (user.organizationId) {
+      this.auditLog.log({
+        eventType: 'USER_LOGIN' as any,
+        userId: user.id,
+        organizationId: user.organizationId as string,
+        ipAddress: opts.ipAddress,
+      userAgent: opts.userAgent,
+      });
+    }
+
+    return {
+      success: true,
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: normalizeRole(user.role),
+          organizationId: user.organizationId,
+          organizationName: user.organization?.name || null,
+          // Owner of this organization? Read here so the client never asks:
+          // it labels the owner and hides actions that would be refused.
+          isOwner: !!user.organization?.ownerId && user.organization.ownerId === user.id,
+          organizationTimezone: user.organization?.timezone || null,
+          orgUsesExternalWorkers: user.organization?.usesExternalWorkers ?? false,
+          onboardingCompleted: user.onboardingCompleted,
+          avatarUrl: user.avatarUrl,
+          // Permission fields come from resolved access, below — the client
+          // gates its own UI on them (useTaskPermissions reads
+          // user.canCreateTasks), so they must be the same answer the server
+          // will give, not the raw columns.
+          // taskCreationScope comes from orgPermissionFields below, reconciled
+          // with the grant — the raw column disagreed with it.
+          allowRemote: user.allowRemote,
+          presence: user.presence,
+          // Worker configuration
+          position: user.position,
+          scheduleType: user.scheduleType,
+          // Technician-specific fields
+          specialty: user.specialty,
+          // Profile badge visibility
+          profileBadges: resolveProfileBadges(user.profileBadges, user.organization?.profileBadges),
+          // Per-user clock display preference ("24h" | "12h") — display-only.
+          timeFormat: user.timeFormat ?? '24h',
+          // One-time welcome-tour flag (false = auto-run the welcome guide once).
+          guidesSeen: user.guidesSeen ?? false,
+          // Access Profile (mobile tabs / web screens) — per-user overrides org.
+          enabledModules: (user.enabledModules ?? user.organization?.enabledModules) || [],
+          // Org FEATURE modules (sprints, checklists, tracking…) — always the
+          // org's set, never the user's access profile. Drives hasModule/hasFeature.
+          orgModules: (user.organization?.enabledModules as string[] | null) || [],
+          // Modules switched on in workspaces this member can see — see
+          // visibleSpaceModules. Drives which top-level nav entries exist.
+          spaceModules: await this.visibleSpaceModules(
+            user.id,
+            user.organizationId!,
+            isAdmin(user as never),
+            (user.organization?.enabledModules as string[] | null) ?? [],
+          ),
+          // Billing tier + subscription status (lowercase) — drives plan gating.
+          subStatus: user.organization?.suspendedAt ? 'canceled' : (user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
+          planTier: user.organization?.planTier ? user.organization.planTier.toString().toLowerCase() : null,
+          // Capabilities the org has BOUGHT — the only thing PlanGuard reads.
+          // Resolved here, server-side, so it can never be a client claim.
+          orgAddOns: user.organization?.addOns ?? [],
+          // Unified resolved access (Phase 2): org-wide ∪ per-space grants.
+          access: access,
+          // …and the permission fields derived from it, so what the client
+          // gates its UI on is what the server will authorize. Last, to win
+          // over the individual fields set above.
+          ...orgPermissionFields(access, user.taskCreationScope),
+          // See validateToken: a document type may name the roles that see it.
+          memberRoleId: user.memberRoleId ?? null,
+        },
+        ...tokens,
+      },
+    };
+  }
+
+  /**
+   * A session for a member who has ALREADY been authenticated by other means —
+   * today, a signature from a key bound to their phone.
+   *
+   * ⚠️ It authenticates nobody. The caller must have proved identity first;
+   * this only loads the member the same way `login()` does and hands the same
+   * payload back. Calling it from anywhere that has not verified a credential
+   * is an account-takeover bug, not a login bug.
+   *
+   * The user query mirrors login's exactly, because `buildResolvedAccess` reads
+   * `memberRole` and the time-windowed `spaceAssignments` — load a thinner user
+   * and the member silently signs in with fewer permissions than they hold.
+   */
+  async buildSessionForUser(
+    userId: string,
+    opts: { userAgent?: string; ipAddress?: string; clientPlatform?: string },
+  ): Promise<AuthResult> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, usesExternalWorkers: true, suspendedAt: true, ownerId: true } },
+        memberRole: { select: { permissions: true, isActive: true } },
+        spaceAssignments: {
+          where: {
+            effectiveFrom: { lte: new Date() },
+            OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+          },
+          select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
+        },
+      },
+    });
+    if (!user || !user.isActive) {
+      return { success: false, statusCode: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
+    }
+    // The organization off switch bites here too — see isOrganizationSuspended.
+    if (user.organization?.suspendedAt) {
+      return { success: false, statusCode: HttpStatus.FORBIDDEN, message: ORG_SUSPENDED_MESSAGE };
+    }
+
+    const access = buildResolvedAccess({
+      isAdmin: user.role === Role.ADMIN,
+      userFlags: ignoreLegacyFlags()
+        ? undefined
+        : {
+            canCreateTasks: user.canCreateTasks,
+            canViewAllTasks: user.canViewAllTasks,
+            canAssignTasks: user.canAssignTasks,
+            canManageUsers: user.canManageUsers,
+            canViewReports: user.canViewReports,
+          },
+      memberRolePermissions: user.memberRole?.isActive ? user.memberRole.permissions : undefined,
+      spaces: user.spaceAssignments.map((a) => ({
+        spaceId: a.spaceId,
+        permissions: a.role?.isActive ? a.role.permissions : undefined,
+      })),
+    });
+
+    return this.buildSession(user, access, opts);
   }
 
   async refresh(refreshToken: string) {
@@ -1397,6 +1502,19 @@ export class AuthService {
       // SECURITY: Invalidate all refresh tokens for this user (force re-login everywhere)
       await this.prisma.refreshToken.deleteMany({
         where: { userId: resetToken.user.id },
+      });
+
+      /*
+        ⚠️ Device keys too, not just refresh tokens.
+
+        "Someone has my phone" must have ONE answer that works, and changing the
+        password is that answer. A device key left alive would let the stolen
+        phone mint a brand-new session with a face — the exact thing the member
+        was trying to stop, and worse than before because it needs no password.
+      */
+      await this.prisma.deviceKey.updateMany({
+        where: { userId: resetToken.user.id, revokedAt: null },
+        data: { revokedAt: new Date() },
       });
 
       this.logger.log(`Password reset successful for user: ${resetToken.user.email}`);
@@ -1950,6 +2068,19 @@ export class AuthService {
       // SECURITY: revoke all refresh tokens so other sessions/devices are signed
       // out after a password change (consistent with the reset-password flow).
       await this.prisma.refreshToken.deleteMany({ where: { userId: data.userId } });
+
+      /*
+        ⚠️ Device keys too, not just refresh tokens.
+
+        "Someone has my phone" must have ONE answer that works, and changing the
+        password is that answer. A device key left alive would let the stolen
+        phone mint a brand-new session with a face — the exact thing the member
+        was trying to stop, and worse than before because it needs no password.
+      */
+      await this.prisma.deviceKey.updateMany({
+        where: { userId: data.userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
 
       this.logger.log(`Password changed for user ${data.userId}`);
 

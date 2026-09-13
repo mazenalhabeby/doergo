@@ -1,10 +1,14 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AuthService } from './auth.service';
+import { BiometricService } from './biometric.service';
 
 @Controller()
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly biometric: BiometricService,
+  ) {}
 
   @MessagePattern({ cmd: 'health' })
   async health() {
@@ -86,4 +90,38 @@ export class AuthController {
   mailStatus() {
     return this.authService.mailHealth();
   }
+
+  /*
+    Biometric sign-in.
+
+    ⚠️ `enroll` and `revoke` take `userId` from the payload, and the GATEWAY is
+    what puts it there — from the verified access token, never from the client
+    body. This service is behind Redis and trusts its caller; the gateway is the
+    boundary that must not be bypassed.
+  */
+  @MessagePattern({ cmd: 'biometric_enroll' })
+  async biometricEnroll(@Payload() data: { userId: string; deviceId: string; publicKey: string; label: string; platform: string; secureHardware?: boolean }) {
+    return this.biometric.enroll(data.userId, data);
+  }
+
+  @MessagePattern({ cmd: 'biometric_challenge' })
+  async biometricChallenge(@Payload() data: { deviceId: string }) {
+    return this.biometric.challenge(data.deviceId);
+  }
+
+  @MessagePattern({ cmd: 'biometric_verify' })
+  async biometricVerify(@Payload() data: { deviceId: string; signature: string; userAgent?: string; ipAddress?: string }) {
+    return this.biometric.verify(data, { userAgent: data.userAgent, ipAddress: data.ipAddress });
+  }
+
+  @MessagePattern({ cmd: 'biometric_devices' })
+  async biometricDevices(@Payload() data: { userId: string }) {
+    return this.biometric.list(data.userId);
+  }
+
+  @MessagePattern({ cmd: 'biometric_revoke' })
+  async biometricRevoke(@Payload() data: { userId: string; deviceId: string }) {
+    return this.biometric.revoke(data.userId, data.deviceId);
+  }
+
 }

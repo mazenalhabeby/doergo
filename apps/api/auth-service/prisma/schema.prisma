@@ -701,9 +701,9 @@ model User {
   /// Also what re-enables the identity comparison in `checkScan`, which has
   /// always been able to match a scanned passport against the member record and
   /// never had a record to match against.
-  dateOfBirth DateTime? @db.Date
-  role        Role
-  isActive    Boolean   @default(true)
+  dateOfBirth   DateTime? @db.Date
+  role          Role
+  isActive      Boolean   @default(true)
   /// What this person bills and costs per hour, in integer cents.
   ///
   /// ⚠️ The natural home for COST — Ahmed costs €20/h wherever he works — while
@@ -715,11 +715,11 @@ model User {
   /// typed into the wrong box bills a client €0 without a word. The ladder that
   /// reads these is `resolveRate` in packages/shared — four levels, most
   /// specific wins, and it is the only place the order is written down.
-  billRateCents  Int?
-  costRateCents  Int?
+  billRateCents Int?
+  costRateCents Int?
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Security: Account lockout fields
   failedLoginAttempts Int       @default(0)
@@ -851,6 +851,7 @@ model User {
   lastLocation        WorkerLastLocation?
   locationHistory     LocationHistory[]
   refreshTokens       RefreshToken[]
+  deviceKeys          DeviceKey[]
   passwordResetTokens PasswordResetToken[]
   serviceReports      ServiceReport[]
   reportDefinitions   ReportDefinition[]   @relation("ReportCreator") // saved reports created
@@ -920,6 +921,38 @@ model User {
   @@index([customerId]) // customer portal: a customer's login users
   @@index([organizationId, lastAppVersion]) // who in this org is still on an old build
   @@map("users")
+}
+
+/// A phone that can sign in for a member without a password.
+///
+/// Holds a PUBLIC key only — the private half is generated inside the Secure
+/// Enclave / StrongBox and cannot leave that chip, so there is nothing here
+/// worth stealing and nothing to leak in a database dump.
+model DeviceKey {
+  id             String  @id @default(cuid())
+  userId         String
+  /// App-generated, stable per install. Names which key to check; not a secret.
+  deviceId       String
+  /// base64 X.509 SubjectPublicKeyInfo DER, P-256. Both platforms emit this.
+  publicKey      String
+  /// What the member sees in their device list — "iPhone 14", "Pixel 7".
+  label          String
+  platform       String
+  /// Secure Enclave / StrongBox, or a software-backed fallback. Recorded so a
+  /// policy can later refuse the weaker case without guessing after the fact.
+  secureHardware Boolean @default(true)
+
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+  /// Set, never deleted: a revoked device is evidence, and reusing the row
+  /// would let a re-enrolment silently inherit an old device's history.
+  revokedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+  @@index([userId])
+  @@map("device_keys")
 }
 
 model RefreshToken {
@@ -1711,16 +1744,15 @@ model Customer {
   /// Which companies this person is a contact at (type = PERSON).
   contactsAsPerson    CustomerContact[]   @relation("PersonContacts")
 
-  signLinks CustomerSignLink[]
+  signLinks      CustomerSignLink[]
+  /// Repeating visits booked for this client.
+  recurringTasks RecurringTaskTemplate[] @relation("RecurringTaskCustomer")
 
   @@index([organizationId, isActive])
   @@index([organizationId, name])
   @@index([portalId])
   @@index([organizationId, spaceId]) // a space's Customers list
   @@map("customers")
-  /// Repeating visits booked for this client.
-  recurringTasks RecurringTaskTemplate[] @relation("RecurringTaskCustomer")
-
 }
 
 /// A person who works at a company — the contact you actually ring.
@@ -3892,9 +3924,7 @@ model InvoiceItem {
   taskId   String?
   reportId String?
 
-  createdAt DateTime @default(now())
-
-  @@index([invoiceId])
+  createdAt     DateTime @default(now())
   /// The rates that applied ON THE DAY this line was issued.
   ///
   /// ⚠️ NOT a cache of the ladder — the record of it. The ladder answers "what
@@ -3910,6 +3940,7 @@ model InvoiceItem {
   /// Hours this line was billed for, when it came from tracked work.
   billedHours   Float?
 
+  @@index([invoiceId])
   @@map("invoice_items")
 }
 
