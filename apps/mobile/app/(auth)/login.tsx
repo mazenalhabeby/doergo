@@ -322,9 +322,19 @@ export default function LoginScreen() {
                 activeOpacity={0.8}
               >
                 <Ionicons name="finger-print" size={22} color={COLORS.primary} />
-                <Text style={[styles.bioButtonText, { color: COLORS.primary }]}>
-                  {t('biometrics.unlockWith', { method: bio.label })}
-                </Text>
+                <View>
+                  <Text style={[styles.bioButtonText, { color: COLORS.primary }]}>
+                    {t('biometrics.unlockWith', { method: bio.label })}
+                  </Text>
+                  {/* ⚠️ A fingerprint cannot tell you whose account it opens.
+                      The screen has to, or somebody signs in as a colleague
+                      who used this phone before them and never notices. */}
+                  {!!bio.owner && (
+                    <Text style={[styles.bioOwner, { color: colors.textMuted }]} numberOfLines={1}>
+                      {bio.owner.name || bio.owner.email}
+                    </Text>
+                  )}
+                </View>
               </TouchableOpacity>
             )}
 
@@ -591,6 +601,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   bioButtonText: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.semibold },
+  bioOwner: { fontSize: FONT_SIZE.sm, marginTop: 1 },
   securityContainer: {
     flexDirection: 'row',
     justifyContent: 'center',

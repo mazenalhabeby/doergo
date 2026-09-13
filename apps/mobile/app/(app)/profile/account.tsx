@@ -164,7 +164,12 @@ export default function AccountScreen() {
                       ? t('biometrics.rowUnavailable')
                       : bio.enrolled
                         ? t('biometrics.rowOnThis')
-                        : t('biometrics.rowOff')}
+                        : bio.owner
+                          /* Someone else's key is on this phone. Say so rather
+                             than showing a bare "off" that turns on and
+                             silently replaces their binding. */
+                          ? t('biometrics.signsInAs', { name: bio.owner.name || bio.owner.email })
+                          : t('biometrics.rowOff')}
                   </Text>
                 </View>
                 {bio.capability.kind === 'ready' && (

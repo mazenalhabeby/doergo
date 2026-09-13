@@ -2325,6 +2325,8 @@
     "openSettings": "Ouvrir les réglages",
     "invalidatedTitle": "{{method}} doit être reconfiguré",
     "invalidatedBody": "La biométrie de votre téléphone a changé, la clé enregistrée n'est donc plus valable. Connectez-vous une fois avec votre mot de passe et nous la reconfigurerons.",
-    "rejectedBody": "Votre session a expiré. Connectez-vous avec votre mot de passe."
+    "rejectedBody": "Votre session a expiré. Connectez-vous avec votre mot de passe.",
+    "confirmEnable": "Confirmez que c'est bien vous pour l'activer",
+    "signsInAs": "Connexion en tant que {{name}}"
   }
 }

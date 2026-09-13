@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Linking } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../contexts/auth-context';
 import {
   resolveCapability,
   isReady,
   enrolmentSettingsUrl,
   biometricCredential,
+  confirmWithBiometrics,
   BiometricError,
+  getKeyOwner,
   type Capability,
   type BiometricFailure,
 } from '../lib/biometrics';
@@ -43,14 +46,18 @@ export interface BiometricUnlock {
   disable: () => Promise<void>;
   /** Send them to the OS screen that fixes `none-enrolled` or `too-weak`. */
   openSettings: () => void;
+  /** Whose account a fingerprint will open. A face cannot say; the screen must. */
+  owner: { userId: string; name: string; email: string } | null;
 }
 
 export function useBiometricUnlock(): BiometricUnlock {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [capability, setCapability] = useState<Capability | null>(null);
   const [enrolled, setEnrolled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<BiometricFailure | null>(null);
+  const [owner, setOwner] = useState<BiometricUnlock['owner']>(null);
 
   /*
     ⚠️ Re-resolve on every foreground, not once on mount.
@@ -61,10 +68,23 @@ export function useBiometricUnlock(): BiometricUnlock {
     work. The same effect catches an OS upgrade that killed the key.
   */
   const refresh = useCallback(async () => {
-    const [cap, bound] = await Promise.all([resolveCapability(), biometricCredential.isEnrolled()]);
+    /*
+      ⚠️ Scoped to the SIGNED-IN member when there is one.
+
+      Signed in, "enrolled" must mean "enrolled by YOU" — otherwise a second
+      member sees a switch already on, holding somebody else's key. Signed out,
+      the login screen legitimately wants the looser question, because it does
+      not yet know who is arriving.
+    */
+    const [cap, bound, who] = await Promise.all([
+      resolveCapability(),
+      biometricCredential.isEnrolled(user?.id),
+      getKeyOwner(),
+    ]);
     setCapability(cap);
     setEnrolled(bound);
-  }, []);
+    setOwner(who);
+  }, [user?.id]);
 
   const mounted = useRef(true);
   useEffect(() => {
@@ -102,11 +122,27 @@ export function useBiometricUnlock(): BiometricUnlock {
   }, [busy]);
 
   const enroll = useCallback(async (): Promise<boolean> => {
+    if (!user) return false;
     setBusy(true);
     setFailure(null);
     try {
-      await biometricCredential.enroll();
+      /*
+        ⚠️ Prove it is them BEFORE binding.
+
+        Creating a keystore key does not prompt on its own, so without this a
+        toggle was two taps that handed a 30-day session to whatever finger the
+        phone happens to trust — enable-able by anyone holding an unlocked
+        phone, which is the exact person this feature is meant to stop.
+      */
+      if (!(await confirmWithBiometrics(t('biometrics.confirmEnable')))) return false;
+
+      await biometricCredential.enroll({
+        userId: user.id,
+        name: [user.firstName, user.lastName].filter(Boolean).join(' '),
+        email: user.email,
+      });
       setEnrolled(true);
+      await refresh();
       return true;
     } catch {
       setEnrolled(false);
@@ -114,11 +150,12 @@ export function useBiometricUnlock(): BiometricUnlock {
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [user, t, refresh]);
 
   const disable = useCallback(async () => {
     await biometricCredential.forget();
     setEnrolled(false);
+    setOwner(null);
     setFailure(null);
   }, []);
 
@@ -138,5 +175,6 @@ export function useBiometricUnlock(): BiometricUnlock {
     enroll,
     disable,
     openSettings,
+    owner,
   };
 }

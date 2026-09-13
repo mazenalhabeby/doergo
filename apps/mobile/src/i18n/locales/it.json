@@ -2325,6 +2325,8 @@
     "openSettings": "Apri impostazioni",
     "invalidatedTitle": "{{method}} va configurato di nuovo",
     "invalidatedBody": "La biometria del telefono è cambiata, quindi la chiave salvata non è più valida. Accedi una volta con la password e la configureremo di nuovo.",
-    "rejectedBody": "La sessione è scaduta. Accedi con la password."
+    "rejectedBody": "La sessione è scaduta. Accedi con la password.",
+    "confirmEnable": "Conferma che sei tu per attivarlo",
+    "signsInAs": "Accede come {{name}}"
   }
 }

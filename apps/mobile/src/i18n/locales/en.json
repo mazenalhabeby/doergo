@@ -2325,6 +2325,8 @@
     "openSettings": "Open settings",
     "invalidatedTitle": "{{method}} needs setting up again",
     "invalidatedBody": "Your phone's biometrics changed, so the key we stored is no longer valid. Sign in once with your password and we'll set it up again.",
-    "rejectedBody": "Your session expired. Please sign in with your password."
+    "rejectedBody": "Your session expired. Please sign in with your password.",
+    "confirmEnable": "Confirm it is you to turn this on",
+    "signsInAs": "Signs in as {{name}}"
   }
 }

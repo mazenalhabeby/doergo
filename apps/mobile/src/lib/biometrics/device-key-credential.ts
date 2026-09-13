@@ -34,6 +34,30 @@ import { BiometricError, type BiometricCredential } from './credential';
 const KEY_ALIAS = 'hbcfield_device_key';
 /** Not a secret — it only names which public key the server should check. */
 const DEVICE_ID_KEY = 'hbcfield_device_id';
+/*
+  ⚠️ WHO the key belongs to, and WHAT to call them.
+
+  A key is bound to a PHONE; an account is not. Without this, enrolling as one
+  member and then signing in as another left the switch reading "on" for the
+  second member — and unlocking replayed the FIRST member's key, so they were
+  signed in as somebody else entirely. The crypto was correct throughout; the
+  binding was simply missing a user.
+
+  The label is stored so the unlock screen can say WHOSE account a fingerprint
+  will open. A face cannot tell you that, so the screen has to.
+*/
+const OWNER_KEY = 'hbcfield_device_key_owner';
+
+export interface KeyOwner { userId: string; name: string; email: string }
+
+export async function getKeyOwner(): Promise<KeyOwner | null> {
+  try {
+    const raw = await SecureStore.getItemAsync(OWNER_KEY);
+    return raw ? (JSON.parse(raw) as KeyOwner) : null;
+  } catch {
+    return null;
+  }
+}
 
 async function deviceId(): Promise<string> {
   const existing = await SecureStore.getItemAsync(DEVICE_ID_KEY);
@@ -64,22 +88,30 @@ async function post(path: string, body: unknown, bearer?: string): Promise<Respo
 export class DeviceKeyCredential implements BiometricCredential {
   readonly kind = 'device-key' as const;
 
-  async isEnrolled(): Promise<boolean> {
+  /**
+   * @param forUserId When given, "is THIS member enrolled" — which is the only
+   * question a settings switch should ever ask. Omitted, it is the looser "is
+   * anyone enrolled on this phone", which the login screen needs before it
+   * knows who is signing in.
+   */
+  async isEnrolled(forUserId?: string): Promise<boolean> {
     try {
-      const [id, exists] = await Promise.all([
+      const [id, exists, owner] = await Promise.all([
         SecureStore.getItemAsync(DEVICE_ID_KEY),
         keyExists(KEY_ALIAS),
+        getKeyOwner(),
       ]);
-      // Both halves, because either can disappear alone: the OS can drop the
-      // key on an enrolment change while our id survives, and a reinstall
-      // clears the id while an Android keystore entry can outlive it.
-      return !!id && exists === true;
+      // All three, because each can disappear alone: the OS drops the key on an
+      // enrolment change while our id survives, and a reinstall clears the id
+      // while an Android keystore entry can outlive it.
+      if (!id || exists !== true || !owner) return false;
+      return forUserId ? owner.userId === forUserId : true;
     } catch {
       return false;
     }
   }
 
-  async enroll(): Promise<void> {
+  async enroll(owner: KeyOwner): Promise<void> {
     const access = await getAccessToken();
     // ⚠️ Enrolment MUST ride on a live session. Without it, anyone who reaches
     // the endpoint can bind their own key to somebody else's account.
@@ -116,6 +148,12 @@ export class DeviceKeyCredential implements BiometricCredential {
       await deleteKeys(KEY_ALIAS).catch(() => {});
       throw new BiometricError('rejected', 'Enrolment refused');
     }
+
+    // Written LAST: the owner record is what every other surface treats as
+    // "enrolled", so it must not exist before the server agrees.
+    await SecureStore.setItemAsync(OWNER_KEY, JSON.stringify(owner), {
+      keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
+    });
   }
 
   async unlock(): Promise<void> {
@@ -183,6 +221,7 @@ export class DeviceKeyCredential implements BiometricCredential {
     await Promise.allSettled([
       deleteKeys(KEY_ALIAS),
       SecureStore.deleteItemAsync(DEVICE_ID_KEY),
+      SecureStore.deleteItemAsync(OWNER_KEY),
       // Best effort: the local key is already gone, and a server row that
       // outlives it is revoked from the Devices screen or by a password change.
       (async () => {

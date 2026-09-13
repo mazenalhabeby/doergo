@@ -2,7 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
 import i18n from '../../i18n';
 import { API_URL, getRefreshToken, saveTokens } from '../api/client';
-import { DeviceKeyCredential } from './device-key-credential';
+import { DeviceKeyCredential, type KeyOwner as DeviceKeyOwner } from './device-key-credential';
 
 /**
  * The thing biometrics protect — behind an interface, on purpose.
@@ -19,13 +19,22 @@ import { DeviceKeyCredential } from './device-key-credential';
  * until a Class 3 biometric passes, so there is nothing for a patched build to
  * skip.
  */
+export interface KeyOwner { userId: string; name: string; email: string }
+
 export interface BiometricCredential {
   /** Which implementation — recorded with enrolment so a migration can tell. */
   readonly kind: 'secure-store' | 'device-key';
-  /** Is this phone currently bound? Cheap, no prompt. */
-  isEnrolled(): Promise<boolean>;
-  /** Bind this phone. Requires a LIVE session — never call it from a login form. */
-  enroll(): Promise<void>;
+  /**
+   * Is this phone bound — and to WHOM.
+   *
+   * ⚠️ `forUserId` is not optional decoration. A key belongs to a phone, an
+   * account does not: without scoping, enrolling as one member and signing in
+   * as another shows the second member a switch that is already "on" and
+   * unlocks into the FIRST member's account. Settings must always pass it.
+   */
+  isEnrolled(forUserId?: string): Promise<boolean>;
+  /** Bind this phone to a member. Requires a LIVE session — never from a login form. */
+  enroll(owner: KeyOwner): Promise<void>;
   /** Prompt, and produce a session. Throws `BiometricError` on every failure. */
   unlock(): Promise<void>;
   /** Unbind. Must be safe to call when nothing is bound. */
@@ -95,7 +104,7 @@ function classify(err: unknown): BiometricFailure {
 class SecureStoreCredential implements BiometricCredential {
   readonly kind = 'secure-store' as const;
 
-  async isEnrolled(): Promise<boolean> {
+  async isEnrolled(_forUserId?: string): Promise<boolean> {
     try {
       // ⚠️ No `requireAuthentication` here — this is "is something bound", and
       // asking it would prompt on every app launch to render a switch.
@@ -105,7 +114,7 @@ class SecureStoreCredential implements BiometricCredential {
     }
   }
 
-  async enroll(): Promise<void> {
+  async enroll(_owner: KeyOwner): Promise<void> {
     const refresh = await getRefreshToken();
     if (!refresh) throw new BiometricError('not-enrolled', 'No live session to bind');
     await SecureStore.setItemAsync(BIO_REFRESH_KEY, refresh, authOpts());

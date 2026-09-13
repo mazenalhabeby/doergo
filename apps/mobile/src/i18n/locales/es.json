@@ -2325,6 +2325,8 @@
     "openSettings": "Abrir ajustes",
     "invalidatedTitle": "Hay que volver a configurar {{method}}",
     "invalidatedBody": "La biometría de su teléfono cambió, así que la clave guardada ya no es válida. Inicie sesión una vez con su contraseña y la configuraremos de nuevo.",
-    "rejectedBody": "Su sesión ha caducado. Inicie sesión con su contraseña."
+    "rejectedBody": "Su sesión ha caducado. Inicie sesión con su contraseña.",
+    "confirmEnable": "Confirme que es usted para activarlo",
+    "signsInAs": "Inicia sesión como {{name}}"
   }
 }

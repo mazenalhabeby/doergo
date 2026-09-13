@@ -65,6 +65,19 @@ export class BiometricService {
       Several live keys for one device means a key the member believes they
       removed still opens the account.
     */
+    /*
+      ⚠️ One device belongs to ONE member at a time.
+
+      The unique index is (userId, deviceId), so without this a phone enrolled
+      by a second member keeps the first member's row alive too — and `verify`
+      then has two keys for one device. Re-enrolling hands the phone over
+      rather than sharing it.
+    */
+    await this.prisma.deviceKey.updateMany({
+      where: { deviceId: body.deviceId, userId: { not: userId }, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+
     await this.prisma.deviceKey.upsert({
       where: { userId_deviceId: { userId, deviceId: body.deviceId } },
       create: {
@@ -122,10 +135,27 @@ export class BiometricService {
     const challenge = await this.challenges.consume(body.deviceId);
     if (!challenge) return refused;
 
-    const key = await this.prisma.deviceKey.findFirst({
+    /*
+      ⚠️ EXACTLY ONE live key per deviceId, or refuse.
+
+      `findFirst` silently picked the oldest when a phone had been enrolled by
+      two different members — so unlocking signed you in as whoever got there
+      first, regardless of who was expected. The client now clears its key on
+      logout, but the server must not depend on a client behaving: two live rows
+      for one device is an ambiguous answer, and the only safe answer to an
+      ambiguous credential is no.
+    */
+    const keys = await this.prisma.deviceKey.findMany({
       where: { deviceId: body.deviceId, revokedAt: null },
+      take: 2,
     });
-    if (!key) return refused;
+    if (keys.length !== 1) {
+      if (keys.length > 1) {
+        this.logger.warn(`Device ${body.deviceId} has ${keys.length} live keys — refusing`);
+      }
+      return refused;
+    }
+    const key = keys[0];
 
     if (!this.verifySignature(key.publicKey, challenge, body.signature)) {
       this.logger.warn(`Bad biometric signature for device ${body.deviceId}`);

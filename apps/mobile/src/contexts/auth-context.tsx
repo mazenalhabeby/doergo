@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { biometricCredential } from '../lib/biometrics';
 import { getAccessPlatforms } from '@hbcfield/shared/client';
 import {
   authApi,
@@ -156,6 +157,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await Promise.all([
       clearTokens(),
       SecureStore.deleteItemAsync(USER_KEY),
+      /*
+        ⚠️ The device key goes too.
+
+        It is bound to the PHONE, not the account, so leaving it behind meant
+        the next member to sign in saw a switch already on — and unlocking
+        replayed the PREVIOUS member's key and signed them in as somebody else.
+        Signing out is exactly the moment that binding stops being true.
+      */
+      biometricCredential.forget(),
     ]);
     setUser(null);
   };

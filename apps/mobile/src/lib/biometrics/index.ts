@@ -5,6 +5,7 @@ export {
   enrolmentSettingsUrl,
   type Capability,
 } from './capability';
+export { getKeyOwner, type KeyOwner } from './device-key-credential';
 export {
   biometricCredential,
   confirmWithBiometrics,
