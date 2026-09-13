@@ -2,17 +2,10 @@ import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import * as Crypto from 'expo-crypto';
 import * as Device from 'expo-device';
-import {
-  createKeys,
-  deleteKeys,
-  keyExists,
-  signWithOptions,
-  BiometricStrength,
-  InputEncoding,
-} from '@sbaiahmed1/react-native-biometrics';
 import i18n from '../../i18n';
 import { API_URL, getAccessToken, saveTokens } from '../api/client';
 import { BiometricError, type BiometricCredential, type KeyOwner } from './types';
+import { deviceKeyModule } from './native';
 
 /**
  * Sign-in with nothing to steal.
@@ -47,6 +40,13 @@ const DEVICE_ID_KEY = 'hbcfield_device_id';
   will open. A face cannot tell you that, so the screen has to.
 */
 const OWNER_KEY = 'hbcfield_device_key_owner';
+
+/** The native key store, or a refusal a caller already knows how to handle. */
+function keys() {
+  const lib = deviceKeyModule();
+  if (!lib) throw new BiometricError('not-enrolled', 'Biometric key module not in this build');
+  return lib;
+}
 
 export async function getKeyOwner(): Promise<KeyOwner | null> {
   try {
@@ -96,7 +96,7 @@ export class DeviceKeyCredential implements BiometricCredential {
     try {
       const [id, exists, owner] = await Promise.all([
         SecureStore.getItemAsync(DEVICE_ID_KEY),
-        keyExists(KEY_ALIAS),
+        keys().keyExists(KEY_ALIAS),
         getKeyOwner(),
       ]);
       // All three, because each can disappear alone: the OS drops the key on an
@@ -126,6 +126,7 @@ export class DeviceKeyCredential implements BiometricCredential {
       keeps a PIN from standing in for a biometric at BINDING time. The prompt
       at signing time is where a passcode fallback would be considered.
     */
+    const { createKeys, deleteKeys, BiometricStrength } = keys();
     const { publicKey } = await createKeys(
       KEY_ALIAS,
       'ec256',
@@ -157,6 +158,7 @@ export class DeviceKeyCredential implements BiometricCredential {
   async unlock(): Promise<void> {
     const id = await SecureStore.getItemAsync(DEVICE_ID_KEY);
     if (!id) throw new BiometricError('not-enrolled');
+    const { signWithOptions, BiometricStrength, InputEncoding } = keys();
 
     // 1 — a nonce we did not choose. Single-use, short-lived, server-issued:
     // a client-supplied challenge turns one captured signature into a key.
@@ -217,7 +219,8 @@ export class DeviceKeyCredential implements BiometricCredential {
   async forget(): Promise<void> {
     const id = await SecureStore.getItemAsync(DEVICE_ID_KEY).catch(() => null);
     await Promise.allSettled([
-      deleteKeys(KEY_ALIAS),
+      // A build without the module holds no key to delete — the rest still runs.
+      (async () => deviceKeyModule()?.deleteKeys(KEY_ALIAS))(),
       SecureStore.deleteItemAsync(DEVICE_ID_KEY),
       SecureStore.deleteItemAsync(OWNER_KEY),
       // Best effort: the local key is already gone, and a server row that

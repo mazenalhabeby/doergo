@@ -9,6 +9,10 @@
  * So: evaluate the graph, and assert the exported instance is usable. A cycle
  * leaves it `undefined`, and this fails.
  */
+// The native side is present in these specs; `no-native-module.spec.ts` covers its absence.
+jest.mock('../native', () => ({
+  deviceKeyModule: () => require('@sbaiahmed1/react-native-biometrics'),
+}));
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn().mockResolvedValue(null),
   setItemAsync: jest.fn().mockResolvedValue(undefined),

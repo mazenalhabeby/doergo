@@ -1,4 +1,5 @@
 import { Linking, Platform } from 'react-native';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 
 /**
  * Play In-App Updates — Android only.
@@ -44,12 +45,25 @@ let cached: InAppUpdatesModule | null | undefined;
 /** The module, or null when this binary has no such native module. */
 function nativeModule(): InAppUpdatesModule | null {
   if (cached !== undefined) return cached;
+  /*
+    ⚠️ Ask FIRST, with the optional API; `require` only once the answer is yes.
+
+    A `require` in a try/catch was the previous guard. The catch did keep the
+    app alive, but React Native still REPORTS the throw on its way out, so every
+    build without the module showed a red "Cannot find native module
+    'ExpoInAppUpdates'" on the tasks screen. `requireOptionalNativeModule`
+    answers null instead of throwing, so there is nothing to report.
+  */
+  if (!requireOptionalNativeModule('ExpoInAppUpdates')) {
+    // Expo Go, iOS, or a build predating the package. Not an error — the
+    // caller falls back to the server's own version check.
+    cached = null;
+    return cached;
+  }
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     cached = require('expo-in-app-updates') as InAppUpdatesModule;
   } catch {
-    // Expo Go, iOS, or a build predating the package. Not an error — the
-    // caller falls back to the server's own version check.
     cached = null;
   }
   return cached;

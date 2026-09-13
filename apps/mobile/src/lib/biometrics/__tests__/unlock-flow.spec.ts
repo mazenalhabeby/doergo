@@ -21,6 +21,10 @@ jest.mock('@sbaiahmed1/react-native-biometrics', () => ({
   BiometricStrength: { Strong: 'strong' },
   InputEncoding: { Base64: 'base64' },
 }));
+// The native side is present in these specs; `no-native-module.spec.ts` covers its absence.
+jest.mock('../native', () => ({
+  deviceKeyModule: () => require('@sbaiahmed1/react-native-biometrics'),
+}));
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn().mockResolvedValue('device-1'),
   setItemAsync: jest.fn().mockResolvedValue(undefined),

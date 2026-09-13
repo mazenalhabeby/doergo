@@ -8,6 +8,9 @@
  */
 module.exports = {
   Platform: { OS: 'ios', select: (o) => o.ios ?? o.default },
+  // No native modules in a rule test; a spec that needs one mocks its binding.
+  NativeModules: {},
+  TurboModuleRegistry: { get: () => null },
   Linking: {
     canOpenURL: async () => false,
     openURL: async () => undefined,

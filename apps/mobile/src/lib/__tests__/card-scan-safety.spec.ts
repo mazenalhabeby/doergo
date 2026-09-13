@@ -86,9 +86,12 @@ describe('the native card reader is never imported at module scope', () => {
 
       The rule did not change when it moved; its home did. A second binding
       appearing anywhere is the drift this catches.
+
+      Keyed on the READER's module name: other optional native modules (Play
+      in-app updates) use the same safe API for their own binding, legitimately.
     */
     const binders = files
-      .filter((f) => stripComments(fs.readFileSync(f, 'utf8')).includes('requireOptionalNativeModule'))
+      .filter((f) => stripComments(fs.readFileSync(f, 'utf8')).includes("'ExpoMlkitOcr'"))
       .map((f) => path.relative(MOBILE, f));
     expect(binders).toEqual(['src/lib/ocr.ts']);
   });

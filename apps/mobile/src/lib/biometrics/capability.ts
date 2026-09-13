@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import i18n from '../../i18n';
+import { deviceKeyModule } from './native';
 
 /**
  * What can THIS phone actually do — asked once, answered for every screen.
@@ -53,6 +54,10 @@ export function isOfferable(c: Capability): boolean {
 
 export async function resolveCapability(): Promise<Capability> {
   try {
+    // A binary built before the key library shipped can hold no key, however
+    // good its sensor. Hidden, like no sensor at all — an OTA must not offer a
+    // switch that can only fail. See `native.ts`.
+    if (!deviceKeyModule()) return { kind: 'unavailable' };
     if (!(await LocalAuthentication.hasHardwareAsync())) return { kind: 'unavailable' };
     if (!(await LocalAuthentication.isEnrolledAsync())) return { kind: 'none-enrolled' };
 
