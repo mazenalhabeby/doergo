@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/contexts/auth-context';
+import { useBiometricUnlock } from '../../src/hooks/use-biometric-unlock';
+import { BlurSheet, SheetPanel } from '../../src/components';
 import { useToast } from '../../src/contexts/toast-context';
 import { AnimatedLogo, centeredContent } from '../../src/components';
 import { useResponsive } from '../../src/lib/responsive';
@@ -34,7 +36,9 @@ import {
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, refreshUser } = useAuth();
+  const bio = useBiometricUnlock();
+  const [offerBiometric, setOfferBiometric] = useState(false);
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const r = useResponsive();
@@ -70,13 +74,45 @@ export default function LoginScreen() {
     return Object.keys(newErrors).length === 0;
   };
 
+  /*
+    Prompt on open when this phone is bound.
+
+    ⚠️ Once per mount, guarded by a ref. Re-prompting on every render — or on
+    every foreground, which the capability refresh triggers — puts the OS sheet
+    back up the instant somebody dismisses it to type their password, which
+    reads as the app refusing to let them in.
+  */
+  const promptedRef = useRef(false);
+  useEffect(() => {
+    if (!bio.canUnlock || promptedRef.current) return;
+    promptedRef.current = true;
+    void (async () => {
+      if (await bio.unlock()) {
+        await refreshUser();
+        router.replace(ROUTES.home as Href);
+      }
+    })();
+  }, [bio.canUnlock]);
+
   const handleLogin = async () => {
     if (!validate()) return;
 
     setIsLoading(true);
     try {
       await login(email.toLowerCase().trim(), password);
-      router.replace(ROUTES.home as Href);
+      /*
+        Offer it once, here, and never again from a banner.
+
+        This is the only moment the member has both a live session to bind and a
+        reason to care — and `enroll()` needs that session, so an offer anywhere
+        else would have to send them back through this screen anyway. Declined,
+        the switch still lives in Account.
+      */
+      if (bio.capability?.kind === 'ready' && !bio.enrolled) {
+        setOfferBiometric(true);
+      } else {
+        router.replace(ROUTES.home as Href);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : t('auth.login.loginFailed');
       toast.error(t('auth.login.loginFailed'), message);
@@ -261,6 +297,27 @@ export default function LoginScreen() {
               </LinearGradient>
             </TouchableOpacity>
 
+            {/* Unlock — only when this phone is actually bound. A button that
+                cannot work is worse than no button. */}
+            {bio.canUnlock && (
+              <TouchableOpacity
+                style={[styles.bioButton, { borderColor: colors.border }]}
+                onPress={async () => {
+                  if (await bio.unlock()) {
+                    await refreshUser();
+                    router.replace(ROUTES.home as Href);
+                  }
+                }}
+                disabled={bio.busy}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="finger-print" size={22} color={COLORS.primary} />
+                <Text style={[styles.bioButtonText, { color: COLORS.primary }]}>
+                  {t('biometrics.unlockWith', { method: bio.label })}
+                </Text>
+              </TouchableOpacity>
+            )}
+
             {/* Security Badges */}
             <View style={styles.securityContainer}>
               <View style={styles.securityBadge}>
@@ -291,6 +348,42 @@ export default function LoginScreen() {
           {t('auth.login.needHelp')}<Text style={styles.footerLink}>{t('auth.login.contactSupport')}</Text>
         </Text>
       </View>
+    {/*
+      Asked once, never again from a banner. Either answer leaves for home, so
+      there is no way to get stuck behind it.
+    */}
+    <BlurSheet visible={offerBiometric} onClose={() => { setOfferBiometric(false); router.replace(ROUTES.home as Href); }}>
+      <SheetPanel onClose={() => { setOfferBiometric(false); router.replace(ROUTES.home as Href); }}>
+        <View style={styles.offerBody}>
+          <View style={[styles.offerIcon, { backgroundColor: colors.primaryLight }]}>
+            <Ionicons name="finger-print" size={30} color={COLORS.primary} />
+          </View>
+          <Text style={[styles.offerTitle, { color: colors.textPrimary }]}>
+            {t('biometrics.enableTitle', { method: bio.label })}
+          </Text>
+          <Text style={[styles.offerText, { color: colors.textSecondary }]}>
+            {t('biometrics.enableBody')}
+          </Text>
+          <TouchableOpacity
+            style={styles.offerPrimary}
+            disabled={bio.busy}
+            onPress={async () => {
+              await bio.enroll();
+              setOfferBiometric(false);
+              router.replace(ROUTES.home as Href);
+            }}
+          >
+            <Text style={styles.offerPrimaryText}>{t('biometrics.enable', { method: bio.label })}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.offerGhost, { borderColor: colors.border }]}
+            onPress={() => { setOfferBiometric(false); router.replace(ROUTES.home as Href); }}
+          >
+            <Text style={[styles.offerGhostText, { color: colors.textPrimary }]}>{t('biometrics.notNow')}</Text>
+          </TouchableOpacity>
+        </View>
+      </SheetPanel>
+    </BlurSheet>
     </Animated.View>
   );
 }
@@ -469,6 +562,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  offerBody: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md, alignItems: 'center' },
+  offerIcon: { width: 62, height: 62, borderRadius: 19, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.lg },
+  offerTitle: { fontSize: FONT_SIZE.xxl, fontWeight: FONT_WEIGHT.bold, textAlign: 'center' },
+  offerText: { fontSize: FONT_SIZE.base, textAlign: 'center', marginTop: SPACING.sm, lineHeight: 21 },
+  offerPrimary: { alignSelf: 'stretch', backgroundColor: COLORS.primary, borderRadius: RADIUS.md, paddingVertical: 14, alignItems: 'center', marginTop: SPACING.xl },
+  offerPrimaryText: { color: COLORS.white, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.semibold },
+  offerGhost: { alignSelf: 'stretch', borderRadius: RADIUS.md, borderWidth: 1, paddingVertical: 14, alignItems: 'center', marginTop: SPACING.sm },
+  offerGhostText: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.medium },
+  bioButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    marginTop: SPACING.lg,
+    paddingVertical: 14,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+  },
+  bioButtonText: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.semibold },
   securityContainer: {
     flexDirection: 'row',
     justifyContent: 'center',

@@ -10,9 +10,11 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useBiometricUnlock } from '../../../src/hooks/use-biometric-unlock';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
@@ -31,6 +33,7 @@ export default function AccountScreen() {
   const { user, logout } = useAuth();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const bio = useBiometricUnlock();
   const { t } = useTranslation();
   const toast = useToast();
   const [currentPassword, setCurrentPassword] = useState('');
@@ -136,6 +139,67 @@ export default function AccountScreen() {
             </View>
           </View>
         </View>
+
+
+        {/*
+          Biometric sign-in.
+
+          ⚠️ Hidden entirely when the phone has no sensor — a control that can
+          never work is not a setting, it is a dead end with a label. The two
+          refused states say WHY and offer the one action that fixes it, because
+          "unavailable" with no reason is what makes people assume it is broken.
+        */}
+        {bio.capability && bio.capability.kind !== 'unavailable' && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('profile.menu.accountSecurity')}</Text>
+            <View style={[styles.card, { backgroundColor: colors.card }]}>
+              <View style={styles.infoRow}>
+                <Ionicons name="finger-print" size={18} color={bio.capability.kind === 'ready' ? COLORS.primary : colors.textMuted} />
+                <View style={styles.infoContent}>
+                  <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
+                    {t('biometrics.row', { method: bio.label })}
+                  </Text>
+                  <Text style={[styles.infoLabel, { color: colors.textMuted }]}>
+                    {bio.capability.kind !== 'ready'
+                      ? t('biometrics.rowUnavailable')
+                      : bio.enrolled
+                        ? t('biometrics.rowOnThis')
+                        : t('biometrics.rowOff')}
+                  </Text>
+                </View>
+                {bio.capability.kind === 'ready' && (
+                  <Switch
+                    value={bio.enrolled}
+                    disabled={bio.busy}
+                    onValueChange={(on: boolean) => { void (on ? bio.enroll() : bio.disable()); }}
+                    trackColor={{ false: colors.border, true: COLORS.primary }}
+                  />
+                )}
+              </View>
+
+              {bio.capability.kind !== 'ready' && (
+                <>
+                  <View style={[styles.divider, { backgroundColor: colors.border }]} />
+                  <View style={styles.bioHelp}>
+                    <Text style={[styles.infoLabel, { color: colors.textSecondary, lineHeight: 19 }]}>
+                      {bio.capability.kind === 'too-weak'
+                        ? t('biometrics.weakBody')
+                        : t('biometrics.notEnrolledBody')}
+                    </Text>
+                    <TouchableOpacity
+                      style={[styles.bioSettingsBtn, { borderColor: colors.border }]}
+                      onPress={bio.openSettings}
+                    >
+                      <Text style={[styles.bioSettingsText, { color: COLORS.primary }]}>
+                        {t('biometrics.openSettings')}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </View>
+          </View>
+        )}
 
         {/* Change Password */}
         <View style={styles.section}>
@@ -322,6 +386,9 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.medium,
     marginTop: 2,
   },
+  bioHelp: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, gap: SPACING.md },
+  bioSettingsBtn: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: RADIUS.sm, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm },
+  bioSettingsText: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold },
   divider: {
     height: 1,
     marginVertical: SPACING.md,
