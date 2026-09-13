@@ -69,9 +69,18 @@ interface QuickAction {
   tone?: string;
   /** A number worth interrupting for. Absent is the normal case. */
   badge?: number;
-  /** Badge fill; only an obligation earns a loud one. */
-  badgeTone?: string;
 }
+
+/*
+  ⚠️ ONE badge colour for every tile.
+
+  The fill used to encode severity — amber for documents, red when they block
+  work, grey for what you hold — and side by side that read as two unrelated
+  kinds of counter on one strip rather than as a meaning. A count is a count;
+  how serious the documents are is said by the glyph turning red and by the
+  reminder card below, not by the badge.
+*/
+const BADGE_TONE = COLORS.warning;
 
 /**
  * Four across, and a short row is left-aligned rather than stretched.
@@ -103,7 +112,6 @@ export const QuickActions = React.memo(function QuickActions() {
         // so the two never disagree about how serious the same documents are.
         tone: blocksWork ? COLORS.error : undefined,
         badge: outstandingDocs > 0 ? outstandingDocs : undefined,
-        badgeTone: blocksWork ? COLORS.error : COLORS.warning,
       });
     }
 
@@ -113,8 +121,6 @@ export const QuickActions = React.memo(function QuickActions() {
         Glyph: EquipmentGlyph,
         label: t('home.actions.equipment', 'My equipment'),
         badge: held.length,
-        // A count of what you hold is information, not an alarm.
-        badgeTone: colors.textMuted,
       });
     }
 
@@ -123,7 +129,7 @@ export const QuickActions = React.memo(function QuickActions() {
     out.push({ key: 'support', Glyph: SupportGlyph, label: t('home.actions.support', 'Support') });
 
     return out;
-  }, [user?.orgAddOns, outstandingDocs, blocksWork, held.length, colors.textMuted, t]);
+  }, [user?.orgAddOns, outstandingDocs, blocksWork, held.length, t]);
 
   // Messages and Support are ungated, so this is never empty in practice — but
   // a screen that renders a band over nothing is the bug this prevents.
@@ -145,8 +151,7 @@ export const QuickActions = React.memo(function QuickActions() {
 
     Four filled tiles in four hues, 80px apart, is a paint chart. A raised chip
     with one ink mark reads as a control, and it leaves the badge as the only
-    colour on the strip — so an amber count is the one thing that moves, and a
-    red one is impossible to miss.
+    colour on the strip — so an amber count is the one thing that moves.
   */
   const tileFill: [string, string] = isDark
     ? ['rgba(255,255,255,0.07)', 'rgba(255,255,255,0.025)']
@@ -186,7 +191,7 @@ export const QuickActions = React.memo(function QuickActions() {
                 <View
                   style={[
                     s.badge,
-                    { backgroundColor: a.badgeTone ?? COLORS.warning, borderColor: colors.surface },
+                    { backgroundColor: BADGE_TONE, borderColor: colors.surface },
                   ]}
                 >
                   <Text style={s.badgeText} numberOfLines={1}>
