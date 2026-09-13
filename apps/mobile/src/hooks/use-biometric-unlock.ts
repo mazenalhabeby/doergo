@@ -12,6 +12,7 @@ import {
   getKeyOwner,
   type Capability,
   type BiometricFailure,
+  type BiometricMethod,
 } from '../lib/biometrics';
 
 /**
@@ -41,6 +42,8 @@ export interface BiometricUnlock {
   canUnlock: boolean;
   /** What the phone calls it: "Face ID", "Fingerprint", "Biometric unlock"… */
   label: string;
+  /** Which glyph to draw — a face, or a fingerprint. */
+  method: BiometricMethod;
   unlock: () => Promise<boolean>;
   enroll: () => Promise<boolean>;
   disable: () => Promise<void>;
@@ -171,6 +174,7 @@ export function useBiometricUnlock(): BiometricUnlock {
     canUnlock: !!capability && isReady(capability) && enrolled,
     // A sensible word before the first resolve lands, so nothing renders blank.
     label: capability && isReady(capability) ? capability.label : t('biometrics.generic'),
+    method: capability && isReady(capability) ? capability.method : 'generic',
     unlock,
     enroll,
     disable,

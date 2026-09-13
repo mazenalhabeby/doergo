@@ -1,0 +1,53 @@
+import React from 'react';
+import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
+import type { BiometricMethod } from '../lib/biometrics';
+
+interface IconProps {
+  size?: number;
+  color: string;
+}
+
+/**
+ * One colour, depth from layered opacities — the `onboarding-icons` style, not
+ * the stock Ionicon. The ridges darken toward the centre, which is where the
+ * eye lands and where a finger goes.
+ */
+export function FingerprintIcon({ size = 64, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+      <Circle cx={32} cy={32} r={30} fill={color} fillOpacity={0.08} />
+      <G stroke={color} strokeWidth={2.6} strokeLinecap="round" fill="none">
+        <Path d="M18 22c3.6-4.6 8.4-7 14-7s10.4 2.4 14 7" strokeOpacity={0.45} />
+        <Path d="M14.5 33c0-9.8 7.8-17 17.5-17S49.5 23.2 49.5 33v2.5" strokeOpacity={0.55} />
+        <Path d="M20 44c-1-3-1.5-6-1.5-9.5 0-7.6 6-13.5 13.5-13.5s13.5 5.9 13.5 13.5c0 4-.8 7.4-2.2 10.6" strokeOpacity={0.7} />
+        <Path d="M25.5 49c-1.6-4.4-2.4-9-2.4-14 0-5 4-9 8.9-9s8.9 4 8.9 9c0 5.8-1.1 10.4-3.1 14.2" strokeOpacity={0.85} />
+        <Path d="M32 33.5c0 7-.8 12.4-3 17.5" />
+        <Path d="M36.2 51c1.3-3.8 2-8 2-12.6" strokeOpacity={0.9} />
+      </G>
+    </Svg>
+  );
+}
+
+/**
+ * Face ID's own vocabulary — the corner brackets and a face — in the same
+ * single-colour, layered-opacity style. A Face ID iPhone shown a fingerprint
+ * reads as an app nobody tried on one.
+ */
+export function FaceIcon({ size = 64, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+      <Rect x={2} y={2} width={60} height={60} rx={30} fill={color} fillOpacity={0.08} />
+      <G stroke={color} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" fill="none">
+        <Path d="M16 24v-4a4 4 0 0 1 4-4h4M40 16h4a4 4 0 0 1 4 4v4M48 40v4a4 4 0 0 1-4 4h-4M24 48h-4a4 4 0 0 1-4-4v-4" strokeOpacity={0.55} />
+        <Path d="M25 27v3M39 27v3" />
+        <Path d="M32 27v8h-2.5" strokeOpacity={0.85} />
+        <Path d="M26 40c3.4 3 8.6 3 12 0" strokeOpacity={0.9} />
+      </G>
+    </Svg>
+  );
+}
+
+/** The glyph for what this phone will actually ask for. */
+export function BiometricIcon({ method, ...props }: IconProps & { method?: BiometricMethod }) {
+  return method === 'face' ? <FaceIcon {...props} /> : <FingerprintIcon {...props} />;
+}

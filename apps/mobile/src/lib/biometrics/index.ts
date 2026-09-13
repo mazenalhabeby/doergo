@@ -4,6 +4,7 @@ export {
   isOfferable,
   enrolmentSettingsUrl,
   type Capability,
+  type BiometricMethod,
 } from './capability';
 
 export {
@@ -14,7 +15,7 @@ export {
 } from './types';
 
 export { confirmWithBiometrics, SecureStoreCredential } from './credential';
-export { DeviceKeyCredential, getKeyOwner } from './device-key-credential';
+export { DeviceKeyCredential, getKeyOwner, classifySignFailure } from './device-key-credential';
 
 import { DeviceKeyCredential } from './device-key-credential';
 import type { BiometricCredential } from './types';

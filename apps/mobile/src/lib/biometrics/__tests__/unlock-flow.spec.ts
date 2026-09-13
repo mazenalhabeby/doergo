@@ -92,3 +92,44 @@ describe('unlock costs exactly one prompt', () => {
     expect(deleteKeys).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * ⚠️ What a failed prompt means, by the codes each platform actually returns.
+ * The old rule read the MESSAGE, and iOS reports a Face ID cancel as
+ * SIGNATURE_CREATION_FAILED — so one dismissed prompt erased the binding.
+ */
+describe('a failed prompt only deletes the key on proof', () => {
+  const run = async (signed: unknown) => {
+    const { deleteKeys } = require('@sbaiahmed1/react-native-biometrics');
+    deleteKeys.mockClear();
+    signWithOptions.mockResolvedValue(signed);
+    const { DeviceKeyCredential } = require('../device-key-credential');
+    const err = await new DeviceKeyCredential().unlock().catch((e: unknown) => e);
+    return { failure: (err as { failure: string }).failure, deleted: deleteKeys.mock.calls.length > 0 };
+  };
+
+  it.each([
+    ['iOS cancel', { success: false, errorCode: 'USER_CANCEL', error: 'User canceled authentication' }],
+    ['Android cancel', { success: false, errorCode: 'USER_CANCELED', error: 'Cancel' }],
+    ['iOS app sent to background', { success: false, errorCode: 'SYSTEM_CANCEL', error: 'System canceled authentication' }],
+  ])('%s → cancelled, key kept', async (_, signed) => {
+    expect(await run(signed)).toEqual({ failure: 'cancelled', deleted: false });
+  });
+
+  it.each([
+    ['iOS Face ID cancel inside SecKeyCreateSignature', { success: false, errorCode: 'SIGNATURE_CREATION_FAILED', error: 'Failed to create digital signature' }],
+    ['iOS lockout', { success: false, errorCode: 'BIOMETRY_LOCKOUT', error: 'Biometry is locked out' }],
+    ['iOS face not recognised', { success: false, errorCode: 'AUTHENTICATION_FAILED', error: 'Authentication failed' }],
+    ['Android lockout', { success: false, errorCode: 'BIOMETRIC_LOCKOUT', error: 'Too many attempts' }],
+  ])('%s → failed, key kept', async (_, signed) => {
+    expect(await run(signed)).toEqual({ failure: 'failed', deleted: false });
+  });
+
+  it.each([
+    ['iOS enrolment changed', { success: false, errorCode: 'BIOMETRY_CURRENT_SET_CHANGED', error: 'Biometric enrollment changed' }],
+    ['key missing', { success: false, errorCode: 'KEY_NOT_FOUND', error: 'Key not found' }],
+    ['Android fingerprint added', { success: false, errorCode: 'SIGNATURE_CREATION_FAILED', error: 'Failed to generate signature: Key permanently invalidated' }],
+  ])('%s → invalidated, key deleted', async (_, signed) => {
+    expect(await run(signed)).toEqual({ failure: 'invalidated', deleted: true });
+  });
+});

@@ -20,7 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useBiometricUnlock } from '../../src/hooks/use-biometric-unlock';
 import { resolveCapability, getKeyOwner } from '../../src/lib/biometrics';
-import { BlurSheet, SheetPanel, FingerprintIcon } from '../../src/components';
+import { BlurSheet, SheetPanel, BiometricIcon } from '../../src/components';
 import { useToast } from '../../src/contexts/toast-context';
 import { AnimatedLogo, centeredContent } from '../../src/components';
 import { useResponsive } from '../../src/lib/responsive';
@@ -278,10 +278,15 @@ export default function LoginScreen() {
                   {bio.busy ? (
                     <ActivityIndicator color={COLORS.primary} />
                   ) : (
-                    <FingerprintIcon size={64} color={COLORS.primary} />
+                    <BiometricIcon method={bio.method} size={64} color={COLORS.primary} />
                   )}
                 </TouchableOpacity>
-                <Text style={styles.bioTap}>{t('biometrics.tapToUnlock', { method: bio.label })}</Text>
+                <Text style={styles.bioTap}>
+                  {/* A failure that kept the key: say so, and invite another go. */}
+                  {bio.failure === 'failed'
+                    ? t('biometrics.tapRetry')
+                    : t('biometrics.tapToUnlock', { method: bio.label })}
+                </Text>
 
                 <View style={styles.bioSpacer} />
 
@@ -307,7 +312,7 @@ export default function LoginScreen() {
                 onPress={() => setUsePassword(false)}
                 activeOpacity={0.8}
               >
-                <FingerprintIcon size={26} color={COLORS.primary} />
+                <BiometricIcon method={bio.method} size={26} color={COLORS.primary} />
                 <Text style={styles.bioBackText} numberOfLines={1}>
                   {t('biometrics.backTo', { method: bio.label, name: ownerName })}
                 </Text>
@@ -465,7 +470,7 @@ export default function LoginScreen() {
       <SheetPanel onClose={() => { setOfferBiometric(false); router.replace(ROUTES.home as Href); }}>
         <View style={styles.offerBody}>
           <View style={[styles.offerIcon, { backgroundColor: colors.primaryLight }]}>
-            <Ionicons name="finger-print" size={30} color={COLORS.primary} />
+            <BiometricIcon method={bio.method} size={30} color={COLORS.primary} />
           </View>
           <Text style={[styles.offerTitle, { color: colors.textPrimary }]}>
             {t('biometrics.enableTitle', { method: bio.label })}

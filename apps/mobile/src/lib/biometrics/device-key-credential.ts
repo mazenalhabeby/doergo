@@ -41,6 +41,48 @@ const DEVICE_ID_KEY = 'hbcfield_device_id';
 */
 const OWNER_KEY = 'hbcfield_device_key_owner';
 
+type SignFailure = { code?: string; message?: string };
+
+/*
+  ⚠️ WHAT A FAILED PROMPT MEANS, DECIDED BY ERROR CODE — NEVER BY WORDING.
+
+  This used to read the MESSAGE: "cancel" in it meant cancelled, and anything
+  else meant the key was broken and was deleted. That held on Android and was
+  wrong on iOS, where the library reports a Face ID cancel raised inside
+  `SecKeyCreateSignature` as SIGNATURE_CREATION_FAILED, "Failed to create
+  digital signature". Dismissing Face ID once would have erased the member's
+  binding, and so would a lockout or a face not recognised in poor light.
+
+  The two platforms do not even agree on the cancel code — iOS USER_CANCEL,
+  Android USER_CANCELED — so both are listed.
+
+  Deleting is the one outcome that cannot be undone from the phone, so it
+  needs positive evidence. When in doubt the key stays; the worst case is a
+  "Tap to try again" and a password, and a revoked key is still caught by the
+  server refusing the signature.
+*/
+const CANCEL_CODES = new Set([
+  'USER_CANCEL', 'USER_CANCELED', 'SYSTEM_CANCEL', 'SYSTEM_CANCELED', 'USER_FALLBACK',
+]);
+const INVALIDATED_CODES = new Set([
+  // iOS: the key was minted .biometryCurrentSet and the enrolled faces/fingers changed.
+  'BIOMETRY_CURRENT_SET_CHANGED',
+  // Both: the OS dropped the key.
+  'KEY_NOT_FOUND',
+]);
+
+export function classifySignFailure(f: SignFailure | null): 'cancelled' | 'invalidated' | 'failed' {
+  const code = f?.code?.toUpperCase();
+  if (code && CANCEL_CODES.has(code)) return 'cancelled';
+  if (code && INVALIDATED_CODES.has(code)) return 'invalidated';
+  // Android surfaces KeyPermanentlyInvalidatedException inside a generic
+  // SIGNATURE_CREATION_FAILED; its message is the only place it is named.
+  if (/permanently\s*invalidated/i.test(f?.message ?? '')) return 'invalidated';
+  // No code at all (a thrown JS error): a cancel is still recognisable by name.
+  if (!code && /cancel/i.test(f?.message ?? '')) return 'cancelled';
+  return 'failed';
+}
+
 /** The native key store, or a refusal a caller already knows how to handle. */
 function keys() {
   const lib = deviceKeyModule();
@@ -169,6 +211,7 @@ export class DeviceKeyCredential implements BiometricCredential {
 
     // 2 — the only prompt in the whole flow.
     let signature: string | undefined;
+    let failure: SignFailure | null = null;
     try {
       const signed = await signWithOptions({
         keyAlias: KEY_ALIAS,
@@ -189,18 +232,22 @@ export class DeviceKeyCredential implements BiometricCredential {
         // A passcode cannot stand in for the biometric that guards the key.
         disableDeviceFallback: true,
       });
-      if (!signed.success || !signed.signature) throw new Error(signed.error ?? 'cancelled');
-      signature = signed.signature;
+      if (signed.success && signed.signature) signature = signed.signature;
+      else failure = { code: signed.errorCode, message: signed.error };
     } catch (err) {
-      const m = String((err as Error)?.message ?? err).toLowerCase();
-      if (m.includes('cancel')) throw new BiometricError('cancelled');
+      const e = err as { code?: string; message?: string };
+      failure = { code: e?.code, message: e?.message ?? String(err) };
+    }
+
+    if (!signature) {
+      const kind = classifySignFailure(failure);
       /*
-        Anything else means the key is unusable — a fingerprint added, a face
-        edited, a passcode removed and re-added (iOS 17+), a Samsung OS upgrade.
-        Clearing it turns a permanent silent failure into one honest re-enrol.
+        Only a key that is PROVABLY unusable is cleared — a fingerprint added, a
+        face edited, the key missing. Clearing it turns a permanent silent
+        failure into one honest re-enrol. Anything else keeps it.
       */
-      await this.forget();
-      throw new BiometricError('invalidated');
+      if (kind === 'invalidated') await this.forget();
+      throw new BiometricError(kind);
     }
 
     // 3 — the server checks the signature against the key it holds for this device.

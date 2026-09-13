@@ -34,8 +34,15 @@ export type Capability =
   | { kind: 'none-enrolled' }
   /** Enrolled, but Class 2 — it can never hold a key. Say why, and what fixes it. */
   | { kind: 'too-weak' }
-  /** The only state that may show a prompt. `label` is what the phone calls it. */
-  | { kind: 'ready'; label: string };
+  /**
+   * The only state that may show a prompt. `label` is what the phone calls it;
+   * `method` picks the glyph, because a Face ID iPhone shown a fingerprint
+   * reads as an app that was never tried on one.
+   */
+  | { kind: 'ready'; label: string; method: BiometricMethod };
+
+/** What the member will actually present. `generic` when the phone will not say. */
+export type BiometricMethod = 'face' | 'fingerprint' | 'generic';
 
 /** Can this capability be used to protect a credential? One question, one place. */
 export function isReady(c: Capability): c is Extract<Capability, { kind: 'ready' }> {
@@ -70,7 +77,7 @@ export async function resolveCapability(): Promise<Capability> {
     const level = await LocalAuthentication.getEnrolledLevelAsync();
     if (level !== LocalAuthentication.SecurityLevel.BIOMETRIC_STRONG) return { kind: 'too-weak' };
 
-    return { kind: 'ready', label: await resolveLabel() };
+    return { kind: 'ready', ...(await resolveMethod()) };
   } catch (err) {
     /*
       Swallowed for the USER — every caller is deciding whether to offer
@@ -97,20 +104,22 @@ export async function resolveCapability(): Promise<Capability> {
  * says fingerprint, face unlock, or — when the list under-reports and we
  * genuinely cannot tell — the neutral "biometric unlock", which is honest.
  */
-async function resolveLabel(): Promise<string> {
+async function resolveMethod(): Promise<{ label: string; method: BiometricMethod }> {
   const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
   const face = types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
   const print = types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
 
   // iOS is truthful here, and a device has exactly one of the two.
   if (Platform.OS === 'ios') {
-    return face ? i18n.t('biometrics.faceId') : i18n.t('biometrics.touchId');
+    return face
+      ? { label: i18n.t('biometrics.faceId'), method: 'face' }
+      : { label: i18n.t('biometrics.touchId'), method: 'fingerprint' };
   }
 
-  if (face && print) return i18n.t('biometrics.faceOrFingerprint'); // Pixel 8+
-  if (print) return i18n.t('biometrics.fingerprint');
-  if (face) return i18n.t('biometrics.faceUnlock'); // Class 3 face: Pixels
-  return i18n.t('biometrics.generic');
+  if (face && print) return { label: i18n.t('biometrics.faceOrFingerprint'), method: 'generic' }; // Pixel 8+
+  if (print) return { label: i18n.t('biometrics.fingerprint'), method: 'fingerprint' };
+  if (face) return { label: i18n.t('biometrics.faceUnlock'), method: 'face' }; // Class 3 face: Pixels
+  return { label: i18n.t('biometrics.generic'), method: 'generic' };
 }
 
 /**

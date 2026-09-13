@@ -32,7 +32,13 @@ export type BiometricFailure =
   /** Nothing was bound on this phone. Show the password form. */
   | 'not-enrolled'
   /** The server refused the credential — revoked, or expired. */
-  | 'rejected';
+  | 'rejected'
+  /**
+   * The prompt did not produce a signature, and nothing says the key is gone:
+   * a lockout, a face not recognised, iOS reporting a cancel in its own words.
+   * The key STAYS — see `classifySignFailure`.
+   */
+  | 'failed';
 
 export class BiometricError extends Error {
   constructor(readonly failure: BiometricFailure, message?: string) {

@@ -18,7 +18,7 @@ import { useBiometricUnlock } from '../../../src/hooks/use-biometric-unlock';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { SheetHeader, ScreenContainer } from '../../../src/components';
+import { SheetHeader, ScreenContainer, BiometricIcon } from '../../../src/components';
 import { useToast } from '../../../src/contexts/toast-context';
 import { passwordApi, accountApi } from '../../../src/lib/api';
 import {
@@ -155,7 +155,7 @@ export default function AccountScreen() {
             <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('profile.menu.accountSecurity')}</Text>
             <View style={[styles.card, { backgroundColor: colors.card }]}>
               <View style={styles.infoRow}>
-                <Ionicons name="finger-print" size={18} color={bio.capability.kind === 'ready' ? COLORS.primary : colors.textMuted} />
+                <BiometricIcon method={bio.method} size={22} color={bio.capability.kind === 'ready' ? COLORS.primary : colors.textMuted} />
                 <View style={styles.infoContent}>
                   <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
                     {t('biometrics.row', { method: bio.label })}
