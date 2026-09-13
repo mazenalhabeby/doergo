@@ -2327,6 +2327,10 @@
     "invalidatedBody": "La biometría de su teléfono cambió, así que la clave guardada ya no es válida. Inicie sesión una vez con su contraseña y la configuraremos de nuevo.",
     "rejectedBody": "Su sesión ha caducado. Inicie sesión con su contraseña.",
     "confirmEnable": "Confirme que es usted para activarlo",
-    "signsInAs": "Inicia sesión como {{name}}"
+    "signsInAs": "Inicia sesión como {{name}}",
+    "welcomeBack": "Bienvenido de nuevo, {{name}}",
+    "tapToUnlock": "Toca para desbloquear con {{method}}",
+    "notYou": "¿No eres {{name}}? Inicia sesión con otra cuenta",
+    "backTo": "Volver a {{method}} para {{name}}"
   }
 }

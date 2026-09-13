@@ -19,6 +19,7 @@ export type { DocumentFilters } from './document-filter-bar';
 export { DocumentScanner } from './document-scanner';
 export { SupplyDocumentSheet } from './supply-document-sheet';
 export { CreateOrgIcon, JoinOrgIcon, InvitationIcon } from './onboarding-icons';
+export { FingerprintIcon } from './fingerprint-icon';
 export { TechnicianPicker } from './technician-picker';
 export { LoadingState, ErrorState } from './screen-states';
 export { LocationPickerSheet } from './location-picker-sheet';

@@ -19,8 +19,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useBiometricUnlock } from '../../src/hooks/use-biometric-unlock';
-import { resolveCapability } from '../../src/lib/biometrics';
-import { BlurSheet, SheetPanel } from '../../src/components';
+import { resolveCapability, getKeyOwner } from '../../src/lib/biometrics';
+import { BlurSheet, SheetPanel, FingerprintIcon } from '../../src/components';
 import { useToast } from '../../src/contexts/toast-context';
 import { AnimatedLogo, centeredContent } from '../../src/components';
 import { useResponsive } from '../../src/lib/responsive';
@@ -49,6 +49,11 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  /*
+    The member chose the password over the fingerprint. Only meaningful while
+    this phone holds a key; without one the form is the only screen there is.
+  */
+  const [usePassword, setUsePassword] = useState(false);
 
   const { colors, isDark } = useTheme();
   const toast = useToast();
@@ -83,6 +88,13 @@ export default function LoginScreen() {
     back up the instant somebody dismisses it to type their password, which
     reads as the app refusing to let them in.
   */
+  const unlockAndEnter = async () => {
+    if (await bio.unlock()) {
+      await refreshUser();
+      router.replace(ROUTES.home as Href);
+    }
+  };
+
   const promptedRef = useRef(false);
   useEffect(() => {
     /*
@@ -93,12 +105,7 @@ export default function LoginScreen() {
     */
     if (!bio.canUnlock || promptedRef.current || signedOutByUser) return;
     promptedRef.current = true;
-    void (async () => {
-      if (await bio.unlock()) {
-        await refreshUser();
-        router.replace(ROUTES.home as Href);
-      }
-    })();
+    void unlockAndEnter();
   }, [bio.canUnlock, signedOutByUser]);
 
   const handleLogin = async () => {
@@ -123,8 +130,14 @@ export default function LoginScreen() {
         launch where somebody is most likely to be offered this. Reading it gave
         a silent "no" and the offer never appeared.
       */
-      const cap = await resolveCapability();
-      if (cap.kind === 'ready' && !bio.enrolled) {
+      const [cap, owner] = await Promise.all([resolveCapability(), getKeyOwner()]);
+      /*
+        ⚠️ Asked about THIS member, not "is anyone enrolled". `bio.enrolled` is
+        resolved signed-out, so it is true for whoever's key is on the phone —
+        which meant the member who tapped "Not Mike?" was never offered it.
+      */
+      const alreadyMine = !!owner && owner.email.toLowerCase() === email.toLowerCase().trim();
+      if (cap.kind === 'ready' && !alreadyMine) {
         setOfferBiometric(true);
       } else {
         router.replace(ROUTES.home as Href);
@@ -135,6 +148,27 @@ export default function LoginScreen() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  /*
+    Fingerprint first when this phone holds a key; the form is one tap away.
+    ⚠️ Nothing is drawn in the card until the capability has resolved — the
+    first frame otherwise shows the form and swaps it for the fingerprint a
+    moment later, which reads as the screen changing its mind.
+  */
+  const resolved = bio.capability !== null;
+  const showBiometric = bio.canUnlock && !usePassword;
+  const ownerName = bio.owner?.name?.trim().split(/\s+/)[0] || bio.owner?.email || '';
+  const bioNotice =
+    bio.failure === 'invalidated' ? t('biometrics.invalidatedBody', { method: bio.label })
+      : bio.failure === 'rejected' ? t('biometrics.rejectedBody')
+        : null;
+
+  const switchToPassword = (sameAccount: boolean) => {
+    setUsePassword(true);
+    setEmail(sameAccount ? bio.owner?.email ?? '' : '');
+    setPassword('');
+    setErrors({});
   };
 
   return (
@@ -192,10 +226,13 @@ export default function LoginScreen() {
             <AnimatedLogo size="large" variant="light" />
           </View>
 
-          <View style={styles.divider} />
-
-          <Text style={styles.welcomeText}>{t('auth.login.title')}</Text>
-          <Text style={styles.subtitleText}>{t('auth.login.subtitle')}</Text>
+          {resolved && !showBiometric && (
+            <>
+              <View style={styles.divider} />
+              <Text style={styles.welcomeText}>{t('auth.login.title')}</Text>
+              <Text style={styles.subtitleText}>{t('auth.login.subtitle')}</Text>
+            </>
+          )}
         </View>
       </LinearGradient>
 
@@ -206,10 +243,85 @@ export default function LoginScreen() {
       >
         <View style={[styles.formCard, { backgroundColor: colors.card }]}>
           <ScrollView
-            contentContainerStyle={[styles.scrollContent, r.isTablet && centeredContent(460)]}
+            contentContainerStyle={[
+              styles.scrollContent,
+              showBiometric && styles.scrollGrow,
+              r.isTablet && centeredContent(460),
+            ]}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
+            {!resolved ? null : showBiometric ? (
+              <View style={styles.bioScreen}>
+                <View style={styles.bioGreeting}>
+                  <Text style={[styles.bioWelcome, { color: colors.textPrimary }]} numberOfLines={1}>
+                    {t('biometrics.welcomeBack', { name: ownerName })}
+                  </Text>
+                  {/* ⚠️ A fingerprint cannot tell you whose account it opens.
+                      The screen has to, or somebody signs in as a colleague
+                      who used this phone before them and never notices. */}
+                  {!!bio.owner?.email && (
+                    <Text style={[styles.bioEmail, { color: colors.textMuted }]} numberOfLines={1}>
+                      {bio.owner.email}
+                    </Text>
+                  )}
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.bioCircle, { backgroundColor: colors.primaryLight, borderColor: COLORS.primary + '33' }]}
+                  onPress={() => void unlockAndEnter()}
+                  disabled={bio.busy}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('biometrics.unlockWith', { method: bio.label })}
+                >
+                  {bio.busy ? (
+                    <ActivityIndicator color={COLORS.primary} />
+                  ) : (
+                    <FingerprintIcon size={64} color={COLORS.primary} />
+                  )}
+                </TouchableOpacity>
+                <Text style={styles.bioTap}>{t('biometrics.tapToUnlock', { method: bio.label })}</Text>
+
+                <View style={styles.bioSpacer} />
+
+                <TouchableOpacity
+                  style={[styles.bioPasswordButton, { borderColor: colors.border, backgroundColor: colors.card }]}
+                  onPress={() => switchToPassword(true)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.bioPasswordText, { color: colors.textPrimary }]}>{t('biometrics.usePassword')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => switchToPassword(false)} style={styles.bioNotYou} hitSlop={8}>
+                  <Text style={[styles.bioNotYouText, { color: colors.textSecondary }]}>
+                    {t('biometrics.notYou', { name: ownerName })}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+            <>
+            {/* One tap back to the fingerprint, for the member who owns it. */}
+            {bio.canUnlock && (
+              <TouchableOpacity
+                style={[styles.bioBack, { backgroundColor: colors.primaryLight }]}
+                onPress={() => setUsePassword(false)}
+                activeOpacity={0.8}
+              >
+                <FingerprintIcon size={26} color={COLORS.primary} />
+                <Text style={styles.bioBackText} numberOfLines={1}>
+                  {t('biometrics.backTo', { method: bio.label, name: ownerName })}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Why the fingerprint went: said once, where the password goes. */}
+            {!!bioNotice && (
+              <View style={[styles.bioNotice, { backgroundColor: colors.warningLight }]}>
+                <Ionicons name="information-circle" size={18} color={colors.textSecondary} />
+                <Text style={[styles.bioNoticeText, { color: colors.textSecondary }]}>{bioNotice}</Text>
+              </View>
+            )}
+
             {/* Email Input */}
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.textPrimary }]}>{t('auth.login.emailLabel')}</Text>
@@ -313,37 +425,6 @@ export default function LoginScreen() {
               </LinearGradient>
             </TouchableOpacity>
 
-            {/* Unlock — only when this phone is actually bound. A button that
-                cannot work is worse than no button. */}
-            {bio.canUnlock && (
-              <TouchableOpacity
-                style={[styles.bioButton, { borderColor: colors.border }]}
-                onPress={async () => {
-                  if (await bio.unlock()) {
-                    await refreshUser();
-                    router.replace(ROUTES.home as Href);
-                  }
-                }}
-                disabled={bio.busy}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="finger-print" size={22} color={COLORS.primary} />
-                <View>
-                  <Text style={[styles.bioButtonText, { color: COLORS.primary }]}>
-                    {t('biometrics.unlockWith', { method: bio.label })}
-                  </Text>
-                  {/* ⚠️ A fingerprint cannot tell you whose account it opens.
-                      The screen has to, or somebody signs in as a colleague
-                      who used this phone before them and never notices. */}
-                  {!!bio.owner && (
-                    <Text style={[styles.bioOwner, { color: colors.textMuted }]} numberOfLines={1}>
-                      {bio.owner.name || bio.owner.email}
-                    </Text>
-                  )}
-                </View>
-              </TouchableOpacity>
-            )}
-
             {/* Security Badges */}
             <View style={styles.securityContainer}>
               <View style={styles.securityBadge}>
@@ -364,6 +445,8 @@ export default function LoginScreen() {
                 <Text style={styles.createAccountLink}>{t('auth.login.createOne')}</Text>
               </TouchableOpacity>
             </View>
+            </>
+            )}
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
@@ -596,18 +679,55 @@ const styles = StyleSheet.create({
   offerPrimaryText: { color: COLORS.white, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.semibold },
   offerGhost: { alignSelf: 'stretch', borderRadius: RADIUS.md, borderWidth: 1, paddingVertical: 14, alignItems: 'center', marginTop: SPACING.sm },
   offerGhostText: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.medium },
-  bioButton: {
-    flexDirection: 'row',
+  scrollGrow: { flexGrow: 1 },
+  bioScreen: { flexGrow: 1, alignItems: 'center' },
+  bioGreeting: { alignItems: 'center', marginTop: SPACING.sm, marginBottom: SPACING.xxl, maxWidth: '100%' },
+  bioWelcome: { fontSize: 22, fontWeight: FONT_WEIGHT.bold, letterSpacing: -0.2 },
+  bioEmail: { fontSize: FONT_SIZE.base, marginTop: 2 },
+  bioCircle: {
+    width: 124,
+    height: 124,
+    borderRadius: 62,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: SPACING.sm,
+  },
+  bioTap: {
     marginTop: SPACING.lg,
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.primary,
+    textAlign: 'center',
+  },
+  bioSpacer: { flexGrow: 1, minHeight: SPACING.xxl },
+  bioPasswordButton: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
     paddingVertical: 14,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.md + 2,
     borderWidth: 1,
   },
-  bioButtonText: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.semibold },
-  bioOwner: { fontSize: FONT_SIZE.sm, marginTop: 1 },
+  bioPasswordText: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold },
+  bioNotYou: { marginTop: SPACING.md, paddingVertical: SPACING.xs },
+  bioNotYouText: { fontSize: FONT_SIZE.base, textDecorationLine: 'underline', textAlign: 'center' },
+  bioBack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.sm + 2,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.md + 2,
+    marginBottom: SPACING.xl,
+  },
+  bioBackText: { flex: 1, fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold, color: COLORS.primary },
+  bioNotice: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+    marginBottom: SPACING.xl,
+  },
+  bioNoticeText: { flex: 1, fontSize: FONT_SIZE.sm, lineHeight: 18 },
   securityContainer: {
     flexDirection: 'row',
     justifyContent: 'center',

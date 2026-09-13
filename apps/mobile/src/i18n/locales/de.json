@@ -2327,6 +2327,10 @@
     "invalidatedBody": "Die Biometrie Ihres Telefons hat sich geändert, daher ist der gespeicherte Schlüssel ungültig. Melden Sie sich einmal mit Ihrem Passwort an, dann richten wir es neu ein.",
     "rejectedBody": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich mit Ihrem Passwort an.",
     "confirmEnable": "Bestätigen Sie, dass Sie es sind, um dies zu aktivieren",
-    "signsInAs": "Anmeldung als {{name}}"
+    "signsInAs": "Anmeldung als {{name}}",
+    "welcomeBack": "Willkommen zurück, {{name}}",
+    "tapToUnlock": "Tippen, um mit {{method}} zu entsperren",
+    "notYou": "Nicht {{name}}? Mit einem anderen Konto anmelden",
+    "backTo": "Zurück zu {{method}} für {{name}}"
   }
 }
