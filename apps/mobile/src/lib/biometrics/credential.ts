@@ -2,6 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
 import i18n from '../../i18n';
 import { API_URL, getRefreshToken, saveTokens } from '../api/client';
+import { DeviceKeyCredential } from './device-key-credential';
 
 /**
  * The thing biometrics protect — behind an interface, on purpose.
@@ -162,13 +163,15 @@ class SecureStoreCredential implements BiometricCredential {
 }
 
 /**
- * The one instance the app uses.
+ * The one instance the app uses — and the ONE line that chooses how the secret
+ * is held. Nothing else in the app knows which implementation is live.
  *
- * A module-level constant rather than a factory: there is exactly one credential
- * per install, and passing it around would be ceremony. Swapping to the device
- * key is a change to this line and nothing else.
+ * ⚠️ `SecureStoreCredential` above is kept as the documented fallback: it needs
+ * no server, so it is what a self-hosted deployment without the biometric
+ * endpoints would use. The device key is the default because it prompts once
+ * instead of twice and leaves nothing on the phone to steal.
  */
-export const biometricCredential: BiometricCredential = new SecureStoreCredential();
+export const biometricCredential: BiometricCredential = new DeviceKeyCredential();
 
 /**
  * The plain OS prompt, for RE-authorising an action inside a live session —
