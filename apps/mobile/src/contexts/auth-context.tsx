@@ -26,7 +26,13 @@ interface AuthContextType {
   isAuthenticated: boolean;
   needsOnboarding: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
+  /**
+   * `forgetBiometrics` only when the account itself is going away. A plain
+   * sign-out keeps the phone's fingerprint binding — see `clearStorage`.
+   */
+  logout: (opts?: { forgetBiometrics?: boolean }) => Promise<void>;
+  /** Set by an explicit sign-out; the login screen must not auto-prompt then. */
+  signedOutByUser: boolean;
   refreshUser: () => Promise<void>;
 }
 
@@ -35,6 +41,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [signedOutByUser, setSignedOutByUser] = useState(false);
 
   // Handle auth failure (called by api.ts when refresh fails)
   const handleAuthFailure = useCallback(async () => {
@@ -142,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData));
   };
 
-  const clearStorage = async () => {
+  const clearStorage = async (forgetBiometrics = false) => {
     // Stop any background location work FIRST so the OS foreground-service
     // notification and GPS subscription are torn down immediately — otherwise
     // a distance-based tracker can linger until the device next moves.
@@ -158,14 +165,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearTokens(),
       SecureStore.deleteItemAsync(USER_KEY),
       /*
-        ⚠️ The device key goes too.
+        ⚠️ The device key STAYS on an ordinary sign-out.
 
-        It is bound to the PHONE, not the account, so leaving it behind meant
-        the next member to sign in saw a switch already on — and unlocking
-        replayed the PREVIOUS member's key and signed them in as somebody else.
-        Signing out is exactly the moment that binding stops being true.
+        It used to go too, which made the feature unusable: the fingerprint
+        button only exists on the login screen, the login screen is reached by
+        signing out, and signing out destroyed the key — so a member enrolled,
+        signed out, and found the fingerprint gone and the switch off.
+
+        Deleting it was a fix for "member B unlocks as member A". That is now
+        handled where it belongs, without destroying anything: the key records
+        its OWNER, the login screen says whose account it opens, Settings only
+        shows "on" to that owner, and the server revokes A's key the moment B
+        enrols on the same phone. Password changes revoke it server-side.
+
+        Only the account going away forgets it here.
       */
-      biometricCredential.forget(),
+      forgetBiometrics ? biometricCredential.forget() : Promise.resolve(),
     ]);
     setUser(null);
   };
@@ -182,16 +197,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     await saveUser(response.user);
+    setSignedOutByUser(false);
     setUser(response.user);
   };
 
-  const logout = async () => {
+  const logout = async (opts?: { forgetBiometrics?: boolean }) => {
     try {
       await authApi.logout();
     } catch (error) {
       console.error('Error during logout:', error);
     } finally {
-      await clearStorage();
+      setSignedOutByUser(true);
+      await clearStorage(opts?.forgetBiometrics);
     }
   };
 
@@ -204,6 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         needsOnboarding: !!user && !user.onboardingCompleted,
         login,
         logout,
+        signedOutByUser,
         refreshUser,
       }}
     >

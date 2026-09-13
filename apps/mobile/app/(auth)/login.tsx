@@ -37,7 +37,7 @@ import {
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, refreshUser } = useAuth();
+  const { login, refreshUser, signedOutByUser } = useAuth();
   const bio = useBiometricUnlock();
   const [offerBiometric, setOfferBiometric] = useState(false);
   const insets = useSafeAreaInsets();
@@ -85,7 +85,13 @@ export default function LoginScreen() {
   */
   const promptedRef = useRef(false);
   useEffect(() => {
-    if (!bio.canUnlock || promptedRef.current) return;
+    /*
+      ⚠️ Not straight after an explicit sign-out. Somebody who just tapped
+      "Sign out" and is met by a fingerprint sheet is one touch from being
+      signed straight back in. The button below stays; only the auto-prompt
+      waits for a real launch.
+    */
+    if (!bio.canUnlock || promptedRef.current || signedOutByUser) return;
     promptedRef.current = true;
     void (async () => {
       if (await bio.unlock()) {
@@ -93,7 +99,7 @@ export default function LoginScreen() {
         router.replace(ROUTES.home as Href);
       }
     })();
-  }, [bio.canUnlock]);
+  }, [bio.canUnlock, signedOutByUser]);
 
   const handleLogin = async () => {
     if (!validate()) return;

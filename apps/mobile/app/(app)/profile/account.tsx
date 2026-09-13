@@ -95,7 +95,8 @@ export default function AccountScreen() {
             try {
               setIsDeleting(true);
               await accountApi.deleteAccount(deletePassword.trim());
-              await logout();
+              // The account is gone, so a fingerprint must not offer to open it.
+              await logout({ forgetBiometrics: true });
             } catch (err) {
               toast.error(
                 t('common.error'),

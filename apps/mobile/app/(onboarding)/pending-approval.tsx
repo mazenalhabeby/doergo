@@ -159,7 +159,7 @@ export default function PendingApprovalScreen() {
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity style={styles.logoutRow} onPress={logout}>
+        <TouchableOpacity style={styles.logoutRow} onPress={() => void logout()}>
           <Ionicons name="log-out-outline" size={18} color={COLORS.slate500} />
           <Text style={styles.logoutText}>{t('common.logOut')}</Text>
         </TouchableOpacity>

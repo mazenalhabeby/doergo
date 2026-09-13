@@ -236,7 +236,7 @@ export default function ChoosePathScreen() {
 
       {/* Footer */}
       <Animated.View style={[styles.footer, { paddingBottom: insets.bottom + SPACING.sm, opacity: fadeAnim, borderTopColor: colors.border, backgroundColor: colors.card }]}>
-        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+        <TouchableOpacity style={styles.logoutButton} onPress={() => void logout()}>
           <Ionicons name="log-out-outline" size={16} color={colors.textMuted} />
           <Text style={[styles.logoutText, { color: colors.textMuted }]}>{t('onboarding.choosePath.signOut')}</Text>
         </TouchableOpacity>
