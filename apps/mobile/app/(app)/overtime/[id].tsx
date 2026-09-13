@@ -22,7 +22,7 @@ import {
   FONT_SIZE,
   FONT_WEIGHT,
 } from '../../../src/lib/constants';
-import { ScreenContainer } from '../../../src/components';
+import { ScreenContainer, ScreenHeader } from '../../../src/components';
 
 export default function OvertimeRequestScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -122,13 +122,7 @@ export default function OvertimeRequestScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerBack}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('overtime.title')}</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <ScreenHeader title={t('overtime.title')} />
 
       <ScreenContainer width="content">
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -275,8 +269,6 @@ const styles = StyleSheet.create({
   backBtn: { marginTop: SPACING.lg, paddingHorizontal: SPACING.xl, paddingVertical: SPACING.md, backgroundColor: COLORS.primary, borderRadius: RADIUS.md },
   backBtnText: { color: '#fff', fontWeight: FONT_WEIGHT.semibold },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md, paddingVertical: SPACING.md, borderBottomWidth: 1 },
-  headerBack: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: FONT_SIZE.xxl, fontWeight: FONT_WEIGHT.bold },
   content: { padding: SPACING.lg, gap: SPACING.lg },
   locationCard: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, padding: SPACING.lg, borderRadius: RADIUS.lg, borderWidth: 1 },
   locationInfo: { flex: 1 },

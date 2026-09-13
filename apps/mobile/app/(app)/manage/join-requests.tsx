@@ -5,17 +5,19 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { joinRequestsApi, type JoinRequest } from '../../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
-import { Skeleton, ConfirmSheet, ScreenContainer } from '../../../src/components';
+import { Skeleton, ConfirmSheet, ScreenContainer, ScreenHeader } from '../../../src/components';
 
 export default function JoinRequestsScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   // Dates follow the active language rather than a hardcoded en-US locale.
   const { formatDate } = useTimeFormat();
   const toast = useToast();
@@ -138,7 +140,8 @@ export default function JoinRequestsScreen() {
   }
 
   return (
-    <View style={[s.container, { backgroundColor: colors.surface }]}>
+    <View style={[s.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}>
+      <ScreenHeader title={t('manage.joinRequests.label')} />
       <ScreenContainer width="content">
         <FlatList
           data={requests}

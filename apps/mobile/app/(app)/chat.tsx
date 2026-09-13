@@ -279,9 +279,13 @@ export default function ChatScreen() {
 
   return (
     <ScreenContainer>
+      {/* Its own bar, deliberately: the centre is a composite (avatar, name,
+          External tag), which ScreenHeader's single title cannot carry. The
+          chevron matches the shared one so the glyph does not change size as
+          you move between screens. */}
       <View style={[styles.header, { borderColor: colors.border, backgroundColor: colors.surface, paddingTop: insets.top + SPACING.xs }]}>
         <TouchableOpacity onPress={goBack} style={styles.iconBtn}>
-          <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         {view === 'thread' && active ? (
           <View style={styles.headerPerson}>

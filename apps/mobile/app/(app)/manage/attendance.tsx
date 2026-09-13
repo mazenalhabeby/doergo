@@ -5,6 +5,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { ScreenHeader } from '../../../src/components';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
@@ -72,6 +74,7 @@ interface Feed<T> {
 export default function AttendanceReviewScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const toast = useToast();
   const { user } = useAuth();
   const { formatTime, formatDateRelative } = useTimeFormat();
@@ -489,7 +492,8 @@ export default function AttendanceReviewScreen() {
       : t(`attendanceReview.segments.${seg}`);
 
   return (
-    <View style={[s.container, { backgroundColor: colors.surface }]}>
+    <View style={[s.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}>
+      <ScreenHeader title={t('manage.titles.attendance')} />
       <View style={s.filterRow}>
         {SEGMENTS.map((seg) => (
           <FilterChip key={seg} label={segmentLabel(seg)} active={segment === seg} onPress={() => show(seg)} />

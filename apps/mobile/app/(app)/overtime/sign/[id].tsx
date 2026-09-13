@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../src/contexts/theme-context';
 import { useToast } from '../../../../src/contexts/toast-context';
 import { overtimeApi, membersApi, OrgMember } from '../../../../src/lib/api';
-import { SignatureCapture, ScreenContainer } from '../../../../src/components';
+import { SignatureCapture, ScreenContainer, ScreenHeader } from '../../../../src/components';
 import {
   COLORS,
   SPACING,
@@ -98,13 +98,7 @@ export default function OvertimeSignatureScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerBack}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('overtime.leaderApproval')}</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <ScreenHeader title={t('overtime.leaderApproval')} />
 
       <ScreenContainer width="content">
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -221,8 +215,6 @@ export default function OvertimeSignatureScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md, paddingVertical: SPACING.md, borderBottomWidth: 1 },
-  headerBack: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: FONT_SIZE.xxl, fontWeight: FONT_WEIGHT.bold },
   content: { padding: SPACING.lg, gap: SPACING.lg, paddingBottom: 40 },
   infoCard: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, padding: SPACING.md, borderRadius: RADIUS.md, borderWidth: 1 },
   infoText: { flex: 1, fontSize: FONT_SIZE.sm, color: '#1E40AF' },

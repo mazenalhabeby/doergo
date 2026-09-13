@@ -9,6 +9,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
 
+import { ScreenHeader } from '../../src/components';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { useAuth } from '../../src/contexts/auth-context';
@@ -209,7 +210,7 @@ export default function AssetContractScreen() {
     */
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <Header colors={colors} title={t('contract.title', 'From a contract')} />
+        <ScreenHeader title={t('contract.title', 'From a contract')} />
         <View style={s.centre}>
           <Ionicons name="lock-closed-outline" size={40} color={colors.textMuted} />
           <Text style={[s.hint, { color: colors.textMuted }]}>
@@ -223,7 +224,7 @@ export default function AssetContractScreen() {
   if (stage === 'camera' && !cam.granted) {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <Header colors={colors} title={t('contract.title', 'From a contract')} />
+        <ScreenHeader title={t('contract.title', 'From a contract')} />
         <MediaAccessScreen
           purpose="contract"
           access={cam}
@@ -237,7 +238,7 @@ export default function AssetContractScreen() {
   if (stage === 'fields') {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <Header colors={colors} title={t('contract.check', 'Check what it read')} onBack={() => setStage('camera')} />
+        <ScreenHeader title={t('contract.check', 'Check what it read')} onBack={() => setStage('camera')} />
         <ScrollView contentContainerStyle={{ padding: SPACING.lg, paddingBottom: SPACING.xxxl + insets.bottom }}>
           <Text style={[s.label, { color: colors.textMuted }]}>{t('contract.kind', 'What kind of thing')}</Text>
           <Chips
@@ -316,7 +317,7 @@ export default function AssetContractScreen() {
     const holderName = members.find((m) => m.id === holderUserId)?.name ?? '';
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <Header colors={colors} title={t('custody.whatHappens', 'What happens')} onBack={() => setStage('fields')} />
+        <ScreenHeader title={t('custody.whatHappens', 'What happens')} onBack={() => setStage('fields')} />
         <ScrollView contentContainerStyle={{ padding: SPACING.lg, paddingBottom: SPACING.xxxl + insets.bottom }}>
           {preview.steps.map((step, i) => (
             <View key={i} style={[s.step, { borderColor: colors.border, backgroundColor: colors.surface }]}>
@@ -461,25 +462,11 @@ function ReadField({
   );
 }
 
-function Header({ colors, title, onBack }: { colors: any; title: string; onBack?: () => void }) {
-  return (
-    <View style={[s.header, { borderBottomColor: colors.border }]}>
-      <TouchableOpacity onPress={onBack ?? (() => router.back())} style={s.hBtn}>
-        <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-      </TouchableOpacity>
-      <Text style={[s.hTitle, { color: colors.textPrimary }]}>{title}</Text>
-      <View style={s.hBtn} />
-    </View>
-  );
-}
-
 const s = StyleSheet.create({
   safe: { flex: 1 },
   black: { flex: 1, backgroundColor: '#000' },
   grow: { flex: 1, minWidth: 0 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: SPACING.sm, borderBottomWidth: StyleSheet.hairlineWidth },
-  hBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  hTitle: { flex: 1, textAlign: 'center', fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold as any },
   centre: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SPACING.md, padding: SPACING.xl },
   hint: { fontSize: FONT_SIZE.sm, textAlign: 'center' },
 

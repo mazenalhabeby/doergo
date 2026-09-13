@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
@@ -15,7 +16,7 @@ import { FilterChip } from '../../../src/components/filter-chip';
 import {
   COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS,
 } from '../../../src/lib/constants';
-import { Skeleton, ConfirmSheet, ScreenContainer } from '../../../src/components';
+import { Skeleton, ConfirmSheet, ScreenContainer, ScreenHeader } from '../../../src/components';
 import { getTimeOffStatusStyle } from '../../../src/lib/styles';
 
 type StatusFilter = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL';
@@ -25,6 +26,7 @@ const FILTER_KEYS: StatusFilter[] = ['PENDING', 'APPROVED', 'REJECTED', 'ALL'];
 export default function TimeOffRequestsScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   // Dates follow the active language rather than a hardcoded en-US locale.
   const { locale } = useTimeFormat();
   const toast = useToast();
@@ -175,7 +177,8 @@ export default function TimeOffRequestsScreen() {
   }
 
   return (
-    <View style={[s.container, { backgroundColor: colors.surface }]}>
+    <View style={[s.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}>
+      <ScreenHeader title={t('manage.titles.timeOffRequests')} />
       <View style={s.filterRow}>
         {FILTER_KEYS.map(f => (
           <FilterChip key={f} label={t(`manage.timeOffRequestsScreen.filters.${f.toLowerCase()}`)} active={filter === f} onPress={() => setFilter(f)} />

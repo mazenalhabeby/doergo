@@ -17,7 +17,7 @@ import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { documentsApi, type DocumentChain } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
-import { SignatureCapture, ScreenContainer } from '../../src/components';
+import { SignatureCapture, ScreenContainer, ScreenHeader } from '../../src/components';
 
 /*
   Signing, on a phone.
@@ -148,19 +148,7 @@ export default function SignDocumentScreen() {
 
   return (
     <View style={[s.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      <View style={[s.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel={t('common.back')}
-        >
-          <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: colors.textPrimary }]} numberOfLines={1}>
-          {params.title || t('documents.sign.title')}
-        </Text>
-        <View style={s.headerSpacer} />
-      </View>
+      <ScreenHeader title={params.title || t('documents.sign.title')} />
 
       <ScreenContainer>
         <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + SPACING.xxl }}>
@@ -418,8 +406,6 @@ const s = StyleSheet.create({
     paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold },
-  headerSpacer: { width: 26 },
 
   progress: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg, gap: SPACING.xs },
   progressText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium },

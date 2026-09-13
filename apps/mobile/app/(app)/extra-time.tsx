@@ -32,7 +32,7 @@ import {
   FONT_WEIGHT,
   SHADOWS,
 } from '../../src/lib/constants';
-import { Skeleton, ConfirmSheet, ScreenContainer } from '../../src/components';
+import { Skeleton, ConfirmSheet, ScreenContainer, ScreenHeader } from '../../src/components';
 
 const QUICK_MINUTES = [15, 30, 60, 90];
 
@@ -180,13 +180,7 @@ export default function ExtraTimeScreen() {
   return (
     <View style={[s.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={[s.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={s.headerBack}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: colors.textPrimary }]}>{t('shiftReminder.leaderTitle')}</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <ScreenHeader title={t('shiftReminder.leaderTitle')} />
 
       {isLoading ? (
         <Skeleton.ListScreen />
@@ -403,8 +397,6 @@ const s = StyleSheet.create({
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
   },
-  headerBack: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: FONT_SIZE.xxl, fontWeight: FONT_WEIGHT.bold },
   subtitle: { fontSize: FONT_SIZE.sm, paddingHorizontal: SPACING.xs, marginBottom: SPACING.md },
   list: { padding: SPACING.lg, paddingBottom: SPACING.xxl, flexGrow: 1 },
   card: { borderRadius: RADIUS.lg, padding: SPACING.lg, marginBottom: SPACING.md, ...SHADOWS.sm },

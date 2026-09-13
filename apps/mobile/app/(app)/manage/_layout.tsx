@@ -1,26 +1,18 @@
 import { Stack } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../../src/contexts/theme-context';
 
+/**
+ * No native header on any of these.
+ *
+ * ⚠️ The six management screens used to take their header from this Stack,
+ * which made them the only screens in the app whose bar was drawn by the
+ * navigator rather than by `ScreenHeader` — a different back glyph, a
+ * different title position (the native default is left-aligned on Android),
+ * and no way to keep the two in step as either changes. They render the same
+ * bar as everywhere else now.
+ *
+ * The Stack itself stays: it is what gives these screens their own push
+ * history, so `members → member detail` pops correctly.
+ */
 export default function ManageLayout() {
-  const { colors } = useTheme();
-  const { t } = useTranslation();
-
-  return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: colors.header },
-        headerTintColor: colors.textPrimary,
-        headerTitleStyle: { fontWeight: '600' },
-        headerShadowVisible: false,
-      }}
-    >
-      <Stack.Screen name="attendance" options={{ title: t('manage.titles.attendance') }} />
-      <Stack.Screen name="time-off-requests" options={{ title: t('manage.titles.timeOffRequests') }} />
-      <Stack.Screen name="members" options={{ title: t('manage.members.label') }} />
-      <Stack.Screen name="join-requests" options={{ title: t('manage.joinRequests.label') }} />
-      <Stack.Screen name="invitations" options={{ title: t('manage.invitations.label') }} />
-      <Stack.Screen name="schedules" options={{ title: t('manage.schedules.label') }} />
-    </Stack>
-  );
+  return <Stack screenOptions={{ headerShown: false }} />;
 }

@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
@@ -12,7 +13,7 @@ import { useToast } from '../../../src/contexts/toast-context';
 import { membersApi, type OrgMember } from '../../../src/lib/api';
 import { FilterChip } from '../../../src/components/filter-chip';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
-import { Skeleton, ConfirmSheet, ScreenContainer } from '../../../src/components';
+import { Skeleton, ConfirmSheet, ScreenContainer, ScreenHeader } from '../../../src/components';
 
 const ROLE_COLORS: Record<string, string> = {
   ADMIN: COLORS.primary,
@@ -25,6 +26,7 @@ export default function MembersScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const toast = useToast();
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -128,7 +130,8 @@ export default function MembersScreen() {
   }
 
   return (
-    <View style={[s.container, { backgroundColor: colors.surface }]}>
+    <View style={[s.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}>
+      <ScreenHeader title={t('manage.members.label')} />
       <View style={s.filterRow}>
         {['ALL', 'ADMIN', 'DISPATCHER', 'TECHNICIAN'].map(r => (
           <FilterChip key={r} label={r === 'ALL' ? t('manage.membersScreen.filterAll') : getRoleLabel(r)} active={roleFilter === r} onPress={() => setRoleFilter(r)} />

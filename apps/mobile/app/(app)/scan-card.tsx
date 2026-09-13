@@ -8,6 +8,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { ScreenHeader } from '../../src/components';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { scanBusinessCard, type ParsedCard } from '../../src/lib/card-scan';
@@ -194,7 +195,7 @@ export default function ScanCardScreen() {
   if (!canAdd) {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.surface }]} edges={['top']}>
-        <Header colors={colors} title={t('scan.title', 'Scan a card')} />
+        <ScreenHeader title={t('scan.title', 'Scan a card')} />
         <View style={s.centre}>
           <Ionicons name="lock-closed-outline" size={40} color={colors.textMuted} />
           <Text style={[s.hint, { color: colors.textMuted }]}>
@@ -209,7 +210,7 @@ export default function ScanCardScreen() {
   if (!cam.granted) {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.surface }]} edges={['top']}>
-        <Header colors={colors} title={t('scan.title', 'Scan a card')} />
+        <ScreenHeader title={t('scan.title', 'Scan a card')} />
         {/*
           ⚠️ This used to pass `canAskAgain={permission?.canAskAgain !== false}`,
           which reads TRUE while the first check is still in flight — so a phone
@@ -273,7 +274,7 @@ export default function ScanCardScreen() {
 
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.surface }]} edges={['top']}>
-        <Header colors={colors} title={t('scan.review', 'Check before saving')} onBack={() => setCard(null)} />
+        <ScreenHeader title={t('scan.review', 'Check before saving')} onBack={() => setCard(null)} />
         <ScrollView
           contentContainerStyle={{
             padding: SPACING.lg,
@@ -340,24 +341,10 @@ export default function ScanCardScreen() {
   );
 }
 
-function Header({ colors, title, onBack }: { colors: any; title: string; onBack?: () => void }) {
-  return (
-    <View style={[s.header, { borderBottomColor: colors.border }]}>
-      <TouchableOpacity onPress={onBack ?? (() => router.back())} style={s.hBtn}>
-        <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-      </TouchableOpacity>
-      <Text style={[s.hTitle, { color: colors.textPrimary }]}>{title}</Text>
-      <View style={s.hBtn} />
-    </View>
-  );
-}
-
 const s = StyleSheet.create({
   safe: { flex: 1 },
   black: { flex: 1, backgroundColor: '#000' },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: SPACING.sm, borderBottomWidth: StyleSheet.hairlineWidth },
-  hBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  hTitle: { flex: 1, textAlign: 'center', fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold as any },
   centre: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SPACING.md, padding: SPACING.xl },
   hint: { fontSize: FONT_SIZE.sm, textAlign: 'center' },
 

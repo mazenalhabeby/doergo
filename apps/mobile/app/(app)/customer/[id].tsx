@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { ScreenHeader } from '../../../src/components';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { customersApi, type MobileCustomer, type MobileCustomerActivity } from '../../../src/lib/api';
@@ -67,11 +68,7 @@ export default function CustomerRecordScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.surface }]} edges={['top']}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.hBtn}><Ionicons name="chevron-back" size={24} color={colors.textPrimary} /></TouchableOpacity>
-        <Text style={[styles.hTitle, { color: colors.textPrimary }]} numberOfLines={1}>{customer.name}</Text>
-        <View style={styles.hBtn} />
-      </View>
+      <ScreenHeader title={customer.name} />
 
       <ScrollView contentContainerStyle={{ padding: SPACING.md, paddingBottom: 40 }} refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={COLORS.primary} />}>
         {/* Identity */}
@@ -158,8 +155,6 @@ export default function CustomerRecordScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: SPACING.sm, borderBottomWidth: StyleSheet.hairlineWidth },
-  hBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  hTitle: { flex: 1, textAlign: 'center', fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold as any },
   idRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatar: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
   avatarTxt: { color: '#fff', fontSize: FONT_SIZE.md, fontWeight: '700' },

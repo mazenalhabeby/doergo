@@ -378,7 +378,7 @@ export default function RoutePlannerScreen() {
           across the top would crop the very thing it sits on. */}
       <View style={[styles.floatTop, { top: insets.top + 8 }]} pointerEvents="box-none">
         <PressableScale onPress={() => router.back()} style={[styles.fab, { backgroundColor: colors.card, borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel={t('common.back', 'Back')}>
-          <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </PressableScale>
         <View style={styles.floatTopRight}>
           <PressableScale onPress={() => { locateMe(); fitToRoute(true); }} style={[styles.fab, { backgroundColor: colors.card, borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel={t('route.useMyLocation', 'Use my location')}>

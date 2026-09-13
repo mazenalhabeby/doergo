@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
 
+import { ScreenHeader } from '../../src/components';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
@@ -288,7 +289,7 @@ export default function AssetExpenseScreen() {
   if (loading) {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <Header colors={colors} title={t('expenses.title', 'Add a receipt')} />
+        <ScreenHeader title={t('expenses.title', 'Add a receipt')} />
         <View style={s.centre}><ActivityIndicator color={COLORS.primary} /></View>
       </SafeAreaView>
     );
@@ -301,7 +302,7 @@ export default function AssetExpenseScreen() {
     */
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <Header colors={colors} title={t('expenses.title', 'Add a receipt')} />
+        <ScreenHeader title={t('expenses.title', 'Add a receipt')} />
         <View style={s.centre}>
           <Ionicons name="lock-closed-outline" size={40} color={colors.textMuted} />
           <Text style={[s.hint, { color: colors.textMuted }]}>
@@ -316,7 +317,7 @@ export default function AssetExpenseScreen() {
   if (stage === 'camera' && !cam.granted) {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <Header colors={colors} title={t('expenses.title', 'Add a receipt')} />
+        <ScreenHeader title={t('expenses.title', 'Add a receipt')} />
         <MediaAccessScreen
           purpose="receipt"
           access={cam}
@@ -330,9 +331,7 @@ export default function AssetExpenseScreen() {
   if (stage === 'review') {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <Header
-          colors={colors}
-          title={t('expenses.review', 'Check before sending')}
+        <ScreenHeader title={t('expenses.review', 'Check before sending')}
           onBack={() => { discardShot(); setStage('camera'); }}
         />
         <ScrollView contentContainerStyle={{ padding: SPACING.lg, paddingBottom: SPACING.xxxl + insets.bottom }}>
@@ -501,24 +500,10 @@ function Field({
   );
 }
 
-function Header({ colors, title, onBack }: { colors: any; title: string; onBack?: () => void }) {
-  return (
-    <View style={[s.header, { borderBottomColor: colors.border }]}>
-      <TouchableOpacity onPress={onBack ?? (() => router.back())} style={s.hBtn}>
-        <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-      </TouchableOpacity>
-      <Text style={[s.hTitle, { color: colors.textPrimary }]}>{title}</Text>
-      <View style={s.hBtn} />
-    </View>
-  );
-}
-
 const s = StyleSheet.create({
   safe: { flex: 1 },
   black: { flex: 1, backgroundColor: '#000' },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: SPACING.sm, borderBottomWidth: StyleSheet.hairlineWidth },
-  hBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  hTitle: { flex: 1, textAlign: 'center', fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold as any },
   centre: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SPACING.md, padding: SPACING.xl },
   hint: { fontSize: FONT_SIZE.sm, textAlign: 'center' },
   asset: { fontSize: FONT_SIZE.sm, marginBottom: SPACING.md },

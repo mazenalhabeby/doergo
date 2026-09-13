@@ -5,13 +5,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { techniciansApi, scheduleApi } from '../../../src/lib/api';
 import type { TechnicianListItem, ScheduleEntry } from '../../../src/lib/api/types';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
-import { Skeleton, ScreenContainer } from '../../../src/components';
+import { Skeleton, ScreenContainer, ScreenHeader } from '../../../src/components';
 import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 
 // DAY_NAMES will be resolved via t() inside the component
@@ -24,6 +25,7 @@ interface TechSchedule {
 export default function SchedulesScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const { formatSchedule } = useTimeFormat();
   const toast = useToast();
   const dayNames = t('dayNames.short', { returnObjects: true }) as string[];
@@ -120,7 +122,8 @@ export default function SchedulesScreen() {
   }
 
   return (
-    <View style={[s.container, { backgroundColor: colors.surface }]}>
+    <View style={[s.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}>
+      <ScreenHeader title={t('manage.schedules.label')} />
       <ScreenContainer width="content">
         <FlatList
           data={data}

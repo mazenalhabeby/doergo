@@ -21,7 +21,7 @@ import { useToast } from '../../src/contexts/toast-context';
 import { documentsApi, type MemberDocument, type DocumentType } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import {
-  Skeleton, ScreenContainer, SupplyDocumentSheet, PressableScale, DocumentFilterBar,
+  Skeleton, ScreenContainer, ScreenHeader, SupplyDocumentSheet, PressableScale, DocumentFilterBar,
 } from '../../src/components';
 import type { DocumentFilters } from '../../src/components/document-filter-bar';
 import { waitingOnMember } from '@hbcfield/shared/client';
@@ -416,27 +416,25 @@ export default function DocumentsScreen() {
 
   return (
     <View style={[s.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      <View style={[s.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel={t('common.back')}>
-          <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: colors.textPrimary }]}>{t('documents.my.title')}</Text>
-        {/* Only when the organization actually asks its members for something.
-            An upload button on an organization that issues everything is an
-            invitation to be refused. */}
-        {types.some((ty) => ty.direction === 'SUPPLIED' && ty.isActive) ? (
-          <TouchableOpacity
-            onPress={() => setSupplying(true)}
-            accessibilityRole="button"
-            accessibilityLabel={t('documents.supply.action')}
-            hitSlop={10}
-          >
-            <Ionicons name="add-circle-outline" size={26} color={COLORS.primary} />
-          </TouchableOpacity>
-        ) : (
-          <View style={s.headerSpacer} />
-        )}
-      </View>
+      <ScreenHeader
+        title={t('documents.my.title')}
+        /* Only when the organization actually asks its members for something.
+           An upload button on an organization that issues everything is an
+           invitation to be refused. */
+        right={
+          types.some((ty) => ty.direction === 'SUPPLIED' && ty.isActive) ? (
+            <TouchableOpacity
+              onPress={() => setSupplying(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t('documents.supply.action')}
+              hitSlop={10}
+            >
+              <Ionicons name="add-circle-outline" size={26} color={COLORS.primary} />
+            </TouchableOpacity>
+          ) : undefined
+        }
+      />
+
 
       <SupplyDocumentSheet
         types={types}
@@ -618,8 +616,6 @@ const s = StyleSheet.create({
     paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold },
-  headerSpacer: { width: 26 },
 
   // The one thing on this screen asking something of the reader.
   needed: {

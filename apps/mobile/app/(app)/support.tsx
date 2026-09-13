@@ -12,12 +12,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SocketEvents, type SupportTicket } from '@hbcfield/shared/client';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useSocketContext } from '../../src/contexts/socket-context';
-import { ScreenContainer } from '../../src/components';
+import { ScreenContainer, ScreenHeader, goBack as leaveScreen } from '../../src/components';
 import { supportApi, type SupportConfig } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 
@@ -53,7 +53,9 @@ export default function SupportScreen() {
     // Settle independently — a hiccup on one call shouldn't blank the whole screen.
     const [cfgR, listR] = await Promise.allSettled([supportApi.getConfig(), supportApi.list()]);
     if (cfgR.status === 'fulfilled') setConfig(cfgR.value);
-    if (listR.status === 'fulfilled') setTickets(listR.value.data);
+    // `list` resolves to the array itself — fetchWithAuth already unwrapped
+    // the envelope. Guarded anyway: a screen must not crash on a bad payload.
+    if (listR.status === 'fulfilled') setTickets(listR.value ?? []);
     // Only surface an error if BOTH failed (a real connectivity problem).
     setError(cfgR.status === 'rejected' && listR.status === 'rejected'
       ? t('support.loadError', 'Could not load support. Check your connection.')
@@ -135,25 +137,47 @@ export default function SupportScreen() {
     }
   };
 
+  /*
+    Out of the screen, or back a step inside it.
+
+    ⚠️ The chevron used to exist ONLY on the `new` and `thread` views, where it
+    meant "back to the list". On the list itself it was an empty 36px spacer —
+    so arriving here from the home screen left no way out at all: this is a
+    pushed Stack screen (`headerShown: false`), so there is no navigator header
+    and no tab bar either. The iOS swipe-back gesture was the only exit, and
+    nothing on screen said so.
+
+    `canGoBack()` because Support is also reachable from a push notification
+    (see (app)/_layout.tsx), which can open it with no history behind it — the
+    same guard chat.tsx already uses.
+  */
+  const goBack = () => {
+    if (view !== 'list') { setView('list'); return; }
+    leaveScreen();
+  };
+
   const headerTitle =
     view === 'new' ? t('support.newTicket', 'New request') : view === 'thread' ? active?.subject || t('support.title', 'Support') : t('support.title', 'Support');
 
   return (
+    /*
+      ⚠️ The screen owns its own safe area. `headerShown: false` for this route
+      (see (app)/_layout.tsx), so the header below IS the header — and nothing
+      was clearing the status bar, which put the title and the back chevron
+      under the notch on every one of the three views.
+
+      The root also has to PAINT the background: ScreenContainer only caps the
+      width, so an unpainted strip behind the status bar shows whatever the
+      navigator is drawing underneath. Same shape as documents.tsx.
+    */
+    <View style={[styles.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
     <ScreenContainer>
-      {/* Header */}
-      <View style={[styles.header, { borderColor: colors.border }]}>
-        {view !== 'list' ? (
-          <TouchableOpacity onPress={() => setView('list')} style={styles.back}>
-            <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.back} />
-        )}
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]} numberOfLines={1}>
-          {headerTitle}
-        </Text>
-        <View style={styles.back} />
-      </View>
+      <ScreenHeader
+        title={headerTitle}
+        /* Inside the screen this steps back a view; on the list it leaves. */
+        onBack={goBack}
+      />
+
 
       {error ? (
         <View style={styles.errorBar}>
@@ -178,7 +202,7 @@ export default function SupportScreen() {
               </Text>
             )}
           </View>
-          <ScrollView style={{ flex: 1 }}>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: SPACING.sm }}>
             {tickets.length === 0 ? (
               <Text style={[styles.empty, { color: colors.textSecondary }]}>{t('support.empty', 'No tickets yet.')}</Text>
             ) : (
@@ -225,7 +249,11 @@ export default function SupportScreen() {
         </KeyboardAvoidingView>
       ) : (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-          <ScrollView ref={scrollRef} style={{ flex: 1, padding: SPACING.md }}>
+          <ScrollView
+            ref={scrollRef}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ padding: SPACING.md, paddingBottom: SPACING.sm }}
+          >
             {active?.messages?.map((m) => {
               const mine = m.authorType === 'CUSTOMER';
               return (
@@ -253,13 +281,12 @@ export default function SupportScreen() {
         </KeyboardAvoidingView>
       )}
     </ScreenContainer>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderBottomWidth: 1 },
-  back: { width: 36, height: 36, justifyContent: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold },
+  screen: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   slaRow: { paddingHorizontal: SPACING.md, paddingTop: SPACING.sm },
   errorBar: { backgroundColor: '#FEE2E2', paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm },

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Activity
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SheetPanel } from '../../src/components/sheet-panel';
 import { Ionicons } from '@expo/vector-icons';
+import { ScreenHeader } from '../../src/components';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { customersApi, locationsApi, type MobileCustomer } from '../../src/lib/api';
@@ -125,11 +126,7 @@ export default function CustomersScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.surface }]} edges={['top']}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.hBtn}><Ionicons name="chevron-back" size={24} color={colors.textPrimary} /></TouchableOpacity>
-        <Text style={[styles.hTitle, { color: colors.textPrimary }]}>{t('customers.title', 'Customers')}</Text>
-        <View style={styles.hBtn} />
-      </View>
+      <ScreenHeader title={t('customers.title', 'Customers')} />
 
       <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Ionicons name="search" size={18} color={colors.textMuted} />
@@ -404,7 +401,6 @@ const FAB_CLEARANCE = FAB_SIZE + SPACING.xl;
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: SPACING.sm, borderBottomWidth: StyleSheet.hairlineWidth },
-  hBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   // `searchBar` deliberately ends with marginBottom: 0, so the separation
   // between the field and the filters belongs here.
   filterBar: { flexGrow: 0, flexShrink: 0, marginTop: SPACING.md },
@@ -415,7 +411,6 @@ const styles = StyleSheet.create({
     // A chip is a target, not a label.
     minHeight: 34, justifyContent: 'center',
   },
-  hTitle: { flex: 1, textAlign: 'center', fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold as any },
   searchBar: { flexDirection: 'row', alignItems: 'center', gap: 8, margin: SPACING.md, marginBottom: 0, paddingHorizontal: 12, borderWidth: 1, borderRadius: RADIUS.md, height: 42 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.sm, marginBottom: 8 },
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },

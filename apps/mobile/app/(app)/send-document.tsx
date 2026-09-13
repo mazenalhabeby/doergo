@@ -9,6 +9,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
 
+import { ScreenHeader } from '../../src/components';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
@@ -153,7 +154,7 @@ export default function SendDocumentScreen() {
   if (stage === 'camera' && !cam.granted) {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <Header colors={colors} title={t('sendDoc.title', 'Send a document')} />
+        <ScreenHeader title={t('sendDoc.title', 'Send a document')} />
         <MediaAccessScreen
           purpose="document"
           access={cam}
@@ -168,9 +169,7 @@ export default function SendDocumentScreen() {
     const recognised = verdict?.kind === 'asset-contract';
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <Header
-          colors={colors}
-          title={t('sendDoc.check', 'Check before sending')}
+        <ScreenHeader title={t('sendDoc.check', 'Check before sending')}
           onBack={() => { discardShot(); setStage('camera'); }}
         />
         <ScrollView contentContainerStyle={{ padding: SPACING.lg, paddingBottom: SPACING.xxxl + insets.bottom }}>
@@ -294,25 +293,11 @@ function Field({
   );
 }
 
-function Header({ colors, title, onBack }: { colors: any; title: string; onBack?: () => void }) {
-  return (
-    <View style={[s.header, { borderBottomColor: colors.border }]}>
-      <TouchableOpacity onPress={onBack ?? (() => router.back())} style={s.hBtn}>
-        <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-      </TouchableOpacity>
-      <Text style={[s.hTitle, { color: colors.textPrimary }]}>{title}</Text>
-      <View style={s.hBtn} />
-    </View>
-  );
-}
-
 const s = StyleSheet.create({
   safe: { flex: 1 },
   black: { flex: 1, backgroundColor: '#000' },
   grow: { flex: 1, minWidth: 0 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: SPACING.sm, borderBottomWidth: StyleSheet.hairlineWidth },
-  hBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  hTitle: { flex: 1, textAlign: 'center', fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold as any },
 
   camHead: { flexDirection: 'row', padding: SPACING.md },
   camBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(0,0,0,.45)', alignItems: 'center', justifyContent: 'center' },
