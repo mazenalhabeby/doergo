@@ -2298,5 +2298,33 @@
     "openSettings": "Open settings",
     "blocked": "Camera access is turned off for this app.",
     "blockedLibrary": "Photo access is turned off for this app."
+  },
+  "biometrics": {
+    "faceId": "Face ID",
+    "touchId": "Touch ID",
+    "fingerprint": "Fingerprint",
+    "faceUnlock": "Face unlock",
+    "faceOrFingerprint": "Face or fingerprint",
+    "generic": "Biometric unlock",
+    "prompt": "Unlock HBCField",
+    "enableTitle": "Sign in with {{method}}?",
+    "enableBody": "Next time, open HBCField with a glance instead of your password. Your face never leaves this phone.",
+    "enable": "Turn on {{method}}",
+    "notNow": "Not now",
+    "unlockWith": "Unlock with {{method}}",
+    "tapRetry": "Tap to try again",
+    "usePassword": "Use password instead",
+    "row": "{{method}} sign-in",
+    "rowOnThis": "On, this device",
+    "rowOff": "Off",
+    "rowUnavailable": "Unavailable on this phone",
+    "weakTitle": "Face unlock isn't secure enough",
+    "weakBody": "Your phone's face unlock can't protect a sign-in — it isn't one of the stronger kinds. Add a fingerprint and this turns on by itself.",
+    "notEnrolledTitle": "Set up {{method}} first",
+    "notEnrolledBody": "This device can do it — there is just nothing saved yet.",
+    "openSettings": "Open settings",
+    "invalidatedTitle": "{{method}} needs setting up again",
+    "invalidatedBody": "Your phone's biometrics changed, so the key we stored is no longer valid. Sign in once with your password and we'll set it up again.",
+    "rejectedBody": "Your session expired. Please sign in with your password."
   }
 }

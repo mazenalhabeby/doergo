@@ -2298,5 +2298,33 @@
     "openSettings": "Abrir ajustes",
     "blocked": "El acceso a la cámara está desactivado para esta app.",
     "blockedLibrary": "El acceso a las fotos está desactivado para esta app."
+  },
+  "biometrics": {
+    "faceId": "Face ID",
+    "touchId": "Touch ID",
+    "fingerprint": "Huella digital",
+    "faceUnlock": "Desbloqueo facial",
+    "faceOrFingerprint": "Rostro o huella",
+    "generic": "Desbloqueo biométrico",
+    "prompt": "Desbloquear HBCField",
+    "enableTitle": "¿Iniciar sesión con {{method}}?",
+    "enableBody": "La próxima vez, abra HBCField con una mirada en lugar de su contraseña. Su rostro nunca sale de este teléfono.",
+    "enable": "Activar {{method}}",
+    "notNow": "Ahora no",
+    "unlockWith": "Desbloquear con {{method}}",
+    "tapRetry": "Toque para reintentar",
+    "usePassword": "Usar contraseña",
+    "row": "Inicio de sesión con {{method}}",
+    "rowOnThis": "Activado, este dispositivo",
+    "rowOff": "Desactivado",
+    "rowUnavailable": "No disponible en este teléfono",
+    "weakTitle": "El desbloqueo facial no es lo bastante seguro",
+    "weakBody": "El desbloqueo facial de su teléfono no puede proteger un inicio de sesión: no es de los más robustos. Añada una huella y esto se activará solo.",
+    "notEnrolledTitle": "Configure {{method}} primero",
+    "notEnrolledBody": "Este dispositivo puede hacerlo, solo que aún no hay nada guardado.",
+    "openSettings": "Abrir ajustes",
+    "invalidatedTitle": "Hay que volver a configurar {{method}}",
+    "invalidatedBody": "La biometría de su teléfono cambió, así que la clave guardada ya no es válida. Inicie sesión una vez con su contraseña y la configuraremos de nuevo.",
+    "rejectedBody": "Su sesión ha caducado. Inicie sesión con su contraseña."
   }
 }

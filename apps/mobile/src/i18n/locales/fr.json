@@ -2298,5 +2298,33 @@
     "openSettings": "Ouvrir les réglages",
     "blocked": "L’accès à la caméra est désactivé pour cette application.",
     "blockedLibrary": "L’accès aux photos est désactivé pour cette application."
+  },
+  "biometrics": {
+    "faceId": "Face ID",
+    "touchId": "Touch ID",
+    "fingerprint": "Empreinte digitale",
+    "faceUnlock": "Déverrouillage par le visage",
+    "faceOrFingerprint": "Visage ou empreinte",
+    "generic": "Déverrouillage biométrique",
+    "prompt": "Déverrouiller HBCField",
+    "enableTitle": "Se connecter avec {{method}} ?",
+    "enableBody": "La prochaine fois, ouvrez HBCField d'un regard plutôt qu'avec votre mot de passe. Votre visage ne quitte jamais ce téléphone.",
+    "enable": "Activer {{method}}",
+    "notNow": "Pas maintenant",
+    "unlockWith": "Déverrouiller avec {{method}}",
+    "tapRetry": "Touchez pour réessayer",
+    "usePassword": "Utiliser le mot de passe",
+    "row": "Connexion par {{method}}",
+    "rowOnThis": "Activé, cet appareil",
+    "rowOff": "Désactivé",
+    "rowUnavailable": "Indisponible sur ce téléphone",
+    "weakTitle": "Le déverrouillage par le visage n'est pas assez sûr",
+    "weakBody": "Le déverrouillage par le visage de votre téléphone ne peut pas protéger une connexion : il n'est pas parmi les plus robustes. Ajoutez une empreinte et cela s'activera tout seul.",
+    "notEnrolledTitle": "Configurez d'abord {{method}}",
+    "notEnrolledBody": "Cet appareil en est capable — il n'y a simplement rien d'enregistré.",
+    "openSettings": "Ouvrir les réglages",
+    "invalidatedTitle": "{{method}} doit être reconfiguré",
+    "invalidatedBody": "La biométrie de votre téléphone a changé, la clé enregistrée n'est donc plus valable. Connectez-vous une fois avec votre mot de passe et nous la reconfigurerons.",
+    "rejectedBody": "Votre session a expiré. Connectez-vous avec votre mot de passe."
   }
 }

@@ -2298,5 +2298,33 @@
     "openSettings": "Einstellungen öffnen",
     "blocked": "Der Kamerazugriff ist für diese App deaktiviert.",
     "blockedLibrary": "Der Fotozugriff ist für diese App deaktiviert."
+  },
+  "biometrics": {
+    "faceId": "Face ID",
+    "touchId": "Touch ID",
+    "fingerprint": "Fingerabdruck",
+    "faceUnlock": "Gesichtsentsperrung",
+    "faceOrFingerprint": "Gesicht oder Fingerabdruck",
+    "generic": "Biometrische Entsperrung",
+    "prompt": "HBCField entsperren",
+    "enableTitle": "Mit {{method}} anmelden?",
+    "enableBody": "Öffnen Sie HBCField künftig mit einem Blick statt mit Ihrem Passwort. Ihr Gesicht verlässt dieses Telefon nie.",
+    "enable": "{{method}} aktivieren",
+    "notNow": "Jetzt nicht",
+    "unlockWith": "Mit {{method}} entsperren",
+    "tapRetry": "Zum Wiederholen tippen",
+    "usePassword": "Stattdessen Passwort verwenden",
+    "row": "Anmeldung mit {{method}}",
+    "rowOnThis": "Ein, dieses Gerät",
+    "rowOff": "Aus",
+    "rowUnavailable": "Auf diesem Telefon nicht verfügbar",
+    "weakTitle": "Gesichtsentsperrung ist nicht sicher genug",
+    "weakBody": "Die Gesichtsentsperrung Ihres Telefons kann eine Anmeldung nicht schützen – sie gehört nicht zu den stärkeren Verfahren. Fügen Sie einen Fingerabdruck hinzu, dann wird dies automatisch aktiviert.",
+    "notEnrolledTitle": "Zuerst {{method}} einrichten",
+    "notEnrolledBody": "Dieses Gerät kann das – es ist nur noch nichts gespeichert.",
+    "openSettings": "Einstellungen öffnen",
+    "invalidatedTitle": "{{method}} muss neu eingerichtet werden",
+    "invalidatedBody": "Die Biometrie Ihres Telefons hat sich geändert, daher ist der gespeicherte Schlüssel ungültig. Melden Sie sich einmal mit Ihrem Passwort an, dann richten wir es neu ein.",
+    "rejectedBody": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich mit Ihrem Passwort an."
   }
 }

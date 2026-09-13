@@ -2298,5 +2298,33 @@
     "openSettings": "Apri impostazioni",
     "blocked": "L’accesso alla fotocamera è disattivato per questa app.",
     "blockedLibrary": "L’accesso alle foto è disattivato per questa app."
+  },
+  "biometrics": {
+    "faceId": "Face ID",
+    "touchId": "Touch ID",
+    "fingerprint": "Impronta digitale",
+    "faceUnlock": "Sblocco con il volto",
+    "faceOrFingerprint": "Volto o impronta",
+    "generic": "Sblocco biometrico",
+    "prompt": "Sblocca HBCField",
+    "enableTitle": "Accedere con {{method}}?",
+    "enableBody": "La prossima volta apri HBCField con uno sguardo invece che con la password. Il tuo volto non lascia mai questo telefono.",
+    "enable": "Attiva {{method}}",
+    "notNow": "Non ora",
+    "unlockWith": "Sblocca con {{method}}",
+    "tapRetry": "Tocca per riprovare",
+    "usePassword": "Usa la password",
+    "row": "Accesso con {{method}}",
+    "rowOnThis": "Attivo, questo dispositivo",
+    "rowOff": "Disattivo",
+    "rowUnavailable": "Non disponibile su questo telefono",
+    "weakTitle": "Lo sblocco con il volto non è abbastanza sicuro",
+    "weakBody": "Lo sblocco con il volto del tuo telefono non può proteggere un accesso: non è tra i più robusti. Aggiungi un’impronta e si attiverà da solo.",
+    "notEnrolledTitle": "Configura prima {{method}}",
+    "notEnrolledBody": "Questo dispositivo può farlo, semplicemente non c’è ancora nulla salvato.",
+    "openSettings": "Apri impostazioni",
+    "invalidatedTitle": "{{method}} va configurato di nuovo",
+    "invalidatedBody": "La biometria del telefono è cambiata, quindi la chiave salvata non è più valida. Accedi una volta con la password e la configureremo di nuovo.",
+    "rejectedBody": "La sessione è scaduta. Accedi con la password."
   }
 }

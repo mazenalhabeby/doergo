@@ -89,6 +89,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         'com.apple.developer.usernotifications.time-sensitive': true,
       },
       infoPlist: {
+        /*
+          ⚠️ Without this key Face ID does not work AT ALL — not the prompt, and
+          not SecureStore's `requireAuthentication`, which fails with a bare
+          error rather than falling back. It is also why Face ID cannot be
+          tested in Expo Go: Expo Go's own Info.plist has no reason to carry it.
+        */
+        NSFaceIDUsageDescription:
+          'HBCField uses Face ID so you can sign in without typing your password. Your face never leaves this device.',
         NSLocationWhenInUseUsageDescription:
           'HBCField needs your location to verify you are at your assigned work site when clocking in.',
         NSLocationAlwaysAndWhenInUseUsageDescription:
