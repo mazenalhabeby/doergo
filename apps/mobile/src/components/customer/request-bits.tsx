@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/theme-context';
 import { SPACING, RADIUS, FONT_SIZE } from '../../lib/constants';
-import { portalColor, portalTint, portalIcon } from '../../lib/portal-ui';
+import { portalColor } from '../../lib/portal-ui';
+import { CategoryGlyph } from './portal-glyphs';
 
 /** Status → semantic base colour (reads well on translucent tint in both themes). */
 export function statusColor(status: string): string {
@@ -47,8 +47,8 @@ export function RequestRow({
       style={({ pressed }) => [row.card, { backgroundColor: colors.card, borderColor: colors.border }, pressed && { opacity: 0.7 }]}
       onPress={onPress}
     >
-      <View style={[row.thumb, { backgroundColor: portalTint(color) }]}>
-        <MaterialCommunityIcons name={portalIcon(icon)} size={20} color={portalColor(color)} />
+      <View style={row.thumb}>
+        <CategoryGlyph icon={icon} color={color} size={21} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[row.title, { color: colors.textPrimary }]} numberOfLines={1}>

@@ -347,6 +347,12 @@
     },
     "crew": {
       "link": "The crew"
+    },
+    "actions": {
+      "documents": "Documents",
+      "equipment": "My equipment",
+      "messages": "Messages",
+      "support": "Support"
     }
   },
   "tasks": {
@@ -2135,8 +2141,8 @@
     }
   },
   "myAssets": {
-    "title": "What I have",
-    "empty": "Nothing has been handed to you yet.",
+    "title": "My equipment",
+    "empty": "No equipment has been handed to you yet.",
     "loadFailed": "Could not load what you hold",
     "anAsset": "An asset",
     "since": "Since",

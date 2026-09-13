@@ -3,15 +3,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../src/lib/constants';
 import { portalApi } from '../../../src/lib/api/portal';
 import { resolveMediaUrl } from '../../../src/lib/api';
-import { portalColor, portalTint, portalIcon } from '../../../src/lib/portal-ui';
+import { portalColor } from '../../../src/lib/portal-ui';
 import { RequestRow } from '../../../src/components/customer/request-bits';
+import { ReportGlyph, RequestsGlyph, ContactGlyph, AccountGlyph, CategoryGlyph } from '../../../src/components/customer/portal-glyphs';
 
 const CLOSED = /COMPLET|CLOSED|CANCEL|RESOLV|DONE/i;
 
@@ -57,13 +58,13 @@ export default function CustomerHome() {
 
   // Premium action grid — wired to what this portal actually does. Messages is
   // gated on the portal feature flag so we never show a dead tile.
-  const tiles: { key: string; label: string; icon: string; accent: AccentKey; badge?: number; onPress: () => void }[] = [
-    { key: 'report', label: t('portal.tileReport', 'Report a Maintenance Issue'), icon: 'wrench', accent: 'blue', onPress: () => router.push('/(customer)/report') },
-    { key: 'requests', label: t('portal.tileRequests', 'My Requests'), icon: 'clipboard-text-outline', accent: 'green', badge: openCount || undefined, onPress: () => router.push('/(customer)/(tabs)/requests') },
+  const tiles: { key: string; label: string; Glyph: React.ComponentType<{ size?: number; color: string }>; accent: AccentKey; badge?: number; onPress: () => void }[] = [
+    { key: 'report', label: t('portal.tileReport', 'Report a Maintenance Issue'), Glyph: ReportGlyph, accent: 'blue', onPress: () => router.push('/(customer)/report') },
+    { key: 'requests', label: t('portal.tileRequests', 'My Requests'), Glyph: RequestsGlyph, accent: 'green', badge: openCount || undefined, onPress: () => router.push('/(customer)/(tabs)/requests') },
     ...(cfg?.features?.messages !== false
-      ? [{ key: 'messages', label: t('portal.tileContact', 'Contact {{office}}', { office: officeLabel }), icon: 'message-text-outline', accent: 'purple' as AccentKey, onPress: () => router.push('/(customer)/(tabs)/messages') }]
+      ? [{ key: 'messages', label: t('portal.tileContact', 'Contact {{office}}', { office: officeLabel }), Glyph: ContactGlyph, accent: 'purple' as AccentKey, onPress: () => router.push('/(customer)/(tabs)/messages') }]
       : []),
-    { key: 'profile', label: t('portal.tileProfile', 'My Account'), icon: 'account-circle-outline', accent: 'teal', onPress: () => router.push('/(customer)/(tabs)/profile') },
+    { key: 'profile', label: t('portal.tileProfile', 'My Account'), Glyph: AccountGlyph, accent: 'teal', onPress: () => router.push('/(customer)/(tabs)/profile') },
   ];
   const tileW = (width - SPACING.lg * 2 - SPACING.md) / 2;
 
@@ -113,7 +114,7 @@ export default function CustomerHome() {
               <Pressable key={tile.key} style={[styles.tile, { width: tileW }]} onPress={tile.onPress}>
                 <LinearGradient colors={isDark ? a.dark : a.light} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.tileBg}>
                   <View style={[styles.tileIcon, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#ffffffcc' }]}>
-                    <MaterialCommunityIcons name={tile.icon as any} size={26} color={a.fg} />
+                    <tile.Glyph size={28} color={a.fg} />
                     {tile.badge ? (
                       <View style={[styles.tileBadge, { backgroundColor: a.fg }]}>
                         <Text style={styles.tileBadgeText}>{tile.badge > 9 ? '9+' : tile.badge}</Text>
@@ -134,8 +135,8 @@ export default function CustomerHome() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: SPACING.lg, gap: SPACING.md }}>
               {categories.map((c) => (
                 <Pressable key={c.key} style={styles.catChip} onPress={() => router.push(`/(customer)/report?category=${encodeURIComponent(c.key)}`)}>
-                  <View style={[styles.catIcon, { backgroundColor: portalTint(c.color) }]}>
-                    <MaterialCommunityIcons name={portalIcon(c.icon)} size={26} color={portalColor(c.color)} />
+                  <View style={styles.catIcon}>
+                    <CategoryGlyph icon={c.icon} color={c.color} size={26} />
                   </View>
                   <Text style={[styles.catLabel, { color: colors.textSecondary }]} numberOfLines={2}>{c.label}</Text>
                 </Pressable>

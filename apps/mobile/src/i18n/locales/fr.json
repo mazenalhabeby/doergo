@@ -347,6 +347,12 @@
     },
     "crew": {
       "link": "L'équipe"
+    },
+    "actions": {
+      "documents": "Documents",
+      "equipment": "Mon équipement",
+      "messages": "Messages",
+      "support": "Assistance"
     }
   },
   "tasks": {
@@ -2135,8 +2141,8 @@
     }
   },
   "myAssets": {
-    "title": "Ce que j’ai",
-    "empty": "Rien ne vous a encore été remis.",
+    "title": "Mon équipement",
+    "empty": "Aucun équipement ne vous a encore été remis.",
     "loadFailed": "Chargement impossible",
     "anAsset": "Un bien",
     "since": "Depuis",

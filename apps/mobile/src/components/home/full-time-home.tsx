@@ -37,6 +37,8 @@ import { countryFromTz } from '@hbcfield/shared/client';
 import { TourTarget } from '../tour';
 import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from './home-styles';
 import { DocumentsReminderCard } from '../documents-reminder-card';
+import { QuickActions } from './quick-actions';
+import { NetWorkGlyph, BreakGlyph, WeekGlyph } from './glyphs';
 import { workedMinutes } from '@hbcfield/shared/client';
 
 export function FullTimeHome() {
@@ -201,24 +203,27 @@ export function FullTimeHome() {
           <ShiftClockCard onChanged={() => fetchAttendanceData()} />
         </TourTarget>
 
+        {/* The personal doors — after the block about today, before the lists. */}
+        <QuickActions />
+
         {/* Quick Stats */}
         <TourTarget name="home-today" style={ftStyles.quickStatsRow}>
           <View style={[ftStyles.quickStatCard, { backgroundColor: colors.card }]}>
-            <Ionicons name="briefcase-outline" size={24} color={COLORS.primary} />
+            <NetWorkGlyph size={26} color={colors.textPrimary} />
             <Text style={[ftStyles.quickStatValue, { color: colors.textPrimary }]}>
               {formatDuration(Math.max(0, elapsedMinutes - (breakStatus?.totalBreakMinutes || 0)))}
             </Text>
             <Text style={[ftStyles.quickStatLabel, { color: colors.textMuted }]}>{t('home.fullTime.netWork')}</Text>
           </View>
           <View style={[ftStyles.quickStatCard, { backgroundColor: colors.card }]}>
-            <Ionicons name="cafe-outline" size={24} color={COLORS.amber} />
+            <BreakGlyph size={26} color={colors.textPrimary} />
             <Text style={[ftStyles.quickStatValue, { color: colors.textPrimary }]}>
               {breakStatus?.totalBreakMinutes ? formatDuration(breakStatus.totalBreakMinutes) : '0m'}
             </Text>
             <Text style={[ftStyles.quickStatLabel, { color: colors.textMuted }]}>{t('home.fullTime.breakTime')}</Text>
           </View>
           <View style={[ftStyles.quickStatCard, { backgroundColor: colors.card }]}>
-            <Ionicons name="calendar-outline" size={24} color={COLORS.success} />
+            <WeekGlyph size={26} color={colors.textPrimary} />
             <Text style={[ftStyles.quickStatValue, { color: colors.textPrimary }]}>
               {(() => {
                 const now = new Date();

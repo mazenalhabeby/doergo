@@ -39,6 +39,7 @@ import { styles as homeStyles, SPACING, COLORS } from './home-styles';
 import { WorkspaceCard, type WorkspaceBoxData } from './workspace/workspace-card';
 import { SitePulse } from './site-pulse';
 import { NeedsList, type NeedItem } from './needs-list';
+import { QuickActions } from './quick-actions';
 import { CrewLine, type CrewMember } from './crew-line';
 import { type PersonNodeData } from './workspace/person-node';
 import { ActivitySheet, type LiveEvent, type PendingActionItem } from './workspace/activity-sheet';
@@ -652,7 +653,7 @@ export function AdminDashboard() {
       const first = blocked[0];
       out.push({
         key: 'blocked',
-        icon: 'warning-outline',
+        glyph: 'blocked',
         tone: 'urgent',
         title: plural('home.needs.blocked', blocked.length),
         detail: first?.title,
@@ -667,7 +668,7 @@ export function AdminDashboard() {
     if (canReviewHours && pendingHours > 0) {
       out.push({
         key: 'hours',
-        icon: 'time-outline',
+        glyph: 'approve',
         tone: 'attention',
         title: plural('home.needs.hours', pendingHours),
         detail: i18n.t('home.needs.hoursDetail'),
@@ -688,7 +689,7 @@ export function AdminDashboard() {
       const latest = liveEvents[0];
       out.push({
         key: 'activity',
-        icon: 'pulse-outline',
+        glyph: 'activity',
         tone: 'neutral',
         title: i18n.t('home.needs.activity'),
         detail: latest ? `${latest.name} ${latest.action} · ${latest.time}` : undefined,
@@ -699,7 +700,7 @@ export function AdminDashboard() {
     if (open > 0) {
       out.push({
         key: 'jobs',
-        icon: 'list-outline',
+        glyph: 'openJobs',
         tone: 'neutral',
         title: plural('home.needs.openJobs', open),
         detail: doneToday > 0 ? i18n.t('home.needs.doneToday', { count: doneToday }) : undefined,
@@ -922,6 +923,11 @@ export function AdminDashboard() {
           <SitePulse total={pulse.total} onShift={pulse.onShift} caption={pulseCaption} />
           <NeedsList items={needs} />
         </View>
+
+        {/* The personal doors, directly under what is waiting on this person.
+            An owner holds no van and sends no page in, so two of the five
+            tiles simply never build — see quick-actions.tsx. */}
+        <QuickActions />
 
         {/*
           Outstanding personal documents. Renders nothing when there are none,

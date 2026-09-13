@@ -347,6 +347,12 @@
     },
     "crew": {
       "link": "La squadra"
+    },
+    "actions": {
+      "documents": "Documenti",
+      "equipment": "La mia attrezzatura",
+      "messages": "Messaggi",
+      "support": "Assistenza"
     }
   },
   "tasks": {
@@ -2135,8 +2141,8 @@
     }
   },
   "myAssets": {
-    "title": "Cosa ho",
-    "empty": "Non ti è ancora stato consegnato nulla.",
+    "title": "La mia attrezzatura",
+    "empty": "Non ti è ancora stata consegnata alcuna attrezzatura.",
     "loadFailed": "Impossibile caricare",
     "anAsset": "Un bene",
     "since": "Dal",

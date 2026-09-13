@@ -66,7 +66,7 @@ export const styles = StyleSheet.create({
   statIcon: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -127,6 +127,23 @@ export const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
+
+/*
+  The stat card's icon chip.
+
+  ⚠️ It is a shade DARKER than the card it sits on — the inverse of the
+  quick-action tile, which is lighter than the off-white surface it sits on. A
+  white chip on a white card is invisible but for its border. Same idea,
+  opposite direction, so both read as the same control.
+*/
+export function statChip(
+  colors: { surfaceRaised: string; border: string },
+  isDark: boolean,
+) {
+  return isDark
+    ? { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.07)', borderWidth: StyleSheet.hairlineWidth }
+    : { backgroundColor: colors.surfaceRaised, borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth };
+}
 
 // Re-export constants for convenience
 export { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS };

@@ -7,11 +7,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
+import { ScreenHeader } from '../../src/components';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { assetsApi, assetProposalsApi, type HeldAsset, type MyExpense, type MyProposal } from '../../src/lib/api';
 import { normalizeKindShape, custodyDays } from '@hbcfield/shared/client';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
+import { SendDocumentGlyph } from '../../src/components/home/glyphs';
 
 /**
  * What I have been given, and what I have spent on it.
@@ -67,13 +69,7 @@ export default function MyAssetsScreen() {
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-      <View style={[s.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={s.hBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={[s.hTitle, { color: colors.textPrimary }]}>{t('myAssets.title', 'What I have')}</Text>
-        <View style={s.hBtn} />
-      </View>
+      <ScreenHeader title={t('myAssets.title', 'My equipment')} />
 
       {held === null ? (
         <View style={s.centre}><ActivityIndicator color={COLORS.primary} /></View>
@@ -86,7 +82,7 @@ export default function MyAssetsScreen() {
             <View style={s.empty}>
               <Ionicons name="cube-outline" size={40} color={colors.textMuted} />
               <Text style={[s.emptyText, { color: colors.textMuted }]}>
-                {t('myAssets.empty', 'Nothing has been handed to you yet.')}
+                {t('myAssets.empty', 'No equipment has been handed to you yet.')}
               </Text>
             </View>
           ) : (
@@ -98,7 +94,7 @@ export default function MyAssetsScreen() {
               style={[s.secondary, { borderColor: colors.border }]}
               onPress={() => router.push('/send-document')}
             >
-              <Ionicons name="document-attach-outline" size={17} color={COLORS.primary} />
+              <SendDocumentGlyph size={19} color={COLORS.primary} />
               <Text style={[s.secondaryText, { color: COLORS.primary }]}>
                 {t('sendDoc.title', 'Send a document')}
               </Text>
@@ -241,8 +237,6 @@ function ProposalRow({ proposal, colors, t }: { proposal: MyProposal; colors: an
 const s = StyleSheet.create({
   safe: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: SPACING.sm, borderBottomWidth: StyleSheet.hairlineWidth },
-  hBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  hTitle: { flex: 1, textAlign: 'center', fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold as any },
   centre: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   grow: { flex: 1, minWidth: 0 },
   right: { alignItems: 'flex-end' },

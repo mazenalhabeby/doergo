@@ -374,7 +374,7 @@ export default function ProfileScreen() {
                 icon="cube-outline"
                 iconColor={COLORS.primary}
                 iconBg={colors.primaryLight}
-                label={t('myAssets.title', 'What I have')}
+                label={t('myAssets.title', 'My equipment')}
                 onPress={() => router.push('/my-assets' as Href)}
                 trailing={
                   <View style={[styles.menuBadge, { backgroundColor: colors.border }]}>

@@ -349,6 +349,17 @@ const cStyles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.15)',
   },
 
-  // Clock In Card (when clocked out)
-  clockInIconTint: { backgroundColor: 'rgba(37, 99, 235, 0.1)' },
+  /*
+    Clock In, when clocked out.
+
+    ⚠️ This was `rgba(37, 99, 235, 0.1)` — a BLUE tint behind an emerald glyph,
+    left behind by the blue→emerald rebrand. The tile takes its glyph's own hue,
+    which is the rule the needs-list chips follow, and is what the blue was
+    reaching for in the first place.
+  */
+  clockInIconTint: {
+    backgroundColor: COLORS.primaryLight,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(5, 150, 105, 0.18)',
+  },
 });

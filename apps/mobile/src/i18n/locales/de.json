@@ -347,6 +347,12 @@
     },
     "crew": {
       "link": "Das Team"
+    },
+    "actions": {
+      "documents": "Dokumente",
+      "equipment": "Meine Ausrüstung",
+      "messages": "Nachrichten",
+      "support": "Support"
     }
   },
   "tasks": {
@@ -2135,8 +2141,8 @@
     }
   },
   "myAssets": {
-    "title": "Was ich habe",
-    "empty": "Ihnen wurde noch nichts übergeben.",
+    "title": "Meine Ausrüstung",
+    "empty": "Ihnen wurde noch keine Ausrüstung übergeben.",
     "loadFailed": "Konnte nicht geladen werden",
     "anAsset": "Ein Objekt",
     "since": "Seit",

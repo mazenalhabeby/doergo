@@ -6,7 +6,6 @@ import {
   RefreshControl,
   FlatList,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -27,12 +26,14 @@ import { useExcursionSync } from '../../hooks/useExcursionSync';
 import { WeekCalendar } from '../week-calendar';
 import { TourTarget } from '../tour';
 import { ROUTES } from '../../lib/constants';
-import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from './home-styles';
+import { styles as sharedStyles, statChip, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from './home-styles';
 import { DocumentsReminderCard } from '../documents-reminder-card';
+import { QuickActions } from './quick-actions';
+import { TodayGlyph, UrgentGlyph, CompletedGlyph, PendingGlyph } from './glyphs';
 
 export function HybridHome() {
   const { user } = useAuth();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { t } = useTranslation();
 
   // Loading states
@@ -183,12 +184,15 @@ export function HybridHome() {
       {/* Shift clock widget (self-contained: owns its own attendance state + sheets) */}
       <ShiftClockCard onChanged={() => fetchData()} />
 
+      {/* The personal doors — after the block about today, before the lists. */}
+      <QuickActions />
+
       {/* Task Stats */}
       <TourTarget name="home-today" style={sharedStyles.statsGrid}>
         <View style={[sharedStyles.statCard, { backgroundColor: colors.card }]}>
           <View style={sharedStyles.statRow}>
-            <View style={[sharedStyles.statIcon, { backgroundColor: colors.primaryLight }]}>
-              <Ionicons name="today" size={18} color={COLORS.primary} />
+            <View style={[sharedStyles.statIcon, statChip(colors, isDark)]}>
+              <TodayGlyph size={20} color={colors.textPrimary} />
             </View>
             <Text style={[sharedStyles.statNumber, { color: colors.textPrimary }]}>{stats.todaysTasks}</Text>
           </View>
@@ -196,8 +200,8 @@ export function HybridHome() {
         </View>
         <View style={[sharedStyles.statCard, { backgroundColor: colors.card }]}>
           <View style={sharedStyles.statRow}>
-            <View style={[sharedStyles.statIcon, { backgroundColor: colors.amberLight }]}>
-              <Ionicons name="flash" size={18} color={COLORS.amber} />
+            <View style={[sharedStyles.statIcon, statChip(colors, isDark)]}>
+              <UrgentGlyph size={20} color={colors.textPrimary} />
             </View>
             <Text style={[sharedStyles.statNumber, { color: colors.textPrimary }]}>{stats.urgent}</Text>
           </View>
@@ -205,8 +209,8 @@ export function HybridHome() {
         </View>
         <View style={[sharedStyles.statCard, { backgroundColor: colors.card }]}>
           <View style={sharedStyles.statRow}>
-            <View style={[sharedStyles.statIcon, { backgroundColor: colors.successLight }]}>
-              <Ionicons name="checkmark-done" size={18} color={COLORS.success} />
+            <View style={[sharedStyles.statIcon, statChip(colors, isDark)]}>
+              <CompletedGlyph size={20} color={colors.textPrimary} />
             </View>
             <Text style={[sharedStyles.statNumber, { color: colors.textPrimary }]}>{stats.completed}</Text>
           </View>
@@ -214,8 +218,8 @@ export function HybridHome() {
         </View>
         <View style={[sharedStyles.statCard, { backgroundColor: colors.card }]}>
           <View style={sharedStyles.statRow}>
-            <View style={[sharedStyles.statIcon, { backgroundColor: colors.warningLight }]}>
-              <Ionicons name="hourglass-outline" size={18} color={COLORS.warning} />
+            <View style={[sharedStyles.statIcon, statChip(colors, isDark)]}>
+              <PendingGlyph size={20} color={colors.textPrimary} />
             </View>
             <Text style={[sharedStyles.statNumber, { color: colors.textPrimary }]}>{stats.pending}</Text>
           </View>
@@ -245,7 +249,7 @@ export function HybridHome() {
       </TourTarget>
     </>
   ), [stats, currentWeekStart, filteredTasks.length, selectedDate, taskDateSet, user?.firstName,
-      colors, t, isClockedIn, attendanceStatus]);
+      colors, isDark, t, isClockedIn, attendanceStatus]);
 
   const renderTask = useCallback(({ item }: { item: Task }) => (
     <View style={hStyles.taskItemWrapper}>
