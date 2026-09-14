@@ -19,18 +19,21 @@ export interface UploadRoute {
   /** The presign path, from the operation's params. Null when a param is missing. */
   presign(params: Record<string, string>): string | null;
   /** The body the presign route takes. */
-  presignBody(file: StoredFile, fileName: string): Record<string, string>;
-  /** The held file this operation still has to upload, if any. */
+  presignBody(file: StoredFile, fileName: string, body: Body): Record<string, unknown>;
+  /** The upload link and key from the presign answer. Most routes say `uploadUrl`/`fileKey`. */
+  linkOf?(answer: Record<string, unknown>): { uploadUrl: string; fileKey: string };
+  /** The NEXT held file this operation still has to upload, if any. An operation may carry several. */
   pendingFileIdOf(body: Body): string | undefined;
   /** The file's name as the member chose it. */
   fileNameOf(body: Body): string;
-  /** The body with the uploaded key (and the file's real type and size) filled in. */
+  /** The body with this file's uploaded key (and its real type and size) filled in. */
   withKey(body: Body, key: string, file: StoredFile): Body;
-  /** The held file an operation carried, before or after upload — for cleaning up. */
-  heldFileIdOf(body: Body): string | undefined;
+  /** Every held file an operation carried, before or after upload — for cleaning up. */
+  heldFileIdsOf(body: Body): string[];
 }
 
 const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
+const ids = (...values: unknown[]) => values.filter((v): v is string => typeof v === 'string' && v.length > 0);
 const enc = encodeURIComponent;
 
 /** The common shape: the record's own id is the file id, `fileKey` at the top. */
@@ -41,7 +44,7 @@ function flat(presign: (p: Record<string, string>) => string | null, typeField: 
     pendingFileIdOf: (b) => (b.fileKey ? undefined : str(b.id)),
     fileNameOf: (b) => str(b.fileName) ?? 'file',
     withKey: (b, key, file) => ({ ...b, fileKey: key, [typeField]: file.mime, fileSize: file.bytes ?? b.fileSize }),
-    heldFileIdOf: (b) => str(b.id),
+    heldFileIdsOf: (b) => ids(b.id),
   };
 }
 
@@ -65,7 +68,7 @@ const ROUTES: Partial<Record<SyncOperationName, UploadRoute>> = {
       const { receiptPending: _pending, ...rest } = b;
       return { ...rest, receiptKey: key, receiptMime: file.mime, receiptName: str(b.receiptName) ?? 'receipt' };
     },
-    heldFileIdOf: (b) => str(b.entryId),
+    heldFileIdsOf: (b) => ids(b.entryId),
   },
 
   /*
@@ -90,9 +93,42 @@ const ROUTES: Partial<Record<SyncOperationName, UploadRoute>> = {
       };
       return { ...rest, attachments: [attachment] };
     },
-    heldFileIdOf: (b) => str(b.id),
+    heldFileIdsOf: (b) => ids(b.id),
+  },
+
+  /*
+    Supplying my own document: a front, and sometimes a back, into ONE filing.
+    `$front`/`$back` are the held files' ids — phone-only keys (the transport
+    never sends a key starting with `$`), kept so the copies can be deleted
+    once the document is filed. A side is still to upload while its key is
+    missing. The presign answer is `{ url, key }`, and the upload is sized.
+  */
+  'document.supply': {
+    presign: () => '/documents/mine/upload-url',
+    presignBody: (file, _name, b) => ({ typeId: str(b.typeId) ?? '', mimeType: file.mime, sizeBytes: file.bytes ?? 0 }),
+    linkOf: (a) => ({ uploadUrl: String(a.url), fileKey: String(a.key) }),
+    pendingFileIdOf: (b) => (b.$front && !b.stagingKey ? str(b.$front) : b.$back && !b.backStagingKey ? str(b.$back) : undefined),
+    fileNameOf: () => 'document.jpg',
+    withKey: (b, key, file) => (file.id === b.$front ? { ...b, stagingKey: key } : { ...b, backStagingKey: key }),
+    heldFileIdsOf: (b) => ids(b.$front, b.$back),
+  },
+
+  // A page sent in about a thing I have been given — a proposal. The page is optional evidence.
+  'proposal.raise': {
+    presign: () => '/assets/proposals/upload-url',
+    presignBody: (file) => ({ fileName: 'document.jpg', mimeType: file.mime }),
+    pendingFileIdOf: (b) => (b.pagePending ? str(b.id) : undefined),
+    fileNameOf: () => 'document.jpg',
+    withKey: (b, key, file) => {
+      const { pagePending: _pending, ...rest } = b;
+      return { ...rest, fileKey: key, fileName: 'document.jpg', fileMime: file.mime };
+    },
+    heldFileIdsOf: (b) => ids(b.id),
   },
 };
+
+/** A body key only the phone reads (a held file's id); never sent — see http-transport. */
+export const isPhoneOnlyKey = (key: string) => key.startsWith('$');
 
 export function routeFor(op: Pick<OutboxOp, 'op'>): UploadRoute | undefined {
   return ROUTES[op.op];
@@ -105,7 +141,7 @@ export function pendingFileIdOf(op: Pick<OutboxOp, 'op' | 'payload'>): string | 
   return routeFor(op)?.pendingFileIdOf(bodyOf(op));
 }
 
-/** The held file an operation carried, for deleting its copy once it is done with. */
-export function heldFileIdOf(op: Pick<OutboxOp, 'op' | 'payload'>): string | undefined {
-  return routeFor(op)?.heldFileIdOf(bodyOf(op));
+/** Every held file an operation carried, for deleting the copies once it is done with. */
+export function heldFileIdsOf(op: Pick<OutboxOp, 'op' | 'payload'>): string[] {
+  return routeFor(op)?.heldFileIdsOf(bodyOf(op)) ?? [];
 }

@@ -42,6 +42,9 @@ export const SYNC_OPERATIONS = {
   'timeOff.request': { method: 'POST', path: '/employees/:employeeId/time-off' },
   // Money & communication
   'expense.submit': { method: 'POST', path: '/assets/:assetId/expenses' },
+  'proposal.raise': { method: 'POST', path: '/assets/proposals' },
+  // Documents I supply myself (a licence, a passport)
+  'document.supply': { method: 'POST', path: '/documents/mine' },
   'chat.send': { method: 'POST', path: '/chat/conversations/:conversationId/messages' },
   'support.ticket': { method: 'POST', path: '/support/tickets' },
   // Clients (sales reps)

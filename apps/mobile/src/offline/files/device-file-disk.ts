@@ -52,7 +52,7 @@ export class DeviceFileDisk implements FileDisk {
       return { path: dest.uri, bytes: dest.size, mime: input.mime, width: input.width, height: input.height };
     }
 
-    const lib = SHRINKABLE.has(input.mime) ? loadImageManipulator() : null;
+    const lib = input.shrink !== false && SHRINKABLE.has(input.mime) ? loadImageManipulator() : null;
     if (lib) {
       const ctx = lib.ImageManipulator.manipulate(input.uri);
       const { width = 0, height = 0 } = input;

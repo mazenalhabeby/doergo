@@ -18,6 +18,9 @@ import { canScanContracts, scanContract } from '../../src/lib/receipt-scan';
 import { assetProposalsApi, uploadToPresignedUrl, type ContractFields } from '../../src/lib/api';
 import { classifyDocument, type DocumentClassification } from '@hbcfield/shared/client';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
+import { useOffline } from '../../src/offline/offline-context';
+import { createFromPhone } from '../../src/offline/actions/queued-create';
+import { uuidv7 } from '../../src/offline/ids';
 
 /**
  * Send a page in and let somebody responsible decide.
@@ -47,6 +50,7 @@ export default function SendDocumentScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const toast = useToast();
+  const offline = useOffline();
   const insets = useSafeAreaInsets();
   const cam = useCameraAccess();
   const camera = useRef<CameraView>(null);
@@ -105,6 +109,33 @@ export default function SendDocumentScreen() {
     setSending(true);
     let fileKey: string | undefined;
     try {
+      if (offline.engine && offline.files) {
+        // Saved on the phone with its page; both send themselves. The page copy
+        // is deleted once the proposal is accepted or refused.
+        const cleanFields: ContractFields = {};
+        for (const [k, v] of Object.entries(fields)) {
+          if (typeof v === 'string' && v.trim()) (cleanFields as Record<string, string>)[k] = v.trim();
+        }
+        const id = uuidv7();
+        if (shot) await offline.files.keep({ id, kind: 'document', mime: shot.mime, uri: shot.uri });
+        const { outcome } = await createFromPhone(offline.engine, {
+          op: 'proposal.raise', id, lane: 'proposal:new',
+          body: {
+            fields: cleanFields,
+            ...(verdict?.signals ? { signals: verdict.signals } : {}),
+            documentKind: verdict?.kind ?? 'unknown',
+            ...(shot ? { pagePending: true } : {}),
+          },
+        });
+        if (outcome.kind === 'refused') {
+          toast.error((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('sendDoc.sendFailed', 'Could not send it'));
+          return;
+        }
+        toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('sendDoc.sent', 'Sent — somebody will confirm it.'));
+        discardShot();
+        router.back();
+        return;
+      }
       /*
         The page goes phone → S3 directly, under a prefix that names the
         organization; the submit refuses a key outside it.
@@ -148,7 +179,7 @@ export default function SendDocumentScreen() {
     } finally {
       setSending(false);
     }
-  }, [named, shot, fields, verdict, discardShot, t, toast]);
+  }, [named, shot, fields, verdict, discardShot, t, toast, offline.engine, offline.files]);
 
   // ── Camera permission ─────────────────────────────────────────────────────
   if (stage === 'camera' && !cam.granted) {

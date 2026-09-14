@@ -23,6 +23,9 @@ import { PressableScale } from './pressable-scale';
 import { DatePickerModal } from './date-picker-modal';
 import { DocumentScanner, type ScannedDocument } from './document-scanner';
 import { expiryPrompt, formatCalendarDate, type Rect } from '@hbcfield/shared/client';
+import { useOffline } from '../offline/offline-context';
+import { createFromPhone } from '../offline/actions/queued-create';
+import { uuidv7 } from '../offline/ids';
 
 /**
  * The member supplying a document from their phone.
@@ -55,6 +58,7 @@ export function SupplyDocumentSheet({
   const { colors } = useTheme();
   const { t } = useTranslation();
   const toast = useToast();
+  const offline = useOffline();
   const { pickFromGallery } = useImagePicker();
 
   const suppliable = useMemo(
@@ -287,6 +291,41 @@ export function SupplyDocumentSheet({
     */
     setBusy(true);
     try {
+      if (offline.engine && offline.files) {
+        /*
+          Filed through the outbox, so it survives no signal and is filed once.
+          What was already uploaded while the date was being read goes as its
+          key; what was not is kept on the phone and uploaded when sent — and
+          the copy is deleted the moment the document is filed. It is a
+          photograph of somebody's passport.
+        */
+        const back = scanned?.back ?? null;
+        const body: Record<string, unknown> = {
+          typeId: type.id,
+          title: type.label,
+          ...(expiresOn ? { expiresOn: toIsoDate(expiresOn) } : {}),
+          ...(scanned?.barcodeData ? { mrzText: scanned.barcodeData } : {}),
+          ...((staged?.crop ?? scanned?.crop) ? { crop: staged?.crop ?? scanned?.crop } : {}),
+          ...((staged?.back?.crop ?? back?.crop) ? { backCrop: staged?.back?.crop ?? back?.crop } : {}),
+        };
+        if (staged?.key) body.stagingKey = staged.key;
+        else body.$front = (await offline.files.keep({ id: uuidv7(), kind: 'document', mime: photo.mimeType || 'image/jpeg', uri: photo.uri })).id;
+        if (staged?.back?.key) body.backStagingKey = staged.back.key;
+        else if (back) body.$back = (await offline.files.keep({ id: uuidv7(), kind: 'document', mime: 'image/jpeg', uri: back.uri })).id;
+
+        const { outcome } = await createFromPhone(offline.engine, { op: 'document.supply', lane: `document:${type.id}`, body });
+        if (outcome.kind === 'refused') {
+          toast.error((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('documents.supply.failed'));
+          setBusy(false);
+          return;
+        }
+        toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('documents.supply.submitted'));
+        reset();
+        onSubmitted();
+        onClose();
+        return;
+      }
+
       // Already uploaded while the member was confirming the date.
       const key = staged?.key ?? (await (async () => {
         const p = await documentsApi.ownUploadUrl({

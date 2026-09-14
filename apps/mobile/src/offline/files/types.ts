@@ -21,7 +21,8 @@ export interface StoredFile {
   createdAt: number;
 }
 
-export type FileKind = 'photo' | 'signature';
+/** `document` is kept at full size: the server reads its machine-readable zone off the pixels. */
+export type FileKind = 'photo' | 'signature' | 'document';
 
 /** The files table. SQLite on a phone, memory in tests. */
 export interface FileRegistry {
@@ -43,14 +44,16 @@ export interface FileDisk {
 export type KeepInput = {
   id: string;
   mime: string;
+  /** Re-encode a big photo smaller. Off for documents, whose small print is the point. */
+  shrink?: boolean;
   width?: number;
   height?: number;
 } & ({ uri: string } | { base64: string });
 
 /** The two network steps of an upload. Throws `UploadFailure`. */
 export interface ObjectUploader {
-  /** `body` is shaped by the route — see uploads.ts. */
-  presign(path: string, body: Record<string, string>): Promise<{ uploadUrl: string; fileKey: string }>;
+  /** `body` and the answer are shaped by the route — see uploads.ts. */
+  presign(path: string, body: Record<string, unknown>): Promise<Record<string, unknown>>;
   put(uploadUrl: string, path: string, mime: string): Promise<void>;
 }
 

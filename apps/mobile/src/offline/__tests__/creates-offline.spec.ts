@@ -21,9 +21,9 @@ const { reportIssueFromPhone, sendIssueMessageFromPhone, pendingIssueEvents } = 
 const { submitExpenseFromPhone } = require('../assets/expense-actions') as typeof import('../assets/expense-actions');
 /* eslint-enable @typescript-eslint/no-require-imports */
 
-function setup() {
+function setup(opts: { answer?: (path: string, n: number) => Record<string, unknown> } = {}) {
   const sent: OutboxOp[] = [];
-  const presigned: { path: string; body: Record<string, string> }[] = [];
+  const presigned: { path: string; body: Record<string, unknown> }[] = [];
   let online = false;
   let t = 1_757_849_000_000;
   const transport: SyncTransport = {
@@ -52,7 +52,7 @@ function setup() {
           // Like the server: no link for an issue it does not have yet.
           if (path.startsWith('/shift-issues/') && !sent.some((o) => o.op === 'shiftIssue.create')) throw Object.assign(new Error('404'), {});
           presigned.push({ path, body });
-          return { uploadUrl: 'u', fileKey: `key-for${path}` };
+          return opts.answer ? opts.answer(path, presigned.length) : { uploadUrl: 'u', fileKey: `key-for${path}` };
         },
         async put() {},
       },
@@ -124,5 +124,44 @@ describe('expenses', () => {
     await s.e.flush();
     expect(s.presigned).toHaveLength(0);
     expect(s.sent[0]!.payload.body).toMatchObject({ receiptKey: 'o1/assets/van-1/x.pdf', receiptMime: 'application/pdf' });
+  });
+});
+
+describe('documents I supply', () => {
+  it('uploads front and back into one filing, sized, and deletes both copies once filed', async () => {
+    // This route's presign answers `{ url, key }`.
+    const s = setup({ answer: (_path, n) => ({ url: 'https://s3/put', key: `staging-${n}` }) });
+    await s.e.start();
+    const front = await s.files.keep({ id: 'front-file-000000001', kind: 'document', mime: 'image/jpeg', uri: 'file:///c/f.jpg' });
+    const back = await s.files.keep({ id: 'back-file-0000000001', kind: 'document', mime: 'image/jpeg', uri: 'file:///c/b.jpg' });
+    await createFromPhone(s.e, { op: 'document.supply', lane: 'document:t1', body: { typeId: 't1', title: 'Licence', $front: front.id, $back: back.id } });
+    s.goOnline();
+    await s.e.flush();
+
+    expect(s.presigned).toEqual([
+      { path: '/documents/mine/upload-url', body: { typeId: 't1', mimeType: 'image/jpeg', sizeBytes: 700 } },
+      { path: '/documents/mine/upload-url', body: { typeId: 't1', mimeType: 'image/jpeg', sizeBytes: 700 } },
+    ]);
+    expect(s.sent[0]!.payload.body).toMatchObject({ stagingKey: 'staging-1', backStagingKey: 'staging-2', typeId: 't1' });
+    expect(s.registry.rows.size).toBe(0);
+  });
+});
+
+describe('the transport', () => {
+  it('never sends a key only the phone reads', async () => {
+    const posted: any[] = [];
+    jest.resetModules();
+    jest.doMock('../../lib/api/client', () => ({
+      ApiError: class extends Error {},
+      fetchWithAuth: async (_path: string, init: { body: string }) => {
+        posted.push(JSON.parse(init.body));
+        return { results: [] };
+      },
+    }));
+    jest.doMock('../../lib/api/attachments', () => ({ uploadToPresignedUrl: jest.fn() }));
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { httpSyncTransport } = require('../http-transport') as typeof import('../http-transport');
+    await httpSyncTransport.push([{ id: 'o1', op: 'document.supply', lane: 'l', dependsOn: [], payload: { body: { typeId: 't', stagingKey: 'k', $front: 'f1', $back: 'b1' } } } as any]);
+    expect(posted[0].operations[0].payload.body).toEqual({ typeId: 't', stagingKey: 'k' });
   });
 });

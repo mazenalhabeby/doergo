@@ -2,6 +2,14 @@ import type { SyncMediaLink, SyncPullResponse, SyncPullScope, SyncPushResponse }
 import { ApiError, fetchWithAuth } from '../lib/api/client';
 import { uploadToPresignedUrl } from '../lib/api/attachments';
 import { UploadFailure, type ObjectUploader } from './files/types';
+import { isPhoneOnlyKey } from './files/uploads';
+
+/** The payload as the server takes it: route params and body, without the phone's own keys. */
+function forServer(payload: OutboxOp['payload']): OutboxOp['payload'] {
+  const body = payload.body;
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return payload;
+  return { ...payload, body: Object.fromEntries(Object.entries(body).filter(([k]) => !isPhoneOnlyKey(k))) };
+}
 import type { SyncTransport } from './sync-engine';
 import type { OutboxOp } from './outbox/types';
 
@@ -17,7 +25,7 @@ export const httpSyncTransport: SyncTransport = {
             op: o.op,
             lane: o.lane,
             dependsOn: o.dependsOn.length ? o.dependsOn : undefined,
-            payload: o.payload,
+            payload: forServer(o.payload),
             evidence: o.evidence,
           })),
         }),
@@ -42,7 +50,7 @@ export const httpSyncTransport: SyncTransport = {
 export const httpObjectUploader: ObjectUploader = {
   async presign(path, body) {
     try {
-      return await fetchWithAuth<{ uploadUrl: string; fileKey: string }>(path, { method: 'POST', body: JSON.stringify(body) });
+      return await fetchWithAuth<Record<string, unknown>>(path, { method: 'POST', body: JSON.stringify(body) });
     } catch (err) {
       if (err instanceof ApiError) throw new UploadFailure(err.statusCode || null, err.code ?? `HTTP_${err.statusCode}`);
       throw new UploadFailure(null, 'NETWORK');

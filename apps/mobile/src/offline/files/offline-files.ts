@@ -20,7 +20,7 @@ export class OfflineFiles {
    * operation fail with FILE_MISSING; bytes with no row are only disk space.
    */
   async keep(input: KeepInput & { kind: FileKind }): Promise<StoredFile> {
-    const kept = await this.deps.disk.keep(input);
+    const kept = await this.deps.disk.keep({ ...input, shrink: input.kind === 'photo' });
     const file: StoredFile = {
       id: input.id,
       path: kept.path,
