@@ -10,6 +10,9 @@ import {
   MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { Matches } from 'class-validator';
+import { CLIENT_ID } from '../../../common/dto/upload.dto';
+import { OccurrenceEvidenceDto } from '../../../common/dto/occurrence.dto';
 
 class PartUsedDto {
   @ApiProperty({ description: 'Name of the part', example: 'Air Filter' })
@@ -39,6 +42,18 @@ class PartUsedDto {
 }
 
 export class CompleteTaskDto {
+  @ApiPropertyOptional({ description: 'Report id made on the phone; a resend returns the same report' })
+  @IsOptional()
+  @IsString()
+  @Matches(CLIENT_ID)
+  id?: string;
+
+  @ApiPropertyOptional({ type: OccurrenceEvidenceDto, description: 'When the job was completed, for a completion recorded offline' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OccurrenceEvidenceDto)
+  evidence?: OccurrenceEvidenceDto;
+
   @ApiProperty({
     description: 'Brief summary of work done',
     example: 'Replaced compressor and recharged refrigerant',
