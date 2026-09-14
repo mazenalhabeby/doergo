@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Stack, useRouter, type Href } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { getLastNotificationResponseAsync, type NotificationResponse } from 'expo-notifications';
+import { type NotificationResponse } from 'expo-notifications';
 import { usePushNotifications, getTaskIdFromNotification } from '../../src/hooks/usePushNotifications';
 import { useTheme } from '../../src/contexts/theme-context';
 import { SocketProvider } from '../../src/contexts/socket-context';
@@ -48,22 +48,6 @@ export default function CustomerLayout() {
     registered.current = true;
     registerForPushNotifications();
   }, [registerForPushNotifications]);
-
-  // Cold start: app launched by tapping a push while killed.
-  const coldStart = useRef(false);
-  useEffect(() => {
-    if (coldStart.current) return;
-    coldStart.current = true;
-    let active = true;
-    getLastNotificationResponseAsync()
-      .then((response) => {
-        if (active && response) handleNotificationResponse(response);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [handleNotificationResponse]);
 
   return (
     <QueryClientProvider client={queryClient}>

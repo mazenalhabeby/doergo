@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   Linking,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -83,6 +83,8 @@ function glyphFor(typeKey: string, isCredential: boolean): Glyph {
 
 export default function DocumentsScreen() {
   const router = useRouter();
+  // `open`: a document named by a tapped notification.
+  const { open: openFromNotification } = useLocalSearchParams<{ open?: string }>();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const toast = useToast();
@@ -284,6 +286,23 @@ export default function DocumentsScreen() {
       setOpening(null);
     }
   }, [load, t, toast, types, router]);
+
+  /*
+    Arrived from a notification about one document.
+
+    Still waiting on this member → straight into the signing flow, which is what
+    the notification asked for. Anything else (signed meanwhile, or a document
+    that only informs) → the list, with nothing opened on their behalf: opening
+    a file is recorded as the member opening it, and a notification tap is not
+    that.
+  */
+  const handledNotificationDoc = useRef<string | null>(null);
+  useEffect(() => {
+    if (!openFromNotification || isLoading || handledNotificationDoc.current === openFromNotification) return;
+    handledNotificationDoc.current = openFromNotification;
+    const doc = documents.find((d) => d.id === openFromNotification);
+    if (doc?.needsSignature) void open(doc);
+  }, [openFromNotification, isLoading, documents, open]);
 
   /*
     Soft background from the THEME (it inverts in dark mode), hue from the fixed

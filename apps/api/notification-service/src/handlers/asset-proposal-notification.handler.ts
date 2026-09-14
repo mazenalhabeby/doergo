@@ -41,7 +41,7 @@ export class AssetProposalNotificationHandler {
           id,
           'A new asset to confirm',
           `${who} sent in a contract${what}`,
-          { type: 'asset_proposal', proposalId: data.proposalId },
+          { type: 'asset_proposal', kind: 'raised', proposalId: data.proposalId },
         );
       } catch (e) {
         this.logger.error(`asset proposal push failed: ${(e as Error).message}`);
@@ -64,7 +64,7 @@ export class AssetProposalNotificationHandler {
           ? `${detail || 'What you sent in'} is on the books and yours`
           // The reason, verbatim. A refusal with none teaches nothing.
           : detail || 'What you sent in was not added',
-        { type: 'asset_proposal', proposalId: data.proposalId },
+        { type: 'asset_proposal', kind: 'decided', proposalId: data.proposalId },
       );
     } catch (e) {
       this.logger.error(`asset proposal decision push failed: ${(e as Error).message}`);

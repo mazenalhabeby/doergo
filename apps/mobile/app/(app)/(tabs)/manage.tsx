@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { ScreenContainer } from '../../../src/components';
@@ -26,6 +26,11 @@ export default function ManageScreen() {
   */
   const [issuesOpen, setIssuesOpen] = useState(false);
   const [issueId, setIssueId] = useState<string | null>(null);
+  // A tapped shift-issue notification names the thread to open.
+  const { issueId: issueFromNotification } = useLocalSearchParams<{ issueId?: string }>();
+  useEffect(() => {
+    if (issueFromNotification) setIssueId(issueFromNotification);
+  }, [issueFromNotification]);
 
   return (
     <ScreenContainer width="content" style={{ backgroundColor: colors.surface }}>

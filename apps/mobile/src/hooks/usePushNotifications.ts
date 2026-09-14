@@ -8,17 +8,21 @@ import { pushApi } from '../lib/api';
 import { PUSH_CHANNELS, RETIRED_PUSH_CHANNELS } from '@hbcfield/shared/client';
 
 const PUSH_TOKEN_CACHE_KEY = 'hbcfield_push_token_registered';
+/** A tap older than this, found at launch, is history rather than an instruction. */
+const LAUNCH_TAP_MAX_AGE_MS = 30 * 60 * 1000;
 
-// Configure how notifications appear when the app is in the foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+/*
+  Taps already acted on, by notification id. One tap can arrive twice — at
+  launch through getLastNotificationResponse and, on Android, through the
+  listener as well — and it navigates once.
+*/
+const handledTaps = new Set<string>();
+function isNewTap(response: Notifications.NotificationResponse): boolean {
+  const id = response.notification.request.identifier;
+  if (handledTaps.has(id)) return false;
+  handledTaps.add(id);
+  return true;
+}
 
 interface PushNotificationState {
   expoPushToken: string | null;
@@ -192,7 +196,8 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
     // Listener for when user taps on notification
     responseListener.current = Notifications.addNotificationResponseReceivedListener(
       (response) => {
-        options.onNotificationResponse?.(response);
+        const handler = options.onNotificationResponse;
+        if (handler && isNewTap(response)) handler(response);
       }
     );
 
@@ -205,6 +210,38 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
       }
     };
   }, [options.onNotificationReceived, options.onNotificationResponse]);
+
+  /*
+    The tap that LAUNCHED the app.
+
+    ⚠️ This is why every notification used to open Home. With the app closed,
+    the tap is delivered while the splash screen and sign-in are still running —
+    before any screen that listens exists — so the listener above never hears
+    it, and the start-up redirect lands on Home. Asked for once the listening
+    screen is up, it is still there to act on.
+  */
+  const onResponse = options.onNotificationResponse;
+  useEffect(() => {
+    if (!onResponse) return;
+    let response: Notifications.NotificationResponse | null = null;
+    try {
+      response = Notifications.getLastNotificationResponse();
+    } catch {
+      return; // a build without the native call
+    }
+    if (!response) return;
+    // Milliseconds on Android; some iOS versions report seconds.
+    const { date } = response.notification;
+    const sent = date < 1e12 ? date * 1000 : date;
+    if (Date.now() - sent > LAUNCH_TAP_MAX_AGE_MS || !isNewTap(response)) return;
+    // Consumed: a remount after sign-out/in must not replay it.
+    try {
+      Notifications.clearLastNotificationResponse();
+    } catch {
+      /* the in-memory set still stops a replay this session */
+    }
+    onResponse(response);
+  }, [onResponse]);
 
   // Android notification channel setup
   useEffect(() => {
@@ -277,17 +314,6 @@ export function getTaskIdFromNotification(
     : (notification.request.content.data as NotificationData);
 
   return data?.taskId ?? null;
-}
-
-// Helper function to get notification type
-export function getNotificationType(
-  notification: Notifications.Notification | Notifications.NotificationResponse
-): string | null {
-  const data = 'notification' in notification
-    ? (notification.notification.request.content.data as NotificationData)
-    : (notification.request.content.data as NotificationData);
-
-  return data?.type ?? null;
 }
 
 /**

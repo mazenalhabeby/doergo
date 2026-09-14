@@ -1,15 +1,13 @@
 import { OfflineProvider } from '../../src/offline/offline-context';
-import { useEffect, useCallback, useRef } from 'react';
-import { Stack, useRouter, Href } from 'expo-router';
+import { useEffect, useCallback, useRef, useState } from 'react';
+import { Stack, useRouter, useRootNavigationState, useSegments, Href } from 'expo-router';
 import { AppState, AppStateStatus, Platform, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import * as Location from 'expo-location';
-import { getLastNotificationResponseAsync, type NotificationResponse } from 'expo-notifications';
-import {
-  usePushNotifications,
-  getTaskIdFromNotification,
-  getNotificationType,
-} from '../../src/hooks/usePushNotifications';
+import { type NotificationResponse } from 'expo-notifications';
+import { usePushNotifications } from '../../src/hooks/usePushNotifications';
+import { notificationTarget, type NotificationTarget } from '../../src/lib/notification-route';
+import { holds } from '../../src/lib/permissions';
 import { SocketProvider, useSocketContext } from '../../src/contexts/socket-context';
 import { LocationTrackingProvider } from '../../src/contexts/location-tracking-context';
 import { DocumentRequirementsProvider } from '../../src/contexts/document-requirements-context';
@@ -115,76 +113,40 @@ export default function AppLayout() {
   // Keep technician presence alive for online status
   usePresencePing();
 
-  // Handle notification tap - navigate to relevant screen
+  /*
+    A tapped notification opens the screen it is about — the table is
+    src/lib/notification-route.ts. Home only when the table says so, or for a
+    type it does not know and that names no task.
+  */
+  const { user } = useAuth();
+  const managesIssues = holds(user, 'canViewAllTasks');
+  const [pendingTarget, setPendingTarget] = useState<NotificationTarget | null>(null);
   const handleNotificationResponse = useCallback((response: NotificationResponse) => {
-    const taskId = getTaskIdFromNotification(response);
-    const type = getNotificationType(response);
-    const data = response.notification?.request?.content?.data as Record<string, any> | undefined;
+    const data = response.notification?.request?.content?.data as Record<string, unknown> | undefined;
+    const target = notificationTarget(data, { managesIssues });
+    if (target) setPendingTarget(target);
+  }, [managesIssues]);
 
-    console.log('[AppLayout] Notification tapped, type:', type, 'taskId:', taskId);
+  /*
+    Navigate once the app has SETTLED, not the moment the tap is known.
 
-    // Overtime notifications (legacy overtime module)
-    if (type?.startsWith('overtime.')) {
-      const overtimeId = data?.overtimeRequestId || 'active';
-      router.push(`/overtime/${overtimeId}` as Href);
-      return;
-    }
-
-    // Shift reminder → the worker's clock screen, where the response actions live.
-    if (type === 'shift_reminder' || type === 'overtime_decision') {
-      router.push('/(app)/(tabs)/attendance' as Href);
-      return;
-    }
-
-    // Extra-time request → the leader's approval screen.
-    if (type === 'overtime_request') {
-      router.push('/extra-time' as Href);
-      return;
-    }
-
-    // Support: deep-link into the ticket thread.
-    if (type === 'support' || data?.type === 'support') {
-      const ticketId = data?.ticketId;
-      router.push((ticketId ? `/support?ticketId=${ticketId}` : '/support') as Href);
-      return;
-    }
-
-    // Chat: deep-link into the conversation.
-    if (type === 'chat' || data?.type === 'chat') {
-      const conversationId = data?.conversationId;
-      router.push((conversationId ? `/chat?conversationId=${conversationId}` : '/chat') as Href);
-      return;
-    }
-
-    /*
-      Leave, in two directions and to two screens.
-
-      A request goes to whoever is routed about that member, and what they need
-      is the approvals list. A decision goes to the member who asked, and what
-      they need is their own. The push already knows which it is — sending both
-      to one screen would land half the taps on a page with nothing to do.
-    */
-    if (type === 'time_off_request') {
-      router.push('/manage/time-off-requests' as Href);
-      return;
-    }
-    if (type === 'time_off_response') {
-      router.push('/(app)/(tabs)/time-off' as Href);
-      return;
-    }
-
-    // Attendance pushes (enable-Always reminder, out-of-ring excursion events,
-    // geofence warnings) → the clock screen, where the banners + actions live.
-    if (type?.startsWith('attendance.')) {
-      router.push('/(app)/(tabs)/attendance' as Href);
-      return;
-    }
-
-    if (taskId) {
-      // Navigate to task detail
-      router.push(`/task/${taskId}` as Href);
-    }
-  }, [router]);
+    On a launch from a notification the tap is known while start-up is still
+    moving the app around — the sign-in check, the redirect into the app, a
+    token refresh. A push made in the middle of that is replaced by the next
+    redirect, and the member lands on Home. So the target waits until the
+    navigator exists and the app has stayed inside (app) for a moment; any
+    further move restarts the wait.
+  */
+  const rootNavKey = useRootNavigationState()?.key;
+  const topSegment = useSegments()[0] as string | undefined;
+  useEffect(() => {
+    if (!pendingTarget || !rootNavKey || topSegment !== '(app)') return;
+    const timer = setTimeout(() => {
+      setPendingTarget(null);
+      router.push(pendingTarget as Href);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [pendingTarget, rootNavKey, topSegment, router]);
 
   const {
     registerForPushNotifications,
@@ -201,24 +163,6 @@ export default function AppLayout() {
       registerForPushNotifications();
     }
   }, [registerForPushNotifications]);
-
-  // Cold start: if the app was launched by tapping a push while killed, the
-  // in-session response listener never fires — read the launching response once
-  // and route to the same destination so the deep link isn't lost.
-  const coldStartHandled = useRef(false);
-  useEffect(() => {
-    if (coldStartHandled.current) return;
-    coldStartHandled.current = true;
-    let active = true;
-    getLastNotificationResponseAsync()
-      .then((response) => {
-        if (active && response) handleNotificationResponse(response);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [handleNotificationResponse]);
 
   // Re-register when app comes to foreground (in case token changed)
   useEffect(() => {

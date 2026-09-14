@@ -21,7 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import * as Location from 'expo-location';
 import { useFocusEffect } from '@react-navigation/native';
-import { useRouter, Href } from 'expo-router';
+import { useLocalSearchParams, useRouter, Href } from 'expo-router';
 import {
   COLORS,
   SPACING,
@@ -101,6 +101,11 @@ export default function AttendanceScreen() {
   // Shift Issues: report a blocker + open its live thread.
   const [reportIssueOpen, setReportIssueOpen] = useState(false);
   const [issueThreadId, setIssueThreadId] = useState<string | null>(null);
+  // A tapped shift-issue notification names the thread to open.
+  const { issueId: issueFromNotification } = useLocalSearchParams<{ issueId?: string }>();
+  useEffect(() => {
+    if (issueFromNotification) setIssueThreadId(issueFromNotification);
+  }, [issueFromNotification]);
   const [issueListOpen, setIssueListOpen] = useState(false);
 
   // Geofence warning state
