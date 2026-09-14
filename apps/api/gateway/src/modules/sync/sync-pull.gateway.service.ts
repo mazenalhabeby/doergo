@@ -12,4 +12,8 @@ export class SyncPullGatewayService extends BaseGatewayService {
   pull(data: Record<string, unknown>) {
     return this.send({ cmd: 'sync_pull' }, data);
   }
+
+  mediaLinks(data: Record<string, unknown>) {
+    return this.send({ cmd: 'sync_media_links' }, data);
+  }
 }

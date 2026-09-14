@@ -16,6 +16,16 @@ import type { OccurrenceEvidence } from './occurrence';
  * the server answers `reset: true` and the phone rebuilds that scope from
  * scratch instead of trusting its copy.
  */
+/** Most attachment ids one media-links request may ask to sign. */
+export const SYNC_MEDIA_LINKS_MAX = 100;
+
+/** A short-lived link to one photo the member may see, for the phone's offline image cache. */
+export interface SyncMediaLink {
+  id: string;
+  url: string;
+  mimeType: string | null;
+}
+
 export const SYNC_TOMBSTONE_RETENTION_DAYS = 90;
 
 /** At most this many operations per push. More are sent in further batches. */

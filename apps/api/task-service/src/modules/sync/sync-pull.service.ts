@@ -3,7 +3,9 @@ import {
   activeAssignmentWhere,
   SYNC_PULL_MAX_ROWS,
   SYNC_TOMBSTONE_RETENTION_DAYS,
+  SYNC_MEDIA_LINKS_MAX,
   TaskStatus,
+  type SyncMediaLink,
   type SyncPullResponse,
   type SyncPullScope,
 } from '@hbcfield/shared';
@@ -11,6 +13,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { buildTaskVisibilityWhere, type TaskVisibilityFacts } from '../tasks/task-visibility';
 import { TASK_LIST_INCLUDE, annotateTracksLocation } from '../tasks/task-list-shape';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
+import { MediaSigner } from '../../common/storage/media-signer.service';
 
 /** Closed work stays on the phone this long, so yesterday's job can still be looked up in a basement. */
 const CLOSED_TASK_WINDOW_DAYS = 30;
@@ -75,7 +78,29 @@ export class SyncPullService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly workflows: WorkflowConfigCache,
+    private readonly media: MediaSigner,
   ) {}
+
+  /**
+   * Short-lived links to task photos, for the phone to keep for offline viewing.
+   *
+   * Pulled attachments carry no URL on purpose — a link lives an hour and a
+   * stored one is a leaked one. The phone asks here for the images it does not
+   * have yet, on Wi-Fi, and downloads them. Only images, and only on tasks this
+   * member can see: the ids come from the phone and are filtered by the same
+   * visibility the pull uses, so asking for somebody else's photo returns
+   * nothing rather than an error that confirms it exists.
+   */
+  async mediaLinks(req: TaskVisibilityFacts & { ids: string[] }): Promise<SyncMediaLink[]> {
+    const ids = [...new Set((req.ids ?? []).filter((id) => typeof id === 'string'))].slice(0, SYNC_MEDIA_LINKS_MAX);
+    if (!ids.length) return [];
+    const rows = await this.prisma.attachment.findMany({
+      where: { id: { in: ids }, task: this.tasksInScope(req), OR: [{ mimeType: { startsWith: 'image/' } }, { fileType: 'IMAGE' }] },
+      select: { id: true, fileKey: true, fileUrl: true, fileName: true, mimeType: true },
+    });
+    const signed = await this.media.signAll(rows);
+    return signed.filter((r) => r.url).map((r) => ({ id: r.id, url: r.url!, mimeType: r.mimeType ?? null }));
+  }
 
   async pull(req: PullRequest): Promise<SyncPullResponse> {
     switch (req.scope) {

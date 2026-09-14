@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, Post, Query, Request } from '@nestjs/c
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { isAdmin, spacesGranting, type SyncOperation } from '@hbcfield/shared';
-import { SyncPullQueryDto, SyncPushDto } from './dto/sync-push.dto';
+import { SyncMediaLinksDto, SyncPullQueryDto, SyncPushDto } from './dto/sync-push.dto';
 import { SyncPullGatewayService } from './sync-pull.gateway.service';
 import { SyncPushService } from './sync-push.service';
 
@@ -46,6 +46,21 @@ export class SyncController {
       scope: query.scope,
       cursor: query.cursor ?? null,
       limit: query.limit,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /** Short-lived links to task photos the member may see, for the offline image cache. */
+  @Post('media-links')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Signed links for task photos, for offline viewing' })
+  async mediaLinks(@Body() dto: SyncMediaLinksDto, @Request() req: any) {
+    return this.pullService.mediaLinks({
+      ids: dto.ids,
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,

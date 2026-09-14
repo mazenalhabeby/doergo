@@ -15,7 +15,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { SYNC_OPERATIONS, SYNC_PUSH_MAX_OPS, SYNC_PULL_SCOPES, SYNC_PULL_MAX_ROWS } from '@hbcfield/shared';
+import { SYNC_OPERATIONS, SYNC_PUSH_MAX_OPS, SYNC_PULL_SCOPES, SYNC_PULL_MAX_ROWS, SYNC_MEDIA_LINKS_MAX } from '@hbcfield/shared';
 
 const ID = /^[A-Za-z0-9_-]{16,128}$/;
 
@@ -81,4 +81,14 @@ export class SyncPullQueryDto {
   @Min(1)
   @Max(SYNC_PULL_MAX_ROWS)
   limit?: number;
+}
+
+/** Attachment ids the phone wants links for, to keep the photos for offline viewing. */
+export class SyncMediaLinksDto {
+  @ApiProperty({ type: [String], maxItems: SYNC_MEDIA_LINKS_MAX })
+  @IsArray()
+  @ArrayMaxSize(SYNC_MEDIA_LINKS_MAX)
+  @IsString({ each: true })
+  @Matches(/^[A-Za-z0-9_-]{1,64}$/, { each: true })
+  ids: string[];
 }
