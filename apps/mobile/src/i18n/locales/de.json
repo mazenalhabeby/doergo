@@ -864,7 +864,8 @@
       "updateAvailable": "Version {{version}} ist verfügbar",
       "language": "Sprache",
       "timeFormat": "Zeitformat",
-      "guidedTour": "Geführte Touren"
+      "guidedTour": "Geführte Touren",
+      "sync": "Synchronisierung"
     },
     "language": {
       "choosePreferred": "Wählen Sie Ihre bevorzugte Sprache",
@@ -2332,5 +2333,68 @@
     "tapToUnlock": "Tippen, um mit {{method}} zu entsperren",
     "notYou": "Nicht {{name}}? Mit einem anderen Konto anmelden",
     "backTo": "Zurück zu {{method}} für {{name}}"
+  },
+  "offline": {
+    "banner": {
+      "offline": "Sie sind offline. Arbeiten Sie weiter — Änderungen werden gespeichert und gesendet, sobald Sie wieder online sind.",
+      "offlineWaiting_one": "Offline · {{count}} Änderung wartet",
+      "offlineWaiting_other": "Offline · {{count}} Änderungen warten",
+      "limited": "Schwache Verbindung — Änderungen werden gespeichert und gesendet",
+      "sending_one": "{{count}} Änderung wird gesendet…",
+      "sending_other": "{{count}} Änderungen werden gesendet…",
+      "attention_one": "{{count}} Änderung braucht Sie",
+      "attention_other": "{{count}} Änderungen brauchen Sie"
+    },
+    "chip": {
+      "waiting": "Wird gesendet",
+      "attention": "Nicht übernommen"
+    },
+    "sync": {
+      "title": "Synchronisierung",
+      "lastSynced": "Zuletzt synchronisiert {{time}}",
+      "neverSynced": "Noch nicht synchronisiert",
+      "attention": "Braucht Ihre Aufmerksamkeit",
+      "waiting": "Wartet",
+      "sent": "Heute gesendet",
+      "nothingWaiting": "Alles wurde gesendet.",
+      "gotIt": "Verstanden",
+      "retry": "Erneut versuchen",
+      "discard": "Verwerfen",
+      "syncNow": "Jetzt synchronisieren",
+      "offlineNow": "Sie sind offline — dies wird gesendet, sobald Sie wieder online sind.",
+      "unavailable": "Diese App-Version funktioniert nur online. Aktualisieren Sie die App, um ohne Internet weiterzuarbeiten.",
+      "waitingSince": "Gespeichert {{time}}"
+    },
+    "ops": {
+      "task_status": "Statusänderung",
+      "task_comment": "Notiz",
+      "task_decline": "Auftrag abgelehnt",
+      "task_attachment": "Foto",
+      "task_complete": "Auftrag abgeschlossen",
+      "report_attachment": "Berichtsfoto",
+      "attendance_clockIn": "Einstempeln",
+      "attendance_clockOut": "Ausstempeln",
+      "attendance_breakStart": "Pause begonnen",
+      "attendance_breakEnd": "Pause beendet",
+      "worklog_note": "Arbeitsnotiz",
+      "worklog_attachment": "Arbeitsfoto",
+      "shiftIssue_message": "Nachricht zum Problem",
+      "timeOff_request": "Abwesenheitsantrag",
+      "expense_submit": "Ausgabe",
+      "chat_send": "Nachricht"
+    },
+    "errors": {
+      "DEPENDENCY_FAILED": "Ein vorheriger Schritt, von dem dies abhängt, wurde nicht übernommen.",
+      "TASK_REASSIGNED": "Das Büro hat den Auftrag jemand anderem gegeben, bevor Ihre Änderung ankam.",
+      "CONFLICT": "Das Büro hat dies geändert, bevor Ihre Änderung ankam.",
+      "default": "Der Server hat dies nicht übernommen."
+    },
+    "signOut": {
+      "title_one": "{{count}} Änderung wurde nicht gesendet",
+      "title_other": "{{count}} Änderungen wurden nicht gesendet",
+      "body": "Wenn Sie sich jetzt abmelden, werden sie von diesem Telefon gelöscht. Verbinden Sie sich zuerst mit dem Internet, um sie zu senden.",
+      "send": "Jetzt senden",
+      "discard": "Löschen und abmelden"
+    }
   }
 }

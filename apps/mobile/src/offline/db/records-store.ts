@@ -1,3 +1,4 @@
+import type { SyncPullResponse } from '@hbcfield/shared/client';
 import type { SqlDb } from './sql';
 
 /**
@@ -41,20 +42,14 @@ export class RecordsStore {
    */
   async applyPull(
     scope: string,
-    page: {
-      rows: { id: string; updatedAt?: string | null; [k: string]: unknown }[];
-      deleted: string[];
-      reset: boolean;
-      scopeIds?: string[];
-      cursor: string;
-    },
+    page: Pick<SyncPullResponse, 'rows' | 'deleted' | 'reset' | 'scopeIds' | 'cursor'>,
     options: { parentOf?: (row: any) => string | null; keep?: ReadonlySet<string>; firstPage: boolean },
   ): Promise<void> {
     await this.db.withExclusiveTransactionAsync(async (txn) => {
       if (page.reset && options.firstPage) {
         await txn.runAsync('DELETE FROM records WHERE scope = ?', [scope]);
       }
-      for (const row of page.rows) {
+      for (const row of page.rows as { id: string; updatedAt?: string | null }[]) {
         await txn.runAsync(
           'INSERT OR REPLACE INTO records (scope, id, parent_id, data, server_updated_at) VALUES (?, ?, ?, ?, ?)',
           [scope, row.id, options.parentOf?.(row) ?? null, JSON.stringify(row), (row.updatedAt as string | undefined) ?? null],

@@ -1,3 +1,4 @@
+import { OfflineProvider } from '../../src/offline/offline-context';
 import { useEffect, useCallback, useRef } from 'react';
 import { Stack, useRouter, Href } from 'expo-router';
 import { AppState, AppStateStatus, Platform, View } from 'react-native';
@@ -239,6 +240,7 @@ export default function AppLayout() {
   }, [pushError]);
 
   return (
+    <OfflineProvider>
     <SocketProvider>
     <GlobalChatNotifier />
     <LocationTrackingProvider>
@@ -278,6 +280,7 @@ export default function AppLayout() {
         <Stack.Screen name="support" options={{ headerShown: false }} />
         <Stack.Screen name="chat" options={{ headerShown: false }} />
         <Stack.Screen name="extra-time" options={{ headerShown: false }} />
+        <Stack.Screen name="sync" options={{ headerShown: false }} />
         {/* ⚠️ EVERY route under app/(app) must appear in this list.
 
             A screen that is not registered inherits the stack's default header,
@@ -365,5 +368,6 @@ export default function AppLayout() {
       </DocumentRequirementsProvider>
     </LocationTrackingProvider>
     </SocketProvider>
+    </OfflineProvider>
   );
 }

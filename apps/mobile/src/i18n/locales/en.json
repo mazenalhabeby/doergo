@@ -864,7 +864,8 @@
       "updateAvailable": "Version {{version}} is available",
       "language": "Language",
       "timeFormat": "Time format",
-      "guidedTour": "Guided tours"
+      "guidedTour": "Guided tours",
+      "sync": "Sync"
     },
     "language": {
       "choosePreferred": "Choose your preferred language",
@@ -2332,5 +2333,68 @@
     "tapToUnlock": "Tap to unlock with {{method}}",
     "notYou": "Not {{name}}? Sign in with another account",
     "backTo": "Back to {{method}} for {{name}}"
+  },
+  "offline": {
+    "banner": {
+      "offline": "You're offline. Keep working — changes are saved and sent when you're back online.",
+      "offlineWaiting_one": "You're offline · {{count}} change waiting",
+      "offlineWaiting_other": "You're offline · {{count}} changes waiting",
+      "limited": "Weak connection — changes are saved and will be sent",
+      "sending_one": "Sending {{count}} change…",
+      "sending_other": "Sending {{count}} changes…",
+      "attention_one": "{{count}} change needs you",
+      "attention_other": "{{count}} changes need you"
+    },
+    "chip": {
+      "waiting": "Waiting to send",
+      "attention": "Not applied"
+    },
+    "sync": {
+      "title": "Sync",
+      "lastSynced": "Last synced {{time}}",
+      "neverSynced": "Not synced yet",
+      "attention": "Needs your attention",
+      "waiting": "Waiting",
+      "sent": "Sent today",
+      "nothingWaiting": "Everything has been sent.",
+      "gotIt": "Got it",
+      "retry": "Try again",
+      "discard": "Discard",
+      "syncNow": "Sync now",
+      "offlineNow": "You're offline — this will be sent when you're back online.",
+      "unavailable": "This version of the app works online only. Update the app to keep working without internet.",
+      "waitingSince": "Saved {{time}}"
+    },
+    "ops": {
+      "task_status": "Status change",
+      "task_comment": "Note",
+      "task_decline": "Declined job",
+      "task_attachment": "Photo",
+      "task_complete": "Job completed",
+      "report_attachment": "Report photo",
+      "attendance_clockIn": "Clock in",
+      "attendance_clockOut": "Clock out",
+      "attendance_breakStart": "Break started",
+      "attendance_breakEnd": "Break ended",
+      "worklog_note": "Work log note",
+      "worklog_attachment": "Work log photo",
+      "shiftIssue_message": "Issue message",
+      "timeOff_request": "Time off request",
+      "expense_submit": "Expense",
+      "chat_send": "Message"
+    },
+    "errors": {
+      "DEPENDENCY_FAILED": "An earlier step this depends on wasn't accepted.",
+      "TASK_REASSIGNED": "The office gave this job to someone else before your change arrived.",
+      "CONFLICT": "The office changed this before your change arrived.",
+      "default": "The server didn't accept this."
+    },
+    "signOut": {
+      "title_one": "{{count}} change hasn't been sent",
+      "title_other": "{{count}} changes haven't been sent",
+      "body": "Signing out now deletes them from this phone. Connect to the internet to send them first.",
+      "send": "Send now",
+      "discard": "Delete and sign out"
+    }
   }
 }

@@ -27,6 +27,12 @@ export function formatTimeRange(dueDate: string | Date, durationHours: number = 
   return `${startTime} - ${endTime}${nextDay}`;
 }
 
+/** A moment's time of day, honoring the member's 12h/24h preference. */
+export function formatTimeOfDay(at: Date | number, hour12: boolean = false): string {
+  const d = typeof at === 'number' ? new Date(at) : at;
+  return formatClock(d.getHours(), d.getMinutes(), hour12);
+}
+
 /** Format hour+minute honoring the 12h/24h preference. */
 function formatClock(h: number, m: number, hour12: boolean): string {
   const hh = ((h % 24) + 24) % 24;

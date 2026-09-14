@@ -1,3 +1,5 @@
+import { useOffline, useSyncStatus } from '../../../src/offline/offline-context';
+import { destroyOfflineDatabase } from '../../../src/offline/db/database';
 import { useState, useCallback, useRef } from 'react';
 import {
   View,
@@ -67,6 +69,9 @@ const THEME_MODE_ICONS: Record<ThemeMode, string> = {
 
 export default function ProfileScreen() {
   const { user, logout, refreshUser } = useAuth();
+  const offline = useOffline();
+  const { snapshot: syncSnapshot } = useSyncStatus();
+  const [showUnsentConfirm, setShowUnsentConfirm] = useState(false);
   const { colors, isDark, mode, setMode } = useTheme();
   const toast = useToast();
   const { t } = useTranslation();
@@ -211,13 +216,25 @@ export default function ProfileScreen() {
   }, []);
 
   const handleLogout = () => {
-    setShowSignOutConfirm(true);
+    /*
+      ⚠️ Work that exists only on this phone is asked about first.
+
+      Signing out deletes the member's offline database — the queue with it. A
+      plain "Sign out?" would let somebody throw away a morning of clock-ins and
+      photos with one tap, so unsent work gets its own question.
+    */
+    if (offline.engine?.hasUnsent()) setShowUnsentConfirm(true);
+    else setShowSignOutConfirm(true);
   };
 
   const confirmSignOut = async () => {
     setShowSignOutConfirm(false);
+    setShowUnsentConfirm(false);
+    const userId = user?.id;
     await unregisterPushToken();
     await logout();
+    // Nothing unsent (or the member chose to delete it): the copy goes too.
+    if (userId) await destroyOfflineDatabase(userId).catch(() => undefined);
   };
 
   return (
@@ -432,6 +449,25 @@ export default function ProfileScreen() {
           )}
           <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
           <MenuItem
+            icon={syncSnapshot.attention > 0 ? 'alert-circle-outline' : 'cloud-done-outline'}
+            iconColor={syncSnapshot.attention > 0 ? COLORS.error : COLORS.primary}
+            iconBg={syncSnapshot.attention > 0 ? colors.errorLight : colors.primaryLight}
+            label={t('profile.menu.sync')}
+            onPress={() => router.push('/sync' as Href)}
+            trailing={
+              <View style={styles.menuTrailingRow}>
+                {syncSnapshot.attention + syncSnapshot.waiting > 0 && (
+                  <Text style={[styles.menuTrailingText, { color: syncSnapshot.attention > 0 ? COLORS.error : colors.textMuted }]}>
+                    {syncSnapshot.attention + syncSnapshot.waiting}
+                  </Text>
+                )}
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </View>
+            }
+            themeColors={colors}
+          />
+          <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+          <MenuItem
             icon="notifications-outline"
             iconColor={COLORS.primary}
             iconBg={colors.primaryLight}
@@ -610,6 +646,22 @@ export default function ProfileScreen() {
         cancelLabel={t('common.cancel')}
         variant="warning"
         icon="log-out-outline"
+      />
+
+      <ConfirmSheet
+        visible={showUnsentConfirm}
+        onClose={() => {
+          // "Send now" and dismissing both mean: keep it, try to send.
+          setShowUnsentConfirm(false);
+          void offline.engine?.syncAll();
+        }}
+        onConfirm={confirmSignOut}
+        title={t('offline.signOut.title', { count: syncSnapshot.waiting + syncSnapshot.attention })}
+        message={t('offline.signOut.body')}
+        confirmLabel={t('offline.signOut.discard')}
+        cancelLabel={t('offline.signOut.send')}
+        variant="danger"
+        icon="cloud-offline-outline"
       />
 
       <GuideSheet visible={guidesOpen} onClose={() => setGuidesOpen(false)} />

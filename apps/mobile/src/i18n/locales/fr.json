@@ -864,7 +864,8 @@
       "updateAvailable": "La version {{version}} est disponible",
       "language": "Langue",
       "timeFormat": "Format de l'heure",
-      "guidedTour": "Visites guidées"
+      "guidedTour": "Visites guidées",
+      "sync": "Synchronisation"
     },
     "language": {
       "choosePreferred": "Choisissez votre langue préférée",
@@ -2332,5 +2333,68 @@
     "tapToUnlock": "Touchez pour déverrouiller avec {{method}}",
     "notYou": "Vous n'êtes pas {{name}} ? Connectez-vous avec un autre compte",
     "backTo": "Revenir à {{method}} pour {{name}}"
+  },
+  "offline": {
+    "banner": {
+      "offline": "Vous êtes hors ligne. Continuez à travailler : les modifications sont enregistrées et envoyées dès votre retour en ligne.",
+      "offlineWaiting_one": "Hors ligne · {{count}} modification en attente",
+      "offlineWaiting_other": "Hors ligne · {{count}} modifications en attente",
+      "limited": "Connexion faible : les modifications sont enregistrées et seront envoyées",
+      "sending_one": "Envoi de {{count}} modification…",
+      "sending_other": "Envoi de {{count}} modifications…",
+      "attention_one": "{{count}} modification requiert votre attention",
+      "attention_other": "{{count}} modifications requièrent votre attention"
+    },
+    "chip": {
+      "waiting": "En attente d'envoi",
+      "attention": "Non appliqué"
+    },
+    "sync": {
+      "title": "Synchronisation",
+      "lastSynced": "Dernière synchronisation {{time}}",
+      "neverSynced": "Pas encore synchronisé",
+      "attention": "Requiert votre attention",
+      "waiting": "En attente",
+      "sent": "Envoyé aujourd'hui",
+      "nothingWaiting": "Tout a été envoyé.",
+      "gotIt": "Compris",
+      "retry": "Réessayer",
+      "discard": "Supprimer",
+      "syncNow": "Synchroniser",
+      "offlineNow": "Vous êtes hors ligne : ce sera envoyé dès votre retour en ligne.",
+      "unavailable": "Cette version de l'application fonctionne uniquement en ligne. Mettez l'application à jour pour travailler sans internet.",
+      "waitingSince": "Enregistré {{time}}"
+    },
+    "ops": {
+      "task_status": "Changement de statut",
+      "task_comment": "Note",
+      "task_decline": "Intervention refusée",
+      "task_attachment": "Photo",
+      "task_complete": "Intervention terminée",
+      "report_attachment": "Photo du rapport",
+      "attendance_clockIn": "Pointage d'arrivée",
+      "attendance_clockOut": "Pointage de départ",
+      "attendance_breakStart": "Pause commencée",
+      "attendance_breakEnd": "Pause terminée",
+      "worklog_note": "Note de travail",
+      "worklog_attachment": "Photo de travail",
+      "shiftIssue_message": "Message d'incident",
+      "timeOff_request": "Demande d'absence",
+      "expense_submit": "Dépense",
+      "chat_send": "Message"
+    },
+    "errors": {
+      "DEPENDENCY_FAILED": "Une étape précédente dont cela dépend n'a pas été acceptée.",
+      "TASK_REASSIGNED": "Le bureau a confié cette intervention à quelqu'un d'autre avant l'arrivée de votre modification.",
+      "CONFLICT": "Le bureau a modifié cela avant l'arrivée de votre modification.",
+      "default": "Le serveur ne l'a pas accepté."
+    },
+    "signOut": {
+      "title_one": "{{count}} modification n'a pas été envoyée",
+      "title_other": "{{count}} modifications n'ont pas été envoyées",
+      "body": "Vous déconnecter maintenant les supprime de ce téléphone. Connectez-vous à internet pour les envoyer d'abord.",
+      "send": "Envoyer",
+      "discard": "Supprimer et se déconnecter"
+    }
   }
 }

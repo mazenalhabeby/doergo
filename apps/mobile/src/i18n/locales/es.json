@@ -864,7 +864,8 @@
       "updateAvailable": "La versión {{version}} está disponible",
       "language": "Idioma",
       "timeFormat": "Formato de hora",
-      "guidedTour": "Tours guiados"
+      "guidedTour": "Tours guiados",
+      "sync": "Sincronización"
     },
     "language": {
       "choosePreferred": "Elige tu idioma preferido",
@@ -2332,5 +2333,68 @@
     "tapToUnlock": "Toca para desbloquear con {{method}}",
     "notYou": "¿No eres {{name}}? Inicia sesión con otra cuenta",
     "backTo": "Volver a {{method}} para {{name}}"
+  },
+  "offline": {
+    "banner": {
+      "offline": "Estás sin conexión. Sigue trabajando: los cambios se guardan y se envían cuando vuelvas a tener conexión.",
+      "offlineWaiting_one": "Sin conexión · {{count}} cambio pendiente",
+      "offlineWaiting_other": "Sin conexión · {{count}} cambios pendientes",
+      "limited": "Conexión débil: los cambios se guardan y se enviarán",
+      "sending_one": "Enviando {{count}} cambio…",
+      "sending_other": "Enviando {{count}} cambios…",
+      "attention_one": "{{count}} cambio necesita tu atención",
+      "attention_other": "{{count}} cambios necesitan tu atención"
+    },
+    "chip": {
+      "waiting": "Pendiente de envío",
+      "attention": "No aplicado"
+    },
+    "sync": {
+      "title": "Sincronización",
+      "lastSynced": "Última sincronización {{time}}",
+      "neverSynced": "Aún no sincronizado",
+      "attention": "Necesita tu atención",
+      "waiting": "Pendiente",
+      "sent": "Enviado hoy",
+      "nothingWaiting": "Todo se ha enviado.",
+      "gotIt": "Entendido",
+      "retry": "Reintentar",
+      "discard": "Descartar",
+      "syncNow": "Sincronizar ahora",
+      "offlineNow": "Estás sin conexión: se enviará cuando vuelvas a tener conexión.",
+      "unavailable": "Esta versión de la app solo funciona con conexión. Actualiza la app para seguir trabajando sin internet.",
+      "waitingSince": "Guardado {{time}}"
+    },
+    "ops": {
+      "task_status": "Cambio de estado",
+      "task_comment": "Nota",
+      "task_decline": "Trabajo rechazado",
+      "task_attachment": "Foto",
+      "task_complete": "Trabajo completado",
+      "report_attachment": "Foto del informe",
+      "attendance_clockIn": "Fichar entrada",
+      "attendance_clockOut": "Fichar salida",
+      "attendance_breakStart": "Pausa iniciada",
+      "attendance_breakEnd": "Pausa terminada",
+      "worklog_note": "Nota de trabajo",
+      "worklog_attachment": "Foto de trabajo",
+      "shiftIssue_message": "Mensaje de incidencia",
+      "timeOff_request": "Solicitud de ausencia",
+      "expense_submit": "Gasto",
+      "chat_send": "Mensaje"
+    },
+    "errors": {
+      "DEPENDENCY_FAILED": "No se aceptó un paso anterior del que depende.",
+      "TASK_REASSIGNED": "La oficina asignó este trabajo a otra persona antes de que llegara tu cambio.",
+      "CONFLICT": "La oficina cambió esto antes de que llegara tu cambio.",
+      "default": "El servidor no lo aceptó."
+    },
+    "signOut": {
+      "title_one": "{{count}} cambio no se ha enviado",
+      "title_other": "{{count}} cambios no se han enviado",
+      "body": "Si cierras sesión ahora se borrarán de este teléfono. Conéctate a internet para enviarlos primero.",
+      "send": "Enviar ahora",
+      "discard": "Borrar y cerrar sesión"
+    }
   }
 }
