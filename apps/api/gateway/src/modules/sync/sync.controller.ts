@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Header, HttpCode, NotFoundException, Post, Query, Request, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { timingSafeEqual } from 'crypto';
-import { Public } from '../../common/decorators';
+import { Public, RequirePermission } from '../../common/decorators';
 import { SyncHealthStore } from './sync-health.store';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -69,6 +69,20 @@ export class SyncController {
   @ApiOperation({ summary: "Report this phone's sync queue health" })
   async telemetry(@Body() dto: SyncTelemetryDto, @Request() req: any) {
     await this.health.record({ userId: req.user.id, organizationId: req.user.organizationId }, dto);
+  }
+
+  /**
+   * Whose phone is still holding work, and why — the office's Phone sync tab.
+   *
+   * Counts, ages and reason codes only; never the work itself. The caller's
+   * organization comes from the token. `canManageUsers` because it is a view of
+   * people, and an external member can never hold that org-level permission.
+   */
+  @Get('health')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: "Members' phone sync health (counts only)" })
+  async memberHealth(@Request() req: any) {
+    return this.health.forOrganization(req.user.organizationId);
   }
 
   /**

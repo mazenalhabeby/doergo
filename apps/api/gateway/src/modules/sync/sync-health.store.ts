@@ -1,21 +1,25 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-import type { SyncOperationResult, SyncTelemetry } from '@hbcfield/shared';
+import { SYNC_STUCK_AFTER_MS, syncHealthState, type SyncHealthState, type SyncOperationResult, type SyncTelemetry } from '@hbcfield/shared';
 
 /** A phone that has not reported for this long is no longer counted. */
 const REPORT_TTL_SECONDS = 30 * 24 * 60 * 60;
-/** Work waiting longer than this is "stuck" for the alert. */
-const STUCK_AFTER_MS = 24 * 60 * 60 * 1000;
 
 const HEALTH = (userId: string) => `synchealth:${userId}`;
 const INDEX = 'synchealth:index';
+const ORG_INDEX = (organizationId: string) => `synchealth:org:${organizationId}`;
 const RESULTS = 'synccount:results';
 
 export interface StoredHealth extends SyncTelemetry {
   userId: string;
   organizationId: string;
   receivedAt: number;
+}
+
+/** One member's phone, as the office's Phone sync tab reads it. */
+export interface MemberSyncHealth extends Omit<StoredHealth, 'organizationId'> {
+  state: SyncHealthState;
 }
 
 /**
@@ -60,9 +64,32 @@ export class SyncHealthStore implements OnModuleDestroy {
         .multi()
         .set(HEALTH(member.userId), JSON.stringify(stored), 'EX', REPORT_TTL_SECONDS)
         .zadd(INDEX, now, member.userId)
+        .zadd(ORG_INDEX(member.organizationId), now, member.userId)
+        .expire(ORG_INDEX(member.organizationId), REPORT_TTL_SECONDS)
         .exec();
     } catch {
       /* fails open */
+    }
+  }
+
+  /**
+   * Every phone in one organization that reported in the last 30 days.
+   *
+   * ⚠️ The report's own organization is checked, not only the index it was
+   * found in: a member who moved to another organization would otherwise show
+   * their new employer's queue to the old one until the entry expired.
+   */
+  async forOrganization(organizationId: string, now = Date.now()): Promise<MemberSyncHealth[]> {
+    try {
+      const key = ORG_INDEX(organizationId);
+      await this.redis.zremrangebyscore(key, 0, now - REPORT_TTL_SECONDS * 1000);
+      const userIds = await this.redis.zrange(key, 0, -1);
+      if (!userIds.length) return [];
+      const raw = await this.redis.mget(userIds.map(HEALTH));
+      return memberHealthView(raw, organizationId, now);
+    } catch {
+      // Fails open for writes; a read that cannot answer says so rather than showing "all fine".
+      throw new ServiceUnavailableException('Phone sync health is unavailable right now');
     }
   }
 
@@ -103,6 +130,25 @@ export class SyncHealthStore implements OnModuleDestroy {
   }
 }
 
+/** Pure: stored reports → the tab's rows, only this organization's, most urgent first. */
+export function memberHealthView(raw: readonly (string | null)[], organizationId: string, now: number): MemberSyncHealth[] {
+  const order: Record<SyncHealthState, number> = { stuck: 0, needs_member: 1, sending: 2, silent: 3, up_to_date: 4 };
+  const rows: MemberSyncHealth[] = [];
+  for (const r of raw) {
+    if (!r) continue;
+    let report: StoredHealth;
+    try {
+      report = JSON.parse(r) as StoredHealth;
+    } catch {
+      continue;
+    }
+    if (report.organizationId !== organizationId) continue;
+    const { organizationId: _org, ...rest } = report;
+    rows.push({ ...rest, state: syncHealthState(report, now) });
+  }
+  return rows.sort((a, b) => order[a.state] - order[b.state] || (a.oldestWaitingAt ?? Infinity) - (b.oldestWaitingAt ?? Infinity));
+}
+
 /** At most 20 entries with short keys and finite, non-negative counts. */
 export function boundedCounts(counts: Record<string, number> | null | undefined): Record<string, number> {
   const out: Record<string, number> = {};
@@ -125,7 +171,7 @@ export function renderMetrics(reports: readonly StoredHealth[], results: Record<
     o.waiting += r.waiting;
     o.attention += r.attention;
     o.bytes += r.bytesWaiting;
-    if (r.oldestWaitingAt !== null && now - r.oldestWaitingAt >= STUCK_AFTER_MS) o.stuck++;
+    if (r.waiting > 0 && r.oldestWaitingAt !== null && now - r.oldestWaitingAt >= SYNC_STUCK_AFTER_MS) o.stuck++;
     byOrg.set(r.organizationId, o);
   }
   const lines: string[] = [];
