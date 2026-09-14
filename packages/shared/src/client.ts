@@ -28,6 +28,9 @@ export * from './setup';
 // Customer portal (intake types, seed templates, helpers) — pure, client-safe
 export * from './customer-portal';
 
+// Offline sync: occurrence evidence rules and the push/pull protocol — pure, client-safe
+export * from './sync';
+
 // Export utility functions (date, query string building)
 export * from './utils';
 // Reading a business card — pure rules, runs on the phone.

@@ -40,6 +40,9 @@ export * from './queues';
 // Export utility functions (for NestJS backend)
 export * from './utils';
 
+// Offline sync: occurrence evidence rules and the push/pull protocol
+export * from './sync';
+
 // IANA timezone → country name
 export * from './timezone-country';
 
