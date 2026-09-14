@@ -1130,6 +1130,7 @@ model Task {
   @@index([organizationId, source, triaged]) // portal "pending triage" inbox count/list
   @@index([customerId, createdAt]) // portal request list (filter customer + sort by newest)
   @@index([organizationId, spaceId, status]) // space + status filtering
+  @@index([organizationId, updatedAt]) // offline sync: pull changes in order
   @@map("tasks")
 }
 
@@ -1192,6 +1193,7 @@ model Attachment {
   fileType  AttachmentType
   fileSize  Int
   createdAt DateTime       @default(now())
+  updatedAt DateTime       @default(now()) @updatedAt
 
   taskId String
   task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
@@ -2136,6 +2138,7 @@ model ReportAttachment {
   caption  String? // Optional description
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@index([reportId])
   @@map("report_attachments")
@@ -2478,6 +2481,7 @@ model TimeEntry {
   @@index([status, nextBreakRemindAt]) // the same sweep's second due-list: rests
   @@index([organizationId, reminderState]) // pending extra-time lookups per org
   @@index([organizationId, approvalStatus, clockInAt]) // approval queue (P3): pending, newest-first
+  @@index([userId, updatedAt]) // offline sync: pull changes in order
   @@map("time_entries")
 }
 
@@ -5001,4 +5005,25 @@ model DocumentEvent {
 
   @@index([documentId, at])
   @@map("document_events")
+}
+
+/// A deleted row, recorded so offline phones can remove it too.
+///
+/// Written by the `sync_tombstone` Postgres trigger on every synced table —
+/// never by application code, because cascade deletes happen inside Postgres
+/// where no service sees them. Pruned after the pull window.
+model SyncTombstone {
+  id             BigInt   @id @default(autoincrement())
+  entity         String
+  entityId       String
+  organizationId String?
+  parentId       String?
+  userId         String?
+  deletedAt      DateTime @default(now())
+
+  @@index([organizationId, deletedAt], map: "sync_tombstones_org_deletedAt_idx")
+  @@index([parentId, deletedAt], map: "sync_tombstones_parent_deletedAt_idx")
+  @@index([userId, deletedAt], map: "sync_tombstones_user_deletedAt_idx")
+  @@index([deletedAt], map: "sync_tombstones_deletedAt_idx")
+  @@map("sync_tombstones")
 }

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
-import { runWithCronLock } from '@hbcfield/shared';
+import { runWithCronLock, SYNC_TOMBSTONE_RETENTION_DAYS } from '@hbcfield/shared';
 
 /**
  * Retention: prune old TaskEvent rows nightly (H4).
@@ -106,6 +106,38 @@ export class RetentionService {
     if (totalDeleted > 0) {
       this.logger.log(`Pruned ${totalDeleted} activity logs older than ${days}d`);
     }
+    return totalDeleted;
+  }
+
+  /**
+   * Forget deletions older than the sync window.
+   *
+   * Always on, unlike the audit prunes: tombstones are not history anyone reads,
+   * only a message to phones that have not synced yet, and a phone behind the
+   * window is told to rebuild rather than read them. Without this the table
+   * grows with every delete, forever.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async pruneSyncTombstonesCron(): Promise<void> {
+    await runWithCronLock(
+      this.prisma,
+      { name: 'task:pruneSyncTombstones', ttlSeconds: 1800, logger: this.logger },
+      () => this.pruneSyncTombstones(),
+    );
+  }
+
+  async pruneSyncTombstones(): Promise<number> {
+    const cutoff = new Date(Date.now() - SYNC_TOMBSTONE_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    const BATCH = 5000;
+    let totalDeleted = 0;
+    for (let i = 0; i < 200; i++) {
+      const deleted = await this.prisma.$executeRaw`
+        DELETE FROM sync_tombstones
+        WHERE id IN (SELECT id FROM sync_tombstones WHERE "deletedAt" < ${cutoff} LIMIT ${BATCH})`;
+      totalDeleted += deleted;
+      if (deleted < BATCH) break;
+    }
+    if (totalDeleted > 0) this.logger.log(`Pruned ${totalDeleted} sync tombstones older than ${SYNC_TOMBSTONE_RETENTION_DAYS}d`);
     return totalDeleted;
   }
 }

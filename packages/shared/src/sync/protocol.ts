@@ -9,6 +9,15 @@
  */
 import type { OccurrenceEvidence } from './occurrence';
 
+/**
+ * How long a deletion is remembered for offline phones.
+ *
+ * A phone whose pull cursor is older than this may have missed a deletion, so
+ * the server answers `reset: true` and the phone rebuilds that scope from
+ * scratch instead of trusting its copy.
+ */
+export const SYNC_TOMBSTONE_RETENTION_DAYS = 90;
+
 /** At most this many operations per push. More are sent in further batches. */
 export const SYNC_PUSH_MAX_OPS = 50;
 
