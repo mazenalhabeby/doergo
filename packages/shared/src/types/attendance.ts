@@ -5,6 +5,7 @@
  */
 
 import { TimeEntryStatus, BreakType, ApprovalStatus } from './enums';
+import type { NoShiftTag } from '../attendance/no-shift-limit';
 
 // ============================================================================
 // COMPANY LOCATION
@@ -74,6 +75,14 @@ export interface CompanyLocation {
    * together, not a property of the place.
    */
   awayAllowed?: boolean;
+  /** Clocking in here with no shift: ALLOW | LIMIT | SHIFT_ONLY — see attendance/no-shift-limit.ts. */
+  noShiftPolicy?: string | null;
+  noShiftDailyMinutes?: number | null;
+  /**
+   * The caller's allowance here with no shift, as the server read it. Only on
+   * the clock-in list and status; null where the workspace allows it freely.
+   */
+  noShift?: NoShiftTag | null;
 }
 
 // ============================================================================
@@ -136,6 +145,8 @@ export interface TimeEntry {
   shiftId?: string | null;
   expectedClockInAt?: string | null;
   expectedClockOutAt?: string | null;
+  /** The planned end is the workspace's daily limit for clocking in with no shift, not a shift end. */
+  endIsDailyLimit?: boolean;
   /*
     This shift's planned rests, frozen at clock-in. Loosely typed here on
     purpose: the shape is owned and validated by

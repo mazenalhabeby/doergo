@@ -1894,7 +1894,8 @@
         "stale": "Über eine Woche später gesendet",
         "fixMocked": "Standort vorgetäuscht",
         "boundaryChanged": "Standortgrenze seitdem geändert",
-        "clockOutProvisional": "Ausstempeln nicht bestätigt"
+        "clockOutProvisional": "Ausstempeln nicht bestätigt",
+        "pastDailyLimit": "Über dem Tageslimit"
       }
     },
     "locationsTab": {
@@ -3544,6 +3545,21 @@
       "approve": "{{minutes}} Min. genehmigen",
       "success": "{{minutes}} Min. Überstunden hinzugefügt",
       "error": "Überstunden konnten nicht hinzugefügt werden"
+    },
+    "noShift": {
+      "title": "Einstempeln ohne Schicht",
+      "subtitle": "Was passiert, wenn ein Mitglied ohne Schicht heute hier einstempelt.",
+      "allow": "Erlauben",
+      "allowHint": "Mitglieder stempeln frei ein und aus. Jede Stunde zählt.",
+      "limit": "Bis zu einer Anzahl Stunden pro Tag erlauben",
+      "limitHint": "Zeit über dem Limit zählt nur, wenn eine Leitung sie als Überstunden genehmigt.",
+      "shiftOnly": "Nur mit Schicht",
+      "shiftOnlyHint": "Mitglieder ohne Schicht heute können hier nicht einstempeln.",
+      "note": "Mitglieder mit Schicht sind nicht betroffen. Das Limit zählt jede heute gearbeitete Stunde, an jedem Arbeitsbereich, in der Zeitzone dieses Arbeitsbereichs.",
+      "hours": "{{count}} Std.",
+      "less": "Weniger",
+      "more": "Mehr",
+      "saved": "Gespeichert"
     }
   },
   "auditLog": {

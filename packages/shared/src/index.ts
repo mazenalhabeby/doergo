@@ -108,6 +108,8 @@ export * from './attendance/break-plan';
 
 // Away policy — see client.ts.
 export * from './attendance/away-policy';
+// Clocking in with no shift: allow, limit per day, or shift only.
+export * from './attendance/no-shift-limit';
 
 // Cover — will there be enough people, and the right people. See client.ts.
 export * from './attendance/cover';

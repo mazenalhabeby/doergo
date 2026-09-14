@@ -2203,6 +2203,12 @@ model CompanyLocation {
   /// A String rather than an enum so a value this server has not heard of falls
   /// back to STRICT instead of failing to deserialise — see resolveAwayAccess.
   geofencePolicy    String    @default("STRICT")
+  /// Clocking in with NO shift here: ALLOW | LIMIT (up to noShiftDailyMinutes a
+  /// day, counted at every workspace) | SHIFT_ONLY. The limit becomes the
+  /// session's planned end, so counted time, reminders and overtime follow it.
+  /// A String so an unknown value falls back to ALLOW — see noShiftAllowance.
+  noShiftPolicy       String @default("ALLOW")
+  noShiftDailyMinutes Int    @default(480)
   /// The staffing floor: how many people must be on the floor here on a working
   /// day. 0 = never set, which is NOT "nobody needed" — every surface reads it
   /// as "no floor configured" and reports the count without a verdict.
@@ -2368,6 +2374,9 @@ model TimeEntry {
   clockOutPlace String?
   /// Closed by the open-shift sweep with a temporary time, not by the member.
   /// Replaced by their real clock-out or their answer to "when did you leave?".
+  /// The planned end is the workspace's daily limit for clocking in with no
+  /// shift (see noShiftAllowance): not early before it, "past today's limit" after.
+  endIsDailyLimit Boolean @default(false)
   clockOutProvisional Boolean @default(false)
   /// What the temporary time was based on: LEFT_SITE | SHIFT_END | CLOCK_IN_PLUS_8H.
   clockOutBasis       String?

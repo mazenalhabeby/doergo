@@ -1894,7 +1894,8 @@
         "stale": "Inviato con oltre una settimana di ritardo",
         "fixMocked": "Posizione simulata",
         "boundaryChanged": "Confine della sede modificato da allora",
-        "clockOutProvisional": "Uscita non confermata"
+        "clockOutProvisional": "Uscita non confermata",
+        "pastDailyLimit": "Oltre il limite di oggi"
       }
     },
     "locationsTab": {
@@ -3544,6 +3545,21 @@
       "approve": "Approva {{minutes}} min",
       "success": "Aggiunti {{minutes}} min di straordinari",
       "error": "Impossibile aggiungere gli straordinari"
+    },
+    "noShift": {
+      "title": "Timbrare senza turno",
+      "subtitle": "Cosa succede quando un membro senza turno oggi timbra qui.",
+      "allow": "Consenti",
+      "allowHint": "I membri timbrano liberamente. Ogni ora conta.",
+      "limit": "Consenti fino a un numero di ore al giorno",
+      "limitHint": "Il tempo oltre il limite conta solo se un responsabile lo approva come straordinario.",
+      "shiftOnly": "Solo con un turno",
+      "shiftOnlyHint": "I membri senza turno oggi non possono timbrare qui.",
+      "note": "I membri con un turno non sono interessati. Il limite conta ogni ora lavorata oggi, in qualsiasi spazio, nel fuso orario di questo spazio.",
+      "hours": "{{count}} h",
+      "less": "Meno",
+      "more": "Più",
+      "saved": "Salvato"
     }
   },
   "auditLog": {

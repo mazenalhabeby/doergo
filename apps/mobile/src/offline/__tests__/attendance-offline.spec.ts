@@ -46,6 +46,25 @@ describe('checkClockInLocally — the same answer offline as online', () => {
     expect(checkClockInLocally({ location: { ...warehouse, lat: null, lng: null } as never, fix: north(5000), alreadyClockedIn: false })).toMatchObject({ ok: true });
     expect(checkClockInLocally({ location: warehouse, fix: north(5), alreadyClockedIn: true })).toMatchObject({ ok: false, code: 'ALREADY_CLOCKED_IN' });
   });
+
+  describe('with no shift, at a workspace that limits it', () => {
+    const NOW = new Date('2026-09-15T12:00:00Z');
+    const tag = { policy: 'LIMIT' as const, dailyMinutes: 480, hasShiftNow: false, workedTodayMinutes: 480, dayEndsAt: '2026-09-15T22:00:00.000Z' };
+    const at = (over: Record<string, unknown>) => ({ ...warehouse, noShift: { ...tag, ...over } }) as CompanyLocation;
+
+    it('refuses when today’s hours are used up, naming the limit', () => {
+      expect(checkClockInLocally({ location: at({}), fix: north(5), alreadyClockedIn: false, now: NOW })).toEqual({ ok: false, code: 'NO_HOURS_LEFT', hours: 8 });
+    });
+
+    it('refuses where a shift is required, and lets somebody with a shift in', () => {
+      expect(checkClockInLocally({ location: at({ policy: 'SHIFT_ONLY' }), fix: north(5), alreadyClockedIn: false, now: NOW })).toMatchObject({ ok: false, code: 'NO_SHIFT_TODAY' });
+      expect(checkClockInLocally({ location: at({ policy: 'SHIFT_ONLY', hasShiftNow: true }), fix: north(5), alreadyClockedIn: false, now: new Date() })).toMatchObject({ ok: true });
+    });
+
+    it('starts the next day with the hours back, from what the phone kept yesterday', () => {
+      expect(checkClockInLocally({ location: at({}), fix: north(5), alreadyClockedIn: false, now: new Date('2026-09-16T06:00:00Z') })).toMatchObject({ code: 'FIX_NOT_AT_TAP' });
+    });
+  });
 });
 
 describe('overlayShift', () => {

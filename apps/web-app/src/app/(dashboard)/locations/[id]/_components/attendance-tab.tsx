@@ -15,6 +15,7 @@ import { ShiftsTab } from "./shifts-tab"
 import { RotaTab } from "./rota-tab"
 import { RestsSection } from "./rests-section"
 import { AwayPolicySection } from "./away-policy-section"
+import { NoShiftSection } from "./no-shift-section"
 import { MinCoverSection } from "./min-cover-section"
 
 /**
@@ -143,6 +144,11 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
       */}
       <div className="border-t border-border/60 pt-6">
         <AwayPolicySection space={space} />
+      </div>
+
+      {/* Clocking in with no shift — every attendance model, like the geofence. */}
+      <div className="border-t border-border/60 pt-6">
+        <NoShiftSection space={space} />
       </div>
 
       {/*

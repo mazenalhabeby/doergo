@@ -1894,7 +1894,8 @@
         "stale": "Enviado más de una semana tarde",
         "fixMocked": "Ubicación simulada",
         "boundaryChanged": "Límite del sitio cambiado desde entonces",
-        "clockOutProvisional": "Salida sin confirmar"
+        "clockOutProvisional": "Salida sin confirmar",
+        "pastDailyLimit": "Por encima del límite diario"
       }
     },
     "locationsTab": {
@@ -3544,6 +3545,21 @@
       "approve": "Aprobar {{minutes}} min",
       "success": "Se añadieron {{minutes}} min de horas extra",
       "error": "No se pudieron añadir las horas extra"
+    },
+    "noShift": {
+      "title": "Fichar sin turno",
+      "subtitle": "Qué ocurre cuando un miembro sin turno hoy ficha aquí.",
+      "allow": "Permitir",
+      "allowHint": "Los miembros fichan la entrada y la salida libremente. Cada hora cuenta.",
+      "limit": "Permitir hasta un número de horas al día",
+      "limitHint": "El tiempo por encima del límite solo cuenta si un responsable lo aprueba como horas extra.",
+      "shiftOnly": "Solo con turno",
+      "shiftOnlyHint": "Los miembros sin turno hoy no pueden fichar aquí.",
+      "note": "Los miembros con turno no se ven afectados. El límite cuenta cada hora trabajada hoy, en cualquier espacio de trabajo, en la zona horaria de este espacio.",
+      "hours": "{{count}} h",
+      "less": "Menos",
+      "more": "Más",
+      "saved": "Guardado"
     }
   },
   "auditLog": {

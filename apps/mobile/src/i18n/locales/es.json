@@ -743,14 +743,17 @@
         "FIX_MISSING": "No se pudo determinar su ubicación. Salga al exterior o acérquese a una ventana e inténtelo de nuevo.",
         "FIX_INACCURATE": "Su ubicación aún no es lo bastante precisa (debe estar dentro de 100 m). Espere un momento e inténtelo de nuevo.",
         "FIX_NOT_AT_TAP": "Su ubicación está desactualizada. Inténtelo de nuevo para obtener una nueva.",
-        "OUTSIDE_SITE": "Está a {{distance}} m de {{location}}, que solo admite fichajes dentro de {{radius}} m. Acérquese e inténtelo de nuevo."
+        "OUTSIDE_SITE": "Está a {{distance}} m de {{location}}, que solo admite fichajes dentro de {{radius}} m. Acérquese e inténtelo de nuevo.",
+        "NO_SHIFT_TODAY": "Hoy no tienes turno y este espacio solo permite fichar con turno.",
+        "NO_HOURS_LEFT": "No quedan horas hoy. Este espacio permite {{hours}} h al día sin turno."
       }
     },
     "overtime": {
       "note": "Llevas {{duration}} después del fin de tu turno. Las horas extra solo cuentan cuando tu responsable las aprueba.",
       "reasonLabel": "¿Por qué te quedaste? (se envía a tu responsable)",
       "reasonPlaceholder": "Opcional — déjalo vacío para fichar la salida sin pedirlas",
-      "askLabel": "Fichar salida y pedir horas extra"
+      "askLabel": "Fichar salida y pedir horas extra",
+      "notePastLimit": "Llevas {{duration}} por encima del límite de hoy. Ese tiempo solo cuenta cuando tu responsable lo aprueba como horas extra."
     },
     "unconfirmed": {
       "title": "Tu turno del {{day}} seguía abierto",
@@ -759,6 +762,18 @@
       "pickerTitle": "¿A qué hora te fuiste?",
       "inFuture": "Esa hora es anterior a tu entrada o aún no ha llegado.",
       "saved": "Se guardó tu hora de salida"
+    },
+    "noShift": {
+      "title": "Sin turno hoy · {{location}}",
+      "left": "Hoy has trabajado {{worked}}. Puedes trabajar {{left}} más, hasta las {{time}}.",
+      "shiftOnlyTitle": "Hoy no tienes turno",
+      "shiftOnlyBody": "{{location}} solo permite fichar con turno. Pide uno a tu responsable.",
+      "noHoursTitle": "No quedan horas hoy",
+      "noHoursBody": "{{location}} permite {{hours}} al día sin turno y ya las has trabajado. Pide un turno a tu responsable.",
+      "countsUntil": "Cuenta hasta las {{time}} · límite de hoy",
+      "minutesLeft_one": "Queda {{count}} min hoy",
+      "minutesLeft_other": "Quedan {{count}} min hoy",
+      "afterLimit": "Después de las {{time}}, tu tiempo solo cuenta si tu responsable aprueba horas extra."
     }
   },
   "overtime": {
@@ -2440,7 +2455,9 @@
       "FIX_MISSING": "No se pudo determinar la ubicación.",
       "REPORT_EXISTS": "Este trabajo ya tiene un informe de servicio, así que el suyo no se añadió.",
       "WAITING_FOR_WIFI": "Esperando Wi-Fi: eligió enviar fotos solo con Wi-Fi.",
-      "TIME_OFF_DECIDED": "Esta solicitud ya fue resuelta, así que ya no se puede cancelar."
+      "TIME_OFF_DECIDED": "Esta solicitud ya fue resuelta, así que ya no se puede cancelar.",
+      "NO_SHIFT_TODAY": "Hoy no tienes turno y este espacio solo permite fichar con turno.",
+      "NO_HOURS_LEFT": "No quedan horas hoy sin turno en este espacio. Pide un turno a tu responsable."
     },
     "signOut": {
       "title_one": "{{count}} cambio no se ha enviado",

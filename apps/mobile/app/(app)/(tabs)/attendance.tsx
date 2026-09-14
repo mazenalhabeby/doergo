@@ -49,6 +49,7 @@ import { AlwaysLocationNudge } from '../../../src/components/always-location-nud
 import { useExcursionSync } from '../../../src/hooks/useExcursionSync';
 import { useClockIn } from '../../../src/hooks/useClockIn';
 import { hhmmIn, leaveTimeFrom, minutesPastEnd } from '../../../src/offline/attendance/leave-time';
+import { noShiftAllowanceNow } from '@hbcfield/shared/client';
 import { TimePickerModal } from '../../../src/components/time-picker-modal';
 import { useShift, useShiftActions } from '../../../src/offline/attendance/use-shift';
 import { OfflineBanner } from '../../../src/offline/components/offline-banner';
@@ -576,6 +577,19 @@ export default function AttendanceScreen() {
     ? minutesPastEnd(currentEntry.expectedClockOutAt, new Date())
     : 0;
   const assignedLocations = status?.assignedLocations || [];
+  /*
+    Workspaces with a rule for clocking in with no shift, and what it allows
+    now. From the tag the server read, so it answers without signal too.
+  */
+  const noShiftCards = !isClockedIn
+    ? assignedLocations
+        .map((location) => ({ location, allowance: noShiftAllowanceNow(location.noShift, new Date()) }))
+        .filter((c) => c.allowance.kind !== 'free')
+    : [];
+  // A session counted up to the daily limit: how much of it is left.
+  const limitLeftMinutes = currentEntry?.endIsDailyLimit && currentEntry.expectedClockOutAt
+    ? Math.ceil((new Date(currentEntry.expectedClockOutAt).getTime() - Date.now()) / 60_000)
+    : null;
 
   // Shift reminder: has the shift ended while still clocked in?
   const reminderState = currentEntry?.reminderState ?? 'NONE';
@@ -620,6 +634,54 @@ export default function AttendanceScreen() {
       >
         {/* Offline, or changes still on their way — nothing otherwise. */}
         <OfflineBanner style={styles.offlineBanner} />
+
+        {/* No shift today, at a workspace that limits it. */}
+        {noShiftCards.map(({ location, allowance }) => {
+          const tz = location.timezone;
+          const worked = location.noShift?.workedTodayMinutes ?? 0;
+          const daily = location.noShift?.dailyMinutes ?? 0;
+          const refused = allowance.kind === 'refused';
+          return (
+            <View
+              key={location.id}
+              style={[
+                styles.unconfirmedCard,
+                refused
+                  ? { backgroundColor: colors.errorLight, borderColor: COLORS.error }
+                  : { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
+              <View style={styles.unconfirmedRow}>
+                <Ionicons name={refused ? 'lock-closed-outline' : 'hourglass-outline'} size={20} color={refused ? COLORS.error : COLORS.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.unconfirmedTitle, { color: refused ? COLORS.error : colors.textPrimary }]}>
+                    {allowance.kind === 'refused'
+                      ? allowance.reason === 'SHIFT_ONLY'
+                        ? t('attendance.noShift.shiftOnlyTitle')
+                        : t('attendance.noShift.noHoursTitle')
+                      : t('attendance.noShift.title', { location: location.name })}
+                  </Text>
+                  <Text style={[styles.unconfirmedBody, { color: colors.textSecondary }]}>
+                    {allowance.kind === 'limited'
+                      ? t('attendance.noShift.left', {
+                          worked: formatDuration(worked),
+                          left: formatDuration(allowance.remainingMinutes),
+                          time: formatTime(allowance.until.toISOString(), tz),
+                        })
+                      : allowance.kind === 'refused' && allowance.reason === 'SHIFT_ONLY'
+                        ? t('attendance.noShift.shiftOnlyBody', { location: location.name })
+                        : t('attendance.noShift.noHoursBody', { location: location.name, hours: formatDuration(daily) })}
+                  </Text>
+                </View>
+              </View>
+              {allowance.kind === 'limited' && daily > 0 && (
+                <View style={[styles.limitMeter, { backgroundColor: colors.border }]}>
+                  <View style={[styles.limitMeterFill, { width: `${Math.min(100, Math.round((worked / daily) * 100))}%` }]} />
+                </View>
+              )}
+            </View>
+          );
+        })}
 
         {/* A shift left open was closed with a temporary time: ask when they left. */}
         {unconfirmed && (
@@ -899,6 +961,22 @@ export default function AttendanceScreen() {
                   {t('attendance.startedAt', { time: formatTime(currentEntry.clockInAt, (currentEntry.timezone ?? currentEntry.location?.timezone)) })}
                 </Text>
               </View>
+              {currentEntry.endIsDailyLimit && !!currentEntry.expectedClockOutAt && (
+                <View style={styles.shiftDetail}>
+                  <Ionicons name="hourglass-outline" size={18} color={colors.textSecondary} />
+                  <Text style={[styles.shiftDetailText, { color: colors.textSecondary }]}>
+                    {t('attendance.noShift.countsUntil', { time: formatTime(currentEntry.expectedClockOutAt, (currentEntry.timezone ?? currentEntry.location?.timezone)) })}
+                  </Text>
+                </View>
+              )}
+              {limitLeftMinutes != null && limitLeftMinutes > 0 && limitLeftMinutes <= 30 && (
+                <View style={[styles.limitWarn, { backgroundColor: colors.warningLight, borderColor: COLORS.warning }]}>
+                  <Text style={[styles.unconfirmedTitle, { color: colors.textPrimary }]}>{t('attendance.noShift.minutesLeft', { count: limitLeftMinutes })}</Text>
+                  <Text style={[styles.unconfirmedBody, { color: colors.textSecondary }]}>
+                    {t('attendance.noShift.afterLimit', { time: formatTime(currentEntry.expectedClockOutAt!, (currentEntry.timezone ?? currentEntry.location?.timezone)) })}
+                  </Text>
+                </View>
+              )}
               {/*
                 Both clocks, and only when they differ.
 
@@ -1288,7 +1366,9 @@ export default function AttendanceScreen() {
         notesPlaceholder={t('attendance.shiftNotesPlaceholder')}
         isLoading={isActionLoading}
         overtime={pastEndMinutes > 0 ? {
-          note: t('attendance.overtime.note', { duration: formatDuration(pastEndMinutes) }),
+          note: currentEntry?.endIsDailyLimit
+            ? t('attendance.overtime.notePastLimit', { duration: formatDuration(pastEndMinutes) })
+            : t('attendance.overtime.note', { duration: formatDuration(pastEndMinutes) }),
           label: t('attendance.overtime.reasonLabel'),
           placeholder: t('attendance.overtime.reasonPlaceholder'),
           askLabel: t('attendance.overtime.askLabel'),
@@ -1486,6 +1566,9 @@ export default function AttendanceScreen() {
 }
 
 const styles = StyleSheet.create({
+  limitMeter: { height: 6, borderRadius: 3, overflow: 'hidden' },
+  limitMeterFill: { height: '100%', backgroundColor: COLORS.primary },
+  limitWarn: { borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.sm, gap: 2, marginTop: SPACING.xs },
   unconfirmedCard: { marginHorizontal: SPACING.lg, marginBottom: SPACING.md, borderRadius: RADIUS.lg, borderWidth: 1, padding: SPACING.md, gap: SPACING.md },
   unconfirmedRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-start' },
   unconfirmedTitle: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold },

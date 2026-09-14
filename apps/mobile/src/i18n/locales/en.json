@@ -743,14 +743,17 @@
         "FIX_MISSING": "Your location couldn't be found. Step outside or near a window and try again.",
         "FIX_INACCURATE": "Your location isn't precise enough yet (it needs to be within 100 m). Wait a moment and try again.",
         "FIX_NOT_AT_TAP": "Your location is out of date. Try again to take a fresh one.",
-        "OUTSIDE_SITE": "You're {{distance}} m from {{location}}, which only accepts clock-ins within {{radius}} m. Move closer and try again."
+        "OUTSIDE_SITE": "You're {{distance}} m from {{location}}, which only accepts clock-ins within {{radius}} m. Move closer and try again.",
+        "NO_SHIFT_TODAY": "You have no shift today, and this workspace only allows clocking in with a shift.",
+        "NO_HOURS_LEFT": "No hours left today. This workspace allows {{hours}} h a day without a shift."
       }
     },
     "overtime": {
       "note": "You are {{duration}} past the end of your shift. Overtime counts only when your leader approves it.",
       "reasonLabel": "Why did you stay? (sent to your leader)",
       "reasonPlaceholder": "Optional — leave empty to clock out without asking",
-      "askLabel": "Clock out and ask for overtime"
+      "askLabel": "Clock out and ask for overtime",
+      "notePastLimit": "You are {{duration}} past today's limit. That time counts only when your leader approves it as overtime."
     },
     "unconfirmed": {
       "title": "Your shift from {{day}} was still open",
@@ -759,6 +762,18 @@
       "pickerTitle": "When did you leave?",
       "inFuture": "That time is before you clocked in or still to come.",
       "saved": "Your clock-out time was saved"
+    },
+    "noShift": {
+      "title": "No shift today · {{location}}",
+      "left": "You worked {{worked}} today. You can work {{left}} more, until {{time}}.",
+      "shiftOnlyTitle": "You have no shift today",
+      "shiftOnlyBody": "{{location}} only allows clocking in with a shift. Ask your leader for one.",
+      "noHoursTitle": "No hours left today",
+      "noHoursBody": "{{location}} allows {{hours}} a day without a shift, and you have worked them. Ask your leader for a shift.",
+      "countsUntil": "Counts until {{time}} · today's limit",
+      "minutesLeft_one": "{{count}} min left today",
+      "minutesLeft_other": "{{count}} min left today",
+      "afterLimit": "After {{time}}, your time counts only if your leader approves overtime."
     }
   },
   "overtime": {
@@ -2440,7 +2455,9 @@
       "FIX_MISSING": "The location couldn't be determined.",
       "REPORT_EXISTS": "This job already has a service report, so yours wasn't added.",
       "WAITING_FOR_WIFI": "Waiting for Wi-Fi — you chose to send photos only on Wi-Fi.",
-      "TIME_OFF_DECIDED": "This request was already decided, so it can no longer be cancelled."
+      "TIME_OFF_DECIDED": "This request was already decided, so it can no longer be cancelled.",
+      "NO_SHIFT_TODAY": "You have no shift today, and this workspace only allows clocking in with a shift.",
+      "NO_HOURS_LEFT": "No hours left today at this workspace without a shift. Ask your leader for a shift."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",

@@ -43,6 +43,12 @@ import {
   buildSingleDayFilter,
   buildDateRangeFilter,
   mayClockInRemotely as canClockInRemotely,
+  noShiftAllowance,
+  countedMinutesBetween,
+  startOfDayIn,
+  endOfDayIn,
+  type NoShiftAllowance,
+  type NoShiftTag,
 } from '@hbcfield/shared';
 import { scopeWhere, scopeWhereOn, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
 import { CountedTimeService } from './counted-time.service';
@@ -74,6 +80,9 @@ const ATTENDANCE_LOCATION_SELECT = {
   // The ceiling on working away from here. Read wherever a workspace is handed
   // to a client that then decides whether to offer "away".
   geofencePolicy: true,
+  // Clocking in here with no shift — tagged per member as `noShift`.
+  noShiftPolicy: true,
+  noShiftDailyMinutes: true,
 } as const;
 
 @Injectable()
@@ -115,6 +124,83 @@ export class AttendanceService {
       }
     }
     return spaceTz ?? null;
+  }
+
+  /**
+   * What this workspace allows a member with no shift, at this moment.
+   *
+   * One indexed read (userId, clockInAt) of the member's sessions touching
+   * today, at EVERY workspace — a limit that only counted its own hours would
+   * be walked around by clocking in next door. Rejected sessions count nothing.
+   */
+  async noShiftAllowanceFor(
+    userId: string,
+    space: { noShiftPolicy?: string | null; noShiftDailyMinutes?: number | null },
+    at: Date,
+    tz: string,
+  ): Promise<NoShiftAllowance & { workedTodayMinutes: number }> {
+    const policy = space.noShiftPolicy ?? 'ALLOW';
+    if (policy !== 'LIMIT') {
+      return { ...noShiftAllowance({ policy, dailyMinutes: space.noShiftDailyMinutes, workedTodayMinutes: 0, at }), workedTodayMinutes: 0 };
+    }
+    const dayStart = startOfDayIn(at, tz);
+    const entries = await this.prisma.timeEntry.findMany({
+      where: {
+        userId,
+        // Bounded below so the index does the work; nothing stays open a day (the sweep closes it).
+        clockInAt: { gte: new Date(dayStart.getTime() - 24 * 3_600_000), lt: at },
+        OR: [{ clockOutAt: null }, { clockOutAt: { gt: dayStart } }],
+        approvalStatus: { not: 'REJECTED' },
+      },
+      select: { clockInAt: true, clockOutAt: true, paidMinutes: true, totalMinutes: true, unpaidBreakMinutes: true },
+    });
+    const workedTodayMinutes = countedMinutesBetween(entries, dayStart, at);
+    return {
+      ...noShiftAllowance({ policy, dailyMinutes: space.noShiftDailyMinutes, workedTodayMinutes, at }),
+      workedTodayMinutes,
+    };
+  }
+
+  /**
+   * Tag each workspace with this member's rule for clocking in there with no
+   * shift, as `noShift` (null where it is allowed freely).
+   *
+   * Costs nothing for workspaces that allow it — every existing one. Elsewhere
+   * one shift resolution per workspace, and ONE read of today's hours per time
+   * zone, however many workspaces share it.
+   */
+  private async tagNoShift<T extends ResolverSpace & { noShiftPolicy?: string | null; noShiftDailyMinutes?: number | null }>(
+    spaces: T[],
+    userId: string,
+    now: Date,
+  ): Promise<(T & { noShift: NoShiftTag | null })[]> {
+    const worked = new Map<string, Promise<number>>();
+    return Promise.all(
+      spaces.map(async (space) => {
+        const policy = space.noShiftPolicy ?? 'ALLOW';
+        if (policy !== 'LIMIT' && policy !== 'SHIFT_ONLY') return { ...space, noShift: null };
+        const tz = space.timezone || 'UTC';
+        const hasShiftNow = await this.shiftResolver
+          .resolveForClockIn({ userId, space, clockInAt: now, clockInTz: tz })
+          .then((r) => !!r)
+          .catch(() => false);
+        let workedTodayMinutes = 0;
+        if (policy === 'LIMIT' && !hasShiftNow) {
+          if (!worked.has(tz)) {
+            worked.set(tz, this.noShiftAllowanceFor(userId, { noShiftPolicy: 'LIMIT', noShiftDailyMinutes: space.noShiftDailyMinutes }, now, tz).then((a) => a.workedTodayMinutes));
+          }
+          workedTodayMinutes = await worked.get(tz)!;
+        }
+        const noShift: NoShiftTag = {
+          policy,
+          dailyMinutes: space.noShiftDailyMinutes ?? 480,
+          hasShiftNow,
+          workedTodayMinutes,
+          dayEndsAt: endOfDayIn(now, tz).toISOString(),
+        };
+        return { ...space, noShift };
+      }),
+    );
   }
 
   private async buildShiftStamp(
@@ -298,6 +384,8 @@ export class AttendanceService {
           geofenceRadius: true, geofencePolygon: true, timezone: true, isDefault: true,
           // The ceiling. Needed to answer `awayAllowed` below.
           geofencePolicy: true,
+          // The rule for clocking in with no shift, and what the resolver needs to ask it.
+          workModel: true, noShiftPolicy: true, noShiftDailyMinutes: true,
         },
       orderBy: { name: 'asc' },
     });
@@ -305,9 +393,8 @@ export class AttendanceService {
     // The overrides are already on the assignment rows read above, so tagging
     // costs one lookup for the member and no second query for them.
     const overrideBySpace = new Map(assignments.map((a) => [a.spaceId, a.allowRemote]));
-    return success(
-      await this.tagAwayAllowed(locations, data.userId, data.organizationId, overrideBySpace),
-    );
+    const tagged = await this.tagAwayAllowed(locations, data.userId, data.organizationId, overrideBySpace);
+    return success(await this.tagNoShift(tagged, data.userId, new Date()));
   }
 
   /**
@@ -626,6 +713,31 @@ export class AttendanceService {
       workerTz ?? undefined,
     );
 
+    /*
+      ── Clocking in with no shift ──
+      The workspace decides: allow it, allow up to a number of hours a day, or
+      only with a shift. A limit becomes the session's planned end, so counted
+      time, reminders, overtime and the open-shift close all follow it.
+
+      ⚠️ Recorded offline, it is KEPT, never refused: the member already worked
+      it. With no hours left it counts nothing and says so, and time past the
+      limit still needs an approval like any overtime.
+    */
+    let endIsDailyLimit = false;
+    if (!scheduled) {
+      const allowance = await this.noShiftAllowanceFor(data.userId, location, clockInTime, location.timezone || workerTz || orgTz);
+      if (allowance.kind === 'refused' && !flagReasons.includes('RECORDED_OFFLINE')) {
+        throw noShiftRefusal(allowance, location.name);
+      }
+      if (allowance.kind !== 'free') {
+        const end = allowance.kind === 'limited' ? allowance.until : clockInTime;
+        stampCols.expectedClockOutAt = end;
+        stampCols.nextRemindAt = new Date(Math.max(end.getTime(), Date.now()) + SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES * 60_000);
+        endIsDailyLimit = true;
+        if (allowance.kind === 'refused') flagReasons.push('PAST_DAILY_LIMIT');
+      }
+    }
+
     // Smart flags: matched shift/rota → LATE_ARRIVAL if past the start beyond the
     // shift's tolerance; no matched shift → UNSCHEDULED_DAY. Late detection is the
     // shared computeScheduleFlags (same logic as clock-out + edit).
@@ -680,6 +792,7 @@ export class AttendanceService {
         approvalStatus,
         organizationId: data.organizationId,
         ...stampCols,
+        endIsDailyLimit,
         breakPlan: restPlan.breakPlan as never,
         nextBreakRemindAt: restPlan.nextBreakRemindAt,
     });
@@ -953,12 +1066,19 @@ export class AttendanceService {
     // "Unscheduled" tag.)
     const toleranceMin = await this.getShiftFlagTolerance(entry.shiftId);
     if (entry.expectedClockOutAt) {
+      const scheduleFlags = computeScheduleFlags({
+        clockOutAt: clockOutTime,
+        expectedClockOutAt: entry.expectedClockOutAt,
+        toleranceMin,
+      });
+      /*
+        A daily limit is an allowance, not a shift: leaving before it is not
+        early, and staying past it reads as past the limit.
+      */
       flagReasons.push(
-        ...computeScheduleFlags({
-          clockOutAt: clockOutTime,
-          expectedClockOutAt: entry.expectedClockOutAt,
-          toleranceMin,
-        }),
+        ...(entry.endIsDailyLimit
+          ? scheduleFlags.filter((f) => f !== 'EARLY_DEPARTURE').map((f) => (f === 'OVERTIME' ? 'PAST_DAILY_LIMIT' : f))
+          : scheduleFlags),
       );
     }
 
@@ -973,11 +1093,13 @@ export class AttendanceService {
       phone used to ask the question — so the number the member was shown and the
       number their manager sees are the same number.
     */
-    const shortBy = shortfallMinutes({
-      clockOutAt: clockOutTime,
-      expectedEndAt: entry.expectedClockOutAt,
-      toleranceMin,
-    });
+    const shortBy = entry.endIsDailyLimit
+      ? 0
+      : shortfallMinutes({
+          clockOutAt: clockOutTime,
+          expectedEndAt: entry.expectedClockOutAt,
+          toleranceMin,
+        });
     const earlyReason = shortBy > 0 ? (data.earlyReason ?? '').trim().slice(0, 500) : '';
 
     // Deduplicate flags
@@ -1204,7 +1326,7 @@ export class AttendanceService {
     const flags = new Set<string>([...base, 'MISSED_CLOCK_OUT']);
     const isOvertime =
       !!entry.expectedClockOutAt && clockOutTime.getTime() > entry.expectedClockOutAt.getTime();
-    if (isOvertime) flags.add('OVERTIME');
+    if (isOvertime) flags.add(entry.endIsDailyLimit ? 'PAST_DAILY_LIMIT' : 'OVERTIME');
     const uniqueFlags = [...flags];
 
     // Counted the same way as any other close — a forgotten clock-out is a late
@@ -2459,13 +2581,15 @@ export class AttendanceService {
       it the phone had only the account grant to go on, and offered the option at
       workspaces that require presence.
     */
-    const assignedLocations = await this.tagAwayAllowed(
+    const awayTagged = await this.tagAwayAllowed(
       assignments.map((a) => a.space),
       data.userId,
       data.organizationId,
       // The per-workspace overrides, from the rows just read.
       new Map(assignments.map((a) => [a.spaceId, a.allowRemote])),
     );
+    // Only asked when it could matter: a member on the clock is not choosing where to clock in.
+    const assignedLocations = currentEntry ? awayTagged : await this.tagNoShift(awayTagged, data.userId, new Date());
 
     // Active out-of-ring excursion for the current session (drives mobile UI).
     const activeExcursion = currentEntry ? await this.getActiveExcursion(currentEntry.id) : null;
@@ -3553,4 +3677,19 @@ export function overtimeEndFor(input: {
 }): Date {
   const base = input.expectedEndAt ?? input.requestStartedAt ?? input.clockOutAt ?? input.now;
   return new Date(base.getTime() + Math.round(input.minutes) * 60_000);
+}
+
+/** Why a clock-in with no shift was refused, in words and a code the phone translates. */
+export function noShiftRefusal(allowance: Extract<NoShiftAllowance, { kind: 'refused' }>, spaceName: string): BadRequestException {
+  if (allowance.reason === 'SHIFT_ONLY') {
+    return new BadRequestException({
+      message: `You have no shift today. ${spaceName} only allows clocking in with a shift.`,
+      code: 'NO_SHIFT_TODAY',
+    });
+  }
+  const hours = Math.round(((allowance.dailyMinutes ?? 0) / 60) * 10) / 10;
+  return new BadRequestException({
+    message: `No hours left today. ${spaceName} allows ${hours} h a day without a shift, and you have worked them. Ask your leader for a shift.`,
+    code: 'NO_HOURS_LEFT',
+  });
 }

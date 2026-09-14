@@ -127,6 +127,7 @@ export function useClockIn(opts: {
               distance: verdict.distanceM ?? '?',
               radius: verdict.radiusM ?? '?',
               location: selectedLocation?.name ?? '',
+              hours: verdict.hours ?? '',
             }),
           );
           return;

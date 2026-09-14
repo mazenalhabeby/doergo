@@ -18,6 +18,7 @@ const FLAG_BADGE_CONFIG: Record<string, { label: string; className: string }> = 
   OUTSIDE_GEOFENCE_OUT: { label: "Geofence (Out)", className: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" },
   LATE_ARRIVAL: { label: "Late Arrival", className: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20" },
   EARLY_DEPARTURE: { label: "Early Departure", className: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20" },
+  PAST_DAILY_LIMIT: { label: "Past today's limit", className: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20" },
   UNSCHEDULED_DAY: { label: "Unscheduled", className: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20" },
   FIX_MOCKED: { label: "Mock location", className: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20" },
   CLOCK_SUSPECT: { label: "Phone clock changed", className: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20" },

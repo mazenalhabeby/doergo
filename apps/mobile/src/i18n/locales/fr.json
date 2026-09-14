@@ -743,14 +743,17 @@
         "FIX_MISSING": "Votre position est introuvable. Sortez ou approchez-vous d'une fenêtre, puis réessayez.",
         "FIX_INACCURATE": "Votre position n'est pas encore assez précise (100 m maximum). Patientez un instant et réessayez.",
         "FIX_NOT_AT_TAP": "Votre position n'est plus à jour. Réessayez pour en obtenir une nouvelle.",
-        "OUTSIDE_SITE": "Vous êtes à {{distance}} m de {{location}}, qui n'accepte les pointages qu'à moins de {{radius}} m. Rapprochez-vous et réessayez."
+        "OUTSIDE_SITE": "Vous êtes à {{distance}} m de {{location}}, qui n'accepte les pointages qu'à moins de {{radius}} m. Rapprochez-vous et réessayez.",
+        "NO_SHIFT_TODAY": "Vous n'avez pas de service aujourd'hui, et cet espace n'autorise le pointage qu'avec un service.",
+        "NO_HOURS_LEFT": "Plus d'heures aujourd'hui. Cet espace autorise {{hours}} h par jour sans service."
       }
     },
     "overtime": {
       "note": "Vous avez dépassé la fin de votre service de {{duration}}. Les heures supplémentaires ne comptent qu'une fois approuvées par votre responsable.",
       "reasonLabel": "Pourquoi êtes-vous resté ? (envoyé à votre responsable)",
       "reasonPlaceholder": "Facultatif — laissez vide pour pointer sans demande",
-      "askLabel": "Pointer la sortie et demander des heures sup."
+      "askLabel": "Pointer la sortie et demander des heures sup.",
+      "notePastLimit": "Vous avez dépassé la limite du jour de {{duration}}. Ce temps ne compte qu'une fois approuvé en heures supplémentaires par votre responsable."
     },
     "unconfirmed": {
       "title": "Votre service du {{day}} était resté ouvert",
@@ -759,6 +762,18 @@
       "pickerTitle": "À quelle heure êtes-vous parti ?",
       "inFuture": "Cette heure est avant votre pointage d'entrée ou pas encore passée.",
       "saved": "Votre heure de sortie a été enregistrée"
+    },
+    "noShift": {
+      "title": "Pas de service aujourd'hui · {{location}}",
+      "left": "Vous avez travaillé {{worked}} aujourd'hui. Vous pouvez encore travailler {{left}}, jusqu'à {{time}}.",
+      "shiftOnlyTitle": "Vous n'avez pas de service aujourd'hui",
+      "shiftOnlyBody": "{{location}} n'autorise le pointage qu'avec un service. Demandez-en un à votre responsable.",
+      "noHoursTitle": "Plus d'heures aujourd'hui",
+      "noHoursBody": "{{location}} autorise {{hours}} par jour sans service, et vous les avez travaillées. Demandez un service à votre responsable.",
+      "countsUntil": "Compte jusqu'à {{time}} · limite du jour",
+      "minutesLeft_one": "Encore {{count}} min aujourd'hui",
+      "minutesLeft_other": "Encore {{count}} min aujourd'hui",
+      "afterLimit": "Après {{time}}, votre temps ne compte que si votre responsable approuve des heures supplémentaires."
     }
   },
   "overtime": {
@@ -2440,7 +2455,9 @@
       "FIX_MISSING": "La position n'a pas pu être déterminée.",
       "REPORT_EXISTS": "Cette intervention a déjà un rapport, le vôtre n'a donc pas été ajouté.",
       "WAITING_FOR_WIFI": "En attente du Wi-Fi : vous avez choisi d'envoyer les photos uniquement en Wi-Fi.",
-      "TIME_OFF_DECIDED": "Cette demande a déjà été traitée et ne peut plus être annulée."
+      "TIME_OFF_DECIDED": "Cette demande a déjà été traitée et ne peut plus être annulée.",
+      "NO_SHIFT_TODAY": "Vous n'avez pas de service aujourd'hui, et cet espace n'autorise le pointage qu'avec un service.",
+      "NO_HOURS_LEFT": "Plus d'heures aujourd'hui sans service dans cet espace. Demandez un service à votre responsable."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",

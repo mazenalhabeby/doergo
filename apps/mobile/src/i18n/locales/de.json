@@ -743,14 +743,17 @@
         "FIX_MISSING": "Ihr Standort konnte nicht ermittelt werden. Gehen Sie ins Freie oder an ein Fenster und versuchen Sie es erneut.",
         "FIX_INACCURATE": "Ihr Standort ist noch nicht genau genug (höchstens 100 m). Warten Sie kurz und versuchen Sie es erneut.",
         "FIX_NOT_AT_TAP": "Ihr Standort ist veraltet. Versuchen Sie es erneut, um ihn neu zu bestimmen.",
-        "OUTSIDE_SITE": "Sie sind {{distance}} m von {{location}} entfernt; dort ist Einstempeln nur im Umkreis von {{radius}} m möglich. Gehen Sie näher heran und versuchen Sie es erneut."
+        "OUTSIDE_SITE": "Sie sind {{distance}} m von {{location}} entfernt; dort ist Einstempeln nur im Umkreis von {{radius}} m möglich. Gehen Sie näher heran und versuchen Sie es erneut.",
+        "NO_SHIFT_TODAY": "Sie haben heute keine Schicht, und dieser Arbeitsbereich erlaubt das Einstempeln nur mit Schicht.",
+        "NO_HOURS_LEFT": "Heute keine Stunden mehr. Dieser Arbeitsbereich erlaubt {{hours}} Std. pro Tag ohne Schicht."
       }
     },
     "overtime": {
       "note": "Sie sind {{duration}} über dem Schichtende. Überstunden zählen erst, wenn Ihre Leitung sie genehmigt.",
       "reasonLabel": "Warum sind Sie geblieben? (geht an Ihre Leitung)",
       "reasonPlaceholder": "Optional — leer lassen, um ohne Anfrage auszustempeln",
-      "askLabel": "Ausstempeln und Überstunden beantragen"
+      "askLabel": "Ausstempeln und Überstunden beantragen",
+      "notePastLimit": "Sie sind {{duration}} über dem Tageslimit. Diese Zeit zählt nur, wenn Ihre Leitung sie als Überstunden genehmigt."
     },
     "unconfirmed": {
       "title": "Ihre Schicht vom {{day}} war noch offen",
@@ -759,6 +762,18 @@
       "pickerTitle": "Wann sind Sie gegangen?",
       "inFuture": "Diese Uhrzeit liegt vor dem Einstempeln oder in der Zukunft.",
       "saved": "Ihre Ausstempelzeit wurde gespeichert"
+    },
+    "noShift": {
+      "title": "Heute keine Schicht · {{location}}",
+      "left": "Sie haben heute {{worked}} gearbeitet. Sie können noch {{left}} arbeiten, bis {{time}}.",
+      "shiftOnlyTitle": "Sie haben heute keine Schicht",
+      "shiftOnlyBody": "{{location}} erlaubt das Einstempeln nur mit Schicht. Fragen Sie Ihre Leitung nach einer Schicht.",
+      "noHoursTitle": "Heute keine Stunden mehr",
+      "noHoursBody": "{{location}} erlaubt {{hours}} pro Tag ohne Schicht, und Sie haben sie gearbeitet. Fragen Sie Ihre Leitung nach einer Schicht.",
+      "countsUntil": "Zählt bis {{time}} · Tageslimit",
+      "minutesLeft_one": "Noch {{count}} Min. heute",
+      "minutesLeft_other": "Noch {{count}} Min. heute",
+      "afterLimit": "Nach {{time}} zählt Ihre Zeit nur, wenn Ihre Leitung Überstunden genehmigt."
     }
   },
   "overtime": {
@@ -2440,7 +2455,9 @@
       "FIX_MISSING": "Der Standort konnte nicht bestimmt werden.",
       "REPORT_EXISTS": "Für diesen Auftrag gibt es bereits einen Servicebericht, daher wurde Ihrer nicht hinzugefügt.",
       "WAITING_FOR_WIFI": "Wartet auf WLAN – Sie haben gewählt, Fotos nur über WLAN zu senden.",
-      "TIME_OFF_DECIDED": "Dieser Antrag wurde bereits entschieden und kann nicht mehr storniert werden."
+      "TIME_OFF_DECIDED": "Dieser Antrag wurde bereits entschieden und kann nicht mehr storniert werden.",
+      "NO_SHIFT_TODAY": "Sie haben heute keine Schicht, und dieser Arbeitsbereich erlaubt das Einstempeln nur mit Schicht.",
+      "NO_HOURS_LEFT": "Heute keine Stunden mehr ohne Schicht in diesem Arbeitsbereich. Fragen Sie Ihre Leitung nach einer Schicht."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",

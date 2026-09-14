@@ -12,7 +12,9 @@ import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_N
   validateGeofencePolygon,
   type GeofencePolygonError,
 } from '@hbcfield/shared';
-import { isGeofencePolicy, validateMinCover, cleanRateCents } from '@hbcfield/shared';
+import { isGeofencePolicy,
+  isNoShiftPolicy,
+  clampDailyMinutes, validateMinCover, cleanRateCents } from '@hbcfield/shared';
 
 // tz-lookup: offline coords → IANA timezone (no types pkg).
 const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
@@ -387,6 +389,8 @@ export class LocationsService {
     workflowId?: string;
     workModel?: string;
     geofencePolicy?: string;
+    noShiftPolicy?: string;
+    noShiftDailyMinutes?: number;
     minCover?: number;
     timezone?: string;
     kind?: string;
@@ -438,6 +442,16 @@ export class LocationsService {
         throw new BadRequestException('Unknown clock-in policy for this workspace');
       }
       updateData.geofencePolicy = data.geofencePolicy;
+    }
+    // Clocking in with no shift — validated for the same reason as the policy above.
+    if (data.noShiftPolicy !== undefined) {
+      if (!isNoShiftPolicy(data.noShiftPolicy)) {
+        throw new BadRequestException('Unknown rule for clocking in without a shift');
+      }
+      updateData.noShiftPolicy = data.noShiftPolicy;
+    }
+    if (data.noShiftDailyMinutes !== undefined) {
+      updateData.noShiftDailyMinutes = clampDailyMinutes(data.noShiftDailyMinutes);
     }
     /*
       The staffing floor. Validated through the shared rule rather than trusted,

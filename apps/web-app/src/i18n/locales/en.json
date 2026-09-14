@@ -1894,7 +1894,8 @@
         "stale": "Sent over a week late",
         "fixMocked": "Mock location",
         "boundaryChanged": "Site boundary changed since",
-        "clockOutProvisional": "Clock-out not confirmed"
+        "clockOutProvisional": "Clock-out not confirmed",
+        "pastDailyLimit": "Past today's limit"
       }
     },
     "locationsTab": {
@@ -3544,6 +3545,21 @@
       "approve": "Approve {{minutes}} min",
       "success": "Added {{minutes}} min of overtime",
       "error": "Could not add overtime"
+    },
+    "noShift": {
+      "title": "Clocking in without a shift",
+      "subtitle": "What happens when a member who has no shift today clocks in here.",
+      "allow": "Allow",
+      "allowHint": "Members clock in and out freely. Every hour counts.",
+      "limit": "Allow up to a number of hours a day",
+      "limitHint": "Time past the limit counts only when a leader approves it as overtime.",
+      "shiftOnly": "Only with a shift",
+      "shiftOnlyHint": "Members without a shift today cannot clock in here.",
+      "note": "Members with a shift are not affected. The limit counts every hour the member worked today, at any workspace, in this workspace's time zone.",
+      "hours": "{{count}} h",
+      "less": "Less",
+      "more": "More",
+      "saved": "Saved"
     }
   },
   "auditLog": {

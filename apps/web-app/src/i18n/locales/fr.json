@@ -1894,7 +1894,8 @@
         "stale": "Envoyé plus d'une semaine après",
         "fixMocked": "Position simulée",
         "boundaryChanged": "Limite du site modifiée depuis",
-        "clockOutProvisional": "Sortie non confirmée"
+        "clockOutProvisional": "Sortie non confirmée",
+        "pastDailyLimit": "Au-delà de la limite du jour"
       }
     },
     "locationsTab": {
@@ -3544,6 +3545,21 @@
       "approve": "Approuver {{minutes}} min",
       "success": "{{minutes}} min d'heures supplémentaires ajoutées",
       "error": "Impossible d'ajouter les heures supplémentaires"
+    },
+    "noShift": {
+      "title": "Pointer sans service",
+      "subtitle": "Ce qui se passe quand un membre sans service aujourd'hui pointe ici.",
+      "allow": "Autoriser",
+      "allowHint": "Les membres pointent librement. Chaque heure compte.",
+      "limit": "Autoriser jusqu'à un nombre d'heures par jour",
+      "limitHint": "Le temps au-delà de la limite ne compte que si un responsable l'approuve en heures supplémentaires.",
+      "shiftOnly": "Seulement avec un service",
+      "shiftOnlyHint": "Les membres sans service aujourd'hui ne peuvent pas pointer ici.",
+      "note": "Les membres ayant un service ne sont pas concernés. La limite compte chaque heure travaillée aujourd'hui, dans n'importe quel espace, dans le fuseau horaire de cet espace.",
+      "hours": "{{count}} h",
+      "less": "Moins",
+      "more": "Plus",
+      "saved": "Enregistré"
     }
   },
   "auditLog": {

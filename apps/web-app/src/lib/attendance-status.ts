@@ -157,6 +157,14 @@ const FLAG_ORDER: Array<{ reason: string; chip: Omit<AttendanceChip, "key"> }> =
     },
   },
   {
+    reason: "PAST_DAILY_LIMIT",
+    chip: {
+      tone: "orange",
+      labelKey: "technicians.attendanceTab.flag.pastDailyLimit",
+      fallback: "Past today's limit",
+    },
+  },
+  {
     reason: "UNSCHEDULED_DAY",
     chip: {
       tone: "purple",

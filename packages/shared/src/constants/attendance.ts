@@ -131,6 +131,8 @@ export const ATTENDANCE_FLAG_REASONS = {
   MISSED_CLOCK_OUT: 'MISSED_CLOCK_OUT',
   // Closed by the open-shift sweep with a temporary time; waiting for the member's real one.
   CLOCK_OUT_PROVISIONAL: 'CLOCK_OUT_PROVISIONAL',
+  // No shift, and worked past the workspace's daily limit (or clocked in with none left, offline).
+  PAST_DAILY_LIMIT: 'PAST_DAILY_LIMIT',
   OUTSIDE_GEOFENCE_IN: 'OUTSIDE_GEOFENCE_IN',
   OUTSIDE_GEOFENCE_OUT: 'OUTSIDE_GEOFENCE_OUT',
   LATE_ARRIVAL: 'LATE_ARRIVAL',
@@ -152,6 +154,7 @@ export const FLAG_REASON_LABELS: Record<string, string> = {
   OVERTIME: 'Overtime',
   MISSED_CLOCK_OUT: 'Missed Clock-Out',
   CLOCK_OUT_PROVISIONAL: 'Clock-out not confirmed',
+  PAST_DAILY_LIMIT: "Past today's limit",
   OUTSIDE_GEOFENCE_IN: 'Outside Geofence (In)',
   OUTSIDE_GEOFENCE_OUT: 'Outside Geofence (Out)',
   LATE_ARRIVAL: 'Late Arrival',

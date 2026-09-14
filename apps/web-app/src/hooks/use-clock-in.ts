@@ -152,7 +152,8 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
   */
   const shortfall = shortfallMinutes({
     clockOutAt: new Date(),
-    expectedEndAt: activeEntry?.expectedClockOutAt ? new Date(activeEntry.expectedClockOutAt) : null,
+    // A daily limit is an allowance, not a shift: leaving before it is not early.
+    expectedEndAt: activeEntry?.expectedClockOutAt && !activeEntry.endIsDailyLimit ? new Date(activeEntry.expectedClockOutAt) : null,
     // The tolerance the flags use. Not carried on the entry, so the shared
     // default stands in: a client asking a few minutes early is a nuisance, and
     // the server measures it again with the shift's own value regardless.

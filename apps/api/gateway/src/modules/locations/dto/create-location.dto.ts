@@ -15,7 +15,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ATTENDANCE_CONSTANTS, GEOFENCE_POLYGON_LIMITS, WorkModel, SpaceKind } from '@hbcfield/shared';
-import { GEOFENCE_POLICIES, DEFAULT_GEOFENCE_POLICY, MIN_COVER_MAX } from '@hbcfield/shared';
+import { GEOFENCE_POLICIES, DEFAULT_GEOFENCE_POLICY, MIN_COVER_MAX, NO_SHIFT_POLICIES, NO_SHIFT_LIMIT } from '@hbcfield/shared';
 
 /** One corner of a drawn site boundary. */
 export class GeoPointDto {
@@ -163,6 +163,22 @@ export class CreateLocationDto {
   @Max(MIN_COVER_MAX)
   @IsOptional()
   minCover?: number;
+
+  /**
+   * Clocking in here with no shift: ALLOW, LIMIT (up to `noShiftDailyMinutes` a
+   * day, counted at every workspace) or SHIFT_ONLY. Defaults to ALLOW.
+   */
+  @ApiPropertyOptional({ enum: NO_SHIFT_POLICIES, default: 'ALLOW' })
+  @IsIn(NO_SHIFT_POLICIES as unknown as string[])
+  @IsOptional()
+  noShiftPolicy?: string;
+
+  @ApiPropertyOptional({ description: 'Daily limit for LIMIT, in minutes', minimum: NO_SHIFT_LIMIT.MIN_MINUTES, maximum: NO_SHIFT_LIMIT.MAX_MINUTES })
+  @IsInt()
+  @Min(NO_SHIFT_LIMIT.MIN_MINUTES)
+  @Max(NO_SHIFT_LIMIT.MAX_MINUTES)
+  @IsOptional()
+  noShiftDailyMinutes?: number;
 
   @ApiPropertyOptional({
     enum: SpaceKind,

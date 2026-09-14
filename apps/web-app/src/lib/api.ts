@@ -4507,6 +4507,8 @@ export interface UpdateLocationInput {
    * member decides who may.
    */
   geofencePolicy?: string;
+  noShiftPolicy?: string;
+  noShiftDailyMinutes?: number;
   /** The staffing floor. 0 = no floor set, which is not "nobody needed". */
   minCover?: number;
   kind?: string;
