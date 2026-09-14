@@ -16,6 +16,8 @@ const config: Config = {
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts'],
   coverageDirectory: './coverage',
   moduleNameMapper: {
+    // The app's own `@/…` imports, for specs that render a real page.
+    '^@/(.*)$': '<rootDir>/src/$1',
     '^@hbcfield/shared$': '<rootDir>/../../packages/shared/src',
     '^@hbcfield/shared/(.*)$': '<rootDir>/../../packages/shared/src/$1',
   },
