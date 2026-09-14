@@ -10,6 +10,7 @@ import { success, normalizeKindShape, isAdmin, Role } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { AssetAccessService } from './asset-access.service';
 import { AssetContractService, type ContractFields } from './asset-contract.service';
+import { findPrior } from '../../common/create-once.util';
 
 const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf'];
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
@@ -134,7 +135,17 @@ export class AssetProposalService {
     userRole: string;
     organizationId: string;
     canManageAssets?: boolean;
+    /** Made on the phone: a page sent in twice is one proposal. */
+    id?: string;
   }) {
+    // Answered before the open-proposal cap, which would count the resend against itself.
+    const prior = await findPrior({
+      id: data.id,
+      find: (id) => this.prisma.assetProposal.findUnique({ where: { id } }),
+      isSame: (p) => p.raisedById === data.userId && p.organizationId === data.organizationId,
+    });
+    if (prior) return success(prior);
+
     const fields = this.cleanFields(data.fields);
     /*
       Something has to identify the thing, or there is nothing for a reviewer to
@@ -189,6 +200,7 @@ export class AssetProposalService {
 
     const proposal = await this.prisma.assetProposal.create({
       data: {
+        ...(data.id ? { id: data.id } : {}),
         organizationId: data.organizationId,
         raisedById: data.userId,
         holderUserId,

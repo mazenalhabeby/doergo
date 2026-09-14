@@ -250,6 +250,13 @@ export class ReadContractDto {
  * review time from what the member holds THEN.
  */
 export class RaiseProposalDto {
+  /** Made on the phone: a page sent in twice is one proposal. */
+  @ApiPropertyOptional({ description: 'Id made on the phone; a resend returns the same proposal' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Za-z0-9_-]{16,64}$/)
+  id?: string;
+
   @ApiProperty({ type: ContractFieldsDto })
   @ValidateNested()
   @Type(() => ContractFieldsDto)

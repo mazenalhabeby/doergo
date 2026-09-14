@@ -16,6 +16,7 @@ import {
   Max,
   Min,
   ValidateNested,
+  Matches,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -582,6 +583,17 @@ export class ReadOwnUploadDto {
 }
 
 export class SubmitOwnDocumentDto {
+  /**
+   * Made on the phone: a document supplied offline and sent twice is filed
+   * once. The second send would otherwise fail on an upload the first already
+   * moved out of staging.
+   */
+  @ApiPropertyOptional({ description: 'Id made on the phone; a resend returns the filed document' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Za-z0-9_-]{16,64}$/)
+  id?: string;
+
   @ApiProperty()
   @IsString()
   stagingKey!: string;

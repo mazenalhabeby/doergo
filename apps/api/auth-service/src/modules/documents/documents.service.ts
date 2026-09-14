@@ -64,6 +64,7 @@ import { OBJECT_STORE } from './object-store.provider';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { runWithCronLock } from '@hbcfield/shared';
 import { openUntrustedImage } from './image-input';
+import { findPrior } from '@hbcfield/shared';
 
 /**
  * The personnel file.
@@ -1299,10 +1300,19 @@ export class DocumentsService {
     backStagingKey?: string | null;
     backCrop?: Rect | null;
     ctx?: RequestContext;
+    /** Made on the phone: the same document sent twice is filed once. */
+    id?: string;
   }) {
     // Checked here as well as at presign: presign is a courtesy, this is the
     // step that would actually file the document.
     this.assertNotExternal(data.actor);
+
+    const prior = await findPrior({
+      id: data.id,
+      find: (id) => this.prisma.document.findUnique({ where: { id } }),
+      isSame: (d) => d.userId === data.actor.userId && d.organizationId === data.actor.organizationId,
+    });
+    if (prior) return prior;
     this.assertStagingKey(
       data.stagingKey,
       this.ownStagingPrefix(data.actor.organizationId, data.actor.userId),
@@ -1402,6 +1412,7 @@ export class DocumentsService {
     const document = await this.prisma.$transaction(async (tx) => {
       const created = await tx.document.create({
         data: {
+          ...(data.id ? { id: data.id } : {}),
           organizationId: data.actor.organizationId,
           userId: data.actor.userId,
           typeId: type.id,
