@@ -78,6 +78,10 @@ export class SyncPullService {
         return this.spaces(req);
       case 'tasks':
         return this.tasks(req);
+      case 'comments':
+        return this.taskChildren(req, 'comments');
+      case 'attachments':
+        return this.taskChildren(req, 'attachments');
       default:
         throw new BadRequestException('Unknown sync scope');
     }
@@ -128,15 +132,7 @@ export class SyncPullService {
     const reset = !cursor || Date.parse(cursor.s) < retentionEdge;
     const from = reset ? null : cursor;
 
-    const visibility = buildTaskVisibilityWhere(req);
-    const windowStart = new Date(Date.now() - CLOSED_TASK_WINDOW_DAYS * 86_400_000);
-    const inScope = {
-      organizationId: visibility.organizationId,
-      AND: [
-        ...(visibility.AND ?? []),
-        { OR: [{ status: { notIn: FINISHED } }, { updatedAt: { gte: windowStart } }] },
-      ],
-    };
+    const inScope = this.tasksInScope(req);
 
     const rows = await this.prisma.task.findMany({
       where: {
@@ -193,6 +189,103 @@ export class SyncPullService {
       rows: page,
       deleted: tombstones.map((t) => t.entityId),
       scopeIds,
+      cursor: encodeCursor({
+        t: last ? last.updatedAt.toISOString() : from?.t ?? new Date(0).toISOString(),
+        i: last ? last.id : from?.i ?? '',
+        d: String(highestTombstone),
+        s: new Date().toISOString(),
+      }),
+      hasMore,
+      reset,
+      serverTime: new Date().toISOString(),
+    };
+  }
+
+  /** The tasks a member keeps offline: visible to them, open or recently closed. */
+  private tasksInScope(req: TaskVisibilityFacts) {
+    const visibility = buildTaskVisibilityWhere(req);
+    const windowStart = new Date(Date.now() - CLOSED_TASK_WINDOW_DAYS * 86_400_000);
+    return {
+      organizationId: visibility.organizationId,
+      AND: [
+        ...(visibility.AND ?? []),
+        { OR: [{ status: { notIn: FINISHED } }, { updatedAt: { gte: windowStart } }] },
+      ],
+    };
+  }
+
+  /**
+   * Notes and photo records for the tasks in scope — what a task opened in a
+   * basement shows under its title.
+   *
+   * ⚠️ Scoped by a JOIN to the same task scope, never by a list of ids sent
+   * back and forth: a member's copy of a comment is exactly as wide as their
+   * copy of its task.
+   *
+   * Photos come WITHOUT a link. Signed links expire within the hour, so a stored
+   * one would be dead by the time it is needed; the phone asks for fresh links
+   * when online and shows cached images by attachment id when not.
+   */
+  private async taskChildren(req: PullRequest, scope: 'comments' | 'attachments'): Promise<SyncPullResponse> {
+    const limit = Math.min(Math.max(Number(req.limit) || SYNC_PULL_MAX_ROWS, 1), SYNC_PULL_MAX_ROWS);
+    const cursor = decodeCursor(req.cursor);
+    const retentionEdge = Date.now() - SYNC_TOMBSTONE_RETENTION_DAYS * 86_400_000;
+    const reset = !cursor || Date.parse(cursor.s) < retentionEdge;
+    const from = reset ? null : cursor;
+    const taskScope = this.tasksInScope(req);
+    const after = from
+      ? { OR: [{ updatedAt: { gt: new Date(from.t) } }, { updatedAt: new Date(from.t), id: { gt: from.i } }] }
+      : {};
+
+    const rows: { id: string; updatedAt: Date; taskId: string }[] =
+      scope === 'comments'
+        ? await this.prisma.comment.findMany({
+            where: { task: taskScope, ...after },
+            orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
+            take: limit + 1,
+            select: {
+              id: true, taskId: true, content: true, createdAt: true, updatedAt: true,
+              user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+            },
+          })
+        : await this.prisma.attachment.findMany({
+            where: { task: taskScope, ...after },
+            orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
+            take: limit + 1,
+            select: {
+              id: true, taskId: true, fileName: true, fileType: true, mimeType: true, fileSize: true,
+              uploadedById: true, createdAt: true, updatedAt: true,
+            },
+          });
+    const hasMore = rows.length > limit;
+    const page = hasMore ? rows.slice(0, limit) : rows;
+
+    const tombstoneFrom = from ? BigInt(from.d) : null;
+    let deleted: string[] = [];
+    let highestTombstone: bigint;
+    if (tombstoneFrom === null) {
+      highestTombstone = (await this.prisma.syncTombstone.aggregate({ _max: { id: true } }))._max.id ?? BigInt(0);
+    } else {
+      const tombstones = await this.prisma.syncTombstone.findMany({
+        where: { id: { gt: tombstoneFrom }, entity: scope },
+        orderBy: { id: 'asc' },
+        take: 5000,
+        select: { id: true, entityId: true, parentId: true },
+      });
+      // Only deletions under a task this member keeps; ids alone, never content.
+      const parents = [...new Set(tombstones.map((t) => t.parentId).filter((p): p is string => !!p))];
+      const visible = parents.length
+        ? new Set((await this.prisma.task.findMany({ where: { id: { in: parents }, ...taskScope }, select: { id: true } })).map((t) => t.id))
+        : new Set<string>();
+      deleted = tombstones.filter((t) => t.parentId && visible.has(t.parentId)).map((t) => t.entityId);
+      highestTombstone = tombstones.at(-1)?.id ?? tombstoneFrom;
+    }
+
+    const last = page.at(-1);
+    return {
+      scope,
+      rows: page,
+      deleted,
       cursor: encodeCursor({
         t: last ? last.updatedAt.toISOString() : from?.t ?? new Date(0).toISOString(),
         i: last ? last.id : from?.i ?? '',

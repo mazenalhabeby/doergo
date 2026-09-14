@@ -95,3 +95,36 @@ describe('SyncPullService tasks', () => {
     await expect(new SyncPullService(prismaWith([]) as any).pull({ ...facts, scope: 'payroll' as any })).rejects.toThrow('Unknown sync scope');
   });
 });
+
+describe('SyncPullService task children', () => {
+  it('scopes notes by a join to the task scope, and reports only deletions under visible tasks', async () => {
+    const prisma: any = {
+      comment: { findMany: jest.fn(async () => [{ id: 'c1', taskId: 't1', updatedAt: new Date('2026-09-01T00:00:00Z') }]) },
+      task: { findMany: jest.fn(async () => [{ id: 't1' }]) },
+      syncTombstone: {
+        findMany: jest.fn(async () => [
+          { id: BigInt(50), entityId: 'gone-mine', parentId: 't1' },
+          { id: BigInt(51), entityId: 'gone-other-org', parentId: 't-foreign' },
+          { id: BigInt(52), entityId: 'orphan', parentId: null },
+        ]),
+      },
+    };
+    const cursor = encodeCursor({ t: '2026-08-01T00:00:00.000Z', i: '', d: '49', s: new Date().toISOString() });
+    const r = await new SyncPullService(prisma).pull({ ...facts, scope: 'comments', cursor });
+    const where = prisma.comment.findMany.mock.calls[0][0].where;
+    expect(where.task.organizationId).toBe(ORG);
+    expect(r.deleted).toEqual(['gone-mine']);
+    expect(decodeCursor(r.cursor)!.d).toBe('52');
+  });
+
+  it('never sends a photo link, only the record', async () => {
+    const prisma: any = {
+      attachment: { findMany: jest.fn(async () => []) },
+      syncTombstone: { aggregate: jest.fn(async () => ({ _max: { id: null } })) },
+    };
+    await new SyncPullService(prisma).pull({ ...facts, scope: 'attachments' });
+    const select = prisma.attachment.findMany.mock.calls[0][0].select;
+    expect(select.fileUrl).toBeUndefined();
+    expect(select.fileKey).toBeUndefined();
+  });
+});
