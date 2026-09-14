@@ -7,9 +7,11 @@ import { toast } from "sonner"
 import type { TFunction } from "i18next"
 import type { TimeEntry } from "@hbcfield/shared"
 import { attendanceApi } from "@/lib/api"
-import { shortfallMinutes, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, mayClockInRemotely } from "@hbcfield/shared/client"
+import { shortfallMinutes, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, mayClockInRemotely, chooseClockInLocation } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { getBrowserPosition, GeolocationError, type GeolocationFailure } from "@/lib/geolocation"
+
+type BrowserPosition = Awaited<ReturnType<typeof getBrowserPosition>>
 import type { ClockLocation } from "@/components/clock-in-picker"
 
 /**
@@ -39,7 +41,8 @@ export type ClockAction =
   | { out: true; earlyReason?: string }
   /** No workspace to be away from — the org's Remote bucket. */
   | "remote"
-  | { locationId: string }
+  /** A workspace, with the position already read when choosing it — never asked for twice. */
+  | { locationId: string; pos?: BrowserPosition | null; announce?: boolean }
 
 /**
  * Clocking in and out — the whole behaviour, in one place.
@@ -65,7 +68,9 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
   const qc = useQueryClient()
   const { user } = useAuth()
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [awayPickerOpen, setAwayPickerOpen] = useState(false)
+  // The position read to choose, handed to the picker so it does not ask the browser again.
+  const [pickerPosition, setPickerPosition] = useState<BrowserPosition | null>(null)
+  const [locating, setLocating] = useState(false)
   const [earlyOpen, setEarlyOpen] = useState(false)
 
   /*
@@ -105,28 +110,12 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
   const locations = (locationsData ?? []) as ClockLocation[]
 
   /*
-    The workspaces this member may work AWAY from, decided by the server with
-    the same rule the clock-in refuses by.
-
-    Filtered here rather than fetched separately: it is the same list, asked a
-    second question, and a second request would be a second chance for the two
-    answers to disagree.
-  */
-  const awayLocations = locations.filter((l) => l.awayAllowed)
-
-  /*
-    Whether to offer "away" at all.
-
-    Somebody may hold the account grant and still have nowhere to use it —
-    every workspace they are assigned to requires presence. Showing the button
-    there offers a choice that can only end in a refusal, which is worse than
-    not offering it: the member cannot tell whether they did something wrong.
-
-    The bucket remains for a member assigned to NO workspace, who has no site to
-    be away from and for whom the account grant is the whole answer.
+    ⚠️ No "away" choice any more. Whether a member may clock in away from a
+    site is the server's (the workspace's ceiling × their grant), and where they
+    are working is decided from evidence afterwards. A member with workspaces
+    picks one of them; the Remote bucket is only for somebody who has none.
   */
   const hasNoWorkspace = locations.length === 0
-  const mayClockInAway = awayLocations.length > 0 || (hasNoWorkspace && canClockInRemotely)
 
   const st = (status ?? {}) as Record<string, unknown>
   /*
@@ -162,7 +151,7 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
 
   const clock = useMutation({
     mutationFn: async (action: ClockAction) => {
-      const pos = await getBrowserPosition()
+      const pos = (typeof action === "object" && "locationId" in action && action.pos) || (await getBrowserPosition())
       if (action === "out" || (typeof action === "object" && "out" in action)) {
         return attendanceApi.clockOut({
           lat: pos.lat,
@@ -208,10 +197,13 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
         out too late to explain it.
       */
       const entry = (data as { isRemote?: boolean } | undefined) ?? {}
+      const name = typeof action === "object" && "locationId" in action ? locations.find((l) => l.id === action.locationId)?.name : undefined
       toast.success(
         entry.isRemote
           ? t("attendance.my.clockedInAwayToast", "Clocked in — away from the site. This shift will be reviewed.")
-          : t("attendance.my.clockedInToast", "Clocked in"),
+          : name && typeof action === "object" && "announce" in action && action.announce
+            ? t("attendance.my.clockedInAtToast", { name, defaultValue: `Clocked in at ${name}` })
+            : t("attendance.my.clockedInToast", "Clocked in"),
       )
     },
     onError: (err: unknown) => {
@@ -221,21 +213,21 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
   })
 
   /**
-   * Start an on-site clock-in.
+   * One button: clock in.
    *
-   * One workspace is not a choice — asking somebody with a single site to
-   * confirm it every morning is a tap they can never get wrong, which is the
-   * definition of a dialog that should not exist. The picker opens only when
-   * there is something to decide.
+   * Nobody is asked when the answer is obvious — one workspace, or standing
+   * inside exactly one of several areas — and otherwise the picker opens with
+   * the best one already chosen. The choice itself is `chooseClockInLocation`,
+   * shared with the phone, so both order and pick the same way.
    */
-  const startOnSite = () => {
-    /*
-      Nowhere to clock in is a real state — a member nobody has put on a site
-      yet. The shift page says so in place of its button, but the navbar has no
-      room for that, and opening an empty picker asks somebody to choose from
-      nothing. Say what is wrong instead.
-    */
-    if (locations.length === 0) {
+  const startClockIn = async () => {
+    if (clock.isPending || locating) return
+    if (hasNoWorkspace) {
+      // Nowhere to be: the org's Remote bucket for somebody granted it; otherwise say what is wrong.
+      if (canClockInRemotely) {
+        clock.mutate("remote")
+        return
+      }
       toast.error(
         t(
           "attendance.my.noAssignedLocations",
@@ -248,51 +240,22 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
       clock.mutate({ locationId: locations[0].id })
       return
     }
+    setLocating(true)
+    let pos: BrowserPosition | null = null
+    try {
+      pos = await getBrowserPosition()
+    } catch {
+      // Not fatal: without a position the list is still ordered by shift and primary.
+    } finally {
+      setLocating(false)
+    }
+    const choice = chooseClockInLocation(locations, pos)
+    if (choice.kind === "auto") {
+      clock.mutate({ locationId: choice.location.id, pos, announce: true })
+      return
+    }
+    setPickerPosition(pos)
     setPickerOpen(true)
-  }
-
-  /**
-   * Clock in away from the site.
-   *
-   * Mirrors `startOnSite` deliberately: one workspace goes straight through, more
-   * than one opens the picker, and none at all falls back to the org's Remote
-   * bucket for a member who belongs to no workspace. The button that calls this
-   * is only rendered when `mayClockInAway` says there is somewhere to go, so the
-   * "nowhere" branch here is a guard rather than a path.
-   */
-  const startAway = () => {
-    if (clock.isPending) return
-    if (awayLocations.length > 0) {
-      /*
-        Show the picker whenever they work in more than one place — even when
-        only ONE of those places would take them away from it.
-
-        Not the same rule as on-site, and deliberately. Standing at a site, the
-        workspace is obvious from the fact that you are standing there. Working
-        from a kitchen table, "which workspace is today for?" is a real question,
-        and going straight through would silently charge the day to one of
-        several — the exact failure this product already fixed once, when both
-        surfaces picked the nearest site and said nothing about it.
-
-        With a single workspace there is nothing to choose, so it goes through.
-      */
-      if (locations.length > 1) {
-        setAwayPickerOpen(true)
-      } else {
-        clock.mutate({ locationId: awayLocations[0].id })
-      }
-      return
-    }
-    if (hasNoWorkspace && canClockInRemotely) {
-      clock.mutate("remote")
-      return
-    }
-    toast.error(
-      t(
-        "attendance.my.noAwayWorkspace",
-        "None of your workspaces allow clocking in away from the site.",
-      ),
-    )
   }
 
   return {
@@ -301,22 +264,12 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
     activeEntry,
     /** Workspaces this member may clock in at right now. */
     locations,
-    /** True while a clock-in or clock-out is in flight, on EITHER surface. */
-    pending: clock.isPending,
+    /** True while a clock-in or clock-out is in flight — or the position is being read — on EITHER surface. */
+    pending: clock.isPending || locating,
     /** What is in flight — so a surface can spin the right button only. */
     action: clock.variables as ClockAction | undefined,
-    /** Ask to clock in on site: straight through, or open the picker. */
-    startOnSite,
-    /**
-     * Ask to clock in AWAY: straight through when there is one workspace it
-     * could be, the picker when there is a choice, and the org's Remote bucket
-     * when they belong to no workspace at all.
-     */
-    startAway,
-    /** Is there anywhere this member may actually work away from? */
-    mayClockInAway,
-    /** The workspaces where they may — the same list, asked a second question. */
-    awayLocations,
+    /** Clock in: straight through when the workspace is obvious, the picker when it is not. */
+    startClockIn,
     /**
      * End the shift.
      *
@@ -330,7 +283,6 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
       if (shortfall > 0) setEarlyOpen(true)
       else clock.mutate("out")
     },
-    clockInRemotely: () => clock.mutate("remote"),
     /** Minutes short of the shift end, right now; 0 when there is no shift. */
     shortfallMinutes: shortfall,
     /** Spread straight into <ClockOutEarlyDialog {...earlyProps} />. */
@@ -346,37 +298,14 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
         clock.mutate({ out: true, earlyReason })
       },
     },
-    /**
-     * The SAME picker, in away mode.
-     *
-     * One component and one flow: the dialog that reads the position and takes a
-     * workspace does not care why it is being asked. Two of them would drift the
-     * way the two clock-in surfaces did before they shared this hook.
-     */
-    awayPickerProps: {
-      open: awayPickerOpen,
-      onOpenChange: setAwayPickerOpen,
-      locations: awayLocations,
-      pending: clock.isPending,
-      onPick: (locationId: string) => clock.mutate({ locationId }),
-      geoErrorMessage: (reason: GeolocationFailure) => geoErrorMessage(t, reason),
-      away: true,
-      /*
-        How many of their workspaces were left out, so the dialog can say so.
-
-        A list that silently omits three of a member's five workspaces looks like
-        a bug to the person who knows they work at five.
-      */
-      hiddenCount: locations.length - awayLocations.length,
-    },
     /** Spread straight into <ClockInPicker {...pickerProps} />. */
     pickerProps: {
       open: pickerOpen,
       onOpenChange: setPickerOpen,
       locations,
+      position: pickerPosition,
       pending: clock.isPending,
-      onPick: (locationId: string) => clock.mutate({ locationId }),
-      geoErrorMessage: (reason: GeolocationFailure) => geoErrorMessage(t, reason),
+      onPick: (locationId: string) => clock.mutate({ locationId, pos: pickerPosition }),
     },
   }
 }

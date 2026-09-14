@@ -1019,6 +1019,22 @@ export class AttendanceController {
     });
   }
 
+  /*
+    Where somebody worked through the day. The same gate and the same space
+    scope as the edit history beside it: this is attendance detail about a
+    person, and outside the caller's spaces it does not exist.
+  */
+  @Get('entries/:id/presence')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
+  @ApiOperation({ summary: 'Where a member worked through one entry: on site, in the field or remote' })
+  async getEntryPresence(@Param('id') entryId: string, @Request() req?: any) {
+    return this.attendanceService.getEntryPresence({
+      entryId,
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+    });
+  }
+
   @Get('entries/:id/history')
   @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get the full edit history for a time entry' })

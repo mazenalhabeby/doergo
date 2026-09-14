@@ -1,5 +1,5 @@
 import i18n from "@/i18n"
-import { isTaskOverdue, canManageSpace, canManageMembersInSpace } from "@hbcfield/shared/client"
+import { isTaskOverdue, canManageSpace, canManageMembersInSpace, type PresenceFreshness, type WorkPresence } from "@hbcfield/shared/client"
 import type { OrgMember, Task } from "@/lib/api"
 import type { PersonNodeProps, WorkspaceBoxProps } from "@/components/dashboard"
 
@@ -73,6 +73,14 @@ export interface AttendanceFacts {
   withinGeofence: boolean
   /** Open session the reminder engine escalated and stopped chasing. */
   needsReview: boolean
+  /**
+   * Where they are working now, decided by the server from evidence. Null on
+   * entries from before it existed — those keep the reading below.
+   */
+  workPresence?: WorkPresence | null
+  /** How fresh that is: a phone gone quiet, or a clock-in that never reports. */
+  freshness?: PresenceFreshness
+  lastSeenAt?: string | null
 }
 
 export interface BuildWorkspaceBoxesInput {
@@ -213,9 +221,16 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
         // On Shift / In Field / Working is decided by WHERE they clocked in
         // (space geofence) + whether the space is shift-based — not their access.
         const { isShiftBased, atSpace } = shiftLabelInfo(userId)
-        const isRemoteHere = attendanceByUser.get(userId)?.isRemote ?? false
-        // "In Field" = clocked in on a shift-based space but not confirmed inside it.
-        const onRoad = isCurrentlyClockedIn && !isRemoteHere && isShiftBased && !atSpace
+        const facts = attendanceByUser.get(userId)
+        const workPresence = facts?.workPresence ?? null
+        /*
+          The server's evidence-based group wins. The old reading — from where they
+          clocked in — only stands for entries that have no group.
+        */
+        const isRemoteHere = workPresence ? workPresence === "REMOTE" : (facts?.isRemote ?? false)
+        const onRoad = workPresence
+          ? isCurrentlyClockedIn && workPresence === "FIELD"
+          : isCurrentlyClockedIn && !isRemoteHere && isShiftBased && !atSpace
 
         const isOnBreak = onBreakUserIds.has(userId)
 
@@ -225,9 +240,12 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
           isOnline: memberOnline(member),
           presence: member.presence,
           isRemote: isRemoteHere,
-          needsReview: attendanceByUser.get(userId)?.needsReview ?? false,
+          needsReview: facts?.needsReview ?? false,
           isShiftBased,
           atSpace,
+          workPresence,
+          freshness: facts?.freshness,
+          lastSeenAt: facts?.lastSeenAt,
         })
 
         const node = personNode(member, status, tag, activeTaskTitle, isCurrentlyClockedIn)
@@ -260,7 +278,7 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
         } else if (onRoad) {
           // Clocked in here, working on the road → "In Field" group.
           onRoadPeople.push(node)
-        } else if (attendanceByUser.get(userId)?.isRemote) {
+        } else if (isRemoteHere) {
           // Clocked in remotely (WFH), attributed to this (home) space → "Off-site".
           remotePeople.push(node)
         } else {

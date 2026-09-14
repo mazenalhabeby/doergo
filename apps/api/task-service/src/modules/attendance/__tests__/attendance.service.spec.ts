@@ -18,6 +18,7 @@ import {
 import { CountedTimeService } from '../counted-time.service';
 import { BreakRulesService } from '../break-rules.service';
 import { BreakReminderService } from '../break-reminder.service';
+import { PresenceService } from '../presence/presence.service';
 
 describe('AttendanceService', () => {
   let service: AttendanceService;
@@ -169,7 +170,7 @@ describe('AttendanceService', () => {
         BreakReminderService,
         BreakRulesService,
         CountedTimeService,
-        AttendanceService,
+        AttendanceService, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } },
         BreakService,
         ApprovalService,
         AttendanceReportService,

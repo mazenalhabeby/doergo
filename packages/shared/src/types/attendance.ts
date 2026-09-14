@@ -83,6 +83,9 @@ export interface CompanyLocation {
    * the clock-in list and status; null where the workspace allows it freely.
    */
   noShift?: NoShiftTag | null;
+  /** On the clock-in list and status: a shift for the caller here now, and their primary workspace. */
+  shiftToday?: boolean;
+  isPrimary?: boolean;
 }
 
 // ============================================================================
@@ -147,6 +150,12 @@ export interface TimeEntry {
   expectedClockOutAt?: string | null;
   /** The planned end is the workspace's daily limit for clocking in with no shift, not a shift end. */
   endIsDailyLimit?: boolean;
+  /** Where they are working now: ON_SITE | FIELD | REMOTE — see attendance/presence.ts. Null on older entries. */
+  presence?: string | null;
+  presenceReason?: string | null;
+  presenceAt?: string | null;
+  /** Last position heard from the phone; null when it never sent one (a computer). */
+  lastSeenAt?: string | null;
   /*
     This shift's planned rests, frozen at clock-in. Loosely typed here on
     purpose: the shape is owned and validated by

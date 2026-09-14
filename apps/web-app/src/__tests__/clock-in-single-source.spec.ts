@@ -54,23 +54,34 @@ describe('clocking in has one implementation', () => {
     expect(hook).not.toContain('attendanceApi.getLocations');
   });
 
-  it('never picks the workspace on the member’s behalf', () => {
+  it('chooses the workspace only through the shared rule, never by its own distance maths', () => {
     // The original bug: both surfaces measured distances and clocked in at the
-    // nearest site without saying so. Choosing is the picker's job now, and a
-    // distance calculation reappearing next to a clock-in call is the smell.
+    // nearest site without saying so. A choice is made now only where it is
+    // certain (one workspace, or inside exactly one area) and only by
+    // `chooseClockInLocation`, shared with the phone. Distance maths reappearing
+    // next to a clock-in call is the smell.
     const hook = readFileSync(join(SRC, HOOK), 'utf8');
+    expect(hook).toContain('chooseClockInLocation');
     expect(hook).not.toContain('distanceMeters');
+    expect(hook).not.toContain('haversine');
   });
 
   it('opens the picker only when there is a choice', () => {
-    // One workspace is not a choice — a confirmation somebody can never get
-    // wrong is a dialog that should not exist.
     const hook = readFileSync(join(SRC, HOOK), 'utf8');
-    const start = hook.indexOf('const startOnSite');
+    const start = hook.indexOf('const startClockIn');
     expect(start).toBeGreaterThan(-1);
-    const body = hook.slice(start, hook.indexOf('}', hook.indexOf('setPickerOpen(true)')));
+    const body = hook.slice(start, hook.indexOf('setPickerOpen(true)', start) + 20);
     expect(body).toContain('locations.length === 1');
+    expect(body).toContain('choice.kind === "auto"');
     expect(body).toContain('setPickerOpen(true)');
+  });
+
+  it('offers no remote-or-field choice to a member who has workspaces', () => {
+    const widget = readFileSync(join(SRC, 'components', 'clock-widget.tsx'), 'utf8');
+    const page = readFileSync(join(SRC, 'app', '(dashboard)', 'my', 'attendance', 'page.tsx'), 'utf8');
+    for (const src of [widget, page]) {
+      expect(src).not.toMatch(/startAway|awayPickerProps|clockInAway/);
+    }
   });
 
   it('shows the same picker on both surfaces', () => {

@@ -3,16 +3,10 @@
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { useBillingLock, useClockIn } from "@/hooks"
-import { LogIn, LogOut, Home, Loader2, ChevronDown, MapPin } from "lucide-react"
+import { LogIn, LogOut, Loader2 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { hasAccessModule } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu"
 import { ClockInPicker } from "@/components/clock-in-picker"
 import { ClockOutEarlyDialog } from "@/components/attendance/clock-out-early-dialog"
 
@@ -60,10 +54,7 @@ export function ClockWidget() {
   const canClock = !!user && hasAccessModule(user, "clock")
 
   const {
-    clockedIn, activeEntry, pending, startOnSite, clockOut, pickerProps,
-    // Whether there is anywhere to work away FROM, not merely whether the
-    // account allows it — see useClockIn.
-    startAway, mayClockInAway, awayPickerProps, earlyProps,
+    clockedIn, activeEntry, pending, startClockIn, clockOut, pickerProps, earlyProps,
   } = useClockIn({
     enabled: canClock,
   })
@@ -104,52 +95,21 @@ export function ClockWidget() {
 
   return (
     <>
-      {/* One picker, whichever button opened it — and the same one for away. */}
+      {/* One button. Where they are is decided from evidence, not chosen here. */}
       <ClockInPicker {...pickerProps} />
-      <ClockInPicker {...awayPickerProps} />
       <ClockOutEarlyDialog {...earlyProps} />
-
-      {mayClockInAway ? (
-        // ── Clocked out + remote-eligible → Clock In split menu ─────────
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              size="sm"
-              className="h-8 gap-1 bg-green-600 text-white hover:bg-green-700"
-              disabled={pending || billingLocked}
-              title={billingLocked ? billingLockReason : undefined}
-            >
-              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
-              {t("attendance.my.clockIn", "Clock In")}
-              <ChevronDown className="h-3.5 w-3.5 opacity-80" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={startOnSite}>
-              <MapPin className="h-4 w-4" />
-              {t("attendance.my.clockInOnsite", "On-site")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={startAway}>
-              <Home className="h-4 w-4" />
-              {t("attendance.my.clockInAway", "Away from the site")}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : (
-        // ── Clocked out (on-site only) → Clock In ───────────────────────
-        <Button
-          size="sm"
-          className="h-8 gap-1 bg-green-600 text-white hover:bg-green-700"
-          // ⚠️ This button alone used to ignore the billing lock, so the one
-          // member who cannot clock in remotely was the one who got a 402.
-          disabled={pending || billingLocked}
-          title={billingLocked ? billingLockReason : undefined}
-          onClick={startOnSite}
-        >
-          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
-          {t("attendance.my.clockIn", "Clock In")}
-        </Button>
-      )}
+      <Button
+        size="sm"
+        className="h-8 gap-1 bg-green-600 text-white hover:bg-green-700"
+        // ⚠️ This button alone used to ignore the billing lock, so the one
+        // member who cannot clock in remotely was the one who got a 402.
+        disabled={pending || billingLocked}
+        title={billingLocked ? billingLockReason : undefined}
+        onClick={startClockIn}
+      >
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
+        {t("attendance.my.clockIn", "Clock In")}
+      </Button>
     </>
   )
 }

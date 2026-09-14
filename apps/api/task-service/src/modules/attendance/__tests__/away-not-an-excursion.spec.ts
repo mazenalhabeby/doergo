@@ -7,6 +7,7 @@ import { NotificationRoutingService } from '../../../common/notification-routing
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { SERVICE_NAMES, QUEUE_NAMES } from '@hbcfield/shared';
 import { getQueueToken } from '@nestjs/bullmq';
+import { PresenceService } from '../presence/presence.service';
 
 /**
  * A day worked away from the site is not an excursion from it.
@@ -48,7 +49,7 @@ describe('an away day is not a geofence excursion', () => {
     };
     const mod = await Test.createTestingModule({
       providers: [
-        AttendanceService, CountedTimeService, BreakRulesService,
+        AttendanceService, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } }, CountedTimeService, BreakRulesService,
         { provide: ShiftResolverService, useValue: { resolveForClockIn: jest.fn().mockResolvedValue(null) } },
         { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) } },
         { provide: PrismaService, useValue: prisma },

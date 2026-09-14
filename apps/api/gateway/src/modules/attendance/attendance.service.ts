@@ -492,6 +492,11 @@ export class AttendanceService extends BaseGatewayService {
     return this.send({ cmd: 'edit_entry' }, data);
   }
 
+  /** Where somebody worked through one entry's day — groups and reasons, no positions. */
+  async getEntryPresence(data: { entryId: string; organizationId: string; scopeSpaceIds?: string[] | null }) {
+    return this.send({ cmd: 'get_entry_presence' }, data);
+  }
+
   /** Full edit history (per-edit audit rows) for a time entry. */
   async getEntryHistory(data: { entryId: string; organizationId: string; scopeSpaceIds?: string[] | null }) {
     return this.send({ cmd: 'get_entry_history' }, data);

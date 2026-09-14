@@ -56,6 +56,7 @@ import type { OccurrenceEvidence } from '@hbcfield/shared';
 import { fixOfTap, judgeOccurrence } from '../../common/occurrence.util';
 import { alreadyClockedIn, approvalFor, sameRecordOrRefuse, SAME_TAP_MS } from './attendance-occurrence';
 import { BreakRulesService } from './break-rules.service';
+import { PresenceService } from './presence/presence.service';
 
 // Trimmed CompanyLocation projection for the hot attendance polls (P12) —
 // getStatus/getHistory/heartbeat previously `include`d the full ~20-column row
@@ -99,6 +100,8 @@ export class AttendanceService {
     private readonly shiftResolver: ShiftResolverService,
     private readonly countedTime: CountedTimeService,
     private readonly breakRules: BreakRulesService,
+    // Where they are working now — display only, and never in the way of a clock-in.
+    private readonly presence: PresenceService,
   ) {}
 
   /**
@@ -162,28 +165,41 @@ export class AttendanceService {
   }
 
   /**
-   * Tag each workspace with this member's rule for clocking in there with no
-   * shift, as `noShift` (null where it is allowed freely).
+   * Tag each workspace a member may clock in at with what the one-button
+   * clock-in needs to choose and to answer before the tap:
+   *   `shiftToday` — a shift for them here now, `isPrimary`, and
+   *   `noShift`    — their allowance with no shift (null where it is free).
    *
-   * Costs nothing for workspaces that allow it — every existing one. Elsewhere
-   * one shift resolution per workspace, and ONE read of today's hours per time
-   * zone, however many workspaces share it.
+   * One shift resolution per workspace (a member has a handful), and ONE read
+   * of today's hours per time zone, only for workspaces that limit it.
    */
-  private async tagNoShift<T extends ResolverSpace & { noShiftPolicy?: string | null; noShiftDailyMinutes?: number | null }>(
+  private async tagClockInContext<T extends ResolverSpace & { noShiftPolicy?: string | null; noShiftDailyMinutes?: number | null }>(
     spaces: T[],
     userId: string,
     now: Date,
-  ): Promise<(T & { noShift: NoShiftTag | null })[]> {
+    primarySpaceIds: ReadonlySet<string>,
+  ): Promise<(T & { noShift: NoShiftTag | null; shiftToday: boolean; isPrimary: boolean })[]> {
     const worked = new Map<string, Promise<number>>();
     return Promise.all(
       spaces.map(async (space) => {
-        const policy = space.noShiftPolicy ?? 'ALLOW';
-        if (policy !== 'LIMIT' && policy !== 'SHIFT_ONLY') return { ...space, noShift: null };
         const tz = space.timezone || 'UTC';
-        const hasShiftNow = await this.shiftResolver
-          .resolveForClockIn({ userId, space, clockInAt: now, clockInTz: tz })
-          .then((r) => !!r)
-          .catch(() => false);
+        const policy = space.noShiftPolicy ?? 'ALLOW';
+        const limited = policy === 'LIMIT' || policy === 'SHIFT_ONLY';
+        /*
+          A shift is only worth resolving where it changes something: ordering a
+          choice (more than one workspace) or a no-shift rule. A member with one
+          workspace that allows it freely — most of them, on an endpoint the
+          phone polls — costs nothing here. Wrapped so a resolver that throws,
+          however it throws, never takes the list down with it.
+        */
+        const hasShiftNow = spaces.length > 1 || limited
+          ? await Promise.resolve()
+              .then(() => this.shiftResolver.resolveForClockIn({ userId, space, clockInAt: now, clockInTz: tz }))
+              .then((r) => !!r)
+              .catch(() => false)
+          : false;
+        const isPrimary = primarySpaceIds.has(space.id);
+        if (!limited) return { ...space, noShift: null, shiftToday: hasShiftNow, isPrimary };
         let workedTodayMinutes = 0;
         if (policy === 'LIMIT' && !hasShiftNow) {
           if (!worked.has(tz)) {
@@ -198,9 +214,24 @@ export class AttendanceService {
           workedTodayMinutes,
           dayEndsAt: endOfDayIn(now, tz).toISOString(),
         };
-        return { ...space, noShift };
+        return { ...space, noShift, shiftToday: hasShiftNow, isPrimary };
       }),
     );
+  }
+
+  /**
+   * The day's changes of where somebody worked, for one entry in the caller's
+   * spaces. Group, reason and time — never a position. Outside the caller's
+   * spaces it is "not found", like every other entry read.
+   */
+  async getEntryPresence(data: { entryId: string; organizationId: string; scopeSpaceIds?: AttendanceScope }) {
+    const entry = await this.prisma.timeEntry.findFirst({
+      where: { id: data.entryId, organizationId: data.organizationId, ...scopeWhere(data.scopeSpaceIds) },
+      select: { id: true, clockInAt: true, clockOutAt: true, presence: true, lastSeenAt: true },
+    });
+    if (!entry) throw new NotFoundException('Time entry not found');
+    const changes = await this.presence.history(entry.id, data.organizationId);
+    return success({ ...entry, changes });
   }
 
   private async buildShiftStamp(
@@ -367,7 +398,7 @@ export class AttendanceService {
       where: activeAssignmentWhere(data.userId),
       // The per-workspace override rides along: it is half of the answer to
       // "may they work away from HERE", and it is on the row we already read.
-      select: { spaceId: true, allowRemote: true },
+      select: { spaceId: true, allowRemote: true, isPrimary: true },
     });
     const spaceIds = [...new Set(assignments.map((a) => a.spaceId))];
     if (!spaceIds.length) return success([]);
@@ -394,7 +425,8 @@ export class AttendanceService {
     // costs one lookup for the member and no second query for them.
     const overrideBySpace = new Map(assignments.map((a) => [a.spaceId, a.allowRemote]));
     const tagged = await this.tagAwayAllowed(locations, data.userId, data.organizationId, overrideBySpace);
-    return success(await this.tagNoShift(tagged, data.userId, new Date()));
+    const primary = new Set(assignments.filter((a) => a.isPrimary).map((a) => a.spaceId));
+    return success(await this.tagClockInContext(tagged, data.userId, new Date(), primary));
   }
 
   /**
@@ -535,6 +567,15 @@ export class AttendanceService {
       });
 
       const remoteFlags = [...occurrence.flags];
+      const remotePresence = await this.presence.atClockIn({
+        userId: data.userId,
+        organizationId: data.organizationId,
+        point: { lat: data.lat, lng: data.lng },
+        insideArea: false,
+        at: remoteClockInAt,
+        timezone: this.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? orgTz,
+        recordedOffline: remoteFlags.includes('RECORDED_OFFLINE'),
+      });
       const entry = await this.createEntryOnce(data.id, data.userId, {
           ...(data.id ? { id: data.id } : {}),
           userId: data.userId,
@@ -552,6 +593,7 @@ export class AttendanceService {
           approvalStatus: approvalFor(remoteFlags),
           organizationId: data.organizationId,
           ...remoteStamp,
+          ...remotePresence,
           breakPlan: remoteRests.breakPlan as never,
           nextBreakRemindAt: remoteRests.nextBreakRemindAt,
       });
@@ -771,6 +813,17 @@ export class AttendanceService {
       timezone: workerTz ?? location.timezone ?? 'UTC',
     });
 
+    // Where they are working from the first moment: inside an area that exists, or decided from the evidence.
+    const presenceCols = await this.presence.atClockIn({
+      userId: data.userId,
+      organizationId: data.organizationId,
+      point: { lat: data.lat, lng: data.lng },
+      insideArea: siteEnforcesZone(zone) && withinGeofence,
+      at: clockInTime,
+      timezone: workerTz ?? location.timezone ?? orgTz,
+      recordedOffline: flagReasons.includes('RECORDED_OFFLINE'),
+    });
+
     // Create time entry
     const entry = await this.createEntryOnce(data.id, data.userId, {
         ...(data.id ? { id: data.id } : {}),
@@ -792,6 +845,7 @@ export class AttendanceService {
         approvalStatus,
         organizationId: data.organizationId,
         ...stampCols,
+        ...presenceCols,
         endIsDailyLimit,
         breakPlan: restPlan.breakPlan as never,
         nextBreakRemindAt: restPlan.nextBreakRemindAt,
@@ -1929,6 +1983,17 @@ export class AttendanceService {
     const hasRing = !entry.isRemote && siteEnforcesZone(sweepZone);
 
     /*
+      Where they are working now. Asked of the area whether or not the day is
+      away: somebody who clocked in from the café and walked in is on site.
+      Not awaited — it swallows its own failures and never holds a heartbeat.
+    */
+    void this.presence.onPosition(
+      entry,
+      { lat: data.lat, lng: data.lng },
+      siteEnforcesZone(sweepZone) && isAtSite({ lat: data.lat, lng: data.lng, accuracy: 0 }, sweepZone).inside,
+    );
+
+    /*
       Deliberately WITHOUT the accuracy tolerance, unlike clock-in.
 
       Clock-in widens the zone by the reported GPS error so a fuzzy fix is not
@@ -2049,7 +2114,7 @@ export class AttendanceService {
       where: { userId: data.userId, organizationId: data.organizationId, status: TimeEntryStatus.CLOCKED_IN },
       include: { location: { select: ATTENDANCE_LOCATION_SELECT } },
     });
-    if (!entry || !entry.location || entry.isRemote) return success({ recorded: 0, opened: false, returned: false });
+    if (!entry || !entry.location) return success({ recorded: 0, opened: false, returned: false });
 
     const zone = {
       lat: entry.location.lat,
@@ -2057,6 +2122,23 @@ export class AttendanceService {
       geofenceRadius: entry.location.geofenceRadius,
       geofencePolygon: parseGeofencePolygon(entry.location.geofencePolygon),
     };
+    /*
+      The day's groups, replayed in the order the points were taken — for a day
+      worked away too, which the excursion replay below does not look at.
+    */
+    {
+      const now = new Date();
+      const hasArea = siteEnforcesZone(zone);
+      const points = data.points
+        .map((p) => ({ lat: p.lat, lng: p.lng, at: new Date(p.recordedAt) }))
+        .filter(({ at, lat, lng }) => Number.isFinite(lat) && Number.isFinite(lng) && !Number.isNaN(at.getTime()) && at >= entry.clockInAt && at.getTime() <= now.getTime() + 2 * 60_000)
+        .sort((a, b) => a.at.getTime() - b.at.getTime())
+        .slice(-500)
+        .map((p) => ({ ...p, insideArea: hasArea && isAtSite({ lat: p.lat, lng: p.lng, accuracy: 0 }, zone).inside }));
+      await this.presence.onBatch(entry, points);
+    }
+    if (entry.isRemote) return success({ recorded: 0, opened: false, returned: false });
+
     if (!siteEnforcesZone(zone)) return success({ recorded: 0, opened: false, returned: false });
 
     const now = new Date();
@@ -2589,7 +2671,9 @@ export class AttendanceService {
       new Map(assignments.map((a) => [a.spaceId, a.allowRemote])),
     );
     // Only asked when it could matter: a member on the clock is not choosing where to clock in.
-    const assignedLocations = currentEntry ? awayTagged : await this.tagNoShift(awayTagged, data.userId, new Date());
+    const assignedLocations = currentEntry
+      ? awayTagged
+      : await this.tagClockInContext(awayTagged, data.userId, new Date(), new Set(assignments.filter((a) => a.isPrimary).map((a) => a.spaceId)));
 
     // Active out-of-ring excursion for the current session (drives mobile UI).
     const activeExcursion = currentEntry ? await this.getActiveExcursion(currentEntry.id) : null;

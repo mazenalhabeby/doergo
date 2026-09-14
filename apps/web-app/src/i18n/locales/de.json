@@ -1021,7 +1021,9 @@
       "offShift": "Nicht im Dienst",
       "roleMember": "Mitarbeiter",
       "roleAdmin": "Admin",
-      "needsReview": "Zu prüfen"
+      "needsReview": "Zu prüfen",
+      "noSignalSince": "Kein Empfang seit {{time}}",
+      "noLiveUpdates": "Keine Live-Updates"
     },
     "pending": {
       "worker": "Mitarbeiter",
@@ -3251,7 +3253,6 @@
         "unavailable": "Standort konnte nicht ermittelt werden. Bitte erneut versuchen."
       },
       "remote": "Remote",
-      "clockInOnsite": "Vor Ort",
       "clockInRemote": "Remote einstempeln",
       "gpsHintRemote": "Vor Ort bestätigt, dass Sie am Standort sind. Remote erfasst die Stadt, aus der Sie arbeiten. Funktioniert auch über VPN.",
       "thisWeek": "Letzte 7 Tage",
@@ -3266,26 +3267,24 @@
       "pickRange": "Zeitraum wählen",
       "picker": {
         "title": "Wo stempeln Sie ein?",
-        "subtitle": "Sie arbeiten an mehreren Orten. Wählen Sie den Ort, an dem Sie gerade sind.",
+        "subtitle": "Sie arbeiten an mehreren Orten. Die beste Übereinstimmung ist bereits ausgewählt.",
         "inRange": "Sie sind hier",
         "outOfRange": "Zu weit entfernt zum Einstempeln",
         "noGeofence": "Kein Geofence",
         "unknownDistance": "Entfernung unbekannt",
         "metresAway": "{{n}} m entfernt",
         "kmAway": "{{n}} km entfernt",
-        "noFix": "Sie können trotzdem wählen, wo Sie sind — Ihr Standort wird beim Einstempeln geprüft.",
-        "awayTitle": "Für welchen Arbeitsbereich arbeiten Sie?",
-        "awaySubtitle": "Sie sind nicht am Standort. Der Tag wird dem gewählten Arbeitsbereich zugeordnet — mit Schicht und Pausen — und als abwesend zur Prüfung markiert.",
-        "awayHidden_one": "Einer Ihrer anderen Arbeitsbereiche kann nur vor Ort eingestempelt werden.",
-        "awayHidden_other": "{{count}} Ihrer anderen Arbeitsbereiche können nur vor Ort eingestempelt werden."
+        "noFix": "Ihr Standort konnte nicht ermittelt werden. Sie können trotzdem wählen — der Standort wird beim Einstempeln geprüft.",
+        "shiftToday": "Schicht heute",
+        "primary": "Hauptbereich",
+        "clockInAt": "Einstempeln bei {{name}}"
       },
       "noAssignedLocations": "Sie sind noch keinem Arbeitsbereich zugeordnet, daher gibt es keinen Ort zum Einstempeln. Bitten Sie Ihre Administration darum.",
       "paidFrom": "Gezählt ab {{time}}",
       "away": "abwesend",
       "clockedInAwayToast": "Eingestempelt — abwesend vom Standort. Diese Schicht wird geprüft.",
-      "clockInAway": "Abwesend vom Standort",
-      "noAwayWorkspace": "Keiner Ihrer Arbeitsbereiche erlaubt das Einstempeln abseits des Standorts.",
-      "gpsHintAway": "Vor Ort prüft, ob Sie am Arbeitsbereich sind. Abwesend erfasst den Tag trotzdem dort, mit dem Ort, von dem aus Sie arbeiten, und legt ihn zur Prüfung vor."
+      "clockedInAtToast": "Eingestempelt bei {{name}}",
+      "gpsHintOneButton": "Nutzt Ihren Standort, um den Arbeitsbereich zu wählen und zu prüfen, dass Sie dort sind. Wo Sie im Laufe des Tages arbeiten, wird automatisch erkannt."
     },
     "management": {
       "title": "Anwesenheitsverwaltung",
@@ -3560,6 +3559,23 @@
       "less": "Weniger",
       "more": "Mehr",
       "saved": "Gespeichert"
+    },
+    "presence": {
+      "title": "Wo gearbeitet wurde",
+      "onSite": "Vor Ort",
+      "field": "Im Außendienst",
+      "remote": "Remote",
+      "sentLate": "Ohne Empfang gesendet",
+      "reasons": {
+        "INSIDE_AREA": "Im Bereich des Arbeitsbereichs",
+        "ON_THE_WAY": "Unterwegs zu einem Auftrag",
+        "AT_JOB": "An der Adresse eines Auftrags",
+        "MOVED": "Hat den Ort gewechselt",
+        "NEAR_AREA": "Knapp außerhalb des Bereichs",
+        "STILL_OUT": "Weiterhin unterwegs, steht",
+        "JOBS_TODAY": "Aufträge mit Adresse heute",
+        "AWAY": "Außerhalb des Bereichs, steht"
+      }
     }
   },
   "auditLog": {

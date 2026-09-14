@@ -20,6 +20,7 @@ import { canAddOvertime } from "@/lib/overtime-preview"
 import { useAuth } from "@/contexts/auth-context"
 import { EditDayOffDialog } from "./edit-dayoff-dialog"
 import { OutOfRingPanel } from "./out-of-ring-panel"
+import { PresenceDay } from "@/components/attendance/presence-day"
 import { useTimeFormat } from "@/hooks"
 import { workedMinutes } from "@hbcfield/shared/client"
 
@@ -559,6 +560,14 @@ export function TrackingTab({
                     {isOpen && (
                       <TableRow className="bg-muted/20 hover:bg-muted/20">
                         <TableCell colSpan={showActions ? 8 : 7} className="p-4">
+                          <PresenceDay
+                            entryId={entry.id}
+                            clockInAt={entry.clockInAt}
+                            clockOutAt={entry.clockOutAt}
+                            timezone={entry.timezone ?? entry.location?.timezone}
+                            hour12={hour12}
+                            locale={locale}
+                          />
                           <div className="mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                             <ListChecks className="h-3.5 w-3.5" /> {t("worklog.title", "Activity — what they did")}
                           </div>

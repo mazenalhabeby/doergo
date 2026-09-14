@@ -52,6 +52,7 @@ describe('heartbeatBatch', () => {
   function service(active: any = null) {
     const svc = Object.create(AttendanceService.prototype) as any;
     svc.logger = { debug: jest.fn(), log: jest.fn(), warn: jest.fn() };
+    svc.presence = { onBatch: jest.fn().mockResolvedValue(undefined), onPosition: jest.fn().mockResolvedValue(undefined) };
     svc.prisma = {
       timeEntry: {
         findFirst: jest.fn().mockResolvedValue({

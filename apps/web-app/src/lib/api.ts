@@ -2981,6 +2981,17 @@ export const attendanceApi = {
     return (response.data as { data?: unknown })?.data ?? response.data;
   },
 
+  // Where a member worked through one entry: groups, reasons and times — never a position.
+  getEntryPresence: async (entryId: string) => {
+    const response = await api.get<{ success: boolean; data: { presence: string | null; lastSeenAt: string | null; changes: { at: string; presence: "ON_SITE" | "FIELD" | "REMOTE"; reason: string; sentLate: boolean }[] } }>(
+      `/attendance/entries/${entryId}/presence`
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data?.data;
+  },
+
   // Approved overtime on a closed shift: minutes counted from the shift end.
   addOvertime: async (entryId: string, input: { minutes: number; reason?: string }) => {
     const response = await api.post<{ success: boolean; data: unknown }>(

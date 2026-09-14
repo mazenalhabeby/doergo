@@ -9,6 +9,7 @@ import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache
 import { MediaSigner } from '../../../common/storage/media-signer.service';
 import { OBJECT_STORE } from '@hbcfield/shared/storage';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
+import { PresenceService } from '../../attendance/presence/presence.service';
 
 /**
  * The per-task authorization gate.
@@ -68,7 +69,7 @@ describe('TasksService — per-task authorization', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        TasksService,
+        TasksService, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: notifications },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },

@@ -1021,7 +1021,9 @@
       "atSpace": "À {{space}}",
       "roleMember": "Membre",
       "roleAdmin": "Admin",
-      "needsReview": "À vérifier"
+      "needsReview": "À vérifier",
+      "noSignalSince": "Pas de réseau depuis {{time}}",
+      "noLiveUpdates": "Pas de mises à jour en direct"
     },
     "pending": {
       "worker": "Employé",
@@ -3251,7 +3253,6 @@
         "unavailable": "Impossible de déterminer votre position. Veuillez réessayer."
       },
       "remote": "À distance",
-      "clockInOnsite": "Sur site",
       "clockInRemote": "Pointer à distance",
       "gpsHintRemote": "« Sur site » vérifie que vous êtes au lieu de travail. « À distance » enregistre la ville d’où vous travaillez. Fonctionne via VPN.",
       "thisWeek": "7 derniers jours",
@@ -3266,26 +3267,24 @@
       "pickRange": "Choisir une période",
       "picker": {
         "title": "Où pointez-vous ?",
-        "subtitle": "Vous travaillez sur plusieurs sites. Choisissez celui où vous êtes.",
+        "subtitle": "Vous travaillez à plusieurs endroits. La meilleure correspondance est déjà choisie.",
         "inRange": "Vous êtes ici",
         "outOfRange": "Trop loin pour pointer",
         "noGeofence": "Sans géorepérage",
         "unknownDistance": "Distance inconnue",
         "metresAway": "à {{n}} m",
         "kmAway": "à {{n}} km",
-        "noFix": "Vous pouvez tout de même indiquer où vous êtes — le site sera vérifié au pointage.",
-        "awayTitle": "Pour quel espace travaillez-vous ?",
-        "awaySubtitle": "Vous n’êtes pas sur le site. La journée est enregistrée sur l’espace choisi — avec son poste et ses pauses — et signalée à distance pour vérification.",
-        "awayHidden_one": "Un de vos autres espaces ne permet le pointage que sur place.",
-        "awayHidden_other": "{{count}} de vos autres espaces ne permettent le pointage que sur place."
+        "noFix": "Votre position n'a pas pu être lue. Vous pouvez quand même choisir — le site est vérifié au pointage.",
+        "shiftToday": "Service aujourd'hui",
+        "primary": "Principal",
+        "clockInAt": "Pointer à {{name}}"
       },
       "noAssignedLocations": "Vous n’êtes encore affecté à aucun espace de travail, il n’y a donc nulle part où pointer. Demandez-le à votre administrateur.",
       "paidFrom": "Compté à partir de {{time}}",
       "away": "à distance",
       "clockedInAwayToast": "Pointé — à distance du site. Ce poste sera vérifié.",
-      "clockInAway": "À distance du site",
-      "noAwayWorkspace": "Aucun de vos espaces n’autorise le pointage à distance du site.",
-      "gpsHintAway": "Sur place vérifie que vous y êtes. À distance enregistre tout de même la journée sur cet espace, avec le lieu d’où vous travaillez, et la laisse à vérifier."
+      "clockedInAtToast": "Entrée pointée à {{name}}",
+      "gpsHintOneButton": "Utilise votre position pour choisir votre espace et vérifier que vous y êtes. Le lieu de travail au fil de la journée est déterminé automatiquement."
     },
     "management": {
       "title": "Gestion des présences",
@@ -3560,6 +3559,23 @@
       "less": "Moins",
       "more": "Plus",
       "saved": "Enregistré"
+    },
+    "presence": {
+      "title": "Où la personne a travaillé",
+      "onSite": "Sur site",
+      "field": "Sur le terrain",
+      "remote": "À distance",
+      "sentLate": "Envoyé sans réseau",
+      "reasons": {
+        "INSIDE_AREA": "Dans la zone de l'espace",
+        "ON_THE_WAY": "En route vers une intervention",
+        "AT_JOB": "À l'adresse d'une intervention",
+        "MOVED": "Parti, a changé de lieu",
+        "NEAR_AREA": "Juste à l'extérieur de la zone",
+        "STILL_OUT": "Toujours dehors, immobile",
+        "JOBS_TODAY": "Interventions avec adresse aujourd'hui",
+        "AWAY": "Hors de la zone, immobile"
+      }
     }
   },
   "auditLog": {

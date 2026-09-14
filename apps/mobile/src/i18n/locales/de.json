@@ -774,7 +774,18 @@
       "minutesLeft_one": "Noch {{count}} Min. heute",
       "minutesLeft_other": "Noch {{count}} Min. heute",
       "afterLimit": "Nach {{time}} zählt Ihre Zeit nur, wenn Ihre Leitung Überstunden genehmigt."
-    }
+    },
+    "picker": {
+      "title": "Wo stempeln Sie ein?",
+      "subtitle": "Sie arbeiten an mehreren Orten. Die beste Übereinstimmung ist bereits ausgewählt.",
+      "clockInAt": "Einstempeln bei {{name}}",
+      "shiftToday": "Schicht heute",
+      "primary": "Hauptbereich",
+      "onSiteOnly": "Einstempeln nur vor Ort",
+      "inRange": "{{distance}} · Sie sind hier",
+      "away": "{{distance}} entfernt"
+    },
+    "noAssignedLocations": "Sie sind noch keinem Arbeitsbereich zugewiesen. Bitten Sie Ihre Verwaltung, Sie hinzuzufügen."
   },
   "overtime": {
     "title": "Überstunden",

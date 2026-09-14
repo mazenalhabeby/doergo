@@ -1021,7 +1021,9 @@
       "atSpace": "En {{space}}",
       "roleMember": "Miembro",
       "roleAdmin": "Admin",
-      "needsReview": "Revisar"
+      "needsReview": "Revisar",
+      "noSignalSince": "Sin señal desde las {{time}}",
+      "noLiveUpdates": "Sin actualizaciones en vivo"
     },
     "pending": {
       "worker": "Trabajador",
@@ -3251,7 +3253,6 @@
         "unavailable": "No se pudo determinar tu ubicación. Vuelve a intentarlo."
       },
       "remote": "Remoto",
-      "clockInOnsite": "En sitio",
       "clockInRemote": "Fichar en remoto",
       "gpsHintRemote": "«En el sitio» verifica que estás en la ubicación. «Remoto» registra la ciudad desde la que trabajas. Funciona con VPN.",
       "thisWeek": "Últimos 7 días",
@@ -3266,26 +3267,24 @@
       "pickRange": "Elige un intervalo",
       "picker": {
         "title": "¿Dónde estás fichando?",
-        "subtitle": "Trabajas en más de un sitio. Elige en cuál estás ahora.",
+        "subtitle": "Trabajas en más de un lugar. La mejor opción ya está elegida.",
         "inRange": "Estás aquí",
         "outOfRange": "Demasiado lejos para fichar",
         "noGeofence": "Sin geovalla",
         "unknownDistance": "Distancia desconocida",
         "metresAway": "a {{n}} m",
         "kmAway": "a {{n}} km",
-        "noFix": "Aun así puedes elegir dónde estás: se verificará al fichar.",
-        "awayTitle": "¿Para qué espacio está trabajando?",
-        "awaySubtitle": "No está en el centro. El día se registra en el espacio que elija — con su turno y sus descansos — y se marca como fuera para revisión.",
-        "awayHidden_one": "En otro de sus espacios solo se puede fichar estando presente.",
-        "awayHidden_other": "En {{count}} de sus otros espacios solo se puede fichar estando presente."
+        "noFix": "No se pudo leer tu ubicación. Puedes elegir igualmente: el sitio se comprueba al fichar.",
+        "shiftToday": "Turno hoy",
+        "primary": "Principal",
+        "clockInAt": "Fichar en {{name}}"
       },
       "noAssignedLocations": "Todavía no estás asignado a ningún espacio de trabajo, así que no hay dónde fichar. Pídeselo a tu administrador.",
       "paidFrom": "Contado desde las {{time}}",
       "away": "fuera",
       "clockedInAwayToast": "Fichado — fuera del centro. Este turno se revisará.",
-      "clockInAway": "Fuera del centro",
-      "noAwayWorkspace": "Ninguno de sus espacios permite fichar fuera del centro.",
-      "gpsHintAway": "En el centro verifica que está allí. Fuera registra el día igualmente en ese espacio, con el lugar desde el que trabaja, y lo deja para revisión."
+      "clockedInAtToast": "Entrada fichada en {{name}}",
+      "gpsHintOneButton": "Usa tu ubicación para elegir tu espacio y comprobar que estás allí. Dónde trabajas durante el día se determina automáticamente."
     },
     "management": {
       "title": "Gestión de asistencia",
@@ -3560,6 +3559,23 @@
       "less": "Menos",
       "more": "Más",
       "saved": "Guardado"
+    },
+    "presence": {
+      "title": "Dónde trabajó",
+      "onSite": "En el sitio",
+      "field": "En campo",
+      "remote": "Remoto",
+      "sentLate": "Enviado sin señal",
+      "reasons": {
+        "INSIDE_AREA": "Dentro del área del espacio",
+        "ON_THE_WAY": "De camino a un trabajo",
+        "AT_JOB": "En la dirección de un trabajo",
+        "MOVED": "Salió y cambió de lugar",
+        "NEAR_AREA": "Justo fuera del área",
+        "STILL_OUT": "Sigue fuera, sin moverse",
+        "JOBS_TODAY": "Trabajos con dirección hoy",
+        "AWAY": "Fuera del área, sin moverse"
+      }
     }
   },
   "auditLog": {

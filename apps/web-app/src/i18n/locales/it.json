@@ -1021,7 +1021,9 @@
       "atSpace": "Presso {{space}}",
       "roleMember": "Membro",
       "roleAdmin": "Admin",
-      "needsReview": "Da verificare"
+      "needsReview": "Da verificare",
+      "noSignalSince": "Nessun segnale dalle {{time}}",
+      "noLiveUpdates": "Nessun aggiornamento in tempo reale"
     },
     "pending": {
       "worker": "Lavoratore",
@@ -3251,7 +3253,6 @@
         "unavailable": "Impossibile determinare la sua posizione. Riprovi."
       },
       "remote": "Remoto",
-      "clockInOnsite": "In sede",
       "clockInRemote": "Timbra da remoto",
       "gpsHintRemote": "«In sede» verifica che tu sia sul posto. «Da remoto» registra la città da cui lavori. Funziona anche con VPN.",
       "thisWeek": "Ultimi 7 giorni",
@@ -3266,26 +3267,24 @@
       "pickRange": "Scegli un intervallo",
       "picker": {
         "title": "Dove stai timbrando?",
-        "subtitle": "Lavori in più sedi. Scegli quella in cui ti trovi ora.",
+        "subtitle": "Lavori in più luoghi. La scelta migliore è già selezionata.",
         "inRange": "Sei qui",
         "outOfRange": "Troppo lontano per timbrare",
         "noGeofence": "Nessun geofence",
         "unknownDistance": "Distanza sconosciuta",
         "metresAway": "a {{n}} m",
         "kmAway": "a {{n}} km",
-        "noFix": "Puoi comunque scegliere dove sei: la sede verrà verificata al momento della timbratura.",
-        "awayTitle": "Per quale spazio sta lavorando?",
-        "awaySubtitle": "Non è in sede. La giornata viene registrata sullo spazio scelto — con il suo turno e le sue pause — e segnata come fuori sede per la verifica.",
-        "awayHidden_one": "In un altro dei suoi spazi si può timbrare solo in sede.",
-        "awayHidden_other": "In {{count}} dei suoi altri spazi si può timbrare solo in sede."
+        "noFix": "Non è stato possibile leggere la tua posizione. Puoi comunque scegliere: la sede viene verificata alla timbratura.",
+        "shiftToday": "Turno oggi",
+        "primary": "Principale",
+        "clockInAt": "Timbra a {{name}}"
       },
       "noAssignedLocations": "Non sei ancora assegnato a uno spazio di lavoro, quindi non c’è dove timbrare. Chiedilo al tuo amministratore.",
       "paidFrom": "Conteggiato dalle {{time}}",
       "away": "fuori sede",
       "clockedInAwayToast": "Timbrato — fuori sede. Questo turno sarà verificato.",
-      "clockInAway": "Fuori sede",
-      "noAwayWorkspace": "Nessuno dei suoi spazi consente di timbrare fuori sede.",
-      "gpsHintAway": "In sede verifica che lei sia lì. Fuori sede registra comunque la giornata su quello spazio, con il luogo da cui lavora, e la lascia da verificare."
+      "clockedInAtToast": "Entrata timbrata a {{name}}",
+      "gpsHintOneButton": "Usa la tua posizione per scegliere lo spazio e verificare che tu sia lì. Dove lavori durante la giornata viene determinato automaticamente."
     },
     "management": {
       "title": "Gestione delle presenze",
@@ -3560,6 +3559,23 @@
       "less": "Meno",
       "more": "Più",
       "saved": "Salvato"
+    },
+    "presence": {
+      "title": "Dove ha lavorato",
+      "onSite": "In sede",
+      "field": "Sul campo",
+      "remote": "Da remoto",
+      "sentLate": "Inviato senza segnale",
+      "reasons": {
+        "INSIDE_AREA": "Nell'area dello spazio",
+        "ON_THE_WAY": "In viaggio verso un lavoro",
+        "AT_JOB": "All'indirizzo di un lavoro",
+        "MOVED": "Uscito, ha cambiato luogo",
+        "NEAR_AREA": "Appena fuori dall'area",
+        "STILL_OUT": "Ancora fuori, fermo",
+        "JOBS_TODAY": "Lavori con indirizzo oggi",
+        "AWAY": "Fuori dall'area, fermo"
+      }
     }
   },
   "auditLog": {

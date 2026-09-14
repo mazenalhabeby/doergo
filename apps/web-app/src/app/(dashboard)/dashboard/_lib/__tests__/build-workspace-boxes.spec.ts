@@ -117,6 +117,49 @@ describe('buildWorkspaceBoxes', () => {
     expect(boxes[0].remotePeople).toHaveLength(1)
   })
 
+  describe('the server’s evidence-based group wins over where they clocked in', () => {
+    const one = (facts: Record<string, unknown>) =>
+      buildWorkspaceBoxes(
+        input({
+          locations: [space('s1')],
+          members: [member('u1')],
+          assignmentsPerLocation: new Map([['s1', new Set(['u1'])]]),
+          clockedInUserIds: new Set(['u1']),
+          attendanceByUser: new Map([['u1', { locationId: 's1', isRemote: false, withinGeofence: true, needsReview: false, ...facts } as never]]),
+          activeSpaceByUser: new Map([['u1', 's1']]),
+          shiftLabelInfo: () => ({ isShiftBased: true, atSpace: true }),
+        }),
+      )[0]
+
+    it('clocked in inside the area, now in the field', () => {
+      const box = one({ workPresence: 'FIELD', freshness: 'LIVE' })
+      expect(box.onRoadPeople).toHaveLength(1)
+      expect(box.people).toHaveLength(0)
+    })
+
+    it('clocked in away, now walked into the office', () => {
+      const box = one({ isRemote: true, withinGeofence: false, workPresence: 'ON_SITE', freshness: 'LIVE' })
+      expect(box.people).toHaveLength(1)
+      expect(box.remotePeople).toHaveLength(0)
+    })
+
+    it('remote, and a phone gone quiet says so on the card', () => {
+      const box = one({ workPresence: 'REMOTE', freshness: 'NO_SIGNAL', lastSeenAt: '2026-09-15T10:40:00Z' })
+      expect(box.remotePeople).toHaveLength(1)
+      expect(box.remotePeople![0].tag?.variant).toBe('hrs-warn')
+    })
+
+    it('a clock-in that never reports is marked, not guessed at', () => {
+      const box = one({ workPresence: 'REMOTE', freshness: 'NO_LIVE_UPDATES' })
+      expect(box.remotePeople![0].tag?.text).toMatch(/live/i)
+    })
+
+    it('an entry with no group keeps the old reading', () => {
+      const box = one({ isRemote: true, withinGeofence: false, workPresence: null })
+      expect(box.remotePeople).toHaveLength(1)
+    })
+  })
+
   it('splits members who are off the clock by whether they are still reachable', () => {
     const online = member('on', { lastActiveAt: new Date().toISOString() })
     const offline = member('off', { lastActiveAt: new Date(Date.now() - 60 * 60 * 1000).toISOString() })

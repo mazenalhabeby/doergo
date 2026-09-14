@@ -774,7 +774,18 @@
       "minutesLeft_one": "Queda {{count}} min hoy",
       "minutesLeft_other": "Quedan {{count}} min hoy",
       "afterLimit": "Después de las {{time}}, tu tiempo solo cuenta si tu responsable aprueba horas extra."
-    }
+    },
+    "picker": {
+      "title": "¿Dónde fichas la entrada?",
+      "subtitle": "Trabajas en más de un lugar. La mejor opción ya está elegida.",
+      "clockInAt": "Fichar en {{name}}",
+      "shiftToday": "Turno hoy",
+      "primary": "Principal",
+      "onSiteOnly": "Solo se puede fichar en el sitio",
+      "inRange": "{{distance}} · Estás aquí",
+      "away": "a {{distance}}"
+    },
+    "noAssignedLocations": "Aún no tienes un espacio de trabajo asignado. Pide a tu administrador que te añada."
   },
   "overtime": {
     "title": "Horas extra",

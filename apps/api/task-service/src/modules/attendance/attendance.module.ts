@@ -13,12 +13,14 @@ import { AttendanceScheduler } from './attendance.scheduler';
 import { CountedTimeService } from './counted-time.service';
 import { BreakRulesService } from './break-rules.service';
 import { BreakReminderService } from './break-reminder.service';
+import { PresenceModule } from './presence/presence.module';
 
 @Module({
   imports: [
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
     BullModule.registerQueue({ name: QUEUE_NAMES.ATTENDANCE }),
     BullModule.registerQueue({ name: QUEUE_NAMES.OVERTIME }),
+    PresenceModule,
   ],
   controllers: [AttendanceController],
   providers: [

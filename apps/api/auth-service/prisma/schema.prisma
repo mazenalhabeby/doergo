@@ -2332,6 +2332,27 @@ model NotificationWatch {
 }
 
 // Time entry for attendance tracking (clock-in/clock-out records)
+/// One change of where somebody on the clock is working. The anchor is where it
+/// happened — movement is measured from it — and is read by the presence service
+/// only, never returned.
+model TimeEntryPresence {
+  id             String    @id @default(cuid())
+  timeEntryId    String
+  timeEntry      TimeEntry @relation(fields: [timeEntryId], references: [id], onDelete: Cascade)
+  organizationId String
+  at             DateTime
+  presence       String
+  reason         String
+  /// Filled in from a batch the phone kept without signal.
+  sentLate       Boolean   @default(false)
+  anchorLat      Float?
+  anchorLng      Float?
+  createdAt      DateTime  @default(now())
+
+  @@index([timeEntryId, at])
+  @@map("time_entry_presence")
+}
+
 model TimeEntry {
   id String @id @default(cuid())
 
@@ -2377,6 +2398,15 @@ model TimeEntry {
   /// The planned end is the workspace's daily limit for clocking in with no
   /// shift (see noShiftAllowance): not early before it, "past today's limit" after.
   endIsDailyLimit Boolean @default(false)
+  /// Where they are working now — ON_SITE | FIELD | REMOTE — decided from evidence
+  /// (see packages/shared/src/attendance/presence.ts) and written only on a change.
+  /// Display only: nothing that counts time reads it.
+  presence          String?
+  presenceReason    String?
+  presenceAt        DateTime?
+  /// Last position heard, refreshed at most every 10 minutes.
+  lastSeenAt        DateTime?
+  presenceChanges   TimeEntryPresence[]
   clockOutProvisional Boolean @default(false)
   /// What the temporary time was based on: LEFT_SITE | SHIFT_END | CLOCK_IN_PLUS_8H.
   clockOutBasis       String?

@@ -169,11 +169,8 @@ export default function MyAttendancePage() {
     request and one locations request.
   */
   const {
-    clockedIn, activeEntry, locations, pending, action, startOnSite, clockOut,
+    clockedIn, activeEntry, locations, pending, startClockIn, clockOut,
     pickerProps, earlyProps,
-    // "Away" is offered only where it could actually be used — the account
-    // grant AND at least one workspace that permits it.
-    startAway, mayClockInAway, awayPickerProps,
   } = useClockIn({ enabled: canSee })
 
   /*
@@ -383,11 +380,11 @@ export default function MyAttendancePage() {
           ) : (
             <div className="mt-4 space-y-2">
               <Button
-                onClick={startOnSite}
+                onClick={startClockIn}
                 disabled={pending || locations.length === 0}
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
               >
-                {pending && typeof action === "object" ? (
+                {pending ? (
                   <><Loader2 className="h-4 w-4 animate-spin" />{t("attendance.my.locating", "Getting your location…")}</>
                 ) : (
                   <><LogIn className="h-4 w-4" />{t("attendance.my.clockIn", "Clock In")}</>
@@ -406,32 +403,13 @@ export default function MyAttendancePage() {
                   )}
                 </p>
               )}
-              {/*
-                Offered only where it can be used.
-
-                This asked the ACCOUNT alone, so a member granted it whose every
-                workspace requires presence saw a button that could only refuse
-                them — with nothing on screen to say why.
-              */}
-              {mayClockInAway && (
-                <Button onClick={startAway} disabled={pending} variant="outline" className="w-full">
-                  {pending && action === "remote" ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" />{t("attendance.my.locating", "Getting your location…")}</>
-                  ) : (
-                    <><Home className="h-4 w-4" />{t("attendance.my.clockInAway", "Away from the site")}</>
-                  )}
-                </Button>
-              )}
             </div>
           )}
           {/* Both dialogs come from the same hook, so the navbar behaves identically. */}
           <ClockInPicker {...pickerProps} />
-          <ClockInPicker {...awayPickerProps} />
           <ClockOutEarlyDialog {...earlyProps} />
           <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
-            {mayClockInAway
-              ? t("attendance.my.gpsHintAway", "On-site verifies you are at the workspace. Away records the day against it anyway, with the place you are working from, and holds it for review.")
-              : t("attendance.my.gpsHint", "Uses your device location to verify you're on site. Works over VPN.")}
+            {t("attendance.my.gpsHintOneButton", "Uses your location to pick your workspace and check you are there. Where you are working through the day is worked out for you.")}
           </p>
         </div>
         {/*

@@ -37,6 +37,10 @@ export function getEmployeeStatus(opts: {
    * nudged to its limit, got no answer, told a leader, and stopped.
    */
   needsReview?: boolean
+  /** The server's evidence-based group, when the entry has one. */
+  workPresence?: "ON_SITE" | "FIELD" | "REMOTE" | null
+  freshness?: "LIVE" | "NO_SIGNAL" | "NO_LIVE_UPDATES"
+  lastSeenAt?: string | null
 }): { status: WorkerStatus; tag?: PersonNodeProps["tag"] } {
   // Genuinely offline: not app-active AND not on the clock. Their stored
   // availability doesn't apply because they aren't currently reachable.
@@ -71,6 +75,23 @@ export function getEmployeeStatus(opts: {
     */
     if (opts.needsReview) {
       return { status: "on", tag: { text: i18n.t("dashboard.presence.needsReview"), variant: "hrs-warn" } }
+    }
+    /*
+      A group from the server, and how fresh it is. The group itself is the
+      section the card sits in, so the tag says what the section cannot: that
+      the phone has gone quiet, or never reports at all.
+    */
+    if (opts.workPresence) {
+      if (opts.freshness === "NO_SIGNAL" && opts.lastSeenAt) {
+        const time = new Date(opts.lastSeenAt).toLocaleTimeString(i18n.language, { hour: "2-digit", minute: "2-digit" })
+        return { status: "on", tag: { text: i18n.t("dashboard.presence.noSignalSince", { time, defaultValue: `No signal since ${time}` }), variant: "hrs-warn" } }
+      }
+      if (opts.freshness === "NO_LIVE_UPDATES") {
+        return { status: "on", tag: { text: i18n.t("dashboard.presence.noLiveUpdates", "No live updates"), variant: "hrs" } }
+      }
+      if (opts.workPresence === "REMOTE") return { status: "on", tag: { text: i18n.t("dashboard.presence.remote"), variant: "task" } }
+      if (opts.workPresence === "FIELD") return { status: "on", tag: { text: i18n.t("dashboard.presence.inField"), variant: "task" } }
+      return { status: "on", tag: { text: i18n.t(opts.isShiftBased ? "dashboard.presence.onShift" : "dashboard.presence.working", "Working"), variant: "hrs" } }
     }
     if (opts.isRemote) return { status: "on", tag: { text: i18n.t("dashboard.presence.remote"), variant: "task" } }
     if (!opts.isShiftBased) return { status: "on", tag: { text: i18n.t("dashboard.presence.working", "Working"), variant: "hrs" } }

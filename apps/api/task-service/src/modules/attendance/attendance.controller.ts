@@ -496,6 +496,11 @@ export class AttendanceController {
     return this.approvalService.editEntry(data);
   }
 
+  @MessagePattern({ cmd: 'get_entry_presence' })
+  async getEntryPresence(@Payload() data: { entryId: string; organizationId: string; scopeSpaceIds?: string[] | null }) {
+    return this.attendanceService.getEntryPresence(data);
+  }
+
   @MessagePattern({ cmd: 'get_entry_history' })
   async getEntryHistory(@Payload() data: { entryId: string; organizationId: string }) {
     return this.approvalService.getEntryHistory(data);

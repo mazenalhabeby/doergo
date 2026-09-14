@@ -1,4 +1,6 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { rankClockInLocations } from '@hbcfield/shared/client';
 import {
   View,
   Text,
@@ -33,16 +35,10 @@ interface LocationPickerSheetProps {
   onSelect: (location: CompanyLocation) => void;
   onConfirm: () => void;
   onClose: () => void;
-  /** Calculate distance in meters from current position to a location */
-  getDistance: (location: CompanyLocation) => number | null;
+  /** The position read when choosing; the list is ordered and measured from it. */
+  fix: { lat: number; lng: number; accuracy?: number | null } | null;
   confirmLabel?: string;
   confirmDisabled?: boolean;
-  /** When true, offer a "Remote" option (member has allowRemote). */
-  allowRemote?: boolean;
-  /** Whether the Remote option is currently selected. */
-  remoteSelected?: boolean;
-  /** Called when the Remote option is picked. */
-  onSelectRemote?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -67,14 +63,14 @@ export function LocationPickerSheet({
   onSelect,
   onConfirm,
   onClose,
-  getDistance,
+  fix,
   confirmLabel,
   confirmDisabled = false,
-  allowRemote = false,
-  remoteSelected = false,
-  onSelectRemote,
 }: LocationPickerSheetProps) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
+  // The shared order: inside an area, a shift today, primary, nearest — the same as the web.
+  const ranked = useMemo(() => rankClockInLocations(locations, fix), [locations, fix]);
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const overlayAnim = useRef(new Animated.Value(0)).current;
   const hasAnimatedIn = useRef(false);
@@ -104,12 +100,10 @@ export function LocationPickerSheet({
 
   if (!visible) return null;
 
-  const canConfirm = remoteSelected || !!selectedLocation;
+  const canConfirm = !!selectedLocation;
   const label =
     confirmLabel ||
-    (remoteSelected
-      ? 'Clock in remotely'
-      : `Clock In at ${selectedLocation?.name || 'Selected Location'}`);
+    (selectedLocation ? t('attendance.picker.clockInAt', { name: selectedLocation.name }) : t('attendance.clockIn'));
 
   return (
     <Modal visible transparent statusBarTranslucent animationType="none" onRequestClose={handleClose}>
@@ -127,7 +121,7 @@ export function LocationPickerSheet({
           {/* Header */}
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.textPrimary }]}>
-              Select Location
+              {t('attendance.picker.title')}
             </Text>
             <TouchableOpacity onPress={handleClose}>
               <Ionicons name="close" size={24} color={colors.textSecondary} />
@@ -135,53 +129,12 @@ export function LocationPickerSheet({
           </View>
 
           <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-            Choose the location you're clocking in at
+            {t('attendance.picker.subtitle')}
           </Text>
 
           {/* Location list */}
           <ScrollView style={styles.list}>
-            {/* Remote option (members with allowRemote) — no location / geofence */}
-            {allowRemote && (
-              <TouchableOpacity
-                style={[
-                  styles.locationItem,
-                  { borderColor: colors.border },
-                  remoteSelected && [
-                    styles.locationItemSelected,
-                    { backgroundColor: colors.primaryLight },
-                  ],
-                ]}
-                onPress={() => onSelectRemote?.()}
-              >
-                <View style={styles.locationInfo}>
-                  <View style={styles.distanceRow}>
-                    <Ionicons name="home-outline" size={16} color={colors.textPrimary} />
-                    <Text style={[styles.locationName, { color: colors.textPrimary }]}>
-                      Work remotely
-                    </Text>
-                  </View>
-                  <Text
-                    style={[styles.locationAddress, { color: colors.textMuted }]}
-                    numberOfLines={1}
-                  >
-                    Clock in from anywhere — no location needed
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.radio,
-                    { borderColor: colors.borderLight },
-                    remoteSelected && styles.radioSelected,
-                  ]}
-                >
-                  {remoteSelected && <View style={styles.radioInner} />}
-                </View>
-              </TouchableOpacity>
-            )}
-            {locations.map((location) => {
-              const distance = getDistance(location);
-              const isWithinGeofence =
-                distance !== null && distance <= location.geofenceRadius;
+            {ranked.map(({ location, distanceM: distance, inside: isWithinGeofence }) => {
               const isSelected = selectedLocation?.id === location.id;
 
               /*
@@ -217,9 +170,21 @@ export function LocationPickerSheet({
                   onPress={() => onSelect(location)}
                 >
                   <View style={styles.locationInfo}>
-                    <Text style={[styles.locationName, { color: colors.textPrimary }]}>
-                      {location.name}
-                    </Text>
+                    <View style={styles.nameRow}>
+                      <Text style={[styles.locationName, { color: colors.textPrimary }]}>
+                        {location.name}
+                      </Text>
+                      {location.shiftToday && (
+                        <Text style={[styles.badge, { color: colors.textSecondary, borderColor: colors.border }]}>
+                          {t('attendance.picker.shiftToday')}
+                        </Text>
+                      )}
+                      {location.isPrimary && (
+                        <Text style={[styles.badge, { color: colors.textSecondary, borderColor: colors.border }]}>
+                          {t('attendance.picker.primary')}
+                        </Text>
+                      )}
+                    </View>
                     <Text
                       style={[styles.locationAddress, { color: colors.textMuted }]}
                       numberOfLines={1}
@@ -228,7 +193,7 @@ export function LocationPickerSheet({
                     </Text>
                     {unusable && (
                       <Text style={[styles.locationAddress, { color: colors.textMuted, marginTop: 2 }]}>
-                        Can only be clocked in at on site
+                        {t('attendance.picker.onSiteOnly')}
                       </Text>
                     )}
                     {distance !== null && (
@@ -254,8 +219,9 @@ export function LocationPickerSheet({
                             },
                           ]}
                         >
-                          {formatDistance(distance)}
-                          {isWithinGeofence ? ' - In range' : ` away`}
+                          {isWithinGeofence
+                            ? t('attendance.picker.inRange', { distance: formatDistance(distance) })
+                            : t('attendance.picker.away', { distance: formatDistance(distance) })}
                         </Text>
                       </View>
                     )}
@@ -346,6 +312,19 @@ const styles = StyleSheet.create({
   },
   locationInfo: {
     flex: 1,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  badge: {
+    fontSize: FONT_SIZE.xs,
+    borderWidth: 1,
+    borderRadius: RADIUS.full,
+    paddingHorizontal: SPACING.sm,
+    overflow: 'hidden',
   },
   locationName: {
     fontSize: FONT_SIZE.lg,

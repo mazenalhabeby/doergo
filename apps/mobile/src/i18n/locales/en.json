@@ -774,7 +774,18 @@
       "minutesLeft_one": "{{count}} min left today",
       "minutesLeft_other": "{{count}} min left today",
       "afterLimit": "After {{time}}, your time counts only if your leader approves overtime."
-    }
+    },
+    "picker": {
+      "title": "Where are you clocking in?",
+      "subtitle": "You work at more than one place. The best match is already chosen.",
+      "clockInAt": "Clock in at {{name}}",
+      "shiftToday": "Shift today",
+      "primary": "Primary",
+      "onSiteOnly": "Can only be clocked in at on site",
+      "inRange": "{{distance}} · You are here",
+      "away": "{{distance}} away"
+    },
+    "noAssignedLocations": "You are not assigned to a workspace yet. Ask your admin to add you to one."
   },
   "overtime": {
     "title": "Overtime",

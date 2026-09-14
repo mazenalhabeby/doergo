@@ -7,10 +7,13 @@ import { DepartureReminderService } from './departure-reminder.service';
 import { TasksProcessor } from './tasks.processor';
 import { AttachmentsModule } from '../attachments/attachments.module';
 
+import { PresenceModule } from '../attendance/presence/presence.module';
+
 @Module({
   imports: [
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
     AttachmentsModule,
+    PresenceModule,
   ],
   controllers: [TasksController], // Keep for backwards compatibility (Redis pub/sub)
   providers: [

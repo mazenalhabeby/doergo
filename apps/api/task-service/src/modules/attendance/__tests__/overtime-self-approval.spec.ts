@@ -12,6 +12,7 @@ import { TimeEntryStatus, SERVICE_NAMES, QUEUE_NAMES } from '@hbcfield/shared';
 import { CountedTimeService } from '../counted-time.service';
 import { BreakRulesService } from '../break-rules.service';
 import { BreakReminderService } from '../break-reminder.service';
+import { PresenceService } from '../presence/presence.service';
 
 /**
  * Audit AT-B1 — overtime is paid time, and the request/approve flow exists so a
@@ -71,7 +72,7 @@ describe('overtime self-approval (AT-B1)', () => {
         BreakReminderService,
         BreakRulesService,
         CountedTimeService,
-        AttendanceService, BreakService, ApprovalService, AttendanceReportService,
+        AttendanceService, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } }, BreakService, ApprovalService, AttendanceReportService,
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: notificationClient },
         { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn() } },

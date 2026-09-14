@@ -7,6 +7,7 @@ import { NotificationRoutingService } from '../../../common/notification-routing
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { SERVICE_NAMES, QUEUE_NAMES } from '@hbcfield/shared';
 import { getQueueToken } from '@nestjs/bullmq';
+import { PresenceService } from '../presence/presence.service';
 
 /**
  * Overtime is a LOOP, and the record has to be able to repeat.
@@ -55,7 +56,7 @@ describe('overtime rounds', () => {
     notify = { emit: jest.fn() };
     const mod = await Test.createTestingModule({
       providers: [
-        AttendanceService,
+        AttendanceService, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } },
         CountedTimeService,
         BreakRulesService,
         { provide: ShiftResolverService, useValue: { resolveForClockIn: jest.fn().mockResolvedValue(null) } },

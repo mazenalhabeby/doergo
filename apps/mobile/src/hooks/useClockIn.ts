@@ -7,7 +7,7 @@ import { useToast } from '../contexts/toast-context';
 import { startBackgroundHeartbeat } from '../services/background-heartbeat';
 import { startGeofenceForSpace } from '../services/background-geofence';
 import { haversineDistance } from '../lib/utils';
-import { mayClockInRemotely } from '@hbcfield/shared/client';
+import { chooseClockInLocation, mayClockInRemotely } from '@hbcfield/shared/client';
 import { connectivity } from '../offline/offline-context';
 import { useShiftActions } from '../offline/attendance/use-shift';
 import { checkClockInLocally } from '../offline/attendance/clock-in-check';
@@ -34,9 +34,8 @@ function coordsOf(loc: Location.LocationObject): Coords {
 
 /**
  * Single source of truth for the mobile clock-in flow — GPS acquisition, the
- * location/remote picker, and the clock-in call. Used by the attendance tab AND
- * both home screens so the "Work remotely" choice (for allowRemote members) is
- * identical everywhere instead of duplicated three times. Spread `pickerProps`
+ * one-button workspace choice, and the clock-in call. Used by the attendance tab
+ * AND both home screens so the flow is identical everywhere. Spread `pickerProps`
  * straight into <LocationPickerSheet/>, wire the button to `openClockInModal`,
  * and pass an `onClockedIn` callback to refetch that screen's attendance data.
  */
@@ -58,7 +57,6 @@ export function useClockIn(opts: {
   const [currentLocation, setCurrentLocation] = useState<Coords | null>(null);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<CompanyLocation | null>(null);
-  const [isRemoteSelected, setIsRemoteSelected] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isClockingIn, setIsClockingIn] = useState(false);
 
@@ -97,15 +95,11 @@ export function useClockIn(opts: {
     }
   }, [t, toast]);
 
-  // Acquire GPS then open the picker (locations + a Remote option when eligible).
-  const openClockInModal = useCallback(async () => {
-    const loc = await getCurrentLocation();
-    if (!loc) return;
-    setLocationModalVisible(true);
-  }, [getCurrentLocation]);
-
-  const confirmClockIn = useCallback(async () => {
-    if (!currentLocation || (!selectedLocation && !isRemoteSelected)) return;
+  /*
+    Clock in at a workspace — or, with `null`, the org's Remote bucket for
+    somebody who has no workspace at all. The one path every tap ends in.
+  */
+  const clockInAt = useCallback(async (location: CompanyLocation | null, fix: Coords) => {
     setIsClockingIn(true);
     setLocationModalVisible(false);
     try {
@@ -115,18 +109,14 @@ export function useClockIn(opts: {
         member would have had online. With a connection the server answers.
       */
       if (connectivity.state !== 'online') {
-        const verdict = checkClockInLocally({
-          location: isRemoteSelected ? null : selectedLocation,
-          fix: currentLocation,
-          alreadyClockedIn: !!opts.isClockedIn,
-        });
+        const verdict = checkClockInLocally({ location, fix, alreadyClockedIn: !!opts.isClockedIn });
         if (!verdict.ok) {
           toast.error(
             t('attendance.offline.notHere', 'Not clocked in'),
             t(`attendance.offline.refused.${verdict.code}`, {
               distance: verdict.distanceM ?? '?',
               radius: verdict.radiusM ?? '?',
-              location: selectedLocation?.name ?? '',
+              location: location?.name ?? '',
               hours: verdict.hours ?? '',
             }),
           );
@@ -134,10 +124,7 @@ export function useClockIn(opts: {
         }
       }
 
-      const outcome = await actions.clockIn({
-        ...(isRemoteSelected ? { isRemote: true } : { locationId: selectedLocation!.id }),
-        fix: currentLocation,
-      });
+      const outcome = await actions.clockIn({ ...(location ? { locationId: location.id } : { isRemote: true }), fix });
       if (outcome.kind === 'refused') {
         toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('attendance.failedToClockIn'));
         return;
@@ -147,16 +134,16 @@ export function useClockIn(opts: {
       // so the OS wakes us on exit even when the app is killed (skips for remote
       // or logical spaces with no coordinates). Runs after the heartbeat grants
       // the "Always" permission geofencing also needs.
-      if (!isRemoteSelected) await startGeofenceForSpace(selectedLocation);
+      if (location) await startGeofenceForSpace(location);
       await onClockedInRef.current?.();
       if (outcome.kind === 'queued') {
         toast.info(t('attendance.offline.clockedInSaved', 'Clocked in · saved on this phone'), t('attendance.offline.clockedInSavedBody', 'Recorded with the time and your location. It is sent when you are back online.'));
       } else {
         toast.success(
           t('common.success'),
-          isRemoteSelected
+          !location
             ? t('attendance.clockedInRemotely', 'Clocked in remotely')
-            : t('attendance.clockedInAt', { location: selectedLocation!.name }),
+            : t('attendance.clockedInAt', { location: location.name }),
         );
       }
     } catch (err) {
@@ -164,9 +151,43 @@ export function useClockIn(opts: {
     } finally {
       setIsClockingIn(false);
       setSelectedLocation(null);
-      setIsRemoteSelected(false);
     }
-  }, [currentLocation, selectedLocation, isRemoteSelected, opts.isClockedIn, actions, t, toast]);
+  }, [opts.isClockedIn, actions, t, toast]);
+
+  /**
+   * One button: clock in.
+   *
+   * Nobody is asked when the answer is obvious — one workspace, or standing
+   * inside exactly one of several areas — and otherwise the sheet opens with
+   * the best one already chosen. The choice is `chooseClockInLocation`, shared
+   * with the web and working from what the phone saved when it has no signal.
+   *
+   * ⚠️ No "remote" or "field" choice for a member who has workspaces: whether
+   * they may be away is the server's, and where they are working is decided
+   * from evidence afterwards.
+   */
+  const openClockInModal = useCallback(async () => {
+    if (isClockingIn) return;
+    const fix = await getCurrentLocation();
+    if (!fix) return;
+    const choice = chooseClockInLocation(opts.assignedLocations ?? [], fix);
+    if (choice.kind === 'auto') {
+      await clockInAt(choice.location, fix);
+      return;
+    }
+    if (choice.kind === 'none') {
+      if (mayClockInRemotely(user)) await clockInAt(null, fix);
+      else toast.error(t('common.error'), t('attendance.noAssignedLocations', 'You are not assigned to a workspace yet. Ask your admin to add you to one.'));
+      return;
+    }
+    setSelectedLocation(choice.ranked[0]!.location);
+    setLocationModalVisible(true);
+  }, [isClockingIn, getCurrentLocation, opts.assignedLocations, clockInAt, user, t, toast]);
+
+  const confirmClockIn = useCallback(async () => {
+    if (!currentLocation || !selectedLocation) return;
+    await clockInAt(selectedLocation, currentLocation);
+  }, [currentLocation, selectedLocation, clockInAt]);
 
   const getDistanceToLocation = useCallback(
     (location: CompanyLocation): number | null => {
@@ -179,37 +200,15 @@ export function useClockIn(opts: {
     [currentLocation],
   );
 
-  const awayCapable = (opts.assignedLocations ?? []).filter((l) => l.awayAllowed);
-  const mayClockInAway =
-    mayClockInRemotely(user) &&
-    (awayCapable.length > 0 || (opts.assignedLocations ?? []).length === 0);
-
   // Spread straight into <LocationPickerSheet {...pickerProps} />.
   const pickerProps = {
     visible: locationModalVisible,
     locations: opts.assignedLocations,
     selectedLocation,
-    onSelect: (loc: CompanyLocation) => {
-      setSelectedLocation(loc);
-      setIsRemoteSelected(false);
-    },
+    onSelect: (loc: CompanyLocation) => setSelectedLocation(loc),
     onConfirm: confirmClockIn,
     onClose: () => setLocationModalVisible(false),
-    getDistance: getDistanceToLocation,
-    /*
-      Offer "Remote" only where it could be used.
-
-      This asked the ACCOUNT alone, so a member granted it whose every workspace
-      requires presence saw an option that could only ever refuse them. The
-      workspace half is answered per site by the server as `awayAllowed`; the
-      bucket remains for somebody assigned to no workspace at all.
-    */
-    allowRemote: mayClockInAway,
-    remoteSelected: isRemoteSelected,
-    onSelectRemote: () => {
-      setIsRemoteSelected(true);
-      setSelectedLocation(null);
-    },
+    fix: currentLocation,
   };
 
   return {

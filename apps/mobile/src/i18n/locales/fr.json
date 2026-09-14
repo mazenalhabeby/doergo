@@ -774,7 +774,18 @@
       "minutesLeft_one": "Encore {{count}} min aujourd'hui",
       "minutesLeft_other": "Encore {{count}} min aujourd'hui",
       "afterLimit": "Après {{time}}, votre temps ne compte que si votre responsable approuve des heures supplémentaires."
-    }
+    },
+    "picker": {
+      "title": "Où pointez-vous ?",
+      "subtitle": "Vous travaillez à plusieurs endroits. La meilleure correspondance est déjà choisie.",
+      "clockInAt": "Pointer à {{name}}",
+      "shiftToday": "Service aujourd'hui",
+      "primary": "Principal",
+      "onSiteOnly": "Pointage sur site uniquement",
+      "inRange": "{{distance}} · Vous êtes ici",
+      "away": "à {{distance}}"
+    },
+    "noAssignedLocations": "Vous n'êtes affecté à aucun espace. Demandez à votre administrateur de vous ajouter."
   },
   "overtime": {
     "title": "Heures supplémentaires",

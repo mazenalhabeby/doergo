@@ -1021,7 +1021,9 @@
       "offShift": "Off-shift",
       "roleMember": "Member",
       "roleAdmin": "Admin",
-      "needsReview": "Needs review"
+      "needsReview": "Needs review",
+      "noSignalSince": "No signal since {{time}}",
+      "noLiveUpdates": "No live updates"
     },
     "pending": {
       "worker": "Worker",
@@ -3251,7 +3253,6 @@
         "unavailable": "Could not determine your location. Please try again."
       },
       "remote": "Remote",
-      "clockInOnsite": "On-site",
       "clockInRemote": "Clock in remotely",
       "gpsHintRemote": "On-site verifies you're at the location. Remote records the city you're working from. Works over VPN.",
       "thisWeek": "Last 7 days",
@@ -3266,26 +3267,24 @@
       "pickRange": "Pick a date range",
       "picker": {
         "title": "Where are you clocking in?",
-        "subtitle": "You work at more than one place. Pick the one you are at now.",
+        "subtitle": "You work at more than one place. The best match is already chosen.",
         "inRange": "You are here",
         "outOfRange": "Too far to clock in",
         "noGeofence": "No geofence",
         "unknownDistance": "Distance unknown",
         "metresAway": "{{n}} m away",
         "kmAway": "{{n}} km away",
-        "noFix": "You can still choose where you are — your site will be verified when you clock in.",
-        "awayTitle": "Which workspace are you working for?",
-        "awaySubtitle": "You are not at the site. The day is recorded against the workspace you pick — with its shift and its rests — and marked as away for review.",
-        "awayHidden_one": "One of your other workspaces can only be clocked in at on site.",
-        "awayHidden_other": "{{count}} of your other workspaces can only be clocked in at on site."
+        "noFix": "Your location could not be read. You can still choose — your site is checked when you clock in.",
+        "shiftToday": "Shift today",
+        "primary": "Primary",
+        "clockInAt": "Clock in at {{name}}"
       },
       "noAssignedLocations": "You are not assigned to a workspace yet, so there is nowhere to clock in. Ask your admin to add you to one.",
       "paidFrom": "Counted from {{time}}",
       "away": "away",
       "clockedInAwayToast": "Clocked in — away from the site. This shift will be reviewed.",
-      "clockInAway": "Away from the site",
-      "noAwayWorkspace": "None of your workspaces allow clocking in away from the site.",
-      "gpsHintAway": "On-site verifies you are at the workspace. Away records the day against it anyway, with the place you are working from, and holds it for review."
+      "clockedInAtToast": "Clocked in at {{name}}",
+      "gpsHintOneButton": "Uses your location to pick your workspace and check you are there. Where you are working through the day is worked out for you."
     },
     "management": {
       "title": "Attendance Management",
@@ -3560,6 +3559,23 @@
       "less": "Less",
       "more": "More",
       "saved": "Saved"
+    },
+    "presence": {
+      "title": "Where they worked",
+      "onSite": "On site",
+      "field": "In the field",
+      "remote": "Remote",
+      "sentLate": "Sent without signal",
+      "reasons": {
+        "INSIDE_AREA": "Inside the workspace area",
+        "ON_THE_WAY": "On the way to a job",
+        "AT_JOB": "At a job's address",
+        "MOVED": "Left and changed place",
+        "NEAR_AREA": "Just outside the area",
+        "STILL_OUT": "Still out, not moving",
+        "JOBS_TODAY": "Jobs at an address today",
+        "AWAY": "Outside the area, not moving"
+      }
     }
   },
   "auditLog": {

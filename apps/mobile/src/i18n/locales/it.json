@@ -774,7 +774,18 @@
       "minutesLeft_one": "Ancora {{count}} min oggi",
       "minutesLeft_other": "Ancora {{count}} min oggi",
       "afterLimit": "Dopo le {{time}}, il tuo tempo conta solo se il tuo responsabile approva gli straordinari."
-    }
+    },
+    "picker": {
+      "title": "Dove timbri?",
+      "subtitle": "Lavori in più luoghi. La scelta migliore è già selezionata.",
+      "clockInAt": "Timbra a {{name}}",
+      "shiftToday": "Turno oggi",
+      "primary": "Principale",
+      "onSiteOnly": "Si può timbrare solo in sede",
+      "inRange": "{{distance}} · Sei qui",
+      "away": "a {{distance}}"
+    },
+    "noAssignedLocations": "Non sei ancora assegnato a uno spazio. Chiedi al tuo amministratore di aggiungerti."
   },
   "overtime": {
     "title": "Straordinario",

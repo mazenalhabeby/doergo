@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 
-import { getSpaceScope } from "@hbcfield/shared/client"
+import { getSpaceScope, isWorkPresence, presenceFreshness } from "@hbcfield/shared/client"
 import type { TimeEntry } from "@hbcfield/shared"
 import {
   attendanceApi,
@@ -260,6 +260,11 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
           // else ('REMINDED', an open overtime request) is still in flight and
           // should keep reading as a normal shift.
           needsReview: entry.reminderState === "ESCALATED",
+          workPresence: isWorkPresence(entry.presence) ? entry.presence : null,
+          freshness: isClockedIn(entry)
+            ? presenceFreshness({ clockInAt: entry.clockInAt, lastSeenAt: entry.lastSeenAt, now: new Date() })
+            : undefined,
+          lastSeenAt: entry.lastSeenAt ?? null,
         })
       }
     }

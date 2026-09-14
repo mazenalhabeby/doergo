@@ -7,6 +7,7 @@ import { NotificationRoutingService } from '../../../common/notification-routing
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { SERVICE_NAMES, QUEUE_NAMES } from '@hbcfield/shared';
 import { getQueueToken } from '@nestjs/bullmq';
+import { PresenceService } from '../presence/presence.service';
 
 /**
  * Who hears about a member's shift.
@@ -57,7 +58,7 @@ describe('who is told about a member’s shift', () => {
     };
     const mod = await Test.createTestingModule({
       providers: [
-        AttendanceService, CountedTimeService, BreakRulesService,
+        AttendanceService, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } }, CountedTimeService, BreakRulesService,
         { provide: ShiftResolverService, useValue: { resolveForClockIn: jest.fn() } },
         { provide: NotificationRoutingService, useValue: routing },
         { provide: PrismaService, useValue: prisma },

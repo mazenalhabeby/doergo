@@ -7,6 +7,7 @@ import { NotificationRoutingService } from '../../../common/notification-routing
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { SERVICE_NAMES, QUEUE_NAMES } from '@hbcfield/shared';
 import { getQueueToken } from '@nestjs/bullmq';
+import { PresenceService } from '../presence/presence.service';
 
 /**
  * The list a member is offered must answer with the rule the clock-in refuses by.
@@ -38,7 +39,7 @@ describe('clock-in list: where may this member work away', () => {
     };
     const mod = await Test.createTestingModule({
       providers: [
-        AttendanceService, CountedTimeService, BreakRulesService,
+        AttendanceService, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } }, CountedTimeService, BreakRulesService,
         { provide: ShiftResolverService, useValue: {} },
         { provide: NotificationRoutingService, useValue: {} },
         { provide: PrismaService, useValue: prisma },

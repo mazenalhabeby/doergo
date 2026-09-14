@@ -16,6 +16,7 @@ import { buildTaskVisibilityWhere, type TaskVisibilityFacts } from './task-visib
 import { fixOfTap, judgeOccurrence } from '../../common/occurrence.util';
 import { createOnce, findPrior } from '../../common/create-once.util';
 import { MediaSigner } from '../../common/storage/media-signer.service';
+import { PresenceService } from '../attendance/presence/presence.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { assertWorkflowInOrg } from '../../common/tenant-scope.util';
@@ -82,6 +83,8 @@ export class TasksService {
     private readonly workflowCache: WorkflowConfigCache,
     private readonly notificationRouting: NotificationRoutingService,
     private readonly media: MediaSigner,
+    // A job on its way or arrived puts its member in the field at once, not at the next heartbeat.
+    private readonly presence: PresenceService,
   ) {
     const redisHost = configService.get<string>('REDIS_HOST', 'localhost') || 'localhost';
     const redisPort = configService.get<number>('REDIS_PORT', 6379) || 6379;
@@ -1915,6 +1918,16 @@ export class TasksService {
       newStatus: data.status,
       watcherIds: await this.taskWatcherIds(updatedTask.assignedToId, updatedTask.organizationId),
     });
+
+    // Only the member moving the job themselves: an office drag is not evidence of where anybody is.
+    if (isAssignedUser && (data.status === TaskStatus.EN_ROUTE || data.status === TaskStatus.ARRIVED)) {
+      void this.presence.onJobMoved({
+        userId: data.userId,
+        organizationId: updatedTask.organizationId,
+        reason: data.status === TaskStatus.EN_ROUTE ? 'ON_THE_WAY' : 'AT_JOB',
+        at: occurredAt,
+      });
+    }
 
     // (c) Blocked Task Reminder — after accepting a new task, remind about blocked ones
     if (isAssignedUser && data.status === TaskStatus.ACCEPTED) {

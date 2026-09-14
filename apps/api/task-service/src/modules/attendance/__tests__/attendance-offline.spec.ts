@@ -18,6 +18,7 @@ import { BreakReminderService } from '../break-reminder.service';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { approvalFor } from '../attendance-occurrence';
+import { PresenceService } from '../presence/presence.service';
 
 const NOW = new Date('2026-09-14T11:14:00.000Z');
 const TAP = new Date('2026-09-14T07:58:00.000Z');
@@ -76,7 +77,7 @@ async function build() {
   const prisma = prismaDouble();
   const moduleRef = await Test.createTestingModule({
     providers: [
-      AttendanceService, BreakService, CountedTimeService, BreakRulesService, BreakReminderService,
+      AttendanceService, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } }, BreakService, CountedTimeService, BreakRulesService, BreakReminderService,
       { provide: PrismaService, useValue: prisma },
       { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
       { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn(), getRepeatableJobs: jest.fn().mockResolvedValue([]) } },
