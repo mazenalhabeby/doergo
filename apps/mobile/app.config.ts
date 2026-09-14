@@ -187,6 +187,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       */
       './plugins/with-biometric-permissions',
       /*
+        The offline database. SQLCipher, because it holds a copy of the member's
+        work — customer addresses, site photos' metadata, their hours — on a
+        device that can be lost. NATIVE: only a build carries it; the offline
+        layer checks for the module before loading, so an over-the-air update
+        to an older build simply stays online-only.
+      */
+      ['expo-sqlite', { useSQLCipher: true }],
+      /*
         The on-device text reader used by the business-card scanner needs iOS
         16. Stated here rather than left to a default, because the failure is a
         build error deep in a pod install rather than anything about OCR.

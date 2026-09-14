@@ -74,11 +74,47 @@ interface ApiResponse<T> {
 
 export class ApiError extends Error {
   statusCode: number;
+  /** The server's machine-readable reason (e.g. TASK_REASSIGNED), when it sent one. */
+  code?: string;
 
-  constructor(message: string, statusCode: number) {
+  constructor(message: string, statusCode: number, code?: string) {
     super(message);
     this.statusCode = statusCode;
+    this.code = code;
     this.name = 'ApiError';
+  }
+}
+
+// ============================================================================
+// Response observers
+// ============================================================================
+
+/**
+ * What every request tells the rest of the app, without the client knowing who
+ * listens: the server's clock (the anchor offline timestamps are checked
+ * against) and whether the network actually worked (NetInfo alone reports a
+ * site Wi-Fi with no internet as "connected").
+ *
+ * The offline layer subscribes; this file stays free of it.
+ */
+export type ResponseObservation =
+  | { kind: 'response'; status: number; serverTime: string | null }
+  | { kind: 'network-error' };
+
+const responseObservers = new Set<(o: ResponseObservation) => void>();
+
+export function observeResponses(cb: (o: ResponseObservation) => void): () => void {
+  responseObservers.add(cb);
+  return () => responseObservers.delete(cb);
+}
+
+function notifyObservers(o: ResponseObservation) {
+  for (const cb of responseObservers) {
+    try {
+      cb(o);
+    } catch {
+      /* an observer must never break a request */
+    }
   }
 }
 
@@ -226,48 +262,6 @@ export function refreshAccessToken(): Promise<string | null> {
 }
 
 // ============================================================================
-// Offline Mutation Queue
-// ============================================================================
-
-interface QueuedMutation {
-  endpoint: string;
-  options: RequestInit;
-  timestamp: number;
-}
-
-const mutationQueue: QueuedMutation[] = [];
-let isProcessingQueue = false;
-
-function queueMutation(endpoint: string, options: RequestInit) {
-  mutationQueue.push({ endpoint, options, timestamp: Date.now() });
-  // Keep queue bounded
-  if (mutationQueue.length > 50) {
-    mutationQueue.shift();
-  }
-}
-
-export async function processOfflineQueue() {
-  if (isProcessingQueue || mutationQueue.length === 0) return;
-  isProcessingQueue = true;
-
-  while (mutationQueue.length > 0) {
-    const mutation = mutationQueue[0]!;
-    // Skip mutations older than 10 minutes
-    if (Date.now() - mutation.timestamp > 10 * 60 * 1000) {
-      mutationQueue.shift();
-      continue;
-    }
-    try {
-      await _fetchWithAuthInner(mutation.endpoint, mutation.options, true);
-      mutationQueue.shift(); // Success - remove from queue
-    } catch {
-      break; // Still offline - stop processing
-    }
-  }
-  isProcessingQueue = false;
-}
-
-// ============================================================================
 // HTTP Fetch Functions
 // ============================================================================
 
@@ -306,7 +300,8 @@ export async function fetchApi<T>(
     if (!response.ok) {
       throw new ApiError(
         sanitizeErrorMessage(data.message, response.status),
-        response.status
+        response.status,
+        typeof (data as { code?: unknown }).code === 'string' ? (data as { code: string }).code : undefined,
       );
     }
 
@@ -386,6 +381,7 @@ async function _fetchWithAuthInner<T>(
     });
 
     clearTimeout(timeoutId);
+    notifyObservers({ kind: 'response', status: response.status, serverTime: response.headers.get('x-server-time') });
 
     // Handle 401 - Automatic token refresh and retry
     if (response.status === 401 && retry) {
@@ -407,7 +403,8 @@ async function _fetchWithAuthInner<T>(
     if (!response.ok) {
       throw new ApiError(
         sanitizeErrorMessage(data.message, response.status),
-        response.status
+        response.status,
+        typeof (data as { code?: unknown }).code === 'string' ? (data as { code: string }).code : undefined,
       );
     }
 
@@ -420,11 +417,13 @@ async function _fetchWithAuthInner<T>(
     if (error instanceof ApiError) {
       throw error;
     }
-    // Network error on a write operation - queue for retry
-    const method = (options.method || 'GET').toUpperCase();
-    if (method !== 'GET' && method !== 'HEAD') {
-      queueMutation(endpoint, options);
-    }
+    /*
+      ⚠️ Nothing is queued here any more. A failed write used to be pushed onto an
+      in-memory list that nothing ever sent — and, had anything sent it, would
+      have duplicated the write, since it carried no idempotency key. Writes that
+      must survive being offline go through the outbox (src/offline).
+    */
+    notifyObservers({ kind: 'network-error' });
     throw new ApiError('Unable to connect to server. Please check if the API is running.', 0);
   }
 }
