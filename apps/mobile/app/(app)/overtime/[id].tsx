@@ -23,6 +23,7 @@ import {
   FONT_WEIGHT,
 } from '../../../src/lib/constants';
 import { ScreenContainer, ScreenHeader } from '../../../src/components';
+import { useQueuedCreate } from '../../../src/offline/actions/queued-create';
 
 export default function OvertimeRequestScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -71,10 +72,19 @@ export default function OvertimeRequestScreen() {
     return () => clearInterval(interval);
   }, [request?.status, request?.overtimeEndAt]);
 
+  const respond = useQueuedCreate('overtime.respond', { idField: null });
+
   const handleRespond = async (response: 'YES' | 'NO') => {
     setIsSubmitting(true);
     try {
-      await overtimeApi.respond({ response, reason: reason.trim() || undefined });
+      const body = { response, reason: reason.trim() || undefined };
+      // The answer is kept and sent even with no signal — "yes, I am staying" must not be lost to a basement.
+      const outcome = await respond.run({ lane: `overtime:${id}`, body }, () => overtimeApi.respond(body));
+      if (outcome.kind === 'refused') {
+        toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('overtime.failedToRespond'));
+        return;
+      }
+      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
       if (response === 'YES') {
         toast.success(t('overtime.requestSent'));
       } else {

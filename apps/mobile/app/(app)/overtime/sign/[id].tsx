@@ -24,6 +24,7 @@ import {
   FONT_SIZE,
   FONT_WEIGHT,
 } from '../../../../src/lib/constants';
+import { useQueuedCreate } from '../../../../src/offline/actions/queued-create';
 
 const DURATION_OPTIONS = [
   { label: '30 min', value: 30 },
@@ -68,6 +69,8 @@ export default function OvertimeSignatureScreen() {
     fetchLeaders();
   }, []);
 
+  const approve = useQueuedCreate('overtime.approveSignature', { idField: null });
+
   const handleSubmit = async () => {
     if (!selectedLeader) {
       return toast.error(t('overtime.selectLeader'));
@@ -78,14 +81,20 @@ export default function OvertimeSignatureScreen() {
 
     setIsSubmitting(true);
     try {
-      await overtimeApi.approveSignature(id!, {
+      const body = {
         approverId: selectedLeader.id,
         leaderName: `${selectedLeader.firstName} ${selectedLeader.lastName}`,
         leaderSignature: signature,
         maxDurationMinutes: duration,
         notes: notes.trim() || undefined,
-      });
-      toast.success(t('overtime.approvedSuccess'));
+      };
+      // Signed on this phone, so it can be sent from this phone later — the leader has already signed.
+      const outcome = await approve.run({ lane: `overtime:${id}`, params: { overtimeId: id! }, body }, () => overtimeApi.approveSignature(id!, body));
+      if (outcome.kind === 'refused') {
+        toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('overtime.failedToApprove'));
+        return;
+      }
+      toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('overtime.approvedSuccess'));
       router.back();
       router.back(); // Go back to attendance
     } catch (err) {
