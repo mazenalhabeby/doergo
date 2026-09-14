@@ -43,3 +43,9 @@ export class HeartbeatBatchDto {
   @Type(() => HeartbeatPointDto)
   points: HeartbeatPointDto[];
 }
+
+/** "I'm working extra time", with the moment it was asked when sent from a queue. */
+export class RequestExtraTimeDto {
+  @ApiPropertyOptional({ description: 'When the member asked (ISO 8601)' }) @IsOptional() @IsISO8601()
+  occurredAt?: string;
+}

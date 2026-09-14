@@ -6,7 +6,7 @@ import type { RecordsStore } from '../db/records-store';
 import { useOffline, useSyncStatus } from '../offline-context';
 import { isUnreachable } from '../actions/unreachable';
 import { overlayShift, type ShiftView } from './shift-overlay';
-import { clockInFromPhone, clockOutFromPhone, endRestFromPhone, startRestFromPhone } from './shift-actions';
+import { clockInFromPhone, clockOutFromPhone, endRestFromPhone, requestExtraTimeFromPhone, startRestFromPhone } from './shift-actions';
 
 const SCOPE = 'attendance';
 
@@ -73,7 +73,7 @@ export function useShift(): ShiftView & { source: Loaded['source']; refresh: () 
 }
 
 /**
- * The four things a member does to a shift, with or without a network.
+ * The things a member does to a shift, with or without a network.
  *
  * With the offline layer they go through the outbox; on a build without it
  * they call the API directly, as they always have. The screen gets one kind
@@ -120,5 +120,8 @@ function shiftActions(engine: ReturnType<typeof useOffline>['engine']) {
 
     endRest: (input: { entryId: string; breakId: string; notes?: string }) =>
       engine ? endRestFromPhone(engine, input) : direct(() => attendanceApi.endBreak(input.notes)),
+
+    requestExtraTime: (input: { entryId: string }) =>
+      engine ? requestExtraTimeFromPhone(engine, input) : direct(() => attendanceApi.requestExtraTime(input.entryId)),
   };
 }

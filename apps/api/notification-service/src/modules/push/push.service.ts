@@ -397,6 +397,13 @@ export class PushService {
     );
   }
 
+  /** An attendance alert answered by what the member actually did, arriving late. */
+  async sendAttendanceResolvedPush(data: { leaderIds: string[]; title: string; body: string; type: string; entryId: string }) {
+    const allTokens: string[] = [];
+    for (const leaderId of data.leaderIds) allTokens.push(...(await this.getUserTokens(leaderId)));
+    return this.sendPushNotification(allTokens, data.title, data.body, { type: data.type, entryId: data.entryId });
+  }
+
   /** The escalation was answered by a clock-in that arrived late — tell the same leaders. */
   async sendNoShowResolvedPush(data: { leaderIds: string[]; body: string; instanceId: string }) {
     const allTokens: string[] = [];

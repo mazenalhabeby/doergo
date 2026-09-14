@@ -420,9 +420,14 @@ export default function AttendanceScreen() {
     if (!entry) return;
     setIsReminderLoading(true);
     try {
-      await attendanceApi.requestExtraTime(entry.id);
+      const outcome = await shiftActions.requestExtraTime({ entryId: entry.id });
+      if (outcome.kind === 'refused') {
+        toast.error(t('common.error'), refusalText(outcome, t('shiftReminder.extraRequestFailed')));
+        return;
+      }
       await fetchAttendanceData();
-      toast.success(t('common.success'), t('shiftReminder.extraRequestSent'));
+      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
+      else toast.success(t('common.success'), t('shiftReminder.extraRequestSent'));
     } catch (err) {
       toast.error(t('common.error'), err instanceof Error ? err.message : t('shiftReminder.extraRequestFailed'));
     } finally {

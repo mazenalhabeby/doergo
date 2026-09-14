@@ -34,6 +34,7 @@ export const SYNC_OPERATIONS = {
   'attendance.clockOut': { method: 'POST', path: '/attendance/clock-out' },
   'attendance.breakStart': { method: 'POST', path: '/attendance/breaks/start' },
   'attendance.breakEnd': { method: 'POST', path: '/attendance/breaks/end' },
+  'attendance.extraTime': { method: 'POST', path: '/attendance/entries/:entryId/request-extra-time' },
   'overtime.respond': { method: 'POST', path: '/overtime/respond' },
   'overtime.approveSignature': { method: 'POST', path: '/overtime/:overtimeId/approve-signature' },
   'worklog.note': { method: 'POST', path: '/attendance/entries/:entryId/worklog' },

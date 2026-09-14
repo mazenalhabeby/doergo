@@ -31,7 +31,7 @@ import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { AttendanceService } from './attendance.service';
 import { AttendanceQueueService } from './attendance.queue.service';
 import {
-  ClockInDto, ClockOutDto, HeartbeatDto, HeartbeatBatchDto, StartBreakDto, EndBreakDto,
+  ClockInDto, ClockOutDto, HeartbeatDto, HeartbeatBatchDto, RequestExtraTimeDto, StartBreakDto, EndBreakDto,
   AddBreakForMemberDto, BreakRuleDto, SnoozeBreakDto,
   ApproveExtraTimeDto, RejectExtraTimeDto,
   AddWorklogNoteDto, AddWorklogNotesBatchDto, PresignWorklogAttachmentDto, ConfirmWorklogAttachmentDto,
@@ -908,9 +908,11 @@ export class AttendanceController {
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @RequirePlan('shift_scheduling')
   @ApiOperation({ summary: 'Request to keep working past the shift end (routes to a leader)' })
-  async requestExtraTime(@Param('id') entryId: string, @Request() req?: any) {
+  async requestExtraTime(@Param('id') entryId: string, @Body() body: RequestExtraTimeDto, @Request() req?: any) {
     return this.attendanceService.requestExtraTime({
       entryId,
+      // The moment it was asked — a phone without signal sends it later.
+      occurredAt: body?.occurredAt ?? null,
       userId: req.user.id,
       organizationId: req.user.organizationId,
     });

@@ -67,6 +67,7 @@ const Events = {
   NOSHOW_ESCALATION: "attendance_noshow_escalation",
   // The escalated shift was answered by a clock-in that arrived late (offline phone).
   NOSHOW_RESOLVED: "attendance_noshow_resolved",
+  SHIFT_ESCALATION_RESOLVED: "attendance_shift_escalation_resolved",
   SHIFT_REMINDER: "attendance_shift_reminder",
   SHIFT_ESCALATION: "attendance_shift_escalation",
   // Spaces
@@ -243,6 +244,7 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   [Events.NOSHOW_REMINDER]: [["attendance-no-shows"]],
   [Events.NOSHOW_ESCALATION]: [["attendance-no-shows"]],
   [Events.NOSHOW_RESOLVED]: ALL_ATTENDANCE_KEYS,
+  [Events.SHIFT_ESCALATION_RESOLVED]: ALL_ATTENDANCE_KEYS,
   [Events.SHIFT_REMINDER]: ALL_ATTENDANCE_KEYS,
   [Events.SHIFT_ESCALATION]: ALL_ATTENDANCE_KEYS,
 

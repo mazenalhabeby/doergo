@@ -19,6 +19,7 @@ describe('answered reminders', () => {
   it('each reminder is answered only by its own action', () => {
     expect(reminderAnswered({ type: 'noshow_reminder' }, T, [op('attendance.clockOut', 'pending', 5)])).toBe(false);
     expect(reminderAnswered({ type: 'shift_reminder' }, T, [op('attendance.clockOut', 'retry', 5)])).toBe(true);
+    expect(reminderAnswered({ type: 'shift_reminder' }, T, [op('attendance.extraTime', 'pending', 5)])).toBe(true);
     expect(reminderAnswered({ type: 'break_due' }, T, [op('attendance.breakStart', 'inflight', 1)])).toBe(true);
     expect(reminderAnswered({ type: 'break_over' }, T, [op('attendance.breakEnd', 'done', 1)])).toBe(true);
   });

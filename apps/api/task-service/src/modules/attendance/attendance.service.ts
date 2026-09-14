@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { lastReadingIsFresh, replayRing, type RingReading } from './heartbeat-replay';
 import {
   Injectable,
@@ -1017,6 +1018,25 @@ export class AttendanceService {
       },
     });
 
+    if (entry.reminderState === 'ESCALATED') {
+      /*
+        The supervisors were told "still clocked in past the end of the shift".
+        The clock-out has now arrived — usually from a phone that had no signal,
+        with the time it was actually tapped. Say so, to the same people.
+      */
+      const leaderIds = await this.notifyTargetsFor(entry, 'canReconcileAttendance');
+      this.notificationClient.emit('attendance_shift_escalation_resolved', {
+        entryId: entry.id,
+        userId: entry.userId,
+        userName: `${updatedEntry.user?.firstName ?? ''} ${updatedEntry.user?.lastName ?? ''}`.trim(),
+        clockOutAt: clockOutTime.toISOString(),
+        timezone: entry.timezone ?? updatedEntry.location?.timezone ?? 'UTC',
+        recordedOffline: occurrence.flags.includes('RECORDED_OFFLINE'),
+        leaderIds,
+        organizationId: entry.organizationId,
+      });
+    }
+
     if (shortBy > 0) {
       /*
         Somebody has to know.
@@ -1194,7 +1214,7 @@ export class AttendanceService {
    * Worker responds "I'm working extra time". Pauses reminders and routes the
    * request to the space's overtime approvers. The entry stays open.
    */
-  async requestExtraTime(data: { userId: string; entryId: string; organizationId: string }) {
+  async requestExtraTime(data: { userId: string; entryId: string; organizationId: string; occurredAt?: string | null }) {
     const entry = await this.prisma.timeEntry.findFirst({
       where: {
         id: data.entryId,
@@ -1238,7 +1258,8 @@ export class AttendanceService {
           locationId: entry.locationId,
           organizationId: data.organizationId,
           status: 'PENDING_APPROVAL',
-          technicianRespondedAt: new Date(),
+          // When they said it — sent later from a phone without signal, that is not now.
+          technicianRespondedAt: respondedAt(data.occurredAt, entry.clockInAt),
           overtimeStartAt: entry.expectedClockOutAt ?? new Date(),
         },
       }),
@@ -1283,10 +1304,17 @@ export class AttendanceService {
       // Scoped as well as checked below: `userCanApproveOvertime` already tests
       // this entry's own space, and the two agreeing is the point — the guard
       // now admits a space-scoped caller, so nothing here may assume org-wide.
-      where: { id: data.entryId, organizationId: data.organizationId, status: TimeEntryStatus.CLOCKED_IN, ...scopeWhere(data.scopeSpaceIds) },
+      where: { id: data.entryId, organizationId: data.organizationId, ...scopeWhere(data.scopeSpaceIds), ...decidableExtraTimeWhere(new Date()) },
       include: { shift: { select: { graceMin: true } } },
     });
     if (!entry) throw new BadRequestException('No matching open shift found');
+    /*
+      ⚠️ The shift may already be CLOSED. A member who asked for extra time and
+      then clocked out with no signal sends both later, in that order; by the
+      time a leader looks, the clock-out is in. Refusing then would leave the
+      overtime they actually worked unpaid, with nothing on screen to say why.
+    */
+    const closed = entry.status === TimeEntryStatus.CLOCKED_OUT;
 
     const allowed = await this.userCanApproveOvertime(data.approverId, entry.locationId, data.organizationId);
     if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
@@ -1294,9 +1322,12 @@ export class AttendanceService {
 
     const now = new Date();
     // Grant the extra minutes from the later of the expected end or now, so a
-    // shift that already ended extends from now (not into the past).
-    const base =
-      entry.expectedClockOutAt && entry.expectedClockOutAt.getTime() > now.getTime()
+    // shift that already ended extends from now (not into the past). A CLOSED
+    // shift extends from its expected end: the work is over, and the paid time
+    // is still capped by the real clock-out.
+    const base = closed
+      ? (entry.expectedClockOutAt ?? entry.clockOutAt ?? now)
+      : entry.expectedClockOutAt && entry.expectedClockOutAt.getTime() > now.getTime()
         ? entry.expectedClockOutAt
         : now;
     const newExpected = new Date(base.getTime() + minutes * 60_000);
@@ -1319,12 +1350,14 @@ export class AttendanceService {
     await this.prisma.$transaction([
       this.prisma.timeEntry.update({
         where: { id: entry.id },
-        data: {
-          expectedClockOutAt: newExpected,
-          reminderState: 'OVERTIME_APPROVED',
-          reminderCount: 0,
-          nextRemindAt: new Date(newExpected.getTime() + graceMin * 60_000),
-        },
+        data: closed
+          ? { expectedClockOutAt: newExpected }
+          : {
+              expectedClockOutAt: newExpected,
+              reminderState: 'OVERTIME_APPROVED',
+              reminderCount: 0,
+              nextRemindAt: new Date(newExpected.getTime() + graceMin * 60_000),
+            },
       }),
       ...(round
         ? [
@@ -1344,6 +1377,9 @@ export class AttendanceService {
           ]
         : []),
     ]);
+
+    // Closed: the timesheet already counted it — count it again with the approval.
+    if (closed) await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });
 
     this.notificationClient.emit('attendance_overtime_decision', {
       entryId: entry.id,
@@ -1368,10 +1404,11 @@ export class AttendanceService {
     reason?: string | null;
   }) {
     const entry = await this.prisma.timeEntry.findFirst({
-      where: { id: data.entryId, organizationId: data.organizationId, status: TimeEntryStatus.CLOCKED_IN },
-      select: { id: true, locationId: true, userId: true },
+      where: { id: data.entryId, organizationId: data.organizationId, ...decidableExtraTimeWhere(new Date()) },
+      select: { id: true, locationId: true, userId: true, status: true },
     });
     if (!entry) throw new BadRequestException('No matching open shift found');
+    const closed = entry.status === TimeEntryStatus.CLOCKED_OUT;
 
     const allowed = await this.userCanApproveOvertime(data.approverId, entry.locationId, data.organizationId);
     if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
@@ -1388,10 +1425,15 @@ export class AttendanceService {
     // The refusal is recorded too: "asked twice, refused once" is a fact about
     // the day, and a request that vanishes when the answer is no is not a record.
     await this.prisma.$transaction([
-      this.prisma.timeEntry.update({
-        where: { id: entry.id },
-        data: { reminderState: 'REMINDED', reminderCount: 0, nextRemindAt: new Date() },
-      }),
+      // A closed shift has nobody to nudge; only the round records the answer.
+      ...(closed
+        ? []
+        : [
+            this.prisma.timeEntry.update({
+              where: { id: entry.id },
+              data: { reminderState: 'REMINDED', reminderCount: 0, nextRemindAt: new Date() },
+            }),
+          ]),
       ...(round
         ? [
             this.prisma.overtimeRequest.update({
@@ -1435,8 +1477,8 @@ export class AttendanceService {
     const entries = await this.prisma.timeEntry.findMany({
       where: {
         organizationId: data.organizationId,
-        status: TimeEntryStatus.CLOCKED_IN,
-        reminderState: 'OVERTIME_PENDING',
+        // Open and waiting — or already clocked out (a phone sent both late) with the round still undecided.
+        ...decidableExtraTimeWhere(new Date(), { openMustBePending: true }),
         // Never offer a leader their OWN request (audit AT-B1). Without this the
         // approve button appeared on your own row and one click granted yourself
         // paid time. An org ADMIN is exempt in the guard below — they have nobody
@@ -3142,4 +3184,36 @@ export class AttendanceService {
       this.logger.error('Failed to send pending-approval alert', error);
     }
   }
+}
+
+/** How long after its clock-out a shift's extra time may still be decided. */
+export const EXTRA_TIME_DECIDABLE_AFTER_CLOSE_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * A shift whose extra-time request a leader may still decide: open and waiting,
+ * or closed within a week with the round still undecided.
+ */
+export function decidableExtraTimeWhere(now: Date, opts: { openMustBePending?: boolean } = {}): Prisma.TimeEntryWhereInput {
+  return {
+    OR: [
+      // Deciding an open shift is as it always was; LISTING one needs a request waiting.
+      opts.openMustBePending
+        ? { status: TimeEntryStatus.CLOCKED_IN, reminderState: 'OVERTIME_PENDING' as const }
+        : { status: TimeEntryStatus.CLOCKED_IN },
+      {
+        status: TimeEntryStatus.CLOCKED_OUT,
+        clockOutAt: { gte: new Date(now.getTime() - EXTRA_TIME_DECIDABLE_AFTER_CLOSE_MS) },
+        overtimeRequests: { some: { status: 'PENDING_APPROVAL' as const } },
+      },
+    ],
+  };
+}
+
+/** The moment a member asked for extra time: the tap, never in the future, never before the shift. */
+export function respondedAt(occurredAt: string | null | undefined, clockInAt: Date, now: Date = new Date()): Date {
+  const at = occurredAt ? new Date(occurredAt) : null;
+  if (!at || Number.isNaN(at.getTime())) return now;
+  if (at.getTime() > now.getTime()) return now;
+  if (at.getTime() < clockInAt.getTime()) return clockInAt;
+  return at;
 }

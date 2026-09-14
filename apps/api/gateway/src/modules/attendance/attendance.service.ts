@@ -434,8 +434,9 @@ export class AttendanceService extends BaseGatewayService {
   }
 
   /** Worker requests to keep working past the shift end (routes to a leader). */
-  async requestExtraTime(data: { userId: string; entryId: string; organizationId: string }) {
-    return this.send({ cmd: 'request_extra_time' }, data);
+  async requestExtraTime(data: { userId: string; entryId: string; organizationId: string; occurredAt?: string | null }) {
+    // A write: `send` retries on a slow reply and would open a second round.
+    return this.sendOnce({ cmd: 'request_extra_time' }, data);
   }
 
   /** Leader approves N more minutes of overtime for an open shift. */

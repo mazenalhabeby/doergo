@@ -108,3 +108,23 @@ export async function endRestFromPhone(
   });
   return outcomeOf(engine, op);
 }
+
+/**
+ * "I'm working extra time", with or without signal.
+ *
+ * On the shift's own lane, so it always arrives BEFORE that shift's clock-out:
+ * asked at 17:05 and clocked out at 18:40 in a basement, the office sees the
+ * request on an open shift, and a leader can still approve it after the
+ * clock-out arrives (the server allows deciding a closed shift's round).
+ */
+export async function requestExtraTimeFromPhone(engine: SyncEngine, input: { entryId: string }): Promise<ActionOutcome> {
+  const clockIn = openOpFor(engine.operations(), 'attendance.clockIn', (b) => b.id === input.entryId);
+  const op = await engine.enqueueAndSettle({
+    op: 'attendance.extraTime',
+    lane: laneOf(input.entryId),
+    entityId: input.entryId,
+    dependsOn: clockIn ? [clockIn.id] : [],
+    payload: { params: { entryId: input.entryId }, body: { occurredAt: new Date().toISOString() } },
+  });
+  return outcomeOf(engine, op);
+}

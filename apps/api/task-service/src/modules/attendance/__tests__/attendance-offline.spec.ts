@@ -222,6 +222,26 @@ describe('attendance recorded offline', () => {
       await expect(service.clockOut(clockOut())).rejects.toMatchObject({ status: 409, response: expect.objectContaining({ code: 'ENTRY_ALREADY_CLOSED' }) });
     });
 
+    it('tells the supervisors who were alerted "still clocked in" that the clock-out has arrived', async () => {
+      const { service, prisma } = await build();
+      prisma.timeEntry.findFirst.mockResolvedValue({ ...open(), reminderState: 'ESCALATED', timezone: 'Europe/Vienna' });
+      const targets = jest.spyOn(service as any, 'notifyTargetsFor').mockResolvedValue(['leader-1']);
+      const emit = (service as any).notificationClient.emit as jest.Mock;
+      await service.clockOut(clockOut());
+      expect(targets).toHaveBeenCalledWith(expect.objectContaining({ id: 'e1' }), 'canReconcileAttendance');
+      expect(emit).toHaveBeenCalledWith('attendance_shift_escalation_resolved', expect.objectContaining({
+        entryId: 'e1', clockOutAt: TAP.toISOString(), recordedOffline: true, leaderIds: ['leader-1'], timezone: 'Europe/Vienna',
+      }));
+    });
+
+    it('says nothing extra when nobody had been alerted', async () => {
+      const { service, prisma } = await build();
+      prisma.timeEntry.findFirst.mockResolvedValue({ ...open(), reminderState: 'REMINDED' });
+      const emit = (service as any).notificationClient.emit as jest.Mock;
+      await service.clockOut(clockOut());
+      expect(emit.mock.calls.map((c) => c[0])).not.toContain('attendance_shift_escalation_resolved');
+    });
+
     it('refuses a clock-out from before a rest in the shift ended', async () => {
       const { service, prisma } = await build();
       prisma.timeEntry.findFirst.mockResolvedValue({ ...open(), breaks: [{ endedAt: new Date('2026-09-14T08:30:00Z') }] });

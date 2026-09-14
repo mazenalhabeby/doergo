@@ -403,6 +403,48 @@ export class AttendanceNotificationHandler {
   }
 
   /*
+    "Still clocked in past the end of the shift" answered by the clock-out
+    itself, arriving late from a phone without signal. Same people as the
+    escalation, so nobody phones round about a shift that ended hours ago.
+  */
+  @EventPattern('attendance_shift_escalation_resolved')
+  async handleShiftEscalationResolved(@Payload() data: {
+    entryId: string;
+    userId: string;
+    userName: string;
+    clockOutAt: string;
+    timezone?: string | null;
+    recordedOffline: boolean;
+    leaderIds: string[];
+    organizationId: string;
+  }) {
+    const leaderIds = data.leaderIds || [];
+    const at = noShowResolvedTime(data.clockOutAt, data.timezone);
+    const body = data.recordedOffline
+      ? `${data.userName} clocked out at ${at}. It was recorded without signal and has just arrived, so there is no need to follow up.`
+      : `${data.userName} has clocked out (${at}), so there is no need to follow up.`;
+    try {
+      await this.pushService.sendAttendanceResolvedPush({ leaderIds, title: 'Clocked out after all', body, type: 'shift_escalation_resolved', entryId: data.entryId });
+    } catch (error) {
+      this.logger.error(`Failed to send shift-escalation resolved push: ${error}`);
+    }
+    const payload = { entryId: data.entryId, userId: data.userId, userName: data.userName, clockOutAt: data.clockOutAt, timestamp: new Date().toISOString() };
+    if (leaderIds.length) {
+      for (const id of leaderIds) this.websocketGateway.emitToUser(id, 'attendance_shift_escalation_resolved', payload);
+    } else {
+      this.websocketGateway.emitToRole(data.organizationId, 'ADMIN', 'attendance_shift_escalation_resolved', payload);
+    }
+    await this.store.record({
+      recipientIds: leaderIds,
+      organizationId: data.organizationId,
+      eventType: 'attendance_shift_escalation_resolved',
+      title: 'Clocked out after all',
+      body,
+      link: '/attendance',
+    });
+  }
+
+  /*
     A no-show that turned out not to be one: the clock-in arrived after the
     escalation, usually from a phone that had no signal at the site. Told to the
     same people the escalation alerted, so nobody keeps chasing somebody who was
