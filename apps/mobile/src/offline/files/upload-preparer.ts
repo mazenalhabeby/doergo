@@ -1,7 +1,7 @@
 import type { OperationPreparer, PrepareResult } from '../sync-engine';
 import type { OutboxOp } from '../outbox/types';
 import { UploadFailure, type FileDisk, type FileRegistry, type ObjectUploader } from './types';
-import { carriesFile, presignPathFor, uploadBodyOf } from './uploads';
+import { carriesFile, presignPathFor, typeFieldFor, uploadBodyOf } from './uploads';
 
 /**
  * Uploads an operation's file just before the operation is sent.
@@ -38,10 +38,11 @@ export class FileUploadPreparer implements OperationPreparer {
     // member sees it, rather than retrying forever.
     if (!file) return { ok: false, status: 422, code: 'FILE_MISSING' };
 
+    const typeField = typeFieldFor(op);
     let key = file.objectKey;
     if (!key) {
       try {
-        const link = await this.deps.uploader.presign(presignPath, { fileName: body.fileName, fileType: file.mime });
+        const link = await this.deps.uploader.presign(presignPath, { fileName: body.fileName, [typeField]: file.mime });
         await this.deps.uploader.put(link.uploadUrl, file.path, file.mime);
         await this.deps.files.markUploaded(file.id, link.fileKey);
         key = link.fileKey;
@@ -55,7 +56,7 @@ export class FileUploadPreparer implements OperationPreparer {
       ok: true,
       op: {
         ...op,
-        payload: { ...op.payload, body: { ...body, fileKey: key, fileType: file.mime, fileSize: file.bytes ?? body.fileSize } },
+        payload: { ...op.payload, body: { ...body, fileKey: key, [typeField]: file.mime, fileSize: file.bytes ?? body.fileSize } },
       },
     };
   }

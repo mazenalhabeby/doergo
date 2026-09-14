@@ -42,9 +42,10 @@ const PENDING_KEY = 'route_pending_bursts';
 // the catch-up upload. Past it the OLDEST points go, because the recent ones
 // describe where the member is now.
 const MAX_PENDING_POINTS = 500;
-// A burst older than this belongs to a route that has long since ended;
-// uploading it would only muddy the record.
-const MAX_PENDING_AGE_MS = 6 * 60 * 60 * 1000;
+// A burst older than this is not sent. A full working day: the server files a
+// late point only inside its own route's start-to-arrival window, so an old
+// point cannot muddy another route — but a day in a dead zone must still land.
+const MAX_PENDING_AGE_MS = 24 * 60 * 60 * 1000;
 
 interface RawLocation {
   coords: { latitude: number; longitude: number; accuracy: number | null };
@@ -171,8 +172,23 @@ async function sendBurst(taskId: string | undefined, points: FlushPoint[]): Prom
  *
  * Never throws: the headless task cannot handle an exception.
  */
+let flushing: Promise<void> | null = null;
+
 async function flushPoints(taskId: string | undefined, points: FlushPoint[]): Promise<void> {
-  const queue: PendingBurst[] = [...(await loadPending()), { taskId, points }];
+  // One flush at a time in this JS context: two overlapping ones would send the
+  // same held bursts twice.
+  while (flushing) await flushing.catch(() => undefined);
+  flushing = flushQueue(points.length ? [{ taskId, points }] : []);
+  try {
+    await flushing;
+  } finally {
+    flushing = null;
+  }
+}
+
+async function flushQueue(fresh: PendingBurst[]): Promise<void> {
+  const queue: PendingBurst[] = [...(await loadPending()), ...fresh];
+  if (!queue.length) return;
   const remaining: PendingBurst[] = [];
 
   for (let i = 0; i < queue.length; i++) {
@@ -283,8 +299,26 @@ export async function startRouteTracking(
   }
 }
 
+/**
+ * Send the points held from a dead zone, now.
+ *
+ * They used to wait for the NEXT burst of a route — so a route that ended
+ * without signal kept its gap until the member drove somewhere else, and past
+ * the age limit it was never sent at all. Called when the connection comes
+ * back, when the app is opened, and when tracking stops. Never throws.
+ */
+export async function flushPendingRoute(): Promise<void> {
+  try {
+    await flushPoints(undefined, []);
+  } catch {
+    /* held for the next attempt */
+  }
+}
+
 /** Stop recording and clear the active task. */
 export async function stopRouteTracking(): Promise<void> {
+  // What is held belongs to the route that is ending; try to send it with it.
+  void flushPendingRoute();
   try {
     const running = await TaskManager.isTaskRegisteredAsync(ROUTE_TASK);
     if (running) {

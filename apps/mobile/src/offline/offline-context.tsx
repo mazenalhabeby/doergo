@@ -13,6 +13,7 @@ import { OfflineFiles } from './files/offline-files';
 import { SqliteFileRegistry } from './files/sqlite-file-registry';
 import { FileUploadPreparer } from './files/upload-preparer';
 import { uuidv7 } from './ids';
+import { flushPendingRoute } from '../services/background-route-tracking';
 import { offlineCapableBuild } from './native';
 import { SyncEngine, type SyncSnapshot } from './sync-engine';
 import type { OutboxOp } from './outbox/types';
@@ -105,11 +106,15 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
       // sends what waits. Pull-to-refresh calls syncAll itself.
       unsubscribers.push(
         connectivity.subscribe((state) => {
-          if (state === 'online') void live.syncAll();
+          if (state !== 'online') return;
+          void live.syncAll();
+          void flushPendingRoute();
         }),
       );
       const appState = AppState.addEventListener('change', (s) => {
-        if (s === 'active') void live.flush();
+        if (s !== 'active') return;
+        void live.flush();
+        void flushPendingRoute();
       });
       unsubscribers.push(() => appState.remove());
       void live.syncAll();

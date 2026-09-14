@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,49 +11,23 @@ import {
   Image,
   Pressable,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system/legacy';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/theme-context';
+import { useToast } from '../contexts/toast-context';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, COLORS } from '../lib/constants';
 import { useImagePicker, type PickedImage } from '../hooks/useImagePicker';
 import { BlurSheet } from './blur-sheet';
 import { SheetPanel } from './sheet-panel';
 import { worklogApi, type WorkLogNote } from '../lib/api/worklog';
 import { uploadToPresignedUrl } from '../lib/api/attachments';
+import { useOffline, useSyncStatus } from '../offline/offline-context';
+import { addWorklogEntry, loadWorklog, worklogView, type WorklogItem } from '../offline/attendance/worklog';
+import { adoptLegacyQueue, flushLegacy, queueLegacy, readLegacy } from '../offline/attendance/legacy-worklog-queue';
 
 const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 const isImg = (m: string) => m.startsWith('image/');
-const pendingKey = (entryId: string) => `worklog_pending_${entryId}`;
-const localId = () => `${Date.now()}_${Math.random().toString(36).slice(2)}`;
-
-// A queued (offline) note — text + the picked photos (their persisted URIs +
-// metadata) so photos re-upload on flush, not just the text.
-type PendingItem = { id: string; body: string; at: string; photos?: PickedImage[] };
-
-// Queued photos are COPIED into persistent app storage so they survive an app
-// restart / OS cache eviction until the flush uploads them.
-const WORKLOG_DIR = FileSystem.documentDirectory ? `${FileSystem.documentDirectory}worklog/` : null;
-
-async function persistPhoto(img: PickedImage): Promise<PickedImage> {
-  if (!WORKLOG_DIR || img.uri.startsWith(WORKLOG_DIR)) return img;
-  try {
-    await FileSystem.makeDirectoryAsync(WORKLOG_DIR, { intermediates: true }).catch(() => {});
-    const ext = (img.fileName.split('.').pop() || img.mimeType.split('/').pop() || 'jpg').toLowerCase();
-    const dest = `${WORKLOG_DIR}${localId()}.${ext}`;
-    await FileSystem.copyAsync({ from: img.uri, to: dest });
-    return { ...img, uri: dest };
-  } catch {
-    return img; // fall back to the cache URI
-  }
-}
-
-async function deletePersisted(uri: string): Promise<void> {
-  if (WORKLOG_DIR && uri.startsWith(WORKLOG_DIR)) {
-    await FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
-  }
-}
 
 interface Props {
   visible: boolean;
@@ -66,147 +40,110 @@ interface Props {
 }
 
 /**
- * Session work-log sheet: add timestamped notes (+ photos) during a shift. Notes
- * post immediately; if offline they queue in AsyncStorage and batch-flush next
- * time the sheet opens. Photos upload phone→S3 direct (presign → PUT → confirm).
+ * Session work-log sheet: timestamped notes (+ photos) during a shift.
+ *
+ * With the offline layer a note goes into the outbox with the id it will have
+ * on the server, its photos kept on the phone and uploaded when it is sent —
+ * so it works with no signal and is never written twice. The list is the
+ * server's notes (or the phone's saved copy of them) with everything still on
+ * its way laid on top.
+ *
+ * On a build without the offline layer the old queue is used, as before.
  */
 export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, editable = true }: Props) {
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
+  const toast = useToast();
   const insets = useSafeAreaInsets();
   const { pickFromGallery, takePhoto } = useImagePicker();
+  const offline = useOffline();
+  const { operations } = useSyncStatus();
+  const outbox = offline.engine && offline.files ? { engine: offline.engine, files: offline.files } : null;
 
-  const [notes, setNotes] = useState<WorkLogNote[]>([]);
-  const [pending, setPending] = useState<PendingItem[]>([]);
+  const [serverNotes, setServerNotes] = useState<WorkLogNote[]>([]);
+  const [legacyPending, setLegacyPending] = useState<WorklogItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [draft, setDraft] = useState('');
   const [picked, setPicked] = useState<PickedImage[]>([]);
   const [busy, setBusy] = useState(false);
   const [viewer, setViewer] = useState<string | null>(null); // full-screen image preview
 
-  const flushPending = useCallback(async () => {
-    let items: PendingItem[] = [];
-    try {
-      const raw = await AsyncStorage.getItem(pendingKey(timeEntryId));
-      items = raw ? JSON.parse(raw) : [];
-    } catch {
-      return;
-    }
-    if (!items.length) return;
-
-    const done = new Set<string>();
-    // Text-only notes → one batch request.
-    const textOnly = items.filter((i) => !i.photos || i.photos.length === 0);
-    if (textOnly.length) {
-      try {
-        await worklogApi.addNotesBatch(timeEntryId, textOnly.map((i) => ({ body: i.body, at: i.at })));
-        textOnly.forEach((i) => done.add(i.id));
-      } catch {
-        /* still offline */
-      }
-    }
-    // Notes with photos → recreate the note, then re-upload each queued photo.
-    for (const item of items.filter((i) => i.photos && i.photos.length)) {
-      try {
-        const note = await worklogApi.addNote(timeEntryId, { body: item.body, at: item.at });
-        for (const p of item.photos!) {
-          const pre = await worklogApi.presignAttachment(note.id, p.fileName, p.mimeType);
-          await uploadToPresignedUrl(pre.uploadUrl, p.uri, p.mimeType);
-          await worklogApi.confirmAttachment(note.id, {
-            fileKey: pre.fileKey, fileUrl: pre.fileUrl, fileName: p.fileName,
-            fileSize: p.fileSize, mimeType: p.mimeType, width: p.width, height: p.height,
-          });
-        }
-        // Uploaded — drop the persisted copies.
-        for (const p of item.photos!) await deletePersisted(p.uri);
-        done.add(item.id);
-      } catch {
-        /* keep for next flush — note text + persisted photos aren't lost */
-      }
-    }
-
-    // Persist only what still didn't make it.
-    try {
-      const remaining = items.filter((i) => !done.has(i.id));
-      if (remaining.length) await AsyncStorage.setItem(pendingKey(timeEntryId), JSON.stringify(remaining));
-      else await AsyncStorage.removeItem(pendingKey(timeEntryId));
-    } catch {
-      /* best effort */
-    }
-  }, [timeEntryId]);
-
-  const readPending = useCallback(async () => {
-    try {
-      const raw = await AsyncStorage.getItem(pendingKey(timeEntryId));
-      setPending(raw ? JSON.parse(raw) : []);
-    } catch {
-      setPending([]);
-    }
-  }, [timeEntryId]);
-
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      await flushPending();
-      setNotes(await worklogApi.list(timeEntryId));
+      if (outbox) await adoptLegacyQueue(outbox.engine, outbox.files, timeEntryId);
+      else await flushLegacy(timeEntryId);
+      setServerNotes(await loadWorklog(timeEntryId, offline.records));
     } catch {
       /* leave whatever we have */
     } finally {
-      await readPending(); // surface anything still queued (offline) so it's visible
+      if (!outbox) {
+        // The old queue's items, shown in the same shape so nothing looks lost.
+        const items = await readLegacy(timeEntryId);
+        setLegacyPending(items.map((i) => ({
+          id: i.id, timeEntryId, body: i.body, at: i.at, pendingSync: true,
+          attachments: (i.photos ?? []).map((ph, n) => ({ id: `${i.id}_${n}`, fileName: ph.fileName, mimeType: ph.mimeType, fileUrl: ph.uri, url: ph.uri })),
+        }) as unknown as WorklogItem));
+      }
       setLoading(false);
     }
-  }, [timeEntryId, flushPending, readPending]);
+  }, [timeEntryId, offline.records, outbox?.engine, outbox?.files]);
 
   useEffect(() => {
     if (visible) load();
   }, [visible, load]);
 
-  const queueOffline = useCallback(async (item: PendingItem) => {
-    try {
-      const raw = await AsyncStorage.getItem(pendingKey(timeEntryId));
-      const q: PendingItem[] = raw ? JSON.parse(raw) : [];
-      q.push(item);
-      await AsyncStorage.setItem(pendingKey(timeEntryId), JSON.stringify(q));
-    } catch {
-      /* best effort */
+  // A note or photo from this session accepted in the background: show the server's copy.
+  const accepted = useRef(new Set<string>());
+  useEffect(() => {
+    if (!visible) return;
+    let fresh = false;
+    for (const o of operations) {
+      if (!o.op.startsWith('worklog.') || o.entityId !== timeEntryId || o.state !== 'done' || accepted.current.has(o.id)) continue;
+      accepted.current.add(o.id);
+      fresh = true;
     }
-  }, [timeEntryId]);
+    if (fresh) void loadWorklog(timeEntryId, offline.records).then(setServerNotes).catch(() => undefined);
+  }, [operations, visible, timeEntryId, offline.records]);
+
+  const notes: WorklogItem[] = useMemo(
+    () =>
+      outbox
+        ? worklogView(serverNotes, timeEntryId, operations, (id, mime) => outbox.files.uriFor(id, mime))
+        : [...serverNotes, ...legacyPending],
+    [outbox?.files, serverNotes, legacyPending, operations, timeEntryId],
+  );
 
   const add = useCallback(async () => {
-    const body = draft.trim();
-    if (!body && picked.length === 0) return;
+    const body = draft.trim() || '(photo)';
+    if (!draft.trim() && picked.length === 0) return;
     setBusy(true);
-    const at = new Date().toISOString();
     try {
-      const note = await worklogApi.addNote(timeEntryId, { body: body || '(photo)', at });
-      // Upload each photo direct to S3 (best-effort per photo — never lose the note).
-      for (const img of picked) {
-        try {
-          const pre = await worklogApi.presignAttachment(note.id, img.fileName, img.mimeType);
-          await uploadToPresignedUrl(pre.uploadUrl, img.uri, img.mimeType);
-          await worklogApi.confirmAttachment(note.id, {
-            fileKey: pre.fileKey, fileUrl: pre.fileUrl, fileName: img.fileName,
-            fileSize: img.fileSize, mimeType: img.mimeType, width: img.width, height: img.height,
-          });
-        } catch {
-          /* photo failed — note is already saved */
+      if (outbox) {
+        const { outcome } = await addWorklogEntry(outbox.engine, outbox.files, {
+          entryId: timeEntryId,
+          body,
+          photos: picked.map((p) => ({ uri: p.uri, fileName: p.fileName, mimeType: p.mimeType, width: p.width, height: p.height })),
+        });
+        if (outcome.kind === 'refused') {
+          toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('common.error'));
+          return;
         }
+      } else {
+        await legacyAdd(timeEntryId, body, picked);
       }
-    } catch {
-      // Offline: copy the photos into persistent storage and queue the note +
-      // photos so both re-upload on the next flush — nothing is lost, even across
-      // an app restart.
-      const persisted = await Promise.all(picked.map(persistPhoto));
-      await queueOffline({ id: localId(), body: body || '(photo)', at, photos: persisted });
-    } finally {
       setDraft('');
       setPicked([]);
+    } catch {
+      toast.error(t('common.error'), t('offline.errors.PHOTO_NOT_KEPT'));
+    } finally {
       setBusy(false);
-      load();
+      if (!outbox) load();
     }
-  }, [draft, picked, timeEntryId, queueOffline, load]);
+  }, [draft, picked, timeEntryId, outbox?.engine, outbox?.files, load, t, toast]);
 
   const remove = useCallback(async (id: string) => {
-    setNotes((p) => p.filter((n) => n.id !== id));
+    setServerNotes((p) => p.filter((n) => n.id !== id));
     try { await worklogApi.deleteNote(id); } catch { load(); }
   }, [load]);
 
@@ -229,14 +166,14 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, edita
           <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {loading ? (
               <ActivityIndicator style={{ marginVertical: SPACING.lg }} color={colors.textSecondary} />
-            ) : notes.length === 0 && pending.length === 0 ? (
+            ) : notes.length === 0 ? (
               <Text style={[styles.empty, { color: colors.textMuted }]}>Nothing logged yet.</Text>
             ) : (
               <>
               {notes.map((n) => (
                 <View key={n.id} style={styles.noteRow}>
                   <Text style={[styles.noteTime, { color: colors.textMuted }]}>{fmtTime(n.at)}</Text>
-                  <View style={[styles.noteBubble, { backgroundColor: isDark ? colors.surfaceRaised : '#f8fafc', borderColor: colors.border }]}>
+                  <View style={[styles.noteBubble, { backgroundColor: isDark ? colors.surfaceRaised : '#f8fafc', borderColor: colors.border }, n.pendingSync && styles.pendingBubble]}>
                     {n.byManager && (
                       <View style={styles.byManagerRow}>
                         <Ionicons name="shield-checkmark-outline" size={12} color={COLORS.primary} />
@@ -262,31 +199,19 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, edita
                         )}
                       </View>
                     )}
+                    {n.pendingSync && (
+                      <View style={styles.pendingRow}>
+                        <Ionicons name="cloud-upload-outline" size={12} color={colors.textMuted} />
+                        <Text style={[styles.pendingText, { color: colors.textMuted }]}>{t('offline.chip.waiting')}</Text>
+                      </View>
+                    )}
                   </View>
-                  {editable && (
+                  {/* A note still on the phone is not on the server to delete. */}
+                  {editable && !n.pendingSync && (
                     <TouchableOpacity onPress={() => remove(n.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                       <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
                     </TouchableOpacity>
                   )}
-                </View>
-              ))}
-              {/* Queued (offline) notes — shown so you always see what you added,
-                  even before it syncs. */}
-              {pending.map((p) => (
-                <View key={p.id} style={styles.noteRow}>
-                  <Text style={[styles.noteTime, { color: colors.textMuted }]}>{fmtTime(p.at)}</Text>
-                  <View style={[styles.noteBubble, { backgroundColor: isDark ? colors.surfaceRaised : '#f8fafc', borderColor: colors.border, opacity: 0.75 }]}>
-                    <Text style={[styles.noteBody, { color: colors.textPrimary }]}>{p.body}</Text>
-                    {!!p.photos?.length && (
-                      <View style={styles.thumbs}>
-                        {p.photos.map((ph, i) => <Image key={i} source={{ uri: ph.uri }} style={styles.thumb} />)}
-                      </View>
-                    )}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                      <Ionicons name="cloud-upload-outline" size={12} color={colors.textMuted} />
-                      <Text style={{ fontSize: FONT_SIZE.xs, color: colors.textMuted }}>Pending upload…</Text>
-                    </View>
-                  </View>
                 </View>
               ))}
               </>
@@ -358,6 +283,27 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, edita
   );
 }
 
+/** The old direct path, for a build without the offline layer: straight to the server, queued if that fails. */
+async function legacyAdd(entryId: string, body: string, photos: PickedImage[]): Promise<void> {
+  try {
+    const note = await worklogApi.addNote(entryId, { body, at: new Date().toISOString() });
+    for (const img of photos) {
+      try {
+        const pre = await worklogApi.presignAttachment(note.id, img.fileName, img.mimeType);
+        await uploadToPresignedUrl(pre.uploadUrl, img.uri, img.mimeType);
+        await worklogApi.confirmAttachment(note.id, {
+          fileKey: pre.fileKey, fileUrl: pre.fileUrl, fileName: img.fileName,
+          fileSize: img.fileSize, mimeType: img.mimeType, width: img.width, height: img.height,
+        });
+      } catch {
+        /* photo failed — note is already saved */
+      }
+    }
+  } catch {
+    await queueLegacy(entryId, body, photos);
+  }
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'flex-end' },
   hint: { fontSize: FONT_SIZE.sm, marginTop: SPACING.xs, marginBottom: SPACING.md },
@@ -369,6 +315,9 @@ const styles = StyleSheet.create({
   byManagerRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 },
   byManagerText: { fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold, flexShrink: 1 },
   noteBody: { fontSize: FONT_SIZE.base, lineHeight: 20 },
+  pendingBubble: { opacity: 0.75 },
+  pendingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  pendingText: { fontSize: FONT_SIZE.xs },
   thumbs: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.xs, marginTop: SPACING.sm },
   thumb: { width: 56, height: 56, borderRadius: RADIUS.sm },
   fileChip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: RADIUS.sm, paddingHorizontal: 8, paddingVertical: 6, maxWidth: 140 },

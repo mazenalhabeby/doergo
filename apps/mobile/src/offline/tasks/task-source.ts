@@ -1,5 +1,5 @@
 import { getStatusCapabilities } from '@hbcfield/shared/client';
-import { ApiError } from '../../lib/api/client';
+import { isUnreachable } from '../actions/unreachable';
 import { tasksApi } from '../../lib/api/tasks';
 import { taskAttachmentsApi } from '../../lib/api/attachments';
 import type { Comment, Task } from '../../lib/api/types';
@@ -17,10 +17,7 @@ export interface TaskDetail {
   source: Source;
 }
 
-/** A failure that means "no network", as opposed to the server saying no. */
-export function isUnreachable(err: unknown): boolean {
-  return err instanceof ApiError ? err.statusCode === 0 || err.statusCode === 408 : err instanceof TypeError;
-}
+export { isUnreachable } from '../actions/unreachable';
 
 /**
  * The task screen's data: from the server when it answers, from the phone

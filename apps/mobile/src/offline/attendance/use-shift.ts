@@ -4,7 +4,7 @@ import { attendanceApi } from '../../lib/api/attendance';
 import type { ActionOutcome } from '../actions/outcome';
 import type { RecordsStore } from '../db/records-store';
 import { useOffline, useSyncStatus } from '../offline-context';
-import { isUnreachable } from '../tasks/task-source';
+import { isUnreachable } from '../actions/unreachable';
 import { overlayShift, type ShiftView } from './shift-overlay';
 import { clockInFromPhone, clockOutFromPhone, endRestFromPhone, startRestFromPhone } from './shift-actions';
 
