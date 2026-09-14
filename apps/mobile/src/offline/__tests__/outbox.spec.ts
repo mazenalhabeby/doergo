@@ -142,3 +142,16 @@ describe('MemoryOutboxStore', () => {
     expect((await store.list('u1')).map((o) => o.state)).toEqual(['pending']);
   });
 });
+
+describe('stuckFor', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { stuckFor, STUCK_AFTER_MS } = require('../outbox/stuck') as typeof import('../outbox/stuck');
+  const now = 10 * STUCK_AFTER_MS;
+  it('says how long the oldest unsent work has waited, once it has waited a day', () => {
+    expect(stuckFor([{ state: 'retry', createdAt: now - STUCK_AFTER_MS - 5 }, { state: 'pending', createdAt: now - 10 }], now)).toBe(STUCK_AFTER_MS + 5);
+    expect(stuckFor([{ state: 'pending', createdAt: now - STUCK_AFTER_MS + 1 }], now)).toBeNull();
+  });
+  it('ignores what was sent or needs the member, not the network', () => {
+    expect(stuckFor([{ state: 'done', createdAt: 0 }, { state: 'failed', createdAt: 0 }, { state: 'discarded', createdAt: 0 }], now)).toBeNull();
+  });
+});

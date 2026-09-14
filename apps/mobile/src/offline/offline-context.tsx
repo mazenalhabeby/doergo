@@ -4,29 +4,19 @@ import { useAuth } from '../contexts/auth-context';
 import { observeResponses } from '../lib/api/client';
 import { setResponseCache } from '../lib/api/response-cache';
 import { noteServerTime } from './clock';
-import { ConnectivityMonitor, type Connectivity } from './connectivity';
-import { openOfflineDatabase } from './db/database';
-import { RecordsStore } from './db/records-store';
-import { SqliteOutboxStore } from './db/sqlite-outbox-store';
-import { File as FsFile } from 'expo-file-system';
-import { httpMediaLinks, httpObjectUploader, httpSyncTransport } from './http-transport';
-import { MediaCache } from './files/media-cache';
-import { OfflinePreferencesStore } from './preferences';
-import { DeviceFileDisk } from './files/device-file-disk';
-import { OfflineFiles } from './files/offline-files';
-import { SqliteFileRegistry } from './files/sqlite-file-registry';
-import { FileUploadPreparer } from './files/upload-preparer';
-import { uuidv7 } from './ids';
+import type { Connectivity } from './connectivity';
+import type { RecordsStore } from './db/records-store';
+import type { MediaCache } from './files/media-cache';
+import type { OfflineFiles } from './files/offline-files';
+import type { OfflinePreferencesStore } from './preferences';
 import { flushPendingRoute } from '../services/background-route-tracking';
 import { offlineCapableBuild } from './native';
-import { SyncEngine, type SyncSnapshot } from './sync-engine';
+import { connectivity, createOfflineRuntime } from './runtime';
+import { registerBackgroundSync } from './background-sync';
+import type { SyncEngine, SyncSnapshot } from './sync-engine';
 import type { OutboxOp } from './outbox/types';
 
-/**
- * One connectivity monitor for the whole app, fed by every request — not only
- * the offline path — so "limited" is noticed on whatever screen fails first.
- */
-export const connectivity = new ConnectivityMonitor();
+export { connectivity };
 let observing = false;
 function observeOnce() {
   if (observing) return;
@@ -99,37 +89,10 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
     const unsubscribers: (() => void)[] = [];
 
     (async () => {
-      const dbPromise = openOfflineDatabase(user.id);
-      if (!dbPromise) return;
-      const db = await dbPromise;
-      if (cancelled) return;
-      const records = new RecordsStore(db);
-      const registry = new SqliteFileRegistry(db);
-      const disk = DeviceFileDisk.forMember(user.id);
-      const files = new OfflineFiles({ registry, disk });
-      const preferences = new OfflinePreferencesStore(user.id);
-      await preferences.load();
-      const media = MediaCache.forMember(user.id, {
-        links: httpMediaLinks,
-        download: async (url, dest) => {
-          await FsFile.downloadFileAsync(url, dest, { idempotent: true });
-        },
-      });
-      engine = new SyncEngine({
-        userId: user.id,
-        organizationId: user.organizationId!,
-        store: new SqliteOutboxStore(db),
-        transport: httpSyncTransport,
-        records,
-        preparer: new FileUploadPreparer({
-          files: registry,
-          disk,
-          uploader: httpObjectUploader,
-          mayUpload: () => !preferences.current.photosOnWifiOnly || connectivity.unmetered,
-        }),
-        newId: () => uuidv7(),
-      });
-      await engine.start();
+      const runtime = await createOfflineRuntime({ userId: user.id, organizationId: user.organizationId! });
+      if (!runtime) return;
+      const { records, files, media, preferences } = runtime;
+      engine = runtime.engine;
       if (cancelled) {
         engine.stop();
         return;
@@ -146,6 +109,8 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
       }
 
       setValue({ available: true, engine: live, records, files, media, preferences, running: live });
+      // Syncs itself now and then with the app closed — best effort, never relied on.
+      void registerBackgroundSync({ userId: user.id, organizationId: user.organizationId! });
       setResponseCache({
         get: async (key) => (await records.get<{ body: unknown }>('http', key))?.data.body,
         put: (key, body) => records.upsert('http', { id: key, body } as never),

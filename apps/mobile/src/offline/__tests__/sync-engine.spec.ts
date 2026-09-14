@@ -232,3 +232,4 @@ describe('captureEvidence', () => {
     expect(captureEvidence()).not.toHaveProperty('anchor');
   });
 });
+

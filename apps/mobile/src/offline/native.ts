@@ -4,6 +4,7 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 type SQLiteLib = typeof import('expo-sqlite');
 type NetInfoLib = typeof import('@react-native-community/netinfo');
 type ImageManipulatorLib = typeof import('expo-image-manipulator');
+type BackgroundTaskLib = typeof import('expo-background-task');
 
 /*
   ⚠️ THE OFFLINE LAYER'S NATIVE PARTS ARE NEVER IMPORTED AT MODULE SCOPE.
@@ -21,6 +22,15 @@ type ImageManipulatorLib = typeof import('expo-image-manipulator');
 let sqlite: SQLiteLib | null | undefined;
 let netinfo: NetInfoLib | null | undefined;
 let manipulator: ImageManipulatorLib | null | undefined;
+let backgroundTask: BackgroundTaskLib | null | undefined;
+
+/** Optional: without it the app still syncs on opening, returning and reconnecting. */
+export function loadBackgroundTask(): BackgroundTaskLib | null {
+  if (backgroundTask !== undefined) return backgroundTask;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  backgroundTask = requireOptionalNativeModule('ExpoBackgroundTask') ? (require('expo-background-task') as BackgroundTaskLib) : null;
+  return backgroundTask;
+}
 
 /** Optional: without it a photo is kept at the size the camera gave. */
 export function loadImageManipulator(): ImageManipulatorLib | null {

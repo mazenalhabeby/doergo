@@ -2,6 +2,7 @@ import { useOffline, useSyncStatus } from '../../../src/offline/offline-context'
 import { destroyOfflineDatabase } from '../../../src/offline/db/database';
 import { DeviceFileDisk } from '../../../src/offline/files/device-file-disk';
 import { MediaCache } from '../../../src/offline/files/media-cache';
+import { unregisterBackgroundSync } from '../../../src/offline/background-sync';
 import { useState, useCallback, useRef } from 'react';
 import {
   View,
@@ -238,6 +239,7 @@ export default function ProfileScreen() {
     await logout();
     // Nothing unsent (or the member chose to delete it): the copy goes too.
     if (userId) {
+      await unregisterBackgroundSync();
       await destroyOfflineDatabase(userId).catch(() => undefined);
       DeviceFileDisk.forMember(userId).destroyAll();
       MediaCache.destroyForMember(userId);

@@ -2433,6 +2433,11 @@
     },
     "savedForLater": "Salvato su questo telefono: sarà inviato quando torni online.",
     "fromPhone": "Salvato su questo telefono",
-    "fromPhoneAt": "Salvato su questo telefono · aggiornato {{time}}"
+    "fromPhoneAt": "Salvato su questo telefono · aggiornato {{time}}",
+    "stuck": {
+      "title": "Lavoro in attesa su questo telefono",
+      "body_one": "{{count}} modifica attende da più di un giorno. Connettiti a internet perché non vada persa.",
+      "body_other": "{{count}} modifiche attendono da più di un giorno. Connettiti a internet perché non vadano perse."
+    }
   }
 }

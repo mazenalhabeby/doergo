@@ -195,6 +195,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       */
       ['expo-sqlite', { useSQLCipher: true }],
       /*
+        Background sync — sending queued work now and then with the app closed.
+        Best effort (WorkManager on Android, BGTaskScheduler on iOS) and NATIVE:
+        the offline layer checks for the module, so an older build just syncs
+        when opened, as before.
+      */
+      'expo-background-task',
+      /*
         The on-device text reader used by the business-card scanner needs iOS
         16. Stated here rather than left to a default, because the failure is a
         build error deep in a pod install rather than anything about OCR.
