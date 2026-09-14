@@ -103,7 +103,7 @@ export function RestCard({ entryId, plan, activeBreak, onChanged }: RestCardProp
                 })
               : t('attendance.rest.ofTotal', 'of {{total}}', { total: hm(target) })
             : t('attendance.rest.untimed', 'Untimed')}
-          {planned && !planned.isPaid ? ` · ${t('attendance.rest.unpaid', 'unpaid')}` : ''}
+          {planned && !planned.isPaid ? ` · ${t('attendance.rest.unpaid', 'not counted')}` : ''}
         </Text>
 
         {target != null && (
@@ -197,8 +197,8 @@ export function RestCard({ entryId, plan, activeBreak, onChanged }: RestCardProp
         {hm(next.durationMinutes)}
         {' · '}
         {next.isPaid
-          ? t('attendance.rest.paidNote', 'paid')
-          : t('attendance.rest.unpaidNote', 'comes off your paid hours')}
+          ? t('attendance.rest.paidNote', 'counts as work')
+          : t('attendance.rest.unpaidNote', 'comes off your counted hours')}
         {next.snoozeCount > 0
           ? ` · ${t('attendance.rest.postponedTimes', 'postponed {{n}}×', { n: next.snoozeCount })}`
           : ''}

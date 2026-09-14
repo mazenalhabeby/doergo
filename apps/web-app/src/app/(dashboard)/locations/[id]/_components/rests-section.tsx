@@ -94,8 +94,8 @@ export function RestsSection({ spaceId }: { spaceId: string }) {
                   <span className="font-medium text-foreground">{rule.name}</span>
                   <Badge variant={rule.isPaid ? "secondary" : "outline"} className="text-[10px]">
                     {rule.isPaid
-                      ? t("attendance.rests.paid", "Paid")
-                      : t("attendance.rests.unpaid", "Unpaid")}
+                      ? t("attendance.rests.paid", "Counts as work")
+                      : t("attendance.rests.unpaid", "Doesn't count")}
                   </Badge>
                   {rule.isRequired && (
                     <Badge variant="outline" className="text-[10px]">
@@ -328,8 +328,8 @@ function RestDialog({
 
           <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-4">
             <ToggleRow
-              label={t("attendance.rests.paidLabel", "Paid")}
-              hint={t("attendance.rests.paidHint", "An unpaid rest comes off the counted hours. The statutory break usually is unpaid.")}
+              label={t("attendance.rests.paidLabel", "Counts as work")}
+              hint={t("attendance.rests.paidHint", "A rest that doesn't count as work comes off the counted hours. The statutory break usually doesn't count.")}
               checked={isPaid}
               onChange={setIsPaid}
             />

@@ -99,7 +99,7 @@ export function RestPanel({ plan, activeBreak, dense, className }: RestPanelProp
               ? t("attendance.rest.overBy", "{{over}} past your {{total}}", { over: hm(elapsed - target), total: hm(target) })
               : t("attendance.rest.ofTotal", "of {{total}}", { total: hm(target) })
             : t("attendance.rest.untimed", "Untimed")}
-          {planned && !planned.isPaid ? ` · ${t("attendance.rest.unpaid", "unpaid")}` : ""}
+          {planned && !planned.isPaid ? ` · ${t("attendance.rest.unpaid", "not counted")}` : ""}
         </p>
 
         {target != null && (
@@ -167,8 +167,8 @@ export function RestPanel({ plan, activeBreak, dense, className }: RestPanelProp
             {hm(next.durationMinutes)}
             {" · "}
             {next.isPaid
-              ? t("attendance.rest.paidNote", "paid")
-              : t("attendance.rest.unpaidNote", "comes off your paid hours")}
+              ? t("attendance.rest.paidNote", "counts as work")
+              : t("attendance.rest.unpaidNote", "comes off your counted hours")}
             {next.snoozeCount > 0 ? ` · ${t("attendance.rest.postponedTimes", "postponed {{n}}×", { n: next.snoozeCount })}` : ""}
           </p>
 
