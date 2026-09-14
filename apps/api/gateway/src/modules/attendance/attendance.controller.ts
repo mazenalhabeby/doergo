@@ -508,6 +508,9 @@ export class AttendanceController {
       // matching: the plan is on the server and an id that is not in it simply
       // does not match, leaving an ordinary unplanned break.
       ruleId: dto.ruleId,
+      id: dto.id,
+      entryId: dto.entryId,
+      evidence: dto.evidence,
     });
   }
 
@@ -590,6 +593,8 @@ export class AttendanceController {
       userId: req.user.id,
       organizationId: req.user.organizationId,
       notes: dto.notes,
+      breakId: dto.breakId,
+      evidence: dto.evidence,
     });
   }
 

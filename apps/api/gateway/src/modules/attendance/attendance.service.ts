@@ -189,6 +189,9 @@ export class AttendanceService extends BaseGatewayService {
     notes?: string;
     /** The planned rest this satisfies; omitted = whichever is next. */
     ruleId?: string;
+    id?: string;
+    entryId?: string;
+    evidence?: unknown;
   }) {
     return this.send({ cmd: 'start_break' }, data);
   }
@@ -225,6 +228,8 @@ export class AttendanceService extends BaseGatewayService {
     /** Spaces the caller may see; null = org-wide, [] = none. */
     scopeSpaceIds?: string[] | null;
     notes?: string;
+    breakId?: string;
+    evidence?: unknown;
   }) {
     return this.send({ cmd: 'end_break' }, data);
   }

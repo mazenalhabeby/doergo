@@ -1887,7 +1887,13 @@
         "late": "Verspätet",
         "earlyDeparture": "Früher gegangen",
         "overtime": "Überstunden",
-        "unscheduled": "Ungeplant"
+        "unscheduled": "Ungeplant",
+        "recordedOffline": "Offline erfasst",
+        "unanchored": "Telefonuhr nicht geprüft",
+        "clockSuspect": "Telefonuhr verstellt",
+        "stale": "Über eine Woche später gesendet",
+        "fixMocked": "Standort vorgetäuscht",
+        "boundaryChanged": "Standortgrenze seitdem geändert"
       }
     },
     "locationsTab": {

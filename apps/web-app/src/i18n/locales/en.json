@@ -1887,7 +1887,13 @@
         "late": "Late",
         "earlyDeparture": "Left early",
         "overtime": "Overtime",
-        "unscheduled": "Unscheduled"
+        "unscheduled": "Unscheduled",
+        "recordedOffline": "Recorded offline",
+        "unanchored": "Phone clock not checked",
+        "clockSuspect": "Phone clock changed",
+        "stale": "Sent over a week late",
+        "fixMocked": "Mock location",
+        "boundaryChanged": "Site boundary changed since"
       }
     },
     "locationsTab": {

@@ -155,6 +155,32 @@ const FLAG_ORDER: Array<{ reason: string; chip: Omit<AttendanceChip, "key"> }> =
       fallback: "Unscheduled",
     },
   },
+  // How the entry was recorded — see packages/shared/src/sync/occurrence.ts.
+  // Red: a person should look. Amber: worth a glance. Muted: said, not judged.
+  {
+    reason: "FIX_MOCKED",
+    chip: { tone: "red", labelKey: "technicians.attendanceTab.flag.fixMocked", fallback: "Mock location" },
+  },
+  {
+    reason: "CLOCK_SUSPECT",
+    chip: { tone: "red", labelKey: "technicians.attendanceTab.flag.clockSuspect", fallback: "Phone clock changed" },
+  },
+  {
+    reason: "BOUNDARY_CHANGED",
+    chip: { tone: "amber", labelKey: "technicians.attendanceTab.flag.boundaryChanged", fallback: "Site boundary changed since" },
+  },
+  {
+    reason: "STALE",
+    chip: { tone: "amber", labelKey: "technicians.attendanceTab.flag.stale", fallback: "Sent over a week late" },
+  },
+  {
+    reason: "RECORDED_OFFLINE",
+    chip: { tone: "muted", labelKey: "technicians.attendanceTab.flag.recordedOffline", fallback: "Recorded offline" },
+  },
+  {
+    reason: "UNANCHORED",
+    chip: { tone: "muted", labelKey: "technicians.attendanceTab.flag.unanchored", fallback: "Phone clock not checked" },
+  },
 ]
 
 export function deriveAttendanceFlags(entry: TimeEntry): AttendanceChip[] {

@@ -98,6 +98,7 @@ describe('AttendanceService', () => {
       findMany: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       count: jest.fn(),
       aggregate: jest.fn(),
     },

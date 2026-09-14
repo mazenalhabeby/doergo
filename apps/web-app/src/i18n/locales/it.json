@@ -1887,7 +1887,13 @@
         "late": "In ritardo",
         "earlyDeparture": "Uscito prima",
         "overtime": "Straordinario",
-        "unscheduled": "Non pianificato"
+        "unscheduled": "Non pianificato",
+        "recordedOffline": "Registrato offline",
+        "unanchored": "Orologio del telefono non verificato",
+        "clockSuspect": "Orologio del telefono modificato",
+        "stale": "Inviato con oltre una settimana di ritardo",
+        "fixMocked": "Posizione simulata",
+        "boundaryChanged": "Confine della sede modificato da allora"
       }
     },
     "locationsTab": {

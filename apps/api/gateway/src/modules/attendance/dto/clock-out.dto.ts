@@ -1,5 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsNumber, IsOptional, IsString, MaxLength, Matches, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+import { CLIENT_ID } from '../../../common/dto/upload.dto';
+import { OccurrenceEvidenceDto } from '../../../common/dto/occurrence.dto';
 
 export class ClockOutDto {
   // Optional: clock-out is allowed without a GPS fix. When absent the geofence
@@ -38,4 +41,16 @@ export class ClockOutDto {
   @IsOptional()
   @MaxLength(500)
   earlyReason?: string;
+
+  @ApiPropertyOptional({ description: 'The shift this closes — a phone that clocked in offline names the entry it made' })
+  @IsOptional()
+  @IsString()
+  @Matches(CLIENT_ID)
+  entryId?: string;
+
+  @ApiPropertyOptional({ type: OccurrenceEvidenceDto, description: 'When and where the tap happened, for an action recorded offline' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OccurrenceEvidenceDto)
+  evidence?: OccurrenceEvidenceDto;
 }

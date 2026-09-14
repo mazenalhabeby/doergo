@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   Logger,
   HttpStatus,
 } from '@nestjs/common';
@@ -19,6 +20,9 @@ import {
 import { BreakType, ApprovalStatus } from '@prisma/client';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { CountedTimeService } from './counted-time.service';
+import type { OccurrenceEvidence } from '@hbcfield/shared';
+import { judgeOccurrence } from '../../common/occurrence.util';
+import { SAME_TAP_MS } from './attendance-occurrence';
 import { parseBreakPlan, outstandingBreaks, markTaken, nextBreakRemindAt as nextRestAt, snooze as snoozePlan } from '@hbcfield/shared';
 
 @Injectable()
@@ -48,12 +52,28 @@ export class BreakService {
      * when a rest is EXPECTED, never that no other rest may happen.
      */
     ruleId?: string;
+    /** The break's id, made on the phone — a resend returns the same break. */
+    id?: string;
+    /** The shift it belongs to, named by a phone that clocked in offline. */
+    entryId?: string;
+    /** When the tap happened, for a break recorded offline. */
+    evidence?: OccurrenceEvidence;
   }) {
     this.logger.log(`Start break: user=${data.userId}, type=${data.type || 'SHORT'}`);
+
+    if (data.id) {
+      const prior = await this.prisma.break.findUnique({ where: { id: data.id }, include: { timeEntry: { select: { userId: true } } } });
+      if (prior) {
+        if (prior.timeEntry.userId !== data.userId) throw new ConflictException({ message: 'This id is already in use', code: 'ID_IN_USE' });
+        const { timeEntry: _owner, ...breakRecord } = prior;
+        return success(breakRecord, 'Break started');
+      }
+    }
 
     // Find active clock-in entry
     const entry = await this.prisma.timeEntry.findFirst({
       where: {
+        ...(data.entryId ? { id: data.entryId } : {}),
         userId: data.userId,
         organizationId: data.organizationId,
         status: TimeEntryStatus.CLOCKED_IN,
@@ -74,6 +94,12 @@ export class BreakService {
       throw new BadRequestException('You are already on a break. End your current break first.');
     }
 
+    // The tap's own time; not before the shift began, nor before the last rest ended.
+    const lastRest = data.evidence
+      ? await this.prisma.break.findFirst({ where: { timeEntryId: entry.id, endedAt: { not: null } }, orderBy: { endedAt: 'desc' }, select: { endedAt: true } })
+      : null;
+    const occurrence = judgeOccurrence(data.evidence, lastRest?.endedAt ?? entry.clockInAt);
+
     /*
       Which planned rest is this, and does it come off the paid time?
 
@@ -90,11 +116,12 @@ export class BreakService {
       outstandingBreaks(plan)[0] ||
       null;
 
-    const startedAt = new Date();
+    const startedAt = occurrence.at;
 
     // Create break record
     const breakRecord = await this.prisma.break.create({
       data: {
+        ...(data.id ? { id: data.id } : {}),
         timeEntryId: entry.id,
         type: (data.type as any) || 'SHORT',
         startedAt,
@@ -366,8 +393,32 @@ export class BreakService {
     userId: string;
     organizationId: string;
     notes?: string;
+    /** The break this ends, named by a phone that started it offline. */
+    breakId?: string;
+    /** When the tap happened, for a break ended offline. */
+    evidence?: OccurrenceEvidence;
   }) {
     this.logger.log(`End break: user=${data.userId}`);
+
+    /*
+      A named break that is already over: the same tap sent twice gets the same
+      answer; one ended some other way is a conflict, never overwritten.
+    */
+    if (data.breakId) {
+      const named = await this.prisma.break.findFirst({
+        where: { id: data.breakId, timeEntry: { userId: data.userId, organizationId: data.organizationId } },
+      });
+      if (!named) throw new BadRequestException('You are not currently on a break');
+      if (named.endedAt) {
+        const tapAt = data.evidence ? new Date(data.evidence.occurredAt).getTime() : NaN;
+        if (Math.abs(named.endedAt.getTime() - tapAt) <= SAME_TAP_MS) return success(named, 'Break ended');
+        throw new ConflictException({
+          message: 'This break was already ended before your change arrived',
+          code: 'BREAK_ALREADY_ENDED',
+          params: { current: { id: named.id, endedAt: named.endedAt } },
+        });
+      }
+    }
 
     // Find active clock-in entry with active break
     const entry = await this.prisma.timeEntry.findFirst({
@@ -378,7 +429,7 @@ export class BreakService {
       },
       include: {
         breaks: {
-          where: { endedAt: null },
+          where: { endedAt: null, ...(data.breakId ? { id: data.breakId } : {}) },
         },
       },
     });
@@ -392,7 +443,7 @@ export class BreakService {
     }
 
     const activeBreak = entry.breaks[0];
-    const now = new Date();
+    const now = judgeOccurrence(data.evidence, activeBreak.startedAt).at;
     const durationMinutes = Math.round(
       (now.getTime() - activeBreak.startedAt.getTime()) / (1000 * 60),
     );
@@ -442,7 +493,7 @@ export class BreakService {
       where: { id: entry.id },
       data: {
         unpaidBreakMinutes,
-        nextBreakRemindAt: plan.length ? nextRestAt(plan, new Date()) : null,
+        nextBreakRemindAt: plan.length ? nextRestAt(plan, now) : null,
       },
     });
 

@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
@@ -41,6 +42,9 @@ import {
 } from '@hbcfield/shared';
 import { scopeWhere, scopeWhereOn, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
 import { CountedTimeService } from './counted-time.service';
+import type { OccurrenceEvidence } from '@hbcfield/shared';
+import { fixOfTap, judgeOccurrence } from '../../common/occurrence.util';
+import { alreadyClockedIn, approvalFor, sameRecordOrRefuse, SAME_TAP_MS } from './attendance-occurrence';
 import { BreakRulesService } from './break-rules.service';
 
 // Trimmed CompanyLocation projection for the hot attendance polls (P12) —
@@ -323,8 +327,44 @@ export class AttendanceService {
     isRemote?: boolean;
     /** Why they are away from the site, when they are. Optional, never trusted. */
     awayReason?: string;
+    /** The entry's id, made on the phone — a resend returns the same entry. */
+    id?: string;
+    /** When and where the tap happened, for a clock-in recorded offline. */
+    evidence?: OccurrenceEvidence;
   }) {
     this.logger.log(`Clock in attempt: user=${data.userId}, location=${data.locationId}, remote=${!!data.isRemote}`);
+
+    /*
+      ── A clock-in the phone already sent ──
+      Its id was made on the phone, so a resend — after the first reached the
+      server and only the answer was lost, even after the shift has since been
+      closed — returns that entry instead of starting a second shift.
+    */
+    if (data.id) {
+      const prior = await this.prisma.timeEntry.findUnique({ where: { id: data.id }, include: { location: true } });
+      if (prior) return success(sameRecordOrRefuse(prior, data.userId), 'Already clocked in');
+    }
+
+    /*
+      ── When it happened ──
+      The tap's own time, never the time it arrived: an 07:58 clock-in synced at
+      11:14 is a 07:58 clock-in, judged as late or on time at 07:58. It cannot be
+      earlier than the member's previous shift ended.
+    */
+    const lastClosed = data.evidence
+      ? await this.prisma.timeEntry.findFirst({
+          where: { userId: data.userId, clockOutAt: { not: null } },
+          orderBy: { clockOutAt: 'desc' },
+          select: { clockOutAt: true },
+        })
+      : null;
+    const occurrence = judgeOccurrence(data.evidence, lastClosed?.clockOutAt);
+    const tapFix = fixOfTap(data.evidence, occurrence.at, occurrence.flags);
+    if (tapFix) {
+      data.lat = tapFix.lat;
+      data.lng = tapFix.lng;
+      data.accuracy = tapFix.accuracy;
+    }
 
     // Any STAFF member may clock in (EMPLOYEE and ADMIN — admins clock in too);
     // only external portal CUSTOMER accounts are excluded. Previously this was
@@ -373,14 +413,10 @@ export class AttendanceService {
         where: { userId: data.userId, status: TimeEntryStatus.CLOCKED_IN },
         include: { location: true },
       });
-      if (already) {
-        throw new BadRequestException(
-          `You are already clocked in${already.location ? ` at ${already.location.name}` : ''}. Please clock out first.`,
-        );
-      }
+      if (already) throw alreadyClockedIn(already, occurrence.fromEvidence);
       const bucket = await this.getOrCreateRemoteBucket(data.organizationId);
       const place = await this.reverseGeocode(data.lat, data.lng);
-      const remoteClockInAt = new Date();
+      const remoteClockInAt = occurrence.at;
       // Remote clock-in: the bucket is a logical (pin-less) space, so anchor the
       // shift to the worker's own timezone.
       // Strip only what is genuinely derived — `expectedClockInAt` is a column.
@@ -407,8 +443,9 @@ export class AttendanceService {
         timezone: this.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? orgTz,
       });
 
-      const entry = await this.prisma.timeEntry.create({
-        data: {
+      const remoteFlags = [...occurrence.flags];
+      const entry = await this.createEntryOnce(data.id, data.userId, {
+          ...(data.id ? { id: data.id } : {}),
           userId: data.userId,
           locationId: bucket.id,
           status: TimeEntryStatus.CLOCKED_IN,
@@ -420,14 +457,12 @@ export class AttendanceService {
           isRemote: true,
           clockInPlace: place,
           timezone: this.resolveEntryTimezone(data.lat, data.lng, orgTz),
-          flagReasons: [],
-          approvalStatus: 'AUTO',
+          flagReasons: remoteFlags,
+          approvalStatus: approvalFor(remoteFlags),
           organizationId: data.organizationId,
           ...remoteStamp,
           breakPlan: remoteRests.breakPlan as never,
           nextBreakRemindAt: remoteRests.nextBreakRemindAt,
-        },
-        include: { location: true, user: { select: { firstName: true, lastName: true } } },
       });
       this.logger.log(`Remote clock in: entry=${entry.id}, user=${data.userId}, place=${place ?? 'unknown'}`);
       this.notificationClient.emit('attendance_clock_in', {
@@ -449,8 +484,10 @@ export class AttendanceService {
     // The window rule is shared with `listClockInLocations`, which decides what
     // the member is OFFERED. Two copies would eventually offer a workspace this
     // then refuses — which reads as the product being broken, not as a rule.
+    // Asked of the moment of the tap: an assignment that ended at noon still
+    // covers a clock-in made offline at 08:00 and sent at 14:00.
     const assignment = await this.prisma.spaceAssignment.findFirst({
-      where: { ...activeAssignmentWhere(data.userId), spaceId: data.locationId },
+      where: { ...activeAssignmentWhere(data.userId, occurrence.at), spaceId: data.locationId },
     });
 
     if (!assignment) {
@@ -470,11 +507,7 @@ export class AttendanceService {
       },
     });
 
-    if (existingEntry) {
-      throw new BadRequestException(
-        `You are already clocked in at ${existingEntry.location.name}. Please clock out first.`,
-      );
-    }
+    if (existingEntry) throw alreadyClockedIn(existingEntry, occurrence.fromEvidence);
 
     // Get location details
     const location = await this.prisma.companyLocation.findFirst({
@@ -545,8 +578,17 @@ export class AttendanceService {
       );
     }
 
-    const clockInTime = new Date();
-    const flagReasons: string[] = [];
+    const clockInTime = occurrence.at;
+    const flagReasons: string[] = [...occurrence.flags];
+
+    /*
+      Judged against today's boundary, which may not be the one that stood when
+      the member tapped. Rather than keep a history of boundaries, say so: a
+      person looks at an entry whose site moved while it was on its way.
+    */
+    if (occurrence.flags.includes('RECORDED_OFFLINE') && location.updatedAt > clockInTime) {
+      flagReasons.push('BOUNDARY_CHANGED');
+    }
 
     /*
       An away day is recorded as away, and reviewed.
@@ -595,7 +637,7 @@ export class AttendanceService {
       );
     }
 
-    const approvalStatus = flagReasons.length === 0 ? 'AUTO' : 'PENDING';
+    const approvalStatus = approvalFor(flagReasons);
 
     /*
       This shift's rests, resolved once and frozen onto the entry.
@@ -614,8 +656,8 @@ export class AttendanceService {
     });
 
     // Create time entry
-    const entry = await this.prisma.timeEntry.create({
-      data: {
+    const entry = await this.createEntryOnce(data.id, data.userId, {
+        ...(data.id ? { id: data.id } : {}),
         userId: data.userId,
         locationId: data.locationId,
         status: TimeEntryStatus.CLOCKED_IN,
@@ -636,11 +678,6 @@ export class AttendanceService {
         ...stampCols,
         breakPlan: restPlan.breakPlan as never,
         nextBreakRemindAt: restPlan.nextBreakRemindAt,
-      },
-      include: {
-        location: true,
-        user: { select: { firstName: true, lastName: true } },
-      },
     });
 
     this.logger.log(
@@ -663,6 +700,33 @@ export class AttendanceService {
     });
 
     return success(entry, `Clocked in at ${location.name}`);
+  }
+
+  /**
+   * Create a clock-in entry — once.
+   *
+   * ⚠️ Two constraints can refuse the insert, and they mean different things.
+   * The id (the phone sent the same clock-in twice, racing): return that entry.
+   * One open shift per member (`time_entries_one_open_per_user`): they are
+   * already clocked in — a conflict with the open entry, never a second shift.
+   */
+  private async createEntryOnce(id: string | undefined, userId: string, data: Record<string, unknown>) {
+    const include = { location: true, user: { select: { firstName: true, lastName: true } } } as const;
+    try {
+      return await this.prisma.timeEntry.create({ data: data as never, include });
+    } catch (err) {
+      if ((err as { code?: string })?.code !== 'P2002') throw err;
+      if (id) {
+        const same = await this.prisma.timeEntry.findUnique({ where: { id }, include });
+        if (same) return sameRecordOrRefuse(same, userId);
+      }
+      const open = await this.prisma.timeEntry.findFirst({
+        where: { userId, status: TimeEntryStatus.CLOCKED_IN },
+        include: { location: true },
+      });
+      if (open) throw alreadyClockedIn(open, true);
+      throw err;
+    }
   }
 
   /** Find or create the org's geofence-exempt "Remote" bucket location. */
@@ -752,23 +816,59 @@ export class AttendanceService {
      * a clock-out is a time system people work around.
      */
     earlyReason?: string;
+    /**
+     * Which shift this closes. A phone that clocked in offline names the entry
+     * it made, so a clock-out can never close a different shift than the one
+     * the member was looking at.
+     */
+    entryId?: string;
+    /** When and where the tap happened, for a clock-out recorded offline. */
+    evidence?: OccurrenceEvidence;
   }) {
-    this.logger.log(`Clock out attempt: user=${data.userId}`);
+    this.logger.log(`Clock out attempt: user=${data.userId}${data.entryId ? `, entry=${data.entryId}` : ''}`);
 
-    // Find active clock-in entry
-    const entry = await this.prisma.timeEntry.findFirst({
-      where: {
-        userId: data.userId,
-        organizationId: data.organizationId,
-        status: TimeEntryStatus.CLOCKED_IN,
-      },
-      include: {
-        location: true,
-      },
-    });
+    const entry = data.entryId
+      ? await this.prisma.timeEntry.findFirst({
+          where: { id: data.entryId, userId: data.userId, organizationId: data.organizationId },
+          include: { location: true, breaks: { select: { endedAt: true } } },
+        })
+      : await this.prisma.timeEntry.findFirst({
+          where: { userId: data.userId, organizationId: data.organizationId, status: TimeEntryStatus.CLOCKED_IN },
+          include: { location: true, breaks: { select: { endedAt: true } } },
+        });
 
     if (!entry) {
       throw new BadRequestException('You are not currently clocked in');
+    }
+
+    /*
+      Already closed. The same tap sent twice gets the same answer; a shift
+      closed some other way meanwhile (a manager, "I forgot to clock out") is a
+      conflict the member sees, never silently overwritten.
+    */
+    if (entry.status !== TimeEntryStatus.CLOCKED_IN) {
+      const tapAt = data.evidence ? new Date(data.evidence.occurredAt).getTime() : NaN;
+      if (entry.clockOutAt && Math.abs(entry.clockOutAt.getTime() - tapAt) <= SAME_TAP_MS) {
+        return success(entry, 'Already clocked out');
+      }
+      throw new ConflictException({
+        message: 'This shift was already closed before your clock-out arrived',
+        code: 'ENTRY_ALREADY_CLOSED',
+        params: { current: { id: entry.id, status: entry.status, clockOutAt: entry.clockOutAt } },
+      });
+    }
+
+    // Not before the shift began, nor before a rest in it ended.
+    const lastRestEnd = (entry.breaks ?? []).reduce<Date | null>(
+      (latest, b) => (b.endedAt && (!latest || b.endedAt > latest) ? b.endedAt : latest),
+      null,
+    );
+    const occurrence = judgeOccurrence(data.evidence, lastRestEnd ?? entry.clockInAt);
+    const tapFix = fixOfTap(data.evidence, occurrence.at, occurrence.flags);
+    if (tapFix) {
+      data.lat = tapFix.lat;
+      data.lng = tapFix.lng;
+      data.accuracy = tapFix.accuracy;
     }
 
     // Geofence is only evaluable when BOTH the device and the location have
@@ -797,13 +897,13 @@ export class AttendanceService {
     const withinGeofence = atOut ? atOut.inside : true;
 
     // Calculate total minutes worked
-    const clockOutTime = new Date();
+    const clockOutTime = occurrence.at;
     const totalMinutes = Math.round(
       (clockOutTime.getTime() - entry.clockInAt.getTime()) / (1000 * 60),
     );
 
     // Smart auto-approval: evaluate clock-out against schedule
-    const flagReasons: string[] = [...(entry.flagReasons || [])];
+    const flagReasons: string[] = [...(entry.flagReasons || []), ...occurrence.flags];
 
     /*
       Clocking out from outside the ring is a violation — unless the whole day
@@ -841,6 +941,7 @@ export class AttendanceService {
     // What the timesheet will read. The real times above are untouched.
     const counted = await this.countedTime.columnsFor(entry, clockOutTime, toleranceMin);
 
+
     /*
       How far short of the shift this falls.
 
@@ -857,7 +958,7 @@ export class AttendanceService {
 
     // Deduplicate flags
     const uniqueFlags = [...new Set(flagReasons)];
-    const approvalStatus = uniqueFlags.length === 0 ? 'AUTO' : 'PENDING';
+    const approvalStatus = approvalFor(uniqueFlags);
 
     // Remote shifts capture a coarse place on clock-out too — only when we have
     // a fix to reverse-geocode.
@@ -866,7 +967,17 @@ export class AttendanceService {
         ? await this.reverseGeocode(data.lat as number, data.lng as number)
         : undefined;
 
-    // Update time entry
+    /*
+      Claimed, not overwritten: two clock-outs racing (the queue and a manager's
+      edit) must not both close the shift with different times.
+    */
+    const claimed = await this.prisma.timeEntry.updateMany({
+      where: { id: entry.id, status: TimeEntryStatus.CLOCKED_IN },
+      data: { status: TimeEntryStatus.CLOCKED_OUT, clockOutAt: clockOutTime },
+    });
+    if (claimed.count === 0) {
+      throw new ConflictException({ message: 'This shift was closed at the same moment', code: 'ENTRY_ALREADY_CLOSED' });
+    }
     const updatedEntry = await this.prisma.timeEntry.update({
       where: { id: entry.id },
       data: {

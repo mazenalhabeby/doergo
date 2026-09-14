@@ -1887,7 +1887,13 @@
         "late": "Tarde",
         "earlyDeparture": "Salió antes",
         "overtime": "Horas extra",
-        "unscheduled": "Sin programar"
+        "unscheduled": "Sin programar",
+        "recordedOffline": "Registrado sin conexión",
+        "unanchored": "Reloj del teléfono sin verificar",
+        "clockSuspect": "Reloj del teléfono cambiado",
+        "stale": "Enviado más de una semana tarde",
+        "fixMocked": "Ubicación simulada",
+        "boundaryChanged": "Límite del sitio cambiado desde entonces"
       }
     },
     "locationsTab": {

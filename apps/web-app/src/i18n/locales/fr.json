@@ -1887,7 +1887,13 @@
         "late": "En retard",
         "earlyDeparture": "Parti plus tôt",
         "overtime": "Heures supp.",
-        "unscheduled": "Non planifié"
+        "unscheduled": "Non planifié",
+        "recordedOffline": "Enregistré hors ligne",
+        "unanchored": "Horloge du téléphone non vérifiée",
+        "clockSuspect": "Horloge du téléphone modifiée",
+        "stale": "Envoyé plus d'une semaine après",
+        "fixMocked": "Position simulée",
+        "boundaryChanged": "Limite du site modifiée depuis"
       }
     },
     "locationsTab": {

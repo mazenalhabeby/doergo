@@ -13,6 +13,7 @@ import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.se
 import Redis from 'ioredis';
 import { TASK_LIST_INCLUDE, annotateTracksLocation } from './task-list-shape';
 import { buildTaskVisibilityWhere, type TaskVisibilityFacts } from './task-visibility';
+import { fixOfTap, judgeOccurrence } from '../../common/occurrence.util';
 import { createOnce } from '../../common/create-once.util';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -29,8 +30,6 @@ import {
   buildDateRangeFilter,
   haversineDistance,
   isAtSite,
-  assessOccurrence,
-  assessFix,
   type OccurrenceEvidence,
   ATTENDANCE_CONSTANTS,
   getStatusCapabilities,
@@ -1664,8 +1663,7 @@ export class TasksService {
       when its row was written: three changes made offline arrive in one push,
       seconds apart, and the second must be compared with 09:00, not 11:14.
     */
-    let occurredAt = new Date();
-    const occurrenceFlags: string[] = [];
+    let previousAt: Date | null = null;
     if (data.evidence) {
       const lastChange = await this.prisma.taskEvent.findFirst({
         where: { taskId: task.id, eventType: TaskEventType.STATUS_CHANGED },
@@ -1673,14 +1671,11 @@ export class TasksService {
         select: { createdAt: true, metadata: true },
       });
       const previousOccurred = (lastChange?.metadata as { occurredAt?: string } | null)?.occurredAt;
-      const previousAt = previousOccurred ? new Date(previousOccurred) : lastChange?.createdAt ?? null;
-      const assessed = assessOccurrence(data.evidence, { now: new Date(), previousAt });
-      if (assessed.refusal) {
-        throw new BadRequestException({ message: assessed.refusal.message, code: assessed.refusal.code });
-      }
-      occurredAt = assessed.occurredAt;
-      occurrenceFlags.push(...assessed.flags);
+      previousAt = previousOccurred ? new Date(previousOccurred) : lastChange?.createdAt ?? null;
     }
+    const judged = judgeOccurrence(data.evidence, previousAt);
+    const occurredAt = judged.at;
+    const occurrenceFlags = judged.flags;
 
     // Validate status transition — honor the task's workflow (its own, else its
     // space's) when present; otherwise the canonical field-service machine.
@@ -1759,13 +1754,8 @@ export class TasksService {
         The position of the TAP when the phone recorded one — a change synced
         from a basement must not be judged by where the phone is at sync time.
       */
-      const fix = data.evidence?.fix;
+      const fix = fixOfTap(data.evidence, occurredAt, occurrenceFlags);
       if (fix) {
-        const checked = assessFix(fix, occurredAt);
-        if (!checked.ok) {
-          if (checked.code === 'FIX_MOCKED') occurrenceFlags.push('FIX_MOCKED');
-          else throw new BadRequestException({ message: checked.message, code: checked.code });
-        }
         data.lat = fix.lat;
         data.lng = fix.lng;
         data.accuracy = fix.accuracy;

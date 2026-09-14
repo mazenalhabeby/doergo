@@ -160,6 +160,22 @@ export function assessFix(
   return { ok: true };
 }
 
+/**
+ * Flags that describe HOW something was recorded, not whether it is right.
+ *
+ * An entry recorded offline, or on a phone that restarted in the meantime, is
+ * shown as such — and still counts on its own. Sending every basement shift to
+ * a review queue would teach managers to approve the queue without reading it,
+ * which costs the entries that genuinely need a look (a moved clock, a mock
+ * location). Those are NOT in this set.
+ */
+export const INFORMATIONAL_FLAGS: ReadonlySet<string> = new Set(['RECORDED_OFFLINE', 'UNANCHORED']);
+
+/** The flags on an entry that should put it in front of a person. */
+export function flagsForReview(flags: readonly string[]): string[] {
+  return flags.filter((f) => !INFORMATIONAL_FLAGS.has(f));
+}
+
 /** Flags that stop an entry counting on its own until a person looks at it. */
 const NEEDS_A_PERSON: ReadonlySet<string> = new Set(['CLOCK_SUSPECT', 'STALE', 'BOUNDARY_CHANGED', 'ASSIGNMENT_CHANGED']);
 

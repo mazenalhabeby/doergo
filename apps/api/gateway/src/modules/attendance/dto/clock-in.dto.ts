@@ -1,5 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsBoolean, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsBoolean, MaxLength, Matches, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+import { CLIENT_ID } from '../../../common/dto/upload.dto';
+import { OccurrenceEvidenceDto } from '../../../common/dto/occurrence.dto';
 
 export class ClockInDto {
   // Optional: not needed for a remote clock-in (no fixed site).
@@ -41,4 +44,16 @@ export class ClockInDto {
   @IsOptional()
   @MaxLength(200)
   awayReason?: string;
+
+  @ApiPropertyOptional({ description: 'Id made on the phone; a resend returns the same record' })
+  @IsOptional()
+  @IsString()
+  @Matches(CLIENT_ID)
+  id?: string;
+
+  @ApiPropertyOptional({ type: OccurrenceEvidenceDto, description: 'When and where the tap happened, for an action recorded offline' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OccurrenceEvidenceDto)
+  evidence?: OccurrenceEvidenceDto;
 }

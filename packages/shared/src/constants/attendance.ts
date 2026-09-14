@@ -118,6 +118,13 @@ export const ATTENDANCE_FLAG_REASONS = {
   LATE_ARRIVAL: 'LATE_ARRIVAL',
   EARLY_DEPARTURE: 'EARLY_DEPARTURE',
   UNSCHEDULED_DAY: 'UNSCHEDULED_DAY',
+  // How it was recorded (see sync/occurrence.ts). The first two are informational.
+  RECORDED_OFFLINE: 'RECORDED_OFFLINE',
+  UNANCHORED: 'UNANCHORED',
+  CLOCK_SUSPECT: 'CLOCK_SUSPECT',
+  STALE: 'STALE',
+  FIX_MOCKED: 'FIX_MOCKED',
+  BOUNDARY_CHANGED: 'BOUNDARY_CHANGED',
 } as const;
 
 export type AttendanceFlagReason = typeof ATTENDANCE_FLAG_REASONS[keyof typeof ATTENDANCE_FLAG_REASONS];
@@ -131,4 +138,10 @@ export const FLAG_REASON_LABELS: Record<string, string> = {
   LATE_ARRIVAL: 'Late Arrival',
   EARLY_DEPARTURE: 'Early Departure',
   UNSCHEDULED_DAY: 'Unscheduled Day',
+  RECORDED_OFFLINE: 'Recorded offline',
+  UNANCHORED: 'Phone clock not checked',
+  CLOCK_SUSPECT: 'Phone clock changed',
+  STALE: 'Sent over a week late',
+  FIX_MOCKED: 'Mock location',
+  BOUNDARY_CHANGED: 'Site boundary changed since',
 };
