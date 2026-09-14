@@ -1,0 +1,83 @@
+/**
+ * Answers the server gave this member, kept so a screen still opens with no
+ * signal.
+ *
+ * Every staff screen fetches its data itself; wrapping each in its own offline
+ * logic would be dozens of copies of one rule. Instead the one API client asks
+ * this: a GET that fails for want of a network is answered with the last
+ * answer to the same request, if this phone has one.
+ *
+ * The store is the member's ENCRYPTED offline database, plugged in by the
+ * offline layer (setResponseCache) and removed with it — never AsyncStorage,
+ * and never shared between members. A build without the offline layer plugs in
+ * nothing and behaves exactly as before.
+ */
+export interface ResponseCacheStore {
+  get(key: string): Promise<unknown | undefined>;
+  put(key: string, body: unknown): Promise<void>;
+}
+
+let store: ResponseCacheStore | null = null;
+
+export function setResponseCache(next: ResponseCacheStore | null): void {
+  store = next;
+}
+
+/*
+  An allow-list, not a deny-list: a new endpoint is kept only once somebody has
+  decided its answer is the member's own data and harmless to hold.
+
+  ⚠️ Never kept: sign-in, billing, signed links (they expire and are
+  credentials), the live map and presence (stale is wrong, not old), the sync
+  protocol itself (it has its own store), and the customer portal.
+*/
+const KEEP: readonly RegExp[] = [
+  /^\/attendance(\/|\?|$)/,
+  /^\/reports\//,
+  /^\/documents(\/|\?|$)/,
+  /^\/assets\/(mine|expenses\/mine|proposals\/mine|custody)/,
+  /^\/shift-issues(\/|\?|$)/,
+  /^\/employees\//,
+  /^\/overtime(\/|\?|$)/,
+  /^\/support(\/|\?|$)/,
+  /^\/chat(\/|\?|$)/,
+  /^\/customers(\/|\?|$)/,
+  /^\/users\/me(\?|$)/,
+  /^\/locations(\/|\?|$)/,
+  /^\/organizations\/(members|join-code)(\/|\?|$)/,
+  /^\/join-requests(\?|$)/,
+  /^\/invitations(\?|$)/,
+  /^\/custom-fields(\/|\?|$)/,
+  /^\/routes(\/|\?|$)/,
+];
+const NEVER: readonly RegExp[] = [
+  /url(\?|$)/i, /presign/i, /download/i, /\/sync\//, /\/tracking\//,
+  /*
+    Read offline by their own, richer path — pulled records with unsent changes
+    laid on top, on a screen that says the copy is from the phone. A kept
+    response would answer first, older, and pretend to be fresh. (Tasks are not
+    in the list above for the same reason: src/offline/tasks.)
+  */
+  /^\/attendance\/(status|breaks\/status)(\?|$)/,
+  /^\/attendance\/entries\/[^/]+\/worklog(\?|$)/,
+];
+
+export function isKeptResponse(endpoint: string): boolean {
+  return KEEP.some((r) => r.test(endpoint)) && !NEVER.some((r) => r.test(endpoint));
+}
+
+/** Save an answer. Never fails the request it belongs to. */
+export function keepResponse(endpoint: string, body: unknown): void {
+  if (!store || !isKeptResponse(endpoint)) return;
+  void store.put(endpoint, body).catch(() => undefined);
+}
+
+/** The last answer to this request, when there is no network to ask. */
+export async function keptResponse(endpoint: string): Promise<unknown | undefined> {
+  if (!store || !isKeptResponse(endpoint)) return undefined;
+  try {
+    return await store.get(endpoint);
+  } catch {
+    return undefined;
+  }
+}

@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import { keepResponse, keptResponse } from './response-cache';
 
 // Dynamically get API URL based on Expo dev server host
 export function getApiUrl(): string {
@@ -345,7 +346,7 @@ export async function fetchWithAuth<T>(
     }
   }
 
-  const promise = _fetchWithAuthInner<T>(endpoint, options, retry);
+  const promise = method === 'GET' ? getKeptWhenOffline<T>(endpoint, options, retry) : _fetchWithAuthInner<T>(endpoint, options, retry);
 
   if (method === 'GET') {
     inflightRequests.set(endpoint, promise);
@@ -353,6 +354,25 @@ export async function fetchWithAuth<T>(
   }
 
   return promise;
+}
+
+/**
+ * A GET that keeps its answer, and falls back to the kept one when there is no
+ * network (see response-cache.ts). A refusal from the server is never masked —
+ * only "could not reach it".
+ */
+async function getKeptWhenOffline<T>(endpoint: string, options: RequestInit, retry: boolean): Promise<T> {
+  try {
+    const body = await _fetchWithAuthInner<T>(endpoint, options, retry);
+    keepResponse(endpoint, body);
+    return body;
+  } catch (err) {
+    if (err instanceof ApiError && (err.statusCode === 0 || err.statusCode === 408)) {
+      const kept = await keptResponse(endpoint);
+      if (kept !== undefined) return kept as T;
+    }
+    throw err;
+  }
 }
 
 async function _fetchWithAuthInner<T>(

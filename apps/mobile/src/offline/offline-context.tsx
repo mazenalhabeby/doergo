@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState, useSync
 import { AppState } from 'react-native';
 import { useAuth } from '../contexts/auth-context';
 import { observeResponses } from '../lib/api/client';
+import { setResponseCache } from '../lib/api/response-cache';
 import { noteServerTime } from './clock';
 import { ConnectivityMonitor, type Connectivity } from './connectivity';
 import { openOfflineDatabase } from './db/database';
@@ -121,6 +122,11 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
       }
       const live = engine;
       setValue({ available: true, engine: live, records, files, media, preferences });
+      setResponseCache({
+        get: async (key) => (await records.get<{ body: unknown }>('http', key))?.data.body,
+        put: (key, body) => records.upsert('http', { id: key, body } as never),
+      });
+      unsubscribers.push(() => setResponseCache(null));
 
       /*
         On Wi-Fi, keep the photos of the tasks on this phone for offline viewing.
