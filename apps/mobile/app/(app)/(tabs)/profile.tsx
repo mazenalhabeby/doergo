@@ -1,9 +1,12 @@
+import { uuidv7 } from '../../../src/offline/ids';
+import type { AvatarChange } from '../../../src/offline/profile/pending-avatar';
+import { updateOwnProfile } from '../../../src/offline/profile/profile-actions';
 import { useOffline, useSyncStatus } from '../../../src/offline/offline-context';
 import { destroyOfflineDatabase } from '../../../src/offline/db/database';
 import { DeviceFileDisk } from '../../../src/offline/files/device-file-disk';
 import { MediaCache } from '../../../src/offline/files/media-cache';
 import { unregisterBackgroundSync } from '../../../src/offline/background-sync';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -71,7 +74,7 @@ const THEME_MODE_ICONS: Record<ThemeMode, string> = {
 // ---------------------------------------------------------------------------
 
 export default function ProfileScreen() {
-  const { user, logout, refreshUser } = useAuth();
+  const { user, logout, refreshUser, patchUser } = useAuth();
   const offline = useOffline();
   const { snapshot: syncSnapshot } = useSyncStatus();
   const [showUnsentConfirm, setShowUnsentConfirm] = useState(false);
@@ -101,6 +104,13 @@ export default function ProfileScreen() {
   const handleSetPresence = useCallback(async (presence: 'AVAILABLE' | 'BUSY' | 'AWAY') => {
     setSavingPresence(true);
     try {
+      if (offline.engine && user?.id) {
+        const outcome = await updateOwnProfile(offline.engine, user.id, { presence });
+        if (outcome.kind === 'refused') throw new Error(outcome.message);
+        patchUser({ presence });
+        if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
+        return;
+      }
       await userApi.setPresence(presence);
       await refreshUser();
     } catch (err) {
@@ -108,7 +118,7 @@ export default function ProfileScreen() {
     } finally {
       setSavingPresence(false);
     }
-  }, [refreshUser, toast, t]);
+  }, [refreshUser, toast, t, offline.engine, user?.id, patchUser]);
   const hasRefreshed = useRef(false);
   const lastFetchTimeRef = useRef(0);
 
@@ -127,13 +137,43 @@ export default function ProfileScreen() {
   const isTechnician = user?.role === Role.EMPLOYEE;
   const appVersion = Constants.expoConfig?.version || '1.0.0';
   const { status: versionStatus } = useVersionStatus();
-  const hasAvatar = !!user?.avatarUrl;
+  /*
+    A photo chosen (or removed) without signal shows at once and is sent when
+    a connection returns — see offline/profile/pending-avatar.ts.
+  */
+  const [pendingAvatar, setPendingAvatar] = useState<AvatarChange | null>(null);
+  useEffect(() => {
+    const queue = offline.avatar;
+    if (!queue) {
+      setPendingAvatar(null);
+      return;
+    }
+    void queue.current().then(setPendingAvatar);
+    return queue.subscribe((change) => {
+      setPendingAvatar(change);
+      if (!change) void refreshUser();
+    });
+  }, [offline.avatar, refreshUser]);
+  const shownAvatarUri = pendingAvatar?.kind === 'photo' ? pendingAvatar.uri
+    : pendingAvatar?.kind === 'remove' ? null
+    : user?.avatarUrl ? resolveMediaUrl(user.avatarUrl) : null;
+  const hasAvatar = !!shownAvatarUri;
 
   // ---- avatar upload flow ------------------------------------------------
 
   const uploadAvatar = useCallback(async (uri: string, fileName: string, mimeType: string) => {
     setAvatarLoading(true);
     try {
+      if (offline.avatar && offline.files) {
+        // Kept on the phone first, so it survives no signal and a closed app.
+        const fileId = uuidv7();
+        const kept = await offline.files.keep({ id: fileId, kind: 'photo', mime: mimeType, uri });
+        await offline.avatar.set({ kind: 'photo', fileId, uri: kept.path, mime: kept.mime, fileName, at: Date.now() });
+        const result = await offline.avatar.flush();
+        if (result === 'waiting') toast.info(t('offline.savedForLater'));
+        if (result === 'refused') toast.error(t('profile.uploadFailed'), t('profile.couldNotUpload'));
+        return;
+      }
       // Upload the avatar (multipart) — returns the new avatar URL
       await avatarApi.upload(uri, fileName, mimeType);
 
@@ -144,11 +184,17 @@ export default function ProfileScreen() {
     } finally {
       setAvatarLoading(false);
     }
-  }, [refreshUser]);
+  }, [refreshUser, offline.avatar, offline.files]);
 
   const handleRemoveAvatar = useCallback(async () => {
     setAvatarLoading(true);
     try {
+      if (offline.avatar) {
+        await offline.avatar.set({ kind: 'remove', at: Date.now() });
+        const result = await offline.avatar.flush();
+        if (result === 'waiting') toast.info(t('offline.savedForLater'));
+        return;
+      }
       await avatarApi.remove();
       await refreshUser();
     } catch (err: any) {
@@ -156,7 +202,7 @@ export default function ProfileScreen() {
     } finally {
       setAvatarLoading(false);
     }
-  }, [refreshUser]);
+  }, [refreshUser, offline.avatar]);
 
   const handleAvatarPress = useCallback(() => {
     if (avatarLoading) return;
@@ -265,8 +311,8 @@ export default function ProfileScreen() {
             <View style={styles.avatar}>
               <ActivityIndicator size="large" color={COLORS.white} />
             </View>
-          ) : hasAvatar ? (
-            <Image source={{ uri: resolveMediaUrl(user!.avatarUrl!) }} style={styles.avatarImage} />
+          ) : shownAvatarUri ? (
+            <Image source={{ uri: shownAvatarUri }} style={styles.avatarImage} />
           ) : (
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>

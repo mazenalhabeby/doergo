@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useAuth } from '../../../src/contexts/auth-context';
+import { useOffline } from '../../../src/offline/offline-context';
+import { updateOwnProfile } from '../../../src/offline/profile/profile-actions';
 import { useToast } from '../../../src/contexts/toast-context';
 import { userApi } from '../../../src/lib/api';
 import { SheetHeader, ScreenContainer } from '../../../src/components';
@@ -27,7 +29,8 @@ export default function TimeFormatScreen() {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, patchUser } = useAuth();
+  const offline = useOffline();
   const toast = useToast();
 
   const current: '24h' | '12h' = user?.timeFormat === '12h' ? '12h' : '24h';
@@ -37,6 +40,14 @@ export default function TimeFormatScreen() {
     if (value === current || saving) return;
     setSaving(true);
     try {
+      if (offline.engine && user?.id) {
+        // A display preference: shown at once, sent when it can be.
+        const outcome = await updateOwnProfile(offline.engine, user.id, { timeFormat: value });
+        if (outcome.kind === 'refused') throw new Error(outcome.message);
+        patchUser({ timeFormat: value });
+        toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('profile.timeFormat.updated'));
+        return;
+      }
       await userApi.setTimeFormat(value);
       await refreshUser();
       toast.success(t('profile.timeFormat.updated'));

@@ -34,6 +34,8 @@ interface AuthContextType {
   /** Set by an explicit sign-out; the login screen must not auto-prompt then. */
   signedOutByUser: boolean;
   refreshUser: () => Promise<void>;
+  /** Show a change the member made at once, before the server has it (a queued profile change). */
+  patchUser: (patch: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -81,6 +83,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuthFailureCallback(handleAuthFailure);
     setUserRefreshedCallback(handleUserRefreshed);
   }, [handleAuthFailure, handleUserRefreshed]);
+
+  const patchUser = useCallback((patch: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const merged = { ...prev, ...patch };
+      void SecureStore.setItemAsync(USER_KEY, JSON.stringify(merged));
+      return merged;
+    });
+  }, []);
 
   const refreshUser = useCallback(async () => {
     try {
@@ -223,6 +234,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         signedOutByUser,
         refreshUser,
+        patchUser,
       }}
     >
       {children}

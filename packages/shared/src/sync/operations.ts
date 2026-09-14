@@ -43,6 +43,7 @@ export const SYNC_OPERATIONS = {
   'shiftIssue.message': { method: 'POST', path: '/shift-issues/:issueId/messages' },
   'timeOff.request': { method: 'POST', path: '/employees/:employeeId/time-off' },
   'timeOff.cancel': { method: 'DELETE', path: '/employees/time-off/:timeOffId' },
+  'profile.update': { method: 'PATCH', path: '/users/me' },
   // Money & communication
   'expense.submit': { method: 'POST', path: '/assets/:assetId/expenses' },
   'proposal.raise': { method: 'POST', path: '/assets/proposals' },

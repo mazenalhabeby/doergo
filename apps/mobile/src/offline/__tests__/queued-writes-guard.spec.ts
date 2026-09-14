@@ -53,6 +53,10 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
   'app/(app)/asset-expense.tsx': { calls: { 'assetsApi.submitExpense': 1 }, why: FALLBACK },
   'app/(app)/send-document.tsx': { calls: { 'assetProposalsApi.raise': 1 }, why: FALLBACK },
   'app/(app)/(tabs)/time-off.tsx': { calls: { 'timeOffApi.cancel': 1 }, why: FALLBACK },
+  'app/(app)/(tabs)/profile.tsx': { calls: { 'userApi.setPresence': 1 }, why: FALLBACK },
+  'app/(app)/profile/time-format.tsx': { calls: { 'userApi.setTimeFormat': 1 }, why: FALLBACK },
+  // The client portal runs no offline layer: a client edits their name at home, not in a basement.
+  'app/(customer)/edit-profile.tsx': { calls: { 'userApi.updateProfile': 1 }, why: 'the customer portal has no outbox' },
   'src/components/worklog-sheet.tsx': {
     calls: { 'worklogApi.addNote': 1, 'worklogApi.confirmAttachment': 1 },
     why: 'directSave: the legacy path for a build without the offline layer',

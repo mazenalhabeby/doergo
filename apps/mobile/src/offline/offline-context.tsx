@@ -14,6 +14,10 @@ import type { OfflineFiles } from './files/offline-files';
 import type { OfflinePreferencesStore } from './preferences';
 import { flushPendingRoute } from '../services/background-route-tracking';
 import { flushKeptCheckIns } from '../services/kept-check-ins';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { avatarApi } from '../lib/api/auth';
+import { isUnreachable } from './actions/unreachable';
+import { createPendingAvatar, type PendingAvatar } from './profile/pending-avatar';
 import { offlineCapableBuild } from './native';
 import { connectivity, createOfflineRuntime } from './runtime';
 import { reportTelemetry } from './telemetry';
@@ -54,9 +58,11 @@ interface OfflineValue {
    * the sign-out guard and the sync status must read this one, not `engine`.
    */
   running: SyncEngine | null;
+  /** A new profile photo (or its removal) waiting for signal. */
+  avatar: PendingAvatar | null;
 }
 
-const UNAVAILABLE: OfflineValue = { available: false, engine: null, records: null, files: null, media: null, preferences: null, running: null };
+const UNAVAILABLE: OfflineValue = { available: false, engine: null, records: null, files: null, media: null, preferences: null, running: null, avatar: null };
 const OfflineContext = createContext<OfflineValue>(UNAVAILABLE);
 
 const EMPTY_SNAPSHOT: SyncSnapshot = { waiting: 0, attention: 0, pushing: false, pulling: false, lastSuccessAt: null };
@@ -113,7 +119,15 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      setValue({ available: true, engine: live, records, files, media, preferences, running: live });
+      const avatar = createPendingAvatar(user.id, {
+        storage: AsyncStorage,
+        upload: (uri, fileName, mime) => avatarApi.upload(uri, fileName, mime),
+        remove: () => avatarApi.remove(),
+        forgetFile: (id) => files.forget(id),
+        isUnreachable,
+      });
+      setValue({ available: true, engine: live, records, files, media, preferences, running: live, avatar });
+      void avatar.flush();
       // Syncs itself now and then with the app closed — best effort, never relied on.
       void registerBackgroundSync({ userId: user.id, organizationId: user.organizationId! });
       setResponseCache({
@@ -143,6 +157,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
           void live.syncAll().then(fillMediaCache);
           void flushPendingRoute();
           void flushKeptCheckIns();
+          void avatar.flush();
         }),
         // Wi-Fi arriving: photos held for it go now, and the image cache fills.
         connectivity.subscribeKind((unmetered) => {
@@ -178,6 +193,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
         void live.flush();
         void flushPendingRoute();
         void flushKeptCheckIns();
+        void avatar.flush();
         void clearAnsweredReminders();
       });
       unsubscribers.push(() => appState.remove());
