@@ -64,6 +64,8 @@ import { SpaceModulesModule } from './common/space-modules.service';
 import { OrgEventsModule } from './common/events/org-events.service';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { AppVersionInterceptor } from './common/interceptors/app-version.interceptor';
+import { IdempotencyModule } from './common/idempotency/idempotency.module';
+import { IdempotencyInterceptor } from './common/idempotency/idempotency.interceptor';
 import { StorageModule } from './common/storage/storage.module';
 
 @Module({
@@ -71,6 +73,7 @@ import { StorageModule } from './common/storage/storage.module';
     // Public: what mobile version is still allowed to talk to this API.
     AppVersionModule,
     StorageModule,
+    IdempotencyModule,
     AuthCacheModule,
     // Global: ModuleGuard is an APP_GUARD, so it is constructed in every
     // module's injector and its dependency has to be reachable from all of them.
@@ -229,6 +232,12 @@ import { StorageModule } from './common/storage/storage.module';
     {
       provide: APP_GUARD,
       useClass: ModuleGuard,
+    },
+    // The same request twice is the same request once (Idempotency-Key).
+    // ⚠️ BEFORE the audit interceptor: a replay must not write a second entry.
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: IdempotencyInterceptor,
     },
     // Auto-audit every mutating request (after guards, around the handler).
     {

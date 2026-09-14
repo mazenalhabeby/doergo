@@ -118,6 +118,22 @@ async function bootstrap() {
   app.enableCors({
     origin: corsOrigins.split(','),
     credentials: true,
+    // Readable by browser code; phones read headers regardless.
+    exposedHeaders: ['X-Server-Time', 'Idempotent-Replayed'],
+  });
+
+  /*
+    The server's clock on every response.
+
+    A phone offline for hours records WHEN each action happened on its own
+    clock. To tell a real 07:58 clock-in from a phone whose clock was moved, it
+    keeps the server time from its last successful response next to its own
+    monotonic uptime; the gap between the two, later, is the evidence. This
+    header is that anchor. Set before anything else so even an error carries it.
+  */
+  app.use((_req: unknown, res: { setHeader(k: string, v: string): void }, next: () => void) => {
+    res.setHeader('X-Server-Time', new Date().toISOString());
+    next();
   });
 
   // Global validation pipe
