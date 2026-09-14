@@ -14,11 +14,8 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../contexts/toast-context';
-import {
-  attendanceApi,
-  type AttendanceStatus,
-  type BreakStatus,
-} from '../../lib/api';
+import { useShift, useShiftActions } from '../../offline/attendance/use-shift';
+import { SyncChip } from '../../offline/components/sync-chip';
 import { LocationPickerSheet, ClockOutSheet } from '../../components';
 import { WorkLogSheet } from '../worklog-sheet';
 import { ReportIssueSheet, ShiftIssueThreadSheet, ShiftIssueListSheet } from '../shift-issue-sheet';
@@ -51,8 +48,11 @@ export function ShiftClockCard({
   const { t } = useTranslation();
   const toast = useToast();
 
-  const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
-  const [breakStatus, setBreakStatus] = useState<BreakStatus | null>(null);
+  // The shift from the server, or the phone's copy of it, with unsent changes on top.
+  const shift = useShift();
+  const attendanceStatus = shift.status;
+  const breakStatus = shift.breaks;
+  const shiftActions = useShiftActions();
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
 
   const [isClockLoading, setIsClockLoading] = useState(false);
@@ -66,20 +66,7 @@ export function ShiftClockCard({
   onChangedRef.current = onChanged;
 
   // ── Data fetching ──────────────────────────────────────────────────
-  const fetchStatus = useCallback(async () => {
-    const [statusData, breakData] = await Promise.all([
-      attendanceApi.getStatus().catch(() => null),
-      attendanceApi.getBreakStatus().catch(() => null),
-    ]);
-    if (statusData) setAttendanceStatus(statusData);
-    if (breakData) setBreakStatus(breakData);
-    if (statusData?.isClockedIn && statusData?.currentEntry) {
-      const clockInTime = new Date(statusData.currentEntry.clockInAt).getTime();
-      setElapsedMinutes(Math.floor((Date.now() - clockInTime) / 60000));
-    } else {
-      setElapsedMinutes(0);
-    }
-  }, []);
+  const fetchStatus = shift.refresh;
 
   // Initial load
   const initialFetchDoneRef = useRef(false);
@@ -96,21 +83,25 @@ export function ShiftClockCard({
     }, [fetchStatus])
   );
 
-  // Update elapsed time every minute
+  // Elapsed time, now and every minute
+  const clockInAt = attendanceStatus?.isClockedIn ? attendanceStatus.currentEntry?.clockInAt : undefined;
   useEffect(() => {
-    if (!attendanceStatus?.isClockedIn || !attendanceStatus?.currentEntry) return;
-    const interval = setInterval(() => {
-      const clockInTime = new Date(attendanceStatus.currentEntry!.clockInAt).getTime();
-      setElapsedMinutes(Math.floor((Date.now() - clockInTime) / 60000));
-    }, 60000);
+    if (!clockInAt) {
+      setElapsedMinutes(0);
+      return;
+    }
+    const tick = () => setElapsedMinutes(Math.floor((Date.now() - new Date(clockInAt).getTime()) / 60000));
+    tick();
+    const interval = setInterval(tick, 60000);
     return () => clearInterval(interval);
-  }, [attendanceStatus?.isClockedIn, attendanceStatus?.currentEntry]);
+  }, [clockInAt]);
 
   // Shared clock-in flow (GPS + location/remote picker) — one implementation
   // across the attendance tab and both home screens, so allowRemote members get
   // the "Work remotely" choice everywhere. (DRY)
   const clockIn = useClockIn({
     assignedLocations: attendanceStatus?.assignedLocations || [],
+    isClockedIn: !!attendanceStatus?.isClockedIn,
     onClockedIn: () => {
       fetchStatus();
       onChangedRef.current?.();
@@ -126,9 +117,16 @@ export function ShiftClockCard({
     setShowClockOutConfirm(false);
     setIsClockLoading(true);
     try {
+      const entryId = attendanceStatus?.currentEntry?.id;
+      if (!entryId) return;
       const location = await clockIn.getCurrentLocation();
-      if (!location) { setIsClockLoading(false); return; }
-      await attendanceApi.clockOut({ lat: location.lat, lng: location.lng, accuracy: location.accuracy, notes: notes || undefined });
+      if (!location) return;
+      const outcome = await shiftActions.clockOut({ entryId, fix: location, notes: notes || undefined });
+      if (outcome.kind === 'refused') {
+        toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('home.fullTime.failedToClockOut'));
+        return;
+      }
+      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
       await stopBackgroundHeartbeat();
       await stopGeofence();
       await fetchStatus();
@@ -160,6 +158,8 @@ export function ShiftClockCard({
                     {breakStatus?.isOnBreak === true ? ` · ☕ ${t('home.fullTime.onBreak')}` : ''}
                   </Text>
                 )}
+                {/* "Waiting to send" while this shift has something the server has not accepted. */}
+                <SyncChip entityId={attendanceStatus?.currentEntry?.id} />
               </View>
             </View>
             <TouchableOpacity

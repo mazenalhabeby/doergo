@@ -1,7 +1,5 @@
 import type { OutboxOp } from '../outbox/types';
-
-/** States in which a queued change still counts for what the member sees. */
-const STILL_MINE = new Set(['pending', 'inflight', 'retry', 'awaiting_auth']);
+import { STILL_MINE } from '../actions/outcome';
 
 /**
  * The task as the member sees it: the server's copy with their own changes the

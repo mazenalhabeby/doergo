@@ -733,6 +733,18 @@
       "later": "Plus tard",
       "allDone": "Toutes vos pauses sont prises.",
       "allDoneWithMissed": "Plus rien pour aujourd’hui."
+    },
+    "offline": {
+      "notHere": "Pointage non effectué",
+      "clockedInSaved": "Arrivée pointée · enregistrée sur ce téléphone",
+      "clockedInSavedBody": "Enregistrée avec l'heure et votre position. Envoyée dès que vous êtes de nouveau en ligne.",
+      "refused": {
+        "ALREADY_CLOCKED_IN": "Vous avez déjà pointé votre arrivée sur ce téléphone.",
+        "FIX_MISSING": "Votre position est introuvable. Sortez ou approchez-vous d'une fenêtre, puis réessayez.",
+        "FIX_INACCURATE": "Votre position n'est pas encore assez précise (100 m maximum). Patientez un instant et réessayez.",
+        "FIX_NOT_AT_TAP": "Votre position n'est plus à jour. Réessayez pour en obtenir une nouvelle.",
+        "OUTSIDE_SITE": "Vous êtes à {{distance}} m de {{location}}, qui n'accepte les pointages qu'à moins de {{radius}} m. Rapprochez-vous et réessayez."
+      }
     }
   },
   "overtime": {
@@ -2391,7 +2403,15 @@
       "PHOTO_NOT_KEPT": "La photo n'a pas pu être enregistrée sur ce téléphone. Reprenez-la.",
       "PHOTO_REFUSED": "Le serveur n'a pas accepté cette photo.",
       "FILE_MISSING": "La photo n'est plus sur ce téléphone, elle ne peut donc pas être envoyée.",
-      "TASK_STATE_CONFLICT": "Le bureau a modifié cela avant l'arrivée de votre modification."
+      "TASK_STATE_CONFLICT": "Le bureau a modifié cela avant l'arrivée de votre modification.",
+      "ALREADY_CLOCKED_IN": "Vous aviez déjà pointé votre arrivée quand ce pointage est arrivé.",
+      "ENTRY_ALREADY_CLOSED": "Ce service était déjà clôturé avant l'arrivée de votre départ.",
+      "BREAK_ALREADY_ENDED": "Cette pause était déjà terminée avant l'arrivée de votre modification.",
+      "OUT_OF_ORDER": "Cela s'est produit avant l'étape qui le précède, donc impossible à appliquer.",
+      "OCCURRED_IN_FUTURE": "L'horloge de ce téléphone est en avance. Vérifiez la date et l'heure.",
+      "FIX_NOT_AT_TAP": "La position n'a pas été prise au moment de l'action.",
+      "FIX_INACCURATE": "La position n'était pas assez précise.",
+      "FIX_MISSING": "La position n'a pas pu être déterminée."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",

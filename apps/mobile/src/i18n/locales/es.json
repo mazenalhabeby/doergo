@@ -733,6 +733,18 @@
       "later": "Más tarde",
       "allDone": "Ha tomado todos sus descansos.",
       "allDoneWithMissed": "No queda nada para hoy."
+    },
+    "offline": {
+      "notHere": "No se ha fichado",
+      "clockedInSaved": "Entrada fichada · guardada en este teléfono",
+      "clockedInSavedBody": "Registrada con la hora y su ubicación. Se envía cuando vuelva a tener conexión.",
+      "refused": {
+        "ALREADY_CLOCKED_IN": "Ya ha fichado la entrada en este teléfono.",
+        "FIX_MISSING": "No se pudo determinar su ubicación. Salga al exterior o acérquese a una ventana e inténtelo de nuevo.",
+        "FIX_INACCURATE": "Su ubicación aún no es lo bastante precisa (debe estar dentro de 100 m). Espere un momento e inténtelo de nuevo.",
+        "FIX_NOT_AT_TAP": "Su ubicación está desactualizada. Inténtelo de nuevo para obtener una nueva.",
+        "OUTSIDE_SITE": "Está a {{distance}} m de {{location}}, que solo admite fichajes dentro de {{radius}} m. Acérquese e inténtelo de nuevo."
+      }
     }
   },
   "overtime": {
@@ -2391,7 +2403,15 @@
       "PHOTO_NOT_KEPT": "No se pudo guardar la foto en este teléfono. Vuelva a tomarla.",
       "PHOTO_REFUSED": "El servidor no aceptó esta foto.",
       "FILE_MISSING": "La foto ya no está en este teléfono, así que no se puede enviar.",
-      "TASK_STATE_CONFLICT": "La oficina cambió esto antes de que llegara tu cambio."
+      "TASK_STATE_CONFLICT": "La oficina cambió esto antes de que llegara tu cambio.",
+      "ALREADY_CLOCKED_IN": "Ya había fichado la entrada cuando llegó este fichaje.",
+      "ENTRY_ALREADY_CLOSED": "Este turno ya estaba cerrado antes de que llegara su salida.",
+      "BREAK_ALREADY_ENDED": "Esta pausa ya había terminado antes de que llegara su cambio.",
+      "OUT_OF_ORDER": "Ocurrió antes del paso al que sigue, así que no se pudo aplicar.",
+      "OCCURRED_IN_FUTURE": "El reloj de este teléfono va adelantado. Revise la fecha y la hora.",
+      "FIX_NOT_AT_TAP": "La ubicación no se tomó en el momento de la acción.",
+      "FIX_INACCURATE": "La ubicación no era lo bastante precisa.",
+      "FIX_MISSING": "No se pudo determinar la ubicación."
     },
     "signOut": {
       "title_one": "{{count}} cambio no se ha enviado",

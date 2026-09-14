@@ -1,18 +1,35 @@
 import { useState, useCallback, useRef } from 'react';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
-import { attendanceApi, CompanyLocation } from '../lib/api';
+import type { CompanyLocation } from '../lib/api';
 import { useAuth } from '../contexts/auth-context';
 import { useToast } from '../contexts/toast-context';
 import { startBackgroundHeartbeat } from '../services/background-heartbeat';
 import { startGeofenceForSpace } from '../services/background-geofence';
 import { haversineDistance } from '../lib/utils';
 import { mayClockInRemotely } from '@hbcfield/shared/client';
+import { connectivity } from '../offline/offline-context';
+import { useShiftActions } from '../offline/attendance/use-shift';
+import { checkClockInLocally } from '../offline/attendance/clock-in-check';
 
 interface Coords {
   lat: number;
   lng: number;
   accuracy: number;
+  /** When the fix was taken — the server checks it matches the tap. */
+  fixAt: string;
+  /** Android reports a position produced by a mock-location app. */
+  mocked?: boolean;
+}
+
+function coordsOf(loc: Location.LocationObject): Coords {
+  return {
+    lat: loc.coords.latitude,
+    lng: loc.coords.longitude,
+    accuracy: loc.coords.accuracy || 0,
+    fixAt: new Date(loc.timestamp).toISOString(),
+    mocked: loc.mocked,
+  };
 }
 
 /**
@@ -26,10 +43,13 @@ interface Coords {
 export function useClockIn(opts: {
   assignedLocations: CompanyLocation[];
   onClockedIn?: () => void | Promise<void>;
+  /** Already clocked in, as far as this phone knows — offline this is the only check there is. */
+  isClockedIn?: boolean;
 }) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const toast = useToast();
+  const actions = useShiftActions();
 
   // Keep the latest refetch callback without churning the memoised handlers.
   const onClockedInRef = useRef(opts.onClockedIn);
@@ -52,11 +72,7 @@ export function useClockIn(opts: {
         return null;
       }
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      const coords: Coords = {
-        lat: loc.coords.latitude,
-        lng: loc.coords.longitude,
-        accuracy: loc.coords.accuracy || 0,
-      };
+      const coords = coordsOf(loc);
       setCurrentLocation(coords);
       setIsGettingLocation(false);
       return coords;
@@ -65,11 +81,9 @@ export function useClockIn(opts: {
       try {
         const last = await Location.getLastKnownPositionAsync();
         if (last) {
-          const coords: Coords = {
-            lat: last.coords.latitude,
-            lng: last.coords.longitude,
-            accuracy: last.coords.accuracy || 0,
-          };
+          // Carries its OWN time: an old last-known position is not evidence of
+          // where this tap happened, and both the phone and the server say so.
+          const coords = coordsOf(last);
           setCurrentLocation(coords);
           setIsGettingLocation(false);
           return coords;
@@ -95,21 +109,38 @@ export function useClockIn(opts: {
     setIsClockingIn(true);
     setLocationModalVisible(false);
     try {
-      await attendanceApi.clockIn(
-        isRemoteSelected
-          ? {
-              isRemote: true,
-              lat: currentLocation.lat,
-              lng: currentLocation.lng,
-              accuracy: currentLocation.accuracy,
-            }
-          : {
-              locationId: selectedLocation!.id,
-              lat: currentLocation.lat,
-              lng: currentLocation.lng,
-              accuracy: currentLocation.accuracy,
-            },
-      );
+      /*
+        With no connection the phone is the only one who can answer, so it asks
+        the same rules the server will — and a refusal here is the refusal the
+        member would have had online. With a connection the server answers.
+      */
+      if (connectivity.state !== 'online') {
+        const verdict = checkClockInLocally({
+          location: isRemoteSelected ? null : selectedLocation,
+          fix: currentLocation,
+          alreadyClockedIn: !!opts.isClockedIn,
+        });
+        if (!verdict.ok) {
+          toast.error(
+            t('attendance.offline.notHere', 'Not clocked in'),
+            t(`attendance.offline.refused.${verdict.code}`, {
+              distance: verdict.distanceM ?? '?',
+              radius: verdict.radiusM ?? '?',
+              location: selectedLocation?.name ?? '',
+            }),
+          );
+          return;
+        }
+      }
+
+      const outcome = await actions.clockIn({
+        ...(isRemoteSelected ? { isRemote: true } : { locationId: selectedLocation!.id }),
+        fix: currentLocation,
+      });
+      if (outcome.kind === 'refused') {
+        toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('attendance.failedToClockIn'));
+        return;
+      }
       await startBackgroundHeartbeat();
       // Best-performance out-of-ring detection: monitor the space's ring natively
       // so the OS wakes us on exit even when the app is killed (skips for remote
@@ -117,12 +148,16 @@ export function useClockIn(opts: {
       // the "Always" permission geofencing also needs.
       if (!isRemoteSelected) await startGeofenceForSpace(selectedLocation);
       await onClockedInRef.current?.();
-      toast.success(
-        t('common.success'),
-        isRemoteSelected
-          ? t('attendance.clockedInRemotely', 'Clocked in remotely')
-          : t('attendance.clockedInAt', { location: selectedLocation!.name }),
-      );
+      if (outcome.kind === 'queued') {
+        toast.info(t('attendance.offline.clockedInSaved', 'Clocked in · saved on this phone'), t('attendance.offline.clockedInSavedBody', 'Recorded with the time and your location. It is sent when you are back online.'));
+      } else {
+        toast.success(
+          t('common.success'),
+          isRemoteSelected
+            ? t('attendance.clockedInRemotely', 'Clocked in remotely')
+            : t('attendance.clockedInAt', { location: selectedLocation!.name }),
+        );
+      }
     } catch (err) {
       toast.error(t('common.error'), err instanceof Error ? err.message : t('attendance.failedToClockIn'));
     } finally {
@@ -130,7 +165,7 @@ export function useClockIn(opts: {
       setSelectedLocation(null);
       setIsRemoteSelected(false);
     }
-  }, [currentLocation, selectedLocation, isRemoteSelected, t, toast]);
+  }, [currentLocation, selectedLocation, isRemoteSelected, opts.isClockedIn, actions, t, toast]);
 
   const getDistanceToLocation = useCallback(
     (location: CompanyLocation): number | null => {

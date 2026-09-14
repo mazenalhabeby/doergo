@@ -733,6 +733,18 @@
       "later": "Später",
       "allDone": "Alle Ihre Pausen sind genommen.",
       "allDoneWithMissed": "Heute steht nichts mehr an."
+    },
+    "offline": {
+      "notHere": "Nicht eingestempelt",
+      "clockedInSaved": "Eingestempelt · auf diesem Telefon gespeichert",
+      "clockedInSavedBody": "Mit Uhrzeit und Standort erfasst. Wird gesendet, sobald Sie wieder online sind.",
+      "refused": {
+        "ALREADY_CLOCKED_IN": "Sie sind auf diesem Telefon bereits eingestempelt.",
+        "FIX_MISSING": "Ihr Standort konnte nicht ermittelt werden. Gehen Sie ins Freie oder an ein Fenster und versuchen Sie es erneut.",
+        "FIX_INACCURATE": "Ihr Standort ist noch nicht genau genug (höchstens 100 m). Warten Sie kurz und versuchen Sie es erneut.",
+        "FIX_NOT_AT_TAP": "Ihr Standort ist veraltet. Versuchen Sie es erneut, um ihn neu zu bestimmen.",
+        "OUTSIDE_SITE": "Sie sind {{distance}} m von {{location}} entfernt; dort ist Einstempeln nur im Umkreis von {{radius}} m möglich. Gehen Sie näher heran und versuchen Sie es erneut."
+      }
     }
   },
   "overtime": {
@@ -2391,7 +2403,15 @@
       "PHOTO_NOT_KEPT": "Das Foto konnte auf diesem Telefon nicht gespeichert werden. Bitte nehmen Sie es erneut auf.",
       "PHOTO_REFUSED": "Der Server hat dieses Foto nicht angenommen.",
       "FILE_MISSING": "Das Foto ist nicht mehr auf diesem Telefon und kann daher nicht gesendet werden.",
-      "TASK_STATE_CONFLICT": "Das Büro hat dies geändert, bevor Ihre Änderung ankam."
+      "TASK_STATE_CONFLICT": "Das Büro hat dies geändert, bevor Ihre Änderung ankam.",
+      "ALREADY_CLOCKED_IN": "Sie waren bereits eingestempelt, als dieses Einstempeln ankam.",
+      "ENTRY_ALREADY_CLOSED": "Diese Schicht war bereits beendet, bevor Ihr Ausstempeln ankam.",
+      "BREAK_ALREADY_ENDED": "Diese Pause war bereits beendet, bevor Ihre Änderung ankam.",
+      "OUT_OF_ORDER": "Dies geschah vor dem Schritt, auf den es folgt, und konnte daher nicht übernommen werden.",
+      "OCCURRED_IN_FUTURE": "Die Uhr dieses Telefons geht vor. Prüfen Sie die Datums- und Uhrzeiteinstellungen.",
+      "FIX_NOT_AT_TAP": "Der Standort wurde nicht im Moment der Aktion bestimmt.",
+      "FIX_INACCURATE": "Der Standort war nicht genau genug.",
+      "FIX_MISSING": "Der Standort konnte nicht bestimmt werden."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",

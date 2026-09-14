@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { useToast } from '../contexts/toast-context';
 import { attendanceApi } from '../lib/api';
+import { useShiftActions } from '../offline/attendance/use-shift';
+import type { ActionOutcome } from '../offline/actions/outcome';
 import {
   outstandingBreaks,
   type BreakPlanItem,
@@ -30,16 +32,19 @@ function hm(mins: number): string {
 }
 
 export interface RestCardProps {
+  /** The shift these rests belong to — a rest recorded offline names it. */
+  entryId: string;
   plan: BreakPlanItem[];
   activeBreak?: { id: string; startedAt: string; ruleId?: string | null } | null;
   /** Refetch the shift after any of these actions. */
   onChanged: () => void;
 }
 
-export function RestCard({ plan, activeBreak, onChanged }: RestCardProps) {
+export function RestCard({ entryId, plan, activeBreak, onChanged }: RestCardProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const toast = useToast();
+  const shiftActions = useShiftActions();
   const [busy, setBusy] = useState<'start' | 'end' | 'later' | null>(null);
 
   /*
@@ -58,7 +63,11 @@ export function RestCard({ plan, activeBreak, onChanged }: RestCardProps) {
   const run = async (kind: 'start' | 'end' | 'later', fn: () => Promise<unknown>, ok: string) => {
     setBusy(kind);
     try {
-      await fn();
+      const result = (await fn()) as ActionOutcome | undefined;
+      if (result && typeof result === 'object' && 'kind' in result && result.kind === 'refused') {
+        toast.error((result.code && t(`offline.errors.${result.code}`, { defaultValue: '' })) || result.message || t('common.error', 'Something went wrong'));
+        return;
+      }
       onChanged();
       toast.success(ok);
     } catch (e) {
@@ -113,7 +122,7 @@ export function RestCard({ plan, activeBreak, onChanged }: RestCardProps) {
 
         <TouchableOpacity
           style={[styles.primary, { backgroundColor: '#059669' }]}
-          onPress={() => run('end', () => attendanceApi.endBreak(), t('attendance.rest.ended', 'Back to work'))}
+          onPress={() => run('end', () => shiftActions.endRest({ entryId, breakId: activeBreak.id }), t('attendance.rest.ended', 'Back to work'))}
           disabled={busy !== null}
           activeOpacity={0.8}
         >
@@ -201,7 +210,7 @@ export function RestCard({ plan, activeBreak, onChanged }: RestCardProps) {
           onPress={() =>
             run(
               'start',
-              () => attendanceApi.startBreak(undefined, undefined, next.ruleId),
+              () => shiftActions.startRest({ entryId, ruleId: next.ruleId }),
               t('attendance.rest.started', 'Rest started'),
             )
           }

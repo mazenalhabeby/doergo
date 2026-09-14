@@ -733,6 +733,18 @@
       "later": "Later",
       "allDone": "All your rests are taken.",
       "allDoneWithMissed": "Nothing more due today."
+    },
+    "offline": {
+      "notHere": "Not clocked in",
+      "clockedInSaved": "Clocked in · saved on this phone",
+      "clockedInSavedBody": "Recorded with the time and your location. It's sent when you're back online.",
+      "refused": {
+        "ALREADY_CLOCKED_IN": "You're already clocked in on this phone.",
+        "FIX_MISSING": "Your location couldn't be found. Step outside or near a window and try again.",
+        "FIX_INACCURATE": "Your location isn't precise enough yet (it needs to be within 100 m). Wait a moment and try again.",
+        "FIX_NOT_AT_TAP": "Your location is out of date. Try again to take a fresh one.",
+        "OUTSIDE_SITE": "You're {{distance}} m from {{location}}, which only accepts clock-ins within {{radius}} m. Move closer and try again."
+      }
     }
   },
   "overtime": {
@@ -2391,7 +2403,15 @@
       "PHOTO_NOT_KEPT": "The photo couldn't be saved on this phone. Try taking it again.",
       "PHOTO_REFUSED": "The server didn't accept this photo.",
       "FILE_MISSING": "The photo is no longer on this phone, so it can't be sent.",
-      "TASK_STATE_CONFLICT": "The office changed this before your change arrived."
+      "TASK_STATE_CONFLICT": "The office changed this before your change arrived.",
+      "ALREADY_CLOCKED_IN": "You were already clocked in when this clock-in arrived.",
+      "ENTRY_ALREADY_CLOSED": "This shift was already closed before your clock-out arrived.",
+      "BREAK_ALREADY_ENDED": "This rest was already ended before your change arrived.",
+      "OUT_OF_ORDER": "This happened before the step it follows, so it couldn't be applied.",
+      "OCCURRED_IN_FUTURE": "This phone's clock is ahead. Check its date and time settings.",
+      "FIX_NOT_AT_TAP": "The location wasn't taken at the moment of the action.",
+      "FIX_INACCURATE": "The location wasn't precise enough.",
+      "FIX_MISSING": "The location couldn't be determined."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",

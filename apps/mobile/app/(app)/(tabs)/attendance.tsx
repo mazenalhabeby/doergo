@@ -32,10 +32,8 @@ import {
 } from '../../../src/lib/constants';
 import {
   attendanceApi,
-  AttendanceStatus,
   TimeEntry,
   CompanyLocation,
-  BreakStatus,
   BreakType,
   GeofenceExcursion,
 } from '../../../src/lib/api';
@@ -50,6 +48,9 @@ import { OutOfRingSheet } from '../../../src/components/out-of-ring-sheet';
 import { AlwaysLocationNudge } from '../../../src/components/always-location-nudge';
 import { useExcursionSync } from '../../../src/hooks/useExcursionSync';
 import { useClockIn } from '../../../src/hooks/useClockIn';
+import { useShift, useShiftActions } from '../../../src/offline/attendance/use-shift';
+import { OfflineBanner } from '../../../src/offline/components/offline-banner';
+import { SyncChip } from '../../../src/offline/components/sync-chip';
 import { TourTarget } from '../../../src/components/tour';
 import { startBackgroundHeartbeat, stopBackgroundHeartbeat } from '../../../src/services/background-heartbeat';
 import { startGeofenceForSpace, stopGeofence } from '../../../src/services/background-geofence';
@@ -79,9 +80,12 @@ export default function AttendanceScreen() {
   const [error, setError] = useState<string | null>(null);
 
   // Attendance state
-  const [status, setStatus] = useState<AttendanceStatus | null>(null);
+  // The shift from the server or the phone's copy, with unsent changes on top.
+  const shift = useShift();
+  const status = shift.status;
+  const breakStatus = shift.breaks;
+  const shiftActions = useShiftActions();
   const [history, setHistory] = useState<TimeEntry[]>([]);
-  const [breakStatus, setBreakStatus] = useState<BreakStatus | null>(null);
   const [isBreakLoading, setIsBreakLoading] = useState(false);
 
   // Clock-in location/remote state lives in the shared useClockIn hook (below).
@@ -132,59 +136,32 @@ export default function AttendanceScreen() {
       lastFetchTimeRef.current = Date.now();
       setError(null);
       const results = await Promise.allSettled([
-        attendanceApi.getStatus(),
         attendanceApi.getHistory({ limit: 10 }),
-        attendanceApi.getBreakStatus(),
         overtimeApi.getActive(),
+        shift.refresh(),
       ]);
 
-      const statusData = results[0].status === 'fulfilled' ? results[0].value : null;
-      const historyData = results[1].status === 'fulfilled' ? results[1].value : null;
-      const breakData = results[2].status === 'fulfilled' ? results[2].value : null;
+      const historyData = results[0].status === 'fulfilled' ? results[0].value : null;
 
-      if (statusData) {
-        setStatus(statusData);
-        setActiveExcursion(statusData.activeExcursion ?? null);
-      }
       if (historyData) {
         // fetchWithAuth unwraps { data: T } → T, so historyData is already TimeEntry[]
         const entries = Array.isArray(historyData) ? historyData : (historyData as any).data || [];
         setHistory(entries);
       }
-      if (breakData) setBreakStatus(breakData);
-
-      const overtimeData = results[3].status === 'fulfilled' ? results[3].value : null;
+      const overtimeData = results[1].status === 'fulfilled' ? results[1].value : null;
       setActiveOvertime(overtimeData);
-
-      // Calculate elapsed time if clocked in
-      if (statusData?.isClockedIn && statusData?.currentEntry) {
-        const clockInTime = new Date(statusData.currentEntry.clockInAt).getTime();
-        const now = Date.now();
-        setElapsedMinutes(Math.floor((now - clockInTime) / 60000));
-      } else {
-        setElapsedMinutes(0);
-      }
-
-      // Calculate break elapsed time if on break
-      if (breakData?.isOnBreak && breakData?.currentBreak?.startedAt) {
-        const breakStartTime = new Date(breakData.currentBreak.startedAt).getTime();
-        const now = Date.now();
-        setBreakElapsedMinutes(Math.floor((now - breakStartTime) / 60000));
-      } else {
-        setBreakElapsedMinutes(0);
-      }
-
-      // Show error only if all requests failed
-      const allFailed = results.every((r) => r.status === 'rejected');
-      if (allFailed) {
-        const firstErr = (results[0] as PromiseRejectedResult).reason;
-        setError(firstErr instanceof Error ? firstErr.message : t('attendance.failedToLoadAttendance'));
-      }
+      // No error screen here: the shift falls back to the phone's copy, and
+      // history and overtime are allowed to be missing while offline.
     } catch (err) {
       console.error('Error fetching attendance:', err);
       setError(err instanceof Error ? err.message : t('attendance.failedToLoadAttendance'));
     }
-  }, []);
+  }, [shift.refresh]);
+
+  // The server's excursion rides on the status.
+  useEffect(() => {
+    if (status) setActiveExcursion(status.activeExcursion ?? null);
+  }, [status?.activeExcursion]);
 
   // Initial load
   useEffect(() => {
@@ -323,18 +300,18 @@ export default function AttendanceScreen() {
   }, [fetchAttendanceData]);
   useExcursionSync(onExcursionEvent, user?.id);
 
-  // Update elapsed time every minute
+  // Elapsed time, now and every minute
+  const clockInAt = status?.isClockedIn ? status.currentEntry?.clockInAt : undefined;
   useEffect(() => {
-    if (!status?.isClockedIn || !status?.currentEntry) return;
-
-    const interval = setInterval(() => {
-      const clockInTime = new Date(status.currentEntry!.clockInAt).getTime();
-      const now = Date.now();
-      setElapsedMinutes(Math.floor((now - clockInTime) / 60000));
-    }, 60000);
-
+    if (!clockInAt) {
+      setElapsedMinutes(0);
+      return;
+    }
+    const tick = () => setElapsedMinutes(Math.floor((Date.now() - new Date(clockInAt).getTime()) / 60000));
+    tick();
+    const interval = setInterval(tick, 60000);
     return () => clearInterval(interval);
-  }, [status?.isClockedIn, status?.currentEntry]);
+  }, [clockInAt]);
 
   // Update break elapsed time every second for live timer
   useEffect(() => {
@@ -369,8 +346,13 @@ export default function AttendanceScreen() {
   // across the attendance tab and both home screens. (DRY)
   const clockIn = useClockIn({
     assignedLocations: status?.assignedLocations || [],
+    isClockedIn: !!status?.isClockedIn,
     onClockedIn: () => fetchAttendanceData(),
   });
+
+  /** A refusal from the outbox, in the member's language. */
+  const refusalText = (o: { code?: string; message?: string }, fallback: string) =>
+    (o.code && t(`offline.errors.${o.code}`, { defaultValue: '' })) || o.message || fallback;
 
   // Handle clock out
   const handleClockOut = () => {
@@ -381,18 +363,21 @@ export default function AttendanceScreen() {
     setShowClockOutConfirm(false);
     setIsActionLoading(true);
     try {
+      const entryId = status?.currentEntry?.id;
+      if (!entryId) return;
+      // A clock-out never waits for a fix: without one it simply carries no position.
       const location = await clockIn.getCurrentLocation();
-      await attendanceApi.clockOut({
-        lat: location?.lat || 0,
-        lng: location?.lng || 0,
-        accuracy: location?.accuracy,
-        notes: notes || undefined,
-      });
+      const outcome = await shiftActions.clockOut({ entryId, fix: location, notes: notes || undefined });
+      if (outcome.kind === 'refused') {
+        toast.error(t('common.error'), refusalText(outcome, t('attendance.failedToClockOut')));
+        return;
+      }
       // Stop background heartbeat + geofence
       await stopBackgroundHeartbeat();
       await stopGeofence();
       await fetchAttendanceData();
-      toast.success(t('common.success'), t('attendance.clockedOutSuccess'));
+      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
+      else toast.success(t('common.success'), t('attendance.clockedOutSuccess'));
     } catch (err) {
       console.error('Clock out error:', err);
       toast.error(t('common.error'), err instanceof Error ? err.message : t('attendance.failedToClockOut'));
@@ -462,7 +447,13 @@ export default function AttendanceScreen() {
     closeBreakModal();
     setIsBreakLoading(true);
     try {
-      await attendanceApi.startBreak(pendingBreakType, breakNotes || undefined);
+      const entryId = status?.currentEntry?.id;
+      if (!entryId) return;
+      const outcome = await shiftActions.startRest({ entryId, type: pendingBreakType, notes: breakNotes || undefined });
+      if (outcome.kind === 'refused') {
+        toast.error(t('common.error'), refusalText(outcome, t('attendance.breaks.failedToStartBreak')));
+        return;
+      }
       await fetchAttendanceData();
       toast.success(t('attendance.breaks.breakStarted'), t('attendance.breaks.breakStartedMessage', { type: pendingBreakType.toLowerCase() }));
     } catch (err) {
@@ -480,7 +471,14 @@ export default function AttendanceScreen() {
     closeBreakModal();
     setIsBreakLoading(true);
     try {
-      await attendanceApi.endBreak(breakNotes || undefined);
+      const entryId = status?.currentEntry?.id;
+      const breakId = breakStatus?.currentBreak?.id;
+      if (!entryId || !breakId) return;
+      const outcome = await shiftActions.endRest({ entryId, breakId, notes: breakNotes || undefined });
+      if (outcome.kind === 'refused') {
+        toast.error(t('common.error'), refusalText(outcome, t('attendance.breaks.failedToEndBreak')));
+        return;
+      }
       await fetchAttendanceData();
       toast.info(t('attendance.breaks.breakEnded'), t('attendance.breaks.breakEndedMessage'));
     } catch (err) {
@@ -568,6 +566,9 @@ export default function AttendanceScreen() {
           />
         }
       >
+        {/* Offline, or changes still on their way — nothing otherwise. */}
+        <OfflineBanner style={styles.offlineBanner} />
+
         {/* Status Card */}
         <View style={[styles.statusCard, { backgroundColor: colors.card }]}>
           <TourTarget name="attendance-header" style={styles.statusHeader}>
@@ -580,6 +581,7 @@ export default function AttendanceScreen() {
             <Text style={[styles.statusTitle, { color: colors.textPrimary }]}>
               {isClockedIn ? t('attendance.clockedIn') : t('attendance.clockedOut')}
             </Text>
+            <SyncChip entityId={status?.currentEntry?.id} />
           </TourTarget>
 
           {/* Nudge to "Always" location — background detection needs it */}
@@ -692,6 +694,7 @@ export default function AttendanceScreen() {
           */}
           {isClockedIn && Array.isArray(currentEntry?.breakPlan) && currentEntry.breakPlan.length > 0 && (
             <RestCard
+              entryId={currentEntry.id}
               plan={currentEntry.breakPlan as BreakPlanItem[]}
               activeBreak={
                 breakStatus?.isOnBreak && breakStatus.currentBreak
@@ -1389,6 +1392,7 @@ export default function AttendanceScreen() {
 }
 
 const styles = StyleSheet.create({
+  offlineBanner: { marginHorizontal: SPACING.lg, marginTop: SPACING.md },
   container: {
     flex: 1,
   },

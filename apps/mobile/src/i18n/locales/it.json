@@ -733,6 +733,18 @@
       "later": "Più tardi",
       "allDone": "Ha preso tutte le sue pause.",
       "allDoneWithMissed": "Per oggi non resta altro."
+    },
+    "offline": {
+      "notHere": "Timbratura non registrata",
+      "clockedInSaved": "Entrata timbrata · salvata su questo telefono",
+      "clockedInSavedBody": "Registrata con l'orario e la tua posizione. Viene inviata quando torni online.",
+      "refused": {
+        "ALREADY_CLOCKED_IN": "Hai già timbrato l'entrata su questo telefono.",
+        "FIX_MISSING": "Impossibile trovare la tua posizione. Esci all'aperto o avvicinati a una finestra e riprova.",
+        "FIX_INACCURATE": "La tua posizione non è ancora abbastanza precisa (entro 100 m). Attendi un momento e riprova.",
+        "FIX_NOT_AT_TAP": "La tua posizione non è aggiornata. Riprova per rilevarne una nuova.",
+        "OUTSIDE_SITE": "Sei a {{distance}} m da {{location}}, che accetta timbrature solo entro {{radius}} m. Avvicinati e riprova."
+      }
     }
   },
   "overtime": {
@@ -2391,7 +2403,15 @@
       "PHOTO_NOT_KEPT": "Non è stato possibile salvare la foto su questo telefono. Scattala di nuovo.",
       "PHOTO_REFUSED": "Il server non ha accettato questa foto.",
       "FILE_MISSING": "La foto non è più su questo telefono, quindi non può essere inviata.",
-      "TASK_STATE_CONFLICT": "L'ufficio ha modificato questo prima che arrivasse la tua modifica."
+      "TASK_STATE_CONFLICT": "L'ufficio ha modificato questo prima che arrivasse la tua modifica.",
+      "ALREADY_CLOCKED_IN": "Avevi già timbrato l'entrata quando è arrivata questa timbratura.",
+      "ENTRY_ALREADY_CLOSED": "Questo turno era già chiuso prima che arrivasse la tua uscita.",
+      "BREAK_ALREADY_ENDED": "Questa pausa era già terminata prima che arrivasse la tua modifica.",
+      "OUT_OF_ORDER": "È avvenuto prima del passaggio a cui segue, quindi non è stato possibile applicarlo.",
+      "OCCURRED_IN_FUTURE": "L'orologio di questo telefono è avanti. Controlla data e ora.",
+      "FIX_NOT_AT_TAP": "La posizione non è stata rilevata al momento dell'azione.",
+      "FIX_INACCURATE": "La posizione non era abbastanza precisa.",
+      "FIX_MISSING": "Impossibile determinare la posizione."
     },
     "signOut": {
       "title_one": "{{count}} modifica non è stata inviata",

@@ -18,16 +18,15 @@ import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import {
   attendanceApi,
-  type AttendanceStatus,
   type TimeEntry,
   type CompanyLocation,
-  type BreakStatus,
 } from '../../lib/api';
 import { LoadingState, ErrorState, ScreenContainer } from '../../components';
 import { ShiftClockCard } from './shift-clock-card';
 import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
 import { AlwaysLocationNudge } from '../always-location-nudge';
 import { useClockIn } from '../../hooks/useClockIn';
+import { useShift } from '../../offline/attendance/use-shift';
 import { useExcursionSync } from '../../hooks/useExcursionSync';
 import {
   formatDurationMinutes as formatDuration,
@@ -53,9 +52,11 @@ export function FullTimeHome() {
 
   // Attendance state — the clock-in/out widget (ShiftClockCard) owns its own
   // copy; this state drives the quick-stats / locations / history below.
-  const [status, setStatus] = useState<AttendanceStatus | null>(null);
+  // The shift from the server or the phone's copy — this screen must open in a basement.
+  const shift = useShift();
+  const status = shift.status;
+  const breakStatus = shift.breaks;
   const [history, setHistory] = useState<TimeEntry[]>([]);
-  const [breakStatus, setBreakStatus] = useState<BreakStatus | null>(null);
 
   // Timer for current shift
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
@@ -67,28 +68,21 @@ export function FullTimeHome() {
     try {
       lastFetchTimeRef.current = Date.now();
       setError(null);
-      const [statusData, historyData, breakData] = await Promise.all([
-        attendanceApi.getStatus(),
-        attendanceApi.getHistory({ limit: 5 }),
-        attendanceApi.getBreakStatus(),
+      // History is a nicety offline; the shift itself comes from useShift, which
+      // falls back to the phone's copy rather than failing the screen.
+      const [, historyData] = await Promise.all([
+        shift.refresh(),
+        attendanceApi.getHistory({ limit: 5 }).catch(() => null),
       ]);
-      setStatus(statusData);
-      const entries = Array.isArray(historyData) ? historyData : (historyData as any).data || [];
-      setHistory(entries);
-      setBreakStatus(breakData);
-
-      if (statusData.isClockedIn && statusData.currentEntry) {
-        const clockInTime = new Date(statusData.currentEntry.clockInAt).getTime();
-        const now = Date.now();
-        setElapsedMinutes(Math.floor((now - clockInTime) / 60000));
-      } else {
-        setElapsedMinutes(0);
+      if (historyData) {
+        const entries = Array.isArray(historyData) ? historyData : (historyData as any).data || [];
+        setHistory(entries);
       }
     } catch (err) {
       console.error('Error fetching attendance:', err);
       setError(err instanceof Error ? err.message : t('home.fullTime.failedToLoadAttendance'));
     }
-  }, []);
+  }, [shift.refresh]);
 
   // Initial load
   useEffect(() => {
@@ -113,18 +107,18 @@ export function FullTimeHome() {
     }, [fetchAttendanceData])
   );
 
-  // Update elapsed time every minute
+  // Elapsed time, now and every minute
+  const clockInAt = status?.isClockedIn ? status.currentEntry?.clockInAt : undefined;
   useEffect(() => {
-    if (!status?.isClockedIn || !status?.currentEntry) return;
-
-    const interval = setInterval(() => {
-      const clockInTime = new Date(status.currentEntry!.clockInAt).getTime();
-      const now = Date.now();
-      setElapsedMinutes(Math.floor((now - clockInTime) / 60000));
-    }, 60000);
-
+    if (!clockInAt) {
+      setElapsedMinutes(0);
+      return;
+    }
+    const tick = () => setElapsedMinutes(Math.floor((Date.now() - new Date(clockInAt).getTime()) / 60000));
+    tick();
+    const interval = setInterval(tick, 60000);
     return () => clearInterval(interval);
-  }, [status?.isClockedIn, status?.currentEntry]);
+  }, [clockInAt]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
