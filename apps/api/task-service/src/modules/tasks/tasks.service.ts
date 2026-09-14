@@ -3,6 +3,7 @@ import {
   Logger,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Inject,
 } from '@nestjs/common';
@@ -11,6 +12,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
 import Redis from 'ioredis';
 import { buildTaskVisibilityWhere, type TaskVisibilityFacts } from './task-visibility';
+import { createOnce } from '../../common/create-once.util';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
@@ -26,6 +28,9 @@ import {
   buildDateRangeFilter,
   haversineDistance,
   isAtSite,
+  assessOccurrence,
+  assessFix,
+  type OccurrenceEvidence,
   ATTENDANCE_CONSTANTS,
   getStatusCapabilities,
   flowTracksLocation,
@@ -1577,6 +1582,10 @@ export class TasksService {
      * app that does not send it behaves exactly as it always did.
      */
     accuracy?: number;
+    /** The status the phone saw when the member tapped — see the conflict check below. */
+    expectedFrom?: string;
+    /** When and where the tap happened, from a phone that may have been offline. */
+    evidence?: OccurrenceEvidence;
     // Server-authoritative cross-org grant map (forwarded from the gateway).
     // Used to allow a guest org to move a task in a space explicitly shared to it.
     access?: unknown;
@@ -1634,7 +1643,9 @@ export class TasksService {
       // manager may move any card on the board.
       if (!isAssignedUser && !hasManageAuthority) {
         this.logger.warn(`Authorization denied: non-assigned user attempted status update`, { userId: data.userId, taskId: data.id, status: data.status });
-        throw new ForbiddenException('You can only update execution status of tasks assigned to you');
+        // The code is what an offline phone shows: "the office gave this job to
+        // someone else before your change arrived".
+        throw new ForbiddenException({ message: 'You can only update execution status of tasks assigned to you', code: 'TASK_REASSIGNED' });
       }
       // Cross-org isolation (C2): the authority checks above never compared the
       // task's org to the caller's, so an ADMIN / canViewAllTasks holder in one
@@ -1646,6 +1657,65 @@ export class TasksService {
           throw new ForbiddenException('You can only update the status of tasks in your organization');
         }
       }
+    }
+
+    /*
+      ── The change was made from a status the task is no longer in ──
+
+      A phone offline for an hour sends "ARRIVED, from EN_ROUTE". Meanwhile the
+      office cancelled the job. Applying ARRIVED on top of a state the member
+      never saw would be wrong, and refusing it with a transition error would
+      tell them nothing — so it is a 409 carrying the task as it is now, and the
+      phone says in words what happened.
+
+      Already where they were moving it (another device got there first, or the
+      office did): nothing to do, answered as done, and no second event.
+    */
+    if (data.expectedFrom && task.status !== data.expectedFrom) {
+      if (task.status === data.status) {
+        return success(await this.prisma.task.findUnique({
+          where: { id: data.id },
+          include: {
+            assignedTo: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+            createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+          },
+        }));
+      }
+      throw new ConflictException({
+        message: `This task was moved to ${task.status} before your change arrived`,
+        code: 'TASK_STATE_CONFLICT',
+        params: { current: { id: task.id, status: task.status, assignedToId: task.assignedToId, updatedAt: task.updatedAt } },
+      });
+    }
+
+    /*
+      ── When it happened ──
+
+      Without evidence the change happened now, as it always has. With it, the
+      tap's own time is recorded and judged by the shared rule the phone already
+      ran: refused only when impossible (the future, or before the change it
+      follows), flagged when the clock looks moved or the record is old.
+
+      ⚠️ "Before the change it follows" reads the previous change's OWN time, not
+      when its row was written: three changes made offline arrive in one push,
+      seconds apart, and the second must be compared with 09:00, not 11:14.
+    */
+    let occurredAt = new Date();
+    const occurrenceFlags: string[] = [];
+    if (data.evidence) {
+      const lastChange = await this.prisma.taskEvent.findFirst({
+        where: { taskId: task.id, eventType: TaskEventType.STATUS_CHANGED },
+        orderBy: { createdAt: 'desc' },
+        select: { createdAt: true, metadata: true },
+      });
+      const previousOccurred = (lastChange?.metadata as { occurredAt?: string } | null)?.occurredAt;
+      const previousAt = previousOccurred ? new Date(previousOccurred) : lastChange?.createdAt ?? null;
+      const assessed = assessOccurrence(data.evidence, { now: new Date(), previousAt });
+      if (assessed.refusal) {
+        throw new BadRequestException({ message: assessed.refusal.message, code: assessed.refusal.code });
+      }
+      occurredAt = assessed.occurredAt;
+      occurrenceFlags.push(...assessed.flags);
     }
 
     // Validate status transition — honor the task's workflow (its own, else its
@@ -1721,6 +1791,21 @@ export class TasksService {
       task.locationLat != null &&
       task.locationLng != null
     ) {
+      /*
+        The position of the TAP when the phone recorded one — a change synced
+        from a basement must not be judged by where the phone is at sync time.
+      */
+      const fix = data.evidence?.fix;
+      if (fix) {
+        const checked = assessFix(fix, occurredAt);
+        if (!checked.ok) {
+          if (checked.code === 'FIX_MOCKED') occurrenceFlags.push('FIX_MOCKED');
+          else throw new BadRequestException({ message: checked.message, code: checked.code });
+        }
+        data.lat = fix.lat;
+        data.lng = fix.lng;
+        data.accuracy = fix.accuracy;
+      }
       if (data.lat == null || data.lng == null) {
         throw new BadRequestException(
           'Location verification required. Please enable GPS and try again.',
@@ -1774,7 +1859,8 @@ export class TasksService {
     if (isAssignedUser && data.status === TaskStatus.EN_ROUTE) {
       if (task.dueDate) {
         const tz = task.space?.timezone || 'UTC';
-        const endOfToday = endOfSiteDay(new Date(), tzOffsetMs(new Date(), tz) / 60_000);
+        // The day the member set off, which for a change synced later is not today.
+        const endOfToday = endOfSiteDay(occurredAt, tzOffsetMs(occurredAt, tz) / 60_000);
         if (task.dueDate > endOfToday) {
           throw new BadRequestException(
             'Cannot start this task yet — it is scheduled for a future date. You can start it on the due date.',
@@ -1814,7 +1900,7 @@ export class TasksService {
 
     // Set routeStartedAt when transitioning to EN_ROUTE
     if (data.status === TaskStatus.EN_ROUTE) {
-      updateData.routeStartedAt = new Date();
+      updateData.routeStartedAt = occurredAt;
       // Reset route data for a fresh tracking session
       updateData.routeDistance = 0;
       updateData.routeEndedAt = null;
@@ -1822,12 +1908,28 @@ export class TasksService {
 
     // Set routeEndedAt when transitioning to ARRIVED
     if (data.status === TaskStatus.ARRIVED) {
-      updateData.routeEndedAt = new Date();
+      updateData.routeEndedAt = occurredAt;
     }
 
-    const updatedTask = await this.prisma.task.update({
-      where: { id: data.id },
+    /*
+      Only if the task is STILL in the status every check above was made
+      against. Two changes racing (a phone replaying while the office drags the
+      card) used to both pass their checks and the second silently won.
+    */
+    const moved = await this.prisma.task.updateMany({
+      where: { id: data.id, status: task.status },
       data: updateData,
+    });
+    if (moved.count === 0) {
+      const now = await this.prisma.task.findUnique({ where: { id: data.id }, select: { id: true, status: true, assignedToId: true, updatedAt: true } });
+      throw new ConflictException({
+        message: `This task was moved to ${now?.status ?? 'another status'} at the same moment`,
+        code: 'TASK_STATE_CONFLICT',
+        params: { current: now },
+      });
+    }
+    const updatedTask = await this.prisma.task.findUniqueOrThrow({
+      where: { id: data.id },
       include: {
         assignedTo: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
@@ -1838,6 +1940,9 @@ export class TasksService {
       oldStatus: task.status,
       newStatus: data.status,
       reason: data.reason,
+      // The tap's time, always — the next change is ordered against it.
+      occurredAt: occurredAt.toISOString(),
+      ...(occurrenceFlags.length ? { occurrenceFlags } : {}),
     });
 
     // Notify about status change
@@ -2039,6 +2144,8 @@ export class TasksService {
    * Add a comment to a task
    */
   async addComment(data: {
+    /** Id made on the phone — see createOnce. */
+    id?: string;
     taskId: string;
     content: string;
     userId: string;
@@ -2058,16 +2165,19 @@ export class TasksService {
     // Authorization check
     await this.checkTaskAccess(task, data);
 
-    const comment = await this.prisma.comment.create({
-      data: {
-        content: data.content,
-        taskId: data.taskId,
-        userId: data.userId,
-      },
-      include: {
-        user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
-      },
+    const include = { user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } } as const;
+    const { row: comment, created } = await createOnce({
+      id: data.id,
+      find: (id) => this.prisma.comment.findUnique({ where: { id }, include }),
+      isSame: (c) => c.taskId === data.taskId && c.userId === data.userId,
+      create: () =>
+        this.prisma.comment.create({
+          data: { ...(data.id ? { id: data.id } : {}), content: data.content, taskId: data.taskId, userId: data.userId },
+          include,
+        }),
     });
+    // A resend of a comment already saved: same answer, no second event or notification.
+    if (!created) return success(comment);
 
     // Create task event with comment preview
     await this.createTaskEvent(data.taskId, data.userId, TaskEventType.COMMENT_ADDED, {

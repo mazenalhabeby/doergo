@@ -5,6 +5,11 @@ import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUrl, Matches, MaxLengt
 const MIME = /^[a-z]+\/[a-z0-9.+-]+$/i;
 /** An object key's alphabet — ids, dashes, dots and slashes, nothing else. */
 const KEY = /^[A-Za-z0-9_\-./]+$/;
+/**
+ * An id the PHONE made (UUIDv7) for a record it created, possibly offline.
+ * The server stores it as the real id, so retrying the create is the same create.
+ */
+export const CLIENT_ID = /^[A-Za-z0-9_-]{16,64}$/;
 
 /**
  * Ask for an upload link.
@@ -35,6 +40,12 @@ export class PresignUploadDto {
  * storage rather than believing it.
  */
 export class ConfirmUploadDto {
+  @ApiPropertyOptional({ description: 'Id made on the phone; a retry with the same id returns the same attachment' })
+  @IsOptional()
+  @IsString()
+  @Matches(CLIENT_ID)
+  id?: string;
+
   @ApiProperty({ example: 'boiler.jpg' })
   @IsString()
   @IsNotEmpty()

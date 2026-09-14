@@ -14,6 +14,7 @@ import {
   requireObjectStore,
 } from '@hbcfield/shared/storage';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { createOnce } from '../../common/create-once.util';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { TaskEventType, AttachmentType, Role, success, canAccessTask } from '@hbcfield/shared';
 import type { TaskAccessFacts } from '../tasks/tasks.service';
@@ -70,6 +71,8 @@ export class AttachmentsService {
   ) {}
 
   async create(data: {
+    /** Id made on the phone — see createOnce. */
+    attachmentId?: string;
     taskId: string;
     uploadedById: string;
     userRole?: string;
@@ -133,8 +136,13 @@ export class AttachmentsService {
       throw new BadRequestException('File is empty or larger than 20 MB');
     }
 
-    const attachment = await this.prisma.attachment.create({
+    const { row: attachment, created } = await createOnce({
+      id: data.attachmentId,
+      find: (id) => this.prisma.attachment.findUnique({ where: { id } }),
+      isSame: (a) => a.taskId === data.taskId && a.uploadedById === data.uploadedById,
+      create: () => this.prisma.attachment.create({
       data: {
+        ...(data.attachmentId ? { id: data.attachmentId } : {}),
         taskId: data.taskId,
         uploadedById: data.uploadedById,
         fileName: data.fileName,
@@ -145,7 +153,9 @@ export class AttachmentsService {
         fileType: attachmentTypeOf(data.fileType),
         fileSize: object.sizeBytes,
       },
+      }),
     });
+    if (!created) return success(await this.media.sign(attachment));
 
     // Create task event
     await this.prisma.taskEvent.create({

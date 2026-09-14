@@ -789,6 +789,7 @@ export class TasksController {
   ) {
     return this.tasksQueueService.addAttachment({
       taskId: id,
+      attachmentId: body.id,
       fileName: body.fileName,
       fileKey: body.fileKey,
       fileUrl: body.fileUrl,

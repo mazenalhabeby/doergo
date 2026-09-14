@@ -67,6 +67,7 @@ describe('TasksService', () => {
       findMany: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
       // Every assignment change funnels through afterAssigneesChanged, which
       // advances a NEW task with updateMany rather than update.
       updateMany: jest.fn().mockResolvedValue({ count: 0 }),
@@ -623,7 +624,8 @@ describe('TasksService', () => {
       const acceptedTask = { ...assignedTask, status: TaskStatus.ACCEPTED };
 
       mockPrismaService.task.findUnique.mockResolvedValue(assignedTask);
-      mockPrismaService.task.update.mockResolvedValue(acceptedTask);
+      mockPrismaService.task.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.task.findUniqueOrThrow.mockResolvedValue(acceptedTask);
       mockPrismaService.taskEvent.create.mockResolvedValue({ id: 'event-1' });
 
       const result = await service.updateStatus({
@@ -641,7 +643,8 @@ describe('TasksService', () => {
     it('should set routeStartedAt when transitioning to EN_ROUTE', async () => {
       const acceptedTask = { ...mockTask, status: TaskStatus.ACCEPTED, assignedToId: 'tech-123' };
       mockPrismaService.task.findUnique.mockResolvedValue(acceptedTask);
-      mockPrismaService.task.update.mockResolvedValue({ ...acceptedTask, status: TaskStatus.EN_ROUTE });
+      mockPrismaService.task.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.task.findUniqueOrThrow.mockResolvedValue({ ...acceptedTask, status: TaskStatus.EN_ROUTE });
       mockPrismaService.taskEvent.create.mockResolvedValue({ id: 'event-1' });
 
       await service.updateStatus({
@@ -652,7 +655,7 @@ describe('TasksService', () => {
         organizationId: 'org-123',
       });
 
-      expect(mockPrismaService.task.update).toHaveBeenCalledWith(
+      expect(mockPrismaService.task.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             routeStartedAt: expect.any(Date),
@@ -665,7 +668,8 @@ describe('TasksService', () => {
     it('should set routeEndedAt when transitioning to ARRIVED', async () => {
       const enRouteTask = { ...mockTask, status: TaskStatus.EN_ROUTE, assignedToId: 'tech-123' };
       mockPrismaService.task.findUnique.mockResolvedValue(enRouteTask);
-      mockPrismaService.task.update.mockResolvedValue({ ...enRouteTask, status: TaskStatus.ARRIVED });
+      mockPrismaService.task.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.task.findUniqueOrThrow.mockResolvedValue({ ...enRouteTask, status: TaskStatus.ARRIVED });
       mockPrismaService.taskEvent.create.mockResolvedValue({ id: 'event-1' });
 
       await service.updateStatus({
@@ -679,7 +683,7 @@ describe('TasksService', () => {
         lng: -74.006,
       });
 
-      expect(mockPrismaService.task.update).toHaveBeenCalledWith(
+      expect(mockPrismaService.task.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             routeEndedAt: expect.any(Date),
@@ -724,7 +728,8 @@ describe('TasksService', () => {
       const canceledTask = { ...assignedTask, status: TaskStatus.CANCELED };
 
       mockPrismaService.task.findUnique.mockResolvedValue(assignedTask);
-      mockPrismaService.task.update.mockResolvedValue(canceledTask);
+      mockPrismaService.task.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.task.findUniqueOrThrow.mockResolvedValue(canceledTask);
       mockPrismaService.taskEvent.create.mockResolvedValue({ id: 'event-1' });
 
       const result = await service.updateStatus({

@@ -175,6 +175,7 @@ export class ReportsController {
     return this.reportsQueueService.addAttachment({
       // Named fields only — the id being authorised is the path's, never the body's.
       reportId: id,
+      attachmentId: body.id,
       type: body.type,
       fileName: body.fileName,
       fileKey: body.fileKey,

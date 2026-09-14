@@ -9,6 +9,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { OBJECT_STORE, ObjectStore, newObjectKey, requireObjectStore } from '@hbcfield/shared/storage';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { createOnce } from '../../common/create-once.util';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import {
   TaskStatus,
@@ -496,6 +497,8 @@ export class ReportsService {
    * Called after file is uploaded to S3
    */
   async addAttachment(data: {
+    /** Id made on the phone — see createOnce. */
+    attachmentId?: string;
     reportId: string;
     type: 'BEFORE' | 'AFTER';
     fileName: string;
@@ -555,8 +558,13 @@ export class ReportsService {
       throw new BadRequestException('File is empty or larger than 20 MB');
     }
 
-    const attachment = await this.prisma.reportAttachment.create({
+    const { row: attachment } = await createOnce({
+      id: data.attachmentId,
+      find: (id) => this.prisma.reportAttachment.findUnique({ where: { id } }),
+      isSame: (a) => a.reportId === data.reportId,
+      create: () => this.prisma.reportAttachment.create({
       data: {
+        ...(data.attachmentId ? { id: data.attachmentId } : {}),
         reportId: data.reportId,
         type: data.type,
         fileName: data.fileName,
@@ -567,6 +575,7 @@ export class ReportsService {
         fileSize: object.sizeBytes,
         caption: data.caption,
       },
+      }),
     });
 
     return success(await this.media.sign(attachment));

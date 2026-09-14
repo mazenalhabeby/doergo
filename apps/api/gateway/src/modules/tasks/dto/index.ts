@@ -1,6 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsEnum, IsOptional, IsDateString, IsNumber, IsNotEmpty, MaxLength, IsArray, IsBoolean, IsInt, Min, Max } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsDateString, IsNumber, IsNotEmpty, MaxLength, IsArray, IsBoolean, IsInt, Min, Max, ValidateNested, Matches } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
+import { Type } from 'class-transformer';
+import { OccurrenceEvidenceDto } from '../../../common/dto/occurrence.dto';
+import { CLIENT_ID } from '../../../common/dto/upload.dto';
 import { TaskPriority, TaskAssigneeRole, DependencyType, TASK_TITLE_MAX_LENGTH, TASK_DESCRIPTION_MAX_LENGTH, ATTENDANCE_CONSTANTS } from '@hbcfield/shared';
 
 /**
@@ -168,6 +171,24 @@ export class UpdateStatusDto {
   @Max(ATTENDANCE_CONSTANTS.MAX_GEOFENCE_RADIUS)
   @IsOptional()
   accuracy?: number;
+
+  /**
+   * The status the phone saw when the member tapped. If the task has since
+   * moved elsewhere (the office cancelled or reassigned it while they were
+   * offline), the change is refused with 409 TASK_STATE_CONFLICT and the task's
+   * current state, instead of being applied on top of something they never saw.
+   */
+  @ApiPropertyOptional({ description: 'The status the change was made from' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  expectedFrom?: string;
+
+  @ApiPropertyOptional({ type: OccurrenceEvidenceDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OccurrenceEvidenceDto)
+  evidence?: OccurrenceEvidenceDto;
 }
 
 export class AddAssigneeDto {
@@ -234,6 +255,12 @@ export class CreateDependencyDto {
 }
 
 export class AddCommentDto {
+  @ApiPropertyOptional({ description: 'Id made on the phone; a retry with the same id returns the same comment' })
+  @IsOptional()
+  @IsString()
+  @Matches(CLIENT_ID)
+  id?: string;
+
   @ApiProperty({ description: 'Comment text', example: 'Looks good to me' })
   @IsString()
   @IsNotEmpty()
