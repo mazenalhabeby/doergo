@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsEnum, IsOptional, IsDateString, IsNumber, IsNotEmpty, MaxLength, IsArray, IsBoolean, IsInt, Min, Max, ValidateNested, Matches } from 'class-validator';
-import { PartialType } from '@nestjs/mapped-types';
+import { OmitType, PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import { OccurrenceEvidenceDto } from '../../../common/dto/occurrence.dto';
 import { CLIENT_ID } from '../../../common/dto/upload.dto';
@@ -10,6 +10,12 @@ import { TaskPriority, TaskAssigneeRole, DependencyType, TASK_TITLE_MAX_LENGTH, 
  * Create task request DTO
  */
 export class CreateTaskDto {
+  @ApiPropertyOptional({ description: 'Id made on the phone; a resend returns the same task' })
+  @IsOptional()
+  @IsString()
+  @Matches(CLIENT_ID)
+  id?: string;
+
   @ApiProperty({ example: 'Fix leaking pipe' })
   @IsString()
   @IsNotEmpty({ message: 'Title is required' })
@@ -127,7 +133,11 @@ export class CreateTaskDto {
  * Update task request DTO
  * Inherits all fields from CreateTaskDto but makes them optional
  */
-export class UpdateTaskDto extends PartialType(CreateTaskDto) {}
+/*
+  Everything a create takes except the id: the phone names a task when it
+  creates one, and an update must never be able to rename a task.
+*/
+export class UpdateTaskDto extends PartialType(OmitType(CreateTaskDto, ['id'] as const)) {}
 
 export class AssignTaskDto {
   @ApiProperty({ example: 'worker-123' })

@@ -20,6 +20,8 @@ import { RequirePermission, DenyExternal } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 
 interface CustomerDto {
+  /** Made on the phone when creating: a client added twice is one client. Ignored on update. */
+  id?: string;
   name?: string;
   contactName?: string | null;
   email?: string | null;
@@ -301,8 +303,9 @@ export class CustomersController {
 
   @Post(':id/activities')
   @ApiOperation({ summary: 'Log an activity / note / reminder on a customer' })
-  addActivity(@Param('id') id: string, @Body() body: { type?: string; body?: string; dueAt?: string; reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string }, @Request() req: any) {
+  addActivity(@Param('id') id: string, @Body() body: { id?: string; type?: string; body?: string; dueAt?: string; reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string }, @Request() req: any) {
     return this.authMutation('add_customer_activity', {
+      clientId: body.id,
       customerId: id, organizationId: req.user.organizationId, authorId: req.user.id,
       type: body.type, body: body.body, dueAt: body.dueAt,
       reminderKind: body.reminderKind, remindBeforeMin: body.remindBeforeMin,

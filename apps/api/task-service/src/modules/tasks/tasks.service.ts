@@ -14,7 +14,7 @@ import Redis from 'ioredis';
 import { TASK_LIST_INCLUDE, annotateTracksLocation } from './task-list-shape';
 import { buildTaskVisibilityWhere, type TaskVisibilityFacts } from './task-visibility';
 import { fixOfTap, judgeOccurrence } from '../../common/occurrence.util';
-import { createOnce } from '../../common/create-once.util';
+import { createOnce, findPrior } from '../../common/create-once.util';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
@@ -112,6 +112,14 @@ export class TasksService {
    * Create a new task (CLIENT or DISPATCHER)
    */
   async create(data: any) {
+    // The same task sent again from the phone's queue: the task it made.
+    const prior = await findPrior({
+      id: data.id,
+      find: (id) => this.prisma.task.findUnique({ where: { id } }),
+      isSame: (t) => t.createdById === data.userId && t.organizationId === data.organizationId,
+    });
+    if (prior) return success(prior, 'Task already created');
+
     const hasAssignment = !!data.assignedToId;
     const assigneeIds: string[] = data.assigneeIds || [];
 
@@ -299,6 +307,7 @@ export class TasksService {
     const task = await this.prisma.$transaction(async (tx) => {
       const createdTask = await tx.task.create({
         data: {
+          ...(typeof data.id === 'string' && data.id ? { id: data.id } : {}),
           title: data.title,
           description: data.description,
           priority: data.priority || 'MEDIUM',

@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { resolveCrmCaps, ownsClient, type CrmCaps } from '@hbcfield/shared';
+import { findPrior } from '@hbcfield/shared';
+
+/** An id a phone made (UUIDv7) — the same alphabet the gateway accepts. */
+const CLIENT_ID = /^[A-Za-z0-9_-]{16,64}$/;
 
 /** Who is making the request — used to resolve & enforce CRM abilities. */
 export interface CrmCaller {
@@ -14,6 +18,8 @@ export interface CustomerDetail {
   value: string;
 }
 export interface CustomerInput {
+  /** Made on the phone when creating; ignored on update. */
+  id?: string;
   name?: string;
   contactName?: string | null;
   email?: string | null;
@@ -650,6 +656,17 @@ export class CustomersService {
     */
     const caps = await this.crmCapsFor(caller, organizationId);
     if (!caps.create) throw new ForbiddenException('Not allowed to create clients');
+
+    // A client added from the phone and sent twice is one client. The id is the
+    // phone's (UUIDv7); anything else in that field is ignored, never stored.
+    const clientId = typeof dto.id === 'string' && CLIENT_ID.test(dto.id) ? dto.id : undefined;
+    const prior = await findPrior({
+      id: clientId,
+      find: (id) => this.prisma.customer.findUnique({ where: { id }, select: { ...customerSelect, organizationId: true } }),
+      isSame: (c) => c.organizationId === organizationId,
+    });
+    if (prior) return { data: prior };
+
     const name = (dto.name || '').trim();
     if (!name) throw new BadRequestException('Customer name is required');
     await this.assertRefsInOrg(dto, organizationId);
@@ -662,6 +679,7 @@ export class CustomersService {
     );
     const customer = await this.prisma.customer.create({
       data: {
+        ...(clientId ? { id: clientId } : {}),
         organizationId,
         name,
         contactName: dto.contactName ?? null,
@@ -841,8 +859,17 @@ export class CustomersService {
     customerId: string; organizationId: string; type?: string; body?: string; dueAt?: string; authorId?: string;
     reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string;
     caller?: CrmCaller;
+    /** Made on the phone: an activity logged twice is one activity. */
+    clientId?: string;
   }) {
     await this.assertCrmReach(data.customerId, data.organizationId, data.caller, { needWork: true });
+    const clientId = typeof data.clientId === 'string' && CLIENT_ID.test(data.clientId) ? data.clientId : undefined;
+    const prior = await findPrior({
+      id: clientId,
+      find: (id) => this.prisma.customerActivity.findUnique({ where: { id } }),
+      isSame: (a) => a.customerId === data.customerId && a.authorId === (data.authorId ?? null),
+    });
+    if (prior) return { data: prior };
     const type = (data.type ?? 'NOTE') as any;
     const isReminder = type === 'REMINDER';
     const dueAt = data.dueAt ? new Date(data.dueAt) : null;
@@ -853,6 +880,7 @@ export class CustomersService {
       : null;
     const activity = await this.prisma.customerActivity.create({
       data: {
+        ...(clientId ? { id: clientId } : {}),
         organizationId: data.organizationId,
         customerId: data.customerId,
         type,
