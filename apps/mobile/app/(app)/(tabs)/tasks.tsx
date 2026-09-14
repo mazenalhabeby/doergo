@@ -28,6 +28,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useConnectivity, useOffline, useSyncStatus } from '../../../src/offline/offline-context';
 import { filterTasksLocally } from '../../../src/offline/tasks/task-list-query';
 import { overlayTask } from '../../../src/offline/tasks/overlay';
+import { FreshnessLabel } from '../../../src/offline/components/freshness-label';
 import { OfflineBanner } from '../../../src/offline/components/offline-banner';
 import { SyncChip } from '../../../src/offline/components/sync-chip';
 import { TourTarget } from '../../../src/components/tour';
@@ -246,9 +247,12 @@ export default function TasksScreen() {
   const lastParamsRef = useRef<TasksListParams | null>(null);
 
   /** The list from the phone's copy, with the member's unsent changes on top. */
+  // When the phone's copy was last brought up to date — shown while the list comes from it.
+  const [localUpdatedAt, setLocalUpdatedAt] = useState<number | null>(null);
   const readLocalTasks = useCallback(async (params: TasksListParams) => {
     if (!offline.records) return;
     lastParamsRef.current = params;
+    void offline.records.cursor('tasks').then((c) => setLocalUpdatedAt(c.lastPullAt)).catch(() => undefined);
     const rows = await offline.records.list<Task>('tasks');
     const ops = offline.engine?.operations() ?? [];
     const visible = filterTasksLocally(
@@ -316,6 +320,7 @@ export default function TasksScreen() {
       }
 
       const fetchedTasks = await tasksApi.list(params);
+      setLocalUpdatedAt(null);
       setTasks(fetchedTasks || []);
     } catch (err: any) {
       if (err?.statusCode === 401 || err?.message?.includes('Session expired')) {
@@ -792,6 +797,11 @@ export default function TasksScreen() {
         ListHeaderComponent={
           <View>
             <OfflineBanner style={styles.offlineBanner} />
+            {localUpdatedAt !== null && (
+              <View style={styles.freshnessRow}>
+                <FreshnessLabel at={localUpdatedAt} />
+              </View>
+            )}
             {isAdmin && (
               <View style={styles.scopeWrap}>
                 <WorkScope
@@ -859,6 +869,7 @@ export default function TasksScreen() {
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
+  freshnessRow: { alignItems: 'flex-end', paddingHorizontal: SPACING.lg, paddingTop: SPACING.xs },
   offlineBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.sm },
   container: {
     flex: 1,

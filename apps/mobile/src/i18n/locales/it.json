@@ -2356,7 +2356,9 @@
       "sending_one": "Invio di {{count}} modifica…",
       "sending_other": "Invio di {{count}} modifiche…",
       "attention_one": "{{count}} modifica richiede la tua attenzione",
-      "attention_other": "{{count}} modifiche richiedono la tua attenzione"
+      "attention_other": "{{count}} modifiche richiedono la tua attenzione",
+      "longOffline_one": "Ultima sincronizzazione {{count}} giorno fa. Si connetta appena può.",
+      "longOffline_other": "Ultima sincronizzazione {{count}} giorni fa. Si connetta appena può."
     },
     "chip": {
       "waiting": "In attesa di invio",
@@ -2440,6 +2442,13 @@
       "title": "Lavoro in attesa su questo telefono",
       "body_one": "{{count}} modifica attende da più di un giorno. Connettiti a internet perché non vada persa.",
       "body_other": "{{count}} modifiche attendono da più di un giorno. Connettiti a internet perché non vadano perse."
+    },
+    "freshness": {
+      "at": "Aggiornato {{time}}",
+      "hours_one": "Aggiornato {{count}} h fa",
+      "hours_other": "Aggiornato {{count}} h fa",
+      "days_one": "Aggiornato {{count}} giorno fa",
+      "days_other": "Aggiornato {{count}} giorni fa"
     }
   }
 }

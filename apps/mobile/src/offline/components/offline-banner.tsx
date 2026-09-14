@@ -5,7 +5,8 @@ import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { COLORS, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING } from '../../lib/constants';
-import { useConnectivity, useSyncStatus } from '../offline-context';
+import { useConnectivity, useLastSyncedAt, useSyncStatus } from '../offline-context';
+import { freshnessOf } from '../freshness';
 
 /**
  * The one line that says what the network means for the member right now.
@@ -19,12 +20,18 @@ export function OfflineBanner({ style }: { style?: object }) {
   const { colors } = useTheme();
   const connectivity = useConnectivity();
   const { snapshot } = useSyncStatus();
+  const lastSyncedAt = useLastSyncedAt();
+  const age = freshnessOf(lastSyncedAt, Date.now());
 
   let tone: 'attention' | 'offline' | 'sending' | null = null;
   let text = '';
   if (snapshot.attention > 0) {
     tone = 'attention';
     text = t('offline.banner.attention', { count: snapshot.attention });
+  } else if (connectivity !== 'online' && age.kind === 'age' && age.longOffline) {
+    // Days without a sync: said plainly, until the phone gets one.
+    tone = 'offline';
+    text = t('offline.banner.longOffline', { count: age.value });
   } else if (connectivity === 'offline') {
     tone = 'offline';
     text = snapshot.waiting > 0 ? t('offline.banner.offlineWaiting', { count: snapshot.waiting }) : t('offline.banner.offline');

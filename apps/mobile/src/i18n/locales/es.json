@@ -2356,7 +2356,9 @@
       "sending_one": "Enviando {{count}} cambio…",
       "sending_other": "Enviando {{count}} cambios…",
       "attention_one": "{{count}} cambio necesita tu atención",
-      "attention_other": "{{count}} cambios necesitan tu atención"
+      "attention_other": "{{count}} cambios necesitan tu atención",
+      "longOffline_one": "Última sincronización hace {{count}} día. Conéctese cuando pueda.",
+      "longOffline_other": "Última sincronización hace {{count}} días. Conéctese cuando pueda."
     },
     "chip": {
       "waiting": "Pendiente de envío",
@@ -2440,6 +2442,13 @@
       "title": "Trabajo pendiente en este teléfono",
       "body_one": "{{count}} cambio lleva más de un día sin enviarse. Conéctese a internet para que no se pierda.",
       "body_other": "{{count}} cambios llevan más de un día sin enviarse. Conéctese a internet para que no se pierdan."
+    },
+    "freshness": {
+      "at": "Actualizado {{time}}",
+      "hours_one": "Actualizado hace {{count}} h",
+      "hours_other": "Actualizado hace {{count}} h",
+      "days_one": "Actualizado hace {{count}} día",
+      "days_other": "Actualizado hace {{count}} días"
     }
   }
 }

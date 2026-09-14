@@ -2356,7 +2356,9 @@
       "sending_one": "Sending {{count}} change…",
       "sending_other": "Sending {{count}} changes…",
       "attention_one": "{{count}} change needs you",
-      "attention_other": "{{count}} changes need you"
+      "attention_other": "{{count}} changes need you",
+      "longOffline_one": "Last synced {{count}} day ago. Connect when you can.",
+      "longOffline_other": "Last synced {{count}} days ago. Connect when you can."
     },
     "chip": {
       "waiting": "Waiting to send",
@@ -2440,6 +2442,13 @@
       "title": "Work waiting on this phone",
       "body_one": "{{count}} change has waited over a day to be sent. Connect to the internet so it is not lost.",
       "body_other": "{{count}} changes have waited over a day to be sent. Connect to the internet so they are not lost."
+    },
+    "freshness": {
+      "at": "Updated {{time}}",
+      "hours_one": "Updated {{count}} h ago",
+      "hours_other": "Updated {{count}} h ago",
+      "days_one": "Updated {{count}} day ago",
+      "days_other": "Updated {{count}} days ago"
     }
   }
 }

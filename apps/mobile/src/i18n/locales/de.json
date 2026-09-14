@@ -2356,7 +2356,9 @@
       "sending_one": "{{count}} Änderung wird gesendet…",
       "sending_other": "{{count}} Änderungen werden gesendet…",
       "attention_one": "{{count}} Änderung braucht Sie",
-      "attention_other": "{{count}} Änderungen brauchen Sie"
+      "attention_other": "{{count}} Änderungen brauchen Sie",
+      "longOffline_one": "Zuletzt vor {{count}} Tag synchronisiert. Bitte verbinden Sie sich, sobald es geht.",
+      "longOffline_other": "Zuletzt vor {{count}} Tagen synchronisiert. Bitte verbinden Sie sich, sobald es geht."
     },
     "chip": {
       "waiting": "Wird gesendet",
@@ -2440,6 +2442,13 @@
       "title": "Arbeit wartet auf diesem Telefon",
       "body_one": "{{count}} Änderung wartet seit über einem Tag auf das Senden. Verbinden Sie sich mit dem Internet, damit sie nicht verloren geht.",
       "body_other": "{{count}} Änderungen warten seit über einem Tag auf das Senden. Verbinden Sie sich mit dem Internet, damit sie nicht verloren gehen."
+    },
+    "freshness": {
+      "at": "Aktualisiert {{time}}",
+      "hours_one": "Aktualisiert vor {{count}} Std.",
+      "hours_other": "Aktualisiert vor {{count}} Std.",
+      "days_one": "Aktualisiert vor {{count}} Tag",
+      "days_other": "Aktualisiert vor {{count}} Tagen"
     }
   }
 }

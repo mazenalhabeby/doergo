@@ -21,6 +21,7 @@ import { createPendingAvatar, type PendingAvatar } from './profile/pending-avata
 import { offlineCapableBuild } from './native';
 import { connectivity, createOfflineRuntime } from './runtime';
 import { reportTelemetry } from './telemetry';
+import { newest } from './freshness';
 import { registerBackgroundSync } from './background-sync';
 import type { SyncEngine, SyncSnapshot } from './sync-engine';
 import type { OutboxOp } from './outbox/types';
@@ -247,6 +248,35 @@ export function useConnectivity(): Connectivity {
     () => connectivity.state,
     () => connectivity.state,
   );
+}
+
+/**
+ * When this phone last brought its copy up to date: the engine's last success
+ * this session, or — after a restart, before anything has synced — the last
+ * pull recorded in the database. Null when it never has.
+ */
+export function useLastSyncedAt(): number | null {
+  const { records } = useOffline();
+  const { snapshot } = useSyncStatus();
+  const [pulledAt, setPulledAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (!records) {
+      setPulledAt(null);
+      return;
+    }
+    let active = true;
+    const read = () =>
+      void Promise.all([records.cursor('tasks'), records.cursor('spaces')])
+        .then(([tasks, spaces]) => active && setPulledAt(newest(tasks.lastPullAt, spaces.lastPullAt)))
+        .catch(() => undefined);
+    read();
+    const off = records.onChange(read);
+    return () => {
+      active = false;
+      off();
+    };
+  }, [records]);
+  return newest(snapshot.lastSuccessAt, pulledAt);
 }
 
 /** The queue's counts and every operation, live. */
