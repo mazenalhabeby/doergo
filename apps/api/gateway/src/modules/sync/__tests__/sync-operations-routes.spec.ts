@@ -26,8 +26,9 @@ function routes(): Set<string> {
   for (const file of controllers(MODULES)) {
     const src = readFileSync(file, 'utf8');
     const prefix = src.match(/@Controller\(\s*'([^']*)'\s*\)/)?.[1] ?? '';
-    for (const m of src.matchAll(/@(Get|Post|Patch|Put|Delete)\(\s*'([^']*)'\s*\)/g)) {
-      out.add(`${m[1].toUpperCase()} ${norm(`${prefix}/${m[2]}`)}`);
+    // `@Post()` with no path is the controller's own route — a create, usually.
+    for (const m of src.matchAll(/@(Get|Post|Patch|Put|Delete)\(\s*(?:'([^']*)')?\s*\)/g)) {
+      out.add(`${m[1].toUpperCase()} ${norm(`${prefix}/${m[2] ?? ''}`)}`);
     }
   }
   return out;
