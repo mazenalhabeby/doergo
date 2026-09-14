@@ -17,6 +17,10 @@ import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useFetchData } from '../../../src/hooks/useFetchData';
 import { useQueuedCreate } from '../../../src/offline/actions/queued-create';
+import { useOffline, useSyncStatus } from '../../../src/offline/offline-context';
+import { cancelTimeOff, pendingCancellations } from '../../../src/offline/timeoff/time-off-actions';
+import { uuidv7 } from '../../../src/offline/ids';
+import { SyncChip } from '../../../src/offline/components/sync-chip';
 import { LoadingState, ErrorState } from '../../../src/components/screen-states';
 import { ConfirmSheet, ScreenContainer } from '../../../src/components';
 import { TourTarget } from '../../../src/components/tour';
@@ -166,8 +170,14 @@ export default function TimeOffScreen() {
   const timeOffCreate = useQueuedCreate<{ startDate: string; endDate: string; reason?: string }>('timeOff.request', {
     onAccepted: () => void fetchData(),
   });
+  const offline = useOffline();
+  const { operations: syncOps } = useSyncStatus();
+  // A cancellation still on the phone already reads as cancelled.
+  const cancelling = useMemo(() => pendingCancellations(syncOps), [syncOps]);
   const requests = useMemo(() => {
-    const server = fetchedData?.requests ?? [];
+    const server = (fetchedData?.requests ?? []).map((r) =>
+      cancelling.has(r.id) && r.status === 'PENDING' ? ({ ...r, status: 'CANCELED' } as TimeOffRequest) : r,
+    );
     const known = new Set(server.map((r) => r.id));
     const onPhone = timeOffCreate.pending
       .filter((p) => !known.has(p.id))
@@ -182,7 +192,7 @@ export default function TimeOffScreen() {
         pendingSync: true,
       }) as unknown as TimeOffRequest);
     return [...server, ...onPhone];
-  }, [fetchedData?.requests, timeOffCreate.pending, user?.id]);
+  }, [fetchedData?.requests, timeOffCreate.pending, user?.id, cancelling]);
   const schedule = fetchedData?.schedule ?? [];
 
   // Calendar
@@ -461,8 +471,10 @@ export default function TimeOffScreen() {
     try {
       setIsSubmitting(true);
       const body = { startDate: startStr, endDate: endStr, reason: fullReason };
+      // Named here so the new request's card can carry "waiting to send" until it arrives.
+      const id = uuidv7();
       const outcome = await timeOffCreate.run(
-        { lane: `timeoff:${user.id}`, params: { employeeId: user.id }, body },
+        { id, entityId: id, lane: `timeoff:${user.id}`, params: { employeeId: user.id }, body },
         () => timeOffApi.request(user.id, body),
       );
       if (outcome.kind === 'refused') {
@@ -489,6 +501,19 @@ export default function TimeOffScreen() {
     const request = cancelTarget;
     setCancelTarget(null);
     try {
+      if (offline.engine && user?.id) {
+        const outcome = await cancelTimeOff(offline.engine, { memberId: user.id, timeOffId: request.id });
+        if (outcome.kind === 'refused') {
+          toast.error(
+            t('common.error'),
+            (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('timeOff.failedToCancel'),
+          );
+          return;
+        }
+        if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
+        else fetchData();
+        return;
+      }
       await timeOffApi.cancel(request.id);
       fetchData();
     } catch (err) {
@@ -915,10 +940,13 @@ export default function TimeOffScreen() {
                       <Ionicons name={typeIcon} size={20} color={COLORS.primary} />
                       <Text style={[styles.requestTypeText, { color: colors.textPrimary }]}>{typeLabel}</Text>
                     </View>
-                    <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderColor: statusStyle.border }]}>
-                      <Text style={[styles.statusText, { color: statusStyle.text }]}>
-                        {t(`timeOffStatus.${request.status}`)}
-                      </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <SyncChip entityId={request.id} />
+                      <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderColor: statusStyle.border }]}>
+                        <Text style={[styles.statusText, { color: statusStyle.text }]}>
+                          {t(`timeOffStatus.${request.status}`)}
+                        </Text>
+                      </View>
                     </View>
                   </View>
 

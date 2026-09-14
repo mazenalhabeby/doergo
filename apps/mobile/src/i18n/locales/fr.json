@@ -2422,7 +2422,8 @@
       "FIX_INACCURATE": "La position n'était pas assez précise.",
       "FIX_MISSING": "La position n'a pas pu être déterminée.",
       "REPORT_EXISTS": "Cette intervention a déjà un rapport, le vôtre n'a donc pas été ajouté.",
-      "WAITING_FOR_WIFI": "En attente du Wi-Fi : vous avez choisi d'envoyer les photos uniquement en Wi-Fi."
+      "WAITING_FOR_WIFI": "En attente du Wi-Fi : vous avez choisi d'envoyer les photos uniquement en Wi-Fi.",
+      "TIME_OFF_DECIDED": "Cette demande a déjà été traitée et ne peut plus être annulée."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",

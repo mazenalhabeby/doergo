@@ -2422,7 +2422,8 @@
       "FIX_INACCURATE": "The location wasn't precise enough.",
       "FIX_MISSING": "The location couldn't be determined.",
       "REPORT_EXISTS": "This job already has a service report, so yours wasn't added.",
-      "WAITING_FOR_WIFI": "Waiting for Wi-Fi — you chose to send photos only on Wi-Fi."
+      "WAITING_FOR_WIFI": "Waiting for Wi-Fi — you chose to send photos only on Wi-Fi.",
+      "TIME_OFF_DECIDED": "This request was already decided, so it can no longer be cancelled."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",

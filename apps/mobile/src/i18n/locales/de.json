@@ -2422,7 +2422,8 @@
       "FIX_INACCURATE": "Der Standort war nicht genau genug.",
       "FIX_MISSING": "Der Standort konnte nicht bestimmt werden.",
       "REPORT_EXISTS": "Für diesen Auftrag gibt es bereits einen Servicebericht, daher wurde Ihrer nicht hinzugefügt.",
-      "WAITING_FOR_WIFI": "Wartet auf WLAN – Sie haben gewählt, Fotos nur über WLAN zu senden."
+      "WAITING_FOR_WIFI": "Wartet auf WLAN – Sie haben gewählt, Fotos nur über WLAN zu senden.",
+      "TIME_OFF_DECIDED": "Dieser Antrag wurde bereits entschieden und kann nicht mehr storniert werden."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",

@@ -52,6 +52,7 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
   'src/components/shift-issue-sheet.tsx': { calls: { 'shiftIssuesApi.create': 1, 'shiftIssuesApi.message': 2 }, why: FALLBACK },
   'app/(app)/asset-expense.tsx': { calls: { 'assetsApi.submitExpense': 1 }, why: FALLBACK },
   'app/(app)/send-document.tsx': { calls: { 'assetProposalsApi.raise': 1 }, why: FALLBACK },
+  'app/(app)/(tabs)/time-off.tsx': { calls: { 'timeOffApi.cancel': 1 }, why: FALLBACK },
   'src/components/worklog-sheet.tsx': {
     calls: { 'worklogApi.addNote': 1, 'worklogApi.confirmAttachment': 1 },
     why: 'directSave: the legacy path for a build without the offline layer',

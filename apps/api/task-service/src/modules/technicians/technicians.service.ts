@@ -1020,9 +1020,16 @@ export class TechniciansService {
       throw new ForbiddenException('You can only cancel your own time-off requests');
     }
 
+    // Cancelled already: the same answer again. A phone that sent this without
+    // signal may send it twice, and the second must not read as a refusal.
+    if (timeOff.status === 'CANCELED') return success(timeOff);
+
     // Can only cancel pending requests
     if (timeOff.status !== 'PENDING') {
-      throw new BadRequestException('Can only cancel pending time-off requests');
+      throw new BadRequestException({
+        message: 'This request was already decided, so it can no longer be cancelled',
+        code: 'TIME_OFF_DECIDED',
+      });
     }
 
     const updated = await this.prisma.timeOff.update({
