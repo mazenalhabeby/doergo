@@ -809,7 +809,33 @@ export function TaskDetailPane({
     if (!task || !stepNote.trim()) return;
     setSavingStepNote(true);
     try {
-      const comment = await tasksApi.addComment(task.id, stepNote.trim());
+      const content = stepNote.trim();
+      if (offline.engine) {
+        // A visit note is written at the customer's door — the same queue as any comment.
+        const { id: commentId, outcome } = await addTaskComment(offline.engine, { taskId: task.id, content });
+        if (outcome.kind === 'refused') {
+          toast.error(refusalText(outcome));
+          return;
+        }
+        const saved = (outcome.kind === 'done' ? outcome.response : null) as Comment | null;
+        setComments((prev) => [
+          {
+            ...(saved ?? {
+              id: commentId,
+              content,
+              createdAt: new Date().toISOString(),
+              user: { id: user?.id ?? '', firstName: user?.firstName ?? '', lastName: user?.lastName ?? '' },
+            }),
+            pendingSync: outcome.kind === 'queued',
+          } as Comment,
+          ...prev.filter((c) => c.id !== commentId),
+        ]);
+        setStepNote('');
+        if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
+        else toast.success(t('common.success'), '');
+        return;
+      }
+      const comment = await tasksApi.addComment(task.id, content);
       setComments((prev) => [comment, ...prev]);
       setStepNote('');
       toast.success(t('common.success'), '');
@@ -818,7 +844,7 @@ export function TaskDetailPane({
     } finally {
       setSavingStepNote(false);
     }
-  }, [task, stepNote, t]);
+  }, [task, stepNote, t, offline.engine, user?.id, user?.firstName, user?.lastName]);
 
   // Per-step: capture an inline signature and persist it as a task attachment.
   const handleStepSignature = useCallback(async (base64: string) => {
@@ -860,7 +886,21 @@ export function TaskDetailPane({
     try {
       setIsUpdating(true);
       setShowBlockReasonModal(false);
-      const updatedTask = await tasksApi.updateStatus(task.id, TaskStatus.BLOCKED, blockReason.trim() || undefined);
+      const reason = blockReason.trim() || undefined;
+      if (offline.engine) {
+        // Blocked is reported from where the work stopped, which is often where the signal did too.
+        const outcome = await changeTaskStatus(offline.engine, { taskId: task.id, from: task.status, to: TaskStatus.BLOCKED, reason });
+        if (outcome.kind === 'refused') throw new Error(refusalText(outcome));
+        if (outcome.kind === 'done') {
+          setTask((prev) => ({ ...(prev ?? task), ...(outcome.response as Task), pendingSync: false } as Task));
+        } else {
+          setTask((prev) => ({ ...(prev ?? task), status: TaskStatus.BLOCKED as Task['status'], pendingSync: true } as Task));
+          toast.info(t('offline.savedForLater'));
+        }
+        setBlockReason('');
+        return;
+      }
+      const updatedTask = await tasksApi.updateStatus(task.id, TaskStatus.BLOCKED, reason);
       setTask(updatedTask);
       setBlockReason('');
     } catch (err) {
@@ -982,6 +1022,16 @@ export function TaskDetailPane({
     setShowCancelTaskConfirm(false);
     try {
       setIsUpdating(true);
+      if (offline.engine) {
+        // The same route and the same check as the member's own changes: a task that moved meanwhile is refused, not overwritten.
+        const outcome = await changeTaskStatus(offline.engine, { taskId: task.id, from: task.status, to: TaskStatus.CANCELED });
+        if (outcome.kind === 'refused') throw new Error(refusalText(outcome));
+        const queued = outcome.kind !== 'done';
+        if (queued) setTask((prev) => ({ ...(prev ?? task), status: TaskStatus.CANCELED as Task['status'], pendingSync: true } as Task));
+        else setTask((prev) => ({ ...(prev ?? task), ...(outcome.response as Task), pendingSync: false } as Task));
+        if (queued) toast.info(t('offline.savedForLater'));
+        return;
+      }
       const updatedTask = await tasksApi.updateStatus(task.id, TaskStatus.CANCELED);
       setTask(updatedTask);
     } catch (err) {
