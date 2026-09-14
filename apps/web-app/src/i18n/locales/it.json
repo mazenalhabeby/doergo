@@ -3217,7 +3217,10 @@
       "rejectTitle": "Rifiuta registrazione oraria",
       "rejectPlaceholder": "Perché questa registrazione viene rifiutata?",
       "rejectEntry": "Rifiuta registrazione",
-      "location": "Sede"
+      "location": "Sede",
+      "filterLabel": "Filtra approvazioni",
+      "filterAll": "Tutte",
+      "filterOffline": "Registrate offline"
     },
     "my": {
       "noAccess": "Non ha accesso alle Presenze.",

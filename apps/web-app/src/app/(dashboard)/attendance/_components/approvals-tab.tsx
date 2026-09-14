@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
 import { RefreshCw, CheckCircle2, Check, X } from "lucide-react"
@@ -20,6 +20,8 @@ import {
 import { toDate, StatusBadge, WorkerCell, ClockCell, ApprovalCell, NoteCell } from "./attendance-helpers"
 import { useTimeFormat } from "@/hooks"
 import { workedMinutes } from "@hbcfield/shared/client"
+import { cn } from "@/lib/utils"
+import { recordedOffline } from "@/lib/attendance-status"
 
 interface ApprovalsTabProps {
   loading: boolean
@@ -37,6 +39,15 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
   const [rejectTarget, setRejectTarget] = useState<TimeEntry | null>(null)
   const [rejectionReason, setRejectionReason] = useState("")
 
+  /*
+    Only the shifts recorded without signal: they arrived late, carry the
+    evidence of the tap, and are the ones worth reading with that in mind.
+  */
+  const [onlyOffline, setOnlyOffline] = useState(false)
+  const all = useMemo(() => data?.data ?? [], [data?.data])
+  const offlineCount = useMemo(() => all.filter(recordedOffline).length, [all])
+  const shown = onlyOffline ? all.filter(recordedOffline) : all
+
   const closeReject = () => {
     setRejectTarget(null)
     setRejectionReason("")
@@ -52,10 +63,36 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
               {t("attendance.approvals.subtitle")}
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={onRefresh} className="rounded-lg">
-            <RefreshCw className="size-4 mr-2" />
-            {t("common.refresh")}
-          </Button>
+          <div className="flex items-center gap-2">
+            {offlineCount > 0 && (
+              <div className="flex items-center gap-1.5" role="group" aria-label={t("attendance.approvals.filterLabel")}>
+                {([
+                  [false, all.length, t("attendance.approvals.filterAll")],
+                  [true, offlineCount, t("attendance.approvals.filterOffline")],
+                ] as const).map(([value, count, label]) => (
+                  <button
+                    key={String(value)}
+                    type="button"
+                    aria-pressed={onlyOffline === value}
+                    onClick={() => setOnlyOffline(value)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors",
+                      onlyOffline === value
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border/80 bg-card text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <span className="font-semibold tabular-nums">{count}</span>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <Button variant="outline" size="sm" onClick={onRefresh} className="rounded-lg">
+              <RefreshCw className="size-4 mr-2" />
+              {t("common.refresh")}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -65,7 +102,7 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
             <Skeleton key={i} className="h-16 w-full" />
           ))}
         </div>
-      ) : !data?.data?.length ? (
+      ) : !all.length ? (
         <div className="p-14 text-center">
           <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-emerald-500/10">
             <CheckCircle2 className="size-6 text-emerald-500" />
@@ -88,7 +125,7 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.data.map((entry: TimeEntry) => (
+            {shown.map((entry: TimeEntry) => (
               <TableRow key={entry.id} className="hover:bg-muted/40 transition-colors">
                 <TableCell>
                   <WorkerCell entry={entry} />

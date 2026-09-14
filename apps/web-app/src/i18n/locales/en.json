@@ -3217,7 +3217,10 @@
       "rejectTitle": "Reject time entry",
       "rejectPlaceholder": "Why is this entry being rejected?",
       "rejectEntry": "Reject entry",
-      "location": "Location"
+      "location": "Location",
+      "filterLabel": "Filter approvals",
+      "filterAll": "All",
+      "filterOffline": "Recorded offline"
     },
     "my": {
       "noAccess": "You don't have access to Attendance.",

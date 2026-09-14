@@ -3217,7 +3217,10 @@
       "rejectTitle": "Rejeter le pointage",
       "rejectPlaceholder": "Pourquoi ce pointage est-il rejeté ?",
       "rejectEntry": "Rejeter le pointage",
-      "location": "Site"
+      "location": "Site",
+      "filterLabel": "Filtrer les validations",
+      "filterAll": "Toutes",
+      "filterOffline": "Enregistrées hors ligne"
     },
     "my": {
       "noAccess": "Vous n'avez pas accès aux présences.",

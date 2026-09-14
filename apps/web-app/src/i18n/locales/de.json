@@ -3217,7 +3217,10 @@
       "rejectTitle": "Zeiteintrag ablehnen",
       "rejectPlaceholder": "Warum wird dieser Eintrag abgelehnt?",
       "rejectEntry": "Eintrag ablehnen",
-      "location": "Standort"
+      "location": "Standort",
+      "filterLabel": "Genehmigungen filtern",
+      "filterAll": "Alle",
+      "filterOffline": "Offline erfasst"
     },
     "my": {
       "noAccess": "Sie haben keinen Zugriff auf die Anwesenheit.",

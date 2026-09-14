@@ -3217,7 +3217,10 @@
       "rejectTitle": "Rechazar registro de horas",
       "rejectPlaceholder": "¿Por qué se rechaza este registro?",
       "rejectEntry": "Rechazar registro",
-      "location": "Ubicación"
+      "location": "Ubicación",
+      "filterLabel": "Filtrar aprobaciones",
+      "filterAll": "Todas",
+      "filterOffline": "Registradas sin conexión"
     },
     "my": {
       "noAccess": "No tienes acceso a Asistencia.",

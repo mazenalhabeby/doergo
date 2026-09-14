@@ -204,3 +204,8 @@ export function deriveAttendanceFlags(entry: TimeEntry): AttendanceChip[] {
 
   return [...known, ...unknown]
 }
+
+/** Recorded on a phone without signal and sent later — the approvals filter reads this. */
+export function recordedOffline(entry: { flagReasons?: string[] | null }): boolean {
+  return (entry.flagReasons ?? []).includes("RECORDED_OFFLINE")
+}
