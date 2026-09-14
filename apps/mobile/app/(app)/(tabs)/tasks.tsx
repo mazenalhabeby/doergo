@@ -385,16 +385,13 @@ export default function TasksScreen() {
   const socketDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!isConnected) return;
+    // With the offline copy, OfflineSocketPoke pulls for the whole app and this
+    // list re-reads itself when the copy updates — nothing to do here.
+    if (!isConnected || offline.engine) return;
 
     const debouncedFetch = () => {
       if (socketDebounceRef.current) clearTimeout(socketDebounceRef.current);
-      // With the offline copy, an event only says "tasks changed": pull, and the
-      // list re-reads itself when the copy updates.
-      socketDebounceRef.current = setTimeout(
-        () => (offline.engine ? void offline.engine.pull('tasks').catch(() => undefined) : fetchTasks()),
-        2000,
-      );
+      socketDebounceRef.current = setTimeout(() => fetchTasks(), 2000);
     };
 
     const unsubs = [
