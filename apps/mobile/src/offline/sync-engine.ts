@@ -8,6 +8,7 @@ import {
   type SyncPullScope,
 } from '@hbcfield/shared/client';
 import { selectBatch } from './outbox/scheduler';
+import { compact } from './outbox/compaction';
 import { applyPushFailure, applyPushResults, failDependency, markInflight, recoverInflight, resumeAuth } from './outbox/transitions';
 import { OPEN_STATES, ATTENTION_STATES, type OutboxOp, type OutboxStore } from './outbox/types';
 
@@ -208,8 +209,15 @@ export class SyncEngine {
 
   /** One batch. Returns true when another batch may be ready straight away. */
   private async pushOnce(): Promise<boolean> {
-    const ops = await this.deps.store.list(this.deps.userId);
+    let ops = await this.deps.store.list(this.deps.userId);
     const now = this.now();
+    // Changes that cancel out before they were ever sent go as one, or not at all.
+    const compacted = compact(ops, now);
+    if (compacted.length) {
+      await this.deps.store.save(compacted);
+      await this.release(compacted.filter((o) => o.state === 'discarded'));
+      ops = await this.deps.store.list(this.deps.userId);
+    }
     const { batch, dependencyFailed, wakeAt } = selectBatch(ops, now);
     if (dependencyFailed.length) {
       await this.deps.store.save(failDependency(dependencyFailed, now));
