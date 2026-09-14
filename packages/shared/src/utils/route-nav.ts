@@ -11,6 +11,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { haversineDistance } from './geofence';
+import type { OptimizedRoute, RouteLeg, RouteOptimizeRequest } from '../types/crm';
 
 export type NavApp = 'google' | 'waze' | 'apple';
 
@@ -304,4 +305,50 @@ export function stopsAheadOf<T extends { id: string; lat: number; lng: number }>
     pressing continue.
   */
   return notArrived.slice(nearestIdx + 1);
+}
+
+/** Straight lines are shorter than roads; this is the usual urban detour. */
+export const STRAIGHT_LINE_ROAD_FACTOR = 1.3;
+/** ~45 km/h — for a rough time when no routing engine answered, never a promise. */
+export const STRAIGHT_LINE_SPEED_MPS = 12.5;
+
+/**
+ * An order and rough legs with no routing engine at all: nearest-neighbour from
+ * the start, distances as the crow flies times the detour factor.
+ *
+ * One implementation for the server (no engine configured or all engines down)
+ * and the phone (no signal to ask the server). `engine: 'nearest-neighbour'` is
+ * what tells a screen there is no road geometry to draw.
+ */
+export function straightLineRoute(req: RouteOptimizeRequest): OptimizedRoute {
+  const stops = req.stops;
+  const orderedStops = nearestNeighbourOrder(req.start, stops).map((i) => stops[i]!);
+  const seq: (LatLng & { label?: string; stopId?: string })[] = [
+    { lat: req.start.lat, lng: req.start.lng, label: req.start.label },
+    ...orderedStops.map((s) => ({ lat: s.lat, lng: s.lng, label: s.label, stopId: s.id })),
+  ];
+  if (req.end) seq.push({ lat: req.end.lat, lng: req.end.lng, label: req.end.label });
+  else if (req.roundTrip) seq.push({ lat: req.start.lat, lng: req.start.lng, label: req.start.label });
+
+  const legs: RouteLeg[] = [];
+  let totalMeters = 0;
+  let totalSeconds = 0;
+  for (let i = 0; i < seq.length - 1; i++) {
+    const a = seq[i]!;
+    const b = seq[i + 1]!;
+    const meters = Math.round(haversineDistance(a.lat, a.lng, b.lat, b.lng) * STRAIGHT_LINE_ROAD_FACTOR);
+    const seconds = Math.round(meters / STRAIGHT_LINE_SPEED_MPS);
+    legs.push({ fromIndex: i, toIndex: i + 1, meters, seconds });
+    totalMeters += meters;
+    totalSeconds += seconds;
+  }
+
+  return {
+    order: orderedStops.map((s) => s.id),
+    waypoints: seq.map((p) => ({ lat: p.lat, lng: p.lng, label: p.label, stopId: p.stopId })),
+    legs,
+    totalMeters,
+    totalSeconds,
+    engine: 'nearest-neighbour',
+  };
 }

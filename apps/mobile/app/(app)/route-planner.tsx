@@ -21,9 +21,14 @@ import { routesApi } from '../../src/lib/api';
 import { useTheme } from '../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import {
-  buildGoogleMapsUrl, buildNavUrl, stopsAheadOf,
+  buildGoogleMapsUrl, buildNavUrl, stopsAheadOf, straightLineRoute,
   type NavApp, type RouteStop, type OptimizedRoute,
 } from '@hbcfield/shared/client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useOffline } from '../../src/offline/offline-context';
+import { overlayTask } from '../../src/offline/tasks/overlay';
+import { isUnreachable } from '../../src/offline/actions/unreachable';
+import { restoreRoute, saveRoute } from '../../src/offline/routes/saved-route';
 
 type LatLng = { lat: number; lng: number; label?: string };
 
@@ -69,9 +74,19 @@ export default function RoutePlannerScreen() {
     mine: the same rule the Tasks banner uses to decide whether to offer this at
     all.
   */
+  const offline = useOffline();
   const load = useCallback(async () => {
     try {
-      const all = await tasksApi.list({ limit: 100 } as any);
+      /*
+        The phone's copy when it has one — the planner is opened on the road as
+        often as in the yard. The server otherwise, as before.
+      */
+      let all: Task[] | null = null;
+      if (offline.records && offline.engine && (await offline.records.cursor('tasks')).lastPullAt !== null) {
+        const ops = offline.engine.operations();
+        all = (await offline.records.list<Task>('tasks')).map((r) => overlayTask(r.data, ops) as Task);
+      }
+      all ??= await tasksApi.list({ limit: 100 } as any);
       const mine = (all || []).filter((x) => isMyRouteStop(x, user?.id));
       setTasks(mine);
       // Preselect all by default.
@@ -81,7 +96,7 @@ export default function RoutePlannerScreen() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, offline.records, offline.engine]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { locateMe(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -112,6 +127,16 @@ export default function RoutePlannerScreen() {
     [tasks, selected],
   );
 
+  // Today's plan, if one was made — shown at once, with or without signal.
+  const restored = useRef(false);
+  useEffect(() => {
+    if (restored.current || loading || !user?.id || tasks.length === 0) return;
+    restored.current = true;
+    void restoreRoute(AsyncStorage, user.id, tasks.map((x) => x.id)).then((plan) => {
+      if (plan) setResult((current) => current ?? plan);
+    });
+  }, [loading, tasks, user?.id]);
+
   const optimize = async () => {
     setError(null);
     const from = start ?? (stops[0] ? { lat: stops[0].lat, lng: stops[0].lng } : null);
@@ -120,8 +145,17 @@ export default function RoutePlannerScreen() {
     if (list.length === 0) { setError(t('route.needStops', 'Select at least one stop')); return; }
     setOptimizing(true);
     try {
-      const r = await routesApi.optimize({ start: from, stops: list });
+      let r: OptimizedRoute;
+      try {
+        r = await routesApi.optimize({ start: from, stops: list });
+      } catch (e) {
+        // No signal: order the stops on the phone. Straight lines, no road to draw —
+        // the map already says "this is the order, not the drive" for this engine.
+        if (!isUnreachable(e)) throw e;
+        r = straightLineRoute({ start: from, stops: list });
+      }
       setResult(r);
+      if (user?.id) void saveRoute(AsyncStorage, user.id, r);
     } catch (e: any) {
       setError(e?.message || 'Could not optimize the route');
     } finally { setOptimizing(false); }

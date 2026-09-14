@@ -4,9 +4,8 @@ import {
   OptimizedRoute,
   RouteLeg,
   RouteStop,
-  nearestNeighbourOrder,
+  straightLineRoute,
   decodePolyline,
-  haversineDistance,
 } from '@hbcfield/shared';
 
 /*
@@ -47,8 +46,6 @@ const TIMEOUT_MS = 8000;
 // Protect the optimizer (and the public OSRM host) from unbounded requests.
 const MAX_STOPS = 25;
 // Straight-line → driving fudge factor for the fallback ETA (roads aren't crow-flies).
-const ROAD_FACTOR = 1.3;
-const AVG_SPEED_MPS = 12.5; // ~45 km/h urban average, for fallback ETA only.
 
 type LatLng = { lat: number; lng: number };
 
@@ -271,38 +268,8 @@ export class RoutesService {
   }
 
   // ── Fallback: nearest-neighbour + straight-line ETA ─────────────────────────
+  // Shared with the phone, which uses the same one when it has no signal.
   private optimizeFallback(req: RouteOptimizeRequest, stops: RouteStop[]): OptimizedRoute {
-    const idxOrder = nearestNeighbourOrder(req.start, stops);
-    const orderedStops = idxOrder.map((i) => stops[i]!);
-    const order = orderedStops.map((s) => s.id);
-
-    const seq: (LatLng & { label?: string; stopId?: string })[] = [
-      { lat: req.start.lat, lng: req.start.lng, label: req.start.label },
-      ...orderedStops.map((s) => ({ lat: s.lat, lng: s.lng, label: s.label, stopId: s.id })),
-    ];
-    if (req.end) seq.push({ lat: req.end.lat, lng: req.end.lng, label: req.end.label });
-    else if (req.roundTrip) seq.push({ lat: req.start.lat, lng: req.start.lng, label: req.start.label });
-
-    const legs: RouteLeg[] = [];
-    let totalMeters = 0;
-    let totalSeconds = 0;
-    for (let i = 0; i < seq.length - 1; i++) {
-      const a = seq[i]!;
-      const b = seq[i + 1]!;
-      const meters = Math.round(haversineDistance(a.lat, a.lng, b.lat, b.lng) * ROAD_FACTOR);
-      const seconds = Math.round(meters / AVG_SPEED_MPS);
-      legs.push({ fromIndex: i, toIndex: i + 1, meters, seconds });
-      totalMeters += meters;
-      totalSeconds += seconds;
-    }
-
-    return {
-      order,
-      waypoints: seq.map((p) => ({ lat: p.lat, lng: p.lng, label: p.label, stopId: p.stopId })),
-      legs,
-      totalMeters,
-      totalSeconds,
-      engine: 'nearest-neighbour',
-    };
+    return straightLineRoute({ ...req, stops });
   }
 }
