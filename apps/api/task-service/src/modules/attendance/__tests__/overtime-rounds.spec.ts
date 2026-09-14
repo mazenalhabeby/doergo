@@ -147,14 +147,26 @@ describe('overtime rounds', () => {
       jest.useRealTimers();
     });
 
-    it('grants from NOW when the shift has already ended, never into the past', async () => {
-      // The leader answers at 18:20 for a shift that ended at 18:00. Extending
-      // from the old end would grant seventy minutes of "overtime" that had
-      // already elapsed — and the member would be asked again almost at once.
+    it('grants the minutes after the shift end, not after the moment of approval', async () => {
+      // The leader answers at 18:20 for a shift that ended at 18:00. Ninety minutes
+      // approved is ninety minutes of overtime — until 19:30 — whenever the leader
+      // happens to look. Counting from the click used to pay until 19:50, and with
+      // a phone that sends its clock-out hours later, until whenever.
       jest.useFakeTimers().setSystemTime(new Date('2026-09-06T16:20:00Z'));
       await service.approveExtraTime({ approverId: 'leader', entryId: 'e1', minutes: 90, organizationId: 'org1' });
       const update = prisma.timeEntry.update.mock.calls[0][0];
-      expect(update.data.expectedClockOutAt).toEqual(new Date('2026-09-06T17:50:00Z'));
+      expect(update.data.expectedClockOutAt).toEqual(new Date('2026-09-06T17:30:00Z'));
+      jest.useRealTimers();
+    });
+
+    it('asks again after the grace from NOW when the approved time has already run out', async () => {
+      // Approved at 19:45 for 90 min after 18:00: that time is used up, so the
+      // member is asked again shortly — not "five minutes after 19:30", in the past.
+      jest.useFakeTimers().setSystemTime(new Date('2026-09-06T17:45:00Z'));
+      await service.approveExtraTime({ approverId: 'leader', entryId: 'e1', minutes: 90, organizationId: 'org1' });
+      const update = prisma.timeEntry.update.mock.calls[0][0];
+      expect(update.data.expectedClockOutAt).toEqual(new Date('2026-09-06T17:30:00Z'));
+      expect(update.data.nextRemindAt.getTime()).toBeGreaterThan(new Date('2026-09-06T17:45:00Z').getTime());
       jest.useRealTimers();
     });
 

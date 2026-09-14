@@ -1260,7 +1260,8 @@ export class AttendanceService {
           status: 'PENDING_APPROVAL',
           // When they said it — sent later from a phone without signal, that is not now.
           technicianRespondedAt: respondedAt(data.occurredAt, entry.clockInAt),
-          overtimeStartAt: entry.expectedClockOutAt ?? new Date(),
+          // Where the overtime begins: the shift end, or — with no planned end — when they asked.
+          overtimeStartAt: entry.expectedClockOutAt ?? respondedAt(data.occurredAt, entry.clockInAt),
         },
       }),
     ]);
@@ -1321,16 +1322,6 @@ export class AttendanceService {
     await this.assertNotSelfOvertimeDecision(data.approverId, entry.userId, data.organizationId);
 
     const now = new Date();
-    // Grant the extra minutes from the later of the expected end or now, so a
-    // shift that already ended extends from now (not into the past). A CLOSED
-    // shift extends from its expected end: the work is over, and the paid time
-    // is still capped by the real clock-out.
-    const base = closed
-      ? (entry.expectedClockOutAt ?? entry.clockOutAt ?? now)
-      : entry.expectedClockOutAt && entry.expectedClockOutAt.getTime() > now.getTime()
-        ? entry.expectedClockOutAt
-        : now;
-    const newExpected = new Date(base.getTime() + minutes * 60_000);
     const graceMin = entry.shift?.graceMin ?? SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
 
     /*
@@ -1344,8 +1335,30 @@ export class AttendanceService {
     const round = await this.prisma.overtimeRequest.findFirst({
       where: { timeEntryId: entry.id, status: 'PENDING_APPROVAL' },
       orderBy: { cycle: 'desc' },
-      select: { id: true },
+      select: { id: true, overtimeStartAt: true },
     });
+
+    /*
+      ⚠️ APPROVED OVERTIME IS A NUMBER OF MINUTES AFTER THE END, NOT AFTER THE CLICK.
+
+      This used to extend from "now" when the shift had already ended, which
+      made the pay depend on when the leader happened to look: ninety minutes
+      approved at 19:00 for a shift that ended at 17:00 paid until 20:30. With a
+      phone that sends its clock-out hours later, that is money nobody approved.
+      So the minutes run from the end the member was working to — the current
+      expected end (moved by earlier rounds, so rounds add up), or where the
+      request said overtime began — and the paid time is still capped by the
+      real clock-out. Only the REMINDER waits for now: a member whose approved
+      time has already run out is asked again after the grace, not in the past.
+    */
+    const newExpected = overtimeEndFor({
+      expectedEndAt: entry.expectedClockOutAt,
+      requestStartedAt: round?.overtimeStartAt ?? null,
+      clockOutAt: entry.clockOutAt,
+      now,
+      minutes,
+    });
+    const remindFrom = newExpected.getTime() > now.getTime() ? newExpected : now;
 
     await this.prisma.$transaction([
       this.prisma.timeEntry.update({
@@ -1356,7 +1369,7 @@ export class AttendanceService {
               expectedClockOutAt: newExpected,
               reminderState: 'OVERTIME_APPROVED',
               reminderCount: 0,
-              nextRemindAt: new Date(newExpected.getTime() + graceMin * 60_000),
+              nextRemindAt: new Date(remindFrom.getTime() + graceMin * 60_000),
             },
       }),
       ...(round
@@ -3216,4 +3229,20 @@ export function respondedAt(occurredAt: string | null | undefined, clockInAt: Da
   if (at.getTime() > now.getTime()) return now;
   if (at.getTime() < clockInAt.getTime()) return clockInAt;
   return at;
+}
+
+/**
+ * The end an approval of `minutes` moves a shift to: minutes after the end the
+ * member was working to, never after the moment of approval. Pure and shared by
+ * a leader's approval and a manager adding overtime to a closed shift.
+ */
+export function overtimeEndFor(input: {
+  expectedEndAt: Date | null;
+  requestStartedAt: Date | null;
+  clockOutAt: Date | null;
+  now: Date;
+  minutes: number;
+}): Date {
+  const base = input.expectedEndAt ?? input.requestStartedAt ?? input.clockOutAt ?? input.now;
+  return new Date(base.getTime() + Math.round(input.minutes) * 60_000);
 }
