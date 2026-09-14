@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { SyncAwareThrottlerGuard } from './common/throttler/sync-aware-throttler.guard';
 import { RedisThrottlerStorage } from './common/throttler/redis-throttler.storage';
 import { BullModule } from '@nestjs/bullmq';
 import { BullBoardModule } from '@bull-board/nestjs';
@@ -64,6 +65,7 @@ import { SpaceModulesModule } from './common/space-modules.service';
 import { OrgEventsModule } from './common/events/org-events.service';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { AppVersionInterceptor } from './common/interceptors/app-version.interceptor';
+import { SyncModule } from './modules/sync/sync.module';
 import { IdempotencyModule } from './common/idempotency/idempotency.module';
 import { IdempotencyInterceptor } from './common/idempotency/idempotency.interceptor';
 import { StorageModule } from './common/storage/storage.module';
@@ -74,6 +76,7 @@ import { StorageModule } from './common/storage/storage.module';
     AppVersionModule,
     StorageModule,
     IdempotencyModule,
+    SyncModule,
     AuthCacheModule,
     // Global: ModuleGuard is an APP_GUARD, so it is constructed in every
     // module's injector and its dependency has to be reachable from all of them.
@@ -178,7 +181,8 @@ import { StorageModule } from './common/storage/storage.module';
     // Global guards - Throttler → JwtAuthGuard → RolesGuard → OnboardingCompleteGuard → PermissionsGuard → AccessModuleGuard
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      // Skips only the gateway's own replays of a phone's queue (per-process secret).
+      useClass: SyncAwareThrottlerGuard,
     },
     {
       provide: APP_GUARD,

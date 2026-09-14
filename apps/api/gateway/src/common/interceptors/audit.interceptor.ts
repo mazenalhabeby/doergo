@@ -20,7 +20,10 @@ import { tap } from 'rxjs/operators';
 const MUTATING = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
 
 // High-frequency / low-value paths we don't audit (location pings, token churn).
-const SKIP_PREFIXES = ['/tracking', '/auth', '/users/push-token'];
+// `/sync/push` is a carrier: each operation inside it is replayed against its own
+// route and audited there, as the action it is. Auditing the carrier too would
+// record every offline action twice.
+const SKIP_PREFIXES = ['/tracking', '/auth', '/users/push-token', '/sync'];
 
 // Redact anything that looks secret from the logged body.
 const SENSITIVE_KEY = /pass|token|secret|otp|code|hash|authorization/i;
