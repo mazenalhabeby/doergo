@@ -1182,7 +1182,13 @@ model Comment {
 model Attachment {
   id        String         @id @default(cuid())
   fileName  String
+  /// ⚠️ LEGACY: `{endpoint}/{bucket}/{key}`, the provider baked into the row.
+  /// Kept for app 1.0.5, which still sends it on confirm. Read `fileKey`.
   fileUrl   String
+  /// The object key. Provider-independent; responses sign a URL from it.
+  fileKey   String?
+  /// The MIME type as uploaded — decides whether a signed link renders inline.
+  mimeType  String?
   fileType  AttachmentType
   fileSize  Int
   createdAt DateTime       @default(now())
@@ -2122,7 +2128,10 @@ model ReportAttachment {
 
   type     ReportAttachmentType // BEFORE or AFTER
   fileName String
+  /// ⚠️ LEGACY: provider URL baked into the row. Read `fileKey`.
   fileUrl  String
+  fileKey  String?
+  mimeType String?
   fileSize Int // bytes
   caption  String? // Optional description
 

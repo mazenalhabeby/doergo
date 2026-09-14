@@ -31,6 +31,8 @@ import {
   ReorderChecklistDto,
   CreateDependencyDto,
   AddCommentDto,
+  PresignAttachmentDto,
+  ConfirmAttachmentDto,
 } from './dto';
 import { TasksQueueService } from './tasks.queue.service';
 import { TasksService } from './tasks.service';
@@ -757,7 +759,7 @@ export class TasksController {
   @ApiOperation({ summary: 'Get presigned URL for uploading an attachment' })
   async getPresignedUrl(
     @Param('id') id: string,
-    @Body() body: { fileName: string; fileType: string },
+    @Body() body: PresignAttachmentDto,
     @Request() req: any,
   ) {
     return this.tasksQueueService.getPresignedUrl({
@@ -782,15 +784,16 @@ export class TasksController {
   @ApiOperation({ summary: 'Confirm attachment upload after S3 upload' })
   async addAttachment(
     @Param('id') id: string,
-    @Body() body: { fileName: string; fileUrl: string; fileType: string; fileSize: number },
+    @Body() body: ConfirmAttachmentDto,
     @Request() req: any,
   ) {
     return this.tasksQueueService.addAttachment({
       taskId: id,
       fileName: body.fileName,
+      fileKey: body.fileKey,
       fileUrl: body.fileUrl,
       fileType: body.fileType,
-      fileSize: body.fileSize,
+      fileSize: body.fileSize ?? 0,
       uploadedById: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,

@@ -46,8 +46,6 @@ export const TASK_JOB_TYPES = {
   GET_ATTACHMENTS: 'task.getAttachments',
   DELETE_ATTACHMENT: 'task.deleteAttachment',
   GET_PRESIGNED_URL: 'task.getPresignedUrl',
-  AVATAR_PRESIGNED_URL: 'task.avatarPresignedUrl',
-  AVATAR_DELETE_S3: 'task.avatarDeleteS3',
   ADD_ASSIGNEE: 'task.addAssignee',
   REMOVE_ASSIGNEE: 'task.removeAssignee',
   ADD_CHECKLIST_ITEM: 'task.addChecklistItem',

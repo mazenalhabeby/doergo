@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
 import Redis from 'ioredis';
+import { MediaSigner } from '../../common/storage/media-signer.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { assertWorkflowInOrg } from '../../common/tenant-scope.util';
@@ -74,6 +75,7 @@ export class TasksService {
     configService: ConfigService,
     private readonly workflowCache: WorkflowConfigCache,
     private readonly notificationRouting: NotificationRoutingService,
+    private readonly media: MediaSigner,
   ) {
     const redisHost = configService.get<string>('REDIS_HOST', 'localhost') || 'localhost';
     const redisPort = configService.get<number>('REDIS_PORT', 6379) || 6379;
@@ -623,13 +625,14 @@ export class TasksService {
       include: {
         unit: { select: { id: true, name: true } },
         workflow: { select: { statuses: { orderBy: { position: 'asc' } } } },
-        attachments: { select: { id: true, fileUrl: true, fileType: true, fileName: true } },
+        attachments: { select: { id: true, fileUrl: true, fileKey: true, mimeType: true, fileType: true, fileName: true } },
       },
     });
     if (!task) {
       throw new NotFoundException('Request not found');
     }
-    return success({ ...this.portalRequestShape(task), description: task.description, attachments: task.attachments });
+    const attachments = (await this.media.signAll(task.attachments)).map(({ fileKey: _k, ...a }) => a);
+    return success({ ...this.portalRequestShape(task), description: task.description, attachments });
   }
 
   /**
@@ -1180,6 +1183,8 @@ export class TasksService {
 
     return success({
       ...task,
+      // Signed links, never the stored provider URL — see MediaSigner.
+      attachments: await this.media.signAll(task.attachments),
       acceptedAt,
       completedAt,
       capabilities,

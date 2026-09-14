@@ -116,13 +116,6 @@ export class TasksProcessor extends WorkerHost {
       case TASK_JOB_TYPES.GET_PRESIGNED_URL:
         return this.attachmentsService.getPresignedUrl(data);
 
-      // ============ Avatar S3 Operations ============
-      case TASK_JOB_TYPES.AVATAR_PRESIGNED_URL:
-        return this.attachmentsService.getAvatarPresignedUrl(data);
-
-      case TASK_JOB_TYPES.AVATAR_DELETE_S3:
-        return this.attachmentsService.deleteAvatarFromS3(data);
-
       default:
         this.logger.warn(`Unknown job type: ${name}`);
         throw new Error(`Unknown job type: ${name}`);

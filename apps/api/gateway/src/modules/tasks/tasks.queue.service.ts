@@ -70,16 +70,6 @@ export class TasksQueueService extends BaseQueueService {
     return this.addJobAndWait(TASK_JOB_TYPES.GET_PRESIGNED_URL, data);
   }
 
-  // ============ Avatar S3 Operations ============
-
-  async getAvatarPresignedUrl(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.AVATAR_PRESIGNED_URL, data);
-  }
-
-  async deleteAvatarFromS3(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.AVATAR_DELETE_S3, data);
-  }
-
   // ============ Assignee Operations ============
 
   async addAssignee(data: Record<string, any>) {

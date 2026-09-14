@@ -6,15 +6,21 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import {
+  OBJECT_STORE,
+  ObjectStore,
+  newObjectKey,
+  requireObjectStore,
+} from '@hbcfield/shared/storage';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { MediaSigner } from '../../common/storage/media-signer.service';
 import { TaskEventType, AttachmentType, Role, success, canAccessTask } from '@hbcfield/shared';
 import type { TaskAccessFacts } from '../tasks/tasks.service';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+/** Upload links live an hour: a phone on a weak connection needs the time. */
+const UPLOAD_TTL_SECONDS = 3600;
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
 const ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
 const ALLOWED_FILE_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOCUMENT_TYPES];
@@ -40,43 +46,45 @@ export function attachmentTypeOf(mime: string): AttachmentType {
   return AttachmentType.OTHER;
 }
 
+/**
+ * The key prefixes a confirmed upload may live under for this task.
+ *
+ * The confirm step pins the object to THIS task — never an arbitrary key, which
+ * would let one tenant attach another tenant's object (or anything else in the
+ * bucket) to their task and read it back through a signed link. The legacy
+ * layout stays accepted for objects presigned before organization-first keys.
+ */
+export function attachmentKeyPrefixes(organizationId: string, taskId: string): string[] {
+  return [`${organizationId}/attachments/${taskId}/`, `attachments/${taskId}/`];
+}
+
 @Injectable()
 export class AttachmentsService {
   private readonly logger = new Logger(AttachmentsService.name);
-  private readonly s3Client: S3Client;
-  private readonly s3Bucket: string;
-  private readonly s3Endpoint: string;
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly configService: ConfigService,
+    @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+    private readonly media: MediaSigner,
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
-  ) {
-    this.s3Endpoint = this.configService.get<string>('S3_ENDPOINT', 'https://hel1.your-objectstorage.com');
-    this.s3Bucket = this.configService.get<string>('S3_BUCKET', 'hbcfield');
-
-    this.s3Client = new S3Client({
-      endpoint: this.s3Endpoint,
-      region: this.configService.get<string>('S3_REGION', 'eu-central'),
-      credentials: {
-        accessKeyId: this.configService.get<string>('S3_ACCESS_KEY', ''),
-        secretAccessKey: this.configService.get<string>('S3_SECRET_KEY', ''),
-      },
-      forcePathStyle: true,
-    });
-  }
+  ) {}
 
   async create(data: {
     taskId: string;
     uploadedById: string;
     userRole?: string;
     fileName: string;
-    fileUrl: string;
+    /** The key the presign step returned. Sent by apps newer than 1.0.5. */
+    fileKey?: string;
+    /** LEGACY: the URL app 1.0.5 sends instead of the key. */
+    fileUrl?: string;
     /** A MIME type, as the client reports it — NOT an AttachmentType. */
     fileType: string;
     fileSize: number;
     organizationId: string;
   }) {
+    const store = requireObjectStore(this.store);
+
     // Verify task exists, then apply the SAME access check as upload/list/delete
     // (not just an org check) — an unassigned employee must not attach to a task.
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
@@ -91,28 +99,9 @@ export class AttachmentsService {
       userRole: data.userRole || '',
     } as TaskAccessFacts);
 
-    // The confirmed URL must be the presigned object for THIS task — never an
-    // arbitrary client-supplied URL (would be stored-XSS/phishing in the gallery).
-    /*
-      The confirmed URL must be the presigned object for THIS task — never an
-      arbitrary client-supplied URL, which would be stored-XSS in the gallery.
-
-      Both layouts are accepted: the org-prefixed one every new presign produces,
-      and the legacy one, because an upload presigned minutes before a deploy is
-      confirmed minutes after it. Both still pin the URL to this task and this
-      bucket, which is the whole point of the check — the prefix is narrower now,
-      not looser.
-    */
-    const base = `${this.s3Endpoint}/${this.s3Bucket}/`;
-    const accepted = [
-      `${base}${data.organizationId}/attachments/${data.taskId}/`,
-      `${base}attachments/${data.taskId}/`,
-    ];
-    if (typeof data.fileUrl !== 'string' || !accepted.some((p) => data.fileUrl.startsWith(p))) {
-      throw new BadRequestException('Invalid file URL');
-    }
-    if (typeof data.fileSize !== 'number' || data.fileSize <= 0 || data.fileSize > MAX_FILE_SIZE) {
-      throw new BadRequestException('Invalid file size');
+    const key = typeof data.fileKey === 'string' && data.fileKey ? data.fileKey : store.keyFromUrl(data.fileUrl);
+    if (!key || key.includes('..') || !attachmentKeyPrefixes(data.organizationId, data.taskId).some((p) => key.startsWith(p))) {
+      throw new BadRequestException('Invalid file');
     }
     if (!data.fileName || data.fileName.length > 255) {
       throw new BadRequestException('Invalid file name');
@@ -126,14 +115,35 @@ export class AttachmentsService {
       throw new BadRequestException('Unsupported file type');
     }
 
+    /*
+      ⚠️ The server looks at the object instead of believing the client.
+
+      The size used to be whatever the confirm request claimed, and nothing
+      checked the upload had happened at all — a row could point at nothing.
+      The presigned PUT did not pin a length (a phone picker's size is not the
+      bytes it sends), so this is also where an oversized upload is caught and
+      removed.
+    */
+    const object = await store.head(key);
+    if (!object.exists) {
+      throw new BadRequestException('The upload did not reach storage. Please try again.');
+    }
+    if (object.sizeBytes <= 0 || object.sizeBytes > MAX_FILE_SIZE) {
+      await store.delete(key);
+      throw new BadRequestException('File is empty or larger than 20 MB');
+    }
+
     const attachment = await this.prisma.attachment.create({
       data: {
         taskId: data.taskId,
         uploadedById: data.uploadedById,
         fileName: data.fileName,
-        fileUrl: data.fileUrl,
+        fileKey: key,
+        // Written for app 1.0.5 only; nothing server-side reads it any more.
+        fileUrl: store.privateUrl(key),
+        mimeType: data.fileType,
         fileType: attachmentTypeOf(data.fileType),
-        fileSize: data.fileSize,
+        fileSize: object.sizeBytes,
       },
     });
 
@@ -147,10 +157,12 @@ export class AttachmentsService {
       },
     });
 
-    // Notify
-    this.notificationClient.emit('attachment_added', { taskId: data.taskId, attachment });
+    const signed = await this.media.sign(attachment);
 
-    return success(attachment);
+    // Notify
+    this.notificationClient.emit('attachment_added', { taskId: data.taskId, attachment: signed });
+
+    return success(signed);
   }
 
   async findByTask(data: {
@@ -176,7 +188,7 @@ export class AttachmentsService {
       },
     });
 
-    return success(attachments);
+    return success(await this.media.signAll(attachments));
   }
 
   async remove(data: {
@@ -204,18 +216,12 @@ export class AttachmentsService {
       throw new ForbiddenException('Attachment is not in your organization');
     }
 
-    // Delete from S3 (graceful - log warning on failure)
-    const fileUrl = attachment.fileUrl;
-    const bucketPrefix = `${this.s3Endpoint}/${this.s3Bucket}/`;
-    if (fileUrl.startsWith(bucketPrefix)) {
-      const fileKey = fileUrl.slice(bucketPrefix.length);
-      try {
-        await this.s3Client.send(new DeleteObjectCommand({
-          Bucket: this.s3Bucket,
-          Key: fileKey,
-        }));
-      } catch (err) {
-        this.logger.warn(`Failed to delete S3 object ${fileKey}: ${err}`);
+    // Remove the object first; a failed cleanup never blocks the delete — an
+    // orphaned object costs a fraction of a cent.
+    if (this.store) {
+      const key = this.media.keyOf(attachment);
+      if (key && !(await this.store.delete(key))) {
+        this.logger.warn(`Failed to delete stored object ${key}`);
       }
     }
 
@@ -269,97 +275,31 @@ export class AttachmentsService {
       throw new BadRequestException('File name must be between 1 and 255 characters');
     }
 
-    // Sanitize filename: remove path separators and special chars
-    const safeName = data.fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const store = requireObjectStore(this.store);
     /*
-      Organization first, like everything else in this bucket.
+      `{org}/attachments/{taskId}/{uuid}.{ext}`.
 
-      Documents, signatures, shift-issue photos and worklog photos all begin with
-      the organization id, which is what makes "delete a tenant" or "export one
-      customer" a prefix operation rather than a scan of the whole bucket. Task
-      attachments predate the shared ObjectStore and were the one thing filed
-      outside that scheme — nothing leaked, because access is checked in the API
-      rather than by prefix, but a per-tenant sweep would silently miss them.
-
-      Only NEW uploads move. Objects already stored keep their old keys, and the
-      database holds the full URL for each one, so reads and deletes of anything
-      uploaded before today are unaffected. There is no migration to run and
-      nothing to backfill — the two layouts simply coexist, which is the cheapest
-      correct answer for a change whose whole benefit is future sweeps.
+      The key used to be `{timestamp}-{original filename}`: guessable, and
+      carrying whatever the uploader called the file ("passport_mueller.jpg").
+      The name is kept on the row; the key is an id. Organization first, like
+      every other object, so a tenant is a prefix.
     */
-    const fileKey = `${data.organizationId}/attachments/${data.taskId}/${Date.now()}-${safeName}`;
-    const expiresIn = 3600; // 1 hour
-
-    const command = new PutObjectCommand({
-      Bucket: this.s3Bucket,
-      Key: fileKey,
-      ContentType: data.fileType,
+    const fileKey = newObjectKey({
+      organizationId: data.organizationId,
+      kind: 'attachments',
+      parentId: data.taskId,
+      mime: data.fileType,
     });
-
-    const uploadUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
-
-    // Build the public file URL for storing in DB after upload
-    const fileUrl = `${this.s3Endpoint}/${this.s3Bucket}/${fileKey}`;
+    const upload = await store.presignUpload(fileKey, data.fileType, undefined, UPLOAD_TTL_SECONDS);
 
     return success({
-      uploadUrl,
+      uploadUrl: upload.url,
       fileKey,
-      fileUrl,
-      expiresIn,
+      // LEGACY: app 1.0.5 echoes this back on confirm. Not a readable URL.
+      fileUrl: store.privateUrl(fileKey),
+      expiresIn: UPLOAD_TTL_SECONDS,
       maxFileSize: MAX_FILE_SIZE,
     });
-  }
-
-  async getAvatarPresignedUrl(data: {
-    userId: string;
-    fileName: string;
-    fileType: string;
-  }) {
-    // Validate file type format and allowed types for avatars
-    if (!data.fileType || !/^[a-z]+\/[a-z0-9\-\.+]+$/i.test(data.fileType)) {
-      throw new BadRequestException('Invalid file type format');
-    }
-    if (!ALLOWED_IMAGE_TYPES.includes(data.fileType)) {
-      throw new BadRequestException(
-        `File type ${data.fileType} is not allowed for avatars. Allowed: JPEG, PNG, GIF, WebP, HEIC.`,
-      );
-    }
-
-    if (!data.fileName || data.fileName.length > 255) {
-      throw new BadRequestException('File name must be between 1 and 255 characters');
-    }
-
-    const safeName = data.fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const fileKey = `avatars/${data.userId}/${Date.now()}-${safeName}`;
-    const expiresIn = 3600;
-
-    const command = new PutObjectCommand({
-      Bucket: this.s3Bucket,
-      Key: fileKey,
-      ContentType: data.fileType,
-    });
-
-    const uploadUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
-    const fileUrl = `${this.s3Endpoint}/${this.s3Bucket}/${fileKey}`;
-
-    return success({ uploadUrl, fileUrl, expiresIn });
-  }
-
-  async deleteAvatarFromS3(data: { fileUrl: string }) {
-    const bucketPrefix = `${this.s3Endpoint}/${this.s3Bucket}/`;
-    if (data.fileUrl.startsWith(bucketPrefix)) {
-      const fileKey = data.fileUrl.slice(bucketPrefix.length);
-      try {
-        await this.s3Client.send(new DeleteObjectCommand({
-          Bucket: this.s3Bucket,
-          Key: fileKey,
-        }));
-        this.logger.log(`Deleted avatar from S3: ${fileKey}`);
-      } catch (err) {
-        this.logger.warn(`Failed to delete avatar S3 object ${fileKey}: ${err}`);
-      }
-    }
-    return success(null, 'Avatar deleted from S3');
   }
 
   /**

@@ -6,6 +6,8 @@ import { Role } from '@hbcfield/shared';
 import { TasksService } from '../tasks.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
+import { MediaSigner } from '../../../common/storage/media-signer.service';
+import { OBJECT_STORE } from '@hbcfield/shared/storage';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 
 /**
@@ -72,6 +74,9 @@ describe('TasksService — per-task authorization', () => {
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },
         { provide: WorkflowConfigCache, useValue: { getWorkflow: jest.fn().mockResolvedValue(null) } },
         { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) } },
+        // Storage unconfigured: attachments come back with url null, as on a dev machine.
+        MediaSigner,
+        { provide: OBJECT_STORE, useValue: null },
       ],
     }).compile();
     service = module.get<TasksService>(TasksService);
