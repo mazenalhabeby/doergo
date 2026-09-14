@@ -7,6 +7,19 @@ import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { IsBoolean } from 'class-validator';
 import { ADD_ON_KEYS, isAddOn, BILLING_MODES, type BillingMode } from '@hbcfield/shared';
 
+/*
+  Offline mode on or off.
+
+  ⚠️ Declared ABOVE the controller, not below it. A class is not hoisted, and
+  the decorator metadata on `setOfflineMode` names this type the moment the
+  controller class is defined — below, the gateway dies on start with
+  "Cannot access 'OfflineModeDto' before initialization".
+*/
+class OfflineModeDto {
+  @IsBoolean()
+  enabled!: boolean;
+}
+
 /**
  * PLATFORM Control Center (company super-admin). `@Public()` skips the customer
  * JWT chain; the PLATFORM-STAFF Bearer token is verified by PlatformAuthGuard and
@@ -188,10 +201,4 @@ export class PlatformAdminController {
     if (unknown.length) throw new HttpException({ message: `Not an add-on: ${unknown.join(', ')}` }, HttpStatus.BAD_REQUEST);
     return this.unwrap(await this.svc.setAddOns({ organizationId: id, addOns }));
   }
-}
-
-/** Offline mode on or off. */
-class OfflineModeDto {
-  @IsBoolean()
-  enabled!: boolean;
 }
