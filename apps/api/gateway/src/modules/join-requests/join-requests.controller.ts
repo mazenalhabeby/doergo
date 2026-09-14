@@ -62,10 +62,11 @@ export class JoinRequestsController {
   ) {
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'onboarding_approve_join_request' }, {
+        // The body first, the caller's identity after it: nothing sent can stand in for who is deciding.
+        ...dto,
         requestId: id,
         organizationId: user.organizationId,
         approverId: user.id,
-        ...dto,
       }),
     );
 
@@ -114,10 +115,11 @@ export class JoinRequestsController {
   ) {
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'onboarding_reject_join_request' }, {
+        // The body first, the caller's identity after it: nothing sent can stand in for who is deciding.
+        ...dto,
         requestId: id,
         organizationId: user.organizationId,
         approverId: user.id,
-        ...dto,
       }),
     );
 

@@ -1,10 +1,11 @@
-import { Injectable, Inject, Logger, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, Logger, NotFoundException, ForbiddenException, BadRequestException, ConflictException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, success } from '@hbcfield/shared';
 import { OBJECT_STORE, ObjectStore, newObjectKey, requireObjectStore } from '@hbcfield/shared/storage';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
+import { createOnce } from '../../common/create-once.util';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
@@ -130,17 +131,40 @@ export class ShiftIssuesService {
   async create(data: {
     organizationId: string; callerUserId: string; title: string; description?: string;
     severity?: string; timeEntryId?: string; spaceId?: string; attachments?: Attachment[];
+    /** Made on the phone: a report sent twice is still one issue. */
+    id?: string;
   }) {
     const title = (data.title ?? '').trim();
     if (!title) throw new BadRequestException('A short title is required');
     const severity = SEVERITIES.includes(data.severity ?? '') ? (data.severity as any) : 'MEDIUM';
 
+    if (data.id) {
+      const prior = await this.prisma.shiftIssue.findUnique({ where: { id: data.id }, include: { events: true } });
+      if (prior) {
+        if (prior.reportedById !== data.callerUserId) throw new ConflictException({ message: 'This id is already in use', code: 'ID_IN_USE' });
+        return success(prior);
+      }
+    }
+
+    /*
+      The shift and the site are the reporter's OWN, in their organization.
+      Both were stored as sent, so an issue could name another member's shift
+      (or another organization's site) and be routed by it.
+    */
+    const timeEntryId = data.timeEntryId
+      ? (await this.prisma.timeEntry.findFirst({ where: { id: data.timeEntryId, userId: data.callerUserId, organizationId: data.organizationId }, select: { id: true } }))?.id ?? null
+      : null;
+    const spaceId = data.spaceId
+      ? (await this.prisma.companyLocation.findFirst({ where: { id: data.spaceId, organizationId: data.organizationId }, select: { id: true } }))?.id ?? null
+      : null;
+
     const issue = await this.prisma.shiftIssue.create({
       data: {
+        ...(data.id ? { id: data.id } : {}),
         organizationId: data.organizationId,
         reportedById: data.callerUserId,
-        timeEntryId: data.timeEntryId ?? null,
-        spaceId: data.spaceId ?? null,
+        timeEntryId,
+        spaceId,
         title: title.slice(0, 200),
         description: data.description?.slice(0, BODY_MAX) ?? null,
         severity,
@@ -239,16 +263,27 @@ export class ShiftIssuesService {
   }
 
   // ── add a message to the thread ───────────────────────────────────────────────
-  async addMessage(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[]; body?: string; attachments?: Attachment[] }) {
+  async addMessage(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[]; body?: string; attachments?: Attachment[];
+    /** Made on the phone: a message sent twice is still one message. */
+    id?: string }) {
     const issue = await this.loadIssue(data.issueId, data.organizationId);
     this.assertParticipant(issue, data.callerUserId, !!data.canManage, data.ledSpaceIds);
     const body = (data.body ?? '').trim();
     const attachments = this.cleanAttachments(issue, data.attachments);
     if (!body && !attachments.length) throw new BadRequestException('Empty message');
 
-    const event = await this.prisma.shiftIssueEvent.create({
-      data: { issueId: issue.id, type: 'MESSAGE', actorId: data.callerUserId, body: body.slice(0, BODY_MAX) || null, attachments: attachments as any },
+    const { row: event, created } = await createOnce({
+      id: data.id,
+      find: (id) => this.prisma.shiftIssueEvent.findUnique({ where: { id } }),
+      isSame: (e) => e.issueId === issue.id && e.actorId === data.callerUserId,
+      create: () =>
+        this.prisma.shiftIssueEvent.create({
+          data: { ...(data.id ? { id: data.id } : {}), issueId: issue.id, type: 'MESSAGE', actorId: data.callerUserId, body: body.slice(0, BODY_MAX) || null, attachments: attachments as any },
+        }),
     });
+    if (!created) {
+      return success({ ...event, attachments: await this.signAttachments(issue, event.attachments), actorName: await this.nameOf(data.callerUserId) });
+    }
     await this.prisma.shiftIssue.update({ where: { id: issue.id }, data: { updatedAt: new Date() } });
     await this.broadcast(issue, data.callerUserId, event);
     const signed = { ...event, attachments: await this.signAttachments(issue, event.attachments), actorName: await this.nameOf(data.callerUserId) };

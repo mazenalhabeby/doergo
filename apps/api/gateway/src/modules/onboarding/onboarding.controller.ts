@@ -42,8 +42,8 @@ export class OnboardingController {
   ) {
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'onboarding_create_org' }, {
-        userId: user.id,
         ...dto,
+        userId: user.id,
       }),
     );
 
@@ -85,8 +85,8 @@ export class OnboardingController {
   ) {
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'onboarding_submit_join_request' }, {
-        userId: user.id,
         ...dto,
+        userId: user.id,
       }),
     );
 

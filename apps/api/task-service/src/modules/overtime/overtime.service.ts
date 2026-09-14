@@ -212,6 +212,16 @@ export class OvertimeService {
     const request = await this.findPendingApproval(data.overtimeRequestId, data.organizationId, data.scopeSpaceIds);
 
     /*
+      Path B is signed on the technician's OWN phone, about their OWN shift.
+      Without this, any member could approve a colleague's overtime by naming a
+      real approver — the approver check below says who may approve, not whose
+      request this is. Not found, not forbidden: a 403 would confirm it exists.
+    */
+    if (request.technicianId !== data.userId) {
+      throw new NotFoundException('Overtime request not found or not pending approval');
+    }
+
+    /*
       Is the person whose signature this is allowed to approve it?
 
       Path B is signed on the TECHNICIAN's device, so the request is

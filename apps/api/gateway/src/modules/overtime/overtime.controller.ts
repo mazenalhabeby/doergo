@@ -73,9 +73,9 @@ export class OvertimeController {
     @Request() req: any,
   ) {
     return this.overtimeQueueService.leaderApprove({
+      ...dto,
       overtimeRequestId: id,
       approverId: req.user.id,
-      ...dto,
       organizationId: req.user.organizationId,
       scopeSpaceIds: this.scope(req, 'canApproveOvertime'),
     });
@@ -106,9 +106,9 @@ export class OvertimeController {
     @Request() req: any,
   ) {
     return this.overtimeQueueService.leaderReject({
+      ...dto,
       overtimeRequestId: id,
       approverId: req.user.id,
-      ...dto,
       organizationId: req.user.organizationId,
       scopeSpaceIds: this.scope(req, 'canApproveOvertime'),
     });
