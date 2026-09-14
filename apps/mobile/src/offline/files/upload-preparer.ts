@@ -25,6 +25,10 @@ export class FileUploadPreparer implements OperationPreparer {
     },
   ) {}
 
+  needsPreparation(op: OutboxOp): boolean {
+    return carriesFile(op) && !uploadBodyOf(op).fileKey;
+  }
+
   async prepare(op: OutboxOp): Promise<PrepareResult> {
     const presignPath = presignPathFor(op);
     if (!presignPath) {

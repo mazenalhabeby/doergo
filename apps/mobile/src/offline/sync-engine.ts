@@ -42,6 +42,8 @@ export type PrepareResult =
  * long as the operation that needs it.
  */
 export interface OperationPreparer {
+  /** Whether this operation has preparation work (which may call the server). */
+  needsPreparation(op: OutboxOp): boolean;
   prepare(op: OutboxOp): Promise<PrepareResult>;
   /** Operations that are done or discarded — their local leftovers can go. */
   release(ops: readonly OutboxOp[]): Promise<void>;
@@ -252,6 +254,11 @@ export class SyncEngine {
    *
    * A prepared operation is saved before it is sent, so a crash after a
    * 10 MB upload does not upload it again.
+   *
+   * ⚠️ PREPARING WAITS FOR DEPENDENCIES TO BE ACCEPTED, not merely sent in the
+   * same batch. Preparation talks to the server BEFORE the push: a report photo
+   * asks for its upload link on a report that, in the same batch, does not
+   * exist yet — a 404, and a photo failed for good. It goes in the next push.
    */
   private async prepareBatch(batch: readonly OutboxOp[]): Promise<{ ready: OutboxOp[]; held: OutboxOp[] }> {
     const preparer = this.deps.preparer;
@@ -261,7 +268,8 @@ export class SyncEngine {
     const blockedLanes = new Set<string>();
     const blockedIds = new Set<string>();
     for (const op of batch) {
-      if (blockedLanes.has(op.lane) || op.dependsOn.some((d) => blockedIds.has(d))) {
+      const waitsForBatch = preparer.needsPreparation(op) && op.dependsOn.some((d) => batch.some((b) => b.id === d));
+      if (blockedLanes.has(op.lane) || op.dependsOn.some((d) => blockedIds.has(d)) || waitsForBatch) {
         held.push({ ...op, state: 'pending', updatedAt: this.now() });
         blockedLanes.add(op.lane);
         blockedIds.add(op.id);

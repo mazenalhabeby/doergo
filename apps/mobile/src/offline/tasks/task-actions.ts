@@ -100,6 +100,82 @@ export async function declineTask(engine: SyncEngine, input: { taskId: string })
   return outcomeOf(engine, op);
 }
 
+export interface ReportPhoto {
+  uri: string;
+  fileName: string;
+  mimeType: string;
+  width?: number;
+  height?: number;
+  side: 'BEFORE' | 'AFTER';
+}
+
+/**
+ * Complete a job with its service report, with or without signal.
+ *
+ * The report goes first, under the id it will have on the server; each before
+ * and after photo is kept on the phone and queued behind it in the same lane,
+ * uploaded when sent. A photo can no longer be lost because the report's
+ * answer was slow — it waits for the report, however long that takes.
+ *
+ * Signatures stay inline: they are line art of a few kilobytes and the web
+ * and the report PDF read them as images directly.
+ */
+export async function completeTaskWithReport(
+  engine: SyncEngine,
+  files: OfflineFiles,
+  input: {
+    taskId: string;
+    report: {
+      summary: string;
+      workPerformed?: string;
+      workDuration: number;
+      technicianSignature?: string;
+      customerSignature?: string;
+      customerName?: string;
+    };
+    photos: ReportPhoto[];
+  },
+): Promise<{ reportId: string; outcome: ActionOutcome }> {
+  const reportId = uuidv7();
+  const kept = [];
+  for (const p of input.photos) {
+    const file = await files.keep({ id: uuidv7(), kind: 'photo', mime: p.mimeType, width: p.width, height: p.height, uri: p.uri });
+    kept.push({ photo: p, file });
+  }
+
+  let complete: OutboxOp;
+  try {
+    complete = await engine.enqueueAndSettle({
+      op: 'task.complete',
+      lane: `task:${input.taskId}`,
+      entityId: input.taskId,
+      payload: { params: { taskId: input.taskId }, body: { id: reportId, ...input.report, evidence: captureEvidence() } },
+    });
+  } catch (err) {
+    for (const { file } of kept) await files.forget(file.id);
+    throw err;
+  }
+  const outcome = await outcomeOf(engine, complete);
+  if (outcome.kind === 'refused') {
+    for (const { file } of kept) await files.forget(file.id);
+    return { reportId, outcome };
+  }
+
+  for (const { photo, file } of kept) {
+    await engine.enqueue({
+      op: 'report.attachment',
+      lane: `task:${input.taskId}`,
+      entityId: input.taskId,
+      dependsOn: complete.state === 'done' ? [] : [complete.id],
+      payload: {
+        params: { reportId },
+        body: { id: file.id, type: photo.side, fileName: renameForType(photo.fileName, file.mime), fileType: file.mime },
+      },
+    });
+  }
+  return { reportId, outcome };
+}
+
 /** Add a note. The phone names it, so a resend can never make a second one. */
 export async function addTaskComment(
   engine: SyncEngine,

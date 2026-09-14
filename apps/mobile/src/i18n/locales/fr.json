@@ -2411,7 +2411,8 @@
       "OCCURRED_IN_FUTURE": "L'horloge de ce téléphone est en avance. Vérifiez la date et l'heure.",
       "FIX_NOT_AT_TAP": "La position n'a pas été prise au moment de l'action.",
       "FIX_INACCURATE": "La position n'était pas assez précise.",
-      "FIX_MISSING": "La position n'a pas pu être déterminée."
+      "FIX_MISSING": "La position n'a pas pu être déterminée.",
+      "REPORT_EXISTS": "Cette intervention a déjà un rapport, le vôtre n'a donc pas été ajouté."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",

@@ -2411,7 +2411,8 @@
       "OCCURRED_IN_FUTURE": "This phone's clock is ahead. Check its date and time settings.",
       "FIX_NOT_AT_TAP": "The location wasn't taken at the moment of the action.",
       "FIX_INACCURATE": "The location wasn't precise enough.",
-      "FIX_MISSING": "The location couldn't be determined."
+      "FIX_MISSING": "The location couldn't be determined.",
+      "REPORT_EXISTS": "This job already has a service report, so yours wasn't added."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",

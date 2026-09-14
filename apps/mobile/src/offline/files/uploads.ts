@@ -23,6 +23,10 @@ const ROUTES: Partial<Record<SyncOperationName, UploadRoute>> = {
     presign: (p) => (p.taskId ? `/tasks/${encodeURIComponent(p.taskId)}/attachments/presign` : null),
     typeField: 'fileType',
   },
+  'report.attachment': {
+    presign: (p) => (p.reportId ? `/reports/${encodeURIComponent(p.reportId)}/attachments/presign` : null),
+    typeField: 'fileType',
+  },
   'worklog.attachment': {
     presign: (p) => (p.noteId ? `/attendance/worklog/${encodeURIComponent(p.noteId)}/attachments/presign` : null),
     typeField: 'mimeType',

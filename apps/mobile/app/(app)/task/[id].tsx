@@ -60,7 +60,7 @@ import { getFlowSteps, hasCapability, getStatusCapabilities, hasFeatureModule, n
 import { useOffline } from '../../../src/offline/offline-context';
 import { mergeAttachments, pendingAttachments } from '../../../src/offline/tasks/overlay';
 import { loadTaskDetail } from '../../../src/offline/tasks/task-source';
-import { addTaskComment, addTaskPhoto, changeTaskStatus, declineTask } from '../../../src/offline/tasks/task-actions';
+import { addTaskComment, addTaskPhoto, changeTaskStatus, completeTaskWithReport, declineTask } from '../../../src/offline/tasks/task-actions';
 import { OfflineBanner } from '../../../src/offline/components/offline-banner';
 import { SyncChip } from '../../../src/offline/components/sync-chip';
 import { BeThereCard } from '../../../src/components/tasks/be-there-card';
@@ -652,6 +652,38 @@ export function TaskDetailPane({
         customerName: customerName.trim(),
       };
 
+      const resetForm = () => {
+        setElapsedTime(0);
+        setCompletionSummary('');
+        setCompletionDetails('');
+        setBeforePhotos([]);
+        setAfterPhotos([]);
+        setTechnicianSignature('');
+        setCustomerSignature('');
+        setCustomerName('');
+        setUploadProgress(new Map());
+      };
+
+      if (offline.engine && offline.files) {
+        // The report, then its photos behind it — saved on the phone first.
+        const asPhoto = (side: 'BEFORE' | 'AFTER') => (p: PickedImage) => ({ uri: p.uri, fileName: p.fileName, mimeType: p.mimeType, width: p.width, height: p.height, side });
+        const { outcome } = await completeTaskWithReport(offline.engine, offline.files, {
+          taskId: task.id,
+          report: input,
+          photos: [...beforePhotos.map(asPhoto('BEFORE')), ...afterPhotos.map(asPhoto('AFTER'))],
+        });
+        if (outcome.kind === 'refused') {
+          setShowCompletionModal(true);
+          toast.error(t('common.error'), refusalText(outcome));
+          return;
+        }
+        resetForm();
+        await loadDetail({ cancelled: false });
+        if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
+        else toast.success(t('common.success'), t('taskDetail.completeTask.successMessage'));
+        return;
+      }
+
       const report = await reportsApi.completeTask(task.id, input);
 
       // Upload photos in background if any were taken
@@ -673,15 +705,7 @@ export function TaskDetailPane({
       // Refresh task data to show updated status
       const updatedTask = await tasksApi.getById(task.id);
       setTask(updatedTask);
-      setElapsedTime(0);
-      setCompletionSummary('');
-      setCompletionDetails('');
-      setBeforePhotos([]);
-      setAfterPhotos([]);
-      setTechnicianSignature('');
-      setCustomerSignature('');
-      setCustomerName('');
-      setUploadProgress(new Map());
+      resetForm();
 
       toast.success(t('common.success'), t('taskDetail.completeTask.successMessage'));
     } catch (err) {

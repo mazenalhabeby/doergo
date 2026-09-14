@@ -2411,7 +2411,8 @@
       "OCCURRED_IN_FUTURE": "Die Uhr dieses Telefons geht vor. Prüfen Sie die Datums- und Uhrzeiteinstellungen.",
       "FIX_NOT_AT_TAP": "Der Standort wurde nicht im Moment der Aktion bestimmt.",
       "FIX_INACCURATE": "Der Standort war nicht genau genug.",
-      "FIX_MISSING": "Der Standort konnte nicht bestimmt werden."
+      "FIX_MISSING": "Der Standort konnte nicht bestimmt werden.",
+      "REPORT_EXISTS": "Für diesen Auftrag gibt es bereits einen Servicebericht, daher wurde Ihrer nicht hinzugefügt."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",

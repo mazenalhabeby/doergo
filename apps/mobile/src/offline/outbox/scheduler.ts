@@ -13,6 +13,16 @@ export interface Selection {
 const GONE_BAD = new Set(['conflict', 'failed', 'discarded']);
 
 /**
+ * Roughly how much JSON one push may carry. The gateway accepts 10 MB; a job
+ * completed offline carries two signatures inline, and fifty of those in one
+ * request would be refused whole. The first operation always goes, whatever
+ * its size, so nothing can be stuck behind this.
+ */
+export const PUSH_BUDGET_BYTES = 4 * 1024 * 1024;
+
+const sizeOf = (op: OutboxOp) => JSON.stringify(op.payload).length + (op.evidence ? 400 : 0);
+
+/**
  * Which operations to send next.
  *
  * Mirrors the server's lane rules so a batch is never refused for ordering:
@@ -23,7 +33,12 @@ const GONE_BAD = new Set(['conflict', 'failed', 'discarded']);
  *  - an operation whose dependency ended badly is failed here, never sent
  *  - a dependency still open elsewhere holds the operation (and its lane)
  */
-export function selectBatch(ops: readonly OutboxOp[], now: number, max: number = SYNC_PUSH_MAX_OPS): Selection {
+export function selectBatch(
+  ops: readonly OutboxOp[],
+  now: number,
+  max: number = SYNC_PUSH_MAX_OPS,
+  budgetBytes: number = PUSH_BUDGET_BYTES,
+): Selection {
   const byId = new Map(ops.map((o) => [o.id, o]));
   const lanes = new Map<string, OutboxOp[]>();
   for (const op of [...ops].sort((a, b) => a.createdAt - b.createdAt || (a.id < b.id ? -1 : 1))) {
@@ -37,6 +52,7 @@ export function selectBatch(ops: readonly OutboxOp[], now: number, max: number =
   const inBatch = new Set<string>();
   const dependencyFailed: OutboxOp[] = [];
   let wakeAt: number | undefined;
+  let bytes = 0;
 
   for (const lane of lanes.values()) {
     for (const op of lane) {
@@ -54,6 +70,10 @@ export function selectBatch(ops: readonly OutboxOp[], now: number, max: number =
       }
       // A dependency that is neither done nor already in this batch holds the lane.
       if (deps.some((d) => d && d.state !== 'done' && !inBatch.has(d.id))) break;
+      const size = sizeOf(op);
+      // Over budget: this lane waits for the next push (order is kept).
+      if (batch.length > 0 && bytes + size > budgetBytes) break;
+      bytes += size;
       batch.push(op);
       inBatch.add(op.id);
     }

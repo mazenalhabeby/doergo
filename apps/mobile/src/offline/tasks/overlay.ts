@@ -22,6 +22,9 @@ export function overlayTask<T extends { id: string; status: string }>(
     if (op.op === 'task.status') {
       const body = (op.payload.body ?? {}) as { status?: string };
       if (body.status) status = body.status;
+    } else if (op.op === 'task.complete') {
+      // Completed with its report — the server moves it to COMPLETED.
+      status = 'COMPLETED';
     } else if (op.op === 'task.decline') {
       // Handed back: what the server will do with it — unassigned, back to NEW —
       // so it leaves "my jobs" at the tap, not when the network returns.
