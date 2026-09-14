@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
 import Redis from 'ioredis';
+import { buildTaskVisibilityWhere, type TaskVisibilityFacts } from './task-visibility';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
@@ -783,70 +784,9 @@ export class TasksService {
     return success(updated);
   }
 
-  /**
-   * Who may see which tasks — the single definition.
-   *
-   * The list and the counts each had their own copy and they disagreed: the
-   * counts filtered an ADMIN down to tasks they CREATED while the list showed
-   * the whole org, and matched a member on `assignedToId` alone while the list
-   * also matched co-assignees. Every badge built on those counts therefore
-   * contradicted the rows underneath it.
-   */
-  private buildVisibilityWhere(opts: {
-    userId: string;
-    userRole: string;
-    canViewAllTasks?: boolean;
-    /** Spaces where the caller holds canViewAllTasks by a SPACE role. */
-    viewAllSpaceIds?: string[];
-    organizationId: string;
-  }): any {
-    const { userId, userRole, canViewAllTasks, organizationId, viewAllSpaceIds } = opts;
-    if (userRole === Role.ADMIN || canViewAllTasks) {
-      return { organizationId };
-    }
-    /*
-      "View all tasks" held in a SPACE means all tasks IN THAT SPACE.
-
-      The flag above is the org-wide answer, so a member whose grant comes from
-      a space role fell straight through to "only what is assigned to me" — they
-      could create a task in their workspace and then not see it, because they
-      had not assigned it to themselves. The grant was real; nothing widened the
-      query with it.
-
-      Their own work stays visible either way: this ADDS the spaces they may see
-      in full, it does not replace the assignment clause.
-    */
-    if (viewAllSpaceIds?.length) {
-      /*
-        Returned as AND-of-OR, not a bare `OR`.
-
-        findAll copies only `organizationId` and `AND` off this result. A bare
-        `OR` was therefore DROPPED on the floor and the caller was left with
-        `{ organizationId }` — every task in the organization, to somebody
-        entitled to one space. The narrowest possible clause and the widest
-        possible outcome, from the same return statement.
-
-        `AND: [{ OR: [...] }]` is the shape this function has always returned
-        and the only one its callers read.
-      */
-      return {
-        organizationId,
-        AND: [
-          {
-            OR: [
-              { spaceId: { in: viewAllSpaceIds } },
-              { assignedToId: userId },
-              { assignees: { some: { userId } } },
-            ],
-          },
-        ],
-      };
-    }
-    // Assigned to them as LEAD (legacy assignedToId) OR as a co-assignee.
-    return {
-      organizationId,
-      AND: [{ OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }] }],
-    };
+  /** See task-visibility.ts — kept as a method so existing call sites read unchanged. */
+  private buildVisibilityWhere(opts: TaskVisibilityFacts): any {
+    return buildTaskVisibilityWhere(opts);
   }
 
   /**

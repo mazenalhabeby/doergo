@@ -36,6 +36,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { WorklogModule } from './modules/worklog/worklog.module';
 import { ShiftIssuesModule } from './modules/shift-issues/shift-issues.module';
+import { SyncModule } from './modules/sync/sync.module';
 import { RetentionService } from './common/retention/retention.service';
 
 @Module({
@@ -98,6 +99,7 @@ import { RetentionService } from './common/retention/retention.service';
     AnalyticsModule,
     WorklogModule,
     ShiftIssuesModule,
+    SyncModule,
   ],
   providers: [RetentionService],
 })

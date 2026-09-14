@@ -119,3 +119,34 @@ export function retryDelayMs(attempt: number, random: () => number = Math.random
   const base = Math.min(2000 * 2 ** Math.max(0, attempt - 1), 5 * 60 * 1000);
   return Math.round(base * (0.8 + random() * 0.4));
 }
+
+/** The parts of a member's world a phone keeps a copy of. Grows phase by phase. */
+export const SYNC_PULL_SCOPES = ['spaces', 'tasks'] as const;
+export type SyncPullScope = (typeof SYNC_PULL_SCOPES)[number];
+
+/** At most this many rows per pull page. */
+export const SYNC_PULL_MAX_ROWS = 200;
+
+export interface SyncPullResponse<Row = unknown> {
+  scope: SyncPullScope;
+  /** Rows created or changed since the cursor, oldest change first. */
+  rows: Row[];
+  /** Ids deleted since the cursor. */
+  deleted: string[];
+  /**
+   * Every id currently in scope, on the LAST page of a pull. A local row not in
+   * this list left the member's scope (reassigned, closed long ago) and is
+   * removed — unless an operation about it is still waiting to be sent.
+   */
+  scopeIds?: string[];
+  /** Pass back as `cursor` next time. */
+  cursor: string;
+  /** More pages follow immediately. */
+  hasMore: boolean;
+  /**
+   * The phone's copy cannot be trusted (cursor older than the tombstone
+   * window, or this scope is always sent whole): replace the scope with `rows`.
+   */
+  reset: boolean;
+  serverTime: string;
+}

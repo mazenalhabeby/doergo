@@ -11,8 +11,11 @@ import {
   Matches,
   MaxLength,
   ValidateNested,
+  IsInt,
+  Min,
+  Max,
 } from 'class-validator';
-import { SYNC_OPERATIONS, SYNC_PUSH_MAX_OPS } from '@hbcfield/shared';
+import { SYNC_OPERATIONS, SYNC_PUSH_MAX_OPS, SYNC_PULL_SCOPES, SYNC_PULL_MAX_ROWS } from '@hbcfield/shared';
 
 const ID = /^[A-Za-z0-9_-]{16,128}$/;
 
@@ -57,4 +60,25 @@ export class SyncPushDto {
   @ValidateNested({ each: true })
   @Type(() => SyncOperationDto)
   operations: SyncOperationDto[];
+}
+
+export class SyncPullQueryDto {
+  @ApiProperty({ enum: SYNC_PULL_SCOPES })
+  @IsIn(SYNC_PULL_SCOPES as unknown as string[])
+  scope: (typeof SYNC_PULL_SCOPES)[number];
+
+  @ApiPropertyOptional({ description: 'The cursor from the previous pull' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(512)
+  @Matches(/^[A-Za-z0-9_-]+$/)
+  cursor?: string;
+
+  @ApiPropertyOptional({ maximum: SYNC_PULL_MAX_ROWS })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(SYNC_PULL_MAX_ROWS)
+  limit?: number;
 }
