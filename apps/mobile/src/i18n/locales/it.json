@@ -745,6 +745,20 @@
         "FIX_NOT_AT_TAP": "La tua posizione non è aggiornata. Riprova per rilevarne una nuova.",
         "OUTSIDE_SITE": "Sei a {{distance}} m da {{location}}, che accetta timbrature solo entro {{radius}} m. Avvicinati e riprova."
       }
+    },
+    "overtime": {
+      "note": "Sei {{duration}} oltre la fine del turno. Gli straordinari contano solo quando il tuo responsabile li approva.",
+      "reasonLabel": "Perché sei rimasto? (inviato al tuo responsabile)",
+      "reasonPlaceholder": "Facoltativo — lascia vuoto per timbrare senza richiesta",
+      "askLabel": "Timbra l'uscita e chiedi gli straordinari"
+    },
+    "unconfirmed": {
+      "title": "Il tuo turno del {{day}} era ancora aperto",
+      "body": "È stato chiuso provvisoriamente alle {{time}}. A che ora sei uscito davvero?",
+      "action": "Indica l'ora di uscita",
+      "pickerTitle": "A che ora sei uscito?",
+      "inFuture": "Quest'ora è prima della tua entrata o non è ancora arrivata.",
+      "saved": "L'ora di uscita è stata salvata"
     }
   },
   "overtime": {

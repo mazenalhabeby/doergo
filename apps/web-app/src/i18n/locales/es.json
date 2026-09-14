@@ -1893,7 +1893,8 @@
         "clockSuspect": "Reloj del teléfono cambiado",
         "stale": "Enviado más de una semana tarde",
         "fixMocked": "Ubicación simulada",
-        "boundaryChanged": "Límite del sitio cambiado desde entonces"
+        "boundaryChanged": "Límite del sitio cambiado desde entonces",
+        "clockOutProvisional": "Salida sin confirmar"
       }
     },
     "locationsTab": {
@@ -3528,6 +3529,21 @@
       "viaAccountOff": "Sigue su cuenta, que no lo permite.",
       "overrideOn": "Permitido aquí, diga lo que diga su cuenta.",
       "overrideOff": "Denegado aquí, aunque su cuenta lo permita."
+    },
+    "addOvertime": {
+      "action": "Añadir horas extra",
+      "title": "Añadir horas extra",
+      "titleFor": "Añadir horas extra · {{name}}",
+      "context": "El turno terminó a las {{end}} · salida a las {{out}} ({{minutes}} min después)",
+      "minutes": "Minutos después del fin del turno",
+      "reason": "Motivo",
+      "reasonPlaceholder": "Se guarda con la aprobación",
+      "countedUntil": "Contado hasta",
+      "countedTime": "Tiempo contado",
+      "cappedAtClockOut": "El tiempo después de la salida nunca se cuenta.",
+      "approve": "Aprobar {{minutes}} min",
+      "success": "Se añadieron {{minutes}} min de horas extra",
+      "error": "No se pudieron añadir las horas extra"
     }
   },
   "auditLog": {

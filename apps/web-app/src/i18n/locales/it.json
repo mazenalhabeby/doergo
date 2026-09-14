@@ -1893,7 +1893,8 @@
         "clockSuspect": "Orologio del telefono modificato",
         "stale": "Inviato con oltre una settimana di ritardo",
         "fixMocked": "Posizione simulata",
-        "boundaryChanged": "Confine della sede modificato da allora"
+        "boundaryChanged": "Confine della sede modificato da allora",
+        "clockOutProvisional": "Uscita non confermata"
       }
     },
     "locationsTab": {
@@ -3528,6 +3529,21 @@
       "viaAccountOff": "Segue il suo account, che non lo consente.",
       "overrideOn": "Consentito qui, qualunque cosa dica il suo account.",
       "overrideOff": "Rifiutato qui, anche se il suo account lo consente."
+    },
+    "addOvertime": {
+      "action": "Aggiungi straordinari",
+      "title": "Aggiungi straordinari",
+      "titleFor": "Aggiungi straordinari · {{name}}",
+      "context": "Turno finito alle {{end}} · uscita alle {{out}} ({{minutes}} min dopo)",
+      "minutes": "Minuti dopo la fine del turno",
+      "reason": "Motivo",
+      "reasonPlaceholder": "Registrato con l'approvazione",
+      "countedUntil": "Contato fino alle",
+      "countedTime": "Tempo contato",
+      "cappedAtClockOut": "Il tempo dopo l'uscita non viene mai contato.",
+      "approve": "Approva {{minutes}} min",
+      "success": "Aggiunti {{minutes}} min di straordinari",
+      "error": "Impossibile aggiungere gli straordinari"
     }
   },
   "auditLog": {

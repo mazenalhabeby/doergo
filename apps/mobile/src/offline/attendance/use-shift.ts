@@ -6,7 +6,7 @@ import type { RecordsStore } from '../db/records-store';
 import { useOffline, useSyncStatus } from '../offline-context';
 import { isUnreachable } from '../actions/unreachable';
 import { overlayShift, type ShiftView } from './shift-overlay';
-import { clockInFromPhone, clockOutFromPhone, endRestFromPhone, requestExtraTimeFromPhone, startRestFromPhone } from './shift-actions';
+import { clockInFromPhone, clockOutFromPhone, endRestFromPhone, requestExtraTimeFromPhone, resolveClockOutFromPhone, startRestFromPhone } from './shift-actions';
 
 const SCOPE = 'attendance';
 
@@ -102,7 +102,7 @@ function shiftActions(engine: ReturnType<typeof useOffline>['engine']) {
             }),
           ),
 
-    clockOut: (input: { entryId: string; fix?: OccurrenceFix | null; notes?: string; earlyReason?: string }) =>
+    clockOut: (input: { entryId: string; fix?: OccurrenceFix | null; notes?: string; earlyReason?: string; overtimeReason?: string }) =>
       engine
         ? clockOutFromPhone(engine, input)
         : direct(() =>
@@ -110,8 +110,14 @@ function shiftActions(engine: ReturnType<typeof useOffline>['engine']) {
               ...(input.fix ? { lat: input.fix.lat, lng: input.fix.lng, accuracy: input.fix.accuracy } : {}),
               notes: input.notes,
               earlyReason: input.earlyReason,
+              overtimeReason: input.overtimeReason,
             }),
           ),
+
+    resolveClockOut: (input: { entryId: string; clockOutAt: Date }) =>
+      engine
+        ? resolveClockOutFromPhone(engine, input)
+        : direct(() => attendanceApi.resolveForgotClockOut(input.entryId, input.clockOutAt.toISOString())),
 
     startRest: (input: { entryId: string; type?: BreakType; notes?: string; ruleId?: string }) =>
       engine

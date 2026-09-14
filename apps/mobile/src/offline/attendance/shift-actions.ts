@@ -4,6 +4,7 @@ import { captureEvidence } from '../clock';
 import { uuidv7 } from '../ids';
 import type { SyncEngine } from '../sync-engine';
 import { openOpFor } from './shift-overlay';
+import { OPEN_STATES, type OutboxOp } from '../outbox/types';
 
 /*
   Every action on a shift goes into ONE lane, `shift:<entryId>`, so a clock-in,
@@ -27,6 +28,13 @@ export async function clockInFromPhone(
     op: 'attendance.clockIn',
     lane: laneOf(entryId),
     entityId: entryId,
+    /*
+      ⚠️ A NEW shift waits for the last one to be closed on the server. They
+      are different lanes, so without this a morning's clock-in could reach the
+      server before last night's queued clock-out — and be refused as "already
+      clocked in", because to the server that shift is still open.
+    */
+    dependsOn: pendingShiftCloses(engine.operations()),
     payload: {
       body: {
         id: entryId,
@@ -42,7 +50,7 @@ export async function clockInFromPhone(
 
 export async function clockOutFromPhone(
   engine: SyncEngine,
-  input: { entryId: string; fix?: OccurrenceFix | null; notes?: string; earlyReason?: string },
+  input: { entryId: string; fix?: OccurrenceFix | null; notes?: string; earlyReason?: string; overtimeReason?: string },
 ): Promise<ActionOutcome> {
   const clockIn = openOpFor(engine.operations(), 'attendance.clockIn', (b) => b.id === input.entryId);
   const op = await engine.enqueueAndSettle({
@@ -56,6 +64,7 @@ export async function clockOutFromPhone(
         ...position(input.fix),
         ...(input.notes ? { notes: input.notes } : {}),
         ...(input.earlyReason ? { earlyReason: input.earlyReason } : {}),
+        ...(input.overtimeReason ? { overtimeReason: input.overtimeReason } : {}),
         evidence: captureEvidence(input.fix),
       },
     },
@@ -125,6 +134,37 @@ export async function requestExtraTimeFromPhone(engine: SyncEngine, input: { ent
     entityId: input.entryId,
     dependsOn: clockIn ? [clockIn.id] : [],
     payload: { params: { entryId: input.entryId }, body: { occurredAt: new Date().toISOString() } },
+  });
+  return outcomeOf(engine, op);
+}
+
+/** Queued operations that close a shift — what a new clock-in must wait for. */
+export function pendingShiftCloses(ops: readonly OutboxOp[]): string[] {
+  return ops
+    .filter((o) => (o.op === 'attendance.clockOut' || o.op === 'attendance.resolveClockOut') && OPEN_STATES.has(o.state))
+    .map((o) => o.id);
+}
+
+/**
+ * "When did you leave?" for a shift left open — or closed by the server with a
+ * temporary time — with or without signal.
+ *
+ * A clock-out for the same shift already on its way is the better answer (it
+ * carries the tap's own evidence), so then nothing extra is sent.
+ */
+export async function resolveClockOutFromPhone(
+  engine: SyncEngine,
+  input: { entryId: string; clockOutAt: Date },
+): Promise<ActionOutcome> {
+  const queuedClockOut = openOpFor(engine.operations(), 'attendance.clockOut', (b) => b.entryId === input.entryId);
+  if (queuedClockOut) return { kind: 'queued' };
+  const clockIn = openOpFor(engine.operations(), 'attendance.clockIn', (b) => b.id === input.entryId);
+  const op = await engine.enqueueAndSettle({
+    op: 'attendance.resolveClockOut',
+    lane: laneOf(input.entryId),
+    entityId: input.entryId,
+    dependsOn: clockIn ? [clockIn.id] : [],
+    payload: { params: { entryId: input.entryId }, body: { clockOutAt: input.clockOutAt.toISOString() } },
   });
   return outcomeOf(engine, op);
 }

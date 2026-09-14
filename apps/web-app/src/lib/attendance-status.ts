@@ -99,6 +99,15 @@ export function deriveAttendanceState(entry: TimeEntry): AttendanceChip {
  * a new backend flag shows up rather than silently vanishing.
  */
 const FLAG_ORDER: Array<{ reason: string; chip: Omit<AttendanceChip, "key"> }> = [
+  // Closed by the open-shift sweep with a temporary time — the member has not confirmed it.
+  {
+    reason: "CLOCK_OUT_PROVISIONAL",
+    chip: {
+      tone: "amber",
+      labelKey: "technicians.attendanceTab.flag.clockOutProvisional",
+      fallback: "Clock-out not confirmed",
+    },
+  },
   {
     reason: "MISSED_CLOCK_OUT",
     chip: {

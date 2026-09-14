@@ -32,7 +32,7 @@ const SCREEN_HEIGHT = Dimensions.get('window').height;
 interface ClockOutSheetProps {
   visible: boolean;
   onClose: () => void;
-  onConfirm: (notes: string) => void;
+  onConfirm: (notes: string, overtimeReason?: string) => void;
   title: string;
   message?: string;
   confirmLabel: string;
@@ -40,6 +40,12 @@ interface ClockOutSheetProps {
   notesLabel: string;
   notesPlaceholder: string;
   isLoading?: boolean;
+  /**
+   * Clocking out past the shift end: says so, and offers a reason that is sent
+   * with the clock-out as the overtime request. Optional to fill in — leaving
+   * it empty is clocking out without asking.
+   */
+  overtime?: { note: string; label: string; placeholder: string; askLabel: string } | null;
 }
 
 export function ClockOutSheet({
@@ -53,10 +59,12 @@ export function ClockOutSheet({
   notesLabel,
   notesPlaceholder,
   isLoading = false,
+  overtime = null,
 }: ClockOutSheetProps) {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const [notes, setNotes] = useState('');
+  const [overtimeReason, setOvertimeReason] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -95,6 +103,7 @@ export function ClockOutSheet({
   const handleClose = useCallback(() => {
     animateClose(() => {
       setNotes('');
+      setOvertimeReason('');
       onClose();
     });
   }, [animateClose, onClose]);
@@ -102,12 +111,14 @@ export function ClockOutSheet({
   const handleConfirm = useCallback(() => {
     if (!isLoading && canConfirm) {
       const text = notes.trim();
+      const reason = overtime ? overtimeReason.trim() : '';
       animateClose(() => {
         setNotes('');
-        onConfirm(text);
+        setOvertimeReason('');
+        onConfirm(text, reason || undefined);
       });
     }
-  }, [isLoading, canConfirm, notes, animateClose, onConfirm]);
+  }, [isLoading, canConfirm, notes, overtime, overtimeReason, animateClose, onConfirm]);
 
   return (
     <Modal
@@ -156,6 +167,32 @@ export function ClockOutSheet({
               {/* Subtitle */}
               {message ? (
                 <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{message}</Text>
+              ) : null}
+
+              {overtime ? (
+                <View style={[styles.overtimeNote, { backgroundColor: colors.warningLight }]}>
+                  <Ionicons name="time-outline" size={16} color={COLORS.warning} />
+                  <Text style={[styles.overtimeNoteText, { color: colors.textPrimary }]}>{overtime.note}</Text>
+                </View>
+              ) : null}
+              {overtime ? (
+                <>
+                  <Text style={[styles.notesLabel, { color: colors.textSecondary }]}>{overtime.label}</Text>
+                  <TextInput
+                    style={[
+                      styles.notesInput,
+                      styles.overtimeInput,
+                      { backgroundColor: isDark ? colors.surfaceRaised : '#f8fafc', borderColor: colors.border, color: colors.textPrimary },
+                    ]}
+                    placeholder={overtime.placeholder}
+                    placeholderTextColor={colors.textMuted}
+                    value={overtimeReason}
+                    onChangeText={setOvertimeReason}
+                    multiline
+                    maxLength={500}
+                    textAlignVertical="top"
+                  />
+                </>
               ) : null}
 
               {/* Notes label */}
@@ -208,7 +245,7 @@ export function ClockOutSheet({
                   ) : (
                     <>
                       <Ionicons name="log-out-outline" size={20} color={COLORS.white} />
-                      <Text style={styles.confirmText}>{confirmLabel}</Text>
+                      <Text style={styles.confirmText}>{overtime && overtimeReason.trim() ? overtime.askLabel : confirmLabel}</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -264,6 +301,16 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.base,
     marginBottom: SPACING.lg,
   },
+  overtimeNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.sm,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  overtimeNoteText: { flex: 1, fontSize: FONT_SIZE.sm, lineHeight: 20 },
+  overtimeInput: { minHeight: 64, marginBottom: SPACING.md },
   notesLabel: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.semibold,

@@ -48,6 +48,8 @@ import { OutOfRingSheet } from '../../../src/components/out-of-ring-sheet';
 import { AlwaysLocationNudge } from '../../../src/components/always-location-nudge';
 import { useExcursionSync } from '../../../src/hooks/useExcursionSync';
 import { useClockIn } from '../../../src/hooks/useClockIn';
+import { hhmmIn, leaveTimeFrom, minutesPastEnd } from '../../../src/offline/attendance/leave-time';
+import { TimePickerModal } from '../../../src/components/time-picker-modal';
 import { useShift, useShiftActions } from '../../../src/offline/attendance/use-shift';
 import { OfflineBanner } from '../../../src/offline/components/offline-banner';
 import { SyncChip } from '../../../src/offline/components/sync-chip';
@@ -364,7 +366,7 @@ export default function AttendanceScreen() {
     setShowClockOutConfirm(true);
   };
 
-  const confirmClockOut = async (notes: string) => {
+  const confirmClockOut = async (notes: string, overtimeReason?: string) => {
     setShowClockOutConfirm(false);
     setIsActionLoading(true);
     try {
@@ -372,7 +374,7 @@ export default function AttendanceScreen() {
       if (!entryId) return;
       // A clock-out never waits for a fix: without one it simply carries no position.
       const location = await clockIn.getCurrentLocation();
-      const outcome = await shiftActions.clockOut({ entryId, fix: location, notes: notes || undefined });
+      const outcome = await shiftActions.clockOut({ entryId, fix: location, notes: notes || undefined, overtimeReason });
       if (outcome.kind === 'refused') {
         toast.error(t('common.error'), refusalText(outcome, t('attendance.failedToClockOut')));
         return;
@@ -393,6 +395,33 @@ export default function AttendanceScreen() {
 
   // ── Shift reminder responses ──────────────────────────────────────────────
   const [showForgotSheet, setShowForgotSheet] = useState(false);
+  const [leavePickerOpen, setLeavePickerOpen] = useState(false);
+
+  /** The member's answer for a shift closed with a temporary time. Queued without signal. */
+  const confirmLeaveTime = async (hhmm: string) => {
+    const entry = status?.unconfirmedClockOut;
+    setLeavePickerOpen(false);
+    if (!entry) return;
+    const tz = entry.timezone ?? entry.location?.timezone ?? 'UTC';
+    const at = leaveTimeFrom(hhmm, new Date(entry.clockInAt), tz, new Date());
+    if (!at) {
+      toast.error(t('common.error'), t('attendance.unconfirmed.inFuture'));
+      return;
+    }
+    setIsReminderLoading(true);
+    try {
+      const outcome = await shiftActions.resolveClockOut({ entryId: entry.id, clockOutAt: at });
+      if (outcome.kind === 'refused') {
+        toast.error(t('common.error'), refusalText(outcome, t('shiftReminder.resolveFailed')));
+        return;
+      }
+      await fetchAttendanceData();
+      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
+      else toast.success(t('common.success'), t('attendance.unconfirmed.saved'));
+    } finally {
+      setIsReminderLoading(false);
+    }
+  };
   const [isReminderLoading, setIsReminderLoading] = useState(false);
 
   // "I forgot to clock out" — self-report actual leave time.
@@ -402,7 +431,11 @@ export default function AttendanceScreen() {
     setShowForgotSheet(false);
     setIsReminderLoading(true);
     try {
-      await attendanceApi.resolveForgotClockOut(entry.id, clockOutAt.toISOString());
+      const outcome = await shiftActions.resolveClockOut({ entryId: entry.id, clockOutAt });
+      if (outcome.kind === 'refused') {
+        toast.error(t('common.error'), refusalText(outcome, t('shiftReminder.resolveFailed')));
+        return;
+      }
       await stopBackgroundHeartbeat();
       await stopGeofence();
       await fetchAttendanceData();
@@ -533,6 +566,15 @@ export default function AttendanceScreen() {
 
   const isClockedIn = status?.isClockedIn || false;
   const currentEntry = status?.currentEntry;
+  const unconfirmed = status?.unconfirmedClockOut ?? null;
+  const unconfirmedTz = unconfirmed?.timezone ?? unconfirmed?.location?.timezone ?? undefined;
+  /*
+    Clocking out past the end, with no request already waiting: the sheet says
+    so and offers the reason that asks a leader for the overtime.
+  */
+  const pastEndMinutes = currentEntry && currentEntry.reminderState !== 'OVERTIME_PENDING'
+    ? minutesPastEnd(currentEntry.expectedClockOutAt, new Date())
+    : 0;
   const assignedLocations = status?.assignedLocations || [];
 
   // Shift reminder: has the shift ended while still clocked in?
@@ -578,6 +620,31 @@ export default function AttendanceScreen() {
       >
         {/* Offline, or changes still on their way — nothing otherwise. */}
         <OfflineBanner style={styles.offlineBanner} />
+
+        {/* A shift left open was closed with a temporary time: ask when they left. */}
+        {unconfirmed && (
+          <View style={[styles.unconfirmedCard, { backgroundColor: colors.warningLight, borderColor: COLORS.warning }]}>
+            <View style={styles.unconfirmedRow}>
+              <Ionicons name="time-outline" size={20} color={COLORS.warning} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.unconfirmedTitle, { color: colors.textPrimary }]}>
+                  {t('attendance.unconfirmed.title', { day: formatDate(String(unconfirmed.clockInAt)) })}
+                </Text>
+                <Text style={[styles.unconfirmedBody, { color: colors.textSecondary }]}>
+                  {t('attendance.unconfirmed.body', { time: formatTime(String(unconfirmed.clockOutAt), unconfirmedTz) })}
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={[styles.unconfirmedButton, { backgroundColor: COLORS.primary }]}
+              onPress={() => setLeavePickerOpen(true)}
+              disabled={isReminderLoading}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.unconfirmedButtonText}>{t('attendance.unconfirmed.action')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Status Card */}
         <View style={[styles.statusCard, { backgroundColor: colors.card }]}>
@@ -1220,7 +1287,24 @@ export default function AttendanceScreen() {
         notesLabel={t('attendance.shiftNotesLabel')}
         notesPlaceholder={t('attendance.shiftNotesPlaceholder')}
         isLoading={isActionLoading}
+        overtime={pastEndMinutes > 0 ? {
+          note: t('attendance.overtime.note', { duration: formatDuration(pastEndMinutes) }),
+          label: t('attendance.overtime.reasonLabel'),
+          placeholder: t('attendance.overtime.reasonPlaceholder'),
+          askLabel: t('attendance.overtime.askLabel'),
+        } : null}
       />
+
+      {unconfirmed && (
+        <TimePickerModal
+          visible={leavePickerOpen}
+          value={hhmmIn(new Date(unconfirmed.clockOutAt), unconfirmedTz ?? 'UTC')}
+          title={t('attendance.unconfirmed.pickerTitle')}
+          onClose={() => setLeavePickerOpen(false)}
+          onClear={() => setLeavePickerOpen(false)}
+          onSelect={(hhmm) => void confirmLeaveTime(hhmm)}
+        />
+      )}
 
       {worklogEntryId && (
         <WorkLogSheet
@@ -1402,6 +1486,12 @@ export default function AttendanceScreen() {
 }
 
 const styles = StyleSheet.create({
+  unconfirmedCard: { marginHorizontal: SPACING.lg, marginBottom: SPACING.md, borderRadius: RADIUS.lg, borderWidth: 1, padding: SPACING.md, gap: SPACING.md },
+  unconfirmedRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-start' },
+  unconfirmedTitle: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold },
+  unconfirmedBody: { fontSize: FONT_SIZE.sm, marginTop: 2, lineHeight: 20 },
+  unconfirmedButton: { borderRadius: RADIUS.md, paddingVertical: SPACING.sm + 2, alignItems: 'center' },
+  unconfirmedButtonText: { color: COLORS.white, fontWeight: FONT_WEIGHT.semibold, fontSize: FONT_SIZE.sm },
   offlineBanner: { marginHorizontal: SPACING.lg, marginTop: SPACING.md },
   container: {
     flex: 1,

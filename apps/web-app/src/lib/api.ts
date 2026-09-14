@@ -2981,6 +2981,18 @@ export const attendanceApi = {
     return (response.data as { data?: unknown })?.data ?? response.data;
   },
 
+  // Approved overtime on a closed shift: minutes counted from the shift end.
+  addOvertime: async (entryId: string, input: { minutes: number; reason?: string }) => {
+    const response = await api.post<{ success: boolean; data: unknown }>(
+      `/attendance/entries/${entryId}/overtime`,
+      input
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  },
+
   // Delete a time entry (admin)
   deleteEntry: async (entryId: string) => {
     const response = await api.delete<{ success: boolean }>(`/attendance/entries/${entryId}`);

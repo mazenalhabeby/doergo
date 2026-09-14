@@ -11,6 +11,7 @@ import { EditHistoryDialog } from "./edit-history-dialog"
 
 // Flag reason badge config for smart auto-approval.
 const FLAG_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
+  CLOCK_OUT_PROVISIONAL: { label: "Clock-out not confirmed", className: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" },
   OVERTIME: { label: "Overtime", className: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20" },
   MISSED_CLOCK_OUT: { label: "Missed Clock-Out", className: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20" },
   OUTSIDE_GEOFENCE_IN: { label: "Geofence (In)", className: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" },

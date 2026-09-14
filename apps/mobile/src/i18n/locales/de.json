@@ -745,6 +745,20 @@
         "FIX_NOT_AT_TAP": "Ihr Standort ist veraltet. Versuchen Sie es erneut, um ihn neu zu bestimmen.",
         "OUTSIDE_SITE": "Sie sind {{distance}} m von {{location}} entfernt; dort ist Einstempeln nur im Umkreis von {{radius}} m möglich. Gehen Sie näher heran und versuchen Sie es erneut."
       }
+    },
+    "overtime": {
+      "note": "Sie sind {{duration}} über dem Schichtende. Überstunden zählen erst, wenn Ihre Leitung sie genehmigt.",
+      "reasonLabel": "Warum sind Sie geblieben? (geht an Ihre Leitung)",
+      "reasonPlaceholder": "Optional — leer lassen, um ohne Anfrage auszustempeln",
+      "askLabel": "Ausstempeln und Überstunden beantragen"
+    },
+    "unconfirmed": {
+      "title": "Ihre Schicht vom {{day}} war noch offen",
+      "body": "Sie wurde vorläufig um {{time}} beendet. Wann sind Sie tatsächlich gegangen?",
+      "action": "Uhrzeit angeben",
+      "pickerTitle": "Wann sind Sie gegangen?",
+      "inFuture": "Diese Uhrzeit liegt vor dem Einstempeln oder in der Zukunft.",
+      "saved": "Ihre Ausstempelzeit wurde gespeichert"
     }
   },
   "overtime": {

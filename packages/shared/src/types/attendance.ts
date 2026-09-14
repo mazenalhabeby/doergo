@@ -336,6 +336,8 @@ export interface ClockOutInput {
    * client asking is a courtesy, not a gate.
    */
   earlyReason?: string;
+  /** Why they stayed past the shift end — sent with a late clock-out, it asks a leader for the overtime. */
+  overtimeReason?: string;
 }
 
 export interface StartBreakInput {

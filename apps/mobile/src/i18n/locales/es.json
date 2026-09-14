@@ -745,6 +745,20 @@
         "FIX_NOT_AT_TAP": "Su ubicación está desactualizada. Inténtelo de nuevo para obtener una nueva.",
         "OUTSIDE_SITE": "Está a {{distance}} m de {{location}}, que solo admite fichajes dentro de {{radius}} m. Acérquese e inténtelo de nuevo."
       }
+    },
+    "overtime": {
+      "note": "Llevas {{duration}} después del fin de tu turno. Las horas extra solo cuentan cuando tu responsable las aprueba.",
+      "reasonLabel": "¿Por qué te quedaste? (se envía a tu responsable)",
+      "reasonPlaceholder": "Opcional — déjalo vacío para fichar la salida sin pedirlas",
+      "askLabel": "Fichar salida y pedir horas extra"
+    },
+    "unconfirmed": {
+      "title": "Tu turno del {{day}} seguía abierto",
+      "body": "Se cerró provisionalmente a las {{time}}. ¿A qué hora te fuiste realmente?",
+      "action": "Indicar hora de salida",
+      "pickerTitle": "¿A qué hora te fuiste?",
+      "inFuture": "Esa hora es anterior a tu entrada o aún no ha llegado.",
+      "saved": "Se guardó tu hora de salida"
     }
   },
   "overtime": {

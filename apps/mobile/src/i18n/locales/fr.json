@@ -745,6 +745,20 @@
         "FIX_NOT_AT_TAP": "Votre position n'est plus à jour. Réessayez pour en obtenir une nouvelle.",
         "OUTSIDE_SITE": "Vous êtes à {{distance}} m de {{location}}, qui n'accepte les pointages qu'à moins de {{radius}} m. Rapprochez-vous et réessayez."
       }
+    },
+    "overtime": {
+      "note": "Vous avez dépassé la fin de votre service de {{duration}}. Les heures supplémentaires ne comptent qu'une fois approuvées par votre responsable.",
+      "reasonLabel": "Pourquoi êtes-vous resté ? (envoyé à votre responsable)",
+      "reasonPlaceholder": "Facultatif — laissez vide pour pointer sans demande",
+      "askLabel": "Pointer la sortie et demander des heures sup."
+    },
+    "unconfirmed": {
+      "title": "Votre service du {{day}} était resté ouvert",
+      "body": "Il a été clôturé provisoirement à {{time}}. À quelle heure êtes-vous vraiment parti ?",
+      "action": "Indiquer l'heure de départ",
+      "pickerTitle": "À quelle heure êtes-vous parti ?",
+      "inFuture": "Cette heure est avant votre pointage d'entrée ou pas encore passée.",
+      "saved": "Votre heure de sortie a été enregistrée"
     }
   },
   "overtime": {

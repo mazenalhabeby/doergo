@@ -1893,7 +1893,8 @@
         "clockSuspect": "Telefonuhr verstellt",
         "stale": "Über eine Woche später gesendet",
         "fixMocked": "Standort vorgetäuscht",
-        "boundaryChanged": "Standortgrenze seitdem geändert"
+        "boundaryChanged": "Standortgrenze seitdem geändert",
+        "clockOutProvisional": "Ausstempeln nicht bestätigt"
       }
     },
     "locationsTab": {
@@ -3528,6 +3529,21 @@
       "viaAccountOff": "Folgt dem Konto, das es nicht erlaubt.",
       "overrideOn": "Hier erlaubt, unabhängig vom Konto.",
       "overrideOff": "Hier abgelehnt, obwohl das Konto es erlaubt."
+    },
+    "addOvertime": {
+      "action": "Überstunden hinzufügen",
+      "title": "Überstunden hinzufügen",
+      "titleFor": "Überstunden hinzufügen · {{name}}",
+      "context": "Schichtende {{end}} · ausgestempelt {{out}} ({{minutes}} Min. später)",
+      "minutes": "Minuten nach Schichtende",
+      "reason": "Grund",
+      "reasonPlaceholder": "Wird mit der Genehmigung gespeichert",
+      "countedUntil": "Gezählt bis",
+      "countedTime": "Gezählte Zeit",
+      "cappedAtClockOut": "Zeit nach dem Ausstempeln wird nie gezählt.",
+      "approve": "{{minutes}} Min. genehmigen",
+      "success": "{{minutes}} Min. Überstunden hinzugefügt",
+      "error": "Überstunden konnten nicht hinzugefügt werden"
     }
   },
   "auditLog": {

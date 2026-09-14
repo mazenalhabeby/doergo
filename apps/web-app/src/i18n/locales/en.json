@@ -1893,7 +1893,8 @@
         "clockSuspect": "Phone clock changed",
         "stale": "Sent over a week late",
         "fixMocked": "Mock location",
-        "boundaryChanged": "Site boundary changed since"
+        "boundaryChanged": "Site boundary changed since",
+        "clockOutProvisional": "Clock-out not confirmed"
       }
     },
     "locationsTab": {
@@ -3528,6 +3529,21 @@
       "viaAccountOff": "Follows their account, which does not.",
       "overrideOn": "Allowed here, whatever their account says.",
       "overrideOff": "Refused here, even though their account allows it."
+    },
+    "addOvertime": {
+      "action": "Add overtime",
+      "title": "Add overtime",
+      "titleFor": "Add overtime · {{name}}",
+      "context": "Shift ended {{end}} · clocked out {{out}} ({{minutes}} min later)",
+      "minutes": "Minutes after the shift end",
+      "reason": "Reason",
+      "reasonPlaceholder": "Recorded with the approval",
+      "countedUntil": "Counted until",
+      "countedTime": "Counted time",
+      "cappedAtClockOut": "Time after the clock-out is never counted.",
+      "approve": "Approve {{minutes}} min",
+      "success": "Added {{minutes}} min of overtime",
+      "error": "Could not add overtime"
     }
   },
   "auditLog": {

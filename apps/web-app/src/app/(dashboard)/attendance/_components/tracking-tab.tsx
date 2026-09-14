@@ -15,6 +15,9 @@ import { useTranslation } from "react-i18next"
 import { StatCard, toDate, formatTime, formatDateInZone, StatusBadge, WorkerCell, ClockCell, ApprovalCell, NoteCell } from "./attendance-helpers"
 import { countryFromTz } from "@hbcfield/shared/client"
 import { EditEntryDialog } from "./edit-entry-dialog"
+import { AddOvertimeDialog } from "./add-overtime-dialog"
+import { canAddOvertime } from "@/lib/overtime-preview"
+import { useAuth } from "@/contexts/auth-context"
 import { EditDayOffDialog } from "./edit-dayoff-dialog"
 import { OutOfRingPanel } from "./out-of-ring-panel"
 import { useTimeFormat } from "@/hooks"
@@ -73,6 +76,10 @@ export function TrackingTab({
 }: TrackingTabProps) {
   const { t } = useTranslation()
   const { hour12, locale } = useTimeFormat()
+  const { hasPermission, hasPlanFeature } = useAuth()
+  // Overtime on a closed shift: the approval permission, and the Option its route is sold under.
+  const canApproveOvertime = hasPermission("canApproveOvertime") && hasPlanFeature("shift_scheduling")
+  const showActions = canReconcile || canApproveOvertime
 
   // Days off (org-wide) only load in the "all" view. They get their own sub-tab
   // so the Clock In / Clock Out columns aren't shown for rows that never have
@@ -504,7 +511,7 @@ export function TrackingTab({
                     <SortHead label={t("common.duration")} active={sort?.key === "duration"} dir={sort?.dir ?? "asc"} onClick={() => onSort("duration")} />
                     <SortHead label={t("attendance.approval")} active={sort?.key === "approval"} dir={sort?.dir ?? "asc"} onClick={() => onSort("approval")} />
                     <TableHead className="font-semibold text-muted-foreground">{t("worklog.column", "Activity")}</TableHead>
-                    {canReconcile && <TableHead className="w-10 text-right" />}
+                    {showActions && <TableHead className="w-10 text-right" />}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -540,15 +547,18 @@ export function TrackingTab({
                           <ChevronRight className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-90")} />
                         </div>
                       </TableCell>
-                      {canReconcile && (
+                      {showActions && (
                         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                          <EditEntryDialog entry={entry} />
+                          <div className="flex items-center justify-end gap-1">
+                            {canApproveOvertime && canAddOvertime(entry) && <AddOvertimeDialog entry={entry} />}
+                            {canReconcile && <EditEntryDialog entry={entry} />}
+                          </div>
                         </TableCell>
                       )}
                     </TableRow>
                     {isOpen && (
                       <TableRow className="bg-muted/20 hover:bg-muted/20">
-                        <TableCell colSpan={canReconcile ? 8 : 7} className="p-4">
+                        <TableCell colSpan={showActions ? 8 : 7} className="p-4">
                           <div className="mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                             <ListChecks className="h-3.5 w-3.5" /> {t("worklog.title", "Activity — what they did")}
                           </div>

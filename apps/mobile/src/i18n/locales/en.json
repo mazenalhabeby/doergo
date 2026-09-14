@@ -745,6 +745,20 @@
         "FIX_NOT_AT_TAP": "Your location is out of date. Try again to take a fresh one.",
         "OUTSIDE_SITE": "You're {{distance}} m from {{location}}, which only accepts clock-ins within {{radius}} m. Move closer and try again."
       }
+    },
+    "overtime": {
+      "note": "You are {{duration}} past the end of your shift. Overtime counts only when your leader approves it.",
+      "reasonLabel": "Why did you stay? (sent to your leader)",
+      "reasonPlaceholder": "Optional — leave empty to clock out without asking",
+      "askLabel": "Clock out and ask for overtime"
+    },
+    "unconfirmed": {
+      "title": "Your shift from {{day}} was still open",
+      "body": "It was closed at {{time}} for now. When did you actually leave?",
+      "action": "Tell us when you left",
+      "pickerTitle": "When did you leave?",
+      "inFuture": "That time is before you clocked in or still to come.",
+      "saved": "Your clock-out time was saved"
     }
   },
   "overtime": {
