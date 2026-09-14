@@ -1,0 +1,45 @@
+# Offline sync alerts — install next to /opt/monitoring/alerts.yml on the
+# production box and add the scrape job below to prometheus.yml.
+#
+#   - job_name: hbcfield-sync
+#     metrics_path: /api/v1/sync/metrics
+#     scheme: http
+#     static_configs: [{ targets: ['hbcfield-api-gateway:4000'] }]
+#     authorization: { type: Bearer, credentials_file: /etc/prometheus/hbcfield-metrics-token }
+#
+# The gateway serves the metrics only with METRICS_TOKEN set (it is a 404
+# otherwise). The file must be world-readable (644) or owned by 65534, like
+# every other rule file on that box.
+groups:
+  - name: offline-sync
+    rules:
+      # A member's phone has held unsent work for over a day. The one loss
+      # offline mode cannot prevent is a phone lost before it syncs.
+      - alert: OfflineWorkStuck
+        expr: sum by (organization) (hbc_offline_members_stuck) > 0
+        for: 1h
+        labels: { severity: warning }
+        annotations:
+          summary: 'Unsent work older than a day on {{ $value }} phone(s) in organization {{ $labels.organization }}'
+
+      # Offices changing things under offline workers more than expected — or
+      # a release that turned valid work into conflicts.
+      - alert: OfflineConflictRateHigh
+        expr: |
+          sum(rate(hbc_sync_push_results_total{status="conflict"}[1h]))
+            / clamp_min(sum(rate(hbc_sync_push_results_total[1h])), 1e-9) > 0.05
+        for: 30m
+        labels: { severity: warning }
+        annotations:
+          summary: 'More than 5% of synced operations are conflicts'
+
+      # Refusals jumping — the classic sign of a server release that no longer
+      # accepts what phones already queued.
+      - alert: OfflineRejectSpike
+        expr: |
+          sum(rate(hbc_sync_push_results_total{status=~"rejected|skipped"}[15m]))
+            / clamp_min(sum(rate(hbc_sync_push_results_total[15m])), 1e-9) > 0.10
+        for: 15m
+        labels: { severity: critical }
+        annotations:
+          summary: 'More than 10% of synced operations are being refused'

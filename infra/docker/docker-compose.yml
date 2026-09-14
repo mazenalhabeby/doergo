@@ -365,6 +365,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4000
+      # Bearer token for /api/v1/sync/metrics (Prometheus). Unset = the route is a 404.
+      - METRICS_TOKEN=${METRICS_TOKEN:-}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}

@@ -12,6 +12,7 @@ import type { OfflinePreferencesStore } from './preferences';
 import { flushPendingRoute } from '../services/background-route-tracking';
 import { offlineCapableBuild } from './native';
 import { connectivity, createOfflineRuntime } from './runtime';
+import { reportTelemetry } from './telemetry';
 import { registerBackgroundSync } from './background-sync';
 import type { SyncEngine, SyncSnapshot } from './sync-engine';
 import type { OutboxOp } from './outbox/types';
@@ -123,6 +124,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
         it stops the moment the Wi-Fi does.
       */
       const fillMediaCache = async () => {
+        void reportTelemetry(live, files);
         if (!connectivity.unmetered || cancelled) return;
         const rows = await records.list<{ id: string; mimeType?: string | null; fileType?: string }>('attachments').catch(() => []);
         const images = rows.filter((r) => r.data.mimeType?.startsWith('image/') || r.data.fileType === 'IMAGE').map((r) => r.id);

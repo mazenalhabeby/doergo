@@ -16,6 +16,29 @@ import type { OccurrenceEvidence } from './occurrence';
  * the server answers `reset: true` and the phone rebuilds that scope from
  * scratch instead of trusting its copy.
  */
+/**
+ * How one phone's queue is doing, sent now and then. Counts and ages only —
+ * never what the work is.
+ */
+export interface SyncTelemetry {
+  appVersion: string;
+  /** Operations still needing the network. */
+  waiting: number;
+  /** Operations the member has to look at. */
+  attention: number;
+  /** When the oldest waiting operation was made (epoch ms), if any. */
+  oldestWaitingAt: number | null;
+  /** Operations by state. */
+  byState: Record<string, number>;
+  /** Why operations are failing or waiting, by code. */
+  codes: Record<string, number>;
+  /** Photos and documents waiting to upload. */
+  filesWaiting: number;
+  bytesWaiting: number;
+  /** Last successful push or pull (epoch ms). */
+  lastSuccessAt: number | null;
+}
+
 /** Most attachment ids one media-links request may ask to sign. */
 export const SYNC_MEDIA_LINKS_MAX = 100;
 

@@ -1,8 +1,12 @@
-import { Body, Controller, Get, HttpCode, Post, Query, Request } from '@nestjs/common';
+import { Body, Controller, Get, Header, HttpCode, NotFoundException, Post, Query, Request, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { timingSafeEqual } from 'crypto';
+import { Public } from '../../common/decorators';
+import { SyncHealthStore } from './sync-health.store';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { isAdmin, spacesGranting, type SyncOperation } from '@hbcfield/shared';
-import { SyncMediaLinksDto, SyncPullQueryDto, SyncPushDto } from './dto/sync-push.dto';
+import { SyncMediaLinksDto, SyncPullQueryDto, SyncPushDto, SyncTelemetryDto } from './dto/sync-push.dto';
 import { SyncPullGatewayService } from './sync-pull.gateway.service';
 import { SyncPushService } from './sync-push.service';
 
@@ -13,6 +17,8 @@ export class SyncController {
   constructor(
     private readonly pushService: SyncPushService,
     private readonly pullService: SyncPullGatewayService,
+    private readonly health: SyncHealthStore,
+    private readonly config: ConfigService,
   ) {}
 
   /**
@@ -29,7 +35,9 @@ export class SyncController {
   @Throttle({ short: { limit: 5, ttl: 1000 }, medium: { limit: 20, ttl: 10_000 }, long: { limit: 60, ttl: 60_000 } })
   @ApiOperation({ summary: 'Apply queued offline operations' })
   async push(@Body() dto: SyncPushDto, @Request() req: any) {
-    return this.pushService.push({ headers: req.headers, ip: req.ip }, dto.operations as SyncOperation[]);
+    const response = await this.pushService.push({ headers: req.headers, ip: req.ip }, dto.operations as SyncOperation[]);
+    void this.health.countResults(response.results);
+    return response;
   }
 
   /**
@@ -52,6 +60,36 @@ export class SyncController {
       viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
+  }
+
+  /** How this phone's queue is doing. Counts and ages only; the latest report replaces the last. */
+  @Post('telemetry')
+  @HttpCode(204)
+  @Throttle({ short: { limit: 2, ttl: 1000 }, medium: { limit: 5, ttl: 60_000 }, long: { limit: 30, ttl: 3_600_000 } })
+  @ApiOperation({ summary: "Report this phone's sync queue health" })
+  async telemetry(@Body() dto: SyncTelemetryDto, @Request() req: any) {
+    await this.health.record({ userId: req.user.id, organizationId: req.user.organizationId }, dto);
+  }
+
+  /**
+   * Offline sync health for Prometheus.
+   *
+   * ⚠️ Not a public page: it answers only a bearer token equal to METRICS_TOKEN,
+   * compared in constant time, and does not exist at all when that is unset —
+   * a 404, not an open door. Organization ids are labels; members never are.
+   */
+  @Public()
+  @Get('metrics')
+  @Header('Content-Type', 'text/plain; version=0.0.4')
+  @ApiOperation({ summary: 'Offline sync metrics (Prometheus, token-protected)' })
+  async metrics(@Request() req: any) {
+    const expected = this.config.get<string>('METRICS_TOKEN');
+    if (!expected) throw new NotFoundException();
+    const given = String(req.headers?.authorization ?? '').replace(/^Bearer\s+/i, '');
+    const a = Buffer.from(given);
+    const b = Buffer.from(expected);
+    if (a.length !== b.length || !timingSafeEqual(a, b)) throw new UnauthorizedException();
+    return this.health.metrics();
   }
 
   /** Short-lived links to task photos the member may see, for the offline image cache. */

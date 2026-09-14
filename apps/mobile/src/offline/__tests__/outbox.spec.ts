@@ -155,3 +155,27 @@ describe('stuckFor', () => {
     expect(stuckFor([{ state: 'done', createdAt: 0 }, { state: 'failed', createdAt: 0 }, { state: 'discarded', createdAt: 0 }], now)).toBeNull();
   });
 });
+
+describe('buildTelemetry', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  jest.mock('../../lib/api/client', () => ({ APP_VERSION: '1.0.6', fetchWithAuth: jest.fn() }));
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { buildTelemetry } = require('../telemetry') as typeof import('../telemetry');
+  const op = (state: string, createdAt: number, code?: string) => ({ state, createdAt, lastError: code ? { code } : undefined }) as any;
+
+  it('reports counts, the oldest waiting and why — never what the work is', () => {
+    const t = buildTelemetry(
+      [op('retry', 50, 'NETWORK'), op('pending', 20), op('failed', 10, 'TASK_REASSIGNED'), op('done', 5, 'OLD')],
+      { count: 2, bytes: 900 },
+      1234,
+      '1.0.6',
+    );
+    expect(t).toEqual({
+      appVersion: '1.0.6', waiting: 2, attention: 1, oldestWaitingAt: 20,
+      byState: { retry: 1, pending: 1, failed: 1, done: 1 },
+      codes: { NETWORK: 1, TASK_REASSIGNED: 1 },
+      filesWaiting: 2, bytesWaiting: 900, lastSuccessAt: 1234,
+    });
+    expect(JSON.stringify(t)).not.toMatch(/payload|body/);
+  });
+});

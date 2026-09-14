@@ -10,6 +10,7 @@ import { loadBackgroundTask, loadNetInfo } from './native';
 import { OPEN_STATES } from './outbox/types';
 import { STUCK_AFTER_MS, stuckFor } from './outbox/stuck';
 import { connectivity, createOfflineRuntime } from './runtime';
+import { reportTelemetry } from './telemetry';
 
 /*
   Sending what waits, now and then, with the app closed.
@@ -78,6 +79,7 @@ async function runOnce(): Promise<boolean> {
     await runtime.engine.flush();
     await flushPendingRoute();
     await warnIfStuck(runtime.engine.operations());
+    await reportTelemetry(runtime.engine, runtime.files);
     return true;
   } finally {
     runtime.engine.stop();

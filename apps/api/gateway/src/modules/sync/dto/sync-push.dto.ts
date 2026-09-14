@@ -92,3 +92,16 @@ export class SyncMediaLinksDto {
   @Matches(/^[A-Za-z0-9_-]{1,64}$/, { each: true })
   ids: string[];
 }
+
+/** How a phone's queue is doing — counts and ages only. */
+export class SyncTelemetryDto {
+  @ApiProperty() @IsString() @MaxLength(40) appVersion: string;
+  @ApiProperty() @IsInt() @Min(0) @Max(1_000_000) waiting: number;
+  @ApiProperty() @IsInt() @Min(0) @Max(1_000_000) attention: number;
+  @ApiPropertyOptional() @IsOptional() @IsInt() @Min(0) oldestWaitingAt: number | null;
+  @ApiProperty() @IsObject() byState: Record<string, number>;
+  @ApiProperty() @IsObject() codes: Record<string, number>;
+  @ApiProperty() @IsInt() @Min(0) @Max(1_000_000) filesWaiting: number;
+  @ApiProperty() @IsInt() @Min(0) bytesWaiting: number;
+  @ApiPropertyOptional() @IsOptional() @IsInt() @Min(0) lastSuccessAt: number | null;
+}
