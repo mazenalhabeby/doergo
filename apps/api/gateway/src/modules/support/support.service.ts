@@ -14,10 +14,10 @@ export class SupportService extends BaseGatewayService {
   }
 
   createTicket(data: any) {
-    return this.send({ cmd: 'support.create' }, data);
+    return this.sendOnce({ cmd: 'support.create' }, data);
   }
   addMessage(data: any) {
-    return this.send({ cmd: 'support.addMessage' }, data);
+    return this.sendOnce({ cmd: 'support.addMessage' }, data);
   }
   assign(data: any) {
     return this.send({ cmd: 'support.assign' }, data);

@@ -47,10 +47,12 @@ export class ChatController {
   @ApiOperation({ summary: 'Send a message' })
   sendMessage(@Param('id') id: string, @Body() dto: SendMessageDto, @Req() req: any) {
     return this.chat.send_({
-      conversationId: id,
-      senderId: req.user.id,
+      id: dto.id,
+      sentAt: dto.sentAt,
       body: dto.body,
       attachments: dto.attachments,
+      conversationId: id,
+      senderId: req.user.id,
     });
   }
 

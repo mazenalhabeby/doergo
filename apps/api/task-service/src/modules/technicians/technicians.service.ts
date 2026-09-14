@@ -3,6 +3,7 @@ import { Inject, Injectable, NotFoundException, BadRequestException, ForbiddenEx
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, SERVICE_NAMES, TaskStatus, success } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
+import { findPrior } from '../../common/create-once.util';
 import { CoverService } from './cover.service';
 import {
   GetEmployeeStatsDto,
@@ -491,6 +492,15 @@ export class TechniciansService {
       throw new NotFoundException('Employee not found in organization');
     }
 
+    // The same request sent again from the phone's queue: answered before the
+    // overlap rule, which would otherwise refuse it as overlapping itself.
+    const prior = await findPrior({
+      id: dto.id,
+      find: (id) => this.prisma.timeOff.findUnique({ where: { id }, include: { technician: { select: { id: true, firstName: true, lastName: true } } } }),
+      isSame: (row) => row.technicianId === technicianId,
+    });
+    if (prior) return success(prior, 'Time-off request already recorded');
+
     // Validate dates
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -520,6 +530,7 @@ export class TechniciansService {
 
     const timeOff = await this.prisma.timeOff.create({
       data: {
+        ...(dto.id ? { id: dto.id } : {}),
         technicianId,
         startDate: start,
         endDate: end,

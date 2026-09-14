@@ -21,8 +21,8 @@ export async function createOnce<T>(opts: {
 }): Promise<{ row: T; created: boolean }> {
   if (!opts.id) return { row: await opts.create(), created: true };
 
-  const existing = await opts.find(opts.id);
-  if (existing) return { row: ownOrRefuse(existing, opts.isSame), created: false };
+  const existing = await findPrior(opts);
+  if (existing) return { row: existing, created: false };
 
   try {
     return { row: await opts.create(), created: true };
@@ -33,6 +33,21 @@ export async function createOnce<T>(opts: {
     if (!raced) throw err;
     return { row: ownOrRefuse(raced, opts.isSame), created: false };
   }
+}
+
+/**
+ * The record a resend already made, or null. For creates that must run checks
+ * BETWEEN "does it exist" and "make it" — an overlap rule would otherwise refuse
+ * the resend of a request as overlapping itself.
+ */
+export async function findPrior<T>(opts: {
+  id: string | undefined;
+  find: (id: string) => Promise<T | null>;
+  isSame: (row: T) => boolean;
+}): Promise<T | null> {
+  if (!opts.id) return null;
+  const existing = await opts.find(opts.id);
+  return existing ? ownOrRefuse(existing, opts.isSame) : null;
 }
 
 function ownOrRefuse<T>(row: T, isSame: (row: T) => boolean): T {

@@ -11,6 +11,7 @@ import {
   type ChatShareFacts,
   SPACE_LEADER_PERMISSION,
 } from '@hbcfield/shared';
+import { findPrior } from '../../common/create-once.util';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { resolveMemberRouting } from '@hbcfield/shared';
 
@@ -576,21 +577,38 @@ export class ChatService {
     senderId: string;
     body: string;
     attachments?: Attachment[];
+    /** Made on the phone: the same message sent twice is one message. */
+    id?: string;
+    /** When the sender wrote it, for a message sent late from offline. */
+    sentAt?: string;
   }) {
     const membership = await this.assertMember(data.conversationId, data.senderId);
+
+    // Already delivered (the answer was lost, or the queue sent it again).
+    const prior = await findPrior({
+      id: data.id,
+      find: (id) => this.prisma.message.findUnique({ where: { id }, include: { sender: userSelect } }),
+      isSame: (m) => m.senderId === data.senderId && m.conversationId === data.conversationId,
+    });
+    if (prior) return { success: true, data: prior };
 
     // Membership is not permission. It says these two once had a reason to
     // talk; it says nothing about whether they still do. Ask again, every time.
     await this.assertStillReachable(membership, data.senderId);
 
     const now = new Date();
+    // Kept only when it differs from now: the future is refused as a claim, not stored.
+    const written = data.sentAt ? new Date(data.sentAt) : null;
+    const sentAt = written && !Number.isNaN(written.getTime()) && written < now && now.getTime() - written.getTime() > 60_000 ? written : null;
     const [message] = await this.prisma.$transaction([
       this.prisma.message.create({
         data: {
+          ...(data.id ? { id: data.id } : {}),
           conversationId: data.conversationId,
           senderId: data.senderId,
           body: data.body,
           attachments: (data.attachments ?? []) as any,
+          sentAt,
         },
         include: { sender: userSelect },
       }),

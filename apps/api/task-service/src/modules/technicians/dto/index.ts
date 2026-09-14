@@ -57,6 +57,8 @@ export class GetScheduleDto {
 // ===========================
 
 export class RequestTimeOffDto {
+  /** Made on the phone: a request sent twice is still one request. */
+  id?: string;
   technicianId: string;
   organizationId: string;
   /** Spaces the caller may read; undefined = org-wide, [] = none. */

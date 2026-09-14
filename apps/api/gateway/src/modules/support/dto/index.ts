@@ -12,7 +12,9 @@ import {
   MinLength,
   ArrayMaxSize,
   ValidateNested,
+  Matches,
 } from 'class-validator';
+import { CLIENT_ID } from '../../../common/dto/upload.dto';
 import { Type } from 'class-transformer';
 import { SUPPORT_CATEGORIES, SUPPORT_STATUSES } from '@hbcfield/shared';
 
@@ -24,6 +26,9 @@ export class SupportAttachmentDto {
 }
 
 export class CreateTicketDto {
+  /** Made on the phone: a ticket sent twice is one ticket. */
+  @IsOptional() @IsString() @Matches(CLIENT_ID) id?: string;
+
   @IsString()
   @MinLength(2)
   @MaxLength(200)
@@ -51,6 +56,9 @@ export class CreateTicketDto {
 }
 
 export class AddMessageDto {
+  /** Made on the phone: a reply sent twice is one reply. */
+  @IsOptional() @IsString() @Matches(CLIENT_ID) id?: string;
+
   @IsString()
   @MinLength(1)
   @MaxLength(5000)

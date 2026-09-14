@@ -31,6 +31,7 @@ import {
   CreateEmployeeDto,
   UpdateEmployeeDto,
   ListEmployeesDto,
+  RequestTimeOffDto,
 } from './dto';
 
 @ApiTags('employees')
@@ -803,7 +804,7 @@ export class EmployeesController {
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   async requestTimeOff(
     @Param('id') id: string,
-    @Body() body: { startDate: string; endDate: string; reason?: string; type?: string },
+    @Body() body: RequestTimeOffDto,
     @CurrentUser() user: CurrentUserData,
   ) {
     // Employees can only request time off for themselves
@@ -815,6 +816,7 @@ export class EmployeesController {
       this.taskClient.send(
         { cmd: 'request_time_off' },
         {
+          id: body.id,
           technicianId: id,
           organizationId: user.organizationId,
           startDate: body.startDate,

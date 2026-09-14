@@ -22,7 +22,8 @@ export class ChatService extends BaseGatewayService {
     return this.send({ cmd: 'chat.history' }, data);
   }
   send_(data: any) {
-    return this.send({ cmd: 'chat.send' }, data);
+    // Once: a retried send is a message delivered twice.
+    return this.sendOnce({ cmd: 'chat.send' }, data);
   }
   markRead(data: any) {
     return this.send({ cmd: 'chat.markRead' }, data);

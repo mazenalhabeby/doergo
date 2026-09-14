@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsOptional, IsString,
   Max, MaxLength, Min, ValidateNested,
+  Matches,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { KIND_SHAPE_LIMITS } from '@hbcfield/shared';
@@ -83,6 +84,16 @@ export class ReadReceiptDto {
  * put an absurd figure into an organization's books from a phone.
  */
 export class SubmitExpenseDto {
+  /**
+   * Made on the phone: an expense filed twice is one expense. Not `id` — the
+   * route already calls the ASSET that, and the two would overwrite each other.
+   */
+  @ApiPropertyOptional({ description: 'Id made on the phone for this expense' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Za-z0-9_-]{16,64}$/)
+  entryId?: string;
+
   @ApiProperty({ description: 'A heading the KIND declares — never free text.' })
   @IsString()
   @MaxLength(KIND_SHAPE_LIMITS.maxLabel)

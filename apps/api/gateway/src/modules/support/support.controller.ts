@@ -55,6 +55,7 @@ export class SupportController {
   @ApiOperation({ summary: 'Open a support ticket' })
   createTicket(@Body() dto: CreateTicketDto, @Req() req: any) {
     return this.support.createTicket({
+      id: dto.id,
       organizationId: req.user.organizationId,
       createdById: req.user.id,
       orgAddOns: req.user.orgAddOns ?? [],
@@ -88,6 +89,7 @@ export class SupportController {
   @ApiOperation({ summary: 'Reply to my ticket' })
   reply(@Param('id') id: string, @Body() dto: AddMessageDto, @Req() req: any) {
     return this.support.addMessage({
+      id: dto.id,
       ticketId: id,
       authorId: req.user.id,
       authorType: 'CUSTOMER',

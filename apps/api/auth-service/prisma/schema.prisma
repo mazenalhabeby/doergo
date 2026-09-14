@@ -4185,6 +4185,8 @@ model Message {
   sender         User         @relation("ChatMessageSender", fields: [senderId], references: [id])
   body           String
   attachments    Json         @default("[]") // ChatAttachment[]
+  /// When the sender wrote it, as their phone recorded it — set only for a message sent late from offline.
+  sentAt         DateTime?
   editedAt       DateTime?
   deletedAt      DateTime?
   createdAt      DateTime     @default(now())

@@ -13,6 +13,7 @@ import {
   type SupportAuthorType,
   type SupportStatus,
 } from '@hbcfield/shared';
+import { findPrior } from '../../common/create-once.util';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
 type Attachment = { fileName: string; fileUrl: string; fileType: string; fileSize: number };
@@ -76,7 +77,16 @@ export class SupportService {
     channel?: string;
     body: string;
     attachments?: Attachment[];
+    /** Made on the phone: a ticket sent twice is one ticket. */
+    id?: string;
   }) {
+    const prior = await findPrior({
+      id: data.id,
+      find: (id) => this.prisma.supportTicket.findUnique({ where: { id }, include: { messages: true, createdBy: this.createdBySelect() } }),
+      isSame: (t) => t.createdById === data.createdById,
+    });
+    if (prior) return { success: true, data: prior };
+
     const now = new Date();
     // What they bought decides both the queue position and the promise.
     const addOns = (data.orgAddOns ?? []) as string[];
@@ -88,6 +98,7 @@ export class SupportService {
 
     const ticket = await this.prisma.supportTicket.create({
       data: {
+        ...(data.id ? { id: data.id } : {}),
         organizationId: data.organizationId,
         createdById: data.createdById,
         subject: data.subject.trim().slice(0, 200),
@@ -138,6 +149,8 @@ export class SupportService {
     organizationId?: string; // customer path — must own the ticket's org
     userId?: string; // customer path — must be the ticket OWNER (not just same org)
     asAgent?: boolean; // agent path — already authorized upstream
+    /** Made on the phone: a reply sent twice is one reply. */
+    id?: string;
   }) {
     const ticket = await this.prisma.supportTicket.findUnique({ where: { id: data.ticketId } });
     if (!ticket) throw new NotFoundException('Ticket not found');
@@ -150,6 +163,14 @@ export class SupportService {
     if (!data.asAgent && ticket.status === 'CLOSED') {
       throw new ForbiddenException('This ticket is closed — please open a new request.');
     }
+
+    // Asked after the ownership check above, so a guessed id reveals nothing.
+    const prior = await findPrior({
+      id: data.id,
+      find: (id) => this.prisma.supportMessage.findUnique({ where: { id } }),
+      isSame: (m) => m.ticketId === data.ticketId && m.authorId === data.authorId,
+    });
+    if (prior) return { success: true, data: prior };
 
     const now = new Date();
     const isAgent = data.authorType === 'AGENT';
@@ -177,6 +198,7 @@ export class SupportService {
     const writes: any[] = [
       this.prisma.supportMessage.create({
         data: {
+          ...(data.id ? { id: data.id } : {}),
           ticketId: data.ticketId,
           authorId: data.authorId,
           authorType: data.authorType,

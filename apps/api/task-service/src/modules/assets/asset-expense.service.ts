@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Inject, Injectable, Logger, No
 import { OBJECT_STORE, ObjectStore, extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
 import { pdfToLines } from './pdf-lines';
 import { randomUUID } from 'crypto';
+import { findPrior } from '../../common/create-once.util';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, normalizeKindShape, findMoneyCategory, parseReceipt } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
@@ -254,9 +255,19 @@ export class AssetExpenseService {
     userRole: string;
     organizationId: string;
     canManageAssets?: boolean;
+    /** Made on the phone: an expense filed twice is one expense. */
+    entryId?: string;
   }) {
     const when = this.readDate(data.occurredAt);
     const asset = await this.gate(data, when);
+
+    // Filed already (after the custody gate, so a guessed id reveals nothing).
+    const prior = await findPrior({
+      id: data.entryId,
+      find: (id) => this.prisma.assetMoney.findUnique({ where: { id } }),
+      isSame: (m) => m.authorId === data.userId && m.assetId === data.id,
+    });
+    if (prior) return success(prior);
 
     const shape = normalizeKindShape(asset.category?.config);
     if (!shape.money.enabled) throw new BadRequestException('This kind does not track money');
@@ -283,6 +294,7 @@ export class AssetExpenseService {
 
     const entry = await this.prisma.assetMoney.create({
       data: {
+        ...(data.entryId ? { id: data.entryId } : {}),
         organizationId: data.organizationId,
         assetId: data.id,
         category: category.label,
