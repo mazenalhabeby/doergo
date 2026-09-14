@@ -2375,7 +2375,16 @@
       "syncNow": "Synchroniser",
       "offlineNow": "Vous êtes hors ligne : ce sera envoyé dès votre retour en ligne.",
       "unavailable": "Cette version de l'application fonctionne uniquement en ligne. Mettez l'application à jour pour travailler sans internet.",
-      "waitingSince": "Enregistré {{time}}"
+      "waitingSince": "Enregistré {{time}}",
+      "thisPhone": "Ce téléphone",
+      "wifiOnly": "Envoyer les photos uniquement en Wi-Fi",
+      "wifiOnlyHint": "Les notes, les pointages et les changements de statut partent avec n'importe quelle connexion.",
+      "photosWaiting": "Photos en attente d'envoi",
+      "photosWaitingValue_one": "{{count}} · {{size}}",
+      "photosWaitingValue_other": "{{count}} · {{size}}",
+      "keptOffline": "Photos conservées pour la consultation hors ligne",
+      "storageWarning": "{{size}} de photos attendent sur ce téléphone. Connectez-vous dès que possible.",
+      "storageUrgent": "{{size}} de photos attendent sur ce téléphone. Connectez-vous vite au Wi-Fi pour ne rien perdre si le téléphone est perdu."
     },
     "ops": {
       "task_status": "Changement de statut",
@@ -2412,7 +2421,8 @@
       "FIX_NOT_AT_TAP": "La position n'a pas été prise au moment de l'action.",
       "FIX_INACCURATE": "La position n'était pas assez précise.",
       "FIX_MISSING": "La position n'a pas pu être déterminée.",
-      "REPORT_EXISTS": "Cette intervention a déjà un rapport, le vôtre n'a donc pas été ajouté."
+      "REPORT_EXISTS": "Cette intervention a déjà un rapport, le vôtre n'a donc pas été ajouté.",
+      "WAITING_FOR_WIFI": "En attente du Wi-Fi : vous avez choisi d'envoyer les photos uniquement en Wi-Fi."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",

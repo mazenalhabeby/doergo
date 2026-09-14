@@ -51,4 +51,8 @@ export class OfflineFiles {
   uriFor(id: string, mime: string): string {
     return this.deps.disk.uriFor(id, mime);
   }
+
+  totals(): Promise<{ count: number; bytes: number }> {
+    return this.deps.registry.totals();
+  }
 }

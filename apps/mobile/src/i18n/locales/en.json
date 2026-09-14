@@ -2375,7 +2375,16 @@
       "syncNow": "Sync now",
       "offlineNow": "You're offline — this will be sent when you're back online.",
       "unavailable": "This version of the app works online only. Update the app to keep working without internet.",
-      "waitingSince": "Saved {{time}}"
+      "waitingSince": "Saved {{time}}",
+      "thisPhone": "This phone",
+      "wifiOnly": "Send photos only on Wi-Fi",
+      "wifiOnlyHint": "Notes, clock-ins and status changes still go on any connection.",
+      "photosWaiting": "Photos waiting to upload",
+      "photosWaitingValue_one": "{{count}} · {{size}}",
+      "photosWaitingValue_other": "{{count}} · {{size}}",
+      "keptOffline": "Photos kept for offline viewing",
+      "storageWarning": "{{size}} of photos are waiting on this phone. Connect when you can.",
+      "storageUrgent": "{{size}} of photos are waiting on this phone. Connect to Wi-Fi soon so nothing is lost if the phone is."
     },
     "ops": {
       "task_status": "Status change",
@@ -2412,7 +2421,8 @@
       "FIX_NOT_AT_TAP": "The location wasn't taken at the moment of the action.",
       "FIX_INACCURATE": "The location wasn't precise enough.",
       "FIX_MISSING": "The location couldn't be determined.",
-      "REPORT_EXISTS": "This job already has a service report, so yours wasn't added."
+      "REPORT_EXISTS": "This job already has a service report, so yours wasn't added.",
+      "WAITING_FOR_WIFI": "Waiting for Wi-Fi — you chose to send photos only on Wi-Fi."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",

@@ -1,6 +1,7 @@
 import { useOffline, useSyncStatus } from '../../../src/offline/offline-context';
 import { destroyOfflineDatabase } from '../../../src/offline/db/database';
 import { DeviceFileDisk } from '../../../src/offline/files/device-file-disk';
+import { MediaCache } from '../../../src/offline/files/media-cache';
 import { useState, useCallback, useRef } from 'react';
 import {
   View,
@@ -238,6 +239,7 @@ export default function ProfileScreen() {
     if (userId) {
       await destroyOfflineDatabase(userId).catch(() => undefined);
       DeviceFileDisk.forMember(userId).destroyAll();
+      MediaCache.destroyForMember(userId);
     }
   };
 

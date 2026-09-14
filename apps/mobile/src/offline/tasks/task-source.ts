@@ -34,9 +34,11 @@ export async function loadTaskDetail(
     me: { id: string; firstName?: string; lastName?: string };
     /** Where a held photo lives on this phone; without it pending photos are not shown. */
     fileUri?: (id: string, mime: string) => string;
+    /** A photo already on the server, kept on this phone for viewing offline. */
+    cachedMediaUri?: (id: string) => string | null;
   },
 ): Promise<TaskDetail> {
-  const { records, operations, me, fileUri } = deps;
+  const { records, operations, me, fileUri, cachedMediaUri } = deps;
   const heldPhotos = fileUri ? pendingAttachments(id, operations, fileUri) : [];
   try {
     const [task, comments, attachments] = await Promise.all([
@@ -59,7 +61,11 @@ export async function loadTaskDetail(
     const local = await localTaskDetail(id, records);
     if (!local) throw err;
     const comments = (await records.listByParent<Comment>('comments', id)).map((r) => r.data);
-    const attachments = (await records.listByParent<any>('attachments', id)).map((r) => r.data);
+    // Saved rows carry no link (links expire); the photo itself, if kept, is on the phone.
+    const attachments = (await records.listByParent<any>('attachments', id)).map((r) => {
+      const kept = cachedMediaUri?.(r.data.id) ?? null;
+      return kept ? { ...r.data, fileUrl: kept, url: kept } : r.data;
+    });
     return {
       task: overlayTask(local, operations),
       comments: mergeComments(comments, pendingComments(id, operations, me)) as TaskDetail['comments'],

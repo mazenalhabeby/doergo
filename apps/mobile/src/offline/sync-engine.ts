@@ -32,7 +32,9 @@ export interface RecordsSink {
 /** What preparing an operation came to. A failure is classified like an HTTP answer. */
 export type PrepareResult =
   | { ok: true; op: OutboxOp }
-  | { ok: false; status: number | null; code?: string };
+  | { ok: false; status: number | null; code?: string }
+  /** Not now, and not a failure: waiting for something (Wi-Fi). No attempt is counted. */
+  | { ok: false; hold: true; code: string; retryInMs: number };
 
 /**
  * Work an operation needs done before it can be sent — uploading its photo.
@@ -285,6 +287,12 @@ export class SyncEngine {
       if ('op' in result) {
         if (result.op !== op) await this.deps.store.save([result.op]);
         ready.push(result.op);
+        continue;
+      }
+      if ('hold' in result) {
+        held.push({ ...op, state: 'retry', nextAttemptAt: this.now() + result.retryInMs, lastError: { code: result.code }, updatedAt: this.now() });
+        blockedIds.add(op.id);
+        blockedLanes.add(op.lane);
         continue;
       }
       const [failed] = applyPushFailure([op], result.status, result.code, this.now(), this.deps.random);

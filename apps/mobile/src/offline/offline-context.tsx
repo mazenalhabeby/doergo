@@ -7,7 +7,10 @@ import { ConnectivityMonitor, type Connectivity } from './connectivity';
 import { openOfflineDatabase } from './db/database';
 import { RecordsStore } from './db/records-store';
 import { SqliteOutboxStore } from './db/sqlite-outbox-store';
-import { httpObjectUploader, httpSyncTransport } from './http-transport';
+import { File as FsFile } from 'expo-file-system';
+import { httpMediaLinks, httpObjectUploader, httpSyncTransport } from './http-transport';
+import { MediaCache } from './files/media-cache';
+import { OfflinePreferencesStore } from './preferences';
 import { DeviceFileDisk } from './files/device-file-disk';
 import { OfflineFiles } from './files/offline-files';
 import { SqliteFileRegistry } from './files/sqlite-file-registry';
@@ -45,9 +48,13 @@ interface OfflineValue {
   records: RecordsStore | null;
   /** Photos and signatures held on this phone until they are sent. */
   files: OfflineFiles | null;
+  /** Photos already on the server, kept for viewing offline. */
+  media: MediaCache | null;
+  /** The member's own sync choices (photos only on Wi-Fi). */
+  preferences: OfflinePreferencesStore | null;
 }
 
-const UNAVAILABLE: OfflineValue = { available: false, engine: null, records: null, files: null };
+const UNAVAILABLE: OfflineValue = { available: false, engine: null, records: null, files: null, media: null, preferences: null };
 const OfflineContext = createContext<OfflineValue>(UNAVAILABLE);
 
 const EMPTY_SNAPSHOT: SyncSnapshot = { waiting: 0, attention: 0, pushing: false, pulling: false, lastSuccessAt: null };
@@ -85,13 +92,26 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
       const registry = new SqliteFileRegistry(db);
       const disk = DeviceFileDisk.forMember(user.id);
       const files = new OfflineFiles({ registry, disk });
+      const preferences = new OfflinePreferencesStore(user.id);
+      await preferences.load();
+      const media = MediaCache.forMember(user.id, {
+        links: httpMediaLinks,
+        download: async (url, dest) => {
+          await FsFile.downloadFileAsync(url, dest, { idempotent: true });
+        },
+      });
       engine = new SyncEngine({
         userId: user.id,
         organizationId: user.organizationId!,
         store: new SqliteOutboxStore(db),
         transport: httpSyncTransport,
         records,
-        preparer: new FileUploadPreparer({ files: registry, disk, uploader: httpObjectUploader }),
+        preparer: new FileUploadPreparer({
+          files: registry,
+          disk,
+          uploader: httpObjectUploader,
+          mayUpload: () => !preferences.current.photosOnWifiOnly || connectivity.unmetered,
+        }),
         newId: () => uuidv7(),
       });
       await engine.start();
@@ -100,16 +120,35 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       const live = engine;
-      setValue({ available: true, engine: live, records, files });
+      setValue({ available: true, engine: live, records, files, media, preferences });
+
+      /*
+        On Wi-Fi, keep the photos of the tasks on this phone for offline viewing.
+        Never on mobile data — a crew's data plans are not ours to spend — and
+        it stops the moment the Wi-Fi does.
+      */
+      const fillMediaCache = async () => {
+        if (!connectivity.unmetered || cancelled) return;
+        const rows = await records.list<{ id: string; mimeType?: string | null; fileType?: string }>('attachments').catch(() => []);
+        const images = rows.filter((r) => r.data.mimeType?.startsWith('image/') || r.data.fileType === 'IMAGE').map((r) => r.id);
+        await media.prefetch(images, () => connectivity.unmetered && !cancelled);
+      };
 
       // Triggers: coming back online syncs everything; returning to the app
       // sends what waits. Pull-to-refresh calls syncAll itself.
       unsubscribers.push(
         connectivity.subscribe((state) => {
           if (state !== 'online') return;
-          void live.syncAll();
+          void live.syncAll().then(fillMediaCache);
           void flushPendingRoute();
         }),
+        // Wi-Fi arriving: photos held for it go now, and the image cache fills.
+        connectivity.subscribeKind((unmetered) => {
+          if (!unmetered) return;
+          void live.flush();
+          void fillMediaCache();
+        }),
+        preferences.subscribe(() => void live.flush()),
       );
       const appState = AppState.addEventListener('change', (s) => {
         if (s !== 'active') return;
@@ -117,7 +156,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
         void flushPendingRoute();
       });
       unsubscribers.push(() => appState.remove());
-      void live.syncAll();
+      void live.syncAll().then(fillMediaCache);
     })().catch((err) => {
       console.warn('[offline] could not start:', err);
       if (!cancelled) setValue(UNAVAILABLE);

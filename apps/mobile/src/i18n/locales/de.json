@@ -2375,7 +2375,16 @@
       "syncNow": "Jetzt synchronisieren",
       "offlineNow": "Sie sind offline — dies wird gesendet, sobald Sie wieder online sind.",
       "unavailable": "Diese App-Version funktioniert nur online. Aktualisieren Sie die App, um ohne Internet weiterzuarbeiten.",
-      "waitingSince": "Gespeichert {{time}}"
+      "waitingSince": "Gespeichert {{time}}",
+      "thisPhone": "Dieses Telefon",
+      "wifiOnly": "Fotos nur über WLAN senden",
+      "wifiOnlyHint": "Notizen, Einstempeln und Statusänderungen werden weiterhin über jede Verbindung gesendet.",
+      "photosWaiting": "Fotos, die auf das Hochladen warten",
+      "photosWaitingValue_one": "{{count}} · {{size}}",
+      "photosWaitingValue_other": "{{count}} · {{size}}",
+      "keptOffline": "Für die Offline-Ansicht gespeicherte Fotos",
+      "storageWarning": "{{size}} Fotos warten auf diesem Telefon. Verbinden Sie sich, sobald es geht.",
+      "storageUrgent": "{{size}} Fotos warten auf diesem Telefon. Verbinden Sie sich bald mit einem WLAN, damit nichts verloren geht, falls das Telefon verloren geht."
     },
     "ops": {
       "task_status": "Statusänderung",
@@ -2412,7 +2421,8 @@
       "FIX_NOT_AT_TAP": "Der Standort wurde nicht im Moment der Aktion bestimmt.",
       "FIX_INACCURATE": "Der Standort war nicht genau genug.",
       "FIX_MISSING": "Der Standort konnte nicht bestimmt werden.",
-      "REPORT_EXISTS": "Für diesen Auftrag gibt es bereits einen Servicebericht, daher wurde Ihrer nicht hinzugefügt."
+      "REPORT_EXISTS": "Für diesen Auftrag gibt es bereits einen Servicebericht, daher wurde Ihrer nicht hinzugefügt.",
+      "WAITING_FOR_WIFI": "Wartet auf WLAN – Sie haben gewählt, Fotos nur über WLAN zu senden."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",

@@ -2375,7 +2375,16 @@
       "syncNow": "Sincronizar ahora",
       "offlineNow": "Estás sin conexión: se enviará cuando vuelvas a tener conexión.",
       "unavailable": "Esta versión de la app solo funciona con conexión. Actualiza la app para seguir trabajando sin internet.",
-      "waitingSince": "Guardado {{time}}"
+      "waitingSince": "Guardado {{time}}",
+      "thisPhone": "Este teléfono",
+      "wifiOnly": "Enviar fotos solo con Wi-Fi",
+      "wifiOnlyHint": "Las notas, los fichajes y los cambios de estado se envían con cualquier conexión.",
+      "photosWaiting": "Fotos pendientes de subir",
+      "photosWaitingValue_one": "{{count}} · {{size}}",
+      "photosWaitingValue_other": "{{count}} · {{size}}",
+      "keptOffline": "Fotos guardadas para ver sin conexión",
+      "storageWarning": "Hay {{size}} de fotos esperando en este teléfono. Conéctese cuando pueda.",
+      "storageUrgent": "Hay {{size}} de fotos esperando en este teléfono. Conéctese pronto a una Wi-Fi para no perder nada si pierde el teléfono."
     },
     "ops": {
       "task_status": "Cambio de estado",
@@ -2412,7 +2421,8 @@
       "FIX_NOT_AT_TAP": "La ubicación no se tomó en el momento de la acción.",
       "FIX_INACCURATE": "La ubicación no era lo bastante precisa.",
       "FIX_MISSING": "No se pudo determinar la ubicación.",
-      "REPORT_EXISTS": "Este trabajo ya tiene un informe de servicio, así que el suyo no se añadió."
+      "REPORT_EXISTS": "Este trabajo ya tiene un informe de servicio, así que el suyo no se añadió.",
+      "WAITING_FOR_WIFI": "Esperando Wi-Fi: eligió enviar fotos solo con Wi-Fi."
     },
     "signOut": {
       "title_one": "{{count}} cambio no se ha enviado",

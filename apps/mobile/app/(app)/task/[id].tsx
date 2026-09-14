@@ -330,6 +330,7 @@ export function TaskDetailPane({
         operations: offline.engine?.operations() ?? [],
         me: { id: user?.id ?? '', firstName: user?.firstName, lastName: user?.lastName },
         fileUri: offline.files ? (fileId, mime) => offline.files!.uriFor(fileId, mime) : undefined,
+        cachedMediaUri: offline.media ? (attId) => offline.media!.uriFor(attId) : undefined,
       });
       if (signal.cancelled) return;
 
@@ -363,7 +364,7 @@ export function TaskDetailPane({
       if (!signal.cancelled) setIsLoading(false);
       fetchingRef.current = false;
     }
-  }, [id, offline.records, offline.engine, offline.files, user?.id, user?.firstName, user?.lastName, t]);
+  }, [id, offline.records, offline.engine, offline.files, offline.media, user?.id, user?.firstName, user?.lastName, t]);
 
   useEffect(() => {
     if (!id || fetchingRef.current) return;

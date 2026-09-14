@@ -22,6 +22,8 @@ export class FileUploadPreparer implements OperationPreparer {
       files: FileRegistry;
       disk: Pick<FileDisk, 'remove'>;
       uploader: ObjectUploader;
+      /** False while the member wants photos sent only on Wi-Fi and this is not Wi-Fi. */
+      mayUpload?: () => boolean;
     },
   ) {}
 
@@ -44,6 +46,10 @@ export class FileUploadPreparer implements OperationPreparer {
 
     const typeField = typeFieldFor(op);
     let key = file.objectKey;
+    if (!key && this.deps.mayUpload && !this.deps.mayUpload()) {
+      // Waits without counting as a failure; Wi-Fi arriving wakes the engine sooner.
+      return { ok: false, hold: true, code: 'WAITING_FOR_WIFI', retryInMs: 5 * 60_000 };
+    }
     if (!key) {
       try {
         const link = await this.deps.uploader.presign(presignPath, { fileName: body.fileName, [typeField]: file.mime });

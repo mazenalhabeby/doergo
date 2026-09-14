@@ -30,6 +30,8 @@ export interface FileRegistry {
   markUploaded(id: string, objectKey: string): Promise<void>;
   /** Remove the row; returns what it was, so its bytes can be deleted too. */
   remove(id: string): Promise<StoredFile | null>;
+  /** How many files are held, and how big — for the Sync screen. */
+  totals(): Promise<{ count: number; bytes: number }>;
 }
 
 /** Where a file's bytes live. The device's documents directory on a phone. */

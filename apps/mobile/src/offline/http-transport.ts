@@ -1,4 +1,4 @@
-import type { SyncPullResponse, SyncPullScope, SyncPushResponse } from '@hbcfield/shared/client';
+import type { SyncMediaLink, SyncPullResponse, SyncPullScope, SyncPushResponse } from '@hbcfield/shared/client';
 import { ApiError, fetchWithAuth } from '../lib/api/client';
 import { uploadToPresignedUrl } from '../lib/api/attachments';
 import { UploadFailure, type ObjectUploader } from './files/types';
@@ -59,3 +59,8 @@ export const httpObjectUploader: ObjectUploader = {
     }
   },
 };
+
+/** Signed links for task photos this member may see, for the offline image cache. */
+export function httpMediaLinks(ids: string[]): Promise<SyncMediaLink[]> {
+  return fetchWithAuth<SyncMediaLink[]>('/sync/media-links', { method: 'POST', body: JSON.stringify({ ids }) });
+}

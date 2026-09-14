@@ -41,6 +41,11 @@ export class SqliteFileRegistry implements FileRegistry {
     if (existing) await this.db.runAsync('DELETE FROM files WHERE id = ?', [id]);
     return existing;
   }
+
+  async totals(): Promise<{ count: number; bytes: number }> {
+    const r = await this.db.getFirstAsync<{ count: number; bytes: number | null }>('SELECT COUNT(*) AS count, SUM(bytes) AS bytes FROM files', []);
+    return { count: r?.count ?? 0, bytes: r?.bytes ?? 0 };
+  }
 }
 
 /** The same, in memory — for tests. */
@@ -62,5 +67,9 @@ export class MemoryFileRegistry implements FileRegistry {
     const f = this.rows.get(id) ?? null;
     this.rows.delete(id);
     return f;
+  }
+  async totals() {
+    const rows = [...this.rows.values()];
+    return { count: rows.length, bytes: rows.reduce((n, f) => n + (f.bytes ?? 0), 0) };
   }
 }

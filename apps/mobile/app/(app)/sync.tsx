@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { RefreshControl, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -28,7 +28,7 @@ export default function SyncScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
-  const { available, engine } = useOffline();
+  const { available, engine, files, media, preferences } = useOffline();
   const connectivity = useConnectivity();
   const { snapshot, operations } = useSyncStatus();
   const [refreshing, setRefreshing] = useState(false);
@@ -42,6 +42,21 @@ export default function SyncScreen() {
       sent: operations.filter((o) => o.state === 'done' && o.updatedAt >= since).reverse(),
     };
   }, [operations]);
+
+  // This phone: what waits to upload, what is kept for offline viewing, and the Wi-Fi choice.
+  const [wifiOnly, setWifiOnly] = useState(preferences?.current.photosOnWifiOnly ?? false);
+  const [storage, setStorage] = useState<{ waitingCount: number; waitingBytes: number; keptBytes: number }>({ waitingCount: 0, waitingBytes: 0, keptBytes: 0 });
+  useEffect(() => preferences?.subscribe((p) => setWifiOnly(p.photosOnWifiOnly)), [preferences]);
+  useEffect(() => {
+    let live = true;
+    void (async () => {
+      const held = (await files?.totals().catch(() => null)) ?? { count: 0, bytes: 0 };
+      if (live) setStorage({ waitingCount: held.count, waitingBytes: held.bytes, keptBytes: media?.sizeBytes() ?? 0 });
+    })();
+    return () => {
+      live = false;
+    };
+  }, [files, media, operations]);
 
   const refresh = useCallback(async () => {
     if (!engine) return;
@@ -124,9 +139,11 @@ export default function SyncScreen() {
                           {t('offline.sync.waitingSince', { time: formatTimeOfDay(o.createdAt, hour12) })}
                         </Text>
                       </View>
-                      {connectivity !== 'online' && (
+                      {o.lastError?.code === 'WAITING_FOR_WIFI' ? (
+                        <Text style={[s.body, { color: colors.textMuted }]}>{t('offline.errors.WAITING_FOR_WIFI')}</Text>
+                      ) : connectivity !== 'online' ? (
                         <Text style={[s.body, { color: colors.textMuted }]}>{t('offline.sync.offlineNow')}</Text>
-                      )}
+                      ) : null}
                     </View>
                   ))
                 )}
@@ -144,6 +161,42 @@ export default function SyncScreen() {
                 </Section>
               )}
 
+              <Section title={t('offline.sync.thisPhone')}>
+                <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={s.row}>
+                    <View style={s.grow}>
+                      <Text style={[s.title, { color: colors.textPrimary }]}>{t('offline.sync.wifiOnly')}</Text>
+                      <Text style={[s.body, { color: colors.textSecondary }]}>{t('offline.sync.wifiOnlyHint')}</Text>
+                    </View>
+                    <Switch
+                      value={wifiOnly}
+                      onValueChange={(v) => void preferences?.set({ photosOnWifiOnly: v })}
+                      trackColor={{ false: colors.border, true: colors.primaryLight }}
+                      thumbColor={wifiOnly ? COLORS.primary : colors.textMuted}
+                    />
+                  </View>
+                  <View style={[s.divider, { backgroundColor: colors.border }]} />
+                  <View style={s.row}>
+                    <Text style={[s.body, { color: colors.textSecondary }]}>{t('offline.sync.photosWaiting')}</Text>
+                    <Text style={[s.figure, { color: colors.textPrimary }]}>
+                      {t('offline.sync.photosWaitingValue', { count: storage.waitingCount, size: formatBytes(storage.waitingBytes) })}
+                    </Text>
+                  </View>
+                  <View style={s.row}>
+                    <Text style={[s.body, { color: colors.textSecondary }]}>{t('offline.sync.keptOffline')}</Text>
+                    <Text style={[s.figure, { color: colors.textPrimary }]}>{formatBytes(storage.keptBytes)}</Text>
+                  </View>
+                  {storage.waitingBytes > STORAGE_WARN_BYTES && (
+                    <View style={[s.warning, { backgroundColor: colors.warningLight }]}>
+                      <Ionicons name="alert-circle-outline" size={16} color={COLORS.warning} />
+                      <Text style={[s.body, s.grow, { color: colors.textPrimary }]}>
+                        {t(storage.waitingBytes > STORAGE_URGENT_BYTES ? 'offline.sync.storageUrgent' : 'offline.sync.storageWarning', { size: formatBytes(storage.waitingBytes) })}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </Section>
+
               {connectivity === 'online' && (
                 <TouchableOpacity onPress={refresh} disabled={refreshing} style={[s.syncNow, { backgroundColor: colors.primaryLight }]}>
                   <Text style={[s.syncNowText, { color: COLORS.primary }]}>{t('offline.sync.syncNow')}</Text>
@@ -157,12 +210,22 @@ export default function SyncScreen() {
   );
 }
 
-function Section({ title, count, children }: { title: string; count: number; children: React.ReactNode }) {
+/** Photos waiting to upload past these sizes: a note, then an insistent one. Nothing is refused. */
+const STORAGE_WARN_BYTES = 500 * 1024 * 1024;
+const STORAGE_URGENT_BYTES = 1024 * 1024 * 1024;
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.max(0, Math.round(bytes / 1024))} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
+function Section({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
   const { colors } = useTheme();
   return (
     <View style={s.section}>
       <Text style={[s.sectionTitle, { color: colors.textMuted }]}>
-        {title} · {count}
+        {count === undefined ? title : `${title} · ${count}`}
       </Text>
       <View style={s.sectionBody}>{children}</View>
     </View>
@@ -189,4 +252,7 @@ const s = StyleSheet.create({
   buttonText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
   syncNow: { alignItems: 'center', borderRadius: RADIUS.lg, paddingVertical: SPACING.md, marginTop: SPACING.md },
   syncNowText: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold },
+  divider: { height: StyleSheet.hairlineWidth, marginVertical: SPACING.xs },
+  figure: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold, fontVariant: ['tabular-nums'] },
+  warning: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.xs, borderRadius: RADIUS.md, padding: SPACING.sm, marginTop: SPACING.xs },
 });
