@@ -5,9 +5,30 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { pushApi } from '../lib/api';
+import { isNotificationSuppressed } from '../lib/notification-suppression';
 import { PUSH_CHANNELS, RETIRED_PUSH_CHANNELS } from '@hbcfield/shared/client';
 
 const PUSH_TOKEN_CACHE_KEY = 'hbcfield_push_token_registered';
+// Configure how notifications appear when the app is in the foreground.
+// ⚠️ Without this handler a notification that arrives while the app is OPEN is
+// not shown at all — no banner, no sound. push-foreground-handler.spec.ts pins it.
+Notifications.setNotificationHandler({
+  handleNotification: async (notification) => {
+    // Already answered on this phone (a clock-in waiting to send, say): show nothing.
+    const show = !isNotificationSuppressed(
+      notification.request.content.data as Record<string, unknown> | undefined,
+      Date.now(),
+    );
+    return {
+      shouldShowAlert: show,
+      shouldPlaySound: show,
+      shouldSetBadge: show,
+      shouldShowBanner: show,
+      shouldShowList: show,
+    };
+  },
+});
+
 /** A tap older than this, found at launch, is history rather than an instruction. */
 const LAUNCH_TAP_MAX_AGE_MS = 30 * 60 * 1000;
 

@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
+import * as Notifications from 'expo-notifications';
+import { setNotificationSuppressor } from '../lib/notification-suppression';
+import { notificationTime, reminderAnswered } from './attendance/answered-reminders';
 import { useAuth } from '../contexts/auth-context';
 import { observeResponses } from '../lib/api/client';
 import { setResponseCache } from '../lib/api/response-cache';
@@ -147,10 +150,32 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
         }),
         preferences.subscribe(() => void live.flush()),
       );
+      /*
+        A reminder the phone has already answered. The server pushed it because
+        the clock-in never arrived — it is in the outbox. Hidden when it lands
+        while the app is open, and cleared from the tray on returning to the app
+        and whenever the queue changes (a tap that answers one already shown).
+      */
+      setNotificationSuppressor((data, at) => reminderAnswered(data, at, live.operations()));
+      unsubscribers.push(() => setNotificationSuppressor(null));
+      const clearAnsweredReminders = async () => {
+        const shown = await Notifications.getPresentedNotificationsAsync().catch(() => []);
+        const ops = live.operations();
+        for (const n of shown) {
+          const data = n.request.content.data as Record<string, unknown> | undefined;
+          if (reminderAnswered(data, notificationTime(n.date), ops)) {
+            await Notifications.dismissNotificationAsync(n.request.identifier).catch(() => undefined);
+          }
+        }
+      };
+      unsubscribers.push(live.subscribe(() => void clearAnsweredReminders()));
+      void clearAnsweredReminders();
+
       const appState = AppState.addEventListener('change', (s) => {
         if (s !== 'active') return;
         void live.flush();
         void flushPendingRoute();
+        void clearAnsweredReminders();
       });
       unsubscribers.push(() => appState.remove());
       void live.syncAll().then(fillMediaCache);
