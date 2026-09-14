@@ -136,6 +136,7 @@ export function AttachmentsSection({
         // 3. Confirm upload
         await taskAttachmentsApi.confirmUpload(taskId, {
           fileName: file.name,
+          fileKey: presigned.fileKey,
           fileUrl: presigned.fileUrl,
           fileType: file.type,
           fileSize: file.size,

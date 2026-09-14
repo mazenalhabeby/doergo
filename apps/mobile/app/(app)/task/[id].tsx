@@ -561,7 +561,7 @@ export function TaskDetailPane({
       const photo = photos[i]!;
       try {
         // Get presigned URL
-        const { uploadUrl, fileUrl } = await reportAttachmentsApi.getPresignedUrl(
+        const { uploadUrl, fileKey, fileUrl } = await reportAttachmentsApi.getPresignedUrl(
           reportId,
           photo.fileName,
           photo.mimeType,
@@ -579,10 +579,14 @@ export function TaskDetailPane({
         });
 
         // Confirm upload
+        // The key is what the server stores; `fileUrl` still goes along so a
+        // server that predates keys keeps accepting it.
         await reportAttachmentsApi.confirmUpload(reportId, {
           type,
           fileName: photo.fileName,
+          fileKey,
           fileUrl,
+          fileType: photo.mimeType,
           fileSize: photo.fileSize,
         });
       } catch (err) {
@@ -675,7 +679,7 @@ export function TaskDetailPane({
     for (let i = 0; i < photos.length; i++) {
       const photo = photos[i]!;
       try {
-        const { uploadUrl, fileUrl } = await taskAttachmentsApi.getPresignedUrl(
+        const { uploadUrl, fileKey, fileUrl } = await taskAttachmentsApi.getPresignedUrl(
           task.id,
           photo.fileName,
           photo.mimeType,
@@ -689,6 +693,7 @@ export function TaskDetailPane({
         });
         await taskAttachmentsApi.confirmUpload(task.id, {
           fileName: photo.fileName,
+          fileKey,
           fileUrl,
           fileType: photo.mimeType,
           fileSize: photo.fileSize,
@@ -729,7 +734,9 @@ export function TaskDetailPane({
     if (!task || !base64) return;
     try {
       await handleUploadTaskAttachment([
-        { uri: base64, fileName: `signature_${Date.now()}.png`, fileType: 'image/png', width: 600, height: 200 } as unknown as PickedImage,
+        // ⚠️ `mimeType`, not `fileType`: the upload reads `photo.mimeType`, so the
+        // old key sent the signature with no content type and it was refused.
+        { uri: base64, fileName: `signature_${Date.now()}.png`, mimeType: 'image/png', width: 600, height: 200 } as unknown as PickedImage,
       ]);
     } catch {
       // best-effort — the captured signature remains visible locally

@@ -19,7 +19,7 @@ import {
   Trash2,
   X,
 } from "lucide-react"
-import { reportsApi, reportAttachmentsApi, type ServiceReport, type ReportAttachment, type PartUsed } from "@/lib/api"
+import { reportsApi, reportAttachmentsApi, uploadToS3, type ServiceReport, type ReportAttachment, type PartUsed } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -267,18 +267,17 @@ function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: stri
       )
       if (!presigned) throw new Error(t("tasks.attachments.failedUploadUrl"))
 
-      // Step 2: Upload to S3
-      await fetch(presigned.uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-      })
+      // Step 2: Upload. `uploadToS3` rejects on a non-2xx; the bare fetch this
+      // replaces resolved on a 403 and went straight on to confirm nothing.
+      await uploadToS3(presigned.uploadUrl, file)
 
       // Step 3: Confirm upload
       await reportAttachmentsApi.confirmUpload(reportId, {
         type: uploadType,
         fileName: file.name,
+        fileKey: presigned.fileKey,
         fileUrl: presigned.fileUrl,
+        fileType: file.type,
         fileSize: file.size,
       })
 

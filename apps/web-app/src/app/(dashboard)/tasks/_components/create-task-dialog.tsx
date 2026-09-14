@@ -613,6 +613,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
             await uploadToS3(presign.uploadUrl, file)
             await taskAttachmentsApi.confirmUpload(task.id, {
               fileName: file.name,
+              fileKey: presign.fileKey,
               fileUrl: presign.fileUrl,
               fileType: file.type,
               fileSize: file.size,

@@ -9,7 +9,7 @@ export const taskAttachmentsApi = {
     });
   },
 
-  confirmUpload: async (taskId: string, data: { fileName: string; fileUrl: string; fileType: string; fileSize: number }): Promise<any> => {
+  confirmUpload: async (taskId: string, data: { fileName: string; fileKey?: string; fileUrl?: string; fileType: string; fileSize?: number }): Promise<any> => {
     return fetchWithAuth(`/tasks/${taskId}/attachments`, {
       method: 'POST',
       body: JSON.stringify(data),

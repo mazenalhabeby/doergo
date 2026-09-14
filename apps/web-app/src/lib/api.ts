@@ -1207,7 +1207,9 @@ export const taskAttachmentsApi = {
 
   confirmUpload: async (
     taskId: string,
-    data: { fileName: string; fileUrl: string; fileType: string; fileSize: number }
+    // `fileKey` is what the server stores; `fileUrl` is sent too so a server
+    // that predates keys keeps accepting the upload.
+    data: { fileName: string; fileKey?: string; fileUrl?: string; fileType: string; fileSize: number }
   ) => {
     const response = await api.post<{ success: boolean; data: Attachment }>(
       `/tasks/${taskId}/attachments`,
@@ -2509,7 +2511,7 @@ export const reportAttachmentsApi = {
   getPresignedUrl: async (reportId: string, fileName: string, fileType: string) => {
     const response = await api.post<{
       success: boolean;
-      data: { uploadUrl: string; fileUrl: string };
+      data: { uploadUrl: string; fileKey?: string; fileUrl: string };
     }>(`/reports/${reportId}/attachments/presign`, { fileName, fileType });
 
     if (response.error) {
@@ -2525,7 +2527,9 @@ export const reportAttachmentsApi = {
     data: {
       type: 'BEFORE' | 'AFTER';
       fileName: string;
-      fileUrl: string;
+      fileKey?: string;
+      fileUrl?: string;
+      fileType?: string;
       fileSize: number;
       caption?: string;
     }

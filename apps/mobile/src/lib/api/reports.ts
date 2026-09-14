@@ -20,7 +20,7 @@ export const reportAttachmentsApi = {
     });
   },
 
-  confirmUpload: async (reportId: string, data: { type: string; fileName: string; fileUrl: string; fileSize: number; caption?: string }): Promise<any> => {
+  confirmUpload: async (reportId: string, data: { type: string; fileName: string; fileKey?: string; fileUrl?: string; fileType?: string; fileSize?: number; caption?: string }): Promise<any> => {
     return fetchWithAuth(`/reports/${reportId}/attachments`, {
       method: 'POST',
       body: JSON.stringify(data),
