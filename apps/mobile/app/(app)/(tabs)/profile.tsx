@@ -225,7 +225,8 @@ export default function ProfileScreen() {
       plain "Sign out?" would let somebody throw away a morning of clock-ins and
       photos with one tap, so unsent work gets its own question.
     */
-    if (offline.engine?.hasUnsent()) setShowUnsentConfirm(true);
+    // `running`, not `engine`: with offline mode off a phone may still hold queued work.
+    if (offline.running?.hasUnsent()) setShowUnsentConfirm(true);
     else setShowSignOutConfirm(true);
   };
 
@@ -659,7 +660,7 @@ export default function ProfileScreen() {
         onClose={() => {
           // "Send now" and dismissing both mean: keep it, try to send.
           setShowUnsentConfirm(false);
-          void offline.engine?.syncAll();
+          void offline.running?.flush();
         }}
         onConfirm={confirmSignOut}
         title={t('offline.signOut.title', { count: syncSnapshot.waiting + syncSnapshot.attention })}

@@ -36,6 +36,9 @@ export class PlatformAdminController {
   @MessagePattern({ cmd: 'platform_suspend' })
   suspend(@Payload() d: any) { return this.svc.suspend(d); }
 
+  @MessagePattern({ cmd: 'platform_set_offline_mode' })
+  setOfflineMode(@Payload() d: any) { return this.svc.setOfflineMode(d); }
+
   @MessagePattern({ cmd: 'platform_reactivate' })
   reactivate(@Payload() d: any) { return this.svc.reactivate(d); }
 

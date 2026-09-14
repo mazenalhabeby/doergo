@@ -92,6 +92,11 @@ export interface User {
    * screen hiding something the API would refuse, and vice versa, cannot drift.
    */
   orgAddOns?: string[] | null;
+  /**
+   * The offline-first app is switched on for this member's organization — the
+   * staged rollout. Absent (an older server) means off.
+   */
+  offlineMode?: boolean;
   /** Org-level feature modules (custom fields, sprints, …). */
   orgModules?: string[] | null;
   // Technician-specific fields

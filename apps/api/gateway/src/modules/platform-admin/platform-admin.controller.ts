@@ -3,6 +3,8 @@ import { Throttle } from '@nestjs/throttler';
 import { Public } from '../../common/decorators';
 import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/platform-auth.guard';
 import { PlatformAdminService } from './platform-admin.service';
+import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
+import { IsBoolean } from 'class-validator';
 import { ADD_ON_KEYS, isAddOn, BILLING_MODES, type BillingMode } from '@hbcfield/shared';
 
 /**
@@ -16,7 +18,10 @@ import { ADD_ON_KEYS, isAddOn, BILLING_MODES, type BillingMode } from '@hbcfield
 @UseGuards(PlatformAuthGuard)
 @Throttle({ default: { limit: 120, ttl: 60_000 } })
 export class PlatformAdminController {
-  constructor(private readonly svc: PlatformAdminService) {}
+  constructor(
+    private readonly svc: PlatformAdminService,
+    private readonly authCache: AuthTokenCache,
+  ) {}
 
   private unwrap<T>(result: any): T {
     if (result && result.success === false) {
@@ -107,6 +112,16 @@ export class PlatformAdminController {
   @RequirePlatformPerm('manageOrgs')
   async suspend(@Param('id') id: string, @Request() req: any) { return this.unwrap(await this.svc.suspend({ organizationId: id, byUserId: this.actor(req) })); }
 
+  /** The offline-first mobile app, on or off for one organization — the staged rollout. */
+  @Post('orgs/:id/offline-mode')
+  @RequirePlatformPerm('manageOrgs')
+  async setOfflineMode(@Param('id') id: string, @Body() body: OfflineModeDto, @Request() req: any) {
+    const result = this.unwrap(await this.svc.setOfflineMode({ organizationId: id, enabled: body.enabled, byUserId: this.actor(req) }));
+    // The gateway caches sessions per organization; drop them so the change is read now.
+    await this.authCache.invalidateOrganization(id).catch(() => undefined);
+    return result;
+  }
+
   @Post('orgs/:id/reactivate')
   @RequirePlatformPerm('manageOrgs')
   async reactivate(@Param('id') id: string, @Request() req: any) { return this.unwrap(await this.svc.reactivate({ organizationId: id, byUserId: this.actor(req) })); }
@@ -173,4 +188,10 @@ export class PlatformAdminController {
     if (unknown.length) throw new HttpException({ message: `Not an add-on: ${unknown.join(', ')}` }, HttpStatus.BAD_REQUEST);
     return this.unwrap(await this.svc.setAddOns({ organizationId: id, addOns }));
   }
+}
+
+/** Offline mode on or off. */
+class OfflineModeDto {
+  @IsBoolean()
+  enabled!: boolean;
 }

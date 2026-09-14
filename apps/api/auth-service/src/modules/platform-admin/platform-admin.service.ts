@@ -241,6 +241,21 @@ export class PlatformAdminService {
     return success({ id: org.id, suspendedAt: new Date() });
   }
 
+  /**
+   * Offline mode for one organization — the rollout switch.
+   *
+   * Reaches each phone with its next session refresh. Turning it OFF never
+   * throws work away: a phone still sends whatever it had queued, and only
+   * stops queuing new work.
+   */
+  async setOfflineMode(data: { organizationId: string; enabled: boolean; byUserId?: string }) {
+    const org = await this.prisma.organization.findUnique({ where: { id: data.organizationId }, select: { id: true, name: true } });
+    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
+    await this.prisma.organization.update({ where: { id: org.id }, data: { offlineMode: !!data.enabled } });
+    this.logger.warn(`[PLATFORM] Org "${org.name}" (${org.id}) offline mode ${data.enabled ? 'ON' : 'OFF'} by ${data.byUserId ?? 'operator'}`);
+    return success({ id: org.id, offlineMode: !!data.enabled });
+  }
+
   async reactivate(data: { organizationId: string; byUserId?: string }) {
     const org = await this.prisma.organization.findUnique({ where: { id: data.organizationId }, select: { id: true, name: true } });
     if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;

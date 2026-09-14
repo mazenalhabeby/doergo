@@ -28,7 +28,9 @@ export default function SyncScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
-  const { available, engine, files, media, preferences } = useOffline();
+  // The running engine: with offline mode off it may still be sending earlier work, which belongs here.
+  const { running: engine, files, media, preferences } = useOffline();
+  const available = !!engine;
   const connectivity = useConnectivity();
   const { snapshot, operations } = useSyncStatus();
   const [refreshing, setRefreshing] = useState(false);

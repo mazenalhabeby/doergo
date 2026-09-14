@@ -444,6 +444,8 @@ model Organization {
   currentPeriodEnd  DateTime?
   // Platform-operator hard lock: when set, the org is forced read-only (via the
   // existing SubscriptionGuard) WITHOUT touching Stripe's subStatus. Reversible.
+  /// The mobile app works offline for this organization's members. The rollout switch — off by default.
+  offlineMode       Boolean   @default(false)
   suspendedAt       DateTime?
   cancelAtPeriodEnd Boolean            @default(false)
   billingEmail      String?

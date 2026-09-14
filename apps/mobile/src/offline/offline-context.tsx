@@ -53,9 +53,15 @@ interface OfflineValue {
   media: MediaCache | null;
   /** The member's own sync choices (photos only on Wi-Fi). */
   preferences: OfflinePreferencesStore | null;
+  /**
+   * The engine that is RUNNING, whether or not screens may queue into it.
+   * With offline mode switched off it still sends what was queued before, so
+   * the sign-out guard and the sync status must read this one, not `engine`.
+   */
+  running: SyncEngine | null;
 }
 
-const UNAVAILABLE: OfflineValue = { available: false, engine: null, records: null, files: null, media: null, preferences: null };
+const UNAVAILABLE: OfflineValue = { available: false, engine: null, records: null, files: null, media: null, preferences: null, running: null };
 const OfflineContext = createContext<OfflineValue>(UNAVAILABLE);
 
 const EMPTY_SNAPSHOT: SyncSnapshot = { waiting: 0, attention: 0, pushing: false, pulling: false, lastSuccessAt: null };
@@ -74,6 +80,14 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     observeOnce();
   }, []);
+
+  /*
+    Switched on per organization. Off, the screens use the plain online paths
+    exactly as before — but the engine still starts, because a phone may hold
+    work queued while it was on, and switching offline mode off must never
+    throw that away. It sends what it has and queues nothing new.
+  */
+  const offlineMode = user?.offlineMode === true;
 
   useEffect(() => {
     if (!user?.id || !user.organizationId || !offlineCapableBuild()) {
@@ -121,7 +135,17 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       const live = engine;
-      setValue({ available: true, engine: live, records, files, media, preferences });
+      if (!offlineMode) {
+        // Drain only: send what was queued while it was on, offer nothing new.
+        if (live.hasUnsent()) {
+          unsubscribers.push(connectivity.subscribe((state) => void (state === 'online' && live.flush())));
+          void live.flush();
+        }
+        setValue({ ...UNAVAILABLE, running: live });
+        return;
+      }
+
+      setValue({ available: true, engine: live, records, files, media, preferences, running: live });
       setResponseCache({
         get: async (key) => (await records.get<{ body: unknown }>('http', key))?.data.body,
         put: (key, body) => records.upsert('http', { id: key, body } as never),
@@ -173,7 +197,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
       unsubscribers.forEach((u) => u());
       engine?.stop();
     };
-  }, [user?.id, user?.organizationId]);
+  }, [user?.id, user?.organizationId, offlineMode]);
 
   return <OfflineContext.Provider value={value}>{children}</OfflineContext.Provider>;
 }
@@ -193,7 +217,7 @@ export function useConnectivity(): Connectivity {
 
 /** The queue's counts and every operation, live. */
 export function useSyncStatus(): { snapshot: SyncSnapshot; operations: readonly OutboxOp[] } {
-  const { engine } = useOffline();
+  const { running: engine } = useOffline();
   const [state, setState] = useState<{ snapshot: SyncSnapshot; operations: readonly OutboxOp[] }>(() => ({
     snapshot: engine?.snapshot() ?? EMPTY_SNAPSHOT,
     operations: engine?.operations() ?? EMPTY_OPS,
