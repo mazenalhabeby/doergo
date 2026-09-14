@@ -2309,6 +2309,87 @@
       "badge": "Extern",
       "company": "Arbeitet für {{company}}",
       "noOrgRole": "Ein externes Mitglied kann keine organisationsweite Rolle tragen. Weisen Sie stattdessen eine Rolle in einem Bereich zu."
+    },
+    "phoneSync": {
+      "entry": "Handy-Sync",
+      "title": "Handy-Sync",
+      "subtitle": "Arbeit ohne Empfang wird auf dem Handy gespeichert und gesendet, sobald es geht. Hier sehen Sie, auf wessen Handy noch Arbeit wartet und warum.",
+      "refresh": "Aktualisieren",
+      "loadError": "Handy-Sync konnte nicht geladen werden. Bitte versuchen Sie es gleich noch einmal.",
+      "filterLabel": "Nach Status filtern",
+      "allPhones": "Handys",
+      "cadence": "Handys melden sich alle 10 Minuten, solange die App genutzt wird, und im Hintergrund, wenn das System es erlaubt.",
+      "unknownMember": "Ehemaliges Mitglied",
+      "noMatch": "Keine passenden Handys.",
+      "footnote": "Es erscheinen nur Handys, die sich in den letzten 30 Tagen gemeldet haben. „Keine Meldung“ heißt: seit 3 Tagen nichts – das Handy ist vielleicht aus oder hat eine App-Version ohne Offline-Arbeit.",
+      "empty": {
+        "title": "Noch keine Meldungen von Handys",
+        "bodyOn": "Offline-Arbeit ist aktiv. Ein Handy erscheint hier, sobald es seine Warteschlange gemeldet hat – wenige Minuten nach dem Öffnen der App.",
+        "bodyOff": "Offline-Arbeit ist für Ihre Organisation noch nicht aktiviert, daher speichert kein Handy Arbeit für später."
+      },
+      "states": {
+        "stuck": "Über einen Tag nicht gesendet",
+        "needs_member": "Mitglied muss handeln",
+        "sending": "Wird gesendet",
+        "silent": "Keine Meldung",
+        "up_to_date": "Aktuell"
+      },
+      "columns": {
+        "member": "Mitglied",
+        "state": "Status",
+        "waiting": "Wartend",
+        "oldest": "Älteste",
+        "files": "Fotos und Dokumente",
+        "lastSent": "Zuletzt gesendet",
+        "app": "App"
+      },
+      "parts": {
+        "pending": "wartend",
+        "inflight": "wird gesendet",
+        "retry": "neuer Versuch",
+        "attention": "abgelehnt"
+      },
+      "detail": {
+        "reported": "Gemeldet vor {{age}} · App {{version}}",
+        "stuckFor_one": "{{count}} Änderung seit {{age}} nicht gesendet",
+        "stuckFor_other": "{{count}} Änderungen seit {{age}} nicht gesendet",
+        "whatWaits": "Was wartet",
+        "oldest": "Älteste nicht gesendete",
+        "lastSent": "Zuletzt beim Server angekommen",
+        "why": "Warum",
+        "helpsLabel": "Was hilft:"
+      },
+      "advice": {
+        "stuck": "Bitten Sie {{name}}, die App an einem Ort mit Empfang zu öffnen. Die Arbeit ist auf dem Handy sicher und wird von selbst gesendet; nichts muss neu eingegeben werden. Abmelden wird verweigert, solange Arbeit ungesendet ist.",
+        "needs_member": "{{name}} hat etwas, das der Server nicht angenommen hat. Es steht auf dem Handy unter Sync, wo der Grund sichtbar ist.",
+        "sending": "nichts. Das Handy sendet gerade; das erledigt sich von selbst.",
+        "silent": "prüfen Sie, ob {{name}} dieses Handy noch nutzt und die neueste App hat. Eine Meldung, die älter als 3 Tage ist, sagt nichts Verlässliches.",
+        "up_to_date": "nichts. Alles von diesem Handy ist beim Server angekommen."
+      },
+      "reasons": {
+        "NETWORK": "Keine Verbindung",
+        "NO_RESULT": "Der Server hat nicht geantwortet",
+        "SERVER_BUSY": "Der Server war ausgelastet oder hatte ein Problem",
+        "WAITING_FOR_WIFI": "Fotos warten auf WLAN (Einstellung des Mitglieds)",
+        "UNAUTHENTICATED": "Abgemeldet: wartet auf erneute Anmeldung",
+        "UPLOAD_FAILED": "Ein Foto-Upload ist fehlgeschlagen und wird wiederholt",
+        "FILE_MISSING": "Ein Foto ist nicht mehr auf dem Handy",
+        "PHOTO_REFUSED": "Der Server hat ein Foto nicht angenommen",
+        "DEPENDENCY_FAILED": "Ein vorheriger Schritt wurde nicht angenommen",
+        "CONFLICT": "Im Büro geändert, bevor dies ankam",
+        "TASK_STATE_CONFLICT": "Der Auftrag wurde im Büro geändert, bevor dies ankam",
+        "TASK_REASSIGNED": "Der Auftrag wurde jemand anderem gegeben",
+        "ALREADY_CLOCKED_IN": "Bereits eingestempelt, als dies ankam",
+        "ENTRY_ALREADY_CLOSED": "Die Schicht war bereits geschlossen",
+        "BREAK_ALREADY_ENDED": "Die Pause war bereits beendet",
+        "OUT_OF_ORDER": "In falscher Reihenfolge angekommen",
+        "OCCURRED_IN_FUTURE": "Die Uhr des Handys geht vor",
+        "FIX_NOT_AT_TAP": "Standort nicht im Moment der Aktion erfasst",
+        "FIX_INACCURATE": "Standort nicht genau genug",
+        "FIX_MISSING": "Kein Standort",
+        "REPORT_EXISTS": "Der Auftrag hatte bereits einen Servicebericht",
+        "OTHER": "Nicht angenommen ({{code}})"
+      }
     }
   },
   "invitations": {
@@ -4919,6 +5000,10 @@
       "spaces": {
         "label": "Arbeitsbereiche",
         "desc": "Arbeitsbereiche und Teamlisten verwalten"
+      },
+      "phoneSync": {
+        "label": "Handy-Sync",
+        "desc": "Auf wessen Handy noch offline erledigte Arbeit wartet"
       }
     }
   },

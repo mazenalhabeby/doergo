@@ -12,6 +12,23 @@ export const SYNC_SILENT_AFTER_MS = 3 * 24 * 60 * 60 * 1000;
 
 export type SyncHealthState = 'silent' | 'stuck' | 'needs_member' | 'sending' | 'up_to_date';
 
+/** One member's phone as `GET /sync/health` returns it: their last report, and what it means. */
+export interface SyncMemberHealth {
+  userId: string;
+  state: SyncHealthState;
+  appVersion: string;
+  waiting: number;
+  attention: number;
+  oldestWaitingAt: number | null;
+  byState: Record<string, number>;
+  codes: Record<string, number>;
+  filesWaiting: number;
+  bytesWaiting: number;
+  lastSuccessAt: number | null;
+  /** When the server received the report (epoch ms). */
+  receivedAt: number;
+}
+
 export interface SyncHealthFacts {
   waiting: number;
   attention: number;

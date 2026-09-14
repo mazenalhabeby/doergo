@@ -2309,6 +2309,87 @@
       "badge": "External",
       "company": "Works for {{company}}",
       "noOrgRole": "An external member cannot hold an organization-wide role. Give them a role in a space instead."
+    },
+    "phoneSync": {
+      "entry": "Phone sync",
+      "title": "Phone sync",
+      "subtitle": "Work done without signal is kept on the phone and sent when it can be. This shows whose phone is still holding work, and why.",
+      "refresh": "Refresh",
+      "loadError": "Phone sync could not be loaded. Try again in a moment.",
+      "filterLabel": "Filter by state",
+      "allPhones": "phones",
+      "cadence": "Phones report every 10 minutes while the app is in use, and in the background when the system allows.",
+      "unknownMember": "Former member",
+      "noMatch": "No phones match.",
+      "footnote": "Only phones that reported in the last 30 days appear. \"Not heard from\" means no report for 3 days: the phone may be off, or on an app version without offline work.",
+      "empty": {
+        "title": "No phones have reported yet",
+        "bodyOn": "Offline work is on. A phone appears here once it has reported its queue, which happens within minutes of opening the app.",
+        "bodyOff": "Offline work is not switched on for your organization yet, so no phone keeps work to send later."
+      },
+      "states": {
+        "stuck": "Unsent over a day",
+        "needs_member": "Needs the member",
+        "sending": "Sending",
+        "silent": "Not heard from",
+        "up_to_date": "Up to date"
+      },
+      "columns": {
+        "member": "Member",
+        "state": "State",
+        "waiting": "Waiting",
+        "oldest": "Oldest",
+        "files": "Photos and documents",
+        "lastSent": "Last sent",
+        "app": "App"
+      },
+      "parts": {
+        "pending": "waiting",
+        "inflight": "sending",
+        "retry": "retrying",
+        "attention": "refused"
+      },
+      "detail": {
+        "reported": "Reported {{age}} ago · app {{version}}",
+        "stuckFor_one": "{{count}} change unsent for {{age}}",
+        "stuckFor_other": "{{count}} changes unsent for {{age}}",
+        "whatWaits": "What is waiting",
+        "oldest": "Oldest unsent",
+        "lastSent": "Last reached the server",
+        "why": "Why",
+        "helpsLabel": "What helps:"
+      },
+      "advice": {
+        "stuck": "ask {{name}} to open the app somewhere with signal. The work is safe on the phone and goes by itself; nothing needs entering again. Signing out is refused while work is unsent.",
+        "needs_member": "{{name}} has something the server did not accept. It is listed on the phone under Sync, where they can see why and decide.",
+        "sending": "nothing. The phone is sending; this clears on its own.",
+        "silent": "check whether {{name}} still uses this phone and has the latest app. A report older than 3 days says nothing reliable.",
+        "up_to_date": "nothing. Everything from this phone has reached the server."
+      },
+      "reasons": {
+        "NETWORK": "No connection",
+        "NO_RESULT": "The server did not answer",
+        "SERVER_BUSY": "The server was busy or had a problem",
+        "WAITING_FOR_WIFI": "Photos wait for Wi-Fi (the member's choice)",
+        "UNAUTHENTICATED": "Signed out: waiting for the member to sign in again",
+        "UPLOAD_FAILED": "A photo upload failed and will be retried",
+        "FILE_MISSING": "A photo is no longer on the phone",
+        "PHOTO_REFUSED": "The server did not accept a photo",
+        "DEPENDENCY_FAILED": "An earlier step it depends on was not accepted",
+        "CONFLICT": "Changed in the office before this arrived",
+        "TASK_STATE_CONFLICT": "The job was changed in the office before this arrived",
+        "TASK_REASSIGNED": "The job was given to someone else",
+        "ALREADY_CLOCKED_IN": "Already clocked in when this clock-in arrived",
+        "ENTRY_ALREADY_CLOSED": "The shift was already closed",
+        "BREAK_ALREADY_ENDED": "The rest was already ended",
+        "OUT_OF_ORDER": "Arrived out of order",
+        "OCCURRED_IN_FUTURE": "The phone's clock is ahead",
+        "FIX_NOT_AT_TAP": "Location not taken at the moment of the action",
+        "FIX_INACCURATE": "Location not precise enough",
+        "FIX_MISSING": "No location",
+        "REPORT_EXISTS": "The job already had a service report",
+        "OTHER": "Not accepted ({{code}})"
+      }
     }
   },
   "invitations": {
@@ -4919,6 +5000,10 @@
       "spaces": {
         "label": "Workspaces",
         "desc": "Manage workspaces and rosters"
+      },
+      "phoneSync": {
+        "label": "Phone sync",
+        "desc": "Whose phone is still holding work done without signal"
       }
     }
   },

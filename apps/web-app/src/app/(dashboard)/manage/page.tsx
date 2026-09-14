@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Users, Mail, UserPlus, Calendar, MapPin, ChevronRight } from "lucide-react"
+import { Users, Mail, UserPlus, Calendar, MapPin, ChevronRight, Smartphone } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/auth-context"
 import { hasAccessModule } from "@hbcfield/shared/client"
@@ -25,6 +25,7 @@ export default function ManagePage() {
   // this user can actually use so there are no dead links.
   const items: Item[] = [
     { href: "/members", label: t('manage.items.members.label'), desc: t('manage.items.members.desc'), icon: Users, show: !!user?.canManageUsers },
+    { href: "/members/phone-sync", label: t('manage.items.phoneSync.label'), desc: t('manage.items.phoneSync.desc'), icon: Smartphone, show: !!user?.canManageUsers && !!user?.offlineMode },
     { href: "/invitations", label: t('manage.items.invitations.label'), desc: t('manage.items.invitations.desc'), icon: Mail, show: !!user?.canManageUsers },
     { href: "/join-requests", label: t('manage.items.joinRequests.label'), desc: t('manage.items.joinRequests.desc'), icon: UserPlus, show: !!user?.canManageUsers || hasPermission('canViewAllTasks') },
     { href: "/schedule", label: t('manage.items.schedule.label'), desc: t('manage.items.schedule.desc'), icon: Calendar, show: hasPermission('canViewAllTasks') },

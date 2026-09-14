@@ -80,6 +80,8 @@ export interface User {
   // Billing tier + subscription status (lowercase) — drives hasPlanFeature().
   planTier?: string | null; // LEGACY — nothing reads it to decide access
   orgAddOns?: string[] | null;
+  /** Offline mode is switched on for this organization (phones keep and send work later). */
+  offlineMode?: boolean;
   subStatus?: string;
   // Avatar
   avatarUrl?: string | null;

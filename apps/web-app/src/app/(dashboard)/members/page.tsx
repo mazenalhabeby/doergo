@@ -16,6 +16,7 @@ import {
   UserPlus,
   MapPin,
   Users,
+  Smartphone,
   Mail,
   Clock,
   Timer,
@@ -847,6 +848,15 @@ export default function MembersPage() {
             </div>
 
             <div className="flex items-center gap-3">
+            {/* Phone sync — only where phones keep work offline, and only for whoever manages people. */}
+            {user?.canManageUsers && user?.offlineMode && (
+              <Button asChild variant="outline" size="sm" className="h-9 rounded-lg">
+                <Link href="/members/phone-sync">
+                  <Smartphone className="h-4 w-4 mr-2" />
+                  {t("members.phoneSync.entry")}
+                </Link>
+              </Button>
+            )}
             {/* Search */}
             <div className="relative" data-tour="members-search">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

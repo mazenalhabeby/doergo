@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-import { SYNC_STUCK_AFTER_MS, syncHealthState, type SyncHealthState, type SyncOperationResult, type SyncTelemetry } from '@hbcfield/shared';
+import { SYNC_STUCK_AFTER_MS, syncHealthState, type SyncHealthState, type SyncMemberHealth, type SyncOperationResult, type SyncTelemetry } from '@hbcfield/shared';
 
 /** A phone that has not reported for this long is no longer counted. */
 const REPORT_TTL_SECONDS = 30 * 24 * 60 * 60;
@@ -17,10 +17,8 @@ export interface StoredHealth extends SyncTelemetry {
   receivedAt: number;
 }
 
-/** One member's phone, as the office's Phone sync tab reads it. */
-export interface MemberSyncHealth extends Omit<StoredHealth, 'organizationId'> {
-  state: SyncHealthState;
-}
+/** One member's phone, as the office's Phone sync tab reads it. The shape is shared with the web. */
+export type MemberSyncHealth = SyncMemberHealth;
 
 /**
  * What every phone last said about its queue, and what pushes have come to.

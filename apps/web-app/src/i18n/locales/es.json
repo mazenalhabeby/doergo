@@ -2309,6 +2309,87 @@
       "badge": "Externo",
       "company": "Trabaja para {{company}}",
       "noOrgRole": "Un miembro externo no puede tener una función de toda la organización. Asígnele una función en un espacio."
+    },
+    "phoneSync": {
+      "entry": "Sincronización del móvil",
+      "title": "Sincronización del móvil",
+      "subtitle": "El trabajo hecho sin señal se guarda en el móvil y se envía cuando es posible. Aquí se ve qué móviles aún guardan trabajo y por qué.",
+      "refresh": "Actualizar",
+      "loadError": "No se pudo cargar la sincronización. Inténtelo de nuevo en un momento.",
+      "filterLabel": "Filtrar por estado",
+      "allPhones": "móviles",
+      "cadence": "Los móviles informan cada 10 minutos mientras se usa la app, y en segundo plano cuando el sistema lo permite.",
+      "unknownMember": "Antiguo miembro",
+      "noMatch": "Ningún móvil coincide.",
+      "footnote": "Solo aparecen móviles que informaron en los últimos 30 días. «Sin noticias» significa sin informe en 3 días: el móvil puede estar apagado o tener una versión sin trabajo sin conexión.",
+      "empty": {
+        "title": "Ningún móvil ha informado todavía",
+        "bodyOn": "El trabajo sin conexión está activo. Un móvil aparece aquí cuando informa de su cola, minutos después de abrir la app.",
+        "bodyOff": "El trabajo sin conexión aún no está activado para su organización, así que ningún móvil guarda trabajo para después."
+      },
+      "states": {
+        "stuck": "Sin enviar más de un día",
+        "needs_member": "Requiere al miembro",
+        "sending": "Enviando",
+        "silent": "Sin noticias",
+        "up_to_date": "Al día"
+      },
+      "columns": {
+        "member": "Miembro",
+        "state": "Estado",
+        "waiting": "En espera",
+        "oldest": "Más antiguo",
+        "files": "Fotos y documentos",
+        "lastSent": "Último envío",
+        "app": "App"
+      },
+      "parts": {
+        "pending": "en espera",
+        "inflight": "enviando",
+        "retry": "reintentando",
+        "attention": "rechazados"
+      },
+      "detail": {
+        "reported": "Informó hace {{age}} · app {{version}}",
+        "stuckFor_one": "{{count}} cambio sin enviar desde hace {{age}}",
+        "stuckFor_other": "{{count}} cambios sin enviar desde hace {{age}}",
+        "whatWaits": "Qué está en espera",
+        "oldest": "Más antiguo sin enviar",
+        "lastSent": "Última llegada al servidor",
+        "why": "Por qué",
+        "helpsLabel": "Qué ayuda:"
+      },
+      "advice": {
+        "stuck": "pida a {{name}} que abra la app en un lugar con señal. El trabajo está a salvo en el móvil y se envía solo; no hay que volver a introducir nada. Cerrar sesión no se permite mientras haya trabajo sin enviar.",
+        "needs_member": "{{name}} tiene algo que el servidor no aceptó. Aparece en el móvil en Sincronización, donde puede ver el motivo.",
+        "sending": "nada. El móvil está enviando; se resolverá solo.",
+        "silent": "compruebe si {{name}} sigue usando este móvil y tiene la última app. Un informe de más de 3 días no es fiable.",
+        "up_to_date": "nada. Todo lo de este móvil ha llegado al servidor."
+      },
+      "reasons": {
+        "NETWORK": "Sin conexión",
+        "NO_RESULT": "El servidor no respondió",
+        "SERVER_BUSY": "El servidor estaba ocupado o tuvo un problema",
+        "WAITING_FOR_WIFI": "Las fotos esperan wifi (elección del miembro)",
+        "UNAUTHENTICATED": "Sesión cerrada: espera a que el miembro vuelva a entrar",
+        "UPLOAD_FAILED": "Falló la subida de una foto y se reintentará",
+        "FILE_MISSING": "Una foto ya no está en el móvil",
+        "PHOTO_REFUSED": "El servidor no aceptó una foto",
+        "DEPENDENCY_FAILED": "No se aceptó un paso anterior del que depende",
+        "CONFLICT": "Se cambió en la oficina antes de que llegara",
+        "TASK_STATE_CONFLICT": "El trabajo se cambió en la oficina antes de que llegara",
+        "TASK_REASSIGNED": "El trabajo se asignó a otra persona",
+        "ALREADY_CLOCKED_IN": "Ya había fichado cuando llegó este fichaje",
+        "ENTRY_ALREADY_CLOSED": "El turno ya estaba cerrado",
+        "BREAK_ALREADY_ENDED": "La pausa ya había terminado",
+        "OUT_OF_ORDER": "Llegó fuera de orden",
+        "OCCURRED_IN_FUTURE": "El reloj del móvil va adelantado",
+        "FIX_NOT_AT_TAP": "Ubicación no tomada en el momento de la acción",
+        "FIX_INACCURATE": "Ubicación poco precisa",
+        "FIX_MISSING": "Sin ubicación",
+        "REPORT_EXISTS": "El trabajo ya tenía un informe de servicio",
+        "OTHER": "No aceptado ({{code}})"
+      }
     }
   },
   "invitations": {
@@ -4919,6 +5000,10 @@
       "spaces": {
         "label": "Espacios de trabajo",
         "desc": "Gestiona espacios de trabajo y sus miembros"
+      },
+      "phoneSync": {
+        "label": "Sincronización del móvil",
+        "desc": "Qué móviles aún guardan trabajo hecho sin señal"
       }
     }
   },

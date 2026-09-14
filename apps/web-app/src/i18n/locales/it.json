@@ -2309,6 +2309,87 @@
       "badge": "Esterno",
       "company": "Lavora per {{company}}",
       "noOrgRole": "Un membro esterno non può avere un ruolo a livello di organizzazione. Gli assegni invece un ruolo in uno spazio."
+    },
+    "phoneSync": {
+      "entry": "Sincronizzazione telefoni",
+      "title": "Sincronizzazione telefoni",
+      "subtitle": "Il lavoro fatto senza segnale resta sul telefono e viene inviato appena possibile. Qui si vede quali telefoni conservano ancora lavoro e perché.",
+      "refresh": "Aggiorna",
+      "loadError": "Impossibile caricare la sincronizzazione. Riprovi tra poco.",
+      "filterLabel": "Filtra per stato",
+      "allPhones": "telefoni",
+      "cadence": "I telefoni inviano un rapporto ogni 10 minuti mentre l'app è in uso, e in background quando il sistema lo consente.",
+      "unknownMember": "Ex membro",
+      "noMatch": "Nessun telefono corrisponde.",
+      "footnote": "Compaiono solo i telefoni che hanno inviato un rapporto negli ultimi 30 giorni. «Nessuna notizia» significa nessun rapporto da 3 giorni: il telefono potrebbe essere spento o avere una versione senza lavoro offline.",
+      "empty": {
+        "title": "Nessun telefono ha ancora inviato un rapporto",
+        "bodyOn": "Il lavoro offline è attivo. Un telefono compare qui dopo aver segnalato la sua coda, pochi minuti dopo l'apertura dell'app.",
+        "bodyOff": "Il lavoro offline non è ancora attivo per la sua organizzazione, quindi nessun telefono conserva lavoro per dopo."
+      },
+      "states": {
+        "stuck": "Non inviato da oltre un giorno",
+        "needs_member": "Serve il membro",
+        "sending": "Invio in corso",
+        "silent": "Nessuna notizia",
+        "up_to_date": "Aggiornato"
+      },
+      "columns": {
+        "member": "Membro",
+        "state": "Stato",
+        "waiting": "In attesa",
+        "oldest": "Più vecchio",
+        "files": "Foto e documenti",
+        "lastSent": "Ultimo invio",
+        "app": "App"
+      },
+      "parts": {
+        "pending": "in attesa",
+        "inflight": "in invio",
+        "retry": "nuovo tentativo",
+        "attention": "rifiutati"
+      },
+      "detail": {
+        "reported": "Rapporto {{age}} fa · app {{version}}",
+        "stuckFor_one": "{{count}} modifica non inviata da {{age}}",
+        "stuckFor_other": "{{count}} modifiche non inviate da {{age}}",
+        "whatWaits": "Cosa è in attesa",
+        "oldest": "Più vecchio non inviato",
+        "lastSent": "Ultimo arrivo al server",
+        "why": "Perché",
+        "helpsLabel": "Cosa aiuta:"
+      },
+      "advice": {
+        "stuck": "chieda a {{name}} di aprire l'app dove c'è segnale. Il lavoro è al sicuro sul telefono e parte da solo; non serve reinserire nulla. L'uscita dall'account è bloccata finché c'è lavoro non inviato.",
+        "needs_member": "{{name}} ha qualcosa che il server non ha accettato. È indicato sul telefono in Sincronizzazione, con il motivo.",
+        "sending": "niente. Il telefono sta inviando; si risolve da solo.",
+        "silent": "verifichi che {{name}} usi ancora questo telefono e abbia l'app più recente. Un rapporto più vecchio di 3 giorni non è affidabile.",
+        "up_to_date": "niente. Tutto ciò che viene da questo telefono è arrivato al server."
+      },
+      "reasons": {
+        "NETWORK": "Nessuna connessione",
+        "NO_RESULT": "Il server non ha risposto",
+        "SERVER_BUSY": "Il server era occupato o ha avuto un problema",
+        "WAITING_FOR_WIFI": "Le foto aspettano il Wi-Fi (scelta del membro)",
+        "UNAUTHENTICATED": "Disconnesso: attende che il membro rientri",
+        "UPLOAD_FAILED": "Il caricamento di una foto non è riuscito e verrà ripetuto",
+        "FILE_MISSING": "Una foto non è più sul telefono",
+        "PHOTO_REFUSED": "Il server non ha accettato una foto",
+        "DEPENDENCY_FAILED": "Un passaggio precedente non è stato accettato",
+        "CONFLICT": "Modificato in ufficio prima dell'arrivo",
+        "TASK_STATE_CONFLICT": "L'intervento è stato modificato in ufficio prima dell'arrivo",
+        "TASK_REASSIGNED": "L'intervento è stato assegnato a un'altra persona",
+        "ALREADY_CLOCKED_IN": "Timbratura già presente all'arrivo di questa",
+        "ENTRY_ALREADY_CLOSED": "Il turno era già chiuso",
+        "BREAK_ALREADY_ENDED": "La pausa era già terminata",
+        "OUT_OF_ORDER": "Arrivato fuori ordine",
+        "OCCURRED_IN_FUTURE": "L'orologio del telefono è avanti",
+        "FIX_NOT_AT_TAP": "Posizione non rilevata al momento dell'azione",
+        "FIX_INACCURATE": "Posizione non abbastanza precisa",
+        "FIX_MISSING": "Nessuna posizione",
+        "REPORT_EXISTS": "L'intervento aveva già un rapporto",
+        "OTHER": "Non accettato ({{code}})"
+      }
     }
   },
   "invitations": {
@@ -4928,6 +5009,10 @@
       "spaces": {
         "label": "Spazi di lavoro",
         "desc": "Gestisci gli spazi di lavoro e gli elenchi di personale"
+      },
+      "phoneSync": {
+        "label": "Sincronizzazione telefoni",
+        "desc": "Quali telefoni conservano ancora lavoro fatto senza segnale"
       }
     }
   },
