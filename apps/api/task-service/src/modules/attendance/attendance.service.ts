@@ -687,7 +687,11 @@ export class AttendanceService {
     // Fulfill the matching expected shift so it isn't flagged as a no-show. Never
     // let a fulfillment hiccup block the clock-in itself.
     if (scheduled && stampCols.shiftId) {
-      await this.markShiftInstancePresent(data.userId, data.locationId, stampCols.shiftId, entry.id, clockInTime).catch(
+      await this.markShiftInstancePresent(data.userId, data.locationId, stampCols.shiftId, entry.id, clockInTime, {
+        organizationId: data.organizationId,
+        recordedOffline: flagReasons.includes('RECORDED_OFFLINE'),
+        timezone: workerTz ?? location.timezone ?? 'UTC',
+      }).catch(
         (e) => this.logger.warn(`markShiftInstancePresent failed for entry=${entry.id}: ${e}`),
       );
     }
@@ -2489,25 +2493,55 @@ export class AttendanceService {
     return success({ processed, created });
   }
 
-  /** Clock-in fulfillment: mark the member's matching expected shift PRESENT. */
+  /**
+   * Clock-in fulfillment: mark the member's matching expected shift PRESENT.
+   *
+   * ⚠️ A clock-in can arrive AFTER the no-show sweep escalated it — a phone with
+   * no signal at 07:58 sends it at 11:14, and by then a supervisor has been told
+   * "hasn't clocked in and isn't responding". Marking the shift PRESENT fixes the
+   * record and says nothing to the person who may already be phoning round. So
+   * an escalated shift that is resolved this way tells the same people it
+   * alerted, with the time of the tap.
+   */
   private async markShiftInstancePresent(
     userId: string,
     spaceId: string,
     shiftId: string,
     timeEntryId: string,
     clockInAt: Date,
+    context?: { organizationId: string; recordedOffline: boolean; timezone: string },
   ) {
     const w = 12 * 3_600_000; // the instance whose start is within ±12h of this clock-in
+    const window = {
+      userId,
+      spaceId,
+      shiftId,
+      expectedClockInAt: { gte: new Date(clockInAt.getTime() - w), lte: new Date(clockInAt.getTime() + w) },
+    };
+    const escalated = context
+      ? await this.prisma.shiftInstance.findMany({ where: { ...window, state: 'ESCALATED' }, select: { id: true } })
+      : [];
     await this.prisma.shiftInstance.updateMany({
-      where: {
-        userId,
-        spaceId,
-        shiftId,
-        state: { in: ['PENDING', 'REMINDED', 'ESCALATED'] },
-        expectedClockInAt: { gte: new Date(clockInAt.getTime() - w), lte: new Date(clockInAt.getTime() + w) },
-      },
+      where: { ...window, state: { in: ['PENDING', 'REMINDED', 'ESCALATED'] } },
       data: { state: 'PRESENT', nextRemindAt: null, timeEntryId },
     });
+    if (!context || escalated.length === 0) return;
+
+    const member = await this.prisma.user.findUnique({ where: { id: userId }, select: { firstName: true, lastName: true } });
+    const leaderIds = await this.notifyTargetsFor({ spaceId, organizationId: context.organizationId, userId }, 'canReconcileAttendance');
+    for (const inst of escalated) {
+      this.notificationClient.emit('attendance_noshow_resolved', {
+        instanceId: inst.id,
+        userId,
+        userName: member ? `${member.firstName} ${member.lastName}`.trim() : 'A worker',
+        spaceId,
+        clockInAt: clockInAt.toISOString(),
+        timezone: context.timezone,
+        recordedOffline: context.recordedOffline,
+        leaderIds,
+        organizationId: context.organizationId,
+      });
+    }
   }
 
   /**

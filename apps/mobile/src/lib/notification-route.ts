@@ -67,6 +67,7 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
   // Somebody else's shift
   shift_escalation: TEAM_ATTENDANCE,
   noshow_escalation: TEAM_ATTENDANCE,
+  noshow_resolved: TEAM_ATTENDANCE,
   attendance_left_early: TEAM_ATTENDANCE,
   pending_approval: TEAM_ATTENDANCE,
   geofence_alert: TEAM_ATTENDANCE,

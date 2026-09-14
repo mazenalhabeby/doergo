@@ -402,6 +402,51 @@ export class AttendanceNotificationHandler {
     });
   }
 
+  /*
+    A no-show that turned out not to be one: the clock-in arrived after the
+    escalation, usually from a phone that had no signal at the site. Told to the
+    same people the escalation alerted, so nobody keeps chasing somebody who was
+    at work the whole time.
+  */
+  @EventPattern('attendance_noshow_resolved')
+  async handleNoShowResolved(@Payload() data: {
+    instanceId: string;
+    userId: string;
+    userName: string;
+    spaceId: string;
+    clockInAt: string;
+    timezone?: string | null;
+    recordedOffline: boolean;
+    leaderIds: string[];
+    organizationId: string;
+  }) {
+    const leaderIds = data.leaderIds || [];
+    const at = noShowResolvedTime(data.clockInAt, data.timezone);
+    const body = data.recordedOffline
+      ? `${data.userName} clocked in at ${at}. It was recorded without signal and has just arrived, so there is no need to follow up.`
+      : `${data.userName} clocked in at ${at}, so there is no need to follow up.`;
+    this.logger.log(`No-show resolved: user=${data.userName}, instance=${data.instanceId}, offline=${data.recordedOffline}, leaders=${leaderIds.length}`);
+    try {
+      await this.pushService.sendNoShowResolvedPush({ leaderIds, body, instanceId: data.instanceId });
+    } catch (error) {
+      this.logger.error(`Failed to send no-show resolved push: ${error}`);
+    }
+    const payload = { instanceId: data.instanceId, userId: data.userId, userName: data.userName, clockInAt: data.clockInAt, timestamp: new Date().toISOString() };
+    if (leaderIds.length) {
+      for (const id of leaderIds) this.websocketGateway.emitToUser(id, 'attendance_noshow_resolved', payload);
+    } else {
+      this.websocketGateway.emitToRole(data.organizationId, 'ADMIN', 'attendance_noshow_resolved', payload);
+    }
+    await this.store.record({
+      recipientIds: leaderIds,
+      organizationId: data.organizationId,
+      eventType: 'attendance_noshow_resolved',
+      title: 'Arrived after all',
+      body,
+      link: '/attendance',
+    });
+  }
+
   // Worker asked to keep working past their shift → notify overtime approvers.
   @EventPattern('attendance_overtime_request')
   async handleOvertimeRequest(@Payload() data: {
@@ -850,5 +895,15 @@ export class AttendanceNotificationHandler {
       endedAt: data.endedAt,
       durationMinutes: data.durationMinutes,
     });
+  }
+}
+
+/** "07:58" in the entry's own zone; the zone is what the member's day was lived in. */
+export function noShowResolvedTime(iso: string, timezone?: string | null): string {
+  const d = new Date(iso);
+  try {
+    return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: timezone || 'UTC' });
+  } catch {
+    return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
   }
 }

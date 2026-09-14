@@ -397,6 +397,16 @@ export class PushService {
     );
   }
 
+  /** The escalation was answered by a clock-in that arrived late — tell the same leaders. */
+  async sendNoShowResolvedPush(data: { leaderIds: string[]; body: string; instanceId: string }) {
+    const allTokens: string[] = [];
+    for (const leaderId of data.leaderIds) allTokens.push(...(await this.getUserTokens(leaderId)));
+    return this.sendPushNotification(allTokens, 'Arrived after all', data.body, {
+      type: 'noshow_resolved',
+      instanceId: data.instanceId,
+    });
+  }
+
   // A worker asked to keep working past their shift — notify the space's
   // overtime approvers so they can grant/deny extra minutes.
   async sendOvertimeRequestPush(data: {
