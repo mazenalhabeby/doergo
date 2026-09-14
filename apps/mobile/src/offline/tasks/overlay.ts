@@ -17,15 +17,23 @@ export function overlayTask<T extends { id: string; status: string }>(
 ): T & { pendingSync: boolean } {
   let status = task.status;
   let pending = false;
+  let declined = false;
   for (const op of ops) {
     if (op.entityId !== task.id || !STILL_MINE.has(op.state)) continue;
     pending = true;
     if (op.op === 'task.status') {
       const body = (op.payload.body ?? {}) as { status?: string };
       if (body.status) status = body.status;
+    } else if (op.op === 'task.decline') {
+      // Handed back: what the server will do with it — unassigned, back to NEW —
+      // so it leaves "my jobs" at the tap, not when the network returns.
+      declined = true;
+      status = 'NEW';
     }
   }
-  return { ...task, status, pendingSync: pending };
+  return declined
+    ? { ...task, status, assignedToId: null, pendingSync: pending }
+    : { ...task, status, pendingSync: pending };
 }
 
 export interface LocalComment {
@@ -68,4 +76,45 @@ export function mergeComments<C extends { id: string; createdAt: string }>(serve
   return [...server, ...pending.filter((p) => !known.has(p.id))].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
+}
+
+export interface LocalAttachment {
+  id: string;
+  fileName: string;
+  fileType: string;
+  /** The held copy on this phone — shown until the server's copy exists. */
+  fileUrl: string;
+  createdAt: string;
+  pendingSync: true;
+}
+
+/**
+ * Photos the member added that the server does not have yet, shaped like the
+ * API's attachments and pointing at the copy held on the phone.
+ */
+export function pendingAttachments(
+  taskId: string,
+  ops: readonly OutboxOp[],
+  uriFor: (id: string, mime: string) => string,
+): LocalAttachment[] {
+  return ops
+    .filter((o) => o.op === 'task.attachment' && o.entityId === taskId && STILL_MINE.has(o.state))
+    .map((o) => {
+      const body = (o.payload.body ?? {}) as { id: string; fileName?: string; fileType?: string };
+      const fileType = body.fileType ?? 'image/jpeg';
+      return {
+        id: body.id,
+        fileName: body.fileName ?? '',
+        fileType,
+        fileUrl: uriFor(body.id, fileType),
+        createdAt: new Date(o.createdAt).toISOString(),
+        pendingSync: true as const,
+      };
+    });
+}
+
+/** The server's attachments plus pending ones it does not have yet (same id = the server's). */
+export function mergeAttachments<A extends { id: string }>(server: readonly A[], pending: readonly LocalAttachment[]) {
+  const known = new Set(server.map((a) => a.id));
+  return [...server, ...pending.filter((p) => !known.has(p.id))];
 }

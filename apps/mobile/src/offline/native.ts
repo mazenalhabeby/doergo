@@ -3,6 +3,7 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 
 type SQLiteLib = typeof import('expo-sqlite');
 type NetInfoLib = typeof import('@react-native-community/netinfo');
+type ImageManipulatorLib = typeof import('expo-image-manipulator');
 
 /*
   ⚠️ THE OFFLINE LAYER'S NATIVE PARTS ARE NEVER IMPORTED AT MODULE SCOPE.
@@ -19,6 +20,15 @@ type NetInfoLib = typeof import('@react-native-community/netinfo');
 */
 let sqlite: SQLiteLib | null | undefined;
 let netinfo: NetInfoLib | null | undefined;
+let manipulator: ImageManipulatorLib | null | undefined;
+
+/** Optional: without it a photo is kept at the size the camera gave. */
+export function loadImageManipulator(): ImageManipulatorLib | null {
+  if (manipulator !== undefined) return manipulator;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  manipulator = requireOptionalNativeModule('ExpoImageManipulator') ? (require('expo-image-manipulator') as ImageManipulatorLib) : null;
+  return manipulator;
+}
 
 export function loadSQLite(): SQLiteLib | null {
   if (sqlite !== undefined) return sqlite;

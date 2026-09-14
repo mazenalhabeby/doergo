@@ -574,7 +574,8 @@ describe('TasksService', () => {
       const declinedTask = { ...mockTask, status: TaskStatus.NEW, assignedToId: null };
 
       mockPrismaService.task.findUnique.mockResolvedValue(assignedTask);
-      mockPrismaService.task.update.mockResolvedValue(declinedTask);
+      mockPrismaService.task.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.task.findUniqueOrThrow.mockResolvedValue(declinedTask);
       mockPrismaService.taskEvent.create.mockResolvedValue({ id: 'event-1' });
 
       const result = await service.decline({
@@ -600,10 +601,10 @@ describe('TasksService', () => {
           userRole: Role.EMPLOYEE,
           organizationId: 'org-123',
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toMatchObject({ response: expect.objectContaining({ code: 'TASK_REASSIGNED' }) });
     });
 
-    it('should throw BadRequestException for task not in ASSIGNED status', async () => {
+    it('refuses a decline that arrives after the task moved on, naming where it is now', async () => {
       const inProgressTask = { ...mockTask, status: TaskStatus.IN_PROGRESS, assignedToId: 'tech-123' };
       mockPrismaService.task.findUnique.mockResolvedValue(inProgressTask);
 
@@ -614,7 +615,25 @@ describe('TasksService', () => {
           userRole: Role.EMPLOYEE,
           organizationId: 'org-123',
         }),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toMatchObject({
+        status: 409,
+        response: expect.objectContaining({ code: 'TASK_STATE_CONFLICT', params: { current: expect.objectContaining({ status: TaskStatus.IN_PROGRESS }) } }),
+      });
+    });
+
+    it('does not undo a reassignment that lands between the read and the write', async () => {
+      mockPrismaService.task.findUnique
+        .mockResolvedValueOnce({ ...mockTask, status: TaskStatus.ASSIGNED, assignedToId: 'tech-123', assignedTo: { id: 'tech-123' } })
+        .mockResolvedValueOnce({ id: 'task-123', status: TaskStatus.ASSIGNED, assignedToId: 'other-tech', updatedAt: new Date() });
+      mockPrismaService.task.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        service.decline({ id: 'task-123', userId: 'tech-123', userRole: Role.EMPLOYEE, organizationId: 'org-123' }),
+      ).rejects.toMatchObject({ status: 409, response: expect.objectContaining({ code: 'TASK_REASSIGNED' }) });
+      expect(mockPrismaService.task.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'task-123', assignedToId: 'tech-123', status: TaskStatus.ASSIGNED } }),
+      );
+      expect(mockNotificationClient.emit).not.toHaveBeenCalledWith('task_declined', expect.anything());
     });
   });
 

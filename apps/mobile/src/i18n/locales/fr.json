@@ -2387,7 +2387,11 @@
       "DEPENDENCY_FAILED": "Une étape précédente dont cela dépend n'a pas été acceptée.",
       "TASK_REASSIGNED": "Le bureau a confié cette intervention à quelqu'un d'autre avant l'arrivée de votre modification.",
       "CONFLICT": "Le bureau a modifié cela avant l'arrivée de votre modification.",
-      "default": "Le serveur ne l'a pas accepté."
+      "default": "Le serveur ne l'a pas accepté.",
+      "PHOTO_NOT_KEPT": "La photo n'a pas pu être enregistrée sur ce téléphone. Reprenez-la.",
+      "PHOTO_REFUSED": "Le serveur n'a pas accepté cette photo.",
+      "FILE_MISSING": "La photo n'est plus sur ce téléphone, elle ne peut donc pas être envoyée.",
+      "TASK_STATE_CONFLICT": "Le bureau a modifié cela avant l'arrivée de votre modification."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",

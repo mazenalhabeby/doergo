@@ -69,6 +69,11 @@ export const MIGRATIONS: readonly string[] = [
   );
   CREATE INDEX IF NOT EXISTS files_outbox ON files (outbox_id);
   `,
+  // 2 — a file remembers where it was uploaded, so a crash after the upload
+  // and before the confirm does not upload it a second time.
+  `
+  ALTER TABLE files ADD COLUMN object_key TEXT;
+  `,
 ];
 
 /** Run every step past `current`, each in its own transaction, recording progress as it goes. */

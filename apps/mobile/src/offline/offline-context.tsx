@@ -7,7 +7,11 @@ import { ConnectivityMonitor, type Connectivity } from './connectivity';
 import { openOfflineDatabase } from './db/database';
 import { RecordsStore } from './db/records-store';
 import { SqliteOutboxStore } from './db/sqlite-outbox-store';
-import { httpSyncTransport } from './http-transport';
+import { httpObjectUploader, httpSyncTransport } from './http-transport';
+import { DeviceFileDisk } from './files/device-file-disk';
+import { OfflineFiles } from './files/offline-files';
+import { SqliteFileRegistry } from './files/sqlite-file-registry';
+import { FileUploadPreparer } from './files/upload-preparer';
 import { uuidv7 } from './ids';
 import { offlineCapableBuild } from './native';
 import { SyncEngine, type SyncSnapshot } from './sync-engine';
@@ -38,9 +42,12 @@ interface OfflineValue {
   available: boolean;
   engine: SyncEngine | null;
   records: RecordsStore | null;
+  /** Photos and signatures held on this phone until they are sent. */
+  files: OfflineFiles | null;
 }
 
-const OfflineContext = createContext<OfflineValue>({ available: false, engine: null, records: null });
+const UNAVAILABLE: OfflineValue = { available: false, engine: null, records: null, files: null };
+const OfflineContext = createContext<OfflineValue>(UNAVAILABLE);
 
 const EMPTY_SNAPSHOT: SyncSnapshot = { waiting: 0, attention: 0, pushing: false, pulling: false, lastSuccessAt: null };
 const EMPTY_OPS: readonly OutboxOp[] = [];
@@ -53,7 +60,7 @@ const EMPTY_OPS: readonly OutboxOp[] = [];
  */
 export function OfflineProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [value, setValue] = useState<OfflineValue>({ available: false, engine: null, records: null });
+  const [value, setValue] = useState<OfflineValue>(UNAVAILABLE);
 
   useEffect(() => {
     observeOnce();
@@ -61,7 +68,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!user?.id || !user.organizationId || !offlineCapableBuild()) {
-      setValue({ available: false, engine: null, records: null });
+      setValue(UNAVAILABLE);
       return;
     }
     let cancelled = false;
@@ -74,12 +81,16 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
       const db = await dbPromise;
       if (cancelled) return;
       const records = new RecordsStore(db);
+      const registry = new SqliteFileRegistry(db);
+      const disk = DeviceFileDisk.forMember(user.id);
+      const files = new OfflineFiles({ registry, disk });
       engine = new SyncEngine({
         userId: user.id,
         organizationId: user.organizationId!,
         store: new SqliteOutboxStore(db),
         transport: httpSyncTransport,
         records,
+        preparer: new FileUploadPreparer({ files: registry, disk, uploader: httpObjectUploader }),
         newId: () => uuidv7(),
       });
       await engine.start();
@@ -88,7 +99,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       const live = engine;
-      setValue({ available: true, engine: live, records });
+      setValue({ available: true, engine: live, records, files });
 
       // Triggers: coming back online syncs everything; returning to the app
       // sends what waits. Pull-to-refresh calls syncAll itself.
@@ -104,7 +115,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
       void live.syncAll();
     })().catch((err) => {
       console.warn('[offline] could not start:', err);
-      if (!cancelled) setValue({ available: false, engine: null, records: null });
+      if (!cancelled) setValue(UNAVAILABLE);
     });
 
     return () => {

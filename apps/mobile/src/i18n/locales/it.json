@@ -2387,7 +2387,11 @@
       "DEPENDENCY_FAILED": "Un passaggio precedente da cui dipende non è stato accettato.",
       "TASK_REASSIGNED": "L'ufficio ha assegnato questo lavoro a qualcun altro prima che arrivasse la tua modifica.",
       "CONFLICT": "L'ufficio ha modificato questo prima che arrivasse la tua modifica.",
-      "default": "Il server non l'ha accettato."
+      "default": "Il server non l'ha accettato.",
+      "PHOTO_NOT_KEPT": "Non è stato possibile salvare la foto su questo telefono. Scattala di nuovo.",
+      "PHOTO_REFUSED": "Il server non ha accettato questa foto.",
+      "FILE_MISSING": "La foto non è più su questo telefono, quindi non può essere inviata.",
+      "TASK_STATE_CONFLICT": "L'ufficio ha modificato questo prima che arrivasse la tua modifica."
     },
     "signOut": {
       "title_one": "{{count}} modifica non è stata inviata",

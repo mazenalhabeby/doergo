@@ -127,6 +127,8 @@ describe('SyncEngine', () => {
     transport.mode = 'offline';
     const complete = await e.enqueue({ op: 'task.complete', lane: 'task:t9', entityId: 't9', payload: { params: { taskId: 't9' }, body: {} } });
     const photo = await e.enqueue({ op: 'report.attachment', lane: 'task:t9', entityId: 't9', dependsOn: [complete.id], payload: { params: { reportId: 'r9' }, body: {} } });
+    // Let the offline attempts the enqueues started finish before the network returns.
+    await e.flush();
     transport.mode = 'ok';
     transport.reject.add(complete.id);
     t += 5_000;

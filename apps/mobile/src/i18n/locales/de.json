@@ -2387,7 +2387,11 @@
       "DEPENDENCY_FAILED": "Ein vorheriger Schritt, von dem dies abhängt, wurde nicht übernommen.",
       "TASK_REASSIGNED": "Das Büro hat den Auftrag jemand anderem gegeben, bevor Ihre Änderung ankam.",
       "CONFLICT": "Das Büro hat dies geändert, bevor Ihre Änderung ankam.",
-      "default": "Der Server hat dies nicht übernommen."
+      "default": "Der Server hat dies nicht übernommen.",
+      "PHOTO_NOT_KEPT": "Das Foto konnte auf diesem Telefon nicht gespeichert werden. Bitte nehmen Sie es erneut auf.",
+      "PHOTO_REFUSED": "Der Server hat dieses Foto nicht angenommen.",
+      "FILE_MISSING": "Das Foto ist nicht mehr auf diesem Telefon und kann daher nicht gesendet werden.",
+      "TASK_STATE_CONFLICT": "Das Büro hat dies geändert, bevor Ihre Änderung ankam."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",

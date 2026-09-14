@@ -1,5 +1,6 @@
 import { useOffline, useSyncStatus } from '../../../src/offline/offline-context';
 import { destroyOfflineDatabase } from '../../../src/offline/db/database';
+import { DeviceFileDisk } from '../../../src/offline/files/device-file-disk';
 import { useState, useCallback, useRef } from 'react';
 import {
   View,
@@ -234,7 +235,10 @@ export default function ProfileScreen() {
     await unregisterPushToken();
     await logout();
     // Nothing unsent (or the member chose to delete it): the copy goes too.
-    if (userId) await destroyOfflineDatabase(userId).catch(() => undefined);
+    if (userId) {
+      await destroyOfflineDatabase(userId).catch(() => undefined);
+      DeviceFileDisk.forMember(userId).destroyAll();
+    }
   };
 
   return (

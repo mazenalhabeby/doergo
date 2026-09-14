@@ -1,5 +1,7 @@
 import type { SyncPullResponse, SyncPullScope, SyncPushResponse } from '@hbcfield/shared/client';
 import { ApiError, fetchWithAuth } from '../lib/api/client';
+import { uploadToPresignedUrl } from '../lib/api/attachments';
+import { UploadFailure, type ObjectUploader } from './files/types';
 import type { SyncTransport } from './sync-engine';
 import type { OutboxOp } from './outbox/types';
 
@@ -33,5 +35,27 @@ export const httpSyncTransport: SyncTransport = {
   pull(scope: SyncPullScope, cursor: string | null) {
     const qs = new URLSearchParams({ scope, ...(cursor ? { cursor } : {}) });
     return fetchWithAuth<SyncPullResponse>(`/sync/pull?${qs.toString()}`);
+  },
+};
+
+/** The two network steps of an upload, through the same client and PUT every screen uses. */
+export const httpObjectUploader: ObjectUploader = {
+  async presign(path, body) {
+    try {
+      return await fetchWithAuth<{ uploadUrl: string; fileKey: string }>(path, { method: 'POST', body: JSON.stringify(body) });
+    } catch (err) {
+      if (err instanceof ApiError) throw new UploadFailure(err.statusCode || null, err.code ?? `HTTP_${err.statusCode}`);
+      throw new UploadFailure(null, 'NETWORK');
+    }
+  },
+
+  async put(uploadUrl, path, mime) {
+    try {
+      await uploadToPresignedUrl(uploadUrl, path, mime);
+    } catch {
+      // Storage refusing a link is almost always the link (expired, clock skew):
+      // retrying asks for a fresh one. Never "failed" — the photo is still good.
+      throw new UploadFailure(null, 'UPLOAD_FAILED');
+    }
   },
 };

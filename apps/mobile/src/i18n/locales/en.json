@@ -2387,7 +2387,11 @@
       "DEPENDENCY_FAILED": "An earlier step this depends on wasn't accepted.",
       "TASK_REASSIGNED": "The office gave this job to someone else before your change arrived.",
       "CONFLICT": "The office changed this before your change arrived.",
-      "default": "The server didn't accept this."
+      "default": "The server didn't accept this.",
+      "PHOTO_NOT_KEPT": "The photo couldn't be saved on this phone. Try taking it again.",
+      "PHOTO_REFUSED": "The server didn't accept this photo.",
+      "FILE_MISSING": "The photo is no longer on this phone, so it can't be sent.",
+      "TASK_STATE_CONFLICT": "The office changed this before your change arrived."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",

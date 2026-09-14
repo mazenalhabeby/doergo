@@ -29,6 +29,24 @@ export interface RecordsSink {
   cursor(scope: string): Promise<{ cursor: string | null; lastPullAt: number | null }>;
 }
 
+/** What preparing an operation came to. A failure is classified like an HTTP answer. */
+export type PrepareResult =
+  | { ok: true; op: OutboxOp }
+  | { ok: false; status: number | null; code?: string };
+
+/**
+ * Work an operation needs done before it can be sent — uploading its photo.
+ *
+ * The engine knows nothing about files: it asks the preparer before sending and
+ * tells it when an operation is finished with, so the photo is kept exactly as
+ * long as the operation that needs it.
+ */
+export interface OperationPreparer {
+  prepare(op: OutboxOp): Promise<PrepareResult>;
+  /** Operations that are done or discarded — their local leftovers can go. */
+  release(ops: readonly OutboxOp[]): Promise<void>;
+}
+
 export interface EnqueueInput {
   op: SyncOperationName;
   lane: string;
@@ -76,6 +94,7 @@ export class SyncEngine {
       store: OutboxStore;
       transport: SyncTransport;
       records: RecordsSink;
+      preparer?: OperationPreparer;
       newId: () => string;
       now?: () => number;
       random?: () => number;
@@ -200,22 +219,77 @@ export class SyncEngine {
     await this.deps.store.save(markInflight(batch, now));
     await this.refreshCache();
 
-    let settled: OutboxOp[];
-    try {
-      const res = await this.deps.transport.push(batch);
-      settled = 'results' in res
-        ? applyPushResults(batch, res.results, this.now(), this.deps.random)
-        : applyPushFailure(batch, res.status, res.code, this.now(), this.deps.random);
-    } catch {
-      settled = applyPushFailure(batch, null, undefined, this.now(), this.deps.random);
+    const { ready, held } = this.deps.preparer ? await this.prepareBatch(batch) : { ready: batch, held: [] as OutboxOp[] };
+    let settled: OutboxOp[] = held;
+    if (ready.length) {
+      try {
+        const res = await this.deps.transport.push(ready);
+        settled = settled.concat('results' in res
+          ? applyPushResults(ready, res.results, this.now(), this.deps.random)
+          : applyPushFailure(ready, res.status, res.code, this.now(), this.deps.random));
+      } catch {
+        settled = settled.concat(applyPushFailure(ready, null, undefined, this.now(), this.deps.random));
+      }
     }
     await this.deps.store.save(settled);
+    await this.release(settled.filter((o) => o.state === 'done'));
     const progressed = settled.some((o) => o.state === 'done' || o.state === 'pending');
     if (settled.some((o) => o.state === 'done')) this.lastSuccessAt = this.now();
     await this.refreshCache();
     // Stop on a failure that affects everything (offline, signed out): retrying
     // the next batch immediately would only fail the same way.
     return progressed && !settled.some((o) => o.state === 'awaiting_auth');
+  }
+
+  /**
+   * Run each operation's preparation (its upload) before the push.
+   *
+   * ⚠️ AN OPERATION THAT COULD NOT BE PREPARED HOLDS ITS LANE. The notes after a
+   * photo in the same lane, and anything depending on it, go back to waiting —
+   * sending them without it would deliver the task's story out of order, and
+   * the server would never know a photo was missing. A permanent refusal (the
+   * member may not add photos here) does not hold, matching the scheduler.
+   *
+   * A prepared operation is saved before it is sent, so a crash after a
+   * 10 MB upload does not upload it again.
+   */
+  private async prepareBatch(batch: readonly OutboxOp[]): Promise<{ ready: OutboxOp[]; held: OutboxOp[] }> {
+    const preparer = this.deps.preparer;
+    if (!preparer) return { ready: [...batch], held: [] };
+    const ready: OutboxOp[] = [];
+    const held: OutboxOp[] = [];
+    const blockedLanes = new Set<string>();
+    const blockedIds = new Set<string>();
+    for (const op of batch) {
+      if (blockedLanes.has(op.lane) || op.dependsOn.some((d) => blockedIds.has(d))) {
+        held.push({ ...op, state: 'pending', updatedAt: this.now() });
+        blockedLanes.add(op.lane);
+        blockedIds.add(op.id);
+        continue;
+      }
+      let result: PrepareResult;
+      try {
+        result = await preparer.prepare(op);
+      } catch {
+        result = { ok: false, status: null, code: 'PREPARE_FAILED' };
+      }
+      // `in`, not `.ok`: the test compiler runs non-strict and does not narrow on a boolean.
+      if ('op' in result) {
+        if (result.op !== op) await this.deps.store.save([result.op]);
+        ready.push(result.op);
+        continue;
+      }
+      const [failed] = applyPushFailure([op], result.status, result.code, this.now(), this.deps.random);
+      held.push(failed!);
+      blockedIds.add(op.id);
+      if (failed!.state !== 'failed') blockedLanes.add(op.lane);
+    }
+    return { ready, held };
+  }
+
+  private async release(ops: readonly OutboxOp[]): Promise<void> {
+    if (!ops.length || !this.deps.preparer) return;
+    await this.deps.preparer.release(ops).catch(() => undefined);
   }
 
   /**
@@ -265,7 +339,9 @@ export class SyncEngine {
   async discard(id: string): Promise<void> {
     const op = await this.deps.store.get(id);
     if (!op || !ATTENTION_STATES.has(op.state)) return;
-    await this.deps.store.save([{ ...op, state: 'discarded', updatedAt: this.now() }]);
+    const discarded: OutboxOp = { ...op, state: 'discarded', updatedAt: this.now() };
+    await this.deps.store.save([discarded]);
+    await this.release([discarded]);
     await this.refreshCache();
   }
 

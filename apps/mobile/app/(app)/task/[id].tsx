@@ -58,8 +58,9 @@ import {
 } from '../../../src/components/task-detail';
 import { getFlowSteps, hasCapability, getStatusCapabilities, hasFeatureModule, needsTravelEstimate, type TaskCapability } from '@hbcfield/shared/client';
 import { useOffline } from '../../../src/offline/offline-context';
+import { mergeAttachments, pendingAttachments } from '../../../src/offline/tasks/overlay';
 import { loadTaskDetail } from '../../../src/offline/tasks/task-source';
-import { addTaskComment, changeTaskStatus } from '../../../src/offline/tasks/task-actions';
+import { addTaskComment, addTaskPhoto, changeTaskStatus, declineTask } from '../../../src/offline/tasks/task-actions';
 import { OfflineBanner } from '../../../src/offline/components/offline-banner';
 import { SyncChip } from '../../../src/offline/components/sync-chip';
 import { BeThereCard } from '../../../src/components/tasks/be-there-card';
@@ -328,6 +329,7 @@ export function TaskDetailPane({
         records: offline.records,
         operations: offline.engine?.operations() ?? [],
         me: { id: user?.id ?? '', firstName: user?.firstName, lastName: user?.lastName },
+        fileUri: offline.files ? (fileId, mime) => offline.files!.uriFor(fileId, mime) : undefined,
       });
       if (signal.cancelled) return;
 
@@ -361,7 +363,7 @@ export function TaskDetailPane({
       if (!signal.cancelled) setIsLoading(false);
       fetchingRef.current = false;
     }
-  }, [id, offline.records, offline.engine, user?.id, user?.firstName, user?.lastName, t]);
+  }, [id, offline.records, offline.engine, offline.files, user?.id, user?.firstName, user?.lastName, t]);
 
   useEffect(() => {
     if (!id || fetchingRef.current) return;
@@ -691,12 +693,62 @@ export function TaskDetailPane({
   };
 
   // Upload a task attachment (photo from camera/gallery)
+  /*
+    The server's attachments with the member's held photos laid on top. Held
+    photos point at the copy on this phone; once one is accepted its copy is
+    deleted, so the list is re-read then (see the engine subscription below).
+  */
+  const refreshAttachments = useCallback(async (taskId: string) => {
+    const held = offline.files
+      ? pendingAttachments(taskId, offline.engine?.operations() ?? [], (fileId, mime) => offline.files!.uriFor(fileId, mime))
+      : [];
+    let server: any[] | null = null;
+    try {
+      server = (await taskAttachmentsApi.getAttachments(taskId)) || [];
+    } catch {
+      // Offline: keep what the screen already had from the server.
+    }
+    setTaskAttachments((prev) => mergeAttachments(server ?? prev.filter((a: any) => !a.pendingSync), held));
+  }, [offline.engine, offline.files]);
+
+  // A held photo sent in the background: swap the phone's copy for the server's.
+  useEffect(() => {
+    const engine = offline.engine;
+    if (!engine || !task?.id) return;
+    const taskId = task.id;
+    const sent = new Set(engine.operations().filter((o) => o.op === 'task.attachment' && o.state === 'done').map((o) => o.id));
+    return engine.subscribe((_snap, ops) => {
+      let changed = false;
+      for (const o of ops) {
+        if (o.op !== 'task.attachment' || o.entityId !== taskId || o.state !== 'done' || sent.has(o.id)) continue;
+        sent.add(o.id);
+        changed = true;
+      }
+      if (changed) void refreshAttachments(taskId);
+    });
+  }, [offline.engine, task?.id, refreshAttachments]);
+
   const handleUploadTaskAttachment = async (photos: PickedImage[]) => {
     if (!task || photos.length === 0) return;
     setIsUploadingTaskAttachment(true);
+    let queued = false;
     for (let i = 0; i < photos.length; i++) {
       const photo = photos[i]!;
       try {
+        if (offline.engine && offline.files) {
+          // Kept on the phone first, sent when there is a connection.
+          const { outcome } = await addTaskPhoto(offline.engine, offline.files, {
+            taskId: task.id,
+            fileName: photo.fileName,
+            mime: photo.mimeType,
+            width: photo.width,
+            height: photo.height,
+            ...(photo.uri.startsWith('data:') ? { base64: photo.uri, kind: 'signature' as const } : { uri: photo.uri }),
+          });
+          if (outcome.kind === 'refused') toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('offline.errors.PHOTO_REFUSED'));
+          if (outcome.kind === 'queued') queued = true;
+          continue;
+        }
         const { uploadUrl, fileKey, fileUrl } = await taskAttachmentsApi.getPresignedUrl(
           task.id,
           photo.fileName,
@@ -718,14 +770,11 @@ export function TaskDetailPane({
         });
       } catch (err) {
         console.warn(`[Attachments] Failed to upload photo ${i}:`, err);
-        toast.error(t('common.error'), t('taskDetail.failedToDelete'));
+        toast.error(t('common.error'), t('offline.errors.PHOTO_NOT_KEPT'));
       }
     }
-    // Refresh attachments
-    try {
-      const updated = await taskAttachmentsApi.getAttachments(task.id);
-      setTaskAttachments(updated || []);
-    } catch {}
+    if (queued) toast.info(t('offline.savedForLater'));
+    await refreshAttachments(task.id);
     setTaskAttachmentProgress(new Map());
     setIsUploadingTaskAttachment(false);
   };
@@ -806,7 +855,20 @@ export function TaskDetailPane({
     setShowDeclineConfirm(false);
     try {
       setIsUpdating(true);
-      await tasksApi.declineTask(task.id);
+      if (offline.engine) {
+        const outcome = await declineTask(offline.engine, { taskId: task.id });
+        if (outcome.kind === 'refused') {
+          toast.error(t('common.error'), refusalText(outcome));
+          return;
+        }
+        if (outcome.kind === 'queued') {
+          toast.info(t('offline.savedForLater'));
+          handleClose();
+          return;
+        }
+      } else {
+        await tasksApi.declineTask(task.id);
+      }
       toast.info(t('taskDetail.declineTask.successTitle'), t('taskDetail.declineTask.successMessage'));
       handleClose();
     } catch (err) {
@@ -1656,10 +1718,12 @@ export function TaskDetailPane({
               {taskAttachments.map((att) => (
                 <TouchableOpacity
                   key={att.id}
-                  onLongPress={() => handleDeleteTaskAttachment(att.id, att.fileName)}
+                  // A held photo is not on the server yet: nothing to delete there, nothing to open.
+                  onLongPress={att.pendingSync ? undefined : () => handleDeleteTaskAttachment(att.id, att.fileName)}
                   onPress={() => {
-                    if (att.fileUrl) Linking.openURL(att.fileUrl);
+                    if (att.fileUrl && !att.pendingSync) Linking.openURL(att.fileUrl);
                   }}
+                  accessibilityLabel={att.pendingSync ? t('offline.chip.waiting') : att.fileName}
                 >
                   {att.fileType?.startsWith('image/') ? (
                     <View style={[styles.attachmentThumb, { backgroundColor: colors.surfaceRaised }]}>
@@ -1668,6 +1732,11 @@ export function TaskDetailPane({
                         style={styles.attachmentThumbImage}
                         resizeMode="cover"
                       />
+                      {att.pendingSync && (
+                        <View style={[styles.attachmentPendingBadge, { backgroundColor: colors.card }]}>
+                          <Ionicons name="cloud-upload-outline" size={12} color={colors.textSecondary} />
+                        </View>
+                      )}
                     </View>
                   ) : (
                     <View style={[styles.attachmentDocCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>

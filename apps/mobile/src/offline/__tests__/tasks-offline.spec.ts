@@ -24,6 +24,13 @@ describe('overlayTask', () => {
     }
   });
 
+  it('takes a job handed back offline out of my list at the tap', () => {
+    const mine = { id: 't1', status: 'ASSIGNED', assignedToId: 'u1' };
+    const shown = overlayTask(mine, [op({ op: 'task.decline', payload: { params: { taskId: 't1' } } })]);
+    expect(shown).toMatchObject({ status: 'NEW', assignedToId: null, pendingSync: true });
+    expect(filterTasksLocally([{ ...shown, title: 'x' }], { assignedToMe: true } as any, 'u1')).toEqual([]);
+  });
+
   it('ignores other tasks', () => {
     expect(overlayTask(task, [op({ entityId: 't2', payload: { body: { status: 'ARRIVED' } } })]).status).toBe('EN_ROUTE');
   });

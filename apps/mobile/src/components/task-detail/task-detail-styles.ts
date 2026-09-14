@@ -375,6 +375,17 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
     // backgroundColor provided inline via colors.surfaceRaised
   },
+  /** "Waiting to send" on a photo held on this phone. */
+  attachmentPendingBadge: {
+    position: 'absolute',
+    right: SPACING.xs,
+    bottom: SPACING.xs,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   attachmentThumbImage: {
     width: 80,
     height: 80,

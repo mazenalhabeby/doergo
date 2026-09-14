@@ -5,7 +5,7 @@ import { taskAttachmentsApi } from '../../lib/api/attachments';
 import type { Comment, Task } from '../../lib/api/types';
 import type { RecordsStore } from '../db/records-store';
 import type { OutboxOp } from '../outbox/types';
-import { mergeComments, overlayTask, pendingComments } from './overlay';
+import { mergeAttachments, mergeComments, overlayTask, pendingAttachments, pendingComments } from './overlay';
 
 /** Where a task detail came from — the screen says "saved on this phone" for the second. */
 export type Source = 'server' | 'phone';
@@ -31,9 +31,16 @@ export function isUnreachable(err: unknown): boolean {
  */
 export async function loadTaskDetail(
   id: string,
-  deps: { records: RecordsStore | null; operations: readonly OutboxOp[]; me: { id: string; firstName?: string; lastName?: string } },
+  deps: {
+    records: RecordsStore | null;
+    operations: readonly OutboxOp[];
+    me: { id: string; firstName?: string; lastName?: string };
+    /** Where a held photo lives on this phone; without it pending photos are not shown. */
+    fileUri?: (id: string, mime: string) => string;
+  },
 ): Promise<TaskDetail> {
-  const { records, operations, me } = deps;
+  const { records, operations, me, fileUri } = deps;
+  const heldPhotos = fileUri ? pendingAttachments(id, operations, fileUri) : [];
   try {
     const [task, comments, attachments] = await Promise.all([
       tasksApi.getById(id),
@@ -47,7 +54,7 @@ export async function loadTaskDetail(
     return {
       task: overlayTask(task, operations),
       comments: mergeComments(comments, pendingComments(id, operations, me)) as TaskDetail['comments'],
-      attachments: attachments || [],
+      attachments: mergeAttachments(attachments || [], heldPhotos),
       source: 'server',
     };
   } catch (err) {
@@ -59,7 +66,7 @@ export async function loadTaskDetail(
     return {
       task: overlayTask(local, operations),
       comments: mergeComments(comments, pendingComments(id, operations, me)) as TaskDetail['comments'],
-      attachments,
+      attachments: mergeAttachments(attachments, heldPhotos),
       source: 'phone',
     };
   }
