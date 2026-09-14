@@ -31,7 +31,7 @@ import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { AttendanceService } from './attendance.service';
 import { AttendanceQueueService } from './attendance.queue.service';
 import {
-  ClockInDto, ClockOutDto, HeartbeatDto, StartBreakDto, EndBreakDto,
+  ClockInDto, ClockOutDto, HeartbeatDto, HeartbeatBatchDto, StartBreakDto, EndBreakDto,
   AddBreakForMemberDto, BreakRuleDto, SnoozeBreakDto,
   ApproveExtraTimeDto, RejectExtraTimeDto,
   AddWorklogNoteDto, AddWorklogNotesBatchDto, PresignWorklogAttachmentDto, ConfirmWorklogAttachmentDto,
@@ -109,6 +109,22 @@ export class AttendanceController {
   async heartbeat(@Body() dto: HeartbeatDto, @Request() req: any) {
     return this.attendanceQueueService.heartbeat({
       ...dto,
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /*
+    Check-ins a phone kept without signal. Replayed as periods, never as live
+    heartbeats — a point from an hour ago must not report somebody "leaving the
+    site" now. The caller is the token; points only ever touch their own shift.
+  */
+  @Post('heartbeat/batch')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Send location check-ins kept while offline' })
+  async heartbeatBatch(@Body() dto: HeartbeatBatchDto, @Request() req: any) {
+    return this.attendanceQueueService.heartbeatBatch({
+      points: dto.points,
       userId: req.user.id,
       organizationId: req.user.organizationId,
     });

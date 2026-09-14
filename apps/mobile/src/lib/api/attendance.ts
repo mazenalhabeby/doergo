@@ -52,6 +52,18 @@ export const attendanceApi = {
     });
   },
 
+  /** Check-ins kept while the phone had no signal, each with the moment it was taken. */
+  heartbeatBatch: async (points: { lat: number; lng: number; accuracy?: number; recordedAt: string }[]): Promise<{
+    recorded: number;
+    opened: boolean;
+    returned: boolean;
+  }> => {
+    return fetchWithAuth('/attendance/heartbeat/batch', {
+      method: 'POST',
+      body: JSON.stringify({ points }),
+    });
+  },
+
   /** Report a reason + how long you'll be outside the ring (OUT_UNREPORTED → PENDING). */
   reportExcursion: async (reason: string, requestedMinutes: number): Promise<GeofenceExcursion> => {
     return fetchWithAuth<GeofenceExcursion>('/attendance/excursions/report', {

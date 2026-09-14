@@ -13,6 +13,7 @@ import type { MediaCache } from './files/media-cache';
 import type { OfflineFiles } from './files/offline-files';
 import type { OfflinePreferencesStore } from './preferences';
 import { flushPendingRoute } from '../services/background-route-tracking';
+import { flushKeptCheckIns } from '../services/kept-check-ins';
 import { offlineCapableBuild } from './native';
 import { connectivity, createOfflineRuntime } from './runtime';
 import { reportTelemetry } from './telemetry';
@@ -141,6 +142,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
           if (state !== 'online') return;
           void live.syncAll().then(fillMediaCache);
           void flushPendingRoute();
+          void flushKeptCheckIns();
         }),
         // Wi-Fi arriving: photos held for it go now, and the image cache fills.
         connectivity.subscribeKind((unmetered) => {
@@ -175,6 +177,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
         if (s !== 'active') return;
         void live.flush();
         void flushPendingRoute();
+        void flushKeptCheckIns();
         void clearAnsweredReminders();
       });
       unsubscribers.push(() => appState.remove());

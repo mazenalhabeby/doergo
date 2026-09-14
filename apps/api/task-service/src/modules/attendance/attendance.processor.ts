@@ -68,6 +68,9 @@ export class AttendanceProcessor extends WorkerHost {
       case ATTENDANCE_JOB_TYPES.HEARTBEAT:
         return this.attendanceService.heartbeat(data);
 
+      case ATTENDANCE_JOB_TYPES.HEARTBEAT_BATCH:
+        return this.attendanceService.heartbeatBatch(data);
+
       default:
         throw new Error(`Unknown job type: ${job.name}`);
     }

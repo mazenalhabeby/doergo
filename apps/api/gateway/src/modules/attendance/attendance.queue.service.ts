@@ -38,4 +38,9 @@ export class AttendanceQueueService extends BaseQueueService {
   async heartbeat(data: Record<string, any>) {
     return this.addJobAndWait(ATTENDANCE_JOB_TYPES.HEARTBEAT, data);
   }
+
+  /** Check-ins a phone kept while it had no signal. */
+  async heartbeatBatch(data: Record<string, any>) {
+    return this.addJobAndWait(ATTENDANCE_JOB_TYPES.HEARTBEAT_BATCH, data);
+  }
 }

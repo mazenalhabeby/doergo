@@ -108,6 +108,8 @@ export const ATTENDANCE_JOB_TYPES = {
   // detection. Slow cadence; bounded scan.
   SHIFT_MATERIALIZE: 'attendance.shiftMaterialize',
   HEARTBEAT: 'attendance.heartbeat',
+  // Check-ins kept by a phone without signal, replayed in the order they were taken.
+  HEARTBEAT_BATCH: 'attendance.heartbeatBatch',
 } as const;
 
 export const OVERTIME_JOB_TYPES = {

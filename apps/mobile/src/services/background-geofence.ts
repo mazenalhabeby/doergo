@@ -1,4 +1,6 @@
 import * as Location from 'expo-location';
+import { keptCheckIns } from './kept-check-ins';
+import { isUnreachable } from '../offline/actions/unreachable';
 import * as TaskManager from 'expo-task-manager';
 import { attendanceApi } from '../lib/api';
 import { getAccessToken } from '../lib/api/client';
@@ -53,13 +55,24 @@ TaskManager.defineTask(GEOFENCE_TASK, async ({ data, error }: any) => {
   }
   if (!pos) return;
 
+  const point = {
+    lat: pos.coords.latitude,
+    lng: pos.coords.longitude,
+    accuracy: pos.coords.accuracy || undefined,
+    recordedAt: new Date(pos.timestamp ?? Date.now()).toISOString(),
+  };
+  // A ring crossing at a site with no signal is exactly the check-in worth keeping.
+  if (!(await keptCheckIns.flush().catch(() => false))) {
+    await keptCheckIns.keep(point);
+    return;
+  }
   try {
-    await attendanceApi.heartbeat({
-      lat: pos.coords.latitude,
-      lng: pos.coords.longitude,
-      accuracy: pos.coords.accuracy || undefined,
-    });
+    await attendanceApi.heartbeat({ lat: point.lat, lng: point.lng, accuracy: point.accuracy });
   } catch (err) {
+    if (isUnreachable(err)) {
+      await keptCheckIns.keep(point);
+      return;
+    }
     console.error('[Geofence] heartbeat failed:', err);
   }
 });

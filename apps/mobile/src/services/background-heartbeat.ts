@@ -3,6 +3,8 @@ import * as TaskManager from 'expo-task-manager';
 import { attendanceApi } from '../lib/api';
 import { getAccessToken } from '../lib/api/client';
 import { requestBackgroundLocationConsent } from './location-consent';
+import { keptCheckIns } from './kept-check-ins';
+import { isUnreachable } from '../offline/actions/unreachable';
 
 const TASK_NAME = 'ATTENDANCE_HEARTBEAT';
 
@@ -30,18 +32,29 @@ TaskManager.defineTask(TASK_NAME, async ({ data, error }: any) => {
   }
 
   const location = data.locations[0];
+  const point = {
+    lat: location.coords.latitude,
+    lng: location.coords.longitude,
+    accuracy: location.coords.accuracy || undefined,
+    recordedAt: new Date(location.timestamp ?? Date.now()).toISOString(),
+  };
+  // What was kept without signal goes first, so the live check-in is judged after it.
+  if (!(await keptCheckIns.flush().catch(() => false))) {
+    await keptCheckIns.keep(point);
+    return;
+  }
   try {
-    const result = await attendanceApi.heartbeat({
-      lat: location.coords.latitude,
-      lng: location.coords.longitude,
-      accuracy: location.coords.accuracy || undefined,
-    });
+    const result = await attendanceApi.heartbeat({ lat: point.lat, lng: point.lng, accuracy: point.accuracy });
 
     if (result.autoClockedOut) {
       console.log('[Heartbeat] Auto-clocked out by server, stopping background tracking');
       await stopBackgroundHeartbeat();
     }
   } catch (err) {
+    if (isUnreachable(err)) {
+      await keptCheckIns.keep(point);
+      return;
+    }
     console.error('[Heartbeat] Failed to send heartbeat:', err);
   }
 });
