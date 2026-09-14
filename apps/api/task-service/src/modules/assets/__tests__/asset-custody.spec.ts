@@ -1,3 +1,4 @@
+import { OBJECT_STORE } from '@hbcfield/shared/storage';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
@@ -189,6 +190,7 @@ describe('filing an expense is gated on custody', () => {
         { provide: ConfigService, useValue: { get: (_k: string, d?: string) => d ?? '' } },
         { provide: AssetAccessService, useValue: { assertMay: jest.fn() } },
         { provide: AssetCustodyService, useValue: custody },
+        { provide: OBJECT_STORE, useValue: { head: async () => ({ exists: true, sizeBytes: 1000 }) } },
       ],
     }).compile();
     service = module.get(AssetExpenseService);
@@ -306,6 +308,7 @@ describe('reviewing one', () => {
         { provide: ConfigService, useValue: { get: (_k: string, d?: string) => d ?? '' } },
         { provide: AssetAccessService, useValue: { assertMay: jest.fn() } },
         { provide: AssetCustodyService, useValue: { heldBy: jest.fn() } },
+        { provide: OBJECT_STORE, useValue: null },
       ],
     }).compile();
     service = module.get(AssetExpenseService);

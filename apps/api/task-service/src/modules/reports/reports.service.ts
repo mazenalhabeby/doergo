@@ -6,11 +6,10 @@ import {
   Inject,
   Logger,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { OBJECT_STORE, ObjectStore, newObjectKey, requireObjectStore } from '@hbcfield/shared/storage';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { MediaSigner } from '../../common/storage/media-signer.service';
 import {
   TaskStatus,
   TaskEventType,
@@ -34,31 +33,31 @@ const REPORT_ALLOWED_TYPES = [
   'image/heif',
 ];
 const REPORT_MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const REPORT_UPLOAD_TTL_SECONDS = 3600;
+
+/**
+ * Where a report photo may live: this organization's report prefix, or the
+ * pre-organization layout for objects presigned before it existed.
+ */
+export function reportKeyPrefixes(organizationId: string, reportId: string): string[] {
+  return [`${organizationId}/reports/${reportId}/`, `reports/${reportId}/`];
+}
 
 @Injectable()
 export class ReportsService {
   private readonly logger = new Logger(ReportsService.name);
-  private readonly s3Client: S3Client;
-  private readonly s3Bucket: string;
-  private readonly s3Endpoint: string;
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly configService: ConfigService,
+    @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+    private readonly media: MediaSigner,
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
-  ) {
-    this.s3Endpoint = this.configService.get<string>('S3_ENDPOINT', 'https://hel1.your-objectstorage.com');
-    this.s3Bucket = this.configService.get<string>('S3_BUCKET', 'hbcfield');
+  ) {}
 
-    this.s3Client = new S3Client({
-      endpoint: this.s3Endpoint,
-      region: this.configService.get<string>('S3_REGION', 'eu-central-1'),
-      credentials: {
-        accessKeyId: this.configService.get<string>('S3_ACCESS_KEY', ''),
-        secretAccessKey: this.configService.get<string>('S3_SECRET_KEY', ''),
-      },
-      forcePathStyle: true,
-    });
+  /** A report as a client receives it — photos behind signed links. */
+  private async withSignedAttachments<T extends { attachments?: any[] } | null>(report: T): Promise<T> {
+    if (!report || !report.attachments) return report;
+    return { ...report, attachments: await this.media.signAll(report.attachments) };
   }
 
   /**
@@ -239,7 +238,7 @@ export class ReportsService {
     // A task with no service report is a normal state (report only exists after
     // completion) — return null rather than throwing, so the endpoint responds
     // 200 with data:null instead of an error the clients have to special-case.
-    return success(report ?? null);
+    return success(await this.withSignedAttachments(report ?? null));
   }
 
   /**
@@ -372,7 +371,7 @@ export class ReportsService {
       },
     });
 
-    return success(updatedReport);
+    return success(await this.withSignedAttachments(updatedReport));
   }
 
   /**
@@ -500,13 +499,19 @@ export class ReportsService {
     reportId: string;
     type: 'BEFORE' | 'AFTER';
     fileName: string;
-    fileUrl: string;
-    fileSize: number;
+    /** The key the presign returned. Sent by apps newer than 1.0.5. */
+    fileKey?: string;
+    /** LEGACY: the URL app 1.0.5 sends instead of the key. */
+    fileUrl?: string;
+    /** Absent from app 1.0.5; storage's own content type is used then. */
+    fileType?: string;
+    fileSize?: number;
     caption?: string;
     userId: string;
     userRole: string;
     organizationId: string;
   }) {
+    const store = requireObjectStore(this.store);
     const report = await this.prisma.serviceReport.findUnique({
       where: { id: data.reportId },
     });
@@ -523,18 +528,31 @@ export class ReportsService {
       throw new ForbiddenException('You can only add attachments to reports in your organization');
     }
 
-    // The confirmed URL must be the presigned object for THIS report — never an
-    // arbitrary client URL (would be stored XSS/phishing in the report + PDF).
-    // Bound the size and name too. (Sec audit H5, mirrors attachments.service.)
-    const expectedPrefix = `${this.s3Endpoint}/${this.s3Bucket}/reports/${data.reportId}/`;
-    if (typeof data.fileUrl !== 'string' || !data.fileUrl.startsWith(expectedPrefix)) {
-      throw new BadRequestException('Invalid file URL');
-    }
-    if (typeof data.fileSize !== 'number' || data.fileSize <= 0 || data.fileSize > REPORT_MAX_FILE_SIZE) {
-      throw new BadRequestException('Invalid file size');
+    // The confirmed object must be the presigned one for THIS report — never an
+    // arbitrary key, which would put another report's (or tenant's) file into
+    // this report's gallery and PDF behind a signed link. (Sec audit H5.)
+    const key = typeof data.fileKey === 'string' && data.fileKey ? data.fileKey : store.keyFromUrl(data.fileUrl);
+    if (!key || key.includes('..') || !reportKeyPrefixes(report.organizationId, data.reportId).some((p) => key.startsWith(p))) {
+      throw new BadRequestException('Invalid file');
     }
     if (!data.fileName || data.fileName.length > 255) {
       throw new BadRequestException('Invalid file name');
+    }
+
+    // Look at the object rather than believing the request: it must exist, be
+    // an image, and be within the limit. An oversized one is removed.
+    const object = await store.head(key);
+    if (!object.exists) {
+      throw new BadRequestException('The upload did not reach storage. Please try again.');
+    }
+    const mimeType = (data.fileType || object.contentType || '').toLowerCase();
+    if (!REPORT_ALLOWED_TYPES.includes(mimeType)) {
+      await store.delete(key);
+      throw new BadRequestException('Report attachments must be images.');
+    }
+    if (object.sizeBytes <= 0 || object.sizeBytes > REPORT_MAX_FILE_SIZE) {
+      await store.delete(key);
+      throw new BadRequestException('File is empty or larger than 20 MB');
     }
 
     const attachment = await this.prisma.reportAttachment.create({
@@ -542,13 +560,16 @@ export class ReportsService {
         reportId: data.reportId,
         type: data.type,
         fileName: data.fileName,
-        fileUrl: data.fileUrl,
-        fileSize: data.fileSize,
+        fileKey: key,
+        // Written for app 1.0.5 only; nothing server-side reads it any more.
+        fileUrl: store.privateUrl(key),
+        mimeType,
+        fileSize: object.sizeBytes,
         caption: data.caption,
       },
     });
 
-    return success(attachment);
+    return success(await this.media.sign(attachment));
   }
 
   /**
@@ -576,20 +597,10 @@ export class ReportsService {
       throw new ForbiddenException('You can only delete attachments from reports you created');
     }
 
-    // Extract S3 key from the file URL
-    const fileUrl = attachment.fileUrl;
-    const bucketPrefix = `${this.s3Endpoint}/${this.s3Bucket}/`;
-    if (fileUrl.startsWith(bucketPrefix)) {
-      const fileKey = fileUrl.slice(bucketPrefix.length);
-      try {
-        await this.s3Client.send(new DeleteObjectCommand({
-          Bucket: this.s3Bucket,
-          Key: fileKey,
-        }));
-      } catch (err) {
-        this.logger.warn(`Failed to delete S3 object ${fileKey}: ${err}`);
-        // Continue with DB deletion even if S3 delete fails
-      }
+    // Remove the object; continue with the row even if cleanup fails.
+    const fileKey = this.media.keyOf(attachment);
+    if (fileKey && this.store && !(await this.store.delete(fileKey))) {
+      this.logger.warn(`Failed to delete stored object ${fileKey}`);
     }
 
     await this.prisma.reportAttachment.delete({
@@ -639,27 +650,22 @@ export class ReportsService {
       throw new BadRequestException('Invalid file name');
     }
 
-    // Sanitize filename: remove path separators and special chars
-    const safeName = data.fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const fileKey = `reports/${data.reportId}/${Date.now()}-${safeName}`;
-    const expiresIn = 3600; // 1 hour
-
-    const command = new PutObjectCommand({
-      Bucket: this.s3Bucket,
-      Key: fileKey,
-      ContentType: data.fileType,
+    const store = requireObjectStore(this.store);
+    // {org}/reports/{reportId}/{uuid}.{ext} — no filename, no timestamp.
+    const fileKey = newObjectKey({
+      organizationId: report.organizationId,
+      kind: 'reports',
+      parentId: data.reportId,
+      mime: data.fileType.toLowerCase(),
     });
-
-    const uploadUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
-
-    // Build the public file URL for storing in DB after upload
-    const fileUrl = `${this.s3Endpoint}/${this.s3Bucket}/${fileKey}`;
+    const upload = await store.presignUpload(fileKey, data.fileType, undefined, REPORT_UPLOAD_TTL_SECONDS);
 
     return success({
-      uploadUrl,
+      uploadUrl: upload.url,
       fileKey,
-      fileUrl,
-      expiresIn,
+      // LEGACY: app 1.0.5 echoes this back on confirm. Not a readable URL.
+      fileUrl: store.privateUrl(fileKey),
+      expiresIn: REPORT_UPLOAD_TTL_SECONDS,
     });
   }
 

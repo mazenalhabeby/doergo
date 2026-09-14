@@ -1,10 +1,8 @@
 import {
   BadRequestException, ForbiddenException, Inject, Injectable, Logger, NotFoundException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { OBJECT_STORE, ObjectStore, extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
 import { randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -14,10 +12,6 @@ import { AssetAccessService } from './asset-access.service';
 import { AssetContractService, type ContractFields } from './asset-contract.service';
 
 const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf'];
-const EXT: Record<string, string> = {
-  'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
-  'image/heic': 'heic', 'image/heif': 'heif', 'application/pdf': 'pdf',
-};
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
 /** One person cannot fill somebody's queue by holding down the shutter. */
 const MAX_OPEN_PER_MEMBER = 10;
@@ -56,33 +50,27 @@ export const PROPOSAL_STATUS = {
 @Injectable()
 export class AssetProposalService {
   private readonly logger = new Logger(AssetProposalService.name);
-  private readonly s3: S3Client;
-  private readonly bucket: string;
-  private readonly endpoint: string;
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService,
     private readonly access: AssetAccessService,
     private readonly contracts: AssetContractService,
     private readonly routing: NotificationRoutingService,
     @Inject('NOTIFICATION_SERVICE') private readonly notifications: ClientProxy,
-  ) {
-    this.endpoint = this.config.get<string>('S3_ENDPOINT', 'https://hel1.your-objectstorage.com');
-    this.bucket = this.config.get<string>('S3_BUCKET', 'hbcfield');
-    this.s3 = new S3Client({
-      endpoint: this.endpoint,
-      region: this.config.get<string>('S3_REGION', 'eu-central'),
-      credentials: {
-        accessKeyId: this.config.get<string>('S3_ACCESS_KEY', ''),
-        secretAccessKey: this.config.get<string>('S3_SECRET_KEY', ''),
-      },
-      forcePathStyle: true,
-    });
-  }
+    @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+  ) {}
 
-  private prefix(organizationId: string): string {
-    return `${organizationId}/asset-proposals/`;
+  /**
+   * Where a member's pages live.
+   *
+   * ⚠️ Per MEMBER, not per organization. The prefix used to be the organization's,
+   * so the submit check accepted any page uploaded by anyone in it: a member who
+   * obtained a colleague's key could raise a proposal on it and then open the
+   * colleague's rental agreement — home address, licence number, bank details —
+   * through their own proposal's link.
+   */
+  private prefix(organizationId: string, userId: string): string {
+    return `${organizationId}/asset-proposals/${userId}/`;
   }
 
   // ── The page ───────────────────────────────────────────────────────────────
@@ -100,13 +88,9 @@ export class AssetProposalService {
 
     // Never taken from the client: a filename is attacker-controlled and this
     // one becomes an object key.
-    const key = `${this.prefix(data.organizationId)}${randomUUID()}.${EXT[data.mimeType] ?? 'bin'}`;
-    const uploadUrl = await getSignedUrl(
-      this.s3,
-      new PutObjectCommand({ Bucket: this.bucket, Key: key, ContentType: data.mimeType }),
-      { expiresIn: 900 },
-    );
-    return success({ uploadUrl, fileKey: key, expiresIn: 900, maxFileSize: MAX_FILE_SIZE });
+    const key = `${this.prefix(data.organizationId, data.userId)}${randomUUID()}.${extensionForMime(data.mimeType)}`;
+    const upload = await requireObjectStore(this.store).presignUpload(key, data.mimeType, undefined, 900);
+    return success({ uploadUrl: upload.url, fileKey: key, expiresIn: 900, maxFileSize: MAX_FILE_SIZE });
   }
 
   /**
@@ -128,11 +112,10 @@ export class AssetProposalService {
     if (p.raisedById !== data.userId && !data.canManageAssets) {
       throw new NotFoundException('No document on that');
     }
-    const url = await getSignedUrl(
-      this.s3,
-      new GetObjectCommand({ Bucket: this.bucket, Key: p.fileKey }),
-      { expiresIn: 600 },
-    );
+    const url = await requireObjectStore(this.store).presignDownload(p.fileKey, undefined, 600, {
+      inline: !!p.fileMime && ALLOWED.includes(p.fileMime),
+      contentType: p.fileMime ?? undefined,
+    });
     return success({ url, expiresIn: 600, mimeType: p.fileMime });
   }
 
@@ -185,9 +168,12 @@ export class AssetProposalService {
     // The key must be one WE presigned, for THIS organization.
     let fileKey: string | null = null;
     if (data.fileKey) {
-      if (!data.fileKey.startsWith(this.prefix(data.organizationId))) {
+      if (data.fileKey.includes('..') || !data.fileKey.startsWith(this.prefix(data.organizationId, data.userId))) {
         throw new BadRequestException('Invalid document');
       }
+      const object = await requireObjectStore(this.store).head(data.fileKey);
+      if (!object.exists) throw new BadRequestException('The page did not finish uploading — please try again');
+      if (object.sizeBytes <= 0 || object.sizeBytes > MAX_FILE_SIZE) throw new BadRequestException('That file is too large');
       fileKey = data.fileKey;
     }
 
@@ -527,11 +513,7 @@ export class AssetProposalService {
 
   /** Remove the page behind a proposal nobody needs any more. Best effort. */
   async forgetDocument(key: string | null | undefined): Promise<void> {
-    if (!key) return;
-    try {
-      await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
-    } catch (e) {
-      this.logger.warn(`Could not remove proposal document ${key}: ${(e as Error).message}`);
-    }
+    if (!key || !this.store) return;
+    if (!(await this.store.delete(key))) this.logger.warn(`Could not remove proposal document ${key}`);
   }
 }

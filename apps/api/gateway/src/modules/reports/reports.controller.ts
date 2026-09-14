@@ -1,3 +1,4 @@
+import { PresignUploadDto, ConfirmReportAttachmentDto } from '../../common/dto/upload.dto';
 import {
   Controller,
   Get,
@@ -143,7 +144,7 @@ export class ReportsController {
   @ApiParam({ name: 'id', description: 'Report ID' })
   async getPresignedUrl(
     @Param('id') id: string,
-    @Body() body: { fileName: string; fileType: string },
+    @Body() body: PresignUploadDto,
     @Request() req: any,
   ) {
     return this.reportsQueueService.getPresignedUrl({
@@ -168,18 +169,18 @@ export class ReportsController {
   @ApiParam({ name: 'id', description: 'Report ID' })
   async addAttachment(
     @Param('id') id: string,
-    @Body() body: {
-      type: 'BEFORE' | 'AFTER';
-      fileName: string;
-      fileUrl: string;
-      fileSize: number;
-      caption?: string;
-    },
+    @Body() body: ConfirmReportAttachmentDto,
     @Request() req: any,
   ) {
     return this.reportsQueueService.addAttachment({
+      // Named fields only — the id being authorised is the path's, never the body's.
       reportId: id,
-      ...body,
+      type: body.type,
+      fileName: body.fileName,
+      fileKey: body.fileKey,
+      fileUrl: body.fileUrl,
+      fileType: body.fileType,
+      caption: body.caption,
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,

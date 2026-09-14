@@ -1,9 +1,8 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { Inject, Injectable, Logger, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { OBJECT_STORE, ObjectStore, extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { MediaSigner } from '../../common/storage/media-signer.service';
 import { success } from '@hbcfield/shared';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
@@ -12,11 +11,7 @@ const ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'application/msword', 'applic
 const ALLOWED_FILE_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOCUMENT_TYPES];
 const BODY_MAX = 5000;
 const BATCH_MAX = 200;
-const EXT_BY_MIME: Record<string, string> = {
-  'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp',
-  'image/heic': 'heic', 'image/heif': 'heif', 'application/pdf': 'pdf', 'text/plain': 'txt',
-  'application/msword': 'doc', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
-};
+const UPLOAD_TTL_SECONDS = 3600;
 
 type Session = { id: string; userId: string; organizationId: string; clockInAt: Date };
 
@@ -29,26 +24,12 @@ type Session = { id: string; userId: string; organizationId: string; clockInAt: 
 @Injectable()
 export class WorklogService {
   private readonly logger = new Logger(WorklogService.name);
-  private readonly s3Client: S3Client;
-  private readonly s3Bucket: string;
-  private readonly s3Endpoint: string;
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly configService: ConfigService,
-  ) {
-    this.s3Endpoint = this.configService.get<string>('S3_ENDPOINT', 'https://hel1.your-objectstorage.com');
-    this.s3Bucket = this.configService.get<string>('S3_BUCKET', 'hbcfield');
-    this.s3Client = new S3Client({
-      endpoint: this.s3Endpoint,
-      region: this.configService.get<string>('S3_REGION', 'eu-central'),
-      credentials: {
-        accessKeyId: this.configService.get<string>('S3_ACCESS_KEY', ''),
-        secretAccessKey: this.configService.get<string>('S3_SECRET_KEY', ''),
-      },
-      forcePathStyle: true,
-    });
-  }
+    @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+    private readonly media: MediaSigner,
+  ) {}
 
   // ── Ownership ──────────────────────────────────────────────────────────────
 
@@ -94,19 +75,15 @@ export class WorklogService {
   }
 
   // ── The object key: {orgId}/attendance/{YYYY}/{MM}/{DD}/{userId}/{timeEntryId}/{uuid}.{ext}
-  private objectKey(te: Session, mime: string): { key: string; url: string } {
-    const d = te.clockInAt ?? new Date();
-    const p = (n: number) => String(n).padStart(2, '0');
-    const ext = EXT_BY_MIME[mime] ?? 'bin';
-    const key = `${te.organizationId}/attendance/${d.getUTCFullYear()}/${p(d.getUTCMonth() + 1)}/${p(d.getUTCDate())}/${te.userId}/${te.id}/${randomUUID()}.${ext}`;
-    return { key, url: `${this.s3Endpoint}/${this.s3Bucket}/${key}` };
+  private objectKey(te: Session, mime: string): string {
+    return `${this.sessionPrefix(te)}${randomUUID()}.${extensionForMime(mime)}`;
   }
 
-  /** Every attachment for this session lives under this prefix (confirm guard). */
+  /** Every attachment for this session lives under this key prefix (confirm guard). */
   private sessionPrefix(te: Session): string {
     const d = te.clockInAt ?? new Date();
     const p = (n: number) => String(n).padStart(2, '0');
-    return `${this.s3Endpoint}/${this.s3Bucket}/${te.organizationId}/attendance/${d.getUTCFullYear()}/${p(d.getUTCMonth() + 1)}/${p(d.getUTCDate())}/${te.userId}/${te.id}/`;
+    return `${te.organizationId}/attendance/${d.getUTCFullYear()}/${p(d.getUTCMonth() + 1)}/${p(d.getUTCDate())}/${te.userId}/${te.id}/`;
   }
 
   private cleanBody(body: unknown): string {
@@ -204,9 +181,7 @@ export class WorklogService {
           author: { id: authorId, name: nameById.get(authorId) ?? 'Member' },
           // true when a manager/admin (not the session's member) wrote it.
           byManager: authorId !== te.userId,
-          attachments: await Promise.all(
-            n.attachments.map(async (a) => ({ ...a, url: await this.signedGet(a.fileKey) })),
-          ),
+          attachments: await this.media.signAll(n.attachments),
         };
       }),
     );
@@ -232,46 +207,59 @@ export class WorklogService {
     }
     if (!data.fileName || data.fileName.length > 255) throw new BadRequestException('Invalid file name');
 
-    const { key, url } = this.objectKey(te, data.mimeType);
-    const command = new PutObjectCommand({ Bucket: this.s3Bucket, Key: key, ContentType: data.mimeType });
-    const uploadUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
-    return success({ uploadUrl, fileKey: key, fileUrl: url, expiresIn: 3600, maxFileSize: MAX_FILE_SIZE });
+    const store = requireObjectStore(this.store);
+    const key = this.objectKey(te, data.mimeType);
+    const upload = await store.presignUpload(key, data.mimeType, undefined, UPLOAD_TTL_SECONDS);
+    return success({
+      uploadUrl: upload.url,
+      fileKey: key,
+      // LEGACY: app 1.0.5 echoes this back on confirm. Not a readable URL.
+      fileUrl: store.privateUrl(key),
+      expiresIn: UPLOAD_TTL_SECONDS,
+      maxFileSize: MAX_FILE_SIZE,
+    });
   }
 
   async confirmAttachment(data: {
     organizationId: string; noteId: string; callerUserId: string; canManage?: boolean;
     /** Spaces the caller oversees; undefined = org-wide, [] = none. */
     manageSpaceIds?: string[];
-    fileKey?: string; fileUrl: string; fileName: string; fileSize: number; mimeType: string; width?: number; height?: number;
+    fileKey?: string; fileUrl?: string; fileName: string; fileSize?: number; mimeType: string; width?: number; height?: number;
   }) {
+    const store = requireObjectStore(this.store);
     const { note, te } = await this.sessionForNote(data.noteId, data.organizationId, data.callerUserId, !!data.canManage, data.manageSpaceIds); // owner or manager (canManage)
     // The confirmed object MUST live under THIS session's prefix (anti-IDOR / cross-tenant).
-    if (typeof data.fileUrl !== 'string' || !data.fileUrl.startsWith(this.sessionPrefix(te))) {
-      throw new BadRequestException('Invalid file URL');
-    }
-    // `0` = size unknown (some mobile pickers/cameras don't report it) — accept it;
-    // only reject a negative or over-limit size. The object is already in S3 at this point.
-    if (typeof data.fileSize !== 'number' || data.fileSize < 0 || data.fileSize > MAX_FILE_SIZE) {
-      throw new BadRequestException('Invalid file size');
+    const fileKey = typeof data.fileKey === 'string' && data.fileKey ? data.fileKey : store.keyFromUrl(data.fileUrl);
+    if (!fileKey || fileKey.includes('..') || !fileKey.startsWith(this.sessionPrefix(te))) {
+      throw new BadRequestException('Invalid file');
     }
     if (!ALLOWED_FILE_TYPES.includes(data.mimeType)) throw new BadRequestException('File type not allowed');
     if (!data.fileName || data.fileName.length > 255) throw new BadRequestException('Invalid file name');
 
-    const fileKey = data.fileKey && data.fileUrl.endsWith(data.fileKey) ? data.fileKey : data.fileUrl.slice(`${this.s3Endpoint}/${this.s3Bucket}/`.length);
+    // The size comes from storage — some pickers report 0 or nothing — and an
+    // upload that never landed cannot become a row.
+    const object = await store.head(fileKey);
+    if (!object.exists) throw new BadRequestException('The upload did not reach storage. Please try again.');
+    if (object.sizeBytes <= 0 || object.sizeBytes > MAX_FILE_SIZE) {
+      await store.delete(fileKey);
+      throw new BadRequestException('File is empty or larger than 20 MB');
+    }
+
     const att = await this.prisma.timeEntryNoteAttachment.create({
       data: {
         noteId: note.id,
         organizationId: data.organizationId,
         fileKey,
-        fileUrl: data.fileUrl,
+        // Written for app 1.0.5 only; nothing server-side reads it any more.
+        fileUrl: store.privateUrl(fileKey),
         fileName: data.fileName,
-        fileSize: data.fileSize,
+        fileSize: object.sizeBytes,
         mimeType: data.mimeType,
         width: typeof data.width === 'number' ? data.width : null,
         height: typeof data.height === 'number' ? data.height : null,
       },
     });
-    return success({ ...att, url: await this.signedGet(att.fileKey) });
+    return success(await this.media.sign(att));
   }
 
   async deleteAttachment(data: { organizationId: string; attachmentId: string; callerUserId: string; canManage?: boolean; manageSpaceIds?: string[] }) {
@@ -286,21 +274,12 @@ export class WorklogService {
     return success({ success: true });
   }
 
-  // ── S3 helpers ───────────────────────────────────────────────────────────────
+  // ── Storage helpers ─────────────────────────────────────────────────────────
 
-  private async signedGet(key: string): Promise<string> {
-    try {
-      return await getSignedUrl(this.s3Client, new GetObjectCommand({ Bucket: this.s3Bucket, Key: key }), { expiresIn: 3600 });
-    } catch {
-      return `${this.s3Endpoint}/${this.s3Bucket}/${key}`;
-    }
-  }
-
+  /** Never fails the user's delete: an orphaned object costs a fraction of a cent. */
   private async deleteObject(key: string): Promise<void> {
-    try {
-      await this.s3Client.send(new DeleteObjectCommand({ Bucket: this.s3Bucket, Key: key }));
-    } catch (e) {
-      this.logger.warn(`Failed to delete S3 object ${key}: ${e instanceof Error ? e.message : e}`);
+    if (this.store && !(await this.store.delete(key))) {
+      this.logger.warn(`Failed to delete stored object ${key}`);
     }
   }
 }

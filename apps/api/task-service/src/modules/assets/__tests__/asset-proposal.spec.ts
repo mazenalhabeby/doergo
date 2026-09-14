@@ -1,3 +1,4 @@
+import { OBJECT_STORE } from '@hbcfield/shared/storage';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -23,6 +24,8 @@ describe('AssetProposalService', () => {
   const contracts = { apply: jest.fn() };
   const routing = { resolveWatchers: jest.fn() };
   const notifications = { emit: jest.fn() };
+  // Every uploaded page exists and is small, unless a test says otherwise.
+  const store = { head: jest.fn(async () => ({ exists: true, sizeBytes: 1000 })) };
 
   const prisma: any = {
     assetProposal: {
@@ -54,6 +57,7 @@ describe('AssetProposalService', () => {
         { provide: AssetContractService, useValue: contracts },
         { provide: NotificationRoutingService, useValue: routing },
         { provide: 'NOTIFICATION_SERVICE', useValue: notifications },
+        { provide: OBJECT_STORE, useValue: store },
       ],
     }).compile();
     service = module.get(AssetProposalService);
@@ -104,10 +108,22 @@ describe('AssetProposalService', () => {
         .rejects.toBeInstanceOf(BadRequestException);
     });
 
-    it('accepts one under this organization’s own prefix', async () => {
-      const key = 'org1/asset-proposals/abc.jpg';
+    it('accepts one under this member’s own prefix', async () => {
+      const key = 'org1/asset-proposals/u-ahmed/abc.jpg';
       const res: any = await raise({ fileKey: key, fileName: 'c.jpg', fileMime: 'image/jpeg' });
       expect(res.data.fileKey).toBe(key);
+    });
+
+    it('refuses a colleague’s page in the same organization', async () => {
+      // ⚠️ The prefix used to be the organization's, so any member's upload was accepted.
+      await expect(raise({ fileKey: 'org1/asset-proposals/u-colleague/abc.jpg' }))
+        .rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('refuses a page that never finished uploading', async () => {
+      store.head.mockResolvedValueOnce({ exists: false, sizeBytes: 0 });
+      await expect(raise({ fileKey: 'org1/asset-proposals/u-ahmed/abc.jpg' }))
+        .rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('stops one person filling the queue', async () => {

@@ -1,8 +1,6 @@
-import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { BadRequestException, ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { OBJECT_STORE, ObjectStore, extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
 import { pdfToLines } from './pdf-lines';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, normalizeKindShape, findMoneyCategory, parseReceipt } from '@hbcfield/shared';
@@ -11,10 +9,6 @@ import { AssetCustodyService } from './asset-custody.service';
 
 /** A receipt is a photograph or a PDF. Nothing else needs to reach this bucket. */
 const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf'];
-const EXT: Record<string, string> = {
-  'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
-  'image/heic': 'heic', 'image/heif': 'heif', 'application/pdf': 'pdf',
-};
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
 /** A receipt older than this is not a field expense, it is bookkeeping. */
 const MAX_BACKDATE_DAYS = 120;
@@ -44,28 +38,13 @@ export const EXPENSE_STATUS = { SUBMITTED: 'SUBMITTED', RECORDED: 'RECORDED', RE
 @Injectable()
 export class AssetExpenseService {
   private readonly logger = new Logger(AssetExpenseService.name);
-  private readonly s3: S3Client;
-  private readonly bucket: string;
-  private readonly endpoint: string;
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService,
     private readonly access: AssetAccessService,
     private readonly custody: AssetCustodyService,
-  ) {
-    this.endpoint = this.config.get<string>('S3_ENDPOINT', 'https://hel1.your-objectstorage.com');
-    this.bucket = this.config.get<string>('S3_BUCKET', 'hbcfield');
-    this.s3 = new S3Client({
-      endpoint: this.endpoint,
-      region: this.config.get<string>('S3_REGION', 'eu-central'),
-      credentials: {
-        accessKeyId: this.config.get<string>('S3_ACCESS_KEY', ''),
-        secretAccessKey: this.config.get<string>('S3_SECRET_KEY', ''),
-      },
-      forcePathStyle: true,
-    });
-  }
+    @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+  ) {}
 
   /** Everything a receipt for this asset lives under. Also the anti-IDOR check. */
   private prefix(organizationId: string, assetId: string): string {
@@ -151,13 +130,9 @@ export class AssetExpenseService {
 
     // The name is never taken from the client: a filename is attacker-controlled
     // and this one becomes an object key.
-    const key = `${this.prefix(data.organizationId, data.id)}${randomUUID()}.${EXT[data.mimeType] ?? 'bin'}`;
-    const uploadUrl = await getSignedUrl(
-      this.s3,
-      new PutObjectCommand({ Bucket: this.bucket, Key: key, ContentType: data.mimeType }),
-      { expiresIn: 900 },
-    );
-    return success({ uploadUrl, fileKey: key, expiresIn: 900, maxFileSize: MAX_FILE_SIZE });
+    const key = `${this.prefix(data.organizationId, data.id)}${randomUUID()}.${extensionForMime(data.mimeType)}`;
+    const upload = await requireObjectStore(this.store).presignUpload(key, data.mimeType, undefined, 900);
+    return success({ uploadUrl: upload.url, fileKey: key, expiresIn: 900, maxFileSize: MAX_FILE_SIZE });
   }
 
   /**
@@ -198,7 +173,7 @@ export class AssetExpenseService {
       the same check `submit` makes. Without it the field is a reader for any
       object in the bucket whose key somebody can guess.
     */
-    if (!data.fileKey.startsWith(this.prefix(data.organizationId, data.id))) {
+    if (data.fileKey.includes('..') || !data.fileKey.startsWith(this.prefix(data.organizationId, data.id))) {
       throw new BadRequestException('That file does not belong to this asset');
     }
     if (!data.fileKey.endsWith('.pdf')) {
@@ -207,12 +182,14 @@ export class AssetExpenseService {
       return success({ read: false, reason: 'NOT_A_PDF' as const });
     }
 
+    const store = requireObjectStore(this.store);
+    // Size first: a PDF parser handed a 2 GB object is a memory problem, not a receipt.
+    const object = await store.head(data.fileKey);
+    if (!object.exists) throw new BadRequestException('The upload did not complete — please try again');
+    if (object.sizeBytes > MAX_FILE_SIZE) throw new BadRequestException('That file is too large to be a receipt');
     let bytes: Buffer;
     try {
-      const obj = await this.s3.send(
-        new GetObjectCommand({ Bucket: this.bucket, Key: data.fileKey }),
-      );
-      bytes = Buffer.from(await obj.Body!.transformToByteArray());
+      bytes = await store.get(data.fileKey);
     } catch {
       throw new BadRequestException('The upload did not complete — please try again');
     }
@@ -254,11 +231,11 @@ export class AssetExpenseService {
     if (entry.authorId !== data.userId && !data.canManageAssets) {
       this.access.assertMay(data as any, 'view assets');
     }
-    const url = await getSignedUrl(
-      this.s3,
-      new GetObjectCommand({ Bucket: this.bucket, Key: entry.receiptKey }),
-      { expiresIn: 600 },
-    );
+    const url = await requireObjectStore(this.store).presignDownload(entry.receiptKey, undefined, 600, {
+      // A photograph or a PDF renders; anything else was never accepted.
+      inline: !!entry.receiptMime && ALLOWED.includes(entry.receiptMime),
+      contentType: entry.receiptMime ?? undefined,
+    });
     return success({ url, expiresIn: 600, mimeType: entry.receiptMime });
   }
 
@@ -294,9 +271,13 @@ export class AssetExpenseService {
     // Anything else is a key from somewhere the caller should not be reading.
     let receiptKey: string | null = null;
     if (data.receiptKey) {
-      if (!data.receiptKey.startsWith(this.prefix(data.organizationId, data.id))) {
+      if (data.receiptKey.includes('..') || !data.receiptKey.startsWith(this.prefix(data.organizationId, data.id))) {
         throw new BadRequestException('Invalid receipt');
       }
+      // The slip must actually be there, and be a slip-sized file.
+      const object = await requireObjectStore(this.store).head(data.receiptKey);
+      if (!object.exists) throw new BadRequestException('The receipt upload did not finish — please try again');
+      if (object.sizeBytes <= 0 || object.sizeBytes > MAX_FILE_SIZE) throw new BadRequestException('That receipt file is too large');
       receiptKey = data.receiptKey;
     }
 
@@ -419,11 +400,7 @@ export class AssetExpenseService {
 
   /** Remove the object behind a deleted entry. Best effort, never blocking. */
   async forgetReceipt(key: string | null | undefined): Promise<void> {
-    if (!key) return;
-    try {
-      await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
-    } catch (e) {
-      this.logger.warn(`Could not remove receipt ${key}: ${(e as Error).message}`);
-    }
+    if (!key || !this.store) return;
+    if (!(await this.store.delete(key))) this.logger.warn(`Could not remove receipt ${key}`);
   }
 }

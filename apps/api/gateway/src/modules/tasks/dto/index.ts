@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsEnum, IsOptional, IsDateString, IsNumber, IsNotEmpty, MaxLength, IsArray, IsBoolean, IsInt, Min, Max, Matches, IsUrl, ValidateIf } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsDateString, IsNumber, IsNotEmpty, MaxLength, IsArray, IsBoolean, IsInt, Min, Max } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
 import { TaskPriority, TaskAssigneeRole, DependencyType, TASK_TITLE_MAX_LENGTH, TASK_DESCRIPTION_MAX_LENGTH, ATTENDANCE_CONSTANTS } from '@hbcfield/shared';
 
@@ -241,62 +241,5 @@ export class AddCommentDto {
   content!: string;
 }
 
-/**
- * Ask for an upload link for a task attachment.
- *
- * The MIME type is checked against the allow-list in the task service; here it
- * is only shaped, so a malformed value never reaches the queue.
- */
-export class PresignAttachmentDto {
-  @ApiProperty({ example: 'boiler.jpg' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(255)
-  fileName: string;
-
-  @ApiProperty({ example: 'image/jpeg' })
-  @IsString()
-  @Matches(/^[a-z]+\/[a-z0-9.+-]+$/i)
-  @MaxLength(120)
-  fileType: string;
-}
-
-/**
- * Confirm an upload. Newer apps send the `fileKey` the presign returned; app
- * 1.0.5 sends the legacy `fileUrl`. One of the two is required.
- *
- * `fileSize` is accepted and ignored — the server reads the real size from
- * storage rather than believing it.
- */
-export class ConfirmAttachmentDto {
-  @ApiProperty({ example: 'boiler.jpg' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(255)
-  fileName: string;
-
-  @ApiPropertyOptional({ example: 'org_1/attachments/task_1/2b1f….jpg' })
-  @ValidateIf((o) => !o.fileUrl)
-  @IsString()
-  @MaxLength(512)
-  @Matches(/^[A-Za-z0-9_\-./]+$/)
-  fileKey?: string;
-
-  @ApiPropertyOptional({ deprecated: true })
-  @ValidateIf((o) => !o.fileKey)
-  @IsUrl({ require_protocol: true, protocols: ['https', 'http'], require_tld: false })
-  @MaxLength(1024)
-  fileUrl?: string;
-
-  @ApiProperty({ example: 'image/jpeg' })
-  @IsString()
-  @Matches(/^[a-z]+\/[a-z0-9.+-]+$/i)
-  @MaxLength(120)
-  fileType: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  fileSize?: number;
-}
+// Upload DTOs are shared by every route that stores a file.
+export { PresignUploadDto as PresignAttachmentDto, ConfirmUploadDto as ConfirmAttachmentDto } from '../../../common/dto/upload.dto';

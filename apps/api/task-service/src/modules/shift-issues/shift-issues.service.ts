@@ -1,21 +1,16 @@
 import { Injectable, Inject, Logger, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { randomUUID } from 'crypto';
-import { ConfigService } from '@nestjs/config';
 import { SERVICE_NAMES, success } from '@hbcfield/shared';
+import { OBJECT_STORE, ObjectStore, newObjectKey, requireObjectStore } from '@hbcfield/shared/storage';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { MediaSigner } from '../../common/storage/media-signer.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
 const ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'text/plain'];
 const ALLOWED_FILE_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOCUMENT_TYPES];
-const EXT_BY_MIME: Record<string, string> = {
-  'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp',
-  'image/heic': 'heic', 'image/heif': 'heif', 'application/pdf': 'pdf', 'text/plain': 'txt',
-};
+const UPLOAD_TTL_SECONDS = 3600;
 const SEVERITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 const BODY_MAX = 5000;
 
@@ -31,28 +26,14 @@ type Attachment = { fileKey: string; fileUrl: string; fileName: string; fileSize
 @Injectable()
 export class ShiftIssuesService {
   private readonly logger = new Logger(ShiftIssuesService.name);
-  private readonly s3Client: S3Client;
-  private readonly s3Bucket: string;
-  private readonly s3Endpoint: string;
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService,
     private readonly routing: NotificationRoutingService,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
-  ) {
-    this.s3Endpoint = this.config.get<string>('S3_ENDPOINT', 'https://hel1.your-objectstorage.com');
-    this.s3Bucket = this.config.get<string>('S3_BUCKET', 'hbcfield');
-    this.s3Client = new S3Client({
-      endpoint: this.s3Endpoint,
-      region: this.config.get<string>('S3_REGION', 'eu-central'),
-      credentials: {
-        accessKeyId: this.config.get<string>('S3_ACCESS_KEY', ''),
-        secretAccessKey: this.config.get<string>('S3_SECRET_KEY', ''),
-      },
-      forcePathStyle: true,
-    });
-  }
+    @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+    private readonly media: MediaSigner,
+  ) {}
 
   // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -90,40 +71,49 @@ export class ShiftIssuesService {
     return u ? `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() : '';
   }
 
-  private objectKey(organizationId: string, issueId: string, mime: string): { key: string; url: string } {
-    const ext = EXT_BY_MIME[mime] ?? 'bin';
-    const key = `${organizationId}/shift-issues/${issueId}/${randomUUID()}.${ext}`;
-    return { key, url: `${this.s3Endpoint}/${this.s3Bucket}/${key}` };
-  }
-
   private issuePrefix(organizationId: string, issueId: string): string {
-    return `${this.s3Endpoint}/${this.s3Bucket}/${organizationId}/shift-issues/${issueId}/`;
+    return `${organizationId}/shift-issues/${issueId}/`;
   }
 
-  /** Keep only attachments whose object lives under THIS issue's prefix (anti-IDOR). */
-  private cleanAttachments(issue: { id: string; organizationId: string }, attachments: unknown): Attachment[] {
+  /**
+   * Keep only attachments whose object lives under THIS issue's prefix.
+   *
+   * ⚠️ The KEY is what gets signed, so the key is what is checked. This used to
+   * check the prefix of `fileUrl` and then sign `fileKey` as sent — a member
+   * could pair a valid-looking URL with another organization's key and be handed
+   * a signed link to that organization's file. The key is now taken from the
+   * key if it passes, else read out of the legacy URL, and must pass either way.
+   */
+  cleanAttachments(issue: { id: string; organizationId: string }, attachments: unknown): Attachment[] {
     if (!Array.isArray(attachments)) return [];
     const prefix = this.issuePrefix(issue.organizationId, issue.id);
-    return attachments
-      .filter((a: any) => a && typeof a.fileUrl === 'string' && a.fileUrl.startsWith(prefix) && typeof a.fileKey === 'string')
-      .slice(0, 10)
-      .map((a: any) => ({
-        fileKey: a.fileKey, fileUrl: a.fileUrl,
+    const within = (k: unknown): k is string => typeof k === 'string' && k.startsWith(prefix) && !k.includes('..');
+    const out: Attachment[] = [];
+    for (const a of attachments.slice(0, 10) as any[]) {
+      if (!a) continue;
+      const fromUrl = this.store?.keyFromUrl(a.fileUrl) ?? null;
+      const key = within(a.fileKey) ? a.fileKey : within(fromUrl) ? fromUrl : null;
+      if (!key) continue;
+      out.push({
+        fileKey: key,
+        fileUrl: this.store ? this.store.privateUrl(key) : '',
         fileName: String(a.fileName ?? 'file').slice(0, 255),
-        fileSize: Number(a.fileSize) || 0, mimeType: String(a.mimeType ?? ''),
-        width: a.width ?? null, height: a.height ?? null,
-      }));
+        fileSize: Number(a.fileSize) || 0,
+        mimeType: ALLOWED_FILE_TYPES.includes(String(a.mimeType)) ? String(a.mimeType) : '',
+        width: typeof a.width === 'number' ? a.width : null,
+        height: typeof a.height === 'number' ? a.height : null,
+      });
+    }
+    return out;
   }
 
-  private async signAttachments(attachments: unknown): Promise<any[]> {
-    if (!Array.isArray(attachments)) return [];
-    return Promise.all(
-      attachments.map(async (a: Attachment) => ({ ...a, url: await this.signedGet(a.fileKey).catch(() => a.fileUrl) })),
-    );
-  }
-
-  private async signedGet(key: string): Promise<string> {
-    return getSignedUrl(this.s3Client, new GetObjectCommand({ Bucket: this.s3Bucket, Key: key }), { expiresIn: 3600 });
+  /**
+   * Signed links for a thread event's files — re-checked against the issue's
+   * prefix on READ as well, so a key stored before the write check existed can
+   * never be signed for someone who should not see it.
+   */
+  private async signAttachments(issue: { id: string; organizationId: string }, attachments: unknown): Promise<any[]> {
+    return this.media.signAll(this.cleanAttachments(issue, attachments));
   }
 
   /** Resolve the responsible people for the reporter (managers/space leaders). */
@@ -237,7 +227,7 @@ export class ShiftIssuesService {
     const thread = await Promise.all(events.map(async (e) => ({
       ...e,
       actorName: e.actorId ? nameById.get(e.actorId) ?? '' : '',
-      attachments: await this.signAttachments(e.attachments),
+      attachments: await this.signAttachments(issue, e.attachments),
     })));
 
     return success({
@@ -261,7 +251,7 @@ export class ShiftIssuesService {
     });
     await this.prisma.shiftIssue.update({ where: { id: issue.id }, data: { updatedAt: new Date() } });
     await this.broadcast(issue, data.callerUserId, event);
-    const signed = { ...event, attachments: await this.signAttachments(event.attachments), actorName: await this.nameOf(data.callerUserId) };
+    const signed = { ...event, attachments: await this.signAttachments(issue, event.attachments), actorName: await this.nameOf(data.callerUserId) };
     return success(signed);
   }
 
@@ -340,10 +330,17 @@ export class ShiftIssuesService {
     this.assertParticipant(issue, data.callerUserId, !!data.canManage, data.ledSpaceIds);
     if (!ALLOWED_FILE_TYPES.includes(data.mimeType)) throw new BadRequestException('File type not allowed');
     if (!data.fileName || data.fileName.length > 255) throw new BadRequestException('Invalid file name');
-    const { key, url } = this.objectKey(data.organizationId, issue.id, data.mimeType);
-    const command = new PutObjectCommand({ Bucket: this.s3Bucket, Key: key, ContentType: data.mimeType });
-    const uploadUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
-    return success({ uploadUrl, fileKey: key, fileUrl: url, expiresIn: 3600, maxFileSize: MAX_FILE_SIZE });
+    const store = requireObjectStore(this.store);
+    const key = newObjectKey({ organizationId: data.organizationId, kind: 'shift-issues', parentId: issue.id, mime: data.mimeType });
+    const upload = await store.presignUpload(key, data.mimeType, undefined, UPLOAD_TTL_SECONDS);
+    return success({
+      uploadUrl: upload.url,
+      fileKey: key,
+      // LEGACY: app 1.0.5 echoes this back in the message. Not a readable URL.
+      fileUrl: store.privateUrl(key),
+      expiresIn: UPLOAD_TTL_SECONDS,
+      maxFileSize: MAX_FILE_SIZE,
+    });
   }
 
   // Confirm is folded into addMessage/create: the client sends the attachment

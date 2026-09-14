@@ -792,7 +792,7 @@ export class TasksController {
       fileName: body.fileName,
       fileKey: body.fileKey,
       fileUrl: body.fileUrl,
-      fileType: body.fileType,
+      fileType: body.fileType ?? '',
       fileSize: body.fileSize ?? 0,
       uploadedById: req.user.id,
       userRole: req.user.role,
