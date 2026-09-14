@@ -74,7 +74,16 @@ const EMPTY_OPS: readonly OutboxOp[] = [];
  * One engine per signed-in member; switching member stops the old one before
  * the new one opens a different database.
  */
-export function OfflineProvider({ children }: { children: React.ReactNode }) {
+export function OfflineProvider({ children, variant = 'staff' }: {
+  children: React.ReactNode;
+  /**
+   * `portal`: a client of the customer portal. The same engine and database,
+   * and none of the field work — no pulls, no background sync, no photo cache,
+   * no location check-ins, no telemetry. A client writes a request somewhere
+   * without signal and reads what they already saw; that is all it needs.
+   */
+  variant?: 'staff' | 'portal';
+}) {
   const { user } = useAuth();
   const [value, setValue] = useState<OfflineValue>(UNAVAILABLE);
 
@@ -116,6 +125,20 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
           void live.flush();
         }
         setValue({ ...UNAVAILABLE, running: live });
+        return;
+      }
+
+      if (variant === 'portal') {
+        setValue({ ...UNAVAILABLE, available: true, engine: live, records, files, running: live });
+        setResponseCache({
+          get: async (key) => (await records.get<{ body: unknown }>('http', key))?.data.body,
+          put: (key, body) => records.upsert('http', { id: key, body } as never),
+        });
+        unsubscribers.push(() => setResponseCache(null));
+        unsubscribers.push(connectivity.subscribe((state) => void (state === 'online' && live.flush())));
+        const portalAppState = AppState.addEventListener('change', (st) => void (st === 'active' && live.flush()));
+        unsubscribers.push(() => portalAppState.remove());
+        void live.flush();
         return;
       }
 
@@ -208,7 +231,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
       unsubscribers.forEach((u) => u());
       engine?.stop();
     };
-  }, [user?.id, user?.organizationId, offlineMode]);
+  }, [user?.id, user?.organizationId, offlineMode, variant]);
 
   return <OfflineContext.Provider value={value}>{children}</OfflineContext.Provider>;
 }

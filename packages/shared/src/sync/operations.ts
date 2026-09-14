@@ -44,6 +44,8 @@ export const SYNC_OPERATIONS = {
   'timeOff.request': { method: 'POST', path: '/employees/:employeeId/time-off' },
   'timeOff.cancel': { method: 'DELETE', path: '/employees/time-off/:timeOffId' },
   'profile.update': { method: 'PATCH', path: '/users/me' },
+  // A client's request from the customer portal.
+  'portal.request': { method: 'POST', path: '/portal/requests' },
   // Money & communication
   'expense.submit': { method: 'POST', path: '/assets/:assetId/expenses' },
   'proposal.raise': { method: 'POST', path: '/assets/proposals' },

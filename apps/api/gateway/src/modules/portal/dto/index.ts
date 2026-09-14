@@ -1,8 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean, IsIn, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsIn, Matches, MaxLength } from 'class-validator';
+import { CLIENT_ID } from '../../../common/dto/upload.dto';
 
 /** A customer submitting a request from the portal. */
 export class SubmitRequestDto {
+  @ApiPropertyOptional({ description: 'The id the phone gave this request, so a resend returns the same one' })
+  @IsOptional()
+  @Matches(CLIENT_ID)
+  id?: string;
+
   @ApiProperty({ description: 'Intake category key (from the portal config)' })
   @IsString()
   categoryKey: string;

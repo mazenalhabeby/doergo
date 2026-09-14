@@ -5,7 +5,7 @@ import { Public, RequirePermission } from '../../common/decorators';
 import { SyncHealthStore } from './sync-health.store';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { isAdmin, spacesGranting, type SyncOperation } from '@hbcfield/shared';
+import { AllowCustomer, isAdmin, spacesGranting, type SyncOperation } from '@hbcfield/shared';
 import { SyncMediaLinksDto, SyncPullQueryDto, SyncPushDto, SyncTelemetryDto } from './dto/sync-push.dto';
 import { SyncPullGatewayService } from './sync-pull.gateway.service';
 import { SyncPushService } from './sync-push.service';
@@ -30,6 +30,13 @@ export class SyncController {
    */
   @Post('push')
   @HttpCode(200)
+  /*
+    A client of the customer portal may push too — their request written with no
+    signal. Safe by construction: every operation is replayed against its real
+    route, and the confinement guard refuses a customer on any route that is not
+    the portal's. A customer pushing task.create gets 403 for that operation.
+  */
+  @AllowCustomer()
   // Its own budget: a phone back from a day offline pushes a few batches in a
   // row, and each batch already bounds itself to 50 operations.
   @Throttle({ short: { limit: 5, ttl: 1000 }, medium: { limit: 20, ttl: 10_000 }, long: { limit: 60, ttl: 60_000 } })

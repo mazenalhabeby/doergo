@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, RefreshControl, Image, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { usePortalRequests } from '../../../src/hooks/usePortalRequests';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -37,11 +38,11 @@ export default function CustomerHome() {
 
   const configQ = useQuery({ queryKey: ['portal', 'config'], queryFn: portalApi.config });
   const unitsQ = useQuery({ queryKey: ['portal', 'units'], queryFn: portalApi.units });
-  const requestsQ = useQuery({ queryKey: ['portal', 'requests'], queryFn: portalApi.requests });
+  const { query: requestsQ, requests: portalRequests, isOnPhone } = usePortalRequests();
 
   const cfg = configQ.data;
   const unit = unitsQ.data?.[0];
-  const requests = requestsQ.data ?? [];
+  const requests = portalRequests;
   const recent = requests.slice(0, 3);
   const openCount = requests.filter((r) => !CLOSED.test(r.status)).length;
   const categories = (cfg?.categories ?? []).filter((c) => c.isActive !== false).slice(0, 8);
@@ -159,7 +160,7 @@ export default function CustomerHome() {
           <ActivityIndicator style={{ marginTop: SPACING.lg }} color={COLORS.primary} />
         ) : recent.length > 0 ? (
           recent.map((r) => (
-            <RequestRow key={r.id} title={r.title} reference={r.reference} status={r.status} icon={r.icon} color={r.color} onPress={() => router.push(`/(customer)/request/${r.id}`)} />
+            <RequestRow key={r.id} title={r.title} reference={r.reference} status={r.status} icon={r.icon} color={r.color} onPress={() => { if (!isOnPhone(r.id)) router.push(`/(customer)/request/${r.id}`); }} />
           ))
         ) : (
           <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>

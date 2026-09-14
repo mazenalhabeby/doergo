@@ -2,12 +2,11 @@ import { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { usePortalRequests } from '../../../src/hooks/usePortalRequests';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../src/lib/constants';
-import { portalApi } from '../../../src/lib/api/portal';
 import { RequestRow } from '../../../src/components/customer/request-bits';
 
 const CLOSED = /COMPLET|CLOSED|CANCEL|RESOLV|DONE/i;
@@ -19,10 +18,8 @@ export default function CustomerRequests() {
   const { colors } = useTheme();
   const { t } = useTranslation();
 
-  const q = useQuery({ queryKey: ['portal', 'requests'], queryFn: portalApi.requests });
+  const { query: q, requests: all, isOnPhone } = usePortalRequests();
   const goReport = () => router.push('/(customer)/report');
-
-  const all = useMemo(() => q.data ?? [], [q.data]);
   const openList = useMemo(() => all.filter((r) => !CLOSED.test(r.status)), [all]);
   const doneList = useMemo(() => all.filter((r) => CLOSED.test(r.status)), [all]);
 
@@ -90,7 +87,8 @@ export default function CustomerRequests() {
               status={item.status}
               icon={item.icon}
               color={item.color}
-              onPress={() => router.push(`/(customer)/request/${item.id}`)}
+              // A request still on the phone has no page on the server yet.
+              onPress={() => { if (!isOnPhone(item.id)) router.push(`/(customer)/request/${item.id}`); }}
             />
           )}
           ListEmptyComponent={

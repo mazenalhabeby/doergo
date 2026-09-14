@@ -1709,7 +1709,8 @@
     "noneHere": "Rien ici.",
     "submittedOn": "Envoyée le {{date}}",
     "photos": "Photos",
-    "details": "Détails"
+    "details": "Détails",
+    "sentWhenOnline": "Elle sera envoyée dès que vous serez de nouveau en ligne."
   },
   "shiftReminder": {
     "shiftEndedTitle": "Votre service est terminé",

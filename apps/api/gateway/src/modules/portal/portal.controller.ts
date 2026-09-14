@@ -146,6 +146,8 @@ export class PortalController {
       .join('\n\n') || undefined;
 
     const created: any = await this.tasksQueue.createTask({
+      // Named on the phone when sent from a queue: a resend returns the same request.
+      ...(dto.id ? { id: dto.id } : {}),
       title: requestTitle(category.label, dto.issue),
       description,
       priority: priorityForCategory(category),

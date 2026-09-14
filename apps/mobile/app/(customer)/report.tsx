@@ -8,6 +8,8 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../src/lib/constants';
 import { portalApi } from '../../src/lib/api/portal';
+import { useAuth } from '../../src/contexts/auth-context';
+import { useQueuedCreate } from '../../src/offline/actions/queued-create';
 import { portalColor, portalTint, portalIcon } from '../../src/lib/portal-ui';
 import type { IntakeCategory } from '@hbcfield/shared/client';
 
@@ -21,6 +23,8 @@ export default function ReportWizard() {
   const { t } = useTranslation();
 
   const configQ = useQuery({ queryKey: ['portal', 'config'], queryFn: portalApi.config });
+  const { user } = useAuth();
+  const requestCreate = useQueuedCreate<Record<string, unknown>>('portal.request');
   const cfg = configQ.data;
   const categories: IntakeCategory[] = cfg?.categories || [];
 
@@ -63,15 +67,25 @@ export default function ReportWizard() {
   }, [cfg?.features, category]);
 
   const submit = useMutation({
-    mutationFn: () =>
-      portalApi.submit({
+    mutationFn: async () => {
+      const input = {
         categoryKey: category!.key,
         issue: issue || undefined,
         description: description.trim() || undefined,
         accessPermitted: cfg?.features?.access ? access ?? undefined : undefined,
         preferredTime: cfg?.features?.preferredTime ? time ?? undefined : undefined,
         contactPreference: cfg?.features?.contact ? contact ?? undefined : undefined,
-      }),
+      };
+      // Written somewhere without signal, it waits on the phone and is sent when it can be.
+      const outcome = await requestCreate.run({ lane: `portal:${user?.id ?? 'me'}`, body: input }, () => portalApi.submit(input));
+      if (outcome.kind === 'refused') {
+        throw new Error((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('portal.submitFailed', 'Please try again in a moment.'));
+      }
+      if (outcome.kind === 'queued') {
+        Alert.alert(t('offline.savedForLater'), t('portal.sentWhenOnline', 'It will be sent as soon as you are back online.'));
+      }
+      return outcome;
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['portal', 'requests'] });
       router.replace('/(customer)/(tabs)/requests');

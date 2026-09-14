@@ -28,8 +28,10 @@ export function setResponseCache(next: ResponseCacheStore | null): void {
   decided its answer is the member's own data and harmless to hold.
 
   ⚠️ Never kept: sign-in, billing, signed links (they expire and are
-  credentials), the live map and presence (stale is wrong, not old), the sync
-  protocol itself (it has its own store), and the customer portal.
+  credentials), the live map and presence (stale is wrong, not old), and the
+  sync protocol itself (it has its own store). The customer portal keeps only
+  a client's own config, units and requests — each member has their own
+  database, so nothing crosses between a client and a colleague on one phone.
 */
 const KEEP: readonly RegExp[] = [
   /^\/attendance(\/|\?|$)/,
@@ -49,6 +51,8 @@ const KEEP: readonly RegExp[] = [
   /^\/invitations(\?|$)/,
   /^\/custom-fields(\/|\?|$)/,
   /^\/routes(\/|\?|$)/,
+  // A portal client's own portal, requests and units — what they already saw.
+  /^\/portal\/(config|units|requests)(\/|\?|$)/,
 ];
 const NEVER: readonly RegExp[] = [
   /url(\?|$)/i, /presign/i, /download/i, /\/sync\//, /\/tracking\//,

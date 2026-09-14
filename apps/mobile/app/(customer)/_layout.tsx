@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { OfflineProvider } from '../../src/offline/offline-context';
 import { Stack, useRouter, type Href } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type NotificationResponse } from 'expo-notifications';
@@ -54,6 +55,8 @@ export default function CustomerLayout() {
       {/* Confined socket: the server only joins customers to user:{id}, so this
           just powers live request-status updates on the detail screen. */}
       <SocketProvider>
+        {/* A request written with no signal waits on the phone; see OfflineProvider's portal variant. */}
+        <OfflineProvider variant="portal">
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="report" options={{ presentation: 'modal' }} />
@@ -61,6 +64,7 @@ export default function CustomerLayout() {
           <Stack.Screen name="edit-profile" options={{ presentation: 'modal' }} />
           <Stack.Screen name="change-password" options={{ presentation: 'modal' }} />
         </Stack>
+        </OfflineProvider>
       </SocketProvider>
     </QueryClientProvider>
   );
