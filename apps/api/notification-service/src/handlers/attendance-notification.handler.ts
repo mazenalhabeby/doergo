@@ -403,6 +403,43 @@ export class AttendanceNotificationHandler {
   }
 
   /*
+    A shift left open, closed with a temporary time. The MEMBER is asked when
+    they actually left — their answer, or the real clock-out their phone may
+    still be holding, replaces it. Not pushed to supervisors: the entry is
+    already waiting in approvals, and a push per forgotten clock-out is noise.
+  */
+  @EventPattern('attendance_shift_closed_provisionally')
+  async handleShiftClosedProvisionally(@Payload() data: {
+    entryId: string;
+    userId: string;
+    clockInAt: string;
+    clockOutAt: string;
+    basis: string;
+    timezone?: string | null;
+    organizationId: string;
+  }) {
+    const at = noShowResolvedTime(data.clockOutAt, data.timezone);
+    const day = new Date(data.clockInAt).toLocaleDateString('en-GB', { weekday: 'long', timeZone: data.timezone || 'UTC' });
+    const body = `Your shift on ${day} was still open, so it was closed at ${at}. Tell us when you actually left.`;
+    try {
+      await this.pushService.sendAttendanceResolvedPush({ leaderIds: [data.userId], title: 'Shift closed — confirm your time', body, type: 'attendance.clock_out_unconfirmed', entryId: data.entryId });
+    } catch (error) {
+      this.logger.error(`Failed to send provisional clock-out push: ${error}`);
+    }
+    this.websocketGateway.emitToUser(data.userId, 'attendance_shift_closed_provisionally', { entryId: data.entryId, clockOutAt: data.clockOutAt });
+    // Boards refresh: the same org-wide signal a clock-out sends.
+    this.websocketGateway.emitToOrganization(data.organizationId, 'attendance.changed', { userId: data.userId, entryId: data.entryId, reason: 'provisional_clock_out' });
+    await this.store.record({
+      recipientIds: [data.userId],
+      organizationId: data.organizationId,
+      eventType: 'attendance_shift_closed_provisionally',
+      title: 'Shift closed — confirm your time',
+      body,
+      link: '/attendance',
+    });
+  }
+
+  /*
     "Still clocked in past the end of the shift" answered by the clock-out
     itself, arriving late from a phone without signal. Same people as the
     escalation, so nobody phones round about a shift that ended hours ago.

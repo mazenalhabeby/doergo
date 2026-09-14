@@ -63,6 +63,8 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
   'attendance.geofence_excursion_approved': CLOCK,
   'attendance.geofence_excursion_rejected': CLOCK,
   'attendance.geofence_excursion_expired': CLOCK,
+  // A shift left open was closed with a temporary time: the Clock screen asks when they left.
+  'attendance.clock_out_unconfirmed': CLOCK,
 
   // Somebody else's shift
   shift_escalation: TEAM_ATTENDANCE,

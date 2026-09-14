@@ -453,6 +453,11 @@ export class AttendanceService extends BaseGatewayService {
     return this.send({ cmd: 'approve_extra_time' }, data);
   }
 
+  /** A manager adds overtime to a closed shift. A write: never retried. */
+  async addOvertimeToEntry(data: { approverId: string; entryId: string; minutes: number; reason?: string | null; organizationId: string; scopeSpaceIds?: string[] | null }) {
+    return this.sendOnce({ cmd: 'add_overtime_to_entry' }, data);
+  }
+
   /** Leader rejects an extra-time request. */
   async rejectExtraTime(data: {
     approverId: string;

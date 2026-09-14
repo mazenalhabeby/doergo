@@ -33,7 +33,7 @@ import { AttendanceQueueService } from './attendance.queue.service';
 import {
   ClockInDto, ClockOutDto, HeartbeatDto, HeartbeatBatchDto, RequestExtraTimeDto, StartBreakDto, EndBreakDto,
   AddBreakForMemberDto, BreakRuleDto, SnoozeBreakDto,
-  ApproveExtraTimeDto, RejectExtraTimeDto,
+  ApproveExtraTimeDto, RejectExtraTimeDto, AddOvertimeDto,
   AddWorklogNoteDto, AddWorklogNotesBatchDto, PresignWorklogAttachmentDto, ConfirmWorklogAttachmentDto,
 } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
@@ -951,6 +951,27 @@ export class AttendanceController {
       notes: body.notes ?? null,
       approverId: req.user.id,
       organizationId: req.user.organizationId,
+    });
+  }
+
+  /*
+    Overtime on a CLOSED shift nobody asked about — the member had no signal or
+    never saw the prompt. The approval permission is checked in task-service
+    against the entry's own space, like the extra-time routes; the caller's
+    readable spaces narrow which entry can be found at all.
+  */
+  @Post('entries/:id/overtime')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @RequirePlan('shift_scheduling')
+  @ApiOperation({ summary: 'Add approved overtime to a closed shift' })
+  async addOvertime(@Param('id') entryId: string, @Body() body: AddOvertimeDto, @Request() req?: any) {
+    return this.attendanceService.addOvertimeToEntry({
+      entryId,
+      minutes: body.minutes,
+      reason: body.reason ?? null,
+      approverId: req.user.id,
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canApproveOvertime'),
     });
   }
 

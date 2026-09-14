@@ -242,6 +242,47 @@ describe('attendance recorded offline', () => {
       expect(emit.mock.calls.map((c) => c[0])).not.toContain('attendance_shift_escalation_resolved');
     });
 
+    it('replaces a temporary close with the real clock-out the phone was holding', async () => {
+      const { service, prisma } = await build();
+      prisma.timeEntry.findFirst.mockResolvedValue({
+        ...open(), status: TimeEntryStatus.CLOCKED_OUT, clockOutAt: new Date('2026-09-14T17:00:00Z'),
+        clockOutProvisional: true, clockOutBasis: 'SHIFT_END', flagReasons: ['LATE_ARRIVAL', 'MISSED_CLOCK_OUT', 'CLOCK_OUT_PROVISIONAL'],
+      });
+      await service.clockOut(clockOut());
+      expect(prisma.timeEntry.updateMany).toHaveBeenCalledWith({
+        where: { id: 'e1', status: TimeEntryStatus.CLOCKED_OUT, clockOutProvisional: true },
+        data: expect.objectContaining({ clockOutAt: TAP, clockOutProvisional: false, clockOutBasis: null }),
+      });
+      const data = prisma.timeEntry.update.mock.calls[0][0].data;
+      expect(data.clockOutAt).toEqual(TAP);
+      expect(data.flagReasons).toContain('LATE_ARRIVAL');
+      expect(data.flagReasons).toContain('RECORDED_OFFLINE');
+      expect(data.flagReasons).not.toContain('CLOCK_OUT_PROVISIONAL');
+      expect(data.flagReasons).not.toContain('MISSED_CLOCK_OUT');
+    });
+
+    it('a late clock-out with a reason asks a leader for the overtime', async () => {
+      const { service, prisma } = await build();
+      prisma.timeEntry.findFirst.mockResolvedValue({ ...open(), expectedClockOutAt: new Date('2026-09-14T06:30:00Z') });
+      prisma.overtimeRequest = { findMany: jest.fn().mockResolvedValue([]), create: jest.fn().mockResolvedValue({}) };
+      jest.spyOn(service as any, 'notifyTargetsFor').mockResolvedValue(['leader-1']);
+      const emit = (service as any).notificationClient.emit as jest.Mock;
+      await service.clockOut(clockOut({ overtimeReason: 'Boiler part arrived late' }));
+      expect(prisma.overtimeRequest.create).toHaveBeenCalledWith({ data: expect.objectContaining({
+        status: 'PENDING_APPROVAL', technicianReason: 'Boiler part arrived late', technicianRespondedAt: TAP,
+        overtimeStartAt: new Date('2026-09-14T06:30:00Z'),
+      }) });
+      expect(emit).toHaveBeenCalledWith('attendance_overtime_request', expect.objectContaining({ entryId: 'e1', leaderIds: ['leader-1'] }));
+    });
+
+    it('does not open a second request when one is already waiting', async () => {
+      const { service, prisma } = await build();
+      prisma.timeEntry.findFirst.mockResolvedValue({ ...open(), expectedClockOutAt: new Date('2026-09-14T06:30:00Z') });
+      prisma.overtimeRequest = { findMany: jest.fn().mockResolvedValue([{ cycle: 1, status: 'PENDING_APPROVAL' }]), create: jest.fn() };
+      await service.clockOut(clockOut({ overtimeReason: 'Stayed' }));
+      expect(prisma.overtimeRequest.create).not.toHaveBeenCalled();
+    });
+
     it('refuses a clock-out from before a rest in the shift ended', async () => {
       const { service, prisma } = await build();
       prisma.timeEntry.findFirst.mockResolvedValue({ ...open(), breaks: [{ endedAt: new Date('2026-09-14T08:30:00Z') }] });

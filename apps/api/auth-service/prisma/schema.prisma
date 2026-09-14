@@ -319,6 +319,7 @@ enum OvertimeRequestStatus {
 enum OvertimeApprovalMethod {
   REMOTE // Team leader approved via push notification on their device
   SIGNATURE // Team leader signed on the technician's phone
+  MANAGER // Added by a manager to a closed shift, without a request from the member
 }
 
 // Task creation scope — controls who the user can create tasks for
@@ -2365,6 +2366,11 @@ model TimeEntry {
   awayReason    String?
   clockInPlace  String? // Coarse reverse-geocoded place, e.g. "Vienna, AT"
   clockOutPlace String?
+  /// Closed by the open-shift sweep with a temporary time, not by the member.
+  /// Replaced by their real clock-out or their answer to "when did you leave?".
+  clockOutProvisional Boolean @default(false)
+  /// What the temporary time was based on: LEFT_SITE | SHIFT_END | CLOCK_IN_PLUS_8H.
+  clockOutBasis       String?
 
   // IANA timezone WHERE the worker physically clocked in, derived from the
   // clock-in GPS at write-time (falls back to the space's timezone). This is the

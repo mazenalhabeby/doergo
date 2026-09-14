@@ -457,6 +457,13 @@ export class AttendanceController {
     return this.attendanceService.approveExtraTime(data);
   }
 
+  @MessagePattern({ cmd: 'add_overtime_to_entry' })
+  async addOvertimeToEntry(
+    @Payload() data: { approverId: string; entryId: string; minutes: number; reason?: string | null; organizationId: string; scopeSpaceIds?: string[] | null },
+  ) {
+    return this.attendanceService.addOvertimeToClosedEntry(data);
+  }
+
   @MessagePattern({ cmd: 'reject_extra_time' })
   async rejectExtraTime(
     @Payload() data: { approverId: string; entryId: string; organizationId: string },

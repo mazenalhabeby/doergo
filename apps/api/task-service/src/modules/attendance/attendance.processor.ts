@@ -53,13 +53,15 @@ export class AttendanceProcessor extends WorkerHost {
           adding rests here costs a second index seek per minute, not a second
           job, a second queue or a timer on anybody's phone.
         */
+        // Shifts left open far too long first, so nobody is reminded about a shift about to close.
+        const abandoned = await this.attendanceService.closeAbandonedShifts();
         const [clockOut, noShow, excursions, rests] = await Promise.all([
           this.attendanceService.runShiftReminders(data),
           this.attendanceService.runNoShowSweep(),
           this.attendanceService.sweepExpiredExcursions(),
           this.breakReminders.sweep(),
         ]);
-        return { clockOut, noShow, excursions, rests };
+        return { abandoned, clockOut, noShow, excursions, rests };
       }
 
       case ATTENDANCE_JOB_TYPES.SHIFT_MATERIALIZE:

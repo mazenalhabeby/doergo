@@ -145,6 +145,21 @@ export class ApproveExtraTimeDto {
   notes?: string;
 }
 
+/** A manager adding overtime to a closed shift nobody asked about. */
+export class AddOvertimeDto {
+  @ApiPropertyOptional({ description: 'Minutes of overtime after the shift end', example: 90 })
+  @IsInt()
+  @Min(1)
+  @Max(1440)
+  minutes!: number;
+
+  @ApiPropertyOptional({ description: 'Why — recorded with the approval' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  reason?: string;
+}
+
 /** A leader refusing it. The reason reaches the member, so it is worth asking for. */
 export class RejectExtraTimeDto {
   @ApiPropertyOptional()

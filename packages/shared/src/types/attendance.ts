@@ -176,6 +176,23 @@ export interface AttendanceStatus {
   // The current session's active "out of ring" excursion, if any (drives the
   // mobile warning sheet / countdown). Null when inside the ring or not clocked in.
   activeExcursion?: GeofenceExcursion | null;
+  /**
+   * The member's latest shift closed automatically with a temporary time
+   * because it was left open — "when did you actually leave?". Null when none.
+   */
+  unconfirmedClockOut?: UnconfirmedClockOut | null;
+}
+
+/** A shift left open and closed with a temporary clock-out, waiting for the member's real time. */
+export interface UnconfirmedClockOut {
+  id: string;
+  clockInAt: string | Date;
+  clockOutAt: string | Date;
+  /** LEFT_SITE | SHIFT_END | CLOCK_IN_PLUS_8H */
+  clockOutBasis: string | null;
+  expectedClockOutAt: string | Date | null;
+  timezone: string | null;
+  location: { id: string; name: string; timezone?: string | null } | null;
 }
 
 // ============================================================================

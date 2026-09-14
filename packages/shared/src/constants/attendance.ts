@@ -109,10 +109,28 @@ export const UNSCHEDULED_SESSION_DEFAULTS = {
   MAX_REMINDERS: 3,            // Nudges before escalating to the responsible leader (~11h)
 } as const;
 
+/*
+  A shift left open is closed with a TEMPORARY time — never silently for good.
+
+  Nothing used to close a forgotten shift, and with one open shift per member a
+  forgotten clock-out blocked the next day's clock-in. The sweep closes it with
+  the best evidence and marks it provisional; the member's real clock-out (sent
+  late from a phone without signal) or their answer to "when did you leave?"
+  replaces it. The temporary time never counts past the shift end.
+*/
+export const OPEN_SHIFT_CLOSE = {
+  AFTER_SHIFT_END_HOURS: 12,     // A planned shift, this long after its end
+  UNPLANNED_AFTER_HOURS: 24,     // A shift with no planned end, this long after clock-in
+  UNPLANNED_FALLBACK_HOURS: 8,   // …closed at clock-in + this, with nothing better to go on
+  BATCH: 100,                    // Per sweep tick — the partial indexes make each one cheap
+} as const;
+
 // Flag reasons for smart auto-approval
 export const ATTENDANCE_FLAG_REASONS = {
   OVERTIME: 'OVERTIME',
   MISSED_CLOCK_OUT: 'MISSED_CLOCK_OUT',
+  // Closed by the open-shift sweep with a temporary time; waiting for the member's real one.
+  CLOCK_OUT_PROVISIONAL: 'CLOCK_OUT_PROVISIONAL',
   OUTSIDE_GEOFENCE_IN: 'OUTSIDE_GEOFENCE_IN',
   OUTSIDE_GEOFENCE_OUT: 'OUTSIDE_GEOFENCE_OUT',
   LATE_ARRIVAL: 'LATE_ARRIVAL',
@@ -133,6 +151,7 @@ export type AttendanceFlagReason = typeof ATTENDANCE_FLAG_REASONS[keyof typeof A
 export const FLAG_REASON_LABELS: Record<string, string> = {
   OVERTIME: 'Overtime',
   MISSED_CLOCK_OUT: 'Missed Clock-Out',
+  CLOCK_OUT_PROVISIONAL: 'Clock-out not confirmed',
   OUTSIDE_GEOFENCE_IN: 'Outside Geofence (In)',
   OUTSIDE_GEOFENCE_OUT: 'Outside Geofence (Out)',
   LATE_ARRIVAL: 'Late Arrival',

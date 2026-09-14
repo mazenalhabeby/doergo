@@ -42,6 +42,12 @@ export class ClockOutDto {
   @MaxLength(500)
   earlyReason?: string;
 
+  @ApiPropertyOptional({ description: 'Why they stayed past the shift end — becomes an overtime request for a leader' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  overtimeReason?: string;
+
   @ApiPropertyOptional({ description: 'The shift this closes — a phone that clocked in offline names the entry it made' })
   @IsOptional()
   @IsString()
