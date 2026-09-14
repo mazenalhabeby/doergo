@@ -1,9 +1,10 @@
-import { Inject, Injectable, Logger, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, ForbiddenException, BadRequestException, ConflictException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { OBJECT_STORE, ObjectStore, extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { success } from '@hbcfield/shared';
+import { createOnce } from '../../common/create-once.util';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
@@ -111,21 +112,34 @@ export class WorklogService {
 
   async addNote(data: { organizationId: string; timeEntryId: string; callerUserId: string; canManage?: boolean;
     /** Spaces the caller oversees; undefined = org-wide, [] = none. */
-    manageSpaceIds?: string[]; body: string; at?: string; taskId?: string }) {
+    manageSpaceIds?: string[]; body: string; at?: string; taskId?: string;
+    /** Made on the phone: a note written offline and sent twice is still one note. */
+    id?: string }) {
     // Writable by the session owner (the member) OR a manager/responsible party (canManage).
     const te = await this.session(data.timeEntryId, data.organizationId, data.callerUserId, !!data.canManage, data.manageSpaceIds);
-    const note = await this.prisma.timeEntryNote.create({
-      data: {
-        timeEntryId: te.id,
-        userId: te.userId, // the session's member
-        authorId: data.callerUserId, // who actually wrote it (member or manager)
-        organizationId: data.organizationId,
-        body: this.cleanBody(data.body),
-        at: this.parseAt(data.at),
-        taskId: await this.keepOrgTaskId(data.taskId, data.organizationId),
-      },
+    const body = this.cleanBody(data.body);
+    const at = this.parseAt(data.at);
+    const taskId = await this.keepOrgTaskId(data.taskId, data.organizationId);
+    const { row } = await createOnce({
+      id: data.id,
+      find: (id) => this.prisma.timeEntryNote.findUnique({ where: { id } }),
+      // The same note: same session, same author. Anything else is somebody else's id.
+      isSame: (n) => n.timeEntryId === te.id && n.authorId === data.callerUserId,
+      create: () =>
+        this.prisma.timeEntryNote.create({
+          data: {
+            ...(data.id ? { id: data.id } : {}),
+            timeEntryId: te.id,
+            userId: te.userId, // the session's member
+            authorId: data.callerUserId, // who actually wrote it (member or manager)
+            organizationId: data.organizationId,
+            body,
+            at,
+            taskId,
+          },
+        }),
     });
-    return success(note);
+    return success(row);
   }
 
   /** Offline flush: many notes in one round-trip. Session validated once. */
@@ -225,9 +239,19 @@ export class WorklogService {
     /** Spaces the caller oversees; undefined = org-wide, [] = none. */
     manageSpaceIds?: string[];
     fileKey?: string; fileUrl?: string; fileName: string; fileSize?: number; mimeType: string; width?: number; height?: number;
+    /** Made on the phone: a confirm sent twice is still one attachment. */
+    id?: string;
   }) {
     const store = requireObjectStore(this.store);
     const { note, te } = await this.sessionForNote(data.noteId, data.organizationId, data.callerUserId, !!data.canManage, data.manageSpaceIds); // owner or manager (canManage)
+    if (data.id) {
+      const prior = await this.prisma.timeEntryNoteAttachment.findUnique({ where: { id: data.id } });
+      // Already confirmed: answered before any storage check. Somebody else's id is refused.
+      if (prior) {
+        if (prior.noteId !== note.id) throw new ConflictException({ message: 'This id is already in use', code: 'ID_IN_USE' });
+        return success(await this.media.sign(prior));
+      }
+    }
     // The confirmed object MUST live under THIS session's prefix (anti-IDOR / cross-tenant).
     const fileKey = typeof data.fileKey === 'string' && data.fileKey ? data.fileKey : store.keyFromUrl(data.fileUrl);
     if (!fileKey || fileKey.includes('..') || !fileKey.startsWith(this.sessionPrefix(te))) {
@@ -245,8 +269,13 @@ export class WorklogService {
       throw new BadRequestException('File is empty or larger than 20 MB');
     }
 
-    const att = await this.prisma.timeEntryNoteAttachment.create({
+    const { row: att } = await createOnce({
+      id: data.id,
+      find: (id) => this.prisma.timeEntryNoteAttachment.findUnique({ where: { id } }),
+      isSame: (a) => a.noteId === note.id,
+      create: () => this.prisma.timeEntryNoteAttachment.create({
       data: {
+        ...(data.id ? { id: data.id } : {}),
         noteId: note.id,
         organizationId: data.organizationId,
         fileKey,
@@ -255,9 +284,10 @@ export class WorklogService {
         fileName: data.fileName,
         fileSize: object.sizeBytes,
         mimeType: data.mimeType,
-        width: typeof data.width === 'number' ? data.width : null,
-        height: typeof data.height === 'number' ? data.height : null,
+        width: typeof data.width === 'number' ? Math.round(data.width) : null,
+        height: typeof data.height === 'number' ? Math.round(data.height) : null,
       },
+      }),
     });
     return success(await this.media.sign(att));
   }

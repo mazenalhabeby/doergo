@@ -34,6 +34,7 @@ import {
   ClockInDto, ClockOutDto, HeartbeatDto, StartBreakDto, EndBreakDto,
   AddBreakForMemberDto, BreakRuleDto, SnoozeBreakDto,
   ApproveExtraTimeDto, RejectExtraTimeDto,
+  AddWorklogNoteDto, AddWorklogNotesBatchDto, PresignWorklogAttachmentDto, ConfirmWorklogAttachmentDto,
 } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 
@@ -171,17 +172,17 @@ export class AttendanceController {
   @Post('entries/:entryId/worklog')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Add a work-log note to an attendance session' })
-  async worklogAdd(@Param('entryId') entryId: string, @Body() body: { body: string; at?: string; taskId?: string }, @Request() req: any) {
+  async worklogAdd(@Param('entryId') entryId: string, @Body() body: AddWorklogNoteDto, @Request() req: any) {
     return this.attendanceService.worklogAddNote({
       organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req),
-      timeEntryId: entryId, body: body?.body, at: body?.at, taskId: body?.taskId,
+      timeEntryId: entryId, id: body.id, body: body.body, at: body.at, taskId: body.taskId,
     });
   }
 
   @Post('entries/:entryId/worklog/batch')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Batch-add work-log notes (offline flush)' })
-  async worklogBatch(@Param('entryId') entryId: string, @Body() body: { notes: any[] }, @Request() req: any) {
+  async worklogBatch(@Param('entryId') entryId: string, @Body() body: AddWorklogNotesBatchDto, @Request() req: any) {
     return this.attendanceService.worklogAddNotesBatch({
       organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req),
       timeEntryId: entryId, notes: body?.notes ?? [],
@@ -210,7 +211,7 @@ export class AttendanceController {
   @Post('worklog/:noteId/attachments/presign')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Presigned upload URL for a work-log photo/file' })
-  async worklogPresign(@Param('noteId') noteId: string, @Body() body: { fileName: string; mimeType: string }, @Request() req: any) {
+  async worklogPresign(@Param('noteId') noteId: string, @Body() body: PresignWorklogAttachmentDto, @Request() req: any) {
     return this.attendanceService.worklogPresignAttachment({
       organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req),
       noteId, fileName: body?.fileName, mimeType: body?.mimeType,
@@ -220,10 +221,10 @@ export class AttendanceController {
   @Post('worklog/:noteId/attachments')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Confirm a work-log photo/file upload' })
-  async worklogConfirm(@Param('noteId') noteId: string, @Body() body: any, @Request() req: any) {
+  async worklogConfirm(@Param('noteId') noteId: string, @Body() body: ConfirmWorklogAttachmentDto, @Request() req: any) {
     return this.attendanceService.worklogConfirmAttachment({
       organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req),
-      noteId, fileKey: body?.fileKey, fileUrl: body?.fileUrl, fileName: body?.fileName,
+      noteId, id: body.id, fileKey: body?.fileKey, fileUrl: body?.fileUrl, fileName: body?.fileName,
       fileSize: body?.fileSize, mimeType: body?.mimeType, width: body?.width, height: body?.height,
     });
   }

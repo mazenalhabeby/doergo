@@ -207,8 +207,24 @@ export class LocationService {
         // Co-assignees included: a member assigned alongside a lead drives the
         // same route, and matching assignedToId alone silently discarded every
         // point they recorded — accepted by the API, never stored.
-        select: { status: true, assignedToId: true, assignees: { select: { userId: true } } },
+        select: {
+          status: true, assignedToId: true, assignees: { select: { userId: true } },
+          routeStartedAt: true, routeEndedAt: true,
+        },
       });
+
+      /*
+        A route that already ended, receiving its own points late.
+
+        A phone in a dead zone keeps its points; "Arrived" may reach the server
+        first (it is a queued operation too), and the points used to be refused
+        and thrown away — the straight line across the gap background tracking
+        was built to remove. Points timed inside the route's own window still
+        belong to it.
+      */
+      if (task && task.status !== 'EN_ROUTE' && isTaskAssignee(task, userId) === true && task.routeStartedAt && task.routeEndedAt) {
+        await this.recordLateRoutePoints(userId, taskId, task.routeStartedAt, task.routeEndedAt, valid);
+      }
 
       // Only record history while the task is EN_ROUTE and the caller is on it —
       // as lead or co-assignee (isTaskAssignee, the shared rule).
@@ -273,6 +289,52 @@ export class LocationService {
       .subscribe();
 
     return success(location);
+  }
+
+  /**
+   * Store the points of an ended route that arrived after it ended.
+   *
+   * Only points timed inside [routeStartedAt, routeEndedAt]; an untimed point
+   * cannot be placed and is left out. A point already stored (the same burst
+   * sent again after a lost answer) is not stored twice. The distance is then
+   * recomputed from the whole route in time order, because late points land
+   * BETWEEN points already counted and an increment would be wrong.
+   */
+  private async recordLateRoutePoints(
+    userId: string,
+    taskId: string,
+    startedAt: Date,
+    endedAt: Date,
+    points: { lat: number; lng: number; accuracy?: number; timestamp?: string }[],
+  ): Promise<void> {
+    const inWindow = points
+      .map((p) => ({ ...p, at: p.timestamp ? new Date(p.timestamp) : null }))
+      .filter((p): p is typeof p & { at: Date } => !!p.at && !Number.isNaN(p.at.getTime()) && p.at >= startedAt && p.at <= endedAt);
+    if (!inWindow.length) return;
+
+    const existing = await this.prisma.locationHistory.findMany({
+      where: { taskId, userId, timestamp: { in: inWindow.map((p) => p.at) } },
+      select: { timestamp: true },
+    });
+    const known = new Set(existing.map((e) => e.timestamp.getTime()));
+    const fresh = inWindow.filter((p) => !known.has(p.at.getTime()));
+    if (!fresh.length) return;
+
+    await this.prisma.locationHistory.createMany({
+      data: fresh.map((p) => ({ userId, taskId, lat: p.lat, lng: p.lng, accuracy: p.accuracy, timestamp: p.at })),
+    });
+
+    const route = await this.prisma.locationHistory.findMany({
+      where: { taskId, userId, timestamp: { gte: startedAt, lte: endedAt } },
+      orderBy: { timestamp: 'asc' },
+      select: { lat: true, lng: true },
+    });
+    let distance = 0;
+    for (let i = 1; i < route.length; i++) {
+      distance += haversineDistance(route[i - 1]!.lat, route[i - 1]!.lng, route[i]!.lat, route[i]!.lng);
+    }
+    await this.prisma.task.update({ where: { id: taskId }, data: { routeDistance: distance } });
+    this.logger.log(`Late route points: task=${taskId} user=${userId} stored=${fresh.length} distance=${Math.round(distance)}m`);
   }
 
   async getActiveWorkers(organizationId?: string, userIds?: string[]) {
