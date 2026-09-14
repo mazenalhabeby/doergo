@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator,
   Modal, ScrollView, Image, Pressable,
@@ -14,6 +14,10 @@ import { SheetPanel } from './sheet-panel';
 import { shiftIssuesApi, type ShiftIssue, type ShiftIssueEvent } from '../lib/api/shift-issues';
 import { useImagePicker, type PickedImage } from '../hooks/useImagePicker';
 import { uploadToPresignedUrl } from '../lib/api/attachments';
+import { useAuth } from '../contexts/auth-context';
+import { useToast } from '../contexts/toast-context';
+import { useOffline, useSyncStatus } from '../offline/offline-context';
+import { pendingIssueEvents, reportIssueFromPhone, sendIssueMessageFromPhone } from '../offline/issues/issue-actions';
 
 // Upload picked photos to S3 and return attachment metadata for a message/report.
 async function uploadPhotos(issueId: string, photos: PickedImage[]): Promise<any[]> {
@@ -121,11 +125,33 @@ export function ReportIssueSheet({ visible, onClose, timeEntryId, spaceId, onCre
   const [severity, setSeverity] = useState('MEDIUM');
   const [picked, setPicked] = useState<PickedImage[]>([]);
   const [busy, setBusy] = useState(false);
+  const offline = useOffline();
+  const toast = useToast();
 
   const submit = useCallback(async () => {
     if (!title.trim()) return;
     setBusy(true);
     try {
+      if (offline.engine && offline.files) {
+        // Saved on the phone first; the issue and its photos send themselves.
+        const { issueId, outcome } = await reportIssueFromPhone(offline.engine, offline.files, {
+          title: title.trim(), description: description.trim() || undefined, severity, timeEntryId, spaceId,
+          photos: picked.map((p) => ({ uri: p.uri, fileName: p.fileName, mimeType: p.mimeType, width: p.width, height: p.height })),
+        });
+        if (outcome.kind === 'refused') {
+          toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('common.error'));
+          return;
+        }
+        setTitle(''); setDescription(''); setSeverity('MEDIUM'); setPicked([]);
+        if (outcome.kind === 'done') {
+          onCreated(issueId);
+        } else {
+          // Not on the server yet, so there is no thread to open: say where it is.
+          toast.info(t('offline.savedForLater'));
+          onClose();
+        }
+        return;
+      }
       const issue = await shiftIssuesApi.create({ title: title.trim(), description: description.trim() || undefined, severity, timeEntryId, spaceId });
       // Photos are uploaded AFTER create (the S3 key needs the issue id) and
       // posted as the reporter's first message.
@@ -138,7 +164,7 @@ export function ReportIssueSheet({ visible, onClose, timeEntryId, spaceId, onCre
     } catch {
       /* toast handled globally */
     } finally { setBusy(false); }
-  }, [title, description, severity, timeEntryId, spaceId, picked, onCreated]);
+  }, [title, description, severity, timeEntryId, spaceId, picked, onCreated, onClose, offline.engine, offline.files, t, toast]);
 
   const addGallery = useCallback(async () => { const imgs = await pickFromGallery('issue-photo'); if (imgs.length) setPicked((p) => [...p, ...imgs].slice(0, 5)); }, [pickFromGallery]);
   const addCamera = useCallback(async () => { const img = await takePhoto('issue-photo'); if (img) setPicked((p) => [...p, img].slice(0, 5)); }, [takePhoto]);
@@ -216,6 +242,9 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
   const [resolveOpen, setResolveOpen] = useState(false);
   const [reason, setReason] = useState('');
   const scrollRef = useRef<ScrollView>(null);
+  const offline = useOffline();
+  const { operations } = useSyncStatus();
+  const { user } = useAuth();
 
   const load = useCallback(async () => {
     if (!issueId) return;
@@ -237,18 +266,38 @@ export function ShiftIssueThreadSheet({ visible, onClose, issueId, canManage, cu
     if (!issueId || (!draft.trim() && picked.length === 0)) return;
     setBusy(true);
     try {
+      if (offline.engine && offline.files) {
+        const outcome = await sendIssueMessageFromPhone(offline.engine, offline.files, {
+          issueId, body: draft,
+          photos: picked.map((p) => ({ uri: p.uri, fileName: p.fileName, mimeType: p.mimeType, width: p.width, height: p.height })),
+        });
+        if (outcome.kind === 'refused') return;
+        setDraft(''); setPicked([]);
+        if (outcome.kind === 'done') await load();
+        return;
+      }
       const attachments = picked.length ? await uploadPhotos(issueId, picked) : [];
       await shiftIssuesApi.message(issueId, { body: draft.trim(), attachments });
       setDraft(''); setPicked([]); await load();
     } catch { /* noop */ } finally { setBusy(false); }
-  }, [issueId, draft, picked, load]);
+  }, [issueId, draft, picked, load, offline.engine, offline.files]);
 
   const addGallery = useCallback(async () => { const imgs = await pickFromGallery('issue-photo'); if (imgs.length) setPicked((p) => [...p, ...imgs].slice(0, 5)); }, [pickFromGallery]);
   const addCamera = useCallback(async () => { const img = await takePhoto('issue-photo'); if (img) setPicked((p) => [...p, img].slice(0, 5)); }, [takePhoto]);
 
   const act = useCallback(async (fn: () => Promise<any>) => { try { await fn(); await load(); } catch { /* noop */ } }, [load]);
 
-  const thread = issue?.thread ?? [];
+  // The server's thread, with what this phone has written and not yet sent on the end.
+  const thread = useMemo(() => {
+    const server = issue?.thread ?? [];
+    if (!issueId || !offline.files) return server;
+    const known = new Set(server.map((e) => e.id));
+    const files = offline.files;
+    const mine = pendingIssueEvents(issueId, operations, (id, mime) => files.uriFor(id, mime), {
+      id: user?.id ?? '', name: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim(),
+    }).filter((e) => !known.has(e.id));
+    return [...server, ...mine];
+  }, [issue?.thread, issueId, operations, offline.files, user?.id, user?.firstName, user?.lastName]);
   const closed = issue ? ['RESOLVED', 'CLOSED', 'CANCELED'].includes(issue.status) : false;
   const sev = SEVERITIES.find((s) => s.key === issue?.severity);
 

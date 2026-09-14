@@ -32,6 +32,8 @@ export interface ChatMessage {
   body: string;
   attachments: ChatAttachment[];
   createdAt: string;
+  /** When the sender wrote it, for a message delivered late from offline. */
+  sentAt?: string | null;
   editedAt?: string | null;
   deletedAt?: string | null;
   sender?: ChatUserRef | null;

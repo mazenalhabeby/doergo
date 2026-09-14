@@ -49,8 +49,8 @@ export type KeepInput = {
 
 /** The two network steps of an upload. Throws `UploadFailure`. */
 export interface ObjectUploader {
-  /** `body` names the type the way the route does — `fileType` or `mimeType`. */
-  presign(path: string, body: { fileName: string; [typeField: string]: string }): Promise<{ uploadUrl: string; fileKey: string }>;
+  /** `body` is shaped by the route — see uploads.ts. */
+  presign(path: string, body: Record<string, string>): Promise<{ uploadUrl: string; fileKey: string }>;
   put(uploadUrl: string, path: string, mime: string): Promise<void>;
 }
 

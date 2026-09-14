@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import { useSocketContext } from '../../src/contexts/socket-context';
 import { ScreenContainer, ScreenHeader, goBack as leaveScreen } from '../../src/components';
 import { supportApi, type SupportConfig } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
+import { useQueuedCreate } from '../../src/offline/actions/queued-create';
 
 type SupportView = 'list' | 'new' | 'thread';
 
@@ -45,6 +46,16 @@ export default function SupportScreen() {
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Requests and replies written with no signal wait in the outbox and show here meanwhile.
+  const ticketCreate = useQueuedCreate<{ subject: string; body: string }>('support.ticket', { onAccepted: () => void loadListRef.current?.() });
+  const replyCreate = useQueuedCreate<{ body: string }>('support.message', {
+    onAccepted: () => {
+      const open = activeRef.current;
+      if (open) void supportApi.get(open.id).then(setActive).catch(() => undefined);
+    },
+  });
+  const loadListRef = useRef<(() => Promise<void>) | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
   const liveChat = !!config?.liveChat;
@@ -89,6 +100,25 @@ export default function SupportScreen() {
   // re-subscribe the listeners on every render.
   const activeRef = useRef(active);
   activeRef.current = active;
+  loadListRef.current = loadList;
+
+  const shownTickets = useMemo(() => {
+    const known = new Set(tickets.map((tk) => tk.id));
+    const onPhone = ticketCreate.pending
+      .filter((p) => !known.has(p.id))
+      .map((p) => ({ id: p.id, subject: p.body.subject, status: 'OPEN', pendingSync: true }) as unknown as SupportTicket);
+    return [...onPhone, ...tickets];
+  }, [tickets, ticketCreate.pending]);
+
+  const shownMessages = useMemo(() => {
+    if (!active) return [];
+    const server = active.messages ?? [];
+    const known = new Set(server.map((m) => m.id));
+    const onPhone = replyCreate.pending
+      .filter((p) => p.params.ticketId === active.id && !known.has(p.id))
+      .map((p) => ({ id: p.id, authorType: 'CUSTOMER', body: p.body.body, pendingSync: true }) as unknown as NonNullable<SupportTicket['messages']>[number]);
+    return [...server, ...onPhone];
+  }, [active, replyCreate.pending]);
   useEffect(() => {
     if (!isAuthenticated) return;
     const offs = [
@@ -107,12 +137,22 @@ export default function SupportScreen() {
     if (subject.trim().length < 2 || body.trim().length < 1) return;
     setSending(true);
     try {
-      const tk = await supportApi.create({ subject: subject.trim(), body: body.trim() });
+      const input = { subject: subject.trim(), body: body.trim(), channel: 'MOBILE' };
+      const outcome = await ticketCreate.run({ lane: 'support:new', body: input }, () => supportApi.create({ subject: input.subject, body: input.body }));
+      if (outcome.kind === 'refused') {
+        setError((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('support.sendError', 'Could not send. Please try again.'));
+        return;
+      }
       setSubject('');
       setBody('');
       setError(null);
+      if (outcome.kind === 'queued') {
+        // Not with support yet: back to the list, where it waits as "sending".
+        setView('list');
+        return;
+      }
       await loadList();
-      openTicket(tk.id);
+      openTicket((outcome.response as { id: string }).id);
     } catch {
       setError(t('support.sendError', 'Could not send. Please try again.'));
     } finally {
@@ -124,11 +164,18 @@ export default function SupportScreen() {
     if (!active || !reply.trim()) return;
     setSending(true);
     try {
-      await supportApi.reply(active.id, reply.trim());
+      const text = reply.trim();
+      const outcome = await replyCreate.run(
+        { lane: `support:${active.id}`, params: { ticketId: active.id }, body: { body: text } },
+        () => supportApi.reply(active.id, text),
+      );
+      if (outcome.kind === 'refused') {
+        setError((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('support.sendError', 'Could not send. Please try again.'));
+        return;
+      }
       setReply('');
       setError(null);
-      const tk = await supportApi.get(active.id);
-      setActive(tk);
+      if (outcome.kind === 'done') setActive(await supportApi.get(active.id));
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
     } catch {
       setError(t('support.sendError', 'Could not send. Please try again.'));
@@ -203,19 +250,23 @@ export default function SupportScreen() {
             )}
           </View>
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: SPACING.sm }}>
-            {tickets.length === 0 ? (
+            {shownTickets.length === 0 ? (
               <Text style={[styles.empty, { color: colors.textSecondary }]}>{t('support.empty', 'No tickets yet.')}</Text>
             ) : (
-              tickets.map((tk) => (
+              shownTickets.map((tk) => (
                 <TouchableOpacity
                   key={tk.id}
+                  // A request still on the phone has no thread on the server to open yet.
+                  disabled={!!(tk as { pendingSync?: boolean }).pendingSync}
                   onPress={() => openTicket(tk.id)}
                   style={[styles.ticketRow, { borderColor: colors.border }]}
                 >
                   <View style={[styles.dot, { backgroundColor: ['OPEN', 'PENDING_AGENT', 'PENDING_CUSTOMER'].includes(tk.status) ? COLORS.primary : colors.border }]} />
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.ticketSubject, { color: colors.textPrimary }]} numberOfLines={1}>{tk.subject}</Text>
-                    <Text style={[styles.ticketMeta, { color: colors.textSecondary }]}>{t(`support.status.${tk.status}`, tk.status)}</Text>
+                    <Text style={[styles.ticketMeta, { color: colors.textSecondary }]}>
+                      {(tk as { pendingSync?: boolean }).pendingSync ? t('offline.chip.waiting') : t(`support.status.${tk.status}`, tk.status)}
+                    </Text>
                   </View>
                   {!!tk.unreadForCustomer && <View style={styles.badge}><Text style={styles.badgeText}>{tk.unreadForCustomer}</Text></View>}
                 </TouchableOpacity>
@@ -254,12 +305,14 @@ export default function SupportScreen() {
             style={{ flex: 1 }}
             contentContainerStyle={{ padding: SPACING.md, paddingBottom: SPACING.sm }}
           >
-            {active?.messages?.map((m) => {
+            {shownMessages.map((m) => {
               const mine = m.authorType === 'CUSTOMER';
+              const pending = !!(m as { pendingSync?: boolean }).pendingSync;
               return (
                 <View key={m.id} style={[styles.bubbleRow, { justifyContent: mine ? 'flex-end' : 'flex-start' }]}>
-                  <View style={[styles.bubble, mine ? { backgroundColor: COLORS.primary } : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
+                  <View style={[styles.bubble, mine ? { backgroundColor: COLORS.primary } : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }, pending && { opacity: 0.7 }]}>
                     <Text style={{ color: mine ? '#fff' : colors.textPrimary, fontSize: FONT_SIZE.sm }}>{m.body}</Text>
+                    {pending && <Ionicons name="time-outline" size={11} color="#fff" style={{ alignSelf: 'flex-end', marginTop: 2 }} accessibilityLabel={t('offline.chip.waiting')} />}
                   </View>
                 </View>
               );

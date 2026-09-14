@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import { useTimeFormat } from '../../src/hooks/useTimeFormat';
 import { ScreenContainer } from '../../src/components';
 import { chatApi, resolveMediaUrl } from '../../src/lib/api';
 import { activeChat } from '../../src/lib/active-chat';
+import { useQueuedCreate } from '../../src/offline/actions/queued-create';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 
 type ChatView = 'list' | 'thread' | 'contacts';
@@ -248,25 +249,52 @@ export default function ChatScreen() {
     }
   };
 
+  /*
+    A message goes into the outbox with the id it will have on the server, and
+    is shown from there at once — with a clock until it is delivered — so a
+    message written with no signal is in the thread, in order, and sends
+    itself. Delivered in the background: the thread reloads.
+  */
+  const chatCreate = useQueuedCreate<{ body: string; sentAt: string }>('chat.send', {
+    onAccepted: () => {
+      if (active) void chatApi.history(active.id).then((h) => setMessages(h.data)).catch(() => undefined);
+    },
+  });
+  const shownMessages = useMemo(() => {
+    if (!active) return messages;
+    const known = new Set(messages.map((m) => m.id));
+    const onPhone = chatCreate.pending
+      .filter((p) => p.params.conversationId === active.id && !known.has(p.id))
+      .map((p) => ({
+        id: p.id, conversationId: active.id, senderId: meId!, body: p.body.body, attachments: [],
+        createdAt: p.body.sentAt, pendingSync: true,
+      }) as ChatMessage & { pendingSync: boolean });
+    return [...messages, ...onPhone];
+  }, [messages, chatCreate.pending, active, meId]);
+
   const sendMessage = async () => {
     const body = text.trim();
     if (!active || !body) return;
     setText('');
-    // Optimistic: show the message immediately.
-    const temp: ChatMessage = {
-      id: `tmp-${Date.now()}`, conversationId: active.id, senderId: meId!, body, attachments: [],
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, temp]);
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
     try {
-      await chatApi.send(active.id, body);
+      const outcome = await chatCreate.run(
+        { lane: `chat:${active.id}`, params: { conversationId: active.id }, body: { body, sentAt: new Date().toISOString() } },
+        () => chatApi.send(active.id, body),
+      );
+      if (outcome.kind === 'refused') {
+        setText(body);
+        setError((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('chat.sendError', 'Could not send. Please try again.'));
+        return;
+      }
       setError(null);
-      const h = await chatApi.history(active.id);
-      setMessages(h.data);
+      if (outcome.kind === 'done') {
+        const h = await chatApi.history(active.id);
+        setMessages(h.data);
+      }
     } catch {
+      setText(body);
       setError(t('chat.sendError', 'Could not send. Please try again.'));
-      setMessages((prev) => prev.filter((m) => m.id !== temp.id)); // rollback
     }
   };
 
@@ -373,9 +401,12 @@ export default function ChatScreen() {
                 <Text style={[styles.threadEmptyHint, { color: colors.textSecondary }]}>{t('chat.threadEmpty', 'No messages yet. Say hello 👋')}</Text>
               </View>
             )}
-            {messages.map((m, i) => {
-              const prev = messages[i - 1];
-              const next = messages[i + 1];
+            {shownMessages.map((m, i) => {
+              const prev = shownMessages[i - 1];
+              const next = shownMessages[i + 1];
+              const pending = !!(m as { pendingSync?: boolean }).pendingSync;
+              // When it was written, for a message delivered late.
+              const writtenAt = m.sentAt ?? m.createdAt;
               const mine = m.senderId === meId;
               const newDay = !prev || dayKey(prev.createdAt) !== dayKey(m.createdAt);
               const isLastOfGroup = !next || next.senderId !== m.senderId || dayKey(next.createdAt) !== dayKey(m.createdAt);
@@ -394,10 +425,15 @@ export default function ChatScreen() {
                       </View>
                     )}
                     <View style={{ flexShrink: 1, maxWidth: '78%', alignItems: mine ? 'flex-end' : 'flex-start' }}>
-                      <View style={[styles.bubble, mine ? { backgroundColor: COLORS.primary } : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }, m.id.startsWith('tmp-') && { opacity: 0.7 }]}>
+                      <View style={[styles.bubble, mine ? { backgroundColor: COLORS.primary } : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }, pending && { opacity: 0.7 }]}>
                         <Text style={{ color: mine ? '#fff' : colors.textPrimary, fontSize: FONT_SIZE.sm }}>{m.body}</Text>
                       </View>
-                      {isLastOfGroup && <Text style={[styles.msgTime, { color: colors.textSecondary }]}>{timeHM(m.createdAt, i18n.language, hour12)}</Text>}
+                      {(isLastOfGroup || pending) && (
+                        <View style={styles.msgMeta}>
+                          {pending && <Ionicons name="time-outline" size={11} color={colors.textSecondary} accessibilityLabel={t('offline.chip.waiting')} />}
+                          <Text style={[styles.msgTime, { color: colors.textSecondary }]}>{timeHM(writtenAt, i18n.language, hour12)}</Text>
+                        </View>
+                      )}
                     </View>
                   </View>
                 </View>
@@ -476,6 +512,7 @@ function Avatar({ u, size = 40, dot = true }: { u?: ChatUserRef | null; size?: n
 }
 
 const styles = StyleSheet.create({
+  msgMeta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderBottomWidth: 1 },
   iconBtn: { width: 36, height: 36, justifyContent: 'center' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold },

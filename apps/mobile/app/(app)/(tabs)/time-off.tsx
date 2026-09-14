@@ -16,6 +16,7 @@ import { useAuth } from '../../../src/contexts/auth-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useFetchData } from '../../../src/hooks/useFetchData';
+import { useQueuedCreate } from '../../../src/offline/actions/queued-create';
 import { LoadingState, ErrorState } from '../../../src/components/screen-states';
 import { ConfirmSheet, ScreenContainer } from '../../../src/components';
 import { TourTarget } from '../../../src/components/tour';
@@ -157,7 +158,31 @@ export default function TimeOffScreen() {
     initialData: { requests: [] as TimeOffRequest[], schedule: [] as ScheduleEntry[] },
   });
 
-  const requests = fetchedData?.requests ?? [];
+  /*
+    Requests still on the phone are shown with the server's, as pending, so a
+    request made with no signal is visible at once — and the calendar marks
+    its days — instead of appearing only once it reaches the office.
+  */
+  const timeOffCreate = useQueuedCreate<{ startDate: string; endDate: string; reason?: string }>('timeOff.request', {
+    onAccepted: () => void fetchData(),
+  });
+  const requests = useMemo(() => {
+    const server = fetchedData?.requests ?? [];
+    const known = new Set(server.map((r) => r.id));
+    const onPhone = timeOffCreate.pending
+      .filter((p) => !known.has(p.id))
+      .map((p) => ({
+        id: p.id,
+        technicianId: user?.id ?? '',
+        startDate: p.body.startDate,
+        endDate: p.body.endDate,
+        reason: p.body.reason ?? null,
+        status: 'PENDING',
+        createdAt: new Date(p.createdAt).toISOString(),
+        pendingSync: true,
+      }) as unknown as TimeOffRequest);
+    return [...server, ...onPhone];
+  }, [fetchedData?.requests, timeOffCreate.pending, user?.id]);
   const schedule = fetchedData?.schedule ?? [];
 
   // Calendar
@@ -435,13 +460,18 @@ export default function TimeOffScreen() {
 
     try {
       setIsSubmitting(true);
-      await timeOffApi.request(user.id, {
-        startDate: startStr,
-        endDate: endStr,
-        reason: fullReason,
-      });
+      const body = { startDate: startStr, endDate: endStr, reason: fullReason };
+      const outcome = await timeOffCreate.run(
+        { lane: `timeoff:${user.id}`, params: { employeeId: user.id }, body },
+        () => timeOffApi.request(user.id, body),
+      );
+      if (outcome.kind === 'refused') {
+        toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('timeOff.requestForm.failedToSubmit'));
+        return;
+      }
       clearSelection();
-      toast.success(t('common.success'), t('timeOff.requestForm.successMessage'));
+      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
+      else toast.success(t('common.success'), t('timeOff.requestForm.successMessage'));
       fetchData();
     } catch (err) {
       toast.error(t('common.error'), err instanceof Error ? err.message : t('timeOff.requestForm.failedToSubmit'));

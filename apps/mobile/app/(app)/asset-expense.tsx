@@ -22,6 +22,8 @@ import {
   type KindMoneyCategory, type ParsedReceipt,
 } from '@hbcfield/shared/client';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
+import { useOffline } from '../../src/offline/offline-context';
+import { submitExpenseFromPhone } from '../../src/offline/assets/expense-actions';
 
 /**
  * File what I just spent, at the pump, in about fifteen seconds.
@@ -47,6 +49,7 @@ export default function AssetExpenseScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const toast = useToast();
+  const offline = useOffline();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ assetId?: string }>();
   const assetId = typeof params.assetId === 'string' ? params.assetId : '';
@@ -235,6 +238,23 @@ export default function AssetExpenseScreen() {
     setSending(true);
     let receiptKey: string | undefined;
     try {
+      if (offline.engine && offline.files) {
+        // Saved on the phone with its receipt; both send themselves.
+        const outcome = await submitExpenseFromPhone(offline.engine, offline.files, {
+          assetId, category, amountCents: cents, note: note.trim() || undefined,
+          occurredAt: new Date(when).toISOString(),
+          photo: shot ? { uri: shot.uri, mime: shot.mime } : null,
+          uploadedKey,
+        });
+        if (outcome.kind === 'refused') {
+          toast.error((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('expenses.sendFailed', 'Could not send it'));
+          return;
+        }
+        toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('expenses.sent', 'Sent — the office will confirm it.'));
+        discardShot();
+        router.back();
+        return;
+      }
       /*
         The slip goes phone → S3 directly. Presigned for THIS asset under a
         prefix that names the organization, and the submit step refuses a key
@@ -283,7 +303,7 @@ export default function AssetExpenseScreen() {
     } finally {
       setSending(false);
     }
-  }, [cents, category, shot, assetId, when, note, discardShot, t, toast]);
+  }, [cents, category, shot, assetId, when, note, discardShot, t, toast, offline.engine, offline.files, uploadedKey]);
 
   // ── Is this mine at all? ──────────────────────────────────────────────────
   if (loading) {
