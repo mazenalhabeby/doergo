@@ -1,5 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
-import * as Crypto from 'expo-crypto';
+import { expoCrypto } from '../../lib/optional-native';
 import { loadSQLite } from '../native';
 import { migrate } from './migrations';
 import type { SqlDb } from './sql';
@@ -19,7 +19,15 @@ const KEY_PREFIX = 'hbc_offline_key_';
 const open = new Map<string, Promise<SqlDb>>();
 
 /** File name from the member id: stable, filesystem-safe, and not the id itself. */
+function crypto() {
+  // offlineCapableBuild() checked for it before any database is opened.
+  const lib = expoCrypto();
+  if (!lib) throw new Error('expo-crypto is not in this build');
+  return lib;
+}
+
 async function fileNameFor(userId: string): Promise<string> {
+  const Crypto = crypto();
   const digest = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, `hbcfield-offline:${userId}`);
   return `hbc_${digest.slice(0, 32)}.db`;
 }
@@ -28,7 +36,7 @@ async function keyFor(userId: string): Promise<string> {
   const name = `${KEY_PREFIX}${userId.replace(/[^A-Za-z0-9_-]/g, '_')}`;
   const existing = await SecureStore.getItemAsync(name);
   if (existing && /^[0-9a-f]{64}$/.test(existing)) return existing;
-  const key = Array.from(Crypto.getRandomBytes(32), (b) => b.toString(16).padStart(2, '0')).join('');
+  const key = Array.from(crypto().getRandomBytes(32), (b) => b.toString(16).padStart(2, '0')).join('');
   await SecureStore.setItemAsync(name, key, { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY });
   return key;
 }

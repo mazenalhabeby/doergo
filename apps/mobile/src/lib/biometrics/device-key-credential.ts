@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import * as Crypto from 'expo-crypto';
+import { expoCrypto } from '../optional-native';
 import * as Device from 'expo-device';
 import i18n from '../../i18n';
 import { API_URL, getAccessToken, saveTokens } from '../api/client';
@@ -102,6 +102,9 @@ export async function getKeyOwner(): Promise<KeyOwner | null> {
 async function deviceId(): Promise<string> {
   const existing = await SecureStore.getItemAsync(DEVICE_ID_KEY);
   if (existing) return existing;
+  // Only reached once the key library answered, and every build with it carries expo-crypto too.
+  const Crypto = expoCrypto();
+  if (!Crypto) throw new Error('expo-crypto is not in this build');
   const id = Crypto.randomUUID();
   await SecureStore.setItemAsync(DEVICE_ID_KEY, id, {
     keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,

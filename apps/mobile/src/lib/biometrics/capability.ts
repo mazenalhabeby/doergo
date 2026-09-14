@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import * as LocalAuthentication from 'expo-local-authentication';
+import { localAuthentication } from '../optional-native';
 import i18n from '../../i18n';
 import { deviceKeyModule } from './native';
 
@@ -70,6 +70,11 @@ export async function resolveCapability(): Promise<Capability> {
       console.warn('[biometrics] ReactNativeBiometrics is not in this binary — rebuild to enable');
       return { kind: 'unavailable' };
     }
+    const LocalAuthentication = localAuthentication();
+    if (!LocalAuthentication) {
+      console.warn('[biometrics] ExpoLocalAuthentication is not in this binary — rebuild to enable');
+      return { kind: 'unavailable' };
+    }
     if (!(await LocalAuthentication.hasHardwareAsync())) return { kind: 'unavailable' };
     if (!(await LocalAuthentication.isEnrolledAsync())) return { kind: 'none-enrolled' };
 
@@ -77,7 +82,7 @@ export async function resolveCapability(): Promise<Capability> {
     const level = await LocalAuthentication.getEnrolledLevelAsync();
     if (level !== LocalAuthentication.SecurityLevel.BIOMETRIC_STRONG) return { kind: 'too-weak' };
 
-    return { kind: 'ready', ...(await resolveMethod()) };
+    return { kind: 'ready', ...(await resolveMethod(LocalAuthentication)) };
   } catch (err) {
     /*
       Swallowed for the USER — every caller is deciding whether to offer
@@ -104,7 +109,9 @@ export async function resolveCapability(): Promise<Capability> {
  * says fingerprint, face unlock, or — when the list under-reports and we
  * genuinely cannot tell — the neutral "biometric unlock", which is honest.
  */
-async function resolveMethod(): Promise<{ label: string; method: BiometricMethod }> {
+async function resolveMethod(
+  LocalAuthentication: NonNullable<ReturnType<typeof localAuthentication>>,
+): Promise<{ label: string; method: BiometricMethod }> {
   const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
   const face = types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
   const print = types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);

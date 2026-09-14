@@ -1,5 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
-import * as LocalAuthentication from 'expo-local-authentication';
+import { localAuthentication } from '../optional-native';
 import i18n from '../../i18n';
 import { API_URL, getRefreshToken, saveTokens } from '../api/client';
 import { BiometricError, type BiometricCredential, type BiometricFailure, type KeyOwner } from './types';
@@ -126,6 +126,9 @@ export class SecureStoreCredential implements BiometricCredential {
  * patched build could only skip a confirmation it already had the right to give.
  */
 export async function confirmWithBiometrics(reason: string): Promise<boolean> {
+  // A build without the prompt cannot confirm anything: refuse rather than wave it through.
+  const LocalAuthentication = localAuthentication();
+  if (!LocalAuthentication) return false;
   const res = await LocalAuthentication.authenticateAsync({
     promptMessage: reason,
     cancelLabel: i18n.t('common.cancel'),

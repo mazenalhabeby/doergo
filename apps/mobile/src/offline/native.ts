@@ -1,5 +1,6 @@
 import { NativeModules } from 'react-native';
 import { requireOptionalNativeModule } from 'expo-modules-core';
+import { expoCrypto } from '../lib/optional-native';
 
 type SQLiteLib = typeof import('expo-sqlite');
 type NetInfoLib = typeof import('@react-native-community/netinfo');
@@ -54,7 +55,8 @@ export function loadNetInfo(): NetInfoLib | null {
   return netinfo;
 }
 
-/** Can this build run offline at all? Both parts, or neither. */
+/** Can this build run offline at all? Every part, or none. */
 export function offlineCapableBuild(): boolean {
-  return loadSQLite() !== null && loadNetInfo() !== null;
+  // expo-crypto names the database file and makes its key.
+  return loadSQLite() !== null && loadNetInfo() !== null && expoCrypto() !== null;
 }
