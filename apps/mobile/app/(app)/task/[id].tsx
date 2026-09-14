@@ -57,6 +57,11 @@ import {
   formatElapsedTime,
 } from '../../../src/components/task-detail';
 import { getFlowSteps, hasCapability, getStatusCapabilities, hasFeatureModule, needsTravelEstimate, type TaskCapability } from '@hbcfield/shared/client';
+import { useOffline } from '../../../src/offline/offline-context';
+import { loadTaskDetail } from '../../../src/offline/tasks/task-source';
+import { addTaskComment, changeTaskStatus } from '../../../src/offline/tasks/task-actions';
+import { OfflineBanner } from '../../../src/offline/components/offline-banner';
+import { SyncChip } from '../../../src/offline/components/sync-chip';
 import { BeThereCard } from '../../../src/components/tasks/be-there-card';
 
 /**
@@ -110,6 +115,13 @@ export function TaskDetailPane({
   const isMine = !!user?.id && task?.assignedToId === user.id;
   const doingTheWork = !isAdmin || isMine;
   const [comments, setComments] = useState<Comment[]>([]);
+  const [detailSource, setDetailSource] = useState<'server' | 'phone'>('server');
+  const offline = useOffline();
+  /** A refusal in the member's language: the server's code first, its message second. */
+  const refusalText = (o: { code?: string; message?: string; conflict?: boolean }) =>
+    (o.code && t(`offline.errors.${o.code}`, { defaultValue: '' })) ||
+    o.message ||
+    t(o.conflict ? 'offline.errors.CONFLICT' : 'taskDetail.failedToUpdateStatus');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -299,66 +311,65 @@ export function TaskDetailPane({
     }
   }, [task?.status, task?.id, isTracking, startTracking, stopTracking]);
 
+  /*
+    One loader for the first open and for Retry — there were two copies.
+
+    From the server when it answers; from the phone's saved copy when it does
+    not (a basement, a tunnel), with the member's unsent changes laid on top
+    either way. `source` says which, and the screen says so.
+  */
+  const loadDetail = useCallback(async (signal: { cancelled: boolean }) => {
+    if (!id) return;
+    try {
+      fetchingRef.current = true;
+      setIsLoading(true);
+      setError(null);
+      const detail = await loadTaskDetail(id, {
+        records: offline.records,
+        operations: offline.engine?.operations() ?? [],
+        me: { id: user?.id ?? '', firstName: user?.firstName, lastName: user?.lastName },
+      });
+      if (signal.cancelled) return;
+
+      // Seed elapsed timer from timeline if task is IN_PROGRESS (server copies only —
+      // the timeline is not kept offline, and a timer from 0 is better than none).
+      if (detail.source === 'server' && detail.task.status === TaskStatus.IN_PROGRESS) {
+        try {
+          const timeline = await tasksApi.getTimeline(id);
+          const inProgressEvent = timeline.find(
+            (e) => e.eventType === 'STATUS_CHANGED' && e.metadata?.newStatus === 'IN_PROGRESS',
+          );
+          if (inProgressEvent) {
+            const startedAt = new Date(inProgressEvent.metadata?.occurredAt ?? inProgressEvent.createdAt).getTime();
+            setElapsedTime(Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
+          }
+        } catch {
+          // Non-blocking — timer starts from 0 if timeline fails
+        }
+      }
+
+      setTask(detail.task);
+      setComments(detail.comments);
+      setTaskAttachments(detail.attachments);
+      setDetailSource(detail.source);
+      lastFetchedIdRef.current = id;
+    } catch (err: any) {
+      if (signal.cancelled) return;
+      if (err?.statusCode === 401 || err?.message?.includes('Session expired')) return;
+      setError(err instanceof Error ? err.message : t('taskDetail.failedToLoad'));
+    } finally {
+      if (!signal.cancelled) setIsLoading(false);
+      fetchingRef.current = false;
+    }
+  }, [id, offline.records, offline.engine, user?.id, user?.firstName, user?.lastName, t]);
+
   useEffect(() => {
     if (!id || fetchingRef.current) return;
     if (lastFetchedIdRef.current === id) return;
-
-    let cancelled = false;
-
-    const fetchData = async () => {
-      try {
-        fetchingRef.current = true;
-        setIsLoading(true);
-        setError(null);
-
-        const [taskResponse, commentsResponse, attachmentsResponse] = await Promise.all([
-          tasksApi.getById(id),
-          tasksApi.getComments(id),
-          taskAttachmentsApi.getAttachments(id).catch(() => []),
-        ]);
-
-        // Don't update state if component unmounted or navigated away
-        if (cancelled) return;
-
-        // Seed elapsed timer from timeline if task is IN_PROGRESS
-        if (taskResponse.status === TaskStatus.IN_PROGRESS) {
-          try {
-            const timeline = await tasksApi.getTimeline(id);
-            const inProgressEvent = timeline.find(
-              (e) => e.eventType === 'STATUS_CHANGED' && e.metadata?.newStatus === 'IN_PROGRESS',
-            );
-            if (inProgressEvent) {
-              const startedAt = new Date(inProgressEvent.createdAt).getTime();
-              const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-              setElapsedTime(Math.max(0, elapsed));
-            }
-          } catch {
-            // Non-blocking — timer starts from 0 if timeline fails
-          }
-        }
-
-        setTask(taskResponse);
-        setComments(commentsResponse);
-        setTaskAttachments(attachmentsResponse || []);
-        lastFetchedIdRef.current = id;
-      } catch (err: any) {
-        if (cancelled) return;
-        if (err?.statusCode === 401 || err?.message?.includes('Session expired')) {
-          return;
-        }
-        setError(err instanceof Error ? err.message : t('taskDetail.failedToLoad'));
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-        fetchingRef.current = false;
-      }
-    };
-
-    fetchData();
-
-    return () => { cancelled = true; };
-  }, [id]);
+    const signal = { cancelled: false };
+    void loadDetail(signal);
+    return () => { signal.cancelled = true; };
+  }, [id, loadDetail]);
 
   // Real-time updates via Socket.IO
   const { isConnected, subscribe } = useSocketContext();
@@ -404,9 +415,32 @@ export function TaskDetailPane({
 
   const handleAddComment = useCallback(async () => {
     if (!task || !newComment.trim()) return;
+    const content = newComment.trim();
     try {
       setIsSubmittingComment(true);
-      const comment = await tasksApi.addComment(task.id, newComment.trim());
+      if (offline.engine) {
+        // Saved on the phone first; shown at once, marked until the server has it.
+        const { id: commentId, outcome } = await addTaskComment(offline.engine, { taskId: task.id, content });
+        if (outcome.kind === 'refused') {
+          toast.error(refusalText(outcome));
+          return;
+        }
+        setComments((prev) => [
+          ...prev.filter((c) => c.id !== commentId),
+          {
+            ...((outcome.kind === 'done' ? outcome.response : null) as Comment | null ?? {
+              id: commentId,
+              content,
+              createdAt: new Date().toISOString(),
+              user: { id: user?.id ?? '', firstName: user?.firstName ?? '', lastName: user?.lastName ?? '' },
+            }),
+            pendingSync: outcome.kind === 'queued',
+          } as Comment,
+        ]);
+        setNewComment('');
+        return;
+      }
+      const comment = await tasksApi.addComment(task.id, content);
       setComments(prev => [...prev, comment]);
       setNewComment('');
     } catch (err) {
@@ -414,54 +448,13 @@ export function TaskDetailPane({
     } finally {
       setIsSubmittingComment(false);
     }
-  }, [task, newComment]);
+  }, [task, newComment, offline.engine, user?.id, user?.firstName, user?.lastName]);
 
   const handleRetry = useCallback(() => {
     lastFetchedIdRef.current = null;
     fetchingRef.current = false;
-    setError(null);
-    setIsLoading(true);
-
-    const fetchData = async () => {
-      try {
-        fetchingRef.current = true;
-        const [taskResponse, commentsResponse, attachmentsResponse] = await Promise.all([
-          tasksApi.getById(id!),
-          tasksApi.getComments(id!),
-          taskAttachmentsApi.getAttachments(id!).catch(() => []),
-        ]);
-
-        // Seed elapsed timer from timeline if task is IN_PROGRESS
-        if (taskResponse.status === TaskStatus.IN_PROGRESS) {
-          try {
-            const timeline = await tasksApi.getTimeline(id!);
-            const inProgressEvent = timeline.find(
-              (e) => e.eventType === 'STATUS_CHANGED' && e.metadata?.newStatus === 'IN_PROGRESS',
-            );
-            if (inProgressEvent) {
-              const startedAt = new Date(inProgressEvent.createdAt).getTime();
-              const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-              setElapsedTime(Math.max(0, elapsed));
-            }
-          } catch {
-            // Non-blocking
-          }
-        }
-
-        setTask(taskResponse);
-        setComments(commentsResponse);
-        setTaskAttachments(attachmentsResponse || []);
-        lastFetchedIdRef.current = id!;
-      } catch (err: any) {
-        if (err?.statusCode === 401) return;
-        setError(err instanceof Error ? err.message : t('taskDetail.failedToLoad'));
-      } finally {
-        setIsLoading(false);
-        fetchingRef.current = false;
-      }
-    };
-    fetchData();
-  }, [id]);
+    void loadDetail({ cancelled: false });
+  }, [loadDetail]);
 
   const handleStatusUpdate = async (newStatus: string, reason?: string) => {
     if (!task) return;
@@ -509,7 +502,7 @@ export function TaskDetailPane({
       }
 
       // Get GPS location for statuses that require location verification
-      let location: { lat: number; lng: number; accuracy?: number } | undefined;
+      let location: { lat: number; lng: number; accuracy?: number; fixAt?: string; mocked?: boolean } | undefined;
       const locationRequiredStatuses = [TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS];
       if (locationRequiredStatuses.includes(newStatus as any)) {
         try {
@@ -529,11 +522,36 @@ export function TaskDetailPane({
               lat: loc.coords.latitude,
               lng: loc.coords.longitude,
               accuracy: loc.coords.accuracy ?? undefined,
+              // When the fix was taken and whether a mock-location app produced it —
+              // a change sent later is judged by where the member was at the tap.
+              fixAt: new Date(loc.timestamp).toISOString(),
+              mocked: (loc as { mocked?: boolean }).mocked ?? false,
             };
           }
         } catch {
           // Location will be undefined — backend will reject if task has location set
         }
+      }
+
+      if (offline.engine) {
+        const outcome = await changeTaskStatus(offline.engine, {
+          taskId: task.id,
+          from: task.status,
+          to: newStatus,
+          reason,
+          fix: location && location.accuracy !== undefined && location.fixAt
+            ? { lat: location.lat, lng: location.lng, accuracy: location.accuracy, fixAt: location.fixAt, mocked: location.mocked }
+            : null,
+        });
+        if (outcome.kind === 'refused') throw new Error(refusalText(outcome));
+        if (outcome.kind === 'done') {
+          setTask((prev) => ({ ...(prev ?? task), ...(outcome.response as Task), pendingSync: false } as Task));
+        } else {
+          // No answer yet — saved on this phone and on its way.
+          setTask((prev) => ({ ...(prev ?? task), status: newStatus as Task['status'], pendingSync: true } as Task));
+          toast.info(t('offline.savedForLater'));
+        }
+        return;
       }
 
       const updatedTask = await tasksApi.updateStatus(task.id, newStatus, reason, location);
@@ -1298,6 +1316,9 @@ export function TaskDetailPane({
       {!embedded && <Stack.Screen options={{ headerShown: false }} />}
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={r.isTablet ? centeredContent(720) : undefined}>
+        {/* Offline, weak signal, or something needs the member — silent otherwise. */}
+        <OfflineBanner style={styles.offlineBanner} />
+
         {/* Section 1: Hero Status Card */}
         <TourTarget name="taskdetail-header" style={[styles.heroCard, { backgroundColor: colors.card }]}>
           <View style={styles.heroHeader}>
@@ -1309,6 +1330,11 @@ export function TaskDetailPane({
             </View>
           </View>
           <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>{task.title}</Text>
+          {/* A change on its way, or a copy read from the phone — each said once, quietly. */}
+          <SyncChip entityId={task.id} />
+          {detailSource === 'phone' && (
+            <Text style={[styles.fromPhone, { color: colors.textMuted }]}>{t('offline.fromPhone')}</Text>
+          )}
           <View style={styles.heroMeta}>
             <View style={[styles.priorityBadge, { backgroundColor: priorityStyle.bg }]}>
               <View style={[styles.priorityDot, { backgroundColor: priorityStyle.color }]} />

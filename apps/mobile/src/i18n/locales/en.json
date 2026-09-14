@@ -2395,6 +2395,9 @@
       "body": "Signing out now deletes them from this phone. Connect to the internet to send them first.",
       "send": "Send now",
       "discard": "Delete and sign out"
-    }
+    },
+    "savedForLater": "Saved on this phone — it will be sent when you're back online.",
+    "fromPhone": "Saved on this phone",
+    "fromPhoneAt": "Saved on this phone · last updated {{time}}"
   }
 }

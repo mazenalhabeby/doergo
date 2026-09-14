@@ -25,6 +25,11 @@ import { oversees } from '../../../src/lib/permissions';
 import { countRouteStops } from '../../../src/lib/my-route';
 import { TaskCard, FilterChip, Skeleton, ScreenContainer, PressableScale } from '../../../src/components';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useConnectivity, useOffline, useSyncStatus } from '../../../src/offline/offline-context';
+import { filterTasksLocally } from '../../../src/offline/tasks/task-list-query';
+import { overlayTask } from '../../../src/offline/tasks/overlay';
+import { OfflineBanner } from '../../../src/offline/components/offline-banner';
+import { SyncChip } from '../../../src/offline/components/sync-chip';
 import { TourTarget } from '../../../src/components/tour';
 import { useResponsive } from '../../../src/lib/responsive';
 import { TaskDetailPane } from '../task/[id]';
@@ -235,6 +240,35 @@ export default function TasksScreen() {
   // ---------------------------------------------------------------------------
 
   const lastFetchTimeRef = useRef(0);
+  const offline = useOffline();
+  const connectivity = useConnectivity();
+  const { operations: outbox } = useSyncStatus();
+  const lastParamsRef = useRef<TasksListParams | null>(null);
+
+  /** The list from the phone's copy, with the member's unsent changes on top. */
+  const readLocalTasks = useCallback(async (params: TasksListParams) => {
+    if (!offline.records) return;
+    lastParamsRef.current = params;
+    const rows = await offline.records.list<Task>('tasks');
+    const ops = offline.engine?.operations() ?? [];
+    const visible = filterTasksLocally(
+      rows.map((r) => overlayTask(r.data, ops)),
+      params,
+      user?.id,
+    );
+    setTasks(visible as Task[]);
+  }, [offline.records, offline.engine, user?.id]);
+
+  // The copy changed (a pull landed) or a queued change moved: re-read, no request.
+  useEffect(() => {
+    if (!offline.records) return;
+    return offline.records.onChange((scope) => {
+      if (scope === 'tasks' && lastParamsRef.current) void readLocalTasks(lastParamsRef.current);
+    });
+  }, [offline.records, readLocalTasks]);
+  useEffect(() => {
+    if (lastParamsRef.current) void readLocalTasks(lastParamsRef.current);
+  }, [outbox, readLocalTasks]);
 
   const fetchTasks = useCallback(async (showRefresh = false) => {
     if (fetchingRef.current && !showRefresh) return;
@@ -261,6 +295,26 @@ export default function TasksScreen() {
         limit: 100,
       };
 
+      /*
+        From the phone's copy whenever it can answer — instantly, with or without
+        a connection — and a pull in the background brings it up to date (the
+        copy re-reads itself when that lands). The "current" and "upcoming" tabs
+        are entirely inside what the phone keeps; history reaches further back,
+        so it asks the server while there is one.
+
+        A phone that has never pulled has nothing to show, so its first load
+        still comes from the server.
+      */
+      if (offline.records && offline.engine) {
+        const { lastPullAt } = await offline.records.cursor('tasks');
+        const useLocal = lastPullAt !== null && (activeTab !== 'history' || connectivity !== 'online');
+        if (useLocal) {
+          await readLocalTasks(params);
+          if (connectivity === 'online') void offline.engine.pull('tasks').catch(() => undefined);
+          return;
+        }
+      }
+
       const fetchedTasks = await tasksApi.list(params);
       setTasks(fetchedTasks || []);
     } catch (err: any) {
@@ -273,7 +327,7 @@ export default function TasksScreen() {
       setIsRefreshing(false);
       fetchingRef.current = false;
     }
-  }, [activeTab, debouncedSearch, isAdmin, mineOnly]);
+  }, [activeTab, debouncedSearch, isAdmin, mineOnly, offline.records, offline.engine, connectivity, readLocalTasks]);
 
   /*
     The badges, from the server.
@@ -330,7 +384,12 @@ export default function TasksScreen() {
 
     const debouncedFetch = () => {
       if (socketDebounceRef.current) clearTimeout(socketDebounceRef.current);
-      socketDebounceRef.current = setTimeout(() => fetchTasks(), 2000);
+      // With the offline copy, an event only says "tasks changed": pull, and the
+      // list re-reads itself when the copy updates.
+      socketDebounceRef.current = setTimeout(
+        () => (offline.engine ? void offline.engine.pull('tasks').catch(() => undefined) : fetchTasks()),
+        2000,
+      );
     };
 
     const unsubs = [
@@ -344,7 +403,7 @@ export default function TasksScreen() {
       unsubs.forEach(fn => fn());
       if (socketDebounceRef.current) clearTimeout(socketDebounceRef.current);
     };
-  }, [isConnected, subscribe, fetchTasks]);
+  }, [isConnected, subscribe, fetchTasks, offline.engine]);
 
   // Tab switch resets status filter
   const handleTabChange = (tab: TabKey) => {
@@ -352,7 +411,18 @@ export default function TasksScreen() {
     setFilter('ALL');
   };
 
-  const handleRefresh = () => fetchTasks(true);
+  const handleRefresh = async () => {
+    // Pull-to-refresh means "sync now": send what waits, then bring the copy up to date.
+    if (offline.engine && connectivity === 'online') {
+      setIsRefreshing(true);
+      try {
+        await offline.engine.syncAll();
+      } finally {
+        setIsRefreshing(false);
+      }
+    }
+    return fetchTasks(true);
+  };
 
   const handleTaskPress = (task: Task) => {
     // In the master-detail split, open the task in the right pane instead of
@@ -721,6 +791,7 @@ export default function TasksScreen() {
         */
         ListHeaderComponent={
           <View>
+            <OfflineBanner style={styles.offlineBanner} />
             {isAdmin && (
               <View style={styles.scopeWrap}>
                 <WorkScope
@@ -745,7 +816,11 @@ export default function TasksScreen() {
         columnWrapperStyle={listColumns > 1 ? styles.gridRow : undefined}
         renderItem={({ item, index }) => {
           const card = (
-            <TaskCard task={item} onPress={() => handleTaskPress(item)} showAssignee={isAdmin} showPriority={isAdmin} showDate />
+            <View>
+              <TaskCard task={item} onPress={() => handleTaskPress(item)} showAssignee={isAdmin} showPriority={isAdmin} showDate />
+              {/* Only while this job has a change on its way. */}
+              <SyncChip entityId={item.id} />
+            </View>
           );
           // Spotlight only the first card for the guided tour.
           const content = index === 0 ? <TourTarget name="tasks-card">{card}</TourTarget> : card;
@@ -784,6 +859,7 @@ export default function TasksScreen() {
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
+  offlineBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.sm },
   container: {
     flex: 1,
   },

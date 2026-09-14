@@ -2395,6 +2395,9 @@
       "body": "Wenn Sie sich jetzt abmelden, werden sie von diesem Telefon gelöscht. Verbinden Sie sich zuerst mit dem Internet, um sie zu senden.",
       "send": "Jetzt senden",
       "discard": "Löschen und abmelden"
-    }
+    },
+    "savedForLater": "Auf diesem Telefon gespeichert — wird gesendet, sobald Sie wieder online sind.",
+    "fromPhone": "Auf diesem Telefon gespeichert",
+    "fromPhoneAt": "Auf diesem Telefon gespeichert · zuletzt aktualisiert {{time}}"
   }
 }

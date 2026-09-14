@@ -2395,6 +2395,9 @@
       "body": "Uscendo ora verranno eliminate da questo telefono. Collegati a internet per inviarle prima.",
       "send": "Invia ora",
       "discard": "Elimina ed esci"
-    }
+    },
+    "savedForLater": "Salvato su questo telefono: sarà inviato quando torni online.",
+    "fromPhone": "Salvato su questo telefono",
+    "fromPhoneAt": "Salvato su questo telefono · aggiornato {{time}}"
   }
 }

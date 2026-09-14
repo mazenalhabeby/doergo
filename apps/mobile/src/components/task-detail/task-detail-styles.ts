@@ -100,6 +100,8 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.sm,
   },
+  offlineBanner: { marginHorizontal: SPACING.lg, marginTop: SPACING.md },
+  fromPhone: { fontSize: FONT_SIZE.xs, marginTop: SPACING.xs },
   heroJobId: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.semibold,

@@ -2395,6 +2395,9 @@
       "body": "Vous déconnecter maintenant les supprime de ce téléphone. Connectez-vous à internet pour les envoyer d'abord.",
       "send": "Envoyer",
       "discard": "Supprimer et se déconnecter"
-    }
+    },
+    "savedForLater": "Enregistré sur ce téléphone : ce sera envoyé dès votre retour en ligne.",
+    "fromPhone": "Enregistré sur ce téléphone",
+    "fromPhoneAt": "Enregistré sur ce téléphone · mis à jour {{time}}"
   }
 }

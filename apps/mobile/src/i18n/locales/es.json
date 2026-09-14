@@ -2395,6 +2395,9 @@
       "body": "Si cierras sesión ahora se borrarán de este teléfono. Conéctate a internet para enviarlos primero.",
       "send": "Enviar ahora",
       "discard": "Borrar y cerrar sesión"
-    }
+    },
+    "savedForLater": "Guardado en este teléfono: se enviará cuando vuelvas a tener conexión.",
+    "fromPhone": "Guardado en este teléfono",
+    "fromPhoneAt": "Guardado en este teléfono · actualizado {{time}}"
   }
 }

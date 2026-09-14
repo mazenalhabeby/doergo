@@ -128,6 +128,38 @@ export class SyncEngine {
     return op;
   }
 
+  /**
+   * Enqueue, then wait briefly for the server's answer.
+   *
+   * Online, a member who taps "Arrived" should hear "you are 340 m from the
+   * site" at once, as they always have — not find it in Sync later. So the
+   * screen waits up to `timeoutMs` for the operation to settle. Offline, or on a
+   * slow line, the wait simply runs out and the operation stays queued: the
+   * screen shows it as saved, and the answer arrives whenever it arrives.
+   */
+  async enqueueAndSettle(input: EnqueueInput, timeoutMs = 8_000): Promise<OutboxOp> {
+    const op = await this.enqueue(input);
+    const settled = (o: OutboxOp | undefined) => !!o && (o.state === 'done' || o.state === 'failed' || o.state === 'conflict');
+    const find = () => this.cache.find((o) => o.id === op.id);
+    if (settled(find())) return find()!;
+    return new Promise<OutboxOp>((resolve) => {
+      let unsubscribe: () => void = () => undefined;
+      const timer = setTimeout(() => {
+        unsubscribe();
+        resolve(find() ?? op);
+      }, timeoutMs);
+      unsubscribe = this.subscribe(() => {
+        const current = find();
+        // A transient failure will retry later — waiting longer would only hold the screen.
+        if (settled(current) || current?.state === 'retry' || current?.state === 'awaiting_auth') {
+          clearTimeout(timer);
+          unsubscribe();
+          resolve(current!);
+        }
+      });
+    });
+  }
+
   /** Send what can be sent. Safe to call as often as anything likes. */
   flush(): Promise<void> {
     if (this.flushing) {
@@ -275,6 +307,8 @@ export class SyncEngine {
     this.wakeTimer = null;
     if (at === undefined) return;
     this.wakeTimer = setTimeout(() => void this.flush(), Math.max(0, at - this.now()));
+    // A pending retry must never be what keeps a process alive (tests, headless tasks).
+    (this.wakeTimer as { unref?: () => void }).unref?.();
   }
 
   private async refreshCache(): Promise<void> {

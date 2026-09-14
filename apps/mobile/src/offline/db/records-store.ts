@@ -16,8 +16,50 @@ export interface RecordRow<T = unknown> {
   serverUpdatedAt: string | null;
 }
 
+type ChangeListener = (scope: string) => void;
+
+/** Which field of a pulled row names its parent, per scope. */
+const PARENT_OF: Record<string, (row: any) => string | null> = {
+  comments: (r) => r.taskId ?? null,
+  attachments: (r) => r.taskId ?? null,
+};
+
 export class RecordsStore {
+  private readonly listeners = new Set<ChangeListener>();
+
   constructor(private readonly db: SqlDb) {}
+
+  /** Told after any write to a scope, so screens reading it can re-read. */
+  onChange(listener: ChangeListener): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private changed(scope: string): void {
+    for (const l of this.listeners) l(scope);
+  }
+
+  async listByParent<T>(scope: string, parentId: string): Promise<RecordRow<T>[]> {
+    const rows = await this.db.getAllAsync<{ id: string; parent_id: string | null; data: string; server_updated_at: string | null }>(
+      'SELECT id, parent_id, data, server_updated_at FROM records WHERE scope = ? AND parent_id = ?',
+      [scope, parentId],
+    );
+    return rows.map((r) => ({ id: r.id, parentId: r.parent_id, data: JSON.parse(r.data) as T, serverUpdatedAt: r.server_updated_at }));
+  }
+
+  /** Replace every record of a scope under one parent — a task's notes as the API returned them. */
+  async replaceChildren(scope: string, parentId: string, rows: { id: string; updatedAt?: string | null }[]): Promise<void> {
+    await this.db.withExclusiveTransactionAsync(async (txn) => {
+      await txn.runAsync('DELETE FROM records WHERE scope = ? AND parent_id = ?', [scope, parentId]);
+      for (const row of rows) {
+        await txn.runAsync(
+          'INSERT OR REPLACE INTO records (scope, id, parent_id, data, server_updated_at) VALUES (?, ?, ?, ?, ?)',
+          [scope, row.id, parentId, JSON.stringify(row), row.updatedAt ?? null],
+        );
+      }
+    });
+    this.changed(scope);
+  }
 
   async list<T>(scope: string): Promise<RecordRow<T>[]> {
     const rows = await this.db.getAllAsync<{ id: string; parent_id: string | null; data: string; server_updated_at: string | null }>(
@@ -52,7 +94,7 @@ export class RecordsStore {
       for (const row of page.rows as { id: string; updatedAt?: string | null }[]) {
         await txn.runAsync(
           'INSERT OR REPLACE INTO records (scope, id, parent_id, data, server_updated_at) VALUES (?, ?, ?, ?, ?)',
-          [scope, row.id, options.parentOf?.(row) ?? null, JSON.stringify(row), (row.updatedAt as string | undefined) ?? null],
+          [scope, row.id, (options.parentOf ?? PARENT_OF[scope])?.(row) ?? null, JSON.stringify(row), (row.updatedAt as string | undefined) ?? null],
         );
       }
       for (const id of page.deleted) {
@@ -73,6 +115,7 @@ export class RecordsStore {
         [scope, page.cursor, Date.now()],
       );
     });
+    this.changed(scope);
   }
 
   /** Replace one record with the server's answer to a push. */
@@ -81,6 +124,7 @@ export class RecordsStore {
       'INSERT OR REPLACE INTO records (scope, id, parent_id, data, server_updated_at) VALUES (?, ?, ?, ?, ?)',
       [scope, row.id, parentId, JSON.stringify(row), row.updatedAt ?? null],
     );
+    this.changed(scope);
   }
 
   async cursor(scope: string): Promise<{ cursor: string | null; lastPullAt: number | null }> {
