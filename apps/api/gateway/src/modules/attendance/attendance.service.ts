@@ -39,13 +39,18 @@ export class AttendanceService extends BaseGatewayService {
   }
 
   // ── Session work-log ("what I did today") ──────────────────────────────────
-  worklogAddNote(data: any) { return this.send({ cmd: 'worklog_add_note' }, data); }
-  worklogAddNotesBatch(data: any) { return this.send({ cmd: 'worklog_add_notes_batch' }, data); }
+  /*
+    Work-log and rest WRITES go through `sendOnce`: `send` retries on a slow
+    answer, and a retried write lands twice — the batch route has no ids to
+    catch it. Reads and presigns keep the retrying `send`.
+  */
+  worklogAddNote(data: any) { return this.sendOnce({ cmd: 'worklog_add_note' }, data); }
+  worklogAddNotesBatch(data: any) { return this.sendOnce({ cmd: 'worklog_add_notes_batch' }, data); }
   worklogList(data: any) { return this.send({ cmd: 'worklog_list' }, data); }
-  worklogDeleteNote(data: any) { return this.send({ cmd: 'worklog_delete_note' }, data); }
+  worklogDeleteNote(data: any) { return this.sendOnce({ cmd: 'worklog_delete_note' }, data); }
   worklogPresignAttachment(data: any) { return this.send({ cmd: 'worklog_presign_attachment' }, data); }
-  worklogConfirmAttachment(data: any) { return this.send({ cmd: 'worklog_confirm_attachment' }, data); }
-  worklogDeleteAttachment(data: any) { return this.send({ cmd: 'worklog_delete_attachment' }, data); }
+  worklogConfirmAttachment(data: any) { return this.sendOnce({ cmd: 'worklog_confirm_attachment' }, data); }
+  worklogDeleteAttachment(data: any) { return this.sendOnce({ cmd: 'worklog_delete_attachment' }, data); }
 
   /**
    * Get time entries for a location (admin view)
@@ -193,12 +198,12 @@ export class AttendanceService extends BaseGatewayService {
     entryId?: string;
     evidence?: unknown;
   }) {
-    return this.send({ cmd: 'start_break' }, data);
+    return this.sendOnce({ cmd: 'start_break' }, data);
   }
 
   /** "Later" — the count is kept server-side, so this is a real answer. */
   async snoozeBreak(data: { userId: string; organizationId: string; ruleId?: string }) {
-    return this.send({ cmd: 'snooze_break' }, data);
+    return this.sendOnce({ cmd: 'snooze_break' }, data);
   }
 
   // ── Rest rules ───────────────────────────────────────────────────────────
@@ -231,7 +236,7 @@ export class AttendanceService extends BaseGatewayService {
     breakId?: string;
     evidence?: unknown;
   }) {
-    return this.send({ cmd: 'end_break' }, data);
+    return this.sendOnce({ cmd: 'end_break' }, data);
   }
 
   /**
