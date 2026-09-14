@@ -23,10 +23,15 @@ import { HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Queue, QueueEvents, Job } from 'bullmq';
 import { DEFAULT_JOB_OPTIONS } from './constants';
 import { sanitizeErrorMessage } from '../api/prisma-error';
+import { idempotentJobId } from './idempotency-context';
 
 interface JobError {
   message?: string;
   statusCode?: number;
+  /** Machine-readable reason (e.g. TASK_STATE_CONFLICT) for the client's language. */
+  code?: string;
+  /** Structured detail, e.g. the server's current version of an entity on a conflict. */
+  params?: Record<string, unknown>;
 }
 
 interface ConfigServiceLike {
@@ -71,12 +76,26 @@ export abstract class BaseQueueService {
     data: Record<string, unknown>,
     timeoutMs: number = 30000,
   ): Promise<T> {
+    const idempotentId = idempotentJobId(jobType);
+    if (idempotentId) {
+      /*
+        ⚠️ Re-adding an id BullMQ still holds returns that job as it is. A
+        FINISHED one is exactly what a retry wants (its answer); a FAILED one
+        would hand back the same failure for a day — so a transient error could
+        never be retried. The failed attempt is removed and the work runs again.
+      */
+      const previous = await Job.fromId(this.queue, idempotentId);
+      if (previous && (await previous.isFailed())) await previous.remove().catch(() => undefined);
+    }
     const job = await this.queue.add(jobType, data, {
       ...DEFAULT_JOB_OPTIONS.CRITICAL,
-      // Unique job ID per call (this is a request/response addJobAndWait flow, so
-      // each write is intentionally a distinct job — not deduped). If true
-      // idempotency is ever needed, derive jobId from the payload instead.
-      jobId: `${jobType}-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+      /*
+        A request with an Idempotency-Key gets a job id derived from it, so a
+        retry after a timed-out wait JOINS the job still running (or finished)
+        rather than running the write again. Without a key, every call is a
+        distinct job, as before.
+      */
+      jobId: idempotentId ?? `${jobType}-${Date.now()}-${Math.random().toString(36).substring(7)}`,
     });
 
     this.logger.debug(`Job ${job.id} added to queue: ${jobType}`);
@@ -103,7 +122,17 @@ export abstract class BaseQueueService {
             errorData.message || failedJob.failedReason,
             errorData.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
           );
-          throw new HttpException(clean.message, clean.status);
+          // The code and detail survive the queue — a phone told only "conflict"
+          // in English cannot say which conflict, in the member's language.
+          throw new HttpException(
+            {
+              message: clean.message,
+              statusCode: clean.status,
+              ...(errorData.code ? { code: errorData.code } : {}),
+              ...(errorData.params && typeof errorData.params === 'object' ? { params: errorData.params } : {}),
+            },
+            clean.status,
+          );
         } catch (parseError) {
           // If parsing fails, the raw error message IS the failedReason — sanitize it.
           if (parseError instanceof HttpException) throw parseError;

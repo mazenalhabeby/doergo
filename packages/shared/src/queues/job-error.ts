@@ -15,9 +15,16 @@ import { UnrecoverableError } from 'bullmq';
  */
 export function buildJobError(error: any): Error {
   const statusCode = error?.status || error?.statusCode || 500;
+  // An HttpException built from an object carries `code` / `params` in its
+  // response body; keep them, or the gateway can only pass on English.
+  const response = typeof error?.getResponse === 'function' ? error.getResponse() : null;
+  const code = typeof response?.code === 'string' ? response.code : typeof error?.code === 'string' ? error.code : undefined;
+  const params = response?.params && typeof response.params === 'object' ? response.params : undefined;
   const payload = JSON.stringify({
     message: error?.message ?? 'Job failed',
     statusCode,
+    ...(code ? { code } : {}),
+    ...(params ? { params } : {}),
   });
   return statusCode < 500 ? new UnrecoverableError(payload) : new Error(payload);
 }

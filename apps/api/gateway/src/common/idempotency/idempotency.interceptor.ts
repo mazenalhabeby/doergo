@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { from, Observable, of, throwError } from 'rxjs';
+import { requestIdempotency } from '@hbcfield/shared';
 import { catchError, mergeMap, tap } from 'rxjs/operators';
 import { IdempotencyStore } from './idempotency.store';
 
@@ -92,7 +93,11 @@ export class IdempotencyInterceptor implements NestInterceptor {
           return of(entry.body);
         }
 
-        return next.handle().pipe(
+        // The key travels with the handler (AsyncLocalStorage) so a queued job
+        // takes its id from it — see idempotency-context.ts.
+        return new Observable<unknown>((subscriber) =>
+          requestIdempotency.run({ key, userId }, () => next.handle().subscribe(subscriber)),
+        ).pipe(
           tap((body) => {
             const status = res.statusCode ?? 200;
             const size = safeSize(body);
