@@ -9,6 +9,8 @@ import {
 } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { buildTaskVisibilityWhere, type TaskVisibilityFacts } from '../tasks/task-visibility';
+import { TASK_LIST_INCLUDE, annotateTracksLocation } from '../tasks/task-list-shape';
+import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
 
 /** Closed work stays on the phone this long, so yesterday's job can still be looked up in a basement. */
 const CLOSED_TASK_WINDOW_DAYS = 30;
@@ -70,7 +72,10 @@ export function decodeCursor(raw: string | null | undefined): Cursor | null {
  */
 @Injectable()
 export class SyncPullService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly workflows: WorkflowConfigCache,
+  ) {}
 
   async pull(req: PullRequest): Promise<SyncPullResponse> {
     switch (req.scope) {
@@ -78,6 +83,8 @@ export class SyncPullService {
         return this.spaces(req);
       case 'tasks':
         return this.tasks(req);
+      case 'workflows':
+        return this.workflowScope(req);
       case 'comments':
         return this.taskChildren(req, 'comments');
       case 'attachments':
@@ -148,18 +155,13 @@ export class SyncPullService {
       },
       orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
       take: limit + 1,
-      select: {
-        id: true, title: true, description: true, status: true, priority: true,
-        dueDate: true, locationLat: true, locationLng: true, locationAddress: true,
-        spaceId: true, workflowId: true, assetId: true, customerId: true, unitId: true,
-        assignedToId: true, createdById: true, parentId: true,
-        routeStartedAt: true, routeEndedAt: true,
-        createdAt: true, updatedAt: true,
-        assignees: { select: { userId: true, role: true } },
-      },
+      // The list endpoint's own shape — see task-list-shape.ts.
+      include: TASK_LIST_INCLUDE,
     });
     const hasMore = rows.length > limit;
-    const page = hasMore ? rows.slice(0, limit) : rows;
+    const page = await annotateTracksLocation(hasMore ? rows.slice(0, limit) : rows, (id) =>
+      this.workflows.getWorkflow(req.organizationId, id),
+    );
 
     // Deletions since the last pull. A reset sends none: the phone is replacing
     // the scope wholesale, and `scopeIds` below settles membership.
@@ -295,6 +297,26 @@ export class SyncPullService {
       hasMore,
       reset,
       serverTime: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * The organization's task flows with their statuses and transitions — what
+   * the task screen needs to offer the right next step with no connection.
+   * Read from the same cache the server's own transition check uses. Small,
+   * always sent whole.
+   */
+  private async workflowScope(req: PullRequest): Promise<SyncPullResponse> {
+    const rows = (await this.workflows.getOrgWorkflows(req.organizationId)) as { id: string }[];
+    const now = new Date().toISOString();
+    return {
+      scope: 'workflows',
+      rows,
+      deleted: [],
+      cursor: encodeCursor({ t: now, i: '', d: '0', s: now }),
+      hasMore: false,
+      reset: true,
+      serverTime: now,
     };
   }
 }

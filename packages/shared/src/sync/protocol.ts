@@ -121,7 +121,7 @@ export function retryDelayMs(attempt: number, random: () => number = Math.random
 }
 
 /** The parts of a member's world a phone keeps a copy of. Grows phase by phase. */
-export const SYNC_PULL_SCOPES = ['spaces', 'tasks', 'comments', 'attachments'] as const;
+export const SYNC_PULL_SCOPES = ['spaces', 'workflows', 'tasks', 'comments', 'attachments'] as const;
 export type SyncPullScope = (typeof SYNC_PULL_SCOPES)[number];
 
 /** At most this many rows per pull page. */

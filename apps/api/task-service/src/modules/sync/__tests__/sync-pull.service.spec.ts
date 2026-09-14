@@ -9,13 +9,14 @@
 import { SyncPullService, encodeCursor, decodeCursor } from '../sync-pull.service';
 
 const ORG = 'org_1';
+const workflowsStub = { getWorkflow: async () => null, getOrgWorkflows: async () => [{ id: 'wf1', statuses: [] }] };
 const day = 86_400_000;
 const facts = { userId: 'u1', userRole: 'EMPLOYEE', organizationId: ORG };
 
 function prismaWith(tasks: any[], tombstones: any[] = []) {
   return {
     task: {
-      findMany: jest.fn(async (args: any) => (args.select?.title ? tasks.slice(0, args.take) : tasks.map((t) => ({ id: t.id })))),
+      findMany: jest.fn(async (args: any) => (args.include ? tasks.slice(0, args.take) : tasks.map((t) => ({ id: t.id })))),
     },
     syncTombstone: {
       findMany: jest.fn(async () => tombstones),
@@ -40,7 +41,7 @@ describe('cursor', () => {
 describe('SyncPullService tasks', () => {
   it('first pull is a reset with the scope membership on the last page', async () => {
     const prisma = prismaWith([task('a'), task('b')]);
-    const r = await new SyncPullService(prisma as any).pull({ ...facts, scope: 'tasks' });
+    const r = await new SyncPullService(prisma as any, workflowsStub as any).pull({ ...facts, scope: 'tasks' });
     expect(r.reset).toBe(true);
     expect(r.hasMore).toBe(false);
     expect(r.scopeIds).toEqual(['a', 'b']);
@@ -53,7 +54,7 @@ describe('SyncPullService tasks', () => {
   it('pages without sending membership until the last page', async () => {
     const rows = Array.from({ length: 5 }, (_, i) => task(`t${i}`));
     const prisma = prismaWith(rows);
-    const r = await new SyncPullService(prisma as any).pull({ ...facts, scope: 'tasks', limit: 2 });
+    const r = await new SyncPullService(prisma as any, workflowsStub as any).pull({ ...facts, scope: 'tasks', limit: 2 });
     expect(r.rows).toHaveLength(2);
     expect(r.hasMore).toBe(true);
     expect(r.scopeIds).toBeUndefined();
@@ -63,21 +64,21 @@ describe('SyncPullService tasks', () => {
   it('⚠️ an old scope is not reset: staleness is the cursor age, not the row date', async () => {
     const prisma = prismaWith([task('a', new Date(Date.now() - 200 * day))]);
     const cursor = encodeCursor({ t: new Date(Date.now() - 200 * day).toISOString(), i: 'a', d: '41', s: new Date().toISOString() });
-    const r = await new SyncPullService(prisma as any).pull({ ...facts, scope: 'tasks', cursor });
+    const r = await new SyncPullService(prisma as any, workflowsStub as any).pull({ ...facts, scope: 'tasks', cursor });
     expect(r.reset).toBe(false);
   });
 
   it('a phone that has not pulled for longer than the tombstone window rebuilds', async () => {
     const prisma = prismaWith([]);
     const cursor = encodeCursor({ t: '2026-01-01T00:00:00.000Z', i: 'a', d: '1', s: new Date(Date.now() - 120 * day).toISOString() });
-    const r = await new SyncPullService(prisma as any).pull({ ...facts, scope: 'tasks', cursor });
+    const r = await new SyncPullService(prisma as any, workflowsStub as any).pull({ ...facts, scope: 'tasks', cursor });
     expect(r.reset).toBe(true);
   });
 
   it('reports deletions since the cursor, scoped to the organization, and advances the watermark', async () => {
     const prisma = prismaWith([], [{ id: BigInt(42), entityId: 'gone1' }, { id: BigInt(47), entityId: 'gone2' }]);
     const cursor = encodeCursor({ t: '2026-09-01T00:00:00.000Z', i: 'a', d: '41', s: new Date().toISOString() });
-    const r = await new SyncPullService(prisma as any).pull({ ...facts, scope: 'tasks', cursor });
+    const r = await new SyncPullService(prisma as any, workflowsStub as any).pull({ ...facts, scope: 'tasks', cursor });
     expect(r.deleted).toEqual(['gone1', 'gone2']);
     expect((prisma.syncTombstone.findMany.mock.calls as any)[0][0].where).toMatchObject({ entity: 'tasks', organizationId: ORG, id: { gt: BigInt(41) } });
     expect(decodeCursor(r.cursor)!.d).toBe('47');
@@ -85,14 +86,14 @@ describe('SyncPullService tasks', () => {
 
   it('scopes rows by the task list visibility rule (a member sees only their own work)', async () => {
     const prisma = prismaWith([]);
-    await new SyncPullService(prisma as any).pull({ ...facts, scope: 'tasks' });
+    await new SyncPullService(prisma as any, workflowsStub as any).pull({ ...facts, scope: 'tasks' });
     const where = (prisma.task.findMany.mock.calls as any)[0][0].where;
     expect(where.organizationId).toBe(ORG);
     expect(JSON.stringify(where.AND)).toContain('"assignedToId":"u1"');
   });
 
   it('refuses an unknown scope', async () => {
-    await expect(new SyncPullService(prismaWith([]) as any).pull({ ...facts, scope: 'payroll' as any })).rejects.toThrow('Unknown sync scope');
+    await expect(new SyncPullService(prismaWith([]) as any, workflowsStub as any).pull({ ...facts, scope: 'payroll' as any })).rejects.toThrow('Unknown sync scope');
   });
 });
 
@@ -110,7 +111,7 @@ describe('SyncPullService task children', () => {
       },
     };
     const cursor = encodeCursor({ t: '2026-08-01T00:00:00.000Z', i: '', d: '49', s: new Date().toISOString() });
-    const r = await new SyncPullService(prisma).pull({ ...facts, scope: 'comments', cursor });
+    const r = await new SyncPullService(prisma, workflowsStub as any).pull({ ...facts, scope: 'comments', cursor });
     const where = prisma.comment.findMany.mock.calls[0][0].where;
     expect(where.task.organizationId).toBe(ORG);
     expect(r.deleted).toEqual(['gone-mine']);
@@ -122,9 +123,16 @@ describe('SyncPullService task children', () => {
       attachment: { findMany: jest.fn(async () => []) },
       syncTombstone: { aggregate: jest.fn(async () => ({ _max: { id: null } })) },
     };
-    await new SyncPullService(prisma).pull({ ...facts, scope: 'attachments' });
+    await new SyncPullService(prisma, workflowsStub as any).pull({ ...facts, scope: 'attachments' });
     const select = prisma.attachment.findMany.mock.calls[0][0].select;
     expect(select.fileUrl).toBeUndefined();
     expect(select.fileKey).toBeUndefined();
+  });
+});
+
+describe('SyncPullService workflows', () => {
+  it('sends the organization flows whole, from the same cache the transition check reads', async () => {
+    const r = await new SyncPullService({} as any, workflowsStub as any).pull({ ...facts, scope: 'workflows' });
+    expect(r).toMatchObject({ scope: 'workflows', reset: true, hasMore: false, rows: [{ id: 'wf1' }] });
   });
 });
