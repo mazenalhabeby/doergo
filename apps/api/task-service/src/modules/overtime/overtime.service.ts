@@ -9,6 +9,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { AttendanceService } from '../attendance/attendance.service';
 import {
   success,
   SERVICE_NAMES,
@@ -30,6 +31,7 @@ export class OvertimeService {
     private readonly notificationClient: ClientProxy,
     @InjectQueue(QUEUE_NAMES.OVERTIME)
     private readonly overtimeQueue: Queue,
+    private readonly attendance: AttendanceService,
   ) {}
 
   /**
@@ -528,8 +530,20 @@ export class OvertimeService {
     return request;
   }
 
+  /*
+    ⚠️ APPROVING IS ONE RULE, AND IT LIVES IN ATTENDANCE.
+
+    This used to mark the round APPROVED from the click, schedule a job that
+    clocked the member out when the minutes ran out, and never touch the shift.
+    Counted time stops at `expectedClockOutAt`, so an approval from the web
+    Overtime page or a signature read "Approved" and counted nothing — and on a
+    shift sent in the next day from a phone without signal, the job had nobody
+    to clock out and recorded minutes since the click. The phone's extra-time
+    screen already did it right: minutes from the shift end, the expected end
+    moved, a closed shift recounted. Every approval goes through that now.
+  */
   private async approveRequest(
-    request: any,
+    request: { id: string; timeEntryId: string; organizationId: string },
     approval: {
       approverId: string;
       maxDurationMinutes: number;
@@ -539,48 +553,21 @@ export class OvertimeService {
       leaderSignature?: string;
     },
   ) {
-    const now = new Date();
-    const maxMinutes = Math.min(approval.maxDurationMinutes, OVERTIME_CONSTANTS.MAX_OVERTIME_DURATION_MINUTES);
-    const overtimeEndAt = new Date(now.getTime() + maxMinutes * 60 * 1000);
-
-    await this.prisma.overtimeRequest.update({
-      where: { id: request.id },
-      data: {
-        status: 'APPROVED',
-        approvalMethod: approval.method,
-        approvedById: approval.approverId,
-        approvedAt: now,
-        approverNotes: approval.notes,
-        leaderName: approval.leaderName,
-        leaderSignature: approval.leaderSignature,
-        maxDurationMinutes: maxMinutes,
-        overtimeStartAt: now,
-        overtimeEndAt,
-      },
+    const minutes = Math.min(approval.maxDurationMinutes, OVERTIME_CONSTANTS.MAX_OVERTIME_DURATION_MINUTES);
+    const result = await this.attendance.approveExtraTime({
+      approverId: approval.approverId,
+      entryId: request.timeEntryId,
+      minutes,
+      organizationId: request.organizationId,
+      signature: approval.method === 'SIGNATURE' ? approval.leaderSignature ?? null : null,
+      notes: approval.notes ?? null,
     });
+    if (approval.leaderName) {
+      await this.prisma.overtimeRequest.update({ where: { id: request.id }, data: { leaderName: approval.leaderName } });
+    }
 
-    // Schedule delayed job to end overtime
-    await this.overtimeQueue.add(
-      OVERTIME_JOB_TYPES.END_OVERTIME,
-      { overtimeRequestId: request.id },
-      {
-        delay: maxMinutes * 60 * 1000,
-        jobId: `overtime-end-${request.id}`,
-        removeOnComplete: true,
-      },
-    );
-
-    // Notify technician
-    this.notificationClient.emit('push_notification', {
-      userId: request.technicianId,
-      title: 'Overtime Approved',
-      body: `Your overtime has been approved for ${maxMinutes} minutes.`,
-      data: { type: 'overtime.approved', overtimeRequestId: request.id, maxDurationMinutes: maxMinutes },
-    });
-
-    this.logger.log(`Overtime ${request.id} approved: ${maxMinutes} min by ${approval.approverId} via ${approval.method}`);
-
-    return success({ status: 'APPROVED', maxDurationMinutes: maxMinutes, overtimeEndAt }, 'Overtime approved');
+    this.logger.log(`Overtime ${request.id} approved: ${minutes} min by ${approval.approverId} via ${approval.method}`);
+    return result;
   }
 
   private async clockOutEntry(timeEntryId: string, organizationId: string, notes: string) {

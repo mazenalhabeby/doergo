@@ -6,11 +6,14 @@ import { OvertimeService } from './overtime.service';
 import { OvertimeProcessor } from './overtime.processor';
 import { OvertimeScheduler } from './overtime.scheduler';
 import { OvertimeController } from './overtime.controller';
+import { AttendanceModule } from '../attendance/attendance.module';
 
 @Module({
   imports: [
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
     BullModule.registerQueue({ name: QUEUE_NAMES.OVERTIME }),
+    // Approving a round is ONE rule, owned by attendance: see OvertimeService.approveRequest.
+    AttendanceModule,
   ],
   controllers: [OvertimeController],
   providers: [OvertimeService, OvertimeProcessor, OvertimeScheduler],

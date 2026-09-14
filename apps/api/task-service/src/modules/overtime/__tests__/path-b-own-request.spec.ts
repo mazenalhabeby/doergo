@@ -10,7 +10,7 @@ it("refuses to approve a colleague's overtime by naming a real approver", async 
     overtimeRequest: { findFirst: jest.fn(async () => ({ id: 'ot1', technicianId: 'colleague', locationId: 'l1', status: 'PENDING_APPROVAL' })) },
     user: { findFirst: jest.fn(async () => ({ id: 'leader', role: 'ADMIN', memberRole: null })) },
   };
-  const service = new OvertimeService(prisma, { emit: jest.fn() } as any, { add: jest.fn() } as any);
+  const service = new OvertimeService(prisma, { emit: jest.fn() } as any, { add: jest.fn() } as any, {} as any);
   const approve = jest.spyOn(service as any, 'approveRequest').mockResolvedValue({});
   await expect(
     service.leaderApproveSignature({
