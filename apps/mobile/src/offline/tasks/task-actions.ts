@@ -48,13 +48,13 @@ export async function changeTaskStatus(
 export async function addTaskPhoto(
   engine: SyncEngine,
   files: OfflineFiles,
-  input: { taskId: string; fileName: string; mime: string; width?: number; height?: number; kind?: FileKind } & (
+  input: { taskId: string; fileName: string; mime: string; width?: number; height?: number; kind?: FileKind; dependsOn?: string[] } & (
     | { uri: string }
     | { base64: string }
   ),
 ): Promise<{ id: string; outcome: ActionOutcome }> {
   const id = uuidv7();
-  const { taskId, fileName, kind = 'photo', ...source } = input;
+  const { taskId, fileName, kind = 'photo', dependsOn, ...source } = input;
   const file = await files.keep({ ...source, id, kind });
   let op: OutboxOp;
   try {
@@ -63,6 +63,8 @@ export async function addTaskPhoto(
         op: 'task.attachment',
         lane: `task:${taskId}`,
         entityId: taskId,
+        // A photo on a task created offline waits for the task to exist.
+        dependsOn,
         payload: {
           params: { taskId },
           body: { id, fileName: renameForType(fileName, file.mime), fileType: file.mime, fileSize: file.bytes ?? undefined },

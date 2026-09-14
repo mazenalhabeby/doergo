@@ -15,6 +15,8 @@ export interface CreateInput {
   /** The field the route reads the phone's id from. `id` unless the route already uses it for something else. */
   idField?: string;
   dependsOn?: string[];
+  /** The id, when the caller needs it before creating (to queue what follows). Made here otherwise. */
+  id?: string;
 }
 
 /**
@@ -25,8 +27,8 @@ export interface CreateInput {
  * same record however many times it arrives. One implementation for every
  * "create" a worker makes; the screens differ only in what they show meanwhile.
  */
-export async function createFromPhone(engine: SyncEngine, input: CreateInput): Promise<{ id: string; outcome: ActionOutcome }> {
-  const id = uuidv7();
+export async function createFromPhone(engine: SyncEngine, input: CreateInput): Promise<{ id: string; opId: string; state: OutboxOp['state']; outcome: ActionOutcome }> {
+  const id = input.id ?? uuidv7();
   const op = await engine.enqueueAndSettle({
     op: input.op,
     lane: input.lane,
@@ -34,7 +36,7 @@ export async function createFromPhone(engine: SyncEngine, input: CreateInput): P
     dependsOn: input.dependsOn,
     payload: { ...(input.params ? { params: input.params } : {}), body: { ...input.body, [input.idField ?? 'id']: id } },
   });
-  return { id, outcome: await outcomeOf(engine, op) };
+  return { id, opId: op.id, state: op.state, outcome: await outcomeOf(engine, op) };
 }
 
 /** What a create is still waiting to send, for a screen to show in place. */

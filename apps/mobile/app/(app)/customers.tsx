@@ -12,6 +12,7 @@ import { holds } from '../../src/lib/permissions';
 import { BlurSheet } from '../../src/components/blur-sheet';
 import { canScanCards } from '../../src/lib/card-scan';
 import { useToast } from '../../src/contexts/toast-context';
+import { useQueuedCreate } from '../../src/offline/actions/queued-create';
 import { customerStageLabel } from '@hbcfield/shared/client';
 import { useTheme } from '../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
@@ -30,6 +31,8 @@ export default function CustomersScreen() {
   const [capped, setCapped] = useState(false);
   const { user } = useAuth();
   const toast = useToast();
+  // A client added with no signal waits in the outbox and is sent when there is one.
+  const clientCreate = useQueuedCreate('customer.create');
 
   /*
     May this person add a client?
@@ -98,7 +101,7 @@ export default function CustomersScreen() {
     if (!name) return;
     setSaving(true);
     try {
-      await customersApi.create({
+      const input = {
         name,
         contactName: form.contactName.trim() || undefined,
         email: form.email.trim() || undefined,
@@ -106,17 +109,22 @@ export default function CustomersScreen() {
         // Whatever workspace is being viewed, so the client lands where the
         // person is looking rather than nowhere.
         spaceId: formSpaceId ?? undefined,
-      });
+      };
+      const outcome = await clientCreate.run({ lane: 'crm:new', body: input }, () => customersApi.create(input));
+      if (outcome.kind === 'refused') {
+        toast.error((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('customers.addFailed', 'Could not add the client'));
+        return;
+      }
       setSheet('none');
       setForm({ name: '', contactName: '', email: '', phone: '' });
-      toast.success(t('customers.added', 'Client added'));
+      toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('customers.added', 'Client added'));
       load(search, spaceId);
     } catch (e: any) {
       toast.error(e?.message || t('customers.addFailed', 'Could not add the client'));
     } finally {
       setSaving(false);
     }
-  }, [form, formSpaceId, load, search, spaceId, t, toast]);
+  }, [form, formSpaceId, load, search, spaceId, t, toast, clientCreate]);
 
   // Rows carry a spaceId and no name; this is the only place that can say which.
   const spaceName = useCallback(

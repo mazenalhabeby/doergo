@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator,
   TextInput, Linking, RefreshControl,
@@ -12,6 +12,7 @@ import { customersApi, type MobileCustomer, type MobileCustomerActivity } from '
 import { CUSTOMER_STAGES, customerStageLabel } from '@hbcfield/shared/client';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
+import { useQueuedCreate } from '../../../src/offline/actions/queued-create';
 
 const initials = (n: string) => n.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 const STAGE_DOT: Record<string, string> = { LEAD: '#94a3b8', CONTACTED: '#3b82f6', QUALIFIED: '#8b5cf6', CUSTOMER: '#16a34a', INACTIVE: '#9ca3af' };
@@ -34,6 +35,9 @@ export default function CustomerRecordScreen() {
   const { t } = useTranslation();
   const [customer, setCustomer] = useState<MobileCustomer | null>(null);
   const [activities, setActivities] = useState<MobileCustomerActivity[]>([]);
+  // Notes and reminders written with no signal wait in the outbox; shown at the top meanwhile.
+  const activityCreate = useQueuedCreate<{ type: string; body?: string; dueAt?: string }>('customer.activity', { onAccepted: () => void loadRef.current?.() });
+  const loadRef = useRef<(() => Promise<void>) | null>(null);
   const [loading, setLoading] = useState(true);
   const [type, setType] = useState('NOTE');
   const [body, setBody] = useState('');
@@ -47,6 +51,14 @@ export default function CustomerRecordScreen() {
     } catch { /* ignore */ } finally { setLoading(false); }
   }, [id]);
   useEffect(() => { load(); }, [load]);
+  loadRef.current = load;
+  const shownActivities = useMemo(() => {
+    const known = new Set(activities.map((a) => a.id));
+    const onPhone = activityCreate.pending
+      .filter((p) => p.params.customerId === id && !known.has(p.id))
+      .map((p) => ({ id: p.id, type: p.body.type, body: p.body.body ?? null, dueAt: p.body.dueAt ?? null, doneAt: null, createdAt: new Date(p.createdAt).toISOString(), pendingSync: true }) as unknown as MobileCustomerActivity);
+    return [...onPhone, ...activities];
+  }, [activities, activityCreate.pending, id]);
 
   const add = async () => {
     if (!body.trim() && type !== 'REMINDER') return;
@@ -54,8 +66,11 @@ export default function CustomerRecordScreen() {
     try {
       let dueAt: string | undefined;
       if (type === 'REMINDER' && due) { const opt = DUE.find((d) => d.k === due); if (opt) dueAt = new Date(Date.now() + opt.h * 3600_000).toISOString(); }
-      await customersApi.addActivity(id, { type, body: body.trim() || undefined, dueAt });
-      setBody(''); setDue(null); await load();
+      const input = { type, body: body.trim() || undefined, dueAt };
+      const outcome = await activityCreate.run({ lane: `crm:${id}`, params: { customerId: id }, body: input }, () => customersApi.addActivity(id, input));
+      if (outcome.kind === 'refused') return;
+      setBody(''); setDue(null);
+      if (outcome.kind === 'done') await load();
     } catch { /* ignore */ } finally { setSaving(false); }
   };
   const setStage = async (s: string) => { if (!customer) return; setCustomer({ ...customer, status: s }); try { await customersApi.update(id, { status: s }); load(); } catch { /* ignore */ } };
@@ -124,20 +139,21 @@ export default function CustomerRecordScreen() {
 
         {/* Timeline */}
         <Text style={[styles.section, { color: colors.textMuted }]}>Activity</Text>
-        {activities.length === 0 ? (
+        {shownActivities.length === 0 ? (
           <Text style={{ textAlign: 'center', color: colors.textMuted, fontSize: FONT_SIZE.sm, paddingVertical: 24 }}>No activity yet.</Text>
-        ) : activities.map((a) => {
+        ) : shownActivities.map((a) => {
           const overdue = a.type === 'REMINDER' && a.dueAt && !a.doneAt && new Date(a.dueAt).getTime() < Date.now();
+          const pending = !!(a as { pendingSync?: boolean }).pendingSync;
           return (
             <View key={a.id} style={[styles.actItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Ionicons name={ACT_ICON[a.type] as any} size={16} color={overdue ? '#dc2626' : COLORS.primary} style={{ marginTop: 2 }} />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={{ fontSize: FONT_SIZE.xs, color: colors.textMuted }}>
                   {a.type === 'STATUS' ? `Stage: ${customerStageLabel(a.metadata?.from || '')} → ${customerStageLabel(a.metadata?.to || '')}` : a.type}
-                  {a.author ? ` · ${a.author.firstName}` : ''} · {relTime(a.createdAt)}
+                  {a.author ? ` · ${a.author.firstName}` : ''} · {pending ? t('offline.chip.waiting') : relTime(a.createdAt)}
                 </Text>
                 {!!a.body && <Text style={{ color: colors.textPrimary, fontSize: FONT_SIZE.sm, marginTop: 2 }}>{a.body}</Text>}
-                {a.type === 'REMINDER' && (
+                {a.type === 'REMINDER' && !pending && (
                   <TouchableOpacity onPress={() => toggleDone(a)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
                     <Ionicons name={a.doneAt ? 'checkbox' : 'square-outline'} size={16} color={a.doneAt ? '#16a34a' : overdue ? '#dc2626' : '#d97706'} />
                     <Text style={{ fontSize: FONT_SIZE.xs, color: a.doneAt ? '#16a34a' : overdue ? '#dc2626' : '#d97706' }}>{a.doneAt ? 'Done' : a.dueAt ? `Due ${new Date(a.dueAt).toLocaleDateString()}` : 'Reminder'}</Text>

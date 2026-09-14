@@ -23,6 +23,10 @@ import { LocationSearchPicker } from '../../../src/components/location-search-pi
 import { DatePickerModal } from '../../../src/components/date-picker-modal';
 import { TimePickerModal } from '../../../src/components/time-picker-modal';
 import { useToast } from '../../../src/contexts/toast-context';
+import { useOffline } from '../../../src/offline/offline-context';
+import { createFromPhone } from '../../../src/offline/actions/queued-create';
+import { addTaskPhoto } from '../../../src/offline/tasks/task-actions';
+import { uuidv7 } from '../../../src/offline/ids';
 import {
   COLORS,
   SPACING,
@@ -65,6 +69,7 @@ export default function CreateTaskScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const toast = useToast();
+  const offline = useOffline();
   const { t } = useTranslation();
   // Dates follow the active language rather than a hardcoded en-US locale.
   const { locale } = useTimeFormat();
@@ -93,6 +98,18 @@ export default function CreateTaskScreen() {
       return;
     }
 
+    const resetForm = () => {
+      setTitle('');
+      setDescription('');
+      setPriority('MEDIUM');
+      setDueDate(null);
+      setLocationAddress('');
+      setLocationLat(null);
+      setLocationLng(null);
+      setSelectedTechnician(null);
+      setPhotos([]);
+    };
+
     try {
       setIsSubmitting(true);
 
@@ -114,6 +131,38 @@ export default function CreateTaskScreen() {
         ...(spaceId && { spaceId }),
         ...(canAssign && selectedTechnician?.id && { assignedToId: selectedTechnician.id }),
       };
+
+      if (offline.engine && offline.files) {
+        /*
+          Saved on the phone first, under the id it will have on the server.
+          Each photo follows it in the task's lane and waits for the task to
+          exist before it asks for an upload link.
+        */
+        const taskId = uuidv7();
+        const created = await createFromPhone(offline.engine, {
+          op: 'task.create', id: taskId, lane: `task:${taskId}`, entityId: taskId,
+          body: input as unknown as Record<string, unknown>,
+        });
+        if (created.outcome.kind === 'refused') {
+          toast.error(t('common.error'), (created.outcome.code && t(`offline.errors.${created.outcome.code}`, { defaultValue: '' })) || created.outcome.message || t('createTask.failedToCreate'));
+          return;
+        }
+        for (const photo of photos) {
+          await addTaskPhoto(offline.engine, offline.files, {
+            taskId, fileName: photo.fileName, mime: photo.mimeType, width: photo.width, height: photo.height, uri: photo.uri,
+            dependsOn: created.state === 'done' ? [] : [created.opId],
+          }).catch(() => undefined);
+        }
+        resetForm();
+        if (created.outcome.kind === 'queued') {
+          // Not on the server yet, so there is no task page to open.
+          toast.info(t('offline.savedForLater'));
+        } else {
+          toast.success(t('common.success'), t('createTask.successMessage'));
+          router.push(ROUTES.taskDetail(taskId));
+        }
+        return;
+      }
 
       const task = await tasksApi.create(input);
 
@@ -137,16 +186,7 @@ export default function CreateTaskScreen() {
         }
       }
 
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setPriority('MEDIUM');
-      setDueDate(null);
-      setLocationAddress('');
-      setLocationLat(null);
-      setLocationLng(null);
-      setSelectedTechnician(null);
-      setPhotos([]);
+      resetForm();
 
       toast.success(t('common.success'), t('createTask.successMessage'));
       router.push(ROUTES.taskDetail(task.id));

@@ -20,6 +20,7 @@ import { File as FsFile } from 'expo-file-system';
 import { useAuth } from '../../src/contexts/auth-context';
 import { holds } from '../../src/lib/permissions';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
+import { useQueuedCreate } from '../../src/offline/actions/queued-create';
 
 /**
  * Scan a business card into a client.
@@ -40,6 +41,7 @@ export default function ScanCardScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const toast = useToast();
+  const clientCreate = useQueuedCreate('customer.create');
   const cam = useCameraAccess();
   const { user } = useAuth();
   const window = useWindowDimensions();
@@ -175,21 +177,28 @@ export default function ScanCardScreen() {
     if (!name) return;
     setSaving(true);
     try {
-      await customersApi.create({
+      const input = {
         name,
         // The company is the client; the person on the card is the contact.
         contactName: values.company ? values.name.trim() || undefined : undefined,
         email: values.email.trim() || undefined,
         phone: values.phone.trim() || undefined,
-      });
-      toast.success(t('customers.added', 'Client added'));
+      };
+      // The card's fields go to the client they create, and nowhere else — held
+      // in the member's encrypted outbox until there is a signal to send them.
+      const outcome = await clientCreate.run({ lane: 'crm:new', body: input }, () => customersApi.create(input));
+      if (outcome.kind === 'refused') {
+        toast.error((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('customers.addFailed', 'Could not add the client'));
+        return;
+      }
+      toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('customers.added', 'Client added'));
       router.back();
     } catch (e: any) {
       toast.error(e?.message || t('customers.addFailed', 'Could not add the client'));
     } finally {
       setSaving(false);
     }
-  }, [values, t, toast]);
+  }, [values, t, toast, clientCreate]);
 
   // ── Allowed to add a client at all? ───────────────────────────────────────
   if (!canAdd) {

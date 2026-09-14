@@ -22,6 +22,7 @@ export interface SyncOperationRoute {
 
 export const SYNC_OPERATIONS = {
   // Tasks
+  'task.create': { method: 'POST', path: '/tasks' },
   'task.status': { method: 'PATCH', path: '/tasks/:taskId/status' },
   'task.comment': { method: 'POST', path: '/tasks/:taskId/comments' },
   'task.decline': { method: 'POST', path: '/tasks/:taskId/decline' },
@@ -43,6 +44,9 @@ export const SYNC_OPERATIONS = {
   'expense.submit': { method: 'POST', path: '/assets/:assetId/expenses' },
   'chat.send': { method: 'POST', path: '/chat/conversations/:conversationId/messages' },
   'support.ticket': { method: 'POST', path: '/support/tickets' },
+  // Clients (sales reps)
+  'customer.create': { method: 'POST', path: '/customers' },
+  'customer.activity': { method: 'POST', path: '/customers/:customerId/activities' },
   'support.message': { method: 'POST', path: '/support/tickets/:ticketId/messages' },
 } as const satisfies Record<string, SyncOperationRoute>;
 
