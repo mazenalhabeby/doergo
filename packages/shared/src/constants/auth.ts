@@ -48,6 +48,16 @@ export const PASSWORD_RESET_EXPIRATION_HOURS = 1;
  */
 export const REFRESH_TOKEN_GRACE_PERIOD_SECONDS = 60;
 
+/**
+ * How long an app session lasts when nothing else says so.
+ *
+ * The code used to fall back to 7 days while production ran 90, set only in
+ * compose — so a container started without that variable signed every field
+ * worker out after a week, and a phone offline for eight days came back to a
+ * login screen with its whole queue waiting. One default, stated once.
+ */
+export const DEFAULT_REFRESH_TOKEN_TTL = '90d';
+
 // =============================================================================
 // PASSWORD REQUIREMENTS
 // =============================================================================

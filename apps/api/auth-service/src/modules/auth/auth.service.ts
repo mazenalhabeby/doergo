@@ -17,6 +17,7 @@ import {
   LOCKOUT_DURATION_MINUTES,
   PASSWORD_RESET_EXPIRATION_HOURS,
   REFRESH_TOKEN_GRACE_PERIOD_SECONDS,
+  DEFAULT_REFRESH_TOKEN_TTL,
   BCRYPT_COST_FACTOR,
   success,
   error,
@@ -1107,13 +1108,52 @@ export class AuthService {
         const now = new Date();
 
         if (now > gracePeriodEnd) {
-          // Beyond grace period → this is a rotated token being replayed, a strong
-          // signal the token was stolen. Revoke the user's ENTIRE refresh-token
-          // chain so the attacker (and the victim) are forced to re-authenticate,
-          // and record a security event (L9).
+          /*
+            Beyond grace → a rotated token is being presented again.
+
+            ⚠️ Two very different stories produce this, and the successor tells
+            them apart:
+
+            - The successor was never used. The likeliest cause is a phone that
+              lost signal between the server rotating its token and the answer
+              arriving — normal on a building site, and exactly what offline mode
+              makes common. Revoking ALL of this member's sessions for it signed
+              them out of every device because one of them lost a response.
+              Only THIS chain is ended: this token and its unused successor. The
+              member signs in again on this phone; their other devices, and their
+              offline queue (kept for the same member), are untouched. A thief
+              holding this token is locked out just the same — the successor they
+              would need is gone too.
+
+            - The successor WAS used. Two parties hold the chain: treat it as
+              theft, revoke every session and record a security event (L9).
+          */
+          const successor = storedToken.replacedByTokenHash
+            ? await this.prisma.refreshToken.findUnique({
+                where: { tokenHash: storedToken.replacedByTokenHash },
+                select: { id: true, usedAt: true },
+              })
+            : null;
+
+          if (successor && !successor.usedAt) {
+            this.logger.warn(
+              `[SECURITY] Stale refresh token for user ${storedToken.userId} whose successor was never used ` +
+              `(lost response). Ending this device's session only.`,
+            );
+            await this.prisma.refreshToken
+              .deleteMany({ where: { id: { in: [storedToken.id, successor.id] } } })
+              .catch((e) => this.logger.error('Failed to end device session on stale refresh', e));
+            return {
+              success: false,
+              statusCode: HttpStatus.UNAUTHORIZED,
+              message: 'Your session on this device ended. Please sign in again.',
+              code: 'SESSION_ENDED',
+            };
+          }
+
           this.logger.warn(
             `[SECURITY] Refresh-token reuse detected for user ${storedToken.userId} ` +
-            `(token used at ${storedToken.usedAt}, grace expired). Revoking token chain.`,
+            `(token used at ${storedToken.usedAt}, successor already used). Revoking every session.`,
           );
           await this.prisma.refreshToken
             .deleteMany({ where: { userId: storedToken.userId } })
@@ -1122,6 +1162,7 @@ export class AuthService {
             success: false,
             statusCode: HttpStatus.UNAUTHORIZED,
             message: 'Token already used',
+            code: 'REFRESH_TOKEN_REUSED',
           };
         }
 
@@ -1842,7 +1883,7 @@ export class AuthService {
     const accessExpiration = this.configService.get('JWT_ACCESS_EXPIRATION') || '15m';
     // Typed loose (like accessExpiration, which is any from configService) so the
     // jsonwebtoken `expiresIn` StringValue overload accepts it.
-    const refreshExpiration: any = refreshTtl || this.configService.get('JWT_REFRESH_EXPIRATION') || '7d';
+    const refreshExpiration: any = refreshTtl || this.configService.get('JWT_REFRESH_EXPIRATION') || DEFAULT_REFRESH_TOKEN_TTL;
 
     this.logger.log(`Generating tokens with refreshExpiration=${refreshExpiration}`);
 
