@@ -55,7 +55,7 @@ export const invitationsApi = {
 
 // Push Token API
 export const pushApi = {
-  registerToken: async (input: { token: string; platform: 'ios' | 'android' | 'web'; deviceId?: string }): Promise<{ success: boolean }> => {
+  registerToken: async (input: { token: string; platform: 'ios' | 'android' | 'web'; deviceId?: string; locale?: string }): Promise<{ success: boolean }> => {
     return fetchWithAuth<{ success: boolean }>('/users/push-token', {
       method: 'POST',
       body: JSON.stringify(input),

@@ -10,6 +10,7 @@ import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme, type ThemeMode } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../src/lib/constants';
 import { portalApi } from '../../../src/lib/api/portal';
+import { userApi } from '../../../src/lib/api';
 import { usePushNotifications } from '../../../src/hooks/usePushNotifications';
 import { changeLanguage, getCurrentLanguage, supportedLanguages } from '../../../src/i18n';
 
@@ -59,6 +60,9 @@ export default function CustomerProfile() {
   };
   const pickLanguage = async (code: string) => {
     await changeLanguage(code);
+    // Request-status pushes are written on the server; tell it the new language.
+    // Best effort — the next launch's push registration carries it anyway.
+    userApi.setLocale(code).catch(() => {});
     setSheet(null);
   };
 

@@ -45,11 +45,25 @@ export const i18nReady = langReady;
 
 export async function changeLanguage(lang: string) {
   await i18n.changeLanguage(lang);
+  storedLang = lang;
   await AsyncStorage.setItem(LANGUAGE_KEY, lang);
 }
 
 export function getCurrentLanguage(): string {
   return i18n.language || 'en';
+}
+
+/**
+ * The member's chosen language once it has been read from storage.
+ *
+ * `getCurrentLanguage()` answers 'en' for the first moments after launch, before
+ * the stored choice is applied — and that is exactly when push registration
+ * runs. Asking this instead is what stops every launch telling the server the
+ * member reads English.
+ */
+export async function getPreferredLanguage(): Promise<string> {
+  await langReady;
+  return storedLang ?? getCurrentLanguage();
 }
 
 export const supportedLanguages = [

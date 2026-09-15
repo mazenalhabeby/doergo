@@ -5,6 +5,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { pushApi } from '../lib/api';
+import { getPreferredLanguage } from '../i18n';
 import { isNotificationSuppressed } from '../lib/notification-suppression';
 import { PUSH_CHANNELS, RETIRED_PUSH_CHANNELS } from '@hbcfield/shared/client';
 
@@ -132,9 +133,14 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
       // Determine platform
       const platform = Platform.OS as 'ios' | 'android';
 
-      // Skip registration if token hasn't changed (avoid redundant API call)
+      // Skip registration if neither the token nor the language changed (avoid
+      // a redundant API call). The language is part of the key because the
+      // server writes pushes in it: a member who switched to German while
+      // offline is re-registered on the next launch instead of staying English.
+      const locale = await getPreferredLanguage();
+      const registration = `${token}|${locale}`;
       const cachedToken = await AsyncStorage.getItem(PUSH_TOKEN_CACHE_KEY);
-      if (cachedToken === token && currentTokenRef.current === token) {
+      if (cachedToken === registration && currentTokenRef.current === token) {
         setState((prev) => ({
           ...prev,
           expoPushToken: token,
@@ -150,10 +156,11 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
           token,
           platform,
           deviceId: Device.deviceName ?? undefined,
+          locale,
         });
 
         currentTokenRef.current = token;
-        await AsyncStorage.setItem(PUSH_TOKEN_CACHE_KEY, token);
+        await AsyncStorage.setItem(PUSH_TOKEN_CACHE_KEY, registration);
         setState((prev) => ({
           ...prev,
           expoPushToken: token,

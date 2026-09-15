@@ -41,6 +41,7 @@ import { SupportButton } from "@/components/support/support-widget"
 import { ClockWidget } from "@/components/clock-widget"
 import { usePresence, PRESENCE_OPTS, presenceRingClass } from "@/components/presence-toggle"
 import { LanguageSwitcher } from "@/components/language-switcher"
+import { useSyncLocale } from "@/hooks/use-sync-locale"
 import { TourLauncherMenuItem, HelpButton } from "@/components/tour"
 import { cn } from "@/lib/utils"
 import {
@@ -153,6 +154,8 @@ function usePrefetchRoutes() {
 // ---------------------------------------------------------------------------
 export function TopNavbar() {
   const { user, logout, hasPlanFeature, hasPermission } = useAuth()
+  // Notifications are written on the server in the reader's language.
+  useSyncLocale()
   /*
     One question, asked of one table.
 

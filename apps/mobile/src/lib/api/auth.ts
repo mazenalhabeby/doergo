@@ -77,6 +77,15 @@ export const userApi = {
       body: JSON.stringify({ timeFormat }),
     });
   },
+  // The language the server writes this member's notifications in. Pushes are
+  // composed on the server while the app is closed, so the choice has to live
+  // there as well as on the phone.
+  setLocale: async (locale: string): Promise<void> => {
+    return fetchWithAuth<void>('/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify({ locale }),
+    });
+  },
   // Update your own name (any authenticated user, incl. portal clients).
   updateProfile: async (data: { firstName: string; lastName: string }): Promise<void> => {
     return fetchWithAuth<void>('/users/me', {
