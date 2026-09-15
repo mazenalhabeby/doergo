@@ -44,8 +44,10 @@ describe('reading a member’s switches', () => {
       },
     };
     expect(await svc.getNotificationPrefs('u1')).toEqual({
-      data: { emailTaskCompleted: false },
-      organizationAllows: { taskAssigned: true, taskCompleted: true, autoClockOut: false },
+      data: {
+        prefs: { emailTaskCompleted: false },
+        organizationAllows: { taskAssigned: true, taskCompleted: true, autoClockOut: false },
+      },
     });
   });
 });

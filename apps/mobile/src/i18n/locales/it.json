@@ -986,7 +986,13 @@
       "attendanceDescription": "Promemoria di timbratura entrata/uscita",
       "timeOff": "Ferie e permessi",
       "timeOffDescription": "Approvazioni delle richieste e aggiornamenti",
-      "footerNote": "Le preferenze di notifica sono memorizzate localmente. Le autorizzazioni per le notifiche push sono gestite nelle impostazioni del dispositivo."
+      "footerNote": "Le categorie sono memorizzate su questo dispositivo, le scelte email nel tuo account. Le autorizzazioni per le notifiche push sono gestite nelle impostazioni del dispositivo.",
+      "emails": "Email",
+      "emailTaskAssigned": "Mi viene assegnata un’attività",
+      "emailTaskCompleted": "Un’attività che ho creato viene completata",
+      "emailAutoClockOut": "Viene chiuso un turno che ho lasciato aperto",
+      "emailOffByOrg": "Disattivato per la tua organizzazione",
+      "emailSaveFailed": "Impossibile salvare le impostazioni email"
     },
     "about": {
       "title": "Informazioni",

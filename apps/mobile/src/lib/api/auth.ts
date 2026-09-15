@@ -86,6 +86,18 @@ export const userApi = {
       body: JSON.stringify({ locale }),
     });
   },
+  // Your own notification switches on the server, and which member emails the
+  // organization allows at all (the ceiling — notifications/email-prefs in shared).
+  getNotificationPrefs: async (): Promise<{ prefs: Record<string, boolean>; organizationAllows: Record<string, boolean> }> => {
+    return fetchWithAuth('/users/me/notification-prefs');
+  },
+  // Merge-update your own switches: only the keys given change.
+  updateNotificationPrefs: async (prefs: Record<string, boolean>): Promise<Record<string, boolean>> => {
+    return fetchWithAuth('/users/me/notification-prefs', {
+      method: 'PATCH',
+      body: JSON.stringify({ prefs }),
+    });
+  },
   // Update your own name (any authenticated user, incl. portal clients).
   updateProfile: async (data: { firstName: string; lastName: string }): Promise<void> => {
     return fetchWithAuth<void>('/users/me', {

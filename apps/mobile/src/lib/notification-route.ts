@@ -54,7 +54,6 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
 
   // The member's own shift
   shift_reminder: CLOCK, // "Still clocked in?" — the clock-out button
-  auto_clock_out: CLOCK,
   break_due: CLOCK,
   break_over: CLOCK,
   overtime_decision: CLOCK,

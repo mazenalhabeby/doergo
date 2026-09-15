@@ -986,7 +986,13 @@
       "attendanceDescription": "Clock-in/out reminders",
       "timeOff": "Time Off",
       "timeOffDescription": "Request approvals and updates",
-      "footerNote": "Notification preferences are stored locally. Push notification permissions are managed in your device settings."
+      "footerNote": "Categories are stored on this device; email choices are saved to your account. Push notification permissions are managed in your device settings.",
+      "emails": "Email",
+      "emailTaskAssigned": "A task is assigned to me",
+      "emailTaskCompleted": "A task I created is completed",
+      "emailAutoClockOut": "A shift I left open is closed",
+      "emailOffByOrg": "Turned off for your organization",
+      "emailSaveFailed": "Could not save your email settings"
     },
     "about": {
       "title": "About",

@@ -2572,16 +2572,18 @@ export class UsersService {
     });
     if (!user) throw new NotFoundException('User not found');
     return {
-      data: (user.notificationPrefs as Record<string, boolean> | null) ?? {},
-      /*
-        Which member emails the organization allows at all. A member cannot read
-        the organization's settings, and a switch they can flip that does
-        nothing — because the ceiling is off — is worse than no switch: the
-        screen shows it off and says why.
-      */
-      organizationAllows: Object.fromEntries(
-        MEMBER_EMAILS.map((kind) => [kind, orgAllowsEmail(user.organization?.notificationPrefs, kind)]),
-      ),
+      data: {
+        prefs: (user.notificationPrefs as Record<string, boolean> | null) ?? {},
+        /*
+          Which member emails the organization allows at all. A member cannot
+          read the organization's settings, and a switch they can flip that does
+          nothing — because the ceiling is off — is worse than no switch: the
+          screen shows it off and says why.
+        */
+        organizationAllows: Object.fromEntries(
+          MEMBER_EMAILS.map((kind) => [kind, orgAllowsEmail(user.organization?.notificationPrefs, kind)]),
+        ),
+      },
     };
   }
 

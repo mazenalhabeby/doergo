@@ -986,7 +986,13 @@
       "attendanceDescription": "Recordatorios de entrada/salida",
       "timeOff": "Ausencias",
       "timeOffDescription": "Aprobaciones de solicitudes y novedades",
-      "footerNote": "Las preferencias de notificación se guardan en el dispositivo. Los permisos de notificaciones push se administran en los ajustes de tu dispositivo."
+      "footerNote": "Las categorías se guardan en este dispositivo y las opciones de correo en tu cuenta. Los permisos de notificaciones push se administran en los ajustes de tu dispositivo.",
+      "emails": "Correo",
+      "emailTaskAssigned": "Se me asigna una tarea",
+      "emailTaskCompleted": "Se completa una tarea que creé",
+      "emailAutoClockOut": "Se cierra un turno que dejé abierto",
+      "emailOffByOrg": "Desactivado para tu organización",
+      "emailSaveFailed": "No se pudieron guardar tus ajustes de correo"
     },
     "about": {
       "title": "Acerca de",

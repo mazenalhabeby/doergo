@@ -986,7 +986,13 @@
       "attendanceDescription": "Ein-/Ausstempel-Erinnerungen",
       "timeOff": "Abwesenheit",
       "timeOffDescription": "Genehmigungen und Aktualisierungen",
-      "footerNote": "Benachrichtigungseinstellungen werden lokal gespeichert. Push-Benachrichtigungsberechtigungen werden in Ihren Geräteeinstellungen verwaltet."
+      "footerNote": "Kategorien werden auf diesem Gerät gespeichert, E-Mail-Einstellungen in Ihrem Konto. Push-Benachrichtigungsberechtigungen werden in Ihren Geräteeinstellungen verwaltet.",
+      "emails": "E-Mail",
+      "emailTaskAssigned": "Mir wird eine Aufgabe zugewiesen",
+      "emailTaskCompleted": "Eine von mir erstellte Aufgabe wird abgeschlossen",
+      "emailAutoClockOut": "Eine offen gebliebene Schicht wird geschlossen",
+      "emailOffByOrg": "Für Ihre Organisation abgeschaltet",
+      "emailSaveFailed": "E-Mail-Einstellungen konnten nicht gespeichert werden"
     },
     "about": {
       "title": "Über",

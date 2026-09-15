@@ -868,11 +868,11 @@ export const usersApi = {
   // Your OWN notification switches, and which member emails the organization
   // allows at all (the ceiling — see notifications/email-prefs in shared).
   getMyNotificationPrefs: async () => {
-    const response = await api.get<{ data: Record<string, boolean>; organizationAllows: Record<string, boolean> }>(
+    const response = await api.get<{ data: { prefs: Record<string, boolean>; organizationAllows: Record<string, boolean> } }>(
       '/users/me/notification-prefs',
     );
     if (response.error) throw new Error(response.error);
-    return { prefs: response.data?.data ?? {}, organizationAllows: response.data?.organizationAllows ?? {} };
+    return { prefs: response.data?.data?.prefs ?? {}, organizationAllows: response.data?.data?.organizationAllows ?? {} };
   },
 
   // Merge-update your OWN notification switches (only the keys given change).
