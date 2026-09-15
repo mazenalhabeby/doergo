@@ -5,6 +5,7 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
 import { AssetAccessService } from '../asset-access.service';
 import { AssetCustodyService } from '../asset-custody.service';
 import { AssetExpenseService } from '../asset-expense.service';
+import { AssetNotifier } from '../asset-notifier.service';
 import { ConfigService } from '@nestjs/config';
 
 /**
@@ -17,6 +18,9 @@ import { ConfigService } from '@nestjs/config';
  */
 
 const KIND_ONE_HOLDER = { holder: { enabled: true, members: true, clients: false, multiple: false, label: 'Driver' } };
+
+/** Who is told. Its own rules are pinned in `asset-notifier.spec.ts`; here only WHEN it is asked. */
+const notifier = { handedOver: jest.fn(), expenseSubmitted: jest.fn(), expenseDecided: jest.fn() };
 
 describe('AssetCustodyService.handOver', () => {
   let service: AssetCustodyService;
@@ -53,6 +57,7 @@ describe('AssetCustodyService.handOver', () => {
         AssetCustodyService,
         { provide: PrismaService, useValue: prisma },
         { provide: AssetAccessService, useValue: { assertMay: jest.fn(), assetInOrg: jest.fn() } },
+        { provide: AssetNotifier, useValue: notifier },
       ],
     }).compile();
     service = module.get(AssetCustodyService);
@@ -138,6 +143,33 @@ describe('AssetCustodyService.handOver', () => {
     expect(tx.assetHolder.createMany).not.toHaveBeenCalled();
   });
 
+  /*
+    Announced AFTER the transaction, with the plan that was written — never from
+    inside it, where a push could announce a handover that is then rolled back.
+  */
+  it('announces the handover once it has been written', async () => {
+    const order: string[] = [];
+    prisma.$transaction.mockImplementation(async (fn: any) => { const r = await fn(tx); order.push('committed'); return r; });
+    notifier.handedOver.mockImplementation(async () => { order.push('announced'); });
+    tx.assetCustody.findMany.mockResolvedValue([
+      { id: 'c1', userId: 'u1', customerId: null, startedAt: new Date('2026-01-01'), endedAt: null },
+    ]);
+
+    await call();
+
+    expect(order).toEqual(['committed', 'announced']);
+    expect(notifier.handedOver).toHaveBeenCalledWith(expect.objectContaining({
+      organizationId: 'org1', assetId: 'a1', actorId: 'actor',
+      plan: expect.objectContaining({ opening: [{ userId: 'u2' }] }),
+    }));
+  });
+
+  it('announces nothing when the handover is refused', async () => {
+    prisma.user.findMany.mockResolvedValue([]);
+    await expect(call()).rejects.toBeInstanceOf(BadRequestException);
+    expect(notifier.handedOver).not.toHaveBeenCalled();
+  });
+
   it('refuses a person from another organization', async () => {
     // The id came back missing rather than accepted — the reason both lookups
     // are scoped to the organization rather than trusted from the picker.
@@ -190,6 +222,7 @@ describe('filing an expense is gated on custody', () => {
         { provide: ConfigService, useValue: { get: (_k: string, d?: string) => d ?? '' } },
         { provide: AssetAccessService, useValue: { assertMay: jest.fn() } },
         { provide: AssetCustodyService, useValue: custody },
+        { provide: AssetNotifier, useValue: notifier },
         { provide: OBJECT_STORE, useValue: { head: async () => ({ exists: true, sizeBytes: 1000 }) } },
       ],
     }).compile();
@@ -254,6 +287,31 @@ describe('filing an expense is gated on custody', () => {
     expect(res.data.status).toBe('RECORDED');
   });
 
+  it('asks the office about a member’s entry', async () => {
+    custody.heldBy.mockResolvedValue(true);
+    await submit();
+    expect(notifier.expenseSubmitted).toHaveBeenCalledTimes(1);
+    expect(notifier.expenseSubmitted).toHaveBeenCalledWith(expect.objectContaining({
+      assetId: 'a1', authorId: 'u1', status: 'SUBMITTED', amountCents: 8141, category: 'Fuel',
+    }));
+  });
+
+  /*
+    ⚠️ The office's own entry asks nobody. Announcing it would put the office's
+    bookkeeping in the office's own bell, once per line typed.
+  */
+  it('asks nobody about an entry the office typed itself', async () => {
+    custody.heldBy.mockResolvedValue(false);
+    await submit({ canManageAssets: true });
+    expect(notifier.expenseSubmitted).not.toHaveBeenCalled();
+  });
+
+  it('asks nobody about a refused filing', async () => {
+    custody.heldBy.mockResolvedValue(false);
+    await expect(submit()).rejects.toBeInstanceOf(ForbiddenException);
+    expect(notifier.expenseSubmitted).not.toHaveBeenCalled();
+  });
+
   it('refuses a heading the kind does not declare', async () => {
     custody.heldBy.mockResolvedValue(true);
     await expect(submit({ category: 'Bribes' })).rejects.toBeInstanceOf(BadRequestException);
@@ -308,6 +366,7 @@ describe('reviewing one', () => {
         { provide: ConfigService, useValue: { get: (_k: string, d?: string) => d ?? '' } },
         { provide: AssetAccessService, useValue: { assertMay: jest.fn() } },
         { provide: AssetCustodyService, useValue: { heldBy: jest.fn() } },
+        { provide: AssetNotifier, useValue: notifier },
         { provide: OBJECT_STORE, useValue: null },
       ],
     }).compile();
@@ -332,5 +391,18 @@ describe('reviewing one', () => {
     await expect(
       service.review({ entryId: 'm1', decision: 'accept', userId: 'u', userRole: 'ADMIN', organizationId: 'org1' } as any),
     ).rejects.toThrow();
+    // A decision that did not happen is not announced — the second reviewer
+    // must not send the member a contradicting push.
+    expect(notifier.expenseDecided).not.toHaveBeenCalled();
+  });
+
+  it('tells the member what was decided, with the reason', async () => {
+    prisma.assetMoney.updateMany.mockResolvedValue({ count: 1 });
+    await service.review({
+      entryId: 'm1', decision: 'reject', note: '  Not our van  ', userId: 'u', userRole: 'ADMIN', organizationId: 'org1',
+    } as any);
+    expect(notifier.expenseDecided).toHaveBeenCalledWith({
+      entryId: 'm1', organizationId: 'org1', decision: 'reject', note: 'Not our van', reviewerId: 'u',
+    });
   });
 });

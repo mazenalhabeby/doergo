@@ -7,6 +7,7 @@ import { NotificationRoutingService } from '../../../common/notification-routing
 import { AssetAccessService } from '../asset-access.service';
 import { AssetContractService } from '../asset-contract.service';
 import { AssetProposalService } from '../asset-proposal.service';
+import { AssetNotifier } from '../asset-notifier.service';
 
 /**
  * A member sends a page in; somebody responsible decides.
@@ -51,6 +52,8 @@ describe('AssetProposalService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AssetProposalService,
+        // The real one: the fallback it owns is what these tests pin.
+        AssetNotifier,
         { provide: PrismaService, useValue: prisma },
         { provide: ConfigService, useValue: { get: (_k: string, d?: string) => d ?? '' } },
         { provide: AssetAccessService, useValue: { assertMay: jest.fn() } },
@@ -227,13 +230,26 @@ describe('AssetProposalService', () => {
       await accept();
       expect(contracts.apply).toHaveBeenCalledWith(
         expect.objectContaining({ categoryId: 'k1', holderUserId: 'u-ahmed', fields: FIELDS }),
+        expect.anything(),
       );
+    });
+
+    /*
+      ⚠️ No double notification. The member is told "Added to the register" by
+      the proposal; the handover push would say the same thing a second time.
+    */
+    it('keeps the handover quiet — the decision already tells the member', async () => {
+      await accept();
+      expect(contracts.apply).toHaveBeenCalledWith(expect.anything(), { announceHandover: false });
+      const decided = notifications.emit.mock.calls.filter(([e]: any[]) => e === 'asset_proposal_decided');
+      expect(decided).toHaveLength(1);
     });
 
     it('lets the reviewer’s corrections win — they are looking at the page too', async () => {
       await accept({ fields: { registration: 'GM-999 ZZ' } });
       expect(contracts.apply).toHaveBeenCalledWith(
         expect.objectContaining({ fields: expect.objectContaining({ registration: 'GM-999 ZZ', vin: FIELDS.vin }) }),
+        expect.anything(),
       );
     });
 

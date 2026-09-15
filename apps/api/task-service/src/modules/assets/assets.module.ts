@@ -13,6 +13,7 @@ import { AssetCustodyService } from './asset-custody.service';
 import { AssetExpenseService } from './asset-expense.service';
 import { AssetContractService } from './asset-contract.service';
 import { AssetProposalService } from './asset-proposal.service';
+import { AssetNotifier } from './asset-notifier.service';
 import { AssetsController } from './assets.controller';
 import { AssetsProcessor } from './assets.processor';
 
@@ -39,6 +40,8 @@ const SERVICES = [
   AssetContractService,
   // A member sends a page in; somebody responsible decides.
   AssetProposalService,
+  // Who is told about any of the above — expenses, decisions, handovers.
+  AssetNotifier,
 ];
 
 @Module({

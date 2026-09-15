@@ -7,6 +7,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, normalizeKindShape, findMoneyCategory, parseReceipt } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetCustodyService } from './asset-custody.service';
+import { AssetNotifier } from './asset-notifier.service';
 
 /** A receipt is a photograph or a PDF. Nothing else needs to reach this bucket. */
 const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf'];
@@ -44,6 +45,7 @@ export class AssetExpenseService {
     private readonly prisma: PrismaService,
     private readonly access: AssetAccessService,
     private readonly custody: AssetCustodyService,
+    private readonly notifier: AssetNotifier,
     @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
   ) {}
 
@@ -316,6 +318,12 @@ export class AssetExpenseService {
       },
     });
 
+    // Only what is waiting on somebody. The office's own entry asks nobody.
+    // (A replayed filing returned `prior` above and announces nothing twice.)
+    if (entry.status === EXPENSE_STATUS.SUBMITTED) {
+      await this.notifier.expenseSubmitted(entry);
+    }
+
     return success(entry);
   }
 
@@ -406,6 +414,14 @@ export class AssetExpenseService {
       },
     });
     if (!count) throw new NotFoundException('That expense is not waiting for a decision');
+
+    await this.notifier.expenseDecided({
+      entryId: data.entryId,
+      organizationId: data.organizationId,
+      decision: data.decision === 'accept' ? 'accept' : 'reject',
+      note: data.note?.trim().slice(0, 300) || null,
+      reviewerId: data.userId,
+    });
 
     return success({ id: data.entryId, status: data.decision === 'accept' ? EXPENSE_STATUS.RECORDED : EXPENSE_STATUS.REJECTED });
   }

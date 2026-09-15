@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Role, success, paginated, TaskStatus, normalizeDetailRows, keepFieldsForKind } from '@hbcfield/shared';
+import { Role, success, paginated, TaskStatus, normalizeDetailRows, keepFieldsForKind, type HandoverPlan } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetHoldersService, type HolderInput } from './asset-holders.service';
 import { AssetCustodyService } from './asset-custody.service';
@@ -503,6 +503,8 @@ export class AssetsService {
       one thing and whose open period says another cannot be repaired by
       looking at it.
     */
+    // Captured inside the transaction, announced only once it has committed.
+    let handover: HandoverPlan | null = null;
     const updated = await this.prisma.$transaction(async (tx) => {
     const row = await tx.asset.update({
       where: { id: data.id },
@@ -554,7 +556,7 @@ export class AssetsService {
     });
 
       if (holderRows) {
-        await this.custody.apply(tx as any, {
+        handover = await this.custody.apply(tx as any, {
           assetId: data.id,
           organizationId: data.organizationId,
           actorId: data.userId,
@@ -587,6 +589,10 @@ export class AssetsService {
 
     if (holderRows && before) {
       await this.activity.logHolderChange(data.id, data.organizationId, data.userId, before, holderRows);
+    }
+    // An edit that changes the driver is a handover, and is told as one.
+    if (handover) {
+      await this.custody.announce({ organizationId: data.organizationId, assetId: data.id, actorId: data.userId, plan: handover });
     }
 
     return success(await this.withHolders(full));

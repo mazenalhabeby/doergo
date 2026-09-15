@@ -30,7 +30,7 @@ const FIELDS = {
 describe('AssetContractService', () => {
   let service: AssetContractService;
   let tx: any;
-  const custody = { apply: jest.fn() };
+  const custody = { apply: jest.fn(), announce: jest.fn() };
 
   const prisma: any = {
     assetCategory: { findFirst: jest.fn() },
@@ -167,6 +167,37 @@ describe('AssetContractService', () => {
       expect(custody.apply).toHaveBeenCalledWith(tx, expect.objectContaining({
         assetId: 'a-ford', to: [],
       }));
+    });
+
+    /*
+      Every custody the contract moved is announced — the new vehicle to its
+      driver, the replaced one as handed back — and only after the transaction
+      committed, never from inside it.
+    */
+    it('announces both handovers once the transaction has committed', async () => {
+      const order: string[] = [];
+      custody.apply.mockImplementation(async (_db: any, input: any) => ({
+        assetId: input.assetId, problems: [], opening: input.to, closing: [], unchanged: [], at: new Date(),
+      }));
+      prisma.$transaction.mockImplementation(async (fn: any) => { const r = await fn(tx); order.push('committed'); return r; });
+      custody.announce.mockImplementation(async () => { order.push('announced'); });
+
+      await service.apply(call() as any);
+
+      expect(order).toEqual(['committed', 'announced', 'announced']);
+      expect(custody.announce.mock.calls.map(([a]: any[]) => a.assetId)).toEqual(['a-new', 'a-ford']);
+      expect(custody.announce).toHaveBeenCalledWith(expect.objectContaining({ actorId: 'actor', organizationId: 'org1' }));
+    });
+
+    it('stays quiet when the caller announces it in its own words', async () => {
+      await service.apply(call() as any, { announceHandover: false });
+      expect(custody.announce).not.toHaveBeenCalled();
+    });
+
+    it('announces nothing when the transaction fails', async () => {
+      prisma.$transaction.mockRejectedValue(new Error('rolled back'));
+      await expect(service.apply(call() as any)).rejects.toThrow('rolled back');
+      expect(custody.announce).not.toHaveBeenCalled();
     });
 
     it('fills the KIND’s own fields from the reading', async () => {
