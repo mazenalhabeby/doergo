@@ -4620,7 +4620,12 @@
     "issuedOn": "Issued {{date}}",
     "dueOn": "Due {{date}}",
     "allSpaces": "All",
-    "inWorkspace": "In {{name}}"
+    "inWorkspace": "In {{name}}",
+    "pdfLanguage": {
+      "button": "Language: {{language}}",
+      "client": "client's ({{language}})",
+      "hint": "The PDF's labels, dates and amounts. Descriptions and notes stay as written."
+    }
   },
   "overtime": {
     "title": "Overtime Management",

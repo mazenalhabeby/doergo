@@ -1826,7 +1826,11 @@
     "scanCard": "Escanear tarjeta",
     "scanCardSub": "Rellena el formulario por ti",
     "enterDetails": "Introducir datos",
-    "enterDetailsSub": "Escríbelo"
+    "enterDetailsSub": "Escríbelo",
+    "locale": "Idioma de los correos",
+    "localeSame": "Igual que la organización",
+    "localeHint": "Las invitaciones y los enlaces de firma para este cliente se escriben en este idioma. Si el cliente eligió un idioma en la app, se usa ese. Con «Igual que la organización», los correos siguen el país de tu organización o, si no, el inglés.",
+    "localeFailed": "No se pudo cambiar el idioma"
   },
   "issues": {
     "myIssues": "Mis incidencias",

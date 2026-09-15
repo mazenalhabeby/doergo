@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 // The lifecycle brings its own icons — see `_lib/lifecycle.ts`.
-import { Download, Printer, Trash2, Pencil, Loader2, MoreHorizontal } from "lucide-react"
+import { Download, Printer, Trash2, Pencil, Loader2, MoreHorizontal, Languages, Check } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { invoicesApi, organizationsApi, type Invoice } from "@/lib/api"
@@ -25,8 +25,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { exportInvoicePdf, renderInvoicePdfUrl, type InvoicePdfData, type InvoiceBranding } from "@/lib/invoice-pdf"
+import { documentLocaleOf, pdfLocaleFor } from "@/lib/invoice-document-locale"
+import { CLIENT_LOCALE_OPTIONS, clientLocaleName } from "@/lib/client-locale"
+import type { SupportedLocale } from "@hbcfield/shared/client"
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PAGE_WIDTH } from "@/components/ui/page-width"
 import { formatMoney } from "@/lib/money"
@@ -55,8 +58,9 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
   )
 }
 
-function toPdfData(inv: Invoice): InvoicePdfData {
+function toPdfData(inv: Invoice, locale: SupportedLocale): InvoicePdfData {
   return {
+    locale,
     invoiceNumber: inv.invoiceNumber,
     status: inv.status,
     clientName: inv.clientName,
@@ -89,6 +93,7 @@ function InvoiceDetailInner({ id }: { id: string }) {
   const queryClient = useQueryClient()
   const isAdmin = user?.role === "ADMIN"
   const [busy, setBusy] = useState(false)
+  const [pdfLocaleOverride, setPdfLocaleOverride] = useState<SupportedLocale | null>(null)
 
   const { data: inv, isLoading } = useQuery({
     queryKey: ["invoice", id],
@@ -134,13 +139,13 @@ function InvoiceDetailInner({ id }: { id: string }) {
   const download = async () => {
     if (!inv) return
     setBusy(true)
-    try { await exportInvoicePdf(toPdfData(inv), branding) } catch (e) { notify.error(e instanceof Error ? e.message : "PDF failed") } finally { setBusy(false) }
+    try { await exportInvoicePdf(toPdfData(inv, pdfLocaleFor(inv, pdfLocaleOverride)), branding) } catch (e) { notify.error(e instanceof Error ? e.message : "PDF failed") } finally { setBusy(false) }
   }
   const print = async () => {
     if (!inv) return
     setBusy(true)
     try {
-      const url = await renderInvoicePdfUrl(toPdfData(inv), branding)
+      const url = await renderInvoicePdfUrl(toPdfData(inv, pdfLocaleFor(inv, pdfLocaleOverride)), branding)
       const w = window.open(url, "_blank")
       if (w) { w.onload = () => { try { w.focus(); w.print() } catch { /* pop-up print blocked */ } } }
     } catch (e) { notify.error(e instanceof Error ? e.message : "PDF failed") } finally { setBusy(false) }
@@ -227,6 +232,42 @@ function InvoiceDetailInner({ id }: { id: string }) {
         status={{ label: statusLabel, className: cn(style.bg, style.text) }}
         onBack={() => router.push("/invoices")}
       >
+        {/*
+          Which language the client's PDF is written in. Defaults to the
+          client's, and says whose it is and what that is — "Language: client's
+          (Deutsch)" — because an office working in English would otherwise
+          download a German invoice and think something broke.
+        */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1.5" disabled={busy}>
+              <Languages className="size-3.5" />
+              <span className="hidden md:inline">
+                {t("invoices.pdfLanguage.button", {
+                  language: pdfLocaleOverride
+                    ? clientLocaleName(pdfLocaleOverride)
+                    : t("invoices.pdfLanguage.client", { language: clientLocaleName(documentLocaleOf(inv.documentLocale)) }),
+                })}
+              </span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+              {t("invoices.pdfLanguage.hint")}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setPdfLocaleOverride(null)}>
+              <Check className={cn("mr-2 size-3.5", pdfLocaleOverride !== null && "invisible")} />
+              {t("invoices.pdfLanguage.client", { language: clientLocaleName(documentLocaleOf(inv.documentLocale)) })}
+            </DropdownMenuItem>
+            {CLIENT_LOCALE_OPTIONS.map((o) => (
+              <DropdownMenuItem key={o.value} onClick={() => setPdfLocaleOverride(o.value as SupportedLocale)}>
+                <Check className={cn("mr-2 size-3.5", pdfLocaleOverride !== o.value && "invisible")} />
+                {o.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button variant="outline" size="sm" className="gap-1.5" disabled={busy} onClick={print}>
           <Printer className="size-3.5" />
           <span className="hidden sm:inline">{t("invoices.actions.print")}</span>

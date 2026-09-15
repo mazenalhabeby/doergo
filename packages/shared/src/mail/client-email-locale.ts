@@ -119,6 +119,48 @@ export async function clientEmailLocales(
   return result;
 }
 
+/**
+ * The language a DOCUMENT for a client is written in — an invoice.
+ *
+ * The same rule as the client's email, because it is the same reader: an
+ * invoice in German beside a signing link in English, to the same accounts
+ * department, is exactly the drift the one rule exists to prevent.
+ *
+ * ⚠️ One difference, and it is why this is not just `clientEmailLocale`: a
+ * document can carry NO address (an invoice typed up for a walk-in client). The
+ * email rule keys everything by address and would stop at English; a document
+ * with no address still falls to the organization's country, as an email to an
+ * address with no account and no client record does.
+ *
+ * At most two lookups (the account, then the organization with the matching
+ * client), and one when there is no address. Throws when the database does —
+ * the caller decides that a failed lookup costs the language, never the read.
+ */
+export async function clientDocumentLocale(
+  prisma: ClientLocaleReader,
+  organizationId: string,
+  recipient: { email?: string | null; customerId?: string | null },
+): Promise<SupportedLocale> {
+  const email = recipient.email?.trim().toLowerCase();
+  if (email) return clientEmailLocale(prisma, organizationId, { email, customerId: recipient.customerId });
+
+  const customerId = recipient.customerId ?? null;
+  const org = (await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: {
+      country: true,
+      customers: customerId
+        ? { where: { id: customerId, locale: { not: null } }, select: { id: true, email: true, locale: true }, take: 1 }
+        : false,
+    },
+  })) as Partial<OrganizationClients> | null;
+  return (
+    normalizeLocale(org?.customers?.[0]?.locale) ??
+    organizationLocaleFromCountry(org?.country) ??
+    DEFAULT_LOCALE
+  );
+}
+
 /** One client address. The same rule and the same two lookups, for a sender that writes to one person. */
 export async function clientEmailLocale(
   prisma: ClientLocaleReader,

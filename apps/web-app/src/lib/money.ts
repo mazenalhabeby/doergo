@@ -16,6 +16,9 @@
  * machine and "1.234,56 €" on another, and the list of invoices must not
  * disagree with the invoice it links to. The CURRENCY still comes from the
  * invoice's own field — it is the grouping and decimal marks that are fixed.
+ * (The client's PDF is written in the CLIENT's language and passes that
+ * language's pinned locale to `formatMoneyIn` — still one answer per document,
+ * never one per machine.)
  *
  * ⚠️ And it must never throw. A bad or empty currency code arrives from real
  * data; `Intl` raises a RangeError on one, and a screen about money is the
@@ -25,11 +28,16 @@
 const LOCALE = "en-IE"
 
 export function formatMoney(amount: number, currency?: string | null): string {
+  return formatMoneyIn(amount, currency, LOCALE)
+}
+
+/** The same rules, in a named Intl locale — for a document written in its reader's language. */
+export function formatMoneyIn(amount: number, currency: string | null | undefined, locale: string): string {
   const code = (currency || "EUR").toUpperCase()
   const value = Number.isFinite(amount) ? amount : 0
 
   try {
-    return new Intl.NumberFormat(LOCALE, {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency: code,
       currencyDisplay: "narrowSymbol",
@@ -38,7 +46,7 @@ export function formatMoney(amount: number, currency?: string | null): string {
     /* `narrowSymbol` is ES2020; fall back to the wide symbol rather than to a
        bare number, which loses the currency entirely. */
     try {
-      return new Intl.NumberFormat(LOCALE, { style: "currency", currency: code }).format(value)
+      return new Intl.NumberFormat(locale, { style: "currency", currency: code }).format(value)
     } catch {
       // An unknown code — say the number and the code, and stay on the screen.
       return `${value.toFixed(2)} ${code}`

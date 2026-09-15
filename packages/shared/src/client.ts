@@ -96,6 +96,9 @@ export * from './crm/client-locale';
 // Which member emails a person gets — the org ceiling and the member opt-out.
 // Client-safe: both settings screens read the keys and defaults from here.
 export * from './notifications/email-prefs';
+// Report dataset and column names per language. The web table, its CSV/PDF and
+// the scheduled email (task-service) all name a column from this one catalogue.
+export * from './reports/report-labels';
 
 // Counted time — the one place real hours become paid hours.
 export * from './attendance/counted-time';

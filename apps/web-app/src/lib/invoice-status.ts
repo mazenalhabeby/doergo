@@ -20,22 +20,28 @@
  * pays or files it, which meant the only way to get a clean PDF was to record a
  * delivery that had not happened. An issued invoice is a real invoice, so it
  * carries no mark — that is what "issued" MEANS here.
+ *
+ * The WORD is not decided here: the stamp is written in the client's language
+ * (`INVOICE_DOCUMENT_LABELS[locale].stamp[kind]`), so this names the kind.
+ * A settled invoice's kind is `settled` — the product never prints "paid".
  */
+export type InvoiceStampKind = "draft" | "canceled" | "settled"
+
 export function invoiceStamp(
   status: string,
-): { text: string; color: { r: number; g: number; b: number } } | null {
+): { kind: InvoiceStampKind; color: { r: number; g: number; b: number } } | null {
   const RED = { r: 190, g: 60, b: 52 };
   const GREEN = { r: 21, g: 112, b: 85 };
 
   switch ((status || "").trim().toUpperCase()) {
     case "DRAFT":
-      return { text: "DRAFT", color: RED };
+      return { kind: "draft", color: RED };
     // Both spellings: the enum is CANCELED, and the other is easy to pass in.
     case "CANCELED":
     case "CANCELLED":
-      return { text: "CANCELED", color: RED };
+      return { kind: "canceled", color: RED };
     case "PAID":
-      return { text: "PAID", color: GREEN };
+      return { kind: "settled", color: GREEN };
     // Named rather than left to the default, so nobody later "fixes" the gap
     // by stamping it. See above: a clean document is the point of the state.
     case "ISSUED":

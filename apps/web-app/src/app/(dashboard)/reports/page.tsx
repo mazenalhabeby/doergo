@@ -33,6 +33,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { localizeReportColumns, reportLabel } from "@hbcfield/shared/client"
 
 const DATE_PRESETS: { value: ReportDatePreset; label: string }[] = [
   { value: "last_7d", label: "Last 7 days" }, { value: "last_30d", label: "Last 30 days" },
@@ -65,20 +66,11 @@ function toCSV(result: ReportResult): string {
 
 // Selectable columns for the detailed timesheet. Every column is freely
 // toggleable; the picker only enforces that at least one stays selected.
-const TIMESHEET_COLS: { key: string; label: string }[] = [
-  { key: "date", label: "Date" },
-  { key: "day", label: "Day" },
-  { key: "clockIn", label: "Clock in" },
-  { key: "clockOut", label: "Clock out" },
-  { key: "hours", label: "Hours" },
-  { key: "break", label: "Break" },
-  { key: "overtime", label: "Overtime" },
-  { key: "jobs", label: "Jobs" },
-  { key: "leaveReason", label: "Leave reason" },
-  { key: "location", label: "Location" },
-  { key: "remote", label: "Remote" },
-  { key: "note", label: "Note" },
-  { key: "status", label: "Status" },
+// Named from the same catalogue as the table headings (`col.<key>`), so the
+// chip and the column it adds cannot be called two different things.
+const TIMESHEET_COLS: string[] = [
+  "date", "day", "clockIn", "clockOut", "hours", "break", "overtime",
+  "jobs", "leaveReason", "location", "remote", "note", "status",
 ]
 const TIMESHEET_DEFAULT = ["date", "day", "clockIn", "clockOut", "hours", "status"]
 
@@ -104,7 +96,14 @@ interface ActiveReport {
 }
 
 export default function ReportsPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  /*
+    Column and dataset names are the system's own, and read in the viewer's
+    language from REPORT_LABELS — the catalogue the scheduled email reads too.
+    What the table shows is what the CSV and PDF take away, so localizing the
+    result once below names the export in the same language.
+  */
+  const lang = i18n.language
   const { hasPlanFeature } = useAuth()
   const { formatSchedule } = useTimeFormat()
   const qc = useQueryClient()
@@ -284,7 +283,7 @@ export default function ReportsPage() {
   // For the detailed timesheet, show only the user-selected columns.
   const displayResult = useMemo<ReportResult | null>(() => {
     if (!result) return null
-    if (!isDetail) return result
+    if (!isDetail) return { ...result, columns: localizeReportColumns(result.columns, lang) }
     const keep = new Set(tsCols)
     // Clock-in/out arrive from the backend as 24h "HH:MM" strings. Re-format them
     // to honor the user's 12h/24h preference (set in Settings). Only non-empty
@@ -294,8 +293,8 @@ export default function ReportsPage() {
       for (const k of ["clockIn", "clockOut"]) if (nr[k]) nr[k] = formatSchedule(String(nr[k]))
       return nr
     })
-    return { columns: result.columns.filter((c) => keep.has(c.key)), rows }
-  }, [result, isDetail, tsCols, formatSchedule])
+    return { columns: localizeReportColumns(result.columns.filter((c) => keep.has(c.key)), lang), rows }
+  }, [result, isDetail, tsCols, formatSchedule, lang])
   const measureCols = displayResult?.columns.filter((c) => c.kind === "measure") || []
   const labelCol = displayResult?.columns.find((c) => c.kind === "period" || c.kind === "dimension")
   const chartMeasure = measureCols[0]
@@ -370,7 +369,7 @@ export default function ReportsPage() {
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {(isDetail ? [rangeLabel] : [dsMeta?.label, rangeLabel, customerFilter]).filter(Boolean).join("  ·  ")}
+                      {(isDetail ? [rangeLabel] : [dsMeta && reportLabel(lang, dsMeta.labelKey, dsMeta.label), rangeLabel, customerFilter]).filter(Boolean).join("  ·  ")}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -413,7 +412,7 @@ export default function ReportsPage() {
                         <Label className="text-xs w-20 shrink-0">{t("reports.dataset", "Dataset")}</Label>
                         <Select value={active.def.dataset} onValueChange={(v) => { const d = datasets.find((x) => x.key === v); setActive((a) => (a ? { ...a, detail: false, def: { ...a.def, dataset: v, measures: d?.measures[0] ? [d.measures[0].key] : [], dimensions: [], filters: [] } } : a)) }}>
                           <SelectTrigger className="h-9 w-[220px] text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>{datasets.map((d) => <SelectItem key={d.key} value={d.key} className="text-xs">{d.label}</SelectItem>)}</SelectContent>
+                          <SelectContent>{datasets.map((d) => <SelectItem key={d.key} value={d.key} className="text-xs">{reportLabel(lang, d.labelKey, d.label)}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
 
@@ -446,18 +445,18 @@ export default function ReportsPage() {
                           <div className="flex items-start gap-3">
                             <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.columns", "Columns")}</Label>
                             <div className="flex flex-wrap gap-1.5">
-                              {TIMESHEET_COLS.map((col) => {
-                                const on = tsCols.includes(col.key)
+                              {TIMESHEET_COLS.map((key) => {
+                                const on = tsCols.includes(key)
                                 // Keep at least one column so the report is never empty.
                                 const isLast = on && tsCols.length === 1
                                 return (
                                   <button
-                                    key={col.key}
+                                    key={key}
                                     disabled={isLast}
-                                    onClick={() => setTsCols((cur) => (cur.includes(col.key) ? cur.filter((k) => k !== col.key) : [...cur, col.key]))}
+                                    onClick={() => setTsCols((cur) => (cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key]))}
                                     className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground", isLast && "cursor-default")}
                                   >
-                                    {t(`reports.tsCol.${col.key}`, col.label)}
+                                    {reportLabel(lang, `col.${key}`, key)}
                                   </button>
                                 )
                               })}
@@ -471,7 +470,7 @@ export default function ReportsPage() {
                             <div className="flex flex-wrap gap-1.5">
                               {dsMeta.measures.map((m) => {
                                 const on = (active.def.measures || []).includes(m.key)
-                                return <button key={m.key} onClick={() => toggleArr("measures", m.key)} className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{m.label}</button>
+                                return <button key={m.key} onClick={() => toggleArr("measures", m.key)} className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{reportLabel(lang, m.labelKey, m.label)}</button>
                               })}
                             </div>
                           </div>
@@ -480,7 +479,7 @@ export default function ReportsPage() {
                             <div className="flex flex-wrap gap-1.5">
                               {dsMeta.dimensions.map((dim) => {
                                 const on = (active.def.dimensions || []).includes(dim.key)
-                                return <button key={dim.key} onClick={() => toggleArr("dimensions", dim.key)} className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{dim.label}</button>
+                                return <button key={dim.key} onClick={() => toggleArr("dimensions", dim.key)} className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{reportLabel(lang, dim.labelKey, dim.label)}</button>
                               })}
                             </div>
                           </div>

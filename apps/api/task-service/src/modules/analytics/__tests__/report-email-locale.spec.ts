@@ -15,8 +15,10 @@ describe('scheduled report email language', () => {
       run: jest.fn().mockResolvedValue({
         data: {
           columns: [
-            { key: 'name', label: 'Member', kind: 'dimension' },
-            { key: 'hours', label: 'Hours', kind: 'measure', format: 'hours' },
+            { key: 'name', labelKey: 'col.technician', label: 'Technician', kind: 'dimension' },
+            { key: 'hours', labelKey: 'col.hoursWorked', label: 'Hours worked', kind: 'measure', format: 'hours' },
+            // A column the catalogue does not know keeps the name it came with.
+            { key: 'cf', label: 'Zählerstand', kind: 'dimension' },
           ],
           rows: [{ name: '<b>Ana</b>', hours: 8.5 }],
         },
@@ -58,7 +60,14 @@ describe('scheduled report email language', () => {
     expect(german.html).toContain('<html lang="de" dir="ltr">');
     expect(german.html).toContain('8,5h');
     expect(german.html).toContain('&lt;b&gt;Ana&lt;/b&gt;');
-    expect(sends.find((s) => s.recipients.includes('outside@firm.com'))!.html).toContain('<html lang="it"');
+    // Column names in each group's language, from the catalogue the web table reads.
+    expect(german.html).toContain('Gearbeitete Stunden');
+    expect(german.html).not.toContain('Hours worked');
+    expect(german.html).toContain('Zählerstand');
+    expect(sends.find((s) => s.subject.startsWith('Rapport'))!.html).toContain('Heures travaillées');
+    const italian = sends.find((s) => s.recipients.includes('outside@firm.com'))!;
+    expect(italian.html).toContain('<html lang="it"');
+    expect(italian.html).toContain('Ore lavorate');
   });
 
   it('falls back to English when neither the address nor the author has a language', async () => {

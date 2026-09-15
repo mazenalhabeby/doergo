@@ -1,6 +1,9 @@
-import { Injectable, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { paginated, snapshotRates, usesTwoRates, cleanRateCents } from '@hbcfield/shared';
+import {
+  paginated, snapshotRates, usesTwoRates, cleanRateCents,
+  clientDocumentLocale, DEFAULT_LOCALE, type SupportedLocale,
+} from '@hbcfield/shared';
 
 /**
  * `YYYY-MM-DD` → the first and last instant of that day.
@@ -22,6 +25,8 @@ function dayEnd(iso?: string | null): Date | null {
 
 @Injectable()
 export class InvoiceService {
+  private readonly logger = new Logger(InvoiceService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: {
@@ -234,7 +239,32 @@ export class InvoiceService {
       };
     }
 
-    return { success: true, data: invoice };
+    return { success: true, data: { ...invoice, documentLocale: await this.documentLocale(invoice) } };
+  }
+
+  /**
+   * Which language the client's copy of this invoice is written in.
+   *
+   * The PDF is drawn in the browser, but the browser cannot answer this: it is
+   * the rule every client email follows (`clientDocumentLocale` in shared — the
+   * account behind the address, the client record's language, the
+   * organization's country, English), and it reads records the office screen
+   * does not load. So it is decided HERE and sent as one field, and the office
+   * may still pick another language for a download.
+   *
+   * On the single invoice only. The list does not carry it: nobody downloads a
+   * PDF from a list row, and a lookup per row is what this must never become.
+   *
+   * ⚠️ A failed lookup costs the language, never the invoice — the page falls
+   * back to English rather than failing to open.
+   */
+  private async documentLocale(invoice: { organizationId: string; clientEmail: string | null }): Promise<SupportedLocale> {
+    try {
+      return await clientDocumentLocale(this.prisma, invoice.organizationId, { email: invoice.clientEmail });
+    } catch (err) {
+      this.logger.warn(`Could not look up a language for an invoice: ${(err as Error).message}`);
+      return DEFAULT_LOCALE;
+    }
   }
 
   async update(

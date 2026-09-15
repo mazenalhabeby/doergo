@@ -16,19 +16,19 @@ import { InvoiceStatus } from "@hbcfield/shared/client"
  */
 describe("invoiceStamp", () => {
   it("marks a draft, because it is not an invoice yet", () => {
-    expect(invoiceStamp("DRAFT")?.text).toBe("DRAFT")
+    expect(invoiceStamp("DRAFT")?.kind).toBe("draft")
   })
 
   it("marks a canceled invoice, because it is no longer owed", () => {
-    expect(invoiceStamp("CANCELED")?.text).toBe("CANCELED")
+    expect(invoiceStamp("CANCELED")?.kind).toBe("canceled")
   })
 
   it("accepts the other spelling of cancelled", () => {
-    expect(invoiceStamp("CANCELLED")?.text).toBe("CANCELED")
+    expect(invoiceStamp("CANCELLED")?.kind).toBe("canceled")
   })
 
   it("marks a paid invoice, which is conventional and useful later", () => {
-    expect(invoiceStamp("PAID")?.text).toBe("PAID")
+    expect(invoiceStamp("PAID")?.kind).toBe("settled")
   })
 
   it("says nothing about states that go stale in a frozen file", () => {
@@ -43,7 +43,7 @@ describe("invoiceStamp", () => {
   })
 
   it("is unbothered by casing and whitespace", () => {
-    expect(invoiceStamp(" draft ")?.text).toBe("DRAFT")
+    expect(invoiceStamp(" draft ")?.kind).toBe("draft")
   })
 
   it("says nothing for an empty or unknown status rather than inventing one", () => {

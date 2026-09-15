@@ -4629,7 +4629,12 @@
     "issuedOn": "Émise {{date}}",
     "dueOn": "Échéance {{date}}",
     "allSpaces": "Tous",
-    "inWorkspace": "Dans {{name}}"
+    "inWorkspace": "Dans {{name}}",
+    "pdfLanguage": {
+      "button": "Langue : {{language}}",
+      "client": "du client ({{language}})",
+      "hint": "Libellés, dates et montants du PDF. Les descriptions et les remarques restent telles qu’elles ont été écrites."
+    }
   },
   "overtime": {
     "title": "Gestion des heures supplémentaires",

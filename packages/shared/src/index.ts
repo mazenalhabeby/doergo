@@ -108,6 +108,8 @@ export * from './notifications/push-channels';
 export * from './notifications/locale';
 export * from './notifications/locale-format';
 export * from './notifications/email-prefs';
+// Report dataset and column names per language — see client.ts.
+export * from './reports/report-labels';
 
 // Counted time — see client.ts.
 export * from './attendance/counted-time';

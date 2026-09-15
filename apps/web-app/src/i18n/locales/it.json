@@ -4629,7 +4629,12 @@
     "issuedOn": "Emessa {{date}}",
     "dueOn": "Scade {{date}}",
     "allSpaces": "Tutti",
-    "inWorkspace": "In {{name}}"
+    "inWorkspace": "In {{name}}",
+    "pdfLanguage": {
+      "button": "Lingua: {{language}}",
+      "client": "del cliente ({{language}})",
+      "hint": "Etichette, date e importi del PDF. Descrizioni e note restano come sono state scritte."
+    }
   },
   "overtime": {
     "title": "Gestione degli straordinari",

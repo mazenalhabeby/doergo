@@ -1826,7 +1826,11 @@
     "scanCard": "Scansiona un biglietto",
     "scanCardSub": "Compila il modulo per te",
     "enterDetails": "Inserisci i dati",
-    "enterDetailsSub": "Scrivilo"
+    "enterDetailsSub": "Scrivilo",
+    "locale": "Lingua delle email",
+    "localeSame": "Come l’organizzazione",
+    "localeHint": "Gli inviti e i link di firma per questo cliente vengono scritti in questa lingua. Se il cliente ha scelto una lingua nell’app, vale quella. Con «Come l’organizzazione», le email seguono il paese della tua organizzazione, altrimenti l’inglese.",
+    "localeFailed": "Impossibile cambiare la lingua"
   },
   "issues": {
     "myIssues": "Le mie segnalazioni",

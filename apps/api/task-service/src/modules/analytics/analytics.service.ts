@@ -1,4 +1,5 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import { reportLabelEn, type ReportLabelKey } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { compile, ReportDefinition } from './query-engine';
 import { datasetCatalog } from './registry';
@@ -136,20 +137,24 @@ export class AnalyticsService {
       return o;
     });
 
+    // Named by key like every other report column (REPORT_LABELS), so the
+    // day-by-day sheet reads in the viewer's language too.
+    const column = (key: string, labelKey: ReportLabelKey, kind: 'dimension' | 'measure', format?: string) =>
+      ({ key, labelKey, label: reportLabelEn(labelKey), kind, ...(format ? { format } : {}) });
     const columns = [
-      { key: 'date', label: 'Date', kind: 'dimension' as const },
-      { key: 'day', label: 'Day', kind: 'dimension' as const },
-      { key: 'clockIn', label: 'Clock in', kind: 'dimension' as const },
-      { key: 'clockOut', label: 'Clock out', kind: 'dimension' as const },
-      { key: 'hours', label: 'Hours', kind: 'measure' as const, format: 'hours' },
-      { key: 'break', label: 'Break', kind: 'measure' as const, format: 'hours' },
-      { key: 'overtime', label: 'Overtime', kind: 'measure' as const, format: 'hours' },
-      { key: 'jobs', label: 'Jobs', kind: 'measure' as const, format: 'number' },
-      { key: 'leaveReason', label: 'Leave reason', kind: 'dimension' as const },
-      { key: 'location', label: 'Location', kind: 'dimension' as const },
-      { key: 'remote', label: 'Remote', kind: 'dimension' as const },
-      { key: 'note', label: 'Note', kind: 'dimension' as const },
-      { key: 'status', label: 'Status', kind: 'dimension' as const },
+      column('date', 'col.date', 'dimension'),
+      column('day', 'col.day', 'dimension'),
+      column('clockIn', 'col.clockIn', 'dimension'),
+      column('clockOut', 'col.clockOut', 'dimension'),
+      column('hours', 'col.hours', 'measure', 'hours'),
+      column('break', 'col.break', 'measure', 'hours'),
+      column('overtime', 'col.overtime', 'measure', 'hours'),
+      column('jobs', 'col.jobs', 'measure', 'number'),
+      column('leaveReason', 'col.leaveReason', 'dimension'),
+      column('location', 'col.location', 'dimension'),
+      column('remote', 'col.remote', 'dimension'),
+      column('note', 'col.note', 'dimension'),
+      column('status', 'col.status', 'dimension'),
     ];
     const userName = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
     return { data: { columns, rows: normalized, userName } };

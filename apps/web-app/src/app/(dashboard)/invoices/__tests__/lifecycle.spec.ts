@@ -148,11 +148,11 @@ describe("the clean document", () => {
       invoice is a real invoice and carries no mark.
     */
     const { invoiceStamp } = require("../../../../lib/invoice-status")
-    expect(invoiceStamp("DRAFT")?.text).toBe("DRAFT")
+    expect(invoiceStamp("DRAFT")?.kind).toBe("draft")
     expect(invoiceStamp("ISSUED")).toBeNull()
     expect(invoiceStamp("SENT")).toBeNull()
-    expect(invoiceStamp("PAID")?.text).toBe("PAID")
-    expect(invoiceStamp("CANCELED")?.text).toBe("CANCELED")
+    expect(invoiceStamp("PAID")?.kind).toBe("settled")
+    expect(invoiceStamp("CANCELED")?.kind).toBe("canceled")
   })
 })
 

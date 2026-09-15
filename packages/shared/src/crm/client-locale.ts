@@ -1,4 +1,4 @@
-import { isSupportedLocale, type SupportedLocale } from '../notifications/locale';
+import { isSupportedLocale, SUPPORTED_LOCALES, type SupportedLocale } from '../notifications/locale';
 
 /**
  * A CLIENT's language — what the office says a client reads.
@@ -40,6 +40,53 @@ export function parseClientLocale(value: unknown): ClientLocaleInput {
 }
 
 export const CLIENT_LOCALE_INVALID_MESSAGE = 'Unsupported language for emails';
+
+/*
+  "Language for emails" as a FORM holds it — shared by the web client form and
+  the phone's, so the two cannot offer different lists or save "not set"
+  differently. (The web kept its own copy first; the phone needing the same
+  four rules is what moved them here.)
+*/
+
+/**
+ * Each language named in itself, the way a language picker is read: the person
+ * choosing may be setting it for a client whose language they do not speak.
+ */
+export const CLIENT_LOCALE_NAMES: Record<SupportedLocale, string> = {
+  en: 'English',
+  de: 'Deutsch',
+  es: 'Español',
+  fr: 'Français',
+  it: 'Italiano',
+};
+
+/** The choices — exactly what the server accepts, so a form never offers a value the save refuses. */
+export const CLIENT_LOCALE_OPTIONS: ReadonlyArray<{ value: SupportedLocale; label: string }> = SUPPORTED_LOCALES.map(
+  (code) => ({ value: code, label: CLIENT_LOCALE_NAMES[code] }),
+);
+
+/**
+ * The form's value for a record: its language, or "" when none is set. "" is
+ * "same as the organization" — resolved at send time, never guessed into the
+ * record. A stored value that is not on the list opens as not set, rather than
+ * as an option that does not exist.
+ */
+export function clientLocaleFormValue(customer?: { locale?: string | null } | null): SupportedLocale | '' {
+  const parsed = parseClientLocale(customer?.locale ?? null);
+  return parsed.ok && parsed.locale ? parsed.locale : '';
+}
+
+/** What a save sends: the chosen language, or null to clear it — never "". */
+export function clientLocalePayload(value: string | null | undefined): SupportedLocale | null {
+  const parsed = parseClientLocale(value ?? null);
+  return parsed.ok ? parsed.locale : null;
+}
+
+/** A language's own name for a record's details, or null when none is set. */
+export function clientLocaleName(locale?: string | null): string | null {
+  const value = clientLocaleFormValue({ locale });
+  return value ? CLIENT_LOCALE_NAMES[value] : null;
+}
 
 /*
   The organization's language, where its COUNTRY states one.

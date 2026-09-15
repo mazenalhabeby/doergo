@@ -13,6 +13,8 @@ import { CUSTOMER_STAGES, customerStageLabel } from '@hbcfield/shared/client';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
 import { useQueuedCreate } from '../../../src/offline/actions/queued-create';
+import { CLIENT_LOCALE_OPTIONS, canEditClientLocale, clientLocaleFormValue, clientLocaleName, clientLocalePayload } from '../../../src/lib/client-locale';
+import { useToast } from '../../../src/contexts/toast-context';
 
 const initials = (n: string) => n.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 const STAGE_DOT: Record<string, string> = { LEAD: '#94a3b8', CONTACTED: '#3b82f6', QUALIFIED: '#8b5cf6', CUSTOMER: '#16a34a', INACTIVE: '#9ca3af' };
@@ -43,6 +45,8 @@ export default function CustomerRecordScreen() {
   const [body, setBody] = useState('');
   const [due, setDue] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [localeOpen, setLocaleOpen] = useState(false);
+  const toast = useToast();
 
   const load = useCallback(async () => {
     try {
@@ -74,6 +78,25 @@ export default function CustomerRecordScreen() {
     } catch { /* ignore */ } finally { setSaving(false); }
   };
   const setStage = async (s: string) => { if (!customer) return; setCustomer({ ...customer, status: s }); try { await customersApi.update(id, { status: s }); load(); } catch { /* ignore */ } };
+  /*
+    Change the client's language for emails. Optimistic like the stage, but a
+    refusal puts the old value back and SAYS so — a language that silently
+    reverted would be discovered when the next invitation arrives in English.
+  */
+  const setLocale = async (value: string) => {
+    if (!customer) return;
+    const before = customer.locale ?? null;
+    const locale = clientLocalePayload(value);
+    setLocaleOpen(false);
+    if (locale === before) return;
+    setCustomer({ ...customer, locale });
+    try {
+      await customersApi.update(id, { locale });
+    } catch (e: any) {
+      setCustomer((c) => (c ? { ...c, locale: before } : c));
+      toast.error(e?.message || t('customers.localeFailed', 'Could not change the language'));
+    }
+  };
   const toggleDone = async (a: MobileCustomerActivity) => { try { await customersApi.updateActivity(id, a.id, { done: !a.doneAt }); load(); } catch { /* ignore */ } };
 
   if (loading) return <SafeAreaView style={[styles.safe, { backgroundColor: colors.surface }]}><ActivityIndicator style={{ marginTop: 40 }} color={COLORS.primary} /></SafeAreaView>;
@@ -109,6 +132,47 @@ export default function CustomerRecordScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {/*
+          Language for emails. Always shown — "same as the organization" still
+          decides something, and the person on the phone should see what. Only
+          somebody who may edit this client's info can change it.
+        */}
+        <View style={[styles.localeRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <TouchableOpacity
+            disabled={!canEditClientLocale(customer)}
+            onPress={() => setLocaleOpen((o) => !o)}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+            accessibilityRole={canEditClientLocale(customer) ? 'button' : 'text'}
+          >
+            <Ionicons name="language" size={16} color={colors.textMuted} />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ fontSize: FONT_SIZE.xs, color: colors.textMuted }}>{t('customers.locale', 'Language for emails')}</Text>
+              <Text style={{ fontSize: FONT_SIZE.sm, color: colors.textPrimary, fontWeight: FONT_WEIGHT.medium as any }}>
+                {clientLocaleName(customer.locale) ?? t('customers.localeSame', 'Same as the organization')}
+              </Text>
+            </View>
+            {canEditClientLocale(customer) && <Ionicons name={localeOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textMuted} />}
+          </TouchableOpacity>
+          {localeOpen && canEditClientLocale(customer) && (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: SPACING.sm }}>
+              {[{ value: '', label: t('customers.localeSame', 'Same as the organization') }, ...CLIENT_LOCALE_OPTIONS].map((o) => {
+                const on = clientLocaleFormValue(customer) === o.value;
+                return (
+                  <TouchableOpacity
+                    key={o.value || 'same'}
+                    onPress={() => setLocale(o.value)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: on }}
+                    style={[styles.stagePill, { borderColor: on ? COLORS.primary : colors.border, backgroundColor: on ? COLORS.primary + '20' : 'transparent' }]}
+                  >
+                    <Text style={{ fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.medium as any, color: on ? COLORS.primary : colors.textMuted }}>{o.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+        </View>
 
         {/* Composer */}
         <View style={[styles.composer, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -179,6 +243,7 @@ const styles = StyleSheet.create({
   actBtn: { width: 38, height: 38, borderRadius: 10, backgroundColor: COLORS.primary + '15', alignItems: 'center', justifyContent: 'center' },
   stagePill: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
   dot: { width: 7, height: 7, borderRadius: 4 },
+  localeRow: { borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.sm, marginTop: SPACING.md },
   composer: { borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.sm, marginTop: SPACING.md },
   typePill: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
   duePill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
