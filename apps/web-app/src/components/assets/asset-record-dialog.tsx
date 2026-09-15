@@ -4,7 +4,7 @@ import { useState } from "react"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
-import { Building2, Plus, Trash2 } from "lucide-react"
+import { Building2, ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react"
 
 import { assetsApi, locationsApi, type AssetCategory } from "@/lib/api"
 import { HolderPicker, decodeHolders, encodeHolderList, type HolderKey } from "./holder-picker"
@@ -12,12 +12,15 @@ import { fieldsDroppedByMove } from "@hbcfield/shared/client"
 import {
   normalizeKindShape, detailRowsForKind, kindHolderLabel, kindNameLabel,
   KIND_SHAPE_LIMITS, type DetailRow,
+  ASSET_RECORD_LIMITS, assetDateProblems, type AssetStatusKey,
 } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { AssetStatusPicker, asStatus } from "./asset-status"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog"
@@ -44,6 +47,46 @@ export interface AssetRecord {
   /** Who holds it. One entry, or several when the type allows it. */
   holders?: Array<{ userId?: string | null; customerId?: string | null }>
   details?: unknown
+  status?: string | null
+  manufacturer?: string | null
+  model?: string | null
+  installDate?: string | null
+  warrantyExpiry?: string | null
+  notes?: string | null
+  _count?: { tasks?: number }
+}
+
+/** A stored date -> what `<input type="date">` holds. */
+const dayOf = (v?: string | null) => (v ? v.slice(0, 10) : "")
+
+/** The plate as the form holds it: every fact a string, empty meaning unset. */
+const factsOf = (r?: AssetRecord) => ({
+  serialNumber: r?.serialNumber ?? "",
+  manufacturer: r?.manufacturer ?? "",
+  model: r?.model ?? "",
+  installDate: dayOf(r?.installDate),
+  warrantyExpiry: dayOf(r?.warrantyExpiry),
+  notes: r?.notes ?? "",
+})
+type Facts = ReturnType<typeof factsOf>
+
+const hasFacts = (f: Facts) => Object.values(f).some((v) => v.trim() !== "")
+
+/**
+ * What a save sends for the plate.
+ *
+ * An emptied box is sent as null, not "": null clears the fact, while an empty
+ * string stored in its place reads as "has a serial number, and it is blank".
+ * On a new record an empty box is simply not sent.
+ */
+export function factsPayload(facts: Facts, editing: boolean): Record<string, string | null> {
+  const out: Record<string, string | null> = {}
+  for (const key of Object.keys(facts) as Array<keyof Facts>) {
+    const value = facts[key].trim()
+    if (value) out[key] = value
+    else if (editing) out[key] = null
+  }
+  return out
 }
 
 /*
@@ -142,6 +185,17 @@ export function AssetRecordDialog({
   const [lat, setLat] = useState<number | null>(existing?.locationLat ?? null)
   const [lng, setLng] = useState<number | null>(existing?.locationLng ?? null)
   const [holders, setHolders] = useState<string[]>(encodeHolders(existing))
+  const [status, setStatus] = useState<AssetStatusKey>(asStatus(existing?.status))
+  const [facts, setFacts] = useState<Facts>(factsOf(existing))
+  /*
+    "More about it" opens by itself when there is something in it. Closed on a
+    record that has a serial number would hide the one fact somebody opened the
+    form to correct.
+  */
+  const [moreOpen, setMoreOpen] = useState(hasFacts(factsOf(existing)))
+  const setFact = (key: keyof Facts, value: string) => setFacts((f) => ({ ...f, [key]: value }))
+  // The same rule the server refuses on, asked while the dates are being typed.
+  const dateProblems = assetDateProblems({ installDate: facts.installDate, warrantyExpiry: facts.warrantyExpiry })
 
   /*
     Picking somebody.
@@ -190,6 +244,8 @@ export function AssetRecordDialog({
         details: rows
           .filter((r) => r.label.trim())
           .map((r) => ({ label: r.label.trim(), value: r.value.trim() })),
+        status,
+        ...factsPayload(facts, !!existing),
       }
       return existing
         // A move is a change of kind; the server drops the fields the
@@ -220,6 +276,9 @@ export function AssetRecordDialog({
       setLng(existing?.locationLng ?? null)
       setHolders(encodeHolders(existing))
       setRows(detailRowsForKind(shape, existing?.details))
+      setStatus(asStatus(existing?.status))
+      setFacts(factsOf(existing))
+      setMoreOpen(hasFacts(factsOf(existing)))
     }
     setOpen(next)
   }
@@ -367,6 +426,83 @@ export function AssetRecordDialog({
         </div>
 
         {/*
+          The record's state. After the fields somebody came to fill in, and
+          before the rarely-touched facts: changing it is common enough to be in
+          view, and consequential enough not to be the first control.
+        */}
+        <div className="mt-3 space-y-1.5">
+          <Label>{t("assetFacts.status.label", "Status")}</Label>
+          <AssetStatusPicker value={status} onChange={setStatus} />
+        </div>
+
+        {/*
+          More about it: the plate.
+
+          Serial, maker, model, the two dates and notes existed on every record
+          with nothing to write them. Behind a fold because most kinds never
+          need them, and a van's form should not open on a warranty date.
+        */}
+        <div className="mt-3 rounded-lg border border-border">
+          <button
+            type="button"
+            onClick={() => setMoreOpen((v) => !v)}
+            aria-expanded={moreOpen}
+            className="flex w-full items-center gap-1.5 px-3 py-2 text-left text-xs font-semibold text-muted-foreground hover:text-foreground"
+          >
+            {moreOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+            {t("assetFacts.more.title", "More about it")}
+          </button>
+          {moreOpen && (
+            <div className="grid gap-2.5 border-t border-border p-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label className="text-xs">{t("assetFacts.more.serial", "Serial number")}</Label>
+                <Input value={facts.serialNumber} maxLength={ASSET_RECORD_LIMITS.serialNumber} onChange={(e) => setFact("serialNumber", e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">{t("assetFacts.more.manufacturer", "Manufacturer")}</Label>
+                <Input value={facts.manufacturer} maxLength={ASSET_RECORD_LIMITS.manufacturer} onChange={(e) => setFact("manufacturer", e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">{t("assetFacts.more.model", "Model")}</Label>
+                <Input value={facts.model} maxLength={ASSET_RECORD_LIMITS.model} onChange={(e) => setFact("model", e.target.value)} />
+              </div>
+              <div className="hidden sm:block" />
+              <div className="space-y-1">
+                <Label className="text-xs">{t("assetFacts.more.installDate", "Installed on")}</Label>
+                <Input type="date" value={facts.installDate} onChange={(e) => setFact("installDate", e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">{t("assetFacts.more.warrantyExpiry", "Warranty until")}</Label>
+                <Input
+                  type="date"
+                  value={facts.warrantyExpiry}
+                  min={facts.installDate || undefined}
+                  onChange={(e) => setFact("warrantyExpiry", e.target.value)}
+                  className={cn(dateProblems.length > 0 && "border-destructive")}
+                />
+              </div>
+              {dateProblems.length > 0 && (
+                <p className="text-[11px] text-destructive sm:col-span-2">
+                  {dateProblems.includes("warranty-before-install")
+                    ? t("assetFacts.dates.warrantyBeforeInstall", "The warranty cannot end before the date it was installed.")
+                    : t("assetFacts.dates.invalid", "That date could not be read.")}
+                </p>
+              )}
+              <div className="space-y-1 sm:col-span-2">
+                <Label className="text-xs">{t("assetFacts.more.notes", "Notes")}</Label>
+                <Textarea
+                  value={facts.notes}
+                  maxLength={ASSET_RECORD_LIMITS.notes}
+                  onChange={(e) => setFact("notes", e.target.value)}
+                  placeholder={t("assetFacts.more.notesPh", "Anything worth knowing — where it came from, what to watch for…")}
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/*
           Moving it somewhere else.
 
           At the bottom, behind a link, and never open by default: it is the one
@@ -451,7 +587,7 @@ export function AssetRecordDialog({
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>{t("common.cancel", "Cancel")}</Button>
           <Button
-            disabled={(!name.trim() && !address.trim()) || save.isPending}
+            disabled={(!name.trim() && !address.trim()) || dateProblems.length > 0 || save.isPending}
             onClick={() => save.mutate()}
           >
             {save.isPending ? t("common.saving", "Saving…") : t("common.save", "Save")}

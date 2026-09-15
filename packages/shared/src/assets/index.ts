@@ -6,3 +6,4 @@ export * from './custody';
 export * from './receipt';
 export * from './contract';
 export * from './document-kind';
+export * from './record';

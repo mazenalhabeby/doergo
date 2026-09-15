@@ -1812,16 +1812,18 @@ export interface AssetHolderInput {
 
 export interface UpdateAssetInput {
   name?: string;
-  serialNumber?: string;
-  model?: string;
-  manufacturer?: string;
+  /** null clears the fact — "" would be stored as a blank serial number. */
+  serialNumber?: string | null;
+  model?: string | null;
+  manufacturer?: string | null;
   status?: AssetStatus;
-  installDate?: string;
-  warrantyExpiry?: string;
+  /** YYYY-MM-DD, or null to clear. */
+  installDate?: string | null;
+  warrantyExpiry?: string | null;
   locationAddress?: string;
   locationLat?: number;
   locationLng?: number;
-  notes?: string;
+  notes?: string | null;
   categoryId?: string | null;
   typeId?: string | null;
   /** Who holds it — one, or several when the type allows it. */
@@ -1866,6 +1868,8 @@ export interface AssetsQueryParams {
   categoryId?: string;
   typeId?: string;
   status?: AssetStatus;
+  /** Leave RETIRED out. Text, as a query string carries it; ignored when `status` is set. */
+  hideRetired?: 'true';
   search?: string;
   page?: number;
   limit?: number;
@@ -2383,7 +2387,9 @@ export interface ServiceReportSummary {
     id: string;
     firstName: string;
     lastName: string;
-  };
+  } | null;
+  /** Lines of parts used — not the sum of their quantities. */
+  partsCount?: number;
   partsTotal: number; // Total cost of parts used
   attachmentCount: number;
   hasBeforePhotos: boolean;

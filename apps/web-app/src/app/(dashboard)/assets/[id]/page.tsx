@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   ArrowLeft, Check, Clock, ListChecks, Loader2, Mail, MapPin, Package, Phone, Plus, Receipt,
-  Settings2, Smartphone, Trash2, UserCheck, X,
+  Settings2, ShieldAlert, Smartphone, Trash2, UserCheck, X,
 } from "lucide-react"
 
 import {
@@ -17,7 +17,7 @@ import {
 } from "@/lib/api"
 import {
   normalizeKindShape, detailRowsForKind, kindHolderLabel, formatCents,
-  attribute, type CustodyPeriod, type KindShape,
+  attribute, warrantyState, type CustodyPeriod, type KindShape,
 } from "@hbcfield/shared/client"
 import { AssetRecordDialog } from "@/components/assets/asset-record-dialog"
 import { AssetListTable } from "@/components/assets/asset-list-table"
@@ -25,6 +25,9 @@ import { AssetFaults } from "@/components/assets/asset-faults"
 import { AssetRaiseJob } from "@/components/assets/asset-raise-job"
 import { AssetInviteClient } from "@/components/assets/asset-invite-client"
 import { AssetCustodyPanel } from "@/components/assets/asset-custody-panel"
+import { AssetStatusChip } from "@/components/assets/asset-status"
+import { AssetServiceReports } from "@/components/assets/asset-service-reports"
+import { ExpenseRefuseDialog } from "@/components/assets/expense-refuse-dialog"
 import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -67,6 +70,13 @@ interface AssetDetail {
   customer?: { id: string; name: string; email?: string | null; phone?: string | null } | null
   details?: unknown
   category?: AssetCategory | null
+  status?: string | null
+  serialNumber?: string | null
+  manufacturer?: string | null
+  model?: string | null
+  installDate?: string | null
+  warrantyExpiry?: string | null
+  notes?: string | null
 }
 
 export default function AssetRecordPage() {
@@ -145,6 +155,29 @@ export default function AssetRecordPage() {
     ? `/assets?space=${kind.spaceId}&type=${kind.id}`
     : "/locations"
   const rows = detailRowsForKind(shape, asset.details).filter((r) => r.value)
+  /*
+    The plate, beside the kind's own fields — only the ones filled in.
+
+    A date is shown as a date, not as the ISO string the API carries, and the
+    warranty says where it stands: within thirty days it is worth a glance, past
+    it the next repair is not covered, and that is the moment somebody looks.
+  */
+  const warranty = warrantyState(asset.warrantyExpiry)
+  const facts = [
+    { key: "serial", label: t("assetFacts.more.serial", "Serial number"), value: asset.serialNumber },
+    { key: "manufacturer", label: t("assetFacts.more.manufacturer", "Manufacturer"), value: asset.manufacturer },
+    { key: "model", label: t("assetFacts.more.model", "Model"), value: asset.model },
+    {
+      key: "install",
+      label: t("assetFacts.more.installDate", "Installed on"),
+      value: asset.installDate ? new Date(asset.installDate).toLocaleDateString() : null,
+    },
+    {
+      key: "warranty",
+      label: t("assetFacts.more.warrantyExpiry", "Warranty until"),
+      value: asset.warrantyExpiry ? new Date(asset.warrantyExpiry).toLocaleDateString() : null,
+    },
+  ].filter((f) => f.value)
   const holders = asset.holders ?? []
   const hasMap = shape.hasAddress && asset.locationLat != null && asset.locationLng != null
 
@@ -179,7 +212,10 @@ export default function AssetRecordPage() {
           <Package className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-bold tracking-tight text-foreground sm:text-2xl">{asset.name}</h1>
+          <div className="flex min-w-0 items-center gap-2">
+            <h1 className="truncate text-xl font-bold tracking-tight text-foreground sm:text-2xl">{asset.name}</h1>
+            <AssetStatusChip status={asset.status} className="text-[11px]" />
+          </div>
           {shape.hasAddress && asset.locationAddress && (
             <p className="mt-0.5 flex items-center gap-1 text-sm text-muted-foreground">
               <MapPin className="h-3.5 w-3.5" /> {asset.locationAddress}
@@ -220,6 +256,13 @@ export default function AssetRecordPage() {
               // rename quietly drop every other resident on save.
               holders: holders.map((h) => ({ userId: h.userId, customerId: h.customerId })),
               details: asset.details,
+              status: asset.status,
+              serialNumber: asset.serialNumber,
+              manufacturer: asset.manufacturer,
+              model: asset.model,
+              installDate: asset.installDate,
+              warrantyExpiry: asset.warrantyExpiry,
+              notes: asset.notes,
             }}
             onSaved={() => {
               qc.invalidateQueries({ queryKey: ["asset", id] })
@@ -302,7 +345,7 @@ export default function AssetRecordPage() {
             </div>
           )}
 
-          {rows.length > 0 && (
+          {(rows.length > 0 || facts.length > 0 || !!asset.notes) && (
             <div className="rounded-2xl border border-border/70 bg-card p-4">
               <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <ListChecks className="h-3.5 w-3.5" /> {t("assetRecords.fields", "Details")}
@@ -314,7 +357,40 @@ export default function AssetRecordPage() {
                     <dd className="truncate text-right font-medium text-foreground">{d.value}</dd>
                   </div>
                 ))}
+                {facts.map((f) => {
+                  const flagged = f.key === "warranty" && (warranty === "expired" || warranty === "soon")
+                  return (
+                    <div key={f.key} className="flex items-baseline justify-between gap-3 py-2">
+                      <dt className="shrink-0 text-xs text-muted-foreground">{f.label}</dt>
+                      <dd
+                        className={cn(
+                          "truncate text-right font-medium text-foreground",
+                          flagged && warranty === "expired" && "text-destructive",
+                          flagged && warranty === "soon" && "text-amber-600 dark:text-amber-400",
+                        )}
+                      >
+                        {f.value}
+                      </dd>
+                    </div>
+                  )
+                })}
               </dl>
+              {warranty === "expired" || warranty === "soon" ? (
+                <p className={cn(
+                  "mt-1 flex items-center justify-end gap-1 text-[11px] font-medium",
+                  warranty === "expired" ? "text-destructive" : "text-amber-600 dark:text-amber-400",
+                )}>
+                  <ShieldAlert className="h-3.5 w-3.5" />
+                  {warranty === "expired"
+                    ? t("assetFacts.warranty.expired", "Warranty ended")
+                    : t("assetFacts.warranty.soon", "Warranty ends soon")}
+                </p>
+              ) : null}
+              {asset.notes && (
+                <p className="mt-2 whitespace-pre-wrap border-t border-border/60 pt-2 text-sm text-foreground">
+                  {asset.notes}
+                </p>
+              )}
             </div>
           )}
         </aside>
@@ -390,9 +466,12 @@ export default function AssetRecordPage() {
               {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
             </div>
           ) : tasks.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              {t("assetRecords.noHistory", "No tasks for this yet.")}
-            </p>
+            <div className="space-y-2">
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                {t("assetRecords.noHistory", "No tasks for this yet.")}
+              </p>
+              <AssetServiceReports assetId={id} />
+            </div>
           ) : (
             <div className="space-y-2">
               {tasks.map((tk) => (
@@ -418,6 +497,8 @@ export default function AssetRecordPage() {
                   </Badge>
                 </button>
               ))}
+              {/* What was done, under what was asked for. */}
+              <AssetServiceReports assetId={id} />
             </div>
           )}
         </main>
@@ -568,7 +649,8 @@ function MoneyPanel({
   )
 
   const review = useMutation({
-    mutationFn: (v: { id: string; decision: "accept" | "reject" }) => assetsApi.reviewExpense(v.id, v.decision),
+    mutationFn: (v: { id: string; decision: "accept" | "reject"; note?: string }) =>
+      assetsApi.reviewExpense(v.id, v.decision, v.note),
     onSuccess: onChanged,
     onError: (e: Error) => notify.error(e.message),
   })
@@ -696,13 +778,19 @@ function MoneyPanel({
 
               {waiting && canManage ? (
                 <div className="flex shrink-0 items-center gap-1">
-                  <button
-                    onClick={() => review.mutate({ id: e.id, decision: "reject" })}
-                    className="rounded p-1 text-muted-foreground transition-colors hover:text-destructive"
-                    aria-label={t("expenses.reject", "Refuse")}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                  {/* Refusing asks why — the member reads it under the entry. */}
+                  <ExpenseRefuseDialog
+                    pending={review.isPending}
+                    onRefuse={(note) => review.mutate({ id: e.id, decision: "reject", note })}
+                    trigger={
+                      <button
+                        className="rounded p-1 text-muted-foreground transition-colors hover:text-destructive"
+                        aria-label={t("expenses.reject", "Refuse")}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    }
+                  />
                   <button
                     onClick={() => review.mutate({ id: e.id, decision: "accept" })}
                     className="rounded p-1 text-muted-foreground transition-colors hover:text-emerald-600"

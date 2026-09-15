@@ -1,7 +1,7 @@
 import { Reflector } from '@nestjs/core';
 import { PATH_METADATA, METHOD_METADATA } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common';
-import { PERMISSIONS_KEY } from '@hbcfield/shared';
+import { PERMISSIONS_KEY, PERMISSIONS_IN_SPACE_KEY } from '@hbcfield/shared';
 import { AssetsController } from '../assets.controller';
 
 /**
@@ -30,6 +30,7 @@ const routeOf = (name: string) => {
     path: Reflect.getMetadata(PATH_METADATA, fn) as string,
     method: Reflect.getMetadata(METHOD_METADATA, fn) as RequestMethod,
     permissions: reflector.get<string[]>(PERMISSIONS_KEY, fn),
+    inSpace: reflector.get<string[]>(PERMISSIONS_IN_SPACE_KEY, fn),
   };
 };
 
@@ -131,8 +132,20 @@ describe('the contract flow asks the write permission throughout', () => {
     site should buy. There is also no caller for it — nobody previews a contract
     they cannot apply.
   */
-  it.each(['readContract', 'previewContract', 'applyContract'])('%s requires canManageAssets', (name) => {
-    expect(routeOf(name).permissions).toEqual(['canManageAssets']);
+  /*
+    Held org-wide OR in a space — never `canViewAllTasks`, and never nothing.
+
+    A Space Manager holds `canManageAssets` in their own depot and was refused
+    the flow outright by `@RequirePermission`. The request names a kind, not a
+    space, so the guard only asks "somewhere?"; the SERVICE narrows each kind to
+    the caller's workspaces (asset-contract.spec.ts pins that half). Loosening
+    the gate here without that narrowing would hand every depot's manager every
+    other depot's fleet, which is why both halves are tested.
+  */
+  it.each(['readContract', 'previewContract', 'applyContract'])('%s requires canManageAssets, in a space or org-wide', (name) => {
+    const route = routeOf(name);
+    expect(route.inSpace).toEqual(['canManageAssets']);
+    expect(route.permissions).toBeUndefined();
   });
 
   /*

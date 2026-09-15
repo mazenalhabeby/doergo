@@ -96,6 +96,23 @@ describe('what Manage offers', () => {
     expect(hasManageSurface(worker as never)).toBe(false);
   });
 
+  /*
+    A Space Manager whose `canManageAssets` comes from their depot's role. The
+    contract endpoints accept that grant for the depot's kinds now, so the row
+    that leads there must be offered — it used to be org-wide only, and the one
+    person at the desk when a rental agreement arrives had no way in.
+  */
+  it('offers "From a contract" to a manager whose asset grant is a space role', () => {
+    const depotManager = {
+      role: 'EMPLOYEE',
+      canManageAssets: false,
+      access: { org: {}, perSpace: { depot: { canManageAssets: true, canViewAllTasks: true } } },
+    };
+    expect(keys(depotManager)).toContain('manage.contract.label');
+    // …and still not to somebody who only oversees the work there.
+    expect(keys(supervisor)).not.toContain('manage.contract.label');
+  });
+
   it('shows the tab to anyone with at least one row', () => {
     expect(hasManageSurface(supervisor as never)).toBe(true);
     expect(hasManageSurface(admin as never)).toBe(true);

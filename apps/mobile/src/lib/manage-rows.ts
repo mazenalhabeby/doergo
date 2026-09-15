@@ -31,11 +31,13 @@ export const MANAGE_ROWS = [
     you are out of the car park — created, handed over, and the one it replaces
     retired.
 
-    `canManageAssets` and org-wide, matching the endpoint: `POST
-    /assets/contracts/apply` is `@RequirePermission`, so a space role however
-    senior is refused there and must be refused a door to it here too.
+    `canManageAssets`, held org-wide OR in a space, matching the endpoint:
+    `POST /assets/contracts/apply` is `@RequirePermissionInSpace` and narrows
+    each kind to the workspaces the grant covers. It used to be org-wide only,
+    which refused a Space Manager the one flow built for their depot's desk —
+    the screen itself then offers only the kinds of their own workspaces.
   */
-  { icon: 'document-attach', labelKey: 'manage.contract.label', descKey: 'manage.contract.desc', route: '/(app)/asset-contract', color: '#0f766e', permission: 'canManageAssets', orgWide: true },
+  { icon: 'document-attach', labelKey: 'manage.contract.label', descKey: 'manage.contract.desc', route: '/(app)/asset-contract', color: '#0f766e', permission: 'canManageAssets', orgWide: false },
 ] as const;
 
 export type ManageRow = (typeof MANAGE_ROWS)[number];

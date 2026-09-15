@@ -6,9 +6,10 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { ArrowLeft, FileText, Package, Plus, Pencil, Search, Trash2, User } from "lucide-react"
 
-import { assetsApi, type AssetCategory } from "@/lib/api"
+import { assetsApi, type AssetCategory, type AssetStatus } from "@/lib/api"
 import {
   normalizeKindShape, kindHolderLabel, detailRowsForKind, type KindShape,
+  canManageAssetsIn, ASSET_STATUS_ORDER,
 } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
@@ -22,6 +23,8 @@ import { AssetRecordDialog, type AssetRecord } from "@/components/assets/asset-r
 import { ContractDialog } from "@/components/assets/contract-dialog"
 import { ProposalQueue } from "@/components/assets/proposal-queue"
 import { OrphanAssetsCard } from "./orphan-assets-card"
+import { AssetStatusChip, useAssetStatusLabel } from "@/components/assets/asset-status"
+import { AssetRetireDialog } from "@/components/assets/asset-retire-dialog"
 
 /**
  * What this space owns.
@@ -36,12 +39,19 @@ export function AssetsTab({ spaceId }: { spaceId: string }) {
   const router = useRouter()
   const { user } = useAuth()
   /*
-    The whole contract flow — read, preview and apply — asks `canManageAssets`,
-    so the button asks it too. A token minted before the capability existed
-    carries neither flag; an admin is one either way, which is what stops an old
-    session losing a button it had yesterday.
+    The proposals queue's accept is `@RequirePermission('canManageAssets')` —
+    org-wide — so the queue asks the org-wide question. A token minted before
+    the capability existed carries neither flag; an admin is one either way,
+    which is what stops an old session losing a button it had yesterday.
   */
   const canManageAssets = !!(user?.canManageAssets ?? user?.canManageUsers) || user?.role === "ADMIN"
+  /*
+    The contract flow asks IN THIS workspace. A Space Manager holds
+    `canManageAssets` in their own depot, and the server now accepts that grant
+    for this workspace's kinds — asking the org-wide flag here hid the button
+    from exactly the person at the desk when the agreement arrives.
+  */
+  const canUseContracts = canManageAssetsIn(user, spaceId)
   /*
     Which type is open lives in the URL.
 
@@ -108,12 +118,13 @@ export function AssetsTab({ spaceId }: { spaceId: string }) {
               apartments with no member holder has nobody to hand one to, and
               offering the button there is a dead end three clicks deep.
             */}
-            {canManageAssets && kinds.some((k: AssetCategory) => {
+            {canUseContracts && kinds.some((k: AssetCategory) => {
               const shape = normalizeKindShape(k.config)
               return shape.holder.enabled && shape.holder.members
             }) && (
               <ContractDialog
                 kinds={kinds}
+                spaceId={spaceId}
                 onCreated={(id) => { invalidate(); router.push(`/assets/${id}`) }}
                 trigger={
                   <Button size="sm" variant="outline">
@@ -262,12 +273,31 @@ function KindContents({
   const router = useRouter()
   const qc = useQueryClient()
   const shape = normalizeKindShape(kind.config)
+  const statusLabel = useAssetStatusLabel()
   const [search, setSearch] = useState("")
+  /*
+    Which states to list. Retired records are hidden unless asked for: they are
+    kept for their history, and a list that leads with the van sold last year
+    is a list somebody scrolls past every day. Choosing "Retired" in the filter
+    shows them regardless — the filter is the more specific question.
+  */
+  const [status, setStatus] = useState<AssetStatus | "">("")
+  const [showRetired, setShowRetired] = useState(false)
+  const [retiring, setRetiring] = useState<{ id: string; name: string; jobs: number } | null>(null)
 
   const recordsQ = useQuery({
-    queryKey: ["asset-records", kind.id],
-    // Whole machines only — a gearbox is reached through its press.
-    queryFn: () => assetsApi.getAssets({ categoryId: kind.id }),
+    queryKey: ["asset-records", kind.id, status, showRetired],
+    queryFn: () => assetsApi.getAssets({
+      categoryId: kind.id,
+      status: status || undefined,
+      hideRetired: !status && !showRetired ? "true" : undefined,
+      /*
+        The server's ceiling, not its default of 20. The search below filters
+        what came back, so a default page silently hid every record after the
+        twentieth from both the list and the search.
+      */
+      limit: 200,
+    }),
   })
 
   // The list endpoint has returned both a bare array and a wrapped page, so
@@ -287,8 +317,26 @@ function KindContents({
     : records
 
   const refresh = () => {
+    // Every filter's cache for this kind — a status change moves a record
+    // between them.
     qc.invalidateQueries({ queryKey: ["asset-records", kind.id] })
     onChanged()
+  }
+
+  /*
+    Delete, or offer to retire.
+
+    A record with jobs in its history cannot be deleted — its history IS its
+    value — and the server says so. The list already knows the count, so it asks
+    the question the refusal would have ended on, with the button that answers it.
+  */
+  const remove = (r: AssetRecord) => {
+    const jobs = r._count?.tasks ?? 0
+    if (jobs > 0 && r.status !== "RETIRED") {
+      setRetiring({ id: r.id, name: r.name, jobs })
+      return
+    }
+    del.mutate(r.id)
   }
 
   const del = useMutation({
@@ -318,17 +366,42 @@ function KindContents({
         }
       />
 
-      {records.length > 3 && (
-        <div className="relative max-w-xs">
-          <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("assetRecords.search", "Search…")}
-            className="h-8 pl-8 text-sm"
-          />
-        </div>
-      )}
+      <div className="flex flex-wrap items-center gap-2">
+        {(records.length > 3 || search) && (
+          <div className="relative w-full max-w-xs">
+            <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t("assetRecords.search", "Search…")}
+              className="h-8 pl-8 text-sm"
+            />
+          </div>
+        )}
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value as AssetStatus | "")}
+          aria-label={t("assetFacts.status.label", "Status")}
+          className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+        >
+          <option value="">{t("assetFacts.filter.all", "All statuses")}</option>
+          {ASSET_STATUS_ORDER.map((s) => (
+            <option key={s} value={s}>{statusLabel(s)}</option>
+          ))}
+        </select>
+        {/* Only meaningful while no single status is chosen. */}
+        {!status && (
+          <label className="inline-flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={showRetired}
+              onChange={(e) => setShowRetired(e.target.checked)}
+              className="h-3.5 w-3.5 rounded border-border"
+            />
+            {t("assetFacts.filter.showRetired", "Show retired")}
+          </label>
+        )}
+      </div>
 
       {recordsQ.isLoading ? (
         <div className="space-y-2">
@@ -337,7 +410,7 @@ function KindContents({
       ) : shown.length === 0 ? (
         <EmptyState
           icon={Package}
-          title={search
+          title={search || status
             ? t("assetLists.noMatch", "Nothing matches that")
             : t("assetRecords.empty", "Nothing added yet")}
         />
@@ -357,8 +430,11 @@ function KindContents({
                     <Package className="h-4 w-4" />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-foreground group-hover:text-primary">
-                      {r.name}
+                    <span className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium text-foreground group-hover:text-primary">
+                        {r.name}
+                      </span>
+                      <AssetStatusChip status={r.status} />
                     </span>
                     <span className="block truncate text-[11px] text-muted-foreground">
                       {[r.locationAddress, ...facts.map((f) => `${f.label} ${f.value}`)]
@@ -379,7 +455,11 @@ function KindContents({
                     </button>
                   }
                 />
-                <button onClick={() => del.mutate(r.id)} className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100">
+                <button
+                  onClick={() => remove(r)}
+                  aria-label={t("common.remove", "Remove")}
+                  className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -387,6 +467,8 @@ function KindContents({
           })}
         </div>
       )}
+
+      <AssetRetireDialog asset={retiring} onClose={() => setRetiring(null)} onRetired={refresh} />
     </div>
   )
 }

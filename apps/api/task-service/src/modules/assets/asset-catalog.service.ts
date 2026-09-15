@@ -97,17 +97,26 @@ export class AssetCatalogService {
   async findAllCategories(query: {
     userId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
+    /** Workspaces where the caller holds canViewAllTasks by a SPACE role. */
+    viewAllSpaceIds?: string[];
     organizationId: string;
     spaceId?: string;
   }) {
-    this.access.assertMay(query as any, 'view asset categories');
+    this.access.assertMay(query, 'view asset categories');
 
+    /*
+      Asking for a space returns THAT space's kinds only; asking for none
+      returns everything the org has — for an org-wide caller. A space-scoped
+      one is confined to their own workspaces whatever they ask for: the same
+      intersecting filter the records list uses, so a kind and its records can
+      never be visible to different people.
+    */
+    const scope = this.access.spaceFilter(query, query.spaceId);
     const categories = await this.prisma.assetCategory.findMany({
-      // Asking for a space returns THAT space's kinds only. Asking for none
-      // returns everything the org has, which is what the org-wide screen wants.
       where: {
         organizationId: query.organizationId,
-        ...(query.spaceId ? { spaceId: query.spaceId } : {}),
+        ...(scope ?? {}),
       },
       orderBy: { name: 'asc' },
       include: {

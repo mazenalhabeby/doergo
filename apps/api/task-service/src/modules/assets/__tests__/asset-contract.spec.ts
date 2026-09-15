@@ -1,9 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { AssetAccessService } from '../asset-access.service';
 import { AssetCustodyService } from '../asset-custody.service';
 import { AssetContractService } from '../asset-contract.service';
+import { AssetCatalogService } from '../asset-catalog.service';
 
 /**
  * Accepting a contract: create the car, hand it over, retire the one it replaces.
@@ -289,6 +290,88 @@ describe('AssetContractService', () => {
     it('refuses an empty page rather than returning an empty reading', async () => {
       await expect(service.read({ text: '   ', userId: 'u', userRole: 'ADMIN', organizationId: 'org1' } as any))
         .rejects.toBeInstanceOf(BadRequestException);
+    });
+  });
+
+  /*
+    The kinds list has to open for them too — the contract flow has nothing to
+    create without it — and it must not open any wider than their workspaces.
+  */
+  describe('the kinds a space-scoped manager can list', () => {
+    const catalog = () => {
+      const db: any = { assetCategory: { findMany: jest.fn(async () => []) } };
+      return { db, svc: new AssetCatalogService(db, new AssetAccessService(db)) };
+    };
+    const base = { userId: 'u', userRole: 'EMPLOYEE', organizationId: 'org1' };
+
+    it('is confined to their own workspaces, whatever they ask for', async () => {
+      const { db, svc } = catalog();
+      await svc.findAllCategories({ ...base, viewAllSpaceIds: ['depot-linz'], spaceId: 'depot-graz' });
+      expect(db.assetCategory.findMany.mock.calls[0][0].where).toEqual({ organizationId: 'org1', spaceId: { in: [] } });
+      await svc.findAllCategories({ ...base, viewAllSpaceIds: ['depot-linz'] });
+      expect(db.assetCategory.findMany.mock.calls[1][0].where).toEqual({ organizationId: 'org1', spaceId: { in: ['depot-linz'] } });
+    });
+
+    it('is unchanged for an org-wide caller', async () => {
+      const { db, svc } = catalog();
+      await svc.findAllCategories({ ...base, userRole: 'ADMIN' });
+      expect(db.assetCategory.findMany.mock.calls[0][0].where).toEqual({ organizationId: 'org1' });
+      await svc.findAllCategories({ ...base, canViewAllTasks: true, spaceId: 's2' });
+      expect(db.assetCategory.findMany.mock.calls[1][0].where).toEqual({ organizationId: 'org1', spaceId: 's2' });
+    });
+
+    it('is refused to somebody granted nowhere', async () => {
+      const { svc } = catalog();
+      await expect(svc.findAllCategories({ ...base, viewAllSpaceIds: [] })).rejects.toBeInstanceOf(ForbiddenException);
+    });
+  });
+
+  /*
+    ⚠️ A manager whose `canManageAssets` comes from a SPACE role.
+
+    The gateway lets a grant held anywhere through the door, because the request
+    names a kind and not a space. This is the half that makes that safe: every
+    kind is narrowed to the caller's own workspaces by the kind's REAL spaceId,
+    and anything else answers as if it did not exist.
+  */
+  describe('a space-scoped manager', () => {
+    const scoped = (over: any = {}) => call({ userRole: 'EMPLOYEE', manageSpaceIds: ['depot-linz'], ...over });
+
+    it('may use a kind in their own workspace', async () => {
+      prisma.assetCategory.findFirst.mockResolvedValue({ id: 'k1', config: VEHICLES, spaceId: 'depot-linz' });
+      const res: any = await service.preview(scoped() as any);
+      expect(res.data.canApply).toBe(true);
+    });
+
+    it('may apply in their own workspace', async () => {
+      prisma.assetCategory.findFirst.mockResolvedValue({ id: 'k1', config: VEHICLES, spaceId: 'depot-linz' });
+      await service.apply(scoped() as any);
+      expect(tx.asset.create).toHaveBeenCalled();
+    });
+
+    it('is told another workspace’s kind does not exist — 404, never 403', async () => {
+      prisma.assetCategory.findFirst.mockResolvedValue({ id: 'k1', config: VEHICLES, spaceId: 'depot-graz' });
+      await expect(service.preview(scoped() as any)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.apply(scoped() as any)).rejects.toBeInstanceOf(NotFoundException);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('cannot reach a kind that belongs to no workspace', async () => {
+      // No space grant can reach a kind in no space — only an org-wide one.
+      prisma.assetCategory.findFirst.mockResolvedValue({ id: 'k1', config: VEHICLES, spaceId: null });
+      await expect(service.apply(scoped() as any)).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('holding the permission nowhere is refused before anything is read', async () => {
+      await expect(service.read({ text: 'x', userId: 'u', userRole: 'EMPLOYEE', organizationId: 'org1', manageSpaceIds: [] } as any))
+        .rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.preview(scoped({ manageSpaceIds: [] }) as any)).rejects.toBeInstanceOf(ForbiddenException);
+      expect(prisma.assetCategory.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('an org-wide caller is not narrowed at all', () => {
+      expect(AssetContractService.kindInScope('anywhere', undefined)).toBe(true);
+      expect(AssetContractService.kindInScope(null, undefined)).toBe(true);
     });
   });
 });

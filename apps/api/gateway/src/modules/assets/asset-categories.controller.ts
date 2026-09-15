@@ -17,8 +17,8 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Role } from '@hbcfield/shared';
-import { RequirePermission, DenyExternal } from '../../common/decorators';
+import { Role, isAdmin, spacesGranting } from '@hbcfield/shared';
+import { RequirePermission, RequirePermissionInSpace, DenyExternal } from '../../common/decorators';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -87,8 +87,18 @@ export class AssetCategoriesController {
     });
   }
 
+  /*
+    Space-aware, exactly like `GET /assets`.
+
+    The records list already admitted a Space Manager to their own workspace's
+    assets, while the list of KINDS those records are grouped under still asked
+    the org-wide column — so the Assets tab of their own depot loaded no kinds,
+    and the contract flow they may now use had nothing to create. The guard
+    widens; the service narrows by `viewAllSpaceIds`, intersecting any
+    requested `spaceId` rather than trusting it.
+  */
   @Get()
-  @RequirePermission('canViewAllTasks')
+  @RequirePermissionInSpace('canViewAllTasks')
   @ApiOperation({ summary: 'List asset kinds — a space\'s own, or the whole org' })
   @ApiQuery({ name: 'spaceId', required: false, description: "Only this space's kinds" })
   async findAllCategories(@Request() req: any, @Query('spaceId') spaceId?: string) {
@@ -96,6 +106,7 @@ export class AssetCategoriesController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       organizationId: req.user.organizationId,
       spaceId,
     });

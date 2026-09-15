@@ -17,7 +17,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Role, isAdmin, spacesGranting } from '@hbcfield/shared';
+import { Role, isAdmin, spacesGranting, assetManageSpaces } from '@hbcfield/shared';
 import { RequirePermission, RequirePermissionInSpace, DenyExternal } from '../../common/decorators';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -371,9 +371,16 @@ export class AssetsController {
     the kind and from what the member actually holds. The request carries the
     reading — a plate, a VIN — and never "close custody X, retire asset Y". A
     client that could name the record to retire could retire any record.
+
+    ⚠️ IN SPACE, not org-wide. A Space Manager holds `canManageAssets` in their
+    own depot, and `@RequirePermission` refused them the one flow built for the
+    person at the desk when a rental agreement arrives. The request names a
+    KIND, not a space, so the guard can only ask "somewhere?" — the service is
+    the boundary: `manageSpaceIds` narrows every kind to the caller's own
+    workspaces by the kind's real `spaceId`, and refuses the rest as not found.
   */
   @Post('contracts/read')
-  @RequirePermission('canManageAssets')
+  @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Read a contract’s text into fields' })
   async readContract(@Body() dto: ReadContractDto, @Request() req: any) {
     return this.assetsService.contractRead({
@@ -381,12 +388,13 @@ export class AssetsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      manageSpaceIds: assetManageSpaces(req.user) ?? undefined,
       organizationId: req.user.organizationId,
     });
   }
 
   @Post('contracts/preview')
-  @RequirePermission('canManageAssets')
+  @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'What accepting this contract would do' })
   async previewContract(@Body() dto: ContractProposalDto, @Request() req: any) {
     return this.assetsService.contractPreview({
@@ -394,14 +402,18 @@ export class AssetsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // The same rule the clients render with: null (org-wide) travels as
+      // undefined, an array narrows, and an empty array reaches nothing.
+      manageSpaceIds: assetManageSpaces(req.user) ?? undefined,
       organizationId: req.user.organizationId,
     });
   }
 
   @Post('contracts/apply')
   // Creates a record, reassigns the organization's property, and can take a
-  // vehicle off the books. Nothing smaller than the write permission fits.
-  @RequirePermission('canManageAssets')
+  // vehicle off the books. Nothing smaller than the write permission fits —
+  // held org-wide, or in the workspace the kind belongs to.
+  @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Create it, hand it over, retire what it replaces' })
   async applyContract(@Body() dto: ContractProposalDto, @Request() req: any) {
     return this.assetsService.contractApply({
@@ -409,6 +421,9 @@ export class AssetsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // The same rule the clients render with: null (org-wide) travels as
+      // undefined, an array narrows, and an empty array reaches nothing.
+      manageSpaceIds: assetManageSpaces(req.user) ?? undefined,
       organizationId: req.user.organizationId,
     });
   }

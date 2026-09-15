@@ -7097,6 +7097,65 @@
     "moveKeeps": "Every field on this record exists in {{kind}} — nothing is lost.",
     "fromContract": "Created from a contract"
   },
+  "assetFacts": {
+    "status": {
+      "label": "Status",
+      "ACTIVE": "Active",
+      "MAINTENANCE": "In maintenance",
+      "INACTIVE": "Inactive",
+      "RETIRED": "Retired",
+      "retiredHint": "Retired stops it counting on the bill and hides it from pickers. Its jobs, money and custody stay."
+    },
+    "filter": {
+      "all": "All statuses",
+      "showRetired": "Show retired"
+    },
+    "more": {
+      "title": "More about it",
+      "serial": "Serial number",
+      "manufacturer": "Manufacturer",
+      "model": "Model",
+      "installDate": "Installed on",
+      "warrantyExpiry": "Warranty until",
+      "notes": "Notes",
+      "notesPh": "Anything worth knowing — where it came from, what to watch for…"
+    },
+    "warranty": {
+      "expired": "Warranty ended",
+      "soon": "Warranty ends soon"
+    },
+    "dates": {
+      "warrantyBeforeInstall": "The warranty cannot end before the date it was installed.",
+      "invalid": "That date could not be read."
+    },
+    "retire": {
+      "title": "Retire instead?",
+      "body": "This has {{count}} job(s) in its history, so it cannot be deleted. Retiring keeps the record, its jobs, money and custody — it stops counting on the bill and leaves pickers.",
+      "confirm": "Set to Retired",
+      "done": "Retired."
+    },
+    "handover": {
+      "when": "When",
+      "whenHint": "Now, unless it changed hands earlier.",
+      "future": "A handover cannot be dated in the future — record it when it happens.",
+      "beforeStart": "That is before {{name}} was given it.",
+      "opensAt": "Opens a new custody from {{when}}. Costs dated after this belong to them."
+    },
+    "reports": {
+      "title": "Service reports",
+      "by": "by {{name}}",
+      "parts": "{{count}} parts",
+      "parts_one": "{{count}} part",
+      "parts_other": "{{count}} parts",
+      "worked": "{{duration}} of work"
+    },
+    "refuse": {
+      "title": "Refuse this expense",
+      "why": "Why (the member sees this)",
+      "whyPh": "e.g. Not a fuel receipt, wrong vehicle…",
+      "confirm": "Refuse"
+    }
+  },
   "assetMoney": {
     "title": "Money",
     "in": "In",
