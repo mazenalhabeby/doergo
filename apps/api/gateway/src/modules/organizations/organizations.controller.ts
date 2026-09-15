@@ -525,7 +525,7 @@ export class OrganizationsController {
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'update_notification_prefs' }, {
+      this.authClient.send({ cmd: 'update_org_notification_prefs' }, {
         organizationId: user.organizationId,
         prefs: dto,
       }),

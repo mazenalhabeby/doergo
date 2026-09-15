@@ -104,6 +104,7 @@ export * from './security/tokens';
 export * from './notifications/push-channels';
 export * from './notifications/locale';
 export * from './notifications/locale-format';
+export * from './notifications/email-prefs';
 
 // Counted time — see client.ts.
 export * from './attendance/counted-time';

@@ -91,6 +91,9 @@ export * from './access/workflow-status-label';
 // the server names the channel and the app creates it — the two cannot drift.
 export * from './notifications/push-channels';
 export * from './notifications/locale';
+// Which member emails a person gets — the org ceiling and the member opt-out.
+// Client-safe: both settings screens read the keys and defaults from here.
+export * from './notifications/email-prefs';
 
 // Counted time — the one place real hours become paid hours.
 export * from './attendance/counted-time';

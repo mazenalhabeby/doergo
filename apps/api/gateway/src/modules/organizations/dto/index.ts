@@ -194,39 +194,43 @@ export class UpdateOrgProfileDto {
   enabledModules?: string[];
 }
 
-/**
- * Update notification preferences DTO
- */
+/*
+  Update notification preferences DTO.
+
+  ⚠️ These are the keys the Settings screen SENDS, and the ones the sender
+  READS (ORG_EMAIL_SWITCH in shared).
+
+  The class used to declare six other names — `emailEnabled`, `taskAssigned`,
+  `commentAdded`… — that no screen sent and nothing read, while the screen sent
+  `emailOnTaskComplete` and friends. With `forbidNonWhitelisted` on, every save
+  of the Notifications section was refused with a 400, for as long as the
+  section existed. A test now pins this list to shared's.
+*/
 export class UpdateNotificationPrefsDto {
-  @ApiPropertyOptional({ description: 'Email notifications enabled' })
+  @ApiPropertyOptional({ description: 'Email a member when a task is assigned to them' })
   @IsOptional()
   @IsBoolean()
-  emailEnabled?: boolean;
+  emailOnTaskAssigned?: boolean;
+
+  @ApiPropertyOptional({ description: 'Email a task’s creator when it is completed' })
+  @IsOptional()
+  @IsBoolean()
+  emailOnTaskComplete?: boolean;
+
+  @ApiPropertyOptional({ description: 'Email a member when a shift they left open is closed with a temporary time' })
+  @IsOptional()
+  @IsBoolean()
+  emailOnAutoClockOut?: boolean;
+
+  @ApiPropertyOptional({ description: 'Email on join request' })
+  @IsOptional()
+  @IsBoolean()
+  emailOnJoinRequest?: boolean;
 
   @ApiPropertyOptional({ description: 'Push notifications enabled' })
   @IsOptional()
   @IsBoolean()
   pushEnabled?: boolean;
-
-  @ApiPropertyOptional({ description: 'Notify on task assigned' })
-  @IsOptional()
-  @IsBoolean()
-  taskAssigned?: boolean;
-
-  @ApiPropertyOptional({ description: 'Notify on task status change' })
-  @IsOptional()
-  @IsBoolean()
-  taskStatusChanged?: boolean;
-
-  @ApiPropertyOptional({ description: 'Notify on new comment' })
-  @IsOptional()
-  @IsBoolean()
-  commentAdded?: boolean;
-
-  @ApiPropertyOptional({ description: 'Notify on join request' })
-  @IsOptional()
-  @IsBoolean()
-  joinRequestReceived?: boolean;
 }
 
 /**

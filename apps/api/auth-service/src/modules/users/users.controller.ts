@@ -122,12 +122,21 @@ export class UsersController {
     return this.usersService.markNotificationsRead(data.userId, data.ids);
   }
 
-  @MessagePattern({ cmd: 'get_notification_prefs' })
+  /*
+    ⚠️ `_my_` in the name is load-bearing. Both this and the organization's
+    settings used to answer `update_notification_prefs`, and Nest keeps only the
+    LAST handler registered for a pattern: OnboardingModule loads after
+    UsersModule, so a member saving their own switches reached the
+    organization's update with no organization id, and it failed. Every pattern
+    in a service must be unique — the member's and the organization's are two
+    different things with two different names.
+  */
+  @MessagePattern({ cmd: 'get_my_notification_prefs' })
   async getNotificationPrefs(@Payload() data: { userId: string }) {
     return this.usersService.getNotificationPrefs(data.userId);
   }
 
-  @MessagePattern({ cmd: 'update_notification_prefs' })
+  @MessagePattern({ cmd: 'update_my_notification_prefs' })
   async updateNotificationPrefs(
     @Payload() data: { userId: string; prefs: Record<string, boolean> },
   ) {

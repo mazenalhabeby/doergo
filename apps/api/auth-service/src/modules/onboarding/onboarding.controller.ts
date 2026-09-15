@@ -91,7 +91,9 @@ export class OnboardingController {
     return this.onboardingService.updateOrgProfile(data.organizationId, data.updates);
   }
 
-  @MessagePattern({ cmd: 'update_notification_prefs' })
+  // Not `update_notification_prefs`: that name was shared with the member's own
+  // settings, and the later registration silently took both (see UsersController).
+  @MessagePattern({ cmd: 'update_org_notification_prefs' })
   async updateNotificationPrefs(@Payload() data: { organizationId: string; prefs: any }) {
     return this.onboardingService.updateNotificationPrefs(data.organizationId, data.prefs);
   }

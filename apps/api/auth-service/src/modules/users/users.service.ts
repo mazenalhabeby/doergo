@@ -1,4 +1,4 @@
-import { memberScopeFilter, cleanRateCents, normalizeLocale } from '@hbcfield/shared';
+import { memberScopeFilter, cleanRateCents, normalizeLocale, MEMBER_NOTIFICATION_PREF_KEYS, pickBooleanPrefs } from '@hbcfield/shared';
 import {
   Injectable,
   Logger,
@@ -2574,14 +2574,23 @@ export class UsersService {
     return { data: (user.notificationPrefs as Record<string, boolean> | null) ?? {} };
   }
 
-  /** Merge-update a user's own notification preferences. */
-  async updateNotificationPrefs(userId: string, prefs: Record<string, boolean>) {
+  /**
+   * Merge-update a user's own notification preferences.
+   *
+   * Only known keys, only booleans. The body is the member's own, but the JSON
+   * is read by the notification router and the email sender, and neither should
+   * find a string "false" (truthy) or a megabyte of junk in it.
+   */
+  async updateNotificationPrefs(userId: string, prefs: unknown) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { notificationPrefs: true },
     });
     if (!user) throw new NotFoundException('User not found');
-    const merged = { ...((user.notificationPrefs as Record<string, boolean> | null) ?? {}), ...prefs };
+    const merged = {
+      ...((user.notificationPrefs as Record<string, boolean> | null) ?? {}),
+      ...pickBooleanPrefs(prefs, MEMBER_NOTIFICATION_PREF_KEYS),
+    };
     await this.prisma.user.update({ where: { id: userId }, data: { notificationPrefs: merged } });
     return { data: merged };
   }
