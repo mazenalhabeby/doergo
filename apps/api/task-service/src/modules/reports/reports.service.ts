@@ -300,28 +300,43 @@ export class ReportsService {
     limit?: number;
     userId: string;
     userRole: string;
+    canViewAllTasks?: boolean;
     organizationId: string;
   }) {
-    const page = data.page || 1;
-    const limit = data.limit || 10;
+    // Query parameters arrive as text, and `limit || 10` honoured whatever
+    // arrived — so ?limit=100000 returned the table. Clamped here, like the
+    // asset lists, because nothing upstream of this does it.
+    const page = Math.max(1, Math.floor(Number(data.page)) || 1);
+    const limit = Math.min(50, Math.max(1, Math.floor(Number(data.limit)) || 10));
     const skip = (page - 1) * limit;
 
-    // Verify asset exists and user has access
-    const asset = await this.prisma.asset.findUnique({
-      where: { id: data.assetId },
+    /*
+      Found inside THIS organization or not at all.
+
+      It used to find by id and then answer 403 "not in your organization" —
+      which confirms to anybody guessing ids that the asset exists somewhere.
+      The record page already treats a missing record as "Not found".
+    */
+    const asset = await this.prisma.asset.findFirst({
+      where: { id: data.assetId, organizationId: data.organizationId },
+      select: { id: true },
     });
 
     if (!asset) {
       throw new NotFoundException('Asset not found');
     }
 
-    // Authorization: Only CLIENT and DISPATCHER can view asset maintenance history
-    if (data.userRole === Role.EMPLOYEE) {
-      throw new ForbiddenException('Technicians cannot view asset maintenance history');
-    }
+    /*
+      Whoever may see all the work may see this.
 
-    if (asset.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Asset is not in your organization');
+      ⚠️ It used to refuse every EMPLOYEE — written when TECHNICIAN was a role.
+      MANAGER has since been retired, so every non-admin IS an employee, and the
+      check refused the office manager holding `canViewAllTasks` the very history
+      the asset record page shows them. The gateway gates the route on that
+      permission; this repeats it for the queue-less internal path.
+    */
+    if (data.userRole !== Role.ADMIN && data.canViewAllTasks !== true) {
+      throw new ForbiddenException('You do not have permission to view this maintenance history');
     }
 
     const [reports, total] = await Promise.all([
@@ -357,6 +372,10 @@ export class ReportsService {
       workDuration: report.workDuration,
       completedAt: report.completedAt,
       completedBy: report.completedBy,
+      // How many lines of parts, for the record page's list — the list shows
+      // "3 parts", and adding up quantities would read "12 parts" for a box of
+      // twelve screws.
+      partsCount: report.partsUsed.length,
       partsTotal: report.partsUsed.reduce(
         (sum, part) => sum + (part.unitCost || 0) * part.quantity,
         0,

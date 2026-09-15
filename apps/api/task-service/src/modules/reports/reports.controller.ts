@@ -39,6 +39,7 @@ export class ReportsController {
       limit?: number;
       userId: string;
       userRole: string;
+      canViewAllTasks?: boolean;
       organizationId: string;
     },
   ) {
