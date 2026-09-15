@@ -1338,9 +1338,25 @@ model AssetMoney {
   /// Why it was refused, in the words the member reads.
   reviewNote   String?
 
+  /// The LOG TYPE this entry is — a key the asset's kind declares ("fuel",
+  /// "oil_change"). NULL is the ledger's own Cost log, which is every entry
+  /// written before the logbook existed: nothing had to be rewritten for them to
+  /// keep counting, and a backfill that stamped "cost" on every row would have
+  /// been a second way of saying the same thing.
+  logType  String?
+  /// The type's answers, keyed by FIELD KEY (never label). The amount and the
+  /// photo are NOT in here: they live in `amountCents` and `receiptKey`, the
+  /// columns every total, queue and link endpoint already reads.
+  values   Json?
+  /// Just the METER readings from `values` ({"odometer": 86412}), kept apart so
+  /// the asset's latest reading is recomputed from a narrow read.
+  readings Json?
+
   createdAt DateTime @default(now())
 
   @@index([assetId, occurredAt])
+  /// "When was this last done" — one type's newest entry, per asset.
+  @@index([assetId, logType, occurredAt])
   /// The review queue: everything an organization has waiting.
   @@index([organizationId, status, occurredAt])
   /// "What have I sent in" — the member's own list, on the phone.
@@ -1361,6 +1377,28 @@ model AssetMoney {
 /// record would be retired are recomputed at review time from the kind and from
 /// what the member holds THEN — a plan frozen at upload would be stale the
 /// moment anything else changed, and would be executed anyway.
+/// A logbook reminder that has been SENT — the sweep's idempotency.
+///
+/// One row per (asset, log type, window, stage). The window is the entry that
+/// started the count, so logging the next oil change opens a new window and the
+/// reminders start again; the stage lets "due soon" and "overdue" each be said
+/// once. Inserting is the claim: a second replica, or the same sweep re-run,
+/// hits the unique index and says nothing.
+model AssetLogReminder {
+  id             String   @id @default(cuid())
+  organizationId String
+  assetId        String
+  asset          Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  logType        String
+  windowKey      String
+  /// SOON | OVERDUE
+  stage          String
+  sentAt         DateTime @default(now())
+
+  @@unique([assetId, logType, windowKey, stage])
+  @@map("asset_log_reminders")
+}
+
 model AssetProposal {
   id             String @id @default(cuid())
   organizationId String
@@ -1652,6 +1690,16 @@ model Asset {
   tasks          Task[]
   serviceReports ServiceReport[]
 
+  /// The logbook, DERIVED: the latest reading of each meter and where every
+  /// log type with a due rule stands ({readings, due, computedAt}). Recomputed
+  /// in the same transaction as every entry write, so a record page reads one
+  /// row and never re-walks the log. See `AssetLogService.recompute`.
+  logState     Json?
+  /// When the reminder sweep should next look at this asset. NULL = nothing
+  /// time can change. The sweep asks the index "what is due", never every asset.
+  logRemindAt  DateTime?
+  logReminders AssetLogReminder[]
+
   @@index([organizationId])
   @@index([categoryId])
   @@index([typeId])
@@ -1659,6 +1707,7 @@ model Asset {
   @@index([serialNumber])
   @@index([holderUserId])
   @@index([customerId])
+  @@index([logRemindAt])
   @@map("assets")
 }
 

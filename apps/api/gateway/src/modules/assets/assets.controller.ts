@@ -29,6 +29,7 @@ import {
   HandOverDto, ReceiptPresignDto, ReadReceiptDto, SubmitExpenseDto,
   ContractProposalDto, ReadContractDto,
   RaiseProposalDto, AcceptProposalDto, ProposalPresignDto,
+  CreateLogEntryDto, LogPresignDto, LogListQueryDto, LogSummaryQueryDto, MyLogQueryDto,
 } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 
@@ -157,6 +158,31 @@ export class AssetsController {
   async myExpenses(@Query('limit') limit: number, @Request() req: any) {
     return this.assetsService.expenseMine({
       limit,
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /*
+    The logbook, read by the member: what I logged, and what is due on what I
+    hold. No permission, for the same reason as `mine` — the service filters by
+    the caller's own id and open custody, so it can only return their own rows.
+    Declared before `:id` so Express reaches them.
+  */
+  @Get('log/mine')
+  @ApiOperation({ summary: 'Logbook entries I filed' })
+  async myLog(@Query() query: MyLogQueryDto, @Request() req: any) {
+    return this.assetsService.logMine({
+      ...query,
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Get('log/due-mine')
+  @ApiOperation({ summary: 'What is due soon on the things I hold' })
+  async myDue(@Request() req: any) {
+    return this.assetsService.logDueMine({
       userId: req.user.id,
       organizationId: req.user.organizationId,
     });
@@ -766,6 +792,79 @@ export class AssetsController {
       canManageAssets: req.user.canManageAssets,
       organizationId: req.user.organizationId,
     });
+  }
+
+  // ============================================
+  // LOGBOOK — what gets done to a thing, and when it is due again
+  // ============================================
+
+  /*
+    Reading one asset's log. `InSpace` widens the door to whoever runs the
+    asset's workspace; the SERVICE checks the asset's own space, which is the
+    boundary — the guard cannot know an asset's space from its id.
+  */
+  @Get(':id/log')
+  @RequirePermissionInSpace('canViewAllTasks')
+  @ApiOperation({ summary: 'The logbook of one asset, newest first' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  async listLog(@Param('id') id: string, @Query() query: LogListQueryDto, @Request() req: any) {
+    return this.assetsService.logList({ id, ...query, ...this.reader(req) });
+  }
+
+  @Get(':id/log/summary')
+  @RequirePermissionInSpace('canViewAllTasks')
+  @ApiOperation({ summary: 'Latest readings, next due, and who spent what in a period' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  async logSummary(@Param('id') id: string, @Query() query: LogSummaryQueryDto, @Request() req: any) {
+    return this.assetsService.logSummary({ id, ...query, ...this.reader(req) });
+  }
+
+  /*
+    Filing an entry, and the upload link for its photo.
+
+    ⚠️ NO PERMISSION DECORATOR, exactly like the expense routes: a driver files
+    fuel against the van they HELD that day, which is a fact about custody the
+    service checks — `canManageAssets` here would lock out everybody the logbook
+    exists for. A type that is not holder-only is also open to whoever can see
+    the asset (the colleague who noticed the dent), decided in the service too.
+  */
+  @Post(':id/log/presign')
+  @ApiOperation({ summary: 'Upload URL for a logbook photo' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  async presignLog(@Param('id') id: string, @Body() dto: LogPresignDto, @Request() req: any) {
+    return this.assetsService.logPresign({ id, ...dto, ...this.reader(req) });
+  }
+
+  @Post(':id/log')
+  @ApiOperation({ summary: 'Log something done to this asset' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  async createLog(@Param('id') id: string, @Body() dto: CreateLogEntryDto, @Request() req: any) {
+    return this.assetsService.logCreate({ id, ...dto, ...this.reader(req) });
+  }
+
+  /*
+    Remove an entry. No decorator: an author may WITHDRAW their own while it is
+    still waiting, and only `canManageAssets` removes anything else — both
+    decided in the service, which knows whose entry it is and its status.
+  */
+  @Delete(':id/log/:entryId')
+  @ApiOperation({ summary: 'Remove a logbook entry' })
+  @ApiParam({ name: 'id', description: 'Asset ID' })
+  @ApiParam({ name: 'entryId', description: 'Entry ID' })
+  async removeLog(@Param('id') id: string, @Param('entryId') entryId: string, @Request() req: any) {
+    return this.assetsService.logRemove({ id, entryId, ...this.reader(req) });
+  }
+
+  /** Everything the logbook's service needs to decide about the caller, in one place. */
+  private reader(req: any) {
+    return {
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canManageAssets: req.user.canManageAssets,
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
+      organizationId: req.user.organizationId,
+    };
   }
 
   @Get(':id/history')

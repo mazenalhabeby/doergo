@@ -9,6 +9,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, normalizeKindShape, isAdmin, Role } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { AssetAccessService } from './asset-access.service';
+import { AssetResponsibleService } from './asset-responsible.service';
 import { AssetContractService, type ContractFields } from './asset-contract.service';
 import { findPrior } from '../../common/create-once.util';
 
@@ -59,6 +60,7 @@ export class AssetProposalService {
     private readonly routing: NotificationRoutingService,
     @Inject('NOTIFICATION_SERVICE') private readonly notifications: ClientProxy,
     @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+    private readonly responsible: AssetResponsibleService,
   ) {}
 
   /**
@@ -294,34 +296,8 @@ export class AssetProposalService {
    * refused is worse than telling them nothing.
    */
   private async whoCanAct(organizationId: string, exceptUserId: string): Promise<string[]> {
-    const roles = await this.prisma.accessRole.findMany({
-      where: { organizationId, isActive: true, scope: { not: 'SPACE' as never } },
-      select: { id: true, permissions: true },
-    });
-    const granting = roles
-      .filter((r) => {
-        const p = (r.permissions ?? {}) as Record<string, unknown>;
-        return p.canManageAssets === true || p.canManageUsers === true;
-      })
-      .map((r) => r.id);
-
-    const people = await this.prisma.user.findMany({
-      where: {
-        organizationId,
-        isActive: true,
-        isExternal: false,
-        id: { not: exceptUserId },
-        // An admin is one by being one, exactly as PermissionsGuard decides it.
-        OR: [
-          { role: Role.ADMIN as never },
-          { canManageUsers: true },
-          ...(granting.length ? [{ memberRoleId: { in: granting } }] : []),
-        ],
-      },
-      select: { id: true },
-      take: 25,
-    });
-    return people.map((p) => p.id);
+    // One definition, shared with the logbook's due reminders.
+    return this.responsible.orgManagers(organizationId, exceptUserId);
   }
 
   private cleanFields(raw: ContractFields | undefined): ContractFields {

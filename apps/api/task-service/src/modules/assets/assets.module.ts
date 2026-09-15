@@ -13,6 +13,9 @@ import { AssetCustodyService } from './asset-custody.service';
 import { AssetExpenseService } from './asset-expense.service';
 import { AssetContractService } from './asset-contract.service';
 import { AssetProposalService } from './asset-proposal.service';
+import { AssetResponsibleService } from './asset-responsible.service';
+import { AssetLogService } from './asset-log.service';
+import { AssetLogReminderService } from './asset-log-reminder.service';
 import { AssetsController } from './assets.controller';
 import { AssetsProcessor } from './assets.processor';
 
@@ -39,6 +42,11 @@ const SERVICES = [
   AssetContractService,
   // A member sends a page in; somebody responsible decides.
   AssetProposalService,
+  // Who can act on the equipment — for proposals and due reminders alike.
+  AssetResponsibleService,
+  // What gets done to a thing, and when it is due again.
+  AssetLogService,
+  AssetLogReminderService,
 ];
 
 @Module({

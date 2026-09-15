@@ -98,6 +98,8 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
   // Equipment. A decision goes to the member who sent the page in; a new proposal
   // goes to reviewers, and reviewing is on the web only.
   asset_proposal: (d) => (d.kind === 'raised' ? null : to('/(app)/my-assets')),
+  // Something on a thing I hold (or look after) is due — its "due soon" line is on What I have.
+  asset_log_due: () => to('/(app)/my-assets'),
 
   // Organization
   join_request_submitted: () => to('/(app)/manage/join-requests'),

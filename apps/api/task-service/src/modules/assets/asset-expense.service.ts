@@ -7,10 +7,11 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, normalizeKindShape, findMoneyCategory, parseReceipt } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetCustodyService } from './asset-custody.service';
+import { ASSET_FILE_MIMES, ASSET_FILE_MAX_BYTES, assetFilePrefix } from './asset-files';
 
-/** A receipt is a photograph or a PDF. Nothing else needs to reach this bucket. */
-const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf'];
-const MAX_FILE_SIZE = 15 * 1024 * 1024;
+/** A receipt is a photograph or a PDF — the one definition, shared with the logbook. */
+const ALLOWED = ASSET_FILE_MIMES;
+const MAX_FILE_SIZE = ASSET_FILE_MAX_BYTES;
 /** A receipt older than this is not a field expense, it is bookkeeping. */
 const MAX_BACKDATE_DAYS = 120;
 
@@ -49,7 +50,7 @@ export class AssetExpenseService {
 
   /** Everything a receipt for this asset lives under. Also the anti-IDOR check. */
   private prefix(organizationId: string, assetId: string): string {
-    return `${organizationId}/asset-receipts/${assetId}/`;
+    return assetFilePrefix(organizationId, assetId);
   }
 
   /**
@@ -329,6 +330,8 @@ export class AssetExpenseService {
       select: {
         id: true, assetId: true, category: true, direction: true, amountCents: true, note: true,
         occurredAt: true, status: true, reviewNote: true, reviewedAt: true, receiptKey: true,
+        // Logbook entries share the table; the screen names their type (null = a cost).
+        logType: true,
         asset: { select: { id: true, name: true } },
       },
     });
@@ -351,6 +354,8 @@ export class AssetExpenseService {
       select: {
         id: true, assetId: true, category: true, direction: true, amountCents: true, note: true,
         occurredAt: true, authorId: true, receiptKey: true, createdAt: true,
+        // A logbook entry waiting for a decision is in the same queue; the screen names its type.
+        logType: true, values: true,
         asset: { select: { id: true, name: true } },
       },
     });
