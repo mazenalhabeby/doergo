@@ -23,7 +23,9 @@ import {
   creditsByAuthor,
   creditsByLogType,
   findPrior,
+  logDateProblem,
   COST_LOG_KEY,
+  LOG_MEMBER_BACKDATE_DAYS,
   type AssetLogState,
   type KindShape,
   type LogDueState,
@@ -33,13 +35,6 @@ import { AssetAccessService } from './asset-access.service';
 import { AssetCustodyService } from './asset-custody.service';
 import { AssetExpenseService, EXPENSE_STATUS } from './asset-expense.service';
 import { ASSET_FILE_MAX_BYTES, ASSET_FILE_MIMES, isAssetFileKey, assetFilePrefix } from './asset-files';
-
-/**
- * A member's day-to-day backdating window. The office may record history from
- * further back — last year's service, typed in the day the logbook is switched
- * on — which is exactly what makes the due dates right from the start.
- */
-const MAX_MEMBER_BACKDATE_DAYS = 120;
 
 /**
  * How many reading-carrying entries the recompute reads to find each meter's
@@ -101,10 +96,11 @@ export class AssetLogService {
   private readDate(raw: string | undefined, actor: Actor, now = new Date()): Date {
     const at = raw ? new Date(raw) : now;
     if (Number.isNaN(at.getTime())) throw new BadRequestException('That date could not be read');
-    // Something that happened. A reminder of the future is a due rule, not an entry.
-    if (at.getTime() > now.getTime() + 86_400_000) throw new BadRequestException('An entry cannot be dated in the future');
-    if (!actor.canManageAssets && now.getTime() - at.getTime() > MAX_MEMBER_BACKDATE_DAYS * 86_400_000) {
-      throw new BadRequestException(`An entry older than ${MAX_MEMBER_BACKDATE_DAYS} days has to be filed by the office`);
+    // The same rule the phone's calendar greys days out by (shared logbook.ts).
+    const problem = logDateProblem(at, { canManageAssets: actor.canManageAssets, now });
+    if (problem === 'future') throw new BadRequestException('An entry cannot be dated in the future');
+    if (problem === 'too-old') {
+      throw new BadRequestException(`An entry older than ${LOG_MEMBER_BACKDATE_DAYS} days has to be filed by the office`);
     }
     return at;
   }

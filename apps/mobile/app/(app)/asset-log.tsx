@@ -8,14 +8,18 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
 
-import { ScreenHeader } from '../../src/components';
+import { ScreenHeader, DateField } from '../../src/components';
+import { useAuth } from '../../src/contexts/auth-context';
+import { holdsOrgWide } from '../../src/lib/permissions';
+import { dayKeyOf, logEntryDayBounds, occurredAtForDay } from '../../src/lib/log-dates';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { useImagePicker } from '../../src/hooks/useImagePicker';
 import { canScanReceipts, scanReceipt } from '../../src/lib/receipt-scan';
 import { assetsApi, uploadToPresignedUrl, type HeldAsset } from '../../src/lib/api';
 import {
-  normalizeKindShape, findLogType, validateLogValues, moneyToCents, COST_LOG_KEY,
+  normalizeKindShape, findLogType, validateLogValues, moneyToCents, logDateProblem, COST_LOG_KEY,
+  LOG_MEMBER_BACKDATE_DAYS,
   type KindLogField, type LogValueProblem,
 } from '@hbcfield/shared/client';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
@@ -43,13 +47,15 @@ import { logFromPhone } from '../../src/offline/assets/log-actions';
 
 type Draft = Record<string, string>;
 
-const today = () => new Date().toISOString().slice(0, 10);
+/** Today as a LOCAL day — `toISOString()` answers yesterday's date after midnight east of Greenwich. */
+const today = () => dayKeyOf(new Date());
 
 export default function AssetLogScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const tt = t as unknown as (k: string, d: string, o?: Record<string, unknown>) => string;
   const toast = useToast();
+  const { user } = useAuth();
   const offline = useOffline();
   const insets = useSafeAreaInsets();
   const { takePhoto, pickFromGallery } = useImagePicker();
@@ -70,6 +76,14 @@ export default function AssetLogScreen() {
   const shape = useMemo(() => normalizeKindShape(held?.asset?.category?.config), [held]);
   const type = useMemo(() => (held ? findLogType(shape, logKey) : null), [held, shape, logKey]);
   const moneyField = type?.fields.find((f) => f.type === 'money') ?? null;
+  /*
+    The days the calendar offers, by the rule the server refuses by. The flat
+    permission, not "in any space": the route reads `req.user.canManageAssets`,
+    and offering a year-old day to somebody the server holds to 120 would be a
+    day chosen and then refused.
+  */
+  const canManageAssets = holdsOrgWide(user as never, 'canManageAssets');
+  const bounds = useMemo(() => logEntryDayBounds(new Date(), { canManageAssets }), [canManageAssets]);
   const photoField = type?.fields.find((f) => f.type === 'photo') ?? null;
 
   useEffect(() => {
@@ -156,9 +170,21 @@ export default function AssetLogScreen() {
 
   const send = useCallback(async () => {
     if (!type) return;
-    const occurredAt = new Date(when);
-    if (Number.isNaN(occurredAt.getTime())) {
+    const occurredAt = occurredAtForDay(when, new Date());
+    if (!occurredAt) {
       toast.error(tt('logbook.badDate', 'That date could not be read'));
+      return;
+    }
+    /*
+      The calendar cannot offer a day outside the window, but a date read off a
+      receipt is set without asking it — an old slip photographed today would
+      otherwise travel all the way to the server to be told so.
+    */
+    const dateProblem = logDateProblem(occurredAt, { canManageAssets });
+    if (dateProblem) {
+      toast.error(dateProblem === 'future'
+        ? tt('logbook.dateFuture', 'An entry cannot be dated in the future')
+        : tt('logbook.dateTooOld', 'An entry older than {{count}} days has to be filed by the office', { count: LOG_MEMBER_BACKDATE_DAYS }));
       return;
     }
     const checked = validateLogValues(type, values, { hasPhoto: !!photo, shape });
@@ -213,7 +239,7 @@ export default function AssetLogScreen() {
       setSending(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type, values, photo, shape, when, note, assetId, offline.engine, offline.files, forgetPhoto]);
+  }, [type, values, photo, shape, when, note, assetId, canManageAssets, offline.engine, offline.files, forgetPhoto]);
 
   const title = type ? logTypeLabel(type, tt) : tt('logbook.title', 'What did you do?');
 
@@ -282,13 +308,13 @@ export default function AssetLogScreen() {
         ))}
 
         <Text style={[s.label, { color: colors.textMuted }]}>{tt('logbook.when', 'When')}</Text>
-        <TextInput
+        <DateField
           value={when}
-          onChangeText={setWhen}
-          placeholder="YYYY-MM-DD"
-          placeholderTextColor={colors.textMuted}
-          autoCapitalize="none"
-          style={[s.input, s.boxed, { color: colors.textPrimary, borderColor: colors.border }]}
+          // Always a day: an entry happened on one, so there is nothing to clear it to.
+          onChange={(v) => v && setWhen(v)}
+          minDate={bounds.minDate}
+          maxDate={bounds.maxDate}
+          title={tt('logbook.when', 'When')}
         />
 
         <Text style={[s.label, { color: colors.textMuted, marginTop: SPACING.md }]}>{tt('expenses.note', 'Note')}</Text>
@@ -391,6 +417,28 @@ function FieldInput({
     );
   }
 
+  if (field.type === 'date') {
+    /*
+      A date the entry RECORDS — the day on a TÜV sticker, when the tyres were
+      bought — not the day it happened, so no entry-date window: a sticker's
+      next inspection is in the future by nature. Clearable unless required.
+    */
+    return (
+      <View style={s.block}>
+        <Text style={[s.label, { color: colors.textMuted }]}>{label}</Text>
+        <DateField
+          value={value}
+          onChange={onChange}
+          clearable={!field.required}
+          title={field.label}
+          placeholder={t('logbook.pickDate', 'Choose a day')}
+          invalid={!!problem}
+        />
+        {error}
+      </View>
+    );
+  }
+
   const numeric = field.type === 'number' || field.type === 'money';
   const suffix = field.type === 'money' ? '€' : field.unit;
   return (
@@ -401,9 +449,9 @@ function FieldInput({
           value={value}
           onChangeText={onChange}
           keyboardType={numeric ? 'decimal-pad' : 'default'}
-          placeholder={field.type === 'date' ? 'YYYY-MM-DD' : field.type === 'money' ? '0,00' : ''}
+          placeholder={field.type === 'money' ? '0,00' : ''}
           placeholderTextColor={colors.textMuted}
-          autoCapitalize={field.type === 'date' ? 'none' : 'sentences'}
+          autoCapitalize="sentences"
           multiline={field.type === 'text'}
           style={[s.input, { flex: 1, color: colors.textPrimary }, field.type === 'money' && s.money]}
         />
@@ -421,7 +469,7 @@ const PROBLEM_FALLBACK: Record<LogValueProblem['code'], string> = {
   required: 'This is needed',
   'not-a-number': 'That is not a number',
   'out-of-range': 'That number is out of range',
-  'not-a-date': 'Use a date like 2026-09-14',
+  'not-a-date': 'Choose a day',
   'not-an-option': 'Choose one of these',
   'too-long': 'That is too long',
 };

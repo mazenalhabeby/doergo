@@ -2219,6 +2219,9 @@
     "unknownType": "Questo tipo non registra più questa voce.",
     "readReceipt": "Leggi l'importo da una ricevuta",
     "when": "Quando",
+    "pickDate": "Scegliere un giorno",
+    "dateFuture": "Una voce non può avere una data futura",
+    "dateTooOld": "Una voce più vecchia di {{count}} giorni va registrata dall'ufficio",
     "notePh": "Qualcosa da sapere",
     "send": "Registra",
     "approvalHint": "Conta quando l'ufficio la accetta.",
@@ -2229,7 +2232,7 @@
       "required": "Campo obbligatorio",
       "not-a-number": "Non è un numero",
       "out-of-range": "Numero fuori intervallo",
-      "not-a-date": "Usi una data come 2026-09-14",
+      "not-a-date": "Scelga un giorno",
       "not-an-option": "Scelga una di queste opzioni",
       "too-long": "Troppo lungo"
     },

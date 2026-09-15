@@ -31,3 +31,4 @@ export { ClockOutSheet } from './clock-out-sheet';
 export { SheetHeader } from './sheet-header';
 export { SignatureCapture } from './signature-capture';
 export * from './chip-row';
+export { DateField } from './date-field';

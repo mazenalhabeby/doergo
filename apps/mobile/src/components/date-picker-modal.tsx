@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -31,7 +31,12 @@ interface DatePickerModalProps {
   visible: boolean;
   selectedDate: Date | null;
   onSelect: (date: Date) => void;
-  onClear: () => void;
+  /**
+   * Offer "Clear". Absent, there is no Clear — a date the record cannot be
+   * without (the day a log entry happened) has nothing to be cleared TO, and a
+   * button that empties it only makes the form refuse to send.
+   */
+  onClear?: () => void;
   onClose: () => void;
   /**
    * Earliest day that may be chosen. ABSENT MEANS NO LIMIT.
@@ -101,6 +106,21 @@ export function DatePickerModal({
     choosing a month returns to the days. Two taps instead of a hundred.
   */
   const [pane, setPane] = useState<'days' | 'months' | 'years'>('days');
+
+  /*
+    Open on the CHOSEN month, every time. The modal stays mounted while hidden,
+    so the view was set once from the first value it ever saw — a date read off
+    a receipt afterwards, or a second field sharing the screen, opened on a
+    month nobody had picked.
+  */
+  useEffect(() => {
+    if (!visible) return;
+    const anchor = selectedDate ?? new Date();
+    setViewYear(anchor.getFullYear());
+    setViewMonth(anchor.getMonth());
+    setPane('days');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
 
   const grid = useMemo(() => getMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
 
@@ -293,7 +313,7 @@ export function DatePickerModal({
               <Text style={[styles.todayBtnText, { color: COLORS.primary }]}>{t('components.datePicker.today')}</Text>
             </TouchableOpacity>
 
-            {selectedDate && (
+            {selectedDate && onClear && (
               <TouchableOpacity
                 onPress={() => { onClear(); onClose(); }}
                 style={styles.clearBtn}
