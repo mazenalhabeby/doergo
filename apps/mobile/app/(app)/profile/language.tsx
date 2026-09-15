@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { SheetHeader, ScreenContainer } from '../../../src/components';
 import { changeLanguage, getCurrentLanguage, supportedLanguages } from '../../../src/i18n';
+import { userApi } from '../../../src/lib/api';
 import {
   COLORS,
   SPACING,
@@ -24,6 +25,9 @@ export default function LanguageScreen() {
   const handleSelect = useCallback((code: string) => {
     if (code !== currentLang) {
       changeLanguage(code);
+      // Pushes are written on the server; tell it now. Best effort — if this
+      // fails, the next launch's push registration carries the language anyway.
+      userApi.setLocale(code).catch(() => {});
     }
   }, [currentLang]);
 

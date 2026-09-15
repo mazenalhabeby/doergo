@@ -866,7 +866,7 @@ export const usersApi = {
   },
 
   // Update your OWN profile (any authenticated user — no admin permission).
-  updateMe: async (data: { firstName?: string; lastName?: string; presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null; timeFormat?: '12h' | '24h'; guidesSeen?: boolean }) => {
+  updateMe: async (data: { firstName?: string; lastName?: string; presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null; timeFormat?: '12h' | '24h'; guidesSeen?: boolean; locale?: string }) => {
     const response = await api.patch<{ success: boolean; data: { id: string; firstName: string; lastName: string } }>(
       '/users/me',
       data,

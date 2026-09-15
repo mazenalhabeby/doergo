@@ -2,6 +2,7 @@ import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
+import { joined, msg, plural, type Msg } from '../i18n/translate';
 
 interface DueItem {
   logType: string;
@@ -40,40 +41,46 @@ export class AssetLogNotificationHandler {
 
     for (const id of recipientIds) this.websocketGateway.emitToUser(id, 'asset_log.due', data);
 
-    const asset = String(data.assetName ?? '').slice(0, 80) || 'An asset';
+    const asset = String(data.assetName ?? '').slice(0, 80) || msg('assetLog.anAsset');
     const overdue = items.some((i) => i.stage === 'overdue');
-    const title = overdue ? `${asset}: overdue` : `${asset}: due soon`;
-    const body = items.map(describe).join(' · ').slice(0, 180);
-
-    for (const id of recipientIds) {
-      try {
-        await this.pushService.sendToUser(id, title, body, {
+    const described = items.map(describe);
+    try {
+      await this.pushService.sendToUsers(
+        recipientIds,
+        {
+          title: msg(overdue ? 'assetLog.title.overdue' : 'assetLog.title.soon', { asset }),
+          body: msg('common.verbatim', { text: joined(described, ' · ') }, 180),
+        },
+        {
           type: 'asset_log_due',
           assetId: data.assetId,
           logType: items[0]?.logType,
-        });
-      } catch (e) {
-        this.logger.error(`asset log due push failed: ${(e as Error).message}`);
-      }
+        },
+      );
+    } catch (e) {
+      this.logger.error(`asset log due push failed: ${(e as Error).message}`);
     }
   }
 }
 
 /** "Oil change in 12 days or 800 km", "Service 400 km overdue". */
-function describe(item: DueItem): string {
+function describe(item: DueItem): Msg {
   const label = String(item.label ?? '').slice(0, 40);
   const units = typeof item.unitsLeft === 'number' ? item.unitsLeft : null;
   const days = typeof item.daysLeft === 'number' ? item.daysLeft : null;
   const unit = item.unit ? ` ${item.unit}` : '';
+  const amount = (n: number) => msg('assetLog.amount', { n, unit });
+  const inDays = (n: number) => plural('assetLog.days', n);
   if (item.stage === 'overdue') {
-    if (units !== null && units <= 0) return `${label} ${Math.abs(units).toLocaleString('en')}${unit} overdue`;
-    if (days !== null) return `${label} ${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} overdue`;
-    return `${label} overdue`;
+    if (units !== null && units <= 0) return msg('assetLog.item.overdueBy', { label, amount: amount(Math.abs(units)) });
+    if (days !== null) return msg('assetLog.item.overdueBy', { label, amount: inDays(Math.abs(days)) });
+    return msg('assetLog.item.overdue', { label });
   }
   // Whichever first, so both limits are said when a type has both.
-  const parts = [
-    days !== null ? `${days} day${days === 1 ? '' : 's'}` : null,
-    units !== null ? `${units.toLocaleString('en')}${unit}` : null,
-  ].filter(Boolean);
-  return parts.length ? `${label} in ${parts.join(' or ')}` : `${label} due soon`;
+  if (days !== null && units !== null) {
+    return msg('assetLog.item.inEither', { label, days: inDays(days), amount: amount(units) });
+  }
+  if (days !== null) return msg('assetLog.item.in', { label, amount: inDays(days) });
+  if (units !== null) return msg('assetLog.item.in', { label, amount: amount(units) });
+  return msg('assetLog.item.dueSoon', { label });
 }

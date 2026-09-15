@@ -4,9 +4,19 @@ import { EmailService } from '../modules/email/email.service';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
+import {
+  geofenceAlertText,
+  noShowEscalationText,
+  overtimeRequestText,
+  pendingApprovalText,
+  shiftEscalationText,
+} from '../modules/push/push.service';
+import { msg, type LocalizedText } from '../i18n/translate';
+import type { SupportedLocale } from '@hbcfield/shared';
 
-// Human-friendly labels for attendance approval flags (keep in sync with the web
-// attendance helpers).
+// Labels for attendance approval flags in the SOCKET payload's `flagSummary`,
+// which the web renders as a hint. The push and the bell entry do not use these:
+// they are written per recipient from the catalogue (`pendingApprovalText`).
 const FLAG_LABELS: Record<string, string> = {
   OVERTIME: 'overtime',
   MISSED_CLOCK_OUT: 'missed clock-out',
@@ -320,10 +330,7 @@ export class AttendanceNotificationHandler {
       recipientIds: leaderIds,
       organizationId: data.organizationId,
       eventType: 'attendance_shift_escalation',
-      title: data.unscheduled ? 'Long open session needs review' : 'Open shift needs review',
-      body: data.unscheduled
-        ? `${data.userName} has been clocked in at ${data.locationName} for ~${data.hoursOpen ?? "?"}h with no scheduled shift and hasn't responded — review and approve/adjust their hours`
-        : `${data.userName} is still clocked in at ${data.locationName} after their shift and hasn't responded`,
+      text: shiftEscalationText(data),
       link: '/attendance',
     });
   }
@@ -396,8 +403,7 @@ export class AttendanceNotificationHandler {
       recipientIds: leaderIds,
       organizationId: data.organizationId,
       eventType: 'attendance_noshow_escalation',
-      title: 'No-show',
-      body: `${data.userName} hasn't clocked in for their shift and hasn't responded — follow up or mark absent`,
+      text: noShowEscalationText(data.userName),
       link: '/attendance',
     });
   }
@@ -418,11 +424,15 @@ export class AttendanceNotificationHandler {
     timezone?: string | null;
     organizationId: string;
   }) {
-    const at = noShowResolvedTime(data.clockOutAt, data.timezone);
-    const day = new Date(data.clockInAt).toLocaleDateString('en-GB', { weekday: 'long', timeZone: data.timezone || 'UTC' });
-    const body = `Your shift on ${day} was still open, so it was closed at ${at}. Tell us when you actually left.`;
+    const text: LocalizedText = {
+      title: msg('attendance.provisional.title'),
+      body: msg('attendance.provisional.body', {
+        day: weekdayIn(data.clockInAt, data.timezone),
+        time: noShowResolvedTime(data.clockOutAt, data.timezone),
+      }),
+    };
     try {
-      await this.pushService.sendAttendanceResolvedPush({ leaderIds: [data.userId], title: 'Shift closed — confirm your time', body, type: 'attendance.clock_out_unconfirmed', entryId: data.entryId });
+      await this.pushService.sendAttendanceResolvedPush({ recipientIds: [data.userId], text, type: 'attendance.clock_out_unconfirmed', entryId: data.entryId });
     } catch (error) {
       this.logger.error(`Failed to send provisional clock-out push: ${error}`);
     }
@@ -433,8 +443,7 @@ export class AttendanceNotificationHandler {
       recipientIds: [data.userId],
       organizationId: data.organizationId,
       eventType: 'attendance_shift_closed_provisionally',
-      title: 'Shift closed — confirm your time',
-      body,
+      text,
       link: '/attendance',
     });
   }
@@ -456,12 +465,13 @@ export class AttendanceNotificationHandler {
     organizationId: string;
   }) {
     const leaderIds = data.leaderIds || [];
-    const at = noShowResolvedTime(data.clockOutAt, data.timezone);
-    const body = data.recordedOffline
-      ? `${data.userName} clocked out at ${at}. It was recorded without signal and has just arrived, so there is no need to follow up.`
-      : `${data.userName} has clocked out (${at}), so there is no need to follow up.`;
+    const facts = { name: data.userName, time: noShowResolvedTime(data.clockOutAt, data.timezone) };
+    const text: LocalizedText = {
+      title: msg('attendance.clockedOutAfterAll.title'),
+      body: msg(data.recordedOffline ? 'attendance.clockedOutAfterAll.bodyOffline' : 'attendance.clockedOutAfterAll.body', facts),
+    };
     try {
-      await this.pushService.sendAttendanceResolvedPush({ leaderIds, title: 'Clocked out after all', body, type: 'shift_escalation_resolved', entryId: data.entryId });
+      await this.pushService.sendAttendanceResolvedPush({ recipientIds: leaderIds, text, type: 'shift_escalation_resolved', entryId: data.entryId });
     } catch (error) {
       this.logger.error(`Failed to send shift-escalation resolved push: ${error}`);
     }
@@ -475,8 +485,7 @@ export class AttendanceNotificationHandler {
       recipientIds: leaderIds,
       organizationId: data.organizationId,
       eventType: 'attendance_shift_escalation_resolved',
-      title: 'Clocked out after all',
-      body,
+      text,
       link: '/attendance',
     });
   }
@@ -500,13 +509,14 @@ export class AttendanceNotificationHandler {
     organizationId: string;
   }) {
     const leaderIds = data.leaderIds || [];
-    const at = noShowResolvedTime(data.clockInAt, data.timezone);
-    const body = data.recordedOffline
-      ? `${data.userName} clocked in at ${at}. It was recorded without signal and has just arrived, so there is no need to follow up.`
-      : `${data.userName} clocked in at ${at}, so there is no need to follow up.`;
+    const facts = { name: data.userName, time: noShowResolvedTime(data.clockInAt, data.timezone) };
+    const text: LocalizedText = {
+      title: msg('attendance.arrivedAfterAll.title'),
+      body: msg(data.recordedOffline ? 'attendance.arrivedAfterAll.bodyOffline' : 'attendance.arrivedAfterAll.body', facts),
+    };
     this.logger.log(`No-show resolved: user=${data.userName}, instance=${data.instanceId}, offline=${data.recordedOffline}, leaders=${leaderIds.length}`);
     try {
-      await this.pushService.sendNoShowResolvedPush({ leaderIds, body, instanceId: data.instanceId });
+      await this.pushService.sendNoShowResolvedPush({ leaderIds, text, instanceId: data.instanceId });
     } catch (error) {
       this.logger.error(`Failed to send no-show resolved push: ${error}`);
     }
@@ -520,8 +530,7 @@ export class AttendanceNotificationHandler {
       recipientIds: leaderIds,
       organizationId: data.organizationId,
       eventType: 'attendance_noshow_resolved',
-      title: 'Arrived after all',
-      body,
+      text,
       link: '/attendance',
     });
   }
@@ -568,8 +577,7 @@ export class AttendanceNotificationHandler {
       recipientIds: leaderIds,
       organizationId: data.organizationId,
       eventType: 'attendance_overtime_request',
-      title: 'Extra-time request',
-      body: `${data.userName} wants to keep working past their shift at ${data.locationName}`,
+      text: overtimeRequestText(data.userName, data.locationName),
       link: '/attendance',
     });
   }
@@ -661,8 +669,7 @@ export class AttendanceNotificationHandler {
       recipientIds: data.dispatcherIds,
       organizationId: data.organizationId,
       eventType: 'attendance_geofence_alert',
-      title: 'Geofence alert',
-      body: `${data.userName} ${data.action === 'clock_in' ? 'clocked in' : 'clocked out'} ${data.distance}m from ${data.locationName}`,
+      text: geofenceAlertText(data),
       link: '/attendance',
     });
   }
@@ -688,7 +695,7 @@ export class AttendanceNotificationHandler {
       await this.pushService.sendPendingApprovalPush({
         managerIds: data.managerIds || [],
         userName: data.userName,
-        flagSummary,
+        flagReasons: data.flagReasons || [],
         entryId: data.entryId,
       });
     } catch (error) {
@@ -721,8 +728,7 @@ export class AttendanceNotificationHandler {
       recipientIds: approverIds,
       organizationId: data.organizationId,
       eventType: 'attendance_pending_approval',
-      title: 'Approval needed',
-      body: `${data.userName}'s time entry needs review (${flagSummary})`,
+      text: pendingApprovalText(data.userName, data.flagReasons || []),
       link: '/attendance?tab=approvals',
     });
   }
@@ -737,8 +743,7 @@ export class AttendanceNotificationHandler {
     try {
       await this.pushService.sendToUser(
         data.userId,
-        'You left the work area',
-        `You're outside ${data.spaceName}. Tell us why and how long — or clock out.`,
+        { title: msg('attendance.excursionOut.title'), body: msg('attendance.excursionOut.body', { space: data.spaceName }) },
         { type: 'attendance.geofence_excursion_out', excursionId: data.excursionId },
       );
     } catch (error) {
@@ -752,15 +757,16 @@ export class AttendanceNotificationHandler {
   async handleExcursionRequested(@Payload() data: GeofenceExcursionEvent) {
     const watcherIds = data.watcherIds || [];
     this.logger.log(`Excursion requested: user=${data.userName}, watchers=${watcherIds.length}`);
+    const facts = { name: data.userName, space: data.spaceName, minutes: data.requestedMinutes ?? '?', reason: data.reason };
+    const text: LocalizedText = {
+      title: msg('attendance.excursionRequested.title'),
+      body: msg(data.reason ? 'attendance.excursionRequested.body' : 'attendance.excursionRequested.bodyNoReason', facts),
+    };
     try {
-      for (const id of watcherIds) {
-        await this.pushService.sendToUser(
-          id,
-          'Out-of-ring request',
-          `${data.userName} left ${data.spaceName}${data.reason ? `: "${data.reason}"` : ''} — approve or reject`,
-          { type: 'attendance.geofence_excursion_requested', excursionId: data.excursionId },
-        );
-      }
+      await this.pushService.sendToUsers(watcherIds, text, {
+        type: 'attendance.geofence_excursion_requested',
+        excursionId: data.excursionId,
+      });
     } catch (error) {
       this.logger.error(`Failed excursion-requested push: ${error}`);
     }
@@ -769,8 +775,7 @@ export class AttendanceNotificationHandler {
       recipientIds: watcherIds,
       organizationId: data.organizationId,
       eventType: 'geofence_excursion_requested',
-      title: 'Out-of-ring request',
-      body: `${data.userName} left ${data.spaceName}${data.reason ? ` — ${data.reason}` : ''} (${data.requestedMinutes ?? '?'} min)`,
+      text,
       link: '/attendance?tab=tracking',
     });
   }
@@ -782,8 +787,10 @@ export class AttendanceNotificationHandler {
     try {
       await this.pushService.sendToUser(
         data.userId,
-        'Out-of-ring approved',
-        `You're approved to be out for ${data.grantedMinutes ?? '?'} min.`,
+        {
+          title: msg('attendance.excursionApproved.title'),
+          body: msg('attendance.excursionApproved.body', { minutes: data.grantedMinutes ?? '?' }),
+        },
         { type: 'attendance.geofence_excursion_approved', excursionId: data.excursionId },
       );
     } catch (error) {
@@ -799,8 +806,7 @@ export class AttendanceNotificationHandler {
     try {
       await this.pushService.sendToUser(
         data.userId,
-        'Out-of-ring rejected',
-        `Your out-of-ring request was rejected and you were clocked out.`,
+        { title: msg('attendance.excursionRejected.title'), body: msg('attendance.excursionRejected.body') },
         { type: 'attendance.geofence_excursion_rejected', excursionId: data.excursionId },
       );
     } catch (error) {
@@ -821,15 +827,15 @@ export class AttendanceNotificationHandler {
   async handleExcursionExpired(@Payload() data: GeofenceExcursionEvent) {
     const watcherIds = data.watcherIds || [];
     this.logger.log(`Excursion expired: user=${data.userName}, watchers=${watcherIds.length}`);
+    const text: LocalizedText = {
+      title: msg('attendance.excursionExpired.title'),
+      body: msg('attendance.excursionExpired.body', { name: data.userName, space: data.spaceName }),
+    };
     try {
-      for (const id of watcherIds) {
-        await this.pushService.sendToUser(
-          id,
-          'Out-of-ring time expired',
-          `${data.userName}'s approved time is up and they're still outside ${data.spaceName}.`,
-          { type: 'attendance.geofence_excursion_expired', excursionId: data.excursionId },
-        );
-      }
+      await this.pushService.sendToUsers(watcherIds, text, {
+        type: 'attendance.geofence_excursion_expired',
+        excursionId: data.excursionId,
+      });
     } catch (error) {
       this.logger.error(`Failed excursion-expired push: ${error}`);
     }
@@ -838,8 +844,7 @@ export class AttendanceNotificationHandler {
       recipientIds: watcherIds,
       organizationId: data.organizationId,
       eventType: 'geofence_excursion_expired',
-      title: 'Out-of-ring time expired',
-      body: `${data.userName}'s approved time is up and they're still outside ${data.spaceName}`,
+      text,
       link: '/attendance?tab=tracking',
     });
   }
@@ -975,6 +980,22 @@ export class AttendanceNotificationHandler {
       durationMinutes: data.durationMinutes,
     });
   }
+}
+
+/**
+ * "Monday" / "Montag" / "lunes" — the weekday of a shift, in the entry's own
+ * zone and the reader's language. A function of the locale, because the same
+ * event reaches a German manager and a Spanish driver.
+ */
+export function weekdayIn(iso: string, timezone?: string | null) {
+  return (locale: SupportedLocale): string => {
+    const d = new Date(iso);
+    try {
+      return d.toLocaleDateString(locale, { weekday: 'long', timeZone: timezone || 'UTC' });
+    } catch {
+      return d.toLocaleDateString(locale, { weekday: 'long', timeZone: 'UTC' });
+    }
+  };
 }
 
 /** "07:58" in the entry's own zone; the zone is what the member's day was lived in. */

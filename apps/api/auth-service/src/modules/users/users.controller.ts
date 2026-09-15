@@ -181,7 +181,7 @@ export class UsersController {
 
   @MessagePattern({ cmd: 'update_own_profile' })
   async updateOwnProfile(
-    @Payload() data: { userId: string; dto: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string } },
+    @Payload() data: { userId: string; dto: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string; guidesSeen?: boolean; locale?: string } },
   ) {
     return this.usersService.updateOwnProfile(data.userId, data.dto);
   }

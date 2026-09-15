@@ -3,6 +3,7 @@ import { EventPattern, Payload } from '@nestjs/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
+import { msg, type LocalizedText } from '../i18n/translate';
 
 @Controller()
 export class JoinRequestNotificationHandler {
@@ -35,19 +36,21 @@ export class JoinRequestNotificationHandler {
     // Target the resolved approvers (admins + Show-in-Management). Fall back to an
     // org-wide broadcast only if none were provided (older producers).
     const recipientIds = data.recipientIds || [];
+    const text: LocalizedText = {
+      title: msg('join.submitted.title'),
+      body: msg('join.submitted.body', { name: data.userName, org: data.organizationName }),
+    };
     if (recipientIds.length) {
       for (const id of recipientIds) {
         this.websocketGateway.emitToUser(id, 'join_request_submitted', payload);
-        try {
-          await this.pushService.sendToUser(
-            id,
-            'New join request',
-            `${data.userName} asked to join ${data.organizationName}`,
-            { type: 'join_request_submitted', organizationId: data.organizationId },
-          );
-        } catch (error) {
-          this.logger.error(`Failed to send join-request push to ${id}: ${error}`);
-        }
+      }
+      try {
+        await this.pushService.sendToUsers(recipientIds, text, {
+          type: 'join_request_submitted',
+          organizationId: data.organizationId,
+        });
+      } catch (error) {
+        this.logger.error(`Failed to send join-request push: ${error}`);
       }
     } else {
       this.websocketGateway.emitToOrganization(data.organizationId, 'join_request_submitted', payload);
@@ -58,8 +61,7 @@ export class JoinRequestNotificationHandler {
       recipientIds: recipientIds,
       organizationId: data.organizationId,
       eventType: 'join_request_submitted',
-      title: 'New join request',
-      body: `${data.userName} asked to join ${data.organizationName}`,
+      text,
       link: '/join-requests',
     });
   }
@@ -78,8 +80,7 @@ export class JoinRequestNotificationHandler {
     try {
       await this.pushService.sendToUser(
         data.userId,
-        'Join Request Approved',
-        `Your request to join ${data.organizationName} has been approved. Welcome aboard!`,
+        { title: msg('join.approved.title'), body: msg('join.approved.body', { org: data.organizationName }) },
         { type: 'join_request_approved', organizationId: data.organizationId, role: data.role },
       );
     } catch (error) {
@@ -108,13 +109,12 @@ export class JoinRequestNotificationHandler {
 
     try {
       const body = data.reason
-        ? `Your request to join ${data.organizationName} was not approved. Reason: ${data.reason}`
-        : `Your request to join ${data.organizationName} was not approved.`;
+        ? msg('join.rejected.bodyReason', { org: data.organizationName, reason: data.reason })
+        : msg('join.rejected.body', { org: data.organizationName });
 
       await this.pushService.sendToUser(
         data.userId,
-        'Join Request Not Approved',
-        body,
+        { title: msg('join.rejected.title'), body },
         { type: 'join_request_rejected', organizationId: data.organizationId, reason: data.reason },
       );
     } catch (error) {

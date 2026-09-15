@@ -2,6 +2,7 @@ import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
+import { msg, verbatim } from '../i18n/translate';
 
 /**
  * Bridges support domain events (emitted by task-service) to real-time sockets
@@ -35,8 +36,8 @@ export class SupportNotificationHandler {
       try {
         await this.pushService.sendToUser(
           data.customerId,
-          'Support replied',
-          (data.message.body ?? '').slice(0, 120),
+          // The agent's words go out as written; only the frame is translated.
+          { title: msg('support.replied.title'), body: verbatim(data.message.body, 120) },
           { type: 'support', ticketId: data.ticketId },
         );
       } catch (e) {

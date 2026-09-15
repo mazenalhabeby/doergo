@@ -2,6 +2,7 @@ import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
+import { msg, type Msg } from '../i18n/translate';
 
 /**
  * Bridges Shift Issue events (emitted by task-service) to real-time sockets +
@@ -23,17 +24,23 @@ export class ShiftIssueNotificationHandler {
     const recipientIds: string[] = data.recipientIds ?? [];
     const socketTargets = new Set<string>([...recipientIds, data.reporterId].filter(Boolean));
     for (const id of socketTargets) this.websocketGateway.emitToUser(id, 'shift_issue.created', data);
-    for (const id of recipientIds) {
-      try {
-        await this.pushService.sendToUser(
-          id,
-          `New issue: ${data.title}`,
-          `${data.reporterName || 'A member'} reported a ${String(data.severity ?? '').toLowerCase()} issue`,
-          { type: 'shift_issue', issueId: data.issueId },
-        );
-      } catch (e) {
-        this.logger.error(`shift-issue create push failed: ${(e as Error).message}`);
-      }
+    const severity = String(data.severity ?? '').toUpperCase();
+    try {
+      await this.pushService.sendToUsers(
+        recipientIds,
+        {
+          title: msg('issue.created.title', { title: data.title }),
+          body: msg('issue.created.body', {
+            name: data.reporterName || msg('common.aMember'),
+            severity: SEVERITIES.has(severity)
+              ? msg(`issue.severity.${severity}` as 'issue.severity.LOW')
+              : severity.toLowerCase(),
+          }),
+        },
+        { type: 'shift_issue', issueId: data.issueId },
+      );
+    } catch (e) {
+      this.logger.error(`shift-issue create push failed: ${(e as Error).message}`);
     }
   }
 
@@ -44,27 +51,36 @@ export class ShiftIssueNotificationHandler {
     for (const id of socketTargets) this.websocketGateway.emitToUser(id, 'shift_issue.event', data);
 
     const body = data.event?.type === 'MESSAGE'
-      ? `${data.actorName || 'Someone'}: ${(data.event?.body ?? '').slice(0, 120)}`
-      : this.systemLine(data);
-    for (const id of recipientIds) {
-      try {
-        await this.pushService.sendToUser(id, `Issue: ${data.title}`, body, { type: 'shift_issue', issueId: data.issueId });
-      } catch (e) {
-        this.logger.error(`shift-issue event push failed: ${(e as Error).message}`);
-      }
+      ? msg('issue.event.message', {
+          name: data.actorName || msg('common.someone'),
+          text: String(data.event?.body ?? '').slice(0, 120),
+        })
+      : systemLine(data);
+    try {
+      await this.pushService.sendToUsers(
+        recipientIds,
+        { title: msg('issue.event.title', { title: data.title }), body },
+        { type: 'shift_issue', issueId: data.issueId },
+      );
+    } catch (e) {
+      this.logger.error(`shift-issue event push failed: ${(e as Error).message}`);
     }
   }
+}
 
-  private systemLine(data: any): string {
-    const who = data.actorName || 'Someone';
-    const reason = data.event?.body ? ` — ${String(data.event.body).slice(0, 80)}` : '';
-    switch (data.event?.type) {
-      case 'ACKNOWLEDGED': return `${who} acknowledged the issue`;
-      case 'ASSIGNED': return `Dispatched to ${data.event?.metadata?.assignedToName ?? 'someone'}`;
-      case 'RESOLVED': return `${who} marked it resolved${reason}`;
-      case 'REOPENED': return `${who} reopened it`;
-      case 'CLOSED': return `${who} closed it${reason}`;
-      default: return `${who} updated the issue${reason}`;
-    }
+const SEVERITIES = new Set(['LOW', 'MEDIUM', 'HIGH', 'URGENT']);
+
+/** What happened on the thread, when it was not somebody writing in it. */
+function systemLine(data: any): Msg {
+  const name = data.actorName || msg('common.someone');
+  // The reason is what the person typed, attached as written.
+  const reason = data.event?.body ? ` — ${String(data.event.body).slice(0, 80)}` : '';
+  switch (data.event?.type) {
+    case 'ACKNOWLEDGED': return msg('issue.event.acknowledged', { name });
+    case 'ASSIGNED': return msg('issue.event.assigned', { name: data.event?.metadata?.assignedToName || msg('common.someone') });
+    case 'RESOLVED': return msg('issue.event.resolved', { name, reason });
+    case 'REOPENED': return msg('issue.event.reopened', { name });
+    case 'CLOSED': return msg('issue.event.closed', { name, reason });
+    default: return msg('issue.event.updated', { name, reason });
   }
 }

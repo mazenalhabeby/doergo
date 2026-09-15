@@ -3,13 +3,9 @@ import { EventPattern, Payload } from '@nestjs/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
+import { msg, type LocalizedText } from '../i18n/translate';
 
-const KIND_TITLE: Record<string, string> = {
-  CALL: '📞 Call reminder',
-  EMAIL: '✉️ Email reminder',
-  MEETING: '👥 Meeting reminder',
-  OTHER: '⏰ Follow-up reminder',
-};
+const REMINDER_KINDS = new Set(['CALL', 'EMAIL', 'MEETING', 'OTHER']);
 
 /** A customer follow-up reminder came due → notify every assigned manager. */
 @Controller()
@@ -31,31 +27,34 @@ export class CrmReminderHandler {
     const recipients = Array.from(new Set((data.userIds ?? (data.userId ? [data.userId] : [])).filter(Boolean)));
     if (recipients.length === 0) return;
 
-    const title = KIND_TITLE[(data.reminderKind ?? 'OTHER').toUpperCase()] ?? KIND_TITLE.OTHER;
-    const body = data.body?.trim() ? `${data.customerName}: ${data.body}` : `Follow up with ${data.customerName}`;
+    const kind = (data.reminderKind ?? 'OTHER').toUpperCase();
+    const text: LocalizedText = {
+      title: msg(`crm.reminder.${REMINDER_KINDS.has(kind) ? kind : 'OTHER'}` as 'crm.reminder.OTHER'),
+      // The note is the rep's own words and is not translated.
+      body: data.body?.trim()
+        ? msg('crm.reminder.bodyNote', { customer: data.customerName, note: data.body })
+        : msg('crm.reminder.body', { customer: data.customerName }),
+    };
     const link = `/customers/${data.customerId}`;
 
-    // Push + realtime, fanned out to every recipient (best-effort per user).
-    await Promise.all(
-      recipients.map(async (uid) => {
-        try {
-          await this.pushService.sendToUser(uid, title, body, { link, customerId: data.customerId, type: 'crm_reminder' });
-        } catch (e) {
-          this.logger.warn(`reminder push failed (${uid}): ${e}`);
-        }
-        this.websocketGateway.emitToUser(uid, 'customer.reminder', {
-          customerId: data.customerId, customerName: data.customerName, body: data.body ?? '',
-          reminderKind: data.reminderKind ?? 'OTHER', timestamp: new Date().toISOString(),
-        });
-      }),
-    );
+    // Realtime to every recipient, then one push for all of them.
+    for (const uid of recipients) {
+      this.websocketGateway.emitToUser(uid, 'customer.reminder', {
+        customerId: data.customerId, customerName: data.customerName, body: data.body ?? '',
+        reminderKind: data.reminderKind ?? 'OTHER', timestamp: new Date().toISOString(),
+      });
+    }
+    try {
+      await this.pushService.sendToUsers(recipients, text, { link, customerId: data.customerId, type: 'crm_reminder' });
+    } catch (e) {
+      this.logger.warn(`reminder push failed: ${e}`);
+    }
 
     await this.store.record({
       recipientIds: recipients,
       organizationId: data.organizationId,
       eventType: 'customer_reminder_due',
-      title,
-      body,
+      text,
       link,
     });
   }

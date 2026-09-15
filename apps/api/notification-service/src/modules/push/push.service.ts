@@ -1,9 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '@hbcfield/shared';
-import Expo, { ExpoPushMessage, ExpoPushTicket, ExpoPushReceipt } from 'expo-server-sdk';
+import { DEFAULT_LOCALE, PrismaService, type SupportedLocale } from '@hbcfield/shared';
+import Expo, { ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
 import { pushRouting } from '@hbcfield/shared';
+import { RecipientLocales } from '../../i18n/recipient-locales.service';
+import { msg, render, renderText, type LocalizedText, type Msg } from '../../i18n/translate';
 
+/**
+ * Every push this product sends.
+ *
+ * ⚠️ THERE IS NO WAY TO SEND A STRING. The only entry points take a
+ * `LocalizedText` — catalogue keys and the facts to fill them with — because a
+ * push is written for people whose language the caller does not know. The
+ * recipients are grouped by the language they read and each group is rendered
+ * and sent once, so a push to thirty approvers is at most five batches, and
+ * their languages cost one query (`RecipientLocales`).
+ */
 @Injectable()
 export class PushService {
   private readonly logger = new Logger(PushService.name);
@@ -12,18 +24,24 @@ export class PushService {
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly locales: RecipientLocales,
   ) {
     this.expo = new Expo();
   }
 
   /**
-   * Register a push token for a user
+   * Register a push token for a user — and, when the app says so, the language
+   * it is set to. This is the one call every phone makes on every launch, so it
+   * is where an app that has changed language (or was installed before the
+   * server asked) is sure to be heard. An app that sends no locale changes
+   * nothing: an old build must not reset somebody back to English.
    */
   async registerPushToken(data: {
     userId: string;
     token: string;
     platform: string;
     deviceId?: string;
+    locale?: string;
   }) {
     const { userId, token, platform, deviceId } = data;
 
@@ -50,6 +68,8 @@ export class PushService {
       },
     });
 
+    if (data.locale !== undefined) await this.locales.set(userId, data.locale);
+
     this.logger.log(`Registered push token for user ${userId}: ${token.substring(0, 20)}...`);
     return { success: true, data: pushToken };
   }
@@ -69,38 +89,61 @@ export class PushService {
   }
 
   /**
-   * Get all push tokens for a user
+   * One text to many people, each in their own language.
+   *
+   * Tokens and languages are each ONE query for the whole list. Duplicate and
+   * empty ids are dropped here, so a caller merging watchers with leaders does
+   * not buzz somebody twice.
    */
-  async getUserTokens(userId: string): Promise<string[]> {
-    const tokens = await this.prisma.userPushToken.findMany({
-      where: { userId },
-      select: { token: true },
-    });
-    return tokens.map((t: { token: string }) => t.token);
-  }
-
-  /**
-   * Send push notification to specific tokens
-   */
-  async sendPushNotification(
-    tokens: string[],
-    title: string,
-    body: string,
+  async sendToUsers(
+    userIds: Array<string | null | undefined>,
+    text: LocalizedText,
     data?: Record<string, any>,
   ) {
-    if (tokens.length === 0) {
-      this.logger.warn(`No push tokens registered for notification: "${title}"`);
+    const ids = [...new Set(userIds.filter((id): id is string => !!id))];
+    if (ids.length === 0) return { success: true, sent: 0, reason: 'no_recipients' };
+
+    const rows: Array<{ userId: string; token: string }> = await this.prisma.userPushToken.findMany({
+      where: { userId: { in: ids } },
+      select: { userId: true, token: true },
+    });
+    if (rows.length === 0) {
+      this.logger.warn(`No push tokens registered for ${ids.length} recipient(s) of ${data?.type ?? 'a push'}`);
       return { success: true, sent: 0, reason: 'no_tokens_registered' };
     }
 
-    // Filter valid tokens
+    const localeOf = await this.locales.localesFor([...new Set(rows.map((r) => r.userId))]);
+    const byLocale = new Map<SupportedLocale, string[]>();
+    for (const row of rows) {
+      const locale = localeOf.get(row.userId) ?? DEFAULT_LOCALE;
+      const list = byLocale.get(locale) ?? [];
+      list.push(row.token);
+      byLocale.set(locale, list);
+    }
+
+    let sent = 0;
+    let failed = 0;
+    for (const [locale, tokens] of byLocale) {
+      const { title, body } = renderText(locale, text);
+      const result = await this.deliver(tokens, title, body, data);
+      sent += result.sent;
+      failed += result.failed;
+    }
+    return { success: true, sent, failed };
+  }
+
+  async sendToUser(userId: string, text: LocalizedText, data?: Record<string, any>) {
+    return this.sendToUsers([userId], text, data);
+  }
+
+  /** Already rendered, already grouped: hand it to Expo. */
+  private async deliver(tokens: string[], title: string, body: string, data?: Record<string, any>) {
     const validTokens = tokens.filter((token) => Expo.isExpoPushToken(token));
     if (validTokens.length === 0) {
       this.logger.warn('No valid Expo push tokens found');
-      return { success: false, error: 'No valid push tokens' };
+      return { sent: 0, failed: 0 };
     }
 
-    // Build messages
     /*
       Where it lands and how loudly — decided by one shared table, because the
       server names the Android channel and the APP is what creates it. Two
@@ -122,7 +165,6 @@ export class PushService {
       interruptionLevel: routing.interruptionLevel,
     }));
 
-    // Chunk and send
     const chunks = this.expo.chunkPushNotifications(messages);
     const tickets: ExpoPushTicket[] = [];
 
@@ -135,32 +177,12 @@ export class PushService {
       }
     }
 
-    // Log any errors
-    const errors = tickets.filter(
-      (ticket) => ticket.status === 'error',
-    );
+    const errors = tickets.filter((ticket) => ticket.status === 'error');
     if (errors.length > 0) {
       this.logger.warn(`${errors.length} push notifications failed`);
     }
 
-    return {
-      success: true,
-      sent: tickets.filter((t) => t.status === 'ok').length,
-      failed: errors.length,
-    };
-  }
-
-  /**
-   * Send push notification to a user (by user ID)
-   */
-  async sendToUser(
-    userId: string,
-    title: string,
-    body: string,
-    data?: Record<string, any>,
-  ) {
-    const tokens = await this.getUserTokens(userId);
-    return this.sendPushNotification(tokens, title, body, data);
+    return { sent: tickets.filter((t) => t.status === 'ok').length, failed: errors.length };
   }
 
   // =========================================================================
@@ -170,8 +192,7 @@ export class PushService {
   async sendTaskAssignedPush(technicianId: string, task: { id: string; title: string }) {
     return this.sendToUser(
       technicianId,
-      'New Task Assigned',
-      `You have been assigned: ${task.title}`,
+      { title: msg('task.assigned.title'), body: msg('task.assigned.body', { task: task.title }) },
       { taskId: task.id, type: 'task_assigned' },
     );
   }
@@ -188,39 +209,32 @@ export class PushService {
     task: { id: string; title: string },
     detail: { dueTime: string; travelMinutes: number; estimated: boolean },
   ) {
-    const drive = detail.estimated
-      ? `about ${detail.travelMinutes} min`
-      : `${detail.travelMinutes} min`;
+    const params = { task: task.title, time: detail.dueTime, minutes: detail.travelMinutes };
     return this.sendToUser(
       userId,
-      'Time to leave',
-      `${task.title} — be there ${detail.dueTime} (${drive} drive)`,
+      {
+        title: msg('task.departure.title'),
+        body: msg(detail.estimated ? 'task.departure.bodyEstimated' : 'task.departure.body', params),
+      },
       { taskId: task.id, type: 'task_departure_due' },
     );
   }
 
-  async sendStatusChangePush(
-    userId: string,
-    task: { id: string; title: string },
-    newStatus: string,
-  ) {
+  async sendStatusChangePush(userId: string, task: { id: string; title: string }, newStatus: string) {
     return this.sendToUser(
       userId,
-      'Task Status Updated',
-      `Task "${task.title}" is now ${newStatus}`,
+      {
+        title: msg('task.statusChanged.title'),
+        body: msg('task.statusChanged.body', { task: task.title, status: taskStatus(newStatus) }),
+      },
       { taskId: task.id, type: 'status_change', status: newStatus },
     );
   }
 
-  async sendTaskCommentPush(
-    userId: string,
-    task: { id: string; title: string },
-    commenterName: string,
-  ) {
+  async sendTaskCommentPush(userId: string, task: { id: string; title: string }, commenterName: string | Msg) {
     return this.sendToUser(
       userId,
-      'New Comment',
-      `${commenterName} commented on "${task.title}"`,
+      { title: msg('task.comment.title'), body: msg('task.comment.body', { name: commenterName, task: task.title }) },
       { taskId: task.id, type: 'comment_added' },
     );
   }
@@ -235,17 +249,23 @@ export class PushService {
     totalHours: number;
     reason: 'exceeded_duration' | 'end_of_day';
   }) {
-    const body =
-      data.reason === 'exceeded_duration'
-        ? `Auto clock-out from ${data.locationName}: exceeded max duration (${data.totalHours.toFixed(1)}h)`
-        : `Auto clock-out from ${data.locationName}: end of day (${data.totalHours.toFixed(1)}h)`;
-
-    return this.sendToUser(data.userId, 'Auto Clock-Out', body, {
-      type: 'auto_clock_out',
-      reason: data.reason,
-      locationName: data.locationName,
-      totalHours: data.totalHours,
-    });
+    const params = { location: data.locationName, hours: roundTenth(data.totalHours) };
+    return this.sendToUser(
+      data.userId,
+      {
+        title: msg('attendance.autoClockOut.title'),
+        body: msg(
+          data.reason === 'exceeded_duration' ? 'attendance.autoClockOut.bodyExceeded' : 'attendance.autoClockOut.bodyEndOfDay',
+          params,
+        ),
+      },
+      {
+        type: 'auto_clock_out',
+        reason: data.reason,
+        locationName: data.locationName,
+        totalHours: data.totalHours,
+      },
+    );
   }
 
   // Shift reminder engine: nudge the worker whose shift has ended but is still
@@ -259,22 +279,29 @@ export class PushService {
     unscheduled?: boolean;
     hoursOpen?: number;
   }) {
-    const body = data.unscheduled
-      ? `You've been clocked in at ${data.locationName} for ~${data.hoursOpen ?? '?'}h — did you forget to clock out?`
-      : `Your shift at ${data.locationName} has ended — did you forget to clock out, or are you working extra time?`;
-    return this.sendToUser(data.userId, 'Still clocked in?', body, {
-      type: 'shift_reminder',
-      entryId: data.entryId,
-      reminderCount: data.reminderCount,
-    });
+    return this.sendToUser(
+      data.userId,
+      {
+        title: msg('attendance.shiftReminder.title'),
+        body: data.unscheduled
+          ? msg('attendance.shiftReminder.bodyUnscheduled', { location: data.locationName, hours: data.hoursOpen ?? '?' })
+          : msg('attendance.shiftReminder.body', { location: data.locationName }),
+      },
+      {
+        type: 'shift_reminder',
+        entryId: data.entryId,
+        reminderCount: data.reminderCount,
+      },
+    );
   }
 
   /**
    * A rest has fallen due.
    *
-   * The body says what it costs, because that is the fact that decides whether
-   * somebody stops now or keeps going: an unpaid rest is time off the clock, and
-   * a member who does not know that will take it late and be surprised.
+   * The body says whether it counts as working time, because that is the fact
+   * that decides whether somebody stops now or keeps going: a rest that does not
+   * count is time off the clock, and a member who does not know that will take
+   * it late and be surprised.
    */
   async sendBreakDuePush(data: {
     userId: string;
@@ -286,18 +313,24 @@ export class PushService {
     expiresAt: string | null;
     snoozeCount: number;
   }) {
-    const cost = data.isPaid ? 'Paid' : 'It comes off your paid hours';
-    const body =
-      data.snoozeCount > 0
-        ? `Still owed: ${data.durationMinutes} minutes. ${cost}.`
-        : `${data.durationMinutes} minutes. ${cost}.`;
-    return this.sendToUser(data.userId, `Time for your ${data.name.toLowerCase()}`, body, {
-      type: 'break_due',
-      entryId: data.entryId,
-      ruleId: data.ruleId,
-      durationMinutes: data.durationMinutes,
-      expiresAt: data.expiresAt,
-    });
+    const params = {
+      minutes: data.durationMinutes,
+      cost: msg(data.isPaid ? 'attendance.breakDue.counted' : 'attendance.breakDue.notCounted'),
+    };
+    return this.sendToUser(
+      data.userId,
+      {
+        title: msg('attendance.breakDue.title', { rest: restName(data.name) }),
+        body: msg(data.snoozeCount > 0 ? 'attendance.breakDue.bodyStillDue' : 'attendance.breakDue.body', params),
+      },
+      {
+        type: 'break_due',
+        entryId: data.entryId,
+        ruleId: data.ruleId,
+        durationMinutes: data.durationMinutes,
+        expiresAt: data.expiresAt,
+      },
+    );
   }
 
   /** The rest has run its length — one nudge, then silence. */
@@ -310,8 +343,7 @@ export class PushService {
   }) {
     return this.sendToUser(
       data.userId,
-      `Your ${data.name.toLowerCase()} is over`,
-      'Tap when you are back — until then the time keeps counting as rest.',
+      { title: msg('attendance.breakOver.title', { rest: restName(data.name) }), body: msg('attendance.breakOver.body') },
       { type: 'break_over', entryId: data.entryId, breakId: data.breakId },
     );
   }
@@ -326,21 +358,20 @@ export class PushService {
     entryId: string;
   }) {
     if (!data.leaderIds?.length) return { success: true, skipped: 'no leaders' };
-    const h = Math.floor(data.shortfallMinutes / 60);
-    const m = data.shortfallMinutes % 60;
-    const short = h > 0 ? `${h}h ${m}m` : `${m}m`;
-    const body = data.reason
-      ? `${data.userName} left ${short} early at ${data.locationName} — "${data.reason}"`
-      : `${data.userName} left ${short} early at ${data.locationName}, with no reason given.`;
-
-    // One send per leader; the same shape the escalation push already uses.
-    for (const leaderId of data.leaderIds) {
-      await this.sendToUser(leaderId, 'Shift ended early', body, {
-        type: 'attendance_left_early',
-        entryId: data.entryId,
-      });
-    }
-    return { success: true };
+    const params = {
+      name: data.userName,
+      short: duration(data.shortfallMinutes),
+      location: data.locationName,
+      reason: data.reason,
+    };
+    return this.sendToUsers(
+      data.leaderIds,
+      {
+        title: msg('attendance.leftEarly.title'),
+        body: msg(data.reason ? 'attendance.leftEarly.body' : 'attendance.leftEarly.bodyNoReason', params),
+      },
+      { type: 'attendance_left_early', entryId: data.entryId },
+    );
   }
 
   // Escalation: nobody responded to the reminders → ask a space leader to
@@ -353,17 +384,7 @@ export class PushService {
     unscheduled?: boolean;
     hoursOpen?: number;
   }) {
-    const body = data.unscheduled
-      ? `${data.userName} has been clocked in at ${data.locationName} for ~${data.hoursOpen ?? '?'}h with no scheduled shift. Review and approve/adjust their hours.`
-      : `${data.userName} is still clocked in at ${data.locationName} after their shift ended and hasn't responded. Please review.`;
-
-    const allTokens: string[] = [];
-    for (const leaderId of data.leaderIds) {
-      const tokens = await this.getUserTokens(leaderId);
-      allTokens.push(...tokens);
-    }
-
-    return this.sendPushNotification(allTokens, data.unscheduled ? 'Long open session' : 'Open shift needs review', body, {
+    return this.sendToUsers(data.leaderIds, shiftEscalationText(data), {
       type: 'shift_escalation',
       userName: data.userName,
       entryId: data.entryId,
@@ -375,8 +396,7 @@ export class PushService {
   async sendNoShowReminderPush(data: { userId: string; instanceId: string; reminderCount: number }) {
     return this.sendToUser(
       data.userId,
-      'Shift started — clock in',
-      `Your shift has started and you're not clocked in yet. Tap to clock in.`,
+      { title: msg('attendance.noShow.title'), body: msg('attendance.noShow.body') },
       { type: 'noshow_reminder', instanceId: data.instanceId, reminderCount: data.reminderCount },
     );
   }
@@ -384,31 +404,21 @@ export class PushService {
   // No-show escalation: the worker never clocked in → ask a space leader to
   // follow up (call the worker / mark absent / reconcile).
   async sendNoShowEscalationPush(data: { leaderIds: string[]; userName: string; instanceId: string }) {
-    const allTokens: string[] = [];
-    for (const leaderId of data.leaderIds) {
-      const tokens = await this.getUserTokens(leaderId);
-      allTokens.push(...tokens);
-    }
-    return this.sendPushNotification(
-      allTokens,
-      'No-show',
-      `${data.userName} hasn't clocked in for their shift and isn't responding. Please follow up.`,
-      { type: 'noshow_escalation', userName: data.userName, instanceId: data.instanceId },
-    );
+    return this.sendToUsers(data.leaderIds, noShowEscalationText(data.userName), {
+      type: 'noshow_escalation',
+      userName: data.userName,
+      instanceId: data.instanceId,
+    });
   }
 
   /** An attendance alert answered by what the member actually did, arriving late. */
-  async sendAttendanceResolvedPush(data: { leaderIds: string[]; title: string; body: string; type: string; entryId: string }) {
-    const allTokens: string[] = [];
-    for (const leaderId of data.leaderIds) allTokens.push(...(await this.getUserTokens(leaderId)));
-    return this.sendPushNotification(allTokens, data.title, data.body, { type: data.type, entryId: data.entryId });
+  async sendAttendanceResolvedPush(data: { recipientIds: string[]; text: LocalizedText; type: string; entryId: string }) {
+    return this.sendToUsers(data.recipientIds, data.text, { type: data.type, entryId: data.entryId });
   }
 
   /** The escalation was answered by a clock-in that arrived late — tell the same leaders. */
-  async sendNoShowResolvedPush(data: { leaderIds: string[]; body: string; instanceId: string }) {
-    const allTokens: string[] = [];
-    for (const leaderId of data.leaderIds) allTokens.push(...(await this.getUserTokens(leaderId)));
-    return this.sendPushNotification(allTokens, 'Arrived after all', data.body, {
+  async sendNoShowResolvedPush(data: { leaderIds: string[]; text: LocalizedText; instanceId: string }) {
+    return this.sendToUsers(data.leaderIds, data.text, {
       type: 'noshow_resolved',
       instanceId: data.instanceId,
     });
@@ -422,15 +432,7 @@ export class PushService {
     locationName: string;
     entryId: string;
   }) {
-    const body = `${data.userName} wants to keep working past their shift at ${data.locationName}. Approve extra time?`;
-
-    const allTokens: string[] = [];
-    for (const leaderId of data.leaderIds) {
-      const tokens = await this.getUserTokens(leaderId);
-      allTokens.push(...tokens);
-    }
-
-    return this.sendPushNotification(allTokens, 'Extra-time request', body, {
+    return this.sendToUsers(data.leaderIds, overtimeRequestText(data.userName, data.locationName), {
       type: 'overtime_request',
       userName: data.userName,
       entryId: data.entryId,
@@ -445,17 +447,24 @@ export class PushService {
     decision: 'approved' | 'rejected';
     minutes?: number;
   }) {
-    const body =
-      data.decision === 'approved'
-        ? `Your extra time was approved${data.minutes ? ` for ${data.minutes} more minutes` : ''}.`
-        : 'Your extra-time request was declined — please clock out.';
-
-    return this.sendToUser(data.userId, data.decision === 'approved' ? 'Overtime approved' : 'Overtime declined', body, {
-      type: 'overtime_decision',
-      entryId: data.entryId,
-      decision: data.decision,
-      minutes: data.minutes,
-    });
+    const approved = data.decision === 'approved';
+    return this.sendToUser(
+      data.userId,
+      {
+        title: msg(approved ? 'attendance.overtimeDecision.titleApproved' : 'attendance.overtimeDecision.titleDeclined'),
+        body: !approved
+          ? msg('attendance.overtimeDecision.bodyDeclined')
+          : data.minutes
+            ? msg('attendance.overtimeDecision.bodyApprovedMinutes', { minutes: data.minutes })
+            : msg('attendance.overtimeDecision.bodyApproved'),
+      },
+      {
+        type: 'overtime_decision',
+        entryId: data.entryId,
+        decision: data.decision,
+        minutes: data.minutes,
+      },
+    );
   }
 
   async sendGeofenceAlertPush(data: {
@@ -465,16 +474,7 @@ export class PushService {
     distance: number;
     action: 'clock_in' | 'clock_out';
   }) {
-    const body = `${data.userName} ${data.action === 'clock_in' ? 'clocked in' : 'clocked out'} ${Math.round(data.distance)}m from ${data.locationName}`;
-
-    // Collect all tokens for all dispatchers
-    const allTokens: string[] = [];
-    for (const dispatcherId of data.dispatcherIds) {
-      const tokens = await this.getUserTokens(dispatcherId);
-      allTokens.push(...tokens);
-    }
-
-    return this.sendPushNotification(allTokens, 'Geofence Alert', body, {
+    return this.sendToUsers(data.dispatcherIds, geofenceAlertText(data), {
       type: 'geofence_alert',
       userName: data.userName,
       locationName: data.locationName,
@@ -486,42 +486,13 @@ export class PushService {
   async sendPendingApprovalPush(data: {
     managerIds: string[];
     userName: string;
-    flagSummary: string;
+    flagReasons: string[];
     entryId: string;
   }) {
-    const body = `${data.userName}'s time entry needs approval (${data.flagSummary})`;
-
-    const allTokens: string[] = [];
-    for (const managerId of data.managerIds) {
-      const tokens = await this.getUserTokens(managerId);
-      allTokens.push(...tokens);
-    }
-
-    return this.sendPushNotification(allTokens, 'Approval Needed', body, {
+    return this.sendToUsers(data.managerIds, pendingApprovalText(data.userName, data.flagReasons), {
       type: 'pending_approval',
       userName: data.userName,
       entryId: data.entryId,
-    });
-  }
-
-  async sendOvertimeAlertPush(data: {
-    dispatcherIds: string[];
-    userName: string;
-    currentHours: number;
-    overtimeThreshold: number;
-  }) {
-    const body = `${data.userName} has worked ${data.currentHours.toFixed(1)} hours today (overtime threshold: ${data.overtimeThreshold}h)`;
-
-    const allTokens: string[] = [];
-    for (const dispatcherId of data.dispatcherIds) {
-      const tokens = await this.getUserTokens(dispatcherId);
-      allTokens.push(...tokens);
-    }
-
-    return this.sendPushNotification(allTokens, 'Overtime Alert', body, {
-      type: 'overtime_alert',
-      userName: data.userName,
-      currentHours: data.currentHours,
     });
   }
 
@@ -530,24 +501,10 @@ export class PushService {
    *
    * `recipientIds`, not `dispatcherIds`: who is told is resolved from the
    * member's own routing (their Access watchers, then their spaces' notify
-   * config), which has nothing to do with holding any particular role. The old
-   * name described a rule this product does not have.
+   * config), which has nothing to do with holding any particular role.
    */
-  async sendTimeOffRequestPush(data: {
-    recipientIds: string[];
-    technicianName: string;
-    startDate: string;
-    endDate: string;
-  }) {
-    const body = `${data.technicianName} requested time off: ${data.startDate} to ${data.endDate}`;
-
-    const allTokens: string[] = [];
-    for (const recipientId of data.recipientIds) {
-      const tokens = await this.getUserTokens(recipientId);
-      allTokens.push(...tokens);
-    }
-
-    return this.sendPushNotification(allTokens, 'Time Off Request', body, {
+  async sendTimeOffRequestPush(data: { recipientIds: string[]; text: LocalizedText; technicianName: string; startDate: string; endDate: string }) {
+    return this.sendToUsers(data.recipientIds, data.text, {
       type: 'time_off_request',
       technicianName: data.technicianName,
       startDate: data.startDate,
@@ -557,26 +514,106 @@ export class PushService {
 
   async sendTimeOffApprovedPush(data: {
     technicianId: string;
+    text: LocalizedText;
     startDate: string;
     endDate: string;
     approved: boolean;
-    rejectionReason?: string;
   }) {
-    const title = data.approved ? 'Time Off Approved' : 'Time Off Rejected';
-    const range = `${data.startDate} to ${data.endDate}`;
-    // A refusal carries its reason. Without it the member opens the app to find
-    // out what to do differently, which is a day later at best.
-    const body = data.approved
-      ? `Your time off request (${range}) has been approved`
-      : data.rejectionReason
-        ? `Your time off request (${range}) was not approved — ${data.rejectionReason}`
-        : `Your time off request (${range}) has been rejected`;
-
-    return this.sendToUser(data.technicianId, title, body, {
+    return this.sendToUser(data.technicianId, data.text, {
       type: 'time_off_response',
       approved: data.approved,
       startDate: data.startDate,
       endDate: data.endDate,
     });
   }
+}
+
+// ── Texts shared by a push and the bell entry written beside it ──────────────
+// One definition each, so the two cannot drift into saying different things.
+
+export function shiftEscalationText(data: { userName: string; locationName: string; unscheduled?: boolean; hoursOpen?: number }): LocalizedText {
+  return data.unscheduled
+    ? {
+        title: msg('attendance.escalation.titleUnscheduled'),
+        body: msg('attendance.escalation.bodyUnscheduled', { name: data.userName, location: data.locationName, hours: data.hoursOpen ?? '?' }),
+      }
+    : {
+        title: msg('attendance.escalation.title'),
+        body: msg('attendance.escalation.body', { name: data.userName, location: data.locationName }),
+      };
+}
+
+export function noShowEscalationText(userName: string): LocalizedText {
+  return { title: msg('attendance.noShowEscalation.title'), body: msg('attendance.noShowEscalation.body', { name: userName }) };
+}
+
+export function overtimeRequestText(userName: string, locationName: string): LocalizedText {
+  return {
+    title: msg('attendance.overtimeRequest.title'),
+    body: msg('attendance.overtimeRequest.body', { name: userName, location: locationName }),
+  };
+}
+
+export function geofenceAlertText(data: { userName: string; locationName: string; distance: number; action: 'clock_in' | 'clock_out' }): LocalizedText {
+  return {
+    title: msg('attendance.geofence.title'),
+    body: msg(data.action === 'clock_in' ? 'attendance.geofence.bodyIn' : 'attendance.geofence.bodyOut', {
+      name: data.userName,
+      distance: Math.round(data.distance),
+      location: data.locationName,
+    }),
+  };
+}
+
+const KNOWN_FLAGS = new Set([
+  'OVERTIME',
+  'MISSED_CLOCK_OUT',
+  'OUTSIDE_GEOFENCE_IN',
+  'OUTSIDE_GEOFENCE_OUT',
+  'LATE_ARRIVAL',
+  'EARLY_DEPARTURE',
+  'UNSCHEDULED_DAY',
+]);
+
+export function pendingApprovalText(userName: string, flagReasons: string[]): LocalizedText {
+  const reasons = flagReasons ?? [];
+  // A flag this catalogue does not know yet still says SOMETHING: its own name,
+  // readable, rather than a missing-key error on a manager's lock screen.
+  const flags = reasons.length
+    ? (locale: SupportedLocale) =>
+        [...new Set(reasons.map((r) => (KNOWN_FLAGS.has(r) ? render(locale, msg(`attendance.flag.${r}` as 'attendance.flag.OVERTIME')) : r.replace(/_/g, ' ').toLowerCase())))].join(', ')
+    : msg('attendance.flag.needsReview');
+  return { title: msg('attendance.approval.title'), body: msg('attendance.approval.body', { name: userName, flags }) };
+}
+
+const KNOWN_STATUSES = new Set([
+  'DRAFT', 'NEW', 'ASSIGNED', 'ACCEPTED', 'EN_ROUTE', 'ARRIVED', 'IN_PROGRESS', 'BLOCKED', 'COMPLETED', 'CANCELED', 'CLOSED',
+]);
+
+/**
+ * A status name. The built-in statuses are translated; a workflow's own status
+ * was named by the organization, in its own language, and is shown as named.
+ */
+export function taskStatus(status: string): Msg | string {
+  return KNOWN_STATUSES.has(status) ? msg(`taskStatus.${status}` as 'taskStatus.NEW') : String(status ?? '').replace(/_/g, ' ');
+}
+
+/**
+ * A rest's own name inside a sentence. English, Spanish, French and Italian
+ * lower-case a common noun mid-sentence ("time for your lunch break"); German
+ * capitalises every noun, so "Mittagspause" stays as the organization wrote it.
+ */
+export function restName(name: string) {
+  return (locale: SupportedLocale) => (locale === 'de' ? name : name.toLowerCase());
+}
+
+/** "1 h 5 min" / "40 min". */
+export function duration(totalMinutes: number): Msg {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return h > 0 ? msg('common.durationHm', { h, m }) : msg('common.durationM', { m });
+}
+
+function roundTenth(n: number): number {
+  return Math.round(n * 10) / 10;
 }
