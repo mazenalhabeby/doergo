@@ -83,7 +83,8 @@ export class SpaceModulesService {
 
     try {
       const res: any = await firstValueFrom(
-        this.taskClient.send({ cmd: 'find_task' }, { id: taskId, organizationId }).pipe(timeout(1_500)),
+        // ⚠️ Its own pattern: `find_task` asks who is reading, and the guard has nobody to name.
+        this.taskClient.send({ cmd: 'find_task_space' }, { id: taskId, organizationId }).pipe(timeout(1_500)),
       );
       const spaceId: string | null = res?.data?.spaceId ?? null;
       this.rememberSpaceOf(key, spaceId);
@@ -111,9 +112,10 @@ export class SpaceModulesService {
 
     try {
       const res: any = await firstValueFrom(
-        this.taskClient.send({ cmd: 'find_asset' }, { id: assetId, organizationId }).pipe(timeout(1_500)),
+        // ⚠️ Its own pattern: `find_asset` asks who is reading, and the guard has nobody to name.
+        this.taskClient.send({ cmd: 'find_asset_space' }, { id: assetId, organizationId }).pipe(timeout(1_500)),
       );
-      const spaceId: string | null = res?.data?.category?.spaceId ?? null;
+      const spaceId: string | null = res?.data?.spaceId ?? null;
       this.rememberSpaceOf(key, spaceId);
       return spaceId;
     } catch {

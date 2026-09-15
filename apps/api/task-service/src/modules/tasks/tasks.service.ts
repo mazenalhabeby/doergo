@@ -974,6 +974,15 @@ export class TasksService {
   /**
    * Find a single task by ID with authorization
    */
+  /** The workspace a task lives in, or null. The space id only — no task data. */
+  async spaceOf(data: { id: string; organizationId: string }) {
+    const task = await this.prisma.task.findFirst({
+      where: { id: data.id, organizationId: data.organizationId },
+      select: { spaceId: true },
+    });
+    return success({ spaceId: task?.spaceId ?? null });
+  }
+
   async findOne(data: { id: string; userId: string; userRole: string; canViewAllTasks?: boolean; organizationId: string; sharedSpaceIds?: string[]; viewAllSpaceIds?: string[] }) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },

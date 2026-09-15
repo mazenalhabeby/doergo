@@ -28,6 +28,16 @@ export class TasksController {
     return this.tasksService.findAll(data);
   }
 
+  /*
+    Which workspace a task lives in — for the gateway's ModuleGuard only.
+    ⚠️ Not `find_task`, which asks who is reading and refuses a caller the guard
+    cannot name. The space id and nothing else, scoped to the organization.
+  */
+  @MessagePattern({ cmd: 'find_task_space' })
+  async findSpace(@Payload() data: { id: string; organizationId: string }) {
+    return this.tasksService.spaceOf(data);
+  }
+
   @MessagePattern({ cmd: 'find_task' })
   async findOne(
     @Payload()

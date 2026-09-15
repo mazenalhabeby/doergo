@@ -220,13 +220,24 @@ describe('assets resolve their workspace', () => {
     expect(branch.slice(0, 400)).toContain('return null');
   });
 
-  it('the resolver reads the KIND\'s space, not the asset\'s', () => {
-    const svc = require('fs').readFileSync(
-      require('path').join(__dirname, '..', 'space-modules.service.ts'),
-      'utf8',
-    );
-    // An asset has no spaceId column; reading `data.spaceId` would be null for
-    // every asset ever created and the fallback would never stop firing.
-    expect(svc).toContain('res?.data?.category?.spaceId');
+  it('the resolver asks for the space alone, with nobody to name — and reads its answer', async () => {
+    /*
+      ⚠️ This used to be a source-text check for \`category?.spaceId\`, and it
+      passed while every asset edit was refused in production: the guard sent
+      \`find_asset\`, a member's READ that asks who is reading, and was refused.
+      Asserted by behaviour now.
+    */
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { of } = require('rxjs');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { SpaceModulesService } = require('../space-modules.service');
+    const send = jest.fn(() => of({ data: { spaceId: 'space-1' } }));
+    const svc = Object.create(SpaceModulesService.prototype);
+    svc.taskClient = { send };
+    svc.taskSpace = new Map();
+    await expect(svc.spaceOfAsset('asset-1', 'org-1')).resolves.toBe('space-1');
+    expect(send).toHaveBeenCalledWith({ cmd: 'find_asset_space' }, { id: 'asset-1', organizationId: 'org-1' });
+    await expect(svc.spaceOfTask('task-1', 'org-1')).resolves.toBe('space-1');
+    expect(send).toHaveBeenCalledWith({ cmd: 'find_task_space' }, { id: 'task-1', organizationId: 'org-1' });
   });
 });

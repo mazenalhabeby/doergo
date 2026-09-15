@@ -53,6 +53,20 @@ export class AssetsController {
     return this.assetsService.findAll(data);
   }
 
+  /*
+    Which workspace an asset lives in — for the gateway's ModuleGuard only.
+
+    ⚠️ Not `find_asset`. That is a READ on a member's behalf and asks who is
+    reading; the guard has no reader to name, so it was refused, the guard fell
+    back to the organization's modules, and every asset edit in an organization
+    that runs assets per workspace was refused with "not switched on". This
+    returns the space id and nothing else, scoped to the organization.
+  */
+  @MessagePattern({ cmd: 'find_asset_space' })
+  async findSpace(@Payload() data: { id: string; organizationId: string }) {
+    return this.assetsService.spaceOf(data);
+  }
+
   @MessagePattern({ cmd: 'find_asset' })
   async findOne(@Payload() data: any) {
     return this.assetsService.findOne(data);

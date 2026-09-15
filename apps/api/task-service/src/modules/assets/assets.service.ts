@@ -335,6 +335,15 @@ export class AssetsService {
     return success(assets);
   }
 
+  /** The workspace an asset lives in (through its kind), or null. The space id only — no asset data. */
+  async spaceOf(data: { id: string; organizationId: string }) {
+    const asset = await this.prisma.asset.findFirst({
+      where: { id: data.id, organizationId: data.organizationId },
+      select: { category: { select: { spaceId: true } } },
+    });
+    return success({ spaceId: asset?.category?.spaceId ?? null });
+  }
+
   /**
    * Get a single asset by ID
    */
