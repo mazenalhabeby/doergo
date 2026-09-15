@@ -141,7 +141,23 @@ export default function MyAssetsScreen() {
               <Text style={[s.sectionTitle, { color: colors.textMuted }]}>
                 {t('sendDoc.mine', 'Documents I sent in')}
               </Text>
-              {sent.map((p) => <ProposalRow key={p.id} proposal={p} colors={colors} t={t} />)}
+              {sent.map((p) => (
+                <ProposalRow
+                  key={p.id}
+                  proposal={p}
+                  colors={colors}
+                  t={t}
+                  onWithdraw={async () => {
+                    try {
+                      await assetProposalsApi.withdraw(p.id);
+                      toast.success(t('sendDoc.withdrawnToast', 'Taken back — nobody will review it'));
+                      void load();
+                    } catch (err: any) {
+                      toast.error(err?.message || t('logbook.withdrawFailed', 'Could not take it back'));
+                    }
+                  }}
+                />
+              ))}
             </>
           )}
 
@@ -370,7 +386,11 @@ function ExpenseRow({ expense, colors, t }: { expense: MyExpense; colors: any; t
   );
 }
 
-function ProposalRow({ proposal, colors, t }: { proposal: MyProposal; colors: any; t: any }) {
+/**
+ * A page I sent in. While nobody has decided, I can take it back — sent by
+ * mistake, or the wrong page — rather than leave somebody reviewing it.
+ */
+function ProposalRow({ proposal, colors, t, onWithdraw }: { proposal: MyProposal; colors: any; t: any; onWithdraw: () => void }) {
   const tone =
     proposal.status === 'ACCEPTED' ? { c: '#22c55e', icon: 'checkmark-circle' as const, label: t('expenses.accepted', 'Accepted') }
     : proposal.status === 'REJECTED' ? { c: colors.textMuted, icon: 'close-circle' as const, label: t('expenses.rejected', 'Refused') }
@@ -393,6 +413,11 @@ function ProposalRow({ proposal, colors, t }: { proposal: MyProposal; colors: an
               nothing and gets re-sent unchanged. */}
           {proposal.reviewNote ? ` — ${proposal.reviewNote}` : ''}
         </Text>
+        {proposal.status === 'PENDING' && (
+          <TouchableOpacity onPress={onWithdraw} hitSlop={8} accessibilityRole="button">
+            <Text style={s.withdraw}>{t('logbook.withdraw', 'Take back')}</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

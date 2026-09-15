@@ -2334,7 +2334,8 @@
     "noPage": "Pas de page",
     "mine": "Documents que j’ai envoyés",
     "withdrawn": "Retiré",
-    "aPage": "Une page"
+    "aPage": "Une page",
+    "withdrawnToast": "Retiré — personne ne l'examinera"
   },
   "perm": {
     "p": {

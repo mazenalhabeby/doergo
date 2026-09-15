@@ -4346,7 +4346,20 @@
     "toast": {
       "deleted": "Activo eliminado"
     },
-    "noWorkspace": "Ningún espacio tiene activos activados todavía."
+    "noWorkspace": "Ningún espacio tiene activos activados todavía.",
+    "all": {
+      "subtitle": "Todos los activos de tus espacios: busca para encontrar uno",
+      "search": "Buscar por nombre, matrícula, número de serie, fabricante o modelo",
+      "showRetired": "Mostrar retirados",
+      "name": "Nombre",
+      "kind": "Tipo",
+      "workspace": "Espacio",
+      "heldBy": "Asignado a",
+      "status": "Estado",
+      "noMatch": "No hay coincidencias",
+      "empty": "Aún no hay activos",
+      "someone": "Alguien"
+    }
   },
   "invoices": {
     "title": "Facturas",

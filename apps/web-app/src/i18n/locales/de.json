@@ -4346,7 +4346,20 @@
     "toast": {
       "deleted": "Anlage gelöscht"
     },
-    "noWorkspace": "Noch kein Workspace hat Anlagen aktiviert."
+    "noWorkspace": "Noch kein Workspace hat Anlagen aktiviert.",
+    "all": {
+      "subtitle": "Alle Assets in Ihren Arbeitsbereichen — suchen Sie danach",
+      "search": "Nach Name, Kennzeichen, Seriennummer, Hersteller oder Modell suchen",
+      "showRetired": "Ausgemusterte anzeigen",
+      "name": "Name",
+      "kind": "Art",
+      "workspace": "Arbeitsbereich",
+      "heldBy": "Bei",
+      "status": "Status",
+      "noMatch": "Keine Treffer",
+      "empty": "Noch keine Assets",
+      "someone": "Jemand"
+    }
   },
   "invoices": {
     "title": "Rechnungen",

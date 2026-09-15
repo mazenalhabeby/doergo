@@ -335,7 +335,8 @@ export class AssetsService {
         take: limit,
         orderBy: { name: 'asc' },
         include: {
-          category: { select: { id: true, name: true, color: true, icon: true } },
+          // spaceId: the "All workspaces" list says which workspace each one is in.
+          category: { select: { id: true, name: true, color: true, icon: true, spaceId: true } },
           type: { select: { id: true, name: true } },
           holders: { select: AssetHoldersService.select },
           _count: { select: { tasks: true } },

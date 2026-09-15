@@ -4346,7 +4346,20 @@
     "toast": {
       "deleted": "Asset deleted"
     },
-    "noWorkspace": "No workspace has assets switched on yet."
+    "noWorkspace": "No workspace has assets switched on yet.",
+    "all": {
+      "subtitle": "Every asset in your workspaces — search to find one",
+      "search": "Search by name, plate, serial, maker or model",
+      "showRetired": "Show retired",
+      "name": "Name",
+      "kind": "Kind",
+      "workspace": "Workspace",
+      "heldBy": "Held by",
+      "status": "Status",
+      "noMatch": "Nothing matches that",
+      "empty": "No assets yet",
+      "someone": "Someone"
+    }
   },
   "invoices": {
     "title": "Invoices",

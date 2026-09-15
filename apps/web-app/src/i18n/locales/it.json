@@ -4355,7 +4355,20 @@
     "toast": {
       "deleted": "Asset eliminato"
     },
-    "noWorkspace": "Nessuno spazio ha ancora attivato gli asset."
+    "noWorkspace": "Nessuno spazio ha ancora attivato gli asset.",
+    "all": {
+      "subtitle": "Tutti gli asset dei tuoi spazi: cerca per trovarne uno",
+      "search": "Cerca per nome, targa, numero di serie, produttore o modello",
+      "showRetired": "Mostra dismessi",
+      "name": "Nome",
+      "kind": "Tipo",
+      "workspace": "Spazio",
+      "heldBy": "Assegnato a",
+      "status": "Stato",
+      "noMatch": "Nessun risultato",
+      "empty": "Ancora nessun asset",
+      "someone": "Qualcuno"
+    }
   },
   "invoices": {
     "title": "Fatture",

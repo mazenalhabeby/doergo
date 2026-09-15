@@ -2334,7 +2334,8 @@
     "noPage": "No page",
     "mine": "Documents I sent in",
     "withdrawn": "Taken back",
-    "aPage": "A page"
+    "aPage": "A page",
+    "withdrawnToast": "Taken back — nobody will review it"
   },
   "perm": {
     "p": {

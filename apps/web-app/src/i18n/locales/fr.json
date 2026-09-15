@@ -4355,7 +4355,20 @@
     "toast": {
       "deleted": "Équipement supprimé"
     },
-    "noWorkspace": "Aucun espace n’a encore activé les équipements."
+    "noWorkspace": "Aucun espace n’a encore activé les équipements.",
+    "all": {
+      "subtitle": "Tous les actifs de vos espaces — recherchez pour en trouver un",
+      "search": "Rechercher par nom, immatriculation, numéro de série, fabricant ou modèle",
+      "showRetired": "Afficher les retirés",
+      "name": "Nom",
+      "kind": "Type",
+      "workspace": "Espace",
+      "heldBy": "Confié à",
+      "status": "Statut",
+      "noMatch": "Aucun résultat",
+      "empty": "Aucun actif pour l'instant",
+      "someone": "Quelqu'un"
+    }
   },
   "invoices": {
     "title": "Factures",
