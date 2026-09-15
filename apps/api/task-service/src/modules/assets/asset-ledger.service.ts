@@ -3,6 +3,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, normalizeKindShape, findMoneyCategory } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetExpenseService, EXPENSE_STATUS } from './asset-expense.service';
+import { AssetLogService } from './asset-log.service';
 
 /**
  * Money logged against a record, and the totals over the whole ledger.
@@ -13,6 +14,7 @@ export class AssetLedgerService {
     private readonly prisma: PrismaService,
     private readonly access: AssetAccessService,
     private readonly expenses: AssetExpenseService,
+    private readonly logs: AssetLogService,
   ) {}
 
   /**
@@ -36,7 +38,9 @@ export class AssetLedgerService {
 
     const [entries, sums] = await Promise.all([
       this.prisma.assetMoney.findMany({
-        where: { assetId: data.id },
+        // Money only. A logbook entry with no amount (a dent, a meter reading)
+        // is on the Logbook, not in a ledger as a row reading €0.00.
+        where: { assetId: data.id, amountCents: { gt: 0 } },
         orderBy: [{ occurredAt: 'desc' }, { createdAt: 'desc' }],
         take,
       }),
@@ -159,11 +163,13 @@ export class AssetLedgerService {
     // points at and no retention rule can find.
     const entry = await this.prisma.assetMoney.findFirst({
       where: { id: data.entryId, assetId: data.id, organizationId: data.organizationId },
-      select: { id: true, receiptKey: true },
+      select: { id: true, receiptKey: true, logType: true, status: true },
     });
     if (!entry) throw new NotFoundException('Entry not found');
 
     await this.prisma.assetMoney.delete({ where: { id: entry.id } });
+    // A removed oil change moves the service interval back to the one before it.
+    if (entry.logType && entry.status === EXPENSE_STATUS.RECORDED) await this.logs.recomputeAsset(data.id);
     void this.expenses.forgetReceipt(entry.receiptKey);
 
     return success({ id: data.entryId });

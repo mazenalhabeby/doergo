@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { AssetNotifier } from '../asset-notifier.service';
+import { AssetResponsibleService } from '../asset-responsible.service';
 
 /**
  * Who is told about the organization's things.
@@ -42,6 +43,8 @@ describe('AssetNotifier', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AssetNotifier,
+        // The real one: who can decide is part of what these tests pin.
+        AssetResponsibleService,
         { provide: PrismaService, useValue: prisma },
         { provide: NotificationRoutingService, useValue: routing },
         { provide: 'NOTIFICATION_SERVICE', useValue: notifications },

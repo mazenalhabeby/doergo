@@ -51,6 +51,8 @@ export interface DatedAmount {
   amountCents: number;
   /** IN or OUT, exactly as `AssetMoney.direction` stores it. */
   direction?: string;
+  /** Who logged it. When several people hold it at once, the cost is theirs. */
+  authorId?: string | null;
 }
 
 const ms = (v: Date | string | null | undefined): number =>
@@ -184,15 +186,20 @@ export function totalsByPeriod<T extends DatedAmount>(
       continue;
     }
     /*
-      A cost inside two open custodies counts ONCE, against the earliest.
+      A cost inside two open custodies counts ONCE — against the holder who
+      LOGGED it, else the earliest.
 
       A machine with a whole shift of operators has several open periods at the
       same instant, so charging every one of them would multiply a €400 repair
-      by the size of the shift and quietly inflate the asset's total. The
-      earliest is the arbitrary-but-stable choice; what matters is that the sum
-      of the parts equals the whole, which is what a person checks.
+      by the size of the shift and quietly inflate the asset's total. Charging
+      the earliest regardless was the first answer, and it sent every
+      operator's fuel to whoever had been on the machine longest: the sum was
+      right and every part of it was wrong. The author was there and is one
+      person; the earliest stays only as the stable fallback for an entry typed
+      by somebody who was not holding it (the office, a colleague).
     */
-    const first = hits.sort((a, b) => ms(a.startedAt) - ms(b.startedAt))[0]!;
+    const sorted = hits.sort((a, b) => ms(a.startedAt) - ms(b.startedAt));
+    const first = (entry.authorId && sorted.find((p) => p.userId === entry.authorId)) || sorted[0]!;
     // `hits` came out of `periods`, so the bucket always exists — but a
     // fallback that silently threw the entry away would be a total that is
     // quietly short, so it is asserted rather than defaulted.

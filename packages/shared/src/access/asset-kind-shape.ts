@@ -30,6 +30,19 @@ export const KIND_SHAPE_LIMITS = {
   maxHolders: 50,
   /** Columns per table — enough to be useful, few enough to read on a phone. */
   maxColumns: 8,
+  /**
+   * Log types per kind. A van needs Fuel, Oil change, Service, Damage, Tyres —
+   * a picker on a phone with more than a dozen rows is a list nobody reads.
+   */
+  maxLogTypes: 12,
+  /** Fields per log type: a form somebody fills in at a pump, not a report. */
+  maxLogFields: 10,
+  /** Options on one choice field. */
+  maxChoiceOptions: 20,
+  maxOptionLabel: 40,
+  maxUnit: 12,
+  /** A stable key: what an entry's values are stored under. */
+  maxLogKey: 40,
 } as const;
 
 /** Who may hold one of these — the apartment "resident", generalised. */
@@ -130,6 +143,100 @@ export interface KindMoney {
   categories: KindMoneyCategory[];
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// The logbook: what gets DONE to a thing
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * What one prompt on a log entry is.
+ *
+ *   'text'   a sentence — "front left wing, scratch"
+ *   'number' a quantity with a unit — "42 l", or a METER — "86,412 km"
+ *   'date'   a day that is not the entry's own ("next inspection")
+ *   'choice' one of a fixed list — so "Diesel" and "diesel" cannot split a report
+ *   'photo'  the photograph — the slip, the dent
+ *   'money'  what it cost, and whether that came in or went out
+ */
+export type LogFieldType = 'text' | 'number' | 'date' | 'choice' | 'photo' | 'money';
+
+export const LOG_FIELD_TYPES: readonly LogFieldType[] = ['text', 'number', 'date', 'choice', 'photo', 'money'];
+
+/**
+ * The colours a log type may wear. Names, not hex: the web and the phone each
+ * map a name onto their own palette, so a kind saved today still reads right
+ * after either app is re-themed — and a hand-edited `#ff00ff` cannot reach
+ * every viewer of the space.
+ */
+export const LOG_COLORS = ['slate', 'blue', 'green', 'amber', 'red', 'violet', 'teal', 'orange'] as const;
+export type LogColor = (typeof LOG_COLORS)[number];
+
+export interface KindLogField {
+  /**
+   * What an entry's value is stored under. Made from the label the first time
+   * and then KEPT, so renaming "Mileage" to "Odometer" leaves every entry
+   * already written still reading — the same reason list rows are keyed by
+   * column label, done one better because a log is history nobody can re-type.
+   */
+  key: string;
+  label: string;
+  type: LogFieldType;
+  required: boolean;
+  /** number: "km", "h", "l". */
+  unit?: string;
+  /**
+   * number: a COUNTER the asset carries — mileage, operating hours.
+   *
+   * The asset remembers the latest one, and a next-due rule may count in it.
+   * A quantity (litres, pieces) is not a meter: "latest litres" means nothing.
+   * Keyed across the kind, so an odometer typed at the pump and one typed at
+   * the garage are the same reading.
+   */
+  meter?: boolean;
+  /** choice: the list. */
+  options?: string[];
+  /** money: in (a refund, rent) or out (fuel, a repair). */
+  direction?: MoneyDirection;
+}
+
+/**
+ * When a type of work is due again: after M months and/or N units of a meter,
+ * whichever comes first — "oil every 15,000 km or 12 months".
+ */
+export interface KindLogDue {
+  months: number | null;
+  units: number | null;
+  /** The meter `units` counts in. Must be a meter field of the SAME log type. */
+  meterKey: string | null;
+  /** Say so this many days before the date… */
+  leadDays: number | null;
+  /** …or this many units before the reading. */
+  leadUnits: number | null;
+}
+
+export interface KindLogType {
+  /** Stable, like a field key. `cost` is reserved for the built-in money log. */
+  key: string;
+  label: string;
+  color: LogColor;
+  fields: KindLogField[];
+  /**
+   * An entry from somebody who does not manage assets waits for somebody who
+   * does, and counts for nothing until then — the rule every expense already
+   * lives by. Off for a meter reading: nobody approves an odometer.
+   */
+  needsApproval: boolean;
+  /**
+   * Only whoever HELD it on the entry's date may log it (managers always may).
+   * On for fuel — a receipt for a van you never drove is refused. Off for
+   * damage — a colleague who notices the dent should be able to say so.
+   */
+  holderOnly: boolean;
+  due: KindLogDue | null;
+}
+
+/** The key of the log every kind with money already has: the ledger. */
+export const COST_LOG_KEY = 'cost';
+
 export interface KindShape {
   /** What the record's main identifier is called: "Name / number", "Plate". */
   nameLabel: string;
@@ -150,6 +257,14 @@ export interface KindShape {
   allowExtraFields: boolean;
   money: KindMoney;
   lists: KindList[];
+  /**
+   * What gets done to one of these, and what each entry asks for.
+   *
+   * Does NOT include the built-in Cost log — that one is derived from `money`
+   * by `logTypesForKind`, so the categories a kind already has stay the one
+   * place its money headings are named.
+   */
+  logTypes: KindLogType[];
 }
 
 const str = (v: unknown, max: number): string =>
@@ -305,7 +420,202 @@ export function normalizeKindShape(raw: unknown): KindShape {
     allowExtraFields: bool(src.allowExtraFields, true),
     money: { enabled: bool(moneySrc.enabled), categories },
     lists,
+    logTypes: normalizeLogTypes(src.logTypes),
   };
+}
+
+/**
+ * A stable key from a label: "Öl-Wechsel" → "ol_wechsel".
+ *
+ * Only ever used when a field or type arrives WITHOUT a key — i.e. the first
+ * time it is saved. After that the stored key wins, which is what lets a label
+ * change without orphaning the history written under it.
+ */
+export function logKeyFrom(label: string): string {
+  const slug = label
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, KIND_SHAPE_LIMITS.maxLogKey);
+  return slug || 'field';
+}
+
+const KEY_SHAPE = /^[a-z0-9_]{1,40}$/;
+
+/** A key not already taken: `odometer`, then `odometer_2`. */
+function uniqueKey(wanted: string, taken: Set<string>): string {
+  let key = wanted;
+  for (let n = 2; taken.has(key); n++) key = `${wanted.slice(0, KIND_SHAPE_LIMITS.maxLogKey - 4)}_${n}`;
+  taken.add(key);
+  return key;
+}
+
+/** A whole number within bounds, or null. Never a NaN that compares false to everything. */
+const intIn = (v: unknown, min: number, max: number): number | null => {
+  const n = typeof v === 'string' && v.trim() !== '' ? Number(v) : v;
+  if (typeof n !== 'number' || !Number.isFinite(n)) return null;
+  const r = Math.round(n);
+  return r < min || r > max ? null : r;
+};
+
+/**
+ * Read the log types of a stored or submitted shape.
+ *
+ * Same trust boundary as the rest of the shape. The rules that are not merely
+ * bounds, and why:
+ *   · at most ONE money field and ONE photo field per type — an entry has one
+ *     amount and one slip, stored in the columns the ledger already reads; a
+ *     second of either would be accepted on screen and silently dropped on save.
+ *   · a due rule counting units must name a METER of its own type, so the entry
+ *     that resets the count records where the count started.
+ *   · `cost` is reserved: that log is the ledger, derived from the money headings.
+ */
+export function normalizeLogTypes(raw: unknown): KindLogType[] {
+  const out: KindLogType[] = [];
+  const labelSeen = new Set<string>();
+  const keysTaken = new Set<string>([COST_LOG_KEY]);
+
+  for (const entry of Array.isArray(raw) ? raw : []) {
+    if (out.length >= KIND_SHAPE_LIMITS.maxLogTypes) break;
+    const e = (entry && typeof entry === 'object' ? entry : {}) as Record<string, unknown>;
+    const label = str(e.label, KIND_SHAPE_LIMITS.maxLabel);
+    if (!label) continue;
+    // Two types with one name would be one button that files under two keys.
+    if (labelSeen.has(label.toLowerCase())) continue;
+    labelSeen.add(label.toLowerCase());
+
+    const rawKey = typeof e.key === 'string' && KEY_SHAPE.test(e.key) ? e.key : logKeyFrom(label);
+    const key = uniqueKey(rawKey, keysTaken);
+
+    const fields: KindLogField[] = [];
+    const fieldLabels = new Set<string>();
+    const fieldKeys = new Set<string>();
+    let money = false;
+    let photo = false;
+    for (const f of Array.isArray(e.fields) ? e.fields : []) {
+      if (fields.length >= KIND_SHAPE_LIMITS.maxLogFields) break;
+      const fs = (f && typeof f === 'object' ? f : {}) as Record<string, unknown>;
+      const fLabel = str(fs.label, KIND_SHAPE_LIMITS.maxLabel);
+      if (!fLabel || fieldLabels.has(fLabel.toLowerCase())) continue;
+      const type = (LOG_FIELD_TYPES as readonly unknown[]).includes(fs.type) ? (fs.type as LogFieldType) : 'text';
+      if (type === 'money') {
+        if (money) continue;
+        money = true;
+      }
+      if (type === 'photo') {
+        if (photo) continue;
+        photo = true;
+      }
+      fieldLabels.add(fLabel.toLowerCase());
+      const fKey = uniqueKey(
+        typeof fs.key === 'string' && KEY_SHAPE.test(fs.key) ? fs.key : logKeyFrom(fLabel),
+        fieldKeys,
+      );
+
+      const field: KindLogField = { key: fKey, label: fLabel, type, required: bool(fs.required) };
+      if (type === 'number') {
+        const unit = str(fs.unit, KIND_SHAPE_LIMITS.maxUnit);
+        if (unit) field.unit = unit;
+        if (bool(fs.meter)) field.meter = true;
+      }
+      if (type === 'choice') {
+        const seen = new Set<string>();
+        const options: string[] = [];
+        for (const o of Array.isArray(fs.options) ? fs.options : []) {
+          if (options.length >= KIND_SHAPE_LIMITS.maxChoiceOptions) break;
+          const opt = str(o, KIND_SHAPE_LIMITS.maxOptionLabel);
+          if (!opt || seen.has(opt.toLowerCase())) continue;
+          seen.add(opt.toLowerCase());
+          options.push(opt);
+        }
+        // A choice with nothing to choose is a text box that refuses every answer.
+        if (options.length === 0) {
+          field.type = 'text';
+        } else {
+          field.options = options;
+        }
+      }
+      if (type === 'money') field.direction = fs.direction === 'in' ? 'in' : 'out';
+      fields.push(field);
+    }
+
+    const color = (LOG_COLORS as readonly unknown[]).includes(e.color) ? (e.color as LogColor) : 'slate';
+
+    let due: KindLogDue | null = null;
+    const d = (e.due && typeof e.due === 'object' ? e.due : null) as Record<string, unknown> | null;
+    if (d) {
+      const months = intIn(d.months, 1, 120);
+      const meterKey = typeof d.meterKey === 'string' ? d.meterKey : null;
+      const meterOk = !!meterKey && fields.some((f) => f.key === meterKey && f.type === 'number' && f.meter);
+      const units = meterOk ? intIn(d.units, 1, 10_000_000) : null;
+      if (months !== null || units !== null) {
+        const leadUnits = units !== null ? intIn(d.leadUnits, 0, units) : null;
+        due = {
+          months,
+          units,
+          meterKey: units !== null ? meterKey : null,
+          leadDays: months !== null ? intIn(d.leadDays, 0, 365) : null,
+          leadUnits,
+        };
+      }
+    }
+
+    out.push({
+      key,
+      label,
+      color,
+      fields,
+      needsApproval: bool(e.needsApproval),
+      holderOnly: bool(e.holderOnly),
+      due,
+    });
+  }
+  return out;
+}
+
+/**
+ * The built-in log every kind that tracks money has: Cost.
+ *
+ * It is the ledger that already exists — a heading from the kind's own money
+ * categories, an amount, the slip — offered in the same picker as Fuel and
+ * Service so a member meets one way of recording things, not two. Derived
+ * rather than stored, so the categories stay the one place the headings live.
+ *
+ * `label` is English and a placeholder: screens translate the `cost` key.
+ */
+export function costLogType(shape: KindShape): KindLogType | null {
+  if (!shape.money.enabled || shape.money.categories.length === 0) return null;
+  return {
+    key: COST_LOG_KEY,
+    label: 'Cost',
+    color: 'slate',
+    fields: [
+      { key: 'category', label: 'Category', type: 'choice', required: true, options: shape.money.categories.map((c) => c.label) },
+      { key: 'amount', label: 'Amount', type: 'money', required: true, direction: 'out' },
+      { key: 'receipt', label: 'Receipt', type: 'photo', required: false },
+    ],
+    // Exactly the expense rules: a member's cost waits; the office's counts.
+    needsApproval: true,
+    holderOnly: true,
+    due: null,
+  };
+}
+
+/** Everything that may be logged against a record of this kind, Cost first. */
+export function logTypesForKind(shape: KindShape): KindLogType[] {
+  const cost = costLogType(shape);
+  return cost ? [cost, ...shape.logTypes] : shape.logTypes;
+}
+
+/**
+ * A log type by key. `null` and `cost` both mean the ledger — an entry written
+ * before the logbook existed carries no key, and it is a cost.
+ */
+export function findLogType(shape: KindShape, key: string | null | undefined): KindLogType | null {
+  if (!key || key === COST_LOG_KEY) return costLogType(shape);
+  return shape.logTypes.find((t) => t.key === key) ?? null;
 }
 
 /** The label to show for the name box — the kind's own word, else a plain one. */

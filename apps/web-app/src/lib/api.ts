@@ -1598,6 +1598,77 @@ export interface AssetMoneyEntry {
   reviewNote?: string | null;
   /** Whether a slip is attached — never the key, and never a URL. */
   hasReceipt?: boolean;
+  /**
+   * The logbook type this row is ("fuel", "damage"). `null`/absent — and
+   * `cost` from the logbook routes — is the ledger itself. A logbook entry with
+   * no money has `amountCents: 0` and says what it is through this.
+   */
+  logType?: string | null;
+}
+
+/** One logbook entry, as the logbook routes return it. */
+export interface AssetLogEntry extends AssetMoneyEntry {
+  assetId: string;
+  logType: string;
+  /** Answers keyed by FIELD key. Money and photo live in amountCents / hasReceipt. */
+  values: Record<string, string | number> | null;
+  reviewedAt?: string | null;
+  author?: CustodyHolderRef | null;
+  createdAt: string;
+}
+
+export interface AssetLogPage {
+  entries: AssetLogEntry[];
+  nextCursor: string | null;
+}
+
+/** Where one type of work stands, as the server computed it NOW. */
+export interface AssetLogDue {
+  key: string;
+  label: string;
+  color: string;
+  lastEntryId: string;
+  lastDoneAt: string;
+  lastReading: number | null;
+  meterKey: string | null;
+  dueAt: string | null;
+  dueReading: number | null;
+  remindAt: string | null;
+  remindReading: number | null;
+  unit: string | null;
+  reading: number | null;
+  stage: 'ok' | 'soon' | 'overdue';
+  progress: number;
+  daysLeft: number | null;
+  unitsLeft: number | null;
+}
+
+export interface AssetLogCredit {
+  inCents: number;
+  outCents: number;
+  netCents: number;
+  entries: number;
+}
+
+export interface AssetLogSummary {
+  period: { from: string; to: string };
+  readings: Record<string, { value: number; at: string; entryId: string }>;
+  due: AssetLogDue[];
+  waitingCount: number;
+  byAuthor: Array<AssetLogCredit & { authorId: string | null; author: CustodyHolderRef | null }>;
+  byType: Array<AssetLogCredit & { logType: string; label: string; color: string }>;
+}
+
+export interface CreateAssetLogInput {
+  /** Made here, so a double click files one entry. */
+  entryId?: string;
+  logType: string;
+  values: Record<string, string | number>;
+  note?: string;
+  occurredAt?: string;
+  receiptKey?: string;
+  receiptName?: string;
+  receiptMime?: string;
 }
 
 export interface AssetMoneySummary {
@@ -2147,6 +2218,48 @@ export const assetsApi = {
 
   removeMoney: async (assetId: string, entryId: string) => {
     const response = await api.delete<{ success: boolean }>(`/assets/${assetId}/money/${entryId}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
+
+  // ============================================
+  // LOGBOOK — what gets done to a thing, and when it is due again
+  // ============================================
+
+  /** One page of an asset's log, newest first. `cursor` is the last id of the previous page. */
+  getLog: async (
+    assetId: string,
+    params: { logType?: string; authorId?: string; status?: AssetExpenseStatus; cursor?: string; limit?: number } = {},
+  ) => {
+    const response = await api.get<{ success: boolean; data: AssetLogPage }>(buildUrlWithQuery(`/assets/${assetId}/log`, params));
+    if (response.error) throw new Error(response.error);
+    return response.data?.data ?? { entries: [], nextCursor: null };
+  },
+
+  /** Readings, next due, and who spent what in a period (this month by default). */
+  getLogSummary: async (assetId: string, params: { from?: string; to?: string } = {}) => {
+    const response = await api.get<{ success: boolean; data: AssetLogSummary }>(buildUrlWithQuery(`/assets/${assetId}/log/summary`, params));
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  presignLogPhoto: async (assetId: string, input: { logType: string; fileName: string; mimeType: string; occurredAt?: string }) => {
+    const response = await api.post<{ success: boolean; data: { uploadUrl: string; fileKey: string; maxFileSize: number } }>(
+      `/assets/${assetId}/log/presign`,
+      input,
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  createLogEntry: async (assetId: string, input: CreateAssetLogInput) => {
+    const response = await api.post<{ success: boolean; data: AssetLogEntry }>(`/assets/${assetId}/log`, input);
+    if (response.error) throw new Error(response.error);
+    return response.data?.data;
+  },
+
+  removeLogEntry: async (assetId: string, entryId: string) => {
+    const response = await api.delete<{ success: boolean }>(`/assets/${assetId}/log/${entryId}`);
     if (response.error) throw new Error(response.error);
     return response.data;
   },

@@ -72,6 +72,30 @@ const ROUTES: Partial<Record<SyncOperationName, UploadRoute>> = {
   },
 
   /*
+    A logbook entry, maybe with its photo — the expense row's shape, because it
+    is the same ledger on the server. The presign asks the LOG route and carries
+    the type and the date: together they decide who may file it (fuel is the
+    driver's that day; a dent is anybody's who can see the van), and the expense
+    route would refuse a colleague reporting damage.
+  */
+  'log.create': {
+    presign: (p) => (p.assetId ? `/assets/${enc(p.assetId)}/log/presign` : null),
+    presignBody: (file, fileName, b) => ({
+      fileName,
+      mimeType: file.mime,
+      ...(str(b.logType) ? { logType: str(b.logType) } : {}),
+      ...(str(b.occurredAt) ? { occurredAt: str(b.occurredAt) } : {}),
+    }),
+    pendingFileIdOf: (b) => (b.receiptPending && !b.receiptKey ? str(b.entryId) : undefined),
+    fileNameOf: (b) => str(b.receiptName) ?? 'photo.jpg',
+    withKey: (b, key, file) => {
+      const { receiptPending: _pending, ...rest } = b;
+      return { ...rest, receiptKey: key, receiptMime: file.mime, receiptName: str(b.receiptName) ?? 'photo.jpg' };
+    },
+    heldFileIdsOf: (b) => ids(b.entryId),
+  },
+
+  /*
     A photo on a shift issue: one attachment in the message's list, sent as a
     message of its own. `photoPending`/`photoName`/`photoMime` are the phone's markers and
     are replaced by the attachment when it uploads.

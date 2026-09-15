@@ -178,4 +178,33 @@ export class AssetsService extends BaseGatewayService {
   }
 
 
+
+  // Logbook
+  async logPresign(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_log_presign' }, data);
+  }
+
+  async logCreate(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_log_create' }, data);
+  }
+
+  async logList(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_log_list' }, data);
+  }
+
+  async logSummary(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_log_summary' }, data);
+  }
+
+  async logMine(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_log_mine' }, data);
+  }
+
+  async logDueMine(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_log_due_mine' }, data);
+  }
+
+  async logRemove(data: Record<string, any>) {
+    return this.send({ cmd: 'asset_log_remove' }, data);
+  }
 }

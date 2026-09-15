@@ -14,6 +14,9 @@ import { AssetExpenseService } from './asset-expense.service';
 import { AssetContractService } from './asset-contract.service';
 import { AssetProposalService } from './asset-proposal.service';
 import { AssetNotifier } from './asset-notifier.service';
+import { AssetResponsibleService } from './asset-responsible.service';
+import { AssetLogService } from './asset-log.service';
+import { AssetLogReminderService } from './asset-log-reminder.service';
 import { AssetsController } from './assets.controller';
 import { AssetsProcessor } from './assets.processor';
 
@@ -42,6 +45,11 @@ const SERVICES = [
   AssetProposalService,
   // Who is told about any of the above — expenses, decisions, handovers.
   AssetNotifier,
+  // Who can act on the equipment — for proposals and due reminders alike.
+  AssetResponsibleService,
+  // What gets done to a thing, and when it is due again.
+  AssetLogService,
+  AssetLogReminderService,
 ];
 
 @Module({

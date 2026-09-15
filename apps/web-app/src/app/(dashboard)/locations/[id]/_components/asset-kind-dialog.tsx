@@ -11,6 +11,7 @@ import {
   type KindShape, type MoneyDirection, type KindColumn, type KindColumnType,
 } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
+import { LogTypesEditor } from "./log-types-editor"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -122,7 +123,7 @@ export function AssetKindDialog({
                 {t("assetKinds.template", "Start from a ready-made type")}
               </Label>
               <p className="mb-1.5 text-[11px] text-muted-foreground/70">
-                {t("assetKinds.templateHint", "Fills in the fields, the money and the tables. Change anything afterwards.")}
+                {t("assetKinds.templateHint", "Fills in the fields, the money, the tables and the log types. Change anything afterwards.")}
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {KIND_TEMPLATES.map((tpl) => (
@@ -493,6 +494,15 @@ export function AssetKindDialog({
               </div>
             ))}
           </div>
+
+          {/* Log types. What gets done to one of these, and when it comes due
+              again. The body lives in its own file: a type carries fields, flags
+              and a due rule, which is a form of its own. */}
+          <LogTypesEditor
+            value={shape.logTypes}
+            onChange={(next) => set("logTypes", next)}
+            moneyEnabled={shape.money.enabled}
+          />
 
           {/* Money. The kind names the headings, so an Apartments kind logs Rent
               and Repairs while a Vehicles kind logs Fuel and Service — one

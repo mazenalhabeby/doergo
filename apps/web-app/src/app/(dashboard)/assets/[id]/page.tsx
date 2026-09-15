@@ -17,7 +17,7 @@ import {
 } from "@/lib/api"
 import {
   normalizeKindShape, detailRowsForKind, kindHolderLabel, formatCents,
-  attribute, warrantyState, type CustodyPeriod, type KindShape,
+  attribute, warrantyState, logTypesForKind, type CustodyPeriod, type KindShape,
 } from "@hbcfield/shared/client"
 import { AssetRecordDialog } from "@/components/assets/asset-record-dialog"
 import { AssetListTable } from "@/components/assets/asset-list-table"
@@ -28,6 +28,7 @@ import { AssetCustodyPanel } from "@/components/assets/asset-custody-panel"
 import { AssetStatusChip } from "@/components/assets/asset-status"
 import { AssetServiceReports } from "@/components/assets/asset-service-reports"
 import { ExpenseRefuseDialog } from "@/components/assets/expense-refuse-dialog"
+import { LogbookPanel } from "./_components/logbook-panel"
 import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -401,6 +402,10 @@ export default function AssetRecordPage() {
             {([
               ["activity", t("assetRecords.activity", "Activity"), (actQ.data ?? []).length],
               ["history", t("assetRecords.jobs", "Jobs"), openCount || null],
+              // The logbook: whenever the kind logs anything at all — Cost counts.
+              ...(logTypesForKind(shape).length > 0
+                ? [["logbook", t("assetLog.tab", "Logbook"), null] as const]
+                : []),
               ...(shape.money.enabled
                 ? [["money", t("assetMoney.title", "Money"), moneyQ.data?.totals?.waitingCount || moneyQ.data?.entries.length || null] as const]
                 : []),
@@ -439,6 +444,8 @@ export default function AssetRecordPage() {
                 ? <AssetFaults assetId={id} assetName={asset.name} spaceId={kind?.spaceId} list={list} shape={shape} />
                 : <AssetListTable assetId={id} list={list} />
             })()
+          ) : tab === "logbook" ? (
+            <LogbookPanel assetId={id} shape={shape} canManage={canManageAssets} />
           ) : tab === "custody" ? (
             <AssetCustodyPanel assetId={id} shape={shape} canManage={canManageAssets} />
           ) : tab === "money" ? (
@@ -454,6 +461,9 @@ export default function AssetRecordPage() {
                 qc.invalidateQueries({ queryKey: ["asset-money", id] })
                 qc.invalidateQueries({ queryKey: ["asset-expenses-pending"] })
                 qc.invalidateQueries({ queryKey: ["asset-custody", id] })
+                // The same rows feed the logbook's totals.
+                qc.invalidateQueries({ queryKey: ["asset-log", id] })
+                qc.invalidateQueries({ queryKey: ["asset-log-summary", id] })
               }}
             />
           ) : tab === "activity" ? (

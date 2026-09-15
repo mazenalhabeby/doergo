@@ -3,11 +3,11 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Role, activeAssignmentWhere, type HandoverPlan } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
+import { AssetResponsibleService } from './asset-responsible.service';
 
 /** Holding any of these, org-wide, is what lets somebody open the register. */
 const SEES_ASSETS = ['canViewAllTasks', 'canManageAssets', 'canManageUsers'] as const;
 /** Holding any of these, org-wide, is what lets somebody DECIDE on the register. */
-const ACTS_ON_ASSETS = ['canManageAssets', 'canManageUsers'] as const;
 
 function grants(permissions: unknown, keys: readonly string[]): boolean {
   const p = (permissions ?? {}) as Record<string, unknown>;
@@ -41,6 +41,7 @@ export class AssetNotifier {
     private readonly prisma: PrismaService,
     private readonly routing: NotificationRoutingService,
     @Inject('NOTIFICATION_SERVICE') private readonly notifications: ClientProxy,
+    private readonly responsible: AssetResponsibleService,
   ) {}
 
   // ── Expenses ───────────────────────────────────────────────────────────────
@@ -242,29 +243,8 @@ export class AssetNotifier {
    * must never become nobody.
    */
   async approvers(organizationId: string, exceptUserId: string, spaceId?: string | null): Promise<string[]> {
-    const roles = await this.prisma.accessRole.findMany({
-      where: { organizationId, isActive: true, scope: { not: 'SPACE' as never } },
-      select: { id: true, permissions: true },
-    });
-    const granting = roles.filter((r) => grants(r.permissions, ACTS_ON_ASSETS)).map((r) => r.id);
-
-    const people = await this.prisma.user.findMany({
-      where: {
-        organizationId,
-        isActive: true,
-        isExternal: false,
-        id: { not: exceptUserId },
-        // An admin is one by being one, exactly as PermissionsGuard decides it.
-        OR: [
-          { role: Role.ADMIN as never },
-          { canManageUsers: true },
-          ...(granting.length ? [{ memberRoleId: { in: granting } }] : []),
-        ],
-      },
-      select: { id: true },
-      take: 25,
-    });
-    const ids = people.map((p) => p.id);
+    // One definition of "who can decide", shared with proposals and the logbook's reminders.
+    const ids = await this.responsible.orgManagers(organizationId, exceptUserId);
     if (!spaceId || ids.length <= 1) return ids;
 
     const { userId: _any, ...window } = activeAssignmentWhere('');

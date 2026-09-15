@@ -13,7 +13,7 @@
  * question about who owns the change.
  */
 
-import type { KindShape } from './asset-kind-shape';
+import type { KindShape, KindLogType, KindLogField, KindLogDue, LogColor } from './asset-kind-shape';
 
 export interface KindTemplate {
   /** Stable id, so a template can be renamed without breaking anything. */
@@ -49,6 +49,37 @@ const lookup = (labels: readonly string[], linkLabel: string, linkTo: string) =>
     return { label, type: 'text' as const };
   });
 
+/** Log fields, spelled the way a template reads best. Keys are given, so they never drift. */
+const field = {
+  text: (key: string, label: string, required = false): KindLogField => ({ key, label, type: 'text', required }),
+  number: (key: string, label: string, unit?: string, required = false): KindLogField =>
+    ({ key, label, type: 'number', required, ...(unit ? { unit } : {}) }),
+  /** A counter the asset keeps — what a next-due rule counts in. */
+  meter: (key: string, label: string, unit: string, required = false): KindLogField =>
+    ({ key, label, type: 'number', required, unit, meter: true }),
+  choice: (key: string, label: string, options: string[], required = false): KindLogField =>
+    ({ key, label, type: 'choice', required, options }),
+  money: (key: string, label: string, required = false): KindLogField =>
+    ({ key, label, type: 'money', required, direction: 'out' }),
+  photo: (key: string, label: string): KindLogField => ({ key, label, type: 'photo', required: false }),
+};
+
+const logType = (
+  key: string,
+  label: string,
+  color: LogColor,
+  fields: KindLogField[],
+  opts: { needsApproval?: boolean; holderOnly?: boolean; due?: KindLogDue } = {},
+): KindLogType => ({
+  key,
+  label,
+  color,
+  fields,
+  needsApproval: opts.needsApproval ?? false,
+  holderOnly: opts.holderOnly ?? false,
+  due: opts.due ?? null,
+});
+
 export const KIND_TEMPLATES: KindTemplate[] = [
   {
     id: 'machine',
@@ -76,6 +107,23 @@ export const KIND_TEMPLATES: KindTemplate[] = [
           columns: lookup(['Code', 'Meaning', 'Cause', 'Fix', 'Part', 'Safety'], 'Part', 'Parts'),
         },
       ],
+      logTypes: [
+        logType('service', 'Service', 'blue', [
+          field.meter('hours', 'Operating hours', 'h', true),
+          field.text('work', 'Work done'),
+          field.money('cost', 'Cost'),
+          field.photo('photo', 'Photo'),
+        ], { needsApproval: true, due: { months: 12, units: 500, meterKey: 'hours', leadDays: 21, leadUnits: 50 } }),
+        logType('repair', 'Repair', 'red', [
+          field.text('fault', 'Fault', true),
+          field.text('work', 'Work done'),
+          field.meter('hours', 'Operating hours', 'h'),
+          field.money('cost', 'Cost'),
+          field.photo('photo', 'Photo'),
+        ], { needsApproval: true }),
+        // A reading and nothing else: the counter a service rule counts in.
+        logType('hours', 'Operating hours', 'teal', [field.meter('hours', 'Operating hours', 'h', true)], { holderOnly: true }),
+      ],
     },
   },
   {
@@ -99,6 +147,21 @@ export const KIND_TEMPLATES: KindTemplate[] = [
       },
       lists: [
         { label: 'Keys', display: 'table', shared: false, columns: cols(['Key', 'Held by']) },
+      ],
+      logTypes: [
+        logType('meter', 'Meter reading', 'teal', [
+          field.choice('meter', 'Meter', ['Electricity', 'Gas', 'Water'], true),
+          field.number('reading', 'Reading', undefined, true),
+          field.photo('photo', 'Photo'),
+        ]),
+        logType('damage', 'Damage', 'red', [
+          field.text('what', 'What happened', true),
+          field.photo('photo', 'Photo'),
+        ]),
+        logType('inspection', 'Inspection', 'blue', [
+          field.choice('result', 'Result', ['Fine', 'Needs work'], true),
+          field.text('notes', 'Notes'),
+        ], { due: { months: 12, units: null, meterKey: null, leadDays: 30, leadUnits: null } }),
       ],
     },
   },
@@ -124,6 +187,31 @@ export const KIND_TEMPLATES: KindTemplate[] = [
       lists: [
         { label: 'Parts', display: 'table', shared: true, columns: catalogue(PARTS_COLUMNS) },
       ],
+      logTypes: [
+        logType('fuel', 'Fuel', 'amber', [
+          field.meter('odometer', 'Odometer', 'km'),
+          field.number('litres', 'Litres', 'l'),
+          field.money('amount', 'Amount', true),
+          field.photo('receipt', 'Receipt'),
+        ], { needsApproval: true, holderOnly: true }),
+        logType('oil_change', 'Oil change', 'violet', [
+          field.meter('odometer', 'Odometer', 'km', true),
+          field.money('amount', 'Amount'),
+          field.photo('receipt', 'Receipt'),
+        ], { needsApproval: true, due: { months: 12, units: 15000, meterKey: 'odometer', leadDays: 30, leadUnits: 1000 } }),
+        logType('service', 'Service', 'blue', [
+          field.meter('odometer', 'Odometer', 'km', true),
+          field.text('work', 'Work done'),
+          field.money('amount', 'Amount'),
+          field.photo('receipt', 'Invoice'),
+        ], { needsApproval: true, due: { months: 24, units: 30000, meterKey: 'odometer', leadDays: 30, leadUnits: 2000 } }),
+        // Anyone who sees the dent may say so — not only whoever drove it that day.
+        logType('damage', 'Damage', 'red', [
+          field.text('what', 'What happened', true),
+          field.meter('odometer', 'Odometer', 'km'),
+          field.photo('photo', 'Photo'),
+        ]),
+      ],
     },
   },
   {
@@ -139,6 +227,16 @@ export const KIND_TEMPLATES: KindTemplate[] = [
       allowExtraFields: true,
       money: { enabled: true, categories: [{ label: 'Repairs', direction: 'out' }] },
       lists: [],
+      logTypes: [
+        logType('inspection', 'Safety check', 'green', [
+          field.choice('result', 'Result', ['Passed', 'Failed'], true),
+          field.text('notes', 'Notes'),
+        ], { due: { months: 12, units: null, meterKey: null, leadDays: 30, leadUnits: null } }),
+        logType('damage', 'Damage', 'red', [
+          field.text('what', 'What happened', true),
+          field.photo('photo', 'Photo'),
+        ]),
+      ],
     },
   },
   {
@@ -161,6 +259,18 @@ export const KIND_TEMPLATES: KindTemplate[] = [
       },
       lists: [
         { label: 'Fault codes', display: 'cards', shared: true, columns: catalogue(['Code', 'Meaning', 'Cause', 'Fix', 'Safety']) },
+      ],
+      logTypes: [
+        logType('inspection', 'Inspection', 'blue', [
+          field.text('system', 'System', true),
+          field.choice('result', 'Result', ['Fine', 'Needs work'], true),
+          field.photo('photo', 'Photo'),
+        ], { due: { months: 12, units: null, meterKey: null, leadDays: 30, leadUnits: null } }),
+        logType('repair', 'Repair', 'red', [
+          field.text('work', 'Work done', true),
+          field.money('amount', 'Amount'),
+          field.photo('photo', 'Invoice'),
+        ], { needsApproval: true }),
       ],
     },
   },

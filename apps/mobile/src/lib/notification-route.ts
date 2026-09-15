@@ -107,6 +107,8 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
   'asset.expense_decided': () => to('/(app)/my-assets'),
   // Something was handed to me, or taken back: what I hold now.
   'asset.handed_over': () => to('/(app)/my-assets'),
+  // Something on a thing I hold (or look after) is due — its "due soon" line is on What I have.
+  asset_log_due: () => to('/(app)/my-assets'),
 
   // Organization
   join_request_submitted: () => to('/(app)/manage/join-requests'),

@@ -8,6 +8,7 @@ import { AssetAccessService } from '../asset-access.service';
 import { AssetContractService } from '../asset-contract.service';
 import { AssetProposalService } from '../asset-proposal.service';
 import { AssetNotifier } from '../asset-notifier.service';
+import { AssetResponsibleService } from '../asset-responsible.service';
 
 /**
  * A member sends a page in; somebody responsible decides.
@@ -54,6 +55,7 @@ describe('AssetProposalService', () => {
         AssetProposalService,
         // The real one: the fallback it owns is what these tests pin.
         AssetNotifier,
+        AssetResponsibleService,
         { provide: PrismaService, useValue: prisma },
         { provide: ConfigService, useValue: { get: (_k: string, d?: string) => d ?? '' } },
         { provide: AssetAccessService, useValue: { assertMay: jest.fn() } },

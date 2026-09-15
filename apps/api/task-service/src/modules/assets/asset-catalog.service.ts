@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Optional,
   NotFoundException,
   ForbiddenException,
   BadRequestException,
@@ -9,6 +10,20 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, normalizeKindShape } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
+import { AssetLogService } from './asset-log.service';
+
+/** Did the parts of a kind that decide readings and due dates change? Labels and colours do not. */
+function logRulesChanged(before: unknown, after: unknown): boolean {
+  const rules = (raw: unknown) =>
+    JSON.stringify(
+      normalizeKindShape(raw).logTypes.map((t) => ({
+        key: t.key,
+        due: t.due,
+        meters: t.fields.filter((f) => f.type === 'number' && f.meter).map((f) => f.key),
+      })),
+    );
+  return rules(before) !== rules(after);
+}
 
 /**
  * Kinds and their types — the shapes records are made from.
@@ -22,6 +37,8 @@ export class AssetCatalogService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly access: AssetAccessService,
+    // Optional so a test of the catalogue alone need not build the logbook.
+    @Optional() private readonly logs?: AssetLogService,
   ) {}
 
   /**
@@ -192,6 +209,18 @@ export class AssetCatalogService {
         _count: { select: { types: true, assets: true } },
       },
     });
+
+    /*
+      A due rule added, changed or removed on the kind changes where every one
+      of its records stands — and the stored state would otherwise wait for
+      each record's next entry to find out. "Oil every 15,000 km", added to a
+      fleet with a year of history, should show on every van the same minute.
+      Only when the rules actually moved, and in the background: a kind with
+      four hundred flats must not hold the save.
+    */
+    if (data.config !== undefined && this.logs && logRulesChanged(category.config, updated.config)) {
+      void this.logs.recomputeKind(updated.id);
+    }
 
     return success(updated);
   }

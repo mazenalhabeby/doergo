@@ -51,6 +51,7 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
   'src/components/supply-document-sheet.tsx': { calls: { 'documentsApi.submitOwn': 1 }, why: FALLBACK },
   'src/components/shift-issue-sheet.tsx': { calls: { 'shiftIssuesApi.create': 1, 'shiftIssuesApi.message': 2 }, why: FALLBACK },
   'app/(app)/asset-expense.tsx': { calls: { 'assetsApi.submitExpense': 1 }, why: FALLBACK },
+  'app/(app)/asset-log.tsx': { calls: { 'assetsApi.createLog': 1 }, why: FALLBACK },
   'app/(app)/send-document.tsx': { calls: { 'assetProposalsApi.raise': 1 }, why: FALLBACK },
   'app/(app)/(tabs)/time-off.tsx': { calls: { 'timeOffApi.cancel': 1 }, why: FALLBACK },
   'app/(app)/(tabs)/profile.tsx': { calls: { 'userApi.setPresence': 1 }, why: FALLBACK },

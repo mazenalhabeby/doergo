@@ -10,6 +10,7 @@ import { AssetCustodyService } from './asset-custody.service';
 import { AssetExpenseService } from './asset-expense.service';
 import { AssetContractService } from './asset-contract.service';
 import { AssetProposalService } from './asset-proposal.service';
+import { AssetLogService } from './asset-log.service';
 
 @Controller()
 export class AssetsController {
@@ -24,6 +25,7 @@ export class AssetsController {
     private readonly expenses: AssetExpenseService,
     private readonly contracts: AssetContractService,
     private readonly proposals: AssetProposalService,
+    private readonly logs: AssetLogService,
   ) {}
 
   // ============================================
@@ -175,9 +177,14 @@ export class AssetsController {
     return this.expenses.pending(data);
   }
 
+  /*
+    Through the logbook, which calls the same decision and then recomputes the
+    asset: an accepted oil change resets a service interval, and a decision that
+    skipped that would leave the due date a job behind.
+  */
   @MessagePattern({ cmd: 'asset_expense_review' })
   async expenseReview(@Payload() data: any) {
-    return this.expenses.review(data);
+    return this.logs.review(data);
   }
 
   @MessagePattern({ cmd: 'asset_expense_receipt_url' })
@@ -251,6 +258,45 @@ export class AssetsController {
   @MessagePattern({ cmd: 'asset_proposal_document_url' })
   async proposalDocumentUrl(@Payload() data: any) {
     return this.proposals.documentUrl(data);
+  }
+
+  // ============================================
+  // LOGBOOK — what gets done to a thing, and when it is due again
+  // ============================================
+
+  @MessagePattern({ cmd: 'asset_log_presign' })
+  async logPresign(@Payload() data: any) {
+    return this.logs.presign(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_log_create' })
+  async logCreate(@Payload() data: any) {
+    return this.logs.create(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_log_list' })
+  async logList(@Payload() data: any) {
+    return this.logs.list(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_log_summary' })
+  async logSummary(@Payload() data: any) {
+    return this.logs.summary(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_log_mine' })
+  async logMine(@Payload() data: any) {
+    return this.logs.mine(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_log_due_mine' })
+  async logDueMine(@Payload() data: any) {
+    return this.logs.dueMine(data);
+  }
+
+  @MessagePattern({ cmd: 'asset_log_remove' })
+  async logRemove(@Payload() data: any) {
+    return this.logs.remove(data);
   }
 
   @MessagePattern({ cmd: 'list_asset_rows' })

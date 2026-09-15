@@ -372,8 +372,9 @@ export class AssetCustodyService {
       // Only what counts. A submitted-but-unreviewed receipt must not move a
       // driver's total before anybody has accepted it.
       this.prisma.assetMoney.findMany({
-        where: { assetId: data.id, status: 'RECORDED' },
-        select: { occurredAt: true, amountCents: true, direction: true },
+        // The author rides along so a shared machine's cost goes to the holder who logged it.
+        where: { assetId: data.id, status: 'RECORDED', amountCents: { gt: 0 } },
+        select: { occurredAt: true, amountCents: true, direction: true, authorId: true },
       }),
     ]);
 
@@ -480,8 +481,8 @@ export class AssetCustodyService {
     */
     const assetIds = [...new Set(periods.map((p) => p.assetId))];
     const entries = await this.prisma.assetMoney.findMany({
-      where: { assetId: { in: assetIds }, organizationId, status: 'RECORDED' },
-      select: { assetId: true, occurredAt: true, amountCents: true, direction: true },
+      where: { assetId: { in: assetIds }, organizationId, status: 'RECORDED', amountCents: { gt: 0 } },
+      select: { assetId: true, occurredAt: true, amountCents: true, direction: true, authorId: true },
     });
 
     const byAsset = new Map<string, typeof entries>();
