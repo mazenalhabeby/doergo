@@ -1820,7 +1820,11 @@
     "scanCard": "Visitenkarte scannen",
     "scanCardSub": "Füllt das Formular für Sie aus",
     "enterDetails": "Daten eingeben",
-    "enterDetailsSub": "Selbst eintippen"
+    "enterDetailsSub": "Selbst eintippen",
+    "locale": "Sprache für E-Mails",
+    "localeSame": "Wie die Organisation",
+    "localeHint": "Einladungen und Signaturlinks an diesen Kunden werden in dieser Sprache verfasst. Hat der Kunde in der App eine Sprache gewählt, gilt diese. Bei „Wie die Organisation“ richtet sich die Sprache nach dem Land Ihrer Organisation, sonst Englisch.",
+    "localeFailed": "Die Sprache konnte nicht geändert werden"
   },
   "issues": {
     "myIssues": "Meine Meldungen",

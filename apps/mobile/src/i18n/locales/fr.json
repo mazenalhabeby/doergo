@@ -1820,7 +1820,11 @@
     "scanCard": "Scanner une carte de visite",
     "scanCardSub": "Remplit le formulaire pour vous",
     "enterDetails": "Saisir les détails",
-    "enterDetailsSub": "Le taper"
+    "enterDetailsSub": "Le taper",
+    "locale": "Langue des e-mails",
+    "localeSame": "Comme l’organisation",
+    "localeHint": "Les invitations et les liens de signature adressés à ce client sont rédigés dans cette langue. Si le client a choisi une langue dans l’application, c’est celle-ci qui s’applique. Avec « Comme l’organisation », les e-mails suivent le pays de votre organisation, sinon l’anglais.",
+    "localeFailed": "Impossible de changer la langue"
   },
   "issues": {
     "myIssues": "Mes signalements",

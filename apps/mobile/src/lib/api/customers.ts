@@ -10,6 +10,13 @@ export interface MobileCustomer {
   status?: string;
   isPortalResident?: boolean;
   spaceId?: string | null;
+  /** Language for emails (en|de|es|fr|it); null = same as the organization. */
+  locale?: string | null;
+  /**
+   * The caller's CRM abilities on THIS record, returned by the single-client
+   * read. The screen hides what may not be done; the server refuses it anyway.
+   */
+  crmCaps?: { view?: 'none' | 'own' | 'all'; work?: boolean; editInfo?: boolean; manage?: boolean } | null;
   createdAt?: string;
 }
 
@@ -47,6 +54,8 @@ export const customersApi = {
     name: string; type?: 'PERSON' | 'COMPANY';
     contactName?: string; email?: string; phone?: string;
     address?: string; notes?: string; spaceId?: string | null;
+    /** null = same as the organization. */
+    locale?: string | null;
   }): Promise<MobileCustomer> =>
     fetchWithAuth<MobileCustomer>('/customers', { method: 'POST', body: JSON.stringify(input) }),
 

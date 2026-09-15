@@ -1856,7 +1856,11 @@
     "scanCard": "Scan a business card",
     "scanCardSub": "Fills the form for you",
     "enterDetails": "Enter details",
-    "enterDetailsSub": "Type it in"
+    "enterDetailsSub": "Type it in",
+    "locale": "Language for emails",
+    "localeSame": "Same as the organization",
+    "localeHint": "Invitations and signing links to this client are written in this language. If the client picked a language in the app, that one is used. With “Same as the organization”, emails follow your organization’s country, otherwise English.",
+    "localeFailed": "Could not change the language"
   },
   "issues": {
     "myIssues": "My issues",

@@ -13,6 +13,7 @@ import { BlurSheet } from '../../src/components/blur-sheet';
 import { canScanCards } from '../../src/lib/card-scan';
 import { useToast } from '../../src/contexts/toast-context';
 import { useQueuedCreate } from '../../src/offline/actions/queued-create';
+import { CLIENT_LOCALE_OPTIONS, newClientInput } from '../../src/lib/client-locale';
 import { customerStageLabel } from '@hbcfield/shared/client';
 import { useTheme } from '../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
@@ -58,6 +59,8 @@ export default function CustomersScreen() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: '', contactName: '', email: '', phone: '' });
   const [formSpaceId, setFormSpaceId] = useState<string | null>(null);
+  // "" = same as the organization; sent as null (see newClientInput).
+  const [formLocale, setFormLocale] = useState('');
 
 
   /*
@@ -97,19 +100,13 @@ export default function CustomersScreen() {
   }, [search, spaceId, load]);
 
   const submit = useCallback(async () => {
-    const name = form.name.trim();
-    if (!name) return;
+    // Whatever workspace is being viewed, so the client lands where the person
+    // is looking rather than nowhere. ONE body for the direct save and the
+    // outbox, so the language cannot reach one and not the other.
+    const input = newClientInput(form, formSpaceId, formLocale);
+    if (!input) return;
     setSaving(true);
     try {
-      const input = {
-        name,
-        contactName: form.contactName.trim() || undefined,
-        email: form.email.trim() || undefined,
-        phone: form.phone.trim() || undefined,
-        // Whatever workspace is being viewed, so the client lands where the
-        // person is looking rather than nowhere.
-        spaceId: formSpaceId ?? undefined,
-      };
       const outcome = await clientCreate.run({ lane: 'crm:new', body: input }, () => customersApi.create(input));
       if (outcome.kind === 'refused') {
         toast.error((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('customers.addFailed', 'Could not add the client'));
@@ -117,6 +114,7 @@ export default function CustomersScreen() {
       }
       setSheet('none');
       setForm({ name: '', contactName: '', email: '', phone: '' });
+      setFormLocale('');
       toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('customers.added', 'Client added'));
       load(search, spaceId);
     } catch (e: any) {
@@ -124,7 +122,7 @@ export default function CustomersScreen() {
     } finally {
       setSaving(false);
     }
-  }, [form, formSpaceId, load, search, spaceId, t, toast, clientCreate]);
+  }, [form, formSpaceId, formLocale, load, search, spaceId, t, toast, clientCreate]);
 
   // Rows carry a spaceId and no name; this is the only place that can say which.
   const spaceName = useCallback(
@@ -385,6 +383,40 @@ export default function CustomersScreen() {
                 </View>
               )}
 
+              {/*
+                Which language the emails to this client are written in. Beside
+                the address it belongs to, and client info like it: whoever may
+                add the client may set it. Each language named in itself.
+              */}
+              <View style={styles.field}>
+                <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>
+                  {t('customers.locale', 'Language for emails')}
+                </Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }}>
+                  <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+                    {[{ value: '', label: t('customers.localeSame', 'Same as the organization') }, ...CLIENT_LOCALE_OPTIONS].map((o) => {
+                      const on = formLocale === o.value;
+                      return (
+                        <TouchableOpacity
+                          key={o.value || 'same'}
+                          onPress={() => setFormLocale(o.value)}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected: on }}
+                          style={[styles.chip, { borderColor: on ? COLORS.primary : colors.border, backgroundColor: on ? COLORS.primary + '15' : 'transparent' }]}
+                        >
+                          <Text style={{ color: on ? COLORS.primary : colors.textMuted, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold as any }}>
+                            {o.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </ScrollView>
+                <Text style={[styles.fieldHint, { color: colors.textMuted }]}>
+                  {t('customers.localeHint', 'Invitations and signing links to this client are written in this language.')}
+                </Text>
+              </View>
+
               <TouchableOpacity
                 onPress={submit}
                 disabled={saving || !form.name.trim()}
@@ -435,6 +467,7 @@ const styles = StyleSheet.create({
   addTitle: { fontSize: FONT_SIZE.xxl, fontWeight: '700', marginBottom: SPACING.md },
   field: { marginBottom: SPACING.md },
   fieldLabel: { fontSize: FONT_SIZE.xs, marginBottom: 5 },
+  fieldHint: { fontSize: FONT_SIZE.xs, marginTop: 5 },
   input: { borderWidth: 1, borderRadius: RADIUS.md, paddingHorizontal: SPACING.md, height: 44, fontSize: FONT_SIZE.sm },
   saveBtn: { borderRadius: RADIUS.md, height: 48, alignItems: 'center', justifyContent: 'center', marginTop: SPACING.sm },
   saveText: { color: '#fff', fontSize: FONT_SIZE.lg, fontWeight: '700' },
