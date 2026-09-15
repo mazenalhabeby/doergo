@@ -6,7 +6,10 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Role, success, paginated, TaskStatus, normalizeDetailRows, keepFieldsForKind } from '@hbcfield/shared';
+import {
+  Role, success, paginated, TaskStatus, normalizeDetailRows, keepFieldsForKind,
+  isAssetStatus, assetDateProblems, SELECTABLE_ASSET_WHERE, type AssetDateProblem,
+} from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetHoldersService, type HolderInput } from './asset-holders.service';
 import { AssetCustodyService } from './asset-custody.service';
@@ -108,6 +111,42 @@ export class AssetsService {
     return { ...asset, holders };
   }
 
+  /**
+   * Refuse a status that is not one of the four.
+   *
+   * The DTO validates it at the gateway, but the queue reaches this method with
+   * whatever was put on the job, and `status as any` straight into Prisma turns
+   * a typo into a 500 with an enum error in the log instead of a sentence.
+   */
+  private assertStatus(status: unknown): void {
+    if (status === undefined || status === null || status === '') return;
+    if (!isAssetStatus(status)) throw new BadRequestException('That is not a status a record can have');
+  }
+
+  /**
+   * Refuse dates that cannot both be true — asked of what the record WILL hold.
+   *
+   * A partial update may carry only the warranty; comparing it with nothing
+   * would let a warranty ending before the install date through the second
+   * time somebody edits the record.
+   */
+  private assertDates(
+    next: { installDate?: string | null; warrantyExpiry?: string | null },
+    stored?: { installDate: Date | null; warrantyExpiry: Date | null },
+  ): void {
+    const problems = assetDateProblems({
+      installDate: next.installDate !== undefined ? next.installDate : stored?.installDate ?? null,
+      warrantyExpiry: next.warrantyExpiry !== undefined ? next.warrantyExpiry : stored?.warrantyExpiry ?? null,
+    });
+    if (!problems.length) return;
+    const say: Record<AssetDateProblem, string> = {
+      'install-invalid': 'That install date could not be read',
+      'warranty-invalid': 'That warranty date could not be read',
+      'warranty-before-install': 'The warranty cannot end before the date it was installed',
+    };
+    throw new BadRequestException(say[problems[0]!]);
+  }
+
   async create(data: {
     name: string;
     serialNumber?: string;
@@ -130,6 +169,8 @@ export class AssetsService {
     organizationId: string;
   }) {
     this.access.assertMay(data as any, 'create assets');
+    this.assertStatus(data.status);
+    this.assertDates(data);
 
     // Verify category if provided. Its config comes back with it: the kind is
     // what decides how many holders a record may have, and asking for it twice
@@ -232,6 +273,8 @@ export class AssetsService {
     categoryId?: string;
     typeId?: string;
     status?: string;
+    /** Leave RETIRED out unless a status is asked for explicitly. */
+    hideRetired?: boolean | string;
     search?: string;
     /** Narrow to one workspace — intersected with what the caller holds. */
     spaceId?: string;
@@ -265,6 +308,17 @@ export class AssetsService {
     if (query.categoryId) where.categoryId = query.categoryId;
     if (query.typeId) where.typeId = query.typeId;
     if (query.status) where.status = query.status;
+    /*
+      Retired records stay on the books and out of the way.
+
+      Opt-in rather than a new default: every existing caller of this list was
+      written against "everything", and changing what an endpoint returns under
+      a caller that did not ask is how a screen quietly loses rows. An explicit
+      `status` wins — asking for RETIRED has to return them.
+    */
+    else if (query.hideRetired === true || query.hideRetired === 'true') {
+      Object.assign(where, SELECTABLE_ASSET_WHERE);
+    }
     if (query.search) {
       where.OR = [
         { name: { contains: query.search, mode: 'insensitive' } },
@@ -378,16 +432,16 @@ export class AssetsService {
     customerId?: string | null;
     details?: unknown;
     name?: string;
-    serialNumber?: string;
-    model?: string;
-    manufacturer?: string;
+    serialNumber?: string | null;
+    model?: string | null;
+    manufacturer?: string | null;
     status?: string;
-    installDate?: string;
-    warrantyExpiry?: string;
+    installDate?: string | null;
+    warrantyExpiry?: string | null;
     locationAddress?: string;
     locationLat?: number;
     locationLng?: number;
-    notes?: string;
+    notes?: string | null;
     categoryId?: string;
     typeId?: string;
     userId: string;
@@ -395,6 +449,7 @@ export class AssetsService {
     organizationId: string;
   }) {
     this.access.assertMay(data as any, 'update assets');
+    this.assertStatus(data.status);
 
     const asset = await this.prisma.asset.findUnique({
       where: { id: data.id },
@@ -407,6 +462,8 @@ export class AssetsService {
     if (asset.organizationId !== data.organizationId) {
       throw new ForbiddenException('Asset does not belong to your organization');
     }
+
+    this.assertDates(data, asset);
 
     // Verify category if changing
     /*

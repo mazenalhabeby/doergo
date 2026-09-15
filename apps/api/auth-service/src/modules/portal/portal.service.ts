@@ -4,6 +4,7 @@ import {
   PORTAL_TEMPLATES,
   templateToIntakeCategories,
   DEFAULT_PORTAL_FEATURES,
+  SELECTABLE_ASSET_WHERE,
 } from '@hbcfield/shared';
 
 // Keep only well-formed { label, value } detail rows (trimmed, capped).
@@ -548,7 +549,17 @@ export class PortalService {
       where: {
         organizationId: data.organizationId,
         OR: [
-          ...(data.customerId ? [{ customerId: data.customerId }] : []),
+          /*
+            What they hold, minus what has been retired. This is the list a
+            client picks from to raise a request, and a van handed back and
+            taken off the books last spring is not something to raise one
+            against — its history stays on the organization's side.
+
+            The one their login is CONFINED to is kept whatever its state: it
+            is the whole of their portal, and hiding it would leave them signed
+            in to an empty screen with no way to ask why.
+          */
+          ...(data.customerId ? [{ customerId: data.customerId, ...SELECTABLE_ASSET_WHERE }] : []),
           ...(data.assetId ? [{ id: data.assetId }] : []),
         ],
       },

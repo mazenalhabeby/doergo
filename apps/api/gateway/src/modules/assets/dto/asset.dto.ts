@@ -13,10 +13,11 @@ import {
   Max,
   Min,
   IsObject,
+  IsIn,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { AssetStatus, KIND_SHAPE_LIMITS } from '@hbcfield/shared';
+import { AssetStatus, KIND_SHAPE_LIMITS, ASSET_RECORD_LIMITS } from '@hbcfield/shared';
 
 /**
  * One filled-in field on a record.
@@ -69,38 +70,49 @@ export class CreateAssetDto {
   @MaxLength(200)
   name: string;
 
+  /*
+    The plate. Nullable on purpose: clearing a serial number that was typed on
+    the wrong record has to reach the server as a decision, and an empty string
+    stored in its place would read as "has a serial, and it is blank".
+
+    Lengths come from ASSET_RECORD_LIMITS, which the form also reads, so the box
+    stops typing where this would refuse.
+  */
   @ApiPropertyOptional({ example: 'AC-2024-001234', description: 'Serial number' })
   @IsString()
   @IsOptional()
-  @MaxLength(100)
-  serialNumber?: string;
+  @MaxLength(ASSET_RECORD_LIMITS.serialNumber)
+  serialNumber?: string | null;
 
   @ApiPropertyOptional({ example: 'Carrier 50XC', description: 'Model name/number' })
   @IsString()
   @IsOptional()
-  @MaxLength(100)
-  model?: string;
+  @MaxLength(ASSET_RECORD_LIMITS.model)
+  model?: string | null;
 
   @ApiPropertyOptional({ example: 'Carrier', description: 'Manufacturer name' })
   @IsString()
   @IsOptional()
-  @MaxLength(100)
-  manufacturer?: string;
+  @MaxLength(ASSET_RECORD_LIMITS.manufacturer)
+  manufacturer?: string | null;
 
   @ApiPropertyOptional({ enum: AssetStatus, default: 'ACTIVE' })
   @IsEnum(AssetStatus)
   @IsOptional()
   status?: AssetStatus;
 
+  // Null clears it. Whether the pair makes sense together (a warranty cannot
+  // end before the install) is asked in task-service, of the values the record
+  // will hold — a partial update may carry only one of them.
   @ApiPropertyOptional({ example: '2024-03-15', description: 'Installation date' })
   @IsDateString()
   @IsOptional()
-  installDate?: string;
+  installDate?: string | null;
 
   @ApiPropertyOptional({ example: '2026-12-31', description: 'Warranty expiry date' })
   @IsDateString()
   @IsOptional()
-  warrantyExpiry?: string;
+  warrantyExpiry?: string | null;
 
   @ApiPropertyOptional({ example: '123 Main St, Building A, Roof' })
   @IsString()
@@ -121,7 +133,8 @@ export class CreateAssetDto {
   @ApiPropertyOptional({ example: 'Installed during Q1 2024 renovation' })
   @IsString()
   @IsOptional()
-  notes?: string;
+  @MaxLength(ASSET_RECORD_LIMITS.notes)
+  notes?: string | null;
 
   @ApiPropertyOptional({ description: 'Category ID' })
   @IsString()
@@ -233,6 +246,16 @@ export class AssetQueryDto {
   @IsEnum(AssetStatus)
   @IsOptional()
   status?: AssetStatus;
+
+  /*
+    Leave retired records out of the list. A STRING, not a boolean: query
+    parameters arrive as text, and implicit conversion turns "false" into true.
+    Ignored when `status` is given — asking for RETIRED must return them.
+  */
+  @ApiPropertyOptional({ enum: ['true', 'false'], description: 'Hide RETIRED records unless a status is asked for' })
+  @IsIn(['true', 'false'])
+  @IsOptional()
+  hideRetired?: 'true' | 'false';
 
   @ApiPropertyOptional({ description: 'Search by name, serial, model, or manufacturer' })
   @IsString()

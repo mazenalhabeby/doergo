@@ -45,6 +45,7 @@ import {
   credentialBlocks,
   endOfSiteDay,
   tzOffsetMs,
+  SELECTABLE_ASSET_WHERE,
 } from '@hbcfield/shared';
 
 const STATUS_COUNTS_TTL = 30; // seconds
@@ -286,8 +287,11 @@ export class TasksService {
         where: {
           id: effAssetId,
           organizationId: effectiveOrgId,
+          // A portal client also cannot raise one against something RETIRED —
+          // the same rule their list of holdings follows. Internally it stays
+          // allowed: the office may still log work against a retired record.
           ...(data.source === 'CUSTOMER_PORTAL'
-            ? { customerId: data.customerId || undefined }
+            ? { customerId: data.customerId || undefined, ...SELECTABLE_ASSET_WHERE }
             : {}),
         },
         select: { id: true },

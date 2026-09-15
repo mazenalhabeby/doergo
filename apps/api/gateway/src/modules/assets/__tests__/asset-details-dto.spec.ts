@@ -37,6 +37,42 @@ describe('asset details survive the validation pipe', () => {
     expect(out.details[0].value).toBe('1234');
   });
 
+  /*
+    The plate — status, serial, maker, model, dates, notes — through the same
+    pipe. These fields had no form until now, so nothing had ever sent them. A
+    form that clears a serial number sends null, and a notes box can be pasted
+    into.
+  */
+  it('accepts a status, the plate and two dates', async () => {
+    const out: any = await pipe.transform(
+      {
+        status: 'MAINTENANCE', serialNumber: 'SN-1', manufacturer: 'Ford', model: 'Transit',
+        installDate: '2024-03-15', warrantyExpiry: '2027-03-15', notes: 'Bought used',
+      },
+      { type: 'body', metatype: UpdateAssetDto },
+    );
+    expect(out.status).toBe('MAINTENANCE');
+    expect(out.warrantyExpiry).toBe('2027-03-15');
+  });
+
+  it('accepts null to clear a fact', async () => {
+    const out: any = await pipe.transform(
+      { serialNumber: null, installDate: null, warrantyExpiry: null, notes: null },
+      { type: 'body', metatype: UpdateAssetDto },
+    );
+    expect(out.serialNumber).toBeNull();
+    expect(out.installDate).toBeNull();
+  });
+
+  it.each([
+    [{ status: 'SOLD' }],
+    [{ installDate: 'last spring' }],
+    [{ notes: 'x'.repeat(2001) }],
+    [{ serialNumber: 'x'.repeat(101) }],
+  ])('refuses %j', async (body) => {
+    await expect(pipe.transform(body, { type: 'body', metatype: UpdateAssetDto })).rejects.toBeDefined();
+  });
+
   it('keeps rows on create too', async () => {
     const out: any = await pipe.transform(
       { name: 'Flat 3B', details: [{ label: 'Floor', value: '3' }, { label: 'Rent', value: '900' }] },
