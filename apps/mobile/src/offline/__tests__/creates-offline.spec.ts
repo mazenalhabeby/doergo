@@ -1,5 +1,5 @@
 /**
- * Creates from the phone — chat, time off, support, shift issues, expenses.
+ * Creates from the phone — chat, time off, support, shift issues, expenses, logbook entries.
  */
 import { SyncEngine, type SyncTransport, type RecordsSink } from '../sync-engine';
 import { MemoryOutboxStore } from '../outbox/memory-store';
@@ -19,6 +19,7 @@ jest.mock('../offline-context', () => ({ useOffline: () => ({}), useSyncStatus: 
 const { createFromPhone, pendingCreates } = require('../actions/queued-create') as typeof import('../actions/queued-create');
 const { reportIssueFromPhone, sendIssueMessageFromPhone, pendingIssueEvents } = require('../issues/issue-actions') as typeof import('../issues/issue-actions');
 const { submitExpenseFromPhone } = require('../assets/expense-actions') as typeof import('../assets/expense-actions');
+const { logFromPhone } = require('../assets/log-actions') as typeof import('../assets/log-actions');
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 function setup(opts: { answer?: (path: string, n: number) => Record<string, unknown> } = {}) {
@@ -124,6 +125,44 @@ describe('expenses', () => {
     await s.e.flush();
     expect(s.presigned).toHaveLength(0);
     expect(s.sent[0]!.payload.body).toMatchObject({ receiptKey: 'o1/assets/van-1/x.pdf', receiptMime: 'application/pdf' });
+  });
+});
+
+describe('logbook entries', () => {
+  it('asks the LOG route for the photo link, with the type and the date that decide who may file it', async () => {
+    const s = setup();
+    await s.e.start();
+    await logFromPhone(s.e, s.files, {
+      assetId: 'van-1', logType: 'damage', values: { what: 'Mirror' },
+      occurredAt: '2026-09-14T08:00:00.000Z', photo: { uri: 'file:///c/d.jpg', mime: 'image/jpeg' },
+    });
+    expect(s.e.operations()[0]).toMatchObject({ op: 'log.create', lane: 'log:van-1' });
+    s.goOnline();
+    await s.e.flush();
+    expect(s.presigned[0]).toEqual({
+      path: '/assets/van-1/log/presign',
+      body: { fileName: 'photo.jpg', mimeType: 'image/jpeg', logType: 'damage', occurredAt: '2026-09-14T08:00:00.000Z' },
+    });
+    const body = s.sent[0]!.payload.body as Record<string, unknown>;
+    expect(body).toMatchObject({
+      entryId: expect.any(String), logType: 'damage', values: { what: 'Mirror' },
+      receiptKey: 'key-for/assets/van-1/log/presign', receiptMime: 'image/jpeg', receiptName: 'photo.jpg',
+    });
+    expect(body).not.toHaveProperty('receiptPending');
+    // The copy of the photo is gone once the entry is filed.
+    expect(s.registry.rows.size).toBe(0);
+  });
+
+  it('files an entry with no photo straight away, the money already in cents', async () => {
+    const s = setup();
+    await s.e.start();
+    await logFromPhone(s.e, s.files, { assetId: 'van-1', logType: 'fuel', values: { odometer: '86412', amount: 7412 }, occurredAt: '2026-09-14T08:00:00.000Z' });
+    s.goOnline();
+    await s.e.flush();
+    expect(s.presigned).toHaveLength(0);
+    expect(s.sent[0]!.payload.body).toEqual({
+      entryId: expect.any(String), logType: 'fuel', values: { odometer: '86412', amount: 7412 }, occurredAt: '2026-09-14T08:00:00.000Z',
+    });
   });
 });
 

@@ -53,6 +53,59 @@ export interface SubmitExpenseInput {
   receiptMime?: string;
 }
 
+/**
+ * One logbook entry I filed — fuel, an oil change, a dent, or a cost.
+ *
+ * `category` is the heading it was filed under AT THE TIME: the type's own label
+ * for a log entry, the chosen heading for a cost. Rows read as they did the day
+ * they were written, whatever the kind is renamed to since.
+ */
+export interface MyLogEntry {
+  id: string;
+  assetId: string;
+  /** `cost` for the ledger's own entries. */
+  logType: string;
+  category: string;
+  direction: 'IN' | 'OUT';
+  amountCents: number;
+  note: string | null;
+  values: Record<string, string | number> | null;
+  occurredAt: string;
+  status: 'SUBMITTED' | 'RECORDED' | 'REJECTED';
+  reviewNote: string | null;
+  reviewedAt: string | null;
+  hasReceipt: boolean;
+  asset?: { id: string; name: string } | null;
+}
+
+/** Something due on a thing I hold. Computed on the server from the asset's stored state. */
+export interface DueItem {
+  assetId: string;
+  assetName: string;
+  key: string;
+  label: string;
+  color: string;
+  stage: 'ok' | 'soon' | 'overdue';
+  progress: number;
+  daysLeft: number | null;
+  unitsLeft: number | null;
+  unit: string | null;
+  reading: number | null;
+  dueAt: string | null;
+  dueReading: number | null;
+}
+
+export interface CreateLogInput {
+  logType: string;
+  /** Answers keyed by field key; a money field in integer cents. */
+  values: Record<string, string | number>;
+  note?: string;
+  occurredAt?: string;
+  receiptKey?: string;
+  receiptName?: string;
+  receiptMime?: string;
+}
+
 // NOTE: fetchWithAuth already unwraps the `{ data: T }` envelope, so nothing
 // here may unwrap `.data` a second time.
 export const assetsApi = {
@@ -112,6 +165,44 @@ export const assetsApi = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+
+  // ── The logbook ───────────────────────────────────────────────────────────
+
+  /** Everything I logged, costs included, with what happened to each. */
+  myLog: async (input: { assetId?: string; limit?: number } = {}): Promise<MyLogEntry[]> => {
+    const q = new URLSearchParams();
+    if (input.assetId) q.set('assetId', input.assetId);
+    if (input.limit) q.set('limit', String(input.limit));
+    const res = await fetchWithAuth<MyLogEntry[]>(`/assets/log/mine${q.toString() ? `?${q}` : ''}`);
+    return res ?? [];
+  },
+
+  /** What is due soon or overdue on what I hold. Overdue first. */
+  dueMine: async (): Promise<DueItem[]> => {
+    const res = await fetchWithAuth<{ items: DueItem[] }>('/assets/log/due-mine');
+    return res?.items ?? [];
+  },
+
+  /**
+   * A URL to PUT a logbook photo at. The log type and the date travel because
+   * together they decide who may file it: fuel is the driver's that day, a dent
+   * is anybody's who can see the van.
+   */
+  presignLog: (assetId: string, input: { logType: string; fileName: string; mimeType: string; occurredAt?: string }) =>
+    fetchWithAuth<{ uploadUrl: string; fileKey: string; expiresIn: number; maxFileSize: number }>(
+      `/assets/${assetId}/log/presign`,
+      { method: 'POST', body: JSON.stringify(input) },
+    ),
+
+  createLog: (assetId: string, input: CreateLogInput) =>
+    fetchWithAuth<MyLogEntry>(`/assets/${assetId}/log`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+
+  /** Take back my own entry while it is still waiting. */
+  withdrawLog: (assetId: string, entryId: string) =>
+    fetchWithAuth<{ id: string }>(`/assets/${assetId}/log/${entryId}`, { method: 'DELETE' }),
 };
 
 /** The reading off a contract, after a person has corrected it. */

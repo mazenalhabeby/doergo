@@ -84,7 +84,7 @@ export type { OvertimeRequest } from './overtime';
 export { locationsApi } from './locations';
 export { assetsApi, assetContractsApi, assetProposalsApi } from './assets';
 export type {
-  HeldAsset, MyExpense, SubmitExpenseInput,
+  HeldAsset, MyExpense, SubmitExpenseInput, MyLogEntry, DueItem, CreateLogInput,
   ContractFields, ContractStep, ContractPreview, ContractProposalInput, AssetKind,
   MyProposal, RaiseProposalInput,
 } from './assets';

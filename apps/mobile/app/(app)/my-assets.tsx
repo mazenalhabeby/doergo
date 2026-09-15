@@ -10,8 +10,11 @@ import { useTranslation } from 'react-i18next';
 import { ScreenHeader } from '../../src/components';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
-import { assetsApi, assetProposalsApi, type HeldAsset, type MyExpense, type MyProposal } from '../../src/lib/api';
-import { normalizeKindShape, custodyDays } from '@hbcfield/shared/client';
+import {
+  assetsApi, assetProposalsApi, type HeldAsset, type MyExpense, type MyProposal, type MyLogEntry, type DueItem,
+} from '../../src/lib/api';
+import { normalizeKindShape, custodyDays, logTypesForKind, COST_LOG_KEY } from '@hbcfield/shared/client';
+import { logColor, logTypeLabel } from '../../src/lib/log-display';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import { SendDocumentGlyph } from '../../src/components/home/glyphs';
 
@@ -38,6 +41,14 @@ export default function MyAssetsScreen() {
 
   const [held, setHeld] = useState<HeldAsset[] | null>(null);
   const [expenses, setExpenses] = useState<MyExpense[]>([]);
+  /*
+    The logbook, when the server has it. Null means "this server does not
+    answer the logbook routes" (an older deploy): the screen then shows the
+    expenses list it always did, rather than an empty "My entries" that would
+    read as everything having been lost.
+  */
+  const [entries, setEntries] = useState<MyLogEntry[] | null>(null);
+  const [due, setDue] = useState<DueItem[]>([]);
   const [sent, setSent] = useState<MyProposal[]>([]);
   const [canPropose, setCanPropose] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -47,15 +58,20 @@ export default function MyAssetsScreen() {
     try {
       // Both at once: two independent reads, and waiting for the first to
       // finish before starting the second doubles the time on a phone.
-      const [mine, sent, proposals] = await Promise.all([
+      const [mine, sent, proposals, logged, dueSoon] = await Promise.all([
         assetsApi.mine(),
         assetsApi.myExpenses(),
         assetProposalsApi.mine(),
+        // Allowed to fail alone: a logbook the server lacks must not empty the screen.
+        assetsApi.myLog().catch(() => null),
+        assetsApi.dueMine().catch(() => [] as DueItem[]),
       ]);
       setHeld(mine.periods);
       setCanPropose(mine.canPropose);
       setExpenses(sent);
       setSent(proposals);
+      setEntries(logged);
+      setDue(dueSoon);
     } catch (e: any) {
       toast.error(e?.message || t('myAssets.loadFailed', 'Could not load what you hold'));
       setHeld([]);
@@ -78,6 +94,20 @@ export default function MyAssetsScreen() {
           contentContainerStyle={{ padding: SPACING.lg, paddingBottom: SPACING.xxxl + insets.bottom }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={COLORS.primary} />}
         >
+          {/*
+            Due soon, before the list of things: "the Sprinter's oil is overdue"
+            is the one line on this screen that should change what somebody does
+            today. The server puts overdue first.
+          */}
+          {due.length > 0 && (
+            <View style={[s.dueBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[s.sectionTitle, { color: colors.textMuted, marginTop: 0, marginBottom: 0 }]}>
+                {t('logbook.dueSoon', 'Due soon')}
+              </Text>
+              {due.map((d) => <DueRow key={`${d.assetId}:${d.key}`} item={d} colors={colors} t={t} />)}
+            </View>
+          )}
+
           {held.length === 0 ? (
             <View style={s.empty}>
               <Ionicons name="cube-outline" size={40} color={colors.textMuted} />
@@ -115,13 +145,40 @@ export default function MyAssetsScreen() {
             </>
           )}
 
-          {expenses.length > 0 && (
-            <>
-              <Text style={[s.sectionTitle, { color: colors.textMuted }]}>
-                {t('myAssets.sent', 'What I sent in')}
-              </Text>
-              {expenses.map((e) => <ExpenseRow key={e.id} expense={e} colors={colors} t={t} />)}
-            </>
+          {entries !== null ? (
+            entries.length > 0 && (
+              <>
+                <Text style={[s.sectionTitle, { color: colors.textMuted }]}>
+                  {t('logbook.mine', 'My entries')}
+                </Text>
+                {entries.map((e) => (
+                  <EntryRow
+                    key={e.id}
+                    entry={e}
+                    colors={colors}
+                    t={t}
+                    onWithdraw={async () => {
+                      try {
+                        await assetsApi.withdrawLog(e.assetId, e.id);
+                        toast.success(t('logbook.withdrawn', 'Taken back'));
+                        void load();
+                      } catch (err: any) {
+                        toast.error(err?.message || t('logbook.withdrawFailed', 'Could not take it back'));
+                      }
+                    }}
+                  />
+                ))}
+              </>
+            )
+          ) : (
+            expenses.length > 0 && (
+              <>
+                <Text style={[s.sectionTitle, { color: colors.textMuted }]}>
+                  {t('myAssets.sent', 'What I sent in')}
+                </Text>
+                {expenses.map((e) => <ExpenseRow key={e.id} expense={e} colors={colors} t={t} />)}
+              </>
+            )
           )}
         </ScrollView>
       )}
@@ -136,6 +193,14 @@ function HeldCard({ held, colors, t }: { held: HeldAsset; colors: any; t: any })
   // it. A button that opens a form with an empty required select is worse than
   // no button.
   const canSpend = shape.money.enabled && shape.money.categories.some((c) => c.direction === 'out');
+  /*
+    "What did you do?" — the kind's log types, Cost first where the kind has
+    money to spend. Offered only when there is more than the receipt to choose
+    from: a picker with one row is a button that takes two taps.
+  */
+  const types = logTypesForKind(shape).filter((ty) => ty.key !== COST_LOG_KEY || canSpend);
+  const hasLog = shape.logTypes.length > 0;
+  const [picking, setPicking] = useState(false);
 
   return (
     <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -166,7 +231,37 @@ function HeldCard({ held, colors, t }: { held: HeldAsset; colors: any; t: any })
         </View>
       </View>
 
-      {canSpend && (
+      {hasLog ? (
+        <>
+          <TouchableOpacity
+            style={[s.primary, { backgroundColor: COLORS.primary }]}
+            onPress={() => setPicking((p) => !p)}
+          >
+            <Ionicons name={picking ? 'chevron-up' : 'add'} size={18} color="#fff" />
+            <Text style={s.primaryText}>{t('logbook.whatDidYouDo', 'What did you do?')}</Text>
+          </TouchableOpacity>
+          {picking && (
+            <View style={[s.picker, { borderColor: colors.border }]}>
+              {types.map((ty, i) => (
+                <TouchableOpacity
+                  key={ty.key}
+                  style={[s.pickRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }]}
+                  onPress={() => {
+                    setPicking(false);
+                    // The Cost log IS "Add a receipt" — its camera and PDF reader, unchanged.
+                    if (ty.key === COST_LOG_KEY) router.push({ pathname: '/(app)/asset-expense', params: { assetId: held.assetId } });
+                    else router.push({ pathname: '/(app)/asset-log', params: { assetId: held.assetId, logType: ty.key } });
+                  }}
+                >
+                  <View style={[s.dot, { backgroundColor: logColor(ty.color) }]} />
+                  <Text style={[s.pickText, { color: colors.textPrimary }]} numberOfLines={1}>{logTypeLabel(ty, t)}</Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </>
+      ) : canSpend && (
         <TouchableOpacity
           style={[s.primary, { backgroundColor: COLORS.primary }]}
           onPress={() => router.push({ pathname: '/(app)/asset-expense', params: { assetId: held.assetId } })}
@@ -174,6 +269,75 @@ function HeldCard({ held, colors, t }: { held: HeldAsset; colors: any; t: any })
           <Ionicons name="receipt-outline" size={17} color="#fff" />
           <Text style={s.primaryText}>{t('myAssets.addExpense', 'Add a receipt')}</Text>
         </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+/** "Sprinter · Oil change — 588 km overdue". Both limits are said while it is only soon. */
+function DueRow({ item, colors, t }: { item: DueItem; colors: any; t: any }) {
+  const overdue = item.stage === 'overdue';
+  const units = item.unitsLeft;
+  const days = item.daysLeft;
+  const unit = item.unit ? ` ${item.unit}` : '';
+  let when: string;
+  if (overdue) {
+    when = units !== null && units <= 0
+      ? t('logbook.overdueUnits', '{{amount}} overdue', { amount: `${Math.abs(units).toLocaleString()}${unit}` })
+      : days !== null
+        ? t('logbook.overdueDays', '{{count}} days overdue', { count: Math.abs(days) })
+        : t('logbook.overdue', 'Overdue');
+  } else {
+    // Whichever first: both limits, when the type has both.
+    const parts = [
+      days !== null ? t('logbook.inDays', 'in {{count}} days', { count: days }) : null,
+      units !== null ? t('logbook.inUnits', 'in {{amount}}', { amount: `${units.toLocaleString()}${unit}` }) : null,
+    ].filter(Boolean);
+    when = parts.length ? parts.join(` ${t('logbook.or', 'or')} `) : t('logbook.soon', 'Soon');
+  }
+  const tone = overdue ? COLORS.error : '#f59e0b';
+  return (
+    <View style={s.dueRow}>
+      <Ionicons name={overdue ? 'alert-circle' : 'time-outline'} size={18} color={tone} />
+      <View style={s.grow}>
+        <Text style={[s.expenseTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+          {item.assetName} · {item.label}
+        </Text>
+        <Text style={[s.cardSub, { color: tone }]} numberOfLines={1}>{when}</Text>
+      </View>
+    </View>
+  );
+}
+
+/** One thing I logged, with what happened to it — and a way to take it back while it waits. */
+function EntryRow({ entry, colors, t, onWithdraw }: { entry: MyLogEntry; colors: any; t: any; onWithdraw: () => void }) {
+  const tone =
+    entry.status === 'RECORDED' ? { c: '#22c55e', icon: 'checkmark-circle' as const, label: t('logbook.recorded', 'Recorded') }
+    : entry.status === 'REJECTED' ? { c: colors.textMuted, icon: 'close-circle' as const, label: t('expenses.rejected', 'Refused') }
+    : { c: '#f59e0b', icon: 'time' as const, label: t('logbook.submitted', 'Waiting for the office') };
+
+  return (
+    <View style={[s.expense, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <Ionicons name={tone.icon} size={18} color={tone.c} />
+      <View style={s.grow}>
+        <Text style={[s.expenseTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+          {entry.asset?.name ?? t('myAssets.anAsset', 'An asset')} · {entry.category}
+        </Text>
+        <Text style={[s.cardSub, { color: colors.textMuted }]} numberOfLines={2}>
+          {new Date(entry.occurredAt).toLocaleDateString()} · {tone.label}
+          {/* The reason it was refused, in the words somebody wrote. */}
+          {entry.reviewNote ? ` — ${entry.reviewNote}` : ''}
+        </Text>
+        {entry.status === 'SUBMITTED' && (
+          <TouchableOpacity onPress={onWithdraw} hitSlop={8}>
+            <Text style={s.withdraw}>{t('logbook.withdraw', 'Take back')}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+      {entry.amountCents > 0 && (
+        <Text style={[s.expenseAmount, { color: entry.status === 'REJECTED' ? colors.textMuted : colors.textPrimary }]}>
+          {euros(entry.amountCents)}
+        </Text>
       )}
     </View>
   );
@@ -262,4 +426,12 @@ const s = StyleSheet.create({
   expense: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },
   expenseTitle: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium as any },
   expenseAmount: { fontSize: FONT_SIZE.sm, fontWeight: '700' },
+
+  picker: { borderWidth: 1, borderRadius: RADIUS.md, marginTop: SPACING.sm, overflow: 'hidden' },
+  pickRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, paddingHorizontal: SPACING.md, paddingVertical: 12 },
+  pickText: { flex: 1, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium as any },
+  dot: { width: 10, height: 10, borderRadius: 5 },
+  dueBox: { borderWidth: 1, borderRadius: RADIUS.lg, padding: SPACING.md, marginBottom: SPACING.md, gap: SPACING.sm },
+  dueRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
+  withdraw: { color: COLORS.primary, fontSize: FONT_SIZE.xs, fontWeight: '700', marginTop: 4 },
 });

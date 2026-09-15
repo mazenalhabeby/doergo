@@ -51,6 +51,8 @@ export const SYNC_OPERATIONS = {
   'portal.request': { method: 'POST', path: '/portal/requests' },
   // Money & communication
   'expense.submit': { method: 'POST', path: '/assets/:assetId/expenses' },
+  // A logbook entry — fuel, an oil change, a dent — maybe with its photo.
+  'log.create': { method: 'POST', path: '/assets/:assetId/log' },
   'proposal.raise': { method: 'POST', path: '/assets/proposals' },
   // Documents I supply myself (a licence, a passport)
   'document.supply': { method: 'POST', path: '/documents/mine' },
