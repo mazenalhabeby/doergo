@@ -4,6 +4,7 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
 import { AssetAccessService } from '../asset-access.service';
 import { AssetCustodyService } from '../asset-custody.service';
 import { AssetContractService } from '../asset-contract.service';
+import { AssetCatalogService } from '../asset-catalog.service';
 
 /**
  * Accepting a contract: create the car, hand it over, retire the one it replaces.
@@ -258,6 +259,39 @@ describe('AssetContractService', () => {
     it('refuses an empty page rather than returning an empty reading', async () => {
       await expect(service.read({ text: '   ', userId: 'u', userRole: 'ADMIN', organizationId: 'org1' } as any))
         .rejects.toBeInstanceOf(BadRequestException);
+    });
+  });
+
+  /*
+    The kinds list has to open for them too — the contract flow has nothing to
+    create without it — and it must not open any wider than their workspaces.
+  */
+  describe('the kinds a space-scoped manager can list', () => {
+    const catalog = () => {
+      const db: any = { assetCategory: { findMany: jest.fn(async () => []) } };
+      return { db, svc: new AssetCatalogService(db, new AssetAccessService(db)) };
+    };
+    const base = { userId: 'u', userRole: 'EMPLOYEE', organizationId: 'org1' };
+
+    it('is confined to their own workspaces, whatever they ask for', async () => {
+      const { db, svc } = catalog();
+      await svc.findAllCategories({ ...base, viewAllSpaceIds: ['depot-linz'], spaceId: 'depot-graz' });
+      expect(db.assetCategory.findMany.mock.calls[0][0].where).toEqual({ organizationId: 'org1', spaceId: { in: [] } });
+      await svc.findAllCategories({ ...base, viewAllSpaceIds: ['depot-linz'] });
+      expect(db.assetCategory.findMany.mock.calls[1][0].where).toEqual({ organizationId: 'org1', spaceId: { in: ['depot-linz'] } });
+    });
+
+    it('is unchanged for an org-wide caller', async () => {
+      const { db, svc } = catalog();
+      await svc.findAllCategories({ ...base, userRole: 'ADMIN' });
+      expect(db.assetCategory.findMany.mock.calls[0][0].where).toEqual({ organizationId: 'org1' });
+      await svc.findAllCategories({ ...base, canViewAllTasks: true, spaceId: 's2' });
+      expect(db.assetCategory.findMany.mock.calls[1][0].where).toEqual({ organizationId: 'org1', spaceId: 's2' });
+    });
+
+    it('is refused to somebody granted nowhere', async () => {
+      const { svc } = catalog();
+      await expect(svc.findAllCategories({ ...base, viewAllSpaceIds: [] })).rejects.toBeInstanceOf(ForbiddenException);
     });
   });
 

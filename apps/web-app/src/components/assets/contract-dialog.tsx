@@ -8,10 +8,13 @@ import {
 } from "lucide-react"
 
 import {
-  assetsApi, organizationsApi,
-  type AssetCategory, type ContractFields, type ContractPreview, type ContractReading,
+  assetsApi, organizationsApi, locationsApi,
+  type AssetCategory, type ContractFields, type ContractPreview, type ContractReading, type OrgMember,
 } from "@/lib/api"
-import { normalizeKindShape, kindHolderLabel } from "@hbcfield/shared/client"
+import {
+  normalizeKindShape, kindHolderLabel, assetManageSpaces, canManageAssetsIn,
+} from "@hbcfield/shared/client"
+import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -51,11 +54,14 @@ type FieldKey = (typeof FIELD_KEYS)[number]
 
 export function ContractDialog({
   kinds,
+  spaceId,
   trigger,
   onCreated,
 }: {
   /** The workspace's kinds. Only those whose records are held by a member. */
   kinds: AssetCategory[]
+  /** The workspace this is opened from — whose roster a space-scoped manager picks from. */
+  spaceId?: string
   trigger: React.ReactNode
   onCreated: (assetId: string) => void
 }) {
@@ -76,19 +82,48 @@ export function ContractDialog({
     somebody; a kind with no holder has nobody to hand it to, and offering it
     would produce a refusal three clicks later with no way to act on it.
   */
+  const { user } = useAuth()
+  /*
+    ⚠️ And only kinds in a workspace the caller manages assets in.
+
+    A Space Manager's `canManageAssets` reaches their own depot's kinds; the
+    server answers any other as not found. Offering one here would be a
+    refusal at the preview, with nothing on screen to say why.
+  */
   const usable = kinds.filter((k) => {
     const shape = normalizeKindShape(k.config)
-    return shape.holder.enabled && shape.holder.members
+    return shape.holder.enabled && shape.holder.members && canManageAssetsIn(user, k.spaceId)
   })
   const kind = usable.find((k) => k.id === categoryId)
   const shape = normalizeKindShape(kind?.config)
 
+  /*
+    Who it can be handed to.
+
+    The organization's member list is `canManageUsers` — a permission a Space
+    Manager does not hold — so for them it came back refused and the picker was
+    empty on the one screen they can now use. A space-scoped manager picks from
+    THIS workspace's roster, which is also the honest list: they run this depot,
+    not the company. An org-wide manager keeps the whole organization.
+  */
+  const orgWide = assetManageSpaces(user) === null
   const membersQ = useQuery({
     queryKey: ["org-members-assignable"],
     queryFn: () => organizationsApi.getMembers({ limit: 100 }),
-    enabled: open,
+    enabled: open && orgWide,
   })
-  const members = (membersQ.data?.data ?? []).filter((m) => m.isActive && m.role !== "CUSTOMER")
+  const rosterQ = useQuery({
+    queryKey: ["space-roster", spaceId],
+    queryFn: () => locationsApi.getAssignedMembers(spaceId!),
+    enabled: open && !orgWide && !!spaceId,
+  })
+  const members: OrgMember[] = orgWide
+    ? (membersQ.data?.data ?? []).filter((m) => m.isActive && m.role !== "CUSTOMER")
+    : (rosterQ.data ?? [])
+        .filter((a) => a.user && !a.user.isExternal)
+        .map((a) => ({ ...(a.user as object), id: a.userId, isActive: true } as unknown as OrgMember))
+        // One row per person — a member can hold several assignments to one space.
+        .filter((m, i, all) => all.findIndex((x) => x.id === m.id) === i)
 
   const read = useMutation({
     mutationFn: () => assetsApi.readContract(text),

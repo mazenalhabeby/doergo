@@ -18,10 +18,12 @@ import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
 import { useCameraAccess } from '../../src/permissions/use-media-access';
 import { canScanContracts, scanContract } from '../../src/lib/receipt-scan';
 import {
-  assetContractsApi, membersApi,
+  assetContractsApi, membersApi, locationsApi,
   type AssetKind, type ContractFields, type ContractPreview,
 } from '../../src/lib/api';
-import { normalizeKindShape, kindHolderLabel, type ParsedContract } from '@hbcfield/shared/client';
+import {
+  normalizeKindShape, kindHolderLabel, assetManageSpaces, canManageAssetsIn, type ParsedContract,
+} from '@hbcfield/shared/client';
 import { forgetHeldAssets } from '../../src/hooks/use-held-assets';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 
@@ -80,12 +82,18 @@ export default function AssetContractScreen() {
     somebody; a kind of apartments with no member holder has nobody to hand one
     to, and offering it is a refusal two taps later with no way to act on it.
   */
+  /*
+    …and only kinds in a workspace the grant covers. A Space Manager's
+    `canManageAssets` reaches their own depot's kinds, and the server answers
+    any other as not found — offering one here would be a refusal at the
+    preview with nothing to say why. The same shared rule the web asks.
+  */
   const usable = useMemo(
     () => kinds.filter((k) => {
       const shape = normalizeKindShape(k.config);
-      return shape.holder.enabled && shape.holder.members;
+      return shape.holder.enabled && shape.holder.members && canManageAssetsIn(user as never, k.spaceId);
     }),
-    [kinds],
+    [kinds, user],
   );
   const kind = usable.find((k) => k.id === categoryId);
   const shape = normalizeKindShape(kind?.config);
@@ -95,21 +103,39 @@ export default function AssetContractScreen() {
     let alive = true;
     (async () => {
       try {
-        const [ks, ms] = await Promise.all([assetContractsApi.kinds(), membersApi.list()]);
+        /*
+          Who it can be handed to. The organization's member list is
+          `canManageUsers`, which a Space Manager does not hold — so for them
+          the picker came back empty. A space-scoped manager picks from the
+          rosters of the workspaces they manage assets in; an org-wide one
+          keeps the whole organization.
+        */
+        const spaces = assetManageSpaces(user as never);
+        const [ks, people] = await Promise.all([
+          assetContractsApi.kinds(),
+          spaces === null
+            ? membersApi.list().then((ms) =>
+                (ms ?? [])
+                  .filter((m: any) => m.isActive !== false && m.role !== 'CUSTOMER')
+                  .map((m: any) => ({ id: m.id, name: `${m.firstName ?? ''} ${m.lastName ?? ''}`.trim() || m.email })),
+              )
+            : locationsApi.getRosters(spaces).then((rows) =>
+                rows
+                  .filter((a) => a.user)
+                  .map((a) => ({ id: a.userId, name: `${a.user!.firstName ?? ''} ${a.user!.lastName ?? ''}`.trim() || a.user!.email }))
+                  .filter((m, i, all) => all.findIndex((x) => x.id === m.id) === i),
+              ),
+        ]);
         if (!alive) return;
         setKinds(ks);
-        setMembers(
-          (ms ?? [])
-            .filter((m: any) => m.isActive !== false && m.role !== 'CUSTOMER')
-            .map((m: any) => ({ id: m.id, name: `${m.firstName ?? ''} ${m.lastName ?? ''}`.trim() || m.email })),
-        );
+        setMembers(people);
       } catch {
         // The pickers stay empty and the screen says so; an error toast on a
         // camera screen somebody just opened is noise.
       }
     })();
     return () => { alive = false; };
-  }, [canManage]);
+  }, [canManage, user]);
 
   useEffect(() => {
     if (!categoryId && usable.length === 1) setCategoryId(usable[0]!.id);
