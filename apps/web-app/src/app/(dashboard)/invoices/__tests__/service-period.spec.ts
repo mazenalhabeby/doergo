@@ -117,7 +117,9 @@ describe("the service period", () => {
     expect(src).toContain("invoices.create.servicePeriod")
 
     const pdf = strip(read(path.join(WEB, "../../../lib/invoice-pdf.ts")))
-    expect(pdf).toContain("Service period")
+    // Written in the client's language, so the words live in the document catalogue.
+    expect(pdf).toContain("L.servicePeriod")
+    expect(read(path.join(WEB, "../../../lib/invoice-document-locale.ts"))).toContain('servicePeriod: "Service period"')
     expect(pdf).toContain("servicePeriodFrom")
     // And the same statement reaches the EDIT screen, which shows the period
     // the invoice was raised for rather than inventing a new one.

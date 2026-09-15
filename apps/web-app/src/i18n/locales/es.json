@@ -4593,7 +4593,12 @@
     "issuedOn": "Emitida {{date}}",
     "dueOn": "Vence {{date}}",
     "allSpaces": "Todos",
-    "inWorkspace": "En {{name}}"
+    "inWorkspace": "En {{name}}",
+    "pdfLanguage": {
+      "button": "Idioma: {{language}}",
+      "client": "del cliente ({{language}})",
+      "hint": "Etiquetas, fechas e importes del PDF. Las descripciones y notas se mantienen tal como se escribieron."
+    }
   },
   "overtime": {
     "title": "Gestión de horas extra",

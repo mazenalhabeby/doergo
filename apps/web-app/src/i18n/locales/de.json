@@ -4593,7 +4593,12 @@
     "issuedOn": "Ausgestellt {{date}}",
     "dueOn": "Fällig {{date}}",
     "allSpaces": "Alle",
-    "inWorkspace": "In {{name}}"
+    "inWorkspace": "In {{name}}",
+    "pdfLanguage": {
+      "button": "Sprache: {{language}}",
+      "client": "Kundensprache ({{language}})",
+      "hint": "Beschriftungen, Datumsangaben und Beträge im PDF. Beschreibungen und Anmerkungen bleiben, wie sie geschrieben wurden."
+    }
   },
   "overtime": {
     "title": "Überstundenverwaltung",

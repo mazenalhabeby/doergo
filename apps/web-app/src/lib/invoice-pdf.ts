@@ -1,13 +1,20 @@
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
+import type { SupportedLocale } from "@hbcfield/shared/client"
 import { invoiceStamp } from "./invoice-status"
-import { formatMoney } from "@/lib/money"
+import {
+  documentUpper, fillLabel, formatDocumentDate, formatDocumentMoney, formatDocumentQuantity,
+  invoiceDocumentLabels, termsSentence, type InvoiceDocumentLabels,
+} from "./invoice-document-locale"
 
 /**
  * Client-side invoice PDF, mirroring the "PDF studio" approach in report-pdf.ts
  * (jsPDF + jspdf-autotable, org letterhead with logo/address, graceful fallback
  * to name-only if the logo is CORS-blocked). Kept self-contained so it does not
  * depend on api.ts types (which change independently).
+ *
+ * Written in the CLIENT's language (`locale`) — every label, date and amount;
+ * see `invoice-document-locale.ts`. Descriptions, notes and names go as written.
  */
 
 export interface InvoiceBranding {
@@ -53,6 +60,12 @@ export interface InvoicePdfData {
   servicePeriodTo?: string | Date | null
   notes?: string | null
   items: InvoicePdfItem[]
+  /**
+   * The language the client's copy is written in: the invoice's
+   * `documentLocale`, or the one the office picked for this download.
+   * Absent reads English.
+   */
+  locale?: SupportedLocale | null
 }
 
 const INK = { r: 30, g: 41, b: 59 } // slate-800
@@ -95,18 +108,12 @@ function orgAddressLines(b: InvoiceBranding): string[] {
   return [line1, b.addressLine2 || "", regionLine, contact].filter((l) => l && l.trim().length > 0)
 }
 
-function fmtMoney(n: number, currency: string): string {
-  return formatMoney(n, currency)
-}
-
-function fmtDate(d?: string | Date | null): string {
-  if (!d) return "—"
-  const dt = typeof d === "string" ? new Date(d) : d
-  if (isNaN(dt.getTime())) return "—"
-  return dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-}
-
 async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise<jsPDF> {
+  const locale = inv.locale ?? null
+  const L: InvoiceDocumentLabels = invoiceDocumentLabels(locale)
+  const fmtMoney = (n: number, currency: string) => formatDocumentMoney(n, currency, locale)
+  const fmtDate = (d?: string | Date | null) => formatDocumentDate(d, locale)
+  const upper = (text: string) => documentUpper(text, locale)
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
   const pageW = doc.internal.pageSize.getWidth()
   const margin = 16
@@ -124,23 +131,23 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
   doc.setTextColor(INK.r, INK.g, INK.b)
   doc.setFont("helvetica", "bold")
   doc.setFontSize(15)
-  doc.text(branding.name || "Company", margin + logoW, margin + 5)
+  doc.text(branding.name || L.company, margin + logoW, margin + 5)
   doc.setFont("helvetica", "normal")
   doc.setFontSize(8.5)
   doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
   let ly = margin + 10
   for (const line of orgAddressLines(branding)) { doc.text(line, margin + logoW, ly); ly += 4 }
-  if (branding.vatId) { doc.text(`VAT / UID: ${branding.vatId}`, margin + logoW, ly); ly += 4 }
+  if (branding.vatId) { doc.text(`${L.vatId}: ${branding.vatId}`, margin + logoW, ly); ly += 4 }
 
   // ── "INVOICE" heading block (right-aligned) ─────────────────────────────────
   doc.setTextColor(ACCENT.r, ACCENT.g, ACCENT.b)
   doc.setFont("helvetica", "bold")
   doc.setFontSize(22)
-  doc.text("INVOICE", pageW - margin, margin + 6, { align: "right" })
+  doc.text(upper(L.invoice), pageW - margin, margin + 6, { align: "right" })
   doc.setTextColor(INK.r, INK.g, INK.b)
   doc.setFont("helvetica", "normal")
   doc.setFontSize(9)
-  doc.text(inv.invoiceNumber, pageW - margin, margin + 12, { align: "right" })
+  doc.text(`${L.invoiceNumber} ${inv.invoiceNumber}`, pageW - margin, margin + 12, { align: "right" })
 
   let y = Math.max(ly, margin + 22) + 6
   doc.setDrawColor(ACCENT.r, ACCENT.g, ACCENT.b)
@@ -153,7 +160,7 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
   doc.setFont("helvetica", "bold")
   doc.setFontSize(7.5)
   doc.setTextColor(ACCENT.r, ACCENT.g, ACCENT.b)
-  doc.text("BILL TO", margin, y, { charSpace: 0.4 })
+  doc.text(upper(L.billTo), margin, y, { charSpace: 0.4 })
   doc.setTextColor(INK.r, INK.g, INK.b)
   doc.setFont("helvetica", "bold")
   doc.setFontSize(10)
@@ -177,8 +184,8 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
     unpaid invoice is argued over.
   */
   const metaRows: [string, string][] = [
-    ["Issue date", fmtDate(inv.issueDate)],
-    ["Due date", inv.dueDate ? fmtDate(inv.dueDate) : "On receipt"],
+    [L.issueDate, fmtDate(inv.issueDate)],
+    [L.dueDate, inv.dueDate ? fmtDate(inv.dueDate) : L.onReceipt],
   ]
 
   /*
@@ -191,12 +198,12 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
   */
   if (inv.servicePeriodFrom || inv.servicePeriodTo) {
     metaRows.push([
-      "Service period",
+      L.servicePeriod,
       inv.servicePeriodFrom && inv.servicePeriodTo
         ? `${fmtDate(inv.servicePeriodFrom)} - ${fmtDate(inv.servicePeriodTo)}`
         : inv.servicePeriodFrom
-          ? `From ${fmtDate(inv.servicePeriodFrom)}`
-          : `Up to ${fmtDate(inv.servicePeriodTo)}`,
+          ? fillLabel(L.periodFrom, { date: fmtDate(inv.servicePeriodFrom) })
+          : fillLabel(L.periodTo, { date: fmtDate(inv.servicePeriodTo) }),
     ])
   }
   let my = y
@@ -213,10 +220,10 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
   // ── Line items table ────────────────────────────────────────────────────────
   autoTable(doc, {
     startY: y,
-    head: [["Description", "Qty", "Unit price", "Amount"]],
+    head: [[L.description, L.qty, L.unitPrice, L.amount]],
     body: inv.items.map((it) => [
       it.description,
-      String(it.quantity),
+      formatDocumentQuantity(it.quantity, locale),
       fmtMoney(it.unitPrice, inv.currency),
       fmtMoney(it.amount, inv.currency),
     ]),
@@ -245,29 +252,46 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
     doc.text(value, pageW - margin, ty, { align: "right" })
     ty += bold ? 7 : 5.5
   }
-  totalLine("Subtotal", fmtMoney(inv.subtotal, inv.currency))
-  if (inv.discount) totalLine("Discount", `- ${fmtMoney(inv.discount, inv.currency)}`)
-  if (inv.taxRate) totalLine(`Tax (${Math.round((inv.taxRate || 0) * 100)}%)`, fmtMoney(inv.taxAmount, inv.currency))
+  totalLine(L.subtotal, fmtMoney(inv.subtotal, inv.currency))
+  if (inv.discount) totalLine(L.discount, `- ${fmtMoney(inv.discount, inv.currency)}`)
+  if (inv.taxRate) totalLine(`${L.vat} (${Math.round((inv.taxRate || 0) * 100)}%)`, fmtMoney(inv.taxAmount, inv.currency))
   doc.setDrawColor(LINE.r, LINE.g, LINE.b); doc.setLineWidth(0.3)
   doc.line(totalsX, ty - 2, pageW - margin, ty - 2)
   ty += 2
-  totalLine("Total", fmtMoney(inv.total, inv.currency), true)
+  totalLine(L.total, fmtMoney(inv.total, inv.currency), true)
+
+  // ── Terms ───────────────────────────────────────────────────────────────────
+  // What the client is asked to do, in their language — and nothing on an
+  // invoice that is already settled or cancelled.
+  const terms = termsSentence(locale, inv)
+  if (terms) {
+    ty += 2
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(INK.r, INK.g, INK.b)
+    for (const l of doc.splitTextToSize(terms, pageW - margin * 2)) { doc.text(l, pageW - margin, ty, { align: "right" }); ty += 4 }
+  }
 
   // ── Notes ─────────────────────────────────────────────────────────────────
   if (inv.notes && inv.notes.trim()) {
     ty += 6
     doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(ACCENT.r, ACCENT.g, ACCENT.b)
-    doc.text("NOTES", margin, ty, { charSpace: 0.4 }); ty += 5
+    doc.text(upper(L.notes), margin, ty, { charSpace: 0.4 }); ty += 5
     doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
     for (const l of doc.splitTextToSize(inv.notes, pageW - margin * 2)) { doc.text(l, margin, ty); ty += 4 }
   }
 
-  // ── Footer ──────────────────────────────────────────────────────────────────
+  // ── Footer, on every page ───────────────────────────────────────────────────
+  // A long invoice runs onto a second page; each one says whose it is and
+  // "page x of y", so a page that comes loose from the others can be put back.
   const pageH = doc.internal.pageSize.getHeight()
-  doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
-  doc.text(`${branding.name || "Company"} · ${inv.invoiceNumber}`, margin, pageH - 8)
+  const pages = doc.getNumberOfPages()
+  for (let p = 1; p <= pages; p++) {
+    doc.setPage(p)
+    doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
+    doc.text(`${branding.name || L.company} · ${inv.invoiceNumber}`, margin, pageH - 8)
+    doc.text(fillLabel(L.page, { page: p, pages }), pageW - margin, pageH - 8, { align: "right" })
+  }
 
-  drawStatusStamp(doc, inv.status, pageW, pageH, margin)
+  drawStatusStamp(doc, inv.status, L, locale, pageW, pageH, margin)
   return doc
 }
 
@@ -285,7 +309,9 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
  *             should file it. Said loudly, because a draft mistaken for an
  *             invoice is the expensive direction of that mistake.
  *   CANCELED  it was an invoice and is not owed. Same reasoning.
- *   PAID      conventional, and useful to whoever opens the file later.
+ *   PAID      conventional, and useful to whoever opens the file later. The
+ *             stamp reads SETTLED (and its translations): the product never
+ *             prints "paid".
  *
  * SENT, OVERDUE and REFUNDED are deliberately not drawn. Beyond meaning little
  * to the reader, they go STALE: a PDF is a frozen copy that outlives the state
@@ -295,31 +321,41 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
 function drawStatusStamp(
   doc: jsPDF,
   status: string,
+  L: InvoiceDocumentLabels,
+  locale: SupportedLocale | null,
   pageW: number,
   pageH: number,
   margin: number,
 ): void {
   const stamp = invoiceStamp(status)
   if (!stamp) return
+  // In the reader's language: a DRAFT they cannot read is not a warning.
+  const text = documentUpper(L.stamp[stamp.kind], locale)
 
   // Diagonal across the page, behind nothing and over everything — a watermark
-  // that has to be read rather than found.
-  doc.saveGraphicsState()
-  // @ts-expect-error — GState is provided by jsPDF at runtime, not in its types.
-  doc.setGState(new doc.GState({ opacity: 0.16 }))
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(74)
-  doc.setTextColor(stamp.color.r, stamp.color.g, stamp.color.b)
-  doc.text(stamp.text, pageW / 2, pageH / 2, { align: "center", angle: 32 })
-  doc.restoreGraphicsState()
+  // that has to be read rather than found. On EVERY page: the second page of a
+  // draft, printed on its own, must not read as an invoice either.
+  const pages = doc.getNumberOfPages()
+  for (let p = 1; p <= pages; p++) {
+    doc.setPage(p)
+    doc.saveGraphicsState()
+    // @ts-expect-error — GState is provided by jsPDF at runtime, not in its types.
+    doc.setGState(new doc.GState({ opacity: 0.16 }))
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(74)
+    doc.setTextColor(stamp.color.r, stamp.color.g, stamp.color.b)
+    doc.text(text, pageW / 2, pageH / 2, { align: "center", angle: 32 })
+    doc.restoreGraphicsState()
+  }
 
-  // And once more, small and solid under the invoice number, so it survives
-  // being printed in greyscale or read on a phone at thumbnail size.
+  // And once more, small and solid under the invoice number on the first page,
+  // so it survives being printed in greyscale or read at thumbnail size.
+  doc.setPage(1)
   doc.setFont("helvetica", "bold")
   doc.setFontSize(9)
   doc.setTextColor(stamp.color.r, stamp.color.g, stamp.color.b)
   // Directly beneath the invoice number, which sits at margin + 12.
-  doc.text(stamp.text, pageW - margin, margin + 17, { align: "right" })
+  doc.text(text, pageW - margin, margin + 17, { align: "right" })
 }
 
 /** Download the invoice as a PDF file. */

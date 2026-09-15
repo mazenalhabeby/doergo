@@ -5742,6 +5742,11 @@ export interface Invoice {
   servicePeriodFrom?: string | null;
   servicePeriodTo?: string | null;
   notes?: string | null;
+  /**
+   * The language the client's copy is written in (en|de|es|fr|it), decided on
+   * the server by the client-email rule. On the single-invoice read only.
+   */
+  documentLocale?: string | null;
   organizationId: string;
   createdById: string;
   items: InvoiceItem[];
