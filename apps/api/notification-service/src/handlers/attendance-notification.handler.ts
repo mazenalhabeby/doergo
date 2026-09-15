@@ -80,6 +80,7 @@ export class AttendanceNotificationHandler {
 
     try {
       await this.emailService.sendAutoClockOutEmail({
+        userId: data.userId,
         userEmail: data.userEmail,
         userName: data.userName,
         locationName: data.locationName,
@@ -628,19 +629,20 @@ export class AttendanceNotificationHandler {
   }) {
     this.logger.log(`Geofence alert: user=${data.userName}, distance=${data.distance}m`);
 
-    for (const email of data.dispatcherEmails) {
-      try {
-        await this.emailService.sendGeofenceAlertEmail({
-          userEmail: email,
-          userName: data.userName,
-          locationName: data.locationName,
-          distance: data.distance,
-          allowedRadius: data.allowedRadius,
-          action: data.action,
-        });
-      } catch (error) {
-        this.logger.error(`Failed to send geofence alert email to ${email}: ${error}`);
-      }
+    // `dispatcherIds` and `dispatcherEmails` are the same people in the same
+    // order (NotificationRoutingService builds both from one list), so they zip.
+    // The ids are what carry each reader's language — one query for all of them.
+    try {
+      await this.emailService.sendGeofenceAlertEmail({
+        recipients: (data.dispatcherEmails || []).map((email, i) => ({ id: data.dispatcherIds?.[i], email })),
+        userName: data.userName,
+        locationName: data.locationName,
+        distance: data.distance,
+        allowedRadius: data.allowedRadius,
+        action: data.action,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send geofence alert emails: ${error}`);
     }
 
     try {

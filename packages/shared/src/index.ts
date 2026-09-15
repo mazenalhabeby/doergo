@@ -87,6 +87,12 @@ export * from './access/workflow-status-label';
 
 // SMTP connection settings — one decision, both sending services.
 export * from './mail/transport';
+// Email words, per recipient language — templates, catalogue and the address
+// lookup. Root entry only: nothing in a browser writes an email.
+export * from './mail/email-messages';
+export * from './mail/email-render';
+export * from './mail/email-templates';
+export * from './mail/email-locale';
 
 // One replica per scheduled job — see the note in the file.
 export * from './scheduling/cron-lock';
@@ -97,6 +103,7 @@ export * from './security/tokens';
 // Push routing — see client.ts.
 export * from './notifications/push-channels';
 export * from './notifications/locale';
+export * from './notifications/locale-format';
 
 // Counted time — see client.ts.
 export * from './attendance/counted-time';

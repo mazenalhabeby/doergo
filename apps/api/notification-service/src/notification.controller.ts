@@ -150,10 +150,12 @@ export class NotificationController {
   @EventPattern('invitation_created')
   async handleInvitationCreated(@Payload() data: {
     recipientEmail: string;
-    organizationName: string;
+    organizationName: string | null;
     invitationCode: string;
     targetRole: string;
     expiresAt: string;
+    /** The member who created it — their language is the email's fallback. */
+    inviterId?: string | null;
   }) {
     this.logger.log(`Sending invitation email to ${data.recipientEmail} for org ${data.organizationName}`);
     await this.emailService.sendInvitationEmail(data);

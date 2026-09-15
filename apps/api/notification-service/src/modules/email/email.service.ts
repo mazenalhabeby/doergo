@@ -1,20 +1,50 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
-import { mailRoutes, sendViaFirstWorking, type MailRoute } from '@hbcfield/shared';
+import {
+  autoClockOutEmail,
+  DEFAULT_LOCALE,
+  geofenceAlertEmail,
+  groupByLocale,
+  invitationEmail,
+  mailRoutes,
+  sendViaFirstWorking,
+  taskAssignedEmail,
+  taskCompletedEmail,
+  type MailRoute,
+  type RenderedEmail,
+  type SupportedLocale,
+} from '@hbcfield/shared';
+import { RecipientLocales } from '../../i18n/recipient-locales.service';
 
-// Escape HTML to prevent XSS in email content
-function esc(str: string | undefined | null): string {
-  if (!str) return '';
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+/** Somebody an email goes to. `id` is what carries their language; without one it is English. */
+export interface EmailRecipient {
+  id?: string | null;
+  email: string;
 }
 
+/**
+ * Delivery, and the choice of language. Never the words.
+ *
+ * What each email SAYS lives in `@hbcfield/shared` (email-templates.ts), keyed
+ * by language, because auth-service and task-service send mail too and all
+ * three must say the same thing the same way. What this service decides is
+ * who reads which language — one query for a whole recipient list, the same
+ * RecipientLocales the pushes use — and that each language is rendered ONCE
+ * however many people read it.
+ *
+ * `email-catalogue-guard.spec.ts` fails if a subject or a line of markup is
+ * written here again.
+ */
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private routes: Array<MailRoute & { tx: nodemailer.Transporter }> = [];
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private readonly locales: RecipientLocales,
+  ) {
     // The same routes the auth service uses, resolved the same way: primary
     // first, then the fallback, so one provider refusing us does not stop the
     // product sending mail.
@@ -60,198 +90,78 @@ export class EmailService {
     }
   }
 
-  async sendTaskCreatedEmail(task: any, recipientEmail: string) {
-    const subject = `New Task Created: ${esc(task.title)}`;
-    const html = `
-      <h2>New Task Created</h2>
-      <p><strong>Title:</strong> ${esc(task.title)}</p>
-      <p><strong>Description:</strong> ${esc(task.description) || 'N/A'}</p>
-      <p><strong>Priority:</strong> ${esc(task.priority)}</p>
-    `;
-    return this.sendEmail(recipientEmail, subject, html);
+  private send(to: string, email: RenderedEmail) {
+    return this.sendEmail(to, email.subject, email.html);
   }
 
-  async sendTaskAssignedEmail(task: any, workerEmail: string) {
-    const subject = `Task Assigned: ${esc(task.title)}`;
-    const html = `
-      <h2>You have been assigned a new task</h2>
-      <p><strong>Title:</strong> ${esc(task.title)}</p>
-      <p><strong>Description:</strong> ${esc(task.description) || 'N/A'}</p>
-      <p><strong>Priority:</strong> ${esc(task.priority)}</p>
-      <p><strong>Location:</strong> ${esc(task.locationAddress) || 'N/A'}</p>
-    `;
-    return this.sendEmail(workerEmail, subject, html);
+  /**
+   * One email per recipient, each in the recipient's language.
+   *
+   * Languages are loaded for the whole list in one query, and the message is
+   * rendered once per language rather than once per person: a geofence alert
+   * to six managers who read two languages is one lookup and two renders.
+   * Addresses repeated in the list get one email.
+   */
+  async sendToMembers(recipients: EmailRecipient[], render: (locale: SupportedLocale) => RenderedEmail): Promise<void> {
+    const seen = new Set<string>();
+    const unique = recipients.filter((r) => {
+      const key = r.email?.trim().toLowerCase();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    if (unique.length === 0) return;
+
+    const locales = await this.locales.localesFor(unique.map((r) => r.id));
+    const groups = groupByLocale(unique, (r) => (r.id && locales.get(r.id)) || DEFAULT_LOCALE);
+    for (const [locale, group] of groups) {
+      const email = render(locale);
+      for (const r of group) {
+        try {
+          await this.send(r.email, email);
+        } catch (error) {
+          this.logger.error(`Failed to send email to ${r.email}: ${error}`);
+        }
+      }
+    }
   }
 
-  async sendTaskCompletedEmail(task: any, recipientEmail: string) {
-    const subject = `Task Completed: ${esc(task.title)}`;
-    const html = `
-      <h2>Task Completed</h2>
-      <p><strong>Title:</strong> ${esc(task.title)}</p>
-      <p>The task has been marked as completed.</p>
-    `;
-    return this.sendEmail(recipientEmail, subject, html);
+  async sendTaskAssignedEmail(task: Parameters<typeof taskAssignedEmail>[1], assignee: EmailRecipient) {
+    return this.sendToMembers([assignee], (locale) => taskAssignedEmail(locale, task));
+  }
+
+  async sendTaskCompletedEmail(task: Parameters<typeof taskCompletedEmail>[1], creator: EmailRecipient) {
+    return this.sendToMembers([creator], (locale) => taskCompletedEmail(locale, task));
   }
 
   // =========================================================================
   // ATTENDANCE NOTIFICATIONS
   // =========================================================================
 
-  async sendAutoClockOutEmail(data: {
-    userEmail: string;
-    userName: string;
-    locationName: string;
-    clockInTime: string;
-    clockOutTime: string;
-    totalHours: number;
-    reason: 'exceeded_duration' | 'end_of_day';
-  }) {
-    const reasonText = data.reason === 'exceeded_duration'
-      ? 'You were automatically clocked out because your shift exceeded the maximum allowed duration (16 hours).'
-      : 'You were automatically clocked out at the end of the day.';
-
-    const subject = `Auto Clock-Out: ${data.locationName}`;
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #d97706;">Automatic Clock-Out Notice</h2>
-        <p>Hello ${data.userName},</p>
-        <p>${reasonText}</p>
-
-        <div style="background-color: #f8fafc; border-radius: 8px; padding: 16px; margin: 20px 0;">
-          <h3 style="margin-top: 0; color: #334155;">Shift Details</h3>
-          <p><strong>Location:</strong> ${data.locationName}</p>
-          <p><strong>Clock In:</strong> ${data.clockInTime}</p>
-          <p><strong>Clock Out:</strong> ${data.clockOutTime}</p>
-          <p><strong>Total Hours:</strong> ${data.totalHours.toFixed(1)} hours</p>
-        </div>
-
-        <p style="color: #64748b; font-size: 14px;">
-          If you believe this was an error, please contact your supervisor.
-        </p>
-
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
-        <p style="color: #94a3b8; font-size: 12px;">
-          This is an automated message from HBCField.
-        </p>
-      </div>
-    `;
-    return this.sendEmail(data.userEmail, subject, html);
+  async sendAutoClockOutEmail(
+    data: Parameters<typeof autoClockOutEmail>[1] & { userId?: string | null; userEmail: string },
+  ) {
+    return this.sendToMembers([{ id: data.userId, email: data.userEmail }], (locale) =>
+      autoClockOutEmail(locale, data),
+    );
   }
 
-  async sendGeofenceAlertEmail(data: {
-    userEmail: string;
-    userName: string;
-    locationName: string;
-    distance: number;
-    allowedRadius: number;
-    action: 'clock_in' | 'clock_out';
-  }) {
-    const subject = `Geofence Alert: ${data.userName} - ${data.action === 'clock_in' ? 'Clock In' : 'Clock Out'}`;
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #dc2626;">Geofence Alert</h2>
-        <p>A technician has ${data.action === 'clock_in' ? 'clocked in' : 'clocked out'} outside the allowed geofence area.</p>
-
-        <div style="background-color: #fef2f2; border-radius: 8px; padding: 16px; margin: 20px 0; border-left: 4px solid #dc2626;">
-          <h3 style="margin-top: 0; color: #991b1b;">Details</h3>
-          <p><strong>Technician:</strong> ${data.userName}</p>
-          <p><strong>Location:</strong> ${data.locationName}</p>
-          <p><strong>Distance from location:</strong> ${Math.round(data.distance)}m</p>
-          <p><strong>Allowed radius:</strong> ${data.allowedRadius}m</p>
-        </div>
-
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
-        <p style="color: #94a3b8; font-size: 12px;">
-          This is an automated alert from HBCField.
-        </p>
-      </div>
-    `;
-    return this.sendEmail(data.userEmail, subject, html);
+  /** To everybody who watches the member — each in their own language. */
+  async sendGeofenceAlertEmail(
+    data: Parameters<typeof geofenceAlertEmail>[1] & { recipients: EmailRecipient[] },
+  ) {
+    return this.sendToMembers(data.recipients, (locale) => geofenceAlertEmail(locale, data));
   }
 
-  async sendAttendanceReportEmail(data: {
-    recipientEmail: string;
-    recipientName: string;
-    reportType: 'weekly' | 'monthly';
-    periodStart: string;
-    periodEnd: string;
-    totalHours: number;
-    totalShifts: number;
-    overtimeHours: number;
-  }) {
-    const subject = `${data.reportType === 'weekly' ? 'Weekly' : 'Monthly'} Attendance Report`;
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2563eb;">Attendance Report</h2>
-        <p>Hello ${data.recipientName},</p>
-        <p>Here is your ${data.reportType} attendance summary.</p>
-
-        <div style="background-color: #f8fafc; border-radius: 8px; padding: 16px; margin: 20px 0;">
-          <h3 style="margin-top: 0; color: #334155;">Summary</h3>
-          <p><strong>Period:</strong> ${data.periodStart} - ${data.periodEnd}</p>
-          <p><strong>Total Shifts:</strong> ${data.totalShifts}</p>
-          <p><strong>Total Hours:</strong> ${data.totalHours.toFixed(1)} hours</p>
-          ${data.overtimeHours > 0 ? `<p><strong>Overtime:</strong> ${data.overtimeHours.toFixed(1)} hours</p>` : ''}
-        </div>
-
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
-        <p style="color: #94a3b8; font-size: 12px;">
-          This is an automated report from HBCField.
-        </p>
-      </div>
-    `;
-    return this.sendEmail(data.recipientEmail, subject, html);
-  }
-
-  async sendInvitationEmail(data: {
-    recipientEmail: string;
-    organizationName: string;
-    invitationCode: string;
-    targetRole: string;
-    expiresAt: string;
-  }) {
-    const subject = `You're invited to join ${esc(data.organizationName)} on HBCField`;
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="text-align: center; padding: 30px 0;">
-          <h1 style="color: #2563eb; margin: 0;">HBC FIELD</h1>
-          <p style="color: #64748b; margin-top: 4px;">Field Service Management</p>
-        </div>
-
-        <div style="background-color: #f8fafc; border-radius: 12px; padding: 24px; text-align: center;">
-          <h2 style="color: #1e293b; margin-top: 0;">You've been invited!</h2>
-          <p style="color: #475569;">
-            You've been invited to join <strong>${esc(data.organizationName)}</strong> as a <strong>${esc(data.targetRole)}</strong>.
-          </p>
-
-          <div style="background: linear-gradient(135deg, #eff6ff, #e0e7ff); border: 2px solid #bfdbfe; border-radius: 12px; padding: 20px; margin: 24px 0;">
-            <p style="color: #64748b; font-size: 14px; margin: 0 0 8px 0;">Your invitation code</p>
-            <p style="font-family: monospace; font-size: 32px; font-weight: bold; letter-spacing: 0.3em; color: #1e40af; margin: 0;">
-              ${esc(data.invitationCode)}
-            </p>
-          </div>
-
-          <p style="color: #475569;">
-            To get started:
-          </p>
-          <ol style="color: #475569; text-align: left; padding-left: 20px;">
-            <li>Download the HBCField app</li>
-            <li>Create your account</li>
-            <li>Choose "Use Invitation" during setup</li>
-            <li>Enter the code above</li>
-          </ol>
-
-          <p style="color: #94a3b8; font-size: 13px; margin-top: 20px;">
-            This invitation expires on ${new Date(data.expiresAt).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
-          </p>
-        </div>
-
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
-        <p style="color: #94a3b8; font-size: 12px; text-align: center;">
-          This is an automated email from HBCField. If you didn't expect this invitation, you can safely ignore it.
-        </p>
-      </div>
-    `;
-    return this.sendEmail(data.recipientEmail, subject, html);
+  /**
+   * An invitation goes to an ADDRESS, usually of somebody with no account yet.
+   * Language: their own account if the address is one, else the inviting
+   * member's, else English (RecipientLocales.forAddress).
+   */
+  async sendInvitationEmail(
+    data: Parameters<typeof invitationEmail>[1] & { recipientEmail: string; inviterId?: string | null },
+  ) {
+    const locale = await this.locales.forAddress(data.recipientEmail, data.inviterId);
+    return this.send(data.recipientEmail, invitationEmail(locale, data));
   }
 }

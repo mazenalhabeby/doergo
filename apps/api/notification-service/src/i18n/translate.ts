@@ -1,4 +1,4 @@
-import { DEFAULT_LOCALE, type SupportedLocale } from '@hbcfield/shared';
+import { DEFAULT_LOCALE, formatNumberFor, pluralFormFor, type SupportedLocale } from '@hbcfield/shared';
 import { PUSH_MESSAGES, type PushKey, type PushPluralKey } from './push-messages';
 
 /**
@@ -67,27 +67,10 @@ export const verbatim = (text: string | null | undefined, max?: number): Msg =>
 export const joined = (parts: Array<Msg | PluralMsg>, separator: string) => (locale: SupportedLocale) =>
   parts.map((part) => render(locale, part)).join(separator);
 
-const numberFormats =new Map<SupportedLocale, Intl.NumberFormat>();
-function formatNumber(locale: SupportedLocale, n: number): string {
-  let f = numberFormats.get(locale);
-  if (!f) {
-    f = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
-    numberFormats.set(locale, f);
-  }
-  return f.format(n);
-}
-
-const pluralRules = new Map<SupportedLocale, Intl.PluralRules>();
-function pluralForm(locale: SupportedLocale, count: number): 'one' | 'other' {
-  let r = pluralRules.get(locale);
-  if (!r) {
-    r = new Intl.PluralRules(locale);
-    pluralRules.set(locale, r);
-  }
-  // CLDR gives French, Spanish and Italian a "many" form for round millions.
-  // Nobody has a million blocked tasks; everything that is not "one" is "other".
-  return r.select(count) === 'one' ? 'one' : 'other';
-}
+// Shared with the email templates, so a push and an email to the same member
+// write "8,5" and choose "1 Tag" by the same rule.
+const formatNumber = (locale: SupportedLocale, n: number) => formatNumberFor(locale, n);
+const pluralForm = pluralFormFor;
 
 function renderParam(locale: SupportedLocale, value: MsgParam): string {
   if (value === null || value === undefined) return '';

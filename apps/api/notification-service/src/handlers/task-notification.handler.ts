@@ -88,7 +88,7 @@ export class TaskNotificationHandler {
     // Email notification to assigned worker
     if (data.workerEmail) {
       try {
-        await this.emailService.sendTaskAssignedEmail(data.task, data.workerEmail);
+        await this.emailService.sendTaskAssignedEmail(data.task, { id: data.workerId, email: data.workerEmail });
       } catch (error) {
         this.logger.error(`Failed to send task assigned email: ${error}`);
       }
@@ -138,7 +138,10 @@ export class TaskNotificationHandler {
     // Email notification for task completion
     if (data.newStatus === 'COMPLETED' && data.creatorEmail) {
       try {
-        await this.emailService.sendTaskCompletedEmail(data.task, data.creatorEmail);
+        await this.emailService.sendTaskCompletedEmail(data.task, {
+          id: data.task.createdById,
+          email: data.creatorEmail,
+        });
       } catch (error) {
         this.logger.error(`Failed to send task completed email: ${error}`);
       }

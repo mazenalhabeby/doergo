@@ -31,6 +31,7 @@ import {
   accessAllows,
   resolveTaskCreationScope,
   mailRoutes,
+  passwordResetEmail,
   sendViaFirstWorking,
   type MailRoute,
   type ProfileBadgesConfig,
@@ -388,7 +389,17 @@ export class AuthService {
     };
   }
 
-  private async sendPasswordResetEmail(email: string, firstName: string, resetToken: string) {
+  /**
+   * The reset email, in the language the member reads the app in.
+   *
+   * The words are the shared template's (`passwordResetEmail`), so this and the
+   * invitation a member received cannot drift apart in tone or in language.
+   * `locale` comes from the same row the address does — no extra query.
+   */
+  private async sendPasswordResetEmail(
+    user: { email: string; firstName: string; locale: string | null },
+    resetToken: string,
+  ) {
     if (!this.mailRoutes.length) {
       this.logger.warn('Cannot send password reset email - SMTP not configured');
       return;
@@ -399,45 +410,22 @@ export class AuthService {
     const fallbackFrom = this.configService.get('SMTP_FROM', 'noreply@hbcfield.eu');
 
     try {
-      const html = this.passwordResetHtml(firstName, resetLink);
+      // Rendered once so every route sends the same message.
+      const { subject, html } = passwordResetEmail(user.locale, {
+        firstName: user.firstName,
+        resetLink,
+        expiresInHours: PASSWORD_RESET_EXPIRATION_HOURS,
+      });
       const { label } = await sendViaFirstWorking(
         this.mailRoutes.map((r) => ({
           label: r.label,
-          send: () =>
-            r.tx.sendMail({
-              from: r.from || fallbackFrom,
-              to: email,
-              subject: 'HBCField - Reset Your Password',
-              html,
-            }),
+          send: () => r.tx.sendMail({ from: r.from || fallbackFrom, to: user.email, subject, html }),
         })),
       );
-      this.logger.log(`Password reset email sent to ${email} via ${label}`);
+      this.logger.log(`Password reset email sent to ${user.email} via ${label}`);
     } catch (err) {
-      this.logger.error(`Failed to send password reset email to ${email}: ${err}`);
+      this.logger.error(`Failed to send password reset email to ${user.email}: ${err}`);
     }
-  }
-
-  /** The reset email body, built once so every route sends the same message. */
-  private passwordResetHtml(firstName: string, resetLink: string): string {
-    return `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #2563eb;">Password Reset Request</h2>
-            <p>Hello ${firstName},</p>
-            <p>We received a request to reset your password. Click the button below to set a new password:</p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetLink}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                Reset Password
-              </a>
-            </div>
-            <p style="color: #64748b; font-size: 14px;">If the button doesn't work, copy and paste this link into your browser:</p>
-            <p style="color: #64748b; font-size: 14px; word-break: break-all;">${resetLink}</p>
-            <p style="color: #64748b; font-size: 14px;">This link will expire in ${PASSWORD_RESET_EXPIRATION_HOURS} hour(s).</p>
-            <p style="color: #64748b; font-size: 14px;">If you didn't request this, you can safely ignore this email.</p>
-            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
-            <p style="color: #94a3b8; font-size: 12px;">This is an automated message from HBCField.</p>
-          </div>
-        `;
   }
 
   async register(data: {
@@ -1425,7 +1413,7 @@ export class AuthService {
       // Find user - but don't reveal if email exists (security best practice)
       const user = await this.prisma.user.findUnique({
         where: { email },
-        select: { id: true, email: true, firstName: true },
+        select: { id: true, email: true, firstName: true, locale: true },
       });
 
       // SECURITY: Always return success to prevent email enumeration attacks
@@ -1463,7 +1451,7 @@ export class AuthService {
       });
 
       // Send password reset email
-      await this.sendPasswordResetEmail(user.email, user.firstName, resetToken);
+      await this.sendPasswordResetEmail(user, resetToken);
       this.logger.log(`Password reset token generated for user: ${email}`);
 
       return successResponse;

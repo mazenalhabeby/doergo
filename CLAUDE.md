@@ -1118,6 +1118,10 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `applyAgreement()`, `agreementFrom()`, `validateAgreedPrice()` | An agreed price — the ONE place a computed bill's total is replaced |
 | `isMaterialAgreementDrift()`, `agreementEndsWithin()` | Has a contracted customer outgrown the deal, and is the term ending? |
 | `isOrganizationSuspended()`, `ORG_SUSPENDED_MESSAGE` | The organization off switch, read at all three doors into the product |
+| `passwordResetEmail()`, `invitationEmail()`, `signLinkEmail()`, … (`mail/email-templates.ts`) | Every email the product sends, as `(locale, facts) → { subject, html }`. Senders pick the language and deliver; they write no words or markup (`email-catalogue-guard.spec.ts`) |
+| `EMAIL_MESSAGES`, `emailTranslator()`, `escapeHtml()`, `bold()` | The email catalogue (en/de/es/fr/it) and the renderer that escapes every sentence and value |
+| `localesByAddress()`, `groupByLocale()` | Which language an ADDRESS reads (its account's, one query for a list) — for invitations, client signing links, report recipients |
+| `formatNumberFor()`, `pluralFormFor()` | Numbers and one/other plurals per locale — shared by the push and email renderers |
 | `documentTypeVisibleTo()`, `visibleTypeWhere()`, `visibleTypeSelfWhere()` | Who may SEE documents of a type — one rule in three shapes (predicate / documents `where` / catalogue `where`). Empty list = no restriction |
 | `assertMemberInScope()`, `memberScopeFilter()` | "Is this person in my crew?" — one rule for both services |
 | `activeAssignmentWhere()` | "Is this member assigned to this workspace RIGHT NOW?" — shared by the clock-in list and the clock-in check |

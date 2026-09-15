@@ -1,5 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DEFAULT_LOCALE, normalizeLocale, PrismaService, type SupportedLocale } from '@hbcfield/shared';
+import {
+  DEFAULT_LOCALE,
+  localesByAddress,
+  normalizeLocale,
+  PrismaService,
+  type SupportedLocale,
+} from '@hbcfield/shared';
 
 /** Long enough that a burst of events costs one query; short enough that a language change lands within a minute on every replica. */
 export const LOCALE_CACHE_TTL_MS = 60_000;
@@ -9,7 +15,7 @@ const MAX_CACHED = 20_000;
 /**
  * Which language each recipient reads.
  *
- * Asked for every push and every bell entry, for everybody the event reaches —
+ * Asked for every push, bell entry and email, for everybody the event reaches —
  * so it is asked for a LIST and answered with one query for whatever the cache
  * does not already hold. A per-recipient lookup would put thirty round trips in
  * front of a push to thirty approvers.
@@ -58,6 +64,24 @@ export class RecipientLocales {
       for (const id of missing) result.set(id, DEFAULT_LOCALE);
     }
     return result;
+  }
+
+  /**
+   * The language for a message to an ADDRESS that may not be an account — an
+   * invitation. The recipient's own account wins when the address is one (an
+   * orphan login being invited has told us their language); otherwise the
+   * sending member's, since they chose to invite this person and most likely
+   * share a working language; otherwise English. See `localesByAddress`.
+   */
+  async forAddress(address: string, senderId?: string | null): Promise<SupportedLocale> {
+    try {
+      const own = (await localesByAddress(this.prisma, [address])).get(address.trim().toLowerCase());
+      if (own) return own;
+    } catch (error) {
+      this.logger.error(`Could not look up the locale for an address: ${error}`);
+    }
+    if (!senderId) return DEFAULT_LOCALE;
+    return (await this.localesFor([senderId])).get(senderId) ?? DEFAULT_LOCALE;
   }
 
   /**
