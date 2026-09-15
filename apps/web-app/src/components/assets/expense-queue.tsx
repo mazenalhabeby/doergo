@@ -12,6 +12,7 @@ import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { initials } from "./holder-picker"
+import { logTypeLabel } from "./log-style"
 
 /**
  * Expenses sent in from phones, waiting on somebody in the office.
@@ -64,6 +65,9 @@ export function ExpenseQueue() {
                 qc.invalidateQueries({ queryKey: ["asset-expenses-pending"] })
                 qc.invalidateQueries({ queryKey: ["asset-money", e.assetId] })
                 qc.invalidateQueries({ queryKey: ["asset-custody", e.assetId] })
+                // An accepted logbook entry moves the record's readings and next due.
+                qc.invalidateQueries({ queryKey: ["asset-log", e.assetId] })
+                qc.invalidateQueries({ queryKey: ["asset-log-summary", e.assetId] })
               }}
             />
           ))}
@@ -106,7 +110,8 @@ export function PendingRow({ entry, onDone }: { entry: PendingExpense; onDone: (
           {entry.asset?.name ? (
             <Link href={`/assets/${entry.assetId}`} className="hover:text-primary">{entry.asset.name}</Link>
           ) : t("expenses.anAsset", "An asset")}
-          <span className="text-muted-foreground"> · {entry.category}</span>
+          {/* A logbook entry files under its type's label; a cost under its heading. */}
+          <span className="text-muted-foreground"> · {entry.category || logTypeLabel(t, null, entry.logType)}</span>
         </p>
         <p className="truncate text-xs text-muted-foreground">
           {author} · {new Date(entry.occurredAt).toLocaleDateString()}
@@ -126,12 +131,23 @@ export function PendingRow({ entry, onDone }: { entry: PendingExpense; onDone: (
         </button>
       )}
 
-      <span className={cn(
-        "shrink-0 text-sm font-semibold tabular-nums",
-        entry.direction === "IN" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400",
-      )}>
-        {entry.direction === "IN" ? "+" : "−"} {formatCents(entry.amountCents)}
-      </span>
+      {/*
+        A logbook entry with no money (a dent, a meter reading) waits here too —
+        it is still somebody's word the office has to accept. It shows what it
+        IS rather than "€0.00", which reads like a receipt nobody filled in.
+      */}
+      {entry.amountCents > 0 ? (
+        <span className={cn(
+          "shrink-0 text-sm font-semibold tabular-nums",
+          entry.direction === "IN" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400",
+        )}>
+          {entry.direction === "IN" ? "+" : "−"} {formatCents(entry.amountCents)}
+        </span>
+      ) : (
+        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+          {t("assetLog.logEntry", "Logbook entry")}
+        </span>
+      )}
 
       <div className="flex shrink-0 items-center gap-1">
         <Button
