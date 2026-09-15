@@ -1,6 +1,16 @@
 # HBCField Production Docker Compose
 # Usage: docker compose --env-file .env.production up -d
 # Note: Nginx runs on the host (not in Docker) to share with other apps
+#
+# Images. The six application services carry BOTH `build:` and `image:`.
+#   · By hand: `docker compose --env-file .env.production build <svc>` builds
+#     exactly as before and tags hbcfield/hbcfield-<svc>:local.
+#   · Release pipeline (infra/release/deploy.sh): CI builds the images and pushes
+#     them to GHCR, and the server runs them with
+#       HBCFIELD_REGISTRY=ghcr.io/<owner> HBCFIELD_TAG=<commit sha> \
+#         docker compose --env-file .env.production up -d --no-deps --no-build <svc>
+#   Set both in the SHELL, never in .env.production: persisted there, a later
+#   hand build would put local bits under a CI image's name.
 
 # Log rotation (audit) — cap every container's json-file logs so verbose request
 # logging can't fill the disk on this shared box. 10MB × 3 files = 30MB/service.
@@ -129,6 +139,7 @@ services:
 
   # ==================== BACKEND SERVICES ====================
   auth-service:
+    image: ${HBCFIELD_REGISTRY:-hbcfield}/hbcfield-auth-service:${HBCFIELD_TAG:-local}
     build:
       context: ../../
       dockerfile: apps/api/auth-service/Dockerfile
@@ -214,6 +225,7 @@ services:
       - hbcfield-network
 
   task-service:
+    image: ${HBCFIELD_REGISTRY:-hbcfield}/hbcfield-task-service:${HBCFIELD_TAG:-local}
     build:
       context: ../../
       dockerfile: apps/api/task-service/Dockerfile
@@ -268,6 +280,7 @@ services:
       - hbcfield-network
 
   notification-service:
+    image: ${HBCFIELD_REGISTRY:-hbcfield}/hbcfield-notification-service:${HBCFIELD_TAG:-local}
     build:
       context: ../../
       dockerfile: apps/api/notification-service/Dockerfile
@@ -328,6 +341,7 @@ services:
       - hbcfield-network
 
   tracking-service:
+    image: ${HBCFIELD_REGISTRY:-hbcfield}/hbcfield-tracking-service:${HBCFIELD_TAG:-local}
     build:
       context: ../../
       dockerfile: apps/api/tracking-service/Dockerfile
@@ -359,6 +373,7 @@ services:
       - hbcfield-network
 
   api-gateway:
+    image: ${HBCFIELD_REGISTRY:-hbcfield}/hbcfield-api-gateway:${HBCFIELD_TAG:-local}
     build:
       context: ../../
       dockerfile: apps/api/gateway/Dockerfile
@@ -438,6 +453,7 @@ services:
 
   # ==================== WEB APP ====================
   web-app:
+    image: ${HBCFIELD_REGISTRY:-hbcfield}/hbcfield-web-app:${HBCFIELD_TAG:-local}
     build:
       context: ../../
       dockerfile: apps/web-app/Dockerfile

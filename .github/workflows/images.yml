@@ -1,0 +1,221 @@
+name: Images
+
+# The six production images, built from the repository's own Dockerfiles and
+# pushed to GHCR tagged with the commit SHA. The server never builds again: it
+# pulls exactly what was built here (infra/release/deploy.sh).
+#
+#   ghcr.io/<owner>/hbcfield-<service>:<full sha>    ← what a release deploys
+#   ghcr.io/<owner>/hbcfield-<service>:main          ← convenience, never deployed by name
+#
+# Authentication is the workflow's own GITHUB_TOKEN (packages: write). The server
+# pulls with a separate read-only token — see docs/release.md.
+#
+# ⚠️ Every web build argument that infra/docker/docker-compose.yml passes must be
+# passed here too, and declared as ARG in apps/web-app/Dockerfile. Docker drops
+# an undeclared build arg SILENTLY — the paid map tiles were configured, billed
+# and never used once already. tools/release/check-images.ts fails CI if these
+# three lists drift.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit to build (defaults to the tip of main)
+        required: false
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: images-${{ github.event.inputs.ref || github.sha }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  meta:
+    name: Resolve commit
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.sha.outputs.sha }}
+      owner: ${{ steps.sha.outputs.owner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.sha }}
+      - id: sha
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          # GHCR refuses upper-case repository names.
+          echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+  services:
+    name: Build ${{ matrix.service }}
+    needs: meta
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: auth-service
+            dockerfile: apps/api/auth-service/Dockerfile
+          - service: task-service
+            dockerfile: apps/api/task-service/Dockerfile
+          - service: notification-service
+            dockerfile: apps/api/notification-service/Dockerfile
+          - service: tracking-service
+            dockerfile: apps/api/tracking-service/Dockerfile
+          - service: api-gateway
+            dockerfile: apps/api/gateway/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.meta.outputs.sha }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          # The Dockerfiles install AND `pnpm deploy` with --frozen-lockfile, so
+          # the image is the lockfile, not whatever the registry called latest.
+          tags: |
+            ${{ env.REGISTRY }}/${{ needs.meta.outputs.owner }}/hbcfield-${{ matrix.service }}:${{ needs.meta.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ needs.meta.outputs.owner }}/hbcfield-${{ matrix.service }}:main
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ needs.meta.outputs.sha }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,scope=${{ matrix.service }},mode=max
+          provenance: false
+
+  web-app:
+    name: Build web-app
+    needs: meta
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      # Repository VARIABLES (Settings → Secrets and variables → Actions →
+      # Variables). They are baked into public JavaScript, so they are not
+      # secrets — but they must match infra/docker/.env.production.
+      DOMAIN: ${{ vars.DOMAIN || 'hbcfield.com' }}
+      GOOGLE_MAPS_API_KEY: ${{ vars.GOOGLE_MAPS_API_KEY }}
+      MAP_TILE_URL: ${{ vars.MAP_TILE_URL }}
+      MAP_TILE_ATTRIBUTION: ${{ vars.MAP_TILE_ATTRIBUTION }}
+      IMAGE: ghcr.io/${{ needs.meta.outputs.owner }}/hbcfield-web-app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.meta.outputs.sha }}
+
+      - name: Refuse a web build that would silently fall back
+        # Unset, the map falls back to OpenStreetMap's public tiles (not permitted
+        # at commercial volume) and the map key to nothing. The compose defaults
+        # are empty strings, so nothing else would notice.
+        run: |
+          missing=""
+          for v in GOOGLE_MAPS_API_KEY MAP_TILE_URL MAP_TILE_ATTRIBUTION; do
+            [ -n "${!v}" ] || missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Repository variables not set:$missing — copy them from infra/docker/.env.production (Settings → Secrets and variables → Actions → Variables)."
+            exit 1
+          fi
+          echo "web build for https://$DOMAIN"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web-app/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ needs.meta.outputs.sha }}
+            ${{ env.IMAGE }}:main
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ needs.meta.outputs.sha }}
+          # EXACTLY the args infra/docker/docker-compose.yml passes to web-app.
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://${{ env.DOMAIN }}/api/v1
+            NEXT_PUBLIC_AUTH_URL=https://${{ env.DOMAIN }}/api/v1
+            NEXT_PUBLIC_SOCKET_URL=https://${{ env.DOMAIN }}
+            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ env.GOOGLE_MAPS_API_KEY }}
+            NEXT_PUBLIC_MAP_TILE_URL=${{ env.MAP_TILE_URL }}
+            NEXT_PUBLIC_MAP_TILE_ATTRIBUTION=${{ env.MAP_TILE_ATTRIBUTION }}
+          cache-from: type=gha,scope=web-app
+          cache-to: type=gha,scope=web-app,mode=max
+          provenance: false
+
+      - name: Verify the baked configuration
+        # The failure this catches looks like success: login and realtime fall
+        # back to localhost:4000/4001 in the browser while the server is fine.
+        run: |
+          ref="$IMAGE:${{ needs.meta.outputs.sha }}"
+          docker pull --quiet "$ref"
+          static=/app/apps/web-app/.next/static
+          if docker run --rm --entrypoint sh "$ref" -c "grep -rhoE 'localhost:400[01]' $static | head -1" | grep -q localhost; then
+            echo "::error::the web bundle contains localhost:4000/4001 — a NEXT_PUBLIC_* URL did not reach the build"; exit 1
+          fi
+          docker run --rm --entrypoint sh "$ref" -c "grep -rqF 'https://$DOMAIN/api/v1' $static" \
+            || { echo "::error::the web bundle does not contain https://$DOMAIN/api/v1"; exit 1; }
+          tile_host="$(echo "$MAP_TILE_URL" | sed -E 's#^https?://([^/]+).*#\1#')"
+          docker run --rm --entrypoint sh "$ref" -c "grep -rqF '$tile_host' $static" \
+            || { echo "::error::the web bundle does not contain the tile host $tile_host — the MAP_TILE build arg was dropped"; exit 1; }
+          echo "web bundle: API https://$DOMAIN/api/v1, tiles $tile_host, no localhost"
+
+  verify:
+    name: Verify images
+    needs: [meta, services, web-app]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.meta.outputs.sha }}
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: auth-service carries every migration in the commit
+        # `prisma migrate deploy` from a stale image reports "No pending
+        # migrations" for a migration that is sitting right there in the tree.
+        run: |
+          ref="ghcr.io/${{ needs.meta.outputs.owner }}/hbcfield-auth-service:${{ needs.meta.outputs.sha }}"
+          tree=$(find apps/api/auth-service/prisma/migrations -mindepth 1 -maxdepth 1 -type d -name '[0-9]*' | wc -l | tr -d ' ')
+          image=$(docker run --rm --entrypoint sh "$ref" -c 'ls -1 /app/apps/api/auth-service/prisma/migrations | grep -c "^[0-9]"')
+          echo "migrations: tree $tree, image $image"
+          [ "$tree" = "$image" ]
+      - name: Summary
+        run: |
+          {
+            echo "### Images for \`${{ needs.meta.outputs.sha }}\`"
+            echo
+            for s in auth-service task-service notification-service tracking-service api-gateway web-app; do
+              echo "- \`ghcr.io/${{ needs.meta.outputs.owner }}/hbcfield-$s:${{ needs.meta.outputs.sha }}\`"
+            done
+            echo
+            echo "Deploy with **Actions → Deploy → Run workflow**, sha \`${{ needs.meta.outputs.sha }}\`."
+          } >> "$GITHUB_STEP_SUMMARY"

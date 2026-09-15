@@ -1,0 +1,241 @@
+name: Mobile release
+
+# Phones: a store build or an over-the-air update, decided from the diff.
+#
+#   tools/release/mobile-change-kind.ts compares main with the commit the last
+#   STORE build was made from:
+#     native change (a native dependency, app.config.ts native fields, plugins,
+#     native assets, eas.json build env)  → store build on a NEW version train
+#     JavaScript only                     → OTA to the CURRENT train only
+#     nothing                             → nothing
+#
+# ⚠️ An OTA only ever goes to the version the last store build carries
+#    (runtimeVersion: appVersion). Current JS on an older native binary crashes
+#    on render — 2026-08-31, every Play Store install. This workflow never
+#    publishes to any other train.
+# ⚠️ EXPO_PUBLIC_API_URL is set inline on every OTA and verified in the bundle.
+#    `eas update` inlines the local value, and an empty one shipped localhost.
+#
+# Secrets: EXPO_TOKEN (required); PLAY_STORE_SERVICE_ACCOUNT_JSON (store builds,
+# for the Android auto-submit — eas.json names ./play-store-key.json).
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: EAS channel / update branch
+        type: choice
+        options: [production]
+        default: production
+      kind:
+        description: auto = decided from the diff. `store` is always allowed; `ota` is refused when a store build is needed.
+        type: choice
+        options: [auto, store, ota]
+        default: auto
+      ota_rollout:
+        description: OTA only — percentage of the train that receives it first (raise later with eas update:edit)
+        default: '20'
+      message:
+        description: Release note for the update / build
+        required: false
+
+permissions:
+  contents: write   # the version bump commit and the release tags
+
+concurrency:
+  group: mobile-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 150
+    env:
+      CHANNEL: ${{ inputs.channel }}
+      PROD_API_URL: https://hbcfield.com/api/v1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+        with:
+          node-version: '22'
+          prisma: 'false'
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Which commit did the last store build come from?
+        id: base
+        working-directory: apps/mobile
+        run: |
+          # EAS knows exactly; the repo's tags and version history are the fallback.
+          commits=""
+          for p in ios android; do
+            c="$(eas build:list --platform "$p" --status finished --build-profile "$CHANNEL" --limit 1 --json --non-interactive 2>/dev/null | jq -r '.[0].gitCommitHash // empty' || true)"
+            [ -n "$c" ] && commits="$commits $c"
+          done
+          base="auto"
+          for c in $commits; do
+            git cat-file -e "$c^{commit}" 2>/dev/null || { echo "::warning::EAS build commit $c is not in this repository"; continue; }
+            # Two platforms built from different commits: take the OLDER — a
+            # native change either binary lacks makes the OTA unsafe for it.
+            if [ "$base" = auto ] || git merge-base --is-ancestor "$c" "$base"; then base="$c"; fi
+          done
+          echo "last store build: $base"
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+
+      - name: Decide
+        id: decide
+        run: |
+          node tools/release/mobile-change-kind.ts --base "${{ steps.base.outputs.base }}"
+          GITHUB_OUTPUT='' node tools/release/mobile-change-kind.ts --base "${{ steps.base.outputs.base }}" --json > decision.json
+
+      - name: Apply the requested kind
+        id: kind
+        env:
+          AUTO: ${{ steps.decide.outputs.kind }}
+          REQUESTED: ${{ inputs.kind }}
+          HEAD_VERSION: ${{ steps.decide.outputs.head_version }}
+          BASE_VERSION: ${{ steps.decide.outputs.base_version }}
+          RELEASE_VERSION: ${{ steps.decide.outputs.release_version }}
+          BUMP: ${{ steps.decide.outputs.bump_required }}
+          REASONS: ${{ steps.decide.outputs.store_reasons }}
+        run: |
+          kind="$AUTO"; version="$RELEASE_VERSION"; bump="$BUMP"
+          case "$REQUESTED" in
+            ota)
+              if [ "$AUTO" = store ]; then
+                echo "::error::an OTA was requested but a store build is required: $REASONS"; exit 1
+              fi
+              kind=ota ;;
+            store)
+              if [ "$AUTO" != store ]; then
+                kind=store
+                if [ "$HEAD_VERSION" = "$BASE_VERSION" ]; then
+                  version="$(node -e "const [a,b,c]=process.argv[1].split('.');console.log([a,b,+c+1].join('.'))" "$HEAD_VERSION")"; bump=true
+                else
+                  version="$HEAD_VERSION"; bump=false
+                fi
+              fi ;;
+          esac
+          if [ "$kind" = ota ] && [ "$HEAD_VERSION" != "$BASE_VERSION" ]; then
+            echo "::error::app.config.ts says $HEAD_VERSION but the last store build is $BASE_VERSION — no binary exists on that train"; exit 1
+          fi
+          echo "kind=$kind" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "bump=$bump" >> "$GITHUB_OUTPUT"
+          echo "release: $kind, version $version (bump: $bump)"
+
+      # ─── OTA ────────────────────────────────────────────────────────────────
+      - name: OTA — export the bundle with the production API inlined
+        if: steps.kind.outputs.kind == 'ota'
+        working-directory: apps/mobile
+        run: |
+          rm -rf dist
+          EXPO_PUBLIC_API_URL="$PROD_API_URL" npx expo export --platform ios --platform android --output-dir dist
+          # Hermes bytecode keeps string literals readable.
+          hits="$(grep -a -r -c 'hbcfield.com/api/v1' dist/_expo/static/js | awk -F: '{s+=$2} END {print s+0}')"
+          local_hits="$(grep -a -r -c 'localhost:4000' dist/_expo/static/js | awk -F: '{s+=$2} END {print s+0}')"
+          echo "bundle: hbcfield.com/api/v1 ×$hits, localhost:4000 ×$local_hits"
+          [ "$hits" -ge 1 ] || { echo "::error::the production API URL is not in the bundle"; exit 1; }
+
+      - name: OTA — publish to the current train only
+        if: steps.kind.outputs.kind == 'ota'
+        working-directory: apps/mobile
+        env:
+          MESSAGE: ${{ inputs.message }}
+          ROLLOUT: ${{ inputs.ota_rollout }}
+          VERSION: ${{ steps.kind.outputs.version }}
+        run: |
+          [[ "$ROLLOUT" =~ ^([1-9][0-9]?|100)$ ]] || { echo "::error::ota_rollout must be 1–100"; exit 1; }
+          msg="${MESSAGE:-$(git log -1 --format=%s)}"
+          rollout=""; [ "$ROLLOUT" != 100 ] && rollout="--rollout-percentage $ROLLOUT"
+          # runtimeVersion follows app.config.ts `version`, which the previous
+          # step proved equals the last store build's. Nothing here changes it.
+          EXPO_PUBLIC_API_URL="$PROD_API_URL" eas update --branch "$CHANNEL" --message "$msg ($VERSION)" \
+            --skip-bundler --input-dir dist $rollout --non-interactive
+
+      # ─── Store build ────────────────────────────────────────────────────────
+      - name: Store — open the new version train
+        if: steps.kind.outputs.kind == 'store' && steps.kind.outputs.bump == 'true'
+        env:
+          VERSION: ${{ steps.kind.outputs.version }}
+        run: |
+          node tools/release/mobile-change-kind.ts set-version "$VERSION"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore(mobile): $VERSION — store build
+
+          Opened by the Mobile release workflow: $(jq -r '.storeReasons | join("; ")' decision.json | cut -c1-600)"
+          git push origin HEAD:main || { echo "::error::could not push the version bump to main (branch protection?). Bump app.config.ts to $VERSION in a PR and run again."; exit 1; }
+
+      - name: Store — Play service account
+        if: steps.kind.outputs.kind == 'store'
+        working-directory: apps/mobile
+        env:
+          PLAY_KEY: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$PLAY_KEY" ]; then
+            echo "::error::PLAY_STORE_SERVICE_ACCOUNT_JSON is not set — the Android auto-submit reads ./play-store-key.json (eas.json)"; exit 1
+          fi
+          printf '%s' "$PLAY_KEY" > play-store-key.json
+
+      - name: Store — build both platforms and submit
+        if: steps.kind.outputs.kind == 'store'
+        working-directory: apps/mobile
+        env:
+          MESSAGE: ${{ inputs.message }}
+        run: |
+          # Android goes to the production track at the rollout in eas.json
+          # (20%); iOS is submitted for review — phased release is set per version
+          # in App Store Connect (docs/release.md).
+          eas build --platform all --profile "$CHANNEL" --auto-submit --non-interactive \
+            ${MESSAGE:+--message "$MESSAGE"}
+
+      - name: Tag the release
+        if: steps.kind.outputs.kind == 'store' || steps.kind.outputs.kind == 'ota'
+        env:
+          KIND: ${{ steps.kind.outputs.kind }}
+          VERSION: ${{ steps.kind.outputs.version }}
+        run: |
+          sha="$(git rev-parse HEAD)"
+          if [ "$KIND" = store ]; then tag="mobile-build-v$VERSION"; else tag="mobile-ota-v$VERSION-${sha:0:8}"; fi
+          git tag -f "$tag" "$sha"
+          git push -f origin "refs/tags/$tag"
+          echo "tag=$tag" >> "$GITHUB_ENV"
+
+      - name: Summary
+        if: always()
+        env:
+          KIND: ${{ steps.kind.outputs.kind }}
+          VERSION: ${{ steps.kind.outputs.version }}
+          BASE: ${{ steps.base.outputs.base }}
+        run: |
+          {
+            echo "## Mobile release: ${KIND:-not decided}  (version ${VERSION:-?})"
+            echo
+            echo "Compared with the last store build: \`${BASE:-?}\`"
+            if [ -f decision.json ]; then
+              echo
+              echo '```'
+              jq -r '"store reasons:", (.storeReasons[] | "  - " + .), "js changes: \(.jsChanges | length)"' decision.json
+              echo '```'
+            fi
+            case "$KIND" in
+              ota)
+                echo "Published to train **$VERSION** at ${{ inputs.ota_rollout }}%. Widen it: \`eas update:edit --rollout-percentage 100\` (apps/mobile)."
+                echo "Roll back: \`eas update:roll-back-to-embedded --branch $CHANNEL --runtime-version $VERSION\`." ;;
+              store)
+                echo "Submitted **$VERSION**. When both stores list it:"
+                echo "1. set \`MOBILE_LATEST_VERSION=$VERSION\` in \`infra/docker/.env.production\` and recreate api-gateway (the in-app update prompt reads it);"
+                echo "2. never raise \`MOBILE_MIN_VERSION\` until the fleet has moved." ;;
+              none)
+                echo "Nothing mobile changed since the last release." ;;
+            esac
+          } >> "$GITHUB_STEP_SUMMARY"
