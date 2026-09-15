@@ -324,7 +324,12 @@ export class AssetExpenseService {
   async mine(data: { userId: string; organizationId: string; limit?: number }) {
     const take = Math.min(Math.max(data.limit ?? 50, 1), 100);
     const entries = await this.prisma.assetMoney.findMany({
-      where: { organizationId: data.organizationId, authorId: data.userId },
+      /*
+        Money only. Logbook entries share the table, and an app built before the
+        logbook renders every row here as an amount — a dent would read €0.00.
+        The phone's logbook reads `/assets/log/mine` for the rest.
+      */
+      where: { organizationId: data.organizationId, authorId: data.userId, amountCents: { gt: 0 } },
       orderBy: [{ occurredAt: 'desc' }, { createdAt: 'desc' }],
       take,
       select: {
