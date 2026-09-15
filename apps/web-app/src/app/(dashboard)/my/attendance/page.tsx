@@ -20,6 +20,7 @@ import type { DateRange } from "react-day-picker"
 import { ClockInPicker } from "@/components/clock-in-picker"
 import { ClockOutEarlyDialog } from "@/components/attendance/clock-out-early-dialog"
 import { RestPanel } from "@/components/attendance/rest-panel"
+import { UnconfirmedClockOutCard } from "@/components/attendance/unconfirmed-clock-out-card"
 
 /** Human-readable duration between two ISO timestamps (or to now). */
 function duration(fromIso?: string | null, toIso?: string | null): string {
@@ -315,6 +316,13 @@ export default function MyAttendancePage() {
         <h1 data-tour="page-my-attendance" className="text-2xl font-semibold text-foreground">{t("nav.myShifts", "My shifts")}</h1>
         <p className="text-sm text-muted-foreground">{t("attendance.my.subtitle")}</p>
       </div>
+
+      {/*
+        A shift left open and closed with a temporary time, waiting for the
+        member's real one. The email about it links here. Renders nothing
+        when there is none.
+      */}
+      <UnconfirmedClockOutCard className="mb-6" />
 
       {/* Status + summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">

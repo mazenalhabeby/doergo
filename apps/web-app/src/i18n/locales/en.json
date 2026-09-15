@@ -2605,13 +2605,30 @@
     },
     "notifications": {
       "title": "Notification Preferences",
-      "description": "Control how and when your organization receives notifications",
-      "emailOnTaskCreate": "Email on task creation",
-      "emailOnTaskComplete": "Email on task completion",
+      "description": "Choose which emails your organization sends. A member can turn off an email you allow, but cannot turn on one you switch off.",
+      "emailOnTaskAssigned": "Email members when a task is assigned to them",
+      "emailOnTaskAssignedHint": "Several assigned at once arrive as one email. Nobody is emailed about work they assigned themselves.",
+      "emailOnTaskComplete": "Email a task’s creator when it is completed",
+      "emailOnTaskCompleteHint": "Not when they completed it themselves.",
+      "emailOnAutoClockOut": "Email members when a shift they left open is closed",
+      "emailOnAutoClockOutHint": "With the temporary time and a link to say when they actually left.",
       "emailOnJoinRequest": "Email on join request",
       "pushEnabled": "Push notifications enabled",
       "saved": "Notification preferences saved",
       "failed": "Failed to save notification preferences"
+    },
+    "myEmails": {
+      "title": "Email notifications",
+      "description": "Emails HBCField sends you. In-app and push notifications are not affected.",
+      "taskAssigned": "A task is assigned to me",
+      "taskAssignedHint": "Several at once arrive as one email.",
+      "taskCompleted": "A task I created is completed",
+      "taskCompletedHint": "Not when I complete it myself.",
+      "autoClockOut": "A shift I left open is closed",
+      "autoClockOutHint": "With the temporary time, so I can say when I actually left.",
+      "offByOrg": "Turned off for your organization",
+      "saved": "Email settings saved",
+      "failed": "Could not save your email settings"
     },
     "joinCode": {
       "title": "Join Code",
@@ -2653,7 +2670,8 @@
       "notifications": "Notifications",
       "auditLog": "Audit Log",
       "profile": "Profile",
-      "security": "Password & Security"
+      "security": "Password & Security",
+      "myEmails": "Email notifications"
     },
     "changeEmail": {
       "title": "Change email",
@@ -2765,7 +2783,6 @@
     "joinRejected": "Join request rejected",
     "clockIn": "Employee clocked in",
     "clockOut": "Employee clocked out",
-    "autoClockOut": "Auto clock-out",
     "geofenceAlert": "Geofence alert",
     "pendingApproval": "Time entry needs approval",
     "breakStarted": "Break started",
@@ -3292,7 +3309,17 @@
       "away": "away",
       "clockedInAwayToast": "Clocked in — away from the site. This shift will be reviewed.",
       "clockedInAtToast": "Clocked in at {{name}}",
-      "gpsHintOneButton": "Uses your location to pick your workspace and check you are there. Where you are working through the day is worked out for you."
+      "gpsHintOneButton": "Uses your location to pick your workspace and check you are there. Where you are working through the day is worked out for you.",
+      "unconfirmed": {
+        "title": "Your shift on {{day}} was closed at {{time}}",
+        "body": "It was still open, so it was closed with a temporary time. When did you actually leave?",
+        "leftAt": "I left at",
+        "save": "Save",
+        "keep": "Keep {{time}}",
+        "saved": "Thanks — your shift has been updated",
+        "failed": "Could not update the shift",
+        "invalid": "Pick a time after you clocked in, and not in the future"
+      }
     },
     "management": {
       "title": "Attendance Management",

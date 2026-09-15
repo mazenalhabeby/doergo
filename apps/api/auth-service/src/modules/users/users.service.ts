@@ -1,4 +1,4 @@
-import { memberScopeFilter, cleanRateCents, normalizeLocale, MEMBER_NOTIFICATION_PREF_KEYS, pickBooleanPrefs } from '@hbcfield/shared';
+import { memberScopeFilter, cleanRateCents, normalizeLocale, MEMBER_EMAILS, MEMBER_NOTIFICATION_PREF_KEYS, orgAllowsEmail, pickBooleanPrefs } from '@hbcfield/shared';
 import {
   Injectable,
   Logger,
@@ -2568,10 +2568,21 @@ export class UsersService {
   async getNotificationPrefs(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { notificationPrefs: true },
+      select: { notificationPrefs: true, organization: { select: { notificationPrefs: true } } },
     });
     if (!user) throw new NotFoundException('User not found');
-    return { data: (user.notificationPrefs as Record<string, boolean> | null) ?? {} };
+    return {
+      data: (user.notificationPrefs as Record<string, boolean> | null) ?? {},
+      /*
+        Which member emails the organization allows at all. A member cannot read
+        the organization's settings, and a switch they can flip that does
+        nothing — because the ceiling is off — is worse than no switch: the
+        screen shows it off and says why.
+      */
+      organizationAllows: Object.fromEntries(
+        MEMBER_EMAILS.map((kind) => [kind, orgAllowsEmail(user.organization?.notificationPrefs, kind)]),
+      ),
+    };
   }
 
   /**

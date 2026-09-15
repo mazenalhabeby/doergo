@@ -2605,13 +2605,30 @@
     },
     "notifications": {
       "title": "Benachrichtigungseinstellungen",
-      "description": "Legen Sie fest, wie und wann Ihre Organisation Benachrichtigungen erhaelt",
-      "emailOnTaskCreate": "E-Mail bei Aufgabenerstellung",
-      "emailOnTaskComplete": "E-Mail bei Aufgabenabschluss",
+      "description": "Legen Sie fest, welche E-Mails Ihre Organisation versendet. Mitglieder können eine erlaubte E-Mail abschalten, aber keine einschalten, die Sie abgeschaltet haben.",
+      "emailOnTaskAssigned": "Mitglieder per E-Mail informieren, wenn ihnen eine Aufgabe zugewiesen wird",
+      "emailOnTaskAssignedHint": "Mehrere gleichzeitig kommen als eine E-Mail. Niemand erhält eine E-Mail über Arbeit, die er sich selbst zugewiesen hat.",
+      "emailOnTaskComplete": "Ersteller einer Aufgabe per E-Mail informieren, wenn sie abgeschlossen ist",
+      "emailOnTaskCompleteHint": "Nicht, wenn er sie selbst abgeschlossen hat.",
+      "emailOnAutoClockOut": "Mitglieder per E-Mail informieren, wenn eine offen gebliebene Schicht geschlossen wird",
+      "emailOnAutoClockOutHint": "Mit der vorläufigen Zeit und einem Link, um anzugeben, wann sie tatsächlich gegangen sind.",
       "emailOnJoinRequest": "E-Mail bei Beitrittsanfrage",
       "pushEnabled": "Push-Benachrichtigungen aktiviert",
       "saved": "Benachrichtigungseinstellungen gespeichert",
       "failed": "Benachrichtigungseinstellungen konnten nicht gespeichert werden"
+    },
+    "myEmails": {
+      "title": "E-Mail-Benachrichtigungen",
+      "description": "E-Mails, die HBCField Ihnen sendet. Benachrichtigungen in der App und Push-Nachrichten sind davon nicht betroffen.",
+      "taskAssigned": "Mir wird eine Aufgabe zugewiesen",
+      "taskAssignedHint": "Mehrere gleichzeitig kommen als eine E-Mail.",
+      "taskCompleted": "Eine von mir erstellte Aufgabe wird abgeschlossen",
+      "taskCompletedHint": "Nicht, wenn ich sie selbst abschließe.",
+      "autoClockOut": "Eine offen gebliebene Schicht wird geschlossen",
+      "autoClockOutHint": "Mit der vorläufigen Zeit, damit ich angeben kann, wann ich tatsächlich gegangen bin.",
+      "offByOrg": "Für Ihre Organisation abgeschaltet",
+      "saved": "E-Mail-Einstellungen gespeichert",
+      "failed": "E-Mail-Einstellungen konnten nicht gespeichert werden"
     },
     "joinCode": {
       "title": "Beitrittscode",
@@ -2653,7 +2670,8 @@
       "notifications": "Benachrichtigungen",
       "auditLog": "Audit-Protokoll",
       "profile": "Profil",
-      "security": "Passwort & Sicherheit"
+      "security": "Passwort & Sicherheit",
+      "myEmails": "E-Mail-Benachrichtigungen"
     },
     "changeEmail": {
       "title": "E-Mail ändern",
@@ -2765,7 +2783,6 @@
     "joinRejected": "Beitrittsanfrage abgelehnt",
     "clockIn": "Techniker eingestempelt",
     "clockOut": "Techniker ausgestempelt",
-    "autoClockOut": "Automatisches Ausstempeln",
     "geofenceAlert": "Geofence-Alarm",
     "pendingApproval": "Zeiteintrag muss genehmigt werden",
     "breakStarted": "Pause begonnen",
@@ -3292,7 +3309,17 @@
       "away": "abwesend",
       "clockedInAwayToast": "Eingestempelt — abwesend vom Standort. Diese Schicht wird geprüft.",
       "clockedInAtToast": "Eingestempelt bei {{name}}",
-      "gpsHintOneButton": "Nutzt Ihren Standort, um den Arbeitsbereich zu wählen und zu prüfen, dass Sie dort sind. Wo Sie im Laufe des Tages arbeiten, wird automatisch erkannt."
+      "gpsHintOneButton": "Nutzt Ihren Standort, um den Arbeitsbereich zu wählen und zu prüfen, dass Sie dort sind. Wo Sie im Laufe des Tages arbeiten, wird automatisch erkannt.",
+      "unconfirmed": {
+        "title": "Ihre Schicht am {{day}} wurde um {{time}} geschlossen",
+        "body": "Sie war noch offen und wurde deshalb mit einer vorläufigen Zeit geschlossen. Wann sind Sie tatsächlich gegangen?",
+        "leftAt": "Gegangen um",
+        "save": "Speichern",
+        "keep": "{{time}} beibehalten",
+        "saved": "Danke — Ihre Schicht wurde aktualisiert",
+        "failed": "Die Schicht konnte nicht aktualisiert werden",
+        "invalid": "Wählen Sie eine Zeit nach dem Einstempeln, die nicht in der Zukunft liegt"
+      }
     },
     "management": {
       "title": "Anwesenheitsverwaltung",

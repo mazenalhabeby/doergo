@@ -32,6 +32,24 @@ describe('a member’s own notification switches', () => {
   });
 });
 
+describe('reading a member’s switches', () => {
+  it('says which emails the organization allows, so the screen can explain a switch that is off above them', async () => {
+    const svc = Object.create(UsersService.prototype) as any;
+    svc.prisma = {
+      user: {
+        findUnique: jest.fn().mockResolvedValue({
+          notificationPrefs: { emailTaskCompleted: false },
+          organization: { notificationPrefs: { emailOnAutoClockOut: false } },
+        }),
+      },
+    };
+    expect(await svc.getNotificationPrefs('u1')).toEqual({
+      data: { emailTaskCompleted: false },
+      organizationAllows: { taskAssigned: true, taskCompleted: true, autoClockOut: false },
+    });
+  });
+});
+
 describe('the organization’s notification switches', () => {
   function service(existing: unknown, found = true) {
     const svc = Object.create(OnboardingService.prototype) as any;

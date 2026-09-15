@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react"
-import { SETTINGS_OPTION } from "@hbcfield/shared/client"
+import { SETTINGS_OPTION, ORG_EMAIL_SWITCH, MEMBER_EMAIL_PREF, type MemberEmail } from "@hbcfield/shared/client"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
@@ -133,7 +133,7 @@ type SettingsSection =
   // Organization
   | "general" | "members" | "modules" | "audit-log"
   // Personal
-  | "profile" | "security" | "notifications"
+  | "profile" | "security" | "notifications" | "my-emails"
 
 interface NavItem {
   key: SettingsSection
@@ -158,6 +158,9 @@ const ORG_NAV_ITEMS: NavItem[] = [
 const PERSONAL_NAV_ITEMS: NavItem[] = [
   { key: "profile", icon: Users, labelKey: "settings.nav.profile" },
   { key: "security", icon: Key, labelKey: "settings.nav.security" },
+  // The member's own email opt-outs. Separate from "Notifications" above, which
+  // is the organization's policy and admin-only.
+  { key: "my-emails", icon: Mail, labelKey: "settings.nav.myEmails" },
 ]
 
 const NAV_ITEMS = [...ORG_NAV_ITEMS, ...PERSONAL_NAV_ITEMS]
@@ -850,10 +853,19 @@ function NotificationsSection() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
 
+  /*
+    The three member emails default to ON, as the sender reads them: an
+    organization that never saved this section has no keys, and the switches
+    must show what actually happens rather than a default the server does not
+    share. The keys come from shared, where the sender reads them too.
+  */
   const [prefs, setPrefs] = useState({
-    emailOnTaskCreate: false, emailOnTaskComplete: false,
-    emailOnJoinRequest: true, pushEnabled: true,
-  })
+    [ORG_EMAIL_SWITCH.taskAssigned]: true,
+    [ORG_EMAIL_SWITCH.taskCompleted]: true,
+    [ORG_EMAIL_SWITCH.autoClockOut]: true,
+    emailOnJoinRequest: true,
+    pushEnabled: true,
+  } as Record<string, boolean>)
   const [initialized, setInitialized] = useState(false)
 
   const { data: profile, isLoading } = useQuery({
@@ -862,13 +874,9 @@ function NotificationsSection() {
   })
 
   useEffect(() => {
-    if (profile?.notificationPrefs && !initialized) {
-      setPrefs({
-        emailOnTaskCreate: profile.notificationPrefs.emailOnTaskCreate ?? false,
-        emailOnTaskComplete: profile.notificationPrefs.emailOnTaskComplete ?? false,
-        emailOnJoinRequest: profile.notificationPrefs.emailOnJoinRequest ?? true,
-        pushEnabled: profile.notificationPrefs.pushEnabled ?? true,
-      })
+    if (profile && !initialized) {
+      const saved = (profile.notificationPrefs ?? {}) as Record<string, boolean>
+      setPrefs((prev) => Object.fromEntries(Object.keys(prev).map((k) => [k, saved[k] !== false])))
       setInitialized(true)
     }
   }, [profile, initialized])
@@ -884,11 +892,26 @@ function NotificationsSection() {
 
   if (isLoading) return <Skeleton className="h-[300px] w-full rounded-2xl" />
 
+  // "Email on task creation" used to lead this list. No such email exists, so
+  // the switch did nothing; the email that does exist — assignment — replaces it.
   const TOGGLES = [
-    { key: "emailOnTaskCreate" as const, label: t("settings.notifications.emailOnTaskCreate") },
-    { key: "emailOnTaskComplete" as const, label: t("settings.notifications.emailOnTaskComplete") },
-    { key: "emailOnJoinRequest" as const, label: t("settings.notifications.emailOnJoinRequest") },
-    { key: "pushEnabled" as const, label: t("settings.notifications.pushEnabled") },
+    {
+      key: ORG_EMAIL_SWITCH.taskAssigned,
+      label: t("settings.notifications.emailOnTaskAssigned"),
+      description: t("settings.notifications.emailOnTaskAssignedHint"),
+    },
+    {
+      key: ORG_EMAIL_SWITCH.taskCompleted,
+      label: t("settings.notifications.emailOnTaskComplete"),
+      description: t("settings.notifications.emailOnTaskCompleteHint"),
+    },
+    {
+      key: ORG_EMAIL_SWITCH.autoClockOut,
+      label: t("settings.notifications.emailOnAutoClockOut"),
+      description: t("settings.notifications.emailOnAutoClockOutHint"),
+    },
+    { key: "emailOnJoinRequest", label: t("settings.notifications.emailOnJoinRequest"), description: undefined },
+    { key: "pushEnabled", label: t("settings.notifications.pushEnabled"), description: undefined },
   ]
 
   return (
@@ -905,12 +928,78 @@ function NotificationsSection() {
             key={item.key}
             id={`notif-${item.key}`}
             label={item.label}
-            checked={prefs[item.key]}
+            description={item.description}
+            checked={prefs[item.key] ?? true}
             onChange={v => setPrefs(prev => ({ ...prev, [item.key]: v }))}
           />
         ))}
       </div>
       <SaveBar onSave={() => mutation.mutate(prefs)} isPending={mutation.isPending} t={t} />
+    </SettingCard>
+  )
+}
+
+/**
+ * The emails HBCField sends ME — one switch each, saved as it is flipped.
+ *
+ * Personal, and open to every member: these are the member's own opt-outs,
+ * stored on their account. The organization's switch above them is a ceiling
+ * the member cannot lift, so an email the organization has turned off shows
+ * here off and disabled, with the reason — a switch that can be flipped and
+ * does nothing is worse than no switch.
+ */
+function MyEmailNotificationsSection() {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["my-notification-prefs"],
+    queryFn: () => usersApi.getMyNotificationPrefs(),
+  })
+
+  const mutation = useMutation({
+    mutationFn: (change: Record<string, boolean>) => usersApi.updateMyNotificationPrefs(change),
+    onSuccess: (prefs) => {
+      queryClient.setQueryData(["my-notification-prefs"], (old: typeof data) => (old ? { ...old, prefs } : old))
+      notify.success(t("settings.myEmails.saved"))
+    },
+    onError: (e: Error) => notify.error(e.message || t("settings.myEmails.failed")),
+  })
+
+  if (isLoading) return <Skeleton className="h-[260px] w-full rounded-2xl" />
+
+  const ROWS: Array<{ kind: MemberEmail; label: string; description: string }> = [
+    { kind: "taskAssigned", label: t("settings.myEmails.taskAssigned"), description: t("settings.myEmails.taskAssignedHint") },
+    { kind: "taskCompleted", label: t("settings.myEmails.taskCompleted"), description: t("settings.myEmails.taskCompletedHint") },
+    { kind: "autoClockOut", label: t("settings.myEmails.autoClockOut"), description: t("settings.myEmails.autoClockOutHint") },
+  ]
+
+  return (
+    <SettingCard
+      icon={Mail}
+      iconColor="text-amber-600"
+      iconBg="bg-amber-50"
+      title={t("settings.myEmails.title")}
+      description={t("settings.myEmails.description")}
+    >
+      <div className="divide-y divide-border">
+        {ROWS.map(({ kind, label, description }) => {
+          const allowed = data?.organizationAllows?.[kind] !== false
+          const key = MEMBER_EMAIL_PREF[kind]
+          const mine = data?.prefs?.[key] !== false
+          return (
+            <ToggleRow
+              key={kind}
+              id={`my-email-${kind}`}
+              label={label}
+              description={allowed ? description : t("settings.myEmails.offByOrg")}
+              checked={allowed && mine}
+              disabled={!allowed || mutation.isPending}
+              onChange={(v) => mutation.mutate({ [key]: v })}
+            />
+          )
+        })}
+      </div>
     </SettingCard>
   )
 }
@@ -1439,6 +1528,7 @@ export default function SettingsPage() {
             {/* Personal sections */}
             {activeSection === "profile" && <div data-tour="settings-profile"><ProfileSection /></div>}
             {activeSection === "security" && <div data-tour="settings-security"><SecuritySection /></div>}
+            {activeSection === "my-emails" && <div data-tour="settings-my-emails"><MyEmailNotificationsSection /></div>}
           </div>
         </div>
       </div>

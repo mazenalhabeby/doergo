@@ -865,6 +865,23 @@ export const usersApi = {
     return response.data;
   },
 
+  // Your OWN notification switches, and which member emails the organization
+  // allows at all (the ceiling — see notifications/email-prefs in shared).
+  getMyNotificationPrefs: async () => {
+    const response = await api.get<{ data: Record<string, boolean>; organizationAllows: Record<string, boolean> }>(
+      '/users/me/notification-prefs',
+    );
+    if (response.error) throw new Error(response.error);
+    return { prefs: response.data?.data ?? {}, organizationAllows: response.data?.organizationAllows ?? {} };
+  },
+
+  // Merge-update your OWN notification switches (only the keys given change).
+  updateMyNotificationPrefs: async (prefs: Record<string, boolean>) => {
+    const response = await api.patch<{ data: Record<string, boolean> }>('/users/me/notification-prefs', { prefs });
+    if (response.error) throw new Error(response.error);
+    return response.data?.data ?? {};
+  },
+
   // Update your OWN profile (any authenticated user — no admin permission).
   updateMe: async (data: { firstName?: string; lastName?: string; presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null; timeFormat?: '12h' | '24h'; guidesSeen?: boolean; locale?: string }) => {
     const response = await api.patch<{ success: boolean; data: { id: string; firstName: string; lastName: string } }>(
@@ -2880,6 +2897,20 @@ export const attendanceApi = {
     const envelope = response.data as { data?: unknown; message?: string };
     const entry = (envelope?.data ?? response.data) as Record<string, unknown>;
     return { ...entry, message: envelope?.message };
+  },
+
+  /**
+   * "When did you actually leave?" — for a shift the open-shift sweep closed
+   * with a temporary time (or one still open). The member's answer replaces the
+   * temporary clock-out; the server checks it is after clock-in and not ahead.
+   */
+  resolveForgotClockOut: async (entryId: string, clockOutAt: string) => {
+    const response = await api.post<{ success: boolean; data: unknown }>(
+      `/attendance/entries/${encodeURIComponent(entryId)}/forgot-clock-out`,
+      { clockOutAt },
+    );
+    if (response.error) throw new Error(response.error);
+    return (response.data as { data?: unknown })?.data ?? response.data;
   },
 
   /** Start a rest. `ruleId` says which planned one; omit for whichever is next. */

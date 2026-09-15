@@ -2605,13 +2605,30 @@
     },
     "notifications": {
       "title": "Preferencias de notificaciones",
-      "description": "Controla cómo y cuándo tu organización recibe notificaciones",
-      "emailOnTaskCreate": "Correo al crear una tarea",
-      "emailOnTaskComplete": "Correo al completar una tarea",
+      "description": "Elige qué correos envía tu organización. Un miembro puede desactivar un correo que permitas, pero no activar uno que hayas desactivado.",
+      "emailOnTaskAssigned": "Enviar un correo a los miembros cuando se les asigna una tarea",
+      "emailOnTaskAssignedHint": "Varias asignadas a la vez llegan en un solo correo. Nadie recibe un correo por trabajo que se asignó a sí mismo.",
+      "emailOnTaskComplete": "Enviar un correo a quien creó una tarea cuando se completa",
+      "emailOnTaskCompleteHint": "No cuando la completó esa misma persona.",
+      "emailOnAutoClockOut": "Enviar un correo a los miembros cuando se cierra un turno que dejaron abierto",
+      "emailOnAutoClockOutHint": "Con la hora provisional y un enlace para indicar cuándo salieron realmente.",
       "emailOnJoinRequest": "Correo por solicitud de acceso",
       "pushEnabled": "Notificaciones push activadas",
       "saved": "Preferencias de notificaciones guardadas",
       "failed": "No se pudieron guardar las preferencias de notificaciones"
+    },
+    "myEmails": {
+      "title": "Notificaciones por correo",
+      "description": "Correos que HBCField te envía. Las notificaciones de la app y push no cambian.",
+      "taskAssigned": "Se me asigna una tarea",
+      "taskAssignedHint": "Varias a la vez llegan en un solo correo.",
+      "taskCompleted": "Se completa una tarea que creé",
+      "taskCompletedHint": "No cuando la completo yo.",
+      "autoClockOut": "Se cierra un turno que dejé abierto",
+      "autoClockOutHint": "Con la hora provisional, para indicar cuándo salí realmente.",
+      "offByOrg": "Desactivado para tu organización",
+      "saved": "Ajustes de correo guardados",
+      "failed": "No se pudieron guardar tus ajustes de correo"
     },
     "joinCode": {
       "title": "Código de acceso",
@@ -2653,7 +2670,8 @@
       "notifications": "Notificaciones",
       "auditLog": "Registro de auditoría",
       "profile": "Perfil",
-      "security": "Contraseña y seguridad"
+      "security": "Contraseña y seguridad",
+      "myEmails": "Notificaciones por correo"
     },
     "changeEmail": {
       "title": "Cambiar correo electrónico",
@@ -2765,7 +2783,6 @@
     "joinRejected": "Solicitud de acceso rechazada",
     "clockIn": "Empleado registró entrada",
     "clockOut": "Empleado registró salida",
-    "autoClockOut": "Salida automática",
     "geofenceAlert": "Alerta de geocerca",
     "pendingApproval": "El registro de horas necesita aprobación",
     "breakStarted": "Descanso iniciado",
@@ -3292,7 +3309,17 @@
       "away": "fuera",
       "clockedInAwayToast": "Fichado — fuera del centro. Este turno se revisará.",
       "clockedInAtToast": "Entrada fichada en {{name}}",
-      "gpsHintOneButton": "Usa tu ubicación para elegir tu espacio y comprobar que estás allí. Dónde trabajas durante el día se determina automáticamente."
+      "gpsHintOneButton": "Usa tu ubicación para elegir tu espacio y comprobar que estás allí. Dónde trabajas durante el día se determina automáticamente.",
+      "unconfirmed": {
+        "title": "Tu turno del {{day}} se cerró a las {{time}}",
+        "body": "Seguía abierto, así que se cerró con una hora provisional. ¿Cuándo saliste realmente?",
+        "leftAt": "Salí a las",
+        "save": "Guardar",
+        "keep": "Mantener {{time}}",
+        "saved": "Gracias, tu turno se ha actualizado",
+        "failed": "No se pudo actualizar el turno",
+        "invalid": "Elige una hora posterior a tu entrada y que no sea futura"
+      }
     },
     "management": {
       "title": "Gestión de asistencia",

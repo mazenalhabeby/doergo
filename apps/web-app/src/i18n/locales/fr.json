@@ -2605,13 +2605,30 @@
     },
     "notifications": {
       "title": "Préférences de notification",
-      "description": "Contrôlez comment et quand votre organisation reçoit des notifications",
-      "emailOnTaskCreate": "E-mail à la création d'une tâche",
-      "emailOnTaskComplete": "E-mail à la fin d'une tâche",
+      "description": "Choisissez les e-mails envoyés par votre organisation. Un membre peut désactiver un e-mail que vous autorisez, mais pas en activer un que vous avez désactivé.",
+      "emailOnTaskAssigned": "Envoyer un e-mail aux membres lorsqu’une tâche leur est affectée",
+      "emailOnTaskAssignedHint": "Plusieurs affectations simultanées arrivent en un seul e-mail. Personne n’est averti d’un travail qu’il s’est affecté lui-même.",
+      "emailOnTaskComplete": "Envoyer un e-mail au créateur d’une tâche lorsqu’elle est terminée",
+      "emailOnTaskCompleteHint": "Pas lorsqu’il l’a terminée lui-même.",
+      "emailOnAutoClockOut": "Envoyer un e-mail aux membres lorsqu’un poste resté ouvert est clôturé",
+      "emailOnAutoClockOutHint": "Avec l’heure provisoire et un lien pour indiquer quand ils sont réellement partis.",
       "emailOnJoinRequest": "E-mail lors d'une demande d'adhésion",
       "pushEnabled": "Notifications push activées",
       "saved": "Préférences de notification enregistrées",
       "failed": "Échec de l'enregistrement des préférences de notification"
+    },
+    "myEmails": {
+      "title": "Notifications par e-mail",
+      "description": "Les e-mails que HBCField vous envoie. Les notifications dans l’application et push ne changent pas.",
+      "taskAssigned": "Une tâche m’est affectée",
+      "taskAssignedHint": "Plusieurs à la fois arrivent en un seul e-mail.",
+      "taskCompleted": "Une tâche que j’ai créée est terminée",
+      "taskCompletedHint": "Pas lorsque je la termine moi-même.",
+      "autoClockOut": "Un poste que j’ai laissé ouvert est clôturé",
+      "autoClockOutHint": "Avec l’heure provisoire, pour indiquer quand je suis réellement parti.",
+      "offByOrg": "Désactivé pour votre organisation",
+      "saved": "Paramètres e-mail enregistrés",
+      "failed": "Impossible d’enregistrer vos paramètres e-mail"
     },
     "joinCode": {
       "title": "Code d'adhésion",
@@ -2653,7 +2670,8 @@
       "notifications": "Notifications",
       "auditLog": "Journal d'audit",
       "profile": "Profil",
-      "security": "Mot de passe et sécurité"
+      "security": "Mot de passe et sécurité",
+      "myEmails": "Notifications par e-mail"
     },
     "changeEmail": {
       "title": "Modifier l'e-mail",
@@ -2765,7 +2783,6 @@
     "joinRejected": "Demande d'adhésion rejetée",
     "clockIn": "Employé pointé en entrée",
     "clockOut": "Employé pointé en sortie",
-    "autoClockOut": "Pointage sortie automatique",
     "geofenceAlert": "Alerte de géorepérage",
     "pendingApproval": "Un pointage nécessite une approbation",
     "breakStarted": "Pause commencée",
@@ -3292,7 +3309,17 @@
       "away": "à distance",
       "clockedInAwayToast": "Pointé — à distance du site. Ce poste sera vérifié.",
       "clockedInAtToast": "Entrée pointée à {{name}}",
-      "gpsHintOneButton": "Utilise votre position pour choisir votre espace et vérifier que vous y êtes. Le lieu de travail au fil de la journée est déterminé automatiquement."
+      "gpsHintOneButton": "Utilise votre position pour choisir votre espace et vérifier que vous y êtes. Le lieu de travail au fil de la journée est déterminé automatiquement.",
+      "unconfirmed": {
+        "title": "Votre poste du {{day}} a été clôturé à {{time}}",
+        "body": "Il était encore ouvert ; il a donc été clôturé avec une heure provisoire. Quand êtes-vous réellement parti ?",
+        "leftAt": "Parti à",
+        "save": "Enregistrer",
+        "keep": "Garder {{time}}",
+        "saved": "Merci — votre poste a été mis à jour",
+        "failed": "Impossible de mettre à jour le poste",
+        "invalid": "Choisissez une heure après votre arrivée, et pas dans le futur"
+      }
     },
     "management": {
       "title": "Gestion des présences",
