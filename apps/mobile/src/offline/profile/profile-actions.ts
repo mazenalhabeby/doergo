@@ -7,6 +7,8 @@ export interface OwnProfilePatch {
   lastName?: string;
   presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null;
   timeFormat?: '12h' | '24h';
+  /** The language pushes are written in — see apps/api/notification-service/src/i18n. */
+  locale?: string;
 }
 
 /**

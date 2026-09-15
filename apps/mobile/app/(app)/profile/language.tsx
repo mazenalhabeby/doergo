@@ -15,6 +15,9 @@ import {
   FONT_WEIGHT,
   SHADOWS,
 } from '../../../src/lib/constants';
+import { useOffline } from '../../../src/offline/offline-context';
+import { useAuth } from '../../../src/contexts/auth-context';
+import { updateOwnProfile } from '../../../src/offline/profile/profile-actions';
 
 export default function LanguageScreen() {
   const { colors, isDark } = useTheme();
@@ -22,14 +25,22 @@ export default function LanguageScreen() {
   const { t } = useTranslation();
   const currentLang = getCurrentLanguage();
 
+  const offline = useOffline();
+  const { user } = useAuth();
+
   const handleSelect = useCallback((code: string) => {
     if (code !== currentLang) {
       changeLanguage(code);
-      // Pushes are written on the server; tell it now. Best effort — if this
-      // fails, the next launch's push registration carries the language anyway.
-      userApi.setLocale(code).catch(() => {});
+      // Pushes are written on the server; tell it — through the queue, so a
+      // language picked with no signal still arrives. Best effort either way:
+      // the next launch's push registration carries the language too.
+      if (offline.engine && user?.id) {
+        void updateOwnProfile(offline.engine, user.id, { locale: code }).catch(() => {});
+      } else {
+        userApi.setLocale(code).catch(() => {});
+      }
     }
-  }, [currentLang]);
+  }, [currentLang, offline.engine, user?.id]);
 
   return (
     <ScreenContainer width="content">
