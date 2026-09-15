@@ -483,6 +483,25 @@ export class AssetLogService {
 
   // ── Derived state ──────────────────────────────────────────────────────────
 
+  /**
+   * Every record of a kind, after its rules changed. One asset at a time and
+   * best effort: a failure on one is logged and the rest carry on, and the next
+   * entry on any of them recomputes it anyway.
+   */
+  async recomputeKind(categoryId: string): Promise<number> {
+    const assets = await this.prisma.asset.findMany({ where: { categoryId }, select: { id: true }, take: 5000 });
+    let done = 0;
+    for (const a of assets) {
+      try {
+        await this.recomputeAsset(a.id);
+        done++;
+      } catch (e) {
+        this.logger.warn(`logbook recompute for ${a.id} failed: ${(e as Error).message}`);
+      }
+    }
+    return done;
+  }
+
   /** Recompute outside a caller's transaction. */
   async recomputeAsset(assetId: string): Promise<void> {
     await this.prisma.$transaction((tx) => this.recompute(tx, assetId));
