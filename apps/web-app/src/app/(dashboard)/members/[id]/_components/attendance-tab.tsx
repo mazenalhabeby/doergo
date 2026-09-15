@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next"
 
 import { type TimeEntry } from "@/lib/api"
 import { AddAttendanceDialog } from "./add-attendance-dialog"
+import { AddOvertimeDialog } from "../../../attendance/_components/add-overtime-dialog"
+import { useOvertimeAction } from "@/hooks/use-overtime-action"
 import { AttendanceStatusCell } from "@/components/attendance-status-cell"
 import { WorkLogTimeline } from "@/components/worklog-timeline"
 import { useTimeFormat } from "@/hooks"
@@ -28,6 +30,17 @@ export function AttendanceTab({
   const { t } = useTranslation()
   const { formatTime, formatDate, locale } = useTimeFormat()
   const [expanded, setExpanded] = useState<string | null>(null)
+  /*
+    "Add overtime" on a closed shift, with the SAME gate and dialog as the
+    attendance board. A manager opens the member first and finds the evening
+    here; sending them to another page to approve it was the gap.
+
+    Never on the viewer's own profile — approving your own hours is refused by
+    the server, and a column of buttons that all fail is worse than no column.
+  */
+  const overtime = useOvertimeAction()
+  const showOvertime = overtime.enabled && overtime.viewer.userId !== employeeId
+  const columns = showOvertime ? 8 : 7
 
   return (
     <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
@@ -77,6 +90,7 @@ export function AttendanceTab({
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {t('technicians.attendanceTab.statusColumn')}
                 </th>
+                {showOvertime && <th className="w-10 px-2 py-3" />}
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {t('worklog.column', 'Activity')}
                 </th>
@@ -140,13 +154,19 @@ export function AttendanceTab({
                     <td className="px-5 py-3">
                       <AttendanceStatusCell entry={entry} />
                     </td>
+                    {showOvertime && (
+                      // The row expands on click; the action must not.
+                      <td className="px-2 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                        {overtime.canOfferFor(entry) && <AddOvertimeDialog entry={entry} />}
+                      </td>
+                    )}
                     <td className="px-5 py-3">
                       <ChevronRight className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-90")} />
                     </td>
                   </tr>
                   {isOpen && (
                     <tr className="border-b border-border/60 bg-muted/20">
-                      <td colSpan={7} className="px-5 py-4">
+                      <td colSpan={columns} className="px-5 py-4">
                         <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                           <ListChecks className="h-3.5 w-3.5" /> {t('worklog.title', "Activity — what they did")}
                         </div>

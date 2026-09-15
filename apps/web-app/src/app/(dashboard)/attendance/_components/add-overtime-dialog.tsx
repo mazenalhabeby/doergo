@@ -49,6 +49,9 @@ export function AddOvertimeDialog({ entry }: { entry: TimeEntry }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["attendance"] })
       queryClient.invalidateQueries({ queryKey: ["attendance-approvals"] })
+      // The member's own attendance tab offers the same action, keyed
+      // ["memberAttendance", memberId, from, to] — a prefix reaches every range.
+      queryClient.invalidateQueries({ queryKey: ["memberAttendance"] })
       notify.success(t("attendance.addOvertime.success", { minutes: value, defaultValue: `Added ${value} min of overtime` }))
       setOpen(false)
     },
