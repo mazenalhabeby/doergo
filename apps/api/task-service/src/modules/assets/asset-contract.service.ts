@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
@@ -32,6 +32,22 @@ export interface ContractFields {
 type Db = Parameters<AssetCustodyService['apply']>[0];
 
 /**
+ * Who is acting, and where they may.
+ *
+ * `manageSpaceIds` follows the three states the rest of the codebase uses:
+ * undefined = org-wide (the caller already passed `@RequirePermission`-strength
+ * checks, or is an internal caller such as accepting a proposal), an array =
+ * only kinds in those workspaces, and an EMPTY array = nowhere.
+ */
+interface ContractActor {
+  userId: string;
+  userRole: string;
+  canViewAllTasks?: boolean;
+  manageSpaceIds?: string[];
+  organizationId: string;
+}
+
+/**
  * A contract → a record, a handover, and the retirement of what it replaces.
  *
  * The situation: somebody is handed a rental agreement. The office then has to
@@ -59,6 +75,34 @@ export class AssetContractService {
     private readonly access: AssetAccessService,
     private readonly custody: AssetCustodyService,
   ) {}
+
+  /**
+   * Is a kind in a workspace this caller may manage?
+   *
+   * A kind in NO workspace is refused to a space-scoped caller: it belongs to
+   * nobody's space, so no space grant can reach it — only an org-wide one.
+   */
+  static kindInScope(kindSpaceId: string | null | undefined, manageSpaceIds?: string[]): boolean {
+    if (manageSpaceIds === undefined) return true;
+    return !!kindSpaceId && manageSpaceIds.includes(kindSpaceId);
+  }
+
+  /**
+   * May they use the contract flow at all?
+   *
+   * Org-wide callers keep the check they always had. A space-scoped manager is
+   * let through when they manage assets SOMEWHERE — which kinds they then reach
+   * is decided in `resolve`, by each kind's own workspace.
+   */
+  private assertMay(actor: ContractActor, doing: string): void {
+    if (actor.manageSpaceIds === undefined) {
+      this.access.assertMay(actor, doing);
+      return;
+    }
+    if (actor.manageSpaceIds.length === 0) {
+      throw new ForbiddenException(`You do not have permission to ${doing}`);
+    }
+  }
 
   /**
    * A person's corrections → the shape the shared rules read.
@@ -97,6 +141,7 @@ export class AssetContractService {
     holderUserId: string;
     fields: ContractFields;
     retireReplaced?: boolean;
+    manageSpaceIds?: string[];
     organizationId: string;
   }): Promise<{
     proposal: ContractProposal;
@@ -108,9 +153,22 @@ export class AssetContractService {
   }> {
     const kind = await this.prisma.assetCategory.findFirst({
       where: { id: data.categoryId, organizationId: data.organizationId },
-      select: { id: true, config: true },
+      select: { id: true, config: true, spaceId: true },
     });
-    if (!kind) throw new NotFoundException('That type is not in this organization');
+    /*
+      ⚠️ A space-scoped manager reaches only the kinds of THEIR workspaces.
+
+      The gateway lets a grant held in any space through the door, because the
+      request names a kind, not a space. This is where it narrows — by the
+      kind's real workspace, read here, never by anything the client sent.
+
+      404 rather than 403, and the same sentence as a kind in another tenant:
+      "that type exists, you just may not use it" tells somebody what another
+      depot runs.
+    */
+    if (!kind || !AssetContractService.kindInScope(kind.spaceId, data.manageSpaceIds)) {
+      throw new NotFoundException('That type is not in this organization');
+    }
 
     const shape = normalizeKindShape(kind.config);
     if (maxHolders(shape) === 0) throw new BadRequestException('This type is not held by anybody');
@@ -200,11 +258,8 @@ export class AssetContractService {
     holderUserId: string;
     fields: ContractFields;
     retireReplaced?: boolean;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'view assets');
+  } & ContractActor) {
+    this.assertMay(data, 'view assets');
     const { proposal, startsAt, startClamped } = await this.resolve(data);
     return success({
       ...proposal,
@@ -228,11 +283,8 @@ export class AssetContractService {
     holderUserId: string;
     fields: ContractFields;
     retireReplaced?: boolean;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'update assets');
+  } & ContractActor) {
+    this.assertMay(data, 'update assets');
 
     // Recomputed from scratch, on the server, exactly as the preview was.
     const { proposal, shape, startsAt, startClamped } = await this.resolve(data);
@@ -348,8 +400,8 @@ export class AssetContractService {
    * has no reader, so it posts what somebody pasted. Both end up in the same
    * rules — this is only the door for the second.
    */
-  async read(data: { text?: string; userId: string; userRole: string; organizationId: string }) {
-    this.access.assertMay(data as any, 'view assets');
+  async read(data: { text?: string } & ContractActor) {
+    this.assertMay(data, 'view assets');
     const text = (data.text ?? '').slice(0, 20_000);
     if (!text.trim()) throw new BadRequestException('There is nothing to read');
     return success(parseContract(text.split(/\r?\n/)));
