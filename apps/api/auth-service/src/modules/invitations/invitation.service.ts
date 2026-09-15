@@ -24,6 +24,9 @@ import {
   mergePermissions,
   permissionsExceed,
   externalMayHold,
+  clientEmailLocale,
+  DEFAULT_LOCALE,
+  type SupportedLocale,
 } from '@hbcfield/shared';
 import { defaultSpaceRoleId } from './invitation-space-role';
 import { memberFieldsFromInvitation } from './invitation-apply';
@@ -43,6 +46,30 @@ export class InvitationService {
     // the same database as the member who just accepted.
     private readonly documents: DocumentsService,
   ) {}
+
+  /**
+   * The language a CLIENT's invitation is written in — the client rule
+   * (`clientEmailLocales`): their own account, the client record, the
+   * organization, English.
+   *
+   * Decided HERE and sent with the event, because this is the service that can
+   * read the client record, and because notification-service's fallback for an
+   * address — the inviting member's language — is the wrong one for a client:
+   * the member who pressed "invite" writing German says nothing about what the
+   * client reads. A failed lookup is English, never "let the inviter decide".
+   */
+  private async clientInviteLocale(
+    organizationId: string,
+    email: string,
+    customerId: string | null | undefined,
+  ): Promise<SupportedLocale> {
+    try {
+      return await clientEmailLocale(this.prisma, organizationId, { email, customerId });
+    } catch (e) {
+      this.logger.warn(`Could not look up a language for a client invitation: ${e}`);
+      return DEFAULT_LOCALE;
+    }
+  }
 
   /**
    * Cap an Access Profile's permission flags at the creator's ceiling. For a true
@@ -395,6 +422,10 @@ export class InvitationService {
     // link automatically (fire-and-forget — the invite already succeeded; a mail
     // hiccup must not fail the request, and the code is still shown in the UI).
     if (data.email && data.email.trim()) {
+      // Outside the try: the lookup already turns a failure into English.
+      const clientLocale = isCustomerInvite
+        ? await this.clientInviteLocale(data.organizationId, data.email.trim(), data.customerId)
+        : undefined;
       try {
         this.notificationClient.emit('invitation_created', {
           recipientEmail: data.email.trim(),
@@ -406,6 +437,8 @@ export class InvitationService {
           // The inviter's language is the email's language when the address is
           // not already somebody's account.
           inviterId: data.createdById,
+          // …except for a client, whose language is decided by the client rule.
+          ...(clientLocale ? { locale: clientLocale } : {}),
         });
       } catch (e) {
         this.logger.warn(`Failed to queue invitation email to ${data.email}: ${e}`);
@@ -471,6 +504,8 @@ export class InvitationService {
       // Whoever created the invitation, not whoever pressed "resend": the
       // resend carries no caller, and the creator is who chose this client.
       inviterId: invitation.createdById,
+      // A portal invitation always names its client, so the client rule decides.
+      locale: await this.clientInviteLocale(data.organizationId, customer.email, data.customerId),
     });
     return { success: true, data: { sentTo: customer.email } };
   }

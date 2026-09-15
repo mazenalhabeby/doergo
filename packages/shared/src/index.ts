@@ -93,6 +93,9 @@ export * from './mail/email-messages';
 export * from './mail/email-render';
 export * from './mail/email-templates';
 export * from './mail/email-locale';
+// A client's language: what the office set, and the rule every client email follows.
+export * from './crm/client-locale';
+export * from './mail/client-email-locale';
 
 // One replica per scheduled job — see the note in the file.
 export * from './scheduling/cron-lock';

@@ -8,6 +8,7 @@ import {
   groupByLocale,
   invitationEmail,
   mailRoutes,
+  normalizeLocale,
   sendViaFirstWorking,
   taskAssignedEmail,
   taskCompletedEmail,
@@ -157,11 +158,22 @@ export class EmailService {
    * An invitation goes to an ADDRESS, usually of somebody with no account yet.
    * Language: their own account if the address is one, else the inviting
    * member's, else English (RecipientLocales.forAddress).
+   *
+   * Unless the sender already decided it. A CLIENT's invitation arrives with
+   * `locale` resolved in auth-service by the client rule (their account, the
+   * client record, the organization, English — `clientEmailLocales`), because
+   * the inviting member's language says nothing about a client's and only
+   * auth-service can read the client record. An unusable value falls back.
    */
   async sendInvitationEmail(
-    data: Parameters<typeof invitationEmail>[1] & { recipientEmail: string; inviterId?: string | null },
+    data: Parameters<typeof invitationEmail>[1] & {
+      recipientEmail: string;
+      inviterId?: string | null;
+      locale?: string | null;
+    },
   ) {
-    const locale = await this.locales.forAddress(data.recipientEmail, data.inviterId);
+    const locale =
+      normalizeLocale(data.locale) ?? (await this.locales.forAddress(data.recipientEmail, data.inviterId));
     return this.send(data.recipientEmail, invitationEmail(locale, data));
   }
 }

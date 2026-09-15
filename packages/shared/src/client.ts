@@ -91,6 +91,8 @@ export * from './access/workflow-status-label';
 // the server names the channel and the app creates it — the two cannot drift.
 export * from './notifications/push-channels';
 export * from './notifications/locale';
+// What a client record's "Language for emails" may hold — the form and the server share it.
+export * from './crm/client-locale';
 
 // Counted time — the one place real hours become paid hours.
 export * from './attendance/counted-time';

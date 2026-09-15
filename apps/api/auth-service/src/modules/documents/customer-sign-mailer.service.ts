@@ -7,7 +7,7 @@ import {
   sendViaFirstWorking,
   runWithCronLock,
   canReissue,
-  localesByAddress,
+  clientEmailLocale,
   signLinkEmail,
   signReissueEmail,
   DEFAULT_LOCALE,
@@ -112,7 +112,7 @@ export class CustomerSignMailerService {
 
     const sent = await this.send(
       addr,
-      signLinkEmail(await this.localeFor(addr), {
+      signLinkEmail(await this.localeFor(organizationId, addr, customerId), {
         organizationName,
         documents: toSign,
         url: this.signUrl(token),
@@ -201,21 +201,24 @@ export class CustomerSignMailerService {
   /**
    * Which language a client's email is written in.
    *
-   * A client is an ADDRESS, and the Customer record carries no language — so
-   * the only real signal is an account behind that address (a portal client
-   * who signs in, or a member of another organization who countersigns), whose
-   * own chosen language wins. Anybody else gets English, as every client did
-   * before.
+   * The one rule every client-facing sender follows (`clientEmailLocale` in
+   * shared): the account behind the address, then the client record's language,
+   * then the organization's, then English. The client is found by the record
+   * the signer step names when there is one, else by the address among this
+   * organization's clients.
    *
    * Deliberately NOT the issuing member's language: the client is a different
-   * company, and "the supplier's office writes German" says nothing about what
-   * the client's accounts department reads. When Customer gains a language
-   * field, it slots in between the account and the default, here and nowhere
-   * else. A lookup that fails costs the language, never the email.
+   * company. Only the system's words follow it — the document titles and the
+   * organization's name in the email go as the organization wrote them. A
+   * lookup that fails costs the language, never the email.
    */
-  private async localeFor(address: string): Promise<SupportedLocale> {
+  private async localeFor(
+    organizationId: string,
+    address: string,
+    customerId?: string | null,
+  ): Promise<SupportedLocale> {
     try {
-      return (await localesByAddress(this.prisma, [address])).get(address.trim().toLowerCase()) ?? DEFAULT_LOCALE;
+      return await clientEmailLocale(this.prisma, organizationId, { email: address, customerId });
     } catch (err) {
       this.logger.warn(`Could not look up a language for a signing link: ${(err as Error).message}`);
       return DEFAULT_LOCALE;
@@ -234,10 +237,11 @@ export class CustomerSignMailerService {
    *  back, not for news. */
   async sendReissue(data: {
     to: string; token: string; expiresAt: Date; organizationName: string;
+    organizationId: string; customerId?: string | null;
   }): Promise<boolean> {
     return this.send(
       data.to,
-      signReissueEmail(await this.localeFor(data.to), {
+      signReissueEmail(await this.localeFor(data.organizationId, data.to, data.customerId), {
         organizationName: data.organizationName,
         url: this.signUrl(data.token),
         expiresAt: data.expiresAt,

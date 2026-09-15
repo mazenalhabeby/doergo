@@ -268,6 +268,8 @@ export class DocumentsController {
           token: outcome.token,
           expiresAt: outcome.expiresAt,
           organizationName: outcome.organizationName,
+          organizationId: outcome.organizationId,
+          customerId: outcome.customerId,
         });
         if (sent) await this.links.markSent(outcome.linkId);
       }

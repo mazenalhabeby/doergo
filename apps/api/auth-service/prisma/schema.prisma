@@ -1745,6 +1745,15 @@ model Customer {
   vatId     String? // VAT / UID number (EU) — e.g. ATU12345678
   regNumber String? // company register number (e.g. Firmenbuchnummer FN 123456x)
 
+  /// The language email to this client is written in: en | de | es | fr | it.
+  ///
+  /// A client mostly never signs in, so nothing ever told us what they read —
+  /// the office says it here. NULL = not set: the account behind the address
+  /// still wins, then the organization's language, then English
+  /// (`clientEmailLocales` in shared). Only the system's own wording follows it;
+  /// what the organization wrote (document titles, invoice lines) goes as written.
+  locale String?
+
   /// This person exists as somebody's CONTACT, not as a client of yours.
   ///
   /// Set when a person is created from a company's "Contact people" panel. It

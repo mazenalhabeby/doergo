@@ -16,6 +16,10 @@ import { normalizeLocale, type SupportedLocale } from '../notifications/locale';
  *   2. what the sending side knows (the inviting member, the schedule's author);
  *   3. English.
  *
+ * A CLIENT is the exception to step 2 — the sending member's language says
+ * nothing about a client's — and follows `clientEmailLocales` instead, which
+ * asks the client record and the organization in its place.
+ *
  * ONE query for the whole list — a report to twelve addresses is one lookup,
  * not twelve. Only addresses that are an account WITH a language come back, so
  * the caller's fallback applies to everything else. `User.email` is stored

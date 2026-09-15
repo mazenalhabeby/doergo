@@ -18,6 +18,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { RequirePermission, DenyExternal } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
+import { parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE } from '@hbcfield/shared';
 
 interface CustomerDto {
   /** Made on the phone when creating: a client added twice is one client. Ignored on update. */
@@ -40,7 +41,22 @@ interface CustomerDto {
   industry?: string | null;
   vatId?: string | null;
   regNumber?: string | null;
+  /** The language email to this client is written in. null / "" = not set. */
+  locale?: string | null;
   details?: { label: string; value: string }[] | null;
+}
+
+/**
+ * Refuse a language that is not on the list before anything is forwarded.
+ *
+ * auth-service refuses it too — it is the boundary, and the phone's offline
+ * sync reaches it by another route — but a request that can only fail should
+ * fail here, without a round trip and without a module check on the way.
+ */
+export function assertClientLocale(dto: CustomerDto): void {
+  if (dto.locale !== undefined && !parseClientLocale(dto.locale).ok) {
+    throw new BadRequestException(CLIENT_LOCALE_INVALID_MESSAGE);
+  }
 }
 
 /**
@@ -235,6 +251,7 @@ export class CustomersController {
   @Post()
   @ApiOperation({ summary: 'Create a customer (CRM record; ?spaceId scopes it to a space)' })
   async create(@Body() dto: CustomerDto, @Request() req: any) {
+    assertClientLocale(dto);
     const orgId = req.user.organizationId;
     if (dto.spaceId) {
       await this.requireSpaceModule(dto.spaceId, orgId, 'crm');
@@ -246,6 +263,7 @@ export class CustomersController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update a customer' })
   async update(@Param('id') id: string, @Body() dto: CustomerDto, @Request() req: any) {
+    assertClientLocale(dto);
     // Moving a customer into a space requires that space to have the CRM module
     // (parity with create; the service also validates the space belongs to org).
     if (dto.spaceId) await this.requireSpaceModule(dto.spaceId, req.user.organizationId, 'crm');

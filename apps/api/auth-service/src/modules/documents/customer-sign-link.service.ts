@@ -164,7 +164,11 @@ export class CustomerSignLinkService {
    */
   async requestReissue(email: string): Promise<
     | { send: false }
-    | { send: true; to: string; token: string; expiresAt: Date; linkId: string; organizationName: string }
+    | {
+        send: true; to: string; token: string; expiresAt: Date; linkId: string; organizationName: string;
+        /** Which organization and client this is — the email's language is looked up from them. */
+        organizationId: string; customerId: string | null;
+      }
   > {
     const addr = email.trim().toLowerCase();
     if (!isUsableEmail(addr)) return { send: false };
@@ -215,6 +219,8 @@ export class CustomerSignLinkService {
       expiresAt,
       linkId: fresh.id,
       organizationName: row.document.organization?.name ?? '',
+      organizationId,
+      customerId: row.customerId ?? null,
     };
   }
 

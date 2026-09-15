@@ -156,6 +156,8 @@ export class NotificationController {
     expiresAt: string;
     /** The member who created it — their language is the email's fallback. */
     inviterId?: string | null;
+    /** Already decided by the sender — a client's invitation (see EmailService). */
+    locale?: string | null;
   }) {
     this.logger.log(`Sending invitation email to ${data.recipientEmail} for org ${data.organizationName}`);
     await this.emailService.sendInvitationEmail(data);

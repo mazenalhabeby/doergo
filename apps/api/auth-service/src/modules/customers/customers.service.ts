@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { resolveCrmCaps, ownsClient, type CrmCaps } from '@hbcfield/shared';
+import { resolveCrmCaps, ownsClient, parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, type CrmCaps } from '@hbcfield/shared';
 import { findPrior } from '@hbcfield/shared';
 
 /** An id a phone made (UUIDv7) — the same alphabet the gateway accepts. */
@@ -40,6 +40,8 @@ export interface CustomerInput {
   industry?: string | null;
   vatId?: string | null;
   regNumber?: string | null;
+  /** The language email to this client is written in; null / "" = not set. */
+  locale?: string | null;
   details?: CustomerDetail[] | null; // flexible custom key-value attributes
 }
 
@@ -64,6 +66,7 @@ const customerSelect = {
   industry: true,
   vatId: true,
   regNumber: true,
+  locale: true,
   details: true,
   createdAt: true,
   updatedAt: true,
@@ -77,6 +80,18 @@ function sanitizeDetails(details: unknown): CustomerDetail[] | undefined {
     .map((d) => ({ label: d.label.trim().slice(0, 80), value: d.value.trim().slice(0, 2000) }))
     .filter((d) => d.label.length > 0)
     .slice(0, 30);
+}
+
+/**
+ * The client's language for emails, as a write may carry it: `undefined` leaves
+ * it alone, null / "" clears it, a supported code sets it, anything else is
+ * refused. Refused rather than dropped — see `parseClientLocale`.
+ */
+function clientLocaleFrom(value: unknown): string | null | undefined {
+  if (value === undefined) return undefined;
+  const parsed = parseClientLocale(value);
+  if (!parsed.ok) throw new BadRequestException(CLIENT_LOCALE_INVALID_MESSAGE);
+  return parsed.locale;
 }
 
 const MAX_TEXT = 10000; // generous cap for free-text notes / activity bodies
@@ -669,6 +684,7 @@ export class CustomersService {
 
     const name = (dto.name || '').trim();
     if (!name) throw new BadRequestException('Customer name is required');
+    const locale = clientLocaleFrom(dto.locale) ?? null;
     await this.assertRefsInOrg(dto, organizationId);
     // ownerId must be a real member of this org (else drop it).
     const ownerId = dto.ownerId ? ((await this.keepOrgUserIds([dto.ownerId], organizationId))[0] ?? null) : null;
@@ -699,6 +715,7 @@ export class CustomersService {
         industry: dto.industry ?? null,
         vatId: dto.vatId ?? null,
         regNumber: dto.regNumber ?? null,
+        locale,
         details: (sanitizeDetails(dto.details) ?? undefined) as any,
       },
       select: customerSelect,
@@ -716,7 +733,7 @@ export class CustomersService {
     const touchesPortal = dto.isPortalResident !== undefined || dto.portalId !== undefined;
     const touchesOwnership = dto.ownerId !== undefined || dto.managerIds !== undefined;
     const touchesStatus = dto.status !== undefined;
-    const infoKeys = ['name', 'contactName', 'email', 'phone', 'address', 'notes', 'isActive', 'spaceId', 'type', 'details', 'legalName', 'website', 'industry', 'vatId', 'regNumber'] as const;
+    const infoKeys = ['name', 'contactName', 'email', 'phone', 'address', 'notes', 'isActive', 'spaceId', 'type', 'details', 'legalName', 'website', 'industry', 'vatId', 'regNumber', 'locale'] as const;
     const touchesInfo = infoKeys.some((k) => dto[k] !== undefined);
     const reach = this.canReach(caps, existing, caller);
     if (existing.isPortalResident || touchesPortal || touchesOwnership) {
@@ -751,6 +768,9 @@ export class CustomersService {
       if (dto[k] !== undefined) data[k] = dto[k];
     }
     if (dto.notes !== undefined) data.notes = capText(dto.notes);
+    // Info, like the phone number: gated on editInfo above, no permission of its own.
+    const locale = clientLocaleFrom(dto.locale);
+    if (locale !== undefined) data.locale = locale;
     if (dto.type !== undefined) data.type = dto.type === 'COMPANY' ? 'COMPANY' : 'PERSON';
     if (dto.details !== undefined) data.details = (sanitizeDetails(dto.details) ?? []) as any;
     if (dto.managerIds !== undefined) data.managerIds = await this.keepOrgUserIds(sanitizeIds(dto.managerIds) ?? [], organizationId);

@@ -431,6 +431,8 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 
 > ⚠️ **A contact is not a client.** `Customer.isContact` keeps them out of the client list AND out of `BILLABLE_CLIENT_WHERE` — the CRM ladder charges per active client, and a firm with six contacts is not six clients.
 >
+> ⚠️ **`Customer.locale` is "Language for emails"** (migration `20260916170000_customer_locale`). Client info under the same `editInfo` gate as the phone number. NULL = "same as the organization": resolved at SEND time by `clientEmailLocales`, never written into the record. A portal client's own app language still wins over it.
+>
 > ⚠️ **Linking is not gated on `Customer.type`.** A real book of clients reads "BILLA AG", "Siemens AG" — all saved as PERSON, because the Person/Company toggle is an afterthought. The two ends are told apart by their POSITION in the link; the panels split by type, the service does not. A↔B both ways round is refused.
 
 ### Custody & expenses (`/assets`) — who holds a thing, and what they spend on it
@@ -1120,7 +1122,9 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `isOrganizationSuspended()`, `ORG_SUSPENDED_MESSAGE` | The organization off switch, read at all three doors into the product |
 | `passwordResetEmail()`, `invitationEmail()`, `signLinkEmail()`, … (`mail/email-templates.ts`) | Every email the product sends, as `(locale, facts) → { subject, html }`. Senders pick the language and deliver; they write no words or markup (`email-catalogue-guard.spec.ts`) |
 | `EMAIL_MESSAGES`, `emailTranslator()`, `escapeHtml()`, `bold()` | The email catalogue (en/de/es/fr/it) and the renderer that escapes every sentence and value |
-| `localesByAddress()`, `groupByLocale()` | Which language an ADDRESS reads (its account's, one query for a list) — for invitations, client signing links, report recipients |
+| `localesByAddress()`, `groupByLocale()` | Which language an ADDRESS reads (its account's, one query for a list) — for member invitations and report recipients |
+| `clientEmailLocales()`, `clientEmailLocale()` | Which language a CLIENT's email is written in: the account behind the address → `Customer.locale` → the organization's country (`organizationLocaleFromCountry`, single-language countries only) → English. Two lookups for a batch. Every client sender uses it — signing link + re-send, portal invitation + re-send. ⚠️ Never the sending member's language |
+| `parseClientLocale()` | What `Customer.locale` may hold: a supported code, or null/"" to clear. Anything else is REFUSED (400), not dropped — the gateway, auth-service and the web form all read it |
 | `formatNumberFor()`, `pluralFormFor()` | Numbers and one/other plurals per locale — shared by the push and email renderers |
 | `documentTypeVisibleTo()`, `visibleTypeWhere()`, `visibleTypeSelfWhere()` | Who may SEE documents of a type — one rule in three shapes (predicate / documents `where` / catalogue `where`). Empty list = no restriction |
 | `assertMemberInScope()`, `memberScopeFilter()` | "Is this person in my crew?" — one rule for both services |
