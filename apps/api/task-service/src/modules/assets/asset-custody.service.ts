@@ -13,6 +13,7 @@ import {
   type HandoverPlan,
 } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
+import { AssetNotifier } from './asset-notifier.service';
 
 /** Anything that can run the two tables — the client, or a transaction. */
 type Db = Pick<PrismaService, 'assetCustody' | 'assetHolder' | 'assetMoney' | 'asset' | 'user'>;
@@ -37,6 +38,7 @@ export class AssetCustodyService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly access: AssetAccessService,
+    private readonly notifier: AssetNotifier,
   ) {}
 
   /** The columns every reader here needs, and no more. */
@@ -209,6 +211,20 @@ export class AssetCustodyService {
     return plan;
   }
 
+  /**
+   * Tell the people a handover moved something towards or away from.
+   *
+   * ⚠️ Separate from `apply`, and called by whoever owns the transaction once
+   * it has COMMITTED. `apply` runs inside the caller's transaction, so a push
+   * sent from there could announce a van that a later step rolls back. Every
+   * path that calls `apply` calls this after — the button below, an edit that
+   * changes the driver, a contract — so however somebody got the thing, they
+   * are told the same way.
+   */
+  async announce(input: { organizationId: string; assetId: string; actorId: string; plan: HandoverPlan }): Promise<void> {
+    await this.notifier.handedOver(input);
+  }
+
   /** A refusal in the words the person reads, not a problem code. */
   private explain(plan: HandoverPlan): string {
     const first = plan.problems[0]!;
@@ -264,6 +280,7 @@ export class AssetCustodyService {
         strict: true,
       }),
     );
+    await this.announce({ organizationId: data.organizationId, assetId: data.id, actorId: data.userId, plan });
 
     return success({
       closed: plan.closing.length,

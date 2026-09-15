@@ -5,6 +5,7 @@ import type { TaskEventPayload } from "@/types/socket-events"
 import {
   Bell, UserPlus, ClipboardList, MessageSquare, CheckCircle,
   AlertTriangle, Clock, MapPin, Coffee, Paperclip, XCircle, Send, ClipboardCheck, PenLine, CalendarDays,
+  Receipt, Package,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
@@ -107,6 +108,7 @@ type NotificationType =
   | "crm_reminder"
   | "signature_needed"
   | "time_off_requested" | "time_off_decided"
+  | "asset_expense" | "asset_expense_decided" | "asset_handover"
 
 interface Notification {
   id: string
@@ -146,6 +148,9 @@ const TYPE_CONFIG: Record<NotificationType, { icon: typeof Bell; color: string; 
   invitation_created: { icon: Send, color: "text-indigo-600", bg: "bg-indigo-50" },
   time_off_requested: { icon: CalendarDays, color: "text-purple-600", bg: "bg-purple-50" },
   time_off_decided:   { icon: CalendarDays, color: "text-green-600", bg: "bg-green-50" },
+  asset_expense:      { icon: Receipt, color: "text-amber-600", bg: "bg-amber-50" },
+  asset_expense_decided: { icon: Receipt, color: "text-green-600", bg: "bg-green-50" },
+  asset_handover:     { icon: Package, color: "text-indigo-600", bg: "bg-indigo-50" },
 }
 
 // Map a persisted delivery eventType → the bell's NotificationType (for icon/color).
@@ -162,6 +167,9 @@ function eventTypeToNotifType(eventType: string): NotificationType {
     "document_awaiting_signature": "signature_needed",
     "time_off_requested": "time_off_requested",
     "time_off_decided": "time_off_decided",
+    "asset.expense_submitted": "asset_expense",
+    "asset.expense_decided": "asset_expense_decided",
+    "asset.handed_over": "asset_handover",
   }
   return map[eventType] || "task_status_changed"
 }
@@ -317,6 +325,48 @@ export function NotificationBell() {
             : t("notifications.timeOffRejected", "Time off not approved"),
           [[d.startDate, d.endDate].filter(Boolean).join(" → "), d.rejectionReason].filter(Boolean).join(" — "),
           "/my/time-off",
+        )
+      }),
+
+      /*
+        The organization's things. Each arrives only in its recipient's own
+        room — the organization room gets ids, never these — so a name and an
+        amount are only ever rendered for somebody task-service already decided
+        may see that asset. Live half of the bell entry the server persisted.
+      */
+      subscribe<{ assetId?: string; assetName?: string; authorName?: string; category?: string }>("asset.expense_submitted", (d) => {
+        add(
+          "asset_expense",
+          t("notifications.assetExpenseSubmitted", "An expense to confirm"),
+          t("notifications.assetExpenseSubmittedBody", "{{author}} sent {{category}} for {{asset}}", {
+            author: d.authorName ?? "", category: d.category ?? "", asset: d.assetName ?? "",
+          }),
+          d.assetId ? `/assets/${d.assetId}` : "/assets",
+        )
+      }),
+      subscribe<{ assetId?: string; assetName?: string; category?: string; decision?: string; note?: string | null }>("asset.expense_decided", (d) => {
+        const accepted = d.decision === "accept"
+        add(
+          "asset_expense_decided",
+          accepted
+            ? t("notifications.assetExpenseAccepted", "Expense accepted")
+            : t("notifications.assetExpenseRefused", "Expense refused"),
+          // The reason travels with a refusal — a bare "no" teaches nothing.
+          [[d.category, d.assetName].filter(Boolean).join(" · "), accepted ? null : d.note].filter(Boolean).join(" — "),
+          d.assetId ? `/assets/${d.assetId}` : "/assets",
+        )
+      }),
+      subscribe<{ assetId?: string; assetName?: string; direction?: "to" | "from" }>("asset.handed_over", (d) => {
+        const toMe = d.direction !== "from"
+        add(
+          "asset_handover",
+          toMe
+            ? t("notifications.assetHandedOver", "Handed over to you")
+            : t("notifications.assetHandedBack", "Handed back"),
+          toMe
+            ? t("notifications.assetHandedOverBody", "{{asset}} is now with you", { asset: d.assetName ?? "" })
+            : t("notifications.assetHandedBackBody", "{{asset}} was handed back", { asset: d.assetName ?? "" }),
+          d.assetId ? `/assets/${d.assetId}` : "/assets",
         )
       }),
 

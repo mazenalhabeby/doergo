@@ -13,6 +13,7 @@ import {
   type ParsedContract,
   type ContractProposal,
   type KindShape,
+  type HandoverPlan,
 } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetCustodyService } from './asset-custody.service';
@@ -231,7 +232,15 @@ export class AssetContractService {
     userId: string;
     userRole: string;
     organizationId: string;
-  }) {
+  }, options: {
+    /**
+     * Tell the people who received or lost something. Off only for a caller
+     * that announces the same event in its own words — a proposal accepted.
+     * A second ARGUMENT, not a field on `data`, because `data` arrives from a
+     * request body and a client must not be able to switch notifications off.
+     */
+    announceHandover?: boolean;
+  } = {}) {
     this.access.assertMay(data as any, 'update assets');
 
     // Recomputed from scratch, on the server, exactly as the preview was.
@@ -249,6 +258,8 @@ export class AssetContractService {
     const details = fieldsForKind(shape, parsed);
     const limit = maxHolders(shape);
 
+    // Filled inside the transaction, announced only once it has committed.
+    const handovers: Array<{ assetId: string; plan: HandoverPlan }> = [];
     const created = await this.prisma.$transaction(async (tx) => {
       const asset = await tx.asset.create({
         data: {
@@ -271,7 +282,7 @@ export class AssetContractService {
         second author for one fact, and the two would disagree the first time
         either changed alone.
       */
-      await this.custody.apply(tx as unknown as Db, {
+      const given = await this.custody.apply(tx as unknown as Db, {
         assetId: asset.id,
         organizationId: data.organizationId,
         actorId: data.userId,
@@ -281,11 +292,12 @@ export class AssetContractService {
         limit,
         strict: true,
       });
+      handovers.push({ assetId: asset.id, plan: given });
 
       const replaced: string[] = [];
       for (const step of proposal.steps) {
         if (step.kind !== 'close') continue;
-        await this.custody.apply(tx as unknown as Db, {
+        const takenBack = await this.custody.apply(tx as unknown as Db, {
           assetId: step.assetId,
           organizationId: data.organizationId,
           actorId: data.userId,
@@ -295,6 +307,7 @@ export class AssetContractService {
           limit,
           strict: true,
         });
+        handovers.push({ assetId: step.assetId, plan: takenBack });
         replaced.push(step.assetId);
       }
 
@@ -330,6 +343,14 @@ export class AssetContractService {
 
       return { asset, replaced };
     });
+
+    if (options.announceHandover !== false) {
+      for (const h of handovers) {
+        await this.custody.announce({
+          organizationId: data.organizationId, assetId: h.assetId, actorId: data.userId, plan: h.plan,
+        });
+      }
+    }
 
     return success({
       assetId: created.asset.id,

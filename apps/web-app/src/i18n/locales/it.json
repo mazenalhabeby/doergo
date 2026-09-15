@@ -2776,7 +2776,15 @@
     "signatureNeeded": "Serve la tua firma",
     "timeOffRequest": "Richiesta di ferie",
     "timeOffApproved": "Ferie approvate",
-    "timeOffRejected": "Ferie non approvate"
+    "timeOffRejected": "Ferie non approvate",
+    "assetExpenseSubmitted": "Una spesa da confermare",
+    "assetExpenseSubmittedBody": "{{author}} ha inviato {{category}} per {{asset}}",
+    "assetExpenseAccepted": "Spesa accettata",
+    "assetExpenseRefused": "Spesa rifiutata",
+    "assetHandedOver": "Consegnato a te",
+    "assetHandedOverBody": "{{asset}} ora è con te",
+    "assetHandedBack": "Restituito",
+    "assetHandedBackBody": "{{asset}} è stato restituito"
   },
   "landing": {
     "nav": {

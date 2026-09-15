@@ -6,10 +6,11 @@ import { OBJECT_STORE, ObjectStore, extensionForMime, requireObjectStore } from 
 import { randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, normalizeKindShape, isAdmin, Role } from '@hbcfield/shared';
+import { success, normalizeKindShape, isAdmin } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { AssetAccessService } from './asset-access.service';
 import { AssetContractService, type ContractFields } from './asset-contract.service';
+import { AssetNotifier } from './asset-notifier.service';
 import { findPrior } from '../../common/create-once.util';
 
 const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf'];
@@ -57,6 +58,7 @@ export class AssetProposalService {
     private readonly access: AssetAccessService,
     private readonly contracts: AssetContractService,
     private readonly routing: NotificationRoutingService,
+    private readonly notifier: AssetNotifier,
     @Inject('NOTIFICATION_SERVICE') private readonly notifications: ClientProxy,
     @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
   ) {}
@@ -255,7 +257,9 @@ export class AssetProposalService {
       let recipientIds = ids;
 
       if (recipientIds.length === 0) {
-        recipientIds = await this.whoCanAct(organizationId, raisedById);
+        // The same approvers an expense falls back to, from the one place that
+        // decides who can act on the register.
+        recipientIds = await this.notifier.approvers(organizationId, raisedById);
       }
       if (recipientIds.length === 0) return;
 
@@ -278,50 +282,6 @@ export class AssetProposalService {
       // the only copy of what they read off the page.
       this.logger.warn(`asset proposal announce failed: ${(e as Error).message}`);
     }
-  }
-
-  /**
-   * Everyone who could actually accept it — the fallback, never the first choice.
-   *
-   * ⚠️ `canManageAssets` is NOT a column on User. It is resolved at sign-in from
-   * the member's ORG role (`accessAllows(access, 'canManageAssets') ||
-   * accessAllows(access, 'canManageUsers')`), so finding the holders means
-   * reading the roles that grant it and then the people who hold those roles.
-   *
-   * Org-scoped roles only, matching the endpoint: `POST
-   * /assets/contracts/apply` is `@RequirePermission`, so a space role however
-   * senior is refused there — and telling somebody about work they will be
-   * refused is worse than telling them nothing.
-   */
-  private async whoCanAct(organizationId: string, exceptUserId: string): Promise<string[]> {
-    const roles = await this.prisma.accessRole.findMany({
-      where: { organizationId, isActive: true, scope: { not: 'SPACE' as never } },
-      select: { id: true, permissions: true },
-    });
-    const granting = roles
-      .filter((r) => {
-        const p = (r.permissions ?? {}) as Record<string, unknown>;
-        return p.canManageAssets === true || p.canManageUsers === true;
-      })
-      .map((r) => r.id);
-
-    const people = await this.prisma.user.findMany({
-      where: {
-        organizationId,
-        isActive: true,
-        isExternal: false,
-        id: { not: exceptUserId },
-        // An admin is one by being one, exactly as PermissionsGuard decides it.
-        OR: [
-          { role: Role.ADMIN as never },
-          { canManageUsers: true },
-          ...(granting.length ? [{ memberRoleId: { in: granting } }] : []),
-        ],
-      },
-      select: { id: true },
-      take: 25,
-    });
-    return people.map((p) => p.id);
   }
 
   private cleanFields(raw: ContractFields | undefined): ContractFields {
@@ -423,6 +383,15 @@ export class AssetProposalService {
         userId: data.userId,
         userRole: data.userRole,
         organizationId: data.organizationId,
+      }, {
+        /*
+          ⚠️ Quiet handover. The member is about to be told "Added to the
+          register" by `tell` below, which says everything the handover push
+          would — the thing is on the books and it is theirs. Both arriving
+          together is one event announced twice, and the second one teaches
+          people that this app repeats itself.
+        */
+        announceHandover: false,
       });
 
       const assetId = applied?.data?.assetId ?? null;

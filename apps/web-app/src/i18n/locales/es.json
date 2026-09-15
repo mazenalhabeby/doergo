@@ -2776,7 +2776,15 @@
     "signatureNeeded": "Se necesita tu firma",
     "timeOffRequest": "Solicitud de vacaciones",
     "timeOffApproved": "Vacaciones aprobadas",
-    "timeOffRejected": "Vacaciones no aprobadas"
+    "timeOffRejected": "Vacaciones no aprobadas",
+    "assetExpenseSubmitted": "Un gasto por confirmar",
+    "assetExpenseSubmittedBody": "{{author}} envió {{category}} de {{asset}}",
+    "assetExpenseAccepted": "Gasto aceptado",
+    "assetExpenseRefused": "Gasto rechazado",
+    "assetHandedOver": "Entregado a ti",
+    "assetHandedOverBody": "{{asset}} ahora está contigo",
+    "assetHandedBack": "Devuelto",
+    "assetHandedBackBody": "{{asset}} fue devuelto"
   },
   "landing": {
     "nav": {

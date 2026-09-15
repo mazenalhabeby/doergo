@@ -2776,7 +2776,15 @@
     "signatureNeeded": "Votre signature est requise",
     "timeOffRequest": "Demande de congé",
     "timeOffApproved": "Congé approuvé",
-    "timeOffRejected": "Congé non approuvé"
+    "timeOffRejected": "Congé non approuvé",
+    "assetExpenseSubmitted": "Une dépense à confirmer",
+    "assetExpenseSubmittedBody": "{{author}} a envoyé {{category}} pour {{asset}}",
+    "assetExpenseAccepted": "Dépense acceptée",
+    "assetExpenseRefused": "Dépense refusée",
+    "assetHandedOver": "Vous a été confié",
+    "assetHandedOverBody": "{{asset}} vous a été confié",
+    "assetHandedBack": "Restitué",
+    "assetHandedBackBody": "{{asset}} a été restitué"
   },
   "landing": {
     "nav": {

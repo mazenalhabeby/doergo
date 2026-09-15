@@ -2776,7 +2776,15 @@
     "signatureNeeded": "Your signature is needed",
     "timeOffRequest": "Time-off request",
     "timeOffApproved": "Time off approved",
-    "timeOffRejected": "Time off not approved"
+    "timeOffRejected": "Time off not approved",
+    "assetExpenseSubmitted": "An expense to confirm",
+    "assetExpenseSubmittedBody": "{{author}} sent {{category}} for {{asset}}",
+    "assetExpenseAccepted": "Expense accepted",
+    "assetExpenseRefused": "Expense refused",
+    "assetHandedOver": "Handed over to you",
+    "assetHandedOverBody": "{{asset}} is now with you",
+    "assetHandedBack": "Handed back",
+    "assetHandedBackBody": "{{asset}} was handed back"
   },
   "landing": {
     "nav": {

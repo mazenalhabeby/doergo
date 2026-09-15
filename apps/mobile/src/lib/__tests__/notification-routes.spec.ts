@@ -80,6 +80,8 @@ describe('notification routes', () => {
     expect(notificationTarget({ type: 'chat', conversationId: 'c1' }, viewer)).toEqual({ pathname: '/(app)/chat', params: { conversationId: 'c1' } });
     expect(notificationTarget({ type: 'overtime.approved', overtimeRequestId: 'o1' }, viewer)).toEqual({ pathname: '/(app)/overtime/[id]', params: { id: 'o1' } });
     expect(notificationTarget({ type: 'crm_reminder', customerId: 'k1' }, viewer)).toEqual({ pathname: '/(app)/customer/[id]', params: { id: 'k1' } });
+    expect(notificationTarget({ type: 'asset.expense_decided', assetId: 'a1', entryId: 'm1' }, viewer)).toEqual({ pathname: '/(app)/my-assets' });
+    expect(notificationTarget({ type: 'asset.handed_over', assetId: 'a1', direction: 'to' }, viewer)).toEqual({ pathname: '/(app)/my-assets' });
   });
 
   it('sends a shift issue to whichever screen hosts the thread for this person', () => {
@@ -90,6 +92,8 @@ describe('notification routes', () => {
   it('stays put when there is nowhere better, and never invents a route', () => {
     expect(notificationTarget({ type: 'join_request_approved' }, viewer)).toBeNull();
     expect(notificationTarget({ type: 'asset_proposal', kind: 'raised' }, viewer)).toBeNull();
+    // Confirming an expense is on the web; a phone has no queue to open.
+    expect(notificationTarget({ type: 'asset.expense_submitted', assetId: 'a1', entryId: 'm1' }, { managesIssues: true })).toBeNull();
     expect(notificationTarget({ type: 'something_new' }, viewer)).toBeNull();
     expect(notificationTarget({ type: 'something_new', taskId: 't9' }, viewer)?.params).toEqual({ id: 't9' });
     expect(notificationTarget({ type: 'task_assigned' }, viewer)).toBeNull();
