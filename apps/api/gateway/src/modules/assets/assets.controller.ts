@@ -613,6 +613,8 @@ export class AssetsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      // The backdating exemption the date rule reads (shared entry-date.ts).
+      canManageAssets: req.user.canManageAssets,
       organizationId: req.user.organizationId,
     });
   }

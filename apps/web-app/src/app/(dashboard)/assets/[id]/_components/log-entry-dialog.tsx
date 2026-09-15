@@ -7,10 +7,14 @@ import { Camera, Loader2, Plus, X } from "lucide-react"
 
 import {
   logTypesForKind, validateLogValues, readLogNumber,
+  assetEntryDateExempt, assetEntryDayBounds, assetEntryOccurredAt, localDayKey,
   type KindLogField, type KindLogType, type KindShape, type LogValueProblem,
 } from "@hbcfield/shared/client"
 import { assetsApi, uploadToS3 } from "@/lib/api"
+import { useAuth } from "@/contexts/auth-context"
 import { logColor, logFieldLabel, logTypeLabel } from "@/components/assets/log-style"
+import { entryDateText } from "@/components/assets/entry-date"
+import { DatePicker } from "@/components/ui/date-picker"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -23,10 +27,8 @@ import {
 /** The photo formats the server accepts for a logbook photo. */
 const PHOTO_ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf"
 
-const todayIso = () => {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-}
+/** Today as a LOCAL day — the one the person's wall calendar shows. */
+const todayIso = () => localDayKey(new Date())
 
 /**
  * "+ Log" — one entry of one of the kind's log types.
@@ -49,6 +51,7 @@ export function LogEntryDialog({
   onSaved: () => void
 }) {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const types = useMemo(() => logTypesForKind(shape), [shape])
   const [open, setOpen] = useState(false)
   const [typeKey, setTypeKey] = useState<string>(types[0]?.key ?? "")
@@ -61,6 +64,16 @@ export function LogEntryDialog({
   const fileInput = useRef<HTMLInputElement>(null)
 
   const type = types.find((x) => x.key === typeKey) ?? types[0]
+
+  /*
+    The days on offer, by the rule the server refuses by (shared
+    `assets/entry-date.ts`) — the same window the phone's calendar greys out.
+    ORG-WIDE exemption only: the route reads `req.user.canManageAssets`, so a
+    Space Manager offered last year would pick it and be refused.
+  */
+  const canManageAssets = assetEntryDateExempt(user)
+  const bounds = useMemo(() => assetEntryDayBounds(new Date(), { canManageAssets }), [canManageAssets, open])
+  const dateProblem = entryDateText(t as never, day, { canManageAssets })
 
   const reset = (next: boolean) => {
     if (next) {
@@ -98,7 +111,9 @@ export function LogEntryDialog({
     mutationFn: async () => {
       if (!type) throw new Error("No log type")
       // Today means now; an earlier day means midday — no time zone turns it into the day before.
-      const occurredAt = day === todayIso() ? new Date().toISOString() : new Date(`${day}T12:00:00`).toISOString()
+      const at = assetEntryOccurredAt(day, new Date())
+      if (!at || dateProblem) throw new Error(dateProblem ?? t("assetLog.problem.notADate", "That date could not be read"))
+      const occurredAt = at.toISOString()
       let receipt: { receiptKey: string; receiptName: string; receiptMime: string } | undefined
       if (file) {
         const pre = await assetsApi.presignLogPhoto(assetId, {
@@ -169,7 +184,14 @@ export function LogEntryDialog({
 
           <div>
             <Label className="text-xs text-muted-foreground">{t("assetLog.when", "When")}</Label>
-            <Input type="date" className="mt-1" value={day} max={todayIso()} onChange={(e) => setDay(e.target.value || todayIso())} />
+            <DatePicker
+              className="mt-1"
+              value={day}
+              onChange={(v) => setDay(v || todayIso())}
+              fromDate={bounds.minDate}
+              toDate={bounds.maxDate}
+            />
+            {dateProblem && <p className="mt-1 text-[11px] text-destructive">{dateProblem}</p>}
           </div>
 
           {type?.fields.map((f) => (
@@ -200,7 +222,7 @@ export function LogEntryDialog({
             disabled={save.isPending}
             onClick={() => {
               setShowProblems(true)
-              if (checked?.ok) save.mutate()
+              if (checked?.ok && !dateProblem) save.mutate()
             }}
           >
             {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

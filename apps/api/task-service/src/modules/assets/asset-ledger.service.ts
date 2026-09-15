@@ -4,6 +4,7 @@ import { success, normalizeKindShape, findMoneyCategory } from '@hbcfield/shared
 import { AssetAccessService } from './asset-access.service';
 import { AssetExpenseService, EXPENSE_STATUS } from './asset-expense.service';
 import { AssetLogService } from './asset-log.service';
+import { readAssetEntryDate } from './asset-entry-date';
 
 /**
  * Money logged against a record, and the totals over the whole ledger.
@@ -100,6 +101,7 @@ export class AssetLedgerService {
     userId: string;
     userRole: string;
     organizationId: string;
+    canManageAssets?: boolean;
   }) {
     this.access.assertMay(data as any, 'update assets');
 
@@ -126,10 +128,12 @@ export class AssetLedgerService {
       throw new BadRequestException('An amount is needed');
     }
 
-    const occurredAt = data.occurredAt ? new Date(data.occurredAt) : new Date();
-    if (Number.isNaN(occurredAt.getTime())) {
-      throw new BadRequestException('That date could not be read');
-    }
+    /*
+      The same date rule as the logbook and a member's expense — this is the
+      same row. In practice only the future refuses here, because the route
+      already asks `canManageAssets` org-wide — the backdating exemption.
+    */
+    const occurredAt = readAssetEntryDate(data.occurredAt, data);
 
     const entry = await this.prisma.assetMoney.create({
       data: {

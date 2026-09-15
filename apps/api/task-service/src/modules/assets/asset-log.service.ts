@@ -23,9 +23,7 @@ import {
   creditsByAuthor,
   creditsByLogType,
   findPrior,
-  logDateProblem,
   COST_LOG_KEY,
-  LOG_MEMBER_BACKDATE_DAYS,
   type AssetLogState,
   type KindShape,
   type LogDueState,
@@ -35,6 +33,7 @@ import { AssetAccessService } from './asset-access.service';
 import { AssetCustodyService } from './asset-custody.service';
 import { AssetExpenseService, EXPENSE_STATUS } from './asset-expense.service';
 import { ASSET_FILE_MAX_BYTES, ASSET_FILE_MIMES, isAssetFileKey, assetFilePrefix } from './asset-files';
+import { readAssetEntryDate } from './asset-entry-date';
 
 /**
  * How many reading-carrying entries the recompute reads to find each meter's
@@ -93,18 +92,6 @@ export class AssetLogService {
 
   // ── Shared checks ──────────────────────────────────────────────────────────
 
-  private readDate(raw: string | undefined, actor: Actor, now = new Date()): Date {
-    const at = raw ? new Date(raw) : now;
-    if (Number.isNaN(at.getTime())) throw new BadRequestException('That date could not be read');
-    // The same rule the phone's calendar greys days out by (shared logbook.ts).
-    const problem = logDateProblem(at, { canManageAssets: actor.canManageAssets, now });
-    if (problem === 'future') throw new BadRequestException('An entry cannot be dated in the future');
-    if (problem === 'too-old') {
-      throw new BadRequestException(`An entry older than ${LOG_MEMBER_BACKDATE_DAYS} days has to be filed by the office`);
-    }
-    return at;
-  }
-
   private async loadAsset(id: string, organizationId: string) {
     const asset = await this.prisma.asset.findFirst({
       where: { id, organizationId },
@@ -162,7 +149,7 @@ export class AssetLogService {
    * dent is not the driver.
    */
   async presign(data: Actor & { id: string; logType?: string | null; fileName: string; mimeType: string; occurredAt?: string }) {
-    const when = this.readDate(data.occurredAt, data);
+    const when = readAssetEntryDate(data.occurredAt, data);
     const asset = await this.loadAsset(data.id, data.organizationId);
     const type = findLogType(asset.shape, data.logType);
     if (!type) throw new BadRequestException('That is not something this kind logs');
@@ -194,7 +181,7 @@ export class AssetLogService {
       entryId?: string;
     },
   ) {
-    const when = this.readDate(data.occurredAt, data);
+    const when = readAssetEntryDate(data.occurredAt, data);
     const asset = await this.loadAsset(data.id, data.organizationId);
     const type = findLogType(asset.shape, data.logType);
     if (!type) throw new BadRequestException('That is not something this kind logs');

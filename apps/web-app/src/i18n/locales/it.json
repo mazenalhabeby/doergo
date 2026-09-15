@@ -7234,6 +7234,8 @@
     "thisMonth": "Questo mese",
     "unknownAuthor": "Non registrato",
     "when": "Quando",
+    "dateFuture": "Una voce non può avere una data futura",
+    "dateTooOld": "Una voce più vecchia di {{count}} giorni va registrata dall'ufficio",
     "problem": {
       "required": "Questo è obbligatorio",
       "notANumber": "Non è un numero",

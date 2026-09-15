@@ -7225,6 +7225,8 @@
     "thisMonth": "Dieser Monat",
     "unknownAuthor": "Nicht erfasst",
     "when": "Wann",
+    "dateFuture": "Ein Eintrag kann nicht in der Zukunft liegen",
+    "dateTooOld": "Einträge, die älter als {{count}} Tage sind, erfasst das Büro",
     "problem": {
       "required": "Das wird benötigt",
       "notANumber": "Das ist keine Zahl",

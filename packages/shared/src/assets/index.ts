@@ -7,5 +7,6 @@ export * from './receipt';
 export * from './contract';
 export * from './document-kind';
 export * from './record';
+export * from './entry-date';
 export * from './logbook';
 export * from './proposal-scope';

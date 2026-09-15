@@ -1,72 +1,58 @@
-import { LOG_MEMBER_BACKDATE_DAYS } from '@hbcfield/shared/client';
+import {
+  assetEntryDayBounds,
+  assetEntryOccurredAt,
+  assetEntryDateText as entryDateText,
+  localDayFromKey,
+  localDayKey,
+  type AssetEntryDateKeys,
+} from '@hbcfield/shared/client';
 
 /**
- * Calendar days for the logbook form, on the phone.
+ * Calendar days for anything filed against an asset, on the phone — a logbook
+ * entry and a receipt alike.
  *
- * A picked day is a LOCAL calendar day — "YYYY-MM-DD" as the member reads it
- * off their own wall calendar. `toISOString().slice(0, 10)` is the tempting
- * shortcut and it is wrong for an evening in Vienna: at 00:30 on the 15th it
- * answers the 14th, so the calendar would open on yesterday and "Today" would
- * select a day that is not today.
+ * The rules are in shared (`assets/entry-date.ts`): the days a calendar offers,
+ * the instant a picked day is filed at, what the server refuses and the words
+ * it refuses with. These are the phone's names for them, and the phone's keys.
  *
  * Pure (no React Native), so the bounds the calendar greys out are pinned by a
- * spec against the same shared constant the server refuses by.
+ * spec against the same rule the server refuses by.
  */
-
-const KEY = /^(\d{4})-(\d{2})-(\d{2})$/;
-const pad = (n: number) => String(n).padStart(2, '0');
 
 /** A local day as "YYYY-MM-DD". */
-export function dayKeyOf(d: Date): string {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
+export const dayKeyOf = localDayKey;
 
-/** Local midnight of a "YYYY-MM-DD", or null for anything that is not a real day ("2026-02-30"). */
-export function dateFromDayKey(key: string | null | undefined): Date | null {
-  const m = KEY.exec((key ?? '').trim());
-  if (!m) return null;
-  const d = new Date(+m[1]!, +m[2]! - 1, +m[3]!);
-  return d.getMonth() === +m[2]! - 1 && d.getDate() === +m[3]! ? d : null;
-}
+/** Local midnight of a "YYYY-MM-DD", or null for anything that is not a real day. */
+export const dateFromDayKey = localDayFromKey;
 
-const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+/** The days an entry may be dated with, as the calendar offers them. */
+export const logEntryDayBounds = assetEntryDayBounds;
 
-/** `days` calendar days before a local day — by the calendar, so a DST change cannot shift it by an hour into the next day. */
-const daysBefore = (d: Date, days: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - days);
+/** The instant an entry chosen for a day is filed at: now for today, local midday before. */
+export const occurredAtForDay = assetEntryOccurredAt;
 
-/**
- * The days an ENTRY may be dated with, as the calendar offers them.
- *
- * Never after today: the server allows a day's grace for clocks and time zones,
- * but a member choosing tomorrow on purpose is filing a plan, not an entry.
- *
- * A member reaches back `LOG_MEMBER_BACKDATE_DAYS - 1` days, not the full
- * window. A past day is sent as its local midday (`occurredAtForDay`), and the
- * oldest full-window day's midday is already outside the window by the
- * afternoon — offering it would be offering a day the server then refuses.
- * Somebody who manages assets types in history, so they have no lower bound.
- */
-export function logEntryDayBounds(
-  now: Date,
-  opts: { canManageAssets?: boolean } = {},
-): { minDate?: Date; maxDate: Date } {
-  const today = startOfDay(now);
-  return opts.canManageAssets
-    ? { maxDate: today }
-    : { minDate: daysBefore(today, LOG_MEMBER_BACKDATE_DAYS - 1), maxDate: today };
-}
+/** Where the phone's catalogue keeps the shared refusals. */
+export const PHONE_ENTRY_DATE_KEYS: AssetEntryDateKeys = {
+  future: 'logbook.dateFuture',
+  'too-old': 'logbook.dateTooOld',
+  unreadable: 'logbook.badDate',
+};
+
+type Translate = (key: string, fallback: string, options?: Record<string, unknown>) => string;
 
 /**
- * The instant an entry chosen for `dayKey` is filed at.
+ * Why this day will not be accepted, as the member reads it — or null.
  *
- * Today is NOW — two entries logged this morning keep their order, and "latest
- * reading" is decided by date. A past day is its local midday: a whole day
- * from both of its edges, so no time zone between here and the server can move
- * it onto a neighbouring date.
+ * ⚠️ ONE sentence for the logbook and the receipt screen, and the same words as
+ * the server's refusal. A date read off a receipt is set without the calendar
+ * ever being opened, so the check has to run at send too — and an old slip
+ * refused in one wording on the phone and another by the server reads as two
+ * different problems.
  */
-export function occurredAtForDay(dayKey: string, now: Date): Date | null {
-  const day = dateFromDayKey(dayKey);
-  if (!day) return null;
-  if (dayKeyOf(day) === dayKeyOf(now)) return new Date(now.getTime());
-  return new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12, 0, 0, 0);
+export function assetEntryDateText(
+  t: Translate,
+  dayKey: string,
+  opts: { canManageAssets?: boolean; now?: Date } = {},
+): string | null {
+  return entryDateText(t, PHONE_ENTRY_DATE_KEYS, dayKey, opts);
 }

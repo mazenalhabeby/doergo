@@ -7225,6 +7225,8 @@
     "thisMonth": "This month",
     "unknownAuthor": "Not recorded",
     "when": "When",
+    "dateFuture": "An entry cannot be dated in the future",
+    "dateTooOld": "An entry older than {{count}} days has to be filed by the office",
     "problem": {
       "required": "This is needed",
       "notANumber": "That is not a number",

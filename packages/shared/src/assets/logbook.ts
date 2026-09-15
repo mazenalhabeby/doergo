@@ -56,44 +56,20 @@ export interface ValidatedLogEntry {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Entry date
+// Entry date — the rule lives in entry-date.ts, shared with expenses
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * A member's day-to-day backdating window. The office may record history from
- * further back — last year's service, typed in the day the logbook is switched
- * on — which is exactly what makes the due dates right from the start.
- *
- * Here rather than in the service because the phone's calendar greys out the
- * same days the server refuses: a day offered and then refused after a round
- * trip on one bar of signal is the form lying about what it will take.
- */
-export const LOG_MEMBER_BACKDATE_DAYS = 120;
-
-/**
- * How far past "now" an entry may be dated: one day. Not zero, because a phone
- * whose clock runs a few minutes ahead, or a member a time zone east of the
- * server, would otherwise be refused an entry made this minute.
- */
-export const LOG_FUTURE_GRACE_MS = 86_400_000;
-
-export type LogDateProblem = 'future' | 'too-old';
-
-/**
- * Why an entry may not carry this date, or null when it may.
- *
- * Something that happened: a reminder of the future is a due rule, not an entry.
- */
-export function logDateProblem(
-  at: Date,
-  opts: { canManageAssets?: boolean; now?: Date } = {},
-): LogDateProblem | null {
-  const now = (opts.now ?? new Date()).getTime();
-  const t = at.getTime();
-  if (t > now + LOG_FUTURE_GRACE_MS) return 'future';
-  if (!opts.canManageAssets && now - t > LOG_MEMBER_BACKDATE_DAYS * 86_400_000) return 'too-old';
-  return null;
-}
+/*
+  The logbook's names for the one asset-entry date rule. Kept because the
+  logbook shipped first under them; new code asks `assetEntryDateProblem`, which
+  is the same function and not a copy.
+*/
+export {
+  ASSET_ENTRY_BACKDATE_DAYS as LOG_MEMBER_BACKDATE_DAYS,
+  ASSET_ENTRY_FUTURE_GRACE_MS as LOG_FUTURE_GRACE_MS,
+  assetEntryDateProblem as logDateProblem,
+  type AssetEntryDateProblem as LogDateProblem,
+} from './entry-date';
 
 const MAX_TEXT = 500;
 /** No real meter or quantity is this large, and a bigger number is a typo that would poison a due date. */

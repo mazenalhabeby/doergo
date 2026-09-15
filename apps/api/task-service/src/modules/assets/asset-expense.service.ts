@@ -9,12 +9,11 @@ import { AssetAccessService } from './asset-access.service';
 import { AssetCustodyService } from './asset-custody.service';
 import { AssetNotifier } from './asset-notifier.service';
 import { ASSET_FILE_MIMES, ASSET_FILE_MAX_BYTES, assetFilePrefix } from './asset-files';
+import { readAssetEntryDate } from './asset-entry-date';
 
 /** A receipt is a photograph or a PDF — the one definition, shared with the logbook. */
 const ALLOWED = ASSET_FILE_MIMES;
 const MAX_FILE_SIZE = ASSET_FILE_MAX_BYTES;
-/** A receipt older than this is not a field expense, it is bookkeeping. */
-const MAX_BACKDATE_DAYS = 120;
 
 export const EXPENSE_STATUS = { SUBMITTED: 'SUBMITTED', RECORDED: 'RECORDED', REJECTED: 'REJECTED' } as const;
 
@@ -53,26 +52,6 @@ export class AssetExpenseService {
   /** Everything a receipt for this asset lives under. Also the anti-IDOR check. */
   private prefix(organizationId: string, assetId: string): string {
     return assetFilePrefix(organizationId, assetId);
-  }
-
-  /**
-   * A date the money could plausibly have moved.
-   *
-   * Bounded on both sides. The future is refused outright — a receipt is proof
-   * of something that has happened — and the past is bounded because a slip
-   * from two years ago belongs in the office's books, not filed from a phone
-   * against a custody nobody can now remember.
-   */
-  private readDate(raw: string | undefined, now = new Date()): Date {
-    const at = raw ? new Date(raw) : now;
-    if (Number.isNaN(at.getTime())) throw new BadRequestException('That date could not be read');
-    if (at.getTime() > now.getTime() + 86_400_000) {
-      throw new BadRequestException('A receipt cannot be dated in the future');
-    }
-    if (now.getTime() - at.getTime() > MAX_BACKDATE_DAYS * 86_400_000) {
-      throw new BadRequestException(`A receipt older than ${MAX_BACKDATE_DAYS} days has to be filed by the office`);
-    }
-    return at;
   }
 
   /**
@@ -126,7 +105,8 @@ export class AssetExpenseService {
     organizationId: string;
     canManageAssets?: boolean;
   }) {
-    const when = this.readDate(data.occurredAt);
+    // The same date rule as a logbook entry — they are the same row.
+    const when = readAssetEntryDate(data.occurredAt, data);
     await this.gate(data, when);
 
     if (!ALLOWED.includes(data.mimeType)) throw new BadRequestException('That kind of file is not a receipt');
@@ -169,7 +149,8 @@ export class AssetExpenseService {
     organizationId: string;
     canManageAssets?: boolean;
   }) {
-    const when = this.readDate(data.occurredAt);
+    // The same date rule as a logbook entry — they are the same row.
+    const when = readAssetEntryDate(data.occurredAt, data);
     await this.gate(data, when);
 
     /*
@@ -261,7 +242,8 @@ export class AssetExpenseService {
     /** Made on the phone: an expense filed twice is one expense. */
     entryId?: string;
   }) {
-    const when = this.readDate(data.occurredAt);
+    // The same date rule as a logbook entry — they are the same row.
+    const when = readAssetEntryDate(data.occurredAt, data);
     const asset = await this.gate(data, when);
 
     // Filed already (after the custody gate, so a guessed id reveals nothing).

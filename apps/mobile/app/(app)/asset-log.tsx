@@ -10,16 +10,14 @@ import { File as FsFile } from 'expo-file-system';
 
 import { ScreenHeader, DateField } from '../../src/components';
 import { useAuth } from '../../src/contexts/auth-context';
-import { holdsOrgWide } from '../../src/lib/permissions';
-import { dayKeyOf, logEntryDayBounds, occurredAtForDay } from '../../src/lib/log-dates';
+import { assetEntryDateText, dayKeyOf, logEntryDayBounds, occurredAtForDay } from '../../src/lib/log-dates';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { useImagePicker } from '../../src/hooks/useImagePicker';
 import { canScanReceipts, scanReceipt } from '../../src/lib/receipt-scan';
 import { assetsApi, uploadToPresignedUrl, type HeldAsset } from '../../src/lib/api';
 import {
-  normalizeKindShape, findLogType, validateLogValues, moneyToCents, logDateProblem, COST_LOG_KEY,
-  LOG_MEMBER_BACKDATE_DAYS,
+  normalizeKindShape, findLogType, validateLogValues, moneyToCents, assetEntryDateExempt, COST_LOG_KEY,
   type KindLogField, type LogValueProblem,
 } from '@hbcfield/shared/client';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
@@ -77,12 +75,12 @@ export default function AssetLogScreen() {
   const type = useMemo(() => (held ? findLogType(shape, logKey) : null), [held, shape, logKey]);
   const moneyField = type?.fields.find((f) => f.type === 'money') ?? null;
   /*
-    The days the calendar offers, by the rule the server refuses by. The flat
-    permission, not "in any space": the route reads `req.user.canManageAssets`,
-    and offering a year-old day to somebody the server holds to 120 would be a
-    day chosen and then refused.
+    The days the calendar offers, by the rule the server refuses by. The
+    ORG-WIDE grant, not "in any space": every route that files an entry reads
+    `req.user.canManageAssets`, and offering a year-old day to somebody the
+    server holds to 120 would be a day chosen and then refused.
   */
-  const canManageAssets = holdsOrgWide(user as never, 'canManageAssets');
+  const canManageAssets = assetEntryDateExempt(user as never);
   const bounds = useMemo(() => logEntryDayBounds(new Date(), { canManageAssets }), [canManageAssets]);
   const photoField = type?.fields.find((f) => f.type === 'photo') ?? null;
 
@@ -170,21 +168,16 @@ export default function AssetLogScreen() {
 
   const send = useCallback(async () => {
     if (!type) return;
-    const occurredAt = occurredAtForDay(when, new Date());
-    if (!occurredAt) {
-      toast.error(tt('logbook.badDate', 'That date could not be read'));
-      return;
-    }
     /*
       The calendar cannot offer a day outside the window, but a date read off a
       receipt is set without asking it — an old slip photographed today would
       otherwise travel all the way to the server to be told so.
     */
-    const dateProblem = logDateProblem(occurredAt, { canManageAssets });
-    if (dateProblem) {
-      toast.error(dateProblem === 'future'
-        ? tt('logbook.dateFuture', 'An entry cannot be dated in the future')
-        : tt('logbook.dateTooOld', 'An entry older than {{count}} days has to be filed by the office', { count: LOG_MEMBER_BACKDATE_DAYS }));
+    const now = new Date();
+    const dateProblem = assetEntryDateText(tt, when, { canManageAssets, now });
+    const occurredAt = occurredAtForDay(when, now);
+    if (dateProblem || !occurredAt) {
+      toast.error(dateProblem ?? tt('logbook.badDate', 'That date could not be read'));
       return;
     }
     const checked = validateLogValues(type, values, { hasPhoto: !!photo, shape });

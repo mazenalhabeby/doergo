@@ -7225,6 +7225,8 @@
     "thisMonth": "Este mes",
     "unknownAuthor": "Sin registrar",
     "when": "Cuándo",
+    "dateFuture": "Una entrada no puede tener fecha futura",
+    "dateTooOld": "Una entrada de hace más de {{count}} días la registra la oficina",
     "problem": {
       "required": "Esto es obligatorio",
       "notANumber": "Eso no es un número",

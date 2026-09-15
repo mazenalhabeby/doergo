@@ -7234,6 +7234,8 @@
     "thisMonth": "Ce mois-ci",
     "unknownAuthor": "Non renseigné",
     "when": "Quand",
+    "dateFuture": "Une entrée ne peut pas être datée dans le futur",
+    "dateTooOld": "Une entrée de plus de {{count}} jours doit être saisie par le bureau",
     "problem": {
       "required": "Ce champ est requis",
       "notANumber": "Ce n'est pas un nombre",

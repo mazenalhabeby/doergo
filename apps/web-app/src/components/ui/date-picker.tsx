@@ -39,12 +39,14 @@ export interface DatePickerProps {
   disabled?: boolean
   /** Nothing before this may be chosen — a due date cannot precede its issue. */
   fromDate?: Date
+  /** Nothing after this may be chosen — something that happened is not dated tomorrow. */
+  toDate?: Date
   className?: string
   id?: string
 }
 
 /** `YYYY-MM-DD` → Date, without letting a timezone move it. */
-function toDate(iso: string): Date | undefined {
+function parseIsoDay(iso: string): Date | undefined {
   if (!iso) return undefined
   const d = parseISO(iso)
   return isValid(d) ? d : undefined
@@ -62,11 +64,12 @@ export function DatePicker({
   clearable = false,
   disabled = false,
   fromDate,
+  toDate,
   className,
   id,
 }: DatePickerProps) {
   const { t } = useTranslation()
-  const selected = toDate(value)
+  const selected = parseIsoDay(value)
 
   return (
     <div className={cn("relative", className)}>
@@ -94,8 +97,16 @@ export function DatePicker({
             mode="single"
             selected={selected}
             onSelect={(d) => onChange(d ? toIso(d) : "")}
-            disabled={fromDate ? { before: fromDate } : undefined}
-            defaultMonth={selected ?? fromDate}
+            /*
+              Two matchers, never one object: `{ before, after }` together is a
+              DateInterval in react-day-picker — it disables the days BETWEEN
+              them, which is exactly the days that should stay open.
+            */
+            disabled={fromDate || toDate ? [
+              ...(fromDate ? [{ before: fromDate }] : []),
+              ...(toDate ? [{ after: toDate }] : []),
+            ] : undefined}
+            defaultMonth={selected ?? toDate ?? fromDate}
             initialFocus
           />
         </PopoverContent>

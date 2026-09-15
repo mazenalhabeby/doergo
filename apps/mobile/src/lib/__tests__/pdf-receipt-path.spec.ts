@@ -106,7 +106,7 @@ describe('the server reads the file, and is allowed to by custody', () => {
 
   it('asks custody on the RECEIPT’s date, not today', () => {
     const svc = stripComments(read(path.join(TASK, 'src/modules/assets/asset-expense.service.ts')));
-    expect(svc).toMatch(/readReceipt[\s\S]{0,600}this\.readDate\(data\.occurredAt\)[\s\S]{0,200}this\.gate\(/);
+    expect(svc).toMatch(/readReceipt[\s\S]{0,600}readAssetEntryDate\(data\.occurredAt, data\)[\s\S]{0,200}this\.gate\(/);
   });
 
   it('declines an image rather than reading it worse', () => {

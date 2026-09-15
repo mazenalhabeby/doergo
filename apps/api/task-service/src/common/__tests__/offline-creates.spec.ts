@@ -97,7 +97,6 @@ describe('expenses', () => {
     const svc = withDeps(AssetExpenseService, { prisma });
     const gate = jest.fn(async () => ({ category: { config: {} } }));
     (svc as any).gate = gate;
-    (svc as any).readDate = () => new Date();
     const res: any = await svc.submit({ id: 'a1', entryId: 'ex-phone-0000000001', category: 'Fuel', amountCents: 5000, userId: 'u1', userRole: 'EMPLOYEE', organizationId: 'o1' });
     expect(gate).toHaveBeenCalled();
     expect(res.data.id).toBe('ex-phone-0000000001');

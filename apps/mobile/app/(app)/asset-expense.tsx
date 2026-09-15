@@ -10,7 +10,9 @@ import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
 
-import { ScreenHeader } from '../../src/components';
+import { ScreenHeader, DateField } from '../../src/components';
+import { useAuth } from '../../src/contexts/auth-context';
+import { assetEntryDateText, dayKeyOf, logEntryDayBounds, occurredAtForDay } from '../../src/lib/log-dates';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
@@ -18,7 +20,7 @@ import { useCameraAccess } from '../../src/permissions/use-media-access';
 import { canScanReceipts, scanReceipt } from '../../src/lib/receipt-scan';
 import { assetsApi, uploadToPresignedUrl, type HeldAsset } from '../../src/lib/api';
 import {
-  normalizeKindShape, categoryForReceipt, moneyToCents,
+  normalizeKindShape, categoryForReceipt, moneyToCents, assetEntryDateExempt,
   type KindMoneyCategory, type ParsedReceipt,
 } from '@hbcfield/shared/client';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
@@ -48,7 +50,9 @@ type Stage = 'camera' | 'review';
 export default function AssetExpenseScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const tt = t as unknown as (k: string, d: string, o?: Record<string, unknown>) => string;
   const toast = useToast();
+  const { user } = useAuth();
   const offline = useOffline();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ assetId?: string }>();
@@ -75,7 +79,27 @@ export default function AssetExpenseScreen() {
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [category, setCategory] = useState('');
-  const [when, setWhen] = useState<string>(new Date().toISOString().slice(0, 10));
+  /*
+    A LOCAL day. `toISOString().slice(0, 10)` answered yesterday after midnight
+    anywhere east of Greenwich, and `new Date("2026-09-10")` is UTC midnight —
+    the evening of the 9th west of it, which is the instant custody was asked
+    of. Both are gone: the day is picked on the logbook's calendar and filed by
+    the logbook's rule (shared `assets/entry-date.ts`).
+  */
+  const [when, setWhen] = useState<string>(() => dayKeyOf(new Date()));
+  /*
+    The same window the logbook offers and the server refuses by. ORG-WIDE, as
+    the expense routes read `req.user.canManageAssets`: a Space Manager's depot
+    grant does not reach it, so offering them last year would be a refusal.
+  */
+  const canManageAssets = assetEntryDateExempt(user as never);
+  const bounds = useMemo(() => logEntryDayBounds(new Date(), { canManageAssets }), [canManageAssets]);
+  /** What the server is sent for the chosen day — now for today, local midday before. */
+  const occurredAtIso = useCallback(
+    () => (occurredAtForDay(when, new Date()) ?? new Date()).toISOString(),
+    [when],
+  );
+  const dateProblem = assetEntryDateText(tt, when, { canManageAssets });
 
   const shape = useMemo(() => normalizeKindShape(held?.asset?.category?.config), [held]);
   const spendCategories = useMemo<KindMoneyCategory[]>(
@@ -196,14 +220,14 @@ export default function AssetExpenseScreen() {
         mimeType: 'application/pdf',
         // The same shape the submit sends: the gate reads a DATE, and a bare
         // "2026-09-11" and an instant must not disagree about which day it is.
-        occurredAt: new Date(when).toISOString(),
+        occurredAt: occurredAtIso(),
       });
       await uploadToPresignedUrl(presigned.uploadUrl, file.uri, 'application/pdf');
       setUploadedKey(presigned.fileKey);
 
       const answer = await assetsApi.readReceipt(assetId, {
         fileKey: presigned.fileKey,
-        occurredAt: new Date(when).toISOString(),
+        occurredAt: occurredAtIso(),
       });
       if (answer.read) {
         applyRead(answer.receipt);
@@ -220,7 +244,7 @@ export default function AssetExpenseScreen() {
     } finally {
       setBusy(false);
     }
-  }, [busy, assetId, when, applyRead, t, toast]);
+  }, [busy, assetId, occurredAtIso, applyRead, t, toast]);
 
   const discardShot = useCallback(() => {
     // Whatever was uploaded belongs to the file being discarded; keeping the
@@ -235,6 +259,15 @@ export default function AssetExpenseScreen() {
 
   const send = useCallback(async () => {
     if (!cents || !category) return;
+    /*
+      A date read off the slip is set without the calendar being opened, so an
+      old receipt photographed today reaches here unchecked. Said now, in the
+      logbook's words, rather than after a round trip on one bar of signal.
+    */
+    if (dateProblem) {
+      toast.error(dateProblem);
+      return;
+    }
     setSending(true);
     let receiptKey: string | undefined;
     try {
@@ -242,7 +275,7 @@ export default function AssetExpenseScreen() {
         // Saved on the phone with its receipt; both send themselves.
         const outcome = await submitExpenseFromPhone(offline.engine, offline.files, {
           assetId, category, amountCents: cents, note: note.trim() || undefined,
-          occurredAt: new Date(when).toISOString(),
+          occurredAt: occurredAtIso(),
           photo: shot ? { uri: shot.uri, mime: shot.mime } : null,
           uploadedKey,
         });
@@ -276,7 +309,7 @@ export default function AssetExpenseScreen() {
           const presign = await assetsApi.presignReceipt(assetId, {
             fileName: `receipt-${Date.now()}.jpg`,
             mimeType: shot.mime,
-            occurredAt: new Date(when).toISOString(),
+            occurredAt: occurredAtIso(),
           });
           await uploadToPresignedUrl(presign.uploadUrl, shot.uri, shot.mime);
           receiptKey = presign.fileKey;
@@ -289,7 +322,7 @@ export default function AssetExpenseScreen() {
         category,
         amountCents: cents,
         note: note.trim() || undefined,
-        occurredAt: new Date(when).toISOString(),
+        occurredAt: occurredAtIso(),
         receiptKey,
         receiptName: receiptKey ? 'receipt.jpg' : undefined,
         receiptMime: receiptKey ? shot?.mime : undefined,
@@ -303,7 +336,7 @@ export default function AssetExpenseScreen() {
     } finally {
       setSending(false);
     }
-  }, [cents, category, shot, assetId, when, note, discardShot, t, toast, offline.engine, offline.files, uploadedKey]);
+  }, [cents, category, dateProblem, shot, assetId, occurredAtIso, note, discardShot, t, toast, offline.engine, offline.files, uploadedKey]);
 
   // ── Is this mine at all? ──────────────────────────────────────────────────
   if (loading) {
@@ -386,14 +419,17 @@ export default function AssetExpenseScreen() {
             unknown={!read?.date}
             t={t}
           >
-            <TextInput
+            {/* The logbook's calendar, greying out the days the server refuses. */}
+            <DateField
               value={when}
-              onChangeText={setWhen}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={colors.textMuted}
-              autoCapitalize="none"
-              style={[s.input, { color: colors.textPrimary }]}
+              onChange={(v) => v && setWhen(v)}
+              minDate={bounds.minDate}
+              maxDate={bounds.maxDate}
+              title={t('expenses.date', 'Date')}
+              invalid={!!dateProblem}
             />
+            {/* A date read off an old slip lands outside the calendar's days; say so beside it. */}
+            {dateProblem && <Text style={s.dateProblem}>{dateProblem}</Text>}
           </Field>
 
           <Text style={[s.label, { color: colors.textMuted }]}>{t('expenses.category', 'What for')}</Text>
@@ -550,6 +586,7 @@ const s = StyleSheet.create({
   badgeCheck: { color: '#fbbf24', backgroundColor: 'rgba(245,158,11,.16)' },
   input: { fontSize: FONT_SIZE.base, paddingVertical: 6 },
   amountInput: { fontSize: 26, fontWeight: '700' },
+  dateProblem: { color: COLORS.error, fontSize: FONT_SIZE.xs, marginTop: SPACING.xs },
   boxed: { borderWidth: 1, borderRadius: RADIUS.md, paddingHorizontal: SPACING.md, paddingVertical: 10 },
 
   label: { fontSize: FONT_SIZE.xs, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: SPACING.sm },
