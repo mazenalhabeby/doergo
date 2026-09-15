@@ -1,0 +1,212 @@
+name: Deploy
+
+# Releases one commit to production. Manual only, and only through the
+# `production` environment, whose required reviewer approves the run before any
+# step below executes (Settings → Environments → production).
+#
+# What happens:
+#   1. refuse unless CI and Images both succeeded for this exact commit
+#   2. read the server's HEAD over SSH; ship the missing commits as a git bundle
+#      (the server's own GitHub deploy key is dead)
+#   3. copy infra/release/ FROM THIS COMMIT to the server and run deploy.sh there,
+#      detached, so a dropped SSH connection cannot kill a release half-way
+#   4. follow its log until it ends, and publish the result as the job summary
+#
+# The server pulls images with its own read-only GHCR login — docs/release.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Commit to release (full or short SHA, must be on main)
+        required: true
+      confirm:
+        description: Type "deploy" to confirm
+        required: true
+      check_only:
+        description: Dry run — preflight and image pull only, no backup, nothing changed
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Release ${{ inputs.sha }}
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 60
+    env:
+      PROD_USER: ${{ vars.PROD_USER || 'root' }}
+      PROD_REPO_DIR: ${{ vars.PROD_REPO_DIR || '/opt/doergo' }}
+    steps:
+      - name: Confirm
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+          SHA_IN: ${{ inputs.sha }}
+        run: |
+          [ "$CONFIRM" = "deploy" ] || { echo "::error::confirm must be exactly \"deploy\""; exit 1; }
+          [[ "$SHA_IN" =~ ^[0-9a-f]{7,40}$ ]] || { echo "::error::sha must be a hex commit id"; exit 1; }
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve the commit
+        id: commit
+        env:
+          SHA_IN: ${{ inputs.sha }}
+        run: |
+          sha="$(git rev-parse --verify --quiet "${SHA_IN}^{commit}")" || { echo "::error::commit $SHA_IN not found"; exit 1; }
+          git merge-base --is-ancestor "$sha" origin/main || { echo "::error::$sha is not on main"; exit 1; }
+          git checkout --quiet "$sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+          echo "subject=$(git log -1 --format=%s "$sha" | tr -d '\"' | cut -c1-100)" >> "$GITHUB_OUTPUT"
+
+      - name: CI and Images passed for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          for wf in ci.yml images.yml; do
+            ok="$(gh run list --repo '${{ github.repository }}' --workflow "$wf" --commit "$SHA" --status success --json databaseId --jq 'length')"
+            if [ "${ok:-0}" -lt 1 ]; then
+              echo "::error::$wf has no successful run for $SHA — wait for it, or fix it. A release never ships an unchecked commit."
+              exit 1
+            fi
+            echo "$wf passed for $SHA"
+          done
+
+      - name: SSH
+        env:
+          PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          PROD_KNOWN_HOSTS: ${{ secrets.PROD_KNOWN_HOSTS }}
+        run: |
+          [ -n "$PROD_SSH_KEY" ] && [ -n "$PROD_HOST" ] || { echo "::error::secrets PROD_SSH_KEY and PROD_HOST are required"; exit 1; }
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$PROD_SSH_KEY" > ~/.ssh/prod && chmod 600 ~/.ssh/prod
+          if [ -n "$PROD_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$PROD_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            echo "::warning::PROD_KNOWN_HOSTS not set — trusting the host key on first use. Add it (ssh-keyscan the server) to pin it."
+            ssh-keyscan -T 15 "$PROD_HOST" > ~/.ssh/known_hosts 2>/dev/null
+          fi
+          cat > ~/.ssh/config <<EOF
+          Host prod
+            HostName $PROD_HOST
+            User $PROD_USER
+            IdentityFile ~/.ssh/prod
+            IdentitiesOnly yes
+            ServerAliveInterval 30
+            ServerAliveCountMax 10
+          EOF
+          ssh prod true
+
+      - name: Ship the commit
+        id: ship
+        env:
+          SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          server_head="$(ssh prod "git -C '$PROD_REPO_DIR' rev-parse HEAD")"
+          echo "server_head=$server_head" >> "$GITHUB_OUTPUT"
+          echo "server is at $server_head"
+          git cat-file -e "${server_head}^{commit}" 2>/dev/null \
+            || { echo "::error::the server's HEAD $server_head is not on GitHub — it carries commits made on the box. Reconcile by hand (merge, never reset)."; exit 1; }
+          git merge-base --is-ancestor "$server_head" "$SHA" \
+            || { echo "::error::$SHA does not contain the server's HEAD $server_head — releasing it would drop commits"; exit 1; }
+
+          remote_dir="/root/hbcfield-release-${SHA:0:12}"
+          ssh prod "rm -rf '$remote_dir' && mkdir -p '$remote_dir'"
+          # The release script of THIS commit, not whatever the server has checked out.
+          scp -rq infra/release/. "prod:$remote_dir/release/"
+          bundle_arg=""
+          if [ "$server_head" != "$SHA" ]; then
+            git branch -f release-bundle "$SHA"
+            git bundle create release.bundle release-bundle "^$server_head"
+            scp -q release.bundle "prod:$remote_dir/release.bundle"
+            bundle_arg="--bundle $remote_dir/release.bundle"
+          fi
+          echo "remote_dir=$remote_dir" >> "$GITHUB_OUTPUT"
+          echo "bundle_arg=$bundle_arg" >> "$GITHUB_OUTPUT"
+
+      - name: Release
+        id: release
+        env:
+          SHA: ${{ steps.commit.outputs.sha }}
+          SERVER_HEAD: ${{ steps.ship.outputs.server_head }}
+          REMOTE_DIR: ${{ steps.ship.outputs.remote_dir }}
+          BUNDLE_ARG: ${{ steps.ship.outputs.bundle_arg }}
+          CHECK_ONLY: ${{ inputs.check_only }}
+          REGISTRY: ghcr.io/${{ steps.commit.outputs.owner }}
+        run: |
+          check=""; [ "$CHECK_ONLY" = "true" ] && check="--check"
+          out="$REMOTE_DIR/run.out"
+          # Detached: the release belongs to the server, not to this SSH session.
+          pid="$(ssh prod "cd '$REMOTE_DIR' && ROOT_DIR='$PROD_REPO_DIR' \
+              REQUIRED_ENV_FILE='$REMOTE_DIR/release/required-env.conf' HOOKS_DIR='$REMOTE_DIR/release/preflight.d' \
+              setsid nohup bash '$REMOTE_DIR/release/deploy.sh' '$SHA' $BUNDLE_ARG --expect-head '$SERVER_HEAD' --registry '$REGISTRY' $check \
+              > '$out' 2>&1 < /dev/null & echo \$!")"
+          echo "release running on the server as pid $pid"
+          # Follow until the process exits. If this connection drops the release
+          # carries on; re-attach by reading $out on the server.
+          ssh prod "tail -n +1 --pid='$pid' -f '$out'" | tee release.out || true
+          # tail can return just before the last write lands; read the file whole.
+          ssh prod "cat '$out'" > release.out
+          result="$(grep -E '^RESULT: ' release.out | tail -1 | awk '{print $2}')"
+          echo "result=${result:-unknown}" >> "$GITHUB_OUTPUT"
+          case "$result" in
+            released|checked) exit 0 ;;
+            *) echo "::error::release ended with: ${result:-no RESULT line (was it killed?)}"; exit 1 ;;
+          esac
+
+      - name: Summary
+        if: always()
+        env:
+          SHA: ${{ steps.commit.outputs.sha }}
+          SUBJECT: ${{ steps.commit.outputs.subject }}
+          SERVER_HEAD: ${{ steps.ship.outputs.server_head }}
+          RESULT: ${{ steps.release.outputs.result }}
+        run: |
+          {
+            case "$RESULT" in
+              released)        echo "## Released \`${SHA:0:12}\`" ;;
+              checked)         echo "## Dry run passed for \`${SHA:0:12}\`" ;;
+              rolled-back)     echo "## FAILED and rolled back — production is on \`${SERVER_HEAD:0:12}\`" ;;
+              rollback-failed) echo "## FAILED and the ROLLBACK failed — act now" ;;
+              refused)         echo "## Refused before changing anything" ;;
+              *)               echo "## Did not finish (${RESULT:-no result})" ;;
+            esac
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Commit | \`${SHA}\` — ${SUBJECT} |"
+            echo "| Server before | \`${SERVER_HEAD:-?}\` |"
+            echo "| Triggered by | @${{ github.actor }} |"
+            if [ -f release.out ]; then
+              echo
+              grep -E '^RESULT: ' release.out | tail -1 | sed 's/^/    /'
+              echo
+              echo "<details><summary>Release log (last 80 lines)</summary>"
+              echo
+              echo '```'
+              tail -n 80 release.out
+              echo '```'
+              echo "</details>"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Clean up the server copy
+        if: always() && steps.ship.outputs.remote_dir != ''
+        env:
+          REMOTE_DIR: ${{ steps.ship.outputs.remote_dir }}
+        run: |
+          # The run log is also in /opt/doergo/releases; this copy was only the vehicle.
+          ssh prod "rm -f '$REMOTE_DIR/release.bundle'" || true
