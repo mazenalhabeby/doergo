@@ -7098,6 +7098,65 @@
     "moveKeeps": "Tous les champs de cette fiche existent dans {{kind}} — rien n’est perdu.",
     "fromContract": "Créé à partir d’un contrat"
   },
+  "assetFacts": {
+    "status": {
+      "label": "Statut",
+      "ACTIVE": "Actif",
+      "MAINTENANCE": "En maintenance",
+      "INACTIVE": "Inactif",
+      "RETIRED": "Retiré",
+      "retiredHint": "Retiré ne compte plus sur la facture et disparaît des sélecteurs. Ses interventions, son argent et sa garde restent."
+    },
+    "filter": {
+      "all": "Tous les statuts",
+      "showRetired": "Afficher les retirés"
+    },
+    "more": {
+      "title": "Plus de détails",
+      "serial": "Numéro de série",
+      "manufacturer": "Fabricant",
+      "model": "Modèle",
+      "installDate": "Installé le",
+      "warrantyExpiry": "Garantie jusqu'au",
+      "notes": "Notes",
+      "notesPh": "Ce qu'il faut savoir — sa provenance, ce qu'il faut surveiller…"
+    },
+    "warranty": {
+      "expired": "Garantie expirée",
+      "soon": "La garantie expire bientôt"
+    },
+    "dates": {
+      "warrantyBeforeInstall": "La garantie ne peut pas se terminer avant la date d'installation.",
+      "invalid": "Cette date n'a pas pu être lue."
+    },
+    "retire": {
+      "title": "Le retirer plutôt ?",
+      "body": "Il a {{count}} intervention(s) dans son historique, il ne peut donc pas être supprimé. Le retirer conserve la fiche, ses interventions, son argent et sa garde — il ne compte plus sur la facture et quitte les sélecteurs.",
+      "confirm": "Passer à Retiré",
+      "done": "Retiré."
+    },
+    "handover": {
+      "when": "Quand",
+      "whenHint": "Maintenant, sauf s'il a changé de mains plus tôt.",
+      "future": "Une remise ne peut pas être datée dans le futur — enregistrez-la quand elle a lieu.",
+      "beforeStart": "C'est avant que {{name}} ne l'ait reçu.",
+      "opensAt": "Ouvre une nouvelle garde à partir du {{when}}. Les coûts postérieurs lui reviennent."
+    },
+    "reports": {
+      "title": "Rapports d'intervention",
+      "by": "par {{name}}",
+      "parts": "{{count}} pièces",
+      "parts_one": "{{count}} pièce",
+      "parts_other": "{{count}} pièces",
+      "worked": "{{duration}} de travail"
+    },
+    "refuse": {
+      "title": "Refuser cette dépense",
+      "why": "Pourquoi (le membre le verra)",
+      "whyPh": "p. ex. Pas un ticket de carburant, mauvais véhicule…",
+      "confirm": "Refuser"
+    }
+  },
   "assetMoney": {
     "title": "Argent",
     "in": "Entrées",

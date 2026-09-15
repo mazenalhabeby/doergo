@@ -7089,6 +7089,65 @@
     "moveKeeps": "Alle Felder dieses Objekts gibt es auch in {{kind}} — nichts geht verloren.",
     "fromContract": "Aus einem Vertrag angelegt"
   },
+  "assetFacts": {
+    "status": {
+      "label": "Status",
+      "ACTIVE": "Aktiv",
+      "MAINTENANCE": "In Wartung",
+      "INACTIVE": "Inaktiv",
+      "RETIRED": "Ausgemustert",
+      "retiredHint": "Ausgemustert zählt nicht mehr auf der Rechnung und erscheint in keiner Auswahl mehr. Aufträge, Geld und Übergaben bleiben erhalten."
+    },
+    "filter": {
+      "all": "Alle Status",
+      "showRetired": "Ausgemusterte anzeigen"
+    },
+    "more": {
+      "title": "Weitere Angaben",
+      "serial": "Seriennummer",
+      "manufacturer": "Hersteller",
+      "model": "Modell",
+      "installDate": "Installiert am",
+      "warrantyExpiry": "Garantie bis",
+      "notes": "Notizen",
+      "notesPh": "Was man wissen sollte — Herkunft, worauf zu achten ist…"
+    },
+    "warranty": {
+      "expired": "Garantie abgelaufen",
+      "soon": "Garantie läuft bald ab"
+    },
+    "dates": {
+      "warrantyBeforeInstall": "Die Garantie kann nicht vor dem Installationsdatum enden.",
+      "invalid": "Dieses Datum konnte nicht gelesen werden."
+    },
+    "retire": {
+      "title": "Stattdessen ausmustern?",
+      "body": "Hierzu gibt es {{count}} Auftrag/Aufträge, daher kann es nicht gelöscht werden. Beim Ausmustern bleiben der Datensatz, seine Aufträge, Geld und Übergaben erhalten — es zählt nicht mehr auf der Rechnung und erscheint in keiner Auswahl.",
+      "confirm": "Auf Ausgemustert setzen",
+      "done": "Ausgemustert."
+    },
+    "handover": {
+      "when": "Wann",
+      "whenHint": "Jetzt, außer es wurde früher übergeben.",
+      "future": "Eine Übergabe kann nicht in der Zukunft liegen — erfassen Sie sie, wenn sie stattfindet.",
+      "beforeStart": "Das liegt vor dem Zeitpunkt, an dem {{name}} es erhalten hat.",
+      "opensAt": "Beginnt ab {{when}} eine neue Übergabe. Spätere Kosten gehören dieser Person."
+    },
+    "reports": {
+      "title": "Serviceberichte",
+      "by": "von {{name}}",
+      "parts": "{{count}} Teile",
+      "parts_one": "{{count}} Teil",
+      "parts_other": "{{count}} Teile",
+      "worked": "{{duration}} Arbeitszeit"
+    },
+    "refuse": {
+      "title": "Diese Ausgabe ablehnen",
+      "why": "Warum (das Mitglied sieht das)",
+      "whyPh": "z. B. Kein Tankbeleg, falsches Fahrzeug…",
+      "confirm": "Ablehnen"
+    }
+  },
   "assetMoney": {
     "title": "Geld",
     "in": "Einnahmen",

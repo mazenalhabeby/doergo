@@ -7098,6 +7098,65 @@
     "moveKeeps": "Tutti i campi di questo record esistono in {{kind}}: non si perde nulla.",
     "fromContract": "Creato da un contratto"
   },
+  "assetFacts": {
+    "status": {
+      "label": "Stato",
+      "ACTIVE": "Attivo",
+      "MAINTENANCE": "In manutenzione",
+      "INACTIVE": "Inattivo",
+      "RETIRED": "Dismesso",
+      "retiredHint": "Dismesso non conta più in fattura e scompare dalle selezioni. Lavori, denaro e custodia restano."
+    },
+    "filter": {
+      "all": "Tutti gli stati",
+      "showRetired": "Mostra dismessi"
+    },
+    "more": {
+      "title": "Altri dettagli",
+      "serial": "Numero di serie",
+      "manufacturer": "Produttore",
+      "model": "Modello",
+      "installDate": "Installato il",
+      "warrantyExpiry": "Garanzia fino al",
+      "notes": "Note",
+      "notesPh": "Ciò che vale la pena sapere — da dove viene, a cosa fare attenzione…"
+    },
+    "warranty": {
+      "expired": "Garanzia scaduta",
+      "soon": "La garanzia scade presto"
+    },
+    "dates": {
+      "warrantyBeforeInstall": "La garanzia non può terminare prima della data di installazione.",
+      "invalid": "Impossibile leggere questa data."
+    },
+    "retire": {
+      "title": "Dismetterlo invece?",
+      "body": "Ha {{count}} lavoro/i nello storico, quindi non può essere eliminato. Dismettendolo restano la scheda, i lavori, il denaro e la custodia — non conta più in fattura ed esce dalle selezioni.",
+      "confirm": "Imposta come dismesso",
+      "done": "Dismesso."
+    },
+    "handover": {
+      "when": "Quando",
+      "whenHint": "Adesso, a meno che non sia passato di mano prima.",
+      "future": "Una consegna non può essere datata nel futuro — registrala quando avviene.",
+      "beforeStart": "È prima che {{name}} lo ricevesse.",
+      "opensAt": "Apre una nuova custodia dal {{when}}. I costi successivi spettano a questa persona."
+    },
+    "reports": {
+      "title": "Rapporti di intervento",
+      "by": "di {{name}}",
+      "parts": "{{count}} ricambi",
+      "parts_one": "{{count}} ricambio",
+      "parts_other": "{{count}} ricambi",
+      "worked": "{{duration}} di lavoro"
+    },
+    "refuse": {
+      "title": "Rifiuta questa spesa",
+      "why": "Perché (il membro lo vedrà)",
+      "whyPh": "es. Non è uno scontrino carburante, veicolo sbagliato…",
+      "confirm": "Rifiuta"
+    }
+  },
   "assetMoney": {
     "title": "Denaro",
     "in": "Entrate",

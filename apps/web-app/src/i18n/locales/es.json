@@ -7089,6 +7089,65 @@
     "moveKeeps": "Todos los campos de este registro existen en {{kind}}: no se pierde nada.",
     "fromContract": "Creado desde un contrato"
   },
+  "assetFacts": {
+    "status": {
+      "label": "Estado",
+      "ACTIVE": "Activo",
+      "MAINTENANCE": "En mantenimiento",
+      "INACTIVE": "Inactivo",
+      "RETIRED": "Retirado",
+      "retiredHint": "Retirado deja de contar en la factura y desaparece de los selectores. Sus trabajos, dinero y custodia se conservan."
+    },
+    "filter": {
+      "all": "Todos los estados",
+      "showRetired": "Mostrar retirados"
+    },
+    "more": {
+      "title": "Más datos",
+      "serial": "Número de serie",
+      "manufacturer": "Fabricante",
+      "model": "Modelo",
+      "installDate": "Instalado el",
+      "warrantyExpiry": "Garantía hasta",
+      "notes": "Notas",
+      "notesPh": "Lo que conviene saber — de dónde viene, a qué prestar atención…"
+    },
+    "warranty": {
+      "expired": "Garantía vencida",
+      "soon": "La garantía vence pronto"
+    },
+    "dates": {
+      "warrantyBeforeInstall": "La garantía no puede terminar antes de la fecha de instalación.",
+      "invalid": "No se pudo leer esa fecha."
+    },
+    "retire": {
+      "title": "¿Retirarlo en su lugar?",
+      "body": "Tiene {{count}} trabajo(s) en su historial, así que no se puede eliminar. Al retirarlo se conservan el registro, sus trabajos, dinero y custodia — deja de contar en la factura y sale de los selectores.",
+      "confirm": "Marcar como retirado",
+      "done": "Retirado."
+    },
+    "handover": {
+      "when": "Cuándo",
+      "whenHint": "Ahora, salvo que cambiara de manos antes.",
+      "future": "Una entrega no puede tener fecha futura — regístrela cuando ocurra.",
+      "beforeStart": "Eso es anterior a cuando {{name}} lo recibió.",
+      "opensAt": "Abre una nueva custodia desde {{when}}. Los costes posteriores le corresponden."
+    },
+    "reports": {
+      "title": "Informes de servicio",
+      "by": "por {{name}}",
+      "parts": "{{count}} piezas",
+      "parts_one": "{{count}} pieza",
+      "parts_other": "{{count}} piezas",
+      "worked": "{{duration}} de trabajo"
+    },
+    "refuse": {
+      "title": "Rechazar este gasto",
+      "why": "Por qué (el miembro lo verá)",
+      "whyPh": "p. ej. No es un ticket de combustible, vehículo equivocado…",
+      "confirm": "Rechazar"
+    }
+  },
   "assetMoney": {
     "title": "Dinero",
     "in": "Entradas",

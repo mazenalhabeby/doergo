@@ -12,6 +12,7 @@ import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { initials } from "./holder-picker"
+import { ExpenseRefuseDialog } from "./expense-refuse-dialog"
 
 /**
  * Expenses sent in from phones, waiting on somebody in the office.
@@ -80,7 +81,8 @@ export function PendingRow({ entry, onDone }: { entry: PendingExpense; onDone: (
     : t("expenses.someone", "Someone")
 
   const review = useMutation({
-    mutationFn: (decision: "accept" | "reject") => assetsApi.reviewExpense(entry.id, decision),
+    mutationFn: (v: { decision: "accept" | "reject"; note?: string }) =>
+      assetsApi.reviewExpense(entry.id, v.decision, v.note),
     onSuccess: onDone,
     onError: (e: Error) => notify.error(e.message),
   })
@@ -134,16 +136,23 @@ export function PendingRow({ entry, onDone }: { entry: PendingExpense; onDone: (
       </span>
 
       <div className="flex shrink-0 items-center gap-1">
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={review.isPending}
-          onClick={() => review.mutate("reject")}
-          className="text-muted-foreground hover:text-destructive"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-        <Button size="sm" disabled={review.isPending} onClick={() => review.mutate("accept")}>
+        {/* Refusing asks why: the member reads the reason under the entry. */}
+        <ExpenseRefuseDialog
+          pending={review.isPending}
+          onRefuse={(note) => review.mutate({ decision: "reject", note })}
+          trigger={
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={review.isPending}
+              aria-label={t("expenses.reject", "Refuse")}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          }
+        />
+        <Button size="sm" disabled={review.isPending} onClick={() => review.mutate({ decision: "accept" })}>
           {review.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
           <span className="ml-1 hidden sm:inline">{t("expenses.accept", "Accept")}</span>
         </Button>

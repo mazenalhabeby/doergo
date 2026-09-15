@@ -18,6 +18,26 @@ import {
 } from "@/components/ui/dialog"
 import { HolderPicker, decodeHolders, encodeHolderList, type HolderKey } from "./holder-picker"
 
+/** A moment -> what `<input type="datetime-local">` holds, in the viewer's own zone. */
+export function toLocalInput(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+/**
+ * The `at` a handover is sent with, or undefined for "now".
+ *
+ * Left untouched, the box still holds the minute the dialog opened; sending
+ * that would date a handover confirmed five minutes later five minutes early.
+ * So only a time somebody actually chose travels — the server's own clock is
+ * the better "now". An unreadable value is sent as-is for the plan to refuse.
+ */
+export function handoverAt(value: string, touched: boolean): string | undefined {
+  if (!touched || !value) return undefined
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? value : d.toISOString()
+}
+
 /**
  * Hand something over — and see, before agreeing to it, exactly what that does.
  *
@@ -46,21 +66,35 @@ export function AssetHandoverDialog({
   const [open, setOpen] = useState(false)
   const [to, setTo] = useState<HolderKey[]>([])
   const [reason, setReason] = useState("")
+  /*
+    When it changed hands. Defaults to now; somebody recording on Monday that
+    the van went back on Friday sets it here, so Friday's fuel lands on the
+    right person. The server always accepted `at` — this dialog never sent it.
+  */
+  const [when, setWhen] = useState(() => toLocalInput(new Date()))
+  const [whenTouched, setWhenTouched] = useState(false)
+  const at = handoverAt(when, whenTouched)
 
   const openPeriods = periods.filter((p) => !p.endedAt)
   const nameOf = (p: CustodyPeriodDto) =>
     p.user ? `${p.user.firstName ?? ""} ${p.user.lastName ?? ""}`.trim() || p.user.email || "—"
       : p.customer?.name ?? "—"
 
+  // The date goes into the SAME plan the server executes, so "that is in the
+  // future" and "that is before they got it" appear beside the box while it is
+  // being set, and the server refuses on exactly the same list.
   const plan = planHandover({
     periods: openPeriods as unknown as CustodyPeriod[],
     to: decodeHolders(to),
+    at,
     limit: shape.holder.multiple ? 50 : 1,
   })
   const ready = canHandOver(plan)
+  const future = plan.problems.some((p) => p.kind === "future")
+  const beforeStart = plan.problems.find((p) => p.kind === "before-start")
 
   const hand = useMutation({
-    mutationFn: () => assetsApi.handOver(assetId, { to: decodeHolders(to), reason: reason.trim() || undefined }),
+    mutationFn: () => assetsApi.handOver(assetId, { to: decodeHolders(to), at, reason: reason.trim() || undefined }),
     onSuccess: () => {
       notify.success(t("custody.done", "Handed over."))
       setOpen(false)
@@ -76,6 +110,8 @@ export function AssetHandoverDialog({
       // off them", and the second commonest is one tap from being a mistake.
       setTo(encodeHolderList(openPeriods))
       setReason("")
+      setWhen(toLocalInput(new Date()))
+      setWhenTouched(false)
     }
     setOpen(next)
   }
@@ -101,6 +137,33 @@ export function AssetHandoverDialog({
               enabled={open}
               showChips={shape.holder.multiple}
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="handover-when">{t("assetFacts.handover.when", "When")}</Label>
+            <Input
+              id="handover-when"
+              type="datetime-local"
+              value={when}
+              max={toLocalInput(new Date())}
+              onChange={(e) => { setWhen(e.target.value); setWhenTouched(true) }}
+              className={future || beforeStart ? "border-destructive" : undefined}
+            />
+            {future ? (
+              <p className="text-[11.5px] text-destructive">
+                {t("assetFacts.handover.future", "A handover cannot be dated in the future — record it when it happens.")}
+              </p>
+            ) : beforeStart && beforeStart.kind === "before-start" ? (
+              <p className="text-[11.5px] text-destructive">
+                {t("assetFacts.handover.beforeStart", "That is before {{name}} was given it.", {
+                  name: nameOf(beforeStart.period as unknown as CustodyPeriodDto),
+                })}
+              </p>
+            ) : (
+              <p className="text-[11.5px] text-muted-foreground">
+                {t("assetFacts.handover.whenHint", "Now, unless it changed hands earlier.")}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -145,7 +208,11 @@ export function AssetHandoverDialog({
                   <li className="flex items-start gap-2 text-foreground">
                     <UserPlus className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                     <span>
-                      {t("custody.opens", "Opens a new custody from now. Costs dated after this belong to them.")}
+                      {at && !future
+                        ? t("assetFacts.handover.opensAt", "Opens a new custody from {{when}}. Costs dated after this belong to them.", {
+                            when: plan.at.toLocaleString(),
+                          })
+                        : t("custody.opens", "Opens a new custody from now. Costs dated after this belong to them.")}
                     </span>
                   </li>
                 )}
