@@ -2,6 +2,7 @@ import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
+import { msg, verbatim } from '../i18n/translate';
 
 /**
  * A member sent in a page that looks like a contract for a thing.
@@ -33,19 +34,20 @@ export class AssetProposalNotificationHandler {
     const targets = new Set<string>([...recipientIds, data.raisedById].filter(Boolean));
     for (const id of targets) this.websocketGateway.emitToUser(id, 'asset_proposal.raised', data);
 
-    const who = data.raiserName || 'A member';
-    const what = data.name ? ` — ${data.name}` : '';
-    for (const id of recipientIds) {
-      try {
-        await this.pushService.sendToUser(
-          id,
-          'A new asset to confirm',
-          `${who} sent in a contract${what}`,
-          { type: 'asset_proposal', kind: 'raised', proposalId: data.proposalId },
-        );
-      } catch (e) {
-        this.logger.error(`asset proposal push failed: ${(e as Error).message}`);
-      }
+    const name = data.raiserName || msg('common.aMember');
+    try {
+      await this.pushService.sendToUsers(
+        recipientIds,
+        {
+          title: msg('proposal.raised.title'),
+          body: data.name
+            ? msg('proposal.raised.bodyNamed', { name, asset: data.name })
+            : msg('proposal.raised.body', { name }),
+        },
+        { type: 'asset_proposal', kind: 'raised', proposalId: data.proposalId },
+      );
+    } catch (e) {
+      this.logger.error(`asset proposal push failed: ${(e as Error).message}`);
     }
   }
 
@@ -59,11 +61,16 @@ export class AssetProposalNotificationHandler {
     try {
       await this.pushService.sendToUser(
         data.userId,
-        accepted ? 'Added to the register' : 'Not added',
         accepted
-          ? `${detail || 'What you sent in'} is on the books and yours`
-          // The reason, verbatim. A refusal with none teaches nothing.
-          : detail || 'What you sent in was not added',
+          ? {
+              title: msg('proposal.accepted.title'),
+              body: detail ? msg('proposal.accepted.body', { detail }) : msg('proposal.accepted.bodyGeneric'),
+            }
+          : {
+              title: msg('proposal.rejected.title'),
+              // The reason, verbatim. A refusal with none teaches nothing.
+              body: detail ? verbatim(detail) : msg('proposal.rejected.bodyGeneric'),
+            },
         { type: 'asset_proposal', kind: 'decided', proposalId: data.proposalId },
       );
     } catch (e) {

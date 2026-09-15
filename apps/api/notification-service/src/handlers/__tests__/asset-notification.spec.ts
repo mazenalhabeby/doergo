@@ -4,6 +4,7 @@ import {
   type ExpenseSubmittedEvent,
 } from '../asset-notification.handler';
 import { KeyedCoalescer } from '../../common/keyed-coalescer';
+import { renderText } from '../../i18n/translate';
 
 /**
  * Delivering what task-service decided about the organization's things.
@@ -19,7 +20,7 @@ const flush = () => new Promise((r) => setImmediate(r));
 
 describe('AssetNotificationHandler', () => {
   let handler: AssetNotificationHandler;
-  const push = { sendToUser: jest.fn() };
+  const push = { sendToUsers: jest.fn() };
   const socket = { emitToUser: jest.fn(), emitToOrganization: jest.fn() };
   const store = { record: jest.fn() };
 
@@ -40,16 +41,26 @@ describe('AssetNotificationHandler', () => {
     authorId: 'u-ahmed', authorName: 'Ahmed Dessouky', category: 'Fuel', amountCents: 8141,
     occurredAt: '2026-09-14T10:00:00Z', recipientIds: ['u-boss'], ...over,
   });
-  const pushesTo = (id: string) => push.sendToUser.mock.calls.filter(([u]) => u === id);
+  /*
+    What each recipient was sent, one row per person, rendered in English —
+    the handler hands over catalogue keys and a list of people, and it is the
+    sentence a person reads that these tests are about.
+  */
+  const sent = (): Array<[string, string, string, any]> =>
+    push.sendToUsers.mock.calls.flatMap(([ids, text, data]: [string[], any, any]) => {
+      const { title, body } = renderText('en', text);
+      return ids.map((id): [string, string, string, any] => [id, title, body, data]);
+    });
+  const pushesTo = (id: string) => sent().filter(([u]) => u === id);
 
   describe('an expense sent in', () => {
     it('tells each approver, with a link to the asset', async () => {
       await handler.handleExpenseSubmitted(expense({ recipientIds: ['u-boss', 'u-fleet'] }));
 
-      expect(push.sendToUser).toHaveBeenCalledWith(
+      expect(sent()).toContainEqual([
         'u-boss', 'An expense to confirm', 'Ahmed Dessouky sent Fuel for Ford Transit',
         expect.objectContaining({ type: 'asset.expense_submitted', assetId: 'a1', entryId: 'm1' }),
-      );
+      ]);
       expect(pushesTo('u-fleet')).toHaveLength(1);
       expect(store.record).toHaveBeenCalledWith(expect.objectContaining({
         recipientIds: ['u-boss'], organizationId: 'org1', eventType: 'asset.expense_submitted', link: '/assets/a1',
@@ -129,7 +140,7 @@ describe('AssetNotificationHandler', () => {
     });
 
     it('keeps delivering the bell when a phone cannot be reached', async () => {
-      push.sendToUser.mockRejectedValueOnce(new Error('expo down'));
+      push.sendToUsers.mockRejectedValueOnce(new Error('expo down'));
       await handler.handleExpenseSubmitted(expense());
       expect(store.record).toHaveBeenCalledTimes(1);
     });
@@ -143,20 +154,19 @@ describe('AssetNotificationHandler', () => {
 
     it('tells the author it was accepted', async () => {
       await handler.handleExpenseDecided(decided());
-      expect(push.sendToUser).toHaveBeenCalledTimes(1);
-      expect(push.sendToUser).toHaveBeenCalledWith('u-ahmed', 'Expense accepted', 'Fuel for Ford Transit',
-        expect.objectContaining({ type: 'asset.expense_decided', decision: 'accept' }));
+      expect(sent()).toEqual([['u-ahmed', 'Expense accepted', 'Fuel for Ford Transit',
+        expect.objectContaining({ type: 'asset.expense_decided', decision: 'accept' })]]);
       expect(store.record).toHaveBeenCalledWith(expect.objectContaining({ recipientIds: ['u-ahmed'], link: '/assets/a1' }));
     });
 
     it('carries the reason when it was refused', async () => {
       await handler.handleExpenseDecided(decided({ decision: 'reject', note: 'Not our van' }));
-      expect(push.sendToUser).toHaveBeenCalledWith('u-ahmed', 'Expense refused', 'Fuel for Ford Transit: Not our van', expect.anything());
+      expect(sent()).toContainEqual(['u-ahmed', 'Expense refused', 'Fuel for Ford Transit: Not our van', expect.anything()]);
     });
 
     it('still says something when refused without a reason', async () => {
       await handler.handleExpenseDecided(decided({ decision: 'reject', note: '' }));
-      expect(push.sendToUser.mock.calls[0][2]).toBe('Fuel for Ford Transit was not accepted');
+      expect(sent()[0][2]).toBe('Fuel for Ford Transit was not accepted');
     });
   });
 
@@ -168,10 +178,10 @@ describe('AssetNotificationHandler', () => {
 
     it('tells the receiver it is theirs and the other person it went back', async () => {
       await handler.handleHandedOver(handed());
-      expect(push.sendToUser).toHaveBeenCalledWith('u-mira', 'Handed over to you', 'Ford Transit is now with you',
-        expect.objectContaining({ type: 'asset.handed_over', direction: 'to' }));
-      expect(push.sendToUser).toHaveBeenCalledWith('u-ahmed', 'Handed back', 'Ford Transit was handed back',
-        expect.objectContaining({ type: 'asset.handed_over', direction: 'from' }));
+      expect(sent()).toContainEqual(['u-mira', 'Handed over to you', 'Ford Transit is now with you',
+        expect.objectContaining({ type: 'asset.handed_over', direction: 'to' })]);
+      expect(sent()).toContainEqual(['u-ahmed', 'Handed back', 'Ford Transit was handed back',
+        expect.objectContaining({ type: 'asset.handed_over', direction: 'from' })]);
       expect(store.record).toHaveBeenCalledTimes(2);
       expect(socket.emitToOrganization).toHaveBeenCalledWith('org1', 'asset.custodyChanged', { assetId: 'a1' });
     });

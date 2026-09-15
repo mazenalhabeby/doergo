@@ -4,6 +4,8 @@ import { EmailService } from '../modules/email/email.service';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
+import { taskStatus } from '../modules/push/push.service';
+import { msg, plural, type LocalizedText } from '../i18n/translate';
 
 @Controller()
 export class TaskNotificationHandler {
@@ -25,17 +27,15 @@ export class TaskNotificationHandler {
     watcherIds: string[] | undefined,
     event: string,
     payload: any,
-    push: { title: string; body: string; data?: any },
+    push: { text: LocalizedText; data?: any },
     exclude?: string,
   ) {
-    const ids = (watcherIds || []).filter((id) => id && id !== exclude);
-    for (const id of ids) {
-      this.websocketGateway.emitToUser(id, event, payload);
-      try {
-        await this.pushService.sendToUser(id, push.title, push.body, push.data);
-      } catch (error) {
-        this.logger.error(`Failed to send task watcher push to ${id}: ${error}`);
-      }
+    const ids = [...new Set((watcherIds || []).filter((id) => id && id !== exclude))];
+    for (const id of ids) this.websocketGateway.emitToUser(id, event, payload);
+    try {
+      await this.pushService.sendToUsers(ids, push.text, push.data);
+    } catch (error) {
+      this.logger.error(`Failed to send task watcher push: ${error}`);
     }
   }
 
@@ -95,11 +95,15 @@ export class TaskNotificationHandler {
     }
 
     // Alert the assignee's "Notifications about" watchers (their managers).
+    const assignedText: LocalizedText = {
+      title: msg('task.watch.assigned.title'),
+      body: msg('task.watch.assigned.body', { task: data.task.title }),
+    };
     await this.notifyTaskWatchers(
       data.watcherIds,
       'task.assigned',
       data.task,
-      { title: 'Task assigned', body: `"${data.task.title}" was assigned`, data: { taskId: data.task.id } },
+      { text: assignedText, data: { taskId: data.task.id } },
       data.workerId,
     );
 
@@ -108,8 +112,7 @@ export class TaskNotificationHandler {
       recipientIds: [data.workerId, ...(data.watcherIds || [])],
       organizationId: data.task.organizationId,
       eventType: 'task.assigned',
-      title: 'Task assigned',
-      body: `"${data.task.title}" was assigned`,
+      text: assignedText,
       link: `/tasks/${data.task.id}`,
       data: { taskId: data.task.id },
     });
@@ -142,11 +145,15 @@ export class TaskNotificationHandler {
     }
 
     // Alert the assignee's "Notifications about" watchers (their managers).
+    const statusText: LocalizedText = {
+      title: msg('task.watch.status.title'),
+      body: msg('task.watch.status.body', { task: data.task.title, status: taskStatus(data.newStatus) }),
+    };
     await this.notifyTaskWatchers(
       data.watcherIds,
       'task.statusChanged',
       { task: data.task, oldStatus: data.oldStatus, newStatus: data.newStatus },
-      { title: 'Task status changed', body: `"${data.task.title}" → ${data.newStatus}`, data: { taskId: data.task.id } },
+      { text: statusText, data: { taskId: data.task.id } },
       data.task.assignedToId,
     );
 
@@ -155,8 +162,7 @@ export class TaskNotificationHandler {
       recipientIds: [data.task.createdById, ...(data.watcherIds || [])],
       organizationId: data.task.organizationId,
       eventType: 'task.statusChanged',
-      title: 'Task status changed',
-      body: `"${data.task.title}" → ${data.newStatus}`,
+      text: statusText,
       link: `/tasks/${data.task.id}`,
       data: { taskId: data.task.id },
     });
@@ -181,7 +187,7 @@ export class TaskNotificationHandler {
 
     const commenterName = data.comment?.user?.firstName
       ? `${data.comment.user.firstName} ${data.comment.user.lastName || ''}`.trim()
-      : 'Someone';
+      : msg('common.someone');
     const commenterId = data.comment?.userId;
 
     if (data.task?.createdById && data.task.createdById !== commenterId) {
@@ -228,8 +234,10 @@ export class TaskNotificationHandler {
     try {
       await this.pushService.sendToUser(
         data.userId,
-        `${count} Blocked Task${count > 1 ? 's' : ''} Need Attention`,
-        `You have ${count} blocked task${count > 1 ? 's' : ''}: ${taskNames}`,
+        {
+          title: plural('task.blocked.title', count),
+          body: plural('task.blocked.body', count, { tasks: taskNames }),
+        },
         { type: 'blocked_tasks_reminder', taskId: data.blockedTasks[0]?.id },
       );
     } catch (error) {

@@ -4,6 +4,7 @@ import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
 import { KeyedCoalescer } from '../common/keyed-coalescer';
+import { msg, plural, type LocalizedText } from '../i18n/translate';
 
 /** A burst of filings about one asset reaches each approver once per window. */
 export const EXPENSE_COALESCE_WINDOW_MS = 60_000;
@@ -116,17 +117,22 @@ export class AssetNotificationHandler implements OnModuleDestroy {
 
   /** The first in its window: said in full. */
   private async deliverExpense(recipientId: string, data: ExpenseSubmittedEvent) {
-    const title = 'An expense to confirm';
-    const body = `${data.authorName || 'A member'} sent ${data.category} for ${data.assetName}`;
-    await this.push(recipientId, title, body, {
+    const text: LocalizedText = {
+      title: plural('asset.expense.title', 1),
+      body: msg('asset.expense.body', {
+        name: data.authorName || msg('common.aMember'),
+        category: data.category,
+        asset: data.assetName,
+      }),
+    };
+    await this.push([recipientId], text, {
       type: 'asset.expense_submitted', assetId: data.assetId, entryId: data.entryId,
     });
     await this.store.record({
       recipientIds: [recipientId],
       organizationId: data.organizationId,
       eventType: 'asset.expense_submitted',
-      title,
-      body,
+      text,
       link: assetLink(data.assetId),
       data: { assetId: data.assetId, entryId: data.entryId, authorId: data.authorId },
     });
@@ -142,21 +148,26 @@ export class AssetNotificationHandler implements OnModuleDestroy {
   private async deliverSummary(recipientId: string, held: ExpenseSubmittedEvent[]) {
     const last = held[held.length - 1]!;
     const authors = new Set(held.map((e) => e.authorId));
-    const who = authors.size === 1 ? last.authorName || 'A member' : null;
     const n = held.length;
-    const title = n === 1 ? 'An expense to confirm' : 'Expenses to confirm';
-    const body = who
-      ? `${who} sent ${n} more for ${last.assetName}`
-      : `${n} more expenses sent in for ${last.assetName}`;
-    await this.push(recipientId, title, body, {
+    const text: LocalizedText = {
+      title: plural('asset.expense.title', n),
+      body:
+        authors.size === 1
+          ? msg('asset.expense.summaryOneSender', {
+              name: last.authorName || msg('common.aMember'),
+              count: n,
+              asset: last.assetName,
+            })
+          : msg('asset.expense.summaryManySenders', { count: n, asset: last.assetName }),
+    };
+    await this.push([recipientId], text, {
       type: 'asset.expense_submitted', assetId: last.assetId, entryId: last.entryId, count: n,
     });
     await this.store.record({
       recipientIds: [recipientId],
       organizationId: last.organizationId,
       eventType: 'asset.expense_submitted',
-      title,
-      body,
+      text,
       link: assetLink(last.assetId),
       data: { assetId: last.assetId, entryIds: held.map((e) => e.entryId), count: n },
     });
@@ -173,11 +184,17 @@ export class AssetNotificationHandler implements OnModuleDestroy {
 
     const accepted = data.decision === 'accept';
     const note = String(data.note ?? '').trim().slice(0, 200);
-    const title = accepted ? 'Expense accepted' : 'Expense refused';
-    const what = `${data.category} for ${data.assetName}`;
+    const what = { category: data.category, asset: data.assetName };
     // The reason travels IN the message. A refusal that only says "no" sends
     // somebody to ask the office what happened.
-    const body = accepted ? what : note ? `${what}: ${note}` : `${what} was not accepted`;
+    const text: LocalizedText = {
+      title: msg(accepted ? 'asset.decided.titleAccepted' : 'asset.decided.titleRefused'),
+      body: accepted
+        ? msg('asset.decided.bodyAccepted', what)
+        : note
+          ? msg('asset.decided.bodyRefusedNote', { ...what, note })
+          : msg('asset.decided.bodyRefused', what),
+    };
 
     this.websocketGateway.emitToUser(data.authorId, 'asset.expense_decided', {
       entryId: data.entryId,
@@ -188,15 +205,14 @@ export class AssetNotificationHandler implements OnModuleDestroy {
       category: data.category,
       amountCents: data.amountCents,
     });
-    await this.push(data.authorId, title, body, {
+    await this.push([data.authorId], text, {
       type: 'asset.expense_decided', assetId: data.assetId, entryId: data.entryId, decision: data.decision,
     });
     await this.store.record({
       recipientIds: [data.authorId],
       organizationId: data.organizationId,
       eventType: 'asset.expense_decided',
-      title,
-      body,
+      text,
       link: assetLink(data.assetId),
       data: { assetId: data.assetId, entryId: data.entryId, decision: data.decision },
     });
@@ -212,9 +228,18 @@ export class AssetNotificationHandler implements OnModuleDestroy {
     const receivers = [...new Set((data.openedUserIds ?? []).filter((id) => id && id !== data.byUserId))];
     const losers = [...new Set((data.closedUserIds ?? []).filter((id) => id && id !== data.byUserId && !receivers.includes(id)))];
 
-    const groups: Array<{ ids: string[]; title: string; body: string; direction: 'to' | 'from' }> = [
-      { ids: receivers, title: 'Handed over to you', body: `${data.assetName} is now with you`, direction: 'to' },
-      { ids: losers, title: 'Handed back', body: `${data.assetName} was handed back`, direction: 'from' },
+    const asset = { asset: data.assetName };
+    const groups: Array<{ ids: string[]; text: LocalizedText; direction: 'to' | 'from' }> = [
+      {
+        ids: receivers,
+        text: { title: msg('asset.handover.to.title'), body: msg('asset.handover.to.body', asset) },
+        direction: 'to',
+      },
+      {
+        ids: losers,
+        text: { title: msg('asset.handover.from.title'), body: msg('asset.handover.from.body', asset) },
+        direction: 'from',
+      },
     ];
 
     for (const group of groups) {
@@ -223,25 +248,24 @@ export class AssetNotificationHandler implements OnModuleDestroy {
         this.websocketGateway.emitToUser(id, 'asset.handed_over', {
           assetId: data.assetId, assetName: data.assetName, direction: group.direction, at: data.at,
         });
-        await this.push(id, group.title, group.body, {
-          type: 'asset.handed_over', assetId: data.assetId, direction: group.direction,
-        });
       }
+      await this.push(group.ids, group.text, {
+        type: 'asset.handed_over', assetId: data.assetId, direction: group.direction,
+      });
       await this.store.record({
         recipientIds: group.ids,
         organizationId: data.organizationId,
         eventType: 'asset.handed_over',
-        title: group.title,
-        body: group.body,
+        text: group.text,
         link: assetLink(data.assetId),
         data: { assetId: data.assetId, direction: group.direction },
       });
     }
   }
 
-  private async push(userId: string, title: string, body: string, data: Record<string, unknown>) {
+  private async push(userIds: string[], text: LocalizedText, data: Record<string, unknown>) {
     try {
-      await this.pushService.sendToUser(userId, title, body, data);
+      await this.pushService.sendToUsers(userIds, text, data);
     } catch (e) {
       this.logger.error(`asset push failed: ${(e as Error).message}`);
     }

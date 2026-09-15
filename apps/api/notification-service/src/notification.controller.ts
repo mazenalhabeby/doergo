@@ -3,6 +3,7 @@ import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { EmailService } from './modules/email/email.service';
 import { PushService } from './modules/push/push.service';
 import { WebsocketGateway } from './modules/websocket/websocket.gateway';
+import { RecipientLocales } from './i18n/recipient-locales.service';
 
 @Controller()
 export class NotificationController {
@@ -12,6 +13,7 @@ export class NotificationController {
     private readonly emailService: EmailService,
     private readonly pushService: PushService,
     private readonly websocketGateway: WebsocketGateway,
+    private readonly recipientLocales: RecipientLocales,
   ) {}
 
   // =========================================================================
@@ -58,9 +60,20 @@ export class NotificationController {
     token: string;
     platform: string;
     deviceId?: string;
+    locale?: string;
   }) {
     this.logger.log(`Registering push token for user ${data.userId}`);
     return this.pushService.registerPushToken(data);
+  }
+
+  /**
+   * The member changed language on the profile endpoint, which auth-service
+   * wrote. Forget the cached one here so the next push reads the new value
+   * instead of waiting out the cache.
+   */
+  @EventPattern('user_locale_changed')
+  handleUserLocaleChanged(@Payload() data: { userId: string }) {
+    if (data?.userId) this.recipientLocales.forget(data.userId);
   }
 
   @MessagePattern({ cmd: 'remove_push_token' })

@@ -3,14 +3,14 @@ import { EventPattern, Payload } from '@nestjs/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
+import { msg, type LocalizedText, type Msg } from '../i18n/translate';
 
-/** How a leave kind reads in a sentence. */
-const TYPE_LABELS: Record<string, string> = {
-  VACATION: 'holiday',
-  SICK: 'sick leave',
-  FAMILY: 'family leave',
-  OTHER: 'time off',
-};
+/** How a leave kind reads in a sentence — a phrase of its own in each language. */
+const LEAVE_KINDS = new Set(['VACATION', 'SICK', 'FAMILY', 'OTHER']);
+function leaveKind(type: string | undefined): Msg {
+  const kind = LEAVE_KINDS.has(type ?? '') ? type : type ? 'OTHER' : 'VACATION';
+  return msg(`timeOff.kind.${kind}` as 'timeOff.kind.OTHER');
+}
 
 /**
  * Leave: somebody asked for days, and somebody answered.
@@ -58,9 +58,11 @@ export class TimeOffNotificationHandler {
     );
     if (recipients.length === 0) return;
 
-    const kind = TYPE_LABELS[data.type ?? 'VACATION'] ?? 'time off';
     const range = data.startDate === data.endDate ? data.startDate : `${data.startDate} → ${data.endDate}`;
-    const body = `${data.memberName} asked for ${kind}: ${range}`;
+    const text: LocalizedText = {
+      title: msg('timeOff.requested.title'),
+      body: msg('timeOff.requested.body', { name: data.memberName, kind: leaveKind(data.type), range }),
+    };
     const link = '/employees/availability';
 
     const payload = {
@@ -82,6 +84,7 @@ export class TimeOffNotificationHandler {
     try {
       await this.pushService.sendTimeOffRequestPush({
         recipientIds: recipients,
+        text,
         technicianName: data.memberName,
         startDate: data.startDate,
         endDate: data.endDate,
@@ -96,8 +99,7 @@ export class TimeOffNotificationHandler {
       recipientIds: recipients,
       organizationId: data.organizationId,
       eventType: 'time_off_requested',
-      title: 'Time-off request',
-      body,
+      text,
       link,
       data: { timeOffId: data.timeOffId, memberId: data.memberId },
     });
@@ -121,14 +123,16 @@ export class TimeOffNotificationHandler {
     );
 
     const range = data.startDate === data.endDate ? data.startDate : `${data.startDate} → ${data.endDate}`;
-    const title = data.approved ? 'Time off approved' : 'Time off not approved';
     // The reason travels IN the message when it was refused. A refusal that
     // only says "no" sends somebody to ask their manager what happened.
-    const body = data.approved
-      ? `Your ${range} is approved`
-      : data.rejectionReason
-        ? `${range} — ${data.rejectionReason}`
-        : `Your request for ${range} was not approved`;
+    const text: LocalizedText = {
+      title: msg(data.approved ? 'timeOff.decided.titleApproved' : 'timeOff.decided.titleRejected'),
+      body: data.approved
+        ? msg('timeOff.decided.bodyApproved', { range })
+        : data.rejectionReason
+          ? msg('timeOff.decided.bodyRejectedReason', { range, reason: data.rejectionReason })
+          : msg('timeOff.decided.bodyRejected', { range }),
+    };
 
     this.websocketGateway.emitToUser(data.memberId, 'time_off_decided', {
       timeOffId: data.timeOffId,
@@ -142,10 +146,10 @@ export class TimeOffNotificationHandler {
     try {
       await this.pushService.sendTimeOffApprovedPush({
         technicianId: data.memberId,
+        text,
         startDate: data.startDate,
         endDate: data.endDate,
         approved: data.approved,
-        rejectionReason: data.rejectionReason ?? undefined,
       });
     } catch (error) {
       this.logger.error(`Failed to send time-off decision push: ${error}`);
@@ -155,8 +159,7 @@ export class TimeOffNotificationHandler {
       recipientIds: [data.memberId],
       organizationId: data.organizationId,
       eventType: 'time_off_decided',
-      title,
-      body,
+      text,
       link: '/my/time-off',
       data: { timeOffId: data.timeOffId, approved: data.approved },
     });
