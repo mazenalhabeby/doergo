@@ -1,4 +1,4 @@
-import { memberScopeFilter, cleanRateCents } from '@hbcfield/shared';
+import { memberScopeFilter, cleanRateCents, normalizeLocale } from '@hbcfield/shared';
 import {
   Injectable,
   Logger,
@@ -2034,9 +2034,9 @@ export class UsersService {
    */
   async updateOwnProfile(
     userId: string,
-    dto: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string; guidesSeen?: boolean },
+    dto: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string; guidesSeen?: boolean; locale?: string },
   ) {
-    const data: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string; guidesSeen?: boolean } = {};
+    const data: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string; guidesSeen?: boolean; locale?: string } = {};
     if (dto.firstName !== undefined) data.firstName = dto.firstName.trim();
     if (dto.lastName !== undefined) data.lastName = dto.lastName.trim();
     // presence: a value sets the manual override; null clears it back to auto.
@@ -2045,6 +2045,10 @@ export class UsersService {
     if (dto.timeFormat === '12h' || dto.timeFormat === '24h') data.timeFormat = dto.timeFormat;
     // guidesSeen: one-time welcome-tour flag (only ever set to true by the client).
     if (dto.guidesSeen === true) data.guidesSeen = true;
+    // locale: the language this member's pushes are written in. Only one the
+    // server has a catalogue for; anything else leaves the stored value alone.
+    const locale = normalizeLocale(dto.locale);
+    if (locale) data.locale = locale;
 
     const updated = await this.prisma.user.update({
       where: { id: userId },
@@ -2059,6 +2063,7 @@ export class UsersService {
         presence: true,
         timeFormat: true,
         guidesSeen: true,
+        locale: true,
       },
     });
 

@@ -19,10 +19,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { IsString, IsOptional, IsEmail, IsNotEmpty, IsIn, ValidateIf, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsNotEmpty, IsIn, ValidateIf, IsBoolean, MaxLength } from 'class-validator';
 import { join } from 'path';
 import { mkdir, writeFile, unlink } from 'fs/promises';
-import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData, AllowCustomer } from '@hbcfield/shared';
+import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData, AllowCustomer, SUPPORTED_LOCALES, type SupportedLocale } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
@@ -41,6 +41,20 @@ class RegisterPushTokenDto {
   @IsString()
   @IsOptional()
   deviceId?: string;
+
+  // The language the app is set to. Sent on every registration, which every
+  // launch makes, so the server hears about a change even from an app that
+  // never calls the profile endpoint. Older builds omit it and change nothing.
+  //
+  // ⚠️ Deliberately NOT @IsIn here. A 400 would refuse the TOKEN along with the
+  // language, and a future app build offering a sixth language would silently
+  // stop receiving pushes at all. The value is checked against SUPPORTED_LOCALES
+  // where it is stored (RecipientLocales.set → normalizeLocale), and an unknown
+  // one is dropped there without touching what was stored.
+  @IsOptional()
+  @IsString()
+  @MaxLength(16)
+  locale?: string;
 }
 
 class UpdateMeDto {
@@ -67,6 +81,11 @@ class UpdateMeDto {
   @IsOptional()
   @IsBoolean()
   guidesSeen?: boolean;
+
+  // The language pushes and bell entries are written in for this member.
+  @IsOptional()
+  @IsIn(SUPPORTED_LOCALES)
+  locale?: SupportedLocale;
 }
 
 class UpdateMyEmailDto {
@@ -108,6 +127,12 @@ export class UsersController {
     );
     // Drop the cached session so the new name takes effect on the next request.
     await this.authCache.invalidateUser(user.id);
+
+    // notification-service caches languages briefly; tell it so the very next
+    // push is written in the one just chosen.
+    if (dto.locale !== undefined) {
+      this.notificationClient.emit('user_locale_changed', { userId: user.id });
+    }
 
     // Real-time: broadcast availability changes so teammates' dashboards /
     // contact lists update without a refresh.
@@ -299,6 +324,7 @@ export class UsersController {
           token: dto.token,
           platform: dto.platform,
           deviceId: dto.deviceId,
+          locale: dto.locale,
         },
       ),
     );
