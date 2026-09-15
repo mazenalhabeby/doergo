@@ -37,7 +37,6 @@ import {
 export class InvitationsController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-    @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
     private readonly orgEvents: OrgEventsService,
   ) {}
 
@@ -69,16 +68,11 @@ export class InvitationsController {
       );
     }
 
-    // Send invitation email if email was provided
-    if (dto.email && result?.data?.code) {
-      this.notificationClient.emit('invitation_created', {
-        recipientEmail: dto.email,
-        organizationName: result.data.organization?.name || 'your organization',
-        invitationCode: result.data.code,
-        targetRole: dto.targetRole,
-        expiresAt: result.data.expiresAt,
-      });
-    }
+    // No invitation email from here. auth-service sends it when `email` is in
+    // the payload (it has done since client invites learned to email
+    // themselves), and this emit on top meant every invited person got the
+    // same email twice — the second one without the inviter, so it could not
+    // be written in their language either.
 
     // A pending invitation is shown on /members alongside real members, so a new
     // one must reach every open admin screen (audit M-D2).

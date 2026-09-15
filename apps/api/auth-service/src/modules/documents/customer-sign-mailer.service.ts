@@ -7,14 +7,16 @@ import {
   sendViaFirstWorking,
   runWithCronLock,
   canReissue,
+  localesByAddress,
+  signLinkEmail,
+  signReissueEmail,
+  DEFAULT_LOCALE,
   type MailRoute,
+  type RenderedEmail,
+  type SupportedLocale,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CustomerSignLinkService } from './customer-sign-link.service';
-
-/** HTML-escape. Every interpolation below goes through it. */
-const esc = (s: string): string =>
-  String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /**
  * Telling a client that documents are waiting for them.
@@ -110,10 +112,12 @@ export class CustomerSignMailerService {
 
     const sent = await this.send(
       addr,
-      toSign.length === 1
-        ? `A document needs your signature — ${organizationName}`.trim()
-        : `${toSign.length} documents need your signature — ${organizationName}`.trim(),
-      this.html({ organizationName, documents: toSign, token, expiresAt }),
+      signLinkEmail(await this.localeFor(addr), {
+        organizationName,
+        documents: toSign,
+        url: this.signUrl(token),
+        expiresAt,
+      }),
     );
 
     if (!sent) return false;
@@ -171,7 +175,8 @@ export class CustomerSignMailerService {
     };
   }
 
-  private async send(to: string, subject: string, html: string): Promise<boolean> {
+  private async send(to: string, email: RenderedEmail): Promise<boolean> {
+    const { subject, html } = email;
     if (!this.routes.length) {
       this.logger.warn(`No SMTP route — not sending "${subject}"`);
       return false;
@@ -194,81 +199,35 @@ export class CustomerSignMailerService {
   }
 
   /**
-   * The message.
+   * Which language a client's email is written in.
    *
-   * In the house style the invitation email already uses — 600px, Arial, the
-   * blue wordmark — because a client who has seen one email from this product
-   * should recognise the next.
+   * A client is an ADDRESS, and the Customer record carries no language — so
+   * the only real signal is an account behind that address (a portal client
+   * who signs in, or a member of another organization who countersigns), whose
+   * own chosen language wins. Anybody else gets English, as every client did
+   * before.
    *
-   * It names the documents rather than counting them, because a client who
-   * cannot tell what is waiting has to open the link to find out whether it
-   * matters. It gives the expiry as a DATE, since the mail may be read a week
-   * after it arrives. And it attaches nothing: the file is the thing being
-   * signed, and a copy loose in a mailbox is a copy nobody can prove anything
-   * about.
+   * Deliberately NOT the issuing member's language: the client is a different
+   * company, and "the supplier's office writes German" says nothing about what
+   * the client's accounts department reads. When Customer gains a language
+   * field, it slots in between the account and the default, here and nowhere
+   * else. A lookup that fails costs the language, never the email.
    */
-  private html(data: {
-    organizationName: string;
-    documents: { title: string; forMember: string | null }[];
-    token: string;
-    expiresAt: Date;
-  }): string {
-    const org = esc(data.organizationName);
-    const many = data.documents.length > 1;
-    // The token rides in the QUERY STRING of a web-app URL. It never reaches
-    // the gateway this way, and the gateway logs every request path it does see.
-    const url = `${this.appUrl()}/sign?token=${encodeURIComponent(data.token)}`;
-    const until = data.expiresAt.toLocaleDateString('en-GB', {
-      day: 'numeric', month: 'long', year: 'numeric',
-    });
+  private async localeFor(address: string): Promise<SupportedLocale> {
+    try {
+      return (await localesByAddress(this.prisma, [address])).get(address.trim().toLowerCase()) ?? DEFAULT_LOCALE;
+    } catch (err) {
+      this.logger.warn(`Could not look up a language for a signing link: ${(err as Error).message}`);
+      return DEFAULT_LOCALE;
+    }
+  }
 
-    const items = data.documents
-      .map((d) => `<li style="color:#1e293b;font-size:14px;margin-bottom:5px;">${esc(d.title)}${
-        d.forMember ? ` — ${esc(d.forMember)}` : ''
-      }</li>`)
-      .join('');
-
-    return `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="text-align: center; padding: 30px 0;">
-          <h1 style="color: #2563eb; margin: 0;">HBC FIELD</h1>
-          <p style="color: #64748b; margin-top: 4px;">Field Service Management</p>
-        </div>
-
-        <div style="background-color: #f8fafc; border-radius: 12px; padding: 24px; text-align: center;">
-          <h2 style="color: #1e293b; margin-top: 0;">
-            ${many ? `${data.documents.length} documents need your signature` : 'A document needs your signature'}
-          </h2>
-          <p style="color: #475569;">
-            <strong>${org}</strong> has asked you to countersign the work below.
-            ${many ? 'Each one has' : 'It has'} already been signed by the worker and approved by
-            the person responsible for them.
-          </p>
-
-          <div style="background:#eef4ff;border:1px solid #cfe0ff;border-radius:10px;padding:14px 16px;margin:18px 0;text-align:left;">
-            <p style="color:#64748b;font-size:12px;margin:0 0 8px 0;">Waiting for you</p>
-            <ul style="margin:0;padding-left:18px;">${items}</ul>
-          </div>
-
-          <a href="${esc(url)}"
-             style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:13px 30px;border-radius:9px;font-weight:bold;margin:6px 0 14px;">
-            Review and sign
-          </a>
-
-          <p style="color:#94a3b8;font-size:13px;margin-bottom:0;">
-            ${many ? 'You can sign them all at once. ' : ''}This link is valid until <strong>${esc(until)}</strong>
-            and stays your way back to these documents — if it expires, you can ask for a new one
-            from the same page.
-          </p>
-        </div>
-
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
-        <p style="color: #94a3b8; font-size: 12px; text-align: center;">
-          You are receiving this because ${org} listed you as the client for this work.<br>
-          HBCField · hbcfield.com
-        </p>
-      </div>
-    `;
+  /**
+   * The token rides in the QUERY STRING of a web-app URL. It never reaches the
+   * gateway this way, and the gateway logs every request path it does see.
+   */
+  private signUrl(token: string): string {
+    return `${this.appUrl()}/sign?token=${encodeURIComponent(token)}`;
   }
 
   /** The re-issue mail: same page, no document list — they asked for the way
@@ -276,32 +235,13 @@ export class CustomerSignMailerService {
   async sendReissue(data: {
     to: string; token: string; expiresAt: Date; organizationName: string;
   }): Promise<boolean> {
-    const url = `${this.appUrl()}/sign?token=${encodeURIComponent(data.token)}`;
-    const until = data.expiresAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
     return this.send(
       data.to,
-      `Your documents with ${data.organizationName}`.trim(),
-      `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="text-align: center; padding: 30px 0;">
-          <h1 style="color: #2563eb; margin: 0;">HBC FIELD</h1>
-        </div>
-        <div style="background-color:#f8fafc;border-radius:12px;padding:24px;text-align:center;">
-          <h2 style="color:#1e293b;margin-top:0;">Here is your link</h2>
-          <p style="color:#475569;">
-            It opens your documents with <strong>${esc(data.organizationName)}</strong> — both the
-            ones waiting for your signature and the ones you have already signed.
-          </p>
-          <a href="${esc(url)}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:13px 30px;border-radius:9px;font-weight:bold;margin:6px 0 14px;">
-            Open my documents
-          </a>
-          <p style="color:#94a3b8;font-size:13px;margin-bottom:0;">
-            Valid until <strong>${esc(until)}</strong>. Any earlier link you were sent no longer works.
-          </p>
-        </div>
-        <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;">
-        <p style="color:#94a3b8;font-size:12px;text-align:center;">HBCField · hbcfield.com</p>
-      </div>`,
+      signReissueEmail(await this.localeFor(data.to), {
+        organizationName: data.organizationName,
+        url: this.signUrl(data.token),
+        expiresAt: data.expiresAt,
+      }),
     );
   }
 

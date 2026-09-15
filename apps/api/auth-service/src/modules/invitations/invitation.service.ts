@@ -398,10 +398,14 @@ export class InvitationService {
       try {
         this.notificationClient.emit('invitation_created', {
           recipientEmail: data.email.trim(),
-          organizationName: invitation.organization?.name ?? 'Your organization',
+          // No name → the email says "your organization" in the reader's language.
+          organizationName: invitation.organization?.name ?? null,
           invitationCode: code,
           targetRole: invitation.targetRole,
           expiresAt: invitation.expiresAt.toISOString(),
+          // The inviter's language is the email's language when the address is
+          // not already somebody's account.
+          inviterId: data.createdById,
         });
       } catch (e) {
         this.logger.warn(`Failed to queue invitation email to ${data.email}: ${e}`);
@@ -460,10 +464,13 @@ export class InvitationService {
     }
     this.notificationClient.emit('invitation_created', {
       recipientEmail: customer.email,
-      organizationName: invitation.organization?.name ?? 'Your organization',
+      organizationName: invitation.organization?.name ?? null,
       invitationCode: invitation.code,
       targetRole: invitation.targetRole,
       expiresAt: invitation.expiresAt.toISOString(),
+      // Whoever created the invitation, not whoever pressed "resend": the
+      // resend carries no caller, and the creator is who chose this client.
+      inviterId: invitation.createdById,
     });
     return { success: true, data: { sentTo: customer.email } };
   }

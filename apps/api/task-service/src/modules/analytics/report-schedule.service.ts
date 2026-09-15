@@ -3,7 +3,15 @@ import {
   NotFoundException, BadRequestException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { SERVICE_NAMES } from '@hbcfield/shared';
+import {
+  SERVICE_NAMES,
+  emailLocale,
+  formatNumberFor,
+  groupByLocale,
+  localesByAddress,
+  scheduledReportEmail,
+  type SupportedLocale,
+} from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AnalyticsService } from './analytics.service';
 import { ReportDefinition } from './query-engine';
@@ -68,7 +76,7 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
     const due = await this.prisma.reportSchedule.findMany({
       where: { isActive: true, nextRunAt: { lte: now } },
       take: 25,
-      include: { reportDefinition: true },
+      include: { reportDefinition: true, createdBy: { select: { locale: true } } },
     });
     for (const s of due) {
       const next = this.computeNextRun(s.cadence as Cadence, s.hour, s.dayOfWeek, s.dayOfMonth, now);
@@ -86,53 +94,57 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async deliver(schedule: { organizationId: string; recipients: string[]; reportDefinition: { name: string; config: unknown } }) {
-    const recipients = (schedule.recipients || []).filter(Boolean);
+  /**
+   * One email per language among the recipients, not one for everybody.
+   *
+   * Recipients are ADDRESSES typed into the schedule. Each is written in the
+   * language of the account behind it when there is one, and otherwise in the
+   * language of the member who set the schedule up — they chose to send this
+   * report to that address. One query for the whole list; the report itself is
+   * run once, and only the frame around it is rendered per language.
+   *
+   * The report's own column names and values are data from the report
+   * definition, not sentences, and are sent as they are.
+   */
+  private async deliver(schedule: {
+    organizationId: string;
+    recipients: string[];
+    reportDefinition: { name: string; config: unknown };
+    createdBy?: { locale: string | null } | null;
+  }) {
+    const recipients = [...new Set((schedule.recipients || []).filter(Boolean))];
     if (!recipients.length) return;
     const def = schedule.reportDefinition.config as ReportDefinition;
     const { data } = await this.analytics.run({ organizationId: schedule.organizationId, definition: def });
-    const html = this.renderHtml(schedule.reportDefinition.name, data.columns, data.rows);
-    this.notificationClient.emit('report_email', {
-      recipients,
-      subject: `Report: ${schedule.reportDefinition.name}`,
-      html,
+
+    const own = await localesByAddress(this.prisma, recipients).catch((e) => {
+      this.logger.warn(`Could not look up recipient languages for a report: ${e}`);
+      return new Map<string, SupportedLocale>();
     });
+    const fallback = emailLocale(schedule.createdBy?.locale);
+    const groups = groupByLocale(recipients, (to) => own.get(to.trim().toLowerCase()) ?? fallback);
+    const generatedAt = new Date();
+
+    for (const [locale, group] of groups) {
+      const { subject, html } = scheduledReportEmail(locale, {
+        reportName: schedule.reportDefinition.name,
+        generatedAt,
+        columns: data.columns.map((c) => ({ label: c.label, align: c.kind === 'measure' ? 'right' : 'left' })),
+        rows: data.rows.slice(0, 200).map((r) => data.columns.map((c) => this.fmt(r[c.key], c.format, locale))),
+      });
+      this.notificationClient.emit('report_email', { recipients: group, subject, html });
+    }
   }
 
-  /** Escape a string for safe interpolation into report-email HTML (L5). */
-  private esc(v: unknown): string {
-    return String(v ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
-
-  private fmt(v: unknown, format?: string): string {
+  private fmt(v: unknown, format: string | undefined, locale: SupportedLocale): string {
     if (v == null) return '—';
-    if (format === 'hours') return `${Number(v).toFixed(1)}h`;
-    if (format === 'currency') return `€${Number(v).toFixed(2)}`;
-    if (format === 'percent') return `${Number(v)}%`;
-    if (format === 'number') return Number(v).toLocaleString();
+    if (format === 'hours') return `${formatNumberFor(locale, Number(v), 1)}h`;
+    if (format === 'currency') return new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(Number(v));
+    if (format === 'percent') return `${formatNumberFor(locale, Number(v), 2)}%`;
+    if (format === 'number') return formatNumberFor(locale, Number(v), 2);
     const s = String(v);
     if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
     return s;
-  }
-
-  private renderHtml(name: string, columns: Array<{ key: string; label: string; kind: string; format?: string }>, rows: Array<Record<string, unknown>>): string {
-    const th = columns.map((c) => `<th style="text-align:${c.kind === 'measure' ? 'right' : 'left'};padding:8px 12px;border-bottom:2px solid #e2e8f0;font-size:12px;color:#64748b;text-transform:uppercase;">${this.esc(c.label)}</th>`).join('');
-    const trs = rows.slice(0, 200).map((r) => {
-      const tds = columns.map((c) => `<td style="text-align:${c.kind === 'measure' ? 'right' : 'left'};padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:14px;">${this.esc(this.fmt(r[c.key], c.format))}</td>`).join('');
-      return `<tr>${tds}</tr>`;
-    }).join('');
-    return `
-      <div style="font-family:Inter,system-ui,sans-serif;color:#1e293b;">
-        <h2 style="margin:0 0 4px;">${this.esc(name)}</h2>
-        <p style="margin:0 0 16px;color:#64748b;font-size:13px;">Generated ${new Date().toUTCString()}</p>
-        ${rows.length === 0 ? '<p style="color:#64748b;">No data for this period.</p>' : `<table style="border-collapse:collapse;width:100%;"><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`}
-        <p style="margin-top:20px;color:#94a3b8;font-size:12px;">HBCField — scheduled report</p>
-      </div>`;
   }
 
   // ── CRUD ────────────────────────────────────────────────────────────────────
