@@ -96,6 +96,7 @@ export * from './security/tokens';
 
 // Push routing — see client.ts.
 export * from './notifications/push-channels';
+export * from './notifications/locale';
 
 // Counted time — see client.ts.
 export * from './attendance/counted-time';

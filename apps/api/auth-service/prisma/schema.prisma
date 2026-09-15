@@ -811,6 +811,13 @@ model User {
   // Display-only; does not affect stored timestamps or any server logic.
   timeFormat String? @default("24h")
 
+  // The language this person reads the app in: en | de | es | fr | it.
+  // Written by the phone when it registers for push and by either app when the
+  // language is changed. The server needs it because a push is composed HERE,
+  // long before any screen is open to translate it. NULL = never told (an old
+  // app build) and reads as English.
+  locale String?
+
   // Member's home IANA timezone. Used to anchor shifts / detect no-shows for a
   // LOGICAL space (no GPS on a no-show); falls back to the org timezone.
   timezone String?
