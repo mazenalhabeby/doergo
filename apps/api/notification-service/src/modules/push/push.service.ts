@@ -243,30 +243,9 @@ export class PushService {
   // ATTENDANCE NOTIFICATIONS
   // =========================================================================
 
-  async sendAutoClockOutPush(data: {
-    userId: string;
-    locationName: string;
-    totalHours: number;
-    reason: 'exceeded_duration' | 'end_of_day';
-  }) {
-    const params = { location: data.locationName, hours: roundTenth(data.totalHours) };
-    return this.sendToUser(
-      data.userId,
-      {
-        title: msg('attendance.autoClockOut.title'),
-        body: msg(
-          data.reason === 'exceeded_duration' ? 'attendance.autoClockOut.bodyExceeded' : 'attendance.autoClockOut.bodyEndOfDay',
-          params,
-        ),
-      },
-      {
-        type: 'auto_clock_out',
-        reason: data.reason,
-        locationName: data.locationName,
-        totalHours: data.totalHours,
-      },
-    );
-  }
+  // (No "clocked out automatically" push: nothing ends a shift for anybody. A
+  // shift LEFT open is closed with a temporary time and announced as
+  // `attendance.clock_out_unconfirmed` — see the attendance handler.)
 
   // Shift reminder engine: nudge the worker whose shift has ended but is still
   // clocked in. The `type`/`entryId` let the mobile app render the "I forgot" /
@@ -612,8 +591,4 @@ export function duration(totalMinutes: number): Msg {
   const h = Math.floor(totalMinutes / 60);
   const m = totalMinutes % 60;
   return h > 0 ? msg('common.durationHm', { h, m }) : msg('common.durationM', { m });
-}
-
-function roundTenth(n: number): number {
-  return Math.round(n * 10) / 10;
 }

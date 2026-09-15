@@ -1,4 +1,4 @@
-import { cleanRateCents } from '@hbcfield/shared';
+import { cleanRateCents, ORG_NOTIFICATION_PREF_KEYS, pickBooleanPrefs } from '@hbcfield/shared';
 import { Injectable, Logger, HttpStatus, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -1005,13 +1005,31 @@ export class OnboardingService {
     return { success: true, data: org };
   }
 
-  async updateNotificationPrefs(organizationId: string, prefs: any) {
+  /**
+   * The organization's notification switches — for the three member emails,
+   * the CEILING no member can lift (see notifications/email-prefs in shared).
+   *
+   * MERGED, and only known boolean keys: a screen that sends part of the set
+   * must not reset the rest to "unset", which for an email means ON.
+   */
+  async updateNotificationPrefs(organizationId: string, prefs: unknown) {
+    const org = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { notificationPrefs: true },
+    });
+    if (!org) {
+      return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'Organization not found' };
+    }
+    const merged = {
+      ...pickBooleanPrefs(org.notificationPrefs, ORG_NOTIFICATION_PREF_KEYS),
+      ...pickBooleanPrefs(prefs, ORG_NOTIFICATION_PREF_KEYS),
+    };
     await this.prisma.organization.update({
       where: { id: organizationId },
-      data: { notificationPrefs: prefs },
+      data: { notificationPrefs: merged },
     });
 
-    return { success: true, data: { notificationPrefs: prefs } };
+    return { success: true, data: { notificationPrefs: merged } };
   }
 
   async updateSecuritySettings(organizationId: string, settings: any) {

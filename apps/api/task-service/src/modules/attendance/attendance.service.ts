@@ -2253,6 +2253,8 @@ export class AttendanceService {
           orderBy: { leftRingAt: 'asc' },
           select: { id: true, leftRingAt: true },
         },
+        // Named in the member's email, so they can tell which shift is meant.
+        location: { select: { name: true } },
       },
     });
 
@@ -2322,6 +2324,7 @@ export class AttendanceService {
         clockOutAt: at.toISOString(),
         basis,
         timezone: entry.timezone ?? 'UTC',
+        locationName: entry.location?.name ?? null,
         organizationId: entry.organizationId,
       });
     }

@@ -1,4 +1,4 @@
-import { memberScopeFilter, cleanRateCents, normalizeLocale } from '@hbcfield/shared';
+import { memberScopeFilter, cleanRateCents, normalizeLocale, MEMBER_EMAILS, MEMBER_NOTIFICATION_PREF_KEYS, orgAllowsEmail, pickBooleanPrefs } from '@hbcfield/shared';
 import {
   Injectable,
   Logger,
@@ -2568,20 +2568,42 @@ export class UsersService {
   async getNotificationPrefs(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { notificationPrefs: true },
+      select: { notificationPrefs: true, organization: { select: { notificationPrefs: true } } },
     });
     if (!user) throw new NotFoundException('User not found');
-    return { data: (user.notificationPrefs as Record<string, boolean> | null) ?? {} };
+    return {
+      data: {
+        prefs: (user.notificationPrefs as Record<string, boolean> | null) ?? {},
+        /*
+          Which member emails the organization allows at all. A member cannot
+          read the organization's settings, and a switch they can flip that does
+          nothing — because the ceiling is off — is worse than no switch: the
+          screen shows it off and says why.
+        */
+        organizationAllows: Object.fromEntries(
+          MEMBER_EMAILS.map((kind) => [kind, orgAllowsEmail(user.organization?.notificationPrefs, kind)]),
+        ),
+      },
+    };
   }
 
-  /** Merge-update a user's own notification preferences. */
-  async updateNotificationPrefs(userId: string, prefs: Record<string, boolean>) {
+  /**
+   * Merge-update a user's own notification preferences.
+   *
+   * Only known keys, only booleans. The body is the member's own, but the JSON
+   * is read by the notification router and the email sender, and neither should
+   * find a string "false" (truthy) or a megabyte of junk in it.
+   */
+  async updateNotificationPrefs(userId: string, prefs: unknown) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { notificationPrefs: true },
     });
     if (!user) throw new NotFoundException('User not found');
-    const merged = { ...((user.notificationPrefs as Record<string, boolean> | null) ?? {}), ...prefs };
+    const merged = {
+      ...((user.notificationPrefs as Record<string, boolean> | null) ?? {}),
+      ...pickBooleanPrefs(prefs, MEMBER_NOTIFICATION_PREF_KEYS),
+    };
     await this.prisma.user.update({ where: { id: userId }, data: { notificationPrefs: merged } });
     return { data: merged };
   }

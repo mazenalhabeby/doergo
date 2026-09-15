@@ -500,7 +500,14 @@ describe('TasksService', () => {
 
       expect(result.success).toBe(true);
       expect(result.data.status).toBe(TaskStatus.ASSIGNED);
-      expect(mockNotificationClient.emit).toHaveBeenCalledWith('task_assigned', expect.any(Object));
+      // The actor rides on the event: the assignment email is never sent to
+      // somebody about work they gave themselves, and no address travels.
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+        'task_assigned',
+        expect.objectContaining({ workerId: 'tech-123', actorId: 'user-123' }),
+      );
+      const [, payload] = mockNotificationClient.emit.mock.calls.find(([event]: [string]) => event === 'task_assigned');
+      expect(payload).not.toHaveProperty('workerEmail');
     });
 
     it('should throw NotFoundException for non-existent task', async () => {

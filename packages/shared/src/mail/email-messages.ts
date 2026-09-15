@@ -40,14 +40,10 @@ const en = {
   'label.priority': 'Priority',
   'label.location': 'Location',
   'label.clockIn': 'Clock in',
-  'label.clockOut': 'Clock out',
-  'label.totalHours': 'Total hours',
   'label.member': 'Member',
   'label.distance': 'Distance from location',
   'label.allowedRadius': 'Allowed radius',
 
-  'unit.hours.one': '{{count}} hour',
-  'unit.hours.other': '{{count}} hours',
   'unit.meters': '{{meters}} m',
 
   'priority.LOW': 'Low',
@@ -101,15 +97,6 @@ const en = {
   'taskCompleted.heading': 'Task completed',
   'taskCompleted.body': 'The task has been marked as completed.',
 
-  // ── Automatic clock-out ─────────────────────────────────────────────────
-  'autoClockOut.subject': 'Automatic clock-out: {{location}}',
-  'autoClockOut.heading': 'Automatic clock-out notice',
-  'autoClockOut.reason.exceeded_duration':
-    'You were automatically clocked out because your shift exceeded the maximum allowed duration (16 hours).',
-  'autoClockOut.reason.end_of_day': 'You were automatically clocked out at the end of the day.',
-  'autoClockOut.details': 'Shift details',
-  'autoClockOut.contact': 'If you believe this was an error, please contact your supervisor.',
-
   // ── Scheduled report ────────────────────────────────────────────────────
   'report.subject': 'Report: {{name}}',
   'report.generated': 'Generated {{date}}',
@@ -138,6 +125,38 @@ const en = {
     'It opens your documents with {{org}} — both the ones waiting for your signature and the ones you have already signed.',
   'signReissue.button': 'Open my documents',
   'signReissue.validity': 'Valid until {{date}}. Any earlier link you were sent no longer works.',
+
+  // ── Member emails the reader can switch off (see notifications/email-prefs) ──
+  // Every one of them says where, in the footer.
+  'layout.emailPrefsHint': 'You can turn this email off in your notification settings in HBCField.',
+  'label.temporaryClockOut': 'Temporary clock-out',
+  'task.button': 'Open task',
+  'taskDigest.button': 'Open my tasks',
+  'taskDigest.assigned.subject.one': 'A task was assigned to you',
+  'taskDigest.assigned.subject.other': '{{count}} tasks were assigned to you',
+  'taskDigest.assigned.heading.one': 'A task was assigned to you',
+  'taskDigest.assigned.heading.other': '{{count}} tasks were assigned to you',
+  'taskDigest.assigned.intro.one': 'Since our last email, this task was assigned to you:',
+  'taskDigest.assigned.intro.other': 'Since our last email, these tasks were assigned to you:',
+  'taskDigest.completed.subject.one': 'A task you created was completed',
+  'taskDigest.completed.subject.other': '{{count}} tasks you created were completed',
+  'taskDigest.completed.heading.one': 'A task you created was completed',
+  'taskDigest.completed.heading.other': '{{count}} tasks you created were completed',
+  'taskDigest.completed.intro.one': 'Since our last email, this task you created was completed:',
+  'taskDigest.completed.intro.other': 'Since our last email, these tasks you created were completed:',
+  // A shift left open and closed by the sweep with a TEMPORARY time. The old
+  // "automatic clock-out" wording described a 16-hour cut-off that no longer
+  // exists, and nothing ever sent it.
+  'autoClockOut.subject': 'Your shift on {{day}} was closed — confirm your time',
+  'autoClockOut.heading': 'Your shift was closed automatically',
+  'autoClockOut.intro': 'Your shift on {{day}} was still open, so it was closed with a temporary clock-out time.',
+  'autoClockOut.basis.LEFT_SITE': 'The temporary time is when you were seen leaving the site.',
+  'autoClockOut.basis.SHIFT_END': 'The temporary time is the planned end of your shift.',
+  'autoClockOut.basis.CLOCK_IN_PLUS_8H': 'Your shift had no planned end, so the temporary time is eight hours after you clocked in.',
+  'autoClockOut.details': 'Shift details',
+  'autoClockOut.ask': 'Please tell us when you actually left. Until you do, the shift waits for review with the temporary time.',
+  'autoClockOut.button': 'Confirm when I left',
+  'autoClockOut.appHint': 'You can also answer in the HBCField app.',
 };
 
 export type EmailKey = keyof typeof en;
@@ -158,14 +177,10 @@ const de: Record<EmailKey, string> = {
   'label.priority': 'Priorität',
   'label.location': 'Standort',
   'label.clockIn': 'Eingestempelt',
-  'label.clockOut': 'Ausgestempelt',
-  'label.totalHours': 'Stunden gesamt',
   'label.member': 'Mitglied',
   'label.distance': 'Entfernung zum Standort',
   'label.allowedRadius': 'Erlaubter Radius',
 
-  'unit.hours.one': '{{count}} Stunde',
-  'unit.hours.other': '{{count}} Stunden',
   'unit.meters': '{{meters}} m',
 
   'priority.LOW': 'Niedrig',
@@ -215,13 +230,6 @@ const de: Record<EmailKey, string> = {
   'taskCompleted.heading': 'Aufgabe abgeschlossen',
   'taskCompleted.body': 'Die Aufgabe wurde als abgeschlossen markiert.',
 
-  'autoClockOut.subject': 'Automatisch ausgestempelt: {{location}}',
-  'autoClockOut.heading': 'Hinweis: automatisch ausgestempelt',
-  'autoClockOut.reason.exceeded_duration':
-    'Sie wurden automatisch ausgestempelt, weil Ihre Schicht die maximal erlaubte Dauer (16 Stunden) überschritten hat.',
-  'autoClockOut.reason.end_of_day': 'Sie wurden zum Tagesende automatisch ausgestempelt.',
-  'autoClockOut.details': 'Schichtdetails',
-  'autoClockOut.contact': 'Falls Sie glauben, dass es sich um einen Fehler handelt, wenden Sie sich bitte an Ihre Führungskraft.',
 
   'report.subject': 'Bericht: {{name}}',
   'report.generated': 'Erstellt am {{date}}',
@@ -249,6 +257,32 @@ const de: Record<EmailKey, string> = {
     'Er öffnet Ihre Dokumente bei {{org}} — sowohl die, die auf Ihre Unterschrift warten, als auch die bereits unterschriebenen.',
   'signReissue.button': 'Meine Dokumente öffnen',
   'signReissue.validity': 'Gültig bis {{date}}. Früher gesendete Links funktionieren nicht mehr.',
+  'layout.emailPrefsHint': 'Sie können diese E-Mail in Ihren Benachrichtigungseinstellungen in HBCField abschalten.',
+  'label.temporaryClockOut': 'Vorläufig ausgestempelt',
+  'task.button': 'Aufgabe öffnen',
+  'taskDigest.button': 'Meine Aufgaben öffnen',
+  'taskDigest.assigned.subject.one': 'Ihnen wurde eine Aufgabe zugewiesen',
+  'taskDigest.assigned.subject.other': 'Ihnen wurden {{count}} Aufgaben zugewiesen',
+  'taskDigest.assigned.heading.one': 'Ihnen wurde eine Aufgabe zugewiesen',
+  'taskDigest.assigned.heading.other': 'Ihnen wurden {{count}} Aufgaben zugewiesen',
+  'taskDigest.assigned.intro.one': 'Seit unserer letzten E-Mail wurde Ihnen diese Aufgabe zugewiesen:',
+  'taskDigest.assigned.intro.other': 'Seit unserer letzten E-Mail wurden Ihnen diese Aufgaben zugewiesen:',
+  'taskDigest.completed.subject.one': 'Eine von Ihnen erstellte Aufgabe wurde abgeschlossen',
+  'taskDigest.completed.subject.other': '{{count}} von Ihnen erstellte Aufgaben wurden abgeschlossen',
+  'taskDigest.completed.heading.one': 'Eine von Ihnen erstellte Aufgabe wurde abgeschlossen',
+  'taskDigest.completed.heading.other': '{{count}} von Ihnen erstellte Aufgaben wurden abgeschlossen',
+  'taskDigest.completed.intro.one': 'Seit unserer letzten E-Mail wurde diese von Ihnen erstellte Aufgabe abgeschlossen:',
+  'taskDigest.completed.intro.other': 'Seit unserer letzten E-Mail wurden diese von Ihnen erstellten Aufgaben abgeschlossen:',
+  'autoClockOut.subject': 'Ihre Schicht am {{day}} wurde geschlossen — bitte Zeit bestätigen',
+  'autoClockOut.heading': 'Ihre Schicht wurde automatisch geschlossen',
+  'autoClockOut.intro': 'Ihre Schicht am {{day}} war noch offen und wurde deshalb mit einer vorläufigen Ausstempelzeit geschlossen.',
+  'autoClockOut.basis.LEFT_SITE': 'Die vorläufige Zeit ist der Moment, in dem Sie den Standort verlassen haben.',
+  'autoClockOut.basis.SHIFT_END': 'Die vorläufige Zeit ist das geplante Ende Ihrer Schicht.',
+  'autoClockOut.basis.CLOCK_IN_PLUS_8H': 'Ihre Schicht hatte kein geplantes Ende, daher liegt die vorläufige Zeit acht Stunden nach Ihrem Einstempeln.',
+  'autoClockOut.details': 'Schichtdetails',
+  'autoClockOut.ask': 'Bitte teilen Sie uns mit, wann Sie tatsächlich gegangen sind. Bis dahin wartet die Schicht mit der vorläufigen Zeit auf Prüfung.',
+  'autoClockOut.button': 'Uhrzeit bestätigen',
+  'autoClockOut.appHint': 'Sie können auch in der HBCField-App antworten.',
 };
 
 const es: Record<EmailKey, string> = {
@@ -264,14 +298,10 @@ const es: Record<EmailKey, string> = {
   'label.priority': 'Prioridad',
   'label.location': 'Ubicación',
   'label.clockIn': 'Entrada',
-  'label.clockOut': 'Salida',
-  'label.totalHours': 'Horas totales',
   'label.member': 'Miembro',
   'label.distance': 'Distancia a la ubicación',
   'label.allowedRadius': 'Radio permitido',
 
-  'unit.hours.one': '{{count}} hora',
-  'unit.hours.other': '{{count}} horas',
   'unit.meters': '{{meters}} m',
 
   'priority.LOW': 'Baja',
@@ -320,13 +350,6 @@ const es: Record<EmailKey, string> = {
   'taskCompleted.heading': 'Tarea completada',
   'taskCompleted.body': 'La tarea se ha marcado como completada.',
 
-  'autoClockOut.subject': 'Salida fichada automáticamente: {{location}}',
-  'autoClockOut.heading': 'Aviso de salida automática',
-  'autoClockOut.reason.exceeded_duration':
-    'Se ha fichado tu salida automáticamente porque tu turno superó la duración máxima permitida (16 horas).',
-  'autoClockOut.reason.end_of_day': 'Se ha fichado tu salida automáticamente al final de la jornada.',
-  'autoClockOut.details': 'Detalles del turno',
-  'autoClockOut.contact': 'Si crees que se trata de un error, contacta con tu responsable.',
 
   'report.subject': 'Informe: {{name}}',
   'report.generated': 'Generado el {{date}}',
@@ -353,6 +376,32 @@ const es: Record<EmailKey, string> = {
   'signReissue.intro': 'Abre tus documentos con {{org}}: tanto los que esperan tu firma como los que ya has firmado.',
   'signReissue.button': 'Abrir mis documentos',
   'signReissue.validity': 'Válido hasta el {{date}}. Cualquier enlace anterior que te enviamos ya no funciona.',
+  'layout.emailPrefsHint': 'Puedes desactivar este correo en tus ajustes de notificaciones de HBCField.',
+  'label.temporaryClockOut': 'Salida provisional',
+  'task.button': 'Abrir tarea',
+  'taskDigest.button': 'Abrir mis tareas',
+  'taskDigest.assigned.subject.one': 'Se te ha asignado una tarea',
+  'taskDigest.assigned.subject.other': 'Se te han asignado {{count}} tareas',
+  'taskDigest.assigned.heading.one': 'Se te ha asignado una tarea',
+  'taskDigest.assigned.heading.other': 'Se te han asignado {{count}} tareas',
+  'taskDigest.assigned.intro.one': 'Desde nuestro último correo, se te ha asignado esta tarea:',
+  'taskDigest.assigned.intro.other': 'Desde nuestro último correo, se te han asignado estas tareas:',
+  'taskDigest.completed.subject.one': 'Se ha completado una tarea que creaste',
+  'taskDigest.completed.subject.other': 'Se han completado {{count}} tareas que creaste',
+  'taskDigest.completed.heading.one': 'Se ha completado una tarea que creaste',
+  'taskDigest.completed.heading.other': 'Se han completado {{count}} tareas que creaste',
+  'taskDigest.completed.intro.one': 'Desde nuestro último correo, se ha completado esta tarea que creaste:',
+  'taskDigest.completed.intro.other': 'Desde nuestro último correo, se han completado estas tareas que creaste:',
+  'autoClockOut.subject': 'Tu turno del {{day}} se ha cerrado: confirma tu hora',
+  'autoClockOut.heading': 'Tu turno se ha cerrado automáticamente',
+  'autoClockOut.intro': 'Tu turno del {{day}} seguía abierto, así que se cerró con una hora de salida provisional.',
+  'autoClockOut.basis.LEFT_SITE': 'La hora provisional es el momento en que saliste del lugar de trabajo.',
+  'autoClockOut.basis.SHIFT_END': 'La hora provisional es el final previsto de tu turno.',
+  'autoClockOut.basis.CLOCK_IN_PLUS_8H': 'Tu turno no tenía un final previsto, así que la hora provisional es ocho horas después de tu entrada.',
+  'autoClockOut.details': 'Detalles del turno',
+  'autoClockOut.ask': 'Indícanos cuándo saliste realmente. Hasta entonces, el turno queda pendiente de revisión con la hora provisional.',
+  'autoClockOut.button': 'Confirmar mi hora de salida',
+  'autoClockOut.appHint': 'También puedes responder en la app de HBCField.',
 };
 
 const fr: Record<EmailKey, string> = {
@@ -368,14 +417,10 @@ const fr: Record<EmailKey, string> = {
   'label.priority': 'Priorité',
   'label.location': 'Lieu',
   'label.clockIn': 'Arrivée',
-  'label.clockOut': 'Départ',
-  'label.totalHours': 'Total des heures',
   'label.member': 'Membre',
   'label.distance': 'Distance du lieu',
   'label.allowedRadius': 'Rayon autorisé',
 
-  'unit.hours.one': '{{count}} heure',
-  'unit.hours.other': '{{count}} heures',
   'unit.meters': '{{meters}} m',
 
   'priority.LOW': 'Basse',
@@ -425,13 +470,6 @@ const fr: Record<EmailKey, string> = {
   'taskCompleted.heading': 'Tâche terminée',
   'taskCompleted.body': 'La tâche a été marquée comme terminée.',
 
-  'autoClockOut.subject': 'Départ pointé automatiquement : {{location}}',
-  'autoClockOut.heading': 'Avis de départ automatique',
-  'autoClockOut.reason.exceeded_duration':
-    'Votre départ a été pointé automatiquement car votre poste a dépassé la durée maximale autorisée (16 heures).',
-  'autoClockOut.reason.end_of_day': 'Votre départ a été pointé automatiquement en fin de journée.',
-  'autoClockOut.details': 'Détails du poste',
-  'autoClockOut.contact': 'Si vous pensez qu’il s’agit d’une erreur, contactez votre responsable.',
 
   'report.subject': 'Rapport : {{name}}',
   'report.generated': 'Généré le {{date}}',
@@ -459,6 +497,32 @@ const fr: Record<EmailKey, string> = {
     'Il ouvre vos documents avec {{org}} — ceux qui attendent votre signature comme ceux que vous avez déjà signés.',
   'signReissue.button': 'Ouvrir mes documents',
   'signReissue.validity': 'Valable jusqu’au {{date}}. Les liens envoyés précédemment ne fonctionnent plus.',
+  'layout.emailPrefsHint': 'Vous pouvez désactiver cet e-mail dans vos paramètres de notification HBCField.',
+  'label.temporaryClockOut': 'Départ provisoire',
+  'task.button': 'Ouvrir la tâche',
+  'taskDigest.button': 'Ouvrir mes tâches',
+  'taskDigest.assigned.subject.one': 'Une tâche vous a été affectée',
+  'taskDigest.assigned.subject.other': '{{count}} tâches vous ont été affectées',
+  'taskDigest.assigned.heading.one': 'Une tâche vous a été affectée',
+  'taskDigest.assigned.heading.other': '{{count}} tâches vous ont été affectées',
+  'taskDigest.assigned.intro.one': 'Depuis notre dernier e-mail, cette tâche vous a été affectée :',
+  'taskDigest.assigned.intro.other': 'Depuis notre dernier e-mail, ces tâches vous ont été affectées :',
+  'taskDigest.completed.subject.one': 'Une tâche que vous avez créée est terminée',
+  'taskDigest.completed.subject.other': '{{count}} tâches que vous avez créées sont terminées',
+  'taskDigest.completed.heading.one': 'Une tâche que vous avez créée est terminée',
+  'taskDigest.completed.heading.other': '{{count}} tâches que vous avez créées sont terminées',
+  'taskDigest.completed.intro.one': 'Depuis notre dernier e-mail, cette tâche que vous avez créée a été terminée :',
+  'taskDigest.completed.intro.other': 'Depuis notre dernier e-mail, ces tâches que vous avez créées ont été terminées :',
+  'autoClockOut.subject': 'Votre poste du {{day}} a été clôturé — confirmez votre heure',
+  'autoClockOut.heading': 'Votre poste a été clôturé automatiquement',
+  'autoClockOut.intro': 'Votre poste du {{day}} était encore ouvert ; il a donc été clôturé avec une heure de départ provisoire.',
+  'autoClockOut.basis.LEFT_SITE': 'L’heure provisoire correspond au moment où vous avez quitté le site.',
+  'autoClockOut.basis.SHIFT_END': 'L’heure provisoire correspond à la fin prévue de votre poste.',
+  'autoClockOut.basis.CLOCK_IN_PLUS_8H': 'Votre poste n’avait pas de fin prévue ; l’heure provisoire est donc fixée huit heures après votre arrivée.',
+  'autoClockOut.details': 'Détails du poste',
+  'autoClockOut.ask': 'Merci de nous indiquer l’heure à laquelle vous êtes réellement parti. D’ici là, le poste reste en attente de vérification avec l’heure provisoire.',
+  'autoClockOut.button': 'Confirmer mon heure de départ',
+  'autoClockOut.appHint': 'Vous pouvez aussi répondre dans l’application HBCField.',
 };
 
 const it: Record<EmailKey, string> = {
@@ -474,14 +538,10 @@ const it: Record<EmailKey, string> = {
   'label.priority': 'Priorità',
   'label.location': 'Luogo',
   'label.clockIn': 'Entrata',
-  'label.clockOut': 'Uscita',
-  'label.totalHours': 'Ore totali',
   'label.member': 'Membro',
   'label.distance': 'Distanza dal luogo',
   'label.allowedRadius': 'Raggio consentito',
 
-  'unit.hours.one': '{{count}} ora',
-  'unit.hours.other': '{{count}} ore',
   'unit.meters': '{{meters}} m',
 
   'priority.LOW': 'Bassa',
@@ -530,13 +590,6 @@ const it: Record<EmailKey, string> = {
   'taskCompleted.heading': 'Attività completata',
   'taskCompleted.body': 'L’attività è stata segnata come completata.',
 
-  'autoClockOut.subject': 'Uscita timbrata automaticamente: {{location}}',
-  'autoClockOut.heading': 'Avviso di uscita automatica',
-  'autoClockOut.reason.exceeded_duration':
-    'La tua uscita è stata timbrata automaticamente perché il turno ha superato la durata massima consentita (16 ore).',
-  'autoClockOut.reason.end_of_day': 'La tua uscita è stata timbrata automaticamente a fine giornata.',
-  'autoClockOut.details': 'Dettagli del turno',
-  'autoClockOut.contact': 'Se pensi che si tratti di un errore, contatta il tuo responsabile.',
 
   'report.subject': 'Report: {{name}}',
   'report.generated': 'Generato il {{date}}',
@@ -563,6 +616,32 @@ const it: Record<EmailKey, string> = {
   'signReissue.intro': 'Apre i tuoi documenti con {{org}}: sia quelli in attesa della tua firma sia quelli che hai già firmato.',
   'signReissue.button': 'Apri i miei documenti',
   'signReissue.validity': 'Valido fino al {{date}}. I link inviati in precedenza non funzionano più.',
+  'layout.emailPrefsHint': 'Puoi disattivare questa email nelle impostazioni delle notifiche di HBCField.',
+  'label.temporaryClockOut': 'Uscita provvisoria',
+  'task.button': 'Apri attività',
+  'taskDigest.button': 'Apri le mie attività',
+  'taskDigest.assigned.subject.one': 'Ti è stata assegnata un’attività',
+  'taskDigest.assigned.subject.other': 'Ti sono state assegnate {{count}} attività',
+  'taskDigest.assigned.heading.one': 'Ti è stata assegnata un’attività',
+  'taskDigest.assigned.heading.other': 'Ti sono state assegnate {{count}} attività',
+  'taskDigest.assigned.intro.one': 'Dalla nostra ultima email, ti è stata assegnata questa attività:',
+  'taskDigest.assigned.intro.other': 'Dalla nostra ultima email, ti sono state assegnate queste attività:',
+  'taskDigest.completed.subject.one': 'Un’attività che hai creato è stata completata',
+  'taskDigest.completed.subject.other': '{{count}} attività che hai creato sono state completate',
+  'taskDigest.completed.heading.one': 'Un’attività che hai creato è stata completata',
+  'taskDigest.completed.heading.other': '{{count}} attività che hai creato sono state completate',
+  'taskDigest.completed.intro.one': 'Dalla nostra ultima email, questa attività che hai creato è stata completata:',
+  'taskDigest.completed.intro.other': 'Dalla nostra ultima email, queste attività che hai creato sono state completate:',
+  'autoClockOut.subject': 'Il tuo turno di {{day}} è stato chiuso: conferma l’orario',
+  'autoClockOut.heading': 'Il tuo turno è stato chiuso automaticamente',
+  'autoClockOut.intro': 'Il tuo turno di {{day}} era ancora aperto, quindi è stato chiuso con un orario di uscita provvisorio.',
+  'autoClockOut.basis.LEFT_SITE': 'L’orario provvisorio è il momento in cui hai lasciato il luogo di lavoro.',
+  'autoClockOut.basis.SHIFT_END': 'L’orario provvisorio è la fine prevista del tuo turno.',
+  'autoClockOut.basis.CLOCK_IN_PLUS_8H': 'Il tuo turno non aveva una fine prevista, quindi l’orario provvisorio è otto ore dopo la tua entrata.',
+  'autoClockOut.details': 'Dettagli del turno',
+  'autoClockOut.ask': 'Indicaci quando sei uscito davvero. Fino ad allora il turno resta in attesa di verifica con l’orario provvisorio.',
+  'autoClockOut.button': 'Conferma l’orario di uscita',
+  'autoClockOut.appHint': 'Puoi rispondere anche nell’app HBCField.',
 };
 
 export const EMAIL_MESSAGES: Record<SupportedLocale, Record<EmailKey, string>> = { en, de, es, fr, it };

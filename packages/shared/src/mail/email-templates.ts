@@ -182,45 +182,89 @@ export function geofenceAlertEmail(
   return done(t, t.text(`geofence.subject.${action}` as const, { name: data.userName }), body);
 }
 
-export function autoClockOutEmail(
+/** A button to a page in the product. The url is ours, and escaped anyway. */
+function button(t: EmailTranslator, label: EmailKey, url: string): string {
+  return `
+        <div style="text-align: center; margin: 28px 0;">
+          <a href="${escapeHtml(url)}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+            ${t.html(label)}
+          </a>
+        </div>`;
+}
+
+/** Why the reader is getting this, and where it is switched off. */
+function prefsFooter(t: EmailTranslator): string {
+  return `
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+        <p style="color: #94a3b8; font-size: 12px;">${t.html('layout.emailPrefsHint')}</p>`;
+}
+
+/**
+ * A moment in the zone the shift was lived in, in the reader's language. An
+ * unknown zone reads UTC rather than throwing out of a delivery path.
+ */
+function shiftMoment(
+  t: EmailTranslator,
+  value: string | Date,
+  timezone: string | null | undefined,
+  options: Intl.DateTimeFormatOptions,
+): string {
+  try {
+    return t.date(value, { ...options, timeZone: timezone || 'UTC' });
+  } catch {
+    return t.date(value, { ...options, timeZone: 'UTC' });
+  }
+}
+
+const CLOSE_BASES = ['LEFT_SITE', 'SHIFT_END', 'CLOCK_IN_PLUS_8H'] as const;
+
+/**
+ * A shift left open, closed by the sweep with a TEMPORARY clock-out.
+ *
+ * It says the time, why that time, and asks for the real one — the member is
+ * the only person who knows it, and the entry waits in review until they say.
+ * It replaced an "automatic clock-out" email that described a rule the product
+ * no longer has (a hard 16-hour limit, an end-of-day cut-off) and that nothing
+ * ever sent: the product does not end anybody's shift for them, it closes a
+ * record that was left open.
+ */
+export function shiftClosedEmail(
   locale: Locale,
   data: {
     userName: string;
-    locationName: string;
-    clockInTime: string;
-    clockOutTime: string;
-    totalHours: number;
-    reason: 'exceeded_duration' | 'end_of_day';
+    locationName?: string | null;
+    clockInAt: string | Date;
+    clockOutAt: string | Date;
+    timezone?: string | null;
+    basis?: string | null;
+    confirmUrl: string;
   },
 ): RenderedEmail {
   const t = emailTranslator(locale);
-  const reason = data.reason === 'exceeded_duration' ? 'exceeded_duration' : 'end_of_day';
-  const hours = t.text({ plural: 'unit.hours', count: Math.round(data.totalHours * 10) / 10 });
+  const day = shiftMoment(t, data.clockInAt, data.timezone, { weekday: 'long', day: 'numeric', month: 'long' });
+  const time = (v: string | Date) => shiftMoment(t, v, data.timezone, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  const basis = CLOSE_BASES.find((b) => b === data.basis);
   const body = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #d97706;">${t.html('autoClockOut.heading')}</h2>
         <p>${t.html('layout.greeting', { name: data.userName })}</p>
-        <p>${t.html(`autoClockOut.reason.${reason}` as const)}</p>
+        <p>${t.html('autoClockOut.intro', { day: bold(day) })}</p>
+        ${basis ? `<p>${t.html(`autoClockOut.basis.${basis}` as const)}</p>` : ''}
 
         <div style="background-color: #f8fafc; border-radius: 8px; padding: 16px; margin: 20px 0;">
           <h3 style="margin-top: 0; color: #334155;">${t.html('autoClockOut.details')}</h3>
-          ${field(t, 'label.location', data.locationName)}
-          ${field(t, 'label.clockIn', data.clockInTime)}
-          ${field(t, 'label.clockOut', data.clockOutTime)}
-          ${field(t, 'label.totalHours', hours)}
+          ${data.locationName ? field(t, 'label.location', data.locationName) : ''}
+          ${field(t, 'label.clockIn', time(data.clockInAt))}
+          ${field(t, 'label.temporaryClockOut', time(data.clockOutAt))}
         </div>
 
-        <p style="color: #64748b; font-size: 14px;">
-          ${t.html('autoClockOut.contact')}
-        </p>
-
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
-        <p style="color: #94a3b8; font-size: 12px;">
-          ${t.html('layout.automatedMessage')}
-        </p>
+        <p>${t.html('autoClockOut.ask')}</p>
+        ${button(t, 'autoClockOut.button', data.confirmUrl)}
+        <p style="color: #64748b; font-size: 14px;">${t.html('autoClockOut.appHint')}</p>
+        ${prefsFooter(t)}
       </div>
     `;
-  return done(t, t.text('autoClockOut.subject', { location: data.locationName }), body);
+  return done(t, t.text('autoClockOut.subject', { day }), body);
 }
 
 interface TaskFacts {
@@ -228,6 +272,8 @@ interface TaskFacts {
   description?: string | null;
   priority?: string | null;
   locationAddress?: string | null;
+  /** Where the task opens. Without one the email carries no button. */
+  url?: string | null;
 }
 
 export function taskAssignedEmail(locale: Locale, task: TaskFacts): RenderedEmail {
@@ -239,6 +285,8 @@ export function taskAssignedEmail(locale: Locale, task: TaskFacts): RenderedEmai
       ${field(t, 'label.description', task.description || na)}
       ${field(t, 'label.priority', priorityLabel(t, task.priority))}
       ${field(t, 'label.location', task.locationAddress || na)}
+      ${task.url ? button(t, 'task.button', task.url) : ''}
+      ${prefsFooter(t)}
     `;
   return done(t, t.text('taskAssigned.subject', { task: task.title }), body);
 }
@@ -249,8 +297,44 @@ export function taskCompletedEmail(locale: Locale, task: TaskFacts): RenderedEma
       <h2>${t.html('taskCompleted.heading')}</h2>
       ${field(t, 'label.title', task.title ?? '')}
       <p>${t.html('taskCompleted.body')}</p>
+      ${task.url ? button(t, 'task.button', task.url) : ''}
+      ${prefsFooter(t)}
     `;
   return done(t, t.text('taskCompleted.subject', { task: task.title }), body);
+}
+
+/**
+ * Several of the same task email folded into one.
+ *
+ * Twenty tasks assigned in one go are one piece of news to the person who got
+ * them. The first went on its own at once (see KeyedCoalescer); this carries the
+ * rest of the burst, NAMED rather than counted — a bare count makes the reader
+ * open the app to learn whether any of it matters.
+ */
+export function taskDigestEmail(
+  locale: Locale,
+  data: { kind: 'assigned' | 'completed'; tasks: TaskFacts[]; url?: string | null },
+): RenderedEmail {
+  const t = emailTranslator(locale);
+  const kind = data.kind === 'completed' ? 'completed' : 'assigned';
+  const count = data.tasks.length;
+  const items = data.tasks
+    .map((task) => {
+      const title = escapeHtml(task.title ?? '');
+      const link = task.url ? `<a href="${escapeHtml(task.url)}" style="color: #2563eb;">${title}</a>` : title;
+      return `<li style="margin-bottom: 6px;">${link}</li>`;
+    })
+    .join('');
+  const body = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>${t.html({ plural: `taskDigest.${kind}.heading` as const, count })}</h2>
+        <p>${t.html({ plural: `taskDigest.${kind}.intro` as const, count })}</p>
+        <ul style="padding-left: 20px;">${items}</ul>
+        ${data.url ? button(t, 'taskDigest.button', data.url) : ''}
+        ${prefsFooter(t)}
+      </div>
+    `;
+  return done(t, t.text({ plural: `taskDigest.${kind}.subject` as const, count }), body);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

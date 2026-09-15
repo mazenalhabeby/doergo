@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import {
-  autoClockOutEmail,
   DEFAULT_LOCALE,
   geofenceAlertEmail,
   groupByLocale,
@@ -10,8 +9,6 @@ import {
   mailRoutes,
   normalizeLocale,
   sendViaFirstWorking,
-  taskAssignedEmail,
-  taskCompletedEmail,
   type MailRoute,
   type RenderedEmail,
   type SupportedLocale,
@@ -127,25 +124,13 @@ export class EmailService {
     }
   }
 
-  async sendTaskAssignedEmail(task: Parameters<typeof taskAssignedEmail>[1], assignee: EmailRecipient) {
-    return this.sendToMembers([assignee], (locale) => taskAssignedEmail(locale, task));
-  }
-
-  async sendTaskCompletedEmail(task: Parameters<typeof taskCompletedEmail>[1], creator: EmailRecipient) {
-    return this.sendToMembers([creator], (locale) => taskCompletedEmail(locale, task));
-  }
-
-  // =========================================================================
-  // ATTENDANCE NOTIFICATIONS
-  // =========================================================================
-
-  async sendAutoClockOutEmail(
-    data: Parameters<typeof autoClockOutEmail>[1] & { userId?: string | null; userEmail: string },
-  ) {
-    return this.sendToMembers([{ id: data.userId, email: data.userEmail }], (locale) =>
-      autoClockOutEmail(locale, data),
-    );
-  }
+  /*
+    The task and shift emails are not sent from here: they go through
+    MemberEmailsService, which resolves the address from the user id and checks
+    the preferences. The helpers that stood here took an address from the
+    caller, and were the reason those emails could only ever have gone to an
+    address an event carried — which none did.
+  */
 
   /** To everybody who watches the member — each in their own language. */
   async sendGeofenceAlertEmail(

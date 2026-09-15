@@ -986,7 +986,13 @@
       "attendanceDescription": "Rappels de pointage d'arrivée/départ",
       "timeOff": "Congés",
       "timeOffDescription": "Approbations et mises à jour des demandes",
-      "footerNote": "Les préférences de notification sont stockées localement. Les autorisations de notifications push sont gérées dans les paramètres de votre appareil."
+      "footerNote": "Les catégories sont stockées sur cet appareil ; les choix d’e-mail sont enregistrés dans votre compte. Les autorisations de notifications push sont gérées dans les paramètres de votre appareil.",
+      "emails": "E-mail",
+      "emailTaskAssigned": "Une tâche m’est affectée",
+      "emailTaskCompleted": "Une tâche que j’ai créée est terminée",
+      "emailAutoClockOut": "Un poste que j’ai laissé ouvert est clôturé",
+      "emailOffByOrg": "Désactivé pour votre organisation",
+      "emailSaveFailed": "Impossible d’enregistrer vos paramètres e-mail"
     },
     "about": {
       "title": "À propos",

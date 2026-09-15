@@ -27,9 +27,9 @@ describe('render', () => {
   });
 
   it('formats numbers the way the reader writes them', () => {
-    const body = msg('attendance.autoClockOut.bodyEndOfDay', { location: 'Lager', hours: 8.5 });
-    expect(render('en', body)).toContain('(8.5 h)');
-    expect(render('de', body)).toContain('(8,5 Std.)');
+    const body = msg('attendance.shiftReminder.bodyUnscheduled', { location: 'Lager', hours: 8.5 });
+    expect(render('en', body)).toContain('about 8.5 h');
+    expect(render('de', body)).toContain('etwa 8,5 Std.');
   });
 
   it('passes a person’s own words through untouched, and trims them for a lock screen', () => {

@@ -244,6 +244,7 @@ export class ReportsService {
       oldStatus: TaskStatus.IN_PROGRESS,
       newStatus: TaskStatus.COMPLETED,
       reportId: result.report.id,
+      actorId: data.userId,
     });
 
     return success(result.report, 'Task completed successfully');

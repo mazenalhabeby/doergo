@@ -19,7 +19,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { IsString, IsOptional, IsEmail, IsNotEmpty, IsIn, ValidateIf, IsBoolean, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsNotEmpty, IsIn, ValidateIf, IsBoolean, IsObject, MaxLength } from 'class-validator';
 import { join } from 'path';
 import { mkdir, writeFile, unlink } from 'fs/promises';
 import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData, AllowCustomer, SUPPORTED_LOCALES, type SupportedLocale } from '@hbcfield/shared';
@@ -95,6 +95,18 @@ class UpdateMyEmailDto {
   @IsString()
   @IsNotEmpty({ message: 'Current password is required' })
   currentPassword: string;
+}
+
+/**
+ * A member's own notification switches. Declared as a class so the global
+ * ValidationPipe checks it — a bare `{ prefs?: … }` type is not validated at
+ * all. Which KEYS may be stored is decided in auth-service against
+ * MEMBER_NOTIFICATION_PREF_KEYS; anything else is dropped there.
+ */
+class UpdateMyNotificationPrefsDto {
+  @IsOptional()
+  @IsObject()
+  prefs?: Record<string, boolean>;
 }
 
 @ApiTags('users')
@@ -178,7 +190,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Get your notification opt-out preferences' })
   async getNotificationPrefs(@CurrentUser() user: CurrentUserData) {
     return firstValueFrom(
-      this.authClient.send({ cmd: 'get_notification_prefs' }, { userId: user.id }),
+      this.authClient.send({ cmd: 'get_my_notification_prefs' }, { userId: user.id }),
     );
   }
 
@@ -186,10 +198,10 @@ export class UsersController {
   @ApiOperation({ summary: 'Update your notification opt-out preferences (category → boolean)' })
   async updateNotificationPrefs(
     @CurrentUser() user: CurrentUserData,
-    @Body() dto: { prefs?: Record<string, boolean> },
+    @Body() dto: UpdateMyNotificationPrefsDto,
   ) {
     return firstValueFrom(
-      this.authClient.send({ cmd: 'update_notification_prefs' }, {
+      this.authClient.send({ cmd: 'update_my_notification_prefs' }, {
         userId: user.id,
         prefs: dto?.prefs || {},
       }),

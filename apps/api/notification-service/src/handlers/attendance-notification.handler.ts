@@ -1,6 +1,7 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { EmailService } from '../modules/email/email.service';
+import { MemberEmailsService } from '../modules/email/member-emails.service';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
@@ -52,6 +53,7 @@ export class AttendanceNotificationHandler {
 
   constructor(
     private readonly emailService: EmailService,
+    private readonly memberEmails: MemberEmailsService,
     private readonly pushService: PushService,
     private readonly websocketGateway: WebsocketGateway,
     private readonly store: NotificationStore,
@@ -64,55 +66,18 @@ export class AttendanceNotificationHandler {
     this.websocketGateway.emitPresenceChanged(data.userId, data.presence, data.organizationId);
   }
 
-  @EventPattern('attendance_auto_clock_out')
-  async handleAutoClockOut(@Payload() data: {
-    userId: string;
-    userEmail: string;
-    userName: string;
-    locationName: string;
-    clockInTime: string;
-    clockOutTime: string;
-    totalHours: number;
-    reason: 'exceeded_duration' | 'end_of_day';
-    organizationId: string;
-  }) {
-    this.logger.log(`Auto clock-out: user=${data.userName}, reason=${data.reason}`);
+  /*
+    There is no `attendance_auto_clock_out` handler any more, on purpose.
 
-    try {
-      await this.emailService.sendAutoClockOutEmail({
-        userId: data.userId,
-        userEmail: data.userEmail,
-        userName: data.userName,
-        locationName: data.locationName,
-        clockInTime: data.clockInTime,
-        clockOutTime: data.clockOutTime,
-        totalHours: data.totalHours,
-        reason: data.reason,
-      });
-    } catch (error) {
-      this.logger.error(`Failed to send auto clock-out email: ${error}`);
-    }
-
-    try {
-      await this.pushService.sendAutoClockOutPush({
-        userId: data.userId,
-        locationName: data.locationName,
-        totalHours: data.totalHours,
-        reason: data.reason,
-      });
-    } catch (error) {
-      this.logger.error(`Failed to send auto clock-out push: ${error}`);
-    }
-
-    this.websocketGateway.emitToOrganization(data.organizationId, 'attendance_auto_clock_out', {
-      userId: data.userId,
-      userName: data.userName,
-      locationName: data.locationName,
-      totalHours: data.totalHours,
-      reason: data.reason,
-      timestamp: new Date().toISOString(),
-    });
-  }
+    One stood here — an email, a push and a socket event for a shift "clocked
+    out automatically" after 16 hours or at the end of the day. Nothing has
+    emitted that event since forced clock-outs were retired: the product never
+    ends a shift for anybody. What does exist is the open-shift sweep, which
+    closes a shift LEFT open with a temporary time and asks the member for the
+    real one — `attendance_shift_closed_provisionally`, below, and that is where
+    the email now goes. A handler for an event nobody sends reads like a
+    delivery guarantee and is not one.
+  */
 
   // Shift reminder engine: a worker's shift ended but they're still clocked in.
   // Push the worker + live-update their org dashboard. Never force-closes.
@@ -414,6 +379,7 @@ export class AttendanceNotificationHandler {
     they actually left — their answer, or the real clock-out their phone may
     still be holding, replaces it. Not pushed to supervisors: the entry is
     already waiting in approvals, and a push per forgotten clock-out is noise.
+    This is the only automatic close the product has.
   */
   @EventPattern('attendance_shift_closed_provisionally')
   async handleShiftClosedProvisionally(@Payload() data: {
@@ -423,6 +389,7 @@ export class AttendanceNotificationHandler {
     clockOutAt: string;
     basis: string;
     timezone?: string | null;
+    locationName?: string | null;
     organizationId: string;
   }) {
     const text: LocalizedText = {
@@ -436,6 +403,15 @@ export class AttendanceNotificationHandler {
       await this.pushService.sendAttendanceResolvedPush({ recipientIds: [data.userId], text, type: 'attendance.clock_out_unconfirmed', entryId: data.entryId });
     } catch (error) {
       this.logger.error(`Failed to send provisional clock-out push: ${error}`);
+    }
+    // …and by email, with the temporary time and a link to answer. A phone
+    // switched off for the weekend never saw the push, and the answer is what
+    // the member's hours are counted from. Preferences decide whether it goes.
+    // After the push: an SMTP round trip must not delay the phone.
+    try {
+      await this.memberEmails.shiftClosed(data);
+    } catch (error) {
+      this.logger.error(`Failed to send provisional clock-out email: ${error}`);
     }
     this.websocketGateway.emitToUser(data.userId, 'attendance_shift_closed_provisionally', { entryId: data.entryId, clockOutAt: data.clockOutAt });
     // Boards refresh: the same org-wide signal a clock-out sends.

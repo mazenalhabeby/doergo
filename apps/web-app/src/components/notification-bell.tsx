@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import type { TaskEventPayload } from "@/types/socket-events"
 import {
   Bell, UserPlus, ClipboardList, MessageSquare, CheckCircle,
-  AlertTriangle, Clock, MapPin, Coffee, Paperclip, XCircle, Send, ClipboardCheck, PenLine, CalendarDays,
+  Clock, MapPin, Coffee, Paperclip, XCircle, Send, ClipboardCheck, PenLine, CalendarDays,
   Receipt, Package,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -100,7 +100,7 @@ type NotificationType =
   | "task_created" | "task_assigned" | "task_completed" | "task_declined"
   | "task_status_changed" | "comment_added" | "attachment_added"
   | "join_request" | "join_approved" | "join_rejected"
-  | "clock_in" | "clock_out" | "auto_clock_out" | "geofence_alert"
+  | "clock_in" | "clock_out" | "geofence_alert"
   | "pending_approval"
   | "break_started" | "break_ended"
   | "invitation_created"
@@ -140,7 +140,6 @@ const TYPE_CONFIG: Record<NotificationType, { icon: typeof Bell; color: string; 
   join_rejected:      { icon: XCircle, color: "text-red-600", bg: "bg-red-50" },
   clock_in:           { icon: Clock, color: "text-green-600", bg: "bg-green-50" },
   clock_out:          { icon: Clock, color: "text-muted-foreground", bg: "bg-muted" },
-  auto_clock_out:     { icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50" },
   geofence_alert:     { icon: MapPin, color: "text-red-600", bg: "bg-red-50" },
   pending_approval:   { icon: ClipboardCheck, color: "text-amber-600", bg: "bg-amber-50" },
   break_started:      { icon: Coffee, color: "text-amber-600", bg: "bg-amber-50" },
@@ -389,9 +388,6 @@ export function NotificationBell() {
       subscribe<AttendanceEventPayload>("attendance.clockOut", (d) => {
         const { name, place } = attendanceInfo(d, d?.timeEntry?.clockOutPlace ?? d?.timeEntry?.clockInPlace, t)
         add("clock_out", name || t("notifications.clockOut"), [t("notifications.clockOutAction", "Clocked out"), place].filter(Boolean).join(" · "), attendanceHref)
-      }),
-      subscribe<AttendanceEventPayload>("attendance_auto_clock_out", (d) => {
-        add("auto_clock_out", t("notifications.autoClockOut"), d.userName || "", attendanceHref)
       }),
       subscribe<AttendanceEventPayload>("attendance_geofence_alert", (d) => {
         add("geofence_alert", t("notifications.geofenceAlert"), d.userName || "", attendanceHref)

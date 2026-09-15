@@ -3,17 +3,18 @@ import { join } from 'path';
 import {
   EMAIL_MESSAGES,
   SUPPORTED_LOCALES,
-  autoClockOutEmail,
   emailTranslator,
   geofenceAlertEmail,
   invitationEmail,
   passwordResetEmail,
   scheduledReportEmail,
+  shiftClosedEmail,
   signLinkEmail,
   signReissueEmail,
   subjectLine,
   taskAssignedEmail,
   taskCompletedEmail,
+  taskDigestEmail,
   type EmailKey,
 } from '@hbcfield/shared';
 
@@ -137,7 +138,10 @@ describe('email templates', () => {
       passwordResetEmail(locale, { firstName: 'A', resetLink: 'https://x', expiresInHours: 1 }),
       invitationEmail(locale, { organizationName: 'Acme', invitationCode: 'ABCDE12345', targetRole: 'EMPLOYEE', expiresAt: EXPIRES }),
       geofenceAlertEmail(locale, { userName: 'A', locationName: 'B', distance: 120.4, allowedRadius: 50, action: 'clock_out' }),
-      autoClockOutEmail(locale, { userName: 'A', locationName: 'B', clockInTime: '08:00', clockOutTime: '18:00', totalHours: 10, reason: 'end_of_day' }),
+      shiftClosedEmail(locale, { userName: 'A', locationName: 'B', clockInAt: EXPIRES, clockOutAt: EXPIRES, timezone: 'Europe/Vienna', basis: 'SHIFT_END', confirmUrl: 'https://x' }),
+      shiftClosedEmail(locale, { userName: 'A', clockInAt: EXPIRES, clockOutAt: EXPIRES, timezone: 'Not/AZone', basis: 'nonsense', confirmUrl: 'https://x' }),
+      taskDigestEmail(locale, { kind: 'assigned', tasks: [{ title: 'T', url: 'https://x/tasks/1' }], url: 'https://x/tasks' }),
+      taskDigestEmail(locale, { kind: 'completed', tasks: [{ title: 'T' }, { title: 'U' }] }),
       taskAssignedEmail(locale, { title: 'T', priority: 'HIGH' }),
       taskCompletedEmail(locale, { title: 'T' }),
       scheduledReportEmail(locale, { reportName: 'R', generatedAt: EXPIRES, columns: [], rows: [] }),
@@ -157,7 +161,8 @@ describe('email templates', () => {
     const emails = [
       invitationEmail('en', { organizationName: org, invitationCode: evil, targetRole: evil, expiresAt: EXPIRES }),
       geofenceAlertEmail('de', { userName: evil, locationName: org, distance: 1, allowedRadius: 1, action: 'clock_in' }),
-      autoClockOutEmail('fr', { userName: evil, locationName: org, clockInTime: evil, clockOutTime: '1', totalHours: 1, reason: 'exceeded_duration' }),
+      shiftClosedEmail('fr', { userName: evil, locationName: org, clockInAt: EXPIRES, clockOutAt: EXPIRES, basis: evil, confirmUrl: 'https://x/"onmouseover="' }),
+      taskDigestEmail('de', { kind: 'assigned', tasks: [{ title: evil, url: 'https://x/"onmouseover="' }, { title: org }], url: 'https://x' }),
       taskAssignedEmail('es', { title: evil, description: org, priority: evil, locationAddress: evil }),
       taskCompletedEmail('it', { title: evil }),
       passwordResetEmail('en', { firstName: evil, resetLink: 'https://x/"><script>', expiresInHours: 1 }),
@@ -208,8 +213,10 @@ describe('email templates', () => {
   });
 
   it('writes numbers and dates the way the reader does', () => {
-    expect(autoClockOutEmail('de', { userName: 'A', locationName: 'B', clockInTime: '', clockOutTime: '', totalHours: 8.5, reason: 'end_of_day' }).html)
-      .toContain('8,5 Stunden');
+    // The shift's own zone and the reader's language: 12:00 UTC is 14:00 in Vienna.
+    const closed = shiftClosedEmail('de', { userName: 'A', clockInAt: EXPIRES, clockOutAt: EXPIRES, timezone: 'Europe/Vienna', basis: 'SHIFT_END', confirmUrl: 'https://x' });
+    expect(closed.subject).toBe('Ihre Schicht am Sonntag, 20. September wurde geschlossen — bitte Zeit bestätigen');
+    expect(closed.html).toContain('14:00');
     expect(invitationEmail('es', { organizationName: 'A', invitationCode: 'C', targetRole: 'ADMIN', expiresAt: EXPIRES }).html)
       .toContain('20 de septiembre de 2026');
     expect(emailTranslator('fr').number(1234.5)).toBe(new Intl.NumberFormat('fr', { maximumFractionDigits: 1 }).format(1234.5));

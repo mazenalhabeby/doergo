@@ -13,7 +13,10 @@ import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MEMBER_EMAIL_PREF, type MemberEmail } from '@hbcfield/shared/client';
 import { useTheme } from '../../../src/contexts/theme-context';
+import { useToast } from '../../../src/contexts/toast-context';
+import { userApi } from '../../../src/lib/api';
 import { SheetHeader, ScreenContainer } from '../../../src/components';
 import {
   COLORS,
@@ -37,17 +40,54 @@ const defaultPrefs: NotificationPrefs = {
   timeOff: true,
 };
 
+/*
+  The emails, unlike the categories above, live on the SERVER: the email is
+  composed and sent while the phone may be switched off, so a choice kept on
+  the device could never reach it. Same switches as web Settings → Email
+  notifications, and the same rule — an email the organization has turned off
+  shows off, disabled, and says why.
+*/
+const EMAIL_ROWS: Array<{ kind: MemberEmail; labelKey: string; icon: keyof typeof Ionicons.glyphMap }> = [
+  { kind: 'taskAssigned', labelKey: 'profile.notifications.emailTaskAssigned', icon: 'clipboard-outline' },
+  { kind: 'taskCompleted', labelKey: 'profile.notifications.emailTaskCompleted', icon: 'checkmark-done-outline' },
+  { kind: 'autoClockOut', labelKey: 'profile.notifications.emailAutoClockOut', icon: 'time-outline' },
+];
+
 export default function NotificationsScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const toast = useToast();
   const [prefs, setPrefs] = useState<NotificationPrefs>(defaultPrefs);
   const [permissionStatus, setPermissionStatus] = useState<string>('undetermined');
+  const [emailPrefs, setEmailPrefs] = useState<Record<string, boolean> | null>(null);
+  const [orgAllows, setOrgAllows] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadPrefs();
     checkPermission();
+    userApi
+      .getNotificationPrefs()
+      .then((res) => {
+        setEmailPrefs(res?.prefs ?? {});
+        setOrgAllows(res?.organizationAllows ?? {});
+      })
+      // Offline or refused: the section stays hidden rather than showing switches that cannot save.
+      .catch(() => setEmailPrefs(null));
   }, []);
+
+  const updateEmailPref = async (kind: MemberEmail, value: boolean) => {
+    const key = MEMBER_EMAIL_PREF[kind];
+    const before = emailPrefs;
+    setEmailPrefs({ ...(emailPrefs ?? {}), [key]: value });
+    try {
+      const saved = await userApi.updateNotificationPrefs({ [key]: value });
+      setEmailPrefs(saved ?? { ...(before ?? {}), [key]: value });
+    } catch {
+      setEmailPrefs(before);
+      toast.error(t('common.error'), t('profile.notifications.emailSaveFailed'));
+    }
+  };
 
   const loadPrefs = async () => {
     try {
@@ -164,6 +204,43 @@ export default function NotificationsScreen() {
           </View>
         </View>
       </View>
+
+      {emailPrefs && (
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('profile.notifications.emails')}</Text>
+          <View style={[styles.card, { backgroundColor: colors.card }]}>
+            {EMAIL_ROWS.map((row, i) => {
+              const allowed = orgAllows[row.kind] !== false;
+              const on = allowed && emailPrefs[MEMBER_EMAIL_PREF[row.kind]] !== false;
+              return (
+                <View key={row.kind}>
+                  {i > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
+                  <View style={styles.toggleRow}>
+                    <View style={styles.toggleInfo}>
+                      <Ionicons name={row.icon} size={20} color={COLORS.primary} />
+                      <View style={styles.toggleTextContainer}>
+                        <Text style={[styles.toggleLabel, { color: colors.textPrimary }]}>{t(row.labelKey)}</Text>
+                        {!allowed && (
+                          <Text style={[styles.toggleDescription, { color: colors.textSecondary }]}>
+                            {t('profile.notifications.emailOffByOrg')}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                    <Switch
+                      value={on}
+                      disabled={!allowed}
+                      onValueChange={(v) => updateEmailPref(row.kind, v)}
+                      trackColor={{ false: colors.border, true: colors.primaryLight }}
+                      thumbColor={on ? COLORS.primary : colors.textMuted}
+                    />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      )}
 
       <Text style={[styles.footerNote, { color: colors.textMuted }]}>
         {t('profile.notifications.footerNote')}

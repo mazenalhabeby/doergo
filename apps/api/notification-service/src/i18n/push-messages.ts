@@ -62,9 +62,6 @@ const en = {
   'taskStatus.CLOSED': 'Closed',
 
   // ── Attendance ──────────────────────────────────────────────────────────
-  'attendance.autoClockOut.title': 'Clocked out automatically',
-  'attendance.autoClockOut.bodyExceeded': 'Clocked out at {{location}}: the maximum shift length was reached ({{hours}} h)',
-  'attendance.autoClockOut.bodyEndOfDay': 'Clocked out at {{location}}: end of day ({{hours}} h)',
   'attendance.shiftReminder.title': 'Still clocked in?',
   'attendance.shiftReminder.body': 'Your shift at {{location}} has ended — did you forget to clock out, or are you working extra time?',
   'attendance.shiftReminder.bodyUnscheduled': 'You’ve been clocked in at {{location}} for about {{hours}} h — did you forget to clock out?',
@@ -273,9 +270,6 @@ const de: Record<PushKey, string> = {
   'taskStatus.CANCELED': 'Storniert',
   'taskStatus.CLOSED': 'Geschlossen',
 
-  'attendance.autoClockOut.title': 'Automatisch ausgestempelt',
-  'attendance.autoClockOut.bodyExceeded': 'Ausgestempelt bei {{location}}: Die maximale Schichtlänge wurde erreicht ({{hours}} Std.)',
-  'attendance.autoClockOut.bodyEndOfDay': 'Ausgestempelt bei {{location}}: Tagesende ({{hours}} Std.)',
   'attendance.shiftReminder.title': 'Noch eingestempelt?',
   'attendance.shiftReminder.body': 'Ihre Schicht bei {{location}} ist zu Ende — haben Sie das Ausstempeln vergessen oder leisten Sie Mehrarbeit?',
   'attendance.shiftReminder.bodyUnscheduled': 'Sie sind seit etwa {{hours}} Std. bei {{location}} eingestempelt — haben Sie das Ausstempeln vergessen?',
@@ -469,9 +463,6 @@ const es: Record<PushKey, string> = {
   'taskStatus.CANCELED': 'Cancelada',
   'taskStatus.CLOSED': 'Cerrada',
 
-  'attendance.autoClockOut.title': 'Salida fichada automáticamente',
-  'attendance.autoClockOut.bodyExceeded': 'Salida fichada en {{location}}: se alcanzó la duración máxima del turno ({{hours}} h)',
-  'attendance.autoClockOut.bodyEndOfDay': 'Salida fichada en {{location}}: fin de la jornada ({{hours}} h)',
   'attendance.shiftReminder.title': '¿Sigues fichado?',
   'attendance.shiftReminder.body': 'Tu turno en {{location}} ha terminado: ¿olvidaste fichar la salida o estás haciendo tiempo extra?',
   'attendance.shiftReminder.bodyUnscheduled': 'Llevas unas {{hours}} h fichado en {{location}}: ¿olvidaste fichar la salida?',
@@ -665,9 +656,6 @@ const fr: Record<PushKey, string> = {
   'taskStatus.CANCELED': 'Annulée',
   'taskStatus.CLOSED': 'Clôturée',
 
-  'attendance.autoClockOut.title': 'Départ pointé automatiquement',
-  'attendance.autoClockOut.bodyExceeded': 'Départ pointé à {{location}} : durée maximale du poste atteinte ({{hours}} h)',
-  'attendance.autoClockOut.bodyEndOfDay': 'Départ pointé à {{location}} : fin de journée ({{hours}} h)',
   'attendance.shiftReminder.title': 'Toujours pointé ?',
   'attendance.shiftReminder.body': 'Votre poste à {{location}} est terminé — avez-vous oublié de pointer votre départ, ou faites-vous des heures supplémentaires ?',
   'attendance.shiftReminder.bodyUnscheduled': 'Vous êtes pointé à {{location}} depuis environ {{hours}} h — avez-vous oublié de pointer votre départ ?',
@@ -861,9 +849,6 @@ const it: Record<PushKey, string> = {
   'taskStatus.CANCELED': 'Annullata',
   'taskStatus.CLOSED': 'Chiusa',
 
-  'attendance.autoClockOut.title': 'Uscita timbrata automaticamente',
-  'attendance.autoClockOut.bodyExceeded': 'Uscita timbrata presso {{location}}: raggiunta la durata massima del turno ({{hours}} h)',
-  'attendance.autoClockOut.bodyEndOfDay': 'Uscita timbrata presso {{location}}: fine giornata ({{hours}} h)',
   'attendance.shiftReminder.title': 'Ancora in servizio?',
   'attendance.shiftReminder.body': 'Il tuo turno presso {{location}} è finito: hai dimenticato di timbrare l’uscita o stai facendo straordinari?',
   'attendance.shiftReminder.bodyUnscheduled': 'Hai timbrato presso {{location}} da circa {{hours}} h: hai dimenticato di timbrare l’uscita?',
