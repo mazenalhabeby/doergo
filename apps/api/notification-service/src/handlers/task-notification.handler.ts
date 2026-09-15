@@ -1,6 +1,6 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
-import { EmailService } from '../modules/email/email.service';
+import { MemberEmailsService } from '../modules/email/member-emails.service';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
@@ -12,7 +12,7 @@ export class TaskNotificationHandler {
   private readonly logger = new Logger('TaskNotificationHandler');
 
   constructor(
-    private readonly emailService: EmailService,
+    private readonly memberEmails: MemberEmailsService,
     private readonly pushService: PushService,
     private readonly websocketGateway: WebsocketGateway,
     private readonly store: NotificationStore,
@@ -85,15 +85,6 @@ export class TaskNotificationHandler {
       this.logger.error(`Failed to send task assigned push: ${error}`);
     }
 
-    // Email notification to assigned worker
-    if (data.workerEmail) {
-      try {
-        await this.emailService.sendTaskAssignedEmail(data.task, { id: data.workerId, email: data.workerEmail });
-      } catch (error) {
-        this.logger.error(`Failed to send task assigned email: ${error}`);
-      }
-    }
-
     // Alert the assignee's "Notifications about" watchers (their managers).
     const assignedText: LocalizedText = {
       title: msg('task.watch.assigned.title'),
@@ -116,6 +107,15 @@ export class TaskNotificationHandler {
       link: `/tasks/${data.task.id}`,
       data: { taskId: data.task.id },
     });
+
+    // Email to the person given the work, last: an SMTP round trip must not
+    // delay the push or the bell. Address, preferences, the actor and the burst
+    // are all MemberEmailsService's, decided from the ids alone.
+    try {
+      await this.memberEmails.taskAssigned({ task: data.task, recipientId: data.workerId, actorId: data.actorId });
+    } catch (error) {
+      this.logger.error(`Failed to send task assigned email: ${error}`);
+    }
   }
 
   @EventPattern('task_status_changed')
@@ -132,18 +132,6 @@ export class TaskNotificationHandler {
         );
       } catch (error) {
         this.logger.error(`Failed to send status change push: ${error}`);
-      }
-    }
-
-    // Email notification for task completion
-    if (data.newStatus === 'COMPLETED' && data.creatorEmail) {
-      try {
-        await this.emailService.sendTaskCompletedEmail(data.task, {
-          id: data.task.createdById,
-          email: data.creatorEmail,
-        });
-      } catch (error) {
-        this.logger.error(`Failed to send task completed email: ${error}`);
       }
     }
 
@@ -169,6 +157,20 @@ export class TaskNotificationHandler {
       link: `/tasks/${data.task.id}`,
       data: { taskId: data.task.id },
     });
+
+    // Email to the creator when the work is done — never to a creator who
+    // completed it themselves (see MemberEmailsService). Last, as above.
+    if (data.newStatus === 'COMPLETED' && data.task.createdById) {
+      try {
+        await this.memberEmails.taskCompleted({
+          task: data.task,
+          recipientId: data.task.createdById,
+          actorId: data.actorId,
+        });
+      } catch (error) {
+        this.logger.error(`Failed to send task completed email: ${error}`);
+      }
+    }
   }
 
   @EventPattern('task_declined')

@@ -402,6 +402,8 @@ export class TasksService {
       this.notificationClient.emit('task_assigned', {
         task,
         workerId: data.assignedToId,
+        // Who did it — so the person who assigns work to themselves is not emailed about it.
+        actorId: data.userId,
         watcherIds: await this.taskWatcherIds(data.assignedToId, task.organizationId),
       });
     }
@@ -796,6 +798,7 @@ export class TasksService {
       this.notificationClient.emit('task_assigned', {
         task: updated,
         workerId: assignedToId,
+        actorId: data.userId,
         watcherIds: await this.taskWatcherIds(assignedToId, updated.organizationId),
       });
     }
@@ -1466,7 +1469,7 @@ export class TasksService {
 
     // The primary, the status and the notification — the same writer as every
     // other path. It re-derives `assignedToId` from the rows, which now agree.
-    await this.afterAssigneesChanged(data.id, alreadyOn ? [] : [data.workerId]);
+    await this.afterAssigneesChanged(data.id, alreadyOn ? [] : [data.workerId], data.userId);
 
     this.invalidateStatusCountsCache(updatedTask.organizationId);
 
@@ -1929,6 +1932,8 @@ export class TasksService {
       task: updatedTask,
       oldStatus: task.status,
       newStatus: data.status,
+      // Who moved it — a creator completing their own task is not emailed about it.
+      actorId: data.userId,
       watcherIds: await this.taskWatcherIds(updatedTask.assignedToId, updatedTask.organizationId),
     });
 
@@ -2393,7 +2398,7 @@ export class TasksService {
     // Primary, status and the notification — all of it, in one place.
     // `wasAlreadyOn` decides whether this is news: re-adding somebody to change
     // their role must not push them a second time about work they already have.
-    await this.afterAssigneesChanged(data.taskId, wasAlreadyOn ? [] : [data.userId]);
+    await this.afterAssigneesChanged(data.taskId, wasAlreadyOn ? [] : [data.userId], data.requestUserId);
 
     await this.createTaskEvent(data.taskId, data.requestUserId, TaskEventType.ASSIGNEE_ADDED, {
       assigneeId: data.userId,
@@ -2440,7 +2445,7 @@ export class TasksService {
     // Sync the primary assignedToId field
     // Same writer as every other change to who is on this task. Nobody is newly
     // assigned by a removal, so nobody is told they have new work.
-    await this.afterAssigneesChanged(data.taskId, []);
+    await this.afterAssigneesChanged(data.taskId, [], data.requestUserId);
 
     await this.createTaskEvent(data.taskId, data.requestUserId, TaskEventType.ASSIGNEE_REMOVED, {
       assigneeId: data.userId,
@@ -2503,6 +2508,8 @@ export class TasksService {
   private async afterAssigneesChanged(
     taskId: string,
     newlyAssigned: string[],
+    /** Who made the change. Carried on the event so nobody is emailed about their own action. */
+    actorId: string,
   ): Promise<void> {
     await this.syncPrimaryAssignee(taskId);
 
@@ -2535,7 +2542,8 @@ export class TasksService {
     */
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
-      select: { id: true, title: true, organizationId: true, status: true, dueDate: true, priority: true },
+      // What the assignment email shows — it reads "N/A" for a field left out here.
+      select: { id: true, title: true, organizationId: true, status: true, dueDate: true, priority: true, description: true, locationAddress: true },
     });
     if (!task) return;
 
@@ -2543,6 +2551,7 @@ export class TasksService {
       this.notificationClient.emit('task_assigned', {
         task,
         workerId,
+        actorId,
         watcherIds: await this.taskWatcherIds(workerId, task.organizationId),
       });
     }

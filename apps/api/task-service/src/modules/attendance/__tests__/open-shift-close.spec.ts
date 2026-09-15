@@ -60,7 +60,7 @@ describe('closeAbandonedShifts', () => {
   }
   const entry = (over: any = {}) => ({
     id: 'e1', userId: 'u1', organizationId: 'org-1', clockInAt: at('14T08:00'), expectedClockOutAt: at('14T17:00'),
-    breakMinutes: 0, unpaidBreakMinutes: 0, flagReasons: ['LATE_ARRIVAL'], timezone: 'Europe/Vienna', breaks: [], geofenceExcursions: [], ...over,
+    breakMinutes: 0, unpaidBreakMinutes: 0, flagReasons: ['LATE_ARRIVAL'], timezone: 'Europe/Vienna', breaks: [], geofenceExcursions: [], location: { name: 'Lager' }, ...over,
   });
 
   it('asks the database only for open shifts past the limits, in a bounded batch', async () => {
@@ -83,7 +83,11 @@ describe('closeAbandonedShifts', () => {
       approvalStatus: 'PENDING', reminderState: 'RESOLVED', nextRemindAt: null,
     });
     expect(claim.data.flagReasons).toEqual(expect.arrayContaining(['LATE_ARRIVAL', 'MISSED_CLOCK_OUT', 'CLOCK_OUT_PROVISIONAL']));
-    expect(svc.notificationClient.emit).toHaveBeenCalledWith('attendance_shift_closed_provisionally', expect.objectContaining({ entryId: 'e1', basis: 'SHIFT_END' }));
+    expect(svc.notificationClient.emit).toHaveBeenCalledWith('attendance_shift_closed_provisionally', expect.objectContaining({
+      entryId: 'e1', userId: 'u1', basis: 'SHIFT_END', clockOutAt: at('14T17:00').toISOString(), timezone: 'Europe/Vienna', locationName: 'Lager',
+    }));
+    // The site is named in the member's email, so the sweep asks for it in the same read.
+    expect(svc.prisma.timeEntry.findMany.mock.calls[0][0].include.location).toEqual({ select: { name: true } });
     expect(res.data).toEqual({ closed: 1 });
   });
 

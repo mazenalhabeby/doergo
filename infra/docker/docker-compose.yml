@@ -301,6 +301,11 @@ services:
       - SMTP_FALLBACK_PASS=${SMTP_FALLBACK_PASS:-}
       - SMTP_FALLBACK_SECURE=${SMTP_FALLBACK_SECURE:-}
       - SMTP_FALLBACK_FROM=${SMTP_FALLBACK_FROM:-}
+      # Links in the member emails (a task, "confirm when you left"). The same
+      # value auth-service mails from — this list is explicit, so a variable not
+      # named here never reaches the container, and the links would point at
+      # the code's fallback domain instead.
+      - APP_URL=https://${DOMAIN:-hbcfield.hbc-solution.io}
       - SOCKET_CORS_ORIGINS=https://${DOMAIN:-hbcfield.hbc-solution.io}
       - SOCKET_ADMIN_USER=${SOCKET_ADMIN_USER:-}
       - SOCKET_ADMIN_PASSWORD=${SOCKET_ADMIN_PASSWORD:-}

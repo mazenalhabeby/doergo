@@ -1,3 +1,4 @@
+import { taskAssignedEmail, taskCompletedEmail } from '@hbcfield/shared';
 import { EmailService } from '../email.service';
 import { RecipientLocales } from '../../../i18n/recipient-locales.service';
 
@@ -89,11 +90,11 @@ describe('EmailService', () => {
 
   it('writes English to somebody with no id, and when the language lookup fails', async () => {
     const { service, prisma, sent } = setup([]);
-    await service.sendTaskCompletedEmail({ title: 'Pumpe' }, { id: null, email: 'x@x' });
+    await service.sendToMembers([{ id: null, email: 'x@x' }], (locale) => taskCompletedEmail(locale, { title: 'Pumpe' }));
     expect(sent[0].subject).toBe('Task completed: Pumpe');
 
     prisma.user.findMany.mockRejectedValueOnce(new Error('down'));
-    await service.sendTaskAssignedEmail({ title: 'Pumpe' }, { id: 'u9', email: 'y@x' });
+    await service.sendToMembers([{ id: 'u9', email: 'y@x' }], (locale) => taskAssignedEmail(locale, { title: 'Pumpe' }));
     expect(sent[1].subject).toBe('Task assigned: Pumpe');
   });
 
