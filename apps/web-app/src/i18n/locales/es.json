@@ -7533,7 +7533,10 @@
     "workspaceHint": "A qué lista de clientes pertenece.",
     "workspaceOnly": "Se añadirá a {{name}}.",
     "workspaceNone": "Sin espacio de trabajo",
-    "workspaceMoveHint": "Al moverlo, el cliente sale de una lista de clientes y entra en otra."
+    "workspaceMoveHint": "Al moverlo, el cliente sale de una lista de clientes y entra en otra.",
+    "locale": "Idioma de los correos",
+    "localeSame": "Igual que la organización",
+    "localeHint": "Las invitaciones y los enlaces de firma para este cliente se escriben en este idioma. Si el cliente eligió un idioma en la app, se usa ese. Con «Igual que la organización», los correos siguen el país de tu organización o, si no, el inglés."
   },
   "reports": {
     "addSchedule": "Añadir programación",

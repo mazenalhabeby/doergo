@@ -7542,7 +7542,10 @@
     "workspaceHint": "À quelle liste de clients cela appartient.",
     "workspaceOnly": "Ajouté à {{name}}.",
     "workspaceNone": "Aucun espace de travail",
-    "workspaceMoveHint": "Le déplacer le retire de la liste d’un espace de travail pour l’ajouter à une autre."
+    "workspaceMoveHint": "Le déplacer le retire de la liste d’un espace de travail pour l’ajouter à une autre.",
+    "locale": "Langue des e-mails",
+    "localeSame": "Comme l’organisation",
+    "localeHint": "Les invitations et les liens de signature adressés à ce client sont rédigés dans cette langue. Si le client a choisi une langue dans l’application, c’est celle-ci qui s’applique. Avec « Comme l’organisation », les e-mails suivent le pays de votre organisation, sinon l’anglais."
   },
   "reports": {
     "addSchedule": "Ajouter une planification",

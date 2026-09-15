@@ -10,6 +10,7 @@ import { Contact, Plus, Smartphone, ChevronRight, User, Building2, Trash2, Globe
 import { notify } from "@/lib/toast"
 import { customersApi, locationsApi, type CompanyLocation, type Customer, type CustomerDetail } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
+import { CLIENT_LOCALE_OPTIONS, clientLocaleFormValue, clientLocalePayload } from "@/lib/client-locale"
 import { customerStageLabel } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { Truncated } from "@/components/truncated"
@@ -261,6 +262,9 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
     industry: existing?.industry ?? "", vatId: existing?.vatId ?? "", regNumber: existing?.regNumber ?? "",
   })
   const [details, setDetails] = useState<CustomerDetail[]>(existing?.details ?? [])
+  // "" = same as the organization; kept apart from `form` because it is sent as
+  // null, not as an empty string, when nothing is chosen.
+  const [locale, setLocale] = useState<string>(clientLocaleFormValue(existing))
 
   /*
     Workspaces this client could belong to — those with the CRM module on.
@@ -315,6 +319,7 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
         industry: isCompany ? form.industry : "",
         vatId: isCompany ? form.vatId : "",
         regNumber: isCompany ? form.regNumber : "",
+        locale: clientLocalePayload(locale),
         details: cleanDetails,
       }
       return existing
@@ -402,6 +407,29 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
           <div className="space-y-1">
             <Label>{isCompany ? t("customers.companyPhone", "Company phone") : t("customers.phone", "Phone")}</Label>
             <PhoneInput value={form.phone} onChange={(v) => set("phone", v)} />
+          </div>
+
+          {/*
+            Beside the address it belongs to: this decides what the emails sent
+            to that address read like. Client info, so it saves under the same
+            permission as the phone number — nothing of its own.
+          */}
+          <div className="space-y-1">
+            <Label htmlFor="client-locale">{t("customers.locale", "Language for emails")}</Label>
+            <select
+              id="client-locale"
+              value={locale}
+              onChange={(e) => setLocale(e.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">{t("customers.localeSame", "Same as the organization")}</option>
+              {CLIENT_LOCALE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            <p className="text-[11px] text-muted-foreground">
+              {t("customers.localeHint", "Invitations and signing links to this client are written in this language. If the client picked a language in the app, that one is used. With “Same as the organization”, emails follow your organization’s country, otherwise English.")}
+            </p>
           </div>
 
           {/* Company-only fields */}

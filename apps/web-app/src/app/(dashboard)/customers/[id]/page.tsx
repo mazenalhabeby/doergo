@@ -37,6 +37,7 @@ import { ContactsPanel, WorksAtPanel } from "./customer-contacts"
 import { Truncated } from "@/components/truncated"
 import { ActivityFeedSkeleton, ClientRecordSkeleton } from "@/components/skeletons/crm"
 import { ManagersPanel } from "./customer-managers"
+import { clientLocaleName } from "@/lib/client-locale"
 
 // stage tone → dot color
 const STAGE_DOT: Record<string, string> = {
@@ -273,6 +274,11 @@ export default function CustomerRecordPage() {
                 <PropRow label={t("customers.vatId", "VAT / UID")} value={customer.vatId} />
                 <PropRow label={t("customers.regNumber", "Register no.")} value={customer.regNumber} />
               </>}
+              {/* Always shown: "not set" still decides something, and the office should see what. */}
+              <PropRow
+                label={t("customers.locale", "Language for emails")}
+                value={clientLocaleName(customer.locale) ?? t("customers.localeSame", "Same as the organization")}
+              />
               {(customer.details ?? []).filter((d) => d.label && d.value).map((d, i) => (
                 <PropRow key={i} label={d.label} value={d.value} />
               ))}

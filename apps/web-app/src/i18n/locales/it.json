@@ -7542,7 +7542,10 @@
     "workspaceHint": "A quale elenco clienti appartiene.",
     "workspaceOnly": "Aggiunto a {{name}}.",
     "workspaceNone": "Nessuno spazio di lavoro",
-    "workspaceMoveHint": "Spostandolo, il cliente esce da un elenco clienti ed entra in un altro."
+    "workspaceMoveHint": "Spostandolo, il cliente esce da un elenco clienti ed entra in un altro.",
+    "locale": "Lingua delle email",
+    "localeSame": "Come l’organizzazione",
+    "localeHint": "Gli inviti e i link di firma per questo cliente vengono scritti in questa lingua. Se il cliente ha scelto una lingua nell’app, vale quella. Con «Come l’organizzazione», le email seguono il paese della tua organizzazione, altrimenti l’inglese."
   },
   "reports": {
     "addSchedule": "Aggiungi pianificazione",

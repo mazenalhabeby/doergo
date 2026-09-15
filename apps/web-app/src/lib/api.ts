@@ -6218,6 +6218,8 @@ export interface Customer {
   industry?: string | null;
   vatId?: string | null;
   regNumber?: string | null;
+  /** The language email to this client is written in (en|de|es|fr|it); null = same as the organization. */
+  locale?: string | null;
   details?: CustomerDetail[] | null;
   /**
    * The caller's CRM abilities ON THIS RECORD, resolved server-side and returned

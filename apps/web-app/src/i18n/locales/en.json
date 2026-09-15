@@ -7533,7 +7533,10 @@
     "workspaceHint": "Which workspace's client list this belongs to.",
     "workspaceOnly": "Added to {{name}}.",
     "workspaceNone": "No workspace",
-    "workspaceMoveHint": "Moving this client takes it out of one workspace's list and into another."
+    "workspaceMoveHint": "Moving this client takes it out of one workspace's list and into another.",
+    "locale": "Language for emails",
+    "localeSame": "Same as the organization",
+    "localeHint": "Invitations and signing links to this client are written in this language. If the client picked a language in the app, that one is used. With “Same as the organization”, emails follow your organization’s country, otherwise English."
   },
   "reports": {
     "addSchedule": "Add schedule",

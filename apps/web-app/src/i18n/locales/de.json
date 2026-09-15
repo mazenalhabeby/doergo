@@ -7533,7 +7533,10 @@
     "workspaceHint": "Zu welcher Kundenliste dieser Eintrag gehört.",
     "workspaceOnly": "Wird zu {{name}} hinzugefügt.",
     "workspaceNone": "Kein Arbeitsbereich",
-    "workspaceMoveHint": "Beim Verschieben verlässt der Kunde die eine Kundenliste und erscheint in der anderen."
+    "workspaceMoveHint": "Beim Verschieben verlässt der Kunde die eine Kundenliste und erscheint in der anderen.",
+    "locale": "Sprache für E-Mails",
+    "localeSame": "Wie die Organisation",
+    "localeHint": "Einladungen und Signaturlinks an diesen Kunden werden in dieser Sprache verfasst. Hat der Kunde in der App eine Sprache gewählt, gilt diese. Bei „Wie die Organisation“ richtet sich die Sprache nach dem Land Ihrer Organisation, sonst Englisch."
   },
   "reports": {
     "addSchedule": "Zeitplan hinzufügen",
