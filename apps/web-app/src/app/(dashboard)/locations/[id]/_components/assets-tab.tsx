@@ -33,7 +33,18 @@ import { AssetRetireDialog } from "@/components/assets/asset-retire-dialog"
  * "Vehicles" are separate lists. Adding the individual ones inside a kind is
  * the next step; this screen is where the kinds are set up.
  */
-export function AssetsTab({ spaceId }: { spaceId: string }) {
+export function AssetsTab({
+  spaceId,
+  allProposals = false,
+}: {
+  spaceId: string
+  /**
+   * Show every proposal the caller may decide, not only this workspace's.
+   * For when this is the ONLY workspace with assets and no "All" view exists —
+   * otherwise a page for a kind in no workspace would be on no screen at all.
+   */
+  allProposals?: boolean
+}) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const router = useRouter()
@@ -153,8 +164,11 @@ export function AssetsTab({ spaceId }: { spaceId: string }) {
         say what sort of thing this is — and this is the component that has
         them. It therefore appears on both surfaces that show assets, which is
         two chances to notice somebody waiting rather than a duplicate.
+
+        Only THIS workspace's: a page for another depot's kind cannot be decided
+        with this tab's kinds.
       */}
-      {canUseContracts && <ProposalQueue kinds={kinds} />}
+      {canUseContracts && <ProposalQueue kinds={kinds} spaceId={allProposals ? undefined : spaceId} />}
 
       {/* Assets that belong to no space, and so show on no other screen. Above
           the types rather than below them: it is a problem to clear, not a

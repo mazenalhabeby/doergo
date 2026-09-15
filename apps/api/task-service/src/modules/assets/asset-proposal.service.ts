@@ -8,7 +8,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   success, normalizeKindShape, activeAssignmentWhere,
-  mayReviewProposal, proposalReviewSpaces, type ProposalPlace,
+  mayReviewProposal, proposalInSpace, proposalReviewSpaces, type ProposalPlace,
 } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { AssetContractService, type ContractActor, type ContractFields } from './asset-contract.service';
@@ -20,7 +20,7 @@ const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/h
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
 /** One person cannot fill somebody's queue by holding down the shutter. */
 const MAX_OPEN_PER_MEMBER = 10;
-/** How many waiting proposals are read before a space-scoped queue is narrowed. */
+/** How many waiting proposals are read before a scoped (or one workspace's) queue is narrowed. */
 const PENDING_SCAN = 500;
 
 /** The columns that decide where a proposal belongs. */
@@ -356,24 +356,41 @@ export class AssetProposalService {
    * what `mayReviewProposal` gives them, filtered with the very function accept
    * and reject ask, so the list and the refusal cannot drift: a row in the
    * queue is a row they can act on, and nothing else is shown.
+   *
+   * `spaceId` narrows to ONE workspace's own — the Assets tab of that workspace
+   * — by `proposalInSpace`, the same rule asked of one place. It is ANDed with
+   * the caller's scope and can only ever remove rows: a workspace the caller
+   * does not manage simply shows what they could already decide there, which
+   * is nothing unless the member is also one of theirs. Absent, the whole
+   * in-scope queue, as the org-wide Assets page shows it.
    */
-  async pending(data: ContractActor) {
+  async pending(data: ContractActor & { spaceId?: string }) {
     this.contracts.assertMay(data, 'view assets');
     const scoped = data.manageSpaceIds !== undefined;
+    const forSpaceId = typeof data.spaceId === 'string' && data.spaceId ? data.spaceId : undefined;
+    const narrowed = scoped || forSpaceId !== undefined;
     const found = await this.prisma.assetProposal.findMany({
       where: { organizationId: data.organizationId, status: PROPOSAL_STATUS.PENDING },
       orderBy: { createdAt: 'desc' },
-      // Narrowed in memory below, so a scoped caller reads further before it cuts.
-      take: scoped ? PENDING_SCAN : 100,
+      // Narrowed in memory below, so a narrowed queue reads further before it cuts.
+      take: narrowed ? PENDING_SCAN : 100,
       select: {
         id: true, fields: true, signals: true, documentKind: true, categoryId: true,
         raisedById: true, holderUserId: true, createdAt: true, fileKey: true, fileName: true,
       },
     });
     let rows = found;
-    if (scoped && found.length > 0) {
+    if (narrowed && found.length > 0) {
+      // Kinds and assignments are read inside THIS organization only, so a
+      // workspace id from somewhere else places nothing and matches nothing.
       const places = await this.placesOf(found, data.organizationId);
-      rows = found.filter((r) => mayReviewProposal(places.get(r.id)!, data.manageSpaceIds)).slice(0, 100);
+      rows = found
+        .filter((r) => {
+          const place = places.get(r.id)!;
+          if (scoped && !mayReviewProposal(place, data.manageSpaceIds)) return false;
+          return forSpaceId === undefined || proposalInSpace(place, forSpaceId);
+        })
+        .slice(0, 100);
     }
     if (rows.length === 0) return success({ proposals: [] });
 

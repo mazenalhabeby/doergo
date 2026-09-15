@@ -41,15 +41,23 @@ import { initials } from "./holder-picker"
  * decide (`mayReviewProposal` in shared: the kind's workspace, or the member's
  * while no kind is chosen), so nothing here filters proposals — only the kinds
  * offered, below.
+ *
+ * ⚠️ ON A WORKSPACE'S TAB, ONLY THAT WORKSPACE'S (`spaceId`). A manager of two
+ * depots was shown the other depot's van here too, in a kind this tab's picker
+ * does not offer — a decision the screen could not make. The server narrows by
+ * `proposalInSpace`, the same rule asked of one place; without `spaceId` (the
+ * org-wide Assets page) the whole in-scope queue comes back, which is where a
+ * page with a kind in no workspace, or from a member assigned nowhere, is found.
  */
-export function ProposalQueue({ kinds }: { kinds: AssetCategory[] }) {
+export function ProposalQueue({ kinds, spaceId }: { kinds: AssetCategory[]; spaceId?: string }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(true)
   const [reviewing, setReviewing] = useState<AssetProposal | null>(null)
 
   const q = useQuery({
-    queryKey: ["asset-proposals-pending"],
-    queryFn: () => assetsApi.getPendingProposals(),
+    // Prefixed by the shared key, so a decision invalidates every queue at once.
+    queryKey: ["asset-proposals-pending", spaceId ?? "all"],
+    queryFn: () => assetsApi.getPendingProposals(spaceId),
     // Somebody sends one from a rental desk; the office has this page open.
     refetchInterval: 120_000,
   })

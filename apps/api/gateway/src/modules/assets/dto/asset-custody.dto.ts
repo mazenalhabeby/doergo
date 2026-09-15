@@ -332,6 +332,22 @@ export class AcceptProposalDto {
   retireReplaced?: boolean;
 }
 
+/**
+ * What GET /assets/proposals/pending accepts.
+ *
+ * `spaceId` NARROWS the queue to one workspace's own proposals — a workspace's
+ * Assets tab. It is intersected with the caller's scope in the service and can
+ * never widen it. The global pipe forbids undeclared parameters, so this class
+ * is also the whole list of what the route takes.
+ */
+export class PendingProposalsQueryDto {
+  @ApiPropertyOptional({ description: 'Only this workspace’s proposals — intersected with the caller’s own scope' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Za-z0-9_-]{1,64}$/)
+  spaceId?: string;
+}
+
 /** A place to put the page, before the proposal exists. */
 export class ProposalPresignDto {
   @ApiProperty()

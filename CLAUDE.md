@@ -1127,7 +1127,8 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `parseReceipt()`, `moneyToCents()`, `categoryForReceipt()` | A photographed slip → amount, date, vendor. On-device, nothing calls out |
 | `parseContract()`, `proposeFromContract()`, `canApply()`, `fieldsForKind()` | A contract → a reading, then the three things accepting it would do |
 | `classifyDocument()`, `worthProposing()` | Is this page a contract for a thing, or a fuel receipt? Needs BOTH signals |
-| `mayReviewProposal()`, `proposalReviewSpaces()` | Who may decide a page a member sent in: a chosen kind decides by its workspace; with no kind, the member's workspaces. The queue, accept/reject, the page link and the routing all read it |
+| `mayReviewProposal()`, `proposalReviewSpaces()`, `proposalInSpace()` | Who may decide a page a member sent in: a chosen kind decides by its workspace; with no kind, the member's workspaces. The queue, accept/reject, the page link and the routing all read it; `proposalInSpace` narrows a workspace tab's queue (`?spaceId=`) to its own and never widens |
+| `assetEntryDateProblem()`, `assetEntryDayBounds()`, `assetEntryOccurredAt()`, `assetEntryDateExempt()`, `assetEntryDateText()` | ONE date rule for everything filed against an asset (logbook, expense, Money tab): 120 days back unless org-wide `canManageAssets`, a day of grace forward, one sentence per refusal. Server door `readAssetEntryDate`; the `LOG_*` names are aliases |
 | `keepFieldsForKind()`, `fieldsDroppedByMove()` | Moving an asset to another kind — what survives, and what the warning names. One rule read two ways |
 | `NAV_OPTION`, `SPACE_TAB_OPTION`, `SETTINGS_OPTION`, `surfaceAllowed()` | Which surface each Option owns. The navbar, workspace tabs and settings list all read these — adding an Option is adding a row |
 | `joinCodeCandidates()`, `JOIN_CODE_MAX_LENGTH` | Telling an org join code from an invitation code |

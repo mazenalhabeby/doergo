@@ -2304,8 +2304,15 @@ export const assetsApi = {
   // PROPOSALS — a member sends a page, the office decides
   // ============================================
 
-  getPendingProposals: async () => {
-    const response = await api.get<{ success: boolean; data: { proposals: AssetProposal[] } }>('/assets/proposals/pending');
+  /**
+   * Proposals waiting on a decision the caller may make. With a `spaceId`, only
+   * THAT workspace's own (its kind is there, or no kind and the member is
+   * assigned there) — a workspace's Assets tab. The server narrows; it never widens.
+   */
+  getPendingProposals: async (spaceId?: string) => {
+    const response = await api.get<{ success: boolean; data: { proposals: AssetProposal[] } }>(
+      spaceId ? `/assets/proposals/pending?spaceId=${encodeURIComponent(spaceId)}` : '/assets/proposals/pending',
+    );
     if (response.error) throw new Error(response.error);
     return response.data?.data?.proposals ?? [];
   },

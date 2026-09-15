@@ -28,7 +28,7 @@ import {
   CreateAssetDto, UpdateAssetDto, AssetQueryDto, AssetListRowDto, UpdateAssetListRowDto,
   HandOverDto, ReceiptPresignDto, ReadReceiptDto, SubmitExpenseDto,
   ContractProposalDto, ReadContractDto,
-  RaiseProposalDto, AcceptProposalDto, ProposalPresignDto,
+  RaiseProposalDto, AcceptProposalDto, ProposalPresignDto, PendingProposalsQueryDto,
   CreateLogEntryDto, LogPresignDto, LogListQueryDto, LogSummaryQueryDto, MyLogQueryDto,
 } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
@@ -302,12 +302,16 @@ export class AssetsController {
     anywhere — so the person a driver's page is for could not see it. In space
     now; the service narrows to what this caller may decide, by the same rule
     accept and reject refuse with (`mayReviewProposal` in shared).
+
+    `?spaceId=` is a workspace's Assets tab asking for its OWN — narrowed in
+    the service by `proposalInSpace`, ANDed with the scope above, never widening.
   */
   @Get('proposals/pending')
   @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Documents waiting on a decision' })
-  async pendingProposals(@Request() req: any) {
+  async pendingProposals(@Query() query: PendingProposalsQueryDto, @Request() req: any) {
     return this.assetsService.proposalPending({
+      spaceId: query?.spaceId,
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,

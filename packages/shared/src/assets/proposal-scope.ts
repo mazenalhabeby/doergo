@@ -73,3 +73,22 @@ export function proposalReviewSpaces(place: ProposalPlace): string[] {
   if (place.kindSpaceId !== undefined) return place.kindSpaceId ? [place.kindSpaceId] : [];
   return [...new Set(place.holderSpaceIds)];
 }
+
+/**
+ * Does this proposal belong on `forSpaceId`'s own queue?
+ *
+ * The same rule again, asked of ONE workspace: its kind is there, or — no kind
+ * chosen — the member it is for is assigned there.
+ *
+ * ⚠️ A NARROWING, NEVER A GRANT. It answers "is this one of THIS workspace's",
+ * not "may this caller decide it" — the caller's scope is `mayReviewProposal`,
+ * and a workspace tab asks both. A manager of Linz and Graz looking at Linz's
+ * Assets tab used to be shown Graz's van too, in a kind that tab's picker does
+ * not offer, so the one decision on the screen could not be made from it.
+ *
+ * A kind in no workspace belongs to no workspace's tab; only an org-wide queue
+ * shows it, exactly as only an org-wide manager may decide it.
+ */
+export function proposalInSpace(place: ProposalPlace, forSpaceId: string): boolean {
+  return proposalReviewSpaces(place).includes(forSpaceId);
+}

@@ -18,13 +18,19 @@
  * one workspace has assets on there is nothing to choose, and it opens there.
  */
 import { useTranslation } from "react-i18next"
+import { useQuery } from "@tanstack/react-query"
 import { Package } from "lucide-react"
+import { canManageAssetsIn } from "@hbcfield/shared/client"
+
+import { assetsApi } from "@/lib/api"
+import { useAuth } from "@/contexts/auth-context"
 
 import { useSpaceScope } from "@/hooks/use-space-scope"
 import { SpaceTabs } from "@/components/space-tabs"
 import { AssetsTab } from "../locations/[id]/_components/assets-tab"
 import { ExpenseQueue } from "@/components/assets/expense-queue"
 import { AllAssetsList } from "@/components/assets/all-assets-list"
+import { ProposalQueue } from "@/components/assets/proposal-queue"
 
 export default function AssetsPage() {
   const { t } = useTranslation()
@@ -74,10 +80,40 @@ export default function AssetsPage() {
           </p>
         </div>
       ) : spaceId ? (
-        <AssetsTab spaceId={spaceId} />
+        /*
+          The only workspace, with no "All" tab to fall back to: its queue
+          keeps every proposal the caller may decide, so one for a kind in no
+          workspace still has somewhere to be seen.
+        */
+        <AssetsTab spaceId={spaceId} allProposals={!scope.showTabs} />
       ) : scope.ready ? (
-        <AllAssetsList spaceNames={spaceNames} />
+        <>
+          <AllProposals />
+          <AllAssetsList spaceNames={spaceNames} />
+        </>
       ) : null}
     </div>
   )
+}
+
+/**
+ * Every proposal the caller may decide, on "All workspaces".
+ *
+ * ⚠️ NOT A DUPLICATE OF THE TAB'S QUEUE. A workspace tab shows only that
+ * workspace's own, so a page whose kind belongs to no workspace — or one sent
+ * by a member assigned nowhere, with no kind chosen — is on no tab at all. This
+ * is where it is found; without it that page would wait for ever. The kinds are
+ * the whole organization's, narrowed in the review dialog to the ones this
+ * reviewer manages, exactly as the server narrows accepting.
+ */
+function AllProposals() {
+  const { user } = useAuth()
+  const mayDecide = canManageAssetsIn(user)
+  const kindsQ = useQuery({
+    queryKey: ["space-asset-kinds", "all"],
+    queryFn: () => assetsApi.getCategories(),
+    enabled: mayDecide,
+  })
+  if (!mayDecide) return null
+  return <ProposalQueue kinds={kindsQ.data ?? []} />
 }

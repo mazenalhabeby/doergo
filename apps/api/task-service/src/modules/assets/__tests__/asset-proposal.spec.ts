@@ -1,7 +1,7 @@
 import { OBJECT_STORE } from '@hbcfield/shared/storage';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { mayReviewProposal, proposalReviewSpaces } from '@hbcfield/shared';
+import { mayReviewProposal, proposalInSpace, proposalReviewSpaces } from '@hbcfield/shared';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
@@ -450,6 +450,53 @@ describe('AssetProposalService', () => {
       it('is refused to somebody who manages assets nowhere, before anything is read', async () => {
         await expect(service.pending({ ...linz, manageSpaceIds: [] } as any)).rejects.toBeInstanceOf(ForbiddenException);
         expect(prisma.assetProposal.findMany).not.toHaveBeenCalled();
+      });
+    });
+
+    /*
+      ⚠️ A workspace's own tab shows THAT workspace's proposals. A manager of
+      Linz and Graz on Linz's Assets tab was shown Graz's van too — in a kind
+      that tab's picker does not offer, so it could not be decided from there.
+    */
+    describe('one workspace’s queue', () => {
+      const both = { ...linz, manageSpaceIds: ['linz', 'graz'] };
+      const ids = (res: any) => res.data.proposals.map((p: any) => p.id);
+
+      it('the rule, in shared: a chosen kind by its workspace, else the member’s', () => {
+        expect(proposalInSpace({ kindSpaceId: 'linz', holderSpaceIds: ['graz'] }, 'linz')).toBe(true);
+        expect(proposalInSpace({ kindSpaceId: 'graz', holderSpaceIds: ['linz'] }, 'linz')).toBe(false);
+        expect(proposalInSpace({ kindSpaceId: undefined, holderSpaceIds: ['graz', 'linz'] }, 'linz')).toBe(true);
+        expect(proposalInSpace({ kindSpaceId: undefined, holderSpaceIds: ['graz'] }, 'linz')).toBe(false);
+        // A kind in no workspace is on no workspace's tab.
+        expect(proposalInSpace({ kindSpaceId: null, holderSpaceIds: ['linz'] }, 'linz')).toBe(false);
+      });
+
+      it('narrows a manager of two workspaces to the tab they are on', async () => {
+        expect(ids(await service.pending({ ...both, spaceId: 'linz' } as any)))
+          .toEqual(['p-linz-kind', 'p-nokind-linz', 'p-deleted-kind']);
+        expect(ids(await service.pending({ ...both, spaceId: 'graz' } as any)))
+          .toEqual(['p-graz-kind', 'p-nokind-graz']);
+      });
+
+      it('without a workspace, keeps the whole in-scope queue', async () => {
+        expect(ids(await service.pending(both as any)))
+          .toEqual(['p-linz-kind', 'p-graz-kind', 'p-nokind-linz', 'p-nokind-graz', 'p-deleted-kind']);
+      });
+
+      it('narrows an org-wide manager too — and their unfiled ones stay on the org-wide queue', async () => {
+        const boss = { userId: 'u-boss', userRole: 'ADMIN', organizationId: 'org1' };
+        expect(ids(await service.pending({ ...boss, spaceId: 'linz' } as any)))
+          .toEqual(['p-linz-kind', 'p-nokind-linz', 'p-deleted-kind']);
+        expect(ids(await service.pending(boss as any))).toContain('p-nowhere-kind');
+      });
+
+      it('never widens: a workspace outside the caller’s scope adds nothing they could not already decide', async () => {
+        // Linz only, asking for Graz: Graz's kind is not theirs, and no Linz member's page is Graz's.
+        expect(ids(await service.pending({ ...linz, spaceId: 'graz' } as any))).toEqual([]);
+      });
+
+      it('a workspace id from nowhere matches nothing', async () => {
+        expect(ids(await service.pending({ ...both, spaceId: 'not-a-space' } as any))).toEqual([]);
       });
     });
 
