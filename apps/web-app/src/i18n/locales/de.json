@@ -2776,7 +2776,15 @@
     "signatureNeeded": "Ihre Unterschrift wird benötigt",
     "timeOffRequest": "Urlaubsantrag",
     "timeOffApproved": "Urlaub genehmigt",
-    "timeOffRejected": "Urlaub nicht genehmigt"
+    "timeOffRejected": "Urlaub nicht genehmigt",
+    "assetExpenseSubmitted": "Ausgabe zur Bestätigung",
+    "assetExpenseSubmittedBody": "{{author}} hat {{category}} für {{asset}} eingereicht",
+    "assetExpenseAccepted": "Ausgabe akzeptiert",
+    "assetExpenseRefused": "Ausgabe abgelehnt",
+    "assetHandedOver": "An Sie übergeben",
+    "assetHandedOverBody": "{{asset}} ist jetzt bei Ihnen",
+    "assetHandedBack": "Zurückgegeben",
+    "assetHandedBackBody": "{{asset}} wurde zurückgegeben"
   },
   "landing": {
     "nav": {

@@ -70,6 +70,9 @@ const Events = {
   SHIFT_ESCALATION_RESOLVED: "attendance_shift_escalation_resolved",
   SHIFT_REMINDER: "attendance_shift_reminder",
   SHIFT_ESCALATION: "attendance_shift_escalation",
+  // Assets — ids only, to the whole organization, so an open office screen refetches
+  ASSET_EXPENSES_CHANGED: "asset.expensesChanged",
+  ASSET_CUSTODY_CHANGED: "asset.custodyChanged",
   // Spaces
   SPACE_CHANGED: "space.changed",
   SPACE_ROSTER_CHANGED: "space.rosterChanged",
@@ -235,6 +238,32 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
     ["my-documents"],
     ["my-document-requirements"],
     ["document-templates"],              // a template names its type
+  ],
+
+  /*
+    The organization's things. Before these, an expense a driver sent in sat
+    invisible in the office's queue until somebody reloaded, and a handover
+    made by one manager left another's custody tab showing the old driver.
+
+    Ids only, to the organization room. Each screen refetches through its own
+    scoped endpoint, so somebody who cannot see assets refetches nothing they
+    could not already read.
+  */
+  // An expense sent in, or decided: the queue, the asset's money tab, and the
+  // per-period totals on both custody tabs (only RECORDED counts there).
+  [Events.ASSET_EXPENSES_CHANGED]: [
+    ["asset-expenses-pending"],
+    ["asset-money"],
+    ["asset-custody"],
+    ["member-custody"],
+  ],
+  // A handover: who holds it on the record, on its timeline, in the kind's list
+  // and on the member's holdings tab.
+  [Events.ASSET_CUSTODY_CHANGED]: [
+    ["asset"],
+    ["asset-custody"],
+    ["asset-records"],
+    ["member-custody"],
   ],
 
   // The no-show and shift-reminder engine writes to the entries the attendance

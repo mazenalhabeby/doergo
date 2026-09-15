@@ -98,6 +98,15 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
   // Equipment. A decision goes to the member who sent the page in; a new proposal
   // goes to reviewers, and reviewing is on the web only.
   asset_proposal: (d) => (d.kind === 'raised' ? null : to('/(app)/my-assets')),
+  // An expense to confirm goes to approvers, and the queue they confirm it in is
+  // on the web only: no phone screen lists other people's expenses. `/my-assets`
+  // would open the approver's OWN holdings — a screen about something else — so
+  // the tap stays on Home, where the notice itself already said what and whose.
+  'asset.expense_submitted': HOME,
+  // What the office decided about something I sent in: my own list shows it.
+  'asset.expense_decided': () => to('/(app)/my-assets'),
+  // Something was handed to me, or taken back: what I hold now.
+  'asset.handed_over': () => to('/(app)/my-assets'),
 
   // Organization
   join_request_submitted: () => to('/(app)/manage/join-requests'),
