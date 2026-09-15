@@ -1,5 +1,16 @@
 name: CI
 
+# Everything a release depends on, on every PR and every push to main:
+#   release-tools   migration safety, image build invariants, workflow lint,
+#                   and the release scripts' own tests
+#   typecheck       tsc --noEmit in every app
+#   test            jest in every app (guard specs included — they are specs)
+#   quarantined     the few test files allowed to fail, reported, never gating
+#   web-build       the production Next.js build (pnpm build:check)
+#   security        pnpm audit
+#
+# The Deploy workflow refuses a commit whose CI did not pass.
+
 on:
   push:
     branches: [main, develop]
@@ -10,94 +21,158 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
-  lint-and-typecheck:
-    name: Lint & Type Check
+  release-tools:
+    name: Release tools & migration safety
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      # Node 22: the release scripts are TypeScript run by Node's type stripping,
+      # with no build step and no dependencies of their own.
+      - uses: ./.github/actions/setup
         with:
-          node-version: 20
-          cache: pnpm
+          node-version: '22'
+          build-shared: 'false'
+          prisma: 'false'
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Migrations are additive
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="origin/${{ github.base_ref }}"
+          else
+            base="${{ github.event.before }}"
+            # A new branch, or a force push that dropped history.
+            if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+              base="HEAD~1"
+            fi
+          fi
+          echo "comparing migrations against $base"
+          node tools/release/check-migrations.ts --base "$base" --head HEAD
 
-      - name: Generate Prisma Client
-        run: pnpm db:generate
+      - name: Image build invariants (compose ↔ Dockerfile ↔ images workflow)
+        run: node tools/release/check-images.ts
 
-      - name: Type check - Shared package
-        run: pnpm --filter @hbcfield/shared build
+      - name: Release scripts — typecheck
+        working-directory: tools/release
+        run: ../../node_modules/.bin/tsc -p tsconfig.json
 
-      - name: Type check - Web app
-        run: cd apps/web-app && npx tsc --noEmit
+      - name: Release scripts — tests
+        working-directory: tools/release
+        run: node --test check-migrations.test.ts mobile-change-kind.test.ts check-images.test.ts deploy-sh.test.ts
 
-      - name: Type check - Gateway
-        run: cd apps/api/gateway && npx tsc --noEmit
+      - name: Lint workflows (actionlint + shellcheck)
+        # Scripts inside workflows are shellchecked at warning level; style and
+        # info notes (quoting suggestions on ssh commands and the like) do not gate.
+        run: docker run --rm -e SHELLCHECK_OPTS="-S warning" -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.7 -color
 
-      - name: Type check - Auth service
-        run: cd apps/api/auth-service && npx tsc --noEmit
+      - name: Shell scripts (shellcheck)
+        run: |
+          docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:v0.10.0 -S warning \
+            infra/release/deploy.sh infra/release/preflight.d/*.sh tools/release/fixtures/*.sh
 
-      - name: Type check - Task service
-        run: cd apps/api/task-service && npx tsc --noEmit
+      - name: Translation slot widths
+        run: pnpm i18n:check
 
-  build:
-    name: Build
+  typecheck:
+    name: Type check
     runs-on: ubuntu-latest
-    needs: lint-and-typecheck
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: tsc --noEmit in every app
+        run: |
+          failed=""
+          for app in apps/api/gateway apps/api/auth-service apps/api/task-service apps/api/notification-service apps/api/tracking-service apps/web-app apps/admin apps/mobile; do
+            echo "::group::tsc $app"
+            if (cd "$app" && npx tsc --noEmit -p tsconfig.json); then echo "ok"; else failed="$failed $app"; fi
+            echo "::endgroup::"
+          done
+          if [ -n "$failed" ]; then echo "::error::tsc failed in:$failed"; exit 1; fi
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma Client
-        run: pnpm db:generate
-
-      - name: Build shared package
-        run: pnpm --filter @hbcfield/shared build
-
-      - name: Build web app
-        run: cd apps/web-app && npx next build
+  test:
+    name: Test ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - apps/api/gateway
+          - apps/api/auth-service
+          - apps/api/task-service
+          - apps/api/notification-service
+          - apps/api/tracking-service
+          - apps/web-app
+          - apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: jest
+        working-directory: ${{ matrix.app }}
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
-          NEXT_PUBLIC_USE_MOCK: "true"
+          NODE_OPTIONS: --experimental-vm-modules
+          APP: ${{ matrix.app }}
+        run: |
+          # Quarantined files are excluded here and run in the Quarantined job.
+          ignore="$(jq -r --arg app "$APP" '.tests[] | select(.app == $app) | .path' "$GITHUB_WORKSPACE/tools/release/quarantined-tests.json" | sed 's/[.]/\\./g' | paste -sd'|' -)"
+          if [ -n "$ignore" ]; then
+            echo "quarantined (not gating): $ignore"
+            npx jest --ci --maxWorkers=2 --testPathIgnorePatterns "$ignore"
+          else
+            npx jest --ci --maxWorkers=2
+          fi
 
-      - name: Build gateway
-        run: cd apps/api/gateway && npx nest build
+  quarantined:
+    name: Quarantined tests (not gating)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Run each quarantined file and report
+        env:
+          NODE_OPTIONS: --experimental-vm-modules
+        run: |
+          jq -c '.tests[]' tools/release/quarantined-tests.json | while read -r entry; do
+            app="$(echo "$entry" | jq -r .app)"; path="$(echo "$entry" | jq -r .path)"
+            if (cd "$app" && npx jest --ci "$path"); then
+              echo "::warning file=$app/$path::now PASSES — remove it from tools/release/quarantined-tests.json so it gates again"
+            else
+              echo "::warning file=$app/$path::still failing (quarantined: $(echo "$entry" | jq -r .reason | cut -c1-120)…)"
+            fi
+          done
+
+  web-build:
+    name: Web production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          prisma: 'false'
+      - name: pnpm build:check
+        working-directory: apps/web-app
+        env:
+          NEXT_PUBLIC_API_URL: https://hbcfield.com/api/v1
+          NEXT_PUBLIC_AUTH_URL: https://hbcfield.com/api/v1
+          NEXT_PUBLIC_SOCKET_URL: https://hbcfield.com
+        run: pnpm build:check
 
   security:
-    name: Security Audit
+    name: Security audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
+      - uses: ./.github/actions/setup
         with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
+          build-shared: 'false'
+          prisma: 'false'
       - name: Audit dependencies
         run: pnpm audit --audit-level=high

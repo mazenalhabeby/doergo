@@ -1,0 +1,11 @@
+{
+  "$comment": "Test files CI runs but does not gate on. Each entry needs a reason and the date it was quarantined. The Quarantined job reports when an entry starts passing — remove it then. Never add a file here to get a red build green: only a test that fails on clean main for a reason outside the code under test.",
+  "tests": [
+    {
+      "app": "apps/api/auth-service",
+      "path": "src/modules/documents/__tests__/mrz-ocr.spec.ts",
+      "since": "2026-09-15",
+      "reason": "Fails on clean main (26d27003): 'READS A ZONE off a rendered document' and 'NEVER accepts a misread' get null back. The specimen is an SVG rendered with whatever monospace font the host has, and the OCR model is downloaded at first use when tessdata/ is absent — both properties of the machine, not of the reader. The production image ships eng.traineddata; the parsing and check digits stay gated through mrz.spec.ts in the same folder."
+    }
+  ]
+}

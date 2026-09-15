@@ -1,0 +1,10 @@
+{
+  "name": "hbcfield-release-tools",
+  "private": true,
+  "type": "module",
+  "description": "Release pipeline scripts. Plain Node 22 (type stripping), no dependencies of their own — run from the repo root, e.g. node tools/release/check-migrations.ts",
+  "scripts": {
+    "test": "node --test check-migrations.test.ts mobile-change-kind.test.ts check-images.test.ts deploy-sh.test.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}

@@ -1,0 +1,39 @@
+name: Set up the workspace
+description: pnpm (version from package.json), Node, a frozen install, packages/shared built and the Prisma client generated.
+
+inputs:
+  node-version:
+    description: Node version
+    default: '20'
+  build-shared:
+    description: Build packages/shared (the web app and mobile read its dist/)
+    default: 'true'
+  prisma:
+    description: Generate the Prisma client
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    # No `version:` — pnpm/action-setup reads packageManager (pnpm@9.15.0) from
+    # package.json and refuses to run when both are given.
+    - uses: pnpm/action-setup@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+
+    - name: Install (frozen lockfile)
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    - name: Build packages/shared
+      if: inputs.build-shared == 'true'
+      shell: bash
+      run: pnpm --filter @hbcfield/shared build
+
+    - name: Generate the Prisma client
+      if: inputs.prisma == 'true'
+      shell: bash
+      run: pnpm db:generate
