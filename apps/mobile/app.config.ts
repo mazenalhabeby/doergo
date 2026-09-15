@@ -25,6 +25,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: 'HBCField',
     slug: 'doergo',
     /*
+      1.0.6 — offline mode (encrypted local database, background sync, network
+      status, image resizing: all NATIVE), one-button clock-in, live presence,
+      overtime and forgotten-shift handling, iOS time-sensitive pushes and
+      navigation-app detection.
+
       1.0.5 — the store release carrying the business-card scanner.
 
       ⚠️ `runtimeVersion` follows this, so bumping it opens a NEW OTA train.
@@ -33,7 +38,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       — their binary has different native code. Never publish current JS to an
       older train: the older native side crashes on it.
     */
-    version: '1.0.5',
+    version: '1.0.6',
     // 'default' allows landscape on tablets. Phones are kept portrait so their
     // phone-first UI is never shown rotated: iPhone via the idiom-specific
     // infoPlist keys below, Android phones via a runtime lock in the root layout.
