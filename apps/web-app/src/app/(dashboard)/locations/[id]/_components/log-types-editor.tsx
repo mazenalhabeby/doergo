@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { ChoiceOptionsEditor } from "./choice-options-editor"
 
 /**
  * What gets DONE to one of these — Fuel, Oil change, Damage — and what each
@@ -310,13 +311,7 @@ function TypeDetails({ type, onChange }: { type: KindLogType; onChange: (patch: 
               </div>
 
               {f.type === "choice" && (
-                <Input
-                  // Comma-separated while typing; the normaliser trims and dedupes on save.
-                  value={(f.options ?? []).join(", ")}
-                  onChange={(e) => setField(fi, { options: e.target.value.split(",").map((o) => o.trimStart()) })}
-                  placeholder={t("assetLog.editor.optionsPh", "Diesel, Petrol, Electric")}
-                  className="h-7 text-xs"
-                />
+                <ChoiceOptionsEditor value={f.options ?? []} onChange={(options) => setField(fi, { options })} />
               )}
             </div>
           ))}
