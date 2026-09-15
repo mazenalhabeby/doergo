@@ -2219,6 +2219,9 @@
     "unknownType": "This kind no longer logs that.",
     "readReceipt": "Read the amount from a receipt",
     "when": "When",
+    "pickDate": "Choose a day",
+    "dateFuture": "An entry cannot be dated in the future",
+    "dateTooOld": "An entry older than {{count}} days has to be filed by the office",
     "notePh": "Anything worth knowing",
     "send": "Log it",
     "approvalHint": "It counts once the office accepts it.",
@@ -2229,7 +2232,7 @@
       "required": "This is needed",
       "not-a-number": "That is not a number",
       "out-of-range": "That number is out of range",
-      "not-a-date": "Use a date like 2026-09-14",
+      "not-a-date": "Choose a day",
       "not-an-option": "Choose one of these",
       "too-long": "That is too long"
     },

@@ -2219,6 +2219,9 @@
     "unknownType": "Diese Art erfasst das nicht mehr.",
     "readReceipt": "Betrag von einem Beleg lesen",
     "when": "Wann",
+    "pickDate": "Tag wählen",
+    "dateFuture": "Ein Eintrag kann nicht in der Zukunft liegen",
+    "dateTooOld": "Einträge, die älter als {{count}} Tage sind, erfasst das Büro",
     "notePh": "Was man wissen sollte",
     "send": "Eintragen",
     "approvalHint": "Er zählt, sobald das Büro ihn annimmt.",
@@ -2229,7 +2232,7 @@
       "required": "Dies wird benötigt",
       "not-a-number": "Das ist keine Zahl",
       "out-of-range": "Diese Zahl liegt außerhalb des Bereichs",
-      "not-a-date": "Bitte ein Datum wie 2026-09-14 verwenden",
+      "not-a-date": "Bitte einen Tag wählen",
       "not-an-option": "Bitte eine dieser Optionen wählen",
       "too-long": "Das ist zu lang"
     },

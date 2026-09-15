@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, RefreshControl,
 } from 'react-native';
@@ -17,6 +17,8 @@ import { normalizeKindShape, custodyDays, logTypesForKind, COST_LOG_KEY } from '
 import { logColor, logTypeLabel } from '../../src/lib/log-display';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import { SendDocumentGlyph } from '../../src/components/home/glyphs';
+import { useSyncStatus } from '../../src/offline/offline-context';
+import { overlayMyLog, logEntriesDeliveredSince, type MyLogRow } from '../../src/offline/assets/log-overlay';
 
 /**
  * What I have been given, and what I have spent on it.
@@ -48,6 +50,9 @@ export default function MyAssetsScreen() {
     read as everything having been lost.
   */
   const [entries, setEntries] = useState<MyLogEntry[] | null>(null);
+  /** When the list above was read — what "delivered since" is measured from. */
+  const [loadedAt, setLoadedAt] = useState(0);
+  const { operations } = useSyncStatus();
   const [due, setDue] = useState<DueItem[]>([]);
   const [sent, setSent] = useState<MyProposal[]>([]);
   const [canPropose, setCanPropose] = useState(false);
@@ -71,6 +76,7 @@ export default function MyAssetsScreen() {
       setExpenses(sent);
       setSent(proposals);
       setEntries(logged);
+      setLoadedAt(Date.now());
       setDue(dueSoon);
     } catch (e: any) {
       toast.error(e?.message || t('myAssets.loadFailed', 'Could not load what you hold'));
@@ -82,6 +88,24 @@ export default function MyAssetsScreen() {
 
   // Re-read on focus: coming back from filing an expense must show it.
   useFocusEffect(useCallback(() => { void load(); }, [load]));
+
+  /*
+    Entries logged with no signal are in the outbox, not in the server's list.
+    Laid on top so they show the moment they are saved ("Waiting to send"), and
+    matched by the id the phone gave them, so the delivered row replaces the
+    queued one rather than joining it.
+  */
+  const rows = useMemo(
+    () => overlayMyLog(entries, operations, held ?? [], loadedAt),
+    [entries, operations, held, loadedAt],
+  );
+  // Something was delivered since the list was read: read it again, so the row
+  // carries the server's own status instead of the phone's guess at it.
+  const delivered = logEntriesDeliveredSince(operations, loadedAt);
+  useEffect(() => {
+    if (loadedAt > 0 && delivered > 0) void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [delivered, load]);
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
@@ -161,13 +185,13 @@ export default function MyAssetsScreen() {
             </>
           )}
 
-          {entries !== null ? (
-            entries.length > 0 && (
+          {rows !== null ? (
+            rows.length > 0 && (
               <>
                 <Text style={[s.sectionTitle, { color: colors.textMuted }]}>
                   {t('logbook.mine', 'My entries')}
                 </Text>
-                {entries.map((e) => (
+                {rows.map((e) => (
                   <EntryRow
                     key={e.id}
                     entry={e}
@@ -326,9 +350,12 @@ function DueRow({ item, colors, t }: { item: DueItem; colors: any; t: any }) {
 }
 
 /** One thing I logged, with what happened to it — and a way to take it back while it waits. */
-function EntryRow({ entry, colors, t, onWithdraw }: { entry: MyLogEntry; colors: any; t: any; onWithdraw: () => void }) {
+function EntryRow({ entry, colors, t, onWithdraw }: { entry: MyLogRow; colors: any; t: any; onWithdraw: () => void }) {
   const tone =
-    entry.status === 'RECORDED' ? { c: '#22c55e', icon: 'checkmark-circle' as const, label: t('logbook.recorded', 'Recorded') }
+    // Not sent yet outranks everything: "Recorded" on an entry still on the
+    // phone would tell somebody the office has it when nobody does.
+    entry.pendingSync ? { c: colors.textMuted, icon: 'cloud-upload-outline' as const, label: t('offline.chip.waiting', 'Waiting to send') }
+    : entry.status === 'RECORDED' ? { c: '#22c55e', icon: 'checkmark-circle' as const, label: t('logbook.recorded', 'Recorded') }
     : entry.status === 'REJECTED' ? { c: colors.textMuted, icon: 'close-circle' as const, label: t('expenses.rejected', 'Refused') }
     : { c: '#f59e0b', icon: 'time' as const, label: t('logbook.submitted', 'Waiting for the office') };
 
@@ -344,7 +371,8 @@ function EntryRow({ entry, colors, t, onWithdraw }: { entry: MyLogEntry; colors:
           {/* The reason it was refused, in the words somebody wrote. */}
           {entry.reviewNote ? ` — ${entry.reviewNote}` : ''}
         </Text>
-        {entry.status === 'SUBMITTED' && (
+        {/* A queued entry is not on the server to be taken back; the Sync screen discards it. */}
+        {entry.status === 'SUBMITTED' && !entry.pendingSync && (
           <TouchableOpacity onPress={onWithdraw} hitSlop={8}>
             <Text style={s.withdraw}>{t('logbook.withdraw', 'Take back')}</Text>
           </TouchableOpacity>

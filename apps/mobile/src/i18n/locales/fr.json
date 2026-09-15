@@ -2219,6 +2219,9 @@
     "unknownType": "Ce type ne consigne plus cela.",
     "readReceipt": "Lire le montant sur un reçu",
     "when": "Quand",
+    "pickDate": "Choisir un jour",
+    "dateFuture": "Une entrée ne peut pas être datée dans le futur",
+    "dateTooOld": "Une entrée de plus de {{count}} jours doit être saisie par le bureau",
     "notePh": "Ce qu'il faut savoir",
     "send": "Enregistrer",
     "approvalHint": "Elle compte dès que le bureau l'accepte.",
@@ -2229,7 +2232,7 @@
       "required": "Ce champ est requis",
       "not-a-number": "Ce n'est pas un nombre",
       "out-of-range": "Ce nombre est hors limites",
-      "not-a-date": "Utilisez une date comme 2026-09-14",
+      "not-a-date": "Choisissez un jour",
       "not-an-option": "Choisissez l'une de ces options",
       "too-long": "C'est trop long"
     },

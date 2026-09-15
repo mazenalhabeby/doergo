@@ -38,6 +38,9 @@ const KEEP: readonly RegExp[] = [
   /^\/reports\//,
   /^\/documents(\/|\?|$)/,
   /^\/assets\/(mine|expenses\/mine|proposals\/mine|custody)/,
+  // My own logbook entries and what is due on what I hold — read offline so an
+  // entry queued with no signal is shown beside the ones already delivered.
+  /^\/assets\/log\/(mine|due-mine)(\?|$)/,
   /^\/shift-issues(\/|\?|$)/,
   /^\/employees\//,
   /^\/overtime(\/|\?|$)/,

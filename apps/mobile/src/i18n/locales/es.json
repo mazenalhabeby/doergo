@@ -2219,6 +2219,9 @@
     "unknownType": "Este tipo ya no registra eso.",
     "readReceipt": "Leer el importe de un recibo",
     "when": "Cuándo",
+    "pickDate": "Elegir un día",
+    "dateFuture": "Una entrada no puede tener fecha futura",
+    "dateTooOld": "Una entrada de hace más de {{count}} días la registra la oficina",
     "notePh": "Algo que convenga saber",
     "send": "Registrar",
     "approvalHint": "Cuenta cuando la oficina lo acepte.",
@@ -2229,7 +2232,7 @@
       "required": "Esto es obligatorio",
       "not-a-number": "Eso no es un número",
       "out-of-range": "Ese número está fuera de rango",
-      "not-a-date": "Use una fecha como 2026-09-14",
+      "not-a-date": "Elija un día",
       "not-an-option": "Elija una de estas opciones",
       "too-long": "Es demasiado largo"
     },
