@@ -97,12 +97,28 @@ describe('a member sends a page in; only the office turns it into a thing', () =
     what that asks. A proposals queue whose accept button were reachable by
     everyone who can read would have moved the create, not removed it.
   */
-  it.each(['acceptProposal', 'rejectProposal'])('%s requires canManageAssets', (name) => {
-    expect(routeOf(name).permissions).toEqual(['canManageAssets']);
+  /*
+    Held org-wide OR in a space, exactly as `/contracts/apply` — never
+    `canViewAllTasks`, never nothing. A Space Manager runs their depot's register
+    and is the person a driver's page is for; the SERVICE narrows each proposal
+    to their workspaces (asset-proposal.spec.ts pins that half), so loosening
+    the gate here without it would hand every depot every other depot's queue.
+  */
+  it.each(['acceptProposal', 'rejectProposal'])('%s requires canManageAssets, in a space or org-wide', (name) => {
+    const route = routeOf(name);
+    expect(route.inSpace).toEqual(['canManageAssets']);
+    expect(route.permissions).toBeUndefined();
   });
 
-  it('the queue itself is a read of other people’s, so it asks to look', () => {
-    expect(routeOf('pendingProposals').permissions).toEqual(['canViewAllTasks']);
+  /*
+    The queue is a decider's queue. It asked `canViewAllTasks` org-wide, which a
+    Space Manager does not hold — and it carries plates, VINs and who sent them,
+    which nobody who cannot decide needs to read.
+  */
+  it('the queue asks what deciding asks, narrowed in the service', () => {
+    const route = routeOf('pendingProposals');
+    expect(route.inSpace).toEqual(['canManageAssets']);
+    expect(route.permissions).toBeUndefined();
   });
 
   /*

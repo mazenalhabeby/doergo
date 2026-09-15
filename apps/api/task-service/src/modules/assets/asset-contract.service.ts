@@ -40,7 +40,7 @@ type Db = Parameters<AssetCustodyService['apply']>[0];
  * checks, or is an internal caller such as accepting a proposal), an array =
  * only kinds in those workspaces, and an EMPTY array = nowhere.
  */
-interface ContractActor {
+export interface ContractActor {
   userId: string;
   userRole: string;
   canViewAllTasks?: boolean;
@@ -94,8 +94,11 @@ export class AssetContractService {
    * Org-wide callers keep the check they always had. A space-scoped manager is
    * let through when they manage assets SOMEWHERE — which kinds they then reach
    * is decided in `resolve`, by each kind's own workspace.
+   *
+   * Public because deciding a proposal is the same door: accepting one IS
+   * `apply`, and refusing or listing them must not ask a different question.
    */
-  private assertMay(actor: ContractActor, doing: string): void {
+  assertMay(actor: ContractActor, doing: string): void {
     if (actor.manageSpaceIds === undefined) {
       this.access.assertMay(actor, doing);
       return;

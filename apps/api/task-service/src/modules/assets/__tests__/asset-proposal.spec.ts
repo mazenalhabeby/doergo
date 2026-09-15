@@ -1,6 +1,7 @@
 import { OBJECT_STORE } from '@hbcfield/shared/storage';
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { mayReviewProposal, proposalReviewSpaces } from '@hbcfield/shared';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
@@ -23,11 +24,19 @@ const FIELDS = { registration: 'GM-472 DK', vin: 'WF0YXXTTGYKA12345' };
 
 describe('AssetProposalService', () => {
   let service: AssetProposalService;
-  const contracts = { apply: jest.fn() };
+  // `assertMay` is the REAL rule, so the proposal queue is tested against the
+  // same door the contract flow opens; only `apply` is stubbed.
+  const contracts = {
+    apply: jest.fn(),
+    assertMay: AssetContractService.prototype.assertMay.bind({ access: { assertMay: jest.fn() } }),
+  };
   const routing = { resolveWatchers: jest.fn() };
   const notifications = { emit: jest.fn() };
   // Every uploaded page exists and is small, unless a test says otherwise.
-  const store = { head: jest.fn(async () => ({ exists: true, sizeBytes: 1000 })) };
+  const store = {
+    head: jest.fn(async () => ({ exists: true, sizeBytes: 1000 })),
+    presignDownload: jest.fn(async () => 'https://s3/page'),
+  };
 
   const prisma: any = {
     assetProposal: {
@@ -36,6 +45,7 @@ describe('AssetProposalService', () => {
       update: jest.fn(), updateMany: jest.fn(),
     },
     assetCategory: { findMany: jest.fn() },
+    spaceAssignment: { findMany: jest.fn() },
     accessRole: { findMany: jest.fn() },
     user: { findMany: jest.fn(), findFirst: jest.fn(), findUnique: jest.fn() },
   };
@@ -47,6 +57,7 @@ describe('AssetProposalService', () => {
     prisma.assetCategory.findMany.mockResolvedValue([]);
     prisma.accessRole.findMany.mockResolvedValue([]);
     prisma.user.findMany.mockResolvedValue([]);
+    prisma.spaceAssignment.findMany.mockResolvedValue([]);
     prisma.user.findUnique.mockResolvedValue({ firstName: 'Ahmed', lastName: 'Dessouky' });
     routing.resolveWatchers.mockResolvedValue({ ids: ['u-boss'], emails: [] });
 
@@ -351,6 +362,193 @@ describe('AssetProposalService', () => {
       const res: any = await service.mine({ userId: 'u-ahmed', organizationId: 'org1' } as any);
       expect(res.data[0].fileKey).toBeUndefined();
       expect(res.data[0].hasDocument).toBe(true);
+    });
+  });
+
+  /*
+    ⚠️ A Space Manager decides the pages meant for their workspace.
+
+    Accept, reject and the queue asked `canManageAssets` ORG-wide while the
+    contract flow they run on had already opened to a manager of one depot. The
+    rule is written once in shared (`mayReviewProposal`): a chosen kind decides
+    by its own workspace; with no kind yet, the member's assignments decide.
+  */
+  describe('a space-scoped reviewer', () => {
+    const KINDS: Record<string, string | null> = { 'k-linz': 'linz', 'k-graz': 'graz', 'k-nowhere': null };
+    const ASSIGNED: Record<string, string[]> = { 'u-linz-driver': ['linz'], 'u-graz-driver': ['graz'] };
+    const row = (id: string, categoryId: string | null, holder: string) => ({
+      id, categoryId, holderUserId: holder, raisedById: holder, fields: FIELDS, status: 'PENDING',
+      createdAt: new Date(), fileKey: null,
+    });
+    const QUEUE = [
+      row('p-linz-kind', 'k-linz', 'u-graz-driver'),   // the kind is Linz's → Linz decides
+      row('p-graz-kind', 'k-graz', 'u-linz-driver'),   // the kind is Graz's → not Linz, whoever the driver is
+      row('p-nokind-linz', null, 'u-linz-driver'),     // no kind, a Linz driver → Linz
+      row('p-nokind-graz', null, 'u-graz-driver'),     // no kind, a Graz driver → not Linz
+      row('p-nowhere-kind', 'k-nowhere', 'u-linz-driver'), // a kind in no workspace → org-wide only
+      row('p-deleted-kind', 'k-gone', 'u-linz-driver'),    // a kind since deleted → read as not chosen
+    ];
+    const byId = (id: string) => QUEUE.find((r) => r.id === id)!;
+    const linz = { userId: 'u-lena', userRole: 'EMPLOYEE', organizationId: 'org1', manageSpaceIds: ['linz'] };
+
+    beforeEach(() => {
+      prisma.assetCategory.findMany.mockImplementation(({ where }: any) =>
+        Promise.resolve(
+          (where.id?.in ?? []).filter((id: string) => id in KINDS).map((id: string) => ({ id, spaceId: KINDS[id] })),
+        ),
+      );
+      prisma.spaceAssignment.findMany.mockImplementation(({ where }: any) =>
+        Promise.resolve(
+          (where.userId?.in ?? []).flatMap((u: string) => (ASSIGNED[u] ?? []).map((spaceId) => ({ userId: u, spaceId }))),
+        ),
+      );
+      prisma.assetProposal.findMany.mockResolvedValue(QUEUE);
+      prisma.assetProposal.findFirst.mockImplementation(({ where }: any) => Promise.resolve(byId(where.id) ?? null));
+      prisma.assetProposal.updateMany.mockResolvedValue({ count: 1 });
+      prisma.assetProposal.findUniqueOrThrow.mockImplementation(({ where }: any) => Promise.resolve(byId(where.id)));
+      contracts.apply.mockResolvedValue({ data: { assetId: 'a-new', name: 'GM-472 DK' } });
+    });
+
+    describe('the rule, in shared', () => {
+      it('lets a chosen kind decide by its own workspace, and only that', () => {
+        expect(mayReviewProposal({ kindSpaceId: 'linz', holderSpaceIds: ['graz'] }, ['linz'])).toBe(true);
+        expect(mayReviewProposal({ kindSpaceId: 'graz', holderSpaceIds: ['linz'] }, ['linz'])).toBe(false);
+        expect(mayReviewProposal({ kindSpaceId: null, holderSpaceIds: ['linz'] }, ['linz'])).toBe(false);
+      });
+
+      it('falls to the member’s workspaces while no kind is chosen', () => {
+        expect(mayReviewProposal({ kindSpaceId: undefined, holderSpaceIds: ['graz', 'linz'] }, ['linz'])).toBe(true);
+        expect(mayReviewProposal({ kindSpaceId: undefined, holderSpaceIds: ['graz'] }, ['linz'])).toBe(false);
+        expect(mayReviewProposal({ kindSpaceId: undefined, holderSpaceIds: [] }, ['linz'])).toBe(false);
+      });
+
+      it('org-wide reaches everything; granted nowhere reaches nothing', () => {
+        expect(mayReviewProposal({ kindSpaceId: null, holderSpaceIds: [] }, null)).toBe(true);
+        expect(mayReviewProposal({ kindSpaceId: null, holderSpaceIds: [] }, undefined)).toBe(true);
+        expect(mayReviewProposal({ kindSpaceId: 'linz', holderSpaceIds: ['linz'] }, [])).toBe(false);
+      });
+
+      it('names the same workspaces for routing', () => {
+        expect(proposalReviewSpaces({ kindSpaceId: 'graz', holderSpaceIds: ['linz'] })).toEqual(['graz']);
+        expect(proposalReviewSpaces({ kindSpaceId: undefined, holderSpaceIds: ['linz', 'linz', 'wels'] })).toEqual(['linz', 'wels']);
+        expect(proposalReviewSpaces({ kindSpaceId: null, holderSpaceIds: ['linz'] })).toEqual([]);
+      });
+    });
+
+    describe('the queue', () => {
+      it('shows only what they may decide', async () => {
+        const res: any = await service.pending(linz as any);
+        expect(res.data.proposals.map((p: any) => p.id)).toEqual(['p-linz-kind', 'p-nokind-linz', 'p-deleted-kind']);
+      });
+
+      it('is unchanged for an org-wide manager — and costs no lookups', async () => {
+        const res: any = await service.pending({ userId: 'u-boss', userRole: 'ADMIN', organizationId: 'org1' } as any);
+        expect(res.data.proposals).toHaveLength(QUEUE.length);
+        expect(prisma.spaceAssignment.findMany).not.toHaveBeenCalled();
+      });
+
+      it('is refused to somebody who manages assets nowhere, before anything is read', async () => {
+        await expect(service.pending({ ...linz, manageSpaceIds: [] } as any)).rejects.toBeInstanceOf(ForbiddenException);
+        expect(prisma.assetProposal.findMany).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('deciding', () => {
+      const accept = (id: string, over: any = {}) => service.accept({ id, categoryId: 'k-linz', ...linz, ...over } as any);
+
+      it('accepts one in scope, and carries their workspaces into apply', async () => {
+        await accept('p-nokind-linz');
+        expect(contracts.apply).toHaveBeenCalledWith(
+          expect.objectContaining({ categoryId: 'k-linz', manageSpaceIds: ['linz'], holderUserId: 'u-linz-driver' }),
+          expect.anything(),
+        );
+      });
+
+      it('is told a proposal outside their workspaces does not exist — 404, and nothing is claimed', async () => {
+        for (const id of ['p-graz-kind', 'p-nokind-graz', 'p-nowhere-kind']) {
+          await expect(accept(id)).rejects.toBeInstanceOf(NotFoundException);
+        }
+        expect(prisma.assetProposal.updateMany).not.toHaveBeenCalled();
+        expect(contracts.apply).not.toHaveBeenCalled();
+      });
+
+      /*
+        Reviewing a Linz driver's page is not creating it in Graz's register.
+        `apply` narrows the chosen kind (asset-contract.spec.ts pins that); here,
+        its 404 must leave the proposal back in the queue.
+      */
+      it('cannot create it in a kind outside their workspaces — and the proposal goes back in the queue', async () => {
+        contracts.apply.mockRejectedValue(new NotFoundException('That type is not in this organization'));
+        await expect(accept('p-nokind-linz', { categoryId: 'k-graz' })).rejects.toBeInstanceOf(NotFoundException);
+        expect(contracts.apply).toHaveBeenCalledWith(
+          expect.objectContaining({ categoryId: 'k-graz', manageSpaceIds: ['linz'] }), expect.anything(),
+        );
+        expect(prisma.assetProposal.updateMany).toHaveBeenLastCalledWith(
+          expect.objectContaining({ data: expect.objectContaining({ status: 'PENDING' }) }),
+        );
+      });
+
+      it('still cannot accept one twice', async () => {
+        prisma.assetProposal.updateMany.mockResolvedValue({ count: 0 });
+        await expect(accept('p-nokind-linz')).rejects.toBeInstanceOf(NotFoundException);
+        expect(contracts.apply).not.toHaveBeenCalled();
+      });
+
+      it('an org-wide manager is not narrowed at all', async () => {
+        await service.accept({ id: 'p-graz-kind', userId: 'u-boss', userRole: 'ADMIN', organizationId: 'org1' } as any);
+        expect(prisma.assetProposal.findFirst).not.toHaveBeenCalled();
+        expect(contracts.apply).toHaveBeenCalledWith(
+          expect.not.objectContaining({ manageSpaceIds: expect.anything() }), expect.anything(),
+        );
+      });
+
+      it('refuses one in scope, and 404s one outside without touching it', async () => {
+        prisma.assetProposal.findUnique.mockResolvedValue({ raisedById: 'u-linz-driver' });
+        await service.reject({ id: 'p-nokind-linz', note: 'old', ...linz } as any);
+        expect(prisma.assetProposal.updateMany).toHaveBeenCalledTimes(1);
+
+        prisma.assetProposal.updateMany.mockClear();
+        await expect(service.reject({ id: 'p-graz-kind', ...linz } as any)).rejects.toBeInstanceOf(NotFoundException);
+        expect(prisma.assetProposal.updateMany).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('the page', () => {
+      const withPage = (id: string) => ({ ...byId(id), fileKey: 'org1/asset-proposals/x/a.jpg', fileMime: 'image/jpeg' });
+
+      it('opens for the reviewer of that workspace, and for nobody else’s', async () => {
+        prisma.assetProposal.findFirst.mockResolvedValueOnce(withPage('p-nokind-linz'));
+        await expect(service.documentUrl({ id: 'p-nokind-linz', ...linz } as any)).resolves.toBeDefined();
+
+        prisma.assetProposal.findFirst.mockResolvedValueOnce(withPage('p-graz-kind'));
+        await expect(service.documentUrl({ id: 'p-graz-kind', ...linz } as any)).rejects.toBeInstanceOf(NotFoundException);
+      });
+    });
+
+    describe('who is told', () => {
+      /*
+        The managers of the workspace it belongs to, before the whole office —
+        through the same place the queue narrows by, so whoever is told finds
+        it in their queue.
+      */
+      it('tells the workspace’s managers before falling back to the organization’s', async () => {
+        routing.resolveWatchers.mockResolvedValue({ ids: [], emails: [] });
+        prisma.assetProposal.findUnique.mockResolvedValue({
+          id: 'p1', categoryId: null, holderUserId: 'u-linz-driver', raisedById: 'u-linz-driver',
+        });
+        prisma.spaceAssignment.findMany.mockImplementation(({ where }: any) =>
+          Promise.resolve(
+            where.spaceId === 'linz'
+              ? [{ userId: 'u-lena', role: { isActive: true, permissions: { canManageAssets: true } } }]
+              : [{ userId: 'u-linz-driver', spaceId: 'linz' }],
+          ),
+        );
+        await raise({ userId: 'u-linz-driver' });
+        expect(notifications.emit).toHaveBeenCalledWith(
+          'asset_proposal_raised', expect.objectContaining({ recipientIds: ['u-lena'] }),
+        );
+        expect(prisma.accessRole.findMany).not.toHaveBeenCalled();
+      });
     });
   });
 });

@@ -8,3 +8,4 @@ export * from './contract';
 export * from './document-kind';
 export * from './record';
 export * from './logbook';
+export * from './proposal-scope';

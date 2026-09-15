@@ -293,15 +293,25 @@ export class AssetsController {
     });
   }
 
-  /** The queue. A read of other people's, so it asks to be allowed to look. */
+  /*
+    The queue — a DECIDER's queue, so it asks what deciding asks.
+
+    It used to ask `canViewAllTasks` org-wide: a read of other people's. But the
+    only screen that opens it is the reviewer's, and a Space Manager holds
+    `canManageAssets` in their own depot without holding `canViewAllTasks`
+    anywhere — so the person a driver's page is for could not see it. In space
+    now; the service narrows to what this caller may decide, by the same rule
+    accept and reject refuse with (`mayReviewProposal` in shared).
+  */
   @Get('proposals/pending')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Documents waiting on a decision' })
   async pendingProposals(@Request() req: any) {
     return this.assetsService.proposalPending({
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      manageSpaceIds: assetManageSpaces(req.user) ?? undefined,
       organizationId: req.user.organizationId,
     });
   }
@@ -311,9 +321,13 @@ export class AssetsController {
     replaces — so it asks exactly what `/contracts/apply` asks, because it IS
     `/contracts/apply`, with the plan recomputed at this moment rather than
     frozen when the page was uploaded.
+
+    ⚠️ In space, like apply. The request names a proposal, not a space, so the
+    guard only asks "somewhere?" — the service refuses a proposal outside the
+    caller's workspaces as not found, and apply refuses a kind outside them.
   */
   @Post('proposals/:id/accept')
-  @RequirePermission('canManageAssets')
+  @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Create it, hand it over, retire what it replaces' })
   @ApiParam({ name: 'id', description: 'Proposal ID' })
   async acceptProposal(@Param('id') id: string, @Body() dto: AcceptProposalDto, @Request() req: any) {
@@ -323,12 +337,13 @@ export class AssetsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      manageSpaceIds: assetManageSpaces(req.user) ?? undefined,
       organizationId: req.user.organizationId,
     });
   }
 
   @Post('proposals/:id/reject')
-  @RequirePermission('canManageAssets')
+  @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Refuse it, with a reason the member reads' })
   @ApiParam({ name: 'id', description: 'Proposal ID' })
   async rejectProposal(
@@ -342,6 +357,7 @@ export class AssetsController {
       userId: req.user.id,
       userRole: req.user.role,
       canViewAllTasks: req.user.canViewAllTasks,
+      manageSpaceIds: assetManageSpaces(req.user) ?? undefined,
       organizationId: req.user.organizationId,
     });
   }
@@ -366,11 +382,15 @@ export class AssetsController {
   @ApiOperation({ summary: 'A short-lived link to the page' })
   @ApiParam({ name: 'id', description: 'Proposal ID' })
   async proposalDocumentUrl(@Param('id') id: string, @Request() req: any) {
+    // Resolved once: org-wide (null) or the workspaces a reviewer decides in.
+    // A member who manages nothing gets [] and may open only their own page.
+    const manage = assetManageSpaces(req.user);
     return this.assetsService.proposalDocumentUrl({
       id,
       userId: req.user.id,
       userRole: req.user.role,
-      canManageAssets: req.user.canManageAssets,
+      canManageAssets: manage === null,
+      manageSpaceIds: manage ?? undefined,
       organizationId: req.user.organizationId,
     });
   }

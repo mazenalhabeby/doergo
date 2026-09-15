@@ -1,22 +1,30 @@
 import {
-  BadRequestException, ForbiddenException, Inject, Injectable, Logger, NotFoundException,
+  BadRequestException, Inject, Injectable, Logger, NotFoundException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { OBJECT_STORE, ObjectStore, extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
 import { randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, normalizeKindShape, isAdmin } from '@hbcfield/shared';
+import {
+  success, normalizeKindShape, activeAssignmentWhere,
+  mayReviewProposal, proposalReviewSpaces, type ProposalPlace,
+} from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
-import { AssetAccessService } from './asset-access.service';
-import { AssetContractService, type ContractFields } from './asset-contract.service';
+import { AssetContractService, type ContractActor, type ContractFields } from './asset-contract.service';
 import { AssetNotifier } from './asset-notifier.service';
+import { AssetResponsibleService } from './asset-responsible.service';
 import { findPrior } from '../../common/create-once.util';
 
 const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf'];
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
 /** One person cannot fill somebody's queue by holding down the shutter. */
 const MAX_OPEN_PER_MEMBER = 10;
+/** How many waiting proposals are read before a space-scoped queue is narrowed. */
+const PENDING_SCAN = 500;
+
+/** The columns that decide where a proposal belongs. */
+type Placeable = { id: string; categoryId: string | null; holderUserId: string | null; raisedById: string };
 
 export const PROPOSAL_STATUS = {
   PENDING: 'PENDING',
@@ -55,10 +63,10 @@ export class AssetProposalService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly access: AssetAccessService,
     private readonly contracts: AssetContractService,
     private readonly routing: NotificationRoutingService,
     private readonly notifier: AssetNotifier,
+    private readonly responsible: AssetResponsibleService,
     @Inject('NOTIFICATION_SERVICE') private readonly notifications: ClientProxy,
     @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
   ) {}
@@ -104,15 +112,25 @@ export class AssetProposalService {
    * at one an act rather than a side effect of opening a queue.
    */
   async documentUrl(data: {
-    id: string; userId: string; userRole: string; organizationId: string; canManageAssets?: boolean;
+    id: string; userId: string; userRole: string; organizationId: string;
+    /** Manages assets org-wide. */
+    canManageAssets?: boolean;
+    /** Manages assets in these workspaces only. */
+    manageSpaceIds?: string[];
   }) {
     const p = await this.prisma.assetProposal.findFirst({
       where: { id: data.id, organizationId: data.organizationId },
-      select: { fileKey: true, fileMime: true, raisedById: true },
+      select: { id: true, fileKey: true, fileMime: true, raisedById: true, holderUserId: true, categoryId: true },
     });
     if (!p?.fileKey) throw new NotFoundException('No document on that');
-    // The person who sent it, or somebody who may act on it.
-    if (p.raisedById !== data.userId && !data.canManageAssets) {
+    /*
+      The person who sent it, or somebody who may decide it. A Space Manager
+      reviewing a driver's page must be able to read the page — and only the
+      pages their queue would show them, by the same rule.
+    */
+    const mayDecide = data.canManageAssets === true ||
+      ((data.manageSpaceIds?.length ?? 0) > 0 && (await this.reviewable(p, data.organizationId, data.manageSpaceIds)));
+    if (p.raisedById !== data.userId && !mayDecide) {
       throw new NotFoundException('No document on that');
     }
     const url = await requireObjectStore(this.store).presignDownload(p.fileKey, undefined, 600, {
@@ -257,6 +275,27 @@ export class AssetProposalService {
       let recipientIds = ids;
 
       if (recipientIds.length === 0) {
+        /*
+          The managers of the workspace it belongs to, before the whole office.
+
+          Read through the SAME place the queue narrows by — the kind's
+          workspace, or else the member's — so the people told are the people
+          who will find it in their queue. Telling a depot manager about a van
+          another depot has to create is a push they can do nothing with.
+        */
+        const proposal = await this.prisma.assetProposal.findUnique({
+          where: { id: proposalId },
+          select: { id: true, categoryId: true, holderUserId: true, raisedById: true },
+        });
+        if (proposal) {
+          const place = (await this.placesOf([proposal], organizationId)).get(proposal.id)!;
+          const local = await Promise.all(
+            proposalReviewSpaces(place).map((spaceId) => this.responsible.spaceManagers(organizationId, spaceId)),
+          );
+          recipientIds = [...new Set(local.flat())].filter((id) => id !== raisedById);
+        }
+      }
+      if (recipientIds.length === 0) {
         // The same approvers an expense falls back to, from the one place that
         // decides who can act on the register.
         recipientIds = await this.notifier.approvers(organizationId, raisedById);
@@ -310,18 +349,32 @@ export class AssetProposalService {
     return success(rows.map(({ fileKey, ...r }) => ({ ...r, hasDocument: !!fileKey })));
   }
 
-  /** Everything waiting on a decision. */
-  async pending(data: { userId: string; userRole: string; organizationId: string }) {
-    this.access.assertMay(data as any, 'view assets');
-    const rows = await this.prisma.assetProposal.findMany({
+  /**
+   * Everything waiting on a decision — that THIS caller may decide.
+   *
+   * An org-wide manager sees the whole queue, as before. A space-scoped one sees
+   * what `mayReviewProposal` gives them, filtered with the very function accept
+   * and reject ask, so the list and the refusal cannot drift: a row in the
+   * queue is a row they can act on, and nothing else is shown.
+   */
+  async pending(data: ContractActor) {
+    this.contracts.assertMay(data, 'view assets');
+    const scoped = data.manageSpaceIds !== undefined;
+    const found = await this.prisma.assetProposal.findMany({
       where: { organizationId: data.organizationId, status: PROPOSAL_STATUS.PENDING },
       orderBy: { createdAt: 'desc' },
-      take: 100,
+      // Narrowed in memory below, so a scoped caller reads further before it cuts.
+      take: scoped ? PENDING_SCAN : 100,
       select: {
         id: true, fields: true, signals: true, documentKind: true, categoryId: true,
         raisedById: true, holderUserId: true, createdAt: true, fileKey: true, fileName: true,
       },
     });
+    let rows = found;
+    if (scoped && found.length > 0) {
+      const places = await this.placesOf(found, data.organizationId);
+      rows = found.filter((r) => mayReviewProposal(places.get(r.id)!, data.manageSpaceIds)).slice(0, 100);
+    }
     if (rows.length === 0) return success({ proposals: [] });
 
     const ids = [...new Set(rows.flatMap((r) => [r.raisedById, r.holderUserId]).filter((v): v is string => !!v))];
@@ -358,11 +411,11 @@ export class AssetProposalService {
     typeId?: string;
     fields?: ContractFields;
     retireReplaced?: boolean;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'update assets');
+  } & ContractActor) {
+    this.contracts.assertMay(data, 'update assets');
+    // Out of scope answers exactly like decided or missing — and before the
+    // claim, so a refused reviewer never takes it out of somebody else's queue.
+    await this.assertReviewable(data.id, data);
 
     const proposal = await this.claim(data.id, data.organizationId);
 
@@ -382,6 +435,15 @@ export class AssetProposalService {
         retireReplaced: data.retireReplaced,
         userId: data.userId,
         userRole: data.userRole,
+        canViewAllTasks: data.canViewAllTasks,
+        /*
+          ⚠️ The reviewer's own workspaces travel into apply, which narrows the
+          CHOSEN kind by its real workspace. Being allowed to review a proposal
+          for a member of my depot is not being allowed to create it in another
+          depot's register — a kind picked outside answers 404 there, and the
+          catch below puts the proposal back in the queue.
+        */
+        manageSpaceIds: data.manageSpaceIds,
         organizationId: data.organizationId,
       }, {
         /*
@@ -427,10 +489,9 @@ export class AssetProposalService {
   }
 
   /** Refuse it, with a reason the member reads. */
-  async reject(data: {
-    id: string; note?: string; userId: string; userRole: string; organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'update assets');
+  async reject(data: { id: string; note?: string } & ContractActor) {
+    this.contracts.assertMay(data, 'update assets');
+    await this.assertReviewable(data.id, data);
     const { count } = await this.prisma.assetProposal.updateMany({
       where: { id: data.id, organizationId: data.organizationId, status: PROPOSAL_STATUS.PENDING },
       data: {
@@ -463,6 +524,67 @@ export class AssetProposalService {
     });
     if (!count) throw new NotFoundException('That is not yours, or it has been decided');
     return success({ id: data.id, status: PROPOSAL_STATUS.WITHDRAWN });
+  }
+
+  // ── Where one belongs ──────────────────────────────────────────────────────
+
+  /**
+   * The place of each proposal: its kind's real workspace, and the member's
+   * current assignments. Two queries however many rows.
+   *
+   * A `categoryId` that no longer resolves is read as "not chosen" — the kind
+   * was deleted, and the reviewer is left exactly where a proposal without one
+   * leaves them: they must choose.
+   */
+  private async placesOf(rows: Placeable[], organizationId: string): Promise<Map<string, ProposalPlace>> {
+    const kindIds = [...new Set(rows.map((r) => r.categoryId).filter((v): v is string => !!v))];
+    const holderIds = [...new Set(rows.map((r) => r.holderUserId ?? r.raisedById))];
+    const { userId: _any, ...window } = activeAssignmentWhere('');
+
+    const [kinds, assignments] = await Promise.all([
+      kindIds.length
+        ? this.prisma.assetCategory.findMany({
+            where: { id: { in: kindIds }, organizationId },
+            select: { id: true, spaceId: true },
+          })
+        : Promise.resolve([] as Array<{ id: string; spaceId: string | null }>),
+      this.prisma.spaceAssignment.findMany({
+        where: { ...window, organizationId, userId: { in: holderIds } },
+        select: { userId: true, spaceId: true },
+      }),
+    ]);
+    const kindSpace = new Map(kinds.map((k) => [k.id, k.spaceId]));
+    const spacesOf = new Map<string, string[]>();
+    for (const a of assignments) spacesOf.set(a.userId, [...(spacesOf.get(a.userId) ?? []), a.spaceId]);
+
+    return new Map(rows.map((r) => [r.id, {
+      kindSpaceId: r.categoryId && kindSpace.has(r.categoryId) ? kindSpace.get(r.categoryId) : undefined,
+      holderSpaceIds: spacesOf.get(r.holderUserId ?? r.raisedById) ?? [],
+    }]));
+  }
+
+  private async reviewable(row: Placeable, organizationId: string, manageSpaceIds?: string[]): Promise<boolean> {
+    if (manageSpaceIds === undefined) return true;
+    const place = (await this.placesOf([row], organizationId)).get(row.id)!;
+    return mayReviewProposal(place, manageSpaceIds);
+  }
+
+  /**
+   * Refuse a space-scoped reviewer a proposal outside their workspaces.
+   *
+   * ⚠️ 404, and the same sentence as one already decided. "That is waiting, you
+   * just may not decide it" tells a depot manager what another depot is taking
+   * on. Org-wide callers are not read here at all — the claim answers for them.
+   */
+  private async assertReviewable(id: string, actor: ContractActor): Promise<void> {
+    if (actor.manageSpaceIds === undefined) return;
+    const row = await this.prisma.assetProposal.findFirst({
+      where: { id, organizationId: actor.organizationId, status: PROPOSAL_STATUS.PENDING },
+      select: { id: true, categoryId: true, holderUserId: true, raisedById: true },
+    });
+    if (!row || !(await this.reviewable(row, actor.organizationId, actor.manageSpaceIds))) {
+      throw new NotFoundException('That is not waiting for a decision');
+    }
   }
 
   /**
