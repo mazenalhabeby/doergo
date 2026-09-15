@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { reportLabelEn, type ReportLabelKey } from '@hbcfield/shared';
 import { DATASETS, Dataset } from './registry';
 
 export type Granularity = 'none' | 'day' | 'week' | 'month' | 'quarter' | 'year';
@@ -55,7 +56,11 @@ function aggregate(agg: string, sql: string): string {
 export interface CompiledQuery {
   sql: string;
   params: unknown[];
-  columns: Array<{ key: string; label: string; kind: 'dimension' | 'measure' | 'period'; format?: string }>;
+  /**
+   * `labelKey` names the column in any language (REPORT_LABELS); `label` is its
+   * English name, for a reader that does not translate.
+   */
+  columns: Array<{ key: string; labelKey: ReportLabelKey; label: string; kind: 'dimension' | 'measure' | 'period'; format?: string }>;
 }
 
 /** Compile a report definition into safe parameterized SQL against a dataset. */
@@ -77,7 +82,7 @@ export function compile(def: ReportDefinition, organizationId: string): Compiled
     const expr = `date_trunc('${granularity}', ${ds.dateColumn})`;
     selects.push(`${expr} AS "period"`);
     groupBy.push(expr);
-    columns.push({ key: 'period', label: 'Period', kind: 'period' });
+    columns.push({ key: 'period', labelKey: 'col.period', label: reportLabelEn('col.period'), kind: 'period' });
   }
 
   // Dimensions.
@@ -86,7 +91,7 @@ export function compile(def: ReportDefinition, organizationId: string): Compiled
     if (!dim) throw new BadRequestException(`Unknown dimension '${key}' for dataset '${def.dataset}'`);
     selects.push(`${dim.sql} AS "${key}"`);
     groupBy.push(dim.sql);
-    columns.push({ key, label: dim.label, kind: 'dimension' });
+    columns.push({ key, labelKey: dim.labelKey, label: reportLabelEn(dim.labelKey), kind: 'dimension' });
   }
 
   // Measures.
@@ -94,7 +99,7 @@ export function compile(def: ReportDefinition, organizationId: string): Compiled
     const m = ds.measures[key];
     if (!m) throw new BadRequestException(`Unknown measure '${key}' for dataset '${def.dataset}'`);
     selects.push(`${aggregate(m.agg, m.sql)} AS "${key}"`);
-    columns.push({ key, label: m.label, kind: 'measure', format: m.format });
+    columns.push({ key, labelKey: m.labelKey, label: reportLabelEn(m.labelKey), kind: 'measure', format: m.format });
   }
 
   // WHERE — org scope is ALWAYS applied.

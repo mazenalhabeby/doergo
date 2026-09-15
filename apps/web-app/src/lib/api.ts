@@ -6786,15 +6786,21 @@ export interface ReportDefinition {
   limit?: number;
 }
 
-export interface ReportColumn { key: string; label: string; kind: "dimension" | "measure" | "period"; format?: string }
+/**
+ * `labelKey` names the column in the catalogue every reader shares
+ * (REPORT_LABELS in @hbcfield/shared); `label` is its English name, kept for a
+ * column the catalogue does not know. Render with `localizeReportColumns`.
+ */
+export interface ReportColumn { key: string; labelKey?: string; label: string; kind: "dimension" | "measure" | "period"; format?: string }
 export interface ReportResult { columns: ReportColumn[]; rows: Array<Record<string, unknown>> }
 
 export interface ReportTemplate { key: string; name: string; description: string; def: ReportDefinition }
 export interface DatasetMeta {
   key: string;
+  labelKey?: string;
   label: string;
-  dimensions: Array<{ key: string; label: string; type: string }>;
-  measures: Array<{ key: string; label: string; format: string }>;
+  dimensions: Array<{ key: string; labelKey?: string; label: string; type: string }>;
+  measures: Array<{ key: string; labelKey?: string; label: string; format: string }>;
 }
 
 export interface SavedReport {

@@ -9,6 +9,7 @@ import {
   formatNumberFor,
   groupByLocale,
   localesByAddress,
+  reportLabel,
   scheduledReportEmail,
   type SupportedLocale,
 } from '@hbcfield/shared';
@@ -103,8 +104,9 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
    * report to that address. One query for the whole list; the report itself is
    * run once, and only the frame around it is rendered per language.
    *
-   * The report's own column names and values are data from the report
-   * definition, not sentences, and are sent as they are.
+   * Column NAMES are the system's own and are written in each group's language
+   * (REPORT_LABELS, the catalogue the web table reads). The VALUES — a person, a
+   * client, a status an organization named — are data and go as they are.
    */
   private async deliver(schedule: {
     organizationId: string;
@@ -129,7 +131,7 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
       const { subject, html } = scheduledReportEmail(locale, {
         reportName: schedule.reportDefinition.name,
         generatedAt,
-        columns: data.columns.map((c) => ({ label: c.label, align: c.kind === 'measure' ? 'right' : 'left' })),
+        columns: data.columns.map((c) => ({ label: reportLabel(locale, c.labelKey, c.label), align: c.kind === 'measure' ? 'right' : 'left' })),
         rows: data.rows.slice(0, 200).map((r) => data.columns.map((c) => this.fmt(r[c.key], c.format, locale))),
       });
       this.notificationClient.emit('report_email', { recipients: group, subject, html });

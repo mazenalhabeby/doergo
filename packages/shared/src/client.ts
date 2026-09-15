@@ -93,6 +93,9 @@ export * from './notifications/push-channels';
 export * from './notifications/locale';
 // What a client record's "Language for emails" may hold — the form and the server share it.
 export * from './crm/client-locale';
+// Report dataset and column names per language. The web table, its CSV/PDF and
+// the scheduled email (task-service) all name a column from this one catalogue.
+export * from './reports/report-labels';
 
 // Counted time — the one place real hours become paid hours.
 export * from './attendance/counted-time';
