@@ -39,17 +39,12 @@ export function AssetsTab({ spaceId }: { spaceId: string }) {
   const router = useRouter()
   const { user } = useAuth()
   /*
-    The proposals queue's accept is `@RequirePermission('canManageAssets')` —
-    org-wide — so the queue asks the org-wide question. A token minted before
-    the capability existed carries neither flag; an admin is one either way,
-    which is what stops an old session losing a button it had yesterday.
-  */
-  const canManageAssets = !!(user?.canManageAssets ?? user?.canManageUsers) || user?.role === "ADMIN"
-  /*
-    The contract flow asks IN THIS workspace. A Space Manager holds
-    `canManageAssets` in their own depot, and the server now accepts that grant
-    for this workspace's kinds — asking the org-wide flag here hid the button
-    from exactly the person at the desk when the agreement arrives.
+    The contract flow — and the proposals queue, which accepts THROUGH it — ask
+    IN THIS workspace. A Space Manager holds `canManageAssets` in their own
+    depot, and the server accepts that grant for this workspace's kinds and for
+    the pages meant for it; asking the org-wide flag here hid both from exactly
+    the person at the desk when the agreement arrives. `canManageAssetsIn`
+    already treats an admin and a pre-capability token as org-wide.
   */
   const canUseContracts = canManageAssetsIn(user, spaceId)
   /*
@@ -159,7 +154,7 @@ export function AssetsTab({ spaceId }: { spaceId: string }) {
         them. It therefore appears on both surfaces that show assets, which is
         two chances to notice somebody waiting rather than a duplicate.
       */}
-      {canManageAssets && <ProposalQueue kinds={kinds} />}
+      {canUseContracts && <ProposalQueue kinds={kinds} />}
 
       {/* Assets that belong to no space, and so show on no other screen. Above
           the types rather than below them: it is a problem to clear, not a

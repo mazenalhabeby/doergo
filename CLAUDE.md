@@ -448,7 +448,7 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | POST | `/assets/expenses/:id/receipt-url` | **Mint a link to one slip** — no list ever returns a URL | author, or `canManageAssets` |
 | POST | `/assets/contracts/read` · `/preview` · `/apply` | A contract → create the thing, hand it over, retire what it replaces | **all three** `canManageAssets` |
 | POST · GET | `/assets/proposals/upload-url` · `/proposals` · `/proposals/mine` · `/proposals/:id/withdraw` · `/:id/document-url` | **A member sends a page in** and watches what happened to it | **none: the caller's own id is the boundary** |
-| GET · POST | `/assets/proposals/pending` · `/proposals/:id/accept` · `/reject` | The queue, and the decision | read `canViewAllTasks` · write `canManageAssets` |
+| GET · POST | `/assets/proposals/pending` · `/proposals/:id/accept` · `/reject` | The queue, and the decision | all three `canManageAssets` **in a space or org-wide**, narrowed by `mayReviewProposal` (404 outside) |
 
 > ⚠️ **THE HOLDER IS NEVER WRITTEN ONTO A COST.** Every entry carries the date the money moved; who held the asset that day is a LOOKUP (`holderOn` in shared). Storing it too gives two versions of the truth the first time somebody corrects a handover date — the likeliest repair in the whole feature.
 >
@@ -1127,6 +1127,7 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `parseReceipt()`, `moneyToCents()`, `categoryForReceipt()` | A photographed slip → amount, date, vendor. On-device, nothing calls out |
 | `parseContract()`, `proposeFromContract()`, `canApply()`, `fieldsForKind()` | A contract → a reading, then the three things accepting it would do |
 | `classifyDocument()`, `worthProposing()` | Is this page a contract for a thing, or a fuel receipt? Needs BOTH signals |
+| `mayReviewProposal()`, `proposalReviewSpaces()` | Who may decide a page a member sent in: a chosen kind decides by its workspace; with no kind, the member's workspaces. The queue, accept/reject, the page link and the routing all read it |
 | `keepFieldsForKind()`, `fieldsDroppedByMove()` | Moving an asset to another kind — what survives, and what the warning names. One rule read two ways |
 | `NAV_OPTION`, `SPACE_TAB_OPTION`, `SETTINGS_OPTION`, `surfaceAllowed()` | Which surface each Option owns. The navbar, workspace tabs and settings list all read these — adding an Option is adding a row |
 | `joinCodeCandidates()`, `JOIN_CODE_MAX_LENGTH` | Telling an org join code from an invitation code |

@@ -16,8 +16,7 @@ import { StatCard, toDate, formatTime, formatDateInZone, StatusBadge, WorkerCell
 import { countryFromTz } from "@hbcfield/shared/client"
 import { EditEntryDialog } from "./edit-entry-dialog"
 import { AddOvertimeDialog } from "./add-overtime-dialog"
-import { canAddOvertime } from "@/lib/overtime-preview"
-import { useAuth } from "@/contexts/auth-context"
+import { useOvertimeAction } from "@/hooks/use-overtime-action"
 import { EditDayOffDialog } from "./edit-dayoff-dialog"
 import { OutOfRingPanel } from "./out-of-ring-panel"
 import { PresenceDay } from "@/components/attendance/presence-day"
@@ -77,10 +76,10 @@ export function TrackingTab({
 }: TrackingTabProps) {
   const { t } = useTranslation()
   const { hour12, locale } = useTimeFormat()
-  const { hasPermission, hasPlanFeature } = useAuth()
-  // Overtime on a closed shift: the approval permission, and the Option its route is sold under.
-  const canApproveOvertime = hasPermission("canApproveOvertime") && hasPlanFeature("shift_scheduling")
-  const showActions = canReconcile || canApproveOvertime
+  // Overtime on a closed shift: the approval permission and the Option its route
+  // is sold under — one gate, shared with the member's attendance tab.
+  const overtime = useOvertimeAction()
+  const showActions = canReconcile || overtime.enabled
 
   // Days off (org-wide) only load in the "all" view. They get their own sub-tab
   // so the Clock In / Clock Out columns aren't shown for rows that never have
@@ -551,7 +550,7 @@ export function TrackingTab({
                       {showActions && (
                         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1">
-                            {canApproveOvertime && canAddOvertime(entry) && <AddOvertimeDialog entry={entry} />}
+                            {overtime.canOfferFor(entry) && <AddOvertimeDialog entry={entry} />}
                             {canReconcile && <EditEntryDialog entry={entry} />}
                           </div>
                         </TableCell>

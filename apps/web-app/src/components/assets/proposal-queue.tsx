@@ -12,7 +12,8 @@ import {
   assetsApi,
   type AssetCategory, type AssetProposal, type ContractFields, type ContractPreview,
 } from "@/lib/api"
-import { normalizeKindShape } from "@hbcfield/shared/client"
+import { normalizeKindShape, canManageAssetsIn } from "@hbcfield/shared/client"
+import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -35,6 +36,11 @@ import { initials } from "./holder-picker"
  * Sits at the top of the Assets page and renders NOTHING when it is empty: a
  * permanent empty panel teaches people to stop looking at that part of the
  * screen, and this is the one part that must keep being looked at.
+ *
+ * A Space Manager sees it too. The server narrows the list to what they may
+ * decide (`mayReviewProposal` in shared: the kind's workspace, or the member's
+ * while no kind is chosen), so nothing here filters proposals — only the kinds
+ * offered, below.
  */
 export function ProposalQueue({ kinds }: { kinds: AssetCategory[] }) {
   const { t } = useTranslation()
@@ -132,10 +138,17 @@ function ReviewDialog({
 }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
+  const { user } = useAuth()
 
+  /*
+    Only kinds a member can hold, in a workspace THIS reviewer manages. Accepting
+    runs the contract flow, which refuses a kind outside their workspaces as not
+    found — offering one would be a choice that can only fail. Same filter as
+    the contract dialog; an org-wide manager keeps every kind.
+  */
   const usable = kinds.filter((k) => {
     const shape = normalizeKindShape(k.config)
-    return shape.holder.enabled && shape.holder.members
+    return shape.holder.enabled && shape.holder.members && canManageAssetsIn(user, k.spaceId)
   })
 
   const [categoryId, setCategoryId] = useState("")
