@@ -6,7 +6,7 @@ import {
 import { CameraView } from 'expo-camera';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ScreenHeader } from '../../src/components';
 import { useTheme } from '../../src/contexts/theme-context';
@@ -16,6 +16,7 @@ import { frameToImageCrop } from '@hbcfield/shared/client';
 import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
 import { useCameraAccess } from '../../src/permissions/use-media-access';
 import { customersApi } from '../../src/lib/api';
+import { newClientInput } from '../../src/lib/client-locale';
 import { File as FsFile } from 'expo-file-system';
 import { useAuth } from '../../src/contexts/auth-context';
 import { holds } from '../../src/lib/permissions';
@@ -30,12 +31,23 @@ import { useQueuedCreate } from '../../src/offline/actions/queued-create';
  * from the review must return to the camera, not to the client list.
  *
  * ⚠️ Nothing saves without the person seeing it. Fields the reader can PROVE
- * (email, phone, website) are marked certain; fields it INFERS (name, company,
- * title) are marked as needing a look, and every line the card gave stays
- * available so a wrong guess is one tap to fix rather than a re-scan.
+ * (email, phone, website) are marked certain; fields it INFERS (name, company)
+ * are marked as needing a look, and every line the card gave stays available so
+ * a wrong guess is one tap to fix rather than a re-scan.
+ *
+ * ⚠️ A field is shown here ONLY if it is saved. The job title used to be read,
+ * badged, and offered for correction — and then dropped on the floor, because a
+ * client record has nowhere to put it: `contactName` is a name, `notes` is the
+ * office's own free text, and the honest home (`CustomerContact.role`) needs
+ * the company to exist first. That is a second write, under a second permission
+ * (`crmEditInfo`), and it cannot travel through the single-create outbox lane
+ * this screen already uses offline. Asking somebody to correct a guess and then
+ * discarding it is worse than not asking, so it is no longer asked. The reader
+ * still parses the title; when scanning can create a company AND link a contact
+ * person, it has a field to go in.
  */
 
-type FieldKey = 'name' | 'company' | 'title' | 'email' | 'phone';
+type FieldKey = 'name' | 'company' | 'email' | 'phone';
 
 export default function ScanCardScreen() {
   const { colors } = useTheme();
@@ -46,6 +58,17 @@ export default function ScanCardScreen() {
   const { user } = useAuth();
   const window = useWindowDimensions();
   const insets = useSafeAreaInsets();
+
+  /*
+    Which workspace the client should be filed in, carried from the add sheet.
+
+    Absent is a real answer — the sheet was open on "All workspaces", or this
+    route was reached by deep link — and means the same thing it means on the
+    form: no workspace. Expo Router hands params back as `string | string[]`,
+    so the array form is folded here rather than at the call site.
+  */
+  const params = useLocalSearchParams<{ spaceId?: string | string[] }>();
+  const spaceId = Array.isArray(params.spaceId) ? params.spaceId[0] : params.spaceId;
 
   /*
     The frame is measured against the CAMERA'S OWN BOX, not the window.
@@ -88,7 +111,7 @@ export default function ScanCardScreen() {
   const [busy, setBusy] = useState(false);
   const [card, setCard] = useState<ParsedCard | null>(null);
   const [values, setValues] = useState<Record<FieldKey, string>>({
-    name: '', company: '', title: '', email: '', phone: '',
+    name: '', company: '', email: '', phone: '',
   });
   const [certain, setCertain] = useState<Partial<Record<FieldKey, boolean>>>({});
   const [picking, setPicking] = useState<FieldKey | null>(null);
@@ -127,14 +150,12 @@ export default function ScanCardScreen() {
       setValues({
         name: parsed.name?.value ?? '',
         company: parsed.company?.value ?? '',
-        title: parsed.title?.value ?? '',
         email: parsed.email?.value ?? '',
         phone: parsed.phone?.value ?? '',
       });
       setCertain({
         name: parsed.name?.confidence === 'certain',
         company: parsed.company?.confidence === 'certain',
-        title: parsed.title?.confidence === 'certain',
         email: parsed.email?.confidence === 'certain',
         phone: parsed.phone?.confidence === 'certain',
       });
@@ -173,17 +194,34 @@ export default function ScanCardScreen() {
   }, [busy, t, toast, frame, box.width, box.height]);
 
   const save = useCallback(async () => {
-    const name = (values.company || values.name).trim();
-    if (!name) return;
+    /*
+      ⚠️ The SAME body builder as the typed form (`newClientInput`), not a hand-
+      written object that happens to look like one.
+
+      The two had drifted: the form sends the workspace it was opened in and an
+      explicit `locale` (null = "same as the organization"), and this screen sent
+      neither — so a scanned client landed filed in no workspace, invisible in
+      every workspace tab, with the language key simply absent from the outbox
+      entry, where it can never be added later. One builder means a field added
+      to the form cannot go missing from the camera.
+    */
+    const input = newClientInput(
+      {
+        // The company is the client; the person on the card is the contact.
+        name: values.company || values.name,
+        contactName: values.company ? values.name : '',
+        email: values.email,
+        phone: values.phone,
+      },
+      // Whatever workspace the add sheet was looking at when it sent us here.
+      spaceId || null,
+      // "" — same as the organization, which is the add sheet's own default.
+      // A card gives no hint about which language to write to somebody in.
+      '',
+    );
+    if (!input) return;
     setSaving(true);
     try {
-      const input = {
-        name,
-        // The company is the client; the person on the card is the contact.
-        contactName: values.company ? values.name.trim() || undefined : undefined,
-        email: values.email.trim() || undefined,
-        phone: values.phone.trim() || undefined,
-      };
       // The card's fields go to the client they create, and nowhere else — held
       // in the member's encrypted outbox until there is a signal to send them.
       const outcome = await clientCreate.run({ lane: 'crm:new', body: input }, () => customersApi.create(input));
@@ -198,7 +236,7 @@ export default function ScanCardScreen() {
     } finally {
       setSaving(false);
     }
-  }, [values, t, toast, clientCreate]);
+  }, [values, spaceId, t, toast, clientCreate]);
 
   // ── Allowed to add a client at all? ───────────────────────────────────────
   if (!canAdd) {
@@ -294,7 +332,6 @@ export default function ScanCardScreen() {
         >
           {field('company', t('customers.fName', 'Company'))}
           {field('name', t('customers.fContact', 'Contact person'))}
-          {field('title', t('scan.jobTitle', 'Job title'))}
           {field('email', t('customers.fEmail', 'Email'))}
           {field('phone', t('customers.fPhone', 'Phone'))}
 
