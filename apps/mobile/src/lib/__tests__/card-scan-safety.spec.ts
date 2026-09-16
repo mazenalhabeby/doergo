@@ -118,7 +118,32 @@ describe('the native card reader is never imported at module scope', () => {
 describe('the scanner keeps the card on the phone', () => {
   const scan = fs.readFileSync(path.join(MOBILE, 'app/(app)/scan-card.tsx'), 'utf8');
   const lib = fs.readFileSync(path.join(MOBILE, 'src/lib/card-scan.ts'), 'utf8');
-  const code = stripComments(scan) + stripComments(lib);
+
+  /*
+    ⚠️ THE WHOLE FEATURE, not just the screen.
+
+    This used to read two files, because the review WAS the screen: one
+    component held the camera, the fields and the save. It no longer is — the
+    field row, the destination choice, the duplicate check and the two save
+    roads are components of their own — and a guard that keeps reading the two
+    files it was written against is a guard that quietly stops guarding. An
+    upload added to `card-destination.tsx` would have passed it.
+
+    Everything the scanner is made of is listed here, so a new part of the
+    feature is either on this list or is not part of the feature.
+  */
+  const REVIEW = fs
+    .readdirSync(path.join(MOBILE, 'src/components/customer'))
+    .filter((f) => f.startsWith('card-'))
+    .map((f) => path.join('src/components/customer', f));
+  const FEATURE = ['app/(app)/scan-card.tsx', 'src/lib/card-scan.ts', ...REVIEW];
+  const code = FEATURE.map((f) => stripComments(fs.readFileSync(path.join(MOBILE, f), 'utf8'))).join('\n');
+
+  it('reads every part of the scanner (a shrinking file list passes anything)', () => {
+    // The review is four components plus the rules they share. If a rename
+    // drops them out of the scan, this says so rather than passing silently.
+    expect(REVIEW.length).toBeGreaterThanOrEqual(4);
+  });
 
   it('deletes the photograph, including when reading it failed', () => {
     expect(code).toMatch(/\.delete\(\)/);
@@ -132,10 +157,49 @@ describe('the scanner keeps the card on the phone', () => {
     expect(code).not.toMatch(/console\.(log|warn|info|debug)/);
   });
 
-  it('sends the card nowhere except the client it creates', () => {
-    // No uploads, no analytics, no second endpoint.
+  it('sends the card nowhere except the record it creates', () => {
+    /*
+      No uploads, no analytics, no second endpoint — and the endpoints it DOES
+      reach are named, with what each is for:
+
+       · `create`     — the client a company's card becomes.
+       · `addContact` — the contact person a person's card becomes, attached to
+                        a company that is already in the book. Its own route
+                        because a contact is not a client and must never be
+                        billed as one.
+       · `list`       — READS, both of them: the company the reader named, and
+                        the duplicate check before saving. A search term is the
+                        only thing that leaves the phone, and only a name the
+                        member is about to save anyway.
+
+      Anything else appearing here is the card travelling somewhere it was
+      promised it would not.
+    */
     expect(code).not.toMatch(/fetch\(/);
-    expect(scan.match(/customersApi\.\w+/g) ?? []).toEqual(['customersApi.create']);
+    const reached = [...new Set(code.match(/customersApi\.\w+/g) ?? [])].sort();
+    expect(reached).toEqual(['customersApi.addContact', 'customersApi.create', 'customersApi.list']);
+  });
+
+  it('offers no field it will not save (the bug this screen was rebuilt for)', () => {
+    /*
+      The reader extracts eight fields; the screen used to save four and bin the
+      rest, so a WEBSITE turned up in the contact-person box and a job title was
+      corrected by hand and then dropped. `cardFieldsFor` decides what is shown,
+      `homelessFields` is its complement, and the screen must render both — one
+      as rows, the other as the sentence saying what has nowhere to go.
+    */
+    const review = stripComments(fs.readFileSync(path.join(MOBILE, 'app/(app)/scan-card.tsx'), 'utf8'));
+    expect(review).toContain('cardFieldsFor');
+    expect(review).toContain('homelessFields');
+    const { cardFieldsFor, homelessFields, CARD_FIELDS } = require('../../components/customer/card-review');
+    const everything = Object.fromEntries(CARD_FIELDS.map((k: string) => [k, 'x'])) as Record<string, string>;
+    for (const [kind, destination] of [['COMPANY', 'client'], ['PERSON', 'client'], ['PERSON', 'contact']] as const) {
+      const shown: string[] = cardFieldsFor(kind, destination);
+      const orphans: string[] = homelessFields(kind, destination, everything);
+      // Between them they account for every field the reader can produce, so
+      // nothing can fall between the two and be silently discarded.
+      expect([...shown, ...orphans].sort()).toEqual([...CARD_FIELDS].sort());
+    }
   });
 
   it('asks the native module its capability once, not on every render', () => {

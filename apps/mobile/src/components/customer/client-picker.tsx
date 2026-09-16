@@ -60,17 +60,39 @@ export function ClientPicker({
   excludeId,
   selectedId,
   onSelect,
+  includeOtherKind = false,
+  initialSearch = '',
 }: {
   kind: ClientKind;
   excludeId: string;
   selectedId: string | null;
   onSelect: (client: MobileCustomer) => void;
+  /**
+   * Search the WHOLE book, not only records of `kind`.
+   *
+   * ⚠️ A real book files firms as PERSON all the time — "BILLA AG",
+   * "Siemens AG" — because the Company/Person toggle is an afterthought when
+   * somebody is entering a client in a hurry. Asking the server for
+   * `type=COMPANY` then hides exactly the companies being looked for. Where the
+   * member is choosing freely rather than filling one side of a typed link,
+   * that filter costs more than it buys; `kind` still decides the wording, so
+   * the sheet still says what it is asking for.
+   */
+  includeOtherKind?: boolean;
+  /**
+   * What to search for before the member types anything.
+   *
+   * The card scanner passes the company the reader found, so the shortlist is
+   * already on screen when the sheet opens. Read once, on mount: re-seeding
+   * would fight whatever the member has since typed.
+   */
+  initialSearch?: string;
 }) {
   const { colors } = useTheme();
   const s = useMemo(() => styles(colors), [colors]);
   const { t } = useTranslation();
 
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialSearch);
   const [results, setResults] = useState<MobileCustomer[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -113,7 +135,7 @@ export function ClientPicker({
             limit: RESULT_LIMIT,
             // The two parameters the server reads, built in shared. `contacts`
             // is set on top of the kind because no single filter says both.
-            ...clientFilterQuery(kind === 'COMPANY' ? 'companies' : 'people'),
+            ...clientFilterQuery(includeOtherKind ? 'all' : kind === 'COMPANY' ? 'companies' : 'people'),
             contacts: 'all',
             portalResident: false,
           });
@@ -129,7 +151,7 @@ export function ClientPicker({
       })();
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [query, kind, excludeId]);
+  }, [query, kind, excludeId, includeOtherKind]);
 
   const findLabel = t(kind === 'COMPANY' ? 'customers.record.findCompany' : 'customers.record.findPerson');
 
