@@ -6,6 +6,14 @@ import { useTheme } from '../../contexts/theme-context';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, type ThemeColors } from '../../lib/constants';
 import type { MobileCustomerActivity } from '../../lib/api';
 
+/*
+  ⚠️ A REMINDER always takes the alarm, whatever its reason is.
+
+  Drawing a reminder-to-call with the telephone icon would give it the same
+  glyph as a call that HAPPENED — the one confusion this whole feature exists to
+  prevent (see `crm/reminder.ts` in shared). The reason is said in words, on the
+  heading, where it cannot be mistaken for a record of the past.
+*/
 const ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   NOTE: 'document-text',
   CALL: 'call',
@@ -18,6 +26,12 @@ const ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
 
 /** An activity the outbox is still holding — see `useQueuedCreate`. */
 export type PendingActivity = MobileCustomerActivity & { pendingSync?: boolean };
+
+/** A small fact about an entry — its lead time, its recurrence. Already localised. */
+export interface ActivityTag {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+}
 
 /**
  * One entry on the client's timeline.
@@ -39,6 +53,11 @@ export const ActivityRow = memo(function ActivityRow({
   /** Absent for a queued entry: there is nothing on the server to mark done. */
   onToggleDone,
   doneLabel,
+  /**
+   * How it fires — "1 hour before", "Weekly". Localised by the caller, and
+   * empty for anything that is not a reminder saying something unusual.
+   */
+  tags,
   /** Draws the connecting line downward. False on the last entry. */
   continues,
 }: {
@@ -47,6 +66,7 @@ export const ActivityRow = memo(function ActivityRow({
   meta: string;
   onToggleDone?: (a: MobileCustomerActivity) => void;
   doneLabel?: string;
+  tags?: ActivityTag[];
   continues: boolean;
 }) {
   const { colors } = useTheme();
@@ -77,6 +97,17 @@ export const ActivityRow = memo(function ActivityRow({
           {meta ? ` · ${meta}` : ''}
         </Text>
         {!!activity.body && <Text style={s.text}>{activity.body}</Text>}
+
+        {!!tags?.length && (
+          <View style={s.tags}>
+            {tags.map((tag) => (
+              <View key={tag.label} style={s.tag}>
+                <Ionicons name={tag.icon} size={11} color={colors.textMuted} />
+                <Text style={s.tagText}>{tag.label}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {activity.type === 'REMINDER' && onToggleDone && doneLabel && (
           <PressableScale
@@ -115,6 +146,9 @@ const styles = (c: ThemeColors) =>
     meta: { fontSize: FONT_SIZE.sm, color: c.textMuted, lineHeight: 18 },
     heading: { fontWeight: FONT_WEIGHT.semibold, color: c.textSecondary },
     text: { fontSize: FONT_SIZE.lg, color: c.textPrimary, marginTop: 3, lineHeight: 20 },
+    tags: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginTop: SPACING.xs },
+    tag: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+    tagText: { fontSize: FONT_SIZE.xs, color: c.textMuted },
     check: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginTop: SPACING.sm },
     checkText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium },
   });

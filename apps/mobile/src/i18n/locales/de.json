@@ -598,7 +598,10 @@
     "spaceCount": "{{count}} verfügbar",
     "beThereAt": "Vor Ort um",
     "beThereAtPlaceholder": "Optional — keine feste Uhrzeit",
-    "beThereHint": "Das Mitglied erfährt, wann es losfahren muss — inklusive Fahrzeit."
+    "beThereHint": "Das Mitglied erfährt, wann es losfahren muss — inklusive Fahrzeit.",
+    "forClient": "Auftrag für",
+    "forClientUnnamed": "Dieser Kunde",
+    "clearClient": "Nicht für einen Kunden"
   },
   "attendance": {
     "clockedIn": "Eingestempelt",
@@ -1911,7 +1914,7 @@
       "due": {
         "today": "Heute",
         "tomorrow": "Morgen",
-        "week": "Nächste Woche"
+        "nextWeek": "Nächste Woche"
       },
       "act": {
         "NOTE": "Notiz",
@@ -1921,7 +1924,22 @@
         "REMINDER": "Erinnerung",
         "STATUS": "Phase",
         "SYSTEM": "System"
-      }
+      },
+      "reminderForm": {
+        "pickTime": "Zeit wählen…",
+        "reason": "Grund",
+        "when": "Wann",
+        "pickDay": "Tag wählen",
+        "time": "Uhrzeit",
+        "lead": "Erinnern",
+        "repeat": "Wiederholung",
+        "who": "Wer wird benachrichtigt",
+        "allManagers": "Alle",
+        "me": "Ich",
+        "whoAll": "Alle Mitglieder, die diesen Kunden betreuen, werden benachrichtigt.",
+        "whoOne": "Nur die ausgewählte Person wird benachrichtigt."
+      },
+      "newTask": "Aufgabe"
     },
     "form": {
       "title": "Kunde bearbeiten",
@@ -1935,6 +1953,28 @@
       "industry": "Branche",
       "vatId": "UID-Nummer",
       "regNumber": "Firmenbuchnummer"
+    },
+    "reminderKind": {
+      "call": "Anruf",
+      "email": "E-Mail",
+      "other": "Sonstiges"
+    },
+    "lead": {
+      "0": "Zur Zeit",
+      "5": "5 Min. vorher",
+      "15": "15 Min. vorher",
+      "30": "30 Min. vorher",
+      "60": "1 Stunde vorher",
+      "180": "3 Stunden vorher",
+      "1440": "1 Tag vorher",
+      "2880": "2 Tage vorher",
+      "10080": "1 Woche vorher"
+    },
+    "repeat": {
+      "none": "Wiederholt sich nicht",
+      "daily": "Täglich",
+      "weekly": "Wöchentlich",
+      "monthly": "Monatlich"
     }
   },
   "issues": {

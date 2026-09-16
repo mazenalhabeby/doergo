@@ -598,7 +598,10 @@
     "spaceCount": "{{count}} available",
     "beThereAt": "Be there at",
     "beThereAtPlaceholder": "Optional — no fixed hour",
-    "beThereHint": "The member is told when to set off, allowing for the drive."
+    "beThereHint": "The member is told when to set off, allowing for the drive.",
+    "forClient": "Job for",
+    "forClientUnnamed": "This client",
+    "clearClient": "Not for a client"
   },
   "attendance": {
     "clockedIn": "Clocked In",
@@ -1947,7 +1950,7 @@
       "due": {
         "today": "Today",
         "tomorrow": "Tomorrow",
-        "week": "Next week"
+        "nextWeek": "Next week"
       },
       "act": {
         "NOTE": "Note",
@@ -1957,7 +1960,22 @@
         "REMINDER": "Reminder",
         "STATUS": "Stage",
         "SYSTEM": "System"
-      }
+      },
+      "reminderForm": {
+        "pickTime": "Pick a time…",
+        "reason": "Reason",
+        "when": "When",
+        "pickDay": "Pick a day",
+        "time": "Time",
+        "lead": "Remind me",
+        "repeat": "Repeat",
+        "who": "Who is told",
+        "allManagers": "Everyone",
+        "me": "Me",
+        "whoAll": "Every member who looks after this client is told.",
+        "whoOne": "Only the person chosen is told."
+      },
+      "newTask": "Task"
     },
     "form": {
       "title": "Edit client",
@@ -1971,6 +1989,28 @@
       "industry": "Industry",
       "vatId": "VAT number",
       "regNumber": "Registration number"
+    },
+    "reminderKind": {
+      "call": "Call",
+      "email": "Email",
+      "other": "Other"
+    },
+    "lead": {
+      "0": "At time",
+      "5": "5 min before",
+      "15": "15 min before",
+      "30": "30 min before",
+      "60": "1 hour before",
+      "180": "3 hours before",
+      "1440": "1 day before",
+      "2880": "2 days before",
+      "10080": "1 week before"
+    },
+    "repeat": {
+      "none": "Does not repeat",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly"
     }
   },
   "issues": {

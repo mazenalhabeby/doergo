@@ -598,7 +598,10 @@
     "spaceCount": "{{count}} disponibles",
     "beThereAt": "Estar allí a las",
     "beThereAtPlaceholder": "Opcional — sin hora fija",
-    "beThereHint": "El miembro sabrá cuándo salir, contando el trayecto."
+    "beThereHint": "El miembro sabrá cuándo salir, contando el trayecto.",
+    "forClient": "Trabajo para",
+    "forClientUnnamed": "Este cliente",
+    "clearClient": "No es para un cliente"
   },
   "attendance": {
     "clockedIn": "Entrada registrada",
@@ -1911,7 +1914,7 @@
       "due": {
         "today": "Hoy",
         "tomorrow": "Mañana",
-        "week": "La próxima semana"
+        "nextWeek": "La próxima semana"
       },
       "act": {
         "NOTE": "Nota",
@@ -1921,7 +1924,22 @@
         "REMINDER": "Recordatorio",
         "STATUS": "Etapa",
         "SYSTEM": "Sistema"
-      }
+      },
+      "reminderForm": {
+        "pickTime": "Elegir una hora…",
+        "reason": "Motivo",
+        "when": "Cuándo",
+        "pickDay": "Elegir un día",
+        "time": "Hora",
+        "lead": "Avisarme",
+        "repeat": "Repetición",
+        "who": "A quién se avisa",
+        "allManagers": "Todos",
+        "me": "Yo",
+        "whoAll": "Se avisa a todos los miembros que atienden a este cliente.",
+        "whoOne": "Solo se avisa a la persona elegida."
+      },
+      "newTask": "Tarea"
     },
     "form": {
       "title": "Editar cliente",
@@ -1935,6 +1953,28 @@
       "industry": "Sector",
       "vatId": "NIF-IVA",
       "regNumber": "Número de registro"
+    },
+    "reminderKind": {
+      "call": "Llamada",
+      "email": "Correo",
+      "other": "Otro"
+    },
+    "lead": {
+      "0": "A la hora",
+      "5": "5 min antes",
+      "15": "15 min antes",
+      "30": "30 min antes",
+      "60": "1 hora antes",
+      "180": "3 horas antes",
+      "1440": "1 día antes",
+      "2880": "2 días antes",
+      "10080": "1 semana antes"
+    },
+    "repeat": {
+      "none": "No se repite",
+      "daily": "A diario",
+      "weekly": "Semanalmente",
+      "monthly": "Mensualmente"
     }
   },
   "issues": {

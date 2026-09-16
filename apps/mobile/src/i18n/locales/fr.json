@@ -598,7 +598,10 @@
     "spaceCount": "{{count}} disponibles",
     "beThereAt": "Sur place à",
     "beThereAtPlaceholder": "Facultatif — pas d'heure fixe",
-    "beThereHint": "Le membre saura quand partir, trajet compris."
+    "beThereHint": "Le membre saura quand partir, trajet compris.",
+    "forClient": "Intervention pour",
+    "forClientUnnamed": "Ce client",
+    "clearClient": "Pas pour un client"
   },
   "attendance": {
     "clockedIn": "Pointage d'arrivée effectué",
@@ -1911,7 +1914,7 @@
       "due": {
         "today": "Aujourd'hui",
         "tomorrow": "Demain",
-        "week": "La semaine prochaine"
+        "nextWeek": "La semaine prochaine"
       },
       "act": {
         "NOTE": "Note",
@@ -1921,7 +1924,22 @@
         "REMINDER": "Rappel",
         "STATUS": "Étape",
         "SYSTEM": "Système"
-      }
+      },
+      "reminderForm": {
+        "pickTime": "Choisir une heure…",
+        "reason": "Motif",
+        "when": "Quand",
+        "pickDay": "Choisir un jour",
+        "time": "Heure",
+        "lead": "Me rappeler",
+        "repeat": "Répétition",
+        "who": "Qui est prévenu",
+        "allManagers": "Tout le monde",
+        "me": "Moi",
+        "whoAll": "Tous les membres qui suivent ce client sont prévenus.",
+        "whoOne": "Seule la personne choisie est prévenue."
+      },
+      "newTask": "Tâche"
     },
     "form": {
       "title": "Modifier le client",
@@ -1935,6 +1953,28 @@
       "industry": "Secteur",
       "vatId": "Numéro de TVA",
       "regNumber": "Numéro d'immatriculation"
+    },
+    "reminderKind": {
+      "call": "Appel",
+      "email": "E-mail",
+      "other": "Autre"
+    },
+    "lead": {
+      "0": "À l'heure",
+      "5": "5 min avant",
+      "15": "15 min avant",
+      "30": "30 min avant",
+      "60": "1 heure avant",
+      "180": "3 heures avant",
+      "1440": "1 jour avant",
+      "2880": "2 jours avant",
+      "10080": "1 semaine avant"
+    },
+    "repeat": {
+      "none": "Ne se répète pas",
+      "daily": "Tous les jours",
+      "weekly": "Toutes les semaines",
+      "monthly": "Tous les mois"
     }
   },
   "issues": {
