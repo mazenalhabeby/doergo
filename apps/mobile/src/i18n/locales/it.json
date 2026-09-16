@@ -1842,6 +1842,29 @@
       "emptyFiltered": "Nessun cliente corrisponde alla ricerca."
     },
     "record": {
+      "tabs": {
+        "information": "Informazioni",
+        "activity": "Attività",
+        "reminders": "Promemoria"
+      },
+      "filter": {
+        "all": "Tutto",
+        "notes": "Note",
+        "calls": "Chiamate"
+      },
+      "noActivityFiltered": "Non è ancora stato registrato nulla di questo tipo.",
+      "reminders": {
+        "none": "Niente da seguire.",
+        "overdue_one": "{{count}} promemoria è scaduto",
+        "overdue_other": "{{count}} promemoria sono scaduti",
+        "done": "Completati",
+        "showDone": "Mostra completati ({{count}})",
+        "hideDone": "Nascondi completati",
+        "a11yOpen_one": "Promemoria, {{count}} aperto",
+        "a11yOpen_other": "Promemoria, {{count}} aperti",
+        "a11yOverdue_one": "Promemoria, {{count}} scaduto",
+        "a11yOverdue_other": "Promemoria, {{count}} scaduti"
+      },
       "edit": "Modifica",
       "kindCompany": "Azienda",
       "kindPerson": "Persona",

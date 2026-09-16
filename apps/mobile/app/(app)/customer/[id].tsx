@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, Linking, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, FlatList, Linking, RefreshControl, type ListRenderItemInfo } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenHeader, Skeleton, PressableScale, ConfirmSheet } from '../../../src/components';
+import { ScreenHeader, Skeleton, PressableScale, ConfirmSheet, ChipRow, FilterChip, SegmentedTabs, type SegmentedTab } from '../../../src/components';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { customersApi, type MobileCustomer, type MobileCustomerActivity } from '../../../src/lib/api';
@@ -28,28 +28,34 @@ import { ClientAvatar } from '../../../src/components/customer/client-avatar';
 import { ContactRow } from '../../../src/components/customer/contact-row';
 import { AddressRow } from '../../../src/components/customer/address-row';
 import { ActivityRow, type PendingActivity } from '../../../src/components/customer/activity-row';
+import { ActivityComposer, type ComposedActivity } from '../../../src/components/customer/activity-composer';
 import { ChoiceChip } from '../../../src/components/customer/client-fields';
 import { ClientEditSheet } from '../../../src/components/customer/client-edit-sheet';
 import { AddContactSheet } from '../../../src/components/customer/add-contact-sheet';
 
 /*
-  THE CLIENT RECORD.
+  THE CLIENT RECORD — three tabs.
 
   It used to be one unstructured scroll — identity, stage pills, language,
-  composer, timeline — with nowhere to put anything else. That is why the phone
-  could not show who works at a company, could not show where the work happens,
-  and could not edit a single field: there was no shape to add them to, so
-  nothing was added.
+  composer, timeline — with nowhere to put anything else. Cards gave it a
+  shape; what they could not give it was a LENGTH. Everything was still one
+  `ScrollView`, so opening a client with two hundred logged calls mounted two
+  hundred rows before a single one of them was looked at, under a hero the
+  member had already read.
 
-  It is a set of cards now, each one answering a question somebody actually
-  asks while standing in front of a client:
+  Three tabs, because there are three different jobs here:
 
-    WHO IS THIS         hero — kind, name, industry, call, email, edit
-    WHERE ARE THEY      stage
-    WHO DO I ASK FOR    contact people / the firms this person contacts for
-    WHERE DO I GO       addresses
-    WHAT ARE THE DETAILS company block + language for emails
-    WHAT HAPPENED       composer + timeline
+    INFORMATION   who they are, where we stand, who to ask for, where to go
+    ACTIVITY      what has happened — the composer and the whole feed
+    REMINDERS     what has NOT happened yet, and what is late
+
+  ⚠️ NOT "Notes" as the third tab. A note IS an activity — `CustomerActivity`
+  is one table whose `type` is NOTE | CALL | EMAIL | MEETING | REMINDER |
+  STATUS | SYSTEM — so a Notes tab is a subset of Activity, and it raises a
+  question with no good answer: where does a logged CALL go? Notes is a filter
+  chip inside Activity, next to Calls. Reminders earns its tab by being a
+  different job entirely: outstanding work rather than history, and the one
+  thing on this screen a field member must not walk past.
 */
 
 const STAGE_DOT: Record<string, string> = {
@@ -60,21 +66,31 @@ const STAGE_DOT: Record<string, string> = {
   INACTIVE: '#9ca3af',
 };
 
-/** The three things a member records from the field. Call is mobile-only and stays. */
-const COMPOSER = [
-  { type: 'NOTE', key: 'customers.record.composer.note' },
-  { type: 'CALL', key: 'customers.record.composer.call' },
-  { type: 'REMINDER', key: 'customers.record.composer.reminder' },
-] as const;
+const TABS = ['information', 'activity', 'reminders'] as const;
+type RecordTab = (typeof TABS)[number];
+const isTab = (v: unknown): v is RecordTab => typeof v === 'string' && (TABS as readonly string[]).includes(v);
 
-const DUE = [
-  { k: 'today', h: 8, key: 'customers.record.due.today' },
-  { k: 'tomorrow', h: 32, key: 'customers.record.due.tomorrow' },
-  { k: 'week', h: 24 * 7, key: 'customers.record.due.week' },
+/** What the Activity feed is narrowed to. A note and a call are the two kinds a member files. */
+const FILTERS = [
+  { key: 'all', label: 'customers.record.filter.all', types: null },
+  { key: 'notes', label: 'customers.record.filter.notes', types: ['NOTE'] },
+  { key: 'calls', label: 'customers.record.filter.calls', types: ['CALL'] },
 ] as const;
+type ActivityFilter = (typeof FILTERS)[number]['key'];
+
+const isOverdue = (a: MobileCustomerActivity, now: number) =>
+  a.type === 'REMINDER' && !!a.dueAt && !a.doneAt && new Date(a.dueAt).getTime() < now;
+
+/** Soonest first, so whatever is most overdue is the first thing on the tab. */
+function byDue(a: MobileCustomerActivity, b: MobileCustomerActivity): number {
+  const av = a.dueAt ? new Date(a.dueAt).getTime() : Number.MAX_SAFE_INTEGER;
+  const bv = b.dueAt ? new Date(b.dueAt).getTime() : Number.MAX_SAFE_INTEGER;
+  return av - bv;
+}
 
 export default function CustomerRecordScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string; tab?: string | string[] }>();
+  const id = params.id;
   const { colors } = useTheme();
   const s = useMemo(() => styles(colors), [colors]);
   const { t } = useTranslation();
@@ -88,15 +104,48 @@ export default function CustomerRecordScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const [type, setType] = useState<string>('NOTE');
-  const [body, setBody] = useState('');
-  const [due, setDue] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
   const [localeOpen, setLocaleOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [addingContact, setAddingContact] = useState(false);
   const [busyLink, setBusyLink] = useState<string | null>(null);
   const [removing, setRemoving] = useState<MobileCustomerContact | null>(null);
+  const [filter, setFilter] = useState<ActivityFilter>('all');
+  const [showDone, setShowDone] = useState(false);
+
+  /*
+    WHICH TAB, and which tabs have ever been opened.
+
+    ⚠️ A tab is mounted the first time it is asked for, and then KEPT — the
+    panes that have never been visited render `null`, and a pane that has been
+    visited stays mounted with `display: 'none'` when another one is showing.
+    Unmounting on every switch is the easy version and the wrong one: it throws
+    away the list's scroll position, so a member reading the tenth entry, tapping
+    Reminders and coming back lands at the top again, and it re-runs whatever the
+    pane does on mount. Keeping a hidden pane costs a detached native view.
+
+    The deep link (`?tab=reminders`) decides the FIRST tab rather than switching
+    to it after the fact, so a `crm_reminder` push never mounts Information just
+    to hide it a frame later.
+  */
+  const linkedTab = Array.isArray(params.tab) ? params.tab[0] : params.tab;
+  const [tab, setTab] = useState<RecordTab>(() => (isTab(linkedTab) ? linkedTab : 'information'));
+  const [seen, setSeen] = useState<Record<RecordTab, boolean>>(() => {
+    const first = isTab(linkedTab) ? linkedTab : 'information';
+    // Only the tab actually being opened. A deep link straight to Reminders
+    // must not pay for a hero and five cards nobody has asked to see.
+    return { information: first === 'information', activity: first === 'activity', reminders: first === 'reminders' };
+  });
+
+  const selectTab = useCallback((next: RecordTab) => {
+    setTab(next);
+    setSeen((v) => (v[next] ? v : { ...v, [next]: true }));
+  }, []);
+
+  // A second push for the same client while the screen is already open changes
+  // the param without remounting; the initial state above would never see it.
+  useEffect(() => {
+    if (isTab(linkedTab)) selectTab(linkedTab);
+  }, [linkedTab, selectTab]);
 
   // Notes and reminders written with no signal wait in the outbox; shown at the top meanwhile.
   const loadRef = useRef<(() => Promise<void>) | null>(null);
@@ -120,6 +169,14 @@ export default function CustomerRecordScreen() {
 
   /**
    * Everything the screen needs, in one round trip's worth of time.
+   *
+   * ⚠️ The activities are read HERE, with the record, and NOT deferred until
+   * the Activity tab is opened. Deferring looks like a free saving and is not:
+   * the reminder badge on the tab bar and the "something is overdue" banner are
+   * both computed from this list, and a record that opens saying nothing about
+   * an overdue follow-up is worse than a record that costs one more request.
+   * What the tabs save is RENDERING two hundred rows, which is the expensive
+   * half — not fetching them.
    *
    * ⚠️ `allSettled`, not `all`. The contact and address reads carry their own
    * CRM gates, so a member who may read the client but not its contacts gets a
@@ -174,6 +231,52 @@ export default function CustomerRecordScreen() {
     return [...onPhone, ...activities];
   }, [activities, activityCreate.pending, id]);
 
+  const feed = useMemo(() => {
+    const kinds = FILTERS.find((f) => f.key === filter)?.types;
+    return kinds ? shownActivities.filter((a) => (kinds as readonly string[]).includes(a.type)) : shownActivities;
+  }, [shownActivities, filter]);
+
+  /*
+    Reminders, and the two numbers the tab bar prints.
+
+    ⚠️ Derived from the activities already in hand — never a second request.
+    One list is the source of the feed, the badge, the banner and this tab, so
+    ticking a reminder off moves all four in the same render and none of them
+    can disagree with another.
+  */
+  const { openReminders, doneReminders, overdueCount } = useMemo(() => {
+    const now = Date.now();
+    const all = shownActivities.filter((a) => a.type === 'REMINDER');
+    return {
+      openReminders: all.filter((a) => !a.doneAt).sort(byDue),
+      doneReminders: all.filter((a) => !!a.doneAt),
+      overdueCount: all.filter((a) => isOverdue(a, now)).length,
+    };
+  }, [shownActivities]);
+
+  const reminderRows = useMemo(
+    () => (showDone ? [...openReminders, ...doneReminders] : openReminders),
+    [openReminders, doneReminders, showDone],
+  );
+
+  const tabs = useMemo<SegmentedTab<RecordTab>[]>(() => [
+    { key: 'information', label: t('customers.record.tabs.information') },
+    { key: 'activity', label: t('customers.record.tabs.activity') },
+    {
+      key: 'reminders',
+      label: t('customers.record.tabs.reminders'),
+      count: openReminders.length,
+      // Red is the whole reason reminders are a tab: the one signal that has to
+      // reach somebody who is standing on the Information tab reading a phone number.
+      alert: overdueCount > 0,
+      a11yLabel: overdueCount > 0
+        ? t('customers.record.reminders.a11yOverdue', { count: overdueCount })
+        : openReminders.length > 0
+          ? t('customers.record.reminders.a11yOpen', { count: openReminders.length })
+          : t('customers.record.tabs.reminders'),
+    },
+  ], [t, openReminders.length, overdueCount]);
+
   /*
     ABILITIES, read off the record itself.
 
@@ -197,25 +300,87 @@ export default function CustomerRecordScreen() {
     return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }, [t]);
 
-  const addActivity = async () => {
-    if (!body.trim() && type !== 'REMINDER') return;
-    setSaving(true);
+  const toggleDone = useCallback(async (a: MobileCustomerActivity) => {
+    // Flip it here and now; the server's copy arrives with the refresh below.
+    setActivities((list) => list.map((x) => (x.id === a.id ? { ...x, doneAt: a.doneAt ? null : new Date().toISOString() } : x)));
     try {
-      let dueAt: string | undefined;
-      if (type === 'REMINDER' && due) {
-        const opt = DUE.find((d) => d.k === due);
-        if (opt) dueAt = new Date(Date.now() + opt.h * 3600_000).toISOString();
+      await customersApi.updateActivity(id, a.id, { done: !a.doneAt });
+      await refreshActivities();
+    } catch {
+      await refreshActivities();
+    }
+  }, [id, refreshActivities]);
+
+  /**
+   * One entry, drawn the same way on both lists.
+   *
+   * ⚠️ `onToggleDone` is the stable `toggleDone`, never an arrow written here:
+   * `ActivityRow` is memoised, and a fresh function per render would make every
+   * comparison fail and the memo pure decoration.
+   */
+  const renderActivity = useCallback((a: PendingActivity, continues: boolean) => (
+    <ActivityRow
+      activity={a}
+      continues={continues}
+      heading={
+        a.type === 'STATUS'
+          ? t('customers.record.stageChanged', {
+              from: customerStageLabel(a.metadata?.from || ''),
+              to: customerStageLabel(a.metadata?.to || ''),
+            })
+          : t(`customers.record.act.${a.type}`, { defaultValue: a.type })
       }
-      const input = { type, body: body.trim() || undefined, dueAt };
+      meta={[
+        a.author ? a.author.firstName : '',
+        a.pendingSync ? t('offline.chip.waiting') : relTime(a.createdAt),
+      ].filter(Boolean).join(' · ')}
+      // A queued entry has no server row to mark done yet.
+      onToggleDone={a.pendingSync ? undefined : toggleDone}
+      doneLabel={
+        a.type !== 'REMINDER' ? undefined
+          : a.doneAt ? t('customers.record.reminderDone')
+          : a.dueAt ? t('customers.record.reminderDue', { date: new Date(a.dueAt).toLocaleDateString() })
+          : t('customers.record.composer.reminder')
+      }
+    />
+  ), [t, relTime, toggleDone]);
+
+  const keyOfActivity = useCallback((a: PendingActivity) => a.id, []);
+
+  const renderFeedItem = useCallback(
+    ({ item, index }: ListRenderItemInfo<PendingActivity>) => renderActivity(item, index < feed.length - 1),
+    [renderActivity, feed.length],
+  );
+
+  const renderReminderItem = useCallback(
+    ({ item, index }: ListRenderItemInfo<PendingActivity>) => (
+      <>
+        {/* The boundary between what is still owed and what is finished. Drawn
+            from the index rather than by tagging the rows, so both lists keep
+            one plain array of activities and one key extractor. */}
+        {showDone && index === openReminders.length && index > 0 && (
+          <Text style={s.sectionLabel}>{t('customers.record.reminders.done')}</Text>
+        )}
+        {renderActivity(item, index < reminderRows.length - 1)}
+      </>
+    ),
+    [renderActivity, showDone, openReminders.length, reminderRows.length, s, t],
+  );
+
+  const addActivity = useCallback(async (input: ComposedActivity): Promise<boolean> => {
+    try {
       const outcome = await activityCreate.run(
         { lane: `crm:${id}`, params: { customerId: id }, body: input },
         () => customersApi.addActivity(id, input),
       );
-      if (outcome.kind === 'refused') return;
-      setBody(''); setDue(null);
+      if (outcome.kind === 'refused') return false;
       if (outcome.kind === 'done') await refreshActivities();
-    } catch { /* the outbox reports its own failures */ } finally { setSaving(false); }
-  };
+      return true;
+    } catch {
+      // The outbox reports its own failures; the draft stays so it is not lost.
+      return false;
+    }
+  }, [activityCreate, id, refreshActivities]);
 
   /*
     Stage, language and reminder-done are optimistic and go DIRECT.
@@ -258,17 +423,6 @@ export default function CustomerRecordScreen() {
       toast.error((e as { message?: string })?.message || t('customers.localeFailed'));
     }
   };
-
-  const toggleDone = useCallback(async (a: MobileCustomerActivity) => {
-    // Flip it here and now; the server's copy arrives with the refresh below.
-    setActivities((list) => list.map((x) => (x.id === a.id ? { ...x, doneAt: a.doneAt ? null : new Date().toISOString() } : x)));
-    try {
-      await customersApi.updateActivity(id, a.id, { done: !a.doneAt });
-      await refreshActivities();
-    } catch {
-      await refreshActivities();
-    }
-  }, [id, refreshActivities]);
 
   const openRecord = useCallback((customerId: string) => {
     // `push`, not `replace`: walking from a company to a contact and back is
@@ -319,6 +473,10 @@ export default function CustomerRecordScreen() {
     call: t('customers.record.call'),
   }), [t]);
 
+  const refresher = (
+    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+  );
+
   /* ---------------- render ---------------- */
 
   if (loading) {
@@ -368,271 +526,313 @@ export default function CustomerRecordScreen() {
         ) : undefined}
       />
 
-      <ScrollView
-        contentContainerStyle={s.scroll}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
-      >
-        {/* ---- Hero: who is this ---- */}
-        <View style={s.hero}>
-          <ClientAvatar customer={customer} size={56} />
-          <View style={s.heroText}>
-            <Text style={s.heroName} numberOfLines={2}>{customer.name}</Text>
-            <View style={s.heroTags}>
-              <View style={s.kindPill}>
-                <Ionicons name={company ? 'business' : 'person'} size={11} color={colors.textSecondary} />
-                <Text style={s.kindText}>
-                  {t(company ? 'customers.record.kindCompany' : 'customers.record.kindPerson')}
-                </Text>
+      <SegmentedTabs tabs={tabs} active={tab} onChange={selectTab} style={s.tabBar} />
+
+      {/* ================= INFORMATION ================= */}
+      {seen.information && (
+        <View style={[s.pane, tab !== 'information' && s.hidden]}>
+          <ScrollView
+            contentContainerStyle={s.scroll}
+            keyboardShouldPersistTaps="handled"
+            refreshControl={refresher}
+          >
+            {/* ---- Hero: who is this ---- */}
+            <View style={s.hero}>
+              <ClientAvatar customer={customer} size={56} />
+              <View style={s.heroText}>
+                <Text style={s.heroName} numberOfLines={2}>{customer.name}</Text>
+                <View style={s.heroTags}>
+                  <View style={s.kindPill}>
+                    <Ionicons name={company ? 'business' : 'person'} size={11} color={colors.textSecondary} />
+                    <Text style={s.kindText}>
+                      {t(company ? 'customers.record.kindCompany' : 'customers.record.kindPerson')}
+                    </Text>
+                  </View>
+                  {!!customer.industry?.trim() && <Text style={s.industry} numberOfLines={1}>{customer.industry.trim()}</Text>}
+                </View>
+                {customer.isPortalResident && (
+                  <Text style={s.appAccess}>{t('customers.appAccess')}</Text>
+                )}
               </View>
-              {!!customer.industry?.trim() && <Text style={s.industry} numberOfLines={1}>{customer.industry.trim()}</Text>}
+              <View style={s.heroActions}>
+                {!!customer.phone && (
+                  <HeroButton icon="call" label={t('customers.record.call')} onPress={() => void Linking.openURL(`tel:${customer.phone}`)} />
+                )}
+                {!!customer.email && (
+                  <HeroButton icon="mail" label={t('customers.record.email')} onPress={() => void Linking.openURL(`mailto:${customer.email}`)} />
+                )}
+              </View>
             </View>
-            {customer.isPortalResident && (
-              <Text style={s.appAccess}>{t('customers.appAccess')}</Text>
+
+            {/* ---- Stage ---- */}
+            <RecordCard title={t('customers.record.stage')} icon="flag-outline">
+              {canWork ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
+                  {CUSTOMER_STAGES.map((stage) => (
+                    <ChoiceChip
+                      key={stage.key}
+                      label={customerStageLabel(stage.key)}
+                      selected={status === stage.key}
+                      dotColor={STAGE_DOT[stage.key]}
+                      onPress={() => void setStage(stage.key)}
+                    />
+                  ))}
+                </ScrollView>
+              ) : (
+                /*
+                  No ability to move it, so no pills — but the stage is a FACT about
+                  the client and stays visible. Hiding the value with the control
+                  would answer "where are we with them" with silence.
+                */
+                <View style={s.chips}>
+                  <ChoiceChip label={customerStageLabel(status)} selected dotColor={STAGE_DOT[status]} onPress={() => {}} disabled />
+                </View>
+              )}
+            </RecordCard>
+
+            {/*
+              ---- Contact people (a company) ----
+
+              A card earns its place by holding something or by offering something.
+              With no contacts AND no ability to add one it does neither, so it goes
+              — a reader who cannot act on an empty panel learns only that the
+              screen is long.
+            */}
+            {(contacts.length > 0 || (company && canEditInfo)) && (
+              <RecordCard
+                title={t('customers.record.contacts')}
+                icon="people-outline"
+                badge={contacts.length || undefined}
+                action={canEditInfo ? (
+                  <CardAction icon="add" label={t('customers.record.addContact')} onPress={() => setAddingContact(true)} />
+                ) : undefined}
+                empty={contacts.length === 0 ? t('customers.record.noContacts') : undefined}
+              >
+                {contacts.length > 0 ? contacts.map((link) => (
+                  <ContactRow
+                    key={link.id}
+                    link={link}
+                    side="person"
+                    onOpen={openRecord}
+                    onTogglePrimary={canEditInfo ? makePrimary : undefined}
+                    onRemove={canEditInfo ? setRemoving : undefined}
+                    labels={rowLabels}
+                    busy={busyLink === link.id}
+                  />
+                )) : undefined}
+              </RecordCard>
             )}
-          </View>
-          <View style={s.heroActions}>
-            {!!customer.phone && (
-              <HeroButton icon="call" label={t('customers.record.call')} onPress={() => void Linking.openURL(`tel:${customer.phone}`)} />
+
+            {/*
+              ---- Works at (a person) ----
+
+              Shown when there is something to show, or when the record IS a contact
+              person — for whom "which firms do I contact for" is the whole point of
+              the record. An ordinary individual client gets nothing: the link is
+              only ever created from the COMPANY end, so an empty card here would
+              carry no action and no information, on every person in the book.
+            */}
+            {(companies.length > 0 || customer.isContact === true) && (
+              <RecordCard
+                title={t('customers.record.worksAt')}
+                icon="business-outline"
+                badge={companies.length || undefined}
+                empty={companies.length === 0 ? t('customers.record.noCompanies') : undefined}
+              >
+                {companies.length > 0 ? companies.map((link) => (
+                  <ContactRow
+                    key={link.id}
+                    link={link}
+                    side="company"
+                    onOpen={openRecord}
+                    onRemove={canEditInfo ? setRemoving : undefined}
+                    labels={rowLabels}
+                    busy={busyLink === link.id}
+                  />
+                )) : undefined}
+              </RecordCard>
             )}
-            {!!customer.email && (
-              <HeroButton icon="mail" label={t('customers.record.email')} onPress={() => void Linking.openURL(`mailto:${customer.email}`)} />
+
+            {/*
+              ---- Addresses (read only — see AddressRow) ----
+
+              Only when there are any. Most clients in a real book carry their
+              address on the RECORD and have no address rows at all, so an
+              always-present card with no add button would read "No addresses yet."
+              on the majority of clients and mean nothing on any of them.
+            */}
+            {addresses.length > 0 && (
+              <RecordCard
+                title={t('customers.record.addresses')}
+                icon="location-outline"
+                badge={addresses.length}
+              >
+                {addresses.map((a) => <AddressRow key={a.id} address={a} labels={addressLabels} />)}
+              </RecordCard>
             )}
-          </View>
+
+            {/* ---- Details: the company block, and the language for emails ---- */}
+            <RecordCard title={t(company ? 'customers.record.details' : 'customers.record.detailsPerson')} icon="information-circle-outline">
+              {company && filledCompanyFields.map(([field, value]) => (
+                <RecordRow
+                  key={field}
+                  // The shared key first; this screen's own is what renders until
+                  // the catalogue gains the shared one. COMPANY_ONLY_FIELDS is the
+                  // part that must be shared — a field added there has to show up
+                  // on the record AND the form.
+                  label={t(COMPANY_FIELD_KEYS[field], { defaultValue: t(`customers.form.${field}`) })}
+                  value={value as string}
+                />
+              ))}
+              {!!customer.contactName?.trim() && <RecordRow label={t('customers.fContact')} value={customer.contactName.trim()} />}
+              {!!customer.notes?.trim() && <RecordRow label={t('customers.form.notes')} value={customer.notes.trim()} />}
+
+              {/*
+                Language for emails. Always shown — "same as the organization" still
+                decides something, and the person on the phone should see what. Only
+                somebody who may edit this client's info can change it.
+              */}
+              <PressableScale
+                disabled={!canEditClientLocale(customer)}
+                onPress={() => setLocaleOpen((o) => !o)}
+                accessibilityRole={canEditClientLocale(customer) ? 'button' : 'text'}
+                accessibilityState={{ expanded: localeOpen }}
+                style={s.localeRow}
+              >
+                <Ionicons name="language" size={16} color={colors.textMuted} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={s.localeLabel}>{t('customers.locale')}</Text>
+                  <Text style={s.localeValue}>
+                    {clientLocaleName(customer.locale) ?? t('customers.localeSame')}
+                  </Text>
+                </View>
+                {canEditClientLocale(customer) && (
+                  <Ionicons name={localeOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textMuted} />
+                )}
+              </PressableScale>
+              {localeOpen && canEditClientLocale(customer) && (
+                <View style={s.chipsWrap}>
+                  {[{ value: '', label: t('customers.localeSame') }, ...CLIENT_LOCALE_OPTIONS].map((o) => (
+                    <ChoiceChip
+                      key={o.value || 'same'}
+                      label={o.label}
+                      selected={clientLocaleFormValue(customer) === o.value}
+                      onPress={() => void setLocale(o.value)}
+                    />
+                  ))}
+                </View>
+              )}
+            </RecordCard>
+
+            <View style={{ height: SPACING.xxl }} />
+          </ScrollView>
         </View>
+      )}
 
-        {/* ---- Stage ---- */}
-        <RecordCard title={t('customers.record.stage')} icon="flag-outline">
-          {canWork ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
-              {CUSTOMER_STAGES.map((stage) => (
-                <ChoiceChip
-                  key={stage.key}
-                  label={customerStageLabel(stage.key)}
-                  selected={status === stage.key}
-                  dotColor={STAGE_DOT[stage.key]}
-                  onPress={() => void setStage(stage.key)}
-                />
-              ))}
-            </ScrollView>
-          ) : (
-            /*
-              No ability to move it, so no pills — but the stage is a FACT about
-              the client and stays visible. Hiding the value with the control
-              would answer "where are we with them" with silence.
-            */
-            <View style={s.chips}>
-              <ChoiceChip label={customerStageLabel(status)} selected dotColor={STAGE_DOT[status]} onPress={() => {}} disabled />
-            </View>
-          )}
-        </RecordCard>
-
-        {/*
-          ---- Contact people (a company) ----
-
-          A card earns its place by holding something or by offering something.
-          With no contacts AND no ability to add one it does neither, so it goes
-          — a reader who cannot act on an empty panel learns only that the
-          screen is long.
-        */}
-        {(contacts.length > 0 || (company && canEditInfo)) && (
-          <RecordCard
-            title={t('customers.record.contacts')}
-            icon="people-outline"
-            badge={contacts.length || undefined}
-            action={canEditInfo ? (
-              <CardAction icon="add" label={t('customers.record.addContact')} onPress={() => setAddingContact(true)} />
-            ) : undefined}
-            empty={contacts.length === 0 ? t('customers.record.noContacts') : undefined}
-          >
-            {contacts.length > 0 ? contacts.map((link) => (
-              <ContactRow
-                key={link.id}
-                link={link}
-                side="person"
-                onOpen={openRecord}
-                onTogglePrimary={canEditInfo ? makePrimary : undefined}
-                onRemove={canEditInfo ? setRemoving : undefined}
-                labels={rowLabels}
-                busy={busyLink === link.id}
-              />
-            )) : undefined}
-          </RecordCard>
-        )}
-
-        {/*
-          ---- Works at (a person) ----
-
-          Shown when there is something to show, or when the record IS a contact
-          person — for whom "which firms do I contact for" is the whole point of
-          the record. An ordinary individual client gets nothing: the link is
-          only ever created from the COMPANY end, so an empty card here would
-          carry no action and no information, on every person in the book.
-        */}
-        {(companies.length > 0 || customer.isContact === true) && (
-          <RecordCard
-            title={t('customers.record.worksAt')}
-            icon="business-outline"
-            badge={companies.length || undefined}
-            empty={companies.length === 0 ? t('customers.record.noCompanies') : undefined}
-          >
-            {companies.length > 0 ? companies.map((link) => (
-              <ContactRow
-                key={link.id}
-                link={link}
-                side="company"
-                onOpen={openRecord}
-                onRemove={canEditInfo ? setRemoving : undefined}
-                labels={rowLabels}
-                busy={busyLink === link.id}
-              />
-            )) : undefined}
-          </RecordCard>
-        )}
-
-        {/*
-          ---- Addresses (read only — see AddressRow) ----
-
-          Only when there are any. Most clients in a real book carry their
-          address on the RECORD and have no address rows at all, so an
-          always-present card with no add button would read "No addresses yet."
-          on the majority of clients and mean nothing on any of them.
-        */}
-        {addresses.length > 0 && (
-          <RecordCard
-            title={t('customers.record.addresses')}
-            icon="location-outline"
-            badge={addresses.length}
-          >
-            {addresses.map((a) => <AddressRow key={a.id} address={a} labels={addressLabels} />)}
-          </RecordCard>
-        )}
-
-        {/* ---- Details: the company block, and the language for emails ---- */}
-        <RecordCard title={t(company ? 'customers.record.details' : 'customers.record.detailsPerson')} icon="information-circle-outline">
-          {company && filledCompanyFields.map(([field, value]) => (
-            <RecordRow
-              key={field}
-              // The shared key first; this screen's own is what renders until
-              // the catalogue gains the shared one. COMPANY_ONLY_FIELDS is the
-              // part that must be shared — a field added there has to show up
-              // on the record AND the form.
-              label={t(COMPANY_FIELD_KEYS[field], { defaultValue: t(`customers.form.${field}`) })}
-              value={value as string}
-            />
-          ))}
-          {!!customer.contactName?.trim() && <RecordRow label={t('customers.fContact')} value={customer.contactName.trim()} />}
-          {!!customer.notes?.trim() && <RecordRow label={t('customers.form.notes')} value={customer.notes.trim()} />}
-
+      {/* ================= ACTIVITY ================= */}
+      {seen.activity && (
+        <View style={[s.pane, tab !== 'activity' && s.hidden]}>
           {/*
-            Language for emails. Always shown — "same as the organization" still
-            decides something, and the person on the phone should see what. Only
-            somebody who may edit this client's info can change it.
+            ⚠️ A `FlatList`, not the `ScrollView` this all used to live in. A
+            client with two hundred logged calls mounted two hundred rows the
+            moment the record opened; now it mounts the handful on screen. This
+            is the larger half of what the tabs bought — bigger than the tabs.
+
+            ⚠️ `ListHeaderComponent` is given an ELEMENT, and the composer is a
+            module-scope component. A function component declared inside this
+            render would be a new type every pass, React would remount the
+            header, and the note being typed would lose focus after each letter.
           */}
-          <PressableScale
-            disabled={!canEditClientLocale(customer)}
-            onPress={() => setLocaleOpen((o) => !o)}
-            accessibilityRole={canEditClientLocale(customer) ? 'button' : 'text'}
-            accessibilityState={{ expanded: localeOpen }}
-            style={s.localeRow}
-          >
-            <Ionicons name="language" size={16} color={colors.textMuted} />
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={s.localeLabel}>{t('customers.locale')}</Text>
-              <Text style={s.localeValue}>
-                {clientLocaleName(customer.locale) ?? t('customers.localeSame')}
+          <FlatList
+            data={feed}
+            keyExtractor={keyOfActivity}
+            renderItem={renderFeedItem}
+            contentContainerStyle={s.listPad}
+            keyboardShouldPersistTaps="handled"
+            refreshControl={refresher}
+            // ⚠️ Off deliberately: the pane it lives in is hidden with
+            // `display: 'none'` while another tab is showing, and clipped
+            // subviews inside a hidden parent are the classic way rows come
+            // back blank when it is shown again.
+            removeClippedSubviews={false}
+            ListHeaderComponent={
+              <View>
+                <ActivityComposer onSubmit={addActivity} />
+                <ChipRow fadeColor={colors.surface} style={s.filterBar}>
+                  {FILTERS.map((f) => (
+                    <FilterChip
+                      key={f.key}
+                      label={t(f.label)}
+                      active={filter === f.key}
+                      onPress={() => setFilter(f.key)}
+                    />
+                  ))}
+                </ChipRow>
+              </View>
+            }
+            ListEmptyComponent={
+              <Text style={s.empty}>
+                {filter === 'all'
+                  ? t('customers.record.noActivity')
+                  : t('customers.record.noActivityFiltered')}
               </Text>
-            </View>
-            {canEditClientLocale(customer) && (
-              <Ionicons name={localeOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textMuted} />
-            )}
-          </PressableScale>
-          {localeOpen && canEditClientLocale(customer) && (
-            <View style={s.chipsWrap}>
-              {[{ value: '', label: t('customers.localeSame') }, ...CLIENT_LOCALE_OPTIONS].map((o) => (
-                <ChoiceChip
-                  key={o.value || 'same'}
-                  label={o.label}
-                  selected={clientLocaleFormValue(customer) === o.value}
-                  onPress={() => void setLocale(o.value)}
-                />
-              ))}
-            </View>
-          )}
-        </RecordCard>
-
-        {/* ---- Composer ---- */}
-        <RecordCard title={t('customers.record.logSomething')} icon="create-outline">
-          <View style={s.chipsWrap}>
-            {COMPOSER.map((c) => (
-              <ChoiceChip key={c.type} label={t(c.key)} selected={type === c.type} onPress={() => setType(c.type)} />
-            ))}
-          </View>
-          <TextInput
-            value={body}
-            onChangeText={setBody}
-            multiline
-            placeholder={t(type === 'REMINDER' ? 'customers.record.composer.reminderPlaceholder' : 'customers.record.composer.notePlaceholder')}
-            placeholderTextColor={colors.textMuted}
-            style={s.composerInput}
-            accessibilityLabel={t('customers.record.logSomething')}
+            }
+            ListFooterComponent={<View style={{ height: SPACING.xxl }} />}
           />
-          {type === 'REMINDER' && (
-            <View style={s.chipsWrap}>
-              {DUE.map((d) => (
-                <ChoiceChip key={d.k} label={t(d.key)} selected={due === d.k} onPress={() => setDue(d.k)} />
-              ))}
-            </View>
-          )}
-          <PressableScale
-            onPress={() => void addActivity()}
-            disabled={saving || (!body.trim() && type !== 'REMINDER')}
-            accessibilityRole="button"
-            accessibilityLabel={t('customers.record.composer.add')}
-            accessibilityState={{ busy: saving, disabled: saving || (!body.trim() && type !== 'REMINDER') }}
-            style={[s.addBtn, (saving || (!body.trim() && type !== 'REMINDER')) && { opacity: 0.45 }]}
-          >
-            <Text style={s.addText}>{t('customers.record.composer.add')}</Text>
-          </PressableScale>
-        </RecordCard>
+        </View>
+      )}
 
-        {/* ---- Timeline ---- */}
-        <RecordCard
-          title={t('customers.record.activity')}
-          icon="time-outline"
-          empty={shownActivities.length === 0 ? t('customers.record.noActivity') : undefined}
-        >
-          {shownActivities.length > 0 ? shownActivities.map((a, i) => (
-            <ActivityRow
-              key={a.id}
-              activity={a}
-              continues={i < shownActivities.length - 1}
-              heading={
-                a.type === 'STATUS'
-                  ? t('customers.record.stageChanged', {
-                      from: customerStageLabel(a.metadata?.from || ''),
-                      to: customerStageLabel(a.metadata?.to || ''),
-                    })
-                  : t(`customers.record.act.${a.type}`, { defaultValue: a.type })
-              }
-              meta={[
-                a.author ? a.author.firstName : '',
-                a.pendingSync ? t('offline.chip.waiting') : relTime(a.createdAt),
-              ].filter(Boolean).join(' · ')}
-              // A queued entry has no server row to mark done yet.
-              onToggleDone={a.pendingSync ? undefined : toggleDone}
-              doneLabel={
-                a.type !== 'REMINDER' ? undefined
-                  : a.doneAt ? t('customers.record.reminderDone')
-                  : a.dueAt ? t('customers.record.reminderDue', { date: new Date(a.dueAt).toLocaleDateString() })
-                  : t('customers.record.composer.reminder')
-              }
-            />
-          )) : undefined}
-        </RecordCard>
-
-        <View style={{ height: SPACING.xxl }} />
-      </ScrollView>
+      {/* ================= REMINDERS ================= */}
+      {seen.reminders && (
+        <View style={[s.pane, tab !== 'reminders' && s.hidden]}>
+          <FlatList
+            data={reminderRows}
+            keyExtractor={keyOfActivity}
+            renderItem={renderReminderItem}
+            contentContainerStyle={s.listPad}
+            refreshControl={refresher}
+            // ⚠️ Off deliberately: the pane it lives in is hidden with
+            // `display: 'none'` while another tab is showing, and clipped
+            // subviews inside a hidden parent are the classic way rows come
+            // back blank when it is shown again.
+            removeClippedSubviews={false}
+            ListHeaderComponent={
+              <View>
+                {overdueCount > 0 && (
+                  <View style={s.overdue}>
+                    <Ionicons name="alert-circle" size={18} color={COLORS.error} />
+                    <Text style={s.overdueText}>
+                      {t('customers.record.reminders.overdue', { count: overdueCount })}
+                    </Text>
+                  </View>
+                )}
+                {doneReminders.length > 0 && (
+                  <PressableScale
+                    onPress={() => setShowDone((v) => !v)}
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: showDone }}
+                    style={s.doneToggle}
+                  >
+                    <Ionicons
+                      name={showDone ? 'eye-off-outline' : 'eye-outline'}
+                      size={15}
+                      color={colors.textMuted}
+                    />
+                    <Text style={s.doneToggleText}>
+                      {showDone
+                        ? t('customers.record.reminders.hideDone')
+                        : t('customers.record.reminders.showDone', { count: doneReminders.length })}
+                    </Text>
+                  </PressableScale>
+                )}
+                <View style={{ height: SPACING.md }} />
+              </View>
+            }
+            ListEmptyComponent={<Text style={s.empty}>{t('customers.record.reminders.none')}</Text>}
+            ListFooterComponent={<View style={{ height: SPACING.xxl }} />}
+          />
+        </View>
+      )}
 
       {canEditInfo && (
         <ClientEditSheet
@@ -679,7 +879,55 @@ function HeroButton({ icon, label, onPress }: { icon: keyof typeof Ionicons.glyp
 const styles = (c: ThemeColors) =>
   StyleSheet.create({
     safe: { flex: 1 },
+    tabBar: { marginHorizontal: SPACING.lg, marginBottom: SPACING.sm },
+    /*
+      A pane fills what is left under the tab bar. `display: 'none'` rather
+      than unmounting: the component tree, its state and the native scroll
+      offset all survive the switch, so coming back to Activity lands where the
+      member left it. A hidden pane is not laid out and not drawn.
+    */
+    pane: { flex: 1 },
+    hidden: { display: 'none' },
     scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
+    listPad: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl, flexGrow: 1 },
+    // Full bleed, so the scroll fades sit on the screen edge rather than 16px
+    // inside it, where they would read as a line under the composer.
+    filterBar: { marginHorizontal: -SPACING.lg, marginTop: SPACING.sm, marginBottom: SPACING.sm },
+    empty: {
+      fontSize: FONT_SIZE.base,
+      color: c.textMuted,
+      textAlign: 'center',
+      paddingVertical: SPACING.xxl,
+    },
+    sectionLabel: {
+      fontSize: FONT_SIZE.xs,
+      fontWeight: FONT_WEIGHT.bold,
+      color: c.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.6,
+      marginTop: SPACING.md,
+      marginBottom: SPACING.md,
+    },
+    overdue: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.sm,
+      backgroundColor: c.errorLight,
+      borderRadius: RADIUS.md,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.md,
+      marginTop: SPACING.md,
+    },
+    overdueText: { flex: 1, fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold, color: COLORS.error },
+    doneToggle: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.xs,
+      alignSelf: 'flex-start',
+      marginTop: SPACING.md,
+      paddingVertical: SPACING.xs,
+    },
+    doneToggleText: { fontSize: FONT_SIZE.sm, color: c.textMuted, fontWeight: FONT_WEIGHT.medium },
     hero: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -724,28 +972,6 @@ const styles = (c: ThemeColors) =>
     },
     localeLabel: { fontSize: FONT_SIZE.sm, color: c.textMuted },
     localeValue: { fontSize: FONT_SIZE.lg, color: c.textPrimary, fontWeight: FONT_WEIGHT.medium, marginTop: 1 },
-    composerInput: {
-      backgroundColor: c.input,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.inputBorder,
-      borderRadius: RADIUS.md,
-      paddingHorizontal: SPACING.md,
-      paddingVertical: SPACING.md,
-      marginTop: SPACING.md,
-      minHeight: 72,
-      textAlignVertical: 'top',
-      fontSize: FONT_SIZE.lg,
-      color: c.textPrimary,
-    },
-    addBtn: {
-      alignSelf: 'flex-end',
-      marginTop: SPACING.md,
-      backgroundColor: COLORS.primary,
-      borderRadius: RADIUS.md,
-      paddingHorizontal: SPACING.xxl,
-      paddingVertical: SPACING.md,
-    },
-    addText: { color: COLORS.white, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold },
     notFound: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SPACING.md, paddingBottom: 80 },
     notFoundText: { fontSize: FONT_SIZE.xl, color: c.textMuted },
   });

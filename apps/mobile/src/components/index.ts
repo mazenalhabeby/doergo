@@ -32,3 +32,5 @@ export { SheetHeader } from './sheet-header';
 export { SignatureCapture } from './signature-capture';
 export * from './chip-row';
 export { DateField } from './date-field';
+export { SegmentedTabs } from './segmented-tabs';
+export type { SegmentedTab } from './segmented-tabs';

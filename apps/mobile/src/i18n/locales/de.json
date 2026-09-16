@@ -1842,6 +1842,29 @@
       "emptyFiltered": "Keine Kunden entsprechen Ihrer Suche."
     },
     "record": {
+      "tabs": {
+        "information": "Informationen",
+        "activity": "Aktivität",
+        "reminders": "Erinnerungen"
+      },
+      "filter": {
+        "all": "Alle",
+        "notes": "Notizen",
+        "calls": "Anrufe"
+      },
+      "noActivityFiltered": "Dazu wurde noch nichts erfasst.",
+      "reminders": {
+        "none": "Nichts nachzuverfolgen.",
+        "overdue_one": "{{count}} Erinnerung ist überfällig",
+        "overdue_other": "{{count}} Erinnerungen sind überfällig",
+        "done": "Erledigt",
+        "showDone": "Erledigte anzeigen ({{count}})",
+        "hideDone": "Erledigte ausblenden",
+        "a11yOpen_one": "Erinnerungen, {{count}} offen",
+        "a11yOpen_other": "Erinnerungen, {{count}} offen",
+        "a11yOverdue_one": "Erinnerungen, {{count}} überfällig",
+        "a11yOverdue_other": "Erinnerungen, {{count}} überfällig"
+      },
       "edit": "Bearbeiten",
       "kindCompany": "Firma",
       "kindPerson": "Person",
