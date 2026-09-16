@@ -1830,7 +1830,17 @@
     "locale": "Sprache für E-Mails",
     "localeSame": "Wie die Organisation",
     "localeHint": "Einladungen und Signaturlinks an diesen Kunden werden in dieser Sprache verfasst. Hat der Kunde in der App eine Sprache gewählt, gilt diese. Bei „Wie die Organisation“ richtet sich die Sprache nach dem Land Ihrer Organisation, sonst Englisch.",
-    "localeFailed": "Die Sprache konnte nicht geändert werden"
+    "localeFailed": "Die Sprache konnte nicht geändert werden",
+    "filter": {
+      "all": "Alle",
+      "companies": "Firmen",
+      "people": "Personen",
+      "contacts": "Kontakte"
+    },
+    "list": {
+      "contactTag": "Kontakt",
+      "emptyFiltered": "Keine Kunden entsprechen Ihrer Suche."
+    }
   },
   "issues": {
     "myIssues": "Meine Meldungen",

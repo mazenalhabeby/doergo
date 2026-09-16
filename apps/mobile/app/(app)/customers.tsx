@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { memo, useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SheetPanel } from '../../src/components/sheet-panel';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenHeader } from '../../src/components';
+import { ScreenHeader, ChipRow, FilterChip, PressableScale, Skeleton } from '../../src/components';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { customersApi, locationsApi, type MobileCustomer } from '../../src/lib/api';
@@ -14,11 +14,119 @@ import { canScanCards } from '../../src/lib/card-scan';
 import { useToast } from '../../src/contexts/toast-context';
 import { useQueuedCreate } from '../../src/offline/actions/queued-create';
 import { CLIENT_LOCALE_OPTIONS, newClientInput } from '../../src/lib/client-locale';
-import { customerStageLabel } from '@hbcfield/shared/client';
+import {
+  customerStageLabel,
+  CLIENT_FILTERS, CLIENT_FILTER_KEYS, clientFilterQuery, isCompany,
+  type ClientFilter,
+} from '@hbcfield/shared/client';
 import { useTheme } from '../../src/contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../src/lib/constants';
 
 const initials = (n: string) => n.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+
+/**
+ * One page of the client book.
+ *
+ * 40, not 100: a page is what somebody reads before their thumb reaches the
+ * bottom, and the next one arrives before they get there. The old screen asked
+ * for a hundred and then told the reader it had stopped at a hundred — which is
+ * an apology, not a list.
+ */
+const PAGE_SIZE = 40;
+
+/** The search field waits this long after the last keystroke. */
+const SEARCH_DEBOUNCE_MS = 300;
+
+/** Hoisted, so FlatList is not handed a new function on every render. */
+const keyOf = (c: MobileCustomer) => c.id;
+
+/**
+ * One client in the book.
+ *
+ * Memoized and given only primitives plus a stable `onPress`, because appending
+ * a page re-renders the list and every row in it otherwise redraws — which on a
+ * long book is the difference between paging that feels instant and a visible
+ * stutter at every page boundary.
+ */
+const ClientRow = memo(function ClientRow({
+  client, spaceLabel, contactLabel, appLabel, onPress,
+}: {
+  client: MobileCustomer;
+  /** Which workspace it is filed in, or null when the line is not worth drawing. */
+  spaceLabel: string | null;
+  contactLabel: string;
+  appLabel: string;
+  onPress: (id: string) => void;
+}) {
+  const { colors } = useTheme();
+  const company = isCompany(client);
+  /*
+    A contact is somebody else's person sitting in a list of your clients —
+    still readable, plainly not the same thing. Dimming the whole row says that
+    before a word is read; the pill says which word.
+  */
+  const contact = client.isContact === true;
+
+  return (
+    <PressableScale
+      onPress={() => onPress(client.id)}
+      accessibilityRole="button"
+      accessibilityLabel={client.name}
+      style={[
+        styles.row,
+        SHADOWS.sm,
+        { backgroundColor: colors.card, borderColor: colors.border },
+        contact && styles.rowMuted,
+      ]}
+    >
+      {/*
+        ⚠️ Square for a company, round for a person — the SHAPE carries it, and
+        the colour is the same one either way. The same shape language as the
+        web's client list, so somebody who learns it at a desk already knows it
+        on a phone. A second hue would be a second thing to learn, and this
+        product does not use multi-colour icons.
+      */}
+      <View style={[company ? styles.avatarSquare : styles.avatar, { backgroundColor: COLORS.primary }]}>
+        {company
+          ? <Ionicons name="business" size={19} color="#fff" />
+          : <Text style={styles.avatarTxt}>{initials(client.name)}</Text>}
+      </View>
+
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={{ color: colors.textPrimary, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold as any }} numberOfLines={1}>
+          {client.name}
+        </Text>
+        <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.xs }} numberOfLines={1}>
+          {[customerStageLabel(client.status || 'LEAD'), client.phone || client.email].filter(Boolean).join(' · ')}
+        </Text>
+        {spaceLabel && (
+          <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.xs, marginTop: 2 }} numberOfLines={1}>
+            {spaceLabel}
+          </Text>
+        )}
+      </View>
+
+      {/*
+        "This client has the app." It was a filled phone glyph at 16px, which at
+        that size is a green rounded rectangle — a battery, and read as one. A
+        marker that needs explaining is not working, so it carries its word.
+
+        One tag at a time: a portal resident is never a contact, and two pills
+        on a narrow row squeeze the name they are meant to qualify.
+      */}
+      {client.isPortalResident ? (
+        <View style={[styles.appTag, { borderColor: '#16a34a' }]}>
+          <Text style={styles.appTagText}>{appLabel}</Text>
+        </View>
+      ) : contact ? (
+        <View style={[styles.appTag, { borderColor: colors.border }]}>
+          <Text style={[styles.appTagText, { color: colors.textMuted }]}>{contactLabel}</Text>
+        </View>
+      ) : null}
+      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+    </PressableScale>
+  );
+});
 
 export default function CustomersScreen() {
   const { colors } = useTheme();
@@ -27,9 +135,11 @@ export default function CustomersScreen() {
   const [items, setItems] = useState<MobileCustomer[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [spaces, setSpaces] = useState<{ id: string; name: string }[]>([]);
   const [spaceId, setSpaceId] = useState<string | null>(null); // null = every workspace
-  const [capped, setCapped] = useState(false);
+  const [filter, setFilter] = useState<ClientFilter>('all');
   const { user } = useAuth();
   const toast = useToast();
   // A client added with no signal waits in the outbox and is sent when there is one.
@@ -79,25 +189,116 @@ export default function CustomersScreen() {
       .catch(() => { /* the filter simply does not appear */ });
   }, []);
 
-  const LIMIT = 100;
-  const load = useCallback(async (q?: string, space?: string | null) => {
-    try {
-      const rows = await customersApi.list({
-        search: q || undefined,
-        spaceId: space || undefined,
-        limit: LIMIT,
-      });
-      setItems(rows);
-      // A list that simply stops at a hundred looks like the whole book.
-      setCapped(rows.length >= LIMIT);
-    } catch { /* ignore */ } finally { setLoading(false); }
-  }, []);
+  /*
+    What the three controls mean to the server, in ONE place.
 
-  useEffect(() => { load(undefined, spaceId); }, [load, spaceId]);
+    The kind filter is `clientFilterQuery()` in shared and nothing else — a
+    hand-written `type: 'COMPANY'` at a call site is how the phone and the web
+    end up meaning different things by "Companies".
+
+    ⚠️ `includeUnfiled` goes with a named workspace, always. A client filed in
+    NO workspace is invisible to a strict space filter, and in a real book most
+    of them are — scoping strictly is what made the web's client picker come up
+    empty. The row says which workspace a client is in (or that it is in none),
+    so nothing appears here without an explanation on it.
+  */
+  const queryFor = useCallback(
+    (q: string, space: string | null, f: ClientFilter, page: number) => ({
+      search: q.trim() || undefined,
+      spaceId: space || undefined,
+      includeUnfiled: space ? true : undefined,
+      ...clientFilterQuery(f),
+      page,
+      limit: PAGE_SIZE,
+    }),
+    [],
+  );
+
+  /*
+    Which query the rows on screen belong to.
+
+    Every first-page load claims a new number. A page-2 answer that arrives
+    after the reader has changed the filter carries the OLD number and is
+    dropped — otherwise "Companies" quietly gains a page of people, and the
+    count of what is on screen stops matching what was asked for. It also stops
+    `loadMore` from firing against a list that is being replaced.
+  */
+  const queryId = useRef(0);
+  /** The page already on screen, and whether the server has run out. */
+  const paging = useRef({ page: 1, done: false });
+
+  const load = useCallback(
+    async (q: string, space: string | null, f: ClientFilter, mode: 'first' | 'refresh') => {
+      const id = ++queryId.current;
+      paging.current = { page: 1, done: false };
+      if (mode === 'first') setLoading(true); else setRefreshing(true);
+      try {
+        const rows = await customersApi.list(queryFor(q, space, f, 1));
+        if (id !== queryId.current) return; // a newer query has taken over
+        setItems(rows);
+        paging.current = { page: 1, done: rows.length < PAGE_SIZE };
+      } catch {
+        // A failed list is not worth a toast — pull-to-refresh is right there,
+        // and the offline layer already says when there is no signal.
+        if (id === queryId.current) paging.current.done = true;
+      } finally {
+        if (id === queryId.current) { setLoading(false); setRefreshing(false); }
+      }
+    },
+    [queryFor],
+  );
+
+  /*
+    The next page, appended.
+
+    Three guards, each for a real double-fetch: FlatList fires `onEndReached`
+    more than once per rest position, a first page may still be in flight when
+    the list is short enough to be at its own end, and a server that has run out
+    must not be asked again on every scroll.
+  */
+  const loadMore = useCallback(async () => {
+    if (loadingMore || loading || refreshing || paging.current.done) return;
+    const id = queryId.current;
+    const next = paging.current.page + 1;
+    setLoadingMore(true);
+    try {
+      const rows = await customersApi.list(queryFor(search, spaceId, filter, next));
+      if (id !== queryId.current) return;
+      setItems((prev) => [...prev, ...rows]);
+      paging.current = { page: next, done: rows.length < PAGE_SIZE };
+    } catch {
+      if (id === queryId.current) paging.current.done = true;
+    } finally {
+      if (id === queryId.current) setLoadingMore(false);
+    }
+  }, [loadingMore, loading, refreshing, queryFor, search, spaceId, filter]);
+
+  /*
+    One effect for all three controls — the screen used to have two, so it
+    fetched twice on mount and raced its own answers.
+
+    The 300ms wait is the SEARCH FIELD's, and only its: a chip is a decision
+    already made, and making somebody watch a third of a second of nothing after
+    tapping "Companies" reads as a stuck screen.
+  */
+  const lastSearch = useRef(search);
   useEffect(() => {
-    const tmr = setTimeout(() => load(search, spaceId), 300);
+    const typing = search !== lastSearch.current;
+    lastSearch.current = search;
+    const tmr = setTimeout(() => load(search, spaceId, filter, 'first'), typing ? SEARCH_DEBOUNCE_MS : 0);
     return () => clearTimeout(tmr);
-  }, [search, spaceId, load]);
+  }, [search, spaceId, filter, load]);
+
+  /*
+    ⚠️ Refresh re-asks the CURRENT question. It used to call `load(search)` and
+    drop the workspace, so pulling down on a filtered list silently reverted it
+    to every workspace while the chip stayed lit — the list disagreed with the
+    controls above it and nothing on screen said why.
+  */
+  const refresh = useCallback(
+    () => load(search, spaceId, filter, 'refresh'),
+    [load, search, spaceId, filter],
+  );
 
   const submit = useCallback(async () => {
     // Whatever workspace is being viewed, so the client lands where the person
@@ -116,19 +317,26 @@ export default function CustomersScreen() {
       setForm({ name: '', contactName: '', email: '', phone: '' });
       setFormLocale('');
       toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('customers.added', 'Client added'));
-      load(search, spaceId);
+      refresh();
     } catch (e: any) {
       toast.error(e?.message || t('customers.addFailed', 'Could not add the client'));
     } finally {
       setSaving(false);
     }
-  }, [form, formSpaceId, formLocale, load, search, spaceId, t, toast, clientCreate]);
+  }, [form, formSpaceId, formLocale, refresh, t, toast, clientCreate]);
 
   // Rows carry a spaceId and no name; this is the only place that can say which.
   const spaceName = useCallback(
     (id?: string | null) => (id ? spaces.find((s) => s.id === id)?.name ?? null : null),
     [spaces],
   );
+
+  /*
+    Stable across renders, so a memoized row is not re-rendered by the act of
+    scrolling. A `() => router.push(...)` written in `renderItem` is a new
+    function on every pass and defeats the memo entirely.
+  */
+  const openClient = useCallback((id: string) => router.push(`/(app)/customer/${id}`), []);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.surface }]} edges={['top']}>
@@ -141,53 +349,63 @@ export default function CustomersScreen() {
       </View>
 
       {/*
+        What KIND of record — companies, people, or the contacts who are neither.
+
+        Always shown, unlike the workspace row: every book has all four answers
+        in it, and "Contacts" is the only way to reach records the server hides
+        by default (a contact is a person who works somewhere, not a client, and
+        `contacts: 'exclude'` is the default in customers.service).
+
+        The labels come from CLIENT_FILTER_KEYS and the parameters from
+        `clientFilterQuery()` — the phone writes neither.
+      */}
+      <ChipRow fadeColor={colors.surface} style={styles.filterBar}>
+        {CLIENT_FILTERS.map((f) => (
+          <FilterChip
+            key={f}
+            label={t(CLIENT_FILTER_KEYS[f])}
+            active={filter === f}
+            onPress={() => setFilter(f)}
+          />
+        ))}
+      </ChipRow>
+
+      {/*
         Narrow to one workspace.
 
         Shown only when there is more than one to choose between — a single-site
         organization gets a filter with one option, which is a control that
         cannot do anything. "All" includes the clients filed in no workspace at
-        all, which in a real book is most of them.
+        all, which in a real book is most of them; so does a named workspace,
+        which is what `includeUnfiled` is for, and those rows say so.
       */}
       {spaces.length > 1 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          /*
-            ⚠️ `flexGrow: 0` is not optional here. A horizontal ScrollView in a
-            column is still a flex child: without it the row is squeezed by the
-            list below and the chips render with their text sliced off at the
-            baseline — which is what shipped the first time.
-          */
-          style={styles.filterBar}
-          contentContainerStyle={styles.filters}
-        >
-          {[{ id: null as string | null, name: t('customers.allSpaces', 'All workspaces') }, ...spaces].map((sp) => {
-            const on = spaceId === sp.id;
-            return (
-              <TouchableOpacity
-                key={sp.id ?? 'all'}
-                onPress={() => setSpaceId(sp.id)}
-                style={[
-                  styles.chip,
-                  { borderColor: on ? COLORS.primary : colors.border, backgroundColor: on ? COLORS.primary + '15' : colors.card },
-                ]}
-              >
-                <Text
-                  numberOfLines={1}
-                  style={{ color: on ? COLORS.primary : colors.textMuted, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold as any }}
-                >
-                  {sp.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+        <ChipRow fadeColor={colors.surface} style={styles.spaceBar}>
+          {[{ id: null as string | null, name: t('customers.allSpaces', 'All workspaces') }, ...spaces].map((sp) => (
+            <FilterChip
+              key={sp.id ?? 'all'}
+              label={sp.name}
+              active={spaceId === sp.id}
+              onPress={() => setSpaceId(sp.id)}
+            />
+          ))}
+        </ChipRow>
       )}
 
-      {loading ? <ActivityIndicator style={{ marginTop: 40 }} color={COLORS.primary} /> : (
+      {loading ? (
+        /*
+          A skeleton, not a spinner. The list's shape is known before its
+          contents are, so showing it means the screen does not jump when the
+          answer lands — and a spinner in the middle of an empty screen is
+          indistinguishable from a screen that is broken.
+        */
+        <View style={styles.listPad}>
+          {Array.from({ length: 6 }).map((_, i) => <Skeleton.Card key={i} height={66} />)}
+        </View>
+      ) : (
         <FlatList
           data={items}
-          keyExtractor={(c) => c.id}
+          keyExtractor={keyOf}
           /*
             ⚠️ The screen is inset at the TOP only, on purpose: the list
             should scroll under the home indicator / Android nav bar
@@ -197,42 +415,46 @@ export default function CustomersScreen() {
             FAB_CLEARANCE keeps the last row reachable above the button.
           */
           contentContainerStyle={{ padding: SPACING.md, paddingBottom: SPACING.md + FAB_CLEARANCE + insets.bottom }}
-          refreshControl={<RefreshControl refreshing={false} onRefresh={() => load(search)} tintColor={COLORS.primary} />}
-          ListEmptyComponent={<Text style={{ textAlign: 'center', color: colors.textMuted, marginTop: 40 }}>{t('customers.empty', 'No customers')}</Text>}
-          ListFooterComponent={capped ? (
-            <Text style={{ textAlign: 'center', color: colors.textMuted, fontSize: FONT_SIZE.xs, paddingVertical: SPACING.lg }}>
-              {t('customers.capped', 'Showing the first {{n}}. Search to narrow it down.', { n: 100 })}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={COLORS.primary} />}
+          /*
+            0.4 of a screen, not 0.1: the next page has to arrive before the
+            thumb gets to the bottom, or paging is just a pause with a spinner
+            in it. `loadMore` refuses a second call itself, so an early fire
+            costs nothing.
+          */
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.4}
+          ListEmptyComponent={
+            <Text style={[styles.empty, { color: colors.textMuted }]}>
+              {search.trim() || filter !== 'all' || spaceId
+                ? t('customers.list.emptyFiltered', 'No clients match what you are looking for.')
+                : t('customers.empty', 'No customers')}
             </Text>
-          ) : null}
+          }
+          ListFooterComponent={
+            loadingMore
+              ? <ActivityIndicator style={{ marginVertical: SPACING.lg }} color={COLORS.primary} />
+              : null
+          }
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => router.push(`/(app)/customer/${item.id}`)} style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={[styles.avatar, { backgroundColor: COLORS.primary }]}><Text style={styles.avatarTxt}>{initials(item.name)}</Text></View>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ color: colors.textPrimary, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold as any }} numberOfLines={1}>{item.name}</Text>
-                <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.xs }} numberOfLines={1}>{[customerStageLabel(item.status || 'LEAD'), item.phone || item.email].filter(Boolean).join(' · ')}</Text>
-                {/* Which book this client came from. Only meaningful while
-                    looking at more than one, and "no workspace" is a real
-                    answer worth showing — it is why a client can be missing
-                    from every workspace tab. */}
-                {spaceId === null && spaces.length > 1 && (
-                  <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.xs, marginTop: 2 }} numberOfLines={1}>
-                    {spaceName(item.spaceId) ?? t('customers.noSpace', 'No workspace')}
-                  </Text>
-                )}
-              </View>
-              {/*
-                "This client has the app." It was a filled phone glyph at 16px,
-                which at that size is a green rounded rectangle — a battery, and
-                read as one. A marker that needs explaining is not working, so it
-                carries its word.
-              */}
-              {item.isPortalResident && (
-                <View style={[styles.appTag, { borderColor: '#16a34a' }]}>
-                  <Text style={styles.appTagText}>{t('customers.hasApp', 'App')}</Text>
-                </View>
-              )}
-              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-            </TouchableOpacity>
+            <ClientRow
+              client={item}
+              /*
+                Which book this client came from. Worth a line when looking at
+                more than one workspace, and ALWAYS for a client filed in none —
+                under a named workspace those are the rows whose presence would
+                otherwise need explaining, since `includeUnfiled` is what brought
+                them here.
+              */
+              spaceLabel={
+                spaces.length > 1 && (spaceId === null || !item.spaceId)
+                  ? spaceName(item.spaceId) ?? t('customers.noSpace', 'No workspace')
+                  : null
+              }
+              contactLabel={t('customers.list.contactTag', 'Contact')}
+              appLabel={t('customers.hasApp', 'App')}
+              onPress={openClient}
+            />
           )}
         />
       )}
@@ -284,8 +506,18 @@ export default function CustomersScreen() {
                       same presentation the sheet is still using. The camera
                       would arrive underneath a backdrop that is on its way out.
                       280ms is the sheet's exit plus a frame.
+
+                      ⚠️ The workspace travels with it. A scanned client used to
+                      be created with no `spaceId` at all, so it landed filed in
+                      nothing and was invisible in every workspace tab — the same
+                      bug the typed form was fixed for, still live on the road
+                      where most cards are actually scanned.
                     */
-                    setTimeout(() => router.push('/(app)/scan-card' as any), 280);
+                    const target = formSpaceId;
+                    setTimeout(
+                      () => router.push({ pathname: '/(app)/scan-card', params: target ? { spaceId: target } : {} } as any),
+                      280,
+                    );
                   }}
                 >
                   <View style={[styles.choiceIcon, { backgroundColor: COLORS.primary + '22' }]}>
@@ -442,9 +674,12 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: SPACING.sm, borderBottomWidth: StyleSheet.hairlineWidth },
   // `searchBar` deliberately ends with marginBottom: 0, so the separation
-  // between the field and the filters belongs here.
-  filterBar: { flexGrow: 0, flexShrink: 0, marginTop: SPACING.md },
-  filters: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.md, gap: SPACING.sm, alignItems: 'center' },
+  // between the field and the filters belongs here. ChipRow supplies its own
+  // horizontal padding and inner gap; these only place the rows.
+  filterBar: { marginTop: SPACING.xs },
+  spaceBar: { marginBottom: SPACING.xs },
+  listPad: { paddingHorizontal: SPACING.md, paddingTop: SPACING.md },
+  empty: { textAlign: 'center', marginTop: 40 },
   chip: {
     paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.full, borderWidth: 1, maxWidth: 180,
@@ -453,7 +688,11 @@ const styles = StyleSheet.create({
   },
   searchBar: { flexDirection: 'row', alignItems: 'center', gap: 8, margin: SPACING.md, marginBottom: 0, paddingHorizontal: 12, borderWidth: 1, borderRadius: RADIUS.md, height: 42 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.sm, marginBottom: 8 },
+  // Readable, and plainly not one of your own clients.
+  rowMuted: { opacity: 0.68 },
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  // The same 40px box, squared off — the one difference between the two kinds.
+  avatarSquare: { width: 40, height: 40, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center' },
   avatarTxt: { color: '#fff', fontSize: FONT_SIZE.sm, fontWeight: '700' },
   fab: {
     // `bottom` is set inline — it carries the safe-area inset.

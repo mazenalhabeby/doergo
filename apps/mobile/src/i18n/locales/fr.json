@@ -1830,7 +1830,17 @@
     "locale": "Langue des e-mails",
     "localeSame": "Comme l’organisation",
     "localeHint": "Les invitations et les liens de signature adressés à ce client sont rédigés dans cette langue. Si le client a choisi une langue dans l’application, c’est celle-ci qui s’applique. Avec « Comme l’organisation », les e-mails suivent le pays de votre organisation, sinon l’anglais.",
-    "localeFailed": "Impossible de changer la langue"
+    "localeFailed": "Impossible de changer la langue",
+    "filter": {
+      "all": "Tous",
+      "companies": "Entreprises",
+      "people": "Personnes",
+      "contacts": "Contacts"
+    },
+    "list": {
+      "contactTag": "Contact",
+      "emptyFiltered": "Aucun client ne correspond à votre recherche."
+    }
   },
   "issues": {
     "myIssues": "Mes signalements",
