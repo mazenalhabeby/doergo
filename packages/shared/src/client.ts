@@ -95,6 +95,7 @@ export * from './notifications/locale';
 // What a client record's "Language for emails" may hold — the form and the server share it.
 export * from './crm/client-locale';
 export * from './crm/client-filter';
+export * from './crm/reminder';
 // Which member emails a person gets — the org ceiling and the member opt-out.
 // Client-safe: both settings screens read the keys and defaults from here.
 export * from './notifications/email-prefs';
