@@ -48,9 +48,58 @@ describe('the card as the device actually read it', () => {
   });
 });
 
+describe('the same card on the next read, where the tilde became a hyphen', () => {
+  /*
+    The recogniser is not consistent between scans of ONE card. The raised
+    tilde came back as `_` on one read and as a spaced `-` on the next, and the
+    same read lost the `@` out of the email — so the parser must reach the same
+    answer down three different roads.
+  */
+  const parsed: any = parseBusinessCard(
+    card([
+      'Jasmin Walther',
+      'Stadtamt Gmunden - Liegenschaftsverwaltung',
+      'Rathausplatz 1_ 4810 Gmunden',
+      'T: +43 7612 794 243 - F: +43 7612 794 258 - M: +43 676 88 794 243',
+      'jasmin.waltheragmunden.ooe.gv.at',
+      'gmunden.at - facebook.com/stadt.gmunden',
+    ]),
+  );
+
+  it('still separates the authority from its department', () => {
+    expect(parsed.company?.value).toBe('Stadtamt Gmunden');
+    expect(parsed.title?.value).toBe('Liegenschaftsverwaltung');
+  });
+
+  it('refuses an email with a lost @ as the web address', () => {
+    // `jasmin.walther@gmunden…` came back as `jasmin.waltheragmunden…`. With no
+    // `@` it is shaped exactly like a domain, and it won the website field on a
+    // real scan — the member saw their correspondent filed as the company site.
+    expect(parsed.website?.value).toBe('gmunden.at');
+  });
+
+  it('still finds the company with no email to take a domain from', () => {
+    // The domain is what tells an authority from its department. With the email
+    // ruined it falls back to the web address — the SHORTEST on the card, or
+    // the ruined email wins that too.
+    expect(parsed.companySuggestion).toBe('Gmunden');
+  });
+
+  it('still dials the mobile', () => {
+    expect(parsed.phone?.value).toBe('+43 676 88 794 243');
+  });
+});
+
 describe('an underscore that is part of a value survives', () => {
   it('is untouched with no space around it', () => {
     expect(parseBusinessCard(card(['datei_name.pdf'])).lines).toContain('datei_name.pdf');
+  });
+
+  it('leaves a compound word and a postcode alone', () => {
+    // The hyphen is a separator only when whitespace sets it off — which is
+    // why it is safe in the set at all.
+    expect(parseBusinessCard(card(['Liegenschafts-verwaltung'])).lines).toContain('Liegenschafts-verwaltung');
+    expect(parseBusinessCard(card(['A-1010 Wien'])).lines).toContain('A-1010 Wien');
   });
 
   it('leaves a house number alone when no space follows', () => {

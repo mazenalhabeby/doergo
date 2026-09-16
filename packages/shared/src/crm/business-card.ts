@@ -321,11 +321,21 @@ const LABEL_KIND: Record<string, CardPhoneKind> = {
 /**
  * The glyphs a designer uses to put two facts on one line.
  *
- * ⚠️ `-` is deliberately ABSENT. It is a hyphen inside a compound word far more
- * often than it is a separator, and "Liegenschafts-verwaltung" split in half is
- * a department nobody can search for. The dashes that ARE here (– —) are only
- * ever separators when whitespace sets them off, which the pattern below
- * requires and which a phone range ("794 243–258") does not have.
+ * ⚠️ `-` WAS deliberately absent, on the grounds that it is a hyphen inside a
+ * compound word far more often than a separator and that splitting
+ * "Liegenschafts-verwaltung" yields a department nobody can search for. That
+ * reasoning was wrong, and its own next sentence said so: the whitespace rule
+ * below is what protects compounds, which is exactly why – and — were allowed.
+ * A hyphen inside a word has no space around it; a decorative one does.
+ *
+ * It matters because the recogniser does not return what the card prints. The
+ * Gmunden card's raised tilde came back as `_` on one read and as a spaced `-`
+ * on the next, and with `-` missing the org was glued to its department again:
+ *
+ *     Stadtamt Gmunden - Liegenschaftsverwaltung
+ *
+ * Still safe for compounds ("Liegenschafts-verwaltung"), postcodes ("A-1010")
+ * and ranges ("794 243-258") — none of them space the hyphen.
  */
 /*
   ⚠️ `_` IS IN THIS SET BECAUSE OF WHAT THE RECOGNISER RETURNS, NOT WHAT THE
@@ -345,7 +355,7 @@ const LABEL_KIND: Record<string, CardPhoneKind> = {
   below. `snake_case_identifier` and `file_name.pdf` have no space around the
   underscore and are never cut.
 */
-const SEPARATOR_GLYPHS = '~·•|/–—∙⋅_';
+const SEPARATOR_GLYPHS = '~·•|/–—∙⋅_-';
 
 /**
  * A decorative separator: a glyph SET OFF BY WHITESPACE, a tab, or a run of two
@@ -700,6 +710,14 @@ interface Ctx {
   personalLocal?: string;
   /** Provisional best guess at the name line — context only, never an assignment. */
   nameHint: number;
+  /**
+   * The text of that guess.
+   *
+   * Carried alongside the index because a scorer is handed one fact and the
+   * context, never the whole card — and telling a mangled email from a web
+   * address needs the person's name, not its position.
+   */
+  nameText?: string;
 }
 
 /**
@@ -1002,8 +1020,31 @@ const ROLES: Record<CardRole, RoleSpec> = {
 
   website: {
     min: 0.1, proven: true,
-    // An email contains a hostname too; it is not the card's web address.
-    score: (f) => (f.website && !f.email ? 0.95 : 0),
+    /*
+      An email contains a hostname too; it is not the card's web address — and
+      the `!f.email` guard catches that while the `@` survives the scan.
+
+      ⚠️ IT DOES NOT SURVIVE RELIABLY. On a real read of the Gmunden card the
+      recogniser returned
+
+          jasmin.waltheragmunden.ooe.gv.at
+
+      for `jasmin.walther@gmunden.ooe.gv.at` — the `@` came back as an `a`. With
+      no `@` there is no email to guard against, and what is left is shaped
+      exactly like a domain, so it won the website role outright. The member saw
+      their correspondent's address filed as the company's website, and "nothing
+      read" where the email should be.
+
+      A person's name inside a hostname is the giveaway. A company's web address
+      is the company's name; `walther.something` on a card belonging to Walther
+      is the local part of their email with its `@` lost. Scored down rather than
+      refused, so it still wins when the card offers nothing better — a mangled
+      address is a poor website but it is not nothing.
+    */
+    score: (f, c) => {
+      if (!f.website || f.email) return 0;
+      return looksLikeMangledEmail(f.website, c) ? 0.2 : 0.95;
+    },
     claim: (f) => ({ value: f.website!, also: [] }),
   },
 
@@ -1260,7 +1301,60 @@ function measure(raw: CardLine[]): { facts: LineFacts[]; generic: boolean; perso
     const m = l.text.match(EMAIL);
     if (m) { email = m[0]; break; }
   }
-  const domain = companyDomainFromEmail(email);
+  /*
+    The card's domain, from the email — or from the WEB ADDRESS when there is no
+    usable email.
+
+    ⚠️ The fallback is not a nicety. The domain is what tells an organisation
+    from its department ("which half echoes `gmunden`"), and on a real read of
+    the Gmunden card the `@` came back as an `a`, so there was no email, no
+    domain, and no company — the department was captured and the authority that
+    employs her was not.
+
+    A card almost always prints both, and they almost always agree. Taking the
+    web address when the email is missing costs nothing when the email is fine
+    and rescues the card when it is not.
+
+    ⚠️ A SOCIAL LINK IS NOT THE CARD'S DOMAIN. `facebook.com` would make every
+    company on earth echo "facebook", so the first non-social web address wins.
+  */
+  let domain = companyDomainFromEmail(email);
+  if (!domain) {
+    /*
+      ⚠️ The FEWEST labels wins, not the first found.
+
+      An email whose `@` was misread is still website-shaped, and on this very
+      card it is printed above the web address — so taking the first match made
+      `jasmin.waltheragmunden.ooe.gv.at` the card's domain, which echoes nothing
+      and left the company empty all over again.
+
+      A company's own web address is the shortest domain on its card:
+      `gmunden.at` is two labels, the ruined email is five. Counting labels
+      needs no knowledge of the person's name, which `measure` does not have
+      yet.
+    */
+    let fewest = Infinity;
+    for (const l of ordered) {
+      /*
+        ⚠️ Never read the EMAIL line as a web address. An address contains a
+        hostname, so `office@gmx.at` offered `gmx.at` as the card's domain —
+        a free provider, and the one thing `companyDomainFromEmail` had just
+        refused to answer with. Caught by its own test.
+      */
+      if (EMAIL.test(l.text)) continue;
+      const m = l.text.match(WEBSITE);
+      if (!m) continue;
+      // ⚠️ `m[0]`: WEBSITE is built entirely from non-capturing groups.
+      const host = m[0].toLowerCase().replace(/^[a-z]+:\/\//, '').replace(/^www\./, '').split(/[/?#]/)[0];
+      if (!host) continue;
+      // Keyed on the first label, exactly as `companyDomainFromEmail` reads it.
+      const first = host.split('.')[0]!;
+      // A free provider names no company, however it reached the card.
+      if (SOCIAL_HOST.has(first) || FREE_MAIL_LABEL.has(first)) continue;
+      const labels = host.split('.').length;
+      if (labels < fewest) { fewest = labels; domain = host; }
+    }
+  }
   const word = domainWord(domain);
   const { words: locals, personal } = localWords(email);
   if (email && !personal) genericMailbox = true;
@@ -1421,7 +1515,31 @@ function contextFor(facts: LineFacts[], generic: boolean, personal: boolean): Ct
     const s = ROLES.name.score(f, base);
     if (s > bestScore) { bestScore = s; best = f.i; }
   }
-  return { kind, nameHint: best };
+  return { kind, nameHint: best, nameText: facts.find((f) => f.i === best)?.text };
+}
+
+/**
+ * Is this "website" a person's email address with its `@` lost?
+ *
+ * A company's web address is the company's name. A hostname carrying the
+ * cardholder's OWN name is the local part of their email, run into the domain
+ * by a recogniser that read the `@` as a letter — `jasmin.walther@gmunden…`
+ * coming back as `jasmin.waltheragmunden…`.
+ *
+ * ⚠️ Compared against the name's WORDS, each at least four letters. Shorter and
+ * common surnames collide with ordinary domains, and "Ho" or "Li" appears
+ * inside half the hostnames on earth.
+ */
+function looksLikeMangledEmail(website: string, ctx: Ctx): boolean {
+  if (!ctx.nameText) return false;
+  const host = website.toLowerCase().replace(/^[a-z]+:\/\//, '').replace(/^www\./, '');
+  return ctx.nameText
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .split(/[^a-z]+/)
+    .filter((w) => w.length >= 4)
+    .some((w) => host.includes(w));
 }
 
 function candidatesFor(role: CardRole, facts: LineFacts[], ctx: Ctx): CardCandidate[] {

@@ -8,6 +8,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
 import { ScreenHeader } from '../../src/components';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
@@ -183,6 +184,7 @@ export default function ScanCardScreen() {
   const cam = useCameraAccess();
   const { user } = useAuth();
   const window = useWindowDimensions();
+  const keyboard = useKeyboardHeight();
   const insets = useSafeAreaInsets();
 
   /*
@@ -749,9 +751,15 @@ export default function ScanCardScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             padding: SPACING.lg,
-            // Scrolls under the system bar rather than stopping above it,
-            // so the last control still clears it.
-            paddingBottom: SPACING.xxxl + insets.bottom,
+            /*
+              Clears the system bar AND the keyboard.
+
+              Without the keyboard term the field being typed into sits under
+              the keyboard on Android, so a member editing a company name
+              cannot see what they are typing. The ScrollView can only scroll a
+              focused field into view if there is room below it to scroll into.
+            */
+            paddingBottom: SPACING.xxxl + insets.bottom + keyboard,
           }}
         >
           {/*
