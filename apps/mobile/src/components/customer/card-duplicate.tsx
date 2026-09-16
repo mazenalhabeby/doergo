@@ -70,17 +70,27 @@ export function useDuplicateCheck() {
  * client exists, and what the member wanted was to reach them. "Save anyway" is
  * there because two firms really can share a name, and a warning that cannot be
  * overruled becomes a wall.
+ *
+ * ⚠️ `onUse` replaces "open it" when what is about to be saved is a NEW COMPANY
+ * built from a card. Navigating away there would throw the review out — the
+ * person, their direct line and their department all still unsaved — to show a
+ * record the member did not ask to visit. The useful answer is the one the row
+ * already implies: keep the review, and file this person at the company that is
+ * already here. That is what makes "Create this company" safe to offer at all.
  */
 export function DuplicateSheet({
   matches,
   saving,
   onOpen,
+  onUse,
   onSaveAnyway,
   onClose,
 }: {
   matches: MobileCustomer[];
   saving: boolean;
   onOpen: (client: MobileCustomer) => void;
+  /** Take the one already here INSTEAD of making a new one, without leaving. */
+  onUse?: (client: MobileCustomer) => void;
   onSaveAnyway: () => void;
   onClose: () => void;
 }) {
@@ -91,12 +101,12 @@ export function DuplicateSheet({
   return (
     <BlurSheet visible={matches.length > 0} onClose={saving ? () => {} : onClose}>
       <SheetPanel title={t('scan.maybeExists')} onClose={onClose} closeDisabled={saving}>
-        <Text style={s.body}>{t('scan.maybeExistsBody')}</Text>
+        <Text style={s.body}>{t(onUse ? 'scan.maybeExistsCompany' : 'scan.maybeExistsBody')}</Text>
         <View style={s.rows}>
           {matches.map((m, i) => (
             <PressableScale
               key={m.id}
-              onPress={() => onOpen(m)}
+              onPress={() => (onUse ? onUse(m) : onOpen(m))}
               accessibilityRole="button"
               accessibilityLabel={m.name}
               style={[s.row, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }]}

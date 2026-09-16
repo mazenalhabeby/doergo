@@ -31,8 +31,16 @@ export type CardKind = 'COMPANY' | 'PERSON';
  * `contact` is the case the scanner could not do at all before: the person
  * works at a company that is already in the book, and belongs ON that company
  * (`CustomerContact`) rather than beside it as a second client.
+ *
+ * `newCompany` is the same thing when the company is NOT in the book yet — the
+ * firm is created from the card and the person is attached to it. It was
+ * deliberately refused for a long time, because one line's spelling is how
+ * "BILLA" and "BILLA AG" become two clients on a bill that charges per client.
+ * What made it safe is not a change of mind about that: it is that the name is
+ * EDITABLE before it is saved, that the existing-company chip sits in front of
+ * it, and that the near-duplicate check runs on the company's name at save.
  */
-export type CardDestination = 'client' | 'contact';
+export type CardDestination = 'client' | 'contact' | 'newCompany';
 
 export type CardValues = Record<CardFieldKey, string>;
 export type CardCertainty = Partial<Record<CardFieldKey, boolean>>;
@@ -137,6 +145,15 @@ export function fieldNeedsLook(value: string, certain: boolean | undefined): boo
 export function cardFieldsFor(kind: CardKind, destination: CardDestination): CardFieldKey[] {
   if (kind === 'COMPANY') return ['company', 'name', 'email', 'phone', 'website', 'address', 'vat'];
   if (destination === 'contact') return ['name', 'title', 'email', 'phone'];
+  /*
+    ⚠️ The ONE destination that loses nothing, and that is not a coincidence —
+    it creates both records the card describes. The firm takes what belongs to a
+    firm (its name, its address, its website, its VAT number) and the person
+    takes what belongs to a person (their name, their email, their direct line,
+    and the department as `CustomerContact.role`). A card read in full and saved
+    in full is what the other two exits cannot do.
+  */
+  if (destination === 'newCompany') return ['company', 'name', 'title', 'email', 'phone', 'address', 'website', 'vat'];
   return ['name', 'email', 'phone', 'address'];
 }
 
@@ -211,6 +228,39 @@ export function cardClientExtras(
     if (vat) extras.vatId = vat;
   }
   return extras;
+}
+
+/**
+ * The person, as a CONTACT PERSON at a company.
+ *
+ * ⚠️ The email and the direct line on a person's card are THEIRS, and they
+ * travel with the person — not onto the firm that is created alongside them.
+ * Putting `jasmin.walther@…` on the Stadtamt's record makes one person's inbox
+ * the organisation's address, and the next member to email that client writes
+ * to her by accident.
+ *
+ * ⚠️ The job title — or the DEPARTMENT read off a line like "Stadtamt Gmunden ~
+ * Liegenschaftsverwaltung" — becomes `CustomerContact.role`. That is the home
+ * it never had, and the reason the screen used to read a title, badge it, ask
+ * for a correction and then drop it on the floor.
+ *
+ * ⚠️ One builder for BOTH contact roads (a company already in the book, and one
+ * created from this card), because they differ only in where the company's id
+ * came from. Written twice, the newer copy forgets the role.
+ */
+export function cardContactInput(values: CardValues): {
+  person: { name: string; email?: string; phone?: string };
+  role?: string;
+} {
+  const role = values.title.trim();
+  return {
+    person: {
+      name: values.name.trim(),
+      email: values.email.trim() || undefined,
+      phone: values.phone.trim() || undefined,
+    },
+    ...(role ? { role } : {}),
+  };
 }
 
 /**
