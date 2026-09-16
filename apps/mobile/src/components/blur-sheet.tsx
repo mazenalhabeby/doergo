@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Animated, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+import { Animated, Keyboard, Modal, Platform, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 
 /**
@@ -42,6 +42,31 @@ export function BlurSheet({
 }) {
   const { height } = useWindowDimensions();
   const [mounted, setMounted] = useState(visible);
+  /*
+    How much of the screen the keyboard is eating, measured rather than assumed.
+
+    ⚠️ `KeyboardAvoidingView` was here and did NOTHING ON ANDROID: its
+    `behavior` was set only on iOS, and with no behavior the component is inert.
+    Even given one it is unreliable inside a `Modal`, because Android's
+    `adjustResize` resizes the ACTIVITY window and a modal is its own window —
+    so the sheet sat under the keyboard and a member typing a company name
+    could not see what they were typing.
+
+    Padding the container by the real keyboard height works on both platforms
+    and inside a modal, because it needs nothing from the window manager.
+
+    ⚠️ `Will*` on iOS, `Did*` on Android, and that pairing is not cosmetic:
+    Android does not emit the `Will` events at all, so listening for them there
+    is a listener that never fires.
+  */
+  const [keyboard, setKeyboard] = useState(0);
+  useEffect(() => {
+    const show = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hide = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const on = Keyboard.addListener(show, (e) => setKeyboard(e.endCoordinates?.height ?? 0));
+    const off = Keyboard.addListener(hide, () => setKeyboard(0));
+    return () => { on.remove(); off.remove(); };
+  }, []);
   const overlay = useRef(new Animated.Value(0)).current;
   const slide = useRef(new Animated.Value(height)).current;
 
@@ -75,10 +100,9 @@ export function BlurSheet({
 
   if (!mounted) return null;
 
-  const Wrap: any = avoidKeyboard ? KeyboardAvoidingView : Animated.View;
   return (
     <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={onClose}>
-      <Wrap style={styles.container} behavior={avoidKeyboard && Platform.OS === 'ios' ? 'padding' : undefined}>
+      <Animated.View style={[styles.container, avoidKeyboard && { paddingBottom: keyboard }]}>
         <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: overlay }]}>
           {Platform.OS === 'ios' ? (
             <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill}>
@@ -89,7 +113,7 @@ export function BlurSheet({
           )}
         </Animated.View>
         <Animated.View style={{ transform: [{ translateY: slide }] }}>{children}</Animated.View>
-      </Wrap>
+      </Animated.View>
     </Modal>
   );
 }

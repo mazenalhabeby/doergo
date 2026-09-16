@@ -327,7 +327,25 @@ const LABEL_KIND: Record<string, CardPhoneKind> = {
  * ever separators when whitespace sets them off, which the pattern below
  * requires and which a phone range ("794 243–258") does not have.
  */
-const SEPARATOR_GLYPHS = '~·•|/–—∙⋅';
+/*
+  ⚠️ `_` IS IN THIS SET BECAUSE OF WHAT THE RECOGNISER RETURNS, NOT WHAT THE
+  CARD SHOWS.
+
+  The Gmunden card is printed with a small raised tilde between its halves, and
+  on a real device ML Kit read every one of them as an UNDERSCORE:
+
+      Rathausplatz 1_ 4810 Gmunden
+      T: … 243 _ F: … 258 _ M: … 243
+
+  So the address kept its separator and the phone line never split, which put
+  the landline in `phone` and lost the mobile — the exact fault this whole
+  mechanism was built to fix, reintroduced by one glyph.
+
+  It is safe for the same reason every other glyph here is: the whitespace rule
+  below. `snake_case_identifier` and `file_name.pdf` have no space around the
+  underscore and are never cut.
+*/
+const SEPARATOR_GLYPHS = '~·•|/–—∙⋅_';
 
 /**
  * A decorative separator: a glyph SET OFF BY WHITESPACE, a tab, or a run of two
@@ -1147,10 +1165,29 @@ const ROLES: Record<CardRole, RoleSpec> = {
         parts.push(all[k]!.text);
         if (k !== f.i) also.push(k);
       }
-      return { value: parts.join(', '), also };
+      return { value: tidyAddress(parts.join(', ')), also };
     },
   },
 };
+
+/**
+ * A separator the recogniser glued to the word before it.
+ *
+ * The Gmunden card prints `Rathausplatz 1 ~ 4810 Gmunden`; the device returned
+ * `Rathausplatz 1_ 4810 Gmunden` — the tilde read as an underscore AND its
+ * leading space lost. With no space in front it is rightly not a separator, so
+ * the line is not cut and the address is correct — but the glyph is left
+ * sitting in the value, and an address is the one field a member reads back
+ * character by character when they are standing outside the building.
+ *
+ * ⚠️ Only where a space FOLLOWS. `Rathausplatz 1_4810` might be a house number
+ * a building really uses, and `A-1010` must survive untouched.
+ *
+ * Address only. The same glyph inside a company name is part of the name, and
+ * the point of the whitespace rule everywhere else is that we do not guess.
+ */
+const GLUED_SEPARATOR = new RegExp('([^\\s])[' + SEPARATOR_GLYPHS + '](\\s)', 'g');
+const tidyAddress = (value: string) => value.replace(GLUED_SEPARATOR, '$1,$2').replace(/,\s*,/g, ',');
 
 const sameColumn = (a: LineFacts, b: LineFacts) => a.column === b.column;
 
