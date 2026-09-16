@@ -1840,6 +1840,78 @@
     "list": {
       "contactTag": "Contact",
       "emptyFiltered": "Aucun client ne correspond à votre recherche."
+    },
+    "record": {
+      "edit": "Modifier",
+      "kindCompany": "Entreprise",
+      "kindPerson": "Personne",
+      "call": "Appeler",
+      "email": "E-mail",
+      "notFound": "Ce client est introuvable.",
+      "stage": "Étape",
+      "stageFailed": "Impossible de changer l'étape",
+      "stageChanged": "Étape : {{from}} → {{to}}",
+      "contacts": "Interlocuteurs",
+      "noContacts": "Personne pour le moment.",
+      "worksAt": "Travaille chez",
+      "noCompanies": "Aucune entreprise liée.",
+      "addContact": "Ajouter un interlocuteur",
+      "addContactSave": "Ajouter",
+      "addContactFailed": "Impossible d'ajouter l'interlocuteur",
+      "contactRole": "Fonction",
+      "contactRoleHint": "p. ex. Achats",
+      "contactFailed": "Impossible de modifier l'interlocuteur",
+      "removeContact": "Retirer l'interlocuteur",
+      "removeContactBody": "{{name}} ne sera plus lié à ce client. Sa propre fiche est conservée.",
+      "removeContactConfirm": "Retirer",
+      "primary": "Contact principal",
+      "makePrimary": "Définir comme contact principal",
+      "addresses": "Adresses",
+      "noAddresses": "Aucune adresse pour le moment.",
+      "navigate": "Itinéraire",
+      "details": "Informations sur l'entreprise",
+      "detailsPerson": "Détails",
+      "logSomething": "Consigner quelque chose",
+      "activity": "Activité",
+      "noActivity": "Rien n'a encore été consigné.",
+      "justNow": "à l'instant",
+      "reminderDone": "Terminé",
+      "reminderDue": "Échéance {{date}}",
+      "composer": {
+        "note": "Note",
+        "call": "Appel",
+        "reminder": "Rappel",
+        "notePlaceholder": "Écrire une note…",
+        "reminderPlaceholder": "Ce qu'il faut relancer…",
+        "add": "Ajouter"
+      },
+      "due": {
+        "today": "Aujourd'hui",
+        "tomorrow": "Demain",
+        "week": "La semaine prochaine"
+      },
+      "act": {
+        "NOTE": "Note",
+        "CALL": "Appel",
+        "EMAIL": "E-mail",
+        "MEETING": "Rendez-vous",
+        "REMINDER": "Rappel",
+        "STATUS": "Étape",
+        "SYSTEM": "Système"
+      }
+    },
+    "form": {
+      "title": "Modifier le client",
+      "kind": "Type",
+      "notes": "Notes",
+      "save": "Enregistrer les modifications",
+      "saving": "Enregistrement…",
+      "saveFailed": "Impossible d'enregistrer le client",
+      "legalName": "Raison sociale",
+      "website": "Site web",
+      "industry": "Secteur",
+      "vatId": "Numéro de TVA",
+      "regNumber": "Numéro d'immatriculation"
     }
   },
   "issues": {

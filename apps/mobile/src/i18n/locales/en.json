@@ -1876,6 +1876,78 @@
     "list": {
       "contactTag": "Contact",
       "emptyFiltered": "No clients match what you are looking for."
+    },
+    "record": {
+      "edit": "Edit",
+      "kindCompany": "Company",
+      "kindPerson": "Person",
+      "call": "Call",
+      "email": "Email",
+      "notFound": "This client could not be found.",
+      "stage": "Stage",
+      "stageFailed": "Could not change the stage",
+      "stageChanged": "Stage: {{from}} → {{to}}",
+      "contacts": "Contact people",
+      "noContacts": "Nobody added yet.",
+      "worksAt": "Works at",
+      "noCompanies": "Not linked to a company.",
+      "addContact": "Add contact person",
+      "addContactSave": "Add",
+      "addContactFailed": "Could not add the contact person",
+      "contactRole": "Role",
+      "contactRoleHint": "e.g. Purchasing",
+      "contactFailed": "Could not change the contact person",
+      "removeContact": "Remove contact person",
+      "removeContactBody": "{{name}} is no longer linked to this client. Their own record is kept.",
+      "removeContactConfirm": "Remove",
+      "primary": "Main contact",
+      "makePrimary": "Make main contact",
+      "addresses": "Addresses",
+      "noAddresses": "No addresses yet.",
+      "navigate": "Directions",
+      "details": "Company details",
+      "detailsPerson": "Details",
+      "logSomething": "Log something",
+      "activity": "Activity",
+      "noActivity": "Nothing recorded yet.",
+      "justNow": "now",
+      "reminderDone": "Done",
+      "reminderDue": "Due {{date}}",
+      "composer": {
+        "note": "Note",
+        "call": "Call",
+        "reminder": "Reminder",
+        "notePlaceholder": "Write a note…",
+        "reminderPlaceholder": "What to follow up on…",
+        "add": "Add"
+      },
+      "due": {
+        "today": "Today",
+        "tomorrow": "Tomorrow",
+        "week": "Next week"
+      },
+      "act": {
+        "NOTE": "Note",
+        "CALL": "Call",
+        "EMAIL": "Email",
+        "MEETING": "Meeting",
+        "REMINDER": "Reminder",
+        "STATUS": "Stage",
+        "SYSTEM": "System"
+      }
+    },
+    "form": {
+      "title": "Edit client",
+      "kind": "Type",
+      "notes": "Notes",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "saveFailed": "Could not save the client",
+      "legalName": "Legal name",
+      "website": "Website",
+      "industry": "Industry",
+      "vatId": "VAT number",
+      "regNumber": "Registration number"
     }
   },
   "issues": {

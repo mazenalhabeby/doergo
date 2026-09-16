@@ -1840,6 +1840,78 @@
     "list": {
       "contactTag": "Contacto",
       "emptyFiltered": "Ningún cliente coincide con lo que busca."
+    },
+    "record": {
+      "edit": "Editar",
+      "kindCompany": "Empresa",
+      "kindPerson": "Persona",
+      "call": "Llamar",
+      "email": "Correo",
+      "notFound": "No se encontró este cliente.",
+      "stage": "Etapa",
+      "stageFailed": "No se pudo cambiar la etapa",
+      "stageChanged": "Etapa: {{from}} → {{to}}",
+      "contacts": "Personas de contacto",
+      "noContacts": "Todavía no hay nadie.",
+      "worksAt": "Trabaja en",
+      "noCompanies": "Sin empresa vinculada.",
+      "addContact": "Añadir persona de contacto",
+      "addContactSave": "Añadir",
+      "addContactFailed": "No se pudo añadir la persona de contacto",
+      "contactRole": "Cargo",
+      "contactRoleHint": "p. ej. Compras",
+      "contactFailed": "No se pudo cambiar la persona de contacto",
+      "removeContact": "Quitar persona de contacto",
+      "removeContactBody": "{{name}} dejará de estar vinculada a este cliente. Su propia ficha se conserva.",
+      "removeContactConfirm": "Quitar",
+      "primary": "Contacto principal",
+      "makePrimary": "Definir como contacto principal",
+      "addresses": "Direcciones",
+      "noAddresses": "Todavía no hay direcciones.",
+      "navigate": "Cómo llegar",
+      "details": "Datos de la empresa",
+      "detailsPerson": "Detalles",
+      "logSomething": "Registrar algo",
+      "activity": "Actividad",
+      "noActivity": "Todavía no hay nada registrado.",
+      "justNow": "ahora",
+      "reminderDone": "Hecho",
+      "reminderDue": "Para el {{date}}",
+      "composer": {
+        "note": "Nota",
+        "call": "Llamada",
+        "reminder": "Recordatorio",
+        "notePlaceholder": "Escribe una nota…",
+        "reminderPlaceholder": "De qué hacer seguimiento…",
+        "add": "Añadir"
+      },
+      "due": {
+        "today": "Hoy",
+        "tomorrow": "Mañana",
+        "week": "La próxima semana"
+      },
+      "act": {
+        "NOTE": "Nota",
+        "CALL": "Llamada",
+        "EMAIL": "Correo",
+        "MEETING": "Reunión",
+        "REMINDER": "Recordatorio",
+        "STATUS": "Etapa",
+        "SYSTEM": "Sistema"
+      }
+    },
+    "form": {
+      "title": "Editar cliente",
+      "kind": "Tipo",
+      "notes": "Notas",
+      "save": "Guardar cambios",
+      "saving": "Guardando…",
+      "saveFailed": "No se pudo guardar el cliente",
+      "legalName": "Razón social",
+      "website": "Sitio web",
+      "industry": "Sector",
+      "vatId": "NIF-IVA",
+      "regNumber": "Número de registro"
     }
   },
   "issues": {
