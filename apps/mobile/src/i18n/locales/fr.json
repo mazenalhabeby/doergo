@@ -1842,6 +1842,29 @@
       "emptyFiltered": "Aucun client ne correspond à votre recherche."
     },
     "record": {
+      "tabs": {
+        "information": "Informations",
+        "activity": "Activité",
+        "reminders": "Rappels"
+      },
+      "filter": {
+        "all": "Tout",
+        "notes": "Notes",
+        "calls": "Appels"
+      },
+      "noActivityFiltered": "Rien de ce type n'a encore été enregistré.",
+      "reminders": {
+        "none": "Rien à suivre.",
+        "overdue_one": "{{count}} rappel est en retard",
+        "overdue_other": "{{count}} rappels sont en retard",
+        "done": "Terminés",
+        "showDone": "Afficher les terminés ({{count}})",
+        "hideDone": "Masquer les terminés",
+        "a11yOpen_one": "Rappels, {{count}} en cours",
+        "a11yOpen_other": "Rappels, {{count}} en cours",
+        "a11yOverdue_one": "Rappels, {{count}} en retard",
+        "a11yOverdue_other": "Rappels, {{count}} en retard"
+      },
       "edit": "Modifier",
       "kindCompany": "Entreprise",
       "kindPerson": "Personne",

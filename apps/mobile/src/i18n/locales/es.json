@@ -1842,6 +1842,29 @@
       "emptyFiltered": "Ningún cliente coincide con lo que busca."
     },
     "record": {
+      "tabs": {
+        "information": "Información",
+        "activity": "Actividad",
+        "reminders": "Recordatorios"
+      },
+      "filter": {
+        "all": "Todo",
+        "notes": "Notas",
+        "calls": "Llamadas"
+      },
+      "noActivityFiltered": "Aún no se ha registrado nada de ese tipo.",
+      "reminders": {
+        "none": "Nada que seguir.",
+        "overdue_one": "{{count}} recordatorio está vencido",
+        "overdue_other": "{{count}} recordatorios están vencidos",
+        "done": "Hechos",
+        "showDone": "Mostrar hechos ({{count}})",
+        "hideDone": "Ocultar hechos",
+        "a11yOpen_one": "Recordatorios, {{count}} abierto",
+        "a11yOpen_other": "Recordatorios, {{count}} abiertos",
+        "a11yOverdue_one": "Recordatorios, {{count}} vencido",
+        "a11yOverdue_other": "Recordatorios, {{count}} vencidos"
+      },
       "edit": "Editar",
       "kindCompany": "Empresa",
       "kindPerson": "Persona",

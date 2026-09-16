@@ -1878,6 +1878,29 @@
       "emptyFiltered": "No clients match what you are looking for."
     },
     "record": {
+      "tabs": {
+        "information": "Information",
+        "activity": "Activity",
+        "reminders": "Reminders"
+      },
+      "filter": {
+        "all": "All",
+        "notes": "Notes",
+        "calls": "Calls"
+      },
+      "noActivityFiltered": "Nothing of that kind recorded yet.",
+      "reminders": {
+        "none": "Nothing to follow up on.",
+        "overdue_one": "{{count}} reminder is overdue",
+        "overdue_other": "{{count}} reminders are overdue",
+        "done": "Done",
+        "showDone": "Show done ({{count}})",
+        "hideDone": "Hide done",
+        "a11yOpen_one": "Reminders, {{count}} open",
+        "a11yOpen_other": "Reminders, {{count}} open",
+        "a11yOverdue_one": "Reminders, {{count}} overdue",
+        "a11yOverdue_other": "Reminders, {{count}} overdue"
+      },
       "edit": "Edit",
       "kindCompany": "Company",
       "kindPerson": "Person",
