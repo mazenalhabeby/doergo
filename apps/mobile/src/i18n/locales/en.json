@@ -1973,7 +1973,7 @@
         "SYSTEM": "System"
       },
       "reminderForm": {
-        "pickTime": "Pick a time…",
+        "moreOptions": "More options",
         "reason": "Reason",
         "when": "When",
         "pickDay": "Pick a day",

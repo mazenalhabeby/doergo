@@ -112,13 +112,23 @@ export const ActivityComposer = memo(function ActivityComposer({
   const [body, setBody] = useState('');
   const [preset, setPreset] = useState<ReminderPresetKey | null>(null);
   /*
-    The full set, and whether it is showing.
+    Two separate questions, and they were one state until a member asked why
+    "Tomorrow" had no reason and no repeat.
+
+    `showOptions` — is the full set on screen.
+    `exact`       — does WHEN come from a picked day instead of a preset.
+
+    Folding them together meant the options could only be reached by abandoning
+    the presets, so choosing the fast path silently cost you the reason, the
+    lead time and the repeat. They are unrelated: "remind me tomorrow, to call,
+    every week" is an ordinary thing to want.
 
     ⚠️ Revealed in place rather than in a sheet. The note being typed and the
     reminder's own fields are one thought — "ring them on Tuesday about the
     quote" — and a sheet would cover the text the member is writing it against,
     then take the keyboard down on the way in and back up on the way out.
   */
+  const [showOptions, setShowOptions] = useState(false);
   const [exact, setExact] = useState(false);
   const [reminder, setReminder] = useState<ReminderDraft>(EMPTY_REMINDER);
   const [saving, setSaving] = useState(false);
@@ -232,19 +242,39 @@ export const ActivityComposer = memo(function ActivityComposer({
                 key={p.key}
                 label={t(reminderPresetKey(p.key))}
                 selected={!exact && preset === p.key}
-                onPress={() => { setPreset(p.key); setExact(false); }}
+                onPress={() => {
+                  setPreset(p.key);
+                  // Back to the preset for WHEN, and drop the picked day so the
+                  // two cannot both look chosen. The options stay open.
+                  setExact(false);
+                  setReminder((r) => ({ ...r, dueAt: null }));
+                }}
               />
             ))}
+            {/*
+              Opens the rest of the reminder — reason, lead time, repeat, and a
+              day of its own. It no longer cancels the preset: a member can tap
+              "Tomorrow" and still say what it is for.
+            */}
             <ActionChip
               icon="options-outline"
-              label={t('customers.record.reminderForm.pickTime')}
-              onPress={() => setExact((v) => !v)}
-              active={exact}
-              expanded={exact}
+              label={t('customers.record.reminderForm.moreOptions')}
+              onPress={() => setShowOptions((v) => !v)}
+              active={showOptions}
+              expanded={showOptions}
             />
           </View>
-          {exact && (
-            <ReminderFields value={reminder} onChange={setReminder} assignees={assignees} />
+          {showOptions && (
+            <ReminderFields
+              value={reminder}
+              onChange={(next) => {
+                setReminder(next);
+                // Naming a day is what moves WHEN off the preset — opening the
+                // options to set a repeat must not silently clear "Tomorrow".
+                if (reminderDueAt(next)) setExact(true);
+              }}
+              assignees={assignees}
+            />
           )}
         </>
       )}
