@@ -13,6 +13,18 @@ export interface MobileCustomer {
   isPortalResident?: boolean;
   /** A person who works at a company — NOT a client, and never billed as one. */
   isContact?: boolean;
+  /**
+   * The company this person already contacts, if any — primary first.
+   *
+   * ⚠️ Already on the wire: `decorateContacts` in customers.service adds it to
+   * every row the LIST returns, so nothing was added to the response to make
+   * the contact picker able to say "already a contact at Siemens". That line is
+   * the whole reason the picker prevents duplicates rather than merely allowing
+   * them: a member who can see where somebody already is does not re-type them.
+   *
+   * Null on a COMPANY row — the server only fills it for a person.
+   */
+  contactOf?: { id: string; name: string; role?: string | null } | null;
   spaceId?: string | null;
   /**
    * The members who look after this client — ids only, no names.
@@ -90,6 +102,14 @@ export const customersApi = {
     /** From `clientFilterQuery()` in shared. Never hand-written at a call site. */
     type?: ClientTypeParam;
     contacts?: ContactsParam;
+    /**
+     * `false` = B2B clients only, `true` = portal residents only, omitted = all.
+     *
+     * The contact picker sends `false`: a resident is somebody's tenant with an
+     * app login, not a person you name as the contact at a firm, and offering
+     * them is how one gets linked by mistake.
+     */
+    portalResident?: boolean;
   }): Promise<MobileCustomer[]> =>
     fetchWithAuth<MobileCustomer[]>(buildUrlWithQuery('/customers', { ...params, limit: params?.limit ?? 100 })),
   /**
@@ -119,6 +139,12 @@ export const customersApi = {
     fetchWithAuth<MobileCustomerActivity[]>(`/customers/${id}/activities`),
   /**
    * Log a note, a call that happened, or a reminder.
+   *
+   * ⚠️ The phone no longer AUTHORS a `CALL` — the composer offers Note and
+   * Reminder only, because `type: 'CALL'` sat three rows above
+   * `reminderKind: 'CALL'` and the two mean opposite things. The endpoint still
+   * accepts one (the web and the server both produce them, and there is
+   * history), so nothing here narrowed.
    *
    * ⚠️ The four reminder fields have been accepted by the gateway since the
    * feature was built; the phone simply never sent them. Build them with

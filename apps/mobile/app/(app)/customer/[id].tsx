@@ -37,7 +37,7 @@ import type { ReminderAssignee } from '../../../src/components/customer/reminder
 import { useAuth } from '../../../src/contexts/auth-context';
 import { ChoiceChip } from '../../../src/components/customer/client-fields';
 import { ClientEditSheet } from '../../../src/components/customer/client-edit-sheet';
-import { AddContactSheet } from '../../../src/components/customer/add-contact-sheet';
+import { AddContactSheet, type ContactSide } from '../../../src/components/customer/add-contact-sheet';
 
 /*
   THE CLIENT RECORD — three tabs.
@@ -113,7 +113,14 @@ export default function CustomerRecordScreen() {
 
   const [localeOpen, setLocaleOpen] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [addingContact, setAddingContact] = useState(false);
+  /*
+    WHICH END is being attached, or null for closed.
+
+    One sheet, not two: the direction is a prop, and mounting a second copy per
+    card would give the phone two BlurSheets whose reset effects both fire on
+    every open.
+  */
+  const [adding, setAdding] = useState<ContactSide | null>(null);
   const [busyLink, setBusyLink] = useState<string | null>(null);
   const [removing, setRemoving] = useState<MobileCustomerContact | null>(null);
   const [filter, setFilter] = useState<ActivityFilter>('all');
@@ -172,6 +179,19 @@ export default function CustomerRecordScreen() {
    */
   const refreshActivities = useCallback(async () => {
     try { setActivities(await customersApi.activities(id)); } catch { /* the timeline simply lags */ }
+  }, [id]);
+
+  /**
+   * The "Works at" list on its own.
+   *
+   * ⚠️ Same reasoning as `refreshActivities`, and for one specific reason: the
+   * link `addContact` hands back carries the person end and not the company
+   * end, so this one list cannot be updated from the response and has to be
+   * re-read. Re-reading the whole record for it would cost four more requests
+   * and could momentarily un-apply an optimistic stage change on screen.
+   */
+  const refreshCompanies = useCallback(async () => {
+    try { setCompanies(await customersApi.companies(id)); } catch { /* the panel simply lags */ }
   }, [id]);
 
   /**
@@ -697,7 +717,7 @@ export default function CustomerRecordScreen() {
                 icon="people-outline"
                 badge={contacts.length || undefined}
                 action={canEditInfo ? (
-                  <CardAction icon="add" label={t('customers.record.addContact')} onPress={() => setAddingContact(true)} />
+                  <CardAction icon="add" label={t('customers.record.addContact')} onPress={() => setAdding('person')} />
                 ) : undefined}
                 empty={contacts.length === 0 ? t('customers.record.noContacts') : undefined}
               >
@@ -730,6 +750,16 @@ export default function CustomerRecordScreen() {
                 title={t('customers.record.worksAt')}
                 icon="business-outline"
                 badge={companies.length || undefined}
+                /*
+                  The OTHER end of the same link, and the reason the sheet takes
+                  a side. From here the record is the person and the company is
+                  what gets chosen — which is why the picker searches companies
+                  rather than people. The web offers the same action in the same
+                  place.
+                */
+                action={canEditInfo ? (
+                  <CardAction icon="add" label={t('customers.record.addCompany')} onPress={() => setAdding('company')} />
+                ) : undefined}
                 empty={companies.length === 0 ? t('customers.record.noCompanies') : undefined}
               >
                 {companies.length > 0 ? companies.map((link) => (
@@ -943,10 +973,21 @@ export default function CustomerRecordScreen() {
       )}
       {canEditInfo && (
         <AddContactSheet
-          visible={addingContact}
-          companyId={id}
-          onClose={() => setAddingContact(false)}
-          onAdded={(link) => setContacts((list) => [...list, link])}
+          visible={adding !== null}
+          recordId={id}
+          side={adding ?? 'person'}
+          onClose={() => setAdding(null)}
+          /*
+            ⚠️ Appending works on ONE side only. `addContact` returns the link
+            with its PERSON end filled in and never the company end, whichever
+            way round the call was made — so a company just linked would append
+            a "Works at" row with no name on it. That side re-reads instead: one
+            request, against a wrong row that would survive until the next pull.
+          */
+          onAdded={(link) => {
+            if (adding === 'company') void refreshCompanies();
+            else setContacts((list) => [...list, link]);
+          }}
         />
       )}
       <ConfirmSheet

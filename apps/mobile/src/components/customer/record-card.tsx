@@ -18,6 +18,13 @@ import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS, type ThemeCol
  * ⚠️ The action is a slot, not a button prop. Some cards need a plus, one
  * needs a count, one needs nothing — and a component that grew a boolean per
  * variant would end up with the same five shapes it replaced, only inside.
+ *
+ * ⚠️ A card with NO TITLE has no header row at all, and that is a real case
+ * rather than a degenerate one: the composer's heading said "Log something"
+ * above a text box on the Activity tab of a client — which is where you are,
+ * doing the only thing there is to do — so it stated the obvious in a heavy
+ * chrome the card already provides. An action has nowhere to go without a
+ * header, so a headerless card puts its own controls in its body.
  */
 export function RecordCard({
   title,
@@ -30,8 +37,9 @@ export function RecordCard({
   empty,
   children,
 }: {
-  title: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  /** Omitted for a headerless card — see the note above. */
+  title?: string;
+  icon?: keyof typeof Ionicons.glyphMap;
   badge?: string | number;
   action?: ReactNode;
   empty?: string;
@@ -45,16 +53,26 @@ export function RecordCard({
 
   return (
     <View style={s.card}>
-      <View style={s.header}>
-        <View style={s.iconWrap}>
-          <Ionicons name={icon} size={15} color={COLORS.primary} />
+      {!!title && (
+        <View style={s.header}>
+          {!!icon && (
+            <View style={s.iconWrap}>
+              <Ionicons name={icon} size={15} color={COLORS.primary} />
+            </View>
+          )}
+          <Text style={s.title} numberOfLines={1}>{title}</Text>
+          {badge !== undefined && badge !== '' && <Text style={s.badge}>{badge}</Text>}
+          <View style={s.spacer} />
+          {action}
         </View>
-        <Text style={s.title} numberOfLines={1}>{title}</Text>
-        {badge !== undefined && badge !== '' && <Text style={s.badge}>{badge}</Text>}
-        <View style={s.spacer} />
-        {action}
-      </View>
-      {hasBody && <View style={s.body}>{children ?? <Text style={s.empty}>{empty}</Text>}</View>}
+      )}
+      {hasBody && (
+        // Without a header the body has to supply its own top gap; inheriting
+        // the header's would leave the first row sitting on the card's edge.
+        <View style={[s.body, !title && s.bodyNoHeader]}>
+          {children ?? <Text style={s.empty}>{empty}</Text>}
+        </View>
+      )}
     </View>
   );
 }
@@ -166,6 +184,9 @@ const styles = (c: ThemeColors) =>
       paddingHorizontal: SPACING.lg,
       paddingBottom: SPACING.lg,
     },
+    // Matches the header's own vertical padding, so a headerless card is inset
+    // by the same amount top and bottom rather than reading as top-cropped.
+    bodyNoHeader: { paddingTop: SPACING.md },
     empty: {
       fontSize: FONT_SIZE.base,
       color: c.textMuted,
