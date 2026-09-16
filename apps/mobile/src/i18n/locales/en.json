@@ -1938,6 +1938,8 @@
       "contactFailed": "Could not change the contact person",
       "removeContact": "Remove contact person",
       "removeContactBody": "{{name}} is no longer linked to this client. Their own record is kept.",
+      "removeContactPendingBody": "{{name}} has not been sent yet. Removing them here cancels it — nothing reaches the office.",
+      "contactSending": "That contact is already on its way. Remove it once it has arrived.",
       "removeContactConfirm": "Remove",
       "primary": "Main contact",
       "makePrimary": "Make main contact",
@@ -1951,6 +1953,7 @@
       "justNow": "now",
       "reminderDone": "Done",
       "reminderDue": "Due {{date}}",
+      "reminderFailed": "Could not change the reminder",
       "composer": {
         "note": "Note",
         "reminder": "Reminder",

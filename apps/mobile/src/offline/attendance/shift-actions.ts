@@ -3,7 +3,7 @@ import { outcomeOf, type ActionOutcome } from '../actions/outcome';
 import { captureEvidence } from '../clock';
 import { uuidv7 } from '../ids';
 import type { SyncEngine } from '../sync-engine';
-import { openOpFor } from './shift-overlay';
+import { openOpFor } from '../outbox/open-ops';
 import { OPEN_STATES, type OutboxOp } from '../outbox/types';
 
 /*

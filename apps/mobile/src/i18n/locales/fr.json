@@ -1902,6 +1902,8 @@
       "contactFailed": "Impossible de modifier l'interlocuteur",
       "removeContact": "Retirer l'interlocuteur",
       "removeContactBody": "{{name}} ne sera plus lié à ce client. Sa propre fiche est conservée.",
+      "removeContactPendingBody": "{{name}} n'a pas encore été envoyé. Le retirer ici annule l'opération — rien n'arrivera au bureau.",
+      "contactSending": "Ce contact est déjà en cours d'envoi. Retirez-le une fois qu'il sera arrivé.",
       "removeContactConfirm": "Retirer",
       "primary": "Contact principal",
       "makePrimary": "Définir comme contact principal",
@@ -1915,6 +1917,7 @@
       "justNow": "à l'instant",
       "reminderDone": "Terminé",
       "reminderDue": "Échéance {{date}}",
+      "reminderFailed": "Impossible de modifier le rappel",
       "composer": {
         "note": "Note",
         "reminder": "Rappel",

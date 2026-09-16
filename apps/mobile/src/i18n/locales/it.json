@@ -1902,6 +1902,8 @@
       "contactFailed": "Impossibile modificare il referente",
       "removeContact": "Rimuovi referente",
       "removeContactBody": "{{name}} non sarà più collegato a questo cliente. La sua scheda viene conservata.",
+      "removeContactPendingBody": "{{name}} non è ancora stato inviato. Rimuoverlo qui annulla l’operazione: in ufficio non arriverà nulla.",
+      "contactSending": "Questo contatto è già in viaggio. Rimuovilo quando sarà arrivato.",
       "removeContactConfirm": "Rimuovi",
       "primary": "Contatto principale",
       "makePrimary": "Imposta come contatto principale",
@@ -1915,6 +1917,7 @@
       "justNow": "adesso",
       "reminderDone": "Fatto",
       "reminderDue": "Scadenza {{date}}",
+      "reminderFailed": "Impossibile modificare il promemoria",
       "composer": {
         "note": "Nota",
         "reminder": "Promemoria",

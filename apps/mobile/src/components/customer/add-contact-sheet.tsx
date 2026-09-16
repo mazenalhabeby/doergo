@@ -11,7 +11,8 @@ import { useTheme } from '../../contexts/theme-context';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../../lib/constants';
 import { customersApi } from '../../lib/api';
 import type { MobileCustomer } from '../../lib/api';
-import type { MobileCustomerContact } from '../../lib/api/customers';
+import { useQueuedWrite } from '../../offline/actions/queued-write';
+import { addContactFromPhone } from '../../offline/crm/client-actions';
 
 /**
  * Which END of the link this sheet is choosing.
@@ -61,17 +62,20 @@ export function AddContactSheet({
   side: ContactSide;
   onClose: () => void;
   /**
-   * The link the server wrote.
+   * It went, or it is waiting.
    *
-   * ⚠️ It carries the PERSON end only — `addContact` selects `person` and never
-   * `company`, whichever way round the call was made. A caller adding from the
-   * company side therefore cannot append it to a "Works at" list and must
-   * re-read that list instead; appending it would render a row with no name.
+   * ⚠️ Not the link the server wrote. It only ever carried the PERSON end —
+   * `addContact` selects `person` and never `company`, whichever way round the
+   * call was made — so the "Works at" side always had to re-read anyway; and
+   * with the attachment possibly travelling through the outbox there may be no
+   * server answer at all. The caller re-reads the panel it changed, or, when it
+   * is queued, leaves the row the overlay is already drawing.
    */
-  onAdded: (link: MobileCustomerContact) => void;
+  onAdded: (queued: boolean) => void;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const write = useQueuedWrite();
   const [mode, setMode] = useState<'find' | 'create'>('find');
   const [picked, setPicked] = useState<MobileCustomer | null>(null);
   const [name, setName] = useState('');
@@ -100,20 +104,38 @@ export function AddContactSheet({
     setSaving(true);
     setError(null);
     try {
-      const shared = { role: role.trim() || undefined, isPrimary: isPrimary || undefined };
-      const link = await (side === 'company'
-        /*
-          From the person's side the chosen record is the COMPANY and this
-          record is the person — the arguments swap, nothing else does.
-        */
-        ? customersApi.addContact(picked!.id, { personId: recordId, ...shared })
-        : customersApi.addContact(recordId, {
-            ...(mode === 'find'
-              ? { personId: picked!.id }
-              : { person: { name: name.trim(), email: email.trim() || undefined, phone: phone.trim() || undefined } }),
-            ...shared,
-          }));
-      onAdded(link);
+      /*
+        From the person's side the chosen record is the COMPANY and this record
+        is the person — the two ends swap, nothing else does. ONE body either
+        way, so the queued attachment and the direct call cannot disagree about
+        which end is which.
+      */
+      const companyId = side === 'company' ? picked!.id : recordId;
+      const input = {
+        ...(side === 'company'
+          ? { personId: recordId }
+          : mode === 'find'
+            ? { personId: picked!.id }
+            : { person: { name: name.trim(), email: email.trim() || undefined, phone: phone.trim() || undefined } }),
+        ...(role.trim() ? { role: role.trim() } : {}),
+        ...(isPrimary ? { isPrimary: true } : {}),
+      };
+      /*
+        ⚠️ The NAME the waiting row shows, and it never reaches the server
+        (`$`-prefixed keys are stripped in http-transport). When an existing
+        person is chosen the body carries their id and nothing else, and a row
+        reading "Waiting to send" with no name on it is worse than no row.
+      */
+      const shownName = side === 'company' ? picked!.name : mode === 'find' ? picked!.name : name.trim();
+      const outcome = await write.run(
+        (e) => addContactFromPhone(e, { companyId, ...input, shownName, shownId: picked?.id }),
+        () => customersApi.addContact(companyId, input),
+      );
+      if (outcome.kind === 'refused') {
+        setError(outcome.message || t('customers.record.addContactFailed'));
+        return;
+      }
+      onAdded(outcome.kind === 'queued');
       onClose();
     } catch (e: unknown) {
       setError((e as { message?: string })?.message || t('customers.record.addContactFailed'));

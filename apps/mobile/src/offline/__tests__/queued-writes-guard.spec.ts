@@ -121,7 +121,15 @@ describe('queued writes go through the queue', () => {
 
   it('finds the API functions for queued routes (the scan itself works)', () => {
     // If these stop being found, the parser broke and the guard below passes vacuously.
-    expect([...functions]).toEqual(expect.arrayContaining(['tasksApi.addComment', 'tasksApi.updateStatus']));
+    expect([...functions]).toEqual(expect.arrayContaining([
+      'tasksApi.addComment', 'tasksApi.updateStatus',
+      // The CRM writes: a PATCH on the record, both ends of a contact link, and
+      // a reminder's tick. Named here because each reaches its route through a
+      // differently-shaped function, and one of them silently dropping out of
+      // the scan would let a direct call back onto the record screen.
+      'customersApi.update', 'customersApi.addContact', 'customersApi.updateContact',
+      'customersApi.removeContact', 'customersApi.updateActivity',
+    ]));
   });
 
   it('no screen, component or hook calls one directly', () => {

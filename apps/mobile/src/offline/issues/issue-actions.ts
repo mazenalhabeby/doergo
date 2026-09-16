@@ -1,6 +1,6 @@
 import type { ShiftIssueEvent } from '../../lib/api/shift-issues';
 import { outcomeOf, STILL_MINE, type ActionOutcome } from '../actions/outcome';
-import { openOpFor } from '../attendance/shift-overlay';
+import { openOpFor } from '../outbox/open-ops';
 import type { OfflineFiles } from '../files/offline-files';
 import { uuidv7 } from '../ids';
 import type { OutboxOp } from '../outbox/types';
