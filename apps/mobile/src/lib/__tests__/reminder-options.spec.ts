@@ -63,7 +63,6 @@ describe('the reminder options are translated everywhere', () => {
   });
 
   const FORM = [
-    'customers.record.reminderForm.moreOptions',
     'customers.record.reminderForm.reason',
     'customers.record.reminderForm.when',
     'customers.record.reminderForm.pickDay',

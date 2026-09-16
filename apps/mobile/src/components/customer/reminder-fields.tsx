@@ -9,6 +9,9 @@ import {
   REMINDER_REPEATS,
   reminderLeadKey,
   reminderRepeatKey,
+  REMINDER_PRESETS,
+  reminderPresetKey,
+  type ReminderPresetKey,
 } from '@hbcfield/shared/client';
 import { PressableScale } from '../pressable-scale';
 import { ChipRow } from '../chip-row';
@@ -52,10 +55,23 @@ export const ReminderFields = memo(function ReminderFields({
    * caller. "Everyone" is always offered on top of these and is the default.
    */
   assignees,
+  /**
+   * The quick presets, and which one is standing.
+   *
+   * They live INSIDE this block, directly above the day, because they answer
+   * the same question it does — "when" — and a member reading WHEN should see
+   * every way of saying it in one place. They used to sit outside, next to a
+   * toggle that opened this block, which is what made choosing one feel like
+   * choosing INSTEAD of the options rather than alongside them.
+   */
+  preset,
+  onPreset,
 }: {
   value: ReminderDraft;
   onChange: (next: ReminderDraft) => void;
   assignees: ReminderAssignee[];
+  preset: ReminderPresetKey | null;
+  onPreset: (key: ReminderPresetKey) => void;
 }) {
   const { colors } = useTheme();
   const s = useMemo(() => styles(colors), [colors]);
@@ -89,6 +105,21 @@ export const ReminderFields = memo(function ReminderFields({
         a store build before anybody could set a reminder for Tuesday at two.
       */}
       <Label text={t('customers.record.reminderForm.when')} />
+      {/*
+        The fast path first: one tap standing at a customer's door is the common
+        field case. Naming a day below overrides them, and the caller clears the
+        day when a preset is tapped, so the two can never both look chosen.
+      */}
+      <View style={s.wrap}>
+        {REMINDER_PRESETS.map((p) => (
+          <ChoiceChip
+            key={p.key}
+            label={t(reminderPresetKey(p.key))}
+            selected={!value.dayKey && preset === p.key}
+            onPress={() => onPreset(p.key)}
+          />
+        ))}
+      </View>
       <View style={s.whenRow}>
         <View style={s.whenDate}>
           <DateField

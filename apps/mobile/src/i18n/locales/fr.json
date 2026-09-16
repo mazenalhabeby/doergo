@@ -1937,7 +1937,6 @@
         "SYSTEM": "Système"
       },
       "reminderForm": {
-        "moreOptions": "Plus d’options",
         "reason": "Motif",
         "when": "Quand",
         "pickDay": "Choisir un jour",
