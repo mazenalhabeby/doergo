@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { PressableScale } from '../pressable-scale';
 import { useTheme } from '../../contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type ThemeColors } from '../../lib/constants';
+import type { CardCandidate } from '@hbcfield/shared/client';
 import type { CardFieldKey } from './card-review';
 
 /**
@@ -36,6 +37,17 @@ export const CardFieldRow = memo(function CardFieldRow({
   autoCapitalize = 'sentences',
   /** The lines this card gave, shown inline when the member asks for them. */
   lines,
+  /**
+   * The lines that were NEARLY chosen for this field, best first.
+   *
+   * ⚠️ Offered ABOVE the full list, and that is the difference between fixing a
+   * wrong guess in one tap and scrolling twenty lines to find the obvious one.
+   * The reader already knows which two lines it was deciding between; making
+   * the member re-derive that from a flat list wastes the only thing it knew.
+   */
+  alternatives = [],
+  /** The top two were too close to call — say so rather than pretend. */
+  contested = false,
   expanded,
   onChange,
   onToggleLines,
@@ -48,10 +60,13 @@ export const CardFieldRow = memo(function CardFieldRow({
   keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   lines: readonly string[];
+  alternatives?: readonly CardCandidate[];
+  contested?: boolean;
   expanded: boolean;
   onChange: (key: CardFieldKey, value: string) => void;
   onToggleLines: (key: CardFieldKey) => void;
-  onPickLine: (key: CardFieldKey, line: string) => void;
+  /** `index` is which LINE was chosen — it is what stops another field taking it. */
+  onPickLine: (key: CardFieldKey, line: string, index: number) => void;
 }) {
   const { colors } = useTheme();
   const s = useMemo(() => styles(colors), [colors]);
@@ -99,13 +114,36 @@ export const CardFieldRow = memo(function CardFieldRow({
         accessibilityLabel={label}
       />
 
+      {/*
+        The reader is choosing between two lines and has no grounds to. One
+        sentence, under the field it is about — not a toast, which is gone
+        before the member reaches the row it was warning them about.
+      */}
+      {contested && <Text style={s.contested}>{t('scan.contested')}</Text>}
+
       {expanded && (
         <View style={s.lines}>
+          {alternatives.length > 0 && (
+            <>
+              <Text style={s.listHead}>{t('scan.didYouMean')}</Text>
+              {alternatives.map((alt) => (
+                <LineChoice
+                  key={`alt-${alt.sourceIndex}`}
+                  fieldKey={fieldKey}
+                  line={alt.value}
+                  index={alt.sourceIndex}
+                  near
+                  onPick={onPickLine}
+                />
+              ))}
+              <Text style={s.listHead}>{t('scan.allLines')}</Text>
+            </>
+          )}
           {lines.length === 0 ? (
             <Text style={s.noLines}>{t('scan.noLines')}</Text>
           ) : (
             lines.map((line, i) => (
-              <LineChoice key={`${i}-${line}`} fieldKey={fieldKey} line={line} onPick={onPickLine} />
+              <LineChoice key={`${i}-${line}`} fieldKey={fieldKey} line={line} index={i} onPick={onPickLine} />
             ))
           )}
         </View>
@@ -123,18 +161,28 @@ export const CardFieldRow = memo(function CardFieldRow({
 const LineChoice = memo(function LineChoice({
   fieldKey,
   line,
+  index,
+  /** A runner-up rather than just another line — the reader nearly chose it. */
+  near = false,
   onPick,
 }: {
   fieldKey: CardFieldKey;
   line: string;
-  onPick: (key: CardFieldKey, line: string) => void;
+  index: number;
+  near?: boolean;
+  onPick: (key: CardFieldKey, line: string, index: number) => void;
 }) {
   const { colors } = useTheme();
   const s = useMemo(() => styles(colors), [colors]);
-  const pick = useCallback(() => onPick(fieldKey, line), [onPick, fieldKey, line]);
+  const pick = useCallback(() => onPick(fieldKey, line, index), [onPick, fieldKey, line, index]);
   return (
-    <PressableScale onPress={pick} accessibilityRole="button" accessibilityLabel={line} style={s.lineRow}>
-      <Text style={s.lineText} numberOfLines={1}>{line}</Text>
+    <PressableScale
+      onPress={pick}
+      accessibilityRole="button"
+      accessibilityLabel={line}
+      style={[s.lineRow, near && s.lineRowNear]}
+    >
+      <Text style={[s.lineText, near && s.lineTextNear]} numberOfLines={1}>{line}</Text>
     </PressableScale>
   );
 });
@@ -193,6 +241,18 @@ const styles = (c: ThemeColors) =>
       paddingHorizontal: SPACING.md,
     },
     lineText: { fontSize: FONT_SIZE.sm, color: c.textPrimary },
+    // A runner-up is marked, not shouted: the same row in the brand colour, so
+    // the eye finds it first without the list turning into two designs.
+    lineRowNear: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
+    lineTextNear: { color: COLORS.primaryDark, fontWeight: FONT_WEIGHT.medium },
+    listHead: {
+      fontSize: FONT_SIZE.xs,
+      color: c.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.6,
+      marginTop: SPACING.xs,
+    },
+    contested: { fontSize: FONT_SIZE.xs, color: COLORS.amber, marginTop: SPACING.xs, lineHeight: 16 },
     noLines: { fontSize: FONT_SIZE.sm, color: c.textMuted, paddingVertical: SPACING.sm },
     group: { marginTop: SPACING.xl },
     groupTitle: {

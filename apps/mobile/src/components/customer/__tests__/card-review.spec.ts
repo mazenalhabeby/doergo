@@ -117,10 +117,18 @@ describe('a field is offered only if saving keeps it', () => {
     // so a box for them on a person's card would empty itself on save.
     expect(cardFieldsFor('COMPANY', 'client')).toEqual(expect.arrayContaining(['website', 'vat']));
     expect(cardFieldsFor('PERSON', 'client')).not.toContain('website');
-    expect(cardClientExtras('PERSON', values({ website: 'x.com', vat: 'ATU1', address: 'Wien' })))
+    /*
+      ⚠️ `mayr.at`, and it used to be `x.com`. That was a stand-in for "any
+      website" chosen before `x.com` was Twitter — it is a SOCIAL HOST now, and
+      `cardClientExtras` refuses one outright (see the file, and
+      `card-extras-and-rerank.spec.ts`), so the fixture was asserting the very
+      thing the new rule exists to prevent. The rule under test here is
+      unchanged: company-only fields belong to a company card.
+    */
+    expect(cardClientExtras('PERSON', values({ website: 'mayr.at', vat: 'ATU1', address: 'Wien' })))
       .toEqual({ address: 'Wien' });
-    expect(cardClientExtras('COMPANY', values({ website: 'x.com', vat: 'ATU1', address: 'Wien' })))
-      .toEqual({ address: 'Wien', website: 'x.com', vatId: 'ATU1' });
+    expect(cardClientExtras('COMPANY', values({ website: 'mayr.at', vat: 'ATU1', address: 'Wien' })))
+      .toEqual({ address: 'Wien', website: 'mayr.at', vatId: 'ATU1' });
   });
 
   /*

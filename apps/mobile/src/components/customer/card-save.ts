@@ -43,6 +43,21 @@ export interface ScannedCardSave {
   values: CardValues;
   /** The workspace the add sheet was looking at, carried through the route. */
   spaceId: string | null;
+  /**
+   * What the card said that no field wanted, as the member left it.
+   *
+   * ⚠️ It rides on the CREATE BODY, so it goes through the same outbox entry as
+   * the rest of the client and cannot be lost between a queued create and a
+   * follow-up that never got queued. A second call to attach the extras would
+   * be a write with nothing to address until the create had been answered —
+   * exactly the failure `dependsOnClients` exists to work around, taken on for
+   * no reason when the server accepts them on the create.
+   *
+   * ⚠️ Kept on the COMPANY on the two-record road. An IBAN, opening hours and a
+   * Facebook page belong to the firm; the person gets their name, their email
+   * and their direct line, which is what `cardContactInput` already decides.
+   */
+  details?: { label: string; value: string }[];
 }
 
 export function useSaveScannedCard() {
@@ -87,6 +102,9 @@ export function useSaveScannedCard() {
   const save = useCallback(
     async (plan: ScannedCardSave): Promise<ActionOutcome | null> => {
       const { kind, destination, company, values, spaceId } = plan;
+      // An empty list is not sent at all: `details: []` on a create is a write
+      // of "nothing here", and it reads the same as a deliberate clearing.
+      const details = plan.details?.length ? { details: plan.details } : {};
 
       /*
         ── The firm is new: create it, then hang the person off it ─────────────
@@ -125,7 +143,7 @@ export function useSaveScannedCard() {
           // person's card are the PERSON'S and travel with them, below.
           const body = newClientInput({ name: firm, contactName: '', email: '', phone: '' }, spaceId, '');
           if (!body) return null;
-          const input = { ...body, type: 'COMPANY' as const, ...cardClientExtras('COMPANY', values) };
+          const input = { ...body, type: 'COMPANY' as const, ...cardClientExtras('COMPANY', values), ...details };
 
           const made = await clientCreate.run(
             { id: minted, lane: 'crm:new', body: input },
@@ -164,7 +182,7 @@ export function useSaveScannedCard() {
         company card saved without it becomes a person with a VAT number, and
         `clearCompanyFields` would take the VAT number off it on the next edit.
       */
-      const input = { ...base, type: kind, ...cardClientExtras(kind, values) };
+      const input = { ...base, type: kind, ...cardClientExtras(kind, values), ...details };
       // The card's fields go to the client they create, and nowhere else — held
       // in the member's encrypted outbox until there is a signal to send them.
       return clientCreate.run({ lane: 'crm:new', body: input }, () => customersApi.create(input));

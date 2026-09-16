@@ -23,6 +23,9 @@ const SOURCES = [
   'src/components/customer/card-destination.tsx',
   'src/components/customer/card-duplicate.tsx',
   'src/components/customer/card-field-row.tsx',
+  // What the card said that no field wanted. Added when the extras group was:
+  // a source file missing from this list is a screenful of keys nobody checks.
+  'src/components/customer/card-extras.tsx',
 ];
 
 /*
@@ -90,10 +93,29 @@ describe('the card scanner speaks every language the app ships', () => {
     name of a company as "{{name}}" on somebody's phone.
   */
   it('keeps the placeholders the screen supplies', () => {
-    for (const key of ['createNamed', 'contactAt'] as const) {
+    /*
+      ⚠️ `reading` is the one a member sees while WAITING. A translation that
+      lost `{{done}}` reads "Reading the card…" with no end in sight, on the one
+      screen where a stall is indistinguishable from a crash — and the natural
+      response to a stall on a camera screen is a second press, which is a
+      second scan.
+
+      ⚠️ `poorReadHint` interpolates `lines`, deliberately NOT `count`: i18next
+      reads `count` as a plural selector and would go looking for
+      `poorReadHint_one` first.
+    */
+    const PLACEHOLDERS: Record<string, string[]> = {
+      createNamed: ['{{name}}'],
+      contactAt: ['{{name}}'],
+      reading: ['{{done}}', '{{total}}'],
+      poorReadHint: ['{{lines}}'],
+      notSaved: ['{{fields}}'],
+    };
+    for (const [key, marks] of Object.entries(PLACEHOLDERS)) {
       for (const lang of LANGS) {
-        expect({ lang, key, has: String(at(dict(lang), `scan.${key}`)).includes('{{name}}') })
-          .toEqual({ lang, key, has: true });
+        const text = String(at(dict(lang), `scan.${key}`));
+        const missing = marks.filter((m) => !text.includes(m));
+        expect({ lang, key, missing }).toEqual({ lang, key, missing: [] });
       }
     }
   });

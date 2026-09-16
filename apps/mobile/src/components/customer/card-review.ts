@@ -1,4 +1,7 @@
-import type { ParsedCard } from '@hbcfield/shared/client';
+import {
+  cardExtras, isSocialLink, socialOf,
+  type CardCandidate, type CardExtra, type CardField, type ParsedCard,
+} from '@hbcfield/shared/client';
 
 /**
  * WHAT A SCANNED CARD MEANS, decided once and away from the screen.
@@ -224,10 +227,242 @@ export function cardClientExtras(
   if (kind === 'COMPANY') {
     const website = values.website.trim();
     const vat = values.vat.trim();
-    if (website) extras.website = website;
+    /*
+      ⚠️ A SOCIAL LINK IS NEVER THE WEBSITE, and this is the last door it could
+      slip through. `readCard` keeps one out of the field in the first place, but
+      the field is editable and its line list offers every line on the card — so
+      a member one tap away from `facebook.com/stadt.gmunden` could still put the
+      client's record on a Facebook page instead of the company, on a card that
+      printed `gmunden.at` two characters earlier. Refused here, kept as an
+      extra by the screen: nothing the card said is lost, it is merely filed
+      where it belongs.
+    */
+    if (website && !isSocialLink(website)) extras.website = website;
     if (vat) extras.vatId = vat;
   }
   return extras;
+}
+
+/* ------------------------------------------------------------------ */
+/* Everything read that no field claimed — the "custom fields" half.    */
+
+/**
+ * A row under "Keep as extra", as the screen holds it.
+ *
+ * ⚠️ `labelKey` and `label` are NOT interchangeable and must not be flattened
+ * into one string here. `labelKey` is a translation key — the thing was
+ * recognised, so it is named in the member's own language — while `label` is
+ * the word the CARD printed ("Notruf:", "Skype:") and is shown verbatim,
+ * because translating a company's own word for something invents a fact.
+ * `rename` is the member's own word and wins over both.
+ */
+export interface CardExtraRow extends CardExtra {
+  /** Stable across renders and edits, so a row keeps its keyboard while typed in. */
+  id: string;
+  /** What the member renamed it to, if they did. */
+  rename?: string;
+}
+
+/** What the reader found and what it could not place, in one pass. */
+export interface CardRead {
+  values: CardValues;
+  extras: CardExtraRow[];
+}
+
+/** The candidates for one field, best first — the winner, then its runners-up. */
+export function cardCandidates(card: ParsedCard, key: CardFieldKey): CardCandidate[] {
+  const field = card[key] as CardField | undefined;
+  if (!field) return [];
+  return [
+    { sourceIndex: field.sourceIndex, value: field.value, score: field.score },
+    ...field.alternatives,
+  ];
+}
+
+/** The runners-up alone — what "did you mean…" offers ahead of the full list. */
+export function cardAlternatives(card: ParsedCard, key: CardFieldKey): CardCandidate[] {
+  return (card[key] as CardField | undefined)?.alternatives ?? [];
+}
+
+/** Which line each field is currently holding. A field with nothing holds nothing. */
+export function cardHolding(card: ParsedCard): Partial<Record<CardFieldKey, number>> {
+  const out: Partial<Record<CardFieldKey, number>> = {};
+  for (const key of CARD_FIELDS) {
+    const field = card[key] as CardField | undefined;
+    if (field) out[key] = field.sourceIndex;
+  }
+  return out;
+}
+
+/**
+ * THE READER IS GUESSING BETWEEN TWO LINES — ask, do not pick.
+ *
+ * A card with two unlabelled phone numbers has no right answer, and the reader
+ * saying so is worth more than it choosing. Folded into the same amber as an
+ * inferred field rather than given a colour of its own: one mark on this screen
+ * means "look at this", and a second would only teach people to ignore both.
+ */
+export function cardContested(card: ParsedCard): CardCertainty {
+  const out: CardCertainty = {};
+  for (const key of CARD_FIELDS) out[key] = (card[key] as CardField | undefined)?.contested === true;
+  return out;
+}
+
+/**
+ * WHAT THE CARD SAID, split into what has a field and what does not.
+ *
+ * ⚠️ A line the reader UNDERSTOOD is never discarded. Before this, anything
+ * outside the eight known fields was dropped in silence — a Facebook page, an
+ * IBAN, opening hours, a second office. The member had photographed it and the
+ * phone had read it, and the app threw it away without saying so.
+ *
+ * ⚠️ The website is checked for a social host FIRST, because that one is not a
+ * leftover at all: the reader legitimately claimed it as `website` and it is
+ * the one wrong answer that looks completely right on the record.
+ */
+export function readCard(card: ParsedCard): CardRead {
+  const values = cardValues(card);
+
+  /*
+    A line is "leftover" when no field is standing on it. Two tests, because
+    one is not enough: the SOURCE INDEX catches the line a field won outright,
+    and the TEXT catches the lines a winner swallowed — an address block is
+    three lines and the parse records only the first of them, so without the
+    second test half an address would be offered back as a custom field.
+  */
+  const claimed = new Set(Object.values(cardHolding(card)));
+  const inAValue = (line: string) => {
+    const text = line.trim();
+    if (!text) return true;
+    return CARD_FIELDS.some((key) => {
+      const value = values[key].trim();
+      return !!value && (value === text || value.includes(text));
+    });
+  };
+
+  const leftovers: string[] = [];
+  const social = socialOf(values.website.trim());
+  if (social) {
+    // Out of the field and into the list, before anything else claims the slot.
+    leftovers.push(values.website.trim());
+    values.website = '';
+  }
+  card.lines.forEach((line, i) => {
+    if (claimed.has(i) || inAValue(line)) return;
+    leftovers.push(line);
+  });
+
+  return {
+    values,
+    // `cardExtras` decides what is worth keeping and dedupes by VALUE — a card
+    // that prints the same handle as a URL and again as `@name` is one row.
+    extras: cardExtras(leftovers).map((extra, i) => ({ ...extra, id: `x${i}-${extra.value}` })),
+  };
+}
+
+/**
+ * Can this destination keep the extras?
+ *
+ * ⚠️ A CONTACT PERSON CANNOT. `POST /customers/:id/contacts` carries a name, an
+ * email and a direct line — there is no `details` on it, and the company it
+ * hangs off already exists and is not this screen's to rewrite. So the rows are
+ * still shown and still say what was read, with one sentence admitting they
+ * will not be kept. That is the same rule `homelessFields` follows, for the same
+ * reason: asking somebody to check something and then binning it is worse than
+ * never asking.
+ */
+export function cardExtrasKept(destination: CardDestination): boolean {
+  return destination !== 'contact';
+}
+
+/** The extras as `Customer.details` holds them — `[{label, value}]`, resolved. */
+export function cardDetails(
+  rows: readonly CardExtraRow[],
+  translate: (key: string) => string,
+): { label: string; value: string }[] {
+  return rows
+    .map((row) => ({
+      // The member's own word, then the card's, then ours. A row with no name
+      // at all is dropped by the server's own sanitiser, so it is dropped here
+      // too rather than saved as a blank label somebody has to go and fix.
+      label: (row.rename ?? row.label ?? (row.labelKey ? translate(row.labelKey) : '')).trim(),
+      value: row.value.trim(),
+    }))
+    .filter((row) => !!row.label && !!row.value);
+}
+
+/* ------------------------------------------------------------------ */
+
+/**
+ * A CORRECTION RE-RANKS THE REST.
+ *
+ * The reader assigns lines by strength, each line to at most one field — so the
+ * moment a member says "no, THAT line is the company", the field that was
+ * holding it is holding a line that is spoken for. Leaving it there is the
+ * screen showing one fact twice and inviting the member to save it that way.
+ *
+ * ⚠️ A FIELD THE MEMBER ANSWERED IS NEVER TOUCHED. That is the whole contract:
+ * correcting the company must not quietly rewrite the name they typed a moment
+ * ago, or corrections become a thing people undo rather than make. `answered`
+ * is every field they have typed in or picked for, and it only ever grows.
+ *
+ * ⚠️ A field left with no candidate is EMPTIED, not left standing. Its line
+ * genuinely belongs to somebody else now; keeping the old text would be the
+ * duplicate this function exists to remove, and an empty field colours amber and
+ * says so.
+ *
+ * The auction below is the parser's own, deliberately: by score, ties broken by
+ * declared order and then by position, so the same card and the same correction
+ * always give the same answer.
+ */
+export function reRankGuesses(
+  card: ParsedCard,
+  values: CardValues,
+  answered: ReadonlySet<CardFieldKey>,
+  holding: Readonly<Partial<Record<CardFieldKey, number>>>,
+): { values: CardValues; holding: Partial<Record<CardFieldKey, number>> } {
+  // Only an ANSWERED field owns its line. A guess does not get to reserve one
+  // against a better guess — that is what the auction is for.
+  const taken = new Set<number>();
+  for (const key of CARD_FIELDS) {
+    if (answered.has(key) && holding[key] !== undefined) taken.add(holding[key]!);
+  }
+
+  const open = CARD_FIELDS.filter((key) => !answered.has(key));
+  const pairs: { key: CardFieldKey; index: number; value: string; score: number }[] = [];
+  for (const key of open) {
+    for (const c of cardCandidates(card, key)) {
+      if (taken.has(c.sourceIndex)) continue;
+      pairs.push({ key, index: c.sourceIndex, value: c.value, score: c.score });
+    }
+  }
+  pairs.sort((a, b) =>
+    b.score - a.score ||
+    CARD_FIELDS.indexOf(a.key) - CARD_FIELDS.indexOf(b.key) ||
+    a.index - b.index);
+
+  const nextValues: CardValues = { ...values };
+  const nextHolding: Partial<Record<CardFieldKey, number>> = {};
+  for (const key of CARD_FIELDS) {
+    if (answered.has(key)) {
+      if (holding[key] !== undefined) nextHolding[key] = holding[key];
+    } else {
+      // Cleared first: a field that wins nothing below must end up empty, and
+      // an else-branch per field is how one gets forgotten.
+      nextValues[key] = '';
+    }
+  }
+
+  const filled = new Set<CardFieldKey>();
+  for (const p of pairs) {
+    if (filled.has(p.key) || taken.has(p.index)) continue;
+    nextValues[p.key] = p.value;
+    nextHolding[p.key] = p.index;
+    filled.add(p.key);
+    taken.add(p.index);
+  }
+
+  return { values: nextValues, holding: nextHolding };
 }
 
 /**
