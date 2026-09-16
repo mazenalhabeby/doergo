@@ -20,16 +20,26 @@ import { duplicateSearchTerm, looksLikeSameClient, type CardDestination } from '
  * file the person as a line of text in `contactName` where nothing can ever
  * reach them again.
  *
- * Three exits, and the first is the common one:
+ * Four exits, and they are ordered so the cheapest correct answer comes first:
  *
  *  · the company the reader found, IF it is already in the book;
  *  · any other company, through the same search;
+ *  · CREATE the company from this card, when it is not in the book yet;
  *  · a client in their own right, which is what the screen did before.
  *
- * ⚠️ "Create the company from this card" is NOT on offer, and must not be
- * added. One line's spelling is how "BILLA" and "BILLA AG" become two clients
- * in the same book — the contact sheet hides the same toggle for the same
- * reason, and the CRM ladder bills per client.
+ * ⚠️ "Create the company" was refused here for a long time, and the reason was
+ * good: one line's spelling is how "BILLA" and "BILLA AG" become two clients in
+ * the same book, and the CRM ladder bills per client. What it cost was the
+ * commonest card of all — a person at a firm nobody has entered yet — which had
+ * only two bad answers: file the firm's name as a line of text on a client
+ * record that is really a person, or type the company in by hand afterwards.
+ *
+ * ⚠️ So the objection is answered rather than overruled, in three places and
+ * all three matter: the existing-company chips sit IN FRONT of this one, the
+ * name is an ordinary editable field before anything is saved, and the
+ * near-duplicate check at Save runs on the COMPANY'S name and offers what it
+ * finds. Remove any one of those and this chip goes back to being a machine for
+ * making second copies of clients.
  *
  * ⚠️ The DEFAULT stays "a client in their own right". The suggestion is a chip,
  * not a pre-selection: defaulting to a company means a card whose employer is
@@ -39,11 +49,18 @@ import { duplicateSearchTerm, looksLikeSameClient, type CardDestination } from '
 export function CardDestinationPicker({
   /** What the reader read as the company. '' when it found none. */
   companyGuess,
+  /**
+   * A company name recovered from the email or website domain, for a card whose
+   * firm is printed as a logo no reader can make a word of. Offered as the
+   * pre-fill for "Create this company", never as a fact.
+   */
+  companySuggestion,
   destination,
   company,
   onChange,
 }: {
   companyGuess: string;
+  companySuggestion?: string;
   destination: CardDestination;
   company: MobileCustomer | null;
   onChange: (destination: CardDestination, company: MobileCustomer | null) => void;
@@ -108,6 +125,7 @@ export function CardDestinationPicker({
   }, [onChange, suggested]);
 
   const chooseStandalone = useCallback(() => onChange('client', null), [onChange]);
+  const chooseNewCompany = useCallback(() => onChange('newCompany', null), [onChange]);
 
   const pickFromSheet = useCallback(
     (picked: MobileCustomer) => {
@@ -119,6 +137,12 @@ export function CardDestinationPicker({
 
   const onSuggested = destination === 'contact' && !!suggested && company?.id === suggested.id;
   const onOther = destination === 'contact' && !onSuggested;
+  /*
+    What the chip is called. Naming the firm is the difference between "Create
+    this company" (which company?) and "Create Stadtamt Gmunden", and the name
+    is the one thing the member has to agree with before it becomes a record.
+  */
+  const newName = (companyGuess.trim() || companySuggestion?.trim() || '');
 
   return (
     <View style={s.wrap}>
@@ -146,6 +170,18 @@ export function CardDestinationPicker({
             selected={onOther}
             onPress={() => setSheet(true)}
           />
+          {/*
+            ⚠️ AFTER the two that reach a company already in the book. The order
+            is the safeguard: somebody scanning a card for a firm the office
+            entered last month meets "Contact at BILLA AG" before they meet
+            "Create BILLA", which is the whole of how the duplicate is avoided
+            at the moment it would be made.
+          */}
+          <ChoiceChip
+            label={newName ? t('scan.createNamed', { name: newName }) : t('scan.createCompany')}
+            selected={destination === 'newCompany'}
+            onPress={chooseNewCompany}
+          />
           <ChoiceChip
             label={t('scan.ownRight')}
             selected={destination === 'client'}
@@ -155,7 +191,11 @@ export function CardDestinationPicker({
       )}
 
       <Text style={s.hint}>
-        {destination === 'contact' ? t('scan.contactExplain') : t('scan.ownRightExplain')}
+        {destination === 'contact'
+          ? t('scan.contactExplain')
+          : destination === 'newCompany'
+            ? t('scan.createCompanyExplain')
+            : t('scan.ownRightExplain')}
       </Text>
 
       <BlurSheet visible={sheet} onClose={() => setSheet(false)}>

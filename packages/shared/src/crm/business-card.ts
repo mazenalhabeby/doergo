@@ -37,6 +37,34 @@
  * out as interleaved lines in meaningless order and every "the line after the
  * name" rule collapsed. Columns are clustered first, and the card is read down
  * one column before moving to the next.
+ *
+ * ── A LINE IS NOT A FACT ────────────────────────────────────────────────────
+ *
+ * The third assumption, and the one a real card broke: that a line carries one
+ * thing. A great many European cards use a decorative separator to put several
+ * facts on one line —
+ *
+ *     Stadtamt Gmunden ~ Liegenschaftsverwaltung
+ *     T: +43 7612 794 243 ~ F: +43 7612 794 258 ~ M: +43 676 88 794 243
+ *
+ * — and the reader took the whole string as the company, and the FIRST number
+ * as the phone. So the organisation arrived glued to its department, the mobile
+ * (the one number the person actually wanted dialled) was lost, and the fax was
+ * one regex away from being offered instead.
+ *
+ * Lines are therefore SEGMENTED and each segment scored on its own. Two rules
+ * keep that from destroying more than it fixes:
+ *
+ *  1. A separator counts only when it is SET OFF BY WHITESPACE (or is a run of
+ *     two or more spaces). A hyphen inside "Liegenschafts-verwaltung", the
+ *     slashes in "facebook.com/stadt.gmunden" and "01/02/2026", and the dash in
+ *     a phone range are all glued to their neighbours and never split.
+ *  2. Splitting may never LOSE a value. The whole line stays a candidate
+ *     alongside its segments, and the two are resolved afterwards: the line
+ *     stands unless at least TWO of its segments turned out to mean something
+ *     on their own. "Müller | Söhne GmbH" has one meaningful half, so the
+ *     separator was part of the name; "Stadtamt Gmunden ~ Liegenschafts-
+ *     verwaltung" has two, so it was decoration.
  */
 
 // ── The public shapes ───────────────────────────────────────────────────────
@@ -131,6 +159,23 @@ export type CardRole =
   | 'email' | 'phone' | 'website' | 'vat'
   | 'company' | 'name' | 'title' | 'address';
 
+/**
+ * What the label in front of a number said it was.
+ *
+ * ⚠️ `fax` is never offered as the phone. It is the one number on a card that
+ * nobody wants dialled, and a card that prints `T:`, `F:` and `M:` on ONE line
+ * used to hand back whichever came first — which on a municipal card is the
+ * landline, with the fax a single regex away.
+ */
+export type CardPhoneKind = 'mobile' | 'landline' | 'fax' | 'unknown';
+
+export interface CardPhone {
+  value: string;
+  kind: CardPhoneKind;
+  /** Index into `ParsedCard.lines` — which line or segment it was read from. */
+  sourceIndex: number;
+}
+
 export interface ParsedCard {
   name?: CardField;
   company?: CardField;
@@ -153,6 +198,29 @@ export interface ParsedCard {
    * "Gmail" offered as somebody's employer is wrong every single time.
    */
   companyDomain?: string;
+  /**
+   * A human-looking company name recovered from the domain — `gmunden.ooe.gv.at`
+   * and `gmunden.at` both give "Gmunden".
+   *
+   * ⚠️ This exists because a card's company name is not always READABLE. The
+   * card that prompted it prints its organisation as a hand-drawn script logo
+   * that no text recogniser will ever make a word of, so the domain is the only
+   * recoverable source for it. Offered as a starting point the member edits,
+   * never as a fact — hence a field of its own rather than filling `company`.
+   *
+   * ⚠️ Silent for a mail provider, for a social host, and when the domain is
+   * the PERSON'S OWN NAME (`arzt@nikiforova.at` on Dr Nikiforova's card), which
+   * would otherwise offer somebody as their own employer.
+   */
+  companySuggestion?: string;
+  /**
+   * EVERY number the card printed, each typed by the label in front of it.
+   *
+   * `phone` stays the single best pick, so nothing that reads it has to change.
+   * This is for a screen that wants to offer the other two — a card carries a
+   * landline and a mobile and the office wants both on the record.
+   */
+  phones?: CardPhone[];
   /** How many columns the layout was read as. 1 when there is no geometry. */
   columns: number;
 }
@@ -174,6 +242,9 @@ const EMAIL = /[\w.+-]{1,64}@[\w-]{1,63}\.[\w.-]{2,40}/;
 // a dozen ways, but seven digits is the floor for a real one. The upper bound
 // exists so the class and the trailing digit cannot backtrack indefinitely.
 const PHONE = /\+?\d[\d\s().\/-]{5,28}\d/;
+
+/** The same shape, asked for EVERY number on a line rather than the first. */
+const PHONE_SCAN = new RegExp(PHONE.source, 'g');
 
 const VAT = /\b((?:ATU|DE|CHE|IT|FR|ESB|CZ|SK|HU)[\s-]?\d[\d\s-]{4,20}\d)\b/i;
 
@@ -224,10 +295,88 @@ const WEBSITE = new RegExp(
 const WWW_PREFIX = /(^|\s)w\s?w\s?w[\s.,·_:-]/i;
 const TLD_ANYWHERE = new RegExp('[\\w-][.,·](?:' + TLD + ')\\b', 'i');
 
-/** A number labelled as a mobile beats one labelled fax, whatever the order. */
-const MOBILE_LABEL = /\b(mobile|mobil|mob|cell|handy|m)\b[.:]?/i;
-const TEL_LABEL = /\b(tel|telefon|telephone|phone|t|festnetz|office)\b[.:]?/i;
-const FAX_LABEL = /\bfax\b/i;
+/**
+ * The words and single letters a card puts in front of a number.
+ *
+ * ⚠️ Scanned as a GLOBAL pattern over the text BEFORE each number, and the LAST
+ * one found wins — a card writes "Tel/Fax +43 1 234 ~ M +43 664 555", and the
+ * label nearest the number is the one that describes it.
+ *
+ * ⚠️ The single letters are the whole point of the rewrite. `FAX_LABEL` used to
+ * be `/\bfax\b/` — the literal word — so the commonest European form, a bare
+ * `F:` beside `T:` and `M:`, was invisible. On the card this was written for
+ * the fax sat one position away from being handed over as the phone number.
+ * They are safe here because they are matched only in the LABEL WINDOW, which
+ * is the short run of text between one number and the next.
+ */
+const PHONE_LABEL = /\b(fax|fx|f|mobile|mobil|mob|cell|handy|m|tel|telefon|telephone|phone|festnetz|office|t|p)\b/gi;
+
+const LABEL_KIND: Record<string, CardPhoneKind> = {
+  fax: 'fax', fx: 'fax', f: 'fax',
+  mobile: 'mobile', mobil: 'mobile', mob: 'mobile', cell: 'mobile', handy: 'mobile', m: 'mobile',
+  tel: 'landline', telefon: 'landline', telephone: 'landline', phone: 'landline',
+  festnetz: 'landline', office: 'landline', t: 'landline', p: 'landline',
+};
+
+/**
+ * The glyphs a designer uses to put two facts on one line.
+ *
+ * ⚠️ `-` is deliberately ABSENT. It is a hyphen inside a compound word far more
+ * often than it is a separator, and "Liegenschafts-verwaltung" split in half is
+ * a department nobody can search for. The dashes that ARE here (– —) are only
+ * ever separators when whitespace sets them off, which the pattern below
+ * requires and which a phone range ("794 243–258") does not have.
+ */
+const SEPARATOR_GLYPHS = '~·•|/–—∙⋅';
+
+/**
+ * A decorative separator: a glyph SET OFF BY WHITESPACE, a tab, or a run of two
+ * or more spaces.
+ *
+ * ⚠️ The whitespace requirement is the entire safety of this. Without it `/`
+ * cuts "facebook.com/stadt.gmunden" into two halves that are neither a website
+ * nor anything else, and "01/02/2026" becomes three numbers.
+ *
+ * ⚠️ The glyph alternative must come FIRST. `\s{2,}` would otherwise swallow
+ * the spaces in front of a glyph and leave it stranded at the head of the next
+ * segment.
+ *
+ * Linear: the whitespace and glyph classes are disjoint, so there is nothing
+ * for the engine to backtrack over.
+ */
+const CARD_SEPARATOR = new RegExp('\\s+[' + SEPARATOR_GLYPHS + ']+\\s+|\\t+|\\s{2,}');
+const SEPARATOR_EDGE = new RegExp('^[' + SEPARATOR_GLYPHS + '\\s]+|[' + SEPARATOR_GLYPHS.replace('/', '') + '\\s]+$', 'g');
+
+/**
+ * How many facts one line may hold.
+ *
+ * A card line with seven things on it does not exist; a badly-recognised block
+ * of justified text with runs of spaces in it very much does. The cap is what
+ * keeps the work bounded — every segment becomes a line the whole scoring table
+ * runs over, so an uncapped split turns one bad line into a hundred.
+ */
+const MAX_SEGMENTS = 6;
+
+/** A line is not a phone book either. */
+const MAX_PHONES_PER_LINE = 6;
+
+/**
+ * How much of its line's TYPE SIZE a piece inherits.
+ *
+ * ⚠️ This is what stops a split from inventing facts. Type size is the designer
+ * saying "this LINE matters", and several rules read it as a prior — so a piece
+ * of the biggest line on the card arrives already most of the way to being the
+ * company or the name, on no evidence about its own text at all. "Bau ~ Tec"
+ * then produces two company candidates, both meaningless, and the pair of them
+ * is enough to suppress the line they came from.
+ *
+ * Discounted, a piece has to bring something of its own — a legal form, the
+ * email's domain, a person's shape, an address signal, a number — which is
+ * exactly the evidence the split is supposed to be revealing. "TEC | Anlagenbau
+ * GmbH" keeps its separator; "Stadtamt Gmunden ~ Liegenschaftsverwaltung" does
+ * not, because both of its halves can argue for themselves.
+ */
+const SEGMENT_SIZE_SHARE = 1 / 3;
 
 /** Suffixes that mark a line as an organisation rather than a person. */
 const LEGAL_FORM = /\b(gmbh|ag|ges\.?m\.?b\.?h|kg|og|e\.?u\.?|ltd|limited|inc|llc|plc|s\.?r\.?o|sp\.?\s?z\.?o\.?o|bv|nv|sa|srl|spa|oy|ab|a\/s|aps)\b/i;
@@ -273,6 +422,44 @@ const isRole = (t: string) => {
   const f = fold(t);
   return ROLE.test(f) || ROLE_STEM.test(f);
 };
+
+/*
+  ── An organisation and the part of it this person works in ─────────────────
+
+  A public body, a hospital or any firm past a certain size prints BOTH on the
+  card, usually on one line with a separator between them:
+
+      Stadtamt Gmunden ~ Liegenschaftsverwaltung
+
+  The organisation is the client; the department is what this person does there,
+  which is a `title` in every sense the product has. Telling them apart is the
+  only new judgement here, and there are two signals.
+*/
+
+/**
+ * Words that name a PART of an organisation rather than the organisation.
+ *
+ * Matched anywhere inside a word, because German glues them on: the department
+ * is "Liegenschaftsverwaltung", not "Liegenschaften Verwaltung". Each stem is
+ * long enough not to be a fragment of an unrelated word, for the same reason
+ * `ROLE_STEM` next door is.
+ */
+const DEPARTMENT_STEM = /(verwaltung|abteilung|referat|dezernat|sachgebiet|fachbereich|stabsstelle|geschaftsstelle|department|division)/i;
+
+/**
+ * An administrative AUTHORITY: a thing that IS an organisation.
+ *
+ * ⚠️ "-amt" looks like a department suffix and is not one. "Stadtamt",
+ * "Finanzamt", "Gemeindeamt" are whole bodies — on the card this file was
+ * rewritten for, "Stadtamt Gmunden" IS the client. Listing it as a department
+ * stem was tried and produced exactly the wrong half of the line, so it sits
+ * here instead, where it names an organisation and VETOES the department test.
+ *
+ * ⚠️ `{3,20}` before "amt" with a stop-list in front: "gesamt" is a perfectly
+ * ordinary German word and would otherwise make an authority of any line
+ * carrying it.
+ */
+const AUTHORITY = /\b(?!gesamt|insgesamt|allesamt)[a-z]{3,20}amt\b|\b(magistrat|rathaus|behorde|ministerium|stadtgemeinde|marktgemeinde|bezirkshauptmannschaft)\b/i;
 
 /*
   ── Addresses ──────────────────────────────────────────────────────────────
@@ -337,6 +524,90 @@ const clean = (s: string) => s.replace(/\s+/g, ' ').trim().slice(0, MAX_LINE_CHA
 
 const num = (v: unknown, fallback = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
 
+/**
+ * One line → the facts printed on it.
+ *
+ * Returns `[whole]` for an ordinary line, so every caller has one shape to
+ * handle. A line that splits returns its pieces and NOT the whole — the caller
+ * (`measure`) keeps the whole line itself, because deciding whether the split
+ * was decoration needs the scores, which do not exist yet.
+ *
+ * ⚠️ Pure and exported on purpose: the rule about what a separator IS is the
+ * argument this change rests on, and it is worth being able to test it without
+ * a card around it.
+ */
+export function segmentCardLine(text: string): string[] {
+  // Exported, so it is handed whatever a caller has. Nothing in this file throws.
+  if (typeof text !== 'string') return [];
+  const whole = clean(text);
+  if (!whole) return [];
+  // Bounded before anything else: this runs on a photograph's worth of text.
+  const raw = text.slice(0, MAX_LINE_CHARS * 2);
+  const parts = raw
+    .split(CARD_SEPARATOR)
+    .map((p) => clean(p.replace(SEPARATOR_EDGE, '')))
+    // One character is punctuation, not a fact. Same floor `measure` uses.
+    .filter((p) => p.length > 1);
+  // Too many pieces means the line was never a list of facts — see MAX_SEGMENTS.
+  if (parts.length < 2 || parts.length > MAX_SEGMENTS) return [whole];
+  return parts;
+}
+
+/**
+ * Every number on one piece of text, each typed by the label in FRONT of it.
+ *
+ * ⚠️ The label window is the text since the previous number ended, which is
+ * what makes this work inside a line as well as across lines: on
+ * "T: 1234567 ~ F: 7654321" the second number's window is " ~ F: " and nothing
+ * else. The old code asked whether the LINE mentioned a mobile anywhere, which
+ * is the same answer for all three numbers on a line that carries all three.
+ */
+export function readCardPhones(text: string): { value: string; kind: CardPhoneKind }[] {
+  const out: { value: string; kind: CardPhoneKind }[] = [];
+  if (typeof text !== 'string') return out;
+  /*
+    ⚠️ `lastIndex` is reset here and not trusted from the last call. The loop
+    below can stop early on the cap, which leaves the shared pattern pointing
+    into the middle of some other card's line — and a global regex that
+    remembers where it got to is the classic way a scan silently skips the first
+    number on the next thing it is asked about.
+  */
+  PHONE_SCAN.lastIndex = 0;
+  let cursor = 0;
+  let found: RegExpExecArray | null;
+  while (out.length < MAX_PHONES_PER_LINE && (found = PHONE_SCAN.exec(text)) !== null) {
+    // PHONE cannot match empty, so `lastIndex` always advances and this ends.
+    out.push({ value: clean(found[0]), kind: labelKind(text.slice(cursor, found.index)) });
+    cursor = found.index + found[0].length;
+  }
+  return out;
+}
+
+/** The LAST label in the window describes the number that follows it. */
+function labelKind(window: string): CardPhoneKind {
+  const folded = fold(window);
+  PHONE_LABEL.lastIndex = 0;
+  let kind: CardPhoneKind = 'unknown';
+  let hit: RegExpExecArray | null;
+  while ((hit = PHONE_LABEL.exec(folded)) !== null) {
+    kind = LABEL_KIND[hit[1]!.toLowerCase()] ?? kind;
+  }
+  return kind;
+}
+
+/**
+ * The number a person actually wants dialled.
+ *
+ * A labelled mobile first, then anything that is not a fax. A fax alone answers
+ * NOTHING — which is what keeps it out of the phone field while the line it
+ * sits on stays excluded from being read as somebody's name.
+ */
+function dialable(phones: { value: string; kind: CardPhoneKind }[]) {
+  return phones.find((p) => p.kind === 'mobile')
+    ?? phones.find((p) => p.kind === 'landline')
+    ?? phones.find((p) => p.kind === 'unknown');
+}
+
 // ── Measuring a line, once ──────────────────────────────────────────────────
 
 /**
@@ -363,18 +634,37 @@ interface LineFacts {
   /** Height as a fraction of the tallest line on the card. */
   relSize: number;
 
+  /**
+   * Where this fact came from, when the line it is on carried several.
+   *
+   * `pieces` on the whole line, `partOf` on each piece. They are RIVALS, never
+   * both an answer: `resolveSegments` decides which survives, and the loser is
+   * `suppressed`. See the header — splitting must never lose a value, so the
+   * whole line is measured and scored exactly like its pieces are.
+   */
+  pieces?: number[];
+  partOf?: number;
+  suppressed: boolean;
+
   email?: string;
+  /** Any phone-shaped thing, fax included — it is what rules a line OUT elsewhere. */
   phone?: string;
   website?: string;
   vat?: string;
+
+  /** Every number on the fact, typed. */
+  phones: { value: string; kind: CardPhoneKind }[];
+  /** The one worth dialling, or nothing when all this fact holds is a fax. */
+  dial?: { value: string; kind: CardPhoneKind };
 
   hasDigits: boolean;
   words: number;
   legalForm: boolean;
   role: boolean;
-  mobileLabel: boolean;
-  telLabel: boolean;
-  fax: boolean;
+  /** Part of an organisation rather than the organisation — a `title`, not a client. */
+  department: boolean;
+  /** An administrative body. A thing that IS an organisation. */
+  authority: boolean;
   urlish: boolean;
   personShape: boolean;
   wordmark: boolean;
@@ -450,6 +740,79 @@ export function companyDomainFromEmail(email?: string): string | undefined {
   if (label.length < 2) return undefined;
   if (FREE_MAIL_LABEL.has(label) || FREE_MAIL_LABEL.has(domain)) return undefined;
   return domain;
+}
+
+/**
+ * Labels that belong to the PUBLIC part of a domain, not to its owner.
+ *
+ * ⚠️ Chopping one label off the right is not enough, and the card this was
+ * written for is why: `gmunden.ooe.gv.at` is the city of Gmunden, three levels
+ * down. `ooe` is a federal state, `gv` is the public sector, `at` is the
+ * country — none of them names anybody. Stripping from the right while the
+ * label is public leaves exactly the registrable name.
+ */
+const PUBLIC_LABEL = new Set([
+  ...TLD.split('|').map((t) => t.replace('\\.', '.')),
+  // The second level: `co.uk`, `gv.at`, `ac.at`, `or.at`, `com.au`…
+  'co', 'gv', 'ac', 'or', 'ne', 'priv', 'gov', 'edu', 'mil', 'sch', 'nhs', 'police',
+  // And the Austrian states under `gv.at`, which is a third level.
+  'ooe', 'noe', 'stmk', 'ktn', 'sbg', 'tirol', 'vlbg', 'wien', 'bgld',
+]);
+
+/** Hosts that publish a PAGE about somebody rather than belonging to them. */
+const SOCIAL_HOST = new Set([
+  'facebook', 'fb', 'instagram', 'linkedin', 'twitter', 'x', 'xing', 'youtube',
+  'tiktok', 'pinterest', 'wordpress', 'blogspot', 'wixsite', 'jimdo', 'wa', 't',
+]);
+
+/**
+ * A domain a person could read as a company name: `gmunden.ooe.gv.at` → "Gmunden".
+ *
+ * ⚠️ This exists for the card whose company name is UNREADABLE — a hand-drawn
+ * script logo that no recogniser will make a word of. The domain is then the
+ * only surviving trace of who the person works for, and "Gmunden" offered for
+ * editing beats an empty field and a re-scan that will fail the same way.
+ *
+ * ⚠️ A free provider and a social host both answer NOTHING. "Gmail" and
+ * "Facebook" as somebody's employer are wrong every single time, and a
+ * suggestion is accepted with one tap and corrected with ten.
+ */
+export function companyNameFromDomain(domain?: string): string | undefined {
+  const host = domain?.toLowerCase().replace(/^https?:\/\//, '').split('/')[0]?.replace(/[^a-z0-9.-]/g, '');
+  if (!host || !host.includes('.')) return undefined;
+  const labels = host.split('.').filter(Boolean);
+  if (labels[0] === 'www') labels.shift();
+  if (!labels.length) return undefined;
+  if (FREE_MAIL_LABEL.has(labels[0]!) || FREE_MAIL_LABEL.has(labels.join('.'))) return undefined;
+  if (SOCIAL_HOST.has(labels[0]!)) return undefined;
+
+  // Strip the public suffix from the right; what is left is the owner's name.
+  const owned = labels.slice();
+  while (owned.length > 1 && PUBLIC_LABEL.has(owned[owned.length - 1]!)) owned.pop();
+  const name = owned[owned.length - 1];
+  if (!name || name.length < 2 || FREE_MAIL_LABEL.has(name) || SOCIAL_HOST.has(name)) return undefined;
+
+  /*
+    Title case, one word per dash. `dvd-personal` is printed "DVD Personal" on
+    the card itself — the punctuation is the domain's, never the company's.
+  */
+  return name
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+/** The host a website line points at: `WWW.NIKIFOROVA.AT/kontakt` → `nikiforova.at`. */
+function websiteHost(website?: string): string | undefined {
+  if (!website) return undefined;
+  const host = website
+    .toLowerCase()
+    .replace(/^https?:\/\//, '')
+    // The reader tolerates a scan that lost the separators inside "w w w".
+    .replace(/^w\s?w\s?w[\s.,·_-]{0,2}/, '')
+    .split(/[/\s]/)[0];
+  return host && host.includes('.') ? host : undefined;
 }
 
 /**
@@ -634,17 +997,22 @@ const ROLES: Record<CardRole, RoleSpec> = {
         ⚠️ A card carries two or three numbers and the LABEL decides, not the
         order they happen to be printed in. A fax is the one number nobody
         wants dialled; a mobile is usually the one they do.
+
+        A fact holding nothing BUT a fax has no dialable number and scores 0 —
+        while `f.phone` stays set, so the line is still ruled out of being read
+        as somebody's name. Those are two different questions and they used to
+        share one answer.
       */
-      if (f.fax) return 0;
+      if (!f.dial) return 0;
       /*
         ⚠️ The gap between the two labels is deliberately wider than
         `CONTESTED_MARGIN`, and the gap between two UNLABELLED numbers is zero.
         An explicit "M" settles the question; two bare numbers do not, and the
         screen is told so rather than being handed a coin-flip as a fact.
       */
-      return cap(0.72 + (f.mobileLabel ? 0.2 : 0) + (f.telLabel ? 0.06 : 0));
+      return cap(0.72 + (f.dial.kind === 'mobile' ? 0.2 : 0) + (f.dial.kind === 'landline' ? 0.06 : 0));
     },
-    claim: (f) => ({ value: f.phone!, also: [] }),
+    claim: (f) => ({ value: f.dial!.value, also: [] }),
   },
 
   company: {
@@ -659,10 +1027,22 @@ const ROLES: Record<CardRole, RoleSpec> = {
         flat "roles are never companies" left it with no company at all.
       */
       if (f.role && !f.legalForm) return 0;
+      /*
+        ⚠️ And so does a DEPARTMENT, on the same reasoning and for the same
+        exception. "Liegenschaftsverwaltung" is what this person does at the
+        Stadtamt, not a client to invoice — but "Hausverwaltung Meier GmbH" is a
+        firm whose trade is in its name, which is why `department` is already
+        false wherever a legal form, the email's domain or an authority word
+        says the line names a body rather than a part of one.
+      */
+      if (f.department) return 0;
       if (f.addressSignal > 0) return 0;
       let s = 0;
       if (f.domainMatch) s += 0.55;
       if (f.legalForm) s += 0.4;
+      // A public body has no legal form to print and its name is often the only
+      // thing on the card that is not a person or a number.
+      if (f.authority) s += 0.3;
       // On a company's card the wordmark is the largest thing there is; on a
       // person's it is their name, and size says nothing about the firm.
       s += f.relSize * (c.kind === 'COMPANY' ? 0.35 : 0.08);
@@ -691,7 +1071,7 @@ const ROLES: Record<CardRole, RoleSpec> = {
         the line spoken for.
       */
       if (f.email || f.phone || f.vat || f.website) return 0;
-      if (f.urlish || f.hasDigits || f.legalForm || f.role) return 0;
+      if (f.urlish || f.hasDigits || f.legalForm || f.role || f.department) return 0;
       if (f.addressSignal > 0) return 0;
       if (f.words > 4 || f.text.length < 4) return 0;
 
@@ -710,9 +1090,16 @@ const ROLES: Record<CardRole, RoleSpec> = {
   title: {
     min: 0.5, proven: false,
     score: (f, c) => {
-      if (!f.role) return 0;
+      /*
+        ⚠️ A DEPARTMENT is a job title in everything but grammar, and it is the
+        answer the product actually wants: it becomes `CustomerContact.role`,
+        which is the one place "what does this person do at that firm" can be
+        stored. Scored a shade under a real job title, because "Leiter" says
+        what somebody DOES and "Liegenschaftsverwaltung" says where they sit.
+      */
+      if (!f.role && !f.department) return 0;
       if (f.email || f.phone || f.website || f.vat || f.legalForm || f.urlish) return 0;
-      let s = 0.6;
+      let s = f.role ? 0.6 : 0.55;
       // The title sits WITH the name — same column, a line or two away.
       const hint = c.nameHint >= 0 ? c.nameHint : f.i;
       if (Math.abs(f.i - hint) <= 2) s += 0.25;
@@ -734,13 +1121,29 @@ const ROLES: Record<CardRole, RoleSpec> = {
       or all of it on one line.
     */
     claim: (f, _c, all) => {
+      /*
+        ⚠️ A SUPPRESSED fact occupies no space here — it is step over, not stop.
+        "Rathausplatz 1 ~ 4810 Gmunden" leaves three facts in the array (the
+        whole line and its two halves), and the whole line sits between the
+        address and whatever is above it. Stopping at it would cut the block to
+        one segment; INCLUDING it would print the street twice.
+      */
+      const reach = (from: number, step: -1 | 1) => {
+        let edge = from;
+        for (let k = from + step; k >= 0 && k < all.length; k += step) {
+          const n = all[k]!;
+          if (n.suppressed) continue;
+          if (n.addressSignal <= 0 || !sameColumn(n, f)) break;
+          edge = k;
+        }
+        return edge;
+      };
+      const first = reach(f.i, -1);
+      const last = reach(f.i, 1);
       const also: number[] = [];
-      let first = f.i;
-      let last = f.i;
-      while (first > 0 && all[first - 1]!.addressSignal > 0 && sameColumn(all[first - 1]!, f)) first--;
-      while (last < all.length - 1 && all[last + 1]!.addressSignal > 0 && sameColumn(all[last + 1]!, f)) last++;
       const parts: string[] = [];
       for (let k = first; k <= last; k++) {
+        if (all[k]!.suppressed) continue;
         parts.push(all[k]!.text);
         if (k !== f.i) also.push(k);
       }
@@ -761,6 +1164,13 @@ function measure(raw: CardLine[]): { facts: LineFacts[]; generic: boolean; perso
     .filter((l) => l && typeof l.text === 'string')
     .map((l) => ({
       text: clean(l.text),
+      /*
+        ⚠️ The text as the reader gave it, NOT the cleaned form. `clean`
+        collapses runs of whitespace, and a run of two or more spaces is one of
+        the separators a card uses — collapsing first destroys the evidence that
+        a line held two facts.
+      */
+      segments: segmentCardLine(l.text),
       y: num(l.y),
       height: num(l.height),
       x: typeof l.x === 'number' && Number.isFinite(l.x) ? l.x : undefined,
@@ -768,11 +1178,42 @@ function measure(raw: CardLine[]): { facts: LineFacts[]; generic: boolean; perso
     }))
     .filter((l) => l.text.length > 1);
 
+  /*
+    ⚠️ Columns are clustered over the LINES, never the segments. A segment has
+    no geometry of its own — it inherits its line's box, and feeding several
+    facts with identical `x` into the clusterer would say nothing it does not
+    already know while making the "at least two lines a side" test meaningless.
+  */
   const columns = cardColumns(input);
   const order: { index: number; column: number; row: number }[] = [];
   columns.forEach((col, c) => col.forEach((idx, row) => order.push({ index: idx, column: c, row })));
 
-  const ordered = order.map((o) => ({ ...input[o.index]!, column: o.column, rowInColumn: o.row }));
+  /*
+    A line that split becomes SEVERAL entries: the whole line first, then its
+    pieces. Both are measured and scored; `resolveSegments` decides which of
+    them was the fact and suppresses the other. A line that did not split
+    produces exactly one entry, as before.
+  */
+  const ordered: (typeof input[number] & {
+    column: number; rowInColumn: number; sizeShare: number; pieceOfPrevious?: number;
+  })[] = [];
+  for (const o of order) {
+    const line = input[o.index]!;
+    const at = ordered.length;
+    ordered.push({ ...line, column: o.column, rowInColumn: o.row, sizeShare: 1 });
+    if (line.segments.length < 2) continue;
+    for (const piece of line.segments) {
+      ordered.push({
+        ...line,
+        text: piece,
+        segments: [piece],
+        column: o.column,
+        rowInColumn: o.row,
+        sizeShare: SEGMENT_SIZE_SHARE,
+        pieceOfPrevious: at,
+      });
+    }
+  }
 
   // The email is needed to measure every other line, so it is found first —
   // as a FACT about the card, not as a claim on a line.
@@ -797,7 +1238,8 @@ function measure(raw: CardLine[]): { facts: LineFacts[]; generic: boolean; perso
     const email$ = l.text.match(EMAIL)?.[0];
     const website$ = email$ ? undefined : l.text.match(WEBSITE)?.[0];
     const vat$ = l.text.match(VAT)?.[1];
-    const phone$ = l.text.match(PHONE)?.[0];
+    const phones = readCardPhones(l.text);
+    const phone$ = phones[0]?.value;
 
     const street = STREET.test(folded);
     const postcode = POSTCODE.test(l.text);
@@ -807,29 +1249,45 @@ function measure(raw: CardLine[]): { facts: LineFacts[]; generic: boolean; perso
       ? 0
       : Math.min(0.95, (street ? 0.45 : 0) + (postcode ? 0.45 : 0) + (country ? 0.3 : 0) + (street && house ? 0.1 : 0));
 
+    const legalForm = LEGAL_FORM.test(l.text);
+    const authority = AUTHORITY.test(folded.toLowerCase());
+    const domainMatch = !!word && word.length >= 3 && !email$ && !website$ && squashed.includes(word);
+
     return {
       i,
       text: l.text,
       folded,
       squashed,
+      pieces: undefined,
+      partOf: l.pieceOfPrevious,
+      suppressed: false,
       y: l.y,
       height: l.height,
       x: l.x,
       width: l.width,
       column: l.column,
       rowInColumn: l.rowInColumn,
-      relSize: l.height / denom,
+      // See SEGMENT_SIZE_SHARE: `sizeShare` is 1 for a whole line.
+      relSize: (l.height / denom) * l.sizeShare,
       email: email$,
       website: website$,
       vat: vat$ ? clean(vat$) : undefined,
-      phone: phone$ ? clean(phone$) : undefined,
+      phone: phone$,
+      phones,
+      dial: dialable(phones),
       hasDigits: /\d/.test(l.text),
       words: l.text.split(' ').length,
-      legalForm: LEGAL_FORM.test(l.text),
+      legalForm,
       role: isRole(l.text),
-      mobileLabel: MOBILE_LABEL.test(l.text),
-      telLabel: TEL_LABEL.test(l.text),
-      fax: FAX_LABEL.test(l.text),
+      /*
+        ⚠️ THE DISCRIMINATOR, and the one thing on this card that actually
+        works. "Stadtamt Gmunden" and "Liegenschaftsverwaltung" are the same
+        shape to a computer; what tells them apart is that one of them echoes
+        the domain the email and the website both point at. A legal form or an
+        authority word says the same thing by another route.
+      */
+      department: DEPARTMENT_STEM.test(folded) && !domainMatch && !legalForm && !authority,
+      authority,
       urlish: !!website$ || WWW_PREFIX.test(l.text) || TLD_ANYWHERE.test(l.text) || l.text.includes('://'),
       personShape: isPersonShape(l.text),
       wordmark: isWordmark(l.text),
@@ -839,8 +1297,59 @@ function measure(raw: CardLine[]): { facts: LineFacts[]; generic: boolean; perso
     };
   });
 
+  // The pieces point at their line; the line is told which pieces are its own.
+  for (const f of facts) {
+    if (f.partOf === undefined) continue;
+    const parent = facts[f.partOf];
+    if (!parent) continue;
+    (parent.pieces ??= []).push(f.i);
+  }
+
   return { facts, generic: genericMailbox, personal, domain, columns: columns.length };
 }
+
+/**
+ * WAS THE SEPARATOR DECORATION, OR PART OF THE VALUE?
+ *
+ * Answered once, from the scores, because it cannot be answered from the text.
+ * "Stadtamt Gmunden ~ Liegenschaftsverwaltung" and "Müller | Söhne GmbH" are
+ * the same shape; what differs is that the first has TWO halves that mean
+ * something on their own and the second has one.
+ *
+ * So: a line is suppressed in favour of its pieces when at least two of those
+ * pieces cleared a role's floor. Otherwise the pieces are suppressed and the
+ * whole line stands — which is the promise that splitting never loses a value,
+ * enforced here rather than hoped for.
+ *
+ * Mutates `suppressed` on the facts (the address block reads it) and returns
+ * the set so the candidate lists can be filtered with it.
+ */
+function resolveSegments(facts: LineFacts[], perRole: Record<CardRole, CardCandidate[]>): Set<number> {
+  const claiming = new Set<number>();
+  for (const role of ROLE_ORDER) for (const c of perRole[role]!) claiming.add(c.sourceIndex);
+
+  const suppressed = new Set<number>();
+  for (const f of facts) {
+    if (!f.pieces?.length) continue;
+    const meaningful = f.pieces.filter((i) => claiming.has(i));
+    const losers = meaningful.length >= 2 ? [f.i] : f.pieces;
+    for (const i of losers) {
+      suppressed.add(i);
+      facts[i]!.suppressed = true;
+    }
+  }
+  return suppressed;
+}
+
+const withoutSuppressed = (
+  perRole: Record<CardRole, CardCandidate[]>,
+  suppressed: Set<number>,
+): Record<CardRole, CardCandidate[]> => {
+  if (suppressed.size === 0) return perRole;
+  const out = {} as Record<CardRole, CardCandidate[]>;
+  for (const role of ROLE_ORDER) out[role] = perRole[role]!.filter((c) => !suppressed.has(c.sourceIndex));
+  return out;
+};
 
 /**
  * Every line scored for every role, best first.
@@ -848,13 +1357,17 @@ function measure(raw: CardLine[]): { facts: LineFacts[]; generic: boolean; perso
  * Exported because it is the part worth inspecting when a card reads wrong:
  * the answer is always "look at what each line scored", and that should not
  * require re-running the whole parse in your head.
+ *
+ * ⚠️ Segments are resolved here too, so this and `parseBusinessCard` cannot
+ * disagree about what was on offer. An inspector that showed candidates the
+ * parse had already ruled out would send somebody looking in the wrong place.
  */
 export function scoreCardLines(raw: CardLine[]): Record<CardRole, CardCandidate[]> {
   const { facts, generic, personal } = measure(raw);
   const ctx = contextFor(facts, generic, personal);
   const out = {} as Record<CardRole, CardCandidate[]>;
   for (const role of ROLE_ORDER) out[role] = candidatesFor(role, facts, ctx);
-  return out;
+  return withoutSuppressed(out, resolveSegments(facts, out));
 }
 
 function contextFor(facts: LineFacts[], generic: boolean, personal: boolean): Ctx {
@@ -890,6 +1403,42 @@ const CONTESTED_MARGIN = 0.1;
 const ALTERNATIVE_SHARE = 0.4;
 const MAX_ALTERNATIVES = 3;
 
+/**
+ * A company name recovered from whichever domain the card points at.
+ *
+ * The email's domain first — it names an employer — and the website's host
+ * second, because a card can print an address and no email at all.
+ *
+ * ⚠️ Silent when the domain is the PERSON'S OWN NAME. A sole practitioner's
+ * site is `nikiforova.at`, and "Nikiforova" offered as the firm she works for
+ * is the same mistake `company` already refuses to make (see the `personShape`
+ * penalty there) — made again, in a field that exists to be accepted with one
+ * tap.
+ */
+function suggestCompany(
+  /** The line the parse settled on as the person's name — nothing else. */
+  named: LineFacts | undefined,
+  kind: CardKind,
+  domain?: string,
+  website?: string,
+): string | undefined {
+  const host = domain ?? websiteHost(website);
+  if (!host) return undefined;
+  /*
+    ⚠️ Asked of the NAME the parse actually chose, not of every person-shaped
+    line on the card. "Stadtamt Gmunden" is two capitalised words and therefore
+    person-shaped to the same test a person's name passes — asking the question
+    of all of them withheld the suggestion on the very card it was built for.
+
+    And asked of the HOST rather than of `domainMatch`, which is derived from
+    the email alone: a card can carry a website and no address at all, and that
+    is exactly the card a sole practitioner hands over.
+  */
+  const label = domainWord(host);
+  if (kind === 'PERSON' && label && label.length >= 3 && named?.squashed.includes(label)) return undefined;
+  return companyNameFromDomain(host);
+}
+
 export function parseBusinessCard(raw: CardLine[]): ParsedCard {
   /*
     ⚠️ Nothing in here may throw. It is handed whatever a camera and a text
@@ -900,6 +1449,17 @@ export function parseBusinessCard(raw: CardLine[]): ParsedCard {
   let lines: string[] = [];
   try {
     const { facts, generic, personal, domain, columns } = measure(raw);
+    /*
+      ⚠️ EVERY fact, the glued line AND its pieces, whichever of them the
+      resolver went on to suppress.
+
+      `lines` is what the review screen offers under "Pick a different line",
+      and it is the only way back from a wrong answer. A line the parse decided
+      against is exactly the line somebody may want: dropping the pieces hides
+      "Liegenschaftsverwaltung" on a card that printed it, and dropping the
+      whole line hides "TEC | Anlagenbau GmbH" from the one person who knows
+      that is the firm's real name. Nothing the card said stops being pickable.
+    */
     lines = facts.map((f) => f.text);
     const kind = kindFromFacts(facts, generic, personal);
     const ctx = contextFor(facts, generic, personal);
@@ -907,12 +1467,21 @@ export function parseBusinessCard(raw: CardLine[]): ParsedCard {
     const fields: Partial<Record<CardRole, CardField>> = {};
 
     // Every (line, role) pair that clears its floor, best first.
-    const perRole = {} as Record<CardRole, CardCandidate[]>;
+    const scored = {} as Record<CardRole, CardCandidate[]>;
+    for (const role of ROLE_ORDER) scored[role] = candidatesFor(role, facts, ctx);
+    /*
+      ⚠️ BEFORE anything is assigned. A line and its pieces are rivals for the
+      same fact, and letting both into the auction gives one card two companies
+      — the glued line winning `company` while its own half wins nothing, or
+      worse, an address block printing the street once as a line and again as a
+      piece. Decided here, once, and from the scores, which is the only place
+      the evidence exists.
+    */
+    const perRole = withoutSuppressed(scored, resolveSegments(facts, scored));
+
     const pairs: { role: CardRole; i: number; score: number }[] = [];
     for (const role of ROLE_ORDER) {
-      const found = candidatesFor(role, facts, ctx);
-      perRole[role] = found;
-      for (const c of found) pairs.push({ role, i: c.sourceIndex, score: c.score });
+      for (const c of perRole[role]!) pairs.push({ role, i: c.sourceIndex, score: c.score });
     }
     /*
       ⚠️ THE FIX FOR "whichever rule ran first owns the line".
@@ -964,7 +1533,37 @@ export function parseBusinessCard(raw: CardLine[]): ParsedCard {
       for (const j of also) claimed.add(j);
     }
 
-    return { lines, kind, columns, companyDomain: domain, ...fields };
+    /*
+      EVERY number the card printed, in reading order, deduped by its digits —
+      a card that prints the switchboard twice is one number, and the two
+      spellings of it are not a choice worth offering.
+    */
+    const phones: CardPhone[] = [];
+    const seen = new Set<string>();
+    for (const f of facts) {
+      if (f.suppressed) continue;
+      for (const p of f.phones) {
+        const key = p.value.replace(/\D/g, '');
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        phones.push({ ...p, sourceIndex: f.i });
+      }
+    }
+
+    return {
+      lines,
+      kind,
+      columns,
+      companyDomain: domain,
+      companySuggestion: suggestCompany(
+        fields.name ? facts[fields.name.sourceIndex] : undefined,
+        kind.kind,
+        domain,
+        fields.website?.value,
+      ),
+      ...(phones.length ? { phones } : {}),
+      ...fields,
+    };
   } catch {
     return { lines, kind: { kind: 'PERSON', confidence: 0, reasons: ['default-person'] }, columns: 1 };
   }

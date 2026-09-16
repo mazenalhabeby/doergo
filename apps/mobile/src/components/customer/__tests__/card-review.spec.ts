@@ -3,6 +3,7 @@ import {
   cardCertainty,
   cardClientExtras,
   cardClientNames,
+  cardContactInput,
   cardFieldsFor,
   cardValues,
   duplicateSearchTerm,
@@ -95,6 +96,7 @@ describe('a field is offered only if saving keeps it', () => {
     ['COMPANY', 'client'],
     ['PERSON', 'client'],
     ['PERSON', 'contact'],
+    ['PERSON', 'newCompany'],
   ] as const)('accounts for every field on %s/%s', (kind, destination) => {
     const all = values(Object.fromEntries(CARD_FIELDS.map((k) => [k, 'x'])) as Partial<CardValues>);
     const shown = cardFieldsFor(kind, destination);
@@ -121,6 +123,24 @@ describe('a field is offered only if saving keeps it', () => {
       .toEqual({ address: 'Wien', website: 'x.com', vatId: 'ATU1' });
   });
 
+  /*
+    ⚠️ CREATING the company is the one destination that loses nothing, and that
+    is the argument for having it. The other two each throw something away: a
+    person filed in their own right has no home for the firm, its website or its
+    VAT number, and a contact at a company already in the book has no home for
+    the firm's address. Both roads end with the member reading "also read, but
+    with nowhere to go here".
+  */
+  it('keeps everything the card gave when the company is created from it', () => {
+    const all = values(Object.fromEntries(CARD_FIELDS.map((k) => [k, 'x'])) as Partial<CardValues>);
+    expect(homelessFields('PERSON', 'newCompany', all)).toEqual([]);
+    // Including the department, which is the person's role at the new firm.
+    expect(cardFieldsFor('PERSON', 'newCompany')).toEqual(expect.arrayContaining(['company', 'title']));
+    // And it is the ONLY person road that keeps them.
+    expect(homelessFields('PERSON', 'client', all).length).toBeGreaterThan(0);
+    expect(homelessFields('PERSON', 'contact', all).length).toBeGreaterThan(0);
+  });
+
   it('says nothing about a field the reader did not find', () => {
     // Absent is not homeless. Only what was actually read and cannot be kept.
     expect(homelessFields('PERSON', 'client', values({ name: 'Anna' }))).toEqual([]);
@@ -144,6 +164,42 @@ describe('which record the card becomes', () => {
   it('never puts a person under a contact name on their own card', () => {
     expect(cardClientNames('PERSON', values({ company: 'Siemens AG', name: 'Anna Gruber' })))
       .toEqual({ name: 'Anna Gruber', contactName: '' });
+  });
+
+  /*
+    ⚠️ The split that matters when a company is CREATED from the card and the
+    person hung off it: what belongs to the person must not land on the firm.
+    `jasmin.walther@…` written onto the Stadtamt's record makes one person's
+    inbox the organisation's address, and the next member to email that client
+    writes to her by accident.
+  */
+  it('gives the person their own email and direct line, and the firm neither', () => {
+    const read = values({
+      company: 'Stadtamt Gmunden',
+      name: 'Jasmin Walther',
+      title: 'Liegenschaftsverwaltung',
+      email: 'jasmin.walther@gmunden.ooe.gv.at',
+      phone: '+43 676 88 794 243',
+      address: 'Rathausplatz 1, 4810 Gmunden',
+      website: 'gmunden.at',
+    });
+    expect(cardContactInput(read)).toEqual({
+      person: {
+        name: 'Jasmin Walther',
+        email: 'jasmin.walther@gmunden.ooe.gv.at',
+        phone: '+43 676 88 794 243',
+      },
+      // The department is the person's role at the firm — its one home.
+      role: 'Liegenschaftsverwaltung',
+    });
+    // What the firm takes: its address and its website, and nothing personal.
+    expect(cardClientExtras('COMPANY', read))
+      .toEqual({ address: 'Rathausplatz 1, 4810 Gmunden', website: 'gmunden.at' });
+  });
+
+  it('omits what the card did not carry rather than sending empty strings', () => {
+    expect(cardContactInput(values({ name: '  Anna Gruber  ' })))
+      .toEqual({ person: { name: 'Anna Gruber', email: undefined, phone: undefined } });
   });
 });
 

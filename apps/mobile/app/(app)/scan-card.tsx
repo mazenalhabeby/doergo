@@ -92,6 +92,27 @@ const EMPTY_VALUES: CardValues = {
   company: '', name: '', title: '', email: '', phone: '', website: '', address: '', vat: '',
 };
 
+/** What the button says it will do. Three destinations, three different saves. */
+const SAVE_LABEL: Record<CardDestination, string> = {
+  client: 'customers.save',
+  contact: 'scan.saveContact',
+  newCompany: 'scan.saveNewCompany',
+};
+
+/**
+ * WHY Save is grey — one sentence naming the field that is still empty.
+ *
+ * ⚠️ "Create this company" has TWO requirements (the firm and the person), so a
+ * single message would be wrong half the time. A disabled button that explains
+ * the wrong thing is worse than one that explains nothing: the member fixes the
+ * field it named, nothing changes, and the screen looks broken.
+ */
+function reasonSaveIsGrey(destination: CardDestination, hasCompany: boolean, values: CardValues): string {
+  if (destination === 'contact' && !hasCompany) return 'scan.needCompany';
+  if (destination === 'newCompany' && !values.company.trim()) return 'scan.needCompanyName';
+  return 'scan.needName';
+}
+
 export default function ScanCardScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -291,7 +312,18 @@ export default function ScanCardScreen() {
   const chooseDestination = useCallback((next: CardDestination, chosen: MobileCustomer | null) => {
     setDestination(next);
     setCompany(chosen);
-  }, []);
+    /*
+      ⚠️ CREATING the company is the one exit that needs a name to exist before
+      the member can even see what they are agreeing to, and on the card this
+      was built for the firm's name is a hand-drawn logo no reader can touch. So
+      the domain's answer is seeded HERE, into an ordinary editable row, the
+      moment the exit is chosen — and only when nothing was read, so it can
+      never overwrite what the card actually printed.
+    */
+    if (next === 'newCompany') {
+      setValues((p) => (p.company.trim() ? p : { ...p, company: card?.companySuggestion ?? '' }));
+    }
+  }, [card]);
 
   /*
     ⚠️ Changing the kind RESETS where the person was going.
@@ -319,9 +351,23 @@ export default function ScanCardScreen() {
     fallback each needs. What is decided here is only whether to save at all.
   */
 
-  /** The name the record will carry — what a duplicate would be a duplicate OF. */
-  const savedName = destination === 'contact' ? values.name.trim() : cardClientNames(kind, values).name;
-  const ready = !!savedName && !(destination === 'contact' && !company);
+  /*
+    The name the record will carry — what a duplicate would be a duplicate OF.
+
+    ⚠️ On the "create the company" road that is the COMPANY'S name, not the
+    person's. A second "BILLA AG" beside the "BILLA" already in the book is the
+    damage this whole destination was refused over for so long, and checking the
+    person's name there would look like a duplicate check while guarding
+    precisely the wrong record.
+  */
+  const savedName =
+    destination === 'newCompany' ? values.company.trim()
+    : destination === 'contact' ? values.name.trim()
+    : cardClientNames(kind, values).name;
+  const ready =
+    !!savedName &&
+    !(destination === 'contact' && !company) &&
+    !(destination === 'newCompany' && !values.name.trim());
 
   const commit = useCallback(async () => {
     setSaving(true);
@@ -375,6 +421,19 @@ export default function ScanCardScreen() {
     // come back to.
     router.replace(`/(app)/customer/${client.id}`);
   }, [duplicate]);
+
+  /*
+    ⚠️ The company they were about to create is already here — so take it,
+    WITHOUT leaving the review. The person, their direct line and their
+    department are all still unsaved on this screen; navigating away to the
+    company record would throw the scan out to show something the member never
+    asked to visit. This turns the warning into the one action that keeps
+    everything: file them at the firm that already exists.
+  */
+  const useExistingCompany = useCallback((client: MobileCustomer) => {
+    duplicate.dismiss();
+    chooseDestination('contact', client);
+  }, [duplicate, chooseDestination]);
 
   // ── Allowed to add a client at all? ───────────────────────────────────────
   if (!canAdd) {
@@ -501,6 +560,7 @@ export default function ScanCardScreen() {
           {kind === 'PERSON' && (
             <CardDestinationPicker
               companyGuess={values.company}
+              companySuggestion={card.companySuggestion}
               destination={destination}
               company={company}
               onChange={chooseDestination}
@@ -531,13 +591,13 @@ export default function ScanCardScreen() {
             accessibilityState={{ disabled: saving || !ready, busy: saving }}
           >
             {saving ? <ActivityIndicator size="small" color={COLORS.white} />
-                    : <Text style={s.primaryText}>{t(destination === 'contact' ? 'scan.saveContact' : 'customers.save')}</Text>}
+                    : <Text style={s.primaryText}>{t(SAVE_LABEL[destination])}</Text>}
           </TouchableOpacity>
           {/* The reason Save is still grey, rather than a button that does
               nothing when pressed. */}
           {!ready && (
             <Text style={[s.why, { color: colors.textMuted, textAlign: 'center' }]}>
-              {t(destination === 'contact' && !company ? 'scan.needCompany' : 'scan.needName')}
+              {t(reasonSaveIsGrey(destination, !!company, values))}
             </Text>
           )}
           <TouchableOpacity style={s.ghost} onPress={() => setCard(null)}>
@@ -549,6 +609,10 @@ export default function ScanCardScreen() {
           matches={duplicate.matches}
           saving={saving}
           onOpen={openExisting}
+          // Only when a NEW COMPANY is what would be created: everywhere else
+          // the member is making a client, and opening the one that exists is
+          // what they wanted.
+          onUse={destination === 'newCompany' ? useExistingCompany : undefined}
           onSaveAnyway={saveAnyway}
           onClose={duplicate.dismiss}
         />
