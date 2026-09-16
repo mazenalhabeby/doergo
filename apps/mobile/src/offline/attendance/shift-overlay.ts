@@ -104,8 +104,3 @@ export function overlayShift(
   }
   return { status: status as ShiftView['status'], breaks, pendingSync };
 }
-
-/** The open clock-in (or break start) an operation must wait for, if it has not been accepted yet. */
-export function openOpFor(ops: readonly OutboxOp[], op: OutboxOp['op'], match: (body: Body) => boolean): OutboxOp | undefined {
-  return ops.find((o) => o.op === op && STILL_MINE.has(o.state) && match((o.payload.body ?? {}) as Body));
-}

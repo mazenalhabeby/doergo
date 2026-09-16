@@ -16,6 +16,8 @@ import { CLIENT_LOCALE_OPTIONS, clientLocaleFormValue, clientLocalePayload } fro
 import { useTheme } from '../../contexts/theme-context';
 import { COLORS, SPACING, FONT_SIZE, type ThemeColors } from '../../lib/constants';
 import { customersApi, locationsApi, type MobileCustomer } from '../../lib/api';
+import { useQueuedWrite } from '../../offline/actions/queued-write';
+import { changedFields, updateClientFromPhone } from '../../offline/crm/client-actions';
 
 /**
  * Editing a client, on the phone, for the first time.
@@ -94,12 +96,20 @@ export function ClientEditSheet({
   visible: boolean;
   customer: MobileCustomer;
   onClose: () => void;
-  /** The saved record, so the screen can adopt it without re-reading. */
-  onSaved: (saved: MobileCustomer) => void;
+  /**
+   * WHAT CHANGED, and whether it is still waiting to be sent.
+   *
+   * ⚠️ Not "the saved record": with the change possibly sitting in the outbox
+   * there is no saved record to hand back, and the screen is already showing it
+   * from there. The fields are what the server will hold once it lands, which
+   * is all the caller needs to keep its own copy in step.
+   */
+  onSaved: (patch: Partial<MobileCustomer>, queued: boolean) => void;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const s = useMemo(() => styles(colors), [colors]);
+  const write = useQueuedWrite();
   const [form, setForm] = useState<ClientEditForm>(() => formFromCustomer(customer));
   const [spaces, setSpaces] = useState<{ id: string; name: string }[]>([]);
   const [saving, setSaving] = useState(false);
@@ -142,11 +152,23 @@ export function ClientEditSheet({
 
   const save = async () => {
     if (!form.name.trim() || saving) return;
+    const patch = changedFields(customer, payloadFromForm(form));
+    // Nothing to say to the server. Closing IS the answer — a request that
+    // restates the record unchanged would still overwrite whatever the office
+    // did to it meanwhile.
+    if (Object.keys(patch).length === 0) { onClose(); return; }
     setSaving(true);
     setError(null);
     try {
-      const saved = await customersApi.update(customer.id, payloadFromForm(form));
-      onSaved(saved);
+      const outcome = await write.run(
+        (e) => updateClientFromPhone(e, { customerId: customer.id, patch: patch as Record<string, unknown> }),
+        () => customersApi.update(customer.id, patch),
+      );
+      if (outcome.kind === 'refused') {
+        setError(outcome.message || t('customers.form.saveFailed'));
+        return;
+      }
+      onSaved(patch, outcome.kind === 'queued');
       onClose();
     } catch (e: unknown) {
       // Shown IN the sheet, not as a toast behind it: the typing is still here

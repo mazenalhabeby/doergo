@@ -77,6 +77,15 @@ type Listener = (snapshot: SyncSnapshot, ops: readonly OutboxOp[]) => void;
 const DONE_RETENTION_MS = 24 * 60 * 60 * 1000;
 
 /**
+ * Failures in which the request never completed — see `cancelPending`.
+ *
+ * `NETWORK` is what `applyPushFailure` records when the transport itself threw
+ * or answered with no status; `UNREACHABLE` is the same thing said by the
+ * server-side replay when it could not reach a route.
+ */
+const NEVER_REACHED_SERVER: ReadonlySet<string> = new Set(['NETWORK', 'UNREACHABLE']);
+
+/**
  * The only part of the app that talks to the network on the offline path.
  *
  * Screens enqueue; the engine decides when to send. One flush at a time; a
@@ -367,6 +376,39 @@ export class SyncEngine {
     await this.deps.store.save([discarded]);
     await this.release([discarded]);
     await this.refreshCache();
+  }
+
+  /**
+   * Call an operation back before the server has ever answered it.
+   *
+   * The opposite of `discard`, which answers an operation the SERVER has
+   * already refused. This one is the member changing their mind: a contact
+   * attached in a basement and removed again a minute later was never an
+   * attachment at all, and asking the server to delete something it has never
+   * heard of is not an honest way to say so.
+   *
+   * ⚠️ NEVER ANSWERED is the safety argument, and `attempts === 0` is NOT the
+   * test for it — offline, the first flush fails at the transport and every
+   * queued operation is on its second attempt within a second of being made.
+   * What matters is whether a REQUEST COMPLETED: a network failure means the
+   * phone never spoke to the server, while an HTTP answer of any kind means it
+   * did and the operation stays.
+   *
+   * ⚠️ The residual case is a request that arrived and whose ANSWER was lost.
+   * It is left to correct itself rather than guessed at: the operation this
+   * exists for is an upsert on the server, so nothing is duplicated, and the
+   * link simply reappears the next time the panel is read — which is the truth.
+   * Refusing every cancellation to cover it would refuse the ordinary one too.
+   */
+  async cancelPending(id: string): Promise<boolean> {
+    const op = await this.deps.store.get(id);
+    if (!op || (op.state !== 'pending' && op.state !== 'retry')) return false;
+    if (op.attempts > 0 && !NEVER_REACHED_SERVER.has(op.lastError?.code ?? '')) return false;
+    const cancelled: OutboxOp = { ...op, state: 'discarded', updatedAt: this.now() };
+    await this.deps.store.save([cancelled]);
+    await this.release([cancelled]);
+    await this.refreshCache();
+    return true;
   }
 
   /** Try a failed operation again (e.g. after the member fixed what was wrong). */

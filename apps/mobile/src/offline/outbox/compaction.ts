@@ -1,19 +1,44 @@
 import type { OutboxOp } from './types';
 
 /**
+ * Operations that are a pure "set this value on that record", and can therefore
+ * be merged with a later one about the same record.
+ *
+ * ⚠️ AN ALLOW-LIST, and the test of membership is narrow: replaying only the
+ * MERGED one must leave the record exactly where replaying all of them would.
+ * That is true of a profile field, a client's details and a reminder's tick; it
+ * is not true of a clock-in, a status change, a note or a photo, each of which
+ * is evidence of something that happened, at a time. When in doubt, leave it
+ * out — an extra request costs a moment of radio, a wrongly merged one costs
+ * the record.
+ */
+const SET_OPERATIONS: ReadonlySet<OutboxOp['op']> = new Set([
+  'profile.update',
+  // Stage, language, the whole edit form — one PATCH, so four stages tapped in
+  // a basement are one request. See crm/client-actions.ts.
+  'customer.update',
+  // Ticked, un-ticked and ticked again is one state.
+  'customer.activityUpdate',
+]);
+
+/**
+ * WHICH RECORD an operation is about — what two of them must share to be merged.
+ *
+ * The lane alone is not enough: every reminder on one client shares the client's
+ * lane, and merging two of them would tick the wrong one off.
+ */
+const target = (o: OutboxOp) => `${o.op}|${o.lane}|${JSON.stringify(o.payload.params ?? {})}`;
+
+/**
  * Changes that cancel each other out before they were ever sent.
  *
- * An ALLOW-LIST, deliberately short: only changes that are pure "set this
- * value". Clock-ins, status changes, notes and photos are never touched — each
- * is evidence of something that happened, at a time.
- *
- *  - profile.update, repeated: the NEWEST one carries the latest value of every
+ *  - a SET operation, repeated: the NEWEST one carries the latest value of every
  *    field and the older ones go (Busy → Away → Busy sends one request, not
  *    three). Safe even if an older one reached the server on a lost answer: the
- *    survivor restates every field, so the end state is the same. The survivor
- *    itself must never have been attempted — its body changes, and an attempted
- *    body resent under the same Idempotency-Key is refused as a different
- *    request.
+ *    survivor restates every field any of them set, so the end state is the
+ *    same. The survivor itself must never have been attempted — its body
+ *    changes, and an attempted body resent under the same Idempotency-Key is
+ *    refused as a different request.
  *  - timeOff.request then timeOff.cancel of it, neither ever attempted: nothing
  *    at all. Once the request has been attempted it may be at the office, so
  *    both go, in order.
@@ -28,13 +53,14 @@ export function compact(ops: readonly OutboxOp[], now: number): OutboxOp[] {
   const changed = new Map<string, OutboxOp>();
   const discard = (o: OutboxOp) => changed.set(o.id, { ...o, state: 'discarded', updatedAt: now });
 
-  // Repeated profile changes, per member lane, oldest first.
-  const byLane = new Map<string, OutboxOp[]>();
+  // Repeated changes to one record, oldest first.
+  const byTarget = new Map<string, OutboxOp[]>();
   for (const o of ops) {
-    if (o.op !== 'profile.update' || !waiting(o)) continue;
-    byLane.set(o.lane, [...(byLane.get(o.lane) ?? []), o]);
+    if (!SET_OPERATIONS.has(o.op) || !waiting(o)) continue;
+    const key = target(o);
+    byTarget.set(key, [...(byTarget.get(key) ?? []), o]);
   }
-  for (const group of byLane.values()) {
+  for (const group of byTarget.values()) {
     if (group.length < 2) continue;
     group.sort((a, b) => a.createdAt - b.createdAt);
     const last = group[group.length - 1]!;

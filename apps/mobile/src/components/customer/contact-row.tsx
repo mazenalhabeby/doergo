@@ -35,11 +35,20 @@ export interface ContactRowProps {
   onRemove?: (link: MobileCustomerContact) => void;
   /** Screen-reader labels; the icons say nothing to one. */
   labels: { primary: string; makePrimary: string; remove: string; call: string; email: string };
+  /**
+   * The words for "not sent yet", when this row exists only in the outbox.
+   *
+   * ⚠️ Such a row is NOT tappable, and that is the honest answer rather than a
+   * missing convenience: a person being created along with the link has no
+   * record to open, and the link itself has no id until the server mints one.
+   * Localised by the caller — this component writes no words.
+   */
+  waiting?: string;
   /** While this specific row has work in flight. */
   busy?: boolean;
 }
 
-function ContactRowBase({ link, side, onOpen, onTogglePrimary, onRemove, labels, busy }: ContactRowProps) {
+function ContactRowBase({ link, side, onOpen, onTogglePrimary, onRemove, labels, waiting, busy }: ContactRowProps) {
   const { colors } = useTheme();
   const s = useMemo(() => styles(colors), [colors]);
 
@@ -58,9 +67,9 @@ function ContactRowBase({ link, side, onOpen, onTogglePrimary, onRemove, labels,
     <View style={[s.row, busy && { opacity: 0.5 }]}>
       <PressableScale
         onPress={() => onOpen(end.id)}
-        disabled={busy}
-        accessibilityRole="button"
-        accessibilityLabel={end.name}
+        disabled={busy || !!waiting}
+        accessibilityRole={waiting ? 'text' : 'button'}
+        accessibilityLabel={waiting ? `${end.name} — ${waiting}` : end.name}
         style={s.main}
       >
         <View style={s.nameLine}>
@@ -69,7 +78,14 @@ function ContactRowBase({ link, side, onOpen, onTogglePrimary, onRemove, labels,
             <Ionicons name="star" size={13} color={COLORS.amber} accessibilityLabel={labels.primary} />
           )}
         </View>
-        {!!link.role && <Text style={s.role} numberOfLines={1}>{link.role}</Text>}
+        {/* One line under the name, where the role would be: a row says either
+            what this person does here or that it has not been sent yet, and
+            both at once on a phone is noise. */}
+        {waiting ? (
+          <Text style={s.waiting} numberOfLines={1}>{waiting}</Text>
+        ) : (
+          !!link.role && <Text style={s.role} numberOfLines={1}>{link.role}</Text>
+        )}
       </PressableScale>
 
       <View style={s.actions}>
@@ -147,6 +163,7 @@ const styles = (c: ThemeColors) =>
       flexShrink: 1,
     },
     role: { fontSize: FONT_SIZE.sm, color: c.textMuted, marginTop: 2 },
+    waiting: { fontSize: FONT_SIZE.sm, color: COLORS.amber, marginTop: 2 },
     actions: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
     iconBtn: {
       width: 30,

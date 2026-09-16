@@ -1902,6 +1902,8 @@
       "contactFailed": "Der Ansprechpartner konnte nicht geändert werden",
       "removeContact": "Ansprechpartner entfernen",
       "removeContactBody": "{{name}} ist dann nicht mehr mit diesem Kunden verknüpft. Der eigene Datensatz bleibt erhalten.",
+      "removeContactPendingBody": "{{name}} wurde noch nicht gesendet. Ein Entfernen hier bricht den Vorgang ab — im Büro kommt nichts an.",
+      "contactSending": "Dieser Kontakt ist bereits unterwegs. Entfernen Sie ihn, sobald er angekommen ist.",
       "removeContactConfirm": "Entfernen",
       "primary": "Hauptkontakt",
       "makePrimary": "Als Hauptkontakt festlegen",
@@ -1915,6 +1917,7 @@
       "justNow": "gerade eben",
       "reminderDone": "Erledigt",
       "reminderDue": "Fällig am {{date}}",
+      "reminderFailed": "Erinnerung konnte nicht geändert werden",
       "composer": {
         "note": "Notiz",
         "reminder": "Erinnerung",

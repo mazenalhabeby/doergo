@@ -61,6 +61,30 @@ export const SYNC_OPERATIONS = {
   // Clients (sales reps)
   'customer.create': { method: 'POST', path: '/customers' },
   'customer.activity': { method: 'POST', path: '/customers/:customerId/activities' },
+  /*
+    Changing a client that already exists — its stage, its language, the whole
+    edit form. One route for all three, because they are one PATCH; which fields
+    travel is the screen's business.
+
+    No id mapping is needed for any of these. `create_customer` honours the
+    phone's own id (CLIENT_ID in customers.service), so a client written in a
+    basement ALREADY HAS ITS FINAL ID — a stage change on it is addressed
+    normally and only has to arrive after the create, which `dependsOn` does.
+  */
+  'customer.update': { method: 'PATCH', path: '/customers/:customerId' },
+  'customer.contactAdd': { method: 'POST', path: '/customers/:companyId/contacts' },
+  /*
+    ⚠️ These two address a LINK ID THE SERVER MINTS — unlike a customer id, the
+    phone cannot know it, and `addContact` accepts no client-supplied one. So
+    they are queueable only against a link that already exists; a contact added
+    while offline offers neither until its add has landed (the phone cancels the
+    queued add instead of detaching a row the server has never heard of). See
+    `crm/client-actions.ts` on the phone.
+  */
+  'customer.contactUpdate': { method: 'PATCH', path: '/customers/contacts/:linkId' },
+  'customer.contactRemove': { method: 'DELETE', path: '/customers/contacts/:linkId' },
+  /** Ticking a reminder off — and back on. */
+  'customer.activityUpdate': { method: 'PATCH', path: '/customers/:customerId/activities/:activityId' },
   'support.message': { method: 'POST', path: '/support/tickets/:ticketId/messages' },
 } as const satisfies Record<string, SyncOperationRoute>;
 

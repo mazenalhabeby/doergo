@@ -25,6 +25,24 @@ import {
 import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS, ROUTES, type ThemeColors } from '../../../src/lib/constants';
 import { useQueuedCreate } from '../../../src/offline/actions/queued-create';
+import { useQueuedWrite } from '../../../src/offline/actions/queued-write';
+import { useSyncStatus } from '../../../src/offline/offline-context';
+import {
+  clientLane,
+  dependsOnClients,
+  updateClientFromPhone,
+  updateContactFromPhone,
+  removeContactFromPhone,
+  discardPendingContact,
+  setActivityDoneFromPhone,
+} from '../../../src/offline/crm/client-actions';
+import {
+  applyPendingClient,
+  applyPendingContacts,
+  pendingActivityDone,
+  pendingContactLinks,
+  type PendingContactLink,
+} from '../../../src/offline/crm/client-overlay';
 import { CLIENT_LOCALE_OPTIONS, canEditClientLocale, clientLocaleFormValue, clientLocaleName, clientLocalePayload } from '../../../src/lib/client-locale';
 import { useToast } from '../../../src/contexts/toast-context';
 import { RecordCard, CardAction, RecordRow } from '../../../src/components/customer/record-card';
@@ -84,6 +102,16 @@ const FILTERS = [
 ] as const;
 type ActivityFilter = (typeof FILTERS)[number]['key'];
 
+/**
+ * A contact row that exists only in the outbox.
+ *
+ * It carries the OPERATION's id rather than a link id, because there is no link
+ * until the server mints one — which is what decides both what "remove" means
+ * on it and whether the primary star is offered at all.
+ */
+const isWaiting = (link: MobileCustomerContact | PendingContactLink): link is PendingContactLink =>
+  (link as PendingContactLink).waiting === true;
+
 const isOverdue = (a: MobileCustomerActivity, now: number) =>
   a.type === 'REMINDER' && !!a.dueAt && !a.doneAt && new Date(a.dueAt).getTime() < now;
 
@@ -122,7 +150,8 @@ export default function CustomerRecordScreen() {
   */
   const [adding, setAdding] = useState<ContactSide | null>(null);
   const [busyLink, setBusyLink] = useState<string | null>(null);
-  const [removing, setRemoving] = useState<MobileCustomerContact | null>(null);
+  // `opId` is present only on a row that has never been sent — see confirmRemove.
+  const [removing, setRemoving] = useState<(MobileCustomerContact & { opId?: string }) | null>(null);
   const [filter, setFilter] = useState<ActivityFilter>('all');
   const [showDone, setShowDone] = useState(false);
 
@@ -168,6 +197,20 @@ export default function CustomerRecordScreen() {
     { onAccepted: () => void loadRef.current?.() },
   );
 
+  /*
+    EVERY write on this screen goes through the outbox.
+
+    `write.run` takes the queued action and the API call the screen always made,
+    and picks between them: a store binary without the offline layer has no
+    engine and still reaches the server. `operations` is what the queued changes
+    are READ back from — a queued change is a fact in the outbox, not state in
+    this component, so it survives walking to another screen and back, and it
+    rolls itself back when the server refuses (the refusal discards the
+    operation, and the overlay it fed stops existing).
+  */
+  const write = useQueuedWrite();
+  const { operations } = useSyncStatus();
+
   /**
    * The timeline on its own.
    *
@@ -192,6 +235,19 @@ export default function CustomerRecordScreen() {
    */
   const refreshCompanies = useCallback(async () => {
     try { setCompanies(await customersApi.companies(id)); } catch { /* the panel simply lags */ }
+  }, [id]);
+
+  /**
+   * The "Contact people" list on its own — same reasoning as the two above.
+   *
+   * ⚠️ Read back rather than appended from the answer. A contact may now be
+   * attached through the outbox, where "the answer" is a push result rather
+   * than the route's own response, and a screen that adopted whichever shape
+   * came back would disagree with itself depending on the signal. One request,
+   * on an action a member takes rarely.
+   */
+  const refreshContacts = useCallback(async () => {
+    try { setContacts(await customersApi.contacts(id)); } catch { /* the panel simply lags */ }
   }, [id]);
 
   /**
@@ -242,6 +298,20 @@ export default function CustomerRecordScreen() {
     setRefreshing(false);
   }, [load]);
 
+  /*
+    THE RECORD AS THE MEMBER LAST LEFT IT — the server's copy plus whatever is
+    still in the outbox for it.
+
+    ⚠️ `applyPendingClient` hands back the very object it was given when nothing
+    is waiting, so the common case costs nothing and every memo below it keeps
+    its identity. `operations` moves whenever anything anywhere in the outbox
+    does (somebody starts a rest break), and this screen sits above two
+    memoised lists.
+  */
+  const record = useMemo(() => (customer ? applyPendingClient(customer, operations) : null), [customer, operations]);
+
+  const doneOffline = useMemo(() => pendingActivityDone(operations), [operations]);
+
   const shownActivities = useMemo<PendingActivity[]>(() => {
     const known = new Set(activities.map((a) => a.id));
     const onPhone = activityCreate.pending
@@ -261,8 +331,39 @@ export default function CustomerRecordScreen() {
         createdAt: new Date(p.createdAt).toISOString(),
         pendingSync: true,
       }) as unknown as PendingActivity);
-    return [...onPhone, ...activities];
-  }, [activities, activityCreate.pending, id]);
+    const all = [...onPhone, ...activities];
+    /*
+      A reminder ticked off with no signal reads as ticked off, here and on
+      every count derived from this list. Rows the overlay says nothing about
+      keep their identity, so a tick on one reminder does not re-render two
+      hundred others.
+    */
+    if (!doneOffline.size) return all;
+    return all.map((a) => {
+      const doneAt = doneOffline.get(a.id);
+      return doneAt === undefined || doneAt === (a.doneAt ?? null) ? a : { ...a, doneAt };
+    });
+  }, [activities, activityCreate.pending, doneOffline, id]);
+
+  /*
+    The two contact panels: what the server has, less what is queued to be
+    detached, plus what is queued to be attached.
+
+    ⚠️ A waiting row carries the OPERATION's id, not a link id — there is no
+    link until the server mints one. That is what makes "remove" on such a row
+    mean "cancel the attachment" rather than "delete a link", and why the star
+    is not offered on it: `PATCH /customers/contacts/:linkId` addresses an id
+    the phone cannot know. Adding somebody AS the primary contact is expressible
+    on the attachment itself, so the common case loses nothing.
+  */
+  const shownContacts = useMemo(
+    () => [...applyPendingContacts(contacts, operations), ...pendingContactLinks(operations, id, 'person')],
+    [contacts, operations, id],
+  );
+  const shownCompanies = useMemo(
+    () => [...applyPendingContacts(companies, operations), ...pendingContactLinks(operations, id, 'company')],
+    [companies, operations, id],
+  );
 
   const feed = useMemo(() => {
     const kinds = FILTERS.find((f) => f.key === filter)?.types;
@@ -321,8 +422,8 @@ export default function CustomerRecordScreen() {
     everybody and the tap simply 403'd, which reads as a broken app rather than
     as a missing ability. The value still shows; only the ability is hidden.
   */
-  const canEditInfo = customer?.crmCaps?.editInfo === true;
-  const canWork = customer?.crmCaps?.work === true;
+  const canEditInfo = record?.crmCaps?.editInfo === true;
+  const canWork = record?.crmCaps?.work === true;
 
   /*
     WHO A REMINDER CAN BE POINTED AT — the caller, and only if they manage this
@@ -346,10 +447,10 @@ export default function CustomerRecordScreen() {
     assignee, so the restriction is the client's to keep.
   */
   const assignees = useMemo<ReminderAssignee[]>(() => {
-    const managers = customer?.managerIds ?? [];
+    const managers = record?.managerIds ?? [];
     if (!user?.id || !managers.includes(user.id)) return [];
     return [{ id: user.id, label: t('customers.record.reminderForm.me') }];
-  }, [customer?.managerIds, user?.id, t]);
+  }, [record?.managerIds, user?.id, t]);
 
   /*
     Raise a job for this client.
@@ -362,12 +463,12 @@ export default function CustomerRecordScreen() {
     and clears them, so the tab opened normally afterwards is a blank form.
   */
   const openTask = useCallback(() => {
-    if (!customer?.spaceId) return;
+    if (!record?.spaceId) return;
     router.push({
       pathname: ROUTES.createTask,
-      params: { customerId: customer.id, spaceId: customer.spaceId, customerName: customer.name },
+      params: { customerId: record.id, spaceId: record.spaceId, customerName: record.name },
     } as never);
-  }, [customer?.id, customer?.spaceId, customer?.name]);
+  }, [record?.id, record?.spaceId, record?.name]);
 
   const relTime = useCallback((iso: string) => {
     const secs = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -378,16 +479,31 @@ export default function CustomerRecordScreen() {
     return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }, [t]);
 
+  /*
+    Tick a reminder off, or back on.
+
+    Flipped here AND held by the outbox, deliberately. The local flip is what
+    stops the row blinking back to its old state in the moment between the
+    server accepting and the timeline being re-read; the outbox is what keeps it
+    ticked when there is no signal at all — including on a reminder written
+    minutes ago that the server has never seen, which is why it is offered on a
+    waiting row now (the reminder's create carries the phone's id, and the tick
+    names that create as the step it follows).
+  */
   const toggleDone = useCallback(async (a: MobileCustomerActivity) => {
-    // Flip it here and now; the server's copy arrives with the refresh below.
-    setActivities((list) => list.map((x) => (x.id === a.id ? { ...x, doneAt: a.doneAt ? null : new Date().toISOString() } : x)));
-    try {
-      await customersApi.updateActivity(id, a.id, { done: !a.doneAt });
+    const done = !a.doneAt;
+    setActivities((list) => list.map((x) => (x.id === a.id ? { ...x, doneAt: done ? new Date().toISOString() : null } : x)));
+    const outcome = await write.run(
+      (e) => setActivityDoneFromPhone(e, { customerId: id, activityId: a.id, done }),
+      () => customersApi.updateActivity(id, a.id, { done }),
+    );
+    if (outcome.kind === 'refused') {
+      toast.error((outcome as { message?: string }).message || t('customers.record.reminderFailed'));
       await refreshActivities();
-    } catch {
-      await refreshActivities();
+      return;
     }
-  }, [id, refreshActivities]);
+    if (outcome.kind === 'done') await refreshActivities();
+  }, [id, refreshActivities, write, toast, t]);
 
   /**
    * A reminder's heading ALWAYS says what it is for.
@@ -447,8 +563,7 @@ export default function CustomerRecordScreen() {
         a.author ? a.author.firstName : '',
         a.pendingSync ? t('offline.chip.waiting') : relTime(a.createdAt),
       ].filter(Boolean).join(' · ')}
-      // A queued entry has no server row to mark done yet.
-      onToggleDone={a.pendingSync ? undefined : toggleDone}
+      onToggleDone={toggleDone}
       doneLabel={
         a.type !== 'REMINDER' ? undefined
           : a.doneAt ? t('customers.record.reminderDone')
@@ -483,7 +598,15 @@ export default function CustomerRecordScreen() {
   const addActivity = useCallback(async (input: ComposedActivity): Promise<boolean> => {
     try {
       const outcome = await activityCreate.run(
-        { lane: `crm:${id}`, params: { customerId: id }, body: input },
+        /*
+          ⚠️ It names the client's own create when there is one. The id is
+          already right (`add_customer_activity` honours the phone's, the same
+          way `create_customer` does), but the client sits in the `crm:new`
+          lane and a note sits in this one — different lanes keep no order
+          between them, so without this a note could be pushed at a client the
+          server has not been told about yet.
+        */
+        { lane: clientLane(id), params: { customerId: id }, body: input, dependsOn: dependsOnClients(operations, id) },
         () => customersApi.addActivity(id, input),
       );
       if (outcome.kind === 'refused') return false;
@@ -493,49 +616,56 @@ export default function CustomerRecordScreen() {
       // The outbox reports its own failures; the draft stays so it is not lost.
       return false;
     }
-  }, [activityCreate, id, refreshActivities]);
+  }, [activityCreate, id, operations, refreshActivities]);
 
-  /*
-    Stage, language and reminder-done are optimistic and go DIRECT.
-
-    None of the three is in `SYNC_OPERATIONS`, so there is no queued route to
-    route them through — the outbox only replays operations the allow-list
-    names. With no signal they are lost, exactly as they were before this
-    rewrite; making them durable means adding rows to that list, which is a
-    server-side change and not this screen's to make.
-  */
-  const setStage = async (next: string) => {
-    if (!customer || !canWork || next === customer.status) return;
-    const before = customer.status;
-    setCustomer({ ...customer, status: next });
-    try {
-      await customersApi.update(id, { status: next });
-      await refreshActivities();
-    } catch (e: unknown) {
-      setCustomer((c) => (c ? { ...c, status: before } : c));
-      toast.error((e as { message?: string })?.message || t('customers.record.stageFailed'));
+  /**
+   * ONE way to change this client, whatever moved it — the stage pills, the
+   * language chips, the edit sheet.
+   *
+   * They are one PATCH on the server and one queued operation here, so they
+   * share one function: three copies of "queue it, roll back on a refusal,
+   * commit it on acceptance" is three places for those three cases to drift.
+   *
+   * ⚠️ Nothing is written to `customer` while it is only QUEUED. The record on
+   * screen is `record`, which reads the outbox — so the change survives leaving
+   * the screen, and a refusal takes it away by itself. What IS written here is
+   * the accepted value: once the operation is done its overlay has gone, and
+   * without this the screen would snap back to the value the server gave us
+   * when the record was loaded.
+   */
+  const patchClient = useCallback(async (patch: Partial<MobileCustomer>, failed: string): Promise<boolean> => {
+    const outcome = await write.run(
+      (e) => updateClientFromPhone(e, { customerId: id, patch: patch as Record<string, unknown> }),
+      () => customersApi.update(id, patch),
+    );
+    if (outcome.kind === 'refused') {
+      toast.error(outcome.message || failed);
+      return false;
     }
-  };
+    if (outcome.kind === 'done') setCustomer((c) => (c ? { ...c, ...patch } : c));
+    return true;
+  }, [id, write, toast]);
+
+  const setStage = useCallback(async (next: string) => {
+    if (!record || !canWork || next === (record.status || 'LEAD')) return;
+    // A stage is the member's own reading of where the deal stands, so a replay
+    // overwriting somebody else's later reading is the right answer — it IS the
+    // latest word from the person doing the selling.
+    if (await patchClient({ status: next }, t('customers.record.stageFailed'))) await refreshActivities();
+  }, [record, canWork, patchClient, refreshActivities, t]);
 
   /*
-    Change the client's language for emails. Optimistic like the stage, but a
-    refusal puts the old value back and SAYS so — a language that silently
-    reverted would be discovered when the next invitation arrives in English.
+    Change the client's language for emails. A refusal takes the new value off
+    the record AND says so — a language that silently reverted would be
+    discovered when the next invitation arrives in English.
   */
-  const setLocale = async (value: string) => {
-    if (!customer) return;
-    const before = customer.locale ?? null;
+  const setLocale = useCallback(async (value: string) => {
+    if (!record) return;
     const locale = clientLocalePayload(value);
     setLocaleOpen(false);
-    if (locale === before) return;
-    setCustomer({ ...customer, locale });
-    try {
-      await customersApi.update(id, { locale });
-    } catch (e: unknown) {
-      setCustomer((c) => (c ? { ...c, locale: before } : c));
-      toast.error((e as { message?: string })?.message || t('customers.localeFailed'));
-    }
-  };
+    if (locale === (record.locale ?? null)) return;
+    await patchClient({ locale }, t('customers.localeFailed'));
+  }, [record, patchClient, t]);
 
   const openRecord = useCallback((customerId: string) => {
     // `push`, not `replace`: walking from a company to a contact and back is
@@ -543,34 +673,69 @@ export default function CustomerRecordScreen() {
     router.push(`/(app)/customer/${customerId}` as never);
   }, []);
 
+  /*
+    Only offered on a link the server has minted — see `pendingContactLinks`.
+    Which is why `companyId` is this record: the star appears on the "Contact
+    people" card only, where this record IS the company.
+  */
   const makePrimary = useCallback(async (link: MobileCustomerContact) => {
     setBusyLink(link.id);
-    try {
-      await customersApi.updateContact(link.id, { isPrimary: true });
-      // Only one primary per company, so the others must drop locally too —
-      // the server enforces it and a refetch would agree, at the cost of a
-      // round trip the person is watching.
-      setContacts((list) => list.map((x) => ({ ...x, isPrimary: x.id === link.id })));
-    } catch (e: unknown) {
-      toast.error((e as { message?: string })?.message || t('customers.record.contactFailed'));
-    } finally { setBusyLink(null); }
-  }, [t, toast]);
+    const outcome = await write.run(
+      (e) => updateContactFromPhone(e, { linkId: link.id, companyId: id, isPrimary: true }),
+      () => customersApi.updateContact(link.id, { isPrimary: true }),
+    );
+    setBusyLink(null);
+    if (outcome.kind === 'refused') {
+      toast.error(outcome.message || t('customers.record.contactFailed'));
+      return;
+    }
+    // Only one primary per company, so the others must drop locally too — the
+    // server enforces it and a refetch would agree, at the cost of a round trip
+    // the person is watching. (While queued, `applyPendingContacts` says it.)
+    if (outcome.kind === 'done') setContacts((list) => list.map((x) => ({ ...x, isPrimary: x.id === link.id })));
+  }, [id, write, t, toast]);
 
   const confirmRemove = useCallback(async () => {
     const link = removing;
     if (!link) return;
     setRemoving(null);
+    /*
+      ⚠️ A row that has never been sent is CANCELLED, not deleted. There is no
+      link id for the server to act on — `addContact` mints one and accepts no
+      client-supplied id — so the only honest meaning of "remove" here is
+      "forget the attachment I made in the basement".
+    */
+    if (link.opId) {
+      if (write.engine && !(await discardPendingContact(write.engine, link.opId))) {
+        // Already on its way — it may have landed on an answer that was lost, so
+        // the only honest thing is to wait for it and detach the real link.
+        toast.error(t('customers.record.contactSending'));
+      }
+      return;
+    }
     setBusyLink(link.id);
-    try {
-      await customersApi.removeContact(link.id);
-      // Detaching keeps the PERSON — the link is what goes. Both panels are
-      // filtered because either could be showing this link.
+    // From the "Works at" card this record is the PERSON and the company is the
+    // far end; from "Contact people" it is the other way round.
+    const companyId = link.company?.id ?? id;
+    const outcome = await write.run(
+      (e) => removeContactFromPhone(e, { linkId: link.id, companyId }),
+      () => customersApi.removeContact(link.id),
+    );
+    setBusyLink(null);
+    if (outcome.kind === 'refused') {
+      toast.error(outcome.message || t('customers.record.contactFailed'));
+      return;
+    }
+    // Detaching keeps the PERSON — the link is what goes. Both panels are
+    // filtered because either could be showing this link.
+    if (outcome.kind === 'done') {
       setContacts((list) => list.filter((x) => x.id !== link.id));
       setCompanies((list) => list.filter((x) => x.id !== link.id));
-    } catch (e: unknown) {
-      toast.error((e as { message?: string })?.message || t('customers.record.contactFailed'));
-    } finally { setBusyLink(null); }
-  }, [removing, t, toast]);
+    }
+  }, [removing, id, write, t, toast]);
+
+  /** The same words the Sync screen and every other queued thing use. */
+  const waitingLabel = useMemo(() => t('offline.chip.waiting'), [t]);
 
   const rowLabels = useMemo(() => ({
     primary: t('customers.record.primary'),
@@ -612,7 +777,7 @@ export default function CustomerRecordScreen() {
     );
   }
 
-  if (!customer) {
+  if (!record) {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.surface }]} edges={['top']}>
         <ScreenHeader title="" />
@@ -624,16 +789,16 @@ export default function CustomerRecordScreen() {
     );
   }
 
-  const company = isCompany(customer);
-  const status = customer.status || 'LEAD';
+  const company = isCompany(record);
+  const status = record.status || 'LEAD';
   const filledCompanyFields = COMPANY_ONLY_FIELDS
-    .map((f) => [f, (customer[f as CompanyOnlyField] as string | null | undefined)?.trim()] as const)
+    .map((f) => [f, (record[f as CompanyOnlyField] as string | null | undefined)?.trim()] as const)
     .filter(([, v]) => !!v);
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: colors.surface }]} edges={['top']}>
       <ScreenHeader
-        title={customer.name}
+        title={record.name}
         right={canEditInfo ? (
           <CardAction icon="create-outline" label={t('customers.record.edit')} onPress={() => setEditing(true)} />
         ) : undefined}
@@ -651,9 +816,9 @@ export default function CustomerRecordScreen() {
           >
             {/* ---- Hero: who is this ---- */}
             <View style={s.hero}>
-              <ClientAvatar customer={customer} size={56} />
+              <ClientAvatar customer={record} size={56} />
               <View style={s.heroText}>
-                <Text style={s.heroName} numberOfLines={2}>{customer.name}</Text>
+                <Text style={s.heroName} numberOfLines={2}>{record.name}</Text>
                 <View style={s.heroTags}>
                   <View style={s.kindPill}>
                     <Ionicons name={company ? 'business' : 'person'} size={11} color={colors.textSecondary} />
@@ -661,18 +826,18 @@ export default function CustomerRecordScreen() {
                       {t(company ? 'customers.record.kindCompany' : 'customers.record.kindPerson')}
                     </Text>
                   </View>
-                  {!!customer.industry?.trim() && <Text style={s.industry} numberOfLines={1}>{customer.industry.trim()}</Text>}
+                  {!!record.industry?.trim() && <Text style={s.industry} numberOfLines={1}>{record.industry.trim()}</Text>}
                 </View>
-                {customer.isPortalResident && (
+                {record.isPortalResident && (
                   <Text style={s.appAccess}>{t('customers.appAccess')}</Text>
                 )}
               </View>
               <View style={s.heroActions}>
-                {!!customer.phone && (
-                  <HeroButton icon="call" label={t('customers.record.call')} onPress={() => void Linking.openURL(`tel:${customer.phone}`)} />
+                {!!record.phone && (
+                  <HeroButton icon="call" label={t('customers.record.call')} onPress={() => void Linking.openURL(`tel:${record.phone}`)} />
                 )}
-                {!!customer.email && (
-                  <HeroButton icon="mail" label={t('customers.record.email')} onPress={() => void Linking.openURL(`mailto:${customer.email}`)} />
+                {!!record.email && (
+                  <HeroButton icon="mail" label={t('customers.record.email')} onPress={() => void Linking.openURL(`mailto:${record.email}`)} />
                 )}
               </View>
             </View>
@@ -711,25 +876,28 @@ export default function CustomerRecordScreen() {
               — a reader who cannot act on an empty panel learns only that the
               screen is long.
             */}
-            {(contacts.length > 0 || (company && canEditInfo)) && (
+            {(shownContacts.length > 0 || (company && canEditInfo)) && (
               <RecordCard
                 title={t('customers.record.contacts')}
                 icon="people-outline"
-                badge={contacts.length || undefined}
+                badge={shownContacts.length || undefined}
                 action={canEditInfo ? (
                   <CardAction icon="add" label={t('customers.record.addContact')} onPress={() => setAdding('person')} />
                 ) : undefined}
-                empty={contacts.length === 0 ? t('customers.record.noContacts') : undefined}
+                empty={shownContacts.length === 0 ? t('customers.record.noContacts') : undefined}
               >
-                {contacts.length > 0 ? contacts.map((link) => (
+                {shownContacts.length > 0 ? shownContacts.map((link) => (
                   <ContactRow
                     key={link.id}
                     link={link}
                     side="person"
                     onOpen={openRecord}
-                    onTogglePrimary={canEditInfo ? makePrimary : undefined}
+                    // Not on a row the server has never seen: making somebody
+                    // primary addresses a link id only the server can mint.
+                    onTogglePrimary={canEditInfo && !isWaiting(link) ? makePrimary : undefined}
                     onRemove={canEditInfo ? setRemoving : undefined}
                     labels={rowLabels}
+                    waiting={isWaiting(link) ? waitingLabel : undefined}
                     busy={busyLink === link.id}
                   />
                 )) : undefined}
@@ -745,11 +913,11 @@ export default function CustomerRecordScreen() {
               only ever created from the COMPANY end, so an empty card here would
               carry no action and no information, on every person in the book.
             */}
-            {(companies.length > 0 || customer.isContact === true) && (
+            {(shownCompanies.length > 0 || record.isContact === true) && (
               <RecordCard
                 title={t('customers.record.worksAt')}
                 icon="business-outline"
-                badge={companies.length || undefined}
+                badge={shownCompanies.length || undefined}
                 /*
                   The OTHER end of the same link, and the reason the sheet takes
                   a side. From here the record is the person and the company is
@@ -760,9 +928,9 @@ export default function CustomerRecordScreen() {
                 action={canEditInfo ? (
                   <CardAction icon="add" label={t('customers.record.addCompany')} onPress={() => setAdding('company')} />
                 ) : undefined}
-                empty={companies.length === 0 ? t('customers.record.noCompanies') : undefined}
+                empty={shownCompanies.length === 0 ? t('customers.record.noCompanies') : undefined}
               >
-                {companies.length > 0 ? companies.map((link) => (
+                {shownCompanies.length > 0 ? shownCompanies.map((link) => (
                   <ContactRow
                     key={link.id}
                     link={link}
@@ -770,6 +938,7 @@ export default function CustomerRecordScreen() {
                     onOpen={openRecord}
                     onRemove={canEditInfo ? setRemoving : undefined}
                     labels={rowLabels}
+                    waiting={isWaiting(link) ? waitingLabel : undefined}
                     busy={busyLink === link.id}
                   />
                 )) : undefined}
@@ -807,8 +976,8 @@ export default function CustomerRecordScreen() {
                   value={value as string}
                 />
               ))}
-              {!!customer.contactName?.trim() && <RecordRow label={t('customers.fContact')} value={customer.contactName.trim()} />}
-              {!!customer.notes?.trim() && <RecordRow label={t('customers.form.notes')} value={customer.notes.trim()} />}
+              {!!record.contactName?.trim() && <RecordRow label={t('customers.fContact')} value={record.contactName.trim()} />}
+              {!!record.notes?.trim() && <RecordRow label={t('customers.form.notes')} value={record.notes.trim()} />}
 
               {/*
                 Language for emails. Always shown — "same as the organization" still
@@ -816,9 +985,9 @@ export default function CustomerRecordScreen() {
                 somebody who may edit this client's info can change it.
               */}
               <PressableScale
-                disabled={!canEditClientLocale(customer)}
+                disabled={!canEditClientLocale(record)}
                 onPress={() => setLocaleOpen((o) => !o)}
-                accessibilityRole={canEditClientLocale(customer) ? 'button' : 'text'}
+                accessibilityRole={canEditClientLocale(record) ? 'button' : 'text'}
                 accessibilityState={{ expanded: localeOpen }}
                 style={s.localeRow}
               >
@@ -826,20 +995,20 @@ export default function CustomerRecordScreen() {
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={s.localeLabel}>{t('customers.locale')}</Text>
                   <Text style={s.localeValue}>
-                    {clientLocaleName(customer.locale) ?? t('customers.localeSame')}
+                    {clientLocaleName(record.locale) ?? t('customers.localeSame')}
                   </Text>
                 </View>
-                {canEditClientLocale(customer) && (
+                {canEditClientLocale(record) && (
                   <Ionicons name={localeOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textMuted} />
                 )}
               </PressableScale>
-              {localeOpen && canEditClientLocale(customer) && (
+              {localeOpen && canEditClientLocale(record) && (
                 <View style={s.chipsWrap}>
                   {[{ value: '', label: t('customers.localeSame') }, ...CLIENT_LOCALE_OPTIONS].map((o) => (
                     <ChoiceChip
                       key={o.value || 'same'}
                       label={o.label}
-                      selected={clientLocaleFormValue(customer) === o.value}
+                      selected={clientLocaleFormValue(record) === o.value}
                       onPress={() => void setLocale(o.value)}
                     />
                   ))}
@@ -882,7 +1051,7 @@ export default function CustomerRecordScreen() {
               <View>
                 <ActivityComposer
                   onSubmit={addActivity}
-                  onCreateTask={customer.spaceId ? openTask : undefined}
+                  onCreateTask={record.spaceId ? openTask : undefined}
                   assignees={assignees}
                 />
                 <ChipRow fadeColor={colors.surface} style={s.filterBar}>
@@ -964,11 +1133,20 @@ export default function CustomerRecordScreen() {
       {canEditInfo && (
         <ClientEditSheet
           visible={editing}
-          customer={customer}
+          customer={record}
           onClose={() => setEditing(false)}
-          // The save returns the record; adopting it costs no extra read, and
-          // the timeline is refreshed because an edit writes its own entry.
-          onSaved={(saved) => { setCustomer(saved); void refreshActivities(); }}
+          /*
+            ⚠️ The sheet hands back WHAT CHANGED, not a saved record — with the
+            change possibly still in the outbox there is no saved record to hand
+            back. Queued, the overlay is already showing it and there is nothing
+            to do but say so; accepted, the fields it sent are the fields the
+            server now holds, and the edit writes its own timeline entry.
+          */
+          onSaved={(patch, queued) => {
+            if (queued) { toast.success(t('offline.savedForLater')); return; }
+            setCustomer((c) => (c ? { ...c, ...patch } : c));
+            void refreshActivities();
+          }}
         />
       )}
       {canEditInfo && (
@@ -978,15 +1156,18 @@ export default function CustomerRecordScreen() {
           side={adding ?? 'person'}
           onClose={() => setAdding(null)}
           /*
-            ⚠️ Appending works on ONE side only. `addContact` returns the link
-            with its PERSON end filled in and never the company end, whichever
-            way round the call was made — so a company just linked would append
-            a "Works at" row with no name on it. That side re-reads instead: one
-            request, against a wrong row that would survive until the next pull.
+            ⚠️ Both sides RE-READ; neither appends the answer. `addContact`
+            returns the link with its PERSON end filled in and never the company
+            end, so the "Works at" side never could — and now that the
+            attachment may travel through the outbox, "the answer" is a push
+            result rather than the route's own response, so the other side
+            cannot either without the screen depending on which shape came back.
+            Queued, the row is already on screen (see `pendingContactLinks`).
           */
-          onAdded={(link) => {
+          onAdded={(queued) => {
+            if (queued) { toast.success(t('offline.savedForLater')); return; }
             if (adding === 'company') void refreshCompanies();
-            else setContacts((list) => [...list, link]);
+            else void refreshContacts();
           }}
         />
       )}
@@ -995,8 +1176,16 @@ export default function CustomerRecordScreen() {
         onClose={() => setRemoving(null)}
         onConfirm={() => void confirmRemove()}
         title={t('customers.record.removeContact')}
-        // Says what it does NOT do: detaching keeps the person's own record.
-        message={t('customers.record.removeContactBody', { name: removing?.person?.name ?? removing?.company?.name ?? '' })}
+        /*
+          Says what it does NOT do: detaching keeps the person's own record. A
+          row that never left the phone says something different, because
+          nothing is being detached — the attachment itself is being called back.
+        */
+        message={
+          removing?.opId
+            ? t('customers.record.removeContactPendingBody', { name: removing?.person?.name ?? removing?.company?.name ?? '' })
+            : t('customers.record.removeContactBody', { name: removing?.person?.name ?? removing?.company?.name ?? '' })
+        }
         confirmLabel={t('customers.record.removeContactConfirm')}
         variant="danger"
       />

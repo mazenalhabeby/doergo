@@ -1902,6 +1902,8 @@
       "contactFailed": "No se pudo cambiar la persona de contacto",
       "removeContact": "Quitar persona de contacto",
       "removeContactBody": "{{name}} dejará de estar vinculada a este cliente. Su propia ficha se conserva.",
+      "removeContactPendingBody": "{{name}} todavía no se ha enviado. Quitarla aquí lo cancela: no llegará nada a la oficina.",
+      "contactSending": "Ese contacto ya está en camino. Quítalo cuando haya llegado.",
       "removeContactConfirm": "Quitar",
       "primary": "Contacto principal",
       "makePrimary": "Definir como contacto principal",
@@ -1915,6 +1917,7 @@
       "justNow": "ahora",
       "reminderDone": "Hecho",
       "reminderDue": "Para el {{date}}",
+      "reminderFailed": "No se pudo cambiar el recordatorio",
       "composer": {
         "note": "Nota",
         "reminder": "Recordatorio",

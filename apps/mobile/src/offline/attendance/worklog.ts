@@ -7,7 +7,7 @@ import { uuidv7 } from '../ids';
 import type { OutboxOp } from '../outbox/types';
 import type { SyncEngine } from '../sync-engine';
 import { isUnreachable } from '../actions/unreachable';
-import { openOpFor } from './shift-overlay';
+import { openOpFor } from '../outbox/open-ops';
 
 const SCOPE = 'worklog';
 
