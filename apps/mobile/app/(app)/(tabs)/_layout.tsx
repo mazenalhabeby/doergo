@@ -482,7 +482,21 @@ export default function TabsLayout() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
-      <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={colors.header} />
+      {/*
+        ⚠️ `backgroundColor` was removed, not moved. expo-status-bar warns that
+        it is unsupported under edge-to-edge and then forwards the prop to React
+        Native anyway, which calls the deprecated `Window.setStatusBarColor` —
+        one of the APIs Play names in "Deine App verwendet nicht mehr
+        unterstützte APIs oder Parameter für die randlose Anzeige". It has been
+        a no-op on the device since Android 15 enforced edge-to-edge; it was
+        only ever reaching the bundle scanner.
+
+        Nothing replaces it: the navigator's header already carries
+        `colors.header` and is padded by the top safe-area inset, so it is the
+        header that paints behind the status bar. `style` stays — icon
+        contrast is the supported half of this API.
+      */}
+      <StatusBar style={isDark ? 'light' : 'dark'} />
 
       <Tabs
         tabBar={(props) => <CustomTabBar {...props} />}
