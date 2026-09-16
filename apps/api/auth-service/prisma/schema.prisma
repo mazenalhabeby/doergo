@@ -445,8 +445,15 @@ model Organization {
   currentPeriodEnd  DateTime?
   // Platform-operator hard lock: when set, the org is forced read-only (via the
   // existing SubscriptionGuard) WITHOUT touching Stripe's subStatus. Reversible.
-  /// The mobile app works offline for this organization's members. The rollout switch — off by default.
-  offlineMode       Boolean   @default(false)
+  /// The mobile app works offline for this organization's members.
+  ///
+  /// Was the staged-rollout switch, off by default, flipped per organization by
+  /// an operator. It is ON by default now: working without signal is what the
+  /// product is for, not a favour granted to selected customers, and it has
+  /// never carried a price. A new organization gets it without anyone doing
+  /// anything. The column stays so one organization can still be switched OFF
+  /// if its phones ever need to be taken out of the outbox in a hurry.
+  offlineMode       Boolean   @default(true)
   suspendedAt       DateTime?
   cancelAtPeriodEnd Boolean            @default(false)
   billingEmail      String?

@@ -1,0 +1,17 @@
+-- Offline mode is ON for a new organization.
+--
+-- It was the staged-rollout switch: off by default, flipped per organization by
+-- an operator through a route with no UI behind it. Every existing organization
+-- was switched on by hand on 2026-09-16, which is the moment the default became
+-- the wrong way round — a company signing up tomorrow would have arrived
+-- without it and nobody would have noticed until a member lost a shift in a
+-- basement.
+--
+-- Working without signal has never carried a price and is not an Option. The
+-- column stays so one organization can still be switched OFF quickly if its
+-- phones ever have to come out of the outbox.
+--
+-- DEFAULT only: this does not touch a single existing row, by design. The
+-- backfill already happened and re-running it here would silently re-enable an
+-- organization somebody had deliberately switched off.
+ALTER TABLE "organizations" ALTER COLUMN "offlineMode" SET DEFAULT true;
