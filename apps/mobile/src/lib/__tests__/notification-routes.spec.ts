@@ -79,7 +79,9 @@ describe('notification routes', () => {
     expect(notificationTarget({ type: 'task_assigned', taskId: 't1' }, viewer)).toEqual({ pathname: '/(app)/task/[id]', params: { id: 't1' } });
     expect(notificationTarget({ type: 'chat', conversationId: 'c1' }, viewer)).toEqual({ pathname: '/(app)/chat', params: { conversationId: 'c1' } });
     expect(notificationTarget({ type: 'overtime.approved', overtimeRequestId: 'o1' }, viewer)).toEqual({ pathname: '/(app)/overtime/[id]', params: { id: 'o1' } });
-    expect(notificationTarget({ type: 'crm_reminder', customerId: 'k1' }, viewer)).toEqual({ pathname: '/(app)/customer/[id]', params: { id: 'k1' } });
+    // A reminder push lands ON the Reminders tab — the record has three now,
+    // and the first one is not the thing the member was just told about.
+    expect(notificationTarget({ type: 'crm_reminder', customerId: 'k1' }, viewer)).toEqual({ pathname: '/(app)/customer/[id]', params: { id: 'k1', tab: 'reminders' } });
     expect(notificationTarget({ type: 'asset.expense_decided', assetId: 'a1', entryId: 'm1' }, viewer)).toEqual({ pathname: '/(app)/my-assets' });
     expect(notificationTarget({ type: 'asset.handed_over', assetId: 'a1', direction: 'to' }, viewer)).toEqual({ pathname: '/(app)/my-assets' });
   });

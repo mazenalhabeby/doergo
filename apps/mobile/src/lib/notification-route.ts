@@ -116,7 +116,18 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
   join_request_rejected: HOME,
 
   // CRM
-  crm_reminder: (d) => (str(d.customerId) ? to('/(app)/customer/[id]', { id: str(d.customerId) }) : to('/(app)/customers')),
+  /*
+    Straight to the Reminders tab, not to Information.
+
+    The push exists because something is due; landing on the record's first tab
+    makes the member hunt for the thing they were just told about, and the
+    record now has three tabs to hunt through. The screen reads `tab` on open,
+    so the deep link costs one parameter.
+  */
+  crm_reminder: (d) =>
+    str(d.customerId)
+      ? to('/(app)/customer/[id]', { id: str(d.customerId), tab: 'reminders' })
+      : to('/(app)/customers'),
 };
 
 export function notificationTarget(data: Data | null | undefined, viewer: NotificationViewer): NotificationTarget | null {
