@@ -10,7 +10,7 @@ import {
   type ReminderPresetKey,
 } from '@hbcfield/shared/client';
 import { PressableScale } from '../pressable-scale';
-import { RecordCard, CardAction } from './record-card';
+import { RecordCard } from './record-card';
 import { ChoiceChip } from './client-fields';
 import {
   ReminderFields,
@@ -22,10 +22,22 @@ import {
 import { useTheme } from '../../contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type ThemeColors } from '../../lib/constants';
 
-/** The three things a member records from the field. Call is mobile-only and stays. */
+/**
+ * The two things a member WRITES here.
+ *
+ * ⚠️ "Call" was a third chip and has been removed — from the AUTHORING side
+ * only. `type: 'CALL'` is a call that HAPPENED; `reminderKind: 'CALL'`, three
+ * rows further down inside the reminder options, is a call that has NOT
+ * happened yet. Same word, opposite direction in time, one screen — and it was
+ * reported as confusing twice. The web composer has been Note | Reminder for
+ * exactly this reason, with "Call" living there only as a reminder's reason.
+ *
+ * ⚠️ Existing CALL rows still RENDER, keep their icon and keep the "Calls"
+ * filter chip on the Activity tab. There is historic data, and both the server
+ * and the web still produce them; what went is the button that makes new ones.
+ */
 const KINDS = [
   { type: 'NOTE', key: 'customers.record.composer.note' },
-  { type: 'CALL', key: 'customers.record.composer.call' },
   { type: 'REMINDER', key: 'customers.record.composer.reminder' },
 ] as const;
 
@@ -54,7 +66,11 @@ export type ComposedActivity = {
 };
 
 /**
- * "Log something" — the composer, and the DRAFT it is holding.
+ * The composer, and the DRAFT it is holding.
+ *
+ * It carries no heading of its own — see the card below for why — so what a
+ * member reads first is the choice between a note and a reminder, which is
+ * also the first thing they have to decide.
  *
  * ⚠️ The draft lives HERE, not on the record screen, and that is a performance
  * decision rather than a tidiness one. The composer sits in the Activity tab's
@@ -154,17 +170,29 @@ export const ActivityComposer = memo(function ActivityComposer({
   }, [body, dueAt, empty, isReminder, onSubmit, reminder, saving, type]);
 
   return (
-    <RecordCard
-      title={t('customers.record.logSomething')}
-      icon="create-outline"
-      action={onCreateTask ? (
-        <CardAction icon="checkbox-outline" label={t('customers.record.newTask')} onPress={onCreateTask} />
-      ) : undefined}
-    >
-      <View style={s.chipsWrap}>
+    /*
+      ⚠️ NO HEADING. It read "Log something" under a filled square icon, above a
+      text box, on the Activity tab of a client record — it stated where the
+      member already was, and the icon was chrome the card itself already
+      provides. The chips are the first thing in the card now, which is also the
+      first DECISION: what is being written.
+    */
+    <RecordCard>
+      <View style={s.typeRow}>
         {KINDS.map((c) => (
           <ChoiceChip key={c.type} label={t(c.key)} selected={type === c.type} onPress={() => setType(c.type)} />
         ))}
+        {/*
+          Raising a job sits with the two kinds because it is the third thing a
+          member does from here — but it is NOT a third chip, and the difference
+          is the point. A chip changes what the box below produces; this leaves
+          the screen for the task form. Drawn as an action for the same reason
+          "Pick a time…" is: it opens something rather than being one of the
+          answers, and looking like a chip would make it read as one.
+        */}
+        {!!onCreateTask && (
+          <ActionChip icon="checkbox-outline" label={t('customers.record.newTask')} onPress={onCreateTask} />
+        )}
       </View>
       <TextInput
         value={body}
@@ -177,7 +205,16 @@ export const ActivityComposer = memo(function ActivityComposer({
         )}
         placeholderTextColor={colors.textMuted}
         style={s.input}
-        accessibilityLabel={t('customers.record.logSomething')}
+        /*
+          The removed heading was also the field's accessible name, so it is
+          replaced rather than dropped — a screen reader would otherwise reach an
+          unlabelled multiline box. The SELECTED KIND is the honest answer to
+          "what is this field": it is a note, or it is a reminder, and it changes
+          when the chips do.
+        */
+        accessibilityLabel={t(
+          isReminder ? 'customers.record.composer.reminder' : 'customers.record.composer.note',
+        )}
       />
       {isReminder && (
         <>
@@ -198,18 +235,13 @@ export const ActivityComposer = memo(function ActivityComposer({
                 onPress={() => { setPreset(p.key); setExact(false); }}
               />
             ))}
-            <PressableScale
+            <ActionChip
+              icon="options-outline"
+              label={t('customers.record.reminderForm.pickTime')}
               onPress={() => setExact((v) => !v)}
-              accessibilityRole="button"
-              accessibilityState={{ expanded: exact }}
-              accessibilityLabel={t('customers.record.reminderForm.pickTime')}
-              style={[s.more, { borderColor: exact ? COLORS.primary : colors.border }]}
-            >
-              <Ionicons name="options-outline" size={14} color={exact ? COLORS.primary : colors.textMuted} />
-              <Text style={[s.moreText, { color: exact ? COLORS.primary : colors.textMuted }]}>
-                {t('customers.record.reminderForm.pickTime')}
-              </Text>
-            </PressableScale>
+              active={exact}
+              expanded={exact}
+            />
           </View>
           {exact && (
             <ReminderFields value={reminder} onChange={setReminder} assignees={assignees} />
@@ -230,9 +262,59 @@ export const ActivityComposer = memo(function ActivityComposer({
   );
 });
 
+/**
+ * A control that sits in a chip row and is NOT one of the answers.
+ *
+ * ⚠️ Deliberately not a `ChoiceChip`: a chip is a value the row is currently
+ * set to, and this OPENS something — the exact-time fields, or the task form on
+ * another screen. Drawn with a dashed outline so the difference is visible
+ * before it is tapped; looking like one more chip is how "Pick a time…" would
+ * read as a fourth preset and "Task" as a third kind of note.
+ *
+ * Written once because there are two of them, and two copies of a control whose
+ * whole job is to look unlike its neighbours is how one of them ends up looking
+ * exactly like them.
+ */
+function ActionChip({
+  icon,
+  label,
+  onPress,
+  /** Drawn in the brand colour while what it opened is showing. */
+  active,
+  /** Set only on a control that reveals something in place — not on a link out. */
+  expanded,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+  active?: boolean;
+  expanded?: boolean;
+}) {
+  const { colors } = useTheme();
+  const s = useMemo(() => styles(colors), [colors]);
+  const tint = active ? COLORS.primary : colors.textMuted;
+  return (
+    <PressableScale
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={expanded === undefined ? undefined : { expanded }}
+      accessibilityLabel={label}
+      style={[s.action, { borderColor: active ? COLORS.primary : colors.border }]}
+    >
+      <Ionicons name={icon} size={14} color={tint} />
+      <Text style={[s.actionText, { color: tint }]}>{label}</Text>
+    </PressableScale>
+  );
+}
+
 const styles = (c: ThemeColors) =>
   StyleSheet.create({
     chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginTop: SPACING.sm },
+    // The first row in the card, so it brings no top margin of its own — the
+    // headerless card already insets it. Wraps rather than reserving a spacer:
+    // "Note", "Reminder" and "Task" translate long, and a fixed row would push
+    // the third one off a narrow screen with nothing to catch it.
+    typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
     input: {
       backgroundColor: c.input,
       borderWidth: StyleSheet.hairlineWidth,
@@ -246,9 +328,8 @@ const styles = (c: ThemeColors) =>
       fontSize: FONT_SIZE.lg,
       color: c.textPrimary,
     },
-    // Deliberately NOT a ChoiceChip: it opens something rather than being one of
-    // the answers, and looking like a fourth preset would make it read as one.
-    more: {
+    // `ActionChip`'s outline — see its own note for why it is dashed.
+    action: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: SPACING.xs,
@@ -258,7 +339,7 @@ const styles = (c: ThemeColors) =>
       paddingHorizontal: SPACING.md,
       paddingVertical: SPACING.sm,
     },
-    moreText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium },
+    actionText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium },
     add: {
       alignSelf: 'flex-end',
       marginTop: SPACING.md,
