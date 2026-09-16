@@ -41,7 +41,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootLayoutNav() {
   const { isAuthenticated, isLoading, needsOnboarding, user } = useAuth();
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
   const segments = useSegments();
   const router = useRouter();
   const [showAnimatedSplash, setShowAnimatedSplash] = useState(true);
@@ -61,18 +61,29 @@ function RootLayoutNav() {
       });
   }, [isLoading, splashHidden]);
 
-  // Configure Android navigation bar based on current screen and theme
+  /*
+    The Android navigation bar's BUTTON contrast — light icons on the dark
+    splash, theme-matched icons afterwards.
+
+    ⚠️ The paired `setBackgroundColorAsync` calls were removed. Under
+    edge-to-edge the navigation bar is transparent and the app draws behind it,
+    so expo-navigation-bar returns early from that call and logs a warning on
+    every theme change; it never reached the deprecated `setNavigationBarColor`
+    the Play Console flags, but keeping a call that can only warn invites
+    somebody to "fix" it by opting out of edge-to-edge. What shows through the
+    bar is the screen's own background, which is what `colors.surface` was
+    trying to paint anyway.
+
+    `setButtonStyleAsync` is the one that still does something: it maps to
+    WindowInsetsController's appearance flags, which is the supported API.
+  */
   useEffect(() => {
     if (Platform.OS === 'android') {
-      if (!appIsReady || showAnimatedSplash) {
-        NavigationBar.setBackgroundColorAsync('#09090b');
-        NavigationBar.setButtonStyleAsync('light');
-      } else {
-        NavigationBar.setBackgroundColorAsync(colors.surface);
-        NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
-      }
+      NavigationBar.setButtonStyleAsync(
+        !appIsReady || showAnimatedSplash ? 'light' : isDark ? 'light' : 'dark',
+      );
     }
-  }, [appIsReady, showAnimatedSplash, colors.surface, isDark]);
+  }, [appIsReady, showAnimatedSplash, isDark]);
 
 
   // Handle navigation after auth state changes (3-way: auth → onboarding → app)
