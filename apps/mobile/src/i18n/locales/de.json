@@ -2547,5 +2547,16 @@
       "days_one": "Aktualisiert vor {{count}} Tag",
       "days_other": "Aktualisiert vor {{count}} Tagen"
     }
+  },
+  "updatePage": {
+    "version": "Version {{version}}",
+    "title": "Eine neue Version ist da",
+    "lead": "Aktualisieren Sie über {{store}}, wann es Ihnen passt. Diese Version funktioniert bis dahin weiter.",
+    "pointOffline": "Ohne Empfang weiterarbeiten — gesendet wird, sobald Sie wieder online sind",
+    "pointClock": "Mit einem Tipp einstempeln; der Arbeitsbereich wird für Sie gewählt",
+    "pointShifts": "Spätes Ausstempeln und vergessene Schichten werden für Sie erledigt",
+    "update": "Jetzt aktualisieren",
+    "later": "Später",
+    "note": "Wir erinnern Sie morgen noch einmal."
   }
 }

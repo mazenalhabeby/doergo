@@ -2547,5 +2547,16 @@
       "days_one": "Actualizado hace {{count}} día",
       "days_other": "Actualizado hace {{count}} días"
     }
+  },
+  "updatePage": {
+    "version": "Versión {{version}}",
+    "title": "Hay una nueva versión",
+    "lead": "Actualiza desde {{store}} cuando te venga bien. Esta versión sigue funcionando hasta entonces.",
+    "pointOffline": "Sigue trabajando sin señal: se envía cuando vuelvas a tener conexión",
+    "pointClock": "Ficha con un toque; tu espacio de trabajo se elige por ti",
+    "pointShifts": "Las salidas tardías y los turnos olvidados se gestionan por ti",
+    "update": "Actualizar ahora",
+    "later": "Más tarde",
+    "note": "Te lo recordaremos mañana."
   }
 }

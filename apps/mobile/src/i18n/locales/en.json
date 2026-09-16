@@ -2547,5 +2547,16 @@
       "days_one": "Updated {{count}} day ago",
       "days_other": "Updated {{count}} days ago"
     }
+  },
+  "updatePage": {
+    "version": "Version {{version}}",
+    "title": "A new version is ready",
+    "lead": "Update from {{store}} when it suits you. This version keeps working until you do.",
+    "pointOffline": "Keep working without signal — it is sent when you are back online",
+    "pointClock": "Clock in with one tap; your workspace is picked for you",
+    "pointShifts": "Late clock-outs and forgotten shifts handled for you",
+    "update": "Update now",
+    "later": "Later",
+    "note": "We will remind you again tomorrow."
   }
 }

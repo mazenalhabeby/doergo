@@ -29,6 +29,7 @@ import { ThemeProvider, useTheme } from '../src/contexts/theme-context';
 import { ToastProvider } from '../src/contexts/toast-context';
 import { UpdateRequired } from '../src/components/update-required';
 import { UpdateBanner } from '../src/components/update-banner';
+import { UpdatePage } from '../src/components/update-page';
 import { VersionProvider, useVersionStatus } from '../src/contexts/version-context';
 import { AnimatedSplash } from '../src/components';
 import { ErrorBoundary } from '../src/components/error-boundary';
@@ -123,6 +124,8 @@ function RootLayoutNav() {
     told nothing was new. The provider re-asks on foreground.
   */
   const { status: versionStatus } = useVersionStatus();
+  // While the update page is open the banner stays out of the way. Above every early return: hooks.
+  const [updatePageOpen, setUpdatePageOpen] = useState(false);
 
   const handleSplashComplete = useCallback(() => {
     setShowAnimatedSplash(false);
@@ -164,7 +167,9 @@ function RootLayoutNav() {
           Raising the minimum blocks every older build the instant it is set,
           and if the store has not published yet those people are locked out of
           something that works. This says the same thing and costs nobody. */}
-      {versionStatus && <UpdateBanner status={versionStatus} />}
+      {versionStatus && !updatePageOpen && <UpdateBanner status={versionStatus} />}
+      {/* Once a day, a page of its own; "Later" and the app carries on as it is. */}
+      {versionStatus && <UpdatePage status={versionStatus} onVisibleChange={setUpdatePageOpen} />}
       {/* Prominent background-location disclosure — overlays the app when a
           background service needs consent (Google Play requirement). */}
       <LocationConsentModal />
