@@ -96,6 +96,7 @@ export * from './notifications/locale';
 export * from './crm/client-locale';
 export * from './crm/client-filter';
 export * from './crm/reminder';
+export * from './crm/card-extras';
 // Which member emails a person gets — the org ceiling and the member opt-out.
 // Client-safe: both settings screens read the keys and defaults from here.
 export * from './notifications/email-prefs';
