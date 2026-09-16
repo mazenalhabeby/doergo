@@ -14,6 +14,16 @@ export interface MobileCustomer {
   /** A person who works at a company — NOT a client, and never billed as one. */
   isContact?: boolean;
   spaceId?: string | null;
+  /**
+   * The members who look after this client — ids only, no names.
+   *
+   * ⚠️ Already on the wire: `customerSelect` in auth-service has selected it
+   * since long before this type mentioned it, so nothing was added to the
+   * response to make the reminder composer able to say "remind ME". It decides
+   * who a reminder with no assignee reaches, which is why the composer only
+   * offers to name somebody who is ON this list.
+   */
+  managerIds?: string[] | null;
   notes?: string | null;
   /** Company-only. Blank on a person; see COMPANY_ONLY_FIELDS in shared. */
   legalName?: string | null;
@@ -40,6 +50,25 @@ export interface MobileCustomerActivity {
   metadata?: { from?: string; to?: string } | null;
   createdAt: string;
   author?: { id: string; firstName: string; lastName: string | null } | null;
+
+  /*
+    What a REMINDER is for, and how it fires. Null on every other kind.
+
+    ⚠️ `reminderKind: 'CALL'` is an INTENT — remind me to ring them — and is not
+    the same thing as `type: 'CALL'`, which is the RECORD of a call that
+    happened. Same word, opposite direction in time; see `crm/reminder.ts` in
+    shared. A reminder row must print its reason for exactly this reason.
+
+    ⚠️ Already returned: `listActivities` takes the whole row with no `select`,
+    so these arrived with every timeline read long before the phone read them.
+  */
+  reminderKind?: string | null;
+  /** Fire this many minutes BEFORE `dueAt`. 0 = at the time. */
+  remindBeforeMin?: number | null;
+  /** NONE | DAILY | WEEKLY | MONTHLY. */
+  repeat?: string | null;
+  /** Null = every manager of this client. */
+  reminderAssigneeId?: string | null;
 }
 
 export const customersApi = {
@@ -88,7 +117,23 @@ export const customersApi = {
     fetchWithAuth<MobileCustomer>(`/customers/${id}`, { method: 'PATCH', body: JSON.stringify(dto) }),
   activities: (id: string): Promise<MobileCustomerActivity[]> =>
     fetchWithAuth<MobileCustomerActivity[]>(`/customers/${id}/activities`),
-  addActivity: (id: string, input: { type?: string; body?: string; dueAt?: string }): Promise<MobileCustomerActivity> =>
+  /**
+   * Log a note, a call that happened, or a reminder.
+   *
+   * ⚠️ The four reminder fields have been accepted by the gateway since the
+   * feature was built; the phone simply never sent them. Build them with
+   * `reminderPayload()` from shared rather than by hand — it drops a value the
+   * server does not recognise instead of letting it persist as a string nothing
+   * will ever schedule.
+   */
+  addActivity: (
+    id: string,
+    input: {
+      type?: string; body?: string; dueAt?: string;
+      reminderKind?: string; remindBeforeMin?: number;
+      reminderAssigneeId?: string | null; repeat?: string;
+    },
+  ): Promise<MobileCustomerActivity> =>
     fetchWithAuth<MobileCustomerActivity>(`/customers/${id}/activities`, { method: 'POST', body: JSON.stringify(input) }),
   updateActivity: (id: string, activityId: string, input: { done?: boolean }): Promise<MobileCustomerActivity> =>
     fetchWithAuth<MobileCustomerActivity>(`/customers/${id}/activities/${activityId}`, { method: 'PATCH', body: JSON.stringify(input) }),

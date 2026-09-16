@@ -16,10 +16,14 @@ import {
   isCompany,
   COMPANY_ONLY_FIELDS,
   COMPANY_FIELD_KEYS,
+  REMINDER_KIND_KEYS,
+  isReminderKind,
+  reminderLeadKey,
+  reminderRepeatKey,
   type CompanyOnlyField,
 } from '@hbcfield/shared/client';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS, type ThemeColors } from '../../../src/lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS, ROUTES, type ThemeColors } from '../../../src/lib/constants';
 import { useQueuedCreate } from '../../../src/offline/actions/queued-create';
 import { CLIENT_LOCALE_OPTIONS, canEditClientLocale, clientLocaleFormValue, clientLocaleName, clientLocalePayload } from '../../../src/lib/client-locale';
 import { useToast } from '../../../src/contexts/toast-context';
@@ -27,8 +31,10 @@ import { RecordCard, CardAction, RecordRow } from '../../../src/components/custo
 import { ClientAvatar } from '../../../src/components/customer/client-avatar';
 import { ContactRow } from '../../../src/components/customer/contact-row';
 import { AddressRow } from '../../../src/components/customer/address-row';
-import { ActivityRow, type PendingActivity } from '../../../src/components/customer/activity-row';
+import { ActivityRow, type ActivityTag, type PendingActivity } from '../../../src/components/customer/activity-row';
 import { ActivityComposer, type ComposedActivity } from '../../../src/components/customer/activity-composer';
+import type { ReminderAssignee } from '../../../src/components/customer/reminder-fields';
+import { useAuth } from '../../../src/contexts/auth-context';
 import { ChoiceChip } from '../../../src/components/customer/client-fields';
 import { ClientEditSheet } from '../../../src/components/customer/client-edit-sheet';
 import { AddContactSheet } from '../../../src/components/customer/add-contact-sheet';
@@ -95,6 +101,7 @@ export default function CustomerRecordScreen() {
   const s = useMemo(() => styles(colors), [colors]);
   const { t } = useTranslation();
   const toast = useToast();
+  const { user } = useAuth();
 
   const [customer, setCustomer] = useState<MobileCustomer | null>(null);
   const [activities, setActivities] = useState<MobileCustomerActivity[]>([]);
@@ -149,7 +156,7 @@ export default function CustomerRecordScreen() {
 
   // Notes and reminders written with no signal wait in the outbox; shown at the top meanwhile.
   const loadRef = useRef<(() => Promise<void>) | null>(null);
-  const activityCreate = useQueuedCreate<{ type: string; body?: string; dueAt?: string }>(
+  const activityCreate = useQueuedCreate<ComposedActivity>(
     'customer.activity',
     { onAccepted: () => void loadRef.current?.() },
   );
@@ -225,6 +232,12 @@ export default function CustomerRecordScreen() {
         body: p.body.body ?? null,
         dueAt: p.body.dueAt ?? null,
         doneAt: null,
+        // Carried through so a queued reminder reads the same as a sent one —
+        // it would otherwise lose its reason on the way to the outbox and read
+        // as a bare "Reminder" until the signal came back.
+        reminderKind: p.body.reminderKind ?? null,
+        remindBeforeMin: p.body.remindBeforeMin ?? null,
+        repeat: p.body.repeat ?? null,
         createdAt: new Date(p.createdAt).toISOString(),
         pendingSync: true,
       }) as unknown as PendingActivity);
@@ -291,6 +304,51 @@ export default function CustomerRecordScreen() {
   const canEditInfo = customer?.crmCaps?.editInfo === true;
   const canWork = customer?.crmCaps?.work === true;
 
+  /*
+    WHO A REMINDER CAN BE POINTED AT — the caller, and only if they manage this
+    client.
+
+    ⚠️ Deliberately NOT a member list. The web builds its picker from
+    `GET /organizations/members`, which asks `canManageUsers` — a permission the
+    sales rep and the field member who live on this screen will never hold, so
+    the list would render empty for exactly the people it is for. The one
+    directory they CAN reach (`GET /organizations/contacts`) is worse than
+    nothing here: it is filtered to elevated-permission holders, obeys the
+    caller's own contact policy (NONE returns an empty array) and explicitly
+    EXCLUDES the caller — so it would omit managers silently, and omit the
+    single most likely answer, "remind me". A list stricter than the rule it
+    mirrors is the failure this codebase keeps re-learning.
+
+    So: "Everyone" (null, every manager of the client — what the server already
+    does) plus "Me" when that is true. Naming somebody else needs a member
+    lookup these callers can reach, which does not exist yet. Restricted to
+    `managerIds` exactly as the web is — the server accepts ANY org member as an
+    assignee, so the restriction is the client's to keep.
+  */
+  const assignees = useMemo<ReminderAssignee[]>(() => {
+    const managers = customer?.managerIds ?? [];
+    if (!user?.id || !managers.includes(user.id)) return [];
+    return [{ id: user.id, label: t('customers.record.reminderForm.me') }];
+  }, [customer?.managerIds, user?.id, t]);
+
+  /*
+    Raise a job for this client.
+
+    Only when the client is filed in a workspace — a task belongs to one, and a
+    client filed in none (the majority in a real book) has nowhere to put it.
+    The web gates the same button on the same fact.
+
+    The client and its workspace travel as params; the create screen adopts them
+    and clears them, so the tab opened normally afterwards is a blank form.
+  */
+  const openTask = useCallback(() => {
+    if (!customer?.spaceId) return;
+    router.push({
+      pathname: ROUTES.createTask,
+      params: { customerId: customer.id, spaceId: customer.spaceId, customerName: customer.name },
+    } as never);
+  }, [customer?.id, customer?.spaceId, customer?.name]);
+
   const relTime = useCallback((iso: string) => {
     const secs = (Date.now() - new Date(iso).getTime()) / 1000;
     if (secs < 60) return t('customers.record.justNow');
@@ -312,24 +370,59 @@ export default function CustomerRecordScreen() {
   }, [id, refreshActivities]);
 
   /**
+   * A reminder's heading ALWAYS says what it is for.
+   *
+   * ⚠️ This is the one line that keeps two opposite things apart. An activity of
+   * `type: 'CALL'` is a call that HAPPENED; a reminder whose `reminderKind` is
+   * `CALL` is a call somebody still has to make. Printed as a bare "Reminder"
+   * the second one is unreadable, and printed with a telephone icon it looks
+   * like the first. "Reminder · Call" can be read only one way.
+   *
+   * An older reminder written before the phone could set a reason has none
+   * stored; it keeps the plain heading rather than being labelled "Other",
+   * which would assert something nobody chose.
+   */
+  const headingFor = useCallback((a: PendingActivity): string => {
+    if (a.type === 'STATUS') {
+      return t('customers.record.stageChanged', {
+        from: customerStageLabel(a.metadata?.from || ''),
+        to: customerStageLabel(a.metadata?.to || ''),
+      });
+    }
+    const label = t(`customers.record.act.${a.type}`, { defaultValue: a.type });
+    if (a.type !== 'REMINDER' || !isReminderKind(a.reminderKind)) return label;
+    return `${label} · ${t(REMINDER_KIND_KEYS[a.reminderKind])}`;
+  }, [t]);
+
+  /**
+   * How a reminder fires, when it has anything unusual to say.
+   *
+   * Only what differs from the default is shown: "at the time" and "does not
+   * repeat" are what a reminder is unless it says otherwise, and printing them
+   * on every row would bury the ones that matter.
+   */
+  const tagsFor = useCallback((a: PendingActivity): ActivityTag[] | undefined => {
+    if (a.type !== 'REMINDER') return undefined;
+    const tags: ActivityTag[] = [];
+    if (a.remindBeforeMin) tags.push({ icon: 'notifications-outline', label: t(reminderLeadKey(a.remindBeforeMin)) });
+    if (a.repeat && a.repeat !== 'NONE') tags.push({ icon: 'repeat-outline', label: t(reminderRepeatKey(a.repeat)) });
+    return tags.length ? tags : undefined;
+  }, [t]);
+
+  /**
    * One entry, drawn the same way on both lists.
    *
    * ⚠️ `onToggleDone` is the stable `toggleDone`, never an arrow written here:
    * `ActivityRow` is memoised, and a fresh function per render would make every
-   * comparison fail and the memo pure decoration.
+   * comparison fail and the memo pure decoration. `headingFor` and `tagsFor`
+   * are `useCallback`ed for the same reason.
    */
   const renderActivity = useCallback((a: PendingActivity, continues: boolean) => (
     <ActivityRow
       activity={a}
       continues={continues}
-      heading={
-        a.type === 'STATUS'
-          ? t('customers.record.stageChanged', {
-              from: customerStageLabel(a.metadata?.from || ''),
-              to: customerStageLabel(a.metadata?.to || ''),
-            })
-          : t(`customers.record.act.${a.type}`, { defaultValue: a.type })
-      }
+      heading={headingFor(a)}
+      tags={tagsFor(a)}
       meta={[
         a.author ? a.author.firstName : '',
         a.pendingSync ? t('offline.chip.waiting') : relTime(a.createdAt),
@@ -343,7 +436,7 @@ export default function CustomerRecordScreen() {
           : t('customers.record.composer.reminder')
       }
     />
-  ), [t, relTime, toggleDone]);
+  ), [t, relTime, toggleDone, headingFor, tagsFor]);
 
   const keyOfActivity = useCallback((a: PendingActivity) => a.id, []);
 
@@ -757,7 +850,11 @@ export default function CustomerRecordScreen() {
             removeClippedSubviews={false}
             ListHeaderComponent={
               <View>
-                <ActivityComposer onSubmit={addActivity} />
+                <ActivityComposer
+                  onSubmit={addActivity}
+                  onCreateTask={customer.spaceId ? openTask : undefined}
+                  assignees={assignees}
+                />
                 <ChipRow fadeColor={colors.surface} style={s.filterBar}>
                   {FILTERS.map((f) => (
                     <FilterChip

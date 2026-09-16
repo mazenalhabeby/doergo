@@ -1,9 +1,24 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import { View, TextInput, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import {
+  REMINDER_PRESETS,
+  reminderPresetKey,
+  reminderPresetDue,
+  reminderPayload,
+  type ReminderPresetKey,
+} from '@hbcfield/shared/client';
 import { PressableScale } from '../pressable-scale';
-import { RecordCard } from './record-card';
+import { RecordCard, CardAction } from './record-card';
 import { ChoiceChip } from './client-fields';
+import {
+  ReminderFields,
+  EMPTY_REMINDER,
+  reminderDueAt,
+  type ReminderDraft,
+  type ReminderAssignee,
+} from './reminder-fields';
 import { useTheme } from '../../contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type ThemeColors } from '../../lib/constants';
 
@@ -14,12 +29,6 @@ const KINDS = [
   { type: 'REMINDER', key: 'customers.record.composer.reminder' },
 ] as const;
 
-const DUE = [
-  { k: 'today', h: 8, key: 'customers.record.due.today' },
-  { k: 'tomorrow', h: 32, key: 'customers.record.due.tomorrow' },
-  { k: 'week', h: 24 * 7, key: 'customers.record.due.week' },
-] as const;
-
 /**
  * What the composer hands back.
  *
@@ -28,11 +37,20 @@ const DUE = [
  * to an object type alias and refuses one to an interface — so an interface
  * here fails to compile at the `queued.run` call for no reason a reader would
  * guess from the error.
+ *
+ * ⚠️ The four reminder fields are present ONLY on a reminder. A note that
+ * carried `reminderKind` would be sending a field its author cannot set; the
+ * server nulls them for a non-reminder anyway, and a client that relies on that
+ * is a client that stops being right the day the server stops bothering.
  */
 export type ComposedActivity = {
   type: string;
   body?: string;
   dueAt?: string;
+  reminderKind?: string;
+  remindBeforeMin?: number;
+  reminderAssigneeId?: string | null;
+  repeat?: string;
 };
 
 /**
@@ -45,7 +63,8 @@ export type ComposedActivity = {
  * `ActivityRow` is memoised, so that would not redraw two hundred rows — but it
  * would walk them, on every character, while somebody types a note with one
  * thumb. Keeping the draft inside means a keystroke re-renders this card and
- * nothing else.
+ * nothing else. The reminder options obey the same rule: `ReminderFields` takes
+ * a value and reports a change, and holds nothing the screen would need.
  *
  * ⚠️ It is also why this is a module-scope component. A component defined
  * inside the screen's render is a NEW type on every pass, so React would
@@ -56,8 +75,18 @@ export type ComposedActivity = {
 export const ActivityComposer = memo(function ActivityComposer({
   /** Resolves true when the entry was taken (sent, or queued): clear the draft. */
   onSubmit,
+  /**
+   * Raise a job for this client. Absent when the client is filed in no
+   * workspace — a task has to belong to one, so there would be nowhere to put
+   * it. Matches the web, which gates the same button on the same fact.
+   */
+  onCreateTask,
+  /** This client's managers, already resolved to names by the screen. */
+  assignees = [],
 }: {
   onSubmit: (input: ComposedActivity) => Promise<boolean>;
+  onCreateTask?: () => void;
+  assignees?: ReminderAssignee[];
 }) {
   const { colors } = useTheme();
   const s = useMemo(() => styles(colors), [colors]);
@@ -65,34 +94,73 @@ export const ActivityComposer = memo(function ActivityComposer({
 
   const [type, setType] = useState<string>('NOTE');
   const [body, setBody] = useState('');
-  const [due, setDue] = useState<string | null>(null);
+  const [preset, setPreset] = useState<ReminderPresetKey | null>(null);
+  /*
+    The full set, and whether it is showing.
+
+    ⚠️ Revealed in place rather than in a sheet. The note being typed and the
+    reminder's own fields are one thought — "ring them on Tuesday about the
+    quote" — and a sheet would cover the text the member is writing it against,
+    then take the keyboard down on the way in and back up on the way out.
+  */
+  const [exact, setExact] = useState(false);
+  const [reminder, setReminder] = useState<ReminderDraft>(EMPTY_REMINDER);
   const [saving, setSaving] = useState(false);
+
+  const isReminder = type === 'REMINDER';
+
+  /*
+    When this reminder is for, whichever way it was said.
+
+    The exact form wins when it is open AND has a day, so opening it to look and
+    closing it again does not throw away the preset that was already chosen.
+  */
+  const dueAt = useMemo(() => {
+    if (!isReminder) return undefined;
+    const exactDue = exact ? reminderDueAt(reminder) : null;
+    if (exactDue) return exactDue;
+    return preset ? reminderPresetDue(preset).toISOString() : undefined;
+  }, [isReminder, exact, reminder, preset]);
 
   // A reminder is worth filing with no words — "ring them back" is the due date
   // itself. Everything else needs something written down or it says nothing.
-  const empty = !body.trim() && type !== 'REMINDER';
+  const empty = !body.trim() && !isReminder;
 
   const submit = useCallback(async () => {
     if (empty || saving) return;
     setSaving(true);
     try {
-      let dueAt: string | undefined;
-      if (type === 'REMINDER' && due) {
-        const opt = DUE.find((d) => d.k === due);
-        if (opt) dueAt = new Date(Date.now() + opt.h * 3600_000).toISOString();
-      }
-      const taken = await onSubmit({ type, body: body.trim() || undefined, dueAt });
+      const base: ComposedActivity = { type, body: body.trim() || undefined };
+      /*
+        ⚠️ Built by `reminderPayload`, never by hand. It drops anything the
+        server would not recognise and turns it into the default, so a phone
+        cannot put `repeat: 'FORTNIGHTLY'` on a record where it would persist
+        as text nothing will ever schedule.
+      */
+      const input: ComposedActivity = isReminder
+        ? { ...base, ...reminderPayload({ dueAt, reminderKind: reminder.kind, remindBeforeMin: reminder.lead, repeat: reminder.repeat, reminderAssigneeId: reminder.assigneeId }) }
+        : base;
+
+      const taken = await onSubmit(input);
       if (taken) {
         setBody('');
-        setDue(null);
+        setPreset(null);
+        setExact(false);
+        setReminder(EMPTY_REMINDER);
       }
     } finally {
       setSaving(false);
     }
-  }, [body, due, empty, onSubmit, saving, type]);
+  }, [body, dueAt, empty, isReminder, onSubmit, reminder, saving, type]);
 
   return (
-    <RecordCard title={t('customers.record.logSomething')} icon="create-outline">
+    <RecordCard
+      title={t('customers.record.logSomething')}
+      icon="create-outline"
+      action={onCreateTask ? (
+        <CardAction icon="checkbox-outline" label={t('customers.record.newTask')} onPress={onCreateTask} />
+      ) : undefined}
+    >
       <View style={s.chipsWrap}>
         {KINDS.map((c) => (
           <ChoiceChip key={c.type} label={t(c.key)} selected={type === c.type} onPress={() => setType(c.type)} />
@@ -103,7 +171,7 @@ export const ActivityComposer = memo(function ActivityComposer({
         onChangeText={setBody}
         multiline
         placeholder={t(
-          type === 'REMINDER'
+          isReminder
             ? 'customers.record.composer.reminderPlaceholder'
             : 'customers.record.composer.notePlaceholder',
         )}
@@ -111,12 +179,42 @@ export const ActivityComposer = memo(function ActivityComposer({
         style={s.input}
         accessibilityLabel={t('customers.record.logSomething')}
       />
-      {type === 'REMINDER' && (
-        <View style={s.chipsWrap}>
-          {DUE.map((d) => (
-            <ChoiceChip key={d.k} label={t(d.key)} selected={due === d.k} onPress={() => setDue(d.k)} />
-          ))}
-        </View>
+      {isReminder && (
+        <>
+          {/*
+            The presets stay the fast path.
+
+            One tap standing at a customer's door is the common field case, and
+            it is why they are not replaced by the picker. "Pick a time…" sits
+            beside them rather than above: it is the exception, and it should
+            read as the longer way round.
+          */}
+          <View style={s.chipsWrap}>
+            {REMINDER_PRESETS.map((p) => (
+              <ChoiceChip
+                key={p.key}
+                label={t(reminderPresetKey(p.key))}
+                selected={!exact && preset === p.key}
+                onPress={() => { setPreset(p.key); setExact(false); }}
+              />
+            ))}
+            <PressableScale
+              onPress={() => setExact((v) => !v)}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: exact }}
+              accessibilityLabel={t('customers.record.reminderForm.pickTime')}
+              style={[s.more, { borderColor: exact ? COLORS.primary : colors.border }]}
+            >
+              <Ionicons name="options-outline" size={14} color={exact ? COLORS.primary : colors.textMuted} />
+              <Text style={[s.moreText, { color: exact ? COLORS.primary : colors.textMuted }]}>
+                {t('customers.record.reminderForm.pickTime')}
+              </Text>
+            </PressableScale>
+          </View>
+          {exact && (
+            <ReminderFields value={reminder} onChange={setReminder} assignees={assignees} />
+          )}
+        </>
       )}
       <PressableScale
         onPress={() => void submit()}
@@ -148,6 +246,19 @@ const styles = (c: ThemeColors) =>
       fontSize: FONT_SIZE.lg,
       color: c.textPrimary,
     },
+    // Deliberately NOT a ChoiceChip: it opens something rather than being one of
+    // the answers, and looking like a fourth preset would make it read as one.
+    more: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.xs,
+      borderWidth: 1,
+      borderStyle: 'dashed',
+      borderRadius: RADIUS.full,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm,
+    },
+    moreText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium },
     add: {
       alignSelf: 'flex-end',
       marginTop: SPACING.md,

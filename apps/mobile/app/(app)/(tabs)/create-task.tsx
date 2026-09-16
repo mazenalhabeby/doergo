@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
-import { router } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { tasksApi, taskAttachmentsApi, uploadToPresignedUrl, locationsApi, type CreateTaskInput, type TechnicianListItem } from '../../../src/lib/api';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useImagePicker, type PickedImage } from '../../../src/hooks/useImagePicker';
@@ -43,6 +43,9 @@ import { accessAllowsAnywhere } from '@hbcfield/shared/client';
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const;
 type Priority = typeof PRIORITIES[number];
 
+/** A route param that may arrive as a string, an array, or not at all. */
+const one = (v: string | string[] | undefined): string => (Array.isArray(v) ? v[0] ?? '' : v ?? '');
+
 export default function CreateTaskScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -65,6 +68,8 @@ export default function CreateTaskScreen() {
   const [showTechnicianPicker, setShowTechnicianPicker] = useState(false);
   const [spaces, setSpaces] = useState<{ id: string; name: string }[]>([]);
   const [spaceId, setSpaceId] = useState<string | null>(null);
+  /** The CRM client this job is for, when it was raised from a client record. */
+  const [client, setClient] = useState<{ id: string; name: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -79,6 +84,53 @@ export default function CreateTaskScreen() {
   const canAssign = user?.canAssignTasks === true || accessAllowsAnywhere(user?.access as never, 'canAssignTasks');
   const [photos, setPhotos] = useState<PickedImage[]>([]);
 
+  /*
+    RAISED FROM A CLIENT RECORD — and only that once.
+
+    ⚠️ This is a TAB. It is mounted for the whole session and its params stick,
+    so a member who raises a job for BILLA from the client record and later taps
+    Create Task from the tab bar would find the form still bound to BILLA, with
+    nothing on the way in to suggest why. The params are therefore ADOPTED into
+    state and then cleared from the route, so the tab has exactly one arrival
+    that carries a client and every later one is a blank form.
+
+    ⚠️ Clearing is what makes this loop-free: the effect only acts on a
+    NON-EMPTY id, and its own `setParams` makes the id empty. Without that it
+    would re-adopt on every render that touched the params.
+  */
+  const params = useLocalSearchParams<{ customerId?: string | string[]; spaceId?: string | string[]; customerName?: string | string[] }>();
+  const paramCustomerId = one(params.customerId);
+  const paramSpaceId = one(params.spaceId);
+  const paramCustomerName = one(params.customerName);
+
+  useEffect(() => {
+    if (!paramCustomerId) return;
+    setClient({ id: paramCustomerId, name: paramCustomerName });
+    // An explicit choice beats the org default below, and arrives before the
+    // spaces have loaded — which is why that one never overwrites a set value.
+    if (paramSpaceId) setSpaceId(paramSpaceId);
+    router.setParams({ customerId: '', spaceId: '', customerName: '' });
+  }, [paramCustomerId, paramSpaceId, paramCustomerName]);
+
+  /*
+    LEAVING A FORM NOBODY STARTED DROPS THE CLIENT.
+
+    Clearing the params stops the binding coming BACK; this stops it lingering.
+    Somebody who taps Task on a client record, looks at the form and walks away
+    without typing anything has nothing invested in it, and finding the tab
+    still bound to that client an hour later is the confusing half of the
+    stranding this screen had to solve.
+
+    ⚠️ Only when untouched. A half-written client visit is the member's work —
+    checking the task list mid-form must not throw away who it was for. Read
+    through a ref so the effect's deps stay empty and the cleanup runs on BLUR
+    rather than on every keystroke, which would clear it while they type.
+  */
+  const untouched = !title.trim() && !description.trim() && !dueDate && photos.length === 0;
+  const untouchedRef = useRef(untouched);
+  untouchedRef.current = untouched;
+  useFocusEffect(useCallback(() => () => { if (untouchedRef.current) setClient(null); }, []));
+
   // Load spaces and default to the org's "General" space (every task needs one).
   useEffect(() => {
     locationsApi
@@ -87,7 +139,10 @@ export default function CreateTaskScreen() {
         const opts = list.map((l) => ({ id: l.id, name: l.name, isDefault: (l as { isDefault?: boolean }).isDefault }));
         setSpaces(opts.map(({ id, name }) => ({ id, name })));
         const def = opts.find((o) => o.isDefault) ?? opts.find((o) => o.name === 'General') ?? opts[0];
-        if (def) setSpaceId(def.id);
+        // ⚠️ Never overwrites a workspace already chosen. This resolves AFTER the
+        // client's own workspace is adopted above, so a plain `setSpaceId` here
+        // would quietly move the job off the client's site onto "General".
+        if (def) setSpaceId((prev) => prev ?? def.id);
       })
       .catch(() => {});
   }, []);
@@ -108,6 +163,9 @@ export default function CreateTaskScreen() {
       setLocationLng(null);
       setSelectedTechnician(null);
       setPhotos([]);
+      // The next job typed into this tab is a new job. The workspace is left
+      // where it is — that is a setting somebody chose, not a binding.
+      setClient(null);
     };
 
     try {
@@ -129,6 +187,9 @@ export default function CreateTaskScreen() {
         locationLat: locationLat ?? undefined,
         locationLng: locationLng ?? undefined,
         ...(spaceId && { spaceId }),
+        // A client visit rather than a bare job. Accepted by the gateway all
+        // along; the phone had no client concept to send.
+        ...(client?.id && { customerId: client.id }),
         ...(canAssign && selectedTechnician?.id && { assignedToId: selectedTechnician.id }),
       };
 
@@ -208,6 +269,35 @@ export default function CreateTaskScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+        {/*
+          WHO THIS JOB IS FOR.
+
+          Shown only when the form was opened from a client record. It is the
+          one fact on this screen that did not come from the person filling it
+          in, so it has to be visible and it has to be removable — a member who
+          walked here by accident must be able to raise an ordinary job without
+          backing out and starting again.
+        */}
+        {client && (
+          <View style={[styles.clientBanner, { backgroundColor: COLORS.primary + '14', borderColor: COLORS.primary + '40' }]}>
+            <Ionicons name="business-outline" size={18} color={COLORS.primary} />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={[styles.clientLabel, { color: colors.textMuted }]}>{t('createTask.forClient')}</Text>
+              <Text style={[styles.clientName, { color: colors.textPrimary }]} numberOfLines={1}>
+                {client.name || t('createTask.forClientUnnamed')}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setClient(null)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('createTask.clearClient')}
+            >
+              <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Title */}
         <View style={styles.field}>
           <Text style={[styles.label, { color: colors.textPrimary }]}>{t('createTask.titleLabel')}</Text>
@@ -534,6 +624,18 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   hint: { fontSize: FONT_SIZE.xs, marginTop: SPACING.xs },
+  clientBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
+    marginBottom: SPACING.xl,
+  },
+  clientLabel: { fontSize: FONT_SIZE.xs },
+  clientName: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold, marginTop: 1 },
   // Label + live count badge (e.g. "Space  ⬚ 12 available").
   labelRow: {
     flexDirection: 'row',

@@ -143,6 +143,14 @@ export interface CreateTaskInput {
   locationLng?: number;
   assignedToId?: string;
   spaceId?: string;
+  /**
+   * The CRM client this job is for — a client VISIT rather than a bare task.
+   *
+   * Accepted by `CreateTaskDto` on the gateway since client visits shipped; the
+   * phone had no client concept at all, so a job raised from a client record
+   * arrived unattached to them.
+   */
+  customerId?: string;
 }
 
 export interface UpdateTaskInput {
