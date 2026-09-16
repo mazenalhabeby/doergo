@@ -99,6 +99,7 @@ export * from './crm/client-locale';
 export * from './crm/client-filter';
 export * from './crm/reminder';
 export * from './crm/card-extras';
+export * from './crm/card-merge';
 export * from './mail/client-email-locale';
 
 // One replica per scheduled job — see the note in the file.
