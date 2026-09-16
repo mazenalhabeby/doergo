@@ -31,7 +31,7 @@ import { useMyDocumentRequirements } from "@/hooks/use-document-requirements"
 import { useOverflowNav } from "@/hooks/use-overflow-nav"
 
 import { AnimatedLogo } from "@hbcfield/shared/components"
-import { hasAccessModule, resolveCrmCaps } from "@hbcfield/shared/client"
+import { hasAccessModule, resolveCrmCaps, moduleAnywhere as moduleAnywhereShared } from "@hbcfield/shared/client"
 import { NAV_OPTION } from "@hbcfield/shared/client"
 import { useMySections } from "@/hooks/use-my-sections"
 import { useAuth } from "@/contexts/auth-context"
@@ -239,20 +239,12 @@ export function TopNavbar() {
     resolved server-side with the session, so this costs no request and the nav
     and the pages cannot answer differently.
   */
-  const moduleAnywhere = (m: string) => {
-    /*
-      Absent and empty are different answers.
-
-      `spaceModules` arrives with the session, so a session that PREDATES the
-      field — the deploy window, or a cached token response — carries none at
-      all. Reading that as "no workspace runs anything" would take the CRM entry
-      away from people who had it a minute earlier, which is a worse failure
-      than the one this gate exists to prevent. Unknown falls back to the
-      organization's list; a real empty list means what it says.
-    */
-    if (user.spaceModules === undefined) return (user.orgModules ?? []).includes(m)
-    return user.spaceModules.includes(m)
-  }
+  /*
+    One rule, in shared, because the phone's Manage list asks it too — and two
+    clients answering differently is how a member sees CRM on the web and not on
+    the phone. Every caveat (absent is not empty, most of all) lives with it.
+  */
+  const moduleAnywhere = (m: string) => moduleAnywhereShared(user, m)
 
   /*
     Clients, at their own address.

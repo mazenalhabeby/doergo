@@ -51,6 +51,7 @@ export * from './access/task-access';
 export * from './access/space-scope';
 // Who may configure a space, and add people to it — asked by web and mobile alike.
 export * from './access/space-manage';
+export * from './access/module-anywhere';
 
 // Code lengths and charsets for invitations and org join codes. Pure data, and
 // the CLIENTS are what need them: the inputs that receive a code cap their

@@ -1,3 +1,4 @@
+import { moduleAnywhere } from '@hbcfield/shared/client';
 import { holds, holdsOrgWide } from './permissions';
 
 /**
@@ -31,7 +32,7 @@ export const MANAGE_ROWS = [
     Clients. `crmViewOwn` alone was the whole gate, so an organization that has
     never switched CRM on anywhere still carried the row — and the screen behind
     it can only say "no clients", which reads as a broken list rather than as a
-    feature nobody bought. See `moduleAnywhere` below for why the question is
+    feature nobody bought. See `moduleAnywhere` in shared for why the question is
     "is it running in a workspace I can see" and not "has the org got it".
   */
   { icon: 'people-circle', labelKey: 'manage.customers.label', descKey: 'manage.customers.desc', route: '/(app)/customers', color: '#2563eb', permission: 'crmViewOwn', orgWide: false, module: 'crm' },
@@ -90,30 +91,15 @@ type ManageSubject =
   | undefined;
 
 /**
- * Is a module actually RUNNING in a workspace this member can see?
+ * Whether a module runs in a workspace this member can see.
  *
- * ⚠️ Not "has the organization got it". An organization can carry `crm` on its
- * own record while every workspace has an explicit list without it, and the row
- * then leads to a screen that can only say "no workspace has this switched on
- * yet". The same rule, and the same reasoning, as the web navbar's
- * `moduleAnywhere` (`apps/web-app/src/components/top-navbar.tsx`) — the two
- * clients must not answer this differently, or a member sees Clients on the web
- * and not on the phone.
- *
- * ⚠️ Absent and empty are different answers. `spaceModules` arrives with the
- * session, so a session that PREDATES the field — a deploy window, or a cached
- * token response — carries none at all. Reading that as "no workspace runs
- * anything" would take the row away from people who had it a minute earlier,
- * which is a worse failure than the one this gate exists to prevent. Unknown
- * falls back to the organization's list; a real empty list means what it says.
+ * ⚠️ Not "has the organization got it" — a module is bought per space, so the
+ * org-wide list answers a different question and is wrong in both directions.
+ * The rule and every caveat behind it (absent ≠ empty, most of all) live once
+ * in `moduleAnywhere` in shared, because the web navbar asks the same question
+ * and the two clients must not answer it differently — that is how a member
+ * comes to see Clients on the web and not on the phone.
  */
-function moduleAnywhere(user: ManageSubject, module: string): boolean {
-  const spaceModules = user?.spaceModules;
-  if (spaceModules === undefined || spaceModules === null) {
-    return (user?.orgModules ?? []).includes(module);
-  }
-  return spaceModules.includes(module);
-}
 
 /** The rows this member can actually open. */
 export function manageRowsFor(user: ManageSubject): ManageRow[] {

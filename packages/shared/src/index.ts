@@ -62,6 +62,7 @@ export * from './access/task-access';
 // guard that can only widen. See the file for why [] and null differ.
 export * from './access/space-scope';
 export * from './access/space-manage';
+export * from './access/module-anywhere';
 // Per-member reads: the same "is this person in my crew?" rule for the two
 // services that ask it. NOT exported from client.ts — it needs a Prisma client.
 export * from './access/member-scope';
