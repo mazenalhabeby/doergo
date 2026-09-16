@@ -2024,6 +2024,22 @@
       "daily": "Daily",
       "weekly": "Weekly",
       "monthly": "Monthly"
+    },
+    "social": {
+      "facebook": "Facebook",
+      "instagram": "Instagram",
+      "linkedin": "LinkedIn",
+      "xing": "Xing",
+      "x": "X",
+      "youtube": "YouTube",
+      "tiktok": "TikTok",
+      "whatsapp": "WhatsApp"
+    },
+    "extra": {
+      "iban": "IBAN",
+      "bic": "BIC",
+      "hours": "Opening hours",
+      "skype": "Skype"
     }
   },
   "issues": {
@@ -2394,7 +2410,20 @@
     "maybeExists": "This may already be in your book",
     "maybeExistsBody": "A client with a very similar name is already here. Opening it keeps everything about them in one place.",
     "maybeExistsCompany": "A company with a very similar name is already in your book. Tap it to add this person there instead of creating a second record.",
-    "saveAnyway": "Save as a new record anyway"
+    "saveAnyway": "Save as a new record anyway",
+    "reading": "Reading the card… {{done}} of {{total}}",
+    "poorRead": "Part of this card could not be read",
+    "poorReadHint": "Only {{lines}} lines came through, so something is probably missing. Check every field below, or take another look — more light and a card lying flat help most.",
+    "contested": "Two lines looked equally likely here — please pick one.",
+    "didYouMean": "Did you mean",
+    "allLines": "All lines",
+    "extras": "Keep as extra",
+    "extrasHint": "Read from the card with no field of its own. Rename it, change it, or drop it — whatever is left is saved with the client.",
+    "extrasNotKept": "Read from the card, but a contact person has nowhere to keep it. Choose a client or a new company to save these.",
+    "extraLabel": "Name this",
+    "extraValue": "What it says",
+    "removeExtra": "Do not keep this",
+    "socialNotWebsite": "That is a social page, not the website — it is kept below instead."
   },
   "myAssets": {
     "title": "My equipment",

@@ -1988,6 +1988,22 @@
       "daily": "Tous les jours",
       "weekly": "Toutes les semaines",
       "monthly": "Tous les mois"
+    },
+    "social": {
+      "facebook": "Facebook",
+      "instagram": "Instagram",
+      "linkedin": "LinkedIn",
+      "xing": "Xing",
+      "x": "X",
+      "youtube": "YouTube",
+      "tiktok": "TikTok",
+      "whatsapp": "WhatsApp"
+    },
+    "extra": {
+      "iban": "IBAN",
+      "bic": "BIC",
+      "hours": "Horaires d'ouverture",
+      "skype": "Skype"
     }
   },
   "issues": {
@@ -2394,7 +2410,20 @@
     "maybeExists": "Cela existe peut-être déjà",
     "maybeExistsBody": "Un client au nom très proche figure déjà dans votre fichier. En l’ouvrant, tout ce qui le concerne reste au même endroit.",
     "maybeExistsCompany": "Une société au nom très proche figure déjà dans votre fichier. Touchez-la pour y rattacher cette personne plutôt que de créer une seconde fiche.",
-    "saveAnyway": "Créer quand même une nouvelle fiche"
+    "saveAnyway": "Créer quand même une nouvelle fiche",
+    "reading": "Lecture de la carte… {{done}} sur {{total}}",
+    "poorRead": "Une partie de cette carte n'a pas pu être lue",
+    "poorReadHint": "Seules {{lines}} lignes sont passées, il manque donc probablement quelque chose. Vérifiez chaque champ ci-dessous ou reprenez une photo — plus de lumière et une carte bien à plat aident le plus.",
+    "contested": "Deux lignes semblaient aussi probables l'une que l'autre — choisissez-en une.",
+    "didYouMean": "Vouliez-vous dire",
+    "allLines": "Toutes les lignes",
+    "extras": "Conserver en extra",
+    "extrasHint": "Lu sur la carte, sans champ dédié. Renommez-le, modifiez-le ou supprimez-le — ce qui reste est enregistré avec le client.",
+    "extrasNotKept": "Lu sur la carte, mais une personne de contact n'a pas où le conserver. Choisissez un client ou une nouvelle société pour l'enregistrer.",
+    "extraLabel": "Nommer",
+    "extraValue": "Contenu",
+    "removeExtra": "Ne pas conserver",
+    "socialNotWebsite": "C'est une page de réseau social, pas le site web — elle est conservée ci-dessous à la place."
   },
   "myAssets": {
     "title": "Mon équipement",

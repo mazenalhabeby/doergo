@@ -1988,6 +1988,22 @@
       "daily": "Täglich",
       "weekly": "Wöchentlich",
       "monthly": "Monatlich"
+    },
+    "social": {
+      "facebook": "Facebook",
+      "instagram": "Instagram",
+      "linkedin": "LinkedIn",
+      "xing": "Xing",
+      "x": "X",
+      "youtube": "YouTube",
+      "tiktok": "TikTok",
+      "whatsapp": "WhatsApp"
+    },
+    "extra": {
+      "iban": "IBAN",
+      "bic": "BIC",
+      "hours": "Öffnungszeiten",
+      "skype": "Skype"
     }
   },
   "issues": {
@@ -2394,7 +2410,20 @@
     "maybeExists": "Das gibt es möglicherweise schon",
     "maybeExistsBody": "Ein Kunde mit sehr ähnlichem Namen ist bereits vorhanden. Wenn Sie ihn öffnen, bleibt alles zu ihm an einer Stelle.",
     "maybeExistsCompany": "Eine Firma mit sehr ähnlichem Namen ist bereits vorhanden. Tippen Sie sie an, um diese Person dort zuzuordnen, statt einen zweiten Eintrag anzulegen.",
-    "saveAnyway": "Trotzdem neu anlegen"
+    "saveAnyway": "Trotzdem neu anlegen",
+    "reading": "Karte wird gelesen … {{done}} von {{total}}",
+    "poorRead": "Ein Teil dieser Karte konnte nicht gelesen werden",
+    "poorReadHint": "Es kamen nur {{lines}} Zeilen durch, daher fehlt vermutlich etwas. Prüfen Sie jedes Feld unten oder schauen Sie noch einmal hin – mehr Licht und eine flach liegende Karte helfen am meisten.",
+    "contested": "Hier kamen zwei Zeilen gleich stark infrage – bitte wählen Sie eine aus.",
+    "didYouMean": "Meinten Sie",
+    "allLines": "Alle Zeilen",
+    "extras": "Als Zusatz behalten",
+    "extrasHint": "Von der Karte gelesen, ohne eigenes Feld. Benennen Sie es um, ändern Sie es oder verwerfen Sie es – was übrig bleibt, wird mit dem Kunden gespeichert.",
+    "extrasNotKept": "Von der Karte gelesen, aber eine Kontaktperson hat dafür keinen Platz. Wählen Sie einen Kunden oder eine neue Firma, um dies zu speichern.",
+    "extraLabel": "Benennen",
+    "extraValue": "Inhalt",
+    "removeExtra": "Nicht behalten",
+    "socialNotWebsite": "Das ist eine Social-Media-Seite, keine Website – sie wird stattdessen unten behalten."
   },
   "myAssets": {
     "title": "Meine Ausrüstung",

@@ -1,6 +1,12 @@
 import { fetchWithAuth } from './client';
 import { buildUrlWithQuery, type ClientTypeParam, type ContactsParam } from '@hbcfield/shared/client';
 
+/** One custom fact about a client — the shape `Customer.details` holds. */
+export interface CustomerDetail {
+  label: string;
+  value: string;
+}
+
 export interface MobileCustomer {
   id: string;
   name: string;
@@ -45,6 +51,20 @@ export interface MobileCustomer {
   regNumber?: string | null;
   /** Language for emails (en|de|es|fr|it); null = same as the organization. */
   locale?: string | null;
+  /**
+   * Anything about this client the eight columns have no room for.
+   *
+   * ⚠️ Already on the wire and already stored: `Customer.details` is a JSON
+   * `[{label, value}]` list the web has written since the client record was
+   * built, and `customerSelect` has always returned it. Nothing was added to
+   * the API to let the card scanner keep a Facebook page or an IBAN — only this
+   * type, which had never mentioned it.
+   *
+   * The server sanitises: a row needs a non-empty string label and value, the
+   * label is capped at 80 characters and the value at 2000, and at most 30 rows
+   * survive. Anything else is dropped rather than refused.
+   */
+  details?: CustomerDetail[] | null;
   /**
    * The caller's CRM abilities on THIS record, returned by the single-client
    * read. The screen hides what may not be done; the server refuses it anyway.
@@ -128,6 +148,8 @@ export const customersApi = {
     locale?: string | null;
     /** Company-only; blanked by `clearCompanyFields()` when the type is PERSON. */
     legalName?: string; website?: string; industry?: string; vatId?: string; regNumber?: string;
+    /** What the record has no column for — see `CustomerDetail`. */
+    details?: CustomerDetail[];
   }): Promise<MobileCustomer> =>
     fetchWithAuth<MobileCustomer>('/customers', { method: 'POST', body: JSON.stringify(input) }),
 

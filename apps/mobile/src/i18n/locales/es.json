@@ -1988,6 +1988,22 @@
       "daily": "A diario",
       "weekly": "Semanalmente",
       "monthly": "Mensualmente"
+    },
+    "social": {
+      "facebook": "Facebook",
+      "instagram": "Instagram",
+      "linkedin": "LinkedIn",
+      "xing": "Xing",
+      "x": "X",
+      "youtube": "YouTube",
+      "tiktok": "TikTok",
+      "whatsapp": "WhatsApp"
+    },
+    "extra": {
+      "iban": "IBAN",
+      "bic": "BIC",
+      "hours": "Horario de apertura",
+      "skype": "Skype"
     }
   },
   "issues": {
@@ -2394,7 +2410,20 @@
     "maybeExists": "Puede que ya lo tenga",
     "maybeExistsBody": "Ya hay un cliente con un nombre muy parecido. Si lo abre, todo lo suyo se mantiene en un solo sitio.",
     "maybeExistsCompany": "Ya hay una empresa con un nombre muy parecido. Púlsela para añadir ahí a esta persona en lugar de crear un segundo registro.",
-    "saveAnyway": "Crear uno nuevo de todos modos"
+    "saveAnyway": "Crear uno nuevo de todos modos",
+    "reading": "Leyendo la tarjeta… {{done}} de {{total}}",
+    "poorRead": "No se pudo leer parte de esta tarjeta",
+    "poorReadHint": "Solo llegaron {{lines}} líneas, así que probablemente falte algo. Revise cada campo de abajo o vuelva a mirar: más luz y la tarjeta plana son lo que más ayuda.",
+    "contested": "Aquí dos líneas parecían igual de probables: elija una.",
+    "didYouMean": "Quizá quiso decir",
+    "allLines": "Todas las líneas",
+    "extras": "Guardar como extra",
+    "extrasHint": "Leído de la tarjeta, sin campo propio. Cámbiele el nombre, edítelo o descártelo: lo que quede se guarda con el cliente.",
+    "extrasNotKept": "Leído de la tarjeta, pero una persona de contacto no tiene dónde guardarlo. Elija un cliente o una empresa nueva para guardarlo.",
+    "extraLabel": "Ponerle nombre",
+    "extraValue": "Contenido",
+    "removeExtra": "No guardar esto",
+    "socialNotWebsite": "Eso es una página de redes sociales, no el sitio web: se guarda abajo."
   },
   "myAssets": {
     "title": "Mi equipo",

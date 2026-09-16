@@ -11,8 +11,12 @@ import { useTranslation } from 'react-i18next';
 import { ScreenHeader } from '../../src/components';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
-import { scanBusinessCard, type ParsedCard } from '../../src/lib/card-scan';
-import { frameToImageCrop } from '@hbcfield/shared/client';
+import {
+  readCardLines, parseCardPasses, wantsAnotherFrame, frameGapAfter,
+  CARD_FRAMES, CARD_FRAME_BUDGET_MS,
+  type ParsedCard, type CardLine, type CardReadQuality,
+} from '../../src/lib/card-scan';
+import { frameToImageCrop, socialOf } from '@hbcfield/shared/client';
 import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
 import { useCameraAccess } from '../../src/permissions/use-media-access';
 import type { MobileCustomer } from '../../src/lib/api';
@@ -22,13 +26,16 @@ import { holds } from '../../src/lib/permissions';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import { ChoiceChip } from '../../src/components/customer/client-fields';
 import { CardFieldRow, CardFieldGroup } from '../../src/components/customer/card-field-row';
+import { CardExtrasGroup } from '../../src/components/customer/card-extras';
 import { CardDestinationPicker } from '../../src/components/customer/card-destination';
 import { DuplicateSheet, useDuplicateCheck } from '../../src/components/customer/card-duplicate';
 import { useSaveScannedCard } from '../../src/components/customer/card-save';
 import {
-  CARD_FIELDS, cardCertainty, cardClientNames, cardFieldsFor, cardValues, fieldNeedsLook,
-  guessCardKind, homelessFields,
-  type CardCertainty, type CardDestination, type CardFieldKey, type CardKind, type CardValues,
+  CARD_FIELDS, cardAlternatives, cardCertainty, cardClientNames, cardContested, cardDetails,
+  cardExtrasKept, cardFieldsFor, cardHolding, fieldNeedsLook, guessCardKind, homelessFields,
+  readCard, reRankGuesses,
+  type CardCertainty, type CardDestination, type CardExtraRow, type CardFieldKey, type CardKind,
+  type CardValues,
 } from '../../src/components/customer/card-review';
 
 /**
@@ -57,6 +64,13 @@ import {
  * that the chosen destination has no column for is NAMED on screen rather than
  * dropped. That rule, the kind guess and its reason all live in
  * `card-review.ts` so they can be argued with and tested without a camera.
+ *
+ * ⚠️ THE CARD IS LOOKED AT MORE THAN ONCE, and the screen says so when the look
+ * was bad. Three things follow from that and none of them is cosmetic: the
+ * capture loop below takes two or three frames and merges them; a poor read
+ * leads with a warning instead of presenting four confident fields from a
+ * photograph that half failed; and what the reader understood but no field
+ * wanted is kept as an editable extra rather than dropped in silence.
  */
 
 /**
@@ -88,16 +102,55 @@ const FIELD_INPUT: Partial<Record<CardFieldKey, { keyboardType?: KeyboardTypeOpt
   vat: { autoCapitalize: 'characters' },
 };
 
-const EMPTY_VALUES: CardValues = {
-  company: '', name: '', title: '', email: '', phone: '', website: '', address: '', vat: '',
-};
-
 /** What the button says it will do. Three destinations, three different saves. */
 const SAVE_LABEL: Record<CardDestination, string> = {
   client: 'customers.save',
   contact: 'scan.saveContact',
   newCompany: 'scan.saveNewCompany',
 };
+
+const wait = (ms: number) => new Promise<void>((resolve) => { setTimeout(resolve, ms); });
+
+/**
+ * EVERYTHING THE READ PRODUCED, in one piece of state.
+ *
+ * ⚠️ One object, not eight `useState`s, because a correction changes several of
+ * them AT ONCE and from each other: picking a line marks that field answered,
+ * moves its value, records which line it now holds, and then re-ranks every
+ * field the member has NOT answered against the lines still free. Split across
+ * separate setters that is four functional updates that cannot read one
+ * another, and the re-rank would run on last render's values.
+ *
+ * `kind`, `destination` and `company` stay OUTSIDE it on purpose — see where
+ * they are declared. They are the member's answers about where the person goes,
+ * not the reader's answers about what the card said.
+ */
+interface CardReview {
+  card: ParsedCard;
+  values: CardValues;
+  /** What the reader could PROVE, plus anything the member has since chosen. */
+  certain: CardCertainty;
+  /** The reader was deciding between two lines and had no grounds to. */
+  contested: CardCertainty;
+  /**
+   * WHICH ROWS OPENED UNDER "Worth a look", frozen when the card was read.
+   *
+   * ⚠️ Membership of a group must NOT follow what is being typed. Computed live,
+   * the first character into an empty field moves its row from one heading to
+   * the other, React unmounts the box being typed in, and the keyboard closes on
+   * the member mid-word. The COLOUR still follows the live value (see
+   * `fieldNeedsLook`), so a field that has been answered goes quiet where it is.
+   */
+  flagged: CardCertainty;
+  /** Fields the MEMBER answered. Never re-ranked from under them. */
+  answered: Partial<Record<CardFieldKey, true>>;
+  /** Which line each field is standing on — what stops two fields sharing one. */
+  holding: Partial<Record<CardFieldKey, number>>;
+  /** What the card said that no field wanted. */
+  extras: CardExtraRow[];
+  /** Was that a good look at the card? Said out loud when it was not. */
+  quality: CardReadQuality;
+}
 
 /**
  * WHY Save is grey — one sentence naming the field that is still empty.
@@ -117,6 +170,14 @@ export default function ScanCardScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const toast = useToast();
+  /*
+    ⚠️ The FUNCTION, not the context object. `ToastProvider` builds a fresh
+    `value` object every render, so `toast` has a new identity every time —
+    while `toast.error` is a `useCallback` and is stable. `pickLine` is handed
+    to memoised rows, and closing over `toast` would re-make it on every render
+    and turn every row's memo into decoration.
+  */
+  const toastError = toast.error;
   const { save: commitCard } = useSaveScannedCard();
   const duplicate = useDuplicateCheck();
   const cam = useCameraAccess();
@@ -174,13 +235,21 @@ export default function ScanCardScreen() {
   const camera = useRef<CameraView>(null);
 
   const [busy, setBusy] = useState(false);
-  const [card, setCard] = useState<ParsedCard | null>(null);
-  const [values, setValues] = useState<CardValues>(EMPTY_VALUES);
-  const [certain, setCertain] = useState<CardCertainty>({});
   /*
-    The reader's guess, and the member's override of it.
+    How many looks have been taken, so the shutter can say so.
 
-    Held apart from `card` so "Scan again" cannot leave the previous card's
+    ⚠️ The member is standing in front of somebody holding out a card. A spinner
+    that sits for two seconds with nothing to say reads as a hang, and the
+    natural response to a hang is a second press — which on a camera screen is a
+    second scan. "Reading the card… 2 of 3" costs one line and removes the
+    question.
+  */
+  const [progress, setProgress] = useState(0);
+  const [read, setRead] = useState<CardReview | null>(null);
+  /*
+    The reader's guess about the card, and the member's override of it.
+
+    Held apart from `read` so "Scan again" cannot leave the previous card's
     answer selected under the new one's fields, and so the reason line keeps
     saying what the READER thought even after the member has disagreed with it.
   */
@@ -188,87 +257,54 @@ export default function ScanCardScreen() {
   const [why, setWhy] = useState<ReturnType<typeof guessCardKind>['why']>('unsure');
   const [destination, setDestination] = useState<CardDestination>('client');
   const [company, setCompany] = useState<MobileCustomer | null>(null);
-  /*
-    WHICH ROWS OPENED UNDER "Worth a look", frozen when the card was read.
-
-    ⚠️ Membership of a group must NOT follow what is being typed. Computed live,
-    the first character into an empty field moves its row from one heading to
-    the other, React unmounts the box being typed in, and the keyboard closes on
-    the member mid-word. The COLOUR still follows the live value (see
-    `fieldNeedsLook`), so a field that has been answered goes quiet where it is.
-  */
-  const [flagged, setFlagged] = useState<CardCertainty>({});
   /** Which row has its card lines open. One at a time — eight open lists is a wall. */
   const [picking, setPicking] = useState<CardFieldKey | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const capture = useCallback(async () => {
-    if (!camera.current || busy) return;
-    setBusy(true);
+  /**
+   * ONE LOOK: photograph, read, delete, hand back the lines.
+   *
+   * ⚠️ NEVER `skipProcessing: true` here.
+   *
+   * On Android that returns the frame exactly as the sensor recorded it —
+   * landscape, whatever way the phone is held. The preview is portrait, so
+   * `shot.width/height` then describe a DIFFERENT orientation from `box`, and
+   * `frameToImageCrop` maps the frame onto a rectangle with no relation to what
+   * the person aimed at. Nothing throws: the reader is simply handed the wrong
+   * third of the photograph, and the screen fills in whatever text happened to
+   * be there.
+   *
+   * It cost a real scan — a card whose name, phone, email and address were all
+   * outside the region, leaving only a logo. Processing costs a couple of
+   * hundred milliseconds and is what makes the frame mean anything.
+   *
+   * ⚠️ THE PHOTOGRAPH IS DELETED IN A `finally`, ALWAYS, INCLUDING ON FAILURE
+   * AND INCLUDING WHEN NOBODY IS STILL WAITING FOR IT. It is a picture of a
+   * named person's phone number and email address, sitting in a cache directory
+   * with no expiry and no purpose once the text has been read. The whole point
+   * of reading the card on the device is that the card does not travel; leaving
+   * the image behind quietly undoes that. The caller may abandon a slow frame
+   * (see `capture`) — that is exactly why the deletion lives here and not
+   * there.
+   *
+   * ⚠️ Returns an EMPTY pass rather than throwing. A frame the camera fumbled
+   * must cost the scan that frame, not the whole card; `mergeCardPasses` skips
+   * an empty pass, so one bad look out of three changes nothing.
+   */
+  const captureFrame = useCallback(async (): Promise<CardLine[]> => {
     let shotUri: string | null = null;
     try {
-      /*
-        ⚠️ NEVER `skipProcessing: true` here.
-
-        On Android that returns the frame exactly as the sensor recorded it —
-        landscape, whatever way the phone is held. The preview is portrait, so
-        `shot.width/height` then describe a DIFFERENT orientation from `box`,
-        and `frameToImageCrop` maps the frame onto a rectangle with no relation
-        to what the person aimed at. Nothing throws: the reader is simply handed
-        the wrong third of the photograph, and the screen fills in whatever text
-        happened to be there.
-
-        It cost a real scan — a card whose name, phone, email and address were
-        all outside the region, leaving only a logo. Processing costs a couple
-        of hundred milliseconds and is what makes the frame mean anything.
-      */
-      const shot = await camera.current.takePictureAsync({ quality: 0.8 });
-      if (!shot?.uri) return;
+      const shot = await camera.current?.takePictureAsync({ quality: 0.8 });
+      if (!shot?.uri) return [];
       shotUri = shot.uri;
       const image = { width: shot.width ?? 0, height: shot.height ?? 0 };
-      const parsed = await scanBusinessCard(
-        shot.uri,
-        image,
-        frameToImageCrop({ frame, screen: box, image }),
-      );
-      const guess = guessCardKind(parsed);
-      const read = cardValues(parsed);
-      const proved = cardCertainty(parsed);
-      setCard(parsed);
-      setValues(read);
-      setCertain(proved);
-      setFlagged(Object.fromEntries(CARD_FIELDS.map((key) => [key, fieldNeedsLook(read[key], proved[key])])));
-      setKind(guess.kind);
-      setWhy(guess.why);
-      /*
-        A fresh review every time. A person filed as a contact at Siemens on
-        the last card must not leave Siemens selected under the next one — the
-        save would be right about the fields and wrong about the company, which
-        is the kind of mistake nobody notices until the office does.
-      */
-      setDestination('client');
-      setCompany(null);
-      setPicking(null);
-      if (parsed.lines.length === 0) {
-        toast.error(t('scan.nothingRead', 'Nothing could be read — try again with more light.'));
-        setCard(null);
-      }
+      return await readCardLines(shot.uri, image, frameToImageCrop({ frame, screen: box, image }));
     } catch {
-      toast.error(t('scan.failed', 'Could not read the card.'));
+      return [];
     } finally {
-      /*
-        ⚠️ Delete the photograph. Always, including on failure.
-
-        It is a picture of a named person's phone number and email address,
-        sitting in a cache directory with no expiry and no purpose once the
-        text has been read. The whole point of reading the card on the device
-        is that the card does not travel; leaving the image behind quietly
-        undoes that.
-      */
       if (shotUri) {
         try { new FsFile(shotUri).delete(); } catch { /* already gone */ }
       }
-      setBusy(false);
     }
     /*
       ⚠️ `box`, not `screen`. There is no `screen` in this component — it was
@@ -281,12 +317,101 @@ export default function ScanCardScreen() {
       the compiler is concerned. At runtime it does not exist, so opening the
       scanner threw "Property 'screen' doesn't exist" before a frame was drawn.
     */
-  }, [busy, t, toast, frame, box.width, box.height]);
+  }, [frame, box]);
+
+  const capture = useCallback(async () => {
+    if (!camera.current || busy) return;
+    setBusy(true);
+    setProgress(0);
+    const started = Date.now();
+    const passes: CardLine[][] = [];
+    try {
+      /*
+        THE FIRST LOOK IS ALWAYS AWAITED IN FULL. It is the whole answer if the
+        others fail, so it is the one frame the budget below may not cut short.
+      */
+      const first = Date.now();
+      passes.push(await captureFrame());
+      setProgress(1);
+      let lastFrameMs = Date.now() - first;
+
+      while (wantsAnotherFrame(passes.length, Date.now() - started)) {
+        // Only as much pause as the last frame did not already provide — see
+        // `frameGapAfter`. A card sitting still in front of a moving hand is a
+        // different picture within a quarter of a second either way.
+        const gap = frameGapAfter(lastFrameMs);
+        if (gap > 0) await wait(gap);
+
+        const left = CARD_FRAME_BUDGET_MS - (Date.now() - started);
+        if (left <= 0) break;
+        /*
+          ⚠️ RACED AGAINST WHAT IS LEFT, never simply awaited. The member is
+          holding a card out in front of a camera; one slow frame must cost the
+          scan that frame and not the member's patience. The abandoned capture
+          is not leaked — `captureFrame` deletes its own photograph in a
+          `finally`, so the file goes whenever it settles, with or without
+          anybody waiting for it.
+        */
+        const at = Date.now();
+        const lines = await Promise.race([
+          captureFrame(),
+          wait(left).then(() => null),
+        ]);
+        lastFrameMs = Date.now() - at;
+        if (!lines) break;
+        passes.push(lines);
+        setProgress(passes.length);
+      }
+
+      // ⚠️ Parsed ONCE, on the union. See `parseCardPasses`.
+      const { card: parsed, quality } = parseCardPasses(passes);
+      if (parsed.lines.length === 0) {
+        toastError(t('scan.nothingRead', 'Nothing could be read — try again with more light.'));
+        return;
+      }
+
+      const guess = guessCardKind(parsed);
+      // `readCard` splits what the reader placed from what it merely
+      // understood, and keeps a social link out of `website` on the way past.
+      const { values, extras } = readCard(parsed);
+      const certain = cardCertainty(parsed);
+      const contested = cardContested(parsed);
+      setRead({
+        card: parsed,
+        values,
+        certain,
+        contested,
+        // Contested counts as worth a look: the reader is guessing between two
+        // lines, which is exactly the case a person can settle in one tap.
+        flagged: Object.fromEntries(CARD_FIELDS.map((key) =>
+          [key, fieldNeedsLook(values[key], certain[key]) || !!contested[key]])),
+        answered: {},
+        holding: cardHolding(parsed),
+        extras,
+        quality,
+      });
+      setKind(guess.kind);
+      setWhy(guess.why);
+      /*
+        A fresh review every time. A person filed as a contact at Siemens on
+        the last card must not leave Siemens selected under the next one — the
+        save would be right about the fields and wrong about the company, which
+        is the kind of mistake nobody notices until the office does.
+      */
+      setDestination('client');
+      setCompany(null);
+      setPicking(null);
+    } catch {
+      toastError(t('scan.failed', 'Could not read the card.'));
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, t, toastError, captureFrame]);
 
   /*
     ── Editing what was read ──────────────────────────────────────────────────
 
-    All three are stable across renders, so a keystroke in one row does not
+    All of these are stable across renders, so a keystroke in one row does not
     re-render the other seven. The rows are memoised on their props and take the
     field key rather than a closure written per row at the call site, which is
     what makes the memo worth having.
@@ -295,18 +420,92 @@ export default function ScanCardScreen() {
     capture, and deleted; these edit the answer, never the source.
   */
   const setValue = useCallback((key: CardFieldKey, value: string) => {
-    setValues((p) => ({ ...p, [key]: value }));
+    setRead((p) => p && ({
+      ...p,
+      values: { ...p.values, [key]: value },
+      /*
+        ⚠️ TYPING IS ANSWERING. From the first keystroke this field is the
+        member's, and a later correction elsewhere must never re-rank it out
+        from under them — which is the one thing that would make corrections a
+        thing people undo rather than make.
+      */
+      answered: { ...p.answered, [key]: true as const },
+    }));
   }, []);
 
   const toggleLines = useCallback((key: CardFieldKey) => {
     setPicking((p) => (p === key ? null : key));
   }, []);
 
-  const pickLine = useCallback((key: CardFieldKey, line: string) => {
-    setValues((p) => ({ ...p, [key]: line }));
-    // Chosen by a person — no longer a guess, so the row stops asking.
-    setCertain((p) => ({ ...p, [key]: true }));
+  const pickLine = useCallback((key: CardFieldKey, line: string, index: number) => {
+    /*
+      ⚠️ A SOCIAL LINK MAY NOT BECOME THE WEBSITE, however it was chosen.
+      `facebook.com/stadt.gmunden` passes every "looks like a URL" test ever
+      written, and on the card this was found on `gmunden.at` was printed two
+      characters away. Kept rather than refused: it goes into the extras, where
+      it is filed under the network's own name.
+    */
+    const social = key === 'website' ? socialOf(line) : null;
+    if (social) {
+      setRead((p) => p && ({
+        ...p,
+        extras: p.extras.some((x) => x.value === line)
+          ? p.extras
+          : [...p.extras, { id: `s-${index}-${line}`, labelKey: social.labelKey, value: line }],
+      }));
+      toastError(t('scan.socialNotWebsite'));
+      setPicking(null);
+      return;
+    }
+
+    setRead((p) => {
+      if (!p) return p;
+      const answered = { ...p.answered, [key]: true as const };
+      /*
+        ⚠️ THE CORRECTION RE-RANKS THE REST. The line the member just claimed is
+        no longer available to any other field, so every field they have NOT
+        answered is re-run against the lines that are left. Leaving them stale
+        shows one fact in two places and invites the member to save it that way.
+        The rule is in `reRankGuesses`, where it can be tested without a camera.
+      */
+      const ranked = reRankGuesses(
+        p.card,
+        { ...p.values, [key]: line },
+        new Set(Object.keys(answered) as CardFieldKey[]),
+        { ...p.holding, [key]: index },
+      );
+      return {
+        ...p,
+        values: ranked.values,
+        holding: ranked.holding,
+        answered,
+        // Chosen by a person — no longer a guess, so the row stops asking.
+        certain: { ...p.certain, [key]: true },
+      };
+    });
     setPicking(null);
+  }, [t, toastError]);
+
+  /* ── The extras: rename one, correct one, drop one ───────────────────────── */
+
+  const renameExtra = useCallback((id: string, label: string) => {
+    // `rename` rather than writing over `label`/`labelKey`: the card's own word
+    // and ours both stay recoverable if the member clears the box again.
+    setRead((p) => p && ({
+      ...p,
+      extras: p.extras.map((x) => (x.id === id ? { ...x, rename: label } : x)),
+    }));
+  }, []);
+
+  const setExtraValue = useCallback((id: string, value: string) => {
+    setRead((p) => p && ({
+      ...p,
+      extras: p.extras.map((x) => (x.id === id ? { ...x, value } : x)),
+    }));
+  }, []);
+
+  const dropExtra = useCallback((id: string) => {
+    setRead((p) => p && ({ ...p, extras: p.extras.filter((x) => x.id !== id) }));
   }, []);
 
   const chooseDestination = useCallback((next: CardDestination, chosen: MobileCustomer | null) => {
@@ -321,9 +520,12 @@ export default function ScanCardScreen() {
       never overwrite what the card actually printed.
     */
     if (next === 'newCompany') {
-      setValues((p) => (p.company.trim() ? p : { ...p, company: card?.companySuggestion ?? '' }));
+      setRead((p) => (!p || p.values.company.trim() ? p : {
+        ...p,
+        values: { ...p.values, company: p.card.companySuggestion ?? '' },
+      }));
     }
-  }, [card]);
+  }, []);
 
   /*
     ⚠️ Changing the kind RESETS where the person was going.
@@ -351,6 +553,8 @@ export default function ScanCardScreen() {
     fallback each needs. What is decided here is only whether to save at all.
   */
 
+  const values = read?.values;
+
   /*
     The name the record will carry — what a duplicate would be a duplicate OF.
 
@@ -360,19 +564,37 @@ export default function ScanCardScreen() {
     person's name there would look like a duplicate check while guarding
     precisely the wrong record.
   */
-  const savedName =
+  const savedName = !values ? '' :
     destination === 'newCompany' ? values.company.trim()
     : destination === 'contact' ? values.name.trim()
     : cardClientNames(kind, values).name;
   const ready =
+    !!values &&
     !!savedName &&
     !(destination === 'contact' && !company) &&
     !(destination === 'newCompany' && !values.name.trim());
 
   const commit = useCallback(async () => {
+    if (!read) return;
     setSaving(true);
     try {
-      const outcome = await commitCard({ kind, destination, company, values, spaceId: spaceId || null });
+      const outcome = await commitCard({
+        kind,
+        destination,
+        company,
+        values: read.values,
+        spaceId: spaceId || null,
+        /*
+          ⚠️ Resolved to plain strings HERE, at the last moment, because
+          `Customer.details` holds `[{label, value}]` and a translation key
+          written into a record is a key somebody reads on a client screen
+          forever. `cardDetails` also drops a row the member emptied.
+
+          ⚠️ Only where the destination can keep them: a contact person has no
+          `details`, and the screen has already said so.
+        */
+        details: cardExtrasKept(destination) ? cardDetails(read.extras, t) : undefined,
+      });
       if (!outcome) {
         toast.error(t('customers.addFailed'));
         return;
@@ -392,7 +614,7 @@ export default function ScanCardScreen() {
     } finally {
       setSaving(false);
     }
-  }, [commitCard, kind, destination, company, values, spaceId, t, toast]);
+  }, [commitCard, kind, destination, company, read, spaceId, t, toast]);
 
   /*
     ⚠️ The duplicate search happens HERE and not on the way in: the name it
@@ -435,6 +657,8 @@ export default function ScanCardScreen() {
     chooseDestination('contact', client);
   }, [duplicate, chooseDestination]);
 
+  const scanAgain = useCallback(() => setRead(null), []);
+
   // ── Allowed to add a client at all? ───────────────────────────────────────
   if (!canAdd) {
     return (
@@ -473,45 +697,54 @@ export default function ScanCardScreen() {
   }
 
   // ── Review what was read ──────────────────────────────────────────────────
-  if (card) {
+  if (read) {
     /*
       GROUPED BY CONFIDENCE, not listed flat.
 
       A row needs a look when the reader INFERRED it (`likely` — the name, the
-      company, the address, the title) or found nothing at all. Everything else
-      it proved by shape, and a proved field asking to be checked is how a
-      screen teaches people to stop checking.
+      company, the address, the title), found nothing at all, or was deciding
+      between two lines. Everything else it proved by shape, and a proved field
+      asking to be checked is how a screen teaches people to stop checking.
 
       Membership comes from `flagged` — what was true when the card was READ —
       and never from the live value; see the note where it is set.
     */
     const shown = cardFieldsFor(kind, destination);
-    const needsLook = shown.filter((key) => flagged[key]);
-    const captured = shown.filter((key) => !flagged[key]);
-    const orphans = homelessFields(kind, destination, values);
+    const needsLook = shown.filter((key) => read.flagged[key]);
+    const captured = shown.filter((key) => !read.flagged[key]);
+    const orphans = homelessFields(kind, destination, read.values);
 
-    const row = (key: CardFieldKey) => (
-      <CardFieldRow
-        key={key}
-        fieldKey={key}
-        /* The one label that moves with the kind: on a firm's card the person
-           named on it is the CONTACT, not the client. */
-        label={key === 'name' && kind === 'COMPANY' ? t('customers.fContact') : t(FIELD_LABEL[key])}
-        value={values[key]}
-        attention={fieldNeedsLook(values[key], certain[key])}
-        keyboardType={FIELD_INPUT[key]?.keyboardType}
-        autoCapitalize={FIELD_INPUT[key]?.autoCapitalize}
-        lines={card.lines}
-        expanded={picking === key}
-        onChange={setValue}
-        onToggleLines={toggleLines}
-        onPickLine={pickLine}
-      />
-    );
+    const row = (key: CardFieldKey) => {
+      // A contested field stops asking the moment the member answers it: they
+      // have settled what the reader could not.
+      const stillContested = !!read.contested[key] && !read.answered[key];
+      return (
+        <CardFieldRow
+          key={key}
+          fieldKey={key}
+          /* The one label that moves with the kind: on a firm's card the person
+             named on it is the CONTACT, not the client. */
+          label={key === 'name' && kind === 'COMPANY' ? t('customers.fContact') : t(FIELD_LABEL[key])}
+          value={read.values[key]}
+          attention={fieldNeedsLook(read.values[key], read.certain[key]) || stillContested}
+          keyboardType={FIELD_INPUT[key]?.keyboardType}
+          autoCapitalize={FIELD_INPUT[key]?.autoCapitalize}
+          lines={read.card.lines}
+          // The two lines the reader was nearly persuaded by, offered ahead of
+          // the full list — a wrong guess should be one tap to fix.
+          alternatives={cardAlternatives(read.card, key)}
+          contested={stillContested}
+          expanded={picking === key}
+          onChange={setValue}
+          onToggleLines={toggleLines}
+          onPickLine={pickLine}
+        />
+      );
+    };
 
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.surface }]} edges={['top']}>
-        <ScreenHeader title={t('scan.review')} onBack={() => setCard(null)} />
+        <ScreenHeader title={t('scan.review')} onBack={scanAgain} />
         <ScrollView
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
@@ -521,6 +754,42 @@ export default function ScanCardScreen() {
             paddingBottom: SPACING.xxxl + insets.bottom,
           }}
         >
+          {/*
+            ⚠️ A BAD LOOK IS SAID OUT LOUD, FIRST, BEFORE ANY FIELD.
+
+            The alternative — presenting four confident fields from a photograph
+            that half failed — is what makes a reader feel broken rather than
+            merely imperfect, because the member has no way to know that
+            anything is missing. "Part of this card could not be read" is a
+            smaller failure than a client saved without their email.
+
+            The fields stay below and stay editable: this leads, it does not
+            block. Somebody standing in a corridor with one card and no second
+            chance must still be able to save what did come through.
+          */}
+          {read.quality.poor && (
+            <View style={[s.poor, { borderColor: COLORS.amber }]}>
+              <View style={s.poorHead}>
+                <Ionicons name="alert-circle-outline" size={18} color={COLORS.amber} />
+                <Text style={s.poorTitle}>{t('scan.poorRead')}</Text>
+              </View>
+              <Text style={[s.poorBody, { color: colors.textMuted }]}>
+                {/*
+                  ⚠️ `lines`, NOT `count`. i18next reads `count` as a plural
+                  selector and looks for `poorReadHint_one` / `_other` first —
+                  it falls back to this key when they are absent, so it works
+                  by luck, and stops working the day somebody adds a plural
+                  form in one language and not the other four.
+                */}
+                {t('scan.poorReadHint', { lines: read.quality.lines })}
+              </Text>
+              <TouchableOpacity onPress={scanAgain} style={s.poorBtn} accessibilityRole="button">
+                <Ionicons name="camera-outline" size={16} color={COLORS.white} />
+                <Text style={s.poorBtnText}>{t('scan.again')}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/*
             ONE QUESTION, AT THE TOP, WITH ITS REASON.
 
@@ -556,11 +825,21 @@ export default function ScanCardScreen() {
             </CardFieldGroup>
           )}
 
+          {/* What the card said that no field wanted — kept, named and editable
+              rather than dropped in silence. See `card-extras.tsx`. */}
+          <CardExtrasGroup
+            rows={read.extras}
+            kept={cardExtrasKept(destination)}
+            onRename={renameExtra}
+            onChangeValue={setExtraValue}
+            onRemove={dropExtra}
+          />
+
           {/* A person has somewhere to BE. A company is already the client. */}
           {kind === 'PERSON' && (
             <CardDestinationPicker
-              companyGuess={values.company}
-              companySuggestion={card.companySuggestion}
+              companyGuess={read.values.company}
+              companySuggestion={read.card.companySuggestion}
               destination={destination}
               company={company}
               onChange={chooseDestination}
@@ -597,10 +876,10 @@ export default function ScanCardScreen() {
               nothing when pressed. */}
           {!ready && (
             <Text style={[s.why, { color: colors.textMuted, textAlign: 'center' }]}>
-              {t(reasonSaveIsGrey(destination, !!company, values))}
+              {t(reasonSaveIsGrey(destination, !!company, read.values))}
             </Text>
           )}
-          <TouchableOpacity style={s.ghost} onPress={() => setCard(null)}>
+          <TouchableOpacity style={s.ghost} onPress={scanAgain}>
             <Text style={{ color: colors.textMuted, fontSize: FONT_SIZE.sm }}>{t('scan.again')}</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -642,7 +921,12 @@ export default function ScanCardScreen() {
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
           <View style={[s.guide, { left: frame.left, top: frame.top, width: frame.width, height: frame.height }]} />
           <Text style={[s.guideHint, { top: frame.top + frame.height + 16 }]}>
-            {t('scan.frame', 'Fit the card inside the frame')}
+            {/* Honest progress while several looks are taken — see `progress`.
+                "Hold still" is the one instruction that actually helps, and it
+                is true: the merge wants a card that stays put. */}
+            {busy
+              ? t('scan.reading', { done: Math.max(progress, 1), total: CARD_FRAMES })
+              : t('scan.frame', 'Fit the card inside the frame')}
           </Text>
         </View>
 
@@ -688,6 +972,31 @@ const s = StyleSheet.create({
   kindRow: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.sm },
   why: { fontSize: FONT_SIZE.sm, lineHeight: 18, marginTop: SPACING.sm },
   orphans: { fontSize: FONT_SIZE.sm, lineHeight: 18, marginTop: SPACING.xl },
+
+  /* The bad-read warning. Bordered and boxed — the ONE thing on this screen
+     that is, because it is the one thing that must not be scrolled past. */
+  poor: {
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.amberLight,
+    padding: SPACING.md,
+    marginBottom: SPACING.lg,
+    gap: SPACING.xs,
+  },
+  poorHead: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
+  poorTitle: { flex: 1, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.bold, color: COLORS.amber },
+  poorBody: { fontSize: FONT_SIZE.sm, lineHeight: 18 },
+  poorBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.xs,
+    backgroundColor: COLORS.amber,
+    borderRadius: RADIUS.sm,
+    height: 40,
+    marginTop: SPACING.xs,
+  },
+  poorBtnText: { color: COLORS.white, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold },
 
   primary: { borderRadius: RADIUS.md, height: 50, alignItems: 'center', justifyContent: 'center', marginTop: SPACING.xl },
   primaryText: { color: COLORS.white, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold },

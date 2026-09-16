@@ -1988,6 +1988,22 @@
       "daily": "Ogni giorno",
       "weekly": "Ogni settimana",
       "monthly": "Ogni mese"
+    },
+    "social": {
+      "facebook": "Facebook",
+      "instagram": "Instagram",
+      "linkedin": "LinkedIn",
+      "xing": "Xing",
+      "x": "X",
+      "youtube": "YouTube",
+      "tiktok": "TikTok",
+      "whatsapp": "WhatsApp"
+    },
+    "extra": {
+      "iban": "IBAN",
+      "bic": "BIC",
+      "hours": "Orari di apertura",
+      "skype": "Skype"
     }
   },
   "issues": {
@@ -2394,7 +2410,20 @@
     "maybeExists": "Potrebbe esserci già",
     "maybeExistsBody": "Esiste già un cliente con un nome molto simile. Aprendolo, tutto ciò che lo riguarda resta in un unico posto.",
     "maybeExistsCompany": "Esiste già un’azienda con un nome molto simile. La tocchi per collegarle questa persona invece di creare un secondo record.",
-    "saveAnyway": "Crea comunque una nuova scheda"
+    "saveAnyway": "Crea comunque una nuova scheda",
+    "reading": "Lettura del biglietto… {{done}} di {{total}}",
+    "poorRead": "Una parte di questo biglietto non è stata letta",
+    "poorReadHint": "Sono arrivate solo {{lines}} righe, quindi probabilmente manca qualcosa. Controlli ogni campo qui sotto oppure riprovi: più luce e il biglietto ben disteso aiutano di più.",
+    "contested": "Qui due righe sembravano ugualmente probabili: ne scelga una.",
+    "didYouMean": "Intendeva",
+    "allLines": "Tutte le righe",
+    "extras": "Tieni come extra",
+    "extrasHint": "Letto dal biglietto, senza un campo proprio. Lo rinomini, lo modifichi o lo elimini: ciò che resta viene salvato con il cliente.",
+    "extrasNotKept": "Letto dal biglietto, ma una persona di contatto non ha dove conservarlo. Scelga un cliente o una nuova azienda per salvarlo.",
+    "extraLabel": "Dai un nome",
+    "extraValue": "Contenuto",
+    "removeExtra": "Non tenere",
+    "socialNotWebsite": "È una pagina social, non il sito web: viene tenuta qui sotto."
   },
   "myAssets": {
     "title": "La mia attrezzatura",
