@@ -2,9 +2,13 @@
 
 import { useTranslation } from 'react-i18next';
 
-// The app is live on both stores.
-export const GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=com.hbcfield.app';
-export const APP_STORE_URL = 'https://apps.apple.com/app/id6762745260';
+// The app is live on both stores. The URLs themselves live in `lib/store-links`
+// so a page can import them without dragging this component — and react-i18next
+// with it — along for the ride. Re-exported here because several callers have
+// always imported them from this file.
+import { GOOGLE_PLAY_URL, APP_STORE_URL } from '@/lib/store-links';
+
+export { GOOGLE_PLAY_URL, APP_STORE_URL };
 
 /** Official multi-colour Google Play triangle. */
 export function GooglePlayGlyph({ className = '' }: { className?: string }) {
