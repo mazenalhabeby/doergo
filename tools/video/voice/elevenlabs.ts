@@ -30,12 +30,19 @@ import { probeDurationSec } from '../assemble/ffmpeg.ts';
 const run = promisify(execFile);
 
 /**
- * Rachel — the most neutral of the stock voices for product narration.
+ * Malia — Natural American. The product's narrator.
  *
- * Overridable, because the right voice is a brand decision rather than a
- * technical one: `VIDEO_ELEVEN_VOICE` takes any voice id from the account.
+ * ⚠️ CHOSEN, not defaulted. Every video in the library has to sound like the
+ * same person; a voice that drifts from one to the next reads as several
+ * companies. Change it deliberately and re-render the whole library, never one
+ * video.
+ *
+ * ⚠️ A voice id is NOT a secret and is safe in the repo — it names a voice, it
+ * grants nothing. The key that may speak with it lives in the environment.
+ *
+ * Overridable for a one-off test: `VIDEO_ELEVEN_VOICE`.
  */
-const VOICE_ID = process.env.VIDEO_ELEVEN_VOICE ?? '21m00Tcm4TlvDq8ikWAM';
+const VOICE_ID = process.env.VIDEO_ELEVEN_VOICE ?? 'klHXweKCxxmBYweAPtk4';
 
 /**
  * `multilingual_v2` rather than the English-only model, even while only English
