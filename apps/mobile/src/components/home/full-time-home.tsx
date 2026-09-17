@@ -33,7 +33,7 @@ import {
 } from '../../lib/utils';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { countryFromTz } from '@hbcfield/shared/client';
-import { TourTarget } from '../tour';
+import { TourTarget, useTourScroll } from '../tour';
 import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from './home-styles';
 import { DocumentsReminderCard } from '../documents-reminder-card';
 import { QuickActions } from './quick-actions';
@@ -46,6 +46,7 @@ export function FullTimeHome() {
   const { formatTime, formatDateRelative: formatDate } = useTimeFormat();
   const { colors } = useTheme();
   const { t, i18n } = useTranslation();
+  const tourScroll = useTourScroll();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -161,6 +162,8 @@ export function FullTimeHome() {
     <View style={[sharedStyles.container, { backgroundColor: colors.surface }]}>
       <ScreenContainer width="content">
       <ScrollView
+        // Lets the guided tour scroll a target into view before spotlighting it.
+        {...tourScroll}
         style={sharedStyles.scrollView}
         showsVerticalScrollIndicator={false}
         refreshControl={

@@ -31,7 +31,7 @@ import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
 import { AlwaysLocationNudge } from '../always-location-nudge';
 import { useExcursionSync } from '../../hooks/useExcursionSync';
 import type { GeofenceExcursion, CompanyLocation } from '../../lib/api/types';
-import { TourTarget } from '../tour';
+import { TourTarget, useTourScroll } from '../tour';
 import { ROUTES } from '../../lib/constants';
 import { hasAccessModule, isFieldWorker, canManageMembersInSpace, TaskStatus } from '@hbcfield/shared/client';
 import { holds } from '../../lib/permissions';
@@ -104,6 +104,7 @@ export function AdminDashboard() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const { t, i18n } = useTranslation();
+  const tourScroll = useTourScroll();
 
   // The viewer is online by definition (they're on this screen right now) — never
   // let their own lastActiveAt lag drop them into "Off Duty".
@@ -889,6 +890,8 @@ export function AdminDashboard() {
     <View style={[homeStyles.container, { backgroundColor: colors.surface }]}>
       <ScreenContainer width="content">
       <ScrollView
+        // Lets the guided tour scroll a target into view before spotlighting it.
+        {...tourScroll}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
         refreshControl={

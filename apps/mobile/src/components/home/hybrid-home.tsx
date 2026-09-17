@@ -24,7 +24,7 @@ import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
 import { AlwaysLocationNudge } from '../always-location-nudge';
 import { useExcursionSync } from '../../hooks/useExcursionSync';
 import { WeekCalendar } from '../week-calendar';
-import { TourTarget } from '../tour';
+import { TourTarget, useTourScroll } from '../tour';
 import { ROUTES } from '../../lib/constants';
 import { styles as sharedStyles, statChip, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from './home-styles';
 import { DocumentsReminderCard } from '../documents-reminder-card';
@@ -35,6 +35,7 @@ export function HybridHome() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
+  const tourScroll = useTourScroll();
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
@@ -274,6 +275,10 @@ export function HybridHome() {
     <View style={[sharedStyles.container, { backgroundColor: colors.surface }]}>
       <ScreenContainer width="content">
       <FlatList
+        // Lets the guided tour scroll a target into view before spotlighting it:
+        // most of this screen's tour anchors live in the list header, below the
+        // fold, and the engine cannot scroll a list it was never handed.
+        {...tourScroll}
         data={filteredTasks}
         renderItem={renderTask}
         keyExtractor={item => item.id}
