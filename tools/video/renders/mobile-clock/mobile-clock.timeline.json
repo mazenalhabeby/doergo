@@ -1,0 +1,25 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/mobile-clock/capture/screen-trimmed.mp4",
+  "durationSec": 184.273991,
+  "preRollSec": 9.271327,
+  "beats": [
+    {
+      "id": "signIn",
+      "startSec": 9.271327,
+      "endSec": 93.97432699999999,
+      "narrationSec": 7.544771
+    },
+    {
+      "id": "openClock",
+      "startSec": 106.597327,
+      "endSec": 172.32132700000003,
+      "narrationSec": 7.072667
+    },
+    {
+      "id": "clockIn",
+      "startSec": 172.957327,
+      "endSec": 190.603327,
+      "narrationSec": 8.175521
+    }
+  ]
+}

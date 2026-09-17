@@ -26,18 +26,18 @@
     {
       "id": "signIn",
       "chapter": {
-        "en": "Signing in",
-        "de": "Anmelden",
-        "es": "Iniciar sesión",
-        "fr": "Connexion",
-        "it": "Accesso"
+        "en": "Her day, on her phone",
+        "de": "Ihr Tag, auf ihrem Telefon",
+        "es": "Su día, en su teléfono",
+        "fr": "Sa journée, sur son téléphone",
+        "it": "La sua giornata, sul telefono"
       },
       "narration": {
-        "en": "This is the same product, on the phone the work actually happens on. Priya signs in at the depot gate, before she has put her bag down.",
-        "de": "Dies ist dasselbe Produkt — auf dem Telefon, auf dem die Arbeit tatsächlich stattfindet. Priya meldet sich am Depottor an, noch bevor sie ihre Tasche abgestellt hat.",
-        "es": "Es el mismo producto, en el teléfono donde el trabajo ocurre de verdad. Priya inicia sesión en la puerta del almacén, antes de soltar la bolsa.",
-        "fr": "C'est le même produit, sur le téléphone où le travail se fait vraiment. Priya se connecte à la grille du dépôt, avant même d'avoir posé son sac.",
-        "it": "È lo stesso prodotto, sul telefono dove il lavoro accade davvero. Priya accede al cancello del deposito, prima ancora di posare la borsa."
+        "en": "This is the same product, on the phone the work actually happens on. Priya is at the depot gate, and her day is already on the screen.",
+        "de": "Dies ist dasselbe Produkt — auf dem Telefon, auf dem die Arbeit tatsächlich stattfindet. Priya steht am Depottor, und ihr Tag steht schon auf dem Bildschirm.",
+        "es": "Es el mismo producto, en el teléfono donde el trabajo ocurre de verdad. Priya está en la puerta del almacén y su día ya está en la pantalla.",
+        "fr": "C'est le même produit, sur le téléphone où le travail se fait vraiment. Priya est à la grille du dépôt, et sa journée est déjà à l'écran.",
+        "it": "È lo stesso prodotto, sul telefono dove il lavoro accade davvero. Priya è al cancello del deposito e la sua giornata è già sullo schermo."
       }
     },
     {

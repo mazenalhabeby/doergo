@@ -106,6 +106,30 @@ export interface MobileStageOptions {
    * into the app, which is the only thing the video is about.
    */
   launchUrl?: string;
+  /**
+   * Wipe the app's storage before launching, forcing a logged-out start.
+   *
+   * ⚠️ DEFAULTS TO TRUE, but a flow that does not FILM signing in should turn it
+   * off. Clearing means the flow must type an email and a password, and an
+   * emulator renders that one character at a time — about a hundred seconds of
+   * setup, spent every run, to reach a screen the video does not show.
+   */
+  clearState?: boolean;
+  /**
+   * Text that proves the app has finished loading, polled BEFORE the recorder
+   * starts.
+   *
+   * ⚠️ WITHOUT THIS THE FLOW RACES ITS OWN LAUNCH. Maestro reads whatever view
+   * hierarchy the device is showing, and a relaunch does not clear it — so the
+   * setup's "wait until Attendance is visible" matched the PREVIOUS instance's
+   * screen and returned in a second, while the app behind it was still on its
+   * splash. Every beat then played over a loading screen and the take was 45
+   * seconds of nothing, with no step reported as failed.
+   *
+   * Polled over adb rather than through Maestro: it costs no JVM start, and it
+   * happens before the camera is rolling, so it can take as long as it needs.
+   */
+  readyText?: string;
   /** Steps run BEFORE the clock starts — sign-in, navigation, anything dull. */
   setup?: MaestroStep[];
   beats: MobileBeat[];
@@ -302,28 +326,88 @@ async function startRecording(
     };
   }
 
+  /*
+    ⚠️ ON AN EMULATOR, RECORD ON THE HOST — NOT IN THE GUEST.
+
+    `adb shell screenrecord` encodes inside the guest, on the same starved
+    cores that are already failing to draw the app. Under load it does not slow
+    down, it FREEZES: takes came back holding one identical frame for forty-five
+    seconds while logcat showed the app navigating normally the whole time, and
+    nothing anywhere reported an error. It also stamps frames with the guest
+    clock, so the file's duration bore no relation to how long the take took.
+
+    The emulator has its own recorder (`adb emu screenrecord`) which encodes in
+    QEMU on the Mac and writes straight here. Same load, same machine: every
+    frame different, and a duration that matches wall time to a tenth of a
+    second. It is only available on an emulator, so a real device keeps the
+    path above.
+  */
+  if (/^emulator-/.test(device)) {
+    const hostOut = path.join(dir, 'screen.webm');
+    await fs.rm(hostOut, { force: true });
+    await run(ADB, [
+      '-s', device, 'emu', 'screenrecord', 'start',
+      '--time-limit', String(SCREENRECORD_LIMIT_SEC),
+      hostOut,
+    ]);
+    return {
+      async stop() {
+        await run(ADB, ['-s', device, 'emu', 'screenrecord', 'stop']).catch(() => {});
+        // QEMU finalises the container after it answers; the file is short or
+        // unreadable if it is opened straight away.
+        await new Promise((r) => setTimeout(r, 2500));
+        return hostOut;
+      },
+    };
+  }
+
   const onDevice = '/sdcard/hbcfield-video.mp4';
   await run(ADB, ['-s', device, 'shell', 'rm', '-f', onDevice]).catch(() => {});
+  /*
+    ⚠️ `detached: true` PUTS THE RECORDER IN ITS OWN PROCESS GROUP, and that is
+    not tidiness — it is the fix for the failure that cost most of a day. Spawned
+    normally, the child shares this process's group, and the SIGINT sent to stop
+    it reached NODE as well: the render died the instant it tried to stop
+    recording, printing nothing and exiting 0, while Maestro carried on
+    orphaned. Every "silent exit at 3/4 capture" was this.
+  */
   const proc = spawn(
     ADB,
     [
       '-s', device, 'shell', 'screenrecord',
-      '--bit-rate', '8000000',
+      /*
+        ⚠️ RECORD SMALLER THAN THE PANEL. An emulator's screenrecord encodes on
+        the same cores that are already struggling to draw the app, and at the
+        full 1280×2856 it silently gives up on frames: takes came back holding
+        one stale dashboard for two minutes while logcat showed the app
+        navigating normally throughout. 720×1600 is more than the assembly
+        needs — the phone is composited into a 1080p frame at roughly half
+        width — and it is the difference between a recording and a slideshow.
+      */
+      '--size', '720x1600',
+      '--bit-rate', '6000000',
       '--time-limit', String(SCREENRECORD_LIMIT_SEC),
       onDevice,
     ],
-    { stdio: ['ignore', 'ignore', 'pipe'] },
+    { stdio: ['ignore', 'ignore', 'pipe'], detached: true },
   );
 
   return {
     async stop() {
       /*
-        ⚠️ SIGINT, not SIGKILL. screenrecord finalises the MP4 container when
-        it is interrupted; killed outright it leaves a file with no moov atom,
-        which ffprobe reports as a corrupt stream rather than a short one.
+        ⚠️ STOPPED ON THE DEVICE, NOT BY SIGNALLING THE LOCAL PROCESS. Sending
+        SIGINT to the `adb` child killed THIS process too — the render died the
+        moment it tried to stop recording, printing nothing and exiting 0 while
+        Maestro carried on orphaned. Every "silent exit at 3/4 capture" was
+        that. `detached: true` was not enough on its own.
+
+        ⚠️ -INT rather than -KILL: screenrecord finalises the MP4 container when
+        interrupted; killed outright it leaves a file with no moov atom, which
+        ffprobe reports as a corrupt stream rather than a short one.
       */
-      proc.kill('SIGINT');
-      await new Promise((r) => proc.on('close', r));
+      await run(ADB, ['-s', device, 'shell', 'pkill', '-INT', 'screenrecord']).catch(() => {});
+      await new Promise((r) => setTimeout(r, 2000));
+      proc.unref();
       // The device needs a moment to flush and close the file.
       await new Promise((r) => setTimeout(r, 1500));
       await run(ADB, ['-s', device, 'pull', onDevice, out]);
@@ -412,8 +496,64 @@ export async function captureMobile(options: MobileStageOptions): Promise<Timeli
       await run(ADB, ['-s', device, 'reverse', `tcp:${port}`, `tcp:${port}`]).catch(() => {});
     }
 
-    // A logged-out start is the point; watching storage clear is not footage.
-    await run(ADB, ['-s', device, 'shell', 'pm', 'clear', APP_ID]);
+    /*
+      ⚠️ GRANT LOCATION BEFORE FILMING, NEVER DURING.
+
+      The clock asks the OS for a fix the moment Clock In is tapped, and on a
+      fresh install Android answers with its own permission dialog — three
+      buttons over the app, drawn by the system, which Maestro then has to
+      answer mid-take. Every clock flow failed on exactly this: the tap was
+      reported COMPLETED, "Clock Out" never appeared, and the screenshot showed
+      the OS asking about Precise vs Approximate.
+
+      Granting it here costs nothing on camera and removes a whole class of
+      flake. Best-effort: a build without the permission in its manifest simply
+      makes this a no-op.
+    */
+    const LOCATION_PERMS = [
+      'android.permission.ACCESS_FINE_LOCATION',
+      'android.permission.ACCESS_COARSE_LOCATION',
+      /*
+        ⚠️ AND THE BACKGROUND ONE, which is a THIRD sheet — the app's own,
+        raised the moment a shift starts, because it keeps recording the route
+        while the phone is in a pocket. Granted last, after the foreground
+        pair: Android refuses it on its own.
+      */
+      'android.permission.ACCESS_BACKGROUND_LOCATION',
+    ];
+
+    // A logged-out start, only when the flow actually needs one.
+    if (options.clearState !== false) {
+      await run(ADB, ['-s', device, 'shell', 'pm', 'clear', APP_ID]);
+    }
+
+    // After `pm clear`, which revokes them again.
+    for (const perm of LOCATION_PERMS) {
+      await run(ADB, ['-s', device, 'shell', 'pm', 'grant', APP_ID, perm]).catch(() => {});
+    }
+
+    /*
+      ⚠️ AND STOP THE APP AFTERWARDS. Android kills a process whose permissions
+      change, and a development build that dies that way comes back showing its
+      crash-report launcher instead of the app — which is what happened the
+      first time this ran against an app left open from the previous take. A
+      deliberate stop makes the next launch a cold one either way.
+    */
+    await run(ADB, ['-s', device, 'shell', 'am', 'force-stop', APP_ID]).catch(() => {});
+
+    /*
+      ⚠️ AND TURN THE HANDSET'S OWN LOCATION ON, which is a SECOND dialog.
+
+      Granting the app the permission is not the same as the device having
+      location switched on. With it off, the first fix request raises Google's
+      "Location Accuracy" consent sheet — a system dialog with its own wording
+      and its own two buttons — which covered the clock exactly the way the
+      permission dialog had, one take later. `location_mode 3` is high accuracy,
+      which is both the fix and the reason that sheet is never asked for.
+    */
+    await run(ADB, [
+      '-s', device, 'shell', 'settings', 'put', 'secure', 'location_mode', '3',
+    ]).catch(() => {});
 
     /*
       A DEVELOPMENT BUILD ONLY: open it once and throw that launch away, to
@@ -442,6 +582,35 @@ export async function captureMobile(options: MobileStageOptions): Promise<Timeli
   }
 
   /*
+    ⚠️ WAIT FOR THE APP ITSELF, not for the screen to look right.
+
+    A cold start on a debug build is the JS bundle coming down from Metro, and
+    on this emulator that is half a minute. It has to happen before the camera
+    rolls — see `readyText` for what filming it instead looks like.
+  */
+  if (phone === 'android' && options.readyText) {
+    await launchAndroid(device, options.launchUrl);
+
+    const deadline = Date.now() + 180_000;
+    let ready = false;
+    while (Date.now() < deadline) {
+      const { stdout } = await run(ADB, [
+        '-s', device, 'shell',
+        `uiautomator dump /sdcard/__ready.xml >/dev/null 2>&1; grep -c '${options.readyText}' /sdcard/__ready.xml`,
+      ]).catch(() => ({ stdout: '0' }));
+      if (Number(stdout.trim()) > 0) { ready = true; break; }
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    if (!ready) {
+      throw new Error(
+        `The app never showed "${options.readyText}" — it is still loading, or it is not signed in.`,
+      );
+    }
+    // Let the first render settle so the opening frames are not mid-animation.
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+
+  /*
     ⚠️ The recorder starts BEFORE the driver and stops AFTER it. Any other
     order loses the first or last action — and the last action is usually the
     one the whole video was made to show.
@@ -452,7 +621,16 @@ export async function captureMobile(options: MobileStageOptions): Promise<Timeli
   // that has not begun writing drops the opening frames.
   await new Promise((r) => setTimeout(r, 1500));
 
-  if (phone === 'android') {
+  /*
+    ⚠️ ONLY IF IT IS NOT ALREADY OPEN. With `readyText` the app was launched and
+    waited for before the camera rolled; launching it again here restarts it,
+    and on a debug build that means fetching the bundle from Metro a second
+    time — ON CAMERA. That one redundant launch took a take from ~40 seconds to
+    252, which is past what `adb screenrecord` will record at all (a hard 180 s
+    cap, reached silently), so the footage ended before the clock-in it was
+    made to show.
+  */
+  if (phone === 'android' && !options.readyText) {
     await launchAndroid(device, options.launchUrl);
   }
 
@@ -497,6 +675,7 @@ export async function captureMobile(options: MobileStageOptions): Promise<Timeli
 
   // Let the last frame land before the recorder is asked to stop.
   await new Promise((r) => setTimeout(r, 900));
+  const wallSec = (Date.now() - recorderStart) / 1000;
   const rawMov = await recorder.stop();
 
   if (code !== 0) {
@@ -523,16 +702,64 @@ export async function captureMobile(options: MobileStageOptions): Promise<Timeli
   */
   const LEAD_IN_SEC = 1.2;
   const rawDuration = await probeDurationSec(rawMov);
+
+  /*
+    ⚠️ SAY SO WHEN THE RECORDER RAN OUT. `adb screenrecord` stops at 180 seconds
+    and says nothing — the file is valid, simply short, and the take looks like
+    a flow that quietly failed near the end. Better to name it.
+  */
+  if (rawDuration > 178 && wallSec > rawDuration + 2) {
+    throw new Error(
+      `The recording hit adb's 180-second limit while the flow ran for ${wallSec.toFixed(0)}s — ` +
+        'the end of the take was never filmed. Shorten the flow, or split the video.',
+    );
+  }
+
+  /*
+    ⚠️ THE RECORDING'S CLOCK IS NOT THIS MACHINE'S CLOCK.
+
+    `screenrecord` stamps each frame with the GUEST's clock, and a busy
+    emulator runs its guest slower than real time: a 55.7-second take came back
+    as a 134.7-second file. Marks are taken here, in wall time, so every one of
+    them landed in roughly the first fifth of that file — which is why three
+    beats of narration played over one unchanging dashboard while Maestro
+    reported every tap as COMPLETED, and why nothing looked broken anywhere.
+
+    The footage is re-timed to real seconds rather than the marks being scaled
+    to match it. Both put the captions in the right place; only this one also
+    plays the phone at the speed a person would have seen, instead of two and a
+    half times slower than the voice describing it.
+
+    Measured per take, because it depends on how loaded the machine was, and
+    skipped entirely when it is within 5% — a real device does not drift.
+  */
+  let footage = rawMov;
+  let footageDuration = rawDuration;
+  const drift = wallSec > 1 ? rawDuration / wallSec : 1;
+
+  if (Math.abs(drift - 1) > 0.05) {
+    const retimed = path.join(dir, 'screen-retimed.mp4');
+    await run('ffmpeg', [
+      '-y', '-loglevel', 'error',
+      '-i', rawMov,
+      '-filter:v', `setpts=PTS/${drift}`,
+      '-an',
+      retimed,
+    ]);
+    footage = retimed;
+    footageDuration = await probeDurationSec(retimed);
+  }
+
   const wantedCut = Math.max(0, firstMark - LEAD_IN_SEC);
 
-  let videoPath = rawMov;
+  let videoPath = footage;
   let cutSec = 0;
   if (wantedCut > 0.25) {
     const trimmed = path.join(dir, 'screen-trimmed.mp4');
     await run('ffmpeg', [
       '-y', '-loglevel', 'error',
       '-ss', String(wantedCut),
-      '-i', rawMov,
+      '-i', footage,
       // Stream copy: the footage is re-encoded by assembly anyway, and doing it
       // twice costs a minute and a generation of quality for nothing.
       '-c', 'copy',
@@ -544,7 +771,7 @@ export async function captureMobile(options: MobileStageOptions): Promise<Timeli
       than it was asked for. Trusting `wantedCut` here would shift every caption
       by that difference — comparing the durations gives the real figure.
     */
-    cutSec = rawDuration - (await probeDurationSec(trimmed));
+    cutSec = footageDuration - (await probeDurationSec(trimmed));
     videoPath = trimmed;
   }
 

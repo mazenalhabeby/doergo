@@ -25,7 +25,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { DEMO_LOGIN } from '../../config.ts';
 import { DEPOT } from '../../demo-data.ts';
-import { captureMobile, type MobileBeat, type Phone } from '../mobile-runner.ts';
+import { captureMobile, holdFor, type MobileBeat, type Phone } from '../mobile-runner.ts';
 import type { Timeline } from '../../timeline.ts';
 
 const run = promisify(execFile);
@@ -34,15 +34,14 @@ const BEATS: MobileBeat[] = [
   {
     id: 'signIn',
     steps: [
-      { tapOn: { text: 'you@company.com' } },
-      { inputText: DEMO_LOGIN.email },
-      { tapOn: { text: 'Enter your password' } },
-      { inputText: DEMO_LOGIN.password },
-      'hideKeyboard',
-      { tapOn: { text: 'Sign in' } },
       /*
-        The tab bar is the honest signal that sign-in landed. Waiting on a
-        spinner to disappear would also pass while an error toast is on screen.
+        The beat opens on the dashboard: signing in happened in `setup`, off
+        camera. ⚠️ THAT IS A HARD CONSTRAINT, not a style choice — `adb
+        screenrecord` stops dead at 180 seconds, and an emulator typing an
+        email address one character at a time spends 80 of them. The recording
+        was being cut off before the clock was ever reached.
+
+        It is also the better film. Nobody needs to watch a password appear.
       */
       { extendedWaitUntil: { visible: { text: 'Attendance' }, timeout: 45000 } },
     ],
@@ -52,6 +51,27 @@ const BEATS: MobileBeat[] = [
     steps: [
       { tapOn: { text: 'Attendance' } },
       { extendedWaitUntil: { visible: { text: 'Clock In' }, timeout: 30000 } },
+      /*
+        ⚠️ THE ATTENDANCE SCREEN HAS ITS OWN GUIDE — "Attendance, Step 1 of 4" —
+        separate from the dashboard's seven-step one, and it sits over the Clock
+        In button. The tap was landing on the overlay and reporting success,
+        which is why the button never became "Clock Out".
+
+        Conditional and closed by its ✕: a member who has seen it before gets no
+        overlay, and "Next" would walk four more steps on camera.
+      */
+      /*
+        ⚠️ SETTLE FIRST. Maestro finds "Clock In" in the view hierarchy even
+        while the guide sheet covers it, so the wait above passes instantly and
+        the check below would run before the overlay has drawn.
+      */
+      holdFor(4),
+      {
+        runFlow: {
+          when: { visible: { text: 'Step 1 of 4' } },
+          commands: [{ tapOn: { point: '86%,18%' } }, holdFor(1)],
+        },
+      },
     ],
   },
   {
@@ -174,15 +194,30 @@ export async function captureMobileClock(
       rather than `back` because `back` reloads the bundle and Maestro's own
       backPress then never returns (observed: hung 90 s).
     */
-    setup: devBuild
-      ? [
-          { extendedWaitUntil: { visible: { text: 'Continue' }, timeout: 180000 } },
-          { tapOn: { text: 'Continue' } },
-          { extendedWaitUntil: { visible: { text: 'Element inspector' }, timeout: 30000 } },
-          { tapOn: { point: '90%,10%' } },
-          { extendedWaitUntil: { visible: { text: 'Sign in' }, timeout: 180000 } },
-        ]
-      : [{ extendedWaitUntil: { visible: { text: 'Sign in' }, timeout: 180000 } }],
+    /*
+      ⚠️ THE SESSION IS KEPT. This video opens on the dashboard, so nothing is
+      gained by wiping storage — and a great deal is lost: the flow would have
+      to type an email and a password, which an emulator renders one character
+      at a time, adding ~100 seconds of setup to every take and pushing the
+      whole run past what `adb screenrecord` will record (a hard 180 s).
+    */
+    clearState: false,
+    /*
+      The bottom tab bar only exists once the app has drawn its first real
+      screen, so its presence is the cheapest honest proof that the bundle has
+      arrived and the session is live.
+    */
+    readyText: 'Attendance',
+    setup: [
+      /*
+        ⚠️ One command, and it is a WAIT. A `runFlow ... when:` cannot be the
+        first thing in a Maestro flow — the run dies at parse with no step
+        output at all, which reads exactly like a crash. With the session kept
+        and the developer menu already acknowledged, there is nothing to
+        dismiss anyway: the app opens on the dashboard.
+      */
+      { extendedWaitUntil: { visible: { text: 'Attendance' }, timeout: 120000 } },
+    ],
     beats: BEATS,
   });
 }

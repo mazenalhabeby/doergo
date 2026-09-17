@@ -1,0 +1,26 @@
+TITLE
+Clocking in from the field — HBCField
+
+DESCRIPTION
+A field engineer starts a shift from the depot — the first video captured on a phone rather than a browser.
+
+Chapters
+0:00 Clocking in from the field
+0:12 Her day, on her phone
+1:50 The clock
+2:56 Starting the shift
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload mobile-clock.mp4
+  [ ] Add each mobile-clock.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → 
