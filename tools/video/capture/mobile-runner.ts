@@ -390,6 +390,28 @@ export async function captureMobile(options: MobileStageOptions): Promise<Timeli
       'show_ime_with_hard_keyboard', '1',
     ]).catch(() => {});
 
+    /*
+      ⚠️ TUNNEL THE HOST'S PORTS INTO THE DEVICE, rather than pointing the app
+      at the Mac's LAN address.
+
+      The LAN route works until it doesn't, and its failures are silent: this
+      machine's address changed mid-session (192.168.178.60 → 192.168.0.143) and
+      the app simply sat on the login screen, no error, no log — a request to an
+      address that no longer existed. Emulator NAT is also unreliable after a
+      wipe; ping to the host was dropping half its packets.
+
+      `adb reverse` makes the DEVICE's own localhost mean this Mac, so the app
+      dials `localhost:4000` and lands on the gateway whatever the Wi-Fi is
+      doing. Nothing to resolve, nothing to go stale.
+
+      ⚠️ Best-effort: a real device over USB supports this too, but a device that
+      refuses it should not fail the whole render — the flow will say so more
+      clearly when it cannot sign in.
+    */
+    for (const port of ['4000', '8081']) {
+      await run(ADB, ['-s', device, 'reverse', `tcp:${port}`, `tcp:${port}`]).catch(() => {});
+    }
+
     // A logged-out start is the point; watching storage clear is not footage.
     await run(ADB, ['-s', device, 'shell', 'pm', 'clear', APP_ID]);
 

@@ -23,7 +23,6 @@
 
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { networkInterfaces } from 'node:os';
 import { DEMO_LOGIN } from '../../config.ts';
 import { DEPOT } from '../../demo-data.ts';
 import { captureMobile, type MobileBeat, type Phone } from '../mobile-runner.ts';
@@ -93,7 +92,13 @@ export async function captureMobileClock(
     ⚠️ The Mac's LAN address, never `localhost`: on an Android emulator
     localhost is the emulator, and the request would never leave the phone.
   */
-  const metro = process.env.VIDEO_METRO_URL ?? `http://${lanAddress()}:8081`;
+  /*
+    ⚠️ localhost, not this Mac's LAN address — `adb reverse` in the runner maps
+    the device's own localhost to this machine. The LAN address was used first
+    and failed silently when the Mac moved network mid-session: the app dialled
+    an address that no longer existed and simply sat on the login screen.
+  */
+  const metro = process.env.VIDEO_METRO_URL ?? 'http://localhost:8081';
   /*
     ⚠️ RELEASE BY DEFAULT. Set VIDEO_DEV_BUILD=1 only to film a development
     build against Metro — it works, but it drags the expo developer menu into
@@ -182,15 +187,3 @@ export async function captureMobileClock(
   });
 }
 
-/** The address the phone can reach this Mac on. */
-function lanAddress(): string {
-  for (const entries of Object.values(networkInterfaces())) {
-    for (const entry of entries ?? []) {
-      if (entry.family === 'IPv4' && !entry.internal) return entry.address;
-    }
-  }
-  throw new Error(
-    'No LAN address found, so the phone has no way to reach Metro or the API.\n' +
-      'Set VIDEO_METRO_URL to an address the device can resolve.',
-  );
-}
