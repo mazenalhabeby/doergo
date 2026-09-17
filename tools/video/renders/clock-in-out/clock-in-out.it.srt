@@ -1,0 +1,90 @@
+1
+00:00:06,508 --> 00:00:10,912
+Questa è Mara. Dirige il deposito di
+Halstead Field Services, e la sua giornata
+
+2
+00:00:10,912 --> 00:00:14,146
+inizia come quella di tutti
+gli altri: effettua l'accesso.
+
+3
+00:00:17,806 --> 00:00:21,821
+Tutto ciò che riguarda le sue ore sta
+in un'unica pagina: I miei turni. Nessun
+
+4
+00:00:21,821 --> 00:00:25,372
+foglio ore da compilare, nessun
+modulo da ricordare a fine settimana.
+
+5
+00:00:26,421 --> 00:00:31,343
+Un pulsante avvia il turno. HBCField
+legge la sua posizione, conferma che si trova
+
+6
+00:00:31,343 --> 00:00:36,386
+al deposito e registra dove ha timbrato,
+così dopo nessuno deve fidarsi della parola
+
+7
+00:00:36,386 --> 00:00:37,046
+di nessuno.
+
+8
+00:00:37,527 --> 00:00:41,841
+Da qui il contatore va avanti da solo.
+Può chiudere il portatile, uscire per un
+
+9
+00:00:41,841 --> 00:00:44,135
+intervento, e il turno continua a contare.
+
+10
+00:00:44,588 --> 00:00:49,318
+A fine giornata timbra l'uscita. Le ore
+vengono calcolate per lei: tempo in sede,
+
+11
+00:00:49,318 --> 00:00:51,771
+pause detratte, pronto per l'approvazione.
+
+12
+00:00:52,221 --> 00:00:56,928
+Il suo storico è lì sotto: ogni turno di
+questo mese, con il tempo lavorato per
+
+13
+00:00:56,928 --> 00:00:57,464
+ciascuno.
+
+14
+00:00:57,916 --> 00:01:02,931
+E poiché Mara dirige il deposito, ha
+anche l'altra metà: le presenze di tutta la
+
+15
+00:01:02,931 --> 00:01:06,630
+squadra. Chi è in turno adesso
+e come si somma la giornata.
+
+16
+00:01:07,082 --> 00:01:11,857
+Ogni turno è elencato con orari, ore e
+sede. Nessuno ha digitato nulla di tutto
+
+17
+00:01:11,857 --> 00:01:12,280
+questo.
+
+18
+00:01:12,731 --> 00:01:16,953
+Le vengono segnalati solo i casi che
+richiedono una decisione: un inizio in ritardo,
+
+19
+00:01:16,953 --> 00:01:19,969
+una giornata lunga. Tutto il
+resto si è già sistemato da sé.
+

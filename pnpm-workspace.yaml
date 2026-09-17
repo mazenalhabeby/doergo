@@ -4,3 +4,6 @@ packages:
   - "apps/admin"
   - "apps/mobile"
   - "packages/*"
+  # The video pipeline is the only tools/ script with real dependencies
+  # (Playwright). tools/release stays outside the workspace because it has none.
+  - "tools/video"

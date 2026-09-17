@@ -1,0 +1,90 @@
+1
+00:00:06,508 --> 00:00:11,579
+Das ist Mara. Sie leitet das Depot bei
+Halstead Field Services, und ihr Tag beginnt
+
+2
+00:00:11,579 --> 00:00:14,146
+wie bei allen anderen: Sie meldet sich an.
+
+3
+00:00:17,806 --> 00:00:21,442
+Alles zu ihren eigenen Arbeitszeiten
+steht auf einer einzigen Seite: Meine
+
+4
+00:00:21,442 --> 00:00:25,372
+Schichten. Kein Stundenzettel, kein
+Formular, an das man am Freitag denken muss.
+
+5
+00:00:26,421 --> 00:00:31,298
+Ein Klick startet die Schicht. HBCField
+liest ihren Standort, bestätigt, dass sie am
+
+6
+00:00:31,298 --> 00:00:35,943
+Depot ist, und hält fest, wo
+eingestempelt wurde — damit später niemand jemandem
+
+7
+00:00:35,943 --> 00:00:37,046
+etwas glauben muss.
+
+8
+00:00:37,527 --> 00:00:41,968
+Ab jetzt läuft die Uhr von allein. Sie
+kann den Laptop zuklappen, zu einem Auftrag
+
+9
+00:00:41,968 --> 00:00:44,135
+hinausfahren — die Schicht zählt weiter.
+
+10
+00:00:44,588 --> 00:00:49,300
+Am Ende des Tages stempelt sie aus. Die
+Stunden werden für sie berechnet: Zeit vor
+
+11
+00:00:49,300 --> 00:00:51,771
+Ort, Pausen abgezogen,
+bereit zur Freigabe.
+
+12
+00:00:52,221 --> 00:00:56,079
+Ihr eigener Nachweis steht direkt
+darunter: jede Schicht dieses Monats mit den
+
+13
+00:00:56,079 --> 00:00:57,464
+jeweils geleisteten Stunden.
+
+14
+00:00:57,916 --> 00:01:02,381
+Und weil Mara das Depot leitet, sieht sie
+auch die andere Hälfte: die Zeiterfassung
+
+15
+00:01:02,381 --> 00:01:06,630
+des gesamten Teams. Wer gerade
+eingestempelt ist und wie der Tag zusammenkommt.
+
+16
+00:01:07,082 --> 00:01:11,305
+Jede Schicht ist mit Zeiten, Stunden
+und Standort aufgeführt. Nichts davon hat
+
+17
+00:01:11,305 --> 00:01:12,280
+jemand eingetippt.
+
+18
+00:01:12,731 --> 00:01:17,105
+Nur was eine Entscheidung braucht, wird
+ihr vorgelegt: ein später Beginn, ein langer
+
+19
+00:01:17,105 --> 00:01:19,969
+Tag. Alles andere hat sich
+bereits von selbst erledigt.
+

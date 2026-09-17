@@ -48,6 +48,9 @@ export * from './sync';
 // IANA timezone → country name
 export * from './timezone-country';
 
+// Which narrated video explains which guided tour. Pure data; rendered by tools/video.
+export * from './video-guides';
+
 // Export crypto utilities (Node-only, not in client bundle)
 export * from './utils/crypto';
 

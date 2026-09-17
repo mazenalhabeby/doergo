@@ -39,6 +39,10 @@ export * from './crm/business-card';
 // IANA timezone → country name (for attendance display labels)
 export * from './timezone-country';
 
+// Which narrated video explains which guided tour — read by the web app's tour
+// UI, so it has to be on the browser-safe entry too.
+export * from './video-guides';
+
 // Client-safe constants (pure data — no server deps)
 export * from './constants/attendance';
 // Task status vocabulary and the overdue rule. Pure data + pure functions, and
