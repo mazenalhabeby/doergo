@@ -1,88 +1,88 @@
 1
-00:00:06,508 --> 00:00:11,727
+00:00:05,271 --> 00:00:10,444
 Esta es Mara. Dirige el almacén de
 Halstead Field Services, y su día empieza igual
 
 2
-00:00:11,727 --> 00:00:14,146
+00:00:10,444 --> 00:00:12,841
 que el de los demás: iniciando sesión.
 
 3
-00:00:17,806 --> 00:00:22,159
+00:00:13,293 --> 00:00:17,808
 Todo lo relativo a sus horas está en una
 sola página: Mis turnos. Sin parte de horas
 
 4
-00:00:22,159 --> 00:00:25,372
+00:00:17,808 --> 00:00:21,141
 que rellenar ni formulario que
 recordar al final de la semana.
 
 5
-00:00:26,421 --> 00:00:31,521
+00:00:21,595 --> 00:00:26,343
 Un botón inicia el turno. HBCField lee su
 ubicación, confirma que está en el almacén
 
 6
-00:00:31,521 --> 00:00:36,500
+00:00:26,343 --> 00:00:30,978
 y registra dónde ha fichado, para que
 después nadie tenga que fiarse de la palabra
 
 7
-00:00:36,500 --> 00:00:37,046
+00:00:30,978 --> 00:00:31,487
 de nadie.
 
 8
-00:00:37,527 --> 00:00:42,558
+00:00:31,938 --> 00:00:37,172
 A partir de aquí el reloj corre solo.
 Puede cerrar el portátil, salir a un trabajo,
 
 9
-00:00:42,558 --> 00:00:44,135
+00:00:37,172 --> 00:00:38,811
 y el turno sigue contando.
 
 10
-00:00:44,588 --> 00:00:49,257
+00:00:39,263 --> 00:00:43,851
 Al final del día ficha la salida. Las
 horas se calculan solas: tiempo en obra,
 
 11
-00:00:49,257 --> 00:00:51,771
+00:00:43,851 --> 00:00:46,322
 descansos descontados, listo para aprobar.
 
 12
-00:00:52,221 --> 00:00:56,287
+00:00:46,775 --> 00:00:51,349
 Su propio historial está justo debajo:
 cada turno de este mes, con el tiempo
 
 13
-00:00:56,287 --> 00:00:57,464
+00:00:51,349 --> 00:00:52,673
 trabajado en cada uno.
 
 14
-00:00:57,916 --> 00:01:02,730
+00:00:53,126 --> 00:00:57,924
 Y como Mara supervisa el almacén, tiene
 la otra mitad: la asistencia de todo el
 
 15
-00:01:02,730 --> 00:01:06,630
+00:00:57,924 --> 00:01:01,810
 equipo. Quién está fichado ahora
 mismo y cómo va sumando el día.
 
 16
-00:01:07,082 --> 00:01:11,978
+00:01:02,263 --> 00:01:07,512
 Cada turno aparece con las horas, el
 total y el centro. Nadie ha tecleado nada de
 
 17
-00:01:11,978 --> 00:01:12,280
+00:01:07,512 --> 00:01:07,836
 esto.
 
 18
-00:01:12,731 --> 00:01:17,617
+00:01:08,288 --> 00:01:13,554
 Solo se le señalan los que requieren una
 decisión: una entrada tarde, una jornada
 
 19
-00:01:17,617 --> 00:01:19,969
+00:01:13,554 --> 00:01:16,090
 larga. El resto ya se ha resuelto solo.
 

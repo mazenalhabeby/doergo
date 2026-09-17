@@ -1,0 +1,14 @@
+1
+00:00:06,236 --> 00:00:11,219
+Mara dirige el almacén de Halstead Field
+Services. Inicia sesión y lo primero que
+
+2
+00:00:11,219 --> 00:00:13,248
+quiere ver son sus propias horas.
+
+3
+00:00:13,698 --> 00:00:18,249
+Un botón inicia el turno. El reloj
+empieza a correr, y eso es todo.
+

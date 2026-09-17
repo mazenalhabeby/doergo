@@ -6,12 +6,12 @@ Starting and finishing a shift in HBCField takes one tap, and the record it leav
 
 Chapters
 0:00 Clock in and clock out
-0:06 Signing in
-0:17 My shifts
-0:26 Clocking in
-0:44 Clocking out
-0:57 The team board
-1:12 Approvals
+0:05 Signing in
+0:13 My shifts
+0:21 Clocking in
+0:39 Clocking out
+0:53 The team board
+1:08 Approvals
 
 Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
 

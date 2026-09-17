@@ -1,92 +1,92 @@
 1
-00:00:06,508 --> 00:00:11,347
+00:00:05,271 --> 00:00:10,067
 Voici Mara. Elle dirige le dépôt de
 Halstead Field Services, et sa journée commence
 
 2
-00:00:11,347 --> 00:00:14,146
+00:00:10,067 --> 00:00:12,841
 comme celle de tout le
 monde : elle se connecte.
 
 3
-00:00:17,806 --> 00:00:21,517
+00:00:13,293 --> 00:00:17,142
 Tout ce qui concerne ses heures tient
 sur une seule page : Mes postes. Aucune
 
 4
-00:00:21,517 --> 00:00:25,372
+00:00:17,142 --> 00:00:21,141
 feuille de temps à remplir, aucun
 formulaire à ne pas oublier en fin de semaine.
 
 5
-00:00:26,421 --> 00:00:31,435
+00:00:21,595 --> 00:00:26,263
 Un bouton lance le poste. HBCField lit sa
 position, confirme qu'elle est au dépôt et
 
 6
-00:00:31,435 --> 00:00:36,151
+00:00:26,263 --> 00:00:30,653
 enregistre le lieu du pointage — pour
 que personne n'ait à croire quiconque sur
 
 7
-00:00:36,151 --> 00:00:37,046
+00:00:30,653 --> 00:00:31,487
 parole ensuite.
 
 8
-00:00:37,527 --> 00:00:41,651
+00:00:31,938 --> 00:00:36,227
 À partir de là, le compteur tourne tout
 seul. Elle peut fermer son portable, partir
 
 9
-00:00:41,651 --> 00:00:44,135
+00:00:36,227 --> 00:00:38,811
 en intervention : le
 poste continue d'être compté.
 
 10
-00:00:44,588 --> 00:00:48,876
+00:00:39,263 --> 00:00:43,477
 En fin de journée, elle pointe son
 départ. Les heures sont calculées pour elle :
 
 11
-00:00:48,876 --> 00:00:51,771
+00:00:43,477 --> 00:00:46,322
 temps sur site, pauses
 déduites, prêt pour validation.
 
 12
-00:00:52,221 --> 00:00:56,355
+00:00:46,775 --> 00:00:51,425
 Son propre relevé se trouve juste en
 dessous : chaque poste du mois, avec le temps
 
 13
-00:00:56,355 --> 00:00:57,464
+00:00:51,425 --> 00:00:52,673
 travaillé pour chacun.
 
 14
-00:00:57,916 --> 00:01:02,436
+00:00:53,126 --> 00:00:57,631
 Et comme Mara supervise le dépôt, elle
 dispose de l'autre moitié : les présences de
 
 15
-00:01:02,436 --> 00:01:06,630
+00:00:57,631 --> 00:01:01,810
 toute l'équipe. Qui est pointé en ce
 moment, et comment la journée se cumule.
 
 16
-00:01:07,082 --> 00:01:11,396
+00:01:02,263 --> 00:01:06,888
 Chaque poste est listé avec les horaires,
 les heures et le site. Personne n'a saisi
 
 17
-00:01:11,396 --> 00:01:12,280
+00:01:06,888 --> 00:01:07,836
 quoi que ce soit.
 
 18
-00:01:12,731 --> 00:01:16,860
+00:01:08,288 --> 00:01:12,738
 Seuls les cas qui appellent une décision
 lui sont signalés : une arrivée tardive,
 
 19
-00:01:16,860 --> 00:01:19,969
+00:01:12,738 --> 00:01:16,090
 une journée longue. Tout le
 reste s'est déjà réglé tout seul.
 

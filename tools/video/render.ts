@@ -26,6 +26,7 @@ import { OUT_DIR, ROOT, assertLocalDatabase, assertLocalWeb, WEB_URL } from './c
 import { loadScript, type VideoScript } from './script.ts';
 import { selectVoiceAdapter } from './voice/index.ts';
 import { captureClockInOut } from './capture/flows/clock-in-out.ts';
+import { captureVoiceTest } from './capture/flows/voice-test.ts';
 import type { Timeline } from './timeline.ts';
 import { renderCards } from './assemble/cards.ts';
 import { writeAllSrt } from './assemble/srt.ts';
@@ -54,6 +55,9 @@ const END_CARD_SEC = 3.0;
  */
 const FLOWS: Record<string, (d: Record<string, number>) => Promise<Timeline>> = {
   'clock-in-out': captureClockInOut,
+  // Twenty seconds, two beats. A cheap way to hear a voice without spending a
+  // full script's characters every time somebody wants to judge one.
+  'voice-test': captureVoiceTest,
 };
 
 interface Args {
@@ -92,9 +96,19 @@ async function narrate(
   await fs.mkdir(dir, { recursive: true });
 
   const clips: Array<{ id: string; file: string; durationSec: number }> = [];
-  for (const beat of script.beats) {
+  /*
+    ⚠️ Each beat is told what comes before and after it. A narrator handed one
+    sentence at a time with no context chooses fresh pitch and energy for each,
+    and the video sounds like several people reading in turn.
+  */
+  for (const [i, beat] of script.beats.entries()) {
     const file = path.join(dir, `${beat.id}.wav`);
-    const { durationSec } = await voice.synthesize({ text: beat.narration.en, outPath: file });
+    const { durationSec } = await voice.synthesize({
+      text: beat.narration.en,
+      outPath: file,
+      previousText: script.beats[i - 1]?.narration.en,
+      nextText: script.beats[i + 1]?.narration.en,
+    });
     clips.push({ id: beat.id, file, durationSec });
     console.log(`    ${beat.id.padEnd(16)} ${durationSec.toFixed(1)}s`);
   }

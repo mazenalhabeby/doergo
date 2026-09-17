@@ -1,0 +1,61 @@
+{
+  "id": "voice-test",
+  "tourIds": [],
+  "title": {
+    "en": "Voice test",
+    "de": "Sprachtest",
+    "es": "Prueba de voz",
+    "fr": "Test de voix",
+    "it": "Test vocale"
+  },
+  "subtitle": {
+    "en": "Twenty seconds, to hear it",
+    "de": "Zwanzig Sekunden zum Hören",
+    "es": "Veinte segundos para escucharlo",
+    "fr": "Vingt secondes pour l'écouter",
+    "it": "Venti secondi per ascoltarlo"
+  },
+  "description": {
+    "en": "A short technical test of narration and picture, not a published video.",
+    "de": "Ein kurzer technischer Test von Ton und Bild, kein veröffentlichtes Video.",
+    "es": "Una breve prueba técnica de narración e imagen, no un vídeo publicado.",
+    "fr": "Un court test technique du son et de l'image, pas une vidéo publiée.",
+    "it": "Un breve test tecnico di audio e video, non un video pubblicato."
+  },
+  "beats": [
+    {
+      "id": "signIn",
+      "chapter": {
+        "en": "Signing in",
+        "de": "Anmelden",
+        "es": "Iniciar sesión",
+        "fr": "Connexion",
+        "it": "Accesso"
+      },
+      "narration": {
+        "en": "Mara runs the depot at Halstead Field Services. She signs in, and the first thing she wants is her own hours.",
+        "de": "Mara leitet das Depot bei Halstead Field Services. Sie meldet sich an, und als Erstes will sie ihre eigenen Stunden sehen.",
+        "es": "Mara dirige el almacén de Halstead Field Services. Inicia sesión y lo primero que quiere ver son sus propias horas.",
+        "fr": "Mara dirige le dépôt de Halstead Field Services. Elle se connecte, et la première chose qu'elle veut voir, ce sont ses heures.",
+        "it": "Mara dirige il deposito di Halstead Field Services. Effettua l'accesso e la prima cosa che vuole vedere sono le sue ore."
+      }
+    },
+    {
+      "id": "clockIn",
+      "chapter": {
+        "en": "Clocking in",
+        "de": "Einstempeln",
+        "es": "Fichar entrada",
+        "fr": "Pointer l'arrivée",
+        "it": "Timbratura di entrata"
+      },
+      "narration": {
+        "en": "One button starts the shift. The clock begins to run, and that is the whole of it.",
+        "de": "Ein Knopf startet die Schicht. Die Uhr läuft, und das war es auch schon.",
+        "es": "Un botón inicia el turno. El reloj empieza a correr, y eso es todo.",
+        "fr": "Un bouton démarre le poste. L'horloge tourne, et c'est tout.",
+        "it": "Un pulsante avvia il turno. L'orologio parte, e questo è tutto."
+      }
+    }
+  ]
+}

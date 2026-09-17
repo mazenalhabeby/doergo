@@ -1,0 +1,19 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/voice-test/capture/page@40f33ff55c766f61a7a99d1ce5488631.webm",
+  "durationSec": 15.2,
+  "preRollSec": 2.735999999999999,
+  "beats": [
+    {
+      "id": "signIn",
+      "startSec": 2.735999999999999,
+      "endSec": 10.197999999999999,
+      "narrationSec": 7.012438
+    },
+    {
+      "id": "clockIn",
+      "startSec": 10.197999999999999,
+      "endSec": 15.2,
+      "narrationSec": 4.551125
+    }
+  ]
+}

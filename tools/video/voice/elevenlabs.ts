@@ -63,7 +63,7 @@ export const elevenLabsAdapter: VoiceAdapter = {
     return Boolean(key());
   },
 
-  async synthesize({ text, outPath }: SynthesisRequest): Promise<SynthesisResult> {
+  async synthesize({ text, outPath, previousText, nextText }: SynthesisRequest): Promise<SynthesisResult> {
     const apiKey = key();
     if (!apiKey) throw new Error('ELEVENLABS_API_KEY is not set');
 
@@ -79,6 +79,14 @@ export const elevenLabsAdapter: VoiceAdapter = {
       body: JSON.stringify({
         text,
         model_id: MODEL_ID,
+        /*
+          The neighbouring lines, so the delivery carries across the join.
+          They are NOT spoken — the model reads them only to decide how this
+          sentence should sound. Without them a two-beat test came back 6.4
+          LUFS apart and sounded like two narrators.
+        */
+        ...(previousText ? { previous_text: previousText } : {}),
+        ...(nextText ? { next_text: nextText } : {}),
         voice_settings: {
           /*
             Steady rather than expressive. A narrator who performs differently
@@ -107,11 +115,25 @@ export const elevenLabsAdapter: VoiceAdapter = {
       );
     }
 
-    // The API returns MP3; assembly wants 48 kHz mono WAV, matching `say` —
-    // a sample-rate change between segments is audible as a click on concat.
+    /*
+      MP3 in, 48 kHz mono WAV out — matching `say`, because a sample-rate change
+      between segments is audible as a click on concat.
+
+      ⚠️ AND NORMALISED TO A FIXED LOUDNESS. Context makes consecutive beats
+      sound like one person; it does not make them the same VOLUME, and a beat
+      6 dB quieter than the one before still reads as a different take. Every
+      clip is brought to −16 LUFS — the level YouTube expects, so the platform
+      does not apply its own gain unevenly afterwards.
+    */
     const mp3 = `${outPath}.mp3`;
     await fs.writeFile(mp3, Buffer.from(await res.arrayBuffer()));
-    await run('ffmpeg', ['-y', '-loglevel', 'error', '-i', mp3, '-ar', '48000', '-ac', '1', outPath]);
+    await run('ffmpeg', [
+      '-y', '-loglevel', 'error',
+      '-i', mp3,
+      '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11',
+      '-ar', '48000', '-ac', '1',
+      outPath,
+    ]);
     await fs.rm(mp3, { force: true });
 
     return { path: outPath, durationSec: await probeDurationSec(outPath) };

@@ -13,6 +13,21 @@ export interface SynthesisRequest {
   text: string;
   /** Absolute path of the WAV file to write. */
   outPath: string;
+  /*
+    What is said either side of this beat.
+
+    ⚠️ WITHOUT THESE, ONE SCRIPT SOUNDS LIKE TWO PEOPLE. Each beat is its own
+    request, and a model given one sentence in isolation picks its own pitch,
+    pace and energy for it — measured on a two-beat test, the clips came back
+    6.4 LUFS apart, which reads to a listener as a different voice rather than
+    a level change.
+
+    A provider that understands continuity (ElevenLabs does) uses them to carry
+    prosody across the join. One that does not simply ignores them, which is
+    why they are optional rather than a second method.
+  */
+  previousText?: string;
+  nextText?: string;
 }
 
 export interface SynthesisResult {

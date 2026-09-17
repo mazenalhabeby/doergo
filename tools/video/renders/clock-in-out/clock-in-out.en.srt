@@ -1,91 +1,91 @@
 1
-00:00:06,508 --> 00:00:11,539
+00:00:05,271 --> 00:00:10,257
 This is Mara. She runs the depot at
 Halstead Field Services, and her day starts the
 
 2
-00:00:11,539 --> 00:00:14,146
+00:00:10,257 --> 00:00:12,841
 same way as everybody
 else's: she signs in.
 
 3
-00:00:17,806 --> 00:00:22,594
+00:00:13,293 --> 00:00:18,260
 Everything about her own hours lives on
 one page. My shifts. No timesheet to fill
 
 4
-00:00:22,594 --> 00:00:25,372
+00:00:18,260 --> 00:00:21,141
 in, no form to remember
 at the end of the week.
 
 5
-00:00:26,421 --> 00:00:31,392
+00:00:21,595 --> 00:00:26,223
 One button starts the shift. HBCField
 reads her location, confirms she is at the
 
 6
-00:00:31,392 --> 00:00:36,487
+00:00:26,223 --> 00:00:30,966
 depot, and records where she clocked in —
 so nobody has to take anybody's word for
 
 7
-00:00:36,487 --> 00:00:37,046
+00:00:30,966 --> 00:00:31,487
 it later.
 
 8
-00:00:37,527 --> 00:00:42,591
+00:00:31,938 --> 00:00:37,205
 From here the clock runs by itself. She
 can close the laptop, go out on a job, and
 
 9
-00:00:42,591 --> 00:00:44,135
+00:00:37,205 --> 00:00:38,811
 the shift keeps counting.
 
 10
-00:00:44,588 --> 00:00:49,260
+00:00:39,263 --> 00:00:43,854
 At the end of the day she clocks out.
 The hours are worked out for her — time on
 
 11
-00:00:49,260 --> 00:00:51,771
+00:00:43,854 --> 00:00:46,322
 site, breaks taken
 off, ready for approval.
 
 12
-00:00:52,221 --> 00:00:56,458
+00:00:46,775 --> 00:00:51,541
 Her own record is right there underneath
 — every shift this month, with the time
 
 13
-00:00:56,458 --> 00:00:57,464
+00:00:51,541 --> 00:00:52,673
 worked on each one.
 
 14
-00:00:57,916 --> 00:01:02,502
+00:00:53,126 --> 00:00:57,697
 And because Mara supervises the depot,
 she gets the other half: the whole team's
 
 15
-00:01:02,502 --> 00:01:06,630
+00:00:57,697 --> 00:01:01,810
 attendance. Who is on the clock
 right now, and how the day is adding up.
 
 16
-00:01:07,082 --> 00:01:11,665
+00:01:02,263 --> 00:01:07,177
 Every shift is listed with the times, the
 hours and the site. Nothing was typed in
 
 17
-00:01:11,665 --> 00:01:12,280
+00:01:07,177 --> 00:01:07,836
 by anybody.
 
 18
-00:01:12,731 --> 00:01:17,459
+00:01:08,288 --> 00:01:13,384
 Only the ones that need a decision are
 flagged for her. A late start, a long day.
 
 19
-00:01:17,459 --> 00:01:19,969
+00:01:13,384 --> 00:01:16,090
 Everything else has
 already settled itself.
 

@@ -1,61 +1,61 @@
 {
-  "videoPath": "/Users/pc/work/doergo/.claude/worktrees/agent-a32f592b1a8bb9bd9/tools/video/renders/clock-in-out/capture/page@5af962581875140eb621361b9c686718.webm",
-  "durationSec": 76.92,
-  "preRollSec": 3.0079999999999956,
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/clock-in-out/capture/page@d1b9c124a6fae39c8942f3458d62d4ee.webm",
+  "durationSec": 73.04,
+  "preRollSec": 1.7710000000000008,
   "beats": [
     {
       "id": "signIn",
-      "startSec": 3.0079999999999956,
-      "endSec": 14.305999999999996,
-      "narrationSec": 7.63775
+      "startSec": 1.7710000000000008,
+      "endSec": 9.793000000000001,
+      "narrationSec": 7.569708
     },
     {
       "id": "openMyShifts",
-      "startSec": 14.305999999999996,
-      "endSec": 22.916999999999994,
-      "narrationSec": 7.566354
+      "startSec": 9.793000000000001,
+      "endSec": 18.094,
+      "narrationSec": 7.848354
     },
     {
       "id": "clockIn",
-      "startSec": 22.920999999999996,
-      "endSec": 34.019999999999996,
-      "narrationSec": 10.625313
+      "startSec": 18.095000000000002,
+      "endSec": 28.438000000000002,
+      "narrationSec": 9.891708
     },
     {
       "id": "onTheClock",
-      "startSec": 34.026999999999994,
-      "endSec": 41.086999999999996,
-      "narrationSec": 6.607542
+      "startSec": 28.438000000000002,
+      "endSec": 35.763,
+      "narrationSec": 6.873125
     },
     {
       "id": "clockOut",
-      "startSec": 41.087999999999994,
-      "endSec": 48.721,
-      "narrationSec": 7.183
+      "startSec": 35.763,
+      "endSec": 43.275,
+      "narrationSec": 7.058875
     },
     {
       "id": "history",
-      "startSec": 48.721,
-      "endSec": 54.416,
-      "narrationSec": 5.243104
+      "startSec": 43.275,
+      "endSec": 49.626,
+      "narrationSec": 5.897875
     },
     {
       "id": "teamBoard",
-      "startSec": 54.416,
-      "endSec": 63.581999999999994,
-      "narrationSec": 8.714208
+      "startSec": 49.626,
+      "endSec": 58.763,
+      "narrationSec": 8.684271
     },
     {
       "id": "records",
-      "startSec": 63.581999999999994,
-      "endSec": 69.231,
-      "narrationSec": 5.197875
+      "startSec": 58.763,
+      "endSec": 64.78800000000001,
+      "narrationSec": 5.572792
     },
     {
       "id": "approvals",
-      "startSec": 69.231,
-      "endSec": 76.92,
-      "narrationSec": 7.237917
+      "startSec": 64.78800000000001,
+      "endSec": 73.04,
+      "narrationSec": 7.801917
     }
   ]
 }
