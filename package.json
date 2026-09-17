@@ -50,6 +50,7 @@
     "date-fns": "^4.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.49.1",
     "sharp": "^0.34.5"
   }
 }

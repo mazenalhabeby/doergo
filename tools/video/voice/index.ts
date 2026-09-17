@@ -1,27 +1,30 @@
 /**
  * Which voice the pipeline speaks with, chosen by VIDEO_TTS.
  *
- * ⚠️ No paid provider is wired up and no API key lives anywhere in this repo.
- * The two commented stubs below describe exactly what a future adapter has to
- * do; they are deliberately not implemented, because an adapter that reads a
- * key from the environment invites somebody to commit one.
+ * ⚠️ NO KEY LIVES IN THIS REPO. `elevenlabs` reads `ELEVENLABS_API_KEY` from the
+ * environment (`.env` is gitignored) and reports itself unavailable without
+ * one, so a machine with no key falls back to `say` rather than failing a
+ * render that has already spent two minutes driving a browser.
+ *
+ * ⚠️ `say` stays the DEFAULT on purpose: characters are billed, so iterate on
+ * wording for free and switch with `VIDEO_TTS=elevenlabs` for the take you mean
+ * to publish.
  */
 
 import type { VoiceAdapter } from './types.ts';
 import { sayAdapter } from './say.ts';
+import { elevenLabsAdapter } from './elevenlabs.ts';
 
 export type { VoiceAdapter, SynthesisRequest, SynthesisResult } from './types.ts';
 
 const ADAPTERS: Record<string, VoiceAdapter> = {
   say: sayAdapter,
+  elevenlabs: elevenLabsAdapter,
 
-  // To add ElevenLabs or OpenAI later:
-  //   1. Write voice/elevenlabs.ts exporting a VoiceAdapter.
-  //   2. isAvailable() returns false when its key env var is unset, so a
-  //      machine without one falls back instead of failing a render at 90%.
-  //   3. Register it here. Nothing else in the pipeline changes — assembly
-  //      reads durations off the produced files, so a slower or faster voice
-  //      re-paces the capture automatically on the next run.
+  // Another provider is one more file: export a VoiceAdapter whose
+  // isAvailable() is false without its key, and register it here. Nothing else
+  // in the pipeline changes — assembly reads durations off the produced files,
+  // so a slower or faster voice re-paces the capture on the next run.
 };
 
 export function selectVoiceAdapter(): VoiceAdapter {
