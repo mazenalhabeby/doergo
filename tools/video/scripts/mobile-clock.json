@@ -1,0 +1,78 @@
+{
+  "id": "mobile-clock",
+  "tourIds": [],
+  "title": {
+    "en": "Clocking in from the field",
+    "de": "Einstempeln vom Einsatzort",
+    "es": "Fichar desde el terreno",
+    "fr": "Pointer depuis le terrain",
+    "it": "Timbrare dal campo"
+  },
+  "subtitle": {
+    "en": "The phone, on site",
+    "de": "Das Telefon, vor Ort",
+    "es": "El teléfono, sobre el terreno",
+    "fr": "Le téléphone, sur site",
+    "it": "Il telefono, sul posto"
+  },
+  "description": {
+    "en": "A field engineer starts a shift from the depot — the first video captured on a phone rather than a browser.",
+    "de": "Eine Einsatzkraft startet ihre Schicht am Depot — das erste Video, das auf einem Telefon statt im Browser aufgenommen wurde.",
+    "es": "Un técnico de campo inicia su turno en el almacén: el primer vídeo grabado en un teléfono y no en un navegador.",
+    "fr": "Un technicien de terrain commence son poste au dépôt — la première vidéo tournée sur un téléphone plutôt que dans un navigateur.",
+    "it": "Un tecnico sul campo inizia il turno al deposito: il primo video girato su un telefono anziché in un browser."
+  },
+  "beats": [
+    {
+      "id": "signIn",
+      "chapter": {
+        "en": "Signing in",
+        "de": "Anmelden",
+        "es": "Iniciar sesión",
+        "fr": "Connexion",
+        "it": "Accesso"
+      },
+      "narration": {
+        "en": "This is the same product, on the phone the work actually happens on. Priya signs in at the depot gate, before she has put her bag down.",
+        "de": "Dies ist dasselbe Produkt — auf dem Telefon, auf dem die Arbeit tatsächlich stattfindet. Priya meldet sich am Depottor an, noch bevor sie ihre Tasche abgestellt hat.",
+        "es": "Es el mismo producto, en el teléfono donde el trabajo ocurre de verdad. Priya inicia sesión en la puerta del almacén, antes de soltar la bolsa.",
+        "fr": "C'est le même produit, sur le téléphone où le travail se fait vraiment. Priya se connecte à la grille du dépôt, avant même d'avoir posé son sac.",
+        "it": "È lo stesso prodotto, sul telefono dove il lavoro accade davvero. Priya accede al cancello del deposito, prima ancora di posare la borsa."
+      }
+    },
+    {
+      "id": "openClock",
+      "chapter": {
+        "en": "The clock",
+        "de": "Die Uhr",
+        "es": "El reloj",
+        "fr": "L'horloge",
+        "it": "L'orologio"
+      },
+      "narration": {
+        "en": "One tab holds her hours. Nothing to choose, nothing to configure — the app already knows which site she is standing on.",
+        "de": "Ein Reiter führt ihre Stunden. Nichts auszuwählen, nichts einzurichten — die App weiß bereits, auf welchem Standort sie steht.",
+        "es": "Una pestaña guarda sus horas. Nada que elegir, nada que configurar: la aplicación ya sabe en qué centro está.",
+        "fr": "Un onglet contient ses heures. Rien à choisir, rien à configurer — l'application sait déjà sur quel site elle se trouve.",
+        "it": "Una scheda contiene le sue ore. Niente da scegliere, niente da configurare: l'app sa già in quale sede si trova."
+      }
+    },
+    {
+      "id": "clockIn",
+      "chapter": {
+        "en": "Starting the shift",
+        "de": "Die Schicht beginnen",
+        "es": "Comenzar el turno",
+        "fr": "Commencer le poste",
+        "it": "Iniziare il turno"
+      },
+      "narration": {
+        "en": "One button, and the shift is running. The position is checked against the depot as she taps, so the record says where she was, not only when.",
+        "de": "Ein Knopf, und die Schicht läuft. Die Position wird beim Tippen gegen das Depot geprüft — der Eintrag sagt also, wo sie war, nicht nur wann.",
+        "es": "Un botón, y el turno está en marcha. La posición se comprueba contra el almacén al pulsar, así que el registro dice dónde estaba, no solo cuándo.",
+        "fr": "Un bouton, et le poste tourne. La position est vérifiée par rapport au dépôt au moment du tap, si bien que l'enregistrement dit où elle était, et pas seulement quand.",
+        "it": "Un pulsante, e il turno è avviato. La posizione viene verificata rispetto al deposito al tocco, così il registro dice dov'era, non solo quando."
+      }
+    }
+  ]
+}

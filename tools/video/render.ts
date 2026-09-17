@@ -27,6 +27,7 @@ import { loadScript, type VideoScript } from './script.ts';
 import { selectVoiceAdapter } from './voice/index.ts';
 import { captureClockInOut } from './capture/flows/clock-in-out.ts';
 import { captureVoiceTest } from './capture/flows/voice-test.ts';
+import { captureMobileClock } from './capture/flows/mobile-clock.ts';
 import type { Timeline } from './timeline.ts';
 import { renderCards } from './assemble/cards.ts';
 import { writeAllSrt } from './assemble/srt.ts';
@@ -58,7 +59,18 @@ const FLOWS: Record<string, (d: Record<string, number>) => Promise<Timeline>> = 
   // Twenty seconds, two beats. A cheap way to hear a voice without spending a
   // full script's characters every time somebody wants to judge one.
   'voice-test': captureVoiceTest,
+  'mobile-clock': captureMobileClock,
 };
+
+/**
+ * Which flows film a phone instead of a browser.
+ *
+ * ⚠️ A SET rather than a flag on the script, because it changes what this file
+ * does — a phone flow warms no Next routes and is composited differently — and
+ * a video's script is content that a translator may edit. Neither of those
+ * decisions belongs in a file full of sentences.
+ */
+const PHONE_FLOWS = new Set(['mobile-clock']);
 
 interface Args {
   videoId: string;
@@ -145,8 +157,12 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const started = Date.now();
 
-  // Both rails first, before anything is created or any browser opens.
-  assertLocalWeb(WEB_URL);
+  /*
+    The database rail first, before anything is created.
+    ⚠️ The web rail cannot be checked yet: it guards a URL only a browser flow
+    opens, and which kind of flow this is is not known until the script loads.
+    It is asserted below, next to the answer.
+  */
   if (!args.skipSeed) assertLocalDatabase(process.env.DATABASE_URL);
   await assertToolchain();
 
@@ -157,6 +173,9 @@ async function main(): Promise<void> {
       `No capture flow registered for "${script.id}". Add one to FLOWS in render.ts.`,
     );
   }
+
+  const onPhone = PHONE_FLOWS.has(script.id);
+  if (!onPhone) assertLocalWeb(WEB_URL);
 
   const outDir = path.join(OUT_DIR, script.id);
   await fs.mkdir(outDir, { recursive: true });
@@ -188,7 +207,12 @@ async function main(): Promise<void> {
     timeline = JSON.parse(await fs.readFile(timelineFile, 'utf8')) as Timeline;
   } else {
     console.log('\n  3/4  capture');
-    await warmRoutes(['/login', '/dashboard', '/my/attendance', '/attendance']);
+    /*
+      ⚠️ Only for a browser flow. A phone flow talks to the gateway, not to
+      `next dev`, so warming web routes would spend seconds compiling pages
+      nothing in the video ever opens.
+    */
+    if (!onPhone) await warmRoutes(['/login', '/dashboard', '/my/attendance', '/attendance']);
     timeline = await flow(narrationDurations);
     await fs.writeFile(timelineFile, JSON.stringify(timeline, null, 2), 'utf8');
     console.log(
@@ -205,7 +229,9 @@ async function main(): Promise<void> {
   const cards = await renderCards(work, { title: script.title.en, subtitle: script.subtitle.en });
   const titleSeg = await stillToSegment(cards.titleCard, TITLE_CARD_SEC, path.join(work, 'title.mp4'));
   const endSeg = await stillToSegment(cards.endCard, END_CARD_SEC, path.join(work, 'end.mp4'));
-  const body = await normaliseFootage(timeline.videoPath, path.join(work, 'body.mp4'));
+  const body = await normaliseFootage(timeline.videoPath, path.join(work, 'body.mp4'), {
+    phone: onPhone,
+  });
 
   const silent = await concatSegments([titleSeg, body, endSeg], path.join(work, 'silent.mp4'));
   const totalSec = await probeDurationSec(silent);

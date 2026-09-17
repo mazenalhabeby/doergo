@@ -31,6 +31,8 @@ real database.
 | `ffmpeg` + `ffprobe` | Assembly. `brew install ffmpeg` |
 | macOS | The default voice is the system `say`. See *Voices* below |
 | `npx playwright install chromium` | Once, for the capture browser |
+| **Mobile only:** a running Android emulator + `maestro` + a JDK | The phone rig. `brew install openjdk`, `curl -fsSL https://get.maestro.mobile.dev \| bash` |
+| **Mobile only:** the debug APK installed, and Metro running | `cd apps/mobile/android && ./gradlew assembleDebug` (needs **JDK 17** — newer JDKs are refused by Gradle) |
 
 ## The four steps, and why they are in this order
 
@@ -157,16 +159,61 @@ The rig stops at the file. Per video, a person must:
 
 See `SHOTLIST.md` for the remaining tours and what each video should show.
 
-## Mobile capture — not built
+## Mobile capture
 
-Out of scope here, and the slot it would fill is clear. **Maestro**
-(`maestro record`) is the right tool: YAML flows, drives a real simulator or
-device, and records video. It would slot in as `capture/mobile/<id>.yaml` plus
-a runner that shells out to `maestro test`, emitting the same `Timeline` shape —
-at which point narration, subtitles, cards and assembly are all reused
-unchanged, because nothing downstream of capture knows what drew the pixels.
+Built, and it films Android today: `node render.ts mobile-clock --skip-seed`.
 
-Two things make it more than an afternoon: Maestro has no equivalent of the
-beat-pacing callback (the flow would need to hold each beat with explicit
-waits generated from the narration durations), and the phone needs its own
-seeded member plus a simulator with a mocked GPS fix.
+The phone rig lives in `capture/mobile-runner.ts` and emits the same `Timeline`
+as the browser rig, so narration, subtitles, cards, YouTube metadata and
+assembly are all reused unchanged — nothing downstream of capture knows what
+drew the pixels.
+
+### What is different from the browser rig
+
+The browser rig is **imperative**: Node runs each beat and holds the clock.
+Maestro runs a whole flow in one process, so the phone rig is **declarative** —
+Node writes one flow with the holds baked in, runs it once, and reads back when
+each beat actually happened. One process because Maestro takes ~6.4 s to reach
+its first command, and six seconds of a frozen phone between every beat cannot
+be cut out of a recording that is still running.
+
+Beat marks are still **observed, never computed**: each beat is fenced by a
+labelled no-op and Node timestamps the line when Maestro prints it.
+
+### Four traps, all of them load-bearing
+
+- **Maestro has no sleep, and the obvious substitutes silently do not wait.**
+  `extendedWaitUntil: notVisible:` on something that does not exist returns at
+  once — a 5,000 ms timeout measured 1.5 s — and `waitForAnimationToEnd` returns
+  as soon as the screen settles. Either would let the picture race the voice
+  while looking exactly like a wait. The hold runs in Maestro's own JavaScript.
+- **The developer menu opens on a freshly-installed app**, and clearing storage
+  for a logged-out start makes every take look freshly installed. It is consumed
+  by a throw-away warm-up launch, never from inside the flow: dismissing it there
+  reloads the bundle, and Maestro's `backPress` then never returns.
+- **Launch by explicit component**, not by URL. Any second app claiming
+  `hbcfield://` turns the launch into an "Open with" chooser.
+- **`localhost` is the emulator**, so Metro and the API are reached on the Mac's
+  LAN address.
+
+### iOS cannot be filmed in a simulator on Apple Silicon
+
+Google's MLKit — the on-device reader behind the business-card and document
+scanners — ships no arm64 **simulator** slice, only arm64 for devices and x86_64
+for the old Intel simulators. That is why the Podfile carries
+`EXCLUDED_ARCHS[sdk=iphonesimulator*] = arm64`, which was right on an Intel Mac
+and cannot work here, because iOS 26 simulators are arm64-only:
+
+```
+ld: building for 'iOS-simulator', but linking in object file
+    (MLImage.framework/MLImage[arm64]) built for 'iOS'
+```
+
+`VIDEO_PHONE=ios` is implemented and needs a **real iPhone** over USB, or a
+build with the OCR module stripped.
+
+### Portrait footage
+
+A phone recording is taller than the frame, so instead of two flat bars it is
+laid over a blown-up, blurred, darkened copy of itself (`normaliseFootage`,
+`{ phone: true }`).

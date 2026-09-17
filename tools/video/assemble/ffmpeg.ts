@@ -108,13 +108,55 @@ function scalePad(): string {
   );
 }
 
-/** Normalise raw Playwright footage into the same shape as the card segments. */
-export async function normaliseFootage(input: string, out: string): Promise<string> {
+/**
+ * A phone recording is taller than it is wide, so `scalePad` would sit it in
+ * the middle of two flat navy bars filling about three quarters of the frame.
+ * That reads as a screenshot somebody forgot to crop.
+ *
+ * Instead the same footage fills the frame behind itself, blown up, blurred and
+ * darkened, with the sharp portrait laid on top. The backdrop carries the app's
+ * own colours, so the surround changes with the screen rather than sitting
+ * there as a slab — the treatment every phone demo that looks expensive uses.
+ *
+ * ⚠️ `force_original_aspect_ratio=increase` on the backdrop, DECREASE on the
+ * foreground. They look like a typo for one another and are not: the backdrop
+ * must overflow the frame so no bar survives, and the foreground must fit
+ * inside it so nothing is cropped.
+ */
+function phoneOnBlur(): string {
+  const { width, height } = OUTPUT;
+  return (
+    `[0:v]split=2[bg][fg];` +
+    `[bg]scale=${width}:${height}:force_original_aspect_ratio=increase,` +
+    `crop=${width}:${height},gblur=sigma=42,eq=brightness=-0.16:saturation=1.15[bgv];` +
+    `[fg]scale=${width}:${height}:force_original_aspect_ratio=decrease[fgv];` +
+    `[bgv][fgv]overlay=(W-w)/2:(H-h)/2,setsar=1`
+  );
+}
+
+export interface NormaliseOptions {
+  /**
+   * Portrait phone footage. Filled behind rather than letterboxed.
+   * ⚠️ Stated by the caller rather than probed from the file: the flow knows
+   * what it filmed, and a probe would quietly switch treatment on a browser
+   * capture that happened to be recorded at an odd size.
+   */
+  phone?: boolean;
+}
+
+/** Normalise raw capture footage into the same shape as the card segments. */
+export async function normaliseFootage(
+  input: string,
+  out: string,
+  options: NormaliseOptions = {},
+): Promise<string> {
   await ffmpeg([
     '-i', input,
     '-f', 'lavfi',
     '-i', 'anullsrc=channel_layout=mono:sample_rate=48000',
-    '-vf', scalePad(),
+    ...(options.phone
+      ? ['-filter_complex', phoneOnBlur()]
+      : ['-vf', scalePad()]),
     '-r', String(OUTPUT.fps),
     '-c:v', 'libx264',
     '-preset', 'medium',
