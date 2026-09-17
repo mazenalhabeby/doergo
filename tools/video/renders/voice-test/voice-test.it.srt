@@ -1,14 +1,14 @@
 1
-00:00:06,236 --> 00:00:11,009
+00:00:06,332 --> 00:00:12,180
 Mara dirige il deposito di Halstead Field
 Services. Effettua l'accesso e la prima
 
 2
-00:00:11,009 --> 00:00:13,248
+00:00:12,180 --> 00:00:14,923
 cosa che vuole vedere sono le sue ore.
 
 3
-00:00:13,698 --> 00:00:18,249
+00:00:15,375 --> 00:00:21,969
 Un pulsante avvia il turno.
 L'orologio parte, e questo è tutto.
 

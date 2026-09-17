@@ -1,14 +1,14 @@
 1
-00:00:06,236 --> 00:00:11,495
+00:00:06,332 --> 00:00:12,776
 Mara runs the depot at Halstead Field
 Services. She signs in, and the first thing
 
 2
-00:00:11,495 --> 00:00:13,248
+00:00:12,776 --> 00:00:14,923
 she wants is her own hours.
 
 3
-00:00:13,698 --> 00:00:18,249
+00:00:15,375 --> 00:00:21,969
 One button starts the shift. The clock
 begins to run, and that is the whole of it.
 

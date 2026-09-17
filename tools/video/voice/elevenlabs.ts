@@ -30,7 +30,7 @@ import { probeDurationSec } from '../assemble/ffmpeg.ts';
 const run = promisify(execFile);
 
 /**
- * Malia — Natural American. The product's narrator.
+ * The product's narrator.
  *
  * ⚠️ CHOSEN, not defaulted. Every video in the library has to sound like the
  * same person; a voice that drifts from one to the next reads as several
@@ -42,7 +42,7 @@ const run = promisify(execFile);
  *
  * Overridable for a one-off test: `VIDEO_ELEVEN_VOICE`.
  */
-const VOICE_ID = process.env.VIDEO_ELEVEN_VOICE ?? 'klHXweKCxxmBYweAPtk4';
+const VOICE_ID = process.env.VIDEO_ELEVEN_VOICE ?? 'GWparLcEBJuQc36gyF2J';
 
 /**
  * `multilingual_v2` rather than the English-only model, even while only English
@@ -51,6 +51,14 @@ const VOICE_ID = process.env.VIDEO_ELEVEN_VOICE ?? 'klHXweKCxxmBYweAPtk4';
  * five versions match.
  */
 const MODEL_ID = process.env.VIDEO_ELEVEN_MODEL ?? 'eleven_multilingual_v2';
+
+/*
+  Delivery, overridable per render so a voice can be auditioned without a commit.
+  ⚠️ Low stability = MORE variation on this API, not less.
+*/
+const STABILITY = Number(process.env.VIDEO_ELEVEN_STABILITY ?? 0.3);
+const SIMILARITY = Number(process.env.VIDEO_ELEVEN_SIMILARITY ?? 0.75);
+const SPEED = Number(process.env.VIDEO_ELEVEN_SPEED ?? 1.0);
 
 const API = 'https://api.elevenlabs.io/v1';
 
@@ -87,17 +95,24 @@ export const elevenLabsAdapter: VoiceAdapter = {
         */
         ...(previousText ? { previous_text: previousText } : {}),
         ...(nextText ? { next_text: nextText } : {}),
+        /*
+          Matched to what the ElevenLabs web player was set to, so what was
+          auditioned there is what renders here — a setting that differs
+          between the two makes every comparison meaningless.
+
+          ⚠️ On this API, LOW stability means MORE expressive, not less. 0.3 is
+          deliberate: the first narrator read as sleepy, and steadiness was the
+          cause. The cost is that the model makes fresh choices per request, so
+          two beats of one video can drift in energy — which is exactly what
+          `previous_text`/`next_text` above are there to hold together. If a
+          long video's delivery still wanders, RAISE this first.
+        */
         voice_settings: {
-          /*
-            Steady rather than expressive. A narrator who performs differently
-            in each beat of one video sounds like several people; `stability`
-            high and `style` at zero keeps twenty videos sounding like one
-            product.
-          */
-          stability: 0.5,
-          similarity_boost: 0.75,
+          stability: STABILITY,
+          similarity_boost: SIMILARITY,
           style: 0,
           use_speaker_boost: true,
+          speed: SPEED,
         },
       }),
     });
