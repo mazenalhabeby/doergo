@@ -1,0 +1,29 @@
+TITLE
+Clock in and clock out — HBCField
+
+DESCRIPTION
+Starting and finishing a shift in HBCField takes one tap, and the record it leaves is the one payroll reads. This walkthrough follows a supervisor through her own shift, then shows the team board her office sees.
+
+Chapters
+0:00 Clock in and clock out
+0:06 Signing in
+0:17 My shifts
+0:26 Clocking in
+0:44 Clocking out
+0:57 The team board
+1:12 Approvals
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload clock-in-out.mp4
+  [ ] Add each clock-in-out.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → "myAttendanceTour", "attendanceTour"

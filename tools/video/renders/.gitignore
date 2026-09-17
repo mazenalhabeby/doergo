@@ -1,0 +1,19 @@
+# Renders are reproducible from the seed, the script and the app, so the
+# intermediates are not worth versioning — the raw Playwright capture alone is
+# ~30MB per run, and it changes on every render.
+#
+# What IS committed is the finished deliverable: the mp4, its subtitles, the
+# YouTube text and the timing manifest. They are the proof the rig works, and
+# the mp4 is the thing anybody can watch without running anything.
+*
+!.gitignore
+!*/
+*/*
+!*/*.mp4
+!*/*.srt
+!*/*.youtube.txt
+!*/*.timeline.json
+
+# ...but not the preview build with captions burned in: it is the same video
+# again, and it exists only for checking subtitle timing locally.
+*.preview-*.mp4

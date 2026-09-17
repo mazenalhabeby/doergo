@@ -1,0 +1,88 @@
+1
+00:00:06,508 --> 00:00:11,727
+Esta es Mara. Dirige el almacén de
+Halstead Field Services, y su día empieza igual
+
+2
+00:00:11,727 --> 00:00:14,146
+que el de los demás: iniciando sesión.
+
+3
+00:00:17,806 --> 00:00:22,159
+Todo lo relativo a sus horas está en una
+sola página: Mis turnos. Sin parte de horas
+
+4
+00:00:22,159 --> 00:00:25,372
+que rellenar ni formulario que
+recordar al final de la semana.
+
+5
+00:00:26,421 --> 00:00:31,521
+Un botón inicia el turno. HBCField lee su
+ubicación, confirma que está en el almacén
+
+6
+00:00:31,521 --> 00:00:36,500
+y registra dónde ha fichado, para que
+después nadie tenga que fiarse de la palabra
+
+7
+00:00:36,500 --> 00:00:37,046
+de nadie.
+
+8
+00:00:37,527 --> 00:00:42,558
+A partir de aquí el reloj corre solo.
+Puede cerrar el portátil, salir a un trabajo,
+
+9
+00:00:42,558 --> 00:00:44,135
+y el turno sigue contando.
+
+10
+00:00:44,588 --> 00:00:49,257
+Al final del día ficha la salida. Las
+horas se calculan solas: tiempo en obra,
+
+11
+00:00:49,257 --> 00:00:51,771
+descansos descontados, listo para aprobar.
+
+12
+00:00:52,221 --> 00:00:56,287
+Su propio historial está justo debajo:
+cada turno de este mes, con el tiempo
+
+13
+00:00:56,287 --> 00:00:57,464
+trabajado en cada uno.
+
+14
+00:00:57,916 --> 00:01:02,730
+Y como Mara supervisa el almacén, tiene
+la otra mitad: la asistencia de todo el
+
+15
+00:01:02,730 --> 00:01:06,630
+equipo. Quién está fichado ahora
+mismo y cómo va sumando el día.
+
+16
+00:01:07,082 --> 00:01:11,978
+Cada turno aparece con las horas, el
+total y el centro. Nadie ha tecleado nada de
+
+17
+00:01:11,978 --> 00:01:12,280
+esto.
+
+18
+00:01:12,731 --> 00:01:17,617
+Solo se le señalan los que requieren una
+decisión: una entrada tarde, una jornada
+
+19
+00:01:17,617 --> 00:01:19,969
+larga. El resto ya se ha resuelto solo.
+
