@@ -17,7 +17,7 @@ import { ROUTES } from '../../lib/constants';
 import { isSameDay } from '../../lib/utils';
 import { useTheme } from '../../contexts/theme-context';
 import { WeekCalendar } from '../week-calendar';
-import { TourTarget } from '../tour';
+import { TourTarget, useTourScroll } from '../tour';
 import { styles as sharedStyles, statChip, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from './home-styles';
 import { DocumentsReminderCard } from '../documents-reminder-card';
 import { QuickActions } from './quick-actions';
@@ -27,6 +27,7 @@ export function FreelancerHome() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
+  const tourScroll = useTourScroll();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -275,6 +276,10 @@ export function FreelancerHome() {
     <View style={[sharedStyles.container, { backgroundColor: colors.surface }]}>
       <ScreenContainer width="content">
       <FlatList
+        // Lets the guided tour scroll a target into view before spotlighting it:
+        // most of this screen's tour anchors live in the list header, below the
+        // fold, and the engine cannot scroll a list it was never handed.
+        {...tourScroll}
         data={filteredTasks}
         renderItem={renderTask}
         keyExtractor={item => item.id}

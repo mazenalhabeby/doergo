@@ -5,6 +5,7 @@ import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
 import { ArrowRight, ArrowLeft, MousePointerClick, X } from "lucide-react"
 
+import type { Box } from "./measure"
 import type { TourStep } from "./types"
 
 const TIP_W = 344
@@ -25,7 +26,8 @@ export function TourOverlay({
   onSkip,
   onHoleClick,
 }: {
-  rect: DOMRect
+  /** A SETTLED rectangle (see measure.ts) — never a live `getBoundingClientRect`. */
+  rect: Box
   step: TourStep
   index: number
   total: number
@@ -44,10 +46,10 @@ export function TourOverlay({
   // Position the tooltip after we can measure its height.
   useLayoutEffect(() => {
     const h = tipRef.current?.offsetHeight ?? 160
-    let top = rect.bottom + pad + GAP
-    if (top + h > window.innerHeight - 10) top = rect.top - pad - GAP - h // flip above
+    let top = rect.y + rect.height + pad + GAP
+    if (top + h > window.innerHeight - 10) top = rect.y - pad - GAP - h // flip above
     if (top < 10) top = 10
-    let left = rect.left + rect.width / 2 - TIP_W / 2 // center under target
+    let left = rect.x + rect.width / 2 - TIP_W / 2 // center under target
     left = Math.min(Math.max(10, left), window.innerWidth - TIP_W - 10)
     setTip({ left, top })
   }, [rect, pad, step])
@@ -61,8 +63,8 @@ export function TourOverlay({
       <div
         className="pointer-events-none fixed z-[71] rounded-xl ring-2 ring-primary transition-all duration-300 ease-out"
         style={{
-          left: rect.left - pad,
-          top: rect.top - pad,
+          left: rect.x - pad,
+          top: rect.y - pad,
           width: rect.width + pad * 2,
           height: rect.height + pad * 2,
           boxShadow: "0 0 0 9999px rgba(15,23,42,0.55)",
@@ -80,7 +82,7 @@ export function TourOverlay({
           onPointerDown={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
           className="pointer-events-auto fixed z-[72] cursor-pointer rounded-xl"
-          style={{ left: rect.left - pad, top: rect.top - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 }}
+          style={{ left: rect.x - pad, top: rect.y - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 }}
         />
       )}
 
