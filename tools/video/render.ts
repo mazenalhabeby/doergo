@@ -32,6 +32,9 @@ import { captureStartToFinish } from './capture/flows/start-to-finish.ts';
 import { captureWorkThatRepeats } from './capture/flows/work-that-repeats.ts';
 import { captureClockInAndOut } from './capture/flows/clock-in-and-out.ts';
 import { captureAMembersFile } from './capture/flows/a-members-file.ts';
+import { captureDraftIssuedPaid } from './capture/flows/draft-issued-paid.ts';
+import { captureYourFirstInvoice } from './capture/flows/your-first-invoice.ts';
+import { captureWhatYouPayUs } from './capture/flows/what-you-pay-us.ts';
 import { captureWhoHasTheVan } from './capture/flows/who-has-the-van.ts';
 import { captureEquipmentOnTheBooks } from './capture/flows/equipment-on-the-books.ts';
 import { captureJobAtTheirAddress } from './capture/flows/job-at-their-address.ts';
@@ -99,6 +102,9 @@ const FLOWS: Record<string, (d: Record<string, number>) => Promise<Timeline>> = 
   'job-at-their-address': captureJobAtTheirAddress,
   'equipment-on-the-books': captureEquipmentOnTheBooks,
   'who-has-the-van': captureWhoHasTheVan,
+  'what-you-pay-us': captureWhatYouPayUs,
+  'your-first-invoice': captureYourFirstInvoice,
+  'draft-issued-paid': captureDraftIssuedPaid,
   'create-a-job': captureCreateAJob,
   // Twenty seconds, two beats. A cheap way to hear a voice without spending a
   // full script's characters every time somebody wants to judge one.
@@ -160,6 +166,9 @@ const WARM_ROUTES: Record<string, string[]> = {
   'job-at-their-address': ['/login', '/dashboard', '/tasks', '/tasks/warm'],
   'equipment-on-the-books': ['/login', '/dashboard', '/assets', '/assets/warm'],
   'who-has-the-van': ['/login', '/dashboard', '/assets', '/assets/warm'],
+  'what-you-pay-us': ['/login', '/dashboard', '/settings', '/settings/billing'],
+  'your-first-invoice': ['/login', '/dashboard', '/invoices', '/invoices/new'],
+  'draft-issued-paid': ['/login', '/dashboard', '/invoices', '/invoices/warm'],
   'create-a-job': ['/login', '/dashboard', '/tasks', '/tasks/warm'],
   'voice-test': ['/login', '/dashboard'],
 };

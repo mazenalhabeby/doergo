@@ -1,0 +1,38 @@
+1
+00:00:08,978 --> 00:00:14,411
+Chaque facture, dans son état :
+brouillon, envoyée, payée, ou en retard.
+
+2
+00:00:14,865 --> 00:00:20,113
+Une nouvelle commence par le
+destinataire. Tout le reste en découle.
+
+3
+00:00:20,566 --> 00:00:25,367
+Les lignes sont ce que vous avez fait : la
+main-d'œuvre à votre tarif, et les pièces
+
+4
+00:00:25,367 --> 00:00:25,767
+posées.
+
+5
+00:00:27,514 --> 00:00:32,512
+Le total est de l'arithmétique, pas une
+décision — et la taxe est traitée là où elle
+
+6
+00:00:32,512 --> 00:00:33,226
+doit l'être.
+
+7
+00:00:33,676 --> 00:00:38,924
+Et ce que vous avez est encore un
+brouillon. Cela se voit dessus, et c'est le but.
+
+8
+00:00:39,376 --> 00:00:44,531
+Ensuite : à quoi son émission vous
+engage, et ce qui se passe ensuite.
+

@@ -1,0 +1,26 @@
+TITLE
+What you pay us — HBCField
+
+DESCRIPTION
+There are no bundles to choose between. You pay for the people who work here, for the capabilities each workspace actually switched on, and for the few things bought once for the whole organisation. The bill shows all three, itemised, and moves the moment you change any of them.
+
+Chapters
+0:00 What you pay us
+0:08 No bundles
+0:13 The people
+0:19 Per workspace
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload what-you-pay-us.mp4
+  [ ] Add each what-you-pay-us.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → "pageSettings"

@@ -1,0 +1,27 @@
+TITLE
+Draft, issued, sent, paid — HBCField
+
+DESCRIPTION
+An invoice has four states and only one of them is a document. A draft is watermarked on purpose: without a deliberate step between writing and sending, the only clean document a business could produce was one that recorded a delivery which had not happened.
+
+Chapters
+0:00 Draft, issued, sent, paid
+0:09 Four states
+0:16 The draft
+0:26 Issuing
+0:41 Sent, and paid
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload draft-issued-paid.mp4
+  [ ] Add each draft-issued-paid.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → 

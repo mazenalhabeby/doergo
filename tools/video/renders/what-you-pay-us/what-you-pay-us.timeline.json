@@ -1,0 +1,43 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/what-you-pay-us/capture/page@2c12ca760bc240a768d2c4fb1f74309b.webm",
+  "durationSec": 38.36,
+  "preRollSec": 4.811,
+  "beats": [
+    {
+      "id": "noBundles",
+      "startSec": 4.811,
+      "endSec": 10.138,
+      "narrationSec": 4.876188
+    },
+    {
+      "id": "theSeats",
+      "startSec": 10.139,
+      "endSec": 16.116999999999997,
+      "narrationSec": 5.526354
+    },
+    {
+      "id": "perWorkspace",
+      "startSec": 16.116999999999997,
+      "endSec": 21.632,
+      "narrationSec": 5.061958
+    },
+    {
+      "id": "theOptions",
+      "startSec": 21.632,
+      "endSec": 28.539,
+      "narrationSec": 6.455146
+    },
+    {
+      "id": "itMoves",
+      "startSec": 28.54,
+      "endSec": 33.683,
+      "narrationSec": 4.690438
+    },
+    {
+      "id": "whereNext",
+      "startSec": 33.683,
+      "endSec": 38.36,
+      "narrationSec": 4.226042
+    }
+  ]
+}

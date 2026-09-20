@@ -1,0 +1,43 @@
+1
+00:00:09,804 --> 00:00:15,563
+Cuatro estados, y no son decoración: cada
+uno significa que algo distinto es cierto.
+
+2
+00:00:16,019 --> 00:00:21,333
+Un borrador todavía puede cambiarlo
+cualquiera que pueda crear facturas, así que
+
+3
+00:00:21,333 --> 00:00:26,514
+está marcado como borrador allí donde
+aparece, también en el propio documento.
+
+4
+00:00:26,965 --> 00:00:34,096
+Emitir es el paso deliberado: fija los
+números y da al documento su sitio en sus
+
+5
+00:00:34,096 --> 00:00:34,720
+libros.
+
+6
+00:00:35,172 --> 00:00:41,302
+Ahora la marca de agua ya no está, y
+queda lo que de verdad se le envía a alguien.
+
+7
+00:00:41,757 --> 00:00:49,754
+Enviada es un hecho del correo. Pagada es
+un hecho del banco. Ninguna se deduce de
+
+8
+00:00:49,754 --> 00:00:50,534
+la otra.
+
+9
+00:00:50,994 --> 00:00:56,288
+A continuación: la factura que va
+al revés: lo que usted nos paga.
+

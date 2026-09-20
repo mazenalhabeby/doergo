@@ -43,11 +43,11 @@
     {
       "id": "theDraft",
       "narration": {
-        "en": "A draft can be changed by anybody who can raise one. So its document says so, across the page.",
-        "de": "Ein Entwurf kann von allen geändert werden, die Rechnungen anlegen dürfen. Deshalb sagt das Dokument es quer über die Seite.",
-        "es": "Un borrador puede cambiarlo cualquiera que pueda crear facturas. Por eso el documento lo dice, cruzando la página.",
-        "fr": "Un brouillon peut être modifié par quiconque peut en créer un. Son document le dit donc, en travers de la page.",
-        "it": "Una bozza può essere modificata da chiunque possa crearne una. Perciò il documento lo dice, per tutta la pagina."
+        "en": "A draft can still be changed by anybody who can raise one — so it is marked as a draft wherever it appears, including on the document itself.",
+        "de": "Ein Entwurf kann noch von allen geändert werden, die Rechnungen anlegen dürfen — deshalb ist er überall als Entwurf gekennzeichnet, auch auf dem Dokument selbst.",
+        "es": "Un borrador todavía puede cambiarlo cualquiera que pueda crear facturas, así que está marcado como borrador allí donde aparece, también en el propio documento.",
+        "fr": "Un brouillon peut encore être modifié par quiconque peut en créer un — il est donc marqué comme brouillon partout où il apparaît, y compris sur le document.",
+        "it": "Una bozza può ancora essere modificata da chiunque possa crearne una — perciò è contrassegnata come bozza ovunque compaia, anche sul documento stesso."
       },
       "chapter": {
         "en": "The draft",

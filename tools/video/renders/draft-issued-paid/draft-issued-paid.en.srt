@@ -1,0 +1,51 @@
+1
+00:00:09,804 --> 00:00:15,220
+Four states, and they are not
+decoration: each one means something different is
+
+2
+00:00:15,220 --> 00:00:15,563
+true.
+
+3
+00:00:16,019 --> 00:00:22,016
+A draft can still be changed by anybody
+who can raise one — so it is marked as a
+
+4
+00:00:22,016 --> 00:00:26,514
+draft wherever it appears,
+including on the document itself.
+
+5
+00:00:26,965 --> 00:00:33,601
+Issuing is the deliberate step. It fixes
+the numbers and gives the document a place
+
+6
+00:00:33,601 --> 00:00:34,720
+in your books.
+
+7
+00:00:35,172 --> 00:00:40,682
+Now the watermark is gone, and what is
+left is the thing you would actually send
+
+8
+00:00:40,682 --> 00:00:41,302
+somebody.
+
+9
+00:00:41,757 --> 00:00:49,148
+Sent is a fact about the post. Paid is a
+fact about the bank. Neither is guessed
+
+10
+00:00:49,148 --> 00:00:50,534
+from the other.
+
+11
+00:00:50,994 --> 00:00:56,288
+Next: the bill that comes the
+other way — what you pay us.
+

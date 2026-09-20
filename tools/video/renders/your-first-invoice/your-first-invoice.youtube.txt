@@ -1,0 +1,26 @@
+TITLE
+Your first invoice — HBCField
+
+DESCRIPTION
+The work is already recorded — the hours, the parts, who signed. An invoice is that record, priced. This is how one is raised, what it takes its numbers from, and why the draft is not something you would ever send.
+
+Chapters
+0:00 Your first invoice
+0:08 What is owed
+0:14 Raising one
+0:33 Still a draft
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload your-first-invoice.mp4
+  [ ] Add each your-first-invoice.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → "pageInvoices"

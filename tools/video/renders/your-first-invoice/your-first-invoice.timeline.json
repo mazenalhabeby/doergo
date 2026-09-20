@@ -1,0 +1,43 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/your-first-invoice/capture/page@a9a9e35a61112e1abbd9984ee473fbbd.webm",
+  "durationSec": 41.48,
+  "preRollSec": 5.477999999999994,
+  "beats": [
+    {
+      "id": "whatIsOwed",
+      "startSec": 5.477999999999994,
+      "endSec": 11.362999999999994,
+      "narrationSec": 5.433479
+    },
+    {
+      "id": "raiseOne",
+      "startSec": 11.364999999999995,
+      "endSec": 17.065999999999995,
+      "narrationSec": 5.247708
+    },
+    {
+      "id": "theLines",
+      "startSec": 17.065999999999995,
+      "endSec": 24.012999999999995,
+      "narrationSec": 5.201271
+    },
+    {
+      "id": "theTotal",
+      "startSec": 24.013999999999996,
+      "endSec": 30.175999999999995,
+      "narrationSec": 5.712104
+    },
+    {
+      "id": "stillADraft",
+      "startSec": 30.175999999999995,
+      "endSec": 35.87499999999999,
+      "narrationSec": 5.247708
+    },
+    {
+      "id": "whereNext",
+      "startSec": 35.87599999999999,
+      "endSec": 41.48,
+      "narrationSec": 5.154833
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/draft-issued-paid/capture/page@85e577b9bd196421809ed253b056afa2.webm",
+  "durationSec": 53.24,
+  "preRollSec": 6.304000000000002,
+  "beats": [
+    {
+      "id": "fourStates",
+      "startSec": 6.304000000000002,
+      "endSec": 12.518000000000002,
+      "narrationSec": 5.758563
+    },
+    {
+      "id": "theDraft",
+      "startSec": 12.519000000000002,
+      "endSec": 23.465000000000003,
+      "narrationSec": 10.495417
+    },
+    {
+      "id": "issuing",
+      "startSec": 23.465000000000003,
+      "endSec": 31.671000000000003,
+      "narrationSec": 7.755479
+    },
+    {
+      "id": "theCleanDocument",
+      "startSec": 31.672,
+      "endSec": 38.256,
+      "narrationSec": 6.130083
+    },
+    {
+      "id": "sentAndPaid",
+      "startSec": 38.257000000000005,
+      "endSec": 47.494,
+      "narrationSec": 8.777146
+    },
+    {
+      "id": "whereNext",
+      "startSec": 47.494,
+      "endSec": 53.24,
+      "narrationSec": 5.294146
+    }
+  ]
+}

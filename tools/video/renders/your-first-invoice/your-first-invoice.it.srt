@@ -1,0 +1,34 @@
+1
+00:00:08,978 --> 00:00:14,411
+Ogni fattura, nello stato in cui si
+trova: bozza, inviata, pagata o in ritardo.
+
+2
+00:00:14,865 --> 00:00:20,113
+Una nuova inizia da per chi
+è. Tutto il resto segue da lì.
+
+3
+00:00:20,566 --> 00:00:25,283
+Le righe sono ciò che avete fatto: la
+manodopera alla vostra tariffa e i pezzi
+
+4
+00:00:25,283 --> 00:00:25,767
+montati.
+
+5
+00:00:27,514 --> 00:00:33,226
+Il totale è aritmetica, non una decisione
+— e l'imposta è trattata dove va trattata.
+
+6
+00:00:33,676 --> 00:00:38,924
+E ciò che ha è ancora una bozza. Si
+vede, ed è proprio questo il punto.
+
+7
+00:00:39,376 --> 00:00:44,531
+Poi: a che cosa la impegna
+emetterla, e che cosa succede dopo.
+

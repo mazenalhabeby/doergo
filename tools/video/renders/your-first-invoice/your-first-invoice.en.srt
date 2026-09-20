@@ -1,0 +1,30 @@
+1
+00:00:08,978 --> 00:00:14,411
+Every invoice, in the state it is
+in: drafted, sent, paid, or late.
+
+2
+00:00:14,865 --> 00:00:20,113
+A new one starts with who it is for.
+Everything else follows from that.
+
+3
+00:00:20,566 --> 00:00:25,767
+The lines are what you did: labour at the
+rate you charge, and the parts you fitted.
+
+4
+00:00:27,514 --> 00:00:33,226
+The total is arithmetic, not a decision
+— and tax is handled where tax belongs.
+
+5
+00:00:33,676 --> 00:00:38,924
+And what you have is still a draft. You
+can see that on it, which is the point.
+
+6
+00:00:39,376 --> 00:00:44,531
+Next: what issuing it commits you
+to, and what happens after that.
+
