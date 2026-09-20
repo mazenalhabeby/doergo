@@ -10,7 +10,7 @@
 
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { DEPOT, LEAD, DEMO_PASSWORD } from './demo-data.ts';
+import { DEPOT, LEAD, OWNER, DEMO_PASSWORD } from './demo-data.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -73,7 +73,31 @@ export const WEB_URL = process.env.VIDEO_WEB_URL ?? 'http://localhost:3000';
  */
 export const DEMO_LOGIN = { email: LEAD.email, password: DEMO_PASSWORD } as const;
 
-/** Locales we ship subtitles for. English is the narrated one. */
+/**
+ * The org owner, for the videos whose viewer IS the owner.
+ *
+ * ⚠️ NOT INTERCHANGEABLE WITH `DEMO_LOGIN`, and the difference is enforced by
+ * the product. `GET /organizations/profile` is ADMIN-only: signed in as Mara
+ * the settings page still offers the General section, its fetch 403s, and the
+ * form renders BLANK — a company name placeholder, an empty address — with
+ * nothing on screen to say it was refused. Video 01 narrates "this is what you
+ * signed up as" over that panel, so it records as the owner.
+ *
+ * Mara stays the default because the attendance videos need somebody who both
+ * clocks in and supervises. Pick per video, and check the screen actually
+ * filled in rather than assuming the account could read it.
+ */
+export const ADMIN_LOGIN = { email: OWNER.email, password: DEMO_PASSWORD } as const;
+
+/**
+ * Locales we ship subtitles for. English is the narrated one.
+ *
+ * ⚠️ ALL FIVE, and `video-guides.test.ts` fails a script that is missing any of
+ * them. A narrowed list ships a video whose Spanish viewers get no subtitles at
+ * all — and nothing anywhere reports it, because the loader only validates what
+ * this list names. The five here, the five in `VideoLanguage`, and the five the
+ * guard asserts are deliberately the same five.
+ */
 export const LOCALES = ['en', 'de', 'es', 'fr', 'it'] as const;
 export type Locale = (typeof LOCALES)[number];
 

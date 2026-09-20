@@ -71,29 +71,16 @@ export interface VideoGuide {
   scriptId: string;
 }
 
-const ALL_LANGUAGES: VideoLanguage[] = ['en', 'de', 'es', 'fr', 'it'];
-
 /**
- * Two tours share one video where one video genuinely answers both.
- *
- * Clocking in and reading the team's hours are the two halves of one story,
- * and a member who supervises sees both — so `attendanceTour` and
- * `myAttendanceTour` point at the same file rather than at two videos that
- * would each repeat the other's context.
+ * One video may answer two tours where one genuinely covers both — point both
+ * keys at the same `scriptId` rather than making two videos that each repeat
+ * the other's context.
  */
 export const VIDEO_GUIDES: Partial<Record<TourId, VideoGuide>> = {
-  myAttendanceTour: {
-    youtubeId: null,
-    seconds: null,
-    languages: ALL_LANGUAGES,
-    scriptId: 'clock-in-out',
-  },
-  attendanceTour: {
-    youtubeId: null,
-    seconds: null,
-    languages: ALL_LANGUAGES,
-    scriptId: 'clock-in-out',
-  },
+  // Empty on purpose: the library is being rebuilt from tools/video/SHOTLIST.md
+  // and nothing is published yet. Add an entry only when a video EXISTS and has
+  // a YouTube id — an entry with a null id is treated as absent anyway, so a
+  // placeholder buys nothing and reads as a promise the UI cannot keep.
 };
 
 /**

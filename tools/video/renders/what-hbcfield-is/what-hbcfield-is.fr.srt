@@ -1,0 +1,186 @@
+1
+00:00:18,005 --> 00:00:24,362
+Voici HBCField, ouvert au bureau d'une
+entreprise qui répare chez les autres. Tout
+
+2
+00:00:24,362 --> 00:00:30,487
+ce que vous allez voir appartient à une
+seule organisation : une entreprise, un
+
+3
+00:00:30,487 --> 00:00:36,535
+compte, et une frontière autour des
+données que rien ne franchit par accident.
+
+4
+00:00:36,990 --> 00:00:43,619
+Quatre mots portent tout le produit. Une
+organisation. Ses espaces de travail. Les
+
+5
+00:00:43,619 --> 00:00:50,409
+personnes qui y sont. Et le travail.
+Retenez ces quatre-là, et chaque écran qui suit
+
+6
+00:00:50,409 --> 00:00:52,269
+s'explique de lui-même.
+
+7
+00:00:52,737 --> 00:00:57,716
+L'organisation, c'est l'entreprise
+elle-même. C'est ce sous quoi vous vous êtes
+
+8
+00:00:57,716 --> 00:01:02,947
+inscrit, ce qui vous est facturé, et la
+limite à l'intérieur de laquelle vivent vos
+
+9
+00:01:02,947 --> 00:01:08,241
+données. Personne à l'extérieur n'en voit
+rien, sauf si vous ouvrez délibérément une
+
+10
+00:01:08,241 --> 00:01:08,619
+porte.
+
+11
+00:01:09,076 --> 00:01:14,789
+À l'intérieur de l'organisation se
+trouvent les espaces de travail. Un espace de
+
+12
+00:01:14,789 --> 00:01:20,502
+travail, c'est un endroit où le travail
+se fait, ou une partie de l'activité qui
+
+13
+00:01:20,502 --> 00:01:25,144
+fonctionne à sa façon. Un dépôt.
+Un atelier. Le site d'un client.
+
+14
+00:01:25,597 --> 00:01:29,961
+Un espace de travail n'est pas un
+dossier. Chacun n'active que les parties du
+
+15
+00:01:29,961 --> 00:01:34,608
+produit dont il a réellement besoin, et
+n'est facturé que pour celles-là. Celui-ci
+
+16
+00:01:34,608 --> 00:01:39,369
+suit les véhicules et les heures
+travaillées. Un espace qui n'a besoin ni de l'un ni
+
+17
+00:01:39,369 --> 00:01:42,826
+de l'autre désactive les deux,
+et ne paie ni l'un ni l'autre.
+
+18
+00:01:43,277 --> 00:01:48,298
+Et l'un d'eux ne vous appartient pas du
+tout : c'est le site d'un client. Dans ce
+
+19
+00:01:48,298 --> 00:01:53,257
+métier, on passe la journée entière chez
+quelqu'un d'autre ; ce site est donc un
+
+20
+00:01:53,257 --> 00:01:57,348
+lieu de travail comme un autre,
+et le produit le traite comme tel.
+
+21
+00:01:57,808 --> 00:02:02,708
+Ensuite, les personnes. Certaines
+travaillent à un bureau. D'autres sont en
+
+22
+00:02:02,708 --> 00:02:08,065
+camionnette dès sept heures du matin. Et
+certaines ne travaillent pas pour vous du
+
+23
+00:02:08,065 --> 00:02:13,226
+tout : le superviseur d'un client,
+autorisé à suivre l'intervention qu'il paie.
+
+24
+00:02:13,677 --> 00:02:18,405
+Ce à quoi quelqu'un a accès n'est pas
+décidé par son intitulé de poste. C'est un
+
+25
+00:02:18,405 --> 00:02:23,075
+rôle que vous construisez vous-même :
+une liste de ce qu'il peut faire, et dans
+
+26
+00:02:23,075 --> 00:02:27,744
+quels espaces de travail il peut le
+faire. Changez le rôle, et tous ceux qui le
+
+27
+00:02:27,744 --> 00:02:29,281
+portent changent avec lui.
+
+28
+00:02:29,733 --> 00:02:36,099
+Et voici le travail. Une intervention dit
+ce qu'il faut faire, où, pour quand, et
+
+29
+00:02:36,099 --> 00:02:42,700
+qui s'en charge. Tous les autres écrans de
+ce produit préparent une intervention, ou
+
+30
+00:02:42,700 --> 00:02:45,058
+relisent ce qui s'y est passé.
+
+31
+00:02:45,517 --> 00:02:51,657
+Ouvrez-en une et vous avez toute
+l'histoire sur une page. Qui s'en occupe. Tout ce
+
+32
+00:02:51,657 --> 00:02:57,946
+que chacun y a fait, dans l'ordre. La
+conversation qui l'a accompagnée. Et à la fin,
+
+33
+00:02:57,946 --> 00:03:03,861
+le rapport : les heures, les pièces
+posées, et la signature du client lui-même.
+
+34
+00:03:04,321 --> 00:03:09,882
+Il y a deux portes d'entrée. Le bureau
+travaille dans un navigateur, comme ici. Les
+
+35
+00:03:09,882 --> 00:03:15,375
+équipes sur le terrain travaillent sur un
+téléphone, et n'y voient que leur propre
+
+36
+00:03:15,375 --> 00:03:20,668
+journée. Une organisation, deux
+fenêtres, et les mêmes faits derrière les deux.
+
+37
+00:03:21,122 --> 00:03:26,869
+Voilà la forme de l'ensemble. Ensuite :
+vos cinq premières minutes. S'inscrire,
+
+38
+00:03:26,869 --> 00:03:31,525
+nommer l'entreprise, et arriver
+sur un écran qui n'est pas vide.
+

@@ -159,6 +159,25 @@ async function createOrganization() {
       joinCodeHash: hashCode(VIDEO_JOIN_CODE),
       joinPolicy: 'INVITE_ONLY',
       timezone: ORG_TIMEZONE,
+      /*
+        The company's own details, filled in.
+
+        ⚠️ WHY THE SEED BOTHERS. Video 01 opens the organisation's settings
+        while the narration says "this is what you signed up as, and what you
+        are billed as". With these null the page is an untouched signup form —
+        a blank name field, an empty address — which reads as an account nobody
+        has finished setting up. Every one of these values is invented; see the
+        rules at the top of demo-data.ts.
+      */
+      industry: 'HVAC & Refrigeration',
+      addressLine1: DEPOT.address,
+      city: 'Reading',
+      postalCode: 'RG2 0QT',
+      country: 'GB',
+      phone: '+44 20 7946 0114',
+      website: 'https://halsteadfield.example',
+      billingEmail: 'accounts@halsteadfield.example',
+      vatId: 'GB000000000',
       enabledModules: DEFAULT_ORG_MODULES as unknown as Prisma.InputJsonValue,
       /*
         Every capability on. A feature video cannot show a feature the
@@ -173,8 +192,17 @@ async function createOrganization() {
         a live Stripe key if one is in the environment.
       */
       billingMode: 'EXTERNAL',
-      subStatus: 'TRIALING',
-      // Far enough out that no screen ever renders an expiry warning.
+      /*
+        ⚠️ ACTIVE, not TRIALING — and only the admin sees the difference.
+
+        The billing banner renders for admins on a trialing org, across every
+        screen, as "365 days left in your free trial". The number comes from
+        this seed and the real trial is fourteen days, so a video recorded as
+        the owner would carry a fictitious offer in the corner of every beat.
+        Active organisations get no banner at all. Nothing is gated on it: the
+        capabilities come from `addOns` above, which are all of them.
+      */
+      subStatus: 'ACTIVE',
       trialEndsAt: daysAhead(365),
     },
   });
@@ -210,6 +238,43 @@ async function createAccessRoles(orgId: string): Promise<Map<string, string>> {
     });
     bySlug.set(created.slug, created.id);
   }
+
+  /*
+    One role this organisation built for itself.
+
+    ⚠️ WHY IT EXISTS. Without it the crew carry `memberRoleId: null`, and their
+    Access tab reads "this role grants no permissions yet" — under a narration
+    saying a role is "a list of what they may do". The sentence and the screen
+    contradicted each other, which is worse than either alone.
+
+    It is also the more honest illustration: the built-in roles are ours, and
+    the point of the beat is that an organisation writes its own. `isSystem`
+    false, a name from this trade, and a modest set — an engineer can raise a
+    follow-up job, see the clients they visit and keep their notes, and read the
+    team's hours. Nothing about members, money or equipment.
+  */
+  const engineer = await prisma.accessRole.upsert({
+    where: { organizationId_slug: { organizationId: orgId, slug: 'field-engineer' } },
+    update: {},
+    create: {
+      organizationId: orgId,
+      name: 'Field Engineer',
+      slug: 'field-engineer',
+      description: 'Works the jobs. Raises follow-up work and keeps the client record straight.',
+      color: '#0ea5e9',
+      scope: 'ORG',
+      isSystem: false,
+      permissions: {
+        canCreateTasks: true,
+        crmViewOwn: true,
+        crmWork: true,
+        canViewSpaceAttendance: true,
+      } as unknown as Prisma.InputJsonValue,
+    },
+    select: { id: true },
+  });
+  bySlug.set('field-engineer', engineer.id);
+
   return bySlug;
 }
 
@@ -453,6 +518,8 @@ async function createPeople(orgId: string, roles: Map<string, string>, passwordH
         onboardingCompleted: true,
         position: person.position,
         timezone: ORG_TIMEZONE,
+        // The organisation's own role, not one of ours — see createAccessRoles.
+        memberRoleId: roles.get('field-engineer') ?? null,
         canCreateTasks: false,
         taskCreationScope: 'NONE',
         scheduleType: 'FIXED',
@@ -754,8 +821,9 @@ async function seedTasks(
   crew: Record<string, { id: string }>,
   clientIds: Map<string, string>,
 ) {
+  const ids = new Map<string, string>();
   for (const task of TASKS) {
-    await prisma.task.create({
+    const row = await prisma.task.create({
       data: {
         organizationId: orgId,
         spaceId,
@@ -772,9 +840,111 @@ async function seedTasks(
         dueDate: task.dueInDays >= 0 ? daysAhead(task.dueInDays) : daysAgo(-task.dueInDays),
         locationAddress: CLIENTS.find((c) => c.name === task.client)?.address ?? null,
       },
+      select: { id: true },
+    });
+    ids.set(task.title, row.id);
+  }
+  return ids;
+}
+
+/**
+ * One job carried all the way through, so the "open one and it is the whole
+ * story" beat is true of the job the camera actually opens.
+ *
+ * ⚠️ WHY ONLY ONE. Fourteen jobs each carrying a timeline, a conversation and
+ * a signed report is a seed that takes minutes and a board where nothing stands
+ * out. The video opens ONE job; that one is furnished, the rest stay as they
+ * are — which is also what a real board looks like, where most jobs are half
+ * done and a few are finished.
+ *
+ * ⚠️ The narration names the parts, the hours and the signature. If this
+ * function is ever removed, beat `theJobHolds` becomes a sentence describing
+ * things that are not on screen — which is the exact bug the first render of
+ * the old attendance video shipped with.
+ */
+const STORY_JOB = 'Replace failed extract fan — kitchen';
+
+/** Ink on transparent, drawn as a path so no image file has to ship. */
+function signature(strokes: string): string {
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 90">` +
+    `<path d="${strokes}" fill="none" stroke="#111827" stroke-width="2.4" ` +
+    `stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+}
+
+async function seedOneJobInFull(
+  orgId: string,
+  taskIds: Map<string, string>,
+  crew: Record<string, { id: string }>,
+  leadId: string,
+  clientIds: Map<string, string>,
+) {
+  const taskId = taskIds.get(STORY_JOB);
+  const engineer = crew.devlin?.id;
+  if (!taskId || !engineer) return 0;
+
+  /*
+    The timeline the Activity panel renders. Written in the order they happened
+    and dated backwards from the visit, because the panel sorts by time and a
+    job whose events all share one timestamp reads as an import, not as work.
+  */
+  const events: Array<[string, string, Date, Record<string, unknown>]> = [
+    ['CREATED', leadId, daysAgo(3), { title: STORY_JOB }],
+    ['ASSIGNED', leadId, daysAgo(3), { assignedTo: 'Conor Devlin' }],
+    ['STATUS_CHANGED', engineer, daysAgo(2), { from: 'ASSIGNED', to: 'ACCEPTED' }],
+    ['STATUS_CHANGED', engineer, daysAgo(1), { from: 'ACCEPTED', to: 'EN_ROUTE' }],
+    ['STATUS_CHANGED', engineer, daysAgo(1), { from: 'EN_ROUTE', to: 'ARRIVED' }],
+    ['STATUS_CHANGED', engineer, daysAgo(1), { from: 'ARRIVED', to: 'IN_PROGRESS' }],
+    ['COMMENT_ADDED', engineer, daysAgo(1), {}],
+    ['STATUS_CHANGED', engineer, daysAgo(1), { from: 'IN_PROGRESS', to: 'COMPLETED' }],
+  ];
+  for (const [eventType, userId, createdAt, metadata] of events) {
+    await prisma.taskEvent.create({
+      data: { taskId, userId, eventType: eventType as never, metadata: metadata as never, createdAt },
     });
   }
-  return TASKS.length;
+
+  const comments: Array<[string, string, Date]> = [
+    [leadId, 'Kitchen closes at 15:00 — the manager will let you in through the yard door.', daysAgo(2)],
+    [engineer, 'Motor is seized solid, not the capacitor. Fitting the 400mm from the van.', daysAgo(1)],
+    [engineer, 'Running and balanced. Chef signed it off before I left.', daysAgo(1)],
+  ];
+  for (const [userId, content, createdAt] of comments) {
+    await prisma.comment.create({ data: { taskId, userId, content, createdAt } });
+  }
+
+  const report = await prisma.serviceReport.create({
+    data: {
+      organizationId: orgId,
+      taskId,
+      customerId: clientIds.get('Pilgrove Hotels') ?? null,
+      summary: 'Seized extract fan replaced and commissioned.',
+      workPerformed:
+        'Isolated and locked off the supply. Removed the failed 400mm inline unit — bearings seized, ' +
+        'windings discoloured. Fitted the replacement, re-made the flexible connections and re-sealed ' +
+        'the duct. Ran up, checked current draw against the plate and balanced against the make-up air. ' +
+        'Left the isolator labelled and the old unit in the van for disposal.',
+      workDuration: 2 * 3600 + 40 * 60,
+      completedAt: daysAgo(1),
+      completedById: engineer,
+      customerName: 'H. Oduya — Head Chef',
+      technicianSignature: signature('M12 62 C 34 22, 52 74, 74 40 S 104 20, 122 56 S 150 70, 170 38'),
+      customerSignature: signature('M16 58 C 40 30, 58 68, 84 44 C 106 24, 118 66, 146 42 L 196 54'),
+    },
+    select: { id: true },
+  });
+
+  const parts = [
+    { name: 'Inline extract fan, 400mm', partNumber: 'TD-1300/400', quantity: 1, unitCost: 214.5 },
+    { name: 'Flexible duct connector, 400mm', partNumber: 'FDC-400', quantity: 2, unitCost: 11.4 },
+    { name: 'Duct sealant, 310ml', partNumber: 'DS-310', quantity: 1, unitCost: 6.95 },
+  ];
+  for (const part of parts) {
+    await prisma.partUsed.create({ data: { reportId: report.id, ...part } });
+  }
+
+  return events.length + comments.length + parts.length + 1;
 }
 
 async function seedAssets(
@@ -991,12 +1161,14 @@ async function main(): Promise<void> {
   );
 
   const clientIds = await seedClients(org.id, spaceIds.depot, lead.id);
-  const taskCount = await seedTasks(org.id, spaceIds.depot, workflowId, lead.id, crew, clientIds);
+  const taskIds = await seedTasks(org.id, spaceIds.depot, workflowId, lead.id, crew, clientIds);
+  const storyRows = await seedOneJobInFull(org.id, taskIds, crew, lead.id, clientIds);
   const assetCount = await seedAssets(org.id, spaceIds.depot, crew);
   const invoiceCount = await seedInvoices(org.id, spaceIds.clientSite, owner.id);
   console.log(
-    `  ${clientIds.size} clients, ${taskCount} jobs, ${assetCount} assets, ${invoiceCount} invoices`,
+    `  ${clientIds.size} clients, ${taskIds.size} jobs, ${assetCount} assets, ${invoiceCount} invoices`,
   );
+  console.log(`  ${storyRows} rows furnishing "${STORY_JOB}" — the job video 01 opens`);
 
   console.log('\n  Recording account');
   console.log(`    ${LEAD.email}`);

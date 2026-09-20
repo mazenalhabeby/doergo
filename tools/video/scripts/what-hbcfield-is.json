@@ -1,0 +1,185 @@
+{
+  "id": "what-hbcfield-is",
+  "tourIds": [
+    "welcomeAdmin"
+  ],
+  "title": {
+    "en": "What HBCField is",
+    "de": "Was HBCField ist",
+    "es": "Qué es HBCField",
+    "fr": "Ce qu'est HBCField",
+    "it": "Che cos’è HBCField"
+  },
+  "subtitle": {
+    "en": "An organisation, its workspaces, its people, and the work",
+    "de": "Eine Organisation, ihre Arbeitsbereiche, ihre Menschen und die Arbeit",
+    "es": "Una organización, sus espacios de trabajo, su gente y el trabajo",
+    "fr": "Une organisation, ses espaces de travail, ses membres et le travail",
+    "it": "Un’organizzazione, i suoi spazi di lavoro, le sue persone e il lavoro"
+  },
+  "description": {
+    "en": "The first video in the series, and the only one that performs no task. Four words carry the whole product — organisation, workspace, member, job — and this is where they are given something concrete to mean. Everything on screen is the real application running against a real database; the company in it is invented, and nobody in it exists.",
+    "de": "Das erste Video der Reihe und das einzige, in dem nichts erledigt wird. Vier Begriffe tragen das ganze Produkt — Organisation, Arbeitsbereich, Mitglied, Auftrag — und hier bekommen sie eine konkrete Bedeutung. Alles auf dem Bildschirm ist die echte Anwendung mit einer echten Datenbank; das Unternehmen darin ist erfunden, und niemand darin existiert.",
+    "es": "El primer vídeo de la serie, y el único en el que no se realiza ninguna tarea. Cuatro palabras sostienen todo el producto — organización, espacio de trabajo, miembro, trabajo — y aquí es donde se les da algo concreto que significar. Todo lo que aparece en pantalla es la aplicación real funcionando contra una base de datos real; la empresa que se ve está inventada y nadie en ella existe.",
+    "fr": "La première vidéo de la série, et la seule où aucune tâche n'est accomplie. Quatre mots portent tout le produit — organisation, espace de travail, membre, intervention — et c'est ici qu'ils reçoivent un sens concret. Tout ce qui est à l'écran est l'application réelle tournant sur une vraie base de données ; l'entreprise qu'on y voit est inventée, et personne à l'intérieur n'existe.",
+    "it": "Il primo video della serie, e l’unico in cui non si svolge alcuna attività. Quattro parole reggono l’intero prodotto — organizzazione, spazio di lavoro, membro, lavoro — e qui ricevono un significato concreto. Tutto ciò che si vede è l’applicazione reale in funzione su un database reale; l’azienda mostrata è inventata e nessuna delle persone al suo interno esiste."
+  },
+  "beats": [
+    {
+      "id": "oneCompany",
+      "chapter": {
+        "en": "One organisation",
+        "de": "Eine Organisation",
+        "es": "Una organización",
+        "fr": "Une organisation",
+        "it": "Un’organizzazione"
+      },
+      "narration": {
+        "en": "This is HBCField, open at the desk of a company that repairs things on other people's premises. Everything you are about to see belongs to one organisation: one company, one account, and a wall around the data that nothing crosses by accident.",
+        "de": "Das ist HBCField, geöffnet am Schreibtisch eines Betriebs, der auf fremdem Gelände repariert. Alles, was Sie gleich sehen, gehört zu einer Organisation: ein Unternehmen, ein Konto, und eine Grenze um die Daten, die nichts versehentlich überschreitet.",
+        "es": "Esto es HBCField, abierto en el escritorio de una empresa que repara cosas en instalaciones ajenas. Todo lo que está a punto de ver pertenece a una sola organización: una empresa, una cuenta y un muro alrededor de los datos que nada cruza por accidente.",
+        "fr": "Voici HBCField, ouvert au bureau d'une entreprise qui répare chez les autres. Tout ce que vous allez voir appartient à une seule organisation : une entreprise, un compte, et une frontière autour des données que rien ne franchit par accident.",
+        "it": "Questo è HBCField, aperto alla scrivania di un’impresa che ripara presso terzi. Tutto quello che sta per vedere appartiene a una sola organizzazione: un’azienda, un account e un confine attorno ai dati che nulla attraversa per caso."
+      }
+    },
+    {
+      "id": "fourWords",
+      "narration": {
+        "en": "Four words carry the whole product. An organisation. Its workspaces. The people in it. And the work. Learn those four, and every screen after this one explains itself.",
+        "de": "Vier Begriffe tragen das ganze Produkt: die Organisation, ihre Arbeitsbereiche, die Menschen darin — und die Arbeit selbst. Wer diese vier kennt, versteht jeden weiteren Bildschirm von allein.",
+        "es": "Cuatro palabras sostienen todo el producto. Una organización. Sus espacios de trabajo. La gente que hay dentro. Y el trabajo. Aprenda esas cuatro y todas las pantallas que siguen se explican solas.",
+        "fr": "Quatre mots portent tout le produit. Une organisation. Ses espaces de travail. Les personnes qui y sont. Et le travail. Retenez ces quatre-là, et chaque écran qui suit s'explique de lui-même.",
+        "it": "Quattro parole reggono l’intero prodotto. Un’organizzazione. I suoi spazi di lavoro. Le persone che ci stanno dentro. E il lavoro. Impari queste quattro e ogni schermata successiva si spiega da sola."
+      },
+      "minSeconds": 6
+    },
+    {
+      "id": "theOrganisation",
+      "chapter": {
+        "en": "The organisation",
+        "de": "Die Organisation",
+        "es": "La organización",
+        "fr": "L'organisation",
+        "it": "L’organizzazione"
+      },
+      "narration": {
+        "en": "The organisation is the company itself. It is what you signed up as, what you are billed as, and the boundary your data sits inside. Nobody outside it sees any of this unless you deliberately open a door.",
+        "de": "Die Organisation ist das Unternehmen selbst. Sie ist das, womit Sie sich registriert haben, wofür Sie bezahlen, und die Grenze, innerhalb derer Ihre Daten liegen. Von außen sieht das niemand, solange Sie nicht ausdrücklich eine Tür öffnen.",
+        "es": "La organización es la empresa misma. Es con lo que se registró, lo que se le factura y el límite dentro del cual viven sus datos. Nadie de fuera ve nada de esto a menos que usted abra una puerta deliberadamente.",
+        "fr": "L'organisation, c'est l'entreprise elle-même. C'est ce sous quoi vous vous êtes inscrit, ce qui vous est facturé, et la limite à l'intérieur de laquelle vivent vos données. Personne à l'extérieur n'en voit rien, sauf si vous ouvrez délibérément une porte.",
+        "it": "L’organizzazione è l’azienda stessa. È ciò con cui si è registrato, ciò che le viene fatturato e il confine entro cui stanno i suoi dati. Nessuno all’esterno vede nulla di tutto questo, a meno che non apra deliberatamente una porta."
+      }
+    },
+    {
+      "id": "theWorkspaces",
+      "chapter": {
+        "en": "Workspaces",
+        "de": "Arbeitsbereiche",
+        "es": "Espacios de trabajo",
+        "fr": "Espaces de travail",
+        "it": "Spazi di lavoro"
+      },
+      "narration": {
+        "en": "Inside the organisation are workspaces. A workspace is somewhere the work happens, or a part of the business that runs its own way. A depot. A workshop. A client's site.",
+        "de": "Innerhalb der Organisation liegen die Arbeitsbereiche. Ein Arbeitsbereich ist ein Ort, an dem gearbeitet wird, oder ein Teil des Betriebs, der nach eigenen Regeln läuft. Ein Depot. Eine Werkstatt. Der Standort eines Kunden.",
+        "es": "Dentro de la organización están los espacios de trabajo. Un espacio de trabajo es un sitio donde ocurre el trabajo, o una parte del negocio que funciona a su manera. Una base. Un taller. Las instalaciones de un cliente.",
+        "fr": "À l'intérieur de l'organisation se trouvent les espaces de travail. Un espace de travail, c'est un endroit où le travail se fait, ou une partie de l'activité qui fonctionne à sa façon. Un dépôt. Un atelier. Le site d'un client.",
+        "it": "Dentro l’organizzazione ci sono gli spazi di lavoro. Uno spazio di lavoro è un luogo in cui il lavoro accade, oppure una parte dell’azienda che funziona a modo suo. Un deposito. Un’officina. La sede di un cliente."
+      }
+    },
+    {
+      "id": "notAFolder",
+      "narration": {
+        "en": "A workspace is not a folder. Each one switches on only the parts of the product it actually needs, and is billed for only those. This one keeps track of vehicles and of hours worked. A workspace that needs neither turns both off, and pays for neither.",
+        "de": "Ein Arbeitsbereich ist kein Ordner. Jeder schaltet nur die Teile des Produkts ein, die er wirklich braucht — und wird auch nur dafür verrechnet. Dieser hier verwaltet Fahrzeuge und Arbeitszeiten. Ein Arbeitsbereich, der beides nicht braucht, schaltet beides ab und zahlt für beides nicht.",
+        "es": "Un espacio de trabajo no es una carpeta. Cada uno enciende solo las partes del producto que de verdad necesita, y solo esas se le facturan. Este lleva el control de los vehículos y de las horas trabajadas. Un espacio que no necesita ninguna de las dos apaga ambas, y no paga por ninguna.",
+        "fr": "Un espace de travail n'est pas un dossier. Chacun n'active que les parties du produit dont il a réellement besoin, et n'est facturé que pour celles-là. Celui-ci suit les véhicules et les heures travaillées. Un espace qui n'a besoin ni de l'un ni de l'autre désactive les deux, et ne paie ni l'un ni l'autre.",
+        "it": "Uno spazio di lavoro non è una cartella. Ognuno accende solo le parti del prodotto che gli servono davvero, e solo quelle gli vengono fatturate. Questo tiene traccia dei veicoli e delle ore lavorate. Uno spazio che non ha bisogno né dell’uno né dell’altro li spegne entrambi, e non paga nessuno dei due."
+      }
+    },
+    {
+      "id": "somebodyElsesSite",
+      "narration": {
+        "en": "And one of these is not yours at all. It is a client's site. In this trade people spend the whole day on somebody else's premises, so that site is a workplace like any other, and the product treats it as one.",
+        "de": "Und einer davon gehört gar nicht Ihnen: Es ist der Standort eines Kunden. In dieser Branche verbringen Menschen den ganzen Tag auf fremdem Gelände. Also ist dieser Standort ein Arbeitsplatz wie jeder andere, und das Produkt behandelt ihn auch so.",
+        "es": "Y uno de ellos no es suyo en absoluto: es el sitio de un cliente. En este oficio la gente pasa el día entero en instalaciones ajenas, así que ese sitio es un lugar de trabajo como cualquier otro, y el producto lo trata como tal.",
+        "fr": "Et l'un d'eux ne vous appartient pas du tout : c'est le site d'un client. Dans ce métier, on passe la journée entière chez quelqu'un d'autre ; ce site est donc un lieu de travail comme un autre, et le produit le traite comme tel.",
+        "it": "E uno di questi non è affatto suo: è la sede di un cliente. In questo mestiere si passa l’intera giornata in casa d’altri, quindi quella sede è un luogo di lavoro come gli altri, e il prodotto la tratta così."
+      }
+    },
+    {
+      "id": "thePeople",
+      "chapter": {
+        "en": "The people",
+        "de": "Die Menschen",
+        "es": "La gente",
+        "fr": "Les personnes",
+        "it": "Le persone"
+      },
+      "narration": {
+        "en": "Then the people. Some of them work at a desk. Some are out in a van from seven in the morning. And some do not work for you at all — a client's supervisor, allowed in to follow the job they are paying for.",
+        "de": "Dann die Menschen. Manche arbeiten am Schreibtisch. Manche sind ab sieben Uhr früh im Transporter unterwegs. Und manche arbeiten gar nicht für Sie: etwa die Aufsicht eines Kunden, die den Auftrag mitverfolgen darf, für den sie bezahlt.",
+        "es": "Después, la gente. Algunos trabajan en un escritorio. Otros están en la furgoneta desde las siete de la mañana. Y algunos no trabajan para usted en absoluto: el supervisor de un cliente, autorizado a seguir el trabajo que está pagando.",
+        "fr": "Ensuite, les personnes. Certaines travaillent à un bureau. D'autres sont en camionnette dès sept heures du matin. Et certaines ne travaillent pas pour vous du tout : le superviseur d'un client, autorisé à suivre l'intervention qu'il paie.",
+        "it": "Poi le persone. Alcune lavorano alla scrivania. Altre sono in furgone dalle sette del mattino. E alcune non lavorano affatto per lei: il responsabile di un cliente, ammesso a seguire il lavoro che sta pagando."
+      }
+    },
+    {
+      "id": "rolesYouBuild",
+      "narration": {
+        "en": "What somebody can reach is not decided by their job title. It is a role you build yourself: a list of what they may do, and which workspaces they may do it in. Change the role, and everybody holding it changes with it.",
+        "de": "Was jemand erreichen darf, entscheidet nicht die Berufsbezeichnung. Es ist eine Rolle, die Sie selbst zusammenstellen: eine Liste dessen, was jemand tun darf, und in welchen Arbeitsbereichen. Ändern Sie die Rolle, ändert sich jede Person, die sie hat.",
+        "es": "Lo que alguien puede alcanzar no lo decide su cargo. Es un rol que usted mismo construye: una lista de lo que puede hacer, y en qué espacios de trabajo puede hacerlo. Cambie el rol y cambia con él todo el que lo tenga.",
+        "fr": "Ce à quoi quelqu'un a accès n'est pas décidé par son intitulé de poste. C'est un rôle que vous construisez vous-même : une liste de ce qu'il peut faire, et dans quels espaces de travail il peut le faire. Changez le rôle, et tous ceux qui le portent changent avec lui.",
+        "it": "Ciò che una persona può raggiungere non lo decide la sua qualifica. È un ruolo che costruisce lei: un elenco di ciò che può fare e in quali spazi di lavoro può farlo. Cambi il ruolo, e cambia con esso chiunque lo abbia."
+      }
+    },
+    {
+      "id": "theWork",
+      "chapter": {
+        "en": "The work",
+        "de": "Die Arbeit",
+        "es": "El trabajo",
+        "fr": "Le travail",
+        "it": "Il lavoro"
+      },
+      "narration": {
+        "en": "And here is the work. A job says what needs doing, where, by when, and who has it. Every other screen in this product is either getting ready for a job, or reading back what happened on one.",
+        "de": "Und hier ist die Arbeit. Ein Auftrag sagt, was zu tun ist, wo, bis wann und wer ihn hat. Jeder andere Bildschirm in diesem Produkt bereitet entweder einen Auftrag vor oder liest nach, was bei einem passiert ist.",
+        "es": "Y aquí está el trabajo. Un trabajo dice qué hay que hacer, dónde, para cuándo y quién lo tiene. Todas las demás pantallas de este producto o preparan un trabajo, o leen lo que ocurrió en uno.",
+        "fr": "Et voici le travail. Une intervention dit ce qu'il faut faire, où, pour quand, et qui s'en charge. Tous les autres écrans de ce produit préparent une intervention, ou relisent ce qui s'y est passé.",
+        "it": "Ed ecco il lavoro. Un lavoro dice che cosa va fatto, dove, entro quando e chi ce l’ha. Ogni altra schermata di questo prodotto o prepara un lavoro, o rilegge che cosa è successo in uno."
+      }
+    },
+    {
+      "id": "theJobHolds",
+      "narration": {
+        "en": "Open one, and it is the whole story on a page. Who is on it. Everything anybody did to it, in order. The conversation that went with it. And at the end, the report: the hours, the parts fitted, and the client's own signature.",
+        "de": "Öffnen Sie einen, steht die ganze Geschichte auf einer Seite. Wer daran arbeitet. Alles, was jemand damit gemacht hat, der Reihe nach. Die Gespräche dazu. Und am Ende der Bericht: die Stunden, die eingebauten Teile und die Unterschrift des Kunden.",
+        "es": "Abra uno y tiene la historia entera en una página. Quién está en él. Todo lo que cada cual le hizo, en orden. La conversación que lo acompañó. Y al final, el informe: las horas, las piezas montadas y la firma del propio cliente.",
+        "fr": "Ouvrez-en une et vous avez toute l'histoire sur une page. Qui s'en occupe. Tout ce que chacun y a fait, dans l'ordre. La conversation qui l'a accompagnée. Et à la fin, le rapport : les heures, les pièces posées, et la signature du client lui-même.",
+        "it": "Ne apra uno ed è l’intera storia su una pagina. Chi ci lavora. Tutto ciò che ognuno vi ha fatto, in ordine. La conversazione che l’ha accompagnato. E alla fine il rapporto: le ore, i pezzi montati e la firma del cliente stesso."
+      }
+    },
+    {
+      "id": "twoWindows",
+      "narration": {
+        "en": "There are two ways in. The office works in a browser, like this one. The people in the field work on a phone, and see only their own day on it. One organisation, two windows, and the same facts behind both.",
+        "de": "Es gibt zwei Zugänge. Das Büro arbeitet im Browser, so wie hier. Die Leute im Außendienst arbeiten am Telefon und sehen dort nur ihren eigenen Tag. Eine Organisation, zwei Fenster — und dieselben Fakten dahinter.",
+        "es": "Hay dos maneras de entrar. La oficina trabaja en un navegador, como este. La gente de campo trabaja en el teléfono, y allí ve solo su propia jornada. Una organización, dos ventanas, y los mismos hechos detrás de ambas.",
+        "fr": "Il y a deux portes d'entrée. Le bureau travaille dans un navigateur, comme ici. Les équipes sur le terrain travaillent sur un téléphone, et n'y voient que leur propre journée. Une organisation, deux fenêtres, et les mêmes faits derrière les deux.",
+        "it": "Ci sono due modi di entrare. L’ufficio lavora nel browser, come qui. Chi è sul campo lavora dal telefono, e lì vede solo la propria giornata. Un’organizzazione, due finestre, e gli stessi fatti dietro entrambe."
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "That is the shape of it. Next: your own first five minutes. Signing up, naming the company, and landing on a screen that is not empty.",
+        "de": "Das ist die Grundform. Als Nächstes: Ihre ersten fünf Minuten. Registrieren, das Unternehmen benennen und auf einem Bildschirm landen, der nicht leer ist.",
+        "es": "Esa es la forma que tiene. A continuación: sus propios primeros cinco minutos. Registrarse, dar nombre a la empresa y aterrizar en una pantalla que no está vacía.",
+        "fr": "Voilà la forme de l'ensemble. Ensuite : vos cinq premières minutes. S'inscrire, nommer l'entreprise, et arriver sur un écran qui n'est pas vide.",
+        "it": "Questa è la forma d’insieme. Poi: i suoi primi cinque minuti. Registrarsi, dare un nome all’azienda e atterrare su una schermata che non è vuota."
+      }
+    }
+  ]
+}

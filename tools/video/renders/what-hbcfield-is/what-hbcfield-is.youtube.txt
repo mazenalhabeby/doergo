@@ -1,0 +1,28 @@
+TITLE
+What HBCField is — HBCField
+
+DESCRIPTION
+The first video in the series, and the only one that performs no task. Four words carry the whole product — organisation, workspace, member, job — and this is where they are given something concrete to mean. Everything on screen is the real application running against a real database; the company in it is invented, and nobody in it exists.
+
+Chapters
+0:00 What HBCField is
+0:18 One organisation
+0:52 The organisation
+1:09 Workspaces
+1:57 The people
+2:29 The work
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload what-hbcfield-is.mp4
+  [ ] Add each what-hbcfield-is.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → "welcomeAdmin"

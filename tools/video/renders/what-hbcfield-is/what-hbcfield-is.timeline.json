@@ -1,0 +1,79 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/what-hbcfield-is/capture/page@5366d59fb8a3238714087fc5ce521b3d.webm",
+  "durationSec": 208.48,
+  "preRollSec": 14.504999999999995,
+  "beats": [
+    {
+      "id": "oneCompany",
+      "startSec": 14.504999999999995,
+      "endSec": 33.489,
+      "narrationSec": 18.529521
+    },
+    {
+      "id": "fourWords",
+      "startSec": 33.489999999999995,
+      "endSec": 49.224999999999994,
+      "narrationSec": 15.278729
+    },
+    {
+      "id": "theOrganisation",
+      "startSec": 49.236999999999995,
+      "endSec": 65.574,
+      "narrationSec": 15.882458
+    },
+    {
+      "id": "theWorkspaces",
+      "startSec": 65.576,
+      "endSec": 82.09599999999999,
+      "narrationSec": 16.068208
+    },
+    {
+      "id": "notAFolder",
+      "startSec": 82.097,
+      "endSec": 99.777,
+      "narrationSec": 17.229208
+    },
+    {
+      "id": "somebodyElsesSite",
+      "startSec": 99.777,
+      "endSec": 114.307,
+      "narrationSec": 14.071292
+    },
+    {
+      "id": "thePeople",
+      "startSec": 114.30799999999999,
+      "endSec": 130.177,
+      "narrationSec": 15.418063
+    },
+    {
+      "id": "rolesYouBuild",
+      "startSec": 130.177,
+      "endSec": 146.232,
+      "narrationSec": 15.603813
+    },
+    {
+      "id": "theWork",
+      "startSec": 146.233,
+      "endSec": 162.016,
+      "narrationSec": 15.325167
+    },
+    {
+      "id": "theJobHolds",
+      "startSec": 162.017,
+      "endSec": 180.819,
+      "narrationSec": 18.343771
+    },
+    {
+      "id": "twoWindows",
+      "startSec": 180.821,
+      "endSec": 197.62199999999999,
+      "narrationSec": 16.346854
+    },
+    {
+      "id": "whereNext",
+      "startSec": 197.62199999999999,
+      "endSec": 208.48,
+      "narrationSec": 10.402542
+    }
+  ]
+}

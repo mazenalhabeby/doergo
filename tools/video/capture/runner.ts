@@ -7,7 +7,7 @@
  * narration that describes it. Everything here exists for one of those.
  */
 
-import { chromium, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { chromium, type Browser, type BrowserContext, type Locator, type Page } from '@playwright/test';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {
@@ -99,12 +99,19 @@ export interface Stage {
    * of the voice.
    */
   beat(id: string, body: (page: Page) => Promise<void>): Promise<void>;
-  /** Move the pointer onto something, visibly. */
-  moveTo(selector: string): Promise<void>;
+  /**
+   * Move the pointer onto something, visibly.
+   *
+   * Takes a Locator as well as a selector, because some targets can only be
+   * named by relation — "the Configure button inside the card that says
+   * Halstead Depot" is a `.filter({ hasText })`, and writing it as a CSS
+   * string means guessing at class names that change.
+   */
+  moveTo(target: string | Locator): Promise<void>;
   /** Move onto something and click it. */
-  click(selector: string): Promise<void>;
+  click(target: string | Locator): Promise<void>;
   /** Type at a human speed. */
-  type(selector: string, text: string): Promise<void>;
+  type(target: string | Locator, text: string): Promise<void>;
   /** A deliberate pause — for letting a viewer read. */
   hold(seconds: number): Promise<void>;
   finish(): Promise<Timeline>;
@@ -189,12 +196,16 @@ export async function openStage(options: StageOptions): Promise<Stage> {
   /** Where the pointer is now, so a move can be interpolated from it. */
   let cursor = { x: VIEWPORT.width / 2, y: VIEWPORT.height - 80 };
 
-  async function moveTo(selector: string): Promise<void> {
-    const target = page.locator(selector).first();
+  /** A selector is the common case; a Locator is how a relational target arrives. */
+  const resolve = (target: string | Locator): Locator =>
+    typeof target === 'string' ? page.locator(target).first() : target.first();
+
+  async function moveTo(selector: string | Locator): Promise<void> {
+    const target = resolve(selector);
     await target.waitFor({ state: 'visible' });
     await target.scrollIntoViewIfNeeded();
     const box = await target.boundingBox();
-    if (!box) throw new Error(`No bounding box for ${selector}`);
+    if (!box) throw new Error(`No bounding box for ${String(selector)}`);
     const to = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 
     /*
@@ -218,17 +229,17 @@ export async function openStage(options: StageOptions): Promise<Stage> {
     await page.waitForTimeout(280);
   }
 
-  async function click(selector: string): Promise<void> {
+  async function click(selector: string | Locator): Promise<void> {
     await moveTo(selector);
     await page.mouse.down();
     await page.waitForTimeout(90);
     await page.mouse.up();
   }
 
-  async function type(selector: string, text: string): Promise<void> {
+  async function type(selector: string | Locator, text: string): Promise<void> {
     await click(selector);
     // 55ms/char is fast enough not to bore and slow enough to read.
-    await page.locator(selector).first().pressSequentially(text, { delay: 55 });
+    await resolve(selector).pressSequentially(text, { delay: 55 });
   }
 
   async function hold(seconds: number): Promise<void> {

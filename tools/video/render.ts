@@ -25,7 +25,8 @@ import path from 'node:path';
 import { OUT_DIR, ROOT, assertLocalDatabase, assertLocalWeb, WEB_URL } from './config.ts';
 import { loadScript, type VideoScript } from './script.ts';
 import { selectVoiceAdapter } from './voice/index.ts';
-import { captureClockInOut } from './capture/flows/clock-in-out.ts';
+import { captureCreateAJob } from './capture/flows/create-a-job.ts';
+import { captureWhatHbcfieldIs } from './capture/flows/what-hbcfield-is.ts';
 import { captureVoiceTest } from './capture/flows/voice-test.ts';
 import { captureMobileClock } from './capture/flows/mobile-clock.ts';
 import type { Timeline } from './timeline.ts';
@@ -55,7 +56,8 @@ const END_CARD_SEC = 3.0;
  * argument — that would let a typo reach the filesystem.
  */
 const FLOWS: Record<string, (d: Record<string, number>) => Promise<Timeline>> = {
-  'clock-in-out': captureClockInOut,
+  'what-hbcfield-is': captureWhatHbcfieldIs,
+  'create-a-job': captureCreateAJob,
   // Twenty seconds, two beats. A cheap way to hear a voice without spending a
   // full script's characters every time somebody wants to judge one.
   'voice-test': captureVoiceTest,
@@ -72,6 +74,33 @@ const FLOWS: Record<string, (d: Record<string, number>) => Promise<Timeline>> = 
  */
 const PHONE_FLOWS = new Set(['mobile-clock']);
 
+/**
+ * The routes each flow visits, warmed before the camera rolls.
+ *
+ * ⚠️ PER VIDEO, not one shared list. A single list was right while there was
+ * one browser video; with several it warms pages nothing in this take opens
+ * (seconds of compile spent for nothing) while leaving the ones it does open
+ * cold — and a cold route spends its beat's narration on a spinner, in silence.
+ *
+ * ⚠️ A DYNAMIC ROUTE IS WARMED BY ANY ID. `/tasks/warm` compiles the same
+ * `[id]` module the real job uses; the 404 it answers with costs nothing.
+ */
+const WARM_ROUTES: Record<string, string[]> = {
+  'what-hbcfield-is': [
+    '/login',
+    '/dashboard',
+    '/settings',
+    '/locations',
+    '/locations/warm',
+    '/members',
+    '/members/warm',
+    '/tasks',
+    '/tasks/warm',
+  ],
+  'create-a-job': ['/login', '/dashboard', '/tasks', '/tasks/warm'],
+  'voice-test': ['/login', '/dashboard'],
+};
+
 interface Args {
   videoId: string;
   skipSeed: boolean;
@@ -82,7 +111,7 @@ interface Args {
 function parseArgs(argv: string[]): Args {
   const positional = argv.filter((a) => !a.startsWith('--'));
   return {
-    videoId: positional[0] ?? 'clock-in-out',
+    videoId: positional[0] ?? 'what-hbcfield-is',
     skipSeed: argv.includes('--skip-seed'),
     // For iterating on cards, subtitles or audio without re-driving the browser.
     skipCapture: argv.includes('--skip-capture'),
@@ -212,7 +241,7 @@ async function main(): Promise<void> {
       `next dev`, so warming web routes would spend seconds compiling pages
       nothing in the video ever opens.
     */
-    if (!onPhone) await warmRoutes(['/login', '/dashboard', '/my/attendance', '/attendance']);
+    if (!onPhone) await warmRoutes(WARM_ROUTES[script.id] ?? ['/login', '/dashboard']);
     timeline = await flow(narrationDurations);
     await fs.writeFile(timelineFile, JSON.stringify(timeline, null, 2), 'utf8');
     console.log(
