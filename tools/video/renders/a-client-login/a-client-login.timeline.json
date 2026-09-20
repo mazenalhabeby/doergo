@@ -1,43 +1,43 @@
 {
-  "videoPath": "/Users/pc/work/doergo/tools/video/renders/a-client-login/capture/page@99d9d57eee6de4ba7fd6ddd91bc9cc0a.webm",
-  "durationSec": 45.52,
-  "preRollSec": 6.9210000000000065,
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/a-client-login/capture/page@5a947b13e3855375a45ee4015fc5ad23.webm",
+  "durationSec": 52.4,
+  "preRollSec": 5.222999999999999,
   "beats": [
     {
       "id": "thePhoneCalls",
-      "startSec": 6.9210000000000065,
-      "endSec": 11.601000000000006,
-      "narrationSec": 4.226042
+      "startSec": 5.222999999999999,
+      "endSec": 10.225999999999999,
+      "narrationSec": 4.551125
     },
     {
       "id": "aPortal",
-      "startSec": 11.602000000000007,
-      "endSec": 18.044000000000004,
-      "narrationSec": 5.99075
+      "startSec": 10.225999999999999,
+      "endSec": 16.436,
+      "narrationSec": 5.758563
     },
     {
       "id": "whoGetsIn",
-      "startSec": 18.04500000000001,
-      "endSec": 25.418000000000006,
-      "narrationSec": 6.919542
+      "startSec": 16.436,
+      "endSec": 31.212999999999997,
+      "narrationSec": 6.455146
     },
     {
       "id": "whatTheySee",
-      "startSec": 25.418000000000006,
-      "endSec": 35.071000000000005,
-      "narrationSec": 9.195104
+      "startSec": 31.214,
+      "endSec": 39.885999999999996,
+      "narrationSec": 8.219875
     },
     {
       "id": "andTheyCanAsk",
-      "startSec": 35.07300000000001,
-      "endSec": 41.19100000000001,
-      "narrationSec": 5.665667
+      "startSec": 39.885999999999996,
+      "endSec": 46.375,
+      "narrationSec": 6.037188
     },
     {
       "id": "whereNext",
-      "startSec": 41.193000000000005,
-      "endSec": 45.52,
-      "narrationSec": 3.854521
+      "startSec": 46.375,
+      "endSec": 52.4,
+      "narrationSec": 5.572792
     }
   ]
 }

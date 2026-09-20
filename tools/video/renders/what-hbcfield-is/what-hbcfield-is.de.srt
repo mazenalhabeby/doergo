@@ -1,186 +1,185 @@
 1
-00:00:19,418 --> 00:00:25,230
+00:00:10,199 --> 00:00:15,842
 Das ist HBCField, geöffnet am
 Schreibtisch eines Betriebs, der auf fremdem Gelände
 
 2
-00:00:25,230 --> 00:00:30,405
+00:00:15,842 --> 00:00:20,865
 repariert. Alles, was Sie gleich
 sehen, gehört zu einer Organisation: ein
 
 3
-00:00:30,405 --> 00:00:35,934
+00:00:20,865 --> 00:00:26,233
 Unternehmen, ein Konto, und eine Grenze
 um die Daten, die nichts versehentlich
 
 4
-00:00:35,934 --> 00:00:36,926
+00:00:26,233 --> 00:00:27,196
 überschreitet.
 
 5
-00:00:37,383 --> 00:00:43,915
+00:00:27,648 --> 00:00:34,038
 Vier Begriffe tragen das ganze Produkt:
 die Organisation, ihre Arbeitsbereiche, die
 
 6
-00:00:43,915 --> 00:00:49,897
+00:00:34,038 --> 00:00:39,890
 Menschen darin — und die Arbeit
 selbst. Wer diese vier kennt, versteht jeden
 
 7
-00:00:49,897 --> 00:00:52,337
+00:00:39,890 --> 00:00:42,277
 weiteren Bildschirm von allein.
 
 8
-00:00:52,788 --> 00:00:58,713
+00:00:42,745 --> 00:00:47,979
 Die Organisation ist das Unternehmen
 selbst. Sie ist das, womit Sie sich registriert
 
 9
-00:00:58,713 --> 00:01:04,427
+00:00:47,979 --> 00:00:53,026
 haben, wofür Sie bezahlen, und die
 Grenze, innerhalb derer Ihre Daten liegen. Von
 
 10
-00:01:04,427 --> 00:01:09,506
+00:00:53,026 --> 00:00:57,513
 außen sieht das niemand, solange Sie
 nicht ausdrücklich eine Tür öffnen.
 
 11
-00:01:09,963 --> 00:01:15,750
+00:00:57,966 --> 00:01:03,208
 Innerhalb der Organisation liegen die
 Arbeitsbereiche. Ein Arbeitsbereich ist ein
 
 12
-00:01:15,750 --> 00:01:21,466
+00:01:03,208 --> 00:01:08,386
 Ort, an dem gearbeitet wird, oder ein
 Teil des Betriebs, der nach eigenen Regeln
 
 13
-00:01:21,466 --> 00:01:25,753
+00:01:08,386 --> 00:01:12,269
 läuft. Ein Depot. Eine
 Werkstatt. Der Standort eines Kunden.
 
 14
-00:01:26,207 --> 00:01:31,498
+00:01:12,726 --> 00:01:18,084
 Ein Arbeitsbereich ist kein Ordner. Jeder
 schaltet nur die Teile des Produkts ein,
 
 15
-00:01:31,498 --> 00:01:36,854
+00:01:18,084 --> 00:01:23,507
 die er wirklich braucht — und wird auch
 nur dafür verrechnet. Dieser hier verwaltet
 
 16
-00:01:36,854 --> 00:01:42,210
+00:01:23,507 --> 00:01:28,931
 Fahrzeuge und Arbeitszeiten. Ein
 Arbeitsbereich, der beides nicht braucht, schaltet
 
 17
-00:01:42,210 --> 00:01:44,597
+00:01:28,931 --> 00:01:31,348
 beides ab und zahlt für beides nicht.
 
 18
-00:01:45,052 --> 00:01:50,613
+00:01:31,802 --> 00:01:37,315
 Und einer davon gehört gar nicht Ihnen: Es
 ist der Standort eines Kunden. In dieser
 
 19
-00:01:50,613 --> 00:01:55,905
+00:01:37,315 --> 00:01:42,563
 Branche verbringen Menschen den ganzen
 Tag auf fremdem Gelände. Also ist dieser
 
 20
-00:01:55,905 --> 00:02:01,399
+00:01:42,563 --> 00:01:48,010
 Standort ein Arbeitsplatz wie jeder
 andere, und das Produkt behandelt ihn auch so.
 
 21
-00:02:01,851 --> 00:02:07,637
+00:01:48,463 --> 00:01:54,298
 Dann die Menschen. Manche arbeiten am
 Schreibtisch. Manche sind ab sieben Uhr früh
 
 22
-00:02:07,637 --> 00:02:13,422
+00:01:54,298 --> 00:02:00,132
 im Transporter unterwegs. Und manche
 arbeiten gar nicht für Sie: etwa die Aufsicht
 
 23
-00:02:13,422 --> 00:02:18,291
+00:02:00,132 --> 00:02:05,042
 eines Kunden, die den Auftrag
 mitverfolgen darf, für den sie bezahlt.
 
 24
-00:02:18,743 --> 00:02:23,285
+00:02:05,496 --> 00:02:10,674
 Was jemand erreichen darf, entscheidet
 nicht die Berufsbezeichnung. Es ist eine
 
 25
-00:02:23,285 --> 00:02:27,999
+00:02:10,674 --> 00:02:16,048
 Rolle, die Sie selbst zusammenstellen:
 eine Liste dessen, was jemand tun darf, und
 
 26
-00:02:27,999 --> 00:02:32,770
+00:02:16,048 --> 00:02:21,488
 in welchen Arbeitsbereichen. Ändern Sie
 die Rolle, ändert sich jede Person, die sie
 
 27
-00:02:32,770 --> 00:02:33,000
+00:02:21,488 --> 00:02:21,750
 hat.
 
 28
-00:02:33,451 --> 00:02:39,039
+00:02:22,204 --> 00:02:27,737
 Und hier ist die Arbeit. Ein Auftrag sagt,
 was zu tun ist, wo, bis wann und wer ihn
 
 29
-00:02:39,039 --> 00:02:44,560
+00:02:27,737 --> 00:02:33,203
 hat. Jeder andere Bildschirm in diesem
 Produkt bereitet entweder einen Auftrag vor
 
 30
-00:02:44,560 --> 00:02:47,522
+00:02:33,203 --> 00:02:36,136
 oder liest nach, was
 bei einem passiert ist.
 
 31
-00:02:47,974 --> 00:02:54,223
+00:02:36,590 --> 00:02:42,194
 Öffnen Sie einen, steht die ganze
 Geschichte auf einer Seite. Wer daran arbeitet.
 
 32
-00:02:54,223 --> 00:03:00,703
+00:02:42,194 --> 00:02:48,006
 Alles, was jemand damit gemacht hat, der
 Reihe nach. Die Gespräche dazu. Und am Ende
 
 33
-00:03:00,703 --> 00:03:06,875
+00:02:48,006 --> 00:02:53,541
 der Bericht: die Stunden, die
 eingebauten Teile und die Unterschrift des Kunden.
 
 34
-00:03:07,326 --> 00:03:13,354
+00:02:53,995 --> 00:03:00,057
 Es gibt zwei Zugänge. Das Büro arbeitet
 im Browser, so wie hier. Die Leute im
 
 35
-00:03:13,354 --> 00:03:19,147
+00:03:00,057 --> 00:03:05,883
 Außendienst arbeiten am Telefon und
 sehen dort nur ihren eigenen Tag. Eine
 
 36
-00:03:19,147 --> 00:03:23,766
+00:03:05,883 --> 00:03:10,528
 Organisation, zwei Fenster —
 und dieselben Fakten dahinter.
 
 37
-00:03:24,219 --> 00:03:29,610
-Das ist die Grundform. Als Nächstes:
-Ihre ersten fünf Minuten. Registrieren, das
+00:03:10,981 --> 00:03:17,067
+Das ist die Grundform. Als Nächstes: die
+Arbeitsbereiche, an denen alles andere
 
 38
-00:03:29,610 --> 00:03:34,529
-Unternehmen benennen und auf einem
-Bildschirm landen, der nicht leer ist.
+00:03:17,067 --> 00:03:17,529
+hängt.
 

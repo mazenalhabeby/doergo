@@ -1,181 +1,180 @@
 1
-00:00:19,418 --> 00:00:24,810
+00:00:10,199 --> 00:00:15,434
 Esto es HBCField, abierto en el
 escritorio de una empresa que repara cosas en
 
 2
-00:00:24,810 --> 00:00:29,993
+00:00:15,434 --> 00:00:20,465
 instalaciones ajenas. Todo lo que
 está a punto de ver pertenece a una sola
 
 3
-00:00:29,993 --> 00:00:35,525
+00:00:20,465 --> 00:00:25,836
 organización: una empresa, una cuenta y
 un muro alrededor de los datos que nada
 
 4
-00:00:35,525 --> 00:00:36,926
+00:00:25,836 --> 00:00:27,196
 cruza por accidente.
 
 5
-00:00:37,383 --> 00:00:43,288
+00:00:27,648 --> 00:00:33,424
 Cuatro palabras sostienen todo el
 producto. Una organización. Sus espacios de
 
 6
-00:00:43,288 --> 00:00:49,346
+00:00:33,424 --> 00:00:39,351
 trabajo. La gente que hay dentro. Y el
 trabajo. Aprenda esas cuatro y todas las
 
 7
-00:00:49,346 --> 00:00:52,337
+00:00:39,351 --> 00:00:42,277
 pantallas que siguen se explican solas.
 
 8
-00:00:52,788 --> 00:00:59,507
+00:00:42,745 --> 00:00:48,680
 La organización es la empresa misma. Es
 con lo que se registró, lo que se le factura
 
 9
-00:00:59,507 --> 00:01:06,147
+00:00:48,680 --> 00:00:54,545
 y el límite dentro del cual viven sus
 datos. Nadie de fuera ve nada de esto a menos
 
 10
-00:01:06,147 --> 00:01:09,506
+00:00:54,545 --> 00:00:57,513
 que usted abra una puerta deliberadamente.
 
 11
-00:01:09,963 --> 00:01:16,075
+00:00:57,966 --> 00:01:03,503
 Dentro de la organización están los
 espacios de trabajo. Un espacio de trabajo es un
 
 12
-00:01:16,075 --> 00:01:22,187
+00:01:03,503 --> 00:01:09,040
 sitio donde ocurre el trabajo, o una parte
 del negocio que funciona a su manera. Una
 
 13
-00:01:22,187 --> 00:01:25,753
+00:01:09,040 --> 00:01:12,269
 base. Un taller. Las
 instalaciones de un cliente.
 
 14
-00:01:26,207 --> 00:01:31,258
+00:01:12,726 --> 00:01:17,841
 Un espacio de trabajo no es una
 carpeta. Cada uno enciende solo las partes del
 
 15
-00:01:31,258 --> 00:01:36,568
+00:01:17,841 --> 00:01:23,218
 producto que de verdad necesita, y solo
 esas se le facturan. Este lleva el control
 
 16
-00:01:36,568 --> 00:01:41,813
+00:01:23,218 --> 00:01:28,529
 de los vehículos y de las horas
 trabajadas. Un espacio que no necesita ninguna de
 
 17
-00:01:41,813 --> 00:01:44,597
+00:01:28,529 --> 00:01:31,348
 las dos apaga ambas, y
 no paga por ninguna.
 
 18
-00:01:45,052 --> 00:01:51,055
+00:01:31,802 --> 00:01:37,754
 Y uno de ellos no es suyo en absoluto: es
 el sitio de un cliente. En este oficio la
 
 19
-00:01:51,055 --> 00:01:56,987
+00:01:37,754 --> 00:01:43,635
 gente pasa el día entero en instalaciones
 ajenas, así que ese sitio es un lugar de
 
 20
-00:01:56,987 --> 00:02:01,399
+00:01:43,635 --> 00:01:48,010
 trabajo como cualquier otro, y
 el producto lo trata como tal.
 
 21
-00:02:01,851 --> 00:02:07,566
+00:01:48,463 --> 00:01:54,227
 Después, la gente. Algunos trabajan en un
 escritorio. Otros están en la furgoneta
 
 22
-00:02:07,566 --> 00:02:13,070
+00:01:54,227 --> 00:01:59,777
 desde las siete de la mañana. Y algunos
 no trabajan para usted en absoluto: el
 
 23
-00:02:13,070 --> 00:02:18,291
+00:01:59,777 --> 00:02:05,042
 supervisor de un cliente, autorizado
 a seguir el trabajo que está pagando.
 
 24
-00:02:18,743 --> 00:02:23,891
+00:02:05,496 --> 00:02:11,365
 Lo que alguien puede alcanzar no lo
 decide su cargo. Es un rol que usted mismo
 
 25
-00:02:23,891 --> 00:02:29,040
+00:02:11,365 --> 00:02:17,235
 construye: una lista de lo que puede
 hacer, y en qué espacios de trabajo puede
 
 26
-00:02:29,040 --> 00:02:33,000
+00:02:17,235 --> 00:02:21,750
 hacerlo. Cambie el rol y
 cambia con él todo el que lo tenga.
 
 27
-00:02:33,451 --> 00:02:39,333
+00:02:22,204 --> 00:02:28,027
 Y aquí está el trabajo. Un trabajo dice
 qué hay que hacer, dónde, para cuándo y
 
 28
-00:02:39,333 --> 00:02:45,512
+00:02:28,027 --> 00:02:34,146
 quién lo tiene. Todas las demás pantallas
 de este producto o preparan un trabajo, o
 
 29
-00:02:45,512 --> 00:02:47,522
+00:02:34,146 --> 00:02:36,136
 leen lo que ocurrió en uno.
 
 30
-00:02:47,974 --> 00:02:54,665
+00:02:36,590 --> 00:02:42,590
 Abra uno y tiene la historia entera en
 una página. Quién está en él. Todo lo que
 
 31
-00:02:54,665 --> 00:03:01,021
+00:02:42,590 --> 00:02:48,290
 cada cual le hizo, en orden. La
 conversación que lo acompañó. Y al final, el
 
 32
-00:03:01,021 --> 00:03:06,875
+00:02:48,290 --> 00:02:53,541
 informe: las horas, las piezas
 montadas y la firma del propio cliente.
 
 33
-00:03:07,326 --> 00:03:13,567
+00:02:53,995 --> 00:03:00,271
 Hay dos maneras de entrar. La oficina
 trabaja en un navegador, como este. La gente
 
 34
-00:03:13,567 --> 00:03:19,960
+00:03:00,271 --> 00:03:06,701
 de campo trabaja en el teléfono, y allí ve
 solo su propia jornada. Una organización,
 
 35
-00:03:19,960 --> 00:03:23,766
+00:03:06,701 --> 00:03:10,528
 dos ventanas, y los
 mismos hechos detrás de ambas.
 
 36
-00:03:24,219 --> 00:03:29,214
-Esa es la forma que tiene. A
-continuación: sus propios primeros cinco minutos.
+00:03:10,981 --> 00:03:16,594
+Esa es la forma que tiene. A continuación:
+los espacios de trabajo de los que cuelga
 
 37
-00:03:29,214 --> 00:03:34,529
-Registrarse, dar nombre a la empresa y
-aterrizar en una pantalla que no está vacía.
+00:03:16,594 --> 00:03:17,529
+todo lo demás.
 

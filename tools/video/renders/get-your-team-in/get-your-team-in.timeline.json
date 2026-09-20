@@ -1,49 +1,49 @@
 {
-  "videoPath": "/Users/pc/work/doergo/tools/video/renders/get-your-team-in/capture/page@c2f8428d19e840c56682c13c044d6d0b.webm",
-  "durationSec": 48.84,
-  "preRollSec": 6.805000000000007,
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/get-your-team-in/capture/page@993be7606a90970f5fa204e962a81875.webm",
+  "durationSec": 50.08,
+  "preRollSec": 6.975999999999999,
   "beats": [
     {
       "id": "whoIsHere",
-      "startSec": 6.805000000000007,
-      "endSec": 10.647000000000007,
-      "narrationSec": 3.390125
+      "startSec": 6.975999999999999,
+      "endSec": 11.189,
+      "narrationSec": 3.761646
     },
     {
       "id": "inviteOne",
-      "startSec": 10.647000000000007,
-      "endSec": 16.625000000000007,
-      "narrationSec": 5.526354
+      "startSec": 11.19,
+      "endSec": 17.448,
+      "narrationSec": 5.805
     },
     {
       "id": "decideFirst",
-      "startSec": 16.625000000000007,
-      "endSec": 25.760000000000005,
-      "narrationSec": 8.684271
+      "startSec": 17.448,
+      "endSec": 24.773,
+      "narrationSec": 6.873104
     },
     {
       "id": "theCode",
-      "startSec": 25.760000000000005,
-      "endSec": 30.856000000000005,
-      "narrationSec": 4.644
-    },
-    {
-      "id": "itIsAKey",
-      "startSec": 30.856000000000005,
-      "endSec": 38.69500000000001,
-      "narrationSec": 7.383958
-    },
-    {
-      "id": "andRevoked",
-      "startSec": 38.696000000000005,
-      "endSec": 44.39600000000001,
+      "startSec": 24.773,
+      "endSec": 30.471999999999998,
       "narrationSec": 5.247708
     },
     {
+      "id": "itIsAKey",
+      "startSec": 30.471999999999998,
+      "endSec": 38.958,
+      "narrationSec": 8.034104
+    },
+    {
+      "id": "andRevoked",
+      "startSec": 38.959,
+      "endSec": 44.797,
+      "narrationSec": 5.387042
+    },
+    {
       "id": "whereNext",
-      "startSec": 44.39600000000001,
-      "endSec": 48.84,
-      "narrationSec": 3.993833
+      "startSec": 44.797,
+      "endSec": 50.08,
+      "narrationSec": 4.82975
     }
   ]
 }

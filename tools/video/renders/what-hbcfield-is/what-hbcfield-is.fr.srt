@@ -1,186 +1,185 @@
 1
-00:00:19,418 --> 00:00:25,425
+00:00:10,199 --> 00:00:16,031
 Voici HBCField, ouvert au bureau d'une
 entreprise qui répare chez les autres. Tout
 
 2
-00:00:25,425 --> 00:00:31,212
+00:00:16,031 --> 00:00:21,649
 ce que vous allez voir appartient à une
 seule organisation : une entreprise, un
 
 3
-00:00:31,212 --> 00:00:36,926
+00:00:21,649 --> 00:00:27,196
 compte, et une frontière autour des
 données que rien ne franchit par accident.
 
 4
-00:00:37,383 --> 00:00:43,871
+00:00:27,648 --> 00:00:33,995
 Quatre mots portent tout le produit. Une
 organisation. Ses espaces de travail. Les
 
 5
-00:00:43,871 --> 00:00:50,517
+00:00:33,995 --> 00:00:40,496
 personnes qui y sont. Et le travail.
 Retenez ces quatre-là, et chaque écran qui suit
 
 6
-00:00:50,517 --> 00:00:52,337
+00:00:40,496 --> 00:00:42,277
 s'explique de lui-même.
 
 7
-00:00:52,788 --> 00:00:58,029
+00:00:42,745 --> 00:00:47,375
 L'organisation, c'est l'entreprise
 elle-même. C'est ce sous quoi vous vous êtes
 
 8
-00:00:58,029 --> 00:01:03,536
+00:00:47,375 --> 00:00:52,239
 inscrit, ce qui vous est facturé, et la
 limite à l'intérieur de laquelle vivent vos
 
 9
-00:01:03,536 --> 00:01:09,108
+00:00:52,239 --> 00:00:57,161
 données. Personne à l'extérieur n'en voit
 rien, sauf si vous ouvrez délibérément une
 
 10
-00:01:09,108 --> 00:01:09,506
+00:00:57,161 --> 00:00:57,513
 porte.
 
 11
-00:01:09,963 --> 00:01:15,577
+00:00:57,966 --> 00:01:03,052
 À l'intérieur de l'organisation se
 trouvent les espaces de travail. Un espace de
 
 12
-00:01:15,577 --> 00:01:21,191
+00:01:03,052 --> 00:01:08,137
 travail, c'est un endroit où le travail
 se fait, ou une partie de l'activité qui
 
 13
-00:01:21,191 --> 00:01:25,753
+00:01:08,137 --> 00:01:12,269
 fonctionne à sa façon. Un dépôt.
 Un atelier. Le site d'un client.
 
 14
-00:01:26,207 --> 00:01:30,865
+00:01:12,726 --> 00:01:17,443
 Un espace de travail n'est pas un
 dossier. Chacun n'active que les parties du
 
 15
-00:01:30,865 --> 00:01:35,826
+00:01:17,443 --> 00:01:22,466
 produit dont il a réellement besoin, et
 n'est facturé que pour celles-là. Celui-ci
 
 16
-00:01:35,826 --> 00:01:40,907
+00:01:22,466 --> 00:01:27,612
 suit les véhicules et les heures
 travaillées. Un espace qui n'a besoin ni de l'un ni
 
 17
-00:01:40,907 --> 00:01:44,597
+00:01:27,612 --> 00:01:31,348
 de l'autre désactive les deux,
 et ne paie ni l'un ni l'autre.
 
 18
-00:01:45,052 --> 00:01:50,885
+00:01:31,802 --> 00:01:37,585
 Et l'un d'eux ne vous appartient pas du
 tout : c'est le site d'un client. Dans ce
 
 19
-00:01:50,885 --> 00:01:56,646
+00:01:37,585 --> 00:01:43,297
 métier, on passe la journée entière chez
 quelqu'un d'autre ; ce site est donc un
 
 20
-00:01:56,646 --> 00:02:01,399
+00:01:43,297 --> 00:01:48,010
 lieu de travail comme un autre,
 et le produit le traite comme tel.
 
 21
-00:02:01,851 --> 00:02:07,075
+00:01:48,463 --> 00:01:53,732
 Ensuite, les personnes. Certaines
 travaillent à un bureau. D'autres sont en
 
 22
-00:02:07,075 --> 00:02:12,788
+00:01:53,732 --> 00:01:59,492
 camionnette dès sept heures du matin. Et
 certaines ne travaillent pas pour vous du
 
 23
-00:02:12,788 --> 00:02:18,291
+00:01:59,492 --> 00:02:05,042
 tout : le superviseur d'un client,
 autorisé à suivre l'intervention qu'il paie.
 
 24
-00:02:18,743 --> 00:02:23,063
+00:02:05,496 --> 00:02:10,421
 Ce à quoi quelqu'un a accès n'est pas
 décidé par son intitulé de poste. C'est un
 
 25
-00:02:23,063 --> 00:02:27,330
+00:02:10,421 --> 00:02:15,285
 rôle que vous construisez vous-même :
 une liste de ce qu'il peut faire, et dans
 
 26
-00:02:27,330 --> 00:02:31,596
+00:02:15,285 --> 00:02:20,149
 quels espaces de travail il peut le
 faire. Changez le rôle, et tous ceux qui le
 
 27
-00:02:31,596 --> 00:02:33,000
+00:02:20,149 --> 00:02:21,750
 portent changent avec lui.
 
 28
-00:02:33,451 --> 00:02:39,296
+00:02:22,204 --> 00:02:27,991
 Et voici le travail. Une intervention dit
 ce qu'il faut faire, où, pour quand, et
 
 29
-00:02:39,296 --> 00:02:45,357
+00:02:27,991 --> 00:02:33,993
 qui s'en charge. Tous les autres écrans de
 ce produit préparent une intervention, ou
 
 30
-00:02:45,357 --> 00:02:47,522
+00:02:33,993 --> 00:02:36,136
 relisent ce qui s'y est passé.
 
 31
-00:02:47,974 --> 00:02:54,300
+00:02:36,590 --> 00:02:42,263
 Ouvrez-en une et vous avez toute
 l'histoire sur une page. Qui s'en occupe. Tout ce
 
 32
-00:02:54,300 --> 00:03:00,780
+00:02:42,263 --> 00:02:48,075
 que chacun y a fait, dans l'ordre. La
 conversation qui l'a accompagnée. Et à la fin,
 
 33
-00:03:00,780 --> 00:03:06,875
+00:02:48,075 --> 00:02:53,541
 le rapport : les heures, les pièces
 posées, et la signature du client lui-même.
 
 34
-00:03:07,326 --> 00:03:12,918
+00:02:53,995 --> 00:02:59,619
 Il y a deux portes d'entrée. Le bureau
 travaille dans un navigateur, comme ici. Les
 
 35
-00:03:12,918 --> 00:03:18,443
+00:02:59,619 --> 00:03:05,175
 équipes sur le terrain travaillent sur un
 téléphone, et n'y voient que leur propre
 
 36
-00:03:18,443 --> 00:03:23,766
+00:03:05,175 --> 00:03:10,528
 journée. Une organisation, deux
 fenêtres, et les mêmes faits derrière les deux.
 
 37
-00:03:24,219 --> 00:03:29,915
+00:03:10,981 --> 00:03:16,314
 Voilà la forme de l'ensemble. Ensuite :
-vos cinq premières minutes. S'inscrire,
+les espaces de travail auxquels tout le
 
 38
-00:03:29,915 --> 00:03:34,529
-nommer l'entreprise, et arriver
-sur un écran qui n'est pas vide.
+00:03:16,314 --> 00:03:17,529
+reste se rattache.
 

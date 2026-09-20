@@ -1,169 +1,164 @@
 1
-00:00:19,418 --> 00:00:24,939
+00:00:10,199 --> 00:00:15,559
 This is HBCField, open at the desk of
 a company that repairs things on other
 
 2
-00:00:24,939 --> 00:00:30,969
+00:00:15,559 --> 00:00:21,413
 people's premises. Everything you are
 about to see belongs to one organisation: one
 
 3
-00:00:30,969 --> 00:00:36,926
+00:00:21,413 --> 00:00:27,196
 company, one account, and a wall around
 the data that nothing crosses by accident.
 
 4
-00:00:37,383 --> 00:00:44,770
+00:00:27,648 --> 00:00:34,874
 Four words carry the whole product. An
 organisation. Its workspaces. The people in
 
 5
-00:00:44,770 --> 00:00:52,337
+00:00:34,874 --> 00:00:42,277
 it. And the work. Learn those four, and
 every screen after this one explains itself.
 
 6
-00:00:52,788 --> 00:00:59,492
+00:00:42,745 --> 00:00:48,667
 The organisation is the company itself.
 It is what you signed up as, what you are
 
 7
-00:00:59,492 --> 00:01:06,113
+00:00:48,667 --> 00:00:54,515
 billed as, and the boundary your data
 sits inside. Nobody outside it sees any of
 
 8
-00:01:06,113 --> 00:01:09,506
+00:00:54,515 --> 00:00:57,513
 this unless you deliberately open a door.
 
 9
-00:01:09,963 --> 00:01:17,716
+00:00:57,966 --> 00:01:04,989
 Inside the organisation are workspaces. A
 workspace is somewhere the work happens,
 
 10
-00:01:17,716 --> 00:01:25,280
+00:01:04,989 --> 00:01:11,841
 or a part of the business that runs its
 own way. A depot. A workshop. A client's
 
 11
-00:01:25,280 --> 00:01:25,753
+00:01:11,841 --> 00:01:12,269
 site.
 
 12
-00:01:26,207 --> 00:01:32,288
+00:01:12,726 --> 00:01:18,883
 A workspace is not a folder. Each one
 switches on only the parts of the product it
 
 13
-00:01:32,288 --> 00:01:38,368
+00:01:18,883 --> 00:01:25,041
 actually needs, and is billed for only
 those. This one keeps track of vehicles and
 
 14
-00:01:38,368 --> 00:01:44,004
+00:01:25,041 --> 00:01:30,748
 of hours worked. A workspace that
 needs neither turns both off, and pays for
 
 15
-00:01:44,004 --> 00:01:44,597
+00:01:30,748 --> 00:01:31,348
 neither.
 
 16
-00:01:45,052 --> 00:01:51,480
+00:01:31,802 --> 00:01:38,175
 And one of these is not yours at all. It
 is a client's site. In this trade people
 
 17
-00:01:51,480 --> 00:01:57,907
+00:01:38,175 --> 00:01:44,548
 spend the whole day on somebody else's
 premises, so that site is a workplace like
 
 18
-00:01:57,907 --> 00:02:01,399
+00:01:44,548 --> 00:01:48,010
 any other, and the
 product treats it as one.
 
 19
-00:02:01,851 --> 00:02:08,411
+00:01:48,463 --> 00:01:55,078
 Then the people. Some of them work at a
 desk. Some are out in a van from seven in
 
 20
-00:02:08,411 --> 00:02:15,213
+00:01:55,078 --> 00:02:01,939
 the morning. And some do not work for you
 at all — a client's supervisor, allowed in
 
 21
-00:02:15,213 --> 00:02:18,291
+00:02:01,939 --> 00:02:05,042
 to follow the job they are paying for.
 
 22
-00:02:18,743 --> 00:02:24,089
+00:02:05,496 --> 00:02:11,591
 What somebody can reach is not decided by
 their job title. It is a role you build
 
 23
-00:02:24,089 --> 00:02:29,634
+00:02:11,591 --> 00:02:17,912
 yourself: a list of what they may do, and
 which workspaces they may do it in. Change
 
 24
-00:02:29,634 --> 00:02:33,000
+00:02:17,912 --> 00:02:21,750
 the role, and everybody
 holding it changes with it.
 
 25
-00:02:33,451 --> 00:02:39,588
+00:02:22,204 --> 00:02:28,281
 And here is the work. A job says what
 needs doing, where, by when, and who has it.
 
 26
-00:02:39,588 --> 00:02:45,576
+00:02:28,281 --> 00:02:34,209
 Every other screen in this product is
 either getting ready for a job, or reading
 
 27
-00:02:45,576 --> 00:02:47,522
+00:02:34,209 --> 00:02:36,136
 back what happened on one.
 
 28
-00:02:47,974 --> 00:02:55,009
+00:02:36,590 --> 00:02:42,899
 Open one, and it is the whole story on a
 page. Who is on it. Everything anybody did
 
 29
-00:02:55,009 --> 00:03:02,129
+00:02:42,899 --> 00:02:49,284
 to it, in order. The conversation that
 went with it. And at the end, the report: the
 
 30
-00:03:02,129 --> 00:03:06,875
+00:02:49,284 --> 00:02:53,541
 hours, the parts fitted, and
 the client's own signature.
 
 31
-00:03:07,326 --> 00:03:13,934
+00:02:53,995 --> 00:03:00,640
 There are two ways in. The office works
 in a browser, like this one. The people in
 
 32
-00:03:13,934 --> 00:03:20,542
+00:03:00,640 --> 00:03:07,286
 the field work on a phone, and see only
 their own day on it. One organisation, two
 
 33
-00:03:20,542 --> 00:03:23,766
+00:03:07,286 --> 00:03:10,528
 windows, and the same facts behind both.
 
 34
-00:03:24,219 --> 00:03:30,575
-That is the shape of it. Next: your own
-first five minutes. Signing up, naming the
-
-35
-00:03:30,575 --> 00:03:34,529
-company, and landing on a
-screen that is not empty.
+00:03:10,981 --> 00:03:17,529
+That is the shape of it. Next: the
+workspaces everything else hangs off.
 

@@ -1,34 +1,34 @@
 1
-00:00:10,421 --> 00:00:14,647
+00:00:08,723 --> 00:00:13,274
 La mayor parte de lo que responde un
 servicio es alguien preguntando qué pasa.
 
 2
-00:00:15,102 --> 00:00:21,093
+00:00:13,726 --> 00:00:19,485
 Un espacio puede llevar un portal: una
 entrada para aquellos para quienes trabaja.
 
 3
-00:00:21,545 --> 00:00:28,465
+00:00:19,936 --> 00:00:26,391
 Usted decide quién entra, cliente a
 cliente, y qué puede hacer dentro.
 
 4
-00:00:28,918 --> 00:00:37,406
+00:00:34,714 --> 00:00:42,302
 Lo que ven es suyo y solo suyo. No hay
 versión de esto en la que vean el trabajo del
 
 5
-00:00:37,406 --> 00:00:38,113
+00:00:42,302 --> 00:00:42,934
 vecino.
 
 6
-00:00:38,573 --> 00:00:44,239
+00:00:43,386 --> 00:00:49,423
 Y pueden crear una solicitud, que llega
 como trabajo y no como un mensaje de voz.
 
 7
-00:00:44,693 --> 00:00:48,548
-A continuación: hablar con
-ellos dentro del propio trabajo.
+00:00:49,875 --> 00:00:55,448
+Este es el último. Todo lo
+demás lo encontrará abriéndolo.
 

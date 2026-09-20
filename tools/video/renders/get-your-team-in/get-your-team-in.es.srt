@@ -1,39 +1,43 @@
 1
-00:00:10,305 --> 00:00:13,695
+00:00:10,476 --> 00:00:14,238
 Todos los que trabajan aquí, y
 lo que puede alcanzar cada uno.
 
 2
-00:00:14,147 --> 00:00:19,673
+00:00:14,690 --> 00:00:20,495
 Invitar a alguien empieza por lo
 que va a ser, no por su correo.
 
 3
-00:00:20,125 --> 00:00:28,217
+00:00:20,948 --> 00:00:27,352
 El rol con el que llega y el espacio al
 que llega. Las dos cosas las decide usted,
 
 4
-00:00:28,217 --> 00:00:28,809
+00:00:27,352 --> 00:00:27,821
 ahora.
 
 5
-00:00:29,260 --> 00:00:33,904
+00:00:28,273 --> 00:00:33,521
 Lo que sale es un código. Envíelo
 como ya se comunique con esa persona.
 
 6
-00:00:34,356 --> 00:00:41,740
+00:00:33,972 --> 00:00:42,006
 Trátelo como una llave, porque lo es:
 quien lo teclee entra. Por eso caduca.
 
 7
-00:00:42,196 --> 00:00:47,444
+00:00:42,459 --> 00:00:47,846
 Y por eso puede retirarlo en
 cuanto dude de dónde ha acabado.
 
 8
-00:00:47,896 --> 00:00:51,890
-A continuación: todo sobre
-una persona, en un sitio.
+00:00:48,297 --> 00:00:52,562
+A continuación: escribir un rol propio,
+con el nombre de un puesto que ya existe en
+
+9
+00:00:52,562 --> 00:00:53,127
+su empresa.
 

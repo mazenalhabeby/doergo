@@ -1,42 +1,42 @@
 1
-00:00:10,421 --> 00:00:14,647
+00:00:08,723 --> 00:00:13,274
 L'essentiel de ce qu'un accueil
 traite, c'est « où ça en est ».
 
 2
-00:00:15,102 --> 00:00:20,369
+00:00:13,726 --> 00:00:18,788
 Un espace de travail peut porter un
 portail : une entrée pour ceux pour qui vous
 
 3
-00:00:20,369 --> 00:00:21,093
+00:00:18,788 --> 00:00:19,485
 travaillez.
 
 4
-00:00:21,545 --> 00:00:28,465
+00:00:19,936 --> 00:00:26,391
 Vous décidez qui entre, client par
 client, et ce qu'il peut y faire.
 
 5
-00:00:28,918 --> 00:00:35,985
+00:00:34,714 --> 00:00:41,031
 Ce qu'ils voient est à eux et à eux seuls.
 Il n'existe pas de version où ils voient
 
 6
-00:00:35,985 --> 00:00:38,113
+00:00:41,031 --> 00:00:42,934
 l'intervention du voisin.
 
 7
-00:00:38,573 --> 00:00:43,367
+00:00:43,386 --> 00:00:48,494
 Et ils peuvent créer une demande, qui
 arrive comme du travail et non comme un
 
 8
-00:00:43,367 --> 00:00:44,239
+00:00:48,494 --> 00:00:49,423
 message vocal.
 
 9
-00:00:44,693 --> 00:00:48,548
-Ensuite : leur parler dans
-l'intervention elle-même.
+00:00:49,875 --> 00:00:55,448
+C'est la dernière de ces vidéos. Le
+reste, vous le trouverez en l'ouvrant.
 

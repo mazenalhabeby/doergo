@@ -1,38 +1,38 @@
 1
-00:00:10,421 --> 00:00:14,647
+00:00:08,723 --> 00:00:13,274
 Das meiste, was eine Servicestelle
 beantwortet, ist die Frage: Was ist der Stand?
 
 2
-00:00:15,102 --> 00:00:20,458
+00:00:13,726 --> 00:00:18,875
 Ein Arbeitsbereich kann ein Portal
 tragen: einen Zugang für die, für die Sie
 
 3
-00:00:20,458 --> 00:00:21,093
+00:00:18,875 --> 00:00:19,485
 arbeiten.
 
 4
-00:00:21,545 --> 00:00:28,465
+00:00:19,936 --> 00:00:26,391
 Sie entscheiden, wer hineinkommt —
 Kunde für Kunde — und was dort erlaubt ist.
 
 5
-00:00:28,918 --> 00:00:35,771
+00:00:34,714 --> 00:00:40,840
 Was sie sehen, ist ihres — und nur
 ihres. Es gibt keine Fassung, in der sie den
 
 6
-00:00:35,771 --> 00:00:38,113
+00:00:40,840 --> 00:00:42,934
 Auftrag des Nachbarn sehen.
 
 7
-00:00:38,573 --> 00:00:44,239
+00:00:43,386 --> 00:00:49,423
 Und sie können etwas melden — das kommt
 als Arbeit an, nicht als Anrufbeantworter.
 
 8
-00:00:44,693 --> 00:00:48,548
-Als Nächstes: mit ihnen
-direkt im Auftrag sprechen.
+00:00:49,875 --> 00:00:55,448
+Das war das letzte davon. Alles
+Weitere finden Sie, indem Sie es öffnen.
 

@@ -97,11 +97,11 @@
     {
       "id": "whereNext",
       "narration": {
-        "en": "Next: talking to them inside the job itself.",
-        "de": "Als Nächstes: mit ihnen direkt im Auftrag sprechen.",
-        "es": "A continuación: hablar con ellos dentro del propio trabajo.",
-        "fr": "Ensuite : leur parler dans l'intervention elle-même.",
-        "it": "Poi: parlare con loro dentro il lavoro stesso."
+        "en": "That is the last of these. Everything else you will find by opening it.",
+        "de": "Das war das letzte davon. Alles Weitere finden Sie, indem Sie es öffnen.",
+        "es": "Este es el último. Todo lo demás lo encontrará abriéndolo.",
+        "fr": "C'est la dernière de ces vidéos. Le reste, vous le trouverez en l'ouvrant.",
+        "it": "Questo è l'ultimo. Tutto il resto lo troverà aprendolo."
       }
     }
   ]
