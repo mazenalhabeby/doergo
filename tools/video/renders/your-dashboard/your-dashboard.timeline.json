@@ -1,0 +1,43 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/your-dashboard/capture/page@596601c165276d8822c377b883d2e5e7.webm",
+  "durationSec": 38.88,
+  "preRollSec": 4.675000000000004,
+  "beats": [
+    {
+      "id": "whoIsHere",
+      "startSec": 4.675000000000004,
+      "endSec": 9.958000000000006,
+      "narrationSec": 4.82975
+    },
+    {
+      "id": "byWorkspace",
+      "startSec": 9.959000000000003,
+      "endSec": 18.492000000000004,
+      "narrationSec": 8.080542
+    },
+    {
+      "id": "whatHappened",
+      "startSec": 18.492000000000004,
+      "endSec": 24.192000000000004,
+      "narrationSec": 5.247708
+    },
+    {
+      "id": "waitingOnYou",
+      "startSec": 24.192000000000004,
+      "endSec": 29.196000000000005,
+      "narrationSec": 4.551125
+    },
+    {
+      "id": "noHunting",
+      "startSec": 29.197000000000003,
+      "endSec": 34.014,
+      "narrationSec": 4.365354
+    },
+    {
+      "id": "whereNext",
+      "startSec": 34.015,
+      "endSec": 38.88,
+      "narrationSec": 4.411792
+    }
+  ]
+}

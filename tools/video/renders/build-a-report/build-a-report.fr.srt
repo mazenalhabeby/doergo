@@ -1,0 +1,29 @@
+1
+00:00:07,873 --> 00:00:14,235
+Commencez par ce que vous comptez :
+interventions, heures, factures, clients.
+
+2
+00:00:14,687 --> 00:00:20,956
+Puis comment le découper : par
+personne, par espace, par client, par mois.
+
+3
+00:00:21,409 --> 00:00:24,242
+Sur la période qui vous intéresse.
+
+4
+00:00:24,694 --> 00:00:31,660
+Lancez-le, et c'est à l'écran — pas dans
+une file, pas dans la boîte de quelqu'un.
+
+5
+00:00:32,112 --> 00:00:36,617
+Emportez-le en fichier, ou gardez-le et
+faites-le vous envoyer régulièrement.
+
+6
+00:00:37,071 --> 00:00:41,808
+Ensuite : où sont réellement les
+gens, et les routes qu'ils ont prises.
+

@@ -1,0 +1,38 @@
+1
+00:00:08,175 --> 00:00:13,005
+Chi è al lavoro, dove, e
+su che cosa sta ciascuno.
+
+2
+00:00:13,459 --> 00:00:21,540
+Raggruppato come il lavoro: una
+colonna per luogo, e i tranquilli lo dicono.
+
+3
+00:00:21,992 --> 00:00:26,677
+Che cosa è successo dall'ultima volta
+che ha guardato, nell'ordine in cui è
+
+4
+00:00:26,677 --> 00:00:27,240
+successo.
+
+5
+00:00:27,692 --> 00:00:32,243
+E l'elenco breve delle cose
+ferme finché lei non dice qualcosa.
+
+6
+00:00:32,697 --> 00:00:36,761
+Nulla di tutto questo richiede di
+lanciare un report, e nulla invecchia mentre lo
+
+7
+00:00:36,761 --> 00:00:37,062
+legge.
+
+8
+00:00:37,515 --> 00:00:41,927
+Poi: fare ai suoi dati una domanda per
+cui nessuno ha costruito una schermata.
+

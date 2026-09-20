@@ -1,0 +1,29 @@
+1
+00:00:07,873 --> 00:00:14,235
+Empiece por lo que cuenta:
+trabajos, horas, facturas, clientes.
+
+2
+00:00:14,687 --> 00:00:20,956
+Después, cómo quiere desglosarlo: por
+persona, por espacio, por cliente, por mes.
+
+3
+00:00:21,409 --> 00:00:24,242
+En el período del que trate la pregunta.
+
+4
+00:00:24,694 --> 00:00:31,660
+Ejecútelo y está en pantalla: no en
+una cola, ni en el buzón de alguien.
+
+5
+00:00:32,112 --> 00:00:36,617
+Llévese un archivo, o guárdelo y
+haga que se lo envíen periódicamente.
+
+6
+00:00:37,071 --> 00:00:41,808
+A continuación: dónde está todo el
+mundo de verdad, y por dónde fue.
+

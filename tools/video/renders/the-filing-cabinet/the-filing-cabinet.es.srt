@@ -1,0 +1,38 @@
+1
+00:00:07,720 --> 00:00:13,153
+El papel va en dos direcciones: lo que
+usted emite y lo que le tienen que entregar.
+
+2
+00:00:13,605 --> 00:00:20,850
+Cada tipo se configura una vez: con qué
+frecuencia hace falta y si hay que firmarlo.
+
+3
+00:00:21,308 --> 00:00:27,618
+Y quién puede verlo. Quien persigue
+carnés de conducir no tiene nada que hacer en
+
+4
+00:00:27,618 --> 00:00:28,553
+las nóminas.
+
+5
+00:00:29,005 --> 00:00:35,269
+No nombre a nadie y queda abierto a todos
+los que ya pueden ver documentos: el valor
+
+6
+00:00:35,269 --> 00:00:36,760
+por defecto sensato.
+
+7
+00:00:37,217 --> 00:00:43,394
+Lo emitido y lo que falta es
+un registro, no un recuerdo.
+
+8
+00:00:43,847 --> 00:00:47,005
+A continuación: emitir uno
+y conseguir que se firme.
+

@@ -1,0 +1,34 @@
+1
+00:00:08,175 --> 00:00:13,005
+Quién está trabajando,
+dónde, y en qué anda cada uno.
+
+2
+00:00:13,459 --> 00:00:21,540
+Agrupado como el trabajo: una columna
+por sitio, y los tranquilos lo dicen.
+
+3
+00:00:21,992 --> 00:00:27,240
+Qué ha pasado desde la última vez
+que miró, en el orden en que pasó.
+
+4
+00:00:27,692 --> 00:00:32,243
+Y la lista corta de cosas
+paradas hasta que usted diga algo.
+
+5
+00:00:32,697 --> 00:00:37,062
+Nada de esto necesita ejecutar un
+informe, y nada envejece mientras lo lee.
+
+6
+00:00:37,515 --> 00:00:41,481
+A continuación: hacerle a sus datos una
+pregunta para la que nadie construyó una
+
+7
+00:00:41,481 --> 00:00:41,927
+pantalla.
+

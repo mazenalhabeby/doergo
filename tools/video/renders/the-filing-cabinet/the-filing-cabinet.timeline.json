@@ -1,0 +1,43 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/the-filing-cabinet/capture/page@da855dcfa29221406d0a73a00f7d8e05.webm",
+  "durationSec": 43.96,
+  "preRollSec": 4.219999999999999,
+  "beats": [
+    {
+      "id": "twoDirections",
+      "startSec": 4.219999999999999,
+      "endSec": 10.104,
+      "narrationSec": 5.433479
+    },
+    {
+      "id": "kinds",
+      "startSec": 10.104999999999999,
+      "endSec": 17.802999999999997,
+      "narrationSec": 7.244625
+    },
+    {
+      "id": "whoMaySee",
+      "startSec": 17.808,
+      "endSec": 25.505,
+      "narrationSec": 7.244625
+    },
+    {
+      "id": "leaveItOpen",
+      "startSec": 25.505,
+      "endSec": 33.714,
+      "narrationSec": 7.755479
+    },
+    {
+      "id": "theRegister",
+      "startSec": 33.717,
+      "endSec": 40.346,
+      "narrationSec": 6.176521
+    },
+    {
+      "id": "whereNext",
+      "startSec": 40.347,
+      "endSec": 43.96,
+      "narrationSec": 3.157917
+    }
+  ]
+}

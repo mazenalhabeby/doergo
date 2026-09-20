@@ -1,0 +1,26 @@
+TITLE
+Build a report — HBCField
+
+DESCRIPTION
+Every product has the screen somebody needs and did not get built. This is the answer to that: choose what you are counting, how you want it broken up, and over what period — then take it away as a file, or have it arrive by email every Monday.
+
+Chapters
+0:00 Build a report
+0:07 What you are counting
+0:14 How to cut it
+0:24 Run it
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload build-a-report.mp4
+  [ ] Add each build-a-report.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → "reportsTour"

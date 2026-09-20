@@ -136,6 +136,12 @@ async function destroyPreviousRun(): Promise<void> {
     points at the member who created it, so deleting the members fails until it
     is gone.
   */
+  await prisma.documentEvent.deleteMany({ where: { document: { organizationId: orgId } } }).catch(() => undefined);
+  await prisma.documentSignature.deleteMany({ where: { signer: { document: { organizationId: orgId } } } }).catch(() => undefined);
+  await prisma.documentSigner.deleteMany({ where: { document: { organizationId: orgId } } }).catch(() => undefined);
+  await prisma.document.deleteMany({ where: { organizationId: orgId } });
+  await prisma.documentTemplate.deleteMany({ where: { organizationId: orgId } }).catch(() => undefined);
+  await prisma.documentType.deleteMany({ where: { organizationId: orgId } });
   await prisma.invitation.deleteMany({ where: { organizationId: orgId } });
   await prisma.joinRequest.deleteMany({ where: { organizationId: orgId } }).catch(() => undefined);
   await prisma.timeOff.deleteMany({ where: { technician: { organizationId: orgId } } });
@@ -803,6 +809,123 @@ async function seedAttendance(
 }
 
 /**
+ * The personnel file: two types, and licences at every stage of running out.
+ *
+ * ⚠️ NO FILE EXISTS BEHIND THESE ROWS. `storageKey` names an object in the
+ * bucket that was never uploaded, because a seed must not put demo files in a
+ * real object store. Everything that READS the register — the credential
+ * board, the counts, a member's own list — works; anything that OPENS a
+ * document would not. No video does.
+ *
+ * ⚠️ `visibleToRoleIds` IS LEFT EMPTY, which means NO RESTRICTION rather than
+ * "nobody". The opposite default would empty every register in the
+ * organisation, which is the bug this field was shipped carefully to avoid.
+ */
+async function seedDocuments(
+  orgId: string,
+  crew: Record<string, { id: string }>,
+  ownerId: string,
+) {
+  const licence = await prisma.documentType.create({
+    data: {
+      organizationId: orgId,
+      key: 'driving-licence',
+      label: 'Driving licence',
+      description: 'Only they have it, so they upload it. Expires, and gates driving work.',
+      direction: 'SUPPLIED',
+      cadence: 'ONE_OFF',
+      isCredential: true,
+      hasExpiry: true,
+      requiredFromAll: true,
+      signatureMode: 'NONE',
+      visibleToRoleIds: [],
+      isActive: true,
+    },
+    select: { id: true },
+  });
+
+  const payslip = await prisma.documentType.create({
+    data: {
+      organizationId: orgId,
+      key: 'payslip',
+      label: 'Payslip',
+      description: 'One per month, per person.',
+      direction: 'ISSUED',
+      cadence: 'MONTHLY',
+      signatureMode: 'NONE',
+      visibleToRoleIds: [],
+      isActive: true,
+    },
+    select: { id: true },
+  });
+
+  const onDate = (days: number) =>
+    new Date(new Date(Date.now() + days * DAY_MS).toISOString().slice(0, 10));
+
+  /* Every stage of running out, so the board has something in each column. */
+  const licences: Array<[string, number]> = [
+    ['rhodes', 640],
+    ['okafor', 51],
+    ['brennan', 19],
+    ['devlin', -12],
+  ];
+  let made = 0;
+  for (const [key, days] of licences) {
+    const userId = crew[key]?.id;
+    if (!userId) continue;
+    await prisma.document.create({
+      data: {
+        organizationId: orgId,
+        userId,
+        typeId: licence.id,
+        title: 'Driving licence',
+        storageKey: `seed/video/licence-${key}.pdf`,
+        sha256: `seed-${key}`,
+        sizeBytes: 148_000,
+        mimeType: 'application/pdf',
+        status: days < 0 ? 'EXPIRED' : 'ISSUED',
+        issuedById: userId,
+        issuedAt: daysAgo(400),
+        expiresOn: onDate(days),
+        verifiedAt: daysAgo(395),
+        verifiedById: ownerId,
+      },
+    });
+    made += 1;
+  }
+
+  /* A month of payslips for two people, so the issued register is not empty. */
+  const now = new Date();
+  for (const key of ['rhodes', 'okafor']) {
+    const userId = crew[key]?.id;
+    if (!userId) continue;
+    for (let back = 1; back <= 3; back += 1) {
+      const when = new Date(now.getFullYear(), now.getMonth() - back, 28);
+      await prisma.document.create({
+        data: {
+          organizationId: orgId,
+          userId,
+          typeId: payslip.id,
+          title: `Payslip — ${when.toLocaleString('en-GB', { month: 'long' })} ${when.getFullYear()}`,
+          periodYear: when.getFullYear(),
+          periodMonth: when.getMonth() + 1,
+          storageKey: `seed/video/payslip-${key}-${back}.pdf`,
+          sha256: `seed-${key}-${back}`,
+          sizeBytes: 92_000,
+          mimeType: 'application/pdf',
+          status: 'ISSUED',
+          issuedById: ownerId,
+          issuedAt: when,
+        },
+      });
+      made += 1;
+    }
+  }
+
+  return made;
+}
+
+/**
  * The rota, and the two clocks.
  *
  * ⚠️ THE WORKSHOP RUNS ON SHIFTS AND THE DEPOT DOES NOT, and that split is
@@ -1357,11 +1480,13 @@ async function main(): Promise<void> {
     `  ${attendance.history} shifts of history, ${attendance.breaks} breaks, ${attendance.live} on the clock now`,
   );
 
+  const documents = await seedDocuments(org.id, crew, owner.id);
   const rota = await seedRota(org.id, spaceIds.workshop, crew, lead.id);
   const leave = await seedTimeOff(crew, lead.id);
   console.log(
     `  a rota on the workshop: ${rota.assignments} on shift, ${rota.entries} shifts with counted hours, ${leave} leave requests`,
   );
+  console.log(`  ${documents} documents on file, including licences at every stage of running out`);
 
   const clientIds = await seedClients(org.id, spaceIds.depot, lead.id);
   const taskIds = await seedTasks(org.id, spaceIds.depot, workflowId, lead.id, crew, clientIds);

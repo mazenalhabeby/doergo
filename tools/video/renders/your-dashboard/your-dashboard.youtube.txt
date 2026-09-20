@@ -1,0 +1,26 @@
+TITLE
+Your dashboard — HBCField
+
+DESCRIPTION
+The first screen is not a report. It answers the three questions somebody actually has at seven in the morning: who is here, what is happening, and what is waiting on me.
+
+Chapters
+0:00 Your dashboard
+0:08 Who is here
+0:21 What happened
+0:27 Waiting on you
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload your-dashboard.mp4
+  [ ] Add each your-dashboard.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → "welcomeAdmin"

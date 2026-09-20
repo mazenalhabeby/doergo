@@ -1,0 +1,30 @@
+1
+00:00:08,175 --> 00:00:13,005
+Who is at work, where, and
+what each of them is on.
+
+2
+00:00:13,459 --> 00:00:21,540
+Grouped the way the work is: one column
+per place, with the quiet ones saying so.
+
+3
+00:00:21,992 --> 00:00:27,240
+What has happened since you last
+looked, in the order it happened.
+
+4
+00:00:27,692 --> 00:00:32,243
+And the short list of things that
+are stopped until you say something.
+
+5
+00:00:32,697 --> 00:00:37,062
+None of it needs a report to be run, and
+none of it goes stale while you read it.
+
+6
+00:00:37,515 --> 00:00:41,927
+Next: asking your own data a
+question nobody built a screen for.
+

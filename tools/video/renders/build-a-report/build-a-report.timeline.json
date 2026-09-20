@@ -1,0 +1,43 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/build-a-report/capture/page@d3f5a3fa9b3164095bc52f93430421f1.webm",
+  "durationSec": 38.76,
+  "preRollSec": 4.3729999999999976,
+  "beats": [
+    {
+      "id": "theQuestion",
+      "startSec": 4.3729999999999976,
+      "endSec": 11.186999999999998,
+      "narrationSec": 6.362271
+    },
+    {
+      "id": "cutItUp",
+      "startSec": 11.186999999999998,
+      "endSec": 17.907999999999998,
+      "narrationSec": 6.269396
+    },
+    {
+      "id": "overWhat",
+      "startSec": 17.909,
+      "endSec": 21.194,
+      "narrationSec": 2.832833
+    },
+    {
+      "id": "runIt",
+      "startSec": 21.194,
+      "endSec": 28.612,
+      "narrationSec": 6.966
+    },
+    {
+      "id": "takeItAway",
+      "startSec": 28.612,
+      "endSec": 33.56999999999999,
+      "narrationSec": 4.504667
+    },
+    {
+      "id": "whereNext",
+      "startSec": 33.571,
+      "endSec": 38.76,
+      "narrationSec": 4.736875
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/licences-that-expire/capture/page@4cb41b659b16e50e064931bafabf80ab.webm",
+  "durationSec": 37.08,
+  "preRollSec": 4.315999999999995,
+  "beats": [
+    {
+      "id": "theBoard",
+      "startSec": 4.315999999999995,
+      "endSec": 10.853999999999996,
+      "narrationSec": 6.083625
+    },
+    {
+      "id": "readNotTyped",
+      "startSec": 10.854999999999995,
+      "endSec": 16.692999999999998,
+      "narrationSec": 5.387042
+    },
+    {
+      "id": "whatIsShort",
+      "startSec": 16.693999999999996,
+      "endSec": 21.231999999999996,
+      "narrationSec": 4.086708
+    },
+    {
+      "id": "chasing",
+      "startSec": 21.231999999999996,
+      "endSec": 26.654999999999994,
+      "narrationSec": 4.969083
+    },
+    {
+      "id": "andTheEvidence",
+      "startSec": 26.654999999999994,
+      "endSec": 32.53999999999999,
+      "narrationSec": 5.433479
+    },
+    {
+      "id": "whereNext",
+      "startSec": 32.53999999999999,
+      "endSec": 37.08,
+      "narrationSec": 4.086708
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+1
+00:00:07,720 --> 00:00:13,153
+Paper runs two ways: what you issue to
+people, and what they have to hand you.
+
+2
+00:00:13,605 --> 00:00:20,850
+Each kind is set up once: how often it is
+needed, and whether it has to be signed.
+
+3
+00:00:21,308 --> 00:00:27,871
+And who may see it. The clerk chasing
+driving licences has no business in the
+
+4
+00:00:27,871 --> 00:00:28,553
+payroll.
+
+5
+00:00:29,005 --> 00:00:35,442
+Name nobody and it is open to everybody
+who can see documents at all — which is the
+
+6
+00:00:35,442 --> 00:00:36,760
+sensible default.
+
+7
+00:00:37,217 --> 00:00:43,394
+What has been issued, and what is still
+owed, is a register rather than a memory.
+
+8
+00:00:43,847 --> 00:00:47,005
+Next: issuing one, and getting it signed.
+
