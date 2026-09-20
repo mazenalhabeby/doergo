@@ -1,0 +1,40 @@
+1
+00:00:09,703 --> 00:00:14,579
+Chaque entreprise a un poste
+qu'aucun des rôles livrés ne décrit.
+
+2
+00:00:15,037 --> 00:00:19,542
+Alors nommez-en un comme vos
+équipes appellent déjà ce poste.
+
+3
+00:00:19,994 --> 00:00:25,427
+Cochez ce qu'il permet,
+regroupé par domaine de l'activité.
+
+4
+00:00:25,893 --> 00:00:30,351
+Enregistrez, et il se range à
+côté de ceux livrés avec le produit.
+
+5
+00:00:30,805 --> 00:00:34,799
+Donnez-le à quelqu'un, et ce à
+quoi il a accès change aussitôt.
+
+6
+00:00:39,591 --> 00:00:45,450
+Et tous ceux qui le portent changent avec
+lui — c'est exactement pourquoi c'est un
+
+7
+00:00:45,450 --> 00:00:48,879
+rôle et non une liste de
+cases sur une personne.
+
+8
+00:00:49,333 --> 00:00:53,327
+Ensuite : tout sur une
+personne, au même endroit.
+

@@ -1,0 +1,43 @@
+1
+00:00:09,703 --> 00:00:13,977
+In jedem Unternehmen gibt es eine
+Aufgabe, die keine der mitgelieferten Rollen
+
+2
+00:00:13,977 --> 00:00:14,579
+beschreibt.
+
+3
+00:00:15,037 --> 00:00:19,542
+Benennen Sie eine also so, wie Ihre
+Leute die Aufgabe ohnehin nennen.
+
+4
+00:00:19,994 --> 00:00:25,427
+Kreuzen Sie an, was sie darf —
+gruppiert nach dem Bereich, den sie betrifft.
+
+5
+00:00:25,893 --> 00:00:30,351
+Speichern — und sie steht neben
+denen, die mit dem Produkt kamen.
+
+6
+00:00:30,805 --> 00:00:34,799
+Geben Sie sie jemandem — und was diese
+Person erreichen darf, ändert sich sofort.
+
+7
+00:00:39,591 --> 00:00:45,858
+Und alle anderen mit dieser Rolle ändern
+sich mit — genau deshalb ist es eine Rolle
+
+8
+00:00:45,858 --> 00:00:48,879
+und keine Häkchenliste bei einer Person.
+
+9
+00:00:49,333 --> 00:00:53,327
+Als Nächstes: alles über
+eine Person, an einem Ort.
+

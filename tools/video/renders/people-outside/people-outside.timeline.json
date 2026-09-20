@@ -1,0 +1,49 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/people-outside/capture/page@83391a78192c7fa10fdc5bf2f17c811b.webm",
+  "durationSec": 49.44,
+  "preRollSec": 6.268999999999998,
+  "beats": [
+    {
+      "id": "notEverybody",
+      "startSec": 6.268999999999998,
+      "endSec": 11.136999999999999,
+      "narrationSec": 4.411792
+    },
+    {
+      "id": "markThem",
+      "startSec": 11.137999999999998,
+      "endSec": 16.467,
+      "narrationSec": 4.876188
+    },
+    {
+      "id": "oneRoleOnly",
+      "startSec": 16.467,
+      "endSec": 24.395999999999997,
+      "narrationSec": 7.476833
+    },
+    {
+      "id": "watchOrRaise",
+      "startSec": 24.397,
+      "endSec": 30.7,
+      "narrationSec": 5.851438
+    },
+    {
+      "id": "noClock",
+      "startSec": 30.700999999999997,
+      "endSec": 37.528,
+      "narrationSec": 6.362271
+    },
+    {
+      "id": "andTheKit",
+      "startSec": 37.528999999999996,
+      "endSec": 43.786,
+      "narrationSec": 5.805
+    },
+    {
+      "id": "whereNext",
+      "startSec": 43.786,
+      "endSec": 49.44,
+      "narrationSec": 5.201271
+    }
+  ]
+}

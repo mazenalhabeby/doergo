@@ -1,0 +1,26 @@
+TITLE
+A role of your own — HBCField
+
+DESCRIPTION
+Every company has a job that no product's built-in roles describe — the person who books the work, the one who chases paperwork, the foreman who is not a manager. Write the role, tick what it may do, give it to somebody. It takes about a minute, and it is the difference between the product fitting your company and your company fitting the product.
+
+Chapters
+0:00 A role of your own
+0:09 The job with no role
+0:15 Name it
+0:30 Give it to somebody
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload a-role-of-your-own.mp4
+  [ ] Add each a-role-of-your-own.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → "membersTour"

@@ -38,6 +38,7 @@ import {
   CREW,
   DEMO_PASSWORD,
   DEPOT,
+  OUTSIDER,
   LEAD,
   ORG_CURRENCY,
   ORG_TIMEZONE,
@@ -531,6 +532,29 @@ async function createPeople(orgId: string, roles: Map<string, string>, passwordH
     },
   });
 
+  /*
+    The client's own facilities manager, invited in to follow the work.
+    ⚠️ `isExternal` is the switch the whole thing hangs on — see the note on
+    OUTSIDER in demo-data.ts. Their role is granted per SPACE, never org-wide.
+  */
+  const outsider = await prisma.user.create({
+    data: {
+      email: OUTSIDER.email,
+      passwordHash,
+      firstName: OUTSIDER.firstName,
+      lastName: OUTSIDER.lastName,
+      role: 'EMPLOYEE',
+      organizationId: orgId,
+      onboardingCompleted: true,
+      position: OUTSIDER.position,
+      timezone: ORG_TIMEZONE,
+      isExternal: true,
+      canCreateTasks: false,
+      enabledModules: accessProfile(),
+    },
+    select: { id: true },
+  });
+
   const crew: Record<string, { id: string; person: DemoPerson }> = {};
   for (const person of CREW) {
     const user = await prisma.user.create({
@@ -558,7 +582,7 @@ async function createPeople(orgId: string, roles: Map<string, string>, passwordH
     crew[person.key] = { id: user.id, person };
   }
 
-  return { owner, lead, crew };
+  return { owner, lead, crew, outsider };
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -572,6 +596,7 @@ async function assignToSpaces(
   ownerId: string,
   crew: Record<string, { id: string }>,
   roles: Map<string, string>,
+  outsiderId?: string,
 ) {
   const assign = (userId: string, spaceId: string, isPrimary: boolean, roleId?: string | null) =>
     prisma.spaceAssignment.upsert({
@@ -604,6 +629,14 @@ async function assignToSpaces(
     every run.
   */
   await assign(leadId, spaceIds.depot, true, roles.get('space-manager'));
+  /*
+    ⚠️ The outsider is assigned to the CLIENT SITE only, with the built-in
+    external role. One space, one role — an org-wide role is refused for an
+    external member, because it would reach every workspace.
+  */
+  if (outsiderId) {
+    await assign(outsiderId, spaceIds.clientSite, true, roles.get('external-observer'));
+  }
   await assign(ownerId, spaceIds.depot, true, roles.get('space-manager'));
 
   const workshopCrew = new Set(['nakamura', 'whitlock']);
@@ -1471,8 +1504,8 @@ async function main(): Promise<void> {
     clientSite: spaces.clientSite.id,
   };
 
-  const { owner, lead, crew } = await createPeople(org.id, roles, passwordHash);
-  await assignToSpaces(org.id, spaceIds, lead.id, owner.id, crew, roles);
+  const { owner, lead, crew, outsider } = await createPeople(org.id, roles, passwordHash);
+  await assignToSpaces(org.id, spaceIds, lead.id, owner.id, crew, roles, outsider.id);
   console.log(`  ${Object.keys(crew).length + 2} members across 3 workspaces`);
 
   const attendance = await seedAttendance(org.id, spaceIds, lead.id, crew);

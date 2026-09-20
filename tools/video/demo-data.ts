@@ -138,6 +138,24 @@ export const CREW: DemoPerson[] = [
   { key: 'achterberg', firstName: 'Lotte', lastName: 'Achterberg', email: 'lotte.achterberg@halsteadfield.example', position: 'Scheduler', phone: '+44 7700 900906' },
 ];
 
+/**
+ * Somebody from the client's side, invited in to watch the work.
+ *
+ * ⚠️ EXTERNAL, and that is a fact about the RELATIONSHIP rather than a
+ * permission somebody remembered to leave off. They hold no clock, no leave and
+ * no personnel file, the organisation's own property is closed to them
+ * whatever their role says, and their whole authority is one role in the
+ * workspaces they were given.
+ */
+export const OUTSIDER: DemoPerson = {
+  key: 'outsider',
+  firstName: 'Ada',
+  lastName: 'Pemberton',
+  email: 'ada.pemberton@brambleside-retail.example',
+  position: 'Facilities Manager, Brambleside Retail Park',
+  phone: '+44 20 7946 0211',
+};
+
 /** One password for everyone. This organisation exists only on a laptop. */
 export const DEMO_PASSWORD = 'VideoDemo!2026';
 
