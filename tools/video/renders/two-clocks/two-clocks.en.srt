@@ -1,55 +1,55 @@
 1
-00:00:12,006 --> 00:00:15,350
+00:00:12,022 --> 00:00:14,808
 One person's shifts, as
 the office sees them.
 
 2
-00:00:15,803 --> 00:00:21,935
+00:00:15,261 --> 00:00:21,744
 These two times are what actually
 happened. They are evidence, and nothing rewrites
 
 3
-00:00:21,935 --> 00:00:22,305
+00:00:21,744 --> 00:00:22,134
 them.
 
 4
-00:00:22,758 --> 00:00:31,297
+00:00:22,586 --> 00:00:29,304
 This one is what counts. Where they
 differ, the record says both — and says which is
 
 5
-00:00:31,297 --> 00:00:31,907
+00:00:29,304 --> 00:00:29,784
 which.
 
 6
-00:00:32,360 --> 00:00:38,972
+00:00:30,236 --> 00:00:35,187
 Somebody in twenty minutes early has
 worked twenty minutes more and is not counted
 
 7
-00:00:38,972 --> 00:00:41,230
+00:00:35,187 --> 00:00:36,877
 for them. The shift decides.
 
 8
-00:00:41,682 --> 00:00:47,072
+00:00:37,331 --> 00:00:42,142
 And the rest that does not count as
 work comes off, whether or not anybody
 
 9
-00:00:47,072 --> 00:00:48,602
+00:00:42,142 --> 00:00:43,508
 remembered to log it.
 
 10
-00:00:49,054 --> 00:00:55,731
+00:00:43,962 --> 00:00:50,077
 Neither number is hidden, and neither is
 calculated at the last minute. That is what
 
 11
-00:00:55,731 --> 00:00:57,878
+00:00:50,077 --> 00:00:52,043
 makes a disagreement short.
 
 12
-00:00:58,331 --> 00:01:02,325
+00:00:52,500 --> 00:00:57,005
 Next: the minutes past the end of
 a shift, and who says they count.
 

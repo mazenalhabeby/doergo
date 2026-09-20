@@ -1,60 +1,60 @@
 1
-00:00:10,824 --> 00:00:16,935
+00:00:10,622 --> 00:00:17,124
 Everybody here holds a role, and the list
 says which. That, and not their job title,
 
 2
-00:00:16,935 --> 00:00:19,555
+00:00:17,124 --> 00:00:19,910
 is what decides what they can reach.
 
 3
-00:00:20,012 --> 00:00:26,328
+00:00:20,365 --> 00:00:26,356
 Here they all are. Each one says how
 much it grants and how many people hold it.
 
 4
-00:00:26,783 --> 00:00:32,449
+00:00:26,809 --> 00:00:32,150
 Some came with the product. Those you
 can copy and adjust, but not break.
 
 5
-00:00:32,902 --> 00:00:38,558
+00:00:32,604 --> 00:00:38,394
 Open one and it is a plain list, grouped
 by the part of the business it touches.
 
 6
-00:00:38,558 --> 00:00:40,750
+00:00:38,394 --> 00:00:40,638
 Nothing clever, nothing hidden.
 
 7
-00:00:41,204 --> 00:00:46,896
+00:00:41,091 --> 00:00:47,827
 Give it one more thing, and everybody
 holding that role has it — without touching a
 
 8
-00:00:46,896 --> 00:00:48,542
+00:00:47,827 --> 00:00:49,775
 single person's account.
 
 9
-00:00:48,994 --> 00:00:55,873
+00:00:50,228 --> 00:00:56,445
 Or write one of your own, named after a
 job you already have. That is the point:
 
 10
-00:00:55,873 --> 00:00:57,678
+00:00:56,445 --> 00:00:58,076
 your words, not ours.
 
 11
-00:00:58,131 --> 00:01:04,500
+00:00:58,530 --> 00:01:04,856
 A role says what somebody may do. Where
 they may do it is the workspaces they are
 
 12
-00:01:04,500 --> 00:01:05,051
+00:01:04,856 --> 00:01:05,403
 put in.
 
 13
-00:01:05,504 --> 00:01:11,727
+00:01:05,856 --> 00:01:10,686
 Next: the work itself. Raising a
 job, and handing it to somebody.
 

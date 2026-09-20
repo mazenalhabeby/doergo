@@ -1,55 +1,55 @@
 {
-  "videoPath": "/Users/pc/work/doergo/tools/video/renders/checklists-and-parts/capture/page@2f613f6dfb99c9510515975aa4a3b443.webm",
-  "durationSec": 58.4,
-  "preRollSec": 6.927999999999997,
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/checklists-and-parts/capture/page@c5df57654c524351c8487044049981ea.webm",
+  "durationSec": 57.8,
+  "preRollSec": 6.464999999999996,
   "beats": [
     {
       "id": "rarelyOneThing",
-      "startSec": 6.927999999999997,
-      "endSec": 14.159999999999997,
-      "narrationSec": 6.780229
+      "startSec": 6.464999999999996,
+      "endSec": 13.836999999999996,
+      "narrationSec": 6.919542
     },
     {
       "id": "whatFinishedMeans",
-      "startSec": 14.160999999999998,
-      "endSec": 21.391999999999996,
-      "narrationSec": 6.780229
+      "startSec": 13.836999999999996,
+      "endSec": 19.906,
+      "narrationSec": 5.619229
     },
     {
       "id": "itemByItem",
-      "startSec": 21.392999999999997,
-      "endSec": 27.493999999999996,
-      "narrationSec": 4.504667
+      "startSec": 19.906999999999996,
+      "endSec": 26.004999999999995,
+      "narrationSec": 4.179604
     },
     {
       "id": "tickedOnSite",
-      "startSec": 27.494999999999997,
-      "endSec": 31.057,
-      "narrationSec": 3.111479
+      "startSec": 26.004999999999995,
+      "endSec": 30.311999999999998,
+      "narrationSec": 3.854521
     },
     {
       "id": "twoVisits",
-      "startSec": 31.058999999999997,
-      "endSec": 37.91799999999999,
-      "narrationSec": 6.408708
+      "startSec": 30.311999999999998,
+      "endSec": 37.31099999999999,
+      "narrationSec": 6.548042
     },
     {
       "id": "eachOneReal",
-      "startSec": 37.92,
-      "endSec": 44.026999999999994,
-      "narrationSec": 5.294146
+      "startSec": 37.31099999999999,
+      "endSec": 43.19499999999999,
+      "narrationSec": 5.433479
     },
     {
       "id": "whatComesBack",
-      "startSec": 44.026999999999994,
-      "endSec": 51.909,
-      "narrationSec": 7.430396
+      "startSec": 43.19499999999999,
+      "endSec": 52.285999999999994,
+      "narrationSec": 8.637833
     },
     {
       "id": "whereNext",
-      "startSec": 51.910999999999994,
-      "endSec": 58.4,
-      "narrationSec": 6.037188
+      "startSec": 52.285999999999994,
+      "endSec": 57.8,
+      "narrationSec": 5.061958
     }
   ]
 }

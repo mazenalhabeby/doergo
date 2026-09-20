@@ -1,52 +1,52 @@
 1
-00:00:09,898 --> 00:00:17,257
+00:00:10,051 --> 00:00:16,490
 Este es el trabajo en curso: cada trabajo
 que lleva la empresa, en el estado en que
 
 2
-00:00:17,257 --> 00:00:17,700
+00:00:16,490 --> 00:00:16,878
 está.
 
 3
-00:00:18,155 --> 00:00:24,982
+00:00:17,338 --> 00:00:24,676
 Uno nuevo empieza con una frase. Escriba
 lo que necesitaría saber quien esté allí.
 
 4
-00:00:25,435 --> 00:00:30,776
+00:00:25,128 --> 00:00:29,540
 Cuánto corre, en las palabras que su
 equipo ya usa para hablar del trabajo.
 
 5
-00:00:31,230 --> 00:00:36,520
+00:00:29,991 --> 00:00:35,281
 Para cuándo tiene que estar hecho. Elija
 un día, y añada una hora si alguien le
 
 6
-00:00:36,520 --> 00:00:36,989
+00:00:35,281 --> 00:00:35,750
 espera.
 
 7
-00:00:37,441 --> 00:00:43,850
+00:00:36,202 --> 00:00:41,682
 Y a qué parte del negocio pertenece.
 Eso decide quién lo ve y qué puede hacer.
 
 8
-00:00:44,306 --> 00:00:48,393
+00:00:42,135 --> 00:00:46,779
 Créelo, y ya está en el
 tablero desde el que todos trabajan.
 
 9
-00:00:48,845 --> 00:00:55,065
+00:00:47,230 --> 00:00:53,118
 Ábralo y está esperando: una
 descripción, sitio para fotos, y todavía nadie
 
 10
-00:00:55,065 --> 00:00:55,811
+00:00:53,118 --> 00:00:53,824
 asignado.
 
 11
-00:00:56,262 --> 00:01:01,649
+00:00:54,276 --> 00:00:59,849
 Que es el siguiente vídeo: dárselo a
 alguien, y qué pasa en cuanto lo hace.
 

@@ -1,56 +1,56 @@
 1
-00:00:12,006 --> 00:00:15,350
+00:00:12,022 --> 00:00:14,808
 Les postes d'une personne,
 tels que le bureau les voit.
 
 2
-00:00:15,803 --> 00:00:21,483
+00:00:15,261 --> 00:00:21,266
 Ces deux heures sont ce qui s'est
 réellement passé. Ce sont des preuves, et rien ne
 
 3
-00:00:21,483 --> 00:00:22,305
+00:00:21,266 --> 00:00:22,134
 les réécrit.
 
 4
-00:00:22,758 --> 00:00:30,008
+00:00:22,586 --> 00:00:28,290
 Celui-ci est ce qui compte. Là où ils
 diffèrent, l'enregistrement montre les deux et
 
 5
-00:00:30,008 --> 00:00:31,907
+00:00:28,290 --> 00:00:29,784
 dit lequel est lequel.
 
 6
-00:00:32,360 --> 00:00:38,087
+00:00:30,236 --> 00:00:34,524
 Quelqu'un arrivé vingt minutes en avance
 a travaillé vingt minutes de plus, qui ne
 
 7
-00:00:38,087 --> 00:00:41,230
+00:00:34,524 --> 00:00:36,877
 sont pas comptées.
 C'est le poste qui décide.
 
 8
-00:00:41,682 --> 00:00:47,313
+00:00:37,331 --> 00:00:42,357
 Et la pause qui ne compte pas comme du
 travail est déduite, que quelqu'un ait pensé
 
 9
-00:00:47,313 --> 00:00:48,602
+00:00:42,357 --> 00:00:43,508
 à la saisir ou non.
 
 10
-00:00:49,054 --> 00:00:55,499
+00:00:43,962 --> 00:00:49,864
 Aucun des deux chiffres n'est caché, aucun
 n'est calculé à la dernière minute. C'est
 
 11
-00:00:55,499 --> 00:00:57,878
+00:00:49,864 --> 00:00:52,043
 ce qui rend un désaccord court.
 
 12
-00:00:58,331 --> 00:01:02,325
+00:00:52,500 --> 00:00:57,005
 Ensuite : les minutes après la fin du
 poste, et qui dit qu'elles comptent.
 

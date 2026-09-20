@@ -1,82 +1,82 @@
 1
-00:00:09,070 --> 00:00:14,794
+00:00:08,980 --> 00:00:15,407
 Tous les espaces de travail de cette
 entreprise sur une page : un dépôt, un atelier,
 
 2
-00:00:14,794 --> 00:00:17,383
+00:00:15,407 --> 00:00:18,314
 et un site qui appartient à un client.
 
 3
-00:00:17,835 --> 00:00:23,022
+00:00:18,770 --> 00:00:23,727
 Chacun indique ce qu'il peut faire et
 combien de personnes y travaillent. Lisez la
 
 4
-00:00:23,022 --> 00:00:25,173
+00:00:23,727 --> 00:00:25,782
 ligne et vous connaissez l'espace.
 
 5
-00:00:25,625 --> 00:00:30,471
+00:00:26,239 --> 00:00:31,246
 Un nouvel espace commence par un nom et
 par le type de lieu : le vôtre, ou celui
 
 6
-00:00:30,471 --> 00:00:31,198
+00:00:31,246 --> 00:00:31,998
 d'un client.
 
 7
-00:00:31,650 --> 00:00:36,538
+00:00:32,454 --> 00:00:37,049
 Donnez-lui une adresse et il obtient une
 limite sur la carte. C'est contre cette
 
 8
-00:00:36,538 --> 00:00:38,616
+00:00:37,049 --> 00:00:39,002
 limite qu'un pointage est vérifié.
 
 9
-00:00:39,070 --> 00:00:44,965
+00:00:39,453 --> 00:00:46,255
 Ensuite, ce qu'il a le droit de faire :
 seulement les capacités que ce lieu utilise
 
 10
-00:00:44,965 --> 00:00:47,522
+00:00:46,255 --> 00:00:49,205
 vraiment — le reste reste désactivé.
 
 11
-00:00:47,975 --> 00:00:53,989
+00:00:49,659 --> 00:00:55,279
 Désactivez ce que ce lieu ne fait pas, et
 il n'est pas facturé pour cela. Une cour
 
 12
-00:00:53,989 --> 00:00:58,610
+00:00:55,279 --> 00:00:59,597
 qui n'envoie personne dehors ne
 paie rien de ce qui se déplace.
 
 13
-00:00:59,062 --> 00:01:04,178
+00:01:00,049 --> 00:01:04,025
 Et les étapes par lesquelles passe
 une intervention ici. Un atelier et un
 
 14
-00:01:04,178 --> 00:01:06,771
+00:01:04,025 --> 00:01:06,040
 déplacement ne veulent pas les mêmes.
 
 15
-00:01:07,223 --> 00:01:12,868
+00:01:06,491 --> 00:01:12,327
 L'un d'eux est celui par défaut : là où
 atterrit une intervention si personne ne dit
 
 16
-00:01:12,868 --> 00:01:15,489
+00:01:12,327 --> 00:01:15,036
 le contraire. Modifiable à tout moment.
 
 17
-00:01:15,944 --> 00:01:21,517
+00:01:15,487 --> 00:01:21,179
 Ensuite : qui a le droit de voir quoi — et
 pourquoi ce n'est pas l'intitulé de poste
 
 18
-00:01:21,517 --> 00:01:22,446
+00:01:21,179 --> 00:01:22,128
 qui le décide.
 

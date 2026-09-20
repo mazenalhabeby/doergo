@@ -1,55 +1,55 @@
 1
-00:00:07,176 --> 00:00:12,416
+00:00:07,478 --> 00:00:14,046
 The button is in the same place on every
 screen, because you do not go looking for
 
 2
-00:00:12,416 --> 00:00:14,142
+00:00:14,046 --> 00:00:16,209
 it at seven in the morning.
 
 3
-00:00:14,594 --> 00:00:21,114
+00:00:16,659 --> 00:00:23,548
 Where you are matters. The workspace has a
 boundary, and the server checks it — not
 
 4
-00:00:21,114 --> 00:00:21,978
+00:00:23,548 --> 00:00:24,461
 the screen.
 
 5
-00:00:22,429 --> 00:00:31,032
+00:00:24,916 --> 00:00:31,832
 In. From here the day is being counted,
 and nobody has to remember what time it
 
 6
-00:00:31,032 --> 00:00:31,903
+00:00:31,832 --> 00:00:32,532
 started.
 
 7
-00:00:32,355 --> 00:00:38,867
+00:00:32,984 --> 00:00:38,297
 The shift is on screen while it runs:
 when it started, how long it has been, and
 
 8
-00:00:38,867 --> 00:00:39,925
+00:00:38,297 --> 00:00:39,161
 what is left.
 
 9
-00:00:40,374 --> 00:00:47,340
+00:00:39,611 --> 00:00:46,902
 Out at the end, and the record closes
 itself. That record is what payroll reads.
 
 10
-00:00:47,792 --> 00:00:52,668
+00:00:47,355 --> 00:00:52,371
 Every shift is kept, with where
 it was and how it was recorded.
 
 11
-00:00:53,122 --> 00:00:59,193
+00:00:52,822 --> 00:00:58,792
 Next: why the hours on that record and
 the hours on a payslip are not the same
 
 12
-00:00:59,193 --> 00:01:01,528
+00:00:58,792 --> 00:01:01,088
 number — and that being right.
 

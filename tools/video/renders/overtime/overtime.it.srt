@@ -1,44 +1,44 @@
 1
-00:00:07,845 --> 00:00:12,814
+00:00:07,823 --> 00:00:12,606
 Qualcuno è rimasto oltre la fine del
 turno. Aspetta qui, con un nome sopra.
 
 2
-00:00:13,267 --> 00:00:18,515
+00:00:13,062 --> 00:00:18,913
 Hanno detto perché, con parole loro, sul
 momento — non una settimana dopo a memoria.
 
 3
-00:00:18,967 --> 00:00:25,561
+00:00:19,366 --> 00:00:25,450
 Quanto è durato e quanto pesa sulla
 giornata, prima che qualcuno acconsenta.
 
 4
-00:00:26,013 --> 00:00:30,611
+00:00:25,904 --> 00:00:29,991
 Lei dice sì o no, e la
 decisione resta con il suo nome.
 
 5
-00:00:31,064 --> 00:00:35,942
+00:00:30,446 --> 00:00:35,626
 Dire sì sposta la fine di quel turno
 — ed è questo a far cambiare le ore
 
 6
-00:00:35,942 --> 00:00:39,330
+00:00:35,626 --> 00:00:39,223
 conteggiate, invece di un
 numero riscritto a mano.
 
 7
-00:00:39,783 --> 00:00:46,185
+00:00:39,676 --> 00:00:45,360
 E che cosa è stato chiesto, da chi, e che
 cosa è stato deciso resta leggibile molto
 
 8
-00:00:46,185 --> 00:00:48,885
+00:00:45,360 --> 00:00:47,757
 dopo che tutti l'hanno dimenticato.
 
 9
-00:00:49,338 --> 00:00:55,329
+00:00:48,214 --> 00:00:54,808
 Poi: il turno stesso — chi lavora,
 chi è assente e chi manca giovedì.
 

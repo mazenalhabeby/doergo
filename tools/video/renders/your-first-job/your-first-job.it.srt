@@ -1,52 +1,52 @@
 1
-00:00:09,898 --> 00:00:17,700
+00:00:10,051 --> 00:00:16,878
 Questo è il lavoro in corso: ogni lavoro
 dell'azienda, nello stato in cui si trova.
 
 2
-00:00:18,155 --> 00:00:24,982
+00:00:17,338 --> 00:00:24,676
 Uno nuovo inizia con una frase. Scriva
 ciò che dovrebbe sapere chi si trova lì.
 
 3
-00:00:25,435 --> 00:00:30,776
+00:00:25,128 --> 00:00:29,540
 Quanto è urgente, con le parole che
 la sua squadra già usa per il lavoro.
 
 4
-00:00:31,230 --> 00:00:36,342
+00:00:29,991 --> 00:00:35,103
 Entro quando deve essere fatto. Scelga
 un giorno, e aggiunga un'ora se qualcuno
 
 5
-00:00:36,342 --> 00:00:36,989
+00:00:35,103 --> 00:00:35,750
 l'aspetta.
 
 6
-00:00:37,441 --> 00:00:43,477
+00:00:36,202 --> 00:00:41,363
 E a quale parte dell'azienda appartiene.
 Questo decide chi lo vede e che cosa può
 
 7
-00:00:43,477 --> 00:00:43,850
+00:00:41,363 --> 00:00:41,682
 fare.
 
 8
-00:00:44,306 --> 00:00:48,393
+00:00:42,135 --> 00:00:46,779
 Lo crei, ed è sulla
 bacheca da cui lavorano tutti.
 
 9
-00:00:48,845 --> 00:00:55,325
+00:00:47,230 --> 00:00:53,364
 Lo apra ed è lì in attesa: una
 descrizione, spazio per le foto, e ancora nessuno
 
 10
-00:00:55,325 --> 00:00:55,811
+00:00:53,364 --> 00:00:53,824
 sopra.
 
 11
-00:00:56,262 --> 00:01:01,649
+00:00:54,276 --> 00:00:59,849
 Che è il video successivo: affidarlo a
 qualcuno, e che cosa succede in quel momento.
 

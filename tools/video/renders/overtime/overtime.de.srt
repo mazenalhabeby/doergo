@@ -1,56 +1,56 @@
 1
-00:00:07,845 --> 00:00:12,471
+00:00:07,823 --> 00:00:12,276
 Jemand ist über das Schichtende hinaus
 geblieben. Es wartet hier, mit einem Namen
 
 2
-00:00:12,471 --> 00:00:12,814
+00:00:12,276 --> 00:00:12,606
 daran.
 
 3
-00:00:13,267 --> 00:00:17,711
+00:00:13,062 --> 00:00:18,018
 Sie haben den Grund in eigenen Worten
 genannt, damals — nicht eine Woche später aus
 
 4
-00:00:17,711 --> 00:00:18,515
+00:00:18,018 --> 00:00:18,913
 dem Gedächtnis.
 
 5
-00:00:18,967 --> 00:00:25,561
+00:00:19,366 --> 00:00:25,450
 Wie lang es war und wie viel es vom
 Tag ausmacht — bevor jemand zustimmt.
 
 6
-00:00:26,013 --> 00:00:30,611
+00:00:25,904 --> 00:00:29,991
 Sie sagen ja oder nein — und die
 Entscheidung bleibt mit Ihrem Namen erhalten.
 
 7
-00:00:31,064 --> 00:00:35,744
+00:00:30,446 --> 00:00:35,415
 Ein Ja verschiebt das Ende dieser
 Schicht — und genau deshalb ändern sich die
 
 8
-00:00:35,744 --> 00:00:39,330
+00:00:35,415 --> 00:00:39,223
 gezählten Stunden, statt dass
 eine Zahl überschrieben wird.
 
 9
-00:00:39,783 --> 00:00:46,261
+00:00:39,676 --> 00:00:45,427
 Und was gefragt wurde, von wem, und was
 entschieden wurde, bleibt lesbar, lange
 
 10
-00:00:46,261 --> 00:00:48,885
+00:00:45,427 --> 00:00:47,757
 nachdem es alle vergessen haben.
 
 11
-00:00:49,338 --> 00:00:54,222
+00:00:48,214 --> 00:00:53,590
 Als Nächstes: der Dienstplan selbst —
 wer arbeitet, wer frei hat und wer am
 
 12
-00:00:54,222 --> 00:00:55,329
+00:00:53,590 --> 00:00:54,808
 Donnerstag fehlt.
 

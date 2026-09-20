@@ -1,65 +1,65 @@
 1
-00:00:10,824 --> 00:00:15,956
+00:00:10,622 --> 00:00:16,081
 Ici, chacun porte un rôle, et la liste
 indique lequel. C'est cela, et non son
 
 2
-00:00:15,956 --> 00:00:19,555
+00:00:16,081 --> 00:00:19,910
 intitulé de poste, qui
 décide de ce à quoi il a accès.
 
 3
-00:00:20,012 --> 00:00:26,328
+00:00:20,365 --> 00:00:26,356
 Les voici tous. Chacun indique ce qu'il
 accorde et combien de personnes le portent.
 
 4
-00:00:26,783 --> 00:00:30,884
+00:00:26,809 --> 00:00:30,675
 Certains sont livrés avec le produit.
 Ceux-là, vous pouvez les copier et les
 
 5
-00:00:30,884 --> 00:00:32,449
+00:00:30,675 --> 00:00:32,150
 ajuster, mais pas les casser.
 
 6
-00:00:32,902 --> 00:00:38,770
+00:00:32,604 --> 00:00:38,611
 Ouvrez-en un : c'est une simple liste,
 regroupée par domaine de l'activité. Rien
 
 7
-00:00:38,770 --> 00:00:40,750
+00:00:38,611 --> 00:00:40,638
 d'astucieux, rien de caché.
 
 8
-00:00:41,204 --> 00:00:46,279
+00:00:41,091 --> 00:00:47,098
 Ajoutez-lui une chose de plus, et tous
 ceux qui portent ce rôle l'obtiennent — sans
 
 9
-00:00:46,279 --> 00:00:48,542
+00:00:47,098 --> 00:00:49,775
 toucher au compte de qui que ce soit.
 
 10
-00:00:48,994 --> 00:00:54,955
+00:00:50,228 --> 00:00:55,615
 Ou écrivez le vôtre, nommé d'après un
 poste qui existe déjà chez vous. C'est tout
 
 11
-00:00:54,955 --> 00:00:57,678
+00:00:55,615 --> 00:00:58,076
 l'intérêt : vos mots, pas les nôtres.
 
 12
-00:00:58,131 --> 00:01:03,513
+00:00:58,530 --> 00:01:03,876
 Un rôle dit ce que quelqu'un peut faire.
 Où il peut le faire, ce sont les espaces de
 
 13
-00:01:03,513 --> 00:01:05,051
+00:01:03,876 --> 00:01:05,403
 travail où il est placé.
 
 14
-00:01:05,504 --> 00:01:11,727
+00:01:05,856 --> 00:01:10,686
 Ensuite : le travail lui-même. Créer une
 intervention et la confier à quelqu'un.
 

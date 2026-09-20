@@ -1,74 +1,74 @@
 1
-00:00:09,070 --> 00:00:14,725
+00:00:08,980 --> 00:00:15,330
 Tutti gli spazi di lavoro di questa
 azienda in una pagina: un deposito, un'officina
 
 2
-00:00:14,725 --> 00:00:17,383
+00:00:15,330 --> 00:00:18,314
 e una sede che appartiene a un cliente.
 
 3
-00:00:17,835 --> 00:00:23,782
+00:00:18,770 --> 00:00:24,454
 Ognuno mostra che cosa può fare e
 quante persone ci lavorano. Legga la riga e
 
 4
-00:00:23,782 --> 00:00:25,173
+00:00:24,454 --> 00:00:25,782
 conosce lo spazio.
 
 5
-00:00:25,625 --> 00:00:31,198
+00:00:26,239 --> 00:00:31,998
 Uno nuovo inizia con un nome e con che
 tipo di luogo è: suo, o di un cliente.
 
 6
-00:00:31,650 --> 00:00:36,671
+00:00:32,454 --> 00:00:37,173
 Gli dia un indirizzo e ottiene un
 confine sulla mappa. È contro quel confine che
 
 7
-00:00:36,671 --> 00:00:38,616
+00:00:37,173 --> 00:00:39,002
 viene verificata la timbratura.
 
 8
-00:00:39,070 --> 00:00:45,883
+00:00:39,453 --> 00:00:47,315
 Poi che cosa gli è permesso: solo le
 capacità che questo luogo usa davvero — il
 
 9
-00:00:45,883 --> 00:00:47,522
+00:00:47,315 --> 00:00:49,205
 resto resta spento.
 
 10
-00:00:47,975 --> 00:00:54,387
+00:00:49,659 --> 00:00:55,651
 Spenga ciò che questo luogo non fa, e non
 gli viene fatturato. Un piazzale che non
 
 11
-00:00:54,387 --> 00:00:58,610
+00:00:55,651 --> 00:00:59,597
 manda fuori nessuno non
 paga nulla di ciò che viaggia.
 
 12
-00:00:59,062 --> 00:01:05,259
+00:01:00,049 --> 00:01:04,865
 E i passaggi che un lavoro attraversa
 qui. Un'officina e un intervento esterno non
 
 13
-00:01:05,259 --> 00:01:06,771
+00:01:04,865 --> 00:01:06,040
 vogliono gli stessi.
 
 14
-00:01:07,223 --> 00:01:13,479
+00:01:06,491 --> 00:01:12,957
 Uno di essi è quello predefinito: dove
 atterra un lavoro se nessuno dice altrimenti.
 
 15
-00:01:13,479 --> 00:01:15,489
+00:01:12,957 --> 00:01:15,036
 Può cambiarlo quando vuole.
 
 16
-00:01:15,944 --> 00:01:22,446
+00:01:15,487 --> 00:01:22,128
 Poi: chi può vedere che cosa — e perché
 non lo decide la qualifica di nessuno.
 

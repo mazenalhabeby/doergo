@@ -1,64 +1,64 @@
 1
-00:00:08,832 --> 00:00:13,670
+00:00:09,611 --> 00:00:14,990
 The columns on this board are not a
 fact about work. They are a choice this
 
 2
-00:00:13,670 --> 00:00:14,637
+00:00:14,990 --> 00:00:16,066
 workspace made.
 
 3
-00:00:15,090 --> 00:00:22,620
+00:00:16,519 --> 00:00:24,407
 Behind them is a task type: the steps a
 job takes here, and the order it takes them
 
 4
-00:00:22,620 --> 00:00:22,892
+00:00:24,407 --> 00:00:24,692
 in.
 
 5
-00:00:23,344 --> 00:00:28,539
+00:00:25,145 --> 00:00:30,805
 You can read the whole thing in a line,
 which is the point: nobody should have to
 
 6
-00:00:28,539 --> 00:00:30,078
+00:00:30,805 --> 00:00:32,483
 guess what happens next.
 
 7
-00:00:30,531 --> 00:00:35,543
+00:00:32,935 --> 00:00:38,621
 If your trade is a common one, somebody
 has already drawn it. Pick it from the
 
 8
-00:00:35,543 --> 00:00:36,057
+00:00:38,621 --> 00:00:39,204
 library.
 
 9
-00:00:36,509 --> 00:00:42,553
+00:00:39,657 --> 00:00:46,293
 What you get is your own copy. Change it
 however you like — no other workspace is
 
 10
-00:00:42,553 --> 00:00:43,150
+00:00:46,293 --> 00:00:46,948
 touched.
 
 11
-00:00:43,603 --> 00:00:48,061
+00:00:47,402 --> 00:00:51,489
 Or build one from nothing, if
 the way you work is your own.
 
 12
-00:00:48,515 --> 00:00:53,788
+00:00:51,942 --> 00:00:57,469
 And the jobs already on the board can be
 moved onto the new steps, rather than left
 
 13
-00:00:53,788 --> 00:00:55,249
+00:00:57,469 --> 00:00:59,001
 behind on the old ones.
 
 14
-00:00:55,701 --> 00:00:59,927
+00:00:59,453 --> 00:01:03,168
 Next: the work that
 comes round again by itself.
 

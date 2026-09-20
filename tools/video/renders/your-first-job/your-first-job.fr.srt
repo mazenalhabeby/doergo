@@ -1,64 +1,64 @@
 1
-00:00:09,898 --> 00:00:17,345
+00:00:10,051 --> 00:00:16,567
 Voici le travail en cours : chaque
 intervention de l'entreprise, dans l'état où elle
 
 2
-00:00:17,345 --> 00:00:17,700
+00:00:16,567 --> 00:00:16,878
 est.
 
 3
-00:00:18,155 --> 00:00:24,521
+00:00:17,338 --> 00:00:24,181
 Une nouvelle commence par une phrase.
 Écrivez ce que devrait savoir la personne sur
 
 4
-00:00:24,521 --> 00:00:24,982
+00:00:24,181 --> 00:00:24,676
 place.
 
 5
-00:00:25,435 --> 00:00:30,776
+00:00:25,128 --> 00:00:29,540
 Son degré d'urgence, dans les
 mots que votre équipe emploie déjà.
 
 6
-00:00:31,230 --> 00:00:35,696
+00:00:29,991 --> 00:00:34,457
 Pour quand elle doit être faite.
 Choisissez un jour, et ajoutez une heure si
 
 7
-00:00:35,696 --> 00:00:36,989
+00:00:34,457 --> 00:00:35,750
 quelqu'un vous attend.
 
 8
-00:00:37,441 --> 00:00:42,607
+00:00:36,202 --> 00:00:40,619
 Et à quelle partie de l'activité elle
 appartient. Cela décide qui la voit et ce
 
 9
-00:00:42,607 --> 00:00:43,850
+00:00:40,619 --> 00:00:41,682
 qu'elle peut faire.
 
 10
-00:00:44,306 --> 00:00:48,393
+00:00:42,135 --> 00:00:46,779
 Créez-la, et elle est sur le
 tableau d'où tout le monde travaille.
 
 11
-00:00:48,845 --> 00:00:55,046
+00:00:47,230 --> 00:00:53,100
 Ouvrez-la : une description, de la place
 pour des photos, et personne dessus pour
 
 12
-00:00:55,046 --> 00:00:55,811
+00:00:53,100 --> 00:00:53,824
 l'instant.
 
 13
-00:00:56,262 --> 00:01:00,954
+00:00:54,276 --> 00:00:59,130
 C'est justement la prochaine vidéo : la
 confier à quelqu'un, et ce qui se passe à
 
 14
-00:01:00,954 --> 00:01:01,649
+00:00:59,130 --> 00:00:59,849
 cet instant.
 

@@ -1,0 +1,55 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/time-off/capture/page@9eeea095de1c95e95870f1ccf152fe7c.webm",
+  "durationSec": 51.2,
+  "preRollSec": 5.383000000000003,
+  "beats": [
+    {
+      "id": "whatIsLeft",
+      "startSec": 5.383000000000003,
+      "endSec": 12.707000000000003,
+      "narrationSec": 6.873104
+    },
+    {
+      "id": "pickTheDays",
+      "startSec": 12.708000000000002,
+      "endSec": 17.105000000000004,
+      "narrationSec": 3.947396
+    },
+    {
+      "id": "sayWhy",
+      "startSec": 17.106,
+      "endSec": 21.970000000000002,
+      "narrationSec": 4.411792
+    },
+    {
+      "id": "sendIt",
+      "startSec": 21.970000000000002,
+      "endSec": 26.972,
+      "narrationSec": 4.551125
+    },
+    {
+      "id": "atTheDesk",
+      "startSec": 26.972,
+      "endSec": 32.765,
+      "narrationSec": 5.340604
+    },
+    {
+      "id": "withConsequences",
+      "startSec": 32.765,
+      "endSec": 37.487,
+      "narrationSec": 4.272479
+    },
+    {
+      "id": "answered",
+      "startSec": 37.487,
+      "endSec": 46.940000000000005,
+      "narrationSec": 6.548042
+    },
+    {
+      "id": "whereNext",
+      "startSec": 46.941,
+      "endSec": 51.2,
+      "narrationSec": 3.808083
+    }
+  ]
+}

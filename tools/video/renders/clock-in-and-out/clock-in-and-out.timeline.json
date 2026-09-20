@@ -1,49 +1,49 @@
 {
-  "videoPath": "/Users/pc/work/doergo/tools/video/renders/clock-in-and-out/capture/page@5b0b356bf33972f1e5a1cc1c45cf207a.webm",
-  "durationSec": 58.48,
-  "preRollSec": 3.675999999999995,
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/clock-in-and-out/capture/page@b36be05ca72e548736205aae41c04ca8.webm",
+  "durationSec": 58.04,
+  "preRollSec": 3.9780000000000015,
   "beats": [
     {
       "id": "theButton",
-      "startSec": 3.675999999999995,
-      "endSec": 11.093999999999994,
-      "narrationSec": 6.966
+      "startSec": 3.9780000000000015,
+      "endSec": 13.158000000000001,
+      "narrationSec": 8.730708
     },
     {
       "id": "whereAreYou",
-      "startSec": 11.093999999999994,
-      "endSec": 18.928999999999995,
-      "narrationSec": 7.383958
+      "startSec": 13.159,
+      "endSec": 21.415000000000003,
+      "narrationSec": 7.801917
     },
     {
       "id": "clockedIn",
-      "startSec": 18.928999999999995,
-      "endSec": 28.854999999999993,
-      "narrationSec": 9.47375
+      "startSec": 21.416,
+      "endSec": 29.483,
+      "narrationSec": 7.616146
     },
     {
       "id": "theShift",
-      "startSec": 28.854999999999993,
-      "endSec": 36.873999999999995,
-      "narrationSec": 7.569708
+      "startSec": 29.484,
+      "endSec": 36.111000000000004,
+      "narrationSec": 6.176521
     },
     {
       "id": "clockOut",
-      "startSec": 36.873999999999995,
-      "endSec": 44.291999999999994,
-      "narrationSec": 6.966
+      "startSec": 36.111000000000004,
+      "endSec": 43.855000000000004,
+      "narrationSec": 7.291063
     },
     {
       "id": "theHistory",
-      "startSec": 44.291999999999994,
-      "endSec": 49.620999999999995,
-      "narrationSec": 4.876188
+      "startSec": 43.855000000000004,
+      "endSec": 49.322,
+      "narrationSec": 5.015521
     },
     {
       "id": "whereNext",
-      "startSec": 49.62199999999999,
-      "endSec": 58.48,
-      "narrationSec": 8.405625
+      "startSec": 49.322,
+      "endSec": 58.04,
+      "narrationSec": 8.266313
     }
   ]
 }

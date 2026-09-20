@@ -1,55 +1,55 @@
 {
-  "videoPath": "/Users/pc/work/doergo/tools/video/renders/start-to-finish/capture/page@e645a58a702f81f6f537c65ee73d2bf2.webm",
-  "durationSec": 66.52,
-  "preRollSec": 6.810999999999993,
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/start-to-finish/capture/page@36b68beee293bead766be43757ae1486.webm",
+  "durationSec": 63.08,
+  "preRollSec": 6.428999999999995,
   "beats": [
     {
       "id": "theSteps",
-      "startSec": 6.810999999999993,
-      "endSec": 15.156999999999993,
-      "narrationSec": 7.894792
+      "startSec": 6.428999999999995,
+      "endSec": 14.914999999999996,
+      "narrationSec": 8.034104
     },
     {
       "id": "whoMovesIt",
-      "startSec": 15.156999999999993,
-      "endSec": 21.737999999999992,
-      "narrationSec": 6.130083
+      "startSec": 14.914999999999996,
+      "endSec": 22.240999999999993,
+      "narrationSec": 6.873104
     },
     {
       "id": "settingOff",
-      "startSec": 21.737999999999992,
-      "endSec": 29.990999999999993,
-      "narrationSec": 7.801917
+      "startSec": 22.240999999999993,
+      "endSec": 29.285999999999994,
+      "narrationSec": 6.594479
     },
     {
       "id": "arriving",
-      "startSec": 29.990999999999993,
-      "endSec": 36.47899999999999,
-      "narrationSec": 6.037188
+      "startSec": 29.286999999999995,
+      "endSec": 36.79599999999999,
+      "narrationSec": 7.058875
     },
     {
       "id": "working",
-      "startSec": 36.47899999999999,
-      "endSec": 42.827999999999996,
-      "narrationSec": 5.897875
+      "startSec": 36.79599999999999,
+      "endSec": 42.169999999999995,
+      "narrationSec": 4.922646
     },
     {
       "id": "theWriteUp",
-      "startSec": 42.827999999999996,
-      "endSec": 50.05899999999999,
-      "narrationSec": 6.780229
+      "startSec": 42.169999999999995,
+      "endSec": 47.776999999999994,
+      "narrationSec": 5.154833
     },
     {
       "id": "whatItHolds",
-      "startSec": 50.059999999999995,
-      "endSec": 59.706999999999994,
-      "narrationSec": 9.195104
+      "startSec": 47.776999999999994,
+      "endSec": 56.495999999999995,
+      "narrationSec": 8.266313
     },
     {
       "id": "whereNext",
-      "startSec": 59.706999999999994,
-      "endSec": 66.52,
-      "narrationSec": 6.362271
+      "startSec": 56.49699999999999,
+      "endSec": 63.08,
+      "narrationSec": 6.130083
     }
   ]
 }

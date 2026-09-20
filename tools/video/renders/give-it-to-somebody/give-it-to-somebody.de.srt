@@ -1,60 +1,60 @@
 1
-00:00:08,948 --> 00:00:15,061
+00:00:09,442 --> 00:00:15,768
 Ein Auftrag auf diesem Board hat keinen
 Namen. Bis dahin ist er eine Notiz, keine
 
 2
-00:00:15,061 --> 00:00:15,589
+00:00:15,768 --> 00:00:16,315
 Arbeit.
 
 3
-00:00:16,043 --> 00:00:20,083
+00:00:16,779 --> 00:00:21,423
 Öffnen Sie ihn: Die Stelle für
 den Namen steht rechts ganz oben.
 
 4
-00:00:20,534 --> 00:00:25,989
+00:00:21,873 --> 00:00:29,278
 Die Liste zeigt die Menschen dieses
 Arbeitsbereichs. Nicht den ganzen Betrieb — die,
 
 5
-00:00:25,989 --> 00:00:28,197
+00:00:29,278 --> 00:00:32,276
 die tatsächlich hinfahren könnten.
 
 6
-00:00:28,648 --> 00:00:33,901
+00:00:32,726 --> 00:00:37,407
 Wählen Sie eine Person — und der Auftrag
 gehört ihr. Er landet auf ihrem Telefon und
 
 7
-00:00:33,901 --> 00:00:38,029
+00:00:37,407 --> 00:00:41,085
 gehört zu ihrem Tag, ohne dass
 jemand zweimal Bescheid geben muss.
 
 8
-00:00:38,479 --> 00:00:43,828
+00:00:41,537 --> 00:00:46,645
 Der Verlauf hält es fest: wer entschieden
 hat und wann. Niemand muss sich merken,
 
 9
-00:00:43,828 --> 00:00:45,677
+00:00:46,645 --> 00:00:48,410
 wer wen wohin geschickt hat.
 
 10
-00:00:46,127 --> 00:00:52,007
+00:00:48,861 --> 00:00:53,833
 Und auf ihrer eigenen Seite steht er
 einfach da — zwischen allem anderen, was sie
 
 11
-00:00:52,007 --> 00:00:52,443
+00:00:53,833 --> 00:00:54,202
 trägt.
 
 12
-00:00:52,896 --> 00:00:57,955
+00:00:55,998 --> 00:01:00,429
 Als Nächstes: derselbe Auftrag bis zum
 Ende — bis zum Bericht, den der Kunde
 
 13
-00:00:57,955 --> 00:00:58,887
+00:01:00,429 --> 00:01:01,246
 unterschreibt.
 

@@ -1,65 +1,65 @@
 1
-00:00:08,832 --> 00:00:12,702
+00:00:09,611 --> 00:00:13,914
 Die Spalten dieses Boards sind keine
 Tatsache über Arbeit. Sie sind eine
 
 2
-00:00:12,702 --> 00:00:14,637
+00:00:13,914 --> 00:00:16,066
 Entscheidung dieses Arbeitsbereichs.
 
 3
-00:00:15,090 --> 00:00:21,906
+00:00:16,519 --> 00:00:23,660
 Dahinter steht eine Auftragsart: die
 Schritte, die ein Auftrag hier nimmt, und ihre
 
 4
-00:00:21,906 --> 00:00:22,892
+00:00:23,660 --> 00:00:24,692
 Reihenfolge.
 
 5
-00:00:23,344 --> 00:00:28,247
+00:00:25,145 --> 00:00:30,487
 Sie können das Ganze in einer Zeile lesen
 — genau darum geht es: Niemand soll raten
 
 6
-00:00:28,247 --> 00:00:30,078
+00:00:30,487 --> 00:00:32,483
 müssen, was als Nächstes kommt.
 
 7
-00:00:30,531 --> 00:00:35,028
+00:00:32,935 --> 00:00:38,037
 Wenn Ihr Gewerk ein verbreitetes ist, hat
 es schon jemand gezeichnet. Nehmen Sie es
 
 8
-00:00:35,028 --> 00:00:36,057
+00:00:38,037 --> 00:00:39,204
 aus der Bibliothek.
 
 9
-00:00:36,509 --> 00:00:41,013
+00:00:39,657 --> 00:00:44,602
 Was Sie bekommen, ist Ihre eigene
 Kopie. Ändern Sie sie, wie Sie wollen — kein
 
 10
-00:00:41,013 --> 00:00:43,150
+00:00:44,602 --> 00:00:46,948
 anderer Arbeitsbereich ist betroffen.
 
 11
-00:00:43,603 --> 00:00:48,061
+00:00:47,402 --> 00:00:51,489
 Oder bauen Sie eine von Grund auf,
 wenn Ihre Arbeitsweise Ihre eigene ist.
 
 12
-00:00:48,515 --> 00:00:52,456
+00:00:51,942 --> 00:00:56,073
 Und die Aufträge, die schon auf dem
 Board stehen, können auf die neuen Schritte
 
 13
-00:00:52,456 --> 00:00:55,249
+00:00:56,073 --> 00:00:59,001
 umgezogen werden, statt auf
 den alten liegen zu bleiben.
 
 14
-00:00:55,701 --> 00:00:59,927
+00:00:59,453 --> 00:01:03,168
 Als Nächstes: die Arbeit,
 die von selbst wiederkehrt.
 

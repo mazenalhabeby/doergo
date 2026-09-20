@@ -1,51 +1,51 @@
 1
-00:00:08,948 --> 00:00:15,216
+00:00:09,442 --> 00:00:15,929
 One job on this board has nobody against
 it. Until it does, it is a note rather than
 
 2
-00:00:15,216 --> 00:00:15,589
+00:00:15,929 --> 00:00:16,315
 work.
 
 3
-00:00:16,043 --> 00:00:20,083
+00:00:16,779 --> 00:00:21,423
 Open it, and the place where a name
 goes is the first thing on the right.
 
 4
-00:00:20,534 --> 00:00:26,591
+00:00:21,873 --> 00:00:30,096
 The list is the people who work in this
 workspace. Not the whole company — the ones
 
 5
-00:00:26,591 --> 00:00:28,197
+00:00:30,096 --> 00:00:32,276
 who could actually go.
 
 6
-00:00:28,648 --> 00:00:35,837
+00:00:32,726 --> 00:00:39,132
 Choose one, and it is theirs. It lands on
 their phone and joins their day, without
 
 7
-00:00:35,837 --> 00:00:38,029
+00:00:39,132 --> 00:00:41,085
 anybody being told twice.
 
 8
-00:00:38,479 --> 00:00:45,169
+00:00:41,537 --> 00:00:47,925
 The trail keeps it: who decided, and
 when. Nobody has to remember who sent whom
 
 9
-00:00:45,169 --> 00:00:45,677
+00:00:47,925 --> 00:00:48,410
 where.
 
 10
-00:00:46,127 --> 00:00:52,443
+00:00:48,861 --> 00:00:54,202
 And on their own page it is simply there,
 among everything else they are carrying.
 
 11
-00:00:52,896 --> 00:00:58,887
+00:00:55,998 --> 00:01:01,246
 Next: the same job followed all the way
 through, to the report the client signs.
 

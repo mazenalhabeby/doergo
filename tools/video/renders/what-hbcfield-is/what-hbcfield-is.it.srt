@@ -1,178 +1,178 @@
 1
-00:00:18,005 --> 00:00:24,369
+00:00:19,418 --> 00:00:25,432
 Questo è HBCField, aperto alla scrivania
 di un’impresa che ripara presso terzi.
 
 2
-00:00:24,369 --> 00:00:31,137
+00:00:25,432 --> 00:00:31,826
 Tutto quello che sta per vedere appartiene
 a una sola organizzazione: un’azienda, un
 
 3
-00:00:31,137 --> 00:00:36,535
+00:00:31,826 --> 00:00:36,926
 account e un confine attorno ai
 dati che nulla attraversa per caso.
 
 4
-00:00:36,990 --> 00:00:43,505
+00:00:37,383 --> 00:00:43,759
 Quattro parole reggono l’intero prodotto.
 Un’organizzazione. I suoi spazi di lavoro.
 
 5
-00:00:43,505 --> 00:00:50,020
+00:00:43,759 --> 00:00:50,135
 Le persone che ci stanno dentro. E il
 lavoro. Impari queste quattro e ogni schermata
 
 6
-00:00:50,020 --> 00:00:52,269
+00:00:50,135 --> 00:00:52,337
 successiva si spiega da sola.
 
 7
-00:00:52,737 --> 00:00:58,538
+00:00:52,788 --> 00:00:58,894
 L’organizzazione è l’azienda stessa. È ciò
 con cui si è registrato, ciò che le viene
 
 8
-00:00:58,538 --> 00:01:04,269
+00:00:58,894 --> 00:01:04,927
 fatturato e il confine entro cui stanno i
 suoi dati. Nessuno all’esterno vede nulla
 
 9
-00:01:04,269 --> 00:01:08,619
+00:01:04,927 --> 00:01:09,506
 di tutto questo, a meno che non
 apra deliberatamente una porta.
 
 10
-00:01:09,076 --> 00:01:15,473
+00:01:09,963 --> 00:01:16,249
 Dentro l’organizzazione ci sono gli spazi
 di lavoro. Uno spazio di lavoro è un luogo
 
 11
-00:01:15,473 --> 00:01:21,717
+00:01:16,249 --> 00:01:22,385
 in cui il lavoro accade, oppure una parte
 dell’azienda che funziona a modo suo. Un
 
 12
-00:01:21,717 --> 00:01:25,144
+00:01:22,385 --> 00:01:25,753
 deposito. Un’officina.
 La sede di un cliente.
 
 13
-00:01:25,597 --> 00:01:30,306
+00:01:26,207 --> 00:01:31,234
 Uno spazio di lavoro non è una cartella.
 Ognuno accende solo le parti del prodotto
 
 14
-00:01:30,306 --> 00:01:35,016
+00:01:31,234 --> 00:01:36,260
 che gli servono davvero, e solo quelle
 gli vengono fatturate. Questo tiene traccia
 
 15
-00:01:35,016 --> 00:01:39,495
+00:01:36,260 --> 00:01:41,042
 dei veicoli e delle ore lavorate. Uno
 spazio che non ha bisogno né dell’uno né
 
 16
-00:01:39,495 --> 00:01:42,826
+00:01:41,042 --> 00:01:44,597
 dell’altro li spegne
 entrambi, e non paga nessuno dei due.
 
 17
-00:01:43,277 --> 00:01:48,810
+00:01:45,052 --> 00:01:51,480
 E uno di questi non è affatto suo: è la
 sede di un cliente. In questo mestiere si
 
 18
-00:01:48,810 --> 00:01:54,274
+00:01:51,480 --> 00:01:57,828
 passa l’intera giornata in casa d’altri,
 quindi quella sede è un luogo di lavoro
 
 19
-00:01:54,274 --> 00:01:57,348
+00:01:57,828 --> 00:02:01,399
 come gli altri, e il
 prodotto la tratta così.
 
 20
-00:01:57,808 --> 00:02:03,841
+00:02:01,851 --> 00:02:08,284
 Poi le persone. Alcune lavorano alla
 scrivania. Altre sono in furgone dalle sette
 
 21
-00:02:03,841 --> 00:02:09,949
+00:02:08,284 --> 00:02:14,796
 del mattino. E alcune non lavorano
 affatto per lei: il responsabile di un cliente,
 
 22
-00:02:09,949 --> 00:02:13,226
+00:02:14,796 --> 00:02:18,291
 ammesso a seguire il
 lavoro che sta pagando.
 
 23
-00:02:13,677 --> 00:02:19,573
+00:02:18,743 --> 00:02:24,130
 Ciò che una persona può raggiungere non
 lo decide la sua qualifica. È un ruolo che
 
 24
-00:02:19,573 --> 00:02:25,542
+00:02:24,130 --> 00:02:29,584
 costruisce lei: un elenco di ciò che può
 fare e in quali spazi di lavoro può farlo.
 
 25
-00:02:25,542 --> 00:02:29,281
+00:02:29,584 --> 00:02:33,000
 Cambi il ruolo, e cambia
 con esso chiunque lo abbia.
 
 26
-00:02:29,733 --> 00:02:36,433
+00:02:33,451 --> 00:02:39,602
 Ed ecco il lavoro. Un lavoro dice che
 cosa va fatto, dove, entro quando e chi ce
 
 27
-00:02:36,433 --> 00:02:43,132
+00:02:39,602 --> 00:02:45,754
 l’ha. Ogni altra schermata di questo
 prodotto o prepara un lavoro, o rilegge che
 
 28
-00:02:43,132 --> 00:02:45,058
+00:02:45,754 --> 00:02:47,522
 cosa è successo in uno.
 
 29
-00:02:45,517 --> 00:02:52,284
+00:02:47,974 --> 00:02:54,946
 Ne apra uno ed è l’intera storia su una
 pagina. Chi ci lavora. Tutto ciò che ognuno
 
 30
-00:02:52,284 --> 00:02:58,643
+00:02:54,946 --> 00:03:01,499
 vi ha fatto, in ordine. La
 conversazione che l’ha accompagnato. E alla fine il
 
 31
-00:02:58,643 --> 00:03:03,861
+00:03:01,499 --> 00:03:06,875
 rapporto: le ore, i pezzi
 montati e la firma del cliente stesso.
 
 32
-00:03:04,321 --> 00:03:10,923
+00:03:07,326 --> 00:03:13,965
 Ci sono due modi di entrare. L’ufficio
 lavora nel browser, come qui. Chi è sul campo
 
 33
-00:03:10,923 --> 00:03:17,131
+00:03:13,965 --> 00:03:20,209
 lavora dal telefono, e lì vede solo la
 propria giornata. Un’organizzazione, due
 
 34
-00:03:17,131 --> 00:03:20,668
+00:03:20,209 --> 00:03:23,766
 finestre, e gli stessi
 fatti dietro entrambe.
 
 35
-00:03:21,122 --> 00:03:27,046
+00:03:24,219 --> 00:03:30,090
 Questa è la forma d’insieme. Poi: i suoi
 primi cinque minuti. Registrarsi, dare un
 
 36
-00:03:27,046 --> 00:03:31,525
+00:03:30,090 --> 00:03:34,529
 nome all’azienda e atterrare su
 una schermata che non è vuota.
 

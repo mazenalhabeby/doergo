@@ -6,8 +6,8 @@ A workspace is a depot, a workshop, a client's site — somewhere work happens, 
 
 Chapters
 0:00 Workspaces
-0:09 Your workspaces
-0:25 Making one
+0:08 Your workspaces
+0:26 Making one
 0:39 What it can do
 
 Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.

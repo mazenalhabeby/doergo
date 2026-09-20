@@ -1,55 +1,55 @@
 1
-00:00:12,006 --> 00:00:15,350
+00:00:12,022 --> 00:00:14,808
 Die Schichten einer
 Person, wie das Büro sie sieht.
 
 2
-00:00:15,803 --> 00:00:20,880
+00:00:15,261 --> 00:00:20,629
 Diese beiden Zeiten sind das, was
 tatsächlich passiert ist. Sie sind Nachweis, und
 
 3
-00:00:20,880 --> 00:00:22,305
+00:00:20,629 --> 00:00:22,134
 nichts schreibt sie um.
 
 4
-00:00:22,758 --> 00:00:30,226
+00:00:22,586 --> 00:00:28,462
 Diese Zahl zählt. Wo sie sich
 unterscheiden, zeigt der Eintrag beide — und sagt,
 
 5
-00:00:30,226 --> 00:00:31,907
+00:00:28,462 --> 00:00:29,784
 welche welche ist.
 
 6
-00:00:32,360 --> 00:00:38,176
+00:00:30,236 --> 00:00:34,591
 Wer zwanzig Minuten früher da ist, hat
 zwanzig Minuten mehr gearbeitet — gezählt
 
 7
-00:00:38,176 --> 00:00:41,230
+00:00:34,591 --> 00:00:36,877
 werden sie nicht. Die Schicht entscheidet.
 
 8
-00:00:41,682 --> 00:00:47,542
+00:00:37,331 --> 00:00:42,562
 Und die Pause, die nicht als Arbeit zählt,
 wird abgezogen — ob jemand daran gedacht
 
 9
-00:00:47,542 --> 00:00:48,602
+00:00:42,562 --> 00:00:43,508
 hat oder nicht.
 
 10
-00:00:49,054 --> 00:00:54,961
+00:00:43,962 --> 00:00:49,371
 Keine der Zahlen ist versteckt, keine
 wird in letzter Minute berechnet. Genau das
 
 11
-00:00:54,961 --> 00:00:57,878
+00:00:49,371 --> 00:00:52,043
 macht eine Meinungsverschiedenheit kurz.
 
 12
-00:00:58,331 --> 00:01:02,325
+00:00:52,500 --> 00:00:57,005
 Als Nächstes: die Minuten nach
 Schichtende — und wer sagt, dass sie zählen.
 

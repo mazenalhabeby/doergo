@@ -1,43 +1,43 @@
 1
-00:00:07,714 --> 00:00:14,494
+00:00:08,364 --> 00:00:14,633
 Buena parte de este trabajo es la misma
 visita, al mismo intervalo, durante años.
 
 2
-00:00:14,947 --> 00:00:21,959
+00:00:15,085 --> 00:00:21,679
 Así que descríbala una vez: qué es la
 visita y a qué parte del negocio pertenece.
 
 3
-00:00:23,582 --> 00:00:29,062
+00:00:23,611 --> 00:00:28,812
 Después, cada cuánto vuelve
 y cuándo toca la primera.
 
 4
-00:00:29,515 --> 00:00:33,927
+00:00:29,266 --> 00:00:35,396
 Y cuándo cae la primera. Todo lo
 demás se cuenta a partir de ahí.
 
 5
-00:00:34,384 --> 00:00:39,539
+00:00:35,849 --> 00:00:41,050
 Guárdelo, y esa será la última
 vez que alguien piense en ello.
 
 6
-00:00:39,992 --> 00:00:47,701
+00:00:41,506 --> 00:00:49,176
 A partir de aquí crea el trabajo, lo
 asigna y lo pone en el tablero, solo, mientras
 
 7
-00:00:47,701 --> 00:00:49,280
+00:00:49,176 --> 00:00:50,748
 dure el contrato.
 
 8
-00:00:49,731 --> 00:00:55,367
+00:00:51,201 --> 00:00:57,565
 A continuación: las partes pequeñas que
 hacen demostrable un trabajo: la lista, los
 
 9
-00:00:55,367 --> 00:00:56,929
+00:00:57,565 --> 00:00:59,328
 subtrabajos, las fotos.
 

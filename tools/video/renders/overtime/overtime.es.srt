@@ -1,48 +1,48 @@
 1
-00:00:07,845 --> 00:00:12,814
+00:00:07,823 --> 00:00:12,606
 Alguien se quedó más allá del fin
 del turno. Espera aquí, con un nombre.
 
 2
-00:00:13,267 --> 00:00:18,515
+00:00:13,062 --> 00:00:18,913
 Dijeron por qué, con sus palabras, en el
 momento; no una semana después de memoria.
 
 3
-00:00:18,967 --> 00:00:25,561
+00:00:19,366 --> 00:00:25,450
 Cuánto fue y cuánto supone del
 día, antes de que nadie lo apruebe.
 
 4
-00:00:26,013 --> 00:00:30,611
+00:00:25,904 --> 00:00:29,991
 Usted dice sí o no, y la
 decisión se guarda con su nombre.
 
 5
-00:00:31,064 --> 00:00:36,306
+00:00:30,446 --> 00:00:36,012
 Decir que sí mueve el final de ese
 turno, que es lo que hace cambiar las horas
 
 6
-00:00:36,306 --> 00:00:39,330
+00:00:36,012 --> 00:00:39,223
 contadas, en vez de
 teclear un número encima.
 
 7
-00:00:39,783 --> 00:00:46,824
+00:00:39,676 --> 00:00:45,927
 Y qué se pidió, quién lo pidió y qué se
 decidió sigue legible mucho después de que
 
 8
-00:00:46,824 --> 00:00:48,885
+00:00:45,927 --> 00:00:47,757
 todos lo hayan olvidado.
 
 9
-00:00:49,338 --> 00:00:54,841
+00:00:48,214 --> 00:00:54,272
 A continuación: el cuadrante en sí:
 quién trabaja, quién libra y quién falta el
 
 10
-00:00:54,841 --> 00:00:55,329
+00:00:54,272 --> 00:00:54,808
 jueves.
 

@@ -1,44 +1,44 @@
 1
-00:00:07,845 --> 00:00:12,814
+00:00:07,823 --> 00:00:12,606
 Somebody stayed past the end of a
 shift. It waits here, with a name on it.
 
 2
-00:00:13,267 --> 00:00:18,515
+00:00:13,062 --> 00:00:18,913
 They said why, in their own words, at
 the time — not a week later from memory.
 
 3
-00:00:18,967 --> 00:00:25,561
+00:00:19,366 --> 00:00:25,450
 How long it was, and how much of the day
 it makes, before anybody agrees to it.
 
 4
-00:00:26,013 --> 00:00:30,611
+00:00:25,904 --> 00:00:29,991
 You say yes or no, and the
 decision is kept with your name on it.
 
 5
-00:00:31,064 --> 00:00:36,264
+00:00:30,446 --> 00:00:35,967
 Saying yes moves the end of that shift
 — which is what makes the counted hours
 
 6
-00:00:36,264 --> 00:00:39,330
+00:00:35,967 --> 00:00:39,223
 change, rather than a
 number being typed over.
 
 7
-00:00:39,783 --> 00:00:46,476
+00:00:39,676 --> 00:00:45,618
 And what was asked, by whom, and what
 was decided stays readable long after
 
 8
-00:00:46,476 --> 00:00:48,885
+00:00:45,618 --> 00:00:47,757
 everybody has forgotten it.
 
 9
-00:00:49,338 --> 00:00:55,329
+00:00:48,214 --> 00:00:54,808
 Next: the rota itself — who is working,
 who is off, and who is missing on Thursday.
 

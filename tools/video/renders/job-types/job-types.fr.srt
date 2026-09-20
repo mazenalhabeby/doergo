@@ -1,65 +1,65 @@
 1
-00:00:08,832 --> 00:00:13,409
+00:00:09,611 --> 00:00:14,701
 Les colonnes de ce tableau ne sont pas un
 fait sur le travail. Ce sont un choix de
 
 2
-00:00:13,409 --> 00:00:14,637
+00:00:14,701 --> 00:00:16,066
 cet espace de travail.
 
 3
-00:00:15,090 --> 00:00:21,644
+00:00:16,519 --> 00:00:23,385
 Derrière elles, un type d'intervention :
 les étapes qu'une intervention suit ici, et
 
 4
-00:00:21,644 --> 00:00:22,892
+00:00:23,385 --> 00:00:24,692
 dans quel ordre.
 
 5
-00:00:23,344 --> 00:00:28,303
+00:00:25,145 --> 00:00:30,548
 Vous pouvez le lire d'une seule ligne, et
 c'est bien l'idée : personne ne devrait
 
 6
-00:00:28,303 --> 00:00:30,078
+00:00:30,548 --> 00:00:32,483
 deviner ce qui vient ensuite.
 
 7
-00:00:30,531 --> 00:00:35,232
+00:00:32,935 --> 00:00:38,268
 Si votre métier est courant,
 quelqu'un l'a déjà dessiné. Prenez-le dans la
 
 8
-00:00:35,232 --> 00:00:36,057
+00:00:38,268 --> 00:00:39,204
 bibliothèque.
 
 9
-00:00:36,509 --> 00:00:41,521
+00:00:39,657 --> 00:00:45,160
 Ce que vous obtenez, c'est votre propre
 copie. Modifiez-la à votre guise — aucun
 
 10
-00:00:41,521 --> 00:00:43,150
+00:00:45,160 --> 00:00:46,948
 autre espace n'est touché.
 
 11
-00:00:43,603 --> 00:00:48,061
+00:00:47,402 --> 00:00:51,489
 Ou construisez-en un de zéro, si votre
 façon de travailler n'appartient qu'à vous.
 
 12
-00:00:48,515 --> 00:00:52,897
+00:00:51,942 --> 00:00:56,536
 Et les interventions déjà sur le tableau
 peuvent être déplacées vers les nouvelles
 
 13
-00:00:52,897 --> 00:00:55,249
+00:00:56,536 --> 00:00:59,001
 étapes, plutôt que
 rester sur les anciennes.
 
 14
-00:00:55,701 --> 00:00:59,927
+00:00:59,453 --> 00:01:03,168
 Ensuite : le travail
 qui revient tout seul.
 

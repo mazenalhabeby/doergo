@@ -1,59 +1,59 @@
 1
-00:00:07,176 --> 00:00:12,601
+00:00:07,478 --> 00:00:14,278
 Il pulsante è nello stesso posto in ogni
 schermata, perché alle sette del mattino
 
 2
-00:00:12,601 --> 00:00:14,142
+00:00:14,278 --> 00:00:16,209
 non lo si va a cercare.
 
 3
-00:00:14,594 --> 00:00:21,314
+00:00:16,659 --> 00:00:23,760
 Dove si trova conta. Lo spazio ha un
 confine, e a verificarlo è il server, non lo
 
 4
-00:00:21,314 --> 00:00:21,978
+00:00:23,760 --> 00:00:24,461
 schermo.
 
 5
-00:00:22,429 --> 00:00:30,934
+00:00:24,916 --> 00:00:31,753
 Dentro. Da qui la giornata viene
 contata, e nessuno deve ricordarsi a che ora è
 
 6
-00:00:30,934 --> 00:00:31,903
+00:00:31,753 --> 00:00:32,532
 iniziata.
 
 7
-00:00:32,355 --> 00:00:39,420
+00:00:32,984 --> 00:00:38,749
 Il turno è sullo schermo mentre scorre:
 quando è iniziato, da quanto dura e che cosa
 
 8
-00:00:39,420 --> 00:00:39,925
+00:00:38,749 --> 00:00:39,161
 resta.
 
 9
-00:00:40,374 --> 00:00:46,944
+00:00:39,611 --> 00:00:46,488
 Si timbra in uscita e il record si chiude
 da solo. È quel record che legge la busta
 
 10
-00:00:46,944 --> 00:00:47,340
+00:00:46,488 --> 00:00:46,902
 paga.
 
 11
-00:00:47,792 --> 00:00:52,668
+00:00:47,355 --> 00:00:52,371
 Ogni turno resta, con il luogo e
 il modo in cui è stato registrato.
 
 12
-00:00:53,122 --> 00:00:59,426
+00:00:52,822 --> 00:00:59,022
 Poi: perché le ore di quel record e
 quelle della busta paga non sono lo stesso
 
 13
-00:00:59,426 --> 00:01:01,528
+00:00:59,022 --> 00:01:01,088
 numero — ed è giusto così.
 

@@ -6,10 +6,10 @@ A job is the smallest complete thing in HBCField: what needs doing, where, by wh
 
 Chapters
 0:00 Create your first job
-0:09 The board
-0:18 A new job
-0:31 When
-0:48 The job itself
+0:10 The board
+0:17 A new job
+0:29 When
+0:47 The job itself
 
 Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
 

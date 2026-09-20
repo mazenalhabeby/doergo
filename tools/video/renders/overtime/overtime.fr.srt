@@ -1,47 +1,47 @@
 1
-00:00:07,845 --> 00:00:12,814
+00:00:07,823 --> 00:00:12,606
 Quelqu'un est resté au-delà de la fin du
 poste. Cela attend ici, avec un nom dessus.
 
 2
-00:00:13,267 --> 00:00:18,058
+00:00:13,062 --> 00:00:18,405
 Ils ont dit pourquoi, avec leurs mots, sur
 le moment — pas une semaine plus tard, de
 
 3
-00:00:18,058 --> 00:00:18,515
+00:00:18,405 --> 00:00:18,913
 mémoire.
 
 4
-00:00:18,967 --> 00:00:25,561
+00:00:19,366 --> 00:00:25,450
 Combien de temps, et ce que cela fait sur
 la journée, avant que quiconque l'accepte.
 
 5
-00:00:26,013 --> 00:00:30,611
+00:00:25,904 --> 00:00:29,991
 Vous dites oui ou non, et la
 décision est conservée avec votre nom.
 
 6
-00:00:31,064 --> 00:00:36,709
+00:00:30,446 --> 00:00:36,440
 Dire oui déplace la fin de ce poste —
 c'est ce qui fait changer les heures comptées,
 
 7
-00:00:36,709 --> 00:00:39,330
+00:00:36,440 --> 00:00:39,223
 plutôt qu'un chiffre réécrit à la main.
 
 8
-00:00:39,783 --> 00:00:46,115
+00:00:39,676 --> 00:00:45,297
 Et ce qui a été demandé, par qui, et ce
 qui a été décidé reste lisible longtemps
 
 9
-00:00:46,115 --> 00:00:48,885
+00:00:45,297 --> 00:00:47,757
 après que tout le monde l'a oublié.
 
 10
-00:00:49,338 --> 00:00:55,329
+00:00:48,214 --> 00:00:54,808
 Ensuite : le planning lui-même — qui
 travaille, qui est absent, et qui manque jeudi.
 

@@ -1,79 +1,79 @@
 {
-  "videoPath": "/Users/pc/work/doergo/tools/video/renders/what-hbcfield-is/capture/page@5366d59fb8a3238714087fc5ce521b3d.webm",
-  "durationSec": 208.48,
-  "preRollSec": 14.504999999999995,
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/what-hbcfield-is/capture/page@64ef57f5103774f971a5814a80652427.webm",
+  "durationSec": 211.48,
+  "preRollSec": 15.917999999999978,
   "beats": [
     {
       "id": "oneCompany",
-      "startSec": 14.504999999999995,
-      "endSec": 33.489,
-      "narrationSec": 18.529521
+      "startSec": 15.917999999999978,
+      "endSec": 33.88199999999998,
+      "narrationSec": 17.507854
     },
     {
       "id": "fourWords",
-      "startSec": 33.489999999999995,
-      "endSec": 49.224999999999994,
-      "narrationSec": 15.278729
+      "startSec": 33.88299999999998,
+      "endSec": 49.287999999999975,
+      "narrationSec": 14.953646
     },
     {
       "id": "theOrganisation",
-      "startSec": 49.236999999999995,
-      "endSec": 65.574,
-      "narrationSec": 15.882458
+      "startSec": 49.287999999999975,
+      "endSec": 66.46099999999998,
+      "narrationSec": 16.718375
     },
     {
       "id": "theWorkspaces",
-      "startSec": 65.576,
-      "endSec": 82.09599999999999,
-      "narrationSec": 16.068208
+      "startSec": 66.46299999999998,
+      "endSec": 82.70599999999997,
+      "narrationSec": 15.789583
     },
     {
       "id": "notAFolder",
-      "startSec": 82.097,
-      "endSec": 99.777,
-      "narrationSec": 17.229208
+      "startSec": 82.70699999999998,
+      "endSec": 101.55099999999997,
+      "narrationSec": 18.390208
     },
     {
       "id": "somebodyElsesSite",
-      "startSec": 99.777,
-      "endSec": 114.307,
-      "narrationSec": 14.071292
-    },
-    {
-      "id": "thePeople",
-      "startSec": 114.30799999999999,
-      "endSec": 130.177,
-      "narrationSec": 15.418063
-    },
-    {
-      "id": "rolesYouBuild",
-      "startSec": 130.177,
-      "endSec": 146.232,
-      "narrationSec": 15.603813
-    },
-    {
-      "id": "theWork",
-      "startSec": 146.233,
-      "endSec": 162.016,
-      "narrationSec": 15.325167
-    },
-    {
-      "id": "theJobHolds",
-      "startSec": 162.017,
-      "endSec": 180.819,
-      "narrationSec": 18.343771
-    },
-    {
-      "id": "twoWindows",
-      "startSec": 180.821,
-      "endSec": 197.62199999999999,
+      "startSec": 101.55199999999998,
+      "endSec": 118.35099999999998,
       "narrationSec": 16.346854
     },
     {
+      "id": "thePeople",
+      "startSec": 118.35099999999998,
+      "endSec": 135.243,
+      "narrationSec": 16.439729
+    },
+    {
+      "id": "rolesYouBuild",
+      "startSec": 135.243,
+      "endSec": 149.95099999999996,
+      "narrationSec": 14.257063
+    },
+    {
+      "id": "theWork",
+      "startSec": 149.95099999999996,
+      "endSec": 164.474,
+      "narrationSec": 14.071292
+    },
+    {
+      "id": "theJobHolds",
+      "startSec": 164.474,
+      "endSec": 183.825,
+      "narrationSec": 18.901042
+    },
+    {
+      "id": "twoWindows",
+      "startSec": 183.82599999999996,
+      "endSec": 200.71899999999997,
+      "narrationSec": 16.439729
+    },
+    {
       "id": "whereNext",
-      "startSec": 197.62199999999999,
-      "endSec": 208.48,
-      "narrationSec": 10.402542
+      "startSec": 200.71899999999997,
+      "endSec": 211.48,
+      "narrationSec": 10.309667
     }
   ]
 }

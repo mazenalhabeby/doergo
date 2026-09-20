@@ -1,49 +1,49 @@
 {
-  "videoPath": "/Users/pc/work/doergo/tools/video/renders/two-clocks/capture/page@e98ac88a2270ea175905e0a3022b58eb.webm",
-  "durationSec": 59.28,
-  "preRollSec": 8.506,
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/two-clocks/capture/page@5a11e6687614d6e90dc86b4e324b07ac.webm",
+  "durationSec": 53.96,
+  "preRollSec": 8.521999999999998,
   "beats": [
     {
       "id": "oneShift",
-      "startSec": 8.506,
-      "endSec": 12.303,
-      "narrationSec": 3.343688
+      "startSec": 8.521999999999998,
+      "endSec": 11.761,
+      "narrationSec": 2.786396
     },
     {
       "id": "whatTheClockSaw",
-      "startSec": 12.303,
-      "endSec": 19.256999999999998,
-      "narrationSec": 6.501583
+      "startSec": 11.761,
+      "endSec": 19.086,
+      "narrationSec": 6.873104
     },
     {
       "id": "whatIsCounted",
-      "startSec": 19.258000000000003,
-      "endSec": 28.86,
-      "narrationSec": 9.148667
+      "startSec": 19.086,
+      "endSec": 26.735999999999997,
+      "narrationSec": 7.198188
     },
     {
       "id": "inEarly",
-      "startSec": 28.86,
-      "endSec": 38.182,
-      "narrationSec": 8.870021
+      "startSec": 26.735999999999997,
+      "endSec": 33.83,
+      "narrationSec": 6.640917
     },
     {
       "id": "theRest",
-      "startSec": 38.182,
-      "endSec": 45.554,
-      "narrationSec": 6.919542
+      "startSec": 33.831,
+      "endSec": 40.461,
+      "narrationSec": 6.176521
     },
     {
       "id": "bothKept",
-      "startSec": 45.554,
-      "endSec": 54.83,
-      "narrationSec": 8.823583
+      "startSec": 40.462,
+      "endSec": 49,
+      "narrationSec": 8.080542
     },
     {
       "id": "whereNext",
-      "startSec": 54.831,
-      "endSec": 59.28,
-      "narrationSec": 3.993833
+      "startSec": 49,
+      "endSec": 53.96,
+      "narrationSec": 4.504667
     }
   ]
 }

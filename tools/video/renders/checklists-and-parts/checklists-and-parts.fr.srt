@@ -1,56 +1,56 @@
 1
-00:00:10,428 --> 00:00:15,225
+00:00:09,965 --> 00:00:14,861
 Une intervention est rarement une
 seule chose, et celui qui la crée en sait
 
 2
-00:00:15,225 --> 00:00:17,208
+00:00:14,861 --> 00:00:16,885
 généralement plus que le titre.
 
 3
-00:00:17,661 --> 00:00:23,345
+00:00:17,337 --> 00:00:22,048
 Une liste, c'est la façon de dire ce que «
 terminé » veut dire, avant que quelqu'un
 
 4
-00:00:23,345 --> 00:00:24,441
+00:00:22,048 --> 00:00:22,956
 prenne la route.
 
 5
-00:00:24,893 --> 00:00:29,398
+00:00:23,407 --> 00:00:27,587
 Point par point, dans
 l'ordre où on les ferait vraiment.
 
 6
-00:00:30,995 --> 00:00:34,106
+00:00:29,505 --> 00:00:33,360
 Ils sont cochés sur place, depuis
 le téléphone, au fur et à mesure.
 
 7
-00:00:34,559 --> 00:00:40,167
+00:00:33,812 --> 00:00:39,542
 Quand une intervention demande deux
 visites, ou deux métiers, elle se divise au lieu
 
 8
-00:00:40,167 --> 00:00:40,968
+00:00:39,542 --> 00:00:40,360
 de s'étaler.
 
 9
-00:00:41,420 --> 00:00:46,714
+00:00:40,811 --> 00:00:46,244
 Chaque partie est une intervention à
 part entière, avec sa personne et sa fin.
 
 10
-00:00:47,527 --> 00:00:54,029
+00:00:46,695 --> 00:00:54,253
 Et c'est ici qu'atterrit ce qui revient du
 terrain : les photos, les papiers, ce qui
 
 11
-00:00:54,029 --> 00:00:54,957
+00:00:54,253 --> 00:00:55,333
 a été signé.
 
 12
-00:00:55,411 --> 00:01:01,448
+00:00:55,786 --> 00:01:00,848
 Le tout sur une page, des mois plus tard,
 sans que personne n'ait tenu un classeur.
 

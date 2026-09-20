@@ -1,56 +1,56 @@
 1
-00:00:07,176 --> 00:00:12,888
+00:00:07,478 --> 00:00:14,637
 Le bouton est au même endroit sur chaque
 écran, parce qu'à sept heures du matin on
 
 2
-00:00:12,888 --> 00:00:14,142
+00:00:14,637 --> 00:00:16,209
 ne le cherche pas.
 
 3
-00:00:14,594 --> 00:00:20,132
+00:00:16,659 --> 00:00:22,510
 L'endroit où vous êtes compte. L'espace de
 travail a une limite, et c'est le serveur
 
 4
-00:00:20,132 --> 00:00:21,978
+00:00:22,510 --> 00:00:24,461
 qui la vérifie, pas l'écran.
 
 5
-00:00:22,429 --> 00:00:30,259
+00:00:24,916 --> 00:00:31,211
 C'est fait. À partir de là, la journée
 est comptée, et personne n'a à se rappeler
 
 6
-00:00:30,259 --> 00:00:31,903
+00:00:31,211 --> 00:00:32,532
 l'heure de début.
 
 7
-00:00:32,355 --> 00:00:38,189
+00:00:32,984 --> 00:00:37,744
 Le poste est à l'écran pendant qu'il
 tourne : quand il a commencé, depuis combien de
 
 8
-00:00:38,189 --> 00:00:39,925
+00:00:37,744 --> 00:00:39,161
 temps, et ce qu'il reste.
 
 9
-00:00:40,374 --> 00:00:47,340
+00:00:39,611 --> 00:00:46,902
 On pointe en partant, et
 l'enregistrement se referme. C'est lui que lit la paie.
 
 10
-00:00:47,792 --> 00:00:52,668
+00:00:47,355 --> 00:00:52,371
 Chaque poste est conservé, avec le lieu
 et la façon dont il a été enregistré.
 
 11
-00:00:53,122 --> 00:00:58,530
+00:00:52,822 --> 00:00:58,141
 Ensuite : pourquoi les heures de cet
 enregistrement et celles d'un bulletin ne sont
 
 12
-00:00:58,530 --> 00:01:01,528
+00:00:58,141 --> 00:01:01,088
 pas le même chiffre —
 et pourquoi c'est juste.
 

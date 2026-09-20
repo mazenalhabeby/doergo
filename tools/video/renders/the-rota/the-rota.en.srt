@@ -1,0 +1,52 @@
+1
+00:00:12,938 --> 00:00:18,371
+Who is on the floor, right now,
+and what each of them is doing.
+
+2
+00:00:18,823 --> 00:00:23,383
+Grouped by workspace, because a person
+missing from one site is not missing from
+
+3
+00:00:23,383 --> 00:00:23,839
+another.
+
+4
+00:00:24,290 --> 00:00:30,448
+Each one can carry a minimum: the number
+of people below which the day does not
+
+5
+00:00:30,448 --> 00:00:30,838
+work.
+
+6
+00:00:31,289 --> 00:00:37,651
+Below it, the people asking to be off —
+and what each request would cost you.
+
+7
+00:00:38,102 --> 00:00:43,025
+It says outright when approving one
+would drop a day below that floor.
+
+8
+00:00:43,476 --> 00:00:48,770
+And when the person asking is the only
+one who can do a particular job that week.
+
+9
+00:00:49,221 --> 00:00:54,654
+You decide knowing that, which is the
+only version of this decision worth making.
+
+10
+00:00:55,107 --> 00:01:00,325
+Next: the same thing from the other
+side — asking for the day off in the first
+
+11
+00:01:00,325 --> 00:01:00,726
+place.
+

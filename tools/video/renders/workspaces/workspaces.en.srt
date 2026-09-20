@@ -1,78 +1,78 @@
 1
-00:00:09,070 --> 00:00:15,784
+00:00:08,980 --> 00:00:16,519
 Every workspace this company runs, on one
 page. A depot, a workshop, and a site that
 
 2
-00:00:15,784 --> 00:00:17,383
+00:00:16,519 --> 00:00:18,314
 belongs to a client.
 
 3
-00:00:17,835 --> 00:00:23,819
+00:00:18,770 --> 00:00:24,489
 Each one carries what it can do and how
 many people work there. Read the row and you
 
 4
-00:00:23,819 --> 00:00:25,173
+00:00:24,489 --> 00:00:25,782
 know the workspace.
 
 5
-00:00:25,625 --> 00:00:31,198
+00:00:26,239 --> 00:00:31,998
 A new one starts with a name and what
 kind of place it is. Yours, or a client's.
 
 6
-00:00:31,650 --> 00:00:36,758
+00:00:32,454 --> 00:00:37,256
 Give it an address and it gets a
 boundary on the map. That boundary is what a
 
 7
-00:00:36,758 --> 00:00:38,616
+00:00:37,256 --> 00:00:39,002
 clock-in is checked against.
 
 8
-00:00:39,070 --> 00:00:46,302
+00:00:39,453 --> 00:00:47,798
 Then what it is allowed to do. Only the
 capabilities this place actually uses — the
 
 9
-00:00:46,302 --> 00:00:47,522
+00:00:47,798 --> 00:00:49,205
 rest stay off.
 
 10
-00:00:47,975 --> 00:00:54,372
+00:00:49,659 --> 00:00:55,637
 Switch off what this place does not do,
 and it is not billed for it. A yard that
 
 11
-00:00:54,372 --> 00:00:58,610
+00:00:55,637 --> 00:00:59,597
 never sends anyone out pays
 for nothing that travels.
 
 12
-00:00:59,062 --> 00:01:05,914
+00:01:00,049 --> 00:01:05,374
 And the steps a job goes through here. A
 workshop and a call-out do not want the
 
 13
-00:01:05,914 --> 00:01:06,771
+00:01:05,374 --> 00:01:06,040
 same ones.
 
 14
-00:01:07,223 --> 00:01:13,724
+00:01:06,491 --> 00:01:13,211
 One of them is the default: where a job
 lands when nobody says otherwise. You can
 
 15
-00:01:13,724 --> 00:01:15,489
+00:01:13,211 --> 00:01:15,036
 move that at any time.
 
 16
-00:01:15,944 --> 00:01:21,987
+00:01:15,487 --> 00:01:21,659
 Next: who is allowed to see what — and
 why that is not decided by anybody's job
 
 17
-00:01:21,987 --> 00:01:22,446
+00:01:21,659 --> 00:01:22,128
 title.
 

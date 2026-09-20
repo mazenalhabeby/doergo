@@ -1,0 +1,40 @@
+1
+00:00:12,938 --> 00:00:18,371
+Quién está ahora mismo, y
+qué está haciendo cada uno.
+
+2
+00:00:18,823 --> 00:00:23,839
+Agrupado por espacio, porque quien
+falta en un sitio no falta en otro.
+
+3
+00:00:24,290 --> 00:00:30,838
+Cada uno puede llevar un mínimo: el
+número por debajo del cual el día no funciona.
+
+4
+00:00:31,289 --> 00:00:37,651
+Debajo, quienes piden librar, y
+lo que costaría cada solicitud.
+
+5
+00:00:38,102 --> 00:00:43,025
+Dice sin rodeos cuándo aprobar una
+dejaría un día por debajo de ese mínimo.
+
+6
+00:00:43,476 --> 00:00:48,770
+Y cuándo quien lo pide es el único que
+puede hacer cierto trabajo esa semana.
+
+7
+00:00:49,221 --> 00:00:54,654
+Usted decide sabiéndolo, que es la
+única versión de esta decisión que vale.
+
+8
+00:00:55,107 --> 00:01:00,726
+A continuación: lo mismo desde
+el otro lado: pedir el día libre.
+

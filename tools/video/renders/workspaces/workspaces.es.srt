@@ -1,73 +1,73 @@
 1
-00:00:09,070 --> 00:00:14,847
+00:00:08,980 --> 00:00:15,467
 Todos los espacios de trabajo de esta
 empresa en una página: una base, un taller y
 
 2
-00:00:14,847 --> 00:00:17,383
+00:00:15,467 --> 00:00:18,314
 un sitio que pertenece a un cliente.
 
 3
-00:00:17,835 --> 00:00:23,675
+00:00:18,770 --> 00:00:24,351
 Cada uno muestra lo que puede hacer y
 cuánta gente trabaja allí. Lea la fila y
 
 4
-00:00:23,675 --> 00:00:25,173
+00:00:24,351 --> 00:00:25,782
 conocerá el espacio.
 
 5
-00:00:25,625 --> 00:00:31,198
+00:00:26,239 --> 00:00:31,998
 Uno nuevo empieza con un nombre y con qué
 tipo de sitio es: suyo, o de un cliente.
 
 6
-00:00:31,650 --> 00:00:37,653
+00:00:32,454 --> 00:00:38,096
 Dele una dirección y obtiene un límite en
 el mapa. Contra ese límite se comprueba
 
 7
-00:00:37,653 --> 00:00:38,616
+00:00:38,096 --> 00:00:39,002
 cada fichaje.
 
 8
-00:00:39,070 --> 00:00:45,865
+00:00:39,453 --> 00:00:47,293
 Después, lo que puede hacer: solo las
 capacidades que este sitio usa de verdad; el
 
 9
-00:00:45,865 --> 00:00:47,522
+00:00:47,293 --> 00:00:49,205
 resto queda apagado.
 
 10
-00:00:47,975 --> 00:00:54,976
+00:00:49,659 --> 00:00:56,202
 Apague lo que este sitio no hace y no se
 le factura. Un patio que nunca manda a
 
 11
-00:00:54,976 --> 00:00:58,610
+00:00:56,202 --> 00:00:59,597
 nadie fuera no paga nada de lo que viaja.
 
 12
-00:00:59,062 --> 00:01:05,335
+00:01:00,049 --> 00:01:04,924
 Y los pasos por los que pasa un trabajo
 aquí. Un taller y una salida a domicilio no
 
 13
-00:01:05,335 --> 00:01:06,771
+00:01:04,924 --> 00:01:06,040
 quieren los mismos.
 
 14
-00:01:07,223 --> 00:01:12,902
+00:01:06,491 --> 00:01:12,361
 Uno de ellos es el predeterminado: donde
 aterriza un trabajo si nadie dice otra
 
 15
-00:01:12,902 --> 00:01:15,489
+00:01:12,361 --> 00:01:15,036
 cosa. Puede cambiarlo cuando quiera.
 
 16
-00:01:15,944 --> 00:01:22,446
+00:01:15,487 --> 00:01:22,128
 A continuación: quién puede ver qué, y
 por qué eso no lo decide el cargo de nadie.
 

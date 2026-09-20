@@ -1,56 +1,56 @@
 1
-00:00:10,428 --> 00:00:16,487
+00:00:09,965 --> 00:00:16,148
 Un trabajo rara vez es una sola cosa, y
 quien lo crea suele saber más de lo que dice
 
 2
-00:00:16,487 --> 00:00:17,208
+00:00:16,148 --> 00:00:16,885
 el título.
 
 3
-00:00:17,661 --> 00:00:23,639
+00:00:17,337 --> 00:00:22,292
 Una lista es cómo se dice qué significa
 «terminado», antes de que alguien conduzca
 
 4
-00:00:23,639 --> 00:00:24,441
+00:00:22,292 --> 00:00:22,956
 hasta allí.
 
 5
-00:00:24,893 --> 00:00:29,398
+00:00:23,407 --> 00:00:27,587
 Punto por punto, en el orden en
 que alguien los haría de verdad.
 
 6
-00:00:30,995 --> 00:00:34,106
+00:00:29,505 --> 00:00:33,360
 Se marcan en el sitio, desde el
 teléfono, según se va haciendo el trabajo.
 
 7
-00:00:34,559 --> 00:00:40,073
+00:00:33,812 --> 00:00:39,446
 Cuando un trabajo necesita dos
 visitas, o dos oficios, se divide en vez de
 
 8
-00:00:40,073 --> 00:00:40,968
+00:00:39,446 --> 00:00:40,360
 desbordarse.
 
 9
-00:00:41,420 --> 00:00:46,714
+00:00:40,811 --> 00:00:46,244
 Cada parte es un trabajo por derecho
 propio, con su persona y su final.
 
 10
-00:00:47,527 --> 00:00:54,274
+00:00:46,695 --> 00:00:54,539
 Y aquí aterriza lo que vuelve del sitio:
 las fotos, los papeles, lo que se haya
 
 11
-00:00:54,274 --> 00:00:54,957
+00:00:54,539 --> 00:00:55,333
 firmado.
 
 12
-00:00:55,411 --> 00:01:01,448
+00:00:55,786 --> 00:01:00,848
 Todo en una página, meses después, sin
 que nadie haya mantenido una carpeta.
 

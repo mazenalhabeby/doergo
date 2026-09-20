@@ -1,55 +1,55 @@
 1
-00:00:08,948 --> 00:00:14,985
+00:00:09,442 --> 00:00:15,690
 Un trabajo de este tablero no tiene a
 nadie. Hasta que lo tenga, es una nota, no
 
 2
-00:00:14,985 --> 00:00:15,589
+00:00:15,690 --> 00:00:16,315
 trabajo.
 
 3
-00:00:16,043 --> 00:00:20,083
+00:00:16,779 --> 00:00:21,423
 Ábralo: el sitio donde va un
 nombre es lo primero a la derecha.
 
 4
-00:00:20,534 --> 00:00:26,555
+00:00:21,873 --> 00:00:30,046
 La lista es la gente que trabaja en
 este espacio. No toda la empresa: los que
 
 5
-00:00:26,555 --> 00:00:28,197
+00:00:30,046 --> 00:00:32,276
 realmente podrían ir.
 
 6
-00:00:28,648 --> 00:00:35,160
+00:00:32,726 --> 00:00:38,529
 Elija a uno y el trabajo es suyo. Aterriza
 en su teléfono y entra en su jornada, sin
 
 7
-00:00:35,160 --> 00:00:38,029
+00:00:38,529 --> 00:00:41,085
 que nadie tenga que avisar dos veces.
 
 8
-00:00:38,479 --> 00:00:44,238
+00:00:41,537 --> 00:00:47,035
 El registro lo guarda: quién lo decidió y
 cuándo. Nadie tiene que acordarse de quién
 
 9
-00:00:44,238 --> 00:00:45,677
+00:00:47,035 --> 00:00:48,410
 mandó a quién adónde.
 
 10
-00:00:46,127 --> 00:00:52,443
+00:00:48,861 --> 00:00:54,202
 Y en su propia página está sin
 más, entre todo lo demás que lleva.
 
 11
-00:00:52,896 --> 00:00:58,186
+00:00:55,998 --> 00:01:00,632
 A continuación: el mismo trabajo seguido
 hasta el final, hasta el informe que firma
 
 12
-00:00:58,186 --> 00:00:58,887
+00:01:00,632 --> 00:01:01,246
 el cliente.
 

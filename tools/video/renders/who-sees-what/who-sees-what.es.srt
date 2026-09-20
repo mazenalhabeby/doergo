@@ -1,64 +1,64 @@
 1
-00:00:10,824 --> 00:00:18,115
+00:00:10,622 --> 00:00:18,378
 Aquí todos tienen un rol, y la lista dice
 cuál. Eso, y no su cargo, decide lo que
 
 2
-00:00:18,115 --> 00:00:19,555
+00:00:18,378 --> 00:00:19,910
 pueden alcanzar.
 
 3
-00:00:20,012 --> 00:00:26,328
+00:00:20,365 --> 00:00:26,356
 Aquí están todos. Cada uno dice
 cuánto concede y cuánta gente lo tiene.
 
 4
-00:00:26,783 --> 00:00:31,790
+00:00:26,809 --> 00:00:31,529
 Algunos vinieron con el producto. Esos
 puede copiarlos y ajustarlos, pero no
 
 5
-00:00:31,790 --> 00:00:32,449
+00:00:31,529 --> 00:00:32,150
 romperlos.
 
 6
-00:00:32,902 --> 00:00:39,031
+00:00:32,604 --> 00:00:38,878
 Abra uno y es una lista sencilla,
 agrupada por la parte del negocio que toca. Nada
 
 7
-00:00:39,031 --> 00:00:40,750
+00:00:38,878 --> 00:00:40,638
 ingenioso, nada oculto.
 
 8
-00:00:41,204 --> 00:00:48,024
+00:00:41,091 --> 00:00:49,162
 Dele una cosa más y todo el que tenga
 ese rol la tendrá, sin tocar la cuenta de
 
 9
-00:00:48,024 --> 00:00:48,542
+00:00:49,162 --> 00:00:49,775
 nadie.
 
 10
-00:00:48,994 --> 00:00:54,877
+00:00:50,228 --> 00:00:55,545
 O escriba uno propio, con el nombre de un
 puesto que ya existe en su empresa. De eso
 
 11
-00:00:54,877 --> 00:00:57,678
+00:00:55,545 --> 00:00:58,076
 se trata: sus palabras, no las nuestras.
 
 12
-00:00:58,131 --> 00:01:03,513
+00:00:58,530 --> 00:01:03,876
 Un rol dice lo que alguien puede hacer.
 Dónde puede hacerlo lo dicen los espacios de
 
 13
-00:01:03,513 --> 00:01:05,051
+00:01:03,876 --> 00:01:05,403
 trabajo en los que está.
 
 14
-00:01:05,504 --> 00:01:11,727
+00:01:05,856 --> 00:01:10,686
 A continuación: el trabajo en sí.
 Crear un trabajo y dárselo a alguien.
 

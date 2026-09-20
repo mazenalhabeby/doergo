@@ -1,55 +1,55 @@
 {
-  "videoPath": "/Users/pc/work/doergo/tools/video/renders/job-types/capture/page@fe40bf7eb13b26f4df370eadc7cf9cfc.webm",
-  "durationSec": 56.88,
-  "preRollSec": 5.332000000000001,
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/job-types/capture/page@c6b1c4949ab1207d98c8f9d18bac7a6b.webm",
+  "durationSec": 60.12,
+  "preRollSec": 6.110999999999997,
   "beats": [
     {
       "id": "notAllTheSame",
-      "startSec": 5.332000000000001,
-      "endSec": 11.59,
-      "narrationSec": 5.805
+      "startSec": 6.110999999999997,
+      "endSec": 13.017999999999997,
+      "narrationSec": 6.455146
     },
     {
       "id": "theTypeBehindIt",
-      "startSec": 11.59,
-      "endSec": 19.844,
-      "narrationSec": 7.801917
+      "startSec": 13.018999999999998,
+      "endSec": 21.644,
+      "narrationSec": 8.173438
     },
     {
       "id": "readIt",
-      "startSec": 19.844,
-      "endSec": 27.031000000000002,
-      "narrationSec": 6.733792
+      "startSec": 21.644999999999996,
+      "endSec": 29.435,
+      "narrationSec": 7.337521
     },
     {
       "id": "theLibrary",
-      "startSec": 27.031000000000002,
-      "endSec": 33.009,
-      "narrationSec": 5.526354
+      "startSec": 29.435,
+      "endSec": 36.157,
+      "narrationSec": 6.269396
     },
     {
       "id": "yourOwnCopy",
-      "startSec": 33.009,
-      "endSec": 40.103,
-      "narrationSec": 6.640917
+      "startSec": 36.157,
+      "endSec": 43.900999999999996,
+      "narrationSec": 7.291063
     },
     {
       "id": "orBuildOne",
-      "startSec": 40.103,
-      "endSec": 45.014,
-      "narrationSec": 4.458229
+      "startSec": 43.901999999999994,
+      "endSec": 48.442,
+      "narrationSec": 4.086708
     },
     {
       "id": "theJobsAlreadyOut",
-      "startSec": 45.015,
-      "endSec": 52.201,
-      "narrationSec": 6.733792
+      "startSec": 48.442,
+      "endSec": 55.952999999999996,
+      "narrationSec": 7.058875
     },
     {
       "id": "whereNext",
-      "startSec": 52.201,
-      "endSec": 56.88,
-      "narrationSec": 4.226042
+      "startSec": 55.952999999999996,
+      "endSec": 60.12,
+      "narrationSec": 3.715208
     }
   ]
 }

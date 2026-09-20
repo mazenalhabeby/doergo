@@ -1,47 +1,47 @@
 1
-00:00:12,006 --> 00:00:15,350
+00:00:12,022 --> 00:00:14,808
 Los turnos de una
 persona, como los ve la oficina.
 
 2
-00:00:15,803 --> 00:00:22,305
+00:00:15,261 --> 00:00:22,134
 Estas dos horas son lo que pasó de
 verdad. Son prueba, y nada las reescribe.
 
 3
-00:00:22,758 --> 00:00:31,375
+00:00:22,586 --> 00:00:29,366
 Este es el que cuenta. Donde difieren, el
 registro muestra los dos y dice cuál es
 
 4
-00:00:31,375 --> 00:00:31,907
+00:00:29,366 --> 00:00:29,784
 cuál.
 
 5
-00:00:32,360 --> 00:00:39,811
+00:00:30,236 --> 00:00:35,814
 Quien entra veinte minutos antes ha
 trabajado veinte minutos más y no se le cuentan.
 
 6
-00:00:39,811 --> 00:00:41,230
+00:00:35,814 --> 00:00:36,877
 Decide el turno.
 
 7
-00:00:41,682 --> 00:00:48,602
+00:00:37,331 --> 00:00:43,508
 Y el descanso que no cuenta como trabajo
 se descuenta, se haya registrado o no.
 
 8
-00:00:49,054 --> 00:00:55,632
+00:00:43,962 --> 00:00:49,986
 Ninguno de los dos números se oculta, y
 ninguno se calcula a última hora. Eso hace
 
 9
-00:00:55,632 --> 00:00:57,878
+00:00:49,986 --> 00:00:52,043
 que una discusión sea corta.
 
 10
-00:00:58,331 --> 00:01:02,325
+00:00:52,500 --> 00:00:57,005
 A continuación: los minutos después del
 fin del turno, y quién dice que cuentan.
 
