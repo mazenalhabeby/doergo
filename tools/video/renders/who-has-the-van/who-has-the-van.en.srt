@@ -1,0 +1,39 @@
+1
+00:00:10,790 --> 00:00:17,152
+A vehicle is not a row in a list. It
+is a thing with a history and a cost.
+
+2
+00:00:17,605 --> 00:00:23,596
+Who has it now is the easy half, and it
+is on the record where anybody can see it.
+
+3
+00:00:24,048 --> 00:00:31,107
+Who had it before is the half that
+matters, kept as periods rather than overwritten.
+
+4
+00:00:31,557 --> 00:00:37,734
+Which is what lets the costs sit
+under the right name, period by period.
+
+5
+00:00:38,185 --> 00:00:44,222
+Handing it over says what it will do
+before you agree to it, rather than after.
+
+6
+00:00:44,674 --> 00:00:50,724
+Correct a handover date later and the
+whole ledger re-attributes itself, because
+
+7
+00:00:50,724 --> 00:00:53,219
+nothing wrote a name onto a cost.
+
+8
+00:00:53,671 --> 00:00:57,247
+Next: turning finished
+work into an invoice.
+

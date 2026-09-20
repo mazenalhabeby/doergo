@@ -32,6 +32,9 @@ import { captureStartToFinish } from './capture/flows/start-to-finish.ts';
 import { captureWorkThatRepeats } from './capture/flows/work-that-repeats.ts';
 import { captureClockInAndOut } from './capture/flows/clock-in-and-out.ts';
 import { captureAMembersFile } from './capture/flows/a-members-file.ts';
+import { captureWhoHasTheVan } from './capture/flows/who-has-the-van.ts';
+import { captureEquipmentOnTheBooks } from './capture/flows/equipment-on-the-books.ts';
+import { captureJobAtTheirAddress } from './capture/flows/job-at-their-address.ts';
 import { captureKeepingAClientWarm } from './capture/flows/keeping-a-client-warm.ts';
 import { captureCompanyOrPerson } from './capture/flows/company-or-person.ts';
 import { captureYourFirstClient } from './capture/flows/your-first-client.ts';
@@ -93,6 +96,9 @@ const FLOWS: Record<string, (d: Record<string, number>) => Promise<Timeline>> = 
   'your-first-client': captureYourFirstClient,
   'company-or-person': captureCompanyOrPerson,
   'keeping-a-client-warm': captureKeepingAClientWarm,
+  'job-at-their-address': captureJobAtTheirAddress,
+  'equipment-on-the-books': captureEquipmentOnTheBooks,
+  'who-has-the-van': captureWhoHasTheVan,
   'create-a-job': captureCreateAJob,
   // Twenty seconds, two beats. A cheap way to hear a voice without spending a
   // full script's characters every time somebody wants to judge one.
@@ -151,6 +157,9 @@ const WARM_ROUTES: Record<string, string[]> = {
   'your-first-client': ['/login', '/dashboard', '/clients', '/customers/warm'],
   'company-or-person': ['/login', '/dashboard', '/clients', '/customers/warm'],
   'keeping-a-client-warm': ['/login', '/dashboard', '/clients', '/customers/warm'],
+  'job-at-their-address': ['/login', '/dashboard', '/tasks', '/tasks/warm'],
+  'equipment-on-the-books': ['/login', '/dashboard', '/assets', '/assets/warm'],
+  'who-has-the-van': ['/login', '/dashboard', '/assets', '/assets/warm'],
   'create-a-job': ['/login', '/dashboard', '/tasks', '/tasks/warm'],
   'voice-test': ['/login', '/dashboard'],
 };

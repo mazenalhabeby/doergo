@@ -1,0 +1,46 @@
+1
+00:00:10,201 --> 00:00:14,288
+Todo lo que la empresa posee
+y alguien se lleva consigo.
+
+2
+00:00:14,741 --> 00:00:20,487
+Se agrupa por tipo, porque una furgoneta
+y un instrumento no tienen casi nada en
+
+3
+00:00:20,487 --> 00:00:20,918
+común.
+
+4
+00:00:21,370 --> 00:00:27,200
+El tipo decide qué se le pregunta a cada
+cosa, para que nadie invente un campo en la
+
+5
+00:00:27,200 --> 00:00:27,686
+cuneta.
+
+6
+00:00:28,139 --> 00:00:35,303
+Así, un vehículo lleva matrícula y año, y
+un instrumento lleva número de serie. La
+
+7
+00:00:35,303 --> 00:00:38,449
+misma pantalla, preguntas distintas.
+
+8
+00:00:38,906 --> 00:00:45,083
+A partir de ahí tiene una vida: qué
+costó, qué se le hizo y quién lo tuvo.
+
+9
+00:00:45,536 --> 00:00:50,025
+Que es el siguiente vídeo: quién tiene
+la furgoneta y cuánto cuesta mientras la
+
+10
+00:00:50,025 --> 00:00:50,366
+tiene.
+

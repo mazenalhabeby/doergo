@@ -1,0 +1,42 @@
+1
+00:00:10,201 --> 00:00:14,288
+Everything the company owns that
+somebody takes away with them.
+
+2
+00:00:14,741 --> 00:00:20,403
+It is grouped by kind, because a van
+and an instrument have almost nothing in
+
+3
+00:00:20,403 --> 00:00:20,918
+common.
+
+4
+00:00:21,370 --> 00:00:27,009
+The kind decides what each thing is
+asked, so nobody invents a field at the
+
+5
+00:00:27,009 --> 00:00:27,686
+roadside.
+
+6
+00:00:28,139 --> 00:00:35,012
+So a vehicle carries a registration and a
+year, and an instrument carries a serial
+
+7
+00:00:35,012 --> 00:00:38,449
+number. Same screen, different questions.
+
+8
+00:00:38,906 --> 00:00:45,083
+From then on it has a life: what it
+cost, what was done to it, and who had it.
+
+9
+00:00:45,536 --> 00:00:50,366
+Which is the next video: who has the
+van, and what it costs while they do.
+

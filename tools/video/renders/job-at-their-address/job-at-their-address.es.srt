@@ -1,0 +1,43 @@
+1
+00:00:09,040 --> 00:00:12,848
+La mayoría de los trabajos son para
+alguien. Diga para quién y medio formulario se
+
+2
+00:00:12,848 --> 00:00:13,452
+rellena solo.
+
+3
+00:00:15,063 --> 00:00:19,939
+El selector de cliente está donde el
+espacio lleva un libro de clientes.
+
+4
+00:00:20,391 --> 00:00:26,989
+Elija uno y el sitio viene con él. Nadie
+teclea una dirección que se pueda teclear
+
+5
+00:00:26,989 --> 00:00:27,311
+mal.
+
+6
+00:00:27,765 --> 00:00:33,406
+Si esa dirección nunca se ha marcado en
+el mapa, lo dice; y en el mapa de abajo se
+
+7
+00:00:33,406 --> 00:00:36,914
+arregla una vez, para
+todas las visitas siguientes.
+
+8
+00:00:37,370 --> 00:00:41,968
+Y la visita se suma a todo lo
+demás que ha hecho para ese cliente.
+
+9
+00:00:42,423 --> 00:00:47,206
+A continuación: las cosas que
+posee la empresa, y quién las tiene.
+

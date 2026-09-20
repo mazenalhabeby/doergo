@@ -1,0 +1,26 @@
+TITLE
+Equipment on the books — HBCField
+
+DESCRIPTION
+A van and a thermal camera are both equipment and almost nothing else about them is alike. So a kind decides what a thing is asked — a registration and a plate for one, a serial number and a calibration date for the other — and the record then holds what somebody actually needs at the roadside.
+
+Chapters
+0:00 Equipment on the books
+0:10 What you own
+0:14 By kind
+0:28 What it holds
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload equipment-on-the-books.mp4
+  [ ] Add each equipment-on-the-books.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → "pageAssets"

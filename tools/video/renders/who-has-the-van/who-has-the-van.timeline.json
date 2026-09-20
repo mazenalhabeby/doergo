@@ -1,0 +1,49 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/who-has-the-van/capture/page@3631941052a520286ed86b0acedf6e29.webm",
+  "durationSec": 54.2,
+  "preRollSec": 7.290000000000006,
+  "beats": [
+    {
+      "id": "aThingWithAHistory",
+      "startSec": 7.290000000000006,
+      "endSec": 14.105000000000008,
+      "narrationSec": 6.362271
+    },
+    {
+      "id": "whoHasItNow",
+      "startSec": 14.105000000000008,
+      "endSec": 20.548000000000005,
+      "narrationSec": 5.99075
+    },
+    {
+      "id": "andWhoHadIt",
+      "startSec": 20.548000000000005,
+      "endSec": 28.057000000000006,
+      "narrationSec": 7.058875
+    },
+    {
+      "id": "whatItCost",
+      "startSec": 28.057000000000006,
+      "endSec": 34.685,
+      "narrationSec": 6.176521
+    },
+    {
+      "id": "handItOver",
+      "startSec": 34.685,
+      "endSec": 41.17400000000001,
+      "narrationSec": 6.037188
+    },
+    {
+      "id": "theLedgerFollows",
+      "startSec": 41.17400000000001,
+      "endSec": 50.17100000000001,
+      "narrationSec": 8.544958
+    },
+    {
+      "id": "whereNext",
+      "startSec": 50.17100000000001,
+      "endSec": 54.2,
+      "narrationSec": 3.575875
+    }
+  ]
+}

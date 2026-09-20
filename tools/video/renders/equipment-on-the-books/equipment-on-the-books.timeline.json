@@ -1,0 +1,43 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/equipment-on-the-books/capture/page@b9396548e4445c5dd5ad349b39dbd727.webm",
+  "durationSec": 47.32,
+  "preRollSec": 6.7010000000000005,
+  "beats": [
+    {
+      "id": "whatYouOwn",
+      "startSec": 6.7010000000000005,
+      "endSec": 11.241,
+      "narrationSec": 4.086708
+    },
+    {
+      "id": "kinds",
+      "startSec": 11.241,
+      "endSec": 17.87,
+      "narrationSec": 6.176521
+    },
+    {
+      "id": "theKindAsks",
+      "startSec": 17.87,
+      "endSec": 24.639,
+      "narrationSec": 6.315833
+    },
+    {
+      "id": "whatTheRecordHolds",
+      "startSec": 24.639,
+      "endSec": 35.403999999999996,
+      "narrationSec": 10.309667
+    },
+    {
+      "id": "itHasALife",
+      "startSec": 35.406,
+      "endSec": 42.036,
+      "narrationSec": 6.176521
+    },
+    {
+      "id": "whereNext",
+      "startSec": 42.036,
+      "endSec": 47.32,
+      "narrationSec": 4.82975
+    }
+  ]
+}

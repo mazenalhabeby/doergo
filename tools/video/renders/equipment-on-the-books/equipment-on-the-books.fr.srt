@@ -1,0 +1,46 @@
+1
+00:00:10,201 --> 00:00:14,288
+Tout ce que l'entreprise
+possède et que quelqu'un emporte.
+
+2
+00:00:14,741 --> 00:00:20,253
+C'est groupé par type, parce qu'une
+camionnette et un instrument n'ont presque rien
+
+3
+00:00:20,253 --> 00:00:20,918
+en commun.
+
+4
+00:00:21,370 --> 00:00:27,068
+Le type décide de ce qu'on demande, pour
+que personne n'invente un champ au bord de
+
+5
+00:00:27,068 --> 00:00:27,686
+la route.
+
+6
+00:00:28,139 --> 00:00:35,040
+Un véhicule porte donc une immatriculation
+et une année, un instrument un numéro de
+
+7
+00:00:35,040 --> 00:00:38,449
+série. Même écran, questions différentes.
+
+8
+00:00:38,906 --> 00:00:45,083
+Dès lors il a une vie : ce qu'il a
+coûté, ce qu'on lui a fait, et qui l'a eu.
+
+9
+00:00:45,536 --> 00:00:49,492
+C'est justement la vidéo suivante : qui
+a la camionnette, et ce qu'elle coûte
+
+10
+00:00:49,492 --> 00:00:50,366
+pendant ce temps.
+

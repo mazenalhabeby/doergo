@@ -1,0 +1,48 @@
+1
+00:00:10,790 --> 00:00:17,152
+Un vehículo no es una fila en una
+lista. Es una cosa con historia y con coste.
+
+2
+00:00:17,605 --> 00:00:23,596
+Quién lo tiene ahora es la mitad
+fácil, y está en la ficha a la vista.
+
+3
+00:00:24,048 --> 00:00:30,155
+Quién lo tuvo antes es la mitad que
+importa, guardada como períodos en vez de
+
+4
+00:00:30,155 --> 00:00:31,107
+sobrescrita.
+
+5
+00:00:31,557 --> 00:00:37,159
+Que es lo que permite que los costes
+queden bajo el nombre correcto, período a
+
+6
+00:00:37,159 --> 00:00:37,734
+período.
+
+7
+00:00:38,185 --> 00:00:44,222
+La entrega dice lo que va a hacer
+antes de que usted acepte, no después.
+
+8
+00:00:44,674 --> 00:00:50,207
+Corrija después una fecha de entrega y
+todo el libro se reatribuye solo, porque
+
+9
+00:00:50,207 --> 00:00:53,219
+nunca se escribió un
+nombre sobre un coste.
+
+10
+00:00:53,671 --> 00:00:57,247
+A continuación: convertir el
+trabajo terminado en una factura.
+

@@ -1,0 +1,26 @@
+TITLE
+Who has the van — HBCField
+
+DESCRIPTION
+"Who has it" is easy. "Who had it in March, and what did it cost while they did" is the question that actually gets asked — by an accountant, by an insurer, by somebody looking at a fuel bill. Custody is kept as periods, so both have answers, and handing something over is one decision rather than three.
+
+Chapters
+0:00 Who has the van
+0:10 More than a row
+0:24 And who had it
+0:38 Handing it over
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload who-has-the-van.mp4
+  [ ] Add each who-has-the-van.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → 

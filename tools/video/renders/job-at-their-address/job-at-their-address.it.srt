@@ -1,0 +1,43 @@
+1
+00:00:09,040 --> 00:00:12,780
+La maggior parte dei lavori è per
+qualcuno. Dica per chi, e metà del modulo si
+
+2
+00:00:12,780 --> 00:00:13,452
+compila da sé.
+
+3
+00:00:15,063 --> 00:00:19,939
+Il selettore cliente c'è dove lo
+spazio di lavoro tiene un libro clienti.
+
+4
+00:00:20,391 --> 00:00:26,550
+Ne scelga uno e il luogo arriva con lui.
+Nessuno digita un indirizzo che si possa
+
+5
+00:00:26,550 --> 00:00:27,311
+sbagliare.
+
+6
+00:00:27,765 --> 00:00:33,086
+Se quell'indirizzo non è mai stato messo
+sulla mappa, lo dice — e la mappa sotto è
+
+7
+00:00:33,086 --> 00:00:36,914
+dove si sistema, una volta,
+per tutte le visite successive.
+
+8
+00:00:37,370 --> 00:00:41,968
+E la visita si unisce a tutto il
+resto che avete fatto per loro.
+
+9
+00:00:42,423 --> 00:00:47,206
+Poi: le cose che l'azienda
+possiede, e chi ce le ha.
+

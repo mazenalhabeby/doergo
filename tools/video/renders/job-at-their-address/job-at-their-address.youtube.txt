@@ -1,0 +1,26 @@
+TITLE
+A job at a client's address — HBCField
+
+DESCRIPTION
+A job for a client should not need its address typed again. Choose the client in the job, and the place the work happens comes with them — which is what lets somebody navigate to it, and what ties the visit to the record of everything else you have done there.
+
+Chapters
+0:00 A job at a client's address
+0:09 Say who it is for
+0:20 The address comes too
+0:37 It joins the history
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload job-at-their-address.mp4
+  [ ] Add each job-at-their-address.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → 

@@ -1,0 +1,48 @@
+1
+00:00:10,790 --> 00:00:16,599
+Un véhicule n'est pas une ligne dans une
+liste. C'est une chose avec une histoire et
+
+2
+00:00:16,599 --> 00:00:17,152
+un coût.
+
+3
+00:00:17,605 --> 00:00:23,596
+Qui l'a maintenant est la moitié facile,
+et c'est sur la fiche, à la vue de tous.
+
+4
+00:00:24,048 --> 00:00:30,182
+Qui l'avait avant est la moitié qui
+compte, conservée par périodes plutôt
+
+5
+00:00:30,182 --> 00:00:31,107
+qu'écrasée.
+
+6
+00:00:31,557 --> 00:00:37,734
+C'est ce qui permet aux coûts de
+figurer sous le bon nom, période par période.
+
+7
+00:00:38,185 --> 00:00:44,222
+La remise dit ce qu'elle va faire
+avant que vous acceptiez, pas après.
+
+8
+00:00:44,674 --> 00:00:50,049
+Corrigez plus tard une date de remise
+et tout le registre se réattribue, parce
+
+9
+00:00:50,049 --> 00:00:53,219
+qu'aucun nom n'a jamais
+été écrit sur un coût.
+
+10
+00:00:53,671 --> 00:00:57,247
+Ensuite : transformer le
+travail fait en facture.
+

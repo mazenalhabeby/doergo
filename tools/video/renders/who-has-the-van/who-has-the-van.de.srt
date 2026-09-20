@@ -1,0 +1,48 @@
+1
+00:00:10,790 --> 00:00:16,634
+Ein Fahrzeug ist keine Zeile in einer
+Liste. Es ist ein Ding mit Geschichte und
+
+2
+00:00:16,634 --> 00:00:17,152
+Kosten.
+
+3
+00:00:17,605 --> 00:00:23,596
+Wer es jetzt hat, ist die leichte Hälfte
+— und steht sichtbar auf dem Datensatz.
+
+4
+00:00:24,048 --> 00:00:29,681
+Wer es vorher hatte, ist die Hälfte, auf
+die es ankommt — als Zeitraum geführt,
+
+5
+00:00:29,681 --> 00:00:31,107
+nicht überschrieben.
+
+6
+00:00:31,557 --> 00:00:37,734
+Dadurch stehen die Kosten unter dem
+richtigen Namen — Zeitraum für Zeitraum.
+
+7
+00:00:38,185 --> 00:00:44,222
+Die Übergabe sagt vorher, was
+sie bewirkt — nicht hinterher.
+
+8
+00:00:44,674 --> 00:00:49,903
+Korrigieren Sie später ein Übergabedatum,
+ordnet sich das ganze Buch neu zu — weil
+
+9
+00:00:49,903 --> 00:00:53,219
+nie ein Name auf eine
+Kostenzeile geschrieben wurde.
+
+10
+00:00:53,671 --> 00:00:57,247
+Als Nächstes: aus erledigter
+Arbeit eine Rechnung machen.
+

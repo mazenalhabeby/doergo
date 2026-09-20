@@ -70,11 +70,11 @@
     {
       "id": "theyCanDriveToIt",
       "narration": {
-        "en": "Which is what the person going there needs: a point on a map, not a line of text.",
-        "de": "Und genau das braucht die Person, die hinfährt: einen Punkt auf der Karte, keine Textzeile.",
-        "es": "Que es lo que necesita quien va: un punto en un mapa, no una línea de texto.",
-        "fr": "C'est ce dont a besoin la personne qui s'y rend : un point sur une carte, pas une ligne de texte.",
-        "it": "Che è ciò che serve a chi ci va: un punto su una mappa, non una riga di testo."
+        "en": "If that address has never been pinned, it says so — and the map underneath is where that is fixed, once, for every visit after this one.",
+        "de": "Wurde diese Adresse nie auf der Karte gesetzt, sagt es das — und auf der Karte darunter wird es einmal erledigt, für jeden weiteren Besuch.",
+        "es": "Si esa dirección nunca se ha marcado en el mapa, lo dice; y en el mapa de abajo se arregla una vez, para todas las visitas siguientes.",
+        "fr": "Si cette adresse n'a jamais été pointée, il le dit — et la carte en dessous est l'endroit où on le corrige, une fois, pour toutes les visites suivantes.",
+        "it": "Se quell'indirizzo non è mai stato messo sulla mappa, lo dice — e la mappa sotto è dove si sistema, una volta, per tutte le visite successive."
       }
     },
     {

@@ -70,20 +70,20 @@
       }
     },
     {
-      "id": "addOne",
+      "id": "whatTheRecordHolds",
       "narration": {
-        "en": "Adding one is answering those questions, and nothing else.",
-        "de": "Etwas anzulegen heißt, diese Fragen zu beantworten — mehr nicht.",
-        "es": "Dar de alta algo es responder a esas preguntas, y nada más.",
-        "fr": "En ajouter un, c'est répondre à ces questions, et rien d'autre.",
-        "it": "Aggiungerne uno significa rispondere a quelle domande, e nient'altro."
+        "en": "So a vehicle carries a registration and a year, and an instrument carries a serial number. Same screen, different questions.",
+        "de": "Ein Fahrzeug trägt also Kennzeichen und Baujahr, ein Messgerät eine Seriennummer. Gleicher Bildschirm, andere Fragen.",
+        "es": "Así, un vehículo lleva matrícula y año, y un instrumento lleva número de serie. La misma pantalla, preguntas distintas.",
+        "fr": "Un véhicule porte donc une immatriculation et une année, un instrument un numéro de série. Même écran, questions différentes.",
+        "it": "Così un veicolo porta targa e anno, e uno strumento un numero di serie. Stessa schermata, domande diverse."
       },
       "chapter": {
-        "en": "Adding one",
-        "de": "Anlegen",
-        "es": "Darlo de alta",
-        "fr": "En ajouter un",
-        "it": "Aggiungerne uno"
+        "en": "What it holds",
+        "de": "Was darauf steht",
+        "es": "Lo que guarda",
+        "fr": "Ce qu'il porte",
+        "it": "Che cosa contiene"
       }
     },
     {
