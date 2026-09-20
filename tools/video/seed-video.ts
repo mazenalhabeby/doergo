@@ -136,6 +136,7 @@ async function destroyPreviousRun(): Promise<void> {
     points at the member who created it, so deleting the members fails until it
     is gone.
   */
+  await prisma.timeOff.deleteMany({ where: { technician: { organizationId: orgId } } });
   await prisma.recurringTaskTemplate.deleteMany({ where: { organizationId: orgId } });
   await prisma.serviceReport.deleteMany({ where: { organizationId: orgId } });
   await prisma.comment.deleteMany({ where: { task: { organizationId: orgId } } });
@@ -381,7 +382,15 @@ async function createSpaces(orgId: string, workflowId: string) {
       geofenceRadius: WORKSHOP.geofenceRadius,
       timezone: ORG_TIMEZONE,
       kind: 'COMPANY',
-      workModel: 'NONE',
+      /*
+        ⚠️ SHIFT here, NONE at the depot, and the split is load-bearing. The
+        clocking videos need a workspace with no rota — with one, clocking out
+        a minute later is "early" and opens a dialog asking the member to
+        explain themselves. The counted-time, overtime and rota videos need the
+        opposite: without an expected start and end there is nothing for the
+        actual times to differ from, and their whole subject disappears.
+      */
+      workModel: 'SHIFT',
       geofencePolicy: 'AWAY_ALLOWED',
       isActive: true,
       minCover: 1,
@@ -791,6 +800,183 @@ async function seedAttendance(
   return { history: entries.length, live: live.length, breaks: breakRows.length };
 }
 
+/**
+ * The rota, and the two clocks.
+ *
+ * ⚠️ THE WORKSHOP RUNS ON SHIFTS AND THE DEPOT DOES NOT, and that split is
+ * load-bearing. Videos about clocking in need a workspace with no rota, or
+ * clocking out forty seconds later is "early" and opens a dialog asking the
+ * member to explain themselves. Videos about counted time need the opposite:
+ * without an expected start and end there is nothing for the actual times to
+ * differ FROM, and the whole subject disappears.
+ *
+ * ⚠️ COUNTED TIME IS COMPUTED HERE THE SAME WAY THE PRODUCT COMPUTES IT —
+ * max(clock-in, shift start) to min(clock-out, shift end), less the unpaid
+ * rest. Inventing the numbers instead would put a screen on camera whose
+ * arithmetic does not work, which is worse than no screen at all.
+ */
+async function seedRota(
+  orgId: string,
+  spaceId: string,
+  crew: Record<string, { id: string }>,
+  leadId: string,
+) {
+  const shift = await prisma.shift.create({
+    data: {
+      organizationId: orgId,
+      spaceId,
+      name: 'Workshop early',
+      description: 'Bench work, 07:00 to 15:30, half an hour off at noon.',
+      color: '#2563eb',
+      startLocal: '07:00',
+      endLocal: '15:30',
+      crossesMidnight: false,
+      breakMinutes: 30,
+      flagToleranceMin: 10,
+      isActive: true,
+    },
+    select: { id: true },
+  });
+
+  const onShift = ['nakamura', 'whitlock'].map((k) => crew[k]?.id).filter(Boolean) as string[];
+  for (const userId of onShift) {
+    await prisma.shiftAssignment.create({
+      data: {
+        organizationId: orgId,
+        userId,
+        spaceId,
+        shiftId: shift.id,
+        recurrence: 'WEEKLY',
+        daysOfWeek: [1, 2, 3, 4, 5],
+        effectiveFrom: daysAgo(60),
+        isActive: true,
+        createdById: leadId,
+      },
+    });
+  }
+
+  /*
+    Four days each, with the differences that make the two clocks visible:
+    somebody in early (the extra minutes are not counted), somebody away late
+    (counted to the shift's end, and the rest is an overtime question), and two
+    ordinary days so the ordinary case is the common one on screen.
+  */
+  const days: Array<{ back: number; inMin: number; outMin: number; flags: string[] }> = [
+    { back: 1, inMin: -23, outMin: 22, flags: ['EARLY_ARRIVAL', 'OVERTIME'] },
+    { back: 2, inMin: 14, outMin: 0, flags: ['LATE_ARRIVAL'] },
+    { back: 3, inMin: -4, outMin: 3, flags: [] },
+    { back: 4, inMin: 2, outMin: -1, flags: [] },
+  ];
+
+  let entries = 0;
+  let overtimeEntryId: string | null = null;
+  for (const userId of onShift) {
+    for (const day of days) {
+      const expectedIn = onDay(day.back, 7, 0);
+      const expectedOut = onDay(day.back, 15, 30);
+      const clockIn = new Date(expectedIn.getTime() + day.inMin * 60_000);
+      const clockOut = new Date(expectedOut.getTime() + day.outMin * 60_000);
+      // The product's own rule, not a number typed in by hand.
+      const countedStart = new Date(Math.max(clockIn.getTime(), expectedIn.getTime()));
+      const countedEnd = new Date(Math.min(clockOut.getTime(), expectedOut.getTime()));
+      const paidMinutes = Math.max(
+        0,
+        Math.round((countedEnd.getTime() - countedStart.getTime()) / 60_000) - 30,
+      );
+
+      const entry = await prisma.timeEntry.create({
+        data: {
+          organizationId: orgId,
+          userId,
+          locationId: spaceId,
+          shiftId: shift.id,
+          status: 'CLOCKED_OUT',
+          timezone: ORG_TIMEZONE,
+          clockInAt: clockIn,
+          clockInLat: WORKSHOP.lat,
+          clockInLng: WORKSHOP.lng,
+          clockInAccuracy: 9,
+          clockInWithinGeofence: true,
+          clockOutAt: clockOut,
+          clockOutLat: WORKSHOP.lat,
+          clockOutLng: WORKSHOP.lng,
+          clockOutWithinGeofence: true,
+          expectedClockInAt: expectedIn,
+          expectedClockOutAt: expectedOut,
+          countedStartAt: countedStart,
+          countedEndAt: countedEnd,
+          paidMinutes,
+          breakMinutes: 30,
+          flagReasons: day.flags,
+          approvalStatus: day.flags.length ? 'PENDING' : 'AUTO',
+        },
+        select: { id: true },
+      });
+      entries += 1;
+      if (day.flags.includes('OVERTIME') && !overtimeEntryId) overtimeEntryId = entry.id;
+    }
+  }
+
+  /*
+    One round of overtime waiting on somebody.
+
+    ⚠️ `timeEntryId` is NOT unique any more — a shift can go round more than
+    once — so this is one row of a conversation, not the whole of it.
+  */
+  if (overtimeEntryId) {
+    await prisma.overtimeRequest.create({
+      data: {
+        organizationId: orgId,
+        technicianId: onShift[0]!,
+        timeEntryId: overtimeEntryId,
+        locationId: spaceId,
+        cycle: 1,
+        status: 'PENDING_APPROVAL',
+        technicianRespondedAt: daysAgo(1),
+        technicianReason: 'Rebuilding the pump seal — twenty minutes short of finishing it.',
+      },
+    });
+  }
+
+  return { shift: 1, assignments: onShift.length, entries };
+}
+
+/**
+ * Leave, in every state a wallchart needs to show one.
+ *
+ * ⚠️ `startDate`/`endDate` are DATE columns. A timestamp with an hour in it
+ * lands on the wrong day at either edge of the year, which is the class of bug
+ * that makes a day off appear on the wallchart a day late.
+ */
+async function seedTimeOff(crew: Record<string, { id: string }>, leadId: string) {
+  const onDate = (d: number) => new Date(new Date(Date.now() + d * DAY_MS).toISOString().slice(0, 10));
+  const rows: Array<[string, number, number, string, string, string]> = [
+    ['rhodes', 12, 16, 'VACATION', 'APPROVED', 'Family holiday, booked in March.'],
+    ['okafor', 5, 5, 'VACATION', 'PENDING', 'Moving house.'],
+    ['brennan', -9, -9, 'SICK', 'APPROVED', ''],
+    ['valdes', 26, 33, 'VACATION', 'PENDING', 'Two weeks, back on the Monday.'],
+  ];
+  let made = 0;
+  for (const [key, from, to, type, status, reason] of rows) {
+    const technicianId = crew[key]?.id;
+    if (!technicianId) continue;
+    await prisma.timeOff.create({
+      data: {
+        technicianId,
+        startDate: onDate(from),
+        endDate: onDate(to),
+        type: type as never,
+        status: status as never,
+        reason: reason || null,
+        approvedById: status === 'APPROVED' ? leadId : null,
+        approvedAt: status === 'APPROVED' ? daysAgo(20) : null,
+      },
+    });
+    made += 1;
+  }
+  return made;
+}
+
 // ───────────────────────────────────────────────────────────────────────────
 // 7. Clients, jobs, assets, invoices — so no screen is an empty state
 // ───────────────────────────────────────────────────────────────────────────
@@ -1167,6 +1353,12 @@ async function main(): Promise<void> {
   const attendance = await seedAttendance(org.id, spaceIds, lead.id, crew);
   console.log(
     `  ${attendance.history} shifts of history, ${attendance.breaks} breaks, ${attendance.live} on the clock now`,
+  );
+
+  const rota = await seedRota(org.id, spaceIds.workshop, crew, lead.id);
+  const leave = await seedTimeOff(crew, lead.id);
+  console.log(
+    `  a rota on the workshop: ${rota.assignments} on shift, ${rota.entries} shifts with counted hours, ${leave} leave requests`,
   );
 
   const clientIds = await seedClients(org.id, spaceIds.depot, lead.id);

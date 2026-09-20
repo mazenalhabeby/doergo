@@ -1,0 +1,120 @@
+{
+  "id": "overtime",
+  "tourIds": [
+    "pageOvertime"
+  ],
+  "title": {
+    "en": "Overtime, asked and approved",
+    "de": "Überstunden: gefragt und genehmigt",
+    "es": "Horas extra, pedidas y aprobadas",
+    "fr": "Heures supplémentaires, demandées et approuvées",
+    "it": "Straordinari, chiesti e approvati"
+  },
+  "subtitle": {
+    "en": "Somebody stays late; somebody says yes; the minutes count",
+    "de": "Jemand bleibt länger, jemand sagt ja — und die Minuten zählen",
+    "es": "Alguien se queda más; alguien dice que sí; los minutos cuentan",
+    "fr": "Quelqu'un reste tard ; quelqu'un dit oui ; les minutes comptent",
+    "it": "Qualcuno resta oltre; qualcuno dice sì; i minuti contano"
+  },
+  "description": {
+    "en": "Minutes past the end of a shift are not counted because somebody worked them — they are counted because somebody with the authority said yes. The request carries the reason, the decision is recorded with who made it, and approving it moves the shift's end so the hours follow.",
+    "de": "Minuten nach Schichtende zählen nicht, weil jemand sie gearbeitet hat — sie zählen, weil jemand mit der Befugnis Ja gesagt hat. Die Anfrage trägt den Grund, die Entscheidung wird mit Namen festgehalten, und die Genehmigung verschiebt das Schichtende, sodass die Stunden folgen.",
+    "es": "Los minutos posteriores al fin del turno no cuentan porque alguien los haya trabajado: cuentan porque alguien con autoridad dijo que sí. La solicitud lleva el motivo, la decisión queda registrada con quién la tomó, y aprobarla mueve el final del turno para que las horas la sigan.",
+    "fr": "Les minutes après la fin d'un poste ne comptent pas parce que quelqu'un les a travaillées — elles comptent parce que quelqu'un qui en a l'autorité a dit oui. La demande porte le motif, la décision est enregistrée avec son auteur, et l'approbation déplace la fin du poste pour que les heures suivent.",
+    "it": "I minuti dopo la fine di un turno non contano perché qualcuno li ha lavorati: contano perché qualcuno con l'autorità ha detto sì. La richiesta porta il motivo, la decisione resta registrata con chi l'ha presa, e approvarla sposta la fine del turno perché le ore seguano."
+  },
+  "beats": [
+    {
+      "id": "theQueue",
+      "narration": {
+        "en": "Somebody stayed past the end of a shift. It waits here, with a name on it.",
+        "de": "Jemand ist über das Schichtende hinaus geblieben. Es wartet hier, mit einem Namen daran.",
+        "es": "Alguien se quedó más allá del fin del turno. Espera aquí, con un nombre.",
+        "fr": "Quelqu'un est resté au-delà de la fin du poste. Cela attend ici, avec un nom dessus.",
+        "it": "Qualcuno è rimasto oltre la fine del turno. Aspetta qui, con un nome sopra."
+      },
+      "chapter": {
+        "en": "Waiting on you",
+        "de": "Wartet auf Sie",
+        "es": "Esperando a usted",
+        "fr": "En attente de vous",
+        "it": "In attesa di lei"
+      }
+    },
+    {
+      "id": "theyGaveAReason",
+      "narration": {
+        "en": "They said why, in their own words, at the time — not a week later from memory.",
+        "de": "Sie haben den Grund in eigenen Worten genannt, damals — nicht eine Woche später aus dem Gedächtnis.",
+        "es": "Dijeron por qué, con sus palabras, en el momento; no una semana después de memoria.",
+        "fr": "Ils ont dit pourquoi, avec leurs mots, sur le moment — pas une semaine plus tard, de mémoire.",
+        "it": "Hanno detto perché, con parole loro, sul momento — non una settimana dopo a memoria."
+      }
+    },
+    {
+      "id": "whatItIs",
+      "narration": {
+        "en": "How long it was, and how much of the day it makes, before anybody agrees to it.",
+        "de": "Wie lang es war und wie viel es vom Tag ausmacht — bevor jemand zustimmt.",
+        "es": "Cuánto fue y cuánto supone del día, antes de que nadie lo apruebe.",
+        "fr": "Combien de temps, et ce que cela fait sur la journée, avant que quiconque l'accepte.",
+        "it": "Quanto è durato e quanto pesa sulla giornata, prima che qualcuno acconsenta."
+      }
+    },
+    {
+      "id": "youDecide",
+      "narration": {
+        "en": "You say yes or no, and the decision is kept with your name on it.",
+        "de": "Sie sagen ja oder nein — und die Entscheidung bleibt mit Ihrem Namen erhalten.",
+        "es": "Usted dice sí o no, y la decisión se guarda con su nombre.",
+        "fr": "Vous dites oui ou non, et la décision est conservée avec votre nom.",
+        "it": "Lei dice sì o no, e la decisione resta con il suo nome."
+      },
+      "chapter": {
+        "en": "You decide",
+        "de": "Sie entscheiden",
+        "es": "Usted decide",
+        "fr": "Vous décidez",
+        "it": "Decide lei"
+      }
+    },
+    {
+      "id": "theHoursFollow",
+      "narration": {
+        "en": "Saying yes moves the end of that shift — which is what makes the counted hours change, rather than a number being typed over.",
+        "de": "Ein Ja verschiebt das Ende dieser Schicht — und genau deshalb ändern sich die gezählten Stunden, statt dass eine Zahl überschrieben wird.",
+        "es": "Decir que sí mueve el final de ese turno, que es lo que hace cambiar las horas contadas, en vez de teclear un número encima.",
+        "fr": "Dire oui déplace la fin de ce poste — c'est ce qui fait changer les heures comptées, plutôt qu'un chiffre réécrit à la main.",
+        "it": "Dire sì sposta la fine di quel turno — ed è questo a far cambiare le ore conteggiate, invece di un numero riscritto a mano."
+      }
+    },
+    {
+      "id": "theRecord",
+      "narration": {
+        "en": "And what was asked, by whom, and what was decided stays readable long after everybody has forgotten it.",
+        "de": "Und was gefragt wurde, von wem, und was entschieden wurde, bleibt lesbar, lange nachdem es alle vergessen haben.",
+        "es": "Y qué se pidió, quién lo pidió y qué se decidió sigue legible mucho después de que todos lo hayan olvidado.",
+        "fr": "Et ce qui a été demandé, par qui, et ce qui a été décidé reste lisible longtemps après que tout le monde l'a oublié.",
+        "it": "E che cosa è stato chiesto, da chi, e che cosa è stato deciso resta leggibile molto dopo che tutti l'hanno dimenticato."
+      },
+      "chapter": {
+        "en": "On the record",
+        "de": "Aktenkundig",
+        "es": "Queda registrado",
+        "fr": "Au dossier",
+        "it": "A verbale"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: the rota itself — who is working, who is off, and who is missing on Thursday.",
+        "de": "Als Nächstes: der Dienstplan selbst — wer arbeitet, wer frei hat und wer am Donnerstag fehlt.",
+        "es": "A continuación: el cuadrante en sí: quién trabaja, quién libra y quién falta el jueves.",
+        "fr": "Ensuite : le planning lui-même — qui travaille, qui est absent, et qui manque jeudi.",
+        "it": "Poi: il turno stesso — chi lavora, chi è assente e chi manca giovedì."
+      }
+    }
+  ]
+}

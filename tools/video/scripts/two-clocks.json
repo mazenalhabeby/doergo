@@ -1,0 +1,125 @@
+{
+  "id": "two-clocks",
+  "tourIds": [],
+  "title": {
+    "en": "Worked and counted",
+    "de": "Gearbeitet und gezählt",
+    "es": "Trabajado y contado",
+    "fr": "Travaillé et compté",
+    "it": "Lavorato e conteggiato"
+  },
+  "subtitle": {
+    "en": "Why the record and the payslip are two different numbers",
+    "de": "Warum Erfassung und Abrechnung zwei verschiedene Zahlen sind",
+    "es": "Por qué el registro y la nómina son dos números distintos",
+    "fr": "Pourquoi l'enregistrement et le bulletin sont deux chiffres différents",
+    "it": "Perché il record e la busta paga sono due numeri diversi"
+  },
+  "description": {
+    "en": "HBCField keeps two clocks on every shift. One is what happened — the times somebody actually clocked in and out, kept as evidence and never edited to suit anybody. The other is what counts: the shift's own hours, less the rests that do not count. They are rarely the same number, and both are right.",
+    "de": "HBCField führt zwei Uhren pro Schicht. Die eine zeigt, was passiert ist: die tatsächlichen Stempelzeiten, als Nachweis aufbewahrt und für niemanden geschönt. Die andere zeigt, was zählt: die Stunden der Schicht, abzüglich der Pausen, die nicht zählen. Beide stimmen — und selten überein.",
+    "es": "HBCField lleva dos relojes en cada turno. Uno es lo que pasó: las horas en que alguien fichó de verdad, guardadas como prueba y nunca retocadas para nadie. El otro es lo que cuenta: las horas del propio turno, menos los descansos que no cuentan. Rara vez coinciden, y los dos son correctos.",
+    "fr": "HBCField tient deux horloges sur chaque poste. L'une dit ce qui s'est passé : les heures réelles de pointage, conservées comme preuve et jamais retouchées. L'autre dit ce qui compte : les heures du poste, moins les pauses qui ne comptent pas. Elles coïncident rarement, et les deux sont justes.",
+    "it": "HBCField tiene due orologi su ogni turno. Uno dice che cosa è successo: gli orari reali di timbratura, conservati come prova e mai ritoccati per nessuno. L'altro dice che cosa conta: le ore del turno, meno le pause che non contano. Raramente coincidono, ed entrambi hanno ragione."
+  },
+  "beats": [
+    {
+      "id": "oneShift",
+      "narration": {
+        "en": "One person's shifts, as the office sees them.",
+        "de": "Die Schichten einer Person, wie das Büro sie sieht.",
+        "es": "Los turnos de una persona, como los ve la oficina.",
+        "fr": "Les postes d'une personne, tels que le bureau les voit.",
+        "it": "I turni di una persona, come li vede l'ufficio."
+      },
+      "chapter": {
+        "en": "One person's shifts",
+        "de": "Schichten einer Person",
+        "es": "Los turnos de alguien",
+        "fr": "Les postes d'une personne",
+        "it": "I turni di una persona"
+      }
+    },
+    {
+      "id": "whatTheClockSaw",
+      "narration": {
+        "en": "These two times are what actually happened. They are evidence, and nothing rewrites them.",
+        "de": "Diese beiden Zeiten sind das, was tatsächlich passiert ist. Sie sind Nachweis, und nichts schreibt sie um.",
+        "es": "Estas dos horas son lo que pasó de verdad. Son prueba, y nada las reescribe.",
+        "fr": "Ces deux heures sont ce qui s'est réellement passé. Ce sont des preuves, et rien ne les réécrit.",
+        "it": "Questi due orari sono ciò che è realmente accaduto. Sono prove, e nulla li riscrive."
+      },
+      "chapter": {
+        "en": "What happened",
+        "de": "Was passiert ist",
+        "es": "Lo que pasó",
+        "fr": "Ce qui s'est passé",
+        "it": "Che cosa è successo"
+      }
+    },
+    {
+      "id": "whatIsCounted",
+      "narration": {
+        "en": "This one is what counts. Where they differ, the record says both — and says which is which.",
+        "de": "Diese Zahl zählt. Wo sie sich unterscheiden, zeigt der Eintrag beide — und sagt, welche welche ist.",
+        "es": "Este es el que cuenta. Donde difieren, el registro muestra los dos y dice cuál es cuál.",
+        "fr": "Celui-ci est ce qui compte. Là où ils diffèrent, l'enregistrement montre les deux et dit lequel est lequel.",
+        "it": "Questo è ciò che conta. Dove differiscono, il record mostra entrambi e dice quale è quale."
+      },
+      "chapter": {
+        "en": "What counts",
+        "de": "Was zählt",
+        "es": "Lo que cuenta",
+        "fr": "Ce qui compte",
+        "it": "Ciò che conta"
+      }
+    },
+    {
+      "id": "inEarly",
+      "narration": {
+        "en": "Somebody in twenty minutes early has worked twenty minutes more and is not counted for them. The shift decides.",
+        "de": "Wer zwanzig Minuten früher da ist, hat zwanzig Minuten mehr gearbeitet — gezählt werden sie nicht. Die Schicht entscheidet.",
+        "es": "Quien entra veinte minutos antes ha trabajado veinte minutos más y no se le cuentan. Decide el turno.",
+        "fr": "Quelqu'un arrivé vingt minutes en avance a travaillé vingt minutes de plus, qui ne sont pas comptées. C'est le poste qui décide.",
+        "it": "Chi arriva venti minuti prima ha lavorato venti minuti in più, e non gli vengono contati. Decide il turno."
+      }
+    },
+    {
+      "id": "theRest",
+      "narration": {
+        "en": "And the rest that does not count as work comes off, whether or not anybody remembered to log it.",
+        "de": "Und die Pause, die nicht als Arbeit zählt, wird abgezogen — ob jemand daran gedacht hat oder nicht.",
+        "es": "Y el descanso que no cuenta como trabajo se descuenta, se haya registrado o no.",
+        "fr": "Et la pause qui ne compte pas comme du travail est déduite, que quelqu'un ait pensé à la saisir ou non.",
+        "it": "E la pausa che non conta come lavoro viene tolta, che qualcuno si sia ricordato di registrarla o no."
+      }
+    },
+    {
+      "id": "bothKept",
+      "narration": {
+        "en": "Neither number is hidden, and neither is calculated at the last minute. That is what makes a disagreement short.",
+        "de": "Keine der Zahlen ist versteckt, keine wird in letzter Minute berechnet. Genau das macht eine Meinungsverschiedenheit kurz.",
+        "es": "Ninguno de los dos números se oculta, y ninguno se calcula a última hora. Eso hace que una discusión sea corta.",
+        "fr": "Aucun des deux chiffres n'est caché, aucun n'est calculé à la dernière minute. C'est ce qui rend un désaccord court.",
+        "it": "Nessuno dei due numeri è nascosto, e nessuno viene calcolato all'ultimo. È questo che rende breve un disaccordo."
+      },
+      "chapter": {
+        "en": "Both kept",
+        "de": "Beide bleiben",
+        "es": "Los dos se guardan",
+        "fr": "Les deux conservés",
+        "it": "Entrambi conservati"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: the minutes past the end of a shift, and who says they count.",
+        "de": "Als Nächstes: die Minuten nach Schichtende — und wer sagt, dass sie zählen.",
+        "es": "A continuación: los minutos después del fin del turno, y quién dice que cuentan.",
+        "fr": "Ensuite : les minutes après la fin du poste, et qui dit qu'elles comptent.",
+        "it": "Poi: i minuti dopo la fine del turno, e chi dice che contano."
+      }
+    }
+  ]
+}

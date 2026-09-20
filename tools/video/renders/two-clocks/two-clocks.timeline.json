@@ -1,0 +1,49 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/two-clocks/capture/page@e98ac88a2270ea175905e0a3022b58eb.webm",
+  "durationSec": 59.28,
+  "preRollSec": 8.506,
+  "beats": [
+    {
+      "id": "oneShift",
+      "startSec": 8.506,
+      "endSec": 12.303,
+      "narrationSec": 3.343688
+    },
+    {
+      "id": "whatTheClockSaw",
+      "startSec": 12.303,
+      "endSec": 19.256999999999998,
+      "narrationSec": 6.501583
+    },
+    {
+      "id": "whatIsCounted",
+      "startSec": 19.258000000000003,
+      "endSec": 28.86,
+      "narrationSec": 9.148667
+    },
+    {
+      "id": "inEarly",
+      "startSec": 28.86,
+      "endSec": 38.182,
+      "narrationSec": 8.870021
+    },
+    {
+      "id": "theRest",
+      "startSec": 38.182,
+      "endSec": 45.554,
+      "narrationSec": 6.919542
+    },
+    {
+      "id": "bothKept",
+      "startSec": 45.554,
+      "endSec": 54.83,
+      "narrationSec": 8.823583
+    },
+    {
+      "id": "whereNext",
+      "startSec": 54.831,
+      "endSec": 59.28,
+      "narrationSec": 3.993833
+    }
+  ]
+}

@@ -31,6 +31,8 @@ import { captureJobTypes } from './capture/flows/job-types.ts';
 import { captureStartToFinish } from './capture/flows/start-to-finish.ts';
 import { captureWorkThatRepeats } from './capture/flows/work-that-repeats.ts';
 import { captureClockInAndOut } from './capture/flows/clock-in-and-out.ts';
+import { captureOvertime } from './capture/flows/overtime.ts';
+import { captureTwoClocks } from './capture/flows/two-clocks.ts';
 import { captureChecklistsAndParts } from './capture/flows/checklists-and-parts.ts';
 import { captureWhatHbcfieldIs } from './capture/flows/what-hbcfield-is.ts';
 import { captureWhoSeesWhat } from './capture/flows/who-sees-what.ts';
@@ -75,6 +77,8 @@ const FLOWS: Record<string, (d: Record<string, number>) => Promise<Timeline>> = 
   'work-that-repeats': captureWorkThatRepeats,
   'checklists-and-parts': captureChecklistsAndParts,
   'clock-in-and-out': captureClockInAndOut,
+  'two-clocks': captureTwoClocks,
+  'overtime': captureOvertime,
   'create-a-job': captureCreateAJob,
   // Twenty seconds, two beats. A cheap way to hear a voice without spending a
   // full script's characters every time somebody wants to judge one.
@@ -124,6 +128,8 @@ const WARM_ROUTES: Record<string, string[]> = {
   'work-that-repeats': ['/login', '/dashboard', '/tasks', '/tasks/recurring'],
   'checklists-and-parts': ['/login', '/dashboard', '/tasks', '/tasks/warm'],
   'clock-in-and-out': ['/login', '/dashboard', '/my/attendance', '/attendance'],
+  'two-clocks': ['/login', '/dashboard', '/members', '/members/warm'],
+  'overtime': ['/login', '/dashboard', '/overtime'],
   'create-a-job': ['/login', '/dashboard', '/tasks', '/tasks/warm'],
   'voice-test': ['/login', '/dashboard'],
 };

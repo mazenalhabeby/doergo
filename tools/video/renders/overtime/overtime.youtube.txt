@@ -1,0 +1,26 @@
+TITLE
+Overtime, asked and approved — HBCField
+
+DESCRIPTION
+Minutes past the end of a shift are not counted because somebody worked them — they are counted because somebody with the authority said yes. The request carries the reason, the decision is recorded with who made it, and approving it moves the shift's end so the hours follow.
+
+Chapters
+0:00 Overtime, asked and approved
+0:07 Waiting on you
+0:26 You decide
+0:39 On the record
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload overtime.mp4
+  [ ] Add each overtime.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → "pageOvertime"

@@ -1,0 +1,49 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/overtime/capture/page@2c18fa4b8204615afb1152aeba2c6066.webm",
+  "durationSec": 52.28,
+  "preRollSec": 4.344999999999999,
+  "beats": [
+    {
+      "id": "theQueue",
+      "startSec": 4.344999999999999,
+      "endSec": 9.765999999999998,
+      "narrationSec": 4.969083
+    },
+    {
+      "id": "theyGaveAReason",
+      "startSec": 9.767,
+      "endSec": 15.466,
+      "narrationSec": 5.247708
+    },
+    {
+      "id": "whatItIs",
+      "startSec": 15.466999999999999,
+      "endSec": 22.512999999999998,
+      "narrationSec": 6.594479
+    },
+    {
+      "id": "youDecide",
+      "startSec": 22.512999999999998,
+      "endSec": 27.563,
+      "narrationSec": 4.597563
+    },
+    {
+      "id": "theHoursFollow",
+      "startSec": 27.564,
+      "endSec": 36.283,
+      "narrationSec": 8.266313
+    },
+    {
+      "id": "theRecord",
+      "startSec": 36.283,
+      "endSec": 45.838,
+      "narrationSec": 9.102229
+    },
+    {
+      "id": "whereNext",
+      "startSec": 45.838,
+      "endSec": 52.28,
+      "narrationSec": 5.99075
+    }
+  ]
+}
