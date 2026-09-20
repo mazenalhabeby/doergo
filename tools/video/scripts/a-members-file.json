@@ -109,11 +109,11 @@
     {
       "id": "andThePaperwork",
       "narration": {
-        "en": "And the paperwork between you: what you have issued, and what is still owed.",
-        "de": "Und die Papiere dazwischen: was Sie ausgestellt haben und was noch aussteht.",
-        "es": "Y los papeles entre ambos: lo que usted ha emitido y lo que falta.",
-        "fr": "Et les papiers entre vous : ce que vous avez émis, et ce qui reste dû.",
-        "it": "E i documenti fra voi: ciò che lei ha emesso e ciò che manca ancora."
+        "en": "And what passes between them and the office: the days they have asked for, and what was said back.",
+        "de": "Und was zwischen ihr und dem Büro läuft: die Tage, die sie beantragt hat — und was geantwortet wurde.",
+        "es": "Y lo que pasa entre ella y la oficina: los días que ha pedido y qué se le respondió.",
+        "fr": "Et ce qui circule entre elle et le bureau : les jours qu'elle a demandés, et la réponse.",
+        "it": "E ciò che passa fra lei e l'ufficio: i giorni che ha chiesto e la risposta ricevuta."
       }
     },
     {

@@ -1,0 +1,49 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/get-your-team-in/capture/page@c2f8428d19e840c56682c13c044d6d0b.webm",
+  "durationSec": 48.84,
+  "preRollSec": 6.805000000000007,
+  "beats": [
+    {
+      "id": "whoIsHere",
+      "startSec": 6.805000000000007,
+      "endSec": 10.647000000000007,
+      "narrationSec": 3.390125
+    },
+    {
+      "id": "inviteOne",
+      "startSec": 10.647000000000007,
+      "endSec": 16.625000000000007,
+      "narrationSec": 5.526354
+    },
+    {
+      "id": "decideFirst",
+      "startSec": 16.625000000000007,
+      "endSec": 25.760000000000005,
+      "narrationSec": 8.684271
+    },
+    {
+      "id": "theCode",
+      "startSec": 25.760000000000005,
+      "endSec": 30.856000000000005,
+      "narrationSec": 4.644
+    },
+    {
+      "id": "itIsAKey",
+      "startSec": 30.856000000000005,
+      "endSec": 38.69500000000001,
+      "narrationSec": 7.383958
+    },
+    {
+      "id": "andRevoked",
+      "startSec": 38.696000000000005,
+      "endSec": 44.39600000000001,
+      "narrationSec": 5.247708
+    },
+    {
+      "id": "whereNext",
+      "startSec": 44.39600000000001,
+      "endSec": 48.84,
+      "narrationSec": 3.993833
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+1
+00:00:10,152 --> 00:00:15,075
+Ce qui a été dit, et quand. La partie qui
+vit d'ordinaire dans la tête de quelqu'un.
+
+2
+00:00:15,530 --> 00:00:23,315
+Une ligne après un appel suffit. Ce n'est
+pas un rapport ; c'est un rappel pour le
+
+3
+00:00:23,315 --> 00:00:24,075
+suivant.
+
+4
+00:00:24,530 --> 00:00:30,242
+Où en est le client est un état
+visible, pas quelque chose à se rappeler.
+
+5
+00:00:30,696 --> 00:00:35,944
+Changez-le quand quelque chose
+change, et tout le monde lit la même chose.
+
+6
+00:00:36,399 --> 00:00:42,250
+En dessous, chaque intervention et
+chaque facture que vous avez émises pour eux.
+
+7
+00:00:42,703 --> 00:00:47,208
+Ensuite : créer une intervention
+pour un client, à sa propre adresse.
+

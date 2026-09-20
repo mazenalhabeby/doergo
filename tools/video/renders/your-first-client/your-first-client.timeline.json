@@ -1,0 +1,49 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/your-first-client/capture/page@0cf7c664e644d6432d83ecffe97f1210.webm",
+  "durationSec": 50.76,
+  "preRollSec": 5.055,
+  "beats": [
+    {
+      "id": "theBook",
+      "startSec": 5.055,
+      "endSec": 10.383,
+      "narrationSec": 4.876188
+    },
+    {
+      "id": "addOne",
+      "startSec": 10.383,
+      "endSec": 18.869999999999997,
+      "narrationSec": 8.034104
+    },
+    {
+      "id": "howToReachThem",
+      "startSec": 18.869999999999997,
+      "endSec": 24.198999999999998,
+      "narrationSec": 4.876188
+    },
+    {
+      "id": "whichWorkspace",
+      "startSec": 24.198999999999998,
+      "endSec": 33.894,
+      "narrationSec": 9.241542
+    },
+    {
+      "id": "saved",
+      "startSec": 33.894,
+      "endSec": 38.897,
+      "narrationSec": 4.551125
+    },
+    {
+      "id": "theirRecord",
+      "startSec": 38.897,
+      "endSec": 46.314,
+      "narrationSec": 6.966
+    },
+    {
+      "id": "whereNext",
+      "startSec": 46.314,
+      "endSec": 50.76,
+      "narrationSec": 3.993833
+    }
+  ]
+}

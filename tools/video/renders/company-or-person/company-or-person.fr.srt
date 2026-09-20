@@ -1,0 +1,47 @@
+1
+00:00:09,487 --> 00:00:15,013
+Vous facturez une entreprise. Vous
+appelez une personne. Les deux ont leur place.
+
+2
+00:00:15,466 --> 00:00:20,017
+Ouvrez un client : les personnes
+avec qui vous traitez y figurent.
+
+3
+00:00:20,472 --> 00:00:25,235
+Ajoutez-en une, et dites ce qu'elle
+fait là-bas. C'est en général ce dont on a
+
+4
+00:00:25,235 --> 00:00:27,066
+besoin à huit heures du matin.
+
+5
+00:00:27,521 --> 00:00:32,165
+L'une d'elles est celle qu'on appelle en
+premier. Tout le monde peut voir qui c'est.
+
+6
+00:00:32,620 --> 00:00:38,492
+Un interlocuteur n'est pas un client. Il
+n'est pas dans la liste des clients, et il
+
+7
+00:00:38,492 --> 00:00:40,190
+ne vous est pas facturé.
+
+8
+00:00:40,647 --> 00:00:45,799
+Et cela se lit dans les deux sens : dans
+quelle entreprise travaille une personne,
+
+9
+00:00:45,799 --> 00:00:48,124
+et qui travaille dans une entreprise.
+
+10
+00:00:48,577 --> 00:00:51,688
+Ensuite : entretenir
+un client sans tableur.
+

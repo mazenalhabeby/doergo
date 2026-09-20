@@ -14,8 +14,6 @@ import { DIALOG, dialogWith, pickFromSelect, signIn, typeSlowly, wheel } from '.
 import type { Timeline } from '../../timeline.ts';
 
 const CLIENT = 'Marchfield Cold Storage';
-const ADDRESS = 'Marchfield Works, Ely Road, Slough SL2';
-const CONTACT = 'Dilys Farrow';
 const EMAIL = 'plant@marchfieldcold.example';
 
 export async function captureYourFirstClient(
@@ -37,7 +35,12 @@ export async function captureYourFirstClient(
   });
 
   await stage.beat('addOne', async () => {
-    const add = page.locator('button').filter({ hasText: /New client|Add client|New Client/i }).first();
+    /*
+      ⚠️ "Add customer", not "Add client". The screen is headed CRM and talks
+      about clients throughout, and the button says customer — so a filter
+      written from the page's own vocabulary finds nothing.
+    */
+    const add = page.locator('button').filter({ hasText: /Add customer/i }).first();
     await stage.click(add);
     await page.locator(DIALOG).waitFor({ state: 'visible', timeout: 20_000 });
     const name = page.locator(`${DIALOG} input`).first();
@@ -46,18 +49,39 @@ export async function captureYourFirstClient(
     await stage.hold(0.8);
   });
 
-  await stage.beat('whereTheyAre', async () => {
-    const address = page.locator(`${DIALOG} input, ${DIALOG} textarea`)
-      .filter({ hasNot: page.locator('[value]') }).first();
-    const field = page.locator(`${DIALOG} input[placeholder*="ddress"], ${DIALOG} textarea[placeholder*="ddress"]`).first();
-    const target = (await field.isVisible().catch(() => false)) ? field : address;
-    await target.click();
-    await typeSlowly(target, ADDRESS);
-    await stage.hold(1.2);
+  await stage.beat('howToReachThem', async () => {
+    /*
+      ⚠️ THERE IS NO ADDRESS FIELD HERE, and the narration claimed one until
+      this was filmed. A client is created with a name, a way of reaching them
+      and a workspace; addresses live on the record afterwards, because a firm
+      can have several and none of them is known when somebody first writes the
+      name down.
+    */
+    const email = page.locator(`${DIALOG} input[type="email"]`).first();
+    await email.click();
+    await typeSlowly(email, EMAIL);
+    const phone = page.locator(`${DIALOG} input[type="tel"]`).first();
+    await phone.click();
+    await typeSlowly(phone, '20 7946 0288');
+    await stage.hold(1.0);
   });
 
   await stage.beat('whichWorkspace', async () => {
-    await pickFromSelect(page, /workspace|space|No workspace/i, 'Halstead Depot').catch(() => {});
+    /*
+      ⚠️ REQUIRED, and it is the field this video exists to point at. Adding a
+      client from the All tab once wrote no workspace at all: saved, and then
+      invisible in every workspace tab and outside the per-space CRM.
+
+      It is a plain `<select>` here rather than one of the app's listboxes.
+    */
+    const native = page.locator(`${DIALOG} select`).first();
+    if (await native.isVisible().catch(() => false)) {
+      await stage.moveTo(native);
+      await native.selectOption({ label: 'Halstead Depot' });
+    } else {
+      await pickFromSelect(page, /Choose a workspace/i, 'Halstead Depot');
+    }
+    await page.waitForTimeout(600);
     await stage.hold(1.4);
   });
 

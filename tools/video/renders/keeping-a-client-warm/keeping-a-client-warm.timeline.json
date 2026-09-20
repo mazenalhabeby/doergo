@@ -1,0 +1,43 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/keeping-a-client-warm/capture/page@78cdc8dfea2b58f195a408a574f02374.webm",
+  "durationSec": 44.16,
+  "preRollSec": 6.651999999999994,
+  "beats": [
+    {
+      "id": "whatWasSaid",
+      "startSec": 6.651999999999994,
+      "endSec": 12.028999999999993,
+      "narrationSec": 4.922646
+    },
+    {
+      "id": "addOne",
+      "startSec": 12.029999999999994,
+      "endSec": 21.028999999999996,
+      "narrationSec": 8.544958
+    },
+    {
+      "id": "whereItStands",
+      "startSec": 21.029999999999994,
+      "endSec": 27.195999999999994,
+      "narrationSec": 5.712104
+    },
+    {
+      "id": "moveIt",
+      "startSec": 27.195999999999994,
+      "endSec": 32.897999999999996,
+      "narrationSec": 5.247708
+    },
+    {
+      "id": "theWholeStory",
+      "startSec": 32.898999999999994,
+      "endSec": 39.202999999999996,
+      "narrationSec": 5.851438
+    },
+    {
+      "id": "whereNext",
+      "startSec": 39.202999999999996,
+      "endSec": 44.16,
+      "narrationSec": 4.504667
+    }
+  ]
+}

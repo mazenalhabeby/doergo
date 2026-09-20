@@ -1,0 +1,49 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/company-or-person/capture/page@4163a5f145e4cd3089ae1015ea9ff3e7.webm",
+  "durationSec": 48.64,
+  "preRollSec": 5.987000000000002,
+  "beats": [
+    {
+      "id": "youRingAPerson",
+      "startSec": 5.987000000000002,
+      "endSec": 11.966000000000001,
+      "narrationSec": 5.526354
+    },
+    {
+      "id": "theCompany",
+      "startSec": 11.966000000000001,
+      "endSec": 16.971000000000004,
+      "narrationSec": 4.551125
+    },
+    {
+      "id": "addAContact",
+      "startSec": 16.972,
+      "endSec": 24.020000000000003,
+      "narrationSec": 6.594479
+    },
+    {
+      "id": "primary",
+      "startSec": 24.021,
+      "endSec": 29.12,
+      "narrationSec": 4.644
+    },
+    {
+      "id": "notAClient",
+      "startSec": 29.12,
+      "endSec": 37.146,
+      "narrationSec": 7.569708
+    },
+    {
+      "id": "bothWays",
+      "startSec": 37.147000000000006,
+      "endSec": 45.077000000000005,
+      "narrationSec": 7.476833
+    },
+    {
+      "id": "whereNext",
+      "startSec": 45.077000000000005,
+      "endSec": 48.64,
+      "narrationSec": 3.111479
+    }
+  ]
+}

@@ -136,6 +136,8 @@ async function destroyPreviousRun(): Promise<void> {
     points at the member who created it, so deleting the members fails until it
     is gone.
   */
+  await prisma.invitation.deleteMany({ where: { organizationId: orgId } });
+  await prisma.joinRequest.deleteMany({ where: { organizationId: orgId } }).catch(() => undefined);
   await prisma.timeOff.deleteMany({ where: { technician: { organizationId: orgId } } });
   await prisma.recurringTaskTemplate.deleteMany({ where: { organizationId: orgId } });
   await prisma.serviceReport.deleteMany({ where: { organizationId: orgId } });

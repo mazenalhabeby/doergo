@@ -1,0 +1,26 @@
+TITLE
+Your first client — HBCField
+
+DESCRIPTION
+A client is more than a name on an invoice: an address a job can be sent to, the people you actually speak to there, and everything that has happened between you. Adding one takes a moment; what it saves is asking somebody where the site was.
+
+Chapters
+0:00 Your first client
+0:08 The book
+0:13 Adding one
+0:42 Their record
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload your-first-client.mp4
+  [ ] Add each your-first-client.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → 

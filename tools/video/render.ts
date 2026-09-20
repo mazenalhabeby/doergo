@@ -31,6 +31,13 @@ import { captureJobTypes } from './capture/flows/job-types.ts';
 import { captureStartToFinish } from './capture/flows/start-to-finish.ts';
 import { captureWorkThatRepeats } from './capture/flows/work-that-repeats.ts';
 import { captureClockInAndOut } from './capture/flows/clock-in-and-out.ts';
+import { captureAMembersFile } from './capture/flows/a-members-file.ts';
+import { captureKeepingAClientWarm } from './capture/flows/keeping-a-client-warm.ts';
+import { captureCompanyOrPerson } from './capture/flows/company-or-person.ts';
+import { captureYourFirstClient } from './capture/flows/your-first-client.ts';
+import { captureGetYourTeamIn } from './capture/flows/get-your-team-in.ts';
+import { captureTimeOff } from './capture/flows/time-off.ts';
+import { captureTheRota } from './capture/flows/the-rota.ts';
 import { captureOvertime } from './capture/flows/overtime.ts';
 import { captureTwoClocks } from './capture/flows/two-clocks.ts';
 import { captureChecklistsAndParts } from './capture/flows/checklists-and-parts.ts';
@@ -79,6 +86,13 @@ const FLOWS: Record<string, (d: Record<string, number>) => Promise<Timeline>> = 
   'clock-in-and-out': captureClockInAndOut,
   'two-clocks': captureTwoClocks,
   'overtime': captureOvertime,
+  'the-rota': captureTheRota,
+  'time-off': captureTimeOff,
+  'get-your-team-in': captureGetYourTeamIn,
+  'a-members-file': captureAMembersFile,
+  'your-first-client': captureYourFirstClient,
+  'company-or-person': captureCompanyOrPerson,
+  'keeping-a-client-warm': captureKeepingAClientWarm,
   'create-a-job': captureCreateAJob,
   // Twenty seconds, two beats. A cheap way to hear a voice without spending a
   // full script's characters every time somebody wants to judge one.
@@ -130,6 +144,13 @@ const WARM_ROUTES: Record<string, string[]> = {
   'clock-in-and-out': ['/login', '/dashboard', '/my/attendance', '/attendance'],
   'two-clocks': ['/login', '/dashboard', '/members', '/members/warm'],
   'overtime': ['/login', '/dashboard', '/overtime'],
+  'the-rota': ['/login', '/dashboard', '/schedule'],
+  'time-off': ['/login', '/dashboard', '/my/time-off', '/schedule', '/members', '/members/warm'],
+  'get-your-team-in': ['/login', '/dashboard', '/members', '/invitations'],
+  'a-members-file': ['/login', '/dashboard', '/members', '/members/warm'],
+  'your-first-client': ['/login', '/dashboard', '/clients', '/customers/warm'],
+  'company-or-person': ['/login', '/dashboard', '/clients', '/customers/warm'],
+  'keeping-a-client-warm': ['/login', '/dashboard', '/clients', '/customers/warm'],
   'create-a-job': ['/login', '/dashboard', '/tasks', '/tasks/warm'],
   'voice-test': ['/login', '/dashboard'],
 };

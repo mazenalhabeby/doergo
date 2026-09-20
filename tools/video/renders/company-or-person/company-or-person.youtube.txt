@@ -1,0 +1,26 @@
+TITLE
+A company, or a person — HBCField
+
+DESCRIPTION
+You invoice a company, but you ring a person. HBCField keeps both, and links them: the people you speak to at a client are records of their own, with a job title and a place in the company — and they are never counted as clients, because six contacts at one firm are not six customers.
+
+Chapters
+0:00 A company, or a person
+0:09 Two things at once
+0:20 Adding a person
+0:32 Not a client
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload company-or-person.mp4
+  [ ] Add each company-or-person.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → 

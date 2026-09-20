@@ -1,0 +1,55 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/a-members-file/capture/page@16e30f7039d73948f18b5418808e6b59.webm",
+  "durationSec": 56.16,
+  "preRollSec": 8.558999999999997,
+  "beats": [
+    {
+      "id": "onePerson",
+      "startSec": 8.558999999999997,
+      "endSec": 14.212999999999997,
+      "narrationSec": 5.201271
+    },
+    {
+      "id": "whatTheyReach",
+      "startSec": 14.213999999999999,
+      "endSec": 21.074999999999996,
+      "narrationSec": 6.408708
+    },
+    {
+      "id": "theirWork",
+      "startSec": 21.075999999999997,
+      "endSec": 25.104,
+      "narrationSec": 3.575875
+    },
+    {
+      "id": "theirHours",
+      "startSec": 25.104,
+      "endSec": 32.754999999999995,
+      "narrationSec": 7.198188
+    },
+    {
+      "id": "whereTheyWork",
+      "startSec": 32.754999999999995,
+      "endSec": 38.221999999999994,
+      "narrationSec": 5.015521
+    },
+    {
+      "id": "whatTheyHold",
+      "startSec": 38.221999999999994,
+      "endSec": 44.989999999999995,
+      "narrationSec": 6.315833
+    },
+    {
+      "id": "andThePaperwork",
+      "startSec": 44.989999999999995,
+      "endSec": 51.806,
+      "narrationSec": 6.362271
+    },
+    {
+      "id": "whereNext",
+      "startSec": 51.806,
+      "endSec": 56.16,
+      "narrationSec": 3.900958
+    }
+  ]
+}

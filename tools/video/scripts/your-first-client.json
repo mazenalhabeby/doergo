@@ -58,23 +58,23 @@
       }
     },
     {
-      "id": "whereTheyAre",
+      "id": "howToReachThem",
       "narration": {
-        "en": "The address matters more than it looks: it is where a job for them will be sent.",
-        "de": "Die Adresse zählt mehr, als sie aussieht: Dorthin geht später der Auftrag.",
-        "es": "La dirección importa más de lo que parece: allí se mandará el trabajo.",
-        "fr": "L'adresse compte plus qu'il n'y paraît : c'est là que partira une intervention.",
-        "it": "L'indirizzo conta più di quanto sembri: è lì che verrà mandato un lavoro."
+        "en": "How you reach them, and in which language they would rather be written to.",
+        "de": "Wie Sie ihn erreichen — und in welcher Sprache er lieber angeschrieben wird.",
+        "es": "Cómo se le localiza, y en qué idioma prefiere que le escriban.",
+        "fr": "Comment le joindre, et dans quelle langue il préfère qu'on lui écrive.",
+        "it": "Come raggiungerlo, e in che lingua preferisce essere contattato."
       }
     },
     {
       "id": "whichWorkspace",
       "narration": {
-        "en": "And which part of the business they belong to, so they are not filed where nobody looks.",
-        "de": "Und zu welchem Teil des Betriebs er gehört — damit er nicht dort abgelegt wird, wo niemand nachsieht.",
-        "es": "Y a qué parte del negocio pertenece, para que no quede archivado donde nadie mira.",
-        "fr": "Et à quelle partie de l'activité il appartient, pour ne pas être classé là où personne ne regarde.",
-        "it": "E a quale parte dell'azienda appartiene, per non finire archiviato dove nessuno guarda."
+        "en": "And which part of the business they belong to. It is asked because a client filed nowhere is a client nobody finds.",
+        "de": "Und zu welchem Teil des Betriebs er gehört. Danach wird gefragt, weil ein nirgends abgelegter Kunde ein Kunde ist, den niemand findet.",
+        "es": "Y a qué parte del negocio pertenece. Se pregunta porque un cliente archivado en ningún sitio es un cliente que nadie encuentra.",
+        "fr": "Et à quelle partie de l'activité il appartient. La question est posée parce qu'un client classé nulle part est un client que personne ne trouve.",
+        "it": "E a quale parte dell'azienda appartiene. Viene chiesto perché un cliente archiviato da nessuna parte è un cliente che nessuno trova."
       }
     },
     {

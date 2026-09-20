@@ -38,30 +38,41 @@ export async function captureGetYourTeamIn(
   await stage.beat('inviteOne', async () => {
     await stage.click('[data-tour="members-invite"]');
     await page.locator(DIALOG).waitFor({ state: 'visible', timeout: 20_000 });
-    await stage.hold(1.4);
+    /*
+      ⚠️ THE DIALOG OFFERS TWO METHODS and opens on Email. This video is about
+      the code — the thing you hand somebody who is standing in front of you —
+      so the method is chosen first, and everything after it depends on that
+      click having landed.
+    */
+    await stage.click(`${DIALOG} button:text-is("Code")`);
+    await page.waitForTimeout(700);
+    await stage.hold(1.0);
   });
 
   await stage.beat('decideFirst', async () => {
     /*
-      The role and the workspace, both chosen before anybody has the code.
-      Matched on their placeholders: these fields carry no ids and their
-      labels are translated at runtime.
+      Who they are, and where they land. The staff/external choice is the one
+      that cannot be undone by editing a permission later — an external member
+      holds no clock, no leave and no personnel file whatever else you grant.
     */
-    await pickFromSelect(page, /role|member/i, 'Field Engineer').catch(() => {});
-    await pickFromSelect(page, /workspace|space/i, 'Halstead Depot').catch(() => {});
-    await stage.hold(1.6);
+    await stage.moveTo(`${DIALOG} :text("Who is this?")`);
+    await stage.hold(1.2);
+    await pickFromSelect(page, /No workspace/i, 'Halstead Depot').catch(() => {});
+    await stage.hold(1.2);
   });
 
   await stage.beat('theCode', async () => {
-    const send = page.locator(`${DIALOG} button`).filter({ hasText: /Invite|Create|Send|Generate/i }).last();
-    await stage.click(send);
+    await stage.click(`${DIALOG} button:has-text("Invitation"), ${DIALOG} button:has-text("Generate")`);
     /*
-      The code appearing IS the server's answer — the dialog may stay open to
-      show it, so the code itself is the thing to wait for, not the dialog
-      closing.
+      The code appearing IS the server's answer, and the dialog stays open to
+      show it — so the code itself is what to wait for, not the dialog closing.
+      Ten characters from a 32-symbol alphabet: the length was raised from six
+      after an audit found a 500-address pool could expect a hit in about
+      eighteen hours.
     */
-    await page.getByText(/[A-Z0-9]{8,10}/).first().waitFor({ state: 'visible', timeout: 30_000 });
-    await stage.hold(1.8);
+    await page.getByText(/\b[A-Z0-9]{8,10}\b/).first()
+      .waitFor({ state: 'visible', timeout: 30_000 });
+    await stage.hold(2.0);
   });
 
   await stage.beat('itIsAKey', async () => {
@@ -77,9 +88,15 @@ export async function captureGetYourTeamIn(
       ⚠️ THE REVOCATION IS NOT OPTIONAL. Everything filmed above is a working
       key until this runs; if this beat is ever removed, the video must be too.
     */
-    const row = page.locator('tr, div').filter({ hasText: /Pending/i }).last();
-    const menu = row.locator('button').last();
-    await stage.click(menu);
+    /*
+      ⚠️ `tr` ONLY. Filtering `tr, div` by text matches a div wrapper first and
+      then looks for a button that is not in it. The revoke control is an
+      icon-only button at the end of the row, which is also why it does not
+      appear in a list of buttons filtered by their text.
+    */
+    const row = page.locator('tr').filter({ hasText: /Pending/i }).last();
+    await row.scrollIntoViewIfNeeded();
+    await stage.click(row.locator('button').last());
     const revoke = page.getByRole('menuitem').filter({ hasText: /Revoke|Cancel|Delete/i }).first();
     if (await revoke.isVisible({ timeout: 4_000 }).catch(() => false)) {
       await revoke.click();
@@ -95,8 +112,12 @@ export async function captureGetYourTeamIn(
   });
 
   await stage.beat('whereNext', async () => {
-    await reveal(page, 'table, [role="table"]', 0.8);
-    await stage.hold(1.2);
+    /*
+      Rest on the register itself rather than on the table element: revoking
+      refetches, and for a moment there is no table in the DOM at all.
+    */
+    await stage.moveTo('text=/Create and manage invitation codes/');
+    await stage.hold(1.6);
   });
 
   return stage.finish();

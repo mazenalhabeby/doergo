@@ -40,32 +40,39 @@ export async function captureAMembersFile(
   });
 
   await stage.beat('theirWork', async () => {
-    await openTab(stage, page, '[role="tab"]:has-text("Tasks")', 'table, text=/No tasks/i');
+    /*
+      ⚠️ ONE MARKER, and a text one — a comma list mixing a CSS selector with a
+      text engine is not a selector Playwright reads the way it looks. Each tab
+      here is proved by the heading only its own panel renders.
+    */
+    await openTab(stage, page, '[role="tab"]:has-text("Tasks")', 'text=Task History');
     await stage.hold(1.6);
   });
 
   await stage.beat('theirHours', async () => {
-    await openTab(stage, page, '[role="tab"]:has-text("Attendance")', 'text=/Attendance History/i');
+    await openTab(stage, page, '[role="tab"]:has-text("Attendance")', 'text=Attendance History');
     await wheel(page, 200);
   });
 
   await stage.beat('whereTheyWork', async () => {
-    await openTab(stage, page, '[role="tab"]:has-text("Locations")', 'text=/Halstead|Brambleside|Kesterton/');
+    await openTab(stage, page, '[role="tab"]:has-text("Locations")', 'text=Location Assignments');
     await stage.hold(1.6);
   });
 
   await stage.beat('whatTheyHold', async () => {
-    await openTab(stage, page, '[role="tab"]:has-text("Custody")', 'text=/Van|holds|nothing/i');
+    await openTab(stage, page, '[role="tab"]:has-text("Custody")', 'text=/HOLDING NOW/i');
     await stage.hold(1.6);
   });
 
   await stage.beat('andThePaperwork', async () => {
     /*
-      The documents tab is named differently depending on what the
-      organisation calls it; matched on either, and the panel is proved by
-      anything the panel itself renders.
+      ⚠️ THERE IS NO DOCUMENTS TAB ON A MEMBER. The personnel file is its own
+      screen; what sits here is Time Off, which is the other thing that passes
+      between a member and the office. The narration says "the paperwork
+      between you", which is true of a leave record and would have been false
+      of a tab that does not exist.
     */
-    await openTab(stage, page, '[role="tab"]:has-text("Documents"), [role="tab"]:has-text("Time Off")', 'text=/Document|Time Off/i');
+    await openTab(stage, page, '[role="tab"]:has-text("Time Off")', 'text=/Manage time-off requests/i');
     await stage.hold(1.6);
   });
 

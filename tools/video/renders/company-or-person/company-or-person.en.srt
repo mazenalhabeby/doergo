@@ -1,0 +1,43 @@
+1
+00:00:09,487 --> 00:00:15,013
+You invoice a company. You ring a
+person. Both belong in the book.
+
+2
+00:00:15,466 --> 00:00:20,017
+Open a client and the people you
+deal with there are listed with them.
+
+3
+00:00:20,472 --> 00:00:26,067
+Add one, and say what they do there. That
+is usually what you actually need at eight
+
+4
+00:00:26,067 --> 00:00:27,066
+in the morning.
+
+5
+00:00:27,521 --> 00:00:32,165
+One of them is the one you ring
+first. Everybody else can see who that is.
+
+6
+00:00:32,620 --> 00:00:39,449
+A contact is not a client. They are not in
+the client list, and you are not charged
+
+7
+00:00:39,449 --> 00:00:40,190
+for them.
+
+8
+00:00:40,647 --> 00:00:48,124
+And it reads both ways: which company a
+person works at, and who works at a company.
+
+9
+00:00:48,577 --> 00:00:51,688
+Next: keeping a client
+warm without a spreadsheet.
+

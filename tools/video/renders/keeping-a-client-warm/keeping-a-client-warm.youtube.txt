@@ -1,0 +1,26 @@
+TITLE
+Keeping a client warm — HBCField
+
+DESCRIPTION
+The difference between a client who comes back and one who does not is usually somebody remembering to ring them. Every client record keeps what was said and when, so the next person to open it knows where things stand without asking anybody.
+
+Chapters
+0:00 Keeping a client warm
+0:10 What was said
+0:24 Where it stands
+0:36 The whole story
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload keeping-a-client-warm.mp4
+  [ ] Add each keeping-a-client-warm.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → 

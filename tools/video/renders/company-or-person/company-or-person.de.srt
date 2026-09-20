@@ -1,0 +1,55 @@
+1
+00:00:09,487 --> 00:00:14,242
+Sie berechnen ein Unternehmen. Sie
+rufen eine Person an. Beides gehört ins
+
+2
+00:00:14,242 --> 00:00:15,013
+Verzeichnis.
+
+3
+00:00:15,466 --> 00:00:19,696
+Öffnen Sie einen Kunden — die Menschen,
+mit denen Sie dort zu tun haben, stehen
+
+4
+00:00:19,696 --> 00:00:20,017
+dabei.
+
+5
+00:00:20,472 --> 00:00:25,932
+Fügen Sie eine hinzu und sagen Sie, was
+sie dort macht. Genau das braucht man
+
+6
+00:00:25,932 --> 00:00:27,066
+morgens um acht.
+
+7
+00:00:27,521 --> 00:00:32,165
+Eine davon ruft man zuerst an.
+Alle anderen sehen, wer das ist.
+
+8
+00:00:32,620 --> 00:00:39,607
+Ein Ansprechpartner ist kein Kunde. Er
+steht nicht in der Kundenliste, und er kostet
+
+9
+00:00:39,607 --> 00:00:40,190
+nichts.
+
+10
+00:00:40,647 --> 00:00:45,906
+Und es gilt in beide Richtungen: bei
+welchem Unternehmen eine Person arbeitet — und
+
+11
+00:00:45,906 --> 00:00:48,124
+wer bei einem Unternehmen arbeitet.
+
+12
+00:00:48,577 --> 00:00:51,688
+Als Nächstes: einen Kunden
+warmhalten — ohne Tabelle.
+

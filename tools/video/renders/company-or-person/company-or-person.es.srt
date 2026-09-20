@@ -1,0 +1,47 @@
+1
+00:00:09,487 --> 00:00:15,013
+Usted factura a una empresa. Llama a una
+persona. Las dos cosas van en el libro.
+
+2
+00:00:15,466 --> 00:00:20,017
+Abra un cliente y la gente con
+la que trata allí aparece con él.
+
+3
+00:00:20,472 --> 00:00:26,554
+Añada una y diga qué hace allí. Eso es lo
+que hace falta de verdad a las ocho de la
+
+4
+00:00:26,554 --> 00:00:27,066
+mañana.
+
+5
+00:00:27,521 --> 00:00:32,165
+A una de ellas se la llama
+primero. Todos los demás ven quién es.
+
+6
+00:00:32,620 --> 00:00:39,926
+Un contacto no es un cliente. No está en
+la lista de clientes, y no se le cobra por
+
+7
+00:00:39,926 --> 00:00:40,190
+él.
+
+8
+00:00:40,647 --> 00:00:47,189
+Y se lee en los dos sentidos: en qué
+empresa trabaja una persona, y quién trabaja en
+
+9
+00:00:47,189 --> 00:00:48,124
+una empresa.
+
+10
+00:00:48,577 --> 00:00:51,688
+A continuación: mantener caliente a
+un cliente sin una hoja de cálculo.
+

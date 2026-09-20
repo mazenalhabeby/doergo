@@ -1,0 +1,26 @@
+TITLE
+A member's file — HBCField
+
+DESCRIPTION
+Everything the organisation knows about one person, gathered rather than scattered: what they can reach, the work they are carrying, the hours they have worked, where they are assigned, what they are holding, and the paperwork between them and you.
+
+Chapters
+0:00 A member's file
+0:12 One person
+0:24 Their work
+0:41 What they hold
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload a-members-file.mp4
+  [ ] Add each a-members-file.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → "memberDetailTour"
