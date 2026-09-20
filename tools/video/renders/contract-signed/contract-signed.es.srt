@@ -1,0 +1,44 @@
+1
+00:00:08,860 --> 00:00:15,269
+Un contrato empieza como plantilla, para
+decidir el texto una vez y no cada vez.
+
+2
+00:00:15,725 --> 00:00:21,619
+Se convierte en un contrato real en
+cuanto alguien acepta una invitación, relleno
+
+3
+00:00:21,619 --> 00:00:24,967
+con su nombre, su
+puesto y su fecha de inicio.
+
+4
+00:00:25,422 --> 00:00:31,181
+Quién firma y en qué orden es parte
+del documento, no de un hilo de correos.
+
+5
+00:00:31,635 --> 00:00:38,550
+Si se firma, solo se confirma como leído,
+o tiene que hacerse en papel, forma parte
+
+6
+00:00:38,550 --> 00:00:42,548
+de la plantilla; no es
+una decisión del momento.
+
+7
+00:00:43,000 --> 00:00:49,682
+Y el registro dice hasta dónde llegó
+cada documento: emitido, aún sin abrir,
+
+8
+00:00:49,682 --> 00:00:52,056
+esperando firma, o firmado.
+
+9
+00:00:52,514 --> 00:00:57,204
+A continuación: los documentos
+que caducan, y enterarse antes.
+

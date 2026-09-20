@@ -43,11 +43,11 @@
     {
       "id": "issueIt",
       "narration": {
-        "en": "Issuing it fills in the person and the terms, and sends it where it has to go.",
-        "de": "Beim Ausstellen werden Person und Konditionen eingesetzt — und es geht dorthin, wo es hin muss.",
-        "es": "Emitirlo rellena a la persona y las condiciones, y lo manda a donde debe ir.",
-        "fr": "L'émettre remplit la personne et les conditions, et l'envoie où il doit aller.",
-        "it": "Emetterlo inserisce la persona e le condizioni, e lo manda dove deve andare."
+        "en": "It becomes a real contract the moment somebody accepts an invitation — filled in with their name, their job title and their start date.",
+        "de": "Zum echten Vertrag wird sie in dem Moment, in dem jemand eine Einladung annimmt — ausgefüllt mit Name, Funktion und Eintrittsdatum.",
+        "es": "Se convierte en un contrato real en cuanto alguien acepta una invitación, relleno con su nombre, su puesto y su fecha de inicio.",
+        "fr": "Il devient un vrai contrat au moment où quelqu'un accepte une invitation — rempli avec son nom, son poste et sa date d'entrée.",
+        "it": "Diventa un contratto vero nel momento in cui qualcuno accetta un invito — compilato col suo nome, la sua mansione e la data d'inizio."
       },
       "chapter": {
         "en": "Issuing it",
@@ -77,21 +77,21 @@
     {
       "id": "theySign",
       "narration": {
-        "en": "They sign where they are, on whatever they are holding.",
-        "de": "Unterschrieben wird dort, wo man gerade ist — auf dem, was man in der Hand hat.",
-        "es": "Firman donde estén, con lo que tengan en la mano.",
-        "fr": "Ils signent là où ils sont, sur ce qu'ils ont en main.",
-        "it": "Firmano dove si trovano, con quello che hanno in mano."
+        "en": "Whether it is signed, merely confirmed as read, or has to be done on paper is part of the template — not a decision somebody makes in the moment.",
+        "de": "Ob unterschrieben, nur als gelesen bestätigt oder zwingend auf Papier — das gehört zur Vorlage, nicht zur Entscheidung des Augenblicks.",
+        "es": "Si se firma, solo se confirma como leído, o tiene que hacerse en papel, forma parte de la plantilla; no es una decisión del momento.",
+        "fr": "Signé, simplement confirmé comme lu, ou obligatoirement sur papier : cela fait partie du modèle, pas d'une décision prise sur le moment.",
+        "it": "Se va firmato, solo confermato come letto, o per forza su carta, fa parte del modello — non è una decisione del momento."
       }
     },
     {
       "id": "theEvidence",
       "narration": {
-        "en": "And what is kept is not just the signature: it is who opened it, when, and from where.",
-        "de": "Und aufbewahrt wird nicht nur die Unterschrift, sondern auch, wer es wann und von wo geöffnet hat.",
-        "es": "Y lo que queda no es solo la firma: es quién lo abrió, cuándo y desde dónde.",
-        "fr": "Et ce qui est conservé n'est pas que la signature : c'est qui l'a ouvert, quand, et d'où.",
-        "it": "E ciò che resta non è solo la firma: è chi l'ha aperto, quando e da dove."
+        "en": "And the register says where every document got to: issued, not opened yet, waiting on a signature, or signed.",
+        "de": "Und das Register zeigt, wie weit jedes Dokument ist: ausgestellt, noch nicht geöffnet, auf eine Unterschrift wartend oder unterschrieben.",
+        "es": "Y el registro dice hasta dónde llegó cada documento: emitido, aún sin abrir, esperando firma, o firmado.",
+        "fr": "Et le registre dit où en est chaque document : émis, pas encore ouvert, en attente de signature, ou signé.",
+        "it": "E il registro dice a che punto è ogni documento: emesso, non ancora aperto, in attesa di firma, o firmato."
       },
       "chapter": {
         "en": "The evidence",

@@ -10,42 +10,42 @@ Each is about two minutes and assumes only the videos above it.
 
 | # | id | Title | Status |
 |--:|---|---|---|
-| 01 | `what-hbcfield-is` | What HBCField is | **built** |
-| 02 | | Your first five minutes | |
-| 03 | | Workspaces, and why everything hangs off them | |
-| 04 | | Who sees what | |
-| 05 | | Create your first job | |
-| 06 | | Give it to somebody | |
-| 07 | | A job from start to finish | |
-| 08 | | Job types, and flows that fit your trade | |
-| 09 | | Work that repeats | |
-| 10 | | Checklists, sub-jobs and photos | |
-| 11 | | Clock in and clock out | |
-| 12 [14] | | Two clocks: worked and counted | |
-| 13 [15] | | Overtime, asked and approved | |
-| 14 [16] | | The rota | ⚠️ needs a SHIFT workspace in the seed |
-| 15 [17] | | Time off | |
-| 16 [18] | | Get your team in | ⚠️ never film a live invitation code |
-| 17 [19] | | Roles you can actually change | |
-| 18 [20] | | A member's file | |
-| 19 [21] | | People who do not work for you | |
-| 20 [22] | | Your first client | |
-| 21 [23] | | A company, or a person | |
-| 22 [24] | | Notes, calls and reminders | |
-| 23 [27] | | A job for a client, at their address | |
-| 24 [28] | | Put your equipment on the books | |
-| 25 [29] | | Who has the van | |
-| 26 [32] | | Your first invoice | |
-| 27 [33] | | Draft, issued, sent, paid | |
-| 28 [34] | | What you pay us | |
-| 29 [35] | | The filing cabinet | |
-| 30 [36] | | Issue a contract and get it signed | |
-| 31 [37] | | Licences that expire | |
-| 32 [39] | | Your dashboard | |
-| 33 [40] | | Build a report | |
-| 34 [41] | | Where everyone is | |
-| 35 [47] | | Give a client their own login | |
-| 36 [50] | | Talking to your client | |
+| 01 | `what-hbcfield-is` | What HBCField is | **made** |
+| 02 | `—` | Your first five minutes | ⚠️ **BLOCKED — there is no web signup page.** `/register` and `/signup` both 404; signing up happens on the phone. This belongs to the mobile set, or the web needs the page first. |
+| 03 | `workspaces` | Workspaces, and why everything hangs off them | **made** |
+| 04 | `who-sees-what` | Who sees what | **made** |
+| 05 | `your-first-job` | Create your first job | **made** |
+| 06 | `give-it-to-somebody` | Give it to somebody | **made** |
+| 07 | `start-to-finish` | A job from start to finish | **made** |
+| 08 | `job-types` | Job types, and flows that fit your trade | **made** |
+| 09 | `work-that-repeats` | Work that repeats | **made** |
+| 10 | `checklists-and-parts` | Checklists, sub-jobs and photos | **made** |
+| 11 | `clock-in-and-out` | Clock in and clock out | **made** |
+| 12 | `two-clocks` | Two clocks: worked and counted | **made** |
+| 13 | `overtime` | Overtime, asked and approved | **made** |
+| 14 | `the-rota` | The rota | **made** |
+| 15 | `time-off` | Time off | **made** |
+| 16 | `get-your-team-in` | Get your team in | **made** |
+| 17 | `a-role-of-your-own` | Roles you can actually change | **made** |
+| 18 | `a-members-file` | A member's file | **made** |
+| 19 | `people-outside` | People who do not work for you | **made** |
+| 20 | `your-first-client` | Your first client | **made** |
+| 21 | `company-or-person` | A company, or a person | **made** |
+| 22 | `keeping-a-client-warm` | Notes, calls and reminders | **made** |
+| 23 | `job-at-their-address` | A job for a client, at their address | **made** |
+| 24 | `equipment-on-the-books` | Put your equipment on the books | **made** |
+| 25 | `who-has-the-van` | Who has the van | **made** |
+| 26 | `your-first-invoice` | Your first invoice | **made** |
+| 27 | `draft-issued-paid` | Draft, issued, sent, paid | **made** |
+| 28 | `what-you-pay-us` | What you pay us | **made** |
+| 29 | `the-filing-cabinet` | The filing cabinet | **made** |
+| 30 | `contract-signed` | Issue a contract and get it signed | **made** |
+| 31 | `licences-that-expire` | Licences that expire | **made** |
+| 32 | `your-dashboard` | Your dashboard | **made** |
+| 33 | `build-a-report` | Build a report | **made** |
+| 34 | `—` | Where everyone is | ⚠️ **BLOCKED — no live map, no GPS.** The tracking tab on the attendance board is a table of who is clocked in, and the seed records no location history. The first cut narrated "everybody who is out, on one map" over a list of clock-in times. |
+| 35 | `—` | Give a client their own login | ⚠️ **BLOCKED — the portal list does not open.** A portal exists (the seed makes one) but clicking its card navigates nowhere, so every claim about who gets in and what they see has no screen. |
+| 36 | `—` | Talking to your client | ⚠️ **BLOCKED — no way in.** Cross-org chat is authorised by a SHARED space; without one there is no chat control in the navbar at all. |
 
 `create-a-job` exists on disk from an earlier pass and predates this ordering —
 it straddles 05, 06 and 23. Re-scope it against them rather than treating it as

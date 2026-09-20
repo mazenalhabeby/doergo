@@ -1,0 +1,43 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/contract-signed/capture/page@06b96813d5f3b5da65153a4cdacca930.webm",
+  "durationSec": 54.16,
+  "preRollSec": 5.359999999999999,
+  "beats": [
+    {
+      "id": "aTemplate",
+      "startSec": 5.359999999999999,
+      "endSec": 12.224,
+      "narrationSec": 6.408708
+    },
+    {
+      "id": "issueIt",
+      "startSec": 12.225,
+      "endSec": 21.922,
+      "narrationSec": 9.241542
+    },
+    {
+      "id": "theChain",
+      "startSec": 21.922,
+      "endSec": 28.134,
+      "narrationSec": 5.758563
+    },
+    {
+      "id": "theySign",
+      "startSec": 28.134999999999998,
+      "endSec": 39.5,
+      "narrationSec": 10.913375
+    },
+    {
+      "id": "theEvidence",
+      "startSec": 39.5,
+      "endSec": 49.012,
+      "narrationSec": 9.055792
+    },
+    {
+      "id": "whereNext",
+      "startSec": 49.014,
+      "endSec": 54.16,
+      "narrationSec": 4.690438
+    }
+  ]
+}

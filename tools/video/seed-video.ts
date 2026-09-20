@@ -143,6 +143,8 @@ async function destroyPreviousRun(): Promise<void> {
   await prisma.document.deleteMany({ where: { organizationId: orgId } });
   await prisma.documentTemplate.deleteMany({ where: { organizationId: orgId } }).catch(() => undefined);
   await prisma.documentType.deleteMany({ where: { organizationId: orgId } });
+  await prisma.intakeCategory.deleteMany({ where: { portal: { organizationId: orgId } } }).catch(() => undefined);
+  await prisma.portal.deleteMany({ where: { organizationId: orgId } });
   await prisma.invitation.deleteMany({ where: { organizationId: orgId } });
   await prisma.joinRequest.deleteMany({ where: { organizationId: orgId } }).catch(() => undefined);
   await prisma.timeOff.deleteMany({ where: { technician: { organizationId: orgId } } });
@@ -428,7 +430,13 @@ async function createSpaces(orgId: string, workflowId: string) {
       geofencePolicy: 'AWAY_ALLOWED',
       isActive: true,
       workflowId,
-      enabledModules: [...SPACE_MODULES] as unknown as Prisma.InputJsonValue,
+      /*
+        ⚠️ The client site also runs a PORTAL, which the other two do not: it
+        is the workspace whose clients log in, and video 35 has no subject
+        without it. `b2c_portal` is the module key; the Portal row itself is
+        created below.
+      */
+      enabledModules: [...SPACE_MODULES, 'b2c_portal'] as unknown as Prisma.InputJsonValue,
     },
   });
 
@@ -839,6 +847,36 @@ async function seedAttendance(
   }
 
   return { history: entries.length, live: live.length, breaks: breakRows.length };
+}
+
+/**
+ * A portal on the client's own site.
+ *
+ * ⚠️ WITHOUT THIS, `/portals` SAYS "No workspace has a client portal switched
+ * on yet" and video 35 has nothing to film. The module key on the space is
+ * only half of it — the Portal row is what the screen lists.
+ */
+async function seedPortal(orgId: string, spaceId: string, clientIds: Map<string, string>) {
+  const portal = await prisma.portal.create({
+    data: {
+      organizationId: orgId,
+      spaceId,
+      name: 'Brambleside Retail Park',
+      templateKey: 'workplace',
+      entityLabel: 'Unit',
+      contactLabel: 'Facilities',
+      accent: '#2563eb',
+      isActive: true,
+    },
+    select: { id: true },
+  });
+
+  /* The client whose people log in. */
+  const customerId = clientIds.get('Brambleside Retail Park');
+  if (customerId) {
+    await prisma.customer.update({ where: { id: customerId }, data: { portalId: portal.id } });
+  }
+  return 1;
 }
 
 /**
@@ -1519,15 +1557,17 @@ async function main(): Promise<void> {
   console.log(
     `  a rota on the workshop: ${rota.assignments} on shift, ${rota.entries} shifts with counted hours, ${leave} leave requests`,
   );
-  console.log(`  ${documents} documents on file, including licences at every stage of running out`);
+  console.log(`  ${documents} documents on file`);
 
   const clientIds = await seedClients(org.id, spaceIds.depot, lead.id);
+  // ⚠️ After the clients: the portal attaches itself to one of them.
+  const portals = await seedPortal(org.id, spaceIds.clientSite, clientIds);
   const taskIds = await seedTasks(org.id, spaceIds.depot, workflowId, lead.id, crew, clientIds);
   const storyRows = await seedOneJobInFull(org.id, taskIds, crew, lead.id, clientIds);
   const assetCount = await seedAssets(org.id, spaceIds.depot, crew);
   const invoiceCount = await seedInvoices(org.id, spaceIds.clientSite, owner.id);
   console.log(
-    `  ${clientIds.size} clients, ${taskIds.size} jobs, ${assetCount} assets, ${invoiceCount} invoices`,
+    `  ${clientIds.size} clients, ${taskIds.size} jobs, ${assetCount} assets, ${invoiceCount} invoices, ${portals} client portal`,
   );
   console.log(`  ${storyRows} rows furnishing "${STORY_JOB}" — the job video 01 opens`);
 

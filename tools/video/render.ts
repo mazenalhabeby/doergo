@@ -32,6 +32,7 @@ import { captureStartToFinish } from './capture/flows/start-to-finish.ts';
 import { captureWorkThatRepeats } from './capture/flows/work-that-repeats.ts';
 import { captureClockInAndOut } from './capture/flows/clock-in-and-out.ts';
 import { captureAMembersFile } from './capture/flows/a-members-file.ts';
+import { captureContractSigned } from './capture/flows/contract-signed.ts';
 import { captureARoleOfYourOwn } from './capture/flows/a-role-of-your-own.ts';
 import { capturePeopleOutside } from './capture/flows/people-outside.ts';
 import { captureLicencesThatExpire } from './capture/flows/licences-that-expire.ts';
@@ -117,6 +118,7 @@ const FLOWS: Record<string, (d: Record<string, number>) => Promise<Timeline>> = 
   'licences-that-expire': captureLicencesThatExpire,
   'people-outside': capturePeopleOutside,
   'a-role-of-your-own': captureARoleOfYourOwn,
+  'contract-signed': captureContractSigned,
   'create-a-job': captureCreateAJob,
   // Twenty seconds, two beats. A cheap way to hear a voice without spending a
   // full script's characters every time somebody wants to judge one.
@@ -187,6 +189,7 @@ const WARM_ROUTES: Record<string, string[]> = {
   'licences-that-expire': ['/login', '/dashboard', '/documents', '/documents/compliance'],
   'people-outside': ['/login', '/dashboard', '/members', '/members/warm'],
   'a-role-of-your-own': ['/login', '/dashboard', '/members', '/members/warm'],
+  'contract-signed': ['/login', '/dashboard', '/documents', '/documents/templates', '/documents/all'],
   'create-a-job': ['/login', '/dashboard', '/tasks', '/tasks/warm'],
   'voice-test': ['/login', '/dashboard'],
 };

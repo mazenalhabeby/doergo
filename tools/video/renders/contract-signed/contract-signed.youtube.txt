@@ -1,0 +1,27 @@
+TITLE
+Issue a contract and get it signed — HBCField
+
+DESCRIPTION
+A contract is issued to somebody, signed by the people who have to sign it, in the order they have to sign it — and every step leaves a record of who did what and when. Nobody has to keep the paper to prove any of it happened.
+
+Chapters
+0:00 Issue a contract and get it signed
+0:08 A template
+0:15 Issuing it
+0:25 The chain
+0:43 The evidence
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload contract-signed.mp4
+  [ ] Add each contract-signed.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → 

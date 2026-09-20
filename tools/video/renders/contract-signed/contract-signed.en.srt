@@ -1,0 +1,48 @@
+1
+00:00:08,860 --> 00:00:14,892
+A contract starts as a template, so the
+wording is decided once rather than each
+
+2
+00:00:14,892 --> 00:00:15,269
+time.
+
+3
+00:00:15,725 --> 00:00:21,242
+It becomes a real contract the moment
+somebody accepts an invitation — filled in
+
+4
+00:00:21,242 --> 00:00:24,967
+with their name, their job
+title and their start date.
+
+5
+00:00:25,422 --> 00:00:31,181
+Who signs, and in what order, is part of
+the document rather than an email thread.
+
+6
+00:00:31,635 --> 00:00:37,850
+Whether it is signed, merely confirmed as
+read, or has to be done on paper is part
+
+7
+00:00:37,850 --> 00:00:42,548
+of the template — not a
+decision somebody makes in the moment.
+
+8
+00:00:43,000 --> 00:00:49,876
+And the register says where every
+document got to: issued, not opened yet, waiting
+
+9
+00:00:49,876 --> 00:00:52,056
+on a signature, or signed.
+
+10
+00:00:52,514 --> 00:00:57,204
+Next: the documents that run
+out, and being told before they do.
+

@@ -1,0 +1,52 @@
+1
+00:00:08,860 --> 00:00:14,459
+Un contrat part d'un modèle, pour que la
+formulation soit décidée une fois et non à
+
+2
+00:00:14,459 --> 00:00:15,269
+chaque fois.
+
+3
+00:00:15,725 --> 00:00:21,714
+Il devient un vrai contrat au moment où
+quelqu'un accepte une invitation — rempli
+
+4
+00:00:21,714 --> 00:00:24,967
+avec son nom, son
+poste et sa date d'entrée.
+
+5
+00:00:25,422 --> 00:00:30,495
+Qui signe, et dans quel ordre, fait
+partie du document plutôt que d'un fil
+
+6
+00:00:30,495 --> 00:00:31,181
+d'e-mails.
+
+7
+00:00:31,635 --> 00:00:37,941
+Signé, simplement confirmé comme lu, ou
+obligatoirement sur papier : cela fait
+
+8
+00:00:37,941 --> 00:00:42,548
+partie du modèle, pas d'une
+décision prise sur le moment.
+
+9
+00:00:43,000 --> 00:00:50,072
+Et le registre dit où en est chaque
+document : émis, pas encore ouvert, en attente
+
+10
+00:00:50,072 --> 00:00:52,056
+de signature, ou signé.
+
+11
+00:00:52,514 --> 00:00:57,204
+Ensuite : les documents qui
+expirent, et l'apprendre avant.
+
