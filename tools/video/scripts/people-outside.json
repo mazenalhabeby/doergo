@@ -1,0 +1,118 @@
+{
+  "id": "people-outside",
+  "tourIds": [],
+  "title": {
+    "en": "People who do not work for you",
+    "de": "Menschen, die nicht für Sie arbeiten",
+    "es": "Gente que no trabaja para usted",
+    "fr": "Des gens qui ne travaillent pas pour vous",
+    "it": "Persone che non lavorano per lei"
+  },
+  "subtitle": {
+    "en": "A client watching the job they are paying for",
+    "de": "Ein Kunde, der den Auftrag verfolgt, den er bezahlt",
+    "es": "Un cliente que sigue el trabajo que está pagando",
+    "fr": "Un client qui suit l'intervention qu'il paie",
+    "it": "Un cliente che segue il lavoro che sta pagando"
+  },
+  "description": {
+    "en": "Not everybody who needs to see the work is on your payroll. An external member watches — and can raise a job — without holding a clock, a personnel file, or any sight of the equipment you own. The relationship disqualifies them, not a permission somebody remembered to leave off.",
+    "de": "Nicht jede Person, die die Arbeit sehen muss, steht auf Ihrer Lohnliste. Ein externes Mitglied schaut zu — und kann einen Auftrag melden — ohne Stempeluhr, ohne Personalakte und ohne Einblick in Ihre Ausrüstung. Es ist die Beziehung, die das ausschließt, nicht eine vergessene Berechtigung.",
+    "es": "No todo el que necesita ver el trabajo está en su nómina. Un miembro externo mira —y puede crear un trabajo— sin fichar, sin expediente y sin ver el equipo que usted posee. Lo descalifica la relación, no un permiso que alguien recordó no marcar.",
+    "fr": "Tout le monde n'a pas besoin d'être sur votre paie pour voir le travail. Un membre externe regarde — et peut créer une intervention — sans pointeuse, sans dossier du personnel, et sans voir le matériel qui vous appartient. C'est la relation qui l'exclut, pas une permission qu'on a pensé à laisser décochée.",
+    "it": "Non tutti quelli che devono vedere il lavoro sono sul suo libro paga. Un membro esterno guarda — e può creare un lavoro — senza orologio, senza fascicolo personale e senza vedere l'attrezzatura che possiede lei. È la relazione a escluderlo, non un permesso che qualcuno si è ricordato di lasciare spento."
+  },
+  "beats": [
+    {
+      "id": "notEverybody",
+      "narration": {
+        "en": "Not everybody who needs to see the work is somebody you employ.",
+        "de": "Nicht jede Person, die die Arbeit sehen muss, ist bei Ihnen angestellt.",
+        "es": "No todo el que necesita ver el trabajo es alguien a quien usted emplea.",
+        "fr": "Tous ceux qui doivent voir le travail ne sont pas vos employés.",
+        "it": "Non tutti quelli che devono vedere il lavoro sono persone che lei impiega."
+      },
+      "chapter": {
+        "en": "Not everybody",
+        "de": "Nicht jede Person",
+        "es": "No todos",
+        "fr": "Pas tout le monde",
+        "it": "Non tutti"
+      }
+    },
+    {
+      "id": "markThem",
+      "narration": {
+        "en": "So you say so when they are invited, and the product takes it seriously from then on.",
+        "de": "Sie sagen es also bei der Einladung — und das Produkt nimmt es von da an ernst.",
+        "es": "Así que lo dice al invitarlos, y el producto se lo toma en serio desde entonces.",
+        "fr": "Vous le dites donc au moment de l'inviter, et le produit le prend au sérieux ensuite.",
+        "it": "Lo dice quindi quando li invita, e il prodotto lo prende sul serio da lì in poi."
+      },
+      "chapter": {
+        "en": "Say so up front",
+        "de": "Von Anfang an sagen",
+        "es": "Dígalo al invitar",
+        "fr": "Le dire d'emblée",
+        "it": "Dirlo subito"
+      }
+    },
+    {
+      "id": "oneRoleOnly",
+      "narration": {
+        "en": "Their whole authority is one role, in the workspaces you shared with them. Never across the company.",
+        "de": "Ihre gesamte Befugnis ist eine Rolle — in den Arbeitsbereichen, die Sie geteilt haben. Nie im ganzen Unternehmen.",
+        "es": "Toda su autoridad es un rol, en los espacios que usted compartió. Nunca en toda la empresa.",
+        "fr": "Toute leur autorité tient en un rôle, dans les espaces que vous avez partagés. Jamais à l'échelle de l'entreprise.",
+        "it": "Tutta la loro autorità è un ruolo, negli spazi che avete condiviso. Mai su tutta l'azienda."
+      }
+    },
+    {
+      "id": "watchOrRaise",
+      "narration": {
+        "en": "One of them watches. The other can also raise a job, which is usually what a client actually wants.",
+        "de": "Die eine Rolle schaut zu. Die andere darf auch einen Auftrag melden — meist genau das, was ein Kunde will.",
+        "es": "Uno de ellos mira. El otro además puede crear un trabajo, que suele ser lo que un cliente quiere.",
+        "fr": "L'un regarde. L'autre peut aussi créer une intervention, ce qu'un client veut généralement.",
+        "it": "Uno guarda. L'altro può anche creare un lavoro, che è di solito ciò che un cliente vuole davvero."
+      }
+    },
+    {
+      "id": "noClock",
+      "narration": {
+        "en": "They hold no clock and no personnel file. There is nothing there for them to be given by mistake.",
+        "de": "Sie haben keine Stempeluhr und keine Personalakte. Es gibt nichts, was man ihnen versehentlich geben könnte.",
+        "es": "No tienen fichaje ni expediente. No hay nada que se les pueda dar por error.",
+        "fr": "Ils n'ont ni pointeuse ni dossier du personnel. Il n'y a rien qu'on puisse leur donner par erreur.",
+        "it": "Non hanno orologio né fascicolo personale. Non c'è nulla che si possa dar loro per sbaglio."
+      },
+      "chapter": {
+        "en": "What they never get",
+        "de": "Was sie nie bekommen",
+        "es": "Lo que nunca reciben",
+        "fr": "Ce qu'ils n'ont jamais",
+        "it": "Ciò che non hanno mai"
+      }
+    },
+    {
+      "id": "andTheKit",
+      "narration": {
+        "en": "And the equipment the company owns is closed to them, whatever else their role says.",
+        "de": "Und die Ausrüstung des Unternehmens bleibt ihnen verschlossen — was ihre Rolle sonst auch sagt.",
+        "es": "Y el equipo de la empresa les queda cerrado, diga lo que diga su rol.",
+        "fr": "Et le matériel de l'entreprise leur est fermé, quoi que dise leur rôle par ailleurs.",
+        "it": "E l'attrezzatura dell'azienda resta loro chiusa, qualunque cosa dica il loro ruolo."
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: the clients themselves — the book of who you work for.",
+        "de": "Als Nächstes: die Kunden selbst — das Verzeichnis derer, für die Sie arbeiten.",
+        "es": "A continuación: los clientes en sí, el libro de para quién trabaja.",
+        "fr": "Ensuite : les clients eux-mêmes — le carnet de ceux pour qui vous travaillez.",
+        "it": "Poi: i clienti stessi — il libro di chi vi dà lavoro."
+      }
+    }
+  ]
+}

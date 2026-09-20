@@ -1,0 +1,118 @@
+{
+  "id": "company-or-person",
+  "tourIds": [],
+  "title": {
+    "en": "A company, or a person",
+    "de": "Ein Unternehmen oder eine Person",
+    "es": "Una empresa, o una persona",
+    "fr": "Une entreprise, ou une personne",
+    "it": "Un'azienda, o una persona"
+  },
+  "subtitle": {
+    "en": "Contact people are neither billed nor lost",
+    "de": "Ansprechpartner werden weder berechnet noch vergessen",
+    "es": "Las personas de contacto ni se facturan ni se pierden",
+    "fr": "Les interlocuteurs ne sont ni facturés ni perdus",
+    "it": "I referenti non vengono né fatturati né persi"
+  },
+  "description": {
+    "en": "You invoice a company, but you ring a person. HBCField keeps both, and links them: the people you speak to at a client are records of their own, with a job title and a place in the company — and they are never counted as clients, because six contacts at one firm are not six customers.",
+    "de": "Sie stellen einem Unternehmen eine Rechnung, aber Sie rufen eine Person an. HBCField führt beides und verbindet es: Die Menschen, mit denen Sie bei einem Kunden sprechen, sind eigene Datensätze mit Funktion und Platz im Unternehmen — und sie zählen nie als Kunden, denn sechs Ansprechpartner bei einer Firma sind nicht sechs Kunden.",
+    "es": "Usted factura a una empresa, pero llama a una persona. HBCField guarda las dos cosas y las enlaza: la gente con la que habla en un cliente son fichas propias, con un cargo y un sitio en la empresa, y nunca cuentan como clientes, porque seis contactos en una firma no son seis clientes.",
+    "fr": "Vous facturez une entreprise, mais vous appelez une personne. HBCField garde les deux et les relie : les personnes à qui vous parlez chez un client sont des fiches à part entière, avec une fonction et une place dans l'entreprise — et elles ne comptent jamais comme des clients, car six interlocuteurs dans une même société ne font pas six clients.",
+    "it": "Si fattura a un'azienda, ma si telefona a una persona. HBCField tiene entrambe e le collega: le persone con cui parlate presso un cliente sono schede a sé, con una mansione e un posto nell'azienda — e non contano mai come clienti, perché sei referenti in una ditta non sono sei clienti."
+  },
+  "beats": [
+    {
+      "id": "youRingAPerson",
+      "narration": {
+        "en": "You invoice a company. You ring a person. Both belong in the book.",
+        "de": "Sie berechnen ein Unternehmen. Sie rufen eine Person an. Beides gehört ins Verzeichnis.",
+        "es": "Usted factura a una empresa. Llama a una persona. Las dos cosas van en el libro.",
+        "fr": "Vous facturez une entreprise. Vous appelez une personne. Les deux ont leur place.",
+        "it": "Si fattura a un'azienda. Si telefona a una persona. Entrambe stanno nel libro."
+      },
+      "chapter": {
+        "en": "Two things at once",
+        "de": "Zweierlei zugleich",
+        "es": "Dos cosas a la vez",
+        "fr": "Deux choses à la fois",
+        "it": "Due cose insieme"
+      }
+    },
+    {
+      "id": "theCompany",
+      "narration": {
+        "en": "Open a client and the people you deal with there are listed with them.",
+        "de": "Öffnen Sie einen Kunden — die Menschen, mit denen Sie dort zu tun haben, stehen dabei.",
+        "es": "Abra un cliente y la gente con la que trata allí aparece con él.",
+        "fr": "Ouvrez un client : les personnes avec qui vous traitez y figurent.",
+        "it": "Apra un cliente e le persone con cui trattate lì sono elencate accanto."
+      }
+    },
+    {
+      "id": "addAContact",
+      "narration": {
+        "en": "Add one, and say what they do there. That is usually what you actually need at eight in the morning.",
+        "de": "Fügen Sie eine hinzu und sagen Sie, was sie dort macht. Genau das braucht man morgens um acht.",
+        "es": "Añada una y diga qué hace allí. Eso es lo que hace falta de verdad a las ocho de la mañana.",
+        "fr": "Ajoutez-en une, et dites ce qu'elle fait là-bas. C'est en général ce dont on a besoin à huit heures du matin.",
+        "it": "Ne aggiunga una e dica che cosa fa lì. È di solito ciò che serve davvero alle otto del mattino."
+      },
+      "chapter": {
+        "en": "Adding a person",
+        "de": "Person hinzufügen",
+        "es": "Añadir una persona",
+        "fr": "Ajouter une personne",
+        "it": "Aggiungere una persona"
+      }
+    },
+    {
+      "id": "primary",
+      "narration": {
+        "en": "One of them is the one you ring first. Everybody else can see who that is.",
+        "de": "Eine davon ruft man zuerst an. Alle anderen sehen, wer das ist.",
+        "es": "A una de ellas se la llama primero. Todos los demás ven quién es.",
+        "fr": "L'une d'elles est celle qu'on appelle en premier. Tout le monde peut voir qui c'est.",
+        "it": "Una di loro è quella che si chiama per prima. Tutti gli altri vedono chi è."
+      }
+    },
+    {
+      "id": "notAClient",
+      "narration": {
+        "en": "A contact is not a client. They are not in the client list, and you are not charged for them.",
+        "de": "Ein Ansprechpartner ist kein Kunde. Er steht nicht in der Kundenliste, und er kostet nichts.",
+        "es": "Un contacto no es un cliente. No está en la lista de clientes, y no se le cobra por él.",
+        "fr": "Un interlocuteur n'est pas un client. Il n'est pas dans la liste des clients, et il ne vous est pas facturé.",
+        "it": "Un referente non è un cliente. Non è nell'elenco clienti, e non le viene addebitato."
+      },
+      "chapter": {
+        "en": "Not a client",
+        "de": "Kein Kunde",
+        "es": "No es un cliente",
+        "fr": "Pas un client",
+        "it": "Non è un cliente"
+      }
+    },
+    {
+      "id": "bothWays",
+      "narration": {
+        "en": "And it reads both ways: which company a person works at, and who works at a company.",
+        "de": "Und es gilt in beide Richtungen: bei welchem Unternehmen eine Person arbeitet — und wer bei einem Unternehmen arbeitet.",
+        "es": "Y se lee en los dos sentidos: en qué empresa trabaja una persona, y quién trabaja en una empresa.",
+        "fr": "Et cela se lit dans les deux sens : dans quelle entreprise travaille une personne, et qui travaille dans une entreprise.",
+        "it": "E si legge nei due sensi: in quale azienda lavora una persona, e chi lavora in un'azienda."
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: keeping a client warm without a spreadsheet.",
+        "de": "Als Nächstes: einen Kunden warmhalten — ohne Tabelle.",
+        "es": "A continuación: mantener caliente a un cliente sin una hoja de cálculo.",
+        "fr": "Ensuite : entretenir un client sans tableur.",
+        "it": "Poi: tenere caldo un cliente senza un foglio di calcolo."
+      }
+    }
+  ]
+}

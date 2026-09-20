@@ -1,0 +1,108 @@
+{
+  "id": "a-client-login",
+  "tourIds": [],
+  "title": {
+    "en": "Give a client their own login",
+    "de": "Ein eigener Zugang für den Kunden",
+    "es": "Dé a un cliente su propio acceso",
+    "fr": "Donnez à un client son propre accès",
+    "it": "Dia al cliente un accesso suo"
+  },
+  "subtitle": {
+    "en": "Their side of the work, without a phone call",
+    "de": "Ihre Sicht auf die Arbeit — ohne Anruf",
+    "es": "Su lado del trabajo, sin llamadas",
+    "fr": "Leur côté du travail, sans coup de téléphone",
+    "it": "Il loro lato del lavoro, senza telefonate"
+  },
+  "description": {
+    "en": "Half the phone calls a service company takes are somebody asking what is happening. A client portal answers that without anybody picking up: they see their own jobs, raise a request, and see nothing that belongs to anybody else.",
+    "de": "Die Hälfte der Anrufe in einem Servicebetrieb sind Menschen, die fragen, was los ist. Ein Kundenportal beantwortet das, ohne dass jemand abhebt: Sie sehen ihre eigenen Aufträge, melden neue — und sehen nichts, was jemand anderem gehört.",
+    "es": "La mitad de las llamadas que recibe una empresa de servicios son alguien preguntando qué está pasando. Un portal de cliente responde a eso sin que nadie descuelgue: ven sus propios trabajos, crean una solicitud y no ven nada que sea de otro.",
+    "fr": "La moitié des appels que reçoit une entreprise de service, c'est quelqu'un qui demande où ça en est. Un portail client répond sans que personne ne décroche : ils voient leurs interventions, créent une demande, et ne voient rien qui appartienne à autrui.",
+    "it": "Metà delle telefonate che riceve un'azienda di servizi è qualcuno che chiede a che punto siamo. Un portale clienti risponde senza che nessuno alzi la cornetta: vedono i propri lavori, aprono una richiesta e non vedono nulla che appartenga ad altri."
+  },
+  "beats": [
+    {
+      "id": "thePhoneCalls",
+      "narration": {
+        "en": "Most of what a service desk answers is somebody asking what is happening.",
+        "de": "Das meiste, was eine Servicestelle beantwortet, ist die Frage: Was ist der Stand?",
+        "es": "La mayor parte de lo que responde un servicio es alguien preguntando qué pasa.",
+        "fr": "L'essentiel de ce qu'un accueil traite, c'est « où ça en est ».",
+        "it": "La maggior parte di ciò a cui risponde un servizio è «a che punto siamo»."
+      },
+      "chapter": {
+        "en": "The phone calls",
+        "de": "Die Anrufe",
+        "es": "Las llamadas",
+        "fr": "Les appels",
+        "it": "Le telefonate"
+      }
+    },
+    {
+      "id": "aPortal",
+      "narration": {
+        "en": "A workspace can carry a portal: a way in for the people you work for.",
+        "de": "Ein Arbeitsbereich kann ein Portal tragen: einen Zugang für die, für die Sie arbeiten.",
+        "es": "Un espacio puede llevar un portal: una entrada para aquellos para quienes trabaja.",
+        "fr": "Un espace de travail peut porter un portail : une entrée pour ceux pour qui vous travaillez.",
+        "it": "Uno spazio può avere un portale: un ingresso per chi vi dà lavoro."
+      },
+      "chapter": {
+        "en": "A portal",
+        "de": "Ein Portal",
+        "es": "Un portal",
+        "fr": "Un portail",
+        "it": "Un portale"
+      }
+    },
+    {
+      "id": "whoGetsIn",
+      "narration": {
+        "en": "You decide who gets in, one client at a time, and what they are allowed to do once there.",
+        "de": "Sie entscheiden, wer hineinkommt — Kunde für Kunde — und was dort erlaubt ist.",
+        "es": "Usted decide quién entra, cliente a cliente, y qué puede hacer dentro.",
+        "fr": "Vous décidez qui entre, client par client, et ce qu'il peut y faire.",
+        "it": "Decide lei chi entra, un cliente alla volta, e che cosa può farci."
+      }
+    },
+    {
+      "id": "whatTheySee",
+      "narration": {
+        "en": "What they see is theirs and only theirs. There is no version of this where they see a neighbour's job.",
+        "de": "Was sie sehen, ist ihres — und nur ihres. Es gibt keine Fassung, in der sie den Auftrag des Nachbarn sehen.",
+        "es": "Lo que ven es suyo y solo suyo. No hay versión de esto en la que vean el trabajo del vecino.",
+        "fr": "Ce qu'ils voient est à eux et à eux seuls. Il n'existe pas de version où ils voient l'intervention du voisin.",
+        "it": "Ciò che vedono è loro e solo loro. Non esiste una versione in cui vedono il lavoro del vicino."
+      },
+      "chapter": {
+        "en": "Theirs only",
+        "de": "Nur ihres",
+        "es": "Solo lo suyo",
+        "fr": "Rien que le leur",
+        "it": "Solo il loro"
+      }
+    },
+    {
+      "id": "andTheyCanAsk",
+      "narration": {
+        "en": "And they can raise a request, which arrives as work rather than as a voicemail.",
+        "de": "Und sie können etwas melden — das kommt als Arbeit an, nicht als Anrufbeantworter.",
+        "es": "Y pueden crear una solicitud, que llega como trabajo y no como un mensaje de voz.",
+        "fr": "Et ils peuvent créer une demande, qui arrive comme du travail et non comme un message vocal.",
+        "it": "E possono aprire una richiesta, che arriva come lavoro e non come segreteria."
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: talking to them inside the job itself.",
+        "de": "Als Nächstes: mit ihnen direkt im Auftrag sprechen.",
+        "es": "A continuación: hablar con ellos dentro del propio trabajo.",
+        "fr": "Ensuite : leur parler dans l'intervention elle-même.",
+        "it": "Poi: parlare con loro dentro il lavoro stesso."
+      }
+    }
+  ]
+}

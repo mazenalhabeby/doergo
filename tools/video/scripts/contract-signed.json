@@ -1,0 +1,115 @@
+{
+  "id": "contract-signed",
+  "tourIds": [],
+  "title": {
+    "en": "Issue a contract and get it signed",
+    "de": "Einen Vertrag ausstellen und unterschreiben lassen",
+    "es": "Emita un contrato y consiga la firma",
+    "fr": "Émettre un contrat et le faire signer",
+    "it": "Emettere un contratto e farlo firmare"
+  },
+  "subtitle": {
+    "en": "The signing chain, and the evidence it leaves",
+    "de": "Die Unterschriftenkette — und die Spur, die sie hinterlässt",
+    "es": "La cadena de firmas y la evidencia que deja",
+    "fr": "La chaîne de signature, et les preuves qu'elle laisse",
+    "it": "La catena delle firme e le prove che lascia"
+  },
+  "description": {
+    "en": "A contract is issued to somebody, signed by the people who have to sign it, in the order they have to sign it — and every step leaves a record of who did what and when. Nobody has to keep the paper to prove any of it happened.",
+    "de": "Ein Vertrag wird jemandem ausgestellt, von den nötigen Personen unterschrieben — in der nötigen Reihenfolge — und jeder Schritt hinterlässt fest, wer wann was getan hat. Niemand muss das Papier aufbewahren, um es zu beweisen.",
+    "es": "Un contrato se emite a alguien, lo firman quienes deben firmarlo, en el orden en que deben hacerlo, y cada paso deja constancia de quién hizo qué y cuándo. Nadie tiene que guardar el papel para demostrar que ocurrió.",
+    "fr": "Un contrat est émis à quelqu'un, signé par ceux qui doivent le signer, dans l'ordre où ils doivent le faire — et chaque étape laisse une trace de qui a fait quoi et quand. Personne n'a besoin de garder le papier pour le prouver.",
+    "it": "Un contratto viene emesso a qualcuno, firmato da chi deve firmarlo, nell'ordine in cui deve farlo — e ogni passaggio lascia traccia di chi ha fatto che cosa e quando. Nessuno deve conservare la carta per dimostrarlo."
+  },
+  "beats": [
+    {
+      "id": "aTemplate",
+      "narration": {
+        "en": "A contract starts as a template, so the wording is decided once rather than each time.",
+        "de": "Ein Vertrag beginnt als Vorlage — der Wortlaut wird einmal entschieden, nicht jedes Mal.",
+        "es": "Un contrato empieza como plantilla, para decidir el texto una vez y no cada vez.",
+        "fr": "Un contrat part d'un modèle, pour que la formulation soit décidée une fois et non à chaque fois.",
+        "it": "Un contratto parte da un modello, così il testo si decide una volta e non ogni volta."
+      },
+      "chapter": {
+        "en": "A template",
+        "de": "Eine Vorlage",
+        "es": "Una plantilla",
+        "fr": "Un modèle",
+        "it": "Un modello"
+      }
+    },
+    {
+      "id": "issueIt",
+      "narration": {
+        "en": "Issuing it fills in the person and the terms, and sends it where it has to go.",
+        "de": "Beim Ausstellen werden Person und Konditionen eingesetzt — und es geht dorthin, wo es hin muss.",
+        "es": "Emitirlo rellena a la persona y las condiciones, y lo manda a donde debe ir.",
+        "fr": "L'émettre remplit la personne et les conditions, et l'envoie où il doit aller.",
+        "it": "Emetterlo inserisce la persona e le condizioni, e lo manda dove deve andare."
+      },
+      "chapter": {
+        "en": "Issuing it",
+        "de": "Ausstellen",
+        "es": "Emitirlo",
+        "fr": "L'émettre",
+        "it": "Emetterlo"
+      }
+    },
+    {
+      "id": "theChain",
+      "narration": {
+        "en": "Who signs, and in what order, is part of the document rather than an email thread.",
+        "de": "Wer unterschreibt und in welcher Reihenfolge, gehört zum Dokument — nicht in einen Mailverlauf.",
+        "es": "Quién firma y en qué orden es parte del documento, no de un hilo de correos.",
+        "fr": "Qui signe, et dans quel ordre, fait partie du document plutôt que d'un fil d'e-mails.",
+        "it": "Chi firma, e in quale ordine, fa parte del documento e non di uno scambio di e-mail."
+      },
+      "chapter": {
+        "en": "The chain",
+        "de": "Die Kette",
+        "es": "La cadena",
+        "fr": "La chaîne",
+        "it": "La catena"
+      }
+    },
+    {
+      "id": "theySign",
+      "narration": {
+        "en": "They sign where they are, on whatever they are holding.",
+        "de": "Unterschrieben wird dort, wo man gerade ist — auf dem, was man in der Hand hat.",
+        "es": "Firman donde estén, con lo que tengan en la mano.",
+        "fr": "Ils signent là où ils sont, sur ce qu'ils ont en main.",
+        "it": "Firmano dove si trovano, con quello che hanno in mano."
+      }
+    },
+    {
+      "id": "theEvidence",
+      "narration": {
+        "en": "And what is kept is not just the signature: it is who opened it, when, and from where.",
+        "de": "Und aufbewahrt wird nicht nur die Unterschrift, sondern auch, wer es wann und von wo geöffnet hat.",
+        "es": "Y lo que queda no es solo la firma: es quién lo abrió, cuándo y desde dónde.",
+        "fr": "Et ce qui est conservé n'est pas que la signature : c'est qui l'a ouvert, quand, et d'où.",
+        "it": "E ciò che resta non è solo la firma: è chi l'ha aperto, quando e da dove."
+      },
+      "chapter": {
+        "en": "The evidence",
+        "de": "Die Nachweise",
+        "es": "La evidencia",
+        "fr": "Les preuves",
+        "it": "Le prove"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: the documents that run out, and being told before they do.",
+        "de": "Als Nächstes: Dokumente, die ablaufen — und rechtzeitig Bescheid bekommen.",
+        "es": "A continuación: los documentos que caducan, y enterarse antes.",
+        "fr": "Ensuite : les documents qui expirent, et l'apprendre avant.",
+        "it": "Poi: i documenti che scadono, e saperlo prima."
+      }
+    }
+  ]
+}

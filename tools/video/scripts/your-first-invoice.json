@@ -1,0 +1,110 @@
+{
+  "id": "your-first-invoice",
+  "tourIds": [
+    "pageInvoices"
+  ],
+  "title": {
+    "en": "Your first invoice",
+    "de": "Ihre erste Rechnung",
+    "es": "Su primera factura",
+    "fr": "Votre première facture",
+    "it": "La sua prima fattura"
+  },
+  "subtitle": {
+    "en": "From finished work to a document you can send",
+    "de": "Von erledigter Arbeit zum versandfertigen Dokument",
+    "es": "Del trabajo terminado a un documento que puede enviar",
+    "fr": "Du travail fait à un document que vous pouvez envoyer",
+    "it": "Dal lavoro finito a un documento che può inviare"
+  },
+  "description": {
+    "en": "The work is already recorded — the hours, the parts, who signed. An invoice is that record, priced. This is how one is raised, what it takes its numbers from, and why the draft is not something you would ever send.",
+    "de": "Die Arbeit ist längst erfasst: Stunden, Teile, Unterschrift. Eine Rechnung ist diese Erfassung, bepreist. So legen Sie eine an, daher kommen ihre Zahlen — und darum ist der Entwurf nichts, was Sie je verschicken würden.",
+    "es": "El trabajo ya está registrado: las horas, las piezas, quién firmó. Una factura es ese registro, con precios. Así se crea una, de ahí salen sus números, y por eso el borrador no es algo que usted enviaría.",
+    "fr": "Le travail est déjà consigné : les heures, les pièces, qui a signé. Une facture, c'est ce relevé, chiffré. Voici comment on en crée une, d'où viennent ses chiffres, et pourquoi le brouillon n'est pas quelque chose que vous enverriez.",
+    "it": "Il lavoro è già registrato: le ore, i pezzi, chi ha firmato. Una fattura è quel registro, con i prezzi. Ecco come se ne crea una, da dove prende i numeri e perché la bozza non è qualcosa che manderebbe."
+  },
+  "beats": [
+    {
+      "id": "whatIsOwed",
+      "narration": {
+        "en": "Every invoice, in the state it is in: drafted, sent, paid, or late.",
+        "de": "Jede Rechnung in ihrem Zustand: Entwurf, versendet, bezahlt oder überfällig.",
+        "es": "Cada factura, en el estado en que está: borrador, enviada, pagada o vencida.",
+        "fr": "Chaque facture, dans son état : brouillon, envoyée, payée, ou en retard.",
+        "it": "Ogni fattura, nello stato in cui si trova: bozza, inviata, pagata o in ritardo."
+      },
+      "chapter": {
+        "en": "What is owed",
+        "de": "Was offen ist",
+        "es": "Lo que se debe",
+        "fr": "Ce qui est dû",
+        "it": "Che cosa è dovuto"
+      }
+    },
+    {
+      "id": "raiseOne",
+      "narration": {
+        "en": "A new one starts with who it is for. Everything else follows from that.",
+        "de": "Eine neue beginnt mit dem Empfänger. Alles andere folgt daraus.",
+        "es": "Una nueva empieza por para quién es. Lo demás se sigue de ahí.",
+        "fr": "Une nouvelle commence par le destinataire. Tout le reste en découle.",
+        "it": "Una nuova inizia da per chi è. Tutto il resto segue da lì."
+      },
+      "chapter": {
+        "en": "Raising one",
+        "de": "Anlegen",
+        "es": "Crear una",
+        "fr": "En créer une",
+        "it": "Crearne una"
+      }
+    },
+    {
+      "id": "theLines",
+      "narration": {
+        "en": "The lines are what you did: labour at the rate you charge, and the parts you fitted.",
+        "de": "Die Positionen sind, was Sie getan haben: Arbeit zu Ihrem Satz und die verbauten Teile.",
+        "es": "Las líneas son lo que hizo: la mano de obra a su tarifa y las piezas que montó.",
+        "fr": "Les lignes sont ce que vous avez fait : la main-d'œuvre à votre tarif, et les pièces posées.",
+        "it": "Le righe sono ciò che avete fatto: la manodopera alla vostra tariffa e i pezzi montati."
+      }
+    },
+    {
+      "id": "theTotal",
+      "narration": {
+        "en": "The total is arithmetic, not a decision — and tax is handled where tax belongs.",
+        "de": "Die Summe ist Rechnen, keine Entscheidung — und die Steuer wird dort behandelt, wo sie hingehört.",
+        "es": "El total es aritmética, no una decisión, y el impuesto se trata donde corresponde.",
+        "fr": "Le total est de l'arithmétique, pas une décision — et la taxe est traitée là où elle doit l'être.",
+        "it": "Il totale è aritmetica, non una decisione — e l'imposta è trattata dove va trattata."
+      }
+    },
+    {
+      "id": "stillADraft",
+      "narration": {
+        "en": "And what you have is still a draft. You can see that on it, which is the point.",
+        "de": "Und was Sie haben, ist noch ein Entwurf. Das sieht man ihm an — genau darum geht es.",
+        "es": "Y lo que tiene sigue siendo un borrador. Se le nota, y de eso se trata.",
+        "fr": "Et ce que vous avez est encore un brouillon. Cela se voit dessus, et c'est le but.",
+        "it": "E ciò che ha è ancora una bozza. Si vede, ed è proprio questo il punto."
+      },
+      "chapter": {
+        "en": "Still a draft",
+        "de": "Noch ein Entwurf",
+        "es": "Aún un borrador",
+        "fr": "Encore un brouillon",
+        "it": "Ancora una bozza"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: what issuing it commits you to, and what happens after that.",
+        "de": "Als Nächstes: wozu das Ausstellen Sie verpflichtet — und was danach passiert.",
+        "es": "A continuación: a qué le compromete emitirla, y qué pasa después.",
+        "fr": "Ensuite : à quoi son émission vous engage, et ce qui se passe ensuite.",
+        "it": "Poi: a che cosa la impegna emetterla, e che cosa succede dopo."
+      }
+    }
+  ]
+}

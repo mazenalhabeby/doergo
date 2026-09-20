@@ -1,0 +1,110 @@
+{
+  "id": "build-a-report",
+  "tourIds": [
+    "reportsTour"
+  ],
+  "title": {
+    "en": "Build a report",
+    "de": "Einen Bericht bauen",
+    "es": "Cree un informe",
+    "fr": "Construire un rapport",
+    "it": "Costruire un report"
+  },
+  "subtitle": {
+    "en": "Ask your own data a question, without waiting for anyone",
+    "de": "Stellen Sie Ihren Daten eine Frage — ohne auf jemanden zu warten",
+    "es": "Pregunte a sus propios datos, sin esperar a nadie",
+    "fr": "Posez une question à vos données, sans attendre personne",
+    "it": "Faccia una domanda ai suoi dati, senza aspettare nessuno"
+  },
+  "description": {
+    "en": "Every product has the screen somebody needs and did not get built. This is the answer to that: choose what you are counting, how you want it broken up, and over what period — then take it away as a file, or have it arrive by email every Monday.",
+    "de": "Jedes Produkt hat den Bildschirm, den jemand braucht und der nie gebaut wurde. Das hier ist die Antwort darauf: Wählen Sie, was Sie zählen, wie es aufgeteilt werden soll und über welchen Zeitraum — dann nehmen Sie es als Datei mit oder lassen es jeden Montag per Mail kommen.",
+    "es": "Todo producto tiene la pantalla que alguien necesita y nunca se construyó. Esta es la respuesta: elija qué cuenta, cómo quiere desglosarlo y en qué período; luego llévese un archivo, o haga que llegue por correo cada lunes.",
+    "fr": "Chaque produit a l'écran dont quelqu'un a besoin et qui n'a pas été fait. Voici la réponse : choisissez ce que vous comptez, comment le découper, et sur quelle période — puis emportez-le en fichier, ou faites-le arriver par e-mail chaque lundi.",
+    "it": "Ogni prodotto ha la schermata che serve a qualcuno e che non è mai stata fatta. Questa è la risposta: scelga che cosa conta, come suddividerlo e su quale periodo — poi se lo porti via come file, o se lo faccia arrivare per e-mail ogni lunedì."
+  },
+  "beats": [
+    {
+      "id": "theQuestion",
+      "narration": {
+        "en": "Start with what you are counting: jobs, hours, invoices, clients.",
+        "de": "Beginnen Sie mit dem, was Sie zählen: Aufträge, Stunden, Rechnungen, Kunden.",
+        "es": "Empiece por lo que cuenta: trabajos, horas, facturas, clientes.",
+        "fr": "Commencez par ce que vous comptez : interventions, heures, factures, clients.",
+        "it": "Inizi da ciò che conta: lavori, ore, fatture, clienti."
+      },
+      "chapter": {
+        "en": "What you are counting",
+        "de": "Was Sie zählen",
+        "es": "Lo que cuenta",
+        "fr": "Ce que vous comptez",
+        "it": "Che cosa conta"
+      }
+    },
+    {
+      "id": "cutItUp",
+      "narration": {
+        "en": "Then how you want it cut up. By person, by workspace, by client, by month.",
+        "de": "Dann, wie es aufgeteilt werden soll: nach Person, Arbeitsbereich, Kunde, Monat.",
+        "es": "Después, cómo quiere desglosarlo: por persona, por espacio, por cliente, por mes.",
+        "fr": "Puis comment le découper : par personne, par espace, par client, par mois.",
+        "it": "Poi come vuole suddividerlo: per persona, per spazio, per cliente, per mese."
+      },
+      "chapter": {
+        "en": "How to cut it",
+        "de": "Wie aufteilen",
+        "es": "Cómo desglosar",
+        "fr": "Comment découper",
+        "it": "Come suddividere"
+      }
+    },
+    {
+      "id": "overWhat",
+      "narration": {
+        "en": "Over whatever period the question is about.",
+        "de": "Über den Zeitraum, um den es geht.",
+        "es": "En el período del que trate la pregunta.",
+        "fr": "Sur la période qui vous intéresse.",
+        "it": "Sul periodo di cui si tratta."
+      }
+    },
+    {
+      "id": "runIt",
+      "narration": {
+        "en": "Run it, and it is on screen — not in a queue, not in somebody's inbox.",
+        "de": "Ausführen — und es steht auf dem Bildschirm. Nicht in einer Warteschlange, nicht in fremden Postfächern.",
+        "es": "Ejecútelo y está en pantalla: no en una cola, ni en el buzón de alguien.",
+        "fr": "Lancez-le, et c'est à l'écran — pas dans une file, pas dans la boîte de quelqu'un.",
+        "it": "Lo esegua ed è sullo schermo: non in coda, non nella posta di qualcuno."
+      },
+      "chapter": {
+        "en": "Run it",
+        "de": "Ausführen",
+        "es": "Ejecutar",
+        "fr": "Lancer",
+        "it": "Eseguire"
+      }
+    },
+    {
+      "id": "takeItAway",
+      "narration": {
+        "en": "Take it away as a file, or keep it and have it sent to you on a schedule.",
+        "de": "Nehmen Sie es als Datei mit — oder speichern Sie es und lassen es sich regelmäßig schicken.",
+        "es": "Llévese un archivo, o guárdelo y haga que se lo envíen periódicamente.",
+        "fr": "Emportez-le en fichier, ou gardez-le et faites-le vous envoyer régulièrement.",
+        "it": "Se lo porti via come file, o lo salvi e se lo faccia inviare a scadenza."
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: where everybody actually is, and the roads they took.",
+        "de": "Als Nächstes: wo alle wirklich sind — und welche Wege sie gefahren sind.",
+        "es": "A continuación: dónde está todo el mundo de verdad, y por dónde fue.",
+        "fr": "Ensuite : où sont réellement les gens, et les routes qu'ils ont prises.",
+        "it": "Poi: dove sono davvero tutti, e le strade che hanno percorso."
+      }
+    }
+  ]
+}

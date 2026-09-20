@@ -1,0 +1,108 @@
+{
+  "id": "job-at-their-address",
+  "tourIds": [],
+  "title": {
+    "en": "A job at a client's address",
+    "de": "Ein Auftrag an der Kundenadresse",
+    "es": "Un trabajo en la dirección del cliente",
+    "fr": "Une intervention à l'adresse du client",
+    "it": "Un lavoro all'indirizzo del cliente"
+  },
+  "subtitle": {
+    "en": "Pick the client and let the address do the rest",
+    "de": "Kunden wählen — die Adresse erledigt den Rest",
+    "es": "Elija el cliente y deje que la dirección haga el resto",
+    "fr": "Choisissez le client et laissez l'adresse faire le reste",
+    "it": "Scelga il cliente e lasci che l'indirizzo faccia il resto"
+  },
+  "description": {
+    "en": "A job for a client should not need its address typed again. Choose the client in the job, and the place the work happens comes with them — which is what lets somebody navigate to it, and what ties the visit to the record of everything else you have done there.",
+    "de": "Ein Auftrag für einen Kunden sollte die Adresse nicht erneut brauchen. Wählen Sie den Kunden im Auftrag, und der Ort kommt mit — das ist es, was die Navigation möglich macht und den Besuch mit allem verbindet, was Sie dort sonst getan haben.",
+    "es": "Un trabajo para un cliente no debería exigir teclear otra vez su dirección. Elija al cliente en el trabajo y el sitio viene con él: eso es lo que permite navegar hasta allí y lo que ata la visita al registro de todo lo demás que ha hecho ahí.",
+    "fr": "Une intervention pour un client ne devrait pas exiger de retaper son adresse. Choisissez le client dans l'intervention, et le lieu vient avec lui — c'est ce qui permet d'y naviguer, et ce qui relie la visite à tout ce que vous avez déjà fait là-bas.",
+    "it": "Un lavoro per un cliente non dovrebbe richiedere di riscrivere l'indirizzo. Scelga il cliente nel lavoro e il luogo arriva con lui: è ciò che permette di navigarci e ciò che lega la visita a tutto il resto che avete fatto lì."
+  },
+  "beats": [
+    {
+      "id": "aJobForSomebody",
+      "narration": {
+        "en": "Most jobs are for somebody. Say who, and half the form fills itself.",
+        "de": "Die meisten Aufträge sind für jemanden. Sagen Sie für wen — und das halbe Formular füllt sich selbst.",
+        "es": "La mayoría de los trabajos son para alguien. Diga para quién y medio formulario se rellena solo.",
+        "fr": "La plupart des interventions sont pour quelqu'un. Dites qui, et la moitié du formulaire se remplit seule.",
+        "it": "La maggior parte dei lavori è per qualcuno. Dica per chi, e metà del modulo si compila da sé."
+      },
+      "chapter": {
+        "en": "Say who it is for",
+        "de": "Für wen",
+        "es": "Para quién",
+        "fr": "Pour qui",
+        "it": "Per chi"
+      }
+    },
+    {
+      "id": "thePicker",
+      "narration": {
+        "en": "The client picker is there wherever the workspace keeps a client book.",
+        "de": "Die Kundenauswahl ist überall dort, wo der Arbeitsbereich ein Kundenverzeichnis führt.",
+        "es": "El selector de cliente está donde el espacio lleva un libro de clientes.",
+        "fr": "Le sélecteur de client est là où l'espace de travail tient un carnet de clients.",
+        "it": "Il selettore cliente c'è dove lo spazio di lavoro tiene un libro clienti."
+      }
+    },
+    {
+      "id": "theAddressComes",
+      "narration": {
+        "en": "Choose one, and the place comes with them. Nobody types an address anybody could mistype.",
+        "de": "Wählen Sie einen — der Ort kommt mit. Niemand tippt eine Adresse, bei der man sich vertippen kann.",
+        "es": "Elija uno y el sitio viene con él. Nadie teclea una dirección que se pueda teclear mal.",
+        "fr": "Choisissez-en un, et le lieu vient avec. Personne ne tape une adresse qu'on peut mal taper.",
+        "it": "Ne scelga uno e il luogo arriva con lui. Nessuno digita un indirizzo che si possa sbagliare."
+      },
+      "chapter": {
+        "en": "The address comes too",
+        "de": "Die Adresse kommt mit",
+        "es": "La dirección viene con él",
+        "fr": "L'adresse suit",
+        "it": "L'indirizzo arriva con lui"
+      }
+    },
+    {
+      "id": "theyCanDriveToIt",
+      "narration": {
+        "en": "Which is what the person going there needs: a point on a map, not a line of text.",
+        "de": "Und genau das braucht die Person, die hinfährt: einen Punkt auf der Karte, keine Textzeile.",
+        "es": "Que es lo que necesita quien va: un punto en un mapa, no una línea de texto.",
+        "fr": "C'est ce dont a besoin la personne qui s'y rend : un point sur une carte, pas une ligne de texte.",
+        "it": "Che è ciò che serve a chi ci va: un punto su una mappa, non una riga di testo."
+      }
+    },
+    {
+      "id": "andTheHistory",
+      "narration": {
+        "en": "And the visit joins everything else you have ever done for them.",
+        "de": "Und der Besuch reiht sich in alles ein, was Sie je für diesen Kunden getan haben.",
+        "es": "Y la visita se suma a todo lo demás que ha hecho para ese cliente.",
+        "fr": "Et la visite rejoint tout ce que vous avez déjà fait pour eux.",
+        "it": "E la visita si unisce a tutto il resto che avete fatto per loro."
+      },
+      "chapter": {
+        "en": "It joins the history",
+        "de": "Teil der Historie",
+        "es": "Se une al historial",
+        "fr": "Elle rejoint l'historique",
+        "it": "Entra nello storico"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: the things the company owns, and who has them.",
+        "de": "Als Nächstes: was dem Unternehmen gehört — und wer es hat.",
+        "es": "A continuación: las cosas que posee la empresa, y quién las tiene.",
+        "fr": "Ensuite : ce que l'entreprise possède, et qui l'a.",
+        "it": "Poi: le cose che l'azienda possiede, e chi ce le ha."
+      }
+    }
+  ]
+}

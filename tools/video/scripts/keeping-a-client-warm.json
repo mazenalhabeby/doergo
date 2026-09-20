@@ -1,0 +1,108 @@
+{
+  "id": "keeping-a-client-warm",
+  "tourIds": [],
+  "title": {
+    "en": "Keeping a client warm",
+    "de": "Kunden warmhalten",
+    "es": "Mantener caliente a un cliente",
+    "fr": "Entretenir un client",
+    "it": "Tenere caldo un cliente"
+  },
+  "subtitle": {
+    "en": "Notes, calls and what happens next — without a spreadsheet",
+    "de": "Notizen, Anrufe und der nächste Schritt — ohne Tabelle",
+    "es": "Notas, llamadas y el siguiente paso, sin hoja de cálculo",
+    "fr": "Notes, appels et la suite — sans tableur",
+    "it": "Note, telefonate e il passo successivo — senza fogli di calcolo"
+  },
+  "description": {
+    "en": "The difference between a client who comes back and one who does not is usually somebody remembering to ring them. Every client record keeps what was said and when, so the next person to open it knows where things stand without asking anybody.",
+    "de": "Der Unterschied zwischen einem Kunden, der wiederkommt, und einem, der es nicht tut, ist meist jemand, der daran denkt anzurufen. Jede Kundenakte hält fest, was gesagt wurde und wann — so weiß die nächste Person, wie die Dinge stehen, ohne jemanden zu fragen.",
+    "es": "La diferencia entre un cliente que vuelve y otro que no suele ser alguien que se acuerda de llamarlo. Cada ficha guarda qué se dijo y cuándo, para que quien la abra después sepa cómo está la cosa sin preguntar a nadie.",
+    "fr": "La différence entre un client qui revient et un client qui ne revient pas, c'est en général quelqu'un qui a pensé à l'appeler. Chaque fiche client garde ce qui a été dit et quand, pour que la personne suivante sache où en sont les choses sans demander.",
+    "it": "La differenza fra un cliente che torna e uno che non torna è di solito qualcuno che si ricorda di telefonargli. Ogni scheda cliente conserva che cosa è stato detto e quando, così chi la apre dopo sa a che punto siamo senza chiedere a nessuno."
+  },
+  "beats": [
+    {
+      "id": "whatWasSaid",
+      "narration": {
+        "en": "What was said, and when. The part that usually lives in somebody's head.",
+        "de": "Was gesagt wurde und wann — der Teil, der sonst in jemandes Kopf steckt.",
+        "es": "Qué se dijo y cuándo. La parte que suele vivir en la cabeza de alguien.",
+        "fr": "Ce qui a été dit, et quand. La partie qui vit d'ordinaire dans la tête de quelqu'un.",
+        "it": "Che cosa è stato detto e quando. La parte che di solito vive nella testa di qualcuno."
+      },
+      "chapter": {
+        "en": "What was said",
+        "de": "Was gesagt wurde",
+        "es": "Lo que se dijo",
+        "fr": "Ce qui a été dit",
+        "it": "Che cosa è stato detto"
+      }
+    },
+    {
+      "id": "addOne",
+      "narration": {
+        "en": "A line after a phone call is enough. It is not a report; it is a reminder for whoever is next.",
+        "de": "Eine Zeile nach dem Telefonat genügt. Kein Bericht — eine Erinnerung für die nächste Person.",
+        "es": "Basta una línea tras una llamada. No es un informe; es un recordatorio para quien venga después.",
+        "fr": "Une ligne après un appel suffit. Ce n'est pas un rapport ; c'est un rappel pour le suivant.",
+        "it": "Basta una riga dopo una telefonata. Non è un rapporto: è un promemoria per chi viene dopo."
+      }
+    },
+    {
+      "id": "whereItStands",
+      "narration": {
+        "en": "Where the client stands is a state you can see, not something to be recalled.",
+        "de": "Wo der Kunde steht, ist ein sichtbarer Zustand — nichts, woran man sich erinnern muss.",
+        "es": "Cómo está el cliente es un estado que se ve, no algo que haya que recordar.",
+        "fr": "Où en est le client est un état visible, pas quelque chose à se rappeler.",
+        "it": "A che punto è il cliente è uno stato visibile, non qualcosa da ricordare."
+      },
+      "chapter": {
+        "en": "Where it stands",
+        "de": "Wie es steht",
+        "es": "Cómo está",
+        "fr": "Où ça en est",
+        "it": "A che punto siamo"
+      }
+    },
+    {
+      "id": "moveIt",
+      "narration": {
+        "en": "Move it when something changes, and everybody reading the book is reading the same thing.",
+        "de": "Ändern Sie ihn, wenn sich etwas ändert — dann liest jede Person dasselbe.",
+        "es": "Cámbielo cuando algo cambie, y todos los que lean el libro leerán lo mismo.",
+        "fr": "Changez-le quand quelque chose change, et tout le monde lit la même chose.",
+        "it": "Lo sposti quando qualcosa cambia, e chiunque legga il libro legge la stessa cosa."
+      }
+    },
+    {
+      "id": "theWholeStory",
+      "narration": {
+        "en": "Underneath it, every job and every invoice you have ever raised for them.",
+        "de": "Darunter jeder Auftrag und jede Rechnung, die Sie je für ihn gestellt haben.",
+        "es": "Debajo, cada trabajo y cada factura que le haya emitido.",
+        "fr": "En dessous, chaque intervention et chaque facture que vous avez émises pour eux.",
+        "it": "Sotto, ogni lavoro e ogni fattura che avete emesso per loro."
+      },
+      "chapter": {
+        "en": "The whole story",
+        "de": "Die ganze Geschichte",
+        "es": "Toda la historia",
+        "fr": "Toute l'histoire",
+        "it": "Tutta la storia"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: raising a job for a client, at their own address.",
+        "de": "Als Nächstes: einen Auftrag für einen Kunden anlegen — an seiner Adresse.",
+        "es": "A continuación: crear un trabajo para un cliente, en su propia dirección.",
+        "fr": "Ensuite : créer une intervention pour un client, à sa propre adresse.",
+        "it": "Poi: creare un lavoro per un cliente, al suo indirizzo."
+      }
+    }
+  ]
+}

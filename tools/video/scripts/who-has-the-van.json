@@ -1,0 +1,118 @@
+{
+  "id": "who-has-the-van",
+  "tourIds": [],
+  "title": {
+    "en": "Who has the van",
+    "de": "Wer hat den Transporter",
+    "es": "Quién tiene la furgoneta",
+    "fr": "Qui a la camionnette",
+    "it": "Chi ha il furgone"
+  },
+  "subtitle": {
+    "en": "Custody as periods, so the question has an answer",
+    "de": "Besitz als Zeiträume — damit die Frage eine Antwort hat",
+    "es": "La custodia como períodos, para que la pregunta tenga respuesta",
+    "fr": "La détention par périodes, pour que la question ait une réponse",
+    "it": "La custodia come periodi, perché la domanda abbia una risposta"
+  },
+  "description": {
+    "en": "\"Who has it\" is easy. \"Who had it in March, and what did it cost while they did\" is the question that actually gets asked — by an accountant, by an insurer, by somebody looking at a fuel bill. Custody is kept as periods, so both have answers, and handing something over is one decision rather than three.",
+    "de": "„Wer hat es?\" ist leicht. „Wer hatte es im März, und was hat es in dieser Zeit gekostet?\" ist die Frage, die tatsächlich gestellt wird — von der Buchhaltung, von der Versicherung, von jemandem mit einer Tankrechnung in der Hand. Besitz wird als Zeitraum geführt, also haben beide Fragen Antworten, und eine Übergabe ist eine Entscheidung statt drei.",
+    "es": "«Quién lo tiene» es fácil. «Quién lo tuvo en marzo y cuánto costó mientras tanto» es la pregunta que de verdad se hace: la contabilidad, el seguro, alguien mirando una factura de combustible. La custodia se guarda como períodos, así que las dos tienen respuesta, y entregar algo es una decisión en vez de tres.",
+    "fr": "« Qui l'a » est facile. « Qui l'avait en mars, et combien a-t-elle coûté pendant ce temps » est la question qu'on pose vraiment — la comptabilité, l'assureur, quelqu'un devant une facture de carburant. La détention est conservée par périodes, donc les deux ont une réponse, et remettre quelque chose est une décision plutôt que trois.",
+    "it": "«Chi ce l'ha» è facile. «Chi ce l'aveva a marzo, e quanto è costato in quel periodo» è la domanda che viene fatta davvero — dalla contabilità, dall'assicurazione, da chi guarda una fattura del carburante. La custodia è tenuta come periodi, così entrambe hanno risposta, e consegnare qualcosa è una decisione invece di tre."
+  },
+  "beats": [
+    {
+      "id": "aThingWithAHistory",
+      "narration": {
+        "en": "A vehicle is not a row in a list. It is a thing with a history and a cost.",
+        "de": "Ein Fahrzeug ist keine Zeile in einer Liste. Es ist ein Ding mit Geschichte und Kosten.",
+        "es": "Un vehículo no es una fila en una lista. Es una cosa con historia y con coste.",
+        "fr": "Un véhicule n'est pas une ligne dans une liste. C'est une chose avec une histoire et un coût.",
+        "it": "Un veicolo non è una riga in un elenco. È una cosa con una storia e un costo."
+      },
+      "chapter": {
+        "en": "More than a row",
+        "de": "Mehr als eine Zeile",
+        "es": "Más que una fila",
+        "fr": "Plus qu'une ligne",
+        "it": "Più di una riga"
+      }
+    },
+    {
+      "id": "whoHasItNow",
+      "narration": {
+        "en": "Who has it now is the easy half, and it is on the record where anybody can see it.",
+        "de": "Wer es jetzt hat, ist die leichte Hälfte — und steht sichtbar auf dem Datensatz.",
+        "es": "Quién lo tiene ahora es la mitad fácil, y está en la ficha a la vista.",
+        "fr": "Qui l'a maintenant est la moitié facile, et c'est sur la fiche, à la vue de tous.",
+        "it": "Chi ce l'ha adesso è la metà facile, ed è sulla scheda, a vista."
+      }
+    },
+    {
+      "id": "andWhoHadIt",
+      "narration": {
+        "en": "Who had it before is the half that matters, kept as periods rather than overwritten.",
+        "de": "Wer es vorher hatte, ist die Hälfte, auf die es ankommt — als Zeitraum geführt, nicht überschrieben.",
+        "es": "Quién lo tuvo antes es la mitad que importa, guardada como períodos en vez de sobrescrita.",
+        "fr": "Qui l'avait avant est la moitié qui compte, conservée par périodes plutôt qu'écrasée.",
+        "it": "Chi ce l'aveva prima è la metà che conta, tenuta come periodi invece di essere sovrascritta."
+      },
+      "chapter": {
+        "en": "And who had it",
+        "de": "Und wer es hatte",
+        "es": "Y quién lo tuvo",
+        "fr": "Et qui l'avait",
+        "it": "E chi ce l'aveva"
+      }
+    },
+    {
+      "id": "whatItCost",
+      "narration": {
+        "en": "Which is what lets the costs sit under the right name, period by period.",
+        "de": "Dadurch stehen die Kosten unter dem richtigen Namen — Zeitraum für Zeitraum.",
+        "es": "Que es lo que permite que los costes queden bajo el nombre correcto, período a período.",
+        "fr": "C'est ce qui permet aux coûts de figurer sous le bon nom, période par période.",
+        "it": "Ed è questo che mette i costi sotto il nome giusto, periodo per periodo."
+      }
+    },
+    {
+      "id": "handItOver",
+      "narration": {
+        "en": "Handing it over says what it will do before you agree to it, rather than after.",
+        "de": "Die Übergabe sagt vorher, was sie bewirkt — nicht hinterher.",
+        "es": "La entrega dice lo que va a hacer antes de que usted acepte, no después.",
+        "fr": "La remise dit ce qu'elle va faire avant que vous acceptiez, pas après.",
+        "it": "La consegna dice che cosa farà prima che lei accetti, non dopo."
+      },
+      "chapter": {
+        "en": "Handing it over",
+        "de": "Die Übergabe",
+        "es": "La entrega",
+        "fr": "La remise",
+        "it": "La consegna"
+      }
+    },
+    {
+      "id": "theLedgerFollows",
+      "narration": {
+        "en": "Correct a handover date later and the whole ledger re-attributes itself, because nothing wrote a name onto a cost.",
+        "de": "Korrigieren Sie später ein Übergabedatum, ordnet sich das ganze Buch neu zu — weil nie ein Name auf eine Kostenzeile geschrieben wurde.",
+        "es": "Corrija después una fecha de entrega y todo el libro se reatribuye solo, porque nunca se escribió un nombre sobre un coste.",
+        "fr": "Corrigez plus tard une date de remise et tout le registre se réattribue, parce qu'aucun nom n'a jamais été écrit sur un coût.",
+        "it": "Corregga più tardi una data di consegna e l'intero registro si riattribuisce da solo, perché nessun nome è mai stato scritto su un costo."
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: turning finished work into an invoice.",
+        "de": "Als Nächstes: aus erledigter Arbeit eine Rechnung machen.",
+        "es": "A continuación: convertir el trabajo terminado en una factura.",
+        "fr": "Ensuite : transformer le travail fait en facture.",
+        "it": "Poi: trasformare il lavoro finito in una fattura."
+      }
+    }
+  ]
+}

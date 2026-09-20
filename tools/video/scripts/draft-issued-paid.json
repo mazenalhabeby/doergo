@@ -1,0 +1,115 @@
+{
+  "id": "draft-issued-paid",
+  "tourIds": [],
+  "title": {
+    "en": "Draft, issued, sent, paid",
+    "de": "Entwurf, ausgestellt, versendet, bezahlt",
+    "es": "Borrador, emitida, enviada, pagada",
+    "fr": "Brouillon, émise, envoyée, payée",
+    "it": "Bozza, emessa, inviata, pagata"
+  },
+  "subtitle": {
+    "en": "Why a draft is watermarked, and what issuing commits you to",
+    "de": "Warum ein Entwurf ein Wasserzeichen trägt — und wozu das Ausstellen verpflichtet",
+    "es": "Por qué un borrador lleva marca de agua, y a qué compromete emitir",
+    "fr": "Pourquoi un brouillon est filigrané, et à quoi engage l'émission",
+    "it": "Perché una bozza è filigranata, e a che cosa impegna l'emissione"
+  },
+  "description": {
+    "en": "An invoice has four states and only one of them is a document. A draft is watermarked on purpose: without a deliberate step between writing and sending, the only clean document a business could produce was one that recorded a delivery which had not happened.",
+    "de": "Eine Rechnung hat vier Zustände, und nur einer davon ist ein Dokument. Der Entwurf trägt absichtlich ein Wasserzeichen: Ohne einen bewussten Schritt zwischen Schreiben und Senden wäre das einzige saubere Dokument eines, das eine Lieferung festhält, die nie stattgefunden hat.",
+    "es": "Una factura tiene cuatro estados y solo uno de ellos es un documento. El borrador lleva marca de agua a propósito: sin un paso deliberado entre escribir y enviar, el único documento limpio que una empresa podía producir era uno que registraba una entrega que no había ocurrido.",
+    "fr": "Une facture a quatre états et un seul est un document. Le brouillon est filigrané exprès : sans une étape délibérée entre l'écriture et l'envoi, le seul document propre qu'une entreprise pouvait produire était celui qui consignait une livraison qui n'avait pas eu lieu.",
+    "it": "Una fattura ha quattro stati e solo uno di essi è un documento. La bozza è filigranata di proposito: senza un passaggio deliberato fra lo scrivere e l'inviare, l'unico documento pulito che un'azienda poteva produrre era quello che registrava una consegna mai avvenuta."
+  },
+  "beats": [
+    {
+      "id": "fourStates",
+      "narration": {
+        "en": "Four states, and they are not decoration: each one means something different is true.",
+        "de": "Vier Zustände — und sie sind keine Dekoration: Jeder bedeutet, dass etwas anderes zutrifft.",
+        "es": "Cuatro estados, y no son decoración: cada uno significa que algo distinto es cierto.",
+        "fr": "Quatre états, et ce n'est pas de la décoration : chacun signifie qu'autre chose est vrai.",
+        "it": "Quattro stati, e non sono decorazione: ognuno significa che è vera una cosa diversa."
+      },
+      "chapter": {
+        "en": "Four states",
+        "de": "Vier Zustände",
+        "es": "Cuatro estados",
+        "fr": "Quatre états",
+        "it": "Quattro stati"
+      }
+    },
+    {
+      "id": "theDraft",
+      "narration": {
+        "en": "A draft can be changed by anybody who can raise one. So its document says so, across the page.",
+        "de": "Ein Entwurf kann von allen geändert werden, die Rechnungen anlegen dürfen. Deshalb sagt das Dokument es quer über die Seite.",
+        "es": "Un borrador puede cambiarlo cualquiera que pueda crear facturas. Por eso el documento lo dice, cruzando la página.",
+        "fr": "Un brouillon peut être modifié par quiconque peut en créer un. Son document le dit donc, en travers de la page.",
+        "it": "Una bozza può essere modificata da chiunque possa crearne una. Perciò il documento lo dice, per tutta la pagina."
+      },
+      "chapter": {
+        "en": "The draft",
+        "de": "Der Entwurf",
+        "es": "El borrador",
+        "fr": "Le brouillon",
+        "it": "La bozza"
+      }
+    },
+    {
+      "id": "issuing",
+      "narration": {
+        "en": "Issuing is the deliberate step. It fixes the numbers and gives the document a place in your books.",
+        "de": "Das Ausstellen ist der bewusste Schritt: Er fixiert die Zahlen und gibt dem Dokument seinen Platz in Ihren Büchern.",
+        "es": "Emitir es el paso deliberado: fija los números y da al documento su sitio en sus libros.",
+        "fr": "L'émission est l'étape délibérée : elle fige les chiffres et donne au document sa place dans vos livres.",
+        "it": "Emettere è il passaggio deliberato: fissa i numeri e dà al documento il suo posto nei vostri libri."
+      },
+      "chapter": {
+        "en": "Issuing",
+        "de": "Ausstellen",
+        "es": "Emitir",
+        "fr": "Émettre",
+        "it": "Emettere"
+      }
+    },
+    {
+      "id": "theCleanDocument",
+      "narration": {
+        "en": "Now the watermark is gone, and what is left is the thing you would actually send somebody.",
+        "de": "Jetzt ist das Wasserzeichen weg — übrig bleibt das, was man wirklich verschickt.",
+        "es": "Ahora la marca de agua ya no está, y queda lo que de verdad se le envía a alguien.",
+        "fr": "Le filigrane a disparu, et il reste ce qu'on envoie vraiment à quelqu'un.",
+        "it": "Ora la filigrana non c'è più, e resta ciò che si manda davvero a qualcuno."
+      }
+    },
+    {
+      "id": "sentAndPaid",
+      "narration": {
+        "en": "Sent is a fact about the post. Paid is a fact about the bank. Neither is guessed from the other.",
+        "de": "Versendet ist eine Tatsache über die Post. Bezahlt eine über die Bank. Keine wird aus der anderen geraten.",
+        "es": "Enviada es un hecho del correo. Pagada es un hecho del banco. Ninguna se deduce de la otra.",
+        "fr": "Envoyée est un fait postal. Payée est un fait bancaire. Aucune n'est devinée à partir de l'autre.",
+        "it": "Inviata è un fatto sulla posta. Pagata è un fatto sulla banca. Nessuna delle due si indovina dall'altra."
+      },
+      "chapter": {
+        "en": "Sent, and paid",
+        "de": "Versendet und bezahlt",
+        "es": "Enviada y pagada",
+        "fr": "Envoyée, et payée",
+        "it": "Inviata e pagata"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: the bill that comes the other way — what you pay us.",
+        "de": "Als Nächstes: die Rechnung in die andere Richtung — was Sie uns zahlen.",
+        "es": "A continuación: la factura que va al revés: lo que usted nos paga.",
+        "fr": "Ensuite : la facture dans l'autre sens — ce que vous nous payez.",
+        "it": "Poi: il conto nell'altro verso — quello che pagate a noi."
+      }
+    }
+  ]
+}

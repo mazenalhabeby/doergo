@@ -53,6 +53,29 @@ export async function signIn(
  * code on every document, so nothing has to remember to re-install it.
  */
 export async function installScroller(page: Page): Promise<void> {
+  /*
+    ⚠️ HIDE THE DEV OVERLAY, on every document.
+
+    `next dev` renders its own indicator into a `<nextjs-portal>` element —
+    the small badge in the corner. It appeared in the corner of EVERY frame of
+    the first fourteen videos before anybody noticed, which on a published
+    product video reads as a screenshot somebody forgot to clean up.
+
+    It is worse than cosmetic: its buttons are real buttons in the page, and a
+    loose selector reaches them. `button:has(svg)` matched the dev menu rather
+    than a row's own menu, and the flow then opened "Try Turbopack" while the
+    narration talked about approving a day off.
+  */
+  await page.addInitScript(() => {
+    const hide = () => {
+      const style = document.createElement('style');
+      style.textContent =
+        'nextjs-portal, #__next-build-watcher, [data-nextjs-toast] { display: none !important; }';
+      document.head?.appendChild(style);
+    };
+    if (document.head) hide();
+    else addEventListener('DOMContentLoaded', hide);
+  });
   await page.addInitScript(() => {
     (window as unknown as { scroller: () => Element }).scroller = () => {
       const pane = document.querySelector('.flex-1.overflow-auto');

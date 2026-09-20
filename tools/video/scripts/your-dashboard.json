@@ -1,0 +1,110 @@
+{
+  "id": "your-dashboard",
+  "tourIds": [
+    "welcomeAdmin"
+  ],
+  "title": {
+    "en": "Your dashboard",
+    "de": "Ihr Dashboard",
+    "es": "Su panel",
+    "fr": "Votre tableau de bord",
+    "it": "La sua dashboard"
+  },
+  "subtitle": {
+    "en": "What is worth looking at before the phone starts",
+    "de": "Was einen Blick wert ist, bevor das Telefon geht",
+    "es": "Lo que merece mirar antes de que empiece el teléfono",
+    "fr": "Ce qui vaut un regard avant que le téléphone sonne",
+    "it": "Che cosa vale uno sguardo prima che squilli il telefono"
+  },
+  "description": {
+    "en": "The first screen is not a report. It answers the three questions somebody actually has at seven in the morning: who is here, what is happening, and what is waiting on me.",
+    "de": "Der erste Bildschirm ist kein Bericht. Er beantwortet die drei Fragen, die man um sieben Uhr früh wirklich hat: Wer ist da, was läuft, und was wartet auf mich?",
+    "es": "La primera pantalla no es un informe. Responde a las tres preguntas que uno tiene de verdad a las siete de la mañana: quién está, qué pasa y qué me espera.",
+    "fr": "Le premier écran n'est pas un rapport. Il répond aux trois questions qu'on se pose vraiment à sept heures du matin : qui est là, que se passe-t-il, et qu'est-ce qui m'attend.",
+    "it": "La prima schermata non è un report. Risponde alle tre domande che uno ha davvero alle sette del mattino: chi c'è, che cosa sta succedendo e che cosa aspetta me."
+  },
+  "beats": [
+    {
+      "id": "whoIsHere",
+      "narration": {
+        "en": "Who is at work, where, and what each of them is on.",
+        "de": "Wer arbeitet, wo — und woran jede Person gerade ist.",
+        "es": "Quién está trabajando, dónde, y en qué anda cada uno.",
+        "fr": "Qui travaille, où, et sur quoi chacun est.",
+        "it": "Chi è al lavoro, dove, e su che cosa sta ciascuno."
+      },
+      "chapter": {
+        "en": "Who is here",
+        "de": "Wer da ist",
+        "es": "Quién está",
+        "fr": "Qui est là",
+        "it": "Chi c'è"
+      }
+    },
+    {
+      "id": "byWorkspace",
+      "narration": {
+        "en": "Grouped the way the work is: one column per place, with the quiet ones saying so.",
+        "de": "Gruppiert wie die Arbeit selbst: eine Spalte pro Ort — und die ruhigen sagen es.",
+        "es": "Agrupado como el trabajo: una columna por sitio, y los tranquilos lo dicen.",
+        "fr": "Groupé comme le travail l'est : une colonne par lieu, et les calmes le disent.",
+        "it": "Raggruppato come il lavoro: una colonna per luogo, e i tranquilli lo dicono."
+      }
+    },
+    {
+      "id": "whatHappened",
+      "narration": {
+        "en": "What has happened since you last looked, in the order it happened.",
+        "de": "Was seit dem letzten Blick passiert ist — in der Reihenfolge des Geschehens.",
+        "es": "Qué ha pasado desde la última vez que miró, en el orden en que pasó.",
+        "fr": "Ce qui s'est passé depuis votre dernier regard, dans l'ordre.",
+        "it": "Che cosa è successo dall'ultima volta che ha guardato, nell'ordine in cui è successo."
+      },
+      "chapter": {
+        "en": "What happened",
+        "de": "Was passiert ist",
+        "es": "Qué ha pasado",
+        "fr": "Ce qui s'est passé",
+        "it": "Che cosa è successo"
+      }
+    },
+    {
+      "id": "waitingOnYou",
+      "narration": {
+        "en": "And the short list of things that are stopped until you say something.",
+        "de": "Und die kurze Liste der Dinge, die stillstehen, bis Sie etwas sagen.",
+        "es": "Y la lista corta de cosas paradas hasta que usted diga algo.",
+        "fr": "Et la courte liste de ce qui est à l'arrêt tant que vous n'avez rien dit.",
+        "it": "E l'elenco breve delle cose ferme finché lei non dice qualcosa."
+      },
+      "chapter": {
+        "en": "Waiting on you",
+        "de": "Was auf Sie wartet",
+        "es": "Lo que le espera",
+        "fr": "En attente de vous",
+        "it": "In attesa di lei"
+      }
+    },
+    {
+      "id": "noHunting",
+      "narration": {
+        "en": "None of it needs a report to be run, and none of it goes stale while you read it.",
+        "de": "Nichts davon braucht einen Bericht — und nichts wird schal, während Sie es lesen.",
+        "es": "Nada de esto necesita ejecutar un informe, y nada envejece mientras lo lee.",
+        "fr": "Rien de tout cela ne demande de lancer un rapport, et rien ne vieillit pendant que vous le lisez.",
+        "it": "Nulla di tutto questo richiede di lanciare un report, e nulla invecchia mentre lo legge."
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: asking your own data a question nobody built a screen for.",
+        "de": "Als Nächstes: Ihren Daten eine Frage stellen, für die niemand einen Bildschirm gebaut hat.",
+        "es": "A continuación: hacerle a sus datos una pregunta para la que nadie construyó una pantalla.",
+        "fr": "Ensuite : poser à vos données une question pour laquelle personne n'a fait d'écran.",
+        "it": "Poi: fare ai suoi dati una domanda per cui nessuno ha costruito una schermata."
+      }
+    }
+  ]
+}

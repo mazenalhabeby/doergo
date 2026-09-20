@@ -1,0 +1,110 @@
+{
+  "id": "equipment-on-the-books",
+  "tourIds": [
+    "pageAssets"
+  ],
+  "title": {
+    "en": "Equipment on the books",
+    "de": "Ausrüstung in den Büchern",
+    "es": "El equipo en los libros",
+    "fr": "Le matériel dans les livres",
+    "it": "L'attrezzatura a libro"
+  },
+  "subtitle": {
+    "en": "Vans, tools, machines — and kinds that ask the right questions",
+    "de": "Transporter, Werkzeuge, Maschinen — und Arten, die die richtigen Fragen stellen",
+    "es": "Furgonetas, herramientas, máquinas — y tipos que hacen las preguntas correctas",
+    "fr": "Camionnettes, outils, machines — et des types qui posent les bonnes questions",
+    "it": "Furgoni, attrezzi, macchine — e tipi che fanno le domande giuste"
+  },
+  "description": {
+    "en": "A van and a thermal camera are both equipment and almost nothing else about them is alike. So a kind decides what a thing is asked — a registration and a plate for one, a serial number and a calibration date for the other — and the record then holds what somebody actually needs at the roadside.",
+    "de": "Ein Transporter und eine Wärmebildkamera sind beides Ausrüstung — und sonst kaum vergleichbar. Deshalb entscheidet die Art, was gefragt wird: Kennzeichen und Zulassung beim einen, Seriennummer und Kalibrierdatum beim anderen. Und der Datensatz enthält dann das, was am Straßenrand wirklich gebraucht wird.",
+    "es": "Una furgoneta y una cámara térmica son equipo, y casi nada más se parece entre ellas. Por eso el tipo decide qué se le pregunta a cada cosa —matrícula y permiso para una, número de serie y fecha de calibración para la otra— y la ficha guarda lo que de verdad hace falta en la cuneta.",
+    "fr": "Une camionnette et une caméra thermique sont toutes deux du matériel, et presque rien d'autre ne les rapproche. C'est donc le type qui décide de ce qu'on demande — une immatriculation pour l'une, un numéro de série et une date d'étalonnage pour l'autre — et la fiche contient alors ce dont on a besoin sur le bord de la route.",
+    "it": "Un furgone e una termocamera sono entrambi attrezzatura, e quasi nient'altro li accomuna. Perciò è il tipo a decidere che cosa viene chiesto — una targa per uno, un numero di serie e una data di taratura per l'altro — e la scheda contiene poi ciò che serve davvero sul ciglio della strada."
+  },
+  "beats": [
+    {
+      "id": "whatYouOwn",
+      "narration": {
+        "en": "Everything the company owns that somebody takes away with them.",
+        "de": "Alles, was dem Unternehmen gehört und von jemandem mitgenommen wird.",
+        "es": "Todo lo que la empresa posee y alguien se lleva consigo.",
+        "fr": "Tout ce que l'entreprise possède et que quelqu'un emporte.",
+        "it": "Tutto ciò che l'azienda possiede e che qualcuno porta via con sé."
+      },
+      "chapter": {
+        "en": "What you own",
+        "de": "Was Ihnen gehört",
+        "es": "Lo que posee",
+        "fr": "Ce que vous possédez",
+        "it": "Ciò che possedete"
+      }
+    },
+    {
+      "id": "kinds",
+      "narration": {
+        "en": "It is grouped by kind, because a van and an instrument have almost nothing in common.",
+        "de": "Gruppiert nach Art — denn ein Transporter und ein Messgerät haben fast nichts gemeinsam.",
+        "es": "Se agrupa por tipo, porque una furgoneta y un instrumento no tienen casi nada en común.",
+        "fr": "C'est groupé par type, parce qu'une camionnette et un instrument n'ont presque rien en commun.",
+        "it": "È raggruppata per tipo, perché un furgone e uno strumento non hanno quasi nulla in comune."
+      },
+      "chapter": {
+        "en": "By kind",
+        "de": "Nach Art",
+        "es": "Por tipo",
+        "fr": "Par type",
+        "it": "Per tipo"
+      }
+    },
+    {
+      "id": "theKindAsks",
+      "narration": {
+        "en": "The kind decides what each thing is asked, so nobody invents a field at the roadside.",
+        "de": "Die Art entscheidet, was gefragt wird — damit niemand am Straßenrand ein Feld erfindet.",
+        "es": "El tipo decide qué se le pregunta a cada cosa, para que nadie invente un campo en la cuneta.",
+        "fr": "Le type décide de ce qu'on demande, pour que personne n'invente un champ au bord de la route.",
+        "it": "Il tipo decide che cosa viene chiesto, così nessuno inventa un campo sul ciglio della strada."
+      }
+    },
+    {
+      "id": "addOne",
+      "narration": {
+        "en": "Adding one is answering those questions, and nothing else.",
+        "de": "Etwas anzulegen heißt, diese Fragen zu beantworten — mehr nicht.",
+        "es": "Dar de alta algo es responder a esas preguntas, y nada más.",
+        "fr": "En ajouter un, c'est répondre à ces questions, et rien d'autre.",
+        "it": "Aggiungerne uno significa rispondere a quelle domande, e nient'altro."
+      },
+      "chapter": {
+        "en": "Adding one",
+        "de": "Anlegen",
+        "es": "Darlo de alta",
+        "fr": "En ajouter un",
+        "it": "Aggiungerne uno"
+      }
+    },
+    {
+      "id": "itHasALife",
+      "narration": {
+        "en": "From then on it has a life: what it cost, what was done to it, and who had it.",
+        "de": "Von da an hat es ein Leben: was es gekostet hat, was daran getan wurde und wer es hatte.",
+        "es": "A partir de ahí tiene una vida: qué costó, qué se le hizo y quién lo tuvo.",
+        "fr": "Dès lors il a une vie : ce qu'il a coûté, ce qu'on lui a fait, et qui l'a eu.",
+        "it": "Da lì ha una vita: quanto è costato, che cosa gli è stato fatto e chi l'ha avuto."
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Which is the next video: who has the van, and what it costs while they do.",
+        "de": "Und das ist das nächste Video: wer den Transporter hat — und was er in dieser Zeit kostet.",
+        "es": "Que es el siguiente vídeo: quién tiene la furgoneta y cuánto cuesta mientras la tiene.",
+        "fr": "C'est justement la vidéo suivante : qui a la camionnette, et ce qu'elle coûte pendant ce temps.",
+        "it": "Che è il video successivo: chi ha il furgone e quanto costa mentre ce l'ha."
+      }
+    }
+  ]
+}

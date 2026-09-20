@@ -1,0 +1,137 @@
+{
+  "id": "time-off",
+  "tourIds": [
+    "pageMyTimeoff"
+  ],
+  "title": {
+    "en": "Time off",
+    "de": "Freie Tage",
+    "es": "Tiempo libre",
+    "fr": "Les congés",
+    "it": "Ferie e permessi"
+  },
+  "subtitle": {
+    "en": "Asking on one screen, answering on another",
+    "de": "Beantragen auf dem einen Bildschirm, entscheiden auf dem anderen",
+    "es": "Pedir en una pantalla, responder en otra",
+    "fr": "Demander sur un écran, répondre sur un autre",
+    "it": "Chiedere su una schermata, rispondere su un'altra"
+  },
+  "description": {
+    "en": "A day off is two screens: the one where somebody asks, with their allowance in front of them, and the one where somebody answers, with the consequences in front of them. Neither has to chase the other, and the answer is kept with who gave it.",
+    "de": "Ein freier Tag sind zwei Bildschirme: der, auf dem jemand fragt — mit dem Resturlaub vor Augen — und der, auf dem jemand antwortet, mit den Folgen vor Augen. Keiner muss dem anderen hinterherlaufen, und die Antwort bleibt mit dem Namen erhalten.",
+    "es": "Un día libre son dos pantallas: aquella donde alguien lo pide, con sus días delante, y aquella donde alguien responde, con las consecuencias delante. Ninguno tiene que perseguir al otro, y la respuesta se guarda con quién la dio.",
+    "fr": "Un jour de congé, ce sont deux écrans : celui où quelqu'un demande, son solde sous les yeux, et celui où quelqu'un répond, les conséquences sous les yeux. Aucun n'a à courir après l'autre, et la réponse est conservée avec son auteur.",
+    "it": "Un giorno libero sono due schermate: quella dove qualcuno chiede, con il residuo davanti, e quella dove qualcuno risponde, con le conseguenze davanti. Nessuno deve rincorrere l'altro, e la risposta resta con chi l'ha data."
+  },
+  "beats": [
+    {
+      "id": "whatIsLeft",
+      "narration": {
+        "en": "Before asking, you can see what you have left. Nobody has to ask the office that question.",
+        "de": "Vor dem Antrag sehen Sie, was Ihnen bleibt. Niemand muss das im Büro erfragen.",
+        "es": "Antes de pedir, ve lo que le queda. Nadie tiene que preguntárselo a la oficina.",
+        "fr": "Avant de demander, vous voyez ce qu'il vous reste. Personne n'a à poser la question au bureau.",
+        "it": "Prima di chiedere, vede quanto le resta. Nessuno deve chiederlo all'ufficio."
+      },
+      "chapter": {
+        "en": "What is left",
+        "de": "Was bleibt",
+        "es": "Lo que queda",
+        "fr": "Ce qu'il reste",
+        "it": "Quanto resta"
+      }
+    },
+    {
+      "id": "pickTheDays",
+      "narration": {
+        "en": "Pick the days on the calendar, the way you would point at them.",
+        "de": "Wählen Sie die Tage im Kalender — so, wie Sie darauf zeigen würden.",
+        "es": "Elija los días en el calendario, como los señalaría con el dedo.",
+        "fr": "Choisissez les jours sur le calendrier, comme vous les montreriez du doigt.",
+        "it": "Scelga i giorni sul calendario, come li indicherebbe."
+      },
+      "chapter": {
+        "en": "Pick the days",
+        "de": "Tage wählen",
+        "es": "Elegir los días",
+        "fr": "Choisir les jours",
+        "it": "Scegliere i giorni"
+      }
+    },
+    {
+      "id": "sayWhy",
+      "narration": {
+        "en": "Say what kind it is, and add a line if it helps whoever answers.",
+        "de": "Sagen Sie, um welche Art es geht — und fügen Sie eine Zeile hinzu, wenn es der antwortenden Person hilft.",
+        "es": "Diga de qué tipo es, y añada una línea si ayuda a quien responda.",
+        "fr": "Dites de quel type il s'agit, et ajoutez une ligne si cela aide celui qui répondra.",
+        "it": "Dica di che tipo è, e aggiunga una riga se aiuta chi risponderà."
+      }
+    },
+    {
+      "id": "sendIt",
+      "narration": {
+        "en": "Send it. That is the whole of it from this side.",
+        "de": "Absenden. Von dieser Seite war das alles.",
+        "es": "Envíelo. Eso es todo desde este lado.",
+        "fr": "Envoyez. De ce côté-ci, c'est tout.",
+        "it": "Lo invii. Da questa parte è tutto."
+      }
+    },
+    {
+      "id": "atTheDesk",
+      "narration": {
+        "en": "At the desk it arrives among everything else that needs a decision this week.",
+        "de": "Am Schreibtisch kommt er an — zwischen allem anderen, was diese Woche entschieden werden muss.",
+        "es": "En la oficina llega entre todo lo demás que necesita una decisión esta semana.",
+        "fr": "Au bureau, elle arrive parmi tout ce qui demande une décision cette semaine.",
+        "it": "Alla scrivania arriva insieme a tutto il resto che richiede una decisione questa settimana."
+      },
+      "chapter": {
+        "en": "At the desk",
+        "de": "Am Schreibtisch",
+        "es": "En la oficina",
+        "fr": "Au bureau",
+        "it": "Alla scrivania"
+      }
+    },
+    {
+      "id": "withConsequences",
+      "narration": {
+        "en": "With what it would leave behind it, so the answer is not a guess.",
+        "de": "Mitsamt dem, was er hinterlassen würde — damit die Antwort keine Vermutung ist.",
+        "es": "Con lo que dejaría detrás, para que la respuesta no sea una suposición.",
+        "fr": "Avec ce qu'elle laisserait derrière elle, pour que la réponse ne soit pas une supposition.",
+        "it": "Con ciò che lascerebbe dietro di sé, perché la risposta non sia un'ipotesi."
+      }
+    },
+    {
+      "id": "answered",
+      "narration": {
+        "en": "Answered, and kept: who asked, who agreed, and when.",
+        "de": "Beantwortet und festgehalten: wer gefragt hat, wer zugestimmt hat und wann.",
+        "es": "Respondido y guardado: quién pidió, quién aceptó y cuándo.",
+        "fr": "Répondu, et conservé : qui a demandé, qui a accepté, et quand.",
+        "it": "Risposto e conservato: chi ha chiesto, chi ha acconsentito e quando."
+      },
+      "chapter": {
+        "en": "Answered",
+        "de": "Beantwortet",
+        "es": "Respondido",
+        "fr": "Répondu",
+        "it": "Risposto"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: getting your team into the product in the first place.",
+        "de": "Als Nächstes: Ihr Team überhaupt erst ins Produkt holen.",
+        "es": "A continuación: meter a su equipo en el producto, para empezar.",
+        "fr": "Ensuite : faire entrer votre équipe dans le produit.",
+        "it": "Poi: far entrare la sua squadra nel prodotto."
+      }
+    }
+  ]
+}

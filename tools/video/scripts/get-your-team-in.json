@@ -1,0 +1,127 @@
+{
+  "id": "get-your-team-in",
+  "tourIds": [
+    "pageInvitations"
+  ],
+  "title": {
+    "en": "Get your team in",
+    "de": "Holen Sie Ihr Team dazu",
+    "es": "Meta a su equipo",
+    "fr": "Faites entrer votre équipe",
+    "it": "Faccia entrare la squadra"
+  },
+  "subtitle": {
+    "en": "A code, a role, and the first person who is not you",
+    "de": "Ein Code, eine Rolle — und die erste Person, die nicht Sie sind",
+    "es": "Un código, un rol y la primera persona que no es usted",
+    "fr": "Un code, un rôle, et la première personne qui n'est pas vous",
+    "it": "Un codice, un ruolo e la prima persona che non è lei"
+  },
+  "description": {
+    "en": "Somebody joins by typing a code you gave them, and what they can do when they arrive is decided before they type it. A code is a key: anybody holding it joins, so it expires, and it can be revoked the moment you doubt it.",
+    "de": "Jemand tritt bei, indem er einen Code eingibt, den Sie gegeben haben — und was die Person danach darf, ist vorher entschieden. Ein Code ist ein Schlüssel: Wer ihn hat, tritt bei. Deshalb läuft er ab und kann widerrufen werden, sobald Sie zweifeln.",
+    "es": "Alguien entra tecleando un código que usted le dio, y lo que podrá hacer al llegar se decide antes de que lo teclee. Un código es una llave: quien lo tenga entra, así que caduca y puede revocarse en cuanto usted dude.",
+    "fr": "Quelqu'un rejoint en tapant un code que vous lui avez donné, et ce qu'il pourra faire en arrivant est décidé avant qu'il le tape. Un code est une clé : quiconque le détient entre, donc il expire, et il peut être révoqué dès que vous avez un doute.",
+    "it": "Qualcuno entra digitando un codice che gli ha dato lei, e che cosa potrà fare una volta dentro è deciso prima che lo digiti. Un codice è una chiave: chi ce l'ha entra, quindi scade e può essere revocato appena lei ha un dubbio."
+  },
+  "beats": [
+    {
+      "id": "whoIsHere",
+      "narration": {
+        "en": "Everybody who works here, and what each of them can reach.",
+        "de": "Alle, die hier arbeiten — und was jede Person erreichen darf.",
+        "es": "Todos los que trabajan aquí, y lo que puede alcanzar cada uno.",
+        "fr": "Tous ceux qui travaillent ici, et ce à quoi chacun a accès.",
+        "it": "Tutti quelli che lavorano qui, e che cosa può raggiungere ciascuno."
+      },
+      "chapter": {
+        "en": "Who is here",
+        "de": "Wer hier ist",
+        "es": "Quién está aquí",
+        "fr": "Qui est là",
+        "it": "Chi c'è"
+      }
+    },
+    {
+      "id": "inviteOne",
+      "narration": {
+        "en": "Inviting somebody starts with what they will be, not with their email address.",
+        "de": "Eine Einladung beginnt damit, was die Person sein wird — nicht mit ihrer E-Mail-Adresse.",
+        "es": "Invitar a alguien empieza por lo que va a ser, no por su correo.",
+        "fr": "Inviter quelqu'un commence par ce qu'il sera, pas par son adresse e-mail.",
+        "it": "Invitare qualcuno inizia da che cosa sarà, non dal suo indirizzo e-mail."
+      },
+      "chapter": {
+        "en": "Inviting",
+        "de": "Einladen",
+        "es": "Invitar",
+        "fr": "Inviter",
+        "it": "Invitare"
+      }
+    },
+    {
+      "id": "decideFirst",
+      "narration": {
+        "en": "The role they arrive with, and the workspace they arrive into. Both decided now, by you.",
+        "de": "Die Rolle, mit der sie ankommt, und der Arbeitsbereich, in den sie kommt. Beides entscheiden Sie jetzt.",
+        "es": "El rol con el que llega y el espacio al que llega. Las dos cosas las decide usted, ahora.",
+        "fr": "Le rôle avec lequel il arrive, et l'espace de travail où il arrive. Les deux, décidés maintenant, par vous.",
+        "it": "Il ruolo con cui arriva e lo spazio in cui arriva. Entrambi decisi adesso, da lei."
+      }
+    },
+    {
+      "id": "theCode",
+      "narration": {
+        "en": "What comes out is a code. Send it however you already talk to them.",
+        "de": "Heraus kommt ein Code. Schicken Sie ihn so, wie Sie ohnehin miteinander reden.",
+        "es": "Lo que sale es un código. Envíelo como ya se comunique con esa persona.",
+        "fr": "Ce qui en sort, c'est un code. Envoyez-le comme vous lui parlez déjà.",
+        "it": "Ne esce un codice. Lo mandi come già parlate tra voi."
+      },
+      "chapter": {
+        "en": "The code",
+        "de": "Der Code",
+        "es": "El código",
+        "fr": "Le code",
+        "it": "Il codice"
+      }
+    },
+    {
+      "id": "itIsAKey",
+      "narration": {
+        "en": "Treat it as a key, because it is one: whoever types it joins. That is why it expires.",
+        "de": "Behandeln Sie ihn wie einen Schlüssel — denn er ist einer: Wer ihn eingibt, tritt bei. Darum läuft er ab.",
+        "es": "Trátelo como una llave, porque lo es: quien lo teclee entra. Por eso caduca.",
+        "fr": "Traitez-le comme une clé, parce que c'en est une : celui qui le tape entre. C'est pourquoi il expire.",
+        "it": "Lo tratti come una chiave, perché lo è: chi lo digita entra. Per questo scade."
+      }
+    },
+    {
+      "id": "andRevoked",
+      "narration": {
+        "en": "And why it can be taken back the moment you have any doubt about where it went.",
+        "de": "Und warum Sie ihn zurückziehen können, sobald Sie zweifeln, wo er gelandet ist.",
+        "es": "Y por eso puede retirarlo en cuanto dude de dónde ha acabado.",
+        "fr": "Et pourquoi il peut être retiré dès que vous doutez de l'endroit où il est parti.",
+        "it": "Ed è perché può ritirarlo appena dubita di dove sia finito."
+      },
+      "chapter": {
+        "en": "Taken back",
+        "de": "Zurückgezogen",
+        "es": "Retirado",
+        "fr": "Retiré",
+        "it": "Ritirato"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: everything about one person, in one place.",
+        "de": "Als Nächstes: alles über eine Person, an einem Ort.",
+        "es": "A continuación: todo sobre una persona, en un sitio.",
+        "fr": "Ensuite : tout sur une personne, au même endroit.",
+        "it": "Poi: tutto su una persona, in un posto solo."
+      }
+    }
+  ]
+}

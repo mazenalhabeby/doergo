@@ -1,0 +1,110 @@
+{
+  "id": "what-you-pay-us",
+  "tourIds": [
+    "pageSettings"
+  ],
+  "title": {
+    "en": "What you pay us",
+    "de": "Was Sie uns zahlen",
+    "es": "Lo que nos paga",
+    "fr": "Ce que vous nous payez",
+    "it": "Quello che ci paga"
+  },
+  "subtitle": {
+    "en": "Seats, workspace modules, options — read off your own bill",
+    "de": "Sitze, Module pro Arbeitsbereich, Optionen — abgelesen an Ihrer Rechnung",
+    "es": "Asientos, módulos por espacio, opciones: leídos en su propia factura",
+    "fr": "Sièges, modules par espace, options — lus sur votre propre facture",
+    "it": "Postazioni, moduli per spazio, opzioni — letti sul suo conto"
+  },
+  "description": {
+    "en": "There are no bundles to choose between. You pay for the people who work here, for the capabilities each workspace actually switched on, and for the few things bought once for the whole organisation. The bill shows all three, itemised, and moves the moment you change any of them.",
+    "de": "Es gibt keine Pakete zur Auswahl. Sie zahlen für die Menschen, die hier arbeiten, für die Fähigkeiten, die jeder Arbeitsbereich tatsächlich eingeschaltet hat, und für die wenigen Dinge, die einmal für die ganze Organisation gekauft werden. Die Rechnung zeigt alle drei, aufgeschlüsselt — und bewegt sich, sobald Sie etwas ändern.",
+    "es": "No hay paquetes entre los que elegir. Paga por la gente que trabaja aquí, por las capacidades que cada espacio ha encendido de verdad, y por las pocas cosas que se compran una vez para toda la organización. La factura muestra las tres, desglosadas, y se mueve en cuanto usted cambia algo.",
+    "fr": "Il n'y a pas de forfaits entre lesquels choisir. Vous payez pour les personnes qui travaillent ici, pour les capacités que chaque espace a réellement activées, et pour les quelques choses achetées une fois pour toute l'organisation. La facture montre les trois, détaillées, et bouge dès que vous changez l'une d'elles.",
+    "it": "Non ci sono pacchetti fra cui scegliere. Paga per le persone che lavorano qui, per le capacità che ogni spazio ha davvero acceso e per le poche cose comprate una volta per tutta l'organizzazione. Il conto mostra tutte e tre, voce per voce, e si muove appena ne cambia una."
+  },
+  "beats": [
+    {
+      "id": "noBundles",
+      "narration": {
+        "en": "There is no plan to choose. The bill is built from what you are actually using.",
+        "de": "Es gibt keinen Tarif zu wählen. Die Rechnung entsteht aus dem, was Sie tatsächlich nutzen.",
+        "es": "No hay un plan que elegir. La factura se construye con lo que realmente usa.",
+        "fr": "Il n'y a pas de forfait à choisir. La facture est bâtie sur ce que vous utilisez réellement.",
+        "it": "Non c'è un piano da scegliere. Il conto è costruito su ciò che usate davvero."
+      },
+      "chapter": {
+        "en": "No bundles",
+        "de": "Keine Pakete",
+        "es": "Sin paquetes",
+        "fr": "Pas de forfaits",
+        "it": "Nessun pacchetto"
+      }
+    },
+    {
+      "id": "theSeats",
+      "narration": {
+        "en": "The people who work here, at one price each, whatever they do.",
+        "de": "Die Menschen, die hier arbeiten — zu einem Preis pro Person, was immer sie tun.",
+        "es": "La gente que trabaja aquí, a un precio por cabeza, hagan lo que hagan.",
+        "fr": "Les personnes qui travaillent ici, à un prix chacune, quel que soit leur métier.",
+        "it": "Le persone che lavorano qui, a un prezzo ciascuna, qualunque cosa facciano."
+      },
+      "chapter": {
+        "en": "The people",
+        "de": "Die Menschen",
+        "es": "Las personas",
+        "fr": "Les personnes",
+        "it": "Le persone"
+      }
+    },
+    {
+      "id": "perWorkspace",
+      "narration": {
+        "en": "Then each workspace, priced for what it switched on and nothing else.",
+        "de": "Dann jeder Arbeitsbereich — bepreist nach dem, was er eingeschaltet hat, und sonst nichts.",
+        "es": "Después cada espacio, cobrado por lo que encendió y nada más.",
+        "fr": "Ensuite chaque espace de travail, facturé pour ce qu'il a activé et rien d'autre.",
+        "it": "Poi ogni spazio di lavoro, addebitato per ciò che ha acceso e nient'altro."
+      },
+      "chapter": {
+        "en": "Per workspace",
+        "de": "Pro Arbeitsbereich",
+        "es": "Por espacio",
+        "fr": "Par espace",
+        "it": "Per spazio"
+      }
+    },
+    {
+      "id": "theOptions",
+      "narration": {
+        "en": "And the things bought once for the whole company, which is why they are not charged per site.",
+        "de": "Und die Dinge, die einmal für das ganze Unternehmen gekauft werden — darum kosten sie nicht pro Standort.",
+        "es": "Y las cosas compradas una vez para toda la empresa, que por eso no se cobran por sitio.",
+        "fr": "Et les choses achetées une fois pour toute l'entreprise, qui ne sont donc pas facturées par site.",
+        "it": "E le cose comprate una volta per tutta l'azienda, che per questo non si pagano per sede."
+      }
+    },
+    {
+      "id": "itMoves",
+      "narration": {
+        "en": "Switch something on and the number moves. Nothing here is a phone call.",
+        "de": "Schalten Sie etwas ein, bewegt sich die Zahl. Nichts davon ist ein Telefonat.",
+        "es": "Encienda algo y el número se mueve. Nada de esto es una llamada de teléfono.",
+        "fr": "Activez quelque chose et le chiffre bouge. Rien ici n'est un coup de téléphone.",
+        "it": "Accenda qualcosa e il numero si muove. Niente qui è una telefonata."
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: the paperwork between a company and the people who work for it.",
+        "de": "Als Nächstes: die Papiere zwischen einem Unternehmen und seinen Menschen.",
+        "es": "A continuación: los papeles entre una empresa y quienes trabajan para ella.",
+        "fr": "Ensuite : les papiers entre une entreprise et ceux qui y travaillent.",
+        "it": "Poi: i documenti fra un'azienda e chi ci lavora."
+      }
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "id": "licences-that-expire",
+  "tourIds": [],
+  "title": {
+    "en": "Licences that expire",
+    "de": "Nachweise, die ablaufen",
+    "es": "Permisos que caducan",
+    "fr": "Des permis qui expirent",
+    "it": "Abilitazioni che scadono"
+  },
+  "subtitle": {
+    "en": "Read off the document, chased before they lapse",
+    "de": "Vom Dokument gelesen, nachgehalten, bevor sie ablaufen",
+    "es": "Leídos del propio documento, perseguidos antes de vencer",
+    "fr": "Lus sur le document, relancés avant l'échéance",
+    "it": "Letti dal documento, sollecitati prima che scadano"
+  },
+  "description": {
+    "en": "A driving licence with three weeks left is a problem only if nobody is looking. Expiry dates are read from the document itself rather than typed by whoever filed it, and what is running out is a board somebody checks rather than a date in an email from last March.",
+    "de": "Ein Führerschein mit drei Wochen Restlaufzeit ist nur dann ein Problem, wenn niemand hinsieht. Ablaufdaten werden aus dem Dokument selbst gelesen, statt von der ablegenden Person getippt — und was ausläuft, ist eine Übersicht, die jemand prüft, statt eines Datums in einer Mail vom März.",
+    "es": "Un carné de conducir al que le quedan tres semanas solo es un problema si nadie mira. Las fechas de caducidad se leen del propio documento en vez de teclearlas quien lo archivó, y lo que está por vencer es un panel que alguien revisa, no una fecha en un correo de marzo.",
+    "fr": "Un permis de conduire auquel il reste trois semaines n'est un problème que si personne ne regarde. Les dates d'expiration sont lues sur le document lui-même plutôt que saisies par celui qui l'a classé, et ce qui arrive à échéance est un tableau qu'on consulte, pas une date dans un e-mail de mars.",
+    "it": "Una patente con tre settimane residue è un problema solo se nessuno guarda. Le scadenze si leggono dal documento stesso invece di essere digitate da chi l'ha archiviato, e ciò che sta per scadere è un quadro che qualcuno controlla, non una data in una mail di marzo."
+  },
+  "beats": [
+    {
+      "id": "theBoard",
+      "narration": {
+        "en": "What is valid, what is missing, and what is about to run out — for everybody at once.",
+        "de": "Was gültig ist, was fehlt und was gleich abläuft — für alle auf einmal.",
+        "es": "Qué está vigente, qué falta y qué está a punto de vencer, para todos a la vez.",
+        "fr": "Ce qui est valide, ce qui manque, et ce qui va expirer — pour tout le monde d'un coup.",
+        "it": "Che cosa è valido, che cosa manca e che cosa sta per scadere — per tutti insieme."
+      },
+      "chapter": {
+        "en": "The board",
+        "de": "Die Übersicht",
+        "es": "El panel",
+        "fr": "Le tableau",
+        "it": "Il quadro"
+      }
+    },
+    {
+      "id": "readNotTyped",
+      "narration": {
+        "en": "The date comes off the document, not off whoever filed it at four on a Friday.",
+        "de": "Das Datum stammt vom Dokument — nicht von der Person, die es freitags um vier abgelegt hat.",
+        "es": "La fecha sale del documento, no de quien lo archivó un viernes a las cuatro.",
+        "fr": "La date vient du document, pas de la personne qui l'a classé un vendredi à seize heures.",
+        "it": "La data viene dal documento, non da chi l'ha archiviato venerdì alle quattro."
+      },
+      "chapter": {
+        "en": "Read, not typed",
+        "de": "Gelesen, nicht getippt",
+        "es": "Leída, no tecleada",
+        "fr": "Lue, pas saisie",
+        "it": "Letta, non digitata"
+      }
+    },
+    {
+      "id": "whatIsShort",
+      "narration": {
+        "en": "So what is short is visible before it is urgent.",
+        "de": "So wird sichtbar, was knapp wird — bevor es dringend ist.",
+        "es": "Así lo que va corto se ve antes de que sea urgente.",
+        "fr": "Ainsi, ce qui devient court se voit avant de devenir urgent.",
+        "it": "Così ciò che si accorcia si vede prima che diventi urgente."
+      }
+    },
+    {
+      "id": "chasing",
+      "narration": {
+        "en": "Chasing it is a list rather than a conversation somebody has to remember to start.",
+        "de": "Das Nachhalten ist eine Liste — kein Gespräch, an das jemand denken muss.",
+        "es": "Perseguirlo es una lista, no una conversación que alguien tenga que acordarse de empezar.",
+        "fr": "La relance est une liste, pas une conversation que quelqu'un doit penser à entamer.",
+        "it": "Sollecitare è un elenco, non una conversazione che qualcuno deve ricordarsi di avviare."
+      },
+      "chapter": {
+        "en": "Chasing",
+        "de": "Nachhalten",
+        "es": "Perseguir",
+        "fr": "Relancer",
+        "it": "Sollecitare"
+      }
+    },
+    {
+      "id": "andTheEvidence",
+      "narration": {
+        "en": "And when somebody asks whether it was valid that day, the answer is on file.",
+        "de": "Und wenn jemand fragt, ob es an dem Tag gültig war, liegt die Antwort in der Akte.",
+        "es": "Y cuando alguien pregunte si estaba vigente ese día, la respuesta está en el archivo.",
+        "fr": "Et quand on demande si c'était valide ce jour-là, la réponse est au dossier.",
+        "it": "E quando qualcuno chiede se era valido quel giorno, la risposta è agli atti."
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: the five numbers worth looking at each morning.",
+        "de": "Als Nächstes: die fünf Zahlen, die jeden Morgen einen Blick wert sind.",
+        "es": "A continuación: los cinco números que merece mirar cada mañana.",
+        "fr": "Ensuite : les cinq chiffres qui valent un coup d'œil chaque matin.",
+        "it": "Poi: i cinque numeri che valgono uno sguardo ogni mattina."
+      }
+    }
+  ]
+}

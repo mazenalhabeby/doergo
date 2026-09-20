@@ -1,0 +1,130 @@
+{
+  "id": "a-members-file",
+  "tourIds": [
+    "memberDetailTour"
+  ],
+  "title": {
+    "en": "A member's file",
+    "de": "Die Akte einer Person",
+    "es": "La ficha de un miembro",
+    "fr": "Le dossier d'un membre",
+    "it": "La scheda di un membro"
+  },
+  "subtitle": {
+    "en": "Hours, jobs, kit, documents — one person, one page",
+    "de": "Stunden, Aufträge, Ausrüstung, Dokumente — eine Person, eine Seite",
+    "es": "Horas, trabajos, equipo, documentos: una persona, una página",
+    "fr": "Heures, interventions, matériel, documents — une personne, une page",
+    "it": "Ore, lavori, attrezzatura, documenti — una persona, una pagina"
+  },
+  "description": {
+    "en": "Everything the organisation knows about one person, gathered rather than scattered: what they can reach, the work they are carrying, the hours they have worked, where they are assigned, what they are holding, and the paperwork between them and you.",
+    "de": "Alles, was die Organisation über eine Person weiß — gesammelt statt verstreut: was sie erreichen darf, welche Arbeit sie trägt, welche Stunden sie geleistet hat, wo sie eingeteilt ist, was sie in Händen hält und welche Papiere zwischen ihr und Ihnen liegen.",
+    "es": "Todo lo que la organización sabe de una persona, reunido en vez de disperso: qué puede alcanzar, qué trabajo lleva, qué horas ha hecho, dónde está asignada, qué tiene en su poder y qué papeles hay entre ella y usted.",
+    "fr": "Tout ce que l'organisation sait d'une personne, rassemblé plutôt que dispersé : ce à quoi elle a accès, le travail qu'elle porte, les heures qu'elle a faites, où elle est affectée, ce qu'elle détient, et les papiers entre elle et vous.",
+    "it": "Tutto ciò che l'organizzazione sa di una persona, raccolto invece che sparso: che cosa può raggiungere, che lavoro porta, quante ore ha fatto, dove è assegnata, che cosa tiene e quali documenti ci sono fra lei e voi."
+  },
+  "beats": [
+    {
+      "id": "onePerson",
+      "narration": {
+        "en": "One person, and everything the company knows about them in one place.",
+        "de": "Eine Person — und alles, was das Unternehmen über sie weiß, an einem Ort.",
+        "es": "Una persona, y todo lo que la empresa sabe de ella en un sitio.",
+        "fr": "Une personne, et tout ce que l'entreprise sait d'elle au même endroit.",
+        "it": "Una persona, e tutto ciò che l'azienda sa di lei in un posto solo."
+      },
+      "chapter": {
+        "en": "One person",
+        "de": "Eine Person",
+        "es": "Una persona",
+        "fr": "Une personne",
+        "it": "Una persona"
+      }
+    },
+    {
+      "id": "whatTheyReach",
+      "narration": {
+        "en": "What they can reach, and where. Changed here, it takes effect everywhere.",
+        "de": "Was sie erreichen darf und wo. Hier geändert, gilt es überall.",
+        "es": "Qué puede alcanzar y dónde. Cambiado aquí, vale en todas partes.",
+        "fr": "Ce à quoi elle a accès, et où. Modifié ici, cela s'applique partout.",
+        "it": "Che cosa può raggiungere e dove. Cambiato qui, vale ovunque."
+      }
+    },
+    {
+      "id": "theirWork",
+      "narration": {
+        "en": "The work they are carrying, and what they have finished.",
+        "de": "Die Arbeit, die sie trägt — und was sie abgeschlossen hat.",
+        "es": "El trabajo que lleva y lo que ha terminado.",
+        "fr": "Le travail qu'elle porte, et ce qu'elle a terminé.",
+        "it": "Il lavoro che porta e quello che ha finito."
+      },
+      "chapter": {
+        "en": "Their work",
+        "de": "Ihre Arbeit",
+        "es": "Su trabajo",
+        "fr": "Son travail",
+        "it": "Il suo lavoro"
+      }
+    },
+    {
+      "id": "theirHours",
+      "narration": {
+        "en": "Their hours, shift by shift, with what was counted and what was on site.",
+        "de": "Ihre Stunden, Schicht für Schicht — mit dem, was gezählt wurde, und dem, was vor Ort war.",
+        "es": "Sus horas, turno a turno, con lo contado y lo que estuvo en el sitio.",
+        "fr": "Ses heures, poste par poste, avec ce qui a été compté et ce qui a été passé sur place.",
+        "it": "Le sue ore, turno per turno, con ciò che è stato conteggiato e ciò che è stato sul posto."
+      }
+    },
+    {
+      "id": "whereTheyWork",
+      "narration": {
+        "en": "Where they are assigned, which is what decides the work they can even see.",
+        "de": "Wo sie eingeteilt ist — das entscheidet, welche Arbeit sie überhaupt sieht.",
+        "es": "Dónde está asignada, que es lo que decide qué trabajo puede siquiera ver.",
+        "fr": "Où elle est affectée, ce qui décide du travail qu'elle peut même voir.",
+        "it": "Dove è assegnata, che è ciò che decide quale lavoro può perfino vedere."
+      }
+    },
+    {
+      "id": "whatTheyHold",
+      "narration": {
+        "en": "What they are holding: the van, the instruments, whatever the company lent them.",
+        "de": "Was sie in Händen hat: den Transporter, die Messgeräte, alles, was die Firma ihr geliehen hat.",
+        "es": "Qué tiene en su poder: la furgoneta, los instrumentos, lo que la empresa le haya prestado.",
+        "fr": "Ce qu'elle détient : la camionnette, les instruments, ce que l'entreprise lui a confié.",
+        "it": "Che cosa tiene: il furgone, gli strumenti, tutto ciò che l'azienda le ha affidato."
+      },
+      "chapter": {
+        "en": "What they hold",
+        "de": "Was sie hält",
+        "es": "Lo que tiene",
+        "fr": "Ce qu'elle détient",
+        "it": "Che cosa tiene"
+      }
+    },
+    {
+      "id": "andThePaperwork",
+      "narration": {
+        "en": "And the paperwork between you: what you have issued, and what is still owed.",
+        "de": "Und die Papiere dazwischen: was Sie ausgestellt haben und was noch aussteht.",
+        "es": "Y los papeles entre ambos: lo que usted ha emitido y lo que falta.",
+        "fr": "Et les papiers entre vous : ce que vous avez émis, et ce qui reste dû.",
+        "it": "E i documenti fra voi: ciò che lei ha emesso e ciò che manca ancora."
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: the people who are here without working for you.",
+        "de": "Als Nächstes: die Menschen, die hier sind, ohne für Sie zu arbeiten.",
+        "es": "A continuación: la gente que está aquí sin trabajar para usted.",
+        "fr": "Ensuite : les personnes qui sont là sans travailler pour vous.",
+        "it": "Poi: le persone che sono qui senza lavorare per lei."
+      }
+    }
+  ]
+}

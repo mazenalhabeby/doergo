@@ -1,0 +1,108 @@
+{
+  "id": "where-everyone-is",
+  "tourIds": [],
+  "title": {
+    "en": "Where everyone is",
+    "de": "Wo alle sind",
+    "es": "Dónde está cada uno",
+    "fr": "Où sont les équipes",
+    "it": "Dove sono tutti"
+  },
+  "subtitle": {
+    "en": "The live map, the road actually driven, and what is never tracked",
+    "de": "Die Live-Karte, der tatsächlich gefahrene Weg — und was nie erfasst wird",
+    "es": "El mapa en vivo, la ruta realmente recorrida y lo que nunca se rastrea",
+    "fr": "La carte en direct, la route réellement parcourue, et ce qui n'est jamais suivi",
+    "it": "La mappa dal vivo, la strada davvero percorsa e ciò che non viene mai tracciato"
+  },
+  "description": {
+    "en": "Tracking earns its place when it answers a question somebody is about to ask on the phone: how far away is he, and did the van actually go there. It records a route while somebody is driving to a job, and stops when they arrive — not all day, and not when there is no job.",
+    "de": "Ortung verdient ihren Platz, wenn sie die Frage beantwortet, die gleich am Telefon kommt: Wie weit ist er noch, und war der Transporter wirklich dort? Aufgezeichnet wird die Fahrt zu einem Auftrag — und sie endet bei der Ankunft. Nicht den ganzen Tag, und nicht ohne Auftrag.",
+    "es": "El seguimiento se gana su sitio cuando responde a la pregunta que alguien está a punto de hacer por teléfono: cuánto le falta, y si la furgoneta estuvo allí. Registra la ruta mientras alguien conduce hacia un trabajo, y se detiene al llegar: no todo el día, y no sin trabajo.",
+    "fr": "Le suivi mérite sa place quand il répond à la question qu'on s'apprête à poser au téléphone : à quelle distance est-il, et la camionnette y est-elle vraiment allée. Il enregistre le trajet pendant qu'on roule vers une intervention, et s'arrête à l'arrivée — pas toute la journée, et pas sans intervention.",
+    "it": "Il tracciamento si guadagna il suo posto quando risponde alla domanda che qualcuno sta per fare al telefono: quanto manca, e il furgone c'è andato davvero. Registra il percorso mentre qualcuno guida verso un lavoro, e si ferma all'arrivo: non tutto il giorno, e non senza lavoro."
+  },
+  "beats": [
+    {
+      "id": "theMap",
+      "narration": {
+        "en": "Everybody who is out, on one map, as they are now.",
+        "de": "Alle, die unterwegs sind — auf einer Karte, so wie es jetzt ist.",
+        "es": "Todos los que están fuera, en un mapa, tal como están ahora.",
+        "fr": "Tous ceux qui sont dehors, sur une carte, tels qu'ils sont maintenant.",
+        "it": "Tutti quelli che sono fuori, su una mappa, come stanno adesso."
+      },
+      "chapter": {
+        "en": "The map",
+        "de": "Die Karte",
+        "es": "El mapa",
+        "fr": "La carte",
+        "it": "La mappa"
+      }
+    },
+    {
+      "id": "theQuestion",
+      "narration": {
+        "en": "It exists for one question: how far away is somebody, when a client is asking.",
+        "de": "Sie existiert für eine Frage: Wie weit ist jemand noch — wenn ein Kunde fragt.",
+        "es": "Existe por una pregunta: cuánto le falta a alguien, cuando un cliente lo pregunta.",
+        "fr": "Elle existe pour une question : à quelle distance est quelqu'un, quand un client demande.",
+        "it": "Esiste per una domanda: quanto manca a qualcuno, quando un cliente lo chiede."
+      }
+    },
+    {
+      "id": "theRoute",
+      "narration": {
+        "en": "And the road actually taken — not a straight line between two pins.",
+        "de": "Und der tatsächlich gefahrene Weg — keine gerade Linie zwischen zwei Nadeln.",
+        "es": "Y la carretera realmente recorrida, no una línea recta entre dos chinchetas.",
+        "fr": "Et la route réellement empruntée — pas une ligne droite entre deux épingles.",
+        "it": "E la strada realmente percorsa — non una linea retta fra due spilli."
+      },
+      "chapter": {
+        "en": "The road taken",
+        "de": "Der gefahrene Weg",
+        "es": "La ruta recorrida",
+        "fr": "La route empruntée",
+        "it": "La strada percorsa"
+      }
+    },
+    {
+      "id": "distanceAndTime",
+      "narration": {
+        "en": "Which gives the job a distance and a time that nobody had to write down.",
+        "de": "Das gibt dem Auftrag Strecke und Dauer, die niemand notieren musste.",
+        "es": "Eso da al trabajo una distancia y un tiempo que nadie tuvo que apuntar.",
+        "fr": "Cela donne à l'intervention une distance et une durée que personne n'a eu à noter.",
+        "it": "Il che dà al lavoro una distanza e un tempo che nessuno ha dovuto annotare."
+      }
+    },
+    {
+      "id": "notAllDay",
+      "narration": {
+        "en": "It runs while somebody is driving to a job, and stops when they arrive. Not all day.",
+        "de": "Sie läuft, während jemand zu einem Auftrag fährt, und endet bei der Ankunft. Nicht den ganzen Tag.",
+        "es": "Funciona mientras alguien conduce hacia un trabajo y se detiene al llegar. No todo el día.",
+        "fr": "Il tourne pendant qu'on roule vers une intervention, et s'arrête à l'arrivée. Pas toute la journée.",
+        "it": "Va mentre qualcuno guida verso un lavoro, e si ferma all'arrivo. Non tutto il giorno."
+      },
+      "chapter": {
+        "en": "Not all day",
+        "de": "Nicht den ganzen Tag",
+        "es": "No todo el día",
+        "fr": "Pas toute la journée",
+        "it": "Non tutto il giorno"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: letting a client see their own side of all this.",
+        "de": "Als Nächstes: dem Kunden seine eigene Sicht darauf geben.",
+        "es": "A continuación: dejar que un cliente vea su propio lado de todo esto.",
+        "fr": "Ensuite : laisser un client voir son propre côté de tout cela.",
+        "it": "Poi: lasciare che un cliente veda il proprio lato di tutto questo."
+      }
+    }
+  ]
+}

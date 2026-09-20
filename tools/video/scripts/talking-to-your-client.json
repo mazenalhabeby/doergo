@@ -1,0 +1,108 @@
+{
+  "id": "talking-to-your-client",
+  "tourIds": [],
+  "title": {
+    "en": "Talking to your client",
+    "de": "Mit dem Kunden sprechen",
+    "es": "Hablar con su cliente",
+    "fr": "Parler à votre client",
+    "it": "Parlare con il cliente"
+  },
+  "subtitle": {
+    "en": "A conversation attached to the work it is about",
+    "de": "Ein Gespräch, das an der Arbeit hängt, um die es geht",
+    "es": "Una conversación pegada al trabajo del que trata",
+    "fr": "Une conversation attachée au travail dont elle parle",
+    "it": "Una conversazione attaccata al lavoro di cui parla"
+  },
+  "description": {
+    "en": "The conversation about a job usually lives in three inboxes and one phone. Here it lives on the job — so the next person to open it reads what was agreed instead of asking, and the client is not left wondering whether anybody saw their message.",
+    "de": "Das Gespräch über einen Auftrag lebt meist in drei Postfächern und einem Telefon. Hier lebt es am Auftrag — so liest die nächste Person, was vereinbart wurde, statt zu fragen, und der Kunde weiß, dass seine Nachricht angekommen ist.",
+    "es": "La conversación sobre un trabajo suele vivir en tres bandejas de entrada y un teléfono. Aquí vive en el trabajo: quien lo abra después lee lo acordado en vez de preguntar, y el cliente no se queda dudando si alguien vio su mensaje.",
+    "fr": "La conversation autour d'une intervention vit d'ordinaire dans trois boîtes mail et un téléphone. Ici, elle vit sur l'intervention — la personne suivante lit ce qui a été convenu au lieu de demander, et le client ne se demande pas si quelqu'un a vu son message.",
+    "it": "La conversazione su un lavoro di solito vive in tre caselle di posta e un telefono. Qui vive sul lavoro: chi lo apre dopo legge ciò che è stato concordato invece di chiedere, e il cliente non resta a domandarsi se qualcuno ha visto il suo messaggio."
+  },
+  "beats": [
+    {
+      "id": "threeInboxes",
+      "narration": {
+        "en": "What was agreed about a job is usually in three inboxes and somebody's phone.",
+        "de": "Was zu einem Auftrag vereinbart wurde, steckt meist in drei Postfächern und einem Telefon.",
+        "es": "Lo acordado sobre un trabajo suele estar en tres bandejas y el teléfono de alguien.",
+        "fr": "Ce qui a été convenu sur une intervention est d'ordinaire dans trois boîtes mail et un téléphone.",
+        "it": "Ciò che è stato concordato su un lavoro di solito è in tre caselle di posta e nel telefono di qualcuno."
+      },
+      "chapter": {
+        "en": "Three inboxes",
+        "de": "Drei Postfächer",
+        "es": "Tres bandejas",
+        "fr": "Trois boîtes",
+        "it": "Tre caselle"
+      }
+    },
+    {
+      "id": "onTheJob",
+      "narration": {
+        "en": "Here it is on the job itself, where anybody who opens it can read it.",
+        "de": "Hier steht es am Auftrag selbst — lesbar für jede Person, die ihn öffnet.",
+        "es": "Aquí está en el propio trabajo, donde puede leerlo quien lo abra.",
+        "fr": "Ici, c'est sur l'intervention elle-même, lisible par quiconque l'ouvre.",
+        "it": "Qui è sul lavoro stesso, dove può leggerlo chiunque lo apra."
+      },
+      "chapter": {
+        "en": "On the job",
+        "de": "Am Auftrag",
+        "es": "En el trabajo",
+        "fr": "Sur l'intervention",
+        "it": "Sul lavoro"
+      }
+    },
+    {
+      "id": "whoIsInIt",
+      "narration": {
+        "en": "The people in it are the ones the work is shared with — and nobody else.",
+        "de": "Beteiligt sind die, mit denen die Arbeit geteilt ist — und sonst niemand.",
+        "es": "Los que están dentro son con quienes se comparte el trabajo, y nadie más.",
+        "fr": "Les personnes qui y sont sont celles avec qui le travail est partagé — et personne d'autre.",
+        "it": "Le persone dentro sono quelle con cui il lavoro è condiviso — e nessun altro."
+      }
+    },
+    {
+      "id": "acrossCompanies",
+      "narration": {
+        "en": "That can be somebody at another company, which is what makes it useful.",
+        "de": "Das kann jemand aus einem anderen Unternehmen sein — genau das macht es nützlich.",
+        "es": "Puede ser alguien de otra empresa, que es lo que lo hace útil.",
+        "fr": "Cela peut être quelqu'un d'une autre entreprise, et c'est ce qui le rend utile.",
+        "it": "Può essere qualcuno di un'altra azienda, ed è questo che lo rende utile."
+      },
+      "chapter": {
+        "en": "Across companies",
+        "de": "Über Firmen hinweg",
+        "es": "Entre empresas",
+        "fr": "Entre entreprises",
+        "it": "Fra aziende"
+      }
+    },
+    {
+      "id": "andItCloses",
+      "narration": {
+        "en": "And when the work is no longer shared, the conversation stops. It is not a back door.",
+        "de": "Und wenn die Arbeit nicht mehr geteilt ist, endet das Gespräch. Es ist keine Hintertür.",
+        "es": "Y cuando el trabajo deja de compartirse, la conversación se detiene. No es una puerta trasera.",
+        "fr": "Et quand le travail n'est plus partagé, la conversation s'arrête. Ce n'est pas une porte dérobée.",
+        "it": "E quando il lavoro non è più condiviso, la conversazione si ferma. Non è una porta di servizio."
+      }
+    },
+    {
+      "id": "theEnd",
+      "narration": {
+        "en": "That is the last of these. Everything else you will find by opening it.",
+        "de": "Das war das letzte davon. Alles Weitere finden Sie, indem Sie es öffnen.",
+        "es": "Este es el último. Todo lo demás lo encontrará abriéndolo.",
+        "fr": "C'est la dernière de ces vidéos. Le reste, vous le trouverez en l'ouvrant.",
+        "it": "Questo è l'ultimo. Tutto il resto lo troverà aprendolo."
+      }
+    }
+  ]
+}

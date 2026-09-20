@@ -1,0 +1,118 @@
+{
+  "id": "your-first-client",
+  "tourIds": [],
+  "title": {
+    "en": "Your first client",
+    "de": "Ihr erster Kunde",
+    "es": "Su primer cliente",
+    "fr": "Votre premier client",
+    "it": "Il suo primo cliente"
+  },
+  "subtitle": {
+    "en": "The book of who you work for",
+    "de": "Das Verzeichnis derer, für die Sie arbeiten",
+    "es": "El libro de para quién trabaja",
+    "fr": "Le carnet de ceux pour qui vous travaillez",
+    "it": "Il libro di chi vi dà lavoro"
+  },
+  "description": {
+    "en": "A client is more than a name on an invoice: an address a job can be sent to, the people you actually speak to there, and everything that has happened between you. Adding one takes a moment; what it saves is asking somebody where the site was.",
+    "de": "Ein Kunde ist mehr als ein Name auf einer Rechnung: eine Adresse, an die ein Auftrag gehen kann, die Menschen, mit denen Sie dort tatsächlich sprechen, und alles, was zwischen Ihnen passiert ist. Das Anlegen dauert einen Moment — es spart die Frage, wo der Standort noch mal war.",
+    "es": "Un cliente es más que un nombre en una factura: una dirección a la que mandar un trabajo, las personas con las que habla de verdad allí, y todo lo que ha pasado entre ustedes. Darlo de alta lleva un momento; lo que ahorra es preguntar dónde estaba el sitio.",
+    "fr": "Un client, c'est plus qu'un nom sur une facture : une adresse où envoyer une intervention, les personnes à qui vous parlez vraiment là-bas, et tout ce qui s'est passé entre vous. L'ajouter prend un instant ; ce que cela évite, c'est de demander où était le site.",
+    "it": "Un cliente è più di un nome su una fattura: un indirizzo a cui mandare un lavoro, le persone con cui parlate davvero lì, e tutto ciò che è successo fra voi. Aggiungerlo richiede un attimo; quello che risparmia è chiedere dov'era il sito."
+  },
+  "beats": [
+    {
+      "id": "theBook",
+      "narration": {
+        "en": "Everybody you work for, in one book rather than in six people's phones.",
+        "de": "Alle, für die Sie arbeiten — in einem Verzeichnis statt in sechs Telefonen.",
+        "es": "Todos para los que trabaja, en un libro y no en seis teléfonos.",
+        "fr": "Tous ceux pour qui vous travaillez, dans un seul carnet plutôt que dans six téléphones.",
+        "it": "Tutti quelli per cui lavorate, in un libro invece che in sei telefoni."
+      },
+      "chapter": {
+        "en": "The book",
+        "de": "Das Verzeichnis",
+        "es": "El libro",
+        "fr": "Le carnet",
+        "it": "Il libro"
+      }
+    },
+    {
+      "id": "addOne",
+      "narration": {
+        "en": "A new one is a name and a way of reaching them. Everything else can wait.",
+        "de": "Ein neuer ist ein Name und ein Weg, ihn zu erreichen. Alles andere hat Zeit.",
+        "es": "Uno nuevo es un nombre y una forma de localizarlo. Lo demás puede esperar.",
+        "fr": "Un nouveau, c'est un nom et un moyen de le joindre. Le reste peut attendre.",
+        "it": "Uno nuovo è un nome e un modo per raggiungerlo. Il resto può aspettare."
+      },
+      "chapter": {
+        "en": "Adding one",
+        "de": "Anlegen",
+        "es": "Darlo de alta",
+        "fr": "En ajouter un",
+        "it": "Aggiungerne uno"
+      }
+    },
+    {
+      "id": "whereTheyAre",
+      "narration": {
+        "en": "The address matters more than it looks: it is where a job for them will be sent.",
+        "de": "Die Adresse zählt mehr, als sie aussieht: Dorthin geht später der Auftrag.",
+        "es": "La dirección importa más de lo que parece: allí se mandará el trabajo.",
+        "fr": "L'adresse compte plus qu'il n'y paraît : c'est là que partira une intervention.",
+        "it": "L'indirizzo conta più di quanto sembri: è lì che verrà mandato un lavoro."
+      }
+    },
+    {
+      "id": "whichWorkspace",
+      "narration": {
+        "en": "And which part of the business they belong to, so they are not filed where nobody looks.",
+        "de": "Und zu welchem Teil des Betriebs er gehört — damit er nicht dort abgelegt wird, wo niemand nachsieht.",
+        "es": "Y a qué parte del negocio pertenece, para que no quede archivado donde nadie mira.",
+        "fr": "Et à quelle partie de l'activité il appartient, pour ne pas être classé là où personne ne regarde.",
+        "it": "E a quale parte dell'azienda appartiene, per non finire archiviato dove nessuno guarda."
+      }
+    },
+    {
+      "id": "saved",
+      "narration": {
+        "en": "Saved, and from now on they can be chosen wherever a client is needed.",
+        "de": "Gespeichert — und ab jetzt überall wählbar, wo ein Kunde gebraucht wird.",
+        "es": "Guardado, y desde ahora se le puede elegir allí donde haga falta un cliente.",
+        "fr": "Enregistré, et désormais il peut être choisi partout où un client est demandé.",
+        "it": "Salvato, e da ora può essere scelto ovunque serva un cliente."
+      }
+    },
+    {
+      "id": "theirRecord",
+      "narration": {
+        "en": "Their record holds the jobs, the invoices and the conversation, without anybody keeping a folder.",
+        "de": "Ihre Akte hält Aufträge, Rechnungen und Gespräche — ohne dass jemand einen Ordner führt.",
+        "es": "Su ficha guarda los trabajos, las facturas y la conversación, sin que nadie lleve una carpeta.",
+        "fr": "Sa fiche contient les interventions, les factures et les échanges, sans que personne tienne un classeur.",
+        "it": "La sua scheda contiene i lavori, le fatture e le conversazioni, senza che nessuno tenga una cartella."
+      },
+      "chapter": {
+        "en": "Their record",
+        "de": "Ihre Akte",
+        "es": "Su ficha",
+        "fr": "Sa fiche",
+        "it": "La sua scheda"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: the difference between a company and the people who work there.",
+        "de": "Als Nächstes: der Unterschied zwischen einem Unternehmen und den Menschen, die dort arbeiten.",
+        "es": "A continuación: la diferencia entre una empresa y la gente que trabaja allí.",
+        "fr": "Ensuite : la différence entre une entreprise et les personnes qui y travaillent.",
+        "it": "Poi: la differenza fra un'azienda e le persone che ci lavorano."
+      }
+    }
+  ]
+}

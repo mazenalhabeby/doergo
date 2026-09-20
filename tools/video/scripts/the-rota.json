@@ -1,0 +1,137 @@
+{
+  "id": "the-rota",
+  "tourIds": [
+    "pageAvailability"
+  ],
+  "title": {
+    "en": "The rota",
+    "de": "Der Dienstplan",
+    "es": "El cuadrante",
+    "fr": "Le planning",
+    "it": "Il turnario"
+  },
+  "subtitle": {
+    "en": "Who is on the floor, who is off, and what that leaves you with",
+    "de": "Wer da ist, wer frei hat — und was Ihnen damit bleibt",
+    "es": "Quién está, quién libra y con qué se queda usted",
+    "fr": "Qui est là, qui est absent, et ce qu'il vous reste",
+    "it": "Chi c'è, chi è assente, e che cosa le resta"
+  },
+  "description": {
+    "en": "Two questions run a week: who is here now, and who will be missing later. This screen answers both in one place — and when somebody asks for a day off, it says what approving would leave you with, before you approve it.",
+    "de": "Zwei Fragen bestimmen die Woche: Wer ist jetzt da, und wer fehlt später? Dieser Bildschirm beantwortet beide an einem Ort — und wenn jemand einen freien Tag beantragt, sagt er Ihnen vorher, was eine Zusage übrig ließe.",
+    "es": "Dos preguntas gobiernan la semana: quién está ahora y quién faltará después. Esta pantalla responde a las dos en un sitio, y cuando alguien pide un día libre le dice con qué se quedaría antes de aprobarlo.",
+    "fr": "Deux questions font la semaine : qui est là maintenant, et qui manquera plus tard. Cet écran répond aux deux au même endroit — et quand quelqu'un demande un jour de congé, il dit ce qu'une approbation vous laisserait, avant que vous approuviez.",
+    "it": "Due domande governano la settimana: chi c'è adesso e chi mancherà dopo. Questa schermata risponde a entrambe in un posto solo — e quando qualcuno chiede un giorno libero, dice che cosa le resterebbe, prima che approvi."
+  },
+  "beats": [
+    {
+      "id": "rightNow",
+      "narration": {
+        "en": "Who is on the floor, right now, and what each of them is doing.",
+        "de": "Wer gerade da ist — und was jede Person gerade tut.",
+        "es": "Quién está ahora mismo, y qué está haciendo cada uno.",
+        "fr": "Qui est là, maintenant, et ce que chacun fait.",
+        "it": "Chi c'è adesso, e che cosa sta facendo ciascuno."
+      },
+      "chapter": {
+        "en": "Right now",
+        "de": "Gerade jetzt",
+        "es": "Ahora mismo",
+        "fr": "Maintenant",
+        "it": "Adesso"
+      }
+    },
+    {
+      "id": "byWorkspace",
+      "narration": {
+        "en": "Grouped by workspace, because a person missing from one site is not missing from another.",
+        "de": "Nach Arbeitsbereich gruppiert — denn wer an einem Standort fehlt, fehlt am anderen nicht.",
+        "es": "Agrupado por espacio, porque quien falta en un sitio no falta en otro.",
+        "fr": "Groupé par espace de travail, parce qu'une personne absente d'un site ne l'est pas d'un autre.",
+        "it": "Raggruppato per spazio, perché chi manca in una sede non manca in un'altra."
+      }
+    },
+    {
+      "id": "theFloor",
+      "narration": {
+        "en": "Each one can carry a minimum: the number of people below which the day does not work.",
+        "de": "Jeder kann ein Minimum tragen: die Zahl, unter der der Tag nicht funktioniert.",
+        "es": "Cada uno puede llevar un mínimo: el número por debajo del cual el día no funciona.",
+        "fr": "Chacun peut porter un minimum : le nombre en dessous duquel la journée ne tient pas.",
+        "it": "Ognuno può avere un minimo: il numero sotto il quale la giornata non regge."
+      },
+      "chapter": {
+        "en": "The minimum",
+        "de": "Das Minimum",
+        "es": "El mínimo",
+        "fr": "Le minimum",
+        "it": "Il minimo"
+      }
+    },
+    {
+      "id": "whoIsAsking",
+      "narration": {
+        "en": "Below it, the people asking to be off — and what each request would cost you.",
+        "de": "Darunter die Anträge auf freie Tage — und was jeder davon Sie kosten würde.",
+        "es": "Debajo, quienes piden librar, y lo que costaría cada solicitud.",
+        "fr": "En dessous, les personnes qui demandent à s'absenter — et ce que chaque demande vous coûterait.",
+        "it": "Sotto, chi chiede di assentarsi — e quanto le costerebbe ogni richiesta."
+      },
+      "chapter": {
+        "en": "Who is asking",
+        "de": "Wer fragt",
+        "es": "Quién lo pide",
+        "fr": "Qui demande",
+        "it": "Chi chiede"
+      }
+    },
+    {
+      "id": "wouldBreakCover",
+      "narration": {
+        "en": "It says outright when approving one would drop a day below that floor.",
+        "de": "Er sagt ausdrücklich, wenn eine Zusage einen Tag unter dieses Minimum drückt.",
+        "es": "Dice sin rodeos cuándo aprobar una dejaría un día por debajo de ese mínimo.",
+        "fr": "Il dit franchement quand approuver ferait passer une journée sous ce minimum.",
+        "it": "Dice apertamente quando approvarne una porterebbe un giorno sotto quel minimo."
+      }
+    },
+    {
+      "id": "theOnlyOne",
+      "narration": {
+        "en": "And when the person asking is the only one who can do a particular job that week.",
+        "de": "Und wenn die fragende Person die einzige ist, die in dieser Woche eine bestimmte Arbeit kann.",
+        "es": "Y cuándo quien lo pide es el único que puede hacer cierto trabajo esa semana.",
+        "fr": "Et quand la personne qui demande est la seule à savoir faire un certain travail cette semaine-là.",
+        "it": "E quando chi chiede è l'unico che sa fare un certo lavoro quella settimana."
+      }
+    },
+    {
+      "id": "thenDecide",
+      "narration": {
+        "en": "You decide knowing that, which is the only version of this decision worth making.",
+        "de": "Sie entscheiden in Kenntnis dessen — die einzige Fassung dieser Entscheidung, die etwas taugt.",
+        "es": "Usted decide sabiéndolo, que es la única versión de esta decisión que vale.",
+        "fr": "Vous décidez en le sachant, qui est la seule version de cette décision qui vaille.",
+        "it": "Decide sapendolo, che è l'unica versione di questa decisione che valga qualcosa."
+      },
+      "chapter": {
+        "en": "Decide knowing",
+        "de": "Wissend entscheiden",
+        "es": "Decidir sabiendo",
+        "fr": "Décider en sachant",
+        "it": "Decidere sapendo"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: the same thing from the other side — asking for the day off in the first place.",
+        "de": "Als Nächstes: dasselbe von der anderen Seite — den freien Tag überhaupt erst beantragen.",
+        "es": "A continuación: lo mismo desde el otro lado: pedir el día libre.",
+        "fr": "Ensuite : la même chose vue de l'autre côté — demander ce jour de congé.",
+        "it": "Poi: la stessa cosa dall'altro lato — chiedere quel giorno libero."
+      }
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "id": "the-filing-cabinet",
+  "tourIds": [],
+  "title": {
+    "en": "The filing cabinet",
+    "de": "Der Aktenschrank",
+    "es": "El archivador",
+    "fr": "Le classeur",
+    "it": "Lo schedario"
+  },
+  "subtitle": {
+    "en": "What you issue, what they hand back, and who may see each kind",
+    "de": "Was Sie ausstellen, was zurückkommt — und wer welche Art sehen darf",
+    "es": "Lo que emite, lo que le entregan y quién puede ver cada tipo",
+    "fr": "Ce que vous émettez, ce qu'ils rendent, et qui peut voir chaque type",
+    "it": "Ciò che emette, ciò che le consegnano e chi può vedere ogni tipo"
+  },
+  "description": {
+    "en": "Two directions of paper run through every company: what you issue to people — contracts, payslips — and what they supply to you — a licence, a passport. Both are kinds of document, and a kind decides how often it is needed, whether it is signed, and who is allowed to see it.",
+    "de": "Zwei Richtungen von Papier laufen durch jedes Unternehmen: was Sie ausstellen — Verträge, Abrechnungen — und was man Ihnen einreicht — einen Führerschein, einen Pass. Beides sind Dokumentarten, und die Art entscheidet, wie oft sie gebraucht wird, ob sie unterschrieben wird und wer sie sehen darf.",
+    "es": "Dos direcciones de papel recorren toda empresa: lo que usted emite a la gente —contratos, nóminas— y lo que le entregan a usted —un carné, un pasaporte—. Ambas son tipos de documento, y el tipo decide con qué frecuencia hace falta, si se firma y quién puede verlo.",
+    "fr": "Deux sens de papier traversent toute entreprise : ce que vous émettez — contrats, bulletins — et ce qu'on vous remet — un permis, un passeport. Ce sont des types de documents, et le type décide de la fréquence, de la signature, et de qui a le droit de le voir.",
+    "it": "Due direzioni di carta attraversano ogni azienda: ciò che emette lei — contratti, buste paga — e ciò che le consegnano — una patente, un passaporto. Entrambi sono tipi di documento, e il tipo decide ogni quanto serve, se si firma e chi può vederlo."
+  },
+  "beats": [
+    {
+      "id": "twoDirections",
+      "narration": {
+        "en": "Paper runs two ways: what you issue to people, and what they have to hand you.",
+        "de": "Papier läuft in zwei Richtungen: was Sie ausstellen — und was man Ihnen geben muss.",
+        "es": "El papel va en dos direcciones: lo que usted emite y lo que le tienen que entregar.",
+        "fr": "Le papier circule dans deux sens : ce que vous émettez, et ce qu'on doit vous remettre.",
+        "it": "La carta va in due direzioni: ciò che emette lei e ciò che le devono consegnare."
+      },
+      "chapter": {
+        "en": "Two directions",
+        "de": "Zwei Richtungen",
+        "es": "Dos direcciones",
+        "fr": "Deux sens",
+        "it": "Due direzioni"
+      }
+    },
+    {
+      "id": "kinds",
+      "narration": {
+        "en": "Each kind is set up once: how often it is needed, and whether it has to be signed.",
+        "de": "Jede Art wird einmal eingerichtet: wie oft sie gebraucht wird und ob sie unterschrieben werden muss.",
+        "es": "Cada tipo se configura una vez: con qué frecuencia hace falta y si hay que firmarlo.",
+        "fr": "Chaque type est réglé une fois : à quelle fréquence il faut le fournir, et s'il doit être signé.",
+        "it": "Ogni tipo si imposta una volta: ogni quanto serve e se va firmato."
+      },
+      "chapter": {
+        "en": "The kinds",
+        "de": "Die Arten",
+        "es": "Los tipos",
+        "fr": "Les types",
+        "it": "I tipi"
+      }
+    },
+    {
+      "id": "whoMaySee",
+      "narration": {
+        "en": "And who may see it. The clerk chasing driving licences has no business in the payroll.",
+        "de": "Und wer sie sehen darf. Wer Führerscheine nachhält, hat in der Lohnbuchhaltung nichts verloren.",
+        "es": "Y quién puede verlo. Quien persigue carnés de conducir no tiene nada que hacer en las nóminas.",
+        "fr": "Et qui peut le voir. La personne qui relance les permis de conduire n'a rien à faire dans la paie.",
+        "it": "E chi può vederlo. Chi rincorre le patenti non ha nulla a che fare con le buste paga."
+      },
+      "chapter": {
+        "en": "Who may see it",
+        "de": "Wer sie sehen darf",
+        "es": "Quién puede verlo",
+        "fr": "Qui peut le voir",
+        "it": "Chi può vederlo"
+      }
+    },
+    {
+      "id": "leaveItOpen",
+      "narration": {
+        "en": "Name nobody and it is open to everybody who can see documents at all — which is the sensible default.",
+        "de": "Nennen Sie niemanden, ist sie für alle offen, die überhaupt Dokumente sehen — der sinnvolle Standard.",
+        "es": "No nombre a nadie y queda abierto a todos los que ya pueden ver documentos: el valor por defecto sensato.",
+        "fr": "Ne nommez personne et c'est ouvert à tous ceux qui voient déjà des documents — la valeur par défaut raisonnable.",
+        "it": "Non nomini nessuno ed è aperto a tutti quelli che già vedono documenti — il default ragionevole."
+      }
+    },
+    {
+      "id": "theRegister",
+      "narration": {
+        "en": "What has been issued, and what is still owed, is a register rather than a memory.",
+        "de": "Was ausgestellt wurde und was noch fehlt, ist ein Register — kein Gedächtnis.",
+        "es": "Lo emitido y lo que falta es un registro, no un recuerdo.",
+        "fr": "Ce qui a été émis et ce qui manque est un registre, pas un souvenir.",
+        "it": "Ciò che è stato emesso e ciò che manca è un registro, non un ricordo."
+      },
+      "chapter": {
+        "en": "The register",
+        "de": "Das Register",
+        "es": "El registro",
+        "fr": "Le registre",
+        "it": "Il registro"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: issuing one, and getting it signed.",
+        "de": "Als Nächstes: eines ausstellen — und unterschreiben lassen.",
+        "es": "A continuación: emitir uno y conseguir que se firme.",
+        "fr": "Ensuite : en émettre un, et le faire signer.",
+        "it": "Poi: emetterne uno e farlo firmare."
+      }
+    }
+  ]
+}
