@@ -1,0 +1,82 @@
+1
+00:00:09,070 --> 00:00:14,772
+Alle Arbeitsbereiche dieses Betriebs auf
+einer Seite: ein Depot, eine Werkstatt und
+
+2
+00:00:14,772 --> 00:00:17,383
+ein Standort, der einem Kunden gehört.
+
+3
+00:00:17,835 --> 00:00:23,474
+Jeder zeigt, was er kann und wie viele
+Menschen dort arbeiten. Wer die Zeile liest,
+
+4
+00:00:23,474 --> 00:00:25,173
+kennt den Arbeitsbereich.
+
+5
+00:00:25,625 --> 00:00:30,744
+Ein neuer beginnt mit einem Namen und
+der Art des Ortes: Ihrer — oder der eines
+
+6
+00:00:30,744 --> 00:00:31,198
+Kunden.
+
+7
+00:00:31,650 --> 00:00:36,780
+Geben Sie eine Adresse an, bekommt er
+eine Grenze auf der Karte. An dieser Grenze
+
+8
+00:00:36,780 --> 00:00:38,616
+wird das Einstempeln geprüft.
+
+9
+00:00:39,070 --> 00:00:46,500
+Dann, was er darf: nur die Fähigkeiten,
+die dieser Ort wirklich nutzt — der Rest
+
+10
+00:00:46,500 --> 00:00:47,522
+bleibt aus.
+
+11
+00:00:47,975 --> 00:00:54,105
+Schalten Sie ab, was dieser Ort nicht tut
+— dann wird es auch nicht verrechnet. Ein
+
+12
+00:00:54,105 --> 00:00:58,610
+Hof, der niemanden
+hinausschickt, zahlt für nichts Unterwegs.
+
+13
+00:00:59,062 --> 00:01:04,882
+Und die Schritte, die ein Auftrag hier
+durchläuft. Werkstatt und Außeneinsatz
+
+14
+00:01:04,882 --> 00:01:06,771
+brauchen nicht dieselben.
+
+15
+00:01:07,223 --> 00:01:13,148
+Einer ist der Standard: dort landet ein
+Auftrag, wenn niemand etwas anderes sagt.
+
+16
+00:01:13,148 --> 00:01:15,489
+Das können Sie jederzeit ändern.
+
+17
+00:01:15,944 --> 00:01:21,559
+Als Nächstes: wer was sehen darf — und
+warum das nicht die Berufsbezeichnung
+
+18
+00:01:21,559 --> 00:01:22,446
+entscheidet.
+

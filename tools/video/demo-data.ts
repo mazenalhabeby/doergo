@@ -170,6 +170,14 @@ export const TASKS = [
   { title: 'Annual pressure vessel inspection', description: 'Written scheme of examination due. Isolate and present.', priority: 'HIGH', status: 'ASSIGNED', client: 'Ledbury Foods', assignee: 'rhodes', dueInDays: 4 },
   { title: 'Reception air curtain not running', description: 'No response on the switch. Check supply and controller.', priority: 'LOW', status: 'ARRIVED', client: 'Pilgrove Hotels', assignee: 'whitlock', dueInDays: 0 },
   { title: 'Replace corroded pipework — plant room', description: 'Two metres of 42mm on the return, plus two valves.', priority: 'MEDIUM', status: 'BLOCKED', client: 'Thorncastle Logistics', assignee: 'devlin', dueInDays: 1 },
+  /*
+    ⚠️ THE ONE JOB WITH NOBODY ON IT, and it is here on purpose: video 06 is
+    about handing a job to somebody, and every other job in this seed already
+    has a name against it. An empty `assignee` becomes a null assignedToId —
+    the status stays the flow's first step, because "unassigned" is a missing
+    person, not a stage of the work.
+  */
+  { title: 'Site survey — new tenant fit-out', description: 'Measure up the second floor and list what the fit-out needs.', priority: 'MEDIUM', status: 'ASSIGNED', client: 'Castlemere Schools Trust', assignee: '', dueInDays: 2 },
 ] as const;
 
 /** Vans and kit, so the Assets screen is not an empty state. */

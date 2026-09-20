@@ -26,7 +26,11 @@ import { OUT_DIR, ROOT, assertLocalDatabase, assertLocalWeb, WEB_URL } from './c
 import { loadScript, type VideoScript } from './script.ts';
 import { selectVoiceAdapter } from './voice/index.ts';
 import { captureCreateAJob } from './capture/flows/create-a-job.ts';
+import { captureGiveItToSomebody } from './capture/flows/give-it-to-somebody.ts';
 import { captureWhatHbcfieldIs } from './capture/flows/what-hbcfield-is.ts';
+import { captureWhoSeesWhat } from './capture/flows/who-sees-what.ts';
+import { captureYourFirstJob } from './capture/flows/your-first-job.ts';
+import { captureWorkspaces } from './capture/flows/workspaces.ts';
 import { captureVoiceTest } from './capture/flows/voice-test.ts';
 import { captureMobileClock } from './capture/flows/mobile-clock.ts';
 import type { Timeline } from './timeline.ts';
@@ -57,6 +61,10 @@ const END_CARD_SEC = 3.0;
  */
 const FLOWS: Record<string, (d: Record<string, number>) => Promise<Timeline>> = {
   'what-hbcfield-is': captureWhatHbcfieldIs,
+  'workspaces': captureWorkspaces,
+  'who-sees-what': captureWhoSeesWhat,
+  'your-first-job': captureYourFirstJob,
+  'give-it-to-somebody': captureGiveItToSomebody,
   'create-a-job': captureCreateAJob,
   // Twenty seconds, two beats. A cheap way to hear a voice without spending a
   // full script's characters every time somebody wants to judge one.
@@ -97,6 +105,10 @@ const WARM_ROUTES: Record<string, string[]> = {
     '/tasks',
     '/tasks/warm',
   ],
+  'workspaces': ['/login', '/dashboard', '/locations', '/locations/warm'],
+  'who-sees-what': ['/login', '/dashboard', '/members', '/members/warm'],
+  'your-first-job': ['/login', '/dashboard', '/tasks', '/tasks/warm'],
+  'give-it-to-somebody': ['/login', '/dashboard', '/tasks', '/tasks/warm', '/members', '/members/warm'],
   'create-a-job': ['/login', '/dashboard', '/tasks', '/tasks/warm'],
   'voice-test': ['/login', '/dashboard'],
 };

@@ -1,0 +1,61 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/workspaces/capture/page@48879815b1d834343bce120ddf34ec15.webm",
+  "durationSec": 79.4,
+  "preRollSec": 5.570000000000007,
+  "beats": [
+    {
+      "id": "theList",
+      "startSec": 5.570000000000007,
+      "endSec": 14.334000000000007,
+      "narrationSec": 8.31275
+    },
+    {
+      "id": "whatACardSays",
+      "startSec": 14.335000000000008,
+      "endSec": 22.125000000000007,
+      "narrationSec": 7.337521
+    },
+    {
+      "id": "newOne",
+      "startSec": 22.125000000000007,
+      "endSec": 28.149000000000008,
+      "narrationSec": 5.572792
+    },
+    {
+      "id": "whereItIs",
+      "startSec": 28.150000000000006,
+      "endSec": 35.57000000000001,
+      "narrationSec": 6.966
+    },
+    {
+      "id": "whatItCanDo",
+      "startSec": 35.57000000000001,
+      "endSec": 44.47400000000001,
+      "narrationSec": 8.452063
+    },
+    {
+      "id": "onlyWhatYouNeed",
+      "startSec": 44.47500000000001,
+      "endSec": 55.562000000000005,
+      "narrationSec": 10.63475
+    },
+    {
+      "id": "theSteps",
+      "startSec": 55.562000000000005,
+      "endSec": 63.723000000000006,
+      "narrationSec": 7.709021
+    },
+    {
+      "id": "theDefault",
+      "startSec": 63.723000000000006,
+      "endSec": 72.444,
+      "narrationSec": 8.266313
+    },
+    {
+      "id": "whereNext",
+      "startSec": 72.444,
+      "endSec": 79.4,
+      "narrationSec": 6.501583
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "id": "workspaces",
+  "tourIds": [
+    "spacesTour"
+  ],
+  "title": {
+    "en": "Workspaces",
+    "de": "Arbeitsbereiche",
+    "es": "Espacios de trabajo",
+    "fr": "Espaces de travail",
+    "it": "Spazi di lavoro"
+  },
+  "subtitle": {
+    "en": "Where the work happens, and what each one is allowed to cost",
+    "de": "Wo gearbeitet wird — und was jeder einzelne kosten darf",
+    "es": "Dónde ocurre el trabajo, y cuánto puede costar cada uno",
+    "fr": "Où le travail se fait, et ce que chacun a le droit de coûter",
+    "it": "Dove il lavoro accade, e quanto ciascuno può costare"
+  },
+  "description": {
+    "en": "A workspace is a depot, a workshop, a client's site — somewhere work happens, or a part of the business that runs its own way. Each one switches on only what it needs and is billed for only that. This is how to make one, and how to decide what it can do.",
+    "de": "Ein Arbeitsbereich ist ein Depot, eine Werkstatt, der Standort eines Kunden — ein Ort, an dem gearbeitet wird, oder ein Betriebsteil mit eigenen Regeln. Jeder schaltet nur ein, was er braucht, und wird nur dafür verrechnet. So legen Sie einen an und entscheiden, was er können soll.",
+    "es": "Un espacio de trabajo es una base, un taller, el sitio de un cliente: un lugar donde ocurre el trabajo, o una parte del negocio que funciona a su manera. Cada uno enciende solo lo que necesita y solo eso se le factura. Así se crea uno y así se decide lo que puede hacer.",
+    "fr": "Un espace de travail est un dépôt, un atelier, le site d'un client — un endroit où le travail se fait, ou une partie de l'activité qui a ses propres règles. Chacun n'active que ce dont il a besoin et n'est facturé que pour cela. Voici comment en créer un et décider de ce qu'il peut faire.",
+    "it": "Uno spazio di lavoro è un deposito, un'officina, la sede di un cliente: un luogo in cui il lavoro accade, o una parte dell'azienda che funziona a modo suo. Ognuno accende solo ciò che gli serve e solo per quello viene fatturato. Ecco come crearne uno e decidere che cosa può fare."
+  },
+  "beats": [
+    {
+      "id": "theList",
+      "narration": {
+        "en": "Every workspace this company runs, on one page. A depot, a workshop, and a site that belongs to a client.",
+        "de": "Alle Arbeitsbereiche dieses Betriebs auf einer Seite: ein Depot, eine Werkstatt und ein Standort, der einem Kunden gehört.",
+        "es": "Todos los espacios de trabajo de esta empresa en una página: una base, un taller y un sitio que pertenece a un cliente.",
+        "fr": "Tous les espaces de travail de cette entreprise sur une page : un dépôt, un atelier, et un site qui appartient à un client.",
+        "it": "Tutti gli spazi di lavoro di questa azienda in una pagina: un deposito, un'officina e una sede che appartiene a un cliente."
+      },
+      "chapter": {
+        "en": "Your workspaces",
+        "de": "Ihre Arbeitsbereiche",
+        "es": "Sus espacios",
+        "fr": "Vos espaces",
+        "it": "I suoi spazi"
+      }
+    },
+    {
+      "id": "whatACardSays",
+      "narration": {
+        "en": "Each one carries what it can do and how many people work there. Read the row and you know the workspace.",
+        "de": "Jeder zeigt, was er kann und wie viele Menschen dort arbeiten. Wer die Zeile liest, kennt den Arbeitsbereich.",
+        "es": "Cada uno muestra lo que puede hacer y cuánta gente trabaja allí. Lea la fila y conocerá el espacio.",
+        "fr": "Chacun indique ce qu'il peut faire et combien de personnes y travaillent. Lisez la ligne et vous connaissez l'espace.",
+        "it": "Ognuno mostra che cosa può fare e quante persone ci lavorano. Legga la riga e conosce lo spazio."
+      }
+    },
+    {
+      "id": "newOne",
+      "narration": {
+        "en": "A new one starts with a name and what kind of place it is. Yours, or a client's.",
+        "de": "Ein neuer beginnt mit einem Namen und der Art des Ortes: Ihrer — oder der eines Kunden.",
+        "es": "Uno nuevo empieza con un nombre y con qué tipo de sitio es: suyo, o de un cliente.",
+        "fr": "Un nouvel espace commence par un nom et par le type de lieu : le vôtre, ou celui d'un client.",
+        "it": "Uno nuovo inizia con un nome e con che tipo di luogo è: suo, o di un cliente."
+      },
+      "chapter": {
+        "en": "Making one",
+        "de": "Einen anlegen",
+        "es": "Crear uno",
+        "fr": "En créer un",
+        "it": "Crearne uno"
+      }
+    },
+    {
+      "id": "whereItIs",
+      "narration": {
+        "en": "Give it an address and it gets a boundary on the map. That boundary is what a clock-in is checked against.",
+        "de": "Geben Sie eine Adresse an, bekommt er eine Grenze auf der Karte. An dieser Grenze wird das Einstempeln geprüft.",
+        "es": "Dele una dirección y obtiene un límite en el mapa. Contra ese límite se comprueba cada fichaje.",
+        "fr": "Donnez-lui une adresse et il obtient une limite sur la carte. C'est contre cette limite qu'un pointage est vérifié.",
+        "it": "Gli dia un indirizzo e ottiene un confine sulla mappa. È contro quel confine che viene verificata la timbratura."
+      }
+    },
+    {
+      "id": "whatItCanDo",
+      "narration": {
+        "en": "Then what it is allowed to do. Only the capabilities this place actually uses — the rest stay off.",
+        "de": "Dann, was er darf: nur die Fähigkeiten, die dieser Ort wirklich nutzt — der Rest bleibt aus.",
+        "es": "Después, lo que puede hacer: solo las capacidades que este sitio usa de verdad; el resto queda apagado.",
+        "fr": "Ensuite, ce qu'il a le droit de faire : seulement les capacités que ce lieu utilise vraiment — le reste reste désactivé.",
+        "it": "Poi che cosa gli è permesso: solo le capacità che questo luogo usa davvero — il resto resta spento."
+      },
+      "chapter": {
+        "en": "What it can do",
+        "de": "Was er kann",
+        "es": "Lo que puede hacer",
+        "fr": "Ce qu'il peut faire",
+        "it": "Che cosa può fare"
+      }
+    },
+    {
+      "id": "onlyWhatYouNeed",
+      "narration": {
+        "en": "Switch off what this place does not do, and it is not billed for it. A yard that never sends anyone out pays for nothing that travels.",
+        "de": "Schalten Sie ab, was dieser Ort nicht tut — dann wird es auch nicht verrechnet. Ein Hof, der niemanden hinausschickt, zahlt für nichts Unterwegs.",
+        "es": "Apague lo que este sitio no hace y no se le factura. Un patio que nunca manda a nadie fuera no paga nada de lo que viaja.",
+        "fr": "Désactivez ce que ce lieu ne fait pas, et il n'est pas facturé pour cela. Une cour qui n'envoie personne dehors ne paie rien de ce qui se déplace.",
+        "it": "Spenga ciò che questo luogo non fa, e non gli viene fatturato. Un piazzale che non manda fuori nessuno non paga nulla di ciò che viaggia."
+      }
+    },
+    {
+      "id": "theSteps",
+      "narration": {
+        "en": "And the steps a job goes through here. A workshop and a call-out do not want the same ones.",
+        "de": "Und die Schritte, die ein Auftrag hier durchläuft. Werkstatt und Außeneinsatz brauchen nicht dieselben.",
+        "es": "Y los pasos por los que pasa un trabajo aquí. Un taller y una salida a domicilio no quieren los mismos.",
+        "fr": "Et les étapes par lesquelles passe une intervention ici. Un atelier et un déplacement ne veulent pas les mêmes.",
+        "it": "E i passaggi che un lavoro attraversa qui. Un'officina e un intervento esterno non vogliono gli stessi."
+      }
+    },
+    {
+      "id": "theDefault",
+      "narration": {
+        "en": "One of them is the default: where a job lands when nobody says otherwise. You can move that at any time.",
+        "de": "Einer ist der Standard: dort landet ein Auftrag, wenn niemand etwas anderes sagt. Das können Sie jederzeit ändern.",
+        "es": "Uno de ellos es el predeterminado: donde aterriza un trabajo si nadie dice otra cosa. Puede cambiarlo cuando quiera.",
+        "fr": "L'un d'eux est celui par défaut : là où atterrit une intervention si personne ne dit le contraire. Modifiable à tout moment.",
+        "it": "Uno di essi è quello predefinito: dove atterra un lavoro se nessuno dice altrimenti. Può cambiarlo quando vuole."
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: who is allowed to see what — and why that is not decided by anybody's job title.",
+        "de": "Als Nächstes: wer was sehen darf — und warum das nicht die Berufsbezeichnung entscheidet.",
+        "es": "A continuación: quién puede ver qué, y por qué eso no lo decide el cargo de nadie.",
+        "fr": "Ensuite : qui a le droit de voir quoi — et pourquoi ce n'est pas l'intitulé de poste qui le décide.",
+        "it": "Poi: chi può vedere che cosa — e perché non lo decide la qualifica di nessuno."
+      }
+    }
+  ]
+}

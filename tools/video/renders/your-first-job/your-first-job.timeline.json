@@ -1,0 +1,55 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/your-first-job/capture/page@ab91b38cc35076a9dc6d6765270183a6.webm",
+  "durationSec": 58.6,
+  "preRollSec": 6.398000000000003,
+  "beats": [
+    {
+      "id": "theBoard",
+      "startSec": 6.398000000000003,
+      "endSec": 14.654000000000003,
+      "narrationSec": 7.801917
+    },
+    {
+      "id": "theTitle",
+      "startSec": 14.655000000000003,
+      "endSec": 21.934000000000005,
+      "narrationSec": 6.826667
+    },
+    {
+      "id": "howUrgent",
+      "startSec": 21.935000000000002,
+      "endSec": 27.730000000000004,
+      "narrationSec": 5.340604
+    },
+    {
+      "id": "whenItIsDue",
+      "startSec": 27.730000000000004,
+      "endSec": 33.941,
+      "narrationSec": 5.758563
+    },
+    {
+      "id": "whereItBelongs",
+      "startSec": 33.941,
+      "endSec": 40.806000000000004,
+      "narrationSec": 6.408708
+    },
+    {
+      "id": "raiseIt",
+      "startSec": 40.806000000000004,
+      "endSec": 45.345000000000006,
+      "narrationSec": 4.086708
+    },
+    {
+      "id": "openIt",
+      "startSec": 45.345000000000006,
+      "endSec": 52.762,
+      "narrationSec": 6.966
+    },
+    {
+      "id": "whereNext",
+      "startSec": 52.762,
+      "endSec": 58.6,
+      "narrationSec": 5.387042
+    }
+  ]
+}

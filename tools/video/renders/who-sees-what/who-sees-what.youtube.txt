@@ -1,0 +1,27 @@
+TITLE
+Who sees what — HBCField
+
+DESCRIPTION
+What somebody can reach in HBCField is not decided by their job title. It is a role: a list of what they may do, written by you, held by as many people as you like. Change the role and everybody holding it changes with it.
+
+Chapters
+0:00 Who sees what
+0:10 Everyone holds one
+0:20 The roles
+0:32 Inside a role
+0:48 Write your own
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload who-sees-what.mp4
+  [ ] Add each who-sees-what.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → "welcomeManager"

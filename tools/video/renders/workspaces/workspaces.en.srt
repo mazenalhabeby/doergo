@@ -1,0 +1,78 @@
+1
+00:00:09,070 --> 00:00:15,784
+Every workspace this company runs, on one
+page. A depot, a workshop, and a site that
+
+2
+00:00:15,784 --> 00:00:17,383
+belongs to a client.
+
+3
+00:00:17,835 --> 00:00:23,819
+Each one carries what it can do and how
+many people work there. Read the row and you
+
+4
+00:00:23,819 --> 00:00:25,173
+know the workspace.
+
+5
+00:00:25,625 --> 00:00:31,198
+A new one starts with a name and what
+kind of place it is. Yours, or a client's.
+
+6
+00:00:31,650 --> 00:00:36,758
+Give it an address and it gets a
+boundary on the map. That boundary is what a
+
+7
+00:00:36,758 --> 00:00:38,616
+clock-in is checked against.
+
+8
+00:00:39,070 --> 00:00:46,302
+Then what it is allowed to do. Only the
+capabilities this place actually uses — the
+
+9
+00:00:46,302 --> 00:00:47,522
+rest stay off.
+
+10
+00:00:47,975 --> 00:00:54,372
+Switch off what this place does not do,
+and it is not billed for it. A yard that
+
+11
+00:00:54,372 --> 00:00:58,610
+never sends anyone out pays
+for nothing that travels.
+
+12
+00:00:59,062 --> 00:01:05,914
+And the steps a job goes through here. A
+workshop and a call-out do not want the
+
+13
+00:01:05,914 --> 00:01:06,771
+same ones.
+
+14
+00:01:07,223 --> 00:01:13,724
+One of them is the default: where a job
+lands when nobody says otherwise. You can
+
+15
+00:01:13,724 --> 00:01:15,489
+move that at any time.
+
+16
+00:01:15,944 --> 00:01:21,987
+Next: who is allowed to see what — and
+why that is not decided by anybody's job
+
+17
+00:01:21,987 --> 00:01:22,446
+title.
+

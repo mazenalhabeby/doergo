@@ -1,0 +1,26 @@
+TITLE
+Workspaces — HBCField
+
+DESCRIPTION
+A workspace is a depot, a workshop, a client's site — somewhere work happens, or a part of the business that runs its own way. Each one switches on only what it needs and is billed for only that. This is how to make one, and how to decide what it can do.
+
+Chapters
+0:00 Workspaces
+0:09 Your workspaces
+0:25 Making one
+0:39 What it can do
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload workspaces.mp4
+  [ ] Add each workspaces.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → "spacesTour"

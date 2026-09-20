@@ -1,0 +1,49 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/give-it-to-somebody/capture/page@911dde659c40248be44701c088a8811d.webm",
+  "durationSec": 55.84,
+  "preRollSec": 5.448,
+  "beats": [
+    {
+      "id": "nobodyOnIt",
+      "startSec": 5.448,
+      "endSec": 12.542000000000002,
+      "narrationSec": 6.640917
+    },
+    {
+      "id": "openIt",
+      "startSec": 12.543,
+      "endSec": 17.034,
+      "narrationSec": 4.040271
+    },
+    {
+      "id": "whoIsFree",
+      "startSec": 17.034,
+      "endSec": 25.148,
+      "narrationSec": 7.662583
+    },
+    {
+      "id": "handedOver",
+      "startSec": 25.148,
+      "endSec": 34.979,
+      "narrationSec": 9.380875
+    },
+    {
+      "id": "theTrail",
+      "startSec": 34.979,
+      "endSec": 42.627,
+      "narrationSec": 7.198188
+    },
+    {
+      "id": "theirDay",
+      "startSec": 42.627,
+      "endSec": 49.396,
+      "narrationSec": 6.315833
+    },
+    {
+      "id": "whereNext",
+      "startSec": 49.396,
+      "endSec": 55.84,
+      "narrationSec": 5.99075
+    }
+  ]
+}

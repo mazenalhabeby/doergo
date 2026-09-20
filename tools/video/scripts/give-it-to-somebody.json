@@ -1,0 +1,120 @@
+{
+  "id": "give-it-to-somebody",
+  "tourIds": [
+    "taskDetailTour"
+  ],
+  "title": {
+    "en": "Give it to somebody",
+    "de": "Den Auftrag jemandem geben",
+    "es": "Dárselo a alguien",
+    "fr": "La confier à quelqu'un",
+    "it": "Affidarlo a qualcuno"
+  },
+  "subtitle": {
+    "en": "Assigning a job, and what happens the moment you do",
+    "de": "Einen Auftrag zuweisen — und was in dem Moment passiert",
+    "es": "Asignar un trabajo, y qué pasa en cuanto lo hace",
+    "fr": "Attribuer une intervention, et ce qui se passe à cet instant",
+    "it": "Assegnare un lavoro, e che cosa succede in quel momento"
+  },
+  "description": {
+    "en": "A job with nobody on it is a note to yourself. Assigning is what turns it into work: it appears on somebody's phone, it joins their day, and the trail records who decided and when.",
+    "de": "Ein Auftrag ohne Namen ist eine Notiz an sich selbst. Erst die Zuweisung macht Arbeit daraus: Er erscheint auf einem Telefon, gehört zum Tag dieser Person, und der Verlauf hält fest, wer wann entschieden hat.",
+    "es": "Un trabajo sin nadie asignado es una nota para usted mismo. Asignarlo es lo que lo convierte en trabajo: aparece en el teléfono de alguien, entra en su jornada, y el registro guarda quién lo decidió y cuándo.",
+    "fr": "Une intervention sans personne dessus est une note à soi-même. L'attribuer, c'est ce qui en fait du travail : elle apparaît sur un téléphone, elle rejoint la journée de quelqu'un, et l'historique retient qui a décidé et quand.",
+    "it": "Un lavoro senza nessuno sopra è un appunto per sé stessi. Assegnarlo è ciò che lo trasforma in lavoro: compare sul telefono di qualcuno, entra nella sua giornata, e la cronologia registra chi ha deciso e quando."
+  },
+  "beats": [
+    {
+      "id": "nobodyOnIt",
+      "narration": {
+        "en": "One job on this board has nobody against it. Until it does, it is a note rather than work.",
+        "de": "Ein Auftrag auf diesem Board hat keinen Namen. Bis dahin ist er eine Notiz, keine Arbeit.",
+        "es": "Un trabajo de este tablero no tiene a nadie. Hasta que lo tenga, es una nota, no trabajo.",
+        "fr": "Une intervention de ce tableau n'a personne en face. Jusque-là, c'est une note, pas du travail.",
+        "it": "Un lavoro su questa bacheca non ha nessuno accanto. Finché è così, è un appunto, non lavoro."
+      },
+      "chapter": {
+        "en": "Nobody on it",
+        "de": "Ohne Namen",
+        "es": "Sin nadie",
+        "fr": "Personne dessus",
+        "it": "Senza nessuno"
+      }
+    },
+    {
+      "id": "openIt",
+      "narration": {
+        "en": "Open it, and the place where a name goes is the first thing on the right.",
+        "de": "Öffnen Sie ihn: Die Stelle für den Namen steht rechts ganz oben.",
+        "es": "Ábralo: el sitio donde va un nombre es lo primero a la derecha.",
+        "fr": "Ouvrez-la : l'endroit où va un nom est la première chose à droite.",
+        "it": "Lo apra: il posto dove va un nome è la prima cosa a destra."
+      }
+    },
+    {
+      "id": "whoIsFree",
+      "narration": {
+        "en": "The list is the people who work in this workspace. Not the whole company — the ones who could actually go.",
+        "de": "Die Liste zeigt die Menschen dieses Arbeitsbereichs. Nicht den ganzen Betrieb — die, die tatsächlich hinfahren könnten.",
+        "es": "La lista es la gente que trabaja en este espacio. No toda la empresa: los que realmente podrían ir.",
+        "fr": "La liste, ce sont les personnes de cet espace de travail. Pas toute l'entreprise — celles qui pourraient réellement y aller.",
+        "it": "L'elenco è la gente che lavora in questo spazio. Non tutta l'azienda: quelli che potrebbero davvero andarci."
+      },
+      "chapter": {
+        "en": "Who could go",
+        "de": "Wer hinfahren kann",
+        "es": "Quién puede ir",
+        "fr": "Qui peut y aller",
+        "it": "Chi può andarci"
+      }
+    },
+    {
+      "id": "handedOver",
+      "narration": {
+        "en": "Choose one, and it is theirs. It lands on their phone and joins their day, without anybody being told twice.",
+        "de": "Wählen Sie eine Person — und der Auftrag gehört ihr. Er landet auf ihrem Telefon und gehört zu ihrem Tag, ohne dass jemand zweimal Bescheid geben muss.",
+        "es": "Elija a uno y el trabajo es suyo. Aterriza en su teléfono y entra en su jornada, sin que nadie tenga que avisar dos veces.",
+        "fr": "Choisissez quelqu'un, et l'intervention est la sienne. Elle arrive sur son téléphone et rejoint sa journée, sans que personne ait à prévenir deux fois.",
+        "it": "Ne scelga uno, e il lavoro è suo. Arriva sul suo telefono ed entra nella sua giornata, senza che nessuno debba avvisare due volte."
+      }
+    },
+    {
+      "id": "theTrail",
+      "narration": {
+        "en": "The trail keeps it: who decided, and when. Nobody has to remember who sent whom where.",
+        "de": "Der Verlauf hält es fest: wer entschieden hat und wann. Niemand muss sich merken, wer wen wohin geschickt hat.",
+        "es": "El registro lo guarda: quién lo decidió y cuándo. Nadie tiene que acordarse de quién mandó a quién adónde.",
+        "fr": "L'historique le retient : qui a décidé, et quand. Personne n'a à se rappeler qui a envoyé qui où.",
+        "it": "La cronologia lo conserva: chi ha deciso e quando. Nessuno deve ricordarsi chi ha mandato chi e dove."
+      },
+      "chapter": {
+        "en": "Who decided",
+        "de": "Wer entschieden hat",
+        "es": "Quién lo decidió",
+        "fr": "Qui a décidé",
+        "it": "Chi ha deciso"
+      }
+    },
+    {
+      "id": "theirDay",
+      "narration": {
+        "en": "And on their own page it is simply there, among everything else they are carrying.",
+        "de": "Und auf ihrer eigenen Seite steht er einfach da — zwischen allem anderen, was sie trägt.",
+        "es": "Y en su propia página está sin más, entre todo lo demás que lleva.",
+        "fr": "Et sur sa propre page, elle est simplement là, parmi tout ce qu'il porte déjà.",
+        "it": "E sulla sua pagina è semplicemente lì, tra tutto il resto che sta portando."
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: the same job followed all the way through, to the report the client signs.",
+        "de": "Als Nächstes: derselbe Auftrag bis zum Ende — bis zum Bericht, den der Kunde unterschreibt.",
+        "es": "A continuación: el mismo trabajo seguido hasta el final, hasta el informe que firma el cliente.",
+        "fr": "Ensuite : la même intervention suivie jusqu'au bout, jusqu'au rapport que le client signe.",
+        "it": "Poi: lo stesso lavoro seguito fino in fondo, fino al rapporto che il cliente firma."
+      }
+    }
+  ]
+}

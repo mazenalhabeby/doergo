@@ -1,0 +1,137 @@
+{
+  "id": "your-first-job",
+  "tourIds": [
+    "tasksTour"
+  ],
+  "title": {
+    "en": "Create your first job",
+    "de": "Ihren ersten Auftrag anlegen",
+    "es": "Cree su primer trabajo",
+    "fr": "Créez votre première intervention",
+    "it": "Crei il suo primo lavoro"
+  },
+  "subtitle": {
+    "en": "What needs doing, where, and by when",
+    "de": "Was zu tun ist, wo und bis wann",
+    "es": "Qué hay que hacer, dónde y para cuándo",
+    "fr": "Ce qu'il faut faire, où, et pour quand",
+    "it": "Che cosa va fatto, dove ed entro quando"
+  },
+  "description": {
+    "en": "A job is the smallest complete thing in HBCField: what needs doing, where, by when, and who has it. This is the first three of those — the fourth is the next video. Nothing here is compulsory except the title.",
+    "de": "Ein Auftrag ist die kleinste vollständige Einheit in HBCField: was zu tun ist, wo, bis wann und wer ihn hat. Hier sind die ersten drei — der vierte folgt im nächsten Video. Pflicht ist nur der Titel.",
+    "es": "Un trabajo es la unidad completa más pequeña de HBCField: qué hay que hacer, dónde, para cuándo y quién lo tiene. Aquí están los tres primeros; el cuarto es el siguiente vídeo. Lo único obligatorio es el título.",
+    "fr": "Une intervention est la plus petite chose complète dans HBCField : ce qu'il faut faire, où, pour quand, et qui s'en charge. Voici les trois premiers — le quatrième est la vidéo suivante. Seul le titre est obligatoire.",
+    "it": "Un lavoro è la cosa completa più piccola in HBCField: che cosa va fatto, dove, entro quando e chi ce l'ha. Qui ci sono i primi tre — il quarto è il video successivo. L'unica cosa obbligatoria è il titolo."
+  },
+  "beats": [
+    {
+      "id": "theBoard",
+      "narration": {
+        "en": "This is the work in hand. Every job the company is carrying, in the state it is in.",
+        "de": "Das ist die laufende Arbeit: jeder Auftrag des Betriebs, in dem Zustand, in dem er ist.",
+        "es": "Este es el trabajo en curso: cada trabajo que lleva la empresa, en el estado en que está.",
+        "fr": "Voici le travail en cours : chaque intervention de l'entreprise, dans l'état où elle est.",
+        "it": "Questo è il lavoro in corso: ogni lavoro dell'azienda, nello stato in cui si trova."
+      },
+      "chapter": {
+        "en": "The board",
+        "de": "Das Board",
+        "es": "El tablero",
+        "fr": "Le tableau",
+        "it": "La bacheca"
+      }
+    },
+    {
+      "id": "theTitle",
+      "narration": {
+        "en": "A new one starts with a sentence. Write what somebody standing there would need to know.",
+        "de": "Ein neuer beginnt mit einem Satz. Schreiben Sie, was jemand vor Ort wissen müsste.",
+        "es": "Uno nuevo empieza con una frase. Escriba lo que necesitaría saber quien esté allí.",
+        "fr": "Une nouvelle commence par une phrase. Écrivez ce que devrait savoir la personne sur place.",
+        "it": "Uno nuovo inizia con una frase. Scriva ciò che dovrebbe sapere chi si trova lì."
+      },
+      "chapter": {
+        "en": "A new job",
+        "de": "Ein neuer Auftrag",
+        "es": "Un trabajo nuevo",
+        "fr": "Une nouvelle intervention",
+        "it": "Un nuovo lavoro"
+      }
+    },
+    {
+      "id": "howUrgent",
+      "narration": {
+        "en": "How urgent it is, in the words your own team already uses about work.",
+        "de": "Wie dringend er ist — in den Worten, die Ihr Team ohnehin für Arbeit benutzt.",
+        "es": "Cuánto corre, en las palabras que su equipo ya usa para hablar del trabajo.",
+        "fr": "Son degré d'urgence, dans les mots que votre équipe emploie déjà.",
+        "it": "Quanto è urgente, con le parole che la sua squadra già usa per il lavoro."
+      }
+    },
+    {
+      "id": "whenItIsDue",
+      "narration": {
+        "en": "When it has to be done by. Pick a day, and add an hour if somebody is expecting you.",
+        "de": "Bis wann er erledigt sein muss. Wählen Sie einen Tag — und eine Uhrzeit, wenn jemand Sie erwartet.",
+        "es": "Para cuándo tiene que estar hecho. Elija un día, y añada una hora si alguien le espera.",
+        "fr": "Pour quand elle doit être faite. Choisissez un jour, et ajoutez une heure si quelqu'un vous attend.",
+        "it": "Entro quando deve essere fatto. Scelga un giorno, e aggiunga un'ora se qualcuno l'aspetta."
+      },
+      "chapter": {
+        "en": "When",
+        "de": "Wann",
+        "es": "Cuándo",
+        "fr": "Quand",
+        "it": "Quando"
+      }
+    },
+    {
+      "id": "whereItBelongs",
+      "narration": {
+        "en": "And which part of the business it belongs to. That decides who sees it and what it can do.",
+        "de": "Und zu welchem Teil des Betriebs er gehört. Das entscheidet, wer ihn sieht und was er kann.",
+        "es": "Y a qué parte del negocio pertenece. Eso decide quién lo ve y qué puede hacer.",
+        "fr": "Et à quelle partie de l'activité elle appartient. Cela décide qui la voit et ce qu'elle peut faire.",
+        "it": "E a quale parte dell'azienda appartiene. Questo decide chi lo vede e che cosa può fare."
+      }
+    },
+    {
+      "id": "raiseIt",
+      "narration": {
+        "en": "Raise it, and it is on the board where everyone works from.",
+        "de": "Anlegen — und er steht auf dem Board, von dem alle arbeiten.",
+        "es": "Créelo, y ya está en el tablero desde el que todos trabajan.",
+        "fr": "Créez-la, et elle est sur le tableau d'où tout le monde travaille.",
+        "it": "Lo crei, ed è sulla bacheca da cui lavorano tutti."
+      }
+    },
+    {
+      "id": "openIt",
+      "narration": {
+        "en": "Open it and it is waiting: a description, room for photographs, and nobody on it yet.",
+        "de": "Öffnen Sie ihn: eine Beschreibung, Platz für Fotos — und noch niemand darauf.",
+        "es": "Ábralo y está esperando: una descripción, sitio para fotos, y todavía nadie asignado.",
+        "fr": "Ouvrez-la : une description, de la place pour des photos, et personne dessus pour l'instant.",
+        "it": "Lo apra ed è lì in attesa: una descrizione, spazio per le foto, e ancora nessuno sopra."
+      },
+      "chapter": {
+        "en": "The job itself",
+        "de": "Der Auftrag selbst",
+        "es": "El trabajo",
+        "fr": "L'intervention",
+        "it": "Il lavoro"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Which is the next video: giving it to somebody, and what happens the moment you do.",
+        "de": "Und genau das ist das nächste Video: ihn jemandem geben — und was in dem Moment passiert.",
+        "es": "Que es el siguiente vídeo: dárselo a alguien, y qué pasa en cuanto lo hace.",
+        "fr": "C'est justement la prochaine vidéo : la confier à quelqu'un, et ce qui se passe à cet instant.",
+        "it": "Che è il video successivo: affidarlo a qualcuno, e che cosa succede in quel momento."
+      }
+    }
+  ]
+}
