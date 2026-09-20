@@ -1,0 +1,43 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/a-client-login/capture/page@99d9d57eee6de4ba7fd6ddd91bc9cc0a.webm",
+  "durationSec": 45.52,
+  "preRollSec": 6.9210000000000065,
+  "beats": [
+    {
+      "id": "thePhoneCalls",
+      "startSec": 6.9210000000000065,
+      "endSec": 11.601000000000006,
+      "narrationSec": 4.226042
+    },
+    {
+      "id": "aPortal",
+      "startSec": 11.602000000000007,
+      "endSec": 18.044000000000004,
+      "narrationSec": 5.99075
+    },
+    {
+      "id": "whoGetsIn",
+      "startSec": 18.04500000000001,
+      "endSec": 25.418000000000006,
+      "narrationSec": 6.919542
+    },
+    {
+      "id": "whatTheySee",
+      "startSec": 25.418000000000006,
+      "endSec": 35.071000000000005,
+      "narrationSec": 9.195104
+    },
+    {
+      "id": "andTheyCanAsk",
+      "startSec": 35.07300000000001,
+      "endSec": 41.19100000000001,
+      "narrationSec": 5.665667
+    },
+    {
+      "id": "whereNext",
+      "startSec": 41.193000000000005,
+      "endSec": 45.52,
+      "narrationSec": 3.854521
+    }
+  ]
+}

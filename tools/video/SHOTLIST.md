@@ -43,9 +43,9 @@ Each is about two minutes and assumes only the videos above it.
 | 31 | `licences-that-expire` | Licences that expire | **made** |
 | 32 | `your-dashboard` | Your dashboard | **made** |
 | 33 | `build-a-report` | Build a report | **made** |
-| 34 | `—` | Where everyone is | ⚠️ **BLOCKED — no live map, no GPS.** The tracking tab on the attendance board is a table of who is clocked in, and the seed records no location history. The first cut narrated "everybody who is out, on one map" over a list of clock-in times. |
-| 35 | `—` | Give a client their own login | ⚠️ **BLOCKED — the portal list does not open.** A portal exists (the seed makes one) but clicking its card navigates nowhere, so every claim about who gets in and what they see has no screen. |
-| 36 | `—` | Talking to your client | ⚠️ **BLOCKED — no way in.** Cross-org chat is authorised by a SHARED space; without one there is no chat control in the navbar at all. |
+| 34 | `where-everyone-is` | The road actually driven | **made** — re-scoped: there is no live map of everybody, and the road one member drove is the stronger half anyway |
+| 35 | `a-client-login` | Give a client their own login | **made** |
+| 36 | `—` | Talking to your client | ⚠️ **BLOCKED — there is no way in.** No chat control in the navbar, none on a member, none on a job. Cross-org chat is authorised by a SHARED space, and this organisation shares none. |
 
 `create-a-job` exists on disk from an earlier pass and predates this ordering —
 it straddles 05, 06 and 23. Re-scope it against them rather than treating it as

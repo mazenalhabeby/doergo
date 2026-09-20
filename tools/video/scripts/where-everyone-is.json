@@ -1,0 +1,108 @@
+{
+  "id": "where-everyone-is",
+  "tourIds": [],
+  "title": {
+    "en": "The road actually driven",
+    "de": "Der tatsächlich gefahrene Weg",
+    "es": "La ruta realmente recorrida",
+    "fr": "La route réellement empruntée",
+    "it": "La strada davvero percorsa"
+  },
+  "subtitle": {
+    "en": "Where somebody is, how far they got, and what is never tracked",
+    "de": "Wo jemand ist, wie weit er kam — und was nie erfasst wird",
+    "es": "Dónde está alguien, hasta dónde llegó y qué no se rastrea nunca",
+    "fr": "Où quelqu'un se trouve, jusqu'où il est allé, et ce qui n'est jamais suivi",
+    "it": "Dove si trova qualcuno, fin dove è arrivato e che cosa non viene mai tracciato"
+  },
+  "description": {
+    "en": "Tracking earns its place when it answers the question somebody is about to ask on the phone: how far away is he, and did the van actually go there. It records the road while somebody is driving to a job and stops when they arrive — not all day, and never without a job.",
+    "de": "Ortung verdient ihren Platz, wenn sie die Frage beantwortet, die gleich am Telefon kommt: Wie weit ist er noch, und war der Transporter wirklich dort? Aufgezeichnet wird die Fahrt zu einem Auftrag, beendet bei der Ankunft — nicht den ganzen Tag, und nie ohne Auftrag.",
+    "es": "El seguimiento se gana su sitio cuando responde a la pregunta que alguien está a punto de hacer por teléfono: cuánto le falta, y si la furgoneta estuvo allí. Registra el camino mientras se conduce hacia un trabajo y se detiene al llegar: no todo el día, y nunca sin trabajo.",
+    "fr": "Le suivi mérite sa place quand il répond à la question qu'on s'apprête à poser au téléphone : à quelle distance est-il, et la camionnette y est-elle vraiment allée. Il enregistre la route pendant le trajet vers une intervention et s'arrête à l'arrivée — pas toute la journée, et jamais sans intervention.",
+    "it": "Il tracciamento si guadagna il posto quando risponde alla domanda che qualcuno sta per fare al telefono: quanto manca, e il furgone c'è andato davvero. Registra la strada mentre si guida verso un lavoro e si ferma all'arrivo: non tutto il giorno, e mai senza un lavoro."
+  },
+  "beats": [
+    {
+      "id": "theMap",
+      "narration": {
+        "en": "Somebody is on the way to this job right now. The question a client is about to ask is how far away they are.",
+        "de": "Jemand ist gerade zu diesem Auftrag unterwegs. Die Frage, die ein Kunde gleich stellt, lautet: Wie weit ist er noch?",
+        "es": "Alguien va de camino a este trabajo ahora mismo. La pregunta que un cliente está a punto de hacer es cuánto le falta.",
+        "fr": "Quelqu'un est en route vers cette intervention en ce moment. La question qu'un client s'apprête à poser, c'est à quelle distance il est.",
+        "it": "Qualcuno sta andando verso questo lavoro proprio adesso. La domanda che un cliente sta per fare è quanto manca."
+      },
+      "chapter": {
+        "en": "On the way",
+        "de": "Unterwegs",
+        "es": "De camino",
+        "fr": "En route",
+        "it": "In viaggio"
+      }
+    },
+    {
+      "id": "theQuestion",
+      "narration": {
+        "en": "The job answers it: this is the road they have taken, point by point, as the phone reported it.",
+        "de": "Der Auftrag beantwortet sie: Das ist der gefahrene Weg, Punkt für Punkt, so wie das Telefon ihn gemeldet hat.",
+        "es": "El trabajo la responde: esta es la carretera que ha tomado, punto por punto, tal como la reportó el teléfono.",
+        "fr": "L'intervention y répond : voici la route empruntée, point par point, telle que le téléphone l'a rapportée.",
+        "it": "Il lavoro risponde: questa è la strada percorsa, punto per punto, come l'ha riportata il telefono."
+      }
+    },
+    {
+      "id": "theRoute",
+      "narration": {
+        "en": "Not a straight line between two pins. The bends are there because the van went round them.",
+        "de": "Keine gerade Linie zwischen zwei Nadeln. Die Kurven sind da, weil der Transporter sie gefahren ist.",
+        "es": "No una línea recta entre dos chinchetas. Las curvas están porque la furgoneta las hizo.",
+        "fr": "Pas une ligne droite entre deux épingles. Les virages y sont parce que la camionnette les a pris.",
+        "it": "Non una linea retta fra due spilli. Le curve ci sono perché il furgone le ha fatte."
+      },
+      "chapter": {
+        "en": "The road taken",
+        "de": "Der gefahrene Weg",
+        "es": "La ruta recorrida",
+        "fr": "La route empruntée",
+        "it": "La strada percorsa"
+      }
+    },
+    {
+      "id": "distanceAndTime",
+      "narration": {
+        "en": "Which gives the job a distance and a time that nobody had to write down, and nobody can misremember.",
+        "de": "Das gibt dem Auftrag Strecke und Dauer, die niemand notieren musste — und niemand falsch erinnern kann.",
+        "es": "Eso da al trabajo una distancia y un tiempo que nadie tuvo que apuntar y nadie puede recordar mal.",
+        "fr": "Cela donne à l'intervention une distance et une durée que personne n'a eu à noter, et que personne ne peut mal se rappeler.",
+        "it": "Il che dà al lavoro una distanza e un tempo che nessuno ha dovuto annotare e nessuno può ricordare male."
+      }
+    },
+    {
+      "id": "notAllDay",
+      "narration": {
+        "en": "It starts when they set off and stops when they arrive. Not all day, and never when there is no job.",
+        "de": "Sie beginnt bei der Abfahrt und endet bei der Ankunft. Nicht den ganzen Tag — und nie ohne Auftrag.",
+        "es": "Empieza cuando salen y se detiene al llegar. No todo el día, y nunca sin un trabajo.",
+        "fr": "Il commence au départ et s'arrête à l'arrivée. Pas toute la journée, et jamais sans intervention.",
+        "it": "Inizia alla partenza e si ferma all'arrivo. Non tutto il giorno, e mai senza un lavoro."
+      },
+      "chapter": {
+        "en": "Not all day",
+        "de": "Nicht den ganzen Tag",
+        "es": "No todo el día",
+        "fr": "Pas toute la journée",
+        "it": "Non tutto il giorno"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "And who is where right now is the first thing on the screen everybody opens anyway.",
+        "de": "Und wer gerade wo ist, steht ohnehin ganz oben auf dem Bildschirm, den alle öffnen.",
+        "es": "Y quién está dónde ahora mismo es lo primero en la pantalla que todos abren de todas formas.",
+        "fr": "Et qui est où en ce moment, c'est déjà la première chose sur l'écran que tout le monde ouvre.",
+        "it": "E chi è dove in questo momento è comunque la prima cosa sulla schermata che tutti aprono."
+      }
+    }
+  ]
+}

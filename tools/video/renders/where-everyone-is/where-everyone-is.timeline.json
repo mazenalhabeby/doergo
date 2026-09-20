@@ -1,0 +1,43 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/where-everyone-is/capture/page@14726c05e3a633e29e2bd3273b7b2b05.webm",
+  "durationSec": 51.88,
+  "preRollSec": 7.933,
+  "beats": [
+    {
+      "id": "theMap",
+      "startSec": 7.933,
+      "endSec": 16.372999999999998,
+      "narrationSec": 7.987667
+    },
+    {
+      "id": "theQuestion",
+      "startSec": 16.372999999999998,
+      "endSec": 24.718,
+      "narrationSec": 7.894792
+    },
+    {
+      "id": "theRoute",
+      "startSec": 24.718,
+      "endSec": 31.438,
+      "narrationSec": 6.269396
+    },
+    {
+      "id": "distanceAndTime",
+      "startSec": 31.438,
+      "endSec": 39.552,
+      "narrationSec": 7.662583
+    },
+    {
+      "id": "notAllDay",
+      "startSec": 39.552,
+      "endSec": 46.645,
+      "narrationSec": 6.640917
+    },
+    {
+      "id": "whereNext",
+      "startSec": 46.645,
+      "endSec": 51.88,
+      "narrationSec": 4.783313
+    }
+  ]
+}

@@ -89,6 +89,16 @@ export const CLIENT_SITE = {
   geofenceRadius: 120,
 } as const;
 
+/**
+ * The client portal's id, fixed like the workspaces' are.
+ *
+ * ⚠️ WHY A LITERAL. The portal list does not open its own detail — clicking a
+ * card navigates nowhere — so the only way to film the portal's own page is to
+ * visit it by URL, and a flow cannot ask the database for an id. Same trick as
+ * DEPOT.id, for the same reason.
+ */
+export const PORTAL_ID = 'video-portal-brambleside';
+
 export interface DemoPerson {
   key: string;
   firstName: string;

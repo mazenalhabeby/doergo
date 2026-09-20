@@ -39,6 +39,7 @@ import {
   DEMO_PASSWORD,
   DEPOT,
   OUTSIDER,
+  PORTAL_ID,
   LEAD,
   ORG_CURRENCY,
   ORG_TIMEZONE,
@@ -148,6 +149,8 @@ async function destroyPreviousRun(): Promise<void> {
   await prisma.invitation.deleteMany({ where: { organizationId: orgId } });
   await prisma.joinRequest.deleteMany({ where: { organizationId: orgId } }).catch(() => undefined);
   await prisma.timeOff.deleteMany({ where: { technician: { organizationId: orgId } } });
+  await prisma.locationHistory.deleteMany({ where: { user: { organizationId: orgId } } });
+  await prisma.workerLastLocation.deleteMany({ where: { user: { organizationId: orgId } } });
   await prisma.recurringTaskTemplate.deleteMany({ where: { organizationId: orgId } });
   await prisma.serviceReport.deleteMany({ where: { organizationId: orgId } });
   await prisma.comment.deleteMany({ where: { task: { organizationId: orgId } } });
@@ -850,6 +853,95 @@ async function seedAttendance(
 }
 
 /**
+ * The road one member actually drove, and where everybody is now.
+ *
+ * ⚠️ WITHOUT THIS THERE IS NO ROUTE TO SHOW. The job screen mounts its route
+ * section when the task has points or is on the way — with neither, it renders
+ * "waiting for the technician", and a video about the road taken has a spinner
+ * to narrate over.
+ *
+ * ⚠️ THE POINTS ARE A DRIVEN PATH, not a straight line between two pins. That
+ * is the entire claim the feature makes, so a seed that laid down two points
+ * would be proving the opposite of the sentence. These follow a plausible road
+ * west out of Reading — invented, over open ground, like every other
+ * coordinate here.
+ */
+async function seedRoute(
+  taskIds: Map<string, string>,
+  crew: Record<string, { id: string }>,
+) {
+  const taskId = taskIds.get('Cold room 2 — door seal replacement');
+  const driverId = crew.rhodes?.id;
+  if (!taskId || !driverId) return 0;
+
+  /*
+    A bend-by-bend path from the depot towards the client's site. Twenty-six
+    points at roughly forty-second intervals is what a phone reports on a
+    twenty-minute drive with distance-based sampling.
+  */
+  const path: Array<[number, number]> = [
+    [51.42219, -0.95030], [51.42360, -0.94780], [51.42520, -0.94480], [51.42690, -0.94120],
+    [51.42880, -0.93740], [51.43090, -0.93330], [51.43320, -0.92900], [51.43570, -0.92450],
+    [51.43840, -0.91990], [51.44130, -0.91520], [51.44440, -0.91040], [51.44770, -0.90550],
+    [51.45120, -0.90050], [51.45490, -0.89540], [51.45880, -0.89020], [51.46290, -0.88490],
+    [51.46720, -0.87950], [51.47170, -0.87400], [51.47640, -0.86840], [51.48130, -0.86270],
+    [51.48640, -0.85690], [51.49170, -0.85100], [51.49720, -0.84500], [51.50290, -0.83890],
+    [51.50880, -0.83270], [51.51490, -0.82640],
+  ];
+
+  const startedAt = new Date(Date.now() - 24 * 60_000);
+  for (const [i, [lat, lng]] of path.entries()) {
+    await prisma.locationHistory.create({
+      data: {
+        userId: driverId,
+        taskId,
+        lat,
+        lng,
+        accuracy: 8 + (i % 5),
+        timestamp: new Date(startedAt.getTime() + i * 42_000),
+      },
+    });
+  }
+
+  /* Haversine over the path, the same sum the server keeps as it arrives. */
+  let metres = 0;
+  for (let i = 1; i < path.length; i += 1) {
+    const [aLat, aLng] = path[i - 1]!;
+    const [bLat, bLng] = path[i]!;
+    const R = 6_371_000;
+    const dLat = ((bLat - aLat) * Math.PI) / 180;
+    const dLng = ((bLng - aLng) * Math.PI) / 180;
+    const h =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((aLat * Math.PI) / 180) * Math.cos((bLat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+    metres += 2 * R * Math.asin(Math.sqrt(h));
+  }
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { routeStartedAt: startedAt, routeDistance: Math.round(metres) },
+  });
+
+  /* And where everybody is now, so a member's pin is not a blank. */
+  for (const [i, key] of ['rhodes', 'okafor', 'brennan', 'valdes'].entries()) {
+    const userId = crew[key]?.id;
+    if (!userId) continue;
+    await prisma.workerLastLocation.upsert({
+      where: { userId },
+      update: {},
+      create: {
+        userId,
+        lat: path[path.length - 1]![0] - i * 0.004,
+        lng: path[path.length - 1]![1] + i * 0.006,
+        accuracy: 10,
+      },
+    });
+  }
+
+  return path.length;
+}
+
+/**
  * A portal on the client's own site.
  *
  * ⚠️ WITHOUT THIS, `/portals` SAYS "No workspace has a client portal switched
@@ -859,6 +951,7 @@ async function seedAttendance(
 async function seedPortal(orgId: string, spaceId: string, clientIds: Map<string, string>) {
   const portal = await prisma.portal.create({
     data: {
+      id: PORTAL_ID,
       organizationId: orgId,
       spaceId,
       name: 'Brambleside Retail Park',
@@ -1564,12 +1657,14 @@ async function main(): Promise<void> {
   const portals = await seedPortal(org.id, spaceIds.clientSite, clientIds);
   const taskIds = await seedTasks(org.id, spaceIds.depot, workflowId, lead.id, crew, clientIds);
   const storyRows = await seedOneJobInFull(org.id, taskIds, crew, lead.id, clientIds);
+  const routePoints = await seedRoute(taskIds, crew);
   const assetCount = await seedAssets(org.id, spaceIds.depot, crew);
   const invoiceCount = await seedInvoices(org.id, spaceIds.clientSite, owner.id);
   console.log(
     `  ${clientIds.size} clients, ${taskIds.size} jobs, ${assetCount} assets, ${invoiceCount} invoices, ${portals} client portal`,
   );
   console.log(`  ${storyRows} rows furnishing "${STORY_JOB}" — the job video 01 opens`);
+  console.log(`  ${routePoints} GPS points on one job — the road actually driven`);
 
   console.log('\n  Recording account');
   console.log(`    ${LEAD.email}`);

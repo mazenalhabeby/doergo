@@ -1,0 +1,55 @@
+1
+00:00:11,433 --> 00:00:16,048
+Quelqu'un est en route vers cette
+intervention en ce moment. La question qu'un
+
+2
+00:00:16,048 --> 00:00:19,421
+client s'apprête à poser,
+c'est à quelle distance il est.
+
+3
+00:00:19,873 --> 00:00:25,963
+L'intervention y répond : voici la route
+empruntée, point par point, telle que le
+
+4
+00:00:25,963 --> 00:00:27,768
+téléphone l'a rapportée.
+
+5
+00:00:28,218 --> 00:00:32,985
+Pas une ligne droite entre deux
+épingles. Les virages y sont parce que la
+
+6
+00:00:32,985 --> 00:00:34,487
+camionnette les a pris.
+
+7
+00:00:34,938 --> 00:00:40,088
+Cela donne à l'intervention une distance
+et une durée que personne n'a eu à noter,
+
+8
+00:00:40,088 --> 00:00:42,601
+et que personne ne peut mal se rappeler.
+
+9
+00:00:43,052 --> 00:00:48,794
+Il commence au départ et s'arrête à
+l'arrivée. Pas toute la journée, et jamais sans
+
+10
+00:00:48,794 --> 00:00:49,693
+intervention.
+
+11
+00:00:50,145 --> 00:00:54,304
+Et qui est où en ce moment, c'est déjà
+la première chose sur l'écran que tout le
+
+12
+00:00:54,304 --> 00:00:54,928
+monde ouvre.
+

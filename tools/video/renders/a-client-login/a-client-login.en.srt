@@ -1,0 +1,38 @@
+1
+00:00:10,421 --> 00:00:14,647
+Most of what a service desk answers
+is somebody asking what is happening.
+
+2
+00:00:15,102 --> 00:00:21,093
+A workspace can carry a portal: a
+way in for the people you work for.
+
+3
+00:00:21,545 --> 00:00:27,993
+You decide who gets in, one client at a
+time, and what they are allowed to do once
+
+4
+00:00:27,993 --> 00:00:28,465
+there.
+
+5
+00:00:28,918 --> 00:00:36,474
+What they see is theirs and only theirs.
+There is no version of this where they see
+
+6
+00:00:36,474 --> 00:00:38,113
+a neighbour's job.
+
+7
+00:00:38,573 --> 00:00:44,239
+And they can raise a request, which
+arrives as work rather than as a voicemail.
+
+8
+00:00:44,693 --> 00:00:48,548
+Next: talking to them
+inside the job itself.
+

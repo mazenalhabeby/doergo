@@ -9,13 +9,22 @@ weakened to hold these.
 
 | Script | Why it cannot be filmed |
 |---|---|
-| `where-everyone-is` | No live map, and the seed records no GPS. The tracking tab on the attendance board is a table of who is clocked in. The first cut narrated "everybody who is out, on one map" over a list of clock-in times. |
-| `a-client-login` | The portal list does not open. The seed makes a portal and the page lists it; clicking the card navigates nowhere, so who gets in, what they see and raising a request all have no screen. |
-| `talking-to-your-client` | Cross-org chat is authorised by a SHARED space. Without one there is no chat control in the navbar at all. |
+| `talking-to-your-client` | There is no way in. No chat control in the navbar, none on a member's page, none on a job. Cross-org chat is authorised by a SHARED space, and the recording organisation shares none. |
 
 Video 02, "Your first five minutes", has no script here because it has no web
 screen either: `/register` and `/signup` both 404, and signing up happens on
 the phone.
+
+Two others were in here and came out, which is the point of checking rather
+than assuming:
+
+* **`where-everyone-is`** was blocked on "there is no live map". True — but the
+  road one member drove IS on the job, and it only needed GPS in the seed
+  (`seedRoute`). Re-scoped and made.
+* **`a-client-login`** was blocked on "the portal list does not open". Also
+  true — clicking the card navigates nowhere — but the portal's own page exists
+  at its own URL, so the seed gives the portal a fixed id and the flow visits
+  it directly, exactly as it does the workspace settings.
 
 Move one back to `scripts/` the day its screen exists, write the flow, and it
 renders like any other.
