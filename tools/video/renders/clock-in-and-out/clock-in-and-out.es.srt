@@ -1,0 +1,51 @@
+1
+00:00:07,176 --> 00:00:12,289
+El botón está en el mismo sitio en todas
+las pantallas, porque a las siete de la
+
+2
+00:00:12,289 --> 00:00:14,142
+mañana nadie quiere buscarlo.
+
+3
+00:00:14,594 --> 00:00:21,240
+Dónde está importa. El espacio tiene un
+límite, y lo comprueba el servidor, no la
+
+4
+00:00:21,240 --> 00:00:21,978
+pantalla.
+
+5
+00:00:22,429 --> 00:00:31,174
+Dentro. A partir de aquí se cuenta el día,
+y nadie tiene que acordarse de a qué hora
+
+6
+00:00:31,174 --> 00:00:31,903
+empezó.
+
+7
+00:00:32,355 --> 00:00:39,925
+El turno está en pantalla mientras corre:
+cuándo empezó, cuánto lleva y qué queda.
+
+8
+00:00:40,374 --> 00:00:47,340
+Salir al final, y el registro se cierra
+solo. Ese registro es lo que lee la nómina.
+
+9
+00:00:47,792 --> 00:00:52,668
+Cada turno se guarda, con
+dónde fue y cómo se registró.
+
+10
+00:00:53,122 --> 00:00:59,106
+A continuación: por qué las horas de ese
+registro y las de la nómina no son el mismo
+
+11
+00:00:59,106 --> 00:01:01,528
+número, y por qué eso es correcto.
+

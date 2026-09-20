@@ -1,0 +1,64 @@
+1
+00:00:08,832 --> 00:00:13,670
+The columns on this board are not a
+fact about work. They are a choice this
+
+2
+00:00:13,670 --> 00:00:14,637
+workspace made.
+
+3
+00:00:15,090 --> 00:00:22,620
+Behind them is a task type: the steps a
+job takes here, and the order it takes them
+
+4
+00:00:22,620 --> 00:00:22,892
+in.
+
+5
+00:00:23,344 --> 00:00:28,539
+You can read the whole thing in a line,
+which is the point: nobody should have to
+
+6
+00:00:28,539 --> 00:00:30,078
+guess what happens next.
+
+7
+00:00:30,531 --> 00:00:35,543
+If your trade is a common one, somebody
+has already drawn it. Pick it from the
+
+8
+00:00:35,543 --> 00:00:36,057
+library.
+
+9
+00:00:36,509 --> 00:00:42,553
+What you get is your own copy. Change it
+however you like — no other workspace is
+
+10
+00:00:42,553 --> 00:00:43,150
+touched.
+
+11
+00:00:43,603 --> 00:00:48,061
+Or build one from nothing, if
+the way you work is your own.
+
+12
+00:00:48,515 --> 00:00:53,788
+And the jobs already on the board can be
+moved onto the new steps, rather than left
+
+13
+00:00:53,788 --> 00:00:55,249
+behind on the old ones.
+
+14
+00:00:55,701 --> 00:00:59,927
+Next: the work that
+comes round again by itself.
+

@@ -304,6 +304,17 @@ interface Recorder {
 
 const SCREENRECORD_LIMIT_SEC = 180;
 
+/*
+ * ⚠️ THE 180-SECOND CAP IS THE GUEST RECORDER'S, NOT THE EMULATOR'S.
+ *
+ * `adb shell screenrecord` stops there and says nothing. QEMU's own recorder
+ * has no such limit, and it needs the room: this emulator spends far longer on
+ * a flow than the narration it is pacing to — a take paced to 30 seconds of
+ * ElevenLabs voice ran 322 — so capping it at 180 would throw away the end of
+ * every video for a reason that does not apply to it.
+ */
+const EMULATOR_LIMIT_SEC = 900;
+
 async function startRecording(
   phone: Phone,
   device: string,
@@ -347,7 +358,7 @@ async function startRecording(
     await fs.rm(hostOut, { force: true });
     await run(ADB, [
       '-s', device, 'emu', 'screenrecord', 'start',
-      '--time-limit', String(SCREENRECORD_LIMIT_SEC),
+      '--time-limit', String(EMULATOR_LIMIT_SEC),
       hostOut,
     ]);
     return {
@@ -708,9 +719,10 @@ export async function captureMobile(options: MobileStageOptions): Promise<Timeli
     and says nothing — the file is valid, simply short, and the take looks like
     a flow that quietly failed near the end. Better to name it.
   */
-  if (rawDuration > 178 && wallSec > rawDuration + 2) {
+  const recorderLimit = /^emulator-/.test(device) ? EMULATOR_LIMIT_SEC : SCREENRECORD_LIMIT_SEC;
+  if (rawDuration > recorderLimit - 2 && wallSec > rawDuration + 2) {
     throw new Error(
-      `The recording hit adb's 180-second limit while the flow ran for ${wallSec.toFixed(0)}s — ` +
+      `The recording hit its ${recorderLimit}s limit while the flow ran for ${wallSec.toFixed(0)}s — ` +
         'the end of the take was never filmed. Shorten the flow, or split the video.',
     );
   }
@@ -792,11 +804,101 @@ export async function captureMobile(options: MobileStageOptions): Promise<Timeli
     };
   });
 
+  /*
+    ⚠️ CLOSE THE DEAD AIR, OR THE EMULATOR SETS THE PACE.
+
+    A beat is held until its narration finishes — that is the whole pacing
+    trick — but the phone also has to DO the beat, and on a loaded emulator a
+    tap that a person would not notice takes a minute. Paced to 30 seconds of
+    voice, a take came back 5 minutes 35 long: the same three sentences, with
+    four and a half minutes of a motionless screen between them.
+
+    So each beat's footage is squeezed to fit its own narration, and the gaps
+    BETWEEN beats — which are pure driver overhead and were never meant to be
+    seen — are squeezed to almost nothing. Speeding up rather than cutting,
+    because the waiting is the only thing being removed: every tap and every
+    transition is still there, just at the speed the phone would have run at if
+    the machine had not been busy.
+
+    A real device barely triggers this — the factors come out near 1 and the
+    footage passes through.
+  */
+  const GAP_SEC = 0.35;
+  const MAX_SPEED = 12;
+
+  type Span = { fromSec: number; toSec: number; targetSec: number };
+  const spans: Span[] = [];
+  const condensed: BeatMark[] = [];
+
+  let readHead = Math.max(0, beats[0].startSec - LEAD_IN_SEC);
+  let writeHead = 0;
+
+  // The lead-in, at its own speed: it is the only footage meant to be watched
+  // before anybody is speaking.
+  if (beats[0].startSec > readHead) {
+    const lead = beats[0].startSec - readHead;
+    spans.push({ fromSec: readHead, toSec: beats[0].startSec, targetSec: lead });
+    writeHead += lead;
+    readHead = beats[0].startSec;
+  }
+
+  for (const b of beats) {
+    if (b.startSec > readHead) {
+      spans.push({ fromSec: readHead, toSec: b.startSec, targetSec: GAP_SEC });
+      writeHead += GAP_SEC;
+    }
+    const actual = Math.max(0.1, b.endSec - b.startSec);
+    const wanted = (options.narrationDurations[b.id] ?? 0) + TAIL_SEC;
+    const target = Math.max(Math.min(actual, wanted), actual / MAX_SPEED);
+
+    spans.push({ fromSec: b.startSec, toSec: b.endSec, targetSec: target });
+    condensed.push({ ...b, startSec: writeHead, endSec: writeHead + target });
+    writeHead += target;
+    readHead = b.endSec;
+  }
+
+  if (durationSec > readHead + 0.1) {
+    spans.push({ fromSec: readHead, toSec: durationSec, targetSec: Math.min(durationSec - readHead, 1) });
+  }
+
+  const needsCondensing = spans.some(
+    (sp) => Math.abs((sp.toSec - sp.fromSec) - sp.targetSec) > 0.25,
+  );
+
+  if (!needsCondensing) {
+    return {
+      videoPath,
+      durationSec,
+      preRollSec: Math.max(0, firstMark - cutSec),
+      beats,
+    };
+  }
+
+  const condensedPath = path.join(dir, 'screen-condensed.mp4');
+  const parts = spans.map((sp, i) => {
+    const span = Math.max(0.05, sp.toSec - sp.fromSec);
+    const speed = span / sp.targetSec;
+    return (
+      `[0:v]trim=${sp.fromSec.toFixed(3)}:${sp.toSec.toFixed(3)},` +
+      `setpts=(PTS-STARTPTS)/${speed.toFixed(6)}[v${i}]`
+    );
+  });
+  const chain =
+    `${parts.join(';')};${spans.map((_, i) => `[v${i}]`).join('')}concat=n=${spans.length}:v=1:a=0[out]`;
+
+  await run('ffmpeg', [
+    '-y', '-loglevel', 'error',
+    '-i', videoPath,
+    '-filter_complex', chain,
+    '-map', '[out]',
+    '-an',
+    condensedPath,
+  ]);
+
   return {
-    videoPath,
-    durationSec,
-    // What is left of the approach after the cut — the lead-in, near enough.
-    preRollSec: Math.max(0, firstMark - cutSec),
-    beats,
+    videoPath: condensedPath,
+    durationSec: await probeDurationSec(condensedPath),
+    preRollSec: condensed[0].startSec,
+    beats: condensed,
   };
 }

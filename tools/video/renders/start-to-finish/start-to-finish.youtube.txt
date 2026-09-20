@@ -1,14 +1,15 @@
 TITLE
-Clocking in from the field — HBCField
+A job from start to finish — HBCField
 
 DESCRIPTION
-A field engineer starts a shift from the depot — the first video captured on a phone rather than a browser.
+Every job moves through the steps its workspace chose — and each step turns something on. Setting off starts recording the route; arriving stops it; finishing asks for the write-up the client signs. Here is one job through all of it.
 
 Chapters
-0:00 Clocking in from the field
-0:04 Her day, on her phone
-1:05 The clock
-4:48 Starting the shift
+0:00 A job from start to finish
+0:10 The steps
+0:25 On the road
+0:39 On site
+0:46 Written up
 
 Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
 
@@ -19,8 +20,8 @@ Everyone and every company shown in this video is fictional. No real
 customer or staff data appears at any point.
 
 UPLOAD CHECKLIST
-  [ ] Upload mobile-clock.mp4
-  [ ] Add each mobile-clock.<locale>.srt under Subtitles
+  [ ] Upload start-to-finish.mp4
+  [ ] Add each start-to-finish.<locale>.srt under Subtitles
   [ ] Paste the description above (chapters come with it)
   [ ] Copy the video id from the URL into
       packages/shared/src/video-guides.ts → 

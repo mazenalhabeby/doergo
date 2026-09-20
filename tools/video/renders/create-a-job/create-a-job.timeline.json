@@ -1,0 +1,79 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/create-a-job/capture/page@73d200474c8ed46e310f7a4d56d48a38.webm",
+  "durationSec": 173.72,
+  "preRollSec": 4.764999999999986,
+  "beats": [
+    {
+      "id": "theBoard",
+      "startSec": 4.764999999999986,
+      "endSec": 18.462999999999987,
+      "narrationSec": 13.235375
+    },
+    {
+      "id": "theViews",
+      "startSec": 18.466999999999985,
+      "endSec": 32.38599999999998,
+      "narrationSec": 13.467583
+    },
+    {
+      "id": "theSearch",
+      "startSec": 32.38599999999998,
+      "endSec": 43.006999999999984,
+      "narrationSec": 10.170354
+    },
+    {
+      "id": "newJob",
+      "startSec": 43.00799999999999,
+      "endSec": 56.277999999999984,
+      "narrationSec": 12.817417
+    },
+    {
+      "id": "theClient",
+      "startSec": 56.27899999999999,
+      "endSec": 70.61899999999999,
+      "narrationSec": 13.885542
+    },
+    {
+      "id": "assign",
+      "startSec": 70.61999999999999,
+      "endSec": 82.03199999999998,
+      "narrationSec": 10.959833
+    },
+    {
+      "id": "theJob",
+      "startSec": 82.03299999999999,
+      "endSec": 95.951,
+      "narrationSec": 13.467583
+    },
+    {
+      "id": "theChecklist",
+      "startSec": 95.95199999999998,
+      "endSec": 112.42499999999998,
+      "narrationSec": 16.021771
+    },
+    {
+      "id": "theWork",
+      "startSec": 112.42599999999999,
+      "endSec": 128.34099999999998,
+      "narrationSec": 15.4645
+    },
+    {
+      "id": "theSteps",
+      "startSec": 128.34099999999998,
+      "endSec": 140.82,
+      "narrationSec": 12.027938
+    },
+    {
+      "id": "theComment",
+      "startSec": 140.82,
+      "endSec": 156.13199999999998,
+      "narrationSec": 14.860771
+    },
+    {
+      "id": "theTrail",
+      "startSec": 156.13299999999998,
+      "endSec": 173.72,
+      "narrationSec": 17.136333
+    }
+  ]
+}

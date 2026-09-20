@@ -1,0 +1,35 @@
+TITLE
+A job, start to finish — HBCField
+
+DESCRIPTION
+How the office sees its work, how a job is raised against a client, and everything a job holds once somebody is actually doing it.
+
+Chapters
+0:00 A job, start to finish
+0:08 The board
+0:21 Three ways to look
+0:35 Finding one
+0:46 Raising one
+0:59 Whose job it is
+1:14 Who does it
+1:25 The record
+1:39 What the job is
+1:55 The work itself
+2:11 Moving it along
+2:24 Talking about it
+2:39 What it remembers
+
+Subtitles are available in EN, DE — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload create-a-job.mp4
+  [ ] Add each create-a-job.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → "tasksTour", "taskDetailTour"

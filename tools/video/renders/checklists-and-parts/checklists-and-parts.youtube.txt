@@ -1,0 +1,27 @@
+TITLE
+Checklists and sub-jobs — HBCField
+
+DESCRIPTION
+A job is rarely one thing. A checklist says what finished means, sub-jobs split work that needs two visits or two trades, and the attachments are where the evidence from site lands. None of it is compulsory — all of it is there when somebody asks what happened.
+
+Chapters
+0:00 Checklists and sub-jobs
+0:10 More than a title
+0:17 What finished means
+0:34 Two visits
+0:47 What comes back
+
+Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
+
+More at https://hbcfield.com
+
+---
+Everyone and every company shown in this video is fictional. No real
+customer or staff data appears at any point.
+
+UPLOAD CHECKLIST
+  [ ] Upload checklists-and-parts.mp4
+  [ ] Add each checklists-and-parts.<locale>.srt under Subtitles
+  [ ] Paste the description above (chapters come with it)
+  [ ] Copy the video id from the URL into
+      packages/shared/src/video-guides.ts → 

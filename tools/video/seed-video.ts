@@ -129,6 +129,15 @@ async function destroyPreviousRun(): Promise<void> {
   await prisma.assetCategory.deleteMany({ where: { organizationId: orgId } });
   await prisma.invoiceItem.deleteMany({ where: { invoice: { organizationId: orgId } } });
   await prisma.invoice.deleteMany({ where: { organizationId: orgId } });
+  /*
+    ⚠️ ANYTHING A VIDEO CREATES MUST BE CLEARED HERE TOO, and the failure is
+    not obvious: the seed dies on a foreign key from a table nobody thought
+    about, hours later, on a re-run. Video 09 makes a recurring template, which
+    points at the member who created it, so deleting the members fails until it
+    is gone.
+  */
+  await prisma.recurringTaskTemplate.deleteMany({ where: { organizationId: orgId } });
+  await prisma.serviceReport.deleteMany({ where: { organizationId: orgId } });
   await prisma.comment.deleteMany({ where: { task: { organizationId: orgId } } });
   await prisma.taskEvent.deleteMany({ where: { task: { organizationId: orgId } } });
   await prisma.task.deleteMany({ where: { organizationId: orgId } });

@@ -1,0 +1,60 @@
+1
+00:00:08,832 --> 00:00:13,843
+Las columnas de este tablero no son un
+hecho sobre el trabajo. Son una decisión de
+
+2
+00:00:13,843 --> 00:00:14,637
+este espacio.
+
+3
+00:00:15,090 --> 00:00:22,892
+Detrás hay un tipo de trabajo: los pasos
+que da un trabajo aquí, y en qué orden.
+
+4
+00:00:23,344 --> 00:00:28,313
+Puede leerlo entero en una línea, y de
+eso se trata: nadie debería tener que
+
+5
+00:00:28,313 --> 00:00:30,078
+adivinar qué viene después.
+
+6
+00:00:30,531 --> 00:00:35,342
+Si su oficio es de los habituales,
+alguien ya lo ha dibujado. Tómelo de la
+
+7
+00:00:35,342 --> 00:00:36,057
+biblioteca.
+
+8
+00:00:36,509 --> 00:00:42,493
+Lo que obtiene es su propia copia.
+Cámbiela como quiera: ningún otro espacio se ve
+
+9
+00:00:42,493 --> 00:00:43,150
+afectado.
+
+10
+00:00:43,603 --> 00:00:48,061
+O constrúyalo desde cero, si su
+manera de trabajar es propia.
+
+11
+00:00:48,515 --> 00:00:53,643
+Y los trabajos que ya están en el tablero
+pueden pasarse a los pasos nuevos, en vez
+
+12
+00:00:53,643 --> 00:00:55,249
+de quedarse en los viejos.
+
+13
+00:00:55,701 --> 00:00:59,927
+A continuación: el
+trabajo que vuelve solo.
+

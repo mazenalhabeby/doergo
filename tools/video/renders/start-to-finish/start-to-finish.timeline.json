@@ -1,0 +1,55 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/start-to-finish/capture/page@e645a58a702f81f6f537c65ee73d2bf2.webm",
+  "durationSec": 66.52,
+  "preRollSec": 6.810999999999993,
+  "beats": [
+    {
+      "id": "theSteps",
+      "startSec": 6.810999999999993,
+      "endSec": 15.156999999999993,
+      "narrationSec": 7.894792
+    },
+    {
+      "id": "whoMovesIt",
+      "startSec": 15.156999999999993,
+      "endSec": 21.737999999999992,
+      "narrationSec": 6.130083
+    },
+    {
+      "id": "settingOff",
+      "startSec": 21.737999999999992,
+      "endSec": 29.990999999999993,
+      "narrationSec": 7.801917
+    },
+    {
+      "id": "arriving",
+      "startSec": 29.990999999999993,
+      "endSec": 36.47899999999999,
+      "narrationSec": 6.037188
+    },
+    {
+      "id": "working",
+      "startSec": 36.47899999999999,
+      "endSec": 42.827999999999996,
+      "narrationSec": 5.897875
+    },
+    {
+      "id": "theWriteUp",
+      "startSec": 42.827999999999996,
+      "endSec": 50.05899999999999,
+      "narrationSec": 6.780229
+    },
+    {
+      "id": "whatItHolds",
+      "startSec": 50.059999999999995,
+      "endSec": 59.706999999999994,
+      "narrationSec": 9.195104
+    },
+    {
+      "id": "whereNext",
+      "startSec": 59.706999999999994,
+      "endSec": 66.52,
+      "narrationSec": 6.362271
+    }
+  ]
+}

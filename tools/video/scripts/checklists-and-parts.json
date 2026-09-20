@@ -1,0 +1,135 @@
+{
+  "id": "checklists-and-parts",
+  "tourIds": [],
+  "title": {
+    "en": "Checklists and sub-jobs",
+    "de": "Checklisten und Teilaufträge",
+    "es": "Listas y subtrabajos",
+    "fr": "Listes et sous-tâches",
+    "it": "Liste e sotto-lavori"
+  },
+  "subtitle": {
+    "en": "The small parts that make a job provable",
+    "de": "Die kleinen Teile, die einen Auftrag beweisbar machen",
+    "es": "Las partes pequeñas que hacen demostrable un trabajo",
+    "fr": "Les petites choses qui rendent une intervention prouvable",
+    "it": "Le piccole parti che rendono un lavoro dimostrabile"
+  },
+  "description": {
+    "en": "A job is rarely one thing. A checklist says what finished means, sub-jobs split work that needs two visits or two trades, and the attachments are where the evidence from site lands. None of it is compulsory — all of it is there when somebody asks what happened.",
+    "de": "Ein Auftrag ist selten eine einzige Sache. Eine Checkliste sagt, was „fertig“ heißt, Teilaufträge trennen Arbeit, die zwei Besuche oder zwei Gewerke braucht, und die Anhänge sind der Ort, an dem die Belege von vor Ort landen. Nichts davon ist Pflicht — alles ist da, wenn jemand fragt.",
+    "es": "Un trabajo rara vez es una sola cosa. Una lista dice qué significa «terminado», los subtrabajos separan lo que necesita dos visitas o dos oficios, y los adjuntos son donde aterriza lo que se trae del sitio. Nada de esto es obligatorio; todo está ahí cuando alguien pregunta qué pasó.",
+    "fr": "Une intervention est rarement une seule chose. Une liste dit ce que « terminé » veut dire, les sous-tâches séparent ce qui demande deux visites ou deux métiers, et les pièces jointes sont là où atterrit ce qui vient du terrain. Rien n'est obligatoire — tout est là quand on demande ce qui s'est passé.",
+    "it": "Un lavoro è raramente una cosa sola. Una lista dice che cosa significa «finito», i sotto-lavori separano ciò che richiede due visite o due mestieri, e gli allegati sono dove atterra ciò che arriva dal posto. Niente di tutto questo è obbligatorio: c'è tutto quando qualcuno chiede che cosa è successo."
+  },
+  "beats": [
+    {
+      "id": "rarelyOneThing",
+      "narration": {
+        "en": "A job is rarely one thing, and the person who raised it usually knows more than the title says.",
+        "de": "Ein Auftrag ist selten eine einzige Sache — und wer ihn anlegt, weiß meist mehr, als im Titel steht.",
+        "es": "Un trabajo rara vez es una sola cosa, y quien lo crea suele saber más de lo que dice el título.",
+        "fr": "Une intervention est rarement une seule chose, et celui qui la crée en sait généralement plus que le titre.",
+        "it": "Un lavoro è raramente una cosa sola, e chi lo crea di solito sa più di quanto dica il titolo."
+      },
+      "chapter": {
+        "en": "More than a title",
+        "de": "Mehr als ein Titel",
+        "es": "Más que un título",
+        "fr": "Plus qu'un titre",
+        "it": "Più di un titolo"
+      }
+    },
+    {
+      "id": "whatFinishedMeans",
+      "narration": {
+        "en": "A checklist is how you say what finished means, before somebody drives out there.",
+        "de": "Mit einer Checkliste sagen Sie, was „fertig“ heißt — bevor jemand hinausfährt.",
+        "es": "Una lista es cómo se dice qué significa «terminado», antes de que alguien conduzca hasta allí.",
+        "fr": "Une liste, c'est la façon de dire ce que « terminé » veut dire, avant que quelqu'un prenne la route.",
+        "it": "Una lista è il modo di dire che cosa significa «finito», prima che qualcuno si metta in strada."
+      },
+      "chapter": {
+        "en": "What finished means",
+        "de": "Was „fertig“ heißt",
+        "es": "Qué es «terminado»",
+        "fr": "Ce que « terminé » veut dire",
+        "it": "Che cosa vuol dire «finito»"
+      }
+    },
+    {
+      "id": "itemByItem",
+      "narration": {
+        "en": "Item by item, in the order somebody would actually do them.",
+        "de": "Punkt für Punkt — in der Reihenfolge, in der man sie wirklich abarbeitet.",
+        "es": "Punto por punto, en el orden en que alguien los haría de verdad.",
+        "fr": "Point par point, dans l'ordre où on les ferait vraiment.",
+        "it": "Punto per punto, nell'ordine in cui li farebbe davvero qualcuno."
+      }
+    },
+    {
+      "id": "tickedOnSite",
+      "narration": {
+        "en": "They get ticked on site, from the phone, as the work is done.",
+        "de": "Abgehakt wird vor Ort, am Telefon, während die Arbeit läuft.",
+        "es": "Se marcan en el sitio, desde el teléfono, según se va haciendo el trabajo.",
+        "fr": "Ils sont cochés sur place, depuis le téléphone, au fur et à mesure.",
+        "it": "Vengono spuntati sul posto, dal telefono, mentre il lavoro procede."
+      }
+    },
+    {
+      "id": "twoVisits",
+      "narration": {
+        "en": "When one job needs two visits, or two trades, it splits rather than sprawls.",
+        "de": "Braucht ein Auftrag zwei Besuche oder zwei Gewerke, wird er geteilt statt ausufernd.",
+        "es": "Cuando un trabajo necesita dos visitas, o dos oficios, se divide en vez de desbordarse.",
+        "fr": "Quand une intervention demande deux visites, ou deux métiers, elle se divise au lieu de s'étaler.",
+        "it": "Quando un lavoro richiede due visite, o due mestieri, si divide invece di dilagare."
+      },
+      "chapter": {
+        "en": "Two visits",
+        "de": "Zwei Besuche",
+        "es": "Dos visitas",
+        "fr": "Deux visites",
+        "it": "Due visite"
+      }
+    },
+    {
+      "id": "eachOneReal",
+      "narration": {
+        "en": "Each part is a job in its own right, with its own person and its own finish.",
+        "de": "Jeder Teil ist ein eigener Auftrag — mit eigener Person und eigenem Abschluss.",
+        "es": "Cada parte es un trabajo por derecho propio, con su persona y su final.",
+        "fr": "Chaque partie est une intervention à part entière, avec sa personne et sa fin.",
+        "it": "Ogni parte è un lavoro a sé, con la sua persona e la sua conclusione."
+      }
+    },
+    {
+      "id": "whatComesBack",
+      "narration": {
+        "en": "And this is where what comes back from site lands — the photographs, the paperwork, whatever was signed.",
+        "de": "Und hier landet, was von vor Ort zurückkommt: die Fotos, die Papiere, alles Unterschriebene.",
+        "es": "Y aquí aterriza lo que vuelve del sitio: las fotos, los papeles, lo que se haya firmado.",
+        "fr": "Et c'est ici qu'atterrit ce qui revient du terrain : les photos, les papiers, ce qui a été signé.",
+        "it": "Ed è qui che atterra ciò che torna dal posto: le foto, i documenti, qualunque cosa sia stata firmata."
+      },
+      "chapter": {
+        "en": "What comes back",
+        "de": "Was zurückkommt",
+        "es": "Lo que vuelve",
+        "fr": "Ce qui revient",
+        "it": "Ciò che torna"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "All of it on one page, months later, without anybody having kept a folder.",
+        "de": "Alles auf einer Seite, Monate später, ohne dass jemand einen Ordner geführt hätte.",
+        "es": "Todo en una página, meses después, sin que nadie haya mantenido una carpeta.",
+        "fr": "Le tout sur une page, des mois plus tard, sans que personne n'ait tenu un classeur.",
+        "it": "Tutto su una pagina, mesi dopo, senza che nessuno abbia tenuto una cartella."
+      }
+    }
+  ]
+}

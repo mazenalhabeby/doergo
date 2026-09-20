@@ -1,0 +1,49 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/work-that-repeats/capture/page@f1f4c910fa5d6b246480e3b3e2b9e104.webm",
+  "durationSec": 53.88,
+  "preRollSec": 4.214000000000006,
+  "beats": [
+    {
+      "id": "theSameVisit",
+      "startSec": 4.214000000000006,
+      "endSec": 11.446000000000005,
+      "narrationSec": 6.780229
+    },
+    {
+      "id": "describeItOnce",
+      "startSec": 11.447000000000006,
+      "endSec": 20.082000000000008,
+      "narrationSec": 7.012438
+    },
+    {
+      "id": "howOften",
+      "startSec": 20.082000000000008,
+      "endSec": 26.014000000000006,
+      "narrationSec": 5.479917
+    },
+    {
+      "id": "whenItStarts",
+      "startSec": 26.015000000000004,
+      "endSec": 30.883000000000006,
+      "narrationSec": 4.411792
+    },
+    {
+      "id": "saveIt",
+      "startSec": 30.884000000000007,
+      "endSec": 36.49100000000001,
+      "narrationSec": 5.154833
+    },
+    {
+      "id": "itRunsItself",
+      "startSec": 36.492000000000004,
+      "endSec": 46.23100000000001,
+      "narrationSec": 9.287979
+    },
+    {
+      "id": "whereNext",
+      "startSec": 46.23100000000001,
+      "endSec": 53.88,
+      "narrationSec": 7.198188
+    }
+  ]
+}

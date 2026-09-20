@@ -1,0 +1,135 @@
+{
+  "id": "start-to-finish",
+  "tourIds": [],
+  "title": {
+    "en": "A job from start to finish",
+    "de": "Ein Auftrag von Anfang bis Ende",
+    "es": "Un trabajo de principio a fin",
+    "fr": "Une intervention du début à la fin",
+    "it": "Un lavoro dall'inizio alla fine"
+  },
+  "subtitle": {
+    "en": "Accepted, on the road, on site, done — and written up",
+    "de": "Angenommen, unterwegs, vor Ort, erledigt — und dokumentiert",
+    "es": "Aceptado, en camino, en el sitio, hecho — y documentado",
+    "fr": "Acceptée, en route, sur place, terminée — et consignée",
+    "it": "Accettato, in viaggio, sul posto, finito — e messo per iscritto"
+  },
+  "description": {
+    "en": "Every job moves through the steps its workspace chose — and each step turns something on. Setting off starts recording the route; arriving stops it; finishing asks for the write-up the client signs. Here is one job through all of it.",
+    "de": "Jeder Auftrag durchläuft die Schritte, die sein Arbeitsbereich gewählt hat — und jeder Schritt schaltet etwas ein. Die Abfahrt startet die Wegaufzeichnung, die Ankunft beendet sie, der Abschluss verlangt den Bericht, den der Kunde unterschreibt. Hier ein Auftrag durch alles hindurch.",
+    "es": "Cada trabajo recorre los pasos que eligió su espacio de trabajo, y cada paso enciende algo. Salir empieza a registrar la ruta; llegar la detiene; terminar pide el informe que firma el cliente. Aquí va un trabajo por todo ello.",
+    "fr": "Chaque intervention suit les étapes choisies par son espace de travail — et chaque étape déclenche quelque chose. Le départ lance l'enregistrement du trajet, l'arrivée l'arrête, la fin réclame le compte rendu que le client signe. Voici une intervention de bout en bout.",
+    "it": "Ogni lavoro attraversa i passaggi scelti dal suo spazio di lavoro, e ogni passaggio accende qualcosa. Partire avvia la registrazione del percorso; arrivare la ferma; finire chiede il rapporto che il cliente firma. Ecco un lavoro attraverso tutto."
+  },
+  "beats": [
+    {
+      "id": "theSteps",
+      "narration": {
+        "en": "Along the top of every job are the steps it goes through — the ones this workspace chose, in its own words.",
+        "de": "Oben auf jedem Auftrag stehen die Schritte, die er durchläuft — die, die dieser Arbeitsbereich gewählt hat, in seinen eigenen Worten.",
+        "es": "En la parte superior de cada trabajo están los pasos por los que pasa: los que eligió este espacio, con sus propias palabras.",
+        "fr": "En haut de chaque intervention figurent les étapes qu'elle traverse — celles que cet espace de travail a choisies, dans ses propres mots.",
+        "it": "In cima a ogni lavoro ci sono i passaggi che attraversa: quelli scelti da questo spazio di lavoro, con le sue parole."
+      },
+      "chapter": {
+        "en": "The steps",
+        "de": "Die Schritte",
+        "es": "Los pasos",
+        "fr": "Les étapes",
+        "it": "I passaggi"
+      }
+    },
+    {
+      "id": "whoMovesIt",
+      "narration": {
+        "en": "The person doing the work moves it along from their phone. From a desk it is the same button.",
+        "de": "Wer die Arbeit macht, schiebt ihn vom Telefon aus weiter. Vom Schreibtisch aus ist es dieselbe Schaltfläche.",
+        "es": "Quien hace el trabajo lo va moviendo desde su teléfono. Desde el escritorio es el mismo botón.",
+        "fr": "La personne qui fait le travail la fait avancer depuis son téléphone. Depuis un bureau, c'est le même bouton.",
+        "it": "Chi fa il lavoro lo fa avanzare dal telefono. Dalla scrivania è lo stesso pulsante."
+      }
+    },
+    {
+      "id": "settingOff",
+      "narration": {
+        "en": "When they set off, the app begins recording the road they actually take. Not a straight line — the route.",
+        "de": "Bei der Abfahrt beginnt die App, den tatsächlich gefahrenen Weg aufzuzeichnen. Keine gerade Linie — die echte Route.",
+        "es": "Cuando salen, la aplicación empieza a registrar el camino que realmente toman. No una línea recta: la ruta.",
+        "fr": "Au départ, l'application commence à enregistrer la route réellement empruntée. Pas une ligne droite — le trajet.",
+        "it": "Quando partono, l'app inizia a registrare la strada che percorrono davvero. Non una linea retta: il percorso."
+      },
+      "chapter": {
+        "en": "On the road",
+        "de": "Unterwegs",
+        "es": "En camino",
+        "fr": "En route",
+        "it": "In viaggio"
+      }
+    },
+    {
+      "id": "arriving",
+      "narration": {
+        "en": "Arriving stops the recording, and the job now knows how far it was and how long it took.",
+        "de": "Die Ankunft beendet die Aufzeichnung — und der Auftrag weiß nun, wie weit es war und wie lange es gedauert hat.",
+        "es": "Llegar detiene el registro, y el trabajo ya sabe cuánto había y cuánto se tardó.",
+        "fr": "L'arrivée arrête l'enregistrement, et l'intervention sait désormais la distance et le temps qu'il a fallu.",
+        "it": "L'arrivo ferma la registrazione, e il lavoro ora sa quanto era lontano e quanto ci è voluto."
+      }
+    },
+    {
+      "id": "working",
+      "narration": {
+        "en": "Then the work itself, with the clock running against this job and nothing else.",
+        "de": "Dann die Arbeit selbst — und die Uhr läuft für diesen Auftrag und für nichts anderes.",
+        "es": "Después, el trabajo en sí, con el reloj corriendo contra este trabajo y ningún otro.",
+        "fr": "Puis le travail lui-même, avec le temps compté sur cette intervention et sur aucune autre.",
+        "it": "Poi il lavoro stesso, con il tempo che corre su questo lavoro e su nessun altro."
+      },
+      "chapter": {
+        "en": "On site",
+        "de": "Vor Ort",
+        "es": "En el sitio",
+        "fr": "Sur place",
+        "it": "Sul posto"
+      }
+    },
+    {
+      "id": "theWriteUp",
+      "narration": {
+        "en": "Finishing asks for the write-up. Here is one somebody finished yesterday.",
+        "de": "Der Abschluss verlangt die Dokumentation. Hier ist eine von gestern.",
+        "es": "Terminar pide el informe. Aquí hay uno que alguien acabó ayer.",
+        "fr": "Terminer réclame le compte rendu. En voici un, terminé hier.",
+        "it": "Finire chiede il rapporto. Eccone uno finito ieri."
+      },
+      "chapter": {
+        "en": "Written up",
+        "de": "Dokumentiert",
+        "es": "El informe",
+        "fr": "Le compte rendu",
+        "it": "Il rapporto"
+      }
+    },
+    {
+      "id": "whatItHolds",
+      "narration": {
+        "en": "What was wrong, what was done about it, how long it took, the parts fitted — and the client's own signature.",
+        "de": "Was defekt war, was dagegen getan wurde, wie lange es gedauert hat, welche Teile verbaut wurden — und die Unterschrift des Kunden.",
+        "es": "Qué fallaba, qué se hizo, cuánto se tardó, las piezas montadas — y la firma del propio cliente.",
+        "fr": "Ce qui n'allait pas, ce qui a été fait, le temps passé, les pièces posées — et la signature du client lui-même.",
+        "it": "Che cosa non andava, che cosa è stato fatto, quanto è durato, i pezzi montati — e la firma del cliente stesso."
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "That page is what an invoice is built from, and what anybody asking in six months will read.",
+        "de": "Diese Seite ist die Grundlage der Rechnung — und das, was in sechs Monaten jemand nachliest.",
+        "es": "Esa página es de donde sale la factura, y lo que leerá quien pregunte dentro de seis meses.",
+        "fr": "Cette page est ce à partir de quoi se construit une facture, et ce que lira toute personne qui posera la question dans six mois.",
+        "it": "Quella pagina è ciò da cui nasce una fattura, e ciò che leggerà chi farà domande fra sei mesi."
+      }
+    }
+  ]
+}

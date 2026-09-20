@@ -1,14 +1,14 @@
 TITLE
-Clocking in from the field — HBCField
+Work that repeats — HBCField
 
 DESCRIPTION
-A field engineer starts a shift from the depot — the first video captured on a phone rather than a browser.
+Half of field service is the same visit at the same interval: the quarterly service, the annual test, the monthly check. Describe it once and the job raises itself, assigned, ahead of the date — so nobody's memory is the thing keeping a contract.
 
 Chapters
-0:00 Clocking in from the field
-0:04 Her day, on her phone
-1:05 The clock
-4:48 Starting the shift
+0:00 Work that repeats
+0:07 The same visit
+0:14 Describe it once
+0:39 It runs itself
 
 Subtitles are available in EN, DE, ES, FR, IT — YouTube will pick yours automatically, or choose one from the CC menu.
 
@@ -19,8 +19,8 @@ Everyone and every company shown in this video is fictional. No real
 customer or staff data appears at any point.
 
 UPLOAD CHECKLIST
-  [ ] Upload mobile-clock.mp4
-  [ ] Add each mobile-clock.<locale>.srt under Subtitles
+  [ ] Upload work-that-repeats.mp4
+  [ ] Add each work-that-repeats.<locale>.srt under Subtitles
   [ ] Paste the description above (chapters come with it)
   [ ] Copy the video id from the URL into
       packages/shared/src/video-guides.ts → 

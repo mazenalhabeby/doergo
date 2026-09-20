@@ -1,0 +1,153 @@
+{
+  "id": "create-a-job",
+  "tourIds": [
+    "tasksTour",
+    "taskDetailTour"
+  ],
+  "title": {
+    "en": "A job, start to finish",
+    "de": "Ein Auftrag, von Anfang bis Ende"
+  },
+  "subtitle": {
+    "en": "The board, the record, and the work",
+    "de": "Die Tafel, der Datensatz und die Arbeit"
+  },
+  "description": {
+    "en": "How the office sees its work, how a job is raised against a client, and everything a job holds once somebody is actually doing it.",
+    "de": "Wie das Büro seine Arbeit sieht, wie ein Auftrag für einen Kunden angelegt wird — und was ein Auftrag alles enthält, sobald jemand ihn tatsächlich ausführt."
+  },
+  "beats": [
+    {
+      "id": "theBoard",
+      "chapter": {
+        "en": "The board",
+        "de": "Die Tafel"
+      },
+      "narration": {
+        "en": "This is everything Halstead has on today. One board, every job, sorted by the state it is in — so the column a job sits in tells you where it has got to without opening anything.",
+        "de": "Das ist alles, was bei Halstead heute ansteht. Eine Tafel, alle Aufträge, sortiert nach ihrem Zustand — die Spalte, in der ein Auftrag steht, sagt Ihnen also, wie weit er ist, ohne dass Sie irgendetwas öffnen müssen."
+      }
+    },
+    {
+      "id": "theViews",
+      "chapter": {
+        "en": "Three ways to look",
+        "de": "Drei Blickwinkel"
+      },
+      "narration": {
+        "en": "The same work, read three ways. The board for what is moving, the table when you want to sort and compare a hundred rows, and the schedule when the question is what day something lands on.",
+        "de": "Dieselbe Arbeit, dreifach gelesen. Die Tafel für das, was in Bewegung ist, die Tabelle, wenn Sie hundert Zeilen sortieren und vergleichen wollen, und der Kalender, wenn die Frage lautet, auf welchen Tag etwas fällt."
+      }
+    },
+    {
+      "id": "theSearch",
+      "chapter": {
+        "en": "Finding one",
+        "de": "Einen finden"
+      },
+      "narration": {
+        "en": "And when a client rings about one specific thing, you search for it. Title, client, whoever is on it — you rarely need to remember more than a word of it.",
+        "de": "Und wenn ein Kunde wegen einer bestimmten Sache anruft, suchen Sie danach. Titel, Kunde, wer daran arbeitet — mehr als ein Wort müssen Sie sich selten merken."
+      }
+    },
+    {
+      "id": "newJob",
+      "chapter": {
+        "en": "Raising one",
+        "de": "Einen anlegen"
+      },
+      "narration": {
+        "en": "A new job starts with the thing that actually needs doing. Write it the way you would say it on the phone, and set how much of a hurry it is in — the rest of the form waits until you need it.",
+        "de": "Ein neuer Auftrag beginnt mit dem, was tatsächlich zu tun ist. Schreiben Sie es so, wie Sie es am Telefon sagen würden, und legen Sie fest, wie eilig es ist — der Rest des Formulars wartet, bis Sie ihn brauchen."
+      }
+    },
+    {
+      "id": "theClient",
+      "chapter": {
+        "en": "Whose job it is",
+        "de": "Für wen der Auftrag ist"
+      },
+      "narration": {
+        "en": "Choosing the client brings their address across with it. Pin that address on the map once, and every job there afterwards knows where it is — the route, the arrival and the time on site all follow from it.",
+        "de": "Den Kunden zu wählen, bringt seine Adresse gleich mit. Setzen Sie diese Adresse einmal auf der Karte, und jeder weitere Auftrag dort weiß, wo er liegt — Route, Ankunft und Zeit vor Ort ergeben sich daraus."
+      }
+    },
+    {
+      "id": "assign",
+      "chapter": {
+        "en": "Who does it",
+        "de": "Wer ihn ausführt"
+      },
+      "narration": {
+        "en": "Then the person. They get it on their phone the moment you save, with the address already on it — nobody is ringing the depot to ask where they are going.",
+        "de": "Dann die Person. Sie erhält den Auftrag samt Adresse in dem Moment, in dem Sie speichern — niemand ruft im Depot an, um zu fragen, wohin es geht."
+      }
+    },
+    {
+      "id": "theJob",
+      "chapter": {
+        "en": "The record",
+        "de": "Der Datensatz"
+      },
+      "narration": {
+        "en": "The job now has a page of its own, and this is where it lives for the rest of its life. Everything about it is on one screen: what it is, who it belongs to, and how far along it has got.",
+        "de": "Der Auftrag hat jetzt eine eigene Seite, und dort lebt er für den Rest seines Bestehens. Alles dazu steht auf einem Bildschirm: worum es geht, zu wem er gehört und wie weit er ist."
+      }
+    },
+    {
+      "id": "theChecklist",
+      "chapter": {
+        "en": "What the job is",
+        "de": "Worin der Auftrag besteht"
+      },
+      "narration": {
+        "en": "If the work has steps, they go on the job itself. A checklist written at the desk is the difference between an engineer who knows what finished looks like and one who has to ring in and ask — and it is ticked off from the phone, on site.",
+        "de": "Wenn die Arbeit aus Schritten besteht, kommen sie an den Auftrag selbst. Eine am Schreibtisch geschriebene Checkliste ist der Unterschied zwischen einer Fachkraft, die weiß, wann sie fertig ist, und einer, die anrufen muss — abgehakt wird sie vor Ort, am Telefon."
+      }
+    },
+    {
+      "id": "theWork",
+      "chapter": {
+        "en": "The work itself",
+        "de": "Die Arbeit selbst"
+      },
+      "narration": {
+        "en": "Underneath there is room for the parts of a job that only turn up once somebody is standing in front of it: smaller jobs inside this one, photographs of what they found, and the documents that have to go back to the client.",
+        "de": "Darunter ist Platz für die Teile eines Auftrags, die erst auftauchen, wenn jemand davorsteht: kleinere Aufträge innerhalb dieses einen, Fotos vom Vorgefundenen und die Dokumente, die zum Kunden zurückgehen müssen."
+      }
+    },
+    {
+      "id": "theSteps",
+      "chapter": {
+        "en": "Moving it along",
+        "de": "Ihn weiterbewegen"
+      },
+      "narration": {
+        "en": "A job moves through your steps, not ours. These buttons come from the workflow your organisation set up, so what comes next is whatever your business says comes next.",
+        "de": "Ein Auftrag durchläuft Ihre Schritte, nicht unsere. Diese Schaltflächen stammen aus dem Arbeitsablauf, den Ihre Organisation eingerichtet hat — was als Nächstes kommt, bestimmt also Ihr Betrieb."
+      }
+    },
+    {
+      "id": "theComment",
+      "chapter": {
+        "en": "Talking about it",
+        "de": "Darüber sprechen"
+      },
+      "narration": {
+        "en": "And when there is something to say about a job, it is said on the job. Not in a message that scrolls away by Thursday — here, against the work it is about, where the next person will find it.",
+        "de": "Und wenn es zu einem Auftrag etwas zu sagen gibt, wird es am Auftrag gesagt. Nicht in einer Nachricht, die bis Donnerstag weggescrollt ist — sondern hier, an der Arbeit, um die es geht, wo die nächste Person sie findet."
+      }
+    },
+    {
+      "id": "theTrail",
+      "chapter": {
+        "en": "What it remembers",
+        "de": "Was er festhält"
+      },
+      "narration": {
+        "en": "Everything that happened to it is kept: who raised it, who was put on it, every step it moved through, and what was said. Six months from now, that trail is the answer to what happened on this job.",
+        "de": "Alles, was damit geschehen ist, wird festgehalten: wer ihn angelegt hat, wer darauf angesetzt wurde, jeden Schritt, den er durchlaufen hat, und was gesagt wurde. In sechs Monaten ist diese Spur die Antwort darauf, was bei diesem Auftrag passiert ist."
+      }
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/checklists-and-parts/capture/page@2f613f6dfb99c9510515975aa4a3b443.webm",
+  "durationSec": 58.4,
+  "preRollSec": 6.927999999999997,
+  "beats": [
+    {
+      "id": "rarelyOneThing",
+      "startSec": 6.927999999999997,
+      "endSec": 14.159999999999997,
+      "narrationSec": 6.780229
+    },
+    {
+      "id": "whatFinishedMeans",
+      "startSec": 14.160999999999998,
+      "endSec": 21.391999999999996,
+      "narrationSec": 6.780229
+    },
+    {
+      "id": "itemByItem",
+      "startSec": 21.392999999999997,
+      "endSec": 27.493999999999996,
+      "narrationSec": 4.504667
+    },
+    {
+      "id": "tickedOnSite",
+      "startSec": 27.494999999999997,
+      "endSec": 31.057,
+      "narrationSec": 3.111479
+    },
+    {
+      "id": "twoVisits",
+      "startSec": 31.058999999999997,
+      "endSec": 37.91799999999999,
+      "narrationSec": 6.408708
+    },
+    {
+      "id": "eachOneReal",
+      "startSec": 37.92,
+      "endSec": 44.026999999999994,
+      "narrationSec": 5.294146
+    },
+    {
+      "id": "whatComesBack",
+      "startSec": 44.026999999999994,
+      "endSec": 51.909,
+      "narrationSec": 7.430396
+    },
+    {
+      "id": "whereNext",
+      "startSec": 51.910999999999994,
+      "endSec": 58.4,
+      "narrationSec": 6.037188
+    }
+  ]
+}

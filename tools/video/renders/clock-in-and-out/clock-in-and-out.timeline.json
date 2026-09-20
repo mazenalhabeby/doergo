@@ -1,0 +1,49 @@
+{
+  "videoPath": "/Users/pc/work/doergo/tools/video/renders/clock-in-and-out/capture/page@5b0b356bf33972f1e5a1cc1c45cf207a.webm",
+  "durationSec": 58.48,
+  "preRollSec": 3.675999999999995,
+  "beats": [
+    {
+      "id": "theButton",
+      "startSec": 3.675999999999995,
+      "endSec": 11.093999999999994,
+      "narrationSec": 6.966
+    },
+    {
+      "id": "whereAreYou",
+      "startSec": 11.093999999999994,
+      "endSec": 18.928999999999995,
+      "narrationSec": 7.383958
+    },
+    {
+      "id": "clockedIn",
+      "startSec": 18.928999999999995,
+      "endSec": 28.854999999999993,
+      "narrationSec": 9.47375
+    },
+    {
+      "id": "theShift",
+      "startSec": 28.854999999999993,
+      "endSec": 36.873999999999995,
+      "narrationSec": 7.569708
+    },
+    {
+      "id": "clockOut",
+      "startSec": 36.873999999999995,
+      "endSec": 44.291999999999994,
+      "narrationSec": 6.966
+    },
+    {
+      "id": "theHistory",
+      "startSec": 44.291999999999994,
+      "endSec": 49.620999999999995,
+      "narrationSec": 4.876188
+    },
+    {
+      "id": "whereNext",
+      "startSec": 49.62199999999999,
+      "endSec": 58.48,
+      "narrationSec": 8.405625
+    }
+  ]
+}

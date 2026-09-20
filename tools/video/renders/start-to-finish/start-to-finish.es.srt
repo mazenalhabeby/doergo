@@ -1,0 +1,61 @@
+1
+00:00:10,311 --> 00:00:15,277
+En la parte superior de cada trabajo
+están los pasos por los que pasa: los que
+
+2
+00:00:15,277 --> 00:00:18,206
+eligió este espacio,
+con sus propias palabras.
+
+3
+00:00:18,657 --> 00:00:23,996
+Quien hace el trabajo lo va moviendo
+desde su teléfono. Desde el escritorio es el
+
+4
+00:00:23,996 --> 00:00:24,787
+mismo botón.
+
+5
+00:00:25,238 --> 00:00:31,200
+Cuando salen, la aplicación empieza a
+registrar el camino que realmente toman. No
+
+6
+00:00:31,200 --> 00:00:33,040
+una línea recta: la ruta.
+
+7
+00:00:33,491 --> 00:00:39,528
+Llegar detiene el registro, y el trabajo
+ya sabe cuánto había y cuánto se tardó.
+
+8
+00:00:39,979 --> 00:00:45,877
+Después, el trabajo en sí, con el reloj
+corriendo contra este trabajo y ningún otro.
+
+9
+00:00:46,328 --> 00:00:53,108
+Terminar pide el informe. Aquí
+hay uno que alguien acabó ayer.
+
+10
+00:00:53,560 --> 00:01:01,288
+Qué fallaba, qué se hizo, cuánto se
+tardó, las piezas montadas — y la firma del
+
+11
+00:01:01,288 --> 00:01:02,755
+propio cliente.
+
+12
+00:01:03,207 --> 00:01:09,145
+Esa página es de donde sale la factura, y
+lo que leerá quien pregunte dentro de seis
+
+13
+00:01:09,145 --> 00:01:09,569
+meses.
+

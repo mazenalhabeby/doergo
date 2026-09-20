@@ -1,0 +1,176 @@
+1
+00:00:08,265 --> 00:00:13,336
+Das ist alles, was bei Halstead heute
+ansteht. Eine Tafel, alle Aufträge, sortiert
+
+2
+00:00:13,336 --> 00:00:18,532
+nach ihrem Zustand — die Spalte, in der
+ein Auftrag steht, sagt Ihnen also, wie weit
+
+3
+00:00:18,532 --> 00:00:21,500
+er ist, ohne dass Sie
+irgendetwas öffnen müssen.
+
+4
+00:00:21,967 --> 00:00:26,899
+Dieselbe Arbeit, dreifach gelesen. Die
+Tafel für das, was in Bewegung ist, die
+
+5
+00:00:26,899 --> 00:00:32,210
+Tabelle, wenn Sie hundert Zeilen sortieren
+und vergleichen wollen, und der Kalender,
+
+6
+00:00:32,210 --> 00:00:35,435
+wenn die Frage lautet, auf
+welchen Tag etwas fällt.
+
+7
+00:00:35,886 --> 00:00:41,133
+Und wenn ein Kunde wegen einer bestimmten
+Sache anruft, suchen Sie danach. Titel,
+
+8
+00:00:41,133 --> 00:00:46,056
+Kunde, wer daran arbeitet — mehr als
+ein Wort müssen Sie sich selten merken.
+
+9
+00:00:46,508 --> 00:00:51,598
+Ein neuer Auftrag beginnt mit dem, was
+tatsächlich zu tun ist. Schreiben Sie es so,
+
+10
+00:00:51,598 --> 00:00:56,688
+wie Sie es am Telefon sagen würden, und
+legen Sie fest, wie eilig es ist — der Rest
+
+11
+00:00:56,688 --> 00:00:59,325
+des Formulars wartet,
+bis Sie ihn brauchen.
+
+12
+00:00:59,779 --> 00:01:05,183
+Den Kunden zu wählen, bringt seine
+Adresse gleich mit. Setzen Sie diese Adresse
+
+13
+00:01:05,183 --> 00:01:10,586
+einmal auf der Karte, und jeder weitere
+Auftrag dort weiß, wo er liegt — Route,
+
+14
+00:01:10,586 --> 00:01:13,665
+Ankunft und Zeit vor
+Ort ergeben sich daraus.
+
+15
+00:01:14,120 --> 00:01:20,057
+Dann die Person. Sie erhält den Auftrag
+samt Adresse in dem Moment, in dem Sie
+
+16
+00:01:20,057 --> 00:01:25,080
+speichern — niemand ruft im Depot
+an, um zu fragen, wohin es geht.
+
+17
+00:01:25,533 --> 00:01:31,359
+Der Auftrag hat jetzt eine eigene
+Seite, und dort lebt er für den Rest seines
+
+18
+00:01:31,359 --> 00:01:37,487
+Bestehens. Alles dazu steht auf einem
+Bildschirm: worum es geht, zu wem er gehört
+
+19
+00:01:37,487 --> 00:01:39,001
+und wie weit er ist.
+
+20
+00:01:39,452 --> 00:01:44,382
+Wenn die Arbeit aus Schritten besteht,
+kommen sie an den Auftrag selbst. Eine am
+
+21
+00:01:44,382 --> 00:01:49,435
+Schreibtisch geschriebene Checkliste ist
+der Unterschied zwischen einer Fachkraft,
+
+22
+00:01:49,435 --> 00:01:54,488
+die weiß, wann sie fertig ist, und einer,
+die anrufen muss — abgehakt wird sie vor
+
+23
+00:01:54,488 --> 00:01:55,474
+Ort, am Telefon.
+
+24
+00:01:55,926 --> 00:02:01,863
+Darunter ist Platz für die Teile eines
+Auftrags, die erst auftauchen, wenn jemand
+
+25
+00:02:01,863 --> 00:02:07,799
+davorsteht: kleinere Aufträge innerhalb
+dieses einen, Fotos vom Vorgefundenen und
+
+26
+00:02:07,799 --> 00:02:11,391
+die Dokumente, die zum
+Kunden zurückgehen müssen.
+
+27
+00:02:11,841 --> 00:02:17,041
+Ein Auftrag durchläuft Ihre Schritte,
+nicht unsere. Diese Schaltflächen stammen aus
+
+28
+00:02:17,041 --> 00:02:22,240
+dem Arbeitsablauf, den Ihre Organisation
+eingerichtet hat — was als Nächstes kommt,
+
+29
+00:02:22,240 --> 00:02:23,869
+bestimmt also Ihr Betrieb.
+
+30
+00:02:24,320 --> 00:02:29,936
+Und wenn es zu einem Auftrag etwas zu
+sagen gibt, wird es am Auftrag gesagt. Nicht
+
+31
+00:02:29,936 --> 00:02:35,277
+in einer Nachricht, die bis Donnerstag
+weggescrollt ist — sondern hier, an der
+
+32
+00:02:35,277 --> 00:02:39,181
+Arbeit, um die es geht, wo
+die nächste Person sie findet.
+
+33
+00:02:39,633 --> 00:02:45,391
+Alles, was damit geschehen ist, wird
+festgehalten: wer ihn angelegt hat, wer darauf
+
+34
+00:02:45,391 --> 00:02:50,942
+angesetzt wurde, jeden Schritt, den er
+durchlaufen hat, und was gesagt wurde. In
+
+35
+00:02:50,942 --> 00:02:56,492
+sechs Monaten ist diese Spur die Antwort
+darauf, was bei diesem Auftrag passiert
+
+36
+00:02:56,492 --> 00:02:56,769
+ist.
+

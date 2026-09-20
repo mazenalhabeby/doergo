@@ -1,0 +1,118 @@
+{
+  "id": "work-that-repeats",
+  "tourIds": [],
+  "title": {
+    "en": "Work that repeats",
+    "de": "Arbeit, die wiederkehrt",
+    "es": "El trabajo que se repite",
+    "fr": "Le travail qui revient",
+    "it": "Il lavoro che si ripete"
+  },
+  "subtitle": {
+    "en": "Set the round once; it raises itself from then on",
+    "de": "Einmal einrichten — danach entsteht sie von selbst",
+    "es": "Configúrelo una vez; a partir de ahí se crea solo",
+    "fr": "Réglez la tournée une fois ; elle se crée ensuite toute seule",
+    "it": "Lo imposti una volta; da lì in poi si crea da solo"
+  },
+  "description": {
+    "en": "Half of field service is the same visit at the same interval: the quarterly service, the annual test, the monthly check. Describe it once and the job raises itself, assigned, ahead of the date — so nobody's memory is the thing keeping a contract.",
+    "de": "Die Hälfte des Außendienstes ist derselbe Besuch im selben Takt: die vierteljährliche Wartung, die jährliche Prüfung, die monatliche Kontrolle. Einmal beschrieben, entsteht der Auftrag von selbst — zugewiesen und rechtzeitig vor dem Termin. So hängt kein Vertrag mehr am Gedächtnis eines Menschen.",
+    "es": "La mitad del servicio de campo es la misma visita al mismo intervalo: la revisión trimestral, la prueba anual, el control mensual. Descríbalo una vez y el trabajo se crea solo, asignado y antes de la fecha, para que la memoria de nadie sea lo que sostiene un contrato.",
+    "fr": "La moitié du service terrain, c'est la même visite au même rythme : l'entretien trimestriel, le test annuel, le contrôle mensuel. Décrivez-la une fois et l'intervention se crée seule, attribuée, avant la date — pour que la mémoire de personne ne soit ce qui tient un contrat.",
+    "it": "Metà del servizio sul campo è la stessa visita allo stesso intervallo: la manutenzione trimestrale, la prova annuale, il controllo mensile. Lo descriva una volta e il lavoro si crea da solo, assegnato e prima della data — così nessun contratto dipende dalla memoria di qualcuno."
+  },
+  "beats": [
+    {
+      "id": "theSameVisit",
+      "narration": {
+        "en": "A lot of this work is the same visit, at the same interval, for years.",
+        "de": "Vieles an dieser Arbeit ist derselbe Besuch, im selben Takt, über Jahre.",
+        "es": "Buena parte de este trabajo es la misma visita, al mismo intervalo, durante años.",
+        "fr": "Une grande part de ce travail, c'est la même visite, au même rythme, pendant des années.",
+        "it": "Molto di questo lavoro è la stessa visita, allo stesso intervallo, per anni."
+      },
+      "chapter": {
+        "en": "The same visit",
+        "de": "Derselbe Besuch",
+        "es": "La misma visita",
+        "fr": "La même visite",
+        "it": "La stessa visita"
+      }
+    },
+    {
+      "id": "describeItOnce",
+      "narration": {
+        "en": "So describe it once. What the visit is, and which part of the business it belongs to.",
+        "de": "Beschreiben Sie ihn also einmal: was der Besuch ist und zu welchem Teil des Betriebs er gehört.",
+        "es": "Así que descríbala una vez: qué es la visita y a qué parte del negocio pertenece.",
+        "fr": "Alors décrivez-la une fois : ce qu'est la visite, et à quelle partie de l'activité elle appartient.",
+        "it": "Quindi lo descriva una volta: che cos'è la visita e a quale parte dell'azienda appartiene."
+      },
+      "chapter": {
+        "en": "Describe it once",
+        "de": "Einmal beschreiben",
+        "es": "Descríbala una vez",
+        "fr": "Décrivez-la une fois",
+        "it": "La descriva una volta"
+      }
+    },
+    {
+      "id": "howOften",
+      "narration": {
+        "en": "Then how often it comes round, and when the first one is due.",
+        "de": "Dann, wie oft er wiederkehrt — und wann der erste fällig ist.",
+        "es": "Después, cada cuánto vuelve y cuándo toca la primera.",
+        "fr": "Ensuite, à quelle fréquence elle revient, et quand la première est due.",
+        "it": "Poi ogni quanto torna, e quando è prevista la prima."
+      }
+    },
+    {
+      "id": "whenItStarts",
+      "narration": {
+        "en": "And when the first one falls. Everything after it is counted from there.",
+        "de": "Und wann der erste fällig ist. Alles Weitere wird von dort aus gezählt.",
+        "es": "Y cuándo cae la primera. Todo lo demás se cuenta a partir de ahí.",
+        "fr": "Et quand tombe la première. Tout le reste se compte à partir de là.",
+        "it": "E quando cade il primo. Tutto il resto si conta da lì."
+      }
+    },
+    {
+      "id": "saveIt",
+      "narration": {
+        "en": "Save it, and that is the last time anybody thinks about it.",
+        "de": "Speichern — und das war das letzte Mal, dass jemand daran denken muss.",
+        "es": "Guárdelo, y esa será la última vez que alguien piense en ello.",
+        "fr": "Enregistrez, et c'est la dernière fois que quelqu'un y pense.",
+        "it": "Lo salvi, e sarà l'ultima volta che qualcuno ci pensa."
+      }
+    },
+    {
+      "id": "itRunsItself",
+      "narration": {
+        "en": "From here it raises the job, assigns it and puts it on the board, on its own, for as long as the contract lasts.",
+        "de": "Von hier an legt es den Auftrag an, weist ihn zu und stellt ihn aufs Board — von allein, solange der Vertrag läuft.",
+        "es": "A partir de aquí crea el trabajo, lo asigna y lo pone en el tablero, solo, mientras dure el contrato.",
+        "fr": "À partir de là, il crée l'intervention, l'attribue et la met sur le tableau, tout seul, tant que le contrat dure.",
+        "it": "Da qui crea il lavoro, lo assegna e lo mette sulla bacheca, da solo, finché dura il contratto."
+      },
+      "chapter": {
+        "en": "It runs itself",
+        "de": "Es läuft von selbst",
+        "es": "Funciona solo",
+        "fr": "Il tourne tout seul",
+        "it": "Va da sé"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: the small parts that make a job provable — the list, the sub-jobs, the photographs.",
+        "de": "Als Nächstes: die kleinen Teile, die einen Auftrag beweisbar machen — die Liste, die Teilaufträge, die Fotos.",
+        "es": "A continuación: las partes pequeñas que hacen demostrable un trabajo: la lista, los subtrabajos, las fotos.",
+        "fr": "Ensuite : les petites choses qui rendent une intervention prouvable — la liste, les sous-tâches, les photos.",
+        "it": "Poi: le piccole parti che rendono un lavoro dimostrabile — l'elenco, i sotto-lavori, le foto."
+      }
+    }
+  ]
+}

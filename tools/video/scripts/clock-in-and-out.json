@@ -1,0 +1,128 @@
+{
+  "id": "clock-in-and-out",
+  "tourIds": [
+    "myAttendanceTour",
+    "attendanceTour"
+  ],
+  "title": {
+    "en": "Clock in and clock out",
+    "de": "Kommen und gehen",
+    "es": "Fichar entrada y salida",
+    "fr": "Pointer en arrivant et en partant",
+    "it": "Timbrare in entrata e in uscita"
+  },
+  "subtitle": {
+    "en": "One tap, and the record payroll reads",
+    "de": "Ein Tippen — und der Eintrag, den die Lohnverrechnung liest",
+    "es": "Un toque, y el registro que lee la nómina",
+    "fr": "Un geste, et l'enregistrement que la paie lira",
+    "it": "Un tocco, e il record che legge la busta paga"
+  },
+  "description": {
+    "en": "Clocking in is one button, and it is checked against where you are: the workspace has a boundary, and the server re-checks it rather than trusting the screen. What comes out is a shift record with a start, an end and the rests in between — the thing payroll reads.",
+    "de": "Das Einstempeln ist eine Schaltfläche — und es wird geprüft, wo Sie sind: Der Arbeitsbereich hat eine Grenze, und der Server prüft sie nach, statt dem Bildschirm zu glauben. Heraus kommt ein Schichteintrag mit Beginn, Ende und den Pausen dazwischen — das, was die Lohnverrechnung liest.",
+    "es": "Fichar es un botón, y se comprueba contra dónde está: el espacio de trabajo tiene un límite, y el servidor lo vuelve a comprobar en vez de fiarse de la pantalla. Lo que sale es un registro de turno con inicio, fin y los descansos de por medio: lo que lee la nómina.",
+    "fr": "Pointer, c'est un bouton, et il est vérifié par rapport à l'endroit où vous êtes : l'espace de travail a une limite, et le serveur la revérifie plutôt que de croire l'écran. Il en sort un enregistrement de poste avec un début, une fin et les pauses entre les deux — ce que lit la paie.",
+    "it": "Timbrare è un pulsante, e viene verificato rispetto a dove si trova: lo spazio di lavoro ha un confine, e il server lo ricontrolla invece di fidarsi dello schermo. Ne esce un turno con un inizio, una fine e le pause in mezzo: ciò che legge la busta paga."
+  },
+  "beats": [
+    {
+      "id": "theButton",
+      "narration": {
+        "en": "The button is in the same place on every screen, because you do not go looking for it at seven in the morning.",
+        "de": "Die Schaltfläche ist auf jedem Bildschirm an derselben Stelle — weil man sie um sieben Uhr früh nicht suchen will.",
+        "es": "El botón está en el mismo sitio en todas las pantallas, porque a las siete de la mañana nadie quiere buscarlo.",
+        "fr": "Le bouton est au même endroit sur chaque écran, parce qu'à sept heures du matin on ne le cherche pas.",
+        "it": "Il pulsante è nello stesso posto in ogni schermata, perché alle sette del mattino non lo si va a cercare."
+      },
+      "chapter": {
+        "en": "One button",
+        "de": "Eine Schaltfläche",
+        "es": "Un botón",
+        "fr": "Un bouton",
+        "it": "Un pulsante"
+      }
+    },
+    {
+      "id": "whereAreYou",
+      "narration": {
+        "en": "Where you are matters. The workspace has a boundary, and the server checks it — not the screen.",
+        "de": "Wo Sie sind, zählt. Der Arbeitsbereich hat eine Grenze, und der Server prüft sie — nicht der Bildschirm.",
+        "es": "Dónde está importa. El espacio tiene un límite, y lo comprueba el servidor, no la pantalla.",
+        "fr": "L'endroit où vous êtes compte. L'espace de travail a une limite, et c'est le serveur qui la vérifie, pas l'écran.",
+        "it": "Dove si trova conta. Lo spazio ha un confine, e a verificarlo è il server, non lo schermo."
+      },
+      "chapter": {
+        "en": "Where you are",
+        "de": "Wo Sie sind",
+        "es": "Dónde está",
+        "fr": "Où vous êtes",
+        "it": "Dove si trova"
+      }
+    },
+    {
+      "id": "clockedIn",
+      "narration": {
+        "en": "In. From here the day is being counted, and nobody has to remember what time it started.",
+        "de": "Drin. Ab jetzt läuft der Tag — und niemand muss sich merken, wann er angefangen hat.",
+        "es": "Dentro. A partir de aquí se cuenta el día, y nadie tiene que acordarse de a qué hora empezó.",
+        "fr": "C'est fait. À partir de là, la journée est comptée, et personne n'a à se rappeler l'heure de début.",
+        "it": "Dentro. Da qui la giornata viene contata, e nessuno deve ricordarsi a che ora è iniziata."
+      }
+    },
+    {
+      "id": "theShift",
+      "narration": {
+        "en": "The shift is on screen while it runs: when it started, how long it has been, and what is left.",
+        "de": "Die Schicht ist sichtbar, während sie läuft: wann sie begann, wie lange sie dauert und was noch bleibt.",
+        "es": "El turno está en pantalla mientras corre: cuándo empezó, cuánto lleva y qué queda.",
+        "fr": "Le poste est à l'écran pendant qu'il tourne : quand il a commencé, depuis combien de temps, et ce qu'il reste.",
+        "it": "Il turno è sullo schermo mentre scorre: quando è iniziato, da quanto dura e che cosa resta."
+      }
+    },
+    {
+      "id": "clockOut",
+      "narration": {
+        "en": "Out at the end, and the record closes itself. That record is what payroll reads.",
+        "de": "Am Ende ausstempeln — und der Eintrag schließt sich selbst. Diesen Eintrag liest die Lohnverrechnung.",
+        "es": "Salir al final, y el registro se cierra solo. Ese registro es lo que lee la nómina.",
+        "fr": "On pointe en partant, et l'enregistrement se referme. C'est lui que lit la paie.",
+        "it": "Si timbra in uscita e il record si chiude da solo. È quel record che legge la busta paga."
+      },
+      "chapter": {
+        "en": "And out",
+        "de": "Und raus",
+        "es": "Y salir",
+        "fr": "Et on repart",
+        "it": "E fuori"
+      }
+    },
+    {
+      "id": "theHistory",
+      "narration": {
+        "en": "Every shift is kept, with where it was and how it was recorded.",
+        "de": "Jede Schicht bleibt erhalten — mit dem Ort und der Art der Erfassung.",
+        "es": "Cada turno se guarda, con dónde fue y cómo se registró.",
+        "fr": "Chaque poste est conservé, avec le lieu et la façon dont il a été enregistré.",
+        "it": "Ogni turno resta, con il luogo e il modo in cui è stato registrato."
+      },
+      "chapter": {
+        "en": "Every shift kept",
+        "de": "Jede Schicht bleibt",
+        "es": "Cada turno guardado",
+        "fr": "Chaque poste conservé",
+        "it": "Ogni turno conservato"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: why the hours on that record and the hours on a payslip are not the same number — and that being right.",
+        "de": "Als Nächstes: warum die Stunden auf diesem Eintrag und die auf der Abrechnung nicht dieselbe Zahl sind — und warum das stimmt.",
+        "es": "A continuación: por qué las horas de ese registro y las de la nómina no son el mismo número, y por qué eso es correcto.",
+        "fr": "Ensuite : pourquoi les heures de cet enregistrement et celles d'un bulletin ne sont pas le même chiffre — et pourquoi c'est juste.",
+        "it": "Poi: perché le ore di quel record e quelle della busta paga non sono lo stesso numero — ed è giusto così."
+      }
+    }
+  ]
+}

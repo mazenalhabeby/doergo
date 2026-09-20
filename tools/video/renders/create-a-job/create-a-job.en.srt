@@ -1,0 +1,158 @@
+1
+00:00:08,265 --> 00:00:14,507
+This is everything Halstead has on today.
+One board, every job, sorted by the state
+
+2
+00:00:14,507 --> 00:00:20,824
+it is in — so the column a job sits in
+tells you where it has got to without opening
+
+3
+00:00:20,824 --> 00:00:21,500
+anything.
+
+4
+00:00:21,967 --> 00:00:27,760
+The same work, read three ways. The
+board for what is moving, the table when you
+
+5
+00:00:27,760 --> 00:00:33,769
+want to sort and compare a hundred rows,
+and the schedule when the question is what
+
+6
+00:00:33,769 --> 00:00:35,435
+day something lands on.
+
+7
+00:00:35,886 --> 00:00:41,403
+And when a client rings about one specific
+thing, you search for it. Title, client,
+
+8
+00:00:41,403 --> 00:00:46,056
+whoever is on it — you rarely need
+to remember more than a word of it.
+
+9
+00:00:46,508 --> 00:00:51,866
+A new job starts with the thing that
+actually needs doing. Write it the way you
+
+10
+00:00:51,866 --> 00:00:57,359
+would say it on the phone, and set how
+much of a hurry it is in — the rest of the
+
+11
+00:00:57,359 --> 00:00:59,325
+form waits until you need it.
+
+12
+00:00:59,779 --> 00:01:05,525
+Choosing the client brings their address
+across with it. Pin that address on the map
+
+13
+00:01:05,525 --> 00:01:11,202
+once, and every job there afterwards knows
+where it is — the route, the arrival and
+
+14
+00:01:11,202 --> 00:01:13,665
+the time on site all follow from it.
+
+15
+00:01:14,120 --> 00:01:19,922
+Then the person. They get it on their
+phone the moment you save, with the address
+
+16
+00:01:19,922 --> 00:01:25,080
+already on it — nobody is ringing
+the depot to ask where they are going.
+
+17
+00:01:25,533 --> 00:01:31,462
+The job now has a page of its own, and
+this is where it lives for the rest of its
+
+18
+00:01:31,462 --> 00:01:37,464
+life. Everything about it is on one
+screen: what it is, who it belongs to, and how
+
+19
+00:01:37,464 --> 00:01:39,001
+far along it has got.
+
+20
+00:01:39,452 --> 00:01:45,179
+If the work has steps, they go on the job
+itself. A checklist written at the desk is
+
+21
+00:01:45,179 --> 00:01:50,701
+the difference between an engineer who
+knows what finished looks like and one who
+
+22
+00:01:50,701 --> 00:01:55,474
+has to ring in and ask — and it is
+ticked off from the phone, on site.
+
+23
+00:01:55,926 --> 00:02:01,664
+Underneath there is room for the parts of
+a job that only turn up once somebody is
+
+24
+00:02:01,664 --> 00:02:07,192
+standing in front of it: smaller jobs
+inside this one, photographs of what they
+
+25
+00:02:07,192 --> 00:02:11,390
+found, and the documents that
+have to go back to the client.
+
+26
+00:02:11,841 --> 00:02:17,891
+A job moves through your steps, not ours.
+These buttons come from the workflow your
+
+27
+00:02:17,891 --> 00:02:23,869
+organisation set up, so what comes next
+is whatever your business says comes next.
+
+28
+00:02:24,320 --> 00:02:30,532
+And when there is something to say about
+a job, it is said on the job. Not in a
+
+29
+00:02:30,532 --> 00:02:36,901
+message that scrolls away by Thursday —
+here, against the work it is about, where
+
+30
+00:02:36,901 --> 00:02:39,181
+the next person will find it.
+
+31
+00:02:39,633 --> 00:02:47,015
+Everything that happened to it is kept:
+who raised it, who was put on it, every step
+
+32
+00:02:47,015 --> 00:02:54,221
+it moved through, and what was said. Six
+months from now, that trail is the answer
+
+33
+00:02:54,221 --> 00:02:56,769
+to what happened on this job.
+

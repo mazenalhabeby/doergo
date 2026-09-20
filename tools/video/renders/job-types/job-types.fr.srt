@@ -1,0 +1,65 @@
+1
+00:00:08,832 --> 00:00:13,409
+Les colonnes de ce tableau ne sont pas un
+fait sur le travail. Ce sont un choix de
+
+2
+00:00:13,409 --> 00:00:14,637
+cet espace de travail.
+
+3
+00:00:15,090 --> 00:00:21,644
+Derrière elles, un type d'intervention :
+les étapes qu'une intervention suit ici, et
+
+4
+00:00:21,644 --> 00:00:22,892
+dans quel ordre.
+
+5
+00:00:23,344 --> 00:00:28,303
+Vous pouvez le lire d'une seule ligne, et
+c'est bien l'idée : personne ne devrait
+
+6
+00:00:28,303 --> 00:00:30,078
+deviner ce qui vient ensuite.
+
+7
+00:00:30,531 --> 00:00:35,232
+Si votre métier est courant,
+quelqu'un l'a déjà dessiné. Prenez-le dans la
+
+8
+00:00:35,232 --> 00:00:36,057
+bibliothèque.
+
+9
+00:00:36,509 --> 00:00:41,521
+Ce que vous obtenez, c'est votre propre
+copie. Modifiez-la à votre guise — aucun
+
+10
+00:00:41,521 --> 00:00:43,150
+autre espace n'est touché.
+
+11
+00:00:43,603 --> 00:00:48,061
+Ou construisez-en un de zéro, si votre
+façon de travailler n'appartient qu'à vous.
+
+12
+00:00:48,515 --> 00:00:52,897
+Et les interventions déjà sur le tableau
+peuvent être déplacées vers les nouvelles
+
+13
+00:00:52,897 --> 00:00:55,249
+étapes, plutôt que
+rester sur les anciennes.
+
+14
+00:00:55,701 --> 00:00:59,927
+Ensuite : le travail
+qui revient tout seul.
+

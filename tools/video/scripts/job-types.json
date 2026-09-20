@@ -1,0 +1,135 @@
+{
+  "id": "job-types",
+  "tourIds": [],
+  "title": {
+    "en": "Job types that fit your trade",
+    "de": "Auftragsarten, die zu Ihrem Gewerk passen",
+    "es": "Tipos de trabajo a la medida de su oficio",
+    "fr": "Des types d'intervention adaptés à votre métier",
+    "it": "Tipi di lavoro adatti al suo mestiere"
+  },
+  "subtitle": {
+    "en": "The steps a job takes, decided by you, per workspace",
+    "de": "Die Schritte eines Auftrags — von Ihnen bestimmt, pro Arbeitsbereich",
+    "es": "Los pasos de un trabajo, decididos por usted, por espacio",
+    "fr": "Les étapes d'une intervention, décidées par vous, par espace de travail",
+    "it": "I passaggi di un lavoro, decisi da lei, per spazio di lavoro"
+  },
+  "description": {
+    "en": "A call-out and a workshop repair do not move through the same steps, and a product that insists they do makes everybody lie to it. Every workspace picks its own task type — from a library of ready-made ones, or built from scratch — and gets its own copy to edit.",
+    "de": "Ein Außeneinsatz und eine Werkstattreparatur durchlaufen nicht dieselben Schritte, und ein Produkt, das darauf besteht, bringt alle dazu, es anzulügen. Jeder Arbeitsbereich wählt seine eigene Auftragsart — aus einer Bibliothek fertiger Vorlagen oder selbst gebaut — und bekommt eine eigene Kopie zum Bearbeiten.",
+    "es": "Una salida a domicilio y una reparación en taller no recorren los mismos pasos, y un producto que insiste en lo contrario hace que todos le mientan. Cada espacio elige su propio tipo de trabajo —de una biblioteca ya hecha o construido desde cero— y obtiene su propia copia para editar.",
+    "fr": "Un déplacement et une réparation en atelier ne suivent pas les mêmes étapes, et un produit qui l'exige pousse tout le monde à lui mentir. Chaque espace de travail choisit son propre type d'intervention — dans une bibliothèque toute faite, ou construit de zéro — et en reçoit sa propre copie à modifier.",
+    "it": "Un intervento esterno e una riparazione in officina non attraversano gli stessi passaggi, e un prodotto che lo pretende spinge tutti a mentirgli. Ogni spazio di lavoro sceglie il proprio tipo di lavoro — da una libreria già pronta o costruito da zero — e ne riceve una copia tutta sua da modificare."
+  },
+  "beats": [
+    {
+      "id": "notAllTheSame",
+      "narration": {
+        "en": "The columns on this board are not a fact about work. They are a choice this workspace made.",
+        "de": "Die Spalten dieses Boards sind keine Tatsache über Arbeit. Sie sind eine Entscheidung dieses Arbeitsbereichs.",
+        "es": "Las columnas de este tablero no son un hecho sobre el trabajo. Son una decisión de este espacio.",
+        "fr": "Les colonnes de ce tableau ne sont pas un fait sur le travail. Ce sont un choix de cet espace de travail.",
+        "it": "Le colonne di questa bacheca non sono un fatto sul lavoro. Sono una scelta di questo spazio."
+      },
+      "chapter": {
+        "en": "The columns",
+        "de": "Die Spalten",
+        "es": "Las columnas",
+        "fr": "Les colonnes",
+        "it": "Le colonne"
+      }
+    },
+    {
+      "id": "theTypeBehindIt",
+      "narration": {
+        "en": "Behind them is a task type: the steps a job takes here, and the order it takes them in.",
+        "de": "Dahinter steht eine Auftragsart: die Schritte, die ein Auftrag hier nimmt, und ihre Reihenfolge.",
+        "es": "Detrás hay un tipo de trabajo: los pasos que da un trabajo aquí, y en qué orden.",
+        "fr": "Derrière elles, un type d'intervention : les étapes qu'une intervention suit ici, et dans quel ordre.",
+        "it": "Dietro c'è un tipo di lavoro: i passaggi che un lavoro compie qui, e in quale ordine."
+      },
+      "chapter": {
+        "en": "The type behind it",
+        "de": "Die Auftragsart",
+        "es": "El tipo detrás",
+        "fr": "Le type derrière",
+        "it": "Il tipo dietro"
+      }
+    },
+    {
+      "id": "readIt",
+      "narration": {
+        "en": "You can read the whole thing in a line, which is the point: nobody should have to guess what happens next.",
+        "de": "Sie können das Ganze in einer Zeile lesen — genau darum geht es: Niemand soll raten müssen, was als Nächstes kommt.",
+        "es": "Puede leerlo entero en una línea, y de eso se trata: nadie debería tener que adivinar qué viene después.",
+        "fr": "Vous pouvez le lire d'une seule ligne, et c'est bien l'idée : personne ne devrait deviner ce qui vient ensuite.",
+        "it": "Può leggerlo tutto in una riga, ed è proprio il punto: nessuno dovrebbe indovinare che cosa viene dopo."
+      }
+    },
+    {
+      "id": "theLibrary",
+      "narration": {
+        "en": "If your trade is a common one, somebody has already drawn it. Pick it from the library.",
+        "de": "Wenn Ihr Gewerk ein verbreitetes ist, hat es schon jemand gezeichnet. Nehmen Sie es aus der Bibliothek.",
+        "es": "Si su oficio es de los habituales, alguien ya lo ha dibujado. Tómelo de la biblioteca.",
+        "fr": "Si votre métier est courant, quelqu'un l'a déjà dessiné. Prenez-le dans la bibliothèque.",
+        "it": "Se il suo mestiere è comune, qualcuno l'ha già disegnato. Lo prenda dalla libreria."
+      },
+      "chapter": {
+        "en": "From the library",
+        "de": "Aus der Bibliothek",
+        "es": "De la biblioteca",
+        "fr": "Dans la bibliothèque",
+        "it": "Dalla libreria"
+      }
+    },
+    {
+      "id": "yourOwnCopy",
+      "narration": {
+        "en": "What you get is your own copy. Change it however you like — no other workspace is touched.",
+        "de": "Was Sie bekommen, ist Ihre eigene Kopie. Ändern Sie sie, wie Sie wollen — kein anderer Arbeitsbereich ist betroffen.",
+        "es": "Lo que obtiene es su propia copia. Cámbiela como quiera: ningún otro espacio se ve afectado.",
+        "fr": "Ce que vous obtenez, c'est votre propre copie. Modifiez-la à votre guise — aucun autre espace n'est touché.",
+        "it": "Quello che ottiene è una copia sua. La cambi come vuole: nessun altro spazio ne risente."
+      }
+    },
+    {
+      "id": "orBuildOne",
+      "narration": {
+        "en": "Or build one from nothing, if the way you work is your own.",
+        "de": "Oder bauen Sie eine von Grund auf, wenn Ihre Arbeitsweise Ihre eigene ist.",
+        "es": "O constrúyalo desde cero, si su manera de trabajar es propia.",
+        "fr": "Ou construisez-en un de zéro, si votre façon de travailler n'appartient qu'à vous.",
+        "it": "Oppure ne costruisca uno da zero, se il suo modo di lavorare è solo suo."
+      }
+    },
+    {
+      "id": "theJobsAlreadyOut",
+      "narration": {
+        "en": "And the jobs already on the board can be moved onto the new steps, rather than left behind on the old ones.",
+        "de": "Und die Aufträge, die schon auf dem Board stehen, können auf die neuen Schritte umgezogen werden, statt auf den alten liegen zu bleiben.",
+        "es": "Y los trabajos que ya están en el tablero pueden pasarse a los pasos nuevos, en vez de quedarse en los viejos.",
+        "fr": "Et les interventions déjà sur le tableau peuvent être déplacées vers les nouvelles étapes, plutôt que rester sur les anciennes.",
+        "it": "E i lavori già sulla bacheca possono essere spostati sui nuovi passaggi, invece di restare sui vecchi."
+      },
+      "chapter": {
+        "en": "The jobs already out",
+        "de": "Laufende Aufträge",
+        "es": "Los trabajos en curso",
+        "fr": "Les interventions en cours",
+        "it": "I lavori già in corso"
+      }
+    },
+    {
+      "id": "whereNext",
+      "narration": {
+        "en": "Next: the work that comes round again by itself.",
+        "de": "Als Nächstes: die Arbeit, die von selbst wiederkehrt.",
+        "es": "A continuación: el trabajo que vuelve solo.",
+        "fr": "Ensuite : le travail qui revient tout seul.",
+        "it": "Poi: il lavoro che torna da solo."
+      }
+    }
+  ]
+}

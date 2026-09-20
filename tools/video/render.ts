@@ -27,6 +27,11 @@ import { loadScript, type VideoScript } from './script.ts';
 import { selectVoiceAdapter } from './voice/index.ts';
 import { captureCreateAJob } from './capture/flows/create-a-job.ts';
 import { captureGiveItToSomebody } from './capture/flows/give-it-to-somebody.ts';
+import { captureJobTypes } from './capture/flows/job-types.ts';
+import { captureStartToFinish } from './capture/flows/start-to-finish.ts';
+import { captureWorkThatRepeats } from './capture/flows/work-that-repeats.ts';
+import { captureClockInAndOut } from './capture/flows/clock-in-and-out.ts';
+import { captureChecklistsAndParts } from './capture/flows/checklists-and-parts.ts';
 import { captureWhatHbcfieldIs } from './capture/flows/what-hbcfield-is.ts';
 import { captureWhoSeesWhat } from './capture/flows/who-sees-what.ts';
 import { captureYourFirstJob } from './capture/flows/your-first-job.ts';
@@ -65,6 +70,11 @@ const FLOWS: Record<string, (d: Record<string, number>) => Promise<Timeline>> = 
   'who-sees-what': captureWhoSeesWhat,
   'your-first-job': captureYourFirstJob,
   'give-it-to-somebody': captureGiveItToSomebody,
+  'start-to-finish': captureStartToFinish,
+  'job-types': captureJobTypes,
+  'work-that-repeats': captureWorkThatRepeats,
+  'checklists-and-parts': captureChecklistsAndParts,
+  'clock-in-and-out': captureClockInAndOut,
   'create-a-job': captureCreateAJob,
   // Twenty seconds, two beats. A cheap way to hear a voice without spending a
   // full script's characters every time somebody wants to judge one.
@@ -109,6 +119,11 @@ const WARM_ROUTES: Record<string, string[]> = {
   'who-sees-what': ['/login', '/dashboard', '/members', '/members/warm'],
   'your-first-job': ['/login', '/dashboard', '/tasks', '/tasks/warm'],
   'give-it-to-somebody': ['/login', '/dashboard', '/tasks', '/tasks/warm', '/members', '/members/warm'],
+  'start-to-finish': ['/login', '/dashboard', '/tasks', '/tasks/warm'],
+  'job-types': ['/login', '/dashboard', '/tasks', '/locations', '/locations/warm'],
+  'work-that-repeats': ['/login', '/dashboard', '/tasks', '/tasks/recurring'],
+  'checklists-and-parts': ['/login', '/dashboard', '/tasks', '/tasks/warm'],
+  'clock-in-and-out': ['/login', '/dashboard', '/my/attendance', '/attendance'],
   'create-a-job': ['/login', '/dashboard', '/tasks', '/tasks/warm'],
   'voice-test': ['/login', '/dashboard'],
 };
