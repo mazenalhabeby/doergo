@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Constants from 'expo-constants';
+import * as Updates from 'expo-updates';
 import { RefreshControl, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -37,6 +38,13 @@ export default function SyncScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const hour12 = user?.timeFormat === '12h';
   const appVersion = Constants.expoConfig?.version ?? '?';
+  /*
+    WHICH JavaScript is running. An over-the-air fix that has not been applied
+    yet is indistinguishable on screen from one that did not work, and an
+    afternoon went into that confusion. `embedded` means the bundle that came
+    with the store build — no update applied.
+  */
+  const jsBuild = Updates.isEmbeddedLaunch ? 'embedded' : (Updates.updateId ?? 'unknown').slice(0, 8);
 
   const groups = useMemo(() => {
     const since = Date.now() - DAY_MS;
@@ -111,7 +119,7 @@ export default function SyncScreen() {
                   screenshot, not by the member. */}
               {unavailableDetail ? (
                 <Text style={[s.meta, { color: colors.textMuted }]} selectable>
-                  {appVersion} · {unavailableDetail}
+                  {appVersion} · js {jsBuild} · {unavailableDetail}
                 </Text>
               ) : null}
             </View>

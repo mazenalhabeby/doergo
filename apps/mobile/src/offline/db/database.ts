@@ -77,10 +77,21 @@ async function fileNameFor(userId: string, generation = ''): Promise<string> {
   return generation ? `hbc_${digest.slice(0, 32)}_${generation}.db` : `hbc_${digest.slice(0, 32)}.db`;
 }
 
+/**
+ * Whether the key was READ BACK rather than freshly made.
+ *
+ * ⚠️ The single most useful fact when a database will not open. If this is
+ * false on a phone that already has a database, the store is not keeping the
+ * key and no amount of file handling will help — the next database will be
+ * unreadable too. It is reported on screen for exactly that reason.
+ */
+let keyWasStored = false;
+
 async function keyFor(userId: string): Promise<string> {
   const name = safeName(KEY_PREFIX, userId);
-  const existing = await SecureStore.getItemAsync(name);
-  if (existing && /^[0-9a-f]{64}$/.test(existing)) return existing;
+  const existing = await SecureStore.getItemAsync(name).catch(() => null);
+  keyWasStored = !!(existing && /^[0-9a-f]{64}$/.test(existing));
+  if (keyWasStored) return existing as string;
   const key = Array.from(crypto().getRandomBytes(32), (b) => b.toString(16).padStart(2, '0')).join('');
   await SecureStore.setItemAsync(name, key, { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY });
   return key;
@@ -202,7 +213,20 @@ export function openOfflineDatabase(userId: string): Promise<SqlDb> | null {
         // Best effort, and deliberately NOT depended on: the fresh database has
         // a name nothing else has used, so a refused delete costs disk space.
         await discardDatabaseFiles(lib, err, fileName);
-        return await openEncrypted(lib, freshName, key);
+        try {
+          return await openEncrypted(lib, freshName, key);
+        } catch (again) {
+          /*
+            Both the existing database AND a file that has never been written
+            failed. That is no longer a stale-file problem, and saying so is
+            the difference between a fixable report and another afternoon: the
+            screen shows this sentence, so it names what was actually tried.
+          */
+          throw Object.assign(
+            new Error(`fresh database also failed (${databaseFailureText(again)}); key ${keyWasStored ? 'was stored' : 'IS NOT PERSISTING'}`),
+            { db: (again as { db?: unknown })?.db },
+          );
+        }
       }
     })();
     // A failed open must not be cached forever.
