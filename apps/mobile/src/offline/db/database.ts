@@ -145,8 +145,57 @@ async function cipherVersion(db: SqlDb): Promise<string> {
   }
 }
 
+/**
+ * The keyed connection, with transactions that stay on it.
+ *
+ * ⚠️ This wrapper exists for one reason: expo-sqlite's
+ * `withExclusiveTransactionAsync` opens a SECOND native connection, and a
+ * second connection to an encrypted database has not been given the key. The
+ * stores all wanted transactions, so they all got a connection that could not
+ * read the file — and migration runs first, so nothing ever worked.
+ *
+ * BEGIN IMMEDIATE takes the write lock up front, which is what "exclusive" was
+ * reaching for; it just does it without a new connection.
+ */
+function keyedConnection(raw: SqlDb): SqlDb {
+  let depth = 0;
+  const self: SqlDb = {
+    execAsync: (source) => raw.execAsync(source),
+    runAsync: (source, params) => raw.runAsync(source, params),
+    getAllAsync: (source, params) => raw.getAllAsync(source, params),
+    getFirstAsync: (source, params) => raw.getFirstAsync(source, params),
+    closeAsync: () => raw.closeAsync(),
+    async withTransactionAsync(task) {
+      // A nested call joins the outer transaction rather than failing on a
+      // second BEGIN, which SQLite refuses.
+      if (depth > 0) {
+        depth++;
+        try {
+          await task(self);
+        } finally {
+          depth--;
+        }
+        return;
+      }
+      depth = 1;
+      await raw.execAsync('BEGIN IMMEDIATE');
+      try {
+        await task(self);
+        await raw.execAsync('COMMIT');
+      } catch (err) {
+        await raw.execAsync('ROLLBACK').catch(() => undefined);
+        throw err;
+      } finally {
+        depth = 0;
+      }
+    },
+  };
+  return self;
+}
+
 async function openEncrypted(lib: NonNullable<ReturnType<typeof loadSQLite>>, fileName: string, key: string): Promise<SqlDb> {
-  const db = (await lib.openDatabaseAsync(fileName)) as unknown as SqlDb;
+  const raw = (await lib.openDatabaseAsync(fileName)) as unknown as SqlDb;
+  const db = keyedConnection(raw);
   // Which step failed, carried out with the error. Four releases were spent not
   // knowing whether the key was rejected, the keying silently did nothing, or
   // the schema was at fault — they fail with the same sentence.

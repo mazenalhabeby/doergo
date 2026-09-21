@@ -81,7 +81,7 @@ export async function migrate(db: import('./sql').SqlDb): Promise<number> {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version', []);
   let version = row?.user_version ?? 0;
   for (let i = version; i < MIGRATIONS.length; i++) {
-    await db.withExclusiveTransactionAsync(async (txn) => {
+    await db.withTransactionAsync(async (txn) => {
       await txn.execAsync(MIGRATIONS[i]!);
       // PRAGMA cannot take a bound parameter; `i + 1` is an integer we produced.
       await txn.execAsync(`PRAGMA user_version = ${i + 1}`);

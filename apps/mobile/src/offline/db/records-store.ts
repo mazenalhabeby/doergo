@@ -49,7 +49,7 @@ export class RecordsStore {
 
   /** Replace every record of a scope under one parent — a task's notes as the API returned them. */
   async replaceChildren(scope: string, parentId: string, rows: { id: string; updatedAt?: string | null }[]): Promise<void> {
-    await this.db.withExclusiveTransactionAsync(async (txn) => {
+    await this.db.withTransactionAsync(async (txn) => {
       await txn.runAsync('DELETE FROM records WHERE scope = ? AND parent_id = ?', [scope, parentId]);
       for (const row of rows) {
         await txn.runAsync(
@@ -87,7 +87,7 @@ export class RecordsStore {
     page: Pick<SyncPullResponse, 'rows' | 'deleted' | 'reset' | 'scopeIds' | 'cursor'>,
     options: { parentOf?: (row: any) => string | null; keep?: ReadonlySet<string>; firstPage: boolean },
   ): Promise<void> {
-    await this.db.withExclusiveTransactionAsync(async (txn) => {
+    await this.db.withTransactionAsync(async (txn) => {
       if (page.reset && options.firstPage) {
         await txn.runAsync('DELETE FROM records WHERE scope = ?', [scope]);
       }

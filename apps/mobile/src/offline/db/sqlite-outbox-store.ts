@@ -45,7 +45,7 @@ export class SqliteOutboxStore implements OutboxStore {
   async save(ops: OutboxOp[]): Promise<void> {
     if (!ops.length) return;
     const placeholders = `(${COLUMNS.split(',').map(() => '?').join(', ')})`;
-    await this.db.withExclusiveTransactionAsync(async (txn) => {
+    await this.db.withTransactionAsync(async (txn) => {
       for (const op of ops) {
         await txn.runAsync(`INSERT OR REPLACE INTO outbox (${COLUMNS}) VALUES ${placeholders}`, toRow(op));
       }
