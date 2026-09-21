@@ -26,7 +26,7 @@ const closeAsync = jest.fn().mockResolvedValue(undefined);
 const deleteDatabaseAsync = jest.fn(async () => {
   if (closeAsync.mock.calls.length === 0) throw new Error('database is still open');
 });
-const openDatabaseAsync = jest.fn(async () => ({ execAsync, getAllAsync: jest.fn().mockResolvedValue([]), runAsync: jest.fn(), closeAsync }));
+const openDatabaseAsync = jest.fn(async (_name: string) => ({ execAsync, getAllAsync: jest.fn().mockResolvedValue([]), runAsync: jest.fn(), closeAsync }));
 
 jest.mock('../native', () => ({ loadSQLite: () => ({ openDatabaseAsync, deleteDatabaseAsync }) }));
 jest.mock('../../lib/optional-native', () => ({
@@ -36,11 +36,12 @@ jest.mock('../../lib/optional-native', () => ({
     getRandomBytes: () => new Uint8Array(32).fill(7),
   }),
 }));
+const store = new Map<string, string>();
 jest.mock('expo-secure-store', () => ({
   AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY: 'x',
-  getItemAsync: jest.fn().mockResolvedValue('b'.repeat(64)),
-  setItemAsync: jest.fn().mockResolvedValue(undefined),
-  deleteItemAsync: jest.fn().mockResolvedValue(undefined),
+  getItemAsync: jest.fn(async (k: string) => store.get(k) ?? (k.startsWith('hbc_offline_key_') ? 'b'.repeat(64) : null)),
+  setItemAsync: jest.fn(async (k: string, v: string) => void store.set(k, v)),
+  deleteItemAsync: jest.fn(async (k: string) => void store.delete(k)),
 }));
 jest.mock('../db/migrations', () => ({ migrate: jest.fn().mockResolvedValue(undefined) }));
 jest.mock('expo-file-system', () => ({
@@ -52,6 +53,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   execAsync.mockReset();
   closeAsync.mockClear();
+  store.clear();
+  openDatabaseAsync.mockClear();
 });
 
 it('starts a new database when the key no longer decrypts the old one', async () => {
@@ -62,6 +65,18 @@ it('starts a new database when the key no longer decrypts the old one', async ()
   expect(deleteDatabaseAsync).toHaveBeenCalledTimes(1);
   // The connection that failed must be closed, or the delete above is refused.
   expect(closeAsync).toHaveBeenCalled();
+  // ⚠️ And the second open must use a DIFFERENT file. The recovery must not
+  // depend on the delete succeeding — it has been refused on a real phone.
+  const names = openDatabaseAsync.mock.calls.map(([name]) => name);
+  expect(names).toHaveLength(2);
+  expect(names[1]).not.toBe(names[0]);
+});
+
+it('recovers even when the old file cannot be deleted at all', async () => {
+  deleteDatabaseAsync.mockRejectedValue(new Error('database is still open'));
+  execAsync.mockRejectedValueOnce(NOT_A_DB).mockResolvedValue(undefined);
+
+  await expect(openOfflineDatabase('member-whose-file-is-stuck')).resolves.toBeTruthy();
 });
 
 it('does not delete the database for an unrelated failure', async () => {

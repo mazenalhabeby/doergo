@@ -17,6 +17,21 @@ import type { SqlDb } from './sql';
  * while the phone is locked — and a backup restored to another phone cannot.
  */
 const KEY_PREFIX = 'hbc_offline_key_';
+/*
+  How many times this member's database has had to be abandoned.
+
+  ⚠️ The recovery does NOT depend on deleting the old file. Deletion can be
+  refused for reasons this code cannot see from here — expo-sqlite keeps open
+  handles in a cache and throws rather than delete one, WAL leaves journals
+  beside the file that the supported API does not touch, and the platform may
+  simply say no. Every one of those turns a recovery into a no-op that looks
+  like it ran, and the member is left exactly where they were. A phone did
+  that twice in one afternoon.
+
+  So the new database gets a NEW NAME and the old bytes are merely litter. The
+  old file is still deleted when it can be, to reclaim the space.
+*/
+const GENERATION_PREFIX = 'hbc_offline_gen_';
 const open = new Map<string, Promise<SqlDb>>();
 
 /** File name from the member id: stable, filesystem-safe, and not the id itself. */
@@ -27,14 +42,34 @@ function crypto() {
   return lib;
 }
 
-async function fileNameFor(userId: string): Promise<string> {
+function safeName(prefix: string, userId: string): string {
+  return `${prefix}${userId.replace(/[^A-Za-z0-9_-]/g, '_')}`;
+}
+
+/** How many databases this member has burned through. 0 for almost everyone. */
+async function generationFor(userId: string): Promise<number> {
+  const raw = await SecureStore.getItemAsync(safeName(GENERATION_PREFIX, userId)).catch(() => null);
+  const n = Number(raw);
+  return Number.isInteger(n) && n > 0 && n < 1000 ? n : 0;
+}
+
+async function bumpGeneration(userId: string, from: number): Promise<number> {
+  const next = from + 1;
+  await SecureStore.setItemAsync(safeName(GENERATION_PREFIX, userId), String(next), {
+    keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
+  }).catch(() => undefined);
+  return next;
+}
+
+async function fileNameFor(userId: string, generation = 0): Promise<string> {
   const Crypto = crypto();
   const digest = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, `hbcfield-offline:${userId}`);
-  return `hbc_${digest.slice(0, 32)}.db`;
+  // Generation 0 keeps the original name, so nothing moves for a healthy phone.
+  return generation > 0 ? `hbc_${digest.slice(0, 32)}_${generation}.db` : `hbc_${digest.slice(0, 32)}.db`;
 }
 
 async function keyFor(userId: string): Promise<string> {
-  const name = `${KEY_PREFIX}${userId.replace(/[^A-Za-z0-9_-]/g, '_')}`;
+  const name = safeName(KEY_PREFIX, userId);
   const existing = await SecureStore.getItemAsync(name);
   if (existing && /^[0-9a-f]{64}$/.test(existing)) return existing;
   const key = Array.from(crypto().getRandomBytes(32), (b) => b.toString(16).padStart(2, '0')).join('');
@@ -115,7 +150,8 @@ export function openOfflineDatabase(userId: string): Promise<SqlDb> | null {
   let pending = open.get(userId);
   if (!pending) {
     pending = (async () => {
-      const [fileName, key] = await Promise.all([fileNameFor(userId), keyFor(userId)]);
+      const [generation, key] = await Promise.all([generationFor(userId), keyFor(userId)]);
+      const fileName = await fileNameFor(userId, generation);
       try {
         return await openEncrypted(lib, fileName, key);
       } catch (err) {
@@ -135,9 +171,13 @@ export function openOfflineDatabase(userId: string): Promise<SqlDb> | null {
           Once. A second failure on a file we just created is a different fault
           and must surface rather than loop.
         */
-        console.warn('[offline] database could not be decrypted — starting a new one');
+        const next = await bumpGeneration(userId, generation);
+        const freshName = await fileNameFor(userId, next);
+        console.warn(`[offline] database could not be decrypted — starting a new one (${freshName})`);
+        // Best effort, and deliberately NOT depended on: the fresh database has
+        // a different name, so a refused delete costs disk space, not the feature.
         await discardDatabaseFiles(lib, err, fileName);
-        return await openEncrypted(lib, fileName, key);
+        return await openEncrypted(lib, freshName, key);
       }
     })();
     // A failed open must not be cached forever.
@@ -161,7 +201,12 @@ export async function destroyOfflineDatabase(userId: string): Promise<void> {
     await db?.closeAsync().catch(() => undefined);
   }
   if (lib) {
-    await lib.deleteDatabaseAsync(await fileNameFor(userId)).catch(() => undefined);
+    // Every generation this member has left behind, not just the current one.
+    const generation = await generationFor(userId);
+    for (let g = 0; g <= generation; g++) {
+      await lib.deleteDatabaseAsync(await fileNameFor(userId, g)).catch(() => undefined);
+    }
   }
-  await SecureStore.deleteItemAsync(`${KEY_PREFIX}${userId.replace(/[^A-Za-z0-9_-]/g, '_')}`).catch(() => undefined);
+  await SecureStore.deleteItemAsync(safeName(KEY_PREFIX, userId)).catch(() => undefined);
+  await SecureStore.deleteItemAsync(safeName(GENERATION_PREFIX, userId)).catch(() => undefined);
 }
