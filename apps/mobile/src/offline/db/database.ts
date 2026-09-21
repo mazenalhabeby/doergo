@@ -111,7 +111,9 @@ async function keyFor(userId: string): Promise<string> {
  * that a real phone never produced.
  */
 export function databaseFailureText(err: unknown): string {
+  const at = err as { step?: string; cipher?: string } | null;
   const parts: string[] = [];
+  if (at?.step) parts.push(`at ${at.step} [cipher ${at.cipher}]`);
   let cur: unknown = err;
   for (let depth = 0; cur && depth < 5; depth++) {
     const e = cur as { message?: string; code?: string; cause?: unknown };
@@ -122,19 +124,49 @@ export function databaseFailureText(err: unknown): string {
   return parts.join(' → ') || String(err);
 }
 
+/**
+ * Is SQLCipher actually in this binary?
+ *
+ * ⚠️ `PRAGMA cipher_version` answers with a version string when the build has
+ * encryption and NOTHING when it does not, and asking it is safe before the
+ * key. It is reported on screen because the difference decides everything and
+ * cannot be seen any other way: a plain SQLite build ignores `PRAGMA key`
+ * silently, so a mis-built app looks exactly like a working one right up until
+ * a database will not open.
+ */
+async function cipherVersion(db: SqlDb): Promise<string> {
+  try {
+    const rows = await (db as unknown as { getAllAsync: (sql: string) => Promise<unknown[]> }).getAllAsync('PRAGMA cipher_version;');
+    const first = rows?.[0] as Record<string, unknown> | undefined;
+    const value = first ? Object.values(first)[0] : undefined;
+    return value ? String(value) : 'NO SQLCIPHER';
+  } catch {
+    return 'NO SQLCIPHER';
+  }
+}
+
 async function openEncrypted(lib: NonNullable<ReturnType<typeof loadSQLite>>, fileName: string, key: string): Promise<SqlDb> {
   const db = (await lib.openDatabaseAsync(fileName)) as unknown as SqlDb;
+  // Which step failed, carried out with the error. Four releases were spent not
+  // knowing whether the key was rejected, the keying silently did nothing, or
+  // the schema was at fault — they fail with the same sentence.
+  let step = 'cipher_version';
+  let cipher = '?';
   try {
+    cipher = await cipherVersion(db);
+    step = 'key';
     // The key must be the FIRST statement on a SQLCipher connection. The value
     // is 64 hex characters we generated — never user input.
     await db.execAsync(`PRAGMA key = "x'${key}'"`);
+    step = 'journal_mode';
     await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
+    step = 'migrate';
     await migrate(db);
     return db;
   } catch (err) {
     // Carry the open connection out with the failure: the recovery has to close
     // it before the file can be deleted, and only this scope has it.
-    throw Object.assign(err instanceof Error ? err : new Error(String(err)), { db });
+    throw Object.assign(err instanceof Error ? err : new Error(String(err)), { db, step, cipher });
   }
 }
 
