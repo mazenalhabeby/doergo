@@ -16,8 +16,17 @@ const NOT_A_DB = Object.assign(new Error("Calling the 'execAsync' function has f
 });
 
 const execAsync = jest.fn();
-const deleteDatabaseAsync = jest.fn().mockResolvedValue(undefined);
-const openDatabaseAsync = jest.fn(async () => ({ execAsync, getAllAsync: jest.fn().mockResolvedValue([]), runAsync: jest.fn(), closeAsync: jest.fn() }));
+const closeAsync = jest.fn().mockResolvedValue(undefined);
+/*
+  expo-sqlite REFUSES to delete a database whose handle is still in its open
+  cache (SQLiteModule.swift: `findCachedDatabase(...) != nil` -> throw). The
+  real module behaves that way, so the fake does too — without it the test
+  passes while the phone does not, which is exactly what happened.
+*/
+const deleteDatabaseAsync = jest.fn(async () => {
+  if (closeAsync.mock.calls.length === 0) throw new Error('database is still open');
+});
+const openDatabaseAsync = jest.fn(async () => ({ execAsync, getAllAsync: jest.fn().mockResolvedValue([]), runAsync: jest.fn(), closeAsync }));
 
 jest.mock('../native', () => ({ loadSQLite: () => ({ openDatabaseAsync, deleteDatabaseAsync }) }));
 jest.mock('../../lib/optional-native', () => ({
@@ -34,10 +43,15 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock('../db/migrations', () => ({ migrate: jest.fn().mockResolvedValue(undefined) }));
+jest.mock('expo-file-system', () => ({
+  Paths: { document: '/doc' },
+  File: class { exists = false; delete() {} },
+}));
 
 beforeEach(() => {
   jest.clearAllMocks();
   execAsync.mockReset();
+  closeAsync.mockClear();
 });
 
 it('starts a new database when the key no longer decrypts the old one', async () => {
@@ -46,6 +60,8 @@ it('starts a new database when the key no longer decrypts the old one', async ()
 
   await expect(openOfflineDatabase('member-restored-from-backup')).resolves.toBeTruthy();
   expect(deleteDatabaseAsync).toHaveBeenCalledTimes(1);
+  // The connection that failed must be closed, or the delete above is refused.
+  expect(closeAsync).toHaveBeenCalled();
 });
 
 it('does not delete the database for an unrelated failure', async () => {

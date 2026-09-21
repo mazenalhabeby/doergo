@@ -1,3 +1,4 @@
+import { File as FsFile, Paths } from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
 import { expoCrypto } from '../../lib/optional-native';
 import { loadSQLite } from '../native';
@@ -62,12 +63,50 @@ function isUnreadableDatabase(err: unknown): boolean {
 
 async function openEncrypted(lib: NonNullable<ReturnType<typeof loadSQLite>>, fileName: string, key: string): Promise<SqlDb> {
   const db = (await lib.openDatabaseAsync(fileName)) as unknown as SqlDb;
-  // The key must be the FIRST statement on a SQLCipher connection. The value
-  // is 64 hex characters we generated — never user input.
-  await db.execAsync(`PRAGMA key = "x'${key}'"`);
-  await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
-  await migrate(db);
-  return db;
+  try {
+    // The key must be the FIRST statement on a SQLCipher connection. The value
+    // is 64 hex characters we generated — never user input.
+    await db.execAsync(`PRAGMA key = "x'${key}'"`);
+    await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
+    await migrate(db);
+    return db;
+  } catch (err) {
+    // Carry the open connection out with the failure: the recovery has to close
+    // it before the file can be deleted, and only this scope has it.
+    throw Object.assign(err instanceof Error ? err : new Error(String(err)), { db });
+  }
+}
+
+/**
+ * Remove an unreadable database, all of it.
+ *
+ * ⚠️ CLOSE IT FIRST. `deleteDatabaseAsync` refuses — it throws — while the
+ * handle is still in expo-sqlite's open cache, and the open SUCCEEDED here: it
+ * was the first statement that failed, so the connection is very much open.
+ * Without this the delete is swallowed, the retry meets the same file, and the
+ * recovery looks like it ran and changed nothing. It did exactly that once.
+ *
+ * ⚠️ AND THE SIDECARS. WAL leaves `-wal` and `-shm` beside the database and
+ * `deleteDatabaseAsync` removes only the main file; a stale journal left next
+ * to a fresh database is replayed into it, which is a new way to arrive at the
+ * same error. expo-sqlite has no API for them, so they go directly.
+ */
+async function discardDatabaseFiles(
+  lib: NonNullable<ReturnType<typeof loadSQLite>>,
+  failed: unknown,
+  fileName: string,
+): Promise<void> {
+  const db = (failed as { db?: { closeAsync?: () => Promise<void> } })?.db;
+  await db?.closeAsync?.().catch(() => undefined);
+  await lib.deleteDatabaseAsync(fileName).catch(() => undefined);
+  for (const suffix of ['', '-wal', '-shm']) {
+    try {
+      const file = new FsFile(Paths.document, 'SQLite', `${fileName}${suffix}`);
+      if (file.exists) file.delete();
+    } catch {
+      // Best effort: the main file is gone through the supported path already.
+    }
+  }
 }
 
 export function openOfflineDatabase(userId: string): Promise<SqlDb> | null {
@@ -97,7 +136,7 @@ export function openOfflineDatabase(userId: string): Promise<SqlDb> | null {
           and must surface rather than loop.
         */
         console.warn('[offline] database could not be decrypted — starting a new one');
-        await lib.deleteDatabaseAsync(fileName).catch(() => undefined);
+        await discardDatabaseFiles(lib, err, fileName);
         return await openEncrypted(lib, fileName, key);
       }
     })();
