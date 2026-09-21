@@ -103,3 +103,9 @@ tools/blog-mcp.zip
 # being used as a file share for binaries that never diff. Kept on disk, and
 # belong wherever design source belongs.
 doergo design/
+
+# The sales brochures — four hand-made PDF exports, ~10.7MB, built by no
+# script and read by no code. A brochure is a deliverable, but a re-export is
+# a whole new 2.7MB blob git keeps forever, and the current one is only ever
+# wanted wherever it is actually sent from.
+docs/sales-brochure*.pdf
