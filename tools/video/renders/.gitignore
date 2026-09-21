@@ -2,18 +2,20 @@
 # intermediates are not worth versioning — the raw Playwright capture alone is
 # ~30MB per run, and it changes on every render.
 #
-# What IS committed is the finished deliverable: the mp4, its subtitles, the
-# YouTube text and the timing manifest. They are the proof the rig works, and
-# the mp4 is the thing anybody can watch without running anything.
+# What IS committed is the finished deliverable MINUS the video itself: the
+# subtitles, the YouTube text and the timing manifest — about 1MB for the whole
+# library, and enough to say what was made and when.
+#
+# ⚠️ The mp4s used to be committed too, for the same reason ("anybody can watch
+# it without running anything"). Sixty-eight of them came to 719MB — two thirds
+# of a git repository that every clone, every CI checkout and the bundle-over-
+# SSH prod deploy has to carry, forever, because git history is not editable in
+# passing. A render is reproducible from the seed, the script and the app; a
+# finished video belongs wherever finished videos are published, not here.
 *
 !.gitignore
 !*/
 */*
-!*/*.mp4
 !*/*.srt
 !*/*.youtube.txt
 !*/*.timeline.json
-
-# ...but not the preview build with captions burned in: it is the same video
-# again, and it exists only for checking subtitle timing locally.
-*.preview-*.mp4
