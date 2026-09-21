@@ -18,7 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { avatarApi } from '../lib/api/auth';
 import { isUnreachable } from './actions/unreachable';
 import { createPendingAvatar, type PendingAvatar } from './profile/pending-avatar';
-import { offlineCapableBuild } from './native';
+import { missingOfflineParts } from './native';
 import { connectivity, createOfflineRuntime } from './runtime';
 import { reportTelemetry } from './telemetry';
 import { newest } from './freshness';
@@ -61,9 +61,26 @@ interface OfflineValue {
   running: SyncEngine | null;
   /** A new profile photo (or its removal) waiting for signal. */
   avatar: PendingAvatar | null;
+  /**
+   * Why there is no engine, when there is none.
+   *
+   * `build` — this binary has no offline parts; only a store update adds them.
+   * `failed` — it has them and the member's database would not open.
+   *
+   * They are told apart because the answer to each is opposite, and the Sync
+   * screen said "update the app" for both. A member on the newest build, whose
+   * database failed, was sent to a store that offers them nothing — and it
+   * hides the only case anyone can act on from here.
+   */
+  unavailableReason: 'build' | 'failed' | 'no-org' | null;
+  /**
+   * WHICH parts are missing, or what the failure said — the one line that turns
+   * "it does not work on my phone" into something actionable without a cable.
+   */
+  unavailableDetail: string | null;
 }
 
-const UNAVAILABLE: OfflineValue = { available: false, engine: null, records: null, files: null, media: null, preferences: null, running: null, avatar: null };
+const UNAVAILABLE: OfflineValue = { available: false, engine: null, records: null, files: null, media: null, preferences: null, running: null, avatar: null, unavailableReason: null, unavailableDetail: null };
 const OfflineContext = createContext<OfflineValue>(UNAVAILABLE);
 
 const EMPTY_SNAPSHOT: SyncSnapshot = { waiting: 0, attention: 0, pushing: false, pulling: false, lastSuccessAt: null };
@@ -101,8 +118,19 @@ export function OfflineProvider({ children, variant = 'staff' }: {
   const offlineMode = user?.offlineMode === true;
 
   useEffect(() => {
-    if (!user?.id || !user.organizationId || !offlineCapableBuild()) {
-      setValue(UNAVAILABLE);
+    /*
+      No organization = nothing to sync with, and it is NOT a reason to send
+      somebody to the app store. Rare (an account mid-onboarding), and without
+      its own answer it reads as the missing-parts case on a perfectly good
+      build — which is an afternoon of looking in the wrong place.
+    */
+    if (!user?.id || !user.organizationId) {
+      setValue(user?.id ? { ...UNAVAILABLE, unavailableReason: 'no-org', unavailableDetail: 'no organization on this account' } : UNAVAILABLE);
+      return;
+    }
+    const missing = missingOfflineParts();
+    if (missing.length > 0) {
+      setValue({ ...UNAVAILABLE, unavailableReason: 'build', unavailableDetail: missing.join(', ') });
       return;
     }
     let cancelled = false;
@@ -111,7 +139,11 @@ export function OfflineProvider({ children, variant = 'staff' }: {
 
     (async () => {
       const runtime = await createOfflineRuntime({ userId: user.id, organizationId: user.organizationId! });
-      if (!runtime) return;
+      // The parts are here and the database did not open — never "update the app".
+      if (!runtime) {
+        if (!cancelled) setValue({ ...UNAVAILABLE, unavailableReason: 'failed', unavailableDetail: 'database did not open' });
+        return;
+      }
       const { records, files, media, preferences } = runtime;
       engine = runtime.engine;
       if (cancelled) {
@@ -150,7 +182,7 @@ export function OfflineProvider({ children, variant = 'staff' }: {
         forgetFile: (id) => files.forget(id),
         isUnreachable,
       });
-      setValue({ available: true, engine: live, records, files, media, preferences, running: live, avatar });
+      setValue({ available: true, engine: live, records, files, media, preferences, running: live, avatar, unavailableReason: null, unavailableDetail: null });
       void avatar.flush();
       // Syncs itself now and then with the app closed — best effort, never relied on.
       void registerBackgroundSync({ userId: user.id, organizationId: user.organizationId! });
@@ -224,7 +256,7 @@ export function OfflineProvider({ children, variant = 'staff' }: {
       void live.syncAll().then(fillMediaCache);
     })().catch((err) => {
       console.warn('[offline] could not start:', err);
-      if (!cancelled) setValue(UNAVAILABLE);
+      if (!cancelled) setValue({ ...UNAVAILABLE, unavailableReason: 'failed', unavailableDetail: String((err as Error)?.message ?? err).slice(0, 200) });
     });
 
     return () => {

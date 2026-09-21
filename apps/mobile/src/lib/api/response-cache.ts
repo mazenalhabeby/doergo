@@ -42,7 +42,13 @@ const KEEP: readonly RegExp[] = [
   // entry queued with no signal is shown beside the ones already delivered.
   /^\/assets\/log\/(mine|due-mine)(\?|$)/,
   /^\/shift-issues(\/|\?|$)/,
-  /^\/employees\//,
+  /*
+    ⚠️ `(\/|\?|$)`, not `\/`. The pattern used to demand a trailing slash, so
+    `/employees/:id` was kept and the LIST behind it — `/employees?page=1`, the
+    whole Team tab — was not. A member offline could open one colleague and
+    never the roster they reached them through.
+  */
+  /^\/employees(\/|\?|$)/,
   /^\/overtime(\/|\?|$)/,
   /^\/support(\/|\?|$)/,
   /^\/chat(\/|\?|$)/,
@@ -53,6 +59,22 @@ const KEEP: readonly RegExp[] = [
   /^\/join-requests(\?|$)/,
   /^\/invitations(\?|$)/,
   /^\/custom-fields(\/|\?|$)/,
+  /*
+    The task's own extra fields. NOT covered by src/offline/tasks, which fetches
+    the task, its notes and its photos — so a task opened in a basement showed
+    every field the organization added as missing rather than as what it holds.
+  */
+  /^\/tasks\/[^/]+\/custom-fields(\?|$)/,
+  // The task's history. Read-only, already-happened facts about one job — the
+  // Activity panel rendered empty with no signal on a task the phone holds.
+  /^\/tasks\/[^/]+\/timeline(\?|$)/,
+  // The kinds of thing an organization owns — the vocabulary every asset screen
+  // reads before it can label a single row.
+  /^\/asset-categories(\/|\?|$)/,
+  /^\/organizations\/contacts(\/|\?|$)/,
+  // The member's own notification choices: their data, and the settings screen
+  // renders switches from it.
+  /^\/users\/me\/notification-prefs(\?|$)/,
   /^\/routes(\/|\?|$)/,
   // A portal client's own portal, requests and units — what they already saw.
   /^\/portal\/(config|units|requests)(\/|\?|$)/,

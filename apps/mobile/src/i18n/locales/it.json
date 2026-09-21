@@ -2676,6 +2676,10 @@
       "longOffline_one": "Ultima sincronizzazione {{count}} giorno fa. Si connetta appena può.",
       "longOffline_other": "Ultima sincronizzazione {{count}} giorni fa. Si connetta appena può."
     },
+    "network": {
+      "offline": "Sei offline. Questo verrà caricato quando tornerai online.",
+      "slow": "La connessione è troppo debole per caricare questo. Funzionerà di nuovo quando il segnale sarà migliore."
+    },
     "chip": {
       "waiting": "In attesa di invio",
       "attention": "Non applicato"
@@ -2693,7 +2697,8 @@
       "discard": "Scarta",
       "syncNow": "Sincronizza ora",
       "offlineNow": "Sei offline: sarà inviato quando torni online.",
-      "unavailable": "Questa versione dell'app funziona solo online. Aggiorna l'app per lavorare senza internet.",
+      "unavailable": "Questa versione dell'app ({{version}}) funziona solo online. Aggiorna l'app per continuare a lavorare senza internet.",
+      "unavailableFailed": "L'archiviazione offline non è riuscita ad avviarsi su questo telefono, quindi l'app funziona solo online. Chiudi completamente l'app e riaprila; se continui a vedere questo, avvisa l'assistenza.",
       "waitingSince": "Salvato {{time}}",
       "thisPhone": "Questo telefono",
       "wifiOnly": "Invia le foto solo con Wi-Fi",

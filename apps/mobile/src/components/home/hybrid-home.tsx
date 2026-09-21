@@ -13,11 +13,13 @@ import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import {
   attendanceApi,
-  tasksApi,
   TaskStatus,
   type AttendanceStatus,
   type Task,
 } from '../../lib/api';
+import { useHomeTasks } from '../../offline/tasks/use-home-tasks';
+import { OfflineBanner } from '../../offline/components/offline-banner';
+import { FreshnessLabel } from '../../offline/components/freshness-label';
 import { TaskCard, ErrorState, Skeleton, ScreenContainer } from '../../components';
 import { ShiftClockCard } from './shift-clock-card';
 import { OutOfRingHomeBanner } from '../out-of-ring-home-banner';
@@ -45,8 +47,12 @@ export function HybridHome() {
   // The clock-in/out widget (ShiftClockCard) owns its own attendance state.
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
 
-  // Task state
-  const [tasks, setTasks] = useState<Task[]>([]);
+  /*
+    The list, from the phone's copy when it has one. Read through the shared
+    reader so this screen and the Tasks tab cannot disagree about the same
+    jobs, and so a member with no signal opens their day instead of a timeout.
+  */
+  const { tasks, updatedAt: tasksUpdatedAt, load: loadTasks } = useHomeTasks();
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
@@ -64,14 +70,14 @@ export function HybridHome() {
       if (showRefresh) setIsRefreshing(true);
       setError(null);
 
-      // Fetch attendance + tasks in parallel
-      const [statusData, fetchedTasks] = await Promise.all([
+      // Attendance + tasks in parallel. Attendance already degrades quietly;
+      // the list now falls back to this phone rather than failing the screen.
+      const [statusData] = await Promise.all([
         attendanceApi.getStatus().catch(() => null),
-        tasksApi.list(),
+        loadTasks(),
       ]);
 
       if (statusData) setAttendanceStatus(statusData);
-      setTasks(fetchedTasks || []);
     } catch (err: any) {
       if (err?.statusCode === 401 || err?.message?.includes('Session expired')) return;
       setError(err instanceof Error ? err.message : t('common.error'));
@@ -80,7 +86,7 @@ export function HybridHome() {
       setIsRefreshing(false);
       fetchingRef.current = false;
     }
-  }, [t]);
+  }, [loadTasks, t]);
 
   // Initial load
   useEffect(() => {
@@ -162,12 +168,20 @@ export function HybridHome() {
 
   const listHeader = useMemo(() => (
     <>
+      {/* What the network means right now — the same line the Tasks tab and
+          the task screen carry, in the same place. Quiet when online with
+          nothing waiting, which is the normal case. */}
+      <OfflineBanner style={hStyles.offlineBanner} />
+
       {/* Welcome */}
       <TourTarget name="home-greeting" style={sharedStyles.welcomeSection}>
         <Text style={[sharedStyles.welcomeGreeting, { color: colors.textMuted }]}>
           {new Date().getHours() < 12 ? t('common.greeting.morning') : new Date().getHours() < 18 ? t('common.greeting.afternoon') : t('common.greeting.evening')}
         </Text>
         <Text style={[sharedStyles.welcomeName, { color: colors.textPrimary }]}>{user?.firstName}!</Text>
+        {/* When the list was last brought up to date — shown only while it is
+            being read from this phone. */}
+        {tasksUpdatedAt !== null && <FreshnessLabel at={tasksUpdatedAt} />}
       </TourTarget>
 
       {/* Outstanding personal documents, once, at the top — see the component
@@ -249,7 +263,7 @@ export function HybridHome() {
         </View>
       </TourTarget>
     </>
-  ), [stats, currentWeekStart, filteredTasks.length, selectedDate, taskDateSet, user?.firstName,
+  ), [stats, currentWeekStart, filteredTasks.length, selectedDate, taskDateSet, tasksUpdatedAt, user?.firstName,
       colors, isDark, t, isClockedIn, attendanceStatus]);
 
   const renderTask = useCallback(({ item }: { item: Task }) => (
@@ -302,6 +316,10 @@ export function HybridHome() {
 }
 
 const hStyles = StyleSheet.create({
+  offlineBanner: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.md,
+  },
   // Task List
   jobsSection: {
     marginTop: SPACING.xxl,

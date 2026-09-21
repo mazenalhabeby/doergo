@@ -2676,6 +2676,10 @@
       "longOffline_one": "Dernière synchro il y a {{count}} jour. Connectez-vous dès que possible.",
       "longOffline_other": "Dernière synchro il y a {{count}} jours. Connectez-vous dès que possible."
     },
+    "network": {
+      "offline": "Vous êtes hors ligne. Ceci se chargera dès votre retour en ligne.",
+      "slow": "La connexion est trop faible pour charger ceci. Cela fonctionnera de nouveau avec un meilleur signal."
+    },
     "chip": {
       "waiting": "En attente d'envoi",
       "attention": "Non appliqué"
@@ -2693,7 +2697,8 @@
       "discard": "Supprimer",
       "syncNow": "Synchroniser",
       "offlineNow": "Vous êtes hors ligne : ce sera envoyé dès votre retour en ligne.",
-      "unavailable": "Cette version de l'application fonctionne uniquement en ligne. Mettez l'application à jour pour travailler sans internet.",
+      "unavailable": "Cette version de l'application ({{version}}) fonctionne uniquement en ligne. Mettez l'application à jour pour continuer à travailler sans internet.",
+      "unavailableFailed": "Le stockage hors ligne n'a pas pu démarrer sur ce téléphone, l'application fonctionne donc uniquement en ligne. Fermez complètement l'application et rouvrez-la ; si cela persiste, prévenez le support.",
       "waitingSince": "Enregistré {{time}}",
       "thisPhone": "Ce téléphone",
       "wifiOnly": "Envoyer les photos uniquement en Wi-Fi",

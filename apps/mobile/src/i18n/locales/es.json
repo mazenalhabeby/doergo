@@ -2676,6 +2676,10 @@
       "longOffline_one": "Última sincronización hace {{count}} día. Conéctese cuando pueda.",
       "longOffline_other": "Última sincronización hace {{count}} días. Conéctese cuando pueda."
     },
+    "network": {
+      "offline": "Estás sin conexión. Esto se cargará cuando vuelvas a tener conexión.",
+      "slow": "La conexión es demasiado débil para cargar esto. Funcionará de nuevo cuando la señal mejore."
+    },
     "chip": {
       "waiting": "Pendiente de envío",
       "attention": "No aplicado"
@@ -2693,7 +2697,8 @@
       "discard": "Descartar",
       "syncNow": "Sincronizar ahora",
       "offlineNow": "Estás sin conexión: se enviará cuando vuelvas a tener conexión.",
-      "unavailable": "Esta versión de la app solo funciona con conexión. Actualiza la app para seguir trabajando sin internet.",
+      "unavailable": "Esta versión de la aplicación ({{version}}) solo funciona con conexión. Actualiza la aplicación para seguir trabajando sin internet.",
+      "unavailableFailed": "El almacenamiento sin conexión no pudo iniciarse en este teléfono, así que la aplicación solo funciona con conexión. Cierra la aplicación por completo y vuelve a abrirla; si sigues viendo esto, avisa a soporte.",
       "waitingSince": "Guardado {{time}}",
       "thisPhone": "Este teléfono",
       "wifiOnly": "Enviar fotos solo con Wi-Fi",

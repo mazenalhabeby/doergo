@@ -2676,6 +2676,10 @@
       "longOffline_one": "Last synced {{count}} day ago. Connect when you can.",
       "longOffline_other": "Last synced {{count}} days ago. Connect when you can."
     },
+    "network": {
+      "offline": "You're offline. This will load when you're back online.",
+      "slow": "The connection is too weak to load this. It will work again when the signal is better."
+    },
     "chip": {
       "waiting": "Waiting to send",
       "attention": "Not applied"
@@ -2693,7 +2697,8 @@
       "discard": "Discard",
       "syncNow": "Sync now",
       "offlineNow": "You're offline — this will be sent when you're back online.",
-      "unavailable": "This version of the app works online only. Update the app to keep working without internet.",
+      "unavailable": "This version of the app ({{version}}) works online only. Update the app to keep working without internet.",
+      "unavailableFailed": "Offline storage could not start on this phone, so the app is working online only. Close the app completely and open it again; if you still see this, tell support.",
       "waitingSince": "Saved {{time}}",
       "thisPhone": "This phone",
       "wifiOnly": "Send photos only on Wi-Fi",

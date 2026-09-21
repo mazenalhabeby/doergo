@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import Constants from 'expo-constants';
 import { RefreshControl, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,12 +30,13 @@ export default function SyncScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   // The running engine: with offline mode off it may still be sending earlier work, which belongs here.
-  const { running: engine, files, media, preferences } = useOffline();
+  const { running: engine, files, media, preferences, unavailableReason, unavailableDetail } = useOffline();
   const available = !!engine;
   const connectivity = useConnectivity();
   const { snapshot, operations } = useSyncStatus();
   const [refreshing, setRefreshing] = useState(false);
   const hour12 = user?.timeFormat === '12h';
+  const appVersion = Constants.expoConfig?.version ?? '?';
 
   const groups = useMemo(() => {
     const since = Date.now() - DAY_MS;
@@ -92,7 +94,26 @@ export default function SyncScreen() {
           {!available ? (
             <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Ionicons name="cloud-offline-outline" size={22} color={colors.textMuted} />
-              <Text style={[s.body, { color: colors.textSecondary }]}>{t('offline.sync.unavailable')}</Text>
+              {/*
+                Why, not just that. "Update the app" is the answer to exactly one
+                of these; told to somebody already on the newest build whose
+                database would not open, it sends them to a store that offers
+                them nothing. The version is printed because it is the first
+                thing anyone asks, and reading it here beats another screen.
+              */}
+              <Text style={[s.body, { color: colors.textSecondary }]}>
+                {unavailableReason === 'failed' || unavailableReason === 'no-org'
+                  ? t('offline.sync.unavailableFailed')
+                  : t('offline.sync.unavailable', { version: appVersion })}
+              </Text>
+              {/* Not translated on purpose: it names native packages and an
+                  error string, and it is read by whoever is being sent the
+                  screenshot, not by the member. */}
+              {unavailableDetail ? (
+                <Text style={[s.meta, { color: colors.textMuted }]} selectable>
+                  {appVersion} · {unavailableDetail}
+                </Text>
+              ) : null}
             </View>
           ) : (
             <>

@@ -15,7 +15,6 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import {
-  tasksApi,
   locationsApi,
   attendanceApi,
   membersApi,
@@ -57,6 +56,9 @@ import {
   ACTIVE_TASK_PRIORITY,
 } from './workspace/helpers';
 import { DocumentsReminderCard } from '../documents-reminder-card';
+import { useHomeTasks } from '../../offline/tasks/use-home-tasks';
+import { OfflineBanner } from '../../offline/components/offline-banner';
+import { FreshnessLabel } from '../../offline/components/freshness-label';
 
 // Dynamic grid — every card is half-width and dropped into the shorter of two
 // columns (masonry). Columns stay balanced, cards are filled to their width,
@@ -123,7 +125,16 @@ export function AdminDashboard() {
   */
   const canReviewHours = holds(user, 'canViewSpaceAttendance');
 
-  const [tasks, setTasks] = useState<Task[]>([]);
+  /*
+    The list, from the phone's copy when it has one.
+
+    Every other read on this screen already degrades quietly — `.catch(() =>
+    [])` on the locations, the directory, the open entries — so `tasksApi.list()`
+    was the single call that could throw, and it took the whole board down with
+    it. Read through the shared reader so this screen and the Tasks tab cannot
+    disagree about the same jobs.
+  */
+  const { tasks, updatedAt: tasksUpdatedAt, load: loadTasks } = useHomeTasks();
   const [locations, setLocations] = useState<LocationWithMembers[]>([]);
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
@@ -170,8 +181,8 @@ export function AdminDashboard() {
 
       // Single batch — locations now embed their member assignments, so there
       // is no per-location follow-up request (no N+1).
-      const [tasksRes, locationsRes, membersRes, entriesRes, breaksRes, pendingRes] = await Promise.all([
-        tasksApi.list(),
+      const [, locationsRes, membersRes, entriesRes, breaksRes, pendingRes] = await Promise.all([
+        loadTasks(),
         locationsApi.list().catch(() => [] as LocationWithMembers[]),
         canReadDirectory
           ? membersApi.list().catch(() => [] as OrgMember[])
@@ -206,7 +217,6 @@ export function AdminDashboard() {
             .getRosters((locationsRes || []).map((l) => l.id))
             .catch(() => [] as LocationAssignment[]);
 
-      setTasks(tasksRes || []);
       setLocations(locationsRes || []);
       setMembers(membersRes || []);
       setRosters(rostersRes || []);
@@ -222,7 +232,7 @@ export function AdminDashboard() {
       setIsRefreshing(false);
       fetchingRef.current = false;
     }
-  }, [t, user?.canManageUsers, canReviewHours]);
+  }, [t, user?.canManageUsers, canReviewHours, loadTasks]);
 
   useEffect(() => {
     if (initialFetchDoneRef.current) return;
@@ -911,6 +921,11 @@ export function AdminDashboard() {
           person keeps their name, and gains the one fact the old header never
           gave them — WHICH site they are looking at.
         */}
+        {/* What the network means right now — the same line the Tasks tab and
+            the task screen carry, in the same place. Quiet when online with
+            nothing waiting, which is the normal case. */}
+        <OfflineBanner style={styles.offlineBanner} />
+
         <TourTarget name="home-greeting" style={styles.header}>
           <Text style={[styles.greeting, { color: colors.textMuted }]}>
             {t('home.admin.greetingLine', { greeting, name: user?.firstName ?? '' })}
@@ -918,6 +933,9 @@ export function AdminDashboard() {
           <Text style={[styles.siteName, { color: colors.textPrimary }]} numberOfLines={1}>
             {siteTitle}
           </Text>
+          {/* When the board's jobs were last brought up to date — shown only
+              while they are being read from this phone. */}
+          {tasksUpdatedAt !== null && <FreshnessLabel at={tasksUpdatedAt} />}
         </TourTarget>
 
         {/* How the site is doing, and what is waiting on this person — the two
@@ -1034,6 +1052,10 @@ export function AdminDashboard() {
 }
 
 const styles = StyleSheet.create({
+  offlineBanner: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.md,
+  },
   header: {
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.lg,

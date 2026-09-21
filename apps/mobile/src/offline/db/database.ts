@@ -45,6 +45,31 @@ async function keyFor(userId: string): Promise<string> {
  * The member's offline database, opened and migrated. Null on a build without
  * the native module — callers stay online-only.
  */
+/**
+ * SQLCipher's answer when the key does not decrypt the file: every statement
+ * after `PRAGMA key` fails with this, because to SQLite the bytes are noise.
+ *
+ * It is not corruption in the usual sense and it is not rare. The file lives in
+ * the app's container and the key lives in the keychain as
+ * THIS_DEVICE_ONLY — restore a phone from a backup and the container comes
+ * back while the key does not, so a perfectly healthy install meets a file it
+ * can never read again.
+ */
+function isUnreadableDatabase(err: unknown): boolean {
+  const text = `${(err as { message?: string } | null)?.message ?? err}`;
+  return /file is not a database|not a database|NOTADB/i.test(text);
+}
+
+async function openEncrypted(lib: NonNullable<ReturnType<typeof loadSQLite>>, fileName: string, key: string): Promise<SqlDb> {
+  const db = (await lib.openDatabaseAsync(fileName)) as unknown as SqlDb;
+  // The key must be the FIRST statement on a SQLCipher connection. The value
+  // is 64 hex characters we generated — never user input.
+  await db.execAsync(`PRAGMA key = "x'${key}'"`);
+  await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
+  await migrate(db);
+  return db;
+}
+
 export function openOfflineDatabase(userId: string): Promise<SqlDb> | null {
   const lib = loadSQLite();
   if (!lib) return null;
@@ -52,13 +77,29 @@ export function openOfflineDatabase(userId: string): Promise<SqlDb> | null {
   if (!pending) {
     pending = (async () => {
       const [fileName, key] = await Promise.all([fileNameFor(userId), keyFor(userId)]);
-      const db = (await lib.openDatabaseAsync(fileName)) as unknown as SqlDb;
-      // The key must be the FIRST statement on a SQLCipher connection. The value
-      // is 64 hex characters we generated — never user input.
-      await db.execAsync(`PRAGMA key = "x'${key}'"`);
-      await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
-      await migrate(db);
-      return db;
+      try {
+        return await openEncrypted(lib, fileName, key);
+      } catch (err) {
+        if (!isUnreadableDatabase(err)) throw err;
+        /*
+          ⚠️ Start again with an empty one. There is no other move: nothing on
+          this phone or any other can decrypt those bytes, and the alternative
+          is what this replaced — the whole offline layer dead for that member
+          for the life of the install, behind a screen telling them to update an
+          app that is already current. A real phone did exactly that.
+
+          What is lost is what was already lost. `records` is a copy of the
+          server and returns on the next pull; the outbox holds work that exists
+          nowhere else, and it too was unreadable the moment the key stopped
+          matching. Discarding it is not the damage, it is the aftermath.
+
+          Once. A second failure on a file we just created is a different fault
+          and must surface rather than loop.
+        */
+        console.warn('[offline] database could not be decrypted — starting a new one');
+        await lib.deleteDatabaseAsync(fileName).catch(() => undefined);
+        return await openEncrypted(lib, fileName, key);
+      }
     })();
     // A failed open must not be cached forever.
     pending.catch(() => open.delete(userId));

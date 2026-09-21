@@ -2,6 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { keepResponse, keptResponse } from './response-cache';
+import { networkErrorText } from './network-error';
 
 // Dynamically get API URL based on Expo dev server host
 export function getApiUrl(): string {
@@ -310,12 +311,12 @@ export async function fetchApi<T>(
   } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new ApiError('Request timed out. Please check your connection.', 408);
+      throw new ApiError(networkErrorText('slow'), 408, 'SLOW_CONNECTION');
     }
     if (error instanceof ApiError) {
       throw error;
     }
-    throw new ApiError('Unable to connect to server. Please check if the API is running.', 0);
+    throw new ApiError(networkErrorText('offline'), 0, 'NO_CONNECTION');
   }
 }
 
@@ -432,7 +433,7 @@ async function _fetchWithAuthInner<T>(
   } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new ApiError('Request timed out. Please check your connection.', 408);
+      throw new ApiError(networkErrorText('slow'), 408, 'SLOW_CONNECTION');
     }
     if (error instanceof ApiError) {
       throw error;
@@ -444,6 +445,6 @@ async function _fetchWithAuthInner<T>(
       must survive being offline go through the outbox (src/offline).
     */
     notifyObservers({ kind: 'network-error' });
-    throw new ApiError('Unable to connect to server. Please check if the API is running.', 0);
+    throw new ApiError(networkErrorText('offline'), 0, 'NO_CONNECTION');
   }
 }

@@ -55,8 +55,24 @@ export function loadNetInfo(): NetInfoLib | null {
   return netinfo;
 }
 
+/**
+ * Which offline parts this binary is missing — empty means it can run offline.
+ *
+ * Named rather than counted, because "this version works online only" is true
+ * of three different binaries and the answer is not the same for each. A phone
+ * reporting 1.0.6 and still refusing to sync is a question nobody could answer
+ * from the outside; the phone knows, and now says.
+ */
+export function missingOfflineParts(): string[] {
+  const missing: string[] = [];
+  if (loadSQLite() === null) missing.push('expo-sqlite');
+  if (loadNetInfo() === null) missing.push('netinfo');
+  // expo-crypto names the database file and makes its key.
+  if (expoCrypto() === null) missing.push('expo-crypto');
+  return missing;
+}
+
 /** Can this build run offline at all? Every part, or none. */
 export function offlineCapableBuild(): boolean {
-  // expo-crypto names the database file and makes its key.
-  return loadSQLite() !== null && loadNetInfo() !== null && expoCrypto() !== null;
+  return missingOfflineParts().length === 0;
 }

@@ -2676,6 +2676,10 @@
       "longOffline_one": "Zuletzt vor {{count}} Tag synchronisiert. Bitte verbinden Sie sich, sobald es geht.",
       "longOffline_other": "Zuletzt vor {{count}} Tagen synchronisiert. Bitte verbinden Sie sich, sobald es geht."
     },
+    "network": {
+      "offline": "Sie sind offline. Dies wird geladen, sobald Sie wieder online sind.",
+      "slow": "Die Verbindung ist zu schwach, um dies zu laden. Es funktioniert wieder, sobald der Empfang besser ist."
+    },
     "chip": {
       "waiting": "Wird gesendet",
       "attention": "Nicht übernommen"
@@ -2693,7 +2697,8 @@
       "discard": "Verwerfen",
       "syncNow": "Jetzt synchronisieren",
       "offlineNow": "Sie sind offline — dies wird gesendet, sobald Sie wieder online sind.",
-      "unavailable": "Diese App-Version funktioniert nur online. Aktualisieren Sie die App, um ohne Internet weiterzuarbeiten.",
+      "unavailable": "Diese App-Version ({{version}}) funktioniert nur online. Aktualisieren Sie die App, um ohne Internet weiterzuarbeiten.",
+      "unavailableFailed": "Der Offline-Speicher konnte auf diesem Telefon nicht gestartet werden, daher arbeitet die App nur online. Schließen Sie die App vollständig und öffnen Sie sie erneut; wenn dies weiterhin erscheint, wenden Sie sich an den Support.",
       "waitingSince": "Gespeichert {{time}}",
       "thisPhone": "Dieses Telefon",
       "wifiOnly": "Fotos nur über WLAN senden",

@@ -11,7 +11,10 @@ import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/auth-context';
-import { tasksApi, TaskStatus, type Task } from '../../lib/api';
+import { TaskStatus, type Task } from '../../lib/api';
+import { useHomeTasks } from '../../offline/tasks/use-home-tasks';
+import { OfflineBanner } from '../../offline/components/offline-banner';
+import { FreshnessLabel } from '../../offline/components/freshness-label';
 import { TaskCard, LoadingState, ErrorState, Skeleton, ScreenContainer } from '../../components';
 import { ROUTES } from '../../lib/constants';
 import { isSameDay } from '../../lib/utils';
@@ -28,7 +31,12 @@ export function FreelancerHome() {
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
   const tourScroll = useTourScroll();
-  const [tasks, setTasks] = useState<Task[]>([]);
+  /*
+    The list, from the phone's copy when it has one. Read through the shared
+    reader so this screen and the Tasks tab cannot disagree about the same
+    jobs, and so a member with no signal opens their day instead of a timeout.
+  */
+  const { tasks, updatedAt: tasksUpdatedAt, load: loadTasks } = useHomeTasks();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -119,8 +127,7 @@ export function FreelancerHome() {
       }
       setError(null);
 
-      const fetchedTasks = await tasksApi.list();
-      setTasks(fetchedTasks || []);
+      await loadTasks();
     } catch (err: any) {
       if (err?.statusCode === 401 || err?.message?.includes('Session expired')) {
         return;
@@ -131,7 +138,7 @@ export function FreelancerHome() {
       setIsRefreshing(false);
       fetchingRef.current = false;
     }
-  }, []);
+  }, [loadTasks, t]);
 
   useEffect(() => {
     if (initialFetchDoneRef.current) return;
@@ -174,12 +181,20 @@ export function FreelancerHome() {
 
   const listHeader = useMemo(() => (
     <>
+      {/* What the network means right now — the same line the Tasks tab and
+          the task screen carry, in the same place. Quiet when online with
+          nothing waiting, which is the normal case. */}
+      <OfflineBanner style={flStyles.offlineBanner} />
+
       {/* Welcome Section */}
       <TourTarget name="home-greeting" style={sharedStyles.welcomeSection}>
         <Text style={[sharedStyles.welcomeGreeting, { color: colors.textMuted }]}>
           {new Date().getHours() < 12 ? t('common.greeting.morning') : new Date().getHours() < 18 ? t('common.greeting.afternoon') : t('common.greeting.evening')}
         </Text>
         <Text style={[sharedStyles.welcomeName, { color: colors.textPrimary }]}>{user?.firstName}!</Text>
+        {/* When the list was last brought up to date — shown only while it is
+            being read from this phone. */}
+        {tasksUpdatedAt !== null && <FreshnessLabel at={tasksUpdatedAt} />}
       </TourTarget>
 
       {/* Outstanding personal documents, once, at the top — see the component
@@ -251,7 +266,7 @@ export function FreelancerHome() {
         </View>
       </TourTarget>
     </>
-  ), [stats, currentWeekStart, filteredTasks.length, selectedDate, taskDateSet, user?.firstName, colors, isDark, t]);
+  ), [stats, currentWeekStart, filteredTasks.length, selectedDate, taskDateSet, tasksUpdatedAt, user?.firstName, colors, isDark, t]);
 
   const renderTask = useCallback(({ item }: { item: Task }) => (
     <View style={flStyles.taskItemWrapper}>
@@ -303,6 +318,10 @@ export function FreelancerHome() {
 }
 
 const flStyles = StyleSheet.create({
+  offlineBanner: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.md,
+  },
   // Jobs Section
   jobsSection: {
     marginTop: SPACING.xxl,
