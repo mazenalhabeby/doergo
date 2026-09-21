@@ -46,26 +46,35 @@ function safeName(prefix: string, userId: string): string {
   return `${prefix}${userId.replace(/[^A-Za-z0-9_-]/g, '_')}`;
 }
 
-/** How many databases this member has burned through. 0 for almost everyone. */
-async function generationFor(userId: string): Promise<number> {
+/**
+ * Which file this member's database currently lives in — "" for the original.
+ *
+ * ⚠️ A COUNTER DOES NOT WORK HERE, and shipping one cost a release. If the
+ * store cannot keep the value (which is the very fault being recovered from —
+ * the key lives in the same store), every launch reads 0, bumps to 1, and
+ * opens the `_1` file that the PREVIOUS launch created under a different key.
+ * Predictable names collide with the wreckage of earlier attempts. A random
+ * one cannot exist yet, so the retry is always a genuinely new database
+ * whether or not anything persists.
+ */
+async function generationFor(userId: string): Promise<string> {
   const raw = await SecureStore.getItemAsync(safeName(GENERATION_PREFIX, userId)).catch(() => null);
-  const n = Number(raw);
-  return Number.isInteger(n) && n > 0 && n < 1000 ? n : 0;
+  return raw && /^[0-9a-f]{1,16}$/.test(raw) ? raw : '';
 }
 
-async function bumpGeneration(userId: string, from: number): Promise<number> {
-  const next = from + 1;
-  await SecureStore.setItemAsync(safeName(GENERATION_PREFIX, userId), String(next), {
+async function bumpGeneration(userId: string): Promise<string> {
+  const next = Array.from(crypto().getRandomBytes(4), (b) => b.toString(16).padStart(2, '0')).join('');
+  await SecureStore.setItemAsync(safeName(GENERATION_PREFIX, userId), next, {
     keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
   }).catch(() => undefined);
   return next;
 }
 
-async function fileNameFor(userId: string, generation = 0): Promise<string> {
+async function fileNameFor(userId: string, generation = ''): Promise<string> {
   const Crypto = crypto();
   const digest = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, `hbcfield-offline:${userId}`);
-  // Generation 0 keeps the original name, so nothing moves for a healthy phone.
-  return generation > 0 ? `hbc_${digest.slice(0, 32)}_${generation}.db` : `hbc_${digest.slice(0, 32)}.db`;
+  // No generation keeps the original name, so nothing moves for a healthy phone.
+  return generation ? `hbc_${digest.slice(0, 32)}_${generation}.db` : `hbc_${digest.slice(0, 32)}.db`;
 }
 
 async function keyFor(userId: string): Promise<string> {
@@ -187,11 +196,11 @@ export function openOfflineDatabase(userId: string): Promise<SqlDb> | null {
           Once. A second failure on a file we just created is a different fault
           and must surface rather than loop.
         */
-        const next = await bumpGeneration(userId, generation);
+        const next = await bumpGeneration(userId);
         const freshName = await fileNameFor(userId, next);
         console.warn(`[offline] database unusable (${databaseFailureText(err)}) — starting a new one (${freshName})`);
         // Best effort, and deliberately NOT depended on: the fresh database has
-        // a different name, so a refused delete costs disk space, not the feature.
+        // a name nothing else has used, so a refused delete costs disk space.
         await discardDatabaseFiles(lib, err, fileName);
         return await openEncrypted(lib, freshName, key);
       }
@@ -217,9 +226,9 @@ export async function destroyOfflineDatabase(userId: string): Promise<void> {
     await db?.closeAsync().catch(() => undefined);
   }
   if (lib) {
-    // Every generation this member has left behind, not just the current one.
+    // The original name and whichever one is in use now.
     const generation = await generationFor(userId);
-    for (let g = 0; g <= generation; g++) {
+    for (const g of generation ? ['', generation] : ['']) {
       await lib.deleteDatabaseAsync(await fileNameFor(userId, g)).catch(() => undefined);
     }
   }

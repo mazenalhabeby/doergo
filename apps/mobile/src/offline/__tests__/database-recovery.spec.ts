@@ -33,14 +33,17 @@ jest.mock('../../lib/optional-native', () => ({
   expoCrypto: () => ({
     CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
     digestStringAsync: async () => 'a'.repeat(64),
-    getRandomBytes: () => new Uint8Array(32).fill(7),
+    getRandomBytes: (n: number) => getRandomBytes(n),
   }),
 }));
 const store = new Map<string, string>();
+let entropy = 0;
+const getRandomBytes = jest.fn((n: number) => Uint8Array.from({ length: n }, () => (entropy++ * 37) % 251));
+const setItemAsync = jest.fn(async (k: string, v: string) => void store.set(k, v));
 jest.mock('expo-secure-store', () => ({
   AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY: 'x',
   getItemAsync: jest.fn(async (k: string) => store.get(k) ?? (k.startsWith('hbc_offline_key_') ? 'b'.repeat(64) : null)),
-  setItemAsync: jest.fn(async (k: string, v: string) => void store.set(k, v)),
+  setItemAsync: (...args: [string, string]) => setItemAsync(...args),
   deleteItemAsync: jest.fn(async (k: string) => void store.delete(k)),
 }));
 jest.mock('../db/migrations', () => ({ migrate: jest.fn().mockResolvedValue(undefined) }));
@@ -55,6 +58,7 @@ beforeEach(() => {
   closeAsync.mockClear();
   store.clear();
   openDatabaseAsync.mockClear();
+  setItemAsync.mockImplementation(async (k: string, v: string) => void store.set(k, v));
 });
 
 it('starts a new database when the key no longer decrypts the old one', async () => {
@@ -100,6 +104,28 @@ it('reports the cause, not the wrapper expo puts around it', () => {
   const text = databaseFailureText(wrapped);
   expect(text).toContain('file is not a database');
   expect(text).toContain('ERR_INTERNAL_SQLITE_ERROR');
+});
+
+it('names the replacement unpredictably, never base + 1', async () => {
+  /*
+    ⚠️ The failure that cost a release. The key and the recovery marker live in
+    the SAME store, so when that store cannot keep values the key differs every
+    launch AND the marker never advances. A COUNTER then picks the same "fresh"
+    name every time — the one the previous launch created under a different key
+    — and the recovery fails on its own wreckage, which is exactly what a real
+    phone reported. A name drawn from random bytes cannot collide with an
+    earlier attempt whether or not anything persisted.
+  */
+  setItemAsync.mockImplementation(async () => undefined); // every write vanishes
+  execAsync.mockRejectedValueOnce(NOT_A_DB).mockResolvedValue(undefined);
+
+  await expect(openOfflineDatabase('member-with-a-broken-store')).resolves.toBeTruthy();
+
+  const [first, replacement] = openDatabaseAsync.mock.calls.map(([name]) => name);
+  expect(replacement).not.toBe(first);
+  expect(replacement).not.toBe(first.replace(/\.db$/, '_1.db'));
+  // Drawn from random bytes, so two phones in the same state never agree.
+  expect(getRandomBytes).toHaveBeenCalled();
 });
 
 it('gives up rather than looping when the fresh database fails the same way', async () => {
