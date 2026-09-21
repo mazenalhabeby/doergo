@@ -9,7 +9,7 @@
  * one back without the other — a healthy install meeting a file it can never
  * read. Nothing retried, nothing reported, and the member had no way out.
  */
-import { openOfflineDatabase } from '../db/database';
+import { databaseFailureText, openOfflineDatabase } from '../db/database';
 
 const NOT_A_DB = Object.assign(new Error("Calling the 'execAsync' function has failed\n→ Caused by: file is not a database"), {
   code: 'ERR_INTERNAL_SQLITE_ERROR',
@@ -79,11 +79,27 @@ it('recovers even when the old file cannot be deleted at all', async () => {
   await expect(openOfflineDatabase('member-whose-file-is-stuck')).resolves.toBeTruthy();
 });
 
-it('does not delete the database for an unrelated failure', async () => {
-  execAsync.mockRejectedValue(new Error('disk I/O error'));
+it('recovers from a differently worded error — the one that beat two releases', async () => {
+  /*
+    The real phone said this, not "file is not a database". A recovery gated on
+    a recognised message did nothing, twice, while looking correct.
+  */
+  const wrapped = Object.assign(new Error("Call to function 'NativeDatabase.execAsync' has been rejected"), {
+    cause: new Error('file is not a database'),
+  });
+  execAsync.mockRejectedValueOnce(wrapped).mockResolvedValue(undefined);
 
-  await expect(openOfflineDatabase('member-with-a-real-fault')).rejects.toThrow('disk I/O error');
-  expect(deleteDatabaseAsync).not.toHaveBeenCalled();
+  await expect(openOfflineDatabase('member-with-the-wrapped-error')).resolves.toBeTruthy();
+});
+
+it('reports the cause, not the wrapper expo puts around it', () => {
+  const wrapped = Object.assign(new Error("Call to function 'NativeDatabase.execAsync' has been rejected"), {
+    code: 'ERR_INTERNAL_SQLITE_ERROR',
+    cause: new Error('file is not a database'),
+  });
+  const text = databaseFailureText(wrapped);
+  expect(text).toContain('file is not a database');
+  expect(text).toContain('ERR_INTERNAL_SQLITE_ERROR');
 });
 
 it('gives up rather than looping when the fresh database fails the same way', async () => {

@@ -82,18 +82,24 @@ async function keyFor(userId: string): Promise<string> {
  * the native module — callers stay online-only.
  */
 /**
- * SQLCipher's answer when the key does not decrypt the file: every statement
- * after `PRAGMA key` fails with this, because to SQLite the bytes are noise.
+ * The whole reason a database failed, cause chain included.
  *
- * It is not corruption in the usual sense and it is not rare. The file lives in
- * the app's container and the key lives in the keychain as
- * THIS_DEVICE_ONLY — restore a phone from a backup and the container comes
- * back while the key does not, so a perfectly healthy install meets a file it
- * can never read again.
+ * ⚠️ expo-modules wraps the real problem: the message begins "Call to function
+ * 'NativeDatabase.execAsync' has been rejected" and the thing that actually
+ * went wrong is in `cause`. Reading only `message` shows the wrapper and hides
+ * the fault — which is exactly how a recovery came to be gated on a string
+ * that a real phone never produced.
  */
-function isUnreadableDatabase(err: unknown): boolean {
-  const text = `${(err as { message?: string } | null)?.message ?? err}`;
-  return /file is not a database|not a database|NOTADB/i.test(text);
+export function databaseFailureText(err: unknown): string {
+  const parts: string[] = [];
+  let cur: unknown = err;
+  for (let depth = 0; cur && depth < 5; depth++) {
+    const e = cur as { message?: string; code?: string; cause?: unknown };
+    const line = [e.code, e.message ?? (typeof cur === 'string' ? cur : undefined)].filter(Boolean).join(': ');
+    if (line && !parts.includes(line)) parts.push(line);
+    cur = e.cause;
+  }
+  return parts.join(' → ') || String(err);
 }
 
 async function openEncrypted(lib: NonNullable<ReturnType<typeof loadSQLite>>, fileName: string, key: string): Promise<SqlDb> {
@@ -155,7 +161,17 @@ export function openOfflineDatabase(userId: string): Promise<SqlDb> | null {
       try {
         return await openEncrypted(lib, fileName, key);
       } catch (err) {
-        if (!isUnreadableDatabase(err)) throw err;
+        /*
+          ⚠️ ANY failure, not a recognised one.
+
+          This used to fire only on "file is not a database", the message seen
+          once in one log. The phone that mattered reported a differently
+          worded error, so the recovery never ran while appearing to be in
+          place — twice, across two releases. Matching error strings from a
+          native module is guesswork; starting one fresh database is cheap and
+          always safe, so it is no longer conditional on getting the guess
+          right. Still ONCE: a second failure surfaces rather than loops.
+        */
         /*
           ⚠️ Start again with an empty one. There is no other move: nothing on
           this phone or any other can decrypt those bytes, and the alternative
@@ -173,7 +189,7 @@ export function openOfflineDatabase(userId: string): Promise<SqlDb> | null {
         */
         const next = await bumpGeneration(userId, generation);
         const freshName = await fileNameFor(userId, next);
-        console.warn(`[offline] database could not be decrypted — starting a new one (${freshName})`);
+        console.warn(`[offline] database unusable (${databaseFailureText(err)}) — starting a new one (${freshName})`);
         // Best effort, and deliberately NOT depended on: the fresh database has
         // a different name, so a refused delete costs disk space, not the feature.
         await discardDatabaseFiles(lib, err, fileName);

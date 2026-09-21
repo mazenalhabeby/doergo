@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { avatarApi } from '../lib/api/auth';
 import { isUnreachable } from './actions/unreachable';
 import { createPendingAvatar, type PendingAvatar } from './profile/pending-avatar';
+import { databaseFailureText } from './db/database';
 import { missingOfflineParts } from './native';
 import { connectivity, createOfflineRuntime } from './runtime';
 import { reportTelemetry } from './telemetry';
@@ -256,7 +257,7 @@ export function OfflineProvider({ children, variant = 'staff' }: {
       void live.syncAll().then(fillMediaCache);
     })().catch((err) => {
       console.warn('[offline] could not start:', err);
-      if (!cancelled) setValue({ ...UNAVAILABLE, unavailableReason: 'failed', unavailableDetail: String((err as Error)?.message ?? err).slice(0, 200) });
+      if (!cancelled) setValue({ ...UNAVAILABLE, unavailableReason: 'failed', unavailableDetail: databaseFailureText(err).slice(0, 400) });
     });
 
     return () => {
