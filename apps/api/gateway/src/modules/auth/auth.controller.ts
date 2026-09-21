@@ -173,7 +173,7 @@ export class AuthController {
     res.clearCookie('refreshToken', { path: '/' });
 
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'logout' }, { refreshToken }),
+      this.authClient.send({ cmd: 'logout' }, { refreshToken, pushToken: refreshTokenDto.pushToken }),
     );
 
     // Kill the cached session immediately so a still-valid access token can't be

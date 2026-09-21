@@ -74,6 +74,25 @@ export class RefreshTokenDto {
   @IsOptional()
   @IsString()
   refreshToken?: string;
+
+  /**
+   * This device's push registration, so signing out also stops the pushes.
+   *
+   * ⚠️ Sent HERE rather than left to `DELETE /users/push-token/:token`, which
+   * is what used to do it. That call ran AFTER the session had been torn down,
+   * and it was best effort: one failure — no signal at the moment of signing
+   * out, the app killed mid-logout — orphaned the row forever, because the
+   * phone clears its cached token either way and can never name it again. The
+   * member then kept receiving their own notifications on a phone they had
+   * signed out of, with nothing on either side able to stop it.
+   *
+   * Logout is the one request that is definitionally authenticated at the
+   * moment it runs, so the removal belongs in it.
+   */
+  @ApiPropertyOptional({ description: "This device's Expo push token, removed as part of signing out" })
+  @IsOptional()
+  @IsString()
+  pushToken?: string;
 }
 
 /**

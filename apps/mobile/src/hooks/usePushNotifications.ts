@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
+import { forgetPushToken, rememberPushToken, storedPushToken } from '../lib/push-token-store';
 import { pushApi } from '../lib/api';
 import { getPreferredLanguage } from '../i18n';
 import { isNotificationSuppressed } from '../lib/notification-suppression';
 import { PUSH_CHANNELS, RETIRED_PUSH_CHANNELS } from '@hbcfield/shared/client';
 
-const PUSH_TOKEN_CACHE_KEY = 'hbcfield_push_token_registered';
+
 // Configure how notifications appear when the app is in the foreground.
 // ⚠️ Without this handler a notification that arrives while the app is OPEN is
 // not shown at all — no banner, no sound. push-foreground-handler.spec.ts pins it.
@@ -139,7 +139,7 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
       // offline is re-registered on the next launch instead of staying English.
       const locale = await getPreferredLanguage();
       const registration = `${token}|${locale}`;
-      const cachedToken = await AsyncStorage.getItem(PUSH_TOKEN_CACHE_KEY);
+      const cachedToken = await storedPushToken();
       if (cachedToken === registration && currentTokenRef.current === token) {
         setState((prev) => ({
           ...prev,
@@ -160,7 +160,7 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
         });
 
         currentTokenRef.current = token;
-        await AsyncStorage.setItem(PUSH_TOKEN_CACHE_KEY, registration);
+        await rememberPushToken(registration);
         setState((prev) => ({
           ...prev,
           expoPushToken: token,
@@ -192,7 +192,7 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
     // instance (profile/auth-context) where the ref is always null — so the
     // removeToken call never fired and a shared device kept receiving the
     // previous user's push. (Sec audit H11.)
-    const token = currentTokenRef.current || (await AsyncStorage.getItem(PUSH_TOKEN_CACHE_KEY));
+    const token = currentTokenRef.current || (await storedPushToken());
     if (!token) {
       return;
     }
@@ -200,11 +200,20 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
     try {
       await pushApi.removeToken(token);
     } catch {
-      // Ignore unregister errors during cleanup
+      /*
+        ⚠️ KEEP the cached token when the removal failed.
+
+        It used to be cleared either way, so a removal that did not land left
+        the row on the server bound to a member who had signed out — and the
+        phone, having forgotten the token, could never name it again. The
+        notifications had no way of stopping. Held instead, so the next
+        sign-out (which sends it with `/auth/logout`) can still clear it.
+      */
+      return;
     }
 
     currentTokenRef.current = null;
-    await AsyncStorage.removeItem(PUSH_TOKEN_CACHE_KEY);
+    await forgetPushToken();
     setState((prev) => ({
       ...prev,
       expoPushToken: null,
@@ -352,11 +361,21 @@ export function getTaskIdFromNotification(
  * (Sec audit H11.)
  */
 export async function purgePushTokenRegistration(): Promise<void> {
+  const token = await storedPushToken();
+  if (!token) return;
   try {
-    const token = await AsyncStorage.getItem(PUSH_TOKEN_CACHE_KEY);
-    if (token) await pushApi.removeToken(token);
+    await pushApi.removeToken(token);
   } catch {
-    // best-effort — ignore (offline / expired session)
+    /*
+      ⚠️ KEEP it. See the note in `unregisterPushToken` — forgetting a token
+      whose removal failed is what left members receiving their own
+      notifications on a phone they had signed out of, with nothing on either
+      side able to name the row that would stop it.
+
+      Since `/auth/logout` now carries the token itself, this helper is a
+      fallback rather than the mechanism, and holding on costs nothing.
+    */
+    return;
   }
-  await AsyncStorage.removeItem(PUSH_TOKEN_CACHE_KEY).catch(() => undefined);
+  await forgetPushToken();
 }

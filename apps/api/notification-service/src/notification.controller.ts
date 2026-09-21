@@ -79,7 +79,7 @@ export class NotificationController {
   @MessagePattern({ cmd: 'remove_push_token' })
   async removePushToken(@Payload() data: { token: string; userId?: string }) {
     this.logger.log(`Removing push token: ${data.token.substring(0, 20)}...`);
-    return this.pushService.removePushToken(data.token);
+    return this.pushService.removePushToken(data.token, data.userId);
   }
 
   // =========================================================================

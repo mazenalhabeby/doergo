@@ -1,3 +1,4 @@
+import { forgetPushToken, storedPushToken } from '../push-token-store';
 import { fetchApi, fetchWithAuth, saveTokens, clearTokens, getAccessToken, getRefreshToken, getApiUrl } from './client';
 import type { User, LoginResponse } from './types';
 
@@ -35,16 +36,35 @@ export const authApi = {
 
   logout: async (): Promise<void> => {
     try {
-      const [accessToken, refreshToken] = await Promise.all([
+      const [accessToken, refreshToken, pushToken] = await Promise.all([
         getAccessToken(),
         getRefreshToken(),
+        storedPushToken(),
       ]);
 
       if (accessToken && refreshToken) {
+        /*
+          The push registration goes WITH the sign-out.
+
+          It used to be removed by a separate `DELETE /users/push-token/:token`
+          issued afterwards, once the session had already been torn down — best
+          effort, and one failure (no signal at the moment of signing out, the
+          app killed mid-logout) left the row on the server forever, because
+          the phone clears its cached token either way and can never name it
+          again. The member kept getting their own notifications on a phone
+          they had signed out of.
+
+          This request is authenticated by definition at the moment it runs, so
+          it is the one place the removal cannot arrive too late. The server
+          scopes the delete to this member AND this token — signing out of one
+          phone never silences another.
+        */
         await fetchWithAuth('/auth/logout', {
           method: 'POST',
-          body: JSON.stringify({ refreshToken }),
+          body: JSON.stringify({ refreshToken, pushToken }),
         }, false); // Don't retry on 401 during logout
+        // Told, and confirmed: only now is it safe to forget.
+        await forgetPushToken();
       }
     } catch {
       // Ignore logout errors - tokens will be cleared regardless

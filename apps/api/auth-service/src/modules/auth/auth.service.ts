@@ -1351,7 +1351,7 @@ export class AuthService {
     }
   }
 
-  async logout(refreshToken: string) {
+  async logout(refreshToken: string, pushToken?: string) {
     try {
       // SECURITY: Hash the token to find and delete
       const tokenHash = hashToken(refreshToken);
@@ -1374,6 +1374,30 @@ export class AuthService {
         await this.prisma.user
           .update({ where: { id: stored.userId }, data: { lastActiveAt: null } })
           .catch(() => undefined);
+
+        /*
+          Signing out stops the pushes to THIS device.
+
+          It used to be the phone's job, through `DELETE /users/push-token/:token`
+          issued after the session had already been torn down — best effort, and
+          a single failure (no signal at the moment of signing out, the app
+          killed mid-logout) orphaned the row permanently, because the phone
+          clears its cached token either way and can never name it again. The
+          member went on receiving their own notifications on a phone they had
+          signed out of, and nothing on either side could stop it.
+
+          ⚠️ Scoped to `userId` as well as the token: `UserPushToken.token` is
+          unique, so an unscoped delete would let anyone holding a token string
+          unregister somebody else's device.
+
+          ⚠️ THIS DEVICE only, never every token the member has. Signing out of
+          one phone must not silence the one still in their pocket.
+        */
+        if (pushToken) {
+          await this.prisma.userPushToken
+            .deleteMany({ where: { token: pushToken, userId: stored.userId } })
+            .catch(() => undefined);
+        }
       }
 
       return {

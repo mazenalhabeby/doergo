@@ -32,7 +32,7 @@ export class AuthController {
 
   @MessagePattern({ cmd: 'logout' })
   async logout(@Payload() data: any) {
-    return this.authService.logout(data.refreshToken);
+    return this.authService.logout(data.refreshToken, data.pushToken);
   }
 
   @MessagePattern({ cmd: 'forgot_password' })

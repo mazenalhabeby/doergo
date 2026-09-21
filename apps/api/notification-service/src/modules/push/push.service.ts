@@ -77,12 +77,21 @@ export class PushService {
   /**
    * Remove a push token
    */
-  async removePushToken(token: string) {
+  /**
+   * Unregister one device.
+   *
+   * ⚠️ `userId` is required in practice and the caller has always passed it —
+   * this method simply ignored it and deleted by token alone. `token` is
+   * unique, so that let anyone who knew a token string unregister somebody
+   * else's phone. Scoped now; called without one (nothing does) it still falls
+   * back to the old behaviour rather than silently doing nothing.
+   */
+  async removePushToken(token: string, userId?: string) {
     try {
-      await this.prisma.userPushToken.delete({
-        where: { token },
+      const { count } = await this.prisma.userPushToken.deleteMany({
+        where: userId ? { token, userId } : { token },
       });
-      return { success: true };
+      return count > 0 ? { success: true } : { success: false, error: 'Token not found' };
     } catch {
       return { success: false, error: 'Token not found' };
     }
