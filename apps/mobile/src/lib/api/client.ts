@@ -351,7 +351,13 @@ export async function fetchWithAuth<T>(
 
   if (method === 'GET') {
     inflightRequests.set(endpoint, promise);
-    promise.finally(() => inflightRequests.delete(endpoint));
+    /*
+      `.finally()` returns a NEW promise, and it rejects whenever the request
+      does. Nobody awaits that one, so every failed GET also produced an
+      unhandled rejection — a warning in the app, and enough to take a test
+      runner down. The caller still gets the real rejection from `promise`.
+    */
+    void promise.finally(() => inflightRequests.delete(endpoint)).catch(() => undefined);
   }
 
   return promise;
@@ -364,7 +370,7 @@ export async function fetchWithAuth<T>(
  */
 async function getKeptWhenOffline<T>(endpoint: string, options: RequestInit, retry: boolean): Promise<T> {
   try {
-    const body = await _fetchWithAuthInner<T>(endpoint, options, retry);
+    const body = await _fetchWithAuthInner<T>(endpoint, options, retry, true);
     keepResponse(endpoint, body);
     return body;
   } catch (err) {
@@ -376,10 +382,31 @@ async function getKeptWhenOffline<T>(endpoint: string, options: RequestInit, ret
   }
 }
 
+/**
+ * How long to wait before trying a request that never reached the server once
+ * more. Long enough for a connection the OS tore down to be replaced, short
+ * enough that nobody sees the difference.
+ */
+const NETWORK_RETRY_MS = 400;
+
 async function _fetchWithAuthInner<T>(
   endpoint: string,
   options: RequestInit = {},
-  retry = true
+  retry = true,
+  /**
+   * Try once more when nothing answered.
+   *
+   * The FIRST request after the app is reopened fails on its own often enough
+   * to be the common case: the process was killed, and the connection pool it
+   * left behind is stale — so the member was shown "You're offline" on a phone
+   * with full signal, and a Retry button that worked every time, which is the
+   * evidence it was never offline.
+   *
+   * GET only, and set at the one GET call site. A write must never be sent
+   * twice on a guess: nothing here carries an idempotency key, and the writes
+   * that must survive no signal go through the outbox (src/offline).
+   */
+  retryNetwork = false
 ): Promise<T> {
   const accessToken = await getAccessToken();
   const url = `${API_URL}${endpoint}`;
@@ -409,7 +436,7 @@ async function _fetchWithAuthInner<T>(
       const newToken = await refreshAccessToken();
 
       if (newToken) {
-        return _fetchWithAuthInner<T>(endpoint, options, false);
+        return _fetchWithAuthInner<T>(endpoint, options, false, retryNetwork);
       }
 
       // Refresh failed - notify auth context which will redirect to login
@@ -444,6 +471,15 @@ async function _fetchWithAuthInner<T>(
       have duplicated the write, since it carried no idempotency key. Writes that
       must survive being offline go through the outbox (src/offline).
     */
+    /*
+      One more try before anyone is told they are offline — and before the
+      connectivity monitor is told, which counts two failures in a row as a
+      weak connection. A blip that the retry survives must leave no trace.
+    */
+    if (retryNetwork) {
+      await new Promise((resolve) => setTimeout(resolve, NETWORK_RETRY_MS));
+      return _fetchWithAuthInner<T>(endpoint, options, retry, false);
+    }
     notifyObservers({ kind: 'network-error' });
     throw new ApiError(networkErrorText('offline'), 0, 'NO_CONNECTION');
   }

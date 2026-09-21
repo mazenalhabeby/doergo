@@ -46,6 +46,15 @@ function observeOnce() {
 interface OfflineValue {
   /** This build carries the offline layer and the member is signed in. */
   available: boolean;
+  /**
+   * The member's database is still opening.
+   *
+   * Told apart from "there will never be one" because a screen that reaches
+   * for the phone's copy on a cold start arrives BEFORE it exists — and with
+   * no way to distinguish the two, it either waits forever on a build that has
+   * no offline layer, or gives up a moment too early on one that does.
+   */
+  starting: boolean;
   engine: SyncEngine | null;
   records: RecordsStore | null;
   /** Photos and signatures held on this phone until they are sent. */
@@ -81,7 +90,7 @@ interface OfflineValue {
   unavailableDetail: string | null;
 }
 
-const UNAVAILABLE: OfflineValue = { available: false, engine: null, records: null, files: null, media: null, preferences: null, running: null, avatar: null, unavailableReason: null, unavailableDetail: null };
+const UNAVAILABLE: OfflineValue = { available: false, starting: false, engine: null, records: null, files: null, media: null, preferences: null, running: null, avatar: null, unavailableReason: null, unavailableDetail: null };
 const OfflineContext = createContext<OfflineValue>(UNAVAILABLE);
 
 const EMPTY_SNAPSHOT: SyncSnapshot = { waiting: 0, attention: 0, pushing: false, pulling: false, lastSuccessAt: null };
@@ -104,7 +113,7 @@ export function OfflineProvider({ children, variant = 'staff' }: {
   variant?: 'staff' | 'portal';
 }) {
   const { user } = useAuth();
-  const [value, setValue] = useState<OfflineValue>(UNAVAILABLE);
+  const [value, setValue] = useState<OfflineValue>({ ...UNAVAILABLE, starting: true });
 
   useEffect(() => {
     observeOnce();
@@ -134,6 +143,9 @@ export function OfflineProvider({ children, variant = 'staff' }: {
       setValue({ ...UNAVAILABLE, unavailableReason: 'build', unavailableDetail: missing.join(', ') });
       return;
     }
+    // Everything below is asynchronous, and screens read `starting` to know
+    // whether the copy they want is still on its way.
+    setValue((v) => (v.starting ? v : { ...UNAVAILABLE, starting: true }));
     let cancelled = false;
     let engine: SyncEngine | null = null;
     const unsubscribers: (() => void)[] = [];
@@ -183,7 +195,7 @@ export function OfflineProvider({ children, variant = 'staff' }: {
         forgetFile: (id) => files.forget(id),
         isUnreachable,
       });
-      setValue({ available: true, engine: live, records, files, media, preferences, running: live, avatar, unavailableReason: null, unavailableDetail: null });
+      setValue({ available: true, starting: false, engine: live, records, files, media, preferences, running: live, avatar, unavailableReason: null, unavailableDetail: null });
       void avatar.flush();
       // Syncs itself now and then with the app closed — best effort, never relied on.
       void registerBackgroundSync({ userId: user.id, organizationId: user.organizationId! });

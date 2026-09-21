@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { tasksApi } from '../../lib/api/tasks';
 import type { Task } from '../../lib/api/types';
 import { useConnectivity, useOffline, useSyncStatus } from '../offline-context';
+import { listFailureIsFatal } from './list-failure';
 import { overlayTask } from './overlay';
 
 /**
@@ -44,6 +45,11 @@ export function useHomeTasks(): HomeTasks {
   // Whether what is on screen came from the phone — a server list must not be
   // silently swapped for an older local one when the queue happens to move.
   const fromPhone = useRef(false);
+  // The server has answered at least once: it is fresher than anything the
+  // phone holds, so the copy arriving late must not overwrite it.
+  const fromServer = useRef(false);
+  // Anything at all has been rendered, from either source.
+  const shown = useRef(false);
 
   const readLocal = useCallback(async () => {
     const records = offline.records;
@@ -57,6 +63,7 @@ export function useHomeTasks(): HomeTasks {
     setTasks(rows.map((r) => overlayTask(r.data, ops)) as Task[]);
     setUpdatedAt(lastPullAt);
     fromPhone.current = true;
+    shown.current = true;
     return true;
   }, [offline.records, offline.engine]);
 
@@ -65,11 +72,31 @@ export function useHomeTasks(): HomeTasks {
       if (connectivity === 'online') void offline.engine?.pull('tasks').catch(() => undefined);
       return;
     }
-    const fetched = await tasksApi.list();
-    fromPhone.current = false;
-    setUpdatedAt(null);
-    setTasks(fetched || []);
-  }, [readLocal, connectivity, offline.engine]);
+    try {
+      const fetched = await tasksApi.list();
+      fromPhone.current = false;
+      fromServer.current = true;
+      shown.current = true;
+      setUpdatedAt(null);
+      setTasks(fetched || []);
+    } catch (err) {
+      // Whether this is worth the whole screen is one rule, stated once.
+      if (!listFailureIsFatal(err, { shown: shown.current, databaseStarting: offline.starting })) return;
+      throw err;
+    }
+  }, [readLocal, connectivity, offline.engine, offline.starting]);
+
+  /*
+    The database opens asynchronously, so a cold start reaches `load()` before
+    `offline.records` exists, takes the server path, and nothing ever sends it
+    back: the home's initial fetch is guarded by a ref, and the re-read below
+    only fires once something has been read from the phone. Read the copy the
+    moment it arrives — unless the server already answered, which is fresher.
+  */
+  useEffect(() => {
+    if (!offline.records || fromPhone.current || fromServer.current) return;
+    void readLocal();
+  }, [offline.records, readLocal]);
 
   // The copy changed (a pull landed) or a queued change moved: re-read, no request.
   useEffect(() => {
