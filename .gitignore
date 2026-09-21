@@ -96,3 +96,10 @@ apps/api/gateway/uploads/
 
 # Build output of tools/blog-mcp — 6 MB, rebuildable from the source beside it.
 tools/blog-mcp.zip
+
+# Source design exports — the Figma/Illustrator output the UI was drawn from,
+# plus a zip of each folder sitting next to the folder itself. 63MB, 54 files,
+# referenced by nothing in apps/, infra/, packages/, tools/ or docs/: git was
+# being used as a file share for binaries that never diff. Kept on disk, and
+# belong wherever design source belongs.
+doergo design/
