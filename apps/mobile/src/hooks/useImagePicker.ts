@@ -46,6 +46,14 @@ export function useImagePicker() {
     /* What the picture is FOR. Drives the wording of the permission sheet, so
        a profile picture is not explained as a job photo. */
     purpose: MediaPurpose = 'task-photo',
+    /*
+      How many may be taken at once.
+      
+      Five suits a job's photos. A document that is sheets of paper needs more:
+      a hotel invoice already sitting in Photos should arrive in one tap, not
+      five plus another round.
+    */
+    selectionLimit = 5,
   ): Promise<PickedImage[]> => {
     if (isPickerOpen) return [];
     const hasPermission = await requestPermission('library', purpose);
@@ -57,7 +65,7 @@ export function useImagePicker() {
         mediaTypes: ['images'],
         allowsMultipleSelection: true,
         quality: 0.7,
-        selectionLimit: 5,
+        selectionLimit,
       });
 
       if (result.canceled || !result.assets) return [];

@@ -21,13 +21,17 @@ import { movePage, type Page } from '../lib/page-order';
 export function MultiPageCapture({
   pages,
   onChange,
-  onAdd,
+  onScan,
+  onLibrary,
   onRetry,
   disabled,
 }: {
   pages: Page[];
   onChange: (next: Page[]) => void;
-  onAdd: () => void;
+  /** One sheet through the scanner — framed, deskewed, cropped. */
+  onScan: () => void;
+  /** Several at once out of the photo library, for paper that arrived by email. */
+  onLibrary: () => void;
   onRetry: (id: string) => void;
   disabled?: boolean;
 }) {
@@ -104,14 +108,30 @@ export function MultiPageCapture({
         {!disabled && (
           <TouchableOpacity
             style={[styles.tile, styles.add, { borderColor: COLORS.primary }]}
-            onPress={onAdd}
-            accessibilityLabel={t('documents.pages.add')}
+            onPress={onScan}
+            accessibilityLabel={t('documents.pages.scan')}
           >
-            <Ionicons name="add" size={26} color={COLORS.primary} />
-            <Text style={[styles.addText, { color: COLORS.primary }]}>{t('documents.pages.add')}</Text>
+            <Ionicons name="scan-outline" size={24} color={COLORS.primary} />
+            <Text style={[styles.addText, { color: COLORS.primary }]}>{t('documents.pages.scan')}</Text>
           </TouchableOpacity>
         )}
       </ScrollView>
+
+      {/*
+        The library, beside the scanner rather than behind a chooser.
+
+        Paper does not always start as paper: a hotel invoice arrives by email
+        and is already in Photos. Multi-select means six sheets in one tap
+        instead of six trips through a camera that was never needed.
+      */}
+      {!disabled && (
+        <TouchableOpacity onPress={onLibrary} style={styles.libraryRow}>
+          <Ionicons name="images-outline" size={16} color={COLORS.primary} />
+          <Text style={[styles.libraryText, { color: COLORS.primary }]}>
+            {t('documents.pages.fromLibrary')}
+          </Text>
+        </TouchableOpacity>
+      )}
 
       <Text style={[styles.hint, { color: colors.textMuted }]}>{t('documents.pages.hint')}</Text>
     </View>
@@ -183,6 +203,8 @@ const styles = StyleSheet.create({
   },
   arrowOff: { opacity: 0.3 },
   add: { borderStyle: 'dashed', gap: 3 },
+  libraryRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 2 },
+  libraryText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
   addText: { fontSize: 10.5, fontWeight: FONT_WEIGHT.semibold },
   hint: { fontSize: FONT_SIZE.xs, lineHeight: 16 },
 });

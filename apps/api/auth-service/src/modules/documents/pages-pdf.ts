@@ -30,13 +30,13 @@ const MAX_EDGE = 2200;
 /** JPEG quality for a page of text. Past ~82 the bytes grow and the glyphs do not. */
 const QUALITY = 82;
 
-/**
- * How many sheets one document may hold.
- *
- * Not a storage limit — it is the point past which somebody is photographing a
- * folder rather than a document, and every later reader pays for it.
- */
-export const MAX_PAGES = 30;
+/*
+  ⚠️ MAX_PAGES lives in @hbcfield/shared now, because BOTH ends need the same
+  number: the server refuses a thirty-first sheet and the phone must stop
+  offering to add one. Re-exported here so this module's callers are unchanged.
+*/
+export { MAX_PAGES } from '@hbcfield/shared';
+import { MAX_PAGES } from '@hbcfield/shared';
 
 /**
  * Normalise one sheet: strip the camera's rotation, bound the resolution, and

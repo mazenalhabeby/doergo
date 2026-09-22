@@ -8,6 +8,7 @@ import { useTheme } from '../contexts/theme-context';
 import { useToast } from '../contexts/toast-context';
 import { MultiPageCapture } from './multi-page-capture';
 import { newPageId, readyKeys, allStaged, pendingCount, failedCount, type Page } from '../lib/page-order';
+import { MAX_PAGES } from '@hbcfield/shared/client';
 import { stagePage } from '../lib/page-upload';
 import { useImagePicker } from '../hooks/useImagePicker';
 import { File as FsFile } from 'expo-file-system';
@@ -115,6 +116,8 @@ export function SupplyDocumentSheet({
   */
   const [pages, setPages] = useState<Page[]>([]);
   const [pageTitle, setPageTitle] = useState('');
+  /** The scanner, opened for a SHEET rather than a card. */
+  const [scanningPage, setScanningPage] = useState(false);
 
   const type = suppliable.find((ty) => ty.id === typeId) ?? suppliable[0];
 
@@ -298,25 +301,61 @@ export function SupplyDocumentSheet({
    * spending them idle means the member waits all over again on Send. The tile
    * shows the sheet's own state while it goes.
    */
-  const addPage = async () => {
-    if (!type) return;
-    /*
-      ⚠️ Refused offline rather than queued. Each sheet is PUT to the object
-      store as it is taken, and a queued submit naming keys whose uploads never
-      happened would fail on arrival having told the member it was sent. A flow
-      that cannot work without a connection should say so, once, up front.
-    */
+  /*
+    ⚠️ Refused offline rather than queued. Each sheet is PUT to the object store
+    as it is taken, and a queued submit naming keys whose uploads never happened
+    would fail on arrival having told the member it was sent. A flow that cannot
+    work without a connection should say so, once, up front.
+  */
+  const canAddPage = () => {
     if (connectivity !== 'online') {
       toast.info(t('documents.pages.needsConnection'));
-      return;
+      return false;
     }
-    const picked = await takePhoto('document');
-    if (!picked?.uri) return;
-    const page: Page = { id: newPageId(), uri: picked.uri, state: 'compressing' };
-    setPages((prev) => [...prev, page]);
-    void stagePage(page, type.id, (next) =>
-      setPages((prev) => prev.map((p) => (p.id === next.id ? next : p))),
-    );
+    if (pages.length >= MAX_PAGES) {
+      toast.info(t('documents.pages.tooMany', { count: MAX_PAGES }));
+      return false;
+    }
+    return true;
+  };
+
+  /**
+   * Add sheets and start sending them immediately.
+   *
+   * ⚠️ The uploads are NOT awaited. Somebody adding six pages spends the time
+   * doing it; those seconds are free upload time, and spending them idle means
+   * waiting all over again on Send. Each tile shows its own state while it goes.
+   */
+  const addPages = (uris: string[]) => {
+    if (!type || uris.length === 0) return;
+    const fresh: Page[] = uris
+      .slice(0, MAX_PAGES - pages.length)
+      .map((uri) => ({ id: newPageId(), uri, state: 'compressing' as const }));
+    setPages((prev) => [...prev, ...fresh]);
+    for (const page of fresh) {
+      void stagePage(page, type.id, (next) =>
+        setPages((prev) => prev.map((p) => (p.id === next.id ? next : p))),
+      );
+    }
+  };
+
+  /** One sheet, through the scanner — framed on A4, deskewed and cropped. */
+  const scanPage = () => {
+    if (!type || !canAddPage()) return;
+    setScanningPage(true);
+  };
+
+  /*
+    Several at once, out of the photo library.
+
+    Paper does not always start as paper: a hotel invoice arrives by email and
+    is already in Photos. Multi-select means six sheets in one tap instead of
+    six trips through a camera that was never needed.
+  */
+  const pickPages = async () => {
+    if (!type || !canAddPage()) return;
+    const picked = await pickFromGallery('document', MAX_PAGES - pages.length);
+    addPages(picked.map((p) => p.uri).filter(Boolean));
   };
 
   /** A sheet that did not land, sent again — its local file was kept for this. */
@@ -598,7 +637,8 @@ export function SupplyDocumentSheet({
                 <MultiPageCapture
                   pages={pages}
                   onChange={setPages}
-                  onAdd={addPage}
+                  onScan={scanPage}
+                  onLibrary={pickPages}
                   onRetry={retryPage}
                   disabled={busy}
                 />
@@ -842,6 +882,26 @@ export function SupplyDocumentSheet({
         on its back, and a passport carries its zone on the photo page — so it
         asked people to turn a passport over and photograph the cover.
       */}
+      {/*
+        The scanner, opened for a SHEET.
+
+        Its own instance rather than a flag on the credential one: that path
+        reads a machine-readable zone, fills in an expiry and stages a single
+        photo, none of which applies to page four of a hotel invoice. Same
+        component, PAGE frame, and the result becomes one more page.
+      */}
+      <DocumentScanner
+        visible={scanningPage}
+        title={type?.label ?? t('documents.supply.title')}
+        twoSided={false}
+        shape="PAGE"
+        onCancel={() => setScanningPage(false)}
+        onDone={(result) => {
+          setScanningPage(false);
+          if (result?.uri) addPages([result.uri]);
+        }}
+      />
+
       <DocumentScanner
         visible={scanning}
         title={type?.label ?? t('documents.supply.title')}

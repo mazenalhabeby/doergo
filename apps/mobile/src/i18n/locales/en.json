@@ -2295,7 +2295,10 @@
       "titlePlaceholder": "Flight confirmation, hotel invoice…",
       "waiting_one": "Waiting for {{count}} page to finish…",
       "waiting_other": "Waiting for {{count}} pages to finish…",
-      "needsConnection": "Adding pages needs a connection — the sheets are sent as you take them."
+      "needsConnection": "Adding pages needs a connection — the sheets are sent as you take them.",
+      "scan": "Scan a page",
+      "fromLibrary": "Choose from photos",
+      "tooMany": "A document can hold {{count}} pages."
     }
   },
   "attendanceReview": {

@@ -2295,7 +2295,10 @@
       "titlePlaceholder": "Conferma di volo, fattura d'albergo…",
       "waiting_one": "In attesa di {{count}} pagina…",
       "waiting_other": "In attesa di {{count}} pagine…",
-      "needsConnection": "Aggiungere pagine richiede una connessione: i fogli partono mentre li scatti."
+      "needsConnection": "Aggiungere pagine richiede una connessione: i fogli partono mentre li scatti.",
+      "scan": "Scansiona pagina",
+      "fromLibrary": "Scegli dalle foto",
+      "tooMany": "Un documento può contenere {{count}} pagine."
     }
   },
   "attendanceReview": {

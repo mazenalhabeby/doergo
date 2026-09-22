@@ -2295,7 +2295,10 @@
       "titlePlaceholder": "Flugbestätigung, Hotelrechnung…",
       "waiting_one": "Warten auf {{count}} Seite…",
       "waiting_other": "Warten auf {{count}} Seiten…",
-      "needsConnection": "Für Seiten wird eine Verbindung benötigt — sie werden beim Aufnehmen gesendet."
+      "needsConnection": "Für Seiten wird eine Verbindung benötigt — sie werden beim Aufnehmen gesendet.",
+      "scan": "Seite scannen",
+      "fromLibrary": "Aus Fotos wählen",
+      "tooMany": "Ein Dokument kann {{count}} Seiten enthalten."
     }
   },
   "attendanceReview": {

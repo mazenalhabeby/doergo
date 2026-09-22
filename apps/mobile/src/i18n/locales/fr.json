@@ -2295,7 +2295,10 @@
       "titlePlaceholder": "Confirmation de vol, facture d'hôtel…",
       "waiting_one": "En attente de {{count}} page…",
       "waiting_other": "En attente de {{count}} pages…",
-      "needsConnection": "Ajouter des pages nécessite une connexion — les feuilles partent au fur et à mesure."
+      "needsConnection": "Ajouter des pages nécessite une connexion — les feuilles partent au fur et à mesure.",
+      "scan": "Scanner une page",
+      "fromLibrary": "Choisir dans Photos",
+      "tooMany": "Un document peut contenir {{count}} pages."
     }
   },
   "attendanceReview": {
