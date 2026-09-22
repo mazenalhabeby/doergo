@@ -1,11 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView,
+  View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView, TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { useToast } from '../contexts/toast-context';
+import { MultiPageCapture } from './multi-page-capture';
+import { newPageId, readyKeys, allStaged, pendingCount, failedCount, type Page } from '../lib/page-order';
+import { stagePage } from '../lib/page-upload';
 import { useImagePicker } from '../hooks/useImagePicker';
 import { File as FsFile } from 'expo-file-system';
 import { documentsApi, type DocumentType } from '../lib/api/documents';
@@ -23,7 +26,7 @@ import { PressableScale } from './pressable-scale';
 import { DatePickerModal } from './date-picker-modal';
 import { DocumentScanner, type ScannedDocument } from './document-scanner';
 import { expiryPrompt, formatCalendarDate, type Rect } from '@hbcfield/shared/client';
-import { useOffline } from '../offline/offline-context';
+import { useOffline, useConnectivity } from '../offline/offline-context';
 import { createFromPhone } from '../offline/actions/queued-create';
 import { uuidv7 } from '../offline/ids';
 
@@ -59,7 +62,8 @@ export function SupplyDocumentSheet({
   const { t } = useTranslation();
   const toast = useToast();
   const offline = useOffline();
-  const { pickFromGallery } = useImagePicker();
+  const connectivity = useConnectivity();
+  const { pickFromGallery, takePhoto } = useImagePicker();
 
   const suppliable = useMemo(
     () => types.filter((ty) => ty.direction === 'SUPPLIED' && ty.isActive),
@@ -102,6 +106,16 @@ export function SupplyDocumentSheet({
     back?: { key: string; crop: Rect | null } | null;
   } | null>(null);
 
+  /*
+    Sheets of paper, for a type that is paper rather than a card.
+
+    Held beside the single-photo state rather than replacing it: the two flows
+    share this sheet, the type decides which is shown, and a member who changes
+    the type mid-way should not carry pages into a scanner.
+  */
+  const [pages, setPages] = useState<Page[]>([]);
+  const [pageTitle, setPageTitle] = useState('');
+
   const type = suppliable.find((ty) => ty.id === typeId) ?? suppliable[0];
 
   /*
@@ -129,6 +143,8 @@ export function SupplyDocumentSheet({
     setDateSource(null);
     setOverriding(false);
     setStaged(null);
+    setPages([]);
+    setPageTitle('');
     setBusy(false);
   };
 
@@ -271,6 +287,91 @@ export function SupplyDocumentSheet({
     },
     [],
   );
+
+  const multi = !!type?.multiPage;
+
+  /**
+   * Take one sheet and start sending it immediately.
+   *
+   * ⚠️ The upload is NOT awaited here. Somebody photographing six pages spends
+   * fifteen seconds doing it; those fifteen seconds are free upload time, and
+   * spending them idle means the member waits all over again on Send. The tile
+   * shows the sheet's own state while it goes.
+   */
+  const addPage = async () => {
+    if (!type) return;
+    /*
+      ⚠️ Refused offline rather than queued. Each sheet is PUT to the object
+      store as it is taken, and a queued submit naming keys whose uploads never
+      happened would fail on arrival having told the member it was sent. A flow
+      that cannot work without a connection should say so, once, up front.
+    */
+    if (connectivity !== 'online') {
+      toast.info(t('documents.pages.needsConnection'));
+      return;
+    }
+    const picked = await takePhoto('document');
+    if (!picked?.uri) return;
+    const page: Page = { id: newPageId(), uri: picked.uri, state: 'compressing' };
+    setPages((prev) => [...prev, page]);
+    void stagePage(page, type.id, (next) =>
+      setPages((prev) => prev.map((p) => (p.id === next.id ? next : p))),
+    );
+  };
+
+  /** A sheet that did not land, sent again — its local file was kept for this. */
+  const retryPage = (id: string) => {
+    if (!type) return;
+    const page = pages.find((p) => p.id === id);
+    if (!page) return;
+    void stagePage({ ...page, state: 'compressing' }, type.id, (next) =>
+      setPages((prev) => prev.map((p) => (p.id === next.id ? next : p))),
+    );
+  };
+
+  /**
+   * File the sheets as one document.
+   *
+   * Kept apart from `submit` on purpose — that one is about a credential: a
+   * scanned card, a read expiry, a verification queue. None of it applies here,
+   * and threading `if (multiPage)` through it would make both harder to read.
+   */
+  const submitPages = async () => {
+    if (!type || pages.length === 0 || busy) return;
+    if (!pageTitle.trim()) {
+      toast.error(t('documents.pages.needTitle'));
+      return;
+    }
+    if (!allStaged(pages)) {
+      const waiting = pendingCount(pages);
+      toast.info(
+        waiting > 0
+          ? t('documents.pages.waiting', { count: waiting })
+          : t('documents.pages.failed', { count: failedCount(pages) }),
+      );
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const keys = readyKeys(pages);
+      await documentsApi.submitOwn({
+        // The first sheet is the document; the rest are its further pages.
+        stagingKey: keys[0],
+        pageStagingKeys: keys.slice(1),
+        typeId: type.id,
+        title: pageTitle.trim(),
+      });
+      toast.success(t('documents.supply.submitted'));
+      reset();
+      onSubmitted?.();
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('common.error'));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const submit = async () => {
     if (!type || !photo) return;
@@ -468,6 +569,42 @@ export function SupplyDocumentSheet({
               })}
             </View>
 
+            {/*
+              Sheets of paper take a different path entirely.
+
+              No scanner, no frame, no expiry: those exist to photograph a card
+              accurately and are noise on a hotel invoice. The type decides,
+              which is why this branches here rather than on what the file is.
+            */}
+            {multi ? (
+              <>
+                <Text style={[s.eyebrow, { color: colors.textMuted }]}>
+                  {t('documents.pages.title')}
+                </Text>
+                <TextInput
+                  value={pageTitle}
+                  onChangeText={setPageTitle}
+                  placeholder={t('documents.pages.titlePlaceholder')}
+                  placeholderTextColor={colors.textMuted}
+                  editable={!busy}
+                  style={[
+                    s.titleInput,
+                    { backgroundColor: colors.surfaceRaised, color: colors.textPrimary, borderColor: colors.border },
+                  ]}
+                />
+                <Text style={[s.titleHint, { color: colors.textMuted }]}>
+                  {t('documents.pages.titleHint')}
+                </Text>
+                <MultiPageCapture
+                  pages={pages}
+                  onChange={setPages}
+                  onAdd={addPage}
+                  onRetry={retryPage}
+                  disabled={busy}
+                />
+              </>
+            ) : (
+            <>
             {/* The photo */}
             <Text style={[s.eyebrow, { color: colors.textMuted }]}>
               {t('documents.supply.theFile')}
@@ -644,6 +781,8 @@ export function SupplyDocumentSheet({
 
           </>
         )}
+            </>
+            )}
         </ScrollView>
 
         {/*
@@ -655,7 +794,7 @@ export function SupplyDocumentSheet({
         */}
         {suppliable.length > 0 && (
           <PressableScale
-            onPress={submit}
+            onPress={multi ? submitPages : submit}
             /*
               ⚠️ A missing date does NOT block sending HERE, and that is a
               deliberate difference from the web — see `dateNotFound`, which
@@ -665,7 +804,7 @@ export function SupplyDocumentSheet({
               block is a read still in flight: sending then races the staged
               upload and sends the same photo twice.
             */
-            disabled={!photo || busy || reading}
+            disabled={multi ? pages.length === 0 || busy : !photo || busy || reading}
             /*
               A dimmed version of the live colour is the worst disabled state
               there is: it still reads as the button, just badly rendered, so
@@ -674,7 +813,7 @@ export function SupplyDocumentSheet({
             */
             style={[
               s.submit,
-              !photo || busy
+              (multi ? pages.length === 0 || busy : !photo || busy)
                 ? { backgroundColor: colors.surfaceRaised }
                 : [s.submitOn, { backgroundColor: COLORS.primary, shadowColor: COLORS.primary }],
             ]}
@@ -682,7 +821,12 @@ export function SupplyDocumentSheet({
             {busy
               ? <ActivityIndicator color={colors.textMuted} />
               : (
-                <Text style={[s.submitText, { color: photo ? COLORS.white : colors.textMuted }]}>
+                <Text
+                  style={[
+                    s.submitText,
+                    { color: (multi ? pages.length > 0 : !!photo) ? COLORS.white : colors.textMuted },
+                  ]}
+                >
                   {t('documents.supply.send')}
                 </Text>
               )}
@@ -859,4 +1003,12 @@ const s = StyleSheet.create({
     elevation: 5,
   },
   submitText: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.semibold, letterSpacing: -0.2 },
+  titleInput: {
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm + 2,
+    fontSize: FONT_SIZE.base,
+  },
+  titleHint: { fontSize: FONT_SIZE.xs, lineHeight: 16, marginTop: -2 },
 });

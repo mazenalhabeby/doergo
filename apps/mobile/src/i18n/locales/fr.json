@@ -2274,7 +2274,29 @@
       "partSign": "{{count}} à signer",
       "blocking": "Aucune mission ne peut vous être confiée tant que ce document n'est pas fourni et validé."
     },
-    "onBehalfOf": "Pour {{name}}"
+    "onBehalfOf": "Pour {{name}}",
+    "pages": {
+      "add": "Ajouter une page",
+      "count_one": "{{count}} page",
+      "count_other": "{{count}} pages",
+      "failed_one": "{{count}} page n'a pas été envoyée. Touchez-la pour réessayer.",
+      "failed_other": "{{count}} pages n'ont pas été envoyées. Touchez-les pour réessayer.",
+      "hint": "Envoyé comme un seul fichier — personne n'a besoin de savoir que c'était plusieurs photos.",
+      "moveLeft": "Déplacer avant",
+      "moveRight": "Déplacer après",
+      "needPages": "Ajoutez au moins une page",
+      "needTitle": "Donnez-lui d'abord un nom",
+      "remove": "Retirer la page {{n}}",
+      "retry": "Réessayer",
+      "sending_one": "Envoi de {{count}} page…",
+      "sending_other": "Envoi de {{count}} pages…",
+      "title": "De quoi s'agit-il ?",
+      "titleHint": "Nécessaire : le nom du type seul n'indique rien.",
+      "titlePlaceholder": "Confirmation de vol, facture d'hôtel…",
+      "waiting_one": "En attente de {{count}} page…",
+      "waiting_other": "En attente de {{count}} pages…",
+      "needsConnection": "Ajouter des pages nécessite une connexion — les feuilles partent au fur et à mesure."
+    }
   },
   "attendanceReview": {
     "segments": {

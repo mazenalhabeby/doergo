@@ -48,7 +48,20 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     calls: { 'tasksApi.create': 1, 'taskAttachmentsApi.confirmUpload': 1 },
     why: FALLBACK,
   },
-  'src/components/supply-document-sheet.tsx': { calls: { 'documentsApi.submitOwn': 1 }, why: FALLBACK },
+  /*
+    TWO calls, and the second is NOT a no-offline-build fallback.
+
+    `submitPages` files sheets of paper as one document, and it names staging
+    keys that only exist because each sheet was already PUT to the object
+    store. There is nothing to queue: a queued submit citing keys whose uploads
+    never happened would fail on arrival, having told the member it was sent.
+    So it refuses while offline and says so, which is the honest answer for a
+    flow that cannot work without a connection.
+  */
+  'src/components/supply-document-sheet.tsx': {
+    calls: { 'documentsApi.submitOwn': 2 },
+    why: `${FALLBACK}, plus multi-sheet submit which cannot be queued — its pages must reach the store first`,
+  },
   'src/components/shift-issue-sheet.tsx': { calls: { 'shiftIssuesApi.create': 1, 'shiftIssuesApi.message': 2 }, why: FALLBACK },
   'app/(app)/asset-expense.tsx': { calls: { 'assetsApi.submitExpense': 1 }, why: FALLBACK },
   'app/(app)/asset-log.tsx': { calls: { 'assetsApi.createLog': 1 }, why: FALLBACK },

@@ -2274,7 +2274,29 @@
       "partSign": "{{count}} to sign",
       "blocking": "You cannot be given work until this is supplied and approved."
     },
-    "onBehalfOf": "For {{name}}"
+    "onBehalfOf": "For {{name}}",
+    "pages": {
+      "add": "Add page",
+      "count_one": "{{count}} page",
+      "count_other": "{{count}} pages",
+      "failed_one": "{{count}} page did not send. Tap it to try again.",
+      "failed_other": "{{count}} pages did not send. Tap them to try again.",
+      "hint": "Sent as one file — nobody downstream needs to know it was several photographs.",
+      "moveLeft": "Move earlier",
+      "moveRight": "Move later",
+      "needPages": "Add at least one page",
+      "needTitle": "Give it a name first",
+      "remove": "Remove page {{n}}",
+      "retry": "Retry",
+      "sending_one": "Sending {{count}} page…",
+      "sending_other": "Sending {{count}} pages…",
+      "title": "What is it?",
+      "titleHint": "Needed, because the type name alone tells nobody what they are looking at.",
+      "titlePlaceholder": "Flight confirmation, hotel invoice…",
+      "waiting_one": "Waiting for {{count}} page to finish…",
+      "waiting_other": "Waiting for {{count}} pages to finish…",
+      "needsConnection": "Adding pages needs a connection — the sheets are sent as you take them."
+    }
   },
   "attendanceReview": {
     "segments": {

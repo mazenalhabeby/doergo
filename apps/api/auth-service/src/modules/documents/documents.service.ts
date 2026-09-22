@@ -332,6 +332,22 @@ export class DocumentsService {
     });
   }
 
+  /**
+   * A card has a reverse; a stack of paper has a page 2.
+   *
+   * ⚠️ Refused rather than silently coerced. Both set is somebody misreading
+   * the editor, and quietly picking a winner means the type behaves one way
+   * while its settings screen says another — which is only discovered by a
+   * member whose upload asks for the wrong thing.
+   */
+  private assertPageShape(twoSided?: boolean | null, multiPage?: boolean | null) {
+    if (twoSided && multiPage) {
+      throw new BadRequestException(
+        'A document type is either two-sided or many sheets, not both',
+      );
+    }
+  }
+
   async createType(data: {
     actor: DocumentActor;
     key: string;
@@ -349,6 +365,8 @@ export class DocumentsService {
     /** Roles that may SEE documents of this type. Empty = no restriction. */
     visibleToRoleIds?: string[];
     twoSided?: boolean;
+    /** Sheets of paper rather than a card — refused together with twoSided. */
+    multiPage?: boolean;
     scanShape?: string;
     position?: number;
     /**
@@ -365,6 +383,8 @@ export class DocumentsService {
 
     const key = normaliseKey(data.key);
     if (!key) throw new BadRequestException('A document type needs a key');
+
+    this.assertPageShape(data.twoSided, data.multiPage);
 
     /*
       Validated by the SAME rule as an edit. Two definitions of a legal route is
@@ -400,6 +420,7 @@ export class DocumentsService {
           // Empty = no restriction, which is what every existing type is.
           visibleToRoleIds: data.visibleToRoleIds ?? [],
           twoSided: data.twoSided ?? false,
+          multiPage: data.multiPage ?? false,
           scanShape: data.scanShape ?? 'CARD',
           position: data.position ?? 0,
           // null, not [] — null is "no route, one signature"; an empty array is
@@ -431,6 +452,8 @@ export class DocumentsService {
       /** Roles that may SEE documents of this type. Empty = no restriction. */
       visibleToRoleIds: string[];
       twoSided: boolean;
+      /** Sheets of paper rather than a card — refused together with twoSided. */
+      multiPage: boolean;
       scanShape: string;
       isActive: boolean;
       position: number;
@@ -440,6 +463,14 @@ export class DocumentsService {
   }) {
     this.assertCanManageTypes(data.actor);
     const existing = await this.findTypeOr404(data.id, data.actor.organizationId);
+
+    // Checked against what the type WILL be, not only what the edit names —
+    // turning on multiPage alone, for a type already two-sided, is the same
+    // misconfiguration arrived at in two steps.
+    this.assertPageShape(
+      data.patch.twoSided ?? existing.twoSided,
+      data.patch.multiPage ?? (existing as { multiPage?: boolean }).multiPage,
+    );
 
     /*
       A route is validated here rather than trusted.

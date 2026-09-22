@@ -2274,7 +2274,29 @@
       "partSign": "{{count}} da firmare",
       "blocking": "Non puoi ricevere lavoro finché non lo invii e non viene approvato."
     },
-    "onBehalfOf": "Per {{name}}"
+    "onBehalfOf": "Per {{name}}",
+    "pages": {
+      "add": "Aggiungi pagina",
+      "count_one": "{{count}} pagina",
+      "count_other": "{{count}} pagine",
+      "failed_one": "{{count}} pagina non è stata inviata. Toccala per riprovare.",
+      "failed_other": "{{count}} pagine non sono state inviate. Toccale per riprovare.",
+      "hint": "Inviato come un unico file — nessuno deve sapere che erano più foto.",
+      "moveLeft": "Sposta prima",
+      "moveRight": "Sposta dopo",
+      "needPages": "Aggiungi almeno una pagina",
+      "needTitle": "Dagli prima un nome",
+      "remove": "Rimuovi la pagina {{n}}",
+      "retry": "Riprova",
+      "sending_one": "Invio di {{count}} pagina…",
+      "sending_other": "Invio di {{count}} pagine…",
+      "title": "Di cosa si tratta?",
+      "titleHint": "Necessario: il nome del tipo da solo non dice nulla.",
+      "titlePlaceholder": "Conferma di volo, fattura d'albergo…",
+      "waiting_one": "In attesa di {{count}} pagina…",
+      "waiting_other": "In attesa di {{count}} pagine…",
+      "needsConnection": "Aggiungere pagine richiede una connessione: i fogli partono mentre li scatti."
+    }
   },
   "attendanceReview": {
     "segments": {

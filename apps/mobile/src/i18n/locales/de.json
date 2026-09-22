@@ -2274,7 +2274,29 @@
       "partSign": "{{count}} unterschreiben",
       "blocking": "Sie können keine Arbeit erhalten, bis dies eingereicht und freigegeben ist."
     },
-    "onBehalfOf": "Für {{name}}"
+    "onBehalfOf": "Für {{name}}",
+    "pages": {
+      "add": "Seite hinzufügen",
+      "count_one": "{{count}} Seite",
+      "count_other": "{{count}} Seiten",
+      "failed_one": "{{count}} Seite wurde nicht gesendet. Zum Wiederholen antippen.",
+      "failed_other": "{{count}} Seiten wurden nicht gesendet. Zum Wiederholen antippen.",
+      "hint": "Wird als eine Datei gesendet — dass es mehrere Fotos waren, muss niemand wissen.",
+      "moveLeft": "Nach vorne",
+      "moveRight": "Nach hinten",
+      "needPages": "Mindestens eine Seite hinzufügen",
+      "needTitle": "Bitte zuerst benennen",
+      "remove": "Seite {{n}} entfernen",
+      "retry": "Erneut",
+      "sending_one": "{{count}} Seite wird gesendet…",
+      "sending_other": "{{count}} Seiten werden gesendet…",
+      "title": "Worum handelt es sich?",
+      "titleHint": "Erforderlich, denn der Typname allein sagt niemandem, worum es geht.",
+      "titlePlaceholder": "Flugbestätigung, Hotelrechnung…",
+      "waiting_one": "Warten auf {{count}} Seite…",
+      "waiting_other": "Warten auf {{count}} Seiten…",
+      "needsConnection": "Für Seiten wird eine Verbindung benötigt — sie werden beim Aufnehmen gesendet."
+    }
   },
   "attendanceReview": {
     "segments": {

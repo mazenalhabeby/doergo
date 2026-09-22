@@ -59,6 +59,13 @@ export interface DocumentType {
   twoSided: boolean;
   /** CARD, PASSPORT or PAGE — the frame the scanner draws. */
   scanShape: 'CARD' | 'PASSPORT' | 'PAGE';
+  /**
+   * Sheets of paper rather than a card: add pages until done, filed as one PDF.
+   *
+   * ⚠️ The opt-out from the credential machinery — no frame, no machine-readable
+   * zone, no expiry prompt. Never set together with `twoSided`.
+   */
+  multiPage?: boolean;
 }
 
 /** One step of a document's signing chain, as the signing screen sees it. */
