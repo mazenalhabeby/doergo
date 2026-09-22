@@ -23,6 +23,7 @@ export function MultiPageCapture({
   onChange,
   onScan,
   onLibrary,
+  onFile,
   onRetry,
   disabled,
 }: {
@@ -30,8 +31,10 @@ export function MultiPageCapture({
   onChange: (next: Page[]) => void;
   /** One sheet through the scanner — framed, deskewed, cropped. */
   onScan: () => void;
-  /** Several at once out of the photo library, for paper that arrived by email. */
+  /** Several at once out of the photo library, for paper already photographed. */
   onLibrary: () => void;
+  /** A PDF off the phone — most of this paper never was paper. */
+  onFile: () => void;
   onRetry: (id: string) => void;
   disabled?: boolean;
 }) {
@@ -52,7 +55,19 @@ export function MultiPageCapture({
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
         {pages.map((page, index) => (
           <View key={page.id} style={[styles.tile, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}>
-            <Image source={{ uri: page.uri }} style={styles.thumb} resizeMode="cover" />
+            {page.mimeType === 'application/pdf' ? (
+              // Nothing to draw: a PDF has no thumbnail until something renders
+              // it, and rendering one here to show a 90px square is not worth a
+              // native dependency. Its name says more than a grey box would.
+              <View style={[styles.thumb, styles.pdf, { backgroundColor: colors.surface }]}>
+                <Ionicons name="document-text-outline" size={26} color={COLORS.primary} />
+                <Text numberOfLines={2} style={[styles.pdfName, { color: colors.textMuted }]}>
+                  {page.name ?? 'PDF'}
+                </Text>
+              </View>
+            ) : (
+              <Image source={{ uri: page.uri }} style={styles.thumb} resizeMode="cover" />
+            )}
 
             <View style={[styles.badge, { backgroundColor: COLORS.primary }]}>
               <Text style={styles.badgeText}>{index + 1}</Text>
@@ -125,12 +140,20 @@ export function MultiPageCapture({
         instead of six trips through a camera that was never needed.
       */}
       {!disabled && (
-        <TouchableOpacity onPress={onLibrary} style={styles.libraryRow}>
-          <Ionicons name="images-outline" size={16} color={COLORS.primary} />
-          <Text style={[styles.libraryText, { color: COLORS.primary }]}>
-            {t('documents.pages.fromLibrary')}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.sourceRow}>
+          <TouchableOpacity onPress={onLibrary} style={styles.libraryRow}>
+            <Ionicons name="images-outline" size={16} color={COLORS.primary} />
+            <Text style={[styles.libraryText, { color: COLORS.primary }]}>
+              {t('documents.pages.fromLibrary')}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onFile} style={styles.libraryRow}>
+            <Ionicons name="document-attach-outline" size={16} color={COLORS.primary} />
+            <Text style={[styles.libraryText, { color: COLORS.primary }]}>
+              {t('documents.pages.fromFiles')}
+            </Text>
+          </TouchableOpacity>
+        </View>
       )}
 
       <Text style={[styles.hint, { color: colors.textMuted }]}>{t('documents.pages.hint')}</Text>
@@ -203,7 +226,10 @@ const styles = StyleSheet.create({
   },
   arrowOff: { opacity: 0.3 },
   add: { borderStyle: 'dashed', gap: 3 },
+  sourceRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.lg, flexWrap: 'wrap' },
   libraryRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 2 },
+  pdf: { justifyContent: 'center', alignItems: 'center', gap: 4, padding: 6 },
+  pdfName: { fontSize: 9.5, textAlign: 'center' },
   libraryText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
   addText: { fontSize: 10.5, fontWeight: FONT_WEIGHT.semibold },
   hint: { fontSize: FONT_SIZE.xs, lineHeight: 16 },

@@ -24,6 +24,7 @@ const LOADED_ONLY_BY: Record<string, string[]> = {
   '@react-native-community/netinfo': ['src/offline/native.ts'],
   'expo-image-manipulator': ['src/offline/native.ts'],
   'expo-background-task': ['src/offline/native.ts'],
+  'expo-document-picker': ['src/lib/optional-native.ts'],
   'expo-mlkit-ocr': ['src/lib/ocr.ts'],
   'expo-in-app-updates': ['src/lib/in-app-updates.ts'],
 };

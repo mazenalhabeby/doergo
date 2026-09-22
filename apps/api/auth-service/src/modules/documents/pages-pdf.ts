@@ -38,6 +38,11 @@ const QUALITY = 82;
 export { MAX_PAGES } from '@hbcfield/shared';
 import { MAX_PAGES } from '@hbcfield/shared';
 
+/** A PDF announces itself in its first five bytes. */
+function isPdf(bytes: Buffer): boolean {
+  return bytes.subarray(0, 5).toString('latin1') === '%PDF-';
+}
+
 /**
  * Normalise one sheet: strip the camera's rotation, bound the resolution, and
  * re-encode as JPEG.
@@ -46,7 +51,13 @@ import { MAX_PAGES } from '@hbcfield/shared';
  * phone over the wire, and it is the bounded opener that refuses a decompression
  * bomb before it reaches memory.
  */
-async function normalise(bytes: Buffer): Promise<{ jpeg: Buffer; width: number; height: number }> {
+interface Sheet {
+  jpeg: Buffer;
+  width: number;
+  height: number;
+}
+
+async function normalise(bytes: Buffer): Promise<Sheet> {
   const image = (await openUntrustedImage(bytes))
     // `rotate()` with no argument applies the EXIF orientation and drops it, so
     // the stored page is the right way up everywhere rather than only in
@@ -77,13 +88,35 @@ export async function assemblePagesPdf(sheets: Buffer[]): Promise<Buffer> {
     throw new Error(`A document may hold at most ${MAX_PAGES} pages`);
   }
 
-  const normalised = await Promise.all(sheets.map(normalise));
+  /*
+    A sheet may already BE a PDF.
+
+    Most of what this feature is for arrives by email — an invoice, a booking,
+    a flight confirmation — and is a PDF before anybody photographs anything.
+    Such a sheet keeps its own pages instead of being rasterised: copying them
+    preserves the text, costs nothing, and a five-page PDF stays five pages
+    rather than becoming one picture of its first.
+  */
+  const normalised = await Promise.all(
+    sheets.map(async (bytes): Promise<{ pdf: Buffer } | { image: Sheet }> =>
+      isPdf(bytes) ? { pdf: bytes } : { image: await normalise(bytes) },
+    ),
+  );
 
   const pdf = await PDFDocument.create();
   for (const sheet of normalised) {
-    const embedded = await pdf.embedJpg(sheet.jpeg);
-    const page = pdf.addPage([sheet.width, sheet.height]);
-    page.drawImage(embedded, { x: 0, y: 0, width: sheet.width, height: sheet.height });
+    if ('pdf' in sheet) {
+      // ⚠️ `ignoreEncryption`: a locked PDF is a document somebody still needs
+      // filed, and refusing the whole upload over it helps nobody.
+      const source = await PDFDocument.load(sheet.pdf, { ignoreEncryption: true });
+      const copied = await pdf.copyPages(source, source.getPageIndices());
+      for (const page of copied) pdf.addPage(page);
+      continue;
+    }
+    const { jpeg, width, height } = sheet.image;
+    const embedded = await pdf.embedJpg(jpeg);
+    const page = pdf.addPage([width, height]);
+    page.drawImage(embedded, { x: 0, y: 0, width, height });
   }
 
   // `useObjectStreams` keeps the cross-reference table compact — a few hundred

@@ -2,6 +2,7 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 
 type LocalAuthenticationLib = typeof import('expo-local-authentication');
 type CryptoLib = typeof import('expo-crypto');
+type DocumentPickerLib = typeof import('expo-document-picker');
 
 /*
   ⚠️ NATIVE LIBRARIES ADDED AFTER A STORE BUILD ARE NEVER IMPORTED AT MODULE SCOPE.
@@ -34,4 +35,19 @@ export function localAuthentication(): LocalAuthenticationLib | null {
 export function expoCrypto(): CryptoLib | null {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   return optional('ExpoCrypto', () => require('expo-crypto') as CryptoLib);
+}
+
+/**
+ * Picking a PDF off the phone. Null on a build without it — the caller then
+ * offers photographs only.
+ *
+ * ⚠️ Added here after `asset-expense.tsx` imported it at module scope and took
+ * its whole ROUTE down on a binary that predates it: expo-router imports every
+ * route while building the tree, so the throw happened at launch and the route
+ * simply never registered. `native-imports.spec.ts` now names this library, so
+ * the next static import fails the suite instead of a member's app.
+ */
+export function documentPicker(): DocumentPickerLib | null {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return optional('ExpoDocumentPicker', () => require('expo-document-picker') as DocumentPickerLib);
 }

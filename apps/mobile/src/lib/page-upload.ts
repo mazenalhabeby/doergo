@@ -82,16 +82,27 @@ export async function stagePage(
   };
 
   try {
-    emit({ state: 'compressing' });
-    const small = await compressSheet(page.uri);
+    /*
+      ⚠️ A PDF is passed through untouched.
+
+      Compressing it would mean rasterising it, which turns a five-page invoice
+      with selectable text into one picture of its first page. The server keeps
+      its pages as they are; the phone's only job is to deliver the bytes.
+    */
+    const isPdf = page.mimeType === 'application/pdf';
+    const mime = isPdf ? 'application/pdf' : 'image/jpeg';
+
+    const small = isPdf
+      ? { uri: page.uri, bytes: 0 }
+      : (emit({ state: 'compressing' }), await compressSheet(page.uri));
 
     emit({ state: 'uploading', uri: small.uri });
     const presigned = await documentsApi.ownUploadUrl({
       typeId,
-      mimeType: 'image/jpeg',
+      mimeType: mime,
       sizeBytes: small.bytes,
     });
-    await uploadToPresignedUrl(presigned.url, small.uri, 'image/jpeg');
+    await uploadToPresignedUrl(presigned.url, small.uri, mime);
 
     return emit({ state: 'ready', stagingKey: presigned.key });
   } catch (err) {

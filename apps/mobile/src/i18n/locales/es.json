@@ -2298,7 +2298,9 @@
       "needsConnection": "Añadir páginas requiere conexión: las hojas se envían según las haces.",
       "scan": "Escanear página",
       "fromLibrary": "Elegir de fotos",
-      "tooMany": "Un documento admite {{count}} páginas."
+      "tooMany": "Un documento admite {{count}} páginas.",
+      "fromFiles": "Adjuntar un PDF",
+      "noFilePicker": "Esta versión de la app no puede adjuntar archivos. Actualízala para añadir un PDF."
     }
   },
   "attendanceReview": {

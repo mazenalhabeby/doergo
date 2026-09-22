@@ -2298,7 +2298,9 @@
       "needsConnection": "Aggiungere pagine richiede una connessione: i fogli partono mentre li scatti.",
       "scan": "Scansiona pagina",
       "fromLibrary": "Scegli dalle foto",
-      "tooMany": "Un documento può contenere {{count}} pagine."
+      "tooMany": "Un documento può contenere {{count}} pagine.",
+      "fromFiles": "Allega un PDF",
+      "noFilePicker": "Questa versione dell'app non può allegare file. Aggiornala per aggiungere un PDF."
     }
   },
   "attendanceReview": {

@@ -9,6 +9,7 @@ import { useToast } from '../contexts/toast-context';
 import { MultiPageCapture } from './multi-page-capture';
 import { newPageId, readyKeys, allStaged, pendingCount, failedCount, type Page } from '../lib/page-order';
 import { MAX_PAGES } from '@hbcfield/shared/client';
+import { documentPicker } from '../lib/optional-native';
 import { stagePage } from '../lib/page-upload';
 import { useImagePicker } from '../hooks/useImagePicker';
 import { File as FsFile } from 'expo-file-system';
@@ -326,11 +327,17 @@ export function SupplyDocumentSheet({
    * doing it; those seconds are free upload time, and spending them idle means
    * waiting all over again on Send. Each tile shows its own state while it goes.
    */
-  const addPages = (uris: string[]) => {
-    if (!type || uris.length === 0) return;
-    const fresh: Page[] = uris
+  const addPages = (incoming: { uri: string; mimeType?: string; name?: string }[]) => {
+    if (!type || incoming.length === 0) return;
+    const fresh: Page[] = incoming
       .slice(0, MAX_PAGES - pages.length)
-      .map((uri) => ({ id: newPageId(), uri, state: 'compressing' as const }));
+      .map((f) => ({
+        id: newPageId(),
+        uri: f.uri,
+        mimeType: f.mimeType,
+        name: f.name,
+        state: 'compressing' as const,
+      }));
     setPages((prev) => [...prev, ...fresh]);
     for (const page of fresh) {
       void stagePage(page, type.id, (next) =>
@@ -352,10 +359,48 @@ export function SupplyDocumentSheet({
     is already in Photos. Multi-select means six sheets in one tap instead of
     six trips through a camera that was never needed.
   */
+  /*
+    A PDF, straight off the phone.
+
+    Most of what this feature exists for never was paper: an invoice, a booking,
+    a flight confirmation arrives by email as a PDF. Photographing a screen
+    showing it is what members did instead, and the result was unreadable.
+  */
+  const pickFile = async () => {
+    if (!type || !canAddPage()) return;
+    const picker = documentPicker();
+    if (!picker) {
+      toast.info(t('documents.pages.noFilePicker'));
+      return;
+    }
+    const picked = await picker.getDocumentAsync({
+      /*
+        Named explicitly rather than `image/*`. The server files PDF, PNG and
+        JPEG and nothing else, so a wildcard lets somebody pick a HEIC off an
+        iPhone, watch it upload, and only then be refused. (It also contains
+        the characters that open a comment, which the DOM-globals guard's
+        stripper takes literally.)
+      */
+      type: ['application/pdf', 'image/jpeg', 'image/png'],
+      copyToCacheDirectory: true,
+      multiple: true,
+    });
+    if (picked.canceled || !picked.assets?.length) return;
+    addPages(
+      picked.assets.map((f) => ({
+        uri: f.uri,
+        mimeType:
+          f.mimeType ??
+          (f.name?.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
+        name: f.name ?? undefined,
+      })),
+    );
+  };
+
   const pickPages = async () => {
     if (!type || !canAddPage()) return;
     const picked = await pickFromGallery('document', MAX_PAGES - pages.length);
-    addPages(picked.map((p) => p.uri).filter(Boolean));
+    addPages(picked.filter((p) => p.uri).map((p) => ({ uri: p.uri })));
   };
 
   /** A sheet that did not land, sent again — its local file was kept for this. */
@@ -639,6 +684,7 @@ export function SupplyDocumentSheet({
                   onChange={setPages}
                   onScan={scanPage}
                   onLibrary={pickPages}
+                  onFile={pickFile}
                   onRetry={retryPage}
                   disabled={busy}
                 />
@@ -898,7 +944,7 @@ export function SupplyDocumentSheet({
         onCancel={() => setScanningPage(false)}
         onDone={(result) => {
           setScanningPage(false);
-          if (result?.uri) addPages([result.uri]);
+          if (result?.uri) addPages([{ uri: result.uri }]);
         }}
       />
 

@@ -8,11 +8,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
-import * as DocumentPicker from 'expo-document-picker';
 
 import { ScreenHeader, DateField } from '../../src/components';
 import { useAuth } from '../../src/contexts/auth-context';
 import { assetEntryDateText, dayKeyOf, logEntryDayBounds, occurredAtForDay } from '../../src/lib/log-dates';
+import { documentPicker } from '../../src/lib/optional-native';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/contexts/toast-context';
 import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
@@ -187,6 +187,17 @@ export default function AssetExpenseScreen() {
    */
   const pickFile = useCallback(async () => {
     if (busy) return;
+    /*
+      ⚠️ Through the loader, never a top-level import.
+
+      This file imported `expo-document-picker` at module scope, and expo-router
+      imports every route while building its tree — so on any binary predating
+      the library the throw happened at LAUNCH and this route never registered
+      at all. It showed up as `No route named "asset-expense"` in the Metro log
+      and a screen that simply did not exist.
+    */
+    const DocumentPicker = documentPicker();
+    if (!DocumentPicker) return;
     const picked = await DocumentPicker.getDocumentAsync({
       type: ['application/pdf', 'image/*'],
       copyToCacheDirectory: true,

@@ -2298,7 +2298,9 @@
       "needsConnection": "Für Seiten wird eine Verbindung benötigt — sie werden beim Aufnehmen gesendet.",
       "scan": "Seite scannen",
       "fromLibrary": "Aus Fotos wählen",
-      "tooMany": "Ein Dokument kann {{count}} Seiten enthalten."
+      "tooMany": "Ein Dokument kann {{count}} Seiten enthalten.",
+      "fromFiles": "PDF anhängen",
+      "noFilePicker": "Diese App-Version kann keine Dateien anhängen. Aktualisieren Sie sie, um ein PDF hinzuzufügen."
     }
   },
   "attendanceReview": {

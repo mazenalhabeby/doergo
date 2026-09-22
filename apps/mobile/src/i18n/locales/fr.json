@@ -2298,7 +2298,9 @@
       "needsConnection": "Ajouter des pages nécessite une connexion — les feuilles partent au fur et à mesure.",
       "scan": "Scanner une page",
       "fromLibrary": "Choisir dans Photos",
-      "tooMany": "Un document peut contenir {{count}} pages."
+      "tooMany": "Un document peut contenir {{count}} pages.",
+      "fromFiles": "Joindre un PDF",
+      "noFilePicker": "Cette version de l'app ne peut pas joindre de fichiers. Mettez-la à jour pour ajouter un PDF."
     }
   },
   "attendanceReview": {

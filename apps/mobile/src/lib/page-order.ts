@@ -15,6 +15,14 @@ export interface Page {
   id: string;
   /** The local file, for the thumbnail. */
   uri: string;
+  /**
+   * What the sheet IS. A PDF is passed through untouched — not compressed, not
+   * rasterised — so an invoice that arrived by email keeps its pages and its
+   * text. Absent means a photograph.
+   */
+  mimeType?: string;
+  /** A PDF has no thumbnail to draw; the tile shows its name instead. */
+  name?: string;
   state: PageState;
   /** Set once the sheet is on the server; this is what gets submitted. */
   stagingKey?: string;

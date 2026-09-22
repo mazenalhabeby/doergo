@@ -84,3 +84,37 @@ describe('sheets of paper, filed as one document', () => {
     expect(parsed.getPageCount()).toBe(MAX_PAGES);
   });
 });
+
+describe('a sheet that is already a PDF', () => {
+  /** A PDF of `n` pages, as one would arrive by email. */
+  async function pdfOf(n: number): Promise<Buffer> {
+    const doc = await PDFDocument.create();
+    for (let i = 0; i < n; i += 1) doc.addPage([420, 595]);
+    return Buffer.from(await doc.save());
+  }
+
+  it('keeps every page of it, rather than rasterising the first', async () => {
+    // The whole point: an invoice emailed as five pages stays five pages, with
+    // its text intact, instead of becoming one picture of page one.
+    const out = await assemblePagesPdf([await pdfOf(5)]);
+    expect((await PDFDocument.load(out)).getPageCount()).toBe(5);
+  });
+
+  it('mixes with photographed sheets, in the order given', async () => {
+    const out = await assemblePagesPdf([await sheet(400, 900), await pdfOf(3), await sheet(400, 900)]);
+    const parsed = await PDFDocument.load(out);
+    expect(parsed.getPageCount()).toBe(5);
+
+    // First and last are the photographs, at their own size; the middle three
+    // came from the PDF and kept its page size.
+    const pages = parsed.getPages();
+    expect(Math.round(pages[0].getWidth())).toBe(400);
+    expect(Math.round(pages[2].getWidth())).toBe(420);
+    expect(Math.round(pages[4].getWidth())).toBe(400);
+  });
+
+  it('files a single PDF unchanged in page count', async () => {
+    const out = await assemblePagesPdf([await pdfOf(1)]);
+    expect((await PDFDocument.load(out)).getPageCount()).toBe(1);
+  });
+});

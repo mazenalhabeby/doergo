@@ -2298,7 +2298,9 @@
       "needsConnection": "Adding pages needs a connection — the sheets are sent as you take them.",
       "scan": "Scan a page",
       "fromLibrary": "Choose from photos",
-      "tooMany": "A document can hold {{count}} pages."
+      "tooMany": "A document can hold {{count}} pages.",
+      "fromFiles": "Attach a PDF",
+      "noFilePicker": "This version of the app cannot attach files. Update it to add a PDF."
     }
   },
   "attendanceReview": {
