@@ -8371,7 +8371,9 @@
         },
         "notReady": "La firma del cliente non è ancora disponibile.",
         "soon": "presto"
-      }
+      },
+      "multiPage": "Più fogli",
+      "multiPageHint": "Il membro aggiunge pagine fino alla fine e il tutto viene archiviato come un unico documento. Nessuno scanner, nessuna cornice, nessuna scadenza: per una fattura d'albergo o una conferma di volo, non per una tessera."
     },
     "supply": {
       "action": "Aggiungi documento",

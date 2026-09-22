@@ -8362,7 +8362,9 @@
         },
         "notReady": "Customer signing is not available yet.",
         "soon": "soon"
-      }
+      },
+      "multiPage": "Many sheets of paper",
+      "multiPageHint": "The member adds pages until they are done and it is filed as one document. No scanner, no frame, no expiry — for a hotel invoice or a flight confirmation, not a card."
     },
     "supply": {
       "action": "Add a document",

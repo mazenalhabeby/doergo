@@ -375,6 +375,14 @@ function TypeEditor({
   */
   const [visibleToRoleIds, setVisibleToRoleIds] = useState<string[]>(type?.visibleToRoleIds ?? [])
   const [twoSided, setTwoSided] = useState(type?.twoSided ?? starter?.twoSided ?? false)
+  /*
+    Sheets of paper rather than a card.
+
+    ⚠️ Mutually exclusive with `twoSided` — the server refuses the pair on both
+    create and update, so turning one on turns the other off HERE rather than
+    letting somebody save a combination that will be rejected.
+  */
+  const [multiPage, setMultiPage] = useState(type?.multiPage ?? false)
   const [scanShape, setScanShape] = useState(type?.scanShape ?? starter?.scanShape ?? "CARD")
   /*
     The signing route: an ordered list of roles.
@@ -406,7 +414,8 @@ function TypeEditor({
           requiredForWorkflowIds: isCredential ? gates : [],
           ...requirementPayload(direction, requiredFromAll, requiredFromRoleIds),
           visibleToRoleIds,
-          twoSided: direction === "SUPPLIED" && twoSided,
+          twoSided: direction === "SUPPLIED" && twoSided && !multiPage,
+          multiPage: direction === "SUPPLIED" && multiPage,
           scanShape,
           retentionMonths,
           // Sent on create as well as on edit. It was missing here, so "Who
@@ -429,7 +438,8 @@ function TypeEditor({
         requiredForWorkflowIds: isCredential ? gates : [],
         ...requirementPayload(direction, requiredFromAll, requiredFromRoleIds),
         visibleToRoleIds,
-        twoSided: direction === "SUPPLIED" && twoSided,
+        twoSided: direction === "SUPPLIED" && twoSided && !multiPage,
+        multiPage: direction === "SUPPLIED" && multiPage,
         scanShape,
         retentionMonths,
         // null, not [] — the server reads null as "no route" and an empty array
@@ -531,9 +541,25 @@ function TypeEditor({
 
               <Toggle
                 checked={twoSided}
-                onChange={setTwoSided}
+                onChange={(v) => { setTwoSided(v); if (v) setMultiPage(false) }}
                 title={t("documents.types.twoSided")}
                 hint={t("documents.types.twoSidedHint")}
+              />
+
+              {/*
+                Paper, not a card. Turning this on turns two-sided off: the
+                server refuses both together, and a form that lets somebody save
+                a rejected combination has wasted their time to no purpose.
+
+                It also switches OFF the scanner on the phone — no frame, no
+                machine-readable zone, no expiry prompt — which is the whole
+                point for a hotel invoice or a flight confirmation.
+              */}
+              <Toggle
+                checked={multiPage}
+                onChange={(v) => { setMultiPage(v); if (v) setTwoSided(false) }}
+                title={t("documents.types.multiPage")}
+                hint={t("documents.types.multiPageHint")}
               />
             </div>
           )}

@@ -8371,7 +8371,9 @@
         },
         "notReady": "La signature du client n’est pas encore disponible.",
         "soon": "bientôt"
-      }
+      },
+      "multiPage": "Plusieurs feuilles",
+      "multiPageHint": "Le membre ajoute des pages jusqu'à la fin et le tout est classé comme un seul document. Pas de scanner, pas de cadre, pas d'expiration — pour une facture d'hôtel ou une confirmation de vol, pas pour une carte."
     },
     "supply": {
       "action": "Ajouter un document",

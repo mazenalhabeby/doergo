@@ -7055,6 +7055,8 @@ export interface DocumentTypeRow {
   visibleToRoleIds: string[];
   /** The scanner asks for the back as well — ID cards and licences, not passports. */
   twoSided: boolean;
+  /** Sheets of paper rather than a card — never set together with twoSided. */
+  multiPage?: boolean;
   /** The frame the scanner draws: a passport page is not the shape of a card. */
   scanShape: 'CARD' | 'PASSPORT' | 'PAGE';
   isActive: boolean;
