@@ -1000,7 +1000,8 @@
     "about": {
       "title": "Informazioni",
       "tagline": "Assegna · Traccia · Consegna",
-      "description": "HBCField è una piattaforma di gestione dei servizi sul campo che aiuta i team ad assegnare attività, monitorare l'avanzamento in tempo reale e offrire un servizio eccellente."
+      "description": "HBCField è una piattaforma di gestione dei servizi sul campo che aiuta i team ad assegnare attività, monitorare l'avanzamento in tempo reale e offrire un servizio eccellente.",
+      "noUpdate": "Nessuno — bundle incorporato"
     },
     "status": {
       "title": "Disponibilità",
@@ -2300,7 +2301,8 @@
       "fromLibrary": "Scegli dalle foto",
       "tooMany": "Un documento può contenere {{count}} pagine.",
       "fromFiles": "Allega un PDF",
-      "noFilePicker": "Questa versione dell'app non può allegare file. Aggiornala per aggiungere un PDF."
+      "noFilePicker": "Questa versione dell'app non può allegare file. Aggiornala per aggiungere un PDF.",
+      "failedGeneric": "Quella pagina non è stata inviata. Toccala per riprovare."
     }
   },
   "attendanceReview": {

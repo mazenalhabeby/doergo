@@ -1000,7 +1000,8 @@
     "about": {
       "title": "Acerca de",
       "tagline": "Despacha · Rastrea · Entrega",
-      "description": "HBCField es una plataforma de gestión de servicios en campo que ayuda a los equipos a despachar tareas, seguir el progreso en tiempo real y ofrecer un servicio excepcional."
+      "description": "HBCField es una plataforma de gestión de servicios en campo que ayuda a los equipos a despachar tareas, seguir el progreso en tiempo real y ofrecer un servicio excepcional.",
+      "noUpdate": "Ninguna — paquete incorporado"
     },
     "status": {
       "title": "Disponibilidad",
@@ -2300,7 +2301,8 @@
       "fromLibrary": "Elegir de fotos",
       "tooMany": "Un documento admite {{count}} páginas.",
       "fromFiles": "Adjuntar un PDF",
-      "noFilePicker": "Esta versión de la app no puede adjuntar archivos. Actualízala para añadir un PDF."
+      "noFilePicker": "Esta versión de la app no puede adjuntar archivos. Actualízala para añadir un PDF.",
+      "failedGeneric": "Esa página no se envió. Tócala para reintentar."
     }
   },
   "attendanceReview": {

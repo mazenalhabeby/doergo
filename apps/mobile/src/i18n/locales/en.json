@@ -1000,7 +1000,8 @@
     "about": {
       "title": "About",
       "tagline": "Dispatch · Track · Deliver",
-      "description": "HBCField is a field service management platform that helps teams dispatch tasks, track progress in real-time, and deliver exceptional service."
+      "description": "HBCField is a field service management platform that helps teams dispatch tasks, track progress in real-time, and deliver exceptional service.",
+      "noUpdate": "None — running the built-in bundle"
     },
     "status": {
       "title": "Availability",
@@ -2300,7 +2301,8 @@
       "fromLibrary": "Choose from photos",
       "tooMany": "A document can hold {{count}} pages.",
       "fromFiles": "Attach a PDF",
-      "noFilePicker": "This version of the app cannot attach files. Update it to add a PDF."
+      "noFilePicker": "This version of the app cannot attach files. Update it to add a PDF.",
+      "failedGeneric": "That page did not send. Tap it to try again."
     }
   },
   "attendanceReview": {

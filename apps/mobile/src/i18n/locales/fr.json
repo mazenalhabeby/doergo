@@ -1000,7 +1000,8 @@
     "about": {
       "title": "À propos",
       "tagline": "Répartir · Suivre · Livrer",
-      "description": "HBCField est une plateforme de gestion des interventions terrain qui aide les équipes à répartir les tâches, à suivre l'avancement en temps réel et à fournir un service exceptionnel."
+      "description": "HBCField est une plateforme de gestion des interventions terrain qui aide les équipes à répartir les tâches, à suivre l'avancement en temps réel et à fournir un service exceptionnel.",
+      "noUpdate": "Aucune — bundle intégré"
     },
     "status": {
       "title": "Disponibilité",
@@ -2300,7 +2301,8 @@
       "fromLibrary": "Choisir dans Photos",
       "tooMany": "Un document peut contenir {{count}} pages.",
       "fromFiles": "Joindre un PDF",
-      "noFilePicker": "Cette version de l'app ne peut pas joindre de fichiers. Mettez-la à jour pour ajouter un PDF."
+      "noFilePicker": "Cette version de l'app ne peut pas joindre de fichiers. Mettez-la à jour pour ajouter un PDF.",
+      "failedGeneric": "Cette page n'a pas été envoyée. Touchez-la pour réessayer."
     }
   },
   "attendanceReview": {

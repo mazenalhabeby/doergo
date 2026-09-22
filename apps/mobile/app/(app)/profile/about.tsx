@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import Constants from 'expo-constants';
+import * as Updates from 'expo-updates';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,6 +23,23 @@ export default function AboutScreen() {
   const gitCommit = (extra.gitCommit as string) || 'unknown';
   const buildProfile = (extra.buildProfile as string) || 'local';
   const builtAt = extra.builtAt as string | undefined;
+  /*
+    WHICH JAVASCRIPT THIS IS.
+
+    The version above is the BINARY's, and it does not change when an update is
+    delivered — so "1.0.6" reads the same on a phone carrying today's update and
+    on one stuck three updates back. That cost an entire afternoon of guessing
+    whether an OTA had landed, with no way for either end to tell.
+
+    `Updates.updateId` is the published update's own id, and `isEmbeddedLaunch`
+    says the app is running the bundle that shipped inside the binary — i.e. no
+    update has been applied at all, which is the case worth seeing plainly.
+  */
+  const updateLabel = Updates.isEmbeddedLaunch
+    ? t('profile.about.noUpdate')
+    : `${(Updates.updateId ?? '').slice(0, 8) || '—'}${
+        Updates.createdAt ? ` · ${new Date(Updates.createdAt).toLocaleString()}` : ''
+      }`;
   const builtAtLabel = builtAt
     ? new Date(builtAt).toLocaleString()
     : '—';
@@ -69,6 +87,10 @@ export default function AboutScreen() {
           <View style={styles.buildRow}>
             <Text style={[styles.buildLabel, { color: colors.textMuted }]}>Built</Text>
             <Text style={[styles.buildValue, { color: colors.textSecondary }]}>{builtAtLabel}</Text>
+          </View>
+          <View style={styles.buildRow}>
+            <Text style={[styles.buildLabel, { color: colors.textMuted }]}>Update</Text>
+            <Text style={[styles.buildValue, { color: colors.textSecondary }]}>{updateLabel}</Text>
           </View>
         </View>
       </View>

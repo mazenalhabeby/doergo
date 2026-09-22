@@ -1,3 +1,4 @@
+import { File as FsFile } from 'expo-file-system';
 import { loadImageManipulator } from '../offline/native';
 import { documentsApi } from './api/documents';
 import { uploadToPresignedUrl } from './api/attachments';
@@ -21,6 +22,22 @@ export * from './page-order';
  * immediately throws away — on a van's hotspot that is the whole difference
  * between this feeling instant and feeling broken.
  */
+
+/**
+ * The file's real length.
+ *
+ * ⚠️ Not optional. The server refuses a presign with `sizeBytes <= 0` — "A file
+ * size is required" — so a placeholder zero here fails EVERY page, and the tile
+ * can only offer Retry, which fails identically. That was the first version of
+ * this file.
+ */
+function fileSize(uri: string): number {
+  try {
+    return new FsFile(uri).size ?? 0;
+  } catch {
+    return 0;
+  }
+}
 
 /** Matches MAX_EDGE server-side: ~190 dpi across A4, past anything read on screen. */
 const MAX_EDGE = 2200;
@@ -50,16 +67,16 @@ export async function compressSheet(uri: string): Promise<{ uri: string; bytes: 
     hotspot, still correct — the SERVER's bound is the load-bearing one.
   */
   const manipulator = loadImageManipulator();
-  if (!manipulator) return { uri, bytes: 0 };
+  if (!manipulator) return { uri, bytes: fileSize(uri) };
   try {
     const out = await manipulator.manipulateAsync(
       uri,
       [{ resize: { width: MAX_EDGE } }],
       { compress: QUALITY, format: manipulator.SaveFormat.JPEG },
     );
-    return { uri: out.uri, bytes: 0 };
+    return { uri: out.uri, bytes: fileSize(out.uri) };
   } catch {
-    return { uri, bytes: 0 };
+    return { uri, bytes: fileSize(uri) };
   }
 }
 
@@ -93,8 +110,14 @@ export async function stagePage(
     const mime = isPdf ? 'application/pdf' : 'image/jpeg';
 
     const small = isPdf
-      ? { uri: page.uri, bytes: 0 }
+      ? { uri: page.uri, bytes: fileSize(page.uri) }
       : (emit({ state: 'compressing' }), await compressSheet(page.uri));
+
+    if (small.bytes <= 0) {
+      // Nothing readable at that path. Said plainly rather than letting the
+      // server answer "A file size is required", which means nothing here.
+      throw new Error('That file could not be read from this phone');
+    }
 
     emit({ state: 'uploading', uri: small.uri });
     const presigned = await documentsApi.ownUploadUrl({

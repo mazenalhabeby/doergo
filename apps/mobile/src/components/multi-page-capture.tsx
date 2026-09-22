@@ -43,6 +43,7 @@ export function MultiPageCapture({
 
   const remove = (id: string) => onChange(pages.filter((p) => p.id !== id));
   const move = (id: string, delta: -1 | 1) => onChange(movePage(pages, id, delta));
+  const failed = pages.filter((p) => p.state === 'failed');
 
   return (
     <View style={styles.wrap}>
@@ -156,6 +157,25 @@ export function MultiPageCapture({
         </View>
       )}
 
+      {/*
+        ⚠️ A failed sheet says WHY, above the strip.
+
+        A bare Retry on a thumbnail is the worst possible failure: it offers an
+        action that will fail identically, and hides the one sentence that would
+        let somebody fix it — the file was too big, the type is not accepted,
+        there is no signal. The first version of this screen did exactly that,
+        and the answer turned out to be a bug nobody could have guessed from a
+        tile.
+      */}
+      {failed.length > 0 && (
+        <View style={[styles.problem, { backgroundColor: colors.errorLight }]}>
+          <Ionicons name="alert-circle-outline" size={15} color={COLORS.error} />
+          <Text style={[styles.problemText, { color: colors.textPrimary }]}>
+            {failed[0].error || t('documents.pages.failedGeneric')}
+          </Text>
+        </View>
+      )}
+
       <Text style={[styles.hint, { color: colors.textMuted }]}>{t('documents.pages.hint')}</Text>
     </View>
   );
@@ -230,6 +250,14 @@ const styles = StyleSheet.create({
   libraryRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 2 },
   pdf: { justifyContent: 'center', alignItems: 'center', gap: 4, padding: 6 },
   pdfName: { fontSize: 9.5, textAlign: 'center' },
+  problem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 7,
+    padding: SPACING.sm,
+    borderRadius: RADIUS.md,
+  },
+  problemText: { flex: 1, fontSize: FONT_SIZE.xs, lineHeight: 16 },
   libraryText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
   addText: { fontSize: 10.5, fontWeight: FONT_WEIGHT.semibold },
   hint: { fontSize: FONT_SIZE.xs, lineHeight: 16 },

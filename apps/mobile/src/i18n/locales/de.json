@@ -1000,7 +1000,8 @@
     "about": {
       "title": "Über",
       "tagline": "Disponieren · Verfolgen · Liefern",
-      "description": "HBCField ist eine Plattform für Außendienstmanagement, die Teams dabei unterstützt, Aufgaben zu disponieren, Fortschritte in Echtzeit zu verfolgen und herausragenden Service zu liefern."
+      "description": "HBCField ist eine Plattform für Außendienstmanagement, die Teams dabei unterstützt, Aufgaben zu disponieren, Fortschritte in Echtzeit zu verfolgen und herausragenden Service zu liefern.",
+      "noUpdate": "Keins — eingebautes Bundle"
     },
     "status": {
       "title": "Verfügbarkeit",
@@ -2300,7 +2301,8 @@
       "fromLibrary": "Aus Fotos wählen",
       "tooMany": "Ein Dokument kann {{count}} Seiten enthalten.",
       "fromFiles": "PDF anhängen",
-      "noFilePicker": "Diese App-Version kann keine Dateien anhängen. Aktualisieren Sie sie, um ein PDF hinzuzufügen."
+      "noFilePicker": "Diese App-Version kann keine Dateien anhängen. Aktualisieren Sie sie, um ein PDF hinzuzufügen.",
+      "failedGeneric": "Diese Seite wurde nicht gesendet. Zum Wiederholen antippen."
     }
   },
   "attendanceReview": {
