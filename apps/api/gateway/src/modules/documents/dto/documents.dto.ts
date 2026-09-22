@@ -136,6 +136,21 @@ export class CreateDocumentTypeDto {
   @IsBoolean()
   twoSided?: boolean;
 
+  /**
+   * Sheets of paper rather than a card — the member adds pages and the lot is
+   * filed as one PDF.
+   *
+   * ⚠️ Missing here is how this shipped broken: the field existed on the model,
+   * the service and both clients, but the gateway runs `forbidNonWhitelisted`,
+   * so the web's save was refused outright with "property multiPage should not
+   * exist". A field is not wired until the DTO that guards the route declares
+   * it.
+   */
+  @ApiPropertyOptional({ description: 'Sheets of paper rather than a card — filed as one PDF' })
+  @IsOptional()
+  @IsBoolean()
+  multiPage?: boolean;
+
   @ApiPropertyOptional({ enum: SCAN_SHAPES, description: 'The frame the scanner draws' })
   @IsOptional()
   @IsIn(SCAN_SHAPES as unknown as string[])
@@ -232,6 +247,21 @@ export class UpdateDocumentTypeDto {
   @IsOptional()
   @IsBoolean()
   twoSided?: boolean;
+
+  /**
+   * Sheets of paper rather than a card — the member adds pages and the lot is
+   * filed as one PDF.
+   *
+   * ⚠️ Missing here is how this shipped broken: the field existed on the model,
+   * the service and both clients, but the gateway runs `forbidNonWhitelisted`,
+   * so the web's save was refused outright with "property multiPage should not
+   * exist". A field is not wired until the DTO that guards the route declares
+   * it.
+   */
+  @ApiPropertyOptional({ description: 'Sheets of paper rather than a card — filed as one PDF' })
+  @IsOptional()
+  @IsBoolean()
+  multiPage?: boolean;
 
   @ApiPropertyOptional({ enum: SCAN_SHAPES, description: 'The frame the scanner draws' })
   @IsOptional()
