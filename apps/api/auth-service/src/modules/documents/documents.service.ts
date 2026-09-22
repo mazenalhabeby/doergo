@@ -64,6 +64,7 @@ import { OBJECT_STORE } from './object-store.provider';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { runWithCronLock } from '@hbcfield/shared';
 import { openUntrustedImage } from './image-input';
+import { assemblePagesPdf, MAX_PAGES } from './pages-pdf';
 import { findPrior } from '@hbcfield/shared';
 
 /**
@@ -1124,6 +1125,14 @@ export class DocumentsService {
     expectedPrefix?: string,
     crop?: Rect | null,
     back?: { key: string; crop: Rect | null } | null,
+    /**
+     * Further sheets of the SAME document, in reading order.
+     *
+     * Present only for a plain multi-sheet upload — a hotel invoice, a flight
+     * confirmation. Mutually exclusive with `back`, which is a property of
+     * cards: a card has a reverse, a stack of paper has a page 2.
+     */
+    pages?: { key: string; crop: Rect | null }[] | null,
   ): Promise<{ key: string; hash: string; sizeBytes: number; mimeType: string; bytes: Buffer }> {
     // Checked again here, not only by the caller. This method reads and moves
     // an object named by untrusted input, so it does not rely on having been
@@ -1151,7 +1160,56 @@ export class DocumentsService {
 
     let bytes = cropped;
     let mimeType = head.contentType ?? 'application/pdf';
-    if (back) {
+
+    if (pages && pages.length > 0) {
+      /*
+        Sheets of paper, filed as one PDF.
+
+        ⚠️ Fetched and cropped in PARALLEL. One round trip per sheet, awaited in
+        turn, is the obvious shape and makes a six-page upload six times slower
+        than it needs to be — the calls are independent and the store is remote.
+
+        ⚠️ A sheet that did not arrive is SKIPPED, not fatal. Losing page four
+        of six is bad; losing all six because page four's PUT was interrupted is
+        worse, and the member cannot tell the difference from the failure.
+      */
+      for (const page of pages) {
+        this.assertStagingKey(page.key, expectedPrefix ?? this.sharedStagingPrefix(organizationId));
+      }
+      const extra = await Promise.all(
+        pages.map(async (page) => {
+          try {
+            const pageHead = await this.withStorage('checking an upload', () => store.head(page.key));
+            if (!pageHead.exists) return null;
+            const raw = await this.withStorage('reading an upload', () => store.get(page.key));
+            return await this.applyCrop(raw, page.crop);
+          } catch {
+            return null;
+          }
+        }),
+      );
+
+      const sheets = [cropped, ...extra.filter((b): b is Buffer => b !== null)];
+      if (sheets.length > 1) {
+        try {
+          bytes = await assemblePagesPdf(sheets);
+          mimeType = 'application/pdf';
+        } catch (err) {
+          // One sheet filed beats a failed upload — the same rule the two-sided
+          // path follows when the reverse cannot be joined.
+          this.logger.warn(`Could not join the pages: ${(err as Error).message}`);
+        }
+      }
+
+      // Claimed or not, the staged sheets are litter once we are past here.
+      await Promise.all(
+        pages.map((page) => store.delete(page.key).catch(() => undefined)),
+      );
+
+      if (bytes.length > MAX_DOCUMENT_BYTES) {
+        throw new BadRequestException('That document is larger than the limit');
+      }
+    } else if (back) {
       // The reverse comes from the client too, so it gets the same check.
       this.assertStagingKey(back.key, expectedPrefix ?? this.sharedStagingPrefix(organizationId));
       const backHead = await this.withStorage('checking an upload', () => store.head(back.key));
@@ -1298,6 +1356,14 @@ export class DocumentsService {
     crop?: Rect | null;
     /** The reverse of a two-sided card, filed as part of the same document. */
     backStagingKey?: string | null;
+    /**
+     * Further sheets, in reading order — a plain multi-sheet upload.
+     *
+     * ⚠️ Not combinable with `backStagingKey`: a card has a reverse, a stack of
+     * paper has a page 2, and letting both through would silently decide which
+     * one won.
+     */
+    pageStagingKeys?: string[] | null;
     backCrop?: Rect | null;
     ctx?: RequestContext;
     /** Made on the phone: the same document sent twice is filed once. */
@@ -1369,6 +1435,14 @@ export class DocumentsService {
     });
     if (!member) throw new NotFoundException('Member not found');
 
+    const extraPages = (data.pageStagingKeys ?? []).filter(Boolean);
+    if (extraPages.length > 0 && data.backStagingKey) {
+      throw new BadRequestException('A document is either two-sided or many sheets, not both');
+    }
+    if (extraPages.length + 1 > MAX_PAGES) {
+      throw new BadRequestException(`A document may hold at most ${MAX_PAGES} pages`);
+    }
+
     const filed = await this.takeStagedObject(
       data.actor.organizationId,
       data.stagingKey,
@@ -1377,6 +1451,7 @@ export class DocumentsService {
       data.backStagingKey
         ? { key: data.backStagingKey, crop: data.backCrop ?? null }
         : null,
+      extraPages.map((key) => ({ key, crop: null })),
     );
 
     /*

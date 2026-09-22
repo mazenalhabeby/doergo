@@ -4725,6 +4725,18 @@ model DocumentType {
   /// and a paper certificate has nothing on its reverse at all.
   twoSided Boolean @default(false)
 
+  /// Sheets of paper rather than a card: the member adds pages until they are
+  /// done and the lot is filed as ONE PDF.
+  ///
+  /// ⚠️ Mutually exclusive with `twoSided` in the UI and refused together on
+  /// the server. A card has a reverse; a stack of paper has a page 2, and
+  /// accepting both would silently decide which one won.
+  ///
+  /// ⚠️ This is the whole opt-out from the credential machinery: no frame to
+  /// line the sheet up in, no machine-readable zone, no expiry prompt. Those
+  /// exist to photograph a licence accurately and are noise on a hotel invoice.
+  multiPage Boolean @default(false)
+
   /// The frame the scanner draws: CARD (ID-1), PASSPORT (ID-3) or PAGE (A4).
   /// Not decoration — a document held to fit the wrong frame sits further from
   /// the lens, and the pixel size of the machine-readable zone is what decides

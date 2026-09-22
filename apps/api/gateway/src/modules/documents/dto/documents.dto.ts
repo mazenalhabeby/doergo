@@ -642,6 +642,22 @@ export class SubmitOwnDocumentDto {
   @ValidateNested()
   @Type(() => ScanCropDto)
   backCrop?: ScanCropDto;
+
+  /**
+   * Further sheets of the same document, in reading order.
+   *
+   * ⚠️ Not combinable with `backStagingKey`. A card has a reverse; a stack of
+   * paper has a page 2. Allowing both would silently decide which one won.
+   */
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Further sheets of the same document, in reading order (multi-sheet uploads)',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(29)
+  @IsString({ each: true })
+  pageStagingKeys?: string[];
 }
 
 export class PreviewTemplateDto {

@@ -22,6 +22,7 @@ module.exports = {
     '^react-native$': '<rootDir>/src/lib/__tests__/react-native.stub.js',
     '^expo-modules-core$': '<rootDir>/src/lib/__tests__/expo-modules-core.stub.js',
     '^@expo/vector-icons$': '<rootDir>/src/lib/__tests__/expo-vector-icons.stub.js',
+    '^expo-image-manipulator$': '<rootDir>/src/lib/__tests__/expo-image-manipulator.stub.js',
   },
   transform: {
     '^.+\\.ts$': ['ts-jest', { tsconfig: { module: 'commonjs', esModuleInterop: true, strict: false } }],

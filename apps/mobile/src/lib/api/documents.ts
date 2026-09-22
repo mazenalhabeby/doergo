@@ -203,6 +203,13 @@ export const documentsApi = {
     /** The reverse of a card, filed as part of the same document. */
     backStagingKey?: string | null;
     backCrop?: Rect | null;
+    /**
+     * Further sheets of the same document, in reading order.
+     *
+     * ⚠️ Never together with `backStagingKey` — the server refuses the pair. A
+     * card has a reverse; a stack of paper has a page 2.
+     */
+    pageStagingKeys?: string[];
   }): Promise<MemberDocument> => {
     const result = await fetchWithAuth<any>('/documents/mine', {
       method: 'POST',
