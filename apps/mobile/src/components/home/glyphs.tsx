@@ -184,17 +184,14 @@ export function NetWorkGlyph({ size = 24, color }: GlyphProps) {
   );
 }
 
-/** Break — a cup on a solid saucer. */
-export function BreakGlyph({ size = 24, color }: GlyphProps) {
-  return (
-    <Svg {...svg(size)}>
-      <Path d="M9.4 1.9v1.7M12.6 1.9v1.7" stroke={color} strokeOpacity={0.45} strokeWidth={1.7} strokeLinecap="round" />
-      <Path d="M3.5 6.3h12v6.4a6 6 0 0 1-12 0z" fill={color} fillOpacity={0.3} />
-      <Path d="M15.9 8h1.6a2.8 2.8 0 0 1 0 5.6h-1.6" fill="none" stroke={color} strokeOpacity={0.5} strokeWidth={1.8} />
-      <Rect x={2.2} y={19.5} width={16.4} height={2.4} rx={1.2} fill={color} fillOpacity={0.95} />
-    </Svg>
-  );
-}
+/*
+  ⚠️ `BreakGlyph` WAS HERE — a cup on a saucer — AND MOVED to
+  `shift-glyphs.tsx`, where it is the PAUSE: two bars punched through a disc.
+  The name is unchanged and every caller still resolves through this folder's
+  `index.ts`, so nothing needs editing but the mark itself.
+
+  The cup was the wrong claim. A rest is the clock stopping, not lunch.
+*/
 
 /* ── Needs list ────────────────────────────────────────────────────────────
    Solid marks with punched detail, NOT stacked layers — these sit on a tinted

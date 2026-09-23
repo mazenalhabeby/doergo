@@ -31,7 +31,27 @@ export const MAX_TABS = 5;
  * More now — one door instead of two, and one fewer permanent slot spent on a
  * menu.
  */
-export const TAB_PRIORITY = ['index', 'tasks', 'attendance', 'create-task', 'time-off', 'team'];
+/*
+  v2 — THE SET IS FIXED: Home · Jobs · Clock · Messages, then More.
+
+  ⚠️ Three routes LEFT the bar and none of them lost its door.
+
+    create-task  is a tile in the shortcuts rail now. It could not be one
+                 before — "never a tile for a tab" — and it can be one the
+                 moment it stops being a tab.
+    time-off     falls into the overflow, which is what the overflow is for.
+    team         likewise.
+
+  ⚠️ And `chat` JOINED it, which is why `app/(app)/chat.tsx` is now a redirect:
+  a tab has to live inside the tab group to carry the pill, and every chat
+  push notification already delivered still names the old path.
+
+  The order is FIXED, not adaptive. A bar that reorders itself by usage moves
+  the target out from under the thumb of the person who uses it most — muscle
+  memory is the entire value of a tab bar and it is the one thing an adaptive
+  bar destroys.
+*/
+export const TAB_PRIORITY = ['index', 'tasks', 'attendance', 'chat', 'time-off', 'team', 'create-task'];
 
 export const byPriority = (a: { name: string }, b: { name: string }) => {
   const ia = TAB_PRIORITY.indexOf(a.name);
@@ -85,6 +105,7 @@ export function tabIconName(routeName: string, focused: boolean): string {
     case 'attendance': return focused ? 'time' : 'time-outline';
     case 'time-off': return focused ? 'calendar' : 'calendar-outline';
     case 'team': return focused ? 'people' : 'people-outline';
+    case 'chat': return focused ? 'chatbubble' : 'chatbubble-outline';
     default: return focused ? 'person' : 'person-outline';
   }
 }

@@ -29,7 +29,18 @@ export const TOURS: TourDef[] = [
       s('welcome', 'work', 'home-work', { optional: true }),
       s('welcome', 'tabsTasks', 'tab-tasks', { optional: true }),
       s('welcome', 'tabsClock', 'tab-attendance', { optional: true }),
-      s('welcome', 'tabsTimeOff', 'tab-time-off', { optional: true }),
+      /*
+        ⚠️ `tabsTimeOff` was here and is GONE.
+
+        Time off left the bar for the overflow in v2, so `tab-time-off` never
+        mounts and the step could only ever be skipped. It was `optional`, so
+        nothing would have broken — it would simply have been a step that
+        silently did not happen, on every run, for everybody. A tour that
+        quietly drops a sixth of itself is worse than one that is honestly
+        shorter. The copy under `tour.welcome.tabsTimeOff` is left in the
+        locale files: it is the right sentence if Time off ever earns a slot
+        back, and deleting five translations to save five lines is not a trade.
+      */
       s('welcome', 'profile', 'tab-profile'),
     ],
   },

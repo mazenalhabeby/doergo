@@ -24,6 +24,18 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 import * as NavigationBar from 'expo-navigation-bar';
 import { useFonts, Outfit_400Regular, Outfit_800ExtraBold } from '@expo-google-fonts/outfit';
+/* v2 — Amazen Trust. Readex Pro for everything, IBM Plex Mono for numerals
+   that are read digit by digit: times, durations, ids, amounts in rows. Never
+   prose. See `src/theme/amazen.ts`. */
+import {
+  ReadexPro_300Light,
+  ReadexPro_400Regular,
+  ReadexPro_500Medium,
+} from '@expo-google-fonts/readex-pro';
+import {
+  IBMPlexMono_400Regular,
+  IBMPlexMono_500Medium,
+} from '@expo-google-fonts/ibm-plex-mono';
 import { AuthProvider, useAuth } from '../src/contexts/auth-context';
 import { ThemeProvider, useTheme } from '../src/contexts/theme-context';
 import { ToastProvider } from '../src/contexts/toast-context';
@@ -192,6 +204,11 @@ export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     Outfit_400Regular,
     Outfit_800ExtraBold,
+    ReadexPro_300Light,
+    ReadexPro_400Regular,
+    ReadexPro_500Medium,
+    IBMPlexMono_400Regular,
+    IBMPlexMono_500Medium,
   });
   const [langLoaded, setLangLoaded] = useState(false);
 

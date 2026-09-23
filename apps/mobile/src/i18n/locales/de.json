@@ -220,14 +220,15 @@
   "tabs": {
     "home": "Start",
     "dashboard": "Dashboard",
-    "tasks": "Aufgaben",
+    "tasks": "Aufträge",
     "createTask": "Erstellen",
     "manage": "Verwalten",
-    "attendance": "Stempeln",
+    "attendance": "Zeit",
     "timeOff": "Urlaub",
     "team": "Team",
     "profile": "Profil",
-    "more": "Mehr"
+    "more": "Mehr",
+    "messages": "Chat"
   },
   "home": {
     "admin": {
@@ -2273,7 +2274,10 @@
       "expiring_other": "{{count}} Dokumente laufen bald ab",
       "partUpload": "{{count}} hochladen",
       "partSign": "{{count}} unterschreiben",
-      "blocking": "Sie können keine Arbeit erhalten, bis dies eingereicht und freigegeben ist."
+      "blocking": "Sie können keine Arbeit erhalten, bis dies eingereicht und freigegeben ist.",
+      "countersign": "{{label}} von {{name}} unterschreiben",
+      "countersignNote": "Das Dokument einer anderen Person wartet auf Sie.",
+      "countersignMore": "und {{count}} weitere warten auf Sie"
     },
     "onBehalfOf": "Für {{name}}",
     "pages": {
@@ -2813,5 +2817,52 @@
     "update": "Jetzt aktualisieren",
     "later": "Später",
     "note": "Wir erinnern Sie morgen noch einmal."
+  },
+  "shortcuts": {
+    "documents": "Dokumente",
+    "documentsDesc": "Alles, was Sie schulden, und alles, was Ihnen ausgestellt wurde",
+    "sign": "Unterschreiben",
+    "signDesc": "Dokumente, die auf Ihre Unterschrift warten",
+    "myEquipment": "Meine Geräte",
+    "myEquipmentDesc": "Was Sie gerade in Händen halten",
+    "sync": "Sync",
+    "syncDesc": "Was noch nicht im Büro angekommen ist",
+    "overtime": "Mehrarbeit",
+    "overtimeDesc": "Zusätzliche Zeit, Runde für Runde",
+    "logExpense": "Beleg erfassen",
+    "logExpenseDesc": "Beleg für ein Gerät fotografieren",
+    "scanCard": "Karte scannen",
+    "scanCardDesc": "Aus einer Visitenkarte wird ein Kunde",
+    "addClient": "Kunde anlegen",
+    "addClientDesc": "Ein neuer Name im Buch",
+    "sendDoc": "Dok. senden",
+    "sendDocDesc": "Jemandem ein Dokument ausstellen",
+    "planRoute": "Route planen",
+    "planRouteDesc": "Die heutigen Stopps, fahrbar sortiert",
+    "support": "Support",
+    "supportDesc": "Bitten Sie uns um Hilfe",
+    "equipmentLog": "Geräte-Journal",
+    "equipmentLogDesc": "Was wann an einem Gerät gemacht wurde",
+    "newJob": "Neuer Auftrag",
+    "newJobDesc": "Einen Auftrag für jemanden anlegen"
+  },
+  "shiftClock": {
+    "onTheClock": "IM DIENST",
+    "notOnTheClock": "NICHT IM DIENST",
+    "onARest": "IN DER PAUSE",
+    "needsYourTime": "BRAUCHT IHRE ZEIT",
+    "queued": "WARTET",
+    "readyToStart": "Bereit zum Start",
+    "whenDidYouLeave": "Wann sind Sie gegangen?",
+    "leftRunning": "Die Schicht lief weiter, deshalb haben wir sie geschlossen. Nennen Sie uns die echte Zeit.",
+    "counted": "{{counted}} gezählt",
+    "countedFrozen": "{{counted}} gezählt, zählt gerade nicht",
+    "restDue": "Pause fällig {{time}}",
+    "restOverdue_one": "Ihre Pause war vor {{count}} Minute fällig",
+    "restOverdue_other": "Ihre Pause war vor {{count}} Minuten fällig",
+    "startRest": "Pause beginnen",
+    "endRest": "Pause beenden",
+    "break": "Pause",
+    "setRealTime": "Echte Zeit eintragen"
   }
 }

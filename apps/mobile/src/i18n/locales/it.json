@@ -220,14 +220,15 @@
   "tabs": {
     "home": "Home",
     "dashboard": "Dashboard",
-    "tasks": "Attività",
+    "tasks": "Lavori",
     "createTask": "Crea",
     "manage": "Gestisci",
-    "attendance": "Presenze",
+    "attendance": "Tempo",
     "timeOff": "Ferie",
     "team": "Team",
     "profile": "Profilo",
-    "more": "Altro"
+    "more": "Altro",
+    "messages": "Chat"
   },
   "home": {
     "admin": {
@@ -2273,7 +2274,10 @@
       "expiring_other": "{{count}} documenti scadono a breve",
       "partUpload": "{{count}} da caricare",
       "partSign": "{{count}} da firmare",
-      "blocking": "Non puoi ricevere lavoro finché non lo invii e non viene approvato."
+      "blocking": "Non puoi ricevere lavoro finché non lo invii e non viene approvato.",
+      "countersign": "Firma il {{label}} di {{name}}",
+      "countersignNote": "Il documento di qualcun altro, in attesa di te.",
+      "countersignMore": "e altri {{count}} ti aspettano"
     },
     "onBehalfOf": "Per {{name}}",
     "pages": {
@@ -2813,5 +2817,52 @@
     "update": "Aggiorna ora",
     "later": "Più tardi",
     "note": "Te lo ricorderemo domani."
+  },
+  "shortcuts": {
+    "documents": "Documenti",
+    "documentsDesc": "Tutto ciò che devi e tutto ciò che ti è stato emesso",
+    "sign": "Firmare",
+    "signDesc": "Documenti in attesa della tua firma",
+    "myEquipment": "La mia attrezzatura",
+    "myEquipmentDesc": "Ciò che hai in mano adesso",
+    "sync": "Sincronizza",
+    "syncDesc": "Ciò che non è ancora arrivato in ufficio",
+    "overtime": "Straordinari",
+    "overtimeDesc": "Tempo extra, un giro alla volta",
+    "logExpense": "Registra spesa",
+    "logExpenseDesc": "Fotografa una ricevuta per ciò che hai",
+    "scanCard": "Scansiona biglietto",
+    "scanCardDesc": "Un biglietto da visita diventa un cliente",
+    "addClient": "Nuovo cliente",
+    "addClientDesc": "Un nuovo nome in rubrica",
+    "sendDoc": "Invia doc.",
+    "sendDocDesc": "Emetti un documento per qualcuno",
+    "planRoute": "Pianifica rotta",
+    "planRouteDesc": "Le tappe di oggi, in un ordine guidabile",
+    "support": "Assistenza",
+    "supportDesc": "Chiedici aiuto",
+    "equipmentLog": "Registro attrezzatura",
+    "equipmentLogDesc": "Cosa è stato fatto a un oggetto, e quando",
+    "newJob": "Nuovo lavoro",
+    "newJobDesc": "Crea un lavoro per qualcuno"
+  },
+  "shiftClock": {
+    "onTheClock": "IN SERVIZIO",
+    "notOnTheClock": "FUORI SERVIZIO",
+    "onARest": "IN PAUSA",
+    "needsYourTime": "MANCA IL TUO ORARIO",
+    "queued": "IN CODA",
+    "readyToStart": "Pronto per iniziare",
+    "whenDidYouLeave": "A che ora sei andato via?",
+    "leftRunning": "Il turno è rimasto aperto, così l'abbiamo chiuso noi. Dicci l'orario reale.",
+    "counted": "{{counted}} conteggiato",
+    "countedFrozen": "{{counted}} conteggiato, ora non conta",
+    "restDue": "pausa prevista alle {{time}}",
+    "restOverdue_one": "La tua pausa era prevista {{count}} minuto fa",
+    "restOverdue_other": "La tua pausa era prevista {{count}} minuti fa",
+    "startRest": "Inizia la pausa",
+    "endRest": "Termina la pausa",
+    "break": "Pausa",
+    "setRealTime": "Inserisci l'orario reale"
   }
 }

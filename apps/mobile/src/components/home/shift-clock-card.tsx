@@ -1,14 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Pressable, type StyleProp, type ViewStyle } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/auth-context';
@@ -17,15 +9,42 @@ import { useToast } from '../../contexts/toast-context';
 import { useShift, useShiftActions } from '../../offline/attendance/use-shift';
 import { SyncChip } from '../../offline/components/sync-chip';
 import { LocationPickerSheet, ClockOutSheet } from '../../components';
-import { WorkLogSheet } from '../worklog-sheet';
 import { ReportIssueSheet, ShiftIssueThreadSheet, ShiftIssueListSheet } from '../shift-issue-sheet';
 import { useClockIn } from '../../hooks/useClockIn';
 import { stopBackgroundHeartbeat } from '../../services/background-heartbeat';
 import { stopGeofence } from '../../services/background-geofence';
 import { formatDurationMinutes as formatDuration } from '../../lib/utils';
-import { styles as homeStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from './home-styles';
+import { AText, Chip, Eyebrow, GlassCard, Hero, LiveDot, Disc, DiscRow } from '../amazen';
+import { ClockInGlyph, ClockOutGlyph, BreakGlyph, IssueNewGlyph, IssueMineGlyph } from './shift-glyphs';
+import { readShiftState, heroParts, type ScheduleKind } from './shift-state';
 
 /**
+ * ONE GLASS SURFACE, IN EVERY STATE.
+ *
+ * That matters more than it sounds. Clocked-out used to be a quiet navigation
+ * row with a chevron and clocked-in a saturated green block; they shared
+ * nothing, so the card was re-read from scratch every time it flipped. Only
+ * the eyebrow, the figure and the discs change now.
+ *
+ * ⚠️ THE COLOUR CAME OFF THE CONTAINER. Once the whole card was brand green,
+ * green stopped meaning *do this* — there was no colour left to promote the
+ * primary action with, which is exactly why Clock Out ended up a pale pill in
+ * the top-right corner at a third the area of "Report an issue", at the
+ * furthest point on the card from a right thumb. Measured on the shipping
+ * app: white on that pill was **2.70:1**, on the button that ends a shift
+ * worked outdoors in gloves, and the pill itself was **1.24:1** against the
+ * card — below the threshold at which an edge reads at all. Give the jade to
+ * one disc and the hierarchy solves itself, with no change of size, position
+ * or weight.
+ *
+ * ⚠️ NEVER THE WORD "PAID". Two clocks exist on one record: `clockInAt` /
+ * `clockOutAt` are evidence, `countedStartAt` / `countedEndAt` / `paidMinutes`
+ * are what payroll reads. Only the counted figure belongs here and it is
+ * called **counted**. Say counted, worked, approved.
+ *
+ * ⚠️ THE CARD IS NOT A TARGET — only its parts. The hero and caption go to
+ * `/attendance`; each disc does its own thing.
+ *
  * Self-contained "shift clock" widget — the member clock-in/clock-out card plus
  * its Activity / Report-an-issue / My-issues sheets. Owns its own attendance +
  * break status, elapsed timer, clock-in (via useClockIn) and clock-out flows, so
@@ -57,7 +76,6 @@ export function ShiftClockCard({
 
   const [isClockLoading, setIsClockLoading] = useState(false);
   const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
-  const [worklogOpen, setWorklogOpen] = useState(false);
   const [reportIssueOpen, setReportIssueOpen] = useState(false);
   const [issueThreadId, setIssueThreadId] = useState<string | null>(null);
   const [issueListOpen, setIssueListOpen] = useState(false);
@@ -138,96 +156,300 @@ export function ShiftClockCard({
     }
   };
 
+  /*
+    The rests.
+
+    Both go through `useShiftActions`, so they queue when there is no signal
+    exactly as the clock does, and the card reports a refusal in the member's
+    own language rather than a raw message.
+
+    `ruleId` names the PLANNED rest this satisfies. Without it the server picks
+    whichever is next — which is what "take my rest now" means, and is the
+    right answer for the Break disc; the overdue one names the rule, so the
+    plan is marked taken rather than a second rest appearing beside it.
+  */
+  const startRest = async (ruleId?: string) => {
+    const entryId = attendanceStatus?.currentEntry?.id;
+    if (!entryId) return;
+    setIsClockLoading(true);
+    try {
+      const outcome = await shiftActions.startRest({ entryId, ruleId });
+      if (outcome.kind === 'refused') {
+        toast.error(t('common.error'), outcome.message || t('common.error'));
+        return;
+      }
+      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
+      await fetchStatus();
+    } finally {
+      setIsClockLoading(false);
+    }
+  };
+
+  const endRest = async () => {
+    const entryId = attendanceStatus?.currentEntry?.id;
+    const breakId = breakStatus?.currentBreak?.id;
+    if (!entryId || !breakId) return;
+    setIsClockLoading(true);
+    try {
+      const outcome = await shiftActions.endRest({ entryId, breakId });
+      if (outcome.kind === 'refused') {
+        toast.error(t('common.error'), outcome.message || t('common.error'));
+        return;
+      }
+      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
+      await fetchStatus();
+    } finally {
+      setIsClockLoading(false);
+    }
+  };
+
   // ── Render ─────────────────────────────────────────────────────────
-  const isClockedIn = attendanceStatus?.isClockedIn || false;
+  const router = useRouter();
+  const { amazen } = useTheme();
+  const c = amazen.color;
+
+  /*
+    Which of the eight, decided ONCE and outside the JSX — see `shift-state.ts`.
+    The states of this card are exactly the kind of thing that grows a ninth
+    branch inside a conditional at six in the evening.
+  */
+  const st = readShiftState({
+    status: attendanceStatus,
+    breaks: breakStatus,
+    schedule: (user?.scheduleType ?? 'NONE') as ScheduleKind,
+    monthlyHourBudget: user?.monthlyHourBudget ?? null,
+    // ⚠️ A month-to-date total is a COUNT question and must not be summed on
+    // the phone on every render. Until it is asked for as one, FLEXIBLE shows
+    // the same elapsed figure and no month bar — which is honest, where an
+    // invented target is not.
+    monthMinutes: null,
+    queued: shift.source === 'phone',
+    // `elapsedMinutes` ticks the clock; the state reads `clockInAt` itself.
+    now: new Date(Date.now() - (elapsedMinutes * 0)),
+  });
+
+  /*
+    ⑧ NOT RENDERED. A member with no workspace assignment has nothing to clock
+    into. Entitlement is asked before content, never after — and a row that
+    cannot be seen makes no request at all.
+  */
+  const hasSomewhereToClockIn =
+    (attendanceStatus?.assignedLocations?.length ?? 0) > 0 || !!user?.allowRemote;
+  if (!hasSomewhereToClockIn && !attendanceStatus?.isClockedIn && st.kind !== 'unconfirmed') return null;
+
+  const live = st.kind === 'working' || st.kind === 'restOverdue';
+  const resting = st.kind === 'resting';
+  const busy = isClockLoading || clockIn.isBusy;
+  const entryId = attendanceStatus?.currentEntry?.id;
+
+  const eyebrow =
+    st.kind === 'unconfirmed' ? t('shiftClock.needsYourTime', 'NEEDS YOUR TIME')
+    : resting ? t('shiftClock.onARest', 'ON A REST')
+    : live ? t('shiftClock.onTheClock', 'ON THE CLOCK')
+    : t('shiftClock.notOnTheClock', 'NOT ON THE CLOCK');
+
+  const eyebrowTone =
+    st.kind === 'unconfirmed' ? 'critical' as const
+    : resting ? 'warn' as const
+    : 'onGlassHome' as const;
+
+  const dotColor =
+    st.kind === 'unconfirmed' ? c.critical
+    : resting ? c.warn
+    : live ? c.accent
+    : c.lineField;
+
+  const caption = [
+    st.workspace,
+    st.countedMinutes !== null
+      ? resting
+        // The counted figure FREEZES and the card says it has frozen. A rest
+        // that silently keeps counting is the bug this sentence prevents.
+        ? t('shiftClock.countedFrozen', { counted: formatDuration(st.countedMinutes), defaultValue: `counted ${formatDuration(st.countedMinutes)}, not counting now` })
+        : t('shiftClock.counted', { counted: formatDuration(st.countedMinutes), defaultValue: `counted ${formatDuration(st.countedMinutes)}` })
+      : null,
+    st.nextRest && st.restOverdueBy <= 0
+      ? t('shiftClock.restDue', { time: clockTime(st.nextRest.dueAt), defaultValue: `rest due ${clockTime(st.nextRest.dueAt)}` })
+      : null,
+  ].filter(Boolean).join(' · ');
 
   return (
     <>
-      {isClockedIn ? (
-        <View style={[cStyles.attendanceCard, cStyles.attendanceCardActive, style]}>
-          <View style={cStyles.attendanceRow}>
-            <View style={cStyles.attendanceLeft}>
-              <View style={[cStyles.statusDot, cStyles.dotActive]} />
-              <View>
-                <Text style={[cStyles.attendanceStatus, { color: COLORS.white }]}>
-                  {t('home.fullTime.clockedIn')}
-                </Text>
-                {attendanceStatus?.currentEntry && (
-                  <Text style={cStyles.attendanceDetail}>
-                    {attendanceStatus.currentEntry.location?.name || ''} · {formatDuration(elapsedMinutes)}
-                    {breakStatus?.isOnBreak === true ? ` · ☕ ${t('home.fullTime.onBreak')}` : ''}
-                  </Text>
-                )}
-                {/* "Waiting to send" while this shift has something the server has not accepted. */}
-                <SyncChip entityId={attendanceStatus?.currentEntry?.id} />
-              </View>
-            </View>
-            <TouchableOpacity
-              style={[cStyles.clockBtn, cStyles.clockOutBtn]}
-              onPress={handleClockOut}
-              disabled={isClockLoading || clockIn.isBusy}
-            >
-              {isClockLoading || clockIn.isBusy ? (
-                <ActivityIndicator size="small" color={COLORS.white} />
-              ) : (
-                <>
-                  <Ionicons name="log-out" size={16} color={COLORS.white} />
-                  <Text style={cStyles.clockBtnText}>{t('home.fullTime.clockOut')}</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-          {attendanceStatus?.currentEntry?.id && (
-            <TouchableOpacity
-              style={cStyles.translucentBtn}
-              onPress={() => setWorklogOpen(true)}
-            >
-              <Ionicons name="list-outline" size={16} color={COLORS.white} />
-              <Text style={cStyles.clockBtnText}>{t('worklog.button', 'Activity')}</Text>
-            </TouchableOpacity>
-          )}
-          {attendanceStatus?.currentEntry?.id && (
-            <TouchableOpacity
-              style={cStyles.translucentBtn}
-              onPress={() => setReportIssueOpen(true)}
-            >
-              <Ionicons name="warning-outline" size={16} color={COLORS.white} />
-              <Text style={cStyles.clockBtnText}>{t('issues.report', 'Report an issue')}</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            style={cStyles.translucentBtn}
-            onPress={() => setIssueListOpen(true)}
-          >
-            <Ionicons name="chatbubbles-outline" size={16} color={COLORS.white} />
-            <Text style={cStyles.clockBtnText}>{t('issues.myIssues', 'My issues')}</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <TouchableOpacity
-          style={[homeStyles.actionCard, { backgroundColor: colors.card }, style]}
-          onPress={clockIn.openClockInModal}
-          disabled={isClockLoading || clockIn.isBusy}
-          activeOpacity={0.8}
+      <GlassCard style={style as ViewStyle}>
+        <Pressable
+          onPress={() => router.push('/(app)/(tabs)/attendance' as Href)}
+          accessibilityRole="button"
+          accessibilityLabel={`${eyebrow}. ${caption}`}
         >
-          <View style={[homeStyles.actionCardIcon, cStyles.clockInIconTint]}>
-            {isClockLoading || clockIn.isBusy ? (
-              <ActivityIndicator size="small" color={COLORS.primary} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1) }}>
+            <LiveDot color={dotColor} live={live} />
+            <Eyebrow tone={eyebrowTone}>{eyebrow}</Eyebrow>
+            <View style={{ flex: 1 }} />
+            {/*
+              ⑤ QUEUED — not a state of its own. The clock-in sits in the
+              outbox and the card SAYS so; it does not pretend the office
+              already knows.
+            */}
+            {st.queued ? <Chip label={t('shiftClock.queued', 'QUEUED')} tone="warn" /> : null}
+            <SyncChip entityId={entryId} />
+          </View>
+
+          <View style={{ marginTop: amazen.space(3) }}>
+            {st.kind === 'unconfirmed' ? (
+              <AText variant="h2" tone="strong">{t('shiftClock.whenDidYouLeave', 'When did you leave?')}</AText>
+            ) : st.minutes !== null ? (
+              <Hero
+                parts={heroParts(st.minutes)}
+                tone={resting ? 'warn' : 'strong'}
+                unitTone={resting ? 'warn' : 'onGlassHome'}
+              />
             ) : (
-              <Ionicons name="finger-print" size={28} color={COLORS.primary} />
+              /*
+                ① The hero is the NEXT thing, not a zero. A 72pt `0` is what
+                the old dashboard did with `0/12`, and it is the same mistake
+                at a smaller scale — so with nothing promised, the card says
+                the sentence instead of drawing an empty figure.
+              */
+              <AText variant="h2" tone="strong">{t('shiftClock.readyToStart', 'Ready to start')}</AText>
             )}
           </View>
-          <View style={homeStyles.actionCardText}>
-            <Text style={[homeStyles.actionCardTitle, { color: colors.textPrimary }]}>
-              {t('home.fullTime.clockIn')}
-            </Text>
-            <Text style={[homeStyles.actionCardSubtitle, { color: colors.textMuted }]}>
-              {t('home.hybrid.tapToStartShift')}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-        </TouchableOpacity>
-      )}
+
+          {caption ? (
+            <AText variant="caption" tone="onGlassHome" numberOfLines={2} style={{ marginTop: 2 }}>
+              {caption}
+            </AText>
+          ) : null}
+
+          {st.kind === 'unconfirmed' ? (
+            <AText variant="caption" tone="onGlassHome" style={{ marginTop: amazen.space(1) }}>
+              {t('shiftClock.leftRunning', { defaultValue: 'It was left running, so we closed it for you. Tell us the real time.' })}
+            </AText>
+          ) : null}
+
+          {/* ④ The strip, and the reason the primary action moves below. */}
+          {st.kind === 'restOverdue' ? (
+            <View
+              style={{
+                marginTop: amazen.space(3),
+                backgroundColor: c.warnTint,
+                borderRadius: amazen.radius.field,
+                paddingVertical: amazen.space(2),
+                paddingHorizontal: amazen.space(3),
+              }}
+            >
+              <AText variant="caption" tone="warn">
+                {t('shiftClock.restOverdue', { minutes: st.restOverdueBy, defaultValue: `Your rest was due ${st.restOverdueBy} minutes ago` })}
+              </AText>
+            </View>
+          ) : null}
+
+          {/*
+            ⚠️ NONE RENDERS NO TRACK AT ALL. A bar with no target invents one,
+            and NONE is the column default — so the majority would get an
+            invented target.
+          */}
+          {st.progress ? (
+            <View style={{ marginTop: amazen.space(3), height: 4, borderRadius: 2, backgroundColor: c.tile, overflow: 'hidden' }}>
+              <View
+                style={{
+                  width: `${Math.min(100, Math.round((st.progress.done / st.progress.target) * 100))}%`,
+                  height: '100%',
+                  backgroundColor: c.accent,
+                }}
+              />
+            </View>
+          ) : null}
+        </Pressable>
+
+        {/*
+          ⚠️ EXACTLY ONE DISC IS FILLED, and its GLOW is what marks it primary —
+          not its size and not its position. That is what lets the primary move
+          (rest overdue offers *Start the rest*) without the row re-flowing.
+
+          Every disc carries a label. Icons never carry meaning alone.
+        */}
+        <DiscRow style={{ marginTop: amazen.space(5) }}>
+          {st.kind === 'unconfirmed' ? (
+            <Disc
+              Glyph={ClockOutGlyph}
+              label={t('shiftClock.setRealTime', 'Set the real time')}
+              filled
+              onPress={() => router.push('/(app)/(tabs)/attendance' as Href)}
+            />
+          ) : live || resting ? (
+            <>
+              {st.kind === 'restOverdue' ? (
+                <Disc
+                  Glyph={BreakGlyph}
+                  label={t('shiftClock.startRest', 'Start the rest')}
+                  filled
+                  disabled={busy}
+                  /* Names the PLANNED rest, so the plan is marked taken rather
+                     than a second rest appearing beside the one that is due. */
+                  onPress={() => void startRest(st.nextRest?.ruleId)}
+                />
+              ) : null}
+              {resting ? (
+                <Disc
+                  Glyph={BreakGlyph}
+                  label={t('shiftClock.endRest', 'End the rest')}
+                  filled
+                  disabled={busy}
+                  onPress={() => void endRest()}
+                />
+              ) : null}
+              <Disc
+                Glyph={ClockOutGlyph}
+                label={t('home.fullTime.clockOut')}
+                filled={st.kind === 'working'}
+                disabled={busy}
+                onPress={handleClockOut}
+              />
+              {st.kind === 'working' ? (
+                <Disc
+                  Glyph={BreakGlyph}
+                  label={t('shiftClock.break', 'Break')}
+                  disabled={busy}
+                  onPress={() => void startRest()}
+                />
+              ) : null}
+              {entryId ? (
+                <Disc
+                  Glyph={IssueNewGlyph}
+                  label={t('issues.report', 'Report')}
+                  onPress={() => setReportIssueOpen(true)}
+                />
+              ) : null}
+              <Disc
+                Glyph={IssueMineGlyph}
+                label={t('issues.myIssues', 'My issues')}
+                onPress={() => setIssueListOpen(true)}
+              />
+            </>
+          ) : (
+            <>
+              <Disc
+                Glyph={ClockInGlyph}
+                label={t('home.fullTime.clockIn')}
+                filled
+                disabled={busy}
+                onPress={clockIn.openClockInModal}
+              />
+              <Disc
+                Glyph={IssueNewGlyph}
+                label={t('issues.report', 'Report')}
+                disabled={!entryId}
+                onPress={() => setReportIssueOpen(true)}
+              />
+              <Disc
+                Glyph={IssueMineGlyph}
+                label={t('issues.myIssues', 'My issues')}
+                onPress={() => setIssueListOpen(true)}
+              />
+            </>
+          )}
+        </DiscRow>
+      </GlassCard>
 
       <LocationPickerSheet
         {...clockIn.pickerProps}
@@ -247,16 +469,15 @@ export function ShiftClockCard({
         isLoading={isClockLoading}
       />
 
-      {attendanceStatus?.currentEntry?.id && (
-        <WorkLogSheet
-          visible={worklogOpen}
-          onClose={() => setWorklogOpen(false)}
-          timeEntryId={attendanceStatus.currentEntry.id}
-          title={t('worklog.title', 'What I did today')}
-          hint={t('worklog.hint', 'Note what you finish through the shift — it becomes your clock-out summary.')}
-        />
-      )}
+      {/*
+        ⚠️ ACTIVITY LEFT THE CARD.
 
+        It was one of four equal full-width buttons beside Clock Out, which is
+        a menu rather than a card — §3.1 asks for elapsed, workspace, counted,
+        the next rest and ONE primary action. "What I did today" is a
+        different widget and belongs in the `needs-action` row; the sheet
+        itself is untouched and still opens from the attendance screen.
+      */}
       <ReportIssueSheet
         visible={reportIssueOpen}
         onClose={() => setReportIssueOpen(false)}
@@ -281,85 +502,9 @@ export function ShiftClockCard({
   );
 }
 
-const cStyles = StyleSheet.create({
-  // Compact Attendance Card
-  attendanceCard: {
-    marginHorizontal: SPACING.lg,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
-    ...SHADOWS.md,
-  },
-  attendanceCardActive: {
-    backgroundColor: COLORS.primary,
-  },
-  attendanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  attendanceLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: SPACING.sm,
-  },
-  statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  dotActive: {
-    backgroundColor: COLORS.success,
-  },
-  attendanceStatus: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate800,
-  },
-  attendanceDetail: {
-    fontSize: FONT_SIZE.sm,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
-  },
-  clockBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.md,
-    gap: SPACING.xs,
-  },
-  clockOutBtn: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  clockBtnText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.white,
-  },
-  // Full-width translucent action buttons (Activity / Report / My issues)
-  translucentBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: SPACING.sm,
-    paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.md,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-  },
-
-  /*
-    Clock In, when clocked out.
-
-    ⚠️ This was `rgba(37, 99, 235, 0.1)` — a BLUE tint behind an emerald glyph,
-    left behind by the blue→emerald rebrand. The tile takes its glyph's own hue,
-    which is the rule the needs-list chips follow, and is what the blue was
-    reaching for in the first place.
-  */
-  clockInIconTint: {
-    backgroundColor: COLORS.primaryLight,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(5, 150, 105, 0.18)',
-  },
-});
+/** `11:24` — a wall clock, in the member's own display preference. */
+function clockTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+}

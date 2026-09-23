@@ -3,15 +3,28 @@
  * Single source of truth for colors, sizes, spacing, and configuration
  */
 
+import { AMAZEN_DARK, AMAZEN_LIGHT, type AmazenColors } from '../theme/amazen';
+
 // =============================================================================
 // COLORS
 // =============================================================================
 
+/*
+  v2 — the fixed palette, nudged onto Amazen Trust.
+
+  These are scheme-INDEPENDENT and therefore cannot satisfy both grounds: a
+  jade that reads on white cannot also read on #0b0f12. They are kept because
+  legacy screens use them as fills and accents on a light ground, and they are
+  now the Amazen LIGHT values so the two never disagree by a hue.
+
+  ⚠️ New code reads `useTheme().amazen.color` — it is scheme-aware and has the
+  tokens this object has no answer for.
+*/
 export const COLORS = {
-  // Brand (aligned with packages/shared/src/design/tokens.ts)
-  primary: '#059669',
-  primaryLight: '#ecfdf5',
-  primaryDark: '#047857',
+  // Brand — Amazen Trust light jade
+  primary: '#0b8168',
+  primaryLight: '#e7f3ef',
+  primaryDark: '#087961',
 
   // Accent
   accent: '#F97316',
@@ -34,21 +47,21 @@ export const COLORS = {
   slate900: '#0F172A',
 
   // Semantic — 500-weight (brighter, matches design tokens)
-  success: '#22C55E',
-  successLight: '#DCFCE7',
-  successBorder: '#86EFAC',
+  success: '#0b8168',
+  successLight: '#e7f3ef',
+  successBorder: '#a9d6c8',
 
-  warning: '#EAB308',
-  warningLight: '#FEF9C3',
-  warningBorder: '#FDE047',
+  warning: '#8a5a10',
+  warningLight: '#f6efe6',
+  warningBorder: '#dcc49b',
 
-  error: '#EF4444',
-  errorLight: '#FEE2E2',
-  errorBorder: '#FCA5A5',
+  error: '#b03127',
+  errorLight: '#f9eceb',
+  errorBorder: '#e3b3ae',
 
-  info: '#059669',
-  infoLight: '#ecfdf5',
-  infoBorder: '#93C5FD',
+  info: '#0b8168',
+  infoLight: '#e7f3ef',
+  infoBorder: '#a9d6c8',
 
   // In Progress (blue-500)
   inProgress: '#3B82F6',
@@ -56,19 +69,19 @@ export const COLORS = {
   inProgressBorder: '#93C5FD',
 
   // Status specific
-  amber: '#D97706',
-  amberLight: '#FFFBEB',
-  amberBorder: '#FDE68A',
+  amber: '#8a5a10',
+  amberLight: '#f6efe6',
+  amberBorder: '#dcc49b',
 
   purple: '#8B5CF6',
   purpleLight: '#EDE9FE',
   purpleBorder: '#C4B5FD',
   purpleDark: '#6D28D9',
 
-  emerald: '#059669',
-  emeraldLight: '#ECFDF5',
-  emeraldBorder: '#A7F3D0',
-  emeraldDark: '#047857',
+  emerald: '#0b8168',
+  emeraldLight: '#e7f3ef',
+  emeraldBorder: '#a9d6c8',
+  emeraldDark: '#087961',
 
   cyan: '#0891B2',
   cyanLight: '#CFFAFE',
@@ -87,65 +100,61 @@ export const COLORS = {
 // THEME COLORS (semantic tokens that change with light/dark mode)
 // =============================================================================
 
-const LIGHT_THEME = {
-  background: '#FFFFFF',
-  surface: '#F8FAFC',
-  surfaceRaised: '#F1F5F9',
-  card: '#FFFFFF',
-  input: '#F1F5F9',
-  inputBorder: '#E2E8F0',
-  inputIconBg: '#F1F5F9',
-  border: '#E2E8F0',
-  borderLight: '#CBD5E1',
-  textPrimary: '#1E293B',
-  textSecondary: '#475569',
-  textMuted: '#94A3B8',
-  tabBar: '#FFFFFF',
-  header: '#FFFFFF',
-  // Light-weight semantic backgrounds (change in dark mode)
-  primaryLight: '#ecfdf5',
-  successLight: '#DCFCE7',
-  errorLight: '#FEE2E2',
-  warningLight: '#FEF9C3',
-  inProgressLight: '#DBEAFE',
-  purpleLight: '#EDE9FE',
-  amberLight: '#FFFBEB',
-  emeraldLight: '#ECFDF5',
-  cyanLight: '#CFFAFE',
-  indigoLight: '#E0E7FF',
-  blockedLight: '#F3F4F6',
-} as const;
+/*
+  v2 — Amazen Trust.
 
-const DARK_THEME = {
-  background: '#0c0c14',
-  surface: '#131320',
-  surfaceRaised: '#1e1e2e',
-  card: '#1a1a28',
-  input: '#1e1e2e',
-  inputBorder: '#2c2c3e',
-  inputIconBg: '#262638',
-  border: '#232335',
-  borderLight: '#363650',
-  textPrimary: '#f0f0f8',
-  textSecondary: '#9898b0',
-  textMuted: '#6a6a82',
-  tabBar: '#0a0a10',
-  header: '#101018',
-  // Rich semantic backgrounds with depth
-  primaryLight: '#0a2a20',
-  successLight: '#0c2818',
-  errorLight: '#2a1018',
-  warningLight: '#2a1f0a',
-  inProgressLight: '#0c1a32',
-  purpleLight: '#1a0c32',
-  amberLight: '#221508',
-  emeraldLight: '#0a2a20',
-  cyanLight: '#081e2a',
-  indigoLight: '#141030',
-  blockedLight: '#1e1e2e',
-} as const;
+  These two objects are no longer hand-picked colours. They are a MAPPING of
+  the legacy semantic keys onto `src/theme/amazen.ts`, so that every screen
+  written against `useTheme().colors` re-skins without being touched, and the
+  two languages can never disagree about what "the card colour" is.
 
-export type ThemeColors = { [K in keyof typeof LIGHT_THEME]: string };
+  New code should read `useTheme().amazen` instead — it has the tokens this
+  map has no key for (glass, the gradients, ink-on-glass, warn).
+*/
+function mapLegacy(a: AmazenColors): Record<string, string> {
+  return {
+    background: a.canvas,
+    surface: a.well,
+    surfaceRaised: a.tile,
+    card: a.well,
+    input: a.sunken,
+    inputBorder: a.lineField,
+    inputIconBg: a.tile,
+    border: a.lineWell,
+    borderLight: a.lineField,
+    textPrimary: a.inkStrong,
+    textSecondary: a.ink,
+    textMuted: a.inkMuted,
+    tabBar: a.canvas,
+    header: a.canvas,
+    // Light-weight semantic grounds. Amazen has three tones, not eleven: jade
+    // for anything affirmative, warn for owed/late/waiting, critical for
+    // failure. Everything else is the neutral tile.
+    primaryLight: a.accentTint,
+    successLight: a.accentTint,
+    errorLight: a.criticalTint,
+    warningLight: a.warnTint,
+    inProgressLight: a.accentTint,
+    purpleLight: a.tile,
+    amberLight: a.warnTint,
+    emeraldLight: a.accentTint,
+    cyanLight: a.tile,
+    indigoLight: a.tile,
+    blockedLight: a.tile,
+  };
+}
+
+const LIGHT_THEME = mapLegacy(AMAZEN_LIGHT.color) as Record<LegacyThemeKey, string>;
+const DARK_THEME = mapLegacy(AMAZEN_DARK.color) as Record<LegacyThemeKey, string>;
+
+type LegacyThemeKey =
+  | 'background' | 'surface' | 'surfaceRaised' | 'card' | 'input' | 'inputBorder'
+  | 'inputIconBg' | 'border' | 'borderLight' | 'textPrimary' | 'textSecondary'
+  | 'textMuted' | 'tabBar' | 'header' | 'primaryLight' | 'successLight'
+  | 'errorLight' | 'warningLight' | 'inProgressLight' | 'purpleLight'
+  | 'amberLight' | 'emeraldLight' | 'cyanLight' | 'indigoLight' | 'blockedLight';
+
+export type ThemeColors = Record<LegacyThemeKey, string>;
 
 export function getThemeColors(scheme: 'light' | 'dark' | null | undefined): ThemeColors {
   return scheme === 'dark' ? DARK_THEME : LIGHT_THEME;

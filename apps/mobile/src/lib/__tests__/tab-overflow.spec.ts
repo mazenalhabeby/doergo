@@ -54,13 +54,29 @@ describe('the tab bar never exceeds five', () => {
   });
 
   it('keeps the everyday four and moves the occasional ones', () => {
-    // An admin who also works a site: seven tabs.
+    /*
+      An admin who also works a site: seven tabs.
+
+      ⚠️ The four are Home · Jobs · Clock · Messages since v2, and the change
+      that surprises is `create-task` — it used to hold a permanent slot and is
+      now LAST, behind even Team. It did not lose its door: it is a tile in the
+      shortcuts rail, which it could not be while it was a tab ("never a tile
+      for a tab"). Creating a job is an action, and an action is a better tile
+      than it ever was a place.
+    */
     const { barRoutes, overflowRoutes } = splitTabs(
-      r('team', 'time-off', 'create-task', 'attendance', 'tasks', 'index'),
+      r('team', 'time-off', 'create-task', 'chat', 'attendance', 'tasks', 'index'),
       true, // an admin also has the management rows
     );
-    expect(names(barRoutes)).toEqual(['index', 'tasks', 'attendance', 'create-task']);
-    expect(names(overflowRoutes)).toEqual(['time-off', 'team']);
+    expect(names(barRoutes)).toEqual(['index', 'tasks', 'attendance', 'chat']);
+    expect(names(overflowRoutes)).toEqual(['time-off', 'team', 'create-task']);
+  });
+
+  it('gives Messages a permanent slot ahead of Time off and Team', () => {
+    // The v2 set is fixed, and this is the half of it that changed.
+    const { barRoutes } = splitTabs(r('index', 'tasks', 'attendance', 'chat', 'time-off'), true);
+    expect(names(barRoutes)).toContain('chat');
+    expect(names(barRoutes)).not.toContain('time-off');
   });
 
   it('orders by priority, not by the order routes happen to arrive in', () => {

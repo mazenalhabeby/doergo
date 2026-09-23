@@ -35,7 +35,7 @@ twelve combinations are tractable.
 | **`SPEC.md`** | The widget: the strip, the active row, the verb, the data — and the alternative that was considered. |
 | **`STATES.md`** | Seven states, three of them empty and not interchangeable. What the strip and the active row do in each. |
 | **`FINDINGS.md`** | Eight things wrong today, with what the code actually says. |
-| **`icons/`** | Eight glyph components, ready to move into `src/components/home/`. |
+| **`../icons/`** | The whole icon system — 43 marks in one folder, with the construction law and the five that already exist in `glyphs.tsx`. |
 
 Visual reference — every shape, face, state and mark on one page:
 **https://claude.ai/artifact/9GcjYhxdrUEaL7NAVstB7U**
@@ -71,7 +71,7 @@ One row, `my-work` — `SPEC.md` §2–3. `week` retires.
 The first row grows and carries the verb. `SPEC.md` §4. `next-job` retires
 without ever being built.
 
-Move `icons/work-glyphs.tsx` into `apps/mobile/src/components/home/` and
+Move `../icons/` (the whole folder — see its README) into `apps/mobile/src/components/home/` and
 export it from that folder's index. **No edits needed** — its
 `import … from './glyphs'` is already written for the destination, which is
 also why it does not compile where it currently sits.

@@ -37,7 +37,8 @@ import { TourTarget, useTourScroll } from '../tour';
 import { styles as sharedStyles, COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from './home-styles';
 import { DocumentsReminderCard } from '../documents-reminder-card';
 import { QuickActions } from './quick-actions';
-import { NetWorkGlyph, BreakGlyph, WeekGlyph } from './glyphs';
+import { NetWorkGlyph, WeekGlyph } from './glyphs';
+import { BreakGlyph } from './shift-glyphs';
 import { workedMinutes } from '@hbcfield/shared/client';
 
 export function FullTimeHome() {

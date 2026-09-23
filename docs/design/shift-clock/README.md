@@ -16,7 +16,7 @@ handed to an implementer with no other context.
 | **`SPEC.md`** | The card: eight states, the data behind each, the copy, the discs. |
 | **`ISSUES.md`** | Report an issue and My issues: three sheets and the thread. |
 | **`TOKENS.md`** | The palette used, one token to add, and two bugs in the design system itself. |
-| **`icons/`** | Six glyph components, ready to move into `src/components/home/`. |
+| **`../icons/`** | The whole icon system — 43 marks in one folder, with the construction law and the five that already exist in `glyphs.tsx`. |
 
 Visual reference — every state and both flows drawn at 390pt:
 **https://claude.ai/artifact/9GcjYhxdrUEaL7NAVstB7U**
@@ -31,7 +31,7 @@ Visual reference — every state and both flows drawn at 390pt:
 - Add `warn` / `warn-tint` / `warn-ink` (`TOKENS.md` §2).
 - Fix the light primary gradient (`TOKENS.md` §3) — this is a **live
   accessibility bug**, white on `#14a586` measures 3.11:1.
-- Move `icons/shift-glyphs.tsx` into `apps/mobile/src/components/home/` and
+- Move `../icons/` (the whole folder — see its README) into `apps/mobile/src/components/home/` and
   export it from that folder's index. **No edits needed** — its
   `import … from './glyphs'` is already written for the destination, which is
   also why it does not compile where it currently sits.

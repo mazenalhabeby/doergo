@@ -220,14 +220,15 @@
   "tabs": {
     "home": "Inicio",
     "dashboard": "Panel",
-    "tasks": "Tareas",
+    "tasks": "Trabajos",
     "createTask": "Crear tarea",
     "manage": "Gestionar",
-    "attendance": "Asistencia",
+    "attendance": "Tiempo",
     "timeOff": "Ausencias",
     "team": "Equipo",
     "profile": "Perfil",
-    "more": "Más"
+    "more": "Más",
+    "messages": "Chat"
   },
   "home": {
     "admin": {
@@ -2273,7 +2274,10 @@
       "expiring_other": "{{count}} documentos caducan pronto",
       "partUpload": "{{count}} por subir",
       "partSign": "{{count}} por firmar",
-      "blocking": "No puedes recibir trabajo hasta que lo entregues y lo aprueben."
+      "blocking": "No puedes recibir trabajo hasta que lo entregues y lo aprueben.",
+      "countersign": "Firmar {{label}} de {{name}}",
+      "countersignNote": "El documento de otra persona, esperándote.",
+      "countersignMore": "y {{count}} más esperándote"
     },
     "onBehalfOf": "Para {{name}}",
     "pages": {
@@ -2813,5 +2817,52 @@
     "update": "Actualizar ahora",
     "later": "Más tarde",
     "note": "Te lo recordaremos mañana."
+  },
+  "shortcuts": {
+    "documents": "Documentos",
+    "documentsDesc": "Todo lo que debes y todo lo que se te ha emitido",
+    "sign": "Firmar",
+    "signDesc": "Documentos que esperan tu firma",
+    "myEquipment": "Mi equipo",
+    "myEquipmentDesc": "Lo que tienes ahora mismo",
+    "sync": "Sincronizar",
+    "syncDesc": "Lo que aún no ha llegado a la oficina",
+    "overtime": "Horas extra",
+    "overtimeDesc": "Tiempo extra, ronda a ronda",
+    "logExpense": "Registrar gasto",
+    "logExpenseDesc": "Fotografía un recibo de algo que tienes",
+    "scanCard": "Escanear tarjeta",
+    "scanCardDesc": "Convierte una tarjeta en un cliente",
+    "addClient": "Nuevo cliente",
+    "addClientDesc": "Un nombre nuevo en la cartera",
+    "sendDoc": "Enviar doc.",
+    "sendDocDesc": "Emite un documento a alguien",
+    "planRoute": "Planear ruta",
+    "planRouteDesc": "Las paradas de hoy, en orden conducible",
+    "support": "Soporte",
+    "supportDesc": "Pídenos ayuda",
+    "equipmentLog": "Registro equipo",
+    "equipmentLogDesc": "Qué se hizo a un equipo, y cuándo",
+    "newJob": "Nuevo trabajo",
+    "newJobDesc": "Crea un trabajo para alguien"
+  },
+  "shiftClock": {
+    "onTheClock": "EN SERVICIO",
+    "notOnTheClock": "FUERA DE SERVICIO",
+    "onARest": "EN DESCANSO",
+    "needsYourTime": "NECESITA TU HORA",
+    "queued": "EN COLA",
+    "readyToStart": "Listo para empezar",
+    "whenDidYouLeave": "¿A qué hora te fuiste?",
+    "leftRunning": "Se quedó abierto, así que lo cerramos por ti. Dinos la hora real.",
+    "counted": "{{counted}} contabilizado",
+    "countedFrozen": "{{counted}} contabilizado, ahora no cuenta",
+    "restDue": "descanso a las {{time}}",
+    "restOverdue_one": "Tu descanso venció hace {{count}} minuto",
+    "restOverdue_other": "Tu descanso venció hace {{count}} minutos",
+    "startRest": "Empezar descanso",
+    "endRest": "Terminar descanso",
+    "break": "Descanso",
+    "setRealTime": "Poner la hora real"
   }
 }

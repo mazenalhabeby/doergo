@@ -33,7 +33,7 @@ THE CARD   →  the order            the totals
 | **`DATA.md`** | Where every number comes from, the state-selection logic, what `engine` changes, and offline. |
 | **`SPEC.md`** | The card: anatomy, the two verbs, the ⋯ menu, height, and the copy table. |
 | **`STATES.md`** | Seven states and one modifier, each with its condition and its verb. |
-| **`icons/`** | Five glyph components, ready to move into `src/components/home/`. |
+| **`../icons/`** | The whole icon system — 43 marks in one folder, with the construction law and the five that already exist in `glyphs.tsx`. |
 
 Visual reference — every state drawn at 350pt:
 **https://claude.ai/artifact/9GcjYhxdrUEaL7NAVstB7U**
@@ -63,7 +63,7 @@ small improvement to the existing screen.
 
 ### 3. The glyphs — nothing visible changes yet
 
-Move `icons/route-glyphs.tsx` into `apps/mobile/src/components/home/` and
+Move `../icons/` (the whole folder — see its README) into `apps/mobile/src/components/home/` and
 export it from that folder's index. **No edits needed** — its
 `import … from './glyphs'` is already written for the destination, which is
 also why it does not compile where it currently sits.

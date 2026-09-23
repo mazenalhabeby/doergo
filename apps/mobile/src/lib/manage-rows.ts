@@ -1,4 +1,4 @@
-import { moduleAnywhere } from '@hbcfield/shared/client';
+import { moduleAnywhere, orgHasAddOn, resolveCrmCaps } from '@hbcfield/shared/client';
 import { holds, holdsOrgWide } from './permissions';
 
 /**
@@ -55,6 +55,123 @@ export const MANAGE_ROWS = [
 ] as const;
 
 export type ManageRow = (typeof MANAGE_ROWS)[number];
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   The member's own half of the table.
+
+   ⚠️ ONE TABLE, THREE SURFACES — the Manage tab, the More sheet, and the home
+   screen's shortcuts rail. A second gated list of the same destinations is
+   §2.4 rule 1 happening again ("Entitlement is asked once … asked separately
+   they drift"), and this file already records what drift cost once:
+
+     "a member can legitimately hold `crmViewOwn` in an organization that runs
+      no CRM anywhere, and the row then led to a screen that could only ever
+      be empty"
+
+     "that is how a member comes to see Clients on the web and not on the
+      phone"
+
+   These twelve rows never had a table at all. Each was reached by ad-hoc
+   navigation from wherever somebody happened to put a link, which is why half
+   of them are unreachable for the members entitled to them.
+
+   ⚠️ NEVER A TILE FOR A TAB. Home, Jobs, New job, Attendance, Time off, Team
+   and Profile are in `(tabs)/`. A tile duplicating a tab is a second door to
+   the same room, one of which moves. `home: true` is refused for any of them.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/** Where a tile's count comes from, or none. The only genuinely new field. */
+export type BadgeSource =
+  | 'documents.due'
+  | 'documents.toSign'
+  /* Messages took a tab slot in v2; the pill carries its unread count now. */
+  | 'sync.queued'
+  | 'overtime.mine'
+  | 'assets.due';
+
+/**
+ * A gate a permission cannot express.
+ *
+ * ⚠️ Three kinds of gate and they are NOT interchangeable. A permission says
+ * who may look; a module says whether the organization bought the thing at
+ * all; and custody says whether this is your van. The first two already live
+ * on a row as `permission` and `module`; these are the rest.
+ */
+export type ExtraGate =
+  /** Bought once for the organization — an Option. */
+  | { addOn: string }
+  /** The offline engine is switched on for this org (the staged rollout). */
+  | { offline: true }
+  /**
+   * ⚠️ `resolveCrmCaps` takes a FLAT permission set, so a space-scoped sales
+   * role grants nothing while looking configured. That is the resolver's
+   * behaviour, not this row's, and it must not be worked around here.
+   */
+  | { crmCap: 'editInfo' | 'manage' | 'work' };
+
+export interface Destination {
+  icon: string;
+  labelKey: string;
+  descKey: string;
+  route: string;
+  color: string;
+  /** Empty string = no permission needed: everyone, about themselves. */
+  permission: string;
+  orgWide: boolean;
+  module?: string;
+  gate?: ExtraGate;
+  /** Eligible for the home rail. NOT every destination is a tile. */
+  home?: true;
+  /** Belongs in the Manage list / More sheet. */
+  manage?: true;
+  badge?: BadgeSource;
+}
+
+/**
+ * The member's own screens.
+ *
+ * ⚠️ `home` is a JUDGEMENT and it belongs in this table where it can be argued
+ * about, not in the widget where it would be invisible. Support and the
+ * equipment log are real screens nobody opens twice a week; they are reachable
+ * and they are not tiles.
+ */
+export const MEMBER_ROWS: Destination[] = [
+  { icon: 'document-text', labelKey: 'shortcuts.documents', descKey: 'shortcuts.documentsDesc', route: '/(app)/documents', color: '#0b8168', permission: '', orgWide: false, home: true, badge: 'documents.due' },
+  { icon: 'create', labelKey: 'shortcuts.sign', descKey: 'shortcuts.signDesc', route: '/(app)/sign-document', color: '#0b8168', permission: '', orgWide: false, home: true, badge: 'documents.toSign' },
+  { icon: 'cube', labelKey: 'shortcuts.myEquipment', descKey: 'shortcuts.myEquipmentDesc', route: '/(app)/my-assets', color: '#0f766e', permission: '', orgWide: false, module: 'assets', home: true, badge: 'assets.due' },
+  /*
+    ⚠️ MESSAGES IS NOT HERE ANY MORE. It took a permanent slot in the tab pill
+    in v2, and a tile that duplicates a tab is a second door to the same room,
+    one of which moves. The route is `/(app)/(tabs)/chat` now; `/(app)/chat`
+    is a redirect kept for every push notification already delivered.
+  */
+  { icon: 'sync', labelKey: 'shortcuts.sync', descKey: 'shortcuts.syncDesc', route: '/(app)/sync', color: '#8b5cf6', permission: '', orgWide: false, gate: { offline: true }, home: true, badge: 'sync.queued' },
+  { icon: 'timer', labelKey: 'shortcuts.overtime', descKey: 'shortcuts.overtimeDesc', route: '/(app)/overtime', color: '#a855f7', permission: '', orgWide: false, gate: { addOn: 'overtime' }, home: true, badge: 'overtime.mine' },
+  /*
+    ⚠️ Filing an expense is authorised by CUSTODY on the receipt's date, never
+    by `canManageAssets` — a driver is not an asset manager and never will be.
+    The tile cannot ask that question without a request, so it gates on the
+    module and the SCREEN enforces custody, which it already does.
+  */
+  { icon: 'receipt', labelKey: 'shortcuts.logExpense', descKey: 'shortcuts.logExpenseDesc', route: '/(app)/asset-expense', color: '#8a5a10', permission: '', orgWide: false, module: 'assets', home: true },
+  /*
+    ⚠️ NEW JOB IS A TILE NOW, and it could not have been one a week ago.
+
+    "Never a tile for a tab" refused it while `create-task` held a permanent
+    slot. v2's fixed set is Home · Jobs · Clock · Messages, so it does not any
+    more — and creating a job was always a better tile than a place: it is an
+    action, and the tab bar is a set of rooms.
+  */
+  { icon: 'add-circle', labelKey: 'shortcuts.newJob', descKey: 'shortcuts.newJobDesc', route: '/(app)/(tabs)/create-task', color: '#0b8168', permission: 'canCreateTasks', orgWide: false, home: true },
+  { icon: 'scan', labelKey: 'shortcuts.scanCard', descKey: 'shortcuts.scanCardDesc', route: '/(app)/scan-card', color: '#2563eb', permission: '', orgWide: false, module: 'crm', home: true },
+  { icon: 'person-add', labelKey: 'shortcuts.addClient', descKey: 'shortcuts.addClientDesc', route: '/(app)/customers?new=1', color: '#2563eb', permission: '', orgWide: false, module: 'crm', gate: { crmCap: 'editInfo' }, home: true },
+  { icon: 'send', labelKey: 'shortcuts.sendDoc', descKey: 'shortcuts.sendDocDesc', route: '/(app)/send-document', color: '#06b6d4', permission: 'canIssueDocuments', orgWide: false, home: true },
+  { icon: 'map', labelKey: 'shortcuts.planRoute', descKey: 'shortcuts.planRouteDesc', route: '/(app)/route-planner', color: '#0ea5e9', permission: '', orgWide: false, module: 'tracking', home: true },
+  // Reachable, and not a tile: nobody opens support twice a week.
+  { icon: 'help-buoy', labelKey: 'shortcuts.support', descKey: 'shortcuts.supportDesc', route: '/(app)/support', color: '#64748b', permission: '', orgWide: false },
+  { icon: 'list', labelKey: 'shortcuts.equipmentLog', descKey: 'shortcuts.equipmentLogDesc', route: '/(app)/asset-log', color: '#0f766e', permission: '', orgWide: false, module: 'assets' },
+];
+
 
 /*
   Two surfaces a supervisor holds the permission for and had no door to.
@@ -117,4 +234,61 @@ export function manageRowsFor(user: ManageSubject): ManageRow[] {
 /** Is there a Manage tab for this member at all? */
 export function hasManageSurface(user: ManageSubject): boolean {
   return manageRowsFor(user).length > 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   The third surface — the home screen's shortcuts rail.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/** The extra session fields the member rows are decided from. */
+type DestinationSubject = ManageSubject & {
+  orgAddOns?: string[] | null;
+  offlineMode?: boolean;
+};
+
+/**
+ * A gate a permission and a module together cannot express.
+ *
+ * ⚠️ `resolveCrmCaps` is given the FLAT org permission set on purpose. A
+ * space-scoped sales role grants no CRM capability while looking perfectly
+ * configured, and that is the resolver's documented behaviour — working round
+ * it here would give the phone a different answer from the server.
+ */
+function passesGate(user: DestinationSubject, gate: ExtraGate | undefined): boolean {
+  if (!gate) return true;
+  if ('addOn' in gate) return orgHasAddOn(user?.orgAddOns ?? null, gate.addOn);
+  if ('offline' in gate) return user?.offlineMode === true;
+  const caps = resolveCrmCaps(
+    (user as { role?: string | null } | null)?.role ?? null,
+    ((user as { access?: { org?: Record<string, boolean> } } | null)?.access?.org ?? {}) as never,
+  );
+  return caps[gate.crmCap] === true;
+}
+
+/**
+ * Every destination this member can actually open — both halves of the table.
+ *
+ * ⚠️ NOTHING IS VISIBLE-THEN-REFUSED. A row checks its module AND its
+ * permission AND its scope before it is returned. The whole point of a rail of
+ * doorways is that every door opens.
+ */
+export function destinationsFor(user: DestinationSubject): Destination[] {
+  const manage: Destination[] = MANAGE_ROWS.map((r) => ({
+    ...r,
+    module: 'module' in r ? (r.module as string) : undefined,
+    manage: true as const,
+  }));
+  return [...manage, ...MEMBER_ROWS].filter((row) => {
+    if (row.permission) {
+      const allowed = row.orgWide ? holdsOrgWide(user, row.permission) : holds(user, row.permission);
+      if (!allowed) return false;
+    }
+    if (row.module !== undefined && !moduleAnywhere(user, row.module)) return false;
+    return passesGate(user, row.gate);
+  });
+}
+
+/** The rail's question — one filter away from the Manage list's. */
+export function homeDestinationsFor(user: DestinationSubject): Destination[] {
+  return destinationsFor(user).filter((r) => r.home === true);
 }

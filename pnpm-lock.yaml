@@ -564,9 +564,15 @@ importers:
       '@babel/runtime':
         specifier: ^7.28.6
         version: 7.28.6
+      '@expo-google-fonts/ibm-plex-mono':
+        specifier: ^0.4.1
+        version: 0.4.1
       '@expo-google-fonts/outfit':
         specifier: ^0.4.3
         version: 0.4.3
+      '@expo-google-fonts/readex-pro':
+        specifier: ^0.4.1
+        version: 0.4.1
       '@expo/metro-runtime':
         specifier: ~6.1.2
         version: 6.1.2(expo@54.0.35)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0)
@@ -1842,8 +1848,14 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
+  '@expo-google-fonts/ibm-plex-mono@0.4.1':
+    resolution: {integrity: sha512-/yYz1mPZq8Nd4tSiH0SBDPEdJUqiOGBwVgSrQvLuw7SPh6C7ezBzmi6eFyHY4QaQwjHDmOLSBKsxzq8ZDFXVAg==}
+
   '@expo-google-fonts/outfit@0.4.3':
     resolution: {integrity: sha512-2uQmDVJencWLllxds6SG92E+SjxyZfvg7eZKZ5XLHggmm5AuUyQK7lzMAFOUzT6kheq2kJ7BAiubMdjKT32fJg==}
+
+  '@expo-google-fonts/readex-pro@0.4.1':
+    resolution: {integrity: sha512-BADsKySd3E/KIHvm5rHNvaRGTM2WmJ6EgnLAaj3ksgV+wyBbRaOSvqik2gYh00vb74AUSZGmvei/YeAv3Korsw==}
 
   '@expo/cli@54.0.25':
     resolution: {integrity: sha512-WnUqIb8oMBhtwSfIqdCHCzcaDIpLNXItRVd5miuvWi4GO0SGo89PSsAkbVJ+LJgcaY+v5rbgMELJS9I/CqOulA==}
@@ -11157,7 +11169,11 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
+  '@expo-google-fonts/ibm-plex-mono@0.4.1': {}
+
   '@expo-google-fonts/outfit@0.4.3': {}
+
+  '@expo-google-fonts/readex-pro@0.4.1': {}
 
   '@expo/cli@54.0.25(expo-router@6.0.24)(expo@54.0.35)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.1.0))':
     dependencies:

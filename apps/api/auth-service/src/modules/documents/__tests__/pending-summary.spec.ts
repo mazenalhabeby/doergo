@@ -108,4 +108,38 @@ describe('summarisePending', () => {
     // member cannot act on.
     expect(summarisePending({ toUpload: [], toSign: [sign('Contract')], expiring: [] }).blocksWork).toBe(false);
   });
+
+  /* ── Somebody else's signature ── */
+
+  it("names the colleague when a signature is not the member's own", () => {
+    // "Sign Anna Müller's time sheet" is a different instruction from "1
+    // document to sign" — only one of them has somebody blocked at the far end.
+    const r = summarisePending({
+      toUpload: [],
+      toSign: [{ title: 'Time sheet September', forMember: 'Anna Müller' }],
+      expiring: [],
+    });
+    expect(r.titleKey).toBe('toSign');
+    expect(r.countersign).toEqual({ title: 'Time sheet September', forMember: 'Anna Müller' });
+  });
+
+  it('says nothing about a colleague when the signature is your own', () => {
+    const r = summarisePending({ toUpload: [], toSign: [sign('Contract')], expiring: [] });
+    expect(r.countersign).toBeNull();
+  });
+
+  it("does not mention a colleague while the member owes something themselves", () => {
+    // A colleague blocked on your signature is not the thing to say while the
+    // member's own licence is missing — the headline is theirs, and the name
+    // is a second line under "1 document to sign", not a replacement for it.
+    const r = summarisePending({
+      toUpload: [upload('Licence')],
+      toSign: [{ title: 'Time sheet', forMember: 'Anna Müller' }],
+      expiring: [],
+    });
+    expect(r.titleKey).toBe('needYou');
+    expect(r.countersign).toBeNull();
+    // But it is still counted — the errand did not go away.
+    expect(r.countersignCount).toBe(1);
+  });
 });

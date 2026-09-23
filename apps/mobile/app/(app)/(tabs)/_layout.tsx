@@ -12,20 +12,28 @@ import { manageRowsFor } from '../../../src/lib/manage-rows';
 import { holds } from '../../../src/lib/permissions';
 import { ShiftIssueListSheet, ShiftIssueThreadSheet } from '../../../src/components/shift-issue-sheet';
 import { AnimatedLogo } from '../../../src/components';
+import { TabPill } from '../../../src/components/amazen';
+import { TAB_GLYPHS } from '../../../src/components/home/tab-glyphs';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
 import { TourTarget, useTourTarget } from '../../../src/components/tour';
-import { Role, hasAccessModule, normalizeRole, canContactColleagues } from '@hbcfield/shared/client';
-import { oversees } from '../../../src/lib/permissions';
+import { Role, hasAccessModule, normalizeRole, canContactColleagues, orgHasAddOn } from '@hbcfield/shared/client';
 import { hasManageSurface } from '../../../src/lib/manage-rows';
 import { resolveMediaUrl } from '../../../src/lib/api';
 
-// Maps a tab route name → guided-tour target key (only the tabs the tours spotlight).
+/*
+  Which tabs the tours spotlight.
+
+  ⚠️ `time-off` was here and is GONE — not because the step was wrong, but
+  because Time off left the bar for the overflow in v2, so the target would
+  never have mounted. The step is `optional`, so it would have failed
+  silently: a tour that quietly skips a third of itself on every run is worse
+  than one that is honestly shorter. The step is removed from the registry too.
+*/
 const TAB_TOUR_KEY: Record<string, string> = {
   tasks: 'tab-tasks',
   attendance: 'tab-attendance',
-  'time-off': 'tab-time-off',
 };
 
 // Logo icon for header left
@@ -95,97 +103,15 @@ function ProfileButton() {
   );
 }
 
-// Animated Tab Item
-function TabItem({
-  route,
-  label,
-  isFocused,
-  onPress,
-  themeColors,
-}: {
-  route: any;
-  label: string;
-  isFocused: boolean;
-  onPress: () => void;
-  themeColors: import('../../../src/lib/constants').ThemeColors;
-}) {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const indicatorAnim = useRef(new Animated.Value(isFocused ? 1 : 0)).current;
+/*
+  ⚠️ `TabItem` WAS HERE AND IS GONE.
 
-  useEffect(() => {
-    Animated.timing(indicatorAnim, {
-      toValue: isFocused ? 1 : 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  }, [isFocused]);
-
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.9,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 4,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const iconName = tabIconName(route.name, isFocused);
-
-  const tourKey = TAB_TOUR_KEY[route.name];
-
-  // Soft capsule that fades/scales in behind the active icon — replaces the old
-  // underline bar (which overlapped the label). Modern Material-3-style pill.
-  const pillScale = indicatorAnim.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] });
-  const inner = (
-    <>
-      <Animated.View style={[styles.iconRow, { transform: [{ scale: scaleAnim }] }]}>
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.activePill,
-            { backgroundColor: themeColors.primaryLight, opacity: indicatorAnim, transform: [{ scale: pillScale }] },
-          ]}
-        />
-        <Ionicons
-          name={iconName as any}
-          size={23}
-          color={isFocused ? COLORS.primary : themeColors.textMuted}
-        />
-      </Animated.View>
-      <Text
-        style={[styles.tabLabel, { color: isFocused ? COLORS.primary : themeColors.textMuted }, isFocused && styles.tabLabelActive]}
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.7}
-      >
-        {label}
-      </Text>
-    </>
-  );
-
-  return (
-    <Pressable
-      style={styles.tabItem}
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-    >
-      {tourKey ? (
-        <TourTarget name={tourKey} style={styles.tabItemInner}>
-          {inner}
-        </TourTarget>
-      ) : (
-        inner
-      )}
-    </Pressable>
-  );
-}
+  It drew one slot of the old edge-to-edge bar: an Ionicon, a label under it,
+  a spring on press and a Material-style pill behind the active one. All of
+  that now lives in `TabPill`, measured off the design reference — including
+  the press feedback, which is opacity rather than a spring because the active
+  slot changes WIDTH and a scale transform on a flexing box judders.
+*/
 
 // Custom Tab Bar - Full width premium design
 function CustomTabBar({ state, descriptors, navigation }: any) {
@@ -211,6 +137,15 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   */
   const showCreate = hasAccessModule(user || {}, 'create_task');
   const showTeam = canContactColleagues(user || {});
+  /*
+    Messages is one of the five now.
+
+    Two gates, because they answer different questions: the organization has to
+    have BOUGHT chat, and this member has to be allowed to talk to colleagues —
+    an admin can switch the second off per person in the Access Builder. Either
+    one missing and the slot is not drawn at all, rather than drawn and refused.
+  */
+  const showChat = orgHasAddOn(user?.orgAddOns ?? null, 'live_chat') && canContactColleagues(user || {});
 
   // Filter routes based on role and modules (profile is in header, not tab bar)
   const visibleRoutes = state.routes.filter((route: any) => {
@@ -224,6 +159,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       deep link into it still resolves.
     */
     if (route.name === 'manage') return false;
+    if (route.name === 'chat') return showChat;
     if (route.name === 'team') return showTeam;
     if (isAdmin) {
       // Clock is module-driven, not role-locked: an admin/owner who also works
@@ -232,6 +168,12 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       // showAttendance; this lets the tab button through.
       if (route.name === 'attendance') return showAttendance;
       if (route.name === 'time-off') return false;
+      /*
+        ⚠️ Chat is checked ABOVE this branch and not here, because this branch
+        ends in `return true` — anything an admin is not explicitly asked about
+        is allowed through. A Messages tab for an organization that never
+        bought chat opens onto a 402.
+      */
       return true;
     }
     /*
@@ -279,72 +221,51 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
   const getAdjustedIndex = () => barRoutes.findIndex((r: any) => r.key === currentRoute.key);
 
-  const isDark = themeColors.tabBar === '#0a0a10'; // quick dark mode check
-
   return (
-    <View style={[styles.tabBarOuter, {
-      paddingBottom: insets.bottom,
-      backgroundColor: isDark ? '#0a0a10' : '#ffffff',
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-      // Soft upward lift so the bar reads as a floating surface (premium depth).
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: -3 },
-      shadowOpacity: isDark ? 0.35 : 0.06,
-      shadowRadius: 12,
-      elevation: 12,
-    }]}>
-      <View style={styles.tabBarInner}>
-        {barRoutes.map((route: any, index: number) => {
-          const { options } = descriptors[route.key];
-          const label = options.title || route.name;
-          const isFocused = getAdjustedIndex() === index;
+    <>
+      {/*
+        ⚠️ THE BAR IS A FLOATING PILL NOW, not a band at the bottom.
 
-          const onPress = () => {
+        `TOKENS.md` gives the tab bar `radius-full` and every screen reserves
+        `space-tabsafe: 110` below its content — two facts that only fit one
+        shape. The gradient runs underneath it, which is why it is absolutely
+        positioned and the screen behind it keeps its full height.
+
+        Everything it draws is measured, not chosen: see `TabPill`.
+      */}
+      <TabPill
+        items={barRoutes.map((route: any, index: number) => ({
+          key: route.key,
+          name: route.name,
+          label: descriptors[route.key].options.title || route.name,
+          focused: getAdjustedIndex() === index,
+          tourKey: TAB_TOUR_KEY[route.name],
+          onPress: () => {
             const event = navigation.emit({
               type: 'tabPress',
               target: route.key,
               canPreventDefault: true,
             });
-
-            if (!isFocused && !event.defaultPrevented) {
+            if (getAdjustedIndex() !== index && !event.defaultPrevented) {
               navigation.navigate(route.name);
             }
-          };
-
-          return (
-            <TabItem
-              key={route.key}
-              route={route}
-              label={label}
-              isFocused={isFocused}
-              onPress={onPress}
-              themeColors={themeColors}
-            />
-          );
-        })}
-
-        {/* The fifth slot, only when there is something to put in it. */}
-        {showMore && (
-          <Pressable style={styles.tabItem} onPress={() => setMoreOpen(true)} accessibilityRole="button">
-            <View style={styles.tabItemInner}>
-              <View style={styles.iconRow}>
-                <Ionicons
-                  name={inOverflow ? 'ellipsis-horizontal-circle' : 'ellipsis-horizontal-circle-outline'}
-                  size={23}
-                  color={inOverflow ? COLORS.primary : themeColors.textMuted}
-                />
-              </View>
-              <Text
-                style={[styles.tabLabel, { color: inOverflow ? COLORS.primary : themeColors.textMuted }, inOverflow && styles.tabLabelActive]}
-                numberOfLines={1}
-              >
-                {t('tabs.more', 'More')}
-              </Text>
-            </View>
-          </Pressable>
-        )}
-      </View>
+          },
+        }))}
+        more={
+          showMore
+            ? {
+                label: t('tabs.more', 'More'),
+                /*
+                  ⚠️ Being INSIDE the overflow has to look different from being
+                  anywhere else, or the bar shows nothing selected and the
+                  person cannot tell where they are.
+                */
+                focused: inOverflow,
+                onPress: () => setMoreOpen(true),
+              }
+            : undefined
+        }
+      />
 
       {/*
         The overflow, as a list rather than a second row of icons.
@@ -377,12 +298,28 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                     navigation.navigate(route.name);
                   }}
                 >
+                  {/*
+                    The SAME mark the pill draws.
+
+                    ⚠️ The overflow is part of the footer, and it was still on
+                    Ionicons while the pill had moved to the house set — so
+                    Time off was a calendar in two different drawings depending
+                    on which door you came through. `TAB_GLYPHS` is the one map
+                    and both surfaces read it.
+                  */}
                   <View style={[styles.moreIcon, { backgroundColor: COLORS.primary + '15' }]}>
-                    <Ionicons
-                      name={tabIconName(route.name, active) as any}
-                      size={19}
-                      color={active ? COLORS.primary : themeColors.textMuted}
-                    />
+                    {(() => {
+                      const G = TAB_GLYPHS[route.name];
+                      return G ? (
+                        <G size={19} color={active ? COLORS.primary : themeColors.textMuted} />
+                      ) : (
+                        <Ionicons
+                          name={tabIconName(route.name, active) as any}
+                          size={19}
+                          color={active ? COLORS.primary : themeColors.textMuted}
+                        />
+                      );
+                    })()}
                   </View>
                   <Text style={[styles.moreLabel, { color: active ? COLORS.primary : themeColors.textPrimary }]}>
                     {options.title || route.name}
@@ -456,7 +393,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         canManage={holds(user, 'canViewAllTasks')}
         currentUserId={user?.id}
       />
-    </View>
+    </>
   );
 }
 
@@ -479,6 +416,15 @@ export default function TabsLayout() {
   */
   const showCreate = hasAccessModule(user || {}, 'create_task');
   const showTeam = canContactColleagues(user || {});
+  /*
+    Messages is one of the five now.
+
+    Two gates, because they answer different questions: the organization has to
+    have BOUGHT chat, and this member has to be allowed to talk to colleagues —
+    an admin can switch the second off per person in the Access Builder. Either
+    one missing and the slot is not drawn at all, rather than drawn and refused.
+  */
+  const showChat = orgHasAddOn(user?.orgAddOns ?? null, 'live_chat') && canContactColleagues(user || {});
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
@@ -519,15 +465,53 @@ export default function TabsLayout() {
           headerRight: () => <ProfileButton />,
           tabBarHideOnKeyboard: true,
           sceneStyle: { backgroundColor: colors.surface },
+          /*
+            THE PAGE MOVES WITH THE CAPSULE.
+
+            `shift` slides the outgoing screen out and the incoming one in, in
+            the direction of travel — so tapping a tab to the RIGHT pushes the
+            content left, and the capsule underneath is moving right into the
+            gap. The two read as one gesture.
+
+            ⚠️ NOT `fade`. A crossfade says "something replaced this"; a shift
+            says "you moved", which is the true thing and the one that makes a
+            bar of five destinations feel like a row rather than a menu.
+
+            ⚠️ AND NOT A LONGER ONE. This runs on every single tab press, all
+            day, on a phone in somebody's hand between two jobs. React
+            Navigation's own duration is deliberately short; the pill's own
+            180ms slide is the thing with the character, and the page just has
+            to not be jarring underneath it.
+
+            Reduced motion is handled by the navigator: it drops to no
+            animation when the system asks.
+          */
+          animation: 'shift',
         }}
       >
         <Tabs.Screen
           name="index"
           options={{
-            /* Says what the screen IS: `oversees` decides which home renders
-               (see (tabs)/index.tsx), so the label has to ask the same question
-               or a supervisor gets the dashboard under a tab marked "Home". */
-            title: oversees(user) ? t('tabs.dashboard') : t('tabs.home'),
+            /*
+              ⚠️ ALWAYS "Home", never "Dashboard" — and this is a v2 reversal.
+
+              It used to ask `oversees(user)` and label a supervisor's tab
+              "Dashboard", on the reasoning that the label should say what the
+              screen IS. Two things undid that:
+
+              1. The design reference labels this tab **Home** on a screen that
+                 is plainly an oversight view — an organization header and a
+                 day's jobs across the site.
+              2. The screen behind it stopped forking. `(tabs)/index.tsx` is
+                 one composed column of widgets now; entitlement filters the
+                 list rather than choosing between four different screens. So
+                 there is no longer a "dashboard" for the label to name.
+
+              `tabs.dashboard` stays in the locale files. Nothing reads it
+              today, and it is the right word if an oversight surface ever
+              becomes a place of its own again.
+            */
+            title: t('tabs.home'),
           }}
         />
         {/* Tasks tab - ADMIN always sees, TECHNICIAN based on enabledModules */}
@@ -576,6 +560,24 @@ export default function TabsLayout() {
           options={{
             title: t('tabs.team'),
             href: showTeam ? '/team' : null,
+          }}
+        />
+        {/*
+          Messages — one of the five since v2.
+
+          It lived at `app/(app)/chat.tsx` and moved in here, because a tab has
+          to be inside the group to carry the pill. The old path is a redirect
+          and must stay: every chat push already delivered to a phone names it.
+
+          Its own header, because the screen draws a conversation title and a
+          back affordance of its own and the group header would sit above both.
+        */}
+        <Tabs.Screen
+          name="chat"
+          options={{
+            title: t('tabs.messages', 'Chat'),
+            href: showChat ? '/chat' : null,
+            headerShown: false,
           }}
         />
         <Tabs.Screen

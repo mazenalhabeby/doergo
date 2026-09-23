@@ -101,6 +101,36 @@ export interface User {
   orgModules?: string[] | null;
   // Technician-specific fields
   position?: string | null;
+  /**
+   * What this person is measured against — and therefore which shift card
+   * they see.
+   *
+   * `FIXED` asks "am I on time?" and the hero before clocking in is the
+   * rostered start. `FLEXIBLE` asks "am I on track this month?" and the hero
+   * is hours against `monthlyHourBudget`. `NONE` promises nothing and gets
+   * **no progress track at all** — ⚠️ a bar with no target invents one.
+   *
+   * ⚠️ SENT ON LOGIN ONLY. `auth.service.ts` puts it on the login context and
+   * on neither of the other two request-context builders — refresh does not
+   * set it, and validateToken SELECTS it and never returns it. So a session
+   * restored from a token has no schedule kind, and the card reads `NONE`.
+   *
+   * That is the honest fallback rather than a bug in the card: absent reads as
+   * `NONE`, which shows a total and NO progress bar, because a bar with no
+   * target invents one. Putting it on all three builders is a server change
+   * and was declined.
+   */
+  scheduleType?: 'FIXED' | 'FLEXIBLE' | 'NONE' | null;
+  /**
+   * Target hours per month. Only meaningful for `FLEXIBLE`.
+   *
+   * ⚠️ NOT SENT BY ANY AUTH PATH TODAY, so it is always null and a FLEXIBLE
+   * member gets no month bar. Declared here because the card already asks the
+   * right question and will answer it the day the field travels — and because
+   * a null budget renders nothing, which is better than a bar measuring
+   * somebody against a number nobody set.
+   */
+  monthlyHourBudget?: number | null;
   // Manual availability override (null = auto from task).
   presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null;
   // Per-user clock display preference ("12h" | "24h"); display-only.

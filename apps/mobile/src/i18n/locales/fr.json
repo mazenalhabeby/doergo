@@ -223,11 +223,12 @@
     "tasks": "Tâches",
     "createTask": "Créer",
     "manage": "Gérer",
-    "attendance": "Présences",
+    "attendance": "Temps",
     "timeOff": "Congés",
     "team": "Équipe",
     "profile": "Profil",
-    "more": "Plus"
+    "more": "Plus",
+    "messages": "Chat"
   },
   "home": {
     "admin": {
@@ -2273,7 +2274,10 @@
       "expiring_other": "{{count}} documents expirent bientôt",
       "partUpload": "{{count}} à envoyer",
       "partSign": "{{count}} à signer",
-      "blocking": "Aucune mission ne peut vous être confiée tant que ce document n'est pas fourni et validé."
+      "blocking": "Aucune mission ne peut vous être confiée tant que ce document n'est pas fourni et validé.",
+      "countersign": "Signer le {{label}} de {{name}}",
+      "countersignNote": "Le document de quelqu'un d'autre, en attente de vous.",
+      "countersignMore": "et {{count}} autres vous attendent"
     },
     "onBehalfOf": "Pour {{name}}",
     "pages": {
@@ -2813,5 +2817,52 @@
     "update": "Mettre à jour",
     "later": "Plus tard",
     "note": "Nous vous le rappellerons demain."
+  },
+  "shortcuts": {
+    "documents": "Documents",
+    "documentsDesc": "Tout ce que vous devez et tout ce qui vous a été remis",
+    "sign": "Signer",
+    "signDesc": "Documents en attente de votre signature",
+    "myEquipment": "Mon matériel",
+    "myEquipmentDesc": "Ce que vous détenez en ce moment",
+    "sync": "Synchro",
+    "syncDesc": "Ce qui n'est pas encore arrivé au bureau",
+    "overtime": "Heures sup.",
+    "overtimeDesc": "Temps supplémentaire, tour par tour",
+    "logExpense": "Saisir un reçu",
+    "logExpenseDesc": "Photographier un reçu pour votre matériel",
+    "scanCard": "Scanner carte",
+    "scanCardDesc": "Une carte de visite devient un client",
+    "addClient": "Nouveau client",
+    "addClientDesc": "Un nouveau nom dans le carnet",
+    "sendDoc": "Envoyer doc.",
+    "sendDocDesc": "Remettre un document à quelqu'un",
+    "planRoute": "Planifier",
+    "planRouteDesc": "Les arrêts du jour, dans un ordre roulable",
+    "support": "Assistance",
+    "supportDesc": "Demandez-nous de l'aide",
+    "equipmentLog": "Journal matériel",
+    "equipmentLogDesc": "Ce qui a été fait sur un matériel, et quand",
+    "newJob": "Nouvelle tâche",
+    "newJobDesc": "Créer une tâche pour quelqu’un"
+  },
+  "shiftClock": {
+    "onTheClock": "EN SERVICE",
+    "notOnTheClock": "HORS SERVICE",
+    "onARest": "EN PAUSE",
+    "needsYourTime": "IL MANQUE VOTRE HEURE",
+    "queued": "EN ATTENTE",
+    "readyToStart": "Prêt à commencer",
+    "whenDidYouLeave": "À quelle heure êtes-vous parti ?",
+    "leftRunning": "Le poste est resté ouvert, nous l'avons clôturé. Indiquez-nous l'heure réelle.",
+    "counted": "{{counted}} comptabilisé",
+    "countedFrozen": "{{counted}} comptabilisé, ne compte pas en ce moment",
+    "restDue": "pause à {{time}}",
+    "restOverdue_one": "Votre pause était due il y a {{count}} minute",
+    "restOverdue_other": "Votre pause était due il y a {{count}} minutes",
+    "startRest": "Commencer la pause",
+    "endRest": "Terminer la pause",
+    "break": "Pause",
+    "setRealTime": "Indiquer l'heure réelle"
   }
 }

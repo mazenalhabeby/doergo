@@ -220,14 +220,15 @@
   "tabs": {
     "home": "Home",
     "dashboard": "Dashboard",
-    "tasks": "Tasks",
+    "tasks": "Jobs",
     "createTask": "Create Task",
     "manage": "Manage",
-    "attendance": "Attendance",
+    "attendance": "Time",
     "timeOff": "Time Off",
     "team": "Team",
     "profile": "Profile",
-    "more": "More"
+    "more": "More",
+    "messages": "Chat"
   },
   "home": {
     "admin": {
@@ -2273,7 +2274,10 @@
       "expiring_other": "{{count}} documents expire soon",
       "partUpload": "{{count}} to upload",
       "partSign": "{{count}} to sign",
-      "blocking": "You cannot be given work until this is supplied and approved."
+      "blocking": "You cannot be given work until this is supplied and approved.",
+      "countersign": "Sign {{name}}'s {{label}}",
+      "countersignNote": "Somebody else's document, waiting on you.",
+      "countersignMore": "and {{count}} more waiting on you"
     },
     "onBehalfOf": "For {{name}}",
     "pages": {
@@ -2813,5 +2817,52 @@
     "update": "Update now",
     "later": "Later",
     "note": "We will remind you again tomorrow."
+  },
+  "shortcuts": {
+    "documents": "Documents",
+    "documentsDesc": "Everything you owe, and everything issued to you",
+    "sign": "Sign",
+    "signDesc": "Documents waiting for your signature",
+    "myEquipment": "My equipment",
+    "myEquipmentDesc": "What you are holding right now",
+    "sync": "Sync",
+    "syncDesc": "What is still waiting to reach the office",
+    "overtime": "Overtime",
+    "overtimeDesc": "Extra time asked of you, round by round",
+    "logExpense": "Log expense",
+    "logExpenseDesc": "Photograph a receipt for something you hold",
+    "scanCard": "Scan card",
+    "scanCardDesc": "Turn a business card into a client",
+    "addClient": "Add client",
+    "addClientDesc": "A new name in the book",
+    "sendDoc": "Send doc",
+    "sendDocDesc": "Issue a document to somebody",
+    "planRoute": "Plan route",
+    "planRouteDesc": "Today's stops, in an order that drives",
+    "support": "Support",
+    "supportDesc": "Ask us for help",
+    "equipmentLog": "Equipment log",
+    "equipmentLogDesc": "What was done to a thing, and when",
+    "newJob": "New job",
+    "newJobDesc": "Raise a job for somebody"
+  },
+  "shiftClock": {
+    "onTheClock": "ON THE CLOCK",
+    "notOnTheClock": "NOT ON THE CLOCK",
+    "onARest": "ON A REST",
+    "needsYourTime": "NEEDS YOUR TIME",
+    "queued": "QUEUED",
+    "readyToStart": "Ready to start",
+    "whenDidYouLeave": "When did you leave?",
+    "leftRunning": "It was left running, so we closed it for you. Tell us the real time.",
+    "counted": "counted {{counted}}",
+    "countedFrozen": "counted {{counted}}, not counting now",
+    "restDue": "rest due {{time}}",
+    "restOverdue_one": "Your rest was due {{count}} minute ago",
+    "restOverdue_other": "Your rest was due {{count}} minutes ago",
+    "startRest": "Start the rest",
+    "endRest": "End the rest",
+    "break": "Break",
+    "setRealTime": "Set the real time"
   }
 }

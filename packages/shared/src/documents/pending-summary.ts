@@ -54,13 +54,25 @@ export interface PendingSummary {
   names: string[];
   /** At least one of them stops work being assigned. */
   blocksWork: boolean;
+  /**
+   * The signature that is somebody ELSE'S, waiting on you.
+   *
+   * *"Sign Anna Müller's time sheet"* is a different instruction from *"1
+   * document to sign"* — only one of them has a colleague blocked at the other
+   * end — and `forMember` has been on the wire since `pendingForMember` was
+   * written, dropped here before the row was built.
+   */
+  countersign: { title: string; forMember: string } | null;
+  countersignCount: number;
 }
 
 export function summarisePending(input: {
   toUpload: { label: string; blocksWork?: boolean }[];
-  toSign: { title: string }[];
+  toSign: { title: string; forMember?: string | null }[];
   expiring: { label: string }[];
 }): PendingSummary {
+  const countersigns = input.toSign.filter((d) => !!d.forMember);
+
   const uploadCount = input.toUpload.length;
   const signCount = input.toSign.length;
   const expiringCount = input.expiring.length;
@@ -93,10 +105,26 @@ export function summarisePending(input: {
     : signCount > 0 ? input.toSign.map((d) => d.title)
     : input.expiring.map((r) => r.label);
 
+  /*
+    ONE, never a list.
+
+    The second line is a person's name, and two of them is a paragraph on a
+    home screen. When several are waiting the card names the first and the
+    count carries the rest — the screen behind it lists them.
+  */
+  const firstCountersign = countersigns[0];
+  const countersign =
+    // Only when it is the HEADLINE — it is a second line under "1 document to
+    // sign", not a replacement for whatever else the member owes.
+    titleKey === 'toSign' && firstCountersign
+      ? { title: firstCountersign.title, forMember: firstCountersign.forMember as string }
+      : null;
+
   return {
     empty, titleKey, count,
     uploadCount, signCount, expiringCount,
     actionCount: uploadCount + signCount,
     mixed, names, blocksWork,
+    countersign, countersignCount: countersigns.length,
   };
 }

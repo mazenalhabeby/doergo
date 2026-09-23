@@ -204,7 +204,23 @@ export default function AppLayout() {
           },
           headerTintColor: COLORS.primary,
           contentStyle: { backgroundColor: colors.surface },
-          animation: 'none',
+          /*
+            Pushed screens SLIDE. This was `'none'`, so every push — a task, a
+            document, a client — replaced the screen in a single frame with
+            nothing to say a new thing had arrived on top of the old one, and
+            nothing to say the back gesture would take it away again.
+
+            ⚠️ `slide_from_right` and not something of our own. It is the
+            platform's own push on both iOS and Android, so the back SWIPE
+            tracks it — a custom animation here would leave the gesture
+            dragging one thing while the screen does another. The character
+            belongs in the tab pill, which nothing else owns.
+
+            The modals below keep `slide_from_bottom`: a sheet comes up, a page
+            comes across, and the difference is how you know which one you are
+            looking at before you read it.
+          */
+          animation: 'slide_from_right',
         }}
       >
         <Stack.Screen
