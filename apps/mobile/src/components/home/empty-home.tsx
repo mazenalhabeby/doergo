@@ -116,6 +116,14 @@ export function EmptyHome({
         </View>
       ))}
 
+      {/*
+        ⚠️ NO BUTTONS WHEN THERE IS NOTHING BEHIND THEM. With nothing available
+        this row rendered `See all 0` — a control that opens an empty sheet,
+        offering the member a choice that does not exist. A member whose
+        entitlement grants them no widget at all is a real case, and so is the
+        day a registry is being rebuilt.
+      */}
+      {totalAvailable === 0 ? null : (
       <View style={{ flexDirection: 'row', gap: amazen.space(3), marginTop: amazen.space(2) }}>
         {ready.length === 2 ? (
           <Pressable
@@ -155,6 +163,7 @@ export function EmptyHome({
           </AText>
         </Pressable>
       </View>
+      )}
     </View>
   );
 }

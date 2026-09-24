@@ -356,7 +356,6 @@
       "support": "Soporte"
     },
     "nothingYet": {},
-    "live": {},
     "edit": {
       "hint": "Mantén pulsado para mover · toca ⊖ para quitar",
       "add": "Añadir widget",
@@ -2883,16 +2882,6 @@
     "endRest": "Terminar descanso",
     "break": "Descanso",
     "setRealTime": "Poner la hora real"
-  },
-  "widgets": {
-    "shiftClock": "Reloj de turno",
-    "myWork": "Mi trabajo",
-    "myRoute": "Ruta de hoy",
-    "crew": "Equipo",
-    "needsYou": "Te espera",
-    "documentsDue": "Documentos",
-    "clients": "Clientes",
-    "shortcuts": "Accesos"
   },
   "crew": {
     "onTheClock": "de servicio",

@@ -48,7 +48,7 @@ const THEMED_ONLY = [
 const strip = (src: string) =>
   src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
-describe('the components built for my-work follow the theme', () => {
+describe('the task components follow the theme', () => {
   const MINE = ['tasks/work-scope.tsx', 'tasks/next-up-card.tsx'];
 
   it.each(MINE)('%s takes its colours from useTheme', (rel) => {

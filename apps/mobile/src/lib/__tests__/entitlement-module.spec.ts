@@ -64,7 +64,19 @@ describe('one question, asked once', () => {
       no profile, and for the two permission-derived modules.
     */
     const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
-    for (const f of ['home/entitlement.ts', 'components/home/my-work-card.tsx']) {
+    /*
+      ⚠️ THE WHOLE TREE, NOT A NAMED FILE. This listed one widget by path and
+      the widget was later deleted — a guard that names its subject stops
+      guarding the moment the subject moves. Every file under `home/` and every
+      widget that lands in `components/home/` is checked, so a new one is
+      covered on the day it is written.
+    */
+    const files = [
+      ...fs.readdirSync(path.join(SRC, 'home')).map((f) => `home/${f}`),
+      ...fs.readdirSync(path.join(SRC, 'components/home')).map((f) => `components/home/${f}`),
+    ].filter((f) => /\.tsx?$/.test(f));
+    expect(files.length).toBeGreaterThan(3);
+    for (const f of files) {
       expect(strip(fs.readFileSync(path.join(SRC, f), 'utf8'))).not.toMatch(/\bhasModule\(/);
     }
   });

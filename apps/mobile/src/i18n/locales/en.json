@@ -363,11 +363,6 @@
       "keepBoth": "Keep both",
       "seeAll": "See all {{n}}"
     },
-    "live": {
-      "documents": "{{n}} waiting on you",
-      "documentsClear": "Nothing outstanding",
-      "sentBack": "{{n}} sent back"
-    },
     "edit": {
       "hint": "Hold to move · tap ⊖ to remove",
       "add": "Add a widget",
@@ -2894,16 +2889,6 @@
     "endRest": "End the rest",
     "break": "Break",
     "setRealTime": "Set the real time"
-  },
-  "widgets": {
-    "shiftClock": "Shift clock",
-    "myWork": "My work",
-    "myRoute": "Today's route",
-    "crew": "Crew",
-    "needsYou": "Needs you",
-    "documentsDue": "Documents",
-    "clients": "Clients",
-    "shortcuts": "Shortcuts"
   },
   "crew": {
     "onTheClock": "on the clock",

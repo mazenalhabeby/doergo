@@ -23,7 +23,7 @@ import {
   LIFT_FACTOR,
 } from '../components/home/editable-widget';
 import { WidgetGallery } from '../components/home/widget-gallery';
-import { useDocumentRequirements } from '../contexts/document-requirements-context';
+import { answerFor, useWidgetAnswers } from './answers';
 import { useHomeLayout } from './use-home-layout';
 import type { WidgetRow } from './registry';
 
@@ -137,31 +137,12 @@ export function HomeScreen() {
   }, []);
 
   /*
-    ⚠️ EVERY LIVE VALUE COMES FROM SOMETHING ALREADY ON SCREEN. A pill in the
-    empty state must never be the reason a request happens — the sentence is a
-    courtesy, and a courtesy that costs a round trip is not one.
+    ⚠️ ONE HOOK, READ ONCE, FOR EVERY WIDGET — including the ones that are NOT
+    on this member's home, because §1's two suggestions and every page of the
+    gallery are about exactly those. `answers.ts` holds the reasons: hooks
+    cannot be called from a filtered list, and nothing in there may fetch.
   */
-  const docs = useDocumentRequirements();
-  const live = React.useMemo(() => ({
-    value: (row: { key: string }): string | null => {
-      if (row.key === 'documents-due') {
-        if (!docs.ready) return null;
-        const n = docs.total;
-        return n > 0
-          ? t('home.live.documents', { n, defaultValue: `${n} waiting on you` })
-          : t('home.live.documentsClear', { defaultValue: 'Nothing outstanding' });
-      }
-      return null;
-    },
-    /*
-      ⚠️ HAS THE ANSWER ARRIVED? — §1 and §4 both refuse to offer a widget that
-      would render "loading". Where the screen can genuinely answer it, it
-      does; where a widget fetches privately and tells nobody, the honest
-      answer is yes and the gap is here rather than hidden behind a guess.
-    */
-    ready: (row: { key: string }): boolean =>
-      row.key === 'documents-due' ? docs.ready : true,
-  }), [docs, t]);
+  const answers = useWidgetAnswers();
 
   const rows = layout.rows;
 
@@ -174,8 +155,8 @@ export function HomeScreen() {
       question let a widget with nothing to show become a suggestion, and the
       card above it rendered nothing: an orphaned pill floating under a gap.
     */
-    () => layout.offScreen.slice(0, 2).map((row) => ({ row, line: live.value(row) })),
-    [layout.offScreen, live],
+    () => layout.offScreen.slice(0, 2).map((row) => ({ row, line: answerFor(answers, row.key).line })),
+    [layout.offScreen, answers],
   );
   const fullName = displayName(user);
   const initials = initialsOf(user);
@@ -439,7 +420,7 @@ export function HomeScreen() {
         visible={picking}
         onClose={() => setPicking(false)}
         offScreen={layout.offScreen}
-        hasData={(row) => live.ready(row)}
+        hasData={(row) => answerFor(answers, row.key).ready}
         onAdd={(key) => {
           /*
             ⚠️ THE SHEET CLOSES SO THE ARRIVAL IS VISIBLE, and the card lands

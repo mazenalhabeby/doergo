@@ -106,19 +106,53 @@ describe('rule 4 — two suggestions, and only ones whose data arrived', () => {
     expect(code('components/home/empty-home.tsx')).toMatch(/\.slice\(0, 2\)/);
   });
 
+  it('offers no buttons when there is nothing behind them', () => {
+    /*
+      With nothing available the row rendered `See all 0` — a control that
+      opens an empty sheet, offering a choice that does not exist. A member
+      whose entitlement grants them no widget at all is a real case.
+    */
+    expect(code('components/home/empty-home.tsx')).toMatch(/totalAvailable === 0 \? null/);
+  });
+
   it('drops a suggestion with no live answer rather than showing "loading"', () => {
     expect(code('components/home/empty-home.tsx')).toMatch(/s\.line !== null/);
   });
 
-  it('the documents answer waits for the fetch to land, not for a zero', () => {
+  it('one hook answers for every widget, and nothing in it fetches', () => {
     /*
-      ⚠️ `total === 0` cannot answer "has it arrived" — it is also what a member
-      with nothing outstanding looks like. Offering them a card because it is
-      still loading, and refusing them one because they are up to date, are two
-      different mistakes with the same symptom.
+      ⚠️ THE OBVIOUS SHAPE IS ILLEGAL. A `useAnswer()` on each registry row
+      reads beautifully and is a hook called from a filtered list — the rows
+      are filtered by entitlement and by what is already on the home, so the
+      set changes between renders. `rules-of-hooks.spec.ts` exists here because
+      that mistake has been made in this codebase before.
+
+      ⚠️ AND IT MUST NOT FETCH. The question is asked about widgets that are
+      NOT on the member's home — the two suggestions, and every page of the
+      gallery — so a value that cost a request would fire one round trip per
+      widget the member does not have, every time the sheet opens.
     */
-    expect(code('contexts/document-requirements-context.tsx')).toMatch(/ready: boolean;/);
-    expect(code('home/home-screen.tsx')).toMatch(/if \(!docs\.ready\) return null;/);
+    const answers = code('home/answers.ts');
+    expect(answers).toMatch(/export function useWidgetAnswers\(\)/);
+    expect(answers).not.toMatch(/Api\.|fetch\(|axios/);
+
+    const home = code('home/home-screen.tsx');
+    expect(home).toMatch(/const answers = useWidgetAnswers\(\);/);
+    // The screen looks a widget up. It never names one.
+    expect(home).toMatch(/answerFor\(answers, row\.key\)/);
+    expect(home).not.toMatch(/row\.key === '/);
+  });
+
+  it('separates "the answer arrived" from "the answer is zero"', () => {
+    /*
+      A count of zero is also what a member with nothing outstanding looks
+      like. Offering somebody a card because it is still loading, and refusing
+      them one because they are up to date, are two different mistakes with the
+      same symptom — so `ready` is its own field.
+    */
+    const answers = code('home/answers.ts');
+    expect(answers).toMatch(/ready: boolean;/);
+    expect(answers).toMatch(/line: string \| null;/);
   });
 });
 
@@ -200,13 +234,18 @@ describe('rule 8 — a hidden key is never deleted from storage', () => {
 });
 
 describe('rule 9 — glass on three cards only', () => {
-  it('names exactly the three, and nothing else', () => {
+  it('no row takes glass but shift clock, crew and clients', () => {
+    /*
+      ⚠️ A SUBSET, NOT AN EXACT LIST. The set is being rebuilt one widget at a
+      time, so pinning the exact three fails on every day but the last. What
+      the rule actually forbids is a FOURTH glass card, and that is what this
+      asserts — true of an empty registry and true of a full one.
+    */
     const registry = code('home/registry.tsx');
     const rows = [...registry.matchAll(/key: '([^']+)',[\s\S]*?surface: '(glass|well)'/g)]
       .map((m) => ({ key: m[1], surface: m[2] }));
-    const glass = rows.filter((r) => r.surface === 'glass').map((r) => r.key).sort();
-    // `clients` is not registered yet — it has no component, per rule 11.
-    expect(glass).toEqual(['crew', 'shift-clock']);
+    const glass = rows.filter((r) => r.surface === 'glass').map((r) => r.key);
+    expect(glass.filter((k) => !['shift-clock', 'crew', 'clients'].includes(k))).toEqual([]);
   });
 });
 
@@ -259,11 +298,30 @@ describe('rule 11 — no placeholder is in the registry', () => {
     expect(registry).not.toMatch(/not built yet/);
   });
 
-  it('every row has a component and a surface', () => {
+  it('every row it DOES have is complete', () => {
+    /*
+      Not "there are at least n" — the set is being rebuilt one at a time, and
+      a count is not an invariant. Completeness is: every row carries a
+      surface, an empty-state decision and a component.
+    */
     const keys = [...registry.matchAll(/^    key: '([^']+)',$/gm)].map((m) => m[1]);
-    const surfaces = [...registry.matchAll(/^    surface: '(glass|well)',$/gm)].map((m) => m[1]);
-    expect(keys.length).toBeGreaterThan(3);
-    expect(surfaces.length).toBe(keys.length);
+    for (const field of ['surface', 'empty', 'Component']) {
+      const n = [...registry.matchAll(new RegExp(`^    ${field}:`, 'gm'))].length;
+      expect(n).toBe(keys.length);
+    }
+  });
+
+  it('the default order names widgets that exist', () => {
+    /*
+      ⚠️ A key that names nothing is skipped SILENTLY — which is right for a
+      member whose entitlement changed, and hides a typo forever.
+    */
+    const keys = new Set(
+      [...registry.matchAll(/^    key: '([^']+)',$/gm)].map((m) => m[1]),
+    );
+    const order = registry.slice(registry.indexOf('DEFAULT_ORDER'));
+    const listed = [...order.matchAll(/'([a-z-]+)',/g)].map((m) => m[1]);
+    for (const k of listed) expect(keys.has(k)).toBe(true);
   });
 });
 

@@ -356,7 +356,6 @@
       "support": "Support"
     },
     "nothingYet": {},
-    "live": {},
     "edit": {
       "hint": "Halten zum Verschieben · ⊖ tippen zum Entfernen",
       "add": "Widget hinzufügen",
@@ -2883,16 +2882,6 @@
     "endRest": "Pause beenden",
     "break": "Pause",
     "setRealTime": "Echte Zeit eintragen"
-  },
-  "widgets": {
-    "shiftClock": "Schichtuhr",
-    "myWork": "Meine Arbeit",
-    "myRoute": "Route heute",
-    "crew": "Team vor Ort",
-    "needsYou": "Wartet auf Sie",
-    "documentsDue": "Dokumente",
-    "clients": "Kunden",
-    "shortcuts": "Kurzbefehle"
   },
   "crew": {
     "onTheClock": "im Dienst",

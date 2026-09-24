@@ -14,7 +14,6 @@ export type { PressableScaleProps } from './pressable-scale';
 export { BlurSheet } from './blur-sheet';
 export { SheetPanel } from './sheet-panel';
 export { DocumentFilterBar } from './document-filter-bar';
-export { DocumentsReminderCard } from './documents-reminder-card';
 export type { DocumentFilters } from './document-filter-bar';
 export { DocumentScanner } from './document-scanner';
 export { SupplyDocumentSheet } from './supply-document-sheet';
