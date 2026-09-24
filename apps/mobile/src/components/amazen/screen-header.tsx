@@ -52,14 +52,28 @@ export function ScreenHeader({
   title: string;
   subtitle?: string;
   /**
-   * Replaces the big line while a MODE is open — `Hold to move · tap ⊖ to
-   * remove`.
+   * Replaces the WHOLE text block while a MODE is open — `Hold to move · tap
+   * ⊖ to remove`.
    *
-   * ⚠️ IT OCCUPIES THE SAME 30pt BOX THE NAME DOES. The header sits above the
-   * scroll view, so anything that changes its height moves the whole column —
-   * and the one rule both phones keep is that entering edit mode does not move
-   * the content. So the line is swapped, never added, and the box it is drawn
-   * in does not resize.
+   * ⚠️ IT OCCUPIES EXACTLY THE HEIGHT THE DATE AND THE NAME DID. The header
+   * sits above the scroll view, so anything that changes its height moves the
+   * whole column — and the one rule both phones keep is that entering edit
+   * mode does not move the content. The block is swapped, never added, and it
+   * does not resize.
+   *
+   * ⚠️ AND IT TAKES BOTH LINES, WHICH IS THE FIX FOR A REAL BUG. It used to
+   * replace only the name, leaving the date above it and one 13pt line for the
+   * sentence. On a 390pt iPhone — beside ＋, Done and the avatar — that is
+   * about 193pt of room for a 198pt string, so iOS read `Hold to move · tap ⊖
+   * to remo…` while the wider Android emulator read it whole. A member on a
+   * small phone was shown a truncated instruction about a mode they had just
+   * entered. Two lines is enough room on every phone the app supports,
+   * including an SE.
+   *
+   * ⚠️ AND THE DATE GOES WHILE THE MODE IS OPEN, on purpose. Editing is
+   * transient and the header is already showing controls that only exist in
+   * it; what day it is can wait thirty seconds. Both platforms replace the
+   * whole bar in an edit mode rather than editing one line of it.
    */
   hint?: string;
   avatarUrl?: string | null;
@@ -115,56 +129,58 @@ export function ScreenHeader({
       ]}
     >
       <View style={{ flex: 1, minWidth: 0 }}>
-        <AText variant="caption" tone="onGradient" numberOfLines={1} style={{ fontSize: 13 }}>
-          {date}
-        </AText>
-        {/*
-          ⚠️ UPPERCASE IS A `textTransform`, NOT THE STRING.
-
-          The organization's name is its own — "BILLA AG" is stored that way and
-          "Wien Energie" is not. Upper-casing it here is presentation and can be
-          undone; upper-casing it in the data would be a company renamed by a
-          stylesheet. And `toLocaleUpperCase` respects Turkish dotless i, where
-          the ASCII version does not.
-        */}
         {hint ? (
-          <View style={{ height: 30, justifyContent: 'center', marginTop: 2 }}>
-            <AText variant="caption" tone="onGradient" numberOfLines={1} style={{ fontSize: 13 }}>
+          /*
+            ⚠️ 51pt — the date's 19 plus its 2pt gap plus the name's 30. The
+            column below must not move by a pixel when the mode opens.
+          */
+          <View style={{ height: 51, justifyContent: 'center' }}>
+            <AText variant="caption" tone="onGradient" numberOfLines={2} style={{ fontSize: 13, lineHeight: 18 }}>
               {hint}
             </AText>
           </View>
         ) : (
-        <AText
-          variant="h2"
-          tone="strong"
-          numberOfLines={1}
-          style={{
-            /*
-              ⚠️ NO `fontWeight` BESIDE A NAMED FACE — IT MEANS DIFFERENT
-              THINGS ON THE TWO PLATFORMS.
+          <>
+            <AText variant="caption" tone="onGradient" numberOfLines={1} style={{ fontSize: 13 }}>
+              {date}
+            </AText>
+            {/*
+              ⚠️ UPPERCASE IS A `textTransform`, NOT THE STRING.
 
-              This was `fontWeight: '700'` on top of Readex Pro Medium. Android
-              IGNORES a weight when the family names a specific loaded face, so
-              it drew Medium 500 — which is what was measured against the
-              design reference and approved. iOS SYNTHESISES a faux bold from
-              the same face, so the member's name was visibly heavier there
-              than on the screen anyone had looked at.
+              The organization's name is its own — "BILLA AG" is stored that way
+              and "Wien Energie" is not. Upper-casing it here is presentation and
+              can be undone; upper-casing it in the data would be a company
+              renamed by a stylesheet. And `toLocaleUpperCase` respects Turkish
+              dotless i, where the ASCII version does not.
+            */}
+            <AText
+              variant="h2"
+              tone="strong"
+              numberOfLines={1}
+              style={{
+                /*
+                  ⚠️ NO `fontWeight` BESIDE A NAMED FACE — IT MEANS DIFFERENT
+                  THINGS ON THE TWO PLATFORMS.
 
-              Readex Pro ships 600 and 700 as real faces; if this ever wants to
-              be heavier, LOAD one and name it here. A weight next to a family
-              is not a way to ask for that — it is a way to get two different
-              answers.
-            */
-            fontFamily: amazen.font.sansMedium,
-            fontSize: 23,
-            lineHeight: 30,
-            letterSpacing: 0.2,
-            textTransform: 'uppercase',
-            marginTop: 2,
-          }}
-        >
-          {title}
-        </AText>
+                  This was `fontWeight: '700'` on top of Readex Pro Medium.
+                  Android IGNORES a weight when the family names a specific
+                  loaded face, so it drew Medium 500 — which is what was
+                  measured against the design reference and approved. iOS
+                  SYNTHESISES a faux bold from the same face, so the member's
+                  name was visibly heavier there than on the screen anyone had
+                  looked at.
+                */
+                fontFamily: amazen.font.sansMedium,
+                fontSize: 23,
+                lineHeight: 30,
+                letterSpacing: 0.2,
+                textTransform: 'uppercase',
+                marginTop: 2,
+              }}
+            >
+              {title}
+            </AText>
+          </>
         )}
       </View>
 

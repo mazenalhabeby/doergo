@@ -388,10 +388,26 @@ describe('§3 — entering the mode moves nothing', () => {
     expect(home.slice(header, list)).toContain("label: '＋'");
   });
 
-  it('the hint replaces the name in a box of the same height', () => {
-    expect(code('components/amazen/screen-header.tsx')).toMatch(
-      /hint \? \(\s*<View style=\{\{ height: 30/,
-    );
+  it('the hint replaces the WHOLE text block, in a box of the same height', () => {
+    /*
+      ⚠️ THE BUG: it replaced only the NAME, leaving the date above it and one
+      13pt line for the sentence. On a 390pt iPhone — beside ＋, Done and the
+      avatar — that is about 193pt of room for a 198pt string, so iOS read
+      `Hold to move · tap ⊖ to remo…` while the wider Android emulator read it
+      whole. A member on a small phone got a truncated instruction about a mode
+      they had just entered.
+
+      Two lines at 13/18 is 36pt, and the block it replaces is the date's 19
+      plus a 2pt gap plus the name's 30 — so the column below does not move by
+      a pixel when the mode opens, which is the rule this screen was rewritten
+      three times to keep.
+    */
+    const header = code('components/amazen/screen-header.tsx');
+    expect(header).toMatch(/hint \? \(\s*<View style=\{\{ height: 51/);
+    expect(header).toMatch(/numberOfLines=\{2\}[^>]*fontSize: 13, lineHeight: 18/);
+    // The date is inside the else branch — it is not drawn while a mode is open.
+    const at = header.indexOf('hint ? (');
+    expect(header.slice(at, header.indexOf(') : (', at))).not.toContain('{date}');
   });
 });
 
