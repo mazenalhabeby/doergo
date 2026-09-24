@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { AText, WidgetBoundary } from '../amazen';
 import { shadowGlass } from '../amazen/surfaces';
-import type { WidgetRow } from '../../home/registry';
+import { widgetTitle, type WidgetRow } from '../../home/registry';
 
 /**
  * ONE CARD, IN BOTH MODES — AND THEY ARE THE SAME CARD.
@@ -145,15 +145,14 @@ function Arrows({
   );
 }
 
-export function EditableWidget({
+function EditableWidgetInner({
   row,
   editing,
   isActive,
   drag,
   onEnterEdit,
   onRemove,
-  onMoveUp,
-  onMoveDown,
+  onMove,
   canUp,
   canDown,
   screenReader,
@@ -165,10 +164,17 @@ export function EditableWidget({
   isActive: boolean;
   /** `renderItem` gave us this — calling it starts the drag. */
   drag: () => void;
+  /*
+    ⚠️ EVERY CALLBACK TAKES THE KEY, so the parent can pass ONE stable function
+    per action instead of a fresh closure per row per render. `renderItem` runs
+    for every card on every parent state change — entering edit mode, a landed
+    ring expiring, a drag starting — and a new `() => remove(item.key)` on each
+    of them defeats `React.memo` on a component that renders a whole live
+    widget underneath it.
+  */
   onEnterEdit: () => void;
-  onRemove: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
+  onRemove: (key: string) => void;
+  onMove: (key: string, direction: 'up' | 'down') => void;
   canUp: boolean;
   canDown: boolean;
   screenReader: boolean;
@@ -178,7 +184,7 @@ export function EditableWidget({
   const { amazen, isDark } = useTheme();
   const { t } = useTranslation();
   const c = amazen.color;
-  const title = t(row.title, { defaultValue: row.key });
+  const title = widgetTitle(row, t);
 
   /*
     ⚠️ A TRANSFORM, NEVER A LAYOUT ANIMATION. `scale` moves pixels and touches
@@ -213,7 +219,13 @@ export function EditableWidget({
     carries the glass shadow, which is what "lifted, floating" actually reads
     as — and it does it without a widget having to know it is being dragged.
   */
-  const halo = useAnimatedStyle(() => ({ opacity: isActive ? 1 : 0 }));
+  /*
+    ⚠️ A PLAIN STYLE, NOT A WORKLET. `isActive` is an ordinary React prop, so
+    `useAnimatedStyle` here returned a constant and bought a worklet per card
+    for nothing. The lift is instant on both platforms anyway — it is the
+    moment the card leaves the column, and a fade would make it look uncertain.
+  */
+  const halo = { opacity: isActive ? 1 : 0 };
 
   /*
     ⚠️ ENTERING IS AN RNGH GESTURE; DRAGGING IS AN RN PRESSABLE.
@@ -265,9 +277,9 @@ export function EditableWidget({
           : undefined
       }
       onAccessibilityAction={(e) => {
-        if (e.nativeEvent.actionName === 'moveUp') onMoveUp();
-        else if (e.nativeEvent.actionName === 'moveDown') onMoveDown();
-        else if (e.nativeEvent.actionName === 'remove') onRemove();
+        if (e.nativeEvent.actionName === 'moveUp') onMove(row.key, 'up');
+        else if (e.nativeEvent.actionName === 'moveDown') onMove(row.key, 'down');
+        else if (e.nativeEvent.actionName === 'remove') onRemove(row.key);
       }}
     >
       {/* the lift's glass rim + jade halo */}
@@ -336,7 +348,7 @@ export function EditableWidget({
       {editing ? (
         <RemoveBadge
           label={`${t('home.edit.remove', { defaultValue: 'Take off my home' })} — ${title}`}
-          onPress={onRemove}
+          onPress={() => onRemove(row.key)}
         />
       ) : null}
 
@@ -344,8 +356,8 @@ export function EditableWidget({
         <Arrows
           up={canUp}
           down={canDown}
-          onUp={onMoveUp}
-          onDown={onMoveDown}
+          onUp={() => onMove(row.key, 'up')}
+          onDown={() => onMove(row.key, 'down')}
           labelUp={`${t('home.edit.moveUp', { defaultValue: 'Move up' })} — ${title}`}
           labelDown={`${t('home.edit.moveDown', { defaultValue: 'Move down' })} — ${title}`}
         />
@@ -384,3 +396,18 @@ export function DropSlot() {
     />
   );
 }
+
+
+/**
+ * ⚠️ MEMOIZED, AND THAT IS NOT A MICRO-OPTIMISATION HERE.
+ *
+ * Each of these renders a whole live widget — its own hooks, its own data, its
+ * own subtree. `renderItem` runs for every card whenever the screen's state
+ * moves, which it does on entering and leaving edit mode, on every landed ring
+ * expiring, and on every drag. Without this, picking one card up re-renders
+ * every widget on the home.
+ *
+ * It only works because every callback above takes the key: a fresh closure
+ * per row would change the props on every render and this would skip nothing.
+ */
+export const EditableWidget = React.memo(EditableWidgetInner);

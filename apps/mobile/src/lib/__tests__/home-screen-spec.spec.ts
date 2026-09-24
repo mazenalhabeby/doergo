@@ -100,10 +100,21 @@ describe('rule 3 — previews are the real component, never a screenshot', () =>
 });
 
 describe('rule 4 — two suggestions, and only ones whose data arrived', () => {
-  it('takes two, never more', () => {
+  it('filters BEFORE it takes two, in one place', () => {
+    /*
+      ⚠️ THE RULE WAS SPLIT AND PICKED THE WRONG TWO. The screen took the first
+      two off-screen widgets and `EmptyHome` then dropped the ones with no
+      answer — so a first widget that had not loaded cost a suggestion while a
+      ready third one sat unused. §1 asks for two, and for only ones whose data
+      arrived: that is a filter then a take, not a take then a filter.
+    */
     const home = code('home/home-screen.tsx');
-    expect(home).toMatch(/layout\.offScreen\.slice\(0, 2\)/);
-    expect(code('components/home/empty-home.tsx')).toMatch(/\.slice\(0, 2\)/);
+    const at = home.indexOf('const suggestions');
+    expect(at).toBeGreaterThan(-1);
+    const block = home.slice(at, at + 500);
+    expect(block.indexOf('.filter(')).toBeLessThan(block.indexOf('.slice(0, 2)'));
+    // And the child renders what it is given rather than choosing again.
+    expect(code('components/home/empty-home.tsx')).not.toMatch(/\.slice\(0, 2\)/);
   });
 
   it('offers no buttons when there is nothing behind them', () => {
@@ -116,7 +127,8 @@ describe('rule 4 — two suggestions, and only ones whose data arrived', () => {
   });
 
   it('drops a suggestion with no live answer rather than showing "loading"', () => {
-    expect(code('components/home/empty-home.tsx')).toMatch(/s\.line !== null/);
+    // The filter moved to where the choosing happens — see the test above.
+    expect(code('home/home-screen.tsx')).toMatch(/s\.line !== null/);
   });
 
   it('one hook answers for every widget, and nothing in it fetches', () => {
@@ -186,10 +198,14 @@ describe('rule 6 — new widgets land at the bottom, always', () => {
 
   it('closes the sheet so the arrival is visible, and rings it', () => {
     const home = code('home/home-screen.tsx');
-    expect(home).toMatch(/setPicking\(false\);\s*\n\s*setLanded\(key\)/);
+    expect(home).toMatch(/setPicking\(false\);\s*\n\s*land\(key\)/);
     expect(code('components/home/editable-widget.tsx')).toMatch(
       /export const LANDED_MS = 30_000;/,
     );
+    // The ring's clock lives with the mode it belongs to, and is cleaned up.
+    const editing = code('home/use-home-editing.ts');
+    expect(editing).toMatch(/setTimeout\(\(\) => setLanded\(null\), LANDED_MS\)/);
+    expect(editing).toMatch(/clearTimeout\(ring\.current\)/);
   });
 });
 
@@ -226,10 +242,19 @@ describe('rule 8 — a hidden key is never deleted from storage', () => {
   });
 
   it('a drag never drops the keys entitlement filtered out of view', () => {
+    /*
+      ⚠️ ONE PIECE OF ARITHMETIC, NOT TWO. The drag and the accessibility
+      arrows both write a new visible order back into the slots it already
+      occupied; two copies is how one of them keeps a hidden key and the other
+      loses it. Both go through `withVisibleOrder`.
+    */
+    const list = code('home/arrange-list.ts');
+    expect(list).toMatch(/export function withVisibleOrder\(/);
+    expect(list).toMatch(/visible\.has\(k\) \? ordered\[i\+\+\]/);
     const hook = code('home/use-home-layout.ts');
-    const set = hook.slice(hook.indexOf('const setOrder ='));
-    expect(set.slice(0, 500)).toMatch(/const visible = new Set\(rows\.map\(\(r\) => r\.key\)\)/);
-    expect(set.slice(0, 500)).toMatch(/visible\.has\(k\) \? visibleKeys\[i\+\+\]/);
+    expect(hook).toMatch(/withVisibleOrder\(orderedKeys, onHomeKeys, visibleKeys\)/);
+    // `move` uses it too, rather than its own inline loop.
+    expect(list).toMatch(/const keys = withVisibleOrder\(layout\.keys/);
   });
 });
 
@@ -348,7 +373,7 @@ describe('§3 — entering the mode moves nothing', () => {
     expect(overhangs.length).toBeGreaterThan(0);
 
     const home = code('home/home-screen.tsx');
-    const pad = home.match(/contentContainerStyle=\{\{[\s\S]*?paddingTop: (\d+)/);
+    const pad = home.match(/paddingTop: (\d+)/);
     expect(pad).not.toBeNull();
     expect(Number(pad![1])).toBeGreaterThanOrEqual(Math.max(...overhangs));
     // Constant — never keyed on the mode.
@@ -419,8 +444,8 @@ describe('§5 — saved immediately, and nothing to confirm', () => {
 describe('§3 — the three taps', () => {
   it('impactLight on entering, selection on crossing, impactMedium on the drop', () => {
     const home = code('home/home-screen.tsx');
-    expect(home).toMatch(/impact\('light'\)/);
-    expect(home).toMatch(/onPlaceholderIndexChange=\{\(\) => selection\(\)\}/);
+    expect(code('home/use-home-editing.ts')).toMatch(/impact\('light'\)/);
+    expect(home).toMatch(/onPlaceholderIndexChange=\{selection\}/);
     expect(home).toMatch(/impact\('medium'\)/);
   });
 
@@ -453,5 +478,114 @@ describe('the copy the design refuses', () => {
 
   it('draws no dashed "Add a widget" outline on the empty home', () => {
     expect(code('components/home/empty-home.tsx')).not.toMatch(/dashed/);
+  });
+});
+
+describe('the render path — a column of live widgets, redrawn on every gesture', () => {
+  const home = code('home/home-screen.tsx');
+  const card = code('components/home/editable-widget.tsx');
+
+  it('memoizes the card, and gives it callbacks that survive a render', () => {
+    /*
+      ⚠️ THE TWO HALVES ONLY WORK TOGETHER. `renderItem` runs for every card
+      whenever the screen's state moves — entering edit mode, a ring expiring,
+      a drag starting — and each card renders a whole live widget underneath
+      it. `React.memo` alone buys nothing if the parent hands down a fresh
+      `() => remove(item.key)` each time, which is why every callback takes the
+      key and the parent passes ONE function per action.
+    */
+    expect(card).toMatch(/React\.memo\(EditableWidgetInner\)/);
+    expect(card).toMatch(/onRemove: \(key: string\) => void;/);
+    expect(card).toMatch(/onMove: \(key: string, direction: 'up' \| 'down'\) => void;/);
+    expect(home).toMatch(/onRemove=\{removeWidget\}/);
+    expect(home).toMatch(/onMove=\{moveBy\}/);
+    expect(home).not.toMatch(/on(Remove|Move\w*)=\{\(\) =>/);
+  });
+
+  it('builds no props in the render path that could be built once', () => {
+    // A fresh object identity per render re-runs the list's own diff for nothing.
+    expect(home).not.toMatch(/containerStyle=\{\{/);
+    expect(home).not.toMatch(/contentContainerStyle=\{\{/);
+    expect(home).toMatch(/const renderDropSlot = \(\) => <DropSlot \/>;/);
+  });
+
+  it('spends no worklet on a value that is not animated', () => {
+    /*
+      `isActive` is an ordinary React prop, so `useAnimatedStyle` around it
+      returned a constant and bought a worklet per card for nothing.
+    */
+    expect(card).not.toMatch(/useAnimatedStyle\(\(\) => \(\{ opacity: isActive/);
+  });
+
+  it('draws nothing until the saved order has landed', () => {
+    /*
+      The layout is read from the phone. Until it arrives the hook composes the
+      DEFAULT order, so a member who had arranged their home watched it
+      rearrange itself, and a member with an empty home saw the §1 empty state
+      flash before their widgets appeared.
+    */
+    expect(home).toMatch(/layout\.loading \? EMPTY_ROWS : layout\.rows/);
+    expect(code('home/registry.tsx')).toMatch(/EMPTY_ROWS: readonly WidgetRow\[\] = Object\.freeze/);
+  });
+
+  it('never leaves a timer holding a setter for a screen that is gone', () => {
+    for (const f of ['home/home-screen.tsx', 'home/use-home-editing.ts']) {
+      const src = code(f);
+      if (!/setTimeout\(/.test(src)) continue;
+      expect(src).toMatch(/clearTimeout\(/);
+      expect(src).toMatch(/useEffect\(\(\) => \(\) =>/);
+    }
+  });
+});
+
+describe('a widget the member is entitled to is always reachable', () => {
+  it('the gallery offers everything available that is not on the home', () => {
+    /*
+      ⚠️ THE BUG THIS EXISTS FOR: `offScreen` asked only for the HIDDEN set, so
+      a registry row that is not in `DEFAULT_ORDER` — never in the saved order,
+      never hidden — was in neither list. Entitled to it, not on the home, not
+      in the gallery: registered and unreachable, with nothing on screen to say
+      so.
+    */
+    const hook = code('home/use-home-layout.ts');
+    expect(hook).toMatch(/available\.filter\(\(w\) => !onHomeKeys\.has\(w\.key\)\)/);
+    expect(hook).not.toMatch(/available\.filter\(\(w\) => layout\.hidden\.includes/);
+  });
+});
+
+describe('one rule, one place', () => {
+  const HOME_FILES = [
+    'home/home-screen.tsx',
+    'home/use-home-layout.ts',
+    'home/use-home-editing.ts',
+    'home/answers.ts',
+    'components/home/editable-widget.tsx',
+    'components/home/empty-home.tsx',
+    'components/home/widget-gallery.tsx',
+  ];
+
+  it('nobody but the registry knows how to render a widget\'s name', () => {
+    /*
+      `t(row.title, { defaultValue: row.key })` was written in four files, and
+      the fallback is the interesting half: a row whose i18n key has no
+      translation must render its KEY, not the dotted path, because a dotted
+      path on somebody's home screen looks like a crash.
+    */
+    for (const f of HOME_FILES) expect(code(f)).not.toMatch(/t\(row\.title/);
+    expect(code('home/registry.tsx')).toMatch(/export function widgetTitle\(/);
+  });
+
+  it('the gallery measures the window as it is now, not as it was', () => {
+    /*
+      `Dimensions.get` is read once and never again, so a rotation — or an iPad
+      split view — leaves every page the width of the old orientation and the
+      paging stops landing on a card.
+    */
+    const gallery = code('components/home/widget-gallery.tsx');
+    expect(gallery).toMatch(/useWindowDimensions\(\)/);
+    expect(gallery).not.toMatch(/Dimensions\.get/);
+    // And one snapping rule, not two that disagree about how wide a page is.
+    expect(gallery).not.toMatch(/pagingEnabled/);
+    expect(gallery).toMatch(/snapToInterval=\{stride\}/);
   });
 });

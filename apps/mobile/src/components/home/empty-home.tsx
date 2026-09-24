@@ -3,7 +3,7 @@ import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { AText, GlassCard, Well } from '../amazen';
-import type { WidgetRow } from '../../home/registry';
+import { widgetTitle, type WidgetRow } from '../../home/registry';
 
 /**
  * Nothing on your home yet — and here is what you would be seeing.
@@ -37,7 +37,10 @@ export function EmptyHome({
   onSeeAll,
   style,
 }: {
-  /** ⚠️ Two, never more — the first two of this profile's default order. */
+  /**
+   * ⚠️ TWO, NEVER MORE, AND ALREADY FILTERED. Every one of these has a live
+   * answer; the caller chose them. See `home-screen.tsx`.
+   */
   suggestions: Suggestion[];
   totalAvailable: number;
   onKeep: (key: string) => void;
@@ -49,8 +52,14 @@ export function EmptyHome({
   const { t } = useTranslation();
   const c = amazen.color;
 
-  /* A suggestion with no answer yet is simply not offered. */
-  const ready = suggestions.filter((s) => s.line !== null).slice(0, 2);
+  /*
+    ⚠️ IT RENDERS WHAT IT IS GIVEN. This used to filter and slice again, and a
+    rule applied in two places is a rule with two answers: the screen took the
+    first two off-screen widgets, this dropped the ones with no answer, and a
+    first widget that had not loaded cost a suggestion while a ready third one
+    sat unused. The choosing happens once, in `home-screen.tsx`.
+  */
+  const ready = suggestions;
 
   return (
     <View style={[{ gap: amazen.space(4) }, style]}>
@@ -99,7 +108,7 @@ export function EmptyHome({
             <Pressable
               onPress={() => onKeep(row.key)}
               accessibilityRole="button"
-              accessibilityLabel={`${t('home.nothingYet.keep', { defaultValue: 'Keep' })} — ${t(row.title, { defaultValue: row.key })}`}
+              accessibilityLabel={`${t('home.nothingYet.keep', { defaultValue: 'Keep' })} — ${widgetTitle(row, t)}`}
               style={({ pressed }) => ({
                 paddingVertical: amazen.space(1.5),
                 paddingHorizontal: amazen.space(3.5),

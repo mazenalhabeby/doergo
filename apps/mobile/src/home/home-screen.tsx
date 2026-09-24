@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { BackHandler, Pressable, RefreshControl } from 'react-native';
+import { BackHandler, Pressable, RefreshControl, StyleSheet } from 'react-native';
 import DraggableFlatList, {
   ScaleDecorator,
   ShadowDecorator,
@@ -16,16 +16,12 @@ import { impact, selection } from '../lib/haptics';
 import { announce, useScreenReader } from '../hooks/use-a11y';
 import { OfflineBanner } from '../offline/components/offline-banner';
 import { EmptyHome, type Suggestion } from '../components/home/empty-home';
-import {
-  DropSlot,
-  EditableWidget,
-  LANDED_MS,
-  LIFT_FACTOR,
-} from '../components/home/editable-widget';
+import { DropSlot, EditableWidget, LIFT_FACTOR } from '../components/home/editable-widget';
 import { WidgetGallery } from '../components/home/widget-gallery';
 import { answerFor, useWidgetAnswers } from './answers';
+import { useHomeEditing } from './use-home-editing';
 import { useHomeLayout } from './use-home-layout';
-import type { WidgetRow } from './registry';
+import { EMPTY_ROWS, widgetTitle, type WidgetRow } from './registry';
 
 /**
  * ONE home screen, composed from a registry — and edited in place.
@@ -56,26 +52,52 @@ import type { WidgetRow } from './registry';
  * the component mounts — nothing is visible-then-refused, and nothing fetches
  * to discover it was not allowed.
  */
+/** Drawn by the library at the drop index; it takes no props. */
+const renderDropSlot = () => <DropSlot />;
+
+/*
+  ⚠️ OUT OF THE RENDER PATH. A fresh style object on every render gives the scroll
+  view a new identity for its content container and rebuilds the list's own
+  props diff for nothing.
+*/
+const styles = StyleSheet.create({ fill: { flex: 1 } });
+
 export function HomeScreen() {
   const { user } = useAuth();
   const { amazen, isDark } = useTheme();
   const tabSafe = useTabSafe();
+  /*
+    ⚠️ 14, not `layout.gutter` (20). Measured off the design reference: the
+    shift card's edge and the tab pill's are the same 14pt inset, and a column
+    that does not line up with the bar under it is the first thing the eye
+    catches.
+
+    ⚠️ `paddingTop: 10` IS ROOM FOR WHAT THE FIRST CARD DRAWS OUTSIDE ITSELF.
+    The ⊖ sits at `top: -9` and the arrival ring at `top: -3`, so on the FIRST
+    row they reach above the content's origin — and a scroll view does not draw
+    above its own content. The result was a ring with its top edge sliced off
+    and a ⊖ cut in half, on the one card everybody looks at first. CONSTANT in
+    both modes: a padding that appeared when edit mode opened would push the
+    whole column down under the finger that had just opened it.
+
+    ⚠️ `paddingBottom` IS NOT A CONSTANT. The tab pill sits on the safe-area
+    inset — 24pt on gesture Android, 48pt on three buttons, 34pt on a notched
+    iPhone, 0 on an iPhone SE — so the room a screen leaves and the room the
+    bar takes are read from one place.
+  */
+  const contentStyle = React.useMemo(
+    () => ({ paddingHorizontal: 14, paddingTop: 10, paddingBottom: tabSafe, flexGrow: 1 }),
+    [tabSafe],
+  );
   const { t } = useTranslation();
   const router = useRouter();
   const [refreshKey, setRefreshKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  const [editing, setEditing] = useState(false);
   const [picking, setPicking] = useState(false);
+  /* Editing is a mode, and `use-home-editing.ts` is all of it. */
+  const { editing, enter: enterEdit, leave: leaveEdit, landed, land } = useHomeEditing();
   const layout = useHomeLayout();
   const screenReader = useScreenReader();
-
-  /** Just added from the gallery — wears a jade ring for 30 seconds. */
-  const [landed, setLanded] = useState<string | null>(null);
-  React.useEffect(() => {
-    if (!landed) return;
-    const timer = setTimeout(() => setLanded(null), LANDED_MS);
-    return () => clearTimeout(timer);
-  }, [landed]);
 
   /*
     ⚠️ NOTHING HERE NEEDS AN UNDO, AND THAT IS WHY THERE ISN'T ONE.
@@ -103,37 +125,24 @@ export function HomeScreen() {
     ("Saved to your account") were the only thing on screen claiming otherwise.
   */
 
+  /*
+    ⚠️ THE SPINNER IS ON A TIMER BECAUSE NOTHING HERE KNOWS WHEN THE DATA
+    LANDED. Each widget owns its own fetching and reports to nobody, which is
+    what keeps them independent — so remounting the column is one gesture wired
+    to all of them without a coordinator that would have to know what every
+    widget fetches. The 400ms is how long the spinner is shown, not a claim
+    about when anything arrived.
+
+    ⚠️ AND IT IS CLEARED ON UNMOUNT. A member who pulls and immediately changes
+    tab left a timer holding a setter for a screen that is gone.
+  */
+  const spinner = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  React.useEffect(() => () => { if (spinner.current) clearTimeout(spinner.current); }, []);
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    // Each widget owns its own data and re-reads on mount; remounting the
-    // column is one gesture wired to all of them without a coordinator that
-    // would have to know what every widget fetches.
     setRefreshKey((k) => k + 1);
-    setTimeout(() => setRefreshing(false), 400);
-  }, []);
-
-  /*
-    ⚠️ THE ANDROID BACK GESTURE LEAVES THE MODE, IT DOES NOT LEAVE THE SCREEN.
-
-    Editing is a mode, and back is what an Android member presses to get out of
-    one. Without this it takes them off Home entirely, which reads as the app
-    throwing away what they were in the middle of doing — and the arrangement
-    IS saved, so it is also a lie.
-  */
-  React.useEffect(() => {
-    if (!editing) return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      setEditing(false);
-      return true;
-    });
-    return () => sub.remove();
-  }, [editing]);
-
-  const enterEdit = useCallback(() => {
-    setEditing((on) => {
-      if (!on) impact('light');
-      return true;
-    });
+    if (spinner.current) clearTimeout(spinner.current);
+    spinner.current = setTimeout(() => setRefreshing(false), 400);
   }, []);
 
   /*
@@ -144,20 +153,42 @@ export function HomeScreen() {
   */
   const answers = useWidgetAnswers();
 
-  const rows = layout.rows;
+  /*
+    ⚠️ NOTHING IS DRAWN UNTIL THE SAVED ORDER HAS LANDED.
 
-  /* ⚠️ TWO SUGGESTIONS, NEVER MORE, and only ones whose answer has arrived. */
+    The layout is read from the phone, which takes a tick, and until it does
+    `useHomeLayout` composes the DEFAULT order. So a member who had arranged
+    their home saw the DEFAULT arrangement first and watched it rearrange
+    itself — and a member with an empty home saw the §1 empty state flash
+    before their widgets arrived, which reads as "everything is gone".
+
+    An empty column for one frame is not a state worth drawing either way.
+  */
+  const rows: readonly WidgetRow[] = layout.loading ? EMPTY_ROWS : layout.rows;
+
+  /*
+    ⚠️ TWO SUGGESTIONS, CHOSEN HERE AND NOWHERE ELSE.
+
+    The rule was split: this file took the first two off-screen widgets, and
+    `EmptyHome` then dropped the ones with no answer. So if the first widget
+    had not loaded, the member got ONE suggestion while a perfectly ready third
+    one sat unused. §1 asks for two, and for only ones whose data has arrived —
+    which means filtering BEFORE taking two, not after.
+
+    ⚠️ A LIVE ANSWER, NEVER THE QUESTION AS A FALLBACK. Letting `line` fall
+    back to the widget's question let a widget with nothing to show become a
+    suggestion, and the card above it rendered nothing: an orphaned pill
+    floating under a gap.
+  */
   const suggestions: Suggestion[] = React.useMemo(
-    /*
-      ⚠️ A LIVE ANSWER, NEVER THE QUESTION AS A FALLBACK.
-
-      The pill's line is "that widget's OWN live answer". Falling back to the
-      question let a widget with nothing to show become a suggestion, and the
-      card above it rendered nothing: an orphaned pill floating under a gap.
-    */
-    () => layout.offScreen.slice(0, 2).map((row) => ({ row, line: answerFor(answers, row.key).line })),
+    () =>
+      layout.offScreen
+        .map((row) => ({ row, line: answerFor(answers, row.key).line }))
+        .filter((s): s is Suggestion => s.line !== null)
+        .slice(0, 2),
     [layout.offScreen, answers],
   );
+
   const fullName = displayName(user);
   const initials = initialsOf(user);
 
@@ -166,8 +197,18 @@ export function HomeScreen() {
     (key: string, direction: 'up' | 'down') => {
       const done = layout.move(key, direction);
       if (!done) return;
+      /*
+        ⚠️ THE POSITION COMES FROM THE MOVE, NOT FROM `rows`.
+
+        `rows` in this closure is the list BEFORE the move — the state update
+        has not landed yet — so reading the new position out of it worked only
+        by an offset that had to be right for both directions and was written
+        down nowhere. `move` already returns where the widget WAS, 1-based, and
+        the new position is one step off it in the direction asked for.
+      */
+      const at = done.wasAt + (direction === 'up' ? -1 : 1);
       const row = rows.find((r) => r.key === key);
-      const at = rows.findIndex((r) => r.key === key) + (direction === 'up' ? 0 : 2);
+      const name = row ? widgetTitle(row, t) : key;
       /*
         ⚠️ ANNOUNCE THE RESULT, NOT THE ACT. "Moved up" tells somebody what
         they just did, which they know. "Crew, position 2 of 4" tells them
@@ -175,22 +216,17 @@ export function HomeScreen() {
       */
       announce(
         t('home.edit.announce', {
-          name: t(row?.title ?? key, { defaultValue: key }),
+          name,
           at,
           of: rows.length,
-          defaultValue: `${t(row?.title ?? key, { defaultValue: key })}, position ${at} of ${rows.length}.`,
+          defaultValue: `${name}, position ${at} of ${rows.length}.`,
         }),
       );
     },
     [layout, rows, t],
   );
 
-  const removeWidget = useCallback(
-    (key: string) => {
-      layout.hide(key);
-    },
-    [layout],
-  );
+  const removeWidget = useCallback((key: string) => layout.hide(key), [layout]);
 
   /*
     ⚠️ `onDragEnd` FIRES ONCE, WITH THE NEW ORDER — §7. It is where the change
@@ -232,9 +268,8 @@ export function HomeScreen() {
               isActive={isActive}
               drag={drag}
               onEnterEdit={enterEdit}
-              onRemove={() => removeWidget(item.key)}
-              onMoveUp={() => moveBy(item.key, 'up')}
-              onMoveDown={() => moveBy(item.key, 'down')}
+              onRemove={removeWidget}
+              onMove={moveBy}
               canUp={index > 0}
               canDown={index < rows.length - 1}
               screenReader={screenReader}
@@ -282,7 +317,7 @@ export function HomeScreen() {
                 {
                   label: t('common.done', { defaultValue: 'Done' }),
                   active: true,
-                  onPress: () => setEditing(false),
+                  onPress: () => leaveEdit(),
                 },
               ]
             : undefined
@@ -290,14 +325,15 @@ export function HomeScreen() {
       />
 
       <DraggableFlatList
-        data={rows}
+        /* ⚠️ The library's prop is a mutable `T[]`; it never writes to it. */
+        data={rows as WidgetRow[]}
         keyExtractor={(row) => row.key}
         renderItem={renderItem}
         onDragEnd={onDragEnd}
         /* ⚠️ A TICK EACH TIME A CARD CROSSES ANOTHER — it is the only signal
            that the order under the thumb actually changed. */
-        onPlaceholderIndexChange={() => selection()}
-        renderPlaceholder={() => <DropSlot />}
+        onPlaceholderIndexChange={selection}
+        renderPlaceholder={renderDropSlot}
         /*
           ⚠️ IT FIGHTS THE iOS BACK-SWIPE. Without a distance the pan claims
           the touch immediately, so an edge swipe to go back is read as a drag
@@ -308,40 +344,14 @@ export function HomeScreen() {
         activationDistance={14}
         /* §3 — auto-scroll within 60pt of an edge. */
         autoscrollThreshold={60}
-        containerStyle={{ flex: 1 }}
+        containerStyle={styles.fill}
         /*
           ⚠️ 14, not `layout.gutter` (20). Measured off the design reference:
           the shift card's edge and the tab pill's are the same 14pt inset, and
           a column that does not line up with the bar under it is the first
           thing the eye catches.
         */
-        contentContainerStyle={{
-          paddingHorizontal: 14,
-          /*
-            ⚠️ ROOM FOR WHAT THE FIRST CARD DRAWS OUTSIDE ITSELF.
-
-            The ⊖ sits at `top: -9` and the arrival ring at `top: -3`, so on
-            the FIRST row they reach above the content's origin — and a scroll
-            view does not draw above its own content. The result was a ring
-            with its top edge sliced off and a ⊖ cut in half, on the one card
-            everybody looks at first. Reported on iOS, where the header leaves
-            no slack; the same 9pt is missing on Android and simply happened to
-            land under a banner.
-
-            ⚠️ CONSTANT IN BOTH MODES. A padding that appeared when edit mode
-            opened would push the whole column down under the finger that had
-            just opened it — the rule that cost this screen three rewrites.
-          */
-          paddingTop: 10,
-          /*
-            ⚠️ THIS SCREEN DRAWS UNDER THE TAB PILL LIKE EVERY OTHER TAB, and
-            the bar is NOT a fixed height — it sits on the safe-area inset,
-            which is 24pt on gesture Android, 48pt on three buttons, 34pt on a
-            notched iPhone and 0 on an iPhone SE.
-          */
-          paddingBottom: tabSafe,
-          flexGrow: 1,
-        }}
+        contentContainerStyle={contentStyle}
         ListHeaderComponent={
           /* ⚠️ ONE line that says what the network is doing, for the whole
              column. Per widget it would be four copies of one sentence. */
@@ -378,7 +388,7 @@ export function HomeScreen() {
               past, and it is BELOW everything, so adding it moves nothing.
             */
             <Pressable
-              onPress={() => setEditing(false)}
+              onPress={() => leaveEdit()}
               accessibilityRole="button"
               accessibilityLabel={t('common.done', { defaultValue: 'Done' })}
               style={{ minHeight: 180 }}
@@ -430,8 +440,7 @@ export function HomeScreen() {
           */
           layout.add(key);
           setPicking(false);
-          setLanded(key);
-          if (!editing) setEditing(false);
+          land(key);
         }}
       />
     </Ground>

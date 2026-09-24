@@ -1,11 +1,11 @@
 import React from 'react';
-import { Dimensions, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { BlurSheet } from '../blur-sheet';
 import { SheetPanel } from '../sheet-panel';
 import { AText } from '../amazen';
-import type { WidgetRow } from '../../home/registry';
+import { widgetTitle, type WidgetRow } from '../../home/registry';
 
 /**
  * The gallery — one widget per page, swiped sideways.
@@ -38,8 +38,15 @@ export function WidgetGallery({
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const c = amazen.color;
-  const width = Dimensions.get('window').width;
+  /*
+    ⚠️ `useWindowDimensions`, NOT `Dimensions.get`. The static read is taken
+    once at render and never again, so a rotation — or an iPad split view —
+    leaves every page the width of the old orientation and the paging stops
+    landing on a card.
+  */
+  const { width } = useWindowDimensions();
   const page = width - amazen.space(8);
+  const stride = page + amazen.space(3);
 
   const offered = offScreen.filter(hasData);
 
@@ -69,10 +76,17 @@ export function WidgetGallery({
 
         <ScrollView
           horizontal
-          pagingEnabled
+          /*
+            ⚠️ NOT `pagingEnabled`. It snaps to whole SCREEN widths, and a page
+            here is the screen less its gutters plus the gap to the next one —
+            so the two rules fight and every page after the first lands further
+            off. `snapToInterval` is the one that knows how wide a page is.
+          */
           showsHorizontalScrollIndicator={false}
           decelerationRate="fast"
-          snapToInterval={page + amazen.space(3)}
+          snapToInterval={stride}
+          snapToAlignment="start"
+          disableIntervalMomentum
           contentContainerStyle={{
             paddingHorizontal: amazen.space(4),
             gap: amazen.space(3),
@@ -91,7 +105,7 @@ export function WidgetGallery({
               </View>
 
               <AText variant="body" tone="strong" style={{ marginTop: amazen.space(3) }}>
-                {t(row.title, { defaultValue: row.key })}
+                {widgetTitle(row, t)}
               </AText>
               {row.question ? (
                 <AText variant="caption" tone="muted" style={{ marginTop: 2 }}>
@@ -102,7 +116,7 @@ export function WidgetGallery({
               <Pressable
                 onPress={() => onAdd(row.key)}
                 accessibilityRole="button"
-                accessibilityLabel={`${t('home.gallery.add', { defaultValue: 'Add widget' })} — ${t(row.title, { defaultValue: row.key })}`}
+                accessibilityLabel={`${t('home.gallery.add', { defaultValue: 'Add widget' })} — ${widgetTitle(row, t)}`}
                 style={({ pressed }) => ({
                   marginTop: amazen.space(4),
                   paddingVertical: amazen.space(3.5),

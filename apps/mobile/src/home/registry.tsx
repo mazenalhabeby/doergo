@@ -93,3 +93,30 @@ export const DEFAULT_ORDER: string[] = [];
 export function availableWidgets(user: User | null | undefined): WidgetRow[] {
   return WIDGETS.filter((w) => meets(user, w.requires));
 }
+
+/**
+ * A stable empty column.
+ *
+ * ⚠️ A FRESH `[]` IS A NEW IDENTITY EVERY RENDER, and this one is handed to a
+ * `FlatList` as `data` — which re-runs its whole diff, and to memo hooks,
+ * which then cannot skip. One frozen array instead.
+ */
+export const EMPTY_ROWS: readonly WidgetRow[] = Object.freeze([]);
+
+/**
+ * A widget's name, in the member's language.
+ *
+ * ⚠️ ONE PLACE. `t(row.title, { defaultValue: row.key })` was written in four
+ * files, and the fallback is the interesting half: a row whose i18n key has no
+ * translation renders its KEY — `crew`, not `home.widgets.crew` — because a
+ * raw dotted key on somebody's home screen looks like a crash, and the key
+ * happens to be a readable word.
+ */
+export function widgetTitle(
+  row: WidgetRow,
+  /* `TFunction` is not imported here on purpose — the registry is data, and it
+     should not depend on which i18n library the app happens to use. */
+  t: (key: string, options: { defaultValue: string }) => string,
+): string {
+  return t(row.title, { defaultValue: row.key });
+}

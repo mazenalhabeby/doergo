@@ -29,7 +29,6 @@ let mod: HapticsModule | null | undefined;
 function load(): HapticsModule | null {
   if (mod !== undefined) return mod;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     mod = require('expo-haptics') as HapticsModule;
   } catch {
     mod = null;

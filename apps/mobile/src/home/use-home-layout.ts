@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../contexts/auth-context';
 import { availableWidgets, DEFAULT_ORDER, type WidgetRow } from './registry';
 import { loadLayout, saveLayout, EMPTY_LAYOUT, type HomeLayout } from './layout-store';
-import { move as moveInList, type Moved } from './arrange-list';
+import { move as moveInList, withVisibleOrder, type Moved } from './arrange-list';
 
 /**
  * The member's home screen: what is on it, in what order, and how to change it.
@@ -117,9 +117,20 @@ export function useHomeLayout(): HomeLayoutApi {
       .filter((w): w is WidgetRow => !!w);
   }, [orderedKeys, layout.hidden, available]);
 
+  /**
+   * Available to this member and NOT on their home — what the gallery offers.
+   *
+   * ⚠️ "NOT ON THE HOME", NOT "HIDDEN". This asked only for the hidden set,
+   * and a widget the member had never had — a registry row that is not in
+   * `DEFAULT_ORDER`, so `orderedKeys` never appends it — was in neither list.
+   * Entitled to it, not on the home, not in the gallery: registered and
+   * unreachable, with nothing on screen to say so. `arrange-list.offHome` had
+   * the right rule all along and nothing called it.
+   */
+  const onHomeKeys = useMemo(() => new Set(rows.map((r) => r.key)), [rows]);
   const offScreen = useMemo(
-    () => available.filter((w) => layout.hidden.includes(w.key)),
-    [available, layout.hidden],
+    () => available.filter((w) => !onHomeKeys.has(w.key)),
+    [available, onHomeKeys],
   );
 
   /**
@@ -146,21 +157,20 @@ export function useHomeLayout(): HomeLayoutApi {
       `move` then writes the visible keys back into the slots they already
       occupied, and the invisible ones keep their places.
     */
-    const visible = new Set(rows.map((r) => r.key));
     const result = moveInList(
-      { keys: orderedKeys, hidden: orderedKeys.filter((k) => !visible.has(k)) },
+      { keys: orderedKeys, hidden: orderedKeys.filter((k) => !onHomeKeys.has(k)) },
       key,
       direction,
     );
     if (!result.moved) return null;
     /*
-      ⚠️ SAVED IMMEDIATELY. The line that follows is an UNDO, not a confirm —
-      a member who moved a widget has already decided, and asking them to
-      confirm it turns one tap into two for the commonest action on the screen.
+      ⚠️ SAVED IMMEDIATELY, with nothing to confirm. A member who moved a
+      widget has already decided; asking them to agree to it turns one tap into
+      two for the commonest action on the screen.
     */
     persist({ ...layout, keys: result.layout.keys });
     return result.moved;
-  }, [rows, orderedKeys, layout, persist]);
+  }, [onHomeKeys, orderedKeys, layout, persist]);
 
   /**
    * ⚠️ THE SAME ARITHMETIC AS `move`, FOR THE SAME REASON.
@@ -172,11 +182,8 @@ export function useHomeLayout(): HomeLayoutApi {
    * lose that widget's saved position by rearranging an unrelated one.
    */
   const setOrder = useCallback((visibleKeys: string[]) => {
-    const visible = new Set(rows.map((r) => r.key));
-    let i = 0;
-    const keys = orderedKeys.map((k) => (visible.has(k) ? visibleKeys[i++] ?? k : k));
-    persist({ ...layout, keys });
-  }, [rows, orderedKeys, layout, persist]);
+    persist({ ...layout, keys: withVisibleOrder(orderedKeys, onHomeKeys, visibleKeys) });
+  }, [onHomeKeys, orderedKeys, layout, persist]);
 
   const hide = useCallback((key: string) => {
     if (layout.hidden.includes(key)) return;

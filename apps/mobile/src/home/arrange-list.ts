@@ -33,6 +33,28 @@ export function onHome(layout: ArrangeLayout): string[] {
   return layout.keys.filter((k) => !layout.hidden.includes(k));
 }
 
+/**
+ * Write a new VISIBLE order back into the slots it already occupied.
+ *
+ * ⚠️ THE ONE PIECE OF ARITHMETIC THE WHOLE SCREEN RESTS ON, AND IT WAS WRITTEN
+ * THREE TIMES. The member reorders what they can SEE; the stored list also
+ * holds keys they cannot — switched off, and ones entitlement removed since.
+ * Writing the seen order straight over the stored one drops every key that was
+ * filtered out of view, so a member temporarily off a workspace loses that
+ * widget's saved position by rearranging an unrelated one.
+ *
+ * Both the drag and the accessibility arrows land here now. Two copies of this
+ * is how one of them keeps a hidden key and the other loses it.
+ */
+export function withVisibleOrder(
+  keys: string[],
+  visible: ReadonlySet<string>,
+  ordered: string[],
+): string[] {
+  let i = 0;
+  return keys.map((k) => (visible.has(k) ? ordered[i++] ?? k : k));
+}
+
 export function offHome(layout: ArrangeLayout, available: string[]): string[] {
   return available.filter((k) => layout.hidden.includes(k) || !layout.keys.includes(k));
 }
@@ -66,8 +88,7 @@ export function move(
   const reordered = [...visible];
   [reordered[from], reordered[to]] = [reordered[to]!, reordered[from]!];
 
-  let i = 0;
-  const keys = layout.keys.map((k) => (visible.includes(k) ? reordered[i++]! : k));
+  const keys = withVisibleOrder(layout.keys, new Set(visible), reordered);
   return {
     layout: { ...layout, keys },
     moved: { key, direction, wasAt: from + 1 },
