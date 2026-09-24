@@ -340,6 +340,22 @@ export function HomeScreen() {
         contentContainerStyle={{
           paddingHorizontal: 14,
           /*
+            ⚠️ ROOM FOR WHAT THE FIRST CARD DRAWS OUTSIDE ITSELF.
+
+            The ⊖ sits at `top: -9` and the arrival ring at `top: -3`, so on
+            the FIRST row they reach above the content's origin — and a scroll
+            view does not draw above its own content. The result was a ring
+            with its top edge sliced off and a ⊖ cut in half, on the one card
+            everybody looks at first. Reported on iOS, where the header leaves
+            no slack; the same 9pt is missing on Android and simply happened to
+            land under a banner.
+
+            ⚠️ CONSTANT IN BOTH MODES. A padding that appeared when edit mode
+            opened would push the whole column down under the finger that had
+            just opened it — the rule that cost this screen three rewrites.
+          */
+          paddingTop: 10,
+          /*
             ⚠️ THIS SCREEN DRAWS UNDER THE TAB PILL LIKE EVERY OTHER TAB, and
             the bar is NOT a fixed height — it sits on the safe-area inset,
             which is 24pt on gesture Android, 48pt on three buttons, 34pt on a

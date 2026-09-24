@@ -274,6 +274,29 @@ describe('§3 — entering the mode moves nothing', () => {
     expect(card).not.toMatch(/FadeIn|Layout|entering=/);
   });
 
+  it('leaves room for what the first card draws OUTSIDE itself', () => {
+    /*
+      ⚠️ THE ⊖ AND THE ARRIVAL RING SIT ABOVE THE CARD'S OWN TOP EDGE, and a
+      scroll view does not draw above its content's origin. Without a top
+      padding the FIRST row's badge was sliced in half and its jade ring lost
+      its top edge — on the one card everybody looks at first.
+
+      The padding must be at least the largest overhang, and it must be
+      CONSTANT: one that appeared with edit mode would push the whole column
+      down under the finger that had just opened it.
+    */
+    const card = code('components/home/editable-widget.tsx');
+    const overhangs = [...card.matchAll(/top: -(\d+)/g)].map((m) => Number(m[1]));
+    expect(overhangs.length).toBeGreaterThan(0);
+
+    const home = code('home/home-screen.tsx');
+    const pad = home.match(/contentContainerStyle=\{\{[\s\S]*?paddingTop: (\d+)/);
+    expect(pad).not.toBeNull();
+    expect(Number(pad![1])).toBeGreaterThanOrEqual(Math.max(...overhangs));
+    // Constant — never keyed on the mode.
+    expect(home).not.toMatch(/paddingTop: editing/);
+  });
+
   it('keeps ＋ and Done in the header, outside the list', () => {
     const home = read('home/home-screen.tsx');
     const header = home.indexOf('<ScreenHeader');
