@@ -245,3 +245,25 @@ export function OpenJobsGlyph({ size = 24, color }: GlyphProps) {
 }
 
 export type { G_ };
+
+/**
+ * FOUR PANELS IN A GRID — the home screen itself, seen from above.
+ *
+ * ⚠️ Its OUTLINE is what identifies it: nothing else in the family is a 2×2.
+ * The four opacities are the law — .18 behind, .34 body, .55 detail, .95 the
+ * naming thing — and here they read as depth in the grid rather than as four
+ * different panels, so the top-left one is the widget you are about to add.
+ *
+ * Three elements is the ceiling and this is one shape repeated, not four
+ * ideas: at 24px it is a grid, which is the only thing it has to say.
+ */
+export function WidgetsGlyph({ size = 24, color }: GlyphProps) {
+  return (
+    <Svg {...svg(size)}>
+      <Rect x={2.6} y={2.6} width={8.2} height={8.2} rx={2.4} fill={color} fillOpacity={0.95} />
+      <Rect x={13.2} y={2.6} width={8.2} height={8.2} rx={2.4} fill={color} fillOpacity={0.55} />
+      <Rect x={2.6} y={13.2} width={8.2} height={8.2} rx={2.4} fill={color} fillOpacity={0.34} />
+      <Rect x={13.2} y={13.2} width={8.2} height={8.2} rx={2.4} fill={color} fillOpacity={0.18} />
+    </Svg>
+  );
+}

@@ -362,7 +362,12 @@
       "moveUp": "Nach oben",
       "moveDown": "Nach unten",
       "remove": "Vom Start entfernen",
-      "announce": "{{name}}, Position {{at}} von {{of}}."
+      "announce": "{{name}}, Position {{at}} von {{of}}.",
+      "emptyTitle": "Noch nichts zum Anordnen",
+      "emptySub_one": "Ein Widget gehört Ihnen. Fügen Sie es hinzu, dann landet es hier.",
+      "emptySub_other": "{{count}} Widgets gehören Ihnen. Fügen Sie eines hinzu, dann landet es hier.",
+      "emptyNone": "Für Sie sind noch keine Widgets verfügbar.",
+      "emptied": "Sie haben alle entfernt. Sie gehören weiterhin Ihnen — nichts ist verloren."
     },
     "gallery": {
       "title": "Widgets",

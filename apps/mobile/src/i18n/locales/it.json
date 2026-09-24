@@ -362,7 +362,12 @@
       "moveUp": "Sposta su",
       "moveDown": "Sposta giù",
       "remove": "Rimuovi dalla home",
-      "announce": "{{name}}, posizione {{at}} di {{of}}."
+      "announce": "{{name}}, posizione {{at}} di {{of}}.",
+      "emptyTitle": "Non c’è ancora nulla da organizzare",
+      "emptySub_one": "Un widget è tuo. Aggiungilo e comparirà qui.",
+      "emptySub_other": "{{count}} widget sono tuoi. Aggiungine uno e comparirà qui.",
+      "emptyNone": "Non hai ancora widget disponibili.",
+      "emptied": "Li hai rimossi tutti. Sono ancora tuoi: non è andato perso nulla."
     },
     "gallery": {
       "title": "Widget",

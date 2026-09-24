@@ -362,7 +362,12 @@
       "moveUp": "Monter",
       "moveDown": "Descendre",
       "remove": "Retirer de l'accueil",
-      "announce": "{{name}}, position {{at}} sur {{of}}."
+      "announce": "{{name}}, position {{at}} sur {{of}}.",
+      "emptyTitle": "Rien à organiser pour l’instant",
+      "emptySub_one": "Un widget vous appartient. Ajoutez-le et il apparaîtra ici.",
+      "emptySub_other": "{{count}} widgets vous appartiennent. Ajoutez-en un et il apparaîtra ici.",
+      "emptyNone": "Aucun widget n’est encore disponible pour vous.",
+      "emptied": "Vous les avez tous retirés. Ils restent à vous — rien n’a été perdu."
     },
     "gallery": {
       "title": "Widgets",

@@ -369,7 +369,12 @@
       "moveUp": "Move up",
       "moveDown": "Move down",
       "remove": "Take off my home",
-      "announce": "{{name}}, position {{at}} of {{of}}."
+      "announce": "{{name}}, position {{at}} of {{of}}.",
+      "emptyTitle": "Nothing to arrange yet",
+      "emptySub_one": "One widget is yours. Add it and it lands here.",
+      "emptySub_other": "{{count}} widgets are yours. Add one and it lands here.",
+      "emptyNone": "No widgets are available to you yet.",
+      "emptied": "You removed all of them. They are still yours — nothing was lost."
     },
     "gallery": {
       "title": "Widgets",

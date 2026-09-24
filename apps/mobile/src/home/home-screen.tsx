@@ -15,6 +15,7 @@ import { displayName, initialsOf } from '../lib/people';
 import { impact, selection } from '../lib/haptics';
 import { announce, useScreenReader } from '../hooks/use-a11y';
 import { OfflineBanner } from '../offline/components/offline-banner';
+import { EmptyArrange } from '../components/home/empty-arrange';
 import { EmptyHome, type Suggestion } from '../components/home/empty-home';
 import { DropSlot, EditableWidget, LIFT_FACTOR } from '../components/home/editable-widget';
 import { WidgetGallery } from '../components/home/widget-gallery';
@@ -359,23 +360,40 @@ export function HomeScreen() {
         }
         ListEmptyComponent={
           /*
-            ⚠️ NOT "your home screen is empty", AND NOT A DASHED OUTLINE.
+            ⚠️ TWO EMPTY COLUMNS, NOT ONE, BECAUSE THEY ANSWER DIFFERENT
+            QUESTIONS.
 
-            A dashed outline means *something belongs here and is missing*.
-            Nothing is broken — the member chose this — and two REAL cards at
-            .42 are a better invitation than an outline of one. They are the
-            same components with the same data, so the suggestion and the thing
-            it suggests can never drift.
+            Reading (§1): somebody who was not asking for anything is looking
+            at a home with nothing on it. Two REAL cards at .42 and "keep
+            these?" — an invitation. NOT "your home screen is empty", and no
+            dashed outline: a dashed box means something belongs here and is
+            missing, and nothing is missing, the member chose this.
+
+            Editing: somebody who is already arranging has just taken the last
+            card off. They need one thing — the way to put something back — and
+            §1's own words ("here is what you would be seeing right now") would
+            promise them a preview that is not there. Now the dashed outline is
+            right, because it is this screen's own word for "a widget goes
+            here": it is the drop slot.
           */
-          <EmptyHome
-            suggestions={suggestions}
-            totalAvailable={layout.available.length}
-            onKeep={(key) => { layout.show(key); }}
-            onKeepBoth={() => {
-              suggestions.filter((s) => s.line !== null).forEach((s) => layout.show(s.row.key));
-            }}
-            onSeeAll={() => setPicking(true)}
-          />
+          editing ? (
+            <EmptyArrange
+              totalAvailable={layout.available.length}
+              /* They had some and removed them, rather than never having any. */
+              emptied={layout.offScreen.length > 0}
+              onAdd={() => setPicking(true)}
+            />
+          ) : (
+            <EmptyHome
+              suggestions={suggestions}
+              totalAvailable={layout.available.length}
+              onKeep={(key) => { layout.show(key); }}
+              onKeepBoth={() => {
+                suggestions.forEach((s) => layout.show(s.row.key));
+              }}
+              onSeeAll={() => setPicking(true)}
+            />
+          )
         }
         ListFooterComponent={
           editing ? (

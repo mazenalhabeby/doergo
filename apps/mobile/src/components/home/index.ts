@@ -14,5 +14,6 @@
  * name, so nothing belongs here for them.
  */
 export { EmptyHome, WidgetSurface, type Suggestion } from './empty-home';
+export { EmptyArrange } from './empty-arrange';
 export { EditableWidget, DropSlot, LANDED_MS, LIFT_FACTOR } from './editable-widget';
 export { WidgetGallery } from './widget-gallery';
