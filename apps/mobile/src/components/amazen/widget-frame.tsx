@@ -38,7 +38,19 @@ export class WidgetBoundary extends React.Component<
 > {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
-  componentDidCatch() { /* the widget is out; the screen is not */ }
+  componentDidCatch(error: Error) {
+    /*
+      The widget is out; the screen is not — and in development it SAYS SO.
+
+      ⚠️ A SILENT `catch` HERE COSTS HOURS. The fallback is usually `null`, so
+      a widget that throws simply is not drawn: the column renders with a gap,
+      or with nothing at all, and there is no error anywhere to explain it. In
+      production that is exactly right — a member does not need a stack trace
+      about a card they cannot fix. In development it is the difference between
+      a one-line answer and bisecting the whole home screen.
+    */
+    if (__DEV__) console.error('[widget] threw and was removed from the column:', error);
+  }
   render() { return this.state.failed ? this.props.fallback : this.props.children; }
 }
 
