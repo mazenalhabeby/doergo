@@ -606,29 +606,58 @@ describe('one rule, one place', () => {
   });
 });
 
-describe('an empty column, in both modes', () => {
+describe('an empty column always offers the way out', () => {
   const home = code('home/home-screen.tsx');
 
-  it('reading and editing get DIFFERENT screens', () => {
+  it('§1 is shown only when there is something to preview', () => {
     /*
-      ⚠️ ONE COMPONENT FOR BOTH WAS THE BUG. §1's empty home is an invitation
-      aimed at somebody who was not asking for anything: two real cards at .42
-      and "keep these?". A member who has just taken the LAST card off while
-      arranging is asking exactly one thing — how do I put something back — and
-      §1's own words, "here is what you would be seeing right now", promise
-      them a preview that is not there.
+      ⚠️ THE DEAD SCREEN THIS EXISTS FOR. §1's empty home is built around two
+      real cards at .42 and a Keep pill — "here is what you would be seeing
+      right now" — and with nothing to suggest that sentence sat over blank
+      space above no control at all. That is what a member got on every launch
+      while the registry was being rebuilt: nowhere to go, and a promise of a
+      preview that was not there.
+
+      The question is not "is the member editing", it is "is there anything to
+      suggest".
     */
-    expect(home).toMatch(/editing \? \(\s*<EmptyArrange/);
-    expect(home).toMatch(/\) : \(\s*<EmptyHome/);
+    expect(home).toMatch(/suggestions\.length > 0 && !editing \? \(\s*<EmptyHome/);
+    expect(home).toMatch(/\) : \(\s*<EmptyArrange/);
   });
 
-  it('the editing one wears the drop slot, and the reading one must not', () => {
+  it('the fallback always names a way forward', () => {
     /*
-      ⚠️ §1 FORBIDS A DASHED OUTLINE AND IS RIGHT — on a resting screen it
-      means something belongs here and is missing, and nothing is missing. In
-      edit mode the dashed rectangle is already this screen's word for "a
-      widget goes here": it IS the drop slot, so it is drawn at the slot's own
-      weight rather than invented again.
+      The mark, what the member has, and the button that opens the gallery. Its
+      ONLY silent case is a member with nothing available at all — where the
+      button would open an empty sheet, and saying so is the honest answer.
+    */
+    const arrange = code('components/home/empty-arrange.tsx');
+    expect(arrange).toMatch(/totalAvailable > 0 \? \(/);
+    expect(arrange).toMatch(/home\.edit\.add/);
+    expect(arrange).toMatch(/home\.edit\.emptyNone/);
+  });
+
+  it('one screen, and one word follows the mode', () => {
+    /*
+      "Nothing to arrange yet" is true of somebody mid-arrangement and odd on a
+      resting home; "Nothing on your home yet" is the reverse. Everything else
+      is the same answer to the same question, so it is one component rather
+      than two that drift.
+    */
+    const arrange = code('components/home/empty-arrange.tsx');
+    expect(arrange).toContain("home.edit.emptyTitle");
+    expect(arrange).toContain("home.nothingYet.title");
+    expect(arrange).toMatch(/arranging/);
+    expect(home).toMatch(/arranging=\{editing\}/);
+  });
+
+  it('wears the drop slot, and §1 must not', () => {
+    /*
+      ⚠️ §1 FORBIDS A DASHED OUTLINE AND IS RIGHT ABOUT ITS OWN SCREEN — where
+      two real cards are on offer, a dashed box would say something is missing,
+      and nothing is. Here the column IS a slot waiting for a card, and the
+      dashed rectangle is already this screen's word for that: it is the drop
+      target, drawn at its own weight rather than invented again.
     */
     const arrange = code('components/home/empty-arrange.tsx');
     const card = code('components/home/editable-widget.tsx');
@@ -642,30 +671,21 @@ describe('an empty column, in both modes', () => {
 
   it('says nothing was lost, and only when something was', () => {
     // `hidden` is not `deleted`, and this is the one moment worth saying so.
-    const arrange = code('components/home/empty-arrange.tsx');
-    expect(arrange).toMatch(/\{emptied \? \(/);
-    expect(home).toMatch(/emptied=\{layout\.offScreen\.length > 0\}/);
+    expect(code('components/home/empty-arrange.tsx')).toMatch(/\{emptied \? \(/);
+    expect(home).toMatch(/emptied=\{layout\.offScreen\.length > 0 && editing\}/);
     const en = JSON.parse(read('i18n/locales/en.json'));
     expect(en.home.edit.emptied).toBe(
       'You removed all of them. They are still yours — nothing was lost.',
     );
   });
 
-  it('offers no Add button to somebody who has nothing to add', () => {
-    const arrange = code('components/home/empty-arrange.tsx');
-    expect(arrange).toMatch(/totalAvailable > 0 \? \(/);
-    expect(arrange).toMatch(/home\.edit\.emptyNone/);
-  });
-
   it('counts in every language with `count`, never an arbitrary `n`', () => {
     expect(code('components/home/empty-arrange.tsx')).toMatch(/count: totalAvailable/);
     for (const lang of ['en', 'de', 'es', 'fr', 'it']) {
       const l = JSON.parse(read(`i18n/locales/${lang}.json`));
-      expect(typeof l.home.edit.emptySub_one).toBe('string');
-      expect(typeof l.home.edit.emptySub_other).toBe('string');
-      expect(typeof l.home.edit.emptyTitle).toBe('string');
-      expect(typeof l.home.edit.emptyNone).toBe('string');
-      expect(typeof l.home.edit.emptied).toBe('string');
+      for (const k of ['emptySub_one', 'emptySub_other', 'emptyTitle', 'emptyNone', 'emptied']) {
+        expect(typeof l.home.edit[k]).toBe('string');
+      }
     }
   });
 });

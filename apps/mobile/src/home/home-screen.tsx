@@ -360,30 +360,19 @@ export function HomeScreen() {
         }
         ListEmptyComponent={
           /*
-            ⚠️ TWO EMPTY COLUMNS, NOT ONE, BECAUSE THEY ANSWER DIFFERENT
-            QUESTIONS.
+            ⚠️ §1'S EMPTY HOME EARNS ITS PLACE ONLY WHEN THERE IS SOMETHING TO
+            PREVIEW. It is built around two real cards at .42 and a Keep pill —
+            "here is what you would be seeing right now" — and with nothing to
+            show, that sentence sits over blank space above no control at all.
+            Which is what a member got on every launch while the registry was
+            being rebuilt: a dead screen, with the way forward nowhere on it.
 
-            Reading (§1): somebody who was not asking for anything is looking
-            at a home with nothing on it. Two REAL cards at .42 and "keep
-            these?" — an invitation. NOT "your home screen is empty", and no
-            dashed outline: a dashed box means something belongs here and is
-            missing, and nothing is missing, the member chose this.
-
-            Editing: somebody who is already arranging has just taken the last
-            card off. They need one thing — the way to put something back — and
-            §1's own words ("here is what you would be seeing right now") would
-            promise them a preview that is not there. Now the dashed outline is
-            right, because it is this screen's own word for "a widget goes
-            here": it is the drop slot.
+            So the question is not "is the member editing", it is "is there
+            anything to suggest". With suggestions, §1. Without them — and
+            always while arranging, where a preview answers a question nobody
+            asked — the slot: the mark, what they have, and the way to add one.
           */
-          editing ? (
-            <EmptyArrange
-              totalAvailable={layout.available.length}
-              /* They had some and removed them, rather than never having any. */
-              emptied={layout.offScreen.length > 0}
-              onAdd={() => setPicking(true)}
-            />
-          ) : (
+          suggestions.length > 0 && !editing ? (
             <EmptyHome
               suggestions={suggestions}
               totalAvailable={layout.available.length}
@@ -392,6 +381,14 @@ export function HomeScreen() {
                 suggestions.forEach((s) => layout.show(s.row.key));
               }}
               onSeeAll={() => setPicking(true)}
+            />
+          ) : (
+            <EmptyArrange
+              totalAvailable={layout.available.length}
+              arranging={editing}
+              /* They had some and removed them, rather than never having any. */
+              emptied={layout.offScreen.length > 0 && editing}
+              onAdd={() => setPicking(true)}
             />
           )
         }

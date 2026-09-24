@@ -33,11 +33,20 @@ import { WidgetsGlyph } from '../glyphs';
 export function EmptyArrange({
   /** How many this member could have. 0 is a real answer, not a loading state. */
   totalAvailable,
+  /**
+   * ⚠️ IT CHANGES ONE WORD, NOT THE SCREEN. "Nothing to arrange yet" is true
+   * of somebody mid-arrangement and odd on a resting home; "Nothing on your
+   * home yet" is the reverse. Everything else — the mark, what they have, the
+   * way to add one — is the same answer to the same question, so it is the
+   * same component rather than two that drift.
+   */
+  arranging,
   /** They got here by removing, not by never having any. */
   emptied,
   onAdd,
 }: {
   totalAvailable: number;
+  arranging: boolean;
   emptied: boolean;
   onAdd: () => void;
 }) {
@@ -90,7 +99,9 @@ export function EmptyArrange({
         </View>
 
         <AText variant="h3" tone="strong">
-          {t('home.edit.emptyTitle', { defaultValue: 'Nothing to arrange yet' })}
+          {arranging
+            ? t('home.edit.emptyTitle', { defaultValue: 'Nothing to arrange yet' })
+            : t('home.nothingYet.title', { defaultValue: 'Nothing on your home yet.' })}
         </AText>
 
         {/*
