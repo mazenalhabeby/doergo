@@ -2,19 +2,19 @@ import React from 'react';
 import { Pressable, View, type ViewStyle } from 'react-native';
 import Animated, {
   Easing,
-  FadeIn,
-  FadeOut,
-  LinearTransition,
   ReduceMotion,
+  interpolate,
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/theme-context';
 import { over } from '../../theme/amazen';
 import { AText } from './text';
-import { TAB_GLYPHS, TabMoreGlyph, type TabGlyphProps } from '../home/tab-glyphs';
+import { TAB_GLYPHS, TabMoreGlyph, type TabGlyphProps } from '../glyphs/tab-glyphs';
 import { TourTarget } from '../tour';
 
 /**
@@ -88,6 +88,80 @@ const MIN_MARK_W = 40;
 const PAD = 6;
 
 /**
+ * How far the scrim reaches ABOVE the pill.
+ *
+ * The bar floats over the content now, so something has to take the content
+ * from legible to gone before it reaches the pill. 56pt is about two list
+ * rows: enough that a line of text is already faint by the time the pill
+ * covers it, short enough that it does not eat the screen.
+ */
+const SCRIM_RISE = 56;
+
+/*
+  THE BAR'S OWN GEOMETRY, AND THE ONLY PLACE IT IS WRITTEN DOWN.
+
+  ⚠️ THE BAR IS NOT A FIXED HEIGHT. It sits on the safe-area inset, and that
+  inset is different on every device the app runs on:
+
+      Android, gesture navigation   24pt
+      Android, three buttons        48pt
+      iPhone with a home indicator  34pt
+      iPhone without one             0pt  (floored to 12)
+
+  A screen reserving a CONSTANT is therefore right on exactly one of them. The
+  constant was 110: on three-button Android the bar is 132pt and 22pt of the
+  last row was behind it, and on every notched iPhone it was 8pt short. Both
+  are invisible in a simulator set to the one device the number was measured
+  on, which is how it survived.
+*/
+const BAR_PAD_TOP = 6;
+const BAR_ROW = 62;
+/** How far the pill floats above the inset. */
+const BAR_LIFT = 16;
+/** An iPhone SE has no inset at all; the bar still may not touch the edge. */
+const BAR_INSET_FLOOR = 12;
+/** A row must STOP clear of the bar, not end exactly against it. */
+const BAR_CLEARANCE = 8;
+
+/** What the bar occupies, bottom-up, for a given safe-area inset. */
+export function tabSafeFor(bottomInset: number) {
+  return (
+    BAR_PAD_TOP + BAR_ROW + BAR_LIFT + Math.max(bottomInset, BAR_INSET_FLOOR) + BAR_CLEARANCE
+  );
+}
+
+/**
+ * Bottom padding for a scrolling tab screen.
+ *
+ * ⚠️ EVERY SCROLLING TAB SCREEN MUST USE THIS. The bar is absolutely
+ * positioned, so React Navigation measures it as zero and leaves the scene the
+ * whole window. A screen that forgets hides its last row behind the pill with
+ * nothing on screen to explain it. `tab-safe.spec.ts` fails if one does.
+ */
+export function useTabSafe() {
+  return tabSafeFor(useSafeAreaInsets().bottom);
+}
+
+/*
+  ⚠️ THE BAR WAS GLASS AND IS NOT ANY MORE.
+
+  `BlurView` over the scrolling content looked right on iOS and wrong on
+  Android: `dimezisBlurView` re-renders what is behind it at reduced fidelity
+  on every frame, so the marks came out smeared and the capsule's edge fuzzy —
+  side by side, two different products. It is experimental by its own
+  documentation, and this bar is on screen the entire time over the one thing
+  people scroll all day, which is the worst case for it.
+
+  No parameter fixes that; the difference is the implementation. So the pill is
+  an OPAQUE colour — `barFill`, one per theme, measured off the references.
+  It renders identically on both platforms, costs nothing per frame, and reads
+  better in light mode, where a translucent bar over a pale page had almost no
+  edge at all.
+
+  The scrim below still fades the content. That was never the problem.
+*/
+
+/**
  * How the bar moves.
  *
  * ⚠️ ONE MOVEMENT, NOT FIVE. The capsule slides; everything else crossfades
@@ -103,12 +177,73 @@ const PAD = 6;
  * phone to stop moving things has asked this too, and Reanimated will collapse
  * these to an instant change on its own — but only if it is told.
  */
+/**
+ * ⚠️ A SPRING, THE SAME ONE FOR EVERY MOVING PART, AND IT NEVER OVERSHOOTS.
+ *
+ * `withTiming` was right for a fade and wrong for this: the capsule is an
+ * object being pushed across a surface by a thumb, and a curve that starts and
+ * stops at fixed times reads as a slide-show rather than a movement, however
+ * well chosen the bezier.
+ *
+ * ⚠️ BUT `dampingRatio: 0.92` WAS A BUG, NOT A FLOURISH. Just under critical
+ * is lovely on a thing that moves — and this spring also drives a WIDTH. An
+ * overshooting width means the slot you just left shrinks past its mark size
+ * and comes back, so its mark rocks left and right after the tint has already
+ * gone. On a row of five, that reads as the bar settling down after you, which
+ * is exactly the fidget a tab bar must not have.
+ *
+ * Critically damped, and clamped as well: `dampingRatio: 1` alone still allows
+ * a hair of numerical overshoot, and on a layout property a hair is visible.
+ *
+ * ⚠️ AND IT IS SHARED. The capsule's position and every slot's width are
+ * driven by this exact config, which is the only reason they stay aligned
+ * frame by frame: two springs with different parameters would drift apart in
+ * the middle of the transition and the tint would run ahead of its own slot.
+ */
 const SLIDE = {
-  duration: 180,
+  duration: 340,
+  dampingRatio: 1,
+  overshootClamping: true,
+  reduceMotion: ReduceMotion.System,
+} as const;
+const TINT = {
+  duration: 120,
   easing: Easing.bezier(0.2, 0.8, 0.2, 1),
   reduceMotion: ReduceMotion.System,
-};
-const TINT = { duration: 120, easing: Easing.bezier(0.2, 0.8, 0.2, 1), reduceMotion: ReduceMotion.System };
+} as const;
+
+/*
+  ⚠️ EVERY ANIMATION GETS ITS OWN COPY OF THE CONFIG. This is not style.
+
+  Reanimated FREEZES an object once it has been shared to the UI thread, and
+  `withSpring` / `withTiming` write their running state onto the config they
+  are handed — so passing the module-level constant directly crashed the
+  screen the second time it animated:
+
+    "You attempted to set the key `current` with the value `undefined` on an
+     object that is meant to be immutable and has been frozen."
+
+  A fresh object per call costs nothing and cannot be frozen out from under
+  the animation. The constants stay constants; only copies are handed out.
+*/
+const slide = () => ({ ...SLIDE });
+const tint = () => ({ ...TINT });
+
+/*
+  ⚠️ THERE IS NO `AnimatedPressable` HERE, AND THAT WAS TRIED FIRST.
+
+  Reanimated freezes the object `useAnimatedStyle` returns, and a plain
+  `Pressable` handed one tries to attach its own bookkeeping to it — the whole
+  screen goes blank with "You attempted to set the key `current` … frozen",
+  which reads nothing like a styling error.
+
+  `createAnimatedComponent(Pressable)` fixes that and introduces a quieter
+  problem: `Pressable` takes its style as a FUNCTION, and an animated component
+  does not evaluate one. The animated width was silently dropped — no crash, no
+  warning, every slot at its static width.
+
+  An animated wrapper around a plain Pressable has neither failure.
+*/
 
 /**
  * Every slot's width, in points, from the pill's own measured width.
@@ -213,50 +348,122 @@ export function TabPill({
       bar is created — on every cold start, and on every remount behind a
       modal.
     */
-    x.value = x.value === 0 ? target : withTiming(target, SLIDE);
+    x.value = x.value === 0 ? target : withSpring(target, slide());
   }, [activeIndex, w, x]);
 
   const capsuleStyle = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
 
   /*
-    ⚠️ IN FLOW, NOT ABSOLUTE — and this was measured, not assumed.
+    ⚠️ ABSOLUTE, AND EVERY TAB SCREEN PAYS FOR IT.
 
-    A floating pill suggests `position: absolute` with the screen running full
-    height behind it. Sampling the reference says otherwise: the band around
-    the pill is #05080a, which is the CANVAS, not the gradient. The home
-    gradient's last stop is #040507, so by the bottom of the screen it has
-    already resolved to canvas and there is nothing to see through.
+    This was in flow for a while, and in flow is genuinely safer: the scene
+    stops above the bar and no screen can hide its last row. But it makes the
+    bar a solid band welded to the bottom of the page, and a band has an EDGE —
+    a hard line where the content is chopped off mid-row, which is what
+    `08.png` shows.
 
-    That one fact is worth a lot. Absolute positioning would put the content of
-    every tab screen written before v2 underneath this — each of them would
-    need `space-tabsafe` added by hand, and the ones that were missed would
-    hide their last row behind the pill with nothing on screen to explain it.
-    In flow, it looks identical and no screen changes.
+    Glass only means anything if there is something behind it, and a fade only
+    means anything if there is something to fade. So the bar floats, the
+    content runs underneath it, the scrim takes that content from legible to
+    gone, and the pill blurs whatever is passing.
+
+    ⚠️ THE PRICE: React Navigation measures a custom tab bar to decide how much
+    room to leave a scene, and an absolutely positioned one measures ZERO. Every
+    scrolling tab screen therefore has to reserve `layout.tabSafe` itself, and
+    one that forgets hides its last row behind the pill with nothing on screen
+    to explain it. There is a test that says so.
   */
+  const bottomInset = Math.max(insets.bottom, BAR_INSET_FLOOR) + BAR_LIFT;
+
   return (
     <View
+      pointerEvents="box-none"
       style={[
         {
-          backgroundColor: c.canvas,
-          // 28pt of air below the pill — measured. The home indicator lives in
-          // it on a phone that has one, so it is a floor, not an addition.
-          paddingBottom: Math.max(insets.bottom, 12) + 16,
-          paddingTop: 6,
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          paddingBottom: bottomInset,
+          paddingTop: BAR_PAD_TOP,
           paddingHorizontal: 14,
         },
         style,
       ]}
     >
+      {/*
+        THE SCRIM.
+
+        The bar floats over the content, so the content has to go somewhere as
+        it arrives underneath. A hard edge — which is what a solid band is —
+        chops a row in half and reads as a broken screen; a fade reads as the
+        page continuing past the bar, which is the truth.
+
+        ⚠️ IT STARTS AT THE CANVAS WITH ZERO ALPHA, NOT AT `'transparent'`.
+        On Android `'transparent'` is rgba(0,0,0,0), and interpolating to an
+        opaque colour drags every stop through BLACK — a dark grey bruise
+        across the top of the fade that does not exist on iOS. Fading a colour
+        to its own zero-alpha self is the only way both platforms agree.
+      */}
+      <LinearGradient
+        pointerEvents="none"
+        colors={[`${c.canvas}00`, `${c.canvas}b8`, c.canvas]}
+        locations={[0, 0.55, 1]}
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: BAR_ROW + bottomInset + SCRIM_RISE,
+        }}
+      />
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          height: 62,
+          height: BAR_ROW,
           borderRadius: amazen.radius.full,
-          // ⚠️ NO BORDER. The reference has none, and a hairline on a
-          // translucent pill over a gradient reads as a seam at the top and
-          // nothing at the bottom.
-          backgroundColor: c.tile,
+          /*
+            ⚠️ `overflow: hidden` IS WHAT MAKES IT A PILL.
+
+            The blur behind it is a RECTANGLE — it knows nothing about the
+            radius — so without this the glass is a square sitting behind a
+            rounded row, which on a dark ground reads as a rendering fault
+            rather than a design.
+          */
+          overflow: 'hidden',
+          backgroundColor: c.barFill,
+          /*
+            ⚠️ THE SHADOW IS LOAD-BEARING IN LIGHT MODE.
+
+            An opaque near-white pill on a pale page is 1.05:1 against its own
+            ground — with no shadow there is no bar, just a row of marks
+            floating on the page. In dark it is the opposite: the pill is
+            LIGHTER than the canvas and separates on its own, so the shadow
+            there is only depth.
+
+            `elevation` alongside, or Android draws no shadow at all and light
+            mode loses the edge on exactly the platform that already looked
+            worst.
+          */
+          ...(amazen.scheme === 'light'
+            ? {
+                shadowColor: '#0b332a',
+                shadowOpacity: 0.12,
+                shadowRadius: 18,
+                shadowOffset: { width: 0, height: 6 },
+                elevation: 8,
+              }
+            : {
+                shadowColor: '#000',
+                shadowOpacity: 0.4,
+                shadowRadius: 18,
+                shadowOffset: { width: 0, height: 8 },
+                elevation: 8,
+              }),
+          // ⚠️ NO BORDER. The references have none, and a hairline on a pill
+          // over a gradient reads as a seam at the top and nothing at the
+          // bottom. The shadow below does the separating instead.
           paddingHorizontal: 6,
           gap: GAP,
           /*
@@ -291,7 +498,7 @@ export function TabPill({
                 width: w.capsule,
                 height: 37,
                 borderRadius: amazen.radius.full,
-                backgroundColor: c.accentTint,
+                backgroundColor: c.barCapsule,
               },
               capsuleStyle,
             ]}
@@ -320,16 +527,18 @@ export function TabPill({
             <TourTarget
               key={it.key}
               name={it.tourKey}
-              style={{
-                width: it.focused ? w?.capsule : w?.mark,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              /*
+                ⚠️ NO WIDTH HERE ANY MORE. The slot animates its own, and a
+                fixed width on the wrapper would clamp it — the tint would
+                slide while the mark stayed put inside a box that never grew.
+                The wrapper measures; it does not size.
+              */
+              style={{ alignItems: 'center', justifyContent: 'center' }}
             >
-              <TabSlot item={it} width={(it.focused ? w?.capsule : w?.mark) ?? 0} />
+              <TabSlot item={it} width={w?.capsule ?? 0} markWidth={w?.mark ?? 0} />
             </TourTarget>
           ) : (
-            <TabSlot key={it.key} item={it} width={(it.focused ? w?.capsule : w?.mark) ?? 0} />
+            <TabSlot key={it.key} item={it} width={w?.capsule ?? 0} markWidth={w?.mark ?? 0} />
           ),
         ) : null}
       </View>
@@ -337,7 +546,17 @@ export function TabPill({
   );
 }
 
-function TabSlot({ item, width }: { item: TabPillItem; width: number }) {
+function TabSlot({
+  item,
+  width,
+  markWidth,
+}: {
+  item: TabPillItem;
+  /** The width this slot has when ACTIVE. */
+  width: number;
+  /** The width it has when it is not. */
+  markWidth: number;
+}) {
   const { amazen } = useTheme();
   const c = amazen.color;
   const Glyph: React.ComponentType<TabGlyphProps> =
@@ -354,124 +573,220 @@ function TabSlot({ item, width }: { item: TabPillItem; width: number }) {
   */
   const jade = useSharedValue(item.focused ? 1 : 0);
   React.useEffect(() => {
-    jade.value = withTiming(item.focused ? 1 : 0, TINT);
+    jade.value = withTiming(item.focused ? 1 : 0, tint());
   }, [item.focused, jade]);
   const jadeStyle = useAnimatedStyle(() => ({ opacity: jade.value }));
 
+  /*
+    ⚠️ THE WIDTH IS ANIMATED, and that is the whole difference.
+
+    It used to change in one frame: the outgoing slot snapped from 108 to 46
+    and the incoming one from 46 to 108, so every mark in the row jumped
+    sideways instantly while the tint slid smoothly behind them. Two motions,
+    one of them a cut — which is what "not smooth" actually was. The tint was
+    never the problem.
+
+    On the SAME spring as the capsule, so the tint and the slot it is filling
+    move as one thing.
+
+    ⚠️ Width is a layout property, so this costs a layout pass per frame on the
+    native side — which is exactly why there are five of these and not fifty,
+    and why `LinearTransition` was removed rather than added to: that ran a
+    layout animation on the mark as WELL, for the same pixels.
+  */
+  const grow = useSharedValue(item.focused ? 1 : 0);
+  React.useEffect(() => {
+    grow.value = withSpring(item.focused ? 1 : 0, slide());
+  }, [item.focused, grow]);
+  const growStyle = useAnimatedStyle(() => ({
+    width: interpolate(grow.value, [0, 1], [markWidth, width]),
+  }));
+
+  /*
+    The label rides the SAME value — no mount, no unmount, no entering.
+
+    `FadeIn`/`FadeOut` meant React added and removed an element in the middle
+    of the transition: a render, a reconciliation and a layout pass on the JS
+    thread, in the frames where the UI thread is trying to run a spring. That
+    is where a dropped frame comes from, and it is the one place in this bar
+    where it is avoidable for free.
+
+    It stays mounted and its opacity is interpolated. It only starts appearing
+    once the slot is 45% open, so the word arrives INTO the space rather than
+    on top of it.
+  */
+  /*
+    ⚠️ THE LABEL'S OWN WIDTH IS ANIMATED TOO, from nothing to what it measures.
+
+    Without it the word still occupies layout while invisible, so the mark sits
+    off-centre in a narrow slot — pushed left by half a word nobody can see.
+
+    ⚠️ AND IT IS MEASURED BY A COPY THAT IS NEVER CLIPPED. Measuring the real
+    label cannot work and fails silently: it lives inside a container this
+    animation squeezes to zero, and a child of a zero-width `overflow: hidden`
+    parent lays out at zero — so `onLayout` reported 0, the guard rejected it,
+    the width stayed 0, and the word never appeared on any tab that became
+    active after mount. The tint moved, the capsule opened, and it was empty.
+
+    The measuring copy is absolutely positioned, so it is outside the flow and
+    outside the clip, and invisible to both the eye and a screen reader.
+  */
+  const [labelW, setLabelW] = React.useState(0);
+  const labelStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(grow.value, [0.45, 1], [0, 1], 'clamp'),
+    width: labelW ? interpolate(grow.value, [0, 1], [0, labelW]) : undefined,
+  }));
+
   return (
-    <Pressable
-      onPress={item.onPress}
-      accessibilityRole="tab"
-      /* The label is read out even when it is not drawn — the four inactive
-         marks are unlabelled to the eye and must not be to a screen reader. */
-      accessibilityLabel={item.badge ? `${item.label}, ${item.badge}` : item.label}
-      accessibilityState={{ selected: item.focused }}
-      /*
-        ⚠️ THE SLOT IS 37pt TALL AND THE MINIMUM TARGET IS 44.
+    /*
+      ⚠️ THE ANIMATION AND THE PRESS ARE TWO ELEMENTS, and that is not an
+      arbitrary split.
 
-        37 is the measured height of the capsule and it is the right VISUAL —
-        a 44pt tint in a 62pt pill leaves no air. So the target is grown
-        without growing the drawing: 8pt top and bottom takes it to 53, and
-        the horizontal slop closes the 2pt gaps so there is no dead strip
-        between two tabs for a thumb to land in.
+      The width comes from `useAnimatedStyle`, and `Pressable` takes its style
+      as a FUNCTION — `({ pressed }) => …` — which an animated component does
+      not evaluate. Wrapping the animated style in that function silently
+      dropped it: no crash, no warning, just every slot at its static width and
+      a bar collapsed into the left corner.
 
-        This bar is used outdoors, in gloves.
-      */
-      hitSlop={{ top: 8, bottom: 8, left: 1, right: 1 }}
-      style={({ pressed }) => [
+      So the outer view animates and the inner one presses. Each does one
+      thing, and neither can quietly swallow the other.
+    */
+    <Animated.View
+      style={[
+        growStyle,
         {
-          /*
-            The capsule is a constant; the marks divide the remainder. Never
-            content-sized — a capsule that hugged its label would be 90pt on
-            "Home" and 150pt on "Nachrichten", and every tab would sit
-            somewhere different depending on which one you were on.
-
-            Press feedback is opacity rather than a scale transform. A
-            transform on this row judders, and it would be the only thing on
-            the bar that moves.
-          */
-          width,
-          flexGrow: 0,
-          flexShrink: 0,
-          /*
-            ⚠️ 37pt, AND `alignSelf` SO IT STAYS 37pt.
-
-            Without it the slot inherits the row's `alignItems` and stretches
-            to the pill's full 62pt — which is exactly what happened to Jobs
-            and Time and to nothing else, because those two are the tabs the
-            guided tour spotlights and so the only two wrapped in a
-            `TourTarget`. A capsule two different heights depending on whether
-            a tour step happens to point at it is the kind of bug that looks
-            like a rendering glitch.
-          */
           height: 37,
+          /*
+            ⚠️ `alignSelf` SO IT STAYS 37pt. Without it the slot inherits the
+            row's `alignItems` and stretches to the pill's full 62 — which is
+            exactly what happened to Jobs and Time and to nothing else, because
+            those two are the tabs the guided tour spotlights and so the only
+            two wrapped in a `TourTarget`.
+          */
           alignSelf: 'center',
           borderRadius: amazen.radius.full,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: item.focused ? 6 : 0,
-          paddingHorizontal: item.focused ? 10 : 0,
-          opacity: pressed ? 0.7 : 1,
+          /*
+            ⚠️ `overflow: hidden` MAKES THE LABEL SLIDE OUT OF THE MARK. The
+            word is there the whole time; it is revealed by the slot widening
+            rather than appearing on top of it. One motion instead of a fade
+            layered over a jump.
+          */
+          overflow: 'hidden',
+          flexGrow: 0,
+          flexShrink: 0,
         },
-        /* ⚠️ No background here. The tint is ONE shared capsule behind the
-           row — see `TabPill`. A per-slot background would flash rather than
-           slide, and the two drawn together would double up mid-animation. */
       ]}
     >
       {/*
-        ⚠️ `LinearTransition` on the mark, because the LABEL changes the
-        layout beside it. When a tab becomes active the label appears and the
-        row re-centres, which would otherwise snap the mark ~20pt sideways in
-        a single frame. This carries it across instead, on the same curve and
-        the same 180ms as the capsule — so the mark rides WITH the tint
-        rather than arriving before it.
+        The ruler. Absolute, so nothing it does affects layout; `opacity: 0`
+        and `accessibilityElementsHidden` so it is drawn for no one.
       */}
-      <Animated.View layout={LinearTransition.duration(SLIDE.duration).easing(SLIDE.easing)}>
-        <Glyph size={21} color={c.inkMuted} />
-        <Animated.View style={[{ position: 'absolute', left: 0, top: 0 }, jadeStyle]}>
-          <Glyph size={21} color={c.accent} />
-        </Animated.View>
-        {item.badge ? <Badge count={item.badge} /> : null}
-      </Animated.View>
-      {item.focused ? (
-        /*
-          The label is MOUNTED only while active, and enters a beat after the
-          capsule starts moving — the tint arrives first and the word settles
-          into it. Out is quicker than in: a word leaving should not be
-          something you watch.
-        */
-        <Animated.View
-          entering={FadeIn.duration(SLIDE.duration).delay(60).reduceMotion(ReduceMotion.System)}
-          exiting={FadeOut.duration(90).reduceMotion(ReduceMotion.System)}
-          style={{ flexShrink: 1 }}
+      <View
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={{ position: 'absolute', opacity: 0, left: 0, top: 0 }}
+        onLayout={(e) => {
+          const next = e.nativeEvent.layout.width;
+          if (next > 0 && Math.abs(next - labelW) > 0.5) setLabelW(next);
+        }}
+      >
+        <AText
+          variant="caption"
+          numberOfLines={1}
+          style={{ fontSize: 13, lineHeight: 17, fontFamily: amazen.font.sansMedium, paddingLeft: 6 }}
         >
-          <AText
-            variant="caption"
-            numberOfLines={1}
-            /* Truncates inside the fixed capsule. The alternative is a capsule
-               that changes width per language, which is the thing this avoids. */
-            /*
-              ⚠️ `flexShrink` AND `minWidth: 0` on the TEXT ITSELF, not only on
-              its wrapper. On Android a `<Text>` in a row does not ellipsize
-              from a shrinking parent — it overflows the capsule and is clipped
-              mid-letter. iOS is forgiving here and Android is not, which is
-              exactly the kind of difference that ships.
-            */
-            style={{
-              color: c.accent,
-              fontSize: 13,
-              lineHeight: 17,
-              fontFamily: amazen.font.sansMedium,
-              flexShrink: 1,
-              minWidth: 0,
-            }}
-          >
-            {item.label}
-          </AText>
+          {item.label}
+        </AText>
+      </View>
+
+      <Pressable
+        onPress={item.onPress}
+        accessibilityRole="tab"
+        /* The label is read out even when it is not drawn — the four inactive
+           marks are unlabelled to the eye and must not be to a screen reader. */
+        accessibilityLabel={item.badge ? `${item.label}, ${item.badge}` : item.label}
+        accessibilityState={{ selected: item.focused }}
+        /*
+          ⚠️ THE SLOT IS 37pt TALL AND THE MINIMUM TARGET IS 44.
+
+          37 is the measured height of the capsule and it is the right VISUAL —
+          a 44pt tint in a 62pt pill leaves no air. So the target is grown
+          without growing the drawing: 8pt top and bottom takes it to 53, and
+          the horizontal slop closes the 2pt gaps so there is no dead strip
+          between two tabs for a thumb to land in.
+
+          This bar is used outdoors, in gloves.
+        */
+        hitSlop={{ top: 8, bottom: 8, left: 1, right: 1 }}
+        style={({ pressed }) => ({
+          flex: 1,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          /*
+            ⚠️ CONSTANT, not `focused ? … : …`. It used to flip in a single
+            frame in the middle of the spring — one more cut underneath a
+            smooth motion. The gap lives inside the label's own animated
+            width, and 10pt fits the mark at either size (10 + 21 + 10 = 41,
+            inside the 46pt mark slot).
+          */
+          paddingHorizontal: 10,
+          /* Opacity, not a scale transform: a transform on a box whose width
+             is already animating judders. */
+          opacity: pressed ? 0.7 : 1,
+        })}
+      >
+        {/*
+          ⚠️ NO LAYOUT ANIMATION ON THE MARK, and it used to have one.
+
+          `LinearTransition` carried the mark across as the label pushed it — a
+          second animation, on the same pixels, competing with the width spring
+          for the same frames. Now the slot's own width animates, the mark is
+          centred in it, and it is carried for free by a motion that was
+          happening anyway. One animation is smoother than two agreeing with
+          each other.
+        */}
+        <View>
+          <Glyph size={21} color={c.inkMuted} />
+          <Animated.View style={[{ position: 'absolute', left: 0, top: 0 }, jadeStyle]}>
+            <Glyph size={21} color={c.accent} />
+          </Animated.View>
+          {item.badge ? <Badge count={item.badge} /> : null}
+        </View>
+
+        {/*
+          ⚠️ ALWAYS MOUNTED, never conditional — see `labelStyle`. It costs a
+          hidden <Text> per slot and buys a transition with no React work in it
+          at all: no mount, no reconciliation, no layout pass on the JS thread
+          in the frames where the UI thread is running a spring.
+        */}
+        <Animated.View style={[{ overflow: 'hidden' }, labelStyle]}>
+          <View style={{ paddingLeft: 6 }}>
+            <AText
+              variant="caption"
+              numberOfLines={1}
+              /*
+                ⚠️ `flexShrink` AND `minWidth: 0` on the TEXT ITSELF, not only
+                on its wrapper. On Android a <Text> in a row does not ellipsize
+                from a shrinking parent — it overflows and is clipped
+                mid-letter. iOS is forgiving here and Android is not.
+              */
+              style={{
+                color: c.accent,
+                fontSize: 13,
+                lineHeight: 17,
+                fontFamily: amazen.font.sansMedium,
+                flexShrink: 1,
+                minWidth: 0,
+              }}
+            >
+              {item.label}
+            </AText>
+          </View>
         </Animated.View>
-      ) : null}
-    </Pressable>
+      </Pressable>
+    </Animated.View>
   );
 }
 

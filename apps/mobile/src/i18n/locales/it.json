@@ -354,6 +354,15 @@
       "equipment": "La mia attrezzatura",
       "messages": "Messaggi",
       "support": "Assistenza"
+    },
+    "arrange": {
+      "start": "Disponi",
+      "add": "Aggiungi widget",
+      "remove": "Rimuovi dalla home",
+      "addTitle": "Aggiungi alla home",
+      "nothingToAdd": "Tutto ciò che puoi avere è già qui.",
+      "someOff": "{{count}} di {{total}} non sono nella tua home.",
+      "allOn": "Tutti i {{count}} sono nella tua home."
     }
   },
   "tasks": {
@@ -2864,5 +2873,15 @@
     "endRest": "Termina la pausa",
     "break": "Pausa",
     "setRealTime": "Inserisci l'orario reale"
+  },
+  "widgets": {
+    "shiftClock": "Orologio turno",
+    "myWork": "Il mio lavoro",
+    "myRoute": "Percorso di oggi",
+    "crew": "Squadra",
+    "needsYou": "In attesa di te",
+    "documentsDue": "Documenti",
+    "clients": "Clienti",
+    "shortcuts": "Scorciatoie"
   }
 }

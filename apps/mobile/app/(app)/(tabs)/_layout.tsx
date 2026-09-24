@@ -2,7 +2,6 @@ import { View, Text, StyleSheet, Platform, Pressable, Animated, TouchableOpacity
 import { Tabs, useRouter, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import { useRef, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BlurSheet } from '../../../src/components/blur-sheet';
@@ -13,7 +12,7 @@ import { holds } from '../../../src/lib/permissions';
 import { ShiftIssueListSheet, ShiftIssueThreadSheet } from '../../../src/components/shift-issue-sheet';
 import { AnimatedLogo } from '../../../src/components';
 import { TabPill } from '../../../src/components/amazen';
-import { TAB_GLYPHS } from '../../../src/components/home/tab-glyphs';
+import { TAB_GLYPHS } from '../../../src/components/glyphs/tab-glyphs';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
@@ -429,20 +428,21 @@ export default function TabsLayout() {
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
       {/*
-        ⚠️ `backgroundColor` was removed, not moved. expo-status-bar warns that
-        it is unsupported under edge-to-edge and then forwards the prop to React
-        Native anyway, which calls the deprecated `Window.setStatusBarColor` —
-        one of the APIs Play names in "Deine App verwendet nicht mehr
-        unterstützte APIs oder Parameter für die randlose Anzeige". It has been
-        a no-op on the device since Android 15 enforced edge-to-edge; it was
-        only ever reaching the bundle scanner.
+        ⚠️ NO `<StatusBar>` HERE. The root layout owns it, driven by the app's
+        theme, and a second one mounted at the same time simply fights it —
+        both write the same global on every render and the winner is commit
+        order. See the note in `app/_layout.tsx`.
 
-        Nothing replaces it: the navigator's header already carries
-        `colors.header` and is padded by the top safe-area inset, so it is the
-        header that paints behind the status bar. `style` stays — icon
-        contrast is the supported half of this API.
+        `backgroundColor` is gone for a separate reason worth keeping: expo
+        forwards it to React Native, which calls the deprecated
+        `Window.setStatusBarColor` — one of the APIs Play names in "Deine App
+        verwendet nicht mehr unterstützte APIs oder Parameter für die randlose
+        Anzeige". It has been a no-op on the device since Android 15 enforced
+        edge-to-edge; it was only ever reaching the bundle scanner. Nothing
+        replaces it: the navigator's header already carries `colors.header` and
+        is padded by the top safe-area inset, so it is the header that paints
+        behind the status bar.
       */}
-      <StatusBar style={isDark ? 'light' : 'dark'} />
 
       <Tabs
         tabBar={(props) => <CustomTabBar {...props} />}
@@ -487,11 +487,44 @@ export default function TabsLayout() {
             animation when the system asks.
           */
           animation: 'shift',
+          /*
+            ⚠️ THE PAGE RUNS ON THE SAME SPRING AS THE CAPSULE.
+
+            The default is a timing curve, and the pill's own motion is a
+            spring — so the content arrived on one schedule and the tint on
+            another, and the eye reads two things happening rather than one.
+            Matching them is what makes a tab press feel like a single
+            gesture instead of two animations that happen to start together.
+
+            `useNativeDriver` is forced on by the navigator, so this runs off
+            the JS thread — it stays smooth while the incoming screen mounts
+            and fetches, which is exactly when it used to stutter.
+          */
+          transitionSpec: {
+            animation: 'spring',
+            config: {
+              stiffness: 180,
+              damping: 22,
+              mass: 0.9,
+              overshootClamping: true,
+              restDisplacementThreshold: 0.2,
+              restSpeedThreshold: 0.2,
+            },
+          },
         }}
       >
         <Tabs.Screen
           name="index"
           options={{
+            /*
+              ⚠️ NO NAVIGATION BAR ON HOME.
+
+              The screen draws its own — the date, the organization, and the
+              avatar — and the stock band on top of it would be two headers,
+              the upper one spending 56pt to say "Home" to somebody who just
+              pressed Home.
+            */
+            headerShown: false,
             /*
               ⚠️ ALWAYS "Home", never "Dashboard" — and this is a v2 reversal.
 

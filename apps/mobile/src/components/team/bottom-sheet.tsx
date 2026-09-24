@@ -10,7 +10,7 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { useTheme } from '../../../contexts/theme-context';
+import { useTheme } from '../../contexts/theme-context';
 
 interface Props {
   visible: boolean;

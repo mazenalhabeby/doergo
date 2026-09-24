@@ -169,7 +169,7 @@ function RootLayoutNav() {
   if (versionStatus?.blocked) {
     return (
       <View style={styles.container}>
-        <StatusBar style="auto" />
+        <StatusBar style={isDark ? 'light' : 'dark'} />
         <UpdateRequired status={versionStatus} />
       </View>
     );
@@ -177,7 +177,31 @@ function RootLayoutNav() {
 
   return (
     <ToastProvider isDark={isDark}>
-      <StatusBar style="auto" />
+      {/*
+        ⚠️ THE APP'S THEME, NOT THE PHONE'S — AND ONLY ONE OF THESE IN THE TREE.
+
+        Two bugs lived here. `style="auto"` reads the OS colour scheme, while
+        the Android navigation-bar effect above reads `isDark`, which is the
+        APP's theme — so a member who pins the app to Light while the phone is
+        in Dark got light icons on a light header, invisible, with the
+        navigation bar at the other end of the screen correctly dark.
+
+        And `(app)/(tabs)/_layout.tsx` mounted a SECOND `<StatusBar>` with a
+        different opinion. Both were mounted at once, both write the same
+        global on every render, and which one landed was commit order — so the
+        icon colour on the tab screens was undefined whenever the two
+        disagreed, which is exactly the pinned-theme case above.
+
+        (The `StatusBarModule: Ignored status bar change` lines in logcat are
+        NOT from this: expo-status-bar always sends a background colour, and
+        Android drops it under edge-to-edge. Removing the duplicate does not
+        reduce them, and they are harmless.)
+
+        One component, one source of truth. Screens with a fixed dark hero
+        (login, onboarding) still override it locally; they mount deeper and
+        are unmounted again when they close.
+      */}
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />

@@ -3,9 +3,10 @@
  * (apps/web-app/src/app/(dashboard)/dashboard/_components/client-dashboard.tsx).
  * Pure functions: avatar colors, status derivation, time formatting.
  */
-import i18n from '../../../i18n';
-import type { Task } from '../../../lib/api';
-import type { TimeEntry } from '../../../lib/api/types';
+import i18n from '../../i18n';
+import type { Task } from '../../lib/api';
+import type { TimeEntry } from '../../lib/api/types';
+import { initialsOf } from '../../lib/people';
 
 export type WorkerStatus = 'on' | 'busy' | 'away' | 'off';
 export type TagVariant = 'task' | 'hrs';
@@ -26,8 +27,14 @@ export const AVATAR_COLORS: [string, string][] = [
   ['#14b8a6', '#0d9488'],
 ];
 
+/**
+ * ⚠️ RE-EXPORT. The rule moved to `src/lib/people.ts`, because seven other
+ * places in this app wrote their own copy rather than look for it in a Team
+ * helper file. The signature is kept so this file's caller did not have to
+ * change to make room.
+ */
 export function getInitials(firstName?: string, lastName?: string): string {
-  return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase() || '?';
+  return initialsOf({ firstName, lastName });
 }
 
 function hashString(str: string): number {

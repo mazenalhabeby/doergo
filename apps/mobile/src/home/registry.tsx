@@ -7,6 +7,28 @@ import { ShiftClockCard } from '../components/home/shift-clock-card';
 import { ShortcutsRail } from '../components/home/shortcuts-rail';
 import { DocumentsReminderCard } from '../components/documents-reminder-card';
 import { MyWorkCard } from '../components/home/my-work-card';
+import { WidgetPlaceholder } from '../components/home/widget-placeholder';
+
+/*
+  ⚠️ FOUR WIDGETS ARE REGISTERED AND NOT BUILT — crew, needs-you, my-route and
+  clients. They render an honest empty box that says so.
+
+  They are here rather than absent because the thing being decided right now is
+  the ARRANGEMENT, and an arrangement of four is not the arrangement of eight.
+  Each placeholder carries the question its spec says it answers, which is the
+  part worth reviewing while the layout is in play.
+
+  ⚠️ Their `requires` are REAL, not placeholders. Entitlement is the half of
+  this that is easiest to get wrong and hardest to see, so it is wired now:
+  switch to a clock-only member and the right ones disappear.
+*/
+const placeholder = (title: string, question: string, height?: number) => {
+  const C = ({ style }: { style?: object }) => (
+    <WidgetPlaceholder title={title} question={question} height={height} />
+  );
+  C.displayName = `Placeholder(${title})`;
+  return C;
+};
 
 /**
  * A WIDGET IS A REGISTRY ROW.
@@ -28,6 +50,16 @@ export interface WidgetRow {
   requires?: Requires;
   Component: React.ComponentType<{ style?: object }>;
   /**
+   * The question this widget answers, in one line — taken from its folder in
+   * `docs/design`.
+   *
+   * Shown in the picker, because a row labelled only "Crew" tells nobody
+   * whether they want it on their home screen. It is plain English rather than
+   * an i18n key on purpose while the set is being decided; it becomes a key
+   * when the copy settles.
+   */
+  question?: string;
+  /**
    * What an empty answer means — a DECISION, not an absence.
    *
    *   hidden      normal, nothing to report
@@ -48,6 +80,7 @@ export const WIDGETS: WidgetRow[] = [
   {
     key: 'shift-clock',
     title: 'widgets.shiftClock',
+    question: 'Am I on the clock, and when is my next rest?',
     requires: { module: 'clock', self: true },
     Component: ShiftClockCard,
     empty: 'hidden',
@@ -66,6 +99,7 @@ export const WIDGETS: WidgetRow[] = [
   {
     key: 'documents-due',
     title: 'widgets.documentsDue',
+    question: 'What do I still owe the office?',
     requires: { self: true },
     Component: DocumentsReminderCard,
     empty: 'hidden',
@@ -84,8 +118,68 @@ export const WIDGETS: WidgetRow[] = [
   {
     key: 'my-work',
     title: 'widgets.myWork',
+    question: 'What am I doing today, and this week?',
     Component: MyWorkCard,
     empty: 'allClear',
+  },
+
+  /*
+    Today's route — §3.4. About the viewer; needs the tracking module.
+    ⚠️ Pins with no line between them means no routing engine is configured —
+    the nearest-neighbour fallback returns an order and no geometry.
+  */
+  {
+    key: 'my-route',
+    title: 'widgets.myRoute',
+    question: 'How many stops, how far, when am I back?',
+    requires: { orgModule: 'tracking', self: true },
+    Component: placeholder("Today's route", 'How many stops, how far, when am I back?', 96),
+    empty: 'invitation',
+  },
+
+  /*
+    Crew — §3.6/§3.7/§3.8 folded into one. Who is on site right now.
+    ⚠️ A *now* question: never cached, and stale here is simply wrong.
+  */
+  {
+    key: 'crew',
+    title: 'widgets.crew',
+    question: 'Who is on site right now?',
+    requires: { permission: 'canViewSpaceAttendance' },
+    Component: placeholder('Crew', 'Who is on site right now?', 96),
+    empty: 'allClear',
+  },
+
+  /*
+    Needs you — §3.14/§3.15/§3.19/§3.21 folded into one row.
+
+    ⚠️ `anyOf` exists for exactly this: the card appears when the viewer holds
+    any ONE of four unrelated grants, and each of its rows then appears
+    independently. Four separate registry rows would each be absent most days —
+    four things to keep consistent for a screen that shows one of them.
+  */
+  {
+    key: 'needs-you',
+    title: 'widgets.needsYou',
+    question: 'Expenses, leave and requests waiting on me.',
+    requires: { anyOf: ['canViewAllTasks', 'canManageAssets', 'canManageUsers'] },
+    Component: placeholder('Needs you', 'Expenses, leave and requests waiting on me.', 110),
+    empty: 'hidden',
+  },
+
+  /*
+    Clients — §3.11.
+    ⚠️ Cannot be built without `GET /crm/due`, which does not exist. See
+    `docs/design/clients/ENDPOINT.md`, which ends with the honest alternative:
+    if it is not going to be built, Clients is a badged tile in the rail.
+  */
+  {
+    key: 'clients',
+    title: 'widgets.clients',
+    question: 'Who is due a call, and who is going cold?',
+    requires: { orgModule: 'crm' },
+    Component: placeholder('Clients', 'Who is due a call, and who is going cold?', 96),
+    empty: 'hidden',
   },
 
   /*
@@ -96,6 +190,7 @@ export const WIDGETS: WidgetRow[] = [
   {
     key: 'shortcuts',
     title: 'widgets.shortcuts',
+    question: 'Four doors to the screens I use most.',
     Component: ShortcutsRail,
     empty: 'hidden',
   },
@@ -109,7 +204,16 @@ export const WIDGETS: WidgetRow[] = [
  * `ADMIN | EMPLOYEE | CUSTOMER` and everything meaningful lives in an
  * `AccessRole`. Entitlement filters this list; it does not fork it.
  */
-export const DEFAULT_ORDER: string[] = ['shift-clock', 'documents-due', 'my-work', 'shortcuts'];
+export const DEFAULT_ORDER: string[] = [
+  'shift-clock',
+  'documents-due',
+  'my-work',
+  'needs-you',
+  'crew',
+  'my-route',
+  'clients',
+  'shortcuts',
+];
 
 /**
  * ENTITLEMENT IS ASKED ONCE, AND FILTERED LAST.

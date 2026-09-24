@@ -354,6 +354,15 @@
       "equipment": "Mi equipo",
       "messages": "Mensajes",
       "support": "Soporte"
+    },
+    "arrange": {
+      "start": "Organizar",
+      "add": "Añadir widget",
+      "remove": "Quitar del inicio",
+      "addTitle": "Añadir a tu inicio",
+      "nothingToAdd": "Todo lo que puedes tener ya está aquí.",
+      "someOff": "{{count}} de {{total}} no están en tu inicio.",
+      "allOn": "Los {{count}} están en tu inicio."
     }
   },
   "tasks": {
@@ -2864,5 +2873,15 @@
     "endRest": "Terminar descanso",
     "break": "Descanso",
     "setRealTime": "Poner la hora real"
+  },
+  "widgets": {
+    "shiftClock": "Reloj de turno",
+    "myWork": "Mi trabajo",
+    "myRoute": "Ruta de hoy",
+    "crew": "Equipo",
+    "needsYou": "Te espera",
+    "documentsDue": "Documentos",
+    "clients": "Clientes",
+    "shortcuts": "Accesos"
   }
 }

@@ -24,7 +24,13 @@ docs/design/
 
 Visual reference, every state drawn at 350–390pt:
 **https://claude.ai/artifact/9GcjYhxdrUEaL7NAVstB7U** (private)
-The summary board is **★ The catalogue, closed — 27 → 9**.
+The summary boards are **★ The catalogue, closed** and **★ The whole home
+screen**.
+
+⚠️ **An implementer cannot see that canvas** — it is a page on claude.ai, not a
+file here. **`BOARDS.md` maps every board to the files that specify it**, and
+has the prompt to paste when asking for one. Ask by **path and section**, never
+by board title.
 
 ---
 
@@ -58,7 +64,7 @@ None of these needs a widget. All six are in code that ships today.
 | | Where | What |
 |---|---|---|
 | **1** | `attendance.service.ts` · `getActiveEntries` | `prisma.timeEntry.findMany` with an `orderBy` and **no `take`**, on a route documented *org-wide*. ~148 rows on every home render at twelve sites. `listNoShows` in the same file uses `take: 200`. |
-| **2** | `admin-dashboard.tsx` | `if (rostered.size === 0)` makes **"6 of 9" into "6 of 6"** — the presence bar is full forever for every supervisor granted attendance but not sites. |
+| ~~**2**~~ | ~~`admin-dashboard.tsx`~~ | **STRUCK — closed as a bug, reopened as a requirement.** `admin-dashboard.tsx` was deleted with the four old home screens, so nobody can hit `if (rostered.size === 0)` any more. The correct behaviour is specified in `crew/FINDINGS.md` §1 and is built **with ④ Crew**: when `rostered.size === 0`, drop the `/n` and render `6 · on the clock right now`. ⚠️ Do not reimplement the collapsing denominator on the way. |
 | **3** | `route-nav.ts` · `supportsMultiStop()` | **Exported and never called.** Apple Maps and Waze users press *Start navigation*, are told it opens the whole route, and get turn-by-turn to stop one. `navApp` defaults to `'apple'` on iOS. |
 | **4** | `pending-summary.ts` · `summarisePending()` | Drops `REJECTED` and `forMember`. A rejected document reads as a missing one, so the member photographs the same cut-off card again. |
 | **5** | `tasks.controller.ts` → `getStatusCounts` | `canAssignTasks` is passed in and the service neither declares nor destructures it. Silently dropped. |
@@ -121,14 +127,23 @@ shortcuts rail as a badged tile and leave it there.
 
 ## 5. Build order
 
-**A · Land the six bugs from §2.** Independent, small, and every one of them
-improves a screen that exists.
+**A · Land the bugs from §2.** Independent, small, and every one of them
+improves a screen that exists. ⚠️ **Bug 2 is struck** — its subject was deleted;
+it is now part of ④ Crew. **Bugs 1 and 5 are `apps/api`** and held. That leaves
+**4** and **3**, in that order: a rejected document reading as a missing one is
+the worst of the set for a real member.
 
 **B · The three shared changes from §3.** Nothing visible changes. They are
 what the widgets stand on.
 
 **C · The icon set.** Move `icons/` into
-`apps/mobile/src/components/home/` and fold `index.ts` into that folder's own.
+`apps/mobile/src/components/glyphs/` and fold `index.ts` into that folder's own.
+
+⚠️ **`glyphs/`, not `home/`** — this folder originally said `home/`. The marks
+are not the home screen's: the footer reads `tab-glyphs.tsx`, the tile rail is
+used by three surfaces, and `components/home/` was where four dead screens and
+72 require cycles lived until they were deleted. A family kept beside one of
+its consumers gets copied by the next one.
 **No edits to any `.tsx`** — every `import … from './glyphs'` is already
 written for the destination, which is why none of them compile where they sit.
 Delete `OnBreakGlyph`; `glyphs.tsx` already has `BreakGlyph`.
@@ -201,6 +216,25 @@ clients**.
 
 ---
 
+## 7a. Briefing an implementer
+
+Ask by **path and section number**. A board title means nothing outside the
+canvas — `BOARDS.md` explains why and has a worked example.
+
+```
+Read docs/design/README.md and docs/design/<widget>/ in full.
+Build <FILE>.md §<n> … §<n>, in that order.
+The marks are already in apps/mobile/src/components/glyphs/<x>-glyphs.tsx.
+Follow every ⚠️ line literally — each one is a bug that has happened.
+Do not invent states that are not in STATES.md.
+```
+
+The last two lines matter. Roughly a fifth of every file is ⚠️ warnings, each
+traced to something in this codebase, and every widget's states are a closed
+list.
+
+---
+
 ## 8. How each folder is laid out
 
 Every widget folder has a `README.md` with the one idea, the build order and a
@@ -217,6 +251,9 @@ Every widget folder has a `README.md` with the one idea, the build order and a
 | `DATA.md` | Route only — where every number comes from. |
 | `TOKENS.md` · `ISSUES.md` | Shift clock only. |
 | `OPEN.md` | Clients only — decisions deliberately left open. |
+
+And two at the top level: **`BOARDS.md`** (canvas board → the files that
+specify it) and this README.
 
 **8,068 lines** across nine folders.
 

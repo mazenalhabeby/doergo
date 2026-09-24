@@ -10,8 +10,8 @@ import { FreshnessLabel } from '../../offline/components/freshness-label';
 import { useShift } from '../../offline/attendance/use-shift';
 import type { Task } from '../../lib/api/types';
 import { AText, Chip, Eyebrow, Well, WellDivider, Disc, WidgetHeader } from '../amazen';
-import { CallGlyph, NavigateGlyph, MoreGlyph } from './work-glyphs';
-import type { GlyphProps } from './glyphs';
+import { NavigateGlyph, MoreGlyph } from '../glyphs/work-glyphs';
+import type { GlyphProps } from '../glyphs/glyphs';
 import {
   shapeFor, faceFor, weekOf, tasksOn, dotsForWeek, startOfDay, decisionFor,
 } from './my-work';
@@ -56,33 +56,67 @@ export function MyWorkCard({ style }: { style?: object }) {
     tasks: hasModule(user ?? {}, 'tasks'),
     clock: hasModule(user ?? {}, 'clock'),
   });
-  if (shape === 'none') return null;
 
-  const face = faceFor({
-    role: user?.role ?? null,
-    canViewAllTasks: user?.canViewAllTasks,
-    viewAllSpaceIds: (user?.access?.perSpace
-      ? Object.entries(user.access.perSpace)
-          .filter(([, g]) => (g as Record<string, boolean>)?.canViewAllTasks)
-          .map(([id]) => id)
-      : []),
-  });
+  const face = useMemo(
+    () =>
+      faceFor({
+        role: user?.role ?? null,
+        canViewAllTasks: user?.canViewAllTasks,
+        viewAllSpaceIds: user?.access?.perSpace
+          ? Object.entries(user.access.perSpace)
+              .filter(([, g]) => (g as Record<string, boolean>)?.canViewAllTasks)
+              .map(([id]) => id)
+          : [],
+      }),
+    [user?.role, user?.canViewAllTasks, user?.access?.perSpace],
+  );
 
-  const dayTasks = shape === 'shifts' ? [] : tasksOn(tasks, selected);
-  const dots = shape === 'shifts' ? week.map(() => 0) : dotsForWeek(tasks, week);
+  /*
+    ⚠️ MEMOISED, because `dotsForWeek` is SEVEN passes over the task list.
+
+    It calls `tasksOn` once per day, and each of those filters and sorts every
+    task the member can see. Unmemoised that ran on every render of this card —
+    every day tap, every queue movement, every parent update — and this member
+    has 157 tasks. Seven filters and seven sorts of 157 rows to redraw four
+    dots is the kind of cost that does not show up until somebody has a real
+    book of work.
+  */
+  const dayTasks = useMemo(
+    () => (shape === 'shifts' ? [] : tasksOn(tasks, selected)),
+    [shape, tasks, selected],
+  );
+  const dots = useMemo(
+    () => (shape === 'shifts' ? week.map(() => 0) : dotsForWeek(tasks, week)),
+    [shape, tasks, week],
+  );
 
   /*
     MINE ALWAYS LEADS. Every face that shows other people's work shows the
     reader's first, grouped and labelled. The widget is about YOUR work; the
     reader is the subject of that sentence whatever else is on screen.
   */
-  const mine = dayTasks.filter((x) => x.assignedToId === user?.id);
-  const theirs = dayTasks.filter((x) => x.assignedToId !== user?.id);
-  const ordered = face === 'executor' ? dayTasks : [...mine, ...theirs];
+  const { mine, theirs, ordered } = useMemo(() => {
+    const m = dayTasks.filter((x) => x.assignedToId === user?.id);
+    const th = dayTasks.filter((x) => x.assignedToId !== user?.id);
+    return { mine: m, theirs: th, ordered: face === 'executor' ? dayTasks : [...m, ...th] };
+  }, [dayTasks, user?.id, face]);
 
   const first = ordered[0];
-  const decision = first ? decisionFor(first, user?.id) : null;
+  const decision = useMemo(
+    () => (first ? decisionFor(first, user?.id) : null),
+    [first, user?.id],
+  );
   const rest = ordered.slice(first ? 1 : 0);
+
+  /*
+    ⚠️ THE EARLY EXIT LIVES HERE, BELOW EVERY HOOK, and it used to live above
+    them. Holding neither module means the widget does not render at all — but
+    a `return null` before a `useMemo` changes how many hooks run between one
+    render and the next, which is the one thing React cannot recover from. The
+    day somebody's modules change while the screen is open, the component
+    would have thrown rather than disappeared.
+  */
+  if (shape === 'none') return null;
 
   return (
     <View style={style}>
@@ -212,28 +246,42 @@ function ActiveRow({
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const c = amazen.color;
-  const phone = null as string | null;
 
   /*
-    The discs re-rank with the state. Before accepting, the useful act is often
-    a question; once moving, it is the road; once working, the person again.
+    ⚠️ COORDINATES ARE COERCED AND CHECKED BEFORE THEY GO INTO A URL.
+
+    They are typed `number | undefined`, but they arrive as JSON from the
+    server and TypeScript stops at the boundary — a string there would be
+    interpolated straight into a `geo:` URL handed to the OS. `Number()` plus
+    `isFinite` is two lines and closes it. Zero is a legal coordinate, so this
+    cannot be a truthiness check.
   */
-  const primaryDisc: { Glyph: React.ComponentType<GlyphProps>; label: string; onPress: () => void } =
-    task.status === 'EN_ROUTE'
+  const lat = Number(task.locationLat);
+  const lng = Number(task.locationLng);
+  const canNavigate = Number.isFinite(lat) && Number.isFinite(lng);
+
+  /*
+    ⚠️ NO CALL DISC, BECAUSE THERE IS NO NUMBER.
+
+    §4 of the spec ranks Call first before a job is accepted — "the useful act
+    is often a question" — and it is right. But `Task` carries no phone field
+    and neither does its assignee, so the disc was wired to a `const phone =
+    null` and did NOTHING when pressed. A control that is drawn, labelled,
+    reachable and inert is worse than an absent one: it is tapped, in a van, by
+    somebody who then believes the call is ringing.
+
+    So the row offers what it can actually do. When a contact number reaches
+    the task, the disc comes back — and the same rule the rest of this app
+    keeps applies: nothing is visible-then-refused.
+  */
+  const primaryDisc: { Glyph: React.ComponentType<GlyphProps>; label: string; onPress: () => void } | null =
+    task.status === 'EN_ROUTE' && canNavigate
       ? {
           Glyph: NavigateGlyph,
           label: t('taskDetail.navigate', { defaultValue: 'Navigate' }),
-          onPress: () => {
-            if (task.locationLat && task.locationLng) {
-              void Linking.openURL(`geo:${task.locationLat},${task.locationLng}`);
-            }
-          },
+          onPress: () => { void Linking.openURL(`geo:${lat},${lng}`); },
         }
-      : {
-          Glyph: CallGlyph,
-          label: t('taskDetail.call', { defaultValue: 'Call' }),
-          onPress: () => { if (phone) void Linking.openURL(`tel:${phone}`); },
-        };
+      : null;
 
   return (
     <Pressable
@@ -289,7 +337,7 @@ function ActiveRow({
           >
             <AText variant="h3" tone="accent">{decision.primary.label}</AText>
           </Pressable>
-          <Disc {...primaryDisc} behind={c.tile} />
+          {primaryDisc ? <Disc {...primaryDisc} behind={c.tile} /> : null}
           {/* ⚠️ Everything else goes behind the `⋯` — two equal buttons is how
               somebody declines a job by accident. */}
           {decision.rest.length > 0 ? (

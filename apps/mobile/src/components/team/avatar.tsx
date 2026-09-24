@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getAvatarColors, type WorkerStatus } from './helpers';
-import { resolveMediaUrl } from '../../../lib/api';
+import { resolveMediaUrl } from '../../lib/api';
 
 const STATUS_COLOR: Record<WorkerStatus, string> = {
   on: '#10b981',   // Available / On shift — green

@@ -65,6 +65,14 @@ export interface User {
   customerId?: string | null;
   unitId?: string | null;
   customerPortalEnabled?: boolean;
+  /**
+   * The organization's name.
+   *
+   * The server has always sent it on login, refresh and validateToken; this
+   * type simply never declared it, so nothing on the phone could name the
+   * company the member is working for.
+   */
+  organizationName?: string | null;
   avatarUrl?: string | null;
   // Permission fields
   canCreateTasks: boolean;

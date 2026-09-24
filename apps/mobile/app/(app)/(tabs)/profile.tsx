@@ -50,6 +50,7 @@ import { TourTarget, GuideSheet } from '../../../src/components/tour';
 import {
   Role,
 } from '@hbcfield/shared/client';
+import { useTabSafe } from '../../../src/components/amazen';
 
 function getInitials(firstName?: string, lastName?: string): string {
   const f = (firstName || '').charAt(0).toUpperCase();
@@ -79,6 +80,7 @@ export default function ProfileScreen() {
   const { snapshot: syncSnapshot } = useSyncStatus();
   const [showUnsentConfirm, setShowUnsentConfirm] = useState(false);
   const { colors, isDark, mode, setMode } = useTheme();
+  const tabSafe = useTabSafe();
   const toast = useToast();
   const { t } = useTranslation();
   const { unregisterPushToken } = usePushNotifications();
@@ -296,7 +298,8 @@ export default function ProfileScreen() {
     <ScreenContainer width="content">
     <ScrollView
       style={[styles.container, { backgroundColor: colors.surface }]}
-      contentContainerStyle={{ paddingBottom: insets.bottom + SPACING.xxxl }}
+      // ⚠️ Room for the floating tab pill — it reserves no layout of its own.
+      contentContainerStyle={{ paddingBottom: tabSafe }}
       showsVerticalScrollIndicator={false}
     >
       {/* ── 1. Profile Header ─────────────────────────────────────────── */}

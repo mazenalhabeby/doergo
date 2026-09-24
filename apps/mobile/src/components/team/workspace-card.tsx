@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../../contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../lib/constants';
+import { useTheme } from '../../contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../lib/constants';
 import { PersonNode, type PersonNodeData } from './person-node';
 
 export interface WorkspaceBoxData {

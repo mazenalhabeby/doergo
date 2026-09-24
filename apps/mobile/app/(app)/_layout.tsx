@@ -240,7 +240,6 @@ export default function AppLayout() {
         <Stack.Screen name="customers" options={{ headerShown: false }} />
         <Stack.Screen name="customer/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="support" options={{ headerShown: false }} />
-        <Stack.Screen name="chat" options={{ headerShown: false }} />
         <Stack.Screen name="extra-time" options={{ headerShown: false }} />
         <Stack.Screen name="sync" options={{ headerShown: false }} />
         {/* ⚠️ EVERY route under app/(app) must appear in this list.

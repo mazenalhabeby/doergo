@@ -8,10 +8,11 @@ import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/contexts/toast-context';
 import { useSocketContext } from '../../../src/contexts/socket-context';
 import { teamApi, type Colleague } from '../../../src/lib/api';
-import { Avatar } from '../../../src/components/home/workspace/avatar';
-import { getInitials, type WorkerStatus } from '../../../src/components/home/workspace/helpers';
+import { Avatar } from '../../../src/components/team/avatar';
+import { getInitials, type WorkerStatus } from '../../../src/components/team/helpers';
 import { ScreenContainer } from '../../../src/components';
 import { COLORS } from '../../../src/lib/constants';
+import { useTabSafe } from '../../../src/components/amazen';
 
 function presenceStatus(p?: string | null): WorkerStatus {
   return p === 'AVAILABLE' ? 'on' : p === 'BUSY' ? 'busy' : p === 'AWAY' ? 'away' : 'off';
@@ -25,6 +26,7 @@ function presenceLabel(p: string | null | undefined, t: import('i18next').TFunct
 
 export default function TeamScreen() {
   const { colors } = useTheme();
+  const tabSafe = useTabSafe();
   const toast = useToast();
   const { t } = useTranslation();
   const router = useRouter();
@@ -100,7 +102,8 @@ export default function TeamScreen() {
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
       <ScreenContainer width="content">
       <ScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        // ⚠️ Room for the floating tab pill — it reserves no layout of its own.
+        contentContainerStyle={{ padding: 16, paddingBottom: tabSafe }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[COLORS.primary]} tintColor={COLORS.primary} />}
       >
         <Text style={[styles.title, { color: colors.textPrimary }]}>{t('team.title')}</Text>

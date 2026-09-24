@@ -77,7 +77,7 @@ describe('notification routes', () => {
     expect(notificationTarget({ type: 'document_awaiting_signature', documentId: 'd1' }, viewer)).toEqual({ pathname: '/(app)/documents', params: { open: 'd1' } });
     expect(notificationTarget({ type: 'shift_reminder', entryId: 'e1' }, viewer)).toEqual({ pathname: '/(app)/(tabs)/attendance' });
     expect(notificationTarget({ type: 'task_assigned', taskId: 't1' }, viewer)).toEqual({ pathname: '/(app)/task/[id]', params: { id: 't1' } });
-    expect(notificationTarget({ type: 'chat', conversationId: 'c1' }, viewer)).toEqual({ pathname: '/(app)/chat', params: { conversationId: 'c1' } });
+    expect(notificationTarget({ type: 'chat', conversationId: 'c1' }, viewer)).toEqual({ pathname: '/(app)/(tabs)/chat', params: { conversationId: 'c1' } });
     expect(notificationTarget({ type: 'overtime.approved', overtimeRequestId: 'o1' }, viewer)).toEqual({ pathname: '/(app)/overtime/[id]', params: { id: 'o1' } });
     // A reminder push lands ON the Reminders tab — the record has three now,
     // and the first one is not the thing the member was just told about.
@@ -101,6 +101,6 @@ describe('notification routes', () => {
     expect(notificationTarget({ type: 'task_assigned' }, viewer)).toBeNull();
     expect(notificationTarget(undefined, viewer)).toBeNull();
     // A missing id is dropped, not sent as "undefined".
-    expect(notificationTarget({ type: 'chat' }, viewer)).toEqual({ pathname: '/(app)/chat' });
+    expect(notificationTarget({ type: 'chat' }, viewer)).toEqual({ pathname: '/(app)/(tabs)/chat' });
   });
 });

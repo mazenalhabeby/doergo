@@ -354,6 +354,15 @@
       "equipment": "Mon équipement",
       "messages": "Messages",
       "support": "Assistance"
+    },
+    "arrange": {
+      "start": "Organiser",
+      "add": "Ajouter un widget",
+      "remove": "Retirer de l'accueil",
+      "addTitle": "Ajouter à votre accueil",
+      "nothingToAdd": "Tout ce que vous pouvez avoir est déjà là.",
+      "someOff": "{{count}} sur {{total}} ne sont pas sur votre accueil.",
+      "allOn": "Les {{count}} sont sur votre accueil."
     }
   },
   "tasks": {
@@ -2864,5 +2873,15 @@
     "endRest": "Terminer la pause",
     "break": "Pause",
     "setRealTime": "Indiquer l'heure réelle"
+  },
+  "widgets": {
+    "shiftClock": "Horloge de poste",
+    "myWork": "Mon travail",
+    "myRoute": "Tournée du jour",
+    "crew": "Équipe",
+    "needsYou": "En attente de vous",
+    "documentsDue": "Documents",
+    "clients": "Clients",
+    "shortcuts": "Raccourcis"
   }
 }

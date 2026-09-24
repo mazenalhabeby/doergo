@@ -15,7 +15,7 @@ import { stopBackgroundHeartbeat } from '../../services/background-heartbeat';
 import { stopGeofence } from '../../services/background-geofence';
 import { formatDurationMinutes as formatDuration } from '../../lib/utils';
 import { AText, Chip, Eyebrow, GlassCard, Hero, LiveDot, Disc, DiscRow } from '../amazen';
-import { ClockInGlyph, ClockOutGlyph, BreakGlyph, IssueNewGlyph, IssueMineGlyph } from './shift-glyphs';
+import { ClockInGlyph, ClockOutGlyph, BreakGlyph, IssueNewGlyph, IssueMineGlyph } from '../glyphs/shift-glyphs';
 import { readShiftState, heroParts, type ScheduleKind } from './shift-state';
 
 /**

@@ -7,11 +7,20 @@ import { useDocumentRequirements } from '../contexts/document-requirements-conte
 import { summarisePending } from '@hbcfield/shared/client';
 import { PressableScale } from './pressable-scale';
 import { AText } from './amazen';
+/*
+  ⚠️ FROM THE GLYPH FILES, NOT A BARREL THAT RE-EXPORTS SCREENS.
+
+  This imported from `./home`, whose index also exported four whole home
+  screens — so a card that wanted five drawings pulled `admin-dashboard` and
+  three siblings into the bundle and created a require cycle with them. The
+  device log carried 72 of those warnings. A barrel is only safe when
+  everything behind it is the same KIND of thing.
+*/
 import {
-  DocNeededGlyph, DocExpiringGlyph, DocBlockedGlyph,
-  CountersignGlyph, SignGlyph,
-} from './home';
-import type { GlyphProps } from './home/glyphs';
+  DocNeededGlyph, DocExpiringGlyph, DocBlockedGlyph, CountersignGlyph,
+} from './glyphs/doc-glyphs';
+import { SignGlyph } from './glyphs/tile-glyphs';
+import type { GlyphProps } from './glyphs/glyphs';
 
 /**
  * "You still owe us a document", said once.

@@ -42,7 +42,9 @@ export const MAX_TABS = 5;
     time-off     falls into the overflow, which is what the overflow is for.
     team         likewise.
 
-  ⚠️ And `chat` JOINED it, which is why `app/(app)/chat.tsx` is now a redirect:
+  ⚠️ And `chat` JOINED it, so `app/(app)/chat.tsx` was DELETED — not turned
+  into a redirect. `(tabs)` is a group, so both files resolved to `/chat` and
+  the redirect looped onto itself, rendering a blank screen:
   a tab has to live inside the tab group to carry the pill, and every chat
   push notification already delivered still names the old path.
 

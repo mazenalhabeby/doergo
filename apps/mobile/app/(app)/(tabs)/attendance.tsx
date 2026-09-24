@@ -65,6 +65,7 @@ import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 import { workedMinutes } from '@hbcfield/shared/client';
 import { RestCard } from '../../../src/components/rest-card';
 import type { BreakPlanItem } from '@hbcfield/shared/client';
+import { useTabSafe } from '../../../src/components/amazen';
 
 export default function AttendanceScreen() {
   const { user } = useAuth();
@@ -75,6 +76,7 @@ export default function AttendanceScreen() {
   const router = useRouter();
   const toast = useToast();
   const { colors, isDark } = useTheme();
+  const tabSafe = useTabSafe();
   const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
   const [isLoading, setIsLoading] = useState(true);
@@ -622,6 +624,8 @@ export default function AttendanceScreen() {
       <ScreenContainer width="content">
       <ScrollView
         style={styles.scrollView}
+        // ⚠️ Room for the floating tab pill — it reserves no layout of its own.
+        contentContainerStyle={{ paddingBottom: tabSafe }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

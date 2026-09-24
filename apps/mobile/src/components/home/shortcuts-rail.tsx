@@ -7,14 +7,14 @@ import { useAuth } from '../../contexts/auth-context';
 import { useDocumentRequirements } from '../../contexts/document-requirements-context';
 import { homeDestinationsFor, type Destination, type BadgeSource } from '../../lib/manage-rows';
 import { AText, Well } from '../amazen';
-import type { GlyphProps } from './glyphs';
-import { DocumentsGlyph, SendDocumentGlyph, SupportGlyph } from './glyphs';
+import type { GlyphProps } from '../glyphs/glyphs';
+import { DocumentsGlyph, SendDocumentGlyph, SupportGlyph } from '../glyphs/glyphs';
 import {
   SignGlyph, MyEquipmentGlyph, SyncGlyph, OvertimeGlyph, ScanCardGlyph,
   AddClientGlyph, EquipmentLogGlyph, NewJobGlyph,
-} from './tile-glyphs';
-import { ExpenseQueueGlyph } from './queue-glyphs';
-import { PlanRouteGlyph } from './route-glyphs';
+} from '../glyphs/tile-glyphs';
+import { ExpenseQueueGlyph } from '../glyphs/queue-glyphs';
+import { PlanRouteGlyph } from '../glyphs/route-glyphs';
 
 /**
  * A toolbar of doorways.

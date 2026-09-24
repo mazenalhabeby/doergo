@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/theme-context';
 import { AText } from './text';
 import { shadowDisc, shadowDiscPrimary } from './surfaces';
-import type { GlyphProps } from '../home/glyphs';
+import type { GlyphProps } from '../glyphs/glyphs';
 
 /**
  * A 58px disc with a label under it.

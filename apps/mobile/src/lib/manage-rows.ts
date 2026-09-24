@@ -142,7 +142,9 @@ export const MEMBER_ROWS: Destination[] = [
   /*
     ⚠️ MESSAGES IS NOT HERE ANY MORE. It took a permanent slot in the tab pill
     in v2, and a tile that duplicates a tab is a second door to the same room,
-    one of which moves. The route is `/(app)/(tabs)/chat` now; `/(app)/chat`
+    one of which moves. The route is `/(app)/(tabs)/chat` now; the old
+    `/(app)/chat` file is gone — it resolved to the same `/chat` and shadowed
+    the real screen. `/(app)/chat`
     is a redirect kept for every push notification already delivered.
   */
   { icon: 'sync', labelKey: 'shortcuts.sync', descKey: 'shortcuts.syncDesc', route: '/(app)/sync', color: '#8b5cf6', permission: '', orgWide: false, gate: { offline: true }, home: true, badge: 'sync.queued' },

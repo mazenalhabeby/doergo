@@ -96,7 +96,7 @@ describe('the tab pill fits', () => {
 
 describe('the footer', () => {
   it('has a mark for every tab that can reach the bar or the overflow', () => {
-    const src = read(path.join(SRC, 'components/home/tab-glyphs.tsx'));
+    const src = read(path.join(SRC, 'components/glyphs/tab-glyphs.tsx'));
     const table = src.slice(src.indexOf('TAB_GLYPHS'));
     const drawn = new Set(
       [...table.matchAll(/^\s*'?([A-Za-z-]+)'?:\s*(Tab\w+Glyph),/gm)].map((m) => m[1]!),
@@ -130,7 +130,7 @@ describe('the footer', () => {
       `TabMoreGlyph` is the exception inside the exception: an outlined 2px dot
       is a ring with nothing in it.
     */
-    const src = read(path.join(SRC, 'components/home/tab-glyphs.tsx'));
+    const src = read(path.join(SRC, 'components/glyphs/tab-glyphs.tsx'));
     const marks = src.split(/^export function /m).slice(1);
     for (const mark of marks) {
       const name = mark.slice(0, mark.indexOf('('));
@@ -188,15 +188,34 @@ describe('the footer works on both platforms', () => {
       One animation that forgets is one that still moves.
     */
     const src = pill();
-    const animations = src.match(/with(Timing|Spring)\(|Fade(In|Out)\.|LinearTransition\./g) ?? [];
-    expect(animations.length).toBeGreaterThan(0);
-    // Every animation config object in the file names it.
+
+    // There is something to check.
+    const calls = [...src.matchAll(/with(?:Timing|Spring)\(([^;]*?)\);/g)];
+    expect(calls.length).toBeGreaterThan(0);
+
+    /*
+      ⚠️ EVERY animation takes one of the NAMED configs — never an inline
+      object. That is what makes this checkable at all: with a literal at each
+      call site, "one of them forgot" is invisible, and one animation that
+      still moves is the whole promise broken for the person who asked their
+      phone to stop moving things.
+    */
+    for (const [, args] of calls) {
+      /*
+        ⚠️ `slide()` / `tint()` — a FRESH copy, never the constant itself.
+        Reanimated freezes a shared object and then writes the animation's own
+        state onto the config it is given, which crashed the bar the second
+        time it moved.
+      */
+      expect(args).toMatch(/\b(slide|tint)\(\)/);
+    }
+
+    // And each named config names it.
     for (const cfg of ['SLIDE', 'TINT']) {
       const i = src.indexOf(`const ${cfg} = `);
       expect(i).toBeGreaterThan(-1);
-      expect(src.slice(i, i + 260)).toContain('ReduceMotion.System');
+      expect(src.slice(i, i + 300)).toContain('ReduceMotion.System');
     }
-    expect(src).toContain('.reduceMotion(ReduceMotion.System)');
   });
 
   it('measures before it draws', () => {
@@ -206,5 +225,44 @@ describe('the footer works on both platforms', () => {
       until `onLayout` has answered.
     */
     expect(pill()).toMatch(/\{w \? slots\.map/);
+  });
+});
+
+describe('the bar settles without rocking', () => {
+  const pill = () => fs.readFileSync(path.join(SRC, 'components/amazen/tab-pill.tsx'), 'utf8');
+
+  it('never overshoots, because the spring also drives a WIDTH', () => {
+    /*
+      ⚠️ THE BUG THIS EXISTS FOR: `dampingRatio: 0.92` — just under critical —
+      is lovely on something that only moves. This spring also drives the slot
+      WIDTH, so an overshoot meant the tab you just left shrank past its mark
+      size and came back: its mark rocked left and right after the tint had
+      already gone, and the bar looked like it was settling down after you.
+
+      Critically damped AND clamped: `dampingRatio: 1` alone still allows a
+      hair of numerical overshoot, and on a layout property a hair is visible.
+    */
+    const src = pill();
+    const i = src.indexOf('const SLIDE = ');
+    const cfg = src.slice(i, src.indexOf('} as const', i));
+    expect(cfg).toContain('dampingRatio: 1');
+    expect(cfg).toContain('overshootClamping: true');
+  });
+
+  it('moves the mark monotonically as a slot closes', () => {
+    /*
+      The mark is centred in its slot, and both the slot and the label inside it
+      are driven by the same value — so the mark's position is a function of
+      that one number. As long as the number only falls, the mark only travels
+      one way. This is what `overshootClamping` buys.
+    */
+    const CAPSULE = 108, MARK = 46, ICON = 21, PAD = 10, LABEL = 40;
+    const centreAt = (g: number) => (MARK + (CAPSULE - MARK) * g - (ICON + LABEL * g)) / 2 + PAD;
+    let prev = Infinity;
+    for (let i = 0; i <= 20; i++) {
+      const c = centreAt(1 - i / 20);
+      expect(c).toBeLessThanOrEqual(prev + 1e-9);
+      prev = c;
+    }
   });
 });

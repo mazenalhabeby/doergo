@@ -25,6 +25,7 @@ import { chatApi, resolveMediaUrl } from '../../../src/lib/api';
 import { activeChat } from '../../../src/lib/active-chat';
 import { useQueuedCreate } from '../../../src/offline/actions/queued-create';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
+import { useTabSafe } from '../../../src/components/amazen';
 
 type ChatView = 'list' | 'thread' | 'contacts';
 
@@ -100,6 +101,7 @@ export default function ChatScreen() {
   const { user } = useAuth();
   const { hour12 } = useTimeFormat();
   const { colors } = useTheme();
+  const tabSafe = useTabSafe();
   const { subscribe, isAuthenticated, emit } = useSocketContext();
   const params = useLocalSearchParams<{ conversationId?: string; userId?: string }>();
   const router = useRouter();
@@ -344,7 +346,11 @@ export default function ChatScreen() {
         <View style={styles.center}><ActivityIndicator color={COLORS.primary} /></View>
       ) : view === 'list' ? (
         <>
-          <ScrollView style={{ flex: 1 }}>
+          <ScrollView
+            style={{ flex: 1 }}
+            // ⚠️ Room for the floating tab pill — it reserves no layout of its own.
+            contentContainerStyle={{ paddingBottom: tabSafe }}
+          >
             {conversations.length === 0 ? (
               <Text style={[styles.empty, { color: colors.textSecondary }]}>{t('chat.empty', 'No conversations yet.')}</Text>
             ) : (
@@ -373,7 +379,11 @@ export default function ChatScreen() {
           </TouchableOpacity>
         </>
       ) : view === 'contacts' ? (
-        <ScrollView style={{ flex: 1 }}>
+        <ScrollView
+          style={{ flex: 1 }}
+          // ⚠️ Room for the floating tab pill — it reserves no layout of its own.
+          contentContainerStyle={{ paddingBottom: tabSafe }}
+        >
           {contacts.length === 0 ? (
             <Text style={[styles.empty, { color: colors.textSecondary }]}>{t('chat.noContacts', 'No one to message.')}</Text>
           ) : (

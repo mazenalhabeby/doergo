@@ -45,6 +45,7 @@ import {
   SHADOWS,
   ROUTES,
 } from '../../../src/lib/constants';
+import { useTabSafe } from '../../../src/components/amazen';
 
 // ---------------------------------------------------------------------------
 // Tab / filter definitions
@@ -169,6 +170,7 @@ function TasksSplitLayout({
 export default function TasksScreen() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
+  const tabSafe = useTabSafe();
   const { t } = useTranslation();
   const r = useResponsive();
   /*
@@ -839,7 +841,7 @@ export default function TasksScreen() {
             content
           );
         }}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: tabSafe }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -1069,7 +1071,10 @@ const styles = StyleSheet.create({
   // List
   listContent: {
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.xl,
+    // ⚠️ Room for the tab pill is composed at the CALL SITE from
+    // `useTabSafe()` — it depends on the device's safe-area inset, and a
+    // stylesheet is built once at module load when no inset is known. Without
+    // it the last job hides behind the floating bar.
     gap: SPACING.md,
   },
   // Column gap between cards when the list renders as a grid (tablets).

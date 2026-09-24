@@ -354,6 +354,15 @@
       "equipment": "Meine Ausrüstung",
       "messages": "Nachrichten",
       "support": "Support"
+    },
+    "arrange": {
+      "start": "Anordnen",
+      "add": "Widget hinzufügen",
+      "remove": "Vom Start entfernen",
+      "addTitle": "Zum Start hinzufügen",
+      "nothingToAdd": "Alles Verfügbare ist bereits hier.",
+      "someOff": "{{count}} von {{total}} sind nicht auf Ihrem Start.",
+      "allOn": "Alle {{count}} sind auf Ihrem Start."
     }
   },
   "tasks": {
@@ -2864,5 +2873,15 @@
     "endRest": "Pause beenden",
     "break": "Pause",
     "setRealTime": "Echte Zeit eintragen"
+  },
+  "widgets": {
+    "shiftClock": "Schichtuhr",
+    "myWork": "Meine Arbeit",
+    "myRoute": "Route heute",
+    "crew": "Team vor Ort",
+    "needsYou": "Wartet auf Sie",
+    "documentsDue": "Dokumente",
+    "clients": "Kunden",
+    "shortcuts": "Kurzbefehle"
   }
 }

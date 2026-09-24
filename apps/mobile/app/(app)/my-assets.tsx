@@ -16,7 +16,7 @@ import {
 import { normalizeKindShape, custodyDays, logTypesForKind, COST_LOG_KEY } from '@hbcfield/shared/client';
 import { logColor, logTypeLabel } from '../../src/lib/log-display';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
-import { SendDocumentGlyph } from '../../src/components/home/glyphs';
+import { SendDocumentGlyph } from '../../src/components/glyphs';
 import { useSyncStatus } from '../../src/offline/offline-context';
 import { overlayMyLog, logEntriesDeliveredSince, type MyLogRow } from '../../src/offline/assets/log-overlay';
 

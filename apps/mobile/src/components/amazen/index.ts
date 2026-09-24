@@ -13,4 +13,5 @@ export { Disc, DiscRow } from './disc';
 export { PrimaryButton, GhostButton, Chip } from './button';
 export { LiveDot } from './live-dot';
 export { WidgetFrame, WidgetHeader, WidgetBoundary } from './widget-frame';
-export { TabPill, type TabPillItem } from './tab-pill';
+export { TabPill, useTabSafe, tabSafeFor, type TabPillItem } from './tab-pill';
+export { ScreenHeader } from './screen-header';

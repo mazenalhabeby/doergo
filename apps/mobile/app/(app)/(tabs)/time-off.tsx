@@ -44,6 +44,7 @@ import { getTimeOffStatusStyle } from '../../../src/lib/styles';
 import { formatShortDate, isSameDay } from '../../../src/lib/utils';
 import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 import { FilterChip } from '../../../src/components/filter-chip';
+import { useTabSafe } from '../../../src/components/amazen';
 
 // =============================================================================
 // HELPERS
@@ -131,6 +132,7 @@ type RequestFilter = 'upcoming' | 'past' | 'all';
 export default function TimeOffScreen() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
+  const tabSafe = useTabSafe();
   const toast = useToast();
   const { t } = useTranslation();
   // Dates follow the active language rather than a hardcoded en-US locale.
@@ -584,6 +586,8 @@ export default function TimeOffScreen() {
       <ScreenContainer width="content">
       <ScrollView
         style={styles.scrollView}
+        // ⚠️ Room for the floating tab pill — it reserves no layout of its own.
+        contentContainerStyle={{ paddingBottom: tabSafe }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

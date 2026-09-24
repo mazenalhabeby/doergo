@@ -39,6 +39,7 @@ import {
 import { getPriorityStyle } from '../../../src/lib/styles';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { accessAllowsAnywhere } from '@hbcfield/shared/client';
+import { useTabSafe } from '../../../src/components/amazen';
 
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const;
 type Priority = typeof PRIORITIES[number];
@@ -72,6 +73,7 @@ export default function CreateTaskScreen() {
   const [client, setClient] = useState<{ id: string; name: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { colors } = useTheme();
+  const tabSafe = useTabSafe();
   const { user } = useAuth();
   const toast = useToast();
   const offline = useOffline();
@@ -266,6 +268,8 @@ export default function CreateTaskScreen() {
       <ScreenContainer width="content">
       <ScrollView
         style={styles.scrollView}
+        // ⚠️ Room for the floating tab pill — it reserves no layout of its own.
+        contentContainerStyle={{ paddingBottom: tabSafe }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >

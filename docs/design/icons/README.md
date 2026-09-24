@@ -26,7 +26,7 @@ https://claude.ai/artifact/9GcjYhxdrUEaL7NAVstB7U
 
 ## The law
 
-The existing `apps/mobile/src/components/home/glyphs.tsx` states it, and every
+The existing `apps/mobile/src/components/glyphs/glyphs.tsx` states it, and every
 mark here obeys it:
 
 > "ONE colour at four opacities — .2 for what sits behind, .3 for the body,
@@ -168,7 +168,11 @@ head rather than drawn on it. Drawn on top it reads as a smudge at 15px.
 
 ## Moving it in
 
-1. Move this folder into `apps/mobile/src/components/home/`.
+1. Move this folder into `apps/mobile/src/components/glyphs/`.
+   ⚠️ **`glyphs/`, not `home/`** — the marks are not the home screen's. The
+   footer reads `tab-glyphs.tsx` and the tile rail serves three surfaces;
+   `components/home/` held four dead screens and 72 require cycles until they
+   were deleted. A family kept beside one consumer gets copied by the next.
 2. Fold `index.ts` into that folder's existing one.
 3. Delete `OnBreakGlyph` and point its callers at `BreakGlyph`.
 

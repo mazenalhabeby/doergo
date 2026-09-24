@@ -1,6 +1,13 @@
 import React from 'react';
 import { Pressable, View, type ViewStyle } from 'react-native';
-import Animated, { Easing, FadeInDown, ReduceMotion } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from 'react-native-reanimated';
 import { useTheme } from '../../contexts/theme-context';
 import { AText } from './text';
 import { Chip } from './button';
@@ -102,31 +109,57 @@ export function WidgetFrame({
   style?: ViewStyle;
 }) {
   const { amazen } = useTheme();
+
+  /*
+    The column arrives, top first.
+
+    ⚠️ A STYLE ANIMATION, NEVER A LAYOUT ANIMATION — THIS IS NOT A PREFERENCE.
+
+    This was `entering={FadeInDown…}` and it corrupted the home screen. A
+    Reanimated layout animation takes the view OUT of normal layout while it
+    runs; if the parent re-lays-out in that window the views keep the positions
+    they were given and never return. On Android an inset change is enough —
+    switching between gesture and three-button navigation, or the theme —
+    and the result was widgets drawn on top of one another with a card's height
+    of empty space above them, permanently, until the app was reloaded.
+    Reproduced three times, and fixed by this change alone.
+
+    `opacity` and `translateY` are style properties. They move pixels and touch
+    no layout, so a re-layout mid-flight lands the widget exactly where the
+    column says it goes.
+
+    ⚠️ `useLayoutEffect`, not `useEffect`. It runs synchronously in the commit
+    that mounts the widget, so there is no frame in which a widget is on screen
+    at `opacity: 0` with nothing scheduled to raise it — which is the failure
+    the old comment here rightly worried about. `ReduceMotion.System` still
+    makes it instant rather than absent.
+
+    ⚠️ 45ms apart and CAPPED at four. A stagger is a hand dealing cards; an
+    uncapped one is a queue, and the eighth widget would land two thirds of a
+    second after the first on a screen somebody opens forty times a day.
+
+    The distance is 8pt. Enough to read as arriving from somewhere, not so much
+    that the screen looks like it is being assembled.
+  */
+  const enter = useSharedValue(0);
+  React.useLayoutEffect(() => {
+    enter.value = withDelay(
+      Math.min(index, 4) * 45,
+      withTiming(1, {
+        duration: amazen.motion.enter,
+        easing: Easing.bezier(...amazen.motion.easing),
+        reduceMotion: ReduceMotion.System,
+      }),
+    );
+  }, [enter, index, amazen.motion.enter, amazen.motion.easing]);
+
+  const entrance = useAnimatedStyle(() => ({
+    opacity: enter.value,
+    transform: [{ translateY: (1 - enter.value) * 8 }],
+  }));
+
   return (
-    <Animated.View
-      /*
-        The column arrives, top first.
-        
-        ⚠️ 45ms apart and CAPPED at four. A stagger is a hand dealing cards; an
-        uncapped one is a queue, and the eighth widget would land two thirds of
-        a second after the first on a screen somebody opens forty times a day.
-        Past the fourth they all arrive together.
-
-        ⚠️ `entering` and NOT an opacity the widget starts at. A widget parked
-        at 0 waiting for an effect is a blank home screen for anybody whose
-        animation never runs — a JS thread stall, a reduced-motion setting read
-        wrong. Reanimated's entering always resolves, and `ReduceMotion.System`
-        makes it instant rather than absent when the phone has asked for that.
-
-        The distance is 8pt. Enough to read as arriving from somewhere, not so
-        much that the screen looks like it is being assembled.
-      */
-      entering={FadeInDown.duration(amazen.motion.enter)
-        .delay(Math.min(index, 4) * 45)
-        .easing(Easing.bezier(...amazen.motion.easing).factory())
-        .reduceMotion(ReduceMotion.System)}
-      style={[{ marginBottom: amazen.layout.block }, style]}
-    >
+    <Animated.View style={[{ marginBottom: amazen.layout.block }, entrance, style]}>
       <WidgetBoundary fallback={fallback}>
         {header}
         {children}

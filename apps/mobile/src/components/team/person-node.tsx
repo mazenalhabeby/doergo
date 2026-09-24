@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useTheme } from '../../../contexts/theme-context';
+import { useTheme } from '../../contexts/theme-context';
 import { Avatar } from './avatar';
 import type { WorkerStatus, PersonTag, TagVariant } from './helpers';
 

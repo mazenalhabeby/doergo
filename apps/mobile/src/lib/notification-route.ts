@@ -83,7 +83,22 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
   time_off_response: () => to('/(app)/(tabs)/time-off'),
 
   // Conversations
-  chat: (d) => to('/(app)/chat', { conversationId: str(d.conversationId) }),
+  /*
+    ⚠️ THE FULL PATH, INCLUDING `(tabs)` — like `CLOCK` above, and unlike what
+    this row used to say.
+
+    Chat moved into the tab group and this row was left pointing at
+    `/(app)/chat`, with a `<Redirect>` parked at the old path to cover it. But
+    `(tabs)` is a GROUP, so `(app)/chat.tsx` and `(app)/(tabs)/chat.tsx` both
+    resolve to `/chat` — two files claiming one route. Expo Router picked the
+    redirect, which redirected to itself, and `/chat` rendered a permanently
+    blank white screen. Every chat push landed there.
+
+    The redirect was never needed in the first place: this table is PURE and is
+    evaluated when the member TAPS, so a notification delivered last month gets
+    today's path. Nothing is baked into the push.
+  */
+  chat: (d) => to('/(app)/(tabs)/chat', { conversationId: str(d.conversationId) }),
   support: (d) => to('/(app)/support', { ticketId: str(d.ticketId) }),
   shift_issue: (d, viewer) =>
     to(viewer.managesIssues ? '/(app)/(tabs)/manage' : '/(app)/(tabs)/attendance', { issueId: str(d.issueId) }),

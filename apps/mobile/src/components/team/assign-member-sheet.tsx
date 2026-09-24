@@ -10,9 +10,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../../contexts/theme-context';
-import { COLORS } from '../../../lib/constants';
-import { locationsApi, type OrgMember } from '../../../lib/api';
+import { useTheme } from '../../contexts/theme-context';
+import { COLORS } from '../../lib/constants';
+import { locationsApi, type OrgMember } from '../../lib/api';
 import { BottomSheet } from './bottom-sheet';
 import { Avatar } from './avatar';
 import { getInitials, shortName } from './helpers';

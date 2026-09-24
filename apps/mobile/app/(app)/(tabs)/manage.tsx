@@ -12,10 +12,12 @@ import { ShiftIssueListSheet, ShiftIssueThreadSheet } from '../../../src/compone
 import {
   COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS, ROUTES,
 } from '../../../src/lib/constants';
+import { useTabSafe } from '../../../src/components/amazen';
 
 export default function ManageScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const tabSafe = useTabSafe();
   const { t } = useTranslation();
   const rows = useMemo(() => manageRowsFor(user), [user]);
   /*
@@ -36,7 +38,7 @@ export default function ManageScreen() {
     <ScreenContainer width="content" style={{ backgroundColor: colors.surface }}>
     <ScrollView
       style={[s.container, { backgroundColor: colors.surface }]}
-      contentContainerStyle={s.content}
+      contentContainerStyle={[s.content, { paddingBottom: tabSafe }]}
       showsVerticalScrollIndicator={false}
     >
       {rows.map((item) => (
@@ -80,6 +82,17 @@ export default function ManageScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1 },
+  /*
+    ⚠️ The bottom padding is composed at the call site from `useTabSafe()`, not
+    set here — it depends on the device's safe-area inset, and a stylesheet is
+    built once at module load when no inset is known.
+
+    It is reserved even though Manage is not a tab any more: its rows moved
+    into the More sheet and the tab button is gone, but the ROUTE is still
+    registered, deliberately, so a push notification or a deep link into it
+    resolves. Arriving that way, the floating pill is still drawn over this
+    screen and still reserves no layout of its own.
+  */
   content: { padding: SPACING.lg, gap: SPACING.sm },
   row: {
     flexDirection: 'row',

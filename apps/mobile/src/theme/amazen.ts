@@ -73,6 +73,24 @@ export interface AmazenColors {
   warnTint: string;
   warnInk: string;
 
+  /**
+   * The tab pill's own fill — SOLID and OPAQUE, one per theme.
+   *
+   * ⚠️ NOT `tile`, and not a blur. The bar was translucent glass for a while
+   * and it produced two different products: crisp on iOS, and smeared on
+   * Android, where `dimezisBlurView` re-renders what is behind it at reduced
+   * fidelity every frame of scroll. A surface that is on screen at all times
+   * over the one thing people scroll all day is the worst possible place for
+   * an experimental blur, and there is no tuning that makes the two platforms
+   * agree — the difference is the implementation, not the parameters.
+   *
+   * An opaque colour renders identically everywhere, costs nothing, and is
+   * what the light reference actually shows.
+   */
+  barFill: string;
+  /** The active tab's capsule — solid for the same reason as `barFill`. */
+  barCapsule: string;
+
   /** input borders — SOLID, never an alpha wash */
   lineField: string;
   /** a divider inside a well */
@@ -119,6 +137,8 @@ const DARK: AmazenColors = {
   warnTint: '#f2b2631f',
   warnInk: '#1a1200',
 
+  barFill: '#191c20', // measured off the design reference
+  barCapsule: '#283736', // measured — `accentTint` over the bar, resolved
   lineField: '#616871',
   lineWell: '#ffffff12', // ⓓ
 };
@@ -152,6 +172,8 @@ const LIGHT: AmazenColors = {
   warnTint: '#8a5a1018', // published in TOKENS §2
   warnInk: '#ffffff', // published in TOKENS §2
 
+  barFill: '#f9fcff', // measured off the light reference
+  barCapsule: '#e7f0f0', // measured
   lineField: '#7f8f89', // ⓓ 3.02:1 on sunken
   lineWell: '#0b332a14', // ⓓ
 };
@@ -206,15 +228,20 @@ export const LAYOUT = {
   /** top inset — NO STATUS BAR IS EVER DRAWN */
   topInset: space(14), // 56
   /**
-   * Bottom padding for a screen that draws UNDER the tab pill.
+   * ⚠️ REMOVED — THE BAR IS NOT A FIXED HEIGHT.
    *
-   * ⚠️ NO SCREEN DOES TODAY. The pill renders in flow — the band around it is
-   * canvas, not gradient, so there is nothing to see through and absolute
-   * positioning would only have hidden the last row of every screen written
-   * before v2. Kept because it is the handoff's own number and a screen that
-   * genuinely wants to run beneath the bar will need it.
+   * This was `tabSafe: 110`, and a flat number cannot be right: the pill sits
+   * on the safe-area inset, which is 24pt on gesture Android, 48pt on three
+   * buttons, 34pt on a notched iPhone and 0 on an iPhone SE. 110 covered the
+   * one device it was measured on and hid 22pt of the last row on three-button
+   * Android and 8pt on every notched iPhone.
+   *
+   * The reservation now comes from `useTabSafe()` in
+   * `components/amazen/tab-pill.tsx`, which is where the bar's own geometry is
+   * written down — so the room a screen leaves and the room the bar takes can
+   * no longer disagree. `tab-safe.spec.ts` fails if a screen goes back to a
+   * constant.
    */
-  tabSafe: 110,
   /** ≥44 everywhere; the discs are 58, because gloves */
   tapMin: 44,
   disc: 58,
