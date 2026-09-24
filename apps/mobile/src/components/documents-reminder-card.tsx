@@ -17,7 +17,7 @@ import { AText } from './amazen';
   everything behind it is the same KIND of thing.
 */
 import {
-  DocNeededGlyph, DocExpiringGlyph, DocBlockedGlyph, CountersignGlyph,
+  DocNeededGlyph, DocExpiringGlyph, DocBlockedGlyph, DocSentBackGlyph, CountersignGlyph,
 } from './glyphs/doc-glyphs';
 import { SignGlyph } from './glyphs/tile-glyphs';
 import type { GlyphProps } from './glyphs/glyphs';
@@ -50,17 +50,21 @@ import type { GlyphProps } from './glyphs/glyphs';
  * space a piece of admin takes on a home screen that has a shift and a day's
  * work to show.
  *
- * ⚠️ ONE STATE SHORT OF THE DESIGN, ON PURPOSE. §4 of
+ * ⚠️ SENT BACK IS BUILT NOW, AND ITS SECOND LINE IS NOT. §4 of
  * `docs/design/documents-due/SPEC.md` names TWO cases that earn a second line:
- * a colleague's name, and a REJECTION'S REASON. Only the first is here.
+ * a colleague's name, and a REJECTION'S REASON.
  *
- * The second needs `/documents/pending` to return refused requirements as
- * their own list carrying `rejectionReason` — `waitingOnMember()` folds
- * REJECTED into `toUpload` today, so a member whose licence came back reads
- * "1 document to upload", the same sentence somebody who never sent one gets,
- * and photographs the same cut-off card again. That is a SERVER change and it
- * was declined, so the state is not built rather than faked: there is no
- * honest way to show a reason the phone was never sent.
+ * The state itself no longer needs the server: `/documents/requirements`
+ * carries the per-requirement `state`, so the phone can tell a refused
+ * licence from one never sent and say so — *"Driving licence was sent back"*
+ * instead of *"1 document needed"*, which is the whole reason somebody
+ * photographs the same cut-off card twice.
+ *
+ * The reviewer's WORDS still are not on the phone. `rejectionReason` lives on
+ * the record and neither of the two endpoints returns it. `summarisePending`
+ * carries `reviewNote` through and this card quotes it the day it arrives; it
+ * is never invented. A headline without the note is worth saying — a headline
+ * with a made-up note is not.
  *
  * The summary rule lives in `packages/shared` so the phone and the web can
  * never quote different numbers for the same person.
@@ -69,10 +73,10 @@ export function DocumentsReminderCard({ style }: { style?: object }) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
-  const { toUpload, toSign, expiringSoon } = useDocumentRequirements();
+  const { toUpload, toSign, expiringSoon, rejected } = useDocumentRequirements();
   const c = amazen.color;
 
-  const p = summarisePending({ toUpload, toSign, expiring: expiringSoon });
+  const p = summarisePending({ toUpload, toSign, expiring: expiringSoon, rejected });
   if (p.empty) return null;
 
   /*
@@ -84,7 +88,8 @@ export function DocumentsReminderCard({ style }: { style?: object }) {
     is about a signature.
   */
   const tone: 'critical' | 'warn' | 'accent' =
-    p.blocksWork ? 'critical'
+    // Sent back is `crit` in its own right: the member believes it is done.
+    p.blocksWork || p.titleKey === 'sentBack' ? 'critical'
     : p.titleKey === 'expiring' ? 'accent'
     : 'warn';
 
@@ -101,19 +106,26 @@ export function DocumentsReminderCard({ style }: { style?: object }) {
     the only one that is not about a document of yours.
   */
   const Glyph: React.ComponentType<GlyphProps> =
-    p.blocksWork ? DocBlockedGlyph
+    // The refusal is the more specific fact, so it wins the mark.
+    p.titleKey === 'sentBack' ? DocSentBackGlyph
+    : p.blocksWork ? DocBlockedGlyph
     : p.countersign ? CountersignGlyph
     : p.titleKey === 'toSign' ? SignGlyph
     : p.titleKey === 'expiring' ? DocExpiringGlyph
     : DocNeededGlyph;
 
   const title =
-    p.countersign
-      ? t('documents.reminder.countersign', { name: p.countersign.forMember, label: p.countersign.title })
-      : t(`documents.reminder.${p.titleKey}`, { count: p.count });
+    p.sentBack && p.sentBackCount === 1
+      ? t('documents.reminder.sentBack', { label: p.sentBack.label })
+      : p.countersign
+        ? t('documents.reminder.countersign', { name: p.countersign.forMember, label: p.countersign.title })
+        : t(`documents.reminder.${p.titleKey}`, { count: p.count });
 
   const subtitle =
-    p.countersign
+    p.titleKey === 'sentBack'
+      // Name them. `names` is already the refused labels.
+      ? p.names.join(' · ')
+    : p.countersign
       ? t('documents.reminder.countersignNote')
       : p.blocksWork
           ? t('documents.reminder.blocking')
@@ -135,7 +147,10 @@ export function DocumentsReminderCard({ style }: { style?: object }) {
     one.
   */
   const second =
-    p.countersign && p.countersignCount > 1
+    // Quoted, and only when the reviewer's words actually reached the phone.
+    p.sentBack?.reviewNote
+      ? `“${p.sentBack.reviewNote}”`
+    : p.countersign && p.countersignCount > 1
       // Several are waiting: the card names the first and says how many more.
       ? t('documents.reminder.countersignMore', { count: p.countersignCount - 1 })
       : null;

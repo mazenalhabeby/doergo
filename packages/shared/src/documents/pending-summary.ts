@@ -19,6 +19,18 @@
  */
 
 export type PendingTitle =
+  /**
+   * Refused, and the member does not know it.
+   *
+   * ⚠️ RANKS ABOVE EVERYTHING, INCLUDING `needYou`. A rejected document is
+   * more urgent than an absent one because the member believes they have
+   * already done it — they are not late in their own head, and nothing on the
+   * phone has told them otherwise. `waitingOnMember()` folds REJECTED in with
+   * MISSING, so before this existed a licence that came back read *"1 document
+   * needed"*, the same sentence somebody who never sent one gets, and the
+   * member photographed the same cut-off card again.
+   */
+  | 'sentBack'
   /** Both kinds at once — the count is everything, the parts go underneath. */
   | 'needYou'
   /** Only documents to supply. */
@@ -64,21 +76,48 @@ export interface PendingSummary {
    */
   countersign: { title: string; forMember: string } | null;
   countersignCount: number;
+  /**
+   * The refused one, and the reviewer's own words if they reached the phone.
+   *
+   * ⚠️ `reviewNote` IS OPTIONAL BECAUSE THE PHONE IS NOT ALWAYS SENT IT.
+   * `/documents/requirements` returns the STATE but not the reason; only
+   * `/documents/pending` could carry it and it does not split the list today.
+   * The headline is worth saying without the note — *"Driving licence was sent
+   * back"* already stops somebody re-photographing the same card — and the
+   * quoted reason is the second line when it arrives. Never invent one.
+   */
+  sentBack: { label: string; reviewNote?: string | null } | null;
+  sentBackCount: number;
 }
 
 export function summarisePending(input: {
   toUpload: { label: string; blocksWork?: boolean }[];
   toSign: { title: string; forMember?: string | null }[];
   expiring: { label: string }[];
+  /**
+   * Requirements a reviewer REFUSED.
+   *
+   * ⚠️ Pass these SEPARATELY from `toUpload`, and do not also count them
+   * there. The server's `/documents/pending` cannot tell them apart yet —
+   * `toUpload: statuses.filter(waitingOnMember)` and `waitingOnMember()`
+   * answers true for MISSING, REJECTED and EXPIRED alike — so a caller that
+   * has the per-requirement `state` supplies them here and the rest is this
+   * function's problem.
+   */
+  rejected?: { label: string; blocksWork?: boolean; reviewNote?: string | null }[];
 }): PendingSummary {
   const countersigns = input.toSign.filter((d) => !!d.forMember);
+  const rejected = input.rejected ?? [];
 
   const uploadCount = input.toUpload.length;
   const signCount = input.toSign.length;
   const expiringCount = input.expiring.length;
-  const blocksWork = input.toUpload.some((r) => r.blocksWork === true);
+  const sentBackCount = rejected.length;
+  // A refused requirement gates work exactly as a missing one does.
+  const blocksWork =
+    input.toUpload.some((r) => r.blocksWork === true) || rejected.some((r) => r.blocksWork === true);
 
-  const empty = uploadCount === 0 && signCount === 0 && expiringCount === 0;
+  const empty = uploadCount === 0 && signCount === 0 && expiringCount === 0 && sentBackCount === 0;
   const mixed = uploadCount > 0 && signCount > 0;
 
   /*
@@ -88,19 +127,23 @@ export function summarisePending(input: {
     about the thing that is already wrong.
   */
   const titleKey: PendingTitle =
-    mixed ? 'needYou'
+    // Above everything — see `sentBack` on PendingTitle.
+    sentBackCount > 0 ? 'sentBack'
+    : mixed ? 'needYou'
     : uploadCount > 0 ? 'needed'
     : signCount > 0 ? 'toSign'
     : 'expiring';
 
   const count =
-    mixed ? uploadCount + signCount
+    sentBackCount > 0 ? sentBackCount
+    : mixed ? uploadCount + signCount
     : uploadCount > 0 ? uploadCount
     : signCount > 0 ? signCount
     : expiringCount;
 
   const names =
-    mixed ? []
+    sentBackCount > 0 ? rejected.map((r) => r.label)
+    : mixed ? []
     : uploadCount > 0 ? input.toUpload.map((r) => r.label)
     : signCount > 0 ? input.toSign.map((d) => d.title)
     : input.expiring.map((r) => r.label);
@@ -120,11 +163,26 @@ export function summarisePending(input: {
       ? { title: firstCountersign.title, forMember: firstCountersign.forMember as string }
       : null;
 
+  /*
+    ONE, like the countersign. Several refusals at once is rare and the screen
+    behind the row lists them; the card names the first and counts the rest.
+  */
+  const firstRejected = rejected[0];
+  const sentBack = firstRejected
+    ? { label: firstRejected.label, reviewNote: firstRejected.reviewNote ?? null }
+    : null;
+
   return {
     empty, titleKey, count,
     uploadCount, signCount, expiringCount,
-    actionCount: uploadCount + signCount,
+    /*
+      Refusals COUNT as waiting on the member — the badge is "what is waiting
+      on you", and something sent back is waiting on them harder than something
+      never sent.
+    */
+    actionCount: uploadCount + signCount + sentBackCount,
     mixed, names, blocksWork,
     countersign, countersignCount: countersigns.length,
+    sentBack, sentBackCount,
   };
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, View, StyleSheet, Linking } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { hasModule } from '@hbcfield/shared/client';
+import { hasAccessModule } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useHomeTasks } from '../../offline/tasks/use-home-tasks';
@@ -53,8 +53,8 @@ export function MyWorkCard({ style }: { style?: object }) {
   const week = useMemo(() => weekOf(new Date()), []);
 
   const shape = shapeFor({
-    tasks: hasModule(user ?? {}, 'tasks'),
-    clock: hasModule(user ?? {}, 'clock'),
+    tasks: hasAccessModule(user ?? {}, 'tasks'),
+    clock: hasAccessModule(user ?? {}, 'clock'),
   });
 
   const face = useMemo(

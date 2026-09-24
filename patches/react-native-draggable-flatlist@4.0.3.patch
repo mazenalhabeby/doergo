@@ -1,0 +1,34 @@
+diff --git a/src/components/DraggableFlatList.tsx b/src/components/DraggableFlatList.tsx
+index 7c88afc54e5d7db3dd8b15819d5833681757f039..3853ae863c44f1c1908c3b4b34e7657582c06cd7 100644
+--- a/src/components/DraggableFlatList.tsx
++++ b/src/components/DraggableFlatList.tsx
+@@ -321,6 +321,29 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
+       // Turning this into a worklet causes timing issues. We want it to run
+       // just after the finger lifts.
+       runOnJS(onContainerTouchEnd)();
++    })
++    // PATCHED (hbcfield): a CANCELLED or FAILED pan never reaches onEnd.
++    //
++    // onEnd only runs when the gesture reaches the END state. A pan that is
++    // cancelled — the OS taking the touch stream (notification shade, a call,
++    // a second pointer), or a touch sequence that is interrupted — leaves the
++    // cell picked up forever: `activeIndexAnim` stays >= 0, so `activeKey`
++    // never clears, the placeholder is drawn under a card nobody is holding,
++    // and `scrollEnabled={!activeKey}` means the list stops scrolling for the
++    // rest of the session. On a home screen that is the whole screen dead.
++    //
++    // onFinalize runs on END, CANCELLED and FAILED alike. After a normal onEnd
++    // this is a no-op: onEnd sets `disabled.value = true` synchronously before
++    // its spring, and the guard below reads it.
++    .onFinalize(() => {
++      if (gestureDisabled.value) return;
++      isTouchActiveNative.value = false;
++      if (activeIndexAnim.value === -1 || disabled.value) return;
++      runOnJS(onRelease)(activeIndexAnim.value);
++      runOnJS(onDragEnd)({
++        from: activeIndexAnim.value,
++        to: spacerIndexAnim.value,
++      });
+     });
+ 
+   if (dragHitSlop) panGesture.hitSlop(dragHitSlop);

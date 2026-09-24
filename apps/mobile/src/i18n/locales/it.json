@@ -355,14 +355,23 @@
       "messages": "Messaggi",
       "support": "Assistenza"
     },
-    "arrange": {
-      "start": "Disponi",
+    "nothingYet": {},
+    "live": {},
+    "edit": {
+      "hint": "Tieni premuto per spostare · tocca ⊖ per rimuovere",
       "add": "Aggiungi widget",
+      "moveUp": "Sposta su",
+      "moveDown": "Sposta giù",
       "remove": "Rimuovi dalla home",
-      "addTitle": "Aggiungi alla home",
-      "nothingToAdd": "Tutto ciò che puoi avere è già qui.",
-      "someOff": "{{count}} di {{total}} non sono nella tua home.",
-      "allOn": "Tutti i {{count}} sono nella tua home."
+      "announce": "{{name}}, posizione {{at}} di {{of}}.",
+      "saved": "Salvato nel tuo account."
+    },
+    "gallery": {
+      "title": "Widget",
+      "sub_one": "Ne hai {{count}} in più. Scorri per vederlo.",
+      "sub_other": "Ne hai altri {{count}}. Scorri per vederli.",
+      "none": "Non c’è altro da aggiungere.",
+      "add": "Aggiungi widget"
     }
   },
   "tasks": {
@@ -2286,7 +2295,9 @@
       "blocking": "Non puoi ricevere lavoro finché non lo invii e non viene approvato.",
       "countersign": "Firma il {{label}} di {{name}}",
       "countersignNote": "Il documento di qualcun altro, in attesa di te.",
-      "countersignMore": "e altri {{count}} ti aspettano"
+      "countersignMore": "e altri {{count}} ti aspettano",
+      "sentBack": "{{label}} è stato rispedito",
+      "sentBack_other": "{{count}} documenti sono stati rispediti"
     },
     "onBehalfOf": "Per {{name}}",
     "pages": {
@@ -2883,5 +2894,22 @@
     "documentsDue": "Documenti",
     "clients": "Clienti",
     "shortcuts": "Scorciatoie"
+  },
+  "crew": {
+    "onTheClock": "in servizio",
+    "onTheClockNow": "in servizio ora",
+    "calm": "Ci sono tutti. Niente in sospeso.",
+    "empty": "Nessuno in turno in questo momento.",
+    "offline": "Serve una connessione. Una risposta conservata sarebbe sbagliata, non vecchia.",
+    "steady": "stabile",
+    "nothingToDecide": "Niente da decidere.",
+    "notArrived": "{{n}} non arrivati",
+    "waiting": "{{n}} in attesa",
+    "more": "{{n}} altri",
+    "call": "Chiama {{name}}",
+    "minLate": "{{n}} min di ritardo",
+    "minLeft": "{{n}} min rimasti",
+    "minOver": "{{n}} min oltre",
+    "minBreak": "{{n}} min di pausa"
   }
 }

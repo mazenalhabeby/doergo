@@ -67,7 +67,8 @@
       "hours": "{{count}}h ago",
       "days": "{{count}}d ago"
     },
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "undo": "UNDO"
   },
   "auth": {
     "login": {
@@ -355,14 +356,33 @@
       "messages": "Messages",
       "support": "Support"
     },
-    "arrange": {
-      "start": "Arrange",
+    "nothingYet": {
+      "title": "Nothing on your home yet.",
+      "sub": "Here is what you would be seeing right now.",
+      "keep": "Keep",
+      "keepBoth": "Keep both",
+      "seeAll": "See all {{n}}"
+    },
+    "live": {
+      "documents": "{{n}} waiting on you",
+      "documentsClear": "Nothing outstanding",
+      "sentBack": "{{n}} sent back"
+    },
+    "edit": {
+      "hint": "Hold to move · tap ⊖ to remove",
       "add": "Add a widget",
-      "remove": "Remove from home",
-      "addTitle": "Add to your home",
-      "nothingToAdd": "Everything you can have is already here.",
-      "someOff": "{{count}} of {{total}} are off your home screen.",
-      "allOn": "All {{count}} are on your home screen."
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "remove": "Take off my home",
+      "announce": "{{name}}, position {{at}} of {{of}}.",
+      "saved": "Saved to your account."
+    },
+    "gallery": {
+      "title": "Widgets",
+      "sub_one": "{{count}} more is yours. Swipe to see it.",
+      "sub_other": "{{count}} more are yours. Swipe to see them.",
+      "none": "Nothing left to add.",
+      "add": "Add widget"
     }
   },
   "tasks": {
@@ -2286,7 +2306,9 @@
       "blocking": "You cannot be given work until this is supplied and approved.",
       "countersign": "Sign {{name}}'s {{label}}",
       "countersignNote": "Somebody else's document, waiting on you.",
-      "countersignMore": "and {{count}} more waiting on you"
+      "countersignMore": "and {{count}} more waiting on you",
+      "sentBack": "{{label}} was sent back",
+      "sentBack_other": "{{count}} documents were sent back"
     },
     "onBehalfOf": "For {{name}}",
     "pages": {
@@ -2883,5 +2905,22 @@
     "documentsDue": "Documents",
     "clients": "Clients",
     "shortcuts": "Shortcuts"
+  },
+  "crew": {
+    "onTheClock": "on the clock",
+    "onTheClockNow": "on the clock right now",
+    "calm": "Everyone is in. Nothing waiting.",
+    "empty": "Nobody is on shift right now.",
+    "offline": "Needs a connection. A kept answer would be wrong, not old.",
+    "steady": "steady",
+    "nothingToDecide": "Nothing to decide.",
+    "notArrived": "{{n}} not arrived",
+    "waiting": "{{n}} waiting",
+    "more": "{{n}} more",
+    "call": "Call {{name}}",
+    "minLate": "{{n}} min late",
+    "minLeft": "{{n}} min left",
+    "minOver": "{{n}} min over",
+    "minBreak": "{{n}} min break"
   }
 }

@@ -1,4 +1,4 @@
-import { hasModule, hasFeatureModule, type MobileModule } from '@hbcfield/shared/client';
+import { hasAccessModule, hasFeatureModule, type MobileModule } from '@hbcfield/shared/client';
 import { holds, holdsOrgWide } from '../lib/permissions';
 import type { User } from '../lib/api/types';
 
@@ -56,7 +56,29 @@ export interface Requires {
 export function meets(user: User | null | undefined, r: Requires | undefined): boolean {
   if (!user) return false;
   if (!r) return true;
-  if (r.module && !hasModule(user as never, r.module)) return false;
+  /*
+    ⚠️ `hasAccessModule`, NEVER `hasModule` — THE TAB BAR AND THE REGISTRY MUST
+    ASK THE SAME QUESTION.
+
+    `hasModule` is the raw storage reader: it answers "is this string in the
+    stored array". `hasAccessModule` is the ACCESS question, and the difference
+    is three rules it already implements and the other does not:
+
+      • an ADMIN holds every module by definition, whatever is stored;
+      • a user with NO Access Profile implicitly holds all of them —
+        `modules.ts` says so in as many words, and null is the default;
+      • `create_task` and `manage` derive from the PERMISSION, org-wide or in
+        any space, because a surface withheld from somebody the server would
+        accept is the bug that took the Create button off the web tasks page.
+
+    Asking the wrong one hid the shift clock from every admin and every member
+    whose profile was never configured — while `(tabs)/_layout.tsx` asked
+    `hasAccessModule(user, 'clock')` and showed them the Clock TAB. The
+    navigation and the home screen disagreed about the same member, which is
+    exactly what §2.4 rule 1 exists to prevent: "entitlement is asked ONCE …
+    asked separately they drift."
+  */
+  if (r.module && !hasAccessModule(user as never, r.module)) return false;
   if (r.orgModule && !hasFeatureModule({ orgModules: user.orgModules }, r.orgModule)) return false;
   const ask = r.orgWide ? holdsOrgWide : holds;
   if (r.permission && !ask(user as never, r.permission)) return false;

@@ -5,7 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { useDocumentRequirements } from '../../contexts/document-requirements-context';
+import { useSyncStatus } from '../../offline/offline-context';
 import { homeDestinationsFor, type Destination, type BadgeSource } from '../../lib/manage-rows';
+/* The selection rule is not rendering — see `lib/shortcut-tiles.ts`. */
+import { chooseTiles, TILE_SIZE, TILE_GAP, type BadgeCounts } from '../../lib/shortcut-tiles';
 import { AText, Well } from '../amazen';
 import type { GlyphProps } from '../glyphs/glyphs';
 import { DocumentsGlyph, SendDocumentGlyph, SupportGlyph } from '../glyphs/glyphs';
@@ -80,12 +83,6 @@ const GLYPHS: Record<string, React.ComponentType<GlyphProps>> = {
  */
 const PEOPLE_BADGES: BadgeSource[] = [];
 
-export interface BadgeCounts {
-  /** A count, or undefined when nothing on this screen already knows it. */
-  [key: string]: number | undefined;
-}
-
-const MAX_TILES = 4;
 
 export function ShortcutsRail({ style }: { style?: object }) {
   const { amazen } = useTheme();
@@ -93,6 +90,15 @@ export function ShortcutsRail({ style }: { style?: object }) {
   const router = useRouter();
   const { user } = useAuth();
   const docs = useDocumentRequirements();
+  /*
+    ⚠️ THE ONE BADGE WITH A LOCAL SOURCE, WHICH IS WHY IT IS ALLOWED.
+
+    `STATES.md` — "Badges fall back to their last known value ONLY where the
+    source is local (the sync queue), and are otherwise absent." The outbox is
+    on this phone; reading it costs nothing and asks nobody. Every other count
+    has to already be on screen for another reason, or the tile draws plain.
+  */
+  const { snapshot } = useSyncStatus();
 
   const counts: BadgeCounts = {
     /*
@@ -104,6 +110,8 @@ export function ShortcutsRail({ style }: { style?: object }) {
     */
     'documents.due': docs.total || undefined,
     'documents.toSign': docs.toSign.length || undefined,
+    // Waiting to send, plus whatever needs a person to look at it.
+    'sync.queued': (snapshot.waiting + snapshot.attention) || undefined,
     // The rest have no source on this screen yet, and so draw no number.
   };
 
@@ -118,7 +126,16 @@ export function ShortcutsRail({ style }: { style?: object }) {
 
   return (
     <Well style={[{ padding: amazen.space(3.5) }, style]}>
-      <View style={{ flexDirection: 'row', gap: 9 }}>
+      {/*
+        ⚠️ LEFT-ALIGNED AT THEIR REAL SIZE — NOT STRETCHED TO FILL THE WIDTH.
+
+        `STATES.md` ④: two tiles are still a card, with two empty columns of
+        air beside them. The tiles are 71pt because that is what a 26px mark
+        needs, and a 150pt tile with a 26px mark in it looks like a mistake.
+        `flex: 1` made exactly that shape the moment a member had two modules
+        instead of four.
+      */}
+      <View style={{ flexDirection: 'row', gap: TILE_GAP, justifyContent: 'flex-start' }}>
         {chosen.map((d) => (
           <Tile
             key={d.labelKey}
@@ -131,25 +148,6 @@ export function ShortcutsRail({ style }: { style?: object }) {
       </View>
     </Well>
   );
-}
-
-/**
- * Twenty-two destinations, four slots.
- *
- * ⚠️ ONLY STEP 2 MOVES DURING THE DAY. Badges come and go, so the first slots
- * are live and the last two are stable — which is the right way round for
- * muscle memory: the thing you reach for without looking never moves.
- */
-export function chooseTiles(available: Destination[], counts: BadgeCounts): Destination[] {
-  const badged: Destination[] = [];
-  const plain: Destination[] = [];
-  for (const d of available) {
-    const n = d.badge ? counts[d.badge] : undefined;
-    (n && n > 0 ? badged : plain).push(d);
-  }
-  // Registry order within each group. A toolbar that reorders itself is a
-  // toolbar you cannot learn.
-  return [...badged, ...plain].slice(0, MAX_TILES);
 }
 
 function Tile({
@@ -173,13 +171,12 @@ function Tile({
       accessibilityRole="button"
       /* ⚠️ The badge is not decoration — it is half the label. */
       accessibilityLabel={count && count > 0 ? `${label}, ${count}` : label}
-      style={({ pressed }) => ({ flex: 1, alignItems: 'center', opacity: pressed ? 0.8 : 1 })}
+      style={({ pressed }) => ({ width: TILE_SIZE, alignItems: 'center', opacity: pressed ? 0.8 : 1 })}
     >
       <View
         style={{
-          width: '100%',
-          aspectRatio: 1,
-          maxHeight: 71,
+          width: TILE_SIZE,
+          height: TILE_SIZE,
           borderRadius: amazen.radius.tile,
           backgroundColor: c.tile,
           borderWidth: StyleSheet.hairlineWidth * 2,

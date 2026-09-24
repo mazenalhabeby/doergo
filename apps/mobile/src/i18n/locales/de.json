@@ -355,14 +355,23 @@
       "messages": "Nachrichten",
       "support": "Support"
     },
-    "arrange": {
-      "start": "Anordnen",
+    "nothingYet": {},
+    "live": {},
+    "edit": {
+      "hint": "Halten zum Verschieben · ⊖ tippen zum Entfernen",
       "add": "Widget hinzufügen",
+      "moveUp": "Nach oben",
+      "moveDown": "Nach unten",
       "remove": "Vom Start entfernen",
-      "addTitle": "Zum Start hinzufügen",
-      "nothingToAdd": "Alles Verfügbare ist bereits hier.",
-      "someOff": "{{count}} von {{total}} sind nicht auf Ihrem Start.",
-      "allOn": "Alle {{count}} sind auf Ihrem Start."
+      "announce": "{{name}}, Position {{at}} von {{of}}.",
+      "saved": "In Ihrem Konto gespeichert."
+    },
+    "gallery": {
+      "title": "Widgets",
+      "sub_one": "{{count}} weiteres gehört Ihnen. Wischen Sie, um es zu sehen.",
+      "sub_other": "{{count}} weitere gehören Ihnen. Wischen Sie, um sie zu sehen.",
+      "none": "Nichts mehr hinzuzufügen.",
+      "add": "Widget hinzufügen"
     }
   },
   "tasks": {
@@ -2286,7 +2295,9 @@
       "blocking": "Sie können keine Arbeit erhalten, bis dies eingereicht und freigegeben ist.",
       "countersign": "{{label}} von {{name}} unterschreiben",
       "countersignNote": "Das Dokument einer anderen Person wartet auf Sie.",
-      "countersignMore": "und {{count}} weitere warten auf Sie"
+      "countersignMore": "und {{count}} weitere warten auf Sie",
+      "sentBack": "{{label}} wurde zurückgeschickt",
+      "sentBack_other": "{{count}} Dokumente wurden zurückgeschickt"
     },
     "onBehalfOf": "Für {{name}}",
     "pages": {
@@ -2883,5 +2894,22 @@
     "documentsDue": "Dokumente",
     "clients": "Kunden",
     "shortcuts": "Kurzbefehle"
+  },
+  "crew": {
+    "onTheClock": "im Dienst",
+    "onTheClockNow": "gerade im Dienst",
+    "calm": "Alle sind da. Nichts offen.",
+    "empty": "Gerade ist niemand im Dienst.",
+    "offline": "Braucht eine Verbindung. Eine gespeicherte Antwort wäre falsch, nicht alt.",
+    "steady": "ruhig",
+    "nothingToDecide": "Nichts zu entscheiden.",
+    "notArrived": "{{n}} nicht erschienen",
+    "waiting": "{{n}} offen",
+    "more": "{{n}} weitere",
+    "call": "{{name}} anrufen",
+    "minLate": "{{n}} Min zu spät",
+    "minLeft": "noch {{n}} Min",
+    "minOver": "{{n}} Min darüber",
+    "minBreak": "{{n}} Min Pause"
   }
 }

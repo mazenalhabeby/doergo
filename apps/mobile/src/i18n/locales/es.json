@@ -355,14 +355,23 @@
       "messages": "Mensajes",
       "support": "Soporte"
     },
-    "arrange": {
-      "start": "Organizar",
+    "nothingYet": {},
+    "live": {},
+    "edit": {
+      "hint": "Mantén pulsado para mover · toca ⊖ para quitar",
       "add": "Añadir widget",
+      "moveUp": "Subir",
+      "moveDown": "Bajar",
       "remove": "Quitar del inicio",
-      "addTitle": "Añadir a tu inicio",
-      "nothingToAdd": "Todo lo que puedes tener ya está aquí.",
-      "someOff": "{{count}} de {{total}} no están en tu inicio.",
-      "allOn": "Los {{count}} están en tu inicio."
+      "announce": "{{name}}, posición {{at}} de {{of}}.",
+      "saved": "Guardado en tu cuenta."
+    },
+    "gallery": {
+      "title": "Widgets",
+      "sub_one": "{{count}} más es tuyo. Desliza para verlo.",
+      "sub_other": "{{count}} más son tuyos. Desliza para verlos.",
+      "none": "No queda nada por añadir.",
+      "add": "Añadir widget"
     }
   },
   "tasks": {
@@ -2286,7 +2295,9 @@
       "blocking": "No puedes recibir trabajo hasta que lo entregues y lo aprueben.",
       "countersign": "Firmar {{label}} de {{name}}",
       "countersignNote": "El documento de otra persona, esperándote.",
-      "countersignMore": "y {{count}} más esperándote"
+      "countersignMore": "y {{count}} más esperándote",
+      "sentBack": "{{label}} fue devuelto",
+      "sentBack_other": "{{count}} documentos fueron devueltos"
     },
     "onBehalfOf": "Para {{name}}",
     "pages": {
@@ -2883,5 +2894,22 @@
     "documentsDue": "Documentos",
     "clients": "Clientes",
     "shortcuts": "Accesos"
+  },
+  "crew": {
+    "onTheClock": "de servicio",
+    "onTheClockNow": "de servicio ahora",
+    "calm": "Están todos. Nada pendiente.",
+    "empty": "No hay nadie de turno ahora.",
+    "offline": "Necesita conexión. Una respuesta guardada sería incorrecta, no antigua.",
+    "steady": "estable",
+    "nothingToDecide": "Nada que decidir.",
+    "notArrived": "{{n}} sin llegar",
+    "waiting": "{{n}} pendiente",
+    "more": "{{n}} más",
+    "call": "Llamar a {{name}}",
+    "minLate": "{{n}} min tarde",
+    "minLeft": "{{n}} min restantes",
+    "minOver": "{{n}} min de más",
+    "minBreak": "{{n}} min de pausa"
   }
 }

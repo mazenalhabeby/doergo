@@ -14,14 +14,21 @@
  * config and then writes the animation's own state onto it).
  *
  * Same-looking code, two threads, two different correct answers. Hence a test.
+ *
+ * ⚠️ THE HAND-WRITTEN DRAG LAYER IS GONE — `components/amazen/arrangeable.tsx`
+ * was ~400 lines of shared values, measurement tables and spring maths, and
+ * every bug it ever had was in the arithmetic rather than in anything visible.
+ * `react-native-draggable-flatlist` owns that now. What is left of our own
+ * worklet code is the long press that opens edit mode, and this still guards
+ * it: the same crash is one careless `.onStart()` away.
  */
 import * as fs from 'fs';
 import * as path from 'path';
 
 const SRC = path.resolve(__dirname, '../..');
 
-/** Files whose animations are driven from inside a gesture. */
-const WORKLET_FILES = ['components/amazen/arrangeable.tsx'];
+/** Files whose animations or state changes are driven from inside a gesture. */
+const WORKLET_FILES = ['components/home/editable-widget.tsx'];
 
 const read = (p: string) =>
   fs
@@ -45,78 +52,23 @@ describe('gesture worklets stay on the UI thread', () => {
   it.each(WORKLET_FILES)('%s reaches the JS thread only through runOnJS', (file) => {
     const src = read(file);
     // Every gesture callback that changes React state has to hop deliberately.
-    if (/\.onEnd\(/.test(src)) expect(src).toContain('runOnJS(');
-  });
-});
-
-/**
- * Drag state is cleared when the new order is DRAWN, not when the finger lifts.
- *
- * ⚠️ THE BUG THIS EXISTS FOR: clearing the shared values inside the drop
- * handler resets them on the UI thread immediately, while React's re-render
- * lands a frame or more later. For those frames the column is still drawn in
- * the OLD order with every offset back at zero — so the two widgets that
- * swapped snap to their old places and then jump again when the new order
- * arrives. "The 2 widgets jump and back again."
- *
- * `useLayoutEffect` runs after the commit and before the frame is painted, so
- * there is no frame in between to see.
- */
-import * as fsx from 'fs';
-import * as pathx from 'path';
-
-const ARRANGEABLE = pathx.resolve(
-  __dirname, '../..', 'components/amazen/arrangeable.tsx',
-);
-
-describe('the drop leaves nothing to flicker', () => {
-  const src = () =>
-    fsx
-      .readFileSync(ARRANGEABLE, 'utf8')
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      .replace(/(^|[^:])\/\/.*$/gm, '$1');
-
-  it('clears the drag state in a layout effect, not in the drop handler', () => {
-    const s = src();
-    expect(s).toMatch(/useLayoutEffect\(/);
-    // Keyed on the order and on the row's index — the two things that change
-    // when the reorder is committed.
-    expect(s).toMatch(/\[order,/);
-    expect(s).toMatch(/\[index,/);
+    for (const cb of src.matchAll(/\.on(?:Start|End|Update|Begin)\(\(\) => \{([\s\S]*?)\n\s*\}\)/g)) {
+      const body = cb[1];
+      if (/set[A-Z]|on[A-Z]/.test(body)) expect(body).toContain('runOnJS(');
+    }
   });
 
-  it('commits the reorder and nothing else when the row actually moves', () => {
+  it.each(WORKLET_FILES)('%s marks every gesture callback a worklet', (file) => {
+    const src = read(file);
     /*
-      The moved branch must call `onMove` alone. A stray reset beside it is the
-      frame of snap-back this whole arrangement exists to remove.
+      ⚠️ AND THE BUILDER CHAIN MUST NOT BE BROKEN ACROSS STATEMENTS. Splitting
+      `Gesture.LongPress()` over several assignments stops Reanimated's Babel
+      plugin recognising the callbacks, so the whole gesture silently runs on
+      the JS thread. The only sign is one warning: "None of the callbacks in
+      the gesture are worklets."
     */
-    const s = src();
-    const i = s.indexOf('const land =');
-    expect(i).toBeGreaterThan(-1);
-    const body = s.slice(i, s.indexOf('}, [index, itemKey', i));
-    const moved = body.slice(body.lastIndexOf('return;'));
-    expect(moved).toContain('onMove(itemKey, to)');
-    expect(moved).not.toMatch(/y\.value\s*=/);
-    expect(moved).not.toMatch(/dragging\.value\s*=/);
-  });
-
-  it('animates the parting but never the un-parting', () => {
-    /*
-      ⚠️ THE SECOND FLICKER, and it is subtle. A parted row sits at, say, -105.
-      When the reorder commits, the LAYOUT already moves it up a slot — it is
-      where it belongs. If the offset then SPRINGS from -105 to 0, it animates
-      105pt downward from a position that was already correct: it appears to
-      jump up and slide back. Two rows doing that at once, in opposite
-      directions, is "one up and one down and then set".
-
-      So the idle branch returns a literal 0 and returns EARLY, before any
-      `withSpring` can be reached.
-    */
-    const s = src();
-    const i = s.indexOf('if (d === -1)');
-    expect(i).toBeGreaterThan(-1);
-    const idle = s.slice(i, s.indexOf('return', s.indexOf('return', i) + 1));
-    expect(idle).toMatch(/translateY:\s*0\b/);
-    expect(idle).not.toContain('withSpring');
+    for (const cb of src.matchAll(/\.on(?:Start|End|Update|Begin)\(\(\) => \{([\s\S]*?)\n\s*\}\)/g)) {
+      expect(cb[1]).toMatch(/'worklet';/);
+    }
   });
 });

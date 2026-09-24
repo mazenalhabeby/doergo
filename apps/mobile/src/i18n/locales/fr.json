@@ -355,14 +355,23 @@
       "messages": "Messages",
       "support": "Assistance"
     },
-    "arrange": {
-      "start": "Organiser",
+    "nothingYet": {},
+    "live": {},
+    "edit": {
+      "hint": "Maintenez pour déplacer · touchez ⊖ pour retirer",
       "add": "Ajouter un widget",
+      "moveUp": "Monter",
+      "moveDown": "Descendre",
       "remove": "Retirer de l'accueil",
-      "addTitle": "Ajouter à votre accueil",
-      "nothingToAdd": "Tout ce que vous pouvez avoir est déjà là.",
-      "someOff": "{{count}} sur {{total}} ne sont pas sur votre accueil.",
-      "allOn": "Les {{count}} sont sur votre accueil."
+      "announce": "{{name}}, position {{at}} sur {{of}}.",
+      "saved": "Enregistré sur votre compte."
+    },
+    "gallery": {
+      "title": "Widgets",
+      "sub_one": "{{count}} autre vous appartient. Balayez pour le voir.",
+      "sub_other": "{{count}} autres vous appartiennent. Balayez pour les voir.",
+      "none": "Plus rien à ajouter.",
+      "add": "Ajouter un widget"
     }
   },
   "tasks": {
@@ -2286,7 +2295,9 @@
       "blocking": "Aucune mission ne peut vous être confiée tant que ce document n'est pas fourni et validé.",
       "countersign": "Signer le {{label}} de {{name}}",
       "countersignNote": "Le document de quelqu'un d'autre, en attente de vous.",
-      "countersignMore": "et {{count}} autres vous attendent"
+      "countersignMore": "et {{count}} autres vous attendent",
+      "sentBack": "{{label}} a été renvoyé",
+      "sentBack_other": "{{count}} documents ont été renvoyés"
     },
     "onBehalfOf": "Pour {{name}}",
     "pages": {
@@ -2883,5 +2894,22 @@
     "documentsDue": "Documents",
     "clients": "Clients",
     "shortcuts": "Raccourcis"
+  },
+  "crew": {
+    "onTheClock": "en poste",
+    "onTheClockNow": "en poste maintenant",
+    "calm": "Tout le monde est là. Rien en attente.",
+    "empty": "Personne en poste pour le moment.",
+    "offline": "Nécessite une connexion. Une réponse gardée serait fausse, pas ancienne.",
+    "steady": "stable",
+    "nothingToDecide": "Rien à décider.",
+    "notArrived": "{{n}} absent(s)",
+    "waiting": "{{n}} en attente",
+    "more": "{{n}} de plus",
+    "call": "Appeler {{name}}",
+    "minLate": "{{n}} min de retard",
+    "minLeft": "{{n}} min restantes",
+    "minOver": "{{n}} min de plus",
+    "minBreak": "{{n}} min de pause"
   }
 }

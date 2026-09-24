@@ -1,22 +1,36 @@
 import React, { useCallback, useState } from 'react';
-import { BackHandler, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { BackHandler, Pressable, RefreshControl } from 'react-native';
+import DraggableFlatList, {
+  ScaleDecorator,
+  ShadowDecorator,
+  type RenderItemParams,
+} from 'react-native-draggable-flatlist';
 import { useTranslation } from 'react-i18next';
 import { useRouter, type Href } from 'expo-router';
 import { useAuth } from '../contexts/auth-context';
 import { useTheme } from '../contexts/theme-context';
-import { Ground, ScreenHeader, WidgetFrame, useTabSafe } from '../components/amazen';
+import { Ground, ScreenHeader, useTabSafe } from '../components/amazen';
 import { resolveMediaUrl } from '../lib/api';
 import { displayName, initialsOf } from '../lib/people';
+import { impact, selection } from '../lib/haptics';
+import { announce, useScreenReader } from '../hooks/use-a11y';
 import { OfflineBanner } from '../offline/components/offline-banner';
-import { Arrangeable } from '../components/amazen/arrangeable';
-import { AText } from '../components/amazen';
-import { WidgetPicker } from '../components/home/widget-picker';
-import { WidgetPlaceholder } from '../components/home/widget-placeholder';
+import { EmptyHome, type Suggestion } from '../components/home/empty-home';
+import {
+  DropSlot,
+  EditableWidget,
+  LANDED_MS,
+  LIFT_FACTOR,
+} from '../components/home/editable-widget';
+import { SavedLine, UNDO_MS } from '../components/home/saved-line';
+import { WidgetGallery } from '../components/home/widget-gallery';
+import { useDocumentRequirements } from '../contexts/document-requirements-context';
 import { useHomeLayout } from './use-home-layout';
+import type { HomeLayout } from './layout-store';
 import type { WidgetRow } from './registry';
 
 /**
- * ONE home screen, composed from a registry.
+ * ONE home screen, composed from a registry — and edited in place.
  *
  * There used to be four — `admin-dashboard`, `hybrid-home`, `freelancer-home`,
  * `full-time-home` — each with its own fetching, skeletons and error handling.
@@ -24,102 +38,70 @@ import type { WidgetRow } from './registry';
  * call kills the whole screen" bug, because the logic was written four times
  * and fixed once.
  *
- * ⚠️ EACH WIDGET FAILS ALONE. `WidgetFrame` is an error boundary per row, so a
- * widget that cannot load takes itself off the screen and never the shift card
- * beside it.
+ * ⚠️ THERE IS NO ARRANGE SCREEN AND NO LIST OF WIDGET NAMES.
  *
- * ⚠️ AND A ROW YOU CANNOT SEE MAKES NO REQUEST AT ALL. Entitlement is asked
- * before the component mounts — nothing is visible-then-refused, and nothing
- * fetches to discover it was not allowed.
+ * The version before this one was a sheet listing "Shift clock", "Crew", "My
+ * work" with up/down arrows beside each. It is the obvious build and it is the
+ * wrong one, for the reason both platforms settled on years ago: a list of
+ * names asks somebody to decide from a word what they can decide from the
+ * thing itself. "Is Crew above My work?" is a question about a picture, and
+ * the picture is on the screen already. So the card you are looking at is the
+ * card you hold, and the card you drag.
  *
- * ⚠️ ARRANGING IS A MODE, NOT A SCREEN. The alternative — a settings page
- * listing widget names with checkboxes — asks somebody to imagine the result.
- * Here the thing being arranged is the thing on screen, so the answer to "does
- * this belong above that" is visible while it is being decided. It costs one
- * header button and it is why the drag is worth having at all.
+ * The arrows did not disappear — they moved to where they belong. Every card
+ * carries `accessibilityActions` for Move up / Move down / Take off my home,
+ * which is what WCAG 2.5.7 actually asks for: *"all functionality that uses a
+ * dragging movement can be achieved by a single pointer without dragging."*
+ * They are drawn on screen only when a screen reader is running.
+ *
+ * ⚠️ A ROW YOU CANNOT SEE MAKES NO REQUEST AT ALL. Entitlement is asked before
+ * the component mounts — nothing is visible-then-refused, and nothing fetches
+ * to discover it was not allowed.
  */
-/**
- * One widget, as it appears WHILE ARRANGING.
- *
- * ⚠️ A WIDGET THAT HAS NOTHING TO SAY RENDERS `null`, AND THAT IS RIGHT ON THE
- * HOME SCREEN AND WRONG HERE.
- *
- * "My work" returns nothing when there is no work. A row of zero height is a
- * widget the member cannot see, cannot drag and cannot remove, still holding
- * its place in the order — and its ✕ badge is drawn at the top-left of a box
- * with no height, so it lands on TOP of the next widget's ✕. Two controls in
- * one place, and the one you hit removes the one you cannot see.
- *
- * ⚠️ AND IT RENDERS IN BOTH MODES, WHICH IS THE POINT. Showing the stand-in
- * only while arranging would mean the row grew by 70pt the moment the mode
- * opened, and every widget below it moved — the same rule the add-widget row
- * broke, in miniature. Both phones agree: entering edit mode does not move the
- * content. So the row is the same height whether it is being read or arranged,
- * and the mode change is purely the ✕ badges.
- *
- * It is also the more honest screen. The registry declares `empty: 'allClear'`
- * for this widget — "the answer is genuinely nothing, and that is good" — and
- * a row saying so tells the member their work is clear, where a gap tells them
- * nothing at all.
- *
- * ⚠️ The widget keeps rendering underneath. Swapping it out for the stand-in
- * would make the measured height non-zero, which would swap it back.
- */
-/*
-  ⚠️ MEMOISED, AND THAT IS ABOUT THE DROP RATHER THAN ABOUT RENDER COUNTS.
-
-  Committing a reorder sets state, so the home screen re-renders — and without
-  this, so does every widget on it: the shift clock, my work, documents. On the
-  emulator, with placeholders, that is free. On a real phone holding real data
-  it is the JS thread busy at the exact moment the member has just let go, and
-  nothing moves until it finishes.
-
-  `row` is the registry object, which is the same reference before and after a
-  reorder — only its POSITION in the list changes, and position is the parent's
-  business. So the widgets sit still and only the column re-arranges.
-*/
-const ArrangeSlot = React.memo(function ArrangeSlot({ row }: { row: WidgetRow }) {
-  const { t } = useTranslation();
-  const [quiet, setQuiet] = React.useState(false);
-  return (
-    <View collapsable={false}>
-      <View
-        pointerEvents="none"
-        /* Android: see the note on the row in `arrangeable.tsx` — a wrapper
-           that exists only to be measured is exactly what gets collapsed. */
-        collapsable={false}
-        onLayout={(e) => setQuiet(e.nativeEvent.layout.height < 1)}
-      >
-        <row.Component />
-      </View>
-      {quiet ? (
-        <WidgetPlaceholder
-          title={t(row.title, { defaultValue: row.key })}
-          question={row.question ?? ''}
-          height={72}
-          /* It IS built — it just has nothing to say today. */
-          note={t('home.arrange.quiet', { defaultValue: 'nothing right now' })}
-        />
-      ) : null}
-    </View>
-  );
-});
-
-
 export function HomeScreen() {
   const { user } = useAuth();
-  const { amazen } = useTheme();
+  const { amazen, isDark } = useTheme();
   const tabSafe = useTabSafe();
   const { t } = useTranslation();
   const router = useRouter();
   const [refreshKey, setRefreshKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  const [arranging, setArranging] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [picking, setPicking] = useState(false);
   const layout = useHomeLayout();
-  /* Handed to the drag layer so the scroll view yields to it — see
-     `Arrangeable`'s `scrollRef`, which is load-bearing and fails silently. */
-  const scrollRef = React.useRef(null);
+  const screenReader = useScreenReader();
+
+  /** Just added from the gallery — wears a jade ring for 30 seconds. */
+  const [landed, setLanded] = useState<string | null>(null);
+  React.useEffect(() => {
+    if (!landed) return;
+    const timer = setTimeout(() => setLanded(null), LANDED_MS);
+    return () => clearTimeout(timer);
+  }, [landed]);
+
+  /*
+    ⚠️ THE LINE IS AN UNDO, NOT A CONFIRM.
+
+    §5: the change is PATCHed immediately and `( Saved to your account. UNDO )`
+    stands for 30 seconds. ❌ No confirm dialog — nothing here is destructive,
+    a removed widget is hidden and its key is kept. ❌ No save button — Done
+    closes a mode, it does not commit anything.
+
+    ⚠️ AND THE LAYOUT SHOULD BE A SERVER-SIDE RECORD. §5 says so in as many
+    words. There is no endpoint: `layout-store.ts` is AsyncStorage, keyed by
+    member, and it is the only file that knows where the layout lives — so the
+    swap is two functions and nothing above them. Noted rather than invented,
+    because inventing it is a backend change and the backend is closed.
+  */
+  const [undoTo, setUndoTo] = useState<HomeLayout | null>(null);
+  React.useEffect(() => {
+    if (!undoTo) return;
+    const timer = setTimeout(() => setUndoTo(null), UNDO_MS);
+    return () => clearTimeout(timer);
+  }, [undoTo]);
+
+  /** Take the before-picture, then change it. The order matters. */
+  const changing = useCallback(() => setUndoTo(layout.snapshot), [layout.snapshot]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -133,151 +115,293 @@ export function HomeScreen() {
   /*
     ⚠️ THE ANDROID BACK GESTURE LEAVES THE MODE, IT DOES NOT LEAVE THE SCREEN.
 
-    Arranging is a mode, and back is what an Android member presses to get out
-    of one. Without this it takes them off Home entirely, which reads as the
-    app throwing away what they were in the middle of doing — and the
-    arrangement IS saved, so it is also a lie.
-
-    It returns `true` only while the mode is on, so every other back press on
-    Home behaves exactly as it did. No-op on iOS, which has no hardware back.
+    Editing is a mode, and back is what an Android member presses to get out of
+    one. Without this it takes them off Home entirely, which reads as the app
+    throwing away what they were in the middle of doing — and the arrangement
+    IS saved, so it is also a lie.
   */
   React.useEffect(() => {
-    if (!arranging) return;
+    if (!editing) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      setArranging(false);
+      setEditing(false);
       return true;
     });
     return () => sub.remove();
-  }, [arranging]);
+  }, [editing]);
+
+  const enterEdit = useCallback(() => {
+    setEditing((on) => {
+      if (!on) impact('light');
+      return true;
+    });
+  }, []);
+
+  /*
+    ⚠️ EVERY LIVE VALUE COMES FROM SOMETHING ALREADY ON SCREEN. A pill in the
+    empty state must never be the reason a request happens — the sentence is a
+    courtesy, and a courtesy that costs a round trip is not one.
+  */
+  const docs = useDocumentRequirements();
+  const live = React.useMemo(() => ({
+    value: (row: { key: string }): string | null => {
+      if (row.key === 'documents-due') {
+        if (!docs.ready) return null;
+        const n = docs.total;
+        return n > 0
+          ? t('home.live.documents', { n, defaultValue: `${n} waiting on you` })
+          : t('home.live.documentsClear', { defaultValue: 'Nothing outstanding' });
+      }
+      return null;
+    },
+    /*
+      ⚠️ HAS THE ANSWER ARRIVED? — §1 and §4 both refuse to offer a widget that
+      would render "loading". Where the screen can genuinely answer it, it
+      does; where a widget fetches privately and tells nobody, the honest
+      answer is yes and the gap is here rather than hidden behind a guess.
+    */
+    ready: (row: { key: string }): boolean =>
+      row.key === 'documents-due' ? docs.ready : true,
+  }), [docs, t]);
 
   const rows = layout.rows;
+
+  /* ⚠️ TWO SUGGESTIONS, NEVER MORE, and only ones whose answer has arrived. */
+  const suggestions: Suggestion[] = React.useMemo(
+    /*
+      ⚠️ A LIVE ANSWER, NEVER THE QUESTION AS A FALLBACK.
+
+      The pill's line is "that widget's OWN live answer". Falling back to the
+      question let a widget with nothing to show become a suggestion, and the
+      card above it rendered nothing: an orphaned pill floating under a gap.
+    */
+    () => layout.offScreen.slice(0, 2).map((row) => ({ row, line: live.value(row) })),
+    [layout.offScreen, live],
+  );
   const fullName = displayName(user);
   const initials = initialsOf(user);
+
+  /* ── the a11y arrows, which are also the rotor actions ─────────────── */
+  const moveBy = useCallback(
+    (key: string, direction: 'up' | 'down') => {
+      changing();
+      const done = layout.move(key, direction);
+      if (!done) return;
+      const row = rows.find((r) => r.key === key);
+      const at = rows.findIndex((r) => r.key === key) + (direction === 'up' ? 0 : 2);
+      /*
+        ⚠️ ANNOUNCE THE RESULT, NOT THE ACT. "Moved up" tells somebody what
+        they just did, which they know. "Crew, position 2 of 4" tells them
+        where it ended up, which is the only thing they cannot see.
+      */
+      announce(
+        t('home.edit.announce', {
+          name: t(row?.title ?? key, { defaultValue: key }),
+          at,
+          of: rows.length,
+          defaultValue: `${t(row?.title ?? key, { defaultValue: key })}, position ${at} of ${rows.length}.`,
+        }),
+      );
+    },
+    [changing, layout, rows, t],
+  );
+
+  const removeWidget = useCallback(
+    (key: string) => {
+      changing();
+      layout.hide(key);
+    },
+    [changing, layout],
+  );
+
+  /*
+    ⚠️ `onDragEnd` FIRES ONCE, WITH THE NEW ORDER — §7. It is where the change
+    is written and where the undo starts. Not `onPlaceholderIndexChange`, which
+    fires on every crossing and would write a dozen records for one gesture.
+  */
+  const onDragEnd = useCallback(
+    ({ data, from, to }: { data: WidgetRow[]; from: number; to: number }) => {
+      if (from === to) return;
+      changing();
+      layout.setOrder(data.map((r) => r.key));
+      impact('medium');
+    },
+    [changing, layout],
+  );
+
+  const renderItem = useCallback(
+    ({ item, getIndex, drag, isActive }: RenderItemParams<WidgetRow>) => {
+      const index = getIndex() ?? 0;
+      return (
+        /*
+          ⚠️ THE TWO DECORATORS §7 NAMES, AND NO ROTATION. Neither platform
+          tilts a dragged card — a tilt says "torn loose", and this one is
+          still in a column that is about to close around it.
+        */
+        <ScaleDecorator activeScale={LIFT_FACTOR}>
+          {/* ⚠️ FED THE GLASS SHADOW — the same numbers `shadowGlass()` gives
+              every card in the kit, so a lifted card is lit like the cards it
+              is being lifted out of rather than like a generic list row. */}
+          <ShadowDecorator
+            elevation={isDark ? 6 : 4}
+            radius={isDark ? 24 : 22}
+            color={isDark ? '#000' : '#0b332a'}
+            opacity={isDark ? 0.45 : 0.1}
+          >
+            <EditableWidget
+              key={`${item.key}:${refreshKey}`}
+              row={item}
+              editing={editing}
+              isActive={isActive}
+              drag={drag}
+              onEnterEdit={enterEdit}
+              onRemove={() => removeWidget(item.key)}
+              onMoveUp={() => moveBy(item.key, 'up')}
+              onMoveDown={() => moveBy(item.key, 'down')}
+              canUp={index > 0}
+              canDown={index < rows.length - 1}
+              screenReader={screenReader}
+              landed={landed === item.key}
+            />
+          </ShadowDecorator>
+        </ScaleDecorator>
+      );
+    },
+    [editing, enterEdit, isDark, landed, moveBy, refreshKey, removeWidget, rows.length, screenReader],
+  );
 
   return (
     <Ground variant="home">
       {/*
-        ⚠️ OUTSIDE the ScrollView, so it does not scroll away.
-
-        It names the day and the company, and both stay true while the column
-        moves under them. Inside, it would be a greeting that disappears the
-        moment somebody looks at their jobs.
+        ⚠️ OUTSIDE THE LIST, so it does not scroll away — and so nothing put in
+        it can move the column. That second reason is why the ＋ lives here:
+        a dashed "Add a widget" row at the head of the column was worth about
+        60pt and shoved every widget down the instant the mode opened, under
+        the finger that had just opened it.
       */}
       <ScreenHeader
-        /*
-          ⚠️ THE PERSON, NOT THE COMPANY.
-
-          The reference shows the organization here, and on a screen for
-          somebody who covers three sites that is the more useful line. But a
-          member who works for one company reads its name every time they open
-          the app and learns nothing — whereas their own name says whose day
-          this is, which matters on a shared phone and on a handover.
-
-          The workspace still appears where it is actually a fact: the shift
-          card names the site you are clocked into.
-        */
         title={fullName}
+        hint={
+          editing
+            ? t('home.edit.hint', { defaultValue: 'Hold to move · tap ⊖ to remove' })
+            : undefined
+        }
         avatarUrl={resolveMediaUrl(user?.avatarUrl)}
         initials={initials}
         onPressAvatar={() => router.push('/(app)/(tabs)/profile' as Href)}
-        /*
-          ⚠️ NOTHING HERE WHILE READING, AND EVERYTHING HERE WHILE ARRANGING.
-
-          The Arrange button is gone: it sat in the header every day of the
-          year for something most people do twice. Arranging starts the way it
-          already starts on both phones — press and hold a widget.
-
-          ⚠️ AND "ADD A WIDGET" LIVES HERE, NOT IN THE COLUMN. This is the fix
-          for the bug that would not go away. Both phones agree on one rule:
-          **entering edit mode does not move the content by a single pixel.**
-          iOS jiggles the icons where they stand and puts its Edit control in a
-          CORNER OF THE CHROME; the Android launcher opens a floating menu over
-          a grid that does not shift. A dashed row at the head of the column
-          broke that rule by construction — it is worth about 60pt, so it
-          shoved every widget down the instant the mode opened, under the
-          finger that had just opened it. Hiding it during drags only moved the
-          same 60pt to the start of every drag, which is what made a widget
-          land a slot away from where it was aimed.
-
-          The header is OUTSIDE the ScrollView. Nothing put here can move the
-          column, ever — which is why this is the only place it can go.
-        */
         actions={
-          arranging
+          editing
             ? [
                 {
                   /*
                     ⚠️ A SYMBOL, BECAUSE TWO WORDS DO NOT FIT BESIDE A NAME.
                     "＋ Add a widget" and "Done" together pushed the member's
-                    own name into an ellipsis — JOHN OWN… — which is a worse
-                    thing to lose than a word nobody needs to read. iOS uses a
-                    bare ＋ in the corner for exactly this control, and only
-                    while editing, where it cannot be misread.
+                    own name into an ellipsis — JOHN OWN…
                   */
                   label: '＋',
-                  a11yLabel: t('home.arrange.add', { defaultValue: 'Add a widget' }),
+                  a11yLabel: t('home.edit.add', { defaultValue: 'Add a widget' }),
                   onPress: () => setPicking(true),
                 },
                 {
                   label: t('common.done', { defaultValue: 'Done' }),
                   active: true,
-                  onPress: () => setArranging(false),
+                  onPress: () => setEditing(false),
                 },
               ]
             : undefined
         }
       />
-      <ScrollView
-        ref={scrollRef}
+
+      <DraggableFlatList
+        data={rows}
+        keyExtractor={(row) => row.key}
+        renderItem={renderItem}
+        onDragEnd={onDragEnd}
+        /* ⚠️ A TICK EACH TIME A CARD CROSSES ANOTHER — it is the only signal
+           that the order under the thumb actually changed. */
+        onPlaceholderIndexChange={() => selection()}
+        renderPlaceholder={() => <DropSlot />}
         /*
-          ⚠️ ANDROID-ONLY, AND ONLY BECAUSE A WIDGET CAN BE DRAGGED.
-
-          Subview clipping DETACHES a child from the native hierarchy once it
-          leaves the visible window, and re-attaches it on the way back. That
-          is the right trade for a long list nobody is holding — but a widget
-          under a finger is translated well outside its own slot, so the thing
-          being dragged is exactly the thing that gets detached. On screen the
-          card vanishes and comes back.
-
-          Off for this column. It is six rows; there is nothing to win by
-          clipping them, and iOS never did it anyway.
+          ⚠️ IT FIGHTS THE iOS BACK-SWIPE. Without a distance the pan claims
+          the touch immediately, so an edge swipe to go back is read as a drag
+          and the member is stuck on a screen the whole platform says they can
+          leave. A distance turns it into `activeOffsetY`, so a horizontal
+          move is never a drag.
         */
-        removeClippedSubviews={false}
+        activationDistance={14}
+        /* §3 — auto-scroll within 60pt of an edge. */
+        autoscrollThreshold={60}
+        containerStyle={{ flex: 1 }}
+        /*
+          ⚠️ 14, not `layout.gutter` (20). Measured off the design reference:
+          the shift card's edge and the tab pill's are the same 14pt inset, and
+          a column that does not line up with the bar under it is the first
+          thing the eye catches.
+        */
         contentContainerStyle={{
-          /*
-            ⚠️ 14, not `layout.gutter` (20). Measured off the design reference:
-            the shift card's edge and the tab pill's are the same 14pt inset,
-            and a column that does not line up with the bar under it is the
-            first thing the eye catches.
-          */
           paddingHorizontal: 14,
           /*
-            ⚠️ THIS SCREEN DRAWS UNDER THE TAB PILL LIKE EVERY OTHER TAB.
-
-            The comment that used to be here said the pill renders in flow and
-            therefore no room was needed. That stopped being true when the bar
-            was made to float: it is absolutely positioned, React Navigation
-            measures it as zero, and home was the one tab screen reserving
-            nothing — so the shortcuts row ended under the glass.
-
-            `useTabSafe()` and not a constant: the bar sits on the safe-area
-            inset, which is 24pt on gesture Android, 48pt on three buttons,
-            34pt on a notched iPhone and 0 on an iPhone SE.
+            ⚠️ THIS SCREEN DRAWS UNDER THE TAB PILL LIKE EVERY OTHER TAB, and
+            the bar is NOT a fixed height — it sits on the safe-area inset,
+            which is 24pt on gesture Android, 48pt on three buttons, 34pt on a
+            notched iPhone and 0 on an iPhone SE.
           */
           paddingBottom: tabSafe,
+          flexGrow: 1,
         }}
-        /*
-          ⚠️ NO PULL-TO-REFRESH WHILE ARRANGING, and this was a real bug: a
-          widget near the top dragged DOWNWARD triggered the refresh spinner
-          instead of moving, because `RefreshControl` claims a downward gesture
-          whenever the list is at the top — before the pan can decide.
+        ListHeaderComponent={
+          /* ⚠️ ONE line that says what the network is doing, for the whole
+             column. Per widget it would be four copies of one sentence. */
+          <OfflineBanner style={{ marginBottom: amazen.space(3) }} />
+        }
+        ListEmptyComponent={
+          /*
+            ⚠️ NOT "your home screen is empty", AND NOT A DASHED OUTLINE.
 
-          It is also the wrong offer. Somebody rearranging their home screen is
-          not asking for fresher numbers, and a refresh mid-arrangement
-          remounts the very widgets being moved.
-        */
+            A dashed outline means *something belongs here and is missing*.
+            Nothing is broken — the member chose this — and two REAL cards at
+            .42 are a better invitation than an outline of one. They are the
+            same components with the same data, so the suggestion and the thing
+            it suggests can never drift.
+          */
+          <EmptyHome
+            suggestions={suggestions}
+            totalAvailable={layout.available.length}
+            onKeep={(key) => { changing(); layout.show(key); }}
+            onKeepBoth={() => {
+              changing();
+              suggestions.filter((s) => s.line !== null).forEach((s) => layout.show(s.row.key));
+            }}
+            onSeeAll={() => setPicking(true)}
+          />
+        }
+        ListFooterComponent={
+          editing ? (
+            /*
+              ⚠️ LEAVING IS "DONE, OR A TAP ANYWHERE THAT IS NOT A CARD" — and
+              this is that anywhere. Every card absorbs its own taps, so the
+              only thing left to hit is the space under the column; giving it a
+              floor means there is always some, even when the widgets fill the
+              screen. It is also the room the bottom card needs to be dragged
+              past, and it is BELOW everything, so adding it moves nothing.
+            */
+            <Pressable
+              onPress={() => setEditing(false)}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.done', { defaultValue: 'Done' })}
+              style={{ minHeight: 180 }}
+            />
+          ) : null
+        }
         refreshControl={
-          arranging ? undefined : (
+          /*
+            ⚠️ NO PULL-TO-REFRESH WHILE EDITING, and this was a real bug: a
+            widget near the top dragged DOWNWARD triggered the refresh spinner
+            instead of moving, because `RefreshControl` claims a downward
+            gesture whenever the list is at the top — before the pan can
+            decide. It is also the wrong offer: somebody rearranging their home
+            screen is not asking for fresher numbers.
+          */
+          editing ? undefined : (
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
@@ -286,92 +410,41 @@ export function HomeScreen() {
           )
         }
         showsVerticalScrollIndicator={false}
-      >
-        {/*
-          ⚠️ ONE line that says what the network is doing, for the whole
-          column. Per widget it would be four copies of the same sentence; per
-          screen it is the context every widget's own freshness label reads
-          against.
-        */}
-        <OfflineBanner style={{ marginBottom: amazen.space(3) }} />
+        /*
+          ⚠️ ANDROID-ONLY, AND ONLY BECAUSE A WIDGET CAN BE DRAGGED. Subview
+          clipping DETACHES a child once it leaves the visible window — and a
+          card under a finger is translated well outside its own slot, so the
+          thing being dragged is exactly the thing that gets detached.
+        */
+        removeClippedSubviews={false}
+      />
 
+      <SavedLine visible={!!undoTo} bottom={tabSafe} onUndo={() => {
+        if (undoTo) layout.restore(undoTo);
+        setUndoTo(null);
+      }} />
 
-        {/*
-          ⚠️ ONE COLUMN, TWO MODES, AND THE SAME WIDGETS IN BOTH.
-
-          Reading renders the widgets directly; arranging wraps them in the
-          drag layer. It is deliberately the same components either way — a
-          separate "edit" representation is how an arrangement ends up looking
-          different from the thing it arranges, and then the order somebody
-          chose is not the order they get.
-        */}
-        <Arrangeable
-          keys={rows.map((r) => r.key)}
-          arranging={arranging}
-          onBeginArrange={() => setArranging(true)}
-          onMove={layout.move}
-          gap={amazen.layout.block}
-          scrollRef={scrollRef}
-        >
-          {(key, i) => {
-            const row = rows.find((r) => r.key === key);
-            if (!row) return null;
-            /*
-              Reading: the widget, exactly as it is. The drag layer is still
-              wrapped around it — that is what the hold needs — but it does
-              nothing until the hold has been held.
-            */
-            if (!arranging) {
-              return (
-                <WidgetFrame key={`${row.key}:${refreshKey}`} index={i}>
-                  <ArrangeSlot row={row} />
-                </WidgetFrame>
-              );
-            }
-            return (
-              <View>
-                {/* Not interactive while arranging: a tap belongs to the
-                    drag, and a widget that navigates away mid-arrangement
-                    loses the arrangement. */}
-                <ArrangeSlot row={row} />
-                <Pressable
-                  onPress={() => layout.hide(key)}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('home.arrange.remove', {
-                    defaultValue: 'Remove from home',
-                  })}
-                  hitSlop={8}
-                  style={{
-                    position: 'absolute',
-                    top: -6,
-                    left: -6,
-                    width: 28,
-                    height: 28,
-                    borderRadius: amazen.radius.full,
-                    backgroundColor: amazen.color.criticalTint,
-                    borderWidth: StyleSheet.hairlineWidth * 2,
-                    borderColor: amazen.color.critical,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <AText variant="body" tone="critical" style={{ lineHeight: 20 }}>×</AText>
-                </Pressable>
-              </View>
-            );
-          }}
-        </Arrangeable>
-
-      </ScrollView>
-
-      <WidgetPicker
+      {/*
+        ⚠️ THE GALLERY SHOWS THE WIDGET, NEVER A LABEL. One per page, swiped
+        sideways, the real component at full size with real data.
+      */}
+      <WidgetGallery
         visible={picking}
         onClose={() => setPicking(false)}
         offScreen={layout.offScreen}
-        total={layout.available.length}
+        hasData={(row) => live.ready(row)}
         onAdd={(key) => {
-          layout.show(key);
+          /*
+            ⚠️ THE SHEET CLOSES SO THE ARRIVAL IS VISIBLE, and the card lands
+            at the BOTTOM wearing a jade ring. Closing it is the point: a card
+            that appears behind a sheet has not arrived anywhere anybody can
+            see, and "it worked" then has to be taken on trust.
+          */
+          changing();
+          layout.add(key);
           setPicking(false);
+          setLanded(key);
+          if (!editing) setEditing(false);
         }}
       />
     </Ground>

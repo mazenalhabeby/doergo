@@ -40,6 +40,7 @@ export function ScreenHeader({
   title,
   /** Overrides the date. Leave unset and it says what day it is. */
   subtitle,
+  hint,
   avatarUrl,
   initials,
   onPressAvatar,
@@ -50,6 +51,17 @@ export function ScreenHeader({
 }: {
   title: string;
   subtitle?: string;
+  /**
+   * Replaces the big line while a MODE is open — `Hold to move · tap ⊖ to
+   * remove`.
+   *
+   * ⚠️ IT OCCUPIES THE SAME 30pt BOX THE NAME DOES. The header sits above the
+   * scroll view, so anything that changes its height moves the whole column —
+   * and the one rule both phones keep is that entering edit mode does not move
+   * the content. So the line is swapped, never added, and the box it is drawn
+   * in does not resize.
+   */
+  hint?: string;
   avatarUrl?: string | null;
   initials?: string;
   onPressAvatar?: () => void;
@@ -115,6 +127,13 @@ export function ScreenHeader({
           stylesheet. And `toLocaleUpperCase` respects Turkish dotless i, where
           the ASCII version does not.
         */}
+        {hint ? (
+          <View style={{ height: 30, justifyContent: 'center', marginTop: 2 }}>
+            <AText variant="caption" tone="onGradient" numberOfLines={1} style={{ fontSize: 13 }}>
+              {hint}
+            </AText>
+          </View>
+        ) : (
         <AText
           variant="h2"
           tone="strong"
@@ -146,6 +165,7 @@ export function ScreenHeader({
         >
           {title}
         </AText>
+        )}
       </View>
 
       {(actions ?? (action ? [action] : [])).map((a) => (

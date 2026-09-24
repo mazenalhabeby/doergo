@@ -3,32 +3,12 @@ import type { Requires } from './entitlement';
 import { meets } from './entitlement';
 import type { User } from '../lib/api/types';
 
+import { CrewCard } from '../components/home/crew-card';
 import { ShiftClockCard } from '../components/home/shift-clock-card';
 import { ShortcutsRail } from '../components/home/shortcuts-rail';
 import { DocumentsReminderCard } from '../components/documents-reminder-card';
 import { MyWorkCard } from '../components/home/my-work-card';
-import { WidgetPlaceholder } from '../components/home/widget-placeholder';
 
-/*
-  ⚠️ FOUR WIDGETS ARE REGISTERED AND NOT BUILT — crew, needs-you, my-route and
-  clients. They render an honest empty box that says so.
-
-  They are here rather than absent because the thing being decided right now is
-  the ARRANGEMENT, and an arrangement of four is not the arrangement of eight.
-  Each placeholder carries the question its spec says it answers, which is the
-  part worth reviewing while the layout is in play.
-
-  ⚠️ Their `requires` are REAL, not placeholders. Entitlement is the half of
-  this that is easiest to get wrong and hardest to see, so it is wired now:
-  switch to a clock-only member and the right ones disappear.
-*/
-const placeholder = (title: string, question: string, height?: number) => {
-  const C = ({ style }: { style?: object }) => (
-    <WidgetPlaceholder title={title} question={question} height={height} />
-  );
-  C.displayName = `Placeholder(${title})`;
-  return C;
-};
 
 /**
  * A WIDGET IS A REGISTRY ROW.
@@ -67,6 +47,31 @@ export interface WidgetRow {
    *   allClear    the answer is genuinely "nothing, and that is good"
    */
   empty: 'hidden' | 'invitation' | 'allClear';
+  /**
+   * ⚠️ GLASS ON THREE CARDS ONLY: shift clock, crew, clients.
+   *
+   * Everything else is a well. A list over a gradient is what dies in
+   * sunlight, and glass is what the three cards that are ABOUT THE MOMENT get
+   * to use — the ones whose answer changes while you are looking at it.
+   *
+   * It lives on the row rather than in the component so the set is readable in
+   * one place; a component deciding its own surface is how a fourth one
+   * appears.
+   */
+  surface: 'glass' | 'well';
+  /**
+   * What the picker shows on the row while the widget is ON the home: its own
+   * live answer, in the widget's tint. `null` until the data has arrived.
+   */
+  liveValue?: (ctx: LiveContext) => string | null;
+  /** `● 1 sent back` — what is waiting, and only when non-zero. */
+  waiting?: (ctx: LiveContext) => string | null;
+}
+
+/** Whatever the picker already has on screen; no widget may fetch for a row. */
+export interface LiveContext {
+  documents: { total: number; toSign: number; rejected: number };
+  sync: { queued: number };
 }
 
 export const WIDGETS: WidgetRow[] = [
@@ -84,6 +89,7 @@ export const WIDGETS: WidgetRow[] = [
     requires: { module: 'clock', self: true },
     Component: ShiftClockCard,
     empty: 'hidden',
+    surface: 'glass',
   },
 
   /*
@@ -103,6 +109,7 @@ export const WIDGETS: WidgetRow[] = [
     requires: { self: true },
     Component: DocumentsReminderCard,
     empty: 'hidden',
+    surface: 'well',
   },
 
   /*
@@ -121,6 +128,7 @@ export const WIDGETS: WidgetRow[] = [
     question: 'What am I doing today, and this week?',
     Component: MyWorkCard,
     empty: 'allClear',
+    surface: 'well',
   },
 
   /*
@@ -128,14 +136,6 @@ export const WIDGETS: WidgetRow[] = [
     ⚠️ Pins with no line between them means no routing engine is configured —
     the nearest-neighbour fallback returns an order and no geometry.
   */
-  {
-    key: 'my-route',
-    title: 'widgets.myRoute',
-    question: 'How many stops, how far, when am I back?',
-    requires: { orgModule: 'tracking', self: true },
-    Component: placeholder("Today's route", 'How many stops, how far, when am I back?', 96),
-    empty: 'invitation',
-  },
 
   /*
     Crew — §3.6/§3.7/§3.8 folded into one. Who is on site right now.
@@ -146,8 +146,9 @@ export const WIDGETS: WidgetRow[] = [
     title: 'widgets.crew',
     question: 'Who is on site right now?',
     requires: { permission: 'canViewSpaceAttendance' },
-    Component: placeholder('Crew', 'Who is on site right now?', 96),
+    Component: CrewCard,
     empty: 'allClear',
+    surface: 'glass',
   },
 
   /*
@@ -158,14 +159,6 @@ export const WIDGETS: WidgetRow[] = [
     independently. Four separate registry rows would each be absent most days —
     four things to keep consistent for a screen that shows one of them.
   */
-  {
-    key: 'needs-you',
-    title: 'widgets.needsYou',
-    question: 'Expenses, leave and requests waiting on me.',
-    requires: { anyOf: ['canViewAllTasks', 'canManageAssets', 'canManageUsers'] },
-    Component: placeholder('Needs you', 'Expenses, leave and requests waiting on me.', 110),
-    empty: 'hidden',
-  },
 
   /*
     Clients — §3.11.
@@ -173,14 +166,6 @@ export const WIDGETS: WidgetRow[] = [
     `docs/design/clients/ENDPOINT.md`, which ends with the honest alternative:
     if it is not going to be built, Clients is a badged tile in the rail.
   */
-  {
-    key: 'clients',
-    title: 'widgets.clients',
-    question: 'Who is due a call, and who is going cold?',
-    requires: { orgModule: 'crm' },
-    Component: placeholder('Clients', 'Who is due a call, and who is going cold?', 96),
-    empty: 'hidden',
-  },
 
   /*
     Shortcuts — §3.27, absorbing messages, credentials and sync. It owns no
@@ -193,6 +178,7 @@ export const WIDGETS: WidgetRow[] = [
     question: 'Four doors to the screens I use most.',
     Component: ShortcutsRail,
     empty: 'hidden',
+    surface: 'well',
   },
 ];
 
@@ -204,14 +190,23 @@ export const WIDGETS: WidgetRow[] = [
  * `ADMIN | EMPLOYEE | CUSTOMER` and everything meaningful lives in an
  * `AccessRole`. Entitlement filters this list; it does not fork it.
  */
+/**
+ * ⚠️ A WIDGET WHOSE COMPONENT IS A PLACEHOLDER IS NOT IN THIS FILE.
+ *
+ * `my-route`, `needs-you` and `clients` were here, each rendering a card that
+ * said **"not built yet"**. A registry row is a promise that something renders;
+ * a member who reads that sentence on their own home screen has been shown the
+ * project's to-do list. Register one when it renders — the design's own check
+ * is "search the running app for `not built yet`: zero results."
+ *
+ * Their specs are written and their entitlement is decided; only the component
+ * is missing. `docs/design/{my-route,needs-you,clients}/`.
+ */
 export const DEFAULT_ORDER: string[] = [
   'shift-clock',
   'documents-due',
   'my-work',
-  'needs-you',
   'crew',
-  'my-route',
-  'clients',
   'shortcuts',
 ];
 

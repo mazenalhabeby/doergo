@@ -33,8 +33,35 @@ interface DocumentRequirementsValue {
   toSign: { id: string; title: string; forMember?: string | null }[];
   /** Held, valid, but running out — worth a mention, not a demand. */
   expiringSoon: { typeId: string; label: string; expiresOn: string | null }[];
+  /**
+   * Requirements a reviewer REFUSED.
+   *
+   * ⚠️ NOT A SECOND BADGE — the one reminder needs them told apart from the
+   * ones never sent, and `/documents/pending` cannot do it: the server builds
+   * `toUpload` as `statuses.filter(waitingOnMember)`, and `waitingOnMember()`
+   * answers true for MISSING, REJECTED and EXPIRED alike. The per-requirement
+   * `state` only exists on `/documents/requirements`.
+   *
+   * ⚠️ Fetched IN PARALLEL, never after. `SPEC.md` §6 warns that "two requests
+   * for one badge is how a reminder ends up being removed again for being
+   * slow" — and it is right about a SERIALISED pair. These go together in one
+   * `Promise.all`, so the reminder costs one round trip in wall-clock terms.
+   */
+  rejected: { typeId: string; label: string; blocksWork: boolean }[];
   /** Everything waiting on the member, of either kind. */
   total: number;
+  /**
+   * Has the answer ARRIVED? — not "is it non-zero".
+   *
+   * ⚠️ `home-screen.md` §1 and §4: *"Only suggest a widget whose data has
+   * arrived"*, and *"a widget whose data has not arrived is not offered yet"*.
+   * `total === 0` cannot answer that — it is also what a member with nothing
+   * outstanding looks like, and offering them a card because it is still
+   * loading, or refusing them one because they are up to date, are two
+   * different mistakes with the same symptom. True as soon as the first fetch
+   * settles, and immediately when there is nothing to fetch.
+   */
+  ready: boolean;
   /** At least one outstanding requirement stops the member being given work. */
   blocksWork: boolean;
   /** `force` skips the throttle — for a caller that knows the answer changed. */
@@ -45,7 +72,9 @@ const EMPTY: DocumentRequirementsValue = {
   toUpload: [],
   toSign: [],
   expiringSoon: [],
+  rejected: [],
   total: 0,
+  ready: true,
   blocksWork: false,
   refresh: async () => {},
 };
@@ -69,6 +98,8 @@ export function DocumentRequirementsProvider({ children }: { children: React.Rea
   const [toUpload, setToUpload] = useState<DocumentRequirementsValue['toUpload']>([]);
   const [toSign, setToSign] = useState<DocumentRequirementsValue['toSign']>([]);
   const [expiringSoon, setExpiringSoon] = useState<DocumentRequirementsValue['expiringSoon']>([]);
+  const [rejected, setRejected] = useState<DocumentRequirementsValue['rejected']>([]);
+  const [ready, setReady] = useState(false);
   // A refresh already in flight, so a foreground event during the first load
   // does not fire a second identical request.
   const inFlight = useRef<Promise<void> | null>(null);
@@ -88,13 +119,15 @@ export function DocumentRequirementsProvider({ children }: { children: React.Rea
 
   const clear = useCallback(() => {
     setToUpload([]);
+    setRejected([]);
     setToSign([]);
     setExpiringSoon([]);
     lastFetched.current = 0;
   }, []);
 
   const refresh = useCallback(async (opts?: { force?: boolean }) => {
-    if (!enabled) { clear(); return; }
+    // Nothing to wait for — the answer is "none", and it is already here.
+    if (!enabled) { clear(); setReady(true); return; }
     if (inFlight.current) return inFlight.current;
     // A caller that knows the answer changed — a submission — always gets a
     // fresh one; a foreground tick does not.
@@ -105,13 +138,28 @@ export function DocumentRequirementsProvider({ children }: { children: React.Rea
         // One request, both kinds. The server applies the same shared rules the
         // member's own documents screen does, so the badge and the screen can
         // never disagree about what is left.
-        const pending = await documentsApi.pending();
+        const [pending, requirements] = await Promise.all([
+          documentsApi.pending(),
+          // Only for the state — see `rejected` on the value type.
+          documentsApi.requirements().catch(() => []),
+        ]);
         // The signed-in user may have changed while this was in the air.
         if (loadedFor.current !== userId) return;
-        setToUpload(pending.toUpload);
+        const refused = requirements
+          .filter((r) => r.state === 'REJECTED')
+          .map((r) => ({ typeId: r.typeId, label: r.label, blocksWork: r.blocksWork }));
+        const refusedIds = new Set(refused.map((r) => r.typeId));
+        /*
+          ⚠️ TAKEN OUT OF `toUpload`, not counted twice. The server put them
+          there — `waitingOnMember()` cannot tell them apart — so leaving them
+          would make one refused licence read as two obligations.
+        */
+        setToUpload(pending.toUpload.filter((r) => !refusedIds.has(r.typeId)));
+        setRejected(refused);
         setToSign(pending.toSign);
         setExpiringSoon(pending.expiring);
         lastFetched.current = Date.now();
+        setReady(true);
       } catch {
         /*
           Silent on purpose. This is a reminder, not a screen somebody asked
@@ -132,6 +180,7 @@ export function DocumentRequirementsProvider({ children }: { children: React.Rea
     // A change of user invalidates everything held, before anything is fetched.
     loadedFor.current = userId;
     clear();
+    setReady(!enabled);
     void refresh({ force: true });
   }, [userId, enabled, refresh, clear]);
 
@@ -147,10 +196,12 @@ export function DocumentRequirementsProvider({ children }: { children: React.Rea
     toUpload,
     toSign,
     expiringSoon,
-    total: toUpload.length + toSign.length,
-    blocksWork: toUpload.some((r) => r.blocksWork),
+    rejected,
+    total: toUpload.length + toSign.length + rejected.length,
+    ready,
+    blocksWork: toUpload.some((r) => r.blocksWork) || rejected.some((r) => r.blocksWork),
     refresh,
-  }), [toUpload, toSign, expiringSoon, refresh]);
+  }), [toUpload, toSign, expiringSoon, rejected, ready, refresh]);
 
   return (
     <DocumentRequirementsContext.Provider value={value}>
