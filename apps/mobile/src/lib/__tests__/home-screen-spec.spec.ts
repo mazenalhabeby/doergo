@@ -312,10 +312,25 @@ describe('§3 — entering the mode moves nothing', () => {
   });
 });
 
-describe('§5 — saved immediately, undone for thirty seconds', () => {
-  it('shows the line for thirty seconds', () => {
-    expect(code('components/home/saved-line.tsx')).toMatch(/export const UNDO_MS = 30_000;/);
-    expect(code('home/home-screen.tsx')).toMatch(/setTimeout\(\(\) => setUndoTo\(null\), UNDO_MS\)/);
+describe('§5 — saved immediately, and nothing to confirm', () => {
+  it('has no UNDO line, and no state left over from one', () => {
+    /*
+      §5 asks for `( Saved to your account.  UNDO )` for 30 seconds after every
+      change. Built, shipped for a day, removed — the first person to see it
+      asked what it was for, which is the answer.
+
+      An undo earns its place where the action is hard to reverse, and none of
+      these are: a move is one drag back, a remove is one tap in the gallery,
+      an add is one tap on the ⊖. It appeared after EVERY change, so a
+      rearrangement — which is a run of changes — kept it on screen the whole
+      time, over the card below it. Its own words were also the only thing
+      claiming the layout is on the account; it is on the phone.
+    */
+    expect(fs.existsSync(path.join(SRC, 'components/home/saved-line.tsx'))).toBe(false);
+    const home = code('home/home-screen.tsx');
+    expect(home).not.toMatch(/SavedLine|UNDO_MS|undoTo/);
+    // And the before-picture the line needed is gone from the layout API too.
+    expect(code('home/use-home-layout.ts')).not.toMatch(/snapshot|restore/);
   });
 
   it('❌ no confirm dialog and ❌ no save button', () => {
@@ -324,12 +339,21 @@ describe('§5 — saved immediately, undone for thirty seconds', () => {
     expect(home).not.toMatch(/home\.edit\.save\b/);
   });
 
-  it('every change takes its before-picture first', () => {
+  it('every change is written the instant it is made', () => {
+    /*
+      Done closes a MODE; it commits nothing. A member who backgrounds the app
+      mid-arrangement keeps their arrangement, which is the half of §5 that
+      actually mattered.
+    */
     const home = code('home/home-screen.tsx');
-    for (const fn of ['moveBy', 'removeWidget', 'onDragEnd']) {
-      const at = home.indexOf(`const ${fn} =`);
+    expect(home).toMatch(/layout\.setOrder\(/);
+    expect(home).toMatch(/layout\.hide\(/);
+    expect(home).toMatch(/layout\.add\(/);
+    const hook = code('home/use-home-layout.ts');
+    for (const fn of ['setOrder', 'hide', 'add', 'move']) {
+      const at = hook.indexOf(`const ${fn} =`);
       expect(at).toBeGreaterThan(-1);
-      expect(home.slice(at, at + 600)).toContain('changing()');
+      expect(hook.slice(at, at + 900)).toContain('persist(');
     }
   });
 });

@@ -363,8 +363,7 @@
       "moveUp": "Nach oben",
       "moveDown": "Nach unten",
       "remove": "Vom Start entfernen",
-      "announce": "{{name}}, Position {{at}} von {{of}}.",
-      "saved": "In Ihrem Konto gespeichert."
+      "announce": "{{name}}, Position {{at}} von {{of}}."
     },
     "gallery": {
       "title": "Widgets",

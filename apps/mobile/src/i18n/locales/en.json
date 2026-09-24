@@ -374,8 +374,7 @@
       "moveUp": "Move up",
       "moveDown": "Move down",
       "remove": "Take off my home",
-      "announce": "{{name}}, position {{at}} of {{of}}.",
-      "saved": "Saved to your account."
+      "announce": "{{name}}, position {{at}} of {{of}}."
     },
     "gallery": {
       "title": "Widgets",

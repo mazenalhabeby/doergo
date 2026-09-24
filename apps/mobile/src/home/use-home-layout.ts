@@ -61,10 +61,6 @@ export interface HomeLayoutApi {
    * looking after a sheet slides away.
    */
   add: (key: string) => void;
-  /** The stored record as it stands — take one before a change, for UNDO. */
-  snapshot: HomeLayout;
-  /** Put a snapshot back. §5's UNDO, and nothing else. */
-  restore: (layout: HomeLayout) => void;
   reset: () => void;
 }
 
@@ -200,12 +196,5 @@ export function useHomeLayout(): HomeLayoutApi {
 
   const reset = useCallback(() => persist(EMPTY_LAYOUT), [persist]);
 
-  const restore = useCallback((l: HomeLayout) => persist(l), [persist]);
-
-  const snapshot = useMemo<HomeLayout>(
-    () => ({ keys: orderedKeys, hidden: layout.hidden }),
-    [orderedKeys, layout.hidden],
-  );
-
-  return { rows, available, offScreen, loading, move, setOrder, hide, show, add, snapshot, restore, reset };
+  return { rows, available, offScreen, loading, move, setOrder, hide, show, add, reset };
 }

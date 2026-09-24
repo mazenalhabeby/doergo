@@ -363,8 +363,7 @@
       "moveUp": "Monter",
       "moveDown": "Descendre",
       "remove": "Retirer de l'accueil",
-      "announce": "{{name}}, position {{at}} sur {{of}}.",
-      "saved": "Enregistré sur votre compte."
+      "announce": "{{name}}, position {{at}} sur {{of}}."
     },
     "gallery": {
       "title": "Widgets",

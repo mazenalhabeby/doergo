@@ -363,8 +363,7 @@
       "moveUp": "Sposta su",
       "moveDown": "Sposta giù",
       "remove": "Rimuovi dalla home",
-      "announce": "{{name}}, posizione {{at}} di {{of}}.",
-      "saved": "Salvato nel tuo account."
+      "announce": "{{name}}, posizione {{at}} di {{of}}."
     },
     "gallery": {
       "title": "Widget",

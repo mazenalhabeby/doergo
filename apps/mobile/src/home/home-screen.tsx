@@ -22,11 +22,9 @@ import {
   LANDED_MS,
   LIFT_FACTOR,
 } from '../components/home/editable-widget';
-import { SavedLine, UNDO_MS } from '../components/home/saved-line';
 import { WidgetGallery } from '../components/home/widget-gallery';
 import { useDocumentRequirements } from '../contexts/document-requirements-context';
 import { useHomeLayout } from './use-home-layout';
-import type { HomeLayout } from './layout-store';
 import type { WidgetRow } from './registry';
 
 /**
@@ -80,28 +78,30 @@ export function HomeScreen() {
   }, [landed]);
 
   /*
-    ⚠️ THE LINE IS AN UNDO, NOT A CONFIRM.
+    ⚠️ NOTHING HERE NEEDS AN UNDO, AND THAT IS WHY THERE ISN'T ONE.
 
-    §5: the change is PATCHed immediately and `( Saved to your account. UNDO )`
-    stands for 30 seconds. ❌ No confirm dialog — nothing here is destructive,
-    a removed widget is hidden and its key is kept. ❌ No save button — Done
-    closes a mode, it does not commit anything.
+    §5 asks for `( Saved to your account.    UNDO )` for 30 seconds after every
+    change. It was built, it shipped for a day, and it was removed because the
+    first person to see it asked what it was for — which is the answer.
 
-    ⚠️ AND THE LAYOUT SHOULD BE A SERVER-SIDE RECORD. §5 says so in as many
-    words. There is no endpoint: `layout-store.ts` is AsyncStorage, keyed by
-    member, and it is the only file that knows where the layout lives — so the
-    swap is two functions and nothing above them. Noted rather than invented,
-    because inventing it is a backend change and the backend is closed.
+    An undo earns its place where the action is hard to reverse. None of these
+    are: a move is one drag back, a remove is one tap in the gallery, an add is
+    one tap on the ⊖. The line appeared after EVERY change, so rearranging a
+    home screen — which is a run of changes — meant it was on screen the whole
+    time, over the card below it.
+
+    The rest of §5 stands and is what actually matters: the change is saved the
+    instant it is made. ❌ No confirm dialog — nothing here is destructive, a
+    removed widget is hidden and its key is kept. ❌ No save button — Done
+    closes a mode, it does not commit anything, and a member who backgrounds
+    the app mid-arrangement keeps their arrangement.
+
+    ⚠️ AND THE LAYOUT IS STILL NOT A SERVER-SIDE RECORD, which §5 also asks
+    for. There is no endpoint. `layout-store.ts` is AsyncStorage, keyed by
+    member, and is the only file that knows where the layout lives — the swap
+    is two functions and nothing above them. The removed line's own words
+    ("Saved to your account") were the only thing on screen claiming otherwise.
   */
-  const [undoTo, setUndoTo] = useState<HomeLayout | null>(null);
-  React.useEffect(() => {
-    if (!undoTo) return;
-    const timer = setTimeout(() => setUndoTo(null), UNDO_MS);
-    return () => clearTimeout(timer);
-  }, [undoTo]);
-
-  /** Take the before-picture, then change it. The order matters. */
-  const changing = useCallback(() => setUndoTo(layout.snapshot), [layout.snapshot]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -183,7 +183,6 @@ export function HomeScreen() {
   /* ── the a11y arrows, which are also the rotor actions ─────────────── */
   const moveBy = useCallback(
     (key: string, direction: 'up' | 'down') => {
-      changing();
       const done = layout.move(key, direction);
       if (!done) return;
       const row = rows.find((r) => r.key === key);
@@ -202,15 +201,14 @@ export function HomeScreen() {
         }),
       );
     },
-    [changing, layout, rows, t],
+    [layout, rows, t],
   );
 
   const removeWidget = useCallback(
     (key: string) => {
-      changing();
       layout.hide(key);
     },
-    [changing, layout],
+    [layout],
   );
 
   /*
@@ -221,11 +219,10 @@ export function HomeScreen() {
   const onDragEnd = useCallback(
     ({ data, from, to }: { data: WidgetRow[]; from: number; to: number }) => {
       if (from === to) return;
-      changing();
       layout.setOrder(data.map((r) => r.key));
       impact('medium');
     },
-    [changing, layout],
+    [layout],
   );
 
   const renderItem = useCallback(
@@ -382,9 +379,8 @@ export function HomeScreen() {
           <EmptyHome
             suggestions={suggestions}
             totalAvailable={layout.available.length}
-            onKeep={(key) => { changing(); layout.show(key); }}
+            onKeep={(key) => { layout.show(key); }}
             onKeepBoth={() => {
-              changing();
               suggestions.filter((s) => s.line !== null).forEach((s) => layout.show(s.row.key));
             }}
             onSeeAll={() => setPicking(true)}
@@ -435,11 +431,6 @@ export function HomeScreen() {
         removeClippedSubviews={false}
       />
 
-      <SavedLine visible={!!undoTo} bottom={tabSafe} onUndo={() => {
-        if (undoTo) layout.restore(undoTo);
-        setUndoTo(null);
-      }} />
-
       {/*
         ⚠️ THE GALLERY SHOWS THE WIDGET, NEVER A LABEL. One per page, swiped
         sideways, the real component at full size with real data.
@@ -456,7 +447,6 @@ export function HomeScreen() {
             that appears behind a sheet has not arrived anywhere anybody can
             see, and "it worked" then has to be taken on trust.
           */
-          changing();
           layout.add(key);
           setPicking(false);
           setLanded(key);
