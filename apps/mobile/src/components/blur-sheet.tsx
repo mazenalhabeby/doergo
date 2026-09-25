@@ -26,6 +26,22 @@ import { BlurView } from 'expo-blur';
   perfectly and there are several of them, including two in shipped code (the
   shift-issue list handing over to the report sheet, and to the thread sheet).
   A sheet asked to open while another is leaving simply waits for it.
+
+  ⚠️ AND THE WAIT MUST NOT DEPEND ON WHICH SHEET IS WRITTEN FIRST.
+
+  The first cut read `dismissingUntil` synchronously in the opening sheet's
+  effect — which only works if the LEAVING sheet's effect ran first, and
+  effects run in the order the siblings are declared. So the same handover
+  worked or failed purely on JSX order:
+
+      <ShiftIssueListSheet …/>    <ShiftIssueThreadSheet …/>   ← works
+      <ShiftIssueThreadSheet …/>  <ShiftIssueListSheet …/>     ← dead tap
+
+  Both spellings exist in this app, so tapping an issue opened the thread on
+  the home card and did nothing at all on the Time tab — the list slid away
+  and the screen stayed where it was. Opening therefore yields one turn first
+  and re-reads the claim afterwards, by which point every effect in the flush
+  has run and the answer is the same whatever the order.
 */
 let dismissingUntil = 0;
 const EXIT_MS = 250;
@@ -50,8 +66,6 @@ export function BlurSheet({
 
   useEffect(() => {
     if (visible) {
-      // Wait out any sheet still leaving the screen — see the note above.
-      const wait = Math.max(0, dismissingUntil - Date.now());
       const open = () => {
         setMounted(true);
         slide.setValue(height);
@@ -60,8 +74,18 @@ export function BlurSheet({
           Animated.spring(slide, { toValue: 0, damping: 25, stiffness: 200, useNativeDriver: true }),
         ]).start();
       };
-      if (wait === 0) { open(); return; }
-      const timer = setTimeout(open, wait);
+      /*
+        Yield once, then wait out any sheet still leaving the screen. The
+        first turn is what makes this independent of declaration order — see
+        the note above; on its own it costs one frame nobody can see.
+      */
+      let timer: ReturnType<typeof setTimeout>;
+      const attempt = () => {
+        const wait = dismissingUntil - Date.now();
+        if (wait > 0) { timer = setTimeout(attempt, wait); return; }
+        open();
+      };
+      timer = setTimeout(attempt, 0);
       return () => clearTimeout(timer);
     }
     if (mounted) {

@@ -90,6 +90,8 @@ export function ShiftIssueThreadSheet({
   const { operations } = useSyncStatus();
 
   const [issue, setIssue] = useState<ShiftIssue | null>(null);
+  /* ⚠️ A failed read is not "still loading" — see `load`. */
+  const [failed, setFailed] = useState(false);
   const [draft, setDraft] = useState('');
   const [picked, setPicked] = useState<PickedImage[]>([]);
   const [busy, setBusy] = useState(false);
@@ -102,8 +104,29 @@ export function ShiftIssueThreadSheet({
 
   const load = useCallback(async () => {
     if (!issueId) return;
-    try { setIssue(await shiftIssuesApi.get(issueId)); } catch { /* the sheet keeps what it has */ }
+    try {
+      setIssue(await shiftIssuesApi.get(issueId));
+      setFailed(false);
+    } catch {
+      /*
+        ⚠️ A FAILED READ USED TO LOOK EXACTLY LIKE A SLOW ONE. The catch was
+        empty and the sheet rendered `Loading…` for as long as it was open, so
+        a member whose request 404'd or timed out sat watching a spinner
+        message with nothing to do about it — the same mistake the list sheet
+        was fixed for. The sheet keeps whatever it already had; if it had
+        nothing, it says so and offers the tap again.
+      */
+      setFailed(true);
+    }
   }, [issueId]);
+
+  /*
+    ⚠️ AND THE PREVIOUS ISSUE GOES. `issue` survived a change of `issueId`, so
+    opening a second fault showed the first one's title and thread until the
+    read came back — on a slow connection, long enough to reply to the wrong
+    one.
+  */
+  useEffect(() => { setIssue(null); setFailed(false); }, [issueId]);
 
   useEffect(() => { if (visible && issueId) void load(); }, [visible, issueId, load]);
 
@@ -174,7 +197,18 @@ export function ShiftIssueThreadSheet({
     <BlurSheet visible={visible} onClose={onClose}>
       <SheetPanel onClose={onClose}>
         {!issue ? (
-          <AText variant="caption" tone="muted">{t('common.loading', { defaultValue: 'Loading…' })}</AText>
+          <View style={{ gap: amazen.space(3), paddingVertical: amazen.space(2) }}>
+            <AText variant="caption" tone="muted">
+              {failed
+                ? t('issues.couldNotLoad', { defaultValue: 'We could not reach your issues. Try again in a moment.' })
+                : t('common.loading', { defaultValue: 'Loading…' })}
+            </AText>
+            {failed ? (
+              <Pressable onPress={() => { setFailed(false); void load(); }} accessibilityRole="button" hitSlop={8} style={{ alignSelf: 'flex-start' }}>
+                <AText variant="caption" tone="accent">{t('common.retry', { defaultValue: 'Try again' })}</AText>
+              </Pressable>
+            ) : null}
+          </View>
         ) : (
           <>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>

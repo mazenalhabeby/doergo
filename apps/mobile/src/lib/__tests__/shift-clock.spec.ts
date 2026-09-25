@@ -526,6 +526,43 @@ describe('§9 — the twelve rules', () => {
     expect(sheet).toMatch(/issues\.resolveReasons/);
   });
 
+  it('11c · a sheet hands over to another whatever order they are declared in', () => {
+    /*
+      ⚠️ iOS WILL NOT PRESENT A MODAL WHILE ANOTHER IS DISMISSING, and every
+      sheet here is a Modal. `BlurSheet` guards it with a shared claim — but
+      the first cut READ that claim synchronously in the opening sheet's
+      effect, which only works when the LEAVING sheet's effect has already
+      run. Effects run in sibling declaration order, so the identical handover
+      worked or died on JSX order:
+
+          <List/> <Thread/>   → the thread opens
+          <Thread/> <List/>   → the list slides away and nothing replaces it
+
+      Both spellings are in this app — the home card has one, the Time tab has
+      the other — so tapping an issue opened the thread on the card and did
+      nothing at all on Time.
+    */
+    const sheet = code('components/blur-sheet.tsx');
+    // The claim still exists, and is still made by the sheet that is LEAVING.
+    expect(sheet).toMatch(/dismissingUntil = Date\.now\(\) \+ EXIT_MS/);
+    /*
+      ⚠️ And opening YIELDS before it reads the claim. Without the turn, the
+      read races the sibling effect that writes it.
+    */
+    const open = sheet.slice(sheet.indexOf('if (visible) {'), sheet.indexOf('if (mounted) {'));
+    expect(open).toMatch(/setTimeout\(attempt, 0\)/);
+    expect(open).toMatch(/const wait = dismissingUntil - Date\.now\(\)/);
+    // The claim must not be read in the same tick the effect runs.
+    expect(open).not.toMatch(/const wait = Math\.max\(0, dismissingUntil/);
+
+    // ⚠️ And a failed read is not a permanent "Loading…".
+    const thread = code('components/issues/issue-thread-sheet.tsx');
+    expect(thread).toMatch(/issues\.couldNotLoad/);
+    expect(thread).toMatch(/common\.retry/);
+    // ⚠️ The previous issue is cleared when the id changes.
+    expect(thread).toMatch(/setIssue\(null\); setFailed\(false\); \}, \[issueId\]\)/);
+  });
+
   it('12 · routing stays server-side', () => {
     /*
       ⚠️ Shift issues reach the WORKSPACE'S WATCHERS, not every org admin — the
