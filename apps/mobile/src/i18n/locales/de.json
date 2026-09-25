@@ -2035,10 +2035,10 @@
     "title": "Meldungen",
     "reportHint": "Blockiert durch etwas, das Sie nicht lösen können?",
     "myIssuesHint": "Eine Meldung öffnen, um zu lesen oder zu antworten",
-    "none": "Noch keine Meldungen.",
+    "none": "Nichts gemeldet.",
     "reportIntro": "Sie kommen nicht weiter? Melden Sie es — Ihre zuständige Person wird sofort benachrichtigt.",
-    "titlePlaceholder": "Worum geht es? (kurzer Titel)",
-    "descriptionPlaceholder": "Beschreiben Sie, was passiert (optional)",
+    "titlePlaceholder": "Was hält Sie auf?",
+    "descriptionPlaceholder": "Was noch helfen würde (optional)",
     "camera": "Kamera",
     "photo": "Foto",
     "submit": "Problem melden",
@@ -2073,6 +2073,35 @@
       "customerUnavailable": "Kunde nicht erreichbar",
       "duplicate": "Duplikat",
       "notAnIssue": "Kein Problem"
+    },
+    "reportShort": "Melden",
+    "myIssuesShort": "Meine Meldungen",
+    "howBadly": "WIE DRINGEND",
+    "addPhoto": "Foto hinzufügen",
+    "send": "Senden",
+    "sendHint": "Die Verantwortlichen für diesen Arbeitsort werden sofort benachrichtigt.",
+    "onShiftSince": "im Dienst seit {{time}}",
+    "travelsWith": "wird mit der Meldung gesendet",
+    "sentTitle": "Gesendet",
+    "queuedTitle": "In der Warteschlange",
+    "sentBody": "Die Verantwortlichen für diesen Arbeitsort haben sie. Die Antwort erscheint hier.",
+    "sentBodyNamed": "{{name}} hat sie. Die Antwort erscheint hier.",
+    "queuedBody": "Sie geht raus, sobald Sie wieder Empfang haben.",
+    "openThread": "Verlauf öffnen",
+    "stillOpen": "NOCH OFFEN",
+    "doneGroup": "ERLEDIGT",
+    "couldNotLoad": "Ihre Meldungen konnten nicht geladen werden. Gleich nochmal versuchen.",
+    "noReplyYet": "Noch keine Antwort.",
+    "replyPlaceholder": "Antworten…",
+    "markResolved": "Behoben? Als erledigt markieren",
+    "reads": {
+      "open": "Offen · noch keine Antwort",
+      "acknowledged": "Gesehen von {{name}}",
+      "inProgress": "{{name}} kümmert sich darum",
+      "resolved": "Behoben",
+      "closed": "Geschlossen",
+      "queued": "In der Warteschlange",
+      "openJustNow": "Offen · gerade eben"
     }
   },
   "route": {
@@ -2877,7 +2906,7 @@
     "queued": "WARTET",
     "readyToStart": "Bereit zum Start",
     "whenDidYouLeave": "Wann sind Sie gegangen?",
-    "leftRunning": "Die Schicht lief weiter, deshalb haben wir sie geschlossen. Nennen Sie uns die echte Zeit.",
+    "leftRunning": "{{workspace}}. Wir haben sie um {{time}} beendet, weil sie offen geblieben ist.",
     "counted": "{{counted}} gezählt",
     "countedFrozen": "{{counted}} gezählt, zählt gerade nicht",
     "restDue": "Pause fällig {{time}}",
@@ -2886,7 +2915,15 @@
     "startRest": "Pause beginnen",
     "endRest": "Pause beenden",
     "break": "Pause",
-    "setRealTime": "Echte Zeit eintragen"
+    "setRealTime": "Echte Zeit eintragen",
+    "doneForToday": "FÜR HEUTE FERTIG",
+    "backAt": "Zurück um {{time}}",
+    "clockInAgain": "Erneut einstempeln",
+    "countedWaiting": "gezählt, wartet auf Freigabe",
+    "countedApproved": "gezählt und freigegeben",
+    "waitingToReach": "wartet auf die Übermittlung ans Büro",
+    "startsIn_one": "Ihre Schicht beginnt in {{count}} Minute",
+    "startsIn_other": "Ihre Schicht beginnt in {{count}} Minuten"
   },
   "crew": {
     "onTheClock": "im Dienst",
@@ -2904,5 +2941,8 @@
     "minLeft": "noch {{n}} Min",
     "minOver": "{{n}} Min darüber",
     "minBreak": "{{n}} Min Pause"
+  },
+  "widgets": {
+    "shiftClock": "Schichtuhr"
   }
 }

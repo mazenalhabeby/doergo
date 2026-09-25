@@ -2078,10 +2078,10 @@
     "title": "Issues",
     "reportHint": "Blocked by something you can't fix?",
     "myIssuesHint": "Open a reported issue to read or reply",
-    "none": "No issues yet.",
+    "none": "Nothing reported.",
     "reportIntro": "Hit a blocker you can't fix? Report it — your responsible person is notified right away.",
-    "titlePlaceholder": "What's the problem? (short title)",
-    "descriptionPlaceholder": "Describe what's happening (optional)",
+    "titlePlaceholder": "What is stopping you?",
+    "descriptionPlaceholder": "Anything that would help (optional)",
     "camera": "Camera",
     "photo": "Photo",
     "submit": "Report issue",
@@ -2116,6 +2116,35 @@
       "customerUnavailable": "Customer unavailable",
       "duplicate": "Duplicate",
       "notAnIssue": "Not an issue"
+    },
+    "reportShort": "Report",
+    "myIssuesShort": "My issues",
+    "howBadly": "HOW BADLY",
+    "addPhoto": "Add a photo",
+    "send": "Send",
+    "sendHint": "The people responsible for this workspace are notified straight away.",
+    "onShiftSince": "on shift since {{time}}",
+    "travelsWith": "this goes with the report",
+    "sentTitle": "Sent",
+    "queuedTitle": "Queued",
+    "sentBody": "The people responsible for this workspace have it. You will see their reply here.",
+    "sentBodyNamed": "{{name}} has it. You will see their reply here.",
+    "queuedBody": "It will go out as soon as you have signal.",
+    "openThread": "Open the thread",
+    "stillOpen": "STILL OPEN",
+    "doneGroup": "DONE",
+    "couldNotLoad": "We could not reach your issues. Try again in a moment.",
+    "noReplyYet": "No reply yet.",
+    "replyPlaceholder": "Reply…",
+    "markResolved": "Fixed? Mark it resolved",
+    "reads": {
+      "open": "Open · no reply yet",
+      "acknowledged": "Seen by {{name}}",
+      "inProgress": "{{name}} is on it",
+      "resolved": "Resolved",
+      "closed": "Closed",
+      "queued": "Queued",
+      "openJustNow": "Open · just now"
     }
   },
   "worklog": {
@@ -2884,7 +2913,7 @@
     "queued": "QUEUED",
     "readyToStart": "Ready to start",
     "whenDidYouLeave": "When did you leave?",
-    "leftRunning": "It was left running, so we closed it for you. Tell us the real time.",
+    "leftRunning": "{{workspace}}. We closed it at {{time}} because it was left running.",
     "counted": "counted {{counted}}",
     "countedFrozen": "counted {{counted}}, not counting now",
     "restDue": "rest due {{time}}",
@@ -2893,7 +2922,15 @@
     "startRest": "Start the rest",
     "endRest": "End the rest",
     "break": "Break",
-    "setRealTime": "Set the real time"
+    "setRealTime": "Set the real time",
+    "doneForToday": "DONE FOR TODAY",
+    "backAt": "Back at {{time}}",
+    "clockInAgain": "Clock in again",
+    "countedWaiting": "counted, waiting for approval",
+    "countedApproved": "counted and approved",
+    "waitingToReach": "waiting to reach the office",
+    "startsIn_one": "your shift starts in {{count}} minute",
+    "startsIn_other": "your shift starts in {{count}} minutes"
   },
   "crew": {
     "onTheClock": "on the clock",
@@ -2911,5 +2948,8 @@
     "minLeft": "{{n}} min left",
     "minOver": "{{n}} min over",
     "minBreak": "{{n}} min break"
+  },
+  "widgets": {
+    "shiftClock": "Shift clock"
   }
 }

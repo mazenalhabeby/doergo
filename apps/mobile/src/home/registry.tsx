@@ -1,4 +1,5 @@
 import type React from 'react';
+import { ShiftClockCard } from '../components/home/shift-clock-card';
 import type { Requires } from './entitlement';
 import { meets } from './entitlement';
 import type { User } from '../lib/api/types';
@@ -66,7 +67,37 @@ export interface WidgetRow {
  * when it renders — the design's own check is "search the running app for
  * `not built yet`: zero results."
  */
-export const WIDGETS: WidgetRow[] = [];
+export const WIDGETS: WidgetRow[] = [
+  /*
+    The shift clock — `docs/design/shift-clock.md`. About the viewer, so no
+    permission: everyone has their own clock.
+
+    ⚠️ `module: 'clock'` AND NOT `time_tracking`. The per-space billing modules
+    have never been sent to the phone — the login payload carries
+    `enabledModules` and `orgModules` and no per-space list at all — and `clock`
+    is time_tracking's mobile proxy, which is what the tab bar already gates on.
+    Asking a different question here than `(tabs)/_layout.tsx` asks is how the
+    navigation and the home screen end up disagreeing about the same member.
+
+    ⚠️ GLASS. One of the three, and the clearest case for it: this is the card
+    whose answer changes while you are looking at it.
+  */
+  {
+    key: 'shift-clock',
+    title: 'widgets.shiftClock',
+    question: 'Am I on the clock, and when is my next rest?',
+    requires: { module: 'clock', self: true },
+    surface: 'glass',
+    /*
+      ⑧ of the eight is "not rendered" — a member with no workspace assignment
+      has nothing to clock into. The CARD decides that, not the registry: it is
+      a fact about the member's data, not about their entitlement, and it can
+      change between renders.
+    */
+    empty: 'hidden',
+    Component: ShiftClockCard,
+  },
+];
 
 /**
  * The order a member gets before they have touched anything.
@@ -80,7 +111,7 @@ export const WIDGETS: WidgetRow[] = [];
  * skipped silently, which is right for a member whose entitlement changed and
  * wrong for a typo — so `registry.spec.ts` fails on one.
  */
-export const DEFAULT_ORDER: string[] = [];
+export const DEFAULT_ORDER: string[] = ['shift-clock'];
 
 /**
  * ENTITLEMENT IS ASKED ONCE, AND FILTERED LAST.

@@ -2035,10 +2035,10 @@
     "title": "Incidencias",
     "reportHint": "¿Bloqueado por algo que no puedes resolver?",
     "myIssuesHint": "Abre una incidencia para leer o responder",
-    "none": "Todavía no hay incidencias.",
+    "none": "Nada reportado.",
     "reportIntro": "¿Te has topado con un bloqueo que no puedes resolver? Repórtalo: tu responsable recibe el aviso al instante.",
-    "titlePlaceholder": "¿Cuál es el problema? (título breve)",
-    "descriptionPlaceholder": "Describe qué está pasando (opcional)",
+    "titlePlaceholder": "¿Qué te está bloqueando?",
+    "descriptionPlaceholder": "Algo que ayude (opcional)",
     "camera": "Cámara",
     "photo": "Foto",
     "submit": "Reportar incidencia",
@@ -2073,6 +2073,35 @@
       "customerUnavailable": "Cliente no disponible",
       "duplicate": "Duplicada",
       "notAnIssue": "No es una incidencia"
+    },
+    "reportShort": "Reportar",
+    "myIssuesShort": "Mis incidencias",
+    "howBadly": "GRAVEDAD",
+    "addPhoto": "Añadir una foto",
+    "send": "Enviar",
+    "sendHint": "Los responsables de este espacio reciben el aviso al instante.",
+    "onShiftSince": "en turno desde las {{time}}",
+    "travelsWith": "esto va con el reporte",
+    "sentTitle": "Enviado",
+    "queuedTitle": "En cola",
+    "sentBody": "Los responsables de este espacio ya lo tienen. Verás su respuesta aquí.",
+    "sentBodyNamed": "{{name}} lo tiene. Verás su respuesta aquí.",
+    "queuedBody": "Se enviará en cuanto tengas cobertura.",
+    "openThread": "Abrir la conversación",
+    "stillOpen": "AÚN ABIERTAS",
+    "doneGroup": "HECHAS",
+    "couldNotLoad": "No pudimos cargar tus incidencias. Inténtalo en un momento.",
+    "noReplyYet": "Sin respuesta todavía.",
+    "replyPlaceholder": "Responder…",
+    "markResolved": "¿Arreglado? Márcalo como resuelto",
+    "reads": {
+      "open": "Abierta · sin respuesta",
+      "acknowledged": "Vista por {{name}}",
+      "inProgress": "{{name}} se está ocupando",
+      "resolved": "Resuelta",
+      "closed": "Cerrada",
+      "queued": "En cola",
+      "openJustNow": "Abierta · ahora mismo"
     }
   },
   "route": {
@@ -2877,7 +2906,7 @@
     "queued": "EN COLA",
     "readyToStart": "Listo para empezar",
     "whenDidYouLeave": "¿A qué hora te fuiste?",
-    "leftRunning": "Se quedó abierto, así que lo cerramos por ti. Dinos la hora real.",
+    "leftRunning": "{{workspace}}. La cerramos a las {{time}} porque quedó abierta.",
     "counted": "{{counted}} contabilizado",
     "countedFrozen": "{{counted}} contabilizado, ahora no cuenta",
     "restDue": "descanso a las {{time}}",
@@ -2886,7 +2915,15 @@
     "startRest": "Empezar descanso",
     "endRest": "Terminar descanso",
     "break": "Descanso",
-    "setRealTime": "Poner la hora real"
+    "setRealTime": "Poner la hora real",
+    "doneForToday": "TERMINADO POR HOY",
+    "backAt": "De vuelta a las {{time}}",
+    "clockInAgain": "Fichar otra vez",
+    "countedWaiting": "contabilizado, pendiente de aprobación",
+    "countedApproved": "contabilizado y aprobado",
+    "waitingToReach": "esperando a llegar a la oficina",
+    "startsIn_one": "tu turno empieza en {{count}} minuto",
+    "startsIn_other": "tu turno empieza en {{count}} minutos"
   },
   "crew": {
     "onTheClock": "de servicio",
@@ -2904,5 +2941,8 @@
     "minLeft": "{{n}} min restantes",
     "minOver": "{{n}} min de más",
     "minBreak": "{{n}} min de pausa"
+  },
+  "widgets": {
+    "shiftClock": "Reloj de turno"
   }
 }

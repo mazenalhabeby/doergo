@@ -123,10 +123,15 @@ export interface User {
    * set it, and validateToken SELECTS it and never returns it. So a session
    * restored from a token has no schedule kind, and the card reads `NONE`.
    *
-   * That is the honest fallback rather than a bug in the card: absent reads as
-   * `NONE`, which shows a total and NO progress bar, because a bar with no
-   * target invents one. Putting it on all three builders is a server change
-   * and was declined.
+   * ⚠️ ABSENT IS ANSWERED FROM THE DATA, NOT ASSUMED. `scheduleFor` in
+   * `components/home/shift-state.ts` reads the shift itself: one the roster
+   * gave both a start and an end is a FIXED shift whatever the payload left
+   * out, and everything else is NONE. Assuming NONE outright would cost a
+   * rostered member a bar they legitimately have a target for; assuming FIXED
+   * would draw one against an invented target for the unconfigured majority,
+   * which is rule 6 broken by a fallback.
+   *
+   * Putting it on all three builders is a server change and was declined.
    */
   scheduleType?: 'FIXED' | 'FLEXIBLE' | 'NONE' | null;
   /**

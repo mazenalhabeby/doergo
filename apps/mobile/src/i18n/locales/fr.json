@@ -2035,10 +2035,10 @@
     "title": "Signalements",
     "reportHint": "Bloqué par quelque chose que vous ne pouvez pas résoudre ?",
     "myIssuesHint": "Ouvrir un signalement pour lire ou répondre",
-    "none": "Aucun signalement pour l'instant.",
+    "none": "Rien de signalé.",
     "reportIntro": "Un blocage que vous ne pouvez pas lever ? Signalez-le — votre responsable est prévenu immédiatement.",
-    "titlePlaceholder": "Quel est le problème ? (titre court)",
-    "descriptionPlaceholder": "Décrivez ce qui se passe (facultatif)",
+    "titlePlaceholder": "Qu’est-ce qui vous bloque ?",
+    "descriptionPlaceholder": "Ce qui pourrait aider (facultatif)",
     "camera": "Appareil photo",
     "photo": "Photo",
     "submit": "Signaler",
@@ -2073,6 +2073,35 @@
       "customerUnavailable": "Client indisponible",
       "duplicate": "Doublon",
       "notAnIssue": "Pas un problème"
+    },
+    "reportShort": "Signaler",
+    "myIssuesShort": "Mes signalements",
+    "howBadly": "GRAVITÉ",
+    "addPhoto": "Ajouter une photo",
+    "send": "Envoyer",
+    "sendHint": "Les responsables de cet espace sont prévenus immédiatement.",
+    "onShiftSince": "en service depuis {{time}}",
+    "travelsWith": "ceci accompagne le signalement",
+    "sentTitle": "Envoyé",
+    "queuedTitle": "En attente",
+    "sentBody": "Les responsables de cet espace l’ont reçu. Leur réponse apparaîtra ici.",
+    "sentBodyNamed": "{{name}} l’a reçu. Sa réponse apparaîtra ici.",
+    "queuedBody": "Il partira dès que vous aurez du réseau.",
+    "openThread": "Ouvrir la conversation",
+    "stillOpen": "ENCORE OUVERTS",
+    "doneGroup": "TERMINÉS",
+    "couldNotLoad": "Impossible de charger vos signalements. Réessayez dans un instant.",
+    "noReplyYet": "Pas encore de réponse.",
+    "replyPlaceholder": "Répondre…",
+    "markResolved": "Réglé ? Marquez-le comme résolu",
+    "reads": {
+      "open": "Ouvert · pas encore de réponse",
+      "acknowledged": "Vu par {{name}}",
+      "inProgress": "{{name}} s’en occupe",
+      "resolved": "Résolu",
+      "closed": "Fermé",
+      "queued": "En attente",
+      "openJustNow": "Ouvert · à l’instant"
     }
   },
   "route": {
@@ -2877,7 +2906,7 @@
     "queued": "EN ATTENTE",
     "readyToStart": "Prêt à commencer",
     "whenDidYouLeave": "À quelle heure êtes-vous parti ?",
-    "leftRunning": "Le poste est resté ouvert, nous l'avons clôturé. Indiquez-nous l'heure réelle.",
+    "leftRunning": "{{workspace}}. Nous l’avons clôturé à {{time}} car il est resté ouvert.",
     "counted": "{{counted}} comptabilisé",
     "countedFrozen": "{{counted}} comptabilisé, ne compte pas en ce moment",
     "restDue": "pause à {{time}}",
@@ -2886,7 +2915,15 @@
     "startRest": "Commencer la pause",
     "endRest": "Terminer la pause",
     "break": "Pause",
-    "setRealTime": "Indiquer l'heure réelle"
+    "setRealTime": "Indiquer l'heure réelle",
+    "doneForToday": "TERMINÉ POUR AUJOURD’HUI",
+    "backAt": "De retour à {{time}}",
+    "clockInAgain": "Repointer",
+    "countedWaiting": "compté, en attente de validation",
+    "countedApproved": "compté et validé",
+    "waitingToReach": "en attente d’arriver au bureau",
+    "startsIn_one": "votre service commence dans {{count}} minute",
+    "startsIn_other": "votre service commence dans {{count}} minutes"
   },
   "crew": {
     "onTheClock": "en poste",
@@ -2904,5 +2941,8 @@
     "minLeft": "{{n}} min restantes",
     "minOver": "{{n}} min de plus",
     "minBreak": "{{n}} min de pause"
+  },
+  "widgets": {
+    "shiftClock": "Horloge de service"
   }
 }

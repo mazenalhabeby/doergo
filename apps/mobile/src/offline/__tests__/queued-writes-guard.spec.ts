@@ -62,7 +62,17 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     calls: { 'documentsApi.submitOwn': 2 },
     why: `${FALLBACK}, plus multi-sheet submit which cannot be queued — its pages must reach the store first`,
   },
-  'src/components/shift-issue-sheet.tsx': { calls: { 'shiftIssuesApi.create': 1, 'shiftIssuesApi.message': 2 }, why: FALLBACK },
+  /*
+    The issue sheets split into one file each when they were rebuilt to
+    `shift-clock.md` §4–§7; `shift-issue-sheet.tsx` is now the door they came
+    through and calls nothing itself. The allowance moved with the code — the
+    same two direct calls, in the two files that now make them.
+  */
+  'src/components/issues/report-issue-sheet.tsx': {
+    calls: { 'shiftIssuesApi.create': 1, 'shiftIssuesApi.message': 1 },
+    why: `${FALLBACK}. The photo message is posted AFTER create, because the S3 key is namespaced by the issue id`,
+  },
+  'src/components/issues/issue-thread-sheet.tsx': { calls: { 'shiftIssuesApi.message': 1 }, why: FALLBACK },
   'app/(app)/asset-expense.tsx': { calls: { 'assetsApi.submitExpense': 1 }, why: FALLBACK },
   'app/(app)/asset-log.tsx': { calls: { 'assetsApi.createLog': 1 }, why: FALLBACK },
   'app/(app)/send-document.tsx': { calls: { 'assetProposalsApi.raise': 1 }, why: FALLBACK },
