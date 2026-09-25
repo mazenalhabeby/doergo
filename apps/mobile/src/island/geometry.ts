@@ -38,8 +38,10 @@ export interface Cutout {
 
 export const PAD = 10;
 export const GAP = 6;
-export const SIDE = 13;
-export const ICON = 21;
+export const SIDE = 18;
+/** Side padding of the text UNDER the lens. */
+export const DROP_SIDE = SIDE;
+export const ICON = 22;
 export const ICON_GAP = 9;
 /** ⚠️ Past this it stops being a notification and becomes a banner. */
 export const CAP = 356;
@@ -95,11 +97,13 @@ export interface Measured {
 }
 
 /* Line boxes, so the open height is decided rather than discovered. */
+/* ⚠️ These mirror `styles.drop` / `title` / `body` in island-view.tsx exactly. */
 const TITLE_LH = 21;
 const BODY_LH = 19;
 const ACTION_H = 30;
-const DROP_GAP = 8;
-const BOTTOM = 14;
+const DROP_TOP = 4;
+const LINE_GAP = 3;
+const BOTTOM = 16;
 
 /**
  * THE SEALED BOX — the cutout itself, which is where the island is born and
@@ -247,7 +251,7 @@ export function coversStatusBar(hole: Cutout): boolean {
 
 /** How many lines the dropped title needs across the open width. */
 export function titleLines(m: Measured, w: number): number {
-  const room = Math.max(1, w - SIDE * 2);
+  const room = Math.max(1, w - DROP_SIDE * 2);
   return Math.max(1, Math.ceil(m.title / room));
 }
 
@@ -256,8 +260,11 @@ export function titleLines(m: Measured, w: number): number {
  * anything moves.
  */
 export function droppedHeight(headH: number, m: Measured, lines: number): number {
-  const body = m.bodyLines > 0 ? 6 + Math.min(m.bodyLines, MAX_BODY_LINES) * BODY_LH : 0;
-  const action = m.action ? 10 + ACTION_H : 0;
-  const title = lines > 0 ? DROP_GAP + lines * TITLE_LH : 0;
-  return headH + title + body + action + BOTTOM;
+  const blocks = [
+    lines > 0 ? lines * TITLE_LH : 0,
+    m.bodyLines > 0 ? Math.min(m.bodyLines, MAX_BODY_LINES) * BODY_LH : 0,
+    m.action ? 4 + ACTION_H : 0,
+  ].filter((b) => b > 0);
+  const gaps = Math.max(0, blocks.length - 1) * LINE_GAP;
+  return headH + DROP_TOP + blocks.reduce((a, b) => a + b, 0) + gaps + BOTTOM;
 }

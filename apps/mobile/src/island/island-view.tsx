@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Platform, Pressable, StyleSheet, Text, View, type TextLayoutEventData, type NativeSyntheticEvent } from 'react-native';
+import { AccessibilityInfo, Pressable, StyleSheet, Text, View, type TextLayoutEventData, type NativeSyntheticEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -15,7 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ISLAND, TONES, type Tone } from './tokens';
-import { CAP, EDGE, ICON, ICON_GAP, SIDE, readLayout, sealedBox, sealedVisible, type Cutout, type Layout, type Measured } from './geometry';
+import { FONT } from '../theme/amazen';
+import { CAP, DROP_SIDE, EDGE, ICON, ICON_GAP, SIDE, readLayout, sealedBox, sealedVisible, type Cutout, type Layout, type Measured } from './geometry';
 
 /**
  * THE ISLAND ITSELF.
@@ -47,12 +48,19 @@ const SPRING = { damping: 26, stiffness: 240, mass: 1 } as const;
 const OUT = 280;
 const REDUCED = 180;
 
+/** ⚠️ FILLED ICONS ONLY — an outline reads as a hairline on black. */
 const ICONS: Record<Tone, keyof typeof Ionicons.glyphMap> = {
-  done: 'checkmark',
-  waiting: 'alert-circle-outline',
-  failed: 'close-circle-outline',
-  queued: 'cloud-offline-outline',
+  done: 'checkmark-circle',
+  waiting: 'alert-circle',
+  failed: 'close-circle',
+  queued: 'cloud-offline',
 };
+
+/** The time it arrived, for the right of the lens when the message has no figure of its own. */
+function stamp(): string {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
 
 export function IslandView({
   hole,
@@ -96,7 +104,8 @@ export function IslandView({
   useEffect(() => {
     if (!message) { setPending(null); return; }
     if (shown?.msg.id === message.id) return;
-    setPending(message);
+    /* ⚠️ Icon left, TIME right — always. No figure of its own, so the time it arrived. */
+    setPending({ ...message, value: message.value ?? stamp() });
   }, [message, shown?.msg.id]);
 
   /* Nothing to say: sink back. */
@@ -258,14 +267,14 @@ export function IslandView({
             {pending.title}
           </Text>
           <Text
-            style={[styles.value, styles.mono]}
+            style={styles.value}
             onTextLayout={(e) => { widths.current.value = lineWidth(e); maybeCommit(); }}
           >
             {pending.value ?? ''}
           </Text>
           {pending.body ? (
             <Text
-              style={[styles.body, { width: capW - SIDE * 2 }]}
+              style={[styles.body, { width: capW - DROP_SIDE * 2 }]}
               onTextLayout={(e) => { widths.current.bodyLines = e.nativeEvent.lines.length; maybeCommit(); }}
             >
               {pending.body}
@@ -302,7 +311,7 @@ export function IslandView({
                 {/* ⚠️ The lens is in here. Left group hugs the left edge, the time the right. */}
                 <View style={{ flex: 1 }} />
                 {msg.value ? (
-                  <Text numberOfLines={1} style={[styles.value, styles.mono, { color: look.fg }]}>{msg.value}</Text>
+                  <Text numberOfLines={1} style={styles.value}>{msg.value}</Text>
                 ) : null}
                 {layout.icon === 'right' ? <Glyph tone={msg.tone} fg={look.fg} /> : null}
               </Animated.View>
@@ -310,8 +319,8 @@ export function IslandView({
               {/* ⚠️ What did not fit beside the lens goes UNDER it; the height was decided for it. */}
               {layout.titleDrops || msg.body || msg.action ? (
                 <Animated.View style={[styles.drop, bodyStyle]}>
-                  {layout.titleDrops ? <Text style={[styles.title, { color: ISLAND.ink }]}>{msg.title}</Text> : null}
-                  {msg.body ? <Text numberOfLines={3} style={[styles.body, { color: ISLAND.dim }]}>{msg.body}</Text> : null}
+                  {layout.titleDrops ? <Text style={styles.title}>{msg.title}</Text> : null}
+                  {msg.body ? <Text numberOfLines={3} style={styles.body}>{msg.body}</Text> : null}
                   {msg.action ? (
                     <Pressable onPress={msg.action.onPress} accessibilityRole="button" style={styles.action}>
                       <Text style={[styles.actionLabel, { color: look.fg }]}>{msg.action.label}</Text>
@@ -343,7 +352,7 @@ function lineWidth(e: NativeSyntheticEvent<TextLayoutEventData>): number {
 }
 
 function Glyph({ tone, fg }: { tone: Tone; fg: string }) {
-  return <Ionicons name={ICONS[tone]} size={ICON - 3} color={fg} />;
+  return <Ionicons name={ICONS[tone]} size={ICON} color={fg} />;
 }
 
 const styles = StyleSheet.create({
@@ -364,14 +373,15 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: ICON_GAP, paddingHorizontal: SIDE },
-  drop: { paddingHorizontal: SIDE, paddingBottom: 14, gap: 6 },
-  title: { fontSize: 15, lineHeight: 21, fontWeight: '500', color: ISLAND.ink },
-  body: { fontSize: 13, lineHeight: 19, color: ISLAND.dim },
-  value: { fontSize: 14, lineHeight: 20 },
-  mono: { fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }), fontVariant: ['tabular-nums'] },
+  /* Under the lens: a little more air than the head row, text left-aligned. */
+  drop: { paddingHorizontal: DROP_SIDE, paddingTop: 4, paddingBottom: 16, gap: 3 },
+  title: { fontFamily: FONT.sansMedium, fontSize: 16, lineHeight: 21, color: ISLAND.ink, letterSpacing: -0.2 },
+  body: { fontFamily: FONT.sans, fontSize: 14, lineHeight: 19, color: ISLAND.dim },
+  /* The time: mono, quiet — it is context, not the news. */
+  value: { fontFamily: FONT.monoMedium, fontSize: 13, lineHeight: 18, color: ISLAND.dim, fontVariant: ['tabular-nums'] },
   action: {
     alignSelf: 'flex-start', marginTop: 4, paddingVertical: 6, paddingHorizontal: 12,
     borderRadius: 999, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: ISLAND.line,
   },
-  actionLabel: { fontSize: 13, fontWeight: '500' },
+  actionLabel: { fontFamily: FONT.sansMedium, fontSize: 13 },
 });

@@ -205,6 +205,26 @@ describe('§6/§7 — the colours and the tones', () => {
   });
 });
 
+describe('04.png — how it reads', () => {
+  const view = code('island/island-view.tsx');
+  it('⚠️ filled icons only', () => {
+    expect(view).toMatch(/done: 'checkmark-circle'/);
+    expect(view).not.toMatch(/-outline'/);
+  });
+  it('⚠️ the time is always on the right — the arrival time when there is no figure', () => {
+    expect(view).toMatch(/value: message\.value \?\? stamp\(\)/);
+  });
+  it('⚠️ "Success" is not news — the sentence becomes the title', () => {
+    const ctx = code('island/island-context.tsx');
+    expect(ctx).toMatch(/\{ \.\.\.tidy\(msg\), id: nextId\.current\+\+ \}/);
+    expect(ctx).toMatch(/title: msg\.body, body: undefined/);
+  });
+  it('uses the app\'s own type — Readex for words, Plex Mono for the time', () => {
+    expect(view).toMatch(/fontFamily: FONT\.sansMedium, fontSize: 16/);
+    expect(view).toMatch(/fontFamily: FONT\.monoMedium/);
+  });
+});
+
 describe('§8/§10 — the motion and the rules', () => {
   const view = code('island/island-view.tsx');
   const ctx = code('island/island-context.tsx');
@@ -303,6 +323,6 @@ describe('§11 — what is deleted, and stays deleted', () => {
 
 describe('the constants are the spec\'s', () => {
   it('§3', () => {
-    expect([GAP, SIDE, ICON, ICON_GAP, CAP, EDGE]).toEqual([6, 13, 21, 9, 356, 8]);
+    expect([GAP, SIDE, ICON, ICON_GAP, CAP, EDGE]).toEqual([6, 18, 22, 9, 356, 8]);
   });
 });

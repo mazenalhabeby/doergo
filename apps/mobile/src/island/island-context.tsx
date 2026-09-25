@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { coversStatusBar } from './geometry';
 import { useCutout } from './cutout';
 import { IslandView, type IslandMessage } from './island-view';
+import i18n from '../i18n';
 import { SCREEN_READER_MIN_DWELL, dwellFor, type Tone } from './tokens';
 
 /**
@@ -92,7 +93,7 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const push = useCallback((msg: Omit<IslandMessage, 'id'>) => {
-    const full: IslandMessage = { ...msg, id: nextId.current++ };
+    const full: IslandMessage = { ...tidy(msg), id: nextId.current++ };
     setCurrent((prev) => {
       /*
         ⚠️ DUPLICATES COLLAPSE, THEY DO NOT STACK. Two identical failures are
@@ -164,4 +165,19 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
       />
     </IslandContext.Provider>
   );
+}
+
+/**
+ * ⚠️ "SUCCESS" IS NOT NEWS. A dozen call sites say `success(t('common.success'),
+ * 'Clocked in at Service Center')` — the fact is in the body and the title is
+ * a word that says nothing. When the title is only that word, the sentence
+ * becomes the title and the empty word goes.
+ */
+const GENERIC = ['common.success', 'common.error', 'common.done'];
+function tidy<T extends { title: string; body?: string }>(msg: T): T {
+  if (!msg.body) return msg;
+  const title = msg.title.trim().toLowerCase();
+  const generic = GENERIC.some((k) => i18n.t(k).toLowerCase() === title)
+    || ['success', 'error', 'done'].includes(title);
+  return generic ? { ...msg, title: msg.body, body: undefined } : msg;
 }
