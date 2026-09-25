@@ -256,8 +256,12 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
     `home-offline-guard.spec.ts` exists for. `source === 'none'` means nothing
     is known, from the server OR the phone's own copy, and nothing known is not
     a fact about this member.
+
+    ⚠️ AND `pending` IS NOT KNOWN EITHER. It means the first request has not
+    come back, which is the same absence wearing a different word — reading it
+    as an answer would hide the card for the length of every cold start.
   */
-  const known = shift.source !== 'none';
+  const known = shift.source !== 'none' && shift.source !== 'pending';
   const somewhereToClockIn = (status?.assignedLocations?.length ?? 0) > 0 || !!user?.allowRemote;
   if (known && !somewhereToClockIn && !status?.isClockedIn && st.kind !== 'unconfirmed') return null;
 

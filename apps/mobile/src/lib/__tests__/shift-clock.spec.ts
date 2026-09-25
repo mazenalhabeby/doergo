@@ -180,8 +180,43 @@ describe('§1 — the eight states, and no ninth', () => {
       a site with no signal. Reproduced by stopping the API mid-session.
     */
     const card = code('components/home/shift-clock-card.tsx');
-    expect(card).toMatch(/const known = shift\.source !== 'none';/);
+    // ⚠️ `pending` is the same absence wearing a different word.
+    expect(card).toMatch(/const known = shift\.source !== 'none' && shift\.source !== 'pending';/);
     expect(card).toMatch(/if \(known && !somewhereToClockIn/);
+  });
+
+  it('shows the state the member was actually in, not one guessed from nothing', () => {
+    /*
+      ⚠️ THE FLASH WAS THE SAME BUG AS ⑧, ONE LINE UP. `useShift` started from
+      `status: null`, and the card decided a state from that absence — so a
+      member on the clock saw `Ready to start` for the length of a round trip,
+      and a member who was not saw the clocked-in card flash past on every
+      refresh. The answer was already in the phone's own database; it was only
+      ever read when the network FAILED.
+    */
+    const hook = code('offline/attendance/use-shift.ts');
+
+    // Four sources, because "not asked yet" is not "asked and nothing known".
+    expect(hook).toMatch(/source: 'server' \| 'phone' \| 'none' \| 'pending'/);
+    expect(hook).toMatch(/source: 'pending' \}\)/);
+
+    // The saved copy is read on mount, not only on failure.
+    const hydrate = hook.slice(hook.indexOf('useEffect(() => {'));
+    expect(hydrate).toMatch(/records\s*\n?\s*\.get</);
+    // ⚠️ It only ever fills a gap — a server answer that got in first stands.
+    expect(hydrate).toMatch(/prev\.source === 'pending'/);
+    // ⚠️ And it is bounded: a week-old copy is a lie, not a head start.
+    expect(hook).toMatch(/SAVED_GOOD_FOR/);
+    expect(hook).toMatch(/const SAVED_GOOD_FOR = 18 \* 60 \* 60 \* 1000/);
+
+    /*
+      ⚠️ AND A FAILED REFRESH MUST NOT REPLACE AN ANSWER WITH AN ABSENCE.
+      `refresh` runs on every focus, so one 500 blanked the card of somebody
+      who was on the clock a second earlier.
+    */
+    const refresh = hook.slice(hook.indexOf('const refresh = useCallback'), hook.indexOf('// A shift operation'));
+    expect(refresh).toMatch(/next\.source === 'none' && prev\.source !== 'none' && prev\.source !== 'pending'/);
+    expect(refresh).toMatch(/return prev;/);
   });
 
   it('has exactly the six kinds the states collapse to, and no more', () => {
