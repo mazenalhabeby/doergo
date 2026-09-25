@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Platform, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
-import { useRouter, type Href } from 'expo-router';
+import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { hasAccessModule, type FlowStatus } from '@hbcfield/shared/client';
@@ -76,7 +76,15 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
     try { await load(); setPhase('ready'); }
     catch (err) { setPhase(isUnreachable(err) ? 'absent' : 'refused'); }
   }, [load]);
-  useEffect(() => { if (shape !== 'none' && shape !== 'shifts') void fetchList(); }, [fetchList, shape]);
+  /*
+    ⚠️ ON EVERY RETURN TO HOME, NOT ONLY ON MOUNT. The home stays mounted
+    under the other tabs, so a card that asked once when the app opened kept
+    showing that morning's copy: jobs created since simply were not there
+    (08.png). `load()` reads the phone's copy AND kicks a background pull.
+  */
+  useFocusEffect(useCallback(() => {
+    if (shape !== 'none' && shape !== 'shifts') void fetchList();
+  }, [fetchList, shape]));
   // Rows arriving from the phone's copy mean it has loaded, whatever load() is still doing.
   useEffect(() => { if (tasks.length > 0 && phase === 'opening') setPhase('ready'); }, [tasks.length, phase]);
 
