@@ -529,7 +529,7 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
       <ShiftIssueListSheet
         visible={listOpen}
         onClose={() => setListOpen(false)}
-        onOpen={(id) => { setListOpen(false); setThreadId(id); }}
+        onOpen={(id) => setThreadId(id)}
         onReport={entryId ? () => { setListOpen(false); setReportOpen(true); } : undefined}
       />
       <ShiftIssueThreadSheet

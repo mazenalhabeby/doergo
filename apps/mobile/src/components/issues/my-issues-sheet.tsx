@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
+import { useSocketContext } from '../../contexts/socket-context';
 import { useAuth } from '../../contexts/auth-context';
 import { shiftIssuesApi, type ShiftIssue } from '../../lib/api/shift-issues';
 import { BlurSheet } from '../blur-sheet';
@@ -46,6 +47,7 @@ export function ShiftIssueListSheet({
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { subscribe } = useSocketContext();
   const c = amazen.color;
 
   const [issues, setIssues] = useState<ShiftIssue[] | null>(null);
@@ -62,6 +64,18 @@ export function ShiftIssueListSheet({
   }, []);
 
   useEffect(() => { if (visible) void load(); }, [visible, load]);
+
+  /*
+    ⚠️ THE LIST STAYS OPEN UNDER THE THREAD NOW, so it can no longer rely on
+    being re-opened to refresh itself: resolve something in the thread, close
+    it, and the row behind would still say `Open · no reply yet`. It listens
+    to the same two events the badge and the thread already do.
+  */
+  useEffect(() => {
+    if (!visible) return;
+    const offs = [subscribe('shift_issue.event', () => void load()), subscribe('shift_issue.created', () => void load())];
+    return () => offs.forEach((o) => o());
+  }, [visible, subscribe, load]);
 
   const { open, done } = groupIssues(issues ?? []);
 
@@ -153,12 +167,23 @@ function Row({
   const unread = unreadFor(issue, viewerId);
   const who = issue.assigneeName?.trim() || '';
   const tone = look.tone === 'warn' ? c.warn : look.tone === 'accent' ? c.accent : c.inkMuted;
+  /*
+    ⚠️ "SEEN BY" AND "IS ON IT" WITH NOBODY'S NAME IN THEM. The long phrasings
+    interpolate `{{name}}` from the ASSIGNEE, and an issue can be acknowledged
+    or worked on without ever being dispatched — which is the normal case —
+    so the row read `Seen by` and stopped. The short label is the same status
+    without the name (`Seen`, `Being fixed`), and it already exists in five
+    languages for the thread header.
+  */
+  const line = who
+    ? t(look.readsAs, { name: who, defaultValue: issue.status })
+    : t(look.label, { defaultValue: issue.status });
 
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${issue.title}. ${t(look.readsAs, { name: who, defaultValue: issue.status })}`}
+      accessibilityLabel={`${issue.title}. ${line}`}
       style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'flex-start',
@@ -202,9 +227,7 @@ function Row({
           {/* ⚠️ Unread, never a total. */}
           {unread > 0 ? <Chip label={String(unread)} tone="accent" numeric /> : null}
         </View>
-        <AText variant="caption" tone="muted" numberOfLines={1}>
-          {t(look.readsAs, { name: who, defaultValue: issue.status })}
-        </AText>
+        <AText variant="caption" tone="muted" numberOfLines={1}>{line}</AText>
       </View>
     </Pressable>
   );

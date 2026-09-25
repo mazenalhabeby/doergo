@@ -42,6 +42,21 @@ import { BlurView } from 'expo-blur';
   and the screen stayed where it was. Opening therefore yields one turn first
   and re-reads the claim afterwards, by which point every effect in the flush
   has run and the answer is the same whatever the order.
+
+  ⚠️ AND WHERE A SHEET LEADS TO ANOTHER, PREFER STACKING TO SWAPPING.
+
+  iOS refuses to PRESENT while dismissing; it presents ON TOP of a sheet that
+  is simply standing there quite happily. So a list that opens a detail should
+  leave itself open underneath:
+
+      onOpen={(id) => { setListOpen(false); setDetailId(id); }}   ← a race
+      onOpen={(id) => setDetailId(id)}                            ← no race
+
+  There is nothing to time, and closing the detail puts the member back in the
+  list they came from, which is what they expect anyway. The timing guard
+  above stays for the hand-overs that genuinely replace one sheet with another
+  (the issue list → the report form), and as the backstop for the next one
+  somebody writes as a swap.
 */
 let dismissingUntil = 0;
 const EXIT_MS = 250;

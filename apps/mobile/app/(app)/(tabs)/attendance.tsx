@@ -1428,7 +1428,7 @@ export default function AttendanceScreen() {
       <ShiftIssueListSheet
         visible={issueListOpen}
         onClose={() => setIssueListOpen(false)}
-        onOpen={(id) => { setIssueListOpen(false); setIssueThreadId(id); }}
+        onOpen={(id) => setIssueThreadId(id)}
         onReport={currentEntry?.id ? () => { setIssueListOpen(false); setReportIssueOpen(true); } : undefined}
       />
 

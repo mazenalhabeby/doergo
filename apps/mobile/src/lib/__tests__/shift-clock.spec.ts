@@ -555,6 +555,26 @@ describe('§9 — the twelve rules', () => {
     // The claim must not be read in the same tick the effect runs.
     expect(open).not.toMatch(/const wait = Math\.max\(0, dismissingUntil/);
 
+    /*
+      ⚠️ AND THE HAND-OVER THAT BROKE IS NOT TIMED AT ALL ANY MORE. iOS
+      refuses to PRESENT while dismissing; it presents happily on TOP of a
+      sheet that is just standing there. So the issue list stays open
+      underneath its thread — there is nothing to race, and closing the
+      thread puts the member back in the list they came from.
+    */
+    for (const caller of [
+      'components/home/shift-clock-card.tsx',
+      '../app/(app)/(tabs)/attendance.tsx',
+      '../app/(app)/(tabs)/manage.tsx',
+      '../app/(app)/(tabs)/_layout.tsx',
+    ]) {
+      const src = code(caller);
+      const handler = src.split('\n').find((l) => l.includes('onOpen={'));
+      expect(handler).toBeDefined();
+      // ⚠️ No `setSomethingOpen(false)` in the handler that opens the thread.
+      expect(handler).not.toMatch(/\(false\)/);
+    }
+
     // ⚠️ And a failed read is not a permanent "Loading…".
     const thread = code('components/issues/issue-thread-sheet.tsx');
     expect(thread).toMatch(/issues\.couldNotLoad/);
