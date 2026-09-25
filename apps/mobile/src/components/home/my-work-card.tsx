@@ -20,7 +20,6 @@ import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { scheduleApi, tasksApi } from '../../lib/api';
 import type { ScheduleEntry, Task } from '../../lib/api/types';
 import { AText, Eyebrow, Well, WellDivider } from '../amazen';
-import { shadowDiscPrimary } from '../amazen/surfaces';
 import { JobSheet } from './job-sheet';
 import {
   AcceptGlyph, OnMyWayGlyph, ArrivedGlyph, StartWorkGlyph, FinishGlyph, NavigateGlyph, MoreGlyph,
@@ -418,7 +417,13 @@ function ActiveRow({ task, decision, busy, onVerb, onMore, onOpen }: {
             radius with `overflow: hidden`, and on iOS that clips its own shadow
             too — the same trap the tab bar fell into (09.png).
           */
-          <View style={[{ flex: 1, borderRadius: amazen.radius.full, backgroundColor: c.accentSolid }, shadowDiscPrimary(c.accentSolid)]}>
+          <View
+            style={{
+              flex: 1, borderRadius: amazen.radius.full, backgroundColor: c.accentSolid,
+              /* A soft lift, not a halo — the full disc glow was too much on a row this size. */
+              shadowColor: c.accentSolid, shadowOpacity: 0.22, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3,
+            }}
+          >
             <Pressable
               onPress={busy ? undefined : () => onVerb(decision.primary)}
               disabled={busy}
