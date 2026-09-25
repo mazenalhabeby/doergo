@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { useSocketContext } from '../../contexts/socket-context';
+import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { useOffline, useSyncStatus } from '../../offline/offline-context';
 import { pendingIssueEvents, sendIssueMessageFromPhone } from '../../offline/issues/issue-actions';
 import { shiftIssuesApi, type ShiftIssue, type ShiftIssueEvent } from '../../lib/api/shift-issues';
@@ -297,10 +298,10 @@ export function ShiftIssueThreadSheet({
 function Bubble({ event, mine }: { event: ShiftIssueEvent; mine: boolean }) {
   const { amazen } = useTheme();
   const c = amazen.color;
+  /* The same clock as the card and the receipt — see `useTimeFormat`. */
+  const clockOf = useTimeFormat().formatTime;
   const when = new Date(event.at);
-  const time = Number.isNaN(when.getTime())
-    ? ''
-    : when.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  const time = Number.isNaN(when.getTime()) ? '' : clockOf(when);
 
   if (!event.body && !(event.attachments?.length)) return null;
 

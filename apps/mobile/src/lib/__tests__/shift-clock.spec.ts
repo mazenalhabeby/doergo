@@ -707,3 +707,28 @@ describe('the totals, and two silent ways they were always zero', () => {
     expect(hook).not.toMatch(/console\./);
   });
 });
+
+describe('one clock for the whole feature', () => {
+  it('no surface formats a time itself', () => {
+    /*
+      ⚠️ THE SAME SHIFT READ `9:04 AM` ON ONE PHONE AND `09:43` ON ANOTHER.
+      `toLocaleTimeString` asks the DEVICE, so the card ignored both the
+      member's own 12h/24h choice — which follows them across devices — and the
+      organization's timezone, which every other attendance surface honours.
+      `useTimeFormat` exists so "screens never hardcode 12h/24h".
+
+      ⚠️ AND THE ZONE MATTERS MORE THAN THE FORMAT: converting to the device's
+      zone makes a night shift clocked at 23:50 read as tomorrow to somebody
+      who travelled.
+    */
+    for (const f of [
+      'components/home/shift-clock-card.tsx',
+      'components/clock-out-sheet.tsx',
+      'components/issues/issue-thread-sheet.tsx',
+    ]) {
+      expect(code(f)).not.toMatch(/toLocaleTimeString/);
+      expect(code(f)).toMatch(/clockOf/);
+    }
+    expect(code('components/home/shift-clock-card.tsx')).toMatch(/useTimeFormat\(\)\.formatTime/);
+  });
+});

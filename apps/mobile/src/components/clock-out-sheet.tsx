@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTimeFormat } from '../hooks/useTimeFormat';
 import { useTheme } from '../contexts/theme-context';
 import { BlurSheet } from './blur-sheet';
 import { AText, Eyebrow, LiveDot } from './amazen';
@@ -62,6 +63,14 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const c = amazen.color;
+  /*
+    ⚠️ THE SAME CLOCK AS THE CARD THIS CAME OUT OF. The receipt is what the
+    member signs off; if the sheet renders `15:00` where the card said
+    `3:00 PM`, the two disagree about the shift in the one place it is being
+    confirmed. `useTimeFormat` reads the member's own 12h/24h choice and the
+    organization's timezone, so neither surface decides for itself.
+  */
+  const clockOf = useTimeFormat().formatTime;
 
   const [notes, setNotes] = useState('');
   const [noteOpen, setNoteOpen] = useState(false);
@@ -164,7 +173,7 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
           </AText>
         </View>
 
-        <Bar view={view} shift={shift} />
+        <Bar view={view} shift={shift} clockOf={clockOf} />
 
         {/* ④ — recorded, never refused. */}
         {view.away ? (
@@ -178,7 +187,7 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
           </Strip>
         ) : null}
 
-        <Receipt view={view} shift={shift} />
+        <Receipt view={view} shift={shift} clockOf={clockOf} />
 
         {/*
           ② — the chips. ⚠️ `WHY, IF YOU WANT TO SAY · OPTIONAL` says the whole
@@ -351,7 +360,7 @@ function Hero({ minutes, warn }: { minutes: number; warn: boolean }) {
  * track is the shortfall — you see the SHAPE of the shift before you read a
  * figure.
  */
-function Bar({ view, shift }: { view: ReturnType<typeof readClockOut>; shift: ClockOutShift }) {
+function Bar({ view, shift, clockOf }: { view: ReturnType<typeof readClockOut>; shift: ClockOutShift; clockOf: (d: Date) => string }) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const c = amazen.color;
@@ -368,12 +377,12 @@ function Bar({ view, shift }: { view: ReturnType<typeof readClockOut>; shift: Cl
 
       <View style={{ flexDirection: 'row', marginTop: amazen.space(1.5) }}>
         <AText variant="caption" tone="onGlassHome" numeric style={{ fontSize: 11.5 }}>
-          {clock(shift.clockInAt)}
+          {clockOf(shift.clockInAt)}
         </AText>
         <View style={{ flex: 1 }} />
         <View style={{ alignItems: 'flex-end' }}>
           <AText variant="caption" tone="onGlassHome" numeric style={{ fontSize: 11.5 }}>
-            {clock(shift.clockOutAt)}
+            {clockOf(shift.clockOutAt)}
           </AText>
           {view.overBy > 0 ? (
             <AText variant="caption" tone="warn" numeric style={{ fontSize: 11 }}>
@@ -431,7 +440,7 @@ function Hatch({ flex }: { flex: number }) {
  * setting it like a statement is what makes it feel finished, and it is why
  * the figures line up as digits rather than as prose.
  */
-function Receipt({ view, shift }: { view: ReturnType<typeof readClockOut>; shift: ClockOutShift }) {
+function Receipt({ view, shift, clockOf }: { view: ReturnType<typeof readClockOut>; shift: ClockOutShift; clockOf: (d: Date) => string }) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const c = amazen.color;
@@ -446,7 +455,7 @@ function Receipt({ view, shift }: { view: ReturnType<typeof readClockOut>; shift
         paddingVertical: amazen.space(3),
       }}
     >
-      <Row label={t('shiftEnd.clockedIn', { defaultValue: 'Clocked in' })} value={clock(shift.clockInAt)} />
+      <Row label={t('shiftEnd.clockedIn', { defaultValue: 'Clocked in' })} value={clockOf(shift.clockInAt)} />
       {view.bar.rest > 0 ? (
         <Row label={t('shiftEnd.rest', { defaultValue: 'Rest' })} value={`− ${dur(view.bar.rest)}`} />
       ) : null}
@@ -455,18 +464,18 @@ function Receipt({ view, shift }: { view: ReturnType<typeof readClockOut>; shift
         <>
           <Row
             label={t('shiftEnd.shiftEnded', { defaultValue: 'Shift ended' })}
-            value={shift.shiftEndAt ? clock(shift.shiftEndAt) : '—'}
+            value={shift.shiftEndAt ? clockOf(shift.shiftEndAt) : '—'}
           />
           <Row
             label={t('shiftEnd.stillWorkingUntil', { defaultValue: 'Still working until' })}
-            value={clock(shift.clockOutAt)}
+            value={clockOf(shift.clockOutAt)}
             tone="warn"
           />
         </>
       ) : (
         <Row
           label={t('shiftEnd.clockedOut', { defaultValue: 'Clocked out' })}
-          value={clock(shift.clockOutAt)}
+          value={clockOf(shift.clockOutAt)}
           /* ④ — the row carries the flag; the button is untouched. */
           flag={view.away ? `⚑ ${awayLabel(view.away.metres)}` : null}
         />
@@ -534,12 +543,6 @@ function Strip({ children, tone }: { children: React.ReactNode; tone: 'warn' }) 
       <AText variant="caption" tone={tone}>{children}</AText>
     </View>
   );
-}
-
-/** `15:00` — a wall clock, in the member's own display preference. */
-function clock(d: Date): string {
-  if (!d || Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 }
 
 /** `1h 08m` / `32m`. Never the word "paid". */

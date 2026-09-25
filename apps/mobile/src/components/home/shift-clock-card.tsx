@@ -11,6 +11,7 @@ import { SyncChip } from '../../offline/components/sync-chip';
 import { LocationPickerSheet, ClockOutSheet } from '../index';
 import { ReportIssueSheet, ShiftIssueListSheet, ShiftIssueThreadSheet } from '../shift-issue-sheet';
 import { useClockIn } from '../../hooks/useClockIn';
+import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { stopBackgroundHeartbeat } from '../../services/background-heartbeat';
 import { stopGeofence } from '../../services/background-geofence';
 import { formatDurationMinutes as formatDuration } from '../../lib/utils';
@@ -57,6 +58,22 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const toast = useToast();
   const router = useRouter();
   const c = amazen.color;
+  /*
+    ⚠️ THE MEMBER'S OWN CLOCK, NOT THE DEVICE'S — and not a `toLocaleTimeString`
+    call written here.
+
+    `useTimeFormat` exists so "screens never hardcode 12h/24h": it reads
+    `user.timeFormat` (which follows the person across devices) and renders in
+    the ORGANIZATION'S timezone rather than silently converting to wherever the
+    phone happens to be. This card was formatting times itself, so the same
+    shift read `9:04 AM` on one phone and `09:43` on another — and a member who
+    had chosen 24h got 12h here and 24h everywhere else in the app.
+
+    ⚠️ AND THE ZONE MATTERS MORE THAN THE FORMAT. A shift belongs to the place
+    it was worked; converting it to the device's zone makes a night shift
+    clocked at 23:50 read as tomorrow to somebody who travelled.
+  */
+  const clockOf = useTimeFormat().formatTime;
 
   /*
     ⚠️ THE SHIFT COMES FROM `use-shift.ts` AND NEVER FROM THE RESPONSE CACHE
@@ -483,7 +500,7 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
         timeEntryId={entryId}
         spaceId={status?.currentEntry?.location?.id}
         workspace={st.workspace}
-        since={status?.currentEntry?.clockInAt ? clockTime(status.currentEntry.clockInAt) : null}
+        since={status?.currentEntry?.clockInAt ? clockOf(status.currentEntry.clockInAt) : null}
         onCreated={(id) => { setReportOpen(false); setThreadId(id); }}
       />
       <ShiftIssueListSheet
@@ -519,8 +536,20 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
       and the figure is the answer.
     */
     if (st.kind === 'before' && st.at) {
-      const [hh, mm] = clockTime(st.at.toISOString()).split(':');
-      return <Hero parts={[{ value: hh ?? '', unit: `:${mm ?? '00'}` }]} tone="strong" unitTone="onGlassHome" />;
+      /*
+        `07` + `:00` — set like an amount, so the integer carries the weight.
+        Split on the separator the member's OWN format produced rather than on
+        a hard-coded colon, because a 12-hour clock brings `AM` with it.
+      */
+      const face = clockOf(st.at);
+      const cut = face.indexOf(':');
+      return (
+        <Hero
+          parts={[{ value: cut > 0 ? face.slice(0, cut) : face, unit: cut > 0 ? face.slice(cut) : '' }]}
+          tone="strong"
+          unitTone="onGlassHome"
+        />
+      );
     }
     if (st.minutes !== null) {
       return (
@@ -539,14 +568,14 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
     if (st.kind === 'unconfirmed') {
       return t('shiftClock.leftRunning', {
         workspace: st.workspace ?? '',
-        time: st.at ? clockTime(st.at.toISOString()) : '',
-        defaultValue: `${st.workspace ?? ''}. We closed it at ${st.at ? clockTime(st.at.toISOString()) : ''} because it was left running.`,
+        time: st.at ? clockOf(st.at) : '',
+        defaultValue: `${st.workspace ?? ''}. We closed it at ${st.at ? clockOf(st.at) : ''} because it was left running.`,
       });
     }
     if (st.kind === 'done' && st.finished) {
       return [
         st.workspace,
-        `${clockTime(st.finished.from.toISOString())} → ${clockTime(st.finished.to.toISOString())}`,
+        `${clockOf(st.finished.from)} → ${clockOf(st.finished.to)}`,
         st.finished.awaitingApproval
           ? t('shiftClock.countedWaiting', { defaultValue: 'counted, waiting for approval' })
           : t('shiftClock.countedApproved', { defaultValue: 'counted and approved' }),
@@ -610,8 +639,8 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
       */
       resting && st.backAt
         ? t('shiftClock.backAt', {
-            time: clockTime(st.backAt.toISOString()),
-            defaultValue: `Back at ${clockTime(st.backAt.toISOString())}`,
+            time: clockOf(st.backAt),
+            defaultValue: `Back at ${clockOf(st.backAt)}`,
           })
         : st.workspace,
       st.countedMinutes !== null
@@ -632,8 +661,8 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
         : null,
       st.nextRest && st.restOverdueBy <= 0
         ? t('shiftClock.restDue', {
-            time: clockTime(st.nextRest.dueAt),
-            defaultValue: `rest due ${clockTime(st.nextRest.dueAt)}`,
+            time: clockOf(st.nextRest.dueAt),
+            defaultValue: `rest due ${clockOf(st.nextRest.dueAt)}`,
           })
         : null,
     ].filter(Boolean).join(' · ');
@@ -731,11 +760,4 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
     */
     return [report, mine];
   }
-}
-
-/** `11:24` — a wall clock, in the member's own display preference. */
-function clockTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 }
