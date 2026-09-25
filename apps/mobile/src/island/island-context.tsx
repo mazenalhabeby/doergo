@@ -103,6 +103,15 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
   */
   const [current, setCurrent] = useState<IslandMessage | null>(null);
   const [liveMsg, setLiveMsg] = useState<IslandMessage | null>(null);
+  /*
+    ⚠️ THE LIVE SHIFT HAD NO WAY OUT. It IS the collapsed state, so a tap on
+    it dismissed the message and `shift()` put it straight back — a black bar
+    on the member's screen all day that nothing could close. Swiping it away
+    means "not for the rest of this shift": it comes back on the next clock-in,
+    and a real message still gets through, because a message is news and this
+    was only ever a status.
+  */
+  const [liveHidden, setLiveHidden] = useState(false);
   const queue = useRef<IslandMessage[]>([]);
   const nextId = useRef(1);
 
@@ -113,8 +122,8 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
       finishes it sinks back to the ring and the figure, not to sealed — the
       clock is the reason this exists.
     */
-    setCurrent(next ?? liveMsg);
-  }, [liveMsg]);
+    setCurrent(next ?? (liveHidden ? null : liveMsg));
+  }, [liveMsg, liveHidden]);
 
   const push = useCallback((msg: Omit<IslandMessage, 'id'>) => {
     const full: IslandMessage = { ...msg, id: nextId.current++ };
@@ -148,7 +157,15 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
   const shape = shapeFor(hole.kind);
   const visorShowing = shape === 'visor' && !!current;
   /* ⚠️ Only the LIVE state — a transient message floats. See `reserveFor`. */
-  const target = liveMsg ? reserveFor(shape) : 0;
+  /* ⚠️ Swiped away reserves nothing — the space is the bar's, and it is gone. */
+  const target = liveMsg && !liveHidden ? reserveFor(shape) : 0;
+
+  /** ⚠️ Swipe up — §10. The one way to be rid of it. */
+  const swipeAway = useCallback((msg: IslandMessage) => {
+    if (msg.tone === 'live') setLiveHidden(true);
+    setCurrent(null);
+    queue.current = [];
+  }, []);
 
   const say = useCallback<IslandContextValue['say']>((input) => {
     push({ ...input, dwell: dwellFor(input.tone, !!input.action) });
@@ -174,15 +191,17 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
       live: ({ label, value: figure }) => {
         const msg: IslandMessage = { id: nextId.current++, tone: 'live', title: label, value: figure, dwell: 0 };
         setLiveMsg(msg);
-        /* Only take the surface if nothing louder is using it. */
-        setCurrent((prev) => (!prev || prev.tone === 'live' ? msg : prev));
+        /* ⚠️ Swiped away stays away for this shift — see `liveHidden`. */
+        setCurrent((prev) => (liveHidden ? prev : !prev || prev.tone === 'live' ? msg : prev));
       },
       clearLive: () => {
         setLiveMsg(null);
+        /* ⚠️ The shift ended, so the dismissal ends with it. */
+        setLiveHidden(false);
         setCurrent((prev) => (prev?.tone === 'live' ? null : prev));
       },
     };
-  }, [push, say]);
+  }, [push, say, liveHidden]);
 
   const withLive = useMemo<IslandContextValue>(
     () => ({ ...value, visorShowing, reserve: target }),
@@ -211,6 +230,7 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
         message={current}
         reduceMotion={reduceMotion}
         onDismiss={shift}
+        onSwipeAway={swipeAway}
       />
     </IslandContext.Provider>
   );

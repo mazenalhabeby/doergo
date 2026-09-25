@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Platform, Pressable, StyleSheet, Text, View, type TextLayoutEventData, type NativeSyntheticEvent } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
   ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
+  runOnJS,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
@@ -58,12 +60,22 @@ export function IslandView({
   screenW,
   message,
   onDismiss,
+  onSwipeAway,
   reduceMotion,
 }: {
   hole: Cutout;
   screenW: number;
   message: IslandMessage | null;
   onDismiss: (id: number) => void;
+  /**
+   * ⚠️ SWIPE UP DISMISSES — §10, and it was never built.
+   *
+   * Without it the live shift had NO way out: it is the collapsed state, so a
+   * tap on it dismissed the message and the provider put it straight back.
+   * The member watched a black bar they could not close sit on their screen
+   * all day, which is a worse version of the fault this replaced.
+   */
+  onSwipeAway: (msg: IslandMessage) => void;
   reduceMotion: boolean;
 }) {
   const topInset = useSafeAreaInsets().top;
@@ -205,6 +217,19 @@ export function IslandView({
   const msg = shown?.msg ?? null;
   const layout = shown?.layout ?? null;
 
+  /*
+    ⚠️ UP ONLY, AND FAR ENOUGH TO MEAN IT. This thing lives under the status
+    bar where the OS's own pull-down starts; a downward or half-hearted pan
+    must do nothing at all, or people will lose their shift clock by
+    reaching for the notification shade.
+  */
+  const swipe = Gesture.Pan()
+    .activeOffsetY([-12, 999])
+    .onEnd((e) => {
+      'worklet';
+      if (e.translationY < -24 && msg) runOnJS(onSwipeAway)(msg);
+    });
+
   const look = msg ? TONES[msg.tone] : TONES.done;
 
   return (
@@ -240,6 +265,7 @@ export function IslandView({
       ) : null}
 
       <View style={styles.stage} pointerEvents="box-none">
+        <GestureDetector gesture={swipe}>
         <Animated.View
           style={[styles.island, { top: layout?.open.y ?? sealed.y }, boxStyle]}
           pointerEvents={msg ? 'auto' : 'none'}
@@ -298,6 +324,7 @@ export function IslandView({
             </Pressable>
           ) : null}
         </Animated.View>
+        </GestureDetector>
       </View>
     </>
   );

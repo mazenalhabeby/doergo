@@ -400,7 +400,7 @@ describe('§5.1–5.4 — the dock and rect paths', () => {
 
     const ctx = code('island/island-context.tsx');
     // ⚠️ Only the LIVE state reserves — a transient message must never move the app.
-    expect(ctx).toMatch(/liveMsg \? reserveFor\(/);
+    expect(ctx).toMatch(/liveMsg && !liveHidden \? reserveFor\(shape\)/);
     expect(ctx).toMatch(/: 0;/);
 
     /*
@@ -547,8 +547,36 @@ describe('§8/§10 — the motion and the rules', () => {
     expect(branch).toMatch(/REDUCED/);
   });
 
+  it('⚠️ swipe up dismisses — and the live shift could not be closed at all', () => {
+    /*
+      §10 says it and it was never built. The live shift IS the collapsed
+      state, so a tap on it dismissed the message and `shift()` put it
+      straight back: a black bar on the member's screen all day that nothing
+      could close — a worse version of the fault this design replaced.
+
+      ⚠️ UP ONLY, AND FAR ENOUGH TO MEAN IT. It sits under the status bar
+      where the OS's own pull-down starts; a downward or half-hearted pan must
+      do nothing, or people lose their shift clock reaching for the shade.
+    */
+    const view = code('island/island-view.tsx');
+    expect(view).toMatch(/Gesture\.Pan\(\)/);
+    expect(view).toMatch(/activeOffsetY\(\[-12, 999\]\)/);
+    expect(view).toMatch(/e\.translationY < -24 && msg/);
+    expect(view).toMatch(/<GestureDetector gesture=\{swipe\}>/);
+
+    const ctx = code('island/island-context.tsx');
+    /* ⚠️ Swiped away means "not for the rest of this shift". */
+    expect(ctx).toMatch(/if \(msg\.tone === 'live'\) setLiveHidden\(true\)/);
+    expect(ctx).toMatch(/setCurrent\(next \?\? \(liveHidden \? null : liveMsg\)\)/);
+    /* ⚠️ And it reserves nothing once it is gone. */
+    expect(ctx).toMatch(/liveMsg && !liveHidden \? reserveFor\(shape\) : 0/);
+    /* ⚠️ The shift ending ends the dismissal — it is back on the next one. */
+    const clear = ctx.slice(ctx.lastIndexOf('clearLive: () => {'));
+    expect(clear.slice(0, 200)).toMatch(/setLiveHidden\(false\)/);
+  });
+
   it('⚠️ one island, and the live shift wins the collapsed state', () => {
-    expect(ctx).toMatch(/setCurrent\(next \?\? liveMsg\)/);
+    expect(ctx).toMatch(/setCurrent\(next \?\? \(liveHidden \? null : liveMsg\)\)/);
     expect(ctx).toMatch(/QUEUE_CAP = 3/);
     expect(ctx).toMatch(/slice\(-QUEUE_CAP\)/);
   });
