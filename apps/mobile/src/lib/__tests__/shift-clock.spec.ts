@@ -332,6 +332,12 @@ describe('§9 — the twelve rules', () => {
        hesitates; a red button confirms the hesitation. */
     expect(form).not.toMatch(/c\.critical/);
     expect(form).toMatch(/backgroundColor: c\.accentSolid/);
+    /*
+      ⚠️ AND SELECTION IS NOT COLOUR. The first cut filled the SELECTED pill
+      with jade whatever it was, which put `MEDIUM` — the default nobody chose
+      — in the brightest colour on the sheet.
+    */
+    expect(form).toMatch(/const bg = on && hot \? c\.warn : c\.tile;/);
     expect(severityShown('LOW')).toBe(false);
     expect(severityShown('MEDIUM')).toBe(false);
     expect(severityShown('HIGH')).toBe(true);

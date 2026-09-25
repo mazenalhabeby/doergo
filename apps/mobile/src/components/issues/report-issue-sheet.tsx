@@ -198,10 +198,18 @@ export function ReportIssueSheet({
         <View style={{ flexDirection: 'row', gap: amazen.space(2), marginTop: amazen.space(2) }}>
           {SEVERITY_KEYS.map((k) => {
             const on = severity === k;
-            /* ⚠️ Colour only at HIGH and above — neutral until it is not. */
+            /*
+              ⚠️ COLOUR ONLY AT `HIGH` AND ABOVE — AND SELECTION IS NOT COLOUR.
+
+              The first cut filled the SELECTED pill with jade whatever it was,
+              which put `MEDIUM` — the default nobody chose — in the brightest
+              colour on the sheet. Below HIGH the selected pill is a neutral
+              raised one: an outline and full-strength ink, which says "this is
+              the one" without saying anything about how bad it is.
+            */
             const hot = severityShown(k);
-            const fg = on ? (hot ? c.warnInk : c.accentInk) : c.ink;
-            const bg = on ? (hot ? c.warn : c.accentSolid) : c.tile;
+            const fg = on ? (hot ? c.warnInk : c.inkStrong) : c.inkMuted;
+            const bg = on && hot ? c.warn : c.tile;
             return (
               <Pressable
                 key={k}
@@ -213,6 +221,8 @@ export function ReportIssueSheet({
                   paddingVertical: amazen.space(2.5),
                   borderRadius: amazen.radius.full,
                   backgroundColor: bg,
+                  borderWidth: 1.5,
+                  borderColor: on ? (hot ? c.warn : c.inkStrong) : 'transparent',
                   opacity: pressed ? 0.8 : 1,
                 })}
               >
