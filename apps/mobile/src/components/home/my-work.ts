@@ -200,12 +200,13 @@ export function routeFor(task: Task, to: FlowStatus, flows: Map<string, unknown>
 /**
  * The shift on a date, from the member's weekly schedule.
  *
- * ⚠️ `dayOfWeek` IS 0 = MONDAY on this endpoint — `time-off.tsx` records the
- * same. JavaScript's `getDay()` is 0 = Sunday; mixing the two puts every bar
+ * ⚠️ `dayOfWeek` IS 0 = SUNDAY — the schema, the DTO and the validator in
+ * technicians.service all say so, which is also `Date.getDay()`. The comment
+ * in `time-off.tsx` claiming 0 = Monday is wrong; copying it put every bar
  * one day late.
  */
 export function shiftOn(schedule: ScheduleEntry[], day: Date): ScheduleEntry | null {
-  const dow = (day.getDay() + 6) % 7;
+  const dow = day.getDay();
   return schedule.find((e) => e.isActive && e.dayOfWeek === dow) ?? null;
 }
 

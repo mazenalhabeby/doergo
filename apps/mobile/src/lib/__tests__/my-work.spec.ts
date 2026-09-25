@@ -45,10 +45,10 @@ describe('my-work — the week', () => {
     expect(hasHour(at(2026, 9, 25, 9, 30))).toBe(true);
   });
 
-  it('⚠️ the schedule is 0 = MONDAY — a bar on the wrong day is one day late', () => {
-    const s: ScheduleEntry[] = [{ id: '1', dayOfWeek: 0, startTime: '07:00', endTime: '15:00', isActive: true }];
+  it('⚠️ the schedule is 0 = SUNDAY, like the server — a bar on the wrong day is one day late', () => {
+    const s: ScheduleEntry[] = [{ id: '1', dayOfWeek: 1, startTime: '07:00', endTime: '15:00', isActive: true }];
     expect(shiftOn(s, new Date(2026, 8, 21))).not.toBeNull(); // Monday
-    expect(shiftOn(s, new Date(2026, 8, 27))).toBeNull(); // Sunday
+    expect(shiftOn(s, new Date(2026, 8, 22))).toBeNull(); // Tuesday
     expect(shiftHours(s[0]!)).toBe(8);
   });
 
