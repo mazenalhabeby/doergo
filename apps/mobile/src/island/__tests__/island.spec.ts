@@ -121,6 +121,14 @@ describe('what does not fit beside the lens goes under it', () => {
     expect(readLayout({ hole: PIXEL, screenW: 412, topInset: 28, measured: msg('Clocked in') }).titleDrops).toBe(false);
   });
 
+  it('⚠️ 05.png · a wrapped title is MEASURED — the estimate undercounted and cut a line off', () => {
+    const m = { ...msg('Anna approved your overtime'), title: 700, titleWrapped: 4 };
+    const est = readLayout({ hole: IPHONE_13, screenW: 390, topInset: 47, measured: { ...m, titleWrapped: undefined } });
+    const real = readLayout({ hole: IPHONE_13, screenW: 390, topInset: 47, measured: m });
+    expect(real.open.h).toBeGreaterThan(est.open.h);
+    expect(code('island/island-view.tsx')).toMatch(/widths\.current\.titleWrapped = e\.nativeEvent\.lines\.length/);
+  });
+
   it('the height follows the content — a body makes it taller, more lines taller still', () => {
     const at = (bodyLines: number) =>
       readLayout({ hole: IPHONE_13, screenW: 390, topInset: 47, measured: msg('Clocked in', { bodyLines }) }).open.h;
@@ -218,6 +226,9 @@ describe('04.png — how it reads', () => {
     const ctx = code('island/island-context.tsx');
     expect(ctx).toMatch(/\{ \.\.\.tidy\(msg\), id: nextId\.current\+\+ \}/);
     expect(ctx).toMatch(/title: msg\.body, body: undefined/);
+    /* ⚠️ 05.png: only a SHORT sentence — a long one stays the body, in full ink. */
+    expect(ctx).toMatch(/msg\.body\.length <= 48/);
+    expect(view).toMatch(/!msg\.title && styles\.bodyAlone/);
   });
   it('uses the app\'s own type — Readex for words, Plex Mono for the time', () => {
     expect(view).toMatch(/fontFamily: FONT\.sansMedium, fontSize: 16/);

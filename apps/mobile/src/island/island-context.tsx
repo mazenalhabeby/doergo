@@ -179,5 +179,11 @@ function tidy<T extends { title: string; body?: string }>(msg: T): T {
   const title = msg.title.trim().toLowerCase();
   const generic = GENERIC.some((k) => i18n.t(k).toLowerCase() === title)
     || ['success', 'error', 'done'].includes(title);
-  return generic ? { ...msg, title: msg.body, body: undefined } : msg;
+  if (!generic) return msg;
+  /*
+    ⚠️ ONLY A SHORT SENTENCE BECOMES THE TITLE. A three-line explanation set
+    in the title's weight is a wall (05.png) — it stays the body, and the
+    empty word simply goes.
+  */
+  return msg.body.length <= 48 ? { ...msg, title: msg.body, body: undefined } : { ...msg, title: '' };
 }

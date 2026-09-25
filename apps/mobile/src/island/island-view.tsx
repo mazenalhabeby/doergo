@@ -16,7 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ISLAND, TONES, type Tone } from './tokens';
 import { FONT } from '../theme/amazen';
-import { CAP, DROP_SIDE, EDGE, ICON, ICON_GAP, SIDE, readLayout, sealedBox, sealedVisible, type Cutout, type Layout, type Measured } from './geometry';
+import { CAP, DROP_SIDE, EDGE, MAX_BODY_LINES, ICON, ICON_GAP, SIDE, readLayout, sealedBox, sealedVisible, type Cutout, type Layout, type Measured } from './geometry';
 
 /**
  * THE ISLAND ITSELF.
@@ -89,7 +89,7 @@ export function IslandView({
   */
   const [pending, setPending] = useState<IslandMessage | null>(null);
   const [shown, setShown] = useState<{ msg: IslandMessage; layout: Layout } | null>(null);
-  const widths = useRef<{ title: number; value: number; bodyLines: number }>({ title: 0, value: 0, bodyLines: 0 });
+  const widths = useRef({ title: 0, titleWrapped: 0, value: 0, bodyLines: 0 });
 
   const w = useSharedValue(sealed.w);
   const h = useSharedValue(sealed.h);
@@ -105,6 +105,7 @@ export function IslandView({
     if (!message) { setPending(null); return; }
     if (shown?.msg.id === message.id) return;
     /* ⚠️ Icon left, TIME right — always. No figure of its own, so the time it arrived. */
+    widths.current = { title: 0, titleWrapped: 0, value: 0, bodyLines: 0 };
     setPending({ ...message, value: message.value ?? stamp() });
   }, [message, shown?.msg.id]);
 
@@ -138,6 +139,7 @@ export function IslandView({
       title: widths.current.title,
       value: widths.current.value,
       bodyLines: msg.body ? Math.max(1, widths.current.bodyLines) : 0,
+      titleWrapped: widths.current.titleWrapped,
       action: !!msg.action,
     };
     const layout = readLayout({ hole, screenW, measured, topInset });
@@ -266,6 +268,14 @@ export function IslandView({
           >
             {pending.title}
           </Text>
+          {pending.title ? (
+            <Text
+              style={[styles.title, { width: capW - DROP_SIDE * 2 }]}
+              onTextLayout={(e) => { widths.current.titleWrapped = e.nativeEvent.lines.length; maybeCommit(); }}
+            >
+              {pending.title}
+            </Text>
+          ) : null}
           <Text
             style={styles.value}
             onTextLayout={(e) => { widths.current.value = lineWidth(e); maybeCommit(); }}
@@ -303,7 +313,7 @@ export function IslandView({
               */}
               <Animated.View style={[styles.headRow, { marginTop: layout.headTop, height: layout.headHeight }, headStyle]}>
                 {layout.icon === 'left' ? <Glyph tone={msg.tone} fg={look.fg} /> : <View style={{ width: 0 }} />}
-                {!layout.titleDrops ? (
+                {!layout.titleDrops && msg.title ? (
                   <Text numberOfLines={1} style={[styles.title, { color: ISLAND.ink }]}>
                     {msg.title}
                   </Text>
@@ -320,7 +330,7 @@ export function IslandView({
               {layout.titleDrops || msg.body || msg.action ? (
                 <Animated.View style={[styles.drop, bodyStyle]}>
                   {layout.titleDrops ? <Text style={styles.title}>{msg.title}</Text> : null}
-                  {msg.body ? <Text numberOfLines={3} style={styles.body}>{msg.body}</Text> : null}
+                  {msg.body ? <Text numberOfLines={MAX_BODY_LINES} style={[styles.body, !msg.title && styles.bodyAlone]}>{msg.body}</Text> : null}
                   {msg.action ? (
                     <Pressable onPress={msg.action.onPress} accessibilityRole="button" style={styles.action}>
                       <Text style={[styles.actionLabel, { color: look.fg }]}>{msg.action.label}</Text>
@@ -342,7 +352,8 @@ export function IslandView({
     const p = pending;
     if (!p) return;
     if (p.body && widths.current.bodyLines === 0) return;
-    if (widths.current.title === 0 && p.title.length > 0) return;
+    if (p.title.length > 0 && (widths.current.title === 0 || widths.current.titleWrapped === 0)) return;
+    if (p.value && widths.current.value === 0) return;
     commit(p);
   }
 }
@@ -377,6 +388,8 @@ const styles = StyleSheet.create({
   drop: { paddingHorizontal: DROP_SIDE, paddingTop: 4, paddingBottom: 16, gap: 3 },
   title: { fontFamily: FONT.sansMedium, fontSize: 16, lineHeight: 21, color: ISLAND.ink, letterSpacing: -0.2 },
   body: { fontFamily: FONT.sans, fontSize: 14, lineHeight: 19, color: ISLAND.dim },
+  /* ⚠️ With no title the sentence IS the message — full ink, same size, so the measured height holds. */
+  bodyAlone: { color: ISLAND.ink },
   /* The time: mono, quiet — it is context, not the news. */
   value: { fontFamily: FONT.monoMedium, fontSize: 13, lineHeight: 18, color: ISLAND.dim, fontVariant: ['tabular-nums'] },
   action: {

@@ -47,7 +47,7 @@ export const ICON_GAP = 9;
 export const CAP = 372;
 export const EDGE = 8;
 /** ⚠️ The fourth line becomes "Open". */
-export const MAX_BODY_LINES = 3;
+export const MAX_BODY_LINES = 4;
 /** A phone with no lens grows from a dot this size, just under the status bar. */
 export const DOT = 36;
 
@@ -92,6 +92,12 @@ export interface Measured {
   value: number;
   /** How many lines the body needs at the open width. 0 = no body. */
   bodyLines: number;
+  /**
+   * ⚠️ How many lines the title REALLY wraps to under the lens, measured at
+   * that width. Dividing its one-line width by the row width undercounts —
+   * words do not break mid-word — and cut the last line off (05.png).
+   */
+  titleWrapped?: number;
   /** There is something to press. */
   action: boolean;
 }
@@ -251,6 +257,7 @@ export function coversStatusBar(hole: Cutout): boolean {
 
 /** How many lines the dropped title needs across the open width. */
 export function titleLines(m: Measured, w: number): number {
+  if (m.titleWrapped && m.titleWrapped > 0) return m.titleWrapped;
   const room = Math.max(1, w - DROP_SIDE * 2);
   return Math.max(1, Math.ceil(m.title / room));
 }
