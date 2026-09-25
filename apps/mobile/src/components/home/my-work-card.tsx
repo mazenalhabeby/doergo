@@ -20,6 +20,7 @@ import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { scheduleApi } from '../../lib/api';
 import type { ScheduleEntry, Task } from '../../lib/api/types';
 import { AText, Eyebrow, Well, WellDivider } from '../amazen';
+import { shadowDiscPrimary } from '../amazen/surfaces';
 import { JobSheet } from './job-sheet';
 import {
   AcceptGlyph, OnMyWayGlyph, ArrivedGlyph, StartWorkGlyph, FinishGlyph, NavigateGlyph, MoreGlyph,
@@ -234,8 +235,9 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                 style={{
                   flex: 1, height: 54, borderRadius: amazen.radius.full,
                   alignItems: 'center', justifyContent: 'center', gap: 4,
+                  /* Every day is a capsule with a hairline ring; the day shown is jade. */
                   backgroundColor: on ? c.accentTint : 'transparent',
-                  borderWidth: on ? 1.5 : 0, borderColor: on ? c.accent : 'transparent',
+                  borderWidth: on ? 1.5 : 1, borderColor: on ? c.accent : c.lineGlass,
                 }}
               >
                 <AText variant="caption" tone={on ? 'strong' : 'muted'}>{d.toLocaleDateString(undefined, { weekday: 'narrow' })}</AText>
@@ -295,8 +297,11 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                     onOpen={() => setSheetFor(active)}
                   />
                 ) : null}
-                {mine.filter((x) => x !== active).map((task) => (
-                  <PlainRow key={task.id} task={task} done={!open(task)} mine={face !== 'executor'} onPress={() => setSheetFor(task)} />
+                {mine.filter((x) => x !== active).map((task, i) => (
+                  <React.Fragment key={task.id}>
+                    {i > 0 ? <WellDivider /> : null}
+                    <PlainRow task={task} done={!open(task)} mine={face !== 'executor'} onPress={() => setSheetFor(task)} />
+                  </React.Fragment>
                 ))}
 
                 {face === 'spaceSupervisor' && theirs.length > 0 ? (
@@ -393,22 +398,29 @@ function ActiveRow({ task, decision, busy, onVerb, onMore, onOpen }: {
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2), marginTop: amazen.space(2) }}>
         {decision ? (
-          <Pressable
-            onPress={busy ? undefined : () => onVerb(decision.primary)}
-            disabled={busy}
-            accessibilityRole="button"
-            accessibilityLabel={decision.primary.label}
-            accessibilityState={{ busy }}
-            style={({ pressed }) => ({ flex: 1, borderRadius: amazen.radius.full, overflow: 'hidden', opacity: busy ? 0.6 : pressed ? 0.88 : 1 })}
-          >
-            <LinearGradient
-              colors={amazen.gradient.primary as unknown as [string, string, ...string[]]}
-              style={{ minHeight: amazen.layout.tapMin, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: amazen.space(2), paddingHorizontal: amazen.space(4) }}
+          /*
+            ⚠️ THE GLOW LIVES ON A WRAPPER. The pill clips its gradient to the
+            radius with `overflow: hidden`, and on iOS that clips its own shadow
+            too — the same trap the tab bar fell into (09.png).
+          */
+          <View style={[{ flex: 1, borderRadius: amazen.radius.full, backgroundColor: c.accentSolid }, shadowDiscPrimary(c.accentSolid)]}>
+            <Pressable
+              onPress={busy ? undefined : () => onVerb(decision.primary)}
+              disabled={busy}
+              accessibilityRole="button"
+              accessibilityLabel={decision.primary.label}
+              accessibilityState={{ busy }}
+              style={({ pressed }) => ({ borderRadius: amazen.radius.full, overflow: 'hidden', opacity: busy ? 0.6 : pressed ? 0.88 : 1 })}
             >
-              {Mark ? <Mark size={18} color={c.accentInk} contrast={amazen.gradient.primary[1]} /> : null}
-              <AText variant="body" tone="accentInk" style={{ fontFamily: amazen.type.h3.fontFamily }} numberOfLines={1}>{decision.primary.label}</AText>
-            </LinearGradient>
-          </Pressable>
+              <LinearGradient
+                colors={amazen.gradient.primary as unknown as [string, string, ...string[]]}
+                style={{ minHeight: amazen.layout.tapMin, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: amazen.space(2), paddingHorizontal: amazen.space(4) }}
+              >
+                {Mark ? <Mark size={17} color={c.accentInk} contrast={amazen.gradient.primary[1]} /> : null}
+                <AText variant="body" tone="accentInk" style={{ fontFamily: amazen.type.h3.fontFamily }} numberOfLines={1}>{decision.primary.label}</AText>
+              </LinearGradient>
+            </Pressable>
+          </View>
         ) : (
           /* A workflow this phone does not hold: open the job rather than guess its verbs. */
           <Pressable onPress={onOpen} accessibilityRole="button" style={{ flex: 1, minHeight: amazen.layout.tapMin, borderRadius: amazen.radius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: c.accentTint }}>
@@ -434,9 +446,13 @@ function RoundButton({ Glyph, label, jade, onPress }: { Glyph: React.ComponentTy
       accessibilityRole="button"
       accessibilityLabel={label}
       hitSlop={4}
-      style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: jade ? c.accentTint : c.tile, opacity: pressed ? 0.8 : 1 })}
+      /*
+        A ring on the WELL colour — darker than the active row it sits in —
+        not a filled grey circle. The jade one is told apart by its mark.
+      */
+      style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: c.well, borderWidth: 1.5, borderColor: jade ? c.accentTint : c.lineGlass, opacity: pressed ? 0.8 : 1 })}
     >
-      <Glyph size={20} color={jade ? c.accent : c.inkStrong} contrast={c.well} />
+      <Glyph size={19} color={jade ? c.accent : c.inkStrong} contrast={c.well} />
     </Pressable>
   );
 }
