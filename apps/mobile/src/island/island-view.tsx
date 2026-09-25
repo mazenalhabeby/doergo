@@ -218,17 +218,49 @@ export function IslandView({
   const layout = shown?.layout ?? null;
 
   /*
+    ⚠️ A TAP ON THE LIVE BAR CLOSES IT TOO, AND THAT IS A DEPARTURE FROM §10.
+    The spec says tap expands — but the live shift has nothing to expand to,
+    so tap was dead on the one surface that is on screen all day, and dismiss
+    put it straight back. Swipe alone is not good enough here: it is
+    undiscoverable, it competes with the OS pull-down two pixels above it, and
+    I cannot test a gesture from this machine. A tap on a bar you want gone
+    should make it gone.
+  */
+  const onTap = (m: IslandMessage) => {
+    if (m.tone === 'live') { onSwipeAway(m); return; }
+    if (m.action) { m.action.onPress(); return; }
+    onDismiss(m.id);
+  };
+
+  /*
     ⚠️ UP ONLY, AND FAR ENOUGH TO MEAN IT. This thing lives under the status
     bar where the OS's own pull-down starts; a downward or half-hearted pan
     must do nothing at all, or people will lose their shift clock by
     reaching for the notification shade.
   */
-  const swipe = Gesture.Pan()
+  const pan = Gesture.Pan()
     .activeOffsetY([-12, 999])
     .onEnd((e) => {
       'worklet';
       if (e.translationY < -24 && msg) runOnJS(onSwipeAway)(msg);
     });
+
+  /*
+    ⚠️ THE TAP HAS TO BE A GESTURE TOO, NOT A `Pressable`.
+
+    The island was covered by a `Pressable` at `StyleSheet.absoluteFill`, and
+    RN's responder system claims a touch on it the instant it goes down — so
+    the pan never activated and the swipe simply did nothing. Two systems
+    arguing over one surface, and the one with the whole area wins. Both are
+    gestures now, raced: the pan takes over once it has 12pt of upward travel,
+    the tap fires otherwise.
+  */
+  const tap = Gesture.Tap().onEnd((_e, ok) => {
+    'worklet';
+    if (!ok || !msg) return;
+    runOnJS(onTap)(msg);
+  });
+  const swipe = Gesture.Exclusive(pan, tap);
 
   const look = msg ? TONES[msg.tone] : TONES.done;
 
@@ -271,10 +303,10 @@ export function IslandView({
           pointerEvents={msg ? 'auto' : 'none'}
         >
           {msg && layout ? (
-            <Pressable
-              onPress={() => (msg.action ? msg.action.onPress() : onDismiss(msg.id))}
+            <View
               accessibilityRole={msg.action ? 'button' : 'alert'}
               accessibilityLabel={[msg.title, msg.value, msg.body].filter(Boolean).join('. ')}
+                      accessibilityHint="Swipe up to dismiss"
               style={StyleSheet.absoluteFill}
             >
               {/* The head row: what fits beside the lens, and nothing more. */}
@@ -321,7 +353,7 @@ export function IslandView({
                   ) : null}
                 </Animated.View>
               ) : null}
-            </Pressable>
+            </View>
           ) : null}
         </Animated.View>
         </GestureDetector>

@@ -564,6 +564,26 @@ describe('§8/§10 — the motion and the rules', () => {
     expect(view).toMatch(/e\.translationY < -24 && msg/);
     expect(view).toMatch(/<GestureDetector gesture=\{swipe\}>/);
 
+    /*
+      ⚠️ AND THE TAP HAS TO BE A GESTURE TOO. The island was covered by a
+      `Pressable` at `StyleSheet.absoluteFill`, and RN's responder system
+      claims a touch on it the instant it goes down — so the pan never
+      activated and the swipe did nothing at all. Two systems arguing over one
+      surface, and the one covering the whole area wins.
+    */
+    expect(view).toMatch(/Gesture\.Tap\(\)/);
+    expect(view).toMatch(/Gesture\.Exclusive\(pan, tap\)/);
+    const island = view.slice(view.indexOf('<GestureDetector'), view.indexOf('</GestureDetector>'));
+    expect(island).not.toMatch(/<Pressable[^>]*absoluteFill/);
+
+    /*
+      ⚠️ AND A TAP ON THE LIVE BAR CLOSES IT — a departure from §10, which
+      says tap expands. The live shift has nothing to expand to, so tap was
+      dead on the one surface that is on screen all day. A swipe alone is
+      undiscoverable and competes with the OS pull-down two pixels above it.
+    */
+    expect(view).toMatch(/if \(m\.tone === 'live'\) \{ onSwipeAway\(m\); return; \}/);
+
     const ctx = code('island/island-context.tsx');
     /* ⚠️ Swiped away means "not for the rest of this shift". */
     expect(ctx).toMatch(/if \(msg\.tone === 'live'\) setLiveHidden\(true\)/);
