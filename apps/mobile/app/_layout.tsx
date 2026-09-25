@@ -182,7 +182,7 @@ function RootLayoutNav() {
       it is pretending to be the camera housing, and the housing is black on a
       white phone too. See `island/tokens.ts`.
     */
-    <IslandProvider surface={isDark ? '#09090b' : '#ffffff'}>
+    <IslandProvider>
       {/*
         ⚠️ THE APP'S THEME, NOT THE PHONE'S — AND ONLY ONE OF THESE IN THE TREE.
 

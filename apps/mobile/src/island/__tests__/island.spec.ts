@@ -244,7 +244,7 @@ describe('§5.1–5.4 — the dock and rect paths', () => {
     const inTree = layout.slice(layout.indexOf('<IslandProvider'));
     expect((inTree.match(/<StatusBar/g) ?? []).length).toBe(0);
     expect(inTree).toMatch(/<IslandStatusBar isDark=\{isDark\} \/>/);
-    expect(code('island/island-context.tsx')).toMatch(/visorShowing = shapeFor\(hole\.kind\) === 'visor'/);
+    expect(code('island/island-context.tsx')).toMatch(/visorShowing = shape === 'visor' && !!current/);
   });
 
   it('⚠️ 5.3 · a dropped rect stays at 22 — it was never a pill', () => {
@@ -297,9 +297,25 @@ describe('§5.1–5.4 — the dock and rect paths', () => {
     // ⚠️ Only the LIVE state reserves — a transient message must never move the app.
     expect(ctx).toMatch(/liveMsg \? reserveFor\(/);
     expect(ctx).toMatch(/: 0;/);
+
+    /*
+      ⚠️ PUBLISHED, NOT PAINTED. Padding the provider's own children cut the
+      gradient off at the padding and left a black band across the top with
+      the clock and the battery on it — which `Ground` forbids in its own
+      header and §5.5 draws the opposite of. The ground stays full-bleed and
+      only what stands on it moves.
+    */
+    expect(ctx).toMatch(/reserve: target/);
+    expect(ctx).not.toMatch(/paddingTop/);
+    expect(ctx).not.toMatch(/backgroundColor/);
+
+    const ground = code('components/amazen/ground.tsx');
+    expect(ground).toMatch(/const \{ reserve \} = useIsland\(\)/);
+    // The gradient is still absolute-fill, behind the push.
+    expect(ground).toMatch(/style=\{StyleSheet\.absoluteFill\}/);
+    expect(ground).toMatch(/paddingTop: push\.value/);
     // ⚠️ On the same spring as the box, so the app moves with it rather than jumping.
-    expect(ctx).toMatch(/withSpring\(target, \{ damping: 26, stiffness: 240, mass: 1 \}\)/);
-    expect(ctx).toMatch(/paddingTop: reserve\.value/);
+    expect(ground).toMatch(/withSpring\(reserve, \{ damping: 26, stiffness: 240, mass: 1 \}\)/);
   });
 
   it('⚠️ 5.4 · a docked island holds MORE text than a Dynamic Island', () => {

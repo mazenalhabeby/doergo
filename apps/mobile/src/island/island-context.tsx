@@ -1,6 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { reserveFor, sealedBox, shapeFor } from './geometry';
 import { useCutout } from './cutout';
@@ -50,6 +49,18 @@ interface IslandContextValue extends ToastContextValue {
    * commit order. That one component reads this flag.
    */
   visorShowing: boolean;
+  /**
+   * How far the live island pushes the app's CONTENT down, in points.
+   *
+   * ⚠️ PUBLISHED, NOT PAINTED. The first cut padded the provider's own
+   * children, which cut the gradient off at the padding and left a black band
+   * across the top with the clock and the battery sitting on it. `Ground`
+   * says it in its own header — *no status bar is ever drawn, the gradient
+   * runs under it* — and §5.5 shows exactly that: the clock to the visor's
+   * left and the battery to its right, ON THE GRADIENT. So the ground stays
+   * full-bleed and only what stands on it moves.
+   */
+  reserve: number;
 }
 
 const IslandContext = createContext<IslandContextValue | null>(null);
@@ -69,22 +80,7 @@ export function useIsland(): IslandContextValue {
 /** ⚠️ Capped at 3, oldest dropped — §10. A backlog nobody reads is noise. */
 const QUEUE_CAP = 3;
 
-export function IslandProvider({
-  children,
-  surface,
-}: {
-  children: React.ReactNode;
-  /**
-   * The app's own background, for the strip the live state vacates.
-   *
-   * ⚠️ NOT THE ISLAND'S BLACK, AND NOT A GUESS. §5.1's snippet pads a bare
-   * `<View>`, which leaves whatever is behind the root showing — on this app
-   * that is white. The strip is the app having moved down, so it is the app's
-   * surface; passing it in keeps the island's own colours out of the theme
-   * (§6) without the provider reaching for `useTheme()` itself.
-   */
-  surface?: string;
-}) {
+export function IslandProvider({ children }: { children: React.ReactNode }) {
   const insets = useSafeAreaInsets();
   const { hole, screenW } = useCutout(insets);
 
@@ -149,7 +145,10 @@ export function IslandProvider({
     ⚠️ ANY black box at the top edge, not only the live one: a transient
     message wears the same visor and puts the same black under the clock.
   */
-  const visorShowing = shapeFor(hole.kind) === 'visor' && !!current;
+  const shape = shapeFor(hole.kind);
+  const visorShowing = shape === 'visor' && !!current;
+  /* ⚠️ Only the LIVE state — a transient message floats. See `reserveFor`. */
+  const target = liveMsg ? reserveFor(sealedBox(hole, screenW, insets.top), shape, insets.top) : 0;
 
   const say = useCallback<IslandContextValue['say']>((input) => {
     push({ ...input, dwell: dwellFor(input.tone, !!input.action) });
@@ -171,6 +170,7 @@ export function IslandProvider({
       info: legacy('queued'),
       say,
       visorShowing: false,
+      reserve: 0,
       live: ({ label, value: figure }) => {
         const msg: IslandMessage = { id: nextId.current++, tone: 'live', title: label, value: figure, dwell: 0 };
         setLiveMsg(msg);
@@ -184,7 +184,10 @@ export function IslandProvider({
     };
   }, [push, say]);
 
-  const withFlag = useMemo<IslandContextValue>(() => ({ ...value, visorShowing }), [value, visorShowing]);
+  const withLive = useMemo<IslandContextValue>(
+    () => ({ ...value, visorShowing, reserve: target }),
+    [value, visorShowing, target],
+  );
 
   /*
     ⚠️ THE LIVE STATE RESERVES ITS SPACE — §5.1. A docked island occupies
@@ -199,21 +202,9 @@ export function IslandProvider({
     and back for four seconds. On a wrapping cutout there is nothing to
     reserve — the island is inside the area the app already avoids.
   */
-  const shape = shapeFor(hole.kind);
-  const target = liveMsg ? reserveFor(sealedBox(hole, screenW, insets.top), shape, insets.top) : 0;
-  const reserve = useSharedValue(0);
-  useEffect(() => {
-    /* ⚠️ The same spring as the box, so the app moves WITH it, never jumps. */
-    reserve.value = reduceMotion
-      ? withTiming(target, { duration: 180 })
-      : withSpring(target, { damping: 26, stiffness: 240, mass: 1 });
-  }, [target, reduceMotion, reserve]);
-  const reserveStyle = useAnimatedStyle(() => ({ paddingTop: reserve.value }));
-
-
   return (
-    <IslandContext.Provider value={withFlag}>
-      <Animated.View style={[{ flex: 1 }, surface ? { backgroundColor: surface } : null, reserveStyle]}>{children}</Animated.View>
+    <IslandContext.Provider value={withLive}>
+      {children}
       <IslandView
         hole={hole}
         screenW={screenW}
