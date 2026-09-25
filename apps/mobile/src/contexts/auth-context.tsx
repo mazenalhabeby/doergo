@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { forgetShift } from '../offline/attendance/last-shift';
 import { biometricCredential } from '../lib/biometrics';
 import { getAccessPlatforms } from '@hbcfield/shared/client';
 import {
@@ -172,6 +173,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // valid, so a shared device stops receiving the previous user's push. (H11.)
       purgePushTokenRegistration().catch(() => undefined),
     ]);
+    /*
+      ⚠️ THE NEXT PERSON ON THIS PHONE IS NOT ON THIS CLOCK. The shift card
+      paints what it last knew before the server answers, so a remembered
+      shift left behind would greet a colleague signing in on the same device
+      with somebody else's running hero.
+    */
+    forgetShift(user?.id);
     await Promise.all([
       clearTokens(),
       SecureStore.deleteItemAsync(USER_KEY),

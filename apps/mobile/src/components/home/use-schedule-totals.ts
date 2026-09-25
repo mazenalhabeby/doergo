@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { TimeEntry } from '@hbcfield/shared/client';
 import { attendanceApi } from '../../lib/api/attendance';
+import { rememberTotals, rememberedTotalsNow, rememberedTotalsOnDisk, type LastTotals } from '../../offline/attendance/last-shift';
 import type { ScheduleKind } from './shift-state';
 
 /**
@@ -43,7 +44,27 @@ export interface ScheduleTotals {
   lastIn: Date | null;
 }
 
+/**
+ * ⚠️ `ready` IS NOT `lastToday !== null`. "No shift ended today" and "we have
+ * not been told yet" are the same `null`, and the card chooses between ① and
+ * ⑥ on exactly that — so before this existed it announced `Ready to start` to
+ * somebody who had already finished, until a second request landed.
+ */
+export interface ScheduleTotalsView extends ScheduleTotals {
+  ready: boolean;
+}
+
 const EMPTY: ScheduleTotals = { monthMinutes: null, weekMinutes: null, lastToday: null, lastIn: null };
+
+/** Turn a remembered copy back into totals. Dates cross storage as strings. */
+function fromRemembered(t: LastTotals): ScheduleTotals {
+  return {
+    monthMinutes: t.monthMinutes,
+    weekMinutes: t.weekMinutes,
+    lastToday: (t.lastToday ?? null) as TimeEntry | null,
+    lastIn: t.lastIn ? new Date(t.lastIn) : null,
+  };
+}
 
 /** Counted minutes on one entry. Never the word "paid" anywhere it is shown. */
 function countedOn(e: TimeEntry): number {
@@ -81,9 +102,32 @@ export function useScheduleTotals(input: {
   /** Re-ask when the shift changes — a clock-out adds today's figure. */
   revision: unknown;
   enabled: boolean;
-}): ScheduleTotals {
-  const [totals, setTotals] = useState<ScheduleTotals>(EMPTY);
-  const { schedule, revision, enabled } = input;
+  /** Whose totals. Remembering them is per member — see `last-shift.ts`. */
+  userId: string | null;
+}): ScheduleTotalsView {
+  const { schedule, revision, enabled, userId } = input;
+
+  /*
+    ⚠️ WHAT THIS SESSION ALREADY KNOWS, SYNCHRONOUSLY. A promise resolves after
+    the first frame is on screen, so a disk-only copy still flashes.
+  */
+  const [totals, setTotals] = useState<ScheduleTotals>(() => {
+    const known = rememberedTotalsNow(userId);
+    return known ? fromRemembered(known) : EMPTY;
+  });
+  const [ready, setReady] = useState(() => !!rememberedTotalsNow(userId));
+
+  /* The cold start: what the LAST run knew, if it was today. Only fills a gap. */
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+    void rememberedTotalsOnDisk(userId).then((known) => {
+      if (!alive || !known) return;
+      setTotals((prev) => (prev === EMPTY ? fromRemembered(known) : prev));
+      setReady(true);
+    });
+    return () => { alive = false; };
+  }, [userId]);
 
   /*
     The period this answer belongs to. A phone left open across midnight — or
@@ -174,6 +218,15 @@ export function useScheduleTotals(input: {
           }
         }
         setTotals({ monthMinutes, weekMinutes, lastToday, lastIn });
+        setReady(true);
+        rememberTotals(userId, {
+          day: today,
+          monthMinutes,
+          weekMinutes,
+          lastToday,
+          lastIn: lastIn ? lastIn.toISOString() : null,
+          serverAt: Date.now(),
+        });
       })
       .catch(() => {
         /*
@@ -183,14 +236,20 @@ export function useScheduleTotals(input: {
           renders no hero figure and no bar, which is honest — a zero would be
           a claim.
         */
-        if (alive) askedFor.current = '';
+        if (alive) { askedFor.current = ''; setReady(true); }
       });
 
     return () => {
       alive = false;
       if (askedFor.current === key) askedFor.current = '';
     };
-  }, [enabled, revision, schedule]);
+  }, [enabled, revision, schedule, userId]);
 
-  return totals;
+  /*
+    ⚠️ NOT ASKING IS AN ANSWER. A FIXED member on the clock is measured against
+    today's shift and no history is fetched for them at all — so `ready` must
+    be true there, or the card would wait forever for a request that is never
+    made.
+  */
+  return { ...totals, ready: ready || !enabled };
 }

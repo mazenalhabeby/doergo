@@ -3,7 +3,9 @@ import type { AttendanceStatus, BreakStatus, BreakType, OccurrenceFix } from '@h
 import { attendanceApi } from '../../lib/api/attendance';
 import type { ActionOutcome } from '../actions/outcome';
 import type { RecordsStore } from '../db/records-store';
+import { useAuth } from '../../contexts/auth-context';
 import { useOffline, useSyncStatus } from '../offline-context';
+import { remember, rememberedNow, rememberedOnDisk } from './last-shift';
 import { isUnreachable } from '../actions/unreachable';
 import { overlayShift, type ShiftView } from './shift-overlay';
 import { clockInFromPhone, clockOutFromPhone, endRestFromPhone, requestExtraTimeFromPhone, resolveClockOutFromPhone, startRestFromPhone } from './shift-actions';
@@ -18,34 +20,30 @@ interface Loaded {
   /**
    * ⚠️ `pending` IS NOT `none`. "We have not asked yet" and "we asked and
    * nothing is known" are different facts, and collapsing them is what makes
-   * a screen decide something from an absence — see `SAVED_GOOD_FOR` below
-   * and the ⑧ note in `shift-clock-card.tsx`.
+   * a screen decide something from an absence — see the ⑧ note in
+   * `shift-clock-card.tsx`.
    */
   source: 'server' | 'phone' | 'none' | 'pending';
 }
-
-/**
- * How long the phone's own copy is worth painting before the server answers.
- *
- * ⚠️ LONGER THAN ANY SHIFT, SHORTER THAN A HABIT. The copy is there to stop
- * the card guessing while the request is in flight; a week-old one would put
- * `ON THE CLOCK` and a running hero in front of somebody who is not working,
- * which is the same lie as the flash, held longer.
- */
-const SAVED_GOOD_FOR = 18 * 60 * 60 * 1000;
 
 /**
  * The shift from the server when it answers, from the phone's copy when it
  * does not. A successful load is saved, so tomorrow's clock-in in a basement
  * still knows the member's workspaces, their boundaries and their open shift.
  */
-export async function loadShift(records: RecordsStore | null): Promise<Loaded> {
+export async function loadShift(records: RecordsStore | null, userId?: string | null): Promise<Loaded> {
   try {
     const [status, breaks] = await Promise.all([attendanceApi.getStatus(), attendanceApi.getBreakStatus()]);
     const serverAt = Date.now();
     if (records) {
       void records.upsert(SCOPE, { id: 'shift', status, breaks, serverAt } as never).catch(() => undefined);
     }
+    /*
+      ⚠️ AND IN A STORE THAT EXISTS. The line above is a no-op wherever the
+      offline runtime did not start, which is most devices — see
+      `last-shift.ts`.
+    */
+    remember(userId, { status, breaks, serverAt });
     return { status, breaks, serverAt, source: 'server' };
   } catch (err) {
     if (records && isUnreachable(err)) {
@@ -66,57 +64,54 @@ export async function loadShift(records: RecordsStore | null): Promise<Loaded> {
 export function useShift(): ShiftView & { source: Loaded['source']; refresh: () => Promise<void> } {
   const offline = useOffline();
   const { operations } = useSyncStatus();
-  const [loaded, setLoaded] = useState<Loaded>({ status: null, breaks: null, serverAt: 0, source: 'pending' });
+  const userId = useAuth().user?.id ?? null;
+
+  /*
+    ⚠️ THE FIRST RENDER IS ALREADY RIGHT, WHICH IS THE WHOLE POINT. Starting
+    from `null` made the card decide a state from an ABSENCE — the ⑧ mistake
+    one line up — so a member on the clock read `Ready to start` until the
+    round trip finished, and a member who was not watched the clocked-in card
+    go past on every refresh.
+
+    Memory is read here, synchronously, because a promise resolves after the
+    first frame is already on screen.
+  */
+  const [loaded, setLoaded] = useState<Loaded>(() => {
+    const known = rememberedNow(userId);
+    return known
+      ? { status: known.status, breaks: known.breaks, serverAt: known.serverAt, source: 'phone' }
+      : { status: null, breaks: null, serverAt: 0, source: 'pending' };
+  });
 
   const refresh = useCallback(async () => {
-    const next = await loadShift(offline.records);
+    const next = await loadShift(offline.records, userId);
     setLoaded((prev) => {
       /*
         ⚠️ A FAILED REFRESH MUST NOT REPLACE AN ANSWER WITH AN ABSENCE. This
         runs on every focus, so one 500 or one dropped request used to blank
         the card of somebody who was on the clock a second earlier — and, by
-        the ⑧ rule, could remove it from the screen entirely. Knowing less
-        than we did is not news; the previous answer stands until a better one
-        arrives.
+        the ⑧ rule, could take it off the screen entirely. Knowing less than
+        we did is not news.
       */
       if (next.source === 'none' && prev.source !== 'none' && prev.source !== 'pending') return prev;
       return next;
     });
-  }, [offline.records]);
+  }, [offline.records, userId]);
 
-  /*
-    ⚠️ PAINT WHAT THE PHONE ALREADY KNOWS, AT ONCE.
-
-    The saved copy used to be read ONLY when the request failed and the
-    network was unreachable — so on an ordinary launch, with the answer
-    sitting in the phone's own database, the card rendered from `null` first.
-    It then decided a state from that absence: a member on the clock saw
-    `Ready to start` for as long as the round trip took, and a member who was
-    not saw the clocked-in card flash past on every refresh. The right answer
-    was on the device the whole time.
-
-    The server still replaces it the moment it answers, and a server answer
-    that gets in first is never overwritten by the slower disk read.
-  */
+  /* The cold start: what the LAST run of the app knew. Only ever fills a gap. */
   useEffect(() => {
-    const records = offline.records;
-    if (!records) return;
+    if (!userId) return;
     let alive = true;
-    void records
-      .get<{ status: AttendanceStatus; breaks: BreakStatus; serverAt: number }>(SCOPE, 'shift')
-      .then((saved) => {
-        if (!alive || !saved) return;
-        if (Date.now() - saved.data.serverAt > SAVED_GOOD_FOR) return;
-        setLoaded((prev) =>
-          /* Only ever fills a gap — it never argues with a real answer. */
-          prev.source === 'pending'
-            ? { status: saved.data.status, breaks: saved.data.breaks, serverAt: saved.data.serverAt, source: 'phone' }
-            : prev,
-        );
-      })
-      .catch(() => undefined);
+    void rememberedOnDisk(userId).then((known) => {
+      if (!alive || !known) return;
+      setLoaded((prev) =>
+        prev.source === 'pending'
+          ? { status: known.status, breaks: known.breaks, serverAt: known.serverAt, source: 'phone' }
+          : prev,
+      );
+    });
     return () => { alive = false; };
-  }, [offline.records]);
+  }, [userId]);
 
   // A shift operation the server just accepted: fetch what it now says.
   const accepted = useRef(new Set<string>());

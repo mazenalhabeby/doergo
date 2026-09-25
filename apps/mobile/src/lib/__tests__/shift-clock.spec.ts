@@ -188,35 +188,89 @@ describe('§1 — the eight states, and no ninth', () => {
   it('shows the state the member was actually in, not one guessed from nothing', () => {
     /*
       ⚠️ THE FLASH WAS THE SAME BUG AS ⑧, ONE LINE UP. `useShift` started from
-      `status: null`, and the card decided a state from that absence — so a
-      member on the clock saw `Ready to start` for the length of a round trip,
-      and a member who was not saw the clocked-in card flash past on every
-      refresh. The answer was already in the phone's own database; it was only
-      ever read when the network FAILED.
+      `status: null`, and the card decided a state from that absence.
+
+      ⚠️ AND THE FIRST FIX WAS DEAD CODE. It hydrated from the OFFLINE RECORDS
+      store — which is `null` on most devices (the runtime needs expo-sqlite,
+      netinfo and expo-crypto present AND the database to open), so every read
+      and write through it is a no-op. Verified on the simulator: the app's
+      container held no offline database at all, only Apple's own caches.
+      Nothing changed on screen, and it looked exactly like the bug.
     */
+    const store = code('offline/attendance/last-shift.ts');
     const hook = code('offline/attendance/use-shift.ts');
 
-    // Four sources, because "not asked yet" is not "asked and nothing known".
-    expect(hook).toMatch(/source: 'server' \| 'phone' \| 'none' \| 'pending'/);
-    expect(hook).toMatch(/source: 'pending' \}\)/);
+    // A store that exists on every build.
+    expect(store).toMatch(/@react-native-async-storage\/async-storage/);
+    expect(hook).toMatch(/from '\.\/last-shift'/);
 
-    // The saved copy is read on mount, not only on failure.
-    const hydrate = hook.slice(hook.indexOf('useEffect(() => {'));
-    expect(hydrate).toMatch(/records\s*\n?\s*\.get</);
-    // ⚠️ It only ever fills a gap — a server answer that got in first stands.
-    expect(hydrate).toMatch(/prev\.source === 'pending'/);
-    // ⚠️ And it is bounded: a week-old copy is a lie, not a head start.
-    expect(hook).toMatch(/SAVED_GOOD_FOR/);
-    expect(hook).toMatch(/const SAVED_GOOD_FOR = 18 \* 60 \* 60 \* 1000/);
+    /*
+      ⚠️ MEMORY IS READ SYNCHRONOUSLY, because a promise resolves AFTER the
+      first frame is on screen — a disk-only fix still flashes.
+    */
+    expect(hook).toMatch(/useState<Loaded>\(\(\) => \{/);
+    expect(hook).toMatch(/rememberedNow\(userId\)/);
+    // Disk is for the cold start, and only ever fills a gap.
+    expect(hook).toMatch(/rememberedOnDisk\(userId\)/);
+    expect(hook).toMatch(/prev\.source === 'pending'/);
+
+    // Every server answer is remembered, for every caller of loadShift.
+    expect(hook).toMatch(/remember\(userId, \{ status, breaks, serverAt \}\)/);
+
+    // ⚠️ Bounded: a week-old copy is a lie, not a head start.
+    expect(store).toMatch(/GOOD_FOR_MS = 18 \* 60 \* 60 \* 1000/);
+    expect(store).toMatch(/function isFresh/);
+    // ⚠️ Keyed by user, and forgotten on sign-out.
+    expect(store).toMatch(/@hbcfield\/last-shift\/\$\{userId\}/);
+    expect(code('contexts/auth-context.tsx')).toMatch(/forgetShift\(user\?\.id\)/);
 
     /*
       ⚠️ AND A FAILED REFRESH MUST NOT REPLACE AN ANSWER WITH AN ABSENCE.
       `refresh` runs on every focus, so one 500 blanked the card of somebody
       who was on the clock a second earlier.
     */
-    const refresh = hook.slice(hook.indexOf('const refresh = useCallback'), hook.indexOf('// A shift operation'));
+    const refresh = hook.slice(hook.indexOf('const refresh = useCallback'), hook.indexOf('/* The cold start'));
     expect(refresh).toMatch(/next\.source === 'none' && prev\.source !== 'none' && prev\.source !== 'pending'/);
     expect(refresh).toMatch(/return prev;/);
+
+    // Four sources: "not asked yet" is not "asked and nothing known".
+    expect(hook).toMatch(/source: 'server' \| 'phone' \| 'none' \| 'pending'/);
+  });
+
+  it('① vs ⑥ waits for the answer that decides it', () => {
+    /*
+      ⚠️ THE FLASH PEOPLE ACTUALLY SEE IS THIS ONE, AND REMEMBERING THE SHIFT
+      DOES NOTHING ABOUT IT. `lastToday` — a shift that ended today — comes
+      from `/attendance/history`, NOT from `/attendance/status`. So the card
+      could hold a complete, correct status answer and still draw ① `Ready to
+      start`, then redraw as ⑥ `Done for today` when a second round trip
+      landed.
+
+      Measured on a simulator cold start, frame by frame: before this, the
+      first card frame read `Ready to start` and the next read `DONE FOR
+      TODAY`. After, three cold starts produced no `Ready to start` frame at
+      all.
+    */
+    const hook = code('components/home/use-schedule-totals.ts');
+    const card = code('components/home/shift-clock-card.tsx');
+
+    // "Nothing ended today" and "not told yet" are the same null — hence `ready`.
+    expect(hook).toMatch(/interface ScheduleTotalsView extends ScheduleTotals/);
+    expect(hook).toMatch(/ready: boolean/);
+    // ⚠️ Not asking IS an answer: a FIXED member on the clock fetches no history.
+    expect(hook).toMatch(/ready: ready \|\| !enabled/);
+
+    // Remembered, so a returning member never waits at all.
+    expect(hook).toMatch(/rememberedTotalsNow\(userId\)/);
+    expect(hook).toMatch(/rememberedTotalsOnDisk\(userId\)/);
+    expect(hook).toMatch(/rememberTotals\(userId, \{/);
+    // ⚠️ Keyed by the LOCAL day — yesterday's copy would say "Done for today".
+    const store = code('offline/attendance/last-shift.ts');
+    expect(store).toMatch(/t\.day === localDay/);
+
+    // The card waits, and only where the choice is actually ① vs ⑥.
+    expect(card).toMatch(/if \(shift\.source === 'pending'\) return null;/);
+    expect(card).toMatch(/if \(!status\?\.isClockedIn && !totals\.ready\) return null;/);
   });
 
   it('has exactly the six kinds the states collapse to, and no more', () => {

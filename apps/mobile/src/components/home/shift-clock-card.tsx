@@ -142,6 +142,7 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
     schedule,
     revision: `${status?.isClockedIn ? '1' : '0'}:${status?.currentEntry?.id ?? ''}`,
     enabled: !status?.isClockedIn || schedule !== 'FIXED',
+    userId: user?.id ?? null,
   });
 
   /* Which of the eight, decided ONCE and outside the JSX — see `shift-state.ts`. */
@@ -262,6 +263,43 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
     as an answer would hide the card for the length of every cold start.
   */
   const known = shift.source !== 'none' && shift.source !== 'pending';
+
+  /*
+    ⚠️ A CARD THAT DOES NOT KNOW YET MUST NOT STATE SOMETHING.
+
+    Remembering the last shift removes the flash for everyone who has used the
+    app before — but on the very first frame of a cold start, before the disk
+    read resolves, there is genuinely no answer, and `ShiftState` has no word
+    for that: it collapses to ①, so the card announced `NOT ON THE CLOCK /
+    Ready to start` to somebody who was, in fact, on the clock. Captured on a
+    simulator cold start: the first card frame read `Ready to start`, the next
+    read `DONE FOR TODAY`.
+
+    Drawing nothing for those frames is the honest answer and costs no design:
+    the card arrives once, already right, instead of arriving wrong and
+    correcting itself in front of the member. ⑧ below is the same decision for
+    a different reason.
+  */
+  if (shift.source === 'pending') return null;
+
+  /*
+    ⚠️ AND ① vs ⑥ IS DECIDED BY A SECOND REQUEST, WHICH IS THE FLASH PEOPLE
+    ACTUALLY SEE.
+
+    `lastToday` — a shift that ended today — comes from `/attendance/history`,
+    not from `/attendance/status`. So the card could have a complete, correct
+    status answer and still draw ① `Ready to start`, then redraw as ⑥ `Done
+    for today` when the second round trip landed. Remembering the shift alone
+    does nothing about it, which is why two earlier attempts looked identical
+    to the bug; captured frame by frame, the first card frame read `Ready to
+    start` and the next read `DONE FOR TODAY`.
+
+    "No shift ended today" and "we have not been told yet" are the same `null`,
+    so the card waits for the answer rather than choosing on its absence — and
+    only when nobody is on the clock, because ②–④ are decided from the status
+    alone and must never wait for a courtesy total.
+  */
+  if (!status?.isClockedIn && !totals.ready) return null;
   const somewhereToClockIn = (status?.assignedLocations?.length ?? 0) > 0 || !!user?.allowRemote;
   if (known && !somewhereToClockIn && !status?.isClockedIn && st.kind !== 'unconfirmed') return null;
 
