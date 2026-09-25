@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { InvitationIcon, ScreenContainer } from '../../src/components';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
-import { useToast } from '../../src/contexts/toast-context';
+import { useToast } from '../../src/island/island-context';
 import { onboardingApi, invitationsApi, type InvitationValidation } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import { INVITATION_CODE_MIN_LENGTH, JOIN_CODE_MAX_LENGTH } from '@hbcfield/shared/client';

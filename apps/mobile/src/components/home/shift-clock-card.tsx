@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import type { BreakType } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../contexts/toast-context';
+import { useToast } from '../../island/island-context';
 import { useShift, useShiftActions } from '../../offline/attendance/use-shift';
 import { SyncChip } from '../../offline/components/sync-chip';
 import { BreakSheet, LocationPickerSheet, ClockOutSheet } from '../index';

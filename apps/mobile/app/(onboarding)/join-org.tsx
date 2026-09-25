@@ -10,7 +10,7 @@ import { JoinOrgIcon, ScreenContainer } from '../../src/components';
 import { onboardingApi, invitationsApi } from '../../src/lib/api';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
-import { useToast } from '../../src/contexts/toast-context';
+import { useToast } from '../../src/island/island-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, ROUTES } from '../../src/lib/constants';
 import { JOIN_CODE_MAX_LENGTH, joinCodeCandidates } from '@hbcfield/shared/client';
 

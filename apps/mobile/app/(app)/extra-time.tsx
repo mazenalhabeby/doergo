@@ -21,7 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../src/contexts/theme-context';
-import { useToast } from '../../src/contexts/toast-context';
+import { useToast } from '../../src/island/island-context';
 import { attendanceApi, TimeEntry } from '../../src/lib/api';
 import { useTimeFormat } from '../../src/hooks/useTimeFormat';
 import {

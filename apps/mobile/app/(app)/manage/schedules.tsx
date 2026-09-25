@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { useToast } from '../../../src/contexts/toast-context';
+import { useToast } from '../../../src/island/island-context';
 import { techniciansApi, scheduleApi } from '../../../src/lib/api';
 import type { TechnicianListItem, ScheduleEntry } from '../../../src/lib/api/types';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';

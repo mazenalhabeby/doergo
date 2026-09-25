@@ -33,7 +33,7 @@ import {
 import { ScreenContainer } from '../../src/components';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
-import { useToast } from '../../src/contexts/toast-context';
+import { useToast } from '../../src/island/island-context';
 import { onboardingApi, locationsApi } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../src/lib/constants';
 

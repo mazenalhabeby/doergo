@@ -7,7 +7,7 @@ import { useTheme } from '../../../src/contexts/theme-context';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useOffline } from '../../../src/offline/offline-context';
 import { updateOwnProfile } from '../../../src/offline/profile/profile-actions';
-import { useToast } from '../../../src/contexts/toast-context';
+import { useToast } from '../../../src/island/island-context';
 import { userApi } from '../../../src/lib/api';
 import { SheetHeader, ScreenContainer } from '../../../src/components';
 import {

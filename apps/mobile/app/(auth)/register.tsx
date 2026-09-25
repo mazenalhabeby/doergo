@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/contexts/auth-context';
-import { useToast } from '../../src/contexts/toast-context';
+import { useToast } from '../../src/island/island-context';
 import { AnimatedLogo, centeredContent } from '../../src/components';
 import { useResponsive } from '../../src/lib/responsive';
 import { useAuthAnimations } from '../../src/hooks/useAuthAnimations';

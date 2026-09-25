@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { useToast } from '../../../src/contexts/toast-context';
+import { useToast } from '../../../src/island/island-context';
 import { membersApi, type OrgMember } from '../../../src/lib/api';
 import { FilterChip } from '../../../src/components/filter-chip';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';

@@ -3,7 +3,7 @@ import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
 import type { CompanyLocation } from '../lib/api';
 import { useAuth } from '../contexts/auth-context';
-import { useToast } from '../contexts/toast-context';
+import { useToast } from '../island/island-context';
 import { startBackgroundHeartbeat } from '../services/background-heartbeat';
 import { startGeofenceForSpace } from '../services/background-geofence';
 import { haversineDistance } from '../lib/utils';

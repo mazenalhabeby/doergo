@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 
 import { ScreenHeader } from '../../src/components';
 import { useTheme } from '../../src/contexts/theme-context';
-import { useToast } from '../../src/contexts/toast-context';
+import { useToast } from '../../src/island/island-context';
 import {
   assetsApi, assetProposalsApi, type HeldAsset, type MyExpense, type MyProposal, type MyLogEntry, type DueItem,
 } from '../../src/lib/api';

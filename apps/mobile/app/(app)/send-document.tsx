@@ -11,7 +11,7 @@ import { File as FsFile } from 'expo-file-system';
 
 import { ScreenHeader } from '../../src/components';
 import { useTheme } from '../../src/contexts/theme-context';
-import { useToast } from '../../src/contexts/toast-context';
+import { useToast } from '../../src/island/island-context';
 import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
 import { useCameraAccess } from '../../src/permissions/use-media-access';
 import { canScanContracts, scanContract } from '../../src/lib/receipt-scan';

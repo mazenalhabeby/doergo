@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../contexts/toast-context';
+import { useToast } from '../../island/island-context';
 import { useOffline } from '../../offline/offline-context';
 import { reportIssueFromPhone } from '../../offline/issues/issue-actions';
 import { shiftIssuesApi, type ShiftIssue } from '../../lib/api/shift-issues';

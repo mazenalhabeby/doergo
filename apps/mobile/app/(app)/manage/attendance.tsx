@@ -9,7 +9,7 @@ import { ScreenHeader } from '../../../src/components';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { useToast } from '../../../src/contexts/toast-context';
+import { useToast } from '../../../src/island/island-context';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 import { attendanceApi, type NoShow } from '../../../src/lib/api';

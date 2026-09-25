@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
 import { ScreenHeader } from '../../src/components';
 import { useTheme } from '../../src/contexts/theme-context';
-import { useToast } from '../../src/contexts/toast-context';
+import { useToast } from '../../src/island/island-context';
 import {
   readCardLines, parseCardPasses, wantsAnotherFrame, frameGapAfter,
   CARD_FRAMES, CARD_FRAME_BUDGET_MS,

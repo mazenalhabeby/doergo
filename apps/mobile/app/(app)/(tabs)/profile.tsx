@@ -33,7 +33,7 @@ import { getCurrentLanguage, supportedLanguages } from '../../../src/i18n';
 import { useTheme, type ThemeMode } from '../../../src/contexts/theme-context';
 import { useHeldAssets } from '../../../src/hooks/use-held-assets';
 import { useDocumentRequirements } from '../../../src/contexts/document-requirements-context';
-import { useToast } from '../../../src/contexts/toast-context';
+import { useToast } from '../../../src/island/island-context';
 import { usePushNotifications } from '../../../src/hooks/usePushNotifications';
 import { useImagePicker } from '../../../src/hooks/useImagePicker';
 import { avatarApi, userApi, resolveMediaUrl } from '../../../src/lib/api';

@@ -21,7 +21,7 @@ import { useAuth } from '../../src/contexts/auth-context';
 import { useBiometricUnlock } from '../../src/hooks/use-biometric-unlock';
 import { resolveCapability, getKeyOwner } from '../../src/lib/biometrics';
 import { BlurSheet, SheetPanel, BiometricIcon } from '../../src/components';
-import { useToast } from '../../src/contexts/toast-context';
+import { useToast } from '../../src/island/island-context';
 import { AnimatedLogo, centeredContent } from '../../src/components';
 import { useResponsive } from '../../src/lib/responsive';
 import { useAuthAnimations } from '../../src/hooks/useAuthAnimations';

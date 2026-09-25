@@ -11,7 +11,7 @@ import { useAuth } from '../../src/contexts/auth-context';
 import { holds } from '../../src/lib/permissions';
 import { BlurSheet } from '../../src/components/blur-sheet';
 import { canScanCards } from '../../src/lib/card-scan';
-import { useToast } from '../../src/contexts/toast-context';
+import { useToast } from '../../src/island/island-context';
 import { useQueuedCreate } from '../../src/offline/actions/queued-create';
 import { CLIENT_LOCALE_OPTIONS, newClientInput } from '../../src/lib/client-locale';
 import {

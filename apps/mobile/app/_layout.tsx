@@ -38,7 +38,7 @@ import {
 } from '@expo-google-fonts/ibm-plex-mono';
 import { AuthProvider, useAuth } from '../src/contexts/auth-context';
 import { ThemeProvider, useTheme } from '../src/contexts/theme-context';
-import { ToastProvider } from '../src/contexts/toast-context';
+import { IslandProvider } from '../src/island/island-context';
 import { UpdateRequired } from '../src/components/update-required';
 import { UpdateBanner } from '../src/components/update-banner';
 import { UpdatePage } from '../src/components/update-page';
@@ -176,7 +176,12 @@ function RootLayoutNav() {
   }
 
   return (
-    <ToastProvider isDark={isDark}>
+    /*
+      ⚠️ NO `isDark`. The island is black in both themes and so is its ink —
+      it is pretending to be the camera housing, and the housing is black on a
+      white phone too. See `island/tokens.ts`.
+    */
+    <IslandProvider>
       {/*
         ⚠️ THE APP'S THEME, NOT THE PHONE'S — AND ONLY ONE OF THESE IN THE TREE.
 
@@ -220,7 +225,7 @@ function RootLayoutNav() {
       {/* Prominent background-location disclosure — overlays the app when a
           background service needs consent (Google Play requirement). */}
       <LocationConsentModal />
-    </ToastProvider>
+    </IslandProvider>
   );
 }
 

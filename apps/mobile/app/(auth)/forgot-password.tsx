@@ -17,7 +17,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import { useToast } from '../../src/contexts/toast-context';
+import { useToast } from '../../src/island/island-context';
 import { AnimatedLogo, ScreenContainer } from '../../src/components';
 import { useAuthAnimations } from '../../src/hooks/useAuthAnimations';
 import { useTheme } from '../../src/contexts/theme-context';

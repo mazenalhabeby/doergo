@@ -44,7 +44,7 @@ import {
   type PendingContactLink,
 } from '../../../src/offline/crm/client-overlay';
 import { CLIENT_LOCALE_OPTIONS, canEditClientLocale, clientLocaleFormValue, clientLocaleName, clientLocalePayload } from '../../../src/lib/client-locale';
-import { useToast } from '../../../src/contexts/toast-context';
+import { useToast } from '../../../src/island/island-context';
 import { RecordCard, CardAction, RecordRow } from '../../../src/components/customer/record-card';
 import { ClientAvatar } from '../../../src/components/customer/client-avatar';
 import { ContactRow } from '../../../src/components/customer/contact-row';

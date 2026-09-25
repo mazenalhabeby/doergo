@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MEMBER_EMAIL_PREF, type MemberEmail } from '@hbcfield/shared/client';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { useToast } from '../../../src/contexts/toast-context';
+import { useToast } from '../../../src/island/island-context';
 import { userApi } from '../../../src/lib/api';
 import { SheetHeader, ScreenContainer } from '../../../src/components';
 import {

@@ -5,7 +5,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
-import { useToast } from '../contexts/toast-context';
+import { useToast } from '../island/island-context';
 import { MultiPageCapture } from './multi-page-capture';
 import { newPageId, readyKeys, allStaged, pendingCount, failedCount, type Page } from '../lib/page-order';
 import { MAX_PAGES } from '@hbcfield/shared/client';

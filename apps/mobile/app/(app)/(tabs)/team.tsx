@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { SocketEvents } from '@hbcfield/shared/client';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { useToast } from '../../../src/contexts/toast-context';
+import { useToast } from '../../../src/island/island-context';
 import { useSocketContext } from '../../../src/contexts/socket-context';
 import { teamApi, type Colleague } from '../../../src/lib/api';
 import { Avatar } from '../../../src/components/team/avatar';
