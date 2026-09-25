@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import {
-  CAP, EDGE, GAP, ICON, ICON_GAP, SIDE, VISOR_MIN, VISOR_RADIUS,
-  readLayout, reserveFor, sealedBox, shapeFor, visorCap, visorHeight, type Cutout, type Measured,
+  CAP, EDGE, GAP, ICON, ICON_GAP, SIDE, VISOR_MIN, VISOR_RADIUS, VISOR_ROW,
+  readLayout, reserveFor, sealedBox, shapeFor, cutoutIntrudes, visorBand, visorCap, visorHeight, type Cutout, type Measured,
 } from '../geometry';
 import { androidCutout, cutoutFromInset } from '../cutout';
 import { TONES, dwellFor, ISLAND } from '../tokens';
@@ -68,7 +68,18 @@ describe('the one law — the camera covers nothing, ever', () => {
             visor short of both, which is the rule doing the real work.
           */
           expect(l.open.w).toBeLessThanOrEqual(visorCap(screenW));
-          expect(l.headTop).toBe(0);
+          /*
+            ⚠️ AND THE ROW CLEARS THE CUTOUT WHEN THE CUTOUT IS IN THE WAY.
+            The horizontal cap clears the CLOCK and the BATTERY, which sit
+            outside the notch; it does not clear the notch itself, and §1's
+            law is about the camera. Measured per phone: where nothing
+            intrudes the row centres in 44pt, which is §5.5 exactly.
+          */
+          if (cutoutIntrudes(hole, screenW)) {
+            expect(l.headTop).toBeGreaterThanOrEqual(hole.y + hole.h);
+          } else {
+            expect(l.headTop).toBe(0);
+          }
         }
 
         /* ⚠️ Never wider than the cap, never within 8pt of an edge. */
@@ -185,12 +196,24 @@ describe('§5 — the three shapes', () => {
       black slab hanging off the top edge, not an island. It shipped in
       c1145217.
     */
-    expect(v.h).toBe(VISOR_MIN);
-    expect(visorHeight(NOTCH)).toBe(44);
-    expect(visorHeight(TEARDROP)).toBe(44);
-    expect(visorHeight(NONE)).toBe(44);
-    /* A taller cutout grows it, and only then. */
-    expect(visorHeight({ ...NOTCH, h: 60 })).toBe(60);
+    /*
+      ⚠️ AND IT MEASURES THIS PHONE'S CUTOUT RATHER THAN ASSUMING FROM ITS
+      KIND. `edge` covers a 209pt notch and a 60pt teardrop; the question is
+      whether THIS one overlaps the width the visor can occupy.
+    */
+    expect(v.h).toBe(30 + VISOR_ROW);                       // notch bottom, then the row
+    expect(visorHeight(TEARDROP, 393)).toBe(18 + VISOR_ROW); // a shallower one
+    expect(visorHeight(NONE, 375)).toBe(VISOR_MIN);          // nothing in the way at all
+    /* A taller cutout pushes it further, and only then. */
+    expect(visorHeight({ ...NOTCH, h: 60 }, 390)).toBe(60 + VISOR_ROW);
+
+    /* ⚠️ Measured, not categorised: both of these are `edge`. */
+    expect(cutoutIntrudes(NOTCH, 390)).toBe(true);
+    expect(cutoutIntrudes(TEARDROP, 393)).toBe(true);
+    expect(cutoutIntrudes(NONE, 375)).toBe(false);
+    /* A cutout outside the visor's own width does not push it down. */
+    expect(cutoutIntrudes({ x: 4, y: 0, w: 20, h: 26, kind: 'edge' }, 390)).toBe(false);
+    expect(visorBand({ x: 4, y: 0, w: 20, h: 26, kind: 'edge' }, 390)).toBe(0);
 
     const l = readLayout({ hole: NOTCH, screenW: 390, measured: msg('Clocked in') });
     // A visor has no lens in its row, so a short phrase stays on one line.
@@ -278,20 +301,25 @@ describe('§5.1–5.4 — the dock and rect paths', () => {
     expect(view).toMatch(/announceForAccessibility/);
   });
 
-  it('⚠️ 5.5 · the content row is LEVEL with the clock, not below it', () => {
+  it('⚠️ 5.5 · centred where nothing is in the way, below the cutout where there is', () => {
     /*
-      §5.5's correction. It was pushed below a status-bar band, which pinned
-      the message to the bottom of a 78pt slab. Nothing needs to clear the
-      status bar vertically because it is cleared HORIZONTALLY — the clock is
-      far left, the battery far right, and `visorCap` keeps the visor short of
-      both.
+      §5.5's correction removed the status-bar band, which had pinned the
+      message to the bottom of a 78pt slab. Nothing needs to clear the STATUS
+      BAR vertically — the clock is far left, the battery far right, and
+      `visorCap` keeps the visor short of both.
+
+      ⚠️ BUT THE CUTOUT ITSELF STILL HAS TO BE CLEARED, and that is measured
+      off the phone rather than assumed from its kind.
     */
-    for (const hole of [NONE, NOTCH, TEARDROP, PIXEL]) {
+    for (const hole of [NONE, PIXEL]) {
       const l = readLayout({ hole, screenW: 390, measured: msg('Clocked in') });
       expect(l.headTop).toBe(0);
       expect(l.headHeight).toBe(l.sealed.h);
     }
-    // Centred in the box, not pinned to an edge of it.
+    const notch = readLayout({ hole: NOTCH, screenW: 390, measured: msg('Clocked in') });
+    expect(notch.headTop).toBe(30);
+    expect(notch.headHeight).toBe(VISOR_ROW);
+    // Centred within whatever is left, not pinned to an edge of it.
     expect(code('island/island-view.tsx')).toMatch(/alignItems: 'center'/);
   });
 
@@ -353,9 +381,9 @@ describe('§5.1–5.4 — the dock and rect paths', () => {
     */
     const edge = sealedBox(NOTCH, 390);
     expect(edge.y).toBe(0);
-    expect(edge.h).toBe(VISOR_MIN);
+    expect(edge.h).toBe(30 + VISOR_ROW);
     /* Barely past the status bar now, which is the point of the correction. */
-    expect(reserveFor(edge, 'visor', 47)).toBe(5);
+    expect(reserveFor(edge, 'visor', 47)).toBe(25);
 
     /* A visor's whole lower band is app content, so it always reserves. */
     const visor = sealedBox(NONE, 375);

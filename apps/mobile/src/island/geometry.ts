@@ -78,6 +78,9 @@ export function shapeFor(kind: CutoutKind): Shape {
  * as a Dynamic Island is.
  */
 export const VISOR_MIN = 44;
+
+/** The content row itself, when a cutout forces the visor to grow past it. */
+export const VISOR_ROW = 34;
 /** ⚠️ The visor's bottom corners. The top ones are square — it is flush. */
 export const VISOR_RADIUS = 26;
 /**
@@ -188,23 +191,57 @@ export function sealedBox(hole: Cutout, screenW: number): Box {
     x: screenW / 2,
     y: 0,
     w: 0,
-    h: visorHeight(hole),
+    h: visorHeight(hole, screenW),
     radiusTop: 0,
     radiusBottom: VISOR_RADIUS,
   };
 }
 
 /**
- * ⚠️ `max(hole.y + hole.h, VISOR_MIN)` — the cutout's own bottom, or 44.
+ * DOES THE CUTOUT ACTUALLY INTRUDE INTO THE VISOR?
  *
- * On an `edge` device the notch bottom is 30, so `max(30, 44)` is still 44 and
- * the visor simply extends the notch a little lower: one continuous black
- * form, no seam, no gap. On a taller cutout it grows to clear it.
+ * ⚠️ MEASURED PER DEVICE, NOT ASSUMED FROM THE KIND. `edge` covers a 209pt
+ * notch and a 60pt teardrop and whatever the next phone ships; the question
+ * that matters is whether THIS cutout overlaps the width THIS visor can
+ * occupy, and that is arithmetic, not a category.
  *
- * ⚠️ `insets.top` IS NOT IN THIS. See `VISOR_MIN`.
+ * ⚠️ AND IT IS ASKED AT THE VISOR'S WIDEST, not at the current message's
+ * width. A band that changed with the sentence would move the island up and
+ * down between messages, which is the lens-appears-to-slide mistake in the
+ * other axis.
  */
-export function visorHeight(hole: Cutout): number {
-  return Math.max(hole.kind === 'none' ? 0 : hole.y + hole.h, VISOR_MIN);
+export function cutoutIntrudes(hole: Cutout, screenW: number): boolean {
+  if (hole.kind === 'none' || hole.w <= 0) return false;
+  const w = Math.min(CAP, screenW - EDGE * 2, visorCap(screenW));
+  const left = clamp(screenW / 2 - w / 2, EDGE, Math.max(EDGE, screenW - EDGE - w));
+  return !(left + w <= hole.x || left >= hole.x + hole.w);
+}
+
+/**
+ * The black above the content row — the cutout's own bottom, or nothing.
+ *
+ * ⚠️ THIS IS WHAT KEEPS THE CAMERA COVERING NOTHING ON A NOTCH PHONE. §5.5
+ * centres the row in a 44pt visor, which is right where there is no cutout —
+ * but a real notch is 209pt wide, centred and 30pt tall, and `visorCap(390)`
+ * is 210, also centred. A row centred in 44pt then sits at roughly 11 → 33,
+ * behind the bottom two thirds of the physical notch. The simulator draws no
+ * notch, so it looked correct and was not.
+ *
+ * Where the cutout intrudes, the row goes below it. Where it does not — no
+ * cutout at all, which is most devices — the band is 0 and §5.5's centred
+ * 44pt visor is exactly what is drawn.
+ */
+export function visorBand(hole: Cutout, screenW: number): number {
+  return cutoutIntrudes(hole, screenW) ? hole.y + hole.h : 0;
+}
+
+/**
+ * ⚠️ `insets.top` IS NOT IN THIS — §5.5. The status bar is cleared
+ * HORIZONTALLY by `visorCap`; only the cutout is cleared vertically, and only
+ * when it is actually in the way.
+ */
+export function visorHeight(hole: Cutout, screenW: number): number {
+  return Math.max(visorBand(hole, screenW) + VISOR_ROW, VISOR_MIN);
 }
 
 /**
@@ -260,13 +297,15 @@ export function readLayout(input: {
   const natural = Math.min(naturalWidth(m, hole), capW);
 
   /*
-    ⚠️ THE CONTENT ROW IS VERTICALLY CENTRED IN THE VISOR — §5.5's correction.
-    It used to be pushed below a status-bar band, which pinned the message to
-    the bottom of a 78pt slab. It is LEVEL with the clock and the battery,
-    which are cleared horizontally by `visorCap`, not vertically by a band.
+    ⚠️ CENTRED WHERE THERE IS NOTHING IN THE WAY, BELOW THE CUTOUT WHERE THERE
+    IS — and which of those it is comes from measuring this phone, not from
+    its kind. With no cutout the band is 0 and the row centres in 44pt, which
+    is §5.5 exactly. On a notch it starts at the notch's own bottom, because
+    a row centred in 44pt would sit behind two thirds of it.
   */
-  const headH = sealed.h;
-  const headTop = 0;
+  const band = shape === 'visor' ? visorBand(hole, screenW) : 0;
+  const headTop = band;
+  const headH = sealed.h - band;
 
   const openBox = (w: number, rung: Rung, lines: number): Box => ({
     x: placeX(w, hole, screenW),
