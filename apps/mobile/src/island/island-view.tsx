@@ -114,8 +114,18 @@ export function IslandView({
 
   /* Measured: decide the rung, then move. */
   const commit = (msg: IslandMessage) => {
+    /*
+      ⚠️ THE LIVE STATE IS A RING AND A FIGURE — §7 (`◎ 0m`) and the drawing:
+      *while you are on the clock it never leaves — a ring and a running
+      figure*. Its label is for the screen reader, not the screen.
+
+      Measuring it as a title made `On the clock · 1h 45m` exceed the visor's
+      cap and DROP, so the thing that is supposed to sit quietly at the top of
+      every screen all day became a black panel a third of the way down it.
+    */
+    const live = msg.tone === 'live';
     const measured: Measured = {
-      title: widths.current.title,
+      title: live ? 0 : widths.current.title,
       value: widths.current.value,
       bodyLines: msg.body ? Math.max(1, widths.current.bodyLines) : 0,
       action: !!msg.action,
@@ -231,12 +241,18 @@ export function IslandView({
               */}
               <Animated.View style={[styles.headRow, { marginTop: layout.headTop, height: layout.headHeight }, headStyle]}>
                 {layout.icon === 'left' ? <Glyph tone={msg.tone} fg={look.fg} /> : <View style={{ width: 0 }} />}
-                {!layout.titleDrops ? (
+                {!layout.titleDrops && msg.tone !== 'live' ? (
                   <Text numberOfLines={1} style={[styles.title, { color: ISLAND.ink, marginLeft: ICON_GAP }]}>
                     {msg.title}
                   </Text>
                 ) : null}
-                <View style={{ flex: 1 }} />
+                {/*
+                  ⚠️ THE SPACER SEPARATES A TITLE FROM ITS FIGURE. With no
+                  title — the live state is a ring and a figure — it pushes the
+                  two apart across the whole visor instead, which §5.5 draws
+                  as `◎  17m`, adjacent.
+                */}
+                {layout.titleDrops || msg.tone === 'live' ? null : <View style={{ flex: 1 }} />}
                 {msg.value ? (
                   <Text numberOfLines={1} style={[styles.value, styles.mono, { color: look.fg }]}>{msg.value}</Text>
                 ) : null}
@@ -267,7 +283,8 @@ export function IslandView({
     const p = pending;
     if (!p) return;
     if (p.body && widths.current.bodyLines === 0) return;
-    if (widths.current.title === 0 && p.title.length > 0) return;
+    /* ⚠️ `live` never measures a title — see `commit`. */
+    if (p.tone !== 'live' && widths.current.title === 0 && p.title.length > 0) return;
     commit(p);
   }
 }
@@ -305,7 +322,7 @@ const styles = StyleSheet.create({
     backgroundColor: ISLAND.bg,
     overflow: 'hidden',
   },
-  headRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SIDE },
+  headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: ICON_GAP, paddingHorizontal: SIDE },
   drop: { paddingHorizontal: SIDE, paddingBottom: 14, gap: 6 },
   title: { fontSize: 15, lineHeight: 21, fontWeight: '500', color: ISLAND.ink },
   body: { fontSize: 13, lineHeight: 19, color: ISLAND.dim },

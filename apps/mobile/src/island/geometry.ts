@@ -35,27 +35,31 @@ export const EDGE = 8;
 export const MAX_BODY_LINES = 3;
 
 /**
- * THE THREE SHAPES.
+ * TWO SHAPES. ⚠️ THERE IS NO `dock` — it was a mistake and the visor replaces
+ * it (§5).
  *
- * ⚠️ YOU CANNOT WRAP SOMETHING BOLTED TO THE TOP EDGE, and trying looks like a
- * bug. Docking is the honest answer and still reads as belonging to the
- * hardware.
+ * `dock` put the island 8pt BELOW the cutout, and that gap is the entire
+ * problem: a black pill hovering under the status bar with daylight above it
+ * is the toast this design replaced. It shipped in `9845c93b` and it is what
+ * the screenshots kept showing.
  *
- * ⚠️ AND `none` GETS THE VISOR — §5.5, NOT a card floating below the status
- * bar. It is the MOST COMMON form, not the exception: every Android phone
- * without the native module, every iPhone SE, every tablet, every
- * under-display camera. If it looks wrong, the feature looks wrong.
+ * ⚠️ AN `edge` CUTOUT AND NO CUTOUT AT ALL ARE THE SAME SHAPE. In both, the
+ * island is flush with the top of the screen and its content row sits below
+ * the status-bar band. The only difference is that on an `edge` device part of
+ * that black is the hardware's and on a `none` device all of it is the app's.
+ * Neither needs a gap, because in neither case is the island an object
+ * floating near the top — IT IS THE TOP.
  *
- * The visor does not float — it makes a notch. It is flush with the top edge,
- * its upper band IS the status-bar strip and is black, and the content row
- * sits in the lower band. The app grows its own cutout and the island lives in
- * it: same object, same black, same ink, same ladder, born from the edge
- * instead of around a lens.
+ * ⚠️ AND THE VISOR IS THE COMMON FORM, NOT THE EXCEPTION: every notch iPhone,
+ * every teardrop Android, every Android phone without the native module, every
+ * SE, every tablet, every under-display camera. ONLY A FLOATING CUTOUT GETS
+ * `wrap`. If the visor looks wrong, the feature looks wrong on almost every
+ * device.
  */
-export type Shape = 'wrap' | 'dock' | 'visor';
+export type Shape = 'wrap' | 'visor';
 
 export function shapeFor(kind: CutoutKind): Shape {
-  return kind === 'floating' ? 'wrap' : kind === 'edge' ? 'dock' : 'visor';
+  return kind === 'floating' ? 'wrap' : 'visor';
 }
 
 /** The content row under a visor's status-bar band. */
@@ -100,7 +104,7 @@ export interface Layout {
   sealed: Box;
   /** Open — what it animates to. */
   open: Box;
-  /** The two places content may go in the head row. Zero for dock and rect. */
+  /** The two places content may go in the head row. ⚠️ Zero on a visor. */
   left: number;
   right: number;
   /** Where the icon sits in the head row. */
@@ -158,23 +162,29 @@ export function sealedBox(hole: Cutout, screenW: number, topInset = 0): Box {
       radiusBottom: 999,
     };
   }
-  if (shape === 'dock') {
-    /* ⚠️ UNDER the cutout, never across it, and centred on the cutout itself. */
-    const w = 0;
-    return { x: hole.x + hole.w / 2 - w / 2, y: hole.y + hole.h + 8, w, h: 36, radiusTop: 999, radiusBottom: 999 };
-  }
   /*
-    ⚠️ THE VISOR IS FLUSH — `y: 0`, NO GAP, EVER. A gap makes it a card
-    hovering under the status bar, which is the thing it is not.
+    ⚠️ THE VISOR IS FLUSH — `y: 0`, NO GAP, EVER. ⚠️ NEVER
+    `hole.y + hole.h + 8`: any gap at all and it stops being the top of the
+    screen and becomes a card near it, which is the toast again.
+
+    ⚠️ AND THE BAND CLEARS BOTH THE STATUS BAR AND THE HARDWARE. On an `edge`
+    device the notch or teardrop is already black, so the visor is drawn at the
+    same `y: 0` and simply merges with it — one continuous black form from the
+    top of the screen down to its rounded bottom edge.
   */
   return {
     x: screenW / 2,
     y: 0,
     w: 0,
-    h: topInset + VISOR_ROW,
+    h: bandFor(hole, topInset) + VISOR_ROW,
     radiusTop: 0,
     radiusBottom: VISOR_RADIUS,
   };
+}
+
+/** The black band above the content row: the status bar, or the hardware. */
+export function bandFor(hole: Cutout, topInset: number): number {
+  return Math.max(topInset, hole.kind === 'none' ? 0 : hole.y + hole.h);
 }
 
 /**
@@ -184,7 +194,12 @@ export function sealedBox(hole: Cutout, screenW: number, topInset = 0): Box {
  * from the width rather than the width from `x`.
  */
 function placeX(w: number, hole: Cutout, screenW: number): number {
-  const centre = hole.kind === 'none' ? screenW / 2 : hole.x + hole.w / 2;
+  /*
+    ⚠️ A VISOR IS CENTRED ON THE SCREEN — §5.5's own `clamp(screenW / 2 - w / 2,
+    …)`. Only a `wrap` is anchored to the hole, because only a `wrap` has to
+    keep a lens from appearing to slide.
+  */
+  const centre = hole.kind === 'floating' ? hole.x + hole.w / 2 : screenW / 2;
   return clamp(centre - w / 2, EDGE, Math.max(EDGE, screenW - EDGE - w));
 }
 
@@ -195,9 +210,9 @@ function clamp(v: number, lo: number, hi: number): number {
 /** The two slots at a given box width — §3. */
 function slots(w: number, hole: Cutout, screenW: number): { left: number; right: number } {
   /*
-    ⚠️ ONLY A `wrap` HAS SLOTS. A dock sits UNDER the cutout and a rect has no
-    cutout at all, so in both the head row is one uninterrupted line — giving
-    them slots would split a row that has nothing in the middle of it.
+    ⚠️ ONLY A `wrap` HAS SLOTS. A visor's content row sits BELOW the black
+    band, so nothing is in the middle of it — giving it slots would split a
+    row that has no lens crossing it.
   */
   if (hole.kind !== 'floating') return { left: 0, right: 0 };
   const x = placeX(w, hole, screenW);
@@ -227,7 +242,8 @@ export function readLayout(input: {
   const natural = Math.min(naturalWidth(m, hole), capW);
 
   const headH = shape === 'visor' ? VISOR_ROW : sealed.h;
-  const headTop = shape === 'visor' ? topInset : 0;
+  /* ⚠️ Below the black band, or the message sits on the clock — §5.5. */
+  const headTop = shape === 'visor' ? bandFor(hole, topInset) : 0;
 
   const openBox = (w: number, rung: Rung, lines: number): Box => ({
     x: placeX(w, hole, screenW),
@@ -237,8 +253,8 @@ export function readLayout(input: {
     /*
       ⚠️ SHAPE FIRST, THEN RUNG — §5.3. Asking the rung first gave a dropped
       card a radius of 30, which makes it ROUNDER as it grows. `wrap` and
-      `dock` are pills, so 999 → 30 is the pill becoming a panel, which is the
-      point.
+      A `wrap` is a pill, so 999 → 30 is the pill becoming a panel, which is
+      the point.
 
       ⚠️ AND A VISOR NEVER GROWS A TOP. It is flush with the edge; a rounded
       top corner would lift it off the bezel and turn it back into a card.
@@ -254,12 +270,12 @@ export function readLayout(input: {
   });
 
   /*
-    A dock or a visor has no lens in its row, so the ladder is only ever about
-    whether the sentence fits — and a visor is capped short of the clock and
-    the battery, which is why the dropped form is common there too.
+    A visor has no lens in its row, so the ladder is only ever about whether
+    the sentence fits — and it is capped short of the clock and the battery,
+    which is why the dropped form is common there too.
   */
   if (hole.kind !== 'floating') {
-    const widest = shape === 'visor' ? Math.min(capW, visorCap(screenW)) : capW;
+    const widest = Math.min(capW, visorCap(screenW));
     const room = widest - SIDE * 2 - ICON - ICON_GAP - m.value - 24;
     if (m.title <= room) {
       const w = Math.min(natural, widest);
@@ -296,12 +312,12 @@ export function readLayout(input: {
 }
 
 /**
- * ⚠️ WHAT A DOCKED OR VISORED ISLAND LANDS ON — §5.1 and §5.5, and it does not
- * apply to `wrap` at all.
+ * ⚠️ WHAT A VISOR LANDS ON — §5.1 and §5.5, and it does not apply to `wrap`
+ * at all.
  *
- * On an iPhone 13 the island docks at `y: 38` height 36 while the safe area
- * starts at 47, so it sits on the first 27pt of the app's own content. A
- * visor's whole lower band is app content by definition.
+ * A visor's lower band is app content by definition: the black reaches down
+ * past the status bar and the content row sits in what the screen would
+ * otherwise be using.
  *
  * For a message that leaves after four seconds that is fine — it is a
  * notification and it is allowed to be on top. ⚠️ FOR THE PERSISTENT LIVE
