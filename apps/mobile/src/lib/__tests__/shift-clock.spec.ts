@@ -526,61 +526,47 @@ describe('§9 — the twelve rules', () => {
     expect(sheet).toMatch(/issues\.resolveReasons/);
   });
 
-  it('11c · a sheet hands over to another whatever order they are declared in', () => {
+  it('11c · there is ONE modal slot, and the hand-over queues for it', () => {
     /*
-      ⚠️ iOS WILL NOT PRESENT A MODAL WHILE ANOTHER IS DISMISSING, and every
-      sheet here is a Modal. `BlurSheet` guards it with a shared claim — but
-      the first cut READ that claim synchronously in the opening sheet's
-      effect, which only works when the LEAVING sheet's effect has already
-      run. Effects run in sibling declaration order, so the identical handover
-      worked or died on JSX order:
+      ⚠️ PROVEN FROM THE DEVICE LOG, not reasoned about. Every sheet here is a
+      `<Modal>`, and on the New Architecture React Native presents each one
+      from the SAME host view controller, so a second is refused outright:
 
-          <List/> <Thread/>   → the thread opens
-          <Thread/> <List/>   → the list slides away and nothing replaces it
+          Attempt to present <RCTFabricModalHostViewController: 0x1684cd600>
+            on <ExpoScreenOrientation.ScreenOrientationViewController>
+            which is already presenting <RCTFabricModalHostViewController: …>.
 
-      Both spellings are in this app — the home card has one, the Time tab has
-      the other — so tapping an issue opened the thread on the card and did
-      nothing at all on Time.
+      Three of those, matching three taps, each with its `GET /shift-issues/:id`
+      in the same log — the tap fired, the request went out, and UIKit dropped
+      the presentation. The member saw the list slide away and nothing arrive.
+
+      Two wrong fixes came first: a timer (a guess at how long dismissal
+      takes), then STACKING the two sheets, which is the one thing the
+      platform explicitly refuses.
     */
     const sheet = code('components/blur-sheet.tsx');
-    // The claim still exists, and is still made by the sheet that is LEAVING.
-    expect(sheet).toMatch(/dismissingUntil = Date\.now\(\) \+ EXIT_MS/);
-    /*
-      ⚠️ And opening YIELDS before it reads the claim. Without the turn, the
-      read races the sibling effect that writes it.
-    */
-    const open = sheet.slice(sheet.indexOf('if (visible) {'), sheet.indexOf('if (mounted) {'));
-    expect(open).toMatch(/setTimeout\(attempt, 0\)/);
-    expect(open).toMatch(/const wait = dismissingUntil - Date\.now\(\)/);
-    // The claim must not be read in the same tick the effect runs.
-    expect(open).not.toMatch(/const wait = Math\.max\(0, dismissingUntil/);
+    // A real slot, queued — not a delay.
+    expect(sheet).toMatch(/let presenting = false/);
+    expect(sheet).toMatch(/const waiting: Array<\(\) => void> = \[\]/);
+    expect(sheet).toMatch(/function takeSlot/);
+    expect(sheet).toMatch(/function releaseSlot/);
+    // ⚠️ Released on UNMOUNT, never at the start of the exit animation.
+    const release = sheet.slice(sheet.indexOf('if (mounted || !holds.current) return;'));
+    expect(release.slice(0, 200)).toMatch(/setTimeout\(releaseSlot, SETTLE_MS\)/);
+    // ⚠️ And the old guesses are gone.
+    expect(sheet).not.toMatch(/dismissingUntil/);
 
     /*
-      ⚠️ AND THE HAND-OVER THAT BROKE IS NOT TIMED AT ALL ANY MORE. iOS
-      refuses to PRESENT while dismissing; it presents happily on TOP of a
-      sheet that is just standing there. So the issue list stays open
-      underneath its thread — there is nothing to race, and closing the
-      thread puts the member back in the list they came from.
+      ⚠️ AND NOTHING INSIDE A SHEET MAY OPEN A SECOND MODAL. A photo viewer
+      written as `<Modal>` beside or inside a BlurSheet is the same dead tap —
+      it was live in the worklog sheet and in the issue thread's own lightbox.
     */
-    for (const caller of [
-      'components/home/shift-clock-card.tsx',
-      '../app/(app)/(tabs)/attendance.tsx',
-      '../app/(app)/(tabs)/manage.tsx',
-      '../app/(app)/(tabs)/_layout.tsx',
-    ]) {
-      const src = code(caller);
-      const handler = src.split('\n').find((l) => l.includes('onOpen={'));
-      expect(handler).toBeDefined();
-      // ⚠️ No `setSomethingOpen(false)` in the handler that opens the thread.
-      expect(handler).not.toMatch(/\(false\)/);
+    const jsx = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const f of ['components/issues/issue-thread-sheet.tsx', 'components/worklog-sheet.tsx']) {
+      const src = read(f);
+      expect(src).toMatch(/BlurSheet/);
+      expect(jsx(src)).not.toMatch(/<Modal/);
     }
-
-    // ⚠️ And a failed read is not a permanent "Loading…".
-    const thread = code('components/issues/issue-thread-sheet.tsx');
-    expect(thread).toMatch(/issues\.couldNotLoad/);
-    expect(thread).toMatch(/common\.retry/);
-    // ⚠️ The previous issue is cleared when the id changes.
-    expect(thread).toMatch(/setIssue\(null\); setFailed\(false\); \}, \[issueId\]\)/);
   });
 
   it('12 · routing stays server-side', () => {

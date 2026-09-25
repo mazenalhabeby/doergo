@@ -381,7 +381,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       <ShiftIssueListSheet
         visible={issuesOpen}
         onClose={() => setIssuesOpen(false)}
-        onOpen={(id) => setIssueId(id)}
+        onOpen={(id) => { setIssuesOpen(false); setIssueId(id); }}
       />
       <ShiftIssueThreadSheet
         visible={!!issueId}

@@ -5,61 +5,64 @@ import { BlurView } from 'expo-blur';
 
 /**
  * One bottom-sheet presentation for the whole app (DRY): a blurred + dimmed
- * backdrop that FADES in, while the sheet SLIDES up — matching the break sheet.
- * Single responsibility: modal presentation + backdrop + open/close animation.
- * Callers just provide their own sheet content (bg, handle, padding) as children;
- * this owns the Modal, the tap-to-dismiss backdrop, and the animation.
+ * backdrop that FADES in, while the sheet SLIDES up.
+ *
+ * Callers bring their own surface (see `SheetPanel`); this owns the Modal, the
+ * tap-to-dismiss backdrop, the animation — and the rule below.
  */
-/*
-  ⚠️ iOS WILL NOT PRESENT A MODAL WHILE ANOTHER IS DISMISSING.
 
-  Every sheet in this app is a Modal, and this one stays mounted for 250ms
-  while it animates out. So the ordinary pattern
+/*
+  ⚠️ THERE IS EXACTLY ONE MODAL SLOT IN THIS APP, AND IT IS NOT A METAPHOR.
+
+  Every sheet here is a `<Modal>`, and on the New Architecture React Native
+  presents each one from the SAME host view controller. So two can never be on
+  screen together, and a second one asked for while the first is still there is
+  refused outright by UIKit — printed to the device log, invisible to the app:
+
+      Attempt to present <RCTFabricModalHostViewController: 0x1684cd600>
+        on <ExpoScreenOrientation.ScreenOrientationViewController>
+        which is already presenting <RCTFabricModalHostViewController: …>.
+
+  That is what the ordinary hand-over does:
 
       onPress={() => { setListOpen(false); setDetailOpen(true); }}
 
-  mounts the second modal while the first is still leaving. The second never
-  appears, and its invisible backdrop swallows every touch — the app looks
-  frozen, with nothing in the logs.
+  Both state changes land in one commit, the detail's Modal mounts while the
+  list's is still there, and the present is dropped. The member taps a row, the
+  list slides away, and the screen stays exactly as it was — with a network
+  request in the log proving the tap fired, which is what makes it so hard to
+  see. It took three wrong fixes: a timer, then a longer timer, then STACKING
+  the two, which is the one thing the platform explicitly refuses.
 
-  It is fixed HERE rather than at each call site because the call sites read
-  perfectly and there are several of them, including two in shipped code (the
-  shift-issue list handing over to the report sheet, and to the thread sheet).
-  A sheet asked to open while another is leaving simply waits for it.
+  So the slot is real and it is queued. A sheet asked to open while another
+  holds it WAITS, and the holder hands it over only once its Modal has actually
+  left the tree — not when its animation started, not after a guessed delay.
 
-  ⚠️ AND THE WAIT MUST NOT DEPEND ON WHICH SHEET IS WRITTEN FIRST.
+  ⚠️ RELEASE ON UNMOUNT, NOT ON `setMounted(false)`. The two are a commit
+  apart, and UIKit's own dismissal is a run-loop after that; `SETTLE_MS` covers
+  the second gap. Releasing at the start of the exit animation is the timer bug
+  in a smaller shape.
 
-  The first cut read `dismissingUntil` synchronously in the opening sheet's
-  effect — which only works if the LEAVING sheet's effect ran first, and
-  effects run in the order the siblings are declared. So the same handover
-  worked or failed purely on JSX order:
-
-      <ShiftIssueListSheet …/>    <ShiftIssueThreadSheet …/>   ← works
-      <ShiftIssueThreadSheet …/>  <ShiftIssueListSheet …/>     ← dead tap
-
-  Both spellings exist in this app, so tapping an issue opened the thread on
-  the home card and did nothing at all on the Time tab — the list slid away
-  and the screen stayed where it was. Opening therefore yields one turn first
-  and re-reads the claim afterwards, by which point every effect in the flush
-  has run and the answer is the same whatever the order.
-
-  ⚠️ AND WHERE A SHEET LEADS TO ANOTHER, PREFER STACKING TO SWAPPING.
-
-  iOS refuses to PRESENT while dismissing; it presents ON TOP of a sheet that
-  is simply standing there quite happily. So a list that opens a detail should
-  leave itself open underneath:
-
-      onOpen={(id) => { setListOpen(false); setDetailId(id); }}   ← a race
-      onOpen={(id) => setDetailId(id)}                            ← no race
-
-  There is nothing to time, and closing the detail puts the member back in the
-  list they came from, which is what they expect anyway. The timing guard
-  above stays for the hand-overs that genuinely replace one sheet with another
-  (the issue list → the report form), and as the backstop for the next one
-  somebody writes as a swap.
+  ⚠️ AND THE FIX IS HERE, NOT AT THE CALL SITES. They read perfectly, there are
+  a dozen of them, and the next one will be written the same way.
 */
-let dismissingUntil = 0;
-const EXIT_MS = 250;
+let presenting = false;
+const waiting: Array<() => void> = [];
+/** UIKit finishes dismissing a run-loop after the view leaves the tree. */
+const SETTLE_MS = 60;
+
+function takeSlot(run: () => void) {
+  if (presenting) { waiting.push(run); return; }
+  presenting = true;
+  run();
+}
+
+function releaseSlot() {
+  const next = waiting.shift();
+  if (!next) { presenting = false; return; }
+  // The slot is handed straight over — `presenting` deliberately stays true.
+  setTimeout(next, SETTLE_MS);
+}
 
 export function BlurSheet({
   visible,
@@ -73,47 +76,52 @@ export function BlurSheet({
   avoidKeyboard?: boolean;
 }) {
   const { height } = useWindowDimensions();
-  const [mounted, setMounted] = useState(visible);
+  const [mounted, setMounted] = useState(false);
   // Measured, not assumed — see the hook for why KeyboardAvoidingView was wrong.
   const keyboard = useKeyboardHeight();
   const overlay = useRef(new Animated.Value(0)).current;
   const slide = useRef(new Animated.Value(height)).current;
+  /** Whether THIS sheet is the one holding the slot. */
+  const holds = useRef(false);
 
   useEffect(() => {
     if (visible) {
-      const open = () => {
+      /* Closed again before its turn came up: give the slot straight back. */
+      let abandoned = false;
+      takeSlot(() => {
+        if (abandoned) { releaseSlot(); return; }
+        holds.current = true;
         setMounted(true);
         slide.setValue(height);
         Animated.parallel([
           Animated.timing(overlay, { toValue: 1, duration: 300, useNativeDriver: true }),
           Animated.spring(slide, { toValue: 0, damping: 25, stiffness: 200, useNativeDriver: true }),
         ]).start();
-      };
-      /*
-        Yield once, then wait out any sheet still leaving the screen. The
-        first turn is what makes this independent of declaration order — see
-        the note above; on its own it costs one frame nobody can see.
-      */
-      let timer: ReturnType<typeof setTimeout>;
-      const attempt = () => {
-        const wait = dismissingUntil - Date.now();
-        if (wait > 0) { timer = setTimeout(attempt, wait); return; }
-        open();
-      };
-      timer = setTimeout(attempt, 0);
-      return () => clearTimeout(timer);
+      });
+      return () => { abandoned = true; };
     }
     if (mounted) {
-      // Claim the window before anything else can present into it.
-      dismissingUntil = Date.now() + EXIT_MS;
       Animated.parallel([
         Animated.timing(overlay, { toValue: 0, duration: 200, useNativeDriver: true }),
-        Animated.timing(slide, { toValue: height, duration: EXIT_MS, useNativeDriver: true }),
+        Animated.timing(slide, { toValue: height, duration: 250, useNativeDriver: true }),
       ]).start(({ finished }) => { if (finished) setMounted(false); });
     }
     return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
+
+  /* ⚠️ The slot goes back only once the Modal is really gone — see above. */
+  useEffect(() => {
+    if (mounted || !holds.current) return;
+    holds.current = false;
+    const timer = setTimeout(releaseSlot, SETTLE_MS);
+    return () => clearTimeout(timer);
+  }, [mounted]);
+
+  /* A sheet torn off the screen mid-life must not take the slot with it. */
+  useEffect(() => () => {
+    if (holds.current) { holds.current = false; releaseSlot(); }
+  }, []);
 
   if (!mounted) return null;
 

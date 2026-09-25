@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Image, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
@@ -196,7 +196,27 @@ export function ShiftIssueThreadSheet({
   return (
     <BlurSheet visible={visible} onClose={onClose}>
       <SheetPanel onClose={onClose}>
-        {!issue ? (
+        {/*
+          ⚠️ A PHOTO IS SHOWN IN THE SHEET, NOT IN A MODAL OF ITS OWN. There
+          is one Modal slot in this app — see `blur-sheet.tsx` — so a second
+          `<Modal>` here would be refused by UIKit exactly the way the thread
+          itself was, and tapping a photo would do nothing at all.
+        */}
+        {viewing ? (
+          <Pressable
+            onPress={() => setViewing(null)}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.close', { defaultValue: 'Close' })}
+            style={{ alignItems: 'center', gap: amazen.space(3) }}
+          >
+            <Image
+              source={{ uri: viewing }}
+              resizeMode="contain"
+              style={{ width: '100%', height: 420, borderRadius: amazen.radius.tile, backgroundColor: c.sunken }}
+            />
+            <AText variant="caption" tone="accent">{t('common.close', { defaultValue: 'Close' })}</AText>
+          </Pressable>
+        ) : !issue ? (
           <View style={{ gap: amazen.space(3), paddingVertical: amazen.space(2) }}>
             <AText variant="caption" tone="muted">
               {failed
@@ -487,23 +507,6 @@ export function ShiftIssueThreadSheet({
               </View>
             ) : null}
 
-            {/*
-              A photo, full screen. ⚠️ `Modal` rather than a layer inside the
-              sheet: the sheet is itself inside a blur host with its own
-              bounds, and an absolutely-positioned overlay is clipped by it.
-            */}
-            <Modal visible={!!viewing} transparent animationType="fade" onRequestClose={() => setViewing(null)}>
-              <Pressable
-                onPress={() => setViewing(null)}
-                accessibilityRole="button"
-                accessibilityLabel={t('common.close', { defaultValue: 'Close' })}
-                style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' }}
-              >
-                {viewing ? (
-                  <Image source={{ uri: viewing }} resizeMode="contain" style={{ width: '100%', height: '82%' }} />
-                ) : null}
-              </Pressable>
-            </Modal>
           </>
         )}
       </SheetPanel>

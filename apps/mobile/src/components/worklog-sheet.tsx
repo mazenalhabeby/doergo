@@ -161,6 +161,20 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, edita
     <>
     <BlurSheet visible={visible} onClose={onClose}>
         <SheetPanel title={title} onClose={onClose}>
+          {/*
+            ⚠️ THE PREVIEW IS IN THE SHEET, NOT A MODAL OF ITS OWN. It used to
+            be a `<Modal>` beside the BlurSheet — and there is one Modal slot
+            in this app (see `blur-sheet.tsx`), so UIKit refused to present it
+            while the sheet was up and tapping a photo did nothing at all. The
+            same dead tap the shift-issue thread had, in another sheet.
+          */}
+          {viewer ? (
+            <Pressable onPress={() => setViewer(null)} style={{ alignItems: 'center', gap: SPACING.md }}>
+              <Image source={{ uri: viewer }} resizeMode="contain" style={styles.viewerImage} />
+              <Text style={[styles.hint, { color: colors.textSecondary }]}>Tap to close</Text>
+            </Pressable>
+          ) : (
+          <>
           <Text style={[styles.hint, { color: colors.textSecondary }]}>{editable ? hint : 'This session is closed — activity is read-only.'}</Text>
 
           <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
@@ -267,18 +281,11 @@ export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, edita
           </View>
           </>
           )}
+          </>
+          )}
         </SheetPanel>
       </BlurSheet>
 
-      {/* Full-screen image preview */}
-      <Modal visible={!!viewer} transparent animationType="fade" onRequestClose={() => setViewer(null)} statusBarTranslucent>
-        <Pressable style={styles.viewerBackdrop} onPress={() => setViewer(null)}>
-          {viewer && <Image source={{ uri: viewer }} style={styles.viewerImage} resizeMode="contain" />}
-          <TouchableOpacity style={[styles.viewerClose, { top: insets.top + SPACING.md }]} onPress={() => setViewer(null)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-            <Ionicons name="close" size={28} color="#fff" />
-          </TouchableOpacity>
-        </Pressable>
-      </Modal>
     </>
   );
 }
