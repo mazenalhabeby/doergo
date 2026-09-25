@@ -1,9 +1,11 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { reserveFor, sealedBox, shapeFor } from './geometry';
 import { useCutout } from './cutout';
 import { IslandView, type IslandMessage } from './island-view';
-import { SCREEN_READER_MIN_DWELL, dwellFor, type Tone } from './tokens';
+import { ISLAND, SCREEN_READER_MIN_DWELL, dwellFor, type Tone } from './tokens';
 
 /**
  * THE ISLAND, MOUNTED ONCE — and the toast API it replaces, unchanged.
@@ -150,12 +152,49 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
     };
   }, [push, say]);
 
+  /*
+    ⚠️ THE LIVE STATE RESERVES ITS SPACE — §5.1. A docked island occupies
+    38 → 74 on an iPhone 13 while the safe area starts at 47, so it sits on
+    the first 27pt of the app's own content. For a message that leaves after
+    four seconds that is fine. For a pill that stays all day it is the exact
+    fault this design replaced: the first cut put the ring on top of
+    `Friday, September 25` and left it there.
+
+    ⚠️ ONLY THE LIVE STATE, AND ONLY OFF `wrap`. A transient message must
+    never move the app, or every clock-in would nudge the whole screen down
+    and back for four seconds. On a wrapping cutout there is nothing to
+    reserve — the island is inside the area the app already avoids.
+  */
+  const shape = shapeFor(hole.kind);
+  const target = liveMsg ? reserveFor(sealedBox(hole, screenW, insets.top), shape, insets.top) : 0;
+  const reserve = useSharedValue(0);
+  useEffect(() => {
+    /* ⚠️ The same spring as the box, so the app moves WITH it, never jumps. */
+    reserve.value = reduceMotion
+      ? withTiming(target, { duration: 180 })
+      : withSpring(target, { damping: 26, stiffness: 240, mass: 1 });
+  }, [target, reduceMotion, reserve]);
+  const reserveStyle = useAnimatedStyle(() => ({ paddingTop: reserve.value }));
+
+  /*
+    ⚠️ AND THE STRIP IT VACATES IS BLACK. §5.1's snippet pads a bare `<View>`,
+    which leaves whatever is behind the root showing — on this app that is
+    white, so reserving the space traded a covered greeting for a white band
+    above the gradient.
+
+    Black is the answer that costs nothing and says the right thing: the
+    island is pretending to be the camera housing, so the strip it sits in
+    reads as more housing rather than as a gap the app fell out of. It is the
+    same decision as §6, applied to the one pixel §6 does not mention.
+  */
+
   return (
     <IslandContext.Provider value={value}>
-      {children}
+      <Animated.View style={[{ flex: 1, backgroundColor: ISLAND.bg }, reserveStyle]}>{children}</Animated.View>
       <IslandView
         hole={hole}
         screenW={screenW}
+        topInset={insets.top}
         message={current}
         reduceMotion={reduceMotion}
         onDismiss={shift}

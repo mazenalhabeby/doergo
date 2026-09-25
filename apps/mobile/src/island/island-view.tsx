@@ -55,17 +55,20 @@ const ICONS: Record<Tone, keyof typeof Ionicons.glyphMap> = {
 export function IslandView({
   hole,
   screenW,
+  topInset,
   message,
   onDismiss,
   reduceMotion,
 }: {
   hole: Cutout;
   screenW: number;
+  /** ⚠️ `rect` derives its `y` from this, never a constant — §5.2. */
+  topInset: number;
   message: IslandMessage | null;
   onDismiss: (id: number) => void;
   reduceMotion: boolean;
 }) {
-  const sealed = sealedBox(hole, screenW);
+  const sealed = sealedBox(hole, screenW, topInset);
   /*
     ⚠️ MEASURE, THEN SHOW. `pending` is rendered invisibly for exactly one
     frame so `onTextLayout` can report real widths at the real font — never a
@@ -115,7 +118,7 @@ export function IslandView({
       bodyLines: msg.body ? Math.max(1, widths.current.bodyLines) : 0,
       action: !!msg.action,
     };
-    const layout = readLayout({ hole, screenW, measured });
+    const layout = readLayout({ hole, screenW, measured, topInset });
     setShown({ msg, layout });
     setPending(null);
 

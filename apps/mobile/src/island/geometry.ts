@@ -101,8 +101,17 @@ const ACTION_H = 30;
 const DROP_GAP = 8;
 const BOTTOM = 14;
 
-/** The sealed capsule — what the island is when it has nothing to say. */
-export function sealedBox(hole: Cutout, screenW: number): Box {
+/**
+ * The sealed capsule — what the island is when it has nothing to say.
+ *
+ * ⚠️ `rect` TAKES ITS `y` FROM THE SAFE AREA, NEVER A CONSTANT — §5.2. A
+ * literal 12 lands on top of the clock and the battery on an iPhone SE, whose
+ * status bar occupies 0 → 20. `wrap` and `dock` are already safe because they
+ * derive `y` from the cutout, which is above or inside that strip by
+ * definition; `rect` has no cutout to derive anything from, which is exactly
+ * why it was the one that got it wrong.
+ */
+export function sealedBox(hole: Cutout, screenW: number, topInset = 0): Box {
   const shape = shapeFor(hole.kind);
   if (shape === 'wrap') {
     return {
@@ -118,7 +127,7 @@ export function sealedBox(hole: Cutout, screenW: number): Box {
     const w = 0;
     return { x: hole.x + hole.w / 2 - w / 2, y: hole.y + hole.h + 8, w, h: 36, radius: 999 };
   }
-  return { x: screenW / 2, y: 12, w: 0, h: 40, radius: 22 };
+  return { x: screenW / 2, y: topInset + 8, w: 0, h: 40, radius: 22 };
 }
 
 /**
@@ -161,10 +170,12 @@ export function readLayout(input: {
   hole: Cutout;
   screenW: number;
   measured: Measured;
+  /** ⚠️ `rect` needs it — §5.2. */
+  topInset?: number;
 }): Layout {
-  const { hole, screenW, measured: m } = input;
+  const { hole, screenW, measured: m, topInset = 0 } = input;
   const shape = shapeFor(hole.kind);
-  const sealed = sealedBox(hole, screenW);
+  const sealed = sealedBox(hole, screenW, topInset);
   const capW = Math.min(CAP, screenW - EDGE * 2);
   const natural = Math.min(naturalWidth(m, hole), capW);
 
@@ -173,8 +184,14 @@ export function readLayout(input: {
     y: sealed.y,
     w,
     h: rung >= 3 ? droppedHeight(sealed.h, m, lines) : sealed.h,
-    /* ⚠️ A dropped island is no longer a pill — §4 rung 3. */
-    radius: rung >= 3 ? 30 : shape === 'rect' ? 22 : 999,
+    /*
+      ⚠️ SHAPE FIRST, THEN RUNG — §5.3. Asking the rung first gave a dropped
+      `rect` a radius of 30, which makes it ROUNDER as it grows. `wrap` and
+      `dock` are pills, so 999 → 30 is the pill becoming a panel, which is the
+      point. A `rect` was never a pill: it is already a card, and dropping
+      does not change what it is.
+    */
+    radius: shape === 'rect' ? 22 : rung >= 3 ? 30 : 999,
   });
 
   /*
@@ -222,6 +239,32 @@ export function readLayout(input: {
   /* ③, or ④ when there is a body under it. */
   const rung: Rung = m.bodyLines > 0 ? 4 : 3;
   return { rung, shape, sealed, open: openBox(capW, rung, titleLines(m, capW)), left: s.left, right: s.right, icon: 'left', titleDrops: true };
+}
+
+/**
+ * ⚠️ WHAT A DOCKED ISLAND LANDS ON — §5.1, and it only bites on `dock` and
+ * `rect`.
+ *
+ * On an iPhone 13 the notch is `y: 0 → 30`, so the island docks at `y: 38`,
+ * height 36, occupying 38 → 74. The safe-area top inset is 47, so it overlaps
+ * the first 27pt of the app's own content.
+ *
+ * For a message that leaves after four seconds that is fine — it is a
+ * notification and it is allowed to be on top. ⚠️ FOR THE PERSISTENT LIVE
+ * SHIFT IT IS NOT. A pill that sits on the header forever is the exact fault
+ * this design was built to fix in the old toast, and it is what the first cut
+ * shipped: the ring covered `Friday, September 25` on the home screen, all
+ * day.
+ *
+ * So on `dock` and `rect` the live state RESERVES the space instead of
+ * floating over it. ⚠️ On `wrap` it never needs to, because it is inside the
+ * cutout area the app already avoids — and ⚠️ a transient message never
+ * reserves anything, or the whole app would nudge down for four seconds every
+ * time something happened.
+ */
+export function reserveFor(box: Box, shape: Shape, topInset: number): number {
+  if (shape === 'wrap') return 0;
+  return Math.max(0, box.y + box.h + 8 - topInset);
 }
 
 /** How many lines the dropped title needs across the open width. */

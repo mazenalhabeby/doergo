@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {
   CAP, EDGE, GAP, ICON, ICON_GAP, SIDE,
-  readLayout, sealedBox, shapeFor, type Cutout, type Measured,
+  readLayout, reserveFor, sealedBox, shapeFor, type Cutout, type Measured,
 } from '../geometry';
 import { androidCutout, cutoutFromInset } from '../cutout';
 import { TONES, dwellFor, ISLAND } from '../tokens';
@@ -159,10 +159,103 @@ describe('§5 — the three shapes', () => {
   });
 
   it('no cutout is a rect at radius 22, not a pill floating next to nothing', () => {
-    const s = sealedBox(NONE, 375);
-    expect(s.y).toBe(12);
+    const s = sealedBox(NONE, 375, 20);
     expect(s.h).toBe(40);
     expect(s.radius).toBe(22);
+  });
+});
+
+describe('§5.1–5.4 — the dock and rect paths', () => {
+  it('⚠️ 5.2 · a rect takes its y from the SAFE AREA, never a constant', () => {
+    /*
+      A literal 12 lands on top of the clock and the battery: an iPhone SE's
+      status bar occupies 0 → 20. `wrap` and `dock` were already safe because
+      they derive `y` from the cutout; `rect` has no cutout to derive anything
+      from, which is exactly why it was the one that got it wrong.
+    */
+    const se = sealedBox(NONE, 375, 20);
+    expect(se.y).toBe(28);
+    expect(se.y).toBeGreaterThanOrEqual(20);
+    // And it moves with the inset rather than staying put.
+    expect(sealedBox(NONE, 393, 59).y).toBe(67);
+    // ⚠️ No constant left behind.
+    expect(code('island/geometry.ts')).not.toMatch(/y: 12,/);
+  });
+
+  it('⚠️ 5.3 · a dropped rect stays at 22 — it was never a pill', () => {
+    /*
+      Asking the rung first gave a dropped rect a radius of 30, which makes it
+      ROUNDER as it grows. On a pill, 999 → 30 is the pill becoming a panel,
+      which is the point. A rect is already a card.
+    */
+    /* Long enough to exceed even a rect's generous row — see 5.4. */
+    const dropped = readLayout({
+      hole: NONE, screenW: 375, topInset: 20,
+      measured: { ...msg('Anna approved your overtime'), title: 600, bodyLines: 2 },
+    });
+    expect(dropped.titleDrops).toBe(true);
+    expect(dropped.open.radius).toBe(22);
+
+    // A dock IS a pill, so it does become a panel.
+    const pill = readLayout({
+      hole: NOTCH, screenW: 390, topInset: 47,
+      measured: { ...msg('Anna approved your overtime'), title: 600, bodyLines: 2 },
+    });
+    expect(pill.titleDrops).toBe(true);
+    expect(pill.open.radius).toBe(30);
+  });
+
+  it('⚠️ 5.1 · the live state RESERVES space on dock and rect, and never on wrap', () => {
+    /*
+      An iPhone 13 docks at y:38 height 36 — 38 → 74 — while the safe area
+      starts at 47, so it sits on the first 27pt of the app's own content. Fine
+      for four seconds; not fine for a pill that stays all day. The first cut
+      shipped exactly that: the ring covered `Friday, September 25`.
+    */
+    const dock = sealedBox(NOTCH, 390, 47);
+    expect(dock.y).toBe(38);
+    expect(dock.h).toBe(36);
+    expect(reserveFor(dock, 'dock', 47)).toBe(35);
+
+    const rect = sealedBox(NONE, 375, 20);
+    expect(reserveFor(rect, 'rect', 20)).toBe(56);
+
+    /* ⚠️ On wrap there is nothing to reserve — it is inside the area the app
+       already avoids. */
+    expect(reserveFor(sealedBox(PIXEL, 412, 44), 'wrap', 44)).toBe(0);
+    expect(reserveFor(sealedBox(DYNAMIC_ISLAND, 393, 59), 'wrap', 59)).toBe(0);
+
+    const ctx = code('island/island-context.tsx');
+    // ⚠️ Only the LIVE state reserves — a transient message must never move the app.
+    expect(ctx).toMatch(/liveMsg \? reserveFor\(/);
+    expect(ctx).toMatch(/: 0;/);
+    // ⚠️ On the same spring as the box, so the app moves with it rather than jumping.
+    expect(ctx).toMatch(/withSpring\(target, \{ damping: 26, stiffness: 240, mass: 1 \}\)/);
+    expect(ctx).toMatch(/paddingTop: reserve\.value/);
+  });
+
+  it('⚠️ 5.4 · a docked island holds MORE text than a Dynamic Island', () => {
+    /*
+      The opposite of what you would guess, and the reason a green run on an
+      iPhone 13 proves nothing: a docked row has no dead zone in the middle of
+      it. The notch phones are the easy case; the Dynamic Island is the hard
+      one.
+    */
+    const usable = (hole: Cutout, screenW: number, topInset: number) => {
+      const l = readLayout({ hole, screenW, topInset, measured: msg('Clocked in') });
+      return hole.kind === 'floating'
+        ? Math.round(l.left - ICON - ICON_GAP)
+        : Math.round(Math.min(CAP, screenW - EDGE * 2) - SIDE * 2 - ICON - ICON_GAP - 42 - 24);
+    };
+    const island = usable(DYNAMIC_ISLAND, 393, 59);
+    const pixel = usable(PIXEL, 412, 44);
+    const notch = usable(NOTCH, 390, 47);
+
+    expect(island).toBeLessThan(70);
+    expect(pixel).toBeGreaterThan(100);
+    // ⚠️ The docked row holds three times what the Dynamic Island does.
+    expect(notch).toBeGreaterThan(island * 3);
+    expect(notch).toBeGreaterThan(pixel);
   });
 });
 
