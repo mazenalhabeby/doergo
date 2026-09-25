@@ -2101,6 +2101,25 @@
       "inProgress": "Wird behoben",
       "resolved": "Behoben",
       "closed": "Geschlossen"
+    },
+    "by": "Gemeldet von {{name}}",
+    "byAndTo": "Gemeldet von {{name}} · bei {{to}}",
+    "aMember": "einem Mitglied",
+    "reopen": "Wieder aufgetreten — erneut öffnen",
+    "withdraw": "Kein Problem? Meldung zurückziehen",
+    "confirmResolve": "Als behoben markieren",
+    "confirmWithdraw": "Zurückziehen",
+    "reasonPlaceholder": "Noch etwas hinzuzufügen?",
+    "trail": {
+      "created": "{{name}} hat das gemeldet",
+      "acknowledged": "{{name}} hat es zur Kenntnis genommen",
+      "assigned": "An {{name}} übergeben",
+      "started": "{{name}} hat mit der Bearbeitung begonnen",
+      "resolved": "{{name}} hat es als behoben markiert",
+      "reopened": "{{name}} hat es erneut geöffnet",
+      "closed": "{{name}} hat es geschlossen",
+      "withdrawn": "{{name}} hat die Meldung zurückgezogen",
+      "changed": "{{name}} hat das aktualisiert"
     }
   },
   "route": {

@@ -2101,6 +2101,25 @@
       "inProgress": "In riparazione",
       "resolved": "Risolta",
       "closed": "Chiusa"
+    },
+    "by": "Segnalato da {{name}}",
+    "byAndTo": "Segnalato da {{name}} · con {{to}}",
+    "aMember": "un membro",
+    "reopen": "È tornato — riapri",
+    "withdraw": "Non è un problema? Ritira",
+    "confirmResolve": "Segna come risolto",
+    "confirmWithdraw": "Ritira",
+    "reasonPlaceholder": "Qualcosa da aggiungere?",
+    "trail": {
+      "created": "{{name}} ha segnalato questo",
+      "acknowledged": "{{name}} ha preso in carico",
+      "assigned": "Inviato a {{name}}",
+      "started": "{{name}} ha iniziato a lavorarci",
+      "resolved": "{{name}} l’ha segnato come risolto",
+      "reopened": "{{name}} l’ha riaperto",
+      "closed": "{{name}} l’ha chiuso",
+      "withdrawn": "{{name}} ha ritirato la segnalazione",
+      "changed": "{{name}} ha aggiornato questo"
     }
   },
   "route": {

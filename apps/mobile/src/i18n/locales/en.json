@@ -2144,6 +2144,25 @@
       "inProgress": "Being fixed",
       "resolved": "Resolved",
       "closed": "Closed"
+    },
+    "by": "Reported by {{name}}",
+    "byAndTo": "Reported by {{name}} · with {{to}}",
+    "aMember": "a member",
+    "reopen": "It is back — reopen it",
+    "withdraw": "Not an issue? Withdraw it",
+    "confirmResolve": "Mark it resolved",
+    "confirmWithdraw": "Withdraw it",
+    "reasonPlaceholder": "Anything to add?",
+    "trail": {
+      "created": "{{name}} reported this",
+      "acknowledged": "{{name}} acknowledged it",
+      "assigned": "Sent to {{name}}",
+      "started": "{{name}} started work on it",
+      "resolved": "{{name}} marked it resolved",
+      "reopened": "{{name}} reopened it",
+      "closed": "{{name}} closed it",
+      "withdrawn": "{{name}} withdrew it",
+      "changed": "{{name}} updated this"
     }
   },
   "worklog": {

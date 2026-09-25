@@ -11,7 +11,7 @@ import * as path from 'path';
 import type { AttendanceStatus, BreakStatus, TimeEntry } from '@hbcfield/shared/client';
 import { readShiftState, scheduleFor, heroParts, budgetParts } from '../../components/home/shift-state';
 import { readClockOut, awayLabel, AWAY_METRES } from '../../components/home/clock-out-state';
-import { lookFor, offeredTo, severityShown, severityTone, unreadFor, groupIssues } from '../../components/home/issue-status';
+import { lookFor, offeredTo, readThread, severityShown, severityTone, unreadFor, groupIssues } from '../../components/home/issue-status';
 import type { ShiftIssue, ShiftIssueStatus } from '../../lib/api/shift-issues';
 
 const SRC = path.resolve(__dirname, '../..');
@@ -417,27 +417,113 @@ describe('§9 — the twelve rules', () => {
     expect(code('components/issues/my-issues-sheet.tsx')).not.toMatch(/eventCount/);
   });
 
-  it('11 · the reporter does not Acknowledge', () => {
+  it('11 · the reporter does not Acknowledge, and cannot Resolve either', () => {
     /*
       ⚠️ ONE SHEET SERVES BOTH ROLES, so it has to know which one is looking.
       Both buttons used to appear as equal outlines whoever it was, which asks
       the person who filed a fault to acknowledge their own report.
-    */
-    const mine = { status: 'OPEN' as ShiftIssueStatus, reportedById: 'me' };
-    expect(offeredTo({ issue: mine, viewerId: 'me', canManage: true })).toEqual({ acknowledge: false, resolve: true, reply: true });
-    const theirs = { status: 'OPEN' as ShiftIssueStatus, reportedById: 'anna' };
-    expect(offeredTo({ issue: theirs, viewerId: 'me', canManage: true })).toEqual({ acknowledge: true, resolve: false, reply: true });
-    expect(offeredTo({ issue: { status: 'ACKNOWLEDGED', reportedById: 'anna' }, viewerId: 'me', canManage: true }))
-      .toEqual({ acknowledge: false, resolve: true, reply: true });
-    // A bystander gets neither.
-    expect(offeredTo({ issue: theirs, viewerId: 'me', canManage: false })).toEqual({ acknowledge: false, resolve: false, reply: true });
 
-    // ⚠️ And Resolve is a text link, not a button beside the reply.
+      ⚠️ AND THE SERVER REFUSES A PLAIN REPORTER'S RESOLVE. `shift-issues.
+      service.ts` allows a status change to somebody who can manage, or the
+      assignee, or the reporter ONLY for CANCELED — so the link the sheet used
+      to show every reporter was a 403 it swallowed. Proved against a live
+      server: mike@ got 403 on RESOLVED and 200 on CANCELED.
+    */
+    const none = { acknowledge: false, resolve: false, withdraw: false, reopen: false, reply: true };
+    const mine = { status: 'OPEN' as ShiftIssueStatus, reportedById: 'me', assignedToId: null };
+    const theirs = { status: 'OPEN' as ShiftIssueStatus, reportedById: 'anna', assignedToId: null };
+
+    // My own issue, and I can manage: resolve, never acknowledge.
+    expect(offeredTo({ issue: mine, viewerId: 'me', canManage: true })).toEqual({ ...none, resolve: true });
+    // Somebody else's, while OPEN: acknowledge first.
+    expect(offeredTo({ issue: theirs, viewerId: 'me', canManage: true })).toEqual({ ...none, acknowledge: true });
+    expect(offeredTo({ issue: { ...theirs, status: 'ACKNOWLEDGED' }, viewerId: 'me', canManage: true }))
+      .toEqual({ ...none, resolve: true });
+
+    // ⚠️ A plain reporter is offered the ending the server actually has.
+    expect(offeredTo({ issue: mine, viewerId: 'me', canManage: false })).toEqual({ ...none, withdraw: true });
+    // The assignee may resolve without managing anything.
+    expect(offeredTo({ issue: { ...theirs, status: 'ACKNOWLEDGED', assignedToId: 'me' }, viewerId: 'me', canManage: false }))
+      .toEqual({ ...none, resolve: true });
+    // A bystander gets nothing but the reply.
+    expect(offeredTo({ issue: theirs, viewerId: 'me', canManage: false })).toEqual(none);
+    // Settled: only whoever may change status can bring it back.
+    expect(offeredTo({ issue: { ...mine, status: 'RESOLVED' }, viewerId: 'me', canManage: false })).toEqual(none);
+    expect(offeredTo({ issue: { ...mine, status: 'RESOLVED' }, viewerId: 'me', canManage: true }))
+      .toEqual({ ...none, reopen: true });
+
     const thread = code('components/issues/issue-thread-sheet.tsx');
-    const at = thread.indexOf('issues.markResolved');
-    expect(thread.slice(Math.max(0, at - 400), at)).toMatch(/alignSelf: 'center'/);
+    // ⚠️ Every ending is a text link, not a button beside the reply.
+    for (const key of ['issues.markResolved', 'issues.withdraw', 'issues.reopen']) {
+      const at = thread.indexOf(key);
+      expect(at).toBeGreaterThan(-1);
+      expect(thread.slice(Math.max(0, at - 900), at)).toMatch(/alignSelf: 'center'/);
+    }
     // ⚠️ No read-receipt metaphor for acknowledged/resolved.
     expect(thread).not.toMatch(/✓✓/);
+    // ⚠️ The composer survives a resolve — the server never refuses a message.
+    expect(thread).not.toMatch(/closedNote/);
+  });
+
+  it('11b · the trail — every event draws something', () => {
+    /*
+      ⚠️ THE BUBBLE RETURNED `null` FOR ANY EVENT WITH NO BODY, so the moments
+      somebody actually picked the fault up were invisible and the thread had
+      silent gaps in it. The web has drawn these as a centred line since the
+      feature shipped.
+    */
+    const at = '2026-09-25T08:00:00.000Z';
+    const ev = (type: string, extra: Record<string, unknown> = {}) =>
+      ({ id: type, type, at, actorName: 'Anna Müller', ...extra }) as never;
+
+    const read = readThread([
+      ev('CREATED', { actorName: 'John Owner', body: 'Second rung is split.' }),
+      ev('ACKNOWLEDGED'),
+      ev('ASSIGNED', { metadata: { assignedToName: 'Karim Ahmad' } }),
+      ev('STATUS_CHANGED', { body: 'Ladder ordered.', metadata: { toStatus: 'IN_PROGRESS' } }),
+      ev('MESSAGE', { body: 'Do not use the bay ladder.' }),
+      ev('RESOLVED'),
+      ev('REOPENED'),
+      ev('CLOSED'),
+      ev('SOMETHING_NEW_FROM_A_NEWER_SERVER'),
+    ]);
+
+    // ⚠️ Nothing is dropped: nine in, nine out.
+    expect(read).toHaveLength(9);
+    expect(read.filter((e) => e.kind === 'note')).toHaveLength(8);
+
+    const keys = read.map((e) => (e.kind === 'note' ? e.key : 'MESSAGE'));
+    expect(keys).toEqual([
+      'issues.trail.created',
+      'issues.trail.acknowledged',
+      'issues.trail.assigned',
+      'issues.trail.started',
+      'MESSAGE',
+      'issues.trail.resolved',
+      'issues.trail.reopened',
+      'issues.trail.closed',
+      // ⚠️ An unknown type still draws a line rather than a gap.
+      'issues.trail.changed',
+    ]);
+
+    // ⚠️ ASSIGNED names the person it went TO, not the one who sent it.
+    const assigned = read[2];
+    expect(assigned.kind === 'note' && assigned.who).toBe('Karim Ahmad');
+    // The reason rides its own line.
+    const started = read[3];
+    expect(started.kind === 'note' && started.reason).toBe('Ladder ordered.');
+    // ⚠️ CREATED carries the description — the header must therefore not repeat it.
+    const created = read[0];
+    expect(created.kind === 'note' && created.reason).toBe('Second rung is split.');
+
+    const sheet = code('components/issues/issue-thread-sheet.tsx');
+    expect(sheet).toMatch(/readThread\(thread\)/);
+    // ⚠️ The description is gone from the header — it is the first line of the trail.
+    expect(sheet).not.toMatch(/\{issue\.description\}/);
+    // ⚠️ A PDF is not an image.
+    expect(sheet).toMatch(/startsWith\('image\/'\)/);
+    // ⚠️ And the six reasons are the web's own keys, not a second list.
+    expect(sheet).toMatch(/issues\.resolveReasons/);
   });
 
   it('12 · routing stays server-side', () => {
