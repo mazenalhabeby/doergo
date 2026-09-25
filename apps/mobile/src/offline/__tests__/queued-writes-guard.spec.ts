@@ -44,6 +44,21 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     },
     why: FALLBACK,
   },
+  /*
+    The job sheet and the My work card act through this one hook. An
+    organization without the offline layer has no engine at all, so every
+    action has the task screen's own `else` — the server, directly.
+  */
+  'src/components/job/use-job-actions.ts': {
+    calls: {
+      'tasksApi.updateStatus': 2,
+      'tasksApi.addComment': 2,
+      'tasksApi.declineTask': 1,
+      'reportsApi.completeTask': 1,
+      'shiftIssuesApi.create': 1,
+    },
+    why: FALLBACK,
+  },
   'app/(app)/(tabs)/create-task.tsx': {
     calls: { 'tasksApi.create': 1, 'taskAttachmentsApi.confirmUpload': 1 },
     why: FALLBACK,

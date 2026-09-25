@@ -7,6 +7,8 @@ import { useLocationTrackingContext } from '../../contexts/location-tracking-con
 import { changeTaskStatus, addTaskComment, declineTask, completeTaskWithReport } from '../../offline/tasks/task-actions';
 import { takeStatusFix, outboxFix, taskDestination } from '../../offline/tasks/status-fix';
 import { reportIssueFromPhone } from '../../offline/issues/issue-actions';
+import { tasksApi, reportsApi } from '../../lib/api';
+import { shiftIssuesApi } from '../../lib/api/shift-issues';
 import type { Task } from '../../lib/api/types';
 import { has } from './job-flow';
 
@@ -34,17 +36,25 @@ export function useJobActions(onChanged?: () => void) {
     (o.code && t(`offline.errors.${o.code}`, { defaultValue: '' })) || o.message || t('taskDetail.failedToUpdateStatus'),
   [t]);
 
+  /*
+    ⚠️ AN ORGANIZATION WITHOUT THE OFFLINE LAYER HAS NO ENGINE — and never
+    will, it is a per-organization switch. Every action therefore has the
+    task screen's shape: the queue when there is one, the server directly
+    when there is not. "This phone is still starting up" was shown to such a
+    member on every press (01.png, 22:01) — true of nothing.
+  */
   const guard = useCallback(async (id: string, work: () => Promise<void>) => {
     if (lock.current) return;
     lock.current = true;
     setBusy(id);
-    try { await work(); } finally { lock.current = false; setBusy(null); onChanged?.(); }
-  }, [onChanged]);
+    try { await work(); }
+    catch (err) { toast.error(err instanceof Error && err.message ? err.message : t('taskDetail.failedToUpdateStatus')); }
+    finally { lock.current = false; setBusy(null); onChanged?.(); }
+  }, [onChanged, toast, t]);
 
   /** Move the job one step. */
   const advance = useCallback((task: Task, current: FlowStatus, to: FlowStatus) => guard(task.id, async () => {
     const engine = offline.engine;
-    if (!engine) { toast.error(t('myWork.needsSync', { defaultValue: 'This phone is still starting up. Try again in a moment.' })); return; }
     const leaving = has(current, 'gps') && !has(to, 'gps');
     const setting = has(to, 'gps') && !has(current, 'gps');
     if (leaving) stopTracking();
@@ -55,10 +65,19 @@ export function useJobActions(onChanged?: () => void) {
       (§04 rule 2), so "Working" and "Picked up" get one too.
     */
     const fix = leaving || has(to, 'gps') ? await takeStatusFix('ARRIVED') : await takeStatusFix(to.key);
-    const outcome = await changeTaskStatus(engine, { taskId: task.id, from: task.status, to: to.key, fix: outboxFix(fix) }) as Outcome;
-    if (outcome.kind === 'refused') {
+    const undoTracking = () => {
       if (leaving) void startTracking(task.id, taskDestination(task));
       if (setting) stopTracking();
+    };
+    if (!engine) {
+      try { await tasksApi.updateStatus(task.id, to.key, undefined, fix); }
+      catch (err) { undoTracking(); throw err; }
+      toast.success(to.label, task.title);
+      return;
+    }
+    const outcome = await changeTaskStatus(engine, { taskId: task.id, from: task.status, to: to.key, fix: outboxFix(fix) }) as Outcome;
+    if (outcome.kind === 'refused') {
+      undoTracking();
       toast.error(refusal(outcome));
       return;
     }
@@ -69,7 +88,11 @@ export function useJobActions(onChanged?: () => void) {
   /** Decline — back to the office. Only offered where the workflow can move to a cancel step. */
   const decline = useCallback((task: Task) => guard(task.id, async () => {
     const engine = offline.engine;
-    if (!engine) return;
+    if (!engine) {
+      await tasksApi.declineTask(task.id);
+      toast.info(t('myWork.declined', { defaultValue: 'Declined' }), task.title);
+      return;
+    }
     const outcome = await declineTask(engine, { taskId: task.id }) as Outcome;
     if (outcome.kind === 'refused') { toast.error(refusal(outcome)); return; }
     toast.info(t('myWork.declined', { defaultValue: 'Declined' }), task.title);
@@ -87,17 +110,26 @@ export function useJobActions(onChanged?: () => void) {
     summary: string; workSeconds: number; signature?: string | null; customerName?: string; customerSignature?: string | null;
   }) => guard(task.id, async () => {
     const engine = offline.engine;
-    if (!engine) return;
+    const report = {
+      summary: input.summary.trim(),
+      workDuration: Math.max(0, Math.round(input.workSeconds)),
+      technicianSignature: input.signature ?? undefined,
+      customerSignature: input.customerSignature ?? undefined,
+      customerName: input.customerName?.trim() || undefined,
+    };
+    if (!engine) {
+      if (has(to, 'report')) await reportsApi.completeTask(task.id, report);
+      else {
+        await tasksApi.updateStatus(task.id, to.key);
+        if (report.summary) await tasksApi.addComment(task.id, report.summary);
+      }
+      toast.success(t('myWork.finished', { defaultValue: 'Job finished' }), task.title);
+      return;
+    }
     if (has(to, 'report') && offline.files) {
       const { outcome } = await completeTaskWithReport(engine, offline.files, {
         taskId: task.id,
-        report: {
-          summary: input.summary.trim(),
-          workDuration: Math.max(0, Math.round(input.workSeconds)),
-          technicianSignature: input.signature ?? undefined,
-          customerSignature: input.customerSignature ?? undefined,
-          customerName: input.customerName?.trim() || undefined,
-        },
+        report,
         photos: [],
       }) as { outcome: Outcome };
       if (outcome.kind === 'refused') { toast.error(refusal(outcome)); return; }
@@ -127,11 +159,17 @@ export function useJobActions(onChanged?: () => void) {
     const title = `${input.reason} · ${task.title}`.slice(0, 200);
     const description = [input.note?.trim(), `${task.title}${task.locationAddress ? ` · ${task.locationAddress}` : ''}`].filter(Boolean).join('\n\n');
     const engine = offline.engine;
-    if (!engine || !offline.files) { toast.error(t('myWork.needsSync', { defaultValue: 'This phone is still starting up. Try again in a moment.' })); return; }
+    const note = `⚠ ${input.reason}${input.note?.trim() ? ` — ${input.note.trim()}` : ''}`;
+    if (!engine || !offline.files) {
+      await shiftIssuesApi.create({ title, description, severity: input.severity, spaceId });
+      await tasksApi.addComment(task.id, note);
+      toast.say({ tone: 'waiting', title: t('myWork.wrongSent', { defaultValue: 'Sent to the office' }), body: task.title });
+      return;
+    }
     try {
       const { outcome } = await reportIssueFromPhone(engine, offline.files, { title, description, severity: input.severity, spaceId, photos: [] }) as { outcome: Outcome };
       if (outcome.kind === 'refused') { toast.error(refusal(outcome)); return; }
-      await addTaskComment(engine, { taskId: task.id, content: `⚠ ${input.reason}${input.note?.trim() ? ` — ${input.note.trim()}` : ''}` });
+      await addTaskComment(engine, { taskId: task.id, content: note });
       if (outcome.kind === 'queued') { toast.info(t('offline.savedForLater')); return; }
       toast.say({ tone: 'waiting', title: t('myWork.wrongSent', { defaultValue: 'Sent to the office' }), body: task.title });
     } catch {
