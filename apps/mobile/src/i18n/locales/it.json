@@ -3038,6 +3038,8 @@
     "nobodyOn": "senza nessuno",
     "yourSites": "Le tue sedi",
     "moreActions": "Altre azioni",
-    "reportIssue": "Segnala un problema"
+    "reportIssue": "Segnala un problema",
+    "late_one": "{{count}} giorno di ritardo",
+    "late_other": "{{count}} giorni di ritardo"
   }
 }

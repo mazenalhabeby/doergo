@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {
   shapeFor, faceFor, viewAllSpaceIds, weekOf, tasksOn, hasHour, decisionFor, routeFor,
-  stepsFor, shiftOn, shiftHours, nextJobAfter, figuresFor,
+  stepsFor, shiftOn, shiftHours, nextJobAfter, figuresFor, todaysOwn,
 } from '../../components/home/my-work';
 import type { ScheduleEntry, Task } from '../api/types';
 
@@ -56,6 +56,24 @@ describe('my-work — the week', () => {
     const list = [task({ id: 'x', dueDate: at(2026, 9, 27, 8) })];
     expect(nextJobAfter(list, new Date(2026, 8, 25), () => true)?.id).toBe('x');
     expect(nextJobAfter(list, new Date(2026, 8, 27), () => true)).toBeNull();
+  });
+});
+
+describe('my-work — today carries what is already in your hands', () => {
+  it('⚠️ 01.png: a job you are on stays on Today whatever its date — and leads', () => {
+    const now = new Date(2026, 8, 25, 20, 0);
+    const list = [
+      task({ id: 'today', dueDate: at(2026, 9, 25, 13), status: 'ASSIGNED' }),
+      task({ id: 'onTheWay', dueDate: at(2026, 9, 9), status: 'EN_ROUTE' }),
+      task({ id: 'overdue', dueDate: at(2026, 9, 20, 9), status: 'ASSIGNED' }),
+      task({ id: 'doneLate', dueDate: at(2026, 9, 10), status: 'COMPLETED' }),
+      task({ id: 'future', dueDate: at(2026, 9, 28, 9), status: 'ASSIGNED' }),
+    ];
+    const ids = todaysOwn(list, new Date(2026, 8, 25), (t) => t.status !== 'COMPLETED', now).map((t) => t.id);
+    expect(ids[0]).toBe('onTheWay');
+    expect(ids).toEqual(expect.arrayContaining(['today', 'overdue']));
+    expect(ids).not.toContain('doneLate');
+    expect(ids).not.toContain('future');
   });
 });
 

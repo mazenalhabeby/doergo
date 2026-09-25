@@ -3038,6 +3038,8 @@
     "nobodyOn": "sin asignar",
     "yourSites": "Tus sitios",
     "moreActions": "Más acciones",
-    "reportIssue": "Informar de un problema"
+    "reportIssue": "Informar de un problema",
+    "late_one": "{{count}} día de retraso",
+    "late_other": "{{count}} días de retraso"
   }
 }

@@ -3038,6 +3038,8 @@
     "nobodyOn": "niemand zugeteilt",
     "yourSites": "Ihre Standorte",
     "moreActions": "Weitere Aktionen",
-    "reportIssue": "Problem melden"
+    "reportIssue": "Problem melden",
+    "late_one": "{{count}} Tag überfällig",
+    "late_other": "{{count}} Tage überfällig"
   }
 }

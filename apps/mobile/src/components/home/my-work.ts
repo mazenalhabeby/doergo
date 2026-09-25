@@ -1,5 +1,6 @@
 import {
   isTaskAssignee, getFlowSteps, getNextStep, getStatusCapabilities, hasCapability,
+  rankMyWork, workBand,
   type FlowStatus,
 } from '@hbcfield/shared/client';
 import type { ScheduleEntry, Task } from '../../lib/api/types';
@@ -238,4 +239,23 @@ export function figuresFor(others: Task[], isOpen: (t: Task) => boolean): { open
     unassigned: open.filter((t) => !t.assignedToId).length,
     sites: new Set(open.map((t) => (t as unknown as { spaceId?: string | null }).spaceId ?? '—')).size,
   };
+}
+
+/**
+ * Today's own work: what is due today, PLUS what is already in your hands
+ * whatever its date says — under way, blocked, or overdue.
+ *
+ * ⚠️ A JOB YOU ARE ON DOES NOT LEAVE BECAUSE ITS DATE PASSED. "On the way" to
+ * a visit due sixteen days ago dropped out of Today entirely (01.png), while
+ * the Jobs tab put it first as "Next up". Both now order by `rankMyWork` — the
+ * shared answer to "what do I do next" — so they cannot disagree.
+ */
+export function todaysOwn(mine: Task[], today: Date, isOpen: (t: Task) => boolean, now: Date = new Date()): Task[] {
+  const due = new Set(tasksOn(mine, today).map((t) => t.id));
+  const carried = mine.filter((t) => {
+    if (due.has(t.id) || !isOpen(t)) return false;
+    const band = workBand(t as never, now);
+    return band === 'doing' || band === 'blocked' || band === 'overdue';
+  });
+  return rankMyWork([...mine.filter((t) => due.has(t.id)), ...carried] as never[], now) as unknown as Task[];
 }

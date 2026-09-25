@@ -3045,6 +3045,8 @@
     "nobodyOn": "nobody on",
     "yourSites": "Your sites",
     "moreActions": "More actions",
-    "reportIssue": "Report an issue"
+    "reportIssue": "Report an issue",
+    "late_one": "{{count}} day late",
+    "late_other": "{{count}} days late"
   }
 }

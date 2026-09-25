@@ -3,7 +3,7 @@ import { Linking, Platform, Pressable, View, type StyleProp, type ViewStyle } fr
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
-import { hasAccessModule, type FlowStatus } from '@hbcfield/shared/client';
+import { daysLate, hasAccessModule, type FlowStatus } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
@@ -28,7 +28,7 @@ import {
 import type { GlyphProps } from '../glyphs/glyphs';
 import {
   shapeFor, faceFor, viewAllSpaceIds, weekOf, sameDay, startOfDay, tasksOn, hasHour, isMine,
-  flowIdOf, stepsFor, isClosed, decisionFor, routeFor, shiftOn, shiftHours, nextJobAfter, figuresFor,
+  flowIdOf, stepsFor, isClosed, decisionFor, routeFor, shiftOn, shiftHours, nextJobAfter, figuresFor, todaysOwn,
   type Decision,
 } from './my-work';
 
@@ -127,17 +127,23 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
   // Today on mount, always. Selecting a day is a READ.
   const [selected, setSelected] = useState<Date>(() => startOfDay(new Date()));
   const week = useMemo(() => weekOf(new Date()), []);
-  const today = startOfDay(new Date());
+  const today = useMemo(() => startOfDay(new Date()), []);
 
   const open = useCallback((task: Task) => !isClosed(task, stepsFor(task, flows)), [flows]);
   const dayTasks = useMemo(() => (shape === 'shifts' ? [] : tasksOn(tasks, selected)), [shape, tasks, selected]);
   const dots = useMemo(() => week.map((d) => (shape === 'shifts' ? 0 : tasksOn(tasks, d).length)), [shape, tasks, week]);
 
-  /* ⚠️ MINE ALWAYS LEADS. */
+  /*
+    ⚠️ MINE ALWAYS LEADS — and on TODAY, mine also carries what is already in
+    my hands from earlier days (under way, blocked, overdue), ranked the way
+    the Jobs tab ranks it. Other days show their own date only.
+  */
+  const isToday = sameDay(selected, today);
   const { mine, theirs } = useMemo(() => {
-    if (face === 'executor') return { mine: dayTasks, theirs: [] as Task[] };
-    return { mine: dayTasks.filter((x) => isMine(x, user?.id)), theirs: dayTasks.filter((x) => !isMine(x, user?.id)) };
-  }, [dayTasks, face, user?.id]);
+    const own = face === 'executor' ? tasks : tasks.filter((x) => isMine(x, user?.id));
+    const mineList = isToday && shape !== 'shifts' ? todaysOwn(own, selected, open) : dayTasks.filter((x) => face === 'executor' || isMine(x, user?.id));
+    return { mine: mineList, theirs: face === 'executor' ? [] as Task[] : dayTasks.filter((x) => !isMine(x, user?.id)) };
+  }, [tasks, dayTasks, face, user?.id, isToday, selected, open, shape]);
 
   const active = useMemo(() => (phase === 'opening' ? null : mine.find((x) => isMine(x, user?.id) && open(x)) ?? null), [mine, user?.id, open, phase]);
   const decision = active ? decisionFor(active, user?.id, stepsFor(active, flows)) : null;
@@ -366,8 +372,11 @@ function ActiveRow({ task, decision, busy, onVerb, onMore, onOpen }: {
   };
 
   const Mark = decision ? MARKS[decision.primary.key] ?? (decision.primary.isFinal ? FinishGlyph : null) : null;
+  const late = daysLate(task.dueDate ?? null) ?? 0;
   const meta = [
-    hasHour(task.dueDate) ? formatTime(task.dueDate!) : null,
+    late > 0
+      ? t('myWork.late', { count: late, defaultValue: `${late} days late` })
+      : hasHour(task.dueDate) ? formatTime(task.dueDate!) : null,
     task.locationAddress,
     (task as unknown as { space?: { name?: string } }).space?.name,
   ].filter(Boolean).join(' · ');
@@ -455,7 +464,11 @@ function PlainRow({ task, done, mine, onPress }: { task: Task; done: boolean; mi
       </AText>
       <SyncChip entityId={task.id} />
       <AText variant="caption" tone="muted" numeric>
-        {done ? t('myWork.done', { defaultValue: 'done' }) : hasHour(task.dueDate) ? formatTime(task.dueDate!) : ''}
+        {done
+          ? t('myWork.done', { defaultValue: 'done' })
+          : (daysLate(task.dueDate ?? null) ?? 0) > 0
+            ? t('myWork.late', { count: daysLate(task.dueDate ?? null), defaultValue: 'late' })
+            : hasHour(task.dueDate) ? formatTime(task.dueDate!) : ''}
       </AText>
     </Pressable>
   );
