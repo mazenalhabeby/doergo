@@ -2976,7 +2976,8 @@
     "minBreak": "{{n}} Min Pause"
   },
   "widgets": {
-    "shiftClock": "Schichtuhr"
+    "shiftClock": "Schichtuhr",
+    "myWork": "Meine Arbeit"
   },
   "shiftEnd": {
     "finishingAt": "FEIERABEND BEI {{at}}",
@@ -3007,5 +3008,36 @@
       "other": "Etwas anderes"
     },
     "countedTotal": "Gezählt"
+  },
+  "myWork": {
+    "all": "Alle {{count}}",
+    "jobs_one": "{{count}} Auftrag",
+    "jobs_other": "{{count}} Aufträge",
+    "mine": "Meine · {{count}}",
+    "more": "+{{count}} weitere",
+    "nothingToday": "Heute ist nichts geplant.",
+    "nothingOn": "Am {{day}} ist nichts geplant.",
+    "nextAt": "Ihr nächster Auftrag ist am {{day}} um {{time}}.",
+    "nextOn": "Ihr nächster Auftrag ist am {{day}}.",
+    "nothingAhead": "Es ist noch nichts weiter geplant.",
+    "refused": "Ihre Aufträge konnten nicht geladen werden.",
+    "refusedBody": "Das Büro hat die Anfrage abgelehnt.",
+    "absent": "Ihre Aufträge sind noch nicht auf diesem Telefon.",
+    "absentBody": "Verbinden Sie sich einmal, dann sind sie beim nächsten Mal da – mit oder ohne Empfang.",
+    "openJob": "Auftrag öffnen",
+    "done": "erledigt",
+    "onTheClock": "Eingestempelt",
+    "shift": "Schicht",
+    "since": "seit {{time}}",
+    "hours": "{{count}} Std.",
+    "noShift": "Keine Schicht am {{day}}.",
+    "across_one": "An {{count}} Standort",
+    "across_other": "An {{count}} Standorten",
+    "open": "offen",
+    "urgent": "dringend",
+    "nobodyOn": "niemand zugeteilt",
+    "yourSites": "Ihre Standorte",
+    "moreActions": "Weitere Aktionen",
+    "reportIssue": "Problem melden"
   }
 }

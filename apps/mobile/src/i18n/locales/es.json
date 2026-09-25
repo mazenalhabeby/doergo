@@ -2976,7 +2976,8 @@
     "minBreak": "{{n}} min de pausa"
   },
   "widgets": {
-    "shiftClock": "Reloj de turno"
+    "shiftClock": "Reloj de turno",
+    "myWork": "Mi trabajo"
   },
   "shiftEnd": {
     "finishingAt": "TERMINANDO EN {{at}}",
@@ -3007,5 +3008,36 @@
       "other": "Otra cosa"
     },
     "countedTotal": "Contabilizado"
+  },
+  "myWork": {
+    "all": "Todos {{count}}",
+    "jobs_one": "{{count}} trabajo",
+    "jobs_other": "{{count}} trabajos",
+    "mine": "Míos · {{count}}",
+    "more": "+{{count}} más",
+    "nothingToday": "Nada programado hoy.",
+    "nothingOn": "Nada programado el {{day}}.",
+    "nextAt": "Tu próximo trabajo es el {{day}} a las {{time}}.",
+    "nextOn": "Tu próximo trabajo es el {{day}}.",
+    "nothingAhead": "No hay nada más programado todavía.",
+    "refused": "No se pudieron cargar tus trabajos.",
+    "refusedBody": "La oficina rechazó la solicitud.",
+    "absent": "Tus trabajos aún no están en este teléfono.",
+    "absentBody": "Conéctate una vez y estarán aquí la próxima vez, con o sin señal.",
+    "openJob": "Abrir el trabajo",
+    "done": "hecho",
+    "onTheClock": "En jornada",
+    "shift": "Turno",
+    "since": "desde las {{time}}",
+    "hours": "{{count}} h",
+    "noShift": "Sin turno el {{day}}.",
+    "across_one": "En {{count}} sitio",
+    "across_other": "En {{count}} sitios",
+    "open": "abiertos",
+    "urgent": "urgentes",
+    "nobodyOn": "sin asignar",
+    "yourSites": "Tus sitios",
+    "moreActions": "Más acciones",
+    "reportIssue": "Informar de un problema"
   }
 }

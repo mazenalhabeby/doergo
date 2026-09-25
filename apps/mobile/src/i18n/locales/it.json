@@ -2976,7 +2976,8 @@
     "minBreak": "{{n}} min di pausa"
   },
   "widgets": {
-    "shiftClock": "Orologio del turno"
+    "shiftClock": "Orologio del turno",
+    "myWork": "Il mio lavoro"
   },
   "shiftEnd": {
     "finishingAt": "FINE TURNO A {{at}}",
@@ -3007,5 +3008,36 @@
       "other": "Altro"
     },
     "countedTotal": "Conteggiato"
+  },
+  "myWork": {
+    "all": "Tutti {{count}}",
+    "jobs_one": "{{count}} lavoro",
+    "jobs_other": "{{count}} lavori",
+    "mine": "Miei · {{count}}",
+    "more": "+{{count}} altri",
+    "nothingToday": "Niente in programma oggi.",
+    "nothingOn": "Niente in programma {{day}}.",
+    "nextAt": "Il tuo prossimo lavoro è {{day}} alle {{time}}.",
+    "nextOn": "Il tuo prossimo lavoro è {{day}}.",
+    "nothingAhead": "Non c’è ancora altro in programma.",
+    "refused": "Impossibile caricare i tuoi lavori.",
+    "refusedBody": "L’ufficio ha rifiutato la richiesta.",
+    "absent": "I tuoi lavori non sono ancora su questo telefono.",
+    "absentBody": "Connettiti una volta e saranno qui la prossima volta, con o senza segnale.",
+    "openJob": "Apri il lavoro",
+    "done": "fatto",
+    "onTheClock": "In servizio",
+    "shift": "Turno",
+    "since": "dalle {{time}}",
+    "hours": "{{count}} h",
+    "noShift": "Nessun turno {{day}}.",
+    "across_one": "Su {{count}} sede",
+    "across_other": "Su {{count}} sedi",
+    "open": "aperti",
+    "urgent": "urgenti",
+    "nobodyOn": "senza nessuno",
+    "yourSites": "Le tue sedi",
+    "moreActions": "Altre azioni",
+    "reportIssue": "Segnala un problema"
   }
 }

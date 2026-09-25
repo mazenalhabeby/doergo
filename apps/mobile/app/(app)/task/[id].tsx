@@ -61,6 +61,7 @@ import { useOffline } from '../../../src/offline/offline-context';
 import { mergeAttachments, pendingAttachments } from '../../../src/offline/tasks/overlay';
 import { loadTaskDetail } from '../../../src/offline/tasks/task-source';
 import { addTaskComment, addTaskPhoto, changeTaskStatus, completeTaskWithReport, declineTask } from '../../../src/offline/tasks/task-actions';
+import { takeStatusFix, outboxFix, taskDestination } from '../../../src/offline/tasks/status-fix';
 import { OfflineBanner } from '../../../src/offline/components/offline-banner';
 import { SyncChip } from '../../../src/offline/components/sync-chip';
 import { BeThereCard } from '../../../src/components/tasks/be-there-card';
@@ -306,7 +307,7 @@ export function TaskDetailPane({
   // Tracking lives in app-level context — survives screen navigation
   useEffect(() => {
     if (task?.status === TaskStatus.EN_ROUTE && !isTracking && task.id) {
-      startTracking(task.id, destinationOf(task));
+      startTracking(task.id, taskDestination(task));
     } else if (task?.status !== TaskStatus.EN_ROUTE && isTracking) {
       stopTracking();
     }
@@ -501,40 +502,11 @@ export function TaskDetailPane({
       }
 
       if (newStatus === TaskStatus.EN_ROUTE) {
-        startTracking(task.id, destinationOf(task));
+        startTracking(task.id, taskDestination(task));
       }
 
-      // Get GPS location for statuses that require location verification
-      let location: { lat: number; lng: number; accuracy?: number; fixAt?: string; mocked?: boolean } | undefined;
-      const locationRequiredStatuses = [TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS];
-      if (locationRequiredStatuses.includes(newStatus as any)) {
-        try {
-          const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
-          if (permStatus === 'granted') {
-            const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-            /*
-              The device's own error radius goes with the fix.
-
-              It was being read and thrown away: a phone reporting "here, ±40m"
-              was judged as though it had said "here, exactly", so somebody
-              standing at the customer's door was refused for being 35 metres
-              out. The server widens the zone by this instead. Null on a
-              platform that does not report it, which reads as no claim.
-            */
-            location = {
-              lat: loc.coords.latitude,
-              lng: loc.coords.longitude,
-              accuracy: loc.coords.accuracy ?? undefined,
-              // When the fix was taken and whether a mock-location app produced it —
-              // a change sent later is judged by where the member was at the tap.
-              fixAt: new Date(loc.timestamp).toISOString(),
-              mocked: (loc as { mocked?: boolean }).mocked ?? false,
-            };
-          }
-        } catch {
-          // Location will be undefined — backend will reject if task has location set
-        }
-      }
+      // Where they are, for the statuses judged by it — one copy, shared with the home widget.
+      const location = await takeStatusFix(newStatus);
 
       if (offline.engine) {
         const outcome = await changeTaskStatus(offline.engine, {
@@ -542,9 +514,7 @@ export function TaskDetailPane({
           from: task.status,
           to: newStatus,
           reason,
-          fix: location && location.accuracy !== undefined && location.fixAt
-            ? { lat: location.lat, lng: location.lng, accuracy: location.accuracy, fixAt: location.fixAt, mocked: location.mocked }
-            : null,
+          fix: outboxFix(location),
         });
         if (outcome.kind === 'refused') throw new Error(refusalText(outcome));
         if (outcome.kind === 'done') {
@@ -561,7 +531,7 @@ export function TaskDetailPane({
       setTask(updatedTask);
     } catch (err) {
       if (task.status === TaskStatus.EN_ROUTE && newStatus === TaskStatus.ARRIVED) {
-        startTracking(task.id, destinationOf(task));
+        startTracking(task.id, taskDestination(task));
       }
       if (newStatus === TaskStatus.EN_ROUTE) {
         stopTracking();
@@ -2019,7 +1989,7 @@ export function TaskDetailPane({
                     )}
                   </View>
                   {locationError && (
-                    <TouchableOpacity onPress={() => task && startTracking(task.id, destinationOf(task))} style={styles.retryTrackingButton}>
+                    <TouchableOpacity onPress={() => task && startTracking(task.id, taskDestination(task))} style={styles.retryTrackingButton}>
                       <Text style={styles.retryTrackingText}>{t('common.retry')}</Text>
                     </TouchableOpacity>
                   )}
@@ -2167,15 +2137,6 @@ export function TaskDetailPane({
 }
 
 // Route entry: reads the id from the URL and renders the pane as a full-screen sheet.
-/**
- * Where a task is being driven to. Passed to the tracker so the phone can
- * recognise arrival from the route it is already recording — see
- * `services/route-arrival.ts`. A task without coordinates simply gets no
- * arrival prompt.
- */
-function destinationOf(task: Task) {
-  return { lat: task.locationLat, lng: task.locationLng, address: task.locationAddress };
-}
 
 export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

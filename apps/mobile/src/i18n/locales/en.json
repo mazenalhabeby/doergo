@@ -2983,7 +2983,8 @@
     "minBreak": "{{n}} min break"
   },
   "widgets": {
-    "shiftClock": "Shift clock"
+    "shiftClock": "Shift clock",
+    "myWork": "My work"
   },
   "shiftEnd": {
     "finishingAt": "FINISHING AT {{at}}",
@@ -3014,5 +3015,36 @@
       "other": "Something else"
     },
     "countedTotal": "Counted"
+  },
+  "myWork": {
+    "all": "All {{count}}",
+    "jobs_one": "{{count}} job",
+    "jobs_other": "{{count}} jobs",
+    "mine": "Mine · {{count}}",
+    "more": "+{{count}} more",
+    "nothingToday": "Nothing scheduled today.",
+    "nothingOn": "Nothing scheduled on {{day}}.",
+    "nextAt": "Your next job is {{day}} at {{time}}.",
+    "nextOn": "Your next job is {{day}}.",
+    "nothingAhead": "Nothing else is scheduled yet.",
+    "refused": "Could not load your jobs.",
+    "refusedBody": "The office refused the request.",
+    "absent": "Your jobs are not on this phone yet.",
+    "absentBody": "Connect once and they will be here next time, signal or not.",
+    "openJob": "Open the job",
+    "done": "done",
+    "onTheClock": "On the clock",
+    "shift": "Shift",
+    "since": "since {{time}}",
+    "hours": "{{count}} h",
+    "noShift": "No shift on {{day}}.",
+    "across_one": "Across {{count}} site",
+    "across_other": "Across {{count}} sites",
+    "open": "open",
+    "urgent": "urgent",
+    "nobodyOn": "nobody on",
+    "yourSites": "Your sites",
+    "moreActions": "More actions",
+    "reportIssue": "Report an issue"
   }
 }

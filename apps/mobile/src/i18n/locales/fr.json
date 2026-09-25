@@ -2976,7 +2976,8 @@
     "minBreak": "{{n}} min de pause"
   },
   "widgets": {
-    "shiftClock": "Horloge de service"
+    "shiftClock": "Horloge de service",
+    "myWork": "Mon travail"
   },
   "shiftEnd": {
     "finishingAt": "FIN DE SERVICE À {{at}}",
@@ -3007,5 +3008,36 @@
       "other": "Autre chose"
     },
     "countedTotal": "Compté"
+  },
+  "myWork": {
+    "all": "Tout {{count}}",
+    "jobs_one": "{{count}} intervention",
+    "jobs_other": "{{count}} interventions",
+    "mine": "Les miennes · {{count}}",
+    "more": "+{{count}} de plus",
+    "nothingToday": "Rien de prévu aujourd’hui.",
+    "nothingOn": "Rien de prévu le {{day}}.",
+    "nextAt": "Votre prochaine intervention est le {{day}} à {{time}}.",
+    "nextOn": "Votre prochaine intervention est le {{day}}.",
+    "nothingAhead": "Rien d’autre n’est encore prévu.",
+    "refused": "Impossible de charger vos interventions.",
+    "refusedBody": "Le bureau a refusé la demande.",
+    "absent": "Vos interventions ne sont pas encore sur ce téléphone.",
+    "absentBody": "Connectez-vous une fois et elles seront là la prochaine fois, avec ou sans réseau.",
+    "openJob": "Ouvrir l’intervention",
+    "done": "fait",
+    "onTheClock": "En service",
+    "shift": "Poste",
+    "since": "depuis {{time}}",
+    "hours": "{{count}} h",
+    "noShift": "Pas de poste le {{day}}.",
+    "across_one": "Sur {{count}} site",
+    "across_other": "Sur {{count}} sites",
+    "open": "ouvertes",
+    "urgent": "urgentes",
+    "nobodyOn": "sans personne",
+    "yourSites": "Vos sites",
+    "moreActions": "Plus d’actions",
+    "reportIssue": "Signaler un problème"
   }
 }

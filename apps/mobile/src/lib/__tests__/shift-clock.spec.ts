@@ -767,7 +767,7 @@ describe('the shift clock is a row', () => {
   });
 
   it('is in the default order', () => {
-    expect(registry).toMatch(/DEFAULT_ORDER: string\[\] = \['shift-clock'\]/);
+    expect(registry).toMatch(/DEFAULT_ORDER: string\[\] = \['shift-clock'/);
   });
 });
 

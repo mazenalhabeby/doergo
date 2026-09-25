@@ -1,5 +1,6 @@
 import type React from 'react';
 import { ShiftClockCard } from '../components/home/shift-clock-card';
+import { MyWorkCard } from '../components/home/my-work-card';
 import type { Requires } from './entitlement';
 import { meets } from './entitlement';
 import type { User } from '../lib/api/types';
@@ -97,6 +98,26 @@ export const WIDGETS: WidgetRow[] = [
     empty: 'hidden',
     Component: ShiftClockCard,
   },
+  /*
+    My work — `docs/design/my-work/`. Today's jobs, this week and the next job
+    in one row: a week strip that changes the list, and a first row that
+    carries its decision.
+
+    ⚠️ NO `requires`. The rule is `tasks` OR `clock`, which `Requires` cannot
+    say; the CARD returns null for a member holding neither, below its hooks.
+    Gating it on `tasks` alone would hide it from exactly the clock-only
+    member the fold exists for.
+
+    ⚠️ A WELL. It is a list, and a list over a gradient dies in sunlight.
+  */
+  {
+    key: 'my-work',
+    title: 'widgets.myWork',
+    question: 'What am I doing today, and this week?',
+    surface: 'well',
+    empty: 'allClear',
+    Component: MyWorkCard,
+  },
 ];
 
 /**
@@ -111,7 +132,7 @@ export const WIDGETS: WidgetRow[] = [
  * skipped silently, which is right for a member whose entitlement changed and
  * wrong for a typo — so `registry.spec.ts` fails on one.
  */
-export const DEFAULT_ORDER: string[] = ['shift-clock'];
+export const DEFAULT_ORDER: string[] = ['shift-clock', 'my-work'];
 
 /**
  * ENTITLEMENT IS ASKED ONCE, AND FILTERED LAST.
