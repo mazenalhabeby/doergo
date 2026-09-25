@@ -417,21 +417,15 @@ export function TabPill({
           height: BAR_ROW + bottomInset + SCRIM_RISE,
         }}
       />
+      {/*
+        ⚠️ THE SHADOW LIVES ON A WRAPPER, NOT ON THE PILL. The pill needs
+        `overflow: hidden` to clip its blur to the radius, and on iOS
+        `overflow: hidden` clips the view's OWN shadow too — so the light-mode
+        shadow this bar depends on was never drawn (09.png).
+      */}
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          height: BAR_ROW,
           borderRadius: amazen.radius.full,
-          /*
-            ⚠️ `overflow: hidden` IS WHAT MAKES IT A PILL.
-
-            The blur behind it is a RECTANGLE — it knows nothing about the
-            radius — so without this the glass is a square sitting behind a
-            rounded row, which on a dark ground reads as a rendering fault
-            rather than a design.
-          */
-          overflow: 'hidden',
           backgroundColor: c.barFill,
           /*
             ⚠️ THE SHADOW IS LOAD-BEARING IN LIGHT MODE.
@@ -449,9 +443,9 @@ export function TabPill({
           ...(amazen.scheme === 'light'
             ? {
                 shadowColor: '#0b332a',
-                shadowOpacity: 0.12,
-                shadowRadius: 18,
-                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.14,
+                shadowRadius: 14,
+                shadowOffset: { width: 0, height: 4 },
                 elevation: 8,
               }
             : {
@@ -461,6 +455,24 @@ export function TabPill({
                 shadowOffset: { width: 0, height: 8 },
                 elevation: 8,
               }),
+        }}
+      >
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          height: BAR_ROW,
+          borderRadius: amazen.radius.full,
+          /*
+            ⚠️ `overflow: hidden` IS WHAT MAKES IT A PILL.
+
+            The blur behind it is a RECTANGLE — it knows nothing about the
+            radius — so without this the glass is a square sitting behind a
+            rounded row, which on a dark ground reads as a rendering fault
+            rather than a design.
+          */
+          overflow: 'hidden',
+          backgroundColor: c.barFill,
           // ⚠️ NO BORDER. The references have none, and a hairline on a pill
           // over a gradient reads as a seam at the top and nothing at the
           // bottom. The shadow below does the separating instead.
@@ -541,6 +553,7 @@ export function TabPill({
             <TabSlot key={it.key} item={it} width={w?.capsule ?? 0} markWidth={w?.mark ?? 0} />
           ),
         ) : null}
+      </View>
       </View>
     </View>
   );
