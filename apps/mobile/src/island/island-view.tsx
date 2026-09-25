@@ -55,20 +55,17 @@ const ICONS: Record<Tone, keyof typeof Ionicons.glyphMap> = {
 export function IslandView({
   hole,
   screenW,
-  topInset,
   message,
   onDismiss,
   reduceMotion,
 }: {
   hole: Cutout;
   screenW: number;
-  /** ⚠️ `rect` derives its `y` from this, never a constant — §5.2. */
-  topInset: number;
   message: IslandMessage | null;
   onDismiss: (id: number) => void;
   reduceMotion: boolean;
 }) {
-  const sealed = sealedBox(hole, screenW, topInset);
+  const sealed = sealedBox(hole, screenW);
   /*
     ⚠️ MEASURE, THEN SHOW. `pending` is rendered invisibly for exactly one
     frame so `onTextLayout` can report real widths at the real font — never a
@@ -130,7 +127,7 @@ export function IslandView({
       bodyLines: msg.body ? Math.max(1, widths.current.bodyLines) : 0,
       action: !!msg.action,
     };
-    const layout = readLayout({ hole, screenW, measured, topInset });
+    const layout = readLayout({ hole, screenW, measured });
     setShown({ msg, layout });
     setPending(null);
 
@@ -238,6 +235,12 @@ export function IslandView({
                 ⚠️ THE CONTENT ROW IS IN THE LOWER BAND ON A VISOR. Its upper
                 band IS the status-bar strip — putting the message there would
                 put it on the clock.
+              */}
+              {/*
+                ⚠️ THE CONTENT ROW IS LEVEL WITH THE CLOCK, NOT BELOW IT —
+                §5.5's correction. It used to be pushed under a status-bar
+                band, which pinned the message to the bottom of a 78pt slab.
+                The status bar is cleared HORIZONTALLY by `visorCap`.
               */}
               <Animated.View style={[styles.headRow, { marginTop: layout.headTop, height: layout.headHeight }, headStyle]}>
                 {layout.icon === 'left' ? <Glyph tone={msg.tone} fg={look.fg} /> : <View style={{ width: 0 }} />}

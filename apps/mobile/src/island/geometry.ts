@@ -62,8 +62,22 @@ export function shapeFor(kind: CutoutKind): Shape {
   return kind === 'floating' ? 'wrap' : 'visor';
 }
 
-/** The content row under a visor's status-bar band. */
-export const VISOR_ROW = 34;
+/**
+ * ⚠️ THE VISOR'S OWN HEIGHT — NOT `insets.top + 34`.
+ *
+ * An earlier version of §5.5 said the content row was pushed below the
+ * status-bar band, and that is what shipped in `c1145217`: on a notch phone
+ * `44 + 34 = 78pt` of black hanging off the top edge with the message pinned
+ * to the bottom of it — a slab, not an island. The band was belt-and-braces
+ * for a collision that cannot happen.
+ *
+ * ⚠️ NOTHING NEEDS TO CLEAR THE STATUS BAR VERTICALLY, BECAUSE IT IS ALREADY
+ * CLEARED HORIZONTALLY. The clock is at the far left, the battery at the far
+ * right, and the visor is centred and capped short of both — `visorCap` is
+ * the rule doing the real work. So the content row is LEVEL with them, exactly
+ * as a Dynamic Island is.
+ */
+export const VISOR_MIN = 44;
 /** ⚠️ The visor's bottom corners. The top ones are square — it is flush. */
 export const VISOR_RADIUS = 26;
 /**
@@ -143,14 +157,12 @@ const BOTTOM = 14;
 /**
  * The sealed capsule — what the island is when it has nothing to say.
  *
- * ⚠️ `rect` TAKES ITS `y` FROM THE SAFE AREA, NEVER A CONSTANT — §5.2. A
- * literal 12 lands on top of the clock and the battery on an iPhone SE, whose
- * status bar occupies 0 → 20. `wrap` and `dock` are already safe because they
- * derive `y` from the cutout, which is above or inside that strip by
- * definition; `rect` has no cutout to derive anything from, which is exactly
- * why it was the one that got it wrong.
+ * ⚠️ NO SAFE-AREA INSET IN HERE. §5.2's bug was a literal `y: 12` landing on
+ * the clock and the battery; the fix was not to thread the inset through but
+ * to notice that a visor starts AT the edge and is cleared HORIZONTALLY —
+ * see `VISOR_MIN`. An inset in this function is the 78pt slab coming back.
  */
-export function sealedBox(hole: Cutout, screenW: number, topInset = 0): Box {
+export function sealedBox(hole: Cutout, screenW: number): Box {
   const shape = shapeFor(hole.kind);
   if (shape === 'wrap') {
     return {
@@ -176,15 +188,23 @@ export function sealedBox(hole: Cutout, screenW: number, topInset = 0): Box {
     x: screenW / 2,
     y: 0,
     w: 0,
-    h: bandFor(hole, topInset) + VISOR_ROW,
+    h: visorHeight(hole),
     radiusTop: 0,
     radiusBottom: VISOR_RADIUS,
   };
 }
 
-/** The black band above the content row: the status bar, or the hardware. */
-export function bandFor(hole: Cutout, topInset: number): number {
-  return Math.max(topInset, hole.kind === 'none' ? 0 : hole.y + hole.h);
+/**
+ * ⚠️ `max(hole.y + hole.h, VISOR_MIN)` — the cutout's own bottom, or 44.
+ *
+ * On an `edge` device the notch bottom is 30, so `max(30, 44)` is still 44 and
+ * the visor simply extends the notch a little lower: one continuous black
+ * form, no seam, no gap. On a taller cutout it grows to clear it.
+ *
+ * ⚠️ `insets.top` IS NOT IN THIS. See `VISOR_MIN`.
+ */
+export function visorHeight(hole: Cutout): number {
+  return Math.max(hole.kind === 'none' ? 0 : hole.y + hole.h, VISOR_MIN);
 }
 
 /**
@@ -232,18 +252,21 @@ export function readLayout(input: {
   hole: Cutout;
   screenW: number;
   measured: Measured;
-  /** ⚠️ `rect` needs it — §5.2. */
-  topInset?: number;
 }): Layout {
-  const { hole, screenW, measured: m, topInset = 0 } = input;
+  const { hole, screenW, measured: m } = input;
   const shape = shapeFor(hole.kind);
-  const sealed = sealedBox(hole, screenW, topInset);
+  const sealed = sealedBox(hole, screenW);
   const capW = Math.min(CAP, screenW - EDGE * 2);
   const natural = Math.min(naturalWidth(m, hole), capW);
 
-  const headH = shape === 'visor' ? VISOR_ROW : sealed.h;
-  /* ⚠️ Below the black band, or the message sits on the clock — §5.5. */
-  const headTop = shape === 'visor' ? bandFor(hole, topInset) : 0;
+  /*
+    ⚠️ THE CONTENT ROW IS VERTICALLY CENTRED IN THE VISOR — §5.5's correction.
+    It used to be pushed below a status-bar band, which pinned the message to
+    the bottom of a 78pt slab. It is LEVEL with the clock and the battery,
+    which are cleared horizontally by `visorCap`, not vertically by a band.
+  */
+  const headH = sealed.h;
+  const headTop = 0;
 
   const openBox = (w: number, rung: Rung, lines: number): Box => ({
     x: placeX(w, hole, screenW),

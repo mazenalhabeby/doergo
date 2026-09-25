@@ -148,7 +148,7 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
   const shape = shapeFor(hole.kind);
   const visorShowing = shape === 'visor' && !!current;
   /* ⚠️ Only the LIVE state — a transient message floats. See `reserveFor`. */
-  const target = liveMsg ? reserveFor(sealedBox(hole, screenW, insets.top), shape, insets.top) : 0;
+  const target = liveMsg ? reserveFor(sealedBox(hole, screenW), shape, insets.top) : 0;
 
   const say = useCallback<IslandContextValue['say']>((input) => {
     push({ ...input, dwell: dwellFor(input.tone, !!input.action) });
@@ -208,7 +208,6 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
       <IslandView
         hole={hole}
         screenW={screenW}
-        topInset={insets.top}
         message={current}
         reduceMotion={reduceMotion}
         onDismiss={shift}
