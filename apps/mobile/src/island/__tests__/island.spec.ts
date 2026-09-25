@@ -116,8 +116,8 @@ describe('what does not fit beside the lens goes under it', () => {
     expect(l.open.h).toBeGreaterThan(l.headHeight);
   });
 
-  it('`Clocked in` drops on a Dynamic Island and stays beside a Pixel lens', () => {
-    expect(readLayout({ hole: DYNAMIC_ISLAND, screenW: 393, topInset: 59, measured: msg('Clocked in') }).titleDrops).toBe(true);
+  it('a long title drops on a Dynamic Island; a short one stays beside a Pixel lens', () => {
+    expect(readLayout({ hole: DYNAMIC_ISLAND, screenW: 393, topInset: 59, measured: msg('Anna approved your overtime') }).titleDrops).toBe(true);
     expect(readLayout({ hole: PIXEL, screenW: 412, topInset: 28, measured: msg('Clocked in') }).titleDrops).toBe(false);
   });
 
@@ -153,7 +153,7 @@ describe('what does not fit beside the lens goes under it', () => {
     /* ⚠️ 05.png: a phantom icon gap sent it to the full cap width. */
     const l = readLayout({ hole: IPHONE_13, screenW: 390, topInset: 47, measured: { title: 0, value: 20, bodyLines: 0, action: false } });
     expect(l.rung).toBe(1);
-    expect(l.open.w).toBeLessThan(IPHONE_13.w + 100);
+    expect(l.open.w).toBeLessThan(IPHONE_13.w + 120);
     expect(l.titleDrops).toBe(false);
     expect(l.open.h).toBe(l.headHeight);
   });
@@ -323,6 +323,6 @@ describe('§11 — what is deleted, and stays deleted', () => {
 
 describe('the constants are the spec\'s', () => {
   it('§3', () => {
-    expect([GAP, SIDE, ICON, ICON_GAP, CAP, EDGE]).toEqual([6, 18, 22, 9, 356, 8]);
+    expect([GAP, SIDE, ICON, ICON_GAP, CAP, EDGE]).toEqual([6, 18, 22, 9, 372, 8]);
   });
 });

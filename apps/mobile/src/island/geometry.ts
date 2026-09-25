@@ -44,7 +44,7 @@ export const DROP_SIDE = SIDE;
 export const ICON = 22;
 export const ICON_GAP = 9;
 /** ⚠️ Past this it stops being a notification and becomes a banner. */
-export const CAP = 356;
+export const CAP = 372;
 export const EDGE = 8;
 /** ⚠️ The fourth line becomes "Open". */
 export const MAX_BODY_LINES = 3;
