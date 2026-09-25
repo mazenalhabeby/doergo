@@ -193,7 +193,8 @@ export function readLayout(input: {
 
   const fitsIn = (w: number) => {
     const s = slots(w, hole, screenW);
-    return ICON + ICON_GAP + m.title <= s.left && m.value <= s.right;
+    /* ⚠️ No title, no gap after the icon — counting one pushed the live ring to the cap. */
+    return ICON + (m.title > 0 ? ICON_GAP + m.title : 0) <= s.left && m.value <= s.right;
   };
 
   const shell = (rung: Rung, w: number, icon: Layout['icon'], drops: boolean): Layout => {
@@ -241,6 +242,16 @@ export function readLayout(input: {
  * on the app's own content. A notch or a Dynamic Island holds the live shift
  * inside the band the app already avoids, so nothing moves.
  */
+/**
+ * ⚠️ iOS AND ANDROID DRAW THE STATUS BAR ABOVE THE APP. An island grown past
+ * the lens sits under the clock and the battery, which then print on top of
+ * it — so while it is open the status bar is hidden. On a phone with no lens
+ * the island is below the status bar and nothing needs hiding.
+ */
+export function coversStatusBar(hole: Cutout): boolean {
+  return hole.kind !== 'none';
+}
+
 export function reserveFor(hole: Cutout): number {
   return hole.kind === 'none' ? DOT + 12 : 0;
 }

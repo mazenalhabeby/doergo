@@ -1,5 +1,6 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { useIsland } from './island-context';
 
 /**
  * THE APP'S ONE STATUS BAR.
@@ -8,9 +9,11 @@ import { StatusBar } from 'expo-status-bar';
  * records the bug that came from having two: both write the same global on
  * every render, and which one lands is commit order.
  *
- * The island needs nothing from it: where it grows over the status bar it
- * covers it, and everywhere else the icons sit on the app's own ground.
+ * ⚠️ HIDDEN WHILE THE ISLAND IS OPEN OVER IT. The OS draws the status bar
+ * above the app, so the clock and the battery would print on top of the
+ * island's icon and time.
  */
 export function IslandStatusBar({ isDark }: { isDark: boolean }) {
-  return <StatusBar style={isDark ? 'light' : 'dark'} />;
+  const { statusBarHidden } = useIsland();
+  return <StatusBar style={isDark ? 'light' : 'dark'} hidden={statusBarHidden} animated hideTransitionAnimation="fade" />;
 }

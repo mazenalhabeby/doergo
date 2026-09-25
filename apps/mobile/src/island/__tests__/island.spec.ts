@@ -149,11 +149,18 @@ describe('what does not fit beside the lens goes under it', () => {
     expect(code('island/island-view.tsx')).not.toMatch(/ellipsizeMode|adjustsFontSizeToFit/);
   });
 
-  it('the live shift is a ring and a figure — one row beside the notch', () => {
-    const l = readLayout({ hole: IPHONE_13, screenW: 390, topInset: 47, measured: { title: 0, value: 50, bodyLines: 0, action: false } });
+  it('the live shift is a ring and a figure — one row HUGGING the notch', () => {
+    /* ⚠️ 05.png: a phantom icon gap sent the live ring to the full cap width. */
+    const l = readLayout({ hole: IPHONE_13, screenW: 390, topInset: 47, measured: { title: 0, value: 20, bodyLines: 0, action: false } });
     expect(l.rung).toBe(1);
+    expect(l.open.w).toBeLessThan(IPHONE_13.w + 100);
     expect(l.titleDrops).toBe(false);
     expect(l.open.h).toBe(l.headHeight);
+  });
+
+  it('⚠️ the status bar hides while the island is open over it', () => {
+    expect(code('island/island-status-bar.tsx')).toMatch(/hidden=\{statusBarHidden\}/);
+    expect(code('island/island-context.tsx')).toMatch(/statusBarHidden = !!current && coversStatusBar\(hole\)/);
   });
 
   it('⚠️ only the SE live shift pushes the app down — a lens band is already avoided', () => {

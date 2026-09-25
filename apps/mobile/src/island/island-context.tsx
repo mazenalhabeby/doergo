@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { reserveFor } from './geometry';
+import { coversStatusBar, reserveFor } from './geometry';
 import { useCutout } from './cutout';
 import { IslandView, type IslandMessage } from './island-view';
 import { SCREEN_READER_MIN_DWELL, dwellFor, type Tone } from './tokens';
@@ -50,6 +50,8 @@ interface IslandContextValue extends ToastContextValue {
    * it moves.
    */
   reserve: number;
+  /** ⚠️ The island is open over the status bar — the ONE `<StatusBar>` hides. */
+  statusBarHidden: boolean;
 }
 
 const IslandContext = createContext<IslandContextValue | null>(null);
@@ -140,6 +142,7 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
   }, [current, screenReader, shift]);
 
   /* ⚠️ Only the LIVE state, and only where the island sits on content. Swiped away reserves nothing. */
+  const statusBarHidden = !!current && coversStatusBar(hole);
   const target = liveMsg && !liveHidden ? reserveFor(hole) : 0;
 
   /** ⚠️ Swipe up — §10. The one way to be rid of it. */
@@ -169,6 +172,7 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
       info: legacy('queued'),
       say,
       reserve: 0,
+      statusBarHidden: false,
       live: ({ label, value: figure }) => {
         const msg: IslandMessage = { id: nextId.current++, tone: 'live', title: label, value: figure, dwell: 0 };
         setLiveMsg(msg);
@@ -185,8 +189,8 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
   }, [push, say, liveHidden]);
 
   const withLive = useMemo<IslandContextValue>(
-    () => ({ ...value, reserve: target }),
-    [value, target],
+    () => ({ ...value, reserve: target, statusBarHidden }),
+    [value, target, statusBarHidden],
   );
 
   /*
