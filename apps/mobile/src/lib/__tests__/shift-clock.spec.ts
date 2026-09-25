@@ -10,7 +10,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { AttendanceStatus, BreakStatus, TimeEntry } from '@hbcfield/shared/client';
 import { readShiftState, scheduleFor, heroParts, budgetParts } from '../../components/home/shift-state';
-import { lookFor, offeredTo, severityShown, unreadFor, groupIssues } from '../../components/home/issue-status';
+import { lookFor, offeredTo, severityShown, severityTone, unreadFor, groupIssues } from '../../components/home/issue-status';
 import type { ShiftIssue, ShiftIssueStatus } from '../../lib/api/shift-issues';
 
 const SRC = path.resolve(__dirname, '../..');
@@ -239,19 +239,22 @@ describe('§2 — three kinds of worker', () => {
     expect(st.progress).toBeNull();
   });
 
-  it('an absent scheduleType is answered from the DATA, never guessed', () => {
+  it('an absent scheduleType reads as NONE, which is the honest default', () => {
     /*
-      ⚠️ `User.scheduleType` IS NOT IN THE LOGIN PAYLOAD (§2). Assuming FIXED
-      draws a bar against an invented target for the unconfigured majority;
-      assuming NONE costs a rostered member a bar they have a real target for.
-      A shift the roster gave a start AND an end is a fixed one.
+      ⚠️ `User.scheduleType` IS NOT IN THE LOGIN PAYLOAD (§2), and `NONE` is the
+      column's own default — so an unconfigured member should see the NONE
+      card, a record of what they worked, and NOT a rostered day with a start
+      time nobody promised them. An earlier cut inferred FIXED from a shift
+      that happened to carry expectations, which is a smaller version of the
+      same lie: it draws a target the member never agreed to and calls anything
+      past it overtime.
     */
-    expect(scheduleFor(undefined, entry({ expectedClockInAt: AT(7).toISOString(), expectedClockOutAt: AT(15).toISOString() }))).toBe('FIXED');
-    expect(scheduleFor(undefined, entry())).toBe('NONE');
-    // A daily CAP is not a roster — it is the workspace's limit, not a shift.
-    expect(scheduleFor(undefined, entry({ expectedClockInAt: AT(7).toISOString(), expectedClockOutAt: AT(15).toISOString(), endIsDailyLimit: true }))).toBe('NONE');
+    expect(scheduleFor(undefined)).toBe('NONE');
+    expect(scheduleFor(null)).toBe('NONE');
+    expect(scheduleFor('nonsense')).toBe('NONE');
     // What the server says always wins.
-    expect(scheduleFor('FLEXIBLE', entry({ expectedClockInAt: AT(7).toISOString(), expectedClockOutAt: AT(15).toISOString() }))).toBe('FLEXIBLE');
+    expect(scheduleFor('FLEXIBLE')).toBe('FLEXIBLE');
+    expect(scheduleFor('FIXED')).toBe('FIXED');
   });
 
   it('the month is one request per period, not a sum on every render', () => {
@@ -264,7 +267,13 @@ describe('§2 — three kinds of worker', () => {
     expect(hook).toMatch(/askedFor\.current === key/);
     expect(hook).toMatch(/getHistory\(/);
     // And never for somebody who will not see it.
-    expect(code('components/home/shift-clock-card.tsx')).toMatch(/enabled: !status\?\.isClockedIn \|\| schedule === 'FLEXIBLE'/);
+    /*
+      A FIXED member on the clock is measured against TODAY, which comes off
+      the shift itself — so no totals are fetched for them at all. FLEXIBLE
+      needs the month either way, and NONE needs the week both before the shift
+      (the hero) and during it (the strip under the discs).
+    */
+    expect(code('components/home/shift-clock-card.tsx')).toMatch(/enabled: !status\?\.isClockedIn \|\| schedule !== 'FIXED'/);
   });
 });
 
@@ -287,8 +296,15 @@ describe('§9 — the twelve rules', () => {
     expect(card).toMatch(/label=\{t\('shiftClock\.startRest'[\s\S]{0,120}filled/);
     expect(card).toMatch(/label=\{t\('shiftClock\.endRest'[\s\S]{0,120}filled/);
     expect(card).toMatch(/filled=\{st\.kind === 'working'\}/);
-    // ⑥ — the day is done, so nothing glows.
-    expect(card).toMatch(/filled=\{st\.kind !== 'done'\}/);
+    /*
+      ⚠️ AND CLOCKED OUT IS A PILL, NOT A ROW OF ONE. A single filled disc
+      beside two quiet ones makes starting the day look like a choice among
+      three; the shift has not begun, so there is exactly one thing to do.
+      ⑥'s pill says `Clock in again` — the day is done, and the card is not
+      arguing for another one.
+    */
+    expect(card).toMatch(/live \|\| resting \|\| st\.kind === 'unconfirmed' \? \(\s*<DiscRow/);
+    expect(card).toMatch(/shiftClock\.clockInAgain/);
   });
 
   it('3 · every disc carries a label', () => {
@@ -328,16 +344,34 @@ describe('§9 — the twelve rules', () => {
 
   it('8 · Report\'s primary is jade, and severity is neutral below HIGH', () => {
     const form = code('components/issues/report-issue-sheet.tsx');
-    /* ⚠️ Red means destructive. A member unsure whether to report already
-       hesitates; a red button confirms the hesitation. */
-    expect(form).not.toMatch(/c\.critical/);
+    /*
+      ⚠️ Red means destructive. A member unsure whether to report already
+      hesitates; a red button confirms the hesitation. The PRIMARY is jade —
+      `critical` appears in this file only as URGENT's own colour, which is
+      the one place in the scale it belongs.
+    */
+    const primary = form.slice(form.indexOf('issues.send'));
+    expect(primary).not.toMatch(/c\.critical/);
     expect(form).toMatch(/backgroundColor: c\.accentSolid/);
+
+    /*
+      ⚠️ AND THE SCALE RUNS NEUTRAL · NEUTRAL · WARN · CRITICAL. `MEDIUM` was
+      set in BLUE — a hue that appears nowhere else in this system — which
+      gives the scale no shape: every row shouts something.
+    */
+    expect(severityTone('LOW')).toBeNull();
+    expect(severityTone('MEDIUM')).toBeNull();
+    expect(severityTone('HIGH')).toBe('warn');
+    expect(severityTone('URGENT')).toBe('critical');
     /*
       ⚠️ AND SELECTION IS NOT COLOUR. The first cut filled the SELECTED pill
       with jade whatever it was, which put `MEDIUM` — the default nobody chose
       — in the brightest colour on the sheet.
     */
-    expect(form).toMatch(/const bg = on && hot \? c\.warn : c\.tile;/);
+    /* Selection below HIGH is a neutral raised pill — an outline and
+       full-strength ink — not the brightest colour on the sheet. */
+    expect(form).toMatch(/const bg = on && hot \? fill : c\.tile;/);
+    expect(form).toMatch(/const hue = severityTone\(k\);/);
     expect(severityShown('LOW')).toBe(false);
     expect(severityShown('MEDIUM')).toBe(false);
     expect(severityShown('HIGH')).toBe(true);

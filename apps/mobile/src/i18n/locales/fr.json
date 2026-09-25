@@ -2102,6 +2102,13 @@
       "closed": "Fermé",
       "queued": "En attente",
       "openJustNow": "Ouvert · à l’instant"
+    },
+    "label": {
+      "open": "Ouvert",
+      "acknowledged": "Vu",
+      "inProgress": "En cours de réparation",
+      "resolved": "Résolu",
+      "closed": "Fermé"
     }
   },
   "route": {
@@ -2923,7 +2930,16 @@
     "countedApproved": "compté et validé",
     "waitingToReach": "en attente d’arriver au bureau",
     "startsIn_one": "votre service commence dans {{count}} minute",
-    "startsIn_other": "votre service commence dans {{count}} minutes"
+    "startsIn_other": "votre service commence dans {{count}} minutes",
+    "today": "AUJOURD’HUI",
+    "thisWeek": "Cette semaine",
+    "ofTarget": "{{done}} sur {{target}}",
+    "ofBudget": "sur {{hours}} h ce mois-ci",
+    "thisMonth": "ce mois-ci",
+    "daysLeft_one": "{{count}} jour ouvré restant",
+    "daysLeft_other": "{{count}} jours ouvrés restants",
+    "workedThisWeek": "travaillé cette semaine",
+    "lastInOn": "dernier pointage {{day}}"
   },
   "crew": {
     "onTheClock": "en poste",

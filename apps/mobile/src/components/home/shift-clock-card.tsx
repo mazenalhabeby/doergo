@@ -18,6 +18,7 @@ import { AText, Chip, Disc, DiscRow, Eyebrow, GlassCard, Hero, LiveDot } from '.
 import { BreakGlyph, ClockInGlyph, ClockOutGlyph, IssueMineGlyph, IssueNewGlyph } from '../glyphs/shift-glyphs';
 import { budgetParts, heroParts, readShiftState, scheduleFor } from './shift-state';
 import { useScheduleTotals } from './use-schedule-totals';
+import { useUnreadIssues } from './use-unread-issues';
 
 /**
  * ONE GLASS SURFACE, IN EVERY STATE.
@@ -97,18 +98,22 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
   }, [refresh]);
   useFocusEffect(useCallback(() => { void refresh(); }, [refresh]));
 
-  const schedule = scheduleFor(user?.scheduleType, status?.currentEntry ?? null);
+  const schedule = scheduleFor(user?.scheduleType);
 
   /*
-    ⚠️ ASKED ONLY WHEN IT WILL BE READ. A FIXED member's hero is a rostered
-    start and needs no totals, so the month is never fetched for them. See
-    `use-schedule-totals.ts` for why it is one request per period rather than
-    a sum on every render.
+    ⚠️ ASKED ONLY WHEN IT WILL BE READ — a row you cannot see makes no request.
+    A FIXED member on the clock is measured against TODAY, which comes off the
+    shift itself, so no totals are fetched for them at all. FLEXIBLE needs the
+    month whatever it is doing, and NONE needs the week both before the shift
+    (the hero) and during it (the strip under the discs).
+
+    See `use-schedule-totals.ts` for why it is one request per period rather
+    than a sum on every render.
   */
   const totals = useScheduleTotals({
     schedule,
     revision: `${status?.isClockedIn ? '1' : '0'}:${status?.currentEntry?.id ?? ''}`,
-    enabled: !status?.isClockedIn || schedule === 'FLEXIBLE',
+    enabled: !status?.isClockedIn || schedule !== 'FIXED',
   });
 
   /* Which of the eight, decided ONCE and outside the JSX — see `shift-state.ts`. */
@@ -120,6 +125,7 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
     monthMinutes: totals.monthMinutes,
     weekMinutes: totals.weekMinutes,
     lastToday: totals.lastToday,
+    lastIn: totals.lastIn,
     queued: shift.pendingSync,
     now,
   });
@@ -131,6 +137,13 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
   });
 
   const entryId = status?.currentEntry?.id;
+
+  /*
+    ⚠️ THE SAME NUMBER THE LIST SHOWS — see `use-unread-issues.ts`. The disc
+    badge and the row pill both come from `unreadFor`; two counters for one
+    idea is how they drift by one and stop being believed.
+  */
+  const unread = useUnreadIssues(true);
 
   const confirmClockOut = useCallback(async (notes: string) => {
     setClockOutOpen(false);
@@ -209,6 +222,15 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const known = shift.source !== 'none';
   const somewhereToClockIn = (status?.assignedLocations?.length ?? 0) > 0 || !!user?.allowRemote;
   if (known && !somewhereToClockIn && !status?.isClockedIn && st.kind !== 'unconfirmed') return null;
+
+  /*
+    This week so far, with the shift that is running now added on. The totals
+    hook only counts CLOSED entries — a running shift is not a total yet — and
+    a strip reading `This week 15h 52m` that ignores the hours being worked
+    while somebody looks at it would be wrong in the one way they would notice.
+  */
+  const weekSoFar =
+    totals.weekMinutes === null ? null : totals.weekMinutes + (st.countedMinutes ?? 0);
 
   const live = st.kind === 'working' || st.kind === 'restOverdue';
   const resting = st.kind === 'resting';
@@ -298,23 +320,72 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
             majority would be measured against a number nobody promised them.
             `st.progress` is null for NONE by construction; this renders what it
             is given and decides nothing.
+
+            ⚠️ AND THE TRACK IS LABELLED. A bare bar says "some of something";
+            `TODAY · 3h 12m of 8h` says which clock it is measuring, which is
+            the whole difference between FIXED and FLEXIBLE — the same bar
+            against a different promise.
           */}
           {st.progress ? (
-            <View
-              style={{ marginTop: amazen.space(3), height: 4, borderRadius: 2, backgroundColor: c.tile, overflow: 'hidden' }}
-              accessibilityRole="progressbar"
-              accessibilityValue={{ min: 0, max: st.progress.target, now: st.progress.done }}
-            >
+            <View style={{ marginTop: amazen.space(4) }}>
               <View
-                style={{
-                  width: `${Math.min(100, Math.round((st.progress.done / st.progress.target) * 100))}%`,
-                  height: '100%',
-                  /* ⚠️ Past the target is `warn`, not `crit` — overtime is owed,
-                     not wrong. Three different things per schedule kind; the
-                     colour only says "past it". */
-                  backgroundColor: st.progress.done > st.progress.target ? c.warn : c.accent,
-                }}
-              />
+                style={{ height: 4, borderRadius: 2, backgroundColor: c.tile, overflow: 'hidden' }}
+                accessibilityRole="progressbar"
+                accessibilityValue={{ min: 0, max: st.progress.target, now: st.progress.done }}
+              >
+                <View
+                  style={{
+                    width: `${Math.min(100, Math.round((st.progress.done / st.progress.target) * 100))}%`,
+                    height: '100%',
+                    /* ⚠️ Past the target is `warn`, not `crit` — overtime is
+                       owed, not wrong. It means three different things per
+                       schedule kind; the colour only says "past it". */
+                    backgroundColor: st.progress.done > st.progress.target ? c.warn : c.accent,
+                  }}
+                />
+              </View>
+              {live || resting ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: amazen.space(2) }}>
+                  <Eyebrow tone="onGlassHome">
+                    {st.schedule === 'FLEXIBLE'
+                      ? new Date().toLocaleDateString(undefined, { month: 'long' })
+                      : t('shiftClock.today', { defaultValue: 'TODAY' })}
+                  </Eyebrow>
+                  <View style={{ flex: 1 }} />
+                  <AText variant="caption" tone="onGlassHome" numeric>
+                    {t('shiftClock.ofTarget', {
+                      done: formatDuration(st.progress.done),
+                      target: `${Math.round(st.progress.target / 60)}h`,
+                      defaultValue: `${formatDuration(st.progress.done)} of ${Math.round(st.progress.target / 60)}h`,
+                    })}
+                  </AText>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+
+          {/*
+            ⚠️ `NONE` ON THE CLOCK GETS A FIGURE, NOT A BAR. Nothing is
+            promised, so there is nothing to draw a track against — but what
+            they have worked this week is still a fact, and it is the one they
+            would otherwise have to leave the card to find.
+          */}
+          {(live || resting) && st.schedule === 'NONE' && weekSoFar !== null ? (
+            <View
+              style={{
+                flexDirection: 'row', alignItems: 'center',
+                marginTop: amazen.space(4),
+                backgroundColor: c.sunken,
+                borderRadius: amazen.radius.field,
+                paddingVertical: amazen.space(2.5),
+                paddingHorizontal: amazen.space(3.5),
+              }}
+            >
+              <AText variant="caption" tone="onGlassHome">
+                {t('shiftClock.thisWeek', { defaultValue: 'This week' })}
+              </AText>
+              <View style={{ flex: 1 }} />
+              <AText variant="body" tone="strong" numeric>{formatDuration(weekSoFar)}</AText>
             </View>
           ) : null}
         </Pressable>
@@ -326,8 +397,36 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
 
           ⚠️ EVERY DISC CARRIES A LABEL (rule 3). Icons never carry meaning
           alone, least of all on a card used in gloves in the dark.
+
+          ⚠️ AND CLOCKED OUT IS A PILL, NOT A ROW OF ONE. A single filled disc
+          beside two quiet ones makes the act of starting the day look like a
+          choice among three; the shift has not begun, so there is exactly one
+          thing to do and the card should say so at full width. Once the clock
+          is running there are four real jobs and the row is right.
         */}
-        <DiscRow style={{ marginTop: amazen.space(5) }}>{discs()}</DiscRow>
+        {live || resting || st.kind === 'unconfirmed' ? (
+          <DiscRow style={{ marginTop: amazen.space(5) }}>{discs()}</DiscRow>
+        ) : (
+          <Pressable
+            onPress={clockIn.openClockInModal}
+            disabled={working}
+            accessibilityRole="button"
+            style={({ pressed }) => ({
+              marginTop: amazen.space(5),
+              paddingVertical: amazen.space(3.5),
+              alignItems: 'center',
+              borderRadius: amazen.radius.full,
+              backgroundColor: c.accentSolid,
+              opacity: working ? 0.5 : pressed ? 0.85 : 1,
+            })}
+          >
+            <AText variant="body" style={{ color: c.accentInk, fontFamily: amazen.font.sansMedium }}>
+              {st.kind === 'done'
+                ? t('shiftClock.clockInAgain', { defaultValue: 'Clock in again' })
+                : t('home.fullTime.clockIn')}
+            </AText>
+          </Pressable>
+        )}
       </GlassCard>
 
       <LocationPickerSheet {...clockIn.pickerProps} confirmDisabled={clockIn.isClockingIn} />
@@ -376,16 +475,19 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
       return <AText variant="h2" tone="strong">{t('shiftClock.whenDidYouLeave', { defaultValue: 'When did you leave?' })}</AText>;
     }
     /*
-      ① THE HERO IS THE NEXT THING, NOT A ZERO. A 72pt `0` is the mistake the
+      ① THE HERO IS THE NEXT THING, NOT A ZERO. A 64pt `0` is the mistake the
       old dashboard made with `0/12`, and it is the same mistake at a larger
       size: a member reads the biggest thing on the card first, and being told
       they have done nothing is not what they opened the app for.
+
+      ⚠️ AND IT IS SET LIKE AN AMOUNT IN EVERY CASE — integer at display size,
+      unit at decimal. `07:00` is `07` + `:00`, not a string; `84h of 160h` is
+      `84` + `h` with the rest in the caption, because the budget is context
+      and the figure is the answer.
     */
     if (st.kind === 'before' && st.at) {
-      return <Hero parts={[{ value: clockTime(st.at.toISOString()), unit: '' }]} tone="strong" small />;
-    }
-    if (st.kind === 'before' && st.schedule === 'FLEXIBLE' && st.minutes !== null && user?.monthlyHourBudget) {
-      return <Hero parts={budgetParts(st.minutes, user.monthlyHourBudget)} tone="strong" unitTone="onGlassHome" small />;
+      const [hh, mm] = clockTime(st.at.toISOString()).split(':');
+      return <Hero parts={[{ value: hh ?? '', unit: `:${mm ?? '00'}` }]} tone="strong" unitTone="onGlassHome" />;
     }
     if (st.minutes !== null) {
       return (
@@ -393,7 +495,6 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
           parts={heroParts(st.minutes)}
           tone={resting ? 'warn' : 'strong'}
           unitTone={resting ? 'warn' : 'onGlassHome'}
-          small={st.kind === 'before' || st.kind === 'done'}
         />
       );
     }
@@ -418,6 +519,13 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
           : t('shiftClock.countedApproved', { defaultValue: 'counted and approved' }),
       ].filter(Boolean).join(' · ');
     }
+    /*
+      ① — THREE DIFFERENT SENTENCES, BECAUSE THE THREE ASK DIFFERENT
+      QUESTIONS. FIXED wants to know whether it is on time, FLEXIBLE whether it
+      is on track, NONE what it has done. One caption for all three would have
+      to be vague enough to be true of each, which is a sentence that answers
+      nobody.
+    */
     if (st.kind === 'before' && st.startsInMinutes !== null && st.startsInMinutes > 0) {
       return [
         st.workspace,
@@ -426,6 +534,34 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
           defaultValue_one: 'your shift starts in a minute',
           defaultValue_other: `your shift starts in ${st.startsInMinutes} minutes`,
         }),
+      ].filter(Boolean).join(' · ');
+    }
+    if (st.kind === 'before' && st.schedule === 'FLEXIBLE' && st.minutes !== null) {
+      return [
+        user?.monthlyHourBudget
+          ? t('shiftClock.ofBudget', {
+              hours: user.monthlyHourBudget,
+              defaultValue: `of ${user.monthlyHourBudget}h this month`,
+            })
+          : t('shiftClock.thisMonth', { defaultValue: 'this month' }),
+        st.workingDaysLeft !== null
+          ? t('shiftClock.daysLeft', {
+              count: st.workingDaysLeft,
+              defaultValue_one: '1 working day left',
+              defaultValue_other: `${st.workingDaysLeft} working days left`,
+            })
+          : null,
+      ].filter(Boolean).join(' · ');
+    }
+    if (st.kind === 'before' && st.schedule === 'NONE' && st.minutes !== null) {
+      return [
+        t('shiftClock.workedThisWeek', { defaultValue: 'worked this week' }),
+        st.lastInOn
+          ? t('shiftClock.lastInOn', {
+              day: st.lastInOn.toLocaleDateString(undefined, { weekday: 'long' }),
+              defaultValue: `last in on ${st.lastInOn.toLocaleDateString(undefined, { weekday: 'long' })}`,
+            })
+          : null,
       ].filter(Boolean).join(' · ');
     }
     if (st.queued && live) {
@@ -486,6 +622,8 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
         key="mine"
         Glyph={IssueMineGlyph}
         label={t('issues.myIssuesShort', { defaultValue: 'My issues' })}
+        /* ⚠️ Unread, never a total. `Disc` renders nothing at 0. */
+        badge={unread}
         onPress={() => setListOpen(true)}
       />
     );
@@ -554,26 +692,11 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
       ].filter(Boolean);
     }
 
-    return [
-      <Disc
-        key="in"
-        Glyph={ClockInGlyph}
-        label={
-          st.kind === 'done'
-            ? t('shiftClock.clockInAgain', { defaultValue: 'Clock in again' })
-            : t('home.fullTime.clockIn')
-        }
-        /*
-          ⑥ ⚠️ NO FILLED DISC AT ALL. The day is done; offering a glowing
-          primary to start another one is the card arguing with the member.
-        */
-        filled={st.kind !== 'done'}
-        disabled={working}
-        onPress={clockIn.openClockInModal}
-      />,
-      report,
-      mine,
-    ];
+    /*
+      Clocked out never reaches here — see the pill above. `discs()` answers
+      for the three states that have a ROW: ②, ③/④ and ⑦.
+    */
+    return [report, mine];
   }
 }
 

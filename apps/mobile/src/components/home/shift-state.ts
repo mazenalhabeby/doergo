@@ -68,6 +68,10 @@ export interface ShiftState {
   backAt: Date | null;
   /** Minutes until the rostered start. Positive only in ① with a roster. */
   startsInMinutes: number | null;
+  /** ① FLEXIBLE — working days left in the month, for the caption. */
+  workingDaysLeft: number | null;
+  /** ① NONE — when they last clocked in, for `last in on Friday`. */
+  lastInOn: Date | null;
   /** ⑥ — the shift that just ended, for `06:45 → 15:00`. */
   finished: { from: Date; to: Date; awaitingApproval: boolean } | null;
   /** Progress against what this person is measured against, or null for NONE. */
@@ -77,6 +81,25 @@ export interface ShiftState {
 }
 
 const MIN = 60_000;
+
+/**
+ * Working days left in this month, counting today.
+ *
+ * ⚠️ MONDAY TO FRIDAY, AND THAT IS AN APPROXIMATION THE CAPTION OWNS. Public
+ * holidays and a member's own leave are not known here, and asking for them
+ * would turn one courtesy line into two requests. The sentence says "working
+ * days left", which is what this counts; it is not a promise about anybody's
+ * rota.
+ */
+export function workingDaysLeftIn(now: Date): number {
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  let days = 0;
+  for (let d = now.getDate(); d <= end; d += 1) {
+    const day = new Date(now.getFullYear(), now.getMonth(), d).getDay();
+    if (day !== 0 && day !== 6) days += 1;
+  }
+  return days;
+}
 
 /**
  * ⚠️ `NONE` RENDERS NO PROGRESS TRACK — rule 6. A bar with no target invents
@@ -112,19 +135,21 @@ function progressFor(
 /**
  * The schedule this member is on.
  *
- * ⚠️ READ THE DATA WHEN THE SERVER HAS NOT SAID. See `ScheduleKind` — a shift
- * the roster gave both a start and an end to is a FIXED one whatever the login
- * payload left out, and everything else is NONE. The one thing this must never
- * do is answer FIXED for somebody with no roster, because that is a bar with
- * no target.
+ * ⚠️ THE DEFAULT IS `NONE`, AND IT IS THE HONEST ONE. `scheduleType` is the
+ * column's own default, so an unconfigured member should see the NONE card —
+ * a record of what they worked — and NOT a rostered day with a start time
+ * nobody promised them. An earlier cut inferred FIXED from a shift that
+ * happened to carry expectations, which is a smaller version of the same lie:
+ * it draws a target the member never agreed to and calls anything past it
+ * overtime.
+ *
+ * What the server SAYS always wins. It just does not say yet — §2 asks for
+ * `scheduleType` and `monthlyHourBudget` in the login payload beside
+ * `allowRemote`, which is a server change.
  */
-export function scheduleFor(
-  declared: string | null | undefined,
-  entry: TimeEntry | null | undefined,
-): ScheduleKind {
+export function scheduleFor(declared: string | null | undefined): ScheduleKind {
   if (declared === 'FIXED' || declared === 'FLEXIBLE' || declared === 'NONE') return declared;
-  const rostered = !!entry?.expectedClockInAt && !!entry?.expectedClockOutAt && !entry?.endIsDailyLimit;
-  return rostered ? 'FIXED' : 'NONE';
+  return 'NONE';
 }
 
 export function readShiftState(input: {
@@ -139,13 +164,15 @@ export function readShiftState(input: {
   weekMinutes?: number | null;
   /** The shift that ended today, if one did. Drives ⑥. */
   lastToday?: TimeEntry | null;
+  /** When they last clocked in at all — ① NONE's `last in on Friday`. */
+  lastIn?: Date | null;
   /** Something about this shift is still in the outbox. */
   queued?: boolean;
   now?: Date;
 }): ShiftState {
   const now = input.now ?? new Date();
   const entry = input.status?.currentEntry ?? null;
-  const schedule = scheduleFor(input.declaredSchedule, entry ?? input.lastToday ?? null);
+  const schedule = scheduleFor(input.declaredSchedule);
 
   const base: ShiftState = {
     kind: 'before',
@@ -158,6 +185,8 @@ export function readShiftState(input: {
     restOverdueBy: 0,
     backAt: null,
     startsInMinutes: null,
+    workingDaysLeft: null,
+    lastInOn: null,
     finished: null,
     progress: null,
     schedule,
@@ -209,9 +238,12 @@ export function readShiftState(input: {
     }
 
     /*
-      ① — and the hero is whatever this person is measured against. FIXED gets
-      the rostered start, FLEXIBLE the month against its budget, NONE the
-      week's total, because nothing is promised and a total is still a fact.
+      ① — AND THE HERO IS WHATEVER THIS PERSON IS MEASURED AGAINST.
+
+      FIXED gets the rostered start, because the question is *am I on time*.
+      FLEXIBLE gets the month against its budget, because the question is *am I
+      on track*. NONE gets what they have actually worked, because nothing is
+      promised in either direction and a record is still a fact.
     */
     const nextStart = input.status?.currentEntry?.expectedClockInAt ?? null;
     if (schedule === 'FIXED' && nextStart) {
@@ -222,25 +254,20 @@ export function readShiftState(input: {
         startsInMinutes: Math.round((at.getTime() - now.getTime()) / MIN),
       };
     }
-    /*
-      ⚠️ AND A TOTAL OF ZERO IS NOT A HERO — IT IS THE `0/12` BUG AGAIN.
-
-      §2 says FLEXIBLE's hero is the month and NONE's is the week, and both are
-      legitimately zero on a Monday morning. Drawing that renders a 64pt `0`,
-      which is the exact mistake §1 forbids: the member reads the biggest thing
-      on the card first, and being told they have done nothing is not what they
-      opened the app for. With no figure worth showing the card says the
-      sentence instead.
-    */
     if (schedule === 'FLEXIBLE' && !!input.monthMinutes) {
       return {
         ...base,
         minutes: input.monthMinutes,
+        workingDaysLeft: workingDaysLeftIn(now),
         progress: progressFor('FLEXIBLE', null, 0, input.monthMinutes, input.monthlyHourBudget ?? null),
       };
     }
     if (schedule === 'NONE' && !!input.weekMinutes) {
-      return { ...base, minutes: input.weekMinutes };
+      return {
+        ...base,
+        minutes: input.weekMinutes,
+        lastInOn: input.lastIn ?? null,
+      };
     }
     return base;
   }

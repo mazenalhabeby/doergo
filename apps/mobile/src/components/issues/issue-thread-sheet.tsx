@@ -11,7 +11,7 @@ import { useImagePicker, type PickedImage } from '../../hooks/useImagePicker';
 import { BlurSheet } from '../blur-sheet';
 import { SheetPanel } from '../sheet-panel';
 import { AText, Chip } from '../amazen';
-import { lookFor, offeredTo, severityShown } from '../home/issue-status';
+import { lookFor, offeredTo, severityShown, severityTone } from '../home/issue-status';
 import { MAX_PHOTOS, uploadPhotos } from './photos';
 
 /**
@@ -145,7 +145,10 @@ export function ShiftIssueThreadSheet({
           <>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
               {severityShown(issue.severity) ? (
-                <Chip label={t(`issues.severity.${issue.severity}`, { defaultValue: issue.severity })} tone="warn" />
+                <Chip
+                  label={t(`issues.severity.${issue.severity}`, { defaultValue: issue.severity })}
+                  tone={severityTone(issue.severity) ?? 'neutral'}
+                />
               ) : null}
               <View
                 style={{
@@ -156,10 +159,8 @@ export function ShiftIssueThreadSheet({
                 }}
               />
               <AText variant="caption" tone="muted">
-                {t(look?.readsAs ?? 'issues.reads.open', {
-                  name: issue.assigneeName?.trim() ?? '',
-                  defaultValue: issue.status,
-                })}
+                {/* ⚠️ The short label here — the name is in the conversation. */}
+                {t(look?.label ?? 'issues.label.open', { defaultValue: issue.status })}
               </AText>
             </View>
 

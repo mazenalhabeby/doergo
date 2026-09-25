@@ -39,9 +39,11 @@ export interface ScheduleTotals {
   weekMinutes: number | null;
   /** Today's finished shift, if there is one — drives ⑥. */
   lastToday: TimeEntry | null;
+  /** When they last clocked in at all — ① NONE's `last in on Friday`. */
+  lastIn: Date | null;
 }
 
-const EMPTY: ScheduleTotals = { monthMinutes: null, weekMinutes: null, lastToday: null };
+const EMPTY: ScheduleTotals = { monthMinutes: null, weekMinutes: null, lastToday: null, lastIn: null };
 
 /** Counted minutes on one entry. Never the word "paid" anywhere it is shown. */
 function countedOn(e: TimeEntry): number {
@@ -111,18 +113,20 @@ export function useScheduleTotals(input: {
         let monthMinutes = 0;
         let weekMinutes = 0;
         let lastToday: TimeEntry | null = null;
+        let lastIn: Date | null = null;
         for (const e of entries) {
           if (!e.clockOutAt) continue; // a running shift is not a total yet
           const m = countedOn(e);
           monthMinutes += m;
           const at = new Date(e.clockInAt);
+          if (!lastIn || at > lastIn) lastIn = at;
           if (at >= week) weekMinutes += m;
           if (iso(at) === today) {
             // The LAST one that ended today, by clock-out.
             if (!lastToday || new Date(e.clockOutAt) > new Date(lastToday.clockOutAt!)) lastToday = e;
           }
         }
-        setTotals({ monthMinutes, weekMinutes, lastToday });
+        setTotals({ monthMinutes, weekMinutes, lastToday, lastIn });
       })
       .catch(() => {
         /*

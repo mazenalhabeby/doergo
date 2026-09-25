@@ -2145,6 +2145,13 @@
       "closed": "Closed",
       "queued": "Queued",
       "openJustNow": "Open · just now"
+    },
+    "label": {
+      "open": "Open",
+      "acknowledged": "Seen",
+      "inProgress": "Being fixed",
+      "resolved": "Resolved",
+      "closed": "Closed"
     }
   },
   "worklog": {
@@ -2930,7 +2937,16 @@
     "countedApproved": "counted and approved",
     "waitingToReach": "waiting to reach the office",
     "startsIn_one": "your shift starts in {{count}} minute",
-    "startsIn_other": "your shift starts in {{count}} minutes"
+    "startsIn_other": "your shift starts in {{count}} minutes",
+    "today": "TODAY",
+    "thisWeek": "This week",
+    "ofTarget": "{{done}} of {{target}}",
+    "ofBudget": "of {{hours}}h this month",
+    "thisMonth": "this month",
+    "daysLeft_one": "{{count}} working day left",
+    "daysLeft_other": "{{count}} working days left",
+    "workedThisWeek": "worked this week",
+    "lastInOn": "last in on {{day}}"
   },
   "crew": {
     "onTheClock": "on the clock",

@@ -19,19 +19,29 @@ export interface IssueLook {
   tone: 'warn' | 'accent' | 'muted';
   /** Solid = still wants something from somebody. */
   solid: boolean;
-  /** The i18n key for the line under the title. */
+  /** The i18n key for the line under the title, in a LIST. */
   readsAs: string;
+  /**
+   * The i18n key for the same status as a HEADER label.
+   *
+   * ⚠️ TWO PHRASINGS FOR ONE STATUS, ON PURPOSE. A list row has room for
+   * `Anna is on it · 2h ago` and needs it, because the reader is scanning
+   * several. A thread header is already about one issue and one person, so the
+   * long form repeats what the messages below it say — `Being fixed` is the
+   * status, and the name is in the conversation.
+   */
+  label: string;
   /** Still the reporter's to worry about. */
   open: boolean;
 }
 
 const LOOK: Record<ShiftIssueStatus, IssueLook> = {
-  OPEN: { tone: 'warn', solid: true, readsAs: 'issues.reads.open', open: true },
-  ACKNOWLEDGED: { tone: 'accent', solid: false, readsAs: 'issues.reads.acknowledged', open: true },
-  IN_PROGRESS: { tone: 'accent', solid: true, readsAs: 'issues.reads.inProgress', open: true },
-  RESOLVED: { tone: 'muted', solid: false, readsAs: 'issues.reads.resolved', open: false },
-  CLOSED: { tone: 'muted', solid: false, readsAs: 'issues.reads.closed', open: false },
-  CANCELED: { tone: 'muted', solid: false, readsAs: 'issues.reads.closed', open: false },
+  OPEN: { tone: 'warn', solid: true, readsAs: 'issues.reads.open', label: 'issues.label.open', open: true },
+  ACKNOWLEDGED: { tone: 'accent', solid: false, readsAs: 'issues.reads.acknowledged', label: 'issues.label.acknowledged', open: true },
+  IN_PROGRESS: { tone: 'accent', solid: true, readsAs: 'issues.reads.inProgress', label: 'issues.label.inProgress', open: true },
+  RESOLVED: { tone: 'muted', solid: false, readsAs: 'issues.reads.resolved', label: 'issues.label.resolved', open: false },
+  CLOSED: { tone: 'muted', solid: false, readsAs: 'issues.reads.closed', label: 'issues.label.closed', open: false },
+  CANCELED: { tone: 'muted', solid: false, readsAs: 'issues.reads.closed', label: 'issues.label.closed', open: false },
 };
 
 export function lookFor(status: ShiftIssueStatus): IssueLook {
@@ -47,6 +57,21 @@ export function lookFor(status: ShiftIssueStatus): IssueLook {
  */
 export function severityShown(s: ShiftIssueSeverity): boolean {
   return s === 'HIGH' || s === 'URGENT';
+}
+
+/**
+ * The scale runs NEUTRAL · NEUTRAL · WARN · CRITICAL.
+ *
+ * ⚠️ AND `MEDIUM` WAS BLUE — A HUE THAT APPEARS NOWHERE ELSE IN THIS SYSTEM.
+ * Four colours for four levels gives the scale no shape: every row shouts
+ * something. Low and Medium stay quiet, High is `warn` because it is owed
+ * attention, and only Urgent takes `critical`, which is the one word in the
+ * palette that means *this is going wrong now*.
+ */
+export function severityTone(s: ShiftIssueSeverity): 'warn' | 'critical' | null {
+  if (s === 'URGENT') return 'critical';
+  if (s === 'HIGH') return 'warn';
+  return null;
 }
 
 /**

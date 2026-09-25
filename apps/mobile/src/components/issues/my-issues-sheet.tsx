@@ -7,7 +7,7 @@ import { shiftIssuesApi, type ShiftIssue } from '../../lib/api/shift-issues';
 import { BlurSheet } from '../blur-sheet';
 import { SheetPanel } from '../sheet-panel';
 import { AText, Chip, Eyebrow } from '../amazen';
-import { groupIssues, lookFor, severityShown, unreadFor } from '../home/issue-status';
+import { groupIssues, lookFor, severityShown, severityTone, unreadFor } from '../home/issue-status';
 
 /**
  * MY ISSUES — grouped by whether it is still yours to worry about.
@@ -194,7 +194,10 @@ function Row({
           </AText>
           {/* ⚠️ Severity at HIGH and above only. */}
           {severityShown(issue.severity) ? (
-            <Chip label={t(`issues.severity.${issue.severity}`, { defaultValue: issue.severity })} tone="warn" />
+            <Chip
+              label={t(`issues.severity.${issue.severity}`, { defaultValue: issue.severity })}
+              tone={severityTone(issue.severity) ?? 'neutral'}
+            />
           ) : null}
           {/* ⚠️ Unread, never a total. */}
           {unread > 0 ? <Chip label={String(unread)} tone="accent" numeric /> : null}

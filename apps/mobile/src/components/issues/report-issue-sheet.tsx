@@ -10,7 +10,7 @@ import { useImagePicker, type PickedImage } from '../../hooks/useImagePicker';
 import { BlurSheet } from '../blur-sheet';
 import { SheetPanel } from '../sheet-panel';
 import { AText, Eyebrow, LiveDot } from '../amazen';
-import { severityShown } from '../home/issue-status';
+import { severityShown, severityTone } from '../home/issue-status';
 import { MAX_PHOTOS, SEVERITY_KEYS, uploadPhotos } from './photos';
 
 /**
@@ -207,9 +207,12 @@ export function ReportIssueSheet({
               raised one: an outline and full-strength ink, which says "this is
               the one" without saying anything about how bad it is.
             */
-            const hot = severityShown(k);
-            const fg = on ? (hot ? c.warnInk : c.inkStrong) : c.inkMuted;
-            const bg = on && hot ? c.warn : c.tile;
+            const hue = severityTone(k);
+            const hot = !!hue;
+            const fill = hue === 'critical' ? c.critical : c.warn;
+            const ink = hue === 'critical' ? c.criticalInk : c.warnInk;
+            const fg = on ? (hot ? ink : c.inkStrong) : c.inkMuted;
+            const bg = on && hot ? fill : c.tile;
             return (
               <Pressable
                 key={k}
@@ -222,7 +225,7 @@ export function ReportIssueSheet({
                   borderRadius: amazen.radius.full,
                   backgroundColor: bg,
                   borderWidth: 1.5,
-                  borderColor: on ? (hot ? c.warn : c.inkStrong) : 'transparent',
+                  borderColor: on ? (hot ? fill : c.inkStrong) : 'transparent',
                   opacity: pressed ? 0.8 : 1,
                 })}
               >
@@ -339,10 +342,18 @@ function Sent({
 
   return (
     <View style={{ alignItems: 'center' }}>
+      {/*
+        A ring with a tick, not a filled disc. A solid jade circle at 72pt is
+        the loudest thing this app draws and it belongs to a PRIMARY ACTION —
+        spending it on an acknowledgement leaves nothing louder for the button
+        underneath, which is the thing the member is meant to press next.
+      */}
       <View
         style={{
           width: 72, height: 72, borderRadius: amazen.radius.full,
-          backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center',
+          borderWidth: 2, borderColor: c.accent,
+          backgroundColor: c.accentTint,
+          alignItems: 'center', justifyContent: 'center',
           marginTop: amazen.space(2),
         }}
       >
@@ -375,7 +386,11 @@ function Sent({
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
             {severityShown(issue.severity) ? (
-              <AText variant="caption" tone="warn" style={{ fontFamily: amazen.font.sansMedium }}>
+              <AText
+                variant="caption"
+                tone={severityTone(issue.severity) === 'critical' ? 'critical' : 'warn'}
+                style={{ fontFamily: amazen.font.sansMedium }}
+              >
                 {t(`issues.severity.${issue.severity}`, { defaultValue: issue.severity })}
               </AText>
             ) : null}
