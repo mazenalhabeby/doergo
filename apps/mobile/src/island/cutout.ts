@@ -4,55 +4,81 @@ import type { EdgeInsets } from 'react-native-safe-area-context';
 import type { Cutout } from './geometry';
 
 /**
- * MEASURE THE PHONE — ⚠️ NEVER ASSUME THE CUTOUT IS CENTRED, NEVER ASSUME ITS
- * SIZE.
- *
- * ⚠️ AND WHERE IT CANNOT BE MEASURED, DO NOT GUESS. An under-display camera
- * (the Z Fold inner screen) reports no cutout at all, and so does an iPhone
- * SE. Both are `none` and get the rectangle. Guessing where an invisible lens
- * might be is how the one law gets broken on the one phone nobody tested.
+ * THIS PHONE'S CUTOUT — where the island is born. Measured where the OS says,
+ * looked up by model where it does not.
  */
 
 /**
- * iOS maps exactly, because there are only three answers — §2.
+ * THE NOTCH, PER MODEL, IN POINTS — `w × h` of the black cutout.
  *
- * The top inset is the measurement Apple actually gives us, and each value
- * belongs to one piece of hardware.
+ * iOS has no API for the cutout rectangle, so the notch comes from the model
+ * identifier. ⚠️ Every width errs WIDE: too wide costs a few points of text
+ * room beside the notch; too narrow puts text under the camera.
  */
-export function cutoutFromInset(top: number, screenW: number): Cutout {
-  /* Dynamic Island: a floating pill, and the hardware is already black. */
+const NOTCH: Record<string, { w: number; h: number }> = {};
+const put = (ids: string[], w: number, h: number) => ids.forEach((id) => { NOTCH[id] = { w, h }; });
+/* X, XS, XS Max, 11 Pro, 11 Pro Max */
+put(['iPhone10,3', 'iPhone10,6', 'iPhone11,2', 'iPhone11,4', 'iPhone11,6', 'iPhone12,3', 'iPhone12,5'], 212, 31);
+/* XR, 11 — an LCD at @2x, so the same glass is more points wide */
+put(['iPhone11,8', 'iPhone12,1'], 232, 33);
+/* 12 mini */
+put(['iPhone13,1'], 228, 35);
+/* 12, 12 Pro, 12 Pro Max */
+put(['iPhone13,2', 'iPhone13,3', 'iPhone13,4'], 212, 33);
+/* 13 mini */
+put(['iPhone14,4'], 178, 35);
+/* 13, 13 Pro, 13 Pro Max, 14, 14 Plus, 16e — the 20% smaller notch */
+put(['iPhone14,5', 'iPhone14,2', 'iPhone14,3', 'iPhone14,7', 'iPhone14,8', 'iPhone17,5'], 166, 34);
+
+/** An unknown notch phone, by its inset — the widest notch that inset has shipped with. */
+function notchByInset(top: number): { w: number; h: number } {
+  if (top >= 50) return { w: 228, h: 35 };
+  if (top >= 48) return { w: 232, h: 33 };
+  if (top >= 47) return { w: 212, h: 33 };
+  return { w: 212, h: 31 };
+}
+
+/**
+ * iOS: the Dynamic Island is one size on every model; a notch comes from the
+ * table; no inset worth a notch is an SE.
+ */
+export function cutoutFromInset(top: number, screenW: number, modelId?: string | null): Cutout {
+  /* Dynamic Island: a floating pill, identical on every model that has one. */
   if (top >= 54) return { x: (screenW - 126) / 2, y: 11, w: 126, h: 37, kind: 'floating' };
-  /* Notch: bolted to the bezel, so it can only be docked under. */
-  if (top >= 40) return { x: (screenW - 209) / 2, y: 0, w: 209, h: 30, kind: 'edge' };
-  /* SE and older: nothing to wrap. */
+  if (top >= 40) {
+    const n = (modelId && NOTCH[modelId]) || notchByInset(top);
+    return { x: (screenW - n.w) / 2, y: 0, w: n.w, h: n.h, kind: 'edge' };
+  }
+  /* SE and older: no lens. */
   return { x: screenW / 2, y: 0, w: 0, h: 0, kind: 'none' };
 }
 
 /**
- * ⚠️ `WindowInsets.getDisplayCutout().boundingRects` IS NOT REACHABLE FROM
- * JAVASCRIPT — §2, correcting an earlier version of the spec that said it was.
- * It is not in React Native, not in Expo, and not in
- * `react-native-safe-area-context`. Getting it needs a native module this
- * project does not have.
+ * ANDROID.
  *
- * ⚠️ AND A STATUS BAR IS NOT A CUTOUT. The first cut read this file's earlier
- * claim, found no rects, and fell back to `insets.top` as a full-width `edge`
- * band — but `insets.top` on Android is the status-bar height and is never 0,
- * so EVERY Android phone claimed hardware it does not have and the island
- * docked under a band that is not there: a black pill floating in space.
- *
- * Where the cutout cannot be measured the answer is `none`, and `none` gets
- * the VISOR (§5.5) — which is not a degraded fallback but the form most
- * devices will actually show.
+ * With a native cutout module, the real rectangle. Without one, nearly every
+ * current Android phone has a centred punch hole in the status bar, so the
+ * island is born there — a small circle in the middle of the status bar —
+ * and is marked `assumed`, so nothing is drawn there while idle.
  */
-export function androidCutout(_top: number, screenW: number): Cutout {
+export function androidCutout(top: number, screenW: number): Cutout {
   const rects = readNativeCutout();
   if (rects && rects.length > 0) {
     const r = rects[0];
-    /* ⚠️ `top === 0` means it is attached to the bezel — §2. */
+    /* ⚠️ `y === 0` means it is attached to the bezel. */
     return { ...r, kind: r.y <= 0 ? 'edge' : 'floating' };
   }
-  return { x: screenW / 2, y: 0, w: 0, h: 0, kind: 'none' };
+  const d = Math.max(16, Math.min(26, top - 10));
+  return { x: (screenW - d) / 2, y: Math.max(4, (top - d) / 2), w: d, h: d, kind: 'floating', assumed: true };
+}
+
+/** The iOS model identifier, e.g. `iPhone14,5`. ⚠️ Optional — never stop the app booting. */
+function modelId(): string | null {
+  try {
+    return (require('expo-device') as { modelId?: string | null }).modelId ?? null;
+  } catch {
+    return null;
+  }
 }
 
 interface Rect { x: number; y: number; w: number; h: number }
@@ -92,6 +118,6 @@ export function useCutout(insets: EdgeInsets): { hole: Cutout; screenW: number }
 
   const screenW = size.width;
   const hole =
-    Platform.OS === 'android' ? androidCutout(insets.top, screenW) : cutoutFromInset(insets.top, screenW);
+    Platform.OS === 'android' ? androidCutout(insets.top, screenW) : cutoutFromInset(insets.top, screenW, modelId());
   return { hole, screenW };
 }

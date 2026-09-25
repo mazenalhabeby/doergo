@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { reserveFor, shapeFor } from './geometry';
+import { reserveFor } from './geometry';
 import { useCutout } from './cutout';
 import { IslandView, type IslandMessage } from './island-view';
 import { SCREEN_READER_MIN_DWELL, dwellFor, type Tone } from './tokens';
@@ -40,25 +40,14 @@ interface IslandContextValue extends ToastContextValue {
   /** Anything richer than the four words above. */
   say: (input: { tone: Tone; title: string; body?: string; value?: string; action?: { label: string; onPress: () => void } }) => void;
   /**
-   * ⚠️ A VISOR IS BLACK, AND IN LIGHT MODE THE STATUS BAR DRAWS DARK ICONS ON
-   * IT — §5.5. The clock and the battery vanish.
-   *
-   * ⚠️ AND THE ANSWER IS NOT A SECOND `<StatusBar>`. There is exactly one in
-   * the tree and the comment above it records the bug that came from having
-   * two: both write the same global on every render and which one lands is
-   * commit order. That one component reads this flag.
-   */
-  visorShowing: boolean;
-  /**
    * How far the live island pushes the app's CONTENT down, in points.
    *
    * ⚠️ PUBLISHED, NOT PAINTED. The first cut padded the provider's own
    * children, which cut the gradient off at the padding and left a black band
    * across the top with the clock and the battery sitting on it. `Ground`
    * says it in its own header — *no status bar is ever drawn, the gradient
-   * runs under it* — and §5.5 shows exactly that: the clock to the visor's
-   * left and the battery to its right, ON THE GRADIENT. So the ground stays
-   * full-bleed and only what stands on it moves.
+   * runs under it*. So the ground stays full-bleed and only what stands on
+   * it moves.
    */
   reserve: number;
 }
@@ -150,15 +139,8 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(t);
   }, [current, screenReader, shift]);
 
-  /*
-    ⚠️ ANY black box at the top edge, not only the live one: a transient
-    message wears the same visor and puts the same black under the clock.
-  */
-  const shape = shapeFor(hole.kind);
-  const visorShowing = shape === 'visor' && !!current;
-  /* ⚠️ Only the LIVE state — a transient message floats. See `reserveFor`. */
-  /* ⚠️ Swiped away reserves nothing — the space is the bar's, and it is gone. */
-  const target = liveMsg && !liveHidden ? reserveFor(shape) : 0;
+  /* ⚠️ Only the LIVE state, and only where the island sits on content. Swiped away reserves nothing. */
+  const target = liveMsg && !liveHidden ? reserveFor(hole) : 0;
 
   /** ⚠️ Swipe up — §10. The one way to be rid of it. */
   const swipeAway = useCallback((msg: IslandMessage) => {
@@ -186,7 +168,6 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
       /* ⚠️ `info` is the outbox voice in this app, so it is grey and mono. */
       info: legacy('queued'),
       say,
-      visorShowing: false,
       reserve: 0,
       live: ({ label, value: figure }) => {
         const msg: IslandMessage = { id: nextId.current++, tone: 'live', title: label, value: figure, dwell: 0 };
@@ -204,22 +185,14 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
   }, [push, say, liveHidden]);
 
   const withLive = useMemo<IslandContextValue>(
-    () => ({ ...value, visorShowing, reserve: target }),
-    [value, visorShowing, target],
+    () => ({ ...value, reserve: target }),
+    [value, target],
   );
 
   /*
-    ⚠️ THE LIVE STATE RESERVES ITS SPACE — §5.1. A docked island occupies
-    38 → 74 on an iPhone 13 while the safe area starts at 47, so it sits on
-    the first 27pt of the app's own content. For a message that leaves after
-    four seconds that is fine. For a pill that stays all day it is the exact
-    fault this design replaced: the first cut put the ring on top of
-    `Friday, September 25` and left it there.
-
-    ⚠️ ONLY THE LIVE STATE, AND ONLY OFF `wrap`. A transient message must
-    never move the app, or every clock-in would nudge the whole screen down
-    and back for four seconds. On a wrapping cutout there is nothing to
-    reserve — the island is inside the area the app already avoids.
+    ⚠️ ONLY THE LIVE STATE RESERVES, AND ONLY ON A PHONE WITH NO LENS. A notch
+    or a Dynamic Island holds the ring and the figure inside the band the app
+    already avoids. A transient message never moves the app.
   */
   return (
     <IslandContext.Provider value={withLive}>

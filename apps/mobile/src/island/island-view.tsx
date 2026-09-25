@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ISLAND, TONES, type Tone } from './tokens';
-import { CAP, EDGE, ICON, ICON_GAP, SIDE, readLayout, sealedBox, shapeFor, type Cutout, type Layout, type Measured } from './geometry';
+import { CAP, EDGE, ICON, ICON_GAP, SIDE, readLayout, sealedBox, sealedVisible, type Cutout, type Layout, type Measured } from './geometry';
 
 /**
  * THE ISLAND ITSELF.
@@ -80,7 +80,8 @@ export function IslandView({
 }) {
   const topInset = useSafeAreaInsets().top;
   const sealed = sealedBox(hole, screenW, topInset);
-  const chrome = shapeFor(hole.kind) === 'visor';
+  /* ⚠️ Idle, only a measured Dynamic Island / punch hole keeps its pill. A notch IS the idle state. */
+  const idle = sealedVisible(hole);
   /*
     ⚠️ MEASURE, THEN SHOW. `pending` is rendered invisibly for exactly one
     frame so `onTextLayout` can report real widths at the real font — never a
@@ -97,12 +98,7 @@ export function IslandView({
   const x = useSharedValue(sealed.x);
   const head = useSharedValue(0);
   const body = useSharedValue(0);
-  /*
-    ⚠️ THERE IS NO SEALED VISOR — §5.5. With nothing to say the visor is not
-    rendered at all, so it fades in on arrival and out after its content, and
-    unmounts. A `wrap` keeps its sealed pill and never touches this.
-  */
-  const vis = useSharedValue(chrome ? 0 : 1);
+  const vis = useSharedValue(idle ? 1 : 0);
 
   /* A new message: measure it first. */
   useEffect(() => {
@@ -120,21 +116,20 @@ export function IslandView({
     */
     body.value = withTiming(0, { duration: 120 });
     head.value = withDelay(60, withTiming(0, { duration: 120 }));
-    /* ⚠️ A visor leaves entirely once its content has gone — §5.5. */
-    if (chrome) {
-      vis.value = withDelay(120, withTiming(0, { duration: 140 }));
-      const t = setTimeout(() => setShown(null), 260);
-      return () => clearTimeout(t);
-    }
     const to = (v: number) => (reduceMotion ? withTiming(v, { duration: REDUCED }) : withTiming(v, { duration: OUT, easing: Easing.out(Easing.cubic) }));
     w.value = withDelay(80, to(sealed.w));
     h.value = withDelay(80, to(sealed.h));
     rTop.value = withDelay(80, to(sealed.radiusTop));
     rBot.value = withDelay(80, to(sealed.radiusBottom));
     x.value = withDelay(80, to(sealed.x));
+    /*
+      ⚠️ BACK INTO THE CUTOUT, THEN GONE. On a notch the sealed box IS the
+      notch, black on black, so hiding it at the end is invisible.
+    */
+    if (!idle) vis.value = withDelay(80 + OUT, withTiming(0, { duration: hole.kind === 'edge' ? 0 : 100 }));
     const t = setTimeout(() => setShown(null), OUT + 140);
     return () => clearTimeout(t);
-  }, [message, shown, reduceMotion, chrome, sealed.w, sealed.h, sealed.radiusTop, sealed.radiusBottom, sealed.x, w, h, rTop, rBot, x, head, body, vis]);
+  }, [message, shown, reduceMotion, idle, hole.kind, sealed.w, sealed.h, sealed.radiusTop, sealed.radiusBottom, sealed.x, w, h, rTop, rBot, x, head, body, vis]);
 
   /* Measured: decide the rung, then move. */
   const commit = (msg: IslandMessage) => {
@@ -143,9 +138,8 @@ export function IslandView({
       *while you are on the clock it never leaves — a ring and a running
       figure*. Its label is for the screen reader, not the screen.
 
-      Measuring it as a title made `On the clock · 1h 45m` exceed the visor's
-      cap and DROP, so the thing that is supposed to sit quietly at the top of
-      every screen all day became a black panel a third of the way down it.
+      Measuring it as a title would drop it under the lens, and the thing that
+      sits at the top of every screen all day would become a panel.
     */
     const live = msg.tone === 'live';
     const measured: Measured = {
@@ -162,23 +156,21 @@ export function IslandView({
     head.value = withTiming(0, { duration: 100 });
     body.value = withTiming(0, { duration: 100 });
 
-    if (chrome) {
-      /*
-        ⚠️ ON A VISOR THE GEOMETRY NEVER MOVES — §5.5.2. The box is always
-        `screenW × (topInset + 34)`; only the CONTENT changes. The spring in
-        §8 is the pill stretching around a lens, and there is no lens here —
-        springing a full-width bar's width and radius animates nothing and
-        wobbles the one surface that is on screen all day.
-      */
-      w.value = layout.open.w;
-      x.value = layout.open.x;
-      rTop.value = layout.open.radiusTop;
-      rBot.value = layout.open.radiusBottom;
-      h.value = withTiming(layout.open.h, { duration: 180 });
-      vis.value = withTiming(1, { duration: 180 });
-      head.value = withDelay(100, withTiming(1, { duration: 220 }));
-      body.value = withDelay(180, withTiming(1, { duration: 220 }));
-    } else if (reduceMotion) {
+    /*
+      ⚠️ BORN AT THE CUTOUT. Coming from nothing, the box starts at exactly
+      the cutout's size and position and grows out of it left and right. On a
+      notch that first frame is black on black — the notch simply widens.
+    */
+    if (!shown && !idle) {
+      w.value = sealed.w;
+      h.value = sealed.h;
+      x.value = sealed.x;
+      rTop.value = sealed.radiusTop;
+      rBot.value = sealed.radiusBottom;
+      vis.value = hole.kind === 'edge' ? 1 : withTiming(1, { duration: 120 });
+    }
+
+    if (reduceMotion) {
       /* ⚠️ Cross-fade only. No spring, no travel, no overshoot — §8 rule 6. */
       const t = { duration: REDUCED, reduceMotion: ReduceMotion.Never } as const;
       w.value = withTiming(layout.open.w, t);
@@ -215,7 +207,7 @@ export function IslandView({
   const boxStyle = useAnimatedStyle(() => ({
     width: w.value,
     height: h.value,
-    /* ⚠️ Four corners, because a visor is square at the top — §5.5. */
+    /* ⚠️ Four corners, because a notch island is square at the top. */
     borderTopLeftRadius: rTop.value,
     borderTopRightRadius: rTop.value,
     borderBottomLeftRadius: rBot.value,
@@ -227,6 +219,7 @@ export function IslandView({
   const bodyStyle = useAnimatedStyle(() => ({ opacity: body.value, transform: [{ translateY: (1 - body.value) * 6 }] }));
 
   const msg = shown?.msg ?? null;
+  const edge = hole.kind === 'edge';
   const layout = shown?.layout ?? null;
 
   /*
@@ -308,8 +301,7 @@ export function IslandView({
         </View>
       ) : null}
 
-      {/* ⚠️ No message, no live shift: no visor — §5.5. A `wrap` stays sealed. */}
-      {chrome && !msg ? null : (
+      {!msg && !idle ? null : (
       <View style={styles.stage} pointerEvents="box-none">
         <GestureDetector gesture={swipe}>
         <Animated.View
@@ -323,39 +315,26 @@ export function IslandView({
                       accessibilityHint="Swipe up to dismiss"
               style={StyleSheet.absoluteFill}
             >
-              {/* The head row: what fits beside the lens, and nothing more. */}
               {/*
-                ⚠️ THE CONTENT ROW IS IN THE LOWER BAND ON A VISOR. Its upper
-                band IS the status-bar strip — putting the message there would
-                put it on the clock.
-              */}
-              {/*
-                ⚠️ THE CONTENT ROW IS LEVEL WITH THE CLOCK, NOT BELOW IT —
-                §5.5's correction. It used to be pushed under a status-bar
-                band, which pinned the message to the bottom of a 78pt slab.
-                The status bar is cleared HORIZONTALLY by `visorCap`.
+                The head row, in the band the lens sits in: icon LEFT of the
+                lens, time RIGHT of it. The ladder already decided both fit.
               */}
               <Animated.View style={[styles.headRow, { marginTop: layout.headTop, height: layout.headHeight }, headStyle]}>
                 {layout.icon === 'left' ? <Glyph tone={msg.tone} fg={look.fg} /> : <View style={{ width: 0 }} />}
                 {!layout.titleDrops && msg.tone !== 'live' ? (
-                  <Text numberOfLines={1} style={[styles.title, { color: ISLAND.ink, marginLeft: ICON_GAP }]}>
+                  <Text numberOfLines={1} style={[styles.title, { color: ISLAND.ink }]}>
                     {msg.title}
                   </Text>
                 ) : null}
-                {/*
-                  ⚠️ THE SPACER SEPARATES A TITLE FROM ITS FIGURE. With no
-                  title — the live state is a ring and a figure — it pushes the
-                  two apart across the whole visor instead, which §5.5 draws
-                  as `◎  17m`, adjacent.
-                */}
-                {layout.titleDrops || msg.tone === 'live' ? null : <View style={{ flex: 1 }} />}
+                {/* ⚠️ The lens is in here. Left group hugs the left edge, the time the right. */}
+                <View style={{ flex: 1 }} />
                 {msg.value ? (
                   <Text numberOfLines={1} style={[styles.value, styles.mono, { color: look.fg }]}>{msg.value}</Text>
                 ) : null}
                 {layout.icon === 'right' ? <Glyph tone={msg.tone} fg={look.fg} /> : null}
               </Animated.View>
 
-              {/* ⚠️ Below the lens — never beside it. */}
+              {/* ⚠️ What did not fit beside the lens goes UNDER it; the height was decided for it. */}
               {layout.titleDrops || msg.body || msg.action ? (
                 <Animated.View style={[styles.drop, bodyStyle]}>
                   {layout.titleDrops ? <Text style={[styles.title, { color: ISLAND.ink }]}>{msg.title}</Text> : null}
