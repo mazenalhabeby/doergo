@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import {
-  CAP, EDGE, GAP, ICON, ICON_GAP, SIDE, VISOR_MIN, VISOR_RADIUS, VISOR_ROW,
-  readLayout, reserveFor, sealedBox, shapeFor, cutoutIntrudes, visorBand, visorCap, visorHeight, type Cutout, type Measured,
+  CAP, EDGE, GAP, ICON, ICON_GAP, SIDE, VISOR_RADIUS, VISOR_ROW,
+  readLayout, reserveFor, sealedBox, shapeFor, type Cutout, type Measured,
 } from '../geometry';
 import { androidCutout, cutoutFromInset } from '../cutout';
 import { TONES, dwellFor, ISLAND } from '../tokens';
@@ -44,7 +44,7 @@ describe('the one law — the camera covers nothing, ever', () => {
   it.each(phones)('%s · nothing is ever laid out under the lens', (_name, hole, screenW) => {
     for (const title of Object.keys(W) as (keyof typeof W)[]) {
       for (const bodyLines of [0, 2]) {
-        const l = readLayout({ hole, screenW, measured: msg(title, { bodyLines }) });
+        const l = readLayout({ hole, screenW, topInset: 47, measured: msg(title, { bodyLines }) });
 
         /* ⚠️ The box may cover the hole — it is meant to WRAP it. What must
            never happen is CONTENT in the dead zone. */
@@ -67,25 +67,24 @@ describe('the one law — the camera covers nothing, ever', () => {
             clock is far left, the battery far right, and `visorCap` keeps the
             visor short of both, which is the rule doing the real work.
           */
-          expect(l.open.w).toBeLessThanOrEqual(visorCap(screenW));
           /*
-            ⚠️ AND THE ROW CLEARS THE CUTOUT WHEN THE CUTOUT IS IN THE WAY.
-            The horizontal cap clears the CLOCK and the BATTERY, which sit
-            outside the notch; it does not clear the notch itself, and §1's
-            law is about the camera. Measured per phone: where nothing
-            intrudes the row centres in 44pt, which is §5.5 exactly.
+            ⚠️ A VISOR CONTAINS THE CUTOUT INSTEAD OF MATCHING IT — §5.5,
+            rewritten. Full width, so it cannot be the wrong width, and the
+            band above the content row holds the status bar and the cutout
+            whatever size that really is.
           */
-          if (cutoutIntrudes(hole, screenW)) {
-            expect(l.headTop).toBeGreaterThanOrEqual(hole.y + hole.h);
-          } else {
-            expect(l.headTop).toBe(0);
-          }
+          expect(l.open.x).toBe(0);
+          expect(l.open.w).toBe(screenW);
+          expect(l.headTop).toBe(47);
+          expect(l.headTop).toBeGreaterThanOrEqual(hole.y + hole.h);
         }
 
-        /* ⚠️ Never wider than the cap, never within 8pt of an edge. */
-        expect(l.open.w).toBeLessThanOrEqual(Math.min(CAP, screenW - EDGE * 2));
-        expect(l.open.x).toBeGreaterThanOrEqual(EDGE);
-        expect(l.open.x + l.open.w).toBeLessThanOrEqual(screenW - EDGE);
+        /* ⚠️ A wrap is never wider than the cap, never within 8pt of an edge. */
+        if (hole.kind === 'floating') {
+          expect(l.open.w).toBeLessThanOrEqual(Math.min(CAP, screenW - EDGE * 2));
+          expect(l.open.x).toBeGreaterThanOrEqual(EDGE);
+          expect(l.open.x + l.open.w).toBeLessThanOrEqual(screenW - EDGE);
+        }
       }
     }
   });
@@ -97,7 +96,7 @@ describe('the one law — the camera covers nothing, ever', () => {
     */
     const centre = PIXEL.x + PIXEL.w / 2;
     for (const title of Object.keys(W) as (keyof typeof W)[]) {
-      const l = readLayout({ hole: PIXEL, screenW: 412, measured: msg(title) });
+      const l = readLayout({ hole: PIXEL, screenW: 412, topInset: 47, measured: msg(title) });
       expect(l.open.x + l.open.w / 2).toBeCloseTo(centre, 0);
     }
   });
@@ -109,7 +108,7 @@ describe('§4 — the ladder, first rung that fits', () => {
       The slots are 96pt each; minus the icon and its gap the title gets 66pt,
       about nine characters. `Clocked in` measures 67. It does not fit.
     */
-    const l = readLayout({ hole: DYNAMIC_ISLAND, screenW: 393, measured: msg('Clocked in') });
+    const l = readLayout({ hole: DYNAMIC_ISLAND, screenW: 393, topInset: 47, measured: msg('Clocked in') });
     expect(l.rung).toBe(3);
     expect(l.titleDrops).toBe(true);
     expect(l.open.radiusTop).toBe(30);
@@ -119,21 +118,21 @@ describe('§4 — the ladder, first rung that fits', () => {
   });
 
   it('the same phrase stays on ONE line on a Pixel ⌀26', () => {
-    const l = readLayout({ hole: PIXEL, screenW: 412, measured: msg('Clocked in') });
+    const l = readLayout({ hole: PIXEL, screenW: 412, topInset: 47, measured: msg('Clocked in') });
     expect(l.titleDrops).toBe(false);
     expect(l.rung).toBeLessThanOrEqual(2);
     expect(l.open.radiusTop).toBe(999);
   });
 
   it('a body forces rung 4, not a taller rung 3', () => {
-    const l = readLayout({ hole: DYNAMIC_ISLAND, screenW: 393, measured: msg('Anna approved your overtime', { bodyLines: 2 }) });
+    const l = readLayout({ hole: DYNAMIC_ISLAND, screenW: 393, topInset: 47, measured: msg('Anna approved your overtime', { bodyLines: 2 }) });
     expect(l.rung).toBe(4);
     expect(l.titleDrops).toBe(true);
   });
 
   it('⚠️ a hard-left camera is rung 5 — the icon moves to the RIGHT slot', () => {
     /* A hole at x=22 leaves a left slot of about −5pt: not even the icon. */
-    const l = readLayout({ hole: HARD_LEFT, screenW: 393, measured: msg('Anna approved your overtime') });
+    const l = readLayout({ hole: HARD_LEFT, screenW: 393, topInset: 47, measured: msg('Anna approved your overtime') });
     expect(l.left).toBeLessThan(ICON);
     expect(l.rung).toBe(5);
     expect(l.icon).toBe('right');
@@ -145,8 +144,8 @@ describe('§4 — the ladder, first rung that fits', () => {
       ⚠️ German and French run 30–40% longer. A string that is rung 2 in
       English is rung 3 in German, and the only way to know is to measure.
     */
-    const english = readLayout({ hole: PIXEL, screenW: 412, measured: msg('Overtime approved') });
-    const german = readLayout({ hole: PIXEL, screenW: 412, measured: { ...msg('Overtime approved'), title: 114 * 1.38 } });
+    const english = readLayout({ hole: PIXEL, screenW: 412, topInset: 47, measured: msg('Overtime approved') });
+    const german = readLayout({ hole: PIXEL, screenW: 412, topInset: 47, measured: { ...msg('Overtime approved'), title: 114 * 1.38 } });
     expect(english.titleDrops).toBe(false);
     expect(german.titleDrops).toBe(true);
     // ⚠️ And nothing is ever clipped or ellipsised to make it fit.
@@ -172,68 +171,58 @@ describe('§5 — the three shapes', () => {
   });
 
   it('wrap surrounds the hole', () => {
-    const s = sealedBox(PIXEL, 412);
+    const s = sealedBox(PIXEL, 412, 47);
     expect(s.y).toBeLessThan(PIXEL.y);
     expect(s.x).toBeLessThan(PIXEL.x);
     expect(s.x + s.w).toBeGreaterThan(PIXEL.x + PIXEL.w);
     expect(s.radiusTop).toBe(999);
   });
 
-  it('⚠️ a notch MERGES with the visor — one black form from the top edge down', () => {
+  it('⚠️ the visor CONTAINS the cutout — full width, so it cannot be wrong', () => {
     /*
-      The hardware is already black, so the visor is drawn at the same `y: 0`
-      and simply joins it. ⚠️ NEVER `hole.y + hole.h + 8`: any gap and it stops
-      being the top of the screen and becomes a card near it.
-    */
-    const v = sealedBox(NOTCH, 390);
-    expect(v.y).toBe(0);
-    expect(v.radiusTop).toBe(0);
-    expect(v.radiusBottom).toBe(VISOR_RADIUS);
+      §5.5, rewritten. Everything that tried to match a cutout is deleted:
+      `visorCap()`, the `screenW - 180` rule, `VISOR_MIN`, the measured band
+      and the centred row.
 
-    /*
-      ⚠️ `max(hole.y + hole.h, 44)` — NOT `insets.top + 34`. On a notch phone
-      that made it 78pt tall with the message pinned to the bottom: a fat
-      black slab hanging off the top edge, not an island. It shipped in
-      c1145217.
+      ⚠️ THE WIDTH COULD NEVER HAVE BEEN RIGHT, BECAUSE `hole` IS FABRICATED.
+      Measured from the running app on a 16e:
+      `insetTop 47 · hole {x: 90.5, w: 209} · open.w 130.57` — a visor 79pt
+      NARROWER than the notch it hung below. And `209` came from an iPhone XR;
+      iOS exposes no API for the cutout rectangle at all.
     */
-    /*
-      ⚠️ AND IT MEASURES THIS PHONE'S CUTOUT RATHER THAN ASSUMING FROM ITS
-      KIND. `edge` covers a 209pt notch and a 60pt teardrop; the question is
-      whether THIS one overlaps the width the visor can occupy.
-    */
-    expect(v.h).toBe(30 + VISOR_ROW);                       // notch bottom, then the row
-    expect(visorHeight(TEARDROP, 393)).toBe(18 + VISOR_ROW); // a shallower one
-    expect(visorHeight(NONE, 375)).toBe(VISOR_MIN);          // nothing in the way at all
-    /* A taller cutout pushes it further, and only then. */
-    expect(visorHeight({ ...NOTCH, h: 60 }, 390)).toBe(60 + VISOR_ROW);
+    for (const [hole, screenW] of [[NOTCH, 390], [TEARDROP, 393], [NONE, 375]] as const) {
+      const v = sealedBox(hole, screenW, 47);
+      expect(v.x).toBe(0);
+      expect(v.w).toBe(screenW);
+      expect(v.y).toBe(0);
+      expect(v.h).toBe(47 + VISOR_ROW);
+      expect(v.radiusTop).toBe(0);
+      expect(v.radiusBottom).toBe(VISOR_RADIUS);
+    }
 
-    /* ⚠️ Measured, not categorised: both of these are `edge`. */
-    expect(cutoutIntrudes(NOTCH, 390)).toBe(true);
-    expect(cutoutIntrudes(TEARDROP, 393)).toBe(true);
-    expect(cutoutIntrudes(NONE, 375)).toBe(false);
-    /* A cutout outside the visor's own width does not push it down. */
-    expect(cutoutIntrudes({ x: 4, y: 0, w: 20, h: 26, kind: 'edge' }, 390)).toBe(false);
-    expect(visorBand({ x: 4, y: 0, w: 20, h: 26, kind: 'edge' }, 390)).toBe(0);
+    /* ⚠️ Nothing left that measures or matches a cutout. */
+    const geo = code('island/geometry.ts');
+    for (const gone of ['visorCap', 'VISOR_MIN', 'visorBand', 'cutoutIntrudes', 'visorHeight']) {
+      expect(geo).not.toMatch(new RegExp(`(export (function|const) )${gone}\\b`));
+    }
 
-    const l = readLayout({ hole: NOTCH, screenW: 390, measured: msg('Clocked in') });
-    // A visor has no lens in its row, so a short phrase stays on one line.
+    const l = readLayout({ hole: NOTCH, screenW: 390, topInset: 47, measured: msg('Clocked in') });
     expect(l.titleDrops).toBe(false);
     expect(l.left).toBe(0);
   });
 
-  it('⚠️ no cutout gets the VISOR — flush with the edge, not a card below it', () => {
+  it('⚠️ only a floating cutout gets `wrap` — 126×37 is the one safe constant', () => {
     /*
-      §5.5. It does not float, it makes a notch: the app grows its own cutout
-      and the island lives in it. ⚠️ And it is the MOST COMMON form — every
-      Android phone without the native module, every SE, every tablet, every
-      under-display camera — not the exception.
+      It is identical on every Dynamic Island iPhone. Everything else gets the
+      visor, which matches nothing and therefore cannot be the wrong width.
+
+      ⚠️ THE COST, STATED PLAINLY: on a notch iPhone there is no island
+      effect — a black top bar that holds the shift. Correct on every phone
+      ever made, and no per-model table to break on the next one.
     */
-    const s = sealedBox(NONE, 375);
-    expect(s.y).toBe(0);
-    expect(s.h).toBe(VISOR_MIN);
-    /* ⚠️ Square at the top. A rounded top corner lifts it off the bezel. */
-    expect(s.radiusTop).toBe(0);
-    expect(s.radiusBottom).toBe(VISOR_RADIUS);
+    expect(shapeFor('floating')).toBe('wrap');
+    expect(sealedBox(DYNAMIC_ISLAND, 393, 59).radiusTop).toBe(999);
+    expect(sealedBox(NOTCH, 390, 47).radiusTop).toBe(0);
   });
 });
 
@@ -246,39 +235,65 @@ describe('§5.1–5.4 — the dock and rect paths', () => {
       cleared HORIZONTALLY by `visorCap`, so there is nothing to collide with
       and nothing to thread through.
     */
-    for (const screenW of [375, 393, 412]) {
-      const v = sealedBox(NONE, screenW);
+    for (const [screenW, top] of [[375, 20], [393, 59], [412, 28]] as const) {
+      const v = sealedBox(NONE, screenW, top);
       expect(v.y).toBe(0);
-      /* ⚠️ The same height whatever the inset. */
-      expect(v.h).toBe(VISOR_MIN);
+      /* The band holds the status bar, so the height follows the inset. */
+      expect(v.h).toBe(top + VISOR_ROW);
     }
-    // ⚠️ No inset and no floating constant left in the geometry.
+    // ⚠️ No floating constant left in the geometry.
     const geo = code('island/geometry.ts');
     expect(geo).not.toMatch(/y: topInset \+ 8/);
     expect(geo).not.toMatch(/y: 12,/);
-    expect(geo).not.toMatch(/topInset \+ VISOR/);
-    expect(geo).not.toMatch(/insets\.top/);
   });
 
-  it('⚠️ 5.5 · a visor may not reach the clock or the battery — it DROPS instead', () => {
+  it('⚠️ 5.5.2 · on a visor the ladder collapses and the bar grows a line at a time', () => {
     /*
-      About 90pt each side. On a 390pt phone that caps the visor at 210 —
-      roughly twenty characters — so the dropped form is common here too. A
-      message that needs more must drop rather than widen into the status bar.
+      The row has `screenW - 26` of usable width — about 320pt on a 390pt
+      phone — so one line is almost always the answer. There is no dead zone
+      to route around and no cap to run into, because the visor matches
+      nothing.
+
+      ⚠️ AND A TITLE THAT STILL WILL NOT FIT WRAPS INSIDE THE SAME BAR. It
+      does not drop below a lens, because there is no lens. The bar grows by
+      one `VISOR_ROW` per line and nothing else moves.
     */
-    expect(visorCap(390)).toBe(210);
+    const one = readLayout({ hole: NONE, screenW: 390, topInset: 47, measured: msg('Clocked in') });
+    expect(one.rung).toBe(1);
+    expect(one.titleDrops).toBe(false);
+    expect(one.open.h).toBe(47 + VISOR_ROW);
+    expect(one.headHeight).toBe(VISOR_ROW);
 
-    const wide = readLayout({
-      hole: NONE, screenW: 390,
-      measured: { ...msg('Anna approved your overtime'), title: 300 },
+    /* Even the longest string in the spec stays on one line here. */
+    const long = readLayout({ hole: NOTCH, screenW: 390, topInset: 47, measured: msg('Anna approved your overtime') });
+    expect(long.rung).toBe(1);
+    expect(long.open.h).toBe(47 + VISOR_ROW);
+
+    /* Past the row's width it wraps, in place, one row taller. */
+    const wraps = readLayout({
+      hole: NONE, screenW: 390, topInset: 47,
+      measured: { ...msg('Anna approved your overtime'), title: 500 },
     });
-    expect(wide.titleDrops).toBe(true);
-    expect(wide.open.w).toBeLessThanOrEqual(visorCap(390));
+    expect(wraps.titleDrops).toBe(false);
+    expect(wraps.open.w).toBe(390);
+    expect(wraps.open.h).toBe(47 + VISOR_ROW * 2);
+    expect(wraps.headHeight).toBe(VISOR_ROW * 2);
+  });
 
-    /* And a short one still fits on the row. */
-    const short = readLayout({ hole: NONE, screenW: 390, measured: msg('Clocked in') });
-    expect(short.titleDrops).toBe(false);
-    expect(short.open.w).toBeLessThanOrEqual(visorCap(390));
+  it('⚠️ 5.5.2 · a visor never springs — only its content changes', () => {
+    /*
+      The morph in §8 is a pill stretching around a lens. There is no lens
+      here, so springing a full-width bar's width and radius animates nothing
+      and wobbles the one surface that is on screen all day.
+    */
+    const view = code('island/island-view.tsx');
+    const branch = view.slice(view.indexOf('if (chrome) {'), view.indexOf('} else if (reduceMotion)'));
+    expect(branch).not.toMatch(/withSpring/);
+    expect(branch).toMatch(/w\.value = layout\.open\.w;/);
+    expect(branch).toMatch(/rTop\.value = layout\.open\.radiusTop;/);
+    /* The content still cross-fades, and the haptic still fires. */
+    expect(branch).toMatch(/head\.value = withDelay\(100, withTiming\(1/);
+    expect(view).toMatch(/Haptics\.impactAsync/);
   });
 
   it('⚠️ the live state is a RING AND A FIGURE, not a sentence', () => {
@@ -301,26 +316,22 @@ describe('§5.1–5.4 — the dock and rect paths', () => {
     expect(view).toMatch(/announceForAccessibility/);
   });
 
-  it('⚠️ 5.5 · centred where nothing is in the way, below the cutout where there is', () => {
+  it('⚠️ 5.5 · the content row sits below the status bar, inside the visor', () => {
     /*
-      §5.5's correction removed the status-bar band, which had pinned the
-      message to the bottom of a 78pt slab. Nothing needs to clear the STATUS
-      BAR vertically — the clock is far left, the battery far right, and
-      `visorCap` keeps the visor short of both.
-
-      ⚠️ BUT THE CUTOUT ITSELF STILL HAS TO BE CLEARED, and that is measured
-      off the phone rather than assumed from its kind.
+      The band above it holds the status bar and, on a notch phone, the notch
+      itself — whatever size that really is. That is the point of containing
+      the cutout rather than matching it: nothing here depends on knowing how
+      big it is.
     */
-    for (const hole of [NONE, PIXEL]) {
-      const l = readLayout({ hole, screenW: 390, measured: msg('Clocked in') });
-      expect(l.headTop).toBe(0);
-      expect(l.headHeight).toBe(l.sealed.h);
+    for (const hole of [NONE, NOTCH, TEARDROP]) {
+      const l = readLayout({ hole, screenW: 390, topInset: 47, measured: msg('Clocked in') });
+      expect(l.headTop).toBe(47);
+      expect(l.headHeight).toBe(VISOR_ROW);
+      expect(l.headTop).toBeGreaterThanOrEqual(hole.y + hole.h);
     }
-    const notch = readLayout({ hole: NOTCH, screenW: 390, measured: msg('Clocked in') });
-    expect(notch.headTop).toBe(30);
-    expect(notch.headHeight).toBe(VISOR_ROW);
-    // Centred within whatever is left, not pinned to an edge of it.
-    expect(code('island/island-view.tsx')).toMatch(/alignItems: 'center'/);
+    /* A wrap has no band at all — its row is beside the lens. */
+    expect(readLayout({ hole: PIXEL, screenW: 412, topInset: 44, measured: msg('Clocked in') }).headTop).toBe(0);
+    expect(code('island/island-view.tsx')).toMatch(/marginTop: layout\.headTop/);
   });
 
   it('⚠️ 5.5 · the status-bar ink goes light on a visor, through the ONE StatusBar', () => {
@@ -346,30 +357,26 @@ describe('§5.1–5.4 — the dock and rect paths', () => {
     expect(code('island/island-context.tsx')).toMatch(/visorShowing = shape === 'visor' && !!current/);
   });
 
-  it('⚠️ 5.3 · a dropped rect stays at 22 — it was never a pill', () => {
+  it('⚠️ 5.3 · a visor never grows a top, and a wrap becomes a panel', () => {
     /*
-      Asking the rung first gave a dropped rect a radius of 30, which makes it
-      ROUNDER as it grows. On a pill, 999 → 30 is the pill becoming a panel,
-      which is the point. A rect is already a card.
+      §5.3's bug was asking the rung before the shape, which made a dropped
+      card ROUNDER as it grew. A visor is flush: square at the top however
+      tall it gets, 26 at the bottom, always.
     */
-    /* Long enough to exceed even a rect's generous row — see 5.4. */
-    const dropped = readLayout({
-      hole: NONE, screenW: 375,
-      measured: { ...msg('Anna approved your overtime'), title: 600, bodyLines: 2 },
-    });
-    expect(dropped.titleDrops).toBe(true);
-    /* ⚠️ A visor never grows a top — it stays flush however tall it gets. */
-    expect(dropped.open.radiusTop).toBe(0);
-    expect(dropped.open.radiusBottom).toBe(VISOR_RADIUS);
+    for (const measured of [msg('Clocked in'), { ...msg('Clocked in'), title: 500, bodyLines: 2 }]) {
+      const v = readLayout({ hole: NONE, screenW: 375, topInset: 20, measured });
+      expect(v.open.radiusTop).toBe(0);
+      expect(v.open.radiusBottom).toBe(VISOR_RADIUS);
+    }
 
-    // A dock IS a pill, so it does become a panel.
-    /* A wrap IS a pill, so it does become a panel. */
+    /* A wrap IS a pill, so 999 → 30 is the pill becoming a panel. */
     const pill = readLayout({
-      hole: DYNAMIC_ISLAND, screenW: 393,
+      hole: DYNAMIC_ISLAND, screenW: 393, topInset: 59,
       measured: { ...msg('Anna approved your overtime'), bodyLines: 2 },
     });
     expect(pill.titleDrops).toBe(true);
     expect(pill.open.radiusTop).toBe(30);
+    expect(pill.open.radiusBottom).toBe(30);
   });
 
   it('⚠️ 5.1 · the live state RESERVES space on dock and rect, and never on wrap', () => {
@@ -379,20 +386,17 @@ describe('§5.1–5.4 — the dock and rect paths', () => {
       for four seconds; not fine for a pill that stays all day. The first cut
       shipped exactly that: the ring covered `Friday, September 25`.
     */
-    const edge = sealedBox(NOTCH, 390);
-    expect(edge.y).toBe(0);
-    expect(edge.h).toBe(30 + VISOR_ROW);
-    /* Barely past the status bar now, which is the point of the correction. */
-    expect(reserveFor(edge, 'visor', 47)).toBe(25);
-
-    /* A visor's whole lower band is app content, so it always reserves. */
-    const visor = sealedBox(NONE, 375);
-    expect(reserveFor(visor, 'visor', 20)).toBe(VISOR_MIN + 8 - 20);
+    /*
+      ⚠️ A CONSTANT, BECAUSE THE VISOR'S GEOMETRY IS ONE — §5.5.3. It is
+      `topInset + VISOR_ROW + 8 - topInset`, so the app simply starts 42pt
+      lower during a shift. That area is the visor's.
+    */
+    expect(reserveFor('visor')).toBe(VISOR_ROW + 8);
+    expect(reserveFor('visor')).toBe(42);
 
     /* ⚠️ On wrap there is nothing to reserve — it is inside the area the app
        already avoids. */
-    expect(reserveFor(sealedBox(PIXEL, 412), 'wrap', 44)).toBe(0);
-    expect(reserveFor(sealedBox(DYNAMIC_ISLAND, 393), 'wrap', 59)).toBe(0);
+    expect(reserveFor('wrap')).toBe(0);
 
     const ctx = code('island/island-context.tsx');
     // ⚠️ Only the LIVE state reserves — a transient message must never move the app.
@@ -419,23 +423,20 @@ describe('§5.1–5.4 — the dock and rect paths', () => {
     expect(ground).toMatch(/withSpring\(reserve, \{ damping: 26, stiffness: 240, mass: 1 \}\)/);
   });
 
-  it('⚠️ 5.4 · a visor holds MORE text than a Dynamic Island — but the cap bites', () => {
+  it('⚠️ 5.4 · a visor holds far MORE text than a Dynamic Island', () => {
     /*
-      The opposite of what you would guess, and the reason a green run on an
-      iPhone 13 proves nothing: a visor's row has no dead zone in the middle
-      of it. The Dynamic Island is the hard case.
+      The opposite of what you would guess, and the reason a green run on a
+      notch phone proves nothing: a visor's row has no dead zone in the middle
+      of it and no cap to run into. The Dynamic Island is the hard case, and
+      it is the only one still doing the ladder.
 
-      ⚠️ §5.4'S TABLE PREDATES THE VISOR. Its ~241pt was the old `dock`, which
-      ran the full cap. A visor is capped at `screenW − 180` so it cannot
-      reach the clock or the battery — 210pt on a 390pt phone, about 88 of it
-      for the title — so the dropped form is common here too, exactly as
-      §5.5 says.
+      ⚠️ §5.4'S TABLE PREDATES ALL OF THIS — its shapes no longer exist.
     */
     const usable = (hole: Cutout, screenW: number) => {
-      const l = readLayout({ hole, screenW, measured: msg('Clocked in') });
+      const l = readLayout({ hole, screenW, topInset: 47, measured: msg('Clocked in') });
       return hole.kind === 'floating'
         ? Math.round(l.left - ICON - ICON_GAP)
-        : Math.round(Math.min(CAP, screenW - EDGE * 2, visorCap(screenW)) - SIDE * 2 - ICON - ICON_GAP - 42 - 24);
+        : Math.round(screenW - SIDE * 2 - ICON - ICON_GAP - 42 - 24);
     };
     const island = usable(DYNAMIC_ISLAND, 393);
     const pixel = usable(PIXEL, 412);
@@ -443,9 +444,8 @@ describe('§5.1–5.4 — the dock and rect paths', () => {
 
     expect(island).toBeLessThan(70);
     expect(pixel).toBeGreaterThan(100);
-    // More than the Dynamic Island, and nothing like the old dock's 241.
-    expect(notch).toBeGreaterThan(island);
-    expect(notch).toBeLessThan(150);
+    /* ~278pt on a 390pt phone — the whole row, less the icon and the figure. */
+    expect(notch).toBeGreaterThan(island * 4);
   });
 });
 

@@ -53,8 +53,13 @@ export const MAX_BODY_LINES = 3;
  * ⚠️ AND THE VISOR IS THE COMMON FORM, NOT THE EXCEPTION: every notch iPhone,
  * every teardrop Android, every Android phone without the native module, every
  * SE, every tablet, every under-display camera. ONLY A FLOATING CUTOUT GETS
- * `wrap`. If the visor looks wrong, the feature looks wrong on almost every
- * device.
+ * `wrap`, because 126 × 37 is identical on every Dynamic Island iPhone and is
+ * the one cutout constant that is not a guess.
+ *
+ * ⚠️ THE COST, STATED PLAINLY: on a notch iPhone you do not get the island
+ * effect. You get a black top bar that holds the shift. It is correct on every
+ * phone ever made and needs no per-model table. The island effect lives where
+ * it is the truth rather than a guess.
  */
 export type Shape = 'wrap' | 'visor';
 
@@ -63,35 +68,27 @@ export function shapeFor(kind: CutoutKind): Shape {
 }
 
 /**
- * ⚠️ THE VISOR'S OWN HEIGHT — NOT `insets.top + 34`.
+ * THE VISOR'S CONTENT ROW. Its height is the only figure the visor needs.
  *
- * An earlier version of §5.5 said the content row was pushed below the
- * status-bar band, and that is what shipped in `c1145217`: on a notch phone
- * `44 + 34 = 78pt` of black hanging off the top edge with the message pinned
- * to the bottom of it — a slab, not an island. The band was belt-and-braces
- * for a collision that cannot happen.
+ * ⚠️ EVERYTHING THAT TRIED TO MATCH THE CUTOUT IS DELETED — §5.5, rewritten.
+ * `visorCap()`, the `screenW - 180` rule, `VISOR_MIN`, the measured band and
+ * the centred row were all attempts to make the visor hug a cutout, and that
+ * cannot be done: `hole` is FABRICATED on iOS. `{x: 90.5, w: 209}` is §2's
+ * constant centred on a 390pt screen, and 209 came from an iPhone XR — iOS
+ * exposes no API for the cutout rectangle at all. The running app measured
+ * `open.w: 130.57` against a claimed 209pt notch: a small black tab dangling
+ * off a wider black shape. No height or centring change fixes that, because
+ * it was never a height problem.
  *
- * ⚠️ NOTHING NEEDS TO CLEAR THE STATUS BAR VERTICALLY, BECAUSE IT IS ALREADY
- * CLEARED HORIZONTALLY. The clock is at the far left, the battery at the far
- * right, and the visor is centred and capped short of both — `visorCap` is
- * the rule doing the real work. So the content row is LEVEL with them, exactly
- * as a Dynamic Island is.
+ * ⚠️ SO THE VISOR MATCHES NOTHING, AND THEREFORE CANNOT BE THE WRONG WIDTH.
+ * It is full-width black chrome that CONTAINS the notch instead of extending
+ * it. Only a floating cutout gets `wrap`, because 126 × 37 is identical on
+ * every Dynamic Island iPhone and is the one constant that is safe.
  */
-export const VISOR_MIN = 44;
-
-/** The content row itself, when a cutout forces the visor to grow past it. */
 export const VISOR_ROW = 34;
+
 /** ⚠️ The visor's bottom corners. The top ones are square — it is flush. */
 export const VISOR_RADIUS = 26;
-/**
- * ⚠️ A VISOR MAY NOT REACH THE STATUS-BAR CONTENT — §5.5. About 90pt each side
- * for the clock and the battery. On a 390pt phone that caps the visor at
- * 210pt, about twenty characters, so the dropped form is common here too: a
- * message that needs more DROPS rather than widening into the clock.
- */
-export function visorCap(screenW: number): number {
-  return screenW - 180;
-}
 
 /**
  * THE LADDER — the first rung that fits wins.
@@ -160,12 +157,11 @@ const BOTTOM = 14;
 /**
  * The sealed capsule — what the island is when it has nothing to say.
  *
- * ⚠️ NO SAFE-AREA INSET IN HERE. §5.2's bug was a literal `y: 12` landing on
- * the clock and the battery; the fix was not to thread the inset through but
- * to notice that a visor starts AT the edge and is cleared HORIZONTALLY —
- * see `VISOR_MIN`. An inset in this function is the 78pt slab coming back.
+ * ⚠️ A VISOR IS NEVER SEALED TO NOTHING. It is chrome: `screenW` wide and
+ * `topInset + 34` tall whether it is saying anything or not. Only its CONTENT
+ * comes and goes — §5.5.2.
  */
-export function sealedBox(hole: Cutout, screenW: number): Box {
+export function sealedBox(hole: Cutout, screenW: number, topInset = 0): Box {
   const shape = shapeFor(hole.kind);
   if (shape === 'wrap') {
     return {
@@ -178,71 +174,21 @@ export function sealedBox(hole: Cutout, screenW: number): Box {
     };
   }
   /*
-    ⚠️ THE VISOR IS FLUSH — `y: 0`, NO GAP, EVER. ⚠️ NEVER
-    `hole.y + hole.h + 8`: any gap at all and it stops being the top of the
-    screen and becomes a card near it, which is the toast again.
-
-    ⚠️ AND THE BAND CLEARS BOTH THE STATUS BAR AND THE HARDWARE. On an `edge`
-    device the notch or teardrop is already black, so the visor is drawn at the
-    same `y: 0` and simply merges with it — one continuous black form from the
-    top of the screen down to its rounded bottom edge.
+    ⚠️ EDGE TO EDGE, FLUSH WITH THE TOP. The band above the content row holds
+    the status bar and, on a notch phone, the notch itself — whatever size it
+    really is. It contains the cutout instead of extending it, which is why
+    it cannot be the wrong width.
   */
   return {
-    x: screenW / 2,
+    x: 0,
     y: 0,
-    w: 0,
-    h: visorHeight(hole, screenW),
+    w: screenW,
+    h: topInset + VISOR_ROW,
     radiusTop: 0,
     radiusBottom: VISOR_RADIUS,
   };
 }
 
-/**
- * DOES THE CUTOUT ACTUALLY INTRUDE INTO THE VISOR?
- *
- * ⚠️ MEASURED PER DEVICE, NOT ASSUMED FROM THE KIND. `edge` covers a 209pt
- * notch and a 60pt teardrop and whatever the next phone ships; the question
- * that matters is whether THIS cutout overlaps the width THIS visor can
- * occupy, and that is arithmetic, not a category.
- *
- * ⚠️ AND IT IS ASKED AT THE VISOR'S WIDEST, not at the current message's
- * width. A band that changed with the sentence would move the island up and
- * down between messages, which is the lens-appears-to-slide mistake in the
- * other axis.
- */
-export function cutoutIntrudes(hole: Cutout, screenW: number): boolean {
-  if (hole.kind === 'none' || hole.w <= 0) return false;
-  const w = Math.min(CAP, screenW - EDGE * 2, visorCap(screenW));
-  const left = clamp(screenW / 2 - w / 2, EDGE, Math.max(EDGE, screenW - EDGE - w));
-  return !(left + w <= hole.x || left >= hole.x + hole.w);
-}
-
-/**
- * The black above the content row — the cutout's own bottom, or nothing.
- *
- * ⚠️ THIS IS WHAT KEEPS THE CAMERA COVERING NOTHING ON A NOTCH PHONE. §5.5
- * centres the row in a 44pt visor, which is right where there is no cutout —
- * but a real notch is 209pt wide, centred and 30pt tall, and `visorCap(390)`
- * is 210, also centred. A row centred in 44pt then sits at roughly 11 → 33,
- * behind the bottom two thirds of the physical notch. The simulator draws no
- * notch, so it looked correct and was not.
- *
- * Where the cutout intrudes, the row goes below it. Where it does not — no
- * cutout at all, which is most devices — the band is 0 and §5.5's centred
- * 44pt visor is exactly what is drawn.
- */
-export function visorBand(hole: Cutout, screenW: number): number {
-  return cutoutIntrudes(hole, screenW) ? hole.y + hole.h : 0;
-}
-
-/**
- * ⚠️ `insets.top` IS NOT IN THIS — §5.5. The status bar is cleared
- * HORIZONTALLY by `visorCap`; only the cutout is cleared vertically, and only
- * when it is actually in the way.
- */
-export function visorHeight(hole: Cutout, screenW: number): number {
-  return Math.max(visorBand(hole, screenW) + VISOR_ROW, VISOR_MIN);
-}
 
 /**
  * ⚠️ THE LENS NEVER MOVES. The box is anchored to the HOLE'S centre, not its
@@ -289,23 +235,14 @@ export function readLayout(input: {
   hole: Cutout;
   screenW: number;
   measured: Measured;
+  /** ⚠️ The visor's band is the status bar — §5.5. */
+  topInset?: number;
 }): Layout {
-  const { hole, screenW, measured: m } = input;
+  const { hole, screenW, measured: m, topInset = 0 } = input;
   const shape = shapeFor(hole.kind);
-  const sealed = sealedBox(hole, screenW);
+  const sealed = sealedBox(hole, screenW, topInset);
   const capW = Math.min(CAP, screenW - EDGE * 2);
   const natural = Math.min(naturalWidth(m, hole), capW);
-
-  /*
-    ⚠️ CENTRED WHERE THERE IS NOTHING IN THE WAY, BELOW THE CUTOUT WHERE THERE
-    IS — and which of those it is comes from measuring this phone, not from
-    its kind. With no cutout the band is 0 and the row centres in 44pt, which
-    is §5.5 exactly. On a notch it starts at the notch's own bottom, because
-    a row centred in 44pt would sit behind two thirds of it.
-  */
-  const band = shape === 'visor' ? visorBand(hole, screenW) : 0;
-  const headTop = band;
-  const headH = sealed.h - band;
 
   const openBox = (w: number, rung: Rung, lines: number): Box => ({
     x: placeX(w, hole, screenW),
@@ -314,38 +251,55 @@ export function readLayout(input: {
     h: rung >= 3 ? droppedHeight(sealed.h, m, lines) : sealed.h,
     /*
       ⚠️ SHAPE FIRST, THEN RUNG — §5.3. Asking the rung first gave a dropped
-      card a radius of 30, which makes it ROUNDER as it grows. `wrap` and
-      A `wrap` is a pill, so 999 → 30 is the pill becoming a panel, which is
-      the point.
-
-      ⚠️ AND A VISOR NEVER GROWS A TOP. It is flush with the edge; a rounded
-      top corner would lift it off the bezel and turn it back into a card.
+      card a radius of 30, which makes it ROUNDER as it grows. A `wrap` is a
+      pill, so 999 → 30 is the pill becoming a panel, which is the point.
     */
-    radiusTop: shape === 'visor' ? 0 : rung >= 3 ? 30 : 999,
-    radiusBottom: shape === 'visor' ? VISOR_RADIUS : rung >= 3 ? 30 : 999,
+    radiusTop: rung >= 3 ? 30 : 999,
+    radiusBottom: rung >= 3 ? 30 : 999,
   });
 
   const shell = (rung: Rung, w: number, left: number, right: number, icon: Layout['icon'], drops: boolean): Layout => ({
     rung, shape, sealed,
     open: openBox(w, rung, drops ? titleLines(m, w) : 0),
-    left, right, icon, titleDrops: drops, headTop, headHeight: headH,
+    left, right, icon, titleDrops: drops, headTop: 0, headHeight: sealed.h,
   });
 
   /*
-    A visor has no lens in its row, so the ladder is only ever about whether
-    the sentence fits — and it is capped short of the clock and the battery,
-    which is why the dropped form is common there too.
+    ⚠️ ON A VISOR THE LADDER COLLAPSES — §5.5.2. The row has `screenW - 26` of
+    usable width, about 320pt on a 390pt phone, so one line is almost always
+    the answer. There is no dead zone to route around and no cap to run into,
+    because the visor matches nothing.
+
+    ⚠️ AND A TITLE THAT STILL WILL NOT FIT WRAPS INSIDE THE SAME BAR. It does
+    not drop below a lens — there is no lens — so the bar simply grows by one
+    `VISOR_ROW` per line and NOTHING ELSE MOVES.
   */
-  if (hole.kind !== 'floating') {
-    const widest = Math.min(capW, visorCap(screenW));
-    const room = widest - SIDE * 2 - ICON - ICON_GAP - m.value - 24;
-    if (m.title <= room) {
-      const w = Math.min(natural, widest);
-      const rung: Rung = w < widest ? 1 : 2;
-      return shell(rung, w, 0, 0, 'left', false);
-    }
-    /* ⚠️ It DROPS rather than widening into the status bar. */
-    return shell(m.bodyLines > 0 ? 4 : 3, widest, 0, 0, 'left', true);
+  if (shape === 'visor') {
+    const room = Math.max(1, screenW - SIDE * 2 - ICON - ICON_GAP - m.value - 24);
+    const lines = Math.max(1, Math.ceil(m.title / room));
+    const body = m.bodyLines > 0 ? 6 + Math.min(m.bodyLines, MAX_BODY_LINES) * 19 : 0;
+    const action = m.action ? 10 + 30 : 0;
+    return {
+      rung: lines > 1 ? (m.bodyLines > 0 ? 4 : 3) : 1,
+      shape,
+      sealed,
+      open: {
+        x: 0,
+        y: 0,
+        w: screenW,
+        h: topInset + VISOR_ROW * lines + body + action,
+        radiusTop: 0,
+        radiusBottom: VISOR_RADIUS,
+      },
+      left: 0,
+      right: 0,
+      icon: 'left',
+      /* ⚠️ The title stays in the row and wraps; it never drops below a lens. */
+      titleDrops: false,
+      /* The content row sits below the status bar, which the band holds. */
+      headTop: topInset,
+      headHeight: VISOR_ROW * lines,
+    };
   }
 
   const fitsIn = (w: number) => ICON + ICON_GAP + m.title <= slots(w, hole, screenW).left;
@@ -391,9 +345,14 @@ export function readLayout(input: {
  * app down and back for four seconds every time something happens is worse
  * than the overlap it would fix.
  */
-export function reserveFor(box: Box, shape: Shape, topInset: number): number {
-  if (shape === 'wrap') return 0;
-  return Math.max(0, box.y + box.h + 8 - topInset);
+export function reserveFor(shape: Shape): number {
+  /*
+    ⚠️ A CONSTANT, BECAUSE THE VISOR'S GEOMETRY IS ONE — §5.5.3. It is
+    `topInset + VISOR_ROW + 8 - topInset`, which is `VISOR_ROW + 8`: the app
+    simply starts 42pt lower during a shift, which is honest, because that
+    area is the visor's.
+  */
+  return shape === 'wrap' ? 0 : VISOR_ROW + 8;
 }
 
 /** How many lines the dropped title needs across the open width. */

@@ -11,8 +11,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ISLAND, TONES, type Tone } from './tokens';
-import { CAP, EDGE, ICON, ICON_GAP, SIDE, readLayout, sealedBox, type Cutout, type Layout, type Measured } from './geometry';
+import { CAP, EDGE, ICON, ICON_GAP, SIDE, readLayout, sealedBox, shapeFor, type Cutout, type Layout, type Measured } from './geometry';
 
 /**
  * THE ISLAND ITSELF.
@@ -65,7 +66,9 @@ export function IslandView({
   onDismiss: (id: number) => void;
   reduceMotion: boolean;
 }) {
-  const sealed = sealedBox(hole, screenW);
+  const topInset = useSafeAreaInsets().top;
+  const sealed = sealedBox(hole, screenW, topInset);
+  const chrome = shapeFor(hole.kind) === 'visor';
   /*
     ⚠️ MEASURE, THEN SHOW. `pending` is rendered invisibly for exactly one
     frame so `onTextLayout` can report real widths at the real font — never a
@@ -99,6 +102,8 @@ export function IslandView({
     */
     body.value = withTiming(0, { duration: 120 });
     head.value = withDelay(60, withTiming(0, { duration: 120 }));
+    /* ⚠️ A visor's chrome does not leave; only its content does — §5.5.2. */
+    if (chrome) { const t = setTimeout(() => setShown(null), 260); return () => clearTimeout(t); }
     const to = (v: number) => (reduceMotion ? withTiming(v, { duration: REDUCED }) : withTiming(v, { duration: OUT, easing: Easing.out(Easing.cubic) }));
     w.value = withDelay(80, to(sealed.w));
     h.value = withDelay(80, to(sealed.h));
@@ -107,7 +112,7 @@ export function IslandView({
     x.value = withDelay(80, to(sealed.x));
     const t = setTimeout(() => setShown(null), OUT + 140);
     return () => clearTimeout(t);
-  }, [message, shown, reduceMotion, sealed.w, sealed.h, sealed.radiusTop, sealed.radiusBottom, sealed.x, w, h, rTop, rBot, x, head, body]);
+  }, [message, shown, reduceMotion, chrome, sealed.w, sealed.h, sealed.radiusTop, sealed.radiusBottom, sealed.x, w, h, rTop, rBot, x, head, body]);
 
   /* Measured: decide the rung, then move. */
   const commit = (msg: IslandMessage) => {
@@ -127,7 +132,7 @@ export function IslandView({
       bodyLines: msg.body ? Math.max(1, widths.current.bodyLines) : 0,
       action: !!msg.action,
     };
-    const layout = readLayout({ hole, screenW, measured });
+    const layout = readLayout({ hole, screenW, measured, topInset });
     setShown({ msg, layout });
     setPending(null);
 
@@ -135,7 +140,22 @@ export function IslandView({
     head.value = withTiming(0, { duration: 100 });
     body.value = withTiming(0, { duration: 100 });
 
-    if (reduceMotion) {
+    if (chrome) {
+      /*
+        ⚠️ ON A VISOR THE GEOMETRY NEVER MOVES — §5.5.2. The box is always
+        `screenW × (topInset + 34)`; only the CONTENT changes. The spring in
+        §8 is the pill stretching around a lens, and there is no lens here —
+        springing a full-width bar's width and radius animates nothing and
+        wobbles the one surface that is on screen all day.
+      */
+      w.value = layout.open.w;
+      x.value = layout.open.x;
+      rTop.value = layout.open.radiusTop;
+      rBot.value = layout.open.radiusBottom;
+      h.value = withTiming(layout.open.h, { duration: 180 });
+      head.value = withDelay(100, withTiming(1, { duration: 220 }));
+      body.value = withDelay(180, withTiming(1, { duration: 220 }));
+    } else if (reduceMotion) {
       /* ⚠️ Cross-fade only. No spring, no travel, no overshoot — §8 rule 6. */
       const t = { duration: REDUCED, reduceMotion: ReduceMotion.Never } as const;
       w.value = withTiming(layout.open.w, t);
@@ -184,6 +204,7 @@ export function IslandView({
 
   const msg = shown?.msg ?? null;
   const layout = shown?.layout ?? null;
+
   const look = msg ? TONES[msg.tone] : TONES.done;
 
   return (
@@ -263,9 +284,9 @@ export function IslandView({
               </Animated.View>
 
               {/* ⚠️ Below the lens — never beside it. */}
-              {layout.titleDrops ? (
+              {layout.titleDrops || msg.body || msg.action ? (
                 <Animated.View style={[styles.drop, bodyStyle]}>
-                  <Text style={[styles.title, { color: ISLAND.ink }]}>{msg.title}</Text>
+                  {layout.titleDrops ? <Text style={[styles.title, { color: ISLAND.ink }]}>{msg.title}</Text> : null}
                   {msg.body ? <Text numberOfLines={3} style={[styles.body, { color: ISLAND.dim }]}>{msg.body}</Text> : null}
                   {msg.action ? (
                     <Pressable onPress={msg.action.onPress} accessibilityRole="button" style={styles.action}>

@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { reserveFor, sealedBox, shapeFor } from './geometry';
+import { reserveFor, shapeFor } from './geometry';
 import { useCutout } from './cutout';
 import { IslandView, type IslandMessage } from './island-view';
 import { SCREEN_READER_MIN_DWELL, dwellFor, type Tone } from './tokens';
@@ -148,7 +148,7 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
   const shape = shapeFor(hole.kind);
   const visorShowing = shape === 'visor' && !!current;
   /* ⚠️ Only the LIVE state — a transient message floats. See `reserveFor`. */
-  const target = liveMsg ? reserveFor(sealedBox(hole, screenW), shape, insets.top) : 0;
+  const target = liveMsg ? reserveFor(shape) : 0;
 
   const say = useCallback<IslandContextValue['say']>((input) => {
     push({ ...input, dwell: dwellFor(input.tone, !!input.action) });
