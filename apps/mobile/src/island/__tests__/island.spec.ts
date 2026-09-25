@@ -280,6 +280,19 @@ describe('§5.1–5.4 — the dock and rect paths', () => {
     expect(wraps.headHeight).toBe(VISOR_ROW * 2);
   });
 
+  it('⚠️ 5.5 · there is NO sealed visor — idle, it is not rendered', () => {
+    /*
+      A black bar across the top of every screen that says nothing is a
+      mistake the user looks at all day. With no message and no live shift the
+      visor unmounts; a `wrap` keeps its sealed pill, because on those phones
+      the cutout is already there.
+    */
+    const view = code('island/island-view.tsx');
+    expect(view).toMatch(/\{chrome && !msg \? null : \(/);
+    expect(view).toMatch(/opacity: vis\.value/);
+    expect(view).toMatch(/useSharedValue\(chrome \? 0 : 1\)/);
+  });
+
   it('⚠️ 5.5.2 · a visor never springs — only its content changes', () => {
     /*
       The morph in §8 is a pill stretching around a lens. There is no lens

@@ -97,6 +97,12 @@ export function IslandView({
   const x = useSharedValue(sealed.x);
   const head = useSharedValue(0);
   const body = useSharedValue(0);
+  /*
+    ⚠️ THERE IS NO SEALED VISOR — §5.5. With nothing to say the visor is not
+    rendered at all, so it fades in on arrival and out after its content, and
+    unmounts. A `wrap` keeps its sealed pill and never touches this.
+  */
+  const vis = useSharedValue(chrome ? 0 : 1);
 
   /* A new message: measure it first. */
   useEffect(() => {
@@ -114,8 +120,12 @@ export function IslandView({
     */
     body.value = withTiming(0, { duration: 120 });
     head.value = withDelay(60, withTiming(0, { duration: 120 }));
-    /* ⚠️ A visor's chrome does not leave; only its content does — §5.5.2. */
-    if (chrome) { const t = setTimeout(() => setShown(null), 260); return () => clearTimeout(t); }
+    /* ⚠️ A visor leaves entirely once its content has gone — §5.5. */
+    if (chrome) {
+      vis.value = withDelay(120, withTiming(0, { duration: 140 }));
+      const t = setTimeout(() => setShown(null), 260);
+      return () => clearTimeout(t);
+    }
     const to = (v: number) => (reduceMotion ? withTiming(v, { duration: REDUCED }) : withTiming(v, { duration: OUT, easing: Easing.out(Easing.cubic) }));
     w.value = withDelay(80, to(sealed.w));
     h.value = withDelay(80, to(sealed.h));
@@ -124,7 +134,7 @@ export function IslandView({
     x.value = withDelay(80, to(sealed.x));
     const t = setTimeout(() => setShown(null), OUT + 140);
     return () => clearTimeout(t);
-  }, [message, shown, reduceMotion, chrome, sealed.w, sealed.h, sealed.radiusTop, sealed.radiusBottom, sealed.x, w, h, rTop, rBot, x, head, body]);
+  }, [message, shown, reduceMotion, chrome, sealed.w, sealed.h, sealed.radiusTop, sealed.radiusBottom, sealed.x, w, h, rTop, rBot, x, head, body, vis]);
 
   /* Measured: decide the rung, then move. */
   const commit = (msg: IslandMessage) => {
@@ -165,6 +175,7 @@ export function IslandView({
       rTop.value = layout.open.radiusTop;
       rBot.value = layout.open.radiusBottom;
       h.value = withTiming(layout.open.h, { duration: 180 });
+      vis.value = withTiming(1, { duration: 180 });
       head.value = withDelay(100, withTiming(1, { duration: 220 }));
       body.value = withDelay(180, withTiming(1, { duration: 220 }));
     } else if (reduceMotion) {
@@ -210,6 +221,7 @@ export function IslandView({
     borderBottomLeftRadius: rBot.value,
     borderBottomRightRadius: rBot.value,
     transform: [{ translateX: x.value }],
+    opacity: vis.value,
   }));
   const headStyle = useAnimatedStyle(() => ({ opacity: head.value, transform: [{ translateY: (1 - head.value) * 6 }] }));
   const bodyStyle = useAnimatedStyle(() => ({ opacity: body.value, transform: [{ translateY: (1 - body.value) * 6 }] }));
@@ -296,6 +308,8 @@ export function IslandView({
         </View>
       ) : null}
 
+      {/* ⚠️ No message, no live shift: no visor — §5.5. A `wrap` stays sealed. */}
+      {chrome && !msg ? null : (
       <View style={styles.stage} pointerEvents="box-none">
         <GestureDetector gesture={swipe}>
         <Animated.View
@@ -358,6 +372,7 @@ export function IslandView({
         </Animated.View>
         </GestureDetector>
       </View>
+      )}
     </>
   );
 

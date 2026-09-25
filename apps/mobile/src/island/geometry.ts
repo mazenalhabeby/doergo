@@ -157,9 +157,9 @@ const BOTTOM = 14;
 /**
  * The sealed capsule — what the island is when it has nothing to say.
  *
- * ⚠️ A VISOR IS NEVER SEALED TO NOTHING. It is chrome: `screenW` wide and
- * `topInset + 34` tall whether it is saying anything or not. Only its CONTENT
- * comes and goes — §5.5.2.
+ * ⚠️ THERE IS NO SEALED VISOR — §5.5. With nothing to say the visor is not
+ * rendered at all; the box below is the size it has WHILE it is showing, and
+ * only its content changes then (§5.5.2). A `wrap` really does seal.
  */
 export function sealedBox(hole: Cutout, screenW: number, topInset = 0): Box {
   const shape = shapeFor(hole.kind);
