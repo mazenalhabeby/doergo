@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Linking, Platform, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated as RNAnimated, Linking, Platform, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { daysLate, hasAccessModule, type FlowStatus } from '@hbcfield/shared/client';
@@ -155,7 +155,19 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
     return { mine: mineList, theirs: face === 'executor' ? [] as Task[] : dayTasks.filter((x) => !isMine(x, user?.id)) };
   }, [tasks, dayTasks, face, user?.id, isToday, selected, open, shape]);
 
-  const active = useMemo(() => (phase === 'opening' ? null : mine.find((x) => isMine(x, user?.id) && open(x)) ?? null), [mine, user?.id, open, phase]);
+  /*
+    ⚠️ TAPPING A ROW MOVES THE FOCUS TO IT (10.png). The active row is the job
+    the member is looking at — the first open one of theirs by default, or
+    whichever of theirs they tapped. It expands IN PLACE, so the list does not
+    reshuffle under their thumb; the sheet opens only from the active row.
+  */
+  const [focusId, setFocusId] = useState<string | null>(null);
+  useEffect(() => { setFocusId(null); }, [selected]);
+  const active = useMemo(() => {
+    if (phase === 'opening') return null;
+    const focused = focusId ? mine.find((x) => x.id === focusId && isMine(x, user?.id) && open(x)) : null;
+    return focused ?? mine.find((x) => isMine(x, user?.id) && open(x)) ?? null;
+  }, [mine, user?.id, open, phase, focusId]);
   const decision = active ? decisionFor(active, user?.id, stepsFor(active, flows)) : null;
 
   /* ---------------- the verb ---------------- */
@@ -272,20 +284,26 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                     body={nextJobLine(nextJobAfter(face === 'executor' ? tasks : tasks.filter((x) => isMine(x, user?.id)), selected, open), t)}
                   />
                 ) : null}
-                {active ? (
-                  <ActiveRow
-                    task={active}
-                    decision={decision}
-                    busy={actions.busy === active.id}
-                    onVerb={(to) => { if (decision) run(active, decision.current, to); }}
-                    onMore={() => setSheetFor({ task: active, view: 'more' })}
-                    onOpen={() => setSheetFor({ task: active, view: 'job' })}
-                  />
-                ) : null}
-                {mine.filter((x) => x !== active).map((task, i) => (
+                {mine.map((task, i) => (
                   <React.Fragment key={task.id}>
-                    {i > 0 ? <WellDivider /> : null}
-                    <PlainRow task={task} done={!open(task)} mine={face !== 'executor'} onPress={() => setSheetFor({ task, view: 'job' })} />
+                    {i > 0 && task !== active && mine[i - 1] !== active ? <WellDivider /> : null}
+                    {task === active ? (
+                      <ActiveRow
+                        key={`active:${task.id}`}
+                        task={task}
+                        decision={decision}
+                        busy={actions.busy === task.id}
+                        onVerb={(to) => { if (decision) run(task, decision.current, to); }}
+                        onMore={() => setSheetFor({ task, view: 'more' })}
+                        onOpen={() => setSheetFor({ task, view: 'job' })}
+                      />
+                    ) : (
+                      <PlainRow
+                        task={task} done={!open(task)} mine={face !== 'executor'}
+                        /* Yours and still open: focus it here. Anything else has no verb to show, so it opens. */
+                        onPress={() => (isMine(task, user?.id) && open(task) ? setFocusId(task.id) : setSheetFor({ task, view: 'job' }))}
+                      />
+                    )}
                   </React.Fragment>
                 ))}
 
@@ -340,6 +358,12 @@ function ActiveRow({ task, decision, busy, onVerb, onMore, onOpen }: {
   const { t } = useTranslation();
   const { formatTime } = useTimeFormat();
   const c = amazen.color;
+  /*
+    A short fade as focus lands. ⚠️ OPACITY ONLY — a Reanimated LAYOUT
+    animation corrupted the home column on Android (mobile-cross-platform-traps).
+  */
+  const fade = useRef(new RNAnimated.Value(0.35)).current;
+  useEffect(() => { RNAnimated.timing(fade, { toValue: 1, duration: 220, useNativeDriver: true }).start(); }, [fade]);
 
   /* ⚠️ Coordinates are coerced before they go into a URL; zero is a legal coordinate. */
   const lat = Number(task.locationLat);
@@ -361,7 +385,7 @@ function ActiveRow({ task, decision, busy, onVerb, onMore, onOpen }: {
   ].filter(Boolean).join(' · ');
 
   return (
-    <View style={{ backgroundColor: c.tile, borderRadius: 20, padding: amazen.space(3.5), gap: 4 }}>
+    <RNAnimated.View style={{ opacity: fade, backgroundColor: c.tile, borderRadius: 20, padding: amazen.space(3.5), gap: 4, marginVertical: amazen.space(1) }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1.5) }}>
         <View style={{ width: 8, height: 8, borderRadius: 4, borderWidth: 1.5, borderColor: c.accent, backgroundColor: task.status === 'ASSIGNED' ? 'transparent' : c.accent }} />
         <Eyebrow tone="muted" style={{ flexShrink: 1 }}>{decision?.current.label ?? task.status.replace(/_/g, ' ')}</Eyebrow>
@@ -386,7 +410,7 @@ function ActiveRow({ task, decision, busy, onVerb, onMore, onOpen }: {
         ) : null}
         {decision ? <RoundButton Glyph={MoreGlyph} label={t('myWork.moreActions', { defaultValue: 'More actions' })} onPress={onMore} /> : null}
       </View>
-    </View>
+    </RNAnimated.View>
   );
 }
 

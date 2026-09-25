@@ -167,10 +167,15 @@ describe('the job — docs/design/job-step.html', () => {
   const flow = code('components/job/job-flow.ts');
   const acts = code('components/job/use-job-actions.ts');
 
-  it('rows, the title and the ⋯ open the ONE job sheet, at the view asked for', () => {
+  it('⚠️ 10.png: tapping one of your rows FOCUSES it in place; the sheet opens from the active row', () => {
     expect(card).toMatch(/<JobSheet/);
-    expect(card).toMatch(/setSheetFor\(\{ task, view: 'job' \}\)/);
-    expect(card).toMatch(/setSheetFor\(\{ task: active, view: 'more' \}\)/);
+    expect(card).toMatch(/isMine\(task, user\?\.id\) && open\(task\) \? setFocusId\(task\.id\) : setSheetFor\(\{ task, view: 'job' \}\)/);
+    expect(card).toMatch(/onMore=\{\(\) => setSheetFor\(\{ task, view: 'more' \}\)\}/);
+    expect(card).toMatch(/onOpen=\{\(\) => setSheetFor\(\{ task, view: 'job' \}\)\}/);
+    /* In place: the list is rendered in order, the focused one expanded where it sits. */
+    expect(card).toMatch(/task === active \? \(/);
+    /* ⚠️ No Reanimated layout animation on the home column. */
+    expect(card).not.toMatch(/layout=\{|entering=\{/);
     expect(card).not.toMatch(/<BlurSheet/);
   });
 
