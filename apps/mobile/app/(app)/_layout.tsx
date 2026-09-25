@@ -23,7 +23,6 @@ import { trackingApi } from '../../src/lib/api';
 import { COLORS } from '../../src/lib/constants';
 import { Role } from '@hbcfield/shared/client';
 import { MediaAccessHost } from '../../src/permissions/media-access-host';
-import { useLiveShift } from '../../src/island/use-live-shift';
 
 // Send a lightweight presence ping using CACHED location (no fresh GPS).
 // Runs once on app start and every 10 minutes — uses getLastKnownPositionAsync
@@ -114,14 +113,6 @@ export default function AppLayout() {
 
   // Keep technician presence alive for online status
   usePresencePing();
-
-  /*
-    ⚠️ THE SHIFT CLOCK FOLLOWS THE MEMBER, NOT THE HOME SCREEN. Mounted here,
-    above the tabs, so the island keeps its ring and its running figure on
-    Jobs, Messages and Team — which is the whole reason it exists rather than
-    a nicer toast. A card cannot do this: it only lives while it is on screen.
-  */
-  useLiveShift();
 
   /*
     A tapped notification opens the screen it is about — the table is

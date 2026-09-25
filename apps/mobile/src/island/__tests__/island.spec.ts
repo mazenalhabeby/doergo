@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {
   CAP, DOT, EDGE, GAP, ICON, ICON_GAP, SIDE,
-  readLayout, reserveFor, sealedBox, sealedVisible, type Cutout, type Measured,
+  readLayout, sealedBox, sealedVisible, type Cutout, type Measured,
 } from '../geometry';
 import { androidCutout, cutoutFromInset } from '../cutout';
 import { TONES, dwellFor, ISLAND } from '../tokens';
@@ -149,8 +149,8 @@ describe('what does not fit beside the lens goes under it', () => {
     expect(code('island/island-view.tsx')).not.toMatch(/ellipsizeMode|adjustsFontSizeToFit/);
   });
 
-  it('the live shift is a ring and a figure — one row HUGGING the notch', () => {
-    /* ⚠️ 05.png: a phantom icon gap sent the live ring to the full cap width. */
+  it('an icon and a figure with no title — one row HUGGING the notch', () => {
+    /* ⚠️ 05.png: a phantom icon gap sent it to the full cap width. */
     const l = readLayout({ hole: IPHONE_13, screenW: 390, topInset: 47, measured: { title: 0, value: 20, bodyLines: 0, action: false } });
     expect(l.rung).toBe(1);
     expect(l.open.w).toBeLessThan(IPHONE_13.w + 100);
@@ -161,20 +161,6 @@ describe('what does not fit beside the lens goes under it', () => {
   it('⚠️ the status bar hides while the island is open over it', () => {
     expect(code('island/island-status-bar.tsx')).toMatch(/hidden=\{statusBarHidden\}/);
     expect(code('island/island-context.tsx')).toMatch(/statusBarHidden = !!current && coversStatusBar\(hole\)/);
-  });
-
-  it('⚠️ only the SE live shift pushes the app down — a lens band is already avoided', () => {
-    expect(reserveFor(IPHONE_13)).toBe(0);
-    expect(reserveFor(DYNAMIC_ISLAND)).toBe(0);
-    expect(reserveFor(SE)).toBeGreaterThan(0);
-  });
-});
-
-describe('§2 — the phone\'s cutout', () => {
-  it('maps the iOS answers', () => {
-    expect(cutoutFromInset(59, 393)).toMatchObject({ w: 126, h: 37, kind: 'floating' });
-    expect(cutoutFromInset(47, 390, 'iPhone14,5')).toMatchObject({ w: 166, y: 0, kind: 'edge' });
-    expect(cutoutFromInset(20, 375)).toMatchObject({ kind: 'none', w: 0 });
   });
 
   it('⚠️ Android with no cutout module: a centred lens in the status bar, marked assumed', () => {
@@ -205,15 +191,17 @@ describe('§6/§7 — the colours and the tones', () => {
     expect(TONES.queued.mono).toBe(true);
   });
 
-  it('⚠️ failed and queued never collapse on their own', () => {
-    expect(dwellFor('failed', false)).toBe(0);
-    expect(dwellFor('failed', true)).toBe(0);
-    expect(dwellFor('queued', false)).toBe(0);
-    // 4s with an action, 3s without — §10.
+  it('⚠️ NOTHING STAYS — every tone closes on its own after a few seconds', () => {
+    for (const tone of Object.keys(TONES) as (keyof typeof TONES)[]) {
+      for (const action of [false, true]) {
+        const d = dwellFor(tone, action);
+        expect(d).toBeGreaterThanOrEqual(3000);
+        expect(d).toBeLessThanOrEqual(5000);
+      }
+    }
     expect(dwellFor('done', false)).toBe(3000);
     expect(dwellFor('done', true)).toBe(4000);
-    // ⚠️ `live` IS the collapsed state, so it has no clock at all.
-    expect(dwellFor('live', false)).toBe(0);
+    expect('live' in TONES).toBe(false);
   });
 });
 
@@ -252,17 +240,7 @@ describe('§8/§10 — the motion and the rules', () => {
     expect(branch).toMatch(/REDUCED/);
   });
 
-  it('⚠️ swipe up dismisses — and the live shift could not be closed at all', () => {
-    /*
-      §10 says it and it was never built. The live shift IS the collapsed
-      state, so a tap on it dismissed the message and `shift()` put it
-      straight back: a black bar on the member's screen all day that nothing
-      could close — a worse version of the fault this design replaced.
-
-      ⚠️ UP ONLY, AND FAR ENOUGH TO MEAN IT. It sits under the status bar
-      where the OS's own pull-down starts; a downward or half-hearted pan must
-      do nothing, or people lose their shift clock reaching for the shade.
-    */
+  it('⚠️ swipe up closes it early — up only, and far enough to mean it', () => {
     const view = code('island/island-view.tsx');
     expect(view).toMatch(/Gesture\.Pan\(\)/);
     expect(view).toMatch(/activeOffsetY\(\[-12, 999\]\)/);
@@ -281,27 +259,12 @@ describe('§8/§10 — the motion and the rules', () => {
     const island = view.slice(view.indexOf('<GestureDetector'), view.indexOf('</GestureDetector>'));
     expect(island).not.toMatch(/<Pressable[^>]*absoluteFill/);
 
-    /*
-      ⚠️ AND A TAP ON THE LIVE BAR CLOSES IT — a departure from §10, which
-      says tap expands. The live shift has nothing to expand to, so tap was
-      dead on the one surface that is on screen all day. A swipe alone is
-      undiscoverable and competes with the OS pull-down two pixels above it.
-    */
-    expect(view).toMatch(/if \(m\.tone === 'live'\) \{ onSwipeAway\(m\); return; \}/);
-
-    const ctx = code('island/island-context.tsx');
-    /* ⚠️ Swiped away means "not for the rest of this shift". */
-    expect(ctx).toMatch(/if \(msg\.tone === 'live'\) setLiveHidden\(true\)/);
-    expect(ctx).toMatch(/setCurrent\(next \?\? \(liveHidden \? null : liveMsg\)\)/);
-    /* ⚠️ And it reserves nothing once it is gone. */
-    expect(ctx).toMatch(/liveMsg && !liveHidden \? reserveFor\(hole\) : 0/);
-    /* ⚠️ The shift ending ends the dismissal — it is back on the next one. */
-    const clear = ctx.slice(ctx.lastIndexOf('clearLive: () => {'));
-    expect(clear.slice(0, 200)).toMatch(/setLiveHidden\(false\)/);
   });
 
-  it('⚠️ one island, and the live shift wins the collapsed state', () => {
-    expect(ctx).toMatch(/setCurrent\(next \?\? \(liveHidden \? null : liveMsg\)\)/);
+  it('⚠️ one island, nothing persistent — a finished message goes to the next or to nothing', () => {
+    expect(ctx).toMatch(/setCurrent\(queue\.current\.shift\(\) \?\? null\)/);
+    expect(ctx).not.toMatch(/liveMsg|clearLive|liveHidden/);
+    expect(fs.existsSync(path.join(SRC, 'island/use-live-shift.ts'))).toBe(false);
     expect(ctx).toMatch(/QUEUE_CAP = 3/);
     expect(ctx).toMatch(/slice\(-QUEUE_CAP\)/);
   });
@@ -309,7 +272,7 @@ describe('§8/§10 — the motion and the rules', () => {
   it('⚠️ every arrival is announced, and nothing auto-dismisses inside 6s with a screen reader', () => {
     expect(view).toMatch(/announceForAccessibility/);
     expect(ctx).toMatch(/SCREEN_READER_MIN_DWELL/);
-    expect(ctx).toMatch(/Math\.max\(current\.dwell, SCREEN_READER_MIN_DWELL\)/);
+    expect(ctx).toMatch(/Math\.max\(base, SCREEN_READER_MIN_DWELL\)/);
   });
 });
 
@@ -334,15 +297,8 @@ describe('§11 — what is deleted, and stays deleted', () => {
       expect(ctx).toMatch(new RegExp(`${fn}\\b`));
     }
     expect(ctx).toMatch(/export function useToast/);
-    // ⚠️ And the new one the whole idea is for.
-    expect(ctx).toMatch(/live: \(\{ label, value: figure \}\)/);
-    expect(ctx).toMatch(/clearLive/);
   });
 
-  it('⚠️ the live shift is mounted above the tabs, not inside a card', () => {
-    const layout = fs.readFileSync(path.join(SRC, '../app/(app)/_layout.tsx'), 'utf8');
-    expect(layout).toMatch(/useLiveShift\(\)/);
-  });
 });
 
 describe('the constants are the spec\'s', () => {

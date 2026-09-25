@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { coversStatusBar, reserveFor } from './geometry';
+import { coversStatusBar } from './geometry';
 import { useCutout } from './cutout';
 import { IslandView, type IslandMessage } from './island-view';
 import { SCREEN_READER_MIN_DWELL, dwellFor, type Tone } from './tokens';
@@ -30,26 +30,8 @@ interface ToastContextValue {
 }
 
 interface IslandContextValue extends ToastContextValue {
-  /**
-   * ⚠️ THE PERSISTENT ONE. While a member is on the clock the island never
-   * leaves: it shrinks to a jade ring and a running figure and stays, so every
-   * screen in the app inherits a live shift clock for nothing.
-   */
-  live: (input: { label: string; value: string }) => void;
-  clearLive: () => void;
   /** Anything richer than the four words above. */
   say: (input: { tone: Tone; title: string; body?: string; value?: string; action?: { label: string; onPress: () => void } }) => void;
-  /**
-   * How far the live island pushes the app's CONTENT down, in points.
-   *
-   * ⚠️ PUBLISHED, NOT PAINTED. The first cut padded the provider's own
-   * children, which cut the gradient off at the padding and left a black band
-   * across the top with the clock and the battery sitting on it. `Ground`
-   * says it in its own header — *no status bar is ever drawn, the gradient
-   * runs under it*. So the ground stays full-bleed and only what stands on
-   * it moves.
-   */
-  reserve: number;
   /** ⚠️ The island is open over the status bar — the ONE `<StatusBar>` hides. */
   statusBarHidden: boolean;
 }
@@ -90,10 +72,10 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
   /*
     ⚠️ ONE ISLAND. It is one piece of hardware; two would destroy the illusion
     instantly. So there is one `current`, one `queue`, and one live state —
-    never a list of floating cards.
+    never a list of floating cards. ⚠️ NOTHING IS PERSISTENT: every message
+    shows for a few seconds and closes.
   */
   const [current, setCurrent] = useState<IslandMessage | null>(null);
-  const [liveMsg, setLiveMsg] = useState<IslandMessage | null>(null);
   /*
     ⚠️ THE LIVE SHIFT HAD NO WAY OUT. It IS the collapsed state, so a tap on
     it dismissed the message and `shift()` put it straight back — a black bar
@@ -102,19 +84,12 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
     and a real message still gets through, because a message is news and this
     was only ever a status.
   */
-  const [liveHidden, setLiveHidden] = useState(false);
   const queue = useRef<IslandMessage[]>([]);
   const nextId = useRef(1);
 
   const shift = useCallback(() => {
-    const next = queue.current.shift() ?? null;
-    /*
-      ⚠️ THE LIVE SHIFT ALWAYS WINS THE COLLAPSED STATE. When a message
-      finishes it sinks back to the ring and the figure, not to sealed — the
-      clock is the reason this exists.
-    */
-    setCurrent(next ?? (liveHidden ? null : liveMsg));
-  }, [liveMsg, liveHidden]);
+    setCurrent(queue.current.shift() ?? null);
+  }, []);
 
   const push = useCallback((msg: Omit<IslandMessage, 'id'>) => {
     const full: IslandMessage = { ...msg, id: nextId.current++ };
@@ -125,29 +100,25 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
         of the things this replaces.
       */
       if (prev && prev.title === full.title && prev.body === full.body && prev.tone === full.tone) return full;
-      /* A live ring is not a message — a real one simply takes over. */
-      if (!prev || prev.tone === 'live') return full;
+      if (!prev) return full;
       queue.current = [...queue.current, full].slice(-QUEUE_CAP);
       return prev;
     });
   }, []);
 
-  /* The dwell clock. ⚠️ `failed` and `queued` hold until acted on. */
+  /* The dwell clock. ⚠️ Every message closes on its own. */
   useEffect(() => {
-    if (!current || current.tone === 'live') return;
-    const dwell = current.dwell === 0 ? 0 : screenReader ? Math.max(current.dwell, SCREEN_READER_MIN_DWELL) : current.dwell;
-    if (dwell === 0) return;
+    if (!current) return;
+    const base = current.dwell > 0 ? current.dwell : dwellFor(current.tone, !!current.action);
+    const dwell = screenReader ? Math.max(base, SCREEN_READER_MIN_DWELL) : base;
     const t = setTimeout(shift, dwell);
     return () => clearTimeout(t);
   }, [current, screenReader, shift]);
 
-  /* ⚠️ Only the LIVE state, and only where the island sits on content. Swiped away reserves nothing. */
   const statusBarHidden = !!current && coversStatusBar(hole);
-  const target = liveMsg && !liveHidden ? reserveFor(hole) : 0;
 
   /** ⚠️ Swipe up — §10. The one way to be rid of it. */
   const swipeAway = useCallback((msg: IslandMessage) => {
-    if (msg.tone === 'live') setLiveHidden(true);
     setCurrent(null);
     queue.current = [];
   }, []);
@@ -171,35 +142,17 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
       /* ⚠️ `info` is the outbox voice in this app, so it is grey and mono. */
       info: legacy('queued'),
       say,
-      reserve: 0,
       statusBarHidden: false,
-      live: ({ label, value: figure }) => {
-        const msg: IslandMessage = { id: nextId.current++, tone: 'live', title: label, value: figure, dwell: 0 };
-        setLiveMsg(msg);
-        /* ⚠️ Swiped away stays away for this shift — see `liveHidden`. */
-        setCurrent((prev) => (liveHidden ? prev : !prev || prev.tone === 'live' ? msg : prev));
-      },
-      clearLive: () => {
-        setLiveMsg(null);
-        /* ⚠️ The shift ended, so the dismissal ends with it. */
-        setLiveHidden(false);
-        setCurrent((prev) => (prev?.tone === 'live' ? null : prev));
-      },
     };
-  }, [push, say, liveHidden]);
+  }, [push, say]);
 
-  const withLive = useMemo<IslandContextValue>(
-    () => ({ ...value, reserve: target, statusBarHidden }),
-    [value, target, statusBarHidden],
+  const withBar = useMemo<IslandContextValue>(
+    () => ({ ...value, statusBarHidden }),
+    [value, statusBarHidden],
   );
 
-  /*
-    ⚠️ ONLY THE LIVE STATE RESERVES, AND ONLY ON A PHONE WITH NO LENS. A notch
-    or a Dynamic Island holds the ring and the figure inside the band the app
-    already avoids. A transient message never moves the app.
-  */
   return (
-    <IslandContext.Provider value={withLive}>
+    <IslandContext.Provider value={withBar}>
       {children}
       <IslandView
         hole={hole}

@@ -21,45 +21,37 @@ export const ISLAND = {
 } as const;
 
 /**
- * THE FIVE TONES, AND ONLY THESE.
+ * THE FOUR TONES, AND ONLY THESE.
  *
  * ⚠️ `queued` IS NOT `failed`. This app has an outbox; "queued" is a fact, not
  * a failure, and colouring it red teaches members that working offline is
  * broken — which is the opposite of what the outbox is for.
- *
- * ⚠️ AND `failed` NEVER COLLAPSES ON ITS OWN. It holds its form, with its
- * action, until it is dismissed or acted on. Everything else sinks.
  */
-export type Tone = 'done' | 'live' | 'waiting' | 'failed' | 'queued';
+export type Tone = 'done' | 'waiting' | 'failed' | 'queued';
 
 export interface ToneLook {
   /** The accent for the icon and any ring. */
   fg: string;
   /** ⚠️ Mono for `queued`, because the thing being counted is a queue. */
   mono: boolean;
-  /** ms before it sinks. ⚠️ 0 = it stays until acted on. */
+  /** ms before it sinks. ⚠️ Every notification closes on its own. */
   dwell: number;
 }
 
 /**
- * ⚠️ 4s WITH AN ACTION, 3s WITHOUT, 0 FOR `failed` AND `queued` — §10.
- * `withAction` is applied by the caller, because the same tone can arrive both
- * ways.
+ * ⚠️ NOTHING STAYS. Every notification shows for a few seconds and closes —
+ * 3s, 4s with an action, 5s for a failure so it can be read.
  */
 export const TONES: Record<Tone, ToneLook> = {
   done: { fg: ISLAND.acc, mono: false, dwell: 3000 },
-  /** ⚠️ Persistent by definition: it IS the collapsed state. */
-  live: { fg: ISLAND.acc, mono: false, dwell: 0 },
   waiting: { fg: ISLAND.warn, mono: false, dwell: 3000 },
-  failed: { fg: ISLAND.crit, mono: false, dwell: 0 },
-  queued: { fg: ISLAND.dim, mono: true, dwell: 0 },
+  failed: { fg: ISLAND.crit, mono: false, dwell: 5000 },
+  queued: { fg: ISLAND.dim, mono: true, dwell: 3000 },
 };
 
 /** 4s when there is something to press — §10. */
 export function dwellFor(tone: Tone, hasAction: boolean): number {
-  const base = TONES[tone].dwell;
-  if (base === 0) return 0;
-  return hasAction ? 4000 : 3000;
+  return Math.max(TONES[tone].dwell, hasAction ? 4000 : 0);
 }
 
 /**

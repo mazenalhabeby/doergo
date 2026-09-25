@@ -49,7 +49,6 @@ const REDUCED = 180;
 
 const ICONS: Record<Tone, keyof typeof Ionicons.glyphMap> = {
   done: 'checkmark',
-  live: 'ellipse-outline',
   waiting: 'alert-circle-outline',
   failed: 'close-circle-outline',
   queued: 'cloud-offline-outline',
@@ -67,14 +66,7 @@ export function IslandView({
   screenW: number;
   message: IslandMessage | null;
   onDismiss: (id: number) => void;
-  /**
-   * ⚠️ SWIPE UP DISMISSES — §10, and it was never built.
-   *
-   * Without it the live shift had NO way out: it is the collapsed state, so a
-   * tap on it dismissed the message and the provider put it straight back.
-   * The member watched a black bar they could not close sit on their screen
-   * all day, which is a worse version of the fault this replaced.
-   */
+  /** Swipe up closes it early. */
   onSwipeAway: (msg: IslandMessage) => void;
   reduceMotion: boolean;
 }) {
@@ -133,17 +125,8 @@ export function IslandView({
 
   /* Measured: decide the rung, then move. */
   const commit = (msg: IslandMessage) => {
-    /*
-      ⚠️ THE LIVE STATE IS A RING AND A FIGURE — §7 (`◎ 0m`) and the drawing:
-      *while you are on the clock it never leaves — a ring and a running
-      figure*. Its label is for the screen reader, not the screen.
-
-      Measuring it as a title would drop it under the lens, and the thing that
-      sits at the top of every screen all day would become a panel.
-    */
-    const live = msg.tone === 'live';
     const measured: Measured = {
-      title: live ? 0 : widths.current.title,
+      title: widths.current.title,
       value: widths.current.value,
       bodyLines: msg.body ? Math.max(1, widths.current.bodyLines) : 0,
       action: !!msg.action,
@@ -198,7 +181,7 @@ export function IslandView({
     }
 
     /* ⚠️ One soft impact on ARRIVAL, never on collapse. */
-    if (msg.tone !== 'live') void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
     /* ⚠️ The toast this replaces announced nothing at all. */
     AccessibilityInfo.announceForAccessibility([msg.title, msg.value, msg.body].filter(Boolean).join('. '));
   };
@@ -222,17 +205,7 @@ export function IslandView({
   const edge = hole.kind === 'edge';
   const layout = shown?.layout ?? null;
 
-  /*
-    ⚠️ A TAP ON THE LIVE BAR CLOSES IT TOO, AND THAT IS A DEPARTURE FROM §10.
-    The spec says tap expands — but the live shift has nothing to expand to,
-    so tap was dead on the one surface that is on screen all day, and dismiss
-    put it straight back. Swipe alone is not good enough here: it is
-    undiscoverable, it competes with the OS pull-down two pixels above it, and
-    I cannot test a gesture from this machine. A tap on a bar you want gone
-    should make it gone.
-  */
   const onTap = (m: IslandMessage) => {
-    if (m.tone === 'live') { onSwipeAway(m); return; }
     if (m.action) { m.action.onPress(); return; }
     onDismiss(m.id);
   };
@@ -321,7 +294,7 @@ export function IslandView({
               */}
               <Animated.View style={[styles.headRow, { marginTop: layout.headTop, height: layout.headHeight }, headStyle]}>
                 {layout.icon === 'left' ? <Glyph tone={msg.tone} fg={look.fg} /> : <View style={{ width: 0 }} />}
-                {!layout.titleDrops && msg.tone !== 'live' ? (
+                {!layout.titleDrops ? (
                   <Text numberOfLines={1} style={[styles.title, { color: ISLAND.ink }]}>
                     {msg.title}
                   </Text>
@@ -360,8 +333,7 @@ export function IslandView({
     const p = pending;
     if (!p) return;
     if (p.body && widths.current.bodyLines === 0) return;
-    /* ⚠️ `live` never measures a title — see `commit`. */
-    if (p.tone !== 'live' && widths.current.title === 0 && p.title.length > 0) return;
+    if (widths.current.title === 0 && p.title.length > 0) return;
     commit(p);
   }
 }
@@ -370,15 +342,7 @@ function lineWidth(e: NativeSyntheticEvent<TextLayoutEventData>): number {
   return e.nativeEvent.lines.reduce((m, l) => Math.max(m, l.width), 0);
 }
 
-/**
- * ⚠️ `live` IS A RING, NOT A GLYPH. It is the state the island holds all day,
- * and a filled icon sitting on the camera for eight hours reads as an alert
- * that nobody can clear.
- */
 function Glyph({ tone, fg }: { tone: Tone; fg: string }) {
-  if (tone === 'live') {
-    return <View style={[styles.ring, { borderColor: fg }]} />;
-  }
   return <Ionicons name={ICONS[tone]} size={ICON - 3} color={fg} />;
 }
 
@@ -405,7 +369,6 @@ const styles = StyleSheet.create({
   body: { fontSize: 13, lineHeight: 19, color: ISLAND.dim },
   value: { fontSize: 14, lineHeight: 20 },
   mono: { fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }), fontVariant: ['tabular-nums'] },
-  ring: { width: ICON - 5, height: ICON - 5, borderRadius: 999, borderWidth: 2 },
   action: {
     alignSelf: 'flex-start', marginTop: 4, paddingVertical: 6, paddingHorizontal: 12,
     borderRadius: 999, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: ISLAND.line,

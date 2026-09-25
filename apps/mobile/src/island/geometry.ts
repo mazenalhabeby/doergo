@@ -193,7 +193,7 @@ export function readLayout(input: {
 
   const fitsIn = (w: number) => {
     const s = slots(w, hole, screenW);
-    /* ⚠️ No title, no gap after the icon — counting one pushed the live ring to the cap. */
+    /* ⚠️ No title, no gap after the icon. */
     return ICON + (m.title > 0 ? ICON_GAP + m.title : 0) <= s.left && m.value <= s.right;
   };
 
@@ -236,13 +236,6 @@ export function readLayout(input: {
 }
 
 /**
- * How far the LIVE shift pushes the app down.
- *
- * ⚠️ Only on a phone with no lens: there the island sits under the status bar,
- * on the app's own content. A notch or a Dynamic Island holds the live shift
- * inside the band the app already avoids, so nothing moves.
- */
-/**
  * ⚠️ iOS AND ANDROID DRAW THE STATUS BAR ABOVE THE APP. An island grown past
  * the lens sits under the clock and the battery, which then print on top of
  * it — so while it is open the status bar is hidden. On a phone with no lens
@@ -250,10 +243,6 @@ export function readLayout(input: {
  */
 export function coversStatusBar(hole: Cutout): boolean {
   return hole.kind !== 'none';
-}
-
-export function reserveFor(hole: Cutout): number {
-  return hole.kind === 'none' ? DOT + 12 : 0;
 }
 
 /** How many lines the dropped title needs across the open width. */
