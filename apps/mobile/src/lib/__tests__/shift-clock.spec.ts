@@ -732,3 +732,75 @@ describe('one clock for the whole feature', () => {
     expect(code('components/home/shift-clock-card.tsx')).toMatch(/useTimeFormat\(\)\.formatTime/);
   });
 });
+
+describe('the Break disc asks which kind, and never insists', () => {
+  const sheet = code('components/break-sheet.tsx');
+  const card = code('components/home/shift-clock-card.tsx');
+
+  it('offers the three, and the button works with none picked', () => {
+    /*
+      ⚠️ AN OFFER, NOT A GATE. With nothing selected this is exactly what the
+      disc did before the sheet existed: no `type`, and the server satisfies
+      whichever planned rest is next — its own comment says "guessing beats
+      refusing, the alternative is a prompt they cannot answer".
+    */
+    expect(sheet).toMatch(/BreakType\.LUNCH, BreakType\.SHORT, BreakType\.OTHER/);
+    expect(sheet).toMatch(/type: kind \?\? undefined/);
+    expect(sheet).toMatch(/disabled=\{isLoading\}/);
+    expect(sheet).not.toMatch(/disabled=\{!kind/);
+  });
+
+  it('uses the shared enum, not a second list of the same three names', () => {
+    // A local copy is a fourth kind waiting to be added on one side only.
+    expect(sheet).toMatch(/from '@hbcfield\/shared\/client'/);
+    expect(sheet).not.toMatch(/'LUNCH' \| 'SHORT' \| 'OTHER'/);
+  });
+
+  it('the reason appears only on Other, and is optional', () => {
+    expect(sheet).toMatch(/\{kind === BreakType\.OTHER \? \(/);
+    expect(sheet).toMatch(/kind === BreakType\.OTHER && reason\.trim\(\)/);
+    // A field that gated the button would be the clock-out bug in miniature.
+    expect(sheet).not.toMatch(/reason\.trim\(\)[^;]*disabled/);
+  });
+
+  it('all three chips stay neutral', () => {
+    /* None of them is a variance and none is a warning — a coloured pill here
+       would say one break is worse than another. */
+    expect(sheet).not.toMatch(/c\.warn|c\.critical|c\.accentSolid,\s*\n\s*borderWidth/);
+    expect(sheet).toMatch(/borderColor: on \? c\.inkStrong : 'transparent'/);
+  });
+
+  it('④ does not go through the sheet', () => {
+    /*
+      ⚠️ A rest that is already late has one answer — take it — and naming its
+      `ruleId` is what marks the plan satisfied rather than adding a second
+      rest beside the one that is due. Asking "what kind?" there is a question
+      about a decision already made.
+    */
+    expect(card).toMatch(/onPress=\{\(\) => void startRest\(\{ ruleId: st\.nextRest\?\.ruleId \}\)\}/);
+    expect(card).toMatch(/onPress=\{\(\) => setBreakOpen\(true\)\}/);
+  });
+
+  it('says what the rest IS, rather than asking the member to price it', () => {
+    /*
+      ⚠️ The type is a LABEL, not a price: the server copies `isPaid` from the
+      planned rest it matches, never from `type`. So the sheet states the
+      duration and whether it counts, and the choice stays cosmetic.
+    */
+    expect(sheet).toMatch(/planned\.isPaid/);
+    expect(sheet).toMatch(/shiftClock\.restDoesNotCount/);
+    expect(sheet).toMatch(/planned=\{st\.nextRest\}|planned\?/);
+  });
+
+  it('has its copy in every language', () => {
+    for (const lang of ['en', 'de', 'es', 'fr', 'it']) {
+      const l = JSON.parse(read(`i18n/locales/${lang}.json`));
+      for (const k of ['whatKind', 'startBreak', 'breakReason', 'restCounts', 'restDoesNotCount']) {
+        expect(typeof l.shiftClock[k]).toBe('string');
+      }
+      for (const k of ['lunch', 'short', 'other', 'takeABreak']) {
+        expect(typeof l.attendance.breaks[k]).toBe('string');
+      }
+    }
+  });
+});

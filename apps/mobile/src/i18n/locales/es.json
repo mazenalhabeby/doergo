@@ -2931,7 +2931,13 @@
     "daysLeft_one": "queda {{count}} día laborable",
     "daysLeft_other": "quedan {{count}} días laborables",
     "workedThisWeek": "trabajado esta semana",
-    "lastInOn": "último fichaje el {{day}}"
+    "lastInOn": "último fichaje el {{day}}",
+    "whatKind": "QUÉ TIPO · OPCIONAL",
+    "startBreak": "Empezar el descanso",
+    "breakReason": "¿Para qué? (opcional)",
+    "restOf": "{{duration}}",
+    "restCounts": "cuenta como trabajado",
+    "restDoesNotCount": "no cuenta"
   },
   "crew": {
     "onTheClock": "de servicio",

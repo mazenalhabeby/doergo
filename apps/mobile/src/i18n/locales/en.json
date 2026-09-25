@@ -2938,7 +2938,13 @@
     "daysLeft_one": "{{count}} working day left",
     "daysLeft_other": "{{count}} working days left",
     "workedThisWeek": "worked this week",
-    "lastInOn": "last in on {{day}}"
+    "lastInOn": "last in on {{day}}",
+    "whatKind": "WHAT KIND · OPTIONAL",
+    "startBreak": "Start the break",
+    "breakReason": "What is it for? (optional)",
+    "restOf": "{{duration}}",
+    "restCounts": "counts as worked",
+    "restDoesNotCount": "does not count"
   },
   "crew": {
     "onTheClock": "on the clock",

@@ -2931,7 +2931,13 @@
     "daysLeft_one": "{{count}} giorno lavorativo rimasto",
     "daysLeft_other": "{{count}} giorni lavorativi rimasti",
     "workedThisWeek": "lavorato questa settimana",
-    "lastInOn": "ultima timbratura {{day}}"
+    "lastInOn": "ultima timbratura {{day}}",
+    "whatKind": "CHE TIPO · FACOLTATIVO",
+    "startBreak": "Inizia la pausa",
+    "breakReason": "Per cosa? (facoltativo)",
+    "restOf": "{{duration}}",
+    "restCounts": "conta come lavoro",
+    "restDoesNotCount": "non conta"
   },
   "crew": {
     "onTheClock": "in servizio",

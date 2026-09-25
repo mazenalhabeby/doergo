@@ -2931,7 +2931,13 @@
     "daysLeft_one": "noch {{count}} Arbeitstag",
     "daysLeft_other": "noch {{count}} Arbeitstage",
     "workedThisWeek": "diese Woche gearbeitet",
-    "lastInOn": "zuletzt am {{day}}"
+    "lastInOn": "zuletzt am {{day}}",
+    "whatKind": "WELCHE ART · OPTIONAL",
+    "startBreak": "Pause beginnen",
+    "breakReason": "Wofür? (optional)",
+    "restOf": "{{duration}}",
+    "restCounts": "zählt als Arbeitszeit",
+    "restDoesNotCount": "zählt nicht"
   },
   "crew": {
     "onTheClock": "im Dienst",

@@ -3,12 +3,13 @@ import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import type { BreakType } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../contexts/toast-context';
 import { useShift, useShiftActions } from '../../offline/attendance/use-shift';
 import { SyncChip } from '../../offline/components/sync-chip';
-import { LocationPickerSheet, ClockOutSheet } from '../index';
+import { BreakSheet, LocationPickerSheet, ClockOutSheet } from '../index';
 import { ReportIssueSheet, ShiftIssueListSheet, ShiftIssueThreadSheet } from '../shift-issue-sheet';
 import { useClockIn } from '../../hooks/useClockIn';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
@@ -95,6 +96,11 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
     receipt showed; the member signs off the figure they can see.
   */
   const [clockOutAt, setClockOutAt] = useState<Date | null>(null);
+  /*
+    The Break disc asks which kind. ⚠️ It is an OFFER, not a gate — picking
+    nothing starts exactly the rest the disc used to start on its own.
+  */
+  const [breakOpen, setBreakOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
@@ -210,11 +216,13 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
     right for the Break disc. The overdue one names the rule, so the plan is
     marked taken rather than a second rest appearing beside the one that is due.
   */
-  const startRest = useCallback(async (ruleId?: string) => {
+  const startRest = useCallback(async (input?: {
+    ruleId?: string; type?: BreakType; notes?: string;
+  }) => {
     if (!entryId) return;
     setBusy(true);
     try {
-      const outcome = await actions.startRest({ entryId, ruleId });
+      const outcome = await actions.startRest({ entryId, ...input });
       if (outcome.kind === 'refused') { toast.error(t('common.error'), outcome.message || t('common.error')); return; }
       if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
       await refresh();
@@ -494,6 +502,21 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
         />
       ) : null}
 
+      {/*
+        ⚠️ ④ DOES NOT COME THROUGH HERE. A rest that is already late has one
+        answer — take it — and naming its `ruleId` is what marks the plan
+        satisfied rather than adding a second rest beside the one that is due.
+        Asking "what kind?" at that moment is a question about a decision
+        already made.
+      */}
+      <BreakSheet
+        visible={breakOpen}
+        onClose={() => setBreakOpen(false)}
+        isLoading={busy}
+        planned={st.nextRest}
+        onStart={(input) => { setBreakOpen(false); void startRest(input); }}
+      />
+
       <ReportIssueSheet
         visible={reportOpen}
         onClose={() => setReportOpen(false)}
@@ -718,7 +741,7 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
             label={t('shiftClock.startRest', { defaultValue: 'Start the rest' })}
             filled
             disabled={working}
-            onPress={() => void startRest(st.nextRest?.ruleId)}
+            onPress={() => void startRest({ ruleId: st.nextRest?.ruleId })}
           />
         ) : null,
         resting ? (
@@ -746,7 +769,7 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
             Glyph={BreakGlyph}
             label={t('shiftClock.break', { defaultValue: 'Break' })}
             disabled={working}
-            onPress={() => void startRest()}
+            onPress={() => setBreakOpen(true)}
           />
         ) : null,
         report,
