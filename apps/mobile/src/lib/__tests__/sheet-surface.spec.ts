@@ -37,6 +37,10 @@ function sheetFiles(): string[] {
  * Nothing new belongs on this list; convert it instead.
  */
 const HAND_ROLLED: Record<string, string> = {
+  'src/components/clock-out-sheet.tsx':
+    'shift-clock.md §11 asks for GLASS with a 1px glass_line border and the glass-card shadow — '
+    + 'it came out of a glass card and is still the same object, the shift. SheetPanel is an opaque '
+    + 'card surface, so using it would make this a dialog ABOUT the shift instead. It reads insets.bottom itself.',
   'app/(app)/(tabs)/attendance.tsx':
     'the break and forgot-to-clock-out sheets predate SheetPanel; both apply insets.bottom themselves',
 };

@@ -1,10 +1,11 @@
-# The shift clock — the card, the schedules, the issue flow
+# The shift clock — the card, the clock-out sheet, the schedules, the issue flow
 
 Everything needed to build clocking in and out. Self-contained: you do not need
 any other file in this folder.
 
 Marks are already written: `apps/mobile/src/components/glyphs/shift-glyphs.tsx`
-Component: `apps/mobile/src/components/home/shift-clock-card.tsx`
+Card: `apps/mobile/src/components/home/shift-clock-card.tsx`
+Clock-out sheet: `apps/mobile/src/components/clock-out-sheet.tsx` — **§11**
 
 ---
 
@@ -379,3 +380,172 @@ under the hero is the one at risk — check it in situ.**
 - Open the thread as the reporter. There is **no Acknowledge button**.
 - Switch to light mode and look at every jade button. **No white text on
   `#14a586`.**
+
+---
+
+## 11 · Clock out — the sheet
+
+`apps/mobile/src/components/clock-out-sheet.tsx`, opened from the card at
+`shift-clock-card.tsx:434`. Rewrite this file. The card does not change.
+
+### 11.1 ⚠️ Two bugs, before any styling
+
+**`clock-out-sheet.tsx:73` — the note is a gate.**
+
+```ts
+const canConfirm = notes.trim().length > 0;
+```
+
+It disables the confirm button (`:239`, `:241`) and the submit handler (`:112`).
+So **a member cannot end their shift without typing a sentence.** That is wrong
+against the type they are filling in:
+
+```ts
+// packages/shared/src/types/attendance.ts:343
+export interface ClockOutInput {
+  notes?: string;          // optional
+  earlyReason?: string;    // "never refuses the clock-out for want of a reason"
+  overtimeReason?: string;
+}
+```
+
+Delete `canConfirm`. The button is enabled whenever `!isLoading`. **Nothing in
+this sheet may ever block clocking out.**
+
+**The `overtime` prop is dead.** `ClockOutSheetProps.overtime` is declared
+(`:47`) and the only caller never passes it — so the late-clock-out path has
+never rendered. §11.5 says when to pass it.
+
+### 11.2 What the sheet is
+
+A shift ends in a record, so the sheet is **set like one** — the day drawn to
+scale, the times as a receipt, one jade button.
+
+```
+        ━━━━                       drag handle, ink @ .22
+
+  ● BILLA AG                       eyebrow: live dot + workspace, mono 11/2.2px
+
+  8h 12m                           hero, 60px weight 200, unit 27px
+  counted
+
+  06:45 ▓▓▓▓▓▓▓░░▓▓▓▓▓▓ 15:00      the day, to scale
+                32m rest
+
+  ┌───────────────────────────┐    the receipt, sunken
+  │ Clocked in         06:45  │
+  │ Rest               − 32m  │
+  │ Clocked out        15:00  │
+  │ ───────────────────────── │
+  │ Counted          8h 12m   │
+  └───────────────────────────┘
+
+  ⊕ Add a note       optional      collapsed, tile
+
+  [      Clock out      ]          full-width jade, SH_BTN
+          Not yet                  text button, muted
+```
+
+**Surface: glass, not a flat panel.** It came out of a glass card and it is
+still the same object — the shift. Keep the existing `BlurView`; give it
+`RADIUS` 32 on the top corners only, a 1px `glass_line` border with no bottom
+edge, and the shadow the glass cards use.
+
+**The bar.** Jade (`accent`) where they worked, a `sunken` notch for the rest,
+amber hatching (`warn`, 135° repeating-linear-gradient) for anything past the
+shift end. Height 12, fully rounded, segments as flex weights so it is always
+to scale. Start and end times beneath it in mono 11.5 `ink2`; a centred caption
+under the rest notch.
+
+**The receipt.** `sunken`, radius 20. Label left in `muted` 13.5, figure right
+in **mono** 13.5 `ink2`. `Counted` is the total: a 1px `line` rule above it,
+label `ink` 14.5, figure mono 16. Same rule as the card's hero — **the number
+they were watching is the number they are signing off**.
+
+**The actions.** One jade button, full width, radius 999. Cancel is a **text
+line beneath it** — `Not yet`, `muted` 14, centred. You almost never cancel
+this; it must not weigh the same as confirming.
+
+### 11.3 Every string that goes
+
+| Gone | Why |
+|---|---|
+| The amber confirm button (`#d97706`, `:207`) | Amber is the `warn` token. Clocking out is the correct end of a shift, pressed every day. It is the **primary, in jade**. |
+| `clockOutConfirmTitle` / `clockOutConfirmMessage` — "Clock Out / Are you sure you want to clock out?" | The receipt **is** the confirmation. The eyebrow says where you are, the hero says what you did, the button says what happens. A confirm question above a form is two patterns fighting, and it makes a daily act sound risky. |
+| `shiftNotesLabel` — "What did you do today?" | A shift is not a day. Nights clock out on the wrong side of midnight, and this then asks about yesterday. |
+| `shiftNotesPlaceholder` + the `0/500` counter | A wall of blank at the moment somebody wants to go home. Collapsed to `Add a note · optional`; it expands to the same `TextInput` on tap. |
+
+Remove those four keys from all six locales
+(`apps/mobile/src/i18n/locales/{en,de,fr,es,it,…}.json` — they appear **twice**
+in each, around `:300` and `:643`). New keys: `shiftEnd.counted`,
+`shiftEnd.clockedIn`, `shiftEnd.rest`, `shiftEnd.clockedOut`,
+`shiftEnd.addNote`, `shiftEnd.optional`, `shiftEnd.notYet`, `shiftEnd.short`,
+`shiftEnd.over`, `shiftEnd.askApproval`.
+
+### 11.4 Where every figure comes from
+
+Nothing new is fetched. The card already holds all of it — pass it down.
+
+| Row | Source |
+|---|---|
+| workspace | `ShiftState.workspace` |
+| `Clocked in` | `entry.clockInAt` |
+| `Rest` | `entry.unpaidBreakMinutes ?? 0` |
+| `Clocked out` | `new Date()` at open — **freeze it**, do not re-render it up |
+| `Counted` | `ShiftState.countedMinutes` |
+| shift length | `ShiftState.progress.target` — **null on `NONE`** |
+
+Format the hero with the card's own `3` `h` `12` `m` helper in
+`shift-state.ts`. Never the word "paid".
+
+### 11.5 Four faces — and only these
+
+**① On time.** Exactly §11.2.
+
+**② Early** — `progress.target` exists and counted is under it. Eyebrow and
+hero turn `warn`. The bar gets a fourth `tile` segment for the shortfall. One
+extra receipt row, `Short of your shift  1h 08m` in `warn`. Under it, a row of
+reason chips — `Finished` · `Sent home` · `Unwell` · `Something else` — labelled
+`WHY, IF YOU WANT TO SAY · OPTIONAL`, sending `earlyReason`. **Picking none
+still clocks out.**
+
+**③ Late** — past `progress.target`. Amber hatching on the bar, receipt rows
+`Shift ended 15:00` and `Still working until 16:42`. A `warn_tint` strip:
+*"This asks **{approver}** to approve 1h 42m of extra time. You are clocked out
+either way."* The button reads **`Clock out & ask`** — it says what it does.
+This is where the caller finally passes the `overtime` prop from §11.1.
+
+**④ Outside the zone** — a `warn_tint` strip above the receipt: *"You are
+**2.4 km** from {workspace}. The clock-out works — {approver} will see where it
+happened."* The `Clocked out` row carries `⚑ 2.4 km away` in `warn`. Button
+unchanged. **Recorded, never refused** — this matches the comment already on
+`ClockOutInput`, that a missing fix skips the geofence check rather than faking
+`(0,0)`.
+
+No other faces. If the shift is `NONE`, there is no target, so ② and ③ cannot
+happen — show ①.
+
+### 11.6 Rules
+
+1. **Nothing blocks the button.** No required field, ever.
+2. One primary. Cancel is text.
+3. Jade is the primary; amber only ever marks a variance from the roster.
+4. The clock-out time is **frozen at open**. A sheet left sitting does not
+   silently bill more minutes than the receipt showed.
+5. The hero is the same figure, in the same setting, as the card it came from.
+6. Reason chips write `earlyReason` / `overtimeReason`, never `notes`.
+
+### 11.7 Check it worked
+
+- Open the sheet, type nothing, press the button. **It clocks out.**
+- Clock out 10 minutes into a 8h shift. Face ②, chips shown, still clocks out
+  with none picked.
+- Clock out an hour past the end. Face ③, button reads `Clock out & ask`, and
+  the request reaches the approver.
+- Clock out with location off. Face ①, `lat`/`lng` absent, no
+  `OUTSIDE_GEOFENCE_OUT`.
+- Clock out as a `NONE` member. Face ①, no bar segment for a target that does
+  not exist.
+- Leave the sheet open five minutes, then confirm. `Clocked out` is the time
+  the sheet **opened**.
+- Light mode: no white text on `#14a586`.

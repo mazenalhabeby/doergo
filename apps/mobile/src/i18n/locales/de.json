@@ -295,10 +295,6 @@
       "onBreak": "In der Pause",
       "clockIn": "Einstempeln",
       "clockOut": "Ausstempeln",
-      "clockOutConfirmTitle": "Ausstempeln",
-      "clockOutConfirmMessage": "Sind Sie sicher, dass Sie sich ausstempeln möchten?",
-      "shiftNotesLabel": "Was haben Sie heute gemacht?",
-      "shiftNotesPlaceholder": "Beschreiben Sie die Arbeit, die Sie während dieser Schicht erledigt haben...",
       "netWork": "Nettoarbeitszeit",
       "breakTime": "Pausenzeit",
       "thisWeek": "Diese Woche",
@@ -632,10 +628,6 @@
     "timeOnShift": "Schichtzeit",
     "clockIn": "Einstempeln",
     "clockOut": "Ausstempeln",
-    "clockOutConfirmTitle": "Ausstempeln",
-    "clockOutConfirmMessage": "Sind Sie sicher, dass Sie sich ausstempeln möchten?",
-    "shiftNotesLabel": "Was haben Sie heute gemacht?",
-    "shiftNotesPlaceholder": "Beschreiben Sie die Arbeit, die Sie während dieser Schicht erledigt haben...",
     "clockedInAt": "Eingestempelt bei {{location}}",
     "clockedOutSuccess": "Erfolgreich ausgestempelt",
     "locationRequired": "Standort erforderlich",
@@ -2960,5 +2952,35 @@
   },
   "widgets": {
     "shiftClock": "Schichtuhr"
+  },
+  "shiftEnd": {
+    "finishingAt": "FEIERABEND BEI {{at}}",
+    "finishingEarly": "FRÜHER SCHLUSS BEI {{at}}",
+    "pastEnd": "ÜBER IHR SCHICHTENDE",
+    "counted": "gezählt",
+    "clockedIn": "Eingestempelt",
+    "rest": "Pause",
+    "clockedOut": "Ausgestempelt",
+    "shiftEnded": "Schicht endete",
+    "stillWorkingUntil": "Weiter gearbeitet bis",
+    "short": "Unter Ihrer Schicht",
+    "over": "{{duration}} darüber",
+    "restNotch": "{{duration}} Pause",
+    "addNote": "Notiz hinzufügen",
+    "optional": "optional",
+    "notYet": "Noch nicht",
+    "clockOutAndAsk": "Ausstempeln & anfragen",
+    "whyOptional": "WARUM, WENN SIE MÖCHTEN · OPTIONAL",
+    "yourApprover": "Ihre Freigabeperson",
+    "overtimeReason": "{{duration}} über dem geplanten Ende",
+    "askApproval": "Damit wird {{who}} um die Freigabe von {{duration}} Mehrarbeit gebeten. Sie sind so oder so ausgestempelt.",
+    "away": "Sie sind {{distance}} von {{at}} entfernt. Das Ausstempeln funktioniert — {{who}} sieht, wo es passiert ist.",
+    "reasons": {
+      "finished": "Fertig",
+      "sentHome": "Heimgeschickt",
+      "unwell": "Krank",
+      "other": "Etwas anderes"
+    },
+    "countedTotal": "Gezählt"
   }
 }

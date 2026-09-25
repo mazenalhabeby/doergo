@@ -295,10 +295,6 @@
       "onBreak": "En pause",
       "clockIn": "Pointer l'arrivée",
       "clockOut": "Pointer le départ",
-      "clockOutConfirmTitle": "Pointer le départ",
-      "clockOutConfirmMessage": "Êtes-vous sûr de vouloir pointer votre départ ?",
-      "shiftNotesLabel": "Qu'avez-vous fait aujourd'hui ?",
-      "shiftNotesPlaceholder": "Décrivez le travail que vous avez accompli durant ce quart...",
       "netWork": "Travail net",
       "breakTime": "Temps de pause",
       "thisWeek": "Cette semaine",
@@ -632,10 +628,6 @@
     "timeOnShift": "Temps de quart",
     "clockIn": "Pointer l'arrivée",
     "clockOut": "Pointer le départ",
-    "clockOutConfirmTitle": "Pointer le départ",
-    "clockOutConfirmMessage": "Êtes-vous sûr de vouloir pointer votre départ ?",
-    "shiftNotesLabel": "Qu'avez-vous fait aujourd'hui ?",
-    "shiftNotesPlaceholder": "Décrivez le travail que vous avez accompli durant ce quart...",
     "clockedInAt": "Arrivée pointée à {{location}}",
     "clockedOutSuccess": "Départ pointé avec succès",
     "locationRequired": "Localisation requise",
@@ -2960,5 +2952,35 @@
   },
   "widgets": {
     "shiftClock": "Horloge de service"
+  },
+  "shiftEnd": {
+    "finishingAt": "FIN DE SERVICE À {{at}}",
+    "finishingEarly": "FIN ANTICIPÉE À {{at}}",
+    "pastEnd": "AU-DELÀ DE LA FIN DE SERVICE",
+    "counted": "compté",
+    "clockedIn": "Pointage entrée",
+    "rest": "Pause",
+    "clockedOut": "Pointage sortie",
+    "shiftEnded": "Service terminé à",
+    "stillWorkingUntil": "Encore au travail jusqu’à",
+    "short": "En deçà de votre service",
+    "over": "{{duration}} de plus",
+    "restNotch": "{{duration}} de pause",
+    "addNote": "Ajouter une note",
+    "optional": "facultatif",
+    "notYet": "Pas encore",
+    "clockOutAndAsk": "Pointer et demander",
+    "whyOptional": "POURQUOI, SI VOUS VOULEZ LE DIRE · FACULTATIF",
+    "yourApprover": "votre responsable",
+    "overtimeReason": "{{duration}} après la fin prévue",
+    "askApproval": "Cela demande à {{who}} de valider {{duration}} de temps supplémentaire. Vous êtes pointé dans tous les cas.",
+    "away": "Vous êtes à {{distance}} de {{at}}. Le pointage fonctionne — {{who}} verra où il a eu lieu.",
+    "reasons": {
+      "finished": "Terminé",
+      "sentHome": "Renvoyé chez soi",
+      "unwell": "Souffrant",
+      "other": "Autre chose"
+    },
+    "countedTotal": "Compté"
   }
 }

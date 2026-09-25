@@ -10,6 +10,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { AttendanceStatus, BreakStatus, TimeEntry } from '@hbcfield/shared/client';
 import { readShiftState, scheduleFor, heroParts, budgetParts } from '../../components/home/shift-state';
+import { readClockOut, awayLabel, AWAY_METRES } from '../../components/home/clock-out-state';
 import { lookFor, offeredTo, severityShown, severityTone, unreadFor, groupIssues } from '../../components/home/issue-status';
 import type { ShiftIssue, ShiftIssueStatus } from '../../lib/api/shift-issues';
 
@@ -531,5 +532,178 @@ describe('the shift clock is a row', () => {
 
   it('is in the default order', () => {
     expect(registry).toMatch(/DEFAULT_ORDER: string\[\] = \['shift-clock'\]/);
+  });
+});
+
+// ── §11 · the clock-out sheet ────────────────────────────────────────────
+describe('§11 — the clock-out sheet', () => {
+  const sheet = code('components/clock-out-sheet.tsx');
+  const card = code('components/home/shift-clock-card.tsx');
+
+  const shift = (over: Partial<Parameters<typeof readClockOut>[0]> = {}) => ({
+    workspace: 'BILLA AG',
+    clockInAt: AT(6, 45),
+    clockOutAt: AT(15, 0),
+    restMinutes: 32,
+    countedMinutes: 492,
+    targetMinutes: 480,
+    shiftEndAt: AT(15, 0),
+    ...over,
+  });
+
+  it('1 · NOTHING BLOCKS THE BUTTON — no required field, ever', () => {
+    /*
+      ⚠️ THE BUG THIS EXISTS FOR. `canConfirm = notes.trim().length > 0`
+      disabled both the button and the submit handler, so a member could not
+      end their shift without typing a sentence — against a type whose own
+      field is `notes?: string`, optional, beside an `earlyReason` documented
+      as "never refuses the clock-out for want of a reason".
+    */
+    expect(sheet).not.toMatch(/canConfirm/);
+    // The only thing that disables it is a request already in flight.
+    expect(sheet).toMatch(/disabled=\{isLoading\}/);
+    expect(sheet).toMatch(/if \(isLoading\) return;/);
+    // And a missing GPS fix is not a failure either.
+    expect(card).toMatch(/getCurrentLocation\(\)\.catch\(\(\) => null\)/);
+    expect(card).not.toMatch(/if \(!fix\) return;/);
+  });
+
+  it('2 · one primary, and Cancel is a text line', () => {
+    const notYet = sheet.indexOf('shiftEnd.notYet');
+    expect(notYet).toBeGreaterThan(-1);
+    // No second button: the cancel has no background of its own.
+    expect(sheet.slice(notYet - 400, notYet)).not.toMatch(/backgroundColor/);
+  });
+
+  it('3 · jade is the primary; amber only marks a variance', () => {
+    /*
+      ⚠️ THE CONFIRM WAS `#d97706` — amber is the `warn` token, and it means a
+      variance from the roster. Clocking out is the correct end of a shift,
+      pressed every day by everybody.
+    */
+    expect(sheet).not.toMatch(/#d97706/);
+    const primary = sheet.slice(sheet.indexOf('shiftEnd.clockOutAndAsk') - 600);
+    expect(primary).toMatch(/backgroundColor: c\.accentSolid/);
+  });
+
+  it('4 · the clock-out time is frozen at open', () => {
+    /*
+      A sheet left sitting on a table must not silently bill more minutes than
+      the receipt showed. Holding the DATE rather than a boolean is what makes
+      it impossible to get wrong — there is no `new Date()` left to re-read.
+    */
+    expect(sheet).not.toMatch(/new Date\(\)/);
+    expect(card).toMatch(/setClockOutAt\(new Date\(\)\)/);
+    expect(code('home/../components/home/clock-out-state.ts')).toMatch(/clockOutAt: Date;/);
+  });
+
+  it('5 · the hero is the card\'s own figure, in the card\'s own setting', () => {
+    expect(sheet).toMatch(/import \{ heroParts \}/);
+    expect(sheet).toMatch(/minutes=\{shift\.countedMinutes\}/);
+    // Never the word "paid".
+    expect(sheet.toLowerCase()).not.toMatch(/\bpaid\b/);
+  });
+
+  it('6 · reasons write their own columns, never `notes`', () => {
+    expect(sheet).toMatch(/earlyReason: early && earlyReason/);
+    expect(sheet).toMatch(/overtimeReason: late/);
+    expect(sheet).toMatch(/notes: notes\.trim\(\) \|\| undefined/);
+  });
+
+  it('§11.5 — four faces, and NONE can only be ①', () => {
+    expect(readClockOut(shift({ countedMinutes: 480 })).face).toBe('onTime');
+    expect(readClockOut(shift({ countedMinutes: 424 })).face).toBe('early');
+    expect(readClockOut(shift({ countedMinutes: 582 })).face).toBe('late');
+    /*
+      ⚠️ NULL TARGET IS THE WHOLE REASON ② AND ③ CANNOT HAPPEN ON `NONE`.
+      Nothing is promised, so there is nothing to be early or late against — a
+      target invented here would put "short of your shift" on somebody who
+      never had one.
+    */
+    expect(readClockOut(shift({ targetMinutes: null, countedMinutes: 120 })).face).toBe('onTime');
+    expect(readClockOut(shift({ targetMinutes: null, countedMinutes: 900 })).bar.over).toBe(0);
+  });
+
+  it('§11.5 — a minute either side is not a variance', () => {
+    // Without a tolerance the sheet calls a shift "early" for finishing 40
+    // seconds before the hour, which turns a daily act into a daily apology.
+    expect(readClockOut(shift({ countedMinutes: 479 })).face).toBe('onTime');
+    expect(readClockOut(shift({ countedMinutes: 481 })).face).toBe('onTime');
+  });
+
+  it('§11.5 ④ — recorded, never refused', () => {
+    const away = readClockOut(shift({ awayMetres: 2400 }));
+    expect(away.away).toEqual({ metres: 2400 });
+    expect(readClockOut(shift({ awayMetres: AWAY_METRES - 1 })).away).toBeNull();
+    expect(awayLabel(2400)).toBe('2.4 km');
+    expect(awayLabel(380)).toBe('380 m');
+    // The strip and the row flag; the BUTTON is untouched.
+    expect(sheet).toMatch(/flag=\{view\.away/);
+    expect(sheet).not.toMatch(/view\.away[\s\S]{0,200}disabled/);
+  });
+
+  it('§11.3 — the four strings are gone from every locale', () => {
+    /*
+      ⚠️ THEY APPEARED TWICE IN EACH FILE — under `home.fullTime` and again
+      under `attendance`. A removal that names one leaves the other behind and
+      the dead copy outlives the screen that used it.
+    */
+    for (const lang of ['en', 'de', 'es', 'fr', 'it']) {
+      const blob = read(`i18n/locales/${lang}.json`);
+      for (const k of ['clockOutConfirmTitle', 'clockOutConfirmMessage', 'shiftNotesLabel', 'shiftNotesPlaceholder']) {
+        expect(blob).not.toContain(k);
+      }
+      const l = JSON.parse(blob);
+      for (const k of ['counted', 'clockedIn', 'rest', 'clockedOut', 'addNote', 'optional', 'notYet', 'short', 'over', 'askApproval']) {
+        expect(typeof l.shiftEnd[k]).toBe('string');
+      }
+    }
+  });
+
+  it('§11.4 — nothing new is fetched', () => {
+    expect(sheet).not.toMatch(/Api\.|fetch\(|useShift\(/);
+    expect(sheet).toMatch(/shift: ClockOutShift;/);
+  });
+});
+
+describe('the totals, and two silent ways they were always zero', () => {
+  const hook = code('components/home/use-schedule-totals.ts');
+
+  it('reads the BARE ARRAY the endpoint actually returns', () => {
+    /*
+      ⚠️ `/attendance/history` answers `{ success, data: [ … ] }` — a bare
+      array once `fetchWithAuth` unwraps the envelope — whatever
+      `getHistory`'s `PaginatedResponse` return type says. Reading `res.data`
+      gave `undefined` on every call, so every figure was 0 and ⑥ could never
+      appear: a 200, no error, and a card quietly saying nothing happened
+      today. Found by calling the endpoint directly.
+    */
+    expect(hook).toMatch(/Array\.isArray\(res\)/);
+    expect(code('lib/api/attendance.ts')).toMatch(/getHistory/);
+  });
+
+  it('asks for the member\'s own calendar days, not UTC ones', () => {
+    /*
+      ⚠️ `toISOString().slice(0,10)` IS A UTC DATE. Local midnight on the 1st
+      in UTC+2 is `2026-08-31T22:00Z`, so the month asked for started on 31
+      August and the week on the 20th — an off-by-one on every boundary,
+      invisible in London and wrong everywhere else.
+    */
+    expect(hook).not.toMatch(/toISOString\(\)\.slice\(0, 10\)/);
+    expect(hook).toMatch(/d\.getFullYear\(\)/);
+  });
+
+  it('a cancelled run forgets it asked', () => {
+    /*
+      React 18 mounts an effect twice in development: the first run claims the
+      key and starts the fetch, the cleanup marks it stale, and the second run
+      sees its own key already claimed and returns. The answer is then
+      discarded for being stale and no second one is ever asked for.
+    */
+    expect(hook).toMatch(/if \(askedFor\.current === key\) askedFor\.current = '';/);
+  });
+
+  it('leaves no console logging behind', () => {
+    expect(hook).not.toMatch(/console\./);
   });
 });

@@ -72,6 +72,16 @@ export const attendanceApi = {
     });
   },
 
+  /**
+   * ⚠️ THE RETURN TYPE IS A LIE THAT COST A DAY. The server answers
+   * `{ success, data: [ … ] }` — a BARE ARRAY once `fetchWithAuth` unwraps the
+   * envelope — not `{ data, meta }`. Anything reading `res.data` gets
+   * `undefined` with a 200 and no error anywhere to say so.
+   *
+   * Left as declared rather than corrected here because several screens
+   * already destructure it defensively; callers must handle both shapes. See
+   * `components/home/use-schedule-totals.ts` for the one that was bitten.
+   */
   getHistory: async (params?: AttendanceHistoryParams): Promise<PaginatedResponse<TimeEntry>> => {
     const endpoint = buildUrlWithQuery('/attendance/history', params ?? {});
     return fetchWithAuth<PaginatedResponse<TimeEntry>>(endpoint, { method: 'GET' });

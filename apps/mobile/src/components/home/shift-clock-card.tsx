@@ -72,7 +72,12 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const actions = useShiftActions();
 
   const [busy, setBusy] = useState(false);
-  const [clockOutOpen, setClockOutOpen] = useState(false);
+  /*
+    ⚠️ THE CLOCK-OUT TIME IS FROZEN WHEN THE SHEET OPENS — §11 rule 4. A sheet
+    left sitting on a table must not silently bill more minutes than the
+    receipt showed; the member signs off the figure they can see.
+  */
+  const [clockOutAt, setClockOutAt] = useState<Date | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
@@ -145,14 +150,22 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
   */
   const unread = useUnreadIssues(true);
 
-  const confirmClockOut = useCallback(async (notes: string) => {
-    setClockOutOpen(false);
+  const confirmClockOut = useCallback(async (input: {
+    notes?: string; earlyReason?: string; overtimeReason?: string;
+  }) => {
+    setClockOutAt(null);
     if (!entryId) return;
     setBusy(true);
     try {
-      const fix = await clockIn.getCurrentLocation();
-      if (!fix) return;
-      const outcome = await actions.clockOut({ entryId, fix, notes: notes || undefined });
+      /*
+        ⚠️ A MISSING FIX IS NOT A FAILURE. `ClockOutInput` says a clock-out with
+        no coordinates SKIPS the geofence check rather than faking (0,0) — so
+        location being off must not stop somebody going home. The old flow
+        returned early when `getCurrentLocation()` gave null, which is the same
+        bug as a required note wearing a different hat.
+      */
+      const fix = await clockIn.getCurrentLocation().catch(() => null);
+      const outcome = await actions.clockOut({ entryId, fix, ...input });
       if (outcome.kind === 'refused') {
         toast.error(
           t('common.error'),
@@ -431,18 +444,38 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
 
       <LocationPickerSheet {...clockIn.pickerProps} confirmDisabled={clockIn.isClockingIn} />
 
-      <ClockOutSheet
-        visible={clockOutOpen}
-        onClose={() => setClockOutOpen(false)}
-        onConfirm={confirmClockOut}
-        title={t('home.fullTime.clockOutConfirmTitle')}
-        message={t('home.fullTime.clockOutConfirmMessage')}
-        confirmLabel={t('home.fullTime.clockOut')}
-        cancelLabel={t('common.cancel')}
-        notesLabel={t('home.fullTime.shiftNotesLabel')}
-        notesPlaceholder={t('home.fullTime.shiftNotesPlaceholder')}
-        isLoading={busy}
-      />
+      {/*
+        ⚠️ EVERYTHING THE SHEET SHOWS COMES FROM HERE — §11.4. Nothing new is
+        fetched: the card already holds the shift, the counted figure and the
+        target, and a second reader for the same numbers is a second chance for
+        them to disagree with the hero the member was just looking at.
+      */}
+      {clockOutAt && status?.currentEntry ? (
+        <ClockOutSheet
+          visible
+          onClose={() => setClockOutAt(null)}
+          onConfirm={confirmClockOut}
+          isLoading={busy}
+          shift={{
+            workspace: st.workspace,
+            clockInAt: new Date(status.currentEntry.clockInAt),
+            clockOutAt,
+            restMinutes: status.currentEntry.unpaidBreakMinutes ?? 0,
+            countedMinutes: st.countedMinutes ?? 0,
+            /* ⚠️ Null on NONE — no roster, so ② and ③ cannot happen. */
+            targetMinutes: st.progress?.target ?? null,
+            shiftEndAt: status.currentEntry.expectedClockOutAt
+              ? new Date(status.currentEntry.expectedClockOutAt)
+              : null,
+            /*
+              ④ — how far outside the ring the phone last was. The excursion is
+              the server's own answer; the sheet never re-derives a geofence.
+            */
+            awayMetres: status.activeExcursion?.lastDistanceM ?? null,
+            approver: null,
+          }}
+        />
+      ) : null}
 
       <ReportIssueSheet
         visible={reportOpen}
@@ -676,7 +709,7 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
           /* Filled in ② only — ③ and ④ have their own primary. */
           filled={st.kind === 'working'}
           disabled={working}
-          onPress={() => setClockOutOpen(true)}
+          onPress={() => setClockOutAt(new Date())}
         />,
         st.kind === 'working' ? (
           <Disc

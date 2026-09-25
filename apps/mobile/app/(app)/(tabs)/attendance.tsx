@@ -100,7 +100,12 @@ export default function AttendanceScreen() {
   const [isEndingBreak, setIsEndingBreak] = useState(false);
 
   // Confirm sheet state
-  const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
+  /*
+    ⚠️ FROZEN AT OPEN — the clock-out sheet's rule 4. Holding the DATE rather
+    than a boolean is what makes that impossible to get wrong: there is no
+    `new Date()` left anywhere for a sheet sitting on a table to re-read.
+  */
+  const [clockOutAt, setClockOutAt] = useState<Date | null>(null);
   // Which session's activity sheet is open (active session OR a history row).
   const [worklogEntryId, setWorklogEntryId] = useState<string | null>(null);
   // Shift Issues: report a blocker + open its live thread.
@@ -366,18 +371,18 @@ export default function AttendanceScreen() {
 
   // Handle clock out
   const handleClockOut = () => {
-    setShowClockOutConfirm(true);
+    setClockOutAt(new Date());
   };
 
-  const confirmClockOut = async (notes: string, overtimeReason?: string) => {
-    setShowClockOutConfirm(false);
+  const confirmClockOut = async (input: { notes?: string; earlyReason?: string; overtimeReason?: string }) => {
+    setClockOutAt(null);
     setIsActionLoading(true);
     try {
       const entryId = status?.currentEntry?.id;
       if (!entryId) return;
       // A clock-out never waits for a fix: without one it simply carries no position.
       const location = await clockIn.getCurrentLocation();
-      const outcome = await shiftActions.clockOut({ entryId, fix: location, notes: notes || undefined, overtimeReason });
+      const outcome = await shiftActions.clockOut({ entryId, fix: location, ...input });
       if (outcome.kind === 'refused') {
         toast.error(t('common.error'), refusalText(outcome, t('attendance.failedToClockOut')));
         return;
@@ -1358,27 +1363,32 @@ export default function AttendanceScreen() {
         confirmDisabled={clockIn.isClockingIn}
       />
 
-      <ClockOutSheet
-        visible={showClockOutConfirm}
-        onClose={() => setShowClockOutConfirm(false)}
-        onConfirm={confirmClockOut}
-        title={t('attendance.clockOutConfirmTitle')}
-        message={t('attendance.clockOutConfirmMessage')}
-        confirmLabel={t('attendance.clockOut')}
-        cancelLabel={t('common.cancel')}
-        notesLabel={t('attendance.shiftNotesLabel')}
-        notesPlaceholder={t('attendance.shiftNotesPlaceholder')}
-        isLoading={isActionLoading}
-        overtime={pastEndMinutes > 0 ? {
-          note: currentEntry?.endIsDailyLimit
-            ? t('attendance.overtime.notePastLimit', { duration: formatDuration(pastEndMinutes) })
-            : t('attendance.overtime.note', { duration: formatDuration(pastEndMinutes) }),
-          label: t('attendance.overtime.reasonLabel'),
-          placeholder: t('attendance.overtime.reasonPlaceholder'),
-          askLabel: t('attendance.overtime.askLabel'),
-        } : null}
-      />
-
+      {/* ⚠️ Nothing new is fetched — every figure is one this screen already has. */}
+      {clockOutAt && currentEntry ? (
+        <ClockOutSheet
+          visible
+          onClose={() => setClockOutAt(null)}
+          onConfirm={confirmClockOut}
+          isLoading={isActionLoading}
+          shift={{
+            workspace: currentEntry.location?.name ?? null,
+            clockInAt: new Date(currentEntry.clockInAt),
+            clockOutAt,
+            restMinutes: currentEntry.unpaidBreakMinutes ?? 0,
+            countedMinutes: elapsedMinutes - (currentEntry.unpaidBreakMinutes ?? 0),
+            targetMinutes:
+              currentEntry.expectedClockInAt && currentEntry.expectedClockOutAt && !currentEntry.endIsDailyLimit
+                ? Math.round(
+                    (new Date(currentEntry.expectedClockOutAt).getTime()
+                      - new Date(currentEntry.expectedClockInAt).getTime()) / 60000,
+                  )
+                : null,
+            shiftEndAt: currentEntry.expectedClockOutAt ? new Date(currentEntry.expectedClockOutAt) : null,
+            awayMetres: status?.activeExcursion?.lastDistanceM ?? null,
+            approver: null,
+          }}
+        />
+      ) : null}
       {unconfirmed && (
         <TimePickerModal
           visible={leavePickerOpen}

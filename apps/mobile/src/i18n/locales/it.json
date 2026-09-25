@@ -295,10 +295,6 @@
       "onBreak": "In pausa",
       "clockIn": "Timbra entrata",
       "clockOut": "Timbra uscita",
-      "clockOutConfirmTitle": "Timbra uscita",
-      "clockOutConfirmMessage": "Sei sicuro di voler timbrare l'uscita?",
-      "shiftNotesLabel": "Cosa hai fatto oggi?",
-      "shiftNotesPlaceholder": "Descrivi il lavoro svolto durante questo turno...",
       "netWork": "Lavoro netto",
       "breakTime": "Tempo di pausa",
       "thisWeek": "Questa settimana",
@@ -632,10 +628,6 @@
     "timeOnShift": "Tempo di turno",
     "clockIn": "Timbra entrata",
     "clockOut": "Timbra uscita",
-    "clockOutConfirmTitle": "Timbra uscita",
-    "clockOutConfirmMessage": "Sei sicuro di voler timbrare l'uscita?",
-    "shiftNotesLabel": "Cosa hai fatto oggi?",
-    "shiftNotesPlaceholder": "Descrivi il lavoro svolto durante questo turno...",
     "clockedInAt": "Entrata timbrata presso {{location}}",
     "clockedOutSuccess": "Uscita timbrata con successo",
     "locationRequired": "Posizione necessaria",
@@ -2960,5 +2952,35 @@
   },
   "widgets": {
     "shiftClock": "Orologio del turno"
+  },
+  "shiftEnd": {
+    "finishingAt": "FINE TURNO A {{at}}",
+    "finishingEarly": "FINE ANTICIPATA A {{at}}",
+    "pastEnd": "OLTRE LA FINE DEL TURNO",
+    "counted": "conteggiato",
+    "clockedIn": "Entrata",
+    "rest": "Pausa",
+    "clockedOut": "Uscita",
+    "shiftEnded": "Turno finito",
+    "stillWorkingUntil": "Ancora al lavoro fino a",
+    "short": "Meno del tuo turno",
+    "over": "{{duration}} in più",
+    "restNotch": "{{duration}} di pausa",
+    "addNote": "Aggiungi una nota",
+    "optional": "facoltativo",
+    "notYet": "Non ancora",
+    "clockOutAndAsk": "Timbra e chiedi",
+    "whyOptional": "PERCHÉ, SE VUOI DIRLO · FACOLTATIVO",
+    "yourApprover": "il tuo responsabile",
+    "overtimeReason": "{{duration}} oltre la fine prevista",
+    "askApproval": "Questo chiede a {{who}} di approvare {{duration}} di tempo extra. Sei timbrato in uscita comunque.",
+    "away": "Sei a {{distance}} da {{at}}. La timbratura funziona — {{who}} vedrà dov’è avvenuta.",
+    "reasons": {
+      "finished": "Finito",
+      "sentHome": "Mandato a casa",
+      "unwell": "Indisposto",
+      "other": "Altro"
+    },
+    "countedTotal": "Conteggiato"
   }
 }

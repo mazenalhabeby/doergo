@@ -295,10 +295,6 @@
       "onBreak": "En descanso",
       "clockIn": "Registrar entrada",
       "clockOut": "Registrar salida",
-      "clockOutConfirmTitle": "Registrar salida",
-      "clockOutConfirmMessage": "¿Seguro que quieres registrar tu salida?",
-      "shiftNotesLabel": "¿Qué hiciste hoy?",
-      "shiftNotesPlaceholder": "Describe el trabajo que completaste durante este turno...",
       "netWork": "Trabajo neto",
       "breakTime": "Tiempo de descanso",
       "thisWeek": "Esta semana",
@@ -632,10 +628,6 @@
     "timeOnShift": "Tiempo en turno",
     "clockIn": "Registrar entrada",
     "clockOut": "Registrar salida",
-    "clockOutConfirmTitle": "Registrar salida",
-    "clockOutConfirmMessage": "¿Seguro que quieres registrar tu salida?",
-    "shiftNotesLabel": "¿Qué hiciste hoy?",
-    "shiftNotesPlaceholder": "Describe el trabajo que completaste en este turno...",
     "clockedInAt": "Entrada registrada en {{location}}",
     "clockedOutSuccess": "Salida registrada correctamente",
     "locationRequired": "Ubicación obligatoria",
@@ -2960,5 +2952,35 @@
   },
   "widgets": {
     "shiftClock": "Reloj de turno"
+  },
+  "shiftEnd": {
+    "finishingAt": "TERMINANDO EN {{at}}",
+    "finishingEarly": "TERMINANDO ANTES EN {{at}}",
+    "pastEnd": "PASADO EL FIN DE TU TURNO",
+    "counted": "contabilizado",
+    "clockedIn": "Entrada",
+    "rest": "Descanso",
+    "clockedOut": "Salida",
+    "shiftEnded": "El turno terminó",
+    "stillWorkingUntil": "Seguiste hasta",
+    "short": "Menos que tu turno",
+    "over": "{{duration}} de más",
+    "restNotch": "{{duration}} de descanso",
+    "addNote": "Añadir una nota",
+    "optional": "opcional",
+    "notYet": "Todavía no",
+    "clockOutAndAsk": "Fichar salida y pedir",
+    "whyOptional": "POR QUÉ, SI QUIERES DECIRLO · OPCIONAL",
+    "yourApprover": "tu responsable",
+    "overtimeReason": "{{duration}} más allá del fin previsto",
+    "askApproval": "Esto pide a {{who}} que apruebe {{duration}} de tiempo extra. Sales fichado igualmente.",
+    "away": "Estás a {{distance}} de {{at}}. El fichaje funciona — {{who}} verá dónde ocurrió.",
+    "reasons": {
+      "finished": "Terminado",
+      "sentHome": "Enviado a casa",
+      "unwell": "Indispuesto",
+      "other": "Otra cosa"
+    },
+    "countedTotal": "Contabilizado"
   }
 }

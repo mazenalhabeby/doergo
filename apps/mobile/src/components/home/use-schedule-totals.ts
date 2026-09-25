@@ -50,7 +50,17 @@ function countedOn(e: TimeEntry): number {
   return e.paidMinutes ?? e.totalMinutes ?? 0;
 }
 
-const iso = (d: Date) => d.toISOString().slice(0, 10);
+/**
+ * `2026-09-01` — the LOCAL calendar day, never the UTC one.
+ *
+ * ⚠️ `toISOString().slice(0,10)` IS A UTC DATE. Local midnight on the 1st in
+ * UTC+2 is `2026-08-31T22:00Z`, so the month asked for started on 31 August
+ * and the week on the 20th — an off-by-one-day on every boundary, invisible in
+ * London and wrong everywhere else. The server compares calendar days, so it
+ * must be given the member's own.
+ */
+const iso = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 function startOfWeek(now: Date): Date {
   const d = new Date(now);
@@ -90,10 +100,23 @@ export function useScheduleTotals(input: {
     const now = new Date();
     const week = startOfWeek(now);
     const month = startOfMonth(now);
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     // One key for the whole answer: the period AND what the shift last did.
     const key = `${iso(month)}|${iso(week)}|${String(revision)}|${schedule}`;
     if (askedFor.current === key) return;
     askedFor.current = key;
+    /*
+      ⚠️ A CANCELLED RUN MUST FORGET IT ASKED, or the guard above eats the only
+      request. React 18 mounts an effect TWICE in development: the first run
+      claims the key and starts the fetch, the cleanup sets `alive = false`, and
+      the second run sees its own key already claimed and returns — so the first
+      answer is discarded for being stale and the second never happens. The
+      totals then stay null forever, which on this card means ⑥ never appears
+      and a NONE member's week reads as nothing.
+
+      It is not only a development problem: any re-render that changes the key
+      twice in a tick has the same shape.
+    */
 
     /*
       ⚠️ ONE REQUEST, NOT THREE. The month's entries contain this week's and
@@ -105,10 +128,34 @@ export function useScheduleTotals(input: {
       request becomes a download on somebody's data plan.
     */
     void attendanceApi
-      .getHistory({ startDate: iso(month), endDate: iso(now), limit: 200, page: 1 })
+      /*
+        ⚠️ `endDate` IS TOMORROW, NOT TODAY. A date-only range whose end is
+        today is read as midnight at the start of today by anything that
+        compares instants — so the shift that just ended falls outside it and
+        ⑥ never appears, on the one day it is about. Asking to tomorrow is
+        correct whether the server treats the bound as inclusive or not.
+      */
+      .getHistory({ startDate: iso(month), endDate: iso(tomorrow), limit: 200, page: 1 })
       .then((res) => {
         if (!alive) return;
-        const entries = res?.data ?? [];
+        /*
+          ⚠️ `/attendance/history` RETURNS A BARE ARRAY, NOT A PAGINATED
+          ENVELOPE — whatever `attendanceApi.getHistory`'s return type says.
+          The server answers `{ success, data: [ … ] }`, `fetchWithAuth`
+          unwraps the one `data`, and what arrives here is the LIST. Reading
+          `res.data` gave `undefined` on every call, so every total was 0 and
+          ⑥ could never appear — with a 200 and no error anywhere to say so.
+
+          (It is also why §2's "ask for it as a count, total from the envelope"
+          cannot work: there is no envelope to take a total from.)
+
+          Both shapes are accepted rather than one, because the declared type
+          says envelope and the server says array, and this must not break on
+          the day one of them changes.
+        */
+        const entries: TimeEntry[] = Array.isArray(res)
+          ? (res as unknown as TimeEntry[])
+          : (res?.data ?? []);
         const today = iso(now);
         let monthMinutes = 0;
         let weekMinutes = 0;
@@ -139,7 +186,10 @@ export function useScheduleTotals(input: {
         if (alive) askedFor.current = '';
       });
 
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+      if (askedFor.current === key) askedFor.current = '';
+    };
   }, [enabled, revision, schedule]);
 
   return totals;

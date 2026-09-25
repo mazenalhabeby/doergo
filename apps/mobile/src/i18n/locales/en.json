@@ -296,10 +296,6 @@
       "onBreak": "On Break",
       "clockIn": "Clock In",
       "clockOut": "Clock Out",
-      "clockOutConfirmTitle": "Clock Out",
-      "clockOutConfirmMessage": "Are you sure you want to clock out?",
-      "shiftNotesLabel": "What did you do today?",
-      "shiftNotesPlaceholder": "Describe the work you completed during this shift...",
       "netWork": "Net Work",
       "breakTime": "Break Time",
       "thisWeek": "This Week",
@@ -639,10 +635,6 @@
     "timeOnShift": "Time on shift",
     "clockIn": "Clock In",
     "clockOut": "Clock Out",
-    "clockOutConfirmTitle": "Clock Out",
-    "clockOutConfirmMessage": "Are you sure you want to clock out?",
-    "shiftNotesLabel": "What did you do today?",
-    "shiftNotesPlaceholder": "Describe the work you completed during this shift...",
     "clockedInAt": "Clocked in at {{location}}",
     "clockedOutSuccess": "Clocked out successfully",
     "locationRequired": "Location Required",
@@ -2967,5 +2959,35 @@
   },
   "widgets": {
     "shiftClock": "Shift clock"
+  },
+  "shiftEnd": {
+    "finishingAt": "FINISHING AT {{at}}",
+    "finishingEarly": "FINISHING EARLY AT {{at}}",
+    "pastEnd": "PAST YOUR SHIFT END",
+    "counted": "counted",
+    "clockedIn": "Clocked in",
+    "rest": "Rest",
+    "clockedOut": "Clocked out",
+    "shiftEnded": "Shift ended",
+    "stillWorkingUntil": "Still working until",
+    "short": "Short of your shift",
+    "over": "{{duration}} over",
+    "restNotch": "{{duration}} rest",
+    "addNote": "Add a note",
+    "optional": "optional",
+    "notYet": "Not yet",
+    "clockOutAndAsk": "Clock out & ask",
+    "whyOptional": "WHY, IF YOU WANT TO SAY · OPTIONAL",
+    "yourApprover": "your approver",
+    "overtimeReason": "{{duration}} past the rostered end",
+    "askApproval": "This asks {{who}} to approve {{duration}} of extra time. You are clocked out either way.",
+    "away": "You are {{distance}} from {{at}}. The clock-out works — {{who}} will see where it happened.",
+    "reasons": {
+      "finished": "Finished",
+      "sentHome": "Sent home",
+      "unwell": "Unwell",
+      "other": "Something else"
+    },
+    "countedTotal": "Counted"
   }
 }
