@@ -17,7 +17,7 @@ import { FreshnessLabel } from '../../offline/components/freshness-label';
 import { SyncChip } from '../../offline/components/sync-chip';
 import { useShift } from '../../offline/attendance/use-shift';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { scheduleApi } from '../../lib/api';
+import { scheduleApi, tasksApi } from '../../lib/api';
 import type { ScheduleEntry, Task } from '../../lib/api/types';
 import { AText, Eyebrow, Well, WellDivider } from '../amazen';
 import { shadowDiscPrimary } from '../amazen/surfaces';
@@ -110,18 +110,32 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const flowIds = useMemo(() => [...new Set(tasks.map(flowIdOf).filter((x): x is string => !!x))].sort().join(','), [tasks]);
   const [flows, setFlows] = useState<Map<string, unknown>>(() => new Map());
   useEffect(() => {
+    if (!flowIds) return;
     const records = offline.records;
-    if (!records || !flowIds) return;
     let live = true;
     void (async () => {
       const next = new Map<string, unknown>();
       for (const id of flowIds.split(',')) {
-        const row = await records.get<unknown>('workflows', id).catch(() => null);
-        if (row?.data) next.set(id, row.data);
+        const row = records ? await records.get<unknown>('workflows', id).catch(() => null) : null;
+        if (row?.data) { next.set(id, row.data); continue; }
+        /*
+          ⚠️ NOT ON THIS PHONE — ASK THE JOB. The phone's copy of workflows can
+          lag its copy of tasks (the iPhone showed "Open the job" where the
+          emulator showed "Arrived", 02.png / 21:20). `GET /tasks/:id` already
+          carries the job's full workflow, so one job per missing workflow is
+          asked for it. Offline this fails quietly and the row opens the job,
+          which is the honest answer when the verbs are unknown.
+        */
+        const sample = tasks.find((x) => flowIdOf(x) === id);
+        if (!sample) continue;
+        const detail = await tasksApi.getById(sample.id).catch(() => null);
+        const flow = (detail as unknown as { workflow?: { id?: string } } | null)?.workflow;
+        if (flow) next.set(id, flow);
       }
       if (live) setFlows(next);
     })();
     return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the SET of workflow ids, not every task change
   }, [offline.records, flowIds]);
 
   // Today on mount, always. Selecting a day is a READ.
@@ -197,7 +211,8 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
 
   const todayShift = sameDay(selected, today) && shift.status?.isClockedIn ? shift.status.currentEntry : null;
   const selShift = shiftOn(schedule, selected);
-  const pillCount = shape === 'shifts' ? schedule.filter((e) => e.isActive).length : dayTasks.length;
+  /* ⚠️ What the card SHOWS, carried-over work included — not only the jobs dated that day. */
+  const pillCount = shape === 'shifts' ? schedule.filter((e) => e.isActive).length : mine.length + theirs.length;
 
   return (
     <View style={style}>
