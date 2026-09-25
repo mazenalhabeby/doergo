@@ -3045,6 +3045,83 @@
     "where": "Wo",
     "workspace": "Arbeitsbereich",
     "who": "Wer",
-    "openFull": "Ganzen Auftrag öffnen"
+    "openFull": "Ganzen Auftrag öffnen",
+    "needsSync": "Das Telefon startet noch. Gleich noch einmal versuchen.",
+    "declined": "Abgelehnt",
+    "finished": "Auftrag abgeschlossen",
+    "wrongSent": "Ans Büro gesendet",
+    "wrongFailed": "Konnte nicht gesendet werden. Bitte erneut versuchen."
+  },
+  "job": {
+    "verb": {
+      "drive": "Losfahren",
+      "arrive": "Ich bin da",
+      "start": "Arbeit beginnen",
+      "finish": "Auftrag abschließen",
+      "next": "Weiter: {{label}}"
+    },
+    "chip": {
+      "tracking": "Fahrt wird aufgezeichnet",
+      "driving": "{{time}} unterwegs",
+      "onSite": "Vor Ort seit {{time}}",
+      "onJob": "{{time}} am Auftrag",
+      "photos_one": "{{count}} Foto",
+      "photos_other": "{{count}} Fotos"
+    },
+    "fact": {
+      "travelled": "Fahrzeit",
+      "due": "Fällig",
+      "late": "Überfällig",
+      "workspace": "Arbeitsbereich",
+      "assigned": "Zugeteilt"
+    },
+    "days_one": "{{count}} Tag",
+    "days_other": "{{count}} Tage",
+    "nobody": "Noch niemand",
+    "notYours": "Nicht Ihr Auftrag — Sie können ihn verfolgen, aber nicht weiterschalten.",
+    "more": "Mehr",
+    "thisStep": "Dieser Schritt",
+    "checkFailed": "Das Häkchen konnte nicht gespeichert werden. Dafür braucht es eine Verbindung.",
+    "openMaps": "In Karten öffnen",
+    "openFull": "Ganzen Auftrag öffnen",
+    "openFullHint": "Verlauf, Fotos, neu zuteilen und bearbeiten",
+    "decline": "Auftrag ablehnen",
+    "declineHint": "Er geht zurück ans Büro",
+    "optional": "optional",
+    "notNow": "Nicht jetzt",
+    "cannotFinish": "Dieser Auftrag kann hier nicht abgeschlossen werden. Öffnen Sie den ganzen Auftrag.",
+    "wrong": {
+      "title": "Etwas stimmt nicht",
+      "who": "Die Verantwortlichen für diesen Arbeitsbereich erhalten das sofort. Der Auftrag bleibt, wo er ist — nichts wird storniert.",
+      "tapOne": "Was ist es · eins antippen",
+      "addNote": "Notiz hinzufügen",
+      "notePlaceholder": "Was das Büro wissen sollte",
+      "send": "Senden",
+      "reason": {
+        "parts": "Warte auf Teile",
+        "access": "Kein Zugang",
+        "customer": "Kunde nicht da",
+        "unsafe": "Nicht sicher",
+        "wrongJob": "Falscher Auftrag",
+        "other": "Etwas anderes"
+      }
+    },
+    "finishing": "Abschließen",
+    "onTheJob": "am Auftrag",
+    "noTimer": "Für diesen Auftrag wurde keine Zeit erfasst.",
+    "receipt": {
+      "started": "Begonnen",
+      "finishing": "Abschluss",
+      "checklist": "Checkliste",
+      "photos": "Fotos",
+      "counted": "Gezählt"
+    },
+    "whatDidYouDo": "Was haben Sie gemacht",
+    "required": "Pflicht",
+    "aLine": "Eine Zeile reicht…",
+    "signOff": "Abzeichnen · dieser Schritt verlangt eine Unterschrift",
+    "yourSignature": "Ihre Unterschrift",
+    "customerName": "Name des Kunden",
+    "customerSigns": "Geben Sie das Telefon dem Kunden zum Unterschreiben (optional)."
   }
 }

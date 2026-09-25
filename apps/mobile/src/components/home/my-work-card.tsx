@@ -1,17 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Linking, Platform, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { LinearGradient } from 'expo-linear-gradient';
 import { daysLate, hasAccessModule, type FlowStatus } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { useLocationTrackingContext } from '../../contexts/location-tracking-context';
 import { useHomeTasks } from '../../offline/tasks/use-home-tasks';
 import { useOffline } from '../../offline/offline-context';
-import { changeTaskStatus } from '../../offline/tasks/task-actions';
-import { takeStatusFix, outboxFix, taskDestination } from '../../offline/tasks/status-fix';
 import { isUnreachable } from '../../offline/actions/unreachable';
 import { FreshnessLabel } from '../../offline/components/freshness-label';
 import { SyncChip } from '../../offline/components/sync-chip';
@@ -20,14 +15,16 @@ import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { scheduleApi, tasksApi } from '../../lib/api';
 import type { ScheduleEntry, Task } from '../../lib/api/types';
 import { AText, Eyebrow, Well, WellDivider } from '../amazen';
-import { JobSheet } from './job-sheet';
+import { JobSheet, type JobView } from '../job/job-sheet';
+import { VerbButton } from '../job/verb-button';
+import { useJobActions } from '../job/use-job-actions';
 import {
-  AcceptGlyph, OnMyWayGlyph, ArrivedGlyph, StartWorkGlyph, FinishGlyph, NavigateGlyph, MoreGlyph,
+  NavigateGlyph, MoreGlyph,
 } from '../glyphs/work-glyphs';
 import type { GlyphProps } from '../glyphs/glyphs';
 import {
   shapeFor, faceFor, viewAllSpaceIds, weekOf, sameDay, startOfDay, tasksOn, hasHour, isMine,
-  flowIdOf, stepsFor, isClosed, decisionFor, routeFor, shiftOn, shiftHours, nextJobAfter, figuresFor, todaysOwn,
+  flowIdOf, stepsFor, isClosed, decisionFor, shiftOn, shiftHours, nextJobAfter, figuresFor, todaysOwn,
   type Decision,
 } from './my-work';
 
@@ -162,44 +159,18 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const decision = active ? decisionFor(active, user?.id, stepsFor(active, flows)) : null;
 
   /* ---------------- the verb ---------------- */
-  const toast = useToast();
-  const { startTracking, stopTracking } = useLocationTrackingContext();
-  const [busy, setBusy] = useState<string | null>(null);
-  /* ⚠️ One sheet per job — rows, the title and the ⋯ all open it. */
-  const [sheetFor, setSheetFor] = useState<Task | null>(null);
-  const busyRef = useRef(false);
-
+  /* ⚠️ One sheet per job — rows, the title and the ⋯ all open it, at the view asked for. */
+  const [sheetFor, setSheetFor] = useState<{ task: Task; view: JobView } | null>(null);
   const openTask = useCallback((task: Task) => router.push(`/task/${task.id}` as Href), [router]);
+  const refresh = useCallback(() => { void load().catch(() => undefined); }, [load]);
+  /* The card's verb and the sheet's go through the SAME actions — see use-job-actions.ts. */
+  const actions = useJobActions(refresh);
 
-  const run = useCallback(async (task: Task, to: FlowStatus) => {
-    setSheetFor(null);
-    /* BLOCKED needs a reason and a reporting finish needs the report — the task screen asks for both. */
-    if (routeFor(task, to, flows) === 'open' || !offline.engine) { openTask(task); return; }
-    if (busyRef.current) return;
-    busyRef.current = true;
-    setBusy(task.id);
-    const leaving = task.status === 'EN_ROUTE' && to.key === 'ARRIVED';
-    try {
-      if (leaving) stopTracking();
-      if (to.key === 'EN_ROUTE') void startTracking(task.id, taskDestination(task));
-      const fix = await takeStatusFix(to.key);
-      const outcome = await changeTaskStatus(offline.engine, { taskId: task.id, from: task.status, to: to.key, fix: outboxFix(fix) });
-      if (outcome.kind === 'refused') {
-        if (leaving) void startTracking(task.id, taskDestination(task));
-        if (to.key === 'EN_ROUTE') stopTracking();
-        toast.error(
-          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('taskDetail.failedToUpdateStatus'),
-        );
-        return;
-      }
-      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
-      else toast.success(to.label, task.title);
-      void load().catch(() => undefined);
-    } finally {
-      busyRef.current = false;
-      setBusy(null);
-    }
-  }, [flows, offline.engine, openTask, startTracking, stopTracking, toast, t, load]);
+  const run = useCallback((task: Task, current: FlowStatus, to: FlowStatus) => {
+    /* ⚠️ Finishing is a sheet of its own: a receipt, one line, a signature only if the step asks. */
+    if (to.isFinal) { setSheetFor({ task, view: 'finish' }); return; }
+    void actions.advance(task, current, to);
+  }, [actions]);
 
   /*
     ⚠️ THE EARLY EXIT IS BELOW EVERY HOOK. Holding neither module means the
@@ -305,23 +276,23 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                   <ActiveRow
                     task={active}
                     decision={decision}
-                    busy={busy === active.id}
-                    onVerb={(to) => void run(active, to)}
-                    onMore={() => setSheetFor(active)}
-                    onOpen={() => setSheetFor(active)}
+                    busy={actions.busy === active.id}
+                    onVerb={(to) => { if (decision) run(active, decision.current, to); }}
+                    onMore={() => setSheetFor({ task: active, view: 'more' })}
+                    onOpen={() => setSheetFor({ task: active, view: 'job' })}
                   />
                 ) : null}
                 {mine.filter((x) => x !== active).map((task, i) => (
                   <React.Fragment key={task.id}>
                     {i > 0 ? <WellDivider /> : null}
-                    <PlainRow task={task} done={!open(task)} mine={face !== 'executor'} onPress={() => setSheetFor(task)} />
+                    <PlainRow task={task} done={!open(task)} mine={face !== 'executor'} onPress={() => setSheetFor({ task, view: 'job' })} />
                   </React.Fragment>
                 ))}
 
                 {face === 'spaceSupervisor' && theirs.length > 0 ? (
                   <>
                     <Eyebrow tone="muted" style={{ marginTop: amazen.space(2) }}>{siteLabel(theirs, t)}</Eyebrow>
-                    {theirs.slice(0, 3).map((task) => <PlainRow key={task.id} task={task} done={!open(task)} mine={false} onPress={() => setSheetFor(task)} />)}
+                    {theirs.slice(0, 3).map((task) => <PlainRow key={task.id} task={task} done={!open(task)} mine={false} onPress={() => setSheetFor({ task, view: 'job' })} />)}
                     {theirs.length > 3 ? (
                       <Pressable onPress={() => router.push('/(app)/(tabs)/tasks' as Href)} accessibilityRole="button" hitSlop={6}>
                         <AText variant="caption" tone="accent">{t('myWork.more', { count: theirs.length - 3, defaultValue: `+${theirs.length - 3} more` })}</AText>
@@ -339,12 +310,12 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
 
       {/* The job — the same sheet model as the shift card's buttons. One slot, one panel. */}
       <JobSheet
-        task={sheetFor}
-        decision={sheetFor ? decisionFor(sheetFor, user?.id, stepsFor(sheetFor, flows)) : null}
-        busy={!!sheetFor && busy === sheetFor.id}
+        task={sheetFor?.task ?? null}
+        view={sheetFor?.view}
+        steps={sheetFor ? stepsFor(sheetFor.task, flows) : null}
         onClose={() => setSheetFor(null)}
-        onVerb={(to) => { if (sheetFor) void run(sheetFor, to); }}
-        onOpenFull={() => { const x = sheetFor; setSheetFor(null); if (x) openTask(x); }}
+        onOpenFull={openTask}
+        onChanged={refresh}
       />
     </View>
   );
@@ -352,14 +323,6 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
 
 /* ---------------- parts ---------------- */
 
-/** The marks map to the TRANSITION, never the wording — labels are organization-authored. */
-const MARKS: Record<string, React.ComponentType<GlyphProps>> = {
-  ACCEPTED: AcceptGlyph,
-  EN_ROUTE: OnMyWayGlyph,
-  ARRIVED: ArrivedGlyph,
-  IN_PROGRESS: StartWorkGlyph,
-  COMPLETED: FinishGlyph,
-};
 
 /**
  * The first open job of the day, WHEN IT IS THE READER'S OWN — raised one step
@@ -388,7 +351,6 @@ function ActiveRow({ task, decision, busy, onVerb, onMore, onOpen }: {
     if (url) void Linking.openURL(url).catch(() => Linking.openURL(`geo:${lat},${lng}`));
   };
 
-  const Mark = decision ? MARKS[decision.primary.key] ?? (decision.primary.isFinal ? FinishGlyph : null) : null;
   const late = daysLate(task.dueDate ?? null) ?? 0;
   const meta = [
     late > 0
@@ -412,35 +374,7 @@ function ActiveRow({ task, decision, busy, onVerb, onMore, onOpen }: {
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2), marginTop: amazen.space(2) }}>
         {decision ? (
-          /*
-            ⚠️ THE GLOW LIVES ON A WRAPPER. The pill clips its gradient to the
-            radius with `overflow: hidden`, and on iOS that clips its own shadow
-            too — the same trap the tab bar fell into (09.png).
-          */
-          <View
-            style={{
-              flex: 1, borderRadius: amazen.radius.full, backgroundColor: c.accentSolid,
-              /* A soft lift, not a halo — the full disc glow was too much on a row this size. */
-              shadowColor: c.accentSolid, shadowOpacity: 0.22, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3,
-            }}
-          >
-            <Pressable
-              onPress={busy ? undefined : () => onVerb(decision.primary)}
-              disabled={busy}
-              accessibilityRole="button"
-              accessibilityLabel={decision.primary.label}
-              accessibilityState={{ busy }}
-              style={({ pressed }) => ({ borderRadius: amazen.radius.full, overflow: 'hidden', opacity: busy ? 0.6 : pressed ? 0.88 : 1 })}
-            >
-              <LinearGradient
-                colors={amazen.gradient.primary as unknown as [string, string, ...string[]]}
-                style={{ minHeight: amazen.layout.tapMin, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: amazen.space(2), paddingHorizontal: amazen.space(4) }}
-              >
-                {Mark ? <Mark size={17} color={c.accentInk} contrast={amazen.gradient.primary[1]} /> : null}
-                <AText variant="body" tone="accentInk" style={{ fontFamily: amazen.type.h3.fontFamily }} numberOfLines={1}>{decision.primary.label}</AText>
-              </LinearGradient>
-            </Pressable>
-          </View>
+          <VerbButton current={decision.current} to={decision.primary} busy={busy} onPress={() => onVerb(decision.primary)} />
         ) : (
           /* A workflow this phone does not hold: open the job rather than guess its verbs. */
           <Pressable onPress={onOpen} accessibilityRole="button" style={{ flex: 1, minHeight: amazen.layout.tapMin, borderRadius: amazen.radius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: c.accentTint }}>

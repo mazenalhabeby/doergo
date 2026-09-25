@@ -98,6 +98,14 @@ export const tasksApi = {
   getTimeline: async (taskId: string): Promise<TaskEvent[]> => {
     return fetchWithAuth<TaskEvent[]>(`/tasks/${taskId}/timeline`, { method: 'GET' });
   },
+
+  /** Tick or untick one checklist item — `PATCH /tasks/:id/checklist/:itemId`. */
+  setChecklistItem: async (taskId: string, itemId: string, isCompleted: boolean): Promise<unknown> => {
+    return fetchWithAuth<unknown>(`/tasks/${taskId}/checklist/${itemId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isCompleted }),
+    });
+  },
 };
 
 // Tracking API - technician location updates

@@ -3045,6 +3045,83 @@
     "where": "Où",
     "workspace": "Espace",
     "who": "Qui",
-    "openFull": "Ouvrir l’intervention complète"
+    "openFull": "Ouvrir l’intervention complète",
+    "needsSync": "Le téléphone démarre encore. Réessayez dans un instant.",
+    "declined": "Refusée",
+    "finished": "Intervention terminée",
+    "wrongSent": "Envoyé au bureau",
+    "wrongFailed": "Envoi impossible. Réessayez."
+  },
+  "job": {
+    "verb": {
+      "drive": "Partir",
+      "arrive": "Je suis arrivé",
+      "start": "Commencer le travail",
+      "finish": "Terminer l’intervention",
+      "next": "Suivant : {{label}}"
+    },
+    "chip": {
+      "tracking": "Le trajet est enregistré",
+      "driving": "{{time}} de route",
+      "onSite": "Sur place depuis {{time}}",
+      "onJob": "{{time}} sur l’intervention",
+      "photos_one": "{{count}} photo",
+      "photos_other": "{{count}} photos"
+    },
+    "fact": {
+      "travelled": "Trajet",
+      "due": "Échéance",
+      "late": "Retard",
+      "workspace": "Espace",
+      "assigned": "Assigné"
+    },
+    "days_one": "{{count}} jour",
+    "days_other": "{{count}} jours",
+    "nobody": "Personne",
+    "notYours": "Pas votre intervention : vous pouvez la suivre, pas la faire avancer.",
+    "more": "Plus",
+    "thisStep": "Cette étape",
+    "checkFailed": "Impossible d’enregistrer. Il faut une connexion.",
+    "openMaps": "Ouvrir dans Plans",
+    "openFull": "Ouvrir l’intervention complète",
+    "openFullHint": "Historique, photos, réassigner et modifier",
+    "decline": "Refuser cette intervention",
+    "declineHint": "Elle retourne au bureau",
+    "optional": "facultatif",
+    "notNow": "Pas maintenant",
+    "cannotFinish": "Cette intervention ne peut pas être terminée ici. Ouvrez l’intervention complète.",
+    "wrong": {
+      "title": "Quelque chose ne va pas",
+      "who": "Les responsables de cet espace le reçoivent tout de suite. L’intervention reste où elle est : rien n’est annulé.",
+      "tapOne": "Qu’est-ce que c’est · touchez-en un",
+      "addNote": "Ajouter une note",
+      "notePlaceholder": "Ce que le bureau doit savoir",
+      "send": "Envoyer",
+      "reason": {
+        "parts": "En attente de pièces",
+        "access": "Impossible d’entrer",
+        "customer": "Client absent",
+        "unsafe": "Pas sûr",
+        "wrongJob": "Mauvaise intervention",
+        "other": "Autre chose"
+      }
+    },
+    "finishing": "Fin",
+    "onTheJob": "sur l’intervention",
+    "noTimer": "Aucun temps compté sur cette intervention.",
+    "receipt": {
+      "started": "Début",
+      "finishing": "Fin",
+      "checklist": "Liste",
+      "photos": "Photos",
+      "counted": "Compté"
+    },
+    "whatDidYouDo": "Qu’avez-vous fait",
+    "required": "obligatoire",
+    "aLine": "Une ligne suffit…",
+    "signOff": "Signature · cette étape en demande une",
+    "yourSignature": "Votre signature",
+    "customerName": "Nom du client",
+    "customerSigns": "Passez le téléphone au client pour qu’il signe (facultatif)."
   }
 }

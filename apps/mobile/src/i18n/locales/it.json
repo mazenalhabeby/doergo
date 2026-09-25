@@ -3045,6 +3045,83 @@
     "where": "Dove",
     "workspace": "Spazio",
     "who": "Chi",
-    "openFull": "Apri il lavoro completo"
+    "openFull": "Apri il lavoro completo",
+    "needsSync": "Il telefono si sta ancora avviando. Riprova tra un attimo.",
+    "declined": "Rifiutato",
+    "finished": "Lavoro terminato",
+    "wrongSent": "Inviato all’ufficio",
+    "wrongFailed": "Invio non riuscito. Riprova."
+  },
+  "job": {
+    "verb": {
+      "drive": "Parti",
+      "arrive": "Sono arrivato",
+      "start": "Inizia il lavoro",
+      "finish": "Termina il lavoro",
+      "next": "Avanti: {{label}}"
+    },
+    "chip": {
+      "tracking": "Il viaggio viene registrato",
+      "driving": "{{time}} di guida",
+      "onSite": "Sul posto dalle {{time}}",
+      "onJob": "{{time}} sul lavoro",
+      "photos_one": "{{count}} foto",
+      "photos_other": "{{count}} foto"
+    },
+    "fact": {
+      "travelled": "Viaggio",
+      "due": "Scadenza",
+      "late": "Ritardo",
+      "workspace": "Spazio",
+      "assigned": "Assegnato"
+    },
+    "days_one": "{{count}} giorno",
+    "days_other": "{{count}} giorni",
+    "nobody": "Nessuno",
+    "notYours": "Non è il tuo lavoro: puoi seguirlo, non farlo avanzare.",
+    "more": "Altro",
+    "thisStep": "Questo passo",
+    "checkFailed": "Impossibile salvare. Serve una connessione.",
+    "openMaps": "Apri in mappe",
+    "openFull": "Apri il lavoro completo",
+    "openFullHint": "Cronologia, foto, riassegna e modifica",
+    "decline": "Rifiuta questo lavoro",
+    "declineHint": "Torna all’ufficio",
+    "optional": "facoltativo",
+    "notNow": "Non ora",
+    "cannotFinish": "Questo lavoro non si può terminare da qui. Apri il lavoro completo.",
+    "wrong": {
+      "title": "Qualcosa non va",
+      "who": "I responsabili di questo spazio lo ricevono subito. Il lavoro resta dov’è: niente viene annullato.",
+      "tapOne": "Cos’è · toccane uno",
+      "addNote": "Aggiungi una nota",
+      "notePlaceholder": "Cosa dovrebbe sapere l’ufficio",
+      "send": "Invia",
+      "reason": {
+        "parts": "In attesa di pezzi",
+        "access": "Non riesco a entrare",
+        "customer": "Cliente assente",
+        "unsafe": "Non sicuro",
+        "wrongJob": "Lavoro sbagliato",
+        "other": "Altro"
+      }
+    },
+    "finishing": "Chiusura",
+    "onTheJob": "sul lavoro",
+    "noTimer": "Nessun tempo contato su questo lavoro.",
+    "receipt": {
+      "started": "Inizio",
+      "finishing": "Fine",
+      "checklist": "Checklist",
+      "photos": "Foto",
+      "counted": "Contato"
+    },
+    "whatDidYouDo": "Cosa hai fatto",
+    "required": "obbligatorio",
+    "aLine": "Basta una riga…",
+    "signOff": "Firma · questo passo ne chiede una",
+    "yourSignature": "La tua firma",
+    "customerName": "Nome del cliente",
+    "customerSigns": "Passa il telefono al cliente per la firma (facoltativo)."
   }
 }

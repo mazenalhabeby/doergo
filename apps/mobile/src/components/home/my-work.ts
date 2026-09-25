@@ -257,5 +257,14 @@ export function todaysOwn(mine: Task[], today: Date, isOpen: (t: Task) => boolea
     const band = workBand(t as never, now);
     return band === 'doing' || band === 'blocked' || band === 'overdue';
   });
-  return rankMyWork([...mine.filter((t) => due.has(t.id)), ...carried] as never[], now) as unknown as Task[];
+  /*
+    ⚠️ CARRIED WORK FIRST, BY THE SHARED RANKING; THEN TODAY BY THE CLOCK. A
+    day read by priority went 12:00, 10:00, 11:00, 14:00 — a list of a day is
+    read top to bottom as the day goes.
+  */
+  const first = rankMyWork(carried as never[], now) as unknown as Task[];
+  const today_ = tasksOn(mine, today).filter((t) => !first.includes(t));
+  const ranked = rankMyWork(today_ as never[], now) as unknown as Task[];
+  const underWay = ranked.filter((t) => ['doing', 'blocked'].includes(workBand(t as never, now)));
+  return [...first, ...underWay, ...today_.filter((t) => !underWay.includes(t))];
 }
