@@ -20,8 +20,7 @@ import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { scheduleApi } from '../../lib/api';
 import type { ScheduleEntry, Task } from '../../lib/api/types';
 import { AText, Eyebrow, Well, WellDivider } from '../amazen';
-import { BlurSheet } from '../blur-sheet';
-import { SheetPanel } from '../sheet-panel';
+import { JobSheet } from './job-sheet';
 import {
   AcceptGlyph, OnMyWayGlyph, ArrivedGlyph, StartWorkGlyph, FinishGlyph, NavigateGlyph, MoreGlyph,
 } from '../glyphs/work-glyphs';
@@ -152,13 +151,14 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const toast = useToast();
   const { startTracking, stopTracking } = useLocationTrackingContext();
   const [busy, setBusy] = useState<string | null>(null);
-  const [menuFor, setMenuFor] = useState<Task | null>(null);
+  /* ⚠️ One sheet per job — rows, the title and the ⋯ all open it. */
+  const [sheetFor, setSheetFor] = useState<Task | null>(null);
   const busyRef = useRef(false);
 
   const openTask = useCallback((task: Task) => router.push(`/task/${task.id}` as Href), [router]);
 
   const run = useCallback(async (task: Task, to: FlowStatus) => {
-    setMenuFor(null);
+    setSheetFor(null);
     /* BLOCKED needs a reason and a reporting finish needs the report — the task screen asks for both. */
     if (routeFor(task, to, flows) === 'open' || !offline.engine) { openTask(task); return; }
     if (busyRef.current) return;
@@ -291,18 +291,18 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                     decision={decision}
                     busy={busy === active.id}
                     onVerb={(to) => void run(active, to)}
-                    onMore={() => setMenuFor(active)}
-                    onOpen={() => openTask(active)}
+                    onMore={() => setSheetFor(active)}
+                    onOpen={() => setSheetFor(active)}
                   />
                 ) : null}
                 {mine.filter((x) => x !== active).map((task) => (
-                  <PlainRow key={task.id} task={task} done={!open(task)} mine={face !== 'executor'} onPress={() => openTask(task)} />
+                  <PlainRow key={task.id} task={task} done={!open(task)} mine={face !== 'executor'} onPress={() => setSheetFor(task)} />
                 ))}
 
                 {face === 'spaceSupervisor' && theirs.length > 0 ? (
                   <>
                     <Eyebrow tone="muted" style={{ marginTop: amazen.space(2) }}>{siteLabel(theirs, t)}</Eyebrow>
-                    {theirs.slice(0, 3).map((task) => <PlainRow key={task.id} task={task} done={!open(task)} mine={false} onPress={() => openTask(task)} />)}
+                    {theirs.slice(0, 3).map((task) => <PlainRow key={task.id} task={task} done={!open(task)} mine={false} onPress={() => setSheetFor(task)} />)}
                     {theirs.length > 3 ? (
                       <Pressable onPress={() => router.push('/(app)/(tabs)/tasks' as Href)} accessibilityRole="button" hitSlop={6}>
                         <AText variant="caption" tone="accent">{t('myWork.more', { count: theirs.length - 3, defaultValue: `+${theirs.length - 3} more` })}</AText>
@@ -318,17 +318,15 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
         )}
       </Well>
 
-      {/* ⋯ — every other transition, and the job itself. One slot, one panel. */}
-      <BlurSheet visible={!!menuFor} onClose={() => setMenuFor(null)}>
-        <SheetPanel title={menuFor?.title} onClose={() => setMenuFor(null)}>
-          <View style={{ gap: amazen.space(2), paddingTop: amazen.space(2) }}>
-            {menuFor ? (decisionFor(menuFor, user?.id, stepsFor(menuFor, flows))?.rest ?? []).map((s) => (
-              <SheetButton key={s.key} label={s.key === 'BLOCKED' ? t('myWork.reportIssue', { defaultValue: 'Report an issue' }) : s.label} tone={s.key === 'BLOCKED' ? 'critical' : 'strong'} onPress={() => void run(menuFor, s)} />
-            )) : null}
-            {menuFor ? <SheetButton label={t('myWork.openJob', { defaultValue: 'Open the job' })} onPress={() => { const x = menuFor; setMenuFor(null); openTask(x); }} /> : null}
-          </View>
-        </SheetPanel>
-      </BlurSheet>
+      {/* The job — the same sheet model as the shift card's buttons. One slot, one panel. */}
+      <JobSheet
+        task={sheetFor}
+        decision={sheetFor ? decisionFor(sheetFor, user?.id, stepsFor(sheetFor, flows)) : null}
+        busy={!!sheetFor && busy === sheetFor.id}
+        onClose={() => setSheetFor(null)}
+        onVerb={(to) => { if (sheetFor) void run(sheetFor, to); }}
+        onOpenFull={() => { const x = sheetFor; setSheetFor(null); if (x) openTask(x); }}
+      />
     </View>
   );
 }
@@ -560,15 +558,6 @@ function Sentence({ title, body, tone = 'strong', children }: { title: string; b
       {body ? <AText variant="caption" tone="muted">{body}</AText> : null}
       {children}
     </View>
-  );
-}
-
-function SheetButton({ label, tone = 'strong', onPress }: { label: string; tone?: 'strong' | 'critical'; onPress: () => void }) {
-  const { amazen } = useTheme();
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => ({ borderRadius: 14, padding: amazen.space(3.5), backgroundColor: amazen.color.tile, opacity: pressed ? 0.8 : 1 })}>
-      <AText variant="body" tone={tone}>{label}</AText>
-    </Pressable>
   );
 }
 

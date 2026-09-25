@@ -3047,6 +3047,11 @@
     "moreActions": "More actions",
     "reportIssue": "Report an issue",
     "late_one": "{{count}} day late",
-    "late_other": "{{count}} days late"
+    "late_other": "{{count}} days late",
+    "when": "When",
+    "where": "Where",
+    "workspace": "Workspace",
+    "who": "Who",
+    "openFull": "Open full job"
   }
 }

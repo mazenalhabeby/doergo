@@ -3040,6 +3040,11 @@
     "moreActions": "Weitere Aktionen",
     "reportIssue": "Problem melden",
     "late_one": "{{count}} Tag überfällig",
-    "late_other": "{{count}} Tage überfällig"
+    "late_other": "{{count}} Tage überfällig",
+    "when": "Wann",
+    "where": "Wo",
+    "workspace": "Arbeitsbereich",
+    "who": "Wer",
+    "openFull": "Ganzen Auftrag öffnen"
   }
 }

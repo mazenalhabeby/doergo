@@ -3040,6 +3040,11 @@
     "moreActions": "Plus d’actions",
     "reportIssue": "Signaler un problème",
     "late_one": "{{count}} jour de retard",
-    "late_other": "{{count}} jours de retard"
+    "late_other": "{{count}} jours de retard",
+    "when": "Quand",
+    "where": "Où",
+    "workspace": "Espace",
+    "who": "Qui",
+    "openFull": "Ouvrir l’intervention complète"
   }
 }

@@ -129,6 +129,22 @@ describe('my-work — the decision', () => {
   });
 });
 
+describe('my-work — a job opens as a sheet, like the shift card', () => {
+  const card = code('components/home/my-work-card.tsx');
+  const sheet = code('components/home/job-sheet.tsx');
+  it('rows, the title and the ⋯ open the ONE job sheet — not a navigation', () => {
+    expect(card).toMatch(/<JobSheet/);
+    expect(card).toMatch(/onPress=\{\(\) => setSheetFor\(task\)\}/);
+    expect(card).toMatch(/onMore=\{\(\) => setSheetFor\(active\)\}/);
+    expect(card).not.toMatch(/<BlurSheet/);
+  });
+  it('the sheet is the shared BlurSheet + SheetPanel, and renders the decision it is handed', () => {
+    expect(sheet).toMatch(/<BlurSheet/);
+    expect(sheet).toMatch(/<SheetPanel/);
+    expect(sheet).not.toMatch(/decisionFor\(/);
+  });
+});
+
 describe('my-work — no new endpoint, one outbox', () => {
   const card = code('components/home/my-work-card.tsx');
   it('reads jobs through useHomeTasks and never tasksApi.list', () => {
