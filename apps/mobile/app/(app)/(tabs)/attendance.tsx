@@ -13,7 +13,6 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
-  Modal,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -43,6 +42,7 @@ import { useToast } from '../../../src/island/island-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { LoadingState, ErrorState, LocationPickerSheet, ClockOutSheet, ScreenContainer, PressableScale, BlurSheet } from '../../../src/components';
 import { WorkLogSheet } from '../../../src/components/worklog-sheet';
+import { SheetPanel } from '../../../src/components/sheet-panel';
 import { ReportIssueSheet, ShiftIssueThreadSheet, ShiftIssueListSheet } from '../../../src/components/shift-issue-sheet';
 import { OutOfRingSheet } from '../../../src/components/out-of-ring-sheet';
 import { AlwaysLocationNudge } from '../../../src/components/always-location-nudge';
@@ -1442,28 +1442,8 @@ export default function AttendanceScreen() {
       />
 
       {/* Forgot-to-clock-out Bottom Sheet — pick actual leave time */}
-      <Modal
-        visible={showForgotSheet}
-        transparent
-        animationType="none"
-        onRequestClose={() => setShowForgotSheet(false)}
-        statusBarTranslucent
-      >
-        <Pressable
-          style={[StyleSheet.absoluteFill, styles.forgotOverlay]}
-          onPress={() => setShowForgotSheet(false)}
-        >
-          <Pressable
-            style={[styles.forgotSheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + SPACING.lg }]}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <View style={[styles.modalHandle, { backgroundColor: colors.borderLight }]} />
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>{t('shiftReminder.forgotSheetTitle')}</Text>
-              <TouchableOpacity onPress={() => setShowForgotSheet(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name="close" size={24} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
+      <BlurSheet visible={showForgotSheet} onClose={() => setShowForgotSheet(false)}>
+          <SheetPanel title={t('shiftReminder.forgotSheetTitle')} onClose={() => setShowForgotSheet(false)}>
             <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
               {t('shiftReminder.forgotSheetSubtitle')}
             </Text>
@@ -1501,24 +1481,15 @@ export default function AttendanceScreen() {
                 <Text style={[styles.forgotOptionTime, { color: '#fff' }]}>{formatTime(new Date().toISOString(), (currentEntry?.timezone ?? currentEntry?.location?.timezone))}</Text>
               )}
             </TouchableOpacity>
-          </Pressable>
-        </Pressable>
-      </Modal>
+          </SheetPanel>
+      </BlurSheet>
 
       {/* Break Notes Bottom Sheet */}
       <BlurSheet visible={breakModalVisible} onClose={closeBreakModal}>
-          <View style={styles.modalSheet}>
-            <View style={[styles.modalHandle, { backgroundColor: colors.borderLight }]} />
-            <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
-              <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                  {isEndingBreak ? t('attendance.breaks.notesTitle') : t('attendance.breaks.startBreakTitle', { type: pendingBreakType?.toLowerCase() })}
-                </Text>
-                <TouchableOpacity onPress={closeBreakModal}>
-                  <Ionicons name="close" size={24} color={colors.textSecondary} />
-                </TouchableOpacity>
-              </View>
-
+          <SheetPanel
+            title={isEndingBreak ? t('attendance.breaks.notesTitle') : t('attendance.breaks.startBreakTitle', { type: pendingBreakType?.toLowerCase() })}
+            onClose={closeBreakModal}
+          >
               <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
                 {t('attendance.breaks.notesSubtitle')}
               </Text>
@@ -1569,11 +1540,7 @@ export default function AttendanceScreen() {
                   </Text>
                 </TouchableOpacity>
               </View>
-
-              {/* Safe area spacer */}
-              <View style={{ height: insets.bottom }} />
-            </View>
-          </View>
+          </SheetPanel>
       </BlurSheet>
     </View>
   );
@@ -1764,16 +1731,6 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   // Forgot clock-out sheet
-  forgotOverlay: {
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  forgotSheet: {
-    borderTopLeftRadius: RADIUS.xl,
-    borderTopRightRadius: RADIUS.xl,
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.sm,
-  },
   forgotOption: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2154,35 +2111,6 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-  },
-  modalSheet: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 20,
-  },
-  modalHandle: {
-    alignSelf: 'center',
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    marginBottom: SPACING.sm,
-  },
-  modalContent: {
-    borderTopLeftRadius: RADIUS.xl,
-    borderTopRightRadius: RADIUS.xl,
-    padding: SPACING.xl,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-  },
-  modalTitle: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: FONT_WEIGHT.bold,
   },
   modalSubtitle: {
     fontSize: FONT_SIZE.base,

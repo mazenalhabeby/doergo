@@ -1,4 +1,4 @@
-import { useRef, useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { rankClockInLocations } from '@hbcfield/shared/client';
 import {
@@ -7,12 +7,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Animated,
-  Dimensions,
-  Pressable,
-  Modal,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
+import { BlurSheet } from './blur-sheet';
+import { SheetPanel } from './sheet-panel';
 import { Ionicons } from '@expo/vector-icons';
 import type { CompanyLocation } from '../lib/api';
 import { useTheme } from '../contexts/theme-context';
@@ -50,8 +47,6 @@ const formatDistance = (meters: number): string => {
   return `${(meters / 1000).toFixed(1)}km`;
 };
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -71,34 +66,6 @@ export function LocationPickerSheet({
   const { t } = useTranslation();
   // The shared order: inside an area, a shift today, primary, nearest — the same as the web.
   const ranked = useMemo(() => rankClockInLocations(locations, fix), [locations, fix]);
-  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-  const overlayAnim = useRef(new Animated.Value(0)).current;
-  const hasAnimatedIn = useRef(false);
-
-  // Trigger open animation when visible turns true
-  if (visible && !hasAnimatedIn.current) {
-    hasAnimatedIn.current = true;
-    slideAnim.setValue(SCREEN_HEIGHT);
-    overlayAnim.setValue(0);
-    Animated.parallel([
-      Animated.timing(overlayAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
-      Animated.spring(slideAnim, { toValue: 0, damping: 25, stiffness: 200, useNativeDriver: true }),
-    ]).start();
-  }
-
-  // Reset flag when hidden
-  if (!visible && hasAnimatedIn.current) {
-    hasAnimatedIn.current = false;
-  }
-
-  const handleClose = useCallback(() => {
-    Animated.parallel([
-      Animated.timing(overlayAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: SCREEN_HEIGHT, duration: 250, useNativeDriver: true }),
-    ]).start(() => onClose());
-  }, [slideAnim, overlayAnim, onClose]);
-
-  if (!visible) return null;
 
   const canConfirm = !!selectedLocation;
   const label =
@@ -106,28 +73,14 @@ export function LocationPickerSheet({
     (selectedLocation ? t('attendance.picker.clockInAt', { name: selectedLocation.name }) : t('attendance.clockIn'));
 
   return (
-    <Modal visible transparent statusBarTranslucent animationType="none" onRequestClose={handleClose}>
-    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: overlayAnim }]}>
-        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
-        </BlurView>
-      </Animated.View>
-      <Animated.View
-        style={[styles.sheet, { transform: [{ translateY: slideAnim }] }]}
-      >
-        <View style={[styles.handle, { backgroundColor: colors.borderLight }]} />
-        <View style={[styles.content, { backgroundColor: colors.card }]}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.textPrimary }]}>
-              {t('attendance.picker.title')}
-            </Text>
-            <TouchableOpacity onPress={handleClose}>
-              <Ionicons name="close" size={24} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-
+    /*
+      ⚠️ THROUGH THE ONE SLOT, ON THE ONE PANEL. This was a raw <Modal> that
+      vanished the instant `visible` went false — outside BlurSheet's queue, so
+      the next sheet on the card could be presented while UIKit was still
+      dismissing it, and the tap died silently.
+    */
+    <BlurSheet visible={visible} onClose={onClose}>
+      <SheetPanel title={t('attendance.picker.title')} onClose={onClose}>
           <Text style={[styles.subtitle, { color: colors.textMuted }]}>
             {t('attendance.picker.subtitle')}
           </Text>
@@ -251,10 +204,8 @@ export function LocationPickerSheet({
           >
             <Text style={styles.confirmButtonText}>{label}</Text>
           </TouchableOpacity>
-        </View>
-      </Animated.View>
-    </View>
-    </Modal>
+      </SheetPanel>
+    </BlurSheet>
   );
 }
 
@@ -263,35 +214,6 @@ export function LocationPickerSheet({
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
-  sheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    maxHeight: '80%',
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    marginBottom: SPACING.sm,
-  },
-  content: {
-    borderTopLeftRadius: RADIUS.xl,
-    borderTopRightRadius: RADIUS.xl,
-    padding: SPACING.xl,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-  },
-  title: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: FONT_WEIGHT.bold,
-  },
   subtitle: {
     fontSize: FONT_SIZE.base,
     marginBottom: SPACING.lg,

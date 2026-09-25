@@ -1,12 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTimeFormat } from '../hooks/useTimeFormat';
 import { useTheme } from '../contexts/theme-context';
 import { BlurSheet } from './blur-sheet';
+import { SheetPanel } from './sheet-panel';
 import { AText, Eyebrow, LiveDot } from './amazen';
-import { shadowGlass } from './amazen/surfaces';
 import { heroParts } from './home/shift-state';
 import { awayLabel, readClockOut, type ClockOutShift } from './home/clock-out-state';
 
@@ -59,9 +58,8 @@ export interface ClockOutSheetProps {
 const EARLY_REASONS = ['finished', 'sentHome', 'unwell', 'other'] as const;
 
 export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, shift }: ClockOutSheetProps) {
-  const { amazen, isDark } = useTheme();
+  const { amazen } = useTheme();
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
   const c = amazen.color;
   /*
     ⚠️ THE SAME CLOCK AS THE CARD THIS CAME OUT OF. The receipt is what the
@@ -119,46 +117,16 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
   return (
     <BlurSheet visible={visible} onClose={close}>
       {/*
-        ⚠️ GLASS, NOT A FLAT PANEL. It came out of a glass card and it is still
-        the same object — the shift. A dark rectangle makes it a DIALOG ABOUT
-        the shift instead, which is how a receipt turns into a question.
+        ⚠️ THE SAME PANEL AS EVERY OTHER SHEET. It used to roll its own glass
+        surface, and glass is see-through: the card's buttons showed through
+        the receipt (06.png) while the Report sheet beside it was solid. One
+        surface, one component.
       */}
-      <View
-        style={[
-          {
-            backgroundColor: c.glass,
-            borderTopLeftRadius: amazen.radius.sheet,
-            borderTopRightRadius: amazen.radius.sheet,
-            borderWidth: StyleSheet.hairlineWidth * 2,
-            /* No bottom edge — the sheet runs off the bottom of the screen. */
-            borderBottomWidth: 0,
-            borderColor: c.lineGlass,
-            paddingHorizontal: amazen.space(5),
-            paddingTop: amazen.space(3),
-            /*
-              ⚠️ THE SYSTEM BAR IS NOT A CONSTANT. `Not yet` is the last thing
-              on the sheet and it sits directly over the home indicator on a
-              gesture-navigation phone — 34pt on a notched iPhone, 24 on
-              gesture Android, 48 on three buttons, 0 on an SE. This sheet
-              rolls its own glass surface (§11) rather than using `SheetPanel`,
-              so it owes the inset itself.
-            */
-            paddingBottom: insets.bottom + amazen.space(5),
-          },
-          shadowGlass(isDark),
-        ]}
-      >
-        <View
-          style={{
-            alignSelf: 'center', width: 36, height: 4, borderRadius: 2,
-            backgroundColor: c.inkOnGradient, opacity: 0.22, marginBottom: amazen.space(4),
-          }}
-        />
-
+      <SheetPanel onClose={close}>
         {/* The eyebrow says WHERE. You have not left the card; it has opened. */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1) }}>
           <LiveDot color={late || early ? c.warn : c.accent} live={false} />
-          <Eyebrow tone={late || early ? 'warn' : 'onGlassHome'}>{eyebrow}</Eyebrow>
+          <Eyebrow tone={late || early ? 'warn' : 'muted'}>{eyebrow}</Eyebrow>
         </View>
 
         {/*
@@ -168,7 +136,7 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
         */}
         <View style={{ marginTop: amazen.space(3) }}>
           <Hero minutes={shift.countedMinutes} warn={late || early} />
-          <AText variant="caption" tone="onGlassHome" style={{ marginTop: 2 }}>
+          <AText variant="caption" tone="muted" style={{ marginTop: 2 }}>
             {t('shiftEnd.counted', { defaultValue: 'counted' })}
           </AText>
         </View>
@@ -325,7 +293,7 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
             {t('shiftEnd.notYet', { defaultValue: 'Not yet' })}
           </AText>
         </Pressable>
-      </View>
+      </SheetPanel>
     </BlurSheet>
   );
 }
@@ -345,7 +313,7 @@ function Hero({ minutes, warn }: { minutes: number; warn: boolean }) {
           >
             {p.value}
           </AText>
-          <AText variant="decimal" tone={warn ? 'warn' : 'onGlassHome'} numeric>{p.unit}</AText>
+          <AText variant="decimal" tone={warn ? 'warn' : 'muted'} numeric>{p.unit}</AText>
         </React.Fragment>
       ))}
     </View>
@@ -376,12 +344,12 @@ function Bar({ view, shift, clockOf }: { view: ReturnType<typeof readClockOut>; 
       </View>
 
       <View style={{ flexDirection: 'row', marginTop: amazen.space(1.5) }}>
-        <AText variant="caption" tone="onGlassHome" numeric style={{ fontSize: 11.5 }}>
+        <AText variant="caption" tone="muted" numeric style={{ fontSize: 11.5 }}>
           {clockOf(shift.clockInAt)}
         </AText>
         <View style={{ flex: 1 }} />
         <View style={{ alignItems: 'flex-end' }}>
-          <AText variant="caption" tone="onGlassHome" numeric style={{ fontSize: 11.5 }}>
+          <AText variant="caption" tone="muted" numeric style={{ fontSize: 11.5 }}>
             {clockOf(shift.clockOutAt)}
           </AText>
           {view.overBy > 0 ? (
@@ -389,7 +357,7 @@ function Bar({ view, shift, clockOf }: { view: ReturnType<typeof readClockOut>; 
               {t('shiftEnd.over', { duration: dur(view.overBy), defaultValue: `${dur(view.overBy)} over` })}
             </AText>
           ) : view.shortBy > 0 ? (
-            <AText variant="caption" tone="onGlassHome" numeric style={{ fontSize: 11 }}>
+            <AText variant="caption" tone="muted" numeric style={{ fontSize: 11 }}>
               {dur(view.shortBy)}
             </AText>
           ) : null}
@@ -397,7 +365,7 @@ function Bar({ view, shift, clockOf }: { view: ReturnType<typeof readClockOut>; 
       </View>
 
       {rest > 0 ? (
-        <AText variant="caption" tone="onGlassHome" style={{ textAlign: 'center', fontSize: 11, marginTop: 2 }}>
+        <AText variant="caption" tone="muted" style={{ textAlign: 'center', fontSize: 11, marginTop: 2 }}>
           {t('shiftEnd.restNotch', { duration: dur(rest), defaultValue: `${dur(rest)} rest` })}
         </AText>
       ) : null}

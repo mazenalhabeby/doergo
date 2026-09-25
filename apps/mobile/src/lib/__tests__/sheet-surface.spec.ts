@@ -36,14 +36,14 @@ function sheetFiles(): string[] {
  * from clearing the system bar — the assertion below still holds them to it.
  * Nothing new belongs on this list; convert it instead.
  */
-const HAND_ROLLED: Record<string, string> = {
-  'src/components/clock-out-sheet.tsx':
-    'shift-clock.md §11 asks for GLASS with a 1px glass_line border and the glass-card shadow — '
-    + 'it came out of a glass card and is still the same object, the shift. SheetPanel is an opaque '
-    + 'card surface, so using it would make this a dialog ABOUT the shift instead. It reads insets.bottom itself.',
-  'app/(app)/(tabs)/attendance.tsx':
-    'the break and forgot-to-clock-out sheets predate SheetPanel; both apply insets.bottom themselves',
-};
+/*
+  ⚠️ EMPTY, AND IT STAYS EMPTY. The clock-out sheet was exempt for "glass" and
+  the glass was see-through: the card's buttons showed through the receipt
+  (06.png) while the Report sheet beside it was solid. The attendance tab's two
+  sheets were hand-rolled, one of them a raw <Modal> outside the one-slot
+  queue. All three use SheetPanel now.
+*/
+const HAND_ROLLED: Record<string, string> = {};
 
 describe('bottom sheets use the shared surface', () => {
   const files = sheetFiles();
