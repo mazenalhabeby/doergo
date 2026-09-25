@@ -50,9 +50,26 @@ let presenting = false;
 const waiting: Array<() => void> = [];
 /** UIKit finishes dismissing a run-loop after the view leaves the tree. */
 const SETTLE_MS = 60;
+/**
+ * ⚠️ THE WATCHDOG. A holder that never gives the slot back froze EVERY sheet
+ * in the app — Clock out, Break, Report, My issues: the tap fired and nothing
+ * ever opened. No sheet's exit takes anywhere near this long, so a request
+ * still waiting after it is waiting on a holder that is stuck, and it goes.
+ */
+const STUCK_MS = 1200;
 
 function takeSlot(run: () => void) {
-  if (presenting) { waiting.push(run); return; }
+  if (presenting) {
+    waiting.push(run);
+    setTimeout(() => {
+      const i = waiting.indexOf(run);
+      if (i < 0) return;
+      waiting.splice(i, 1);
+      // The slot stays taken — it is being handed to this one.
+      run();
+    }, STUCK_MS);
+    return;
+  }
   presenting = true;
   run();
 }
@@ -104,7 +121,13 @@ export function BlurSheet({
       Animated.parallel([
         Animated.timing(overlay, { toValue: 0, duration: 200, useNativeDriver: true }),
         Animated.timing(slide, { toValue: height, duration: 250, useNativeDriver: true }),
-      ]).start(({ finished }) => { if (finished) setMounted(false); });
+      /*
+        ⚠️ UNMOUNT WHETHER OR NOT THE ANIMATION "FINISHED". An interrupted exit
+        reports `finished: false`; guarding on it left the Modal mounted and
+        invisible, holding the one slot for good — every sheet after it was a
+        dead tap. `visible` is false: it goes, animated or not.
+      */
+      ]).start(() => setMounted(false));
     }
     return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps

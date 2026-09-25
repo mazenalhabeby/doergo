@@ -648,6 +648,15 @@ describe('§9 — the twelve rules', () => {
     expect(sheet).toMatch(/const waiting: Array<\(\) => void> = \[\]/);
     expect(sheet).toMatch(/function takeSlot/);
     expect(sheet).toMatch(/function releaseSlot/);
+    /*
+      ⚠️ A STUCK HOLDER FROZE EVERY SHEET. The exit unmounted only when its
+      animation reported `finished`; an interrupted one left an invisible Modal
+      holding the slot, and Clock out, Break, Report, My issues all became dead
+      taps. It unmounts regardless now, and a waiter past STUCK_MS takes over.
+    */
+    expect(sheet).toMatch(/\.start\(\(\) => setMounted\(false\)\)/);
+    expect(sheet).not.toMatch(/if \(finished\) setMounted\(false\)/);
+    expect(sheet).toMatch(/const STUCK_MS = 1200/);
     // ⚠️ Released on UNMOUNT, never at the start of the exit animation.
     const release = sheet.slice(sheet.indexOf('if (mounted || !holds.current) return;'));
     expect(release.slice(0, 200)).toMatch(/setTimeout\(releaseSlot, SETTLE_MS\)/);
