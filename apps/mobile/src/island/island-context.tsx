@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { reserveFor, sealedBox, shapeFor } from './geometry';
 import { useCutout } from './cutout';
 import { IslandView, type IslandMessage } from './island-view';
-import { ISLAND, SCREEN_READER_MIN_DWELL, dwellFor, type Tone } from './tokens';
+import { SCREEN_READER_MIN_DWELL, dwellFor, type Tone } from './tokens';
 
 /**
  * THE ISLAND, MOUNTED ONCE — and the toast API it replaces, unchanged.
@@ -40,6 +40,16 @@ interface IslandContextValue extends ToastContextValue {
   clearLive: () => void;
   /** Anything richer than the four words above. */
   say: (input: { tone: Tone; title: string; body?: string; value?: string; action?: { label: string; onPress: () => void } }) => void;
+  /**
+   * ⚠️ A VISOR IS BLACK, AND IN LIGHT MODE THE STATUS BAR DRAWS DARK ICONS ON
+   * IT — §5.5. The clock and the battery vanish.
+   *
+   * ⚠️ AND THE ANSWER IS NOT A SECOND `<StatusBar>`. There is exactly one in
+   * the tree and the comment above it records the bug that came from having
+   * two: both write the same global on every render and which one lands is
+   * commit order. That one component reads this flag.
+   */
+  visorShowing: boolean;
 }
 
 const IslandContext = createContext<IslandContextValue | null>(null);
@@ -59,7 +69,22 @@ export function useIsland(): IslandContextValue {
 /** ⚠️ Capped at 3, oldest dropped — §10. A backlog nobody reads is noise. */
 const QUEUE_CAP = 3;
 
-export function IslandProvider({ children }: { children: React.ReactNode }) {
+export function IslandProvider({
+  children,
+  surface,
+}: {
+  children: React.ReactNode;
+  /**
+   * The app's own background, for the strip the live state vacates.
+   *
+   * ⚠️ NOT THE ISLAND'S BLACK, AND NOT A GUESS. §5.1's snippet pads a bare
+   * `<View>`, which leaves whatever is behind the root showing — on this app
+   * that is white. The strip is the app having moved down, so it is the app's
+   * surface; passing it in keeps the island's own colours out of the theme
+   * (§6) without the provider reaching for `useTheme()` itself.
+   */
+  surface?: string;
+}) {
   const insets = useSafeAreaInsets();
   const { hole, screenW } = useCutout(insets);
 
@@ -120,6 +145,12 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(t);
   }, [current, screenReader, shift]);
 
+  /*
+    ⚠️ ANY black box at the top edge, not only the live one: a transient
+    message wears the same visor and puts the same black under the clock.
+  */
+  const visorShowing = shapeFor(hole.kind) === 'visor' && !!current;
+
   const say = useCallback<IslandContextValue['say']>((input) => {
     push({ ...input, dwell: dwellFor(input.tone, !!input.action) });
   }, [push]);
@@ -139,6 +170,7 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
       /* ⚠️ `info` is the outbox voice in this app, so it is grey and mono. */
       info: legacy('queued'),
       say,
+      visorShowing: false,
       live: ({ label, value: figure }) => {
         const msg: IslandMessage = { id: nextId.current++, tone: 'live', title: label, value: figure, dwell: 0 };
         setLiveMsg(msg);
@@ -151,6 +183,8 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
       },
     };
   }, [push, say]);
+
+  const withFlag = useMemo<IslandContextValue>(() => ({ ...value, visorShowing }), [value, visorShowing]);
 
   /*
     ⚠️ THE LIVE STATE RESERVES ITS SPACE — §5.1. A docked island occupies
@@ -176,21 +210,10 @@ export function IslandProvider({ children }: { children: React.ReactNode }) {
   }, [target, reduceMotion, reserve]);
   const reserveStyle = useAnimatedStyle(() => ({ paddingTop: reserve.value }));
 
-  /*
-    ⚠️ AND THE STRIP IT VACATES IS BLACK. §5.1's snippet pads a bare `<View>`,
-    which leaves whatever is behind the root showing — on this app that is
-    white, so reserving the space traded a covered greeting for a white band
-    above the gradient.
-
-    Black is the answer that costs nothing and says the right thing: the
-    island is pretending to be the camera housing, so the strip it sits in
-    reads as more housing rather than as a gap the app fell out of. It is the
-    same decision as §6, applied to the one pixel §6 does not mention.
-  */
 
   return (
-    <IslandContext.Provider value={value}>
-      <Animated.View style={[{ flex: 1, backgroundColor: ISLAND.bg }, reserveStyle]}>{children}</Animated.View>
+    <IslandContext.Provider value={withFlag}>
+      <Animated.View style={[{ flex: 1 }, surface ? { backgroundColor: surface } : null, reserveStyle]}>{children}</Animated.View>
       <IslandView
         hole={hole}
         screenW={screenW}

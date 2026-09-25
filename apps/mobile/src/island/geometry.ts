@@ -39,13 +39,37 @@ export const MAX_BODY_LINES = 3;
  *
  * ⚠️ YOU CANNOT WRAP SOMETHING BOLTED TO THE TOP EDGE, and trying looks like a
  * bug. Docking is the honest answer and still reads as belonging to the
- * hardware. `rect` takes radius 22 so it reads as a deliberate card rather
- * than a pill floating next to nothing.
+ * hardware.
+ *
+ * ⚠️ AND `none` GETS THE VISOR — §5.5, NOT a card floating below the status
+ * bar. It is the MOST COMMON form, not the exception: every Android phone
+ * without the native module, every iPhone SE, every tablet, every
+ * under-display camera. If it looks wrong, the feature looks wrong.
+ *
+ * The visor does not float — it makes a notch. It is flush with the top edge,
+ * its upper band IS the status-bar strip and is black, and the content row
+ * sits in the lower band. The app grows its own cutout and the island lives in
+ * it: same object, same black, same ink, same ladder, born from the edge
+ * instead of around a lens.
  */
-export type Shape = 'wrap' | 'dock' | 'rect';
+export type Shape = 'wrap' | 'dock' | 'visor';
 
 export function shapeFor(kind: CutoutKind): Shape {
-  return kind === 'floating' ? 'wrap' : kind === 'edge' ? 'dock' : 'rect';
+  return kind === 'floating' ? 'wrap' : kind === 'edge' ? 'dock' : 'visor';
+}
+
+/** The content row under a visor's status-bar band. */
+export const VISOR_ROW = 34;
+/** ⚠️ The visor's bottom corners. The top ones are square — it is flush. */
+export const VISOR_RADIUS = 26;
+/**
+ * ⚠️ A VISOR MAY NOT REACH THE STATUS-BAR CONTENT — §5.5. About 90pt each side
+ * for the clock and the battery. On a 390pt phone that caps the visor at
+ * 210pt, about twenty characters, so the dropped form is common here too: a
+ * message that needs more DROPS rather than widening into the clock.
+ */
+export function visorCap(screenW: number): number {
+  return screenW - 180;
 }
 
 /**
@@ -64,7 +88,9 @@ export interface Box {
   y: number;
   w: number;
   h: number;
-  radius: number;
+  /** ⚠️ Square on a visor — it is flush with the edge, so it has no top. */
+  radiusTop: number;
+  radiusBottom: number;
 }
 
 export interface Layout {
@@ -81,6 +107,15 @@ export interface Layout {
   icon: 'left' | 'right' | 'none';
   /** ⚠️ Rung 3+ — the title is BELOW the lens, not beside it. */
   titleDrops: boolean;
+  /**
+   * Where the head row starts inside the box.
+   *
+   * ⚠️ NOT ZERO ON A VISOR. Its upper band is the status-bar strip and holds
+   * nothing — the content row is below it, or the message sits on the clock.
+   */
+  headTop: number;
+  /** The head row's own height, which is not the sealed box's on a visor. */
+  headHeight: number;
 }
 
 export interface Measured {
@@ -119,15 +154,27 @@ export function sealedBox(hole: Cutout, screenW: number, topInset = 0): Box {
       y: Math.max(hole.y - PAD, 6),
       w: hole.w + PAD * 2,
       h: Math.max(hole.h + 20, 34),
-      radius: 999,
+      radiusTop: 999,
+      radiusBottom: 999,
     };
   }
   if (shape === 'dock') {
     /* ⚠️ UNDER the cutout, never across it, and centred on the cutout itself. */
     const w = 0;
-    return { x: hole.x + hole.w / 2 - w / 2, y: hole.y + hole.h + 8, w, h: 36, radius: 999 };
+    return { x: hole.x + hole.w / 2 - w / 2, y: hole.y + hole.h + 8, w, h: 36, radiusTop: 999, radiusBottom: 999 };
   }
-  return { x: screenW / 2, y: topInset + 8, w: 0, h: 40, radius: 22 };
+  /*
+    ⚠️ THE VISOR IS FLUSH — `y: 0`, NO GAP, EVER. A gap makes it a card
+    hovering under the status bar, which is the thing it is not.
+  */
+  return {
+    x: screenW / 2,
+    y: 0,
+    w: 0,
+    h: topInset + VISOR_ROW,
+    radiusTop: 0,
+    radiusBottom: VISOR_RADIUS,
+  };
 }
 
 /**
@@ -179,6 +226,9 @@ export function readLayout(input: {
   const capW = Math.min(CAP, screenW - EDGE * 2);
   const natural = Math.min(naturalWidth(m, hole), capW);
 
+  const headH = shape === 'visor' ? VISOR_ROW : sealed.h;
+  const headTop = shape === 'visor' ? topInset : 0;
+
   const openBox = (w: number, rung: Rung, lines: number): Box => ({
     x: placeX(w, hole, screenW),
     y: sealed.y,
@@ -186,81 +236,82 @@ export function readLayout(input: {
     h: rung >= 3 ? droppedHeight(sealed.h, m, lines) : sealed.h,
     /*
       ⚠️ SHAPE FIRST, THEN RUNG — §5.3. Asking the rung first gave a dropped
-      `rect` a radius of 30, which makes it ROUNDER as it grows. `wrap` and
+      card a radius of 30, which makes it ROUNDER as it grows. `wrap` and
       `dock` are pills, so 999 → 30 is the pill becoming a panel, which is the
-      point. A `rect` was never a pill: it is already a card, and dropping
-      does not change what it is.
+      point.
+
+      ⚠️ AND A VISOR NEVER GROWS A TOP. It is flush with the edge; a rounded
+      top corner would lift it off the bezel and turn it back into a card.
     */
-    radius: shape === 'rect' ? 22 : rung >= 3 ? 30 : 999,
+    radiusTop: shape === 'visor' ? 0 : rung >= 3 ? 30 : 999,
+    radiusBottom: shape === 'visor' ? VISOR_RADIUS : rung >= 3 ? 30 : 999,
+  });
+
+  const shell = (rung: Rung, w: number, left: number, right: number, icon: Layout['icon'], drops: boolean): Layout => ({
+    rung, shape, sealed,
+    open: openBox(w, rung, drops ? titleLines(m, w) : 0),
+    left, right, icon, titleDrops: drops, headTop, headHeight: headH,
   });
 
   /*
-    A dock or a rect has no lens in its row, so the ladder is only ever about
-    whether the sentence fits the cap.
+    A dock or a visor has no lens in its row, so the ladder is only ever about
+    whether the sentence fits — and a visor is capped short of the clock and
+    the battery, which is why the dropped form is common there too.
   */
   if (hole.kind !== 'floating') {
-    const room = capW - SIDE * 2 - ICON - ICON_GAP - m.value - 24;
+    const widest = shape === 'visor' ? Math.min(capW, visorCap(screenW)) : capW;
+    const room = widest - SIDE * 2 - ICON - ICON_GAP - m.value - 24;
     if (m.title <= room) {
-      const rung: Rung = natural <= room + SIDE * 2 + ICON + ICON_GAP + m.value + 24 ? 1 : 2;
-      const w = rung === 1 ? natural : capW;
-      return { rung, shape, sealed, open: openBox(w, rung, 0), left: 0, right: 0, icon: 'left', titleDrops: false };
+      const w = Math.min(natural, widest);
+      const rung: Rung = w < widest ? 1 : 2;
+      return shell(rung, w, 0, 0, 'left', false);
     }
-    const rung: Rung = m.bodyLines > 0 ? 4 : 3;
-    return { rung, shape, sealed, open: openBox(capW, rung, titleLines(m, capW)), left: 0, right: 0, icon: 'left', titleDrops: true };
+    /* ⚠️ It DROPS rather than widening into the status bar. */
+    return shell(m.bodyLines > 0 ? 4 : 3, widest, 0, 0, 'left', true);
   }
 
   const fitsIn = (w: number) => ICON + ICON_GAP + m.title <= slots(w, hole, screenW).left;
 
   /* ① at natural width. */
   if (fitsIn(natural)) {
-    const s = slots(natural, hole, screenW);
-    return { rung: 1, shape, sealed, open: openBox(natural, 1, 0), left: s.left, right: s.right, icon: 'left', titleDrops: false };
+    const s2 = slots(natural, hole, screenW);
+    return shell(1, natural, s2.left, s2.right, 'left', false);
   }
   /* ② once grown to the cap. */
   if (fitsIn(capW)) {
-    const s = slots(capW, hole, screenW);
-    return { rung: 2, shape, sealed, open: openBox(capW, 2, 0), left: s.left, right: s.right, icon: 'left', titleDrops: false };
+    const s2 = slots(capW, hole, screenW);
+    return shell(2, capW, s2.left, s2.right, 'left', false);
   }
 
-  const s = slots(capW, hole, screenW);
+  const s3 = slots(capW, hole, screenW);
   /*
     ⑤ A HARD-LEFT CAMERA. A hole at x=22 leaves a left slot of about −5pt —
     not even the icon fits, so it moves to the right slot and everything drops.
   */
-  if (ICON > s.left) {
-    return {
-      rung: 5, shape, sealed,
-      open: openBox(capW, 5, titleLines(m, capW)),
-      left: s.left, right: s.right,
-      icon: s.right >= ICON ? 'right' : 'none',
-      titleDrops: true,
-    };
+  if (ICON > s3.left) {
+    return shell(5, capW, s3.left, s3.right, s3.right >= ICON ? 'right' : 'none', true);
   }
   /* ③, or ④ when there is a body under it. */
-  const rung: Rung = m.bodyLines > 0 ? 4 : 3;
-  return { rung, shape, sealed, open: openBox(capW, rung, titleLines(m, capW)), left: s.left, right: s.right, icon: 'left', titleDrops: true };
+  return shell(m.bodyLines > 0 ? 4 : 3, capW, s3.left, s3.right, 'left', true);
 }
 
 /**
- * ⚠️ WHAT A DOCKED ISLAND LANDS ON — §5.1, and it only bites on `dock` and
- * `rect`.
+ * ⚠️ WHAT A DOCKED OR VISORED ISLAND LANDS ON — §5.1 and §5.5, and it does not
+ * apply to `wrap` at all.
  *
- * On an iPhone 13 the notch is `y: 0 → 30`, so the island docks at `y: 38`,
- * height 36, occupying 38 → 74. The safe-area top inset is 47, so it overlaps
- * the first 27pt of the app's own content.
+ * On an iPhone 13 the island docks at `y: 38` height 36 while the safe area
+ * starts at 47, so it sits on the first 27pt of the app's own content. A
+ * visor's whole lower band is app content by definition.
  *
  * For a message that leaves after four seconds that is fine — it is a
  * notification and it is allowed to be on top. ⚠️ FOR THE PERSISTENT LIVE
- * SHIFT IT IS NOT. A pill that sits on the header forever is the exact fault
- * this design was built to fix in the old toast, and it is what the first cut
- * shipped: the ring covered `Friday, September 25` on the home screen, all
- * day.
+ * SHIFT IT IS NOT: a pill that sits on the header forever is the exact fault
+ * this design replaced, and the first cut shipped it, with the ring parked on
+ * `Friday, September 25` all day.
  *
- * So on `dock` and `rect` the live state RESERVES the space instead of
- * floating over it. ⚠️ On `wrap` it never needs to, because it is inside the
- * cutout area the app already avoids — and ⚠️ a transient message never
- * reserves anything, or the whole app would nudge down for four seconds every
- * time something happened.
+ * ⚠️ TRANSIENT MESSAGES FLOAT; ONLY THE LIVE STATE RESERVES. Nudging the whole
+ * app down and back for four seconds every time something happens is worse
+ * than the overlap it would fix.
  */
 export function reserveFor(box: Box, shape: Shape, topInset: number): number {
   if (shape === 'wrap') return 0;

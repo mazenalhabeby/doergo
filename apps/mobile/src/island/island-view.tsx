@@ -80,7 +80,8 @@ export function IslandView({
 
   const w = useSharedValue(sealed.w);
   const h = useSharedValue(sealed.h);
-  const r = useSharedValue(sealed.radius);
+  const rTop = useSharedValue(sealed.radiusTop);
+  const rBot = useSharedValue(sealed.radiusBottom);
   const x = useSharedValue(sealed.x);
   const head = useSharedValue(0);
   const body = useSharedValue(0);
@@ -104,11 +105,12 @@ export function IslandView({
     const to = (v: number) => (reduceMotion ? withTiming(v, { duration: REDUCED }) : withTiming(v, { duration: OUT, easing: Easing.out(Easing.cubic) }));
     w.value = withDelay(80, to(sealed.w));
     h.value = withDelay(80, to(sealed.h));
-    r.value = withDelay(80, to(sealed.radius));
+    rTop.value = withDelay(80, to(sealed.radiusTop));
+    rBot.value = withDelay(80, to(sealed.radiusBottom));
     x.value = withDelay(80, to(sealed.x));
     const t = setTimeout(() => setShown(null), OUT + 140);
     return () => clearTimeout(t);
-  }, [message, shown, reduceMotion, sealed.w, sealed.h, sealed.radius, sealed.x, w, h, r, x, head, body]);
+  }, [message, shown, reduceMotion, sealed.w, sealed.h, sealed.radiusTop, sealed.radiusBottom, sealed.x, w, h, rTop, rBot, x, head, body]);
 
   /* Measured: decide the rung, then move. */
   const commit = (msg: IslandMessage) => {
@@ -131,7 +133,8 @@ export function IslandView({
       const t = { duration: REDUCED, reduceMotion: ReduceMotion.Never } as const;
       w.value = withTiming(layout.open.w, t);
       h.value = withTiming(layout.open.h, t);
-      r.value = withTiming(layout.open.radius, t);
+      rTop.value = withTiming(layout.open.radiusTop, t);
+      rBot.value = withTiming(layout.open.radiusBottom, t);
       x.value = withTiming(layout.open.x, t);
       head.value = withDelay(60, withTiming(1, t));
       body.value = withDelay(60, withTiming(1, t));
@@ -144,7 +147,8 @@ export function IslandView({
       */
       w.value = withSpring(layout.open.w, SPRING);
       x.value = withSpring(layout.open.x, SPRING);
-      r.value = withSpring(layout.open.radius, SPRING);
+      rTop.value = withSpring(layout.open.radiusTop, SPRING);
+      rBot.value = withSpring(layout.open.radiusBottom, SPRING);
       /* ⚠️ 40ms late, so it reads as widen THEN drop. */
       h.value = withDelay(40, withSpring(layout.open.h, SPRING));
       head.value = withDelay(150, withTiming(1, { duration: 220 }));
@@ -161,7 +165,11 @@ export function IslandView({
   const boxStyle = useAnimatedStyle(() => ({
     width: w.value,
     height: h.value,
-    borderRadius: r.value,
+    /* ⚠️ Four corners, because a visor is square at the top — §5.5. */
+    borderTopLeftRadius: rTop.value,
+    borderTopRightRadius: rTop.value,
+    borderBottomLeftRadius: rBot.value,
+    borderBottomRightRadius: rBot.value,
     transform: [{ translateX: x.value }],
   }));
   const headStyle = useAnimatedStyle(() => ({ opacity: head.value, transform: [{ translateY: (1 - head.value) * 6 }] }));
@@ -216,7 +224,12 @@ export function IslandView({
               style={StyleSheet.absoluteFill}
             >
               {/* The head row: what fits beside the lens, and nothing more. */}
-              <Animated.View style={[styles.headRow, { height: layout.sealed.h }, headStyle]}>
+              {/*
+                ⚠️ THE CONTENT ROW IS IN THE LOWER BAND ON A VISOR. Its upper
+                band IS the status-bar strip — putting the message there would
+                put it on the clock.
+              */}
+              <Animated.View style={[styles.headRow, { marginTop: layout.headTop, height: layout.headHeight }, headStyle]}>
                 {layout.icon === 'left' ? <Glyph tone={msg.tone} fg={look.fg} /> : <View style={{ width: 0 }} />}
                 {!layout.titleDrops ? (
                   <Text numberOfLines={1} style={[styles.title, { color: ISLAND.ink, marginLeft: ICON_GAP }]}>

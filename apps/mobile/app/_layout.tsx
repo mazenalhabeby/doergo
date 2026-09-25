@@ -47,6 +47,7 @@ import { AnimatedSplash } from '../src/components';
 import { ErrorBoundary } from '../src/components/error-boundary';
 import { LocationConsentModal } from '../src/components/LocationConsentModal';
 import { applyOrientationPolicy } from '../src/lib/orientation';
+import { IslandStatusBar } from '../src/island/island-status-bar';
 
 // Keep the native splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -181,7 +182,7 @@ function RootLayoutNav() {
       it is pretending to be the camera housing, and the housing is black on a
       white phone too. See `island/tokens.ts`.
     */
-    <IslandProvider>
+    <IslandProvider surface={isDark ? '#09090b' : '#ffffff'}>
       {/*
         ⚠️ THE APP'S THEME, NOT THE PHONE'S — AND ONLY ONE OF THESE IN THE TREE.
 
@@ -205,8 +206,12 @@ function RootLayoutNav() {
         One component, one source of truth. Screens with a fixed dark hero
         (login, onboarding) still override it locally; they mount deeper and
         are unmounted again when they close.
+
+        (And it has one more thing to consider now — a black visor at the top
+        edge makes dark icons vanish in light mode. §5.5 of the island spec;
+        the flag comes from the provider, still through this one component.)
       */}
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <IslandStatusBar isDark={isDark} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
