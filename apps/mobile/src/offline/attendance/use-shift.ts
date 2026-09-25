@@ -5,12 +5,21 @@ import type { ActionOutcome } from '../actions/outcome';
 import type { RecordsStore } from '../db/records-store';
 import { useAuth } from '../../contexts/auth-context';
 import { useOffline, useSyncStatus } from '../offline-context';
-import { remember, rememberedNow, rememberedOnDisk } from './last-shift';
+import { keep, keptNow, keptOnDisk } from '../../home/remember/store';
 import { isUnreachable } from '../actions/unreachable';
 import { overlayShift, type ShiftView } from './shift-overlay';
 import { clockInFromPhone, clockOutFromPhone, endRestFromPhone, requestExtraTimeFromPhone, resolveClockOutFromPhone, startRestFromPhone } from './shift-actions';
 
 const SCOPE = 'attendance';
+/** ⚠️ One question per name — see `home/remember/store.ts`. */
+const KEPT = 'shift';
+
+/** What is remembered between runs — see `home/remember/store.ts`. */
+interface Kept {
+  status: AttendanceStatus | null;
+  breaks: BreakStatus | null;
+  serverAt: number;
+}
 
 interface Loaded {
   status: AttendanceStatus | null;
@@ -43,7 +52,7 @@ export async function loadShift(records: RecordsStore | null, userId?: string | 
       offline runtime did not start, which is most devices — see
       `last-shift.ts`.
     */
-    remember(userId, { status, breaks, serverAt });
+    keep(KEPT, userId, { status, breaks, serverAt });
     return { status, breaks, serverAt, source: 'server' };
   } catch (err) {
     if (records && isUnreachable(err)) {
@@ -77,7 +86,7 @@ export function useShift(): ShiftView & { source: Loaded['source']; refresh: () 
     first frame is already on screen.
   */
   const [loaded, setLoaded] = useState<Loaded>(() => {
-    const known = rememberedNow(userId);
+    const known = keptNow<Kept>(KEPT, userId);
     return known
       ? { status: known.status, breaks: known.breaks, serverAt: known.serverAt, source: 'phone' }
       : { status: null, breaks: null, serverAt: 0, source: 'pending' };
@@ -102,7 +111,7 @@ export function useShift(): ShiftView & { source: Loaded['source']; refresh: () 
   useEffect(() => {
     if (!userId) return;
     let alive = true;
-    void rememberedOnDisk(userId).then((known) => {
+    void keptOnDisk<Kept>(KEPT, userId).then((known) => {
       if (!alive || !known) return;
       setLoaded((prev) =>
         prev.source === 'pending'

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { forgetShift } from '../offline/attendance/last-shift';
+import { forgetEverythingKept } from '../home/remember/store';
 import { biometricCredential } from '../lib/biometrics';
 import { getAccessPlatforms } from '@hbcfield/shared/client';
 import {
@@ -174,12 +174,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       purgePushTokenRegistration().catch(() => undefined),
     ]);
     /*
-      ⚠️ THE NEXT PERSON ON THIS PHONE IS NOT ON THIS CLOCK. The shift card
-      paints what it last knew before the server answers, so a remembered
-      shift left behind would greet a colleague signing in on the same device
-      with somebody else's running hero.
+      ⚠️ THE NEXT PERSON ON THIS PHONE IS NOT ON THIS CLOCK — and does not hold
+      these vans or run this route. Every widget paints what it last knew
+      before the server answers, so anything left behind would greet a
+      colleague signing in on the same device with somebody else's card. One
+      call, so a widget added later is covered without touching this file.
     */
-    forgetShift(user?.id);
+    forgetEverythingKept();
     await Promise.all([
       clearTokens(),
       SecureStore.deleteItemAsync(USER_KEY),

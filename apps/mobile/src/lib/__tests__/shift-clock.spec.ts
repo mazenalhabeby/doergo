@@ -187,54 +187,62 @@ describe('§1 — the eight states, and no ninth', () => {
 
   it('shows the state the member was actually in, not one guessed from nothing', () => {
     /*
-      ⚠️ THE FLASH WAS THE SAME BUG AS ⑧, ONE LINE UP. `useShift` started from
-      `status: null`, and the card decided a state from that absence.
+      ⚠️ THE FLASH WAS THE SAME BUG AS ⑧, ONE LINE UP: a state decided from an
+      ABSENCE, because `null` means both "nothing to report" and "we have not
+      been told yet".
 
-      ⚠️ AND THE FIRST FIX WAS DEAD CODE. It hydrated from the OFFLINE RECORDS
-      store — which is `null` on most devices (the runtime needs expo-sqlite,
-      netinfo and expo-crypto present AND the database to open), so every read
-      and write through it is a no-op. Verified on the simulator: the app's
-      container held no offline database at all, only Apple's own caches.
-      Nothing changed on screen, and it looked exactly like the bug.
+      ⚠️ AND THE FIRST FIX WAS DEAD CODE. It remembered through the OFFLINE
+      RECORDS store, which is `null` wherever the offline runtime did not
+      start — every read and write through it a silent no-op. The simulator's
+      app container held no offline database at all. Nothing changed, and it
+      looked exactly like the bug.
+
+      It lives in `home/remember/` now, because every widget has this shape.
     */
-    const store = code('offline/attendance/last-shift.ts');
-    const hook = code('offline/attendance/use-shift.ts');
+    const store = code('home/remember/store.ts');
+    const hook = code('home/remember/use-remembered.ts');
+    const shift = code('offline/attendance/use-shift.ts');
+    const totals = code('components/home/use-schedule-totals.ts');
 
-    // A store that exists on every build.
+    // A store that exists on every build — not the offline database.
     expect(store).toMatch(/@react-native-async-storage\/async-storage/);
-    expect(hook).toMatch(/from '\.\/last-shift'/);
+    // ⚠️ And the remembering itself never touches the offline database.
+    expect(hook).not.toMatch(/records/);
 
     /*
       ⚠️ MEMORY IS READ SYNCHRONOUSLY, because a promise resolves AFTER the
       first frame is on screen — a disk-only fix still flashes.
     */
-    expect(hook).toMatch(/useState<Loaded>\(\(\) => \{/);
-    expect(hook).toMatch(/rememberedNow\(userId\)/);
+    expect(hook).toMatch(/useState<\{ data: T \| null; from: Remembered<T>\['from'\] \}>\(\(\) => \{/);
+    expect(hook).toMatch(/keptNow<T>\(name, userId, rules\)/);
     // Disk is for the cold start, and only ever fills a gap.
-    expect(hook).toMatch(/rememberedOnDisk\(userId\)/);
-    expect(hook).toMatch(/prev\.source === 'pending'/);
+    expect(hook).toMatch(/keptOnDisk<T>\(name, userId, rules\)/);
+    expect(hook).toMatch(/prev\.from === 'pending' \?/);
+    // ⚠️ A failed ask never replaces an answer with an absence.
+    expect(hook).toMatch(/setState\(\(prev\) => \(prev\.from === 'pending' \? \{ data: null, from: 'none' \} : prev\)\)/);
 
-    // Every server answer is remembered, for every caller of loadShift.
-    expect(hook).toMatch(/remember\(userId, \{ status, breaks, serverAt \}\)/);
-
-    // ⚠️ Bounded: a week-old copy is a lie, not a head start.
+    // ⚠️ Bounded, and answers that mean "today" are dropped when the day turns.
     expect(store).toMatch(/GOOD_FOR_MS = 18 \* 60 \* 60 \* 1000/);
-    expect(store).toMatch(/function isFresh/);
-    // ⚠️ Keyed by user, and forgotten on sign-out.
-    expect(store).toMatch(/@hbcfield\/last-shift\/\$\{userId\}/);
-    expect(code('contexts/auth-context.tsx')).toMatch(/forgetShift\(user\?\.id\)/);
+    expect(store).toMatch(/rules\.sameDay && kept\.day !== localDay/);
+    // ⚠️ Keyed by user, and one call forgets the lot on sign-out.
+    expect(store).toMatch(/@hbcfield\/kept\/\$\{name\}\/\$\{userId\}/);
+    expect(code('contexts/auth-context.tsx')).toMatch(/forgetEverythingKept\(\)/);
+
+    // Both readers go through it — one implementation, not two.
+    expect(shift).toMatch(/keep\(KEPT, userId, \{ status, breaks, serverAt \}\)/);
+    expect(totals).toMatch(/useRemembered<ScheduleTotals>\(\{/);
 
     /*
-      ⚠️ AND A FAILED REFRESH MUST NOT REPLACE AN ANSWER WITH AN ABSENCE.
-      `refresh` runs on every focus, so one 500 blanked the card of somebody
-      who was on the clock a second earlier.
+      ⚠️ AND A FAILED REFRESH OF THE SHIFT MUST NOT REPLACE AN ANSWER WITH AN
+      ABSENCE. `refresh` runs on every focus, so one 500 blanked the card of
+      somebody who was on the clock a second earlier.
     */
-    const refresh = hook.slice(hook.indexOf('const refresh = useCallback'), hook.indexOf('/* The cold start'));
+    const refresh = shift.slice(shift.indexOf('const refresh = useCallback'), shift.indexOf('/* The cold start'));
     expect(refresh).toMatch(/next\.source === 'none' && prev\.source !== 'none' && prev\.source !== 'pending'/);
     expect(refresh).toMatch(/return prev;/);
 
     // Four sources: "not asked yet" is not "asked and nothing known".
-    expect(hook).toMatch(/source: 'server' \| 'phone' \| 'none' \| 'pending'/);
+    expect(shift).toMatch(/source: 'server' \| 'phone' \| 'none' \| 'pending'/);
   });
 
   it('① vs ⑥ waits for the answer that decides it', () => {
@@ -246,27 +254,22 @@ describe('§1 — the eight states, and no ninth', () => {
       start`, then redraw as ⑥ `Done for today` when a second round trip
       landed.
 
-      Measured on a simulator cold start, frame by frame: before this, the
-      first card frame read `Ready to start` and the next read `DONE FOR
-      TODAY`. After, three cold starts produced no `Ready to start` frame at
-      all.
+      Measured on a simulator cold start, frame by frame: before, the first
+      card frame read `Ready to start` and the next read `DONE FOR TODAY`.
+      After, three cold starts produced no `Ready to start` frame at all.
     */
-    const hook = code('components/home/use-schedule-totals.ts');
+    const totals = code('components/home/use-schedule-totals.ts');
+    const hook = code('home/remember/use-remembered.ts');
     const card = code('components/home/shift-clock-card.tsx');
 
     // "Nothing ended today" and "not told yet" are the same null — hence `ready`.
-    expect(hook).toMatch(/interface ScheduleTotalsView extends ScheduleTotals/);
-    expect(hook).toMatch(/ready: boolean/);
+    expect(totals).toMatch(/interface ScheduleTotalsView extends ScheduleTotals/);
+    expect(totals).toMatch(/ready: boolean/);
+    expect(totals).toMatch(/ready: kept\.ready/);
     // ⚠️ Not asking IS an answer: a FIXED member on the clock fetches no history.
-    expect(hook).toMatch(/ready: ready \|\| !enabled/);
-
-    // Remembered, so a returning member never waits at all.
-    expect(hook).toMatch(/rememberedTotalsNow\(userId\)/);
-    expect(hook).toMatch(/rememberedTotalsOnDisk\(userId\)/);
-    expect(hook).toMatch(/rememberTotals\(userId, \{/);
-    // ⚠️ Keyed by the LOCAL day — yesterday's copy would say "Done for today".
-    const store = code('offline/attendance/last-shift.ts');
-    expect(store).toMatch(/t\.day === localDay/);
+    expect(hook).toMatch(/ready: !enabled \|\| state\.from !== 'pending'/);
+    // ⚠️ And `lastToday` means TODAY.
+    expect(totals).toMatch(/sameDay: true/);
 
     // The card waits, and only where the choice is actually ① vs ⑥.
     expect(card).toMatch(/if \(shift\.source === 'pending'\) return null;/);
@@ -354,8 +357,14 @@ describe('§2 — three kinds of worker', () => {
       is fetched ONCE and kept, and the component re-reads a number.
     */
     const hook = code('components/home/use-schedule-totals.ts');
-    expect(hook).toMatch(/askedFor\.current === key/);
     expect(hook).toMatch(/getHistory\(/);
+    /*
+      The asking-once guard lives in `useRemembered` now — one implementation
+      for every widget, instead of each re-deriving it. The PERIOD is part of
+      the question, so a phone left open across midnight re-asks on its own.
+    */
+    expect(hook).toMatch(/revision: `\$\{iso\(startOfMonth\(now\)\)\}\|\$\{iso\(startOfWeek\(now\)\)\}/);
+    expect(code('home/remember/use-remembered.ts')).toMatch(/askedFor\.current === key/);
     // And never for somebody who will not see it.
     /*
       A FIXED member on the clock is measured against TODAY, which comes off
@@ -917,8 +926,11 @@ describe('the totals, and two silent ways they were always zero', () => {
       key and starts the fetch, the cleanup marks it stale, and the second run
       sees its own key already claimed and returns. The answer is then
       discarded for being stale and no second one is ever asked for.
+
+      It is `useRemembered`'s job now, so every widget gets it.
     */
-    expect(hook).toMatch(/if \(askedFor\.current === key\) askedFor\.current = '';/);
+    expect(code('home/remember/use-remembered.ts'))
+      .toMatch(/if \(!alive && askedFor\.current === key\) askedFor\.current = '';/);
   });
 
   it('leaves no console logging behind', () => {

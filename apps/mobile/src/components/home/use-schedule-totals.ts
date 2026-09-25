@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback } from 'react';
 import type { TimeEntry } from '@hbcfield/shared/client';
 import { attendanceApi } from '../../lib/api/attendance';
-import { rememberTotals, rememberedTotalsNow, rememberedTotalsOnDisk, type LastTotals } from '../../offline/attendance/last-shift';
+import { useRemembered } from '../../home/remember/use-remembered';
 import type { ScheduleKind } from './shift-state';
 
 /**
@@ -56,14 +56,12 @@ export interface ScheduleTotalsView extends ScheduleTotals {
 
 const EMPTY: ScheduleTotals = { monthMinutes: null, weekMinutes: null, lastToday: null, lastIn: null };
 
-/** Turn a remembered copy back into totals. Dates cross storage as strings. */
-function fromRemembered(t: LastTotals): ScheduleTotals {
-  return {
-    monthMinutes: t.monthMinutes,
-    weekMinutes: t.weekMinutes,
-    lastToday: (t.lastToday ?? null) as TimeEntry | null,
-    lastIn: t.lastIn ? new Date(t.lastIn) : null,
-  };
+/**
+ * ⚠️ STORAGE HOLDS NO DATES. `lastIn` goes out as a Date and comes back a
+ * string, and `① last in on Friday` would then call `.getTime()` on it.
+ */
+function revive(t: ScheduleTotals): ScheduleTotals {
+  return { ...t, lastIn: t.lastIn ? new Date(t.lastIn) : null };
 }
 
 /** Counted minutes on one entry. Never the word "paid" anywhere it is shown. */
@@ -97,159 +95,108 @@ function startOfMonth(now: Date): Date {
   return d;
 }
 
+/**
+ * The month's entries → the three figures. Pure, so the boundary rules below
+ * are testable without a network.
+ */
+export function readTotals(entries: readonly TimeEntry[], now: Date): ScheduleTotals {
+  const week = startOfWeek(now);
+  const today = iso(now);
+  let monthMinutes = 0;
+  let weekMinutes = 0;
+  let lastToday: TimeEntry | null = null;
+  let lastIn: Date | null = null;
+  for (const e of entries) {
+    if (!e.clockOutAt) continue; // a running shift is not a total yet
+    const m = countedOn(e);
+    monthMinutes += m;
+    const at = new Date(e.clockInAt);
+    if (!lastIn || at > lastIn) lastIn = at;
+    if (at >= week) weekMinutes += m;
+    if (iso(at) === today) {
+      // The LAST one that ended today, by clock-out.
+      if (!lastToday || new Date(e.clockOutAt) > new Date(lastToday.clockOutAt!)) lastToday = e;
+    }
+  }
+  return { monthMinutes, weekMinutes, lastToday, lastIn };
+}
+
 export function useScheduleTotals(input: {
   schedule: ScheduleKind;
   /** Re-ask when the shift changes — a clock-out adds today's figure. */
   revision: unknown;
   enabled: boolean;
-  /** Whose totals. Remembering them is per member — see `last-shift.ts`. */
+  /** Whose totals. Remembering them is per member — see `remember/store.ts`. */
   userId: string | null;
 }): ScheduleTotalsView {
   const { schedule, revision, enabled, userId } = input;
 
   /*
-    ⚠️ WHAT THIS SESSION ALREADY KNOWS, SYNCHRONOUSLY. A promise resolves after
-    the first frame is on screen, so a disk-only copy still flashes.
+    ⚠️ ONE REQUEST, NOT THREE. The month's entries contain this week's and
+    today's, so the week total and today's finished shift are read out of the
+    same answer rather than asked for again.
+
+    `limit` is deliberately generous and finite: a month cannot hold more
+    shifts than days times a handful, and an unbounded page is how a list
+    request becomes a download on somebody's data plan.
   */
-  const [totals, setTotals] = useState<ScheduleTotals>(() => {
-    const known = rememberedTotalsNow(userId);
-    return known ? fromRemembered(known) : EMPTY;
-  });
-  const [ready, setReady] = useState(() => !!rememberedTotalsNow(userId));
-
-  /* The cold start: what the LAST run knew, if it was today. Only fills a gap. */
-  useEffect(() => {
-    if (!userId) return;
-    let alive = true;
-    void rememberedTotalsOnDisk(userId).then((known) => {
-      if (!alive || !known) return;
-      setTotals((prev) => (prev === EMPTY ? fromRemembered(known) : prev));
-      setReady(true);
-    });
-    return () => { alive = false; };
-  }, [userId]);
-
-  /*
-    The period this answer belongs to. A phone left open across midnight — or
-    across a month boundary — must not keep reporting last month's total as
-    this one's, and re-fetching on a timer would be a request nobody asked for.
-    Recomputed on every effect run, which is cheap; the FETCH is what is
-    guarded.
-  */
-  const askedFor = useRef<string>('');
-
-  useEffect(() => {
-    if (!enabled) { setTotals(EMPTY); askedFor.current = ''; return; }
-    let alive = true;
+  const load = useCallback(async (): Promise<ScheduleTotals> => {
     const now = new Date();
-    const week = startOfWeek(now);
     const month = startOfMonth(now);
     const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    // One key for the whole answer: the period AND what the shift last did.
-    const key = `${iso(month)}|${iso(week)}|${String(revision)}|${schedule}`;
-    if (askedFor.current === key) return;
-    askedFor.current = key;
     /*
-      ⚠️ A CANCELLED RUN MUST FORGET IT ASKED, or the guard above eats the only
-      request. React 18 mounts an effect TWICE in development: the first run
-      claims the key and starts the fetch, the cleanup sets `alive = false`, and
-      the second run sees its own key already claimed and returns — so the first
-      answer is discarded for being stale and the second never happens. The
-      totals then stay null forever, which on this card means ⑥ never appears
-      and a NONE member's week reads as nothing.
-
-      It is not only a development problem: any re-render that changes the key
-      twice in a tick has the same shape.
+      ⚠️ `endDate` IS TOMORROW, NOT TODAY. A date-only range whose end is today
+      is read as midnight at the START of today by anything that compares
+      instants — so the shift that just ended falls outside it and ⑥ never
+      appears, on the one day it is about. Asking to tomorrow is correct
+      whether the server treats the bound as inclusive or not.
     */
-
+    const res = await attendanceApi.getHistory({ startDate: iso(month), endDate: iso(tomorrow), limit: 200, page: 1 });
     /*
-      ⚠️ ONE REQUEST, NOT THREE. The month's entries contain this week's and
-      today's, so the week total and today's finished shift are read out of the
-      same answer rather than asked for again.
+      ⚠️ `/attendance/history` RETURNS A BARE ARRAY, NOT A PAGINATED ENVELOPE —
+      whatever `attendanceApi.getHistory`'s return type says. The server
+      answers `{ success, data: [ … ] }`, `fetchWithAuth` unwraps the one
+      `data`, and what arrives here is the LIST. Reading `res.data` gave
+      `undefined` on every call, so every total was 0 and ⑥ could never appear
+      — with a 200 and no error anywhere to say so.
 
-      `limit` is deliberately generous and finite: a month cannot hold more
-      shifts than days times a handful, and an unbounded page is how a list
-      request becomes a download on somebody's data plan.
+      Both shapes are accepted rather than one, because the declared type says
+      envelope and the server says array, and this must not break on the day
+      one of them changes.
     */
-    void attendanceApi
-      /*
-        ⚠️ `endDate` IS TOMORROW, NOT TODAY. A date-only range whose end is
-        today is read as midnight at the start of today by anything that
-        compares instants — so the shift that just ended falls outside it and
-        ⑥ never appears, on the one day it is about. Asking to tomorrow is
-        correct whether the server treats the bound as inclusive or not.
-      */
-      .getHistory({ startDate: iso(month), endDate: iso(tomorrow), limit: 200, page: 1 })
-      .then((res) => {
-        if (!alive) return;
-        /*
-          ⚠️ `/attendance/history` RETURNS A BARE ARRAY, NOT A PAGINATED
-          ENVELOPE — whatever `attendanceApi.getHistory`'s return type says.
-          The server answers `{ success, data: [ … ] }`, `fetchWithAuth`
-          unwraps the one `data`, and what arrives here is the LIST. Reading
-          `res.data` gave `undefined` on every call, so every total was 0 and
-          ⑥ could never appear — with a 200 and no error anywhere to say so.
-
-          (It is also why §2's "ask for it as a count, total from the envelope"
-          cannot work: there is no envelope to take a total from.)
-
-          Both shapes are accepted rather than one, because the declared type
-          says envelope and the server says array, and this must not break on
-          the day one of them changes.
-        */
-        const entries: TimeEntry[] = Array.isArray(res)
-          ? (res as unknown as TimeEntry[])
-          : (res?.data ?? []);
-        const today = iso(now);
-        let monthMinutes = 0;
-        let weekMinutes = 0;
-        let lastToday: TimeEntry | null = null;
-        let lastIn: Date | null = null;
-        for (const e of entries) {
-          if (!e.clockOutAt) continue; // a running shift is not a total yet
-          const m = countedOn(e);
-          monthMinutes += m;
-          const at = new Date(e.clockInAt);
-          if (!lastIn || at > lastIn) lastIn = at;
-          if (at >= week) weekMinutes += m;
-          if (iso(at) === today) {
-            // The LAST one that ended today, by clock-out.
-            if (!lastToday || new Date(e.clockOutAt) > new Date(lastToday.clockOutAt!)) lastToday = e;
-          }
-        }
-        setTotals({ monthMinutes, weekMinutes, lastToday, lastIn });
-        setReady(true);
-        rememberTotals(userId, {
-          day: today,
-          monthMinutes,
-          weekMinutes,
-          lastToday,
-          lastIn: lastIn ? lastIn.toISOString() : null,
-          serverAt: Date.now(),
-        });
-      })
-      .catch(() => {
-        /*
-          ⚠️ SILENT, AND IT LEAVES THE FIGURES NULL. This is a courtesy number
-          on a card whose real job is the clock; a failed total must not become
-          an error state on the surface somebody uses to start their day. Null
-          renders no hero figure and no bar, which is honest — a zero would be
-          a claim.
-        */
-        if (alive) { askedFor.current = ''; setReady(true); }
-      });
-
-    return () => {
-      alive = false;
-      if (askedFor.current === key) askedFor.current = '';
-    };
-  }, [enabled, revision, schedule, userId]);
+    const entries: TimeEntry[] = Array.isArray(res) ? (res as unknown as TimeEntry[]) : (res?.data ?? []);
+    return readTotals(entries, now);
+  }, []);
 
   /*
-    ⚠️ NOT ASKING IS AN ANSWER. A FIXED member on the clock is measured against
-    today's shift and no history is fetched for them at all — so `ready` must
-    be true there, or the card would wait forever for a request that is never
-    made.
+    ⚠️ THE PERIOD IS PART OF THE QUESTION. A phone left open across midnight —
+    or across a month boundary — must not keep reporting last month's total as
+    this one's, and re-fetching on a timer would be a request nobody asked for.
+
+    ⚠️ AND `sameDay`, BECAUSE `lastToday` MEANS TODAY. A remembered copy from
+    yesterday would greet somebody with `Done for today` before they started.
   */
-  return { ...totals, ready: ready || !enabled };
+  const now = new Date();
+  const kept = useRemembered<ScheduleTotals>({
+    name: 'schedule-totals',
+    userId,
+    load,
+    revision: `${iso(startOfMonth(now))}|${iso(startOfWeek(now))}|${String(revision)}|${schedule}`,
+    enabled,
+    sameDay: true,
+    revive,
+  });
+
+  /*
+    ⚠️ A FAILED TOTAL IS SILENT AND LEAVES THE FIGURES NULL. This is a
+    courtesy number on a card whose real job is the clock; it must not become
+    an error state on the surface somebody uses to start their day. Null
+    renders no hero figure and no bar, which is honest — a zero would be a
+    claim.
+
+    ⚠️ AND NOT ASKING IS AN ANSWER. A FIXED member on the clock is measured
+    against today's shift and no history is fetched for them at all, so `ready`
+    is true there — or the card would wait for a request never made.
+  */
+  return { ...(kept.data ?? EMPTY), ready: kept.ready };
 }
