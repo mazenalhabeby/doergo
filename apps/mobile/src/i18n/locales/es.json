@@ -3240,10 +3240,12 @@
     "offline": "Necesita conexión para ver lo pendiente.",
     "cold_one": "{{count}} se enfría",
     "cold_other": "{{count}} se enfrían",
-    "coldWhy": "— sin contacto en 30 días",
     "markDone": "Marcar hecho",
     "done": "Hecho.",
-    "undo": "Deshacer"
+    "undo": "Deshacer",
+    "coldNever": "{{name}} el que más — sin contacto nunca, {{count}} días",
+    "coldLongest": "{{name}} el que más — {{count}} días sin contacto",
+    "coldRule": "Sin contacto en {{count}} días"
   },
   "shortcutsCard": {
     "edit": "Editar",

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { resolveCrmCaps, ownsClient, parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, type CrmCaps } from '@hbcfield/shared';
+import { resolveCrmCaps, ownsClient, parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, CRM_COLD_DAYS, CRM_CONTACT_TYPES, type CrmCaps } from '@hbcfield/shared';
 import { findPrior } from '@hbcfield/shared';
 
 /** An id a phone made (UUIDv7) — the same alphabet the gateway accepts. */
@@ -1009,7 +1009,7 @@ export class CustomersService {
     const caps = await this.crmCapsFor(data.caller, data.organizationId);
     const me = data.caller?.userId;
     const counts = { call: 0, email: 0, other: 0, overdue: 0 };
-    if (!caps.canAccess || !me) return { data: { allowed: false, items: [], total: 0, counts, cold: 0, book: 0 } };
+    if (!caps.canAccess || !me) return { data: { allowed: false, items: [], total: 0, counts, cold: { count: 0, days: CRM_COLD_DAYS, longest: null }, book: 0 } };
 
     const now = Date.now();
     const DAY = 86_400_000;
@@ -1076,18 +1076,39 @@ export class CustomersService {
       };
     });
 
-    // Going cold: in the book for 30 days and nothing logged on it in 30 days.
-    const cutoff = new Date(now - 30 * DAY);
-    const [cold, total] = await Promise.all([
-      this.prisma.customer.count({
-        where: {
-          ...book,
-          createdAt: { lt: cutoff },
-          activities: { none: { type: { in: ['NOTE', 'CALL', 'EMAIL', 'MEETING'] }, createdAt: { gte: cutoff } } },
-        } as never,
-      }),
+    /*
+      Going cold: in the book for CRM_COLD_DAYS with nothing logged on it since.
+      The answer carries the rule it used and the client who has waited
+      longest, so the card states facts rather than a sentence of its own.
+    */
+    const cutoff = new Date(now - CRM_COLD_DAYS * DAY);
+    const coldWhere = {
+      ...book,
+      createdAt: { lt: cutoff },
+      activities: { none: { type: { in: [...CRM_CONTACT_TYPES] }, createdAt: { gte: cutoff } } },
+    } as never;
+    const [coldCount, total, coldRows] = await Promise.all([
+      this.prisma.customer.count({ where: coldWhere }),
       this.prisma.customer.count({ where: book as never }),
+      // Bounded: the longest-waiting is found among the oldest in the book.
+      this.prisma.customer.findMany({
+        where: coldWhere,
+        orderBy: { createdAt: 'asc' },
+        take: 200,
+        select: {
+          id: true, name: true, createdAt: true,
+          activities: { where: { type: { in: [...CRM_CONTACT_TYPES] } }, orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true } },
+        },
+      }),
     ]);
+    let longest: { id: string; name: string; days: number; never: boolean } | null = null;
+    for (const c of coldRows) {
+      const last = c.activities[0]?.createdAt ?? null;
+      const since = (last ?? c.createdAt).getTime();
+      const days = Math.floor((now - since) / DAY);
+      if (!longest || days > longest.days) longest = { id: c.id, name: c.name, days, never: !last };
+    }
+    const cold = { count: coldCount, days: CRM_COLD_DAYS, longest };
 
     return { data: { allowed: true, items: items.slice(0, limit), total: items.length, counts, cold, book: total } };
   }

@@ -3240,10 +3240,12 @@
     "offline": "Serve una connessione per vedere cosa è dovuto.",
     "cold_one": "{{count}} si sta raffreddando",
     "cold_other": "{{count}} si stanno raffreddando",
-    "coldWhy": "— nessun contatto da 30 giorni",
     "markDone": "Segna fatto",
     "done": "Fatto.",
-    "undo": "Annulla"
+    "undo": "Annulla",
+    "coldNever": "{{name}} da più tempo — mai contattato, {{count}} giorni",
+    "coldLongest": "{{name}} da più tempo — {{count}} giorni senza contatto",
+    "coldRule": "Nessun contatto da {{count}} giorni"
   },
   "shortcutsCard": {
     "edit": "Modifica",

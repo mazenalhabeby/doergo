@@ -202,18 +202,20 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
         ) : null}
 
         <View style={{ gap: amazen.space(3), marginTop: amazen.space(1), paddingBottom: amazen.space(3) }}>
-          {due && due.cold > 0 ? (
+          {due && due.cold.count > 0 ? (
+            /*
+              ⚠️ NOTHING HERE IS A SENTENCE OF THE CARD'S OWN. The count, the
+              rule (days without contact) and the client who has waited
+              longest all come with the answer; the card only arranges them.
+            */
             <WellDoor
               onPress={openBook}
               lead={<GlyphTile Glyph={ColdGlyph} color={c.warn} tint={c.warnTint} behind={c.well} size={26} glyphSize={15} radius={8} />}
-            >
-              <AText variant="caption" numberOfLines={1} style={{ fontSize: 13.5 }}>
-                <AText variant="caption" tone="strong" style={{ fontSize: 13.5, fontFamily: amazen.font.sansMedium }}>
-                  {t('clientsCard.cold', { count: due.cold })}
-                </AText>
-                <AText variant="caption" tone="muted" style={{ fontSize: 13.5 }}>{' '}{t('clientsCard.coldWhy', { defaultValue: '— no contact in 30 days' })}</AText>
-              </AText>
-            </WellDoor>
+              title={t('clientsCard.cold', { count: due.cold.count })}
+              detail={due.cold.longest
+                ? t(due.cold.longest.never ? 'clientsCard.coldNever' : 'clientsCard.coldLongest', { name: due.cold.longest.name, count: due.cold.longest.days })
+                : t('clientsCard.coldRule', { count: due.cold.days })}
+            />
           ) : null}
           {/* ⚠️ ALWAYS — and without a number when the number has not arrived. A door that waits for a number is not a door. */}
           <WellDoor

@@ -3240,10 +3240,12 @@
     "offline": "Braucht eine Verbindung, um Fälliges zu zeigen.",
     "cold_one": "{{count}} kühlt ab",
     "cold_other": "{{count}} kühlen ab",
-    "coldWhy": "— seit 30 Tagen kein Kontakt",
     "markDone": "Erledigt",
     "done": "Erledigt.",
-    "undo": "Rückgängig"
+    "undo": "Rückgängig",
+    "coldNever": "{{name}} am längsten — nie kontaktiert, {{count}} Tage",
+    "coldLongest": "{{name}} am längsten — {{count}} Tage ohne Kontakt",
+    "coldRule": "Seit {{count}} Tagen kein Kontakt"
   },
   "shortcutsCard": {
     "edit": "Bearbeiten",

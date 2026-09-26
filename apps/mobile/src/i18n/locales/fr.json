@@ -3240,10 +3240,12 @@
     "offline": "Une connexion est nécessaire pour voir ce qui est dû.",
     "cold_one": "{{count}} se refroidit",
     "cold_other": "{{count}} se refroidissent",
-    "coldWhy": "— aucun contact depuis 30 jours",
     "markDone": "Marquer fait",
     "done": "Fait.",
-    "undo": "Annuler"
+    "undo": "Annuler",
+    "coldNever": "{{name}} le plus ancien — jamais contacté, {{count}} jours",
+    "coldLongest": "{{name}} le plus ancien — {{count}} jours sans contact",
+    "coldRule": "Aucun contact depuis {{count}} jours"
   },
   "shortcutsCard": {
     "edit": "Modifier",

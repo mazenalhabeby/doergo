@@ -124,8 +124,11 @@ export interface ClientsDue {
   /** Every reminder due by the end of today — `items` is the first few of them. */
   total: number;
   counts: { call: number; email: number; other: number; overdue: number };
-  /** Clients with no contact in 30 days. */
-  cold: number;
+  /**
+   * Going cold: how many, by WHICH rule (days without contact — the server's,
+   * never a copy), and the client who has waited longest.
+   */
+  cold: { count: number; days: number; longest: { id: string; name: string; days: number; never: boolean } | null };
   /** The whole book the caller may see. */
   book: number;
 }

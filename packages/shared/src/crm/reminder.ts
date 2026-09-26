@@ -135,3 +135,16 @@ export function isReminderOverdue(
   if (!activity.dueAt || activity.doneAt) return false;
   return new Date(activity.dueAt).getTime() < now.getTime();
 }
+
+/* ------------------------------------------------------------------ */
+
+/**
+ * "Going cold" — a client in the book this long with nothing logged on it.
+ *
+ * ONE number, sent WITH the answer (`GET /customers/due` → `cold.days`), so the
+ * card says the rule the server actually used rather than a copy of it.
+ */
+export const CRM_COLD_DAYS = 30;
+
+/** What counts as contact: something that happened with the client. Reminders, stage changes and system events do not. */
+export const CRM_CONTACT_TYPES = ['NOTE', 'CALL', 'EMAIL', 'MEETING'] as const;

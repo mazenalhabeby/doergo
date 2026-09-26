@@ -3240,10 +3240,12 @@
     "offline": "Needs a connection to see what is due.",
     "cold_one": "{{count}} going cold",
     "cold_other": "{{count}} going cold",
-    "coldWhy": "— no contact in 30 days",
     "markDone": "Mark done",
     "done": "Done.",
-    "undo": "Undo"
+    "undo": "Undo",
+    "coldNever": "{{name}} longest — never contacted, {{count}} days",
+    "coldLongest": "{{name}} longest — {{count}} days without contact",
+    "coldRule": "No contact in {{count}} days"
   },
   "shortcutsCard": {
     "edit": "Edit",
