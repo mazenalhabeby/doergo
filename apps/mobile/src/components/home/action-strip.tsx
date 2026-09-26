@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
+import { over } from '../../theme/amazen';
 import { useDocumentRequirements } from '../../contexts/document-requirements-context';
 import { documentsApi, type DocumentType } from '../../lib/api/documents';
 import { AText, Eyebrow, LiveDot, PrimaryButton } from '../amazen';
@@ -86,7 +87,16 @@ export function ActionStrip() {
   const lines = stripLines(items)!;
   const say = (p: Phrase) => t(p.key, { ...(p.values ?? {}) } as Record<string, unknown>) as string;
   const ink = tone === 'crit' ? c.critical : tone === 'warn' ? c.warn : c.ink;
-  const tint = tone === 'crit' ? c.criticalTint : tone === 'warn' ? c.warnTint : c.tile;
+  /*
+    ⚠️ OPAQUE, BECAUSE THE GLYPH IS PUNCHED. `contrast` must be the exact
+    colour behind the mark (docs/design/icons/README.md rule 2), and a
+    translucent strip over the home gradient has no single colour. So the
+    strip is the tint composited over the gradient where it sits, and the
+    mark's tile is composited over the strip — both solid, both matchable.
+  */
+  const ground = over(`${amazen.gradient.home[1]}80`, amazen.gradient.home[0]);
+  const tint = over(tone === 'crit' ? c.criticalTint : tone === 'warn' ? c.warnTint : c.tile, ground);
+  const markBg = over(tone === 'calm' ? c.tile : `${ink}1f`, tint);
   const single = items.length === 1;
 
   return (
@@ -109,9 +119,9 @@ export function ActionStrip() {
             backgroundColor: tint, opacity: pressed ? 0.85 : 1,
           })}
         >
-          <View style={{ width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: tone === 'calm' ? c.tile : `${ink}1f` }}>
+          <View style={{ width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: markBg }}>
             {single
-              ? <ItemGlyph item={items[0]!} color={ink} contrast={c.well} size={17} />
+              ? <ItemGlyph item={items[0]!} color={ink} contrast={markBg} size={17} />
               : <AText variant="h3" numeric style={{ color: ink, fontSize: 19, lineHeight: 24 }}>{items.length}</AText>}
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
@@ -190,6 +200,8 @@ function FadingList({ items, tone, onPick, say, surface }: {
         {items.map((item, i) => {
           const l = itemLines(item);
           const ink = item.blocksWork ? c.critical : item.kind === 'expiring' ? c.inkMuted : c.warn;
+          // The punch is the row tile composited over the sheet — rule 2.
+          const rowBg = over(item.kind === 'expiring' ? c.tile : `${ink}1f`, surface);
           return (
             <Pressable
               key={item.key}
@@ -201,8 +213,8 @@ function FadingList({ items, tone, onPick, say, surface }: {
                 borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell, opacity: pressed ? 0.7 : 1,
               })}
             >
-              <View style={{ width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: item.kind === 'expiring' ? c.tile : `${ink}1f` }}>
-                <ItemGlyph item={item} color={ink} contrast={surface} size={16} />
+              <View style={{ width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: rowBg }}>
+                <ItemGlyph item={item} color={ink} contrast={rowBg} size={16} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14, lineHeight: 19 }}>{say(l.title)}</AText>
