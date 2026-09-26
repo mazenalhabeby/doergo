@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated as RNAnimated, Linking, Platform, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Animated as RNAnimated, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { daysLate, hasAccessModule, type FlowStatus } from '@hbcfield/shared/client';
+import { daysLate, hasAccessModule } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useHomeTasks } from '../../offline/tasks/use-home-tasks';
@@ -15,17 +15,10 @@ import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { scheduleApi, tasksApi } from '../../lib/api';
 import type { ScheduleEntry, Task } from '../../lib/api/types';
 import { AText, Eyebrow, Well, WellDivider } from '../amazen';
-import { JobSheet, type JobView } from '../job/job-sheet';
-import { VerbButton } from '../job/verb-button';
-import { useJobActions } from '../job/use-job-actions';
-import {
-  NavigateGlyph, MoreGlyph,
-} from '../glyphs/work-glyphs';
-import type { GlyphProps } from '../glyphs/glyphs';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   shapeFor, faceFor, viewAllSpaceIds, weekOf, sameDay, startOfDay, tasksOn, hasHour, isMine,
-  flowIdOf, stepsFor, isClosed, decisionFor, shiftOn, shiftHours, nextJobAfter, figuresFor, todaysOwn,
-  type Decision,
+  flowIdOf, stepsFor, isClosed, shiftOn, shiftHours, nextJobAfter, figuresFor, todaysOwn,
 } from './my-work';
 
 /**
@@ -168,21 +161,16 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
     const focused = focusId ? mine.find((x) => x.id === focusId && isMine(x, user?.id) && open(x)) : null;
     return focused ?? mine.find((x) => isMine(x, user?.id) && open(x)) ?? null;
   }, [mine, user?.id, open, phase, focusId]);
-  const decision = active ? decisionFor(active, user?.id, stepsFor(active, flows)) : null;
+  /* The step the job is on, in the workflow's own words. */
+  const stepLabel = (task: Task) => stepsFor(task, flows)?.find((x) => x.key === task.status)?.label ?? task.status.replace(/_/g, ' ');
 
-  /* ---------------- the verb ---------------- */
-  /* ⚠️ One sheet per job — rows, the title and the ⋯ all open it, at the view asked for. */
-  const [sheetFor, setSheetFor] = useState<{ task: Task; view: JobView } | null>(null);
+  /*
+    ⚠️ ONE BUTTON: OPEN THE JOB. The widget answers "what is next and where";
+    moving the job along lives on the job page, where every workflow's steps,
+    check-ins, reports and sign-offs already are. A second copy of that flow
+    on the home screen was a second thing to keep right for every workflow.
+  */
   const openTask = useCallback((task: Task) => router.push(`/task/${task.id}` as Href), [router]);
-  const refresh = useCallback(() => { void load().catch(() => undefined); }, [load]);
-  /* The card's verb and the sheet's go through the SAME actions — see use-job-actions.ts. */
-  const actions = useJobActions(refresh);
-
-  const run = useCallback((task: Task, current: FlowStatus, to: FlowStatus) => {
-    /* ⚠️ Finishing is a sheet of its own: a receipt, one line, a signature only if the step asks. */
-    if (to.isFinal) { setSheetFor({ task, view: 'finish' }); return; }
-    void actions.advance(task, current, to);
-  }, [actions]);
 
   /*
     ⚠️ THE EARLY EXIT IS BELOW EVERY HOOK. Holding neither module means the
@@ -291,17 +279,14 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                       <ActiveRow
                         key={`active:${task.id}`}
                         task={task}
-                        decision={decision}
-                        busy={actions.busy === task.id}
-                        onVerb={(to) => { if (decision) run(task, decision.current, to); }}
-                        onMore={() => setSheetFor({ task, view: 'more' })}
-                        onOpen={() => setSheetFor({ task, view: 'job' })}
+                        label={stepLabel(task)}
+                        onOpen={() => openTask(task)}
                       />
                     ) : (
                       <PlainRow
                         task={task} done={!open(task)} mine={face !== 'executor'}
-                        /* Yours and still open: focus it here. Anything else has no verb to show, so it opens. */
-                        onPress={() => (isMine(task, user?.id) && open(task) ? setFocusId(task.id) : setSheetFor({ task, view: 'job' }))}
+                        /* Yours and still open: focus it here. Anything else opens the job. */
+                        onPress={() => (isMine(task, user?.id) && open(task) ? setFocusId(task.id) : openTask(task))}
                       />
                     )}
                   </React.Fragment>
@@ -310,7 +295,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                 {face === 'spaceSupervisor' && theirs.length > 0 ? (
                   <>
                     <Eyebrow tone="muted" style={{ marginTop: amazen.space(2) }}>{siteLabel(theirs, t)}</Eyebrow>
-                    {theirs.slice(0, 3).map((task) => <PlainRow key={task.id} task={task} done={!open(task)} mine={false} onPress={() => setSheetFor({ task, view: 'job' })} />)}
+                    {theirs.slice(0, 3).map((task) => <PlainRow key={task.id} task={task} done={!open(task)} mine={false} onPress={() => openTask(task)} />)}
                     {theirs.length > 3 ? (
                       <Pressable onPress={() => router.push('/(app)/(tabs)/tasks' as Href)} accessibilityRole="button" hitSlop={6}>
                         <AText variant="caption" tone="accent">{t('myWork.more', { count: theirs.length - 3, defaultValue: `+${theirs.length - 3} more` })}</AText>
@@ -326,15 +311,6 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
         )}
       </Well>
 
-      {/* The job — the same sheet model as the shift card's buttons. One slot, one panel. */}
-      <JobSheet
-        task={sheetFor?.task ?? null}
-        view={sheetFor?.view}
-        steps={sheetFor ? stepsFor(sheetFor.task, flows) : null}
-        onClose={() => setSheetFor(null)}
-        onOpenFull={openTask}
-        onChanged={refresh}
-      />
     </View>
   );
 }
@@ -346,14 +322,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
  * The first open job of the day, WHEN IT IS THE READER'S OWN — raised one step
  * out of the well and carrying its decision.
  */
-function ActiveRow({ task, decision, busy, onVerb, onMore, onOpen }: {
-  task: Task;
-  decision: Decision | null;
-  busy: boolean;
-  onVerb: (to: FlowStatus) => void;
-  onMore: () => void;
-  onOpen: () => void;
-}) {
+function ActiveRow({ task, label, onOpen }: { task: Task; label: string; onOpen: () => void }) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const { formatTime } = useTimeFormat();
@@ -365,16 +334,6 @@ function ActiveRow({ task, decision, busy, onVerb, onMore, onOpen }: {
   const fade = useRef(new RNAnimated.Value(0.35)).current;
   useEffect(() => { RNAnimated.timing(fade, { toValue: 1, duration: 220, useNativeDriver: true }).start(); }, [fade]);
 
-  /* ⚠️ Coordinates are coerced before they go into a URL; zero is a legal coordinate. */
-  const lat = Number(task.locationLat);
-  const lng = Number(task.locationLng);
-  const canNavigate = task.locationLat != null && task.locationLng != null && Number.isFinite(lat) && Number.isFinite(lng);
-  const moving = task.status === 'ACCEPTED' || task.status === 'EN_ROUTE';
-  const navigate = () => {
-    const url = Platform.select({ ios: `maps:0,0?daddr=${lat},${lng}`, android: `google.navigation:q=${lat},${lng}` });
-    if (url) void Linking.openURL(url).catch(() => Linking.openURL(`geo:${lat},${lng}`));
-  };
-
   const late = daysLate(task.dueDate ?? null) ?? 0;
   const meta = [
     late > 0
@@ -383,57 +342,34 @@ function ActiveRow({ task, decision, busy, onVerb, onMore, onOpen }: {
     task.locationAddress,
     (task as unknown as { space?: { name?: string } }).space?.name,
   ].filter(Boolean).join(' · ');
+  const open = t('myWork.openJob', { defaultValue: 'Open the job' });
 
   return (
     <RNAnimated.View style={{ opacity: fade, backgroundColor: c.tile, borderRadius: 20, padding: amazen.space(3.5), gap: 4, marginVertical: amazen.space(1) }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1.5) }}>
-        <View style={{ width: 8, height: 8, borderRadius: 4, borderWidth: 1.5, borderColor: c.accent, backgroundColor: task.status === 'ASSIGNED' ? 'transparent' : c.accent }} />
-        <Eyebrow tone="muted" style={{ flexShrink: 1 }}>{decision?.current.label ?? task.status.replace(/_/g, ' ')}</Eyebrow>
+        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: late > 0 ? c.warn : c.accent }} />
+        <Eyebrow tone={late > 0 ? 'warn' : 'muted'} style={{ flexShrink: 1 }}>{label}</Eyebrow>
         <SyncChip entityId={task.id} />
       </View>
-      <Pressable onPress={onOpen} accessibilityRole="link" hitSlop={4}>
-        <AText variant="h3" tone="strong" numberOfLines={2}>{task.title}</AText>
-        {meta ? <AText variant="caption" tone="muted" numberOfLines={1}>{meta}</AText> : null}
-      </Pressable>
+      <AText variant="h3" tone="strong" numberOfLines={2}>{task.title}</AText>
+      {meta ? <AText variant="caption" tone="muted" numberOfLines={1}>{meta}</AText> : null}
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2), marginTop: amazen.space(2) }}>
-        {decision ? (
-          <VerbButton current={decision.current} to={decision.primary} busy={busy} onPress={() => onVerb(decision.primary)} />
-        ) : (
-          /* A workflow this phone does not hold: open the job rather than guess its verbs. */
-          <Pressable onPress={onOpen} accessibilityRole="button" style={{ flex: 1, minHeight: amazen.layout.tapMin, borderRadius: amazen.radius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: c.accentTint }}>
-            <AText variant="body" tone="accent">{t('myWork.openJob', { defaultValue: 'Open the job' })}</AText>
-          </Pressable>
-        )}
-        {canNavigate && moving ? (
-          <RoundButton Glyph={NavigateGlyph} jade label={t('taskDetail.navigate', { defaultValue: 'Navigate' })} onPress={navigate} />
-        ) : null}
-        {decision ? <RoundButton Glyph={MoreGlyph} label={t('myWork.moreActions', { defaultValue: 'More actions' })} onPress={onMore} /> : null}
+      {/* ⚠️ The lift sits on a wrapper: `overflow: hidden` on the pill would clip its own shadow on iOS. */}
+      <View style={{ marginTop: amazen.space(2.5), borderRadius: amazen.radius.full, backgroundColor: c.accentSolid, shadowColor: c.accentSolid, shadowOpacity: 0.22, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 }}>
+        <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`${open}: ${task.title}`}
+          style={({ pressed }) => ({ borderRadius: amazen.radius.full, overflow: 'hidden', opacity: pressed ? 0.88 : 1 })}>
+          <LinearGradient
+            colors={amazen.gradient.primary as unknown as [string, string, ...string[]]}
+            style={{ minHeight: amazen.layout.tapMin + 2, alignItems: 'center', justifyContent: 'center', paddingHorizontal: amazen.space(4) }}
+          >
+            <AText variant="body" tone="accentInk" style={{ fontFamily: amazen.type.h3.fontFamily }}>{open}</AText>
+          </LinearGradient>
+        </Pressable>
       </View>
     </RNAnimated.View>
   );
 }
 
-/** A 40pt disc inside the active row. Discs keep their word for the screen reader. */
-function RoundButton({ Glyph, label, jade, onPress }: { Glyph: React.ComponentType<GlyphProps>; label: string; jade?: boolean; onPress: () => void }) {
-  const { amazen } = useTheme();
-  const c = amazen.color;
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      hitSlop={4}
-      /*
-        A ring on the WELL colour — darker than the active row it sits in —
-        not a filled grey circle. The jade one is told apart by its mark.
-      */
-      style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: c.well, borderWidth: 1.5, borderColor: jade ? c.accentTint : c.lineGlass, opacity: pressed ? 0.8 : 1 })}
-    >
-      <Glyph size={19} color={jade ? c.accent : c.inkStrong} contrast={c.well} />
-    </Pressable>
-  );
-}
 
 function PlainRow({ task, done, mine, onPress }: { task: Task; done: boolean; mine: boolean; onPress: () => void }) {
   const { amazen } = useTheme();

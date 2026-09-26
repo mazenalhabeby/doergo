@@ -1,5 +1,5 @@
 import {
-  isTaskAssignee, getFlowSteps, getNextStep, getStatusCapabilities, hasCapability,
+  isTaskAssignee, getFlowSteps,
   rankMyWork, workBand,
   type FlowStatus,
 } from '@hbcfield/shared/client';
@@ -135,66 +135,9 @@ export function isClosed(task: Task, steps: FlowStatus[] | null): boolean {
   return ['COMPLETED', 'CANCELED', 'CLOSED'].includes(task.status);
 }
 
-/** Stands in for a BLOCKED the flow names as a transition but never defined. */
-const BLOCKED = {
-  key: 'BLOCKED', label: 'Blocked', color: '#DC2626', position: 99,
-  isFinal: false, isCanceled: false, transitions: ['IN_PROGRESS'],
-} as FlowStatus;
 
-export interface Decision {
-  /** Where the task is now — its own, organization-authored label. */
-  current: FlowStatus;
-  /** The primary: the next transition by position. */
-  primary: FlowStatus;
-  /** ⚠️ Everything else goes behind the ⋯ — two equal buttons is how a job gets declined by accident. */
-  rest: FlowStatus[];
-}
 
-/**
- * The decision a job offers, or `null` when it offers none.
- *
- * ⚠️ NO VERB WHEN THE JOB IS NOT YOURS. Access decides whether there is a
- * decision; the workflow decides what it is called.
- */
-export function decisionFor(task: Task, userId: string | undefined, steps: FlowStatus[] | null): Decision | null {
-  if (!steps || !isMine(task, userId)) return null;
-  const current = steps.find((s) => s.key === task.status);
-  if (!current) return null;
-  const onward = current.transitions
-    /*
-      ⚠️ BLOCKED IS OFFERED EVEN WHEN THE FLOW NEVER DEFINED IT. The fallback
-      field-service flow lists it as a transition from IN_PROGRESS but has no
-      BLOCKED status, so it was silently dropped — and the one way to say
-      "something is stopping me" went with it. It opens the Report sheet on
-      the task screen, which needs no status row to exist.
-    */
-    .map((k) => steps.find((s) => s.key === k) ?? (k === 'BLOCKED' ? BLOCKED : undefined))
-    .filter((s): s is FlowStatus => !!s && !s.isCanceled)
-    .sort((a, b) => a.position - b.position);
-  const next = getNextStep(steps, task.status);
-  const primary = onward.find((s) => s.key === next?.key) ?? onward[0];
-  if (!primary) return null;
-  return { current, primary, rest: onward.filter((s) => s.key !== primary.key) };
-}
 
-/**
- * What pressing a transition has to do, decided BEFORE anything is sent.
- *
- * The task screen's own rules, so the widget cannot do less than it does:
- *  - BLOCKED needs a reason, which that screen asks for;
- *  - a final status with the `report` capability needs the service report,
- *    which that screen collects.
- * Those two open the job. Everything else goes straight through the outbox.
- */
-export function routeFor(task: Task, to: FlowStatus, flows: Map<string, unknown>): 'send' | 'open' {
-  if (to.key === 'BLOCKED') return 'open';
-  if (to.isFinal) {
-    const flow = flowIdOf(task) ? (flows.get(flowIdOf(task)!) as { name?: string } | undefined) : undefined;
-    const caps = to.capabilities ?? getStatusCapabilities(flow?.name, to.key);
-    if (hasCapability(caps, 'report')) return 'open';
-  }
-  return 'send';
-}
 
 /* ---------------- the week ---------------- */
 
