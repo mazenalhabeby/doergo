@@ -1,5 +1,5 @@
 import {
-  isTaskAssignee, getFlowSteps,
+  isTaskAssignee, getFlowSteps, getStartOfDay,
   rankMyWork, workBand,
   type FlowStatus,
 } from '@hbcfield/shared/client';
@@ -54,12 +54,8 @@ export function viewAllSpaceIds(perSpace: Record<string, unknown> | undefined): 
     .map(([id]) => id);
 }
 
-/** Local midnight, so a day's jobs are a day's jobs in the member's own zone. */
-export function startOfDay(d: Date): Date {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
+/** Local midnight, so a day's jobs are a day's jobs in the member's own zone. The shared rule, not a copy. */
+export const startOfDay = (d: Date): Date => getStartOfDay(d);
 
 /** Monday first, seven days. */
 export function weekOf(anchor: Date): Date[] {

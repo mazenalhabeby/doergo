@@ -1,4 +1,6 @@
+import { getEndOfDay, getStartOfDay } from '@hbcfield/shared/client';
 import type { ClientsDue, DueReminder } from '../../lib/api/customers';
+import type { Phrase } from './phrase';
 
 /**
  * What the Clients card says — pure, so the words are tested.
@@ -11,8 +13,6 @@ import type { ClientsDue, DueReminder } from '../../lib/api/customers';
  * ⚠️ The line under it ALWAYS carries the split, even when the headline names
  * one kind — "3 owed a call" still has to say how many are late.
  */
-
-export interface Phrase { key: string; values?: Record<string, string | number> }
 
 export function headline(due: Pick<ClientsDue, 'total' | 'counts' | 'items'>): { title: Phrase; split: Phrase[] } | null {
   const n = due.total;
@@ -76,7 +76,5 @@ export function daysLate(dueAt: string | null, dayStart: Date): number | null {
 
 /** The member's own day, which is what "today" means on this card. */
 export function localDay(now: Date = new Date()): { start: Date; end: Date } {
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  return { start, end };
+  return { start: getStartOfDay(now), end: getEndOfDay(now) };
 }

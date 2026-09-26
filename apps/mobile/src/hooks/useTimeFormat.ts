@@ -49,6 +49,15 @@ export function useTimeFormat() {
     [hour12, orgTz],
   );
 
+  /*
+    The time alone, without the zone label — for a card line where the zone
+    suffix only cut the text off. Was the same `.replace()` in three places.
+  */
+  const clock = useCallback(
+    (input: string | Date | null | undefined) => (input ? time(input).replace(/\s+[A-Z]{2,5}$/, '') : ''),
+    [time],
+  );
+
   const range = useCallback(
     (dueDate: string | Date, durationHours = 1) => formatTimeRange(dueDate, durationHours, hour12),
     [hour12],
@@ -100,6 +109,8 @@ export function useTimeFormat() {
     locale,
     /** "2:30 PM" or "14:30" from a Date/ISO. */
     formatTime: time,
+    /** "14:30" / "2:30 PM" with no zone label — for tight card lines. */
+    formatClock: clock,
     /** "9:00 AM - 10:00 AM" or "09:00 - 10:00" for a task slot. */
     formatTimeRange: range,
     /** "5:30 PM" or "17:30" from a raw "HH:MM" schedule string. */

@@ -78,8 +78,7 @@ export function stripTone(items: StripItem[]): StripTone {
   return 'warn';
 }
 
-/** A translation key and its values — the words live in the locale files. */
-export interface Phrase { key: string; values?: Record<string, string | number> }
+import type { Phrase } from './phrase';
 
 /** One item's own two lines. */
 export function itemLines(i: StripItem): { title: Phrase; sub: Phrase } {

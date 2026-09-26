@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState } from 'react-native';
-import { useFocusEffect } from 'expo-router';
 import { attendanceApi, type NoShow } from '../../lib/api/attendance';
 import type { CrewPerson } from './crew-state';
+import { useLiveRefresh } from '../../hooks/use-live-refresh';
 
 /**
  * The Crew card's data — three existing endpoints, no new ones.
@@ -123,15 +122,7 @@ export function useCrew(enabled: boolean): CrewData & { refresh: () => void } {
   }, [enabled]);
 
   /* On every return to the home screen, when the app comes back, and once a minute — rings move. */
-  useFocusEffect(useCallback(() => {
-    void refresh();
-    const id = setInterval(() => void refresh(), REFRESH_MS);
-    return () => clearInterval(id);
-  }, [refresh]));
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') void refresh(); });
-    return () => sub.remove();
-  }, [refresh]);
+  useLiveRefresh(refresh, REFRESH_MS);
 
   return { ...data, refresh: () => void refresh() };
 }

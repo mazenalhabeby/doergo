@@ -7,12 +7,14 @@ import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { holds } from '../../lib/permissions';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { AText, Eyebrow, Well, WellDivider } from '../amazen';
+import { AText, Eyebrow, Well } from '../amazen';
 import { NotArrivedGlyph, HoursWaitingGlyph } from '../glyphs/crew-glyphs';
 import Svg, { Circle } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { crewState, type Band, type CrewPerson, type CrewTile, type Ring } from './crew-state';
 import { useCrew } from './use-crew';
+import { GlyphTile } from './glyph-tile';
+import { WellDoor } from './well-door';
 
 /**
  * Crew — `docs/design/crew`. Who is on (§3.6), shifts waiting (§3.7) and
@@ -39,7 +41,7 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const c = amazen.color;
   const allowed = holds(user, 'canViewSpaceAttendance');
   const data = useCrew(allowed);
-  const { formatTime } = useTimeFormat();
+  const { formatClock } = useTimeFormat();
 
   const allSpaces = useMemo(() => [...new Set(data.people.map((p) => p.spaceId).filter((x): x is string => !!x))], [data.people]);
   /*
@@ -92,7 +94,7 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
           {!data.failed ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.accent }} />
-              <AText variant="caption" tone="accent" numeric>{formatTime(new Date(data.at).toISOString()).replace(/\s+[A-Z]{2,5}$/, '')}</AText>
+              <AText variant="caption" tone="accent" numeric>{formatClock(new Date(data.at))}</AText>
             </View>
           ) : null}
         </View>
@@ -164,11 +166,6 @@ function span(t: (k: string, o?: Record<string, unknown>) => string, n: number):
   return t('crew.min', { n, defaultValue: `${n} min` });
 }
 
-/** HH:mm in the member's own 12/24h preference, without the zone suffix that cut every line off. */
-function useClock() {
-  const { formatTime } = useTimeFormat();
-  return (iso?: string | null) => (iso ? formatTime(iso).replace(/\s+[A-Z]{2,5}$/, '') : '');
-}
 
 const TILE = 118;
 const GAP = 10;
@@ -275,7 +272,7 @@ const TAG: Record<Band, { key: string; fallback: string }> = {
 function TileView({ tile, you, showPlace, onPress }: { tile: CrewTile; you: boolean; showPlace: boolean; onPress: () => void }) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
-  const clock = useClock();
+  const clock = useTimeFormat().formatClock;
   const c = amazen.color;
   const p = tile.person;
   const b = tile.band;
@@ -548,21 +545,13 @@ function Message({ text, dim }: { text: string; dim?: boolean }) {
 function ExceptionRow({ kind, title, detail, onPress }: { kind: 'late' | 'waiting'; title: string; detail: string; onPress: () => void }) {
   const { amazen } = useTheme();
   const c = amazen.color;
-  const Glyph = kind === 'late' ? NotArrivedGlyph : HoursWaitingGlyph;
-  const tone = kind === 'late' ? c.critical : c.warn;
+  const late = kind === 'late';
   return (
-    <>
-      <WellDivider />
-      <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), opacity: pressed ? 0.8 : 1 })}>
-        <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: kind === 'late' ? c.criticalTint : c.warnTint, alignItems: 'center', justifyContent: 'center' }}>
-          <Glyph size={20} color={tone} contrast={kind === 'late' ? c.criticalTint : c.warnTint} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <AText variant="body" tone="strong" style={{ fontSize: 14 }}>{title}</AText>
-          <AText variant="caption" tone="muted" numberOfLines={1}>{detail}</AText>
-        </View>
-        <AText variant="body" tone="muted">›</AText>
-      </Pressable>
-    </>
+    <WellDoor
+      title={title}
+      detail={detail}
+      onPress={onPress}
+      lead={<GlyphTile Glyph={late ? NotArrivedGlyph : HoursWaitingGlyph} color={late ? c.critical : c.warn} tint={late ? c.criticalTint : c.warnTint} behind={c.well} size={34} glyphSize={20} />}
+    />
   );
 }

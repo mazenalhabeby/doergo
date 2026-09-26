@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Linking, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
-import { useFocusEffect, useRouter, type Href } from 'expo-router';
+import { Linking, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { over } from '../../theme/amazen';
@@ -9,11 +9,15 @@ import { useQueuedWrite } from '../../offline/actions/queued-write';
 import { setActivityDoneFromPhone } from '../../offline/crm/client-actions';
 import { useToast } from '../../island/island-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { AText, Eyebrow, Well, WellDivider } from '../amazen';
+import { AText, Eyebrow, Well } from '../amazen';
+import { useLiveRefresh } from '../../hooks/use-live-refresh';
+import { usePhrase } from './phrase';
+import { GlyphTile } from './glyph-tile';
+import { WellDoor } from './well-door';
 import { CallGlyph, FinishGlyph } from '../glyphs/work-glyphs';
 import { EmailGlyph, ColdGlyph, ClientCompanyGlyph, ClientPersonGlyph } from '../glyphs/crm-glyphs';
 import { initials } from '../customer/client-avatar';
-import { daysLate, headline, localDay, rowLines, type Phrase } from './clients-state';
+import { daysLate, headline, localDay, rowLines } from './clients-state';
 
 /**
  * ⭐ CLIENTS — `docs/design/clients`. What is owed today, what is going cold,
@@ -42,7 +46,7 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const router = useRouter();
   const toast = useToast();
   const write = useQueuedWrite();
-  const { formatTime } = useTimeFormat();
+  const { formatClock } = useTimeFormat();
 
   const [due, setDue] = useState<ClientsDue | null>(null);
   const [failed, setFailed] = useState(false);
@@ -60,17 +64,8 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
     }
   }, []);
 
-  useFocusEffect(useCallback(() => {
-    void refresh();
-    const id = setInterval(() => void refresh(), REFRESH_MS);
-    return () => clearInterval(id);
-  }, [refresh]));
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') void refresh(); });
-    return () => sub.remove();
-  }, [refresh]);
-
-  const say = (p: Phrase) => t(p.key, { ...(p.values ?? {}) } as Record<string, unknown>) as string;
+  useLiveRefresh(refresh, REFRESH_MS);
+  const say = usePhrase();
   const openBook = () => router.push('/(app)/customers' as Href);
   const openClient = (r: DueReminder) => router.push(`/(app)/customer/${r.customerId}` as Href);
 
@@ -111,7 +106,6 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const book = due?.book;
   const discPunch = isDark ? '#1fc39c' : '#0f9a7c';
   const tileOnWell = over(c.tile, c.well);
-  const coldTile = over(c.warnTint, c.well);
 
   return (
     <View style={style}>
@@ -137,9 +131,7 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
           </View>
         ) : due ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(3) }}>
-            <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
-              <FinishGlyph size={18} color={c.accent} contrast={over(c.accentTint, c.well)} />
-            </View>
+            <GlyphTile Glyph={FinishGlyph} color={c.accent} tint={c.accentTint} behind={c.well} size={34} glyphSize={18} />
             <AText variant="body" tone="strong">{t('clientsCard.nobody', { defaultValue: 'Nobody is waiting on you.' })}</AText>
           </View>
         ) : (
@@ -154,7 +146,7 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
             {due.items.map((r, i) => {
               const l = rowLines(r);
               const late = daysLate(r.dueAt, day.current.start);
-              const at = r.dueAt ? formatTime(r.dueAt).replace(/\s+[A-Z]{2,5}$/, '') : '';
+              const at = formatClock(r.dueAt);
               const midnight = r.dueAt ? new Date(r.dueAt).getHours() === 0 && new Date(r.dueAt).getMinutes() === 0 : true;
               return (
                 <Pressable
@@ -211,46 +203,28 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
           </View>
         ) : null}
 
-        {due && due.cold > 0 ? (
-          <>
-            <WellDivider />
-            <Door onPress={openBook}>
-              <View style={{ width: 26, height: 26, borderRadius: 8, backgroundColor: coldTile, alignItems: 'center', justifyContent: 'center' }}>
-                <ColdGlyph size={15} color={c.warn} contrast={coldTile} />
-              </View>
-              <AText variant="caption" numberOfLines={1} style={{ flex: 1, fontSize: 13.5 }}>
+        <View style={{ gap: amazen.space(3), marginTop: amazen.space(1), paddingBottom: amazen.space(3) }}>
+          {due && due.cold > 0 ? (
+            <WellDoor
+              onPress={openBook}
+              lead={<GlyphTile Glyph={ColdGlyph} color={c.warn} tint={c.warnTint} behind={c.well} size={26} glyphSize={15} radius={8} />}
+            >
+              <AText variant="caption" numberOfLines={1} style={{ fontSize: 13.5 }}>
                 <AText variant="caption" tone="strong" style={{ fontSize: 13.5, fontFamily: amazen.font.sansMedium }}>
                   {t('clientsCard.cold', { count: due.cold })}
                 </AText>
                 <AText variant="caption" tone="muted" style={{ fontSize: 13.5 }}>{' '}{t('clientsCard.coldWhy', { defaultValue: '— no contact in 30 days' })}</AText>
               </AText>
-            </Door>
-          </>
-        ) : null}
-
-        {/* ⚠️ ALWAYS — and without a number when the number has not arrived. A door that waits for a number is not a door. */}
-        <WellDivider />
-        <Door onPress={openBook}>
-          <AText variant="caption" tone="strong" style={{ flex: 1, fontSize: 13.5 }}>
-            {book != null ? t('clientsCard.all', { count: book }) : t('clientsCard.allNoCount', { defaultValue: 'All clients' })}
-          </AText>
-        </Door>
+            </WellDoor>
+          ) : null}
+          {/* ⚠️ ALWAYS — and without a number when the number has not arrived. A door that waits for a number is not a door. */}
+          <WellDoor
+            onPress={openBook}
+            title={book != null ? t('clientsCard.all', { count: book }) : t('clientsCard.allNoCount', { defaultValue: 'All clients' })}
+          />
+        </View>
       </Well>
     </View>
-  );
-}
-
-function Door({ onPress, children }: { onPress: () => void; children: React.ReactNode }) {
-  const { amazen } = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2.5), paddingVertical: amazen.space(3), opacity: pressed ? 0.7 : 1 })}
-    >
-      {children}
-      <AText variant="body" tone="muted">›</AText>
-    </Pressable>
   );
 }
 

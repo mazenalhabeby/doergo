@@ -6,6 +6,14 @@ import { findPrior } from '@hbcfield/shared';
 /** An id a phone made (UUIDv7) — the same alphabet the gateway accepts. */
 const CLIENT_ID = /^[A-Za-z0-9_-]{16,64}$/;
 
+/**
+ * Clients this member owns or co-manages, as a `where` — the query form of
+ * `ownsClient` (shared). One definition for every read that narrows to "mine".
+ */
+function ownedBy(userId: string | undefined) {
+  return { OR: [{ ownerId: userId }, { managerIds: { has: userId } }] };
+}
+
 /** Who is making the request — used to resolve & enforce CRM abilities. */
 export interface CrmCaller {
   userId?: string;
@@ -577,7 +585,7 @@ export class CustomersService {
     }
     // CRM "own" scope → only clients this caller owns or co-manages (indexed columns).
     if (!isPortalPath && caps.view === 'own') {
-      and.push({ OR: [{ ownerId: data.caller?.userId }, { managerIds: { has: data.caller?.userId } }] });
+      and.push(ownedBy(data.caller?.userId));
     }
     if (data.search) {
       and.push({
@@ -1016,7 +1024,7 @@ export class CustomersService {
 
     const book: Record<string, unknown> = {
       organizationId: data.organizationId, isActive: true, isContact: false, isPortalResident: false,
-      ...(caps.view === 'own' ? { OR: [{ ownerId: me }, { managerIds: { has: me } }] } : {}),
+      ...(caps.view === 'own' ? ownedBy(me) : {}),
     };
 
     const rows = await this.prisma.customerActivity.findMany({
@@ -1030,7 +1038,7 @@ export class CustomersService {
           {
             OR: [
               { reminderAssigneeId: me },
-              { reminderAssigneeId: null, customer: { OR: [{ ownerId: me }, { managerIds: { has: me } }] } },
+              { reminderAssigneeId: null, customer: ownedBy(me) },
               { reminderAssigneeId: null, authorId: me, customer: { ownerId: null, managerIds: { isEmpty: true } } },
             ],
           },

@@ -13,7 +13,10 @@ import { SheetPanel } from '../sheet-panel';
 import { SupplyDocumentSheet } from '../supply-document-sheet';
 import { SignGlyph } from '../glyphs/tile-glyphs';
 import { CountersignGlyph, DocBlockedGlyph, DocExpiringGlyph, DocNeededGlyph, DocSentBackGlyph } from '../glyphs/doc-glyphs';
-import { itemLines, stripItems, stripLines, stripTone, type Phrase, type StripItem, type StripTone } from './action-strip-state';
+import { itemLines, stripItems, stripLines, stripTone, type StripItem, type StripTone } from './action-strip-state';
+import { usePhrase, type Phrase } from './phrase';
+import { GlyphTile } from './glyph-tile';
+import type { GlyphProps } from '../glyphs/glyphs';
 
 /**
  * ⭐ THE ACTION STRIP — what the app needs from the member, under the header.
@@ -41,6 +44,7 @@ export function ActionStrip() {
   const { t } = useTranslation();
   const router = useRouter();
   const reqs = useDocumentRequirements();
+  const say = usePhrase();
 
   const items = useMemo(
     () => stripItems({ toUpload: reqs.toUpload, rejected: reqs.rejected, toSign: reqs.toSign, expiringSoon: reqs.expiringSoon }),
@@ -85,7 +89,6 @@ export function ActionStrip() {
 
   const tone = stripTone(items);
   const lines = stripLines(items)!;
-  const say = (p: Phrase) => t(p.key, { ...(p.values ?? {}) } as Record<string, unknown>) as string;
   const ink = tone === 'crit' ? c.critical : tone === 'warn' ? c.warn : c.ink;
   /*
     ⚠️ OPAQUE, BECAUSE THE GLYPH IS PUNCHED. `contrast` must be the exact
@@ -96,7 +99,6 @@ export function ActionStrip() {
   */
   const ground = over(`${amazen.gradient.home[1]}80`, amazen.gradient.home[0]);
   const tint = over(tone === 'crit' ? c.criticalTint : tone === 'warn' ? c.warnTint : c.tile, ground);
-  const markBg = over(tone === 'calm' ? c.tile : `${ink}1f`, tint);
   const single = items.length === 1;
 
   return (
@@ -119,11 +121,10 @@ export function ActionStrip() {
             backgroundColor: tint, opacity: pressed ? 0.85 : 1,
           })}
         >
-          <View style={{ width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: markBg }}>
-            {single
-              ? <ItemGlyph item={items[0]!} color={ink} contrast={markBg} size={17} />
-              : <AText variant="h3" numeric style={{ color: ink, fontSize: 19, lineHeight: 24 }}>{items.length}</AText>}
-          </View>
+          {/* One item: its mark. Several: the count sits where the mark sat. */}
+          <GlyphTile Glyph={single ? glyphFor(items[0]!) : undefined} color={ink} tint={tone === 'calm' ? c.tile : `${ink}1f`} behind={tint} glyphSize={17}>
+            <AText variant="h3" numeric style={{ color: ink, fontSize: 19, lineHeight: 24 }}>{items.length}</AText>
+          </GlyphTile>
           <View style={{ flex: 1, minWidth: 0 }}>
             <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14, lineHeight: 19, fontFamily: amazen.font.sansMedium }}>
               {say(lines.title)}
@@ -200,8 +201,6 @@ function FadingList({ items, tone, onPick, say, surface }: {
         {items.map((item, i) => {
           const l = itemLines(item);
           const ink = item.blocksWork ? c.critical : item.kind === 'expiring' ? c.inkMuted : c.warn;
-          // The punch is the row tile composited over the sheet — rule 2.
-          const rowBg = over(item.kind === 'expiring' ? c.tile : `${ink}1f`, surface);
           return (
             <Pressable
               key={item.key}
@@ -213,9 +212,7 @@ function FadingList({ items, tone, onPick, say, surface }: {
                 borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell, opacity: pressed ? 0.7 : 1,
               })}
             >
-              <View style={{ width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: rowBg }}>
-                <ItemGlyph item={item} color={ink} contrast={rowBg} size={16} />
-              </View>
+              <GlyphTile Glyph={glyphFor(item)} color={ink} tint={item.kind === 'expiring' ? c.tile : `${ink}1f`} behind={surface} glyphSize={16} />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14, lineHeight: 19 }}>{say(l.title)}</AText>
                 <AText variant="caption" numberOfLines={1} style={{ color: item.blocksWork ? c.critical : c.inkMuted, marginTop: 1 }}>{say(l.sub)}</AText>
@@ -237,14 +234,13 @@ function FadingList({ items, tone, onPick, say, surface }: {
   );
 }
 
-function ItemGlyph({ item, color, contrast, size }: { item: StripItem; color: string; contrast: string; size: number }) {
+/** Each kind's mark, from the document family (glyphs/doc-glyphs.tsx). */
+function glyphFor(item: StripItem): React.ComponentType<GlyphProps> {
   switch (item.kind) {
-    case 'sign': return <SignGlyph size={size} color={color} contrast={contrast} />;
-    case 'countersign': return <CountersignGlyph size={size} color={color} contrast={contrast} />;
-    case 'sentBack': return <DocSentBackGlyph size={size} color={color} contrast={contrast} />;
-    case 'expiring': return <DocExpiringGlyph size={size} color={color} contrast={contrast} />;
-    case 'upload': return item.blocksWork
-      ? <DocBlockedGlyph size={size} color={color} contrast={contrast} />
-      : <DocNeededGlyph size={size} color={color} contrast={contrast} />;
+    case 'sign': return SignGlyph;
+    case 'countersign': return CountersignGlyph;
+    case 'sentBack': return DocSentBackGlyph;
+    case 'expiring': return DocExpiringGlyph;
+    case 'upload': return item.blocksWork ? DocBlockedGlyph : DocNeededGlyph;
   }
 }
