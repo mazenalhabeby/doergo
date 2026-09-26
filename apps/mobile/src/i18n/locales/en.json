@@ -386,7 +386,11 @@
       "hasTwo": "{{a}} and {{b}} have something for you right now",
       "hasMany": "{{a}}, {{b}} and {{count}} more have something for you right now",
       "forTeam": "For running your team",
-      "forDay": "For your working day"
+      "forDay": "For your working day",
+      "added": "Added",
+      "undoHint": "Tap to take it off again",
+      "done_one": "Done · {{count}} added",
+      "done_other": "Done · {{count}} added"
     }
   },
   "tasks": {

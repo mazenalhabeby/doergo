@@ -189,22 +189,27 @@ describe('rule 5 — ⊖ is neutral, and removing deletes nothing', () => {
   });
 });
 
-describe('rule 6 — new widgets land at the bottom, always', () => {
-  it('the gallery appends rather than restoring the old place', () => {
+describe('rule 6 — new widgets land near the top, several in one visit', () => {
+  /*
+    Replaced 2026-09-26 (the member asked): landing at the BOTTOM made them
+    scroll to find what they had just chosen before they could place it, and
+    closing the gallery on every Add meant one trip per widget.
+  */
+  it('lands under the first card, or after the one added before it', () => {
     const hook = code('home/use-home-layout.ts');
-    expect(hook).toMatch(/keys: \[\.\.\.orderedKeys\.filter\(\(k\) => k !== key\), key\]/);
-    expect(code('home/home-screen.tsx')).toMatch(/layout\.add\(key\)/);
+    expect(hook).toMatch(/const anchor = after \?\? rest\.find\(\(k\) => onHomeKeys\.has\(k\)\) \?\? null;/);
+    expect(code('home/home-screen.tsx')).toMatch(/onAdd=\{\(key, after\) => layout\.add\(key, after\)\}/);
   });
 
-  it('closes the sheet so the arrival is visible, and rings it', () => {
+  it('stays open while adding, and on Done rings every arrival in arrange mode', () => {
     const home = code('home/home-screen.tsx');
-    expect(home).toMatch(/setPicking\(false\);\s*\n\s*land\(key\)/);
+    expect(home).toMatch(/setPicking\(false\);[\s\S]{0,400}enterEdit\(\);\s*\n\s*land\(added\)/);
     expect(code('components/home/editable-widget.tsx')).toMatch(
       /export const LANDED_MS = 30_000;/,
     );
     // The ring's clock lives with the mode it belongs to, and is cleaned up.
     const editing = code('home/use-home-editing.ts');
-    expect(editing).toMatch(/setTimeout\(\(\) => setLanded\(null\), LANDED_MS\)/);
+    expect(editing).toMatch(/setTimeout\(\(\) => setLanded\(\[\]\), LANDED_MS\)/);
     expect(editing).toMatch(/clearTimeout\(ring\.current\)/);
   });
 });

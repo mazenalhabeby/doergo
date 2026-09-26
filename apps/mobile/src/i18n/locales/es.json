@@ -379,7 +379,11 @@
       "hasTwo": "{{a}} y {{b}} tienen algo para ti ahora",
       "hasMany": "{{a}}, {{b}} y {{count}} más tienen algo para ti ahora",
       "forTeam": "Para dirigir tu equipo",
-      "forDay": "Para tu jornada"
+      "forDay": "Para tu jornada",
+      "added": "Añadido",
+      "undoHint": "Toca para quitarlo",
+      "done_one": "Listo · {{count}} añadido",
+      "done_other": "Listo · {{count}} añadidos"
     }
   },
   "tasks": {

@@ -60,7 +60,8 @@ export interface HomeLayoutApi {
    * anywhere the member can see. The bottom is the one place they are already
    * looking after a sheet slides away.
    */
-  add: (key: string) => void;
+  /** Under the first card on the home, or right after `after`. */
+  add: (key: string, after?: string | null) => void;
   reset: () => void;
 }
 
@@ -190,12 +191,21 @@ export function useHomeLayout(): HomeLayoutApi {
     persist({ keys: orderedKeys, hidden: [...layout.hidden, key] });
   }, [layout, orderedKeys, persist]);
 
-  const add = useCallback((key: string) => {
+  /**
+   * Add a widget NEAR THE TOP — right under the first card on the home (the
+   * shift clock, for most members). What somebody just chose is what they want
+   * to see; landing it at the bottom made them scroll to find it before they
+   * could place it. Several added in one visit land in the order chosen.
+   */
+  const add = useCallback((key: string, after?: string | null) => {
+    const rest = orderedKeys.filter((k) => k !== key);
+    const anchor = after ?? rest.find((k) => onHomeKeys.has(k)) ?? null;
+    const at = anchor ? rest.indexOf(anchor) + 1 : 0;
     persist({
-      keys: [...orderedKeys.filter((k) => k !== key), key],
+      keys: [...rest.slice(0, at), key, ...rest.slice(at)],
       hidden: layout.hidden.filter((k) => k !== key),
     });
-  }, [layout.hidden, orderedKeys, persist]);
+  }, [layout.hidden, orderedKeys, onHomeKeys, persist]);
 
   const show = useCallback((key: string) => {
     persist({ keys: orderedKeys, hidden: layout.hidden.filter((k) => k !== key) });

@@ -21,15 +21,15 @@ export interface HomeEditing {
   enter: () => void;
   /** Close it. Done, the Android back press, and a tap below the column. */
   leave: () => void;
-  /** The widget that just arrived from the gallery, for 30 seconds. */
-  landed: string | null;
-  /** Say one has arrived — the ring starts now. */
-  land: (key: string) => void;
+  /** The widgets that just arrived from the gallery, for 30 seconds. */
+  landed: readonly string[];
+  /** Say these have arrived — their rings start now. */
+  land: (keys: readonly string[]) => void;
 }
 
 export function useHomeEditing(): HomeEditing {
   const [editing, setEditing] = useState(false);
-  const [landed, setLanded] = useState<string | null>(null);
+  const [landed, setLanded] = useState<readonly string[]>([]);
 
   /*
     ⚠️ THE BUZZ IS THE ONLY THING THAT SAYS A 500ms HOLD WORKED.
@@ -75,10 +75,10 @@ export function useHomeEditing(): HomeEditing {
   */
   const ring = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (ring.current) clearTimeout(ring.current); }, []);
-  const land = useCallback((key: string) => {
-    setLanded(key);
+  const land = useCallback((keys: readonly string[]) => {
+    setLanded(keys);
     if (ring.current) clearTimeout(ring.current);
-    ring.current = setTimeout(() => setLanded(null), LANDED_MS);
+    ring.current = setTimeout(() => setLanded([]), LANDED_MS);
   }, []);
 
   return { editing, enter, leave, landed, land };

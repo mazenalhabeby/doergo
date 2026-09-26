@@ -40,15 +40,20 @@ export function WidgetGallery({
   rows,
   onHome,
   onAdd,
+  onUndo,
   hasData,
 }: {
   visible: boolean;
-  onClose: () => void;
+  /** Done, or the sheet dismissed — with what was added this visit, in order. */
+  onClose: (added: string[]) => void;
   /** Everything available to this member, on their home or not. */
   rows: WidgetRow[];
   /** Keys already on the home — shown, greyed, never offered again. */
   onHome: Set<string>;
-  onAdd: (key: string) => void;
+  /** Added — the gallery STAYS OPEN so several can be added in one visit. `after` keeps them in the order chosen. */
+  onAdd: (key: string, after: string | null) => void;
+  /** Tapped "Added" again: take it back off before finishing. */
+  onUndo: (key: string) => void;
   hasData: (row: WidgetRow) => boolean;
 }) {
   const { amazen, colors } = useTheme();
@@ -60,6 +65,27 @@ export function WidgetGallery({
   /* A page is the whole sheet width; the gutter is inside it. */
   const stride = width;
 
+  /*
+    ⚠️ FROZEN WHEN THE GALLERY OPENS. Adding one here puts it on the home at
+    once, and sorting against the live set would move the page from under the
+    member's finger. What was ALREADY there is greyed; what they add now is
+    ticked and stays where it is.
+  */
+  const [before, setBefore] = useState<Set<string>>(onHome);
+  const [addedNow, setAddedNow] = useState<string[]>([]);
+  useEffect(() => { if (visible) { setBefore(new Set(onHome)); setAddedNow([]); } }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
+  const close = () => onClose(addedNow);
+  const toggle = (key: string) => {
+    selection();
+    if (addedNow.includes(key)) {
+      onUndo(key);
+      setAddedNow((a) => a.filter((k) => k !== key));
+    } else {
+      onAdd(key, addedNow[addedNow.length - 1] ?? null);
+      setAddedNow((a) => [...a, key]);
+    }
+  };
+
   const [pitches, setPitches] = useState<Record<string, Pitch>>({});
   const hear = useCallback((key: string) => (p: Pitch) => {
     setPitches((m) => (m[key]?.line === p.line && m[key]?.need === p.need ? m : { ...m, [key]: p }));
@@ -68,13 +94,13 @@ export function WidgetGallery({
 
   /* Not on the home first — most waiting first — then the rest in registry order; added ones last. */
   const shown = useMemo(() => {
-    const list = rows.filter((r) => onHome.has(r.key) || hasData(r));
+    const list = rows.filter((r) => before.has(r.key) || hasData(r));
     const pos = new Map(rows.map((r, i) => [r.key, i]));
     return [...list].sort((a, b) =>
-      Number(onHome.has(a.key)) - Number(onHome.has(b.key))
+      Number(before.has(a.key)) - Number(before.has(b.key))
       || (pitches[b.key]?.need ?? 0) - (pitches[a.key]?.need ?? 0)
       || pos.get(a.key)! - pos.get(b.key)!);
-  }, [rows, onHome, hasData, pitches]);
+  }, [rows, before, hasData, pitches]);
 
   /* The page follows the WIDGET, not the index — suggestions arriving may reorder the pages. */
   const [currentKey, setCurrentKey] = useState<string | null>(null);
@@ -153,7 +179,7 @@ export function WidgetGallery({
     with something waiting for THIS member — and when nothing is waiting it
     says what the gallery is for: running a team, or a working day.
   */
-  const helping = shown.filter((r) => !onHome.has(r.key) && (pitches[r.key]?.need ?? 0) > 0).map((r) => widgetTitle(r, t));
+  const helping = shown.filter((r) => !before.has(r.key) && (pitches[r.key]?.need ?? 0) > 0).map((r) => widgetTitle(r, t));
   const suggested = helping.length;
   const { user } = useAuth();
   const leads = holds(user as never, 'canViewSpaceAttendance') || holds(user as never, 'canViewAllTasks');
@@ -164,11 +190,11 @@ export function WidgetGallery({
       : helping.length > 2
         ? t('home.gallery.hasMany', { a: helping[0], b: helping[1], count: helping.length - 2 })
         : t(leads ? 'home.gallery.forTeam' : 'home.gallery.forDay');
-  const offered = shown.filter((r) => !onHome.has(r.key)).length;
+  const offered = shown.filter((r) => !before.has(r.key)).length;
 
   return (
-    <BlurSheet visible={visible} onClose={onClose}>
-      <SheetPanel onClose={onClose} maxHeightFraction={0.92} style={{ paddingHorizontal: 0, paddingTop: 10 }}>
+    <BlurSheet visible={visible} onClose={close}>
+      <SheetPanel onClose={close} maxHeightFraction={0.92} style={{ paddingHorizontal: 0, paddingTop: 10 }}>
         <View style={{ paddingHorizontal: gutter }}>
           <AText variant="h2" tone="strong" style={{ fontWeight: '300' }}>
             {t('home.gallery.addTitle', { defaultValue: 'Add a widget' })}
@@ -183,7 +209,7 @@ export function WidgetGallery({
           <Reanimated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: amazen.space(3.5), bottom: 0, borderRadius: 999, backgroundColor: c.accentTint, borderWidth: 1, borderColor: c.accent }, highlight]} />
           {shown.map((r) => {
             const on = r.key === current?.key;
-            const added = onHome.has(r.key);
+            const added = before.has(r.key);
             const dot = !added && (pitches[r.key]?.need ?? 0) > 0;
             return (
               <Pressable
@@ -200,7 +226,9 @@ export function WidgetGallery({
                   borderWidth: 1, borderColor: c.lineGlass,
                 }}
               >
-                {dot ? <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.warn }} /> : null}
+                {addedNow.includes(r.key)
+                  ? <AText variant="caption" tone="accent" style={{ fontSize: 12 }}>✓</AText>
+                  : dot ? <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.warn }} /> : null}
                 <AText variant="caption" style={{ fontSize: 12.5, color: on ? c.inkStrong : added ? c.inkMuted : c.ink }}>{widgetTitle(r, t)}</AText>
               </Pressable>
             );
@@ -222,7 +250,7 @@ export function WidgetGallery({
           {shown.map((row) => {
             const r = row;
             const p = pitches[r.key];
-            const added = onHome.has(r.key);
+            const added = before.has(r.key);
             const urgent = !added && (p?.need ?? 0) > 0;
             return (
               <View key={r.key} style={{ width, paddingHorizontal: gutter, gap: amazen.space(3) }}>
@@ -265,14 +293,39 @@ export function WidgetGallery({
             {shown.map((r, i) => <Dot key={r.key} i={i} progress={progress} on={c.accent} off={c.lineGlass} />)}
           </View>
           {current ? (
-            <Reanimated.View style={buttonStyle}>
-            <PrimaryButton
-              label={onHome.has(current.key)
-                ? t('home.gallery.isOnHome', { name: widgetTitle(current, t) })
-                : t('home.gallery.addName', { name: widgetTitle(current, t) })}
-              disabled={onHome.has(current.key)}
-              onPress={() => onAdd(current.key)}
-            />
+            <Reanimated.View style={[{ flexDirection: 'row', gap: amazen.space(2.5) }, buttonStyle]}>
+              {before.has(current.key) ? (
+                <PrimaryButton label={t('home.gallery.isOnHome', { name: widgetTitle(current, t) })} disabled style={{ flex: 1 }} />
+              ) : addedNow.includes(current.key) ? (
+                /* Added — the same button, now a tick; tap again to take it back. */
+                <Pressable
+                  onPress={() => toggle(current.key)}
+                  accessibilityRole="button"
+                  accessibilityHint={t('home.gallery.undoHint', { defaultValue: 'Tap to take it off again' })}
+                  style={({ pressed }) => ({
+                    flex: 1, borderRadius: 999, paddingVertical: amazen.space(3.5), alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: c.accentTint, borderWidth: 1, borderColor: c.accent, opacity: pressed ? 0.8 : 1,
+                  })}
+                >
+                  <AText variant="body" tone="accent" style={{ fontFamily: amazen.font.sansMedium }}>
+                    {`✓  ${t('home.gallery.added', { defaultValue: 'Added' })}`}
+                  </AText>
+                </Pressable>
+              ) : (
+                <PrimaryButton label={t('home.gallery.addName', { name: widgetTitle(current, t) })} onPress={() => toggle(current.key)} style={{ flex: 1 }} />
+              )}
+              {addedNow.length ? (
+                <Pressable
+                  onPress={close}
+                  accessibilityRole="button"
+                  style={({ pressed }) => ({
+                    borderRadius: 999, paddingHorizontal: amazen.space(5), alignItems: 'center', justifyContent: 'center',
+                    borderWidth: 1, borderColor: c.lineGlass, opacity: pressed ? 0.8 : 1,
+                  })}
+                >
+                  <AText variant="body" tone="strong" style={{ fontFamily: amazen.font.sansMedium }}>{t('home.gallery.done', { count: addedNow.length })}</AText>
+                </Pressable>
+              ) : null}
             </Reanimated.View>
           ) : null}
         </View>

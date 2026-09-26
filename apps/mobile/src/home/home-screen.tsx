@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { BackHandler, Pressable, RefreshControl, StyleSheet } from 'react-native';
+import { BackHandler, Pressable, RefreshControl, StyleSheet, type FlatList } from 'react-native';
 import DraggableFlatList, {
   ScaleDecorator,
   ShadowDecorator,
@@ -99,6 +99,8 @@ export function HomeScreen() {
   const [picking, setPicking] = useState(false);
   /* Editing is a mode, and `use-home-editing.ts` is all of it. */
   const { editing, enter: enterEdit, leave: leaveEdit, landed, land } = useHomeEditing();
+  /* The list, to bring the first new card into view (a gesture-handler FlatList under the hood). */
+  const listRef = React.useRef<Pick<FlatList<WidgetRow>, 'scrollToIndex'>>(null);
   const layout = useHomeLayout();
   const screenReader = useScreenReader();
 
@@ -276,7 +278,7 @@ export function HomeScreen() {
               canUp={index > 0}
               canDown={index < rows.length - 1}
               screenReader={screenReader}
-              landed={landed === item.key}
+              landed={landed.includes(item.key)}
             />
           </ShadowDecorator>
         </ScaleDecorator>
@@ -330,6 +332,8 @@ export function HomeScreen() {
       />
 
       <DraggableFlatList
+        ref={listRef as never}
+        onScrollToIndexFailed={() => {}}
         /* ⚠️ The library's prop is a mutable `T[]`; it never writes to it. */
         data={rows as WidgetRow[]}
         keyExtractor={(row) => row.key}
@@ -453,22 +457,29 @@ export function HomeScreen() {
       */}
       <WidgetGallery
         visible={picking}
-        onClose={() => setPicking(false)}
         rows={layout.available}
         onHome={onHomeKeys}
         hasData={(row) => answerFor(answers, row.key).ready}
-        onAdd={(key) => {
-          // Shortcuts is chosen, not configured later: its editor opens on arrival.
-          if (key === 'shortcuts') editShortcutsOnArrival();
-          /*
-            ⚠️ THE SHEET CLOSES SO THE ARRIVAL IS VISIBLE, and the card lands
-            at the BOTTOM wearing a jade ring. Closing it is the point: a card
-            that appears behind a sheet has not arrived anywhere anybody can
-            see, and "it worked" then has to be taken on trust.
-          */
-          layout.add(key);
+        /*
+          ⚠️ THE GALLERY STAYS OPEN. Several can be added in one visit; each
+          lands under the first card (or after the one added before it), so
+          what was just chosen is where the eye already is.
+        */
+        onAdd={(key, after) => layout.add(key, after)}
+        onUndo={(key) => layout.hide(key)}
+        onClose={(added) => {
           setPicking(false);
-          land(key);
+          if (!added.length) return;
+          // Shortcuts is chosen, not configured later: its editor opens on arrival.
+          if (added.includes('shortcuts')) editShortcutsOnArrival();
+          /*
+            ⚠️ DONE DROPS YOU INTO ARRANGING, at the first new card, each one
+            ringed — the member placed nothing yet, and now they can.
+          */
+          enterEdit();
+          land(added);
+          const i = rows.findIndex((r) => r.key === added[0]);
+          if (i >= 0) setTimeout(() => listRef.current?.scrollToIndex({ index: i, viewPosition: 0.2, animated: true }), 350);
         }}
       />
     </Ground>
