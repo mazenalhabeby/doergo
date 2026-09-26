@@ -3050,7 +3050,14 @@
       "over": "Over",
       "breakOver": "Long break"
     },
-    "steadyCount": "+{{count}} steady · nothing to decide"
+    "steadyCount": "+{{count}} steady · nothing to decide",
+    "needYou_one": "{{count}} needs you",
+    "needYou_other": "{{count}} need you",
+    "toApproveShort": "{{count}} to approve",
+    "allIn": "all in",
+    "all0": "All",
+    "allWorkspacesShort": "All {{count}} workspaces",
+    "inSpace": "In {{name}}"
   },
   "widgets": {
     "shiftClock": "Shift clock",

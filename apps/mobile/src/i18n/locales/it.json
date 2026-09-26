@@ -3043,7 +3043,14 @@
       "over": "Oltre",
       "breakOver": "Pausa lunga"
     },
-    "steadyCount": "+{{count}} regolari · niente da decidere"
+    "steadyCount": "+{{count}} regolari · niente da decidere",
+    "needYou_one": "{{count}} ha bisogno di te",
+    "needYou_other": "{{count}} hanno bisogno di te",
+    "toApproveShort": "{{count}} da approvare",
+    "allIn": "tutti presenti",
+    "all0": "Tutti",
+    "allWorkspacesShort": "Tutti i {{count}} spazi",
+    "inSpace": "A {{name}}"
   },
   "widgets": {
     "shiftClock": "Orologio del turno",

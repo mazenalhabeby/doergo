@@ -3043,7 +3043,14 @@
       "over": "Au-delà",
       "breakOver": "Pause longue"
     },
-    "steadyCount": "+{{count}} dans les temps · rien à décider"
+    "steadyCount": "+{{count}} dans les temps · rien à décider",
+    "needYou_one": "{{count}} a besoin de vous",
+    "needYou_other": "{{count}} ont besoin de vous",
+    "toApproveShort": "{{count}} à valider",
+    "allIn": "tous là",
+    "all0": "Tous",
+    "allWorkspacesShort": "Les {{count}} espaces",
+    "inSpace": "À {{name}}"
   },
   "widgets": {
     "shiftClock": "Horloge de service",

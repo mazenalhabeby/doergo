@@ -3043,7 +3043,14 @@
       "over": "Drüber",
       "breakOver": "Lange Pause"
     },
-    "steadyCount": "+{{count}} im Plan · nichts zu entscheiden"
+    "steadyCount": "+{{count}} im Plan · nichts zu entscheiden",
+    "needYou_one": "{{count}} braucht Sie",
+    "needYou_other": "{{count}} brauchen Sie",
+    "toApproveShort": "{{count}} freizugeben",
+    "allIn": "alle da",
+    "all0": "Alle",
+    "allWorkspacesShort": "Alle {{count}} Arbeitsbereiche",
+    "inSpace": "In {{name}}"
   },
   "widgets": {
     "shiftClock": "Schichtuhr",

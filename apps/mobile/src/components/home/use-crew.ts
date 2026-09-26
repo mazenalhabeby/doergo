@@ -37,6 +37,8 @@ export interface CrewData {
   expected: number;
   /** Shifts done and waiting for a decision. */
   pending: number;
+  /** The same, per workspace — the rings' amber badge. Read from the first page only. */
+  pendingBySpace: Record<string, number>;
   /** Not-arrived rows, for the exception line. */
   notArrived: NoShow[];
   failed: boolean;
@@ -45,7 +47,7 @@ export interface CrewData {
   at: number;
 }
 
-const EMPTY: CrewData = { people: [], expected: 0, pending: 0, notArrived: [], failed: false, loading: true, at: Date.now() };
+const EMPTY: CrewData = { people: [], expected: 0, pending: 0, pendingBySpace: {}, notArrived: [], failed: false, loading: true, at: Date.now() };
 
 type ActiveEntry = {
   id: string; userId: string; locationId?: string | null; clockInAt: string;
@@ -64,12 +66,18 @@ export function useCrew(enabled: boolean): CrewData & { refresh: () => void } {
   const refresh = useCallback(async () => {
     if (!enabled) return;
     try {
-      const [entries, breaks, noShows, pending] = await Promise.all([
+      const [entries, breaks, noShows, pending, pendingRows] = await Promise.all([
         attendanceApi.getAllEntries({ status: 'CLOCKED_IN', limit: ACTIVE_LIMIT }) as unknown as Promise<ActiveEntry[]>,
         attendanceApi.getActiveBreaks().catch(() => []) as Promise<ActiveBreak[]>,
         attendanceApi.listNoShows(1).catch(() => [] as NoShow[]),
         attendanceApi.countPendingApprovals().catch(() => 0),
+        /* ⚠️ Bounded: one page, only to split the count by workspace for the rings. */
+        attendanceApi.getPendingApprovals({ page: 1, limit: 100 }).catch(() => []),
       ]);
+      const pendingBySpace: Record<string, number> = {};
+      for (const e of pendingRows as unknown as { locationId?: string | null }[]) {
+        if (e.locationId) pendingBySpace[e.locationId] = (pendingBySpace[e.locationId] ?? 0) + 1;
+      }
       const now = Date.now();
       const onBreak = new Map<string, ActiveBreak>();
       for (const b of breaks) onBreak.set(b.timeEntryId ?? b.user?.id ?? b.userId ?? '', b);
@@ -108,7 +116,7 @@ export function useCrew(enabled: boolean): CrewData & { refresh: () => void } {
           expectedClockOutAt: n.expectedClockOutAt,
         });
       }
-      if (live.current) setData({ people, expected: people.length, pending, notArrived, failed: false, loading: false, at: now });
+      if (live.current) setData({ people, expected: people.length, pending, pendingBySpace, notArrived, failed: false, loading: false, at: now });
     } catch {
       if (live.current) setData((d) => ({ ...d, people: [], failed: true, loading: false, at: Date.now() }));
     }

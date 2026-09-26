@@ -10,7 +10,7 @@ import { AText, Eyebrow, Well, WellDivider } from '../amazen';
 import { NotArrivedGlyph, HoursWaitingGlyph } from '../glyphs/crew-glyphs';
 import Svg, { Circle } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
-import { crewState, CAPS, type Band, type CrewPerson, type CrewTile, type Ring, type SiteRow } from './crew-state';
+import { crewState, type Band, type CrewPerson, type CrewTile, type Ring } from './crew-state';
 import { useCrew } from './use-crew';
 
 /**
@@ -38,11 +38,25 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const c = amazen.color;
   const allowed = holds(user, 'canViewSpaceAttendance');
   const data = useCrew(allowed);
-  const [site, setSite] = useState<string | null>(null);
-  const [shortOnly, setShortOnly] = useState(false);
   const { formatTime } = useTimeFormat();
 
   const allSpaces = useMemo(() => [...new Set(data.people.map((p) => p.spaceId).filter((x): x is string => !!x))], [data.people]);
+  /*
+    ⭐ THE SCOPE: all workspaces, or one. Chosen with the rings under the
+    number; the whole card answers for it. It OPENS where the trouble is — the
+    one workspace that needs you when there is exactly one, ALL otherwise.
+  */
+  const needs = useMemo(() => {
+    const out: Record<string, number> = {};
+    const all = crewState({ people: data.people, rosteredCount: data.people.length, spaceIds: allSpaces, now: data.at });
+    for (const tile of all.tiles) {
+      if ((tile.band === 'late' || tile.band === 'missed') && tile.person.spaceId) out[tile.person.spaceId] = (out[tile.person.spaceId] ?? 0) + 1;
+    }
+    return out;
+  }, [data.people, allSpaces, data.at]);
+  const [picked, setPicked] = useState<string | null>(null);
+  const troubled = allSpaces.filter((id) => (needs[id] ?? 0) > 0 || (data.pendingBySpace[id] ?? 0) > 0);
+  const site = picked === 'ALL' ? null : picked && allSpaces.includes(picked) ? picked : picked === null && troubled.length === 1 ? troubled[0]! : null;
   const scoped = site ? data.people.filter((p) => p.spaceId === site) : data.people;
   const s = useMemo(() => crewState({
     people: scoped,
@@ -67,8 +81,6 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
         ? allSpaces.map((id) => data.people.find((p) => p.spaceId === id)?.spaceName).filter(Boolean).join(' · ')
         : `${data.people[0]?.spaceName ?? ''} · ${t('crew.oneWorkspace', { defaultValue: 'one workspace' })}`;
 
-  const notArrived = s.tiles.filter((x) => x.band === 'late');
-  const siteRows = shortOnly ? s.sites.filter((x) => !!x.trouble) : s.sites;
 
   return (
     <View style={style}>
@@ -84,12 +96,6 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
           ) : null}
         </View>
 
-        {site ? (
-          <Pressable onPress={() => setSite(null)} accessibilityRole="button" hitSlop={8}>
-            <Eyebrow tone="accent">‹ {t('crew.allWorkspaces', { count: allSpaces.length, defaultValue: `All ${allSpaces.length} workspaces` })}</Eyebrow>
-          </Pressable>
-        ) : null}
-
         {/* The hero. ⚠️ The "/n" is dropped when there is no roster — never a copy of the numerator. */}
         <View style={{ gap: 4 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
@@ -99,7 +105,17 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
             {!data.failed && s.rostered != null ? <AText variant="h2" tone="muted" numeric style={{ fontWeight: '300' }}>/{s.rostered}</AText> : null}
             <AText variant="body" tone="muted">{t('crew.onTheClock', { defaultValue: 'on the clock' })}</AText>
           </View>
-          {sub ? <Eyebrow tone="muted" numberOfLines={1}>{sub}</Eyebrow> : null}
+          {allSpaces.length > 1 && !data.failed ? (
+            <ScopeRings
+              spaces={allSpaces.map((id) => ({ id, name: data.people.find((p) => p.spaceId === id)?.spaceName ?? '' }))}
+              people={data.people}
+              needs={needs}
+              pending={data.pendingBySpace}
+              current={site}
+              now={data.at}
+              onPick={(id) => setPicked(id ?? 'ALL')}
+            />
+          ) : sub ? <Eyebrow tone="muted" numberOfLines={1}>{sub}</Eyebrow> : null}
         </View>
 
         {data.loading && !data.people.length && !data.failed ? (
@@ -116,41 +132,16 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
             </View>
             <Message dim text={t('crew.offline', { defaultValue: 'Needs a connection. A kept answer would be wrong, not old.' })} />
           </>
-        ) : s.unit === 'workspaces' && !site ? (
-          <>
-            <View style={{ flexDirection: 'row', gap: 6 }}>
-              <FilterChip label={t('crew.all', { count: allSpaces.length, defaultValue: `All ${allSpaces.length}` })} on={!shortOnly} onPress={() => setShortOnly(false)} />
-              <FilterChip label={t('crew.short', { count: s.sites.filter((x) => !!x.trouble).length, defaultValue: `Short ${s.sites.filter((x) => !!x.trouble).length}` })} on={shortOnly} onPress={() => setShortOnly(true)} />
-            </View>
-            {siteRows.map((row) => <SiteRowView key={row.spaceId} row={row} people={data.people} onPress={() => setSite(row.spaceId)} />)}
-            {s.sitesOverflow > 0 && !shortOnly ? (
-              <AText variant="caption" tone="accent" style={{ paddingLeft: 15 }}>
-                {t('crew.moreSites', { count: s.sitesOverflow, defaultValue: `+${s.sitesOverflow} workspaces` })}
-              </AText>
-            ) : null}
-          </>
         ) : (
           <Rail state={s} viewerId={user?.id} onOpen={openAttendance} />
         )}
 
         {/* The exception rows — the only way to anything that changes a record. */}
-        {!data.failed && notArrived.length && s.unit === 'workspaces' && !site ? (
-          <ExceptionRow
-            kind="late"
-            title={t('crew.notArrived', { count: notArrived.length, defaultValue: `${notArrived.length} not arrived` })}
-            detail={s.unit === 'workspaces' && !site
-              ? t('crew.acrossLate', { count: new Set(notArrived.map((x) => x.person.spaceId)).size, oldest: Math.max(...notArrived.map((x) => x.minutes)), defaultValue: 'Across workspaces' })
-              : [...notArrived.slice(0, CAPS.exceptionNames).map((x) => `${x.person.firstName} ${x.person.lastName ?? ''}`.trim() + ` ${x.minutes} min`),
-                  notArrived.length > CAPS.exceptionNames ? t('crew.more', { count: notArrived.length - CAPS.exceptionNames, defaultValue: `${notArrived.length - CAPS.exceptionNames} more` }) : null,
-                ].filter(Boolean).join(' · ')}
-            onPress={openAttendance}
-          />
-        ) : null}
-        {!data.failed && data.pending > 0 && !site ? (
+        {!data.failed && (site ? data.pendingBySpace[site] ?? 0 : data.pending) > 0 ? (
           <ExceptionRow
             kind="waiting"
-            title={t('crew.toApprove', { count: data.pending, defaultValue: `${data.pending} shifts to approve` })}
-            detail={t('crew.openAttendance', { defaultValue: 'Open attendance' })}
+            title={t('crew.toApprove', { count: site ? data.pendingBySpace[site] ?? 0 : data.pending, defaultValue: 'shifts to approve' })}
+            detail={site ? t('crew.inSpace', { name: siteName, defaultValue: `In ${siteName}` }) : t('crew.openAttendance', { defaultValue: 'Open attendance' })}
             onPress={openAttendance}
           />
         ) : null}
@@ -352,6 +343,130 @@ function initials(p: CrewPerson): string {
   return `${(p.firstName ?? '').charAt(0)}${(p.lastName ?? '').charAt(0)}`.toUpperCase() || '·';
 }
 
+/* ================================================================ the scope rings */
+
+const RING_SIZE = 34;
+
+/**
+ * ⭐ WHICH WORKSPACE THE CARD ANSWERS FOR — the rings under the number.
+ *
+ * Each workspace is a small ring: its initials on a filled disc, an arc of who
+ * is in out of who is expected. The chosen one opens into a capsule with its
+ * name and state; "All" is a ring too, and comes first.
+ *
+ * ⚠️ THE ARC IS NEVER RED. It says how full a place is, calmly — the missing
+ * part is the plain track. Red lives only in the BADGE, the number of people
+ * there who need you (late or missed); amber when only approvals wait. A red
+ * arc on every workspace made the whole row read as an alarm.
+ */
+function ScopeRings({ spaces, people, needs, pending, current, now, onPick }: {
+  spaces: { id: string; name: string }[];
+  people: CrewPerson[];
+  needs: Record<string, number>;
+  pending: Record<string, number>;
+  current: string | null;
+  now: number;
+  onPick: (spaceId: string | null) => void;
+}) {
+  const { amazen } = useTheme();
+  const { t } = useTranslation();
+  const pad = amazen.space(4.5);
+  const c = amazen.color;
+  void now;
+  const statOf = (id: string | null) => {
+    const ps = id ? people.filter((p) => p.spaceId === id) : people;
+    const inn = ps.filter((p) => !!p.clockInAt).length;
+    const need = id ? needs[id] ?? 0 : Object.values(needs).reduce((a, b) => a + b, 0);
+    const appr = id ? pending[id] ?? 0 : Object.values(pending).reduce((a, b) => a + b, 0);
+    return { inn, exp: ps.length, need, appr };
+  };
+  /* Worst first: people who need you, then approvals. */
+  const order = [...spaces].sort((a, b) => (needs[b.id] ?? 0) - (needs[a.id] ?? 0) || (pending[b.id] ?? 0) - (pending[a.id] ?? 0));
+
+  return (
+    <View style={{ marginHorizontal: -pad, marginTop: 6 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: pad, gap: 7, alignItems: 'center' }}>
+        <RingButton label={t('crew.allWorkspacesShort', { count: spaces.length, defaultValue: `All ${spaces.length} workspaces` })} initials={t('crew.all0', { defaultValue: 'All' })}
+          stat={statOf(null)} on={current === null} onPress={() => onPick(null)} />
+        <View style={{ width: 1, height: 20, backgroundColor: c.lineGlass }} />
+        {order.map((sp) => (
+          <RingButton key={sp.id} label={sp.name} initials={ringInitials(sp.name)}
+            stat={statOf(sp.id)} on={current === sp.id} onPress={() => onPick(sp.id)} />
+        ))}
+      </ScrollView>
+      <LinearGradient pointerEvents="none" colors={[c.well, `${c.well}00`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+        style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 14 }} />
+      <LinearGradient pointerEvents="none" colors={[`${c.well}00`, c.well]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+        style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 26 }} />
+    </View>
+  );
+}
+
+/** Two letters: the first of two words ("Main Office" → MO), or the first two of one ("Warehouse" → WA). */
+function ringInitials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  const two = words.length > 1 ? words[0]!.charAt(0) + words[1]!.charAt(0) : (words[0] ?? '').slice(0, 2);
+  return two.toUpperCase() || '·';
+}
+
+function RingButton({ label, initials: ini, stat, on, onPress }: {
+  label: string; initials: string; stat: { inn: number; exp: number; need: number; appr: number }; on: boolean; onPress: () => void;
+}) {
+  const { amazen } = useTheme();
+  const { t } = useTranslation();
+  const c = amazen.color;
+  const R = 14.5;
+  const C = 2 * Math.PI * R;
+  const f = stat.exp ? stat.inn / stat.exp : 1;
+  const status = stat.need
+    ? { text: t('crew.needYou', { count: stat.need, defaultValue: `${stat.need} need you` }), color: c.critical }
+    : stat.appr
+      ? { text: t('crew.toApproveShort', { count: stat.appr, defaultValue: `${stat.appr} to approve` }), color: c.warn }
+      : { text: t('crew.allIn', { defaultValue: 'all in' }), color: c.accent };
+  const badge = !on && (stat.need || stat.appr) ? { n: stat.need || stat.appr, color: stat.need ? c.critical : c.warn, ink: stat.need ? c.criticalInk : c.warnInk } : null;
+
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: on }}
+      accessibilityLabel={`${label}, ${stat.inn} of ${stat.exp} in, ${status.text}`}
+      style={({ pressed }) => ({
+        flexDirection: 'row', alignItems: 'center', height: 38, borderRadius: 999, padding: 1,
+        borderWidth: 1, borderColor: on ? `${c.accent}66` : 'transparent',
+        backgroundColor: on ? c.accentTint : 'transparent',
+        transform: [{ scale: pressed ? 0.94 : 1 }],
+      })}>
+      <View style={{ width: RING_SIZE, height: RING_SIZE }}>
+        <Svg width={RING_SIZE} height={RING_SIZE} viewBox="0 0 34 34">
+          <Circle cx={17} cy={17} r={11.5} fill={on ? c.accentTint : c.tile} />
+          <Circle cx={17} cy={17} r={R} fill="none" stroke={c.lineGlass} strokeWidth={2.5} />
+          {f > 0 ? (
+            <Circle cx={17} cy={17} r={R} fill="none" stroke={c.accent} strokeWidth={2.5} strokeLinecap="round"
+              strokeDasharray={`${Math.max(0.5, f * C)} ${C}`} rotation={-90} origin="17, 17" />
+          ) : null}
+        </Svg>
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+          <AText variant="caption" style={{ fontSize: 9.5, fontWeight: '600', color: on ? c.accent : c.inkStrong }}>{ini}</AText>
+        </View>
+        {badge ? (
+          <View style={{ position: 'absolute', left: 22, top: -3, minWidth: 15, height: 15, paddingHorizontal: 3, borderRadius: 8, backgroundColor: badge.color, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.well }}>
+            <AText variant="caption" numeric style={{ fontSize: 8.5, lineHeight: 10, color: badge.ink }}>{badge.n}</AText>
+          </View>
+        ) : null}
+      </View>
+      {on ? (
+        <View style={{ paddingLeft: 6, paddingRight: 12, gap: 1 }}>
+          <AText variant="caption" tone="strong" numberOfLines={1} style={{ fontSize: 12.5, fontWeight: '500' }}>{label}</AText>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+            <View style={{ paddingHorizontal: 5, borderRadius: 5, backgroundColor: c.tile }}>
+              <AText variant="caption" tone="strong" numeric style={{ fontSize: 9.5 }}>{stat.inn}/{stat.exp}</AText>
+            </View>
+            <AText variant="caption" style={{ fontSize: 10, color: status.color, fontWeight: '500' }}>{status.text}</AText>
+          </View>
+        </View>
+      ) : null}
+    </Pressable>
+  );
+}
+
 function Message({ text, dim }: { text: string; dim?: boolean }) {
   const { amazen } = useTheme();
   const c = amazen.color;
@@ -365,46 +480,7 @@ function Message({ text, dim }: { text: string; dim?: boolean }) {
   );
 }
 
-function FilterChip({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
-  const { amazen } = useTheme();
-  const c = amazen.color;
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: on }}
-      style={{ borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: on ? c.accentTint : c.tile, borderWidth: 1.5, borderColor: on ? c.accent : 'transparent' }}>
-      <AText variant="caption" tone={on ? 'accent' : 'ink'}>{label}</AText>
-    </Pressable>
-  );
-}
 
-/** A site row is the same card in miniature — a count, a presence bar, what is wrong. */
-function SiteRowView({ row, people, onPress }: { row: SiteRow; people: CrewPerson[]; onPress: () => void }) {
-  const { amazen } = useTheme();
-  const { t } = useTranslation();
-  const c = amazen.color;
-  const total = people.filter((p) => p.spaceId === row.spaceId).length;
-  const tone = row.trouble ? (row.trouble.band === 'late' ? c.critical : c.warn) : c.accent;
-  const issue = row.trouble
-    ? t(`crew.issue.${row.trouble.band}`, { count: row.trouble.count, defaultValue: `${row.trouble.count} ${row.trouble.band}` })
-    : null;
-  const segs = Math.min(total, 14);
-  const onSegs = total ? Math.round((row.on / total) * segs) : 0;
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => ({ gap: 7, paddingVertical: 6, opacity: pressed ? 0.8 : 1 })}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: tone }} />
-        <AText variant="body" tone="strong" numberOfLines={1} style={{ flex: 1, fontSize: 14 }}>{row.spaceName}</AText>
-        {issue ? <AText variant="caption" numeric style={{ color: tone, fontSize: 11 }}>{issue}</AText> : null}
-        <AText variant="caption" tone="muted" numeric>{row.on}/{total}</AText>
-        <AText variant="body" tone="muted">›</AText>
-      </View>
-      <View style={{ flexDirection: 'row', gap: 3, paddingLeft: 15 }}>
-        {Array.from({ length: segs }).map((_, i) => (
-          <View key={i} style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: i < onSegs ? tone : c.lineGlass }} />
-        ))}
-      </View>
-    </Pressable>
-  );
-}
 
 function ExceptionRow({ kind, title, detail, onPress }: { kind: 'late' | 'waiting'; title: string; detail: string; onPress: () => void }) {
   const { amazen } = useTheme();
