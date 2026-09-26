@@ -2959,25 +2959,49 @@
     "restDoesNotCount": "no cuenta"
   },
   "crew": {
-    "onTheClock": "de servicio",
+    "onTheClock": "fichados",
     "onTheClockNow": "de servicio ahora",
-    "calm": "Están todos. Nada pendiente.",
+    "calm": "Todos los esperados están. Nada que decidir.",
     "empty": "No hay nadie de turno ahora.",
-    "offline": "Necesita conexión. Una respuesta guardada sería incorrecta, no antigua.",
-    "steady": "estable",
+    "offline": "Necesita conexión. Una respuesta guardada sería falsa, no antigua.",
+    "steady": "en orden",
     "nothingToDecide": "Nada que decidir.",
     "notArrived": "{{n}} sin llegar",
     "waiting": "{{n}} pendiente",
-    "more": "{{n}} más",
+    "more": "{{count}} más",
     "call": "Llamar a {{name}}",
-    "minLate": "{{n}} min tarde",
-    "minLeft": "{{n}} min restantes",
+    "minLate": "min tarde",
+    "minLeft": "min quedan",
     "minOver": "{{n}} min de más",
-    "minBreak": "{{n}} min de pausa"
+    "minBreak": "min de pausa",
+    "notKept": "La presencia no se guarda",
+    "workspacesShort": "{{count}} espacios · {{short}} con faltas",
+    "oneWorkspace": "un espacio",
+    "allWorkspaces": "Los {{count}} espacios",
+    "all": "Todos {{count}}",
+    "short": "Con faltas {{count}}",
+    "moreSites": "+{{count}} espacios",
+    "nobody": "Nadie está de turno ahora.",
+    "notArrived_one": "{{count}} no ha llegado",
+    "notArrived_other": "{{count}} no han llegado",
+    "acrossLate": "En {{count}} espacios · el más antiguo {{oldest}} min",
+    "waiting_one": "{{count}} turno esperando",
+    "waiting_other": "{{count}} turnos esperando",
+    "waitingDetail": "Hechos y esperando aprobación",
+    "late": "tarde",
+    "over": "de más",
+    "expected": "Previsto",
+    "issue": {
+      "late": "{{count}} tarde",
+      "freeSoon": "{{count}} libres pronto",
+      "over": "{{count}} de más",
+      "breakOver": "{{count}} pausa larga"
+    }
   },
   "widgets": {
     "shiftClock": "Reloj de turno",
-    "myWork": "Mi trabajo"
+    "myWork": "Mi trabajo",
+    "crew": "Equipo"
   },
   "shiftEnd": {
     "finishingAt": "TERMINANDO EN {{at}}",

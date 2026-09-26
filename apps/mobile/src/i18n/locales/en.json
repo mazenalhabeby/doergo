@@ -2968,23 +2968,47 @@
   "crew": {
     "onTheClock": "on the clock",
     "onTheClockNow": "on the clock right now",
-    "calm": "Everyone is in. Nothing waiting.",
+    "calm": "Everyone expected is in. Nothing to decide.",
     "empty": "Nobody is on shift right now.",
     "offline": "Needs a connection. A kept answer would be wrong, not old.",
     "steady": "steady",
     "nothingToDecide": "Nothing to decide.",
     "notArrived": "{{n}} not arrived",
     "waiting": "{{n}} waiting",
-    "more": "{{n}} more",
+    "more": "{{count}} more",
     "call": "Call {{name}}",
-    "minLate": "{{n}} min late",
-    "minLeft": "{{n}} min left",
+    "minLate": "min late",
+    "minLeft": "min left",
     "minOver": "{{n}} min over",
-    "minBreak": "{{n}} min break"
+    "minBreak": "min break",
+    "notKept": "Presence is not kept",
+    "workspacesShort": "{{count}} workspaces · {{short}} short",
+    "oneWorkspace": "one workspace",
+    "allWorkspaces": "All {{count}} workspaces",
+    "all": "All {{count}}",
+    "short": "Short {{count}}",
+    "moreSites": "+{{count}} workspaces",
+    "nobody": "Nobody is on shift right now.",
+    "notArrived_one": "{{count}} not arrived",
+    "notArrived_other": "{{count}} not arrived",
+    "acrossLate": "Across {{count}} workspaces · oldest {{oldest}} min",
+    "waiting_one": "{{count}} shift waiting",
+    "waiting_other": "{{count}} shifts waiting",
+    "waitingDetail": "Done, and waiting for somebody to approve them",
+    "late": "late",
+    "over": "over",
+    "expected": "Expected",
+    "issue": {
+      "late": "{{count}} late",
+      "freeSoon": "{{count}} free soon",
+      "over": "{{count}} over",
+      "breakOver": "{{count}} break over"
+    }
   },
   "widgets": {
     "shiftClock": "Shift clock",
-    "myWork": "My work"
+    "myWork": "My work",
+    "crew": "Crew"
   },
   "shiftEnd": {
     "finishingAt": "FINISHING AT {{at}}",

@@ -1,6 +1,7 @@
 import type React from 'react';
 import { ShiftClockCard } from '../components/home/shift-clock-card';
 import { MyWorkCard } from '../components/home/my-work-card';
+import { CrewCard } from '../components/home/crew-card';
 import type { Requires } from './entitlement';
 import { meets } from './entitlement';
 import type { User } from '../lib/api/types';
@@ -118,6 +119,23 @@ export const WIDGETS: WidgetRow[] = [
     empty: 'allClear',
     Component: MyWorkCard,
   },
+  /*
+    Crew — `docs/design/crew`. Who is on, shifts waiting and no-shows in one
+    row. A tile means a decision; the unit (people or workspaces) is derived
+    from how many workspaces the viewer's grant reaches.
+
+    ⚠️ `canViewSpaceAttendance`, held anywhere — the server narrows every
+    endpoint the card reads to the caller's own spaces.
+  */
+  {
+    key: 'crew',
+    title: 'widgets.crew',
+    question: 'Who is on, who is late, and what is waiting?',
+    requires: { permission: 'canViewSpaceAttendance' },
+    surface: 'well',
+    empty: 'hidden',
+    Component: CrewCard,
+  },
 ];
 
 /**
@@ -132,7 +150,7 @@ export const WIDGETS: WidgetRow[] = [
  * skipped silently, which is right for a member whose entitlement changed and
  * wrong for a typo — so `registry.spec.ts` fails on one.
  */
-export const DEFAULT_ORDER: string[] = ['shift-clock', 'my-work'];
+export const DEFAULT_ORDER: string[] = ['shift-clock', 'crew', 'my-work'];
 
 /**
  * ENTITLEMENT IS ASKED ONCE, AND FILTERED LAST.

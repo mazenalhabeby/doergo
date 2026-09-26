@@ -2959,25 +2959,49 @@
     "restDoesNotCount": "zählt nicht"
   },
   "crew": {
-    "onTheClock": "im Dienst",
+    "onTheClock": "eingestempelt",
     "onTheClockNow": "gerade im Dienst",
-    "calm": "Alle sind da. Nichts offen.",
+    "calm": "Alle Erwarteten sind da. Nichts zu entscheiden.",
     "empty": "Gerade ist niemand im Dienst.",
     "offline": "Braucht eine Verbindung. Eine gespeicherte Antwort wäre falsch, nicht alt.",
-    "steady": "ruhig",
+    "steady": "im Plan",
     "nothingToDecide": "Nichts zu entscheiden.",
     "notArrived": "{{n}} nicht erschienen",
     "waiting": "{{n}} offen",
-    "more": "{{n}} weitere",
+    "more": "{{count}} weitere",
     "call": "{{name}} anrufen",
-    "minLate": "{{n}} Min zu spät",
-    "minLeft": "noch {{n}} Min",
+    "minLate": "Min. zu spät",
+    "minLeft": "Min. übrig",
     "minOver": "{{n}} Min darüber",
-    "minBreak": "{{n}} Min Pause"
+    "minBreak": "Min. Pause",
+    "notKept": "Anwesenheit wird nicht gespeichert",
+    "workspacesShort": "{{count}} Arbeitsbereiche · {{short}} unterbesetzt",
+    "oneWorkspace": "ein Arbeitsbereich",
+    "allWorkspaces": "Alle {{count}} Arbeitsbereiche",
+    "all": "Alle {{count}}",
+    "short": "Unterbesetzt {{count}}",
+    "moreSites": "+{{count}} Arbeitsbereiche",
+    "nobody": "Gerade ist niemand im Dienst.",
+    "notArrived_one": "{{count}} nicht erschienen",
+    "notArrived_other": "{{count}} nicht erschienen",
+    "acrossLate": "In {{count}} Arbeitsbereichen · am längsten {{oldest}} Min.",
+    "waiting_one": "{{count}} Schicht wartet",
+    "waiting_other": "{{count}} Schichten warten",
+    "waitingDetail": "Erledigt und wartet auf Freigabe",
+    "late": "zu spät",
+    "over": "drüber",
+    "expected": "Erwartet",
+    "issue": {
+      "late": "{{count}} zu spät",
+      "freeSoon": "{{count}} bald frei",
+      "over": "{{count}} drüber",
+      "breakOver": "{{count}} Pause zu lang"
+    }
   },
   "widgets": {
     "shiftClock": "Schichtuhr",
-    "myWork": "Meine Arbeit"
+    "myWork": "Meine Arbeit",
+    "crew": "Team"
   },
   "shiftEnd": {
     "finishingAt": "FEIERABEND BEI {{at}}",

@@ -2959,25 +2959,49 @@
     "restDoesNotCount": "ne compte pas"
   },
   "crew": {
-    "onTheClock": "en poste",
+    "onTheClock": "pointés",
     "onTheClockNow": "en poste maintenant",
-    "calm": "Tout le monde est là. Rien en attente.",
+    "calm": "Tous les attendus sont là. Rien à décider.",
     "empty": "Personne en poste pour le moment.",
-    "offline": "Nécessite une connexion. Une réponse gardée serait fausse, pas ancienne.",
-    "steady": "stable",
+    "offline": "Il faut une connexion. Une réponse gardée serait fausse, pas ancienne.",
+    "steady": "dans les temps",
     "nothingToDecide": "Rien à décider.",
     "notArrived": "{{n}} absent(s)",
     "waiting": "{{n}} en attente",
-    "more": "{{n}} de plus",
+    "more": "{{count}} de plus",
     "call": "Appeler {{name}}",
-    "minLate": "{{n}} min de retard",
-    "minLeft": "{{n}} min restantes",
+    "minLate": "min de retard",
+    "minLeft": "min restantes",
     "minOver": "{{n}} min de plus",
-    "minBreak": "{{n}} min de pause"
+    "minBreak": "min de pause",
+    "notKept": "La présence n’est pas conservée",
+    "workspacesShort": "{{count}} espaces · {{short}} en sous-effectif",
+    "oneWorkspace": "un espace",
+    "allWorkspaces": "Les {{count}} espaces",
+    "all": "Tous {{count}}",
+    "short": "En manque {{count}}",
+    "moreSites": "+{{count}} espaces",
+    "nobody": "Personne n’est en poste pour l’instant.",
+    "notArrived_one": "{{count}} pas arrivé",
+    "notArrived_other": "{{count}} pas arrivés",
+    "acrossLate": "Sur {{count}} espaces · le plus ancien {{oldest}} min",
+    "waiting_one": "{{count}} poste en attente",
+    "waiting_other": "{{count}} postes en attente",
+    "waitingDetail": "Terminés, en attente de validation",
+    "late": "de retard",
+    "over": "de plus",
+    "expected": "Attendu",
+    "issue": {
+      "late": "{{count}} en retard",
+      "freeSoon": "{{count}} bientôt libres",
+      "over": "{{count}} au-delà",
+      "breakOver": "{{count}} pause dépassée"
+    }
   },
   "widgets": {
     "shiftClock": "Horloge de service",
-    "myWork": "Mon travail"
+    "myWork": "Mon travail",
+    "crew": "Équipe"
   },
   "shiftEnd": {
     "finishingAt": "FIN DE SERVICE À {{at}}",
