@@ -91,7 +91,7 @@ describe('rule 3 — previews are the real component, never a screenshot', () =>
     expect(empty).toMatch(/pointerEvents="none"/);
   });
 
-  it('the gallery renders the component at full size, inert', () => {
+  it('the gallery renders the real component (scaled to fit), inert', () => {
     const gallery = code('components/home/widget-gallery.tsx');
     expect(gallery).toMatch(/<row\.Component \/>/);
     expect(gallery).toMatch(/pointerEvents="none"/);

@@ -51,6 +51,8 @@ export function WidgetGallery({
   const { width } = useWindowDimensions();
   const gutter = amazen.space(4);
   const inner = width - gutter * 2;
+  /* A page is the whole sheet width; the gutter is inside it. */
+  const stride = width;
 
   const [pitches, setPitches] = useState<Record<string, Pitch>>({});
   const hear = useCallback((key: string) => (p: Pitch) => {
@@ -76,16 +78,16 @@ export function WidgetGallery({
 
   const pages = useRef<ScrollView>(null);
   const names = useRef<ScrollView>(null);
-  useEffect(() => { pages.current?.scrollTo({ x: index * width, animated: false }); }, [index, width]);
+  useEffect(() => { pages.current?.scrollTo({ x: index * stride, animated: false }); }, [index, stride]);
   const onPaged = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const i = Math.round(e.nativeEvent.contentOffset.x / width);
+    const i = Math.round(e.nativeEvent.contentOffset.x / stride);
     if (shown[i] && shown[i]!.key !== current?.key) { selection(); setCurrentKey(shown[i]!.key); }
   };
   const jump = (key: string) => {
     selection();
     setCurrentKey(key);
     const i = shown.findIndex((r) => r.key === key);
-    pages.current?.scrollTo({ x: i * width, animated: true });
+    pages.current?.scrollTo({ x: i * stride, animated: true });
   };
 
   const suggested = shown.filter((r) => !onHome.has(r.key) && (pitches[r.key]?.need ?? 0) > 0).length;
@@ -134,12 +136,16 @@ export function WidgetGallery({
         <ScrollView
           ref={pages}
           horizontal
-          pagingEnabled
+          /* ⚠️ Not `pagingEnabled` — `snapToInterval` knows how wide a page is (home-screen-spec). */
+          snapToInterval={stride}
+          decelerationRate="fast"
+          disableIntervalMomentum
           showsHorizontalScrollIndicator={false}
           onMomentumScrollEnd={onPaged}
           contentContainerStyle={{ paddingTop: amazen.space(3) }}
         >
-          {shown.map((r) => {
+          {shown.map((row) => {
+            const r = row;
             const p = pitches[r.key];
             const added = onHome.has(r.key);
             const urgent = !added && (p?.need ?? 0) > 0;
@@ -163,7 +169,7 @@ export function WidgetGallery({
                 <View pointerEvents="none" style={{ height: FRAME_H, overflow: 'hidden', borderRadius: 22, backgroundColor: c.well, opacity: added ? 0.55 : 1 }}>
                   <View style={{ width: inner / SCALE, transform: [{ scale: SCALE }], transformOrigin: 'top left' }}>
                     <PitchProvider onPitch={hearers[r.key]!}>
-                      <r.Component />
+                      <row.Component />
                     </PitchProvider>
                   </View>
                   <LinearGradient colors={[`${colors.card}00`, colors.card]} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 56 }} />
