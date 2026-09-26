@@ -98,3 +98,23 @@ export class ConnectivityMonitor {
     for (const l of this.listeners) l(next);
   }
 }
+
+/**
+ * One connectivity monitor for the whole app, fed by every request — not only
+ * the offline path — so "limited" is noticed on whatever screen fails first.
+ *
+ * ⚠️ HERE, NOT IN `runtime.ts`. A home widget asks "is there a network at all"
+ * before it spends a request, and importing the runtime to ask that drags the
+ * database, the file stores and the sync engine into every card (and into every
+ * rule test that drives one). This file needs nothing but NetInfo, lazily.
+ */
+export const connectivity = new ConnectivityMonitor();
+
+/**
+ * NetInfo says there is no network at all — a request now cannot reach the
+ * server and is not worth making. `limited` is NOT this: a network is there and
+ * a request may well get through, so that case still tries.
+ */
+export function knownOffline(): boolean {
+  return connectivity.state === 'offline';
+}

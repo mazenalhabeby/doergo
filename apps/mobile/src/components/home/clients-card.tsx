@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,7 @@ import { useTheme } from '../../contexts/theme-context';
 import { customersApi, type ClientsDue, type DueReminder } from '../../lib/api/customers';
 import { useQueuedWrite } from '../../offline/actions/queued-write';
 import { setActivityDoneFromPhone } from '../../offline/crm/client-actions';
+import { useOffline, useSyncStatus } from '../../offline/offline-context';
 import { useToast } from '../../island/island-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { AText, Eyebrow, CardSurface } from '../amazen';
@@ -15,7 +16,7 @@ import { GlyphTile } from './glyph-tile';
 import { WellDoor } from './well-door';
 import { FinishGlyph } from '../glyphs/work-glyphs';
 import { ColdGlyph } from '../glyphs/crm-glyphs';
-import { daysLate, headline, localDay, rowLines, withoutDone } from './clients-state';
+import { daysLate, headline, localDay, queuedDoneIds, rowLines, withoutDone } from './clients-state';
 import { ReminderRow, UNDO_MS, type RowState } from './reminder-row';
 import { usePitch } from '../../home/pitch';
 import { impact, selection } from '../../lib/haptics';
@@ -65,7 +66,16 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
     }
   }, []);
 
-  useLiveRefresh(refresh, REFRESH_MS);
+  /*
+    ⚠️ AND WHEN THE SIGNAL RETURNS — AFTER THE QUEUE HAS GONE. A reminder ticked
+    off with no signal is still in the outbox when the phone reconnects; asked
+    first, the server answers with it still owed. `flush()` joins the send the
+    reconnect already started rather than starting another.
+  */
+  const { running } = useOffline();
+  useLiveRefresh(refresh, REFRESH_MS, { onReconnect: true, beforeReconnect: () => running?.flush() });
+  const { operations } = useSyncStatus();
+  const queued = useMemo(() => queuedDoneIds(operations), [operations]);
   const say = usePhrase();
   const openBook = () => router.push('/(app)/customers' as Href);
   const openClient = (r: DueReminder) => router.push(`/(app)/customer/${r.customerId}` as Href);
@@ -134,7 +144,11 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
     reminder off drops the card's count at once, and the line above the home
     must drop with it rather than trailing until the next refresh.
   */
-  const shown = due ? withoutDone(due, Object.values(marked).map((x) => x.r), day.current.start) : null;
+  /* Ticked on this card, plus ticked earlier and still in the queue — `queuedDoneIds`. */
+  const doneHere = due
+    ? [...Object.values(marked).map((x) => x.r), ...due.items.filter((r) => queued.has(r.id) && !marked[r.id])]
+    : [];
+  const shown = due ? withoutDone(due, doneHere, day.current.start) : null;
   usePitch(!shown || !shown.allowed ? null : shown.total
     ? { need: shown.total, line: t('pitch.clients', { count: shown.total }) }
     : { need: 0, line: t('pitch.clientsCalm') });
@@ -180,7 +194,7 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
 
         {due && due.items.length ? (
           <View style={{ marginTop: amazen.space(3) }}>
-            {due.items.filter((r) => marked[r.id]?.state !== 'gone').map((r, i) => {
+            {due.items.filter((r) => marked[r.id]?.state !== 'gone' && (!queued.has(r.id) || marked[r.id])).map((r, i) => {
               const l = rowLines(r);
               const late = daysLate(r.dueAt, day.current.start);
               const midnight = r.dueAt ? new Date(r.dueAt).getHours() === 0 && new Date(r.dueAt).getMinutes() === 0 : true;

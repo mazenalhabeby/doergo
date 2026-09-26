@@ -315,7 +315,12 @@ export function useLastSyncedAt(): number | null {
         .then(([tasks, spaces]) => active && setPulledAt(newest(tasks.lastPullAt, spaces.lastPullAt)))
         .catch(() => undefined);
     read();
-    const off = records.onChange(read);
+    /*
+      ⚠️ ONLY THE TWO SCOPES IT READS. Every kept GET writes the `http` scope,
+      so listening to all of them ran two cursor queries per response — the
+      home's own reads among them — for a figure none of those can move.
+    */
+    const off = records.onChange((scope) => { if (scope === 'tasks' || scope === 'spaces') read(); });
     return () => {
       active = false;
       off();

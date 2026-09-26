@@ -1,9 +1,48 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { tasksApi } from '../../lib/api/tasks';
 import type { Task } from '../../lib/api/types';
-import { useConnectivity, useOffline, useSyncStatus } from '../offline-context';
+import { connectivity } from '../connectivity';
+import { useOffline, useSyncStatus } from '../offline-context';
+import type { OutboxOp } from '../outbox/types';
+import type { RecordRow } from '../db/records-store';
 import { listFailureIsFatal } from './list-failure';
 import { overlayTask } from './overlay';
+
+/**
+ * ⚠️ A PULL THIS RECENT IS NOT WORTH ANOTHER.
+ *
+ * Every pull's last page carries the whole scope's membership (`scopeIds` —
+ * 138 ids, ~4 KB, for an admin) whether anything changed or not, and the home
+ * used to pull on every focus AND once a minute AND twice per trigger (My work
+ * and Today's route each read this hook). A job created elsewhere reaches the
+ * phone through the socket poke (`socket-poke.ts`) in seconds, so a focus that
+ * lands inside this window re-reads the phone's copy and asks nothing.
+ * Pull-to-refresh on the home is explicit and pulls regardless.
+ */
+export const HOME_PULL_GAP_MS = 30_000;
+
+/**
+ * What the rows on screen ARE, as one string — so a pull that brought nothing
+ * new does not hand every card a new array.
+ *
+ * ⚠️ A NEW ARRAY IS A NEW EVERYTHING. `tasks` feeds every `useMemo` in My work
+ * and Today's route; an identical list with a fresh identity re-sorted the
+ * week, re-derived the day's stops and redrew the route's SVG on every pull,
+ * including the empty ones. The tasks scope is written only by pulls, and every
+ * server-side change moves `updatedAt`, so id + both timestamps + status is the
+ * whole of what can differ; the queued operations about these rows are the rest.
+ */
+export function homeTasksSignature(rows: readonly RecordRow<Task>[], ops: readonly OutboxOp[]): string {
+  const ids = new Set<string>();
+  const parts: string[] = [];
+  for (const r of rows) {
+    ids.add(r.id);
+    const d = r.data as unknown as { updatedAt?: string | null; status?: string };
+    parts.push(`${r.id}:${r.serverUpdatedAt ?? ''}:${d?.updatedAt ?? ''}:${d?.status ?? ''}`);
+  }
+  for (const o of ops) if (o.entityId && ids.has(o.entityId)) parts.push(`${o.id}:${o.state}`);
+  return parts.join('|');
+}
 
 /**
  * The home screens' task list — from the phone's copy whenever it has one,
@@ -29,19 +68,31 @@ export interface HomeTasks {
    */
   updatedAt: number | null;
   /**
+   * A list is on screen — from the phone or the server, empty or not.
+   *
+   * ⚠️ NOT `tasks.length > 0`. An empty copy is an answer ("nothing
+   * scheduled"); no copy yet is not, and a card that cannot tell them apart
+   * says "Nothing scheduled today" to somebody whose jobs are still opening.
+   */
+  loaded: boolean;
+  /**
    * Load the list. Falls back to the phone rather than failing; anything that
    * is not a missing network (a 401, a refusal) still throws, so the screens
    * keep handling those exactly as they did.
+   *
+   * Resolves to `loaded` — ⚠️ false when nothing answered but the phone's
+   * database is still opening: the copy is on its way, and "loaded" now would
+   * be a claim about a list nobody has read.
    */
-  load: () => Promise<void>;
+  load: () => Promise<boolean>;
 }
 
 export function useHomeTasks(): HomeTasks {
   const offline = useOffline();
-  const connectivity = useConnectivity();
   const { operations } = useSyncStatus();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const [loaded, setLoaded] = useState(false);
   // Whether what is on screen came from the phone — a server list must not be
   // silently swapped for an older local one when the queue happens to move.
   const fromPhone = useRef(false);
@@ -50,41 +101,81 @@ export function useHomeTasks(): HomeTasks {
   const fromServer = useRef(false);
   // Anything at all has been rendered, from either source.
   const shown = useRef(false);
+  // What is on screen, as `homeTasksSignature` — see there.
+  const shownSig = useRef<string | null>(null);
+  // When the server last answered the fallback — see HOME_PULL_GAP_MS.
+  const serverAt = useRef(0);
 
-  const readLocal = useCallback(async () => {
+  /** The phone's copy, or null when it has none; its `lastPullAt` when it does. */
+  const readLocal = useCallback(async (): Promise<number | null> => {
     const records = offline.records;
-    if (!records) return false;
+    if (!records) return null;
     // A phone that has never pulled has nothing to show; its first load still
     // comes from the server.
     const { lastPullAt } = await records.cursor('tasks');
-    if (lastPullAt === null) return false;
+    if (lastPullAt === null) return null;
     const rows = await records.list<Task>('tasks');
     const ops = offline.engine?.operations() ?? [];
-    setTasks(rows.map((r) => overlayTask(r.data, ops)) as Task[]);
+    const sig = homeTasksSignature(rows, ops);
+    if (sig !== shownSig.current) {
+      shownSig.current = sig;
+      setTasks(rows.map((r) => overlayTask(r.data, ops)) as Task[]);
+    }
     setUpdatedAt(lastPullAt);
     fromPhone.current = true;
     shown.current = true;
-    return true;
+    setLoaded(true);
+    return lastPullAt;
   }, [offline.records, offline.engine]);
 
+  /*
+    ⚠️ `load` IS STABLE ACROSS CONNECTIVITY, AND THAT IS A FIX. It used to list
+    `connectivity` and `offline.starting` among its dependencies, so every
+    change of signal — and the database finishing opening — gave it a new
+    identity, and every focus effect keyed on it (My work's, Today's route's)
+    ran again: a reconnect became two more pulls on top of the provider's own
+    `syncAll`, racing its flush. The signal is read when `load` runs; the
+    reconnect itself is the provider's (flush, THEN pull), and this hook hears
+    the pull land through `onChange` below.
+  */
+  const starting = useRef(offline.starting);
+  starting.current = offline.starting;
   const load = useCallback(async () => {
-    if (await readLocal()) {
-      if (connectivity === 'online') void offline.engine?.pull('tasks').catch(() => undefined);
-      return;
+    const pulledAt = await readLocal();
+    if (pulledAt !== null) {
+      const stale = Date.now() - pulledAt >= HOME_PULL_GAP_MS;
+      if (stale && connectivity.state === 'online') void offline.engine?.pull('tasks').catch(() => undefined);
+      return true;
     }
+    /*
+      ⚠️ THE SAME GAP FOR THE SERVER PATH. With offline mode off there is no
+      copy and every load is two list requests of up to 500 jobs each — on
+      every focus and every resume. An answer this recent is the answer.
+    */
+    if (fromServer.current && Date.now() - serverAt.current < HOME_PULL_GAP_MS) return true;
     try {
+      /*
+        ⚠️ NO REQUEST WHEN THERE IS NO NETWORK. NetInfo says nothing can reach
+        the server, so the two list requests below could only fail (after a
+        retry) — the answer is the same "unreachable", without spending them.
+      */
+      if (connectivity.state === 'offline') throw Object.assign(new Error('offline'), { statusCode: 0 });
       const fetched = await serverFallback();
       fromPhone.current = false;
       fromServer.current = true;
+      serverAt.current = Date.now();
       shown.current = true;
+      shownSig.current = null;
       setUpdatedAt(null);
       setTasks(fetched || []);
+      setLoaded(true);
+      return true;
     } catch (err) {
       // Whether this is worth the whole screen is one rule, stated once.
-      if (!listFailureIsFatal(err, { shown: shown.current, databaseStarting: offline.starting })) return;
+      if (!listFailureIsFatal(err, { shown: shown.current, databaseStarting: starting.current })) return shown.current;
       throw err;
     }
-  }, [readLocal, connectivity, offline.engine, offline.starting]);
+  }, [readLocal, offline.engine]);
 
   /*
     The database opens asynchronously, so a cold start reaches `load()` before
@@ -110,7 +201,7 @@ export function useHomeTasks(): HomeTasks {
     if (fromPhone.current) void readLocal();
   }, [operations, readLocal]);
 
-  return { tasks, updatedAt, load };
+  return { tasks, updatedAt, loaded, load };
 }
 
 /**

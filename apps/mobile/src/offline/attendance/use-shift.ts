@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/auth-context';
 import { useOffline, useSyncStatus } from '../offline-context';
 import { keep, keptNow, keptOnDisk } from '../../home/remember/store';
 import { isUnreachable } from '../actions/unreachable';
+import { knownOffline } from '../connectivity';
 import { overlayShift, type ShiftView } from './shift-overlay';
 import { clockInFromPhone, clockOutFromPhone, endRestFromPhone, requestExtraTimeFromPhone, resolveClockOutFromPhone, startRestFromPhone } from './shift-actions';
 
@@ -42,6 +43,13 @@ interface Loaded {
  */
 export async function loadShift(records: RecordsStore | null, userId?: string | null): Promise<Loaded> {
   try {
+    /*
+      ⚠️ NO NETWORK, NO ROUND TRIP. NetInfo says nothing can reach the server,
+      so the two reads below could only fail — each after a retry — before the
+      phone's copy is read anyway. Go to the copy directly: the card is right in
+      the first frames of a cold start in a basement, not after the failures.
+    */
+    if (knownOffline()) throw Object.assign(new Error('offline'), { statusCode: 0 });
     const [status, breaks] = await Promise.all([attendanceApi.getStatus(), attendanceApi.getBreakStatus()]);
     const serverAt = Date.now();
     if (records) {
@@ -113,8 +121,13 @@ export function useShift(): ShiftView & { source: Loaded['source']; refresh: () 
     let alive = true;
     void keptOnDisk<Kept>(KEPT, userId).then((known) => {
       if (!alive || !known) return;
+      /*
+        ⚠️ `none` TOO. With no signal the refresh can finish BEFORE this read
+        does — it has nothing to ask — and "nobody knows" then shut out the one
+        thing the phone did know, leaving the card blank for the whole day.
+      */
       setLoaded((prev) =>
-        prev.source === 'pending'
+        prev.source === 'pending' || prev.source === 'none'
           ? { status: known.status, breaks: known.breaks, serverAt: known.serverAt, source: 'phone' }
           : prev,
       );

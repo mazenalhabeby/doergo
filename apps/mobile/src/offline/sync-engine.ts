@@ -96,6 +96,8 @@ export class SyncEngine {
   private flushing: Promise<void> | null = null;
   private flushAgain = false;
   private pullingNow = false;
+  /** The pull of each scope that is on its way — see `pull`. */
+  private readonly pulls = new Map<SyncPullScope, Promise<void>>();
   private lastSuccessAt: number | null = null;
   private cache: OutboxOp[] = [];
   private readonly listeners = new Set<Listener>();
@@ -330,7 +332,24 @@ export class SyncEngine {
    * are never evicted — the phone would otherwise forget a task while its
    * "arrived" is still on the way.
    */
-  async pull(scope: SyncPullScope): Promise<void> {
+  pull(scope: SyncPullScope): Promise<void> {
+    /*
+      ⚠️ ONE PULL PER SCOPE AT A TIME — a second caller joins the first.
+
+      Reconnecting runs `syncAll`, the home's two task readers each pull on the
+      same focus, and a socket poke can land in the middle: three pulls of one
+      scope with one cursor, each applying the same pages in its own
+      transaction and each announcing a change that re-reads every screen. The
+      answer the late callers want is the one already on its way.
+    */
+    const running = this.pulls.get(scope);
+    if (running) return running;
+    const started = this.pullScope(scope).finally(() => this.pulls.delete(scope));
+    this.pulls.set(scope, started);
+    return started;
+  }
+
+  private async pullScope(scope: SyncPullScope): Promise<void> {
     const keep = new Set(this.cache.filter((o) => OPEN_STATES.has(o.state) && o.entityId).map((o) => o.entityId!));
     let { cursor } = await this.deps.records.cursor(scope);
     let firstPage = true;

@@ -23,7 +23,14 @@ export function useRouteDay() {
   const { user } = useAuth();
   const memberId = user?.id ?? null;
   const { tasks, load } = useHomeTasks();
-  useLiveRefresh(load);
+  /*
+    ⚠️ FOCUS AND RESUME, NO MINUTE TIMER. `load` is a pull, and a pull carries
+    the scope's whole membership; the stops change when a job does, which the
+    socket poke already turns into a pull this card re-reads when it lands.
+    A timer here pulled every minute the home was open — and, with offline mode
+    off, downloaded two pages of up to 500 jobs every minute to redraw a line.
+  */
+  useLiveRefresh(load, null);
   const { position, allowed, fresh, ask } = useDriverPosition();
 
   const stops = useMemo(() => dayStops(tasks, memberId), [tasks, memberId]);

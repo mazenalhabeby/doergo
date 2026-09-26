@@ -52,6 +52,15 @@ const KEEP: readonly RegExp[] = [
   /^\/overtime(\/|\?|$)/,
   /^\/support(\/|\?|$)/,
   /^\/chat(\/|\?|$)/,
+  /*
+    ⚠️ INCLUDING `/customers/due` — THE CLIENTS CARD — AND THAT IS DECIDED, NOT
+    INHERITED. Its answer is the member's own to-do list, not presence: a
+    reminder owed at 14:00 is still owed with no signal, and "Needs a
+    connection" would hide the phone number they are about to ring. The key
+    carries the member's day (`dayStart`/`dayEnd`), so yesterday's list can
+    never answer for today; and the card lays the queue over it
+    (`queuedDoneIds`), so a reminder ticked off offline does not come back.
+  */
   /^\/customers(\/|\?|$)/,
   /^\/users\/me(\?|$)/,
   /^\/locations(\/|\?|$)/,

@@ -213,5 +213,15 @@ export function useHomeLayout(): HomeLayoutApi {
 
   const reset = useCallback(() => persist(EMPTY_LAYOUT), [persist]);
 
-  return { rows, available, offScreen, loading, move, setOrder, hide, show, add, reset };
+  /*
+    ⚠️ ONE IDENTITY UNTIL SOMETHING IN IT CHANGES. The screen keys its
+    callbacks on this object (`moveBy`, `removeWidget`, `onDragEnd`), those
+    feed `renderItem`, and `EditableWidget` is memoised on them — so a fresh
+    object on every render handed every card new props and re-rendered every
+    live widget on the home whenever the screen did anything at all.
+  */
+  return useMemo(
+    () => ({ rows, available, offScreen, loading, move, setOrder, hide, show, add, reset }),
+    [rows, available, offScreen, loading, move, setOrder, hide, show, add, reset],
+  );
 }

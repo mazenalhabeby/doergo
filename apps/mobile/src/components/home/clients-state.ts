@@ -1,6 +1,7 @@
 import { getEndOfDay, getStartOfDay } from '@hbcfield/shared/client';
 import type { ClientsDue, DueReminder } from '../../lib/api/customers';
 import type { Phrase } from './phrase';
+import { STILL_MINE } from '../../offline/actions/outcome';
 
 /**
  * What the Clients card says — pure, so the words are tested.
@@ -104,4 +105,23 @@ export function daysLate(dueAt: string | null, dayStart: Date): number | null {
 /** The member's own day, which is what "today" means on this card. */
 export function localDay(now: Date = new Date()): { start: Date; end: Date } {
   return { start: getStartOfDay(now), end: getEndOfDay(now) };
+}
+
+/**
+ * Reminders this phone has already marked done and not yet delivered.
+ *
+ * ⚠️ WITHOUT THIS A TICKED REMINDER COMES BACK. The card forgets what it ticked
+ * the moment it remounts (pull-to-refresh remounts every card), and with no
+ * signal — or before the queue has flushed on reconnect — the answer it reads
+ * is the server's from BEFORE the tick: the row, and the count, return for a
+ * job the member has done. The queue is the truth about what they did.
+ */
+export function queuedDoneIds(ops: readonly { op: string; state: string; entityId?: string | null; payload?: unknown }[]): Set<string> {
+  const out = new Set<string>();
+  for (const o of ops) {
+    if (o.op !== 'customer.activityUpdate' || !o.entityId || !STILL_MINE.has(o.state)) continue;
+    const body = (o.payload as { body?: { done?: unknown } } | undefined)?.body;
+    if (body?.done === true) out.add(o.entityId);
+  }
+  return out;
 }

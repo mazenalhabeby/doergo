@@ -15,6 +15,16 @@ import { useLiveRefresh } from './use-live-refresh';
  * pressed (`fresh`), because the driver has moved since the card was drawn.
  * The position never leaves the phone except inside a plan request.
  */
+/**
+ * ⚠️ THE SAME FIX KEEPS ITS IDENTITY. Parked, the last known position is the
+ * same numbers every minute — and a new object each time handed the route card
+ * a new `position`, which re-judged every stop and redrew the SVG sketch for a
+ * driver who had not moved. ~1 m (1e-5°) is below anything the card can draw.
+ */
+function samePlace(was: LatLng | null, now: { latitude: number; longitude: number }): boolean {
+  return !!was && Math.abs(was.lat - now.latitude) < 1e-5 && Math.abs(was.lng - now.longitude) < 1e-5;
+}
+
 /** The longest a button waits for a fresh fix before using the one it has. */
 const FIX_MS = 6_000;
 
@@ -29,7 +39,7 @@ export function useDriverPosition(everyMs = 60_000) {
       if (!perm.granted) return;
       const last = await Location.getLastKnownPositionAsync({ maxAge: 5 * 60_000 });
       const pos = last ?? (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
-      setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      setPosition((was) => samePlace(was, pos.coords) ? was : { lat: pos.coords.latitude, lng: pos.coords.longitude });
     } catch { /* no fix is a state (the card says so), not an error */ }
   }, []);
   useLiveRefresh(read, everyMs);

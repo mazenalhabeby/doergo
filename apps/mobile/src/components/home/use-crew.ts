@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { attendanceApi, type NoShow } from '../../lib/api/attendance';
 import { crewPeopleFrom, type CrewPerson, type CrewEntryInput, type CrewBreakInput } from './crew-state';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
+import { connectivity } from '../../offline/connectivity';
 
 /**
  * The Crew card's data — three existing endpoints, no new ones.
@@ -64,6 +65,16 @@ export function useCrew(enabled: boolean): CrewData & { refresh: () => void } {
     if (!enabled) return;
     const mine = ++seq.current;
     const current = () => live.current && mine === seq.current;
+    /*
+      ⚠️ NO SIGNAL, NO FOUR REQUESTS. They could only fail — after a retry each
+      — and the answer is the one a failure gives anyway: presence is not kept,
+      so the card says it needs a connection. Straight away, on a cold start in
+      a basement, rather than after the round trips time out.
+    */
+    if (connectivity.state === 'offline') {
+      if (current()) setData((d) => ({ ...d, people: [], notArrived: [], failed: true, loading: false, at: Date.now() }));
+      return;
+    }
     try {
       /*
         ⚠️ PRESENCE FAILS AS A WHOLE. Who is on, who is on a rest and who has
@@ -89,8 +100,23 @@ export function useCrew(enabled: boolean): CrewData & { refresh: () => void } {
     }
   }, [enabled]);
 
-  /* On every return to the home screen, when the app comes back, and once a minute — rings move. */
-  useLiveRefresh(refresh, REFRESH_MS);
+  /*
+    ⚠️ THE MOMENT THE SIGNAL GOES, THE RINGS GO. Presence drawn while offline
+    ages under a clock that says it is current — the answer on screen was
+    right a minute ago and is already the kind of stale this card refuses to
+    draw. The next answer comes with the signal (`onReconnect` below).
+  */
+  useEffect(() => {
+    if (!enabled) return;
+    return connectivity.subscribe((now) => {
+      if (now !== 'offline' || !live.current) return;
+      seq.current++;
+      setData((d) => ({ ...d, people: [], notArrived: [], failed: true, loading: false, at: Date.now() }));
+    });
+  }, [enabled]);
+
+  /* On every return to the home screen, when the app comes back, once a minute — rings move — and when the signal returns. */
+  useLiveRefresh(refresh, REFRESH_MS, { onReconnect: true });
 
   return { ...data, refresh: () => void refresh() };
 }

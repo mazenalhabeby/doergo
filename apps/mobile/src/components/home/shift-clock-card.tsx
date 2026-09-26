@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { useTranslation } from 'react-i18next';
 import type { BreakType } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
@@ -119,13 +119,19 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
   }, []);
 
   const refresh = shift.refresh;
-  const first = useRef(false);
-  useEffect(() => {
-    if (first.current) return;
-    first.current = true;
-    void refresh();
-  }, [refresh]);
-  useFocusEffect(useCallback(() => { void refresh(); }, [refresh]));
+  /*
+    ⚠️ ONE TRIGGER SET, AND THE MOUNT IS ONE OF THEM. A separate "first render"
+    effect sat beside a focus effect and both fired as the card appeared: the
+    status and the rests asked twice on every launch and every pull-to-refresh.
+    The mount of a screen that is showing IS a focus.
+
+    Focus, the app coming back (a shift ended on the web while the phone was in
+    a pocket) and the signal returning — no timer: the minute tick above moves
+    the figures, and nothing about the shift changes without one of these.
+    ⚠️ No flush first: `useShift` lays every queued shift change over whatever
+    the server says, so an answer from before the flush still reads right.
+  */
+  useLiveRefresh(refresh, null, { onReconnect: true });
 
   const schedule = scheduleFor(user?.scheduleType);
 

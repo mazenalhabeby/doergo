@@ -6,12 +6,14 @@ import { daysLate, hasAccessModule } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useHomeTasks } from '../../offline/tasks/use-home-tasks';
-import { useOffline } from '../../offline/offline-context';
+import { useConnectivity, useOffline } from '../../offline/offline-context';
 import { isUnreachable } from '../../offline/actions/unreachable';
+import { knownOffline } from '../../offline/connectivity';
 import { FreshnessLabel } from '../../offline/components/freshness-label';
 import { SyncChip } from '../../offline/components/sync-chip';
 import { useShift } from '../../offline/attendance/use-shift';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
+import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { weekdayName } from '../../lib/app-dates';
 import { scheduleApi, tasksApi } from '../../lib/api';
 import type { ScheduleEntry, Task } from '../../lib/api/types';
@@ -54,8 +56,15 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const router = useRouter();
   const offline = useOffline();
   const shift = useShift();
+  /*
+    ⚠️ This card reads the shift too, and it did not refresh it — only the
+    Shift clock card did. Without that card on the home, "on shift" here was
+    the last SAVED shift, up to a day old. Focus, resume and reconnect; an
+    identical request already in flight is joined by the API client.
+  */
+  useLiveRefresh(shift.refresh, null, { onReconnect: true });
   const c = amazen.color;
-  const { tasks: held, updatedAt, load } = useHomeTasks();
+  const { tasks: held, updatedAt, loaded, load } = useHomeTasks();
 
   const shape = shapeFor({
     tasks: hasAccessModule(user ?? {}, 'tasks'),
@@ -75,7 +84,15 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
   */
   const [phase, setPhase] = useState<'opening' | 'ready' | 'refused' | 'absent'>('opening');
   const fetchList = useCallback(async () => {
-    try { await load(); setPhase('ready'); }
+    /*
+      ⚠️ `ready` ONLY WHEN A LIST IS ON SCREEN. `load()` returns quietly when
+      nothing answered while the phone's database is still opening, and this
+      used to read that as ready: a cold start in a basement said "Nothing
+      scheduled today" over the member's day — for good, on a phone whose copy
+      turned out to be empty of this week. `opening` holds until the copy
+      lands (the effect below) or the database settles the question.
+    */
+    try { if (await load()) setPhase('ready'); }
     catch (err) { setPhase(isUnreachable(err) ? 'absent' : 'refused'); }
   }, [load]);
   /*
@@ -114,8 +131,22 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
     syncDay();
     if (shape !== 'none' && shape !== 'shifts') void fetchList();
   }, [fetchList, shape, syncDay]));
-  // Rows arriving from the phone's copy mean it has loaded, whatever load() is still doing.
-  useEffect(() => { if (held.length > 0 && phase === 'opening') setPhase('ready'); }, [held.length, phase]);
+  // The phone's copy arriving means it has loaded, whatever load() is still doing — an empty copy too.
+  useEffect(() => { if (loaded && phase === 'opening') setPhase('ready'); }, [loaded, phase]);
+  /*
+    ⚠️ THE DATABASE FINISHED OPENING WITH THE CARD STILL WAITING: ask once more.
+    Now there is either a copy (ready) or there will never be one this launch,
+    and nothing answering is then ⑦, not a spinner forever.
+  */
+  const opening = offline.starting;
+  const wasOpening = useRef(opening);
+  useEffect(() => {
+    // The transition only — on mount the focus effect above has already asked.
+    const settled = wasOpening.current && !opening;
+    wasOpening.current = opening;
+    if (settled && phase === 'opening' && shape !== 'none' && shape !== 'shifts') void fetchList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the database settles
+  }, [opening]);
 
   /*
     The shift bars — the member's own weekly schedule. `GET /employees/:id/
@@ -138,6 +169,12 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
   */
   const flowIds = useMemo(() => [...new Set(held.map(flowIdOf).filter((x): x is string => !!x))].sort().join(','), [held]);
   const [flows, setFlows] = useState<Map<string, unknown>>(() => new Map());
+  /*
+    ⚠️ A workflow that could not be asked for offline is asked again when the
+    signal returns — keyed on the set of ids alone, it waited for the NEXT
+    job on a new workflow, and until then its rows could only open the job.
+  */
+  const online = useConnectivity() === 'online';
   useEffect(() => {
     if (!flowIds) return;
     const records = offline.records;
@@ -156,7 +193,8 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
           which is the honest answer when the verbs are unknown.
         */
         const sample = held.find((x) => flowIdOf(x) === id);
-        if (!sample) continue;
+        /* ⚠️ With no network it cannot answer — the row opens the job, as below, without the failed round trip. */
+        if (!sample || knownOffline()) continue;
         const detail = await tasksApi.getById(sample.id).catch(() => null);
         const flow = (detail as unknown as { workflow?: { id?: string } } | null)?.workflow;
         if (flow) next.set(id, flow);
@@ -165,7 +203,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
     })();
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the SET of workflow ids, not every task change
-  }, [offline.records, flowIds]);
+  }, [offline.records, flowIds, online]);
 
   // Today on mount, always. Selecting a day is a READ.
   const today = useMemo(() => new Date(todayMs), [todayMs]);

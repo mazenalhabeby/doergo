@@ -1,5 +1,5 @@
 import { File as FsFile } from 'expo-file-system';
-import { ConnectivityMonitor } from './connectivity';
+import { connectivity } from './connectivity';
 import { openOfflineDatabase } from './db/database';
 import { RecordsStore } from './db/records-store';
 import { SqliteOutboxStore } from './db/sqlite-outbox-store';
@@ -13,11 +13,11 @@ import { uuidv7 } from './ids';
 import { OfflinePreferencesStore } from './preferences';
 import { SyncEngine } from './sync-engine';
 
-/**
- * One connectivity monitor for the whole app, fed by every request — not only
- * the offline path — so "limited" is noticed on whatever screen fails first.
- */
-export const connectivity = new ConnectivityMonitor();
+/*
+  The one connectivity monitor lives in `connectivity.ts` now and is re-exported
+  here for the callers that already import it from the runtime.
+*/
+export { connectivity };
 
 export interface OfflineRuntime {
   records: RecordsStore;

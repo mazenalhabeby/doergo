@@ -15,6 +15,8 @@ import { displayName, initialsOf } from '../lib/people';
 import { impact, selection } from '../lib/haptics';
 import { announce, useScreenReader } from '../hooks/use-a11y';
 import { OfflineBanner } from '../offline/components/offline-banner';
+import { useOffline } from '../offline/offline-context';
+import { connectivity } from '../offline/connectivity';
 import { EmptyArrange } from '../components/home/empty-arrange';
 import { EmptyHome, type Suggestion } from '../components/home/empty-home';
 import { DropSlot, EditableWidget, LIFT_FACTOR } from '../components/home/editable-widget';
@@ -143,12 +145,22 @@ export function HomeScreen() {
   */
   const spinner = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   React.useEffect(() => () => { if (spinner.current) clearTimeout(spinner.current); }, []);
+  const offline = useOffline();
   const onRefresh = useCallback(() => {
     setRefreshing(true);
+    /*
+      ⚠️ THE PULL IS ASKED FOR HERE, EXPLICITLY. The cards re-read the phone's
+      copy when they remount, but a focus inside `HOME_PULL_GAP_MS` of the last
+      pull does not pull again — and a pull-down is a member saying "fresher,
+      please". Queue first, then the list, so it does not show the server's
+      state from before their own unsent change.
+    */
+    const engine = offline.engine;
+    if (engine && connectivity.state === 'online') void engine.flush().then(() => engine.pull('tasks')).catch(() => undefined);
     setRefreshKey((k) => k + 1);
     if (spinner.current) clearTimeout(spinner.current);
     spinner.current = setTimeout(() => setRefreshing(false), 400);
-  }, []);
+  }, [offline.engine]);
 
   /*
     ⚠️ ONE HOOK, READ ONCE, FOR EVERY WIDGET — including the ones that are NOT
@@ -290,7 +302,7 @@ export function HomeScreen() {
     [editing, enterEdit, isDark, landed, moveBy, refreshKey, removeWidget, rows.length, screenReader],
   );
 
-  const onHomeKeys = new Set(rows.map((r) => r.key));
+  const onHomeKeys = React.useMemo(() => new Set(rows.map((r) => r.key)), [rows]);
 
   return (
     <Ground variant="home">

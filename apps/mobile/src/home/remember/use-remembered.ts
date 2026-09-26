@@ -75,7 +75,12 @@ export function useRemembered<T>(input: {
     let alive = true;
     void keptOnDisk<T>(name, userId, rules).then((known) => {
       if (!alive || !known) return;
-      setState((prev) => (prev.from === 'pending' ? { data: revive ? revive(known) : known, from: 'phone' } : prev));
+      /*
+        ⚠️ `none` IS A GAP TOO. With no signal the ask fails fast — often before
+        this disk read lands — and "nothing known" must not shut out what the
+        last run knew.
+      */
+      setState((prev) => (prev.from === 'pending' || prev.from === 'none' ? { data: revive ? revive(known) : known, from: 'phone' } : prev));
     });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
