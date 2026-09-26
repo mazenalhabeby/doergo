@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect } from 'react';
-import { StyleSheet, View, type ViewProps, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, View, type ViewProps, type ViewStyle } from 'react-native';
 import Reanimated, { interpolate, interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useTheme } from '../../contexts/theme-context';
 
@@ -28,7 +28,7 @@ export function GlassCard({ style, children, ...rest }: ViewProps) {
           borderRadius: amazen.radius.surface,
           padding: amazen.layout.gutter,
         },
-        shadowGlass(isDark),
+        shadowUnderGlass(isDark),
         style,
       ]}
       {...rest}
@@ -103,6 +103,16 @@ export function shadowGlass(isDark: boolean): ViewStyle {
   return isDark
     ? { shadowColor: '#000', shadowOpacity: 0.45, shadowRadius: 24, shadowOffset: { width: 0, height: 10 }, elevation: 6 }
     : { shadowColor: '#0b332a', shadowOpacity: 0.1, shadowRadius: 22, shadowOffset: { width: 0, height: 8 }, elevation: 4 };
+}
+
+/**
+ * The glass shadow for a TRANSLUCENT surface. Android draws an elevation
+ * shadow's body behind the view, so under anything see-through it shows as a
+ * lighter rectangle inset in the card — there, glass gets no elevation.
+ */
+export function shadowUnderGlass(isDark: boolean): ViewStyle {
+  const s = shadowGlass(isDark);
+  return Platform.OS === 'android' ? { ...s, elevation: 0 } : s;
 }
 
 export function shadowDisc(isDark: boolean): ViewStyle {
@@ -180,7 +190,13 @@ export function CardSurface({ fallback = 'well', style, children, ...rest }: Vie
     borderRadius: interpolate(p.value, [0, 1], [amazen.radius.panel, amazen.radius.surface]),
     shadowOpacity: shadowMax * p.value,
     // Elevation cannot fade — it is on only for glass. (Android has no shadowOpacity.)
-    elevation: glassy ? elevationMax : 0,
+    /*
+      ⚠️ NEVER AN ELEVATION UNDER GLASS ON ANDROID. Android draws the elevation
+      shadow's own body BEHIND the view, and glass is translucent — so the
+      shadow showed through as a lighter rectangle inset in the card. Glass on
+      Android is lifted by its border and the gradient; iOS keeps the shadow.
+    */
+    elevation: Platform.OS === 'android' ? 0 : glassy ? elevationMax : 0,
   }));
   return (
     <Reanimated.View

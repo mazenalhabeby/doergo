@@ -45,6 +45,10 @@ const ONLINE_ONLY: Record<string, string> = {
   '/onboarding/status': 'joining an organization is not something that happens in a basement',
   '/onboarding/validate-org-code/:x': 'the server is the only thing that knows whether a code is real',
   '/billing/subscription': "Stripe's own status; a kept copy would be a stale claim about money",
+  // Presence — who is on RIGHT NOW. The Crew card says it needs a connection rather than show this morning.
+  '/attendance/no-shows': 'presence: a kept answer would name somebody late who has since arrived',
+  '/attendance/active-entries': 'presence: who is clocked in now',
+  '/attendance/breaks/active': 'presence: who is on a rest now',
 };
 
 /*

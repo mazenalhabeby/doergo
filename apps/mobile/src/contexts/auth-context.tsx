@@ -101,7 +101,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(updatedUser);
       console.log('[AuthContext] User refreshed, onboardingCompleted:', updatedUser.onboardingCompleted);
     } catch (error) {
-      console.error('[AuthContext] Error refreshing user:', error);
+      // No signal is expected, not an error: the kept user stands until it comes back.
+      console.warn('[AuthContext] Could not refresh the user:', error instanceof Error ? error.message : error);
     }
   }, []);
 

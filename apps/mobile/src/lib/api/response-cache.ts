@@ -89,6 +89,16 @@ const NEVER: readonly RegExp[] = [
   */
   /^\/attendance\/(status|breaks\/status)(\?|$)/,
   /^\/attendance\/entries\/[^/]+\/worklog(\?|$)/,
+  /*
+    ⚠️ WHO IS ON RIGHT NOW — presence, never kept. The Crew card read these and
+    got this morning's answer back with no signal, drawn under a fresh clock:
+    "6h 53 late" about somebody who may have arrived an hour ago. Stale is
+    wrong, not old; the card says it needs a connection instead.
+  */
+  /^\/attendance\/all-entries\?(.*&)?status=CLOCKED_IN/,
+  /^\/attendance\/active-entries(\?|$)/,
+  /^\/attendance\/breaks\/active(\?|$)/,
+  /^\/attendance\/no-shows(\?|$)/,
 ];
 
 export function isKeptResponse(endpoint: string): boolean {

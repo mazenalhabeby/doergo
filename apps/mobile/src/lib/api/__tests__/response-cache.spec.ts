@@ -2,12 +2,14 @@ import { isKeptResponse, keepResponse, keptResponse, setResponseCache } from '..
 
 describe('kept responses', () => {
   it("keeps the member's own data, never credentials, live data or what has its own offline copy", () => {
-    for (const kept of ['/attendance/history?limit=10', '/documents', '/assets/mine', '/assets/log/mine?limit=50', '/assets/log/due-mine', '/chat/conversations', '/employees/u1/time-off', '/shift-issues/i1/messages', '/customers?page=1', '/portal/config', '/portal/requests', '/portal/requests/r1', '/portal/units']) {
+    for (const kept of ['/attendance/history?limit=10', '/documents', '/assets/mine', '/assets/log/mine?limit=50', '/assets/log/due-mine', '/chat/conversations', '/employees/u1/time-off', '/shift-issues/i1/messages', '/customers?page=1', '/portal/config', '/portal/requests', '/portal/requests/r1', '/portal/units', '/attendance/all-entries?status=COMPLETED&limit=50']) {
       expect([kept, isKeptResponse(kept)]).toEqual([kept, true]);
     }
     for (const never of [
       '/tasks', '/tasks/t1', '/attendance/status', '/attendance/breaks/status', '/attendance/entries/e1/worklog',
       '/auth/me', '/billing/bill', '/tracking/workers', '/sync/pull?scope=tasks', '/documents/d1/download-url', '/assets/proposals/p1/document-url', '/portal/requests/r1/attachments/a1/url',
+      // Presence — who is on NOW (the Crew card). Stale is wrong, not old.
+      '/attendance/all-entries?status=CLOCKED_IN&limit=300', '/attendance/active-entries', '/attendance/breaks/active', '/attendance/no-shows?days=1',
     ]) {
       expect([never, isKeptResponse(never)]).toEqual([never, false]);
     }

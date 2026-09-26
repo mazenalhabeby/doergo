@@ -6,7 +6,7 @@
  * `src/components/home/` and are one family with one construction law.
  */
 export { Ground } from './ground';
-export { GlassCard, Well, Sunken, WellDivider, shadowGlass, shadowDisc, shadowDiscPrimary, CardSurface, SurfaceProvider, useSurface, type SurfaceKind } from './surfaces';
+export { GlassCard, Well, Sunken, WellDivider, shadowGlass, shadowUnderGlass, shadowDisc, shadowDiscPrimary, CardSurface, SurfaceProvider, useSurface, type SurfaceKind } from './surfaces';
 export { AText, Eyebrow, type Tone, type TypeVariant, type ATextProps } from './text';
 export { Hero, type HeroPart } from './hero';
 export { Disc, DiscRow } from './disc';

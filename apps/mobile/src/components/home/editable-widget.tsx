@@ -12,7 +12,7 @@ import { runOnJS } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { AText, WidgetBoundary } from '../amazen';
-import { shadowGlass } from '../amazen/surfaces';
+import { shadowGlass, shadowUnderGlass } from '../amazen/surfaces';
 import { widgetTitle, type WidgetRow } from '../../home/registry';
 
 /**
@@ -294,7 +294,8 @@ function EditableWidgetInner({
             borderWidth: StyleSheet.hairlineWidth * 2,
             borderColor: c.lineGlass,
           },
-          shadowGlass(isDark),
+          // The halo is a translucent tint — no elevation under it on Android.
+          shadowUnderGlass(isDark),
           halo,
         ]}
       />
