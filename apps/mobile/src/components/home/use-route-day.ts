@@ -8,7 +8,7 @@ import { useDriverPosition } from '../../hooks/use-driver-position';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { detectNavApps, preferredNavApp, rememberNavApp, rememberedNavApp, type InstalledNavApp } from '../../lib/nav-apps';
 import {
-  arrivedIdsOf, dayStops, inPlanOrder, isStraightLine, primaryVerb, progress, routeFigures, routeState,
+  arrivedIdsOf, dayStops, inPlanOrder, notInPlan, isStraightLine, primaryVerb, progress, routeFigures, routeState,
   type DayStop,
 } from '../../lib/route-day';
 
@@ -57,6 +57,7 @@ export function useRouteDay() {
 
   const arrived = useMemo(() => arrivedIdsOf(tasks), [tasks]);
   const ordered = useMemo(() => inPlanOrder(plan, stops), [plan, stops]);
+  const unplanned = useMemo(() => notInPlan(plan, stops), [plan, stops]);
   const { ahead, done } = useMemo(() => progress(ordered, position, arrived), [ordered, position, arrived]);
   const state = routeState({ stops, plan, start: position, ahead, doneCount: done.length });
   const figures = useMemo(() => routeFigures(plan, ordered, ahead), [plan, ordered, ahead]);
@@ -95,7 +96,7 @@ export function useRouteDay() {
   }, [memberId]);
 
   return {
-    state, stops, route: plan, ordered, ahead, done, next, position, allowed, figures,
+    state, stops, route: plan, ordered, unplanned, ahead, done, next, position, allowed, figures,
     straight: isStraightLine(plan), verb: primaryVerb(app, done.length, next),
     app, apps, planning, failed,
     makePlan: plan_, drive, ask, chooseApp,

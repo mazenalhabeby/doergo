@@ -48,6 +48,13 @@ export function dayStops(tasks: readonly Task[], userId: string | null | undefin
 /** Jobs already arrived at, by the record (En Route → Arrived). */
 export const arrivedIdsOf = (tasks: readonly Task[]): Set<string> => new Set(tasks.filter(hasArrived).map((t) => t.id));
 
+/** Stops of today that the plan does not know — added after it was made. Never dropped from view. */
+export function notInPlan(plan: OptimizedRoute | null, stops: readonly DayStop[]): DayStop[] {
+  if (!plan) return [];
+  const planned = new Set(plan.order);
+  return stops.filter((s) => !planned.has(s.id));
+}
+
 /** The stops in the plan's order; a plan naming a stop that is gone is no plan (restoreRoute already refuses it). */
 export function inPlanOrder(plan: OptimizedRoute | null, stops: readonly DayStop[]): DayStop[] {
   if (!plan) return [];
@@ -190,4 +197,56 @@ export function splitLine(line: readonly LatLng[], lastDone: LatLng | null): { d
 export function lastArrival(stops: readonly DayStop[]): Date | null {
   const t = stops.map((s) => (s.arrivedAt ? Date.parse(s.arrivedAt) : NaN)).filter(Number.isFinite);
   return t.length ? new Date(Math.max(...t)) : null;
+}
+
+/* ═════════════════════════ the real map underneath ═════════════════════════ */
+
+/** Web Mercator — the projection Apple and Google draw in, so our pins land on their streets. */
+const mercY = (lat: number) => Math.log(Math.tan(Math.PI / 4 + (Math.max(-85, Math.min(85, lat)) * Math.PI) / 360));
+const invMercY = (y: number) => (Math.atan(Math.exp(y)) - Math.PI / 4) * (360 / Math.PI);
+
+export interface MapBounds { northEast: LatLng; southWest: LatLng }
+
+/** Project onto a map image whose edges are these bounds. */
+export function mercatorProjection(b: MapBounds, width: number, height: number): Projection {
+  const top = mercY(b.northEast.lat), bottom = mercY(b.southWest.lat);
+  const west = b.southWest.lng, east = b.northEast.lng;
+  return {
+    x: (p) => ((p.lng - west) / (east - west || 1e-9)) * width,
+    y: (p) => ((top - mercY(p.lat)) / (top - bottom || 1e-9)) * height,
+  };
+}
+
+/**
+ * The map area to show: every place, padded, with the box's own shape.
+ * ⚠️ A single stop has no span — `minSpanDeg` (~1 km) keeps it from being
+ * drawn at the scale of a doorway.
+ */
+export function mapRegionFor(points: readonly LatLng[], width: number, height: number, pad: number, minSpanDeg = 0.012) {
+  const ps = points.filter(isLatLng);
+  if (!ps.length || !width || !height) return null;
+  let w = Math.min(...ps.map((p) => p.lng)), e = Math.max(...ps.map((p) => p.lng));
+  let s = mercY(Math.min(...ps.map((p) => p.lat))), n = mercY(Math.max(...ps.map((p) => p.lat)));
+  const minY = (minSpanDeg * Math.PI) / 180;
+  if (e - w < minSpanDeg) { const c = (w + e) / 2; w = c - minSpanDeg / 2; e = c + minSpanDeg / 2; }
+  if (n - s < minY) { const c = (n + s) / 2; s = c - minY / 2; n = c + minY / 2; }
+  // Degrees of lng and mercator units share a scale (deg → rad); fit, then grow to the box's shape.
+  const spanX = ((e - w) * Math.PI) / 180, spanY = n - s;
+  const k = Math.min((width - pad * 2) / spanX, (height - pad * 2) / spanY);
+  const fullX = (width / k) * (180 / Math.PI), fullY = height / k;
+  const cx = (w + e) / 2, cy = (n + s) / 2;
+  const north = invMercY(cy + fullY / 2), south = invMercY(cy - fullY / 2);
+  return {
+    latitude: (north + south) / 2, longitude: cx,
+    latitudeDelta: north - south, longitudeDelta: fullX,
+    bounds: { northEast: { lat: north, lng: cx + fullX / 2 }, southWest: { lat: south, lng: cx - fullX / 2 } } as MapBounds,
+  };
+}
+
+/** A stable name for one map picture: the area, the size, the theme. */
+export function mapKey(b: MapBounds, width: number, height: number, dark: boolean): string {
+  const raw = [b.northEast.lat, b.northEast.lng, b.southWest.lat, b.southWest.lng].map((n) => n.toFixed(4)).join(',') + `|${width}x${height}|${dark ? 'd' : 'l'}`;
+  let h = 5381;
+  for (let i = 0; i < raw.length; i++) h = ((h << 5) + h + raw.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
 }

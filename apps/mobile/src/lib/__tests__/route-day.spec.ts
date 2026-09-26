@@ -113,3 +113,14 @@ describe('Today\'s route', () => {
     });
   });
 });
+
+describe('a job added after the plan', () => {
+  it('is never dropped: it is listed as not in the plan', () => {
+    const { notInPlan } = jest.requireActual('../route-day') as typeof import('../route-day');
+    const plan = { order: ['a'], waypoints: [], legs: [], totalMeters: 0, totalSeconds: 0, engine: 'google' } as never;
+    const a = { id: 'a', lat: 48, lng: 16, at: null, arrivedAt: null };
+    const b = { id: 'b', lat: 48.1, lng: 16.1, at: null, arrivedAt: null };
+    expect(notInPlan(plan, [a, b]).map((s) => s.id)).toEqual(['b']);
+    expect(notInPlan(null, [a, b])).toEqual([]);
+  });
+});

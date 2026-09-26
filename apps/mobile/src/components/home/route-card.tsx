@@ -106,6 +106,12 @@ export function RouteCard({ style }: { style?: StyleProp<ViewStyle> }) {
             {r.straight && r.state !== 'finished' ? <Notice warn text={t('route.estimatedOnly')} /> : null}
             {r.state === 'noLocation' ? <Notice text={t('routeCard.noLocation')} /> : null}
             {r.failed ? <Notice warn text={t('routeCard.planFailed')} /> : null}
+            {planned && r.unplanned.length ? (
+              /* ⚠️ A job added after the plan never disappears from the card: it is listed, and one tap plans it in. */
+              <Pressable onPress={() => void r.makePlan()} accessibilityRole="button">
+                <Notice warn text={t('routeCard.newStops', { count: r.unplanned.length })} />
+              </Pressable>
+            ) : null}
 
             {r.done.length ? (
               <>
@@ -131,6 +137,7 @@ export function RouteCard({ style }: { style?: StyleProp<ViewStyle> }) {
             {shownRest.map((s) => (
               <StopRow key={s.id} s={s} marker={planned ? 'ahead' : 'none'} n={planned ? r.ordered.indexOf(s) + 1 : undefined} onDrive={() => void r.drive(s)} />
             ))}
+            {planned ? r.unplanned.map((s) => <StopRow key={s.id} s={s} marker="none" onDrive={() => void r.drive(s)} />) : null}
             {rest.length > shownRest.length ? (
               <Pressable onPress={() => setShowAll(true)} accessibilityRole="button">
                 <AText variant="caption" tone="accent" style={{ fontSize: 12.5 }}>{t('routeCard.more_n', { count: rest.length - shownRest.length })}</AText>

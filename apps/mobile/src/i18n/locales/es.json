@@ -3326,6 +3326,8 @@
     "pitch_one": "Hoy {{count}} parada.",
     "pitch_other": "Hoy {{count}} paradas.",
     "pitchNone": "Hoy no hay a dónde ir. Se llena cuando tengas trabajos en ruta.",
-    "planFailed": "No se pudo planificar la ruta. Tus paradas siguen aquí para ir una a una."
+    "planFailed": "No se pudo planificar la ruta. Tus paradas siguen aquí para ir una a una.",
+    "newStops_one": "{{count}} parada nueva no está en este plan. Toca para incluirla.",
+    "newStops_other": "{{count}} paradas nuevas no están en este plan. Toca para incluirlas."
   }
 }

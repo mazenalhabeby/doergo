@@ -3326,6 +3326,8 @@
     "pitch_one": "Heute {{count}} Stopp anzufahren.",
     "pitch_other": "Heute {{count}} Stopps anzufahren.",
     "pitchNone": "Heute keine Fahrten. Es füllt sich, sobald Sie Aufträge unterwegs haben.",
-    "planFailed": "Die Route konnte nicht geplant werden. Ihre Stopps bleiben hier, einzeln anfahrbar."
+    "planFailed": "Die Route konnte nicht geplant werden. Ihre Stopps bleiben hier, einzeln anfahrbar.",
+    "newStops_one": "{{count}} neuer Stopp ist nicht in diesem Plan. Tippen, um ihn einzuplanen.",
+    "newStops_other": "{{count}} neue Stopps sind nicht in diesem Plan. Tippen, um sie einzuplanen."
   }
 }

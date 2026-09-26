@@ -3326,6 +3326,8 @@
     "pitch_one": "{{count}} stop to drive to today.",
     "pitch_other": "{{count}} stops to drive to today.",
     "pitchNone": "Nothing to drive to today. It fills up when you have jobs on the road.",
-    "planFailed": "The route could not be planned. Your stops are still here to drive to one by one."
+    "planFailed": "The route could not be planned. Your stops are still here to drive to one by one.",
+    "newStops_one": "{{count}} new stop is not in this plan. Tap to plan it in.",
+    "newStops_other": "{{count}} new stops are not in this plan. Tap to plan them in."
   }
 }
