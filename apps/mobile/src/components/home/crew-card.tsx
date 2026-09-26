@@ -232,7 +232,7 @@ function Rail({ state: s, viewerId, onOpen }: { state: ReturnType<typeof crewSta
             onScroll={(e) => setPage(Math.min(pages - 1, Math.max(0, Math.round(e.nativeEvent.contentOffset.x / (TILE + GAP)))))}
             scrollEventThrottle={32}
           >
-            {tiles.map((tile) => <TileView key={tile.person.userId} tile={tile} you={tile.person.userId === viewerId} showPlace={s.unit !== 'people'} onPress={onOpen} />)}
+            {tiles.map((tile) => <TileView key={`${tile.person.userId}:${tile.person.spaceId ?? ""}:${tile.band}`} tile={tile} you={tile.person.userId === viewerId} showPlace={s.unit !== 'people'} onPress={onOpen} />)}
             {s.tilesOverflow > 0 ? (
               <View style={{ width: 70, alignItems: 'center', justifyContent: 'center' }}><AText variant="h3" tone="muted">+{s.tilesOverflow}</AText></View>
             ) : null}
