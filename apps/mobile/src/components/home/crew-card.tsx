@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import Reanimated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Reanimated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Pressable, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -357,15 +357,25 @@ function initials(p: CrewPerson): string {
  * ⚠️ Opacity and transform only: an animated style, never a layout animation.
  */
 function ScopeFade({ k, slide, style, children }: { k: string; slide?: boolean; style?: StyleProp<ViewStyle>; children: React.ReactNode }) {
+  /*
+    Out, swap, in — the old scope fades away before the new one arrives, so
+    the reader never sees one answer replaced in place by another. While the
+    scope holds, children render live (the minute refresh must not wait).
+  */
   const v = useSharedValue(1);
-  const first = React.useRef(true);
+  const [shownK, setShownK] = useState(k);
+  const held = React.useRef(children);
+  if (shownK === k) held.current = children;
   useEffect(() => {
-    if (first.current) { first.current = false; return; }
-    v.value = 0;
-    v.value = withTiming(1, { duration: 280, easing: Easing.out(Easing.cubic) });
-  }, [k, v]);
-  const a = useAnimatedStyle(() => ({ opacity: 0.15 + 0.85 * v.value, transform: [{ translateY: slide ? (1 - v.value) * 8 : 0 }] }));
-  return <Reanimated.View style={[style, a]}>{children}</Reanimated.View>;
+    if (k === shownK) return;
+    const swap = () => {
+      setShownK(k);
+      v.value = withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) });
+    };
+    v.value = withTiming(0, { duration: 140, easing: Easing.in(Easing.quad) }, (done) => { if (done) runOnJS(swap)(); });
+  }, [k, shownK, v]);
+  const a = useAnimatedStyle(() => ({ opacity: v.value, transform: [{ translateY: slide ? (1 - v.value) * 6 : 0 }] }));
+  return <Reanimated.View style={[style, a]}>{held.current}</Reanimated.View>;
 }
 
 /* ================================================================ the scope rings */
@@ -456,6 +466,18 @@ function RingButton({ label, initials: ini, stat, on, onPress }: {
   const capsuleBg = useAnimatedStyle(() => ({ opacity: progress.value }));
   const badge = !on && (stat.need || stat.appr) ? { n: stat.need || stat.appr, color: stat.need ? c.critical : c.warn, ink: stat.need ? c.criticalInk : c.warnInk } : null;
 
+  const labelBody = (
+    <View style={{ paddingLeft: 6, paddingRight: 12, gap: 1 }}>
+      <AText variant="caption" tone="strong" numberOfLines={1} style={{ fontSize: 12.5, fontWeight: '500' }}>{label}</AText>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+        <View style={{ paddingHorizontal: 5, borderRadius: 5, backgroundColor: c.tile }}>
+          <AText variant="caption" tone="strong" numeric style={{ fontSize: 9.5 }}>{stat.inn}/{stat.exp}</AText>
+        </View>
+        <AText variant="caption" numberOfLines={1} style={{ fontSize: 10, color: status.color, fontWeight: '500' }}>{status.text}</AText>
+      </View>
+    </View>
+  );
+
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: on }}
       accessibilityLabel={`${label}, ${stat.inn} of ${stat.exp} in, ${status.text}`}
@@ -489,16 +511,20 @@ function RingButton({ label, initials: ini, stat, on, onPress }: {
         corrupted the home column on Android (mobile-cross-platform-traps).
       */}
       <Reanimated.View style={labelBox}>
-        <View onLayout={(e) => setLabelW(Math.ceil(e.nativeEvent.layout.width))}
-          style={{ position: 'absolute', left: 0, top: 0, bottom: 0, justifyContent: 'center', paddingLeft: 6, paddingRight: 12, gap: 1 }}>
-          <AText variant="caption" tone="strong" numberOfLines={1} style={{ fontSize: 12.5, fontWeight: '500' }}>{label}</AText>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-            <View style={{ paddingHorizontal: 5, borderRadius: 5, backgroundColor: c.tile }}>
-              <AText variant="caption" tone="strong" numeric style={{ fontSize: 9.5 }}>{stat.inn}/{stat.exp}</AText>
-            </View>
-            <AText variant="caption" style={{ fontSize: 10, color: status.color, fontWeight: '500' }}>{status.text}</AText>
+        {/*
+          ⚠️ MEASURED OFF-STAGE, DRAWN AT A FIXED WIDTH. Measured inside the
+          growing box, the text wrapped at every step and each onLayout fed a
+          new width back into the animation — the capsule flickered open and
+          shut. The measurer sits in a wide absolute frame, so it reports the
+          label's own width, once; the drawn label never reflows.
+        */}
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: 600, opacity: 0 }}>
+          <View style={{ alignSelf: 'flex-start' }}
+            onLayout={(e) => { const w = Math.ceil(e.nativeEvent.layout.width); if (w !== labelW) setLabelW(w); }}>
+            {labelBody}
           </View>
         </View>
+        <View style={{ width: labelW, height: 36, justifyContent: 'center' }}>{labelW ? labelBody : null}</View>
       </Reanimated.View>
     </Pressable>
   );
