@@ -370,7 +370,16 @@
       "sub_one": "Ne hai {{count}} in più. Scorri per vederlo.",
       "sub_other": "Ne hai altri {{count}}. Scorri per vederli.",
       "none": "Non c’è altro da aggiungere.",
-      "add": "Aggiungi widget"
+      "add": "Aggiungi widget",
+      "addTitle": "Aggiungi un widget",
+      "helpNow_one": "{{count}} potrebbe aiutarti ora",
+      "helpNow_other": "{{count}} potrebbero aiutarti ora",
+      "everything": "Tutto ciò che puoi aggiungere",
+      "onHomeLine": "Già nella tua home.",
+      "onHome": "In home",
+      "addsAtBottom": "Va in fondo",
+      "isOnHome": "{{name}} è nella tua home",
+      "addName": "Aggiungi {{name}}"
     }
   },
   "tasks": {
@@ -3239,5 +3248,17 @@
       "go": "Vai a",
       "manage": "Gestisci"
     }
+  },
+  "pitch": {
+    "crew_one": "{{count}} persona ha bisogno di te ora.",
+    "crew_other": "{{count}} persone hanno bisogno di te ora.",
+    "crewCalm": "Tutti gli attesi sono arrivati. Niente ti aspetta.",
+    "clients_one": "{{count}} cliente attende una chiamata o un’email oggi.",
+    "clients_other": "{{count}} clienti attendono una chiamata o un’email oggi.",
+    "clientsCalm": "Oggi nessuno ti aspetta.",
+    "shortcuts": "Quattro riquadri scelti da te, subito dopo averlo aggiunto.",
+    "myWork_one": "Hai {{count}} lavoro aperto oggi.",
+    "myWork_other": "Hai {{count}} lavori aperti oggi.",
+    "myWorkCalm": "Oggi non hai niente assegnato. Si riempie quando hai lavori."
   }
 }

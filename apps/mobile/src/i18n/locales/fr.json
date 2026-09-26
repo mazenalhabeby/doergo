@@ -370,7 +370,16 @@
       "sub_one": "{{count}} autre vous appartient. Balayez pour le voir.",
       "sub_other": "{{count}} autres vous appartiennent. Balayez pour les voir.",
       "none": "Plus rien à ajouter.",
-      "add": "Ajouter un widget"
+      "add": "Ajouter un widget",
+      "addTitle": "Ajouter un widget",
+      "helpNow_one": "{{count}} pourrait vous aider maintenant",
+      "helpNow_other": "{{count}} pourraient vous aider maintenant",
+      "everything": "Tout ce que vous pouvez ajouter",
+      "onHomeLine": "Déjà sur votre accueil.",
+      "onHome": "Sur l’accueil",
+      "addsAtBottom": "Ajouté en bas",
+      "isOnHome": "{{name}} est sur votre accueil",
+      "addName": "Ajouter {{name}}"
     }
   },
   "tasks": {
@@ -3239,5 +3248,17 @@
       "go": "Aller à",
       "manage": "Gérer"
     }
+  },
+  "pitch": {
+    "crew_one": "{{count}} personne a besoin de vous maintenant.",
+    "crew_other": "{{count}} personnes ont besoin de vous maintenant.",
+    "crewCalm": "Tous les attendus sont là. Rien ne vous attend.",
+    "clients_one": "{{count}} client attend un appel ou un e-mail aujourd’hui.",
+    "clients_other": "{{count}} clients attendent un appel ou un e-mail aujourd’hui.",
+    "clientsCalm": "Personne ne vous attend aujourd’hui.",
+    "shortcuts": "Quatre tuiles que vous choisissez, juste après l’ajout.",
+    "myWork_one": "{{count}} de vos interventions est ouverte aujourd’hui.",
+    "myWork_other": "{{count}} de vos interventions sont ouvertes aujourd’hui.",
+    "myWorkCalm": "Rien ne vous est attribué aujourd’hui. Cela se remplit quand vous avez des interventions."
   }
 }

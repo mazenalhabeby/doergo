@@ -17,6 +17,7 @@ import { FinishGlyph } from '../glyphs/work-glyphs';
 import { ColdGlyph } from '../glyphs/crm-glyphs';
 import { daysLate, headline, localDay, rowLines, withoutDone } from './clients-state';
 import { ReminderRow, UNDO_MS, type RowState } from './reminder-row';
+import { usePitch } from '../../home/pitch';
 import { impact, selection } from '../../lib/haptics';
 
 /**
@@ -65,6 +66,9 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
   }, []);
 
   useLiveRefresh(refresh, REFRESH_MS);
+  usePitch(!due || !due.allowed ? null : due.total
+    ? { need: due.total, line: t('pitch.clients', { count: due.total }) }
+    : { need: 0, line: t('pitch.clientsCalm') });
   const say = usePhrase();
   const openBook = () => router.push('/(app)/customers' as Href);
   const openClient = (r: DueReminder) => router.push(`/(app)/customer/${r.customerId}` as Href);

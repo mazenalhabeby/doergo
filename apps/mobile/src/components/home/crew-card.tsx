@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { crewState, type Band, type CrewPerson, type CrewTile, type Ring } from './crew-state';
 import { useCrew } from './use-crew';
 import { GlyphTile } from './glyph-tile';
+import { usePitch } from '../../home/pitch';
 import { WellDoor } from './well-door';
 
 /**
@@ -57,6 +58,10 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
     }
     return out;
   }, [data.people, allSpaces, data.at]);
+  const needTotal = Object.values(needs).reduce((a, b) => a + b, 0);
+  usePitch(data.loading || data.failed ? null : needTotal
+    ? { need: needTotal, line: t('pitch.crew', { count: needTotal }) }
+    : { need: 0, line: t('pitch.crewCalm') });
   const [picked, setPicked] = useState<string | null>(null);
   const troubled = allSpaces.filter((id) => (needs[id] ?? 0) > 0 || (data.pendingBySpace[id] ?? 0) > 0);
   const site = picked === 'ALL' ? null : picked && allSpaces.includes(picked) ? picked : picked === null && troubled.length === 1 ? troubled[0]! : null;

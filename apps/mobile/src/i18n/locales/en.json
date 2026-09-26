@@ -377,7 +377,16 @@
       "sub_one": "{{count}} more is yours. Swipe to see it.",
       "sub_other": "{{count}} more are yours. Swipe to see them.",
       "none": "Nothing left to add.",
-      "add": "Add widget"
+      "add": "Add widget",
+      "addTitle": "Add a widget",
+      "helpNow_one": "{{count}} could help you right now",
+      "helpNow_other": "{{count}} could help you right now",
+      "everything": "Everything you can add",
+      "onHomeLine": "Already on your home screen.",
+      "onHome": "On home",
+      "addsAtBottom": "Adds at the bottom",
+      "isOnHome": "{{name}} is on your home",
+      "addName": "Add {{name}}"
     }
   },
   "tasks": {
@@ -3246,5 +3255,17 @@
       "go": "Go to",
       "manage": "Manage"
     }
+  },
+  "pitch": {
+    "crew_one": "{{count}} person needs you right now.",
+    "crew_other": "{{count}} people need you right now.",
+    "crewCalm": "Everyone expected is in. Nothing needs you.",
+    "clients_one": "{{count}} client is owed a call or an email today.",
+    "clients_other": "{{count}} clients are owed a call or an email today.",
+    "clientsCalm": "Nobody is waiting on you today.",
+    "shortcuts": "Four tiles you choose. You pick them right after adding.",
+    "myWork_one": "{{count}} job of yours is open today.",
+    "myWork_other": "{{count}} jobs of yours are open today.",
+    "myWorkCalm": "Nothing assigned to you today. It fills up when you have jobs."
   }
 }

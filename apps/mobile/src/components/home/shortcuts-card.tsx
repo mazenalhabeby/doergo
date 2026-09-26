@@ -17,6 +17,7 @@ import {
   MIN_TILES, SLOTS, badgeOf, groupOf, shortcutCandidates, shownShortcuts,
   smartPicks, type Badges, type ShortcutGroup,
 } from '../../home/shortcuts';
+import { useInGallery, usePitch } from '../../home/pitch';
 import { loadShortcuts, saveShortcuts } from '../../home/layout-store';
 
 /**
@@ -46,6 +47,14 @@ function useShortcutBadges(): Badges {
   }), [docs.toUpload.length, docs.rejected.length, docs.toSign.length, snapshot.waiting, snapshot.attention]);
 }
 
+/*
+  Added from the gallery → the member chooses their four straight away. A flag
+  rather than a prop: the registry renders every card the same way, and only
+  the HOME instance (never the gallery's preview) answers it.
+*/
+let editOnArrival = false;
+export function editShortcutsOnArrival(): void { editOnArrival = true; }
+
 export function ShortcutsCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const { amazen } = useTheme();
   const c = amazen.color;
@@ -57,6 +66,10 @@ export function ShortcutsCard({ style }: { style?: StyleProp<ViewStyle> }) {
 
   const [chosen, setChosen] = useState<string[] | null>(null);
   const [editing, setEditing] = useState(false);
+  const inGallery = useInGallery();
+  useEffect(() => {
+    if (!inGallery && editOnArrival) { editOnArrival = false; setEditing(true); }
+  }, [inGallery]);
   useEffect(() => {
     if (!user?.id) return;
     let live = true;
@@ -65,6 +78,7 @@ export function ShortcutsCard({ style }: { style?: StyleProp<ViewStyle> }) {
   }, [user?.id]);
 
   const shown = useMemo(() => shownShortcuts(chosen, cands, badges), [chosen, cands, badges]);
+  usePitch({ need: 0, line: t('pitch.shortcuts') });
 
   const save = useCallback((keys: string[] | null) => {
     setChosen(keys);

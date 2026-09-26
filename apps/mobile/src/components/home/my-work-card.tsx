@@ -16,6 +16,7 @@ import { scheduleApi, tasksApi } from '../../lib/api';
 import type { ScheduleEntry, Task } from '../../lib/api/types';
 import { AText, Eyebrow, Well, WellDivider } from '../amazen';
 import { LinearGradient } from 'expo-linear-gradient';
+import { usePitch } from '../../home/pitch';
 import {
   shapeFor, faceFor, viewAllSpaceIds, weekOf, sameDay, startOfDay, tasksOn, hasHour, isMine,
   flowIdOf, stepsFor, isClosed, shiftOn, shiftHours, nextJobAfter, figuresFor, todaysOwn,
@@ -177,6 +178,11 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
     widget does not render — but a return above a hook changes how many hooks
     run between renders the day somebody's modules change.
   */
+  const todayOpen = isToday ? mine.filter((x) => isMine(x, user?.id) && open(x)).length : 0;
+  usePitch(phase === 'opening' ? null : todayOpen
+    ? { need: 0, line: t('pitch.myWork', { count: todayOpen }) }
+    : { need: 0, line: t('pitch.myWorkCalm') });
+
   if (shape === 'none') return null;
 
   const todayShift = sameDay(selected, today) && shift.status?.isClockedIn ? shift.status.currentEntry : null;

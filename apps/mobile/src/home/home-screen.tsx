@@ -20,6 +20,7 @@ import { EmptyHome, type Suggestion } from '../components/home/empty-home';
 import { DropSlot, EditableWidget, LIFT_FACTOR } from '../components/home/editable-widget';
 import { WidgetGallery } from '../components/home/widget-gallery';
 import { ActionStrip } from '../components/home/action-strip';
+import { editShortcutsOnArrival } from '../components/home/shortcuts-card';
 import { answerFor, useWidgetAnswers } from './answers';
 import { useHomeEditing } from './use-home-editing';
 import { useHomeLayout } from './use-home-layout';
@@ -284,6 +285,8 @@ export function HomeScreen() {
     [editing, enterEdit, isDark, landed, moveBy, refreshKey, removeWidget, rows.length, screenReader],
   );
 
+  const onHomeKeys = new Set(rows.map((r) => r.key));
+
   return (
     <Ground variant="home">
       {/*
@@ -451,9 +454,12 @@ export function HomeScreen() {
       <WidgetGallery
         visible={picking}
         onClose={() => setPicking(false)}
-        offScreen={layout.offScreen}
+        rows={layout.available}
+        onHome={onHomeKeys}
         hasData={(row) => answerFor(answers, row.key).ready}
         onAdd={(key) => {
+          // Shortcuts is chosen, not configured later: its editor opens on arrival.
+          if (key === 'shortcuts') editShortcutsOnArrival();
           /*
             ⚠️ THE SHEET CLOSES SO THE ARRIVAL IS VISIBLE, and the card lands
             at the BOTTOM wearing a jade ring. Closing it is the point: a card

@@ -370,7 +370,16 @@
       "sub_one": "{{count}} weiteres gehört Ihnen. Wischen Sie, um es zu sehen.",
       "sub_other": "{{count}} weitere gehören Ihnen. Wischen Sie, um sie zu sehen.",
       "none": "Nichts mehr hinzuzufügen.",
-      "add": "Widget hinzufügen"
+      "add": "Widget hinzufügen",
+      "addTitle": "Widget hinzufügen",
+      "helpNow_one": "{{count}} könnte Ihnen jetzt helfen",
+      "helpNow_other": "{{count}} könnten Ihnen jetzt helfen",
+      "everything": "Alles, was Sie hinzufügen können",
+      "onHomeLine": "Bereits auf Ihrem Startbildschirm.",
+      "onHome": "Auf Start",
+      "addsAtBottom": "Kommt nach unten",
+      "isOnHome": "{{name}} ist auf Ihrem Start",
+      "addName": "{{name}} hinzufügen"
     }
   },
   "tasks": {
@@ -3239,5 +3248,17 @@
       "go": "Öffnen",
       "manage": "Verwalten"
     }
+  },
+  "pitch": {
+    "crew_one": "{{count}} Person braucht Sie gerade.",
+    "crew_other": "{{count}} Personen brauchen Sie gerade.",
+    "crewCalm": "Alle Erwarteten sind da. Nichts braucht Sie.",
+    "clients_one": "{{count}} Kunde wartet heute auf einen Anruf oder eine E-Mail.",
+    "clients_other": "{{count}} Kunden warten heute auf einen Anruf oder eine E-Mail.",
+    "clientsCalm": "Heute wartet niemand auf Sie.",
+    "shortcuts": "Vier Kacheln nach Ihrer Wahl. Sie wählen sie direkt nach dem Hinzufügen.",
+    "myWork_one": "{{count}} Auftrag von Ihnen ist heute offen.",
+    "myWork_other": "{{count}} Aufträge von Ihnen sind heute offen.",
+    "myWorkCalm": "Heute ist Ihnen nichts zugewiesen. Es füllt sich, sobald Sie Aufträge haben."
   }
 }
