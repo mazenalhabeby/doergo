@@ -67,7 +67,9 @@
       "hours": "il y a {{count}} h",
       "days": "il y a {{count}} j"
     },
-    "dismiss": "Fermer"
+    "dismiss": "Fermer",
+    "undo": "ANNULER",
+    "sending": "Envoi…"
   },
   "auth": {
     "login": {
@@ -351,7 +353,13 @@
       "messages": "Messages",
       "support": "Assistance"
     },
-    "nothingYet": {},
+    "nothingYet": {
+      "title": "Rien encore sur votre accueil.",
+      "sub": "Voici ce que vous verriez en ce moment.",
+      "keep": "Garder",
+      "keepBoth": "Garder les deux",
+      "seeAll": "Voir les {{n}}"
+    },
     "edit": {
       "hint": "Maintenez pour déplacer · touchez ⊖ pour retirer",
       "add": "Ajouter un widget",
@@ -2539,7 +2547,9 @@
     "extraLabel": "Nommer",
     "extraValue": "Contenu",
     "removeExtra": "Ne pas conserver",
-    "socialNotWebsite": "C'est une page de réseau social, pas le site web — elle est conservée ci-dessous à la place."
+    "socialNotWebsite": "C'est une page de réseau social, pas le site web — elle est conservée ci-dessous à la place.",
+    "found": "TROUVÉ",
+    "check": "VÉRIFIER"
   },
   "myAssets": {
     "title": "Mon équipement",
@@ -2552,7 +2562,8 @@
     "sent": "Ce que j’ai envoyé"
   },
   "custody": {
-    "days": "{{count}} jours"
+    "days": "{{count}} jours",
+    "whatHappens": "Ce qui va se passer"
   },
   "logbook": {
     "cost": "Coût",

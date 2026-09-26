@@ -13,6 +13,7 @@ import { BreakSheet, LocationPickerSheet, ClockOutSheet } from '../index';
 import { ReportIssueSheet, ShiftIssueListSheet, ShiftIssueThreadSheet } from '../shift-issue-sheet';
 import { useClockIn } from '../../hooks/useClockIn';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
+import { monthName, weekdayName } from '../../lib/app-dates';
 import { stopBackgroundHeartbeat } from '../../services/background-heartbeat';
 import { stopGeofence } from '../../services/background-geofence';
 import { formatDurationMinutes as formatDuration } from '../../lib/utils';
@@ -428,7 +429,7 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: amazen.space(2) }}>
                   <Eyebrow tone="onGlassHome">
                     {st.schedule === 'FLEXIBLE'
-                      ? new Date().toLocaleDateString(undefined, { month: 'long' })
+                      ? monthName(new Date())
                       : t('shiftClock.today', { defaultValue: 'TODAY' })}
                   </Eyebrow>
                   <View style={{ flex: 1 }} />
@@ -685,8 +686,8 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
         t('shiftClock.workedThisWeek', { defaultValue: 'worked this week' }),
         st.lastInOn
           ? t('shiftClock.lastInOn', {
-              day: st.lastInOn.toLocaleDateString(undefined, { weekday: 'long' }),
-              defaultValue: `last in on ${st.lastInOn.toLocaleDateString(undefined, { weekday: 'long' })}`,
+              day: weekdayName(st.lastInOn),
+              defaultValue: `last in on ${weekdayName(st.lastInOn)}`,
             })
           : null,
       ].filter(Boolean).join(' · ');

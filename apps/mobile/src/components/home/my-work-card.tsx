@@ -12,6 +12,7 @@ import { FreshnessLabel } from '../../offline/components/freshness-label';
 import { SyncChip } from '../../offline/components/sync-chip';
 import { useShift } from '../../offline/attendance/use-shift';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
+import { weekdayName } from '../../lib/app-dates';
 import { scheduleApi, tasksApi } from '../../lib/api';
 import type { ScheduleEntry, Task } from '../../lib/api/types';
 import { AText, Eyebrow, CardSurface, WellDivider } from '../amazen';
@@ -39,6 +40,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const { user } = useAuth();
   const { amazen } = useTheme();
   const { t } = useTranslation();
+  const { formatClock } = useTimeFormat();
   const router = useRouter();
   const offline = useOffline();
   const shift = useShift();
@@ -222,7 +224,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                 onPress={() => setSelected(startOfDay(d))}
                 accessibilityRole="button"
                 accessibilityState={{ selected: on }}
-                accessibilityLabel={d.toLocaleDateString(undefined, { weekday: 'long' })}
+                accessibilityLabel={weekdayName(d, 'long')}
                 style={{
                   flex: 1, height: 54, borderRadius: amazen.radius.full,
                   alignItems: 'center', justifyContent: 'center', gap: 4,
@@ -231,7 +233,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                   borderWidth: on ? 1.5 : 1, borderColor: on ? c.accent : c.lineGlass,
                 }}
               >
-                <AText variant="caption" tone={on ? 'strong' : 'muted'}>{d.toLocaleDateString(undefined, { weekday: 'narrow' })}</AText>
+                <AText variant="caption" tone={on ? 'strong' : 'muted'}>{weekdayName(d, 'narrow')}</AText>
                 <View style={{ width: 14, height: 3, borderRadius: 2, backgroundColor: bar ? (on ? c.accent : c.inkMuted) : 'transparent' }} />
                 <View style={{ flexDirection: 'row', gap: 2, height: 4 }}>
                   {Array.from({ length: n }).map((_, k) => (
@@ -274,8 +276,8 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                   <Sentence
                     title={sameDay(selected, today)
                       ? t('myWork.nothingToday', { defaultValue: 'Nothing scheduled today.' })
-                      : t('myWork.nothingOn', { day: selected.toLocaleDateString(undefined, { weekday: 'long' }), defaultValue: `Nothing scheduled on ${selected.toLocaleDateString(undefined, { weekday: 'long' })}.` })}
-                    body={nextJobLine(nextJobAfter(face === 'executor' ? tasks : tasks.filter((x) => isMine(x, user?.id)), selected, open), t)}
+                      : t('myWork.nothingOn', { day: weekdayName(selected, 'long'), defaultValue: `Nothing scheduled on ${weekdayName(selected, 'long')}.` })}
+                    body={nextJobLine(nextJobAfter(face === 'executor' ? tasks : tasks.filter((x) => isMine(x, user?.id)), selected, open), t, formatClock)}
                   />
                 ) : null}
                 {mine.map((task, i) => (
@@ -443,7 +445,7 @@ function ShiftList({ schedule, selected, today, live, onOpen }: {
           </>
         ) : (
           <AText variant="body" tone="muted">
-            {t('myWork.noShift', { day: selected.toLocaleDateString(undefined, { weekday: 'long' }), defaultValue: `No shift on ${selected.toLocaleDateString(undefined, { weekday: 'long' })}.` })}
+            {t('myWork.noShift', { day: weekdayName(selected, 'long'), defaultValue: `No shift on ${weekdayName(selected, 'long')}.` })}
           </AText>
         )}
       </Pressable>
@@ -454,7 +456,7 @@ function ShiftList({ schedule, selected, today, live, onOpen }: {
             {i > 0 ? <WellDivider /> : null}
             <Pressable onPress={onOpen} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2.5), paddingVertical: amazen.space(2) }}>
               <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: d < today ? c.inkMuted : c.accent }} />
-              <AText variant="body" tone="strong" style={{ flex: 1 }}>{d.toLocaleDateString(undefined, { weekday: 'long' })}</AText>
+              <AText variant="body" tone="strong" style={{ flex: 1 }}>{weekdayName(d, 'long')}</AText>
               <AText variant="caption" tone="muted" numeric>{e.startTime} → {e.endTime}</AText>
             </Pressable>
           </React.Fragment>
@@ -503,15 +505,16 @@ function dayEyebrow(d: Date, today: Date, t: T): string {
   if (sameDay(d, today)) return t('common.today', { defaultValue: 'Today' });
   const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
   if (sameDay(d, tomorrow)) return t('common.tomorrow', { defaultValue: 'Tomorrow' });
-  return d.toLocaleDateString(undefined, { weekday: 'long' });
+  return weekdayName(d, 'long');
 }
 
-function nextJobLine(next: Task | null, t: T): string {
+/** `clock` is the member's own 12/24h time — `toTimeString` ignored it. */
+function nextJobLine(next: Task | null, t: T, clock: (d: Date) => string): string {
   if (!next?.dueDate) return t('myWork.nothingAhead', { defaultValue: 'Nothing else is scheduled yet.' });
   const d = new Date(next.dueDate);
-  const day = d.toLocaleDateString(undefined, { weekday: 'long' });
+  const day = weekdayName(d, 'long');
   return hasHour(next.dueDate)
-    ? t('myWork.nextAt', { day, time: d.toTimeString().slice(0, 5), defaultValue: `Your next job is ${day} at ${d.toTimeString().slice(0, 5)}.` })
+    ? t('myWork.nextAt', { day, time: clock(d), defaultValue: `Your next job is ${day} at ${clock(d)}.` })
     : t('myWork.nextOn', { day, defaultValue: `Your next job is ${day}.` });
 }
 

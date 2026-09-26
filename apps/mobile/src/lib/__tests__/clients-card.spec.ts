@@ -17,24 +17,24 @@ describe('the Clients card', () => {
 
   it('one kind: names it, and still says how many are late', () => {
     const h = headline(due({ call: 3, overdue: 2 }))!;
-    expect(h.title.key).toBe('clientsCard.owedCall');
+    expect(h.title.key).toBe('clientsCard.owedCallLabel');
     expect(h.split.map((p) => p.key)).toEqual(['clientsCard.split.overdue', 'clientsCard.split.todayCount']);
   });
 
   it('two emails, neither late: "both today"', () => {
     const h = headline(due({ email: 2 }))!;
-    expect(h.title.key).toBe('clientsCard.owedEmail');
+    expect(h.title.key).toBe('clientsCard.owedEmailLabel');
     expect(h.split).toEqual([{ key: 'clientsCard.split.bothToday' }]);
   });
 
   it('several kinds: counts them, and names the split', () => {
     const h = headline(due({ call: 2, email: 1, other: 2 }))!;
-    expect(h.title.key).toBe('clientsCard.needYou');
+    expect(h.title.key).toBe('clientsCard.needYouLabel');
     expect(h.split.map((p) => p.values?.count)).toEqual([2, 1, 2]);
   });
 
   it('only "other": counts, never "owed a call"', () => {
-    expect(headline(due({ other: 2 }))!.title.key).toBe('clientsCard.needYou');
+    expect(headline(due({ other: 2 }))!.title.key).toBe('clientsCard.needYouLabel');
   });
 
   it('says when a reminder is not yours alone', () => {

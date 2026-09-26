@@ -68,7 +68,8 @@
       "days": "{{count}}d ago"
     },
     "dismiss": "Dismiss",
-    "undo": "UNDO"
+    "undo": "UNDO",
+    "sending": "Sending…"
   },
   "auth": {
     "login": {
@@ -2546,7 +2547,9 @@
     "extraLabel": "Name this",
     "extraValue": "What it says",
     "removeExtra": "Do not keep this",
-    "socialNotWebsite": "That is a social page, not the website — it is kept below instead."
+    "socialNotWebsite": "That is a social page, not the website — it is kept below instead.",
+    "found": "FOUND",
+    "check": "CHECK"
   },
   "myAssets": {
     "title": "My equipment",
@@ -2559,7 +2562,8 @@
     "sent": "What I sent in"
   },
   "custody": {
-    "days": "{{count}} days"
+    "days": "{{count}} days",
+    "whatHappens": "What happens"
   },
   "logbook": {
     "cost": "Cost",

@@ -154,7 +154,7 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
           <View style={{ marginTop: amazen.space(2.5) }}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
               <AText variant="display" tone="strong" numeric style={{ fontSize: 52, lineHeight: 56 }}>{String(shown!.total)}</AText>
-              <AText variant="body" tone="ink">{t(`${head.title.key}Label`, { count: shown!.total })}</AText>
+              <AText variant="body" tone="ink">{t(head.title.key, { count: shown!.total })}</AText>
             </View>
             <Eyebrow tone="muted" numberOfLines={1} style={{ marginTop: 2 }}>
               {head.split.map(say).join(' · ')}

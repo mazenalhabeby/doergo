@@ -22,9 +22,9 @@ export function headline(due: Pick<ClientsDue, 'total' | 'counts' | 'items'>): {
 
   let title: Phrase;
   const split: Phrase[] = [];
-  if (oneKind && call) title = { key: 'clientsCard.owedCall', values: { count: n } };
-  else if (oneKind && email) title = { key: 'clientsCard.owedEmail', values: { count: n } };
-  else title = { key: 'clientsCard.needYou', values: { count: n } };
+  if (oneKind && call) title = { key: 'clientsCard.owedCallLabel', values: { count: n } };
+  else if (oneKind && email) title = { key: 'clientsCard.owedEmailLabel', values: { count: n } };
+  else title = { key: 'clientsCard.needYouLabel', values: { count: n } };
 
   if (oneKind && (call || email)) {
     const today = n - overdue;
