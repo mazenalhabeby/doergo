@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import Reanimated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Pressable, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -99,10 +100,12 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
         {/* The hero. ⚠️ The "/n" is dropped when there is no roster — never a copy of the numerator. */}
         <View style={{ gap: 4 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-            <AText variant="display" tone={data.failed ? 'muted' : 'strong'} numeric style={{ fontSize: 56, lineHeight: 60 }}>
-              {data.failed ? '—' : String(s.on)}
-            </AText>
-            {!data.failed && s.rostered != null ? <AText variant="h2" tone="muted" numeric style={{ fontWeight: '300' }}>/{s.rostered}</AText> : null}
+            <ScopeFade k={site ?? 'ALL'} style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+              <AText variant="display" tone={data.failed ? 'muted' : 'strong'} numeric style={{ fontSize: 56, lineHeight: 60 }}>
+                {data.failed ? '—' : String(s.on)}
+              </AText>
+              {!data.failed && s.rostered != null ? <AText variant="h2" tone="muted" numeric style={{ fontWeight: '300' }}>/{s.rostered}</AText> : null}
+            </ScopeFade>
             <AText variant="body" tone="muted">{t('crew.onTheClock', { defaultValue: 'on the clock' })}</AText>
           </View>
           {allSpaces.length > 1 && !data.failed ? (
@@ -133,7 +136,10 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
             <Message dim text={t('crew.offline', { defaultValue: 'Needs a connection. A kept answer would be wrong, not old.' })} />
           </>
         ) : (
-          <Rail state={s} viewerId={user?.id} onOpen={openAttendance} />
+          /* Keyed by scope: a new workspace starts at its first tile, page 1 — and fades in. */
+          <ScopeFade k={site ?? 'ALL'} slide>
+            <Rail key={site ?? 'ALL'} state={s} viewerId={user?.id} onOpen={openAttendance} />
+          </ScopeFade>
         )}
 
         {/* The exception rows — the only way to anything that changes a record. */}
@@ -343,6 +349,25 @@ function initials(p: CrewPerson): string {
   return `${(p.firstName ?? '').charAt(0)}${(p.lastName ?? '').charAt(0)}`.toUpperCase() || '·';
 }
 
+/* ================================================================ transitions */
+
+/**
+ * Fades (and, with `slide`, lifts) its children in whenever `k` changes —
+ * the card changing scope reads as the SAME card answering again, not a jump.
+ * ⚠️ Opacity and transform only: an animated style, never a layout animation.
+ */
+function ScopeFade({ k, slide, style, children }: { k: string; slide?: boolean; style?: StyleProp<ViewStyle>; children: React.ReactNode }) {
+  const v = useSharedValue(1);
+  const first = React.useRef(true);
+  useEffect(() => {
+    if (first.current) { first.current = false; return; }
+    v.value = 0;
+    v.value = withTiming(1, { duration: 280, easing: Easing.out(Easing.cubic) });
+  }, [k, v]);
+  const a = useAnimatedStyle(() => ({ opacity: 0.15 + 0.85 * v.value, transform: [{ translateY: slide ? (1 - v.value) * 8 : 0 }] }));
+  return <Reanimated.View style={[style, a]}>{children}</Reanimated.View>;
+}
+
 /* ================================================================ the scope rings */
 
 const RING_SIZE = 34;
@@ -423,6 +448,12 @@ function RingButton({ label, initials: ini, stat, on, onPress }: {
     : stat.appr
       ? { text: t('crew.toApproveShort', { count: stat.appr, defaultValue: `${stat.appr} to approve` }), color: c.warn }
       : { text: t('crew.allIn', { defaultValue: 'all in' }), color: c.accent };
+  /* One progress value drives the capsule: its fill, its width, its text. */
+  const progress = useSharedValue(on ? 1 : 0);
+  const [labelW, setLabelW] = useState(0);
+  useEffect(() => { progress.value = withTiming(on ? 1 : 0, { duration: 320, easing: Easing.out(Easing.cubic) }); }, [on, progress]);
+  const labelBox = useAnimatedStyle(() => ({ width: progress.value * labelW, height: 36, overflow: 'hidden', opacity: progress.value }));
+  const capsuleBg = useAnimatedStyle(() => ({ opacity: progress.value }));
   const badge = !on && (stat.need || stat.appr) ? { n: stat.need || stat.appr, color: stat.need ? c.critical : c.warn, ink: stat.need ? c.criticalInk : c.warnInk } : null;
 
   return (
@@ -430,10 +461,9 @@ function RingButton({ label, initials: ini, stat, on, onPress }: {
       accessibilityLabel={`${label}, ${stat.inn} of ${stat.exp} in, ${status.text}`}
       style={({ pressed }) => ({
         flexDirection: 'row', alignItems: 'center', height: 38, borderRadius: 999, padding: 1,
-        borderWidth: 1, borderColor: on ? `${c.accent}66` : 'transparent',
-        backgroundColor: on ? c.accentTint : 'transparent',
         transform: [{ scale: pressed ? 0.94 : 1 }],
       })}>
+      <Reanimated.View pointerEvents="none" style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 999, borderWidth: 1, borderColor: `${c.accent}66`, backgroundColor: c.accentTint }, capsuleBg]} />
       <View style={{ width: RING_SIZE, height: RING_SIZE }}>
         <Svg width={RING_SIZE} height={RING_SIZE} viewBox="0 0 34 34">
           <Circle cx={17} cy={17} r={11.5} fill={on ? c.accentTint : c.tile} />
@@ -452,8 +482,15 @@ function RingButton({ label, initials: ini, stat, on, onPress }: {
           </View>
         ) : null}
       </View>
-      {on ? (
-        <View style={{ paddingLeft: 6, paddingRight: 12, gap: 1 }}>
+      {/*
+        ⚠️ THE CAPSULE GROWS, IT DOES NOT SNAP. The label is always there, in a
+        box whose WIDTH is animated from 0 to the label's own measured width —
+        an animated style, never a Reanimated `layout`/`entering` prop, which
+        corrupted the home column on Android (mobile-cross-platform-traps).
+      */}
+      <Reanimated.View style={labelBox}>
+        <View onLayout={(e) => setLabelW(Math.ceil(e.nativeEvent.layout.width))}
+          style={{ position: 'absolute', left: 0, top: 0, bottom: 0, justifyContent: 'center', paddingLeft: 6, paddingRight: 12, gap: 1 }}>
           <AText variant="caption" tone="strong" numberOfLines={1} style={{ fontSize: 12.5, fontWeight: '500' }}>{label}</AText>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
             <View style={{ paddingHorizontal: 5, borderRadius: 5, backgroundColor: c.tile }}>
@@ -462,7 +499,7 @@ function RingButton({ label, initials: ini, stat, on, onPress }: {
             <AText variant="caption" style={{ fontSize: 10, color: status.color, fontWeight: '500' }}>{status.text}</AText>
           </View>
         </View>
-      ) : null}
+      </Reanimated.View>
     </Pressable>
   );
 }
