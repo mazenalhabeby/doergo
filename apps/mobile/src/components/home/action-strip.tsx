@@ -104,14 +104,14 @@ export function ActionStrip() {
           accessibilityLabel={`${say(lines.title)}. ${say(lines.sub)}`}
           style={({ pressed }) => ({
             flexDirection: 'row', alignItems: 'center', gap: amazen.space(3),
-            minHeight: 54, paddingVertical: 9, paddingLeft: 10, paddingRight: 14,
-            borderRadius: 16, borderWidth: 1, borderColor: tone === 'calm' ? c.lineGlass : `${ink}55`,
+            minHeight: 54, paddingVertical: 11, paddingHorizontal: 14,
+            borderRadius: 18, borderWidth: 1, borderColor: tone === 'calm' ? c.lineGlass : `${ink}2e`,
             backgroundColor: tint, opacity: pressed ? 0.85 : 1,
           })}
         >
-          <View style={{ width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: tone === 'calm' ? c.tile : `${ink}22` }}>
+          <View style={{ width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: tone === 'calm' ? c.tile : `${ink}1f` }}>
             {single
-              ? <ItemGlyph item={items[0]!} color={ink} contrast={c.well} size={19} />
+              ? <ItemGlyph item={items[0]!} color={ink} contrast={c.well} size={17} />
               : <AText variant="h3" numeric style={{ color: ink, fontSize: 19, lineHeight: 24 }}>{items.length}</AText>}
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
@@ -201,8 +201,8 @@ function FadingList({ items, tone, onPick, say, surface }: {
                 borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell, opacity: pressed ? 0.7 : 1,
               })}
             >
-              <View style={{ width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: item.kind === 'expiring' ? c.tile : `${ink}22` }}>
-                <ItemGlyph item={item} color={ink} contrast={surface} size={18} />
+              <View style={{ width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: item.kind === 'expiring' ? c.tile : `${ink}1f` }}>
+                <ItemGlyph item={item} color={ink} contrast={surface} size={16} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14, lineHeight: 19 }}>{say(l.title)}</AText>
