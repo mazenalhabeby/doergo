@@ -18,7 +18,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { RequirePermission, DenyExternal } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
-import { parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE } from '@hbcfield/shared';
+import { parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, moduleAnywhere } from '@hbcfield/shared';
 
 interface CustomerDto {
   /** Made on the phone when creating: a client added twice is one client. Ignored on update. */
@@ -172,6 +172,11 @@ export class CustomersController {
     return this.auth('customers_due', {
       organizationId: req.user.organizationId,
       caller: this.caller(req),
+      // ⚠️ CRM must RUN in a workspace the caller is assigned to — read off the
+      // session (no lookup), the same question the phone asks before showing
+      // the card. A CRM view in an organization whose workspaces all have CRM
+      // switched off is a permission for a feature nobody is using.
+      crmOn: moduleAnywhere(req.user, 'crm'),
       dayStart,
       dayEnd,
       limit: limit ? Number(limit) : undefined,

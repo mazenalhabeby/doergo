@@ -1,6 +1,7 @@
 import { hasAccessModule, hasFeatureModule, moduleAnywhere, resolveCrmCaps, type MobileModule } from '@hbcfield/shared/client';
 import { holds, holdsOrgWide } from '../lib/permissions';
 import type { User } from '../lib/api/types';
+import { drivesRoutes, isExternalMember } from '../lib/member-reach';
 
 /**
  * What a widget REQUIRES, as data.
@@ -60,6 +61,14 @@ export interface Requires {
   crm?: true;
   /** A per-SPACE module that must run in a workspace the member can see (`moduleAnywhere`). */
   spaceModule?: string;
+  /**
+   * The organization's own members only. An EXTERNAL member (a client's or
+   * partner's) never sees it, whatever they hold — the server's
+   * `@DenyExternal` says the same about the data behind it.
+   */
+  internal?: true;
+  /** They drive a route — `drivesRoutes` in `lib/member-reach.ts`, shared with the Plan route tile. */
+  drives?: true;
   /** It is about the VIEWER. Documentation — nothing to check. */
   self?: true;
 }
@@ -89,6 +98,8 @@ export function meets(user: User | null | undefined, r: Requires | undefined): b
     exactly what §2.4 rule 1 exists to prevent: "entitlement is asked ONCE …
     asked separately they drift."
   */
+  if (r.internal && isExternalMember(user)) return false;
+  if (r.drives && !drivesRoutes(user)) return false;
   if (r.module && !hasAccessModule(user as never, r.module)) return false;
   if (r.spaceModule && !moduleAnywhere(user as never, r.spaceModule)) return false;
   if (r.crm) {

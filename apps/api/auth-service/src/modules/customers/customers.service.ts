@@ -1005,10 +1005,11 @@ export class CustomersService {
    * and the server does not know which timezone they are standing in. Bounded
    * so a caller cannot widen the window into a full dump.
    */
-  async due(data: { organizationId: string; caller?: CrmCaller; dayStart?: string; dayEnd?: string; limit?: number }) {
-    const caps = await this.crmCapsFor(data.caller, data.organizationId);
+  async due(data: { organizationId: string; caller?: CrmCaller; crmOn?: boolean; dayStart?: string; dayEnd?: string; limit?: number }) {
     const me = data.caller?.userId;
     const counts = { call: 0, email: 0, other: 0, overdue: 0 };
+    // `crmOn === false` only: an older gateway sends nothing and keeps today's answer.
+    const caps = data.crmOn === false ? NO_CRM : await this.crmCapsFor(data.caller, data.organizationId);
     if (!caps.canAccess || !me) return { data: { allowed: false, items: [], total: 0, counts, cold: { count: 0, days: CRM_COLD_DAYS, longest: null }, book: 0 } };
 
     const now = Date.now();

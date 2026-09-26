@@ -870,6 +870,10 @@ export class AuthService {
           organizationTimezone: user.organization?.timezone || null,
           orgUsesExternalWorkers: user.organization?.usesExternalWorkers ?? false,
           onboardingCompleted: user.onboardingCompleted,
+          // Works for a client or partner. The phone hides what external
+          // members may never use (the client book, equipment, the route);
+          // without it a fresh login and a restored session disagree.
+          isExternal: user.isExternal ?? false,
           avatarUrl: user.avatarUrl,
           // Permission fields come from resolved access, below — the client
           // gates its own UI on them (useTaskPermissions reads
@@ -1309,6 +1313,7 @@ export class AuthService {
             role: normalizeRole(storedToken.user.role),
             organizationId: storedToken.user.organizationId,
             onboardingCompleted: storedToken.user.onboardingCompleted,
+            isExternal: storedToken.user.isExternal ?? false,
             avatarUrl: storedToken.user.avatarUrl,
             /*
               Permission fields and `access` from the SAME resolution login

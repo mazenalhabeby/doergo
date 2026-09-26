@@ -1,5 +1,6 @@
-import { moduleAnywhere, orgHasAddOn, resolveCrmCaps } from '@hbcfield/shared/client';
+import { hasAccessModule, moduleAnywhere, orgHasAddOn, resolveCrmCaps, type MobileModule } from '@hbcfield/shared/client';
 import { holds, holdsOrgWide } from './permissions';
+import { drivesRoutes, isExternalMember } from './member-reach';
 
 /**
  * What Manage offers, and to whom.
@@ -35,7 +36,7 @@ export const MANAGE_ROWS = [
     feature nobody bought. See `moduleAnywhere` in shared for why the question is
     "is it running in a workspace I can see" and not "has the org got it".
   */
-  { icon: 'people-circle', labelKey: 'manage.customers.label', descKey: 'manage.customers.desc', route: '/(app)/customers', color: '#2563eb', permission: 'crmViewOwn', orgWide: false, module: 'crm' },
+  { icon: 'people-circle', labelKey: 'manage.customers.label', descKey: 'manage.customers.desc', route: '/(app)/customers', color: '#2563eb', permission: 'crmViewOwn', orgWide: false, module: 'crm', internal: true },
   { icon: 'person-add', labelKey: 'manage.joinRequests.label', descKey: 'manage.joinRequests.desc', route: '/(app)/manage/join-requests', color: '#f97316', permission: 'canManageUsers', orgWide: true },
   { icon: 'mail', labelKey: 'manage.invitations.label', descKey: 'manage.invitations.desc', route: '/(app)/manage/invitations', color: '#06b6d4', permission: 'canManageUsers', orgWide: true },
   { icon: 'alert-circle', labelKey: 'manage.issues.label', descKey: 'manage.issues.desc', route: 'sheet:issues', color: '#ef4444', permission: 'canViewAllTasks', orgWide: false },
@@ -51,7 +52,7 @@ export const MANAGE_ROWS = [
     which refused a Space Manager the one flow built for their depot's desk —
     the screen itself then offers only the kinds of their own workspaces.
   */
-  { icon: 'document-attach', labelKey: 'manage.contract.label', descKey: 'manage.contract.desc', route: '/(app)/asset-contract', color: '#0f766e', permission: 'canManageAssets', orgWide: false },
+  { icon: 'document-attach', labelKey: 'manage.contract.label', descKey: 'manage.contract.desc', route: '/(app)/asset-contract', color: '#0f766e', permission: 'canManageAssets', orgWide: false, internal: true },
 ] as const;
 
 export type ManageRow = (typeof MANAGE_ROWS)[number];
@@ -107,7 +108,9 @@ export type ExtraGate =
    * role grants nothing while looking configured. That is the resolver's
    * behaviour, not this row's, and it must not be worked around here.
    */
-  | { crmCap: 'editInfo' | 'manage' | 'work' };
+  | { crmCap: 'editInfo' | 'manage' | 'work' }
+  /** They drive a route — the same rule as the Today's route widget (`lib/member-reach.ts`). */
+  | { drives: true };
 
 export interface Destination {
   icon: string;
@@ -119,6 +122,13 @@ export interface Destination {
   permission: string;
   orgWide: boolean;
   module?: string;
+  /** An Access Profile module the member must hold (the phone's own gate: `clock`, `tasks`). */
+  accessModule?: MobileModule;
+  /**
+   * The organization's own property — never an external member's, whatever
+   * they hold. Mirrors `@DenyExternal` on the server.
+   */
+  internal?: true;
   gate?: ExtraGate;
   /** Eligible for the home rail. NOT every destination is a tile. */
   home?: true;
@@ -138,9 +148,9 @@ export interface Destination {
  * and they are not tiles.
  */
 export const MEMBER_ROWS: Destination[] = [
-  { icon: 'document-text', labelKey: 'shortcuts.documents', descKey: 'shortcuts.documentsDesc', route: '/(app)/documents', color: '#0b8168', permission: '', orgWide: false, home: true, badge: 'documents.due' },
+  { icon: 'document-text', labelKey: 'shortcuts.documents', descKey: 'shortcuts.documentsDesc', route: '/(app)/documents', color: '#0b8168', permission: '', orgWide: false, internal: true, home: true, badge: 'documents.due' },
   { icon: 'create', labelKey: 'shortcuts.sign', descKey: 'shortcuts.signDesc', route: '/(app)/sign-document', color: '#0b8168', permission: '', orgWide: false, home: true, badge: 'documents.toSign' },
-  { icon: 'cube', labelKey: 'shortcuts.myEquipment', descKey: 'shortcuts.myEquipmentDesc', route: '/(app)/my-assets', color: '#0f766e', permission: '', orgWide: false, module: 'assets', home: true, badge: 'assets.due' },
+  { icon: 'cube', labelKey: 'shortcuts.myEquipment', descKey: 'shortcuts.myEquipmentDesc', route: '/(app)/my-assets', color: '#0f766e', permission: '', orgWide: false, module: 'assets', internal: true, home: true, badge: 'assets.due' },
   /*
     ⚠️ MESSAGES IS NOT HERE ANY MORE. It took a permanent slot in the tab pill
     in v2, and a tile that duplicates a tab is a second door to the same room,
@@ -150,14 +160,14 @@ export const MEMBER_ROWS: Destination[] = [
     is a redirect kept for every push notification already delivered.
   */
   { icon: 'sync', labelKey: 'shortcuts.sync', descKey: 'shortcuts.syncDesc', route: '/(app)/sync', color: '#8b5cf6', permission: '', orgWide: false, gate: { offline: true }, home: true, badge: 'sync.queued' },
-  { icon: 'timer', labelKey: 'shortcuts.overtime', descKey: 'shortcuts.overtimeDesc', route: '/(app)/overtime', color: '#a855f7', permission: '', orgWide: false, gate: { addOn: 'overtime' }, home: true, badge: 'overtime.mine' },
+  { icon: 'timer', labelKey: 'shortcuts.overtime', descKey: 'shortcuts.overtimeDesc', route: '/(app)/overtime', color: '#a855f7', permission: '', orgWide: false, accessModule: 'clock', gate: { addOn: 'overtime' }, home: true, badge: 'overtime.mine' },
   /*
     ⚠️ Filing an expense is authorised by CUSTODY on the receipt's date, never
     by `canManageAssets` — a driver is not an asset manager and never will be.
     The tile cannot ask that question without a request, so it gates on the
     module and the SCREEN enforces custody, which it already does.
   */
-  { icon: 'receipt', labelKey: 'shortcuts.logExpense', descKey: 'shortcuts.logExpenseDesc', route: '/(app)/asset-expense', color: '#8a5a10', permission: '', orgWide: false, module: 'assets', home: true, act: true },
+  { icon: 'receipt', labelKey: 'shortcuts.logExpense', descKey: 'shortcuts.logExpenseDesc', route: '/(app)/asset-expense', color: '#8a5a10', permission: '', orgWide: false, module: 'assets', internal: true, home: true, act: true },
   /*
     ⚠️ NEW JOB IS A TILE NOW, and it could not have been one a week ago.
 
@@ -167,13 +177,13 @@ export const MEMBER_ROWS: Destination[] = [
     action, and the tab bar is a set of rooms.
   */
   { icon: 'add-circle', labelKey: 'shortcuts.newJob', descKey: 'shortcuts.newJobDesc', route: '/(app)/(tabs)/create-task', color: '#0b8168', permission: 'canCreateTasks', orgWide: false, home: true, act: true },
-  { icon: 'scan', labelKey: 'shortcuts.scanCard', descKey: 'shortcuts.scanCardDesc', route: '/(app)/scan-card', color: '#2563eb', permission: '', orgWide: false, module: 'crm', home: true, act: true },
-  { icon: 'person-add', labelKey: 'shortcuts.addClient', descKey: 'shortcuts.addClientDesc', route: '/(app)/customers?new=1', color: '#2563eb', permission: '', orgWide: false, module: 'crm', gate: { crmCap: 'editInfo' }, home: true, act: true },
+  { icon: 'scan', labelKey: 'shortcuts.scanCard', descKey: 'shortcuts.scanCardDesc', route: '/(app)/scan-card', color: '#2563eb', permission: '', orgWide: false, module: 'crm', internal: true, gate: { crmCap: 'editInfo' }, home: true, act: true },
+  { icon: 'person-add', labelKey: 'shortcuts.addClient', descKey: 'shortcuts.addClientDesc', route: '/(app)/customers?new=1', color: '#2563eb', permission: '', orgWide: false, module: 'crm', internal: true, gate: { crmCap: 'editInfo' }, home: true, act: true },
   { icon: 'send', labelKey: 'shortcuts.sendDoc', descKey: 'shortcuts.sendDocDesc', route: '/(app)/send-document', color: '#06b6d4', permission: 'canIssueDocuments', orgWide: false, home: true, act: true },
-  { icon: 'map', labelKey: 'shortcuts.planRoute', descKey: 'shortcuts.planRouteDesc', route: '/(app)/route-planner', color: '#0ea5e9', permission: '', orgWide: false, module: 'tracking', home: true },
+  { icon: 'map', labelKey: 'shortcuts.planRoute', descKey: 'shortcuts.planRouteDesc', route: '/(app)/route-planner', color: '#0ea5e9', permission: '', orgWide: false, gate: { drives: true }, home: true },
   // Reachable, and not a tile: nobody opens support twice a week.
   { icon: 'help-buoy', labelKey: 'shortcuts.support', descKey: 'shortcuts.supportDesc', route: '/(app)/support', color: '#64748b', permission: '', orgWide: false },
-  { icon: 'list', labelKey: 'shortcuts.equipmentLog', descKey: 'shortcuts.equipmentLogDesc', route: '/(app)/asset-log', color: '#0f766e', permission: '', orgWide: false, module: 'assets' },
+  { icon: 'list', labelKey: 'shortcuts.equipmentLog', descKey: 'shortcuts.equipmentLogDesc', route: '/(app)/asset-log', color: '#0f766e', permission: '', orgWide: false, module: 'assets', internal: true },
 ];
 
 
@@ -227,6 +237,8 @@ export function manageRowsFor(user: ManageSubject): ManageRow[] {
   return MANAGE_ROWS.filter((row) => {
     const allowed = row.orgWide ? holdsOrgWide(user, row.permission) : holds(user, row.permission);
     if (!allowed) return false;
+    // The organization's own property (clients, contracts) — never an external member's.
+    if ('internal' in row && isExternalMember(user as never)) return false;
     // Rows naming no module are not gated on one — most of Manage is the
     // organization itself (members, invitations, the rota), which is never
     // bought or unbought.
@@ -262,6 +274,7 @@ function passesGate(user: DestinationSubject, gate: ExtraGate | undefined): bool
   if (!gate) return true;
   if ('addOn' in gate) return orgHasAddOn(user?.orgAddOns ?? null, gate.addOn);
   if ('offline' in gate) return user?.offlineMode === true;
+  if ('drives' in gate) return drivesRoutes(user as never);
   const caps = resolveCrmCaps(
     (user as { role?: string | null } | null)?.role ?? null,
     ((user as { access?: { org?: Record<string, boolean> } } | null)?.access?.org ?? {}) as never,
@@ -280,6 +293,7 @@ export function destinationsFor(user: DestinationSubject): Destination[] {
   const manage: Destination[] = MANAGE_ROWS.map((r) => ({
     ...r,
     module: 'module' in r ? (r.module as string) : undefined,
+    internal: 'internal' in r ? (r.internal as true) : undefined,
     manage: true as const,
   }));
   return [...manage, ...MEMBER_ROWS].filter((row) => {
@@ -288,6 +302,8 @@ export function destinationsFor(user: DestinationSubject): Destination[] {
       if (!allowed) return false;
     }
     if (row.module !== undefined && !moduleAnywhere(user, row.module)) return false;
+    if (row.internal && isExternalMember(user as never)) return false;
+    if (row.accessModule && !hasAccessModule(user as never, row.accessModule)) return false;
     return passesGate(user, row.gate);
   });
 }

@@ -92,7 +92,7 @@ export const WIDGETS: WidgetRow[] = [
     key: 'shift-clock',
     title: 'widgets.shiftClock',
     question: 'widgets.q.shiftClock',
-    requires: { module: 'clock', self: true },
+    requires: { module: 'clock', internal: true, self: true },
     surface: 'glass',
     /*
       ⑧ of the eight is "not rendered" — a member with no workspace assignment
@@ -151,7 +151,7 @@ export const WIDGETS: WidgetRow[] = [
     key: 'clients',
     title: 'widgets.clients',
     question: 'widgets.q.clients',
-    requires: { spaceModule: 'crm', crm: true },
+    requires: { spaceModule: 'crm', crm: true, internal: true },
     surface: 'well',
     empty: 'allClear',
     Component: ClientsCard,
@@ -177,14 +177,16 @@ export const WIDGETS: WidgetRow[] = [
     map), with the next stop lifted and an arrow per stop. No request of its
     own on opening; the plan and position are the phone's.
 
-    ⚠️ Gated on the `tracking` module; WHO has a route is the card's own rule
-    (`isMyRouteStop`) and an empty day says so rather than vanishing.
+    ⚠️ `drives`: tracking in a workspace they are assigned to, jobs in their
+    Access Profile, and not external — the same rule as the Plan route tile.
+    Which stops are theirs today is the card's own rule (`isMyRouteStop`), and
+    an empty day says so rather than vanishing.
   */
   {
     key: 'my-route',
     title: 'widgets.myRoute',
     question: 'widgets.q.myRoute',
-    requires: { spaceModule: 'tracking', self: true },
+    requires: { drives: true, self: true },
     surface: 'well',
     empty: 'allClear',
     Component: RouteCard,

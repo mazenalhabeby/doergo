@@ -61,6 +61,8 @@ export interface User {
   role: 'ADMIN' | 'CLIENT' | 'DISPATCHER' | 'TECHNICIAN' | 'EMPLOYEE' | 'CUSTOMER';
   organizationId: string | null;
   onboardingCompleted: boolean;
+  /** Works for a client or partner (server-resolved). Absent on an older server = not external. */
+  isExternal?: boolean;
   // Customer portal: bound Customer + default unit (only for role=CUSTOMER).
   customerId?: string | null;
   unitId?: string | null;
