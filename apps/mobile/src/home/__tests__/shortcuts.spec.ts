@@ -1,5 +1,5 @@
 import type { Destination } from '../../lib/manage-rows';
-import { shortcutCandidates, smartPicks, shownShortcuts, waitingElsewhere, groupOf } from '../shortcuts';
+import { shortcutCandidates, smartPicks, shownShortcuts, groupOf } from '../shortcuts';
 
 const row = (labelKey: string, over: Partial<Destination> = {}): Destination => ({
   icon: 'x', labelKey, descKey: `${labelKey}Desc`, route: `/(app)/${labelKey}`, color: '#000', permission: '', orgWide: false, ...over,
@@ -35,12 +35,6 @@ describe('the Shortcuts card', () => {
   it('a chosen tile they can no longer open is refilled from the smart picks', () => {
     const allowed = ALL.filter((r) => r !== members);
     expect(shownShortcuts(['route', 'members', 'send'], allowed, {}).map((r) => r.labelKey)).toEqual(['route', 'send', 'newJob']);
-  });
-
-  it('says what is waiting behind a shortcut that is not on the card', () => {
-    const shown = shownShortcuts(['newJob', 'scan'], ALL, { 'sync.queued': 4 });
-    expect(waitingElsewhere(shown, ALL, { 'sync.queued': 4 })?.labelKey).toBe('sync');
-    expect(waitingElsewhere(shown, ALL, {})).toBeNull();
   });
 
   it('groups the editor: waiting, do, go to, manage', () => {

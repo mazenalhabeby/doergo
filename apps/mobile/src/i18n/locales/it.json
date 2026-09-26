@@ -3223,7 +3223,6 @@
   },
   "shortcutsCard": {
     "edit": "Modifica",
-    "open": "Apri",
     "waiting_one": "{{count}} in attesa",
     "waiting_other": "{{count}} in attesa",
     "title": "Le tue quattro scorciatoie",

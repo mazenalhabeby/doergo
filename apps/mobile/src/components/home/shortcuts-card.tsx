@@ -15,7 +15,7 @@ import { SheetPanel } from '../sheet-panel';
 import { SHORTCUT_GLYPHS } from './shortcut-glyphs';
 import {
   MIN_TILES, SLOTS, badgeOf, groupOf, shortcutCandidates, shownShortcuts,
-  smartPicks, waitingElsewhere, type Badges, type ShortcutGroup,
+  smartPicks, type Badges, type ShortcutGroup,
 } from '../../home/shortcuts';
 import { loadShortcuts, saveShortcuts } from '../../home/layout-store';
 
@@ -25,8 +25,10 @@ import { loadShortcuts, saveShortcuts } from '../../home/layout-store';
  * Added, it arrives with four SMART PICKS (what is waiting, then the actions,
  * then the member's places). Edit opens the same popup as the shift widget:
  * every shortcut the member may open, and four slots to fill. Once chosen the
- * tiles keep their order; badges still show on them, and something waiting
- * behind a shortcut NOT on the card gets one line underneath.
+ * tiles keep their order; badges still show on them.
+ *
+ * ⚠️ NO "WAITING ELSEWHERE" LINE. The action strip under the header already
+ * says what is waiting on the member; a second line here only repeated it.
  *
  * ⚠️ NO REQUEST OF ITS OWN. The tiles are a filter over a local table, and a
  * badge only shows a count something else already holds (spec §5): documents
@@ -63,7 +65,6 @@ export function ShortcutsCard({ style }: { style?: StyleProp<ViewStyle> }) {
   }, [user?.id]);
 
   const shown = useMemo(() => shownShortcuts(chosen, cands, badges), [chosen, cands, badges]);
-  const elsewhere = useMemo(() => waitingElsewhere(shown, cands, badges), [shown, cands, badges]);
 
   const save = useCallback((keys: string[] | null) => {
     setChosen(keys);
@@ -94,18 +95,6 @@ export function ShortcutsCard({ style }: { style?: StyleProp<ViewStyle> }) {
           })}
         </View>
 
-        {elsewhere ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: amazen.space(3), paddingTop: amazen.space(2.5), paddingHorizontal: 4, borderTopWidth: 1, borderTopColor: c.lineWell }}>
-            <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: c.warn }} />
-            <AText variant="caption" numberOfLines={1} style={{ flex: 1, fontSize: 12.5 }}>
-              <AText variant="caption" tone="strong" style={{ fontSize: 12.5, fontFamily: amazen.font.sansMedium }}>{t(elsewhere.labelKey)}</AText>
-              <AText variant="caption" tone="ink" style={{ fontSize: 12.5 }}>{' '}{t('shortcutsCard.waiting', { count: badgeOf(elsewhere, badges) })}</AText>
-            </AText>
-            <Pressable onPress={() => open(elsewhere)} hitSlop={10} accessibilityRole="button">
-              <AText variant="caption" tone="accent" style={{ fontSize: 12.5 }}>{t('shortcutsCard.open', { defaultValue: 'Open' })}</AText>
-            </Pressable>
-          </View>
-        ) : null}
       </Well>
 
       <ShortcutsEditor

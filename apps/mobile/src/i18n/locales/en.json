@@ -3230,7 +3230,6 @@
   },
   "shortcutsCard": {
     "edit": "Edit",
-    "open": "Open",
     "waiting_one": "{{count}} waiting",
     "waiting_other": "{{count}} waiting",
     "title": "Your four shortcuts",

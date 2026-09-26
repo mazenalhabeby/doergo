@@ -57,12 +57,6 @@ export function shownShortcuts(chosen: string[] | null, cands: Destination[], ba
   return keep.map((k) => by.get(k)!);
 }
 
-/** The one thing waiting behind a shortcut NOT on the card — said in one line, never hidden. */
-export function waitingElsewhere(shown: Destination[], cands: Destination[], badges: Badges): Destination | null {
-  const on = new Set(shown.map((r) => r.labelKey));
-  return cands.filter((r) => !on.has(r.labelKey) && badgeOf(r, badges) > 0).sort((a, b) => badgeOf(b, badges) - badgeOf(a, badges))[0] ?? null;
-}
-
 export type ShortcutGroup = 'waiting' | 'do' | 'go' | 'manage';
 
 /** The editor's sections. */

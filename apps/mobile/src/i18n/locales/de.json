@@ -3223,7 +3223,6 @@
   },
   "shortcutsCard": {
     "edit": "Bearbeiten",
-    "open": "Öffnen",
     "waiting_one": "{{count}} wartet",
     "waiting_other": "{{count}} warten",
     "title": "Ihre vier Verknüpfungen",

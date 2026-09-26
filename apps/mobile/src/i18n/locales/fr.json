@@ -3223,7 +3223,6 @@
   },
   "shortcutsCard": {
     "edit": "Modifier",
-    "open": "Ouvrir",
     "waiting_one": "{{count}} en attente",
     "waiting_other": "{{count}} en attente",
     "title": "Vos quatre raccourcis",
