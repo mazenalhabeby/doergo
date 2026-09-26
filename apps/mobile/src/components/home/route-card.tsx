@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
+import Svg, { Path } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 import { NAV_APP_LABELS, type NavApp } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
@@ -76,6 +77,13 @@ export function RouteCard({ style }: { style?: StyleProp<ViewStyle> }) {
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <AText variant="h3" tone="strong" style={{ flex: 1 }}>{t('widgets.myRoute')}</AText>
           {r.state !== 'none' ? (
+            <Pressable onPress={openPlanner} hitSlop={6} accessibilityRole="button"
+              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 11, height: 32, borderRadius: 16, backgroundColor: c.tile, borderWidth: 1, borderColor: c.lineGlass, marginRight: 8, opacity: pressed ? 0.75 : 1 })}>
+              <MapGlyph color={c.accent} />
+              <AText variant="caption" tone="ink" style={{ fontSize: 12.5 }}>{t('routeCard.openMapShort')}</AText>
+            </Pressable>
+          ) : null}
+          {r.state !== 'none' ? (
             <Pressable onPress={() => setMenu(true)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('routeCard.more')}
               style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: c.tile, alignItems: 'center', justifyContent: 'center' }}>
               <AText variant="body" tone="ink">⋯</AText>
@@ -94,7 +102,7 @@ export function RouteCard({ style }: { style?: StyleProp<ViewStyle> }) {
           <>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               {tiles.map((x, i) => (
-                <View key={i} style={{ flex: 1, borderRadius: 14, backgroundColor: c.tile, paddingHorizontal: 10, paddingVertical: 9 }}>
+                <View key={i} style={{ flex: 1, borderRadius: 14, backgroundColor: c.tile, paddingHorizontal: 11, paddingVertical: 10 }}>
                   <AText variant="decimal" tone="strong" numeric style={{ fontSize: 22, lineHeight: 27 }}>
                     {x.v}{x.unit ? <AText variant="caption" tone="muted">{` ${x.unit}`}</AText> : null}
                   </AText>
@@ -233,6 +241,7 @@ function StopRow({ s, marker, n, onDrive }: { s: DayStop; marker: 'done' | 'ahea
   );
 }
 
+/** The next stop, one row: its number, name, time · km · minutes, and the drive button. */
 function NextStop({ s, n, route, from, straight, onDrive }: {
   s: DayStop; n: number; route: ReturnType<typeof useRouteDay>['route']; from: ReturnType<typeof useRouteDay>['position']; straight: boolean; onDrive: () => void;
 }) {
@@ -242,18 +251,32 @@ function NextStop({ s, n, route, from, straight, onDrive }: {
   const { formatClock } = useTimeFormat();
   const leg = legInto(route, s.id);
   const m = leg?.meters ?? metresTo(from, s);
-  const facts = [s.address, m != null ? `${straight || !leg ? '~' : ''}${km(m)} km` : null, leg && !straight ? t('routeCard.minutes', { count: Math.round(leg.seconds / 60) }) : null].filter(Boolean).join(' · ');
+  const facts = [
+    hasHour(s.at) ? formatClock(s.at!) : null,
+    m != null ? `${straight || !leg ? '~' : ''}${km(m)} km` : null,
+    leg && !straight ? t('routeCard.minutes', { count: Math.round(leg.seconds / 60) }) : null,
+  ].filter(Boolean).join(' · ');
   return (
-    <View style={{ borderRadius: 18, padding: amazen.space(3.5), gap: 8, backgroundColor: c.tile, borderWidth: 1, borderColor: c.lineGlass }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Marker kind="next" n={n} />
-        <AText variant="eyebrow" tone="accent" style={{ flex: 1 }}>{t('routeCard.nextStop')}</AText>
-        {hasHour(s.at) ? <AText variant="caption" tone="ink" numeric>{formatClock(s.at!)}</AText> : null}
+    <Pressable onPress={onDrive} accessibilityRole="button" accessibilityLabel={t('routeCard.driveTo', { name: s.label })}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 18, padding: 12, backgroundColor: c.tile, opacity: pressed ? 0.85 : 1 })}>
+      <Marker kind="next" n={n} />
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <AText variant="eyebrow" tone="accent" style={{ fontSize: 9.5 }}>{t('routeCard.nextStop')}</AText>
+        <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 15, lineHeight: 20, fontFamily: amazen.font.sansMedium }}>{s.label}</AText>
+        {facts ? <AText variant="caption" tone="muted" numberOfLines={1}>{facts}</AText> : null}
       </View>
-      <AText variant="h3" tone="strong" numberOfLines={2} style={{ fontSize: 17, lineHeight: 23 }}>{s.label}</AText>
-      {facts ? <AText variant="caption" tone="muted" numberOfLines={2}>{facts}</AText> : null}
-      <PrimaryButton label={t('routeCard.driveHere')} onPress={onDrive} />
-    </View>
+      <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: c.accentSolid, alignItems: 'center', justifyContent: 'center' }}>
+        <NavigateGlyph size={20} color={c.accentInk} contrast={c.accentSolid} />
+      </View>
+    </Pressable>
+  );
+}
+
+function MapGlyph({ color }: { color: string }) {
+  return (
+    <Svg width={13} height={13} viewBox="0 0 24 24">
+      <Path d="M9 3 3 5.5v15.5l6-2.5 6 2.5 6-2.5V3l-6 2.5zM9 5.2l6 2.5v11.1l-6-2.5z" fill={color} />
+    </Svg>
   );
 }
 

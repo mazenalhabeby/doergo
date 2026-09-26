@@ -199,36 +199,19 @@ export function lastArrival(stops: readonly DayStop[]): Date | null {
   return t.length ? new Date(Math.max(...t)) : null;
 }
 
-/* ═════════════════════════ the real map underneath ═════════════════════════ */
-
-/** Web Mercator — the projection Apple and Google draw in, so our pins land on their streets. */
-const mercY = (lat: number) => Math.log(Math.tan(Math.PI / 4 + (Math.max(-85, Math.min(85, lat)) * Math.PI) / 360));
-const invMercY = (y: number) => (Math.atan(Math.exp(y)) - Math.PI / 4) * (360 / Math.PI);
-
-export interface MapBounds { northEast: LatLng; southWest: LatLng }
-
 /**
- * The map area to show: every place, padded, with the box's own shape.
- * ⚠️ A single stop has no span — `minSpanDeg` (~1 km) keeps it from being
- * drawn at the scale of a doorway.
+ * A smooth curve through points (Catmull-Rom as cubic Béziers) — the order of
+ * the stops drawn as a line that reads like a route, not a zig-zag.
  */
-export function mapRegionFor(points: readonly LatLng[], width: number, height: number, pad: number, minSpanDeg = 0.012) {
-  const ps = points.filter(isLatLng);
-  if (!ps.length || !width || !height) return null;
-  let w = Math.min(...ps.map((p) => p.lng)), e = Math.max(...ps.map((p) => p.lng));
-  let s = mercY(Math.min(...ps.map((p) => p.lat))), n = mercY(Math.max(...ps.map((p) => p.lat)));
-  const minY = (minSpanDeg * Math.PI) / 180;
-  if (e - w < minSpanDeg) { const c = (w + e) / 2; w = c - minSpanDeg / 2; e = c + minSpanDeg / 2; }
-  if (n - s < minY) { const c = (n + s) / 2; s = c - minY / 2; n = c + minY / 2; }
-  // Degrees of lng and mercator units share a scale (deg → rad); fit, then grow to the box's shape.
-  const spanX = ((e - w) * Math.PI) / 180, spanY = n - s;
-  const k = Math.min((width - pad * 2) / spanX, (height - pad * 2) / spanY);
-  const fullX = (width / k) * (180 / Math.PI), fullY = height / k;
-  const cx = (w + e) / 2, cy = (n + s) / 2;
-  const north = invMercY(cy + fullY / 2), south = invMercY(cy - fullY / 2);
-  return {
-    latitude: (north + south) / 2, longitude: cx,
-    latitudeDelta: north - south, longitudeDelta: fullX,
-    bounds: { northEast: { lat: north, lng: cx + fullX / 2 }, southWest: { lat: south, lng: cx - fullX / 2 } } as MapBounds,
-  };
+export function smoothPath(pts: readonly { x: number; y: number }[]): string {
+  if (pts.length < 2) return '';
+  const f = (n: number) => n.toFixed(1);
+  let d = `M${f(pts[0]!.x)},${f(pts[0]!.y)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i]!, p1 = pts[i]!, p2 = pts[i + 1]!, p3 = pts[i + 2] ?? p2;
+    const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
+    d += `C${f(c1x)},${f(c1y)} ${f(c2x)},${f(c2y)} ${f(p2.x)},${f(p2.y)}`;
+  }
+  return d;
 }
