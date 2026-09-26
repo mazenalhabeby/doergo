@@ -2996,7 +2996,46 @@
       "freeSoon": "{{count}} liberi a breve",
       "over": "{{count}} oltre",
       "breakOver": "{{count}} pausa lunga"
-    }
+    },
+    "toApprove_one": "{{count}} turno da approvare",
+    "toApprove_other": "{{count}} turni da approvare",
+    "openAttendance": "Apri presenze",
+    "min": "{{n}} min",
+    "group": {
+      "late": "In ritardo",
+      "missed": "Assenti oggi",
+      "freeSoon": "Liberi a breve",
+      "over": "Oltre la fine",
+      "breakOver": "Pausa troppo lunga",
+      "steady": "Regolari"
+    },
+    "say": {
+      "late": "{{count}} in ritardo",
+      "missed_one": "{{count}} ha saltato il turno",
+      "missed_other": "{{count}} hanno saltato il turno",
+      "soon": "{{count}} liberi a breve",
+      "over": "{{count}} oltre la fine",
+      "calm": "Ci sono tutti. Niente da decidere.",
+      "noneIn": "Non c’è ancora nessuno: {{list}}."
+    },
+    "key": {
+      "in": "{{count}} presenti",
+      "late": "{{count}} in ritardo",
+      "missed": "{{count}} assenti"
+    },
+    "moreIn": "+{{count}} altri",
+    "steadyLine": "Presenti e in regola. Niente da decidere.",
+    "you": "Tu",
+    "expectedAt": "previsto {{time}}",
+    "shiftWas": "turno {{from}}–{{to}}",
+    "u": {
+      "late": "di ritardo",
+      "missed": "non è venuto",
+      "left": "rimasti",
+      "over": "in più",
+      "break": "in pausa"
+    },
+    "message": "Scrivi a {{name}}"
   },
   "widgets": {
     "shiftClock": "Orologio del turno",

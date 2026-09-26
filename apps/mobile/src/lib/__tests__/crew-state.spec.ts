@@ -44,15 +44,16 @@ describe('rule 1 — the rail is not a roster', () => {
     expect(busy.tiles.length).toBeGreaterThan(calm.tiles.length);
   });
 
-  it('orders late → free soon → over → break over', () => {
+  it('orders late → missed → free soon → over → break over', () => {
     const s = crewState({
       people: [
         person({ userId: 'break', breakMinutes: 40, breakAllowanceMinutes: 30 }),
         person({ userId: 'over', expectedClockOutAt: iso(-10) }),
         person({ userId: 'soon', expectedClockOutAt: iso(25) }),
-        person({ userId: 'late', clockInAt: null, scheduledStartAt: iso(-47) }),
+        person({ userId: 'late', clockInAt: null, scheduledStartAt: iso(-47), expectedClockOutAt: iso(400) }),
+        person({ userId: 'missed', clockInAt: null, scheduledStartAt: iso(-900), expectedClockOutAt: iso(-420) }),
       ],
-      rosteredCount: 4, spaceIds: ['a'], now: NOW,
+      rosteredCount: 5, spaceIds: ['a'], now: NOW,
     });
     expect(s.tiles.map((x) => x.band)).toEqual(BAND_ORDER);
   });
@@ -167,5 +168,15 @@ describe('the six states are a closed list', () => {
     expect(s.on).toBe(0);
     expect(s.rostered).toBeNull();
     expect(s.tiles).toEqual([]);
+  });
+});
+
+describe('missed — late only while the shift is running (02.png)', () => {
+  it('a rostered no-show whose shift has ENDED is missed, not "17h late"', () => {
+    const now = Date.parse('2026-09-26T16:20:00Z');
+    const base = { userId: 'u', firstName: 'Mike', clockInAt: null } as const;
+    expect(bandOf({ ...base, scheduledStartAt: '2026-09-25T20:26:00Z', expectedClockOutAt: '2026-09-26T04:26:00Z' }, now)).toBe('missed');
+    expect(bandOf({ ...base, scheduledStartAt: '2026-09-26T14:16:00Z', expectedClockOutAt: '2026-09-26T22:16:00Z' }, now)).toBe('late');
+    expect(bandOf({ ...base, scheduledStartAt: '2026-09-26T17:00:00Z', expectedClockOutAt: '2026-09-27T01:00:00Z' }, now)).toBeNull();
   });
 });

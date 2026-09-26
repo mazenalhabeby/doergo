@@ -2996,7 +2996,46 @@
       "freeSoon": "{{count}} libres pronto",
       "over": "{{count}} de más",
       "breakOver": "{{count}} pausa larga"
-    }
+    },
+    "toApprove_one": "{{count}} turno por aprobar",
+    "toApprove_other": "{{count}} turnos por aprobar",
+    "openAttendance": "Abrir asistencia",
+    "min": "{{n}} min",
+    "group": {
+      "late": "Tarde",
+      "missed": "Faltaron hoy",
+      "freeSoon": "Libres pronto",
+      "over": "Pasados de hora",
+      "breakOver": "Pausa larga",
+      "steady": "En orden"
+    },
+    "say": {
+      "late": "{{count}} tarde",
+      "missed_one": "{{count}} faltó a su turno",
+      "missed_other": "{{count}} faltaron a su turno",
+      "soon": "{{count}} libres pronto",
+      "over": "{{count}} pasados de hora",
+      "calm": "Están todos. Nada que decidir.",
+      "noneIn": "Aún no hay nadie: {{list}}."
+    },
+    "key": {
+      "in": "{{count}} dentro",
+      "late": "{{count}} tarde",
+      "missed": "{{count}} faltaron"
+    },
+    "moreIn": "+{{count}} más",
+    "steadyLine": "Dentro y según el plan. Nada que decidir.",
+    "you": "Tú",
+    "expectedAt": "esperado {{time}}",
+    "shiftWas": "turno {{from}}–{{to}}",
+    "u": {
+      "late": "tarde",
+      "missed": "no vino",
+      "left": "quedan",
+      "over": "de más",
+      "break": "en pausa"
+    },
+    "message": "Escribir a {{name}}"
   },
   "widgets": {
     "shiftClock": "Reloj de turno",

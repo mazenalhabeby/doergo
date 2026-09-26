@@ -2996,7 +2996,46 @@
       "freeSoon": "{{count}} bald frei",
       "over": "{{count}} drüber",
       "breakOver": "{{count}} Pause zu lang"
-    }
+    },
+    "toApprove_one": "{{count}} Schicht freizugeben",
+    "toApprove_other": "{{count}} Schichten freizugeben",
+    "openAttendance": "Anwesenheit öffnen",
+    "min": "{{n}} Min.",
+    "group": {
+      "late": "Zu spät",
+      "missed": "Heute nicht erschienen",
+      "freeSoon": "Bald frei",
+      "over": "Über dem Ende",
+      "breakOver": "Pause zu lang",
+      "steady": "Im Plan"
+    },
+    "say": {
+      "late": "{{count}} zu spät",
+      "missed_one": "{{count}} hat die Schicht verpasst",
+      "missed_other": "{{count}} haben die Schicht verpasst",
+      "soon": "{{count}} bald frei",
+      "over": "{{count}} über dem Ende",
+      "calm": "Alle sind da. Nichts zu entscheiden.",
+      "noneIn": "Noch niemand da: {{list}}."
+    },
+    "key": {
+      "in": "{{count}} da",
+      "late": "{{count}} zu spät",
+      "missed": "{{count}} verpasst"
+    },
+    "moreIn": "+{{count}} weitere",
+    "steadyLine": "Da und im Plan. Nichts zu entscheiden.",
+    "you": "Sie",
+    "expectedAt": "erwartet {{time}}",
+    "shiftWas": "Schicht {{from}}–{{to}}",
+    "u": {
+      "late": "zu spät",
+      "missed": "nicht gekommen",
+      "left": "übrig",
+      "over": "drüber",
+      "break": "in Pause"
+    },
+    "message": "{{name}} schreiben"
   },
   "widgets": {
     "shiftClock": "Schichtuhr",

@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
@@ -9,7 +8,8 @@ import { holds } from '../../lib/permissions';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { AText, Eyebrow, Well, WellDivider } from '../amazen';
 import { NotArrivedGlyph, HoursWaitingGlyph } from '../glyphs/crew-glyphs';
-import { crewState, CAPS, type CrewPerson, type CrewTile, type Ring, type SiteRow } from './crew-state';
+import { MessagesGlyph } from '../glyphs/glyphs';
+import { crewState, CAPS, type Band, type CrewPerson, type CrewTile, type SiteRow } from './crew-state';
 import { useCrew } from './use-crew';
 
 /**
@@ -68,7 +68,6 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
 
   const notArrived = s.tiles.filter((x) => x.band === 'late');
   const siteRows = shortOnly ? s.sites.filter((x) => !!x.trouble) : s.sites;
-  const withSite = s.unit === 'peopleWithSite';
 
   return (
     <View style={style}>
@@ -79,7 +78,7 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
           {!data.failed ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.accent }} />
-              <AText variant="caption" tone="accent" numeric>{formatTime(new Date(data.at).toISOString())}</AText>
+              <AText variant="caption" tone="accent" numeric>{formatTime(new Date(data.at).toISOString()).replace(/\s+[A-Z]{2,5}$/, '')}</AText>
             </View>
           ) : null}
         </View>
@@ -91,7 +90,7 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
         ) : null}
 
         {/* The hero. ⚠️ The "/n" is dropped when there is no roster — never a copy of the numerator. */}
-        <View style={{ gap: 4 }}>
+        {data.failed || (s.unit === 'workspaces' && !site) ? <View style={{ gap: 4 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
             <AText variant="display" tone={data.failed ? 'muted' : 'strong'} numeric style={{ fontSize: 56, lineHeight: 60 }}>
               {data.failed ? '—' : String(s.on)}
@@ -100,7 +99,7 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
             <AText variant="body" tone="muted">{t('crew.onTheClock', { defaultValue: 'on the clock' })}</AText>
           </View>
           {sub ? <Eyebrow tone="muted" numberOfLines={1}>{sub}</Eyebrow> : null}
-        </View>
+        </View> : sub ? <Eyebrow tone="muted" numberOfLines={1}>{sub}</Eyebrow> : null}
 
         {data.loading && !data.people.length && !data.failed ? (
           <View style={{ flexDirection: 'row', gap: 10 }}>{[0, 1, 2].map((i) => <View key={i} style={{ width: 118, height: 150, borderRadius: 20, backgroundColor: c.tile }} />)}</View>
@@ -129,33 +128,13 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
               </AText>
             ) : null}
           </>
-        ) : s.kind === 'busy' ? (
-          <>
-            {/* ⚠️ The rail scrolls sideways, never wraps: three tiles and nine are the same height. */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }} style={{ marginHorizontal: -amazen.space(4.5) }}>
-              <View style={{ width: amazen.space(4.5) - 10 }} />
-              {s.tiles.map((tile) => <TileView key={tile.person.userId} tile={tile} withSite={withSite} now={data.at} onPress={openAttendance} />)}
-              {s.tilesOverflow > 0 ? (
-                <View style={{ width: 70, alignItems: 'center', justifyContent: 'center' }}><AText variant="h3" tone="muted">+{s.tilesOverflow}</AText></View>
-              ) : null}
-              <View style={{ width: amazen.space(4.5) - 10 }} />
-            </ScrollView>
-            {s.steady.length ? <Steady people={s.steady} /> : null}
-          </>
-        ) : s.kind === 'calm' ? (
-          <>
-            <Message text={t('crew.calm', { defaultValue: 'Everyone expected is in. Nothing to decide.' })} />
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-              {s.steady.slice(0, 27).map((p) => <Initials key={p.userId} person={p} />)}
-              {s.steady.length > 27 ? <AText variant="caption" tone="muted">+{s.steady.length - 27}</AText> : null}
-            </View>
-          </>
         ) : (
-          <Message dim text={t('crew.nobody', { defaultValue: 'Nobody is on shift right now.' })} />
+          <Grouped state={s} viewerId={user?.id} onOpen={openAttendance}
+            onMessage={(id) => router.push({ pathname: '/chat', params: { userId: id } } as never)} />
         )}
 
         {/* The exception rows — the only way to anything that changes a record. */}
-        {!data.failed && notArrived.length ? (
+        {!data.failed && notArrived.length && s.unit === 'workspaces' && !site ? (
           <ExceptionRow
             kind="late"
             title={t('crew.notArrived', { count: notArrived.length, defaultValue: `${notArrived.length} not arrived` })}
@@ -170,8 +149,8 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
         {!data.failed && data.pending > 0 && !site ? (
           <ExceptionRow
             kind="waiting"
-            title={t('crew.waiting', { count: data.pending, defaultValue: `${data.pending} shifts waiting` })}
-            detail={t('crew.waitingDetail', { defaultValue: 'Done, and waiting for somebody to approve them' })}
+            title={t('crew.toApprove', { count: data.pending, defaultValue: `${data.pending} shifts to approve` })}
+            detail={t('crew.openAttendance', { defaultValue: 'Open attendance' })}
             onPress={openAttendance}
           />
         ) : null}
@@ -180,123 +159,178 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
   );
 }
 
-/* ================================================================ the tile */
+/* ================================================================ the grouped list */
 
-const TILE = 118;
-const RING = 56;
+/** `12` → "12 min"; past 90 minutes, hours — minutes above 90 are not read. */
+function span(t: (k: string, o?: Record<string, unknown>) => string, n: number): string {
+  if (n > 90) return `${Math.floor(n / 60)}h ${String(n % 60).padStart(2, '0')}`;
+  return t('crew.min', { n, defaultValue: `${n} min` });
+}
+
+/** HH:mm in the member's own 12/24h preference, without the zone suffix that cut every line off. */
+function useClock() {
+  const { formatTime } = useTimeFormat();
+  return (iso?: string | null) => (iso ? formatTime(iso).replace(/\s+[A-Z]{2,5}$/, '') : '');
+}
+
+const GROUPS: { band: Band; label: string; fallback: string }[] = [
+  { band: 'late', label: 'crew.group.late', fallback: 'Late' },
+  { band: 'missed', label: 'crew.group.missed', fallback: 'Missed today' },
+  { band: 'freeSoon', label: 'crew.group.freeSoon', fallback: 'Free soon' },
+  { band: 'over', label: 'crew.group.over', fallback: 'Past their end' },
+  { band: 'breakOver', label: 'crew.group.breakOver', fallback: 'Break too long' },
+];
+const PER_GROUP = 3;
 
 /**
- * One person, six lines: the ring, the dot, the name, the place, the figure,
- * the span.
- *
- * ⚠️ THE FIGURE IS TIME LEFT, NOT TIME WORKED. A manager at 13:20 needs to know
- * Pia is free in 25 minutes.
+ * ⚠️ NO SIDEWAYS SCROLL. People are grouped by what you do about them — the
+ * reason is the heading, the count beside it — so the card reads in one
+ * glance (02.png: a rail cut hard at the card edge read as a bug). A sentence
+ * says what matters first; a bar shows the whole day in one line.
  */
-function TileView({ tile, withSite, now, onPress }: { tile: CrewTile; withSite: boolean; now: number; onPress: () => void }) {
+function Grouped({ state: s, viewerId, onOpen, onMessage }: {
+  state: ReturnType<typeof crewState>; viewerId?: string; onOpen: () => void; onMessage: (userId: string) => void;
+}) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
-  const { formatTime } = useTimeFormat();
   const c = amazen.color;
-  const p = tile.person;
-  const band = tile.band;
-  const tone = band === 'late' ? c.critical : band === 'freeSoon' ? c.accent : c.warn;
-  const dot = band === 'late' ? c.critical : band === 'breakOver' ? 'transparent' : band === 'over' ? c.warn : c.accent;
-  const n = tile.minutes;
-  const big = band === 'over' ? `${Math.floor(n / 60)}h ${String(n % 60).padStart(2, '0')}` : n >= 60 && band === 'late' ? `${Math.floor(n / 60)}h ${String(n % 60).padStart(2, '0')}` : String(n);
-  const unit = band === 'late' ? (n >= 60 ? t('crew.late', { defaultValue: 'late' }) : t('crew.minLate', { defaultValue: 'min late' }))
-    : band === 'freeSoon' ? t('crew.minLeft', { defaultValue: 'min left' })
-    : band === 'over' ? t('crew.over', { defaultValue: 'over' })
-    : t('crew.minBreak', { defaultValue: 'min break' });
-  const span = band === 'late'
-    ? `${t('crew.expected', { defaultValue: 'Expected' })} ${p.scheduledStartAt ? formatTime(p.scheduledStartAt) : ''}`
-    : `${p.clockInAt ? formatTime(p.clockInAt) : ''} → ${p.expectedClockOutAt && !p.endIsDailyLimit ? formatTime(p.expectedClockOutAt) : '—'}`;
-  void now;
+  const all = [...s.tiles];
+  const count = (b: Band) => all.filter((x) => x.band === b).length;
+  const late = count('late');
+  const missed = count('missed');
+  const soon = count('freeSoon');
+  const over = count('over') + count('breakOver');
+
+  const parts = [
+    late ? t('crew.say.late', { count: late, defaultValue: `${late} late` }) : null,
+    missed ? t('crew.say.missed', { count: missed, defaultValue: `${missed} missed their shift` }) : null,
+    soon ? t('crew.say.soon', { count: soon, defaultValue: `${soon} free soon` }) : null,
+    over ? t('crew.say.over', { count: over, defaultValue: `${over} past their end` }) : null,
+  ].filter(Boolean) as string[];
+  const sentence = !parts.length
+    ? (s.on ? t('crew.say.calm', { defaultValue: 'Everyone is in. Nothing to decide.' }) : t('crew.nobody', { defaultValue: 'Nobody is on shift right now.' }))
+    : s.on === 0
+      ? t('crew.say.noneIn', { list: parts.join(', '), defaultValue: `Nobody is in yet: ${parts.join(', ')}.` })
+      : `${parts.join(', ')}.`;
+
+  const segs = [...Array(s.on).fill('on'), ...Array(late).fill('late'), ...Array(missed).fill('missed')].slice(0, 40);
 
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${p.firstName}, ${big} ${unit}`}
-      style={({ pressed }) => ({ width: TILE, borderRadius: 20, padding: 12, backgroundColor: c.tile, gap: 2, opacity: pressed ? 0.85 : 1 })}>
-      <View style={{ width: RING, height: RING, marginBottom: 8 }}>
-        <RingSvg ring={tile.ring} tone={tone} />
-        <View style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
-          <AText variant="caption" tone="strong" style={{ fontSize: 13 }}>{initials(p)}</AText>
+    <View style={{ gap: amazen.space(3) }}>
+      <AText variant="body" tone={parts.length ? 'strong' : 'accent'} style={{ fontSize: 16, lineHeight: 22 }}>{sentence}</AText>
+
+      {segs.length ? (
+        <View style={{ gap: 6 }}>
+          <View style={{ flexDirection: 'row', gap: 3 }}>
+            {segs.map((k, i) => (
+              <View key={i} style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: k === 'on' ? c.accent : c.critical, opacity: k === 'missed' ? 0.45 : 1 }} />
+            ))}
+          </View>
+          <View style={{ flexDirection: 'row', gap: amazen.space(3) }}>
+            <Key color={c.accent} text={t('crew.key.in', { count: s.on, defaultValue: `${s.on} in` })} />
+            {late ? <Key color={c.critical} text={t('crew.key.late', { count: late, defaultValue: `${late} late` })} /> : null}
+            {missed ? <Key color={c.critical} dim text={t('crew.key.missed', { count: missed, defaultValue: `${missed} missed` })} /> : null}
+          </View>
         </View>
-        <View style={{ position: 'absolute', right: 3, bottom: 3, width: 10, height: 10, borderRadius: 5, backgroundColor: dot, borderWidth: band === 'breakOver' ? 2 : 2, borderColor: band === 'breakOver' ? c.warn : c.well }} />
+      ) : null}
+
+      {GROUPS.map(({ band, label, fallback }) => {
+        const g = all.filter((x) => x.band === band);
+        if (!g.length) return null;
+        const tone = band === 'late' || band === 'missed' ? c.critical : band === 'freeSoon' ? c.accent : c.warn;
+        return (
+          <View key={band} style={{ gap: 6 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Eyebrow style={{ flex: 1, color: tone }}>{t(label, { defaultValue: fallback })}</Eyebrow>
+              <AText variant="caption" numeric style={{ color: tone }}>{g.length}</AText>
+            </View>
+            {g.slice(0, PER_GROUP).map((tile) => (
+              <PersonRow key={tile.person.userId} tile={tile} tone={tone} you={tile.person.userId === viewerId} showPlace={s.unit !== 'people'} onPress={onOpen} onMessage={onMessage} />
+            ))}
+            {g.length > PER_GROUP ? (
+              <Pressable onPress={onOpen} accessibilityRole="button" hitSlop={6}>
+                <AText variant="caption" tone="accent" style={{ paddingHorizontal: 4 }}>{t('crew.moreIn', { count: g.length - PER_GROUP, defaultValue: `+${g.length - PER_GROUP} more` })}</AText>
+              </Pressable>
+            ) : null}
+          </View>
+        );
+      })}
+
+      {s.steady.length ? (
+        <View style={{ gap: 2 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Eyebrow tone="muted" style={{ flex: 1 }}>{t('crew.group.steady', { defaultValue: 'Steady' })}</Eyebrow>
+            <AText variant="caption" tone="muted" numeric>{s.steady.length}</AText>
+          </View>
+          <AText variant="caption" tone="muted">{t('crew.steadyLine', { defaultValue: 'In and on plan. Nothing to decide.' })}</AText>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function Key({ color, text, dim }: { color: string; text: string; dim?: boolean }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+      <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: color, opacity: dim ? 0.45 : 1 }} />
+      <AText variant="caption" tone="muted" style={{ fontSize: 11 }}>{text}</AText>
+    </View>
+  );
+}
+
+/** One person: who, where and since when, the figure, and one button. */
+function PersonRow({ tile, tone, you, showPlace, onPress, onMessage }: {
+  tile: CrewTile; tone: string; you: boolean;
+  /** One workspace: its name is in the header already, and repeating it cut the time off. */
+  showPlace: boolean;
+  onPress: () => void; onMessage: (userId: string) => void;
+}) {
+  const { amazen } = useTheme();
+  const { t } = useTranslation();
+  const clock = useClock();
+  const c = amazen.color;
+  const p = tile.person;
+  const b = tile.band;
+  const name = you ? t('crew.you', { defaultValue: 'You' }) : `${p.firstName} ${p.lastName ?? ''}`.trim();
+  const when = b === 'late' ? t('crew.expectedAt', { time: clock(p.scheduledStartAt), defaultValue: `expected ${clock(p.scheduledStartAt)}` })
+    : b === 'missed' ? t('crew.shiftWas', { from: clock(p.scheduledStartAt), to: clock(p.expectedClockOutAt), defaultValue: `shift ${clock(p.scheduledStartAt)}–${clock(p.expectedClockOutAt)}` })
+    : `${clock(p.clockInAt)} → ${p.expectedClockOutAt && !p.endIsDailyLimit ? clock(p.expectedClockOutAt) : '—'}`;
+  const figure = b === 'missed' ? null : span(t, tile.minutes);
+  const unit = b === 'late' ? t('crew.u.late', { defaultValue: 'late' })
+    : b === 'missed' ? t('crew.u.missed', { defaultValue: 'did not come' })
+    : b === 'freeSoon' ? t('crew.u.left', { defaultValue: 'left' })
+    : b === 'over' ? t('crew.u.over', { defaultValue: 'over' })
+    : t('crew.u.break', { defaultValue: 'on break' });
+  const tint = b === 'freeSoon' ? c.accentTint : b === 'over' || b === 'breakOver' ? c.warnTint : c.criticalTint;
+
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${name}, ${figure ?? ''} ${unit}`}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), padding: amazen.space(2.5), borderRadius: 14, backgroundColor: c.tile, opacity: pressed ? 0.85 : 1 })}>
+      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: tint, alignItems: 'center', justifyContent: 'center' }}>
+        <AText variant="caption" style={{ color: tone, fontSize: 11.5 }}>{initials(p)}</AText>
       </View>
-      {/* ⚠️ First name only. A row of initials is a puzzle. */}
-      <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14 }}>{p.firstName}</AText>
-      {/* The place decides whether you can walk over. */}
-      <AText variant="caption" tone="muted" numberOfLines={1} style={{ fontSize: 11 }}>{withSite || !p.spaceName ? p.spaceName ?? '' : p.spaceName}</AText>
-      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 8 }}>
-        <AText variant="h3" numeric style={{ color: tone, fontSize: 19 }}>{big}</AText>
-        <AText variant="caption" tone="muted" style={{ fontSize: 11 }}>{unit}</AText>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14 }}>{name}</AText>
+        <AText variant="caption" tone="muted" numberOfLines={1}>{[showPlace ? p.spaceName : null, when].filter(Boolean).join(' · ')}</AText>
       </View>
-      <AText variant="caption" tone="muted" numeric numberOfLines={1} style={{ fontSize: 9.5, letterSpacing: 0.6, marginTop: 4, textTransform: 'uppercase' }}>{span}</AText>
+      <View style={{ alignItems: 'flex-end' }}>
+        {figure ? <AText variant="body" numeric style={{ color: tone, fontSize: 13 }}>{figure}</AText> : null}
+        <AText variant="caption" tone="muted" style={{ fontSize: 10.5 }}>{unit}</AText>
+      </View>
+      {/* ⚠️ One button, and it is a message: members carry no phone number yet, so Call cannot be real. */}
+      {!you ? (
+        <Pressable onPress={() => onMessage(p.userId)} accessibilityRole="button" hitSlop={6}
+          accessibilityLabel={t('crew.message', { name: p.firstName, defaultValue: `Message ${p.firstName}` })}
+          style={({ pressed }) => ({ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: c.well, borderWidth: 1.5, borderColor: c.lineGlass, opacity: pressed ? 0.8 : 1 })}>
+          <MessagesGlyph size={17} color={c.accent} />
+        </Pressable>
+      ) : null}
     </Pressable>
   );
 }
 
-/**
- * The ring tells the shift.
- *
- *   arc      clock-in → expected out, as a fraction
- *   late     dashed crit, NO arc — no shift is underway to be a fraction of
- *   break    dashed warn arc; the shift clock still runs underneath
- *   over     full jade, then a warn tail past the top
- *   plain    present, no progress — no expected end, or only a daily cut-off
- */
-function RingSvg({ ring, tone }: { ring: Ring; tone: string }) {
-  const { amazen } = useTheme();
-  const c = amazen.color;
-  const R = 24;
-  const C = 2 * Math.PI * R;
-  const common = { cx: 28, cy: 28, r: R, fill: 'none', strokeWidth: 3 } as const;
-  const rot = { rotation: -90, origin: '28, 28' } as const;
-  const track = <Circle {...common} stroke={c.lineGlass} />;
-  let body: React.ReactNode = null;
-  switch (ring.kind) {
-    case 'dashedLate': body = <Circle {...common} strokeWidth={2.5} stroke={c.critical} strokeDasharray="4 4" />; break;
-    case 'plain': body = <Circle {...common} stroke={c.accent} />; break;
-    case 'none': body = <Circle {...common} strokeWidth={2.5} stroke={c.lineGlass} strokeDasharray="3 5" />; break;
-    case 'break': body = <>{track}<Circle {...common} {...rot} stroke={c.warn} strokeDasharray={`5 4`} /></>; break;
-    case 'over': body = <><Circle {...common} stroke={c.accent} /><Circle {...common} {...rot} stroke={c.warn} strokeLinecap="round" strokeDasharray={`${C * 0.18} ${C}`} /></>; break;
-    case 'arc': body = <>{track}<Circle {...common} {...rot} stroke={tone === c.critical ? c.accent : c.accent} strokeLinecap="round" strokeDasharray={`${Math.max(0.02, ring.fraction) * C} ${C}`} /></>; break;
-  }
-  return <Svg width={RING} height={RING} viewBox="0 0 56 56">{body}</Svg>;
-}
-
-/* ================================================================ small parts */
-
 function initials(p: CrewPerson): string {
   return `${(p.firstName ?? '').charAt(0)}${(p.lastName ?? '').charAt(0)}`.toUpperCase() || '·';
-}
-
-function Initials({ person }: { person: CrewPerson }) {
-  const { amazen } = useTheme();
-  return (
-    <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: amazen.color.accentTint, alignItems: 'center', justifyContent: 'center' }}>
-      <AText variant="caption" tone="accent" style={{ fontSize: 9.5 }}>{initials(person)}</AText>
-    </View>
-  );
-}
-
-/** Everyone with nothing to decide about them — one chip with a count. */
-function Steady({ people }: { people: CrewPerson[] }) {
-  const { amazen } = useTheme();
-  const { t } = useTranslation();
-  const faces = people.slice(0, CAPS.steadyFaces);
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
-      <View style={{ flexDirection: 'row' }}>
-        {faces.map((p, i) => (
-          <View key={p.userId} style={{ marginLeft: i ? -6 : 0, borderRadius: 15, borderWidth: 2, borderColor: amazen.color.well }}><Initials person={p} /></View>
-        ))}
-      </View>
-      <AText variant="caption" tone="ink" numeric>
-        {people.length > faces.length ? `+${people.length - faces.length} ` : ''}{t('crew.steady', { defaultValue: 'steady' })}
-      </AText>
-      <AText variant="caption" tone="muted" style={{ marginLeft: 'auto' }}>{t('crew.nothingToDecide', { defaultValue: 'Nothing to decide.' })}</AText>
-    </View>
-  );
 }
 
 function Message({ text, dim }: { text: string; dim?: boolean }) {

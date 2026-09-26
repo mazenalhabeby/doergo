@@ -2996,7 +2996,46 @@
       "freeSoon": "{{count}} bientôt libres",
       "over": "{{count}} au-delà",
       "breakOver": "{{count}} pause dépassée"
-    }
+    },
+    "toApprove_one": "{{count}} poste à valider",
+    "toApprove_other": "{{count}} postes à valider",
+    "openAttendance": "Ouvrir la présence",
+    "min": "{{n}} min",
+    "group": {
+      "late": "En retard",
+      "missed": "Absents aujourd’hui",
+      "freeSoon": "Bientôt libres",
+      "over": "Au-delà de la fin",
+      "breakOver": "Pause trop longue",
+      "steady": "Dans les temps"
+    },
+    "say": {
+      "late": "{{count}} en retard",
+      "missed_one": "{{count}} a manqué son poste",
+      "missed_other": "{{count}} ont manqué leur poste",
+      "soon": "{{count}} bientôt libres",
+      "over": "{{count}} au-delà de la fin",
+      "calm": "Tout le monde est là. Rien à décider.",
+      "noneIn": "Personne n’est encore là : {{list}}."
+    },
+    "key": {
+      "in": "{{count}} présents",
+      "late": "{{count}} en retard",
+      "missed": "{{count}} absents"
+    },
+    "moreIn": "+{{count}} de plus",
+    "steadyLine": "Présents et dans les temps. Rien à décider.",
+    "you": "Vous",
+    "expectedAt": "attendu {{time}}",
+    "shiftWas": "poste {{from}}–{{to}}",
+    "u": {
+      "late": "de retard",
+      "missed": "pas venu",
+      "left": "restantes",
+      "over": "de plus",
+      "break": "en pause"
+    },
+    "message": "Écrire à {{name}}"
   },
   "widgets": {
     "shiftClock": "Horloge de service",

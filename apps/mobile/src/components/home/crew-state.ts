@@ -17,7 +17,7 @@
  * denominator that used to be a copy of the numerator.
  */
 
-export type Band = 'late' | 'freeSoon' | 'over' | 'breakOver';
+export type Band = 'late' | 'missed' | 'freeSoon' | 'over' | 'breakOver';
 
 /**
  * ⚠️ ORDERING IS FIXED: late → free soon → over → break over.
@@ -25,7 +25,7 @@ export type Band = 'late' | 'freeSoon' | 'over' | 'breakOver';
  * The tile you need is always the one already on screen; the rail is for the
  * rest. A rail that sorts itself by anything else is a rail you have to read.
  */
-export const BAND_ORDER: Band[] = ['late', 'freeSoon', 'over', 'breakOver'];
+export const BAND_ORDER: Band[] = ['late', 'missed', 'freeSoon', 'over', 'breakOver'];
 
 /** Nothing on screen is unbounded — `SCALE.md`. */
 export const CAPS = {
@@ -171,7 +171,17 @@ export function bandOf(p: CrewPerson, now: number): Band | null {
   const clockIn = at(p.clockInAt);
 
   // Rostered, never arrived: somebody has to ring them.
-  if (clockIn === null) return at(p.scheduledStartAt) !== null && at(p.scheduledStartAt)! <= now ? 'late' : null;
+  if (clockIn === null) {
+    const start = at(p.scheduledStartAt);
+    if (start === null || start > now) return null;
+    /*
+      ⚠️ LATE ONLY WHILE THE SHIFT IS RUNNING. Once its end has passed they did
+      not come — "17h 54 late" for a shift that ended in the night meant
+      nothing (02.png). That is MISSED.
+    */
+    const end = at(p.expectedClockOutAt);
+    return end !== null && end <= now ? 'missed' : 'late';
+  }
 
   // A rest past its allowance is a decision, and a payroll consequence.
   const allowance = p.breakAllowanceMinutes ?? null;
@@ -187,7 +197,7 @@ export function bandOf(p: CrewPerson, now: number): Band | null {
 /** The honest ring — see `Ring`. */
 export function ringOf(p: CrewPerson, band: Band | null, now: number): Ring {
   const clockIn = at(p.clockInAt);
-  if (clockIn === null) return band === 'late' ? { kind: 'dashedLate' } : { kind: 'none' };
+  if (clockIn === null) return band === 'late' || band === 'missed' ? { kind: 'dashedLate' } : { kind: 'none' };
 
   // ⚠️ Both of these are present-without-progress, and neither is a bug.
   if (!p.expectedClockOutAt || p.endIsDailyLimit === true) return { kind: 'plain' };
@@ -202,7 +212,7 @@ export function ringOf(p: CrewPerson, band: Band | null, now: number): Ring {
 
 /** What the figure on the tile is about. */
 export function minutesOf(p: CrewPerson, band: Band, now: number): number {
-  if (band === 'late') return Math.max(0, mins(at(p.scheduledStartAt) ?? now, now));
+  if (band === 'late' || band === 'missed') return Math.max(0, mins(at(p.scheduledStartAt) ?? now, now));
   if (band === 'breakOver') return p.breakMinutes ?? 0;
   const end = at(p.expectedClockOutAt);
   if (end === null) return 0;

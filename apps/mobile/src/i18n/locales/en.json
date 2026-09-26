@@ -3003,7 +3003,46 @@
       "freeSoon": "{{count}} free soon",
       "over": "{{count}} over",
       "breakOver": "{{count}} break over"
-    }
+    },
+    "toApprove_one": "{{count}} shift to approve",
+    "toApprove_other": "{{count}} shifts to approve",
+    "openAttendance": "Open attendance",
+    "min": "{{n}} min",
+    "group": {
+      "late": "Late",
+      "missed": "Missed today",
+      "freeSoon": "Free soon",
+      "over": "Past their end",
+      "breakOver": "Break too long",
+      "steady": "Steady"
+    },
+    "say": {
+      "late": "{{count}} late",
+      "missed_one": "{{count}} missed their shift",
+      "missed_other": "{{count}} missed their shifts",
+      "soon": "{{count}} free soon",
+      "over": "{{count}} past their end",
+      "calm": "Everyone is in. Nothing to decide.",
+      "noneIn": "Nobody is in yet: {{list}}."
+    },
+    "key": {
+      "in": "{{count}} in",
+      "late": "{{count}} late",
+      "missed": "{{count}} missed"
+    },
+    "moreIn": "+{{count}} more",
+    "steadyLine": "In and on plan. Nothing to decide.",
+    "you": "You",
+    "expectedAt": "expected {{time}}",
+    "shiftWas": "shift {{from}}–{{to}}",
+    "u": {
+      "late": "late",
+      "missed": "did not come",
+      "left": "left",
+      "over": "over",
+      "break": "on break"
+    },
+    "message": "Message {{name}}"
   },
   "widgets": {
     "shiftClock": "Shift clock",
