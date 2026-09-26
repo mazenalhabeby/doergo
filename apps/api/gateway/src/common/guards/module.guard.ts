@@ -146,7 +146,13 @@ export class ModuleGuard implements CanActivate {
       return null;
     }
 
-    const explicit = req.params?.spaceId ?? req.body?.spaceId ?? req.query?.spaceId ?? null;
+    /*
+      ⚠️ Attendance names its workspace `locationId`. Reading only `spaceId`
+      let a clock-in at a workspace with Time Tracking switched off fall back to
+      the organization's list and be accepted.
+    */
+    const explicit = req.params?.spaceId ?? req.body?.spaceId ?? req.query?.spaceId
+      ?? (this.routeIs(req, '/attendance') ? req.body?.locationId : null) ?? null;
     if (typeof explicit === 'string' && explicit) {
       return this.spaceModules.forSpace(explicit, orgId);
     }

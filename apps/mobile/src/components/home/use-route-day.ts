@@ -8,7 +8,7 @@ import { useDriverPosition } from '../../hooks/use-driver-position';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { detectNavApps, preferredNavApp, rememberNavApp, rememberedNavApp, type InstalledNavApp } from '../../lib/nav-apps';
 import {
-  arrivedIdsOf, dayStops, inPlanOrder, notInPlan, isStraightLine, primaryVerb, progress, routeFigures, routeState,
+  arrivedIdsOf, dayStops, inPlanOrder, isStalePlan, notInPlan, isStraightLine, primaryVerb, progress, routeFigures, routeState,
   type DayStop,
 } from '../../lib/route-day';
 
@@ -29,7 +29,8 @@ export function useRouteDay() {
   const stops = useMemo(() => dayStops(tasks, memberId), [tasks, memberId]);
   const stopKey = stops.map((s) => s.id).join(',');
 
-  const [plan, setPlan] = useState<OptimizedRoute | null>(null);
+  /** The plan as kept on the phone — `plan` below is it, unless it was made from somewhere else. */
+  const [saved, setPlan] = useState<OptimizedRoute | null>(null);
   const [planning, setPlanning] = useState(false);
   /** The server refused a plan — said on the card, never thrown. */
   const [failed, setFailed] = useState<string | null>(null);
@@ -56,11 +57,21 @@ export function useRouteDay() {
   const app: NavApp = navApp ?? preferredNavApp(apps, null);
 
   const arrived = useMemo(() => arrivedIdsOf(tasks), [tasks]);
+  /*
+    ⚠️ A plan made far from here, with nothing done yet, is no plan (the 1701 km
+    bug — `isStalePlan`). "Done" is judged against the SAVED plan first: a
+    driver already standing at a stop of it keeps it.
+  */
+  const plan = useMemo(() => {
+    if (!saved) return null;
+    const judged = progress(inPlanOrder(saved, stops), position, arrived);
+    return isStalePlan(saved, position, judged.done.length) ? null : saved;
+  }, [saved, stops, position, arrived]);
   const ordered = useMemo(() => inPlanOrder(plan, stops), [plan, stops]);
   const unplanned = useMemo(() => notInPlan(plan, stops), [plan, stops]);
   const { ahead, done } = useMemo(() => progress(ordered, position, arrived), [ordered, position, arrived]);
   const state = routeState({ stops, plan, start: position, ahead, doneCount: done.length });
-  const figures = useMemo(() => routeFigures(plan, ordered, ahead), [plan, ordered, ahead]);
+  const figures = useMemo(() => routeFigures(plan, ordered, ahead, position), [plan, ordered, ahead, position]);
   const next = ahead[0];
 
   /** Plan — one billed request, or the phone's own order with no signal. */

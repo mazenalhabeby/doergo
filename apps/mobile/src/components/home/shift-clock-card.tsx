@@ -19,7 +19,7 @@ import { stopGeofence } from '../../services/background-geofence';
 import { formatDurationMinutes as formatDuration } from '../../lib/utils';
 import { AText, CardSurface, Chip, Disc, DiscRow, Eyebrow, Hero, LiveDot } from '../amazen';
 import { BreakGlyph, ClockInGlyph, ClockOutGlyph, IssueMineGlyph, IssueNewGlyph } from '../glyphs/shift-glyphs';
-import { budgetParts, heroParts, readShiftState, scheduleFor } from './shift-state';
+import { heroParts, readShiftState, scheduleFor, targetLabel } from './shift-state';
 import { useScheduleTotals } from './use-schedule-totals';
 import { useUnreadIssues } from './use-unread-issues';
 
@@ -416,12 +416,12 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
               >
                 <View
                   style={{
-                    width: `${Math.min(100, Math.round((st.progress.done / st.progress.target) * 100))}%`,
+                    width: `${st.progress.past ? 100 : Math.min(100, Math.round((st.progress.done / st.progress.target) * 100))}%`,
                     height: '100%',
                     /* ⚠️ Past the target is `warn`, not `crit` — overtime is
                        owed, not wrong. It means three different things per
                        schedule kind; the colour only says "past it". */
-                    backgroundColor: st.progress.done > st.progress.target ? c.warn : c.accent,
+                    backgroundColor: st.progress.past || st.progress.done > st.progress.target ? c.warn : c.accent,
                   }}
                 />
               </View>
@@ -429,15 +429,15 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: amazen.space(2) }}>
                   <Eyebrow tone="onGlassHome">
                     {st.schedule === 'FLEXIBLE'
-                      ? monthName(new Date())
+                      ? monthName(now)
                       : t('shiftClock.today', { defaultValue: 'TODAY' })}
                   </Eyebrow>
                   <View style={{ flex: 1 }} />
                   <AText variant="caption" tone="onGlassHome" numeric>
                     {t('shiftClock.ofTarget', {
                       done: formatDuration(st.progress.done),
-                      target: `${Math.round(st.progress.target / 60)}h`,
-                      defaultValue: `${formatDuration(st.progress.done)} of ${Math.round(st.progress.target / 60)}h`,
+                      target: targetLabel(st.progress.target),
+                      defaultValue: `${formatDuration(st.progress.done)} of ${targetLabel(st.progress.target)}`,
                     })}
                   </AText>
                 </View>
@@ -642,9 +642,19 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
       return [
         st.workspace,
         `${clockOf(st.finished.from)} → ${clockOf(st.finished.to)}`,
+        /*
+          ⚠️ THREE OUTCOMES, NOT TWO. A REJECTED entry is neither waiting nor
+          approved; saying `counted and approved` under it was a false
+          statement about the one thing the member cares about, so
+          REJECTED has its own sentence.
+        */
         st.finished.awaitingApproval
           ? t('shiftClock.countedWaiting', { defaultValue: 'counted, waiting for approval' })
-          : t('shiftClock.countedApproved', { defaultValue: 'counted and approved' }),
+          : st.finished.approved
+            ? t('shiftClock.countedApproved', { defaultValue: 'counted and approved' })
+            : st.finished.rejected
+              ? t('shiftClock.countedRejected', { defaultValue: 'not approved' })
+              : null,
       ].filter(Boolean).join(' · ');
     }
     /*
@@ -710,7 +720,7 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
           })
         : st.workspace,
       st.countedMinutes !== null
-        ? resting
+        ? resting && !st.restCounts
           /*
             ⚠️ ③ FREEZES THE COUNTED FIGURE AND SAYS SO. A rest that silently
             keeps counting is the bug this sentence prevents: the number stops

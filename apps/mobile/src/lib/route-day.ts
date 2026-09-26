@@ -1,5 +1,5 @@
 import {
-  decodePolyline, haversineDistance, stopsAheadOf, supportsMultiStop,
+  decodePolyline, haversineDistance, stopsAheadOf, supportsMultiStop, STRAIGHT_LINE_ROAD_FACTOR,
   type LatLng, type NavApp, type OptimizedRoute, type RouteStop,
 } from '@hbcfield/shared/client';
 import { hasArrived, isMyRouteStop } from './my-route';
@@ -77,23 +77,93 @@ export function routeState(input: {
 
 export const isStraightLine = (plan: OptimizedRoute | null) => plan?.engine === 'nearest-neighbour';
 
+/** Where the plan was made from — its first waypoint, when that is a real place. */
+export function planStart(plan: OptimizedRoute | null): LatLng | null {
+  const w = plan?.waypoints?.[0];
+  return w && !w.stopId && isLatLng(w) ? { lat: w.lat, lng: w.lng } : null;
+}
+
+/**
+ * Within this of the plan's start the driver is still "there", and the leg out
+ * of it stands as the engine measured it.
+ */
+export const AT_START_METRES = 1_000;
+
+/**
+ * A plan made this far from where the driver now is — with nothing done yet —
+ * ordered the day from somewhere else.
+ *
+ * ⚠️ THE 1701 KM BUG. A plan is kept for the day and restored for the same
+ * stops, but it carries the place it was planned FROM. Planned 1 300 km away
+ * (another city, an emulator's default fix, a phone that last knew somewhere
+ * else) it put the stop nearest THAT place first and measured the first leg
+ * from there, so a driver 2 km from a stop read "~1679 km" to the next one and
+ * a day in one city read 1701 km. Such a plan is shown as no plan: the booked
+ * order and the Plan button, one tap to order the day from here.
+ *
+ * Generous on purpose (100 km): a long first leg to a regional stop must not
+ * flip a driver who is ON it back to "not planned". Once a stop is done the
+ * start no longer matters and the plan is never called stale.
+ */
+export const STALE_START_METRES = 100_000;
+
+export function isStalePlan(plan: OptimizedRoute | null, position: LatLng | null, doneCount: number): boolean {
+  if (!plan || doneCount > 0 || !isLatLng(position)) return false;
+  const start = planStart(plan);
+  return !!start && haversineDistance(start.lat, start.lng, position.lat, position.lng) > STALE_START_METRES;
+}
+
+/** A road estimate from here: the crow line times the usual detour — the same rule as a straight-line plan. */
+const roadEstimate = (from: LatLng, to: LatLng) =>
+  Math.round(haversineDistance(from.lat, from.lng, to.lat, to.lng) * STRAIGHT_LINE_ROAD_FACTOR);
+
+/**
+ * How far to the NEXT stop, and whether that is a measured leg or an estimate.
+ *
+ * The plan's leg is believed — except the leg out of the plan's START when the
+ * driver is no longer there: that leg measures a drive from a place they left
+ * (or never were), so the distance is estimated from where they are instead.
+ * No leg at all (a stop added after the plan) is estimated the same way.
+ */
+export function legToNext(plan: OptimizedRoute | null, next: DayStop | undefined, position: LatLng | null) {
+  if (!next) return null;
+  const here = isLatLng(position) ? position : null;
+  const leg = legInto(plan, next.id);
+  const from = leg ? plan!.waypoints[leg.fromIndex] : undefined;
+  const leftStart = !!leg && !!here && !from?.stopId && !!from && isLatLng(from)
+    && haversineDistance(from.lat, from.lng, here.lat, here.lng) > AT_START_METRES;
+  if (leg && !leftStart) return { meters: leg.meters, seconds: leg.seconds as number | null, estimated: false };
+  if (!here) return leg ? { meters: leg.meters, seconds: leg.seconds as number | null, estimated: false } : null;
+  return { meters: roadEstimate(here, next), seconds: null as number | null, estimated: true };
+}
+
 /**
  * The card's figures, from the plan and where the driver has got to.
  *
  * ⚠️ `backBy` is only ever a promise the data can keep: anchored to the FIRST
  * stop's booked time (FINDINGS §7), and never on a straight-line plan, whose
  * seconds are "a rough time … never a promise".
+ *
+ * `position` (optional) replaces the leg into the next stop when that leg
+ * starts at a plan start the driver has left (`legToNext`); `estimated` then
+ * says the total is not a road figure.
  */
-export function routeFigures(plan: OptimizedRoute | null, ordered: readonly DayStop[], ahead: readonly DayStop[]) {
-  if (!plan) return { left: ahead.length, metresToGo: null as number | null, backBy: null as Date | null };
+export function routeFigures(plan: OptimizedRoute | null, ordered: readonly DayStop[], ahead: readonly DayStop[], position: LatLng | null = null) {
+  if (!plan) return { left: ahead.length, metresToGo: null as number | null, backBy: null as Date | null, estimated: false };
   // Legs arrive at waypoint i; waypoint 0 is the start. Sum the legs INTO the stops still ahead, plus any leg home.
   const aheadIds = new Set(ahead.map((s) => s.id));
   const idxOf = new Map(plan.waypoints.map((w, i) => [w.stopId, i] as const));
+  const next = ahead[0];
+  const nextLeg = legToNext(plan, next, position);
   let metresToGo = 0;
+  let counted = false;
   for (const leg of plan.legs) {
     const to = plan.waypoints[leg.toIndex];
-    if (!to?.stopId || aheadIds.has(to.stopId)) metresToGo += leg.meters;
+    if (to?.stopId && to.stopId === next?.id && nextLeg) { metresToGo += nextLeg.meters; counted = true; continue; }
+    if (!to?.stopId || aheadIds.has(to.stopId)) metresToGo += finite(leg.meters) ? leg.meters : 0;
   }
+  // The next stop has no leg in the plan (a stop added after it): its estimate still counts.
+  if (next && nextLeg && !counted && nextLeg.estimated) metresToGo += nextLeg.meters;
   let backBy: Date | null = null;
   const first = ordered[0];
   if (!isStraightLine(plan) && first?.at && finite(plan.totalSeconds)) {
@@ -102,8 +172,9 @@ export function routeFigures(plan: OptimizedRoute | null, ordered: readonly DayS
     const depart = new Date(first.at).getTime() - (firstLeg?.seconds ?? 0) * 1000;
     // A job booked at midnight carries no hour — no promise from it.
     if (new Date(first.at).getHours() !== 0 || new Date(first.at).getMinutes() !== 0) backBy = new Date(depart + plan.totalSeconds * 1000);
+    if (backBy && !Number.isFinite(backBy.getTime())) backBy = null;
   }
-  return { left: ahead.length, metresToGo, backBy };
+  return { left: ahead.length, metresToGo, backBy, estimated: !!nextLeg?.estimated };
 }
 
 /** How far from here to one stop, in metres (straight), for the next-stop line when no leg is known. */
@@ -151,6 +222,8 @@ export function routeLine(plan: OptimizedRoute | null): [number, number][] {
  */
 export function thin<T>(points: readonly T[], max = 240): T[] {
   if (points.length <= max) return [...points];
+  // Fewer than two kept cannot keep both ends (and max 1 divided by zero into `[undefined]`).
+  if (!(max >= 2)) return max >= 1 ? [points[0]!] : [];
   const step = (points.length - 1) / (max - 1);
   return Array.from({ length: max }, (_, i) => points[Math.round(i * step)]!);
 }
@@ -167,15 +240,24 @@ export interface Projection { x: (p: LatLng) => number; y: (p: LatLng) => number
  */
 export function fitProjection(points: readonly LatLng[], width: number, height: number, pad: number): Projection | null {
   const ps = points.filter(isLatLng);
-  if (!ps.length) return null;
+  if (!ps.length || !(width > 0) || !(height > 0)) return null;
   const midLat = ps.reduce((a, p) => a + p.lat, 0) / ps.length;
   const k = Math.cos((midLat * Math.PI) / 180);
-  const xs = ps.map((p) => p.lng * k), ys = ps.map((p) => -p.lat);
+  /*
+    A day across the antimeridian (Fiji, the Aleutians) spans 359° if read
+    naively and draws as two dots at the card's edges. When the points spread
+    wider than half the world, the western ones are read one turn east.
+  */
+  const lngs = ps.map((p) => p.lng);
+  const wrap = Math.max(...lngs) - Math.min(...lngs) > 180;
+  const lngOf = (l: number) => (wrap && l < 0 ? l + 360 : l);
+  const xs = ps.map((p) => lngOf(p.lng) * k), ys = ps.map((p) => -p.lat);
   const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
   const spanX = Math.max(maxX - minX, 1e-6), spanY = Math.max(maxY - minY, 1e-6);
   const s = Math.min((width - pad * 2) / spanX, (height - pad * 2) / spanY);
-  const ox = (width - spanX * s) / 2 - minX * s, oy = (height - spanY * s) / 2 - minY * s;
-  return { x: (p) => p.lng * k * s + ox, y: (p) => -p.lat * s + oy };
+  // Centred on the real middle — not on `span`, whose 1e-6 floor for a single place (or a day along one street) put the pin off-centre.
+  const ox = width / 2 - ((minX + maxX) / 2) * s, oy = height / 2 - ((minY + maxY) / 2) * s;
+  return { x: (p) => lngOf(p.lng) * k * s + ox, y: (p) => -p.lat * s + oy };
 }
 
 /** An SVG path through points, rounded to a tenth of a point (shorter strings, identical picture). */

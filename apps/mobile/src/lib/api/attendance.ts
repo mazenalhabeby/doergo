@@ -155,6 +155,29 @@ export const attendanceApi = {
     return result?.data ?? [];
   },
 
+  /**
+   * Everyone on the clock now, EVERY page — the home Crew card.
+   *
+   * ⚠️ One page silently capped the crew: past 300 on the clock the rings
+   * counted 300 and nobody knew. A FULL page means there may be more, so the
+   * next is asked for; a short page is the end. (The client unwraps `data`
+   * and drops `meta.total`, so a full page is the signal.) One request for
+   * any normal site; bounded at 10 pages (5,000 people).
+   */
+  getClockedInAll: async (): Promise<TimeEntry[]> => {
+    const PAGE = 500;
+    const rows: TimeEntry[] = [];
+    for (let n = 1; n <= 10; n++) {
+      const r = await fetchWithAuth<any>(
+        buildUrlWithQuery('/attendance/all-entries', { status: 'CLOCKED_IN', page: n, limit: PAGE }), { method: 'GET' },
+      );
+      const got: TimeEntry[] = Array.isArray(r) ? r : r?.data ?? [];
+      rows.push(...got);
+      if (got.length < PAGE) break;
+    }
+    return rows;
+  },
+
   /** Who is clocked in RIGHT NOW, org-wide — date-independent (catches overnight
    *  shifts). Backs the admin dashboard presence. */
   getActiveEntries: async (): Promise<TimeEntry[]> => {

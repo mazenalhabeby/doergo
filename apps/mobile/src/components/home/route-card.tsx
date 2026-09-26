@@ -13,7 +13,7 @@ import { NavigateGlyph } from '../glyphs/work-glyphs';
 import { OptimizedGlyph, PlanRouteGlyph } from '../glyphs/route-glyphs';
 import { usePitch } from '../../home/pitch';
 import { selection } from '../../lib/haptics';
-import { lastArrival, legInto, metresTo, type DayStop } from '../../lib/route-day';
+import { lastArrival, legToNext, type DayStop } from '../../lib/route-day';
 import { GlyphTile } from './glyph-tile';
 import { hasHour } from './my-work';
 import { RouteSketch } from './route-sketch';
@@ -64,7 +64,7 @@ export function RouteCard({ style }: { style?: StyleProp<ViewStyle> }) {
       ]
       : [
         { v: String(r.ahead.length), l: r.done.length ? t('routeCard.left') : t('routeCard.stops', { count: r.ahead.length }) },
-        { v: r.figures.metresToGo == null ? '—' : `${r.straight ? '~' : ''}${km(r.figures.metresToGo)}`, unit: 'km', l: r.straight ? t('routeCard.straightLine') : t('routeCard.toGo') },
+        { v: r.figures.metresToGo == null ? '—' : `${r.straight || r.figures.estimated ? '~' : ''}${km(r.figures.metresToGo)}`, unit: 'km', l: r.straight ? t('routeCard.straightLine') : t('routeCard.toGo') },
         { v: r.figures.backBy ? formatClock(r.figures.backBy) : '—', l: t('routeCard.backBy') },
       ];
 
@@ -249,12 +249,12 @@ function NextStop({ s, n, route, from, straight, onDrive }: {
   const c = amazen.color;
   const { t } = useTranslation();
   const { formatClock } = useTimeFormat();
-  const leg = legInto(route, s.id);
-  const m = leg?.meters ?? metresTo(from, s);
+  // ⚠️ Never the leg out of a start the driver has left — see `legToNext` (the 1701 km bug).
+  const leg = legToNext(route, s, from);
   const facts = [
     hasHour(s.at) ? formatClock(s.at!) : null,
-    m != null ? `${straight || !leg ? '~' : ''}${km(m)} km` : null,
-    leg && !straight ? t('routeCard.minutes', { count: Math.round(leg.seconds / 60) }) : null,
+    leg ? `${straight || leg.estimated ? '~' : ''}${km(leg.meters)} km` : null,
+    leg && leg.seconds != null && !straight ? t('routeCard.minutes', { count: Math.round(leg.seconds / 60) }) : null,
   ].filter(Boolean).join(' · ');
   return (
     <Pressable onPress={onDrive} accessibilityRole="button" accessibilityLabel={t('routeCard.driveTo', { name: s.label })}

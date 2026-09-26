@@ -1,6 +1,6 @@
 import {
   isTaskAssignee, getFlowSteps, getStartOfDay,
-  rankMyWork, workBand,
+  rankMyWork, workBand, workflowStatusLabel,
   type FlowStatus,
 } from '@hbcfield/shared/client';
 import type { ScheduleEntry, Task } from '../../lib/api/types';
@@ -72,9 +72,28 @@ export function sameDay(a: Date, b: Date): boolean {
   return startOfDay(a).getTime() === startOfDay(b).getTime();
 }
 
+/**
+ * Local midnight of the FOLLOWING day.
+ *
+ * ⚠️ NOT `startOfDay(d) + 86_400_000`. A local day is 23 or 25 hours on the
+ * two DST Sundays (Vienna: last Sunday of March and of October), so adding
+ * 24h put a 23:30 job on 25 October on NO day at all, and a 00:30 job on
+ * 30 March on two.
+ */
+export function nextDayStart(d: Date): Date {
+  const n = startOfDay(d);
+  n.setDate(n.getDate() + 1);
+  return startOfDay(n);
+}
+
+/** How long until the calendar day turns, so a card left open at 23:59 is not showing yesterday at 00:01. */
+export function msUntilNextDay(now: Date = new Date()): number {
+  return Math.max(0, nextDayStart(now).getTime() - now.getTime());
+}
+
 export function tasksOn(tasks: Task[], day: Date): Task[] {
   const from = startOfDay(day).getTime();
-  const to = from + 86_400_000;
+  const to = nextDayStart(day).getTime();
   return tasks
     .filter((t) => {
       if (!t.dueDate) return false;
@@ -131,6 +150,73 @@ export function isClosed(task: Task, steps: FlowStatus[] | null): boolean {
   return ['COMPLETED', 'CANCELED', 'CLOSED'].includes(task.status);
 }
 
+/**
+ * Was this job called off?
+ *
+ * ⚠️ A CANCELED JOB IS NOT "DONE". `isClosed` is right to treat it as over,
+ * but the card drew every over job as a struck-through row captioned "done" —
+ * so a visit the office called off read as a visit somebody completed, and
+ * still counted as a dot and in "All N". Canceled work is dropped from the
+ * card; finished work stays, struck through, because a list that silently
+ * removes what you just completed leaves somebody wondering whether it saved.
+ */
+export function isCanceled(task: Task, steps: FlowStatus[] | null): boolean {
+  const s = steps?.find((x) => x.key === task.status);
+  if (s) return s.isCanceled;
+  return task.status === 'CANCELED';
+}
+
+/**
+ * Is this job under way on its OWN workflow?
+ *
+ * ⚠️ The shared `workBand` knows only the built-in steps (ACCEPTED, EN_ROUTE,
+ * ARRIVED, IN_PROGRESS, WORKING). A custom flow — New → In Transit → Delivered
+ * — has none of them, so a job somebody was in the middle of was "upcoming",
+ * and an undated one appeared nowhere on the card. Read from the flow instead:
+ * a step that is not where the flow starts, not a waiting step, and not over.
+ */
+const WAITING = new Set(['DRAFT', 'NEW', 'OPEN', 'TODO', 'PENDING', 'ASSIGNED', 'BACKLOG', 'SCHEDULED', 'BLOCKED']);
+export function isUnderWay(task: Task, steps: FlowStatus[] | null): boolean {
+  if (!steps?.length || WAITING.has(task.status)) return false;
+  const s = steps.find((x) => x.key === task.status);
+  if (!s || s.isFinal || s.isCanceled) return false;
+  const first = Math.min(...steps.map((x) => x.position ?? 0));
+  return (s.position ?? 0) > first;
+}
+
+/** The rows the card draws from: everything in hand except what was called off. */
+export function withoutCanceled(tasks: Task[], flows: Map<string, unknown>): Task[] {
+  return tasks.filter((t) => !isCanceled(t, stepsFor(t, flows)));
+}
+
+type Translate = (key: string, opts: { defaultValue: string }) => string;
+
+/**
+ * The step a job is on, in the reader's language where the words are ours.
+ *
+ * ⚠️ `FlowStatus.label` IS THE ENGLISH NAME a shipped template was created
+ * with. A German member read "EN ROUTE" on the card while the rest of the
+ * screen was German. Resolution, most specific first:
+ *   1. the workflow's own status row — a person-written name (no `nameKey`)
+ *      is shown exactly as written; a shipped one goes through its key
+ *   2. the product's own word for a canonical status (`status.EN_ROUTE`)
+ *   3. the raw key, readable, never blank
+ */
+export function stepLabelFor(task: Task, flows: Map<string, unknown>, t: Translate): string {
+  const canonical = (fallback: string) => t(`status.${task.status}`, { defaultValue: fallback });
+  const id = flowIdOf(task);
+  const raw = id ? (flows.get(id) as { statuses?: Array<{ key?: string; name?: string; label?: string; nameKey?: string | null }> } | undefined) : undefined;
+  const row = raw?.statuses?.find((s) => s.key === task.status);
+  if (row) {
+    const name = row.name ?? row.label ?? task.status;
+    if (!row.nameKey) return name;
+    return workflowStatusLabel({ name, nameKey: row.nameKey }, (key, o) => t(key, { defaultValue: canonical(o.defaultValue) }));
+  }
+  const step = stepsFor(task, flows)?.find((x) => x.key === task.status);
+  // The built-in flow is shipped English — ours to translate.
+  return canonical(step?.label ?? task.status.replace(/_/g, ' '));
+}
+
 
 
 
@@ -163,7 +249,7 @@ export function shiftHours(e: ScheduleEntry): number {
  * "Nothing scheduled today", which comes free because the rows are in hand.
  */
 export function nextJobAfter(tasks: Task[], day: Date, isOpen: (t: Task) => boolean): Task | null {
-  const from = startOfDay(day).getTime() + 86_400_000;
+  const from = nextDayStart(day).getTime();
   return tasks
     .filter((t) => t.dueDate && new Date(t.dueDate).getTime() >= from && isOpen(t))
     .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())[0] ?? null;
@@ -189,21 +275,29 @@ export function figuresFor(others: Task[], isOpen: (t: Task) => boolean): { open
  * the Jobs tab put it first as "Next up". Both now order by `rankMyWork` — the
  * shared answer to "what do I do next" — so they cannot disagree.
  */
-export function todaysOwn(mine: Task[], today: Date, isOpen: (t: Task) => boolean, now: Date = new Date()): Task[] {
+export function todaysOwn(
+  mine: Task[], today: Date, isOpen: (t: Task) => boolean, now: Date = new Date(),
+  /** A custom workflow's "under way" (`isUnderWay`); the built-in steps need nothing. */
+  underWay: (t: Task) => boolean = () => false,
+): Task[] {
+  const band = (t: Task) => (underWay(t) && t.status !== 'BLOCKED' ? 'doing' : workBand(t as never, now));
   const due = new Set(tasksOn(mine, today).map((t) => t.id));
   const carried = mine.filter((t) => {
     if (due.has(t.id) || !isOpen(t)) return false;
-    const band = workBand(t as never, now);
-    return band === 'doing' || band === 'blocked' || band === 'overdue';
+    const b = band(t);
+    return b === 'doing' || b === 'blocked' || b === 'overdue';
   });
   /*
     ⚠️ CARRIED WORK FIRST, BY THE SHARED RANKING; THEN TODAY BY THE CLOCK. A
     day read by priority went 12:00, 10:00, 11:00, 14:00 — a list of a day is
     read top to bottom as the day goes.
   */
-  const first = rankMyWork(carried as never[], now) as unknown as Task[];
+  // The shared ranking, then a stable pass so a custom step under way sorts with the built-in ones.
+  const ORDER: Record<string, number> = { doing: 0, blocked: 1, overdue: 2, today: 3, upcoming: 4 };
+  const byBand = (list: Task[]) => list.map((t, i) => ({ t, i })).sort((a, b) => (ORDER[band(a.t)] - ORDER[band(b.t)]) || a.i - b.i).map((x) => x.t);
+  const first = byBand(rankMyWork(carried as never[], now) as unknown as Task[]);
   const today_ = tasksOn(mine, today).filter((t) => !first.includes(t));
   const ranked = rankMyWork(today_ as never[], now) as unknown as Task[];
-  const underWay = ranked.filter((t) => ['doing', 'blocked'].includes(workBand(t as never, now)));
-  return [...first, ...underWay, ...today_.filter((t) => !underWay.includes(t))];
+  const active = ranked.filter((t) => ['doing', 'blocked'].includes(band(t)));
+  return [...first, ...active, ...today_.filter((t) => !active.includes(t))];
 }

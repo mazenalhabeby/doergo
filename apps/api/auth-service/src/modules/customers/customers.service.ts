@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { resolveCrmCaps, ownsClient, parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, CRM_COLD_DAYS, CRM_CONTACT_TYPES, type CrmCaps } from '@hbcfield/shared';
 import { findPrior } from '@hbcfield/shared';
 
@@ -19,6 +20,8 @@ export interface CrmCaller {
   userId?: string;
   role?: string; // system role ('ADMIN' bypasses to full CRM access)
 }
+/** How many open reminders `due()` reads; past it the totals are counted on the database. */
+const DUE_ROWS = 200;
 const NO_CRM: CrmCaps = { view: 'none', work: false, editInfo: false, create: false, manage: false, canAccess: false };
 
 export interface CustomerDetail {
@@ -1019,17 +1022,30 @@ export class CustomersService {
       return Number.isFinite(t) && Math.abs(t - now) <= 2 * DAY ? t : fallback;
     };
     const utcStart = new Date(new Date(now).toISOString().slice(0, 10)).getTime();
-    const dayStart = new Date(parse(data.dayStart, utcStart));
-    const dayEnd = new Date(parse(data.dayEnd, utcStart + DAY));
-    const limit = Math.min(Math.max(Math.floor(data.limit ?? 5), 1), 20);
+    /*
+      ⚠️ The two ends are checked TOGETHER. Each alone within two days of now
+      still let a reversed window through (overdue counted against the later
+      end) or a four-day one (tomorrow's reminders read as today's, and nothing
+      read as late). A day is at most 25 hours (DST); anything that is not one
+      falls back to the UTC day rather than answering a different question.
+    */
+    let start = parse(data.dayStart, NaN);
+    let end = parse(data.dayEnd, NaN);
+    if (!(Number.isFinite(start) && Number.isFinite(end) && end > start && end - start <= 26 * 3_600_000)) {
+      start = utcStart;
+      end = utcStart + DAY;
+    }
+    const dayStart = new Date(start);
+    const dayEnd = new Date(end);
+    const asked = Number(data.limit);
+    const limit = Number.isFinite(asked) ? Math.min(Math.max(Math.floor(asked), 1), 20) : 5;
 
     const book: Record<string, unknown> = {
       organizationId: data.organizationId, isActive: true, isContact: false, isPortalResident: false,
       ...(caps.view === 'own' ? ownedBy(me) : {}),
     };
 
-    const rows = await this.prisma.customerActivity.findMany({
-      where: {
+    const dueWhere = {
         organizationId: data.organizationId,
         type: 'REMINDER',
         doneAt: null,
@@ -1044,10 +1060,12 @@ export class CustomersService {
             ],
           },
         ],
-      },
+    } as never as Record<string, unknown>;
+    const rows = await this.prisma.customerActivity.findMany({
+      where: dueWhere as never,
       orderBy: { dueAt: 'asc' },
-      // Bounded: the card shows a handful and counts the rest.
-      take: 200,
+      // Bounded: the card shows a handful and counts the rest (see the total below).
+      take: DUE_ROWS,
       select: {
         id: true, customerId: true, body: true, dueAt: true, reminderKind: true, reminderAssigneeId: true,
         customer: { select: { name: true, type: true, phone: true, email: true, ownerId: true, managerIds: true } },
@@ -1088,30 +1106,59 @@ export class CustomersService {
       createdAt: { lt: cutoff },
       activities: { none: { type: { in: [...CRM_CONTACT_TYPES] }, createdAt: { gte: cutoff } } },
     } as never;
-    const [coldCount, total, coldRows] = await Promise.all([
+    const [coldCount, total, longestRows] = await Promise.all([
       this.prisma.customer.count({ where: coldWhere }),
       this.prisma.customer.count({ where: book as never }),
-      // Bounded: the longest-waiting is found among the oldest in the book.
-      this.prisma.customer.findMany({
-        where: coldWhere,
-        orderBy: { createdAt: 'asc' },
-        take: 200,
-        select: {
-          id: true, name: true, createdAt: true,
-          activities: { where: { type: { in: [...CRM_CONTACT_TYPES] } }, orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true } },
-        },
-      }),
+      /*
+        ⚠️ The longest-waiting client, answered by the DATABASE over the whole
+        book. It used to be searched among the 200 oldest-created cold clients,
+        so in a big book the one who had truly waited longest (created later,
+        last called long ago) was simply never looked at. One grouped query:
+        each cold client's last contact, the oldest first, one row back.
+      */
+      this.prisma.$queryRaw<Array<{ id: string; name: string; since: Date; last: Date | null }>>(Prisma.sql`
+        SELECT c.id, c.name,
+               COALESCE(MAX(a."createdAt"), c."createdAt") AS since,
+               MAX(a."createdAt") AS last
+        FROM customers c
+        LEFT JOIN customer_activities a
+               ON a."customerId" = c.id AND a.type::text = ANY(${[...CRM_CONTACT_TYPES]}::text[])
+        WHERE c."organizationId" = ${data.organizationId}
+          AND c."isActive" AND NOT c."isContact" AND NOT c."isPortalResident"
+          AND c."createdAt" < ${cutoff}
+          ${caps.view === 'own' ? Prisma.sql`AND (c."ownerId" = ${me} OR ${me} = ANY(c."managerIds"))` : Prisma.empty}
+        GROUP BY c.id
+        HAVING COALESCE(MAX(a."createdAt"), '-infinity'::timestamp) < ${cutoff}
+        ORDER BY since ASC
+        LIMIT 1`),
     ]);
-    let longest: { id: string; name: string; days: number; never: boolean } | null = null;
-    for (const c of coldRows) {
-      const last = c.activities[0]?.createdAt ?? null;
-      const since = (last ?? c.createdAt).getTime();
-      const days = Math.floor((now - since) / DAY);
-      if (!longest || days > longest.days) longest = { id: c.id, name: c.name, days, never: !last };
-    }
+    const top = longestRows[0];
+    const longest = top
+      ? { id: top.id, name: top.name, days: Math.floor((now - new Date(top.since).getTime()) / DAY), never: !top.last }
+      : null;
     const cold = { count: coldCount, days: CRM_COLD_DAYS, longest };
 
-    return { data: { allowed: true, items: items.slice(0, limit), total: items.length, counts, cold, book: total } };
+    /*
+      ⚠️ More than the rows read: count on the database. The card's total and
+      the per-kind counts came from the 200 rows fetched, so a member with more
+      open reminders was told 200. Only asked when the cap was actually hit.
+    */
+    let dueTotal = items.length;
+    if (rows.length === DUE_ROWS) {
+      const [byKind, overdue] = await Promise.all([
+        this.prisma.customerActivity.groupBy({ by: ['reminderKind'], where: dueWhere as never, _count: { _all: true } }),
+        this.prisma.customerActivity.count({ where: { ...dueWhere, dueAt: { lt: dayStart } } as never }),
+      ]);
+      counts.call = counts.email = counts.other = 0;
+      for (const g of byKind) {
+        const k = g.reminderKind === 'CALL' ? 'call' : g.reminderKind === 'EMAIL' ? 'email' : 'other';
+        counts[k] += (g._count as { _all?: number } | undefined)?._all ?? 0;
+      }
+      counts.overdue = overdue;
+      dueTotal = counts.call + counts.email + counts.other;
+    }
+
+    return { data: { allowed: true, items: items.slice(0, limit), total: dueTotal, counts, cold, book: total } };
   }
 
   async deleteActivity(data: { id: string; customerId: string; organizationId: string; caller?: CrmCaller }) {

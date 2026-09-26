@@ -107,6 +107,8 @@ describe('what Manage offers', () => {
       role: 'EMPLOYEE',
       canManageAssets: false,
       access: { org: {}, perSpace: { depot: { canManageAssets: true, canViewAllTasks: true } } },
+      // The contract screen needs the assets module where they work.
+      spaceModules: ['assets'],
     };
     expect(keys(depotManager)).toContain('manage.contract.label');
     // …and still not to somebody who only oversees the work there.

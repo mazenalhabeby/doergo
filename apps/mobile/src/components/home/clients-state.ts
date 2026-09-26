@@ -90,8 +90,15 @@ export function withoutDone(due: ClientsDue, done: DueReminder[], dayStart: Date
 export function daysLate(dueAt: string | null, dayStart: Date): number | null {
   if (!dueAt) return null;
   const t = Date.parse(dueAt);
-  if (t >= dayStart.getTime()) return null;
-  return Math.max(1, Math.ceil((dayStart.getTime() - t) / 86_400_000));
+  if (!Number.isFinite(t) || t >= dayStart.getTime()) return null;
+  /*
+    ⚠️ CALENDAR days, not 24-hour blocks: the night the clocks go back is 25
+    hours long, so a reminder for yesterday at 00:00 is 25h before today and
+    `ceil(25/24)` read "2 days late". Count the member's own midnights instead;
+    rounding absorbs the one hour a DST night adds or removes.
+  */
+  const days = Math.round((dayStart.getTime() - getStartOfDay(new Date(t)).getTime()) / 86_400_000);
+  return Math.max(1, days);
 }
 
 /** The member's own day, which is what "today" means on this card. */

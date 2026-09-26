@@ -190,6 +190,8 @@ export function hasAccessModule(
   user: {
     enabledModules?: unknown;
     access?: { org?: Record<string, boolean>; perSpace?: Record<string, Record<string, boolean>> } | null;
+    /** Works for a client or partner (server-resolved on the session). */
+    isExternal?: boolean | null;
   } & UserPermissionFields,
   module: MobileModule,
 ): boolean {
@@ -199,6 +201,14 @@ export function hasAccessModule(
   // choices to configure — see AccessBuilder).
   const role = (user.role || '').toUpperCase();
   if (role === 'ADMIN' || role === 'CLIENT') return true;
+  /*
+    ⚠️ AN EXTERNAL MEMBER NEVER HOLDS THE CLOCK OR TIME OFF, whatever is stored.
+    The rule was enforced only when a profile was SAVED, so an external member
+    with no profile at all (null = every module) was offered the Clock tab and
+    the server accepted their clock-in. Asked here, it is one answer for the
+    tab, the home widget and the server's `@RequireAccessModule`.
+  */
+  if (user.isExternal === true && EXTERNAL_FORBIDDEN_MODULES.includes(module)) return false;
   /*
     Derived from the permission — org-wide OR held in a space.
 

@@ -4,7 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { SheetPanel } from '../../src/components/sheet-panel';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenHeader, ChipRow, FilterChip, PressableScale, Skeleton } from '../../src/components';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { customersApi, locationsApi, type MobileCustomer } from '../../src/lib/api';
 import { useAuth } from '../../src/contexts/auth-context';
@@ -155,6 +155,12 @@ export default function CustomersScreen() {
   */
   const canAdd = holds(user, 'crmCreateClients') || holds(user, 'crmManageClients');
   /*
+    `?new=1` — the Add client shortcut. The tile opened the plain list and the
+    member had to find the + themselves. Opened once, then the flag is
+    cleared so going back to the list does not reopen the form.
+  */
+  const { new: startNew } = useLocalSearchParams<{ new?: string }>();
+  /*
     ⚠️ ONE sheet, two states — not two sheets.
 
     BlurSheet is a Modal, and it stays mounted for 250ms while it animates out.
@@ -166,6 +172,12 @@ export default function CustomersScreen() {
     Switching content inside a single sheet cannot hit that at all.
   */
   const [sheet, setSheet] = useState<'none' | 'choose' | 'form'>('none');
+  useEffect(() => {
+    if (startNew !== '1' || !canAdd) return;
+    setFormSpaceId(null);
+    setSheet('choose');
+    router.setParams({ new: undefined } as never);
+  }, [startNew, canAdd]);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: '', contactName: '', email: '', phone: '' });
   const [formSpaceId, setFormSpaceId] = useState<string | null>(null);

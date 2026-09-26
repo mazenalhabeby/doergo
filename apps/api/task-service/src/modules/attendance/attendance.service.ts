@@ -417,14 +417,27 @@ export class AttendanceService {
           geofencePolicy: true,
           // The rule for clocking in with no shift, and what the resolver needs to ask it.
           workModel: true, noShiftPolicy: true, noShiftDailyMinutes: true,
+          // Whether Time Tracking runs HERE — a space's own list, else the organization's.
+          enabledModules: true,
+          organization: { select: { enabledModules: true } },
         },
       orderBy: { name: 'asc' },
     });
+    /*
+      ⚠️ ONLY WHERE TIME TRACKING RUNS. The list offered a workspace whose
+      Modules tab has Time Tracking off, and the clock-in there was accepted
+      (the module gate read `spaceId`, the clock-in sends `locationId`). Both
+      now ask the workspace — the list must never be looser than the check.
+    */
+    const clockable = locations.filter((l) => {
+      const mods = (l.enabledModules as string[] | null) ?? (l.organization?.enabledModules as string[] | null) ?? [];
+      return mods.includes('time_tracking');
+    }).map(({ enabledModules: _m, organization: _o, ...rest }) => rest);
 
     // The overrides are already on the assignment rows read above, so tagging
     // costs one lookup for the member and no second query for them.
     const overrideBySpace = new Map(assignments.map((a) => [a.spaceId, a.allowRemote]));
-    const tagged = await this.tagAwayAllowed(locations, data.userId, data.organizationId, overrideBySpace);
+    const tagged = await this.tagAwayAllowed(clockable as typeof locations, data.userId, data.organizationId, overrideBySpace);
     const primary = new Set(assignments.filter((a) => a.isPrimary).map((a) => a.spaceId));
     return success(await this.tagClockInContext(tagged, data.userId, new Date(), primary));
   }
@@ -3339,11 +3352,16 @@ export class AttendanceService {
     const rows = await this.prisma.shiftInstance.findMany({
       where: {
         organizationId: data.organizationId,
-        ...(data.spaceId ? { spaceId: data.spaceId } : {}),
-        // ShiftInstance is keyed on the space too. Applied after the explicit
-        // filter above so a caller asking for one space still cannot reach a
-        // space they were never granted.
-        ...scopeWhereOn('spaceId', data.scopeSpaceIds),
+        /*
+          ⚠️ BOTH, AND-ed — never spread into one object. Spreading the scope
+          after `{ spaceId }` REPLACED the key: a site lead asking for one of
+          their two sites got both, silently. It never leaked (the scope still
+          won), but the filter the caller asked for was dropped.
+        */
+        AND: [
+          data.spaceId ? { spaceId: data.spaceId } : {},
+          scopeWhereOn('spaceId', data.scopeSpaceIds),
+        ],
         state: { in: ['REMINDED', 'ESCALATED', 'EXCUSED'] },
         expectedClockInAt: { gte: since, lte: now },
       },

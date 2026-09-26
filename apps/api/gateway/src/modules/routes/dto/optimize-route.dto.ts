@@ -5,7 +5,10 @@ import {
   IsOptional,
   IsString,
   IsBoolean,
+  IsDefined,
   IsIn,
+  Max,
+  Min,
   ValidateNested,
   ArrayMaxSize,
   ArrayMinSize,
@@ -14,12 +17,20 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class WaypointDto {
+  /*
+    ⚠️ A REAL PLACE ONLY. `@IsNumber()` alone accepted lat 999, which the
+    optimizer then measured: an 18 000 km "route" handed back as a plan.
+  */
   @ApiProperty()
-  @IsNumber()
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @Min(-90)
+  @Max(90)
   lat!: number;
 
   @ApiProperty()
-  @IsNumber()
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @Min(-180)
+  @Max(180)
   lng!: number;
 
   @ApiPropertyOptional()
@@ -43,7 +54,9 @@ export class RouteStopDto extends WaypointDto {
 }
 
 export class OptimizeRouteDto {
+  // ⚠️ `@IsDefined`: `@ValidateNested` skips a missing value, and a request with no start was a 500.
   @ApiProperty({ type: WaypointDto })
+  @IsDefined()
   @ValidateNested()
   @Type(() => WaypointDto)
   start!: WaypointDto;

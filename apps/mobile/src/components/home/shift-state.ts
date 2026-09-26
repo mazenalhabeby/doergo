@@ -52,6 +52,16 @@ export interface ShiftState {
   at: Date | null;
   /** Counted so far. ⚠️ Never called "paid". */
   countedMinutes: number | null;
+  /**
+   * ③ — does the rest being taken COUNT?
+   *
+   * ⚠️ A rest the plan says counts (`isPaid` on the break or its rule) keeps
+   * the counted figure moving. Freezing it and captioning `not counting now`
+   * was false for every counted breather, and the figure then JUMPED by the
+   * rest's length the moment it ended — the server never subtracted it.
+   * False outside ③.
+   */
+  restCounts: boolean;
   workspace: string | null;
   /** The next planned rest, if the shift has a plan. */
   nextRest: BreakPlanItem | null;
@@ -72,10 +82,17 @@ export interface ShiftState {
   workingDaysLeft: number | null;
   /** ① NONE — when they last clocked in, for `last in on Friday`. */
   lastInOn: Date | null;
-  /** ⑥ — the shift that just ended, for `06:45 → 15:00`. */
-  finished: { from: Date; to: Date; awaitingApproval: boolean } | null;
+  /**
+   * ⑥ — the shift that just ended, for `06:45 → 15:00`.
+   *
+   * ⚠️ `approved` IS NOT `!awaitingApproval`. A REJECTED entry is neither
+   * waiting nor approved, and reading "not pending" as "approved" printed
+   * `counted and approved` under a shift the office had just refused.
+   */
+  finished: { from: Date; to: Date; awaitingApproval: boolean; approved: boolean; rejected: boolean } | null;
   /** Progress against what this person is measured against, or null for NONE. */
-  progress: { done: number; target: number } | null;
+  /** `past`: beyond the rostered end (FIXED) — overtime even when `done` is short of `target`. */
+  progress: { done: number; target: number; past?: boolean } | null;
   /** Which question the hero answers, so the card can label it. */
   schedule: ScheduleKind;
 }
@@ -117,13 +134,15 @@ function progressFor(
   todayMinutes: number,
   monthMinutes: number | null,
   budgetHours: number | null,
+  now: Date = new Date(),
 ): ShiftState['progress'] {
   if (schedule === 'FIXED') {
     const start = entry?.expectedClockInAt ? new Date(entry.expectedClockInAt) : null;
     const end = entry?.expectedClockOutAt ? new Date(entry.expectedClockOutAt) : null;
     if (!start || !end) return null;
     const target = Math.round((end.getTime() - start.getTime()) / MIN);
-    return target > 0 ? { done: todayMinutes, target } : null;
+    // Past the rostered END is overtime even when a late start left the total short.
+    return target > 0 ? { done: todayMinutes, target, past: now.getTime() > end.getTime() + MIN } : null;
   }
   if (schedule === 'FLEXIBLE') {
     if (!budgetHours || budgetHours <= 0 || monthMinutes === null) return null;
@@ -180,6 +199,7 @@ export function readShiftState(input: {
     minutes: null,
     at: null,
     countedMinutes: null,
+    restCounts: false,
     workspace: entry?.location?.name ?? null,
     nextRest: null,
     restOverdueBy: 0,
@@ -233,6 +253,8 @@ export function readShiftState(input: {
           from: new Date(last.clockInAt),
           to: new Date(last.clockOutAt),
           awaitingApproval: last.approvalStatus === 'PENDING',
+          approved: last.approvalStatus === 'APPROVED' || last.approvalStatus === 'AUTO',
+          rejected: last.approvalStatus === 'REJECTED',
         },
       };
     }
@@ -298,8 +320,21 @@ export function readShiftState(input: {
     .slice()
     .sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
   const nextRest = due[0] ?? null;
+  /*
+    ⚠️ OVERDUE SINCE IT FELL DUE *ON THE CLOCK*, NEVER BEFORE IT.
+
+    The plan's `dueAt` is laid out from the ROSTERED start, so somebody who
+    arrives two hours late clocks in to a rest whose `dueAt` is already behind
+    them — and the card greeted them, at the moment of clocking in, with `Your
+    rest was due 128 minutes ago` (seen live on a night shift rostered 21:16,
+    clocked in 23:26). They were not here; nothing was overdue. The server's
+    own reminder agrees: it schedules the prompt from the clock-in, not from
+    the stale `dueAt`.
+  */
   const overdueBy = nextRest
-    ? Math.floor((now.getTime() - new Date(nextRest.dueAt).getTime()) / MIN)
+    ? Math.floor(
+        (now.getTime() - Math.max(new Date(nextRest.dueAt).getTime(), clockIn.getTime())) / MIN,
+      )
     : 0;
 
   const progress = progressFor(
@@ -308,6 +343,7 @@ export function readShiftState(input: {
     countedSoFar,
     input.monthMinutes ?? null,
     input.monthlyHourBudget ?? null,
+    now,
   );
 
   /*
@@ -333,13 +369,22 @@ export function readShiftState(input: {
       0,
       Math.floor((started.getTime() - counted.countedStartAt.getTime()) / MIN) - (entry.unpaidBreakMinutes ?? 0),
     );
+    /*
+      A counted rest (`isPaid` on the break, or on the rule it satisfies) does
+      not stop the clock — see `restCounts`. Unknown is read as NOT counting:
+      a rest started offline carries no answer yet, and freezing is the
+      claim that can only under-state.
+    */
+    const restCounts =
+      (current as { isPaid?: boolean | null }).isPaid ?? planned?.isPaid ?? false;
     return {
       ...base,
       kind: 'resting',
       minutes: Math.max(0, Math.floor((now.getTime() - started.getTime()) / MIN)),
       at: started,
       backAt,
-      countedMinutes: frozen,
+      countedMinutes: restCounts ? countedSoFar : frozen,
+      restCounts: restCounts === true,
       nextRest,
       progress,
     };
@@ -380,6 +425,21 @@ export function heroParts(minutes: number): { value: string; unit: string }[] {
   return [{ value: String(h), unit: 'h' }, { value: String(m).padStart(2, '0'), unit: 'm' }];
 }
 
+/**
+ * `8h`, `7h 30m` — what a target reads as.
+ *
+ * ⚠️ NOT `Math.round(minutes / 60)`. A 7h30 shift read `of 8h`, and a 6h20
+ * one `of 6h`: the label disagreed with the bar drawn above it, and with the
+ * clock-out sheet's own target, by up to half an hour.
+ */
+export function targetLabel(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (m === 0) return `${h}h`;
+  if (h === 0) return `${m}m`;
+  return `${h}h ${m}m`;
+}
+
 /** `84` `h` `of 160h` — FLEXIBLE's hero, a month against its budget. */
 export function budgetParts(doneMinutes: number, targetHours: number): { value: string; unit: string }[] {
   return [
@@ -387,3 +447,4 @@ export function budgetParts(doneMinutes: number, targetHours: number): { value: 
     { value: '', unit: `of ${targetHours}h` },
   ];
 }
+

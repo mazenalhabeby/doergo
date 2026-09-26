@@ -66,6 +66,13 @@ export interface CrewPerson {
   breakAllowanceMinutes?: number | null;
   /** Rostered today and never clocked in. */
   scheduledStartAt?: string | null;
+  /**
+   * On a roster today — an entry that carries a planned start, or a no-show.
+   * ⚠️ Decides whether the hero may show `/n` at all: with nobody rostered in
+   * scope, "on + missing" is a copy of the numerator ("6/6"), the exact bug
+   * `CrewState.rostered` documents.
+   */
+  rostered?: boolean;
 }
 
 export type Ring =
@@ -281,7 +288,9 @@ export function crewState(input: {
   for (const p of input.people) {
     const id = p.spaceId ?? '';
     if (!id) continue;
-    bySpace.set(id, [...(bySpace.get(id) ?? []), p]);
+    // ⚠️ push, not `[...old, p]` — copying the list per person was O(n²) on one big site.
+    const list = bySpace.get(id);
+    if (list) list.push(p); else bySpace.set(id, [p]);
   }
   const allSites: SiteRow[] = [...bySpace.entries()].map(([spaceId, ps]) => {
     const counts = new Map<Band, number>();
@@ -327,4 +336,130 @@ export function exceptionNames(tiles: CrewTile[]): { names: string[]; more: numb
     names: tiles.slice(0, CAPS.exceptionNames).map((t) => t.person.firstName),
     more: Math.max(0, tiles.length - CAPS.exceptionNames),
   };
+}
+
+/* ================================================================ assembling the crew */
+
+/** What `/attendance/all-entries?status=CLOCKED_IN` returns, as far as the card reads it. */
+export interface CrewEntryInput {
+  id: string; userId: string; locationId?: string | null; clockInAt: string;
+  expectedClockInAt?: string | null;
+  expectedClockOutAt?: string | null; endIsDailyLimit?: boolean | null;
+  breakPlan?: { ruleId: string; durationMinutes: number }[] | null;
+  user?: { id: string; firstName?: string; lastName?: string } | null;
+  location?: { id: string; name?: string } | null;
+}
+/** One row of `/attendance/breaks/active`. */
+export interface CrewBreakInput { userId?: string; startedAt: string; ruleId?: string | null; timeEntryId?: string; user?: { id: string } | null }
+/** One row of `/attendance/no-shows`. */
+export interface CrewNoShowInput {
+  id?: string; userId: string; userName?: string | null; avatarUrl?: string | null;
+  spaceId: string; spaceName: string; expectedClockInAt: string; expectedClockOutAt: string; state: string;
+}
+
+/** States a no-show leaves the card in: somebody already decided, or they came. */
+const SETTLED_NO_SHOW = ['EXCUSED', 'RESOLVED', 'ARRIVED'];
+
+/** Local midnight of the day `now` falls in — the phone's day, as the reader lives it. */
+export function startOfLocalDay(now: number): number {
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+/**
+ * The three answers → one list of people, decided once and tested.
+ *
+ * ⚠️ TODAY IS THE PHONE'S DAY, NOT THE LAST 24 HOURS. `?days=1` on the server
+ * is a ROLLING window, so at 08:00 yesterday's 09:00–17:00 no-show was still
+ * in it and every morning opened "1 missed their shift" — a card that is
+ * never calm stops being read (FINDINGS §04). A shift counts when it is still
+ * running today or ENDED today; a night shift that ended at 06:00 is today's.
+ *
+ * ⚠️ ONE ROW PER PERSON PER WORKSPACE. Two missed shifts in one site (a split
+ * day) drew two tiles with the same React key and counted the person twice in
+ * the denominator. The latest shift wins: it is the one somebody can still act on.
+ */
+export function crewPeopleFrom(input: {
+  entries: CrewEntryInput[];
+  breaks: CrewBreakInput[];
+  noShows: CrewNoShowInput[];
+  now: number;
+}): { people: CrewPerson[]; notArrived: CrewNoShowInput[] } {
+  const { now } = input;
+  const onBreak = new Map<string, CrewBreakInput>();
+  for (const b of input.breaks) onBreak.set(b.timeEntryId ?? b.user?.id ?? b.userId ?? '', b);
+
+  const people: CrewPerson[] = input.entries.map((e) => {
+    const brk = onBreak.get(e.id) ?? onBreak.get(e.userId);
+    /*
+      ⚠️ An allowance exists only for a PLANNED rest — the plan item the break
+      satisfies. A break somebody simply took has no allowance, so it can never
+      be "over"; saying otherwise would invent a rule.
+    */
+    const planned = brk?.ruleId ? (e.breakPlan ?? []).find((p) => p.ruleId === brk.ruleId) : undefined;
+    const started = brk ? Date.parse(brk.startedAt) : NaN;
+    return {
+      userId: e.userId,
+      firstName: e.user?.firstName ?? '—',
+      lastName: e.user?.lastName ?? null,
+      spaceId: e.locationId ?? e.location?.id ?? null,
+      spaceName: e.location?.name ?? null,
+      clockInAt: e.clockInAt,
+      expectedClockOutAt: e.expectedClockOutAt ?? null,
+      endIsDailyLimit: e.endIsDailyLimit ?? null,
+      breakMinutes: brk && Number.isFinite(started) ? Math.max(0, Math.round((now - started) / 60000)) : null,
+      breakAllowanceMinutes: planned?.durationMinutes ?? null,
+      rostered: !!e.expectedClockInAt,
+    };
+  });
+
+  const onIds = new Set(people.map((p) => p.userId));
+  const dayStart = startOfLocalDay(now);
+  const latest = new Map<string, CrewNoShowInput>();
+  for (const n of input.noShows) {
+    const start = Date.parse(n.expectedClockInAt);
+    if (!Number.isFinite(start) || start > now) continue;            // not due yet
+    if (onIds.has(n.userId) || SETTLED_NO_SHOW.includes(n.state)) continue;
+    const end = Date.parse(n.expectedClockOutAt);
+    if ((Number.isFinite(end) ? end : start) < dayStart) continue;   // yesterday's
+    const key = `${n.userId}:${n.spaceId}`;
+    const had = latest.get(key);
+    if (!had || Date.parse(had.expectedClockInAt) < start) latest.set(key, n);
+  }
+  const notArrived = [...latest.values()];
+  for (const n of notArrived) {
+    const [firstName, ...rest] = (n.userName ?? '').split(' ');
+    people.push({
+      userId: n.userId, firstName: firstName || '—', lastName: rest.join(' ') || null, avatarUrl: n.avatarUrl ?? null,
+      spaceId: n.spaceId, spaceName: n.spaceName, clockInAt: null, scheduledStartAt: n.expectedClockInAt,
+      expectedClockOutAt: n.expectedClockOutAt, rostered: true,
+    });
+  }
+  return { people, notArrived };
+}
+
+/**
+ * The hero's denominator for a scope: everybody expected (on + not in) — or
+ * 0, which `crewState` turns into NO `/n`, when nobody in scope is on a roster.
+ */
+export function rosteredCountOf(people: CrewPerson[]): number {
+  return people.some((p) => p.rostered) ? people.length : 0;
+}
+
+/**
+ * People who need you (late or missed), per workspace — the rings' red badge
+ * and the home pitch.
+ *
+ * ⚠️ COUNTED OVER EVERYONE, NOT OVER THE TILES. The tiles are capped at
+ * `CAPS.tiles`; counting them said "8 need you" with twelve people late.
+ */
+export function needsBySpace(people: CrewPerson[], now: number): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const p of people) {
+    if (!p.spaceId) continue;
+    const b = bandOf(p, now);
+    if (b === 'late' || b === 'missed') out[p.spaceId] = (out[p.spaceId] ?? 0) + 1;
+  }
+  return out;
 }

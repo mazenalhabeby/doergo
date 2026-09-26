@@ -2813,6 +2813,7 @@ model Break {
 
   @@index([timeEntryId])
   @@index([startedAt])
+  @@index([endedAt]) // rests still running — the home Crew card asks every minute
   @@map("breaks")
 }
 
@@ -3028,6 +3029,7 @@ model ShiftInstance {
   @@index([state, nextRemindAt]) // the no-show sweep (drain due rows)
   @@index([userId, localDate]) // clock-in fulfillment lookup
   @@index([organizationId, spaceId, localDate]) // admin/no-show listing
+  @@index([organizationId, expectedClockInAt]) // no-shows by time window (home Crew card)
   @@map("shift_instances")
 }
 

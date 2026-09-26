@@ -64,20 +64,27 @@ export function ShortcutsCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const badges = useShortcutBadges();
   const cands = useMemo(() => shortcutCandidates(destinationsFor(user as never)), [user]);
 
-  const [chosen, setChosen] = useState<string[] | null>(null);
+  /*
+    undefined = NOT READ YET. Read as null ("never chosen") it drew the smart
+    picks for a frame and then swapped them for the member's own four — tiles
+    jumping under a thumb that is already moving. And the previous user's
+    choice must not be shown to the next one while theirs is being read.
+  */
+  const [chosen, setChosen] = useState<string[] | null | undefined>(undefined);
   const [editing, setEditing] = useState(false);
   const inGallery = useInGallery();
   useEffect(() => {
     if (!inGallery && editOnArrival) { editOnArrival = false; setEditing(true); }
   }, [inGallery]);
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id) { setChosen(null); return; }
+    setChosen(undefined);
     let live = true;
     void loadShortcuts(user.id).then((k) => { if (live) setChosen(k); });
     return () => { live = false; };
   }, [user?.id]);
 
-  const shown = useMemo(() => shownShortcuts(chosen, cands, badges), [chosen, cands, badges]);
+  const shown = useMemo(() => shownShortcuts(chosen ?? null, cands, badges), [chosen, cands, badges]);
   usePitch({ need: 0, line: t('pitch.shortcuts') });
 
   const save = useCallback((keys: string[] | null) => {
@@ -86,7 +93,7 @@ export function ShortcutsCard({ style }: { style?: StyleProp<ViewStyle> }) {
   }, [user?.id]);
 
   // One tile is a button that has learned to look like a widget (spec §6).
-  if (cands.length < MIN_TILES || shown.length < MIN_TILES) return null;
+  if (chosen === undefined || cands.length < MIN_TILES || shown.length < MIN_TILES) return null;
 
   const open = (r: Destination) => router.push(r.route as Href);
   const tileBg = over(c.tile, c.well);

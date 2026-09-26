@@ -73,7 +73,7 @@ export function useHomeTasks(): HomeTasks {
       return;
     }
     try {
-      const fetched = await tasksApi.list();
+      const fetched = await serverFallback();
       fromPhone.current = false;
       fromServer.current = true;
       shown.current = true;
@@ -111,4 +111,34 @@ export function useHomeTasks(): HomeTasks {
   }, [operations, readLocal]);
 
   return { tasks, updatedAt, load };
+}
+
+/**
+ * What the home reads from the SERVER when the phone has no copy yet
+ * (offline mode off, or a cold start before the first pull).
+ *
+ * ⚠️ NOT `tasksApi.list()` bare: that is page 1 — 20 of an organization's
+ * hundreds for anyone who oversees the work — so My work and Today's route
+ * counted a page, not the day. Two narrow questions instead, merged:
+ *   • the caller's own work, whatever its date (carried-over and undated jobs);
+ *   • this week, Monday to Sunday — what the week strip can select, including
+ *     a supervisor's team rows (the server narrows it to what they may see).
+ * Both capped at the server's maximum page.
+ */
+async function serverFallback(): Promise<Task[]> {
+  const monday = startOfWeekMonday(new Date());
+  const nextMonday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 7);
+  const [mine, week] = await Promise.all([
+    tasksApi.list({ assignedToMe: true, limit: 500 }),
+    tasksApi.list({ startDate: monday.toISOString(), endDate: new Date(nextMonday.getTime() - 1).toISOString(), limit: 500 }),
+  ]);
+  const byId = new Map<string, Task>();
+  for (const t of [...(mine || []), ...(week || [])]) byId.set(t.id, t);
+  return [...byId.values()];
+}
+
+/** Local Monday 00:00 — calendar arithmetic, so a DST week is still seven days. */
+function startOfWeekMonday(d: Date): Date {
+  const back = (d.getDay() + 6) % 7;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - back);
 }

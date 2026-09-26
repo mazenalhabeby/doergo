@@ -69,10 +69,19 @@ export class RoutesService {
         engine: OSRM_URL ? 'osrm' : 'nearest-neighbour',
       };
     }
-    const capped = stops.slice(0, MAX_STOPS);
+    /*
+      ⚠️ NEVER DROP A STOP. This used to be `stops.slice(0, MAX_STOPS)`, so stops
+      26–50 (the DTO allows 50) silently vanished from the answer: the phone then
+      listed them as "added after the plan" forever, and every replan dropped
+      them again. Over the engine limit the whole list is ordered here instead
+      (nearest-neighbour — no engine call, so no bill either); the
+      `nearest-neighbour` engine already tells the screen it is a rough order.
+    */
     if (stops.length > MAX_STOPS) {
-      this.logger.warn(`optimize: capped ${stops.length} stops to ${MAX_STOPS}`);
+      this.logger.warn(`optimize: ${stops.length} stops is over the engine limit (${MAX_STOPS}); ordering them without an engine`);
+      return this.optimizeFallback(req, stops);
     }
+    const capped = stops;
 
     /*
       Engines in order of what they can answer, each falling through to the

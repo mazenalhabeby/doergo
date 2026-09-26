@@ -45,7 +45,13 @@ describe('listClockInLocations', () => {
   const companyLocation = { findMany: jest.fn() };
   const prisma = {
     // The member's account-level away grant, read when tagging workspaces.
-    user: { findFirst: jest.fn().mockResolvedValue({ allowRemote: false, role: 'EMPLOYEE' }) }, spaceAssignment, companyLocation } as any;
+    user: { findFirst: jest.fn().mockResolvedValue({ allowRemote: false, role: 'EMPLOYEE' }) }, spaceAssignment,
+    // Every fixture workspace runs Time Tracking unless it says otherwise — the list only offers those.
+    companyLocation: {
+      findMany: (...a: unknown[]) => companyLocation.findMany(...a).then((rows: Array<Record<string, unknown>>) =>
+        (rows ?? []).map((r) => ({ enabledModules: ['time_tracking'], ...r }))),
+    },
+  } as any;
 
   // The method under test, bound to a bare prisma double — it is a query and a
   // filter, and standing the whole AttendanceService up (queues, notifications,
@@ -131,5 +137,31 @@ describe('listClockInLocations', () => {
     const res = await service.listClockInLocations({ userId: 'u1', organizationId: 'org-1' });
 
     expect(res.data).toHaveLength(1);
+  });
+});
+
+describe('listClockInLocations — only where Time Tracking runs', () => {
+  const { AttendanceService } = require('../attendance.service');
+  const build = (rows: unknown[]) => {
+    const service = Object.create(AttendanceService.prototype);
+    service.prisma = {
+      user: { findFirst: jest.fn().mockResolvedValue({ allowRemote: false, role: 'EMPLOYEE' }) },
+      spaceAssignment: { findMany: jest.fn().mockResolvedValue([{ spaceId: 'on' }, { spaceId: 'off' }, { spaceId: 'inherit' }]) },
+      companyLocation: { findMany: jest.fn().mockResolvedValue(rows) },
+    };
+    return service;
+  };
+  const row = (id: string, enabledModules: string[] | null, org: string[] | null) => ({
+    id, name: id, address: null, lat: null, lng: null, geofenceRadius: 50, geofencePolicy: 'STRICT', timezone: 'Europe/Vienna',
+    isDefault: false, enabledModules, organization: { enabledModules: org },
+  });
+
+  it('BUG FIXED: a workspace with Time Tracking switched off is not offered', async () => {
+    const service = build([row('on', ['time_tracking'], []), row('off', [], ['time_tracking']), row('inherit', null, ['time_tracking'])]);
+    const res = await service.listClockInLocations({ userId: 'u1', organizationId: 'org-1' });
+    expect(res.data.map((l: { id: string }) => l.id).sort()).toEqual(['inherit', 'on']);
+    // Nothing about modules leaks into the answer.
+    expect(res.data[0]).not.toHaveProperty('enabledModules');
+    expect(res.data[0]).not.toHaveProperty('organization');
   });
 });

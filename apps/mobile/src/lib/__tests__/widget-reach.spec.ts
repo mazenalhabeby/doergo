@@ -27,6 +27,8 @@ import { drivesRoutes, isExternalMember } from '../member-reach';
 const profile = (modules: string[]) => ({ modules });
 const member = (over: Record<string, unknown> = {}) => ({
   role: 'EMPLOYEE',
+  // CRM comes from the ORG ROLE (as on the server) — a member with none has no CRM.
+  memberRoleId: 'role-1',
   access: { org: {}, perSpace: {} },
   enabledModules: profile(['tasks', 'clock']),
   spaceModules: ['tracking', 'assets', 'crm'],
@@ -70,7 +72,7 @@ describe('Today\'s route and Plan route ask one question', () => {
 });
 
 describe('the organization\'s own property is never an external member\'s', () => {
-  const ext = member({ isExternal: true, access: { org: { crmViewAll: true, crmEditInfo: true, canCreateTasks: true }, perSpace: {} } });
+  const ext = member({ isExternal: true, access: { org: { crmViewAll: true, crmEditInfo: true, crmCreateClients: true, canCreateTasks: true }, perSpace: {} } });
 
   it('hides equipment, documents and the client book', () => {
     const t = tiles(ext);
@@ -98,8 +100,15 @@ describe('a tile asks what its screen needs', () => {
     const noEdit = member();
     expect(tiles(noEdit)).not.toContain('shortcuts.scanCard');
     expect(tiles(noEdit)).not.toContain('shortcuts.addClient');
-    const rep = member({ access: { org: { crmViewOwn: true, crmEditInfo: true }, perSpace: {} } });
+    const rep = member({ access: { org: { crmViewOwn: true, crmCreateClients: true }, perSpace: {} } });
     expect(tiles(rep)).toContain('shortcuts.scanCard');
+    expect(tiles(rep)).toContain('shortcuts.addClient');
+  });
+
+  it('BUG FIXED: no org role → no CRM tiles, as the server answers (a legacy canManageUsers column is not a CRM grant)', () => {
+    const legacy = member({ memberRoleId: null, canManageUsers: true, access: { org: { canManageUsers: true }, perSpace: {} } });
+    const t = tiles(legacy);
+    for (const k of ['shortcuts.scanCard', 'shortcuts.addClient', 'manage.customers.label']) expect(t).not.toContain(k);
   });
 
   it('Overtime needs the clock, not only the Option', () => {

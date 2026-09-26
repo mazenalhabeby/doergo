@@ -66,9 +66,6 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
   }, []);
 
   useLiveRefresh(refresh, REFRESH_MS);
-  usePitch(!due || !due.allowed ? null : due.total
-    ? { need: due.total, line: t('pitch.clients', { count: due.total }) }
-    : { need: 0, line: t('pitch.clientsCalm') });
   const say = usePhrase();
   const openBook = () => router.push('/(app)/customers' as Href);
   const openClient = (r: DueReminder) => router.push(`/(app)/customer/${r.customerId}` as Href);
@@ -132,9 +129,18 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
     }
   }, []);
 
+  /*
+    ⚠️ The pitch counts what is LEFT, not what the server last said: ticking a
+    reminder off drops the card's count at once, and the line above the home
+    must drop with it rather than trailing until the next refresh.
+  */
+  const shown = due ? withoutDone(due, Object.values(marked).map((x) => x.r), day.current.start) : null;
+  usePitch(!shown || !shown.allowed ? null : shown.total
+    ? { need: shown.total, line: t('pitch.clients', { count: shown.total }) }
+    : { need: 0, line: t('pitch.clientsCalm') });
+
   if (due && !due.allowed) return null;
 
-  const shown = due ? withoutDone(due, Object.values(marked).map((x) => x.r), day.current.start) : null;
   const head = shown ? headline(shown) : null;
   const book = due?.book;
 

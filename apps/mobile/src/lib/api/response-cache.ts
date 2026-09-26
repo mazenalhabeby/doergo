@@ -99,6 +99,12 @@ const NEVER: readonly RegExp[] = [
   /^\/attendance\/active-entries(\?|$)/,
   /^\/attendance\/breaks\/active(\?|$)/,
   /^\/attendance\/no-shows(\?|$)/,
+  /*
+    The Crew card's approvals COUNT is read beside presence and hidden with it
+    offline — a kept count would be a number from another moment, drawn next
+    to a dash. Never kept.
+  */
+  /^\/attendance\/approvals\/pending\?(.*&)?summary=true/,
 ];
 
 export function isKeptResponse(endpoint: string): boolean {

@@ -30,6 +30,7 @@ import { overlayTask } from '../../src/offline/tasks/overlay';
 import { isUnreachable } from '../../src/offline/actions/unreachable';
 import { restoreRoute } from '../../src/offline/routes/saved-route';
 import { planDay } from '../../src/offline/routes/plan-route';
+import { isStalePlan } from '../../src/lib/route-day';
 
 type LatLng = { lat: number; lng: number; label?: string };
 
@@ -134,9 +135,28 @@ export default function RoutePlannerScreen() {
     if (restored.current || loading || !user?.id || tasks.length === 0) return;
     restored.current = true;
     void restoreRoute(AsyncStorage, user.id, tasks.map((x) => x.id)).then((plan) => {
-      if (plan) setResult((current) => current ?? plan);
+      if (!plan) return;
+      restoredPlan.current = plan;
+      setResult((current) => current ?? plan);
     });
   }, [loading, tasks, user?.id]);
+
+  /*
+    ⚠️ A saved plan made FAR from here, with nothing done yet, is not today's
+    plan — the home card's 1701 km bug (`isStalePlan`, shared with the card).
+    Judged once the driver's position is known; a plan the driver made on this
+    screen is never second-guessed, only the restored one.
+  */
+  const restoredPlan = useRef<typeof result>(null);
+  useEffect(() => {
+    const plan = restoredPlan.current;
+    if (!plan || result !== plan || !start) return;
+    const arrived = tasks.filter((x) => plan.order.includes(x.id) && hasArrived(x)).length;
+    if (isStalePlan(plan, start, arrived)) {
+      restoredPlan.current = null;
+      setResult(null);
+    }
+  }, [start, result, tasks]);
 
   const optimize = async () => {
     setError(null);

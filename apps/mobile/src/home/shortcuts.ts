@@ -51,9 +51,24 @@ export function smartPicks(cands: Destination[], badges: Badges): string[] {
 export function shownShortcuts(chosen: string[] | null, cands: Destination[], badges: Badges): Destination[] {
   const by = new Map(cands.map((r) => [r.labelKey, r]));
   const smart = smartPicks(cands, badges);
-  if (!chosen) return smart.map((k) => by.get(k)!);
-  const keep = chosen.filter((k) => by.has(k)).slice(0, SLOTS);
-  for (const k of smart) if (keep.length < Math.min(SLOTS, chosen.length) && !keep.includes(k)) keep.push(k);
+  /*
+    ⚠️ A stored choice is DATA FROM DISK, written by whichever app version the
+    member had then — sanitise it here rather than trust it:
+      • duplicates collapse (two tiles with one React key, and a slot wasted);
+      • an EMPTY list means "never chosen", not "show nothing" — the Edit
+        button lives on the card, so a card that draws nothing can never be
+        edited again;
+      • never fewer than MIN_TILES when there is enough to fill them — a
+        one-key list (or one surviving key) would hide the card the same way.
+  */
+  const clean = chosen ? [...new Set(chosen.filter((k) => typeof k === 'string'))] : [];
+  if (!clean.length) return smart.map((k) => by.get(k)!);
+  const keep = clean.filter((k) => by.has(k)).slice(0, SLOTS);
+  const target = Math.min(SLOTS, Math.max(MIN_TILES, clean.length));
+  for (const k of [...smart, ...cands.map((r) => r.labelKey)]) {
+    if (keep.length >= target) break;
+    if (!keep.includes(k)) keep.push(k);
+  }
   return keep.map((k) => by.get(k)!);
 }
 

@@ -1,7 +1,7 @@
-import { hasAccessModule, hasFeatureModule, moduleAnywhere, resolveCrmCaps, type MobileModule } from '@hbcfield/shared/client';
+import { hasAccessModule, hasFeatureModule, moduleAnywhere, type MobileModule } from '@hbcfield/shared/client';
 import { holds, holdsOrgWide } from '../lib/permissions';
 import type { User } from '../lib/api/types';
-import { drivesRoutes, isExternalMember } from '../lib/member-reach';
+import { crmCapsOf, drivesRoutes, isExternalMember } from '../lib/member-reach';
 
 /**
  * What a widget REQUIRES, as data.
@@ -102,10 +102,7 @@ export function meets(user: User | null | undefined, r: Requires | undefined): b
   if (r.drives && !drivesRoutes(user)) return false;
   if (r.module && !hasAccessModule(user as never, r.module)) return false;
   if (r.spaceModule && !moduleAnywhere(user as never, r.spaceModule)) return false;
-  if (r.crm) {
-    const u = user as unknown as { role?: string | null; access?: { org?: Record<string, boolean> } };
-    if (!resolveCrmCaps(u.role ?? null, (u.access?.org ?? {}) as never).canAccess) return false;
-  }
+  if (r.crm && !crmCapsOf(user as never).canAccess) return false;
   if (r.orgModule && !hasFeatureModule({ orgModules: user.orgModules }, r.orgModule)) return false;
   const ask = r.orgWide ? holdsOrgWide : holds;
   if (r.permission && !ask(user as never, r.permission)) return false;

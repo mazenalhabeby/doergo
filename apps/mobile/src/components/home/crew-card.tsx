@@ -11,7 +11,7 @@ import { AText, Eyebrow, CardSurface } from '../amazen';
 import { NotArrivedGlyph, HoursWaitingGlyph } from '../glyphs/crew-glyphs';
 import Svg, { Circle } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
-import { crewState, type Band, type CrewPerson, type CrewTile, type Ring } from './crew-state';
+import { crewState, needsBySpace, rosteredCountOf, type Band, type CrewPerson, type CrewTile, type Ring } from './crew-state';
 import { useCrew } from './use-crew';
 import { GlyphTile } from './glyph-tile';
 import { usePitch } from '../../home/pitch';
@@ -50,14 +50,8 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
     number; the whole card answers for it. It OPENS where the trouble is — the
     one workspace that needs you when there is exactly one, ALL otherwise.
   */
-  const needs = useMemo(() => {
-    const out: Record<string, number> = {};
-    const all = crewState({ people: data.people, rosteredCount: data.people.length, spaceIds: allSpaces, now: data.at });
-    for (const tile of all.tiles) {
-      if ((tile.band === 'late' || tile.band === 'missed') && tile.person.spaceId) out[tile.person.spaceId] = (out[tile.person.spaceId] ?? 0) + 1;
-    }
-    return out;
-  }, [data.people, allSpaces, data.at]);
+  /* ⚠️ Over everybody, never over the (capped) tiles — see `needsBySpace`. */
+  const needs = useMemo(() => needsBySpace(data.people, data.at), [data.people, data.at]);
   const needTotal = Object.values(needs).reduce((a, b) => a + b, 0);
   usePitch(data.loading || data.failed ? null : needTotal
     ? { need: needTotal, line: t('pitch.crew', { count: needTotal }) }
@@ -68,7 +62,8 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const scoped = site ? data.people.filter((p) => p.spaceId === site) : data.people;
   const s = useMemo(() => crewState({
     people: scoped,
-    rosteredCount: scoped.length,
+    /* ⚠️ 0 when nobody in scope is rostered — the hero then drops the `/n` rather than print "6/6". */
+    rosteredCount: rosteredCountOf(scoped),
     spaceIds: site ? [site] : allSpaces,
     failed: data.failed,
     now: data.at,
@@ -87,7 +82,8 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
       ? t('crew.workspacesShort', { count: allSpaces.length, short: s.sites.filter((x) => !!x.trouble).length, defaultValue: `${allSpaces.length} workspaces · ${s.sites.filter((x) => !!x.trouble).length} short` })
       : s.unit === 'peopleWithSite'
         ? allSpaces.map((id) => data.people.find((p) => p.spaceId === id)?.spaceName).filter(Boolean).join(' · ')
-        : `${data.people[0]?.spaceName ?? ''} · ${t('crew.oneWorkspace', { defaultValue: 'one workspace' })}`;
+        /* ⚠️ Nobody on and nobody expected: no workspace to name — not " · one workspace". */
+        : data.people[0]?.spaceName ? `${data.people[0].spaceName} · ${t('crew.oneWorkspace', { defaultValue: 'one workspace' })}` : '';
 
 
   return (
@@ -96,7 +92,8 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
         {/* Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
           <Eyebrow tone="muted" style={{ flex: 1 }}>{t('widgets.crew', { defaultValue: 'Crew' })}</Eyebrow>
-          {!data.failed ? (
+          {/* ⚠️ Not while loading: `at` is then the module's load time, not an answer's. */}
+          {!data.failed && !data.loading ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.accent }} />
               <AText variant="caption" tone="accent" numeric>{formatClock(new Date(data.at))}</AText>
@@ -167,7 +164,10 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
 
 /** `12` → "12 min"; past 90 minutes, hours — minutes above 90 are not read. */
 function span(t: (k: string, o?: Record<string, unknown>) => string, n: number): string {
-  if (n > 90) return `${Math.floor(n / 60)}h ${String(n % 60).padStart(2, '0')}`;
+  if (n > 90) {
+    const h = Math.floor(n / 60), m = String(n % 60).padStart(2, '0');
+    return t('crew.hoursMin', { h, m, defaultValue: `${h}h ${m}` });
+  }
   return t('crew.min', { n, defaultValue: `${n} min` });
 }
 
@@ -482,7 +482,8 @@ function RingButton({ label, initials: ini, stat, on, onPress }: {
 
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: on }}
-      accessibilityLabel={`${label}, ${stat.inn} of ${stat.exp} in, ${status.text}`}
+      /* ⚠️ `n/m`, as drawn — no English "of … in" read aloud in five languages. */
+      accessibilityLabel={`${label}, ${stat.inn}/${stat.exp}, ${status.text}`}
       style={({ pressed }) => ({
         flexDirection: 'row', alignItems: 'center', height: 38, borderRadius: 999, padding: 1,
         transform: [{ scale: pressed ? 0.94 : 1 }],

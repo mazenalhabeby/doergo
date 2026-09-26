@@ -96,11 +96,30 @@ function startOfMonth(now: Date): Date {
 }
 
 /**
+ * The first day the history request must cover.
+ *
+ * ⚠️ NOT THE 1ST OF THE MONTH. Two things live before it:
+ *   • the start of THIS WEEK, whenever the week began in last month — on
+ *     Tuesday 1 September the week began on Monday 31 August, and asking from
+ *     the 1st left Monday out of `This week`;
+ *   • the clock-IN of a night shift that ended this morning — in at 21:00 on
+ *     the 31st, out at 05:00 on the 1st, it is today's ⑥ and was never fetched.
+ * So: the earlier of the two starts, less one day for the night shift.
+ */
+export function historyFrom(now: Date): Date {
+  const week = startOfWeek(now);
+  const month = startOfMonth(now);
+  const from = week < month ? week : month;
+  return new Date(from.getFullYear(), from.getMonth(), from.getDate() - 1);
+}
+
+/**
  * The month's entries → the three figures. Pure, so the boundary rules below
  * are testable without a network.
  */
 export function readTotals(entries: readonly TimeEntry[], now: Date): ScheduleTotals {
   const week = startOfWeek(now);
+  const month = startOfMonth(now);
   const today = iso(now);
   let monthMinutes = 0;
   let weekMinutes = 0;
@@ -109,11 +128,22 @@ export function readTotals(entries: readonly TimeEntry[], now: Date): ScheduleTo
   for (const e of entries) {
     if (!e.clockOutAt) continue; // a running shift is not a total yet
     const m = countedOn(e);
-    monthMinutes += m;
     const at = new Date(e.clockInAt);
+    /*
+      ⚠️ THE ANSWER REACHES BACK PAST THE MONTH (see `historyFrom`), so the
+      month is filtered here rather than assumed from the request.
+    */
+    if (at >= month) monthMinutes += m;
     if (!lastIn || at > lastIn) lastIn = at;
     if (at >= week) weekMinutes += m;
-    if (iso(at) === today) {
+    /*
+      ⚠️ A SHIFT THAT *ENDED* TODAY — judged by its clock-OUT, never its
+      clock-in. A night shift in at 21:16 yesterday and out at 05:16 this
+      morning is today's finished shift; keyed on the clock-in it was
+      yesterday's, and the member walking out at dawn got ① `Ready to start`
+      instead of ⑥ `Done for today`.
+    */
+    if (iso(new Date(e.clockOutAt)) === today) {
       // The LAST one that ended today, by clock-out.
       if (!lastToday || new Date(e.clockOutAt) > new Date(lastToday.clockOutAt!)) lastToday = e;
     }
@@ -142,7 +172,7 @@ export function useScheduleTotals(input: {
   */
   const load = useCallback(async (): Promise<ScheduleTotals> => {
     const now = new Date();
-    const month = startOfMonth(now);
+    const from = historyFrom(now);
     const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     /*
       ⚠️ `endDate` IS TOMORROW, NOT TODAY. A date-only range whose end is today
@@ -151,7 +181,7 @@ export function useScheduleTotals(input: {
       appears, on the one day it is about. Asking to tomorrow is correct
       whether the server treats the bound as inclusive or not.
     */
-    const res = await attendanceApi.getHistory({ startDate: iso(month), endDate: iso(tomorrow), limit: 200, page: 1 });
+    const res = await attendanceApi.getHistory({ startDate: iso(from), endDate: iso(tomorrow), limit: 200, page: 1 });
     /*
       ⚠️ `/attendance/history` RETURNS A BARE ARRAY, NOT A PAGINATED ENVELOPE —
       whatever `attendanceApi.getHistory`'s return type says. The server

@@ -240,8 +240,8 @@ describe('what the phone and web are told before the tap', () => {
     const { service, prisma } = await build({ worked: MORNING });
     prisma.spaceAssignment.findMany.mockResolvedValue([{ spaceId: 'loc-1', allowRemote: null }, { spaceId: 'loc-2', allowRemote: null }]);
     prisma.companyLocation.findMany = jest.fn().mockResolvedValue([
-      location,
-      { ...location, id: 'loc-2', name: 'Warehouse', noShiftPolicy: 'ALLOW' },
+      { ...location, enabledModules: ['time_tracking'] },
+      { ...location, id: 'loc-2', name: 'Warehouse', noShiftPolicy: 'ALLOW', enabledModules: ['time_tracking'] },
     ]);
     const res: any = await service.listClockInLocations({ userId: 'u1', organizationId: 'org-1' });
     const [main, warehouse] = res.data;

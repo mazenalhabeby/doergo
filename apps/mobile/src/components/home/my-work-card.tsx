@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated as RNAnimated, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
+import { AppState, Animated as RNAnimated, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { daysLate, hasAccessModule } from '@hbcfield/shared/client';
@@ -20,7 +20,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { usePitch } from '../../home/pitch';
 import {
   shapeFor, faceFor, viewAllSpaceIds, weekOf, sameDay, startOfDay, tasksOn, hasHour, isMine,
-  flowIdOf, stepsFor, isClosed, shiftOn, shiftHours, nextJobAfter, figuresFor, todaysOwn,
+  flowIdOf, stepsFor, isClosed, isUnderWay, shiftOn, shiftHours, nextJobAfter, figuresFor, todaysOwn,
+  msUntilNextDay, withoutCanceled, stepLabelFor,
 } from './my-work';
 
 /**
@@ -40,12 +41,21 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const { user } = useAuth();
   const { amazen } = useTheme();
   const { t } = useTranslation();
-  const { formatClock } = useTimeFormat();
+  const { formatTime } = useTimeFormat();
+  /*
+    ⚠️ THE CARD'S CLOCK IS THE PHONE'S, LIKE ITS DAYS. Days, "late" and the
+    midnight-means-no-hour rule are all read in the phone's zone; the hour was
+    printed in the organization's zone WITH its label ("09:00 CEST", and in
+    12h "9:00 AM GMT+2", which the label-stripper does not recognise). A phone
+    away from the office then put a job on one day and printed the hour of
+    another. `null` = local, no label.
+  */
+  const clock = useCallback((d: string | Date) => formatTime(d, null), [formatTime]);
   const router = useRouter();
   const offline = useOffline();
   const shift = useShift();
   const c = amazen.color;
-  const { tasks, updatedAt, load } = useHomeTasks();
+  const { tasks: held, updatedAt, load } = useHomeTasks();
 
   const shape = shapeFor({
     tasks: hasAccessModule(user ?? {}, 'tasks'),
@@ -69,16 +79,43 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
     catch (err) { setPhase(isUnreachable(err) ? 'absent' : 'refused'); }
   }, [load]);
   /*
+    ⚠️ "TODAY" MOVES. It was memoised once on mount, and the home stays
+    mounted under the other tabs — so a phone that opened the app before
+    midnight kept highlighting yesterday, listing yesterday's jobs as today's
+    and counting "late" from the wrong day until the app was killed. Re-read
+    on every return to home, on every return from the background, and at the
+    turn of the day while the card is on screen. The selection follows only
+    when it was on today; a day the member picked stays picked.
+  */
+  const [todayMs, setTodayMs] = useState(() => startOfDay(new Date()).getTime());
+  const todayRef = useRef(todayMs);
+  const [selected, setSelected] = useState<Date>(() => new Date(todayRef.current));
+  const syncDay = useCallback(() => {
+    const now = startOfDay(new Date()).getTime();
+    const was = todayRef.current;
+    if (now === was) return;
+    todayRef.current = now;
+    setTodayMs(now);
+    setSelected((s) => (s.getTime() === was ? new Date(now) : s));
+  }, []);
+  useEffect(() => {
+    const timer = setTimeout(syncDay, msUntilNextDay() + 1000);
+    const sub = AppState.addEventListener('change', (st) => { if (st === 'active') syncDay(); });
+    return () => { clearTimeout(timer); sub.remove(); };
+  }, [todayMs, syncDay]);
+
+  /*
     ⚠️ ON EVERY RETURN TO HOME, NOT ONLY ON MOUNT. The home stays mounted
     under the other tabs, so a card that asked once when the app opened kept
     showing that morning's copy: jobs created since simply were not there
     (08.png). `load()` reads the phone's copy AND kicks a background pull.
   */
   useFocusEffect(useCallback(() => {
+    syncDay();
     if (shape !== 'none' && shape !== 'shifts') void fetchList();
-  }, [fetchList, shape]));
+  }, [fetchList, shape, syncDay]));
   // Rows arriving from the phone's copy mean it has loaded, whatever load() is still doing.
-  useEffect(() => { if (tasks.length > 0 && phase === 'opening') setPhase('ready'); }, [tasks.length, phase]);
+  useEffect(() => { if (held.length > 0 && phase === 'opening') setPhase('ready'); }, [held.length, phase]);
 
   /*
     The shift bars — the member's own weekly schedule. `GET /employees/:id/
@@ -99,7 +136,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
     lookup the task screen does. A row whose workflow is not here offers no
     verb (it opens the job) rather than guessing the field-service one.
   */
-  const flowIds = useMemo(() => [...new Set(tasks.map(flowIdOf).filter((x): x is string => !!x))].sort().join(','), [tasks]);
+  const flowIds = useMemo(() => [...new Set(held.map(flowIdOf).filter((x): x is string => !!x))].sort().join(','), [held]);
   const [flows, setFlows] = useState<Map<string, unknown>>(() => new Map());
   useEffect(() => {
     if (!flowIds) return;
@@ -118,7 +155,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
           asked for it. Offline this fails quietly and the row opens the job,
           which is the honest answer when the verbs are unknown.
         */
-        const sample = tasks.find((x) => flowIdOf(x) === id);
+        const sample = held.find((x) => flowIdOf(x) === id);
         if (!sample) continue;
         const detail = await tasksApi.getById(sample.id).catch(() => null);
         const flow = (detail as unknown as { workflow?: { id?: string } } | null)?.workflow;
@@ -131,11 +168,13 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
   }, [offline.records, flowIds]);
 
   // Today on mount, always. Selecting a day is a READ.
-  const [selected, setSelected] = useState<Date>(() => startOfDay(new Date()));
-  const week = useMemo(() => weekOf(new Date()), []);
-  const today = useMemo(() => startOfDay(new Date()), []);
+  const today = useMemo(() => new Date(todayMs), [todayMs]);
+  const week = useMemo(() => weekOf(today), [today]);
+  /* Called-off jobs are not work — see `withoutCanceled`. */
+  const tasks = useMemo(() => withoutCanceled(held, flows), [held, flows]);
 
   const open = useCallback((task: Task) => !isClosed(task, stepsFor(task, flows)), [flows]);
+  const underWay = useCallback((task: Task) => isUnderWay(task, stepsFor(task, flows)), [flows]);
   const dayTasks = useMemo(() => (shape === 'shifts' ? [] : tasksOn(tasks, selected)), [shape, tasks, selected]);
   const dots = useMemo(() => week.map((d) => (shape === 'shifts' ? 0 : tasksOn(tasks, d).length)), [shape, tasks, week]);
 
@@ -147,9 +186,9 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const isToday = sameDay(selected, today);
   const { mine, theirs } = useMemo(() => {
     const own = face === 'executor' ? tasks : tasks.filter((x) => isMine(x, user?.id));
-    const mineList = isToday && shape !== 'shifts' ? todaysOwn(own, selected, open) : dayTasks.filter((x) => face === 'executor' || isMine(x, user?.id));
+    const mineList = isToday && shape !== 'shifts' ? todaysOwn(own, selected, open, undefined, underWay) : dayTasks.filter((x) => face === 'executor' || isMine(x, user?.id));
     return { mine: mineList, theirs: face === 'executor' ? [] as Task[] : dayTasks.filter((x) => !isMine(x, user?.id)) };
-  }, [tasks, dayTasks, face, user?.id, isToday, selected, open, shape]);
+  }, [tasks, dayTasks, face, user?.id, isToday, selected, open, underWay, shape]);
 
   /*
     ⚠️ TAPPING A ROW MOVES THE FOCUS TO IT (10.png). The active row is the job
@@ -165,7 +204,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
     return focused ?? mine.find((x) => isMine(x, user?.id) && open(x)) ?? null;
   }, [mine, user?.id, open, phase, focusId]);
   /* The step the job is on, in the workflow's own words. */
-  const stepLabel = (task: Task) => stepsFor(task, flows)?.find((x) => x.key === task.status)?.label ?? task.status.replace(/_/g, ' ');
+  const stepLabel = (task: Task) => stepLabelFor(task, flows, t as never);
 
   /*
     ⚠️ ONE BUTTON: OPEN THE JOB. The widget answers "what is next and where";
@@ -258,7 +297,8 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
           <>
             <Eyebrow tone="accent">
               {dayEyebrow(selected, today, t)}
-              {shape === 'tasks' && dayTasks.length > 0 ? ` · ${t('myWork.jobs', { count: dayTasks.length, defaultValue: `${dayTasks.length} jobs` })}` : ''}
+              {/* ⚠️ The rows the list SHOWS — carried-over work included — not only the jobs dated that day: "1 job" over four rows read as a miscount. */}
+              {shape === 'tasks' && pillCount > 0 ? ` · ${t('myWork.jobs', { count: pillCount, defaultValue: `${pillCount} jobs` })}` : ''}
               {shape === 'both' && selShift ? ` · ${shiftHours(selShift)}h` : ''}
               {shape === 'both' && todayShift?.location?.name ? ` · ${todayShift.location.name}` : ''}
             </Eyebrow>
@@ -277,7 +317,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                     title={sameDay(selected, today)
                       ? t('myWork.nothingToday', { defaultValue: 'Nothing scheduled today.' })
                       : t('myWork.nothingOn', { day: weekdayName(selected, 'long'), defaultValue: `Nothing scheduled on ${weekdayName(selected, 'long')}.` })}
-                    body={nextJobLine(nextJobAfter(face === 'executor' ? tasks : tasks.filter((x) => isMine(x, user?.id)), selected, open), t, formatClock)}
+                    body={nextJobLine(nextJobAfter(face === 'executor' ? tasks : tasks.filter((x) => isMine(x, user?.id)), selected, open), t, clock)}
                   />
                 ) : null}
                 {mine.map((task, i) => (
@@ -288,11 +328,18 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                         key={`active:${task.id}`}
                         task={task}
                         label={stepLabel(task)}
+                        clock={clock}
                         onOpen={() => openTask(task)}
                       />
                     ) : (
+                      /*
+                        ⚠️ EVERY ROW IN THIS LIST IS THE READER'S. It passed
+                        `face !== 'executor'`, so an executor's own jobs were
+                        drawn as somebody else's: a hollow ring and their OWN
+                        first name in front of every title ("Karim · …").
+                      */
                       <PlainRow
-                        task={task} done={!open(task)} mine={face !== 'executor'}
+                        task={task} done={!open(task)} mine clock={clock}
                         /* Yours and still open: focus it here. Anything else opens the job. */
                         onPress={() => (isMine(task, user?.id) && open(task) ? setFocusId(task.id) : openTask(task))}
                       />
@@ -303,7 +350,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                 {face === 'spaceSupervisor' && theirs.length > 0 ? (
                   <>
                     <Eyebrow tone="muted" style={{ marginTop: amazen.space(2) }}>{siteLabel(theirs, t)}</Eyebrow>
-                    {theirs.slice(0, 3).map((task) => <PlainRow key={task.id} task={task} done={!open(task)} mine={false} onPress={() => openTask(task)} />)}
+                    {theirs.slice(0, 3).map((task) => <PlainRow key={task.id} task={task} done={!open(task)} mine={false} clock={clock} onPress={() => openTask(task)} />)}
                     {theirs.length > 3 ? (
                       <Pressable onPress={() => router.push('/(app)/(tabs)/tasks' as Href)} accessibilityRole="button" hitSlop={6}>
                         <AText variant="caption" tone="accent">{t('myWork.more', { count: theirs.length - 3, defaultValue: `+${theirs.length - 3} more` })}</AText>
@@ -330,10 +377,9 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
  * The first open job of the day, WHEN IT IS THE READER'S OWN — raised one step
  * out of the well and carrying its decision.
  */
-function ActiveRow({ task, label, onOpen }: { task: Task; label: string; onOpen: () => void }) {
+function ActiveRow({ task, label, clock, onOpen }: { task: Task; label: string; clock: (d: string) => string; onOpen: () => void }) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
-  const { formatTime } = useTimeFormat();
   const c = amazen.color;
   /*
     A short fade as focus lands. ⚠️ OPACITY ONLY — a Reanimated LAYOUT
@@ -346,7 +392,7 @@ function ActiveRow({ task, label, onOpen }: { task: Task; label: string; onOpen:
   const meta = [
     late > 0
       ? t('myWork.late', { count: late, defaultValue: `${late} days late` })
-      : hasHour(task.dueDate) ? formatTime(task.dueDate!) : null,
+      : hasHour(task.dueDate) ? clock(task.dueDate!) : null,
     task.locationAddress,
     (task as unknown as { space?: { name?: string } }).space?.name,
   ].filter(Boolean).join(' · ');
@@ -379,10 +425,9 @@ function ActiveRow({ task, label, onOpen }: { task: Task; label: string; onOpen:
 }
 
 
-function PlainRow({ task, done, mine, onPress }: { task: Task; done: boolean; mine: boolean; onPress: () => void }) {
+function PlainRow({ task, done, mine, clock, onPress }: { task: Task; done: boolean; mine: boolean; clock: (d: string) => string; onPress: () => void }) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
-  const { formatTime } = useTimeFormat();
   const c = amazen.color;
   const who = !mine && task.assignedTo ? task.assignedTo.firstName : null;
   return (
@@ -404,7 +449,7 @@ function PlainRow({ task, done, mine, onPress }: { task: Task; done: boolean; mi
           ? t('myWork.done', { defaultValue: 'done' })
           : (daysLate(task.dueDate ?? null) ?? 0) > 0
             ? t('myWork.late', { count: daysLate(task.dueDate ?? null), defaultValue: 'late' })
-            : hasHour(task.dueDate) ? formatTime(task.dueDate!) : ''}
+            : hasHour(task.dueDate) ? clock(task.dueDate!) : ''}
       </AText>
     </Pressable>
   );

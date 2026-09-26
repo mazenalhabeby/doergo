@@ -695,7 +695,15 @@ export class BreakService {
                 email: true,
               },
             },
-            location: true,
+            /*
+              ⚠️ NOT `location: true`. That shipped the whole workspace row —
+              cost and bill rates, contact details, the geofence polygon —
+              TWICE per break (here and flattened below), every minute, to
+              anybody holding `canViewSpaceAttendance` in one space, an
+              external supervisor included. ~3.6 KB per break for a name
+              and a time zone. Readers use id, name, address, timezone.
+            */
+            location: { select: { id: true, name: true, address: true, timezone: true } },
           },
         },
       },

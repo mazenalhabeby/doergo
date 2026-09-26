@@ -1,6 +1,6 @@
-import { hasAccessModule, moduleAnywhere, orgHasAddOn, resolveCrmCaps, type MobileModule } from '@hbcfield/shared/client';
+import { hasAccessModule, moduleAnywhere, orgHasAddOn, type MobileModule } from '@hbcfield/shared/client';
 import { holds, holdsOrgWide } from './permissions';
-import { drivesRoutes, isExternalMember } from './member-reach';
+import { crmCapsOf, drivesRoutes, isExternalMember } from './member-reach';
 
 /**
  * What Manage offers, and to whom.
@@ -52,7 +52,12 @@ export const MANAGE_ROWS = [
     which refused a Space Manager the one flow built for their depot's desk —
     the screen itself then offers only the kinds of their own workspaces.
   */
-  { icon: 'document-attach', labelKey: 'manage.contract.label', descKey: 'manage.contract.desc', route: '/(app)/asset-contract', color: '#0f766e', permission: 'canManageAssets', orgWide: false, internal: true },
+  /*
+    ⚠️ The contract screen opens by reading the asset kinds (`GET
+    /asset-categories`: canViewAllTasks + the assets module). Gated on
+    canManageAssets alone it was offered to members whose first read 403s.
+  */
+  { icon: 'document-attach', labelKey: 'manage.contract.label', descKey: 'manage.contract.desc', route: '/(app)/asset-contract', color: '#0f766e', permission: 'canManageAssets', orgWide: false, module: 'assets', internal: true, gate: { alsoHolds: 'canViewAllTasks' } as ExtraGate },
 ] as const;
 
 export type ManageRow = (typeof MANAGE_ROWS)[number];
@@ -108,9 +113,11 @@ export type ExtraGate =
    * role grants nothing while looking configured. That is the resolver's
    * behaviour, not this row's, and it must not be worked around here.
    */
-  | { crmCap: 'editInfo' | 'manage' | 'work' }
+  | { crmCap: 'editInfo' | 'create' | 'manage' | 'work' }
   /** They drive a route — the same rule as the Today's route widget (`lib/member-reach.ts`). */
-  | { drives: true };
+  | { drives: true }
+  /** A SECOND permission the screen's own first read needs (in any space). */
+  | { alsoHolds: string };
 
 export interface Destination {
   icon: string;
@@ -160,7 +167,7 @@ export const MEMBER_ROWS: Destination[] = [
     is a redirect kept for every push notification already delivered.
   */
   { icon: 'sync', labelKey: 'shortcuts.sync', descKey: 'shortcuts.syncDesc', route: '/(app)/sync', color: '#8b5cf6', permission: '', orgWide: false, gate: { offline: true }, home: true, badge: 'sync.queued' },
-  { icon: 'timer', labelKey: 'shortcuts.overtime', descKey: 'shortcuts.overtimeDesc', route: '/(app)/overtime', color: '#a855f7', permission: '', orgWide: false, accessModule: 'clock', gate: { addOn: 'overtime' }, home: true, badge: 'overtime.mine' },
+  { icon: 'timer', labelKey: 'shortcuts.overtime', descKey: 'shortcuts.overtimeDesc', route: '/(app)/overtime/active', color: '#a855f7', permission: '', orgWide: false, accessModule: 'clock', gate: { addOn: 'overtime' }, home: true, badge: 'overtime.mine' },
   /*
     ⚠️ Filing an expense is authorised by CUSTODY on the receipt's date, never
     by `canManageAssets` — a driver is not an asset manager and never will be.
@@ -177,9 +184,16 @@ export const MEMBER_ROWS: Destination[] = [
     action, and the tab bar is a set of rooms.
   */
   { icon: 'add-circle', labelKey: 'shortcuts.newJob', descKey: 'shortcuts.newJobDesc', route: '/(app)/(tabs)/create-task', color: '#0b8168', permission: 'canCreateTasks', orgWide: false, home: true, act: true },
-  { icon: 'scan', labelKey: 'shortcuts.scanCard', descKey: 'shortcuts.scanCardDesc', route: '/(app)/scan-card', color: '#2563eb', permission: '', orgWide: false, module: 'crm', internal: true, gate: { crmCap: 'editInfo' }, home: true, act: true },
-  { icon: 'person-add', labelKey: 'shortcuts.addClient', descKey: 'shortcuts.addClientDesc', route: '/(app)/customers?new=1', color: '#2563eb', permission: '', orgWide: false, module: 'crm', internal: true, gate: { crmCap: 'editInfo' }, home: true, act: true },
-  { icon: 'send', labelKey: 'shortcuts.sendDoc', descKey: 'shortcuts.sendDocDesc', route: '/(app)/send-document', color: '#06b6d4', permission: 'canIssueDocuments', orgWide: false, home: true, act: true },
+  { icon: 'scan', labelKey: 'shortcuts.scanCard', descKey: 'shortcuts.scanCardDesc', route: '/(app)/scan-card', color: '#2563eb', permission: '', orgWide: false, module: 'crm', internal: true, gate: { crmCap: 'create' }, home: true, act: true },
+  { icon: 'person-add', labelKey: 'shortcuts.addClient', descKey: 'shortcuts.addClientDesc', route: '/(app)/customers?new=1', color: '#2563eb', permission: '', orgWide: false, module: 'crm', internal: true, gate: { crmCap: 'create' }, home: true, act: true },
+  /*
+    ⚠️ "Send a contract", NOT "issue a document". The row said "Issue a document
+    to somebody" behind `canIssueDocuments` while its screen is the asset
+    proposal camera — a driver sending in an agreement. Raising one needs no
+    permission (the caller's own id is the boundary on the server); the
+    workspace must run Assets, and it is the organization's own process.
+  */
+  { icon: 'send', labelKey: 'shortcuts.sendDoc', descKey: 'shortcuts.sendDocDesc', route: '/(app)/send-document', color: '#06b6d4', permission: '', orgWide: false, module: 'assets', internal: true, home: true, act: true },
   { icon: 'map', labelKey: 'shortcuts.planRoute', descKey: 'shortcuts.planRouteDesc', route: '/(app)/route-planner', color: '#0ea5e9', permission: '', orgWide: false, gate: { drives: true }, home: true },
   // Reachable, and not a tile: nobody opens support twice a week.
   { icon: 'help-buoy', labelKey: 'shortcuts.support', descKey: 'shortcuts.supportDesc', route: '/(app)/support', color: '#64748b', permission: '', orgWide: false },
@@ -243,7 +257,8 @@ export function manageRowsFor(user: ManageSubject): ManageRow[] {
     // organization itself (members, invitations, the rota), which is never
     // bought or unbought.
     const module = 'module' in row ? (row.module as string) : undefined;
-    return module === undefined || moduleAnywhere(user, module);
+    if (module !== undefined && !moduleAnywhere(user, module)) return false;
+    return passesGate(user as never, 'gate' in row ? (row.gate as ExtraGate) : undefined);
   });
 }
 
@@ -275,10 +290,8 @@ function passesGate(user: DestinationSubject, gate: ExtraGate | undefined): bool
   if ('addOn' in gate) return orgHasAddOn(user?.orgAddOns ?? null, gate.addOn);
   if ('offline' in gate) return user?.offlineMode === true;
   if ('drives' in gate) return drivesRoutes(user as never);
-  const caps = resolveCrmCaps(
-    (user as { role?: string | null } | null)?.role ?? null,
-    ((user as { access?: { org?: Record<string, boolean> } } | null)?.access?.org ?? {}) as never,
-  );
+  if ('alsoHolds' in gate) return holds(user as never, gate.alsoHolds);
+  const caps = crmCapsOf(user as never);
   return caps[gate.crmCap] === true;
 }
 

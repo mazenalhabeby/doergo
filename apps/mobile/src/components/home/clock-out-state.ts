@@ -45,6 +45,8 @@ export interface ClockOutShift {
   awayMetres?: number | null;
   /** Who would approve extra time, when the server has said. */
   approver?: string | null;
+  /** The moment of the clock-out (tests pass it; the sheet reads the clock). */
+  now?: Date;
 }
 
 export interface ClockOutView {
@@ -78,9 +80,18 @@ export function readClockOut(shift: ClockOutShift): ClockOutView {
     turns a daily act into a daily apology.
   */
   const TOLERANCE = 1;
-  const shortBy = target && counted < target - TOLERANCE ? target - counted : 0;
-  const overBy = target && counted > target + TOLERANCE ? counted - target : 0;
-  const face: ClockOutFace = shortBy > 0 ? 'early' : overBy > 0 ? 'late' : 'onTime';
+  /*
+    ⚠️ PAST THE ROSTERED END IS OVERTIME, WHATEVER THE TOTAL. Judged by duration
+    alone, somebody who arrived 2h late and stayed 44 minutes past the end read
+    "short" (513 of 600) and was never asked about the extra time — the time
+    the approval exists for. The END decides; the total decides only when
+    nobody is past it.
+  */
+  const now = shift.now ?? (shift.clockOutAt ? new Date(shift.clockOutAt) : new Date());
+  const pastEnd = shift.shiftEndAt ? Math.floor((now.getTime() - shift.shiftEndAt.getTime()) / 60_000) : 0;
+  const overBy = pastEnd > TOLERANCE ? pastEnd : target && counted > target + TOLERANCE ? counted - target : 0;
+  const shortBy = overBy === 0 && target && counted < target - TOLERANCE ? target - counted : 0;
+  const face: ClockOutFace = overBy > 0 ? 'late' : shortBy > 0 ? 'early' : 'onTime';
 
   const metres = shift.awayMetres ?? null;
   const away = metres !== null && metres >= AWAY_METRES ? { metres } : null;
