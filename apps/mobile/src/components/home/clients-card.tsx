@@ -3,7 +3,6 @@ import { Linking, Pressable, View, type StyleProp, type ViewStyle } from 'react-
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
-import { over } from '../../theme/amazen';
 import { customersApi, type ClientsDue, type DueReminder } from '../../lib/api/customers';
 import { useQueuedWrite } from '../../offline/actions/queued-write';
 import { setActivityDoneFromPhone } from '../../offline/crm/client-actions';
@@ -14,10 +13,11 @@ import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { usePhrase } from './phrase';
 import { GlyphTile } from './glyph-tile';
 import { WellDoor } from './well-door';
-import { CallGlyph, FinishGlyph } from '../glyphs/work-glyphs';
-import { EmailGlyph, ColdGlyph, ClientCompanyGlyph, ClientPersonGlyph } from '../glyphs/crm-glyphs';
-import { initials } from '../customer/client-avatar';
-import { daysLate, headline, localDay, rowLines } from './clients-state';
+import { FinishGlyph } from '../glyphs/work-glyphs';
+import { ColdGlyph } from '../glyphs/crm-glyphs';
+import { daysLate, headline, localDay, rowLines, withoutDone } from './clients-state';
+import { ReminderRow, UNDO_MS, type RowState } from './reminder-row';
+import { impact, selection } from '../../lib/haptics';
 
 /**
  * ⭐ CLIENTS — `docs/design/clients`. What is owed today, what is going cold,
@@ -40,7 +40,7 @@ const ROWS = 3;
 const REFRESH_MS = 60_000;
 
 export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
-  const { amazen, isDark } = useTheme();
+  const { amazen } = useTheme();
   const c = amazen.color;
   const { t } = useTranslation();
   const router = useRouter();
@@ -76,36 +76,63 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
     Linking.openURL(url).catch(() => openClient(r));
   };
 
-  /* The grey disc: done. Leaves at once; the queue keeps it done with no signal. */
-  const done = async (r: DueReminder) => {
-    setDue((d) => {
-      if (!d) return d;
-      const k = r.kind === 'CALL' ? 'call' : r.kind === 'EMAIL' ? 'email' : 'other';
-      const late = daysLate(r.dueAt, day.current.start) != null;
-      return {
-        ...d,
-        items: d.items.filter((x) => x.id !== r.id),
-        total: Math.max(0, d.total - 1),
-        counts: { ...d.counts, [k]: Math.max(0, d.counts[k] - 1), overdue: Math.max(0, d.counts.overdue - (late ? 1 : 0)) },
-      };
-    });
+  /*
+    ⭐ DONE, WITH A WAY BACK. The ring closes at once and the count drops, but
+    nothing is sent for UNDO_MS: a reminder ticked off by mistake would
+    otherwise be gone from the card with no way to find it again. Then it is
+    sent through the queue (still works with no signal) and the row folds away.
+  */
+  const [marked, setMarked] = useState<Record<string, { r: DueReminder; state: RowState | 'gone' }>>({});
+  const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  const send = useCallback(async (r: DueReminder) => {
     const outcome = await write.run(
       (e) => setActivityDoneFromPhone(e, { customerId: r.customerId, activityId: r.id, done: true }),
       () => customersApi.updateActivity(r.customerId, r.id, { done: true }),
     );
     if (outcome.kind === 'refused') {
       toast.error((outcome as { message?: string }).message || t('customers.record.reminderFailed'));
+      if (live.current) setMarked((m) => { const { [r.id]: _, ...rest } = m; return rest; });
     }
     // The next reminder in line takes the freed row.
-    void refresh();
+    if (live.current) void refresh();
+  }, [write, toast, t, refresh]);
+
+  const done = (r: DueReminder) => {
+    impact('light');
+    setMarked((m) => ({ ...m, [r.id]: { r, state: 'undo' } }));
+    timers.current[r.id] = setTimeout(() => {
+      delete timers.current[r.id];
+      setMarked((m) => (m[r.id] ? { ...m, [r.id]: { r, state: 'leaving' } } : m));
+      void send(r);
+    }, UNDO_MS);
   };
+  const undo = (r: DueReminder) => {
+    clearTimeout(timers.current[r.id]);
+    delete timers.current[r.id];
+    selection();
+    setMarked((m) => { const { [r.id]: _, ...rest } = m; return rest; });
+  };
+  const gone = useCallback((id: string) => setMarked((m) => (m[id] ? { ...m, [id]: { ...m[id]!, state: 'gone' } } : m)), []);
+
+  /* Leaving the screen inside the undo window is not an undo: send what was ticked. */
+  const pending = useRef(marked);
+  pending.current = marked;
+  const sendRef = useRef(send);
+  sendRef.current = send;
+  useEffect(() => () => {
+    for (const [id, tm] of Object.entries(timers.current)) {
+      clearTimeout(tm);
+      const e = pending.current[id];
+      if (e) void sendRef.current(e.r);
+    }
+  }, []);
 
   if (due && !due.allowed) return null;
 
-  const head = due ? headline(due) : null;
+  const shown = due ? withoutDone(due, Object.values(marked).map((x) => x.r), day.current.start) : null;
+  const head = shown ? headline(shown) : null;
   const book = due?.book;
-  const discPunch = isDark ? '#1fc39c' : '#0f9a7c';
-  const tileOnWell = over(c.tile, c.well);
 
   return (
     <View style={style}>
@@ -122,8 +149,8 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
         {head ? (
           <View style={{ marginTop: amazen.space(2.5) }}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
-              <AText variant="display" tone="strong" numeric style={{ fontSize: 52, lineHeight: 56 }}>{String(due!.total)}</AText>
-              <AText variant="body" tone="ink">{t(`${head.title.key}Label`, { count: due!.total })}</AText>
+              <AText variant="display" tone="strong" numeric style={{ fontSize: 52, lineHeight: 56 }}>{String(shown!.total)}</AText>
+              <AText variant="body" tone="ink">{t(`${head.title.key}Label`, { count: shown!.total })}</AText>
             </View>
             <Eyebrow tone="muted" numberOfLines={1} style={{ marginTop: 2 }}>
               {head.split.map(say).join(' · ')}
@@ -143,61 +170,28 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
 
         {due && due.items.length ? (
           <View style={{ marginTop: amazen.space(3) }}>
-            {due.items.map((r, i) => {
+            {due.items.filter((r) => marked[r.id]?.state !== 'gone').map((r, i) => {
               const l = rowLines(r);
               const late = daysLate(r.dueAt, day.current.start);
-              const at = formatClock(r.dueAt);
               const midnight = r.dueAt ? new Date(r.dueAt).getHours() === 0 && new Date(r.dueAt).getMinutes() === 0 : true;
+              const state = marked[r.id]?.state;
               return (
-                <Pressable
+                <ReminderRow
                   key={r.id}
-                  onPress={() => openClient(r)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${say(l.title)}. ${say(l.reason)}`}
-                  style={({ pressed }) => ({
-                    flexDirection: 'row', alignItems: 'center', gap: amazen.space(2.5), paddingVertical: amazen.space(2.5),
-                    borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell, opacity: pressed ? 0.75 : 1,
-                  })}
-                >
-                  <Monogram name={r.name} company={r.type === 'COMPANY'} />
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-                      <AText variant="body" tone="strong" numberOfLines={1} style={{ flexShrink: 1, fontSize: 14, lineHeight: 19 }}>{say(l.title)}</AText>
-                      <AText variant="caption" numeric style={{ color: late ? c.warn : c.accent, fontSize: 11 }}>
-                        {late ? t('clientsCard.late', { count: late }) : midnight ? t('clientsCard.today') : at}
-                      </AText>
-                    </View>
-                    <AText variant="caption" numberOfLines={1} style={{ color: r.shared > 1 ? c.warn : c.inkMuted, marginTop: 1 }}>{say(l.reason)}</AText>
-                  </View>
-                  {r.kind !== 'OTHER' ? (
-                    <Pressable
-                      onPress={() => act(r)}
-                      hitSlop={6}
-                      accessibilityRole="button"
-                      accessibilityLabel={say(l.title)}
-                      style={({ pressed }) => ({
-                        width: 36, height: 36, borderRadius: 18, backgroundColor: c.accentSolid,
-                        alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.85 : 1,
-                      })}
-                    >
-                      {r.kind === 'CALL'
-                        ? <CallGlyph size={18} color={c.accentInk} contrast={discPunch} />
-                        : <EmailGlyph size={18} color={c.accentInk} contrast={discPunch} />}
-                    </Pressable>
-                  ) : null}
-                  <Pressable
-                    onPress={() => void done(r)}
-                    hitSlop={6}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('clientsCard.markDone', { defaultValue: 'Mark done' })}
-                    style={({ pressed }) => ({
-                      width: 30, height: 30, borderRadius: 15, backgroundColor: tileOnWell, borderWidth: 1, borderColor: c.lineGlass,
-                      alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1,
-                    })}
-                  >
-                    <FinishGlyph size={15} color={c.ink} contrast={tileOnWell} />
-                  </Pressable>
-                </Pressable>
+                  r={r}
+                  first={i === 0}
+                  state={state && state !== 'gone' ? state : 'open'}
+                  title={say(l.title)}
+                  reason={say(l.reason)}
+                  due={late ? t('clientsCard.late', { count: late }) : midnight ? t('clientsCard.today') : formatClock(r.dueAt)}
+                  dueColor={late ? c.warn : c.accent}
+                  reasonColor={r.shared > 1 ? c.warn : c.inkMuted}
+                  onOpen={() => openClient(r)}
+                  onAct={() => act(r)}
+                  onDone={() => done(r)}
+                  onUndo={() => undo(r)}
+                  onGone={() => gone(r.id)}
+                />
               );
             })}
           </View>
@@ -224,23 +218,6 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
           />
         </View>
       </Well>
-    </View>
-  );
-}
-
-/** A company is a rounded square, a person a circle — the same rule as `ClientAvatar` — with the kind as a badge. */
-function Monogram({ name, company }: { name: string; company: boolean }) {
-  const { amazen } = useTheme();
-  const c = amazen.color;
-  const badge = over(c.tile, c.well);
-  return (
-    <View style={{ width: 36, height: 36 }}>
-      <View style={{ width: 36, height: 36, borderRadius: company ? 11 : 18, backgroundColor: c.tile, alignItems: 'center', justifyContent: 'center' }}>
-        <AText variant="caption" tone="ink" style={{ fontSize: 11.5, fontFamily: amazen.font.sansMedium }}>{initials(name) || '·'}</AText>
-      </View>
-      <View style={{ position: 'absolute', right: -3, bottom: -3, width: 16, height: 16, borderRadius: 5, backgroundColor: badge, borderWidth: 2, borderColor: c.well, alignItems: 'center', justifyContent: 'center' }}>
-        {company ? <ClientCompanyGlyph size={10} color={c.inkMuted} contrast={badge} /> : <ClientPersonGlyph size={10} color={c.inkMuted} />}
-      </View>
     </View>
   );
 }

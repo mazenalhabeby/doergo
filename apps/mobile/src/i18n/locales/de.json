@@ -3216,6 +3216,8 @@
     "cold_one": "{{count}} kühlt ab",
     "cold_other": "{{count}} kühlen ab",
     "coldWhy": "— seit 30 Tagen kein Kontakt",
-    "markDone": "Erledigt"
+    "markDone": "Erledigt",
+    "done": "Erledigt.",
+    "undo": "Rückgängig"
   }
 }

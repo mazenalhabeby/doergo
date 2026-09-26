@@ -66,6 +66,26 @@ export function rowLines(r: DueReminder): { title: Phrase; reason: Phrase } {
   return { title: { key: `clientsCard.row.${verb}`, values: { name: r.name } }, reason: why };
 }
 
+/**
+ * The server's answer, less the rows the member has just ticked off.
+ *
+ * A ticked row waits a few seconds for Undo before anything is sent, and the
+ * minute refresh would otherwise put it straight back — and the count with
+ * it. So the count is always "what the server says, minus what I have done".
+ */
+export function withoutDone(due: ClientsDue, done: DueReminder[], dayStart: Date): ClientsDue {
+  const here = new Set(due.items.map((i) => i.id));
+  const gone = done.filter((r) => here.has(r.id));
+  if (!gone.length) return due;
+  const counts = { ...due.counts };
+  for (const r of gone) {
+    const k = r.kind === 'CALL' ? 'call' : r.kind === 'EMAIL' ? 'email' : 'other';
+    counts[k] = Math.max(0, counts[k] - 1);
+    if (daysLate(r.dueAt, dayStart) != null) counts.overdue = Math.max(0, counts.overdue - 1);
+  }
+  return { ...due, counts, total: Math.max(0, due.total - gone.length) };
+}
+
 /** How late, in whole days — or null when it is due today. */
 export function daysLate(dueAt: string | null, dayStart: Date): number | null {
   if (!dueAt) return null;

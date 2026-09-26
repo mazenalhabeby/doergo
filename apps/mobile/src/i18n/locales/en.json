@@ -3223,6 +3223,8 @@
     "cold_one": "{{count}} going cold",
     "cold_other": "{{count}} going cold",
     "coldWhy": "— no contact in 30 days",
-    "markDone": "Mark done"
+    "markDone": "Mark done",
+    "done": "Done.",
+    "undo": "Undo"
   }
 }

@@ -3216,6 +3216,8 @@
     "cold_one": "{{count}} si sta raffreddando",
     "cold_other": "{{count}} si stanno raffreddando",
     "coldWhy": "— nessun contatto da 30 giorni",
-    "markDone": "Segna fatto"
+    "markDone": "Segna fatto",
+    "done": "Fatto.",
+    "undo": "Annulla"
   }
 }

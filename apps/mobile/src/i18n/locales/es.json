@@ -3216,6 +3216,8 @@
     "cold_one": "{{count}} se enfría",
     "cold_other": "{{count}} se enfrían",
     "coldWhy": "— sin contacto en 30 días",
-    "markDone": "Marcar hecho"
+    "markDone": "Marcar hecho",
+    "done": "Hecho.",
+    "undo": "Deshacer"
   }
 }
