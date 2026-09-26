@@ -1,4 +1,4 @@
-import { hasAccessModule, hasFeatureModule, type MobileModule } from '@hbcfield/shared/client';
+import { hasAccessModule, hasFeatureModule, moduleAnywhere, resolveCrmCaps, type MobileModule } from '@hbcfield/shared/client';
 import { holds, holdsOrgWide } from '../lib/permissions';
 import type { User } from '../lib/api/types';
 
@@ -49,6 +49,15 @@ export interface Requires {
    * senior the space role.
    */
   orgWide?: true;
+  /**
+   * The client book: the `crm` module runs in a workspace the member can see
+   * AND their CRM view is not 'none'. Data, not a closure — the same two
+   * questions the Manage row for Clients asks (`manage-rows.ts`).
+   *
+   * ⚠️ `resolveCrmCaps` reads the ORG permission set only: a space-scoped sales
+   * role grants no CRM, and the server resolves it the same way.
+   */
+  crm?: true;
   /** It is about the VIEWER. Documentation — nothing to check. */
   self?: true;
 }
@@ -79,6 +88,11 @@ export function meets(user: User | null | undefined, r: Requires | undefined): b
     asked separately they drift."
   */
   if (r.module && !hasAccessModule(user as never, r.module)) return false;
+  if (r.crm) {
+    if (!moduleAnywhere(user as never, 'crm')) return false;
+    const u = user as unknown as { role?: string | null; access?: { org?: Record<string, boolean> } };
+    if (!resolveCrmCaps(u.role ?? null, (u.access?.org ?? {}) as never).canAccess) return false;
+  }
   if (r.orgModule && !hasFeatureModule({ orgModules: user.orgModules }, r.orgModule)) return false;
   const ask = r.orgWide ? holdsOrgWide : holds;
   if (r.permission && !ask(user as never, r.permission)) return false;

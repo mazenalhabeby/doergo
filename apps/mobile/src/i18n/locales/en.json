@@ -3062,7 +3062,8 @@
   "widgets": {
     "shiftClock": "Shift clock",
     "myWork": "My work",
-    "crew": "Crew"
+    "crew": "Crew",
+    "clients": "Clients"
   },
   "shiftEnd": {
     "finishingAt": "FINISHING AT {{at}}",
@@ -3173,5 +3174,55 @@
       "expiresIn_other": "Your {{label}} expires in {{count}} days",
       "expiringSub": "Still valid · send the renewed one"
     }
+  },
+  "clientsCard": {
+    "owedCallLabel_one": "owed a call",
+    "owedCallLabel_other": "owed a call",
+    "owedEmailLabel_one": "owed an email",
+    "owedEmailLabel_other": "owed an email",
+    "needYouLabel_one": "needs you",
+    "needYouLabel_other": "need you",
+    "split": {
+      "today": "today",
+      "bothToday": "both today",
+      "allToday": "all today",
+      "overdue_one": "{{count}} overdue",
+      "overdue_other": "{{count}} overdue",
+      "todayCount_one": "{{count}} today",
+      "todayCount_other": "{{count}} today",
+      "calls_one": "{{count}} call",
+      "calls_other": "{{count}} calls",
+      "emails_one": "{{count}} email",
+      "emails_other": "{{count}} emails",
+      "other_one": "{{count}} other",
+      "other_other": "{{count}} other",
+      "notYoursAlone_one": "{{count}} not yours alone",
+      "notYoursAlone_other": "{{count}} not yours alone"
+    },
+    "row": {
+      "ring": "Ring {{name}}",
+      "email": "Email {{name}}",
+      "note": "{{note}}",
+      "other": "Follow up with {{name}}",
+      "ringWhy": "Reminder · call · {{note}}",
+      "ringReason": "Reminder · call",
+      "ringShared": "Reminder · call · any of {{count}} managers",
+      "emailWhy": "Reminder · email · {{note}}",
+      "emailReason": "Reminder · email",
+      "emailShared": "Reminder · email · any of {{count}} managers",
+      "otherReason": "Reminder · {{name}}"
+    },
+    "late_one": "{{count}}d",
+    "late_other": "{{count}}d",
+    "today": "today",
+    "allShort": "All {{count}} ›",
+    "all": "All {{count}} clients",
+    "allNoCount": "All clients",
+    "nobody": "Nobody is waiting on you.",
+    "offline": "Needs a connection to see what is due.",
+    "cold_one": "{{count}} going cold",
+    "cold_other": "{{count}} going cold",
+    "coldWhy": "— no contact in 30 days",
+    "markDone": "Mark done"
   }
 }

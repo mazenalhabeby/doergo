@@ -428,6 +428,7 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | PATCH | `/customers/contacts/:linkId` | Change the role, or make them primary | `editInfo` |
 | DELETE | `/customers/contacts/:linkId` | Detach — **the person record is kept** | `editInfo` |
 | POST | `/customers/:id/promote` | Make a contact a client in their own right | `manage` |
+| GET | `/customers/due` | The home Clients card: reminders owed today (yours — assigned to you, or unassigned on a client you manage), going cold (30 days, no contact), book size. `dayStart`/`dayEnd` = the member's own day | CRM view |
 
 > ⚠️ **A contact is not a client.** `Customer.isContact` keeps them out of the client list AND out of `BILLABLE_CLIENT_WHERE` — the CRM ladder charges per active client, and a firm with six contacts is not six clients.
 >

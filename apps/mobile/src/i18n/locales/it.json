@@ -3055,7 +3055,8 @@
   "widgets": {
     "shiftClock": "Orologio del turno",
     "myWork": "Il mio lavoro",
-    "crew": "Squadra"
+    "crew": "Squadra",
+    "clients": "Clienti"
   },
   "shiftEnd": {
     "finishingAt": "FINE TURNO A {{at}}",
@@ -3166,5 +3167,55 @@
       "expiresIn_other": "Il tuo {{label}} scade tra {{count}} giorni",
       "expiringSub": "Ancora valido · invia quello rinnovato"
     }
+  },
+  "clientsCard": {
+    "owedCallLabel_one": "chiamata dovuta",
+    "owedCallLabel_other": "chiamate dovute",
+    "owedEmailLabel_one": "email dovuta",
+    "owedEmailLabel_other": "email dovute",
+    "needYouLabel_one": "ti aspetta",
+    "needYouLabel_other": "ti aspettano",
+    "split": {
+      "today": "oggi",
+      "bothToday": "entrambe oggi",
+      "allToday": "tutte oggi",
+      "overdue_one": "{{count}} in ritardo",
+      "overdue_other": "{{count}} in ritardo",
+      "todayCount_one": "{{count}} oggi",
+      "todayCount_other": "{{count}} oggi",
+      "calls_one": "{{count}} chiamata",
+      "calls_other": "{{count}} chiamate",
+      "emails_one": "{{count}} email",
+      "emails_other": "{{count}} email",
+      "other_one": "{{count}} altro",
+      "other_other": "{{count}} altri",
+      "notYoursAlone_one": "{{count}} non solo tuo",
+      "notYoursAlone_other": "{{count}} non solo tuoi"
+    },
+    "row": {
+      "ring": "Chiama {{name}}",
+      "email": "Scrivi a {{name}}",
+      "note": "{{note}}",
+      "other": "Ricontatta {{name}}",
+      "ringWhy": "Promemoria · chiamata · {{note}}",
+      "ringReason": "Promemoria · chiamata",
+      "ringShared": "Promemoria · chiamata · uno dei {{count}} referenti",
+      "emailWhy": "Promemoria · email · {{note}}",
+      "emailReason": "Promemoria · email",
+      "emailShared": "Promemoria · email · uno dei {{count}} referenti",
+      "otherReason": "Promemoria · {{name}}"
+    },
+    "late_one": "{{count}} g",
+    "late_other": "{{count}} g",
+    "today": "oggi",
+    "allShort": "Tutti ({{count}}) ›",
+    "all": "Tutti i {{count}} clienti",
+    "allNoCount": "Tutti i clienti",
+    "nobody": "Nessuno ti sta aspettando.",
+    "offline": "Serve una connessione per vedere cosa è dovuto.",
+    "cold_one": "{{count}} si sta raffreddando",
+    "cold_other": "{{count}} si stanno raffreddando",
+    "coldWhy": "— nessun contatto da 30 giorni",
+    "markDone": "Segna fatto"
   }
 }

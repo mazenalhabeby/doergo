@@ -157,6 +157,28 @@ export class CustomersController {
   }
 
   /*
+    What the caller owes clients today — the home Clients card. One read across
+    the book; the service narrows it to the caller's CRM view and to reminders
+    that are theirs. ⚠️ Declared BEFORE `:id` so "due" is not read as an id.
+  */
+  @Get('due')
+  @ApiOperation({ summary: 'Reminders owed today, clients going cold, and the book size (home card)' })
+  due(
+    @Request() req: any,
+    @Query('dayStart') dayStart?: string,
+    @Query('dayEnd') dayEnd?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.auth('customers_due', {
+      organizationId: req.user.organizationId,
+      caller: this.caller(req),
+      dayStart,
+      dayEnd,
+      limit: limit ? Number(limit) : undefined,
+    });
+  }
+
+  /*
     ── Contact people ─────────────────────────────────────────────────────────
 
     Authorization is enforced in the SERVICE, like every other CRM route here:

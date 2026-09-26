@@ -3055,7 +3055,8 @@
   "widgets": {
     "shiftClock": "Horloge de service",
     "myWork": "Mon travail",
-    "crew": "Équipe"
+    "crew": "Équipe",
+    "clients": "Clients"
   },
   "shiftEnd": {
     "finishingAt": "FIN DE SERVICE À {{at}}",
@@ -3166,5 +3167,55 @@
       "expiresIn_other": "Votre {{label}} expire dans {{count}} jours",
       "expiringSub": "Encore valide · envoyez le renouvelé"
     }
+  },
+  "clientsCard": {
+    "owedCallLabel_one": "appel dû",
+    "owedCallLabel_other": "appels dus",
+    "owedEmailLabel_one": "e-mail dû",
+    "owedEmailLabel_other": "e-mails dus",
+    "needYouLabel_one": "vous attend",
+    "needYouLabel_other": "vous attendent",
+    "split": {
+      "today": "aujourd’hui",
+      "bothToday": "les deux aujourd’hui",
+      "allToday": "tous aujourd’hui",
+      "overdue_one": "{{count}} en retard",
+      "overdue_other": "{{count}} en retard",
+      "todayCount_one": "{{count}} aujourd’hui",
+      "todayCount_other": "{{count}} aujourd’hui",
+      "calls_one": "{{count}} appel",
+      "calls_other": "{{count}} appels",
+      "emails_one": "{{count}} e-mail",
+      "emails_other": "{{count}} e-mails",
+      "other_one": "{{count}} autre",
+      "other_other": "{{count}} autres",
+      "notYoursAlone_one": "{{count}} pas seulement à vous",
+      "notYoursAlone_other": "{{count}} pas seulement à vous"
+    },
+    "row": {
+      "ring": "Appeler {{name}}",
+      "email": "Écrire à {{name}}",
+      "note": "{{note}}",
+      "other": "Relancer {{name}}",
+      "ringWhy": "Rappel · appel · {{note}}",
+      "ringReason": "Rappel · appel",
+      "ringShared": "Rappel · appel · l’un des {{count}} gestionnaires",
+      "emailWhy": "Rappel · e-mail · {{note}}",
+      "emailReason": "Rappel · e-mail",
+      "emailShared": "Rappel · e-mail · l’un des {{count}} gestionnaires",
+      "otherReason": "Rappel · {{name}}"
+    },
+    "late_one": "{{count}} j",
+    "late_other": "{{count}} j",
+    "today": "aujourd’hui",
+    "allShort": "Tous ({{count}}) ›",
+    "all": "Les {{count}} clients",
+    "allNoCount": "Tous les clients",
+    "nobody": "Personne ne vous attend.",
+    "offline": "Une connexion est nécessaire pour voir ce qui est dû.",
+    "cold_one": "{{count}} se refroidit",
+    "cold_other": "{{count}} se refroidissent",
+    "coldWhy": "— aucun contact depuis 30 jours",
+    "markDone": "Marquer fait"
   }
 }

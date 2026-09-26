@@ -103,6 +103,33 @@ export interface MobileCustomerActivity {
   reminderAssigneeId?: string | null;
 }
 
+/** One reminder owed today — a row of the home Clients card. */
+export interface DueReminder {
+  id: string;
+  customerId: string;
+  name: string;
+  type: string;
+  kind: 'CALL' | 'EMAIL' | 'OTHER';
+  note: string | null;
+  dueAt: string | null;
+  /** How many managers share it (0 = it is yours alone). */
+  shared: number;
+  phone: string | null;
+  email: string | null;
+}
+
+export interface ClientsDue {
+  allowed: boolean;
+  items: DueReminder[];
+  /** Every reminder due by the end of today — `items` is the first few of them. */
+  total: number;
+  counts: { call: number; email: number; other: number; overdue: number };
+  /** Clients with no contact in 30 days. */
+  cold: number;
+  /** The whole book the caller may see. */
+  book: number;
+}
+
 export const customersApi = {
   /**
    * The client book, optionally narrowed to one workspace.
@@ -157,6 +184,12 @@ export const customersApi = {
     fetchWithAuth<MobileCustomer>(`/customers/${id}`),
   update: (id: string, dto: Partial<MobileCustomer>): Promise<MobileCustomer> =>
     fetchWithAuth<MobileCustomer>(`/customers/${id}`, { method: 'PATCH', body: JSON.stringify(dto) }),
+  /** What the caller owes clients today — the home Clients card. `day` is the member's own day. */
+  due: (day: { start: Date; end: Date }, limit = 3): Promise<ClientsDue> =>
+    fetchWithAuth<ClientsDue>(buildUrlWithQuery('/customers/due', {
+      dayStart: day.start.toISOString(), dayEnd: day.end.toISOString(), limit,
+    })),
+
   activities: (id: string): Promise<MobileCustomerActivity[]> =>
     fetchWithAuth<MobileCustomerActivity[]>(`/customers/${id}/activities`),
   /**

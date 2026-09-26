@@ -3055,7 +3055,8 @@
   "widgets": {
     "shiftClock": "Schichtuhr",
     "myWork": "Meine Arbeit",
-    "crew": "Team"
+    "crew": "Team",
+    "clients": "Kunden"
   },
   "shiftEnd": {
     "finishingAt": "FEIERABEND BEI {{at}}",
@@ -3166,5 +3167,55 @@
       "expiresIn_other": "„{{label}}“ läuft in {{count}} Tagen ab",
       "expiringSub": "Noch gültig · erneuertes Dokument senden"
     }
+  },
+  "clientsCard": {
+    "owedCallLabel_one": "Anruf offen",
+    "owedCallLabel_other": "Anrufe offen",
+    "owedEmailLabel_one": "E-Mail offen",
+    "owedEmailLabel_other": "E-Mails offen",
+    "needYouLabel_one": "braucht Sie",
+    "needYouLabel_other": "brauchen Sie",
+    "split": {
+      "today": "heute",
+      "bothToday": "beide heute",
+      "allToday": "alle heute",
+      "overdue_one": "{{count}} überfällig",
+      "overdue_other": "{{count}} überfällig",
+      "todayCount_one": "{{count}} heute",
+      "todayCount_other": "{{count}} heute",
+      "calls_one": "{{count}} Anruf",
+      "calls_other": "{{count}} Anrufe",
+      "emails_one": "{{count}} E-Mail",
+      "emails_other": "{{count}} E-Mails",
+      "other_one": "{{count}} Sonstiges",
+      "other_other": "{{count}} Sonstige",
+      "notYoursAlone_one": "{{count}} nicht nur Ihrer",
+      "notYoursAlone_other": "{{count}} nicht nur Ihre"
+    },
+    "row": {
+      "ring": "{{name}} anrufen",
+      "email": "{{name}} schreiben",
+      "note": "{{note}}",
+      "other": "{{name}} nachfassen",
+      "ringWhy": "Erinnerung · Anruf · {{note}}",
+      "ringReason": "Erinnerung · Anruf",
+      "ringShared": "Erinnerung · Anruf · einer von {{count}} Betreuern",
+      "emailWhy": "Erinnerung · E-Mail · {{note}}",
+      "emailReason": "Erinnerung · E-Mail",
+      "emailShared": "Erinnerung · E-Mail · einer von {{count}} Betreuern",
+      "otherReason": "Erinnerung · {{name}}"
+    },
+    "late_one": "{{count}} T.",
+    "late_other": "{{count}} T.",
+    "today": "heute",
+    "allShort": "Alle {{count}} ›",
+    "all": "Alle {{count}} Kunden",
+    "allNoCount": "Alle Kunden",
+    "nobody": "Niemand wartet auf Sie.",
+    "offline": "Braucht eine Verbindung, um Fälliges zu zeigen.",
+    "cold_one": "{{count}} kühlt ab",
+    "cold_other": "{{count}} kühlen ab",
+    "coldWhy": "— seit 30 Tagen kein Kontakt",
+    "markDone": "Erledigt"
   }
 }

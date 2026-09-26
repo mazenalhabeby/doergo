@@ -2,6 +2,7 @@ import type React from 'react';
 import { ShiftClockCard } from '../components/home/shift-clock-card';
 import { MyWorkCard } from '../components/home/my-work-card';
 import { CrewCard } from '../components/home/crew-card';
+import { ClientsCard } from '../components/home/clients-card';
 import type { Requires } from './entitlement';
 import { meets } from './entitlement';
 import type { User } from '../lib/api/types';
@@ -136,6 +137,22 @@ export const WIDGETS: WidgetRow[] = [
     empty: 'hidden',
     Component: CrewCard,
   },
+  /*
+    Clients — `docs/design/clients`. What is owed today (reminders, finished
+    from the row), what is going cold, and the way to the whole book.
+
+    ⚠️ One read, `GET /customers/due`, narrowed on the server to the caller's
+    CRM view and to reminders that are THEIRS — not every rep's to-do list.
+  */
+  {
+    key: 'clients',
+    title: 'widgets.clients',
+    question: 'Who do I owe a call or an email today?',
+    requires: { crm: true },
+    surface: 'well',
+    empty: 'allClear',
+    Component: ClientsCard,
+  },
 ];
 
 /**
@@ -150,7 +167,7 @@ export const WIDGETS: WidgetRow[] = [
  * skipped silently, which is right for a member whose entitlement changed and
  * wrong for a typo — so `registry.spec.ts` fails on one.
  */
-export const DEFAULT_ORDER: string[] = ['shift-clock', 'crew', 'my-work'];
+export const DEFAULT_ORDER: string[] = ['shift-clock', 'crew', 'my-work', 'clients'];
 
 /**
  * ENTITLEMENT IS ASKED ONCE, AND FILTERED LAST.

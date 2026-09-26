@@ -977,6 +977,113 @@ export class CustomersService {
     return { data: activity };
   }
 
+  /**
+   * ⭐ WHAT IS OWED TODAY — the home screen's Clients card (docs/design/clients).
+   *
+   * One read across the whole book, where every other CRM read is per client:
+   * answering "who am I owed a call by" with `/customers/:id/activities` is one
+   * request per client, 214 of them for a real book.
+   *
+   * A reminder is MINE when it is assigned to me, or — assigned to nobody —
+   * when I own or co-manage the client (every manager gets it, which is why
+   * the row carries `shared`), or when I wrote it on a client nobody manages.
+   * A view-all role does NOT get every rep's reminders: the card is what YOU
+   * owe, not the organization's to-do list.
+   *
+   * ⚠️ Contacts and portal residents are not clients (CLAUDE.md, CRM contact
+   * people) — neither owes anybody a call, and neither counts in the book.
+   *
+   * ⚠️ `dayStart`/`dayEnd` come from the PHONE: "today" is the member's day,
+   * and the server does not know which timezone they are standing in. Bounded
+   * so a caller cannot widen the window into a full dump.
+   */
+  async due(data: { organizationId: string; caller?: CrmCaller; dayStart?: string; dayEnd?: string; limit?: number }) {
+    const caps = await this.crmCapsFor(data.caller, data.organizationId);
+    const me = data.caller?.userId;
+    const counts = { call: 0, email: 0, other: 0, overdue: 0 };
+    if (!caps.canAccess || !me) return { data: { allowed: false, items: [], total: 0, counts, cold: 0, book: 0 } };
+
+    const now = Date.now();
+    const DAY = 86_400_000;
+    const parse = (v: string | undefined, fallback: number) => {
+      const t = v ? Date.parse(v) : NaN;
+      return Number.isFinite(t) && Math.abs(t - now) <= 2 * DAY ? t : fallback;
+    };
+    const utcStart = new Date(new Date(now).toISOString().slice(0, 10)).getTime();
+    const dayStart = new Date(parse(data.dayStart, utcStart));
+    const dayEnd = new Date(parse(data.dayEnd, utcStart + DAY));
+    const limit = Math.min(Math.max(Math.floor(data.limit ?? 5), 1), 20);
+
+    const book: Record<string, unknown> = {
+      organizationId: data.organizationId, isActive: true, isContact: false, isPortalResident: false,
+      ...(caps.view === 'own' ? { OR: [{ ownerId: me }, { managerIds: { has: me } }] } : {}),
+    };
+
+    const rows = await this.prisma.customerActivity.findMany({
+      where: {
+        organizationId: data.organizationId,
+        type: 'REMINDER',
+        doneAt: null,
+        dueAt: { lt: dayEnd },
+        AND: [
+          { customer: book },
+          {
+            OR: [
+              { reminderAssigneeId: me },
+              { reminderAssigneeId: null, customer: { OR: [{ ownerId: me }, { managerIds: { has: me } }] } },
+              { reminderAssigneeId: null, authorId: me, customer: { ownerId: null, managerIds: { isEmpty: true } } },
+            ],
+          },
+        ],
+      },
+      orderBy: { dueAt: 'asc' },
+      // Bounded: the card shows a handful and counts the rest.
+      take: 200,
+      select: {
+        id: true, customerId: true, body: true, dueAt: true, reminderKind: true, reminderAssigneeId: true,
+        customer: { select: { name: true, type: true, phone: true, email: true, ownerId: true, managerIds: true } },
+      },
+    });
+
+    const items = rows.map((r) => {
+      // MEETING is not a reason a reminder can have (shared/crm/reminder.ts) — an old one reads as OTHER.
+      const kind = r.reminderKind === 'CALL' || r.reminderKind === 'EMAIL' ? r.reminderKind : 'OTHER';
+      const managers = new Set([r.customer.ownerId, ...(r.customer.managerIds ?? [])].filter(Boolean) as string[]);
+      if (kind === 'CALL') counts.call++;
+      else if (kind === 'EMAIL') counts.email++;
+      else counts.other++;
+      if (r.dueAt && r.dueAt < dayStart) counts.overdue++;
+      return {
+        id: r.id,
+        customerId: r.customerId,
+        name: r.customer.name,
+        type: r.customer.type,
+        kind,
+        note: r.body ?? null,
+        dueAt: r.dueAt,
+        // Everybody who manages this client has this row; one call clears all of them.
+        shared: !r.reminderAssigneeId && managers.size > 1 ? managers.size : 0,
+        phone: kind === 'CALL' ? r.customer.phone ?? null : null,
+        email: kind === 'EMAIL' ? r.customer.email ?? null : null,
+      };
+    });
+
+    // Going cold: in the book for 30 days and nothing logged on it in 30 days.
+    const cutoff = new Date(now - 30 * DAY);
+    const [cold, total] = await Promise.all([
+      this.prisma.customer.count({
+        where: {
+          ...book,
+          createdAt: { lt: cutoff },
+          activities: { none: { type: { in: ['NOTE', 'CALL', 'EMAIL', 'MEETING'] }, createdAt: { gte: cutoff } } },
+        } as never,
+      }),
+      this.prisma.customer.count({ where: book as never }),
+    ]);
+
+    return { data: { allowed: true, items: items.slice(0, limit), total: items.length, counts, cold, book: total } };
+  }
+
   async deleteActivity(data: { id: string; customerId: string; organizationId: string; caller?: CrmCaller }) {
     await this.assertCrmReach(data.customerId, data.organizationId, data.caller, { needWork: true });
     await this.prisma.customerActivity.deleteMany({ where: { id: data.id, customerId: data.customerId } });

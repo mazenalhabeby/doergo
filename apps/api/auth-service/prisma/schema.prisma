@@ -1930,6 +1930,7 @@ model CustomerActivity {
 
   @@index([customerId, createdAt])
   @@index([notifyAt]) // due-reminder sweeps
+  @@index([organizationId, type, doneAt, dueAt]) // the home Clients card: open reminders due by today
   @@map("customer_activities")
 }
 

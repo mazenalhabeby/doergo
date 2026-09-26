@@ -51,6 +51,11 @@ export class CustomersController {
   @MessagePattern({ cmd: 'promote_customer_contact' })
   promoteContact(@Payload() d: any) { return this.customersService.promoteContact(d); }
 
+  @MessagePattern({ cmd: 'customers_due' })
+  async due(@Payload() data: any) {
+    return this.customersService.due(data);
+  }
+
   @MessagePattern({ cmd: 'list_customer_activities' })
   async listActivities(@Payload() data: { customerId: string; organizationId: string }) {
     return this.customersService.listActivities(data);
