@@ -36,7 +36,8 @@ const ll = (p: LatLng) => `${p.lat},${p.lng}`;
  * origin → waypoint[0] → … → waypoint[n] → destination
  */
 export function buildGoogleMapsUrl(
-  start: LatLng,
+  /** null → no origin: Google starts from where the phone is (an address is enough to drive to). */
+  start: LatLng | null,
   orderedStops: LatLng[],
   end?: LatLng,
 ): string {
@@ -45,7 +46,7 @@ export function buildGoogleMapsUrl(
   const destination = end ?? all.pop()!; // last stop is the destination when no explicit end
   const params = new URLSearchParams({
     api: '1',
-    origin: ll(start),
+    ...(start ? { origin: ll(start) } : {}),
     destination: ll(destination),
     travelmode: 'driving',
   });
@@ -81,7 +82,7 @@ export function buildAppleMapsUrl(stop: LatLng, start?: LatLng): string {
  */
 export function buildNavUrl(
   app: NavApp,
-  opts: { start: LatLng; orderedStops: LatLng[]; end?: LatLng; nextStop?: LatLng },
+  opts: { start: LatLng | null; orderedStops: LatLng[]; end?: LatLng; nextStop?: LatLng },
 ): string {
   /*
     ⚠️ A named `nextStop` means THAT stop, whichever app is chosen.
@@ -95,7 +96,7 @@ export function buildNavUrl(
     if (app === 'google') return buildGoogleMapsUrl(opts.start, [opts.nextStop]);
     return app === 'waze'
       ? buildWazeUrl(opts.nextStop)
-      : buildAppleMapsUrl(opts.nextStop, opts.start);
+      : buildAppleMapsUrl(opts.nextStop, opts.start ?? undefined);
   }
 
   // No single stop named: Google takes the whole trip, the others can only be
@@ -103,7 +104,7 @@ export function buildNavUrl(
   if (app === 'google') return buildGoogleMapsUrl(opts.start, opts.orderedStops, opts.end);
   const target = opts.orderedStops[0] ?? opts.end;
   if (!target) return '';
-  return app === 'waze' ? buildWazeUrl(target) : buildAppleMapsUrl(target, opts.start);
+  return app === 'waze' ? buildWazeUrl(target) : buildAppleMapsUrl(target, opts.start ?? undefined);
 }
 
 /** Whether the chosen app can consume the full multi-stop order in one link. */

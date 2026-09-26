@@ -58,6 +58,8 @@ export interface Requires {
    * role grants no CRM, and the server resolves it the same way.
    */
   crm?: true;
+  /** A per-SPACE module that must run in a workspace the member can see (`moduleAnywhere`). */
+  spaceModule?: string;
   /** It is about the VIEWER. Documentation — nothing to check. */
   self?: true;
 }
@@ -88,8 +90,8 @@ export function meets(user: User | null | undefined, r: Requires | undefined): b
     asked separately they drift."
   */
   if (r.module && !hasAccessModule(user as never, r.module)) return false;
+  if (r.spaceModule && !moduleAnywhere(user as never, r.spaceModule)) return false;
   if (r.crm) {
-    if (!moduleAnywhere(user as never, 'crm')) return false;
     const u = user as unknown as { role?: string | null; access?: { org?: Record<string, boolean> } };
     if (!resolveCrmCaps(u.role ?? null, (u.access?.org ?? {}) as never).canAccess) return false;
   }

@@ -261,7 +261,7 @@ export function WidgetGallery({
                 }}>
                   <View style={{ width: 7, height: 7, borderRadius: 4, marginTop: 6, backgroundColor: urgent ? c.warn : c.inkMuted }} />
                   <AText variant="caption" style={{ flex: 1, fontSize: 13, lineHeight: 18, color: urgent ? c.inkStrong : c.ink }}>
-                    {added ? t('home.gallery.onHomeLine', { defaultValue: 'Already on your home screen.' }) : p?.line ?? r.question ?? ''}
+                    {added ? t('home.gallery.onHomeLine', { defaultValue: 'Already on your home screen.' }) : p?.line ?? (r.question ? t(r.question) : '')}
                   </AText>
                 </View>
 
@@ -280,7 +280,7 @@ export function WidgetGallery({
 
                 <View>
                   <AText variant="body" tone="strong" style={{ fontSize: 17, fontFamily: amazen.font.sansMedium }}>{widgetTitle(r, t)}</AText>
-                  {r.question ? <AText variant="caption" tone="muted" style={{ marginTop: 2 }}>{r.question}</AText> : null}
+                  {r.question ? <AText variant="caption" tone="muted" style={{ marginTop: 2 }}>{t(r.question)}</AText> : null}
                 </View>
               </View>
             );

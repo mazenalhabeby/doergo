@@ -1,4 +1,5 @@
 import { Linking, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   NAV_APP_PROBES, NAV_APP_LABELS, navAppCandidates, isAlwaysAvailable,
   type NavApp,
@@ -60,4 +61,33 @@ export function navDecision(apps: InstalledNavApp[]): 'open' | 'choose' {
 /** The one to use when there is nothing to ask about. */
 export function soleNavApp(apps: InstalledNavApp[]): NavApp {
   return apps[0]?.key ?? (Platform.OS === 'ios' ? 'apple' : 'google');
+}
+
+/*
+  ⭐ THE CHOSEN APP IS REMEMBERED, per member.
+
+  In a screen opened twice a day re-asking is harmless; on a home card passed
+  at every stop it is an "Open with" sheet eight times before lunch (my-route
+  SPEC §8). A remembered app that is no longer installed is ignored.
+*/
+const NAV_APP_KEY = (memberId: string) => `nav_app_v1_${memberId}`;
+const NAV_APPS: readonly NavApp[] = ['google', 'apple', 'waze'];
+
+export async function rememberedNavApp(memberId: string): Promise<NavApp | null> {
+  try {
+    const v = await AsyncStorage.getItem(NAV_APP_KEY(memberId));
+    return v && (NAV_APPS as readonly string[]).includes(v) ? (v as NavApp) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function rememberNavApp(memberId: string, app: NavApp): Promise<void> {
+  try { await AsyncStorage.setItem(NAV_APP_KEY(memberId), app); } catch { /* the default stands */ }
+}
+
+/** The remembered app if it is still on the phone, else the one that is. */
+export function preferredNavApp(installed: InstalledNavApp[], remembered: NavApp | null): NavApp {
+  if (remembered && (installed.length === 0 || installed.some((a) => a.key === remembered))) return remembered;
+  return soleNavApp(installed);
 }

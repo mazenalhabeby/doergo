@@ -42,7 +42,7 @@ describe('every language', () => {
       const src = fs.readFileSync(file, 'utf8');
       for (const m of src.matchAll(/\bt\(\s*(['"])([A-Za-z][\w]*\.[\w.]+)\1/g)) asked.set(m[2]!, path.relative(SRC, file));
       // Keys held as data (a phrase, a table row) are asked for too.
-      for (const m of src.matchAll(/(?:key|labelKey|descKey|titleKey):\s*'([A-Za-z]+\.[\w.]+)'/g)) asked.set(m[1]!, path.relative(SRC, file));
+      for (const m of src.matchAll(/(?:key|labelKey|descKey|titleKey|question|title):\s*'([A-Za-z]+\.[\w.]+)'/g)) asked.set(m[1]!, path.relative(SRC, file));
     }
     const gaps: string[] = [];
     for (const [key, file] of asked) {

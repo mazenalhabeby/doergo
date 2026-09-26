@@ -4,6 +4,7 @@ import { MyWorkCard } from '../components/home/my-work-card';
 import { CrewCard } from '../components/home/crew-card';
 import { ClientsCard } from '../components/home/clients-card';
 import { ShortcutsCard } from '../components/home/shortcuts-card';
+import { RouteCard } from '../components/home/route-card';
 import type { Requires } from './entitlement';
 import { meets } from './entitlement';
 import type { User } from '../lib/api/types';
@@ -90,7 +91,7 @@ export const WIDGETS: WidgetRow[] = [
   {
     key: 'shift-clock',
     title: 'widgets.shiftClock',
-    question: 'Am I on the clock, and when is my next rest?',
+    question: 'widgets.q.shiftClock',
     requires: { module: 'clock', self: true },
     surface: 'glass',
     /*
@@ -117,7 +118,7 @@ export const WIDGETS: WidgetRow[] = [
   {
     key: 'my-work',
     title: 'widgets.myWork',
-    question: 'What am I doing today, and this week?',
+    question: 'widgets.q.myWork',
     surface: 'well',
     empty: 'allClear',
     Component: MyWorkCard,
@@ -133,7 +134,7 @@ export const WIDGETS: WidgetRow[] = [
   {
     key: 'crew',
     title: 'widgets.crew',
-    question: 'Who is on, who is late, and what is waiting?',
+    question: 'widgets.q.crew',
     requires: { permission: 'canViewSpaceAttendance' },
     surface: 'well',
     empty: 'hidden',
@@ -149,8 +150,8 @@ export const WIDGETS: WidgetRow[] = [
   {
     key: 'clients',
     title: 'widgets.clients',
-    question: 'Who do I owe a call or an email today?',
-    requires: { crm: true },
+    question: 'widgets.q.clients',
+    requires: { spaceModule: 'crm', crm: true },
     surface: 'well',
     empty: 'allClear',
     Component: ClientsCard,
@@ -166,10 +167,27 @@ export const WIDGETS: WidgetRow[] = [
   {
     key: 'shortcuts',
     title: 'widgets.shortcuts',
-    question: 'Where do I go, and what do I do, most?',
+    question: 'widgets.q.shortcuts',
     surface: 'well',
     empty: 'hidden',
     Component: ShortcutsCard,
+  },
+  /*
+    Today's route — `docs/design/my-route`. The driving day, drawn (SVG, not a
+    map), with the next stop lifted and an arrow per stop. No request of its
+    own on opening; the plan and position are the phone's.
+
+    ⚠️ Gated on the `tracking` module; WHO has a route is the card's own rule
+    (`isMyRouteStop`) and an empty day says so rather than vanishing.
+  */
+  {
+    key: 'my-route',
+    title: 'widgets.myRoute',
+    question: 'widgets.q.myRoute',
+    requires: { spaceModule: 'tracking', self: true },
+    surface: 'well',
+    empty: 'allClear',
+    Component: RouteCard,
   },
 ];
 

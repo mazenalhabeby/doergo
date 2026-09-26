@@ -8,7 +8,7 @@ import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { DetentSheet, type Detent } from '../../src/components/route/detent-sheet';
 import { BlurSheet } from '../../src/components/blur-sheet';
 import { SheetPanel } from '../../src/components/sheet-panel';
-import { detectNavApps, navDecision, soleNavApp, type InstalledNavApp } from '../../src/lib/nav-apps';
+import { detectNavApps, navDecision, preferredNavApp, rememberNavApp, rememberedNavApp, soleNavApp, type InstalledNavApp } from '../../src/lib/nav-apps';
 import { PressableScale } from '../../src/components/pressable-scale';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -28,7 +28,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useOffline } from '../../src/offline/offline-context';
 import { overlayTask } from '../../src/offline/tasks/overlay';
 import { isUnreachable } from '../../src/offline/actions/unreachable';
-import { restoreRoute, saveRoute } from '../../src/offline/routes/saved-route';
+import { restoreRoute } from '../../src/offline/routes/saved-route';
+import { planDay } from '../../src/offline/routes/plan-route';
 
 type LatLng = { lat: number; lng: number; label?: string };
 
@@ -145,17 +146,9 @@ export default function RoutePlannerScreen() {
     if (list.length === 0) { setError(t('route.needStops', 'Select at least one stop')); return; }
     setOptimizing(true);
     try {
-      let r: OptimizedRoute;
-      try {
-        r = await routesApi.optimize({ start: from, stops: list });
-      } catch (e) {
-        // No signal: order the stops on the phone. Straight lines, no road to draw —
-        // the map already says "this is the order, not the drive" for this engine.
-        if (!isUnreachable(e)) throw e;
-        r = straightLineRoute({ start: from, stops: list });
-      }
-      setResult(r);
-      if (user?.id) void saveRoute(AsyncStorage, user.id, r);
+      // ONE implementation with the home's route card (offline/routes/plan-route.ts).
+      const r = user?.id ? await planDay(user.id, start, stops) : null;
+      if (r) setResult(r);
     } catch (e: any) {
       setError(e?.message || 'Could not optimize the route');
     } finally { setOptimizing(false); }
@@ -197,12 +190,14 @@ export default function RoutePlannerScreen() {
     detectNavApps().then((found) => {
       if (!alive) return;
       setNavApps(found);
-      // Default to something that exists, rather than to a platform guess that
-      // may point at an app this phone does not have.
-      setNavApp(soleNavApp(found));
+      // The member's remembered app when it is still installed — the SAME
+      // choice the home's route card uses (lib/nav-apps.ts) — else one that exists.
+      void (user?.id ? rememberedNavApp(user.id) : Promise.resolve(null)).then((saved) => {
+        if (alive) setNavApp(preferredNavApp(found, saved));
+      });
     });
     return () => { alive = false; };
-  }, []);
+  }, [user?.id]);
 
   /** Hand the driving off. `stop` null means the whole route. */
   const openIn = useCallback((app: NavApp, stop: RouteStop | null) => {
@@ -611,7 +606,8 @@ export default function RoutePlannerScreen() {
               onPress={() => {
                 const stop = chooserFor?.stop ?? null;
                 setChooserFor(null);
-                setNavApp(a.key);       // remembered for the rest of the session
+                setNavApp(a.key);
+                if (user?.id) void rememberNavApp(user.id, a.key); // remembered for the card too
                 openIn(a.key, stop);
               }}
             >
