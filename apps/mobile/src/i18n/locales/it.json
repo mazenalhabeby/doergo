@@ -3328,6 +3328,8 @@
     "pitchNone": "Nessun viaggio oggi. Si riempie quando hai lavori su strada.",
     "planFailed": "Non è stato possibile pianificare il percorso. Le tue tappe restano qui, una alla volta.",
     "newStops_one": "{{count}} nuova tappa non è in questo piano. Tocca per includerla.",
-    "newStops_other": "{{count}} nuove tappe non sono in questo piano. Tocca per includerle."
+    "newStops_other": "{{count}} nuove tappe non sono in questo piano. Tocca per includerle.",
+    "openMap": "Apri la mappa completa",
+    "openMapShort": "Apri mappa"
   }
 }

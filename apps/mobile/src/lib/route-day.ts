@@ -207,16 +207,6 @@ const invMercY = (y: number) => (Math.atan(Math.exp(y)) - Math.PI / 4) * (360 / 
 
 export interface MapBounds { northEast: LatLng; southWest: LatLng }
 
-/** Project onto a map image whose edges are these bounds. */
-export function mercatorProjection(b: MapBounds, width: number, height: number): Projection {
-  const top = mercY(b.northEast.lat), bottom = mercY(b.southWest.lat);
-  const west = b.southWest.lng, east = b.northEast.lng;
-  return {
-    x: (p) => ((p.lng - west) / (east - west || 1e-9)) * width,
-    y: (p) => ((top - mercY(p.lat)) / (top - bottom || 1e-9)) * height,
-  };
-}
-
 /**
  * The map area to show: every place, padded, with the box's own shape.
  * ⚠️ A single stop has no span — `minSpanDeg` (~1 km) keeps it from being
@@ -241,12 +231,4 @@ export function mapRegionFor(points: readonly LatLng[], width: number, height: n
     latitudeDelta: north - south, longitudeDelta: fullX,
     bounds: { northEast: { lat: north, lng: cx + fullX / 2 }, southWest: { lat: south, lng: cx - fullX / 2 } } as MapBounds,
   };
-}
-
-/** A stable name for one map picture: the area, the size, the theme. */
-export function mapKey(b: MapBounds, width: number, height: number, dark: boolean): string {
-  const raw = [b.northEast.lat, b.northEast.lng, b.southWest.lat, b.southWest.lng].map((n) => n.toFixed(4)).join(',') + `|${width}x${height}|${dark ? 'd' : 'l'}`;
-  let h = 5381;
-  for (let i = 0; i < raw.length; i++) h = ((h << 5) + h + raw.charCodeAt(i)) | 0;
-  return (h >>> 0).toString(36);
 }

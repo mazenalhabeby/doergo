@@ -3328,6 +3328,8 @@
     "pitchNone": "Hoy no hay a dónde ir. Se llena cuando tengas trabajos en ruta.",
     "planFailed": "No se pudo planificar la ruta. Tus paradas siguen aquí para ir una a una.",
     "newStops_one": "{{count}} parada nueva no está en este plan. Toca para incluirla.",
-    "newStops_other": "{{count}} paradas nuevas no están en este plan. Toca para incluirlas."
+    "newStops_other": "{{count}} paradas nuevas no están en este plan. Toca para incluirlas.",
+    "openMap": "Abrir el mapa completo",
+    "openMapShort": "Abrir mapa"
   }
 }

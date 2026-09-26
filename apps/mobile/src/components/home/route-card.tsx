@@ -83,7 +83,7 @@ export function RouteCard({ style }: { style?: StyleProp<ViewStyle> }) {
           ) : null}
         </View>
 
-        <RouteSketch route={r.route} stops={r.stops} ordered={r.ordered} doneIds={doneIds} nextId={r.next?.id ?? null} position={r.position} />
+        <RouteSketch route={r.route} stops={r.stops} ordered={r.ordered} doneIds={doneIds} nextId={r.next?.id ?? null} position={r.position} onOpen={r.state === 'none' ? undefined : openPlanner} />
 
         {r.state === 'none' ? (
           <View style={{ gap: 4, paddingBottom: amazen.space(1) }}>

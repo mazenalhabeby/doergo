@@ -3328,6 +3328,8 @@
     "pitchNone": "Aucun trajet aujourd’hui. Cela se remplit quand vous avez des interventions sur la route.",
     "planFailed": "La tournée n’a pas pu être planifiée. Vos arrêts restent ici, un par un.",
     "newStops_one": "{{count}} nouvel arrêt n’est pas dans ce plan. Touchez pour l’ajouter.",
-    "newStops_other": "{{count}} nouveaux arrêts ne sont pas dans ce plan. Touchez pour les ajouter."
+    "newStops_other": "{{count}} nouveaux arrêts ne sont pas dans ce plan. Touchez pour les ajouter.",
+    "openMap": "Ouvrir la carte complète",
+    "openMapShort": "Ouvrir la carte"
   }
 }
