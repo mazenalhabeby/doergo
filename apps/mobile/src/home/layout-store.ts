@@ -73,3 +73,32 @@ export async function saveLayout(userId: string, layout: HomeLayout): Promise<vo
     */
   }
 }
+
+/*
+  ── The Shortcuts card's four ──
+  An arrangement, like the order above — so it lives here, the one place a
+  home arrangement is kept (remembered-widgets.spec.ts). Up to four keys.
+*/
+
+const shortcutsKey = (userId: string) => `@hbcfield/home-shortcuts/${userId}`;
+
+/** null = never chosen: the card keeps choosing for them. */
+export async function loadShortcuts(userId: string): Promise<string[] | null> {
+  try {
+    const raw = await AsyncStorage.getItem(shortcutsKey(userId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((k) => typeof k === 'string').slice(0, 4) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveShortcuts(userId: string, keys: string[] | null): Promise<void> {
+  try {
+    if (keys) await AsyncStorage.setItem(shortcutsKey(userId), JSON.stringify(keys.slice(0, 4)));
+    else await AsyncStorage.removeItem(shortcutsKey(userId));
+  } catch {
+    /* A lost choice falls back to the smart picks — a disappointment, not an error. */
+  }
+}

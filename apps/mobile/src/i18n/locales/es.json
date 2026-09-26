@@ -3056,7 +3056,8 @@
     "shiftClock": "Reloj de turno",
     "myWork": "Mi trabajo",
     "crew": "Equipo",
-    "clients": "Clientes"
+    "clients": "Clientes",
+    "shortcuts": "Accesos"
   },
   "shiftEnd": {
     "finishingAt": "TERMINANDO EN {{at}}",
@@ -3219,5 +3220,25 @@
     "markDone": "Marcar hecho",
     "done": "Hecho.",
     "undo": "Deshacer"
+  },
+  "shortcutsCard": {
+    "edit": "Editar",
+    "open": "Abrir",
+    "waiting_one": "{{count}} pendiente",
+    "waiting_other": "{{count}} pendientes",
+    "title": "Tus cuatro accesos",
+    "howTo": "Toca un hueco y elige qué va ahí. × lo vacía.",
+    "empty": "Vacío",
+    "remove": "Quitar",
+    "smart": "Sugeridos",
+    "atLeastTwo": "Elige al menos dos. Un solo acceso es un botón, no un widget.",
+    "replacing": "Sustituye {{name}} en el hueco {{n}}",
+    "choosing": "Eligiendo para el hueco {{n}}",
+    "group": {
+      "waiting": "Te esperan",
+      "do": "Hacer",
+      "go": "Ir a",
+      "manage": "Gestionar"
+    }
   }
 }

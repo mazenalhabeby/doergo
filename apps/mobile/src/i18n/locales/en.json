@@ -3063,7 +3063,8 @@
     "shiftClock": "Shift clock",
     "myWork": "My work",
     "crew": "Crew",
-    "clients": "Clients"
+    "clients": "Clients",
+    "shortcuts": "Shortcuts"
   },
   "shiftEnd": {
     "finishingAt": "FINISHING AT {{at}}",
@@ -3226,5 +3227,25 @@
     "markDone": "Mark done",
     "done": "Done.",
     "undo": "Undo"
+  },
+  "shortcutsCard": {
+    "edit": "Edit",
+    "open": "Open",
+    "waiting_one": "{{count}} waiting",
+    "waiting_other": "{{count}} waiting",
+    "title": "Your four shortcuts",
+    "howTo": "Tap a slot, then pick what goes there. Tap × to empty it.",
+    "empty": "Empty",
+    "remove": "Remove",
+    "smart": "Smart picks",
+    "atLeastTwo": "Choose at least two. One tile is a button, not a widget.",
+    "replacing": "Replacing {{name}} in slot {{n}}",
+    "choosing": "Choosing for slot {{n}}",
+    "group": {
+      "waiting": "Waiting on you",
+      "do": "Do",
+      "go": "Go to",
+      "manage": "Manage"
+    }
   }
 }

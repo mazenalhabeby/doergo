@@ -3056,7 +3056,8 @@
     "shiftClock": "Schichtuhr",
     "myWork": "Meine Arbeit",
     "crew": "Team",
-    "clients": "Kunden"
+    "clients": "Kunden",
+    "shortcuts": "Verknüpfungen"
   },
   "shiftEnd": {
     "finishingAt": "FEIERABEND BEI {{at}}",
@@ -3219,5 +3220,25 @@
     "markDone": "Erledigt",
     "done": "Erledigt.",
     "undo": "Rückgängig"
+  },
+  "shortcutsCard": {
+    "edit": "Bearbeiten",
+    "open": "Öffnen",
+    "waiting_one": "{{count}} wartet",
+    "waiting_other": "{{count}} warten",
+    "title": "Ihre vier Verknüpfungen",
+    "howTo": "Tippen Sie auf einen Platz und wählen Sie, was dorthin kommt. × leert ihn.",
+    "empty": "Leer",
+    "remove": "Entfernen",
+    "smart": "Vorschläge",
+    "atLeastTwo": "Wählen Sie mindestens zwei. Eine Kachel ist ein Knopf, kein Widget.",
+    "replacing": "Ersetzt {{name}} auf Platz {{n}}",
+    "choosing": "Auswahl für Platz {{n}}",
+    "group": {
+      "waiting": "Wartet auf Sie",
+      "do": "Erledigen",
+      "go": "Öffnen",
+      "manage": "Verwalten"
+    }
   }
 }

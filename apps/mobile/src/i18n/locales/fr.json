@@ -3056,7 +3056,8 @@
     "shiftClock": "Horloge de service",
     "myWork": "Mon travail",
     "crew": "Équipe",
-    "clients": "Clients"
+    "clients": "Clients",
+    "shortcuts": "Raccourcis"
   },
   "shiftEnd": {
     "finishingAt": "FIN DE SERVICE À {{at}}",
@@ -3219,5 +3220,25 @@
     "markDone": "Marquer fait",
     "done": "Fait.",
     "undo": "Annuler"
+  },
+  "shortcutsCard": {
+    "edit": "Modifier",
+    "open": "Ouvrir",
+    "waiting_one": "{{count}} en attente",
+    "waiting_other": "{{count}} en attente",
+    "title": "Vos quatre raccourcis",
+    "howTo": "Touchez un emplacement, puis choisissez ce qui y va. × le vide.",
+    "empty": "Vide",
+    "remove": "Retirer",
+    "smart": "Suggestions",
+    "atLeastTwo": "Choisissez-en au moins deux. Une seule tuile est un bouton, pas un widget.",
+    "replacing": "Remplace {{name}} à l’emplacement {{n}}",
+    "choosing": "Choix pour l’emplacement {{n}}",
+    "group": {
+      "waiting": "Vous attend",
+      "do": "Faire",
+      "go": "Aller à",
+      "manage": "Gérer"
+    }
   }
 }

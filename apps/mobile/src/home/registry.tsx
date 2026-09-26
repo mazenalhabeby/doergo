@@ -3,6 +3,7 @@ import { ShiftClockCard } from '../components/home/shift-clock-card';
 import { MyWorkCard } from '../components/home/my-work-card';
 import { CrewCard } from '../components/home/crew-card';
 import { ClientsCard } from '../components/home/clients-card';
+import { ShortcutsCard } from '../components/home/shortcuts-card';
 import type { Requires } from './entitlement';
 import { meets } from './entitlement';
 import type { User } from '../lib/api/types';
@@ -153,6 +154,22 @@ export const WIDGETS: WidgetRow[] = [
     empty: 'allClear',
     Component: ClientsCard,
   },
+  /*
+    Shortcuts — `docs/design/shortcuts`. Four tiles the member chooses from
+    every destination they may open (the one table, `manage-rows.ts`), with
+    smart picks until they do. No request of its own.
+
+    ⚠️ NO `requires`: the card counts what the table allows and draws nothing
+    below two tiles.
+  */
+  {
+    key: 'shortcuts',
+    title: 'widgets.shortcuts',
+    question: 'Where do I go, and what do I do, most?',
+    surface: 'well',
+    empty: 'hidden',
+    Component: ShortcutsCard,
+  },
 ];
 
 /**
@@ -167,7 +184,7 @@ export const WIDGETS: WidgetRow[] = [
  * skipped silently, which is right for a member whose entitlement changed and
  * wrong for a typo — so `registry.spec.ts` fails on one.
  */
-export const DEFAULT_ORDER: string[] = ['shift-clock', 'crew', 'my-work', 'clients'];
+export const DEFAULT_ORDER: string[] = ['shift-clock', 'shortcuts', 'crew', 'my-work', 'clients'];
 
 /**
  * ENTITLEMENT IS ASKED ONCE, AND FILTERED LAST.

@@ -3056,7 +3056,8 @@
     "shiftClock": "Orologio del turno",
     "myWork": "Il mio lavoro",
     "crew": "Squadra",
-    "clients": "Clienti"
+    "clients": "Clienti",
+    "shortcuts": "Scorciatoie"
   },
   "shiftEnd": {
     "finishingAt": "FINE TURNO A {{at}}",
@@ -3219,5 +3220,25 @@
     "markDone": "Segna fatto",
     "done": "Fatto.",
     "undo": "Annulla"
+  },
+  "shortcutsCard": {
+    "edit": "Modifica",
+    "open": "Apri",
+    "waiting_one": "{{count}} in attesa",
+    "waiting_other": "{{count}} in attesa",
+    "title": "Le tue quattro scorciatoie",
+    "howTo": "Tocca uno spazio, poi scegli cosa metterci. × lo svuota.",
+    "empty": "Vuoto",
+    "remove": "Rimuovi",
+    "smart": "Suggerite",
+    "atLeastTwo": "Scegline almeno due. Una sola è un pulsante, non un widget.",
+    "replacing": "Sostituisce {{name}} nello spazio {{n}}",
+    "choosing": "Scelta per lo spazio {{n}}",
+    "group": {
+      "waiting": "Ti aspetta",
+      "do": "Fare",
+      "go": "Vai a",
+      "manage": "Gestisci"
+    }
   }
 }

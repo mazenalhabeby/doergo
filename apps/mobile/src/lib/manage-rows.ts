@@ -122,6 +122,8 @@ export interface Destination {
   gate?: ExtraGate;
   /** Eligible for the home rail. NOT every destination is a tile. */
   home?: true;
+  /** An ACTION (make, log, send), not a place — the rail's smart picks take these after anything waiting. */
+  act?: true;
   /** Belongs in the Manage list / More sheet. */
   manage?: true;
   badge?: BadgeSource;
@@ -155,7 +157,7 @@ export const MEMBER_ROWS: Destination[] = [
     The tile cannot ask that question without a request, so it gates on the
     module and the SCREEN enforces custody, which it already does.
   */
-  { icon: 'receipt', labelKey: 'shortcuts.logExpense', descKey: 'shortcuts.logExpenseDesc', route: '/(app)/asset-expense', color: '#8a5a10', permission: '', orgWide: false, module: 'assets', home: true },
+  { icon: 'receipt', labelKey: 'shortcuts.logExpense', descKey: 'shortcuts.logExpenseDesc', route: '/(app)/asset-expense', color: '#8a5a10', permission: '', orgWide: false, module: 'assets', home: true, act: true },
   /*
     ⚠️ NEW JOB IS A TILE NOW, and it could not have been one a week ago.
 
@@ -164,10 +166,10 @@ export const MEMBER_ROWS: Destination[] = [
     more — and creating a job was always a better tile than a place: it is an
     action, and the tab bar is a set of rooms.
   */
-  { icon: 'add-circle', labelKey: 'shortcuts.newJob', descKey: 'shortcuts.newJobDesc', route: '/(app)/(tabs)/create-task', color: '#0b8168', permission: 'canCreateTasks', orgWide: false, home: true },
-  { icon: 'scan', labelKey: 'shortcuts.scanCard', descKey: 'shortcuts.scanCardDesc', route: '/(app)/scan-card', color: '#2563eb', permission: '', orgWide: false, module: 'crm', home: true },
-  { icon: 'person-add', labelKey: 'shortcuts.addClient', descKey: 'shortcuts.addClientDesc', route: '/(app)/customers?new=1', color: '#2563eb', permission: '', orgWide: false, module: 'crm', gate: { crmCap: 'editInfo' }, home: true },
-  { icon: 'send', labelKey: 'shortcuts.sendDoc', descKey: 'shortcuts.sendDocDesc', route: '/(app)/send-document', color: '#06b6d4', permission: 'canIssueDocuments', orgWide: false, home: true },
+  { icon: 'add-circle', labelKey: 'shortcuts.newJob', descKey: 'shortcuts.newJobDesc', route: '/(app)/(tabs)/create-task', color: '#0b8168', permission: 'canCreateTasks', orgWide: false, home: true, act: true },
+  { icon: 'scan', labelKey: 'shortcuts.scanCard', descKey: 'shortcuts.scanCardDesc', route: '/(app)/scan-card', color: '#2563eb', permission: '', orgWide: false, module: 'crm', home: true, act: true },
+  { icon: 'person-add', labelKey: 'shortcuts.addClient', descKey: 'shortcuts.addClientDesc', route: '/(app)/customers?new=1', color: '#2563eb', permission: '', orgWide: false, module: 'crm', gate: { crmCap: 'editInfo' }, home: true, act: true },
+  { icon: 'send', labelKey: 'shortcuts.sendDoc', descKey: 'shortcuts.sendDocDesc', route: '/(app)/send-document', color: '#06b6d4', permission: 'canIssueDocuments', orgWide: false, home: true, act: true },
   { icon: 'map', labelKey: 'shortcuts.planRoute', descKey: 'shortcuts.planRouteDesc', route: '/(app)/route-planner', color: '#0ea5e9', permission: '', orgWide: false, module: 'tracking', home: true },
   // Reachable, and not a tile: nobody opens support twice a week.
   { icon: 'help-buoy', labelKey: 'shortcuts.support', descKey: 'shortcuts.supportDesc', route: '/(app)/support', color: '#64748b', permission: '', orgWide: false },

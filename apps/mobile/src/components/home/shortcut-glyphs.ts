@@ -1,0 +1,44 @@
+import type React from 'react';
+import type { GlyphProps } from '../glyphs/glyphs';
+import { DocumentsGlyph, SendDocumentGlyph, SupportGlyph } from '../glyphs/glyphs';
+import {
+  SignGlyph, MyEquipmentGlyph, SyncGlyph, OvertimeGlyph, NewJobGlyph, ScanCardGlyph, AddClientGlyph,
+  EquipmentLogGlyph, MembersGlyph, ClientsGlyph, InvitationsGlyph, SchedulesGlyph, ContractGlyph,
+} from '../glyphs/tile-glyphs';
+import { ExpenseQueueGlyph, LeaveQueueGlyph, JoinQueueGlyph } from '../glyphs/queue-glyphs';
+import { PlanRouteGlyph } from '../glyphs/route-glyphs';
+import { RosterGlyph, HoursWaitingGlyph } from '../glyphs/crew-glyphs';
+
+/**
+ * Each destination's mark, keyed by the table row's `labelKey`.
+ *
+ * ⚠️ Here and not on the row: `manage-rows.ts` is read by the tab bar, and a
+ * table that imports every drawing in the app is how a require cycle turns
+ * into a black screen (components/amazen/index.ts records one).
+ * ⚠️ Every mark differs in OUTLINE (icons README rule 4) — these sit side by
+ * side in one row of four.
+ */
+export const SHORTCUT_GLYPHS: Record<string, React.ComponentType<GlyphProps>> = {
+  'shortcuts.documents': DocumentsGlyph,
+  'shortcuts.sign': SignGlyph,
+  'shortcuts.myEquipment': MyEquipmentGlyph,
+  'shortcuts.sync': SyncGlyph,
+  'shortcuts.overtime': OvertimeGlyph,
+  'shortcuts.logExpense': ExpenseQueueGlyph,
+  'shortcuts.newJob': NewJobGlyph,
+  'shortcuts.scanCard': ScanCardGlyph,
+  'shortcuts.addClient': AddClientGlyph,
+  'shortcuts.sendDoc': SendDocumentGlyph,
+  'shortcuts.planRoute': PlanRouteGlyph,
+  'shortcuts.support': SupportGlyph,
+  'shortcuts.equipmentLog': EquipmentLogGlyph,
+  'manage.attendance.label': RosterGlyph,
+  'manage.extraTime.label': HoursWaitingGlyph,
+  'manage.timeOff.label': LeaveQueueGlyph,
+  'manage.members.label': MembersGlyph,
+  'manage.customers.label': ClientsGlyph,
+  'manage.joinRequests.label': JoinQueueGlyph,
+  'manage.invitations.label': InvitationsGlyph,
+  'manage.schedules.label': SchedulesGlyph,
+  'manage.contract.label': ContractGlyph,
+};
