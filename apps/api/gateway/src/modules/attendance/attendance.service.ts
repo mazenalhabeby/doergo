@@ -340,6 +340,7 @@ export class AttendanceService extends BaseGatewayService {
     scopeSpaceIds?: string[] | null;
     page?: number;
     limit?: number;
+    summary?: boolean;
   }) {
     return this.send({ cmd: 'get_pending_approvals' }, data);
   }

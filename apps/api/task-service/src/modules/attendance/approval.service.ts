@@ -49,6 +49,8 @@ export class ApprovalService {
     organizationId: string;
     page?: number;
     limit?: number;
+    /** Just the counts — how many, and how many per workspace (the home's Crew card). */
+    summary?: boolean;
   }) {
     const page = data.page ?? 1;
     const limit = data.limit ?? 20;
@@ -62,6 +64,22 @@ export class ApprovalService {
       approvalStatus: ApprovalStatus.PENDING,
       status: { not: 'CLOCKED_IN' as any }, // Only completed entries
     };
+
+    /*
+      ⭐ COUNTS WITHOUT THE ROWS. The Crew card needs the total and a count per
+      workspace; it used to download a whole page of shifts (170 KB for 95)
+      every minute to count them itself. One grouped count answers it in bytes.
+    */
+    if (data.summary) {
+      const groups = await this.prisma.timeEntry.groupBy({ by: ['locationId'], where, _count: { _all: true } });
+      const bySpace: Record<string, number> = {};
+      let total = 0;
+      for (const g of groups) {
+        total += g._count._all;
+        if (g.locationId) bySpace[g.locationId] = g._count._all;
+      }
+      return { total, bySpace };
+    }
 
     const [entries, total] = await Promise.all([
       this.prisma.timeEntry.findMany({

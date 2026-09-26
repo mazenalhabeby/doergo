@@ -211,12 +211,14 @@ export const attendanceApi = {
    * total in the envelope's meta, rather than pulling thirty entries (each with
    * its user, its space and its breaks) to call `.length` on them.
    */
-  countPendingApprovals: async (): Promise<number> => {
-    const result = await fetchWithAuth<any>('/attendance/approvals/pending?page=1&limit=1');
-    const total = result?.meta?.total;
-    if (typeof total === 'number') return total;
-    // Older shapes answered with a bare array; fall back to what arrived.
-    return Array.isArray(result) ? result.length : (result?.data?.length ?? 0);
+  /**
+   * Shifts waiting for a decision: how many, and how many per workspace — the
+   * counts only (`?summary=true`, a grouped count on the server). The Crew card
+   * used to download a whole page of shifts every minute to count them.
+   */
+  pendingApprovalsSummary: async (): Promise<{ total: number; bySpace: Record<string, number> }> => {
+    const r = await fetchWithAuth<any>('/attendance/approvals/pending?summary=true');
+    return { total: typeof r?.total === 'number' ? r.total : 0, bySpace: r?.bySpace ?? {} };
   },
 
   /**

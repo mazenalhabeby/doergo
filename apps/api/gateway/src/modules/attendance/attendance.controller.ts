@@ -781,12 +781,15 @@ export class AttendanceController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Request() req?: any,
+    /** `true` → `{ total, bySpace }` only, no rows (the home's Crew card). */
+    @Query('summary') summary?: string,
   ) {
     return this.attendanceService.getPendingApprovals({
       organizationId: req.user.organizationId,
       scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
+      summary: summary === 'true',
     });
   }
 

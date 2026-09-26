@@ -11,7 +11,7 @@ import { useLiveRefresh } from '../../hooks/use-live-refresh';
  *       none of those — ids and times only)
  *   GET /attendance/breaks/active                          who is on a rest
  *   GET /attendance/no-shows?days=1                        rostered, not in
- *   GET /attendance/approvals/pending?page=1&limit=1       shifts waiting
+ *   GET /attendance/approvals/pending?summary=true         shifts waiting, per workspace (counts only)
  *
  * Every one is `canViewSpaceAttendance` and narrowed by the SERVER to the
  * caller's spaces, so an admin sees the organization and a site lead their
@@ -65,18 +65,15 @@ export function useCrew(enabled: boolean): CrewData & { refresh: () => void } {
   const refresh = useCallback(async () => {
     if (!enabled) return;
     try {
-      const [entries, breaks, noShows, pending, pendingRows] = await Promise.all([
+      const [entries, breaks, noShows, pendingSummary] = await Promise.all([
         attendanceApi.getAllEntries({ status: 'CLOCKED_IN', limit: ACTIVE_LIMIT }) as unknown as Promise<ActiveEntry[]>,
         attendanceApi.getActiveBreaks().catch(() => []) as Promise<ActiveBreak[]>,
         attendanceApi.listNoShows(1).catch(() => [] as NoShow[]),
-        attendanceApi.countPendingApprovals().catch(() => 0),
-        /* ⚠️ Bounded: one page, only to split the count by workspace for the rings. */
-        attendanceApi.getPendingApprovals({ page: 1, limit: 100 }).catch(() => []),
+        /* ⚠️ Counts only — the total and one per workspace for the rings, in bytes. */
+        attendanceApi.pendingApprovalsSummary().catch(() => ({ total: 0, bySpace: {} as Record<string, number> })),
       ]);
-      const pendingBySpace: Record<string, number> = {};
-      for (const e of pendingRows as unknown as { locationId?: string | null }[]) {
-        if (e.locationId) pendingBySpace[e.locationId] = (pendingBySpace[e.locationId] ?? 0) + 1;
-      }
+      const pending = pendingSummary.total;
+      const pendingBySpace = pendingSummary.bySpace;
       const now = Date.now();
       const onBreak = new Map<string, ActiveBreak>();
       for (const b of breaks) onBreak.set(b.timeEntryId ?? b.user?.id ?? b.userId ?? '', b);

@@ -367,6 +367,7 @@ export class AttendanceController {
       scopeSpaceIds?: string[] | null;
       page?: number;
       limit?: number;
+      summary?: boolean;
     },
   ) {
     return this.approvalService.getPendingApprovals(data);
