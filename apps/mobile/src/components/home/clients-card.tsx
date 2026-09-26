@@ -8,7 +8,7 @@ import { useQueuedWrite } from '../../offline/actions/queued-write';
 import { setActivityDoneFromPhone } from '../../offline/crm/client-actions';
 import { useToast } from '../../island/island-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { AText, Eyebrow, Well } from '../amazen';
+import { AText, Eyebrow, CardSurface } from '../amazen';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { usePhrase } from './phrase';
 import { GlyphTile } from './glyph-tile';
@@ -140,7 +140,7 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
 
   return (
     <View style={style}>
-      <Well style={{ padding: amazen.space(4.5), paddingBottom: amazen.space(1.5) }}>
+      <CardSurface style={{ padding: amazen.space(4.5), paddingBottom: amazen.space(1.5) }}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Eyebrow tone="muted" style={{ flex: 1 }}>{t('widgets.clients', { defaultValue: 'Clients' })}</Eyebrow>
           {head && book != null ? (
@@ -221,7 +221,7 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
             title={book != null ? t('clientsCard.all', { count: book }) : t('clientsCard.allNoCount', { defaultValue: 'All clients' })}
           />
         </View>
-      </Well>
+      </CardSurface>
     </View>
   );
 }

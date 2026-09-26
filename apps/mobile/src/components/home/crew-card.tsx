@@ -7,7 +7,7 @@ import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { holds } from '../../lib/permissions';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { AText, Eyebrow, Well } from '../amazen';
+import { AText, Eyebrow, CardSurface } from '../amazen';
 import { NotArrivedGlyph, HoursWaitingGlyph } from '../glyphs/crew-glyphs';
 import Svg, { Circle } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -92,7 +92,7 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
 
   return (
     <View style={style}>
-      <Well style={{ padding: amazen.space(4.5), gap: amazen.space(3) }}>
+      <CardSurface style={{ padding: amazen.space(4.5), gap: amazen.space(3) }}>
         {/* Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
           <Eyebrow tone="muted" style={{ flex: 1 }}>{t('widgets.crew', { defaultValue: 'Crew' })}</Eyebrow>
@@ -158,7 +158,7 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
             onPress={openAttendance}
           />
         ) : null}
-      </Well>
+      </CardSurface>
     </View>
   );
 }

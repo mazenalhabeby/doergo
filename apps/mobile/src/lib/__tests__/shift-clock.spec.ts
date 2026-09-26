@@ -381,8 +381,9 @@ describe('§9 — the twelve rules', () => {
   const card = code('components/home/shift-clock-card.tsx');
 
   it('1 · one shape for all eight states', () => {
-    // ONE GlassCard, opened once and closed once. Not one per branch.
-    expect((card.match(/<GlassCard/g) ?? []).length).toBe(1);
+    // ONE surface, opened once and closed once. Not one per branch. (Glass or
+    // well is decided by the card's place on the home — amazen CardSurface.)
+    expect((card.match(/<CardSurface/g) ?? []).length).toBe(1);
     expect(card).not.toMatch(/<Well[\s>]/);
   });
 

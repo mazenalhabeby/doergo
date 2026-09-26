@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, type TextProps, type TextStyle } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
+import { useSurface } from './surfaces';
 import type { AmazenColors } from '../../theme/amazen';
 
 export type TypeVariant =
@@ -45,6 +46,16 @@ export function AText({
   ...rest
 }: ATextProps) {
   const { amazen } = useTheme();
+  /*
+    ⚠️ THE GREYS FOLLOW THE SURFACE. A card that moves to the top becomes
+    glass, and `muted` composites to a wash there; a shift card moved down
+    becomes a well, where the glass greys are too green. So on a card that
+    knows its surface, the grey is swapped for the one made for it.
+  */
+  const surface = useSurface();
+  const readable: Tone = surface === 'glass' && tone === 'muted' ? 'onGlassHome'
+    : surface === 'well' && (tone === 'onGlass' || tone === 'onGlassHome') ? 'muted'
+    : tone;
   const base = amazen.type[variant] as TextStyle;
   /*
     IBM Plex Mono is already tabular by construction, so `fontVariant` adds
@@ -60,7 +71,7 @@ export function AText({
     : {};
   return (
     <Text
-      style={[base, { color: toneColor(amazen.color, tone) }, mono, style]}
+      style={[base, { color: toneColor(amazen.color, readable) }, mono, style]}
       {...rest}
     />
   );

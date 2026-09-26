@@ -14,7 +14,7 @@ import { useShift } from '../../offline/attendance/use-shift';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { scheduleApi, tasksApi } from '../../lib/api';
 import type { ScheduleEntry, Task } from '../../lib/api/types';
-import { AText, Eyebrow, Well, WellDivider } from '../amazen';
+import { AText, Eyebrow, CardSurface, WellDivider } from '../amazen';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePitch } from '../../home/pitch';
 import {
@@ -192,7 +192,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
 
   return (
     <View style={style}>
-      <Well style={{ padding: amazen.space(4.5), gap: amazen.space(3) }}>
+      <CardSurface style={{ padding: amazen.space(4.5), gap: amazen.space(3) }}>
         {/* The header. The pill goes to the whole list; the card itself is not a target. */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
           <AText variant="h3" tone="strong" style={{ flex: 1 }}>{t('widgets.myWork', { defaultValue: 'My work' })}</AText>
@@ -315,7 +315,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
             )}
           </>
         )}
-      </Well>
+      </CardSurface>
 
     </View>
   );

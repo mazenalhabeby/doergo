@@ -50,6 +50,7 @@ export interface WidgetRow {
    * one place; a component deciding its own surface is how a fourth one
    * appears.
    */
+  /** Its surface OFF the home (the gallery). On the home, position decides: the first card is glass (amazen CardSurface). */
   surface: 'glass' | 'well';
   /**
    * What an empty answer means — a DECISION, not an absence.

@@ -16,7 +16,7 @@ import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { stopBackgroundHeartbeat } from '../../services/background-heartbeat';
 import { stopGeofence } from '../../services/background-geofence';
 import { formatDurationMinutes as formatDuration } from '../../lib/utils';
-import { AText, Chip, Disc, DiscRow, Eyebrow, GlassCard, Hero, LiveDot } from '../amazen';
+import { AText, CardSurface, Chip, Disc, DiscRow, Eyebrow, Hero, LiveDot } from '../amazen';
 import { BreakGlyph, ClockInGlyph, ClockOutGlyph, IssueMineGlyph, IssueNewGlyph } from '../glyphs/shift-glyphs';
 import { budgetParts, heroParts, readShiftState, scheduleFor } from './shift-state';
 import { useScheduleTotals } from './use-schedule-totals';
@@ -340,7 +340,7 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
 
   return (
     <>
-      <GlassCard style={style as ViewStyle}>
+      <CardSurface fallback="glass" style={[{ padding: amazen.layout.gutter }, style as ViewStyle]}>
         {/* ⚠️ ONLY THE HERO AND CAPTION NAVIGATE — never the whole card. */}
         <Pressable
           onPress={() => router.push('/(app)/(tabs)/attendance' as Href)}
@@ -507,7 +507,7 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
             </AText>
           </Pressable>
         )}
-      </GlassCard>
+      </CardSurface>
 
       <LocationPickerSheet {...clockIn.pickerProps} confirmDisabled={clockIn.isClockingIn} />
 

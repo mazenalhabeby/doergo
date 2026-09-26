@@ -9,7 +9,7 @@ import { useSyncStatus } from '../../offline/offline-context';
 import { destinationsFor, type Destination } from '../../lib/manage-rows';
 import { over } from '../../theme/amazen';
 import { selection } from '../../lib/haptics';
-import { AText, Eyebrow, PrimaryButton, Well } from '../amazen';
+import { AText, Eyebrow, PrimaryButton, CardSurface } from '../amazen';
 import { BlurSheet } from '../blur-sheet';
 import { SheetPanel } from '../sheet-panel';
 import { SHORTCUT_GLYPHS } from './shortcut-glyphs';
@@ -93,7 +93,7 @@ export function ShortcutsCard({ style }: { style?: StyleProp<ViewStyle> }) {
 
   return (
     <View style={style}>
-      <Well style={{ padding: amazen.space(3.5), paddingTop: amazen.space(4) }}>
+      <CardSurface style={{ padding: amazen.space(3.5), paddingTop: amazen.space(4) }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4 }}>
           <Eyebrow tone="muted" style={{ flex: 1 }}>{t('widgets.shortcuts', { defaultValue: 'Shortcuts' })}</Eyebrow>
           <Pressable onPress={() => setEditing(true)} hitSlop={10} accessibilityRole="button">
@@ -109,7 +109,7 @@ export function ShortcutsCard({ style }: { style?: StyleProp<ViewStyle> }) {
           })}
         </View>
 
-      </Well>
+      </CardSurface>
 
       <ShortcutsEditor
         visible={editing}

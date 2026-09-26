@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import { StyleSheet, View, type ViewProps, type ViewStyle } from 'react-native';
+import Reanimated, { interpolate, interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useTheme } from '../../contexts/theme-context';
 
 /**
@@ -131,4 +132,73 @@ export function shadowDiscPrimary(accent: string): ViewStyle {
     shadowOffset: { width: 0, height: 6 },
     elevation: 8,
   };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ⭐ THE FIRST CARD LEADS.
+
+   On the home, the surface is decided by POSITION, not by the widget: the
+   first card is glass over the green, every card after it a well — the shift
+   clock included. The home says which through this context; a card asks for
+   `CardSurface` and wears whatever it is given, animating when it changes.
+
+   ⚠️ Glass only works at the top, where the gradient is brightest. Lower down
+   the ground is near-black and glass reads as a hole — which is why it is
+   ONE card and never "any card the member likes".
+
+   Off the home (the gallery's preview, an interior screen) there is no
+   context and a card wears its own `fallback`.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+export type SurfaceKind = 'glass' | 'well';
+
+const SurfaceContext = createContext<SurfaceKind | null>(null);
+
+export function SurfaceProvider({ value, children }: { value: SurfaceKind; children: React.ReactNode }) {
+  return <SurfaceContext.Provider value={value}>{children}</SurfaceContext.Provider>;
+}
+
+/** The surface this card sits on, if something decided it. `AText` reads it to pick readable greys. */
+export function useSurface(): SurfaceKind | null {
+  return useContext(SurfaceContext);
+}
+
+/** A card's own surface — glass or well — which cross-fades when its place changes. */
+export function CardSurface({ fallback = 'well', style, children, ...rest }: ViewProps & { fallback?: SurfaceKind }) {
+  const { amazen, isDark } = useTheme();
+  const c = amazen.color;
+  const kind = useContext(SurfaceContext) ?? fallback;
+  const p = useSharedValue(kind === 'glass' ? 1 : 0);
+  useEffect(() => { p.value = withTiming(kind === 'glass' ? 1 : 0, { duration: 450 }); }, [kind, p]);
+  const shadow = shadowGlass(isDark);
+  const shadowMax = Number(shadow.shadowOpacity ?? 0);
+  const elevationMax = Number(shadow.elevation ?? 0);
+  const glassy = kind === 'glass';
+  const look = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(p.value, [0, 1], [c.well, c.glass]),
+    borderColor: interpolateColor(p.value, [0, 1], ['#ffffff00', c.lineGlass]),
+    borderRadius: interpolate(p.value, [0, 1], [amazen.radius.panel, amazen.radius.surface]),
+    shadowOpacity: shadowMax * p.value,
+    // Elevation cannot fade — it is on only for glass. (Android has no shadowOpacity.)
+    elevation: glassy ? elevationMax : 0,
+  }));
+  return (
+    <Reanimated.View
+      style={[
+        {
+          borderWidth: StyleSheet.hairlineWidth * 2,
+          shadowColor: shadow.shadowColor,
+          shadowRadius: shadow.shadowRadius,
+          shadowOffset: shadow.shadowOffset,
+          // A well's list must be clipped to its corners; glass must not clip its shadow.
+          overflow: kind === 'glass' ? 'visible' : 'hidden',
+        },
+        look,
+        style,
+      ]}
+      {...rest}
+    >
+      <SurfaceContext.Provider value={kind}>{children}</SurfaceContext.Provider>
+    </Reanimated.View>
+  );
 }

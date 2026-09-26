@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useRouter, type Href } from 'expo-router';
 import { useAuth } from '../contexts/auth-context';
 import { useTheme } from '../contexts/theme-context';
-import { Ground, ScreenHeader, useTabSafe } from '../components/amazen';
+import { Ground, ScreenHeader, SurfaceProvider, useTabSafe } from '../components/amazen';
 import { resolveMediaUrl } from '../lib/api';
 import { displayName, initialsOf } from '../lib/people';
 import { impact, selection } from '../lib/haptics';
@@ -266,6 +266,8 @@ export function HomeScreen() {
             color={isDark ? '#000' : '#0b332a'}
             opacity={isDark ? 0.45 : 0.1}
           >
+            {/* ⭐ THE FIRST CARD LEADS — glass at the top, a well everywhere else (amazen/surfaces.tsx). */}
+            <SurfaceProvider value={index === 0 ? 'glass' : 'well'}>
             <EditableWidget
               key={`${item.key}:${refreshKey}`}
               row={item}
@@ -280,6 +282,7 @@ export function HomeScreen() {
               screenReader={screenReader}
               landed={landed.includes(item.key)}
             />
+            </SurfaceProvider>
           </ShadowDecorator>
         </ScaleDecorator>
       );
