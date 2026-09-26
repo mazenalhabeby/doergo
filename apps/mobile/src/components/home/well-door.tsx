@@ -31,7 +31,8 @@ export function WellDoor({
           {children ?? (
             <>
               <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14 }}>{title}</AText>
-              {detail ? <AText variant="caption" tone="muted" numberOfLines={1}>{detail}</AText> : null}
+              {/* Two lines, never cut: on a narrow phone the fact at the end is the part that matters. */}
+              {detail ? <AText variant="caption" tone="muted" numberOfLines={2}>{detail}</AText> : null}
             </>
           )}
         </View>
