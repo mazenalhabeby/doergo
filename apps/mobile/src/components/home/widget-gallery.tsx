@@ -1,5 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+import Reanimated, {
+  interpolateColor, runOnJS, useAnimatedReaction, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue,
+  type SharedValue,
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
@@ -9,6 +13,8 @@ import { AText, PrimaryButton } from '../amazen';
 import { widgetTitle, type WidgetRow } from '../../home/registry';
 import { PitchProvider, type Pitch } from '../../home/pitch';
 import { selection } from '../../lib/haptics';
+import { useAuth } from '../../contexts/auth-context';
+import { holds } from '../../lib/permissions';
 
 /** The preview is the real card at this scale, so a whole card fits a page. */
 const SCALE = 0.78;
@@ -76,21 +82,88 @@ export function WidgetGallery({
   const index = Math.max(0, currentKey ? shown.findIndex((r) => r.key === currentKey) : 0);
   const current = shown[index];
 
-  const pages = useRef<ScrollView>(null);
+  /*
+    ⭐ ONE PROGRESS VALUE — the pages' scroll, in pages. The highlight under the
+    names, the dots and the Add button all read it on the UI thread, so they
+    move WITH the finger instead of jumping when the swipe settles.
+  */
+  const progress = useSharedValue(0);
+  const pages = useRef<Reanimated.ScrollView>(null);
   const names = useRef<ScrollView>(null);
-  useEffect(() => { pages.current?.scrollTo({ x: index * stride, animated: false }); }, [index, stride]);
-  const onPaged = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const i = Math.round(e.nativeEvent.contentOffset.x / stride);
-    if (shown[i] && shown[i]!.key !== current?.key) { selection(); setCurrentKey(shown[i]!.key); }
-  };
+  const keys = useMemo(() => shown.map((r) => r.key), [shown]);
+  const settle = useCallback((i: number) => {
+    const key = keys[i];
+    if (key && key !== currentKeyRef.current) { selection(); setCurrentKey(key); }
+  }, [keys]);
+  const currentKeyRef = useRef<string | null>(null);
+  currentKeyRef.current = current?.key ?? null;
+  const onScroll = useAnimatedScrollHandler((e) => { progress.value = e.contentOffset.x / stride; });
+  // The label changes at the half-way point of a swipe — where the button is dimmest.
+  useAnimatedReaction(() => Math.round(progress.value), (i, prev) => { if (i !== prev) runOnJS(settle)(i); }, [settle]);
+  /*
+    Only when the ORDER changes (a reason arrived and re-sorted the pages) is
+    the page moved by hand, to stay on the same widget. Never on a swipe —
+    the swipe already put it there, and a jump mid-swipe is the jerk.
+  */
+  const indexRef = useRef(index);
+  indexRef.current = index;
+  useEffect(() => {
+    pages.current?.scrollTo({ x: indexRef.current * stride, animated: false });
+    progress.value = indexRef.current;
+  }, [keys, stride, progress]);
   const jump = (key: string) => {
-    selection();
-    setCurrentKey(key);
     const i = shown.findIndex((r) => r.key === key);
     pages.current?.scrollTo({ x: i * stride, animated: true });
   };
 
-  const suggested = shown.filter((r) => !onHome.has(r.key) && (pitches[r.key]?.need ?? 0) > 0).length;
+  /* Where each name sits in its row — the highlight slides between them. */
+  const [chips, setChips] = useState<Record<string, { x: number; w: number }>>({});
+  const xs = useSharedValue<number[]>([]);
+  const ws = useSharedValue<number[]>([]);
+  useEffect(() => {
+    xs.value = keys.map((k) => chips[k]?.x ?? 0);
+    ws.value = keys.map((k) => chips[k]?.w ?? 0);
+  }, [chips, keys, xs, ws]);
+  const highlight = useAnimatedStyle(() => {
+    const n = xs.value.length;
+    if (!n) return { opacity: 0 };
+    const p = Math.max(0, Math.min(n - 1, progress.value));
+    const i = Math.floor(p); const j = Math.min(n - 1, i + 1); const f = p - i;
+    return {
+      opacity: ws.value[i] ? 1 : 0,
+      transform: [{ translateX: xs.value[i]! + (xs.value[j]! - xs.value[i]!) * f }],
+      width: ws.value[i]! + (ws.value[j]! - ws.value[i]!) * f,
+    };
+  });
+  /* Keep the current name in view. */
+  useEffect(() => {
+    const at = current ? chips[current.key] : undefined;
+    if (at) names.current?.scrollTo({ x: Math.max(0, at.x - gutter * 2), animated: true });
+  }, [current, chips, gutter]);
+
+  /* The button dims through the middle of a swipe, and is whole again on each page. */
+  const buttonStyle = useAnimatedStyle(() => {
+    const d = Math.abs(progress.value - Math.round(progress.value)); // 0 … 0.5
+    return { opacity: 1 - d * 1.3, transform: [{ scale: 1 - d * 0.06 }] };
+  });
+
+  /*
+    ⭐ THE SUBTITLE NAMES WHAT HELPS, AND FITS THE PERSON. "2 could help you"
+    made the member go and find which two. It names them instead — the ones
+    with something waiting for THIS member — and when nothing is waiting it
+    says what the gallery is for: running a team, or a working day.
+  */
+  const helping = shown.filter((r) => !onHome.has(r.key) && (pitches[r.key]?.need ?? 0) > 0).map((r) => widgetTitle(r, t));
+  const suggested = helping.length;
+  const { user } = useAuth();
+  const leads = holds(user as never, 'canViewSpaceAttendance') || holds(user as never, 'canViewAllTasks');
+  const subtitle = helping.length === 1
+    ? t('home.gallery.hasOne', { a: helping[0] })
+    : helping.length === 2
+      ? t('home.gallery.hasTwo', { a: helping[0], b: helping[1] })
+      : helping.length > 2
+        ? t('home.gallery.hasMany', { a: helping[0], b: helping[1], count: helping.length - 2 })
+        : t(leads ? 'home.gallery.forTeam' : 'home.gallery.forDay');
   const offered = shown.filter((r) => !onHome.has(r.key)).length;
 
   return (
@@ -101,16 +174,13 @@ export function WidgetGallery({
             {t('home.gallery.addTitle', { defaultValue: 'Add a widget' })}
           </AText>
           <AText variant="caption" tone="muted" style={{ marginTop: 3 }}>
-            {suggested
-              ? t('home.gallery.helpNow', { count: suggested })
-              : offered
-                ? t('home.gallery.everything', { defaultValue: 'Everything you can add' })
-                : t('home.gallery.none', { defaultValue: 'Nothing left to add.' })}
+            {suggested || offered ? subtitle : t('home.gallery.none', { defaultValue: 'Nothing left to add.' })}
           </AText>
         </View>
 
         {/* Every name at once — a dot for a suggestion, grey for one already on the home. */}
         <ScrollView ref={names} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: gutter, gap: 6, paddingTop: amazen.space(3.5) }}>
+          <Reanimated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: amazen.space(3.5), bottom: 0, borderRadius: 999, backgroundColor: c.accentTint, borderWidth: 1, borderColor: c.accent }, highlight]} />
           {shown.map((r) => {
             const on = r.key === current?.key;
             const added = onHome.has(r.key);
@@ -121,9 +191,13 @@ export function WidgetGallery({
                 onPress={() => jump(r.key)}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: on }}
+                onLayout={(e) => {
+                  const { x, width: w } = e.nativeEvent.layout;
+                  setChips((m) => (m[r.key]?.x === x && m[r.key]?.w === w ? m : { ...m, [r.key]: { x, w } }));
+                }}
                 style={{
                   flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999,
-                  borderWidth: 1, borderColor: on ? c.accent : c.lineGlass, backgroundColor: on ? c.accentTint : 'transparent',
+                  borderWidth: 1, borderColor: c.lineGlass,
                 }}
               >
                 {dot ? <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.warn }} /> : null}
@@ -133,15 +207,16 @@ export function WidgetGallery({
           })}
         </ScrollView>
 
-        <ScrollView
+        <Reanimated.ScrollView
           ref={pages}
           horizontal
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           /* ⚠️ Not `pagingEnabled` — `snapToInterval` knows how wide a page is (home-screen-spec). */
           snapToInterval={stride}
           decelerationRate="fast"
           disableIntervalMomentum
           showsHorizontalScrollIndicator={false}
-          onMomentumScrollEnd={onPaged}
           contentContainerStyle={{ paddingTop: amazen.space(3) }}
         >
           {shown.map((row) => {
@@ -175,28 +250,22 @@ export function WidgetGallery({
                   <LinearGradient colors={[`${colors.card}00`, colors.card]} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 56 }} />
                 </View>
 
-                <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
-                  <View style={{ flex: 1 }}>
-                    <AText variant="body" tone="strong" style={{ fontSize: 17, fontFamily: amazen.font.sansMedium }}>{widgetTitle(r, t)}</AText>
-                    {r.question ? <AText variant="caption" tone="muted" style={{ marginTop: 2 }}>{r.question}</AText> : null}
-                  </View>
-                  <AText variant="eyebrow" tone="muted" style={{ fontSize: 9.5 }}>
-                    {added ? t('home.gallery.onHome', { defaultValue: 'On home' }) : t('home.gallery.addsAtBottom', { defaultValue: 'Adds at the bottom' })}
-                  </AText>
+                <View>
+                  <AText variant="body" tone="strong" style={{ fontSize: 17, fontFamily: amazen.font.sansMedium }}>{widgetTitle(r, t)}</AText>
+                  {r.question ? <AText variant="caption" tone="muted" style={{ marginTop: 2 }}>{r.question}</AText> : null}
                 </View>
               </View>
             );
           })}
-        </ScrollView>
+        </Reanimated.ScrollView>
 
         {/* The same place on every page: where you are, and Add. */}
         <View style={{ paddingHorizontal: gutter, paddingTop: amazen.space(3.5), gap: amazen.space(3) }}>
           <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 5 }}>
-            {shown.map((r) => (
-              <View key={r.key} style={{ width: r.key === current?.key ? 18 : 6, height: 6, borderRadius: 3, backgroundColor: r.key === current?.key ? c.accent : c.lineGlass }} />
-            ))}
+            {shown.map((r, i) => <Dot key={r.key} i={i} progress={progress} on={c.accent} off={c.lineGlass} />)}
           </View>
           {current ? (
+            <Reanimated.View style={buttonStyle}>
             <PrimaryButton
               label={onHome.has(current.key)
                 ? t('home.gallery.isOnHome', { name: widgetTitle(current, t) })
@@ -204,9 +273,19 @@ export function WidgetGallery({
               disabled={onHome.has(current.key)}
               onPress={() => onAdd(current.key)}
             />
+            </Reanimated.View>
           ) : null}
         </View>
       </SheetPanel>
     </BlurSheet>
   );
+}
+
+/** A page dot that grows as its page arrives, following the finger. */
+function Dot({ i, progress, on, off }: { i: number; progress: SharedValue<number>; on: string; off: string }) {
+  const style = useAnimatedStyle(() => {
+    const near = Math.max(0, 1 - Math.abs(progress.value - i));
+    return { width: 6 + 12 * near, backgroundColor: interpolateColor(near, [0, 1], [off, on]) };
+  });
+  return <Reanimated.View style={[{ height: 6, borderRadius: 3 }, style]} />;
 }

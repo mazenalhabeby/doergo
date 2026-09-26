@@ -372,14 +372,14 @@
       "none": "No queda nada por añadir.",
       "add": "Añadir widget",
       "addTitle": "Añadir un widget",
-      "helpNow_one": "{{count}} podría ayudarte ahora",
-      "helpNow_other": "{{count}} podrían ayudarte ahora",
-      "everything": "Todo lo que puedes añadir",
       "onHomeLine": "Ya está en tu inicio.",
-      "onHome": "En inicio",
-      "addsAtBottom": "Se añade al final",
       "isOnHome": "{{name}} está en tu inicio",
-      "addName": "Añadir {{name}}"
+      "addName": "Añadir {{name}}",
+      "hasOne": "{{a}} tiene algo para ti ahora",
+      "hasTwo": "{{a}} y {{b}} tienen algo para ti ahora",
+      "hasMany": "{{a}}, {{b}} y {{count}} más tienen algo para ti ahora",
+      "forTeam": "Para dirigir tu equipo",
+      "forDay": "Para tu jornada"
     }
   },
   "tasks": {

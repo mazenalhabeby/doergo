@@ -379,14 +379,14 @@
       "none": "Nothing left to add.",
       "add": "Add widget",
       "addTitle": "Add a widget",
-      "helpNow_one": "{{count}} could help you right now",
-      "helpNow_other": "{{count}} could help you right now",
-      "everything": "Everything you can add",
       "onHomeLine": "Already on your home screen.",
-      "onHome": "On home",
-      "addsAtBottom": "Adds at the bottom",
       "isOnHome": "{{name}} is on your home",
-      "addName": "Add {{name}}"
+      "addName": "Add {{name}}",
+      "hasOne": "{{a}} has something for you right now",
+      "hasTwo": "{{a}} and {{b}} have something for you right now",
+      "hasMany": "{{a}}, {{b}} and {{count}} more have something for you right now",
+      "forTeam": "For running your team",
+      "forDay": "For your working day"
     }
   },
   "tasks": {

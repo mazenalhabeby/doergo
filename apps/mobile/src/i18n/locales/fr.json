@@ -372,14 +372,14 @@
       "none": "Plus rien à ajouter.",
       "add": "Ajouter un widget",
       "addTitle": "Ajouter un widget",
-      "helpNow_one": "{{count}} pourrait vous aider maintenant",
-      "helpNow_other": "{{count}} pourraient vous aider maintenant",
-      "everything": "Tout ce que vous pouvez ajouter",
       "onHomeLine": "Déjà sur votre accueil.",
-      "onHome": "Sur l’accueil",
-      "addsAtBottom": "Ajouté en bas",
       "isOnHome": "{{name}} est sur votre accueil",
-      "addName": "Ajouter {{name}}"
+      "addName": "Ajouter {{name}}",
+      "hasOne": "{{a}} a quelque chose pour vous maintenant",
+      "hasTwo": "{{a}} et {{b}} ont quelque chose pour vous maintenant",
+      "hasMany": "{{a}}, {{b}} et {{count}} autres ont quelque chose pour vous maintenant",
+      "forTeam": "Pour diriger votre équipe",
+      "forDay": "Pour votre journée de travail"
     }
   },
   "tasks": {

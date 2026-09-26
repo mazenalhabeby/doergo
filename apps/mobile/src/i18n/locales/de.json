@@ -372,14 +372,14 @@
       "none": "Nichts mehr hinzuzufügen.",
       "add": "Widget hinzufügen",
       "addTitle": "Widget hinzufügen",
-      "helpNow_one": "{{count}} könnte Ihnen jetzt helfen",
-      "helpNow_other": "{{count}} könnten Ihnen jetzt helfen",
-      "everything": "Alles, was Sie hinzufügen können",
       "onHomeLine": "Bereits auf Ihrem Startbildschirm.",
-      "onHome": "Auf Start",
-      "addsAtBottom": "Kommt nach unten",
       "isOnHome": "{{name}} ist auf Ihrem Start",
-      "addName": "{{name}} hinzufügen"
+      "addName": "{{name}} hinzufügen",
+      "hasOne": "{{a}} hat gerade etwas für Sie",
+      "hasTwo": "{{a}} und {{b}} haben gerade etwas für Sie",
+      "hasMany": "{{a}}, {{b}} und {{count}} weitere haben gerade etwas für Sie",
+      "forTeam": "Für die Führung Ihres Teams",
+      "forDay": "Für Ihren Arbeitstag"
     }
   },
   "tasks": {
