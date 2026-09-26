@@ -3117,5 +3117,54 @@
     "yourSites": "Vos sites",
     "late_one": "{{count}} jour de retard",
     "late_other": "{{count}} jours de retard"
+  },
+  "strip": {
+    "needYou_one": "{{count}} chose vous attend",
+    "needYou_other": "{{count}} choses vous attendent",
+    "stopping_one": "{{count}} chose bloque votre travail",
+    "stopping_other": "{{count}} choses bloquent votre travail",
+    "heroNeed_one": "chose vous attend",
+    "heroNeed_other": "choses vous attendent",
+    "heroStopping_one": "chose bloque votre travail",
+    "heroStopping_other": "choses bloquent votre travail",
+    "startFirst": "Commencer par la première",
+    "notNow": "Plus tard",
+    "eyebrow": {
+      "waiting": "Vous attend",
+      "stopping": "Bloque votre travail",
+      "comingUp": "À venir"
+    },
+    "line": {
+      "nothingReaches": "Aucun nouveau travail ne vous parviendra avant que ce soit fait",
+      "someStop_one": "{{count}} d’entre elles bloque le nouveau travail",
+      "someStop_other": "{{count}} d’entre elles bloquent le nouveau travail",
+      "sentBackOne": "Votre {{label}} a été renvoyé",
+      "sentBackMany": "{{count}} ont été renvoyés",
+      "waitingOnYou": "{{name}} attend votre signature",
+      "neitherUrgent": "Aucune n’est urgente",
+      "noneUrgent": "Aucune n’est urgente",
+      "parts": "{{sign}} à signer · {{upload}} à envoyer",
+      "toSign_one": "{{count}} à signer",
+      "toSign_other": "{{count}} à signer",
+      "toUpload_one": "{{count}} à envoyer",
+      "toUpload_other": "{{count}} à envoyer"
+    },
+    "item": {
+      "sentBack": "Votre {{label}} a été renvoyé",
+      "sentBackSub": "Envoyez-en un nouveau",
+      "sentBackBlocks": "Envoyez-en un nouveau · bloque le nouveau travail",
+      "upload": "Envoyez votre {{label}}",
+      "uploadSub": "Demandé, pas encore envoyé",
+      "blocks": "Bloque le nouveau travail",
+      "sign": "Signer {{label}}",
+      "signSub": "Attend votre signature",
+      "countersign": "Contresigner {{label}} de {{name}}",
+      "countersignSub": "Document de {{name}} · vous attend",
+      "expiresSoon": "Votre {{label}} expire bientôt",
+      "expiresToday": "Votre {{label}} expire aujourd’hui",
+      "expiresIn_one": "Votre {{label}} expire demain",
+      "expiresIn_other": "Votre {{label}} expire dans {{count}} jours",
+      "expiringSub": "Encore valide · envoyez le renouvelé"
+    }
   }
 }

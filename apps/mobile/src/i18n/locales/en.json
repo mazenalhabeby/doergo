@@ -3124,5 +3124,54 @@
     "yourSites": "Your sites",
     "late_one": "{{count}} day late",
     "late_other": "{{count}} days late"
+  },
+  "strip": {
+    "needYou_one": "{{count}} thing needs you",
+    "needYou_other": "{{count}} things need you",
+    "stopping_one": "{{count}} thing is stopping your work",
+    "stopping_other": "{{count}} things are stopping your work",
+    "heroNeed_one": "thing needs you",
+    "heroNeed_other": "things need you",
+    "heroStopping_one": "thing stopping your work",
+    "heroStopping_other": "things stopping your work",
+    "startFirst": "Start with the first",
+    "notNow": "Not now",
+    "eyebrow": {
+      "waiting": "Waiting on you",
+      "stopping": "Stopping your work",
+      "comingUp": "Coming up"
+    },
+    "line": {
+      "nothingReaches": "Nothing new reaches you until they are done",
+      "someStop_one": "{{count}} of them stops new work reaching you",
+      "someStop_other": "{{count}} of them stop new work reaching you",
+      "sentBackOne": "Your {{label}} was sent back",
+      "sentBackMany": "{{count}} were sent back",
+      "waitingOnYou": "{{name}} is waiting on your signature",
+      "neitherUrgent": "Neither is urgent",
+      "noneUrgent": "None of them is urgent",
+      "parts": "{{sign}} to sign · {{upload}} to upload",
+      "toSign_one": "{{count}} to sign",
+      "toSign_other": "{{count}} to sign",
+      "toUpload_one": "{{count}} to upload",
+      "toUpload_other": "{{count}} to upload"
+    },
+    "item": {
+      "sentBack": "Your {{label}} was sent back",
+      "sentBackSub": "Send a new one",
+      "sentBackBlocks": "Send a new one · blocks new work",
+      "upload": "Upload your {{label}}",
+      "uploadSub": "Asked for, not sent yet",
+      "blocks": "Blocks new work",
+      "sign": "Sign {{label}}",
+      "signSub": "Waiting on your signature",
+      "countersign": "Countersign {{name}}’s {{label}}",
+      "countersignSub": "{{name}}’s document · waiting on you",
+      "expiresSoon": "Your {{label}} expires soon",
+      "expiresToday": "Your {{label}} expires today",
+      "expiresIn_one": "Your {{label}} expires tomorrow",
+      "expiresIn_other": "Your {{label}} expires in {{count}} days",
+      "expiringSub": "Still valid · send the renewed one"
+    }
   }
 }

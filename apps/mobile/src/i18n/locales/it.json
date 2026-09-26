@@ -3117,5 +3117,54 @@
     "yourSites": "Le tue sedi",
     "late_one": "{{count}} giorno di ritardo",
     "late_other": "{{count}} giorni di ritardo"
+  },
+  "strip": {
+    "needYou_one": "{{count}} cosa ti aspetta",
+    "needYou_other": "{{count}} cose ti aspettano",
+    "stopping_one": "{{count}} cosa blocca il tuo lavoro",
+    "stopping_other": "{{count}} cose bloccano il tuo lavoro",
+    "heroNeed_one": "cosa ti aspetta",
+    "heroNeed_other": "cose ti aspettano",
+    "heroStopping_one": "cosa blocca il tuo lavoro",
+    "heroStopping_other": "cose bloccano il tuo lavoro",
+    "startFirst": "Inizia dalla prima",
+    "notNow": "Non ora",
+    "eyebrow": {
+      "waiting": "Ti aspetta",
+      "stopping": "Blocca il tuo lavoro",
+      "comingUp": "In arrivo"
+    },
+    "line": {
+      "nothingReaches": "Non ricevi nuovo lavoro finché non sono fatte",
+      "someStop_one": "{{count}} di esse blocca il nuovo lavoro",
+      "someStop_other": "{{count}} di esse bloccano il nuovo lavoro",
+      "sentBackOne": "Il tuo {{label}} è stato rimandato",
+      "sentBackMany": "{{count}} sono stati rimandati",
+      "waitingOnYou": "{{name}} aspetta la tua firma",
+      "neitherUrgent": "Nessuna è urgente",
+      "noneUrgent": "Nessuna è urgente",
+      "parts": "{{sign}} da firmare · {{upload}} da caricare",
+      "toSign_one": "{{count}} da firmare",
+      "toSign_other": "{{count}} da firmare",
+      "toUpload_one": "{{count}} da caricare",
+      "toUpload_other": "{{count}} da caricare"
+    },
+    "item": {
+      "sentBack": "Il tuo {{label}} è stato rimandato",
+      "sentBackSub": "Invianne uno nuovo",
+      "sentBackBlocks": "Invianne uno nuovo · blocca il nuovo lavoro",
+      "upload": "Carica il tuo {{label}}",
+      "uploadSub": "Richiesto, non ancora inviato",
+      "blocks": "Blocca il nuovo lavoro",
+      "sign": "Firma {{label}}",
+      "signSub": "Aspetta la tua firma",
+      "countersign": "Controfirma {{label}} di {{name}}",
+      "countersignSub": "Documento di {{name}} · ti aspetta",
+      "expiresSoon": "Il tuo {{label}} scade presto",
+      "expiresToday": "Il tuo {{label}} scade oggi",
+      "expiresIn_one": "Il tuo {{label}} scade domani",
+      "expiresIn_other": "Il tuo {{label}} scade tra {{count}} giorni",
+      "expiringSub": "Ancora valido · invia quello rinnovato"
+    }
   }
 }

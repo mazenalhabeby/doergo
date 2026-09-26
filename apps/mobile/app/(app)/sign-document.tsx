@@ -91,7 +91,28 @@ export default function SignDocumentScreen() {
     [],
   );
 
-  const isAcknowledge = params.mode === 'ACKNOWLEDGE';
+  /*
+    The mode, resolved when the caller did not know it.
+
+    The home action strip goes STRAIGHT here from `/documents/pending`, whose
+    rows carry an id and a title but not the type's signing mode. Rather than
+    send the member through the documents list to learn it, this screen looks
+    it up — the same list + types the documents screen reads.
+  */
+  const [mode, setMode] = useState<string | undefined>(params.mode);
+  useEffect(() => {
+    if (params.mode) return;
+    let cancelled = false;
+    Promise.all([documentsApi.list(), documentsApi.listTypes()])
+      .then(([docs, types]) => {
+        const doc = docs.find((d) => d.id === String(params.id));
+        const type = doc ? types.find((ty) => ty.id === doc.typeId) : undefined;
+        if (!cancelled) setMode((type as any)?.signatureMode ?? 'IN_APP');
+      })
+      .catch(() => { if (!cancelled) setMode('IN_APP'); });
+    return () => { cancelled = true; };
+  }, [params.id, params.mode]);
+  const isAcknowledge = mode === 'ACKNOWLEDGE';
 
   const openDocument = useCallback(async () => {
     setOpening(true);

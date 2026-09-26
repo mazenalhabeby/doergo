@@ -19,6 +19,7 @@ import { EmptyArrange } from '../components/home/empty-arrange';
 import { EmptyHome, type Suggestion } from '../components/home/empty-home';
 import { DropSlot, EditableWidget, LIFT_FACTOR } from '../components/home/editable-widget';
 import { WidgetGallery } from '../components/home/widget-gallery';
+import { ActionStrip } from '../components/home/action-strip';
 import { answerFor, useWidgetAnswers } from './answers';
 import { useHomeEditing } from './use-home-editing';
 import { useHomeLayout } from './use-home-layout';
@@ -356,7 +357,13 @@ export function HomeScreen() {
         ListHeaderComponent={
           /* ⚠️ ONE line that says what the network is doing, for the whole
              column. Per widget it would be four copies of one sentence. */
-          <OfflineBanner style={{ marginBottom: amazen.space(3) }} />
+          <>
+            <OfflineBanner style={{ marginBottom: amazen.space(3) }} />
+            {/* ⭐ What the app needs from the member. Chrome, not a widget —
+                never in the registry — and away while arranging, so nothing
+                above the column moves under the finger. */}
+            {editing ? null : <ActionStrip />}
+          </>
         }
         ListEmptyComponent={
           /*

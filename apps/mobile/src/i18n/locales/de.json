@@ -3117,5 +3117,54 @@
     "yourSites": "Ihre Standorte",
     "late_one": "{{count}} Tag überfällig",
     "late_other": "{{count}} Tage überfällig"
+  },
+  "strip": {
+    "needYou_one": "{{count}} Sache braucht Sie",
+    "needYou_other": "{{count}} Sachen brauchen Sie",
+    "stopping_one": "{{count}} Sache hält Ihre Arbeit auf",
+    "stopping_other": "{{count}} Sachen halten Ihre Arbeit auf",
+    "heroNeed_one": "Sache braucht Sie",
+    "heroNeed_other": "Sachen brauchen Sie",
+    "heroStopping_one": "Sache hält Ihre Arbeit auf",
+    "heroStopping_other": "Sachen halten Ihre Arbeit auf",
+    "startFirst": "Mit der ersten beginnen",
+    "notNow": "Nicht jetzt",
+    "eyebrow": {
+      "waiting": "Wartet auf Sie",
+      "stopping": "Hält Ihre Arbeit auf",
+      "comingUp": "Demnächst"
+    },
+    "line": {
+      "nothingReaches": "Sie erhalten keine neue Arbeit, bis das erledigt ist",
+      "someStop_one": "{{count}} davon hält neue Arbeit auf",
+      "someStop_other": "{{count}} davon halten neue Arbeit auf",
+      "sentBackOne": "Ihr Dokument „{{label}}“ wurde zurückgeschickt",
+      "sentBackMany": "{{count}} wurden zurückgeschickt",
+      "waitingOnYou": "{{name}} wartet auf Ihre Unterschrift",
+      "neitherUrgent": "Beides ist nicht dringend",
+      "noneUrgent": "Nichts davon ist dringend",
+      "parts": "{{sign}} zu unterschreiben · {{upload}} hochzuladen",
+      "toSign_one": "{{count}} zu unterschreiben",
+      "toSign_other": "{{count}} zu unterschreiben",
+      "toUpload_one": "{{count}} hochzuladen",
+      "toUpload_other": "{{count}} hochzuladen"
+    },
+    "item": {
+      "sentBack": "„{{label}}“ wurde zurückgeschickt",
+      "sentBackSub": "Bitte neu senden",
+      "sentBackBlocks": "Bitte neu senden · hält neue Arbeit auf",
+      "upload": "„{{label}}“ hochladen",
+      "uploadSub": "Angefordert, noch nicht gesendet",
+      "blocks": "Hält neue Arbeit auf",
+      "sign": "„{{label}}“ unterschreiben",
+      "signSub": "Wartet auf Ihre Unterschrift",
+      "countersign": "„{{label}}“ von {{name}} gegenzeichnen",
+      "countersignSub": "Dokument von {{name}} · wartet auf Sie",
+      "expiresSoon": "„{{label}}“ läuft bald ab",
+      "expiresToday": "„{{label}}“ läuft heute ab",
+      "expiresIn_one": "„{{label}}“ läuft morgen ab",
+      "expiresIn_other": "„{{label}}“ läuft in {{count}} Tagen ab",
+      "expiringSub": "Noch gültig · erneuertes Dokument senden"
+    }
   }
 }

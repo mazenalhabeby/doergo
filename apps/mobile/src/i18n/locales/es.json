@@ -3117,5 +3117,54 @@
     "yourSites": "Tus sitios",
     "late_one": "{{count}} día de retraso",
     "late_other": "{{count}} días de retraso"
+  },
+  "strip": {
+    "needYou_one": "{{count}} cosa te necesita",
+    "needYou_other": "{{count}} cosas te necesitan",
+    "stopping_one": "{{count}} cosa está frenando tu trabajo",
+    "stopping_other": "{{count}} cosas están frenando tu trabajo",
+    "heroNeed_one": "cosa te necesita",
+    "heroNeed_other": "cosas te necesitan",
+    "heroStopping_one": "cosa frena tu trabajo",
+    "heroStopping_other": "cosas frenan tu trabajo",
+    "startFirst": "Empezar por la primera",
+    "notNow": "Ahora no",
+    "eyebrow": {
+      "waiting": "Te esperan",
+      "stopping": "Frena tu trabajo",
+      "comingUp": "Próximamente"
+    },
+    "line": {
+      "nothingReaches": "No recibirás trabajo nuevo hasta que estén hechas",
+      "someStop_one": "{{count}} de ellas frena el trabajo nuevo",
+      "someStop_other": "{{count}} de ellas frenan el trabajo nuevo",
+      "sentBackOne": "Tu {{label}} fue devuelto",
+      "sentBackMany": "{{count}} fueron devueltos",
+      "waitingOnYou": "{{name}} espera tu firma",
+      "neitherUrgent": "Ninguna es urgente",
+      "noneUrgent": "Ninguna es urgente",
+      "parts": "{{sign}} por firmar · {{upload}} por subir",
+      "toSign_one": "{{count}} por firmar",
+      "toSign_other": "{{count}} por firmar",
+      "toUpload_one": "{{count}} por subir",
+      "toUpload_other": "{{count}} por subir"
+    },
+    "item": {
+      "sentBack": "Tu {{label}} fue devuelto",
+      "sentBackSub": "Envía uno nuevo",
+      "sentBackBlocks": "Envía uno nuevo · frena el trabajo nuevo",
+      "upload": "Sube tu {{label}}",
+      "uploadSub": "Solicitado, aún no enviado",
+      "blocks": "Frena el trabajo nuevo",
+      "sign": "Firma {{label}}",
+      "signSub": "Espera tu firma",
+      "countersign": "Refrenda {{label}} de {{name}}",
+      "countersignSub": "Documento de {{name}} · te espera",
+      "expiresSoon": "Tu {{label}} vence pronto",
+      "expiresToday": "Tu {{label}} vence hoy",
+      "expiresIn_one": "Tu {{label}} vence mañana",
+      "expiresIn_other": "Tu {{label}} vence en {{count}} días",
+      "expiringSub": "Aún válido · envía el renovado"
+    }
   }
 }

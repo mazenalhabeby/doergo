@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView, TextInput,
 } from 'react-native';
@@ -54,11 +54,14 @@ export function SupplyDocumentSheet({
   visible,
   onClose,
   onSubmitted,
+  initialTypeId,
 }: {
   types: DocumentType[];
   visible: boolean;
   onClose: () => void;
   onSubmitted: () => void;
+  /** Opened FOR one requirement (the home action strip) — that type, already chosen. */
+  initialTypeId?: string | null;
 }) {
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -73,6 +76,9 @@ export function SupplyDocumentSheet({
   );
 
   const [typeId, setTypeId] = useState<string>('');
+  useEffect(() => {
+    if (visible && initialTypeId) setTypeId(initialTypeId);
+  }, [visible, initialTypeId]);
   const [photo, setPhoto] = useState<{ uri: string; mimeType: string; fileSize: number; fileName: string } | null>(null);
   const [expiresOn, setExpiresOn] = useState<Date | null>(null);
   const [showDate, setShowDate] = useState(false);
