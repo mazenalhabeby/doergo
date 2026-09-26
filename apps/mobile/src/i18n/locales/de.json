@@ -3035,7 +3035,15 @@
       "over": "drüber",
       "break": "in Pause"
     },
-    "message": "{{name}} schreiben"
+    "message": "{{name}} schreiben",
+    "tag": {
+      "late": "Zu spät",
+      "missed": "Verpasst",
+      "freeSoon": "Bald frei",
+      "over": "Drüber",
+      "breakOver": "Lange Pause"
+    },
+    "steadyCount": "+{{count}} im Plan · nichts zu entscheiden"
   },
   "widgets": {
     "shiftClock": "Schichtuhr",

@@ -3035,7 +3035,15 @@
       "over": "de plus",
       "break": "en pause"
     },
-    "message": "Écrire à {{name}}"
+    "message": "Écrire à {{name}}",
+    "tag": {
+      "late": "En retard",
+      "missed": "Absent",
+      "freeSoon": "Bientôt libre",
+      "over": "Au-delà",
+      "breakOver": "Pause longue"
+    },
+    "steadyCount": "+{{count}} dans les temps · rien à décider"
   },
   "widgets": {
     "shiftClock": "Horloge de service",

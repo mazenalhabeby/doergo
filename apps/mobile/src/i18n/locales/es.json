@@ -3035,7 +3035,15 @@
       "over": "de más",
       "break": "en pausa"
     },
-    "message": "Escribir a {{name}}"
+    "message": "Escribir a {{name}}",
+    "tag": {
+      "late": "Tarde",
+      "missed": "Faltó",
+      "freeSoon": "Libre pronto",
+      "over": "De más",
+      "breakOver": "Pausa larga"
+    },
+    "steadyCount": "+{{count}} en orden · nada que decidir"
   },
   "widgets": {
     "shiftClock": "Reloj de turno",

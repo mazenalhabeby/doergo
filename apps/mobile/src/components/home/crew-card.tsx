@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
@@ -8,8 +8,9 @@ import { holds } from '../../lib/permissions';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { AText, Eyebrow, Well, WellDivider } from '../amazen';
 import { NotArrivedGlyph, HoursWaitingGlyph } from '../glyphs/crew-glyphs';
-import { MessagesGlyph } from '../glyphs/glyphs';
-import { crewState, CAPS, type Band, type CrewPerson, type CrewTile, type SiteRow } from './crew-state';
+import Svg, { Circle } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
+import { crewState, CAPS, type Band, type CrewPerson, type CrewTile, type Ring, type SiteRow } from './crew-state';
 import { useCrew } from './use-crew';
 
 /**
@@ -90,7 +91,7 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
         ) : null}
 
         {/* The hero. ⚠️ The "/n" is dropped when there is no roster — never a copy of the numerator. */}
-        {data.failed || (s.unit === 'workspaces' && !site) ? <View style={{ gap: 4 }}>
+        <View style={{ gap: 4 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
             <AText variant="display" tone={data.failed ? 'muted' : 'strong'} numeric style={{ fontSize: 56, lineHeight: 60 }}>
               {data.failed ? '—' : String(s.on)}
@@ -99,7 +100,7 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
             <AText variant="body" tone="muted">{t('crew.onTheClock', { defaultValue: 'on the clock' })}</AText>
           </View>
           {sub ? <Eyebrow tone="muted" numberOfLines={1}>{sub}</Eyebrow> : null}
-        </View> : sub ? <Eyebrow tone="muted" numberOfLines={1}>{sub}</Eyebrow> : null}
+        </View>
 
         {data.loading && !data.people.length && !data.failed ? (
           <View style={{ flexDirection: 'row', gap: 10 }}>{[0, 1, 2].map((i) => <View key={i} style={{ width: 118, height: 150, borderRadius: 20, backgroundColor: c.tile }} />)}</View>
@@ -129,8 +130,7 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
             ) : null}
           </>
         ) : (
-          <Grouped state={s} viewerId={user?.id} onOpen={openAttendance}
-            onMessage={(id) => router.push({ pathname: '/chat', params: { userId: id } } as never)} />
+          <Rail state={s} viewerId={user?.id} onOpen={openAttendance} />
         )}
 
         {/* The exception rows — the only way to anything that changes a record. */}
@@ -173,34 +173,36 @@ function useClock() {
   return (iso?: string | null) => (iso ? formatTime(iso).replace(/\s+[A-Z]{2,5}$/, '') : '');
 }
 
-const GROUPS: { band: Band; label: string; fallback: string }[] = [
-  { band: 'late', label: 'crew.group.late', fallback: 'Late' },
-  { band: 'missed', label: 'crew.group.missed', fallback: 'Missed today' },
-  { band: 'freeSoon', label: 'crew.group.freeSoon', fallback: 'Free soon' },
-  { band: 'over', label: 'crew.group.over', fallback: 'Past their end' },
-  { band: 'breakOver', label: 'crew.group.breakOver', fallback: 'Break too long' },
-];
-const PER_GROUP = 3;
+const TILE = 118;
+const GAP = 10;
+const RING = 56;
+/** How wide the fades are: a short one where you came from, a longer one where there is more. */
+const FADE_LEFT = 16;
+const FADE_RIGHT = 36;
 
 /**
- * ⚠️ NO SIDEWAYS SCROLL. People are grouped by what you do about them — the
- * reason is the heading, the count beside it — so the card reads in one
- * glance (02.png: a rail cut hard at the card edge read as a bug). A sentence
- * says what matters first; a bar shows the whole day in one line.
+ * Fix 1 — the rail, cleaned (docs/design/crew + 02.png).
+ *
+ * ⚠️ NEVER A HARD CUT. The rail runs to the card's edge and FADES there, and
+ * the next tile peeks in by about a third — a tile sliced mid-word
+ * ("19h 04 l…") read as a clipping bug, not "swipe for more". Tiles snap, so
+ * a flick never stops half-way, and page dots say where you are.
+ *
+ * ⚠️ EVERY TILE SAYS ITS REASON IN A WORD — Late, Missed, Free soon, Over,
+ * Break. The ring stays, but nobody has to learn what a dashed red ring means.
  */
-function Grouped({ state: s, viewerId, onOpen, onMessage }: {
-  state: ReturnType<typeof crewState>; viewerId?: string; onOpen: () => void; onMessage: (userId: string) => void;
-}) {
+function Rail({ state: s, viewerId, onOpen }: { state: ReturnType<typeof crewState>; viewerId?: string; onOpen: () => void }) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const c = amazen.color;
-  const all = [...s.tiles];
-  const count = (b: Band) => all.filter((x) => x.band === b).length;
+  const pad = amazen.space(4.5);
+  const [page, setPage] = useState(0);
+  const tiles = s.tiles;
+  const count = (b: Band) => tiles.filter((x) => x.band === b).length;
   const late = count('late');
   const missed = count('missed');
   const soon = count('freeSoon');
   const over = count('over') + count('breakOver');
-
   const parts = [
     late ? t('crew.say.late', { count: late, defaultValue: `${late} late` }) : null,
     missed ? t('crew.say.missed', { count: missed, defaultValue: `${missed} missed their shift` }) : null,
@@ -212,121 +214,138 @@ function Grouped({ state: s, viewerId, onOpen, onMessage }: {
     : s.on === 0
       ? t('crew.say.noneIn', { list: parts.join(', '), defaultValue: `Nobody is in yet: ${parts.join(', ')}.` })
       : `${parts.join(', ')}.`;
-
-  const segs = [...Array(s.on).fill('on'), ...Array(late).fill('late'), ...Array(missed).fill('missed')].slice(0, 40);
+  const pages = tiles.length;
 
   return (
     <View style={{ gap: amazen.space(3) }}>
+      {/* ⚠️ A sentence says what matters; the number above it is the fact. */}
       <AText variant="body" tone={parts.length ? 'strong' : 'accent'} style={{ fontSize: 16, lineHeight: 22 }}>{sentence}</AText>
 
-      {segs.length ? (
-        <View style={{ gap: 6 }}>
-          <View style={{ flexDirection: 'row', gap: 3 }}>
-            {segs.map((k, i) => (
-              <View key={i} style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: k === 'on' ? c.accent : c.critical, opacity: k === 'missed' ? 0.45 : 1 }} />
-            ))}
-          </View>
-          <View style={{ flexDirection: 'row', gap: amazen.space(3) }}>
-            <Key color={c.accent} text={t('crew.key.in', { count: s.on, defaultValue: `${s.on} in` })} />
-            {late ? <Key color={c.critical} text={t('crew.key.late', { count: late, defaultValue: `${late} late` })} /> : null}
-            {missed ? <Key color={c.critical} dim text={t('crew.key.missed', { count: missed, defaultValue: `${missed} missed` })} /> : null}
-          </View>
+      {tiles.length ? (
+        <View style={{ marginHorizontal: -pad }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={TILE + GAP}
+            decelerationRate="fast"
+            contentContainerStyle={{ gap: GAP, paddingHorizontal: pad }}
+            onScroll={(e) => setPage(Math.min(pages - 1, Math.max(0, Math.round(e.nativeEvent.contentOffset.x / (TILE + GAP)))))}
+            scrollEventThrottle={32}
+          >
+            {tiles.map((tile) => <TileView key={tile.person.userId} tile={tile} you={tile.person.userId === viewerId} showPlace={s.unit !== 'people'} onPress={onOpen} />)}
+            {s.tilesOverflow > 0 ? (
+              <View style={{ width: 70, alignItems: 'center', justifyContent: 'center' }}><AText variant="h3" tone="muted">+{s.tilesOverflow}</AText></View>
+            ) : null}
+          </ScrollView>
+          {/* The fades: the well's own colour to transparent, over the rail's two ends. Touch passes through. */}
+          <LinearGradient pointerEvents="none" colors={[c.well, `${c.well}00`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: FADE_LEFT }} />
+          <LinearGradient pointerEvents="none" colors={[`${c.well}00`, c.well]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: FADE_RIGHT }} />
         </View>
       ) : null}
 
-      {GROUPS.map(({ band, label, fallback }) => {
-        const g = all.filter((x) => x.band === band);
-        if (!g.length) return null;
-        const tone = band === 'late' || band === 'missed' ? c.critical : band === 'freeSoon' ? c.accent : c.warn;
-        return (
-          <View key={band} style={{ gap: 6 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Eyebrow style={{ flex: 1, color: tone }}>{t(label, { defaultValue: fallback })}</Eyebrow>
-              <AText variant="caption" numeric style={{ color: tone }}>{g.length}</AText>
-            </View>
-            {g.slice(0, PER_GROUP).map((tile) => (
-              <PersonRow key={tile.person.userId} tile={tile} tone={tone} you={tile.person.userId === viewerId} showPlace={s.unit !== 'people'} onPress={onOpen} onMessage={onMessage} />
-            ))}
-            {g.length > PER_GROUP ? (
-              <Pressable onPress={onOpen} accessibilityRole="button" hitSlop={6}>
-                <AText variant="caption" tone="accent" style={{ paddingHorizontal: 4 }}>{t('crew.moreIn', { count: g.length - PER_GROUP, defaultValue: `+${g.length - PER_GROUP} more` })}</AText>
-              </Pressable>
-            ) : null}
-          </View>
-        );
-      })}
+      {pages > 2 ? (
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 4 }}>
+          {Array.from({ length: pages }).map((_, i) => (
+            <View key={i} style={{ width: i === page ? 14 : 5, height: 3, borderRadius: 2, backgroundColor: i === page ? c.accent : c.lineGlass }} />
+          ))}
+        </View>
+      ) : null}
 
       {s.steady.length ? (
-        <View style={{ gap: 2 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Eyebrow tone="muted" style={{ flex: 1 }}>{t('crew.group.steady', { defaultValue: 'Steady' })}</Eyebrow>
-            <AText variant="caption" tone="muted" numeric>{s.steady.length}</AText>
-          </View>
-          <AText variant="caption" tone="muted">{t('crew.steadyLine', { defaultValue: 'In and on plan. Nothing to decide.' })}</AText>
-        </View>
+        <AText variant="caption" tone="muted">
+          {t('crew.steadyCount', { count: s.steady.length, defaultValue: `+${s.steady.length} steady · nothing to decide` })}
+        </AText>
       ) : null}
     </View>
   );
 }
 
-function Key({ color, text, dim }: { color: string; text: string; dim?: boolean }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-      <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: color, opacity: dim ? 0.45 : 1 }} />
-      <AText variant="caption" tone="muted" style={{ fontSize: 11 }}>{text}</AText>
-    </View>
-  );
-}
+const TAG: Record<Band, { key: string; fallback: string }> = {
+  late: { key: 'crew.tag.late', fallback: 'Late' },
+  missed: { key: 'crew.tag.missed', fallback: 'Missed' },
+  freeSoon: { key: 'crew.tag.freeSoon', fallback: 'Free soon' },
+  over: { key: 'crew.tag.over', fallback: 'Over' },
+  breakOver: { key: 'crew.tag.breakOver', fallback: 'Long break' },
+};
 
-/** One person: who, where and since when, the figure, and one button. */
-function PersonRow({ tile, tone, you, showPlace, onPress, onMessage }: {
-  tile: CrewTile; tone: string; you: boolean;
-  /** One workspace: its name is in the header already, and repeating it cut the time off. */
-  showPlace: boolean;
-  onPress: () => void; onMessage: (userId: string) => void;
-}) {
+/**
+ * One person: the reason in a word, the ring, the name, the place, the figure,
+ * the span. ⚠️ The figure is time LEFT, not time worked; past 90 minutes it is
+ * hours; a missed shift has no figure — they did not come.
+ */
+function TileView({ tile, you, showPlace, onPress }: { tile: CrewTile; you: boolean; showPlace: boolean; onPress: () => void }) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const clock = useClock();
   const c = amazen.color;
   const p = tile.person;
   const b = tile.band;
-  const name = you ? t('crew.you', { defaultValue: 'You' }) : `${p.firstName} ${p.lastName ?? ''}`.trim();
-  const when = b === 'late' ? t('crew.expectedAt', { time: clock(p.scheduledStartAt), defaultValue: `expected ${clock(p.scheduledStartAt)}` })
-    : b === 'missed' ? t('crew.shiftWas', { from: clock(p.scheduledStartAt), to: clock(p.expectedClockOutAt), defaultValue: `shift ${clock(p.scheduledStartAt)}–${clock(p.expectedClockOutAt)}` })
-    : `${clock(p.clockInAt)} → ${p.expectedClockOutAt && !p.endIsDailyLimit ? clock(p.expectedClockOutAt) : '—'}`;
-  const figure = b === 'missed' ? null : span(t, tile.minutes);
+  const tone = b === 'late' ? c.critical : b === 'missed' ? c.inkMuted : b === 'freeSoon' ? c.accent : c.warn;
+  const tint = b === 'late' ? c.criticalTint : b === 'missed' ? c.tile : b === 'freeSoon' ? c.accentTint : c.warnTint;
+  const figure = b === 'missed' ? '—' : span(t, tile.minutes);
   const unit = b === 'late' ? t('crew.u.late', { defaultValue: 'late' })
     : b === 'missed' ? t('crew.u.missed', { defaultValue: 'did not come' })
     : b === 'freeSoon' ? t('crew.u.left', { defaultValue: 'left' })
     : b === 'over' ? t('crew.u.over', { defaultValue: 'over' })
     : t('crew.u.break', { defaultValue: 'on break' });
-  const tint = b === 'freeSoon' ? c.accentTint : b === 'over' || b === 'breakOver' ? c.warnTint : c.criticalTint;
+  const spanLine = b === 'late' ? t('crew.expectedAt', { time: clock(p.scheduledStartAt), defaultValue: `expected ${clock(p.scheduledStartAt)}` })
+    : b === 'missed' ? `${clock(p.scheduledStartAt)}–${clock(p.expectedClockOutAt)}`
+    : `${clock(p.clockInAt)} → ${p.expectedClockOutAt && !p.endIsDailyLimit ? clock(p.expectedClockOutAt) : '—'}`;
+  const name = you ? t('crew.you', { defaultValue: 'You' }) : p.firstName;
 
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${name}, ${figure ?? ''} ${unit}`}
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), padding: amazen.space(2.5), borderRadius: 14, backgroundColor: c.tile, opacity: pressed ? 0.85 : 1 })}>
-      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: tint, alignItems: 'center', justifyContent: 'center' }}>
-        <AText variant="caption" style={{ color: tone, fontSize: 11.5 }}>{initials(p)}</AText>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${name}, ${t(TAG[b].key, { defaultValue: TAG[b].fallback })}, ${figure} ${unit}`}
+      style={({ pressed }) => ({ width: TILE, borderRadius: 20, padding: 12, backgroundColor: c.tile, gap: 2, opacity: pressed ? 0.85 : 1 })}>
+      {/* ⚠️ The reason, in a word. */}
+      <View style={{ alignSelf: 'flex-start', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, backgroundColor: tint, marginBottom: 8 }}>
+        <AText variant="caption" numeric style={{ color: tone, fontSize: 9.5, letterSpacing: 1.1, textTransform: 'uppercase' }}>{t(TAG[b].key, { defaultValue: TAG[b].fallback })}</AText>
       </View>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14 }}>{name}</AText>
-        <AText variant="caption" tone="muted" numberOfLines={1}>{[showPlace ? p.spaceName : null, when].filter(Boolean).join(' · ')}</AText>
+      <View style={{ width: RING, height: RING, marginBottom: 8 }}>
+        <RingSvg ring={tile.ring} tone={tone} />
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+          <AText variant="caption" tone="strong" style={{ fontSize: 13 }}>{initials(p)}</AText>
+        </View>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        {figure ? <AText variant="body" numeric style={{ color: tone, fontSize: 13 }}>{figure}</AText> : null}
-        <AText variant="caption" tone="muted" style={{ fontSize: 10.5 }}>{unit}</AText>
+      <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14 }}>{name}</AText>
+      {showPlace && p.spaceName ? <AText variant="caption" tone="muted" numberOfLines={1} style={{ fontSize: 11 }}>{p.spaceName}</AText> : null}
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 8 }}>
+        <AText variant="h3" numeric style={{ color: tone, fontSize: 18 }}>{figure}</AText>
+        <AText variant="caption" tone="muted" style={{ fontSize: 11 }} numberOfLines={1}>{unit}</AText>
       </View>
-      {/* ⚠️ One button, and it is a message: members carry no phone number yet, so Call cannot be real. */}
-      {!you ? (
-        <Pressable onPress={() => onMessage(p.userId)} accessibilityRole="button" hitSlop={6}
-          accessibilityLabel={t('crew.message', { name: p.firstName, defaultValue: `Message ${p.firstName}` })}
-          style={({ pressed }) => ({ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: c.well, borderWidth: 1.5, borderColor: c.lineGlass, opacity: pressed ? 0.8 : 1 })}>
-          <MessagesGlyph size={17} color={c.accent} />
-        </Pressable>
-      ) : null}
+      <AText variant="caption" tone="muted" numeric numberOfLines={1} style={{ fontSize: 10, marginTop: 4 }}>{spanLine}</AText>
     </Pressable>
   );
+}
+
+/**
+ * The ring tells the shift.
+ *
+ *   arc      clock-in → expected out, as a fraction
+ *   late     dashed crit, NO arc — no shift is underway to be a fraction of
+ *   break    dashed warn arc; the shift clock still runs underneath
+ *   over     full jade, then a warn tail past the top
+ *   plain    present, no progress — no expected end, or only a daily cut-off
+ */
+function RingSvg({ ring, tone }: { ring: Ring; tone: string }) {
+  const { amazen } = useTheme();
+  const c = amazen.color;
+  const R = 24;
+  const C = 2 * Math.PI * R;
+  const common = { cx: 28, cy: 28, r: R, fill: 'none', strokeWidth: 3 } as const;
+  const rot = { rotation: -90, origin: '28, 28' } as const;
+  const track = <Circle {...common} stroke={c.lineGlass} />;
+  let body: React.ReactNode = null;
+  switch (ring.kind) {
+    case 'dashedLate': body = <Circle {...common} strokeWidth={2.5} stroke={tone} strokeDasharray="4 4" />; break;
+    case 'plain': body = <Circle {...common} stroke={c.accent} />; break;
+    case 'none': body = <Circle {...common} strokeWidth={2.5} stroke={c.lineGlass} strokeDasharray="3 5" />; break;
+    case 'break': body = <>{track}<Circle {...common} {...rot} stroke={c.warn} strokeDasharray={`5 4`} /></>; break;
+    case 'over': body = <><Circle {...common} stroke={c.accent} /><Circle {...common} {...rot} stroke={c.warn} strokeLinecap="round" strokeDasharray={`${C * 0.18} ${C}`} /></>; break;
+    case 'arc': body = <>{track}<Circle {...common} {...rot} stroke={tone === c.critical ? c.accent : c.accent} strokeLinecap="round" strokeDasharray={`${Math.max(0.02, ring.fraction) * C} ${C}`} /></>; break;
+  }
+  return <Svg width={RING} height={RING} viewBox="0 0 56 56">{body}</Svg>;
 }
 
 function initials(p: CrewPerson): string {

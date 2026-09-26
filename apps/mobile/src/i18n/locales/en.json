@@ -3042,7 +3042,15 @@
       "over": "over",
       "break": "on break"
     },
-    "message": "Message {{name}}"
+    "message": "Message {{name}}",
+    "tag": {
+      "late": "Late",
+      "missed": "Missed",
+      "freeSoon": "Free soon",
+      "over": "Over",
+      "breakOver": "Long break"
+    },
+    "steadyCount": "+{{count}} steady · nothing to decide"
   },
   "widgets": {
     "shiftClock": "Shift clock",
