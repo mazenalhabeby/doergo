@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { useTimeFormat } from "@/hooks"
+import { useTimeFormat, useFormatDistance } from "@/hooks"
 import dynamic from "next/dynamic"
 import {
   Route,
@@ -63,14 +63,6 @@ interface RouteTrackingSectionProps {
   hasAssignee: boolean
 }
 
-// Format distance in km or m
-function formatDistance(meters: number): string {
-  if (meters >= 1000) {
-    return `${(meters / 1000).toFixed(1)} km`
-  }
-  return `${Math.round(meters)} m`
-}
-
 // Calculate average speed in km/h
 function calculateAverageSpeed(distanceMeters: number | null, durationMs: number | null): string {
   if (!distanceMeters || !durationMs || durationMs === 0) return "—"
@@ -110,6 +102,7 @@ export function RouteTrackingSection({
 }: RouteTrackingSectionProps) {
   const { t } = useTranslation()
   const { formatTime } = useTimeFormat()
+  const formatDistance = useFormatDistance()
   const [showMap, setShowMap] = useState(true)
   const isLive = routeData?.status === "EN_ROUTE"
   const liveElapsed = useLiveElapsedTime(routeData?.startTime || null, isLive)
@@ -248,7 +241,7 @@ export function RouteTrackingSection({
                   <div className="flex items-center gap-1">
                     <Route className="size-3 text-muted-foreground" />
                     <span className="text-[11px] font-semibold text-foreground">
-                      {routeData.distance !== null ? formatDistance(routeData.distance) : "—"}
+                      {formatDistance(routeData.distance)}
                     </span>
                   </div>
                   <div className="w-px h-3 bg-muted" />

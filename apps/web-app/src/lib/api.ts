@@ -2865,7 +2865,8 @@ export const attendanceApi = {
   // browser Geolocation API (device location, NOT IP) so it works over a VPN.
   clockIn: async (input: { locationId?: string; lat: number; lng: number; accuracy?: number; isRemote?: boolean }) => {
     const response = await api.post<{ success: boolean; data: unknown }>(`/attendance/clock-in`, input);
-    if (response.error) throw new Error(response.error);
+    // Coded (OUTSIDE_GEOFENCE, AWAY_NOT_ALLOWED …) so the refusal is said in the reader's language.
+    if (response.error) throw apiError(response);
     return (response.data as { data?: unknown })?.data ?? response.data;
   },
 

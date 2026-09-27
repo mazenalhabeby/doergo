@@ -1132,6 +1132,7 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `formatNumberFor()`, `pluralFormFor()` | Numbers and one/other plurals per locale — shared by the push and email renderers |
 | `documentTypeVisibleTo()`, `visibleTypeWhere()`, `visibleTypeSelfWhere()` | Who may SEE documents of a type — one rule in three shapes (predicate / documents `where` / catalogue `where`). Empty list = no restriction |
 | `assertMemberInScope()`, `memberScopeFilter()` | "Is this person in my crew?" — one rule for both services |
+| `formatDistance()`, `distanceParts()`, `distanceRefusalParams()` | THE distance formatter — "85 m", "850 m", "1.2 km", "9,631 km", per locale, no-break space. Mobile `lib/distance`, web `useFormatDistance` only bind the locale. Distance refusals are CODED (`TOO_FAR_TO_ARRIVE`/`TOO_FAR_TO_START`/`OUTSIDE_GEOFENCE`/`AWAY_NOT_ALLOWED` + `params.distanceMetres/radiusMetres`); `distance-display-guard.spec.ts` fails on a hand-built km/m |
 | `activeAssignmentWhere()` | "Is this member assigned to this workspace RIGHT NOW?" — shared by the clock-in list and the clock-in check |
 | `planHandover()`, `canHandOver()`, `partiesAfter()` | What handing an asset over WILL do — the confirm dialog renders it, the server executes it |
 | `holderOn()`, `holdersOn()`, `totalsByPeriod()`, `attribute()` | Whose cost was this? Computed from the date, never stored |

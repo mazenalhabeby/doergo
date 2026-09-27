@@ -179,6 +179,14 @@ describe('attendance recorded offline', () => {
       await expect(service.clockIn(clockIn({ evidence: evidence(TAP, FAR) }))).rejects.toThrow(/can only be clocked in at on site/);
     });
 
+    it('says the strict-site refusal with a code and the figures, in words a person reads', async () => {
+      const { service } = await build();
+      const err = await service.clockIn(clockIn({ evidence: evidence(TAP, FAR) })).catch((e) => e);
+      const body = err.getResponse();
+      expect(body).toMatchObject({ code: 'OUTSIDE_GEOFENCE', params: { distanceMetres: expect.any(Number), radiusMetres: expect.any(Number) } });
+      expect(body.message).toMatch(/You are [\d.,]+\u00A0k?m away\./);
+    });
+
     it('behaves exactly as before for a screen that sends no evidence', async () => {
       const { service, prisma } = await build();
       await service.clockIn({ userId: 'u1', organizationId: 'org-1', locationId: 'loc-1', ...SITE, accuracy: 10 });

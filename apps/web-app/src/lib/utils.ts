@@ -173,19 +173,6 @@ export function formatDurationMinutes(minutes: number | null | undefined): strin
   return `${hours}h ${mins}m`
 }
 
-/**
- * Format distance in meters to human-readable format
- * e.g., 1500 -> "1.5 km", 500 -> "500 m"
- */
-export function formatDistance(meters: number): string {
-  if (meters < 0) return "0 m"
-
-  if (meters >= 1000) {
-    return `${(meters / 1000).toFixed(1)} km`
-  }
-  return `${Math.round(meters)} m`
-}
-
 // =============================================================================
 // TASK HELPERS
 // =============================================================================

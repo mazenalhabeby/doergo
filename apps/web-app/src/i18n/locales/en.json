@@ -3297,8 +3297,7 @@
         "outOfRange": "Too far to clock in",
         "noGeofence": "No geofence",
         "unknownDistance": "Distance unknown",
-        "metresAway": "{{n}} m away",
-        "kmAway": "{{n}} km away",
+        "distanceAway": "{{distance}} away",
         "noFix": "Your location could not be read. You can still choose — your site is checked when you clock in.",
         "shiftToday": "Shift today",
         "primary": "Primary",
@@ -3542,7 +3541,7 @@
     "away": {
       "saved": "Saved",
       "title": "Clocking in here",
-      "subtitle": "What happens when somebody is not inside the {{radius}}m ring.",
+      "subtitle": "What happens when somebody is not inside the {{radius}} ring.",
       "noPin": "This workspace has no location on the map, so there is no ring to be outside of.",
       "noPinNote": "Add a location on the map to control this.",
       "strict": "Must be on site",
@@ -3889,7 +3888,7 @@
       "hintEmpty": "Click each corner of the site",
       "usingRadius": "Using the radius",
       "needMore": "{{count}} of 3 points",
-      "summary": "{{points}} points · {{ha}} ha · {{span}} m across",
+      "summary": "{{points}} points · {{ha}} ha · {{span}} across",
       "tooLarge": "too large to save",
       "tooManyPoints": "A boundary can have at most {{max}} points.",
       "radiusSuperseded": "The drawn site is used instead. Clear it to go back to a radius.",
@@ -6602,7 +6601,7 @@
       "scheduledTitle": "Scheduled shifts",
       "scheduledDesc": "Assign people to shifts. Scheduled members get end-of-shift reminders; anyone left unassigned works open hours.",
       "openHoursNote": "Nothing else to set up — members clock in and out on their own hours.",
-      "geofenceOn": "On-site clock-in is verified within {{radius}} m of the location pin.",
+      "geofenceOn": "On-site clock-in is verified within {{radius}} of the location pin.",
       "geofenceOff": "Location-free clock-in — no geofence set for this workspace."
     },
     "routing": {
@@ -8520,7 +8519,9 @@
     }
   },
   "serverErrors": {
-    "TIMEOFF_OVERLAP": "This employee already has time off from {{from}} to {{to}} ({{status}}). Choose different dates, or edit that entry."
+    "TIMEOFF_OVERLAP": "This employee already has time off from {{from}} to {{to}} ({{status}}). Choose different dates, or edit that entry.",
+    "OUTSIDE_GEOFENCE": "{{location}} only accepts clock-ins on site. You are {{distance}} away.",
+    "AWAY_NOT_ALLOWED": "You are {{distance}} from {{location}}, and you are not set up to work away from it. Ask your administrator to allow it."
   },
   "signLink": {
     "tabs": {

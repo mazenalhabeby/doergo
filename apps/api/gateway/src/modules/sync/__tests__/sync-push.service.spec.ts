@@ -89,6 +89,17 @@ describe('SyncPushService', () => {
     expect(res.results.map((r) => r.status)).toEqual(['rejected', 'skipped', 'applied']);
   });
 
+  it('carries a refusal\'s code AND its figures, so the phone can say it in the member\'s language', async () => {
+    mockFetch({
+      'PATCH /tasks/t1/status': {
+        status: 400,
+        body: { code: 'TOO_FAR_TO_ARRIVE', message: 'You are 9,631 km from the job site…', params: { distanceMetres: 9630871, radiusMetres: 100 } },
+      },
+    });
+    const [r] = (await service.push(caller, [status(1)])).results;
+    expect(r).toMatchObject({ status: 'rejected', code: 'TOO_FAR_TO_ARRIVE', params: { distanceMetres: 9630871, radiusMetres: 100 } });
+  });
+
   it('treats the network failing as retry, and 409 in progress as retry', async () => {
     mockFetch({ 'POST /tasks/t1/comments': [new Error('ECONNRESET'), { status: 409, body: { code: 'IDEMPOTENCY_IN_PROGRESS' } }] });
     expect((await service.push(caller, [comment(1)])).results[0].status).toBe('retry');

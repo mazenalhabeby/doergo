@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DEFAULT_LOCALE, PrismaService, type SupportedLocale } from '@hbcfield/shared';
+import { DEFAULT_LOCALE, PrismaService, formatDistance, type SupportedLocale } from '@hbcfield/shared';
 import Expo, { ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
 import { pushRouting } from '@hbcfield/shared';
 import { RecipientLocales } from '../../i18n/recipient-locales.service';
@@ -547,7 +547,8 @@ export function geofenceAlertText(data: { userName: string; locationName: string
     title: msg('attendance.geofence.title'),
     body: msg(data.action === 'clock_in' ? 'attendance.geofence.bodyIn' : 'attendance.geofence.bodyOut', {
       name: data.userName,
-      distance: Math.round(data.distance),
+      // Written by the shared formatter in each reader's language: "850 m", "9,631 km".
+      distance: (locale) => formatDistance(data.distance, { locale }),
       location: data.locationName,
     }),
   };

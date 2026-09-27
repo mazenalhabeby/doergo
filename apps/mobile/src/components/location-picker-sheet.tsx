@@ -12,6 +12,7 @@ import { BlurSheet } from './blur-sheet';
 import { SheetPanel } from './sheet-panel';
 import { Ionicons } from '@expo/vector-icons';
 import type { CompanyLocation } from '../lib/api';
+import { formatDistance } from '../lib/distance';
 import { useTheme } from '../contexts/theme-context';
 import {
   COLORS,
@@ -37,15 +38,6 @@ interface LocationPickerSheetProps {
   confirmLabel?: string;
   confirmDisabled?: boolean;
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const formatDistance = (meters: number): string => {
-  if (meters < 1000) return `${Math.round(meters)}m`;
-  return `${(meters / 1000).toFixed(1)}km`;
-};
 
 // ---------------------------------------------------------------------------
 // Component

@@ -14,6 +14,7 @@ import { OptimizedGlyph, PlanRouteGlyph } from '../glyphs/route-glyphs';
 import { usePitch } from '../../home/pitch';
 import { selection } from '../../lib/haptics';
 import { lastArrival, legToNext, type DayStop } from '../../lib/route-day';
+import { distanceParts, formatDistance } from '../../lib/distance';
 import { GlyphTile } from './glyph-tile';
 import { hasHour } from './my-work';
 import { RouteSketch } from './route-sketch';
@@ -22,7 +23,12 @@ import { useRouteDay } from './use-route-day';
 /** At most this many stops after the next one; the rest behind "+N more" (SPEC §7). */
 const AHEAD_ROWS = 3;
 
-const km = (m: number) => (m >= 10_000 ? Math.round(m / 1000) : Math.round(m / 100) / 10);
+/*
+  Distances go through the ONE formatter (`lib/distance` → shared): "850 m"
+  under a kilometre, "1.2 km", "12 km", "9,631 km", in the member's language.
+  The card used to keep its own `km()` that always said km — "0.3 km" for a
+  stop round the corner — and its own "~" rule beside it.
+*/
 
 /**
  * ⭐ TODAY'S ROUTE — `docs/design/my-route`. The driving day on the home.
@@ -53,7 +59,7 @@ export function RouteCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const tiles: { v: string; unit?: string; l: string }[] = r.state === 'finished'
     ? [
       { v: String(r.ordered.length), unit: t('routeCard.ofN', { count: r.ordered.length }), l: t('routeCard.stopsDone') },
-      { v: r.route ? String(km(r.route.totalMeters)) : '—', unit: 'km', l: t('routeCard.driven') },
+      distanceTile(r.route ? r.route.totalMeters : null, false, t('routeCard.driven')),
       { v: lastArrival(r.done) ? formatClock(lastArrival(r.done)!) : '—', l: t('routeCard.backAt') },
     ]
     : !planned
@@ -64,7 +70,7 @@ export function RouteCard({ style }: { style?: StyleProp<ViewStyle> }) {
       ]
       : [
         { v: String(r.ahead.length), l: r.done.length ? t('routeCard.left') : t('routeCard.stops', { count: r.ahead.length }) },
-        { v: r.figures.metresToGo == null ? '—' : `${r.straight || r.figures.estimated ? '~' : ''}${km(r.figures.metresToGo)}`, unit: 'km', l: r.straight ? t('routeCard.straightLine') : t('routeCard.toGo') },
+        distanceTile(r.figures.metresToGo, r.straight || r.figures.estimated, r.straight ? t('routeCard.straightLine') : t('routeCard.toGo')),
         { v: r.figures.backBy ? formatClock(r.figures.backBy) : '—', l: t('routeCard.backBy') },
       ];
 
@@ -174,7 +180,7 @@ export function RouteCard({ style }: { style?: StyleProp<ViewStyle> }) {
                 label={r.verb.kind === 'continue' ? t('routeCard.continueRoute') : t('routeCard.startRoute')}
                 detail={[
                   `${r.ahead.length} ${t('routeCard.stops', { count: r.ahead.length })}`,
-                  r.figures.metresToGo == null ? null : `${r.straight || r.figures.estimated ? '~' : ''}${km(r.figures.metresToGo)} km`,
+                  r.figures.metresToGo == null ? null : formatDistance(r.figures.metresToGo, { approx: r.straight || r.figures.estimated }),
                 ].filter(Boolean).join(' · ')}
                 onPress={() => void r.drive(r.verb!.kind === 'driveTo' ? r.verb!.stop : undefined)}
               />
@@ -251,6 +257,12 @@ function StopRow({ s, marker, n, onDrive }: { s: DayStop; marker: 'done' | 'ahea
   );
 }
 
+/** A figure tile for a distance: the number big, its unit ("m" / "km") small. */
+function distanceTile(metres: number | null | undefined, approx: boolean, l: string): { v: string; unit?: string; l: string } {
+  const p = distanceParts(metres, { approx });
+  return p ? { v: p.text, unit: p.unit, l } : { v: '—', l };
+}
+
 /** The next stop, one row: its number, name, time · km · minutes, and the drive button. */
 function NextStop({ s, n, route, from, straight, onDrive }: {
   s: DayStop; n: number; route: ReturnType<typeof useRouteDay>['route']; from: ReturnType<typeof useRouteDay>['position']; straight: boolean; onDrive: () => void;
@@ -263,7 +275,7 @@ function NextStop({ s, n, route, from, straight, onDrive }: {
   const leg = legToNext(route, s, from);
   const facts = [
     hasHour(s.at) ? formatClock(s.at!) : null,
-    leg ? `${straight || leg.estimated ? '~' : ''}${km(leg.meters)} km` : null,
+    leg ? formatDistance(leg.meters, { approx: straight || leg.estimated }) : null,
     leg && leg.seconds != null && !straight ? t('routeCard.minutes', { count: Math.round(leg.seconds / 60) }) : null,
   ].filter(Boolean).join(' · ');
   return (

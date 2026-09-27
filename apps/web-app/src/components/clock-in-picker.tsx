@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useFormatDistance } from "@/hooks/use-format-distance"
 import { Check, Loader2, MapPin, Navigation } from "lucide-react"
 import { rankClockInLocations } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
@@ -54,6 +55,7 @@ export function ClockInPicker({
   pending: boolean
 }) {
   const { t } = useTranslation()
+  const formatDistance = useFormatDistance()
   const [chosen, setChosen] = useState<string | null>(null)
 
   const ranked = useMemo(() => rankClockInLocations(locations, position), [locations, position])
@@ -67,9 +69,7 @@ export function ClockInPicker({
   const distanceLabel = (metres: number | null, hasCoords: boolean) => {
     if (!hasCoords) return t("attendance.my.picker.noGeofence", "No geofence")
     if (metres == null) return t("attendance.my.picker.unknownDistance", "Distance unknown")
-    return metres < 1000
-      ? t("attendance.my.picker.metresAway", "{{n}} m away", { n: Math.round(metres) })
-      : t("attendance.my.picker.kmAway", "{{n}} km away", { n: (metres / 1000).toFixed(1) })
+    return t("attendance.my.picker.distanceAway", "{{distance}} away", { distance: formatDistance(metres) })
   }
   const chosenName = ranked.find((r) => r.location.id === chosen)?.location.name
 

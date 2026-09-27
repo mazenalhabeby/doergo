@@ -5,7 +5,7 @@ export type ActionOutcome =
   /** The server accepted it. `response` is its answer. */
   | { kind: 'done'; response: unknown }
   /** The server refused it; the member has been told; nothing changed. */
-  | { kind: 'refused'; code?: string; message?: string; conflict: boolean }
+  | { kind: 'refused'; code?: string; message?: string; params?: Record<string, unknown>; conflict: boolean }
   /** Saved on the phone and on its way — the network did not answer in time. */
   | { kind: 'queued' };
 
@@ -15,7 +15,13 @@ export async function outcomeOf(engine: SyncEngine, op: OutboxOp): Promise<Actio
   if (op.state === 'failed' || op.state === 'conflict') {
     // Said on the screen the member is looking at — no need to repeat it in Sync.
     await engine.discard(op.id);
-    return { kind: 'refused', code: op.lastError?.code, message: op.lastError?.message, conflict: op.state === 'conflict' };
+    return {
+      kind: 'refused',
+      code: op.lastError?.code,
+      message: op.lastError?.message,
+      ...(op.lastError?.params ? { params: op.lastError.params } : {}),
+      conflict: op.state === 'conflict',
+    };
   }
   return { kind: 'queued' };
 }

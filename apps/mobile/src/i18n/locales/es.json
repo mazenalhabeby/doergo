@@ -303,8 +303,6 @@
       "yourLocations": "Tus ubicaciones",
       "recentActivity": "Actividad reciente",
       "withinRange": "(dentro del rango)",
-      "awayMeters": "a {{distance}} m",
-      "awayKm": "a {{distance}} km",
       "loadingAttendance": "Cargando asistencia...",
       "failedToLoadAttendance": "No se pudieron cargar los datos de asistencia",
       "permissionDenied": "Permiso denegado",
@@ -716,9 +714,9 @@
       "submit": "Enviar solicitud",
       "hoursShort": "{{h}} h"
     },
-    "outsideGeofenceDistance": "Estás a {{distance}}m de tu ubicación",
+    "outsideGeofenceDistance": "Estás a {{distance}} de tu ubicación",
     "autoClockOutTitle": "Salida automática",
-    "autoClockOutDistance": "Se registró tu salida automáticamente porque estás a {{distance}}m de tu lugar de trabajo.",
+    "autoClockOutDistance": "Se registró tu salida automáticamente porque estás a {{distance}} de tu lugar de trabajo.",
     "todaysBreaks": "Descansos de hoy",
     "history": {
       "title": "Historial reciente",
@@ -781,7 +779,7 @@
         "FIX_MISSING": "No se pudo determinar su ubicación. Salga al exterior o acérquese a una ventana e inténtelo de nuevo.",
         "FIX_INACCURATE": "Su ubicación aún no es lo bastante precisa (debe estar dentro de 100 m). Espere un momento e inténtelo de nuevo.",
         "FIX_NOT_AT_TAP": "Su ubicación está desactualizada. Inténtelo de nuevo para obtener una nueva.",
-        "OUTSIDE_SITE": "Está a {{distance}} m de {{location}}, que solo admite fichajes dentro de {{radius}} m. Acérquese e inténtelo de nuevo.",
+        "OUTSIDE_SITE": "Está a {{distance}} de {{location}}, que solo admite fichajes dentro de {{radius}}. Acérquese e inténtelo de nuevo.",
         "NO_SHIFT_TODAY": "Hoy no tienes turno y este espacio solo permite fichar con turno.",
         "NO_HOURS_LEFT": "No quedan horas hoy. Este espacio permite {{hours}} h al día sin turno."
       }
@@ -2876,7 +2874,11 @@
       "WAITING_FOR_WIFI": "Esperando Wi-Fi: eligió enviar fotos solo con Wi-Fi.",
       "TIME_OFF_DECIDED": "Esta solicitud ya fue resuelta, así que ya no se puede cancelar.",
       "NO_SHIFT_TODAY": "Hoy no tienes turno y este espacio solo permite fichar con turno.",
-      "NO_HOURS_LEFT": "No quedan horas hoy sin turno en este espacio. Pide un turno a tu responsable."
+      "NO_HOURS_LEFT": "No quedan horas hoy sin turno en este espacio. Pide un turno a tu responsable.",
+      "TOO_FAR_TO_ARRIVE": "Estás a {{distance}} del lugar del trabajo. Tienes que estar a menos de {{radius}} para marcar la llegada. Acércate e inténtalo de nuevo.",
+      "TOO_FAR_TO_START": "Estás a {{distance}} del lugar del trabajo. Tienes que estar a menos de {{radius}} para empezar el trabajo. Acércate e inténtalo de nuevo.",
+      "OUTSIDE_GEOFENCE": "{{location}} solo admite fichajes en el sitio. Estás a {{distance}}.",
+      "AWAY_NOT_ALLOWED": "Estás a {{distance}} de {{location}} y no tienes permiso para trabajar fuera. Pide a tu administrador que lo permita."
     },
     "signOut": {
       "title_one": "{{count}} cambio no se ha enviado",

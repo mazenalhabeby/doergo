@@ -3297,8 +3297,7 @@
         "outOfRange": "Trop loin pour pointer",
         "noGeofence": "Sans géorepérage",
         "unknownDistance": "Distance inconnue",
-        "metresAway": "à {{n}} m",
-        "kmAway": "à {{n}} km",
+        "distanceAway": "à {{distance}}",
         "noFix": "Votre position n'a pas pu être lue. Vous pouvez quand même choisir — le site est vérifié au pointage.",
         "shiftToday": "Service aujourd'hui",
         "primary": "Principal",
@@ -3542,7 +3541,7 @@
     "away": {
       "saved": "Enregistré",
       "title": "Pointer ici",
-      "subtitle": "Ce qui se passe quand quelqu’un n’est pas dans le rayon de {{radius}} m.",
+      "subtitle": "Ce qui se passe quand quelqu’un n’est pas dans le rayon de {{radius}}.",
       "noPin": "Cet espace n’a pas de lieu sur la carte, il n’y a donc pas de rayon.",
       "noPinNote": "Ajoutez un lieu sur la carte pour régler ceci.",
       "strict": "Doit être sur place",
@@ -3898,7 +3897,7 @@
       "hintEmpty": "Cliquez sur chaque coin du site",
       "usingRadius": "Rayon utilisé",
       "needMore": "{{count}} sur 3 points",
-      "summary": "{{points}} points · {{ha}} ha · {{span}} m de large",
+      "summary": "{{points}} points · {{ha}} ha · {{span}} de large",
       "tooLarge": "trop grand pour être enregistré",
       "tooManyPoints": "Une limite peut compter au maximum {{max}} points.",
       "radiusSuperseded": "C'est le site tracé qui s'applique. Effacez-le pour revenir à un rayon.",
@@ -6611,7 +6610,7 @@
       "scheduledTitle": "Créneaux planifiés",
       "scheduledDesc": "Affectez des personnes à des créneaux. Les membres planifiés reçoivent des rappels de fin de créneau ; les non-affectés travaillent en horaires libres.",
       "openHoursNote": "Rien d’autre à configurer — les membres pointent selon leurs propres horaires.",
-      "geofenceOn": "Le pointage sur site est vérifié dans un rayon de {{radius}} m autour du repère.",
+      "geofenceOn": "Le pointage sur site est vérifié dans un rayon de {{radius}} autour du repère.",
       "geofenceOff": "Pointage sans localisation — aucun géorepérage défini pour cet espace de travail."
     },
     "routing": {
@@ -8529,7 +8528,9 @@
     }
   },
   "serverErrors": {
-    "TIMEOFF_OVERLAP": "Cet employé a déjà une absence du {{from}} au {{to}} ({{status}}). Choisissez d'autres dates ou modifiez cette entrée."
+    "TIMEOFF_OVERLAP": "Cet employé a déjà une absence du {{from}} au {{to}} ({{status}}). Choisissez d'autres dates ou modifiez cette entrée.",
+    "OUTSIDE_GEOFENCE": "{{location}} n'accepte les pointages que sur place. Vous êtes à {{distance}}.",
+    "AWAY_NOT_ALLOWED": "Vous êtes à {{distance}} de {{location}} et vous n'êtes pas autorisé à travailler à distance. Demandez à votre administrateur de l'autoriser."
   },
   "signLink": {
     "tabs": {

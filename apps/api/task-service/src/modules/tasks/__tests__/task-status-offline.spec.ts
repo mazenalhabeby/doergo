@@ -97,6 +97,23 @@ describe('status change recorded offline', () => {
     expect(err.getResponse()).toMatchObject({ code: 'FIX_NOT_AT_TAP' });
   });
 
+  /*
+    The report that started the distance formatter: "You are 9630871m from the
+    job site". The refusal now carries a CODE and the two figures so the phone
+    writes it in the member's language — and its English text says km.
+  */
+  it('refuses an arrival far from the job with a code, the figures, and a readable sentence', async () => {
+    prisma.task.findUnique.mockResolvedValue(base());
+    const vienna = { lat: 48.2082, lng: 16.3738, accuracy: 5, fixAt: tapAt.toISOString() };
+    const err = await service.updateStatus({ ...tech, status: TaskStatus.ARRIVED, evidence: { occurredAt: tapAt.toISOString(), fix: vienna } }).catch((e) => e);
+    expect(err).toBeInstanceOf(BadRequestException);
+    const body = err.getResponse();
+    expect(body).toMatchObject({ code: 'TOO_FAR_TO_ARRIVE', params: { distanceMetres: expect.any(Number), radiusMetres: expect.any(Number) } });
+    expect(body.params.distanceMetres).toBeGreaterThan(150_000);
+    expect(body.message).toMatch(/^You are \d{3}\u00A0km from the job site\. You need to be within \d+\u00A0m to mark it as arrived\./);
+    expect(body.message).not.toMatch(/\d{4,}m/);
+  });
+
   it('accepts but flags a mocked location', async () => {
     prisma.task.findUnique.mockResolvedValue(base());
     await service.updateStatus({ ...tech, status: TaskStatus.ARRIVED, evidence: { occurredAt: tapAt.toISOString(), fix: { ...fix, mocked: true } } });

@@ -3297,8 +3297,7 @@
         "outOfRange": "Zu weit entfernt zum Einstempeln",
         "noGeofence": "Kein Geofence",
         "unknownDistance": "Entfernung unbekannt",
-        "metresAway": "{{n}} m entfernt",
-        "kmAway": "{{n}} km entfernt",
+        "distanceAway": "{{distance}} entfernt",
         "noFix": "Ihr Standort konnte nicht ermittelt werden. Sie können trotzdem wählen — der Standort wird beim Einstempeln geprüft.",
         "shiftToday": "Schicht heute",
         "primary": "Hauptbereich",
@@ -3542,7 +3541,7 @@
     "away": {
       "saved": "Gespeichert",
       "title": "Einstempeln hier",
-      "subtitle": "Was passiert, wenn jemand nicht im {{radius}}-m-Radius ist.",
+      "subtitle": "Was passiert, wenn jemand nicht im Umkreis von {{radius}} ist.",
       "noPin": "Dieser Arbeitsbereich hat keinen Ort auf der Karte, also gibt es keinen Radius.",
       "noPinNote": "Fügen Sie einen Ort auf der Karte hinzu, um dies zu steuern.",
       "strict": "Muss vor Ort sein",
@@ -3889,7 +3888,7 @@
       "hintEmpty": "Klicken Sie jede Ecke des Geländes an",
       "usingRadius": "Radius wird verwendet",
       "needMore": "{{count}} von 3 Punkten",
-      "summary": "{{points}} Punkte · {{ha}} ha · {{span}} m breit",
+      "summary": "{{points}} Punkte · {{ha}} ha · {{span}} breit",
       "tooLarge": "zu groß zum Speichern",
       "tooManyPoints": "Eine Grenze darf höchstens {{max}} Punkte haben.",
       "radiusSuperseded": "Stattdessen gilt das eingezeichnete Gelände. Löschen Sie es, um wieder einen Radius zu verwenden.",
@@ -6602,7 +6601,7 @@
       "scheduledTitle": "Geplante Schichten",
       "scheduledDesc": "Personen zu Schichten zuweisen. Eingeplante Mitglieder erhalten Erinnerungen zum Schichtende; nicht zugewiesene arbeiten zu offenen Zeiten.",
       "openHoursNote": "Nichts weiter einzurichten — Mitglieder stempeln zu ihren eigenen Zeiten ein und aus.",
-      "geofenceOn": "Vor-Ort-Zeiterfassung wird im Umkreis von {{radius}} m um die Markierung geprüft.",
+      "geofenceOn": "Vor-Ort-Zeiterfassung wird im Umkreis von {{radius}} um die Markierung geprüft.",
       "geofenceOff": "Standortfreie Zeiterfassung — für diesen Arbeitsbereich ist kein Geofence festgelegt."
     },
     "routing": {
@@ -8520,7 +8519,9 @@
     }
   },
   "serverErrors": {
-    "TIMEOFF_OVERLAP": "Dieser Mitarbeiter hat bereits Abwesenheit von {{from}} bis {{to}} ({{status}}). Wählen Sie andere Daten oder bearbeiten Sie den vorhandenen Eintrag."
+    "TIMEOFF_OVERLAP": "Dieser Mitarbeiter hat bereits Abwesenheit von {{from}} bis {{to}} ({{status}}). Wählen Sie andere Daten oder bearbeiten Sie den vorhandenen Eintrag.",
+    "OUTSIDE_GEOFENCE": "Bei {{location}} ist Einstempeln nur vor Ort möglich. Sie sind {{distance}} entfernt.",
+    "AWAY_NOT_ALLOWED": "Sie sind {{distance}} von {{location}} entfernt und nicht für das Arbeiten außerhalb eingerichtet. Bitten Sie Ihre Administration, es zu erlauben."
   },
   "signLink": {
     "tabs": {

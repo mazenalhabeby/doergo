@@ -12,6 +12,7 @@ import { addTaskComment, addTaskPhoto, completeTaskWithReport, declineTask, type
 import { taskDestination } from '../../offline/tasks/status-fix';
 import type { PickedImage } from '../../hooks/useImagePicker';
 import type { JobState, JobTask } from './use-job';
+import { refusalText } from '../../lib/distance';
 
 /**
  * The one status write — `changeTaskStatus` through the outbox, with the GPS
@@ -29,10 +30,8 @@ type Translate = (key: string, opts?: Record<string, unknown>) => string;
  * second. Exported because the Jobs tab's Next up card moves a job with the
  * same write and has to say the same sentence when it is refused.
  */
-export function refusalMessage(t: Translate, o: { code?: string; message?: string; conflict?: boolean }): string {
-  return (o.code && t(`offline.errors.${o.code}`, { defaultValue: '' })) ||
-    o.message ||
-    t(o.conflict ? 'offline.errors.CONFLICT' : 'taskDetail.failedToUpdateStatus');
+export function refusalMessage(t: Translate, o: { code?: string; message?: string; params?: Record<string, unknown>; conflict?: boolean }): string {
+  return refusalText(t, o, t(o.conflict ? 'offline.errors.CONFLICT' : 'taskDetail.failedToUpdateStatus'));
 }
 
 interface RouteTracking {

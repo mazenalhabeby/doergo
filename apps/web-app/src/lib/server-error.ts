@@ -1,4 +1,5 @@
 import type { TFunction } from "i18next"
+import { distanceRefusalParams } from "@hbcfield/shared/client"
 
 /**
  * Saying a server refusal in the reader's language.
@@ -41,12 +42,19 @@ export function apiError(response: { error?: string; errorCode?: string; errorPa
  * returns the server's own text — which is the honest fallback: an English
  * sentence that describes the problem beats a translated one that does not.
  */
-export function serverErrorMessage(error: unknown, t: TFunction): string {
+export function serverErrorMessage(error: unknown, t: TFunction, locale?: string): string {
   const e = error as ServerError | undefined
   const fallback = e?.message || t("common.error", "Something went wrong")
   if (!e?.code) return fallback
 
   const key = `serverErrors.${e.code}`
-  const translated = t(key, { ...(e.params ?? {}), defaultValue: "" })
+  /*
+    A distance refusal sends metres (`distanceMetres`, `radiusMetres`); the
+    sentence reads them as a person says them — "9,631 km", "100 m" — through
+    the ONE shared formatter, in the reader's language.
+  */
+  const params = e.params ?? {}
+  const distances = "distanceMetres" in params || "radiusMetres" in params ? distanceRefusalParams(params, locale) : {}
+  const translated = t(key, { ...params, ...distances, defaultValue: "" })
   return typeof translated === "string" && translated.length > 0 ? translated : fallback
 }

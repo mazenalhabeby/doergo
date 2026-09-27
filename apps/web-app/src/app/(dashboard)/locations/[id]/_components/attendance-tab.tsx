@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useFormatDistance } from "@/hooks/use-format-distance"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { CalendarClock, CalendarRange, Clock, Loader2, MapPin, Users } from "lucide-react"
 
@@ -31,6 +32,7 @@ import { MinCoverSection } from "./min-cover-section"
  */
 export function AttendanceTab({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
+  const formatDistance = useFormatDistance()
   const queryClient = useQueryClient()
 
   const initialScheduled = (space.workModel as WorkModel | undefined) != null &&
@@ -78,7 +80,7 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
           <p className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
             <MapPin className="h-3.5 w-3.5 shrink-0" />
             {space.lat != null && space.lng != null
-              ? t("scheduling.attendanceTab.geofenceOn", { radius: space.geofenceRadius })
+              ? t("scheduling.attendanceTab.geofenceOn", { radius: formatDistance(space.geofenceRadius) })
               : t("scheduling.attendanceTab.geofenceOff")}
           </p>
         </div>

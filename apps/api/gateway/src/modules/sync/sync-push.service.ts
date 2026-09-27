@@ -147,6 +147,8 @@ export class SyncPushService {
     const body = await res.json().catch(() => undefined) as any;
     const code: string | undefined = typeof body?.code === 'string' ? body.code : undefined;
     const message: string | undefined = typeof body?.message === 'string' ? body.message : Array.isArray(body?.message) ? body.message.join('; ') : undefined;
+    // The figures a coded refusal is written with ("{{distance}} from the job site").
+    const params: Record<string, unknown> | undefined = body?.params && typeof body.params === 'object' && !Array.isArray(body.params) ? body.params : undefined;
 
     if (res.ok) {
       return { id: op.id, status: res.headers.get('idempotent-replayed') === 'true' ? 'replayed' : 'applied', body: body?.data ?? body };
@@ -159,6 +161,6 @@ export class SyncPushService {
     }
     // 401 inside an authenticated push means the session ended mid-batch.
     if (res.status === 401) return { id: op.id, status: 'retry', code: 'UNAUTHENTICATED', message };
-    return { id: op.id, status: 'rejected', code: code ?? `HTTP_${res.status}`, message };
+    return { id: op.id, status: 'rejected', code: code ?? `HTTP_${res.status}`, message, ...(params ? { params } : {}) };
   }
 }

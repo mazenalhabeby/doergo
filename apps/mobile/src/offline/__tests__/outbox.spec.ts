@@ -104,6 +104,14 @@ describe('transitions', () => {
     expect(out[4]).toMatchObject({ attempts: 1, nextAttemptAt: NOW + 2000 });
   });
 
+  it('keeps a refusal\'s figures, so the screen can say "9,631 km" in the member\'s language', () => {
+    const a = op();
+    const [out] = applyPushResults(markInflight([a], NOW), [
+      { id: a.id, status: 'rejected', code: 'TOO_FAR_TO_ARRIVE', message: 'far', params: { distanceMetres: 9630871, radiusMetres: 100 } },
+    ], NOW, mid);
+    expect(out!.lastError).toEqual({ code: 'TOO_FAR_TO_ARRIVE', message: 'far', params: { distanceMetres: 9630871, radiusMetres: 100 } });
+  });
+
   it('puts an operation that was only waiting on its lane back to pending, without counting an attempt', () => {
     const a = op();
     const [out] = applyPushResults([a], [{ id: a.id, status: 'retry', code: 'LANE_WAITING' }], NOW, mid);

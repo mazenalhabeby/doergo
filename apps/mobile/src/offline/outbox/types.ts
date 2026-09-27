@@ -22,6 +22,8 @@ export type OutboxState =
 export interface OutboxError {
   code?: string;
   message?: string;
+  /** The figures a coded sentence is written with — `distanceMetres`, `radiusMetres` … */
+  params?: Record<string, unknown>;
 }
 
 export interface OutboxOp {

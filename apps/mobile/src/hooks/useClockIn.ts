@@ -11,6 +11,7 @@ import { chooseClockInLocation, mayClockInRemotely } from '@hbcfield/shared/clie
 import { connectivity } from '../offline/offline-context';
 import { useShiftActions } from '../offline/attendance/use-shift';
 import { checkClockInLocally } from '../offline/attendance/clock-in-check';
+import { formatDistance, refusalText } from '../lib/distance';
 
 interface Coords {
   lat: number;
@@ -114,8 +115,8 @@ export function useClockIn(opts: {
           toast.error(
             t('attendance.offline.notHere', 'Not clocked in'),
             t(`attendance.offline.refused.${verdict.code}`, {
-              distance: verdict.distanceM ?? '?',
-              radius: verdict.radiusM ?? '?',
+              distance: formatDistance(verdict.distanceM),
+              radius: formatDistance(verdict.radiusM),
               location: location?.name ?? '',
               hours: verdict.hours ?? '',
             }),
@@ -126,7 +127,7 @@ export function useClockIn(opts: {
 
       const outcome = await actions.clockIn({ ...(location ? { locationId: location.id } : { isRemote: true }), fix });
       if (outcome.kind === 'refused') {
-        toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('attendance.failedToClockIn'));
+        toast.error(t('common.error'), refusalText(t, outcome, t('attendance.failedToClockIn')));
         return;
       }
       await startBackgroundHeartbeat();

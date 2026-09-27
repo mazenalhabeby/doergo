@@ -3297,8 +3297,7 @@
         "outOfRange": "Demasiado lejos para fichar",
         "noGeofence": "Sin geovalla",
         "unknownDistance": "Distancia desconocida",
-        "metresAway": "a {{n}} m",
-        "kmAway": "a {{n}} km",
+        "distanceAway": "a {{distance}}",
         "noFix": "No se pudo leer tu ubicación. Puedes elegir igualmente: el sitio se comprueba al fichar.",
         "shiftToday": "Turno hoy",
         "primary": "Principal",
@@ -3542,7 +3541,7 @@
     "away": {
       "saved": "Guardado",
       "title": "Fichar aquí",
-      "subtitle": "Qué ocurre cuando alguien no está dentro del radio de {{radius}} m.",
+      "subtitle": "Qué ocurre cuando alguien no está dentro del radio de {{radius}}.",
       "noPin": "Este espacio no tiene ubicación en el mapa, así que no hay radio del que estar fuera.",
       "noPinNote": "Añada una ubicación en el mapa para controlarlo.",
       "strict": "Debe estar en el centro",
@@ -3889,7 +3888,7 @@
       "hintEmpty": "Haga clic en cada esquina del recinto",
       "usingRadius": "Usando el radio",
       "needMore": "{{count}} de 3 puntos",
-      "summary": "{{points}} puntos · {{ha}} ha · {{span}} m de ancho",
+      "summary": "{{points}} puntos · {{ha}} ha · {{span}} de ancho",
       "tooLarge": "demasiado grande para guardar",
       "tooManyPoints": "Un límite puede tener como máximo {{max}} puntos.",
       "radiusSuperseded": "En su lugar se usa el recinto dibujado. Bórrelo para volver a un radio.",
@@ -6602,7 +6601,7 @@
       "scheduledTitle": "Turnos programados",
       "scheduledDesc": "Asigna personas a turnos. Los miembros programados reciben recordatorios de fin de turno; quien quede sin asignar trabaja en horario abierto.",
       "openHoursNote": "No hay nada más que configurar: los miembros fichan según su propio horario.",
-      "geofenceOn": "El fichaje en el sitio se verifica dentro de {{radius}} m del pin de ubicación.",
+      "geofenceOn": "El fichaje en el sitio se verifica dentro de {{radius}} del pin de ubicación.",
       "geofenceOff": "Fichaje sin ubicación: no hay geovalla para este espacio de trabajo."
     },
     "routing": {
@@ -8520,7 +8519,9 @@
     }
   },
   "serverErrors": {
-    "TIMEOFF_OVERLAP": "Este empleado ya tiene ausencia del {{from}} al {{to}} ({{status}}). Elige otras fechas o edita esa entrada."
+    "TIMEOFF_OVERLAP": "Este empleado ya tiene ausencia del {{from}} al {{to}} ({{status}}). Elige otras fechas o edita esa entrada.",
+    "OUTSIDE_GEOFENCE": "{{location}} solo admite fichajes en el sitio. Estás a {{distance}}.",
+    "AWAY_NOT_ALLOWED": "Estás a {{distance}} de {{location}} y no tienes permiso para trabajar fuera. Pide a tu administrador que lo permita."
   },
   "signLink": {
     "tabs": {

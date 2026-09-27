@@ -66,6 +66,7 @@ import { workedMinutes } from '@hbcfield/shared/client';
 import { RestCard } from '../../../src/components/rest-card';
 import type { BreakPlanItem } from '@hbcfield/shared/client';
 import { useTabSafe } from '../../../src/components/amazen';
+import { formatDistance, refusalText as refusalTextFor } from '../../../src/lib/distance';
 
 export default function AttendanceScreen() {
   const { user } = useAuth();
@@ -366,8 +367,8 @@ export default function AttendanceScreen() {
   });
 
   /** A refusal from the outbox, in the member's language. */
-  const refusalText = (o: { code?: string; message?: string }, fallback: string) =>
-    (o.code && t(`offline.errors.${o.code}`, { defaultValue: '' })) || o.message || fallback;
+  const refusalText = (o: { code?: string; message?: string; params?: Record<string, unknown> }, fallback: string) =>
+    refusalTextFor(t, o, fallback);
 
   // Handle clock out
   const handleClockOut = () => {
@@ -544,12 +545,6 @@ export default function AttendanceScreen() {
 
   // Distance helper for the on-screen assigned-locations list (from the hook).
   const getDistanceToLocation = clockIn.getDistanceToLocation;
-
-  // Format distance
-  const formatDistance = (meters: number): string => {
-    if (meters < 1000) return `${Math.round(meters)}m`;
-    return `${(meters / 1000).toFixed(1)}km`;
-  };
 
   // Not a FULL_TIME technician
   if (!isFullTimeTechnician) {
@@ -792,7 +787,7 @@ export default function AttendanceScreen() {
                   {t('attendance.outsideGeofence')}
                 </Text>
                 <Text style={styles.geofenceWarningSubtitle}>
-                  {t('attendance.outsideGeofenceDistance', { distance: geofenceDistance })}
+                  {t('attendance.outsideGeofenceDistance', { distance: formatDistance(geofenceDistance) })}
                 </Text>
               </View>
               <TouchableOpacity

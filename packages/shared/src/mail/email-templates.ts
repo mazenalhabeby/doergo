@@ -1,6 +1,7 @@
 import type { SupportedLocale } from '../notifications/locale';
 import { EMAIL_MESSAGES, type EmailKey } from './email-messages';
 import { bold, emailDocument, emailTranslator, escapeHtml, subjectLine, type EmailTranslator } from './email-render';
+import { formatDistance } from '../utils/distance';
 
 /**
  * Every email the product sends, as a pure function of a language and the facts.
@@ -159,7 +160,8 @@ export function geofenceAlertEmail(
 ): RenderedEmail {
   const t = emailTranslator(locale);
   const action = data.action === 'clock_out' ? 'clock_out' : 'clock_in';
-  const meters = (n: number) => t.text('unit.meters', { meters: Math.round(n) });
+  // The shared distance formatter, in the reader's language — "9,631 km", never "9630871 m".
+  const meters = (n: number) => formatDistance(n, { locale: t.locale });
   const body = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #dc2626;">${t.html('geofence.heading')}</h2>

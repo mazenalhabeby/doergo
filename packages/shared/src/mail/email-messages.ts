@@ -44,7 +44,6 @@ const en = {
   'label.distance': 'Distance from location',
   'label.allowedRadius': 'Allowed radius',
 
-  'unit.meters': '{{meters}} m',
 
   'priority.LOW': 'Low',
   'priority.MEDIUM': 'Medium',
@@ -181,7 +180,6 @@ const de: Record<EmailKey, string> = {
   'label.distance': 'Entfernung zum Standort',
   'label.allowedRadius': 'Erlaubter Radius',
 
-  'unit.meters': '{{meters}} m',
 
   'priority.LOW': 'Niedrig',
   'priority.MEDIUM': 'Mittel',
@@ -302,7 +300,6 @@ const es: Record<EmailKey, string> = {
   'label.distance': 'Distancia a la ubicación',
   'label.allowedRadius': 'Radio permitido',
 
-  'unit.meters': '{{meters}} m',
 
   'priority.LOW': 'Baja',
   'priority.MEDIUM': 'Media',
@@ -421,7 +418,6 @@ const fr: Record<EmailKey, string> = {
   'label.distance': 'Distance du lieu',
   'label.allowedRadius': 'Rayon autorisé',
 
-  'unit.meters': '{{meters}} m',
 
   'priority.LOW': 'Basse',
   'priority.MEDIUM': 'Moyenne',
@@ -542,7 +538,6 @@ const it: Record<EmailKey, string> = {
   'label.distance': 'Distanza dal luogo',
   'label.allowedRadius': 'Raggio consentito',
 
-  'unit.meters': '{{meters}} m',
 
   'priority.LOW': 'Bassa',
   'priority.MEDIUM': 'Media',

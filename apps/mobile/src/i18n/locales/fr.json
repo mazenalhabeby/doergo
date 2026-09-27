@@ -303,8 +303,6 @@
       "yourLocations": "Vos lieux",
       "recentActivity": "Activité récente",
       "withinRange": "(dans la zone)",
-      "awayMeters": "à {{distance}} m",
-      "awayKm": "à {{distance}} km",
       "loadingAttendance": "Chargement des présences...",
       "failedToLoadAttendance": "Échec du chargement des données de présence",
       "permissionDenied": "Autorisation refusée",
@@ -716,9 +714,9 @@
       "submit": "Envoyer la demande",
       "hoursShort": "{{h}} h"
     },
-    "outsideGeofenceDistance": "Vous êtes à {{distance}} m de votre lieu",
+    "outsideGeofenceDistance": "Vous êtes à {{distance}} de votre lieu",
     "autoClockOutTitle": "Pointage de départ automatique",
-    "autoClockOutDistance": "Votre départ a été pointé automatiquement car vous êtes à {{distance}} m de votre lieu de travail.",
+    "autoClockOutDistance": "Votre départ a été pointé automatiquement car vous êtes à {{distance}} de votre lieu de travail.",
     "todaysBreaks": "Pauses du jour",
     "history": {
       "title": "Historique récent",
@@ -781,7 +779,7 @@
         "FIX_MISSING": "Votre position est introuvable. Sortez ou approchez-vous d'une fenêtre, puis réessayez.",
         "FIX_INACCURATE": "Votre position n'est pas encore assez précise (100 m maximum). Patientez un instant et réessayez.",
         "FIX_NOT_AT_TAP": "Votre position n'est plus à jour. Réessayez pour en obtenir une nouvelle.",
-        "OUTSIDE_SITE": "Vous êtes à {{distance}} m de {{location}}, qui n'accepte les pointages qu'à moins de {{radius}} m. Rapprochez-vous et réessayez.",
+        "OUTSIDE_SITE": "Vous êtes à {{distance}} de {{location}}, qui n'accepte les pointages qu'à moins de {{radius}}. Rapprochez-vous et réessayez.",
         "NO_SHIFT_TODAY": "Vous n'avez pas de service aujourd'hui, et cet espace n'autorise le pointage qu'avec un service.",
         "NO_HOURS_LEFT": "Plus d'heures aujourd'hui. Cet espace autorise {{hours}} h par jour sans service."
       }
@@ -2876,7 +2874,11 @@
       "WAITING_FOR_WIFI": "En attente du Wi-Fi : vous avez choisi d'envoyer les photos uniquement en Wi-Fi.",
       "TIME_OFF_DECIDED": "Cette demande a déjà été traitée et ne peut plus être annulée.",
       "NO_SHIFT_TODAY": "Vous n'avez pas de service aujourd'hui, et cet espace n'autorise le pointage qu'avec un service.",
-      "NO_HOURS_LEFT": "Plus d'heures aujourd'hui sans service dans cet espace. Demandez un service à votre responsable."
+      "NO_HOURS_LEFT": "Plus d'heures aujourd'hui sans service dans cet espace. Demandez un service à votre responsable.",
+      "TOO_FAR_TO_ARRIVE": "Vous êtes à {{distance}} du lieu d'intervention. Vous devez être à moins de {{radius}} pour signaler votre arrivée. Rapprochez-vous et réessayez.",
+      "TOO_FAR_TO_START": "Vous êtes à {{distance}} du lieu d'intervention. Vous devez être à moins de {{radius}} pour démarrer l'intervention. Rapprochez-vous et réessayez.",
+      "OUTSIDE_GEOFENCE": "{{location}} n'accepte les pointages que sur place. Vous êtes à {{distance}}.",
+      "AWAY_NOT_ALLOWED": "Vous êtes à {{distance}} de {{location}} et vous n'êtes pas autorisé à travailler à distance. Demandez à votre administrateur de l'autoriser."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",

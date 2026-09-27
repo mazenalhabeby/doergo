@@ -25,6 +25,7 @@ import {
   TimeEntryStatus,
   haversineDistance,
   isAtSite,
+  formatDistance,
   siteEnforcesZone,
   parseGeofencePolygon,
   activeAssignmentWhere,
@@ -674,7 +675,7 @@ export class AttendanceService {
       data.accuracy > ATTENDANCE_CONSTANTS.GPS_ACCURACY_THRESHOLD
     ) {
       throw new BadRequestException(
-        `GPS accuracy too low (${Math.round(data.accuracy)}m). Please wait for better signal. Required: ${ATTENDANCE_CONSTANTS.GPS_ACCURACY_THRESHOLD}m or better.`,
+        `GPS accuracy too low (${formatDistance(data.accuracy)}). Please wait for better signal. Required: ${formatDistance(ATTENDANCE_CONSTANTS.GPS_ACCURACY_THRESHOLD)} or better.`,
       );
     }
 
@@ -717,10 +718,22 @@ export class AttendanceService {
       : { allowed: true, reason: 'GRANTED' as const };
 
     if (!withinGeofence && !away.allowed) {
+      // Coded, with the figures, so the phone writes it in the member's
+      // language; `message` is the English fallback, distance as a person says it.
+      const metres = Math.round(distance);
+      const params = { distanceMetres: metres, radiusMetres: location.geofenceRadius, location: location.name };
       throw new BadRequestException(
         away.reason === 'SITE_STRICT'
-          ? `${location.name} can only be clocked in at on site. You are ${Math.round(distance)}m away.`
-          : `You are ${Math.round(distance)}m from ${location.name}, and you are not set up to work away from it. Ask your administrator to allow it.`,
+          ? {
+              message: `${location.name} can only be clocked in at on site. You are ${formatDistance(metres)} away.`,
+              code: 'OUTSIDE_GEOFENCE',
+              params,
+            }
+          : {
+              message: `You are ${formatDistance(metres)} from ${location.name}, and you are not set up to work away from it. Ask your administrator to allow it.`,
+              code: 'AWAY_NOT_ALLOWED',
+              params,
+            },
       );
     }
 

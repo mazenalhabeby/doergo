@@ -7,7 +7,8 @@ import { BlurSheet } from './blur-sheet';
 import { SheetPanel } from './sheet-panel';
 import { AText, Eyebrow, LiveDot } from './amazen';
 import { heroParts } from './home/shift-state';
-import { awayLabel, readClockOut, type ClockOutShift } from './home/clock-out-state';
+import { readClockOut, type ClockOutShift } from './home/clock-out-state';
+import { formatDistance } from '../lib/distance';
 
 /**
  * CLOCK OUT — THE SHEET.
@@ -147,10 +148,10 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
         {view.away ? (
           <Strip tone="warn">
             {t('shiftEnd.away', {
-              distance: awayLabel(view.away.metres),
+              distance: formatDistance(view.away.metres),
               at: shift.workspace ?? '',
               who: shift.approver ?? t('shiftEnd.yourApprover', { defaultValue: 'your approver' }),
-              defaultValue: `You are ${awayLabel(view.away.metres)} from ${shift.workspace ?? ''}. The clock-out works — ${shift.approver ?? 'your approver'} will see where it happened.`,
+              defaultValue: `You are ${formatDistance(view.away.metres)} from ${shift.workspace ?? ''}. The clock-out works — ${shift.approver ?? 'your approver'} will see where it happened.`,
             })}
           </Strip>
         ) : null}
@@ -445,7 +446,7 @@ function Receipt({ view, shift, clockOf }: { view: ReturnType<typeof readClockOu
           label={t('shiftEnd.clockedOut', { defaultValue: 'Clocked out' })}
           value={clockOf(shift.clockOutAt)}
           /* ④ — the row carries the flag; the button is untouched. */
-          flag={view.away ? `⚑ ${awayLabel(view.away.metres)}` : null}
+          flag={view.away ? `⚑ ${formatDistance(view.away.metres)}` : null}
         />
       )}
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useFormatDistance } from "@/hooks/use-format-distance"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { MapPin, Loader2 } from "lucide-react"
 
@@ -26,6 +27,7 @@ export function AwayPolicySection({
   space: { id: string; name: string; lat?: number | null; lng?: number | null; geofenceRadius?: number; geofencePolicy?: string | null }
 }) {
   const { t } = useTranslation()
+  const formatDistance = useFormatDistance()
   const qc = useQueryClient()
   const hasPin = space.lat != null && space.lng != null
   const [policy, setPolicy] = useState<GeofencePolicy>(
@@ -84,8 +86,8 @@ export function AwayPolicySection({
         title={t("attendance.away.title", "Clocking in here")}
         description={
           hasPin
-            ? t("attendance.away.subtitle", "What happens when somebody is not inside the {{radius}}m ring.", {
-                radius: space.geofenceRadius ?? 0,
+            ? t("attendance.away.subtitle", "What happens when somebody is not inside the {{radius}} ring.", {
+                radius: formatDistance(space.geofenceRadius ?? 0),
               })
             : t("attendance.away.noPin", "This workspace has no location on the map, so there is no ring to be outside of.")
         }

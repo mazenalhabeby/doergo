@@ -1,6 +1,9 @@
 // Export geofence utilities
 export * from './geofence';
 
+// Distances as a reader says them — "850 m", "9,631 km" (every app, every server sentence)
+export * from './distance';
+
 // Export date utilities
 export * from './date';
 

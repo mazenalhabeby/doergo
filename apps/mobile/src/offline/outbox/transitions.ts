@@ -27,7 +27,9 @@ export function applyPushResults(
   return batch.map((op) => {
     const result = byId.get(op.id);
     if (!result) return retry(op, now, { code: 'NO_RESULT' }, random);
-    const error = result.code || result.message ? { code: result.code, message: result.message } : undefined;
+    const error = result.code || result.message
+      ? { code: result.code, message: result.message, ...(result.params ? { params: result.params } : {}) }
+      : undefined;
     switch (outboxOutcomeForResult(result)) {
       case 'done':
         return settle(op, 'done', now, { response: result.body, lastError: undefined });

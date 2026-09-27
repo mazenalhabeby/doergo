@@ -303,8 +303,6 @@
       "yourLocations": "Your Locations",
       "recentActivity": "Recent Activity",
       "withinRange": "(within range)",
-      "awayMeters": "{{distance}}m away",
-      "awayKm": "{{distance}}km away",
       "loadingAttendance": "Loading attendance...",
       "failedToLoadAttendance": "Failed to load attendance data",
       "permissionDenied": "Permission Denied",
@@ -716,9 +714,9 @@
       "submit": "Send request",
       "hoursShort": "{{h}}h"
     },
-    "outsideGeofenceDistance": "You are {{distance}}m away from your location",
+    "outsideGeofenceDistance": "You are {{distance}} away from your location",
     "autoClockOutTitle": "Auto Clock-Out",
-    "autoClockOutDistance": "You were automatically clocked out because you are {{distance}}m away from your work location.",
+    "autoClockOutDistance": "You were automatically clocked out because you are {{distance}} away from your work location.",
     "todaysBreaks": "Today's Breaks",
     "history": {
       "title": "Recent History",
@@ -781,7 +779,7 @@
         "FIX_MISSING": "Your location couldn't be found. Step outside or near a window and try again.",
         "FIX_INACCURATE": "Your location isn't precise enough yet (it needs to be within 100 m). Wait a moment and try again.",
         "FIX_NOT_AT_TAP": "Your location is out of date. Try again to take a fresh one.",
-        "OUTSIDE_SITE": "You're {{distance}} m from {{location}}, which only accepts clock-ins within {{radius}} m. Move closer and try again.",
+        "OUTSIDE_SITE": "You're {{distance}} from {{location}}, which only accepts clock-ins within {{radius}}. Move closer and try again.",
         "NO_SHIFT_TODAY": "You have no shift today, and this workspace only allows clocking in with a shift.",
         "NO_HOURS_LEFT": "No hours left today. This workspace allows {{hours}} h a day without a shift."
       }
@@ -2876,7 +2874,11 @@
       "WAITING_FOR_WIFI": "Waiting for Wi-Fi — you chose to send photos only on Wi-Fi.",
       "TIME_OFF_DECIDED": "This request was already decided, so it can no longer be cancelled.",
       "NO_SHIFT_TODAY": "You have no shift today, and this workspace only allows clocking in with a shift.",
-      "NO_HOURS_LEFT": "No hours left today at this workspace without a shift. Ask your leader for a shift."
+      "NO_HOURS_LEFT": "No hours left today at this workspace without a shift. Ask your leader for a shift.",
+      "TOO_FAR_TO_ARRIVE": "You are {{distance}} from the job site. You need to be within {{radius}} to mark it as arrived. Please move closer and try again.",
+      "TOO_FAR_TO_START": "You are {{distance}} from the job site. You need to be within {{radius}} to start the job. Please move closer and try again.",
+      "OUTSIDE_GEOFENCE": "{{location}} only accepts clock-ins on site. You are {{distance}} away.",
+      "AWAY_NOT_ALLOWED": "You are {{distance}} from {{location}}, and you are not set up to work away from it. Ask your administrator to allow it."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",

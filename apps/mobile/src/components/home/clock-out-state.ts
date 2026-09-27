@@ -110,8 +110,3 @@ export function readClockOut(shift: ClockOutShift): ClockOutView {
     bar: { worked, rest, over: overBy, short: shortBy },
   };
 }
-
-/** `2.4 km` or `380 m` — the distance as somebody would say it. */
-export function awayLabel(metres: number): string {
-  return metres >= 1000 ? `${(metres / 1000).toFixed(1)} km` : `${Math.round(metres)} m`;
-}

@@ -31,6 +31,7 @@ import {
   buildDateRangeFilter,
   haversineDistance,
   isAtSite,
+  formatDistance,
   type OccurrenceEvidence,
   ATTENDANCE_CONSTANTS,
   getStatusCapabilities,
@@ -1818,10 +1819,20 @@ export class TasksService {
       );
 
       if (!at.inside) {
+        /*
+          A CODE and the two figures, so the phone and the web write the
+          sentence in the member's language with the distance as a person says
+          it. The English `message` stays for any client that reads only that —
+          and it says "9,631 km", never "9630871m", which is what a member once
+          read here.
+        */
         const away = Math.round(at.distanceToCentre ?? at.metresOutside);
-        throw new BadRequestException(
-          `You are ${away}m from the job site. You must be within ${radius}m to ${data.status === TaskStatus.ARRIVED ? 'mark as arrived' : 'start the job'}. Please move closer and try again.`,
-        );
+        const arriving = data.status === TaskStatus.ARRIVED;
+        throw new BadRequestException({
+          message: `You are ${formatDistance(away)} from the job site. You need to be within ${formatDistance(radius)} to ${arriving ? 'mark it as arrived' : 'start the job'}. Please move closer and try again.`,
+          code: arriving ? 'TOO_FAR_TO_ARRIVE' : 'TOO_FAR_TO_START',
+          params: { distanceMetres: away, radiusMetres: radius },
+        });
       }
     }
 

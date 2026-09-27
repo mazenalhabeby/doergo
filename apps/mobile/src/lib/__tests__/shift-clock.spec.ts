@@ -10,7 +10,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { AttendanceStatus, BreakStatus, TimeEntry } from '@hbcfield/shared/client';
 import { readShiftState, scheduleFor, heroParts, budgetParts } from '../../components/home/shift-state';
-import { readClockOut, awayLabel, AWAY_METRES } from '../../components/home/clock-out-state';
+import { readClockOut, AWAY_METRES } from '../../components/home/clock-out-state';
+import { formatDistance } from '@hbcfield/shared/client';
 import { lookFor, offeredTo, readThread, severityShown, severityTone, unreadFor, groupIssues } from '../../components/home/issue-status';
 import type { ShiftIssue, ShiftIssueStatus } from '../../lib/api/shift-issues';
 
@@ -872,8 +873,9 @@ describe('§11 — the clock-out sheet', () => {
     const away = readClockOut(shift({ awayMetres: 2400 }));
     expect(away.away).toEqual({ metres: 2400 });
     expect(readClockOut(shift({ awayMetres: AWAY_METRES - 1 })).away).toBeNull();
-    expect(awayLabel(2400)).toBe('2.4 km');
-    expect(awayLabel(380)).toBe('380 m');
+    // Said through the ONE distance formatter (no-break space between number and unit).
+    expect(formatDistance(2400)).toBe('2.4\u00A0km');
+    expect(formatDistance(380)).toBe('380\u00A0m');
     // The strip and the row flag; the BUTTON is untouched.
     expect(sheet).toMatch(/flag=\{view\.away/);
     expect(sheet).not.toMatch(/view\.away[\s\S]{0,200}disabled/);

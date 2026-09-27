@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import type { TFunction } from "i18next"
 import type { TimeEntry } from "@hbcfield/shared"
 import { attendanceApi } from "@/lib/api"
+import { serverErrorMessage } from "@/lib/server-error"
 import { shortfallMinutes, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, mayClockInRemotely, chooseClockInLocation } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { getBrowserPosition, GeolocationError, type GeolocationFailure } from "@/lib/geolocation"
@@ -64,7 +65,7 @@ export type ClockAction =
  * locations request between them, not two of each.
  */
 export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const qc = useQueryClient()
   const { user } = useAuth()
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -208,7 +209,8 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
     },
     onError: (err: unknown) => {
       if (err instanceof GeolocationError) toast.error(geoErrorMessage(t, err.reason))
-      else toast.error(err instanceof Error ? err.message : t("common.error", "Something went wrong"))
+      // A coded refusal ("You are 9,631 km from …") in the reader's language; otherwise the server's text.
+      else toast.error(serverErrorMessage(err, t, i18n.language))
     },
   })
 

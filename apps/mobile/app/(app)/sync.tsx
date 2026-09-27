@@ -13,6 +13,7 @@ import { formatTimeOfDay } from '../../src/lib/utils';
 import { useConnectivity, useOffline, useSyncStatus } from '../../src/offline/offline-context';
 import { OfflineBanner } from '../../src/offline/components/offline-banner';
 import type { OutboxOp } from '../../src/offline/outbox/types';
+import { refusalInterpolation } from '../../src/lib/distance';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -84,7 +85,7 @@ export default function SyncScreen() {
   const reason = (o: OutboxOp) => {
     const code = o.lastError?.code;
     if (code) {
-      const known = t(`offline.errors.${code}`, { defaultValue: '' });
+      const known = t(`offline.errors.${code}`, { defaultValue: '', ...refusalInterpolation(o.lastError?.params) });
       if (known) return known;
     }
     if (o.state === 'conflict') return t('offline.errors.CONFLICT');

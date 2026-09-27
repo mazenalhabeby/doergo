@@ -3297,8 +3297,7 @@
         "outOfRange": "Troppo lontano per timbrare",
         "noGeofence": "Nessun geofence",
         "unknownDistance": "Distanza sconosciuta",
-        "metresAway": "a {{n}} m",
-        "kmAway": "a {{n}} km",
+        "distanceAway": "a {{distance}}",
         "noFix": "Non è stato possibile leggere la tua posizione. Puoi comunque scegliere: la sede viene verificata alla timbratura.",
         "shiftToday": "Turno oggi",
         "primary": "Principale",
@@ -3542,7 +3541,7 @@
     "away": {
       "saved": "Salvato",
       "title": "Timbrare qui",
-      "subtitle": "Cosa succede quando qualcuno non è dentro il raggio di {{radius}} m.",
+      "subtitle": "Cosa succede quando qualcuno non è dentro il raggio di {{radius}}.",
       "noPin": "Questo spazio non ha una posizione sulla mappa, quindi non c’è alcun raggio.",
       "noPinNote": "Aggiunga una posizione sulla mappa per gestirlo.",
       "strict": "Deve essere in sede",
@@ -3898,7 +3897,7 @@
       "hintEmpty": "Faccia clic su ogni angolo del sito",
       "usingRadius": "Si usa il raggio",
       "needMore": "{{count}} di 3 punti",
-      "summary": "{{points}} punti · {{ha}} ha · {{span}} m di larghezza",
+      "summary": "{{points}} punti · {{ha}} ha · {{span}} di larghezza",
       "tooLarge": "troppo grande per salvare",
       "tooManyPoints": "Un confine può avere al massimo {{max}} punti.",
       "radiusSuperseded": "Vale invece il sito disegnato. Lo cancelli per tornare a un raggio.",
@@ -6611,7 +6610,7 @@
       "scheduledTitle": "Turni pianificati",
       "scheduledDesc": "Assegna le persone ai turni. I membri pianificati ricevono promemoria di fine turno; chi resta non assegnato lavora a orario libero.",
       "openHoursNote": "Nient’altro da configurare: i membri timbrano secondo i propri orari.",
-      "geofenceOn": "La timbratura in sede è verificata entro {{radius}} m dal segnaposto.",
+      "geofenceOn": "La timbratura in sede è verificata entro {{radius}} dal segnaposto.",
       "geofenceOff": "Timbratura senza posizione — nessun geofence impostato per questo spazio di lavoro."
     },
     "routing": {
@@ -8529,7 +8528,9 @@
     }
   },
   "serverErrors": {
-    "TIMEOFF_OVERLAP": "Questo dipendente ha già un’assenza dal {{from}} al {{to}} ({{status}}). Scegli altre date o modifica quella voce."
+    "TIMEOFF_OVERLAP": "Questo dipendente ha già un’assenza dal {{from}} al {{to}} ({{status}}). Scegli altre date o modifica quella voce.",
+    "OUTSIDE_GEOFENCE": "{{location}} accetta timbrature solo in sede. Sei a {{distance}}.",
+    "AWAY_NOT_ALLOWED": "Sei a {{distance}} da {{location}} e non sei abilitato a lavorare fuori sede. Chiedi al tuo amministratore di consentirlo."
   },
   "signLink": {
     "tabs": {

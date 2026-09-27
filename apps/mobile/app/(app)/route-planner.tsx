@@ -31,10 +31,10 @@ import { isUnreachable } from '../../src/offline/actions/unreachable';
 import { restoreRoute } from '../../src/offline/routes/saved-route';
 import { planDay } from '../../src/offline/routes/plan-route';
 import { isStalePlan } from '../../src/lib/route-day';
+import { formatDistance } from '../../src/lib/distance';
 
 type LatLng = { lat: number; lng: number; label?: string };
 
-const fmtKm = (m: number) => `${(m / 1000).toFixed(1)} km`;
 const fmtDur = (s: number) => {
   const min = Math.round(s / 60);
   if (min < 60) return `${min} min`;
@@ -470,7 +470,7 @@ export default function RoutePlannerScreen() {
                         left: toDrive.length,
                         total: orderedStops.length,
                       })
-                    : `${result.order.length} ${t('route.stopsWord', 'stops')} · ${fmtKm(result.totalMeters)} · ${fmtDur(result.totalSeconds)}`)
+                    : `${result.order.length} ${t('route.stopsWord', 'stops')} · ${formatDistance(result.totalMeters)} · ${fmtDur(result.totalSeconds)}`)
                 : `${selectedCount} ${t('route.selected', 'selected')}${start ? ` · ${start.label}` : ''}`}
             </Text>
 
@@ -556,7 +556,7 @@ export default function RoutePlannerScreen() {
                       morning around, and the reason the order matters. */}
                   {!!legTo(i) && (
                     <Text style={[styles.legDrive, { color: colors.textMuted }]}>
-                      {fmtKm(legTo(i)!.meters)} · {fmtDur(legTo(i)!.seconds)}
+                      {formatDistance(legTo(i)!.meters)} · {fmtDur(legTo(i)!.seconds)}
                     </Text>
                   )}
                 </View>

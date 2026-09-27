@@ -303,8 +303,6 @@
       "yourLocations": "Ihre Standorte",
       "recentActivity": "Letzte Aktivitäten",
       "withinRange": "(in Reichweite)",
-      "awayMeters": "{{distance}}m entfernt",
-      "awayKm": "{{distance}}km entfernt",
       "loadingAttendance": "Anwesenheit wird geladen...",
       "failedToLoadAttendance": "Anwesenheitsdaten konnten nicht geladen werden",
       "permissionDenied": "Berechtigung verweigert",
@@ -716,9 +714,9 @@
       "submit": "Anfrage senden",
       "hoursShort": "{{h}} Std"
     },
-    "outsideGeofenceDistance": "Sie sind {{distance}}m von Ihrem Standort entfernt",
+    "outsideGeofenceDistance": "Sie sind {{distance}} von Ihrem Standort entfernt",
     "autoClockOutTitle": "Automatisches Ausstempeln",
-    "autoClockOutDistance": "Sie wurden automatisch ausgestempelt, weil Sie {{distance}}m von Ihrem Arbeitsort entfernt sind.",
+    "autoClockOutDistance": "Sie wurden automatisch ausgestempelt, weil Sie {{distance}} von Ihrem Arbeitsort entfernt sind.",
     "todaysBreaks": "Heutige Pausen",
     "history": {
       "title": "Letzte Einträge",
@@ -781,7 +779,7 @@
         "FIX_MISSING": "Ihr Standort konnte nicht ermittelt werden. Gehen Sie ins Freie oder an ein Fenster und versuchen Sie es erneut.",
         "FIX_INACCURATE": "Ihr Standort ist noch nicht genau genug (höchstens 100 m). Warten Sie kurz und versuchen Sie es erneut.",
         "FIX_NOT_AT_TAP": "Ihr Standort ist veraltet. Versuchen Sie es erneut, um ihn neu zu bestimmen.",
-        "OUTSIDE_SITE": "Sie sind {{distance}} m von {{location}} entfernt; dort ist Einstempeln nur im Umkreis von {{radius}} m möglich. Gehen Sie näher heran und versuchen Sie es erneut.",
+        "OUTSIDE_SITE": "Sie sind {{distance}} von {{location}} entfernt; dort ist Einstempeln nur im Umkreis von {{radius}} möglich. Gehen Sie näher heran und versuchen Sie es erneut.",
         "NO_SHIFT_TODAY": "Sie haben heute keine Schicht, und dieser Arbeitsbereich erlaubt das Einstempeln nur mit Schicht.",
         "NO_HOURS_LEFT": "Heute keine Stunden mehr. Dieser Arbeitsbereich erlaubt {{hours}} Std. pro Tag ohne Schicht."
       }
@@ -2876,7 +2874,11 @@
       "WAITING_FOR_WIFI": "Wartet auf WLAN – Sie haben gewählt, Fotos nur über WLAN zu senden.",
       "TIME_OFF_DECIDED": "Dieser Antrag wurde bereits entschieden und kann nicht mehr storniert werden.",
       "NO_SHIFT_TODAY": "Sie haben heute keine Schicht, und dieser Arbeitsbereich erlaubt das Einstempeln nur mit Schicht.",
-      "NO_HOURS_LEFT": "Heute keine Stunden mehr ohne Schicht in diesem Arbeitsbereich. Fragen Sie Ihre Leitung nach einer Schicht."
+      "NO_HOURS_LEFT": "Heute keine Stunden mehr ohne Schicht in diesem Arbeitsbereich. Fragen Sie Ihre Leitung nach einer Schicht.",
+      "TOO_FAR_TO_ARRIVE": "Sie sind {{distance}} vom Einsatzort entfernt. Um die Ankunft zu melden, müssen Sie sich im Umkreis von {{radius}} befinden. Bitte gehen Sie näher heran und versuchen Sie es erneut.",
+      "TOO_FAR_TO_START": "Sie sind {{distance}} vom Einsatzort entfernt. Um den Auftrag zu starten, müssen Sie sich im Umkreis von {{radius}} befinden. Bitte gehen Sie näher heran und versuchen Sie es erneut.",
+      "OUTSIDE_GEOFENCE": "Bei {{location}} ist Einstempeln nur vor Ort möglich. Sie sind {{distance}} entfernt.",
+      "AWAY_NOT_ALLOWED": "Sie sind {{distance}} von {{location}} entfernt und nicht für das Arbeiten außerhalb eingerichtet. Bitten Sie Ihre Administration, es zu erlauben."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",

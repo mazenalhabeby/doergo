@@ -90,6 +90,11 @@ export interface SyncOperationResult {
   /** Machine-readable reason (e.g. TASK_REASSIGNED) for the member's language. */
   code?: string;
   message?: string;
+  /**
+   * The figures the coded sentence needs (e.g. `distanceMetres`, `radiusMetres`
+   * for TOO_FAR_TO_ARRIVE), so the phone can write it in the member's language.
+   */
+  params?: Record<string, unknown>;
   /** The server's answer for an applied/replayed operation. */
   body?: unknown;
   /** The server's current version of the entity, on a conflict. */

@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "react-i18next"
+import { useFormatDistance } from "@/hooks/use-format-distance"
 import { formatNominatimAddress, formatPhotonFeature, type PhotonProperties, type NominatimAddress } from "@/lib/geocode"
 import { polygonAreaSqm, GEOFENCE_POLYGON_LIMITS, type LatLng } from "@hbcfield/shared/client"
 
@@ -167,6 +168,7 @@ export default function LocationPicker({
   onPolygonChange,
 }: LocationPickerProps) {
   const { t } = useTranslation()
+  const formatDistance = useFormatDistance()
   // Boundary editing is only offered when the caller wired the handler, so the
   // picker keeps working unchanged everywhere it is used for a pin alone.
   const canDrawBoundary = typeof onPolygonChange === "function"
@@ -500,10 +502,10 @@ export default function LocationPicker({
                         const tooBig = area > GEOFENCE_POLYGON_LIMITS.MAX_AREA_SQM
                         return (
                           <span className={tooBig ? "font-medium text-destructive" : undefined}>
-                            {t("locations.boundary.summary", "{{points}} points · {{ha}} ha · {{span}} m across", {
+                            {t("locations.boundary.summary", "{{points}} points · {{ha}} ha · {{span}} across", {
                               points: ring.length,
                               ha: (area / 10_000).toFixed(2),
-                              span: Math.round(widestSpanMetres(ring)),
+                              span: formatDistance(widestSpanMetres(ring)),
                             })}
                             {tooBig ? ` — ${t("locations.boundary.tooLarge", "too large to save")}` : ""}
                           </span>

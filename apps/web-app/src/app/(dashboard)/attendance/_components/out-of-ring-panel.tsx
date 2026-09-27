@@ -2,6 +2,7 @@
 
 import React from "react"
 import { useTranslation } from "react-i18next"
+import { useFormatDistance } from "@/hooks/use-format-distance"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { MapPin, Check, X, Timer, Loader2, Navigation } from "lucide-react"
 import { GEOFENCE_EXCURSION, type GeofenceExcursion } from "@hbcfield/shared/client"
@@ -134,6 +135,7 @@ function PendingRow({
   onReject: () => void
 }) {
   const { t } = useTranslation()
+  const formatDistance = useFormatDistance()
   const [minutes, setMinutes] = React.useState<number>(ex.requestedMinutes ?? GEOFENCE_EXCURSION.DURATION_PRESETS[0])
   const name = `${ex.user?.firstName ?? ""} ${ex.user?.lastName ?? ""}`.trim() || t("attendance.unknownWorker", "Worker")
 
@@ -146,7 +148,7 @@ function PendingRow({
           <p className="text-xs text-muted-foreground flex items-center gap-1">
             <MapPin className="size-3" />
             {ex.space?.name ?? t("attendance.unknownLocation")}
-            {ex.lastDistanceM != null && ` · ${ex.lastDistanceM}m ${t("attendance.outOfRing.away", "away")}`}
+            {ex.lastDistanceM != null && ` · ${formatDistance(ex.lastDistanceM)} ${t("attendance.outOfRing.away", "away")}`}
           </p>
           {ex.reason && <p className="text-sm text-foreground/80 mt-1 italic">“{ex.reason}”</p>}
           <p className="text-xs text-muted-foreground mt-0.5">
