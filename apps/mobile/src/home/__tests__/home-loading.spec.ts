@@ -38,7 +38,7 @@ describe('the home asks through its queue', () => {
 
   it('useLiveRefresh asks through the queue when it is inside a home card', () => {
     const hook = code('hooks/use-live-refresh.ts');
-    expect(hook).toMatch(/q\.request\(k, \(\) => latest\.current\(\)\)/);
+    expect(hook).toMatch(/q\.request\(k, \(\) => latest\.current\(\), asker\)/);
     expect(hook).toMatch(/useContext\(HomeLoadContext\)/);
   });
 

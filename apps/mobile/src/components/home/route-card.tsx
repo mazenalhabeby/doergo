@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 import { NAV_APP_LABELS, type NavApp } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
@@ -17,6 +17,7 @@ import { lastArrival, legToNext, type DayStop } from '../../lib/route-day';
 import { distanceParts, formatDistance } from '../../lib/distance';
 import { GlyphTile } from './glyph-tile';
 import { hasHour } from './my-work';
+import { weekdayName } from '../../lib/app-dates';
 import { RouteSketch } from './route-sketch';
 import { useRouteDay } from './use-route-day';
 
@@ -97,19 +98,60 @@ export function RouteCard({ style }: { style?: StyleProp<ViewStyle> }) {
           ) : null}
         </View>
 
-        <RouteSketch route={r.route} stops={r.stops} ordered={r.ordered} doneIds={doneIds} nextId={r.next?.id ?? null} position={r.position} onOpen={r.state === 'none' ? undefined : openPlanner} />
+        {/*
+          ⚠️ NO DRAWING WITHOUT A ROUTE. An empty sketch the size of a map read as
+          something broken. Nothing to draw → a short line and, when there is
+          one, the next day there is driving.
+        */}
+        {r.state !== 'none' ? (
+          <RouteSketch route={r.route} stops={r.stops} ordered={r.ordered} doneIds={doneIds} nextId={r.next?.id ?? null} position={r.position} onOpen={openPlanner} />
+        ) : null}
 
-        {r.state === 'none' ? (
-          <View style={{ gap: 4, paddingBottom: amazen.space(1) }}>
-            <AText variant="body" tone="strong">{t('routeCard.noneTitle')}</AText>
-            <AText variant="caption" tone="muted">{t('routeCard.noneWhy')}</AText>
+        {r.state === 'none' && !r.loaded ? (
+          /* Not an answer yet — the jobs are still on their way. A quiet line, never "nothing to drive". */
+          <View style={{ height: 52, borderRadius: 16, backgroundColor: c.tile, opacity: 0.6 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
+        ) : r.state === 'none' ? (
+          <View style={{ gap: amazen.space(3) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3.5) }}>
+              <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
+                <Svg width={26} height={26} viewBox="0 0 24 24">
+                  <Path d="M5 19c3-6 6-2 8-7s4-6 6-7" fill="none" stroke={c.accent} strokeWidth={2} strokeLinecap="round" strokeDasharray="1 4" />
+                  <Circle cx={5} cy={19} r={2.4} fill={c.accent} />
+                  <Circle cx={19} cy={5} r={2.4} fill={c.accent} />
+                </Svg>
+              </View>
+              <View style={{ flex: 1, gap: 2 }}>
+                <AText variant="body" tone="strong" numberOfLines={1}>{r.nextDay ? t('routeCard.noneToday') : t('routeCard.noneAtAll')}</AText>
+                <AText variant="caption" tone="muted" numberOfLines={2}>
+                  {r.nextDay ? t('routeCard.nextDriveDay', { day: weekdayName(r.nextDay.day, 'long') }) : t('routeCard.noneAtAllWhy')}
+                </AText>
+              </View>
+            </View>
+            {r.nextDay ? (
+              <Pressable onPress={openPlanner} accessibilityRole="button"
+                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), borderRadius: 16, backgroundColor: c.tile, padding: amazen.space(3), opacity: pressed ? 0.85 : 1 })}>
+                <View style={{ width: 44, alignItems: 'center' }}>
+                  <AText variant="h3" tone="strong" numeric style={{ fontSize: 20, lineHeight: 24 }}>{String(r.nextDay.day.getDate())}</AText>
+                  <AText variant="caption" tone="muted" numberOfLines={1} style={{ fontSize: 10, letterSpacing: 1, textTransform: 'uppercase' }}>{weekdayName(r.nextDay.day, 'short')}</AText>
+                </View>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14 }}>
+                    {r.nextDay.stops[0]?.at && hasHour(r.nextDay.stops[0].at)
+                      ? t('routeCard.nextStops', { count: r.nextDay.stops.length, time: formatClock(new Date(r.nextDay.stops[0].at)) })
+                      : t('routeCard.nextStopsNoTime', { count: r.nextDay.stops.length })}
+                  </AText>
+                  <AText variant="caption" tone="muted" numberOfLines={1}>{r.nextDay.stops[0]?.label}</AText>
+                </View>
+              </Pressable>
+            ) : null}
           </View>
         ) : (
           <>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               {tiles.map((x, i) => (
                 <View key={i} style={{ flex: 1, borderRadius: 14, backgroundColor: c.tile, paddingHorizontal: 11, paddingVertical: 10 }}>
-                  <AText variant="decimal" tone="strong" numeric style={{ fontSize: 22, lineHeight: 27 }}>
+                  {/* One line whatever the figure — a long distance shrinks rather than breaking across lines. */}
+                  <AText variant="decimal" tone="strong" numeric numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ fontSize: 22, lineHeight: 27 }}>
                     {x.v}{x.unit ? <AText variant="caption" tone="muted">{` ${x.unit}`}</AText> : null}
                   </AText>
                   <AText variant="caption" tone="muted" numberOfLines={1} style={{ fontSize: 11 }}>{x.l}</AText>
@@ -117,6 +159,7 @@ export function RouteCard({ style }: { style?: StyleProp<ViewStyle> }) {
               ))}
             </View>
 
+            {r.carried > 0 && r.state !== 'finished' ? <Notice text={t('routeCard.carried', { count: r.carried })} /> : null}
             {r.straight && r.state !== 'finished' ? <Notice warn text={t('route.estimatedOnly')} /> : null}
             {r.state === 'noLocation' ? <Notice text={t('routeCard.noLocation')} /> : null}
             {r.failed ? <Notice warn text={t('routeCard.planFailed')} /> : null}

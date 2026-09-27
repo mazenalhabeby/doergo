@@ -60,6 +60,8 @@ export function useLiveRefresh(
   */
   const queue = useContext(HomeLoadContext);
   const cardKey = useContext(HomeCardKeyContext);
+  /* This hook's identity in the queue — a card may hold several of these. */
+  const asker = useRef({}).current;
   const route = useRef({ queue, cardKey });
   route.current = { queue, cardKey };
   const opts = useRef(options);
@@ -79,7 +81,7 @@ export function useLiveRefresh(
     if (now - lastAsk.current.at < LIVE_REFRESH_COALESCE_MS && lastAsk.current.signal === signal) return;
     lastAsk.current = { at: now, signal };
     const { queue: q, cardKey: k } = route.current;
-    if (q && k) q.request(k, () => latest.current());
+    if (q && k) q.request(k, () => latest.current(), asker);
     else void latest.current();
   }, []);
 

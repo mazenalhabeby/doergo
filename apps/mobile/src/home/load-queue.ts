@@ -25,7 +25,13 @@ export type LoadState = 'idle' | 'waiting' | 'loading';
 export const STUCK_MS = 15_000;
 
 interface Entry {
-  run: () => unknown;
+  /**
+   * ⚠️ EVERY ASKER IN THE CARD, NOT THE LAST ONE. A card can hold several
+   * refreshes (Today's route: its jobs AND the driver's position). One `run`
+   * per card meant the second request REPLACED the first — the jobs loader
+   * never ran and the card said "nothing to drive" forever. Keyed by asker.
+   */
+  runs: Map<unknown, () => unknown>;
   state: LoadState;
   again: boolean;
   startedAt: number;
@@ -38,8 +44,8 @@ export interface LoadQueue {
   setVisible(keys: readonly string[]): void;
   /** A slow signal: one at a time, and below the fold only when scrolled to. */
   setSlow(slow: boolean): void;
-  /** Ask for this card. Coalesced per card. */
-  request(key: string, run: () => unknown): void;
+  /** Ask for this card. Coalesced per card AND per asker (`from`, stable per hook). */
+  request(key: string, run: () => unknown, from?: unknown): void;
   state(key: string): LoadState;
   /** When `key` started its current request, or null. */
   startedAt(key: string): number | null;
@@ -87,9 +93,11 @@ export function createLoadQueue(opts: { now?: () => number; setTimer?: typeof se
     e.state = 'loading';
     e.startedAt = now();
     stuck.set(k, setTimer(() => finish(k), STUCK_MS));
-    let result: unknown;
-    try { result = e.run(); } catch { result = undefined; }
-    Promise.resolve(result).catch(() => undefined).then(() => finish(k));
+    // Everything asked for this card so far, together; asks that arrive while it runs make the next round.
+    const runs = [...e.runs.values()];
+    e.runs = new Map();
+    const results = runs.map((run) => { try { return Promise.resolve(run()).catch(() => undefined); } catch { return Promise.resolve(); } });
+    Promise.all(results).then(() => finish(k));
   }
 
   /*
@@ -122,14 +130,14 @@ export function createLoadQueue(opts: { now?: () => number; setTimer?: typeof se
     setOrder(keys) { order = [...keys]; pump(); emit(); },
     setVisible(keys) { visible = new Set(keys); visibleKnown = true; pump(); emit(); },
     setSlow(v) { if (slow !== v) { slow = v; pump(); emit(); } },
-    request(key, run) {
+    request(key, run, from = run) {
       const e = entries.get(key);
       if (e) {
-        e.run = run; // the latest refresh closure
+        e.runs.set(from, run); // this asker's latest refresh; other askers keep theirs
         if (e.state === 'loading') e.again = true;
         else if (e.state === 'idle') e.state = 'waiting';
       } else {
-        entries.set(key, { run, state: 'waiting', again: false, startedAt: 0 });
+        entries.set(key, { runs: new Map([[from, run]]), state: 'waiting', again: false, startedAt: 0 });
       }
       schedulePump();
       emit();

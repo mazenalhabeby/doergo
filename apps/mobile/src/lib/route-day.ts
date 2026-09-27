@@ -30,7 +30,8 @@ export const isLatLng = (p: { lat?: unknown; lng?: unknown } | null | undefined)
  * ⚠️ The SAME set the route planner routes (`isMyRouteStop`) — a plan made
  * there is restored here, and it only restores for the stops it was made for.
  */
-export function dayStops(tasks: readonly Task[], userId: string | null | undefined): DayStop[] {
+/** Every job of the member's that is a stop at all: theirs, open, on a flow that travels, with a real place. */
+function stopsOf(tasks: readonly Task[], userId: string | null | undefined): Array<DayStop & { task: Task }> {
   return tasks
     .filter((t) => isMyRouteStop(t, userId) && isLatLng({ lat: t.locationLat, lng: t.locationLng }))
     .map((t) => ({
@@ -41,8 +42,47 @@ export function dayStops(tasks: readonly Task[], userId: string | null | undefin
       address: t.locationAddress ?? undefined,
       at: t.dueDate ?? null,
       arrivedAt: (t as { routeEndedAt?: string | null }).routeEndedAt ?? null,
+      task: t,
     }))
     .sort((a, b) => (a.at ?? '9').localeCompare(b.at ?? '9'));
+}
+
+const UNDER_WAY = new Set(['ACCEPTED', 'EN_ROUTE', 'ARRIVED', 'IN_PROGRESS']);
+const localDayStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+const strip = ({ task: _t, ...stop }: DayStop & { task: Task }): DayStop => stop;
+
+/**
+ * ⭐ TODAY'S ROUTE IS WHAT IS STILL TO DRIVE TODAY.
+ *
+ * Every open stop counted, whatever its date — so next week's deliveries sat
+ * on today's route — and the card said "nothing to drive to today" while
+ * yesterday's deliveries still waited at their doors. The route is now:
+ *   • stops dated today (by the member's own calendar day, DST-safe),
+ *   • stops CARRIED OVER — due before today and still open,
+ *   • the job already under way, whatever its date,
+ *   • an open stop with no date at all (nothing says it is not today);
+ * and a stop dated a later day waits for that day (`nextDriveDay`).
+ */
+export function routeDayOf(tasks: readonly Task[], userId: string | null | undefined, now: Date = new Date()) {
+  const today = localDayStart(now);
+  const tomorrow = localDayStart(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+  const all = stopsOf(tasks, userId);
+  const due = (s: DayStop) => (s.at ? new Date(s.at).getTime() : NaN);
+  const todays = all.filter((s) => UNDER_WAY.has(s.task.status as string) || !s.at || !(due(s) >= tomorrow));
+  const carried = todays.filter((s) => s.at && due(s) < today && !UNDER_WAY.has(s.task.status as string)).length;
+  const later = all.filter((s) => !todays.includes(s));
+  let nextDay: { day: Date; stops: DayStop[] } | null = null;
+  if (later.length) {
+    const first = localDayStart(new Date(due(later[0]!)));
+    const sameDay = later.filter((s) => localDayStart(new Date(due(s))) === first);
+    nextDay = { day: new Date(first), stops: sameDay.map(strip) };
+  }
+  return { stops: todays.map(strip), carried, nextDay };
+}
+
+/** Today's stops — see `routeDayOf`. */
+export function dayStops(tasks: readonly Task[], userId: string | null | undefined, now: Date = new Date()): DayStop[] {
+  return routeDayOf(tasks, userId, now).stops;
 }
 
 /** Jobs already arrived at, by the record (En Route → Arrived). */

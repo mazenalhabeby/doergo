@@ -8,7 +8,7 @@ import { useDriverPosition } from '../../hooks/use-driver-position';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { detectNavApps, preferredNavApp, rememberNavApp, rememberedNavApp, type InstalledNavApp } from '../../lib/nav-apps';
 import {
-  arrivedIdsOf, dayStops, inPlanOrder, isStalePlan, notInPlan, isStraightLine, primaryVerb, progress, routeFigures, routeState,
+  arrivedIdsOf, routeDayOf, inPlanOrder, isStalePlan, notInPlan, isStraightLine, primaryVerb, progress, routeFigures, routeState,
   type DayStop,
 } from '../../lib/route-day';
 
@@ -22,7 +22,7 @@ import {
 export function useRouteDay() {
   const { user } = useAuth();
   const memberId = user?.id ?? null;
-  const { tasks, load } = useHomeTasks();
+  const { tasks, load, loaded } = useHomeTasks();
   /*
     ⚠️ FOCUS AND RESUME, NO MINUTE TIMER. `load` is a pull, and a pull carries
     the scope's whole membership; the stops change when a job does, which the
@@ -33,7 +33,8 @@ export function useRouteDay() {
   useLiveRefresh(load, null);
   const { position, allowed, fresh, ask } = useDriverPosition();
 
-  const stops = useMemo(() => dayStops(tasks, memberId), [tasks, memberId]);
+  const day = useMemo(() => routeDayOf(tasks, memberId), [tasks, memberId]);
+  const stops = day.stops;
   const stopKey = stops.map((s) => s.id).join(',');
 
   /** The plan as kept on the phone — `plan` below is it, unless it was made from somewhere else. */
@@ -114,6 +115,8 @@ export function useRouteDay() {
   }, [memberId]);
 
   return {
+    /* ⚠️ No answer about the day until the jobs have loaded — "nothing to drive" said early is a false calm. */
+    loaded, carried: day.carried, nextDay: day.nextDay,
     state, stops, route: plan, ordered, unplanned, ahead, done, next, position, allowed, figures,
     straight: isStraightLine(plan), verb: primaryVerb(app, done.length, next),
     app, apps, planning, failed,

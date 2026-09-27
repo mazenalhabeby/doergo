@@ -20,7 +20,8 @@ describe('load queue', () => {
     q.setVisible(visible);
     const started: string[] = [];
     const pending: Record<string, ReturnType<typeof deferred>> = {};
-    const ask = (k: string) => q.request(k, () => { started.push(k); pending[k] = deferred(); return pending[k].p; });
+    // One asker per card here (as a card with a single useLiveRefresh).
+    const ask = (k: string) => q.request(k, () => { started.push(k); pending[k] = deferred(); return pending[k].p; }, k);
     return { q, started, pending, ask };
   }
 
@@ -116,5 +117,29 @@ describe('load queue', () => {
     for (const k of ['crew', 'shortcuts', 'shift']) q.request(k, () => { started.push(k); return new Promise(() => undefined); });
     await flush();
     expect(started).toEqual(['shift', 'shortcuts']);
+  });
+});
+
+describe('several askers in one card', () => {
+  it('BUG FIXED: both refreshes run — the second no longer replaces the first', async () => {
+    const q = createLoadQueue();
+    q.setOrder(['route']); q.setVisible(['route']);
+    const ran: string[] = [];
+    const jobs = {}; const position = {};
+    q.request('route', () => { ran.push('jobs'); }, jobs);
+    q.request('route', () => { ran.push('position'); }, position);
+    await flush(); await flush();
+    expect(ran.sort()).toEqual(['jobs', 'position']);
+  });
+
+  it('the same asker twice is still one run (its latest)', async () => {
+    const q = createLoadQueue();
+    q.setOrder(['route']); q.setVisible(['route']);
+    const ran: string[] = [];
+    const me = {};
+    q.request('route', () => { ran.push('old'); }, me);
+    q.request('route', () => { ran.push('new'); }, me);
+    await flush(); await flush();
+    expect(ran).toEqual(['new']);
   });
 });
