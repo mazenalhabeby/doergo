@@ -87,7 +87,12 @@ export default function SchedulesScreen() {
 
         <View style={s.daysRow}>
           {dayNames.map((day, idx) => {
-            const entry = scheduleMap.get(idx);
+            /*
+              ⚠️ The row is drawn Monday first; the schedule stores 0 = SUNDAY.
+              Read by position, every day sat one column late — a Monday shift
+              showed under Tuesday.
+            */
+            const entry = scheduleMap.get((idx + 1) % 7);
             const isActive = entry?.isActive;
             return (
               <View
