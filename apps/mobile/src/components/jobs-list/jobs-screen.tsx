@@ -21,7 +21,7 @@ import { QuietButton, SectionLabel } from '../job/job-ui';
 import type { OpenSheet } from '../job/job-logic';
 import type { WriteStatus } from '../job/use-job-writes';
 import {
-  bandOf, blockedCount, canCreateJobs, emptyKind, filtersFor, groupJobs, passesFilter, pickNextUp, placeOf,
+  bandOf, canCreateJobs, chipsFor, effectiveFilter, emptyKind, groupJobs, passesFilter, pickNextUp, placeOf,
   rowRight, rowWho, showsNextUp, showsRouteRow, PERIODS,
   type JobBand, type JobFacts, type JobsFilter, type Period,
 } from './jobs-logic';
@@ -82,7 +82,7 @@ export function JobsScreen({
   */
   const oversee = oversees(user);
   const [period, setPeriod] = useState<Period>('current');
-  const [filter, setFilter] = useState<JobsFilter>('all');
+  const [chosenFilter, setFilter] = useState<JobsFilter>('all');
   const [search, setSearch] = useState('');
   /* Opens on MINE — "what do I do now" is why a person unlocks a phone. */
   const [mineOnly, setMineOnly] = useState(true);
@@ -112,6 +112,12 @@ export function JobsScreen({
   }, [tasks, flows, user?.id]);
   const factsOf = useCallback((task: ListTask): JobFacts => facts.get(task.id) ?? { mine: false, closed: false, canceled: false, underWay: false }, [facts]);
 
+  /* ---------------- the chips: this period's, only those with jobs ---------------- */
+
+  const chips = useMemo(() => chipsFor(tasks, { oversee, period }, factsOf), [tasks, oversee, period, factsOf]);
+  // A chip that emptied (the last blocked job unblocked) quietly hands back to All.
+  const filter = effectiveFilter(chosenFilter, chips);
+
   /* ---------------- what is drawn ---------------- */
 
   const nextShown = showsNextUp({ period, filter, search });
@@ -134,10 +140,9 @@ export function JobsScreen({
   }, [period, list.isLoading, tasks, user?.id]);
   const routeShown = showsRouteRow({ drives: drivesRoutes(user as never), stops: routeStops, period, filter });
 
-  const blocked = blockedCount(tasks);
-  const filterOptions = filtersFor(oversee).map((k) => ({
-    key: k,
-    label: k === 'blocked' && blocked > 0 ? t('jobsList.filters.blockedCount', { count: blocked }) : t(`jobsList.filters.${k}`),
+  const filterOptions = chips.map((c) => ({
+    key: c.key,
+    label: c.key === 'all' ? t('jobsList.filters.all') : t('jobsList.filters.withCount', { label: t(`jobsList.filters.${c.key}`), count: c.count }),
   }));
 
   /* ---------------- opening a job ---------------- */

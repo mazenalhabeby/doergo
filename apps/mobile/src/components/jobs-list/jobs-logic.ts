@@ -101,11 +101,31 @@ export function groupJobs<T extends Task>(tasks: readonly T[], factsOf: (t: T) =
 
 /* ---------------- filters ---------------- */
 
-export type JobsFilter = 'all' | 'nobody' | 'active' | 'blocked' | 'done';
+export type JobsFilter = 'all' | 'nobody' | 'active' | 'notStarted' | 'blocked' | 'done' | 'canceled';
 
-/** The chips — the person overseeing also gets "Nobody on". */
-export function filtersFor(oversee: boolean): JobsFilter[] {
-  return oversee ? ['all', 'nobody', 'active', 'blocked', 'done'] : ['all', 'active', 'blocked', 'done'];
+/**
+ * ⭐ THE CHIPS FOLLOW THE QUESTION — and the data.
+ *
+ * One fixed row asked "Active? Blocked?" of next week, where nothing has
+ * started and nothing can be blocked. Each period now offers only what can
+ * be true in it, and `chipsFor` then drops any chip with nothing behind it:
+ *
+ *   Now       Nobody on · Active · Blocked · Done · Cancelled
+ *   Upcoming  Nobody on · Not started · Blocked
+ *   History   Done · Cancelled
+ *
+ * "Nobody on" only for the person overseeing — an executor is never shown
+ * work that is nobody's. All is always there.
+ */
+const BY_PERIOD: Record<Period, JobsFilter[]> = {
+  current: ['nobody', 'active', 'blocked', 'done', 'canceled'],
+  upcoming: ['nobody', 'notStarted', 'blocked'],
+  history: ['done', 'canceled'],
+};
+
+/** The chips a period may offer, before counting. */
+export function filtersFor(oversee: boolean, period: Period = 'current'): JobsFilter[] {
+  return ['all', ...BY_PERIOD[period].filter((f) => oversee || f !== 'nobody')];
 }
 
 /** Nobody has been given it — neither the one assignee nor any of the several. */
@@ -116,16 +136,47 @@ export function nobodyOn(task: Pick<Task, 'assignedToId'> & { assignees?: unknow
 /**
  * Does a job pass the chip?
  *  - Active = what is on today's plate: doing now, overdue, or today
+ *  - Not started = open, given out, and nobody has begun it
  *  - Nobody on = open and given to nobody
+ *  - Done = finished; Cancelled = called off (two different answers)
  */
 export function passesFilter(task: Task, filter: JobsFilter, band: JobBand, facts: JobFacts): boolean {
   switch (filter) {
     case 'all': return true;
     case 'active': return band === 'doing' || band === 'today' || band === 'overdue';
+    case 'notStarted': return !facts.closed && !facts.underWay && task.status !== 'BLOCKED' && !nobodyOn(task as never);
     case 'blocked': return task.status === 'BLOCKED';
     case 'nobody': return !facts.closed && nobodyOn(task as never);
-    case 'done': return facts.closed;
+    case 'done': return facts.closed && !facts.canceled;
+    case 'canceled': return facts.canceled;
   }
+}
+
+export interface Chip { key: JobsFilter; count: number }
+
+/**
+ * The chips to draw: this period's, each with how many jobs it holds, and
+ * only those holding any. One pass over the list.
+ */
+export function chipsFor(
+  tasks: readonly Task[],
+  v: { oversee: boolean; period: Period },
+  factsOf: (t: Task) => JobFacts,
+  now: Date = new Date(),
+): Chip[] {
+  const keys = filtersFor(v.oversee, v.period);
+  const counts = new Map<JobsFilter, number>(keys.map((k) => [k, 0]));
+  for (const task of tasks) {
+    const f = factsOf(task);
+    const band = bandOf(task, f, now);
+    for (const k of keys) if (passesFilter(task, k, band, f)) counts.set(k, counts.get(k)! + 1);
+  }
+  return keys.map((k) => ({ key: k, count: counts.get(k)! })).filter((c) => c.key === 'all' || c.count > 0);
+}
+
+/** The chip in force: the chosen one while it still has jobs, else All. */
+export function effectiveFilter(chosen: JobsFilter, chips: readonly Chip[]): JobsFilter {
+  return chips.some((c) => c.key === chosen) ? chosen : 'all';
 }
 
 /** The count on the Blocked chip — what the chip would show. */

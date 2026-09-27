@@ -3554,7 +3554,10 @@
       "active": "Actives",
       "blocked": "Bloquées",
       "blockedCount": "Bloquées · {{count}}",
-      "done": "Terminées"
+      "done": "Terminées",
+      "notStarted": "Pas commencés",
+      "canceled": "Annulés",
+      "withCount": "{{label}} · {{count}}"
     },
     "bands": {
       "doing": "En cours",

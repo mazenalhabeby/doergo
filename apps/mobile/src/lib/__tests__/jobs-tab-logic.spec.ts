@@ -4,7 +4,7 @@
  */
 import { getEndOfMonth, getFlowSteps, getStartOfMonth, toISODateString } from '@hbcfield/shared/client';
 import {
-  bandOf, blockedCount, canCreateJobs, emptyKind, filtersFor, groupJobs, nobodyOn, passesFilter, periodParams,
+  bandOf, blockedCount, canCreateJobs, chipsFor, effectiveFilter, emptyKind, filtersFor, groupJobs, nobodyOn, passesFilter, periodParams,
   pickNextUp, placeOf, rowRight, rowWho, showsNextUp, showsRouteRow,
   type JobFacts,
 } from '../../components/jobs-list/jobs-logic';
@@ -76,9 +76,34 @@ describe('bands — Doing now, Blocked, Overdue, Today, Later, Done', () => {
 });
 
 describe('filters per role', () => {
-  it('a doer gets All, Active, Blocked, Done; somebody overseeing adds Nobody on', () => {
-    expect(filtersFor(false)).toEqual(['all', 'active', 'blocked', 'done']);
-    expect(filtersFor(true)).toEqual(['all', 'nobody', 'active', 'blocked', 'done']);
+  it('each period offers only what can be true in it; Nobody on only when overseeing', () => {
+    expect(filtersFor(false, 'current')).toEqual(['all', 'active', 'blocked', 'done', 'canceled']);
+    expect(filtersFor(true, 'current')).toEqual(['all', 'nobody', 'active', 'blocked', 'done', 'canceled']);
+    expect(filtersFor(false, 'upcoming')).toEqual(['all', 'notStarted', 'blocked']);
+    expect(filtersFor(true, 'upcoming')).toEqual(['all', 'nobody', 'notStarted', 'blocked']);
+    expect(filtersFor(true, 'history')).toEqual(['all', 'done', 'canceled']);
+  });
+
+  it('a chip with nothing behind it is not drawn, and every chip carries its count', () => {
+    const later1 = job({ status: 'ASSIGNED', dueDate: at(30) });
+    const later2 = job({ status: 'ASSIGNED', dueDate: at(31) });
+    const chips = chipsFor([later1, later2], { oversee: false, period: 'upcoming' }, factsOf, NOW);
+    // Nothing is blocked next week — no Blocked chip; both not started.
+    expect(chips).toEqual([{ key: 'all', count: 2 }, { key: 'notStarted', count: 2 }]);
+  });
+
+  it('a chosen chip that empties hands back to All', () => {
+    expect(effectiveFilter('blocked', [{ key: 'all', count: 3 }])).toBe('all');
+    expect(effectiveFilter('blocked', [{ key: 'all', count: 3 }, { key: 'blocked', count: 1 }])).toBe('blocked');
+  });
+
+  it('done and cancelled are two different answers', () => {
+    const done = job({ status: 'COMPLETED' });
+    const off = job({ status: 'CANCELED' });
+    const f = (t: typeof done) => ({ ...factsOf(t), canceled: t.status === 'CANCELED' });
+    expect(passesFilter(done, 'done', band(done), f(done))).toBe(true);
+    expect(passesFilter(off, 'done', band(off), f(off))).toBe(false);
+    expect(passesFilter(off, 'canceled', band(off), f(off))).toBe(true);
   });
 
   it('each chip keeps what it names', () => {
