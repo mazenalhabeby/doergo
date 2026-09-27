@@ -23,6 +23,14 @@ export class ShiftsService extends BaseGatewayService {
   }
 
   // Rota
+  weekRota(data: { organizationId: string; viewScope: string[] | null; editScope: string[] | null; spaceId?: string; from?: string }) {
+    return this.send({ cmd: 'week_rota' }, data);
+  }
+
+  setRotaDay(data: { organizationId: string; editScope: string[] | null; spaceId: string; userId: string; date: string; shiftId: string | null; repeat: 'once' | 'weekly'; createdById: string }) {
+    return this.send({ cmd: 'set_rota_day' }, data);
+  }
+
   listAssignments(data: { organizationId: string; scopeSpaceIds?: string[] | null; spaceId: string; includeEnded?: boolean }) {
     return this.send({ cmd: 'list_shift_assignments' }, data);
   }

@@ -27,6 +27,17 @@ export class ShiftsController {
     return this.service.deleteShift(data);
   }
 
+  // The week as the clock-in reads it, and changing one day of it
+  @MessagePattern({ cmd: 'week_rota' })
+  weekRota(@Payload() data: any) {
+    return this.service.weekRota(data);
+  }
+
+  @MessagePattern({ cmd: 'set_rota_day' })
+  setRotaDay(@Payload() data: any) {
+    return this.service.setRotaDay(data);
+  }
+
   // Rota (assignments)
   @MessagePattern({ cmd: 'list_shift_assignments' })
   listAssignments(@Payload() data: { organizationId: string; spaceId: string; includeEnded?: boolean }) {

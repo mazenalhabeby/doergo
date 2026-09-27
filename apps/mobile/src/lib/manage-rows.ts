@@ -40,7 +40,12 @@ export const MANAGE_ROWS = [
   { icon: 'person-add', labelKey: 'manage.joinRequests.label', descKey: 'manage.joinRequests.desc', route: '/(app)/manage/join-requests', color: '#f97316', permission: 'canManageUsers', orgWide: true },
   { icon: 'mail', labelKey: 'manage.invitations.label', descKey: 'manage.invitations.desc', route: '/(app)/manage/invitations', color: '#06b6d4', permission: 'canManageUsers', orgWide: true },
   { icon: 'alert-circle', labelKey: 'manage.issues.label', descKey: 'manage.issues.desc', route: 'sheet:issues', color: '#ef4444', permission: 'canViewAllTasks', orgWide: false },
-  { icon: 'time', labelKey: 'manage.schedules.label', descKey: 'manage.schedules.desc', route: '/(app)/manage/schedules', color: '#10b981', permission: 'canViewAllTasks', orgWide: true },
+  /*
+    Schedules shows who works when — a staffing fact, read on the leader
+    permission (`canViewSpaceAttendance`, in a space) like cover and the live
+    floor, not on `canViewAllTasks`, which the €2 observer holds.
+  */
+  { icon: 'time', labelKey: 'manage.schedules.label', descKey: 'manage.schedules.desc', route: '/(app)/manage/schedules', color: '#10b981', permission: 'canViewSpaceAttendance', orgWide: false },
   /*
     Photograph a rental agreement at the desk and the van is on the books before
     you are out of the car park — created, handed over, and the one it replaces

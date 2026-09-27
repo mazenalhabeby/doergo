@@ -3850,5 +3850,24 @@
     },
     "waiting_one": "{{count}} en attente",
     "waiting_other": "{{count}} en attente"
+  },
+  "rota": {
+    "failed": "Impossible de charger le planning. Tirez pour réessayer.",
+    "prevWeek": "Semaine précédente",
+    "nextWeek": "Semaine suivante",
+    "thisWeek": "Cette semaine",
+    "noSpaces": "Aucun espace de travail.",
+    "nobody": "Personne n’est affecté à {{space}}",
+    "setUpOnWeb": "Ajoutez postes et personnes dans les réglages de présence de l’espace, sur le web.",
+    "readOnly": "Vous voyez le planning ; un responsable le modifie.",
+    "legendSchedule": "Horaire hebdomadaire (sans planning)",
+    "legendLeave": "Congé",
+    "legendOnce": "Ce jour seulement",
+    "leaveCell": "Congé",
+    "off": "Repos",
+    "once": "Ce jour seulement",
+    "weekly": "Chaque {{weekday}}",
+    "offOnceNeedsLeave": "Un seul jour de repos sur un poste fixe est un congé : approuvez-le, ou mettez-le en repos chaque semaine.",
+    "saveFailed": "Impossible d’enregistrer."
   }
 }

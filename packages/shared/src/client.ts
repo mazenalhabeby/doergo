@@ -132,6 +132,8 @@ export * from './attendance/clock-in-choice';
 // Cover: enough people, and the right people — the leave chart, the approval
 // verdict and the live floor panel all read this one rule.
 export * from './attendance/cover';
+// The rota — who works which shift which day — read by the clock-in and the Schedules page.
+export * from './attendance/rota';
 
 // What should I work on next — one ordering, shared by the phone and the web.
 export * from './tasks/my-work';

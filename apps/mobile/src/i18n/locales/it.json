@@ -3850,5 +3850,24 @@
     },
     "waiting_one": "{{count}} in attesa",
     "waiting_other": "{{count}} in attesa"
+  },
+  "rota": {
+    "failed": "Impossibile caricare il turno. Trascina per riprovare.",
+    "prevWeek": "Settimana precedente",
+    "nextWeek": "Settimana successiva",
+    "thisWeek": "Questa settimana",
+    "noSpaces": "Nessuno spazio di lavoro.",
+    "nobody": "Nessuno è assegnato a {{space}}",
+    "setUpOnWeb": "Aggiungi turni e persone nelle impostazioni presenze dello spazio, sul web.",
+    "readOnly": "Puoi vedere i turni; li modifica un responsabile.",
+    "legendSchedule": "Orario settimanale (senza turni)",
+    "legendLeave": "Assenza",
+    "legendOnce": "Solo questo giorno",
+    "leaveCell": "Assente",
+    "off": "Riposo",
+    "once": "Solo questo giorno",
+    "weekly": "Ogni {{weekday}}",
+    "offOnceNeedsLeave": "Un solo giorno libero da un turno fisso è un’assenza: approvala, oppure imposta riposo ogni settimana.",
+    "saveFailed": "Impossibile salvare."
   }
 }

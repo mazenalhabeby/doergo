@@ -78,6 +78,7 @@ export { taskAttachmentsApi, uploadToPresignedUrl } from './attachments';
 export { attendanceApi } from './attendance';
 export type { NoShow } from './attendance';
 export { techniciansApi, timeOffApi, availabilityApi, scheduleApi } from './technicians';
+export { rotaApi, type RotaWeek, type RotaCell, type RotaShift } from './rota';
 export { onboardingApi, invitationsApi, pushApi } from './onboarding';
 export { joinRequestsApi, membersApi, adminInvitationsApi, orgSettingsApi, teamApi } from './admin';
 export type { JoinRequest, OrgMember, Invitation, CreateInvitationInput, Colleague } from './admin';

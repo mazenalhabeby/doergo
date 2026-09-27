@@ -3850,5 +3850,24 @@
     },
     "waiting_one": "{{count}} offen",
     "waiting_other": "{{count}} offen"
+  },
+  "rota": {
+    "failed": "Dienstplan konnte nicht geladen werden. Zum Aktualisieren ziehen.",
+    "prevWeek": "Vorherige Woche",
+    "nextWeek": "Nächste Woche",
+    "thisWeek": "Diese Woche",
+    "noSpaces": "Keine Arbeitsbereiche.",
+    "nobody": "Niemand ist {{space}} zugeordnet",
+    "setUpOnWeb": "Schichten und Personen legen Sie in den Anwesenheitseinstellungen des Arbeitsbereichs im Web an.",
+    "readOnly": "Sie sehen den Dienstplan; Änderungen macht die Dienstplanung.",
+    "legendSchedule": "Wochenplan (ohne Dienstplan)",
+    "legendLeave": "Abwesenheit",
+    "legendOnce": "Nur dieser Tag",
+    "leaveCell": "Frei",
+    "off": "Frei",
+    "once": "Nur dieser Tag",
+    "weekly": "Jeden {{weekday}}",
+    "offOnceNeedsLeave": "Ein einzelner freier Tag in einer festen Schicht ist Abwesenheit — genehmigen Sie dafür Urlaub oder setzen Sie ihn jede Woche frei.",
+    "saveFailed": "Änderung konnte nicht gespeichert werden."
   }
 }

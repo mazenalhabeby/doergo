@@ -3850,5 +3850,24 @@
     },
     "waiting_one": "{{count}} waiting",
     "waiting_other": "{{count}} waiting"
+  },
+  "rota": {
+    "failed": "Could not load the schedule. Pull to try again.",
+    "prevWeek": "Previous week",
+    "nextWeek": "Next week",
+    "thisWeek": "This week",
+    "noSpaces": "No workspaces to show.",
+    "nobody": "Nobody is assigned to {{space}}",
+    "setUpOnWeb": "Add shifts and people in the workspace’s Attendance settings on the web.",
+    "readOnly": "You can see the rota; a rota manager changes it.",
+    "legendSchedule": "Weekly schedule (no rota)",
+    "legendLeave": "Time off",
+    "legendOnce": "This day only",
+    "leaveCell": "Leave",
+    "off": "Off",
+    "once": "This day only",
+    "weekly": "Every {{weekday}}",
+    "offOnceNeedsLeave": "A single day off from a standing shift is time off — approve leave for it, or set it off every week.",
+    "saveFailed": "Could not save the change."
   }
 }

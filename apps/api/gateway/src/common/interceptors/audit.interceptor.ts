@@ -62,6 +62,7 @@ const ROUTE_ACTIONS: Record<string, string> = {
   'POST /spaces/:id/rota': 'ROTA_ASSIGNED',
   'PATCH /rota/:id': 'ROTA_UPDATED',
   'DELETE /rota/:id': 'ROTA_REMOVED',
+  'POST /rota/day': 'ROTA_DAY_SET',
   'POST /space-roles': 'SPACE_ROLE_CREATED',
   'PATCH /space-roles/:id': 'SPACE_ROLE_UPDATED',
   'DELETE /space-roles/:id': 'SPACE_ROLE_DELETED',

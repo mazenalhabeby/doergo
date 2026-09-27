@@ -59,6 +59,45 @@ export class ShiftsController {
   }
 
   // ── Rota (assignments) ──
+  /**
+   * ONE workspace's week, as the clock-in reads it — the Schedules page.
+   *
+   * ⚠️ READ ON `canViewSpaceAttendance`, the leader permission staffing is
+   * gated on elsewhere (cover, the live floor): who works when is a staffing
+   * fact, not "the work", and `canViewAllTasks` is held by the €2 observer.
+   * The service narrows to the spaces granting it; `canEdit` is answered from
+   * `canManageRota`, and the write below checks it again.
+   */
+  @Get('rota/week')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
+  @ApiOperation({ summary: 'A workspace week: each member, each day, as the clock-in resolves it' })
+  weekRota(@Query('spaceId') spaceId: string | undefined, @Query('from') from: string | undefined, @Request() req: any) {
+    return this.service.weekRota({
+      organizationId: req.user.organizationId,
+      viewScope: this.scope(req, 'canViewSpaceAttendance'),
+      editScope: this.scope(req, 'canManageRota'),
+      spaceId,
+      from,
+    });
+  }
+
+  /** Change one person's day: a shift or off, that day only or that weekday from then on. */
+  @Post('rota/day')
+  @RequirePermissionInSpace('canManageRota')
+  @ApiOperation({ summary: 'Set one member\'s shift for one day, once or weekly' })
+  setRotaDay(@Body() body: { spaceId: string; userId: string; date: string; shiftId?: string | null; repeat: 'once' | 'weekly' }, @Request() req: any) {
+    return this.service.setRotaDay({
+      organizationId: req.user.organizationId,
+      editScope: this.scope(req, 'canManageRota'),
+      spaceId: String(body?.spaceId ?? ''),
+      userId: String(body?.userId ?? ''),
+      date: String(body?.date ?? ''),
+      shiftId: body?.shiftId ? String(body.shiftId) : null,
+      repeat: body?.repeat === 'weekly' ? 'weekly' : 'once',
+      createdById: req.user.id,
+    });
+  }
+
   @Get('spaces/:spaceId/rota')
   @RequirePermissionInSpace('canManageRota')
   @ApiOperation({ summary: 'List the rota for a space' })

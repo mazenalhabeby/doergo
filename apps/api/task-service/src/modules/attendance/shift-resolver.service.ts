@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { WorkModel, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN } from '@hbcfield/shared';
+import { WorkModel, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, rotaRunsOn } from '@hbcfield/shared';
 
 /**
  * Space (CompanyLocation) fields the resolver needs.
@@ -172,26 +172,16 @@ export class ShiftResolverService {
     };
   }
 
+  /**
+   * ⚠️ ONE RULE — `rotaRunsOn` in shared. The Schedules page draws a week of
+   * the same answer; a second copy here is how the page shows a shift the
+   * clock-in does not hold anybody to.
+   */
   private recurrenceMatches(
     a: { recurrence: string; daysOfWeek: number[]; daysOfMonth: number[]; dates: Date[] },
     local: LocalDate,
   ): boolean {
-    switch (a.recurrence) {
-      case 'DAILY':
-        return true;
-      case 'WEEKLY':
-        return a.daysOfWeek.includes(local.dow);
-      case 'MONTHLY':
-        return a.daysOfMonth.includes(local.dom);
-      case 'ONE_OFF':
-        // Stored as midnight-UTC of the admin's picked calendar date; compare it
-        // as a plain calendar date (NOT re-zoned) against the clock-in's local
-        // date, so a "March 15" one-off matches a March-15-local clock-in in any
-        // timezone (re-zoning would shift it a day west of UTC).
-        return a.dates.some((d) => d.toISOString().slice(0, 10) === local.dateStr);
-      default:
-        return false;
-    }
+    return rotaRunsOn(a, local.dateStr);
   }
 
   /**

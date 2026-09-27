@@ -3850,5 +3850,24 @@
     },
     "waiting_one": "{{count}} pendiente",
     "waiting_other": "{{count}} pendientes"
+  },
+  "rota": {
+    "failed": "No se pudo cargar el horario. Desliza para reintentar.",
+    "prevWeek": "Semana anterior",
+    "nextWeek": "Semana siguiente",
+    "thisWeek": "Esta semana",
+    "noSpaces": "No hay espacios de trabajo.",
+    "nobody": "Nadie está asignado a {{space}}",
+    "setUpOnWeb": "Añade turnos y personas en los ajustes de asistencia del espacio en la web.",
+    "readOnly": "Puedes ver el cuadrante; lo cambia quien gestiona turnos.",
+    "legendSchedule": "Horario semanal (sin cuadrante)",
+    "legendLeave": "Ausencia",
+    "legendOnce": "Solo este día",
+    "leaveCell": "Libre",
+    "off": "Libre",
+    "once": "Solo este día",
+    "weekly": "Cada {{weekday}}",
+    "offOnceNeedsLeave": "Un solo día libre en un turno fijo es una ausencia: apruébala, o márcalo libre cada semana.",
+    "saveFailed": "No se pudo guardar el cambio."
   }
 }

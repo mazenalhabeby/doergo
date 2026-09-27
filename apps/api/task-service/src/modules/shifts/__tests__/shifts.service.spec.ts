@@ -23,6 +23,19 @@ describe('ShiftsService', () => {
     service = module.get(ShiftsService);
   });
 
+  describe('deleteAssignment', () => {
+    it('refuses an assignment in a space outside the caller\'s scope — it reads as not found', async () => {
+      prisma.shiftAssignment.findFirst.mockResolvedValue({ id: 'a-1', spaceId: 'sp-OTHER' });
+      await expect(service.deleteAssignment({ organizationId: 'org-1', assignmentId: 'a-1', scopeSpaceIds: ['sp-1'] })).rejects.toThrow(NotFoundException);
+      expect(prisma.shiftAssignment.delete).not.toHaveBeenCalled();
+    });
+    it('deletes inside the caller\'s scope', async () => {
+      prisma.shiftAssignment.findFirst.mockResolvedValue({ id: 'a-1', spaceId: 'sp-1' });
+      await service.deleteAssignment({ organizationId: 'org-1', assignmentId: 'a-1', scopeSpaceIds: ['sp-1'] });
+      expect(prisma.shiftAssignment.delete).toHaveBeenCalled();
+    });
+  });
+
   describe('createShift', () => {
     it('derives crossesMidnight for a night shift and clamps reminder params', async () => {
       prisma.shift.create.mockImplementation(({ data }: any) => Promise.resolve({ id: 's1', ...data }));

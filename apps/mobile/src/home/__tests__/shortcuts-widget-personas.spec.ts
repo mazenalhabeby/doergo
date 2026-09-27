@@ -51,7 +51,9 @@ describe('Shortcuts widget — every persona', () => {
       'shortcuts.sendDoc', 'shortcuts.planRoute', 'shortcuts.support', 'shortcuts.equipmentLog',
     ],
     mike: [
-      'manage.attendance.label', 'manage.extraTime.label', 'manage.timeOff.label', 'manage.customers.label', 'manage.contract.label',
+      'manage.attendance.label', 'manage.extraTime.label', 'manage.timeOff.label', 'manage.customers.label',
+    // Schedules follows canViewSpaceAttendance (in a space) — the leader permission Attendance uses.
+    'manage.schedules.label', 'manage.contract.label',
       'shortcuts.documents', 'shortcuts.sign', 'shortcuts.myEquipment', 'shortcuts.sync', 'shortcuts.overtime', 'shortcuts.logExpense',
       'shortcuts.newJob', 'shortcuts.sendDoc', 'shortcuts.planRoute', 'shortcuts.support', 'shortcuts.equipmentLog',
     ],
@@ -62,7 +64,8 @@ describe('Shortcuts widget — every persona', () => {
       'shortcuts.logExpense', 'shortcuts.newJob', 'shortcuts.sendDoc', 'shortcuts.support', 'shortcuts.equipmentLog',
     ],
     'a.test': [
-      'manage.attendance.label', 'manage.extraTime.label', 'manage.timeOff.label',
+      // An external supervisor sees their ONE workspace's schedule — the server narrows /rota/week to it.
+      'manage.attendance.label', 'manage.extraTime.label', 'manage.timeOff.label', 'manage.schedules.label',
       'shortcuts.sign', 'shortcuts.sync', 'shortcuts.newJob', 'shortcuts.support',
     ],
   };
