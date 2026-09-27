@@ -2989,6 +2989,7 @@
     "calm": "Everyone expected is in. Nothing to decide.",
     "empty": "Nobody is on shift right now.",
     "offline": "Who is on right now needs a connection. It updates as soon as you are back online.",
+    "asOf": "As of {{time}} · may have changed",
     "steady": "steady",
     "nothingToDecide": "Nothing to decide.",
     "notArrived": "{{n}} not arrived",

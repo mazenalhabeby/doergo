@@ -25,6 +25,9 @@ const same = (a: Deps, b: Deps) =>
   !!a && !!b && a.length === b.length && a.every((x, j) => Object.is(x, b[j]));
 
 export const react = {
+  /* Contexts outside any provider read their default — what a hook sees off the home. */
+  createContext<T>(value: T): { _default: T } { return { _default: value }; },
+  useContext<T>(ctx: { _default: T }): T { return ctx._default; },
   useRef<T>(v: T): { current: T } {
     const k = cursor++;
     if (!slots[k]) slots[k] = { current: v };

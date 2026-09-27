@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { attendanceApi, type NoShow } from '../../lib/api/attendance';
-import { crewPeopleFrom, type CrewPerson, type CrewEntryInput, type CrewBreakInput } from './crew-state';
+import { crewAsOf, crewPeopleFrom, type CrewAsOf, type CrewPerson, type CrewEntryInput, type CrewBreakInput } from './crew-state';
+import { keep, keptNow, keptOnDisk } from '../../home/remember/store';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { connectivity } from '../../offline/connectivity';
 
@@ -46,12 +47,32 @@ export interface CrewData {
   loading: boolean;
   /** When this answer was asked — the card's clock. */
   at: number;
+  /** With no answer: the last known COUNTS and their time (never people). */
+  asOf: CrewAsOf | null;
 }
 
-const EMPTY: CrewData = { people: [], expected: 0, pending: 0, pendingBySpace: {}, notArrived: [], failed: false, loading: true, at: Date.now() };
+/** Counts only, today only, per user — see `crewAsOf`. */
+const AS_OF = 'crew-asof';
+const AS_OF_RULES = { sameDay: true } as const;
 
-export function useCrew(enabled: boolean): CrewData & { refresh: () => void } {
+const EMPTY: CrewData = { people: [], expected: 0, pending: 0, pendingBySpace: {}, notArrived: [], failed: false, loading: true, at: Date.now(), asOf: null };
+
+/** `userId` keys the kept counts — per person, never shared on a shared phone. */
+export function useCrew(enabled: boolean, userId: string | null = null): CrewData & { refresh: () => void } {
   const [data, setData] = useState<CrewData>(EMPTY);
+  /** The failed state, with the last known counts when there are any. */
+  const failWith = useCallback(async (current: () => boolean) => {
+    /*
+      ⚠️ AT ONCE, THEN THE DISK. The rings go the instant the signal does —
+      waiting on storage first would leave live-looking presence on screen for
+      a frame. What the last run kept arrives after, if it is still wanted.
+    */
+    const now = keptNow<CrewAsOf>(AS_OF, userId, AS_OF_RULES);
+    if (current()) setData((d) => ({ ...d, people: [], notArrived: [], failed: true, loading: false, at: Date.now(), asOf: now }));
+    if (now) return;
+    const disk = await keptOnDisk<CrewAsOf>(AS_OF, userId, AS_OF_RULES);
+    if (disk && current()) setData((d) => (d.failed ? { ...d, asOf: disk } : d));
+  }, [userId]);
   const live = useRef(true);
   /*
     ⚠️ LATEST ASK WINS. Focus, the minute tick and the app coming back can all
@@ -72,7 +93,7 @@ export function useCrew(enabled: boolean): CrewData & { refresh: () => void } {
       a basement, rather than after the round trips time out.
     */
     if (connectivity.state === 'offline') {
-      if (current()) setData((d) => ({ ...d, people: [], notArrived: [], failed: true, loading: false, at: Date.now() }));
+      await failWith(current);
       return;
     }
     try {
@@ -91,14 +112,17 @@ export function useCrew(enabled: boolean): CrewData & { refresh: () => void } {
       ]);
       const now = Date.now();
       const { people, notArrived } = crewPeopleFrom({ entries, breaks, noShows, now });
-      if (current()) setData({
-        people, expected: people.length, pending: pendingSummary.total, pendingBySpace: pendingSummary.bySpace,
-        notArrived: notArrived as NoShow[], failed: false, loading: false, at: now,
-      });
+      if (current()) {
+        setData({
+          people, expected: people.length, pending: pendingSummary.total, pendingBySpace: pendingSummary.bySpace,
+          notArrived: notArrived as NoShow[], failed: false, loading: false, at: now, asOf: null,
+        });
+        keep(AS_OF, userId, crewAsOf(people, now), AS_OF_RULES);
+      }
     } catch {
-      if (current()) setData((d) => ({ ...d, people: [], notArrived: [], failed: true, loading: false, at: Date.now() }));
+      await failWith(current);
     }
-  }, [enabled]);
+  }, [enabled, userId, failWith]);
 
   /*
     ⚠️ THE MOMENT THE SIGNAL GOES, THE RINGS GO. Presence drawn while offline
@@ -110,10 +134,10 @@ export function useCrew(enabled: boolean): CrewData & { refresh: () => void } {
     if (!enabled) return;
     return connectivity.subscribe((now) => {
       if (now !== 'offline' || !live.current) return;
-      seq.current++;
-      setData((d) => ({ ...d, people: [], notArrived: [], failed: true, loading: false, at: Date.now() }));
+      const mine = ++seq.current;
+      void failWith(() => live.current && mine === seq.current);
     });
-  }, [enabled]);
+  }, [enabled, failWith]);
 
   /* On every return to the home screen, when the app comes back, once a minute — rings move — and when the signal returns. */
   useLiveRefresh(refresh, REFRESH_MS, { onReconnect: true });

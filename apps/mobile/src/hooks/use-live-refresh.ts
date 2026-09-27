@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useContext, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { connectivity, type Connectivity } from '../offline/connectivity';
+import { HomeCardKeyContext, HomeLoadContext } from '../home/home-load-context';
 
 /**
  * Keep a live answer live: ask on every return to the screen, once a minute
@@ -52,6 +53,15 @@ export function useLiveRefresh(
   */
   const latest = useRef(refresh);
   latest.current = refresh;
+  /*
+    ⭐ ON THE HOME, THE QUEUE DECIDES WHEN. A card inside `HomeCard` asks
+    through the home's load queue — the member's order, two at a time (one on
+    a slow signal), below the fold when scrolled near. Anywhere else, at once.
+  */
+  const queue = useContext(HomeLoadContext);
+  const cardKey = useContext(HomeCardKeyContext);
+  const route = useRef({ queue, cardKey });
+  route.current = { queue, cardKey };
   const opts = useRef(options);
   opts.current = options;
   const focused = useRef(false);
@@ -68,7 +78,9 @@ export function useLiveRefresh(
     */
     if (now - lastAsk.current.at < LIVE_REFRESH_COALESCE_MS && lastAsk.current.signal === signal) return;
     lastAsk.current = { at: now, signal };
-    void latest.current();
+    const { queue: q, cardKey: k } = route.current;
+    if (q && k) q.request(k, () => latest.current());
+    else void latest.current();
   }, []);
 
   useFocusEffect(useCallback(() => {

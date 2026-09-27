@@ -41,7 +41,7 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const router = useRouter();
   const c = amazen.color;
   const allowed = holds(user, 'canViewSpaceAttendance');
-  const data = useCrew(allowed);
+  const data = useCrew(allowed, user?.id ?? null);
   const { formatClock } = useTimeFormat();
 
   const allSpaces = useMemo(() => [...new Set(data.people.map((p) => p.spaceId).filter((x): x is string => !!x))], [data.people]);
@@ -106,9 +106,10 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
             <ScopeFade k={site ?? 'ALL'} style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
               <AText variant="display" tone={data.failed ? 'muted' : 'strong'} numeric style={{ fontSize: 56, lineHeight: 60 }}>
-                {data.failed ? '—' : String(s.on)}
+                {data.failed ? (data.asOf ? String(data.asOf.on) : '—') : String(s.on)}
               </AText>
               {!data.failed && s.rostered != null ? <AText variant="h2" tone="muted" numeric style={{ fontWeight: '300' }}>/{s.rostered}</AText> : null}
+              {data.failed && data.asOf?.rostered != null ? <AText variant="h2" tone="muted" numeric style={{ fontWeight: '300' }}>/{data.asOf.rostered}</AText> : null}
             </ScopeFade>
             <AText variant="body" tone="muted">{t('crew.onTheClock', { defaultValue: 'on the clock' })}</AText>
           </View>
@@ -129,15 +130,29 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
           <View style={{ flexDirection: 'row', gap: 10 }}>{[0, 1, 2].map((i) => <View key={i} style={{ width: 118, height: 150, borderRadius: 20, backgroundColor: c.tile }} />)}</View>
         ) : data.failed ? (
           <>
-            {/* ⚠️ Three empty shapes so the card keeps its height — and no "last updated" line. */}
+            {/*
+              ⚠️ Three shapes so the card keeps its height. With a kept COUNT
+              (never people) they carry each workspace's number as it was, greyed
+              out and dated — no late markers, nothing to act on.
+            */}
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              {[0, 1, 2].map((i) => (
-                <View key={i} style={{ width: 104, height: 110, borderRadius: 20, backgroundColor: c.tile, alignItems: 'center', justifyContent: 'center' }}>
-                  <View style={{ width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: c.lineGlass }} />
-                </View>
-              ))}
+              {[0, 1, 2].map((i) => {
+                const site = data.asOf?.sites[i];
+                return (
+                  <View key={i} style={{ width: 104, height: 110, borderRadius: 20, backgroundColor: c.tile, alignItems: 'center', justifyContent: 'center', gap: 6, opacity: site ? 0.75 : 1 }}>
+                    <View style={{ width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: c.lineGlass, alignItems: 'center', justifyContent: 'center' }}>
+                      {site ? <AText variant="body" tone="muted" numeric>{String(site.on)}</AText> : null}
+                    </View>
+                    {site ? <AText variant="caption" tone="muted" numberOfLines={1} style={{ maxWidth: 92 }}>{site.spaceName}</AText> : null}
+                  </View>
+                );
+              })}
             </View>
-            <Message dim text={t('crew.offline', { defaultValue: 'Needs a connection. A kept answer would be wrong, not old.' })} />
+            {data.asOf ? (
+              <Message dim text={t('crew.asOf', { time: formatClock(new Date(data.asOf.at)), defaultValue: `As of ${formatClock(new Date(data.asOf.at))} · may have changed` })} />
+            ) : (
+              <Message dim text={t('crew.offline', { defaultValue: 'Needs a connection. A kept answer would be wrong, not old.' })} />
+            )}
           </>
         ) : (
           /* Keyed by scope: a new workspace starts at its first tile, page 1 — and fades in. */

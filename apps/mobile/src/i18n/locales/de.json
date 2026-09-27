@@ -2989,6 +2989,7 @@
     "calm": "Alle Erwarteten sind da. Nichts zu entscheiden.",
     "empty": "Gerade ist niemand im Dienst.",
     "offline": "Wer gerade da ist, braucht eine Verbindung. Es aktualisiert sich, sobald Sie wieder online sind.",
+    "asOf": "Stand {{time}} · kann sich geändert haben",
     "steady": "im Plan",
     "nothingToDecide": "Nichts zu entscheiden.",
     "notArrived": "{{n}} nicht erschienen",

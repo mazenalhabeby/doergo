@@ -54,6 +54,11 @@ export interface WidgetRow {
   /** Its surface OFF the home (the gallery). On the home, position decides: the first card is glass (amazen CardSurface). */
   surface: 'glass' | 'well';
   /**
+   * Roughly how tall the card stands with an answer — the space held while its
+   * FIRST answer is on the way (home-load `HomeCard`), so nothing below jumps.
+   */
+  restHeight?: number;
+  /**
    * What an empty answer means — a DECISION, not an absence.
    *
    *   hidden      normal, nothing to report
@@ -90,6 +95,7 @@ export const WIDGETS: WidgetRow[] = [
   */
   {
     key: 'shift-clock',
+    restHeight: 200,
     title: 'widgets.shiftClock',
     question: 'widgets.q.shiftClock',
     requires: { module: 'clock', internal: true, self: true },
@@ -117,6 +123,7 @@ export const WIDGETS: WidgetRow[] = [
   */
   {
     key: 'my-work',
+    restHeight: 280,
     title: 'widgets.myWork',
     question: 'widgets.q.myWork',
     surface: 'well',
@@ -133,6 +140,7 @@ export const WIDGETS: WidgetRow[] = [
   */
   {
     key: 'crew',
+    restHeight: 300,
     title: 'widgets.crew',
     question: 'widgets.q.crew',
     requires: { permission: 'canViewSpaceAttendance' },
@@ -149,6 +157,7 @@ export const WIDGETS: WidgetRow[] = [
   */
   {
     key: 'clients',
+    restHeight: 220,
     title: 'widgets.clients',
     question: 'widgets.q.clients',
     requires: { spaceModule: 'crm', crm: true, internal: true },
@@ -166,6 +175,7 @@ export const WIDGETS: WidgetRow[] = [
   */
   {
     key: 'shortcuts',
+    restHeight: 130,
     title: 'widgets.shortcuts',
     question: 'widgets.q.shortcuts',
     surface: 'well',
@@ -184,6 +194,7 @@ export const WIDGETS: WidgetRow[] = [
   */
   {
     key: 'my-route',
+    restHeight: 380,
     title: 'widgets.myRoute',
     question: 'widgets.q.myRoute',
     requires: { drives: true, self: true },

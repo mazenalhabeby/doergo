@@ -51,6 +51,8 @@ export function localDay(now: Date = new Date()): string {
 }
 
 const keyFor = (name: string, userId: string) => `@hbcfield/kept/${name}/${userId}`;
+/** Every kept key starts with this — what sign-out sweeps. */
+const KEPT_PREFIX = '@hbcfield/kept/';
 
 /** The synchronous half. Keyed by storage key, so two users cannot collide. */
 const memory = new Map<string, Kept<unknown>>();
@@ -124,5 +126,16 @@ export function forgetEverythingKept(): void {
   const keys = [...written];
   memory.clear();
   written.clear();
-  if (keys.length) void AsyncStorage.multiRemove(keys).catch(() => undefined);
+  /*
+    ⚠️ EVERY kept key on the device, not only this session's. A copy written in
+    an EARLIER run and never read in this one was not in `written`, so it
+    survived the sign-out on disk — the next person's phone still held the last
+    person's shift, jobs and crew counts.
+  */
+  void Promise.resolve()
+    .then(() => AsyncStorage.getAllKeys())
+    .then((all) => [...new Set([...keys, ...(all ?? []).filter((k) => k.startsWith(KEPT_PREFIX))])])
+    .catch(() => keys)
+    .then((drop) => (drop.length ? AsyncStorage.multiRemove(drop) : undefined))
+    .catch(() => undefined);
 }

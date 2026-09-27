@@ -27,6 +27,7 @@ import { answerFor, useWidgetAnswers } from './answers';
 import { useHomeEditing } from './use-home-editing';
 import { useHomeLayout } from './use-home-layout';
 import { EMPTY_ROWS, widgetTitle, type WidgetRow } from './registry';
+import { HomeCard, HomeLoadContext, useHomeLoadQueue } from './home-load';
 
 /**
  * ONE home screen, composed from a registry — and edited in place.
@@ -280,6 +281,7 @@ export function HomeScreen() {
           >
             {/* ⭐ THE FIRST CARD LEADS — glass at the top, a well everywhere else (amazen/surfaces.tsx). */}
             <SurfaceProvider value={index === 0 ? 'glass' : 'well'}>
+            <HomeCard id={item.key} restHeight={item.restHeight}>
             <EditableWidget
               key={`${item.key}:${refreshKey}`}
               row={item}
@@ -294,6 +296,7 @@ export function HomeScreen() {
               screenReader={screenReader}
               landed={landed.includes(item.key)}
             />
+            </HomeCard>
             </SurfaceProvider>
           </ShadowDecorator>
         </ScaleDecorator>
@@ -304,7 +307,26 @@ export function HomeScreen() {
 
   const onHomeKeys = React.useMemo(() => new Set(rows.map((r) => r.key)), [rows]);
 
+  /*
+    ⭐ THE ORDER THE HOME ASKS IN — the member's own (home-load / load-queue).
+    What the list reports as on screen, plus the card just below it, is asked
+    first; the rest waits its turn. Refs, because FlatList refuses a new
+    `onViewableItemsChanged` after the first render.
+  */
+  const loadOrder = React.useMemo(() => rows.map((r) => r.key), [rows]);
+  const loadQueue = useHomeLoadQueue(loadOrder);
+  const onViewable = React.useRef(({ viewableItems }: { viewableItems: Array<{ item: WidgetRow; index: number | null }> }) => {
+    const shown = viewableItems.map((v) => v.item.key);
+    const last = Math.max(-1, ...viewableItems.map((v) => v.index ?? -1));
+    const next = rowsRef.current[last + 1]?.key;
+    loadQueue.setVisible(next ? [...shown, next] : shown);
+  }).current;
+  const rowsRef = React.useRef(rows);
+  rowsRef.current = rows;
+  const viewability = React.useRef({ itemVisiblePercentThreshold: 1 }).current;
+
   return (
+    <HomeLoadContext.Provider value={loadQueue}>
     <Ground variant="home">
       {/*
         ⚠️ OUTSIDE THE LIST, so it does not scroll away — and so nothing put in
@@ -353,6 +375,8 @@ export function HomeScreen() {
         data={rows as WidgetRow[]}
         keyExtractor={(row) => row.key}
         renderItem={renderItem}
+        onViewableItemsChanged={onViewable}
+        viewabilityConfig={viewability}
         onDragEnd={onDragEnd}
         /* ⚠️ A TICK EACH TIME A CARD CROSSES ANOTHER — it is the only signal
            that the order under the thumb actually changed. */
@@ -498,5 +522,6 @@ export function HomeScreen() {
         }}
       />
     </Ground>
+    </HomeLoadContext.Provider>
   );
 }

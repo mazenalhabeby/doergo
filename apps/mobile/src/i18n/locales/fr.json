@@ -2989,6 +2989,7 @@
     "calm": "Tous les attendus sont là. Rien à décider.",
     "empty": "Personne en poste pour le moment.",
     "offline": "Qui est là en ce moment nécessite une connexion. Cela se met à jour dès que vous êtes de nouveau en ligne.",
+    "asOf": "À {{time}} · peut avoir changé",
     "steady": "dans les temps",
     "nothingToDecide": "Rien à décider.",
     "notArrived": "{{n}} absent(s)",

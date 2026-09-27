@@ -2989,6 +2989,7 @@
     "calm": "Tutti gli attesi ci sono. Niente da decidere.",
     "empty": "Nessuno in turno in questo momento.",
     "offline": "Chi è presente adesso richiede una connessione. Si aggiorna appena torni online.",
+    "asOf": "Alle {{time}} · potrebbe essere cambiato",
     "steady": "regolari",
     "nothingToDecide": "Niente da decidere.",
     "notArrived": "{{n}} non arrivati",

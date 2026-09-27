@@ -463,3 +463,37 @@ export function needsBySpace(people: CrewPerson[], now: number): Record<string, 
   }
   return out;
 }
+
+/**
+ * ⭐ THE CREW, AS OF A MOMENT — what the card may show with no signal.
+ *
+ * Presence is never kept (a kept "late" is wrong, not old). What IS kept is
+ * this: COUNTS per workspace and the time they were true — no names, no
+ * people, nothing about anyone in particular. The card draws it greyed out,
+ * "as of 08:12 · may have changed", with no late markers and nothing to act on.
+ * Kept per user, for today only, and wiped on sign-out (home/remember).
+ */
+export interface CrewAsOf {
+  at: number;
+  on: number;
+  rostered: number | null;
+  sites: { spaceId: string; spaceName: string; on: number }[];
+}
+
+export function crewAsOf(people: CrewPerson[], at: number): CrewAsOf {
+  const spaceIds = [...new Set(people.map((p) => p.spaceId).filter((x): x is string => !!x))];
+  const all = crewState({ people, rosteredCount: rosteredCountOf(people), spaceIds, now: at });
+  return {
+    at,
+    on: all.on,
+    rostered: all.rostered,
+    sites: spaceIds.map((id) => {
+      const here = people.filter((p) => p.spaceId === id);
+      return {
+        spaceId: id,
+        spaceName: here[0]?.spaceName ?? '',
+        on: crewState({ people: here, rosteredCount: rosteredCountOf(here), spaceIds: [id], now: at }).on,
+      };
+    }),
+  };
+}

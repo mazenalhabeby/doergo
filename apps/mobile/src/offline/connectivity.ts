@@ -24,6 +24,9 @@ export class ConnectivityMonitor {
   private readonly listeners = new Set<Listener>();
   private readonly kindListeners = new Set<KindListener>();
   private isUnmetered = false;
+  /** A 2G/3G cellular link — up, but too thin to share six ways. */
+  private isWeak = false;
+  private readonly weakListeners = new Set<(weak: boolean) => void>();
   private unsubscribeNetInfo?: () => void;
 
   start(): void {
@@ -37,6 +40,8 @@ export class ConnectivityMonitor {
       // Wi-Fi or a cable, and not a phone's hotspot the OS knows is metered.
       const expensive = (s.details as { isConnectionExpensive?: boolean } | null)?.isConnectionExpensive;
       this.setUnmetered(this.network === 'up' && (s.type === 'wifi' || s.type === 'ethernet') && expensive !== true);
+      const gen = (s.details as { cellularGeneration?: string | null } | null)?.cellularGeneration;
+      this.setWeak(this.network === 'up' && s.type === 'cellular' && (gen === '2g' || gen === '3g'));
       this.recompute();
     });
   }
@@ -78,6 +83,30 @@ export class ConnectivityMonitor {
     if (unmetered === this.isUnmetered) return;
     this.isUnmetered = unmetered;
     for (const l of this.kindListeners) l(unmetered);
+  }
+
+  private setWeak(weak: boolean): void {
+    if (weak === this.isWeak) return;
+    this.isWeak = weak;
+    for (const l of this.weakListeners) l(weak);
+  }
+
+  /**
+   * ⭐ A SLOW LINK: a 2G/3G cellular connection, or requests failing in a row
+   * (`limited`). The home loads one card at a time on it, and cards below the
+   * fold wait until they are scrolled to.
+   */
+  get slow(): boolean {
+    return this.isWeak || this.current === 'limited';
+  }
+
+  /** Called when `slow` may have changed (either half of it). */
+  subscribeSlow(listener: (slow: boolean) => void): () => void {
+    const onWeak = () => listener(this.slow);
+    const onState = () => listener(this.slow);
+    this.weakListeners.add(onWeak);
+    this.listeners.add(onState);
+    return () => { this.weakListeners.delete(onWeak); this.listeners.delete(onState); };
   }
 
   subscribeKind(listener: KindListener): () => void {
