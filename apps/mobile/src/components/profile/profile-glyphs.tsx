@@ -1,7 +1,7 @@
 import React from 'react';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import type { GlyphProps } from '../glyphs/glyphs';
-import { DocumentsGlyph, MessagesGlyph, SendDocumentGlyph, SupportGlyph } from '../glyphs/glyphs';
+import { DocumentsGlyph, SendDocumentGlyph, SupportGlyph } from '../glyphs/glyphs';
 import { MyEquipmentGlyph, SyncGlyph } from '../glyphs/tile-glyphs';
 import { ReminderGlyph } from '../glyphs/crm-glyphs';
 
@@ -103,7 +103,6 @@ function DownloadGlyph({ size = 24, color }: GlyphProps) {
 }
 
 export const PROFILE_GLYPHS = {
-  messages: MessagesGlyph,
   equipment: MyEquipmentGlyph,
   documents: DocumentsGlyph,
   sendDocument: SendDocumentGlyph,

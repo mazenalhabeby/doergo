@@ -324,7 +324,6 @@ export function ProfileScreen() {
         {/* ── Yours ── */}
         <TourTarget name="profile-menu">
           <Group label={t('profile.group.yours', 'Yours')}>
-            <Row glyph="messages" label={t('chat.title', 'Messages')} onPress={() => router.push('/chat' as Href)} />
             {held.length > 0 ? <Row glyph="equipment" label={t('myAssets.title', 'My equipment')} count={held.length} onPress={() => router.push('/my-assets' as Href)} /> : null}
             {orgHasAddOn(user?.orgAddOns ?? null, 'documents') ? (
               <Row glyph="documents" label={t('profile.documents')} count={outstandingDocs} countTone={docsBlockWork ? 'critical' : 'warn'} onPress={() => router.push('/documents' as Href)} />
