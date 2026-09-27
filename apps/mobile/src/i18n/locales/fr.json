@@ -4020,5 +4020,40 @@
       "refused": "Refusé",
       "takenBack": "Repris"
     }
+  },
+  "settings": {
+    "notif": {
+      "saveFailed": "Impossible d’enregistrer — réessayez.",
+      "jobs": "Interventions",
+      "jobsSub": "Attribuées à vous, modifiées, un commentaire sur les vôtres",
+      "clock": "Pointage et postes",
+      "clockSub": "L’heure de pointer, une pause, les réponses aux heures sup.",
+      "timeOff": "Absences",
+      "timeOffSub": "Vos demandes traitées",
+      "allowed": "Ce téléphone peut vous avertir",
+      "allowedSub": "Autorisé dans les réglages du téléphone",
+      "blocked": "Les notifications sont coupées pour l’app",
+      "blockedSub": "Vous ne serez pas prévenu des nouvelles interventions ni de votre poste. Activez-les dans les réglages du téléphone.",
+      "allow": "Autoriser les notifications",
+      "openSettings": "Ouvrir les réglages",
+      "onPhone": "Sur ce téléphone",
+      "byEmail": "Par e-mail",
+      "offline": "Une connexion est nécessaire pour modifier.",
+      "always": "Les messages d’un collègue et ce qui bloque votre travail vous parviennent toujours."
+    },
+    "theme": {
+      "systemSub": "Clair ou sombre, comme le téléphone",
+      "lightSub": "Idéal en plein soleil",
+      "darkSub": "Repose les yeux le soir",
+      "system": "Comme le téléphone",
+      "lede": "L’apparence de l’app. Elle change au toucher."
+    },
+    "time": {
+      "lede": "Comment les heures s’écrivent dans toute l’app.",
+      "shift": "Un poste : {{shift}}"
+    },
+    "lang": {
+      "emails": "Vos e-mails de HBCField arrivent aussi dans cette langue."
+    }
   }
 }

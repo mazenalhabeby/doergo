@@ -4020,5 +4020,40 @@
       "refused": "Rechazado",
       "takenBack": "Retirado"
     }
+  },
+  "settings": {
+    "notif": {
+      "saveFailed": "No se pudo guardar — inténtelo de nuevo.",
+      "jobs": "Trabajos",
+      "jobsSub": "Asignados a usted, cambios, un comentario en los suyos",
+      "clock": "Fichajes y turnos",
+      "clockSub": "Hora de fichar, un descanso, respuestas de horas extra",
+      "timeOff": "Ausencias",
+      "timeOffSub": "Sus solicitudes respondidas",
+      "allowed": "Este teléfono puede avisarle",
+      "allowedSub": "Permitido en los ajustes del teléfono",
+      "blocked": "Las notificaciones están desactivadas",
+      "blockedSub": "No se enterará de trabajos nuevos ni de su turno. Actívelas en los ajustes del teléfono.",
+      "allow": "Permitir notificaciones",
+      "openSettings": "Abrir ajustes del teléfono",
+      "onPhone": "En este teléfono",
+      "byEmail": "Por correo",
+      "offline": "Se necesita conexión para cambiarlo.",
+      "always": "Los mensajes de un compañero y lo que bloquea su trabajo siempre le llegan."
+    },
+    "theme": {
+      "systemSub": "Claro u oscuro, como el teléfono",
+      "lightSub": "Mejor a pleno sol",
+      "darkSub": "Descansa la vista de noche",
+      "system": "Igual que el teléfono",
+      "lede": "Cómo se ve la app. Cambia al tocar."
+    },
+    "time": {
+      "lede": "Cómo se escriben las horas en toda la app.",
+      "shift": "Un turno: {{shift}}"
+    },
+    "lang": {
+      "emails": "Sus correos de HBCField llegan también en este idioma."
+    }
   }
 }

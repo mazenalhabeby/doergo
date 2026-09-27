@@ -4020,5 +4020,40 @@
       "refused": "Abgelehnt",
       "takenBack": "Zurückgenommen"
     }
+  },
+  "settings": {
+    "notif": {
+      "saveFailed": "Konnte nicht gespeichert werden — bitte erneut versuchen.",
+      "jobs": "Aufträge",
+      "jobsSub": "Ihnen zugewiesen, geändert, ein Kommentar zu Ihren",
+      "clock": "Stempeln und Schichten",
+      "clockSub": "Zeit zum Einstempeln, eine Pause, Antworten zu Überstunden",
+      "timeOff": "Abwesenheit",
+      "timeOffSub": "Ihre Anträge beantwortet",
+      "allowed": "Dieses Telefon darf Sie benachrichtigen",
+      "allowedSub": "In den Einstellungen des Telefons erlaubt",
+      "blocked": "Mitteilungen sind für diese App aus",
+      "blockedSub": "Sie erfahren nichts von neuen Aufträgen oder Ihrer Schicht. Schalten Sie sie in den Einstellungen des Telefons ein.",
+      "allow": "Mitteilungen erlauben",
+      "openSettings": "Telefon-Einstellungen öffnen",
+      "onPhone": "Auf diesem Telefon",
+      "byEmail": "Per E-Mail",
+      "offline": "Zum Ändern ist eine Verbindung nötig.",
+      "always": "Nachrichten von Kollegen und alles, was Ihre Arbeit blockiert, erreicht Sie immer."
+    },
+    "theme": {
+      "systemSub": "Hell oder dunkel, wie das Telefon",
+      "lightSub": "Am besten bei Sonne",
+      "darkSub": "Schont die Augen am Abend",
+      "system": "Wie das Telefon",
+      "lede": "Wie die App aussieht. Ändert sich beim Antippen."
+    },
+    "time": {
+      "lede": "Wie Uhrzeiten überall in der App geschrieben werden.",
+      "shift": "Eine Schicht: {{shift}}"
+    },
+    "lang": {
+      "emails": "Ihre E-Mails von HBCField kommen auch in dieser Sprache."
+    }
   }
 }

@@ -141,7 +141,8 @@ describe('RecipientLocales', () => {
 });
 
 describe('PushService — one text, many languages', () => {
-  const prisma = { userPushToken: { findMany: jest.fn() } };
+  // `user` answers the member's own push switches (none set here → everyone gets it).
+  const prisma = { userPushToken: { findMany: jest.fn() }, user: { findMany: jest.fn(async () => []) } };
   const localeOf: Record<string, string> = {};
   const locales = { localesFor: jest.fn(async (ids: string[]) => new Map(ids.map((id) => [id, localeOf[id] ?? 'en']))) };
   let service: PushService;

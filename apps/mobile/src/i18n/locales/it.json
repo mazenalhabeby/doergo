@@ -4020,5 +4020,40 @@
       "refused": "Rifiutato",
       "takenBack": "Ritirato"
     }
+  },
+  "settings": {
+    "notif": {
+      "saveFailed": "Impossibile salvare — riprovi.",
+      "jobs": "Lavori",
+      "jobsSub": "Assegnati a lei, modificati, un commento sui suoi",
+      "clock": "Timbrature e turni",
+      "clockSub": "Ora di timbrare, una pausa, risposte agli straordinari",
+      "timeOff": "Assenze",
+      "timeOffSub": "Le sue richieste con risposta",
+      "allowed": "Questo telefono può avvisarla",
+      "allowedSub": "Consentito nelle impostazioni del telefono",
+      "blocked": "Le notifiche sono disattivate per l’app",
+      "blockedSub": "Non saprà di nuovi lavori o del suo turno. Le attivi nelle impostazioni del telefono.",
+      "allow": "Consenti notifiche",
+      "openSettings": "Apri impostazioni",
+      "onPhone": "Su questo telefono",
+      "byEmail": "Via e-mail",
+      "offline": "Serve una connessione per modificarle.",
+      "always": "I messaggi di un collega e ciò che blocca il suo lavoro le arrivano sempre."
+    },
+    "theme": {
+      "systemSub": "Chiaro o scuro, come il telefono",
+      "lightSub": "Meglio al sole",
+      "darkSub": "Riposa gli occhi di sera",
+      "system": "Come il telefono",
+      "lede": "L’aspetto dell’app. Cambia al tocco."
+    },
+    "time": {
+      "lede": "Come si scrivono gli orari in tutta l’app.",
+      "shift": "Un turno: {{shift}}"
+    },
+    "lang": {
+      "emails": "Le sue e-mail di HBCField arrivano anche in questa lingua."
+    }
   }
 }

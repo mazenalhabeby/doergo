@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DEFAULT_LOCALE, PrismaService, formatDistance, type SupportedLocale } from '@hbcfield/shared';
 import Expo, { ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
-import { pushRouting } from '@hbcfield/shared';
+import { pushRouting, pushCategory, memberWantsPush } from '@hbcfield/shared';
 import { RecipientLocales } from '../../i18n/recipient-locales.service';
 import { msg, render, renderText, type LocalizedText, type Msg } from '../../i18n/translate';
 
@@ -109,8 +109,23 @@ export class PushService {
     text: LocalizedText,
     data?: Record<string, any>,
   ) {
-    const ids = [...new Set(userIds.filter((id): id is string => !!id))];
+    let ids = [...new Set(userIds.filter((id): id is string => !!id))];
     if (ids.length === 0) return { success: true, sent: 0, reason: 'no_recipients' };
+
+    /*
+      The member's own switches (Profile → Notifications: jobs, clock and
+      shifts, time off). One query, and only for a push that falls under one —
+      a message or a document to sign always goes.
+    */
+    if (pushCategory(data?.type)) {
+      const prefs: Array<{ id: string; notificationPrefs: unknown }> = await this.prisma.user.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, notificationPrefs: true },
+      });
+      const off = new Set(prefs.filter((u) => !memberWantsPush(u.notificationPrefs, data?.type)).map((u) => u.id));
+      if (off.size) ids = ids.filter((id) => !off.has(id));
+      if (ids.length === 0) return { success: true, sent: 0, reason: 'switched_off' };
+    }
 
     const rows: Array<{ userId: string; token: string }> = await this.prisma.userPushToken.findMany({
       where: { userId: { in: ids } },

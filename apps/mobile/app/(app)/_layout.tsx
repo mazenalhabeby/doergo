@@ -272,9 +272,7 @@ export default function AppLayout() {
           name="profile/notifications"
           options={{
             title: t('navTitles.notifications'),
-            presentation: 'transparentModal',
             headerShown: false,
-            animation: 'slide_from_bottom',
           }}
         />
         <Stack.Screen
@@ -298,25 +296,19 @@ export default function AppLayout() {
         <Stack.Screen
           name="profile/language"
           options={{
-            presentation: 'transparentModal',
             headerShown: false,
-            animation: 'slide_from_bottom',
           }}
         />
         <Stack.Screen
           name="profile/appearance"
           options={{
-            presentation: 'transparentModal',
             headerShown: false,
-            animation: 'slide_from_bottom',
           }}
         />
         <Stack.Screen
           name="profile/time-format"
           options={{
-            presentation: 'transparentModal',
             headerShown: false,
-            animation: 'slide_from_bottom',
           }}
         />
       </Stack>

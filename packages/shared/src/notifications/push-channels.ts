@@ -113,3 +113,31 @@ export function pushRouting(type?: string | null): PushRouting {
     interruptionLevel: isTimeSensitive ? 'time-sensitive' : 'active',
   };
 }
+
+/** The three switches a member has for their own pushes (Profile → Notifications). */
+export type PushCategory = 'tasks' | 'attendance' | 'timeOff';
+
+/**
+ * Which of the member's switches a push falls under — or null for one that
+ * always reaches them: a message from a colleague, a document to sign, anything
+ * that stops their work. A new type is null (always sent) until somebody files it.
+ *
+ * ⚠️ The switches existed on the phone for a long time and did nothing: they
+ * were kept on the device, and every push was sent regardless. They are stored
+ * on the member now (`User.notificationPrefs`, the keys the server already
+ * accepted) and the push sender asks this before it sends.
+ */
+export function pushCategory(type?: string | null): PushCategory | null {
+  const t = (type ?? '').toLowerCase();
+  if (t.startsWith('time_off')) return 'timeOff';
+  if (ATTENDANCE_PREFIXES.some((p) => t.startsWith(p)) || t.startsWith('geofence')) return 'attendance';
+  if (t.startsWith('task_') || t === 'status_change' || t === 'comment_added') return 'tasks';
+  return null;
+}
+
+/** Does this member want pushes of this category? Only an explicit "off" says no. */
+export function memberWantsPush(memberPrefs: unknown, type?: string | null): boolean {
+  const cat = pushCategory(type);
+  if (!cat || !memberPrefs || typeof memberPrefs !== 'object') return true;
+  return (memberPrefs as Record<string, unknown>)[cat] !== false;
+}

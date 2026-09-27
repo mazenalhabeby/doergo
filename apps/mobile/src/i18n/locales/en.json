@@ -4020,5 +4020,40 @@
       "refused": "Refused",
       "takenBack": "Taken back"
     }
+  },
+  "settings": {
+    "notif": {
+      "saveFailed": "Could not save that — try again.",
+      "jobs": "Jobs",
+      "jobsSub": "Assigned to you, changed, a comment on yours",
+      "clock": "Clock and shifts",
+      "clockSub": "Time to clock in, a rest, overtime answers",
+      "timeOff": "Time off",
+      "timeOffSub": "Your requests answered",
+      "allowed": "This phone can notify you",
+      "allowedSub": "Allowed in the phone's settings",
+      "blocked": "Notifications are off for this app",
+      "blockedSub": "You will not hear about new jobs or your shift. Turn them on in the phone's settings.",
+      "allow": "Allow notifications",
+      "openSettings": "Open phone settings",
+      "onPhone": "On this phone",
+      "byEmail": "By email",
+      "offline": "Needs a connection to change these.",
+      "always": "Messages from a colleague and anything that blocks your work always reach you."
+    },
+    "theme": {
+      "systemSub": "Light or dark, as the phone is",
+      "lightSub": "Best in bright sun",
+      "darkSub": "Easy on the eyes at night",
+      "system": "Same as the phone",
+      "lede": "How the app looks. It changes as you tap."
+    },
+    "time": {
+      "lede": "How times are written everywhere in the app.",
+      "shift": "A shift: {{shift}}"
+    },
+    "lang": {
+      "emails": "Your emails from HBCField come in this language too."
+    }
   }
 }
