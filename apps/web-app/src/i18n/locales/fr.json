@@ -8528,6 +8528,9 @@
     }
   },
   "serverErrors": {
+    "STEP_FORM_INVALID": "Certaines réponses demandées par cette étape manquent ou ne sont pas valides.",
+    "STEP_FORM_FOREIGN_FILE": "Une photo ou une signature de ces réponses n'appartient pas à cette tâche.",
+    "STEP_FORM_DEFINITION_INVALID": "Certaines questions de cette étape ne sont pas valides.",
     "TIMEOFF_OVERLAP": "Cet employé a déjà une absence du {{from}} au {{to}} ({{status}}). Choisissez d'autres dates ou modifiez cette entrée.",
     "OUTSIDE_GEOFENCE": "{{location}} n'accepte les pointages que sur place. Vous êtes à {{distance}}.",
     "AWAY_NOT_ALLOWED": "Vous êtes à {{distance}} de {{location}} et vous n'êtes pas autorisé à travailler à distance. Demandez à votre administrateur de l'autoriser."
@@ -8848,5 +8851,169 @@
     "whyPh": "C’est l’ancien contrat…",
     "accepted": "Ajouté et remis.",
     "refused": "Refusé."
+  },
+  "stepForm": {
+    "tab": "Demander en passant ici",
+    "tabStandard": "rapport standard",
+    "startFrom": "Partir de",
+    "preset": {
+      "fieldService": "Intervention",
+      "salesVisit": "Visite commerciale",
+      "delivery": "Livraison",
+      "inspection": "Inspection",
+      "support": "Support",
+      "nothing": "Rien"
+    },
+    "presetField": {
+      "fieldService": {
+        "work_done": "Travaux réalisés",
+        "photos_before": "Avant",
+        "photos_after": "Après",
+        "tech_signature": "Votre signature",
+        "customer_name": "Nom du client",
+        "customer_signature": "Signature du client"
+      },
+      "salesVisit": {
+        "outcome": "Résultat",
+        "outcome_o0": "Gagné",
+        "outcome_o1": "À relancer",
+        "outcome_o2": "Pas intéressé",
+        "outcome_o3": "Non joint",
+        "notes": "Notes",
+        "follow_up_on": "Relancer le"
+      },
+      "delivery": {
+        "proof_of_delivery": "Preuve de livraison",
+        "received_by": "Reçu par",
+        "recipient_signature": "Signature du destinataire"
+      },
+      "inspection": {
+        "passed": "Conforme",
+        "findings": "Constats",
+        "evidence": "Preuves",
+        "inspector_signature": "Signature de l'inspecteur"
+      },
+      "support": {
+        "resolution": "Résolution",
+        "resolution_o0": "Résolu",
+        "resolution_o1": "Contournement",
+        "resolution_o2": "Escaladé",
+        "resolution_o3": "Non reproductible",
+        "what_you_did": "Travaux réalisés"
+      }
+    },
+    "newLabel": {
+      "note": "Notes",
+      "choice": "Résultat",
+      "photos": "Photos",
+      "signature": "Signature",
+      "name": "Nom",
+      "number": "Nombre",
+      "yesno": "Oui ou non",
+      "date": "Date",
+      "optionA": "Option 1",
+      "optionB": "Option 2"
+    },
+    "type": {
+      "note": "Note",
+      "choice": "Choix",
+      "photos": "Photos",
+      "signature": "Signature",
+      "name": "Nom",
+      "number": "Nombre",
+      "yesno": "Oui / non",
+      "date": "Date"
+    },
+    "required": "Obligatoire",
+    "optional": "Facultatif",
+    "empty": "Rien n'est demandé : la tâche passe simplement à cette étape.",
+    "dragHint": "Glisser pour réordonner",
+    "labelPlaceholder": "Question",
+    "moveUp": "Monter",
+    "moveDown": "Descendre",
+    "removeField": "Retirer la question",
+    "optionPlaceholder": "Option",
+    "addOption": "Ajouter une option",
+    "removeOption": "Retirer l'option",
+    "crm": {
+      "label": "Écrire aussi dans le CRM",
+      "none": "Non",
+      "outcome": "Comme résultat de visite (une note client)",
+      "followUp": "Comme rappel de relance"
+    },
+    "addField": "Ajouter un champ",
+    "readOnly": "Seules les personnes autorisées à modifier les workflows peuvent changer ces questions.",
+    "preview": "Aperçu",
+    "previewNothing": "Cette étape ne demande rien : un geste et la tâche avance.",
+    "legacy": {
+      "title": "Utilise le rapport d'intervention standard",
+      "body": "Le membre assigné indique les travaux réalisés, des photos avant et après, les deux signatures et le nom du client. Personnalisez-le pour poser vos propres questions, ou ne demandez rien ici.",
+      "customise": "Personnaliser",
+      "askNothing": "Ne rien demander",
+      "backToStandard": "Revenir au rapport standard"
+    },
+    "definitionError": {
+      "invalid": "Cette question n'est pas valide.",
+      "not_object": "Ces questions n'ont pas pu être lues.",
+      "unknown_key": "Cette question a un réglage non pris en charge.",
+      "too_many_fields": "Une étape peut poser au plus {{max}} questions.",
+      "unknown_type": "Ce type de question n'est pas pris en charge.",
+      "invalid_id": "L'identifiant de cette question n'est pas valide.",
+      "duplicate_id": "Deux questions ont le même identifiant.",
+      "label_required": "Donnez un intitulé à cette question.",
+      "label_too_long": "Cet intitulé est trop long (80 caractères au plus).",
+      "options_required": "Un choix nécessite au moins deux options.",
+      "too_many_options": "Un choix peut avoir au plus 12 options.",
+      "option_too_long": "Une option est trop longue (60 caractères au plus).",
+      "duplicate_option": "Deux options sont identiques.",
+      "options_not_allowed": "Seul un choix a des options.",
+      "crm_invalid": "Ce lien CRM n'est pas pris en charge.",
+      "crm_not_allowed": "Ce type de question ne peut pas écrire dans le CRM.",
+      "crm_duplicate": "Une seule question par étape peut écrire ceci dans le CRM."
+    },
+    "saveInvalid": "{{step}} : corrigez les questions marquées en rouge avant d'enregistrer.",
+    "saveRefused": "{{step}} : certaines questions n'ont pas été acceptées.",
+    "bulkSkipped_one": "{{count}} tâche n'a pas été déplacée : cette étape demande des réponses. Déplacez-la seule.",
+    "bulkSkipped_other": "{{count}} tâches n'ont pas été déplacées : cette étape demande des réponses. Déplacez-les une par une.",
+    "dialog": {
+      "title": "Passer à {{step}}",
+      "caption_one": "{{required}} obligatoires · {{count}} champ, issu du workflow",
+      "caption_other": "{{required}} obligatoires · {{count}} champs, issus du workflow",
+      "legacyCaption": "Le rapport d'intervention standard.",
+      "submit": "Passer à {{step}}",
+      "uploading": "Envoi…",
+      "notePlaceholder": "Saisissez ici…",
+      "namePlaceholder": "Nom",
+      "datePlaceholder": "Choisir un jour",
+      "yes": "Oui",
+      "no": "Non",
+      "addPhotos": "Ajouter des photos",
+      "removePhoto": "Retirer la photo",
+      "notAPhoto": "{{name}} n'est pas une photo.",
+      "photoTooBig": "{{name}} dépasse 20 Mo.",
+      "uploadFailed": "Un fichier n'a pas pu être envoyé : {{error}}",
+      "refused": "Certaines réponses n'ont pas été acceptées."
+    },
+    "answerError": {
+      "invalid": "Cette réponse n'est pas valide.",
+      "not_object": "Les réponses n'ont pas pu être lues.",
+      "unknown_field": "Cette étape ne demande pas cela.",
+      "required": "Ce champ est obligatoire.",
+      "wrong_type": "Cette réponse n'est pas du bon type.",
+      "too_long": "C'est trop long.",
+      "too_many": "Trop de photos (10 au plus).",
+      "not_an_option": "Choisissez l'une des options.",
+      "out_of_range": "Ce nombre est hors limites.",
+      "invalid_date": "Choisissez un jour valide.",
+      "invalid_file": "Ce fichier n'a pas été accepté. Ajoutez-le à nouveau."
+    },
+    "report": {
+      "title": "Rapports",
+      "someone": "Quelqu'un",
+      "notAnswered": "Sans réponse",
+      "fileGone": "Supprimé",
+      "byWhen": "{{who}} · {{when}}",
+      "unreadable": "Ce rapport ne peut pas être affiché."
+    }
   }
 }

@@ -8519,6 +8519,9 @@
     }
   },
   "serverErrors": {
+    "STEP_FORM_INVALID": "Some answers this step asks for are missing or not valid.",
+    "STEP_FORM_FOREIGN_FILE": "A photo or signature in these answers does not belong to this job.",
+    "STEP_FORM_DEFINITION_INVALID": "Some questions on this step are not valid.",
     "TIMEOFF_OVERLAP": "This employee already has time off from {{from}} to {{to}} ({{status}}). Choose different dates, or edit that entry.",
     "OUTSIDE_GEOFENCE": "{{location}} only accepts clock-ins on site. You are {{distance}} away.",
     "AWAY_NOT_ALLOWED": "You are {{distance}} from {{location}}, and you are not set up to work away from it. Ask your administrator to allow it."
@@ -8839,5 +8842,169 @@
     "whyPh": "That is the old contract…",
     "accepted": "Added and handed over.",
     "refused": "Refused."
+  },
+  "stepForm": {
+    "tab": "Ask when moving here",
+    "tabStandard": "standard report",
+    "startFrom": "Start from",
+    "preset": {
+      "fieldService": "Field service",
+      "salesVisit": "Sales visit",
+      "delivery": "Delivery",
+      "inspection": "Inspection",
+      "support": "Support",
+      "nothing": "Nothing"
+    },
+    "presetField": {
+      "fieldService": {
+        "work_done": "What you did",
+        "photos_before": "Before",
+        "photos_after": "After",
+        "tech_signature": "Your signature",
+        "customer_name": "Customer name",
+        "customer_signature": "Customer signature"
+      },
+      "salesVisit": {
+        "outcome": "Outcome",
+        "outcome_o0": "Won",
+        "outcome_o1": "Follow-up",
+        "outcome_o2": "No interest",
+        "outcome_o3": "Not reached",
+        "notes": "Notes",
+        "follow_up_on": "Follow up on"
+      },
+      "delivery": {
+        "proof_of_delivery": "Proof of delivery",
+        "received_by": "Received by",
+        "recipient_signature": "Recipient signature"
+      },
+      "inspection": {
+        "passed": "Passed",
+        "findings": "Findings",
+        "evidence": "Evidence",
+        "inspector_signature": "Inspector signature"
+      },
+      "support": {
+        "resolution": "Resolution",
+        "resolution_o0": "Resolved",
+        "resolution_o1": "Workaround",
+        "resolution_o2": "Escalated",
+        "resolution_o3": "Not reproducible",
+        "what_you_did": "What you did"
+      }
+    },
+    "newLabel": {
+      "note": "Notes",
+      "choice": "Outcome",
+      "photos": "Photos",
+      "signature": "Signature",
+      "name": "Name",
+      "number": "Number",
+      "yesno": "Yes or no",
+      "date": "Date",
+      "optionA": "Option 1",
+      "optionB": "Option 2"
+    },
+    "type": {
+      "note": "Note",
+      "choice": "Choice",
+      "photos": "Photos",
+      "signature": "Signature",
+      "name": "Name",
+      "number": "Number",
+      "yesno": "Yes / no",
+      "date": "Date"
+    },
+    "required": "Required",
+    "optional": "Optional",
+    "empty": "Nothing is asked — the job just moves to this step.",
+    "dragHint": "Drag to reorder",
+    "labelPlaceholder": "Question",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "removeField": "Remove question",
+    "optionPlaceholder": "Option",
+    "addOption": "Add option",
+    "removeOption": "Remove option",
+    "crm": {
+      "label": "Also write to the CRM",
+      "none": "No",
+      "outcome": "As the visit outcome (a client note)",
+      "followUp": "As a follow-up reminder"
+    },
+    "addField": "Add a field",
+    "readOnly": "Only people who may edit workflows can change these questions.",
+    "preview": "Preview",
+    "previewNothing": "This step asks nothing — one tap and the job moves.",
+    "legacy": {
+      "title": "Uses the standard field-service report",
+      "body": "The assigned member is asked what they did, before and after photos, both signatures and the customer's name. Customise it to ask your own questions, or ask nothing here.",
+      "customise": "Customise",
+      "askNothing": "Ask nothing",
+      "backToStandard": "Use the standard report again"
+    },
+    "definitionError": {
+      "invalid": "This question is not valid.",
+      "not_object": "These questions could not be read.",
+      "unknown_key": "This question has a setting that is not supported.",
+      "too_many_fields": "A step can ask at most {{max}} questions.",
+      "unknown_type": "This kind of question is not supported.",
+      "invalid_id": "This question's id is not valid.",
+      "duplicate_id": "Two questions share the same id.",
+      "label_required": "Give this question a label.",
+      "label_too_long": "This label is too long (80 characters at most).",
+      "options_required": "A choice needs at least two options.",
+      "too_many_options": "A choice can have at most 12 options.",
+      "option_too_long": "An option is too long (60 characters at most).",
+      "duplicate_option": "Two options are the same.",
+      "options_not_allowed": "Only a choice has options.",
+      "crm_invalid": "This CRM link is not supported.",
+      "crm_not_allowed": "This kind of question cannot write to the CRM.",
+      "crm_duplicate": "Only one question per step can write this to the CRM."
+    },
+    "saveInvalid": "{{step}}: fix the questions marked in red before saving.",
+    "saveRefused": "{{step}}: some questions were not accepted.",
+    "bulkSkipped_one": "{{count}} job was not moved: that step asks for answers. Move it on its own.",
+    "bulkSkipped_other": "{{count}} jobs were not moved: that step asks for answers. Move them one at a time.",
+    "dialog": {
+      "title": "Move to {{step}}",
+      "caption_one": "{{required}} required · {{count}} field, from the workflow",
+      "caption_other": "{{required}} required · {{count}} fields, from the workflow",
+      "legacyCaption": "The standard field-service report.",
+      "submit": "Move to {{step}}",
+      "uploading": "Uploading…",
+      "notePlaceholder": "Type here…",
+      "namePlaceholder": "Name",
+      "datePlaceholder": "Pick a day",
+      "yes": "Yes",
+      "no": "No",
+      "addPhotos": "Add photos",
+      "removePhoto": "Remove photo",
+      "notAPhoto": "{{name}} is not a photo.",
+      "photoTooBig": "{{name}} is larger than 20 MB.",
+      "uploadFailed": "A file could not be uploaded: {{error}}",
+      "refused": "Some answers were not accepted."
+    },
+    "answerError": {
+      "invalid": "This answer is not valid.",
+      "not_object": "The answers could not be read.",
+      "unknown_field": "This step does not ask this.",
+      "required": "This is required.",
+      "wrong_type": "This answer is not the right kind.",
+      "too_long": "This is too long.",
+      "too_many": "Too many photos (10 at most).",
+      "not_an_option": "Pick one of the options.",
+      "out_of_range": "This number is out of range.",
+      "invalid_date": "Pick a valid day.",
+      "invalid_file": "This file was not accepted. Add it again."
+    },
+    "report": {
+      "title": "Reports",
+      "someone": "Someone",
+      "notAnswered": "Not answered",
+      "fileGone": "Removed",
+      "byWhen": "{{who}} · {{when}}",
+      "unreadable": "This report cannot be shown."
+    }
   }
 }

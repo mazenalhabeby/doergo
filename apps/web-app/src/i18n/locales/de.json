@@ -8519,6 +8519,9 @@
     }
   },
   "serverErrors": {
+    "STEP_FORM_INVALID": "Einige Antworten, die dieser Schritt abfragt, fehlen oder sind ungültig.",
+    "STEP_FORM_FOREIGN_FILE": "Ein Foto oder eine Unterschrift in diesen Antworten gehört nicht zu diesem Auftrag.",
+    "STEP_FORM_DEFINITION_INVALID": "Einige Fragen in diesem Schritt sind ungültig.",
     "TIMEOFF_OVERLAP": "Dieser Mitarbeiter hat bereits Abwesenheit von {{from}} bis {{to}} ({{status}}). Wählen Sie andere Daten oder bearbeiten Sie den vorhandenen Eintrag.",
     "OUTSIDE_GEOFENCE": "Bei {{location}} ist Einstempeln nur vor Ort möglich. Sie sind {{distance}} entfernt.",
     "AWAY_NOT_ALLOWED": "Sie sind {{distance}} von {{location}} entfernt und nicht für das Arbeiten außerhalb eingerichtet. Bitten Sie Ihre Administration, es zu erlauben."
@@ -8839,5 +8842,169 @@
     "whyPh": "Das ist der alte Vertrag…",
     "accepted": "Angelegt und übergeben.",
     "refused": "Abgelehnt."
+  },
+  "stepForm": {
+    "tab": "Beim Wechsel hierher abfragen",
+    "tabStandard": "Standardbericht",
+    "startFrom": "Vorlage",
+    "preset": {
+      "fieldService": "Außendienst",
+      "salesVisit": "Kundenbesuch",
+      "delivery": "Lieferung",
+      "inspection": "Prüfung",
+      "support": "Support",
+      "nothing": "Nichts"
+    },
+    "presetField": {
+      "fieldService": {
+        "work_done": "Ausgeführte Arbeiten",
+        "photos_before": "Vorher",
+        "photos_after": "Nachher",
+        "tech_signature": "Ihre Unterschrift",
+        "customer_name": "Name des Kunden",
+        "customer_signature": "Unterschrift des Kunden"
+      },
+      "salesVisit": {
+        "outcome": "Ergebnis",
+        "outcome_o0": "Gewonnen",
+        "outcome_o1": "Nachfassen",
+        "outcome_o2": "Kein Interesse",
+        "outcome_o3": "Nicht erreicht",
+        "notes": "Notizen",
+        "follow_up_on": "Nachfassen am"
+      },
+      "delivery": {
+        "proof_of_delivery": "Liefernachweis",
+        "received_by": "Empfangen von",
+        "recipient_signature": "Unterschrift des Empfängers"
+      },
+      "inspection": {
+        "passed": "Bestanden",
+        "findings": "Befund",
+        "evidence": "Nachweise",
+        "inspector_signature": "Unterschrift des Prüfers"
+      },
+      "support": {
+        "resolution": "Lösung",
+        "resolution_o0": "Gelöst",
+        "resolution_o1": "Umgehungslösung",
+        "resolution_o2": "Eskaliert",
+        "resolution_o3": "Nicht reproduzierbar",
+        "what_you_did": "Ausgeführte Arbeiten"
+      }
+    },
+    "newLabel": {
+      "note": "Notizen",
+      "choice": "Ergebnis",
+      "photos": "Fotos",
+      "signature": "Unterschrift",
+      "name": "Name",
+      "number": "Zahl",
+      "yesno": "Ja oder nein",
+      "date": "Datum",
+      "optionA": "Option 1",
+      "optionB": "Option 2"
+    },
+    "type": {
+      "note": "Notiz",
+      "choice": "Auswahl",
+      "photos": "Fotos",
+      "signature": "Unterschrift",
+      "name": "Name",
+      "number": "Zahl",
+      "yesno": "Ja / Nein",
+      "date": "Datum"
+    },
+    "required": "Pflicht",
+    "optional": "Optional",
+    "empty": "Es wird nichts abgefragt – der Auftrag wechselt einfach in diesen Schritt.",
+    "dragHint": "Zum Sortieren ziehen",
+    "labelPlaceholder": "Frage",
+    "moveUp": "Nach oben",
+    "moveDown": "Nach unten",
+    "removeField": "Frage entfernen",
+    "optionPlaceholder": "Option",
+    "addOption": "Option hinzufügen",
+    "removeOption": "Option entfernen",
+    "crm": {
+      "label": "Auch ins CRM schreiben",
+      "none": "Nein",
+      "outcome": "Als Besuchsergebnis (Kundennotiz)",
+      "followUp": "Als Erinnerung zum Nachfassen"
+    },
+    "addField": "Feld hinzufügen",
+    "readOnly": "Nur Personen, die Workflows bearbeiten dürfen, können diese Fragen ändern.",
+    "preview": "Vorschau",
+    "previewNothing": "Dieser Schritt fragt nichts ab – ein Tipp, und der Auftrag wechselt.",
+    "legacy": {
+      "title": "Verwendet den Standard-Servicebericht",
+      "body": "Das zugewiesene Mitglied wird nach den ausgeführten Arbeiten, Vorher- und Nachher-Fotos, beiden Unterschriften und dem Namen des Kunden gefragt. Passen Sie ihn an, um eigene Fragen zu stellen, oder fragen Sie hier nichts ab.",
+      "customise": "Anpassen",
+      "askNothing": "Nichts abfragen",
+      "backToStandard": "Wieder den Standardbericht verwenden"
+    },
+    "definitionError": {
+      "invalid": "Diese Frage ist ungültig.",
+      "not_object": "Diese Fragen konnten nicht gelesen werden.",
+      "unknown_key": "Diese Frage hat eine nicht unterstützte Einstellung.",
+      "too_many_fields": "Ein Schritt kann höchstens {{max}} Fragen stellen.",
+      "unknown_type": "Diese Art von Frage wird nicht unterstützt.",
+      "invalid_id": "Die Kennung dieser Frage ist ungültig.",
+      "duplicate_id": "Zwei Fragen haben dieselbe Kennung.",
+      "label_required": "Geben Sie dieser Frage eine Bezeichnung.",
+      "label_too_long": "Diese Bezeichnung ist zu lang (höchstens 80 Zeichen).",
+      "options_required": "Eine Auswahl braucht mindestens zwei Optionen.",
+      "too_many_options": "Eine Auswahl kann höchstens 12 Optionen haben.",
+      "option_too_long": "Eine Option ist zu lang (höchstens 60 Zeichen).",
+      "duplicate_option": "Zwei Optionen sind gleich.",
+      "options_not_allowed": "Nur eine Auswahl hat Optionen.",
+      "crm_invalid": "Diese CRM-Verknüpfung wird nicht unterstützt.",
+      "crm_not_allowed": "Diese Art von Frage kann nicht ins CRM schreiben.",
+      "crm_duplicate": "Nur eine Frage pro Schritt kann dies ins CRM schreiben."
+    },
+    "saveInvalid": "{{step}}: Korrigieren Sie vor dem Speichern die rot markierten Fragen.",
+    "saveRefused": "{{step}}: Einige Fragen wurden nicht angenommen.",
+    "bulkSkipped_one": "{{count}} Auftrag wurde nicht verschoben: Dieser Schritt fragt Antworten ab. Verschieben Sie ihn einzeln.",
+    "bulkSkipped_other": "{{count}} Aufträge wurden nicht verschoben: Dieser Schritt fragt Antworten ab. Verschieben Sie sie einzeln.",
+    "dialog": {
+      "title": "Nach „{{step}}“ verschieben",
+      "caption_one": "{{required}} Pflicht · {{count}} Feld, aus dem Workflow",
+      "caption_other": "{{required}} Pflicht · {{count}} Felder, aus dem Workflow",
+      "legacyCaption": "Der Standard-Servicebericht.",
+      "submit": "Nach „{{step}}“ verschieben",
+      "uploading": "Wird hochgeladen…",
+      "notePlaceholder": "Hier eingeben…",
+      "namePlaceholder": "Name",
+      "datePlaceholder": "Tag wählen",
+      "yes": "Ja",
+      "no": "Nein",
+      "addPhotos": "Fotos hinzufügen",
+      "removePhoto": "Foto entfernen",
+      "notAPhoto": "{{name}} ist kein Foto.",
+      "photoTooBig": "{{name}} ist größer als 20 MB.",
+      "uploadFailed": "Eine Datei konnte nicht hochgeladen werden: {{error}}",
+      "refused": "Einige Antworten wurden nicht angenommen."
+    },
+    "answerError": {
+      "invalid": "Diese Antwort ist ungültig.",
+      "not_object": "Die Antworten konnten nicht gelesen werden.",
+      "unknown_field": "Dieser Schritt fragt das nicht ab.",
+      "required": "Dies ist ein Pflichtfeld.",
+      "wrong_type": "Diese Antwort hat nicht die richtige Art.",
+      "too_long": "Das ist zu lang.",
+      "too_many": "Zu viele Fotos (höchstens 10).",
+      "not_an_option": "Wählen Sie eine der Optionen.",
+      "out_of_range": "Diese Zahl liegt außerhalb des zulässigen Bereichs.",
+      "invalid_date": "Wählen Sie einen gültigen Tag.",
+      "invalid_file": "Diese Datei wurde nicht angenommen. Fügen Sie sie erneut hinzu."
+    },
+    "report": {
+      "title": "Berichte",
+      "someone": "Jemand",
+      "notAnswered": "Nicht beantwortet",
+      "fileGone": "Entfernt",
+      "byWhen": "{{who}} · {{when}}",
+      "unreadable": "Dieser Bericht kann nicht angezeigt werden."
+    }
   }
 }

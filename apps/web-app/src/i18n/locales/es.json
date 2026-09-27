@@ -8519,6 +8519,9 @@
     }
   },
   "serverErrors": {
+    "STEP_FORM_INVALID": "Faltan algunas respuestas que pide este paso o no son válidas.",
+    "STEP_FORM_FOREIGN_FILE": "Una foto o firma de estas respuestas no pertenece a este trabajo.",
+    "STEP_FORM_DEFINITION_INVALID": "Algunas preguntas de este paso no son válidas.",
     "TIMEOFF_OVERLAP": "Este empleado ya tiene ausencia del {{from}} al {{to}} ({{status}}). Elige otras fechas o edita esa entrada.",
     "OUTSIDE_GEOFENCE": "{{location}} solo admite fichajes en el sitio. Estás a {{distance}}.",
     "AWAY_NOT_ALLOWED": "Estás a {{distance}} de {{location}} y no tienes permiso para trabajar fuera. Pide a tu administrador que lo permita."
@@ -8839,5 +8842,169 @@
     "whyPh": "Ese es el contrato antiguo…",
     "accepted": "Añadido y entregado.",
     "refused": "Rechazado."
+  },
+  "stepForm": {
+    "tab": "Preguntar al pasar aquí",
+    "tabStandard": "informe estándar",
+    "startFrom": "Empezar desde",
+    "preset": {
+      "fieldService": "Servicio técnico",
+      "salesVisit": "Visita comercial",
+      "delivery": "Entrega",
+      "inspection": "Inspección",
+      "support": "Soporte",
+      "nothing": "Nada"
+    },
+    "presetField": {
+      "fieldService": {
+        "work_done": "Qué hiciste",
+        "photos_before": "Antes",
+        "photos_after": "Después",
+        "tech_signature": "Tu firma",
+        "customer_name": "Nombre del cliente",
+        "customer_signature": "Firma del cliente"
+      },
+      "salesVisit": {
+        "outcome": "Resultado",
+        "outcome_o0": "Ganado",
+        "outcome_o1": "Seguimiento",
+        "outcome_o2": "Sin interés",
+        "outcome_o3": "No localizado",
+        "notes": "Notas",
+        "follow_up_on": "Seguimiento el"
+      },
+      "delivery": {
+        "proof_of_delivery": "Prueba de entrega",
+        "received_by": "Recibido por",
+        "recipient_signature": "Firma del destinatario"
+      },
+      "inspection": {
+        "passed": "Aprobado",
+        "findings": "Hallazgos",
+        "evidence": "Pruebas",
+        "inspector_signature": "Firma del inspector"
+      },
+      "support": {
+        "resolution": "Resolución",
+        "resolution_o0": "Resuelto",
+        "resolution_o1": "Solución temporal",
+        "resolution_o2": "Escalado",
+        "resolution_o3": "No reproducible",
+        "what_you_did": "Qué hiciste"
+      }
+    },
+    "newLabel": {
+      "note": "Notas",
+      "choice": "Resultado",
+      "photos": "Fotos",
+      "signature": "Firma",
+      "name": "Nombre",
+      "number": "Número",
+      "yesno": "Sí o no",
+      "date": "Fecha",
+      "optionA": "Opción 1",
+      "optionB": "Opción 2"
+    },
+    "type": {
+      "note": "Nota",
+      "choice": "Opción",
+      "photos": "Fotos",
+      "signature": "Firma",
+      "name": "Nombre",
+      "number": "Número",
+      "yesno": "Sí / no",
+      "date": "Fecha"
+    },
+    "required": "Obligatorio",
+    "optional": "Opcional",
+    "empty": "No se pregunta nada: el trabajo simplemente pasa a este paso.",
+    "dragHint": "Arrastra para reordenar",
+    "labelPlaceholder": "Pregunta",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "removeField": "Quitar pregunta",
+    "optionPlaceholder": "Opción",
+    "addOption": "Añadir opción",
+    "removeOption": "Quitar opción",
+    "crm": {
+      "label": "Escribir también en el CRM",
+      "none": "No",
+      "outcome": "Como resultado de la visita (una nota del cliente)",
+      "followUp": "Como recordatorio de seguimiento"
+    },
+    "addField": "Añadir un campo",
+    "readOnly": "Solo quienes pueden editar flujos de trabajo pueden cambiar estas preguntas.",
+    "preview": "Vista previa",
+    "previewNothing": "Este paso no pregunta nada: un toque y el trabajo avanza.",
+    "legacy": {
+      "title": "Usa el informe de servicio estándar",
+      "body": "Al miembro asignado se le pregunta qué hizo, fotos de antes y después, ambas firmas y el nombre del cliente. Personalízalo para hacer tus propias preguntas, o no preguntes nada aquí.",
+      "customise": "Personalizar",
+      "askNothing": "No preguntar nada",
+      "backToStandard": "Volver al informe estándar"
+    },
+    "definitionError": {
+      "invalid": "Esta pregunta no es válida.",
+      "not_object": "No se pudieron leer estas preguntas.",
+      "unknown_key": "Esta pregunta tiene un ajuste no admitido.",
+      "too_many_fields": "Un paso puede hacer como máximo {{max}} preguntas.",
+      "unknown_type": "Este tipo de pregunta no se admite.",
+      "invalid_id": "El identificador de esta pregunta no es válido.",
+      "duplicate_id": "Dos preguntas comparten el mismo identificador.",
+      "label_required": "Ponle un texto a esta pregunta.",
+      "label_too_long": "Este texto es demasiado largo (80 caracteres como máximo).",
+      "options_required": "Una opción necesita al menos dos alternativas.",
+      "too_many_options": "Una opción puede tener como máximo 12 alternativas.",
+      "option_too_long": "Una alternativa es demasiado larga (60 caracteres como máximo).",
+      "duplicate_option": "Dos alternativas son iguales.",
+      "options_not_allowed": "Solo una pregunta de opción tiene alternativas.",
+      "crm_invalid": "Este vínculo con el CRM no se admite.",
+      "crm_not_allowed": "Este tipo de pregunta no puede escribir en el CRM.",
+      "crm_duplicate": "Solo una pregunta por paso puede escribir esto en el CRM."
+    },
+    "saveInvalid": "{{step}}: corrige las preguntas marcadas en rojo antes de guardar.",
+    "saveRefused": "{{step}}: algunas preguntas no se aceptaron.",
+    "bulkSkipped_one": "{{count}} trabajo no se movió: ese paso pide respuestas. Muévelo por separado.",
+    "bulkSkipped_other": "{{count}} trabajos no se movieron: ese paso pide respuestas. Muévelos de uno en uno.",
+    "dialog": {
+      "title": "Mover a {{step}}",
+      "caption_one": "{{required}} obligatorios · {{count}} campo, del flujo de trabajo",
+      "caption_other": "{{required}} obligatorios · {{count}} campos, del flujo de trabajo",
+      "legacyCaption": "El informe de servicio estándar.",
+      "submit": "Mover a {{step}}",
+      "uploading": "Subiendo…",
+      "notePlaceholder": "Escribe aquí…",
+      "namePlaceholder": "Nombre",
+      "datePlaceholder": "Elige un día",
+      "yes": "Sí",
+      "no": "No",
+      "addPhotos": "Añadir fotos",
+      "removePhoto": "Quitar foto",
+      "notAPhoto": "{{name}} no es una foto.",
+      "photoTooBig": "{{name}} supera los 20 MB.",
+      "uploadFailed": "No se pudo subir un archivo: {{error}}",
+      "refused": "Algunas respuestas no se aceptaron."
+    },
+    "answerError": {
+      "invalid": "Esta respuesta no es válida.",
+      "not_object": "No se pudieron leer las respuestas.",
+      "unknown_field": "Este paso no pregunta esto.",
+      "required": "Esto es obligatorio.",
+      "wrong_type": "Esta respuesta no es del tipo correcto.",
+      "too_long": "Es demasiado largo.",
+      "too_many": "Demasiadas fotos (10 como máximo).",
+      "not_an_option": "Elige una de las opciones.",
+      "out_of_range": "Este número está fuera de rango.",
+      "invalid_date": "Elige un día válido.",
+      "invalid_file": "Este archivo no se aceptó. Vuelve a añadirlo."
+    },
+    "report": {
+      "title": "Informes",
+      "someone": "Alguien",
+      "notAnswered": "Sin respuesta",
+      "fileGone": "Eliminado",
+      "byWhen": "{{who}} · {{when}}",
+      "unreadable": "Este informe no se puede mostrar."
+    }
   }
 }

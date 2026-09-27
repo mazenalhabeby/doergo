@@ -8528,6 +8528,9 @@
     }
   },
   "serverErrors": {
+    "STEP_FORM_INVALID": "Mancano alcune risposte richieste da questo passaggio o non sono valide.",
+    "STEP_FORM_FOREIGN_FILE": "Una foto o una firma in queste risposte non appartiene a questo lavoro.",
+    "STEP_FORM_DEFINITION_INVALID": "Alcune domande di questo passaggio non sono valide.",
     "TIMEOFF_OVERLAP": "Questo dipendente ha già un’assenza dal {{from}} al {{to}} ({{status}}). Scegli altre date o modifica quella voce.",
     "OUTSIDE_GEOFENCE": "{{location}} accetta timbrature solo in sede. Sei a {{distance}}.",
     "AWAY_NOT_ALLOWED": "Sei a {{distance}} da {{location}} e non sei abilitato a lavorare fuori sede. Chiedi al tuo amministratore di consentirlo."
@@ -8848,5 +8851,169 @@
     "whyPh": "Quello è il contratto vecchio…",
     "accepted": "Aggiunto e consegnato.",
     "refused": "Rifiutato."
+  },
+  "stepForm": {
+    "tab": "Chiedi al passaggio qui",
+    "tabStandard": "rapporto standard",
+    "startFrom": "Parti da",
+    "preset": {
+      "fieldService": "Intervento tecnico",
+      "salesVisit": "Visita commerciale",
+      "delivery": "Consegna",
+      "inspection": "Ispezione",
+      "support": "Assistenza",
+      "nothing": "Niente"
+    },
+    "presetField": {
+      "fieldService": {
+        "work_done": "Lavoro svolto",
+        "photos_before": "Prima",
+        "photos_after": "Dopo",
+        "tech_signature": "La tua firma",
+        "customer_name": "Nome del cliente",
+        "customer_signature": "Firma del cliente"
+      },
+      "salesVisit": {
+        "outcome": "Esito",
+        "outcome_o0": "Acquisito",
+        "outcome_o1": "Da ricontattare",
+        "outcome_o2": "Non interessato",
+        "outcome_o3": "Non raggiunto",
+        "notes": "Note",
+        "follow_up_on": "Ricontattare il"
+      },
+      "delivery": {
+        "proof_of_delivery": "Prova di consegna",
+        "received_by": "Ricevuto da",
+        "recipient_signature": "Firma del destinatario"
+      },
+      "inspection": {
+        "passed": "Superata",
+        "findings": "Rilievi",
+        "evidence": "Prove",
+        "inspector_signature": "Firma dell'ispettore"
+      },
+      "support": {
+        "resolution": "Risoluzione",
+        "resolution_o0": "Risolto",
+        "resolution_o1": "Soluzione temporanea",
+        "resolution_o2": "Inoltrato",
+        "resolution_o3": "Non riproducibile",
+        "what_you_did": "Lavoro svolto"
+      }
+    },
+    "newLabel": {
+      "note": "Note",
+      "choice": "Esito",
+      "photos": "Foto",
+      "signature": "Firma",
+      "name": "Nome",
+      "number": "Numero",
+      "yesno": "Sì o no",
+      "date": "Data",
+      "optionA": "Opzione 1",
+      "optionB": "Opzione 2"
+    },
+    "type": {
+      "note": "Nota",
+      "choice": "Scelta",
+      "photos": "Foto",
+      "signature": "Firma",
+      "name": "Nome",
+      "number": "Numero",
+      "yesno": "Sì / no",
+      "date": "Data"
+    },
+    "required": "Obbligatorio",
+    "optional": "Facoltativo",
+    "empty": "Non viene chiesto nulla: il lavoro passa semplicemente a questo passaggio.",
+    "dragHint": "Trascina per riordinare",
+    "labelPlaceholder": "Domanda",
+    "moveUp": "Sposta su",
+    "moveDown": "Sposta giù",
+    "removeField": "Rimuovi domanda",
+    "optionPlaceholder": "Opzione",
+    "addOption": "Aggiungi opzione",
+    "removeOption": "Rimuovi opzione",
+    "crm": {
+      "label": "Scrivi anche nel CRM",
+      "none": "No",
+      "outcome": "Come esito della visita (una nota cliente)",
+      "followUp": "Come promemoria per ricontattare"
+    },
+    "addField": "Aggiungi un campo",
+    "readOnly": "Solo chi può modificare i workflow può cambiare queste domande.",
+    "preview": "Anteprima",
+    "previewNothing": "Questo passaggio non chiede nulla: un tocco e il lavoro avanza.",
+    "legacy": {
+      "title": "Usa il rapporto di intervento standard",
+      "body": "Al membro assegnato vengono chiesti il lavoro svolto, le foto prima e dopo, entrambe le firme e il nome del cliente. Personalizzalo per fare le tue domande, oppure non chiedere nulla qui.",
+      "customise": "Personalizza",
+      "askNothing": "Non chiedere nulla",
+      "backToStandard": "Torna al rapporto standard"
+    },
+    "definitionError": {
+      "invalid": "Questa domanda non è valida.",
+      "not_object": "Non è stato possibile leggere queste domande.",
+      "unknown_key": "Questa domanda ha un'impostazione non supportata.",
+      "too_many_fields": "Un passaggio può fare al massimo {{max}} domande.",
+      "unknown_type": "Questo tipo di domanda non è supportato.",
+      "invalid_id": "L'identificativo di questa domanda non è valido.",
+      "duplicate_id": "Due domande hanno lo stesso identificativo.",
+      "label_required": "Dai un'etichetta a questa domanda.",
+      "label_too_long": "Questa etichetta è troppo lunga (al massimo 80 caratteri).",
+      "options_required": "Una scelta richiede almeno due opzioni.",
+      "too_many_options": "Una scelta può avere al massimo 12 opzioni.",
+      "option_too_long": "Un'opzione è troppo lunga (al massimo 60 caratteri).",
+      "duplicate_option": "Due opzioni sono uguali.",
+      "options_not_allowed": "Solo una scelta ha opzioni.",
+      "crm_invalid": "Questo collegamento al CRM non è supportato.",
+      "crm_not_allowed": "Questo tipo di domanda non può scrivere nel CRM.",
+      "crm_duplicate": "Solo una domanda per passaggio può scrivere questo nel CRM."
+    },
+    "saveInvalid": "{{step}}: correggi le domande segnate in rosso prima di salvare.",
+    "saveRefused": "{{step}}: alcune domande non sono state accettate.",
+    "bulkSkipped_one": "{{count}} lavoro non è stato spostato: quel passaggio chiede delle risposte. Spostalo da solo.",
+    "bulkSkipped_other": "{{count}} lavori non sono stati spostati: quel passaggio chiede delle risposte. Spostali uno alla volta.",
+    "dialog": {
+      "title": "Sposta in {{step}}",
+      "caption_one": "{{required}} obbligatori · {{count}} campo, dal workflow",
+      "caption_other": "{{required}} obbligatori · {{count}} campi, dal workflow",
+      "legacyCaption": "Il rapporto di intervento standard.",
+      "submit": "Sposta in {{step}}",
+      "uploading": "Caricamento…",
+      "notePlaceholder": "Scrivi qui…",
+      "namePlaceholder": "Nome",
+      "datePlaceholder": "Scegli un giorno",
+      "yes": "Sì",
+      "no": "No",
+      "addPhotos": "Aggiungi foto",
+      "removePhoto": "Rimuovi foto",
+      "notAPhoto": "{{name}} non è una foto.",
+      "photoTooBig": "{{name}} supera i 20 MB.",
+      "uploadFailed": "Non è stato possibile caricare un file: {{error}}",
+      "refused": "Alcune risposte non sono state accettate."
+    },
+    "answerError": {
+      "invalid": "Questa risposta non è valida.",
+      "not_object": "Non è stato possibile leggere le risposte.",
+      "unknown_field": "Questo passaggio non chiede questo.",
+      "required": "Questo campo è obbligatorio.",
+      "wrong_type": "Questa risposta non è del tipo giusto.",
+      "too_long": "È troppo lungo.",
+      "too_many": "Troppe foto (al massimo 10).",
+      "not_an_option": "Scegli una delle opzioni.",
+      "out_of_range": "Questo numero è fuori intervallo.",
+      "invalid_date": "Scegli un giorno valido.",
+      "invalid_file": "Questo file non è stato accettato. Aggiungilo di nuovo."
+    },
+    "report": {
+      "title": "Rapporti",
+      "someone": "Qualcuno",
+      "notAnswered": "Nessuna risposta",
+      "fileGone": "Rimosso",
+      "byWhen": "{{who}} · {{when}}",
+      "unreadable": "Questo rapporto non può essere mostrato."
+    }
   }
 }

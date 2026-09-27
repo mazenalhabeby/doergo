@@ -32,6 +32,9 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { notify } from "@/lib/toast"
 import { AssignMemberDialog } from "@/components/assign-member-dialog"
+import { useStepMove } from "@/components/step-forms/use-step-move"
+import { StepReportsSection } from "@/components/step-forms/step-reports-section"
+import { serverErrorMessage } from "@/lib/server-error"
 
 import {
   TaskProgressCard,
@@ -129,7 +132,15 @@ export default function TaskDetailPage({
   }, [id, task?.title, setOverride, clearOverride])
 
   // ─── Derived State ──────────────────────────────────────────────────────
-  const { statuses: workflowStatuses, hasWorkflow } = useWorkflow(task?.workflowId)
+  const { statuses: workflowStatuses, hasWorkflow, workflow: pageWorkflow } = useWorkflow(task?.workflowId)
+  /*
+    The workflow a move is judged against: the task's EFFECTIVE one as the
+    detail read resolves it (its own, else its space's) — which is the one the
+    server judges the move by, and the one that carries each step's form.
+  */
+  const moveWorkflow = task?.workflow ?? pageWorkflow ?? null
+  // "Ask when a job moves here": a move into a step with a form opens it first.
+  const stepMove = useStepMove()
 
   const isCanceled = hasWorkflow
     ? workflowStatuses.some((s) => s.key === task?.status && s.isCanceled)
@@ -183,8 +194,16 @@ export default function TaskDetailPage({
   })
 
   const deleteMutation = useMutation({
-    mutationFn: () => tasksApi.updateStatus(id, "CANCELED"),
-    onSuccess: () => {
+    mutationFn: () =>
+      stepMove.move({
+        task: task!,
+        status: "CANCELED",
+        workflow: moveWorkflow,
+        send: (answers) => tasksApi.updateStatus(id, "CANCELED", undefined, answers),
+      }),
+    onSuccess: (result) => {
+      if (result === "cancelled") return
+      queryClient.invalidateQueries({ queryKey: ["task-submissions", id] })
       notify.success(t("tasks.detail.requestCancelled"))
       queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
       // The list's space tabs are server-counted; a status change or a move
@@ -196,8 +215,17 @@ export default function TaskDetailPage({
   })
 
   const statusChangeMutation = useMutation({
-    mutationFn: (newStatus: string) => tasksApi.updateStatus(id, newStatus),
-    onSuccess: () => {
+    mutationFn: (newStatus: string) =>
+      stepMove.move({
+        task: task!,
+        status: newStatus,
+        workflow: moveWorkflow,
+        send: (answers) => tasksApi.updateStatus(id, newStatus, undefined, answers),
+      }),
+    onSuccess: (result) => {
+      // The step's dialog was closed without answering — nothing moved.
+      if (result === "cancelled") return
+      queryClient.invalidateQueries({ queryKey: ["task-submissions", id] })
       notify.success(t("tasks.detail.statusUpdated"))
       queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
       queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
@@ -205,7 +233,7 @@ export default function TaskDetailPage({
       // between spaces makes those numbers stale.
       queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
     },
-    onError: (e: Error) => notify.error(e.message),
+    onError: (e: Error) => notify.error(serverErrorMessage(e, t)),
   })
 
   /*
@@ -314,6 +342,7 @@ export default function TaskDetailPage({
         }}
       />
       <EditTaskDialog task={task} open={showEditDialog} onOpenChange={setShowEditDialog} />
+      {stepMove.dialog}
 
       <div className="p-8 max-w-7xl mx-auto">
         {/* ─── Header ────────────────────────────────────────────────── */}
@@ -442,6 +471,12 @@ export default function TaskDetailPage({
               </CollapsibleSection>
               </div>
             )}
+
+            {/* Reports — what each step asked when the job moved into it,
+                read from the answers' own snapshot. Self-hides when there are
+                none; the service report above stays for jobs finished before
+                step forms existed, and both show when both exist. */}
+            <StepReportsSection taskId={id} workflowStatuses={moveWorkflow?.statuses ?? workflowStatuses} />
 
             {/* Route Tracking — module + permission, and only when there is a
                 route to show OR one being recorded right now.

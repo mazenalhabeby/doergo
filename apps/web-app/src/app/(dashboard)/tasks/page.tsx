@@ -30,6 +30,10 @@ import { tasksApi, phasesApi, sprintsApi, epicsApi, locationsApi, type Task, typ
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { AssignMemberDialog } from "@/components/assign-member-dialog"
+import { useStepMove } from "@/components/step-forms/use-step-move"
+import { isStepFormRefusal, stepFormForMove } from "@/lib/step-forms"
+import { isAssignedTo } from "@/lib/task-assignment"
+import { serverErrorMessage } from "@/lib/server-error"
 import {
   TasksViewSkeleton,
   VIEW_MODE_STORAGE_KEY,
@@ -64,7 +68,7 @@ const SprintFormDialog = dynamic(() => import("./_components/sprint-management")
 const CompleteSprintDialog = dynamic(() => import("./_components/sprint-management").then((m) => m.CompleteSprintDialog), { ssr: false })
 const DeleteSprintDialog = dynamic(() => import("./_components/sprint-management").then((m) => m.DeleteSprintDialog), { ssr: false })
 const EpicFormDialog = dynamic(() => import("./_components/sprint-management").then((m) => m.EpicFormDialog), { ssr: false })
-import { hasAccessModule, mayChangeStatus, isFinishedStatus, STATUS_TRANSITIONS } from "@hbcfield/shared/client"
+import { hasAccessModule, mayChangeStatus, isFinishedStatus, STATUS_TRANSITIONS, type StepFormAnswers } from "@hbcfield/shared/client"
 import { PAGE_SHELL } from "@/components/ui/page-width";
 
 // Priority sort order
@@ -594,10 +598,26 @@ export default function TasksPage() {
     [boardHasWorkflow, boardStatuses],
   )
 
+  /*
+    "Ask when a job moves here". A move into a step with a form opens the
+    step's dialog and goes out only with its answers. The list carries no
+    effective workflow per task, so it is the task's own type, else this
+    view's default — and when that guess is wrong the server's refusal makes
+    `useStepMove` read the job's real one and ask anyway.
+  */
+  const stepMove = useStepMove()
+  const workflowForTask = useCallback(
+    (task: Task) => {
+      const wfId = task.workflowId ?? contextDefaultWorkflowId
+      return orgWorkflows.find((w) => w.id === wfId) ?? null
+    },
+    [orgWorkflows, contextDefaultWorkflowId],
+  )
+
   // Kanban drag-and-drop status change
   const statusChangeMutation = useMutation({
-    mutationFn: ({ taskId, status }: { taskId: string; status: string }) =>
-      tasksApi.updateStatus(taskId, status),
+    mutationFn: ({ taskId, status, answers }: { taskId: string; status: string; answers?: StepFormAnswers }) =>
+      tasksApi.updateStatus(taskId, status, undefined, answers),
     onMutate: async ({ taskId, status }) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
       const snapshot = snapshotTasksCache(queryClient)
@@ -606,13 +626,37 @@ export default function TasksPage() {
     },
     onError: (e: Error, _vars, context) => {
       if (context?.snapshot) restoreTasksCache(queryClient, context.snapshot)
-      notify.error(e.message)
+      // A step-form refusal is answered by the step's dialog, not a toast.
+      if (!isStepFormRefusal(e)) notify.error(serverErrorMessage(e, t))
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
       queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"], refetchType: "all" })
     },
   })
+
+  /** Every status change on this page: through the step's form when it has one. */
+  const requestStatusChange = useCallback(
+    (taskId: string, status: string) => {
+      const task = tasks.find((tk) => tk.id === taskId)
+      if (!task) {
+        statusChangeMutation.mutate({ taskId, status })
+        return
+      }
+      stepMove
+        .move({
+          task,
+          status,
+          workflow: workflowForTask(task),
+          send: (answers) => statusChangeMutation.mutateAsync({ taskId, status, answers }),
+        })
+        .catch((e: unknown) => {
+          // Anything else was already said by the mutation's own onError.
+          if (isStepFormRefusal(e)) notify.error(serverErrorMessage(e, t))
+        })
+    },
+    [tasks, statusChangeMutation, stepMove, workflowForTask, t],
+  )
 
   const handleKanbanDrop = useCallback((taskId: string, newStatus: string) => {
     const task = tasks.find(t => t.id === taskId)
@@ -640,8 +684,8 @@ export default function TasksPage() {
       return
     }
 
-    statusChangeMutation.mutate({ taskId, status: newStatus })
-  }, [tasks, statusChangeMutation, user, t])
+    requestStatusChange(taskId, newStatus)
+  }, [tasks, requestStatusChange, user, t])
 
   // Handle reorder within same column/group
   const handleReorder = useCallback((taskId: string, newPosition: number, _groupKey: string) => {
@@ -675,7 +719,7 @@ export default function TasksPage() {
   // Context menu actions
   const contextActions: TaskContextMenuActions = useMemo(() => ({
     onStatusChange: (taskId: string, status: string) => {
-      statusChangeMutation.mutate({ taskId, status })
+      requestStatusChange(taskId, status)
     },
     onPriorityChange: (taskId: string, priority: string) => {
       const snapshot = snapshotTasksCache(queryClient)
@@ -767,7 +811,7 @@ export default function TasksPage() {
         notify.error(e.message)
       })
     },
-  }), [statusChangeMutation, queryClient])
+  }), [requestStatusChange, queryClient])
 
   // Build recent assignees from visible tasks for context menu
   const recentAssignees = useMemo(() => {
@@ -795,16 +839,38 @@ export default function TasksPage() {
 
   // Bulk action handlers
   const handleBulkStatusChange = useCallback((taskIds: string[], status: string) => {
-    Promise.allSettled(taskIds.map(id => tasksApi.updateStatus(id, status)))
+    /*
+      A step that asks something is answered job by job — one form cannot be
+      one set of answers for twenty different jobs. Those are left where they
+      are and named; the rest move as before.
+    */
+    const asks = new Set(
+      taskIds.filter((id) => {
+        const task = tasks.find((tk) => tk.id === id)
+        return !!task && !!stepFormForMove({ workflow: workflowForTask(task), statusKey: status, isAssignee: isAssignedTo(task, user?.id) })
+      }),
+    )
+    const movable = taskIds.filter((id) => !asks.has(id))
+    if (asks.size > 0) {
+      notify.error(t("stepForm.bulkSkipped", {
+        count: asks.size,
+        defaultValue: "{{count}} jobs were not moved: that step asks for answers. Move them one at a time.",
+      }))
+    }
+    if (movable.length === 0) {
+      handleClearSelection()
+      return
+    }
+    Promise.allSettled(movable.map(id => tasksApi.updateStatus(id, status)))
       .then((results) => {
         const failed = results.filter(r => r.status === "rejected").length
-        if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
-        else notify.bulk(taskIds.length, t("tasks.notify.actionUpdated"))
+        if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: movable.length }))
+        else notify.bulk(movable.length, t("tasks.notify.actionUpdated"))
         handleClearSelection()
         queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
         queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"], refetchType: "all" })
       })
-  }, [handleClearSelection, queryClient])
+  }, [handleClearSelection, queryClient, tasks, workflowForTask, user?.id, t])
 
   const handleBulkPriorityChange = useCallback((taskIds: string[], priority: string) => {
     Promise.allSettled(taskIds.map(id => tasksApi.update(id, { priority })))
@@ -1636,6 +1702,7 @@ export default function TasksPage() {
         onBulkDelete={handleBulkDelete}
       />
 
+      {stepMove.dialog}
       <AssignMemberDialog
         open={assignDialogOpen}
         onOpenChange={(open) => {

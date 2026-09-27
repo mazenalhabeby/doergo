@@ -17,6 +17,7 @@ import {
   JoinPolicy,
   buildUrlWithQuery,
 } from '@hbcfield/shared/client';
+import type { StepForm, StepFormField, StepFormAnswers } from '@hbcfield/shared/client';
 import type {
   CompanyLocation,
   TimeEntry,
@@ -597,6 +598,12 @@ export interface Task {
   phaseId?: string | null;
   sprintId?: string | null;
   workflowId?: string | null;
+  /**
+   * The task's EFFECTIVE workflow (its own, else its space's), as the detail
+   * read resolves it — statuses included, each with its step form. Present on
+   * GET /tasks/:id only; the list does not carry it.
+   */
+  workflow?: { id: string; name: string; statuses?: WorkflowStatus[] } | null;
   // Agile fields
   storyPoints?: number | null;
   epicId?: string | null;
@@ -1063,14 +1070,28 @@ export const tasksApi = {
   },
 
   // Update task status (TECHNICIAN only)
-  updateStatus: async (id: string, status: string, reason?: string) => {
-    const response = await api.patch<TaskResponse>(`/tasks/${id}/status`, { status, reason });
+  updateStatus: async (id: string, status: string, reason?: string, answers?: StepFormAnswers) => {
+    const response = await api.patch<TaskResponse>(`/tasks/${id}/status`, {
+      status,
+      reason,
+      // Only when the step asked something — see `useStepMove`.
+      ...(answers !== undefined ? { answers } : {}),
+    });
 
+    // Coded: a step-form refusal (STEP_FORM_INVALID / _FOREIGN_FILE) names the
+    // fields it refused, and the move dialog shows each one where it belongs.
     if (response.error) {
-      throw new Error(response.error);
+      throw apiError(response);
     }
 
     return response.data?.data;
+  },
+
+  /** The step forms answered on this job (its reports), oldest first, with signed file links. */
+  getSubmissions: async (id: string): Promise<TaskStepSubmission[]> => {
+    const response = await api.get<{ success: boolean; data: TaskStepSubmission[] }>(`/tasks/${id}/submissions`);
+    if (response.error) throw apiError(response);
+    return response.data?.data ?? [];
   },
 
   // Get task timeline/activity
@@ -5244,7 +5265,30 @@ export interface WorkflowStatus {
   transitions: string[];
   capabilities?: string[];
   wipLimit?: number | null;
+  /**
+   * "Ask when a job moves here" — the step's own form, or null when not set
+   * (then the legacy rule applies: a final `report` step asks the field-service
+   * report). `{ fields: [] }` = set to ask nothing. See `resolveStepForm`.
+   */
+  form?: StepForm | null;
   createdAt: string;
+}
+
+/** What a step's form is SENT as: no version (the server decides it). `null` clears it. */
+export type StepFormInput = { fields: Array<Omit<StepFormField, 'id'> & { id?: string }> } | null;
+
+/** One step form answered on a job — its report for that move. */
+export interface TaskStepSubmission {
+  id: string;
+  statusKey: string;
+  formVersion: number;
+  /** The form as it was answered (a snapshot) — never today's definition. */
+  form: unknown;
+  answers: StepFormAnswers;
+  /** Photos and signatures named by the answers, with short-lived signed links. */
+  files: Record<string, { id: string; fileName: string; url?: string; fileUrl?: string; mimeType?: string | null; fileType?: string }>;
+  submittedAt: string;
+  submittedBy: { id: string; firstName: string | null; lastName: string | null; avatarUrl?: string | null };
 }
 
 /** A task type in the shared library, as a tenant sees it. */
@@ -5410,22 +5454,30 @@ export const workflowsApi = {
       transitions?: string[];
       capabilities?: string[];
       wipLimit?: number | null;
+      /** The step form; omit to leave it, null to clear it. */
+      form?: StepFormInput;
     },
   ) => {
     const response = await api.post<{ success: boolean; data: WorkflowStatus }>(
       `/workflows/${workflowId}/statuses`,
       data,
     );
-    if (response.error) throw new Error(response.error);
+    // Coded: a bad step form is refused as STEP_FORM_DEFINITION_INVALID with
+    // the fields it objects to, which the builder shows on the field.
+    if (response.error) throw apiError(response);
     return response.data?.data;
   },
 
-  updateStatus: async (workflowId: string, statusId: string, data: Partial<WorkflowStatus>) => {
+  updateStatus: async (
+    workflowId: string,
+    statusId: string,
+    data: Omit<Partial<WorkflowStatus>, 'form'> & { form?: StepFormInput },
+  ) => {
     const response = await api.patch<{ success: boolean; data: WorkflowStatus }>(
       `/workflows/${workflowId}/statuses/${statusId}`,
       data,
     );
-    if (response.error) throw new Error(response.error);
+    if (response.error) throw apiError(response);
     return response.data?.data;
   },
 

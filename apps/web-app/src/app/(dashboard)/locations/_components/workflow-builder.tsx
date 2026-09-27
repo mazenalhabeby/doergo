@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect, memo } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { notify } from "@/lib/toast"
-import { Plus, X, Loader2, AlertCircle, Upload } from "lucide-react"
+import { Plus, X, Loader2, AlertCircle, Upload, ClipboardList } from "lucide-react"
 
 import { workflowsApi, type WorkflowStatus } from "@/lib/api"
 import { resolveTransitions, toStatusKey } from "@/lib/workflow-transitions"
@@ -16,6 +16,18 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { ColorPicker, PRESET_COLORS } from "./color-picker"
+import { useAuth } from "@/contexts/auth-context"
+import { StepFormEditor } from "@/components/step-forms/step-form-editor"
+import {
+  builderStepMode,
+  definitionErrors,
+  definitionRefusal,
+  draftChanged,
+  draftFromStored,
+  draftToPayload,
+  type DefinitionErrors,
+  type StepFormDraft,
+} from "@/lib/step-forms"
 
 // ============================================================================
 // TYPES
@@ -55,6 +67,15 @@ interface StatusEntry {
    * lands in this screen instead of arriving stripped.
    */
   capabilities?: string[]
+  /**
+   * "Ask when a job moves here" — the step's list of questions as edited.
+   * null = NOT SET (the legacy rule decides); `{ fields: [] }` = ask nothing.
+   */
+  form: StepFormDraft
+  /** The form as loaded, so a save only sends it when it actually changed. */
+  initialForm: StepFormDraft
+  /** What the server refused on the last save, by field. */
+  formServerErrors?: DefinitionErrors
 }
 
 interface WorkflowBuilderProps {
@@ -99,6 +120,7 @@ interface Template {
     isFinal: boolean
     isCanceled: boolean
     capabilities?: string[]
+    form?: StepFormDraft
   }[]
 }
 
@@ -148,6 +170,11 @@ const StatusRow = memo(function StatusRow({
   onRemove,
   autoFocus,
   moduleOn,
+  workflowName,
+  formsEditable,
+  crmAvailable,
+  formOpen,
+  onToggleForm,
 }: {
   status: StatusEntry
   index: number
@@ -158,6 +185,14 @@ const StatusRow = memo(function StatusRow({
   autoFocus?: boolean
   /** Is this module switched on in the space? Drives the amber warning. */
   moduleOn: (key: string) => boolean
+  /** The flow's name — the shipped capability map is read by it for a step that says nothing. */
+  workflowName: string
+  /** May this person change what a step asks? */
+  formsEditable: boolean
+  /** Does the space run the CRM (so a question can write to it)? */
+  crmAvailable: boolean
+  formOpen: boolean
+  onToggleForm: (index: number) => void
 }) {
   const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -225,6 +260,13 @@ const StatusRow = memo(function StatusRow({
   }
 
   const caps = status.capabilities ?? []
+  // What this step asks as it stands: its own list, the standard report, or nothing.
+  const stepShape = { key: toStatusKey(status.name), isFinal: status.isFinal, capabilities: caps }
+  const formMode = builderStepMode({ ...stepShape, form: status.form }, workflowName)
+  const standardAvailable = builderStepMode({ ...stepShape, form: null }, workflowName) === "legacy"
+  const asked = formMode === "own" ? status.form?.fields.length ?? 0 : 0
+  const formInvalid =
+    Object.keys(definitionErrors(status.form)).length > 0 || Object.keys(status.formServerErrors ?? {}).length > 0
   const toggleCap = (key: string) =>
     onChange(index, {
       capabilities: caps.includes(key) ? caps.filter((c) => c !== key) : [...caps, key],
@@ -299,7 +341,47 @@ const StatusRow = memo(function StatusRow({
             </button>
           )
         })}
+        {/*
+          "Ask when a job moves here" — what a member answers when a job moves
+          INTO this step. Any step can ask, not only the last.
+        */}
+        <button
+          type="button"
+          onClick={() => onToggleForm(index)}
+          aria-expanded={formOpen}
+          data-testid="step-form-toggle"
+          className={`ml-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium border transition-colors ${
+            formInvalid
+              ? "border-red-400 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300"
+              : formOpen
+                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+                : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          <ClipboardList className="size-3" />
+          {t("stepForm.tab", "Ask when moving here")}
+          {formMode === "legacy"
+            ? ` · ${t("stepForm.tabStandard", "standard report")}`
+            : asked > 0
+              ? ` · ${asked}`
+              : ""}
+        </button>
       </div>
+
+      {formOpen && (
+        <div className="pl-8 pr-8 pt-1">
+          <StepFormEditor
+            stepName={status.name}
+            mode={formMode}
+            draft={status.form}
+            onChange={(form) => onChange(index, { form, formServerErrors: undefined })}
+            editable={formsEditable}
+            crmAvailable={crmAvailable}
+            serverErrors={status.formServerErrors}
+            standardAvailable={standardAvailable && formMode === "own"}
+          />
+        </div>
+      )}
     </div>
   )
 })
@@ -365,12 +447,20 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
         isFinal: st.isFinal,
         isCanceled: st.isCanceled,
         capabilities: st.capabilities ?? [],
+        form: draftFromStored(st.form),
       })),
   }))
 
   // What this SPACE has switched on. A capability whose module is off here is
   // decoration: the step would ask the member for something the space cannot do.
   const { hasModule } = useSpaceModules(spaceId)
+  const { user, hasPermission } = useAuth()
+  // Editing what a step asks is editing the workflow — the same people.
+  const formsEditable = user?.role === "ADMIN" || hasPermission("canManageTaskTypes")
+  // Without a space, the organization's own modules decide (useSpaceModules falls back).
+  const crmAvailable = hasModule("crm")
+  const [openForm, setOpenForm] = useState<number | null>(null)
+  const toggleForm = useCallback((i: number) => setOpenForm((cur) => (cur === i ? null : i)), [])
   // Without a space (creating one), nothing is known to be off — so nothing is
   // warned about, rather than everything being warned about.
   const moduleOn = useCallback((key: string) => (spaceId ? hasModule(key) : true), [spaceId, hasModule])
@@ -391,6 +481,8 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
           capabilities: s.capabilities ?? [],
           transitions: s.transitions ?? [],
           nameKey: s.nameKey ?? null,
+          form: draftFromStored(s.form),
+          initialForm: draftFromStored(s.form),
         }))
     }
     // Empty until the library loads — a starter flow is chosen, not assumed.
@@ -437,6 +529,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
   }, [])
 
   const handleRemoveStatus = useCallback((index: number) => {
+    setOpenForm(null)
     setStatuses((prev) => {
       if (prev.length <= 1) return prev
       return prev.filter((_, i) => i !== index).map((s, i) => ({ ...s, position: i }))
@@ -452,6 +545,8 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
         isFinal: false,
         isCanceled: false,
         position: prev.length,
+        form: null,
+        initialForm: null,
       }
       setLastAddedIndex(prev.length)
       return [...prev, newStatus]
@@ -461,7 +556,8 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
   const handleApplyTemplate = useCallback((template: Template) => {
     // Capabilities come across with the steps. Dropping them was what made a
     // template applied here a hollow copy of the same one applied elsewhere.
-    setStatuses(template.statuses.map((s, i) => ({ ...s, position: i, nameKey: s.nameKey ?? null })))
+    // Forms too: a template's steps arrive with what they ask.
+    setStatuses(template.statuses.map((s, i) => ({ ...s, position: i, nameKey: s.nameKey ?? null, form: s.form ?? null, initialForm: null })))
     setName((prev) => prev.trim() || template.name)
     setLastAddedIndex(null)
   }, [])
@@ -476,6 +572,14 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
     const validStatuses = statuses.filter((s) => s.name.trim())
     if (validStatuses.length === 0) {
       notify.error(t("workflows.builder.toast.statusRequired"))
+      return
+    }
+
+    // A step whose questions the server would refuse is refused here, on the step.
+    const badForm = statuses.findIndex((s) => s.name.trim() && Object.keys(definitionErrors(s.form)).length > 0)
+    if (badForm >= 0) {
+      setOpenForm(badForm)
+      notify.error(t("stepForm.saveInvalid", { step: statuses[badForm]!.name.trim(), defaultValue: "{{step}}: fix the questions marked in red before saving." }))
       return
     }
 
@@ -502,7 +606,8 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
             isCanceled: s.isCanceled,
             transitions: resolveTransitions(validStatuses, i),
             capabilities: s.capabilities ?? [],
-          })
+            ...(s.form !== null ? { form: draftToPayload(s.form) } : {}),
+          }).catch((err) => { throw Object.assign(err, { stepIndex: statuses.indexOf(s) }) })
         }
 
         queryClient.invalidateQueries({ queryKey: ["workflows"] })
@@ -538,13 +643,16 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
           if (s.id && existingIds.has(s.id)) {
             // Update existing
             const original = initialStatuses?.find((os) => os.id === s.id)
+            // Sent only when it changed: omitted leaves the stored form (and its version) alone.
+            const formChanged = draftChanged(s.initialForm, s.form)
             if (
               original &&
               (original.name !== s.name.trim() ||
                 original.color !== s.color ||
                 original.isFinal !== s.isFinal ||
                 original.isCanceled !== s.isCanceled ||
-                original.position !== i)
+                original.position !== i ||
+                formChanged)
             ) {
               await workflowsApi.updateStatus(workflowId, s.id, {
                 name: s.name.trim(),
@@ -555,7 +663,8 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
                 isCanceled: s.isCanceled,
                 transitions: resolveTransitions(validStatuses, i),
                 capabilities: s.capabilities ?? [],
-              })
+                ...(formChanged ? { form: draftToPayload(s.form) } : {}),
+              }).catch((err) => { throw Object.assign(err, { stepIndex: statuses.indexOf(s) }) })
             }
           } else {
             // Add new
@@ -568,7 +677,8 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
               isCanceled: s.isCanceled,
               transitions: resolveTransitions(validStatuses, i),
               capabilities: s.capabilities ?? [],
-            })
+              ...(s.form !== null ? { form: draftToPayload(s.form) } : {}),
+            }).catch((err) => { throw Object.assign(err, { stepIndex: statuses.indexOf(s) }) })
           }
         }
 
@@ -577,9 +687,22 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
         onSaved?.()
       }
     } catch (err) {
-      notify.error(
-        err instanceof Error ? err.message : t("workflows.builder.toast.saveFailed")
-      )
+      /*
+        A step's questions refused by the server: shown on the step, on the
+        fields it names — not as one English sentence in a toast.
+      */
+      const stepIndex = (err as { stepIndex?: number } | null)?.stepIndex
+      const step = stepIndex !== undefined ? statuses[stepIndex] : undefined
+      const refusal = step ? definitionRefusal(err, draftToPayload(step.form)?.fields ?? []) : null
+      if (step && refusal && stepIndex !== undefined) {
+        setStatuses((prev) => prev.map((s, j) => (j === stepIndex ? { ...s, formServerErrors: refusal } : s)))
+        setOpenForm(stepIndex)
+        notify.error(t("stepForm.saveRefused", { step: step.name.trim(), defaultValue: "{{step}}: some questions were not accepted." }))
+      } else {
+        notify.error(
+          err instanceof Error ? err.message : t("workflows.builder.toast.saveFailed")
+        )
+      }
     } finally {
       setIsSaving(false)
     }
@@ -704,6 +827,11 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
               onRemove={handleRemoveStatus}
               autoFocus={lastAddedIndex === index}
               moduleOn={moduleOn}
+              workflowName={name}
+              formsEditable={formsEditable}
+              crmAvailable={crmAvailable}
+              formOpen={openForm === index}
+              onToggleForm={toggleForm}
             />
           ))}
           <button
