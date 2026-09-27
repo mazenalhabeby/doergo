@@ -89,19 +89,20 @@ describe('the tour, the tablet, the list', () => {
 describe('the one header', () => {
   const layout = read('app/(app)/(tabs)/_layout.tsx');
 
-  it('both screens draw the amazen ScreenHeader, not the navigator\'s band', () => {
-    for (const f of ['src/components/jobs-list/jobs-screen.tsx', 'src/components/new-job/new-job-screen.tsx']) {
+  it('every v2 screen draws the amazen ScreenHeader, not the navigator\'s band', () => {
+    for (const f of ['src/components/jobs-list/jobs-screen.tsx', 'src/components/new-job/new-job-screen.tsx', 'src/components/time/time-screen.tsx']) {
       const src = read(f);
       expect(src).toMatch(/import \{[^}]*\bScreenHeader\b[^}]*\} from '\.\.\/amazen'/);
-      expect(src).toMatch(/onPressAvatar=\{avatar\.openProfile\}/);
+      // The avatar is the header's own business — no screen passes it.
+      expect(src).not.toMatch(/avatarUrl=|onPressAvatar=/);
     }
-    for (const name of ['tasks', 'create-task']) {
+    for (const name of ['tasks', 'create-task', 'attendance']) {
       expect(layout).toMatch(new RegExp(`name="${name}"\\s*options=\\{\\{[^}]*headerShown: false`));
     }
   });
 
   it('the avatar has ONE source and ONE handler — home, the tab bar\'s button, Jobs and New job', () => {
-    expect(read('src/home/home-screen.tsx')).toMatch(/useProfileAvatar\(\)/);
+    expect(read('src/components/amazen/screen-header.tsx')).toMatch(/useProfileAvatar\(\)/);
     expect(layout).toMatch(/const \{ avatarUrl, openProfile \} = useProfileAvatar\(\)/);
     expect(read('src/lib/use-profile-avatar.ts')).toMatch(/router\.push\('\/\(app\)\/\(tabs\)\/profile'/);
   });

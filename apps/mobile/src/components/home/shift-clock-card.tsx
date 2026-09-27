@@ -20,7 +20,7 @@ import { formatDurationMinutes as formatDuration } from '../../lib/utils';
 import { AText, CardSurface, Chip, Disc, DiscRow, Eyebrow, Hero, LiveDot } from '../amazen';
 import { BreakGlyph, ClockInGlyph, ClockOutGlyph, IssueMineGlyph, IssueNewGlyph } from '../glyphs/shift-glyphs';
 import { heroParts, readShiftState, scheduleFor, targetLabel } from './shift-state';
-import { useScheduleTotals } from './use-schedule-totals';
+import { useScheduleTotals, type ScheduleTotalsView } from './use-schedule-totals';
 import { useUnreadIssues } from './use-unread-issues';
 
 /**
@@ -54,6 +54,37 @@ import { useUnreadIssues } from './use-unread-issues';
  * card, and "what I did today" belongs to a different widget.
  */
 export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
+  /*
+    ⚠️ THE HOME'S OWN COPY OF THE SHIFT. The Time tab holds the shift itself
+    (it also draws the day's timeline from it) and renders the view below with
+    that one copy — two `useShift` calls on one screen are two loads, and two
+    answers that can disagree for a frame.
+  */
+  const shift = useShift();
+  useLiveRefresh(shift.refresh, null, { onReconnect: true });
+  return <ShiftClockCardView shift={shift} style={style} />;
+}
+
+export interface ShiftClockCardViewProps {
+  shift: ReturnType<typeof useShift>;
+  style?: StyleProp<ViewStyle>;
+  /**
+   * The hero and caption open the Time tab — except ON the Time tab, where a
+   * link to the page you are on is a tap that does nothing visible.
+   */
+  linkToTime?: boolean;
+  /** ⑦'s "Set the real time". Absent → it opens the Time tab, which asks. */
+  onSetRealTime?: () => void;
+  /** A tapped shift-issue notification names the thread to open. */
+  openIssueId?: string | null;
+  /**
+   * The Time tab already asks for the week's totals (its week bars) — handed in
+   * here so one screen makes one request, not one per reader.
+   */
+  totals?: ScheduleTotalsView;
+}
+
+export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealTime, openIssueId, totals: given }: ShiftClockCardViewProps) {
   const { user } = useAuth();
   const { amazen } = useTheme();
   const { t } = useTranslation();
@@ -85,7 +116,6 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
     somebody a shift. The offline path is the richer one: pulled records with
     unsent changes laid on top, and the card SAYS the copy is from the phone.
   */
-  const shift = useShift();
   const status = shift.status;
   const breaks = shift.breaks;
   const actions = useShiftActions();
@@ -105,6 +135,9 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const [reportOpen, setReportOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
+  useEffect(() => {
+    if (openIssueId) setThreadId(openIssueId);
+  }, [openIssueId]);
 
   /*
     ⚠️ A MINUTE TICK THAT MOVES `now`, NOT A COUNTER THAT ACCUMULATES (rule 5).
@@ -131,7 +164,6 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
     ⚠️ No flush first: `useShift` lays every queued shift change over whatever
     the server says, so an answer from before the flush still reads right.
   */
-  useLiveRefresh(refresh, null, { onReconnect: true });
 
   const schedule = scheduleFor(user?.scheduleType);
 
@@ -145,12 +177,13 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
     See `use-schedule-totals.ts` for why it is one request per period rather
     than a sum on every render.
   */
-  const totals = useScheduleTotals({
+  const own = useScheduleTotals({
     schedule,
     revision: `${status?.isClockedIn ? '1' : '0'}:${status?.currentEntry?.id ?? ''}`,
-    enabled: !status?.isClockedIn || schedule !== 'FIXED',
+    enabled: !given && (!status?.isClockedIn || schedule !== 'FIXED'),
     userId: user?.id ?? null,
   });
+  const totals = given ?? own;
 
   /* Which of the eight, decided ONCE and outside the JSX — see `shift-state.ts`. */
   const st = readShiftState({
@@ -333,7 +366,7 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const eyebrowTone =
     st.kind === 'unconfirmed' ? ('critical' as const)
     : resting ? ('warn' as const)
-    : ('onGlassHome' as const);
+    : ('onGlass' as const);
 
   const dotColor =
     st.kind === 'unconfirmed' ? c.critical
@@ -350,8 +383,9 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
       <CardSurface fallback="glass" style={[{ padding: amazen.layout.gutter }, style as ViewStyle]}>
         {/* ⚠️ ONLY THE HERO AND CAPTION NAVIGATE — never the whole card. */}
         <Pressable
-          onPress={() => router.push('/(app)/(tabs)/attendance' as Href)}
-          accessibilityRole="button"
+          onPress={linkToTime ? () => router.push('/(app)/(tabs)/attendance' as Href) : undefined}
+          disabled={!linkToTime}
+          accessibilityRole={linkToTime ? 'button' : 'summary'}
           accessibilityLabel={`${eyebrow}. ${caption}`}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1) }}>
@@ -372,10 +406,10 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
           <View style={{ marginTop: amazen.space(3) }}>{hero()}</View>
 
           {caption ? (
-            /* ⚠️ `onGlassHome`, not `onGlass` — the Home gradient's top stop is
+            /* ⚠️ `onGlass` is measured over the ground's lighter top stop —
                lighter, and `#9fbdb4` measures 4.14:1 there. This caption is the
                one §8 names as at risk. */
-            <AText variant="caption" tone="onGlassHome" numberOfLines={2} style={{ marginTop: 2 }}>
+            <AText variant="caption" tone="onGlass" numberOfLines={2} style={{ marginTop: 2 }}>
               {caption}
             </AText>
           ) : null}
@@ -433,13 +467,13 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
               </View>
               {live || resting ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: amazen.space(2) }}>
-                  <Eyebrow tone="onGlassHome">
+                  <Eyebrow tone="onGlass">
                     {st.schedule === 'FLEXIBLE'
                       ? monthName(now)
                       : t('shiftClock.today', { defaultValue: 'TODAY' })}
                   </Eyebrow>
                   <View style={{ flex: 1 }} />
-                  <AText variant="caption" tone="onGlassHome" numeric>
+                  <AText variant="caption" tone="onGlass" numeric>
                     {t('shiftClock.ofTarget', {
                       done: formatDuration(st.progress.done),
                       target: targetLabel(st.progress.target),
@@ -468,7 +502,7 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
                 paddingHorizontal: amazen.space(3.5),
               }}
             >
-              <AText variant="caption" tone="onGlassHome">
+              <AText variant="caption" tone="onGlass">
                 {t('shiftClock.thisWeek', { defaultValue: 'This week' })}
               </AText>
               <View style={{ flex: 1 }} />
@@ -619,7 +653,7 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
         <Hero
           parts={[{ value: cut > 0 ? face.slice(0, cut) : face, unit: cut > 0 ? face.slice(cut) : '' }]}
           tone="strong"
-          unitTone="onGlassHome"
+          unitTone="onGlass"
         />
       );
     }
@@ -628,7 +662,7 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
         <Hero
           parts={heroParts(st.minutes)}
           tone={resting ? 'warn' : 'strong'}
-          unitTone={resting ? 'warn' : 'onGlassHome'}
+          unitTone={resting ? 'warn' : 'onGlass'}
         />
       );
     }
@@ -779,7 +813,7 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
           Glyph={ClockOutGlyph}
           label={t('shiftClock.setRealTime', { defaultValue: 'Set the real time' })}
           filled
-          onPress={() => router.push('/(app)/(tabs)/attendance' as Href)}
+          onPress={onSetRealTime ?? (() => router.push('/(app)/(tabs)/attendance' as Href))}
         />,
         mine,
       ];

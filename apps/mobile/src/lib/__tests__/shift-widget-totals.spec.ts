@@ -86,3 +86,24 @@ describe('historyFrom — how far back the one request must reach', () => {
     expect([d.getHours(), d.getMinutes()]).toEqual([0, 0]);
   });
 });
+
+describe('the Time tab\'s week bars — the same answer, split by day', () => {
+  // Sunday 27 Sep 2026: the week is Mon 21 – Sun 27.
+  const now = new Date(2026, 8, 27, 12);
+
+  it('puts each shift on the day it STARTED, Monday first, and adds up to the week total', () => {
+    const t = readTotals([
+      shift(at(9, 21, 7), at(9, 21, 15), 480),
+      shift(at(9, 23, 7), at(9, 23, 15), 450),
+      shift(at(9, 23, 16), at(9, 23, 18), 120),
+      shift(at(9, 26, 21), at(9, 27, 5), 480), // a night shift belongs to Saturday
+    ], now);
+    expect(t.weekDays).toEqual([480, 0, 570, 0, 0, 480, 0]);
+    expect(t.weekDays.reduce((a, b) => a + b, 0)).toBe(t.weekMinutes);
+  });
+
+  it('leaves out last week and a running shift', () => {
+    const t = readTotals([shift(at(9, 20, 8), at(9, 20, 16), 480), shift(at(9, 27, 8), null, 0)], now);
+    expect(t.weekDays).toEqual([0, 0, 0, 0, 0, 0, 0]);
+  });
+});

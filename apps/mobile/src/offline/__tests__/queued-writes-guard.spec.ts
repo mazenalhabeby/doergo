@@ -92,7 +92,8 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
   'app/(app)/asset-expense.tsx': { calls: { 'assetsApi.submitExpense': 1 }, why: FALLBACK },
   'app/(app)/asset-log.tsx': { calls: { 'assetsApi.createLog': 1 }, why: FALLBACK },
   'app/(app)/send-document.tsx': { calls: { 'assetProposalsApi.raise': 1 }, why: FALLBACK },
-  'app/(app)/(tabs)/time-off.tsx': { calls: { 'timeOffApi.cancel': 1 }, why: FALLBACK },
+  // One copy of a member's leave, shared by the Time off tab and the Time tab.
+  'src/components/time/use-my-time-off.ts': { calls: { 'timeOffApi.cancel': 1 }, why: FALLBACK },
   'app/(app)/(tabs)/profile.tsx': { calls: { 'userApi.setPresence': 1 }, why: FALLBACK },
   'app/(app)/profile/time-format.tsx': { calls: { 'userApi.setTimeFormat': 1 }, why: FALLBACK },
   'app/(app)/profile/language.tsx': { calls: { 'userApi.setLocale': 1 }, why: FALLBACK },
@@ -100,7 +101,8 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
   'app/(customer)/edit-profile.tsx': { calls: { 'userApi.updateProfile': 1 }, why: 'the customer portal has no outbox' },
   // Same portal: its sync push is confined to portal requests, so a language change goes direct.
   'app/(customer)/(tabs)/profile.tsx': { calls: { 'userApi.setLocale': 1 }, why: 'the customer portal has no outbox for profile changes' },
-  'src/components/worklog-sheet.tsx': {
+  // The work log's data moved out of the sheet so the Today card reads the same notes.
+  'src/components/worklog/use-worklog.ts': {
     calls: { 'worklogApi.addNote': 1, 'worklogApi.confirmAttachment': 1 },
     why: 'directSave: the legacy path for a build without the offline layer',
   },

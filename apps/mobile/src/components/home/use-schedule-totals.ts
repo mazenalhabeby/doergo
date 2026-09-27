@@ -42,6 +42,12 @@ export interface ScheduleTotals {
   lastToday: TimeEntry | null;
   /** When they last clocked in at all — ① NONE's `last in on Friday`. */
   lastIn: Date | null;
+  /**
+   * This week's counted minutes per day, Monday first — the Time tab's week
+   * bars. Read out of the SAME answer as the week total, never asked again.
+   * A shift belongs to the day it started on, as the week total already says.
+   */
+  weekDays: number[];
 }
 
 /**
@@ -54,14 +60,15 @@ export interface ScheduleTotalsView extends ScheduleTotals {
   ready: boolean;
 }
 
-const EMPTY: ScheduleTotals = { monthMinutes: null, weekMinutes: null, lastToday: null, lastIn: null };
+const EMPTY: ScheduleTotals = { monthMinutes: null, weekMinutes: null, lastToday: null, lastIn: null, weekDays: [0, 0, 0, 0, 0, 0, 0] };
 
 /**
  * ⚠️ STORAGE HOLDS NO DATES. `lastIn` goes out as a Date and comes back a
  * string, and `① last in on Friday` would then call `.getTime()` on it.
  */
 function revive(t: ScheduleTotals): ScheduleTotals {
-  return { ...t, lastIn: t.lastIn ? new Date(t.lastIn) : null };
+  // A copy kept before `weekDays` existed has none — an empty week, not a crash.
+  return { ...t, lastIn: t.lastIn ? new Date(t.lastIn) : null, weekDays: Array.isArray(t.weekDays) && t.weekDays.length === 7 ? t.weekDays : EMPTY.weekDays };
 }
 
 /** Counted minutes on one entry. Never the word "paid" anywhere it is shown. */
@@ -125,6 +132,7 @@ export function readTotals(entries: readonly TimeEntry[], now: Date): ScheduleTo
   let weekMinutes = 0;
   let lastToday: TimeEntry | null = null;
   let lastIn: Date | null = null;
+  const weekDays = [0, 0, 0, 0, 0, 0, 0];
   for (const e of entries) {
     if (!e.clockOutAt) continue; // a running shift is not a total yet
     const m = countedOn(e);
@@ -135,7 +143,12 @@ export function readTotals(entries: readonly TimeEntry[], now: Date): ScheduleTo
     */
     if (at >= month) monthMinutes += m;
     if (!lastIn || at > lastIn) lastIn = at;
-    if (at >= week) weekMinutes += m;
+    if (at >= week) {
+      weekMinutes += m;
+      // Monday = 0. Only this week's days — the answer reaches back past it.
+      const day = Math.floor((new Date(at.getFullYear(), at.getMonth(), at.getDate()).getTime() - week.getTime()) / 86_400_000);
+      if (day >= 0 && day < 7) weekDays[day] += m;
+    }
     /*
       ⚠️ A SHIFT THAT *ENDED* TODAY — judged by its clock-OUT, never its
       clock-in. A night shift in at 21:16 yesterday and out at 05:16 this
@@ -148,7 +161,7 @@ export function readTotals(entries: readonly TimeEntry[], now: Date): ScheduleTo
       if (!lastToday || new Date(e.clockOutAt) > new Date(lastToday.clockOutAt!)) lastToday = e;
     }
   }
-  return { monthMinutes, weekMinutes, lastToday, lastIn };
+  return { monthMinutes, weekMinutes, lastToday, lastIn, weekDays };
 }
 
 export function useScheduleTotals(input: {

@@ -10,9 +10,10 @@
  * ⚠️ Two rules that are easy to break:
  *
  *   1. A colour is measured against the surface it SITS ON, not against the
- *      canvas. `ink-onglass` differs between the Home gradient and the interior
- *      one because their top stops differ — that is why `inkOnGlassHome` is a
- *      token of its own and not a judgement call at the call site.
+ *      canvas. There is ONE ground gradient — the home's — on every screen,
+ *      and `inkOnGlass` is measured against its lighter top stop. A second,
+ *      darker "interior" gradient used to need a second grey; it is gone, so
+ *      the grey cannot be picked wrong.
  *   2. `accent` is INK and `accentLift → accentSolid` is a FILL. They are close
  *      in light mode and must not be swapped: white on `accentLift` at its
  *      published light value (#14a586) measures 3.11:1 and fails. TOKENS.md §3.
@@ -40,10 +41,8 @@ export interface AmazenColors {
   ink: string;
   /** sub-lines — ON A WELL ONLY */
   inkMuted: string;
-  /** muted text on glass over the INTERIOR gradient */
+  /** muted text on glass — measured over the ground's lighter top stop */
   inkOnGlass: string;
-  /** muted text on glass over the HOME gradient — its top stop is lighter */
-  inkOnGlassHome: string;
   /** disc labels — no surface under them */
   inkOnGradient: string;
 
@@ -98,12 +97,9 @@ export interface AmazenColors {
 }
 
 export interface AmazenGradients {
-  /** the home screen's ground */
-  home: readonly string[];
-  homeLocations: readonly number[];
-  /** every other screen's ground */
-  interior: readonly string[];
-  interiorLocations: readonly number[];
+  /** the ground every screen stands on — one, so every tab reads as one app */
+  ground: readonly string[];
+  groundLocations: readonly number[];
   /** the primary button and the filled disc */
   primary: readonly string[];
 }
@@ -119,8 +115,7 @@ const DARK: AmazenColors = {
   inkStrong: '#f1f6fa',
   ink: '#acb6bf',
   inkMuted: '#808b95',
-  inkOnGlass: '#9fbdb4',
-  inkOnGlassHome: '#b0cbc2', // ⓓ TOKENS §3 asked for this; #9fbdb4 is 4.14:1 there
+  inkOnGlass: '#b0cbc2', // ⓓ TOKENS §3 — #9fbdb4 is 4.14:1 over the ground's top stop
   inkOnGradient: '#98a9a2',
 
   accent: '#66dbba',
@@ -154,8 +149,7 @@ const LIGHT: AmazenColors = {
   inkStrong: '#0b1f1a', // ⓓ
   ink: '#485752', // ⓓ
   inkMuted: '#63726d', // ⓓ
-  inkOnGlass: '#4e6b64', // published in TOKENS §3
-  inkOnGlassHome: '#4e6b64', // the light home stop is the SAFER one — 5.17:1
+  inkOnGlass: '#4e6b64', // published in TOKENS §3 — 5.17:1 over the light top stop
   inkOnGradient: '#3a544d', // ⓓ
 
   accent: '#097058', // ⓓ ink: 5.38:1 at its worst (glass over the home gradient)
@@ -179,20 +173,16 @@ const LIGHT: AmazenColors = {
 };
 
 const DARK_GRADIENTS: AmazenGradients = {
-  home: ['#0c4339', '#09291f', '#061a19', '#050c0f', '#040507'],
-  homeLocations: [0, 0.26, 0.52, 0.78, 1],
-  interior: ['#0a3229', '#06181a', '#040d10', '#040507'],
-  interiorLocations: [0, 0.24, 0.5, 1],
+  ground: ['#0c4339', '#09291f', '#061a19', '#050c0f', '#040507'],
+  groundLocations: [0, 0.26, 0.52, 0.78, 1],
   primary: ['#7fe6c8', '#10b993'],
 };
 
 const LIGHT_GRADIENTS: AmazenGradients = {
   // ⓓ — solved backwards from TOKENS §3, which measures light `ink-onglass`
   // against glass over #bfe0d2, so that is the home gradient's top stop.
-  home: ['#bfe0d2', '#d5ece1', '#e6f2ec', '#f0f6f3', '#f3f7f5'],
-  homeLocations: [0, 0.26, 0.52, 0.78, 1],
-  interior: ['#cbe5d9', '#e4f0eb', '#f0f6f3', '#f3f7f5'],
-  interiorLocations: [0, 0.24, 0.5, 1],
+  ground: ['#bfe0d2', '#d5ece1', '#e6f2ec', '#f0f6f3', '#f3f7f5'],
+  groundLocations: [0, 0.26, 0.52, 0.78, 1],
   // TOKENS §3: NOT accentLift's published light value — white on #14a586 is
   // 3.11:1. This pair is 5.36:1 and 4.82:1 and still reads as a lit jade pill.
   primary: ['#087961', '#0b8168'],

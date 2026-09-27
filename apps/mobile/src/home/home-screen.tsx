@@ -10,7 +10,6 @@ import { useAuth } from '../contexts/auth-context';
 import { useTheme } from '../contexts/theme-context';
 import { Ground, ScreenHeader, SurfaceProvider, useTabSafe } from '../components/amazen';
 import { displayName } from '../lib/people';
-import { useProfileAvatar } from '../lib/use-profile-avatar';
 import { impact, selection } from '../lib/haptics';
 import { announce, useScreenReader } from '../hooks/use-a11y';
 import { OfflineBanner } from '../offline/components/offline-banner';
@@ -206,7 +205,6 @@ export function HomeScreen() {
   );
 
   const fullName = displayName(user);
-  const avatar = useProfileAvatar();
 
   /* ── the a11y arrows, which are also the rotor actions ─────────────── */
   const moveBy = useCallback(
@@ -325,7 +323,7 @@ export function HomeScreen() {
 
   return (
     <HomeLoadContext.Provider value={loadQueue}>
-    <Ground variant="home">
+    <Ground>
       {/*
         ⚠️ OUTSIDE THE LIST, so it does not scroll away — and so nothing put in
         it can move the column. That second reason is why the ＋ lives here:
@@ -340,9 +338,6 @@ export function HomeScreen() {
             ? t('home.edit.hint', { defaultValue: 'Hold to move · tap ⊖ to remove' })
             : undefined
         }
-        avatarUrl={avatar.avatarUrl}
-        initials={avatar.initials}
-        onPressAvatar={avatar.openProfile}
         actions={
           editing
             ? [

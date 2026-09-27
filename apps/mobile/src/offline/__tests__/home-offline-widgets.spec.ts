@@ -183,6 +183,8 @@ describe('what the cards do with it, pinned in the source', () => {
 
   it('crew and the shift clock come back by themselves when the signal does', () => {
     expect(code('components/home/use-crew.ts')).toMatch(/useLiveRefresh\(refresh, REFRESH_MS, \{ onReconnect: true \}\)/);
-    expect(code('components/home/shift-clock-card.tsx')).toMatch(/useLiveRefresh\(refresh, null, \{ onReconnect: true \}\)/);
+    // The home widget's loader; the Time tab holds its own copy and does the same.
+    expect(code('components/home/shift-clock-card.tsx')).toMatch(/useLiveRefresh\(shift\.refresh, null, \{ onReconnect: true \}\)/);
+    expect(code('components/time/time-screen.tsx')).toMatch(/useLiveRefresh\(shift\.refresh, null, \{ onReconnect: true \}\)/);
   });
 });

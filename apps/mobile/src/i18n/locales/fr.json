@@ -2182,8 +2182,33 @@
     "hint": "Notez ce que vous terminez pendant le service — cela devient votre résumé de fin de poste.",
     "tabHint": "Notez ce que vous avez fait aujourd’hui",
     "title": "Ce que j’ai fait aujourd’hui",
-    "titlePast": "Activité de ce service",
-    "viewActivity": "Voir l’activité"
+    "titlePast": "Activité de ce poste",
+    "viewActivity": "Voir l’activité",
+    "done": "Terminé",
+    "tapToClose": "Touchez pour fermer",
+    "status": "Statut",
+    "nowAt": "maintenant {{time}}",
+    "count_one": "{{count}} note",
+    "count_other": "{{count}} notes",
+    "empty": "Rien de noté pour l’instant",
+    "emptyPast": "Rien n’a été noté pendant ce poste.",
+    "nothing": "Rien de noté",
+    "removePhoto": "Retirer la photo",
+    "camera": "Prendre une photo",
+    "gallery": "Choisir des photos",
+    "placeholder": "Qu’avez-vous terminé ?",
+    "add": "Ajouter une note",
+    "footer": "Devient votre résumé au moment de pointer la sortie",
+    "addedBy": "Ajoutée par {{name}}",
+    "addedByManager": "Ajoutée par un responsable",
+    "remove": "Retirer la note",
+    "photoOnly": "(photo)",
+    "quick": {
+      "finished": "Intervention terminée",
+      "waitingParts": "En attente de pièces",
+      "handedOver": "Remis",
+      "cleanedUp": "Rangé"
+    }
   },
   "updateRequired": {
     "title": "Mise à jour à faire",
@@ -3638,5 +3663,119 @@
     "who": "Qui s’en charge",
     "create": "Créer la tâche",
     "doneTitle": "Tâche créée"
+  },
+  "time": {
+    "approval": {
+      "PENDING": "En attente",
+      "APPROVED": "Approuvé",
+      "REJECTED": "Non approuvé",
+      "AUTO": "Approuvé"
+    },
+    "banners": {
+      "open": "Ouvrir"
+    },
+    "places": {
+      "title": "Vos lieux de travail",
+      "all": "Les {{count}} ›",
+      "noSite": "Aucun site défini · pointage partout",
+      "footer": "Définis par votre bureau. Le pointage choisit celui où vous êtes.",
+      "clockedIn": "Pointé ici",
+      "here": "Vous êtes ici",
+      "away": "à {{distance}}",
+      "anywhere": "Pointage partout",
+      "noFix": "Distance inconnue"
+    },
+    "today": {
+      "title": "Aujourd’hui",
+      "clockedIn": "Arrivée pointée",
+      "clockedOut": "Départ pointé",
+      "away": "hors d’un site",
+      "onSite": "sur le site",
+      "offSite": "hors du site",
+      "rest": {
+        "LUNCH": "Pause déjeuner",
+        "SHORT": "Pause courte",
+        "OTHER": "Pause"
+      },
+      "notCounted": "non comptée",
+      "restNow": "maintenant",
+      "counted": "{{time}} comptées",
+      "whatIDid": "Ce que j’ai fait"
+    },
+    "week": {
+      "title": "Cette semaine",
+      "a11y": "{{time}} comptées cette semaine",
+      "counted": "comptées",
+      "days_one": "jour travaillé",
+      "days_other": "jours travaillés",
+      "month": "ce mois-ci"
+    },
+    "history": {
+      "title": "Postes récents",
+      "empty": "Vos postes terminés s’affichent ici.",
+      "all": "Voir tous les postes",
+      "sheetTitle": "Vos postes",
+      "failed": "Impossible de charger vos postes. Réessayez dans un instant.",
+      "none": "Aucun poste terminé sur cette période.",
+      "closedHint": "« Clôturé pour vous » : le poste était resté ouvert et a été clôturé pour vous.",
+      "period": {
+        "week": "Cette semaine",
+        "lastWeek": "La semaine dernière",
+        "month": "Ce mois-ci"
+      },
+      "status": {
+        "approved": "Approuvé",
+        "waiting": "En attente",
+        "rejected": "Non approuvé",
+        "closedForYou": "Clôturé pour vous"
+      }
+    },
+    "off": {
+      "title": "Congés",
+      "used_one": "{{count}} jour pris cette année",
+      "used_other": "{{count}} jours pris cette année",
+      "none": "Aucun congé à venir.",
+      "request": "Demander un congé",
+      "requestTitle": "Demander un congé",
+      "approvedBy": "Approuvé par {{name}}",
+      "approved": "Approuvé",
+      "waiting": "En attente d’approbation",
+      "days_one": "{{count}} jour",
+      "days_other": "{{count}} jours",
+      "workingDays_one": "{{count}} jour travaillé",
+      "workingDays_other": "{{count}} jours travaillés",
+      "sentTitle": "Demande envoyée",
+      "sentBody": "Vous recevrez une notification dès qu’elle aura une réponse.",
+      "queuedTitle": "Enregistrée sur votre téléphone",
+      "queuedBody": "Elle part au bureau dès que vous avez du réseau.",
+      "kind": {
+        "vacation": "Vacances",
+        "sickLeave": "Maladie",
+        "family": "Famille",
+        "other": "Autre"
+      },
+      "quick": {
+        "tomorrow": "Demain",
+        "nextWeek": "La semaine prochaine"
+      },
+      "prevMonth": "Mois précédent",
+      "nextMonth": "Mois suivant",
+      "legendApproved": "Approuvé",
+      "legendWaiting": "En attente",
+      "legendOff": "Jour non travaillé",
+      "hintFirst": "Touchez votre premier jour de congé",
+      "hintLast": "Touchez le dernier jour, ou envoyez uniquement celui-ci",
+      "clash": "Vous êtes déjà en congé le {{day}} ou l’avez demandé. Choisissez d’autres jours.",
+      "notePlaceholder": "Ce que le bureau doit savoir (facultatif)",
+      "addNote": "Ajouter une note · facultatif",
+      "send": "Envoyer la demande",
+      "pickDays": "Choisissez vos jours",
+      "from": "Du",
+      "to": "Au",
+      "workingDaysLabel": "Jours travaillés",
+      "daysLabel": "Jours",
+      "sentAt": "Envoyée",
+      "withdraw": "Retirer la demande"
+    }
   }
 }

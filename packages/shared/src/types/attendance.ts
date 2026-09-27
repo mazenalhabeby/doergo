@@ -176,6 +176,8 @@ export interface TimeEntry {
   reminderState?: 'NONE' | 'REMINDED' | 'OVERTIME_PENDING' | 'OVERTIME_APPROVED' | 'ESCALATED' | 'RESOLVED';
   nextRemindAt?: string | null;
   reminderCount?: number;
+  /** On `/attendance/history` only: how many work-log notes the shift carries. */
+  _count?: { workLog?: number };
   createdAt: string;
   updatedAt: string;
   organizationId: string;

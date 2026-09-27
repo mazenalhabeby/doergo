@@ -11,7 +11,6 @@ import { locationsApi } from '../../lib/api';
 import { ROUTES } from '../../lib/constants';
 import { useResponsive } from '../../lib/responsive';
 import { Ground, AText, PrimaryButton, ScreenHeader, Well, useTabSafe } from '../amazen';
-import { useProfileAvatar } from '../../lib/use-profile-avatar';
 import { LocationSearchPicker } from '../location-search-picker';
 import { centeredContent } from '../screen-container';
 import { FilterChips } from '../jobs-list/jobs-controls';
@@ -40,7 +39,6 @@ export function NewJobScreen() {
   const { amazen } = useTheme();
   const c = amazen.color;
   const { t } = useTranslation();
-  const avatar = useProfileAvatar();
   const tabSafe = useTabSafe();
   const r = useResponsive();
   const { user } = useAuth();
@@ -152,9 +150,6 @@ export function NewJobScreen() {
         {/* ⚠️ THE ONE HEADER — the amazen `ScreenHeader` with Back in its leading slot and the avatar top right. */}
         <ScreenHeader
           title={t('newJob.title')}
-          avatarUrl={avatar.avatarUrl}
-          initials={avatar.initials}
-          onPressAvatar={avatar.openProfile}
           style={wide ?? undefined}
           leading={
             <Pressable

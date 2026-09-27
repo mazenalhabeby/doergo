@@ -2183,7 +2183,32 @@
     "tabHint": "Festhalten, was Sie heute gemacht haben",
     "title": "Was ich heute gemacht habe",
     "titlePast": "Aktivität dieser Schicht",
-    "viewActivity": "Aktivität ansehen"
+    "viewActivity": "Aktivität ansehen",
+    "done": "Beendet",
+    "tapToClose": "Zum Schließen tippen",
+    "status": "Status",
+    "nowAt": "jetzt {{time}}",
+    "count_one": "{{count}} Notiz",
+    "count_other": "{{count}} Notizen",
+    "empty": "Noch nichts notiert",
+    "emptyPast": "In dieser Schicht wurde nichts notiert.",
+    "nothing": "Nichts notiert",
+    "removePhoto": "Foto entfernen",
+    "camera": "Foto aufnehmen",
+    "gallery": "Fotos auswählen",
+    "placeholder": "Was haben Sie gerade erledigt?",
+    "add": "Notiz hinzufügen",
+    "footer": "Wird Ihre Zusammenfassung beim Ausstempeln",
+    "addedBy": "Hinzugefügt von {{name}}",
+    "addedByManager": "Von einer Führungskraft hinzugefügt",
+    "remove": "Notiz entfernen",
+    "photoOnly": "(Foto)",
+    "quick": {
+      "finished": "Auftrag erledigt",
+      "waitingParts": "Warte auf Teile",
+      "handedOver": "Übergeben",
+      "cleanedUp": "Aufgeräumt"
+    }
   },
   "updateRequired": {
     "title": "Zeit für ein Update",
@@ -3638,5 +3663,119 @@
     "who": "Wer macht es",
     "create": "Auftrag erstellen",
     "doneTitle": "Auftrag erstellt"
+  },
+  "time": {
+    "approval": {
+      "PENDING": "Wartet",
+      "APPROVED": "Genehmigt",
+      "REJECTED": "Nicht genehmigt",
+      "AUTO": "Genehmigt"
+    },
+    "banners": {
+      "open": "Öffnen"
+    },
+    "places": {
+      "title": "Ihre Arbeitsorte",
+      "all": "Alle {{count}} ›",
+      "noSite": "Kein Standort festgelegt · überall einstempeln",
+      "footer": "Von Ihrem Büro festgelegt. Beim Einstempeln wird der Ort gewählt, an dem Sie sind.",
+      "clockedIn": "Hier eingestempelt",
+      "here": "Sie sind hier",
+      "away": "{{distance}} entfernt",
+      "anywhere": "Überall einstempeln",
+      "noFix": "Entfernung unbekannt"
+    },
+    "today": {
+      "title": "Heute",
+      "clockedIn": "Eingestempelt",
+      "clockedOut": "Ausgestempelt",
+      "away": "nicht an einem Standort",
+      "onSite": "am Standort",
+      "offSite": "außerhalb des Standorts",
+      "rest": {
+        "LUNCH": "Mittagspause",
+        "SHORT": "Kurze Pause",
+        "OTHER": "Pause"
+      },
+      "notCounted": "nicht gezählt",
+      "restNow": "jetzt",
+      "counted": "{{time}} gezählt",
+      "whatIDid": "Was ich erledigt habe"
+    },
+    "week": {
+      "title": "Diese Woche",
+      "a11y": "{{time}} diese Woche gezählt",
+      "counted": "gezählt",
+      "days_one": "Arbeitstag",
+      "days_other": "Arbeitstage",
+      "month": "diesen Monat"
+    },
+    "history": {
+      "title": "Letzte Schichten",
+      "empty": "Ihre beendeten Schichten erscheinen hier.",
+      "all": "Alle Schichten anzeigen",
+      "sheetTitle": "Ihre Schichten",
+      "failed": "Ihre Schichten konnten nicht geladen werden. Versuchen Sie es gleich noch einmal.",
+      "none": "Keine beendeten Schichten in diesem Zeitraum.",
+      "closedHint": "„Für Sie beendet“ heißt: Die Schicht lief weiter und wurde für Sie beendet.",
+      "period": {
+        "week": "Diese Woche",
+        "lastWeek": "Letzte Woche",
+        "month": "Dieser Monat"
+      },
+      "status": {
+        "approved": "Genehmigt",
+        "waiting": "Wartet",
+        "rejected": "Nicht genehmigt",
+        "closedForYou": "Für Sie beendet"
+      }
+    },
+    "off": {
+      "title": "Abwesenheit",
+      "used_one": "{{count}} Tag dieses Jahr genommen",
+      "used_other": "{{count}} Tage dieses Jahr genommen",
+      "none": "Keine Abwesenheit geplant.",
+      "request": "Abwesenheit beantragen",
+      "requestTitle": "Abwesenheit beantragen",
+      "approvedBy": "Genehmigt von {{name}}",
+      "approved": "Genehmigt",
+      "waiting": "Wartet auf Genehmigung",
+      "days_one": "{{count}} Tag",
+      "days_other": "{{count}} Tage",
+      "workingDays_one": "{{count}} Arbeitstag",
+      "workingDays_other": "{{count}} Arbeitstage",
+      "sentTitle": "Antrag gesendet",
+      "sentBody": "Sie erhalten eine Benachrichtigung, sobald er beantwortet ist.",
+      "queuedTitle": "Auf Ihrem Telefon gespeichert",
+      "queuedBody": "Er geht an das Büro, sobald Sie Empfang haben.",
+      "kind": {
+        "vacation": "Urlaub",
+        "sickLeave": "Krank",
+        "family": "Familie",
+        "other": "Sonstiges"
+      },
+      "quick": {
+        "tomorrow": "Morgen",
+        "nextWeek": "Nächste Woche"
+      },
+      "prevMonth": "Vorheriger Monat",
+      "nextMonth": "Nächster Monat",
+      "legendApproved": "Genehmigt",
+      "legendWaiting": "Wartet",
+      "legendOff": "Kein Arbeitstag",
+      "hintFirst": "Tippen Sie auf Ihren ersten freien Tag",
+      "hintLast": "Tippen Sie auf den letzten Tag oder senden Sie nur diesen",
+      "clash": "Für {{day}} haben Sie bereits frei oder einen Antrag gestellt. Wählen Sie Tage davor oder danach.",
+      "notePlaceholder": "Was das Büro wissen sollte (optional)",
+      "addNote": "Notiz hinzufügen · optional",
+      "send": "Antrag senden",
+      "pickDays": "Tage auswählen",
+      "from": "Von",
+      "to": "Bis",
+      "workingDaysLabel": "Arbeitstage",
+      "daysLabel": "Tage",
+      "sentAt": "Gesendet",
+      "withdraw": "Antrag zurückziehen"
+    }
   }
 }

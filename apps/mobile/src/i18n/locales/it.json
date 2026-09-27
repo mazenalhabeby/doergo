@@ -2183,7 +2183,32 @@
     "tabHint": "Registri cosa ha fatto oggi",
     "title": "Cosa ho fatto oggi",
     "titlePast": "Attività di questo turno",
-    "viewActivity": "Vedi attività"
+    "viewActivity": "Vedi attività",
+    "done": "Terminato",
+    "tapToClose": "Tocca per chiudere",
+    "status": "Stato",
+    "nowAt": "ora {{time}}",
+    "count_one": "{{count}} nota",
+    "count_other": "{{count}} note",
+    "empty": "Ancora nessuna nota",
+    "emptyPast": "Nessuna nota in questo turno.",
+    "nothing": "Nessuna nota",
+    "removePhoto": "Rimuovi foto",
+    "camera": "Scatta una foto",
+    "gallery": "Scegli foto",
+    "placeholder": "Cosa hai appena finito?",
+    "add": "Aggiungi nota",
+    "footer": "Diventa il riepilogo quando timbri l’uscita",
+    "addedBy": "Aggiunta da {{name}}",
+    "addedByManager": "Aggiunta da un responsabile",
+    "remove": "Rimuovi nota",
+    "photoOnly": "(foto)",
+    "quick": {
+      "finished": "Lavoro finito",
+      "waitingParts": "In attesa di pezzi",
+      "handedOver": "Consegnato",
+      "cleanedUp": "Riordinato"
+    }
   },
   "updateRequired": {
     "title": "È ora di aggiornare",
@@ -3638,5 +3663,119 @@
     "who": "Chi lo fa",
     "create": "Crea lavoro",
     "doneTitle": "Lavoro creato"
+  },
+  "time": {
+    "approval": {
+      "PENDING": "In attesa",
+      "APPROVED": "Approvato",
+      "REJECTED": "Non approvato",
+      "AUTO": "Approvato"
+    },
+    "banners": {
+      "open": "Apri"
+    },
+    "places": {
+      "title": "Dove lavori",
+      "all": "Tutti {{count}} ›",
+      "noSite": "Nessuna sede definita · timbra ovunque",
+      "footer": "Impostati dal tuo ufficio. La timbratura sceglie quello in cui ti trovi.",
+      "clockedIn": "Timbrato qui",
+      "here": "Sei qui",
+      "away": "a {{distance}}",
+      "anywhere": "Timbra ovunque",
+      "noFix": "Distanza sconosciuta"
+    },
+    "today": {
+      "title": "Oggi",
+      "clockedIn": "Entrata",
+      "clockedOut": "Uscita",
+      "away": "fuori sede",
+      "onSite": "in sede",
+      "offSite": "fuori dalla sede",
+      "rest": {
+        "LUNCH": "Pausa pranzo",
+        "SHORT": "Pausa breve",
+        "OTHER": "Pausa"
+      },
+      "notCounted": "non conteggiata",
+      "restNow": "ora",
+      "counted": "{{time}} conteggiate",
+      "whatIDid": "Cosa ho fatto"
+    },
+    "week": {
+      "title": "Questa settimana",
+      "a11y": "{{time}} conteggiate questa settimana",
+      "counted": "conteggiate",
+      "days_one": "giorno lavorato",
+      "days_other": "giorni lavorati",
+      "month": "questo mese"
+    },
+    "history": {
+      "title": "Turni recenti",
+      "empty": "Qui compaiono i tuoi turni finiti.",
+      "all": "Vedi tutti i turni",
+      "sheetTitle": "I tuoi turni",
+      "failed": "Impossibile caricare i tuoi turni. Riprova tra poco.",
+      "none": "Nessun turno finito in questo periodo.",
+      "closedHint": "«Chiuso per te» significa che il turno era rimasto aperto ed è stato chiuso per te.",
+      "period": {
+        "week": "Questa settimana",
+        "lastWeek": "La settimana scorsa",
+        "month": "Questo mese"
+      },
+      "status": {
+        "approved": "Approvato",
+        "waiting": "In attesa",
+        "rejected": "Non approvato",
+        "closedForYou": "Chiuso per te"
+      }
+    },
+    "off": {
+      "title": "Assenze",
+      "used_one": "{{count}} giorno usato quest’anno",
+      "used_other": "{{count}} giorni usati quest’anno",
+      "none": "Nessuna assenza in arrivo.",
+      "request": "Richiedi un’assenza",
+      "requestTitle": "Richiedi un’assenza",
+      "approvedBy": "Approvata da {{name}}",
+      "approved": "Approvata",
+      "waiting": "In attesa di approvazione",
+      "days_one": "{{count}} giorno",
+      "days_other": "{{count}} giorni",
+      "workingDays_one": "{{count}} giorno lavorativo",
+      "workingDays_other": "{{count}} giorni lavorativi",
+      "sentTitle": "Richiesta inviata",
+      "sentBody": "Riceverai una notifica quando avrà risposta.",
+      "queuedTitle": "Salvata sul telefono",
+      "queuedBody": "Arriverà all’ufficio appena avrai segnale.",
+      "kind": {
+        "vacation": "Ferie",
+        "sickLeave": "Malattia",
+        "family": "Famiglia",
+        "other": "Altro"
+      },
+      "quick": {
+        "tomorrow": "Domani",
+        "nextWeek": "La prossima settimana"
+      },
+      "prevMonth": "Mese precedente",
+      "nextMonth": "Mese successivo",
+      "legendApproved": "Approvata",
+      "legendWaiting": "In attesa",
+      "legendOff": "Giorno non lavorativo",
+      "hintFirst": "Tocca il tuo primo giorno libero",
+      "hintLast": "Tocca l’ultimo giorno o invia solo questo",
+      "clash": "Hai già libero il {{day}} o l’hai richiesto. Scegli altri giorni.",
+      "notePlaceholder": "Cosa deve sapere l’ufficio (facoltativo)",
+      "addNote": "Aggiungi una nota · facoltativa",
+      "send": "Invia la richiesta",
+      "pickDays": "Scegli i giorni",
+      "from": "Dal",
+      "to": "Al",
+      "workingDaysLabel": "Giorni lavorativi",
+      "daysLabel": "Giorni",
+      "sentAt": "Inviata",
+      "withdraw": "Ritira la richiesta"
+    }
   }
 }

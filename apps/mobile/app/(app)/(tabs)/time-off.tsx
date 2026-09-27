@@ -15,11 +15,7 @@ import { useFocusEffect } from 'expo-router';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useToast } from '../../../src/island/island-context';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { useFetchData } from '../../../src/hooks/useFetchData';
-import { useQueuedCreate } from '../../../src/offline/actions/queued-create';
-import { useOffline, useSyncStatus } from '../../../src/offline/offline-context';
-import { cancelTimeOff, pendingCancellations } from '../../../src/offline/timeoff/time-off-actions';
-import { uuidv7 } from '../../../src/offline/ids';
+import { useMyTimeOff } from '../../../src/components/time/use-my-time-off';
 import { SyncChip } from '../../../src/offline/components/sync-chip';
 import { LoadingState, ErrorState } from '../../../src/components/screen-states';
 import { ConfirmSheet, ScreenContainer } from '../../../src/components';
@@ -138,64 +134,14 @@ export default function TimeOffScreen() {
   // Dates follow the active language rather than a hardcoded en-US locale.
   const { locale } = useTimeFormat();
 
-  // Data - fetched via useFetchData
-  const fetcher = useCallback(async () => {
-    if (!user?.id) return { requests: [] as TimeOffRequest[], schedule: [] as ScheduleEntry[] };
-    const [requestsData, scheduleData] = await Promise.all([
-      timeOffApi.list(user.id),
-      scheduleApi.getMine(user.id).catch(() => [] as ScheduleEntry[]),
-    ]);
-    return {
-      requests: Array.isArray(requestsData) ? requestsData : [],
-      schedule: Array.isArray(scheduleData) ? scheduleData : [],
-    };
-  }, [user?.id]);
-
-  const {
-    data: fetchedData,
-    isLoading,
-    isRefreshing,
-    error,
-    fetchData,
-    refresh: refreshData,
-    setData: setFetchedData,
-  } = useFetchData({
-    fetcher,
-    initialData: { requests: [] as TimeOffRequest[], schedule: [] as ScheduleEntry[] },
-  });
-
   /*
-    Requests still on the phone are shown with the server's, as pending, so a
-    request made with no signal is visible at once — and the calendar marks
-    its days — instead of appearing only once it reaches the office.
+    ⚠️ ONE COPY OF A MEMBER'S LEAVE — `useMyTimeOff`, shared with the Time tab's
+    request sheet: the server's requests with those still on the phone laid on
+    top, a withdrawal on the phone already read as withdrawn.
   */
-  const timeOffCreate = useQueuedCreate<{ startDate: string; endDate: string; reason?: string }>('timeOff.request', {
-    onAccepted: () => void fetchData(),
-  });
-  const offline = useOffline();
-  const { operations: syncOps } = useSyncStatus();
-  // A cancellation still on the phone already reads as cancelled.
-  const cancelling = useMemo(() => pendingCancellations(syncOps), [syncOps]);
-  const requests = useMemo(() => {
-    const server = (fetchedData?.requests ?? []).map((r) =>
-      cancelling.has(r.id) && r.status === 'PENDING' ? ({ ...r, status: 'CANCELED' } as TimeOffRequest) : r,
-    );
-    const known = new Set(server.map((r) => r.id));
-    const onPhone = timeOffCreate.pending
-      .filter((p) => !known.has(p.id))
-      .map((p) => ({
-        id: p.id,
-        technicianId: user?.id ?? '',
-        startDate: p.body.startDate,
-        endDate: p.body.endDate,
-        reason: p.body.reason ?? null,
-        status: 'PENDING',
-        createdAt: new Date(p.createdAt).toISOString(),
-        pendingSync: true,
-      }) as unknown as TimeOffRequest);
-    return [...server, ...onPhone];
-  }, [fetchedData?.requests, timeOffCreate.pending, user?.id, cancelling]);
-  const schedule = fetchedData?.schedule ?? [];
+  const leave = useMyTimeOff();
+  const { requests, schedule, isLoading, isRefreshing, error, fetchData } = leave;
+  const refreshData = leave.refresh;
 
   // Calendar
   const today = useMemo(() => new Date(), []);
@@ -472,13 +418,7 @@ export default function TimeOffScreen() {
 
     try {
       setIsSubmitting(true);
-      const body = { startDate: startStr, endDate: endStr, reason: fullReason };
-      // Named here so the new request's card can carry "waiting to send" until it arrives.
-      const id = uuidv7();
-      const outcome = await timeOffCreate.run(
-        { id, entityId: id, lane: `timeoff:${user.id}`, params: { employeeId: user.id }, body },
-        () => timeOffApi.request(user.id, body),
-      );
+      const outcome = await leave.request({ startDate: startStr, endDate: endStr, reason: fullReason });
       if (outcome.kind === 'refused') {
         toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('timeOff.requestForm.failedToSubmit'));
         return;
@@ -486,7 +426,6 @@ export default function TimeOffScreen() {
       clearSelection();
       if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
       else toast.success(t('common.success'), t('timeOff.requestForm.successMessage'));
-      fetchData();
     } catch (err) {
       toast.error(t('common.error'), err instanceof Error ? err.message : t('timeOff.requestForm.failedToSubmit'));
     } finally {
@@ -503,21 +442,15 @@ export default function TimeOffScreen() {
     const request = cancelTarget;
     setCancelTarget(null);
     try {
-      if (offline.engine && user?.id) {
-        const outcome = await cancelTimeOff(offline.engine, { memberId: user.id, timeOffId: request.id });
-        if (outcome.kind === 'refused') {
-          toast.error(
-            t('common.error'),
-            (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('timeOff.failedToCancel'),
-          );
-          return;
-        }
-        if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
-        else fetchData();
+      const outcome = await leave.cancel(request.id);
+      if (outcome.kind === 'refused') {
+        toast.error(
+          t('common.error'),
+          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('timeOff.failedToCancel'),
+        );
         return;
       }
-      await timeOffApi.cancel(request.id);
-      fetchData();
+      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
     } catch (err) {
       toast.error(t('common.error'), err instanceof Error ? err.message : t('timeOff.failedToCancel'));
     }

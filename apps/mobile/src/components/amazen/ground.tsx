@@ -4,32 +4,25 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/theme-context';
 
 /**
- * The ground every v2 screen stands on.
+ * The ground every v2 screen stands on — ONE gradient, the home's, on every
+ * tab and every screen reached from one.
  *
- * ⚠️ There are TWO gradients and they are not interchangeable. The home one's
- * top stop is lighter, which is why `inkOnGlassHome` exists as a token of its
- * own — text that passes on the interior ground fails on the home one at
- * 4.14:1. Pass the variant; never eyeball it.
+ * ⚠️ THERE USED TO BE TWO. A darker "interior" gradient sat under Jobs, the job
+ * page and New job, so moving between tabs changed the light, and every grey
+ * written on glass had to know which ground it was on (`inkOnGlass` vs
+ * `inkOnGlassHome`, 4.14:1 vs 5.28:1). One ground, one grey: nothing to pick.
  *
  * ⚠️ NO STATUS BAR IS EVER DRAWN. The gradient runs under it, and screens use
  * `layout.topInset` (56) rather than a safe-area background band.
  */
-export function Ground({
-  variant = 'interior',
-  style,
-  children,
-  ...rest
-}: ViewProps & { variant?: 'home' | 'interior' }) {
+export function Ground({ style, children, ...rest }: ViewProps) {
   const { amazen } = useTheme();
   const g = amazen.gradient;
-  const colors = variant === 'home' ? g.home : g.interior;
-  const locations = variant === 'home' ? g.homeLocations : g.interiorLocations;
-
   return (
     <View style={[styles.root, { backgroundColor: amazen.color.canvas }, style]} {...rest}>
       <LinearGradient
-        colors={colors as unknown as [string, string, ...string[]]}
-        locations={locations as unknown as [number, number, ...number[]]}
+        colors={g.ground as unknown as [string, string, ...string[]]}
+        locations={g.groundLocations as unknown as [number, number, ...number[]]}
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />

@@ -2783,6 +2783,13 @@ export class AttendanceService {
         take: limit,
         include: {
           location: { select: ATTENDANCE_LOCATION_SELECT },
+          /*
+            How many work-log notes each shift carries — the Time tab's "3 notes"
+            under a shift. A COUNT, answered in the same query as a correlated
+            subquery on the indexed (timeEntryId, at); never the notes, which
+            are opened one shift at a time.
+          */
+          _count: { select: { workLog: true } },
         },
         orderBy: { clockInAt: 'desc' },
       }),

@@ -54,7 +54,13 @@ export function useTimeFormat() {
     suffix only cut the text off. Was the same `.replace()` in three places.
   */
   const clock = useCallback(
-    (input: string | Date | null | undefined) => (input ? time(input).replace(/\s+[A-Z]{2,5}$/, '') : ''),
+    /*
+      ⚠️ "GMT-7" TOO. Where the platform has no short name for a zone it writes
+      the offset, which the letters-only pattern left on the line — so a list
+      of shifts read "11:05 GMT-7 → 11:05 GMT-7".
+    */
+    (input: string | Date | null | undefined, tz?: string | null) =>
+      (input ? time(input, tz).replace(/\s+(?:GMT[+-]\d{1,2}(?::\d{2})?|UTC|[A-Z]{2,5})$/, '') : ''),
     [time],
   );
 

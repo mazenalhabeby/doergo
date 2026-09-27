@@ -2182,8 +2182,33 @@
     "hint": "Note what you finish through the shift — it becomes your clock-out summary.",
     "tabHint": "Log what you did today",
     "title": "What I did today",
-    "titlePast": "Activity for this session",
-    "viewActivity": "View activity"
+    "titlePast": "Activity for this shift",
+    "viewActivity": "View activity",
+    "done": "Done",
+    "tapToClose": "Tap to close",
+    "status": "Status",
+    "nowAt": "now {{time}}",
+    "count_one": "{{count}} note",
+    "count_other": "{{count}} notes",
+    "empty": "Nothing noted yet",
+    "emptyPast": "Nothing was noted on this shift.",
+    "nothing": "Nothing noted",
+    "removePhoto": "Remove photo",
+    "camera": "Take a photo",
+    "gallery": "Choose photos",
+    "placeholder": "What did you just finish?",
+    "add": "Add note",
+    "footer": "Becomes your clock-out summary",
+    "addedBy": "Added by {{name}}",
+    "addedByManager": "Added by a manager",
+    "remove": "Remove note",
+    "photoOnly": "(photo)",
+    "quick": {
+      "finished": "Finished a job",
+      "waitingParts": "Waiting for parts",
+      "handedOver": "Handed over",
+      "cleanedUp": "Cleaned up"
+    }
   },
   "updateRequired": {
     "title": "Time to update",
@@ -3638,5 +3663,119 @@
     "who": "Who does it",
     "create": "Create job",
     "doneTitle": "Job created"
+  },
+  "time": {
+    "approval": {
+      "PENDING": "Waiting",
+      "APPROVED": "Approved",
+      "REJECTED": "Not approved",
+      "AUTO": "Approved"
+    },
+    "banners": {
+      "open": "Open"
+    },
+    "places": {
+      "title": "Where you work",
+      "all": "All {{count}} ›",
+      "noSite": "No site drawn · clocks in anywhere",
+      "footer": "Set by your office. Clock in picks the one you are at.",
+      "clockedIn": "Clocked in here",
+      "here": "You are here",
+      "away": "{{distance}} away",
+      "anywhere": "Clocks in anywhere",
+      "noFix": "Distance unknown"
+    },
+    "today": {
+      "title": "Today",
+      "clockedIn": "Clocked in",
+      "clockedOut": "Clocked out",
+      "away": "away from a site",
+      "onSite": "on the site",
+      "offSite": "outside the site",
+      "rest": {
+        "LUNCH": "Lunch rest",
+        "SHORT": "Short rest",
+        "OTHER": "Rest"
+      },
+      "notCounted": "not counted",
+      "restNow": "now",
+      "counted": "{{time}} counted",
+      "whatIDid": "What I did"
+    },
+    "week": {
+      "title": "This week",
+      "a11y": "{{time}} counted this week",
+      "counted": "counted",
+      "days_one": "day worked",
+      "days_other": "days worked",
+      "month": "this month"
+    },
+    "history": {
+      "title": "Recent shifts",
+      "empty": "Your finished shifts show here.",
+      "all": "See all shifts",
+      "sheetTitle": "Your shifts",
+      "failed": "Could not load your shifts. Try again in a moment.",
+      "none": "No finished shifts in this period.",
+      "closedHint": "“Closed for you” means the shift was left running and was closed for you.",
+      "period": {
+        "week": "This week",
+        "lastWeek": "Last week",
+        "month": "This month"
+      },
+      "status": {
+        "approved": "Approved",
+        "waiting": "Waiting",
+        "rejected": "Not approved",
+        "closedForYou": "Closed for you"
+      }
+    },
+    "off": {
+      "title": "Time off",
+      "used_one": "{{count}} day used this year",
+      "used_other": "{{count}} days used this year",
+      "none": "No time off coming up.",
+      "request": "Request time off",
+      "requestTitle": "Request time off",
+      "approvedBy": "Approved by {{name}}",
+      "approved": "Approved",
+      "waiting": "Waiting for approval",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "workingDays_one": "{{count}} working day",
+      "workingDays_other": "{{count}} working days",
+      "sentTitle": "Request sent",
+      "sentBody": "You will get a notification when it is answered.",
+      "queuedTitle": "Saved on your phone",
+      "queuedBody": "It goes to the office as soon as you have signal.",
+      "kind": {
+        "vacation": "Vacation",
+        "sickLeave": "Sick",
+        "family": "Family",
+        "other": "Other"
+      },
+      "quick": {
+        "tomorrow": "Tomorrow",
+        "nextWeek": "Next week"
+      },
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "legendApproved": "Approved",
+      "legendWaiting": "Waiting",
+      "legendOff": "Not a working day",
+      "hintFirst": "Tap your first day off",
+      "hintLast": "Tap your last day, or send just this one",
+      "clash": "You already have {{day}} off or asked for it. Choose days around it.",
+      "notePlaceholder": "Anything the office should know (optional)",
+      "addNote": "Add a note · optional",
+      "send": "Send the request",
+      "pickDays": "Pick your days",
+      "from": "From",
+      "to": "To",
+      "workingDaysLabel": "Working days",
+      "daysLabel": "Days",
+      "sentAt": "Sent",
+      "withdraw": "Withdraw the request"
+    }
   }
 }

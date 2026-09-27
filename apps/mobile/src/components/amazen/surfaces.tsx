@@ -11,9 +11,8 @@ import { useTheme } from '../../contexts/theme-context';
  *   Sunken  a field or a photo slot — something you put things INTO.
  *
  * ⚠️ Glass is translucent, so anything written on it must be measured against
- * the gradient BEHIND it, not against the glass. Use `inkOnGlass` on an
- * interior screen and `inkOnGlassHome` on the home screen. `inkMuted` is for a
- * WELL and composites to an unreadable wash on glass.
+ * the gradient BEHIND it, not against the glass — that is `inkOnGlass`.
+ * `inkMuted` is for a WELL and composites to an unreadable wash on glass.
  */
 
 export function GlassCard({ style, children, ...rest }: ViewProps) {

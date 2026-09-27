@@ -12,7 +12,6 @@ import { ROUTES } from '../../lib/constants';
 import { OfflineBanner } from '../../offline/components/offline-banner';
 import { FreshnessLabel } from '../../offline/components/freshness-label';
 import { Ground, AText, ScreenHeader, WellDivider, useTabSafe } from '../amazen';
-import { useProfileAvatar } from '../../lib/use-profile-avatar';
 import { TourTarget } from '../tour';
 import { centeredContent } from '../screen-container';
 import { isCanceled, isClosed, isMine, isUnderWay, stepLabelFor, stepsFor } from '../home/my-work';
@@ -71,7 +70,6 @@ export function JobsScreen({
   const { user } = useAuth();
   const { amazen } = useTheme();
   const { t } = useTranslation();
-  const avatar = useProfileAvatar();
   const tabSafe = useTabSafe();
   const r = useResponsive();
   const c = amazen.color;
@@ -172,9 +170,6 @@ export function JobsScreen({
     <TourTarget name="tasks-header">
       <ScreenHeader
         title={t('jobsList.title')}
-        avatarUrl={avatar.avatarUrl}
-        initials={avatar.initials}
-        onPressAvatar={avatar.openProfile}
         actions={canCreateJobs(user as never) ? [{
           label: `＋ ${t('jobsList.newJob')}`,
           a11yLabel: t('jobsList.newJob'),

@@ -373,7 +373,8 @@ describe('§2 — three kinds of worker', () => {
       needs the month either way, and NONE needs the week both before the shift
       (the hero) and during it (the strip under the discs).
     */
-    expect(code('components/home/shift-clock-card.tsx')).toMatch(/enabled: !status\?\.isClockedIn \|\| schedule !== 'FIXED'/);
+    // …and none at all when the Time tab hands its own totals in.
+    expect(code('components/home/shift-clock-card.tsx')).toMatch(/enabled: !given && \(!status\?\.isClockedIn \|\| schedule !== 'FIXED'\)/);
   });
 });
 
@@ -673,7 +674,8 @@ describe('§9 — the twelve rules', () => {
     const jsx = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '');
     for (const f of ['components/issues/issue-thread-sheet.tsx', 'components/worklog-sheet.tsx']) {
       const src = read(f);
-      expect(src).toMatch(/BlurSheet/);
+      // `JobSheet` IS the BlurSheet slot, in the design system's clothes.
+      expect(src).toMatch(/BlurSheet|JobSheet/);
       expect(jsx(src)).not.toMatch(/<Modal/);
     }
   });
@@ -738,13 +740,17 @@ describe('§8 — the two live contrast bugs', () => {
     expect(light).not.toMatch(/#14a586/);
   });
 
-  it('the caption under the hero uses the HOME ink, not the interior one', () => {
+  it('ONE ground and ONE glass grey, measured over its lighter top stop', () => {
     /*
-      `#9fbdb4` on glass over the home gradient's lighter top stop is 4.14:1 and
-      fails; `inkOnGlassHome` exists as a token of its own for this one line.
+      `#9fbdb4` on glass over the ground's top stop is 4.14:1 and fails. There
+      used to be a second, darker "interior" ground and a second grey for it;
+      both are gone, so no screen can pair the wrong grey with its ground.
     */
-    expect(code('components/home/shift-clock-card.tsx')).toMatch(/tone="onGlassHome"/);
-    expect(read('theme/amazen.ts')).toMatch(/inkOnGlassHome: '#b0cbc2'/);
+    const theme = read('theme/amazen.ts');
+    expect(theme).toMatch(/inkOnGlass: '#b0cbc2'/);
+    expect(theme).not.toMatch(/inkOnGlassHome|interior:/);
+    expect(read('components/amazen/ground.tsx')).not.toMatch(/variant/);
+    expect(code('components/home/shift-clock-card.tsx')).toMatch(/tone="onGlass"/);
   });
 
   it('warn exists as its own token, and is not crit', () => {

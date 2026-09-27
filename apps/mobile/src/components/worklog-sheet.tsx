@@ -1,345 +1,290 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  Modal,
-  ScrollView,
-  Image,
-  Pressable,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useMemo, useState } from 'react';
+import { Image, Pressable, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/theme-context';
-import { useToast } from '../island/island-context';
-import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, COLORS } from '../lib/constants';
 import { useImagePicker, type PickedImage } from '../hooks/useImagePicker';
-import { BlurSheet } from './blur-sheet';
-import { SheetPanel } from './sheet-panel';
-import { worklogApi, type WorkLogNote } from '../lib/api/worklog';
-import { uploadToPresignedUrl } from '../lib/api/attachments';
-import { useOffline, useSyncStatus } from '../offline/offline-context';
-import { addWorklogEntry, loadWorklog, worklogView, type WorklogItem } from '../offline/attendance/worklog';
-import { adoptLegacyQueue, flushLegacy, queueLegacy, readLegacy } from '../offline/attendance/legacy-worklog-queue';
+import { useTimeFormat } from '../hooks/useTimeFormat';
+import { formatDurationMinutes } from '../lib/utils';
+import { AText, Sunken } from './amazen';
+import { JobField, JobSheet, Pill, RoundButton, StateEyebrow } from './job/job-ui';
+import { CameraGlyph, CloseGlyph, GalleryGlyph, SendGlyph } from './job/job-glyphs';
+import { DayBar } from './time/day-bar';
+import { useWorklog } from './worklog/use-worklog';
+import type { WorklogItem } from '../offline/attendance/worklog';
 
-const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 const isImg = (m: string) => m.startsWith('image/');
+/** Phrases a note usually starts with — one tap puts them in the box, where they can still be edited. */
+const QUICK = ['finished', 'waitingParts', 'handedOver', 'cleanedUp'] as const;
 
-interface Props {
-  visible: boolean;
-  onClose: () => void;
-  timeEntryId: string;
-  title: string;
-  hint: string;
-  /** Only the active (clocked-in) session can be edited; a closed session is read-only. */
-  editable?: boolean;
+export interface WorkLogShift {
+  workspace: string | null;
+  clockInAt: string;
+  /** Null while the shift is running. */
+  clockOutAt: string | null;
+  tz?: string | null;
+  /** The counted figure, on a finished shift. Never called "paid". */
+  countedMinutes?: number | null;
+  approval?: 'PENDING' | 'APPROVED' | 'REJECTED' | string | null;
 }
 
 /**
- * Session work-log sheet: timestamped notes (+ photos) during a shift.
+ * A shift's work log — what was done, note by note, drawn on the shift itself.
  *
- * With the offline layer a note goes into the outbox with the id it will have
- * on the server, its photos kept on the phone and uploaded when it is sent —
- * so it works with no signal and is never written twice. The list is the
- * server's notes (or the phone's saved copy of them) with everything still on
- * its way laid on top.
+ * The same object in two states: the running shift ("What I did today"),
+ * where a note can be added, and a finished one ("Activity for this shift"),
+ * read-only with the shift's receipt on top. The notes sit on a rail like a
+ * job's activity, and the bar above marks where in the day each one was.
  *
- * On a build without the offline layer the old queue is used, as before.
+ * ⚠️ THE DATA IS `useWorklog`, SHARED WITH THE TODAY CARD — see that file.
+ * ⚠️ THE PHOTO PREVIEW IS IN THE SHEET, NOT A MODAL OF ITS OWN. There is one
+ * Modal slot in this app (`blur-sheet.tsx`); a second one beside the sheet is
+ * refused by UIKit and the tap does nothing at all.
  */
-export function WorkLogSheet({ visible, onClose, timeEntryId, title, hint, editable = true }: Props) {
-  const { colors, isDark } = useTheme();
+export function WorkLogSheet({
+  visible,
+  onClose,
+  timeEntryId,
+  editable = false,
+  shift,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  timeEntryId: string;
+  /** Only the running shift can be written to; a finished one is read. */
+  editable?: boolean;
+  shift: WorkLogShift;
+}) {
+  const { amazen } = useTheme();
+  const c = amazen.color;
   const { t } = useTranslation();
-  const toast = useToast();
-  const insets = useSafeAreaInsets();
+  const { formatClock: formatTime, formatDateRelative } = useTimeFormat();
   const { pickFromGallery, takePhoto } = useImagePicker();
-  const offline = useOffline();
-  const { operations } = useSyncStatus();
-  const outbox = offline.engine && offline.files ? { engine: offline.engine, files: offline.files } : null;
+  const log = useWorklog(timeEntryId, visible);
 
-  const [serverNotes, setServerNotes] = useState<WorkLogNote[]>([]);
-  const [legacyPending, setLegacyPending] = useState<WorklogItem[]>([]);
-  const [loading, setLoading] = useState(false);
   const [draft, setDraft] = useState('');
   const [picked, setPicked] = useState<PickedImage[]>([]);
   const [busy, setBusy] = useState(false);
-  const [viewer, setViewer] = useState<string | null>(null); // full-screen image preview
+  const [viewer, setViewer] = useState<string | null>(null);
+  useEffect(() => { if (!visible) setViewer(null); }, [visible]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      if (outbox) await adoptLegacyQueue(outbox.engine, outbox.files, timeEntryId);
-      else await flushLegacy(timeEntryId);
-      setServerNotes(await loadWorklog(timeEntryId, offline.records));
-    } catch {
-      /* leave whatever we have */
-    } finally {
-      if (!outbox) {
-        // The old queue's items, shown in the same shape so nothing looks lost.
-        const items = await readLegacy(timeEntryId);
-        setLegacyPending(items.map((i) => ({
-          id: i.id, timeEntryId, body: i.body, at: i.at, pendingSync: true,
-          attachments: (i.photos ?? []).map((ph, n) => ({ id: `${i.id}_${n}`, fileName: ph.fileName, mimeType: ph.mimeType, fileUrl: ph.uri, url: ph.uri })),
-        }) as unknown as WorklogItem));
-      }
-      setLoading(false);
-    }
-  }, [timeEntryId, offline.records, outbox?.engine, outbox?.files]);
+  const tz = shift.tz ?? undefined;
+  const clock = (iso: string) => formatTime(iso, tz);
+  const start = new Date(shift.clockInAt);
+  const running = !shift.clockOutAt;
+  /*
+    ⚠️ A RUNNING SHIFT'S BAR ENDS AT THE LATER OF NOW AND THE LAST NOTE, never
+    at a guessed shift end — "now" is the one end that is a fact.
+  */
+  const now = new Date();
+  const end = shift.clockOutAt ? new Date(shift.clockOutAt) : now;
+  const marks = useMemo(() => log.notes.map((n) => ({ at: new Date(n.at), pending: !!n.pendingSync })), [log.notes]);
 
-  useEffect(() => {
-    if (visible) load();
-  }, [visible, load]);
-
-  // A note or photo from this session accepted in the background: show the server's copy.
-  const accepted = useRef(new Set<string>());
-  useEffect(() => {
-    if (!visible) return;
-    let fresh = false;
-    for (const o of operations) {
-      if (!o.op.startsWith('worklog.') || o.entityId !== timeEntryId || o.state !== 'done' || accepted.current.has(o.id)) continue;
-      accepted.current.add(o.id);
-      fresh = true;
-    }
-    if (fresh) void loadWorklog(timeEntryId, offline.records).then(setServerNotes).catch(() => undefined);
-  }, [operations, visible, timeEntryId, offline.records]);
-
-  const notes: WorklogItem[] = useMemo(
-    () =>
-      outbox
-        ? worklogView(serverNotes, timeEntryId, operations, (id, mime) => outbox.files.uriFor(id, mime))
-        : [...serverNotes, ...legacyPending],
-    [outbox?.files, serverNotes, legacyPending, operations, timeEntryId],
-  );
-
-  const add = useCallback(async () => {
-    const body = draft.trim() || '(photo)';
-    if (!draft.trim() && picked.length === 0) return;
+  const send = async () => {
+    if (busy || (!draft.trim() && picked.length === 0)) return;
     setBusy(true);
-    try {
-      if (outbox) {
-        const { outcome } = await addWorklogEntry(outbox.engine, outbox.files, {
-          entryId: timeEntryId,
-          body,
-          photos: picked.map((p) => ({ uri: p.uri, fileName: p.fileName, mimeType: p.mimeType, width: p.width, height: p.height })),
-        });
-        if (outcome.kind === 'refused') {
-          toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('common.error'));
-          return;
-        }
-      } else {
-        await legacyAdd(timeEntryId, body, picked);
-      }
-      setDraft('');
-      setPicked([]);
-    } catch {
-      toast.error(t('common.error'), t('offline.errors.PHOTO_NOT_KEPT'));
-    } finally {
-      setBusy(false);
-      if (!outbox) load();
-    }
-  }, [draft, picked, timeEntryId, outbox?.engine, outbox?.files, load, t, toast]);
+    const ok = await log.add(draft, picked);
+    setBusy(false);
+    if (ok) { setDraft(''); setPicked([]); }
+  };
+  const addPhotos = (imgs: PickedImage[]) => setPicked((p) => [...p, ...imgs].slice(0, 5));
 
-  const remove = useCallback(async (id: string) => {
-    setServerNotes((p) => p.filter((n) => n.id !== id));
-    try { await worklogApi.deleteNote(id); } catch { load(); }
-  }, [load]);
-
-  const addFromGallery = useCallback(async () => {
-    const imgs = await pickFromGallery('worklog-photo');
-    if (imgs.length) setPicked((p) => [...p, ...imgs].slice(0, 5));
-  }, [pickFromGallery]);
-
-  const addFromCamera = useCallback(async () => {
-    const img = await takePhoto('worklog-photo');
-    if (img) setPicked((p) => [...p, img].slice(0, 5));
-  }, [takePhoto]);
+  const eyebrow = running
+    ? <StateEyebrow tone="accent" live label={[t('shiftClock.onTheClock', 'On the clock'), shift.workspace].filter(Boolean).join(' · ')} />
+    : <StateEyebrow label={[t('worklog.done', 'Done'), formatDateRelative(shift.clockInAt, tz), shift.workspace].filter(Boolean).join(' · ')} />;
 
   return (
-    <>
-    <BlurSheet visible={visible} onClose={onClose}>
-        <SheetPanel title={title} onClose={onClose}>
-          {/*
-            ⚠️ THE PREVIEW IS IN THE SHEET, NOT A MODAL OF ITS OWN. It used to
-            be a `<Modal>` beside the BlurSheet — and there is one Modal slot
-            in this app (see `blur-sheet.tsx`), so UIKit refused to present it
-            while the sheet was up and tapping a photo did nothing at all. The
-            same dead tap the shift-issue thread had, in another sheet.
-          */}
-          {viewer ? (
-            <Pressable onPress={() => setViewer(null)} style={{ alignItems: 'center', gap: SPACING.md }}>
-              <Image source={{ uri: viewer }} resizeMode="contain" style={styles.viewerImage} />
-              <Text style={[styles.hint, { color: colors.textSecondary }]}>Tap to close</Text>
-            </Pressable>
+    <JobSheet
+      visible={visible}
+      onClose={onClose}
+      busy={busy}
+      eyebrow={eyebrow}
+      title={running ? t('worklog.title', 'What I did today') : t('worklog.titlePast', 'Activity for this shift')}
+    >
+      {viewer ? (
+        <Pressable onPress={() => setViewer(null)} accessibilityRole="button" accessibilityLabel={t('common.close')} style={{ alignItems: 'center', gap: amazen.space(2) }}>
+          <Image source={{ uri: viewer }} resizeMode="contain" style={{ width: '100%', height: 360, borderRadius: 18 }} />
+          <AText variant="caption" tone="muted">{t('worklog.tapToClose', 'Tap to close')}</AText>
+        </Pressable>
+      ) : (
+        <>
+          {running ? null : (
+            <Sunken style={{ padding: amazen.space(3.5), gap: amazen.space(2) }}>
+              <ReceiptRow label={t('shiftEnd.clockedIn', 'Clocked in')} value={clock(shift.clockInAt)} />
+              <ReceiptRow label={t('shiftEnd.clockedOut', 'Clocked out')} value={clock(shift.clockOutAt!)} />
+              {shift.countedMinutes != null ? (
+                <View style={{ borderTopWidth: 1, borderTopColor: c.lineWell, paddingTop: amazen.space(2) }}>
+                  <ReceiptRow strong label={t('shiftEnd.countedTotal', 'Counted')} value={formatDurationMinutes(shift.countedMinutes)} />
+                </View>
+              ) : null}
+              {shift.approval ? (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <AText variant="caption" tone="muted" style={{ fontSize: 13.5 }}>{t('worklog.status', 'Status')}</AText>
+                  <Pill label={t(`time.approval.${shift.approval}`, { defaultValue: shift.approval })} tone={shift.approval === 'APPROVED' ? 'accent' : shift.approval === 'REJECTED' ? 'critical' : 'warn'} />
+                </View>
+              ) : null}
+            </Sunken>
+          )}
+
+          <DayBar
+            start={start}
+            end={end}
+            marks={marks}
+            filled={1}
+            labels={[
+              clock(shift.clockInAt),
+              running
+                ? t('worklog.nowAt', { defaultValue: 'now {{time}}', time: clock(now.toISOString()) })
+                : log.notes.length ? t('worklog.count', { count: log.notes.length, defaultValue: '{{count}} notes' }) : '',
+              running ? '' : clock(shift.clockOutAt!),
+            ]}
+          />
+
+          {log.loading && log.notes.length === 0 ? (
+            <AText variant="caption" tone="muted">{t('common.loading', 'Loading…')}</AText>
+          ) : log.notes.length === 0 ? (
+            <View style={{ gap: 4, paddingVertical: amazen.space(2) }}>
+              <AText variant="body" tone="strong">{editable ? t('worklog.empty', 'Nothing noted yet') : t('worklog.emptyPast', 'Nothing was noted on this shift.')}</AText>
+              {editable ? (
+                <AText variant="caption" tone="muted" style={{ fontSize: 13, lineHeight: 18 }}>
+                  {t('worklog.hint', 'Note what you finish through the shift — it becomes your clock-out summary.')}
+                </AText>
+              ) : null}
+            </View>
           ) : (
-          <>
-          <Text style={[styles.hint, { color: colors.textSecondary }]}>{editable ? hint : 'This session is closed — activity is read-only.'}</Text>
-
-          <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            {loading ? (
-              <ActivityIndicator style={{ marginVertical: SPACING.lg }} color={colors.textSecondary} />
-            ) : notes.length === 0 ? (
-              <Text style={[styles.empty, { color: colors.textMuted }]}>Nothing logged yet.</Text>
-            ) : (
-              <>
-              {notes.map((n) => (
-                <View key={n.id} style={styles.noteRow}>
-                  <Text style={[styles.noteTime, { color: colors.textMuted }]}>{fmtTime(n.at)}</Text>
-                  <View style={[styles.noteBubble, { backgroundColor: isDark ? colors.surfaceRaised : '#f8fafc', borderColor: colors.border }, n.pendingSync && styles.pendingBubble]}>
-                    {n.byManager && (
-                      <View style={styles.byManagerRow}>
-                        <Ionicons name="shield-checkmark-outline" size={12} color={COLORS.primary} />
-                        <Text style={[styles.byManagerText, { color: COLORS.primary }]} numberOfLines={1}>
-                          {n.author?.name ? `Added by ${n.author.name}` : 'Added by manager'}
-                        </Text>
-                      </View>
-                    )}
-                    <Text style={[styles.noteBody, { color: colors.textPrimary }]}>{n.body}</Text>
-                    {n.attachments.length > 0 && (
-                      <View style={styles.thumbs}>
-                        {n.attachments.map((a) =>
-                          isImg(a.mimeType) ? (
-                            <TouchableOpacity key={a.id} activeOpacity={0.8} onPress={() => setViewer(a.url ?? a.fileUrl)}>
-                              <Image source={{ uri: a.url ?? a.fileUrl }} style={styles.thumb} />
-                            </TouchableOpacity>
-                          ) : (
-                            <View key={a.id} style={[styles.fileChip, { borderColor: colors.border }]}>
-                              <Ionicons name="document-outline" size={14} color={colors.textSecondary} />
-                              <Text style={[styles.fileName, { color: colors.textSecondary }]} numberOfLines={1}>{a.fileName}</Text>
-                            </View>
-                          ),
-                        )}
-                      </View>
-                    )}
-                    {n.pendingSync && (
-                      <View style={styles.pendingRow}>
-                        <Ionicons name="cloud-upload-outline" size={12} color={colors.textMuted} />
-                        <Text style={[styles.pendingText, { color: colors.textMuted }]}>{t('offline.chip.waiting')}</Text>
-                      </View>
-                    )}
-                  </View>
-                  {/* A note still on the phone is not on the server to delete. */}
-                  {editable && !n.pendingSync && (
-                    <TouchableOpacity onPress={() => remove(n.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
-                    </TouchableOpacity>
-                  )}
-                </View>
+            <View>
+              {log.notes.map((n, i) => (
+                <NoteRow
+                  key={n.id}
+                  note={n}
+                  time={clock(n.at)}
+                  last={i === log.notes.length - 1}
+                  canRemove={editable && !n.pendingSync}
+                  onRemove={() => void log.remove(n.id)}
+                  onOpenPhoto={setViewer}
+                />
               ))}
-              </>
-            )}
-          </ScrollView>
+            </View>
+          )}
 
-          {/* Composer — only for the active (clocked-in) session */}
-          {editable && (
-          <>
-          {picked.length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickedRow}>
-              {picked.map((p, i) => (
-                <View key={i} style={styles.pickedItem}>
-                  <Image source={{ uri: p.uri }} style={styles.pickedThumb} />
-                  <TouchableOpacity style={styles.pickedRemove} onPress={() => setPicked((prev) => prev.filter((_, idx) => idx !== i))}>
-                    <Ionicons name="close-circle" size={18} color="#fff" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </ScrollView>
-          )}
-          <View style={styles.composer}>
-            <TextInput
-              style={[styles.input, { backgroundColor: isDark ? colors.surfaceRaised : '#f1f5f9', color: colors.textPrimary }]}
-              placeholder="What did you just do?"
-              placeholderTextColor={colors.textMuted}
-              value={draft}
-              onChangeText={setDraft}
-              multiline
-              maxLength={2000}
-            />
-          </View>
-          <View style={styles.actions}>
-            <TouchableOpacity style={styles.iconBtn} onPress={addFromCamera} disabled={picked.length >= 5}>
-              <Ionicons name="camera-outline" size={22} color={colors.textSecondary} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn} onPress={addFromGallery} disabled={picked.length >= 5}>
-              <Ionicons name="images-outline" size={22} color={colors.textSecondary} />
-            </TouchableOpacity>
-            <View style={{ flex: 1 }} />
-            <TouchableOpacity
-              style={[styles.addBtn, (busy || (!draft.trim() && picked.length === 0)) && { opacity: 0.5 }]}
-              onPress={add}
-              disabled={busy || (!draft.trim() && picked.length === 0)}
-            >
-              {busy ? <ActivityIndicator size="small" color={COLORS.white} /> : (
-                <>
-                  <Ionicons name="add" size={20} color={COLORS.white} />
-                  <Text style={styles.addText}>Add</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-          </>
-          )}
-          </>
-          )}
-        </SheetPanel>
-      </BlurSheet>
+          {editable ? (
+            <>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: amazen.space(1.5) }} keyboardShouldPersistTaps="handled">
+                {QUICK.map((k) => (
+                  <Pressable
+                    key={k}
+                    onPress={() => setDraft((d) => (d.trim() ? `${d.trim()} · ` : '') + t(`worklog.quick.${k}`))}
+                    accessibilityRole="button"
+                    style={({ pressed }) => ({ borderRadius: amazen.radius.full, paddingHorizontal: amazen.space(3), paddingVertical: amazen.space(1.75), backgroundColor: c.tile, opacity: pressed ? 0.75 : 1 })}
+                  >
+                    <AText variant="caption" tone="ink" style={{ fontSize: 12.5 }}>{t(`worklog.quick.${k}`)}</AText>
+                  </Pressable>
+                ))}
+              </ScrollView>
 
-    </>
+              {picked.length > 0 ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: amazen.space(1.5) }}>
+                  {picked.map((p, i) => (
+                    <View key={`${p.uri}-${i}`}>
+                      <Image source={{ uri: p.uri }} style={{ width: 58, height: 58, borderRadius: 12 }} />
+                      <Pressable
+                        onPress={() => setPicked((prev) => prev.filter((_, idx) => idx !== i))}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('worklog.removePhoto', 'Remove photo')}
+                        hitSlop={8}
+                        style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: 11, backgroundColor: c.well, alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <CloseGlyph size={12} color={c.inkStrong} />
+                      </Pressable>
+                    </View>
+                  ))}
+                </ScrollView>
+              ) : null}
+
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: amazen.space(1.5) }}>
+                <RoundButton Glyph={CameraGlyph} label={t('worklog.camera', 'Take a photo')} size={42} disabled={picked.length >= 5} onPress={async () => { const p = await takePhoto('worklog-photo'); if (p) addPhotos([p]); }} />
+                <RoundButton Glyph={GalleryGlyph} label={t('worklog.gallery', 'Choose photos')} size={42} disabled={picked.length >= 5} onPress={async () => addPhotos(await pickFromGallery('worklog-photo'))} />
+                <JobField
+                  value={draft}
+                  onChangeText={setDraft}
+                  placeholder={t('worklog.placeholder', 'What did you just finish?')}
+                  multiline
+                  maxLength={2000}
+                  style={{ flex: 1, minHeight: 42, paddingVertical: amazen.space(2.5) }}
+                />
+                <RoundButton Glyph={SendGlyph} tone="jade" size={42} label={t('worklog.add', 'Add note')} disabled={busy || (!draft.trim() && picked.length === 0)} onPress={() => void send()} />
+              </View>
+              <AText variant="caption" tone="muted" style={{ textAlign: 'center' }}>
+                {t('worklog.footer', 'Becomes your clock-out summary')}
+              </AText>
+            </>
+          ) : null}
+        </>
+      )}
+    </JobSheet>
   );
 }
 
-/** The old direct path, for a build without the offline layer: straight to the server, queued if that fails. */
-async function legacyAdd(entryId: string, body: string, photos: PickedImage[]): Promise<void> {
-  try {
-    const note = await worklogApi.addNote(entryId, { body, at: new Date().toISOString() });
-    for (const img of photos) {
-      try {
-        const pre = await worklogApi.presignAttachment(note.id, img.fileName, img.mimeType);
-        await uploadToPresignedUrl(pre.uploadUrl, img.uri, img.mimeType);
-        await worklogApi.confirmAttachment(note.id, {
-          fileKey: pre.fileKey, fileUrl: pre.fileUrl, fileName: img.fileName,
-          fileSize: img.fileSize, mimeType: img.mimeType, width: img.width, height: img.height,
-        });
-      } catch {
-        /* photo failed — note is already saved */
-      }
-    }
-  } catch {
-    await queueLegacy(entryId, body, photos);
-  }
+function ReceiptRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+      <AText variant="caption" tone={strong ? 'strong' : 'muted'} style={{ fontSize: strong ? 14.5 : 13.5, lineHeight: 20 }}>{label}</AText>
+      <AText variant="caption" tone={strong ? 'strong' : 'ink'} numeric style={{ fontSize: strong ? 16 : 13.5, lineHeight: 20 }}>{value}</AText>
+    </View>
+  );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'flex-end' },
-  hint: { fontSize: FONT_SIZE.sm, marginTop: SPACING.xs, marginBottom: SPACING.md },
-  list: { maxHeight: 320 },
-  empty: { fontSize: FONT_SIZE.base, textAlign: 'center', marginVertical: SPACING.lg },
-  noteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm, marginBottom: SPACING.sm },
-  noteTime: { fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold, paddingTop: 6, width: 44 },
-  noteBubble: { flex: 1, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.sm },
-  byManagerRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 },
-  byManagerText: { fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold, flexShrink: 1 },
-  noteBody: { fontSize: FONT_SIZE.base, lineHeight: 20 },
-  pendingBubble: { opacity: 0.75 },
-  pendingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  pendingText: { fontSize: FONT_SIZE.xs },
-  thumbs: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.xs, marginTop: SPACING.sm },
-  thumb: { width: 56, height: 56, borderRadius: RADIUS.sm },
-  fileChip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: RADIUS.sm, paddingHorizontal: 8, paddingVertical: 6, maxWidth: 140 },
-  fileName: { fontSize: FONT_SIZE.xs, flexShrink: 1 },
-  pickedRow: { marginTop: SPACING.sm },
-  pickedItem: { marginRight: SPACING.sm },
-  pickedThumb: { width: 56, height: 56, borderRadius: RADIUS.sm },
-  pickedRemove: { position: 'absolute', top: -6, right: -6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10 },
-  composer: { marginTop: SPACING.sm },
-  input: { borderRadius: RADIUS.md, padding: SPACING.md, fontSize: FONT_SIZE.base, minHeight: 44, maxHeight: 120 },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: SPACING.sm },
-  iconBtn: { padding: SPACING.sm },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#2563eb', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, borderRadius: RADIUS.md },
-  addText: { color: COLORS.white, fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.base },
-  viewerBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' },
-  viewerImage: { width: '100%', height: '100%' },
-  viewerClose: { position: 'absolute', right: SPACING.lg, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
-});
+/** One note on the rail: time, dot, what was done, its photos. */
+function NoteRow({
+  note, time, last, canRemove, onRemove, onOpenPhoto,
+}: {
+  note: WorklogItem;
+  time: string;
+  last: boolean;
+  canRemove: boolean;
+  onRemove: () => void;
+  onOpenPhoto: (uri: string) => void;
+}) {
+  const { amazen } = useTheme();
+  const c = amazen.color;
+  const { t } = useTranslation();
+  const pending = !!note.pendingSync;
+  return (
+    <View style={{ flexDirection: 'row', gap: amazen.space(2) }}>
+      <AText variant="caption" tone="muted" numeric style={{ width: 44, paddingTop: 3 }}>{time}</AText>
+      <View style={{ width: 12, alignItems: 'center' }}>
+        {/* ⚠️ Hollow amber: on the phone, not at the office yet. Solid jade: sent. */}
+        <View style={{ width: 9, height: 9, borderRadius: 5, marginTop: 6, backgroundColor: pending ? 'transparent' : c.accent, borderWidth: pending ? 2 : 0, borderColor: c.warn }} />
+        {last ? null : <View style={{ width: 2, flex: 1, minHeight: 14, backgroundColor: c.lineWell }} />}
+      </View>
+      <View style={{ flex: 1, paddingBottom: amazen.space(3.5), gap: amazen.space(1.5) }}>
+        {note.byManager ? (
+          <AText variant="caption" tone="accent" numberOfLines={1}>
+            {note.author?.name ? t('worklog.addedBy', { defaultValue: 'Added by {{name}}', name: note.author.name }) : t('worklog.addedByManager', 'Added by a manager')}
+          </AText>
+        ) : null}
+        <AText variant="body" tone="strong" style={{ fontSize: 14, lineHeight: 20 }}>{note.body}</AText>
+        {note.attachments.length > 0 ? (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(1.5) }}>
+            {note.attachments.map((a) =>
+              isImg(a.mimeType) ? (
+                <Pressable key={a.id} onPress={() => onOpenPhoto(a.url ?? a.fileUrl)} accessibilityRole="imagebutton" accessibilityLabel={a.fileName}>
+                  <Image source={{ uri: a.url ?? a.fileUrl }} style={{ width: 56, height: 56, borderRadius: 12, backgroundColor: c.tile }} />
+                </Pressable>
+              ) : (
+                <View key={a.id} style={{ borderRadius: 10, paddingHorizontal: 8, paddingVertical: 6, backgroundColor: c.tile, maxWidth: 160 }}>
+                  <AText variant="caption" tone="ink" numberOfLines={1}>{a.fileName}</AText>
+                </View>
+              ),
+            )}
+          </View>
+        ) : null}
+        {pending ? <AText variant="caption" tone="warn" numeric>{t('offline.chip.waiting')}</AText> : null}
+      </View>
+      {canRemove ? (
+        <Pressable onPress={onRemove} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('worklog.remove', 'Remove note')} style={{ paddingTop: 4 }}>
+          <CloseGlyph size={14} color={c.inkMuted} />
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}

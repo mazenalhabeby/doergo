@@ -578,6 +578,8 @@ export default function TabsLayout() {
           options={{
             title: t('tabs.attendance'),
             href: showAttendance ? '/attendance' : null,
+            // ⚠️ The page draws the shared ScreenHeader itself — no navigator band.
+            headerShown: false,
           }}
         />
         {/* Time Off tab - module-driven */}

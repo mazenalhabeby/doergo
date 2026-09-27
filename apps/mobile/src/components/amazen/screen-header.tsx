@@ -3,6 +3,7 @@ import { Image, Pressable, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
+import { useProfileAvatar } from '../../lib/use-profile-avatar';
 import { AText } from './text';
 
 /**
@@ -41,9 +42,6 @@ export function ScreenHeader({
   /** Overrides the date. Leave unset and it says what day it is. */
   subtitle,
   hint,
-  avatarUrl,
-  initials,
-  onPressAvatar,
   /** An extra control to the left of the avatar — Arrange, on the home screen. */
   action,
   actions,
@@ -77,9 +75,6 @@ export function ScreenHeader({
    * whole bar in an edit mode rather than editing one line of it.
    */
   hint?: string;
-  avatarUrl?: string | null;
-  initials?: string;
-  onPressAvatar?: () => void;
   action?: HeaderAction;
   /**
    * More than one, drawn left to right before the avatar.
@@ -104,6 +99,14 @@ export function ScreenHeader({
   const { i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const c = amazen.color;
+  /*
+    ⚠️ THE AVATAR IS NOT A PROP. Every screen used to pass the same three
+    values from `useProfileAvatar` — the same picture, the same handler — and a
+    screen that forgot one drew a blank circle that went nowhere. The header
+    reads it itself, so it is in the same place, showing the same person and
+    opening the same page, on every screen that has a header at all.
+  */
+  const { avatarUrl, initials, openProfile: onPressAvatar } = useProfileAvatar();
 
   /*
     "Tuesday, 22 September" — written by the platform, in the member's own

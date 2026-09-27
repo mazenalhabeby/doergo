@@ -97,7 +97,7 @@ export function ActionStrip() {
     strip is the tint composited over the gradient where it sits, and the
     mark's tile is composited over the strip — both solid, both matchable.
   */
-  const ground = over(`${amazen.gradient.home[1]}80`, amazen.gradient.home[0]);
+  const ground = over(`${amazen.gradient.ground[1]}80`, amazen.gradient.ground[0]);
   const tint = over(tone === 'crit' ? c.criticalTint : tone === 'warn' ? c.warnTint : c.tile, ground);
   const single = items.length === 1;
 

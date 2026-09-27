@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View, type StyleProp, typ
 import { useTheme } from '../../contexts/theme-context';
 import { BlurSheet } from '../blur-sheet';
 import { SheetPanel } from '../sheet-panel';
-import { AText } from '../amazen';
+import { AText, LiveDot } from '../amazen';
 import type { GlyphProps } from '../glyphs/glyphs';
 
 /**
@@ -26,6 +26,7 @@ export function JobSheet({
   visible,
   onClose,
   title,
+  eyebrow,
   busy = false,
   scroll = true,
   scrollEnabled = true,
@@ -34,6 +35,8 @@ export function JobSheet({
   visible: boolean;
   onClose: () => void;
   title?: string;
+  /** A line above the title — where the thing is and what state it is in (a live dot + a workspace). */
+  eyebrow?: ReactNode;
   /** Work in flight — the sheet cannot be flicked away mid-send. */
   busy?: boolean;
   /** Off for a sheet that must never scroll. */
@@ -47,6 +50,7 @@ export function JobSheet({
   const close = busy ? () => undefined : onClose;
   const body = (
     <View style={{ gap: amazen.space(3), paddingBottom: amazen.space(2) }}>
+      {eyebrow ?? null}
       {title ? <AText variant="h2" tone="strong" numberOfLines={2} style={{ fontFamily: amazen.font.sansLight }}>{title}</AText> : null}
       {children}
     </View>
@@ -333,6 +337,22 @@ export function SectionLabel({ children, tone = 'muted', style }: { children: Re
   return (
     <View style={style}>
       <AText numberOfLines={1} style={{ color, fontFamily: amazen.font.mono, fontSize: 10.5, lineHeight: 14, letterSpacing: 2, textTransform: 'uppercase' }}>{children}</AText>
+    </View>
+  );
+}
+
+/**
+ * A dot and a mono line — "● ON THE CLOCK · HBC OFFICE". What the thing is doing
+ * and where, above a sheet's title. The dot breathes only while `live`.
+ */
+export function StateEyebrow({ label, tone = 'muted', live = false }: { label: string; tone?: 'muted' | 'accent' | 'warn' | 'critical'; live?: boolean }) {
+  const { amazen } = useTheme();
+  const c = amazen.color;
+  const color = tone === 'accent' ? c.accent : tone === 'warn' ? c.warn : tone === 'critical' ? c.critical : c.lineField;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1.5) }}>
+      <LiveDot color={color} live={live} />
+      <SectionLabel tone={tone} style={{ flexShrink: 1 }}>{label}</SectionLabel>
     </View>
   );
 }

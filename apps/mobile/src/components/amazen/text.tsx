@@ -9,7 +9,7 @@ export type TypeVariant =
 
 /** Which ink. Named by ROLE, so a call site never picks a hex. */
 export type Tone =
-  | 'strong' | 'ink' | 'muted' | 'onGlass' | 'onGlassHome' | 'onGradient'
+  | 'strong' | 'ink' | 'muted' | 'onGlass' | 'onGradient'
   | 'accent' | 'critical' | 'warn' | 'accentInk';
 
 function toneColor(c: AmazenColors, tone: Tone): string {
@@ -18,7 +18,6 @@ function toneColor(c: AmazenColors, tone: Tone): string {
     case 'ink': return c.ink;
     case 'muted': return c.inkMuted;
     case 'onGlass': return c.inkOnGlass;
-    case 'onGlassHome': return c.inkOnGlassHome;
     case 'onGradient': return c.inkOnGradient;
     case 'accent': return c.accent;
     case 'critical': return c.critical;
@@ -53,8 +52,8 @@ export function AText({
     knows its surface, the grey is swapped for the one made for it.
   */
   const surface = useSurface();
-  const readable: Tone = surface === 'glass' && tone === 'muted' ? 'onGlassHome'
-    : surface === 'well' && (tone === 'onGlass' || tone === 'onGlassHome') ? 'muted'
+  const readable: Tone = surface === 'glass' && tone === 'muted' ? 'onGlass'
+    : surface === 'well' && tone === 'onGlass' ? 'muted'
     : tone;
   const base = amazen.type[variant] as TextStyle;
   /*
