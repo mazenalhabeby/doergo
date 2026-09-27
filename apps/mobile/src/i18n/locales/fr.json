@@ -3315,6 +3315,8 @@
     "turnOnLocation": "Activer la localisation",
     "plan": "Planifier la tournée",
     "planCost": "Utilise votre position. Une requête par plan.",
+    "startRoute": "Démarrer la tournée",
+    "continueRoute": "Reprendre la tournée",
     "driveTo": "Aller à {{name}}",
     "chosen": "Utilisée",
     "replan": "Replanifier d’ici",

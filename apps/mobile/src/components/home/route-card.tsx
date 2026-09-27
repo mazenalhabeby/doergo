@@ -164,8 +164,18 @@ export function RouteCard({ style }: { style?: StyleProp<ViewStyle> }) {
               </View>
             ) : r.verb && r.ahead.length > 1 ? (
               /* One stop left: the next-stop block's own "Drive here" already is this button. */
+              /*
+                ⚠️ A FIXED LABEL, NEVER THE STOP'S NAME. "Drive to Deliver to
+                Billa AG — Landstraße" wrapped onto two lines and repeated the
+                Next stop row right above it. The row names the stop; the button
+                starts the day and says it in a few characters.
+              */
               <PrimaryButton
-                label={r.verb.kind === 'driveTo' ? t('routeCard.driveTo', { name: r.verb.stop.label }) : r.verb.kind === 'continue' ? t('route.continueNav') : t('route.startNav')}
+                label={r.verb.kind === 'continue' ? t('routeCard.continueRoute') : t('routeCard.startRoute')}
+                detail={[
+                  `${r.ahead.length} ${t('routeCard.stops', { count: r.ahead.length })}`,
+                  r.figures.metresToGo == null ? null : `${r.straight || r.figures.estimated ? '~' : ''}${km(r.figures.metresToGo)} km`,
+                ].filter(Boolean).join(' · ')}
                 onPress={() => void r.drive(r.verb!.kind === 'driveTo' ? r.verb!.stop : undefined)}
               />
             ) : null}

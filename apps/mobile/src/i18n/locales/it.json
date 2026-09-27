@@ -3315,6 +3315,8 @@
     "turnOnLocation": "Attiva la posizione",
     "plan": "Pianifica percorso",
     "planCost": "Usa la tua posizione. Una richiesta per piano.",
+    "startRoute": "Avvia il percorso",
+    "continueRoute": "Riprendi il percorso",
     "driveTo": "Vai a {{name}}",
     "chosen": "In uso",
     "replan": "Ripianifica da qui",

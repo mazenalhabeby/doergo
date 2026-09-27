@@ -15,12 +15,19 @@ import { AText } from './text';
  */
 export function PrimaryButton({
   label,
+  detail,
   onPress,
   disabled,
   loading,
   style,
 }: {
   label: string;
+  /**
+   * A few characters of fact after the label — "3 stops · 32 km". ⚠️ Never a
+   * name or a title: a button that carries one wraps onto two lines, cut
+   * differently in every language.
+   */
+  detail?: string;
   onPress?: () => void;
   disabled?: boolean;
   loading?: boolean;
@@ -33,7 +40,7 @@ export function PrimaryButton({
       onPress={off ? undefined : onPress}
       disabled={off}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={detail ? `${label}, ${detail}` : label}
       accessibilityState={{ disabled: !!off, busy: !!loading }}
       style={({ pressed }) => [
         {
@@ -58,7 +65,10 @@ export function PrimaryButton({
         }}
       >
         {loading ? <ActivityIndicator size="small" color={amazen.color.accentInk} /> : null}
-        <AText variant="h3" tone="accentInk">{label}</AText>
+        <AText variant="h3" tone="accentInk" numberOfLines={1} style={{ flexShrink: 1 }}>{label}</AText>
+        {detail ? (
+          <AText variant="caption" tone="accentInk" numeric numberOfLines={1} style={{ fontFamily: amazen.font.mono, opacity: 0.75 }}>{detail}</AText>
+        ) : null}
       </LinearGradient>
     </Pressable>
   );

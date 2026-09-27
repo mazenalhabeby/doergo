@@ -3315,6 +3315,8 @@
     "turnOnLocation": "Standort einschalten",
     "plan": "Route planen",
     "planCost": "Nutzt Ihren Standort. Eine Anfrage pro Plan.",
+    "startRoute": "Route starten",
+    "continueRoute": "Route fortsetzen",
     "driveTo": "Nach {{name}} fahren",
     "chosen": "Wird verwendet",
     "replan": "Von hier neu planen",
