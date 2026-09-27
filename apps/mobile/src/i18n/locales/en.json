@@ -74,7 +74,7 @@
   "auth": {
     "login": {
       "title": "Sign In",
-      "subtitle": "Access your dashboard and manage operations",
+      "subtitle": "Welcome back. Your jobs and your shift are waiting.",
       "emailLabel": "Email address",
       "emailPlaceholder": "you@company.com",
       "passwordLabel": "Password",
@@ -98,12 +98,12 @@
       "rememberPassword": "Remember your password? ",
       "signIn": "Sign In",
       "sentTitle": "Check Your Email",
-      "sentMessage": "If an account exists with that email, we've sent a password reset link. Please check your inbox and spam folder.",
+      "sentMessage": "If an account uses that email, a link to set a new password is on its way. It works for one hour — check spam too.",
       "backToLogin": "Back to Sign In"
     },
     "register": {
       "title": "Create your account",
-      "subtitle": "Get started with HBCField",
+      "subtitle": "You can join your company, or start one, next.",
       "firstNameLabel": "First name",
       "firstNamePlaceholder": "John",
       "lastNameLabel": "Last name",

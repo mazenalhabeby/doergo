@@ -74,7 +74,7 @@
   "auth": {
     "login": {
       "title": "Anmelden",
-      "subtitle": "Greifen Sie auf Ihr Dashboard zu und verwalten Sie Ihre Abläufe",
+      "subtitle": "Willkommen zurück. Ihre Aufträge und Ihre Schicht warten.",
       "emailLabel": "E-Mail-Adresse",
       "emailPlaceholder": "name@firma.com",
       "passwordLabel": "Passwort",
@@ -98,12 +98,12 @@
       "rememberPassword": "Passwort eingefallen? ",
       "signIn": "Anmelden",
       "sentTitle": "E-Mail prüfen",
-      "sentMessage": "Falls ein Konto mit dieser E-Mail existiert, haben wir einen Link zum Zurücksetzen gesendet. Bitte prüfen Sie Ihren Posteingang und Spam-Ordner.",
+      "sentMessage": "Wenn ein Konto diese E-Mail verwendet, ist ein Link zum Festlegen eines neuen Passworts unterwegs. Er gilt eine Stunde — sehen Sie auch im Spam nach.",
       "backToLogin": "Zurück zur Anmeldung"
     },
     "register": {
       "title": "Konto erstellen",
-      "subtitle": "Starten Sie mit HBCField",
+      "subtitle": "Als Nächstes treten Sie Ihrer Firma bei oder gründen eine.",
       "firstNameLabel": "Vorname",
       "firstNamePlaceholder": "Max",
       "lastNameLabel": "Nachname",

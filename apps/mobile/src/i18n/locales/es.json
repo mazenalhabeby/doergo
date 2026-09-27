@@ -74,7 +74,7 @@
   "auth": {
     "login": {
       "title": "Iniciar sesión",
-      "subtitle": "Accede a tu panel y gestiona las operaciones",
+      "subtitle": "Bienvenido de nuevo. Sus trabajos y su turno le esperan.",
       "emailLabel": "Correo electrónico",
       "emailPlaceholder": "tu@empresa.com",
       "passwordLabel": "Contraseña",
@@ -98,12 +98,12 @@
       "rememberPassword": "¿Recuerdas tu contraseña? ",
       "signIn": "Iniciar sesión",
       "sentTitle": "Revisa tu correo",
-      "sentMessage": "Si existe una cuenta con ese correo, te enviamos un enlace para restablecer la contraseña. Revisa tu bandeja de entrada y la carpeta de spam.",
+      "sentMessage": "Si una cuenta usa ese correo, va de camino un enlace para crear una nueva contraseña. Vale una hora; revise también el spam.",
       "backToLogin": "Volver a iniciar sesión"
     },
     "register": {
       "title": "Crea tu cuenta",
-      "subtitle": "Empieza con HBCField",
+      "subtitle": "A continuación puede unirse a su empresa o crear una.",
       "firstNameLabel": "Nombre",
       "firstNamePlaceholder": "Juan",
       "lastNameLabel": "Apellido",

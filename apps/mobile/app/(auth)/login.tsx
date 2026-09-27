@@ -1,48 +1,23 @@
 import { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  ActivityIndicator,
-  Animated,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import { useRouter, Href } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useBiometricUnlock } from '../../src/hooks/use-biometric-unlock';
 import { resolveCapability, getKeyOwner } from '../../src/lib/biometrics';
-import { BlurSheet, SheetPanel, BiometricIcon } from '../../src/components';
-import { useToast } from '../../src/island/island-context';
-import { AnimatedLogo, centeredContent } from '../../src/components';
-import { useResponsive } from '../../src/lib/responsive';
-import { useAuthAnimations } from '../../src/hooks/useAuthAnimations';
+import { BiometricIcon } from '../../src/components';
 import { useTheme } from '../../src/contexts/theme-context';
-import {
-  COLORS,
-  SPACING,
-  RADIUS,
-  FONT_SIZE,
-  FONT_WEIGHT,
-  ROUTES,
-} from '../../src/lib/constants';
+import { ROUTES } from '../../src/lib/constants';
+import { AText, PrimaryButton } from '../../src/components/amazen';
+import { JobSheet, SheetOption } from '../../src/components/job/job-ui';
+import { AuthCard, AuthField, AuthFrame, AuthHelp, AuthLinkLine } from '../../src/components/auth/auth-ui';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { login, refreshUser, signedOutByUser } = useAuth();
   const bio = useBiometricUnlock();
   const [offerBiometric, setOfferBiometric] = useState(false);
-  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const r = useResponsive();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -55,11 +30,10 @@ export default function LoginScreen() {
   */
   const [usePassword, setUsePassword] = useState(false);
 
-  const { colors, isDark } = useTheme();
-  const toast = useToast();
+  const { amazen } = useTheme();
+  const c = amazen.color;
 
   // Animations
-  const { fadeAnim, slideAnim, orb1TranslateY, orb2TranslateY } = useAuthAnimations();
 
   const validate = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -143,8 +117,9 @@ export default function LoginScreen() {
         router.replace(ROUTES.home as Href);
       }
     } catch (error) {
+      // Said under the password, where the eye already is — a toast covered the form it was about.
       const message = error instanceof Error ? error.message : t('auth.login.loginFailed');
-      toast.error(t('auth.login.loginFailed'), message);
+      setErrors({ password: message });
     } finally {
       setIsLoading(false);
     }
@@ -171,611 +146,99 @@ export default function LoginScreen() {
     setErrors({});
   };
 
+  const goHome = () => { setOfferBiometric(false); router.replace(ROUTES.home as Href); };
+
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          backgroundColor: colors.surface,
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
-        },
-      ]}
+    <AuthFrame
+      footer={resolved && !showBiometric ? (
+        <View style={{ gap: amazen.space(2.5) }}>
+          <AuthLinkLine text={t('auth.login.noAccount')} link={t('auth.login.createOne')} onPress={() => router.push(ROUTES.register as Href)} />
+          <AuthHelp />
+        </View>
+      ) : null}
     >
-      <StatusBar style="light" />
-
-      {/* Premium Dark Header with Gradient */}
-      <LinearGradient
-        colors={[COLORS.slate900, COLORS.slate800, COLORS.slate900]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.header, { paddingTop: insets.top + SPACING.xl }]}
-      >
-        {/* Animated Gradient Orbs */}
-        <Animated.View
-          style={[
-            styles.orb,
-            styles.orb1,
-            { transform: [{ translateY: orb1TranslateY }] },
-          ]}
-        >
-          <LinearGradient
-            colors={['rgba(37, 99, 235, 0.4)', 'rgba(37, 99, 235, 0)']}
-            style={styles.orbGradient}
-          />
-        </Animated.View>
-        <Animated.View
-          style={[
-            styles.orb,
-            styles.orb2,
-            { transform: [{ translateY: orb2TranslateY }] },
-          ]}
-        >
-          <LinearGradient
-            colors={['rgba(139, 92, 246, 0.3)', 'rgba(139, 92, 246, 0)']}
-            style={styles.orbGradient}
-          />
-        </Animated.View>
-
-        {/* Grid Pattern Overlay */}
-        <View style={styles.gridOverlay} />
-
-        <View style={styles.headerContent}>
-          {/* Logo */}
-          <View style={styles.logoContainer}>
-            <AnimatedLogo size="large" variant="light" />
+      {!resolved ? null : showBiometric ? (
+        /* Face ID first when this phone holds a key — and WHOSE account it opens, or somebody signs in as a colleague. */
+        <AuthCard>
+          <View style={{ alignItems: 'center', gap: amazen.space(1) }}>
+            <AText variant="h2" tone="strong" numberOfLines={1} style={{ fontSize: 21, fontFamily: amazen.font.sansLight }}>{t('biometrics.welcomeBack', { name: ownerName })}</AText>
+            {bio.owner?.email ? <AText variant="caption" tone="onGlass" numberOfLines={1}>{bio.owner.email}</AText> : null}
           </View>
-
-          {resolved && !showBiometric && (
-            <>
-              <View style={styles.divider} />
-              <Text style={styles.welcomeText}>{t('auth.login.title')}</Text>
-              <Text style={styles.subtitleText}>{t('auth.login.subtitle')}</Text>
-            </>
-          )}
-        </View>
-      </LinearGradient>
-
-      {/* Form Card */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.formWrapper}
-      >
-        <View style={[styles.formCard, { backgroundColor: colors.card }]}>
-          <ScrollView
-            contentContainerStyle={[
-              styles.scrollContent,
-              showBiometric && styles.scrollGrow,
-              r.isTablet && centeredContent(460),
-            ]}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {!resolved ? null : showBiometric ? (
-              <View style={styles.bioScreen}>
-                <View style={styles.bioGreeting}>
-                  <Text style={[styles.bioWelcome, { color: colors.textPrimary }]} numberOfLines={1}>
-                    {t('biometrics.welcomeBack', { name: ownerName })}
-                  </Text>
-                  {/* ⚠️ A fingerprint cannot tell you whose account it opens.
-                      The screen has to, or somebody signs in as a colleague
-                      who used this phone before them and never notices. */}
-                  {!!bio.owner?.email && (
-                    <Text style={[styles.bioEmail, { color: colors.textMuted }]} numberOfLines={1}>
-                      {bio.owner.email}
-                    </Text>
-                  )}
-                </View>
-
-                <TouchableOpacity
-                  style={[styles.bioCircle, { backgroundColor: colors.primaryLight, borderColor: COLORS.primary + '33' }]}
-                  onPress={() => void unlockAndEnter()}
-                  disabled={bio.busy}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('biometrics.unlockWith', { method: bio.label })}
-                >
-                  {bio.busy ? (
-                    <ActivityIndicator color={COLORS.primary} />
-                  ) : (
-                    <BiometricIcon method={bio.method} size={64} color={COLORS.primary} />
-                  )}
-                </TouchableOpacity>
-                <Text style={styles.bioTap}>
-                  {/* A failure that kept the key: say so, and invite another go. */}
-                  {bio.failure === 'failed'
-                    ? t('biometrics.tapRetry')
-                    : t('biometrics.tapToUnlock', { method: bio.label })}
-                </Text>
-
-                <View style={styles.bioSpacer} />
-
-                <TouchableOpacity
-                  style={[styles.bioPasswordButton, { borderColor: colors.border, backgroundColor: colors.card }]}
-                  onPress={() => switchToPassword(true)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.bioPasswordText, { color: colors.textPrimary }]}>{t('biometrics.usePassword')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => switchToPassword(false)} style={styles.bioNotYou} hitSlop={8}>
-                  <Text style={[styles.bioNotYouText, { color: colors.textSecondary }]}>
-                    {t('biometrics.notYou', { name: ownerName })}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-            <>
-            {/* One tap back to the fingerprint, for the member who owns it. */}
-            {bio.canUnlock && (
-              <TouchableOpacity
-                style={[styles.bioBack, { backgroundColor: colors.primaryLight }]}
-                onPress={() => setUsePassword(false)}
-                activeOpacity={0.8}
-              >
-                <BiometricIcon method={bio.method} size={26} color={COLORS.primary} />
-                <Text style={styles.bioBackText} numberOfLines={1}>
-                  {t('biometrics.backTo', { method: bio.label, name: ownerName })}
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            {/* Why the fingerprint went: said once, where the password goes. */}
-            {!!bioNotice && (
-              <View style={[styles.bioNotice, { backgroundColor: colors.warningLight }]}>
-                <Ionicons name="information-circle" size={18} color={colors.textSecondary} />
-                <Text style={[styles.bioNoticeText, { color: colors.textSecondary }]}>{bioNotice}</Text>
-              </View>
-            )}
-
-            {/* Email Input */}
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('auth.login.emailLabel')}</Text>
-              <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.email && { backgroundColor: colors.errorLight, borderColor: COLORS.error }]}>
-                <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
-                  <Ionicons name="mail-outline" size={20} color={colors.textMuted} />
-                </View>
-                <TextInput
-                  style={[styles.input, { color: colors.textPrimary }]}
-                  placeholder={t('auth.login.emailPlaceholder')}
-                  placeholderTextColor={colors.textMuted}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  value={email}
-                  onChangeText={(text) => {
-                    setEmail(text);
-                    if (errors.email) setErrors({ ...errors, email: undefined });
-                  }}
-                />
-              </View>
-              {errors.email && (
-                <View style={styles.errorContainer}>
-                  <Ionicons name="alert-circle" size={14} color={COLORS.error} />
-                  <Text style={styles.errorText}>{errors.email}</Text>
-                </View>
-              )}
-            </View>
-
-            {/* Password Input */}
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('auth.login.passwordLabel')}</Text>
-              <View style={[styles.inputContainer, { backgroundColor: colors.input, borderColor: colors.inputBorder }, errors.password && { backgroundColor: colors.errorLight, borderColor: COLORS.error }]}>
-                <View style={[styles.inputIconContainer, { backgroundColor: colors.inputIconBg, borderRightColor: colors.inputBorder }]}>
-                  <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} />
-                </View>
-                <TextInput
-                  style={[styles.input, { color: colors.textPrimary }]}
-                  placeholder={t('auth.login.passwordPlaceholder')}
-                  placeholderTextColor={colors.textMuted}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  value={password}
-                  onChangeText={(text) => {
-                    setPassword(text);
-                    if (errors.password) setErrors({ ...errors, password: undefined });
-                  }}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeButton}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Ionicons
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color={colors.textMuted}
-                  />
-                </TouchableOpacity>
-              </View>
-              {errors.password && (
-                <View style={styles.errorContainer}>
-                  <Ionicons name="alert-circle" size={14} color={COLORS.error} />
-                  <Text style={styles.errorText}>{errors.password}</Text>
-                </View>
-              )}
-            </View>
-
-            {/* Forgot Password */}
-            <TouchableOpacity
-              onPress={() => router.push(ROUTES.forgotPassword as Href)}
-              style={styles.forgotPasswordButton}
-            >
-              <Text style={styles.forgotPasswordText}>{t('auth.login.forgotPassword')}</Text>
-            </TouchableOpacity>
-
-            {/* Login Button */}
-            <TouchableOpacity
-              style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
-              onPress={handleLogin}
-              disabled={isLoading}
-              activeOpacity={0.9}
-            >
-              <LinearGradient
-                colors={isLoading ? [COLORS.infoBorder, COLORS.infoBorder] : [COLORS.primary, COLORS.inProgress]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.loginButtonGradient}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color={COLORS.white} size="small" />
-                ) : (
-                  <>
-                    <Text style={styles.loginButtonText}>{t('auth.login.submitButton')}</Text>
-                    <View style={styles.arrowContainer}>
-                      <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
-                    </View>
-                  </>
-                )}
-              </LinearGradient>
-            </TouchableOpacity>
-
-            {/* Security Badges */}
-            <View style={styles.securityContainer}>
-              <View style={styles.securityBadge}>
-                <Ionicons name="lock-closed" size={14} color={colors.textMuted} />
-                <Text style={[styles.securityText, { color: colors.textMuted }]}>{t('auth.login.enterpriseProtected')}</Text>
-              </View>
-              <View style={[styles.securityDot, { backgroundColor: colors.border }]} />
-              <View style={styles.securityBadge}>
-                <Ionicons name="shield-checkmark" size={14} color={colors.textMuted} />
-                <Text style={[styles.securityText, { color: colors.textMuted }]}>{t('auth.login.secure')}</Text>
-              </View>
-            </View>
-
-            {/* Create Account Link */}
-            <View style={styles.createAccountContainer}>
-              <Text style={[styles.createAccountText, { color: colors.textSecondary }]}>{t('auth.login.noAccount')}</Text>
-              <TouchableOpacity onPress={() => router.push(ROUTES.register as Href)}>
-                <Text style={styles.createAccountLink}>{t('auth.login.createOne')}</Text>
-              </TouchableOpacity>
-            </View>
-            </>
-            )}
-          </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
-
-      {/* Footer */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, SPACING.xl) }]}>
-        <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-          {t('auth.login.needHelp')}<Text style={styles.footerLink}>{t('auth.login.contactSupport')}</Text>
-        </Text>
-      </View>
-    {/*
-      Asked once, never again from a banner. Either answer leaves for home, so
-      there is no way to get stuck behind it.
-    */}
-    <BlurSheet visible={offerBiometric} onClose={() => { setOfferBiometric(false); router.replace(ROUTES.home as Href); }}>
-      <SheetPanel onClose={() => { setOfferBiometric(false); router.replace(ROUTES.home as Href); }}>
-        <View style={styles.offerBody}>
-          <View style={[styles.offerIcon, { backgroundColor: colors.primaryLight }]}>
-            <BiometricIcon method={bio.method} size={30} color={COLORS.primary} />
-          </View>
-          <Text style={[styles.offerTitle, { color: colors.textPrimary }]}>
-            {t('biometrics.enableTitle', { method: bio.label })}
-          </Text>
-          <Text style={[styles.offerText, { color: colors.textSecondary }]}>
-            {t('biometrics.enableBody')}
-          </Text>
-          <TouchableOpacity
-            style={styles.offerPrimary}
+          <Pressable
+            onPress={() => void unlockAndEnter()}
             disabled={bio.busy}
-            onPress={async () => {
-              await bio.enroll();
-              setOfferBiometric(false);
-              router.replace(ROUTES.home as Href);
-            }}
+            accessibilityRole="button"
+            accessibilityLabel={t('biometrics.unlockWith', { method: bio.label })}
+            style={({ pressed }) => ({ alignSelf: 'center', width: 104, height: 104, borderRadius: 32, backgroundColor: c.accentTint, borderWidth: 1.5, borderColor: c.accent, alignItems: 'center', justifyContent: 'center', marginVertical: amazen.space(2), opacity: pressed ? 0.85 : 1 })}
           >
-            <Text style={styles.offerPrimaryText}>{t('biometrics.enable', { method: bio.label })}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.offerGhost, { borderColor: colors.border }]}
-            onPress={() => { setOfferBiometric(false); router.replace(ROUTES.home as Href); }}
-          >
-            <Text style={[styles.offerGhostText, { color: colors.textPrimary }]}>{t('biometrics.notNow')}</Text>
-          </TouchableOpacity>
+            {bio.busy ? <ActivityIndicator color={c.accent} /> : <BiometricIcon method={bio.method} size={56} color={c.accent} />}
+          </Pressable>
+          <AText variant="body" tone="onGlass" style={{ textAlign: 'center', fontSize: 13.5 }}>
+            {bio.failure === 'failed' ? t('biometrics.tapRetry') : t('biometrics.tapToUnlock', { method: bio.label })}
+          </AText>
+          <Pressable onPress={() => switchToPassword(true)} accessibilityRole="button"
+            style={({ pressed }) => ({ borderRadius: amazen.radius.full, backgroundColor: c.tile, paddingVertical: amazen.space(3), alignItems: 'center', opacity: pressed ? 0.8 : 1 })}>
+            <AText variant="body" tone="strong" style={{ fontSize: 14.5 }}>{t('biometrics.usePassword')}</AText>
+          </Pressable>
+          <Pressable onPress={() => switchToPassword(false)} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'center', padding: amazen.space(1) }}>
+            <AText variant="body" style={{ color: c.accent, fontSize: 13.5 }}>{t('biometrics.notYou', { name: ownerName })}</AText>
+          </Pressable>
+        </AuthCard>
+      ) : (
+        <AuthCard title={t('auth.login.title')} sub={t('auth.login.subtitle')}>
+          {/* One tap back to Face ID, for the member who owns it. */}
+          {bio.canUnlock ? (
+            <Pressable onPress={() => setUsePassword(false)} accessibilityRole="button"
+              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2.5), borderRadius: 14, backgroundColor: c.accentTint, padding: amazen.space(3), opacity: pressed ? 0.85 : 1 })}>
+              <BiometricIcon method={bio.method} size={22} color={c.accent} />
+              <AText variant="body" numberOfLines={1} style={{ flex: 1, color: c.accent, fontSize: 13.5 }}>{t('biometrics.backTo', { method: bio.label, name: ownerName })}</AText>
+            </Pressable>
+          ) : null}
+          {/* Why Face ID went: said once, where the password goes. */}
+          {bioNotice ? (
+            <View style={{ borderRadius: 14, backgroundColor: c.warnTint, padding: amazen.space(3) }}>
+              <AText variant="caption" tone="ink" style={{ lineHeight: 18 }}>{bioNotice}</AText>
+            </View>
+          ) : null}
+          <AuthField
+            label={t('auth.login.emailLabel')}
+            placeholder={t('auth.login.emailPlaceholder')}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            textContentType="username"
+            autoComplete="email"
+            value={email}
+            onChangeText={(v) => { setEmail(v); if (errors.email) setErrors({ ...errors, email: undefined }); }}
+            error={errors.email}
+          />
+          <AuthField
+            label={t('auth.login.passwordLabel')}
+            placeholder={t('auth.login.passwordPlaceholder')}
+            secure
+            textContentType="password"
+            autoComplete="password"
+            value={password}
+            onChangeText={(v) => { setPassword(v); if (errors.password) setErrors({ ...errors, password: undefined }); }}
+            onSubmitEditing={() => void handleLogin()}
+            returnKeyType="go"
+            error={errors.password}
+          />
+          <Pressable onPress={() => router.push(ROUTES.forgotPassword as Href)} hitSlop={8} accessibilityRole="link" style={{ alignSelf: 'flex-end', marginTop: -amazen.space(1) }}>
+            <AText variant="body" style={{ color: c.accent, fontSize: 13.5 }}>{t('auth.login.forgotPassword')}</AText>
+          </Pressable>
+          <PrimaryButton label={t('auth.login.submitButton')} loading={isLoading} onPress={() => void handleLogin()} />
+        </AuthCard>
+      )}
+
+      {/* Offered once, here — the only moment with both a live session to bind and a reason to care. */}
+      <JobSheet visible={offerBiometric} onClose={goHome} title={t('biometrics.enableTitle', { method: bio.label })}>
+        <View style={{ alignSelf: 'center', width: 64, height: 64, borderRadius: 20, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
+          <BiometricIcon method={bio.method} size={32} color={c.accent} />
         </View>
-      </SheetPanel>
-    </BlurSheet>
-    </Animated.View>
+        <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 21 }}>{t('biometrics.enableBody')}</AText>
+        <PrimaryButton label={t('biometrics.enable', { method: bio.label })} disabled={bio.busy} onPress={async () => { await bio.enroll(); goHome(); }} />
+        <SheetOption label={t('biometrics.notNow')} onPress={goHome} />
+      </JobSheet>
+    </AuthFrame>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingBottom: 50,
-    paddingHorizontal: SPACING.xxl,
-    borderBottomLeftRadius: 40,
-    borderBottomRightRadius: 40,
-    overflow: 'hidden',
-  },
-  orb: {
-    position: 'absolute',
-    borderRadius: 999,
-  },
-  orb1: {
-    top: -40,
-    right: -40,
-    width: 160,
-    height: 160,
-  },
-  orb2: {
-    bottom: -20,
-    left: -40,
-    width: 140,
-    height: 140,
-  },
-  orbGradient: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 999,
-  },
-  gridOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.03,
-    backgroundColor: 'transparent',
-  },
-  headerContent: {
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  logoContainer: {
-    marginBottom: SPACING.md,
-  },
-  tagline: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.slate500,
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-    marginTop: SPACING.xs,
-  },
-  divider: {
-    width: 40,
-    height: 3,
-    backgroundColor: COLORS.primary,
-    borderRadius: 2,
-    marginVertical: SPACING.xl,
-  },
-  welcomeText: {
-    fontSize: 26,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.white,
-    marginBottom: SPACING.sm,
-  },
-  subtitleText: {
-    fontSize: FONT_SIZE.lg,
-    color: COLORS.slate400,
-  },
-  formWrapper: {
-    flex: 1,
-    marginTop: -SPACING.xxl,
-  },
-  formCard: {
-    flex: 1,
-    marginHorizontal: SPACING.lg,
-    borderRadius: RADIUS.xl + 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 24,
-    elevation: 8,
-  },
-  scrollContent: {
-    padding: SPACING.xxl,
-  },
-  inputGroup: {
-    marginBottom: SPACING.xl,
-  },
-  label: {
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.semibold,
-    marginBottom: SPACING.sm + 2,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: RADIUS.md + 2,
-    borderWidth: 1.5,
-    height: 56,
-    overflow: 'hidden',
-  },
-  inputIconContainer: {
-    width: 52,
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRightWidth: 1,
-  },
-  input: {
-    flex: 1,
-    fontSize: FONT_SIZE.xl,
-    paddingHorizontal: SPACING.lg,
-  },
-  eyeButton: {
-    paddingHorizontal: SPACING.lg,
-    height: '100%',
-    justifyContent: 'center',
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: SPACING.sm,
-    gap: SPACING.xs + 2,
-  },
-  errorText: {
-    fontSize: FONT_SIZE.md,
-    color: COLORS.error,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  forgotPasswordButton: {
-    alignSelf: 'flex-end',
-    marginBottom: SPACING.lg,
-    marginTop: -SPACING.sm,
-  },
-  forgotPasswordText: {
-    fontSize: FONT_SIZE.base,
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  loginButton: {
-    marginTop: SPACING.sm,
-    borderRadius: RADIUS.md + 2,
-    overflow: 'hidden',
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  loginButtonDisabled: {
-    shadowOpacity: 0.1,
-  },
-  loginButtonGradient: {
-    flexDirection: 'row',
-    height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: SPACING.sm + 2,
-  },
-  loginButtonText: {
-    fontSize: 17,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.white,
-    letterSpacing: 0.3,
-  },
-  arrowContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  offerBody: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md, alignItems: 'center' },
-  offerIcon: { width: 62, height: 62, borderRadius: 19, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.lg },
-  offerTitle: { fontSize: FONT_SIZE.xxl, fontWeight: FONT_WEIGHT.bold, textAlign: 'center' },
-  offerText: { fontSize: FONT_SIZE.base, textAlign: 'center', marginTop: SPACING.sm, lineHeight: 21 },
-  offerPrimary: { alignSelf: 'stretch', backgroundColor: COLORS.primary, borderRadius: RADIUS.md, paddingVertical: 14, alignItems: 'center', marginTop: SPACING.xl },
-  offerPrimaryText: { color: COLORS.white, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.semibold },
-  offerGhost: { alignSelf: 'stretch', borderRadius: RADIUS.md, borderWidth: 1, paddingVertical: 14, alignItems: 'center', marginTop: SPACING.sm },
-  offerGhostText: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.medium },
-  scrollGrow: { flexGrow: 1 },
-  bioScreen: { flexGrow: 1, alignItems: 'center' },
-  bioGreeting: { alignItems: 'center', marginTop: SPACING.sm, marginBottom: SPACING.xxl, maxWidth: '100%' },
-  bioWelcome: { fontSize: 22, fontWeight: FONT_WEIGHT.bold, letterSpacing: -0.2 },
-  bioEmail: { fontSize: FONT_SIZE.base, marginTop: 2 },
-  bioCircle: {
-    width: 124,
-    height: 124,
-    borderRadius: 62,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bioTap: {
-    marginTop: SPACING.lg,
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primary,
-    textAlign: 'center',
-  },
-  bioSpacer: { flexGrow: 1, minHeight: SPACING.xxl },
-  bioPasswordButton: {
-    alignSelf: 'stretch',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderRadius: RADIUS.md + 2,
-    borderWidth: 1,
-  },
-  bioPasswordText: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold },
-  bioNotYou: { marginTop: SPACING.md, paddingVertical: SPACING.xs },
-  bioNotYouText: { fontSize: FONT_SIZE.base, textDecorationLine: 'underline', textAlign: 'center' },
-  bioBack: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.sm + 2,
-    paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.md + 2,
-    marginBottom: SPACING.xl,
-  },
-  bioBackText: { flex: 1, fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold, color: COLORS.primary },
-  bioNotice: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    padding: SPACING.md,
-    borderRadius: RADIUS.md,
-    marginBottom: SPACING.xl,
-  },
-  bioNoticeText: { flex: 1, fontSize: FONT_SIZE.sm, lineHeight: 18 },
-  securityContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: SPACING.xxl,
-    gap: SPACING.md,
-  },
-  securityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs + 2,
-  },
-  securityDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-  },
-  securityText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  createAccountContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: SPACING.xl,
-  },
-  createAccountText: {
-    fontSize: FONT_SIZE.base,
-  },
-  createAccountLink: {
-    fontSize: FONT_SIZE.base,
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  footer: {
-    paddingVertical: SPACING.xl,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: FONT_SIZE.base,
-  },
-  footerLink: {
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-});
