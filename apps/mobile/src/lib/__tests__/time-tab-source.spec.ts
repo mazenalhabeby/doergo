@@ -75,7 +75,7 @@ describe('words', () => {
     const get = (o: Record<string, unknown>, k: string) => k.split('.').reduce<unknown>((a, p) => (a as Record<string, unknown>)?.[p], o);
     const keys = new Set<string>();
     for (const f of [...TIME, 'components/worklog-sheet.tsx']) {
-      for (const m of read(f).matchAll(/t\('((?:time|worklog)\.[a-zA-Z.]+)'/g)) keys.add(m[1]);
+      for (const m of read(f).matchAll(/t\('((?:time|worklog|extraTime)\.[a-zA-Z.]+)'/g)) keys.add(m[1]);
     }
     expect(keys.size).toBeGreaterThan(30);
     for (const k of keys) {

@@ -84,18 +84,29 @@ export function TimeScreen() {
   });
   const watch = useShiftWatch(status, shift.refresh);
 
+  // Extra-time approvals are bought (shift_scheduling) and held by people who manage users.
+  const hasShiftScheduling = orgHasAddOn(user?.orgAddOns, 'shift_scheduling');
+  const canApproveExtraTime = !!user?.canManageUsers && hasShiftScheduling;
+
   /* ---------------- recent shifts + extra time ---------------- */
   const [recent, setRecent] = useState<TimeEntry[]>([]);
   const [overtime, setOvertime] = useState<OvertimeRequest | null>(null);
+  // How many requests wait on this person — only asked of somebody who can decide them.
+  const [waiting, setWaiting] = useState(0);
   const loadExtras = useCallback(async () => {
-    const [h, o] = await Promise.allSettled([attendanceApi.getHistory({ limit: 10 }), overtimeApi.getActive()]);
+    const [h, o, w] = await Promise.allSettled([
+      attendanceApi.getHistory({ limit: 10 }),
+      overtimeApi.getActive(),
+      canApproveExtraTime ? attendanceApi.getPendingExtraTime() : Promise.resolve([]),
+    ]);
+    if (w.status === 'fulfilled') setWaiting(w.value.length);
     if (h.status === 'fulfilled') {
       // ⚠️ A BARE ARRAY once unwrapped — see `attendanceApi.getHistory`.
       const v = h.value as unknown;
       setRecent(Array.isArray(v) ? (v as TimeEntry[]) : ((v as { data?: TimeEntry[] })?.data ?? []));
     }
     if (o.status === 'fulfilled') setOvertime(o.value ?? null);
-  }, []);
+  }, [canApproveExtraTime]);
   useLiveRefresh(loadExtras, null);
   // A clock-out adds a shift to the history; reload it when the shift changes.
   const shiftKey = `${status?.isClockedIn ? '1' : '0'}:${status?.currentEntry?.id ?? ''}`;
@@ -211,9 +222,6 @@ export function TimeScreen() {
     setRefreshing(false);
   };
 
-  // Extra-time approvals are bought (shift_scheduling) and held by people who manage users.
-  const hasShiftScheduling = orgHasAddOn(user?.orgAddOns, 'shift_scheduling');
-  const canApproveExtraTime = !!user?.canManageUsers && hasShiftScheduling;
 
   // Counted so far on the running shift — today's bar includes it.
   const runningMinutes = entry
@@ -281,6 +289,7 @@ export function TimeScreen() {
               Glyph={ApproveGlyph}
               label={t('shiftReminder.openEntryPoint')}
               hint={t('shiftReminder.openEntryPointDesc')}
+              badge={waiting}
               onPress={() => router.push('/extra-time' as Href)}
             />
           </Well>

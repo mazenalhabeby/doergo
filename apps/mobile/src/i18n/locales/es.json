@@ -3777,5 +3777,37 @@
       "sentAt": "Enviada",
       "withdraw": "Retirar la solicitud"
     }
+  },
+  "extraTime": {
+    "title": "Tiempo extra",
+    "emptyTitle": "Nada pendiente",
+    "emptyBody": "Cuando alguien pida tiempo extra, aparecerá aquí y recibirás una notificación.",
+    "waiting_one": "pendiente de ti",
+    "waiting_other": "pendientes de ti",
+    "askedSoFar": "pedido hasta ahora",
+    "stillWorking": "Sigue trabajando · {{count}}",
+    "stillWorkingShort": "Sigue trabajando",
+    "clockedOut": "Salida fichada · {{count}}",
+    "working": "Trabajando",
+    "left": "Salida fichada",
+    "inAt": "entrada {{time}}",
+    "endAt": "fin {{time}}",
+    "nowAt": "ahora {{time}}",
+    "outAt": "salida {{time}}",
+    "pastCounting": "después del fin, y sigue contando",
+    "pastLeft": "después del fin, al irse",
+    "approveTitle": "Tiempo extra para {{name}}",
+    "more": "15 minutos más",
+    "less": "15 minutos menos",
+    "untilNow": "Hasta ahora",
+    "untilLeft": "Hasta que se fue",
+    "shiftEnd": "Fin del turno",
+    "extra": "Extra",
+    "countsUntil": "Cuenta hasta",
+    "notNow": "Ahora no",
+    "rejectTitle": "¿Rechazar el tiempo extra de {{name}}?",
+    "rejectBody": "Su tiempo cuenta hasta el fin del turno, {{time}}. Se le avisa.",
+    "rejectBodyNoEnd": "Se le avisa.",
+    "keepWaiting": "Dejarlo pendiente"
   }
 }

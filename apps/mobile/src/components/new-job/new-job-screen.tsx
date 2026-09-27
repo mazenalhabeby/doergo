@@ -10,7 +10,7 @@ import { useImagePicker, type PickedImage } from '../../hooks/useImagePicker';
 import { locationsApi } from '../../lib/api';
 import { ROUTES } from '../../lib/constants';
 import { useResponsive } from '../../lib/responsive';
-import { Ground, AText, PrimaryButton, ScreenHeader, Well, useTabSafe } from '../amazen';
+import { Ground, AText, HeaderBack, PrimaryButton, ScreenHeader, Well, useTabSafe } from '../amazen';
 import { LocationSearchPicker } from '../location-search-picker';
 import { centeredContent } from '../screen-container';
 import { FilterChips } from '../jobs-list/jobs-controls';
@@ -151,17 +151,7 @@ export function NewJobScreen() {
         <ScreenHeader
           title={t('newJob.title')}
           style={wide ?? undefined}
-          leading={
-            <Pressable
-              onPress={back}
-              accessibilityRole="button"
-              accessibilityLabel={t('common.back')}
-              hitSlop={6}
-              style={({ pressed }) => ({ width: 43, height: 43, borderRadius: 22, backgroundColor: c.tile, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.75 : 1 })}
-            >
-              <AText variant="body" tone="strong" style={{ fontSize: 22, lineHeight: 26 }}>‹</AText>
-            </Pressable>
-          }
+          leading={<HeaderBack onPress={back} />}
         />
 
         <ScrollView

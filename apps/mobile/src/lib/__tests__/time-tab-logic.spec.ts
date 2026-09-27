@@ -117,3 +117,26 @@ describe('a shift\'s status on the row', () => {
     expect(statusOf({ status: 'CLOCKED_OUT', approvalStatus: 'REJECTED' } as never)).toBe('rejected');
   });
 });
+
+import { minutesPastEnd, suggestedExtra, stepExtra, EXTRA_MAX } from '../../components/time/time-logic';
+
+describe('extra time', () => {
+  const end = '2026-09-27T12:30:00.000Z';
+  it('past the end: up to now while working, up to the clock-out once left, zero with no end', () => {
+    expect(minutesPastEnd({ expectedClockOutAt: end }, new Date('2026-09-27T14:10:00.000Z'))).toBe(100);
+    expect(minutesPastEnd({ expectedClockOutAt: end, clockOutAt: '2026-09-27T13:50:00.000Z' }, new Date('2026-09-27T20:00:00.000Z'))).toBe(80);
+    expect(minutesPastEnd({ expectedClockOutAt: end }, new Date('2026-09-27T12:00:00.000Z'))).toBe(0);
+    expect(minutesPastEnd({ expectedClockOutAt: null }, new Date())).toBe(0);
+  });
+  it('the suggestion rounds UP to a quarter hour, at least 15, at most the cap', () => {
+    expect(suggestedExtra(100)).toBe(105);
+    expect(suggestedExtra(90)).toBe(90);
+    expect(suggestedExtra(0)).toBe(15);
+    expect(suggestedExtra(5000)).toBe(EXTRA_MAX);
+  });
+  it('steps stay inside the bounds', () => {
+    expect(stepExtra(15, -1)).toBe(15);
+    expect(stepExtra(EXTRA_MAX, 1)).toBe(EXTRA_MAX);
+    expect(stepExtra(30, 1)).toBe(45);
+  });
+});

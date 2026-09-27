@@ -255,3 +255,26 @@ export function ScreenHeader({
     </View>
   );
 }
+
+/**
+ * Back, for a header's `leading` slot — a round tile, the same size as the
+ * avatar opposite it, so the text between them is centred by construction.
+ *
+ * ⚠️ ONE OF THESE. New job drew its own and a second screen was about to copy
+ * it; two drawings of Back is how one screen's arrow ends up a pixel lower.
+ */
+export function HeaderBack({ onPress }: { onPress: () => void }) {
+  const { amazen } = useTheme();
+  const { t } = useTranslation();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={t('common.back')}
+      hitSlop={6}
+      style={({ pressed }) => ({ width: 43, height: 43, borderRadius: 22, backgroundColor: amazen.color.tile, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.75 : 1 })}
+    >
+      <AText variant="body" tone="strong" style={{ fontSize: 22, lineHeight: 26 }}>‹</AText>
+    </Pressable>
+  );
+}

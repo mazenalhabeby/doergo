@@ -3777,5 +3777,37 @@
       "sentAt": "Sent",
       "withdraw": "Withdraw the request"
     }
+  },
+  "extraTime": {
+    "title": "Extra time",
+    "emptyTitle": "Nothing waiting",
+    "emptyBody": "When somebody asks for extra time, it shows here and you get a notification.",
+    "waiting_one": "waiting for you",
+    "waiting_other": "waiting for you",
+    "askedSoFar": "asked for, so far",
+    "stillWorking": "Still working · {{count}}",
+    "stillWorkingShort": "Still working",
+    "clockedOut": "Clocked out · {{count}}",
+    "working": "Working",
+    "left": "Clocked out",
+    "inAt": "in {{time}}",
+    "endAt": "end {{time}}",
+    "nowAt": "now {{time}}",
+    "outAt": "out {{time}}",
+    "pastCounting": "past the end, and counting",
+    "pastLeft": "past the end when they left",
+    "approveTitle": "Extra time for {{name}}",
+    "more": "15 minutes more",
+    "less": "15 minutes less",
+    "untilNow": "Until now",
+    "untilLeft": "Until they left",
+    "shiftEnd": "Shift end",
+    "extra": "Extra",
+    "countsUntil": "Counts until",
+    "notNow": "Not now",
+    "rejectTitle": "Reject {{name}}’s extra time?",
+    "rejectBody": "Their time counts until the shift end, {{time}}. They are told.",
+    "rejectBodyNoEnd": "They are told.",
+    "keepWaiting": "Keep it waiting"
   }
 }

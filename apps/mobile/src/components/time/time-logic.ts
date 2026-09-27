@@ -182,3 +182,35 @@ export function statusOf(e: { status: string; approvalStatus: string }): 'approv
   if (String(e.approvalStatus) === 'REJECTED') return 'rejected';
   return 'waiting';
 }
+
+/* ------------------------------------------------------------------ */
+/* Extra time — what a leader is asked to approve                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Minutes past the shift's end: up to NOW while they are still working, up to
+ * the clock-out once they have left. Zero with no planned end — there is
+ * nothing to be past.
+ */
+export function minutesPastEnd(e: { expectedClockOutAt?: string | null; clockOutAt?: string | null }, now: Date): number {
+  if (!e.expectedClockOutAt) return 0;
+  const until = e.clockOutAt ? new Date(e.clockOutAt) : now;
+  return Math.max(0, Math.round((until.getTime() - new Date(e.expectedClockOutAt).getTime()) / 60_000));
+}
+
+/** The step the approve sheet moves in, and its bounds (the server takes 1–1440). */
+export const EXTRA_STEP = 15;
+export const EXTRA_MAX = 12 * 60;
+
+/**
+ * What the Approve button offers: the time past the end, rounded UP to the
+ * next quarter hour — "until now" in one tap — and never less than one step.
+ */
+export function suggestedExtra(pastMinutes: number): number {
+  return Math.min(EXTRA_MAX, Math.max(EXTRA_STEP, Math.ceil(pastMinutes / EXTRA_STEP) * EXTRA_STEP));
+}
+
+/** One step up or down, kept inside the bounds. */
+export function stepExtra(minutes: number, dir: 1 | -1): number {
+  return Math.min(EXTRA_MAX, Math.max(EXTRA_STEP, minutes + dir * EXTRA_STEP));
+}

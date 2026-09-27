@@ -3777,5 +3777,37 @@
       "sentAt": "Gesendet",
       "withdraw": "Antrag zurückziehen"
     }
+  },
+  "extraTime": {
+    "title": "Mehrarbeit",
+    "emptyTitle": "Nichts offen",
+    "emptyBody": "Wenn jemand Mehrarbeit beantragt, erscheint es hier und Sie erhalten eine Benachrichtigung.",
+    "waiting_one": "wartet auf Sie",
+    "waiting_other": "warten auf Sie",
+    "askedSoFar": "bisher beantragt",
+    "stillWorking": "Arbeitet noch · {{count}}",
+    "stillWorkingShort": "Arbeitet noch",
+    "clockedOut": "Ausgestempelt · {{count}}",
+    "working": "Arbeitet",
+    "left": "Ausgestempelt",
+    "inAt": "ab {{time}}",
+    "endAt": "Ende {{time}}",
+    "nowAt": "jetzt {{time}}",
+    "outAt": "aus {{time}}",
+    "pastCounting": "nach Schichtende, läuft weiter",
+    "pastLeft": "nach Schichtende, als die Person ging",
+    "approveTitle": "Mehrarbeit für {{name}}",
+    "more": "15 Minuten mehr",
+    "less": "15 Minuten weniger",
+    "untilNow": "Bis jetzt",
+    "untilLeft": "Bis zum Gehen",
+    "shiftEnd": "Schichtende",
+    "extra": "Zusätzlich",
+    "countsUntil": "Zählt bis",
+    "notNow": "Nicht jetzt",
+    "rejectTitle": "Mehrarbeit von {{name}} ablehnen?",
+    "rejectBody": "Die Zeit zählt bis zum Schichtende, {{time}}. Die Person wird informiert.",
+    "rejectBodyNoEnd": "Die Person wird informiert.",
+    "keepWaiting": "Offen lassen"
   }
 }
