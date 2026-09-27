@@ -3056,6 +3056,7 @@
     "expectedAt": "previsto {{time}}",
     "shiftWas": "turno {{from}}–{{to}}",
     "u": {
+      "on": "presente",
       "late": "di ritardo",
       "missed": "non è venuto",
       "left": "rimasti",
@@ -3064,6 +3065,7 @@
     },
     "message": "Scrivi a {{name}}",
     "tag": {
+      "in": "Presente",
       "late": "In ritardo",
       "missed": "Assente",
       "freeSoon": "Libero a breve",

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Reanimated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { Pressable, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
+import { FlatList, Pressable, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
@@ -11,7 +11,7 @@ import { AText, Eyebrow, CardSurface } from '../amazen';
 import { NotArrivedGlyph, HoursWaitingGlyph } from '../glyphs/crew-glyphs';
 import Svg, { Circle } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
-import { crewState, needsBySpace, rosteredCountOf, type Band, type CrewPerson, type CrewTile, type Ring } from './crew-state';
+import { crewState, needsBySpace, quietTiles, rosteredCountOf, type Band, type CrewPerson, type CrewTile, type QuietTile, type Ring, type TileBand } from './crew-state';
 import { useCrew } from './use-crew';
 import { GlyphTile } from './glyph-tile';
 import { usePitch } from '../../home/pitch';
@@ -157,7 +157,7 @@ export function CrewCard({ style }: { style?: StyleProp<ViewStyle> }) {
         ) : (
           /* Keyed by scope: a new workspace starts at its first tile, page 1 — and fades in. */
           <ScopeFade k={site ?? 'ALL'} slide>
-            <Rail key={site ?? 'ALL'} state={s} viewerId={user?.id} onOpen={openAttendance} />
+            <Rail key={site ?? 'ALL'} state={s} viewerId={user?.id} onOpen={openAttendance} now={data.at} />
           </ScopeFade>
         )}
 
@@ -205,7 +205,7 @@ const FADE_RIGHT = 36;
  * ⚠️ EVERY TILE SAYS ITS REASON IN A WORD — Late, Missed, Free soon, Over,
  * Break. The ring stays, but nobody has to learn what a dashed red ring means.
  */
-function Rail({ state: s, viewerId, onOpen }: { state: ReturnType<typeof crewState>; viewerId?: string; onOpen: () => void }) {
+function Rail({ state: s, viewerId, onOpen, now }: { state: ReturnType<typeof crewState>; viewerId?: string; onOpen: () => void; now: number }) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const c = amazen.color;
@@ -228,29 +228,43 @@ function Rail({ state: s, viewerId, onOpen }: { state: ReturnType<typeof crewSta
     : s.on === 0
       ? t('crew.say.noneIn', { list: parts.join(', '), defaultValue: `Nobody is in yet: ${parts.join(', ')}.` })
       : `${parts.join(', ')}.`;
-  const pages = tiles.length;
+  /* The decisions first, then everyone who is in — quietly. */
+  const quiet = useMemo(() => quietTiles(s.steady, now), [s.steady, now]);
+  const rail: Array<CrewTile | QuietTile> = useMemo(() => [...tiles, ...quiet], [tiles, quiet]);
+  const pages = rail.length;
 
   return (
     <View style={{ gap: amazen.space(3) }}>
       {/* ⚠️ A sentence says what matters; the number above it is the fact. */}
       <AText variant="body" tone={parts.length ? 'strong' : 'accent'} style={{ fontSize: 16, lineHeight: 22 }}>{sentence}</AText>
 
-      {tiles.length ? (
+      {rail.length ? (
         <View style={{ marginHorizontal: -pad }}>
-          <ScrollView
+          {/*
+            ⚠️ VIRTUALISED. A big site has hundreds on the clock; only the tiles
+            near the screen are drawn. Fixed tile width → `getItemLayout`, so
+            nothing is measured.
+          */}
+          <FlatList
             horizontal
+            data={rail}
+            keyExtractor={(tile) => `${tile.person.userId}:${tile.person.spaceId ?? ''}:${tile.band}`}
+            renderItem={({ item }) => <TileView tile={item} you={item.person.userId === viewerId} showPlace={s.unit !== 'people'} onPress={onOpen} />}
+            getItemLayout={(_, i) => ({ length: TILE + GAP, offset: pad + (TILE + GAP) * i, index: i })}
+            initialNumToRender={4}
+            maxToRenderPerBatch={4}
+            windowSize={3}
             showsHorizontalScrollIndicator={false}
             snapToInterval={TILE + GAP}
             decelerationRate="fast"
-            contentContainerStyle={{ gap: GAP, paddingHorizontal: pad }}
+            ItemSeparatorComponent={RailGap}
+            contentContainerStyle={{ paddingHorizontal: pad }}
             onScroll={(e) => setPage(Math.min(pages - 1, Math.max(0, Math.round(e.nativeEvent.contentOffset.x / (TILE + GAP)))))}
             scrollEventThrottle={32}
-          >
-            {tiles.map((tile) => <TileView key={`${tile.person.userId}:${tile.person.spaceId ?? ""}:${tile.band}`} tile={tile} you={tile.person.userId === viewerId} showPlace={s.unit !== 'people'} onPress={onOpen} />)}
-            {s.tilesOverflow > 0 ? (
-              <View style={{ width: 70, alignItems: 'center', justifyContent: 'center' }}><AText variant="h3" tone="muted">+{s.tilesOverflow}</AText></View>
+            ListFooterComponent={s.tilesOverflow > 0 ? (
+              <View style={{ width: 70, marginLeft: GAP, alignItems: 'center', justifyContent: 'center' }}><AText variant="h3" tone="muted">+{s.tilesOverflow}</AText></View>
             ) : null}
-          </ScrollView>
+          />
           {/* The fades: the well's own colour to transparent, over the rail's two ends. Touch passes through. */}
           <LinearGradient pointerEvents="none" colors={[c.well, `${c.well}00`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: FADE_LEFT }} />
@@ -259,7 +273,7 @@ function Rail({ state: s, viewerId, onOpen }: { state: ReturnType<typeof crewSta
         </View>
       ) : null}
 
-      {pages > 2 ? (
+      {pages > 2 && pages <= 12 ? (
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 4 }}>
           {Array.from({ length: pages }).map((_, i) => (
             <View key={i} style={{ width: i === page ? 14 : 5, height: 3, borderRadius: 2, backgroundColor: i === page ? c.accent : c.lineGlass }} />
@@ -267,16 +281,12 @@ function Rail({ state: s, viewerId, onOpen }: { state: ReturnType<typeof crewSta
         </View>
       ) : null}
 
-      {s.steady.length ? (
-        <AText variant="caption" tone="muted">
-          {t('crew.steadyCount', { count: s.steady.length, defaultValue: `+${s.steady.length} steady · nothing to decide` })}
-        </AText>
-      ) : null}
     </View>
   );
 }
 
-const TAG: Record<Band, { key: string; fallback: string }> = {
+const TAG: Record<TileBand, { key: string; fallback: string }> = {
+  in: { key: 'crew.tag.in', fallback: 'In' },
   late: { key: 'crew.tag.late', fallback: 'Late' },
   missed: { key: 'crew.tag.missed', fallback: 'Missed' },
   freeSoon: { key: 'crew.tag.freeSoon', fallback: 'Free soon' },
@@ -289,17 +299,21 @@ const TAG: Record<Band, { key: string; fallback: string }> = {
  * the span. ⚠️ The figure is time LEFT, not time worked; past 90 minutes it is
  * hours; a missed shift has no figure — they did not come.
  */
-function TileView({ tile, you, showPlace, onPress }: { tile: CrewTile; you: boolean; showPlace: boolean; onPress: () => void }) {
+const RailGap = () => <View style={{ width: GAP }} />;
+
+function TileView({ tile, you, showPlace, onPress }: { tile: CrewTile | QuietTile; you: boolean; showPlace: boolean; onPress: () => void }) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const clock = useTimeFormat().formatClock;
   const c = amazen.color;
   const p = tile.person;
-  const b = tile.band;
-  const tone = b === 'late' ? c.critical : b === 'missed' ? c.inkMuted : b === 'freeSoon' ? c.accent : c.warn;
-  const tint = b === 'late' ? c.criticalTint : b === 'missed' ? c.tile : b === 'freeSoon' ? c.accentTint : c.warnTint;
+  const b: TileBand = tile.band;
+  const quiet = b === 'in';
+  const tone = b === 'late' ? c.critical : b === 'missed' ? c.inkMuted : b === 'freeSoon' || quiet ? c.accent : c.warn;
+  const tint = b === 'late' ? c.criticalTint : b === 'missed' ? c.tile : b === 'freeSoon' || quiet ? c.accentTint : c.warnTint;
   const figure = b === 'missed' ? '—' : span(t, tile.minutes);
-  const unit = b === 'late' ? t('crew.u.late', { defaultValue: 'late' })
+  const unit = quiet ? t('crew.u.on', { defaultValue: 'on' })
+    : b === 'late' ? t('crew.u.late', { defaultValue: 'late' })
     : b === 'missed' ? t('crew.u.missed', { defaultValue: 'did not come' })
     : b === 'freeSoon' ? t('crew.u.left', { defaultValue: 'left' })
     : b === 'over' ? t('crew.u.over', { defaultValue: 'over' })
@@ -311,7 +325,11 @@ function TileView({ tile, you, showPlace, onPress }: { tile: CrewTile; you: bool
 
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${name}, ${t(TAG[b].key, { defaultValue: TAG[b].fallback })}, ${figure} ${unit}`}
-      style={({ pressed }) => ({ width: TILE, borderRadius: 20, padding: 12, backgroundColor: c.tile, gap: 2, opacity: pressed ? 0.85 : 1 })}>
+      style={({ pressed }) => ({
+        width: TILE, borderRadius: 20, padding: 12, gap: 2, opacity: pressed ? 0.85 : 1,
+        /* Quiet: an outline, not a fill — it needs nothing from you. */
+        backgroundColor: quiet ? 'transparent' : c.tile, borderWidth: quiet ? 1 : 0, borderColor: c.lineGlass,
+      })}>
       {/* ⚠️ The reason, in a word. */}
       <View style={{ alignSelf: 'flex-start', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, backgroundColor: tint, marginBottom: 8 }}>
         <AText variant="caption" numeric style={{ color: tone, fontSize: 9.5, letterSpacing: 1.1, textTransform: 'uppercase' }}>{t(TAG[b].key, { defaultValue: TAG[b].fallback })}</AText>

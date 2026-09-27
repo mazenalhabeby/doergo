@@ -3056,6 +3056,7 @@
     "expectedAt": "expected {{time}}",
     "shiftWas": "shift {{from}}–{{to}}",
     "u": {
+      "on": "on",
       "late": "late",
       "missed": "did not come",
       "left": "left",
@@ -3064,6 +3065,7 @@
     },
     "message": "Message {{name}}",
     "tag": {
+      "in": "In",
       "late": "Late",
       "missed": "Missed",
       "freeSoon": "Free soon",

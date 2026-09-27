@@ -31,7 +31,7 @@ describe('Crew widget — translations', () => {
     expect([...keys]).toEqual(expect.arrayContaining([
       'widgets.crew', 'crew.onTheClock', 'crew.offline', 'crew.toApprove', 'crew.tag.late', 'crew.tag.breakOver', 'pitch.crew', 'pitch.crewCalm',
     ]));
-    expect([...counted]).toEqual(expect.arrayContaining(['crew.toApprove', 'crew.needYou', 'pitch.crew', 'crew.steadyCount']));
+    expect([...counted]).toEqual(expect.arrayContaining(['crew.toApprove', 'crew.needYou', 'pitch.crew']));
   });
 
   for (const l of LOCALES) {

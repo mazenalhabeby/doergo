@@ -96,6 +96,12 @@ export type Ring =
   /** Not in. */
   | { kind: 'none' };
 
+/**
+ * `in`: on the clock and needing nothing — drawn AFTER the decisions, quietly.
+ * Not a `Band`: it is never counted as something that needs you.
+ */
+export type TileBand = Band | 'in';
+
 export interface CrewTile {
   person: CrewPerson;
   band: Band;
@@ -496,4 +502,26 @@ export function crewAsOf(people: CrewPerson[], at: number): CrewAsOf {
       };
     }),
   };
+}
+
+/**
+ * ⭐ EVERYONE WHO IS IN, AS QUIET TILES AFTER THE DECISIONS.
+ *
+ * "1/2 on the clock" and no way to see who — the steady people collapsed into
+ * a grey count. They now follow the tiles that need you, with their ring and
+ * how long they have been on. Already in hand (the card fetched everyone for
+ * the count): no request, and the rail only draws the tiles near the screen.
+ */
+export interface QuietTile {
+  person: CrewPerson;
+  band: 'in';
+  ring: Ring;
+  minutes: number;
+}
+
+export function quietTiles(steady: CrewPerson[], now: number): QuietTile[] {
+  return steady
+    .map((p) => ({ person: p, band: 'in' as const, ring: ringOf(p, null, now), minutes: Math.max(0, mins(at(p.clockInAt) ?? now, now)) }))
+    // Longest on first — the order a supervisor reads a floor in.
+    .sort((a, b) => b.minutes - a.minutes);
 }

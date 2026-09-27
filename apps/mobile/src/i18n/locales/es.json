@@ -3056,6 +3056,7 @@
     "expectedAt": "esperado {{time}}",
     "shiftWas": "turno {{from}}–{{to}}",
     "u": {
+      "on": "dentro",
       "late": "tarde",
       "missed": "no vino",
       "left": "quedan",
@@ -3064,6 +3065,7 @@
     },
     "message": "Escribir a {{name}}",
     "tag": {
+      "in": "Dentro",
       "late": "Tarde",
       "missed": "Faltó",
       "freeSoon": "Libre pronto",

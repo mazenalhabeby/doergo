@@ -3056,6 +3056,7 @@
     "expectedAt": "erwartet {{time}}",
     "shiftWas": "Schicht {{from}}–{{to}}",
     "u": {
+      "on": "da",
       "late": "zu spät",
       "missed": "nicht gekommen",
       "left": "übrig",
@@ -3064,6 +3065,7 @@
     },
     "message": "{{name}} schreiben",
     "tag": {
+      "in": "Da",
       "late": "Zu spät",
       "missed": "Verpasst",
       "freeSoon": "Bald frei",

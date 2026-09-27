@@ -237,3 +237,17 @@ describe('the five states', () => {
     expect(NOW - startOfLocalDay(NOW)).toBeLessThan(86_400_000);
   });
 });
+
+describe('everyone who is in is SEEN — quiet tiles after the decisions', () => {
+  const { quietTiles } = require('../../components/home/crew-state');
+  it('the steady crew become tiles, longest on first, never counted as needing you', () => {
+    const now = Date.parse('2026-09-27T09:43:00.000Z');
+    const q = quietTiles([
+      { userId: 'a', firstName: 'Mike', clockInAt: '2026-09-27T07:58:00.000Z' },
+      { userId: 'b', firstName: 'Sarah', clockInAt: '2026-09-27T06:00:00.000Z' },
+    ], now);
+    expect(q.map((x: { person: { firstName: string } }) => x.person.firstName)).toEqual(['Sarah', 'Mike']);
+    expect(q.every((x: { band: string }) => x.band === 'in')).toBe(true);
+    expect(q[1].minutes).toBe(105);
+  });
+});

@@ -3056,6 +3056,7 @@
     "expectedAt": "attendu {{time}}",
     "shiftWas": "poste {{from}}–{{to}}",
     "u": {
+      "on": "présent",
       "late": "de retard",
       "missed": "pas venu",
       "left": "restantes",
@@ -3064,6 +3065,7 @@
     },
     "message": "Écrire à {{name}}",
     "tag": {
+      "in": "Présent",
       "late": "En retard",
       "missed": "Absent",
       "freeSoon": "Bientôt libre",
