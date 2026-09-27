@@ -15,7 +15,8 @@ import { MoreGlyph, NavigateGlyph } from '../glyphs';
 import { flowIdOf, hasHour, stepLabelFor, stepsFor } from '../home/my-work';
 import { JadeButton } from '../job/job-dock';
 import { Pill, QuietButton, RoundButton, SectionLabel } from '../job/job-ui';
-import { decideNext, dockMode, heldUntilDue, moreOptions, needsReport, type MoreOption, type OpenSheet } from '../job/job-logic';
+import { decideNext, dockMode, formSheet, heldUntilDue, moreOptions, type MoreOption, type OpenSheet } from '../job/job-logic';
+import { formForMove, moveKind, type WorkflowWithForms } from '../job/step-form-logic';
 import { glyphFor } from '../job/step-glyph';
 import { openJobInMaps } from '../job/maps';
 import { refusalMessage, trackRouteFor, untrackRouteFor, type WriteStatus } from '../job/use-job-writes';
@@ -28,7 +29,7 @@ import { MoreSheet } from '../job/sheets/more-sheet';
  *
  * ⚠️ THE DECISION IS THE JOB PAGE'S (`decideNext`), and the write is the job
  * page's too — `writeStatus` is handed down by the route from `task/[id].tsx`.
- * A step that needs the page (Finish, Report an issue, Decline, Assign…)
+ * A step that needs the page (a step form, Report an issue, Decline, Assign…)
  * opens the job on that sheet instead of keeping a second copy of it here.
  */
 export function NextUp({
@@ -62,7 +63,8 @@ export function NextUp({
   // `null` when this phone does not hold the job's workflow: then the card only opens the job.
   const steps = stepsFor(task, flows);
   const flowId = flowIdOf(task);
-  const workflowName = (flowId ? (flows.get(flowId) as { name?: string | null } | undefined)?.name : null) ?? null;
+  const workflow = (flowId ? flows.get(flowId) : null) as WorkflowWithForms | null | undefined;
+  const workflowName = workflow?.name ?? null;
   const labelOf = useCallback((key: string) => stepLabelFor({ ...task, status: key as never }, flows, t as never), [task, flows, t]);
   const decision = steps ? decideNext(task.status, steps) : { primary: null, rest: [], resume: false };
   const target = decision.primary;
@@ -92,10 +94,15 @@ export function NextUp({
     }
   }, [task, tracking, writeStatus, toast, t, labelOf, onChanged]);
 
-  /** Blocked asks what is wrong and a report step opens Finish — both on the job page. Anything else just goes. */
+  /**
+   * The job page's rule (`moveKind`): a step whose form asks something opens
+   * the job on that form, Blocked asks what is wrong — both on the page.
+   * Anything else just goes.
+   */
   const go = (to: string) => {
-    if (to === 'BLOCKED') { onOpen('issue'); return; }
-    if (steps && needsReport(to, steps, workflowName)) { onOpen('finish'); return; }
+    const kind = moveKind(to, steps ? formForMove(workflow, steps, to, workflowName) : { form: null, source: null });
+    if (kind === 'issue') { onOpen('issue'); return; }
+    if (kind === 'form') { onOpen(formSheet(to)); return; }
     void step(to);
   };
 
@@ -113,6 +120,7 @@ export function NextUp({
     setMore(false);
     switch (o.kind) {
       case 'step': go(o.to); return;
+      case 'issue': go('BLOCKED'); return;
       case 'maps': openJobInMaps(task, 'show'); return;
       default: onOpen(o.kind); return;
     }

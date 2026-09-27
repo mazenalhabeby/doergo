@@ -2859,6 +2859,8 @@
       "CONFLICT": "La oficina cambió esto antes de que llegara tu cambio.",
       "default": "El servidor no lo aceptó.",
       "PHOTO_NOT_KEPT": "No se pudo guardar la foto en este teléfono. Vuelva a tomarla.",
+      "STEP_FORM_INVALID": "Faltan algunas respuestas que pide este paso o no se aceptaron.",
+      "STEP_FORM_FOREIGN_FILE": "Una foto o firma de estas respuestas no pertenece a este trabajo.",
       "PHOTO_REFUSED": "El servidor no aceptó esta foto.",
       "FILE_MISSING": "La foto ya no está en este teléfono, así que no se puede enviar.",
       "TASK_STATE_CONFLICT": "La oficina cambió esto antes de que llegara tu cambio.",
@@ -3542,6 +3544,38 @@
       "duration": "Tiempo en el trabajo",
       "completedAt": "Completado",
       "customer": "Firmado por"
+    },
+    "form": {
+      "counts": "{{required}} de {{total}} obligatorios",
+      "typeHere": "Escribe aquí…",
+      "namePlaceholder": "Nombre completo",
+      "pickDay": "Elige un día",
+      "page": {
+        "answers": "Detalles",
+        "photos": "Fotos",
+        "signoff": "Firma"
+      },
+      "error": {
+        "required": "Este campo es obligatorio.",
+        "wrong_type": "Introduce un número, como 12 o 12,5.",
+        "too_long": "Demasiado largo: como máximo {{max}} caracteres.",
+        "too_many": "Demasiadas: como máximo {{max}} fotos.",
+        "not_an_option": "Elige una de las opciones.",
+        "out_of_range": "Ese número es demasiado grande.",
+        "invalid_date": "Elige un día del calendario.",
+        "invalid_file": "Este archivo no se aceptó. Añádelo de nuevo.",
+        "unknown_field": "Este paso ya no pide esto. Cierra el formulario e inténtalo de nuevo.",
+        "not_object": "No se pudieron leer las respuestas. Inténtalo de nuevo.",
+        "invalid": "Algunas respuestas no se aceptaron. Revisa el formulario e inténtalo de nuevo."
+      }
+    },
+    "submissions": {
+      "title": "Informes",
+      "offline": "Los informes necesitan señal para cargarse.",
+      "byAt": "{{name}} · {{when}}",
+      "empty": "No se rellenó nada.",
+      "photo": "Foto",
+      "signed": "Firmado"
     },
     "sign": {
       "needed": "Este paso necesita una firma.",

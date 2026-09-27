@@ -59,9 +59,11 @@ describe('the job page — every popup is the one sheet', () => {
     const page = read(path.join(JOB, 'job-page.tsx'));
     expect(page.match(/useState<SheetKind \| null>/g)?.length).toBe(1);
     // Each sheet is visible on its own kind.
-    for (const kind of ['more', 'issue', 'decline', 'cancel', 'assign', 'edit', 'finish', 'sign', 'delete']) {
+    for (const kind of ['more', 'issue', 'decline', 'cancel', 'assign', 'edit', 'sign', 'delete']) {
       expect(page).toContain(`visible={sheet === '${kind}'}`);
     }
+    // The step form is visible on its kind AND only while there is a form to draw.
+    expect(page).toContain(`visible={sheet === 'form' && !!activeForm}`);
   });
 
   it('the signature pad is drawn in place, not in a modal of its own', () => {
@@ -130,7 +132,7 @@ describe('the job page — the server pieces it uses', () => {
   });
 
   it('reads a finished report from GET /tasks/:id/report, and "none" is null', () => {
-    const get = reports.slice(reports.indexOf('getByTask'), reports.indexOf('completeTask'));
+    const get = reports.slice(reports.indexOf('getByTask'));
     expect(get).toMatch(/\/tasks\/\$\{taskId\}\/report/);
     expect(get).toMatch(/typeof r\.summary === 'string'/);
   });

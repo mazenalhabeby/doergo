@@ -149,7 +149,7 @@ export function JobsScreen({
 
   const open = useCallback((task: { id: string }, sheet?: OpenSheet) => {
     if (r.isSplit) { setSelected({ id: task.id, sheet: sheet ?? null }); return; }
-    router.push((sheet ? `/task/${task.id}?sheet=${sheet}` : ROUTES.taskDetail(task.id)) as Href);
+    router.push((sheet ? `/task/${task.id}?sheet=${encodeURIComponent(sheet)}` : ROUTES.taskDetail(task.id)) as Href);
   }, [r.isSplit]);
 
   const labelFor = useCallback((task: ListTask) => {

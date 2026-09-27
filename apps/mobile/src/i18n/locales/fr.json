@@ -2859,6 +2859,8 @@
       "CONFLICT": "Le bureau a modifié cela avant l'arrivée de votre modification.",
       "default": "Le serveur ne l'a pas accepté.",
       "PHOTO_NOT_KEPT": "La photo n'a pas pu être enregistrée sur ce téléphone. Reprenez-la.",
+      "STEP_FORM_INVALID": "Certaines réponses demandées par cette étape manquent ou n'ont pas été acceptées.",
+      "STEP_FORM_FOREIGN_FILE": "Une photo ou une signature de ces réponses n'appartient pas à ce travail.",
       "PHOTO_REFUSED": "Le serveur n'a pas accepté cette photo.",
       "FILE_MISSING": "La photo n'est plus sur ce téléphone, elle ne peut donc pas être envoyée.",
       "TASK_STATE_CONFLICT": "Le bureau a modifié cela avant l'arrivée de votre modification.",
@@ -3542,6 +3544,38 @@
       "duration": "Temps sur l’intervention",
       "completedAt": "Terminée le",
       "customer": "Signé par"
+    },
+    "form": {
+      "counts": "{{required}} sur {{total}} obligatoires",
+      "typeHere": "Saisissez ici…",
+      "namePlaceholder": "Nom complet",
+      "pickDay": "Choisir un jour",
+      "page": {
+        "answers": "Détails",
+        "photos": "Photos",
+        "signoff": "Signature"
+      },
+      "error": {
+        "required": "Ce champ est obligatoire.",
+        "wrong_type": "Saisissez un nombre, par exemple 12 ou 12,5.",
+        "too_long": "Trop long — {{max}} caractères au maximum.",
+        "too_many": "Trop de photos — {{max}} au maximum.",
+        "not_an_option": "Choisissez une des options.",
+        "out_of_range": "Ce nombre est trop grand.",
+        "invalid_date": "Choisissez un jour dans le calendrier.",
+        "invalid_file": "Ce fichier n'a pas été accepté. Ajoutez-le à nouveau.",
+        "unknown_field": "Cette étape ne le demande plus. Fermez le formulaire et réessayez.",
+        "not_object": "Les réponses n'ont pas pu être lues. Réessayez.",
+        "invalid": "Certaines réponses n'ont pas été acceptées. Vérifiez le formulaire et réessayez."
+      }
+    },
+    "submissions": {
+      "title": "Rapports",
+      "offline": "Les rapports ont besoin de réseau pour se charger.",
+      "byAt": "{{name}} · {{when}}",
+      "empty": "Rien n'a été rempli.",
+      "photo": "Photo",
+      "signed": "Signé"
     },
     "sign": {
       "needed": "Cette étape demande une signature.",

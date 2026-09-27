@@ -2859,6 +2859,8 @@
       "CONFLICT": "The office changed this before your change arrived.",
       "default": "The server didn't accept this.",
       "PHOTO_NOT_KEPT": "The photo couldn't be saved on this phone. Try taking it again.",
+      "STEP_FORM_INVALID": "Some answers this step asks for are missing or weren't accepted.",
+      "STEP_FORM_FOREIGN_FILE": "A photo or signature in these answers doesn't belong to this job.",
       "PHOTO_REFUSED": "The server didn't accept this photo.",
       "FILE_MISSING": "The photo is no longer on this phone, so it can't be sent.",
       "TASK_STATE_CONFLICT": "The office changed this before your change arrived.",
@@ -3542,6 +3544,38 @@
       "duration": "Time on the job",
       "completedAt": "Completed",
       "customer": "Signed by"
+    },
+    "form": {
+      "counts": "{{required}} of {{total}} required",
+      "typeHere": "Type here…",
+      "namePlaceholder": "Full name",
+      "pickDay": "Pick a day",
+      "page": {
+        "answers": "Details",
+        "photos": "Photos",
+        "signoff": "Sign-off"
+      },
+      "error": {
+        "required": "This one is required.",
+        "wrong_type": "Enter a number, like 12 or 12.5.",
+        "too_long": "Too long — at most {{max}} characters.",
+        "too_many": "Too many — at most {{max}} photos.",
+        "not_an_option": "Pick one of the choices.",
+        "out_of_range": "That number is too large.",
+        "invalid_date": "Pick a day from the calendar.",
+        "invalid_file": "This file wasn't accepted. Add it again.",
+        "unknown_field": "This step no longer asks this. Close the form and try again.",
+        "not_object": "The answers couldn't be read. Try again.",
+        "invalid": "Some answers weren't accepted. Check the form and try again."
+      }
+    },
+    "submissions": {
+      "title": "Reports",
+      "offline": "The reports need a signal to load.",
+      "byAt": "{{name}} · {{when}}",
+      "empty": "Nothing was filled in.",
+      "photo": "Photo",
+      "signed": "Signed"
     },
     "sign": {
       "needed": "This step needs a signature.",

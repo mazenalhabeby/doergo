@@ -27,8 +27,9 @@ import { useJob } from './use-job';
 import { useJobWrites, type WriteStatus } from './use-job-writes';
 import {
   checklistMode, checklistStep, decideNext, dockMode, heldUntilDue, isCanceledStatus, isClosedStatus,
-  moreOptions, needsReport, stepPosition, formatOnJob, type MoreOption, type OpenSheet,
+  formSheetTarget, moreOptions, needsReport, stepPosition, formatOnJob, type MoreOption, type OpenSheet,
 } from './job-logic';
+import { formForMove, moveKind, workflowAsks } from './step-form-logic';
 import { glyphFor } from './step-glyph';
 import { openJobInMaps } from './maps';
 import { JobHeader, JobTopRow } from './job-header';
@@ -39,6 +40,7 @@ import { JobFields } from './job-fields';
 import { JobFiles, type JobFile } from './job-files';
 import { JobActivity } from './job-activity';
 import { JobReport } from './job-report';
+import { JobSubmissions } from './job-submissions';
 import { JobDock, type DockPrimary } from './job-dock';
 import { Banner, QuietButton, SectionLabel } from './job-ui';
 import { MoreSheet } from './sheets/more-sheet';
@@ -46,10 +48,17 @@ import { ReportIssueSheet } from './sheets/report-issue-sheet';
 import { JobConfirmSheet } from './sheets/confirm-sheet';
 import { AssignSheet } from './sheets/assign-sheet';
 import { EditSheet } from './sheets/edit-sheet';
-import { FinishSheet } from './sheets/finish-sheet';
+import { StepFormSheet } from './sheets/step-form-sheet';
 import { SignSheet } from './sheets/sign-sheet';
 
-type SheetKind = 'more' | 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'finish' | 'sign' | 'delete';
+type SheetKind = 'more' | 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'form' | 'sign' | 'delete';
+
+/** A link's sheet as the page's own: `finish` and `form:<STEP>` are both the step form. */
+function sheetOf(open: OpenSheet | null): SheetKind | null {
+  if (!open) return null;
+  if (open === 'finish' || formSheetTarget(open)) return 'form';
+  return open as Exclude<OpenSheet, 'finish' | `form:${string}`>;
+}
 
 const ACTIVE: string[] = [TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED];
 
@@ -127,7 +136,14 @@ export function JobPage({
   );
 
   const writes = useJobWrites(job, { writeStatus, onClosed: close, labelOf });
-  const [sheet, setSheet] = useState<SheetKind | null>(initialSheet);
+  const [sheet, setSheet] = useState<SheetKind | null>(sheetOf(initialSheet));
+  /*
+    The step the form sheet moves the job to — null = the dock's own next step
+    (an older `?sheet=finish` link). Field errors from a refused move keep the
+    sheet open on the fields they name.
+  */
+  const [formTo, setFormTo] = useState<string | null>(formSheetTarget(initialSheet));
+  const [formErrors, setFormErrors] = useState<Record<string, string> | null>(null);
   const [deleting, setDeleting] = useState<JobFile | null>(null);
   const closeSheet = useCallback(() => setSheet(null), []);
 
@@ -141,10 +157,13 @@ export function JobPage({
   const seenTo = useRef(0);
   const activityY = useRef<number | null>(null);
   const reportY = useRef<number | null>(null);
+  const submissionsY = useRef<number | null>(null);
   const closedRef = useRef(false);
+  const asksRef = useRef(false);
   const check = useCallback(() => {
     if (activityY.current != null && seenTo.current >= activityY.current) job.loadEvents();
     if (closedRef.current && reportY.current != null && seenTo.current >= reportY.current) job.loadReport();
+    if (asksRef.current && submissionsY.current != null && seenTo.current >= submissionsY.current) job.loadSubmissions();
   }, [job]);
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset, layoutMeasurement } = e.nativeEvent;
@@ -229,10 +248,22 @@ export function JobPage({
   const openMaps = () => openJobInMaps(task, 'show');
   const navigate = () => openJobInMaps(task, 'navigate');
 
-  /** Take the job to a step: Blocked asks what is wrong, a report step opens Finish, anything else just goes. */
+  /**
+   * Take the job to a step: a step whose form asks something opens the step
+   * form (the old field-service report included — it is the preset a legacy
+   * report step asks), Blocked asks what is wrong (unless it has a form of its
+   * own), anything else just goes.
+   */
   const go = (to: string) => {
-    if (to === TaskStatus.BLOCKED) { setSheet('issue'); return; }
-    if (needsReport(to, steps, workflowName)) { setSheet('finish'); return; }
+    const kind = moveKind(to, formForMove(task.workflow, steps, to, workflowName));
+    if (kind === 'issue') { setSheet('issue'); return; }
+    if (kind === 'form') {
+      writes.resetFormFiles();
+      setFormErrors(null);
+      setFormTo(to);
+      setSheet('form');
+      return;
+    }
     setSheet(null);
     void writes.changeStatus(to);
   };
@@ -240,7 +271,7 @@ export function JobPage({
   const pick = (o: MoreOption) => {
     switch (o.kind) {
       case 'step': go(o.to); return;
-      case 'issue': setSheet('issue'); return;
+      case 'issue': go(TaskStatus.BLOCKED); return;
       case 'decline': setSheet('decline'); return;
       case 'maps': setSheet(null); openMaps(); return;
       case 'assign': setSheet('assign'); return;
@@ -322,6 +353,20 @@ export function JobPage({
   const stepSignature = doingTheWork && !closed && hasCapability(caps, 'signature');
   const reportShown = closed && !canceled;
 
+  /* The step form being answered — the step it moves to, and what that step asks. */
+  const formTarget = formTo ?? decision.primary;
+  const activeForm = formTarget ? formForMove(task.workflow, steps, formTarget, workflowName).form : null;
+  /*
+    Reports: asked for only when the workflow asks something somewhere and the
+    job has moved past its first step — then read when the section is seen.
+  */
+  const asks = workflowAsks(task.workflow, steps, workflowName);
+  const submissionsShown = asks && (position.index !== 0 || closed || blocked);
+  asksRef.current = submissionsShown;
+  const submissionList = Array.isArray(job.submissions) ? job.submissions : null;
+  // An older job's service report says "none" only where no step form could have stood in for it.
+  const reportSaysNone = !asks || (submissionList !== null && submissionList.length === 0);
+
   const bottom = embedded ? 0 : insets.bottom;
   const iosKeyboard = Platform.OS === 'ios' ? keyboard : 0;
 
@@ -399,7 +444,9 @@ export function JobPage({
           onDelete={(f) => { setDeleting(f); setSheet('delete'); }}
         />
 
-        {reportShown ? <JobReport report={job.report} onLayout={at(reportY)} /> : null}
+        {submissionsShown ? <JobSubmissions submissions={job.submissions} labelOf={labelOf} onLayout={at(submissionsY)} /> : null}
+
+        {reportShown ? <JobReport report={job.report} sayNone={reportSaysNone} onLayout={at(reportY)} /> : null}
 
         <JobActivity
           comments={job.comments}
@@ -489,12 +536,20 @@ export function JobPage({
         busy={writes.busy}
         onSave={writes.edit}
       />
-      <FinishSheet
-        visible={sheet === 'finish'}
+      <StepFormSheet
+        visible={sheet === 'form' && !!activeForm}
         onClose={closeSheet}
-        onJobText={task.acceptedAt ? t('job.timer.onJob', { time: formatOnJob(job.elapsed) }) : null}
+        title={formTarget ? labelOf(formTarget) : ''}
+        form={activeForm}
         busy={writes.busy}
-        onComplete={(report, photos) => writes.complete({ ...report, workDuration: job.elapsed }, photos)}
+        serverErrors={formErrors}
+        onSubmit={async (draft, signatures) => {
+          if (!formTarget || !activeForm) return false;
+          setFormErrors(null);
+          const res = await writes.moveWithForm(formTarget, activeForm, draft, signatures);
+          if (!res.ok) setFormErrors(res.fieldErrors ?? null);
+          return res.ok;
+        }}
       />
       <SignSheet
         visible={sheet === 'sign'}

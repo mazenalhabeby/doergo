@@ -46,9 +46,12 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     calls: {
       'tasksApi.addComment': 1,
       'tasksApi.declineTask': 1,
-      'reportsApi.completeTask': 1,
-      // The photo uploaders are only reached from the completeTask/attach fallbacks.
-      'reportAttachmentsApi.confirmUpload': 1,
+      /*
+        ONE uploader (`sendFile`) for a photo added to the job and for a step
+        form's photos and signatures. The old finish path (`reportsApi.completeTask`
+        + report photos) is gone: a step's report is its form, answered on the
+        status change itself.
+      */
       'taskAttachmentsApi.confirmUpload': 1,
     },
     why: FALLBACK,

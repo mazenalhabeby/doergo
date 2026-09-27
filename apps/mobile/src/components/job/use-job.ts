@@ -3,7 +3,7 @@ import { AppState } from 'react-native';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
 import { needsTravelEstimate, slotHeldBy } from '@hbcfield/shared/client';
-import { tasksApi, reportsApi, TaskStatus, type Comment, type ServiceReport, type Task, type TaskEvent } from '../../lib/api';
+import { tasksApi, reportsApi, TaskStatus, type Comment, type ServiceReport, type StepSubmission, type Task, type TaskEvent } from '../../lib/api';
 import { useAuth } from '../../contexts/auth-context';
 import { useSocketContext } from '../../contexts/socket-context';
 import { SocketEvents } from '../../lib/socket';
@@ -234,6 +234,29 @@ export function useJob(taskId: string) {
       .catch(() => setReport(knownOffline() ? 'unreachable' : null));
   }, [taskId]);
 
+  /* ---------------- the step forms it was moved with, on demand ---------------- */
+
+  /**
+   * `GET /tasks/:id/submissions` — the job's reports. Asked for only when the
+   * Reports section comes on screen, like the service report above.
+   * `undefined` = not asked yet; 'unreachable' = nothing answered and nothing kept.
+   */
+  const [submissions, setSubmissions] = useState<StepSubmission[] | undefined | 'unreachable'>(undefined);
+  const submissionsAsked = useRef(false);
+  const loadSubmissions = useCallback(() => {
+    if (!taskId || submissionsAsked.current) return;
+    submissionsAsked.current = true;
+    tasksApi.getSubmissions(taskId)
+      .then(setSubmissions)
+      .catch(() => setSubmissions(knownOffline() ? 'unreachable' : []));
+  }, [taskId]);
+  /** A move with a form went through on this phone: read them again — but only if they were ever read. */
+  const reloadSubmissions = useCallback(() => {
+    if (!submissionsAsked.current) return;
+    submissionsAsked.current = false;
+    loadSubmissions();
+  }, [loadSubmissions]);
+
   /*
     ⭐ ONE JOB AT A TIME, KNOWN BEFORE THE TAP. The server refuses accepting a
     job while another of the member's holds the slot; the page reads the
@@ -260,6 +283,7 @@ export function useJob(taskId: string) {
     elapsed, hasArrived, here, tracking,
     events, loadEvents, localEvents, pushLocalEvent,
     report, loadReport,
+    submissions, loadSubmissions, reloadSubmissions,
   };
 }
 

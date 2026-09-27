@@ -2859,6 +2859,8 @@
       "CONFLICT": "L'ufficio ha modificato questo prima che arrivasse la tua modifica.",
       "default": "Il server non l'ha accettato.",
       "PHOTO_NOT_KEPT": "Non è stato possibile salvare la foto su questo telefono. Scattala di nuovo.",
+      "STEP_FORM_INVALID": "Mancano alcune risposte richieste da questo passaggio o non sono state accettate.",
+      "STEP_FORM_FOREIGN_FILE": "Una foto o una firma di queste risposte non appartiene a questo lavoro.",
       "PHOTO_REFUSED": "Il server non ha accettato questa foto.",
       "FILE_MISSING": "La foto non è più su questo telefono, quindi non può essere inviata.",
       "TASK_STATE_CONFLICT": "L'ufficio ha modificato questo prima che arrivasse la tua modifica.",
@@ -3542,6 +3544,38 @@
       "duration": "Tempo sul lavoro",
       "completedAt": "Concluso",
       "customer": "Firmato da"
+    },
+    "form": {
+      "counts": "{{required}} di {{total}} obbligatori",
+      "typeHere": "Scrivi qui…",
+      "namePlaceholder": "Nome completo",
+      "pickDay": "Scegli un giorno",
+      "page": {
+        "answers": "Dettagli",
+        "photos": "Foto",
+        "signoff": "Firma"
+      },
+      "error": {
+        "required": "Questo campo è obbligatorio.",
+        "wrong_type": "Inserisci un numero, ad esempio 12 o 12,5.",
+        "too_long": "Troppo lungo: al massimo {{max}} caratteri.",
+        "too_many": "Troppe: al massimo {{max}} foto.",
+        "not_an_option": "Scegli una delle opzioni.",
+        "out_of_range": "Questo numero è troppo grande.",
+        "invalid_date": "Scegli un giorno dal calendario.",
+        "invalid_file": "Questo file non è stato accettato. Aggiungilo di nuovo.",
+        "unknown_field": "Questo passaggio non lo chiede più. Chiudi il modulo e riprova.",
+        "not_object": "Non è stato possibile leggere le risposte. Riprova.",
+        "invalid": "Alcune risposte non sono state accettate. Controlla il modulo e riprova."
+      }
+    },
+    "submissions": {
+      "title": "Rapporti",
+      "offline": "I rapporti hanno bisogno di segnale per caricarsi.",
+      "byAt": "{{name}} · {{when}}",
+      "empty": "Non è stato compilato nulla.",
+      "photo": "Foto",
+      "signed": "Firmato"
     },
     "sign": {
       "needed": "Questo passo richiede una firma.",

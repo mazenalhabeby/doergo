@@ -179,17 +179,35 @@ export function moreOptions(input: {
 }
 
 /**
- * A sheet another screen may open the job page on — `/task/:id?sheet=finish`.
+ * A sheet another screen may open the job page on — `/task/:id?sheet=…`.
  * The Jobs tab hands over here for the steps that live on the page. Anything
  * else in the parameter is ignored: a link must never open a sheet the page
  * does not offer from its own buttons.
+ *
+ * `form:<STEP>` opens the step form for moving the job to that step (Next up
+ * hands a step with a form over this way). `finish` is the older link and
+ * means the same for the dock's own next step.
  */
-export type OpenSheet = 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'finish';
-const OPEN_SHEETS: readonly OpenSheet[] = ['issue', 'decline', 'cancel', 'assign', 'edit', 'finish'];
+export type OpenSheet = 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'finish' | `form:${string}`;
+const OPEN_SHEETS: readonly string[] = ['issue', 'decline', 'cancel', 'assign', 'edit', 'finish'];
+const FORM_SHEET = /^form:([A-Za-z0-9_-]{1,64})$/;
 
 export function parseOpenSheet(v: unknown): OpenSheet | null {
   const one = Array.isArray(v) ? v[0] : v;
-  return typeof one === 'string' && (OPEN_SHEETS as readonly string[]).includes(one) ? (one as OpenSheet) : null;
+  if (typeof one !== 'string') return null;
+  if (OPEN_SHEETS.includes(one) || FORM_SHEET.test(one)) return one as OpenSheet;
+  return null;
+}
+
+/** The sheet that asks a step's form. */
+export function formSheet(to: string): OpenSheet {
+  return `form:${to}`;
+}
+
+/** The step a `form:<STEP>` sheet moves to; null for any other sheet. */
+export function formSheetTarget(sheet: OpenSheet | null | undefined): string | null {
+  const m = FORM_SHEET.exec(sheet ?? '');
+  return m ? m[1]! : null;
 }
 
 /* ---------------- dates ---------------- */
@@ -262,35 +280,6 @@ export async function tickOptimistic(
     apply((items) => withTick(items, id, !value));
     return false;
   }
-}
-
-/* ---------------- finishing ---------------- */
-
-export interface FinishDraft {
-  summary: string;
-  details: string;
-  customerName: string;
-  techSigned: boolean;
-  customerSigned: boolean;
-}
-
-export const FINISH_STEPS = 3;
-
-/** Can the member move on from this step of "Finish the job"? */
-export function finishCanAdvance(step: number, d: FinishDraft): boolean {
-  if (step === 0) return d.summary.trim().length > 0;
-  if (step === 1) return true; // photos are optional
-  return d.customerName.trim().length > 0 && d.techSigned && d.customerSigned;
-}
-
-/** What is still missing to complete — for the sentence under a disabled button. */
-export function finishMissing(d: FinishDraft): Array<'summary' | 'techSignature' | 'customerName' | 'customerSignature'> {
-  const out: Array<'summary' | 'techSignature' | 'customerName' | 'customerSignature'> = [];
-  if (!d.summary.trim()) out.push('summary');
-  if (!d.techSigned) out.push('techSignature');
-  if (!d.customerName.trim()) out.push('customerName');
-  if (!d.customerSigned) out.push('customerSignature');
-  return out;
 }
 
 /* ---------------- reporting an issue ---------------- */

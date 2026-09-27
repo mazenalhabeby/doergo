@@ -1,7 +1,14 @@
 import { fetchWithAuth } from './client';
-import type { CompleteTaskInput, ServiceReport } from './types';
+import type { ServiceReport } from './types';
 
-// Reports API - completing tasks with service reports
+/*
+  Reports API — READ ONLY.
+
+  A job is no longer closed with `POST /tasks/:id/complete`: a step's report is
+  its step form, answered on the move itself (`PATCH /tasks/:id/status` with
+  `answers`, see `workflows/step-form`). What stays is reading the service
+  report an older job was closed with.
+*/
 export const reportsApi = {
   /**
    * The service report a finished job was closed with — `GET /tasks/:id/report`.
@@ -14,35 +21,5 @@ export const reportsApi = {
     const result = await fetchWithAuth<unknown>(`/tasks/${taskId}/report`, { method: 'GET' });
     const r = result as Partial<ServiceReport> | null;
     return r && typeof r === 'object' && typeof r.summary === 'string' ? (r as ServiceReport) : null;
-  },
-
-  completeTask: async (taskId: string, input: CompleteTaskInput): Promise<ServiceReport> => {
-    return fetchWithAuth<ServiceReport>(`/tasks/${taskId}/complete`, {
-      method: 'POST',
-      body: JSON.stringify(input),
-    });
-  },
-};
-
-// Report Attachments API
-export const reportAttachmentsApi = {
-  getPresignedUrl: async (reportId: string, fileName: string, fileType: string): Promise<{ uploadUrl: string; fileKey: string; fileUrl: string; expiresIn: number }> => {
-    return fetchWithAuth(`/reports/${reportId}/attachments/presign`, {
-      method: 'POST',
-      body: JSON.stringify({ fileName, fileType }),
-    });
-  },
-
-  confirmUpload: async (reportId: string, data: { type: string; fileName: string; fileKey?: string; fileUrl?: string; fileType?: string; fileSize?: number; caption?: string }): Promise<any> => {
-    return fetchWithAuth(`/reports/${reportId}/attachments`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  delete: async (reportId: string, attachmentId: string): Promise<void> => {
-    return fetchWithAuth<void>(`/reports/${reportId}/attachments/${attachmentId}`, {
-      method: 'DELETE',
-    });
   },
 };

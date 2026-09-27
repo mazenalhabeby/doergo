@@ -2859,6 +2859,8 @@
       "CONFLICT": "Das Büro hat dies geändert, bevor Ihre Änderung ankam.",
       "default": "Der Server hat dies nicht übernommen.",
       "PHOTO_NOT_KEPT": "Das Foto konnte auf diesem Telefon nicht gespeichert werden. Bitte nehmen Sie es erneut auf.",
+      "STEP_FORM_INVALID": "Einige Angaben, die dieser Schritt verlangt, fehlen oder wurden nicht angenommen.",
+      "STEP_FORM_FOREIGN_FILE": "Ein Foto oder eine Unterschrift in diesen Angaben gehört nicht zu diesem Auftrag.",
       "PHOTO_REFUSED": "Der Server hat dieses Foto nicht angenommen.",
       "FILE_MISSING": "Das Foto ist nicht mehr auf diesem Telefon und kann daher nicht gesendet werden.",
       "TASK_STATE_CONFLICT": "Das Büro hat dies geändert, bevor Ihre Änderung ankam.",
@@ -3542,6 +3544,38 @@
       "duration": "Zeit am Auftrag",
       "completedAt": "Abgeschlossen",
       "customer": "Unterschrieben von"
+    },
+    "form": {
+      "counts": "{{required}} von {{total}} erforderlich",
+      "typeHere": "Hier eingeben…",
+      "namePlaceholder": "Vollständiger Name",
+      "pickDay": "Tag wählen",
+      "page": {
+        "answers": "Angaben",
+        "photos": "Fotos",
+        "signoff": "Abschluss"
+      },
+      "error": {
+        "required": "Dieses Feld ist erforderlich.",
+        "wrong_type": "Geben Sie eine Zahl ein, z. B. 12 oder 12,5.",
+        "too_long": "Zu lang — höchstens {{max}} Zeichen.",
+        "too_many": "Zu viele — höchstens {{max}} Fotos.",
+        "not_an_option": "Wählen Sie eine der Möglichkeiten.",
+        "out_of_range": "Diese Zahl ist zu groß.",
+        "invalid_date": "Wählen Sie einen Tag im Kalender.",
+        "invalid_file": "Diese Datei wurde nicht angenommen. Fügen Sie sie erneut hinzu.",
+        "unknown_field": "Dieser Schritt fragt das nicht mehr. Schließen Sie das Formular und versuchen Sie es erneut.",
+        "not_object": "Die Antworten konnten nicht gelesen werden. Versuchen Sie es erneut.",
+        "invalid": "Einige Antworten wurden nicht angenommen. Prüfen Sie das Formular und versuchen Sie es erneut."
+      }
+    },
+    "submissions": {
+      "title": "Berichte",
+      "offline": "Die Berichte brauchen eine Verbindung zum Laden.",
+      "byAt": "{{name}} · {{when}}",
+      "empty": "Es wurde nichts ausgefüllt.",
+      "photo": "Foto",
+      "signed": "Unterschrieben"
     },
     "sign": {
       "needed": "Für diesen Schritt ist eine Unterschrift nötig.",

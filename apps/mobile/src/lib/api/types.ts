@@ -336,6 +336,20 @@ export interface CompleteTaskInput {
   partsUsed?: PartUsedInput[];
 }
 
+/** One row of `GET /tasks/:id/submissions` — the answers a job was moved into a step with. */
+export interface StepSubmission {
+  id: string;
+  statusKey: string;
+  formVersion?: number;
+  /** The form as it was when answered — a later edit of the workflow does not rewrite an old report. */
+  form: unknown;
+  answers: Record<string, string | string[] | number | boolean>;
+  /** The photos and signatures the answers name, by attachment id, with signed links. */
+  files: Record<string, { id?: string; fileName?: string | null; url?: string | null; fileUrl?: string | null; mimeType?: string | null }>;
+  submittedAt: string;
+  submittedBy?: { id?: string; firstName?: string | null; lastName?: string | null } | null;
+}
+
 export interface ServiceReport {
   id: string;
   taskId: string;

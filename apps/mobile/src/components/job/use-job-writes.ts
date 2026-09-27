@@ -1,25 +1,38 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { StepForm, StepFormAnswers } from '@hbcfield/shared/client';
 import {
-  tasksApi, reportsApi, reportAttachmentsApi, taskAttachmentsApi, uploadToPresignedUrl, TaskStatus,
-  type CompleteTaskInput, type Task, type UpdateTaskInput,
+  tasksApi, taskAttachmentsApi, uploadToPresignedUrl, TaskStatus,
+  type Task, type UpdateTaskInput,
 } from '../../lib/api';
 import { useAuth } from '../../contexts/auth-context';
 import { useToast } from '../../island/island-context';
 import { useOffline } from '../../offline/offline-context';
 import { mergeAttachments, pendingAttachments } from '../../offline/tasks/overlay';
-import { addTaskComment, addTaskPhoto, completeTaskWithReport, declineTask, type ActionOutcome } from '../../offline/tasks/task-actions';
+import { addTaskComment, addTaskPhoto, declineTask, type ActionOutcome } from '../../offline/tasks/task-actions';
 import { taskDestination } from '../../offline/tasks/status-fix';
 import type { PickedImage } from '../../hooks/useImagePicker';
 import type { JobState, JobTask } from './use-job';
 import { refusalText } from '../../lib/distance';
+import { prepareStepForm, reasonFromAnswers, signatureFile, refusalFieldErrors, type DraftPhoto, type FormDraft } from './step-form-logic';
 
 /**
  * The one status write — `changeTaskStatus` through the outbox, with the GPS
  * fix taken by `takeStatusFix`. It lives on the SCREEN (`task/[id].tsx`) and is
  * handed in, so the screen stays the single place a status leaves the phone.
  */
-export type WriteStatus = (task: Task, to: string, reason?: string) => Promise<ActionOutcome>;
+export type WriteStatus = (task: Task, to: string, reason?: string, extras?: StatusExtras) => Promise<ActionOutcome>;
+
+/** What a move into a step with a form carries beside the status. */
+export interface StatusExtras {
+  /** The step form's answers — photo and signature values are attachment ids of this job. */
+  answers?: StepFormAnswers;
+  /** The queued `task.attachment` operations those files are, still unsent — the move waits for them. */
+  dependsOn?: string[];
+}
+
+/** How a move with a form ended: sent (or kept to send), or refused with the fields to point at. */
+export type FormMoveResult = { ok: true } | { ok: false; fieldErrors?: Record<string, string> };
 
 export interface Member { id: string; firstName: string; lastName: string }
 
@@ -58,8 +71,8 @@ export function untrackRouteFor(tracking: RouteTracking, task: Task, from: strin
 /**
  * Everything the job page WRITES.
  *
- * ⚠️ QUEUED WHERE A QUEUE EXISTS. Comments, photos, status, decline and the
- * finished report go through the offline engine first; the direct API call is
+ * ⚠️ QUEUED WHERE A QUEUE EXISTS. Comments, photos, status (with a step
+ * form's answers) and decline go through the offline engine first; the direct API call is
  * only the path for a build without it (`queued-writes-guard.spec` counts
  * them). Assign, edit, a checklist tick and deleting a file have no outbox
  * operation, so they are direct — and the page disables them with no signal.
@@ -69,7 +82,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
   const toast = useToast();
   const { user } = useAuth();
   const offline = useOffline();
-  const { task, setTask, setComments, setAttachments, pushLocalEvent, tracking, reload } = job;
+  const { task, setTask, setComments, setAttachments, pushLocalEvent, tracking, reloadSubmissions } = job;
   const { writeStatus, onClosed, labelOf } = deps;
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -210,31 +223,44 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
     });
   }, [offline.engine, task?.id, refreshAttachments]);
 
+  /**
+   * ONE file onto the job — queued where a queue exists (kept on the phone,
+   * sent when there is a signal), uploaded directly otherwise. A `data:` URL
+   * is a signature the pad drew. Returns the attachment's id and, while it is
+   * still unsent, the operation a move naming it must wait for.
+   */
+  const sendFile = useCallback(async (taskId: string, photo: DraftPhoto): Promise<{ id: string | null; waitFor: string | null; outcome: ActionOutcome }> => {
+    if (offline.engine && offline.files) {
+      const sent = await addTaskPhoto(offline.engine, offline.files, {
+        taskId,
+        fileName: photo.fileName,
+        mime: photo.mimeType,
+        width: photo.width,
+        height: photo.height,
+        ...(photo.uri.startsWith('data:') ? { base64: photo.uri, kind: 'signature' as const } : { uri: photo.uri }),
+      });
+      return { id: sent.id, waitFor: sent.state === 'done' ? null : sent.opId, outcome: sent.outcome };
+    }
+    const { uploadUrl, fileKey, fileUrl } = await taskAttachmentsApi.getPresignedUrl(taskId, photo.fileName, photo.mimeType);
+    await uploadToPresignedUrl(uploadUrl, photo.uri, photo.mimeType, () => undefined);
+    const saved = await taskAttachmentsApi.confirmUpload(taskId, {
+      fileName: photo.fileName, fileKey, fileUrl, fileType: photo.mimeType, fileSize: photo.fileSize,
+    });
+    return { id: typeof saved?.id === 'string' ? saved.id : null, waitFor: null, outcome: { kind: 'done', response: saved } };
+  }, [offline.engine, offline.files]);
+
+  const photoRefused = (outcome: { code?: string; message?: string }) =>
+    (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('offline.errors.PHOTO_REFUSED');
+
   const addPhotos = useCallback(async (photos: PickedImage[]) => {
     if (!task || photos.length === 0) return;
     setUploading(true);
     let queued = false;
     for (const photo of photos) {
       try {
-        if (offline.engine && offline.files) {
-          // Kept on the phone first, sent when there is a connection.
-          const { outcome } = await addTaskPhoto(offline.engine, offline.files, {
-            taskId: task.id,
-            fileName: photo.fileName,
-            mime: photo.mimeType,
-            width: photo.width,
-            height: photo.height,
-            ...(photo.uri.startsWith('data:') ? { base64: photo.uri, kind: 'signature' as const } : { uri: photo.uri }),
-          });
-          if (outcome.kind === 'refused') fail(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('offline.errors.PHOTO_REFUSED'));
-          if (outcome.kind === 'queued') queued = true;
-          continue;
-        }
-        const { uploadUrl, fileKey, fileUrl } = await taskAttachmentsApi.getPresignedUrl(task.id, photo.fileName, photo.mimeType);
-        await uploadToPresignedUrl(uploadUrl, photo.uri, photo.mimeType, () => undefined);
-        await taskAttachmentsApi.confirmUpload(task.id, {
-          fileName: photo.fileName, fileKey, fileUrl, fileType: photo.mimeType, fileSize: photo.fileSize,
-        });
+        const { outcome } = await sendFile(task.id, photo);
+        if (outcome.kind === 'refused') fail(t('common.error'), photoRefused(outcome));
+        if (outcome.kind === 'queued') queued = true;
       } catch {
         fail(t('common.error'), t('offline.errors.PHOTO_NOT_KEPT'));
       }
@@ -243,14 +269,11 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
     pushLocalEvent({ eventType: 'ATTACHMENT_ADDED', metadata: { count: photos.length }, pendingSync: queued });
     await refreshAttachments(task.id);
     setUploading(false);
-  }, [task, offline.engine, offline.files, toast, t, pushLocalEvent, refreshAttachments]);
+  }, [task, sendFile, toast, t, pushLocalEvent, refreshAttachments]);
 
   /** A signature drawn at a step, kept as a picture on the job. */
   const addSignature = useCallback(async (png: string) => {
-    await addPhotos([
-      // ⚠️ `mimeType`, not `fileType`: the upload reads `photo.mimeType`.
-      { uri: png, fileName: `signature_${Date.now()}.png`, mimeType: 'image/png', width: 600, height: 200, fileSize: 0 },
-    ]);
+    await addPhotos([signatureFile(png) as PickedImage]);
   }, [addPhotos]);
 
   const deleteAttachment = useCallback(async (attachmentId: string) => {
@@ -294,56 +317,81 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
     return ok;
   }, [changeStatus, addPhotos, toast, t]);
 
-  /* ---------------- finish the job ---------------- */
+  /* ---------------- a step with a form ---------------- */
 
-  const uploadReportPhotos = async (reportId: string, photos: PickedImage[], type: 'BEFORE' | 'AFTER') => {
-    for (const photo of photos) {
-      try {
-        const { uploadUrl, fileKey, fileUrl } = await reportAttachmentsApi.getPresignedUrl(reportId, photo.fileName, photo.mimeType);
-        await uploadToPresignedUrl(uploadUrl, photo.uri, photo.mimeType, () => undefined);
-        // The key is what the server stores; `fileUrl` still goes along for a server that predates keys.
-        await reportAttachmentsApi.confirmUpload(reportId, { type, fileName: photo.fileName, fileKey, fileUrl, fileType: photo.mimeType, fileSize: photo.fileSize });
-      } catch {
-        // A photo that did not upload does not undo the report.
-      }
-    }
-  };
+  /*
+    Files already sent for the sheet that is open, by the picture they are —
+    a move refused for a missing name must not upload the same six photos
+    again when it is sent a second time. Cleared once a move goes through.
+  */
+  const sentFiles = useRef(new Map<string, { id: string; waitFor: string | null }>());
 
-  const complete = useCallback(async (
-    input: CompleteTaskInput,
-    photos: { before: PickedImage[]; after: PickedImage[] },
-  ): Promise<boolean> => {
-    if (!task) return false;
+  /**
+   * Move the job into a step whose form asks something.
+   *
+   * ⚠️ FILES FIRST, THEN THE MOVE, IN THE JOB'S LANE. Every photo and each
+   * inked signature is queued as an attachment of the job (`addTaskPhoto`,
+   * a phone-made id); those ids ARE the answers; the status change carries
+   * them and waits for any file still unsent. Through the ONE status write
+   * (`writeStatus`, from the screen) — never a second road.
+   *
+   * A refusal of the answers (`STEP_FORM_INVALID`, `STEP_FORM_FOREIGN_FILE`)
+   * comes back as field errors, so the sheet stays open on them.
+   */
+  const moveWithForm = useCallback(async (
+    to: string,
+    form: StepForm,
+    draft: FormDraft,
+    signatures: Record<string, string>,
+  ): Promise<FormMoveResult> => {
+    if (!task) return { ok: false };
+    const from = task.status;
+    let tracked = false;
     try {
       setBusy(true);
-      if (offline.engine && offline.files) {
-        // The report, then its photos behind it — saved on the phone first.
-        const asPhoto = (side: 'BEFORE' | 'AFTER') => (p: PickedImage) => ({ uri: p.uri, fileName: p.fileName, mimeType: p.mimeType, width: p.width, height: p.height, side });
-        const { outcome } = await completeTaskWithReport(offline.engine, offline.files, {
-          taskId: task.id,
-          report: input,
-          photos: [...photos.before.map(asPhoto('BEFORE')), ...photos.after.map(asPhoto('AFTER'))],
-        });
-        if (outcome.kind === 'refused') { fail(t('common.error'), refusalText(outcome)); return false; }
-        await reload();
-        if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
-        else toast.success(t('job.finish.doneTitle'), t('job.finish.doneBody'));
-        return true;
+      const prepared = await prepareStepForm({
+        form, draft, signatures,
+        sent: sentFiles.current,
+        send: (file) => sendFile(task.id, file),
+      });
+      if (!prepared.ok) {
+        if (prepared.refused) fail(t('common.error'), photoRefused(prepared.refused));
+        return { ok: false, fieldErrors: prepared.fieldErrors };
       }
-      const report = await reportsApi.completeTask(task.id, input);
-      if (report?.id) {
-        await Promise.all([uploadReportPhotos(report.id, photos.before, 'BEFORE'), uploadReportPhotos(report.id, photos.after, 'AFTER')]);
+      const { answers, dependsOn, queuedFiles } = prepared;
+
+      trackRouteFor(tracking, task, from, to);
+      tracked = true;
+      const reason = to === TaskStatus.BLOCKED ? reasonFromAnswers(form, answers) : undefined;
+      const outcome = await writeStatus(task, to, reason, { answers, ...(dependsOn.length ? { dependsOn } : {}) });
+      if (outcome.kind === 'refused') {
+        untrackRouteFor(tracking, task, from, to);
+        tracked = false;
+        const fieldErrors = refusalFieldErrors(outcome, answers);
+        fail(refusalText(outcome));
+        return { ok: false, ...(fieldErrors ? { fieldErrors } : {}) };
       }
-      setTask(await tasksApi.getById(task.id) as JobTask);
-      toast.success(t('job.finish.doneTitle'), t('job.finish.doneBody'));
-      return true;
+      settle(task, to, outcome);
+      sentFiles.current.clear();
+      pushLocalEvent({ eventType: 'STATUS_CHANGED', metadata: { oldStatus: from, newStatus: to, reason }, pendingSync: outcome.kind === 'queued' });
+      if (outcome.kind === 'done') toast.success(labelOf(to), task.title);
+      // The photos and signatures are the job's files too.
+      if (form.fields.some((f) => (f.type === 'photos' || f.type === 'signature') && answers[f.id] !== undefined)) {
+        await refreshAttachments(task.id);
+      }
+      if (outcome.kind === 'done' && !queuedFiles) reloadSubmissions();
+      return { ok: true };
     } catch (err) {
-      fail(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToComplete'));
-      return false;
+      if (tracked) untrackRouteFor(tracking, task, from, to);
+      fail(err instanceof Error && err.message ? err.message : t('taskDetail.failedToUpdateStatus'));
+      return { ok: false };
     } finally {
       setBusy(false);
     }
-  }, [task, offline.engine, offline.files, refusalText, reload, setTask, toast, t]);
+  }, [task, tracking, writeStatus, sendFile, settle, pushLocalEvent, refreshAttachments, reloadSubmissions, refusalText, toast, labelOf, t]);
+
+  /** A sheet opened afresh starts with nothing sent. */
+  const resetFormFiles = useCallback(() => sentFiles.current.clear(), []);
 
   /* ---------------- overseeing ---------------- */
 
@@ -383,7 +431,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
     busy, uploading,
     notice, clearNotice: () => setNotice(null),
     changeStatus, cancelJob, addComment, addPhotos, addSignature, deleteAttachment,
-    decline, reportIssue, complete, assign, edit, refreshAttachments,
+    decline, reportIssue, moveWithForm, resetFormFiles, assign, edit, refreshAttachments,
   };
 }
 

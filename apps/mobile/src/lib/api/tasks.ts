@@ -1,6 +1,6 @@
 import { fetchWithAuth } from './client';
 import { buildUrlWithQuery, type StepFormAnswers } from '@hbcfield/shared/client';
-import type { Task, Comment, TaskEvent, CreateTaskInput, UpdateTaskInput, LocationUpdate, LocationResponse, LocationBatchUpdate, ChecklistItem } from './types';
+import type { StepSubmission, Task, Comment, TaskEvent, CreateTaskInput, UpdateTaskInput, LocationUpdate, LocationResponse, LocationBatchUpdate, ChecklistItem } from './types';
 
 export interface TasksListParams {
   status?: string;
@@ -130,6 +130,16 @@ export const tasksApi = {
 
   getTimeline: async (taskId: string): Promise<TaskEvent[]> => {
     return fetchWithAuth<TaskEvent[]>(`/tasks/${taskId}/timeline`, { method: 'GET' });
+  },
+
+  /**
+   * The step forms this job was moved through — its reports, each with the
+   * form as it was answered and signed links to its photos and signatures.
+   * Kept by the response cache, like the service report.
+   */
+  getSubmissions: async (taskId: string): Promise<StepSubmission[]> => {
+    const rows = await fetchWithAuth<unknown>(`/tasks/${taskId}/submissions`, { method: 'GET' });
+    return Array.isArray(rows) ? (rows as StepSubmission[]) : [];
   },
 };
 

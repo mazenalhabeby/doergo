@@ -6,7 +6,7 @@ import { changeTaskStatus } from '../../../src/offline/tasks/task-actions';
 import { takeStatusFix, outboxFix } from '../../../src/offline/tasks/status-fix';
 import { JobPage } from '../../../src/components/job/job-page';
 import { parseOpenSheet, type OpenSheet } from '../../../src/components/job/job-logic';
-import type { WriteStatus } from '../../../src/components/job/use-job-writes';
+import type { StatusExtras, WriteStatus } from '../../../src/components/job/use-job-writes';
 
 /**
  * The job — `docs/design/job-flow.html`. The page itself lives in
@@ -28,10 +28,13 @@ import type { WriteStatus } from '../../../src/components/job/use-job-writes';
  * the ONE shared helper, the same as the home widget's, for the statuses the
  * server judges by where the member is standing. The direct call is only the
  * path for a build without the offline layer.
+ *
+ * A step with a form hands its answers in `extras` — the SAME write, so a move
+ * that owes answers can never leave the phone by a second road.
  */
 export function useWriteStatus(): WriteStatus {
   const offline = useOffline();
-  return useCallback(async (task: Task, newStatus: string, reason?: string) => {
+  return useCallback(async (task: Task, newStatus: string, reason?: string, extras?: StatusExtras) => {
     const location = await takeStatusFix(newStatus);
     if (offline.engine) {
       return changeTaskStatus(offline.engine, {
@@ -40,9 +43,12 @@ export function useWriteStatus(): WriteStatus {
         to: newStatus,
         reason,
         fix: outboxFix(location),
+        // A step form's answers, and the queued photos/signatures they name — sent first.
+        answers: extras?.answers,
+        dependsOn: extras?.dependsOn,
       });
     }
-    const updated = await tasksApi.updateStatus(task.id, newStatus, reason, location);
+    const updated = await tasksApi.updateStatus(task.id, newStatus, reason, location, extras?.answers);
     return { kind: 'done' as const, response: updated };
   }, [offline.engine]);
 }
@@ -56,7 +62,7 @@ export function TaskDetailPane({
   taskId: string;
   embedded?: boolean;
   onClose?: () => void;
-  /** Open on a sheet — `?sheet=finish` from the Jobs tab's Next up card. */
+  /** Open on a sheet — `?sheet=form:<STEP>` from the Jobs tab's Next up card. */
   initialSheet?: OpenSheet | null;
 }) {
   const writeStatus = useWriteStatus();

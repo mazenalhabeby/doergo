@@ -14,8 +14,20 @@ import { formatOnJob } from './job-logic';
  * ⚠️ ASKED FOR ONLY WHEN IT IS SEEN: a closed job, and this section on screen
  * (the page calls `onLayout` → `loadReport`). A job that is still open has no
  * report to ask for, and one nobody scrolls to costs nothing.
+ *
+ * Jobs closed since step forms arrived keep their report as a step form
+ * (`JobSubmissions`); an older job shows this one. Both, when it has both.
  */
-export function JobReport({ report, onLayout }: { report: ServiceReport | null | undefined | 'unreachable'; onLayout: (e: LayoutChangeEvent) => void }) {
+export function JobReport({ report, sayNone = true, onLayout }: {
+  report: ServiceReport | null | undefined | 'unreachable';
+  /**
+   * Say "No report was filed" when there is none. Off while the job's step
+   * forms (its Reports) may hold its report instead — a job closed through a
+   * step form has no service report, and saying so above its answers is wrong.
+   */
+  sayNone?: boolean;
+  onLayout: (e: LayoutChangeEvent) => void;
+}) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const { formatDateFull, formatTime } = useTimeFormat();
@@ -26,6 +38,9 @@ export function JobReport({ report, onLayout }: { report: ServiceReport | null |
       <AText variant="body" tone="strong" numeric={numeric} style={{ fontSize: 14, lineHeight: 20 }}>{value}</AText>
     </View>
   ) : null);
+
+  // Nothing to say: keep the place (it is what asks for the report when seen), draw nothing.
+  if (!sayNone && (report === null || report === undefined)) return <View onLayout={onLayout} />;
 
   return (
     <View onLayout={onLayout} style={{ gap: amazen.space(2) }}>

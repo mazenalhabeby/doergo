@@ -1,8 +1,8 @@
 import { FIELD_SERVICE_FLOW, WORKFLOW_TEMPLATES, getFlowSteps } from '@hbcfield/shared/client';
 import {
-  canDecline, checklistMode, checklistStep, decideNext, dockMode, finishCanAdvance, finishMissing,
+  canDecline, checklistMode, checklistStep, decideNext, dockMode,
   formatOnJob, heldUntilDue, isClosedStatus, issueReason, mainSteps, moreOptions, needsReport,
-  stepPosition, tickOptimistic, withTick, type CheckItem, type FinishDraft,
+  stepPosition, tickOptimistic, withTick, type CheckItem,
 } from '../../components/job/job-logic';
 
 /**
@@ -224,33 +224,11 @@ describe('the checklist', () => {
   });
 });
 
-describe('finish the job — three steps, the same required fields', () => {
-  const empty: FinishDraft = { summary: '', details: '', customerName: '', techSigned: false, customerSigned: false };
-
-  it('step 1 needs a summary; details are optional', () => {
-    expect(finishCanAdvance(0, empty)).toBe(false);
-    expect(finishCanAdvance(0, { ...empty, summary: '   ' })).toBe(false);
-    expect(finishCanAdvance(0, { ...empty, summary: 'Replaced the valve' })).toBe(true);
-  });
-
-  it('step 2 — photos — never blocks', () => {
-    expect(finishCanAdvance(1, empty)).toBe(true);
-  });
-
-  it('sign-off needs the customer\'s name AND both signatures', () => {
-    const named = { ...empty, summary: 'x', customerName: 'Anna Müller' };
-    expect(finishCanAdvance(2, named)).toBe(false);
-    expect(finishCanAdvance(2, { ...named, techSigned: true })).toBe(false);
-    expect(finishCanAdvance(2, { ...named, customerSigned: true })).toBe(false);
-    expect(finishCanAdvance(2, { ...named, techSigned: true, customerSigned: true })).toBe(true);
-    expect(finishCanAdvance(2, { ...named, customerName: ' ', techSigned: true, customerSigned: true })).toBe(false);
-  });
-
-  it('names what is missing', () => {
-    expect(finishMissing(empty)).toEqual(['summary', 'techSignature', 'customerName', 'customerSignature']);
-    expect(finishMissing({ ...empty, summary: 'x', techSigned: true })).toEqual(['customerName', 'customerSignature']);
-  });
-});
+/*
+  The old three-step Finish sheet's rules moved to the step form: the same
+  report is now the `fieldService` preset, judged by the shared
+  `validateStepAnswers` (see `step-form-sheet.spec.ts`).
+*/
 
 describe('small words', () => {
   it('time on the job is h:mm', () => {

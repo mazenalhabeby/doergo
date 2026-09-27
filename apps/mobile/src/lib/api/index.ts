@@ -28,6 +28,7 @@ export type {
   LocationUpdate,
   LocationResponse,
   ServiceReport,
+  StepSubmission,
   CompleteTaskInput,
   PartUsedInput,
   RegisterPushTokenInput,
@@ -72,7 +73,7 @@ export { routesApi } from './routes';
 export { customersApi } from './customers';
 export type { MobileCustomer, MobileCustomerActivity } from './customers';
 export type { TasksListParams } from './tasks';
-export { reportsApi, reportAttachmentsApi } from './reports';
+export { reportsApi } from './reports';
 export { taskAttachmentsApi, uploadToPresignedUrl } from './attachments';
 export { attendanceApi } from './attendance';
 export type { NoShow } from './attendance';
