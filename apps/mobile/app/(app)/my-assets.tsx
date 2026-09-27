@@ -13,7 +13,8 @@ import { useToast } from '../../src/island/island-context';
 import {
   assetsApi, assetProposalsApi, type HeldAsset, type MyExpense, type MyProposal, type MyLogEntry, type DueItem,
 } from '../../src/lib/api';
-import { normalizeKindShape, custodyDays, logTypesForKind, COST_LOG_KEY } from '@hbcfield/shared/client';
+import { normalizeKindShape, custodyDays, logTypesForKind, COST_LOG_KEY, orgHasAddOn } from '@hbcfield/shared/client';
+import { useAuth } from '../../src/contexts/auth-context';
 import { logColor, logTypeLabel } from '../../src/lib/log-display';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import { SendDocumentGlyph } from '../../src/components/glyphs';
@@ -37,6 +38,7 @@ const euros = (cents: number) => `€${(Math.abs(cents) / 100).toFixed(2)}`;
 
 export default function MyAssetsScreen() {
   const { colors } = useTheme();
+  const { user } = useAuth();
   const { t } = useTranslation();
   const toast = useToast();
   const insets = useSafeAreaInsets();
@@ -143,14 +145,19 @@ export default function MyAssetsScreen() {
             held.map((h) => <HeldCard key={h.id} held={h} colors={colors} t={t} />)
           )}
 
-          {canPropose && (
+          {/*
+            Only where the organization has no Documents option. Everywhere else
+            a contract is handed in from Documents → Add a document, and a second
+            button here would be a second door to the same place.
+          */}
+          {canPropose && !orgHasAddOn(user?.orgAddOns ?? null, 'documents') && (
             <TouchableOpacity
               style={[s.secondary, { borderColor: colors.border }]}
               onPress={() => router.push('/send-document')}
             >
               <SendDocumentGlyph size={19} color={COLORS.primary} />
               <Text style={[s.secondaryText, { color: COLORS.primary }]}>
-                {t('sendDoc.title', 'Send a document')}
+                {t('documents.supply.contract', 'Contract for a vehicle or equipment')}
               </Text>
             </TouchableOpacity>
           )}

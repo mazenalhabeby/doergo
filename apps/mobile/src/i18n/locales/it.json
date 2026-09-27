@@ -2383,7 +2383,10 @@
       "expiresOnOptional": "Scade il",
       "expiresOnValue": "Scade il {{date}}",
       "changeDate": "Modifica",
-      "dateCorrecting": "Inserisca la data come è stampata sul documento."
+      "dateCorrecting": "Inserisca la data come è stampata sul documento.",
+      "forOffice": "Per l’ufficio",
+      "contract": "Contratto per un veicolo o un’attrezzatura",
+      "contractHint": "Noleggio, leasing o acquisto — l’ufficio lo registra"
     },
     "status": {
       "pendingVerification": "In attesa di verifica",

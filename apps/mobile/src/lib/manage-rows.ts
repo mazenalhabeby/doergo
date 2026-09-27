@@ -175,13 +175,10 @@ export const MEMBER_ROWS: Destination[] = [
   { icon: 'scan', labelKey: 'shortcuts.scanCard', descKey: 'shortcuts.scanCardDesc', route: '/(app)/scan-card', color: '#2563eb', permission: '', orgWide: false, module: 'crm', internal: true, gate: { crmCap: 'create' }, home: true, act: true },
   { icon: 'person-add', labelKey: 'shortcuts.addClient', descKey: 'shortcuts.addClientDesc', route: '/(app)/customers?new=1', color: '#2563eb', permission: '', orgWide: false, module: 'crm', internal: true, gate: { crmCap: 'create' }, home: true, act: true },
   /*
-    ⚠️ "Send a contract", NOT "issue a document". The row said "Issue a document
-    to somebody" behind `canIssueDocuments` while its screen is the asset
-    proposal camera — a driver sending in an agreement. Raising one needs no
-    permission (the caller's own id is the boundary on the server); the
-    workspace must run Assets, and it is the organization's own process.
+    No "Send a contract" tile: a contract for a vehicle is handed in from
+    Documents → Add a document ("For the office"), or from My equipment where
+    the organization has no Documents option — one door, not three.
   */
-  { icon: 'send', labelKey: 'shortcuts.sendDoc', descKey: 'shortcuts.sendDocDesc', route: '/(app)/send-document', color: '#06b6d4', permission: '', orgWide: false, module: 'assets', internal: true, home: true, act: true },
   { icon: 'map', labelKey: 'shortcuts.planRoute', descKey: 'shortcuts.planRouteDesc', route: '/(app)/route-planner', color: '#0ea5e9', permission: '', orgWide: false, gate: { drives: true }, home: true },
   // Reachable, and not a tile: nobody opens support twice a week.
   { icon: 'help-buoy', labelKey: 'shortcuts.support', descKey: 'shortcuts.supportDesc', route: '/(app)/support', color: '#64748b', permission: '', orgWide: false },

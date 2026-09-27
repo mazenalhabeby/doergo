@@ -2383,7 +2383,10 @@
       "expiresOnOptional": "Caduca el",
       "expiresOnValue": "Caduca el {{date}}",
       "changeDate": "Cambiar",
-      "dateCorrecting": "Introduzca la fecha tal como aparece en el documento."
+      "dateCorrecting": "Introduzca la fecha tal como aparece en el documento.",
+      "forOffice": "Para la oficina",
+      "contract": "Contrato de un vehículo o equipo",
+      "contractHint": "Alquiler, leasing o compra — la oficina lo registra"
     },
     "status": {
       "pendingVerification": "Pendiente de revisión",

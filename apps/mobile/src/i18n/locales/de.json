@@ -2383,7 +2383,10 @@
       "expiresOnOptional": "Gültig bis",
       "expiresOnValue": "Gültig bis {{date}}",
       "changeDate": "Ändern",
-      "dateCorrecting": "Geben Sie das Datum so ein, wie es auf dem Dokument steht."
+      "dateCorrecting": "Geben Sie das Datum so ein, wie es auf dem Dokument steht.",
+      "forOffice": "Für das Büro",
+      "contract": "Vertrag für ein Fahrzeug oder Gerät",
+      "contractHint": "Miete, Leasing oder Kauf — das Büro legt es an"
     },
     "status": {
       "pendingVerification": "Wird geprüft",

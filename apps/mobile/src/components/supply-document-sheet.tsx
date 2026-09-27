@@ -55,6 +55,7 @@ export function SupplyDocumentSheet({
   onClose,
   onSubmitted,
   initialTypeId,
+  onContract,
 }: {
   types: DocumentType[];
   visible: boolean;
@@ -62,6 +63,16 @@ export function SupplyDocumentSheet({
   onSubmitted: () => void;
   /** Opened FOR one requirement (the home action strip) — that type, already chosen. */
   initialTypeId?: string | null;
+  /**
+   * "Contract for a vehicle or equipment" — the one thing a member hands in
+   * that is not a document of THEIRS. Present only where the organization runs
+   * Assets; choosing it leaves this sheet for the contract camera, which reads
+   * the page on the phone and raises a proposal for the office.
+   *
+   * It lives here because it used to be a second door ("Send a document" on the
+   * profile) to the same question — what are you handing in?
+   */
+  onContract?: () => void;
 }) {
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -69,6 +80,26 @@ export function SupplyDocumentSheet({
   const offline = useOffline();
   const connectivity = useConnectivity();
   const { pickFromGallery, takePhoto } = useImagePicker();
+
+  const officeRow = onContract ? (
+    <>
+      <Text style={[s.eyebrow, { color: colors.textMuted }]}>{t('documents.supply.forOffice', 'For the office')}</Text>
+      <PressableScale
+        onPress={onContract}
+        accessibilityRole="button"
+        style={[s.typeRow, { backgroundColor: colors.surfaceRaised }]}
+      >
+        <View style={[s.typeIcon, { backgroundColor: colors.surface }]}>
+          <Ionicons name="car-outline" size={19} color={colors.textSecondary} />
+        </View>
+        <View style={s.typeText}>
+          <Text style={[s.typeLabel, { color: colors.textPrimary }]} numberOfLines={1}>{t('documents.supply.contract', 'Contract for a vehicle or equipment')}</Text>
+          <Text style={[s.typeHint, { color: colors.textMuted }]} numberOfLines={1}>{t('documents.supply.contractHint', 'Rental, leasing or purchase — the office adds it')}</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      </PressableScale>
+    </>
+  ) : null;
 
   const suppliable = useMemo(
     () => types.filter((ty) => ty.direction === 'SUPPLIED' && ty.isActive),
@@ -587,9 +618,11 @@ export function SupplyDocumentSheet({
         >
 
         {suppliable.length === 0 ? (
-          <Text style={[s.empty, { color: colors.textSecondary }]}>
-            {t('documents.supply.nothingToSupply')}
-          </Text>
+          officeRow ?? (
+            <Text style={[s.empty, { color: colors.textSecondary }]}>
+              {t('documents.supply.nothingToSupply')}
+            </Text>
+          )
         ) : (
           <>
             {/*
@@ -658,6 +691,8 @@ export function SupplyDocumentSheet({
                 );
               })}
             </View>
+
+            {officeRow}
 
             {/*
               Sheets of paper take a different path entirely.

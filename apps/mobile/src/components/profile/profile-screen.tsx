@@ -70,6 +70,8 @@ export function ProfileScreen() {
     that opens an empty screen is how a menu teaches people to stop reading it.
   */
   const { held, canPropose } = useHeldAssets();
+  /* Without the Documents option, My equipment is where a contract is sent in — so it must be reachable with nothing held. */
+  const contractHere = canPropose && !orgHasAddOn(user?.orgAddOns ?? null, 'documents');
 
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [savingPresence, setSavingPresence] = useState(false);
@@ -324,11 +326,10 @@ export function ProfileScreen() {
         {/* ── Yours ── */}
         <TourTarget name="profile-menu">
           <Group label={t('profile.group.yours', 'Yours')}>
-            {held.length > 0 ? <Row glyph="equipment" label={t('myAssets.title', 'My equipment')} count={held.length} onPress={() => router.push('/my-assets' as Href)} /> : null}
+            {held.length > 0 || contractHere ? <Row glyph="equipment" label={t('myAssets.title', 'My equipment')} count={held.length || undefined} onPress={() => router.push('/my-assets' as Href)} /> : null}
             {orgHasAddOn(user?.orgAddOns ?? null, 'documents') ? (
               <Row glyph="documents" label={t('profile.documents')} count={outstandingDocs} countTone={docsBlockWork ? 'critical' : 'warn'} onPress={() => router.push('/documents' as Href)} />
             ) : null}
-            {canPropose ? <Row glyph="sendDocument" label={t('sendDoc.title', 'Send a document')} onPress={() => router.push('/send-document' as Href)} /> : null}
             <Row
               glyph="sync"
               label={t('profile.menu.sync')}

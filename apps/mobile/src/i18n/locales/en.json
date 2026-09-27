@@ -2383,7 +2383,10 @@
       "expiresOnOptional": "Expires on (optional)",
       "expiresOnValue": "Expires {{date}}",
       "changeDate": "Change",
-      "dateCorrecting": "Set the date as printed on the document."
+      "dateCorrecting": "Set the date as printed on the document.",
+      "forOffice": "For the office",
+      "contract": "Contract for a vehicle or equipment",
+      "contractHint": "Rental, leasing or purchase — the office adds it"
     },
     "status": {
       "pendingVerification": "Awaiting review",

@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/island/island-context';
+import { useHeldAssets } from '../../src/hooks/use-held-assets';
 import { documentsApi, type MemberDocument, type DocumentType } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import {
@@ -115,6 +116,8 @@ export default function DocumentsScreen() {
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [opening, setOpening] = useState<string | null>(null);
   const [supplying, setSupplying] = useState(false);
+  /* May this member hand in a contract for a vehicle or equipment (the org runs Assets)? */
+  const { canPropose } = useHeldAssets();
 
   const load = useCallback(async (refreshing = false) => {
     if (refreshing) setIsRefreshing(true);
@@ -441,7 +444,8 @@ export default function DocumentsScreen() {
            An upload button on an organization that issues everything is an
            invitation to be refused. */
         right={
-          types.some((ty) => ty.direction === 'SUPPLIED' && ty.isActive) ? (
+          /* …or when it runs Assets: a contract for a vehicle is handed in from here too. */
+          types.some((ty) => ty.direction === 'SUPPLIED' && ty.isActive) || canPropose ? (
             <TouchableOpacity
               onPress={() => setSupplying(true)}
               accessibilityRole="button"
@@ -462,6 +466,11 @@ export default function DocumentsScreen() {
         /* The badge and the home card read a cached count — supplying
            something here is exactly when it stops being true. */
         onSubmitted={() => { void load(true); void refreshRequirements({ force: true }); }}
+        onContract={canPropose ? () => {
+          setSupplying(false);
+          // After the sheet has left — pushing while a modal dismisses races its presentation.
+          setTimeout(() => router.push('/(app)/send-document' as never), 280);
+        } : undefined}
       />
 
       <ScreenContainer>

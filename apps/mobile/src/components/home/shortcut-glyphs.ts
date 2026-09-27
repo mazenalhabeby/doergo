@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { GlyphProps } from '../glyphs/glyphs';
-import { DocumentsGlyph, SendDocumentGlyph, SupportGlyph } from '../glyphs/glyphs';
+import { DocumentsGlyph, SupportGlyph } from '../glyphs/glyphs';
 import {
   SignGlyph, MyEquipmentGlyph, SyncGlyph, OvertimeGlyph, NewJobGlyph, ScanCardGlyph, AddClientGlyph,
   EquipmentLogGlyph, MembersGlyph, ClientsGlyph, InvitationsGlyph, SchedulesGlyph,
@@ -29,7 +29,6 @@ export const SHORTCUT_GLYPHS: Record<string, React.ComponentType<GlyphProps>> = 
   'shortcuts.newJob': NewJobGlyph,
   'shortcuts.scanCard': ScanCardGlyph,
   'shortcuts.addClient': AddClientGlyph,
-  'shortcuts.sendDoc': SendDocumentGlyph,
   'shortcuts.planRoute': PlanRouteGlyph,
   'shortcuts.support': SupportGlyph,
   'shortcuts.equipmentLog': EquipmentLogGlyph,
