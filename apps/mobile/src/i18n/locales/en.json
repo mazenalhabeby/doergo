@@ -3369,5 +3369,170 @@
     "testing": "Testing",
     "backlog": "Backlog",
     "draft": "Draft"
+  },
+  "job": {
+    "stepOf": "Step {{index}} of {{total}}",
+    "stepOfNext": "Step {{index}} of {{total}} · next: {{next}}",
+    "arrivedBanner": "You look like you're there.",
+    "blockedBanner": "Blocked: {{reason}}",
+    "blockedNoReason": "Blocked. The office has been told.",
+    "details": "Details",
+    "keep": "Keep it",
+    "needsSignal": "This needs a signal. Try again when you are back online.",
+    "leave": {
+      "drive": "about {{count}} min drive"
+    },
+    "facts": {
+      "when": "When",
+      "where": "Where",
+      "workspace": "Workspace",
+      "who": "Who",
+      "from": "From",
+      "you": "(you)",
+      "nobody": "Nobody yet"
+    },
+    "checklist": {
+      "thisStep": "This step · {{done}} of {{total}}",
+      "title": "Checklist · {{done}} of {{total}}",
+      "opensAt": "Opens for ticking at the {{step}} step.",
+      "offline": "Ticking needs a signal. Nothing you tick now would be kept.",
+      "failed": "That tick was not saved. Try again."
+    },
+    "fields": {
+      "title": "Job fields",
+      "edit": "Edit"
+    },
+    "files": {
+      "title": "Photos & files · {{count}}",
+      "sending": "sending",
+      "camera": "Take a photo",
+      "gallery": "Choose from your photos",
+      "deleteTitle": "Delete this file?",
+      "deleteBody": "“{{name}}” is removed from the job for everyone."
+    },
+    "activity": {
+      "title": "Activity",
+      "empty": "Nothing yet. Notes and photos you add show here, with every step.",
+      "placeholder": "Add a note for the office",
+      "visitPlaceholder": "Visit notes for the office",
+      "send": "Send",
+      "waiting": "waiting to send",
+      "created": "Created by {{name}}",
+      "createdPlain": "Created",
+      "blocked": "Blocked: {{reason}}",
+      "assigned": "Assigned",
+      "unassigned": "Unassigned",
+      "photoAdded": "Photo added",
+      "ticked": "Ticked: {{text}}",
+      "unticked": "Unticked: {{text}}"
+    },
+    "timer": {
+      "onJob": "{{time}} on this job",
+      "onJobTracking": "{{time}} on this job · tracking your route",
+      "onJobNotTracking": "{{time}} on this job · route not recording",
+      "tracking": "Tracking your route",
+      "notTracking": "Route not recording"
+    },
+    "dock": {
+      "navigate": "Navigate",
+      "more": "More",
+      "edit": "Edit details",
+      "assign": "Assign someone",
+      "reassign": "Reassign",
+      "backToWork": "Back to work"
+    },
+    "done": {
+      "completed": "Done. The office has your report.",
+      "closed": "This job is finished.",
+      "canceled": "This job was cancelled."
+    },
+    "more": {
+      "issue": "Report an issue",
+      "issueHint": "stops the job, tells the office",
+      "decline": "Decline this job",
+      "declineHint": "goes back to the office",
+      "maps": "Open in maps",
+      "edit": "Edit details",
+      "cancel": "Cancel job",
+      "nothing": "Nothing else to do on this job."
+    },
+    "issue": {
+      "title": "Report an issue",
+      "context": "{{context}}. This goes with the report.",
+      "sentTitle": "Issue reported",
+      "sentBody": "The office has it. The job is marked Blocked."
+    },
+    "decline": {
+      "title": "Decline this job?",
+      "body": "It goes back to the office unassigned, and whoever assigned it is told.",
+      "confirm": "Decline"
+    },
+    "cancel": {
+      "title": "Cancel this job?",
+      "body": "Nobody will be able to work on it. It stays in History.",
+      "confirm": "Cancel job"
+    },
+    "assign": {
+      "title": "Who does it?",
+      "now": "now",
+      "online": "Online",
+      "jobs_one": "{{count}} open job",
+      "jobs_other": "{{count}} open jobs",
+      "search": "Search people",
+      "none": "Nobody to give this job to here.",
+      "failed": "Could not load the people.",
+      "doneTitle": "Assigned",
+      "doneBody": "{{name}} is told now"
+    },
+    "edit": {
+      "title": "Edit details",
+      "titlePlaceholder": "What needs doing?",
+      "detailsPlaceholder": "Details for whoever does it (optional)",
+      "urgency": "How urgent",
+      "address": "Address",
+      "doneTitle": "Saved"
+    },
+    "finish": {
+      "title": "Finish the job",
+      "step": "Step {{index}} of {{total}} · {{name}}",
+      "stepDid": "What you did",
+      "stepPhotos": "Photos",
+      "stepSign": "Sign-off",
+      "summary": "What did you do? (required)",
+      "details": "Parts used, what to watch next time (optional)",
+      "before": "Before",
+      "after": "After",
+      "yourSignature": "Your signature",
+      "customerName": "Customer's name",
+      "customerSignature": "Customer's signature",
+      "signHere": "Sign here",
+      "handOver": "Hand the phone over",
+      "complete": "Complete job",
+      "stillNeeded": "Still needed: {{list}}",
+      "missing": {
+        "summary": "what you did",
+        "techSignature": "your signature",
+        "customerName": "the customer's name",
+        "customerSignature": "the customer's signature"
+      },
+      "doneTitle": "Job complete",
+      "doneBody": "Report sent to the office"
+    },
+    "report": {
+      "title": "Service report",
+      "loading": "Loading the report…",
+      "offline": "The report needs a signal to load.",
+      "none": "No report was filed with this job.",
+      "summary": "What was done",
+      "work": "Work performed",
+      "duration": "Time on the job",
+      "completedAt": "Completed",
+      "customer": "Signed by"
+    },
+    "sign": {
+      "needed": "This step needs a signature.",
+      "open": "Sign",
+      "save": "Save signature"
+    }
   }
 }

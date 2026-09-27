@@ -3369,5 +3369,170 @@
     "testing": "Tests",
     "backlog": "Backlog",
     "draft": "Brouillon"
+  },
+  "job": {
+    "stepOf": "Étape {{index}} sur {{total}}",
+    "stepOfNext": "Étape {{index}} sur {{total}} · ensuite : {{next}}",
+    "arrivedBanner": "Vous semblez être arrivé.",
+    "blockedBanner": "Bloquée : {{reason}}",
+    "blockedNoReason": "Bloquée. Le bureau est prévenu.",
+    "details": "Détails",
+    "keep": "La garder",
+    "needsSignal": "Il faut une connexion. Réessayez quand vous serez de nouveau en ligne.",
+    "leave": {
+      "drive": "environ {{count}} min de route"
+    },
+    "facts": {
+      "when": "Quand",
+      "where": "Où",
+      "workspace": "Espace",
+      "who": "Qui",
+      "from": "De",
+      "you": "(vous)",
+      "nobody": "Personne pour l’instant"
+    },
+    "checklist": {
+      "thisStep": "Cette étape · {{done}} sur {{total}}",
+      "title": "Liste de contrôle · {{done}} sur {{total}}",
+      "opensAt": "À cocher à l’étape « {{step}} ».",
+      "offline": "Cocher demande une connexion. Ce que vous cochez maintenant ne serait pas gardé.",
+      "failed": "Cette case n’a pas été enregistrée. Réessayez."
+    },
+    "fields": {
+      "title": "Champs de l’intervention",
+      "edit": "Modifier"
+    },
+    "files": {
+      "title": "Photos et fichiers · {{count}}",
+      "sending": "envoi",
+      "camera": "Prendre une photo",
+      "gallery": "Choisir dans vos photos",
+      "deleteTitle": "Supprimer ce fichier ?",
+      "deleteBody": "« {{name}} » est retiré de l’intervention pour tout le monde."
+    },
+    "activity": {
+      "title": "Activité",
+      "empty": "Rien pour l’instant. Les notes et photos que vous ajoutez apparaissent ici, à chaque étape.",
+      "placeholder": "Ajouter une note pour le bureau",
+      "visitPlaceholder": "Notes de visite pour le bureau",
+      "send": "Envoyer",
+      "waiting": "en attente d’envoi",
+      "created": "Créée par {{name}}",
+      "createdPlain": "Créée",
+      "blocked": "Bloquée : {{reason}}",
+      "assigned": "Attribuée",
+      "unassigned": "Désattribuée",
+      "photoAdded": "Photo ajoutée",
+      "ticked": "Coché : {{text}}",
+      "unticked": "Décoché : {{text}}"
+    },
+    "timer": {
+      "onJob": "{{time}} sur cette intervention",
+      "onJobTracking": "{{time}} sur cette intervention · trajet enregistré",
+      "onJobNotTracking": "{{time}} sur cette intervention · trajet non enregistré",
+      "tracking": "Trajet enregistré",
+      "notTracking": "Trajet non enregistré"
+    },
+    "dock": {
+      "navigate": "Itinéraire",
+      "more": "Plus",
+      "edit": "Modifier les détails",
+      "assign": "Attribuer",
+      "reassign": "Réattribuer",
+      "backToWork": "Reprendre le travail"
+    },
+    "done": {
+      "completed": "Terminé. Le bureau a votre rapport.",
+      "closed": "Cette intervention est terminée.",
+      "canceled": "Cette intervention a été annulée."
+    },
+    "more": {
+      "issue": "Signaler un problème",
+      "issueHint": "met l’intervention en pause, prévient le bureau",
+      "decline": "Refuser cette intervention",
+      "declineHint": "retourne au bureau",
+      "maps": "Ouvrir dans Plans",
+      "edit": "Modifier les détails",
+      "cancel": "Annuler l’intervention",
+      "nothing": "Rien d’autre à faire sur cette intervention."
+    },
+    "issue": {
+      "title": "Signaler un problème",
+      "context": "{{context}}. Ceci accompagne le signalement.",
+      "sentTitle": "Problème signalé",
+      "sentBody": "Le bureau est au courant. L’intervention est marquée bloquée."
+    },
+    "decline": {
+      "title": "Refuser cette intervention ?",
+      "body": "Elle retourne au bureau sans attribution, et la personne qui l’a attribuée est prévenue.",
+      "confirm": "Refuser"
+    },
+    "cancel": {
+      "title": "Annuler cette intervention ?",
+      "body": "Plus personne ne pourra y travailler. Elle reste dans l’historique.",
+      "confirm": "Annuler l’intervention"
+    },
+    "assign": {
+      "title": "Qui s’en charge ?",
+      "now": "actuel",
+      "online": "En ligne",
+      "jobs_one": "{{count}} intervention ouverte",
+      "jobs_other": "{{count}} interventions ouvertes",
+      "search": "Chercher une personne",
+      "none": "Personne ici à qui confier cette intervention.",
+      "failed": "Impossible de charger les personnes.",
+      "doneTitle": "Attribuée",
+      "doneBody": "{{name}} est prévenu maintenant"
+    },
+    "edit": {
+      "title": "Modifier les détails",
+      "titlePlaceholder": "Que faut-il faire ?",
+      "detailsPlaceholder": "Détails pour la personne qui s’en charge (facultatif)",
+      "urgency": "Niveau d’urgence",
+      "address": "Adresse",
+      "doneTitle": "Enregistré"
+    },
+    "finish": {
+      "title": "Terminer l’intervention",
+      "step": "Étape {{index}} sur {{total}} · {{name}}",
+      "stepDid": "Ce que vous avez fait",
+      "stepPhotos": "Photos",
+      "stepSign": "Validation",
+      "summary": "Qu’avez-vous fait ? (obligatoire)",
+      "details": "Pièces utilisées, points à surveiller la prochaine fois (facultatif)",
+      "before": "Avant",
+      "after": "Après",
+      "yourSignature": "Votre signature",
+      "customerName": "Nom du client",
+      "customerSignature": "Signature du client",
+      "signHere": "Signez ici",
+      "handOver": "Tendez le téléphone au client",
+      "complete": "Terminer l’intervention",
+      "stillNeeded": "Il manque : {{list}}",
+      "missing": {
+        "summary": "ce que vous avez fait",
+        "techSignature": "votre signature",
+        "customerName": "le nom du client",
+        "customerSignature": "la signature du client"
+      },
+      "doneTitle": "Intervention terminée",
+      "doneBody": "Rapport envoyé au bureau"
+    },
+    "report": {
+      "title": "Rapport d’intervention",
+      "loading": "Chargement du rapport…",
+      "offline": "Le rapport a besoin d’une connexion pour se charger.",
+      "none": "Aucun rapport n’a été déposé pour cette intervention.",
+      "summary": "Ce qui a été fait",
+      "work": "Travaux réalisés",
+      "duration": "Temps sur l’intervention",
+      "completedAt": "Terminée le",
+      "customer": "Signé par"
+    },
+    "sign": {
+      "needed": "Cette étape demande une signature.",
+      "open": "Signer",
+      "save": "Enregistrer la signature"
+    }
   }
 }

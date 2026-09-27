@@ -22,6 +22,7 @@ export type {
   Task,
   Comment,
   TaskEvent,
+  ChecklistItem,
   CreateTaskInput,
   UpdateTaskInput,
   LocationUpdate,

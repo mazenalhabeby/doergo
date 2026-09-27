@@ -248,6 +248,17 @@ export interface Task {
     lastName: string;
     avatarUrl?: string | null;
   };
+  /** The task's checklist, in order — present on `GET /tasks/:id`. */
+  checklistItems?: ChecklistItem[];
+  /** The workspace it lives in — present on `GET /tasks/:id`. */
+  space?: { id: string; name: string; enabledModules?: string[] | null; workflowId?: string | null } | null;
+}
+
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  isCompleted: boolean;
+  position: number;
 }
 
 export interface Comment {

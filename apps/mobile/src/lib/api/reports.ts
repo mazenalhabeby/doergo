@@ -3,6 +3,19 @@ import type { CompleteTaskInput, ServiceReport } from './types';
 
 // Reports API - completing tasks with service reports
 export const reportsApi = {
+  /**
+   * The service report a finished job was closed with — `GET /tasks/:id/report`.
+   *
+   * ⚠️ The server answers `{ data: null }` when there is none, and the client
+   * unwraps `data ?? envelope` — so "no report" arrives as the ENVELOPE, not
+   * as null. Anything without a summary is no report.
+   */
+  getByTask: async (taskId: string): Promise<ServiceReport | null> => {
+    const result = await fetchWithAuth<unknown>(`/tasks/${taskId}/report`, { method: 'GET' });
+    const r = result as Partial<ServiceReport> | null;
+    return r && typeof r === 'object' && typeof r.summary === 'string' ? (r as ServiceReport) : null;
+  },
+
   completeTask: async (taskId: string, input: CompleteTaskInput): Promise<ServiceReport> => {
     return fetchWithAuth<ServiceReport>(`/tasks/${taskId}/complete`, {
       method: 'POST',

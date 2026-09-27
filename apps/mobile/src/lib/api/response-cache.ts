@@ -77,6 +77,9 @@ const KEEP: readonly RegExp[] = [
   // The task's history. Read-only, already-happened facts about one job — the
   // Activity panel rendered empty with no signal on a task the phone holds.
   /^\/tasks\/[^/]+\/timeline(\?|$)/,
+  // The report a finished job was closed with — already-happened facts, read by
+  // the job page's Service report section only once the job is closed.
+  /^\/tasks\/[^/]+\/report(\?|$)/,
   // The kinds of thing an organization owns — the vocabulary every asset screen
   // reads before it can label a single row.
   /^\/asset-categories(\/|\?|$)/,

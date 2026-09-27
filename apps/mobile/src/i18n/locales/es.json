@@ -3369,5 +3369,170 @@
     "testing": "Pruebas",
     "backlog": "Backlog",
     "draft": "Borrador"
+  },
+  "job": {
+    "stepOf": "Paso {{index}} de {{total}}",
+    "stepOfNext": "Paso {{index}} de {{total}} · siguiente: {{next}}",
+    "arrivedBanner": "Parece que ya has llegado.",
+    "blockedBanner": "Bloqueado: {{reason}}",
+    "blockedNoReason": "Bloqueado. La oficina ya lo sabe.",
+    "details": "Detalles",
+    "keep": "Mantenerlo",
+    "needsSignal": "Esto necesita conexión. Inténtalo de nuevo cuando vuelvas a estar en línea.",
+    "leave": {
+      "drive": "unos {{count}} min en coche"
+    },
+    "facts": {
+      "when": "Cuándo",
+      "where": "Dónde",
+      "workspace": "Espacio",
+      "who": "Quién",
+      "from": "De",
+      "you": "(tú)",
+      "nobody": "Nadie todavía"
+    },
+    "checklist": {
+      "thisStep": "Este paso · {{done}} de {{total}}",
+      "title": "Lista de control · {{done}} de {{total}}",
+      "opensAt": "Se puede marcar en el paso «{{step}}».",
+      "offline": "Marcar necesita conexión. Lo que marques ahora no se guardaría.",
+      "failed": "Esa marca no se guardó. Inténtalo de nuevo."
+    },
+    "fields": {
+      "title": "Campos del trabajo",
+      "edit": "Editar"
+    },
+    "files": {
+      "title": "Fotos y archivos · {{count}}",
+      "sending": "enviando",
+      "camera": "Hacer una foto",
+      "gallery": "Elegir de tus fotos",
+      "deleteTitle": "¿Eliminar este archivo?",
+      "deleteBody": "«{{name}}» se quita del trabajo para todos."
+    },
+    "activity": {
+      "title": "Actividad",
+      "empty": "Todavía nada. Las notas y fotos que añadas aparecen aquí, con cada paso.",
+      "placeholder": "Añade una nota para la oficina",
+      "visitPlaceholder": "Notas de la visita para la oficina",
+      "send": "Enviar",
+      "waiting": "pendiente de envío",
+      "created": "Creado por {{name}}",
+      "createdPlain": "Creado",
+      "blocked": "Bloqueado: {{reason}}",
+      "assigned": "Asignado",
+      "unassigned": "Sin asignar",
+      "photoAdded": "Foto añadida",
+      "ticked": "Marcado: {{text}}",
+      "unticked": "Desmarcado: {{text}}"
+    },
+    "timer": {
+      "onJob": "{{time}} en este trabajo",
+      "onJobTracking": "{{time}} en este trabajo · registrando tu ruta",
+      "onJobNotTracking": "{{time}} en este trabajo · la ruta no se registra",
+      "tracking": "Registrando tu ruta",
+      "notTracking": "La ruta no se registra"
+    },
+    "dock": {
+      "navigate": "Navegar",
+      "more": "Más",
+      "edit": "Editar detalles",
+      "assign": "Asignar a alguien",
+      "reassign": "Reasignar",
+      "backToWork": "Volver al trabajo"
+    },
+    "done": {
+      "completed": "Hecho. La oficina tiene tu informe.",
+      "closed": "Este trabajo está terminado.",
+      "canceled": "Este trabajo se canceló."
+    },
+    "more": {
+      "issue": "Informar de un problema",
+      "issueHint": "detiene el trabajo, avisa a la oficina",
+      "decline": "Rechazar este trabajo",
+      "declineHint": "vuelve a la oficina",
+      "maps": "Abrir en mapas",
+      "edit": "Editar detalles",
+      "cancel": "Cancelar trabajo",
+      "nothing": "No hay nada más que hacer en este trabajo."
+    },
+    "issue": {
+      "title": "Informar de un problema",
+      "context": "{{context}}. Esto va con el informe.",
+      "sentTitle": "Problema informado",
+      "sentBody": "La oficina lo tiene. El trabajo queda marcado como bloqueado."
+    },
+    "decline": {
+      "title": "¿Rechazar este trabajo?",
+      "body": "Vuelve a la oficina sin asignar, y quien lo asignó recibe el aviso.",
+      "confirm": "Rechazar"
+    },
+    "cancel": {
+      "title": "¿Cancelar este trabajo?",
+      "body": "Nadie podrá trabajar en él. Se queda en el historial.",
+      "confirm": "Cancelar trabajo"
+    },
+    "assign": {
+      "title": "¿Quién lo hace?",
+      "now": "ahora",
+      "online": "En línea",
+      "jobs_one": "{{count}} trabajo abierto",
+      "jobs_other": "{{count}} trabajos abiertos",
+      "search": "Buscar personas",
+      "none": "Aquí no hay nadie a quien dar este trabajo.",
+      "failed": "No se pudieron cargar las personas.",
+      "doneTitle": "Asignado",
+      "doneBody": "{{name}} recibe el aviso ahora"
+    },
+    "edit": {
+      "title": "Editar detalles",
+      "titlePlaceholder": "¿Qué hay que hacer?",
+      "detailsPlaceholder": "Detalles para quien lo haga (opcional)",
+      "urgency": "Qué urgencia",
+      "address": "Dirección",
+      "doneTitle": "Guardado"
+    },
+    "finish": {
+      "title": "Terminar el trabajo",
+      "step": "Paso {{index}} de {{total}} · {{name}}",
+      "stepDid": "Lo que hiciste",
+      "stepPhotos": "Fotos",
+      "stepSign": "Firma",
+      "summary": "¿Qué hiciste? (obligatorio)",
+      "details": "Piezas usadas, qué vigilar la próxima vez (opcional)",
+      "before": "Antes",
+      "after": "Después",
+      "yourSignature": "Tu firma",
+      "customerName": "Nombre del cliente",
+      "customerSignature": "Firma del cliente",
+      "signHere": "Firma aquí",
+      "handOver": "Pásale el teléfono al cliente",
+      "complete": "Completar trabajo",
+      "stillNeeded": "Falta: {{list}}",
+      "missing": {
+        "summary": "lo que hiciste",
+        "techSignature": "tu firma",
+        "customerName": "el nombre del cliente",
+        "customerSignature": "la firma del cliente"
+      },
+      "doneTitle": "Trabajo completado",
+      "doneBody": "Informe enviado a la oficina"
+    },
+    "report": {
+      "title": "Informe de servicio",
+      "loading": "Cargando el informe…",
+      "offline": "El informe necesita conexión para cargarse.",
+      "none": "Este trabajo no tiene informe.",
+      "summary": "Lo que se hizo",
+      "work": "Trabajo realizado",
+      "duration": "Tiempo en el trabajo",
+      "completedAt": "Completado",
+      "customer": "Firmado por"
+    },
+    "sign": {
+      "needed": "Este paso necesita una firma.",
+      "open": "Firmar",
+      "save": "Guardar firma"
+    }
   }
 }

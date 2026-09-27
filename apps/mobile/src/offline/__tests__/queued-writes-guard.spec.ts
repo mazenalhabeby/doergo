@@ -32,10 +32,19 @@ const SCANNED = ['app', 'src/components', 'src/hooks', 'src/screens', 'src/featu
 */
 const FALLBACK = 'the no-offline-build path, behind `if (offline.engine)`';
 const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: string }> = {
+  /*
+    The job page split into `src/components/job/` when it was rebuilt to
+    `docs/design/job-flow.html`. The status write stayed on the screen (one
+    call, every step, Blocked and Cancel included — it was three); every other
+    fallback moved with the code into the writes hook.
+  */
   'app/(app)/task/[id].tsx': {
+    calls: { 'tasksApi.updateStatus': 1 },
+    why: FALLBACK,
+  },
+  'src/components/job/use-job-writes.ts': {
     calls: {
-      'tasksApi.addComment': 2,
-      'tasksApi.updateStatus': 3,
+      'tasksApi.addComment': 1,
       'tasksApi.declineTask': 1,
       'reportsApi.completeTask': 1,
       // The photo uploaders are only reached from the completeTask/attach fallbacks.

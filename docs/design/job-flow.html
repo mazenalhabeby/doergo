@@ -1,0 +1,566 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Job Flow Rebuild</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{--bg:#eef3f1;--surface:#fff;--ink:#0b1f1a;--muted:#5a6a65;--line:#0b332a1a;--accent:#0b8168;--accent-ink:#fff;--chip:#0b332a0d}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#06090b;--surface:#0d1215;--ink:#e8eff2;--muted:#8b979e;--line:#ffffff14;--accent:#66dbba;--accent-ink:#001810;--chip:#ffffff0d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#06090b;--surface:#0d1215;--ink:#e8eff2;--muted:#8b979e;--line:#ffffff14;--accent:#66dbba;--accent-ink:#001810;--chip:#ffffff0d;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:"Readex Pro",system-ui,sans-serif;font-size:14px;line-height:1.45;padding:28px 20px 48px;margin:0}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.wrap{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+header h1{margin:0;font-weight:300;font-size:34px;letter-spacing:-1.2px}
+header p{margin:6px 0 0;color:var(--muted);max-width:72ch}
+.layout{display:grid;grid-template-columns:420px 1fr;gap:28px;align-items:start}
+@media (max-width:920px){.layout{grid-template-columns:1fr}}
+.stage{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;justify-content:center}
+@media (max-width:920px){.stage{position:static}}
+
+/* ---------- phone, on the app's amazen tokens ---------- */
+.phone{--canvas:#040507;--well:#0b0f12;--raised:#151b20;--tile:#ffffff14;--sunk:#0c1013;--inkS:#f1f6fa;--inkP:#acb6bf;--inkM:#808b95;--acc:#66dbba;--accInk:#001810;--accTint:#66dbba24;--crit:#fd978c;--critTint:#fd978c1f;--warn:#f2b263;--warnTint:#f2b2631f;--lineW:#ffffff12;--g1:#0a3229;--g2:#06181a;--g3:#040d10;--g4:#040507;--p1:#7fe6c8;--p2:#10b993;--bar:#191c20;--cap:#283736;
+  width:390px;max-width:100%;height:800px;border-radius:50px;padding:10px;background:#111417;box-shadow:0 30px 60px #00000040,inset 0 0 0 2px #ffffff10;position:relative}
+.phone[data-ph="light"]{--canvas:#f3f7f5;--well:#fff;--raised:#eef3f1;--tile:#0b332a0f;--sunk:#eef3f1;--inkS:#0b1f1a;--inkP:#485752;--inkM:#63726d;--acc:#097058;--accInk:#fff;--accTint:#0b816818;--crit:#b03127;--critTint:#b0312714;--warn:#8a5a10;--warnTint:#8a5a1018;--lineW:#0b332a14;--g1:#cbe5d9;--g2:#e4f0eb;--g3:#f0f6f3;--g4:#f3f7f5;--p1:#087961;--p2:#0b8168;--bar:#f9fcff;--cap:#e7f0f0;background:#d9dfdd}
+.screen{height:100%;border-radius:40px;overflow:hidden;position:relative;background:linear-gradient(180deg,var(--g1) 0%,var(--g2) 24%,var(--g3) 50%,var(--g4) 100%);color:var(--inkS);display:flex;flex-direction:column}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:160px;height:32px;background:#000;border-radius:0 0 20px 20px;z-index:30}
+.sbar{display:flex;justify-content:space-between;padding:11px 28px 0;font-size:13px;font-weight:500;height:36px;flex:none}
+.scroll{flex:1;overflow-y:auto;padding:6px 16px 100px;display:flex;flex-direction:column;gap:14px;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+button{font:inherit;color:inherit}
+.tabbar{position:absolute;left:14px;right:14px;bottom:14px;height:58px;border-radius:999px;background:var(--bar);display:flex;align-items:center;justify-content:space-around;padding:0 6px;box-shadow:0 4px 14px #0b332a24;z-index:5}
+.tabbar span{width:44px;height:44px;border-radius:999px;display:grid;place-items:center;color:var(--inkM);font-size:15px}
+.tabbar span.on{background:var(--cap);color:var(--acc);width:96px;gap:6px;grid-auto-flow:column;font-size:13px}
+
+/* type */
+.h1{font-size:28px;font-weight:300;letter-spacing:-.8px}
+.h2{font-size:23px;font-weight:300;letter-spacing:-.4px;line-height:1.25}
+.h3{font-size:16px;font-weight:500}
+.cap{font-size:12px;color:var(--inkP)}
+.ey{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--inkM)}
+.ey.acc{color:var(--acc)} .ey.warn{color:var(--warn)} .ey.crit{color:var(--crit)}
+.muted{color:var(--inkP)}
+
+/* primitives */
+.well{background:var(--well);border-radius:26px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.raised{background:var(--tile);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.primary{border:0;border-radius:999px;min-height:46px;background:linear-gradient(180deg,var(--p1),var(--p2));color:var(--accInk);font-weight:500;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 18px;cursor:pointer;--cut:var(--p2)}
+.primary:disabled{opacity:.45;cursor:default}
+.ghost{border:0;border-radius:999px;min-height:46px;background:var(--tile);color:var(--inkS);font-size:14.5px;padding:0 16px;cursor:pointer}
+.ghost.acc{color:var(--acc)} .ghost.crit{color:var(--crit)}
+.disc{width:46px;height:46px;border-radius:999px;border:0;display:grid;place-items:center;background:var(--tile);color:var(--inkS);cursor:pointer;flex:none;--cut:var(--well)}
+.disc.jade{background:var(--accTint);color:var(--acc)}
+.primary svg,.disc svg{width:20px;height:20px}
+.chip{border:0;border-radius:999px;padding:7px 13px;background:var(--tile);color:var(--inkP);font-size:12.5px;cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--accTint);color:var(--acc);box-shadow:inset 0 0 0 1.5px var(--acc)}
+.seg{display:flex;background:var(--tile);border-radius:999px;padding:3px}
+.seg button{flex:1;border:0;background:transparent;border-radius:999px;padding:8px 6px;color:var(--inkP);font-size:13px;cursor:pointer;display:flex;gap:6px;justify-content:center;align-items:center}
+.seg button.on{background:var(--well);color:var(--inkS);box-shadow:0 1px 4px #0003}
+.seg .n{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--inkM)}
+.field{width:100%;border:1.5px solid var(--lineW);background:var(--sunk);color:var(--inkS);border-radius:16px;padding:12px 14px;font:inherit;font-size:14px;outline:none}
+.field:focus{border-color:var(--acc)}
+textarea.field{resize:none;min-height:84px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--acc);flex:none}
+.dot.hollow{background:transparent;border:1.5px solid var(--inkM)}
+.dot.warn{background:var(--warn)} .dot.crit{background:var(--crit)} .dot.dim{background:var(--inkM)}
+.pill{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;border-radius:6px;padding:2px 7px;background:var(--tile);color:var(--inkP);white-space:nowrap}
+.pill.acc{background:var(--accTint);color:var(--acc)} .pill.warn{background:var(--warnTint);color:var(--warn)} .pill.crit{background:var(--critTint);color:var(--crit)}
+.row{display:flex;align-items:center;gap:12px;padding:10px 2px;border:0;background:transparent;width:100%;text-align:left;cursor:pointer;border-radius:12px}
+.row:hover{background:var(--tile)}
+.row .t{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .s{font-size:12px;color:var(--inkP);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .body{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.row .r{font-size:12px;color:var(--inkP);text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.divider{height:1px;background:var(--lineW);margin:0 2px}
+.acts{display:flex;gap:8px;align-items:center}
+.acts .primary{flex:1}
+.search{display:flex;align-items:center;gap:10px;background:var(--well);border-radius:999px;padding:0 16px;height:46px;color:var(--inkM)}
+.search input{flex:1;border:0;background:transparent;color:var(--inkS);font:inherit;outline:none}
+.hscroll{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+.hscroll::-webkit-scrollbar{display:none}
+.route{display:flex;align-items:center;gap:12px;background:var(--well);border-radius:22px;padding:12px 14px;border:0;width:100%;cursor:pointer;text-align:left}
+.route .ic{width:40px;height:40px;border-radius:50%;background:var(--accTint);color:var(--acc);display:grid;place-items:center;flex:none}
+.route .ic svg{width:18px;height:18px}
+
+/* the detail sheet */
+.detail{position:absolute;inset:0;z-index:12;display:flex;flex-direction:column;justify-content:flex-end;background:#0008;animation:fade .2s}
+.detail .panel{height:94%;background:var(--canvas);border-radius:30px 30px 0 0;display:flex;flex-direction:column;overflow:hidden;animation:up .28s cubic-bezier(.2,.8,.2,1)}
+.phone[data-ph="dark"] .detail .panel{background:linear-gradient(180deg,#0c1417,#040507 40%)}
+.detail .top{display:flex;align-items:center;gap:10px;padding:10px 16px 6px}
+.handle{width:38px;height:4px;border-radius:2px;background:var(--inkM);opacity:.4;margin:8px auto 0}
+.detail .scroll{padding:6px 16px 150px}
+.close{width:36px;height:36px;border-radius:50%;border:0;background:var(--tile);color:var(--inkP);cursor:pointer;display:grid;place-items:center;font-size:16px}
+.dock{position:absolute;left:0;right:0;bottom:0;padding:12px 16px 22px;background:linear-gradient(180deg,transparent,var(--canvas) 30%);display:flex;flex-direction:column;gap:8px;z-index:2}
+.phone[data-ph="dark"] .dock{background:linear-gradient(180deg,#04050700,#040507 30%)}
+.status-strip{display:flex;gap:6px;flex-wrap:wrap}
+.banner{display:flex;align-items:center;gap:10px;border-radius:16px;padding:10px 12px;font-size:12.5px}
+.banner.acc{background:var(--accTint);color:var(--acc)} .banner.warn{background:var(--warnTint);color:var(--warn)}
+.banner button{margin-left:auto;border:0;border-radius:999px;padding:6px 12px;background:var(--acc);color:var(--accInk);font-size:12px;cursor:pointer}
+.steps{display:flex;gap:4px;align-items:center}
+.steps i{flex:1;height:4px;border-radius:2px;background:var(--tile)}
+.steps i.done{background:var(--acc);opacity:.55} .steps i.now{background:var(--acc)}
+.facts{background:var(--tile);border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.fact{display:flex;gap:12px;font-size:12.5px}
+.fact b{width:82px;flex:none;font-weight:400;color:var(--inkM)}
+.fact span{flex:1}
+.map{height:130px;border-radius:18px;position:relative;overflow:hidden;background:var(--sunk);cursor:pointer}
+.map canvas{width:100%;height:100%;display:block}
+.map .pin{position:absolute;left:50%;top:44%;transform:translate(-50%,-100%);color:var(--acc)}
+.map .pin svg{width:28px;height:28px}
+.check{display:flex;align-items:center;gap:12px;padding:9px 2px;border:0;background:transparent;width:100%;text-align:left;cursor:pointer;font-size:14px}
+.box{width:22px;height:22px;border-radius:7px;border:1.8px solid var(--inkM);display:grid;place-items:center;flex:none}
+.check.on .box{background:var(--acc);border-color:var(--acc);color:var(--accInk)}
+.check.on .lbl{color:var(--inkM);text-decoration:line-through}
+.photos{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ph{aspect-ratio:1;border-radius:14px;background:var(--tile);display:grid;place-items:center;color:var(--inkM);font-size:11px;position:relative;overflow:hidden;border:0;cursor:pointer}
+.ph.img{background:linear-gradient(135deg,#4a6d63,#1d2d2a)}
+.phone[data-ph="light"] .ph.img{background:linear-gradient(135deg,#a9c8bd,#6f948a)}
+.ph.add{border:1.5px dashed var(--lineW);background:transparent;font-size:20px}
+.ph .pend{position:absolute;right:5px;top:5px;font-size:9px;background:#000a;color:#fff;border-radius:4px;padding:1px 4px}
+.comment{display:flex;gap:10px}
+.av{width:30px;height:30px;border-radius:50%;background:var(--accTint);color:var(--acc);display:grid;place-items:center;font-size:11px;font-weight:500;flex:none}
+.event{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--inkM)}
+.event i{width:30px;display:grid;place-items:center;flex:none;font-style:normal}
+.compose{display:flex;gap:8px;align-items:flex-end}
+.compose .field{border-radius:22px;padding:11px 14px}
+.timer{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--inkP)}
+.timer b{font-family:"IBM Plex Mono",monospace;font-weight:500;color:var(--inkS);font-size:14px}
+.cf{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cf div{background:var(--tile);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;font-size:13px}
+
+/* sheets */
+.scrim{position:absolute;inset:0;z-index:20;display:flex;align-items:flex-end;background:#0009;backdrop-filter:blur(3px);animation:fade .2s}
+.sheet{width:100%;max-height:88%;overflow-y:auto;background:var(--well);border-radius:28px 28px 0 0;padding:6px 18px 28px;display:flex;flex-direction:column;gap:12px;animation:up .26s cubic-bezier(.2,.8,.2,1);scrollbar-width:none}
+.sheet .hd{display:flex;align-items:center;gap:10px}
+.sheet .hd .h2{flex:1}
+.sheet .opt{display:flex;align-items:center;gap:12px;border:0;background:var(--tile);border-radius:16px;padding:13px 14px;text-align:left;cursor:pointer;font-size:14.5px;width:100%}
+.sheet .opt.crit{color:var(--crit)}
+.sheet .opt small{margin-left:auto;color:var(--inkM);font-size:12px}
+.sev{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.sev button{border:0;border-radius:999px;padding:10px 4px;background:var(--tile);color:var(--inkP);cursor:pointer;font-size:13px}
+.sev button.on{background:transparent;box-shadow:inset 0 0 0 2px var(--inkS);color:var(--inkS)}
+.sig{height:120px;border-radius:16px;background:var(--sunk);border:1.5px dashed var(--lineW);position:relative;touch-action:none}
+.sig canvas{width:100%;height:100%;display:block;cursor:crosshair}
+.sig span{position:absolute;left:14px;bottom:10px;font-size:11px;color:var(--inkM);pointer-events:none}
+.stepper{display:flex;gap:6px;align-items:center;font-size:11.5px;color:var(--inkM)}
+.stepper i{height:4px;flex:1;border-radius:2px;background:var(--tile)}
+.stepper i.on{background:var(--acc)}
+.member{display:flex;align-items:center;gap:12px;border:0;background:transparent;width:100%;padding:9px 2px;cursor:pointer;text-align:left;border-radius:12px}
+.member:hover{background:var(--tile)}
+.member .body{flex:1}
+.member.sel{background:var(--accTint)}
+
+/* island toast */
+.island{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:40;background:#000;color:#f1f6fa;border-radius:0 0 26px 26px;padding:10px 18px 14px;min-width:210px;max-width:350px;display:flex;flex-direction:column;gap:4px;animation:grow .35s cubic-bezier(.2,.8,.2,1)}
+.island .hr{display:flex;align-items:center;gap:10px;height:22px}
+.island .hr span{flex:1}
+.island .hr b{font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:12px;color:#8b969d}
+.island .tt{font-size:15px;font-weight:500}
+.island .bd{font-size:13px;color:#8b969d}
+.island[hidden]{display:none!important}
+@keyframes up{from{transform:translateY(40px);opacity:.3}}
+@keyframes fade{from{opacity:0}}
+@keyframes grow{from{max-width:160px;opacity:.4}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+
+/* ---------- control panel ---------- */
+.panel2{background:var(--surface);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:18px;border:1px solid var(--line)}
+.grp{display:flex;flex-direction:column;gap:8px}
+.lbl{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted)}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opts button{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:7px 12px;font-size:13px;cursor:pointer}
+.opts button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:640px){.cols{grid-template-columns:1fr}}
+.hint{font-size:12.5px;color:var(--muted);margin:0}
+.flow{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
+.flow li button{width:100%;text-align:left;border:0;background:transparent;color:var(--ink);padding:8px 10px;border-radius:10px;cursor:pointer;display:flex;gap:10px;font-size:13.5px}
+.flow li button:hover{background:var(--chip)}
+.flow li button span{color:var(--muted);font-size:12px;margin-left:auto}
+.changes{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.changes b{font-weight:500}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Jobs, rebuilt</h1>
+    <p>The whole job flow on the app's new design: the Jobs tab, the job itself, every sheet it opens, and New job. Everything on the phone works. Use the controls to switch between the person doing the job and the person overseeing it, and between two real workflows.</p>
+  </header>
+  <div class="layout">
+    <div class="stage">
+      <div class="phone" id="phone" data-ph="dark">
+        <div class="screen" id="screen">
+          <div class="notch"></div>
+          <div class="island" id="island" hidden></div>
+          <div class="sbar"><span class="mono">09:12</span><span class="mono">▂▄▆ ▮</span></div>
+          <div class="scroll" id="main"></div>
+          <div class="tabbar" id="tabbar"></div>
+          <div id="detail"></div>
+          <div id="sheet"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel2">
+      <div class="cols">
+        <div class="grp"><span class="lbl">Who is looking</span><div class="opts" data-k="role"></div><p class="hint" id="h-role"></p></div>
+        <div class="grp"><span class="lbl">First job's workflow</span><div class="opts" data-k="flow"></div><p class="hint">Button words come from the workflow the organisation wrote. The app never hardcodes them.</p></div>
+      </div>
+      <div class="cols">
+        <div class="grp"><span class="lbl">Signal</span><div class="opts" data-k="signal"></div><p class="hint">Off: every step still works. It is saved on the phone and marked “waiting to send”.</p></div>
+        <div class="grp"><span class="lbl">Phone theme</span><div class="opts" data-k="ph"></div></div>
+      </div>
+      <div class="grp"><span class="lbl">Go to a screen</span>
+        <ul class="flow" id="flow"></ul>
+      </div>
+      <div class="grp"><span class="lbl">What changes from today's app</span>
+        <ul class="changes">
+          <li><b>One design.</b> Every job screen moves to the design the home screen already uses. Today none of them do.</li>
+          <li><b>The list answers “what next”.</b> Next up is the same card as the home widget, with the real button, not an “Open” button. Below it, jobs are grouped Doing now, Blocked, Overdue, Today, Later.</li>
+          <li><b>The job keeps one button at the bottom.</b> The next step, a Navigate or Call disc, and ⋯ for everything else. Decline and Report an issue move into ⋯, so nobody declines by accident.</li>
+          <li><b>Checklist items can be ticked.</b> Today they are read-only.</li>
+          <li><b>Finishing is three short steps</b> (what you did, photos, sign-off) instead of one long form.</li>
+          <li><b>Every popup is the same bottom sheet.</b> Today the job screen uses four raw pop-ups that skip the one-at-a-time rule, which is how buttons went dead on the shift card.</li>
+          <li><b>Photos and comments become one activity feed</b>, with status changes in it.</li>
+        </ul>
+      </div>
+      <div class="grp"><span class="lbl">Needs the backend later (not in this build)</span>
+        <p class="hint">A client phone number for Call, ticking checklist items on the server, and a view of a finished service report. The mockup shows where they go; without the data they stay hidden.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------- data ---------------- */
+const FLOWS={
+  field:{name:'Field service',steps:[
+    {key:'ASSIGNED',label:'Assigned',to:['ACCEPTED','CANCELED']},
+    {key:'ACCEPTED',label:'Accepted',to:['EN_ROUTE']},
+    {key:'EN_ROUTE',label:'On the way',to:['ARRIVED'],caps:['gps']},
+    {key:'ARRIVED',label:'Arrived',to:['IN_PROGRESS'],caps:['timer']},
+    {key:'IN_PROGRESS',label:'Working',to:['COMPLETED','BLOCKED'],caps:['timer','checklist','photos']},
+    {key:'COMPLETED',label:'Completed',to:[],final:true,caps:['report']},
+  ]},
+  support:{name:'Support',steps:[
+    {key:'OPEN',label:'Open',to:['TRIAGING']},
+    {key:'TRIAGING',label:'Triaging',to:['IN_PROGRESS']},
+    {key:'IN_PROGRESS',label:'In progress',to:['WAITING','BLOCKED'],caps:['timer']},
+    {key:'WAITING',label:'Waiting on client',to:['RESOLVED']},
+    {key:'RESOLVED',label:'Resolved',to:['CLOSED']},
+    {key:'CLOSED',label:'Closed',to:[],final:true},
+  ]},
+};
+const MARK={ACCEPTED:'accept',EN_ROUTE:'van',ARRIVED:'pin',IN_PROGRESS:'play',COMPLETED:'finish',TRIAGING:'accept',WAITING:'play',RESOLVED:'finish',CLOSED:'finish'};
+const MEMBERS=[{id:'me',name:'Mike Weber',role:'Field Technician',state:'On shift · 2 jobs today'},{id:'karim',name:'Karim Ahmad',role:'HVAC Specialist',state:'On shift · free after 11:00'},{id:'lisa',name:'Lisa Adler',role:'Electrician',state:'On shift · 1 job'},{id:'noor',name:'Noor Shah',role:'Plumber',state:'Off today'}];
+function freshJobs(){return[
+  {id:'J-2041',title:'Replace compressor valve',status:'ASSIGNED',flow:'field',prio:'HIGH',due:'Today 09:30',band:'today',addr:'Industriezentrum NÖ-Süd, Wr. Neudorf',space:'BILLA AG',who:'me',by:'Anna Müller',desc:'Unit 3 in the cold store trips twice a day. Valve is on the truck. Anna meets you at the loading bay.',km:11,
+    checklist:[{t:'Isolate unit 3',on:false},{t:'Replace valve and seals',on:false},{t:'Pressure test 30 min',on:false},{t:'Photo of the gauge',on:false}],
+    photos:1,feed:[{k:'ev',t:'Created by Anna Müller',at:'Mon 14:02'},{k:'c',who:'Anna Müller',t:'Key is at the security desk.',at:'Mon 14:05'}],cf:[['Unit','Cold store 3'],['Refrigerant','R404A']]},
+  {id:'J-1987',title:'Visit REWE — contract handover',status:'EN_ROUTE',flow:'field',prio:'MEDIUM',due:'Sep 9',band:'doing',late:16,addr:'Laakirchner Str. 4, Laakirchen',space:'REWE Group',who:'me',by:'John Owner',desc:'',km:3,checklist:[],photos:0,feed:[],cf:[]},
+  {id:'J-2040',title:'Leak trace — aisle 4',status:'BLOCKED',flow:'field',prio:'URGENT',due:'Yesterday',band:'blocked',addr:'Industriezentrum NÖ-Süd',space:'BILLA AG',who:'me',by:'Anna Müller',desc:'Waiting for the ceiling access to be opened.',km:11,checklist:[],photos:2,feed:[{k:'ev',t:'Blocked: ceiling panel locked',at:'Yesterday 15:40'}],cf:[]},
+  {id:'J-2033',title:'Quarterly filter service',status:'ASSIGNED',flow:'field',prio:'MEDIUM',due:'Tue 22',band:'overdue',late:3,addr:'Service Center, Vöcklabruck',space:'Service Center',who:'me',by:'Dana Pichler',desc:'',km:26,checklist:[],photos:0,feed:[],cf:[]},
+  {id:'J-2046',title:'Site handover — REWE',status:'ASSIGNED',flow:'field',prio:'MEDIUM',due:'Today 16:15',band:'today',addr:'Laakirchner Str. 4, Laakirchen',space:'REWE Group',who:'me',by:'John Owner',desc:'',km:3,checklist:[],photos:0,feed:[],cf:[]},
+  {id:'J-2052',title:'Emergency cover — freezer',status:'ASSIGNED',flow:'field',prio:'HIGH',due:'Sun 08:00',band:'later',addr:'Hofer, Vöcklabruck',space:'Hofer',who:'me',by:'Anna Müller',desc:'',km:22,checklist:[],photos:0,feed:[],cf:[]},
+  {id:'J-2044',title:'Cable run — floor 2',status:'ASSIGNED',flow:'field',prio:'MEDIUM',due:'Today 10:00',band:'today',addr:'Industriezentrum NÖ-Süd',space:'BILLA AG',who:'karim',by:'Anna Müller',desc:'',km:11,checklist:[],photos:0,feed:[],cf:[]},
+  {id:'J-2045',title:'Leak in cold room',status:'ASSIGNED',flow:'field',prio:'URGENT',due:'Today 12:00',band:'today',addr:'Service Center, Vöcklabruck',space:'Service Center',who:null,by:'John Owner',desc:'',km:26,checklist:[],photos:0,feed:[],cf:[]},
+];}
+
+/* ---------------- state ---------------- */
+let S,jobs;
+function reset(){S={role:'doer',flow:'field',signal:'on',ph:'dark',screen:'jobs',period:'current',scope:'mine',filter:'all',q:'',open:null,sheet:null,finish:{step:0,summary:'',details:'',name:''},report:{sev:'Medium',t:''},assign:null,timer:{},pending:new Set(),create:{t:'',prio:'MEDIUM',when:'Today',time:'14:00',who:'me',space:'BILLA AG'}};jobs=freshJobs();applyFlow();}
+function applyFlow(){const j=jobs[0];j.flow=S.flow;j.status=FLOWS[S.flow].steps[0].key;}
+reset();
+
+/* ---------------- icons (filled) ---------------- */
+const I={
+ accept:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5" fill="currentColor"/><path d="M8 12.4l2.7 2.7L16.2 9.4" fill="none" stroke="var(--cut)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+ van:'<svg viewBox="0 0 24 24"><path d="M2 6.5A1.5 1.5 0 0 1 3.5 5h10A1.5 1.5 0 0 1 15 6.5V8h3.3a1.5 1.5 0 0 1 1.2.6l2.2 2.9c.2.3.3.6.3.9v3.1a1.5 1.5 0 0 1-1.5 1.5H2.5a.5.5 0 0 1-.5-.5z" fill="currentColor"/><circle cx="7" cy="17.5" r="2.6" fill="currentColor" stroke="var(--cut)" stroke-width="1.6"/><circle cx="17" cy="17.5" r="2.6" fill="currentColor" stroke="var(--cut)" stroke-width="1.6"/></svg>',
+ pin:'<svg viewBox="0 0 24 24"><path d="M12 2a7.5 7.5 0 0 0-7.5 7.5C4.5 15 12 22 12 22s7.5-7 7.5-12.5A7.5 7.5 0 0 0 12 2z" fill="currentColor"/><circle cx="12" cy="9.5" r="2.8" fill="var(--cut)"/></svg>',
+ play:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M10 8.2v7.6l6-3.8z" fill="var(--cut)"/></svg>',
+ finish:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7.8 12.3l2.8 2.8 5.6-5.8" fill="none" stroke="var(--cut)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+ nav:'<svg viewBox="0 0 24 24"><path d="M21.2 2.8 2.8 10.4c-.8.3-.7 1.4.1 1.6l7.3 1.8 1.8 7.3c.2.8 1.3.9 1.6.1z" fill="currentColor"/></svg>',
+ more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2.2" fill="currentColor"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/><circle cx="19" cy="12" r="2.2" fill="currentColor"/></svg>',
+ search:'<svg viewBox="0 0 24 24" width="18" height="18"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 15.5 20 20" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+ plus:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>',
+ send:'<svg viewBox="0 0 24 24"><path d="M3.4 20.4 21 12 3.4 3.6l-.4 6.6L15 12 3 13.8z" fill="currentColor"/></svg>',
+ check:'<svg viewBox="0 0 24 24" width="14" height="14"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+ cam:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M4 7h3l1.6-2.2h6.8L17 7h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" fill="currentColor"/><circle cx="12" cy="13" r="3.6" fill="var(--cut)"/></svg>',
+ warn:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2.5 1.5 21h21z" fill="currentColor"/><path d="M12 9v5.5" stroke="var(--cut)" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.8" r="1.3" fill="var(--cut)"/></svg>',
+};
+
+/* ---------------- helpers ---------------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const job=id=>jobs.find(j=>j.id===id);
+const steps=j=>FLOWS[j.flow].steps;
+const stepOf=j=>steps(j).find(s=>s.key===j.status)||{key:j.status,label:j.status==='BLOCKED'?'Blocked':j.status==='CANCELED'?'Cancelled':j.status,to:j.status==='BLOCKED'?['IN_PROGRESS']:[]};
+const labelOf=(j,k)=>(steps(j).find(s=>s.key===k)||{}).label||(k==='BLOCKED'?'Blocked':k==='IN_PROGRESS'?'Back to work':k);
+const isMine=j=>j.who==='me';
+const closed=j=>stepOf(j).final||j.status==='CANCELED';
+const oversee=()=>S.role==='overseer';
+function decision(j){
+  if(!isMine(j)||closed(j))return null;
+  const onward=stepOf(j).to.filter(k=>k!=='CANCELED');
+  if(!onward.length)return null;
+  const order=k=>{const i=steps(j).findIndex(s=>s.key===k);return i<0?99:i;};
+  const sorted=[...onward].sort((a,b)=>order(a)-order(b));
+  const primary=j.status==='BLOCKED'?'IN_PROGRESS':sorted.find(k=>k!=='BLOCKED')||sorted[0];
+  return{primary,rest:sorted.filter(k=>k!==primary)};
+}
+const hasCap=(j,c)=>(stepOf(j).caps||[]).includes(c);
+const targetCap=(j,k,c)=>((steps(j).find(s=>s.key===k)||{}).caps||[]).includes(c);
+function band(j){if(closed(j))return 'done';if(j.status==='BLOCKED')return 'blocked';if(['ACCEPTED','EN_ROUTE','ARRIVED','IN_PROGRESS','TRIAGING','WAITING'].includes(j.status)&&isMine(j))return 'doing';return j.band==='doing'?'today':j.band;}
+const BANDS=[['doing','Doing now'],['blocked','Blocked'],['overdue','Overdue'],['today','Today'],['later','Later'],['done','Done']];
+const memberName=id=>id?MEMBERS.find(m=>m.id===id).name:null;
+
+let islandT;
+function island(title,body,tone='done'){
+  const col={done:'#66dbba',warn:'#f2b263',crit:'#fd978c',queued:'#8b969d'}[tone];
+  const ic={done:I.finish,warn:I.warn,crit:I.warn,queued:I.send}[tone];
+  const now=new Date();const tm=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const el=$('#island');el.hidden=false;el.style.setProperty('--cut','#000');
+  el.innerHTML=`<div class="hr"><span style="color:${col};width:20px;height:20px;display:inline-grid">${ic.replace('<svg','<svg width="20" height="20"')}</span><span></span><b>${tm}</b></div><div class="tt">${esc(title)}</div>${body?`<div class="bd">${esc(body)}</div>`:''}`;
+  clearTimeout(islandT);islandT=setTimeout(()=>el.hidden=true,tone==='crit'?5000:3200);
+}
+
+/* ---------------- the Jobs tab ---------------- */
+function jobRow(j){
+  const b=band(j);const late=j.late&&!closed(j);
+  const right=S.pending.has(j.id)?'<span class="pill">Waiting to send</span>':late?`<span class="pill warn">${j.late} d late</span>`:closed(j)?'<span class="pill">Done</span>':`<span class="mono">${esc(j.due.replace('Today ',''))}</span>`;
+  const dotCls=b==='blocked'?'crit':b==='overdue'?'warn':closed(j)?'dim':isMine(j)?'':'hollow';
+  const who=oversee()&&S.scope==='all'?(j.who?(isMine(j)?'You':memberName(j.who).split(' ')[0]):'<span style="color:var(--warn)">Nobody</span>'):null;
+  const sub=[who,esc(j.addr.split(',')[0])].filter(Boolean).join(' · ');
+  return `<button class="row" data-open="${j.id}"><span class="dot ${dotCls}"></span><span class="body"><span class="t">${j.prio==='URGENT'?'<span style="color:var(--crit)">● </span>':''}${esc(j.title)}</span><span class="s">${sub}</span></span><span class="r">${right}<span class="pill${b==='doing'?' acc':''}">${esc(stepOf(j).label)}</span></span></button>`;
+}
+function activeCard(j,where){
+  const d=decision(j);const st=stepOf(j);
+  const meta=[j.late?`${j.late} days late`:j.due,j.status==='EN_ROUTE'?`${Math.max(1,Math.round(j.km*.35))} km · arriving ~09:24`:`${j.km} km`,j.space].filter(Boolean).join(' · ');
+  const moving=['ACCEPTED','EN_ROUTE'].includes(j.status);
+  return `<div class="raised" style="background:var(--raised)">
+    <div style="display:flex;align-items:center;gap:8px"><span class="dot${j.status==='BLOCKED'?' crit':''}"></span><span class="ey${j.status==='BLOCKED'?' crit':''}">${where}${esc(st.label)}</span>${S.pending.has(j.id)?'<span class="pill" style="margin-left:auto">Waiting to send</span>':''}</div>
+    <button data-open="${j.id}" style="border:0;background:none;text-align:left;padding:0;cursor:pointer"><div class="h3" style="font-size:17px">${esc(j.title)}</div><div class="cap">${esc(meta)}</div></button>
+    <div class="acts" style="margin-top:6px">${d?`<button class="primary" data-go="${j.id}" data-to="${d.primary}">${I[MARK[d.primary]]||''}${esc(labelOf(j,d.primary))}</button>`:`<button class="ghost" style="flex:1" data-open="${j.id}">Open the job</button>`}
+    ${moving?`<button class="disc jade" data-nav="${j.id}" aria-label="Navigate">${I.nav}</button>`:''}<button class="disc" data-more="${j.id}" aria-label="More">${I.more}</button></div></div>`;
+}
+function renderJobs(){
+  let list=jobs.filter(j=>S.period==='history'?closed(j):S.period==='upcoming'?j.band==='later':!closed(j)||j.id==='__');
+  if(!oversee()||S.scope==='mine')list=list.filter(isMine);
+  if(S.q)list=list.filter(j=>(j.title+j.addr+j.space).toLowerCase().includes(S.q.toLowerCase()));
+  const f=S.filter;
+  if(f==='active')list=list.filter(j=>['doing','today','overdue'].includes(band(j)));
+  if(f==='blocked')list=list.filter(j=>j.status==='BLOCKED');
+  if(f==='new')list=list.filter(j=>!j.who);
+  if(f==='done')list=jobs.filter(j=>closed(j)&&(isMine(j)||S.scope==='all'));
+  const mine=jobs.filter(isMine);
+  const next=list.filter(isMine).filter(j=>!closed(j)).sort((a,b)=>BANDS.findIndex(x=>x[0]===band(a))-BANDS.findIndex(x=>x[0]===band(b)))[0];
+  const stops=mine.filter(j=>!closed(j)&&j.km).length;
+  const filters=oversee()?[['all','All'],['new','Nobody on'],['active','Active'],['blocked','Blocked'],['done','Done']]:[['all','All'],['active','Active'],['blocked','Blocked'],['done','Done']];
+  let html=`<div style="display:flex;align-items:center;gap:10px;padding-top:4px"><div class="h1" style="flex:1">Jobs</div>
+      <button class="disc jade" data-screen="create" aria-label="New job">${I.plus}</button></div>
+    <label class="search">${I.search}<input id="q" placeholder="Search jobs, places, clients" value="${esc(S.q)}"></label>
+    ${oversee()?`<div class="seg"><button data-scope="mine" class="${S.scope==='mine'?'on':''}">Mine <span class="n">${mine.filter(j=>!closed(j)).length}</span></button><button data-scope="all" class="${S.scope==='all'?'on':''}">Everyone <span class="n">168</span></button></div>`:''}
+    <div class="seg">${[['current','Now'],['upcoming','Upcoming'],['history','History']].map(([k,l])=>`<button data-period="${k}" class="${S.period===k?'on':''}">${l}</button>`).join('')}</div>
+    <div class="hscroll">${filters.map(([k,l])=>`<button class="chip${S.filter===k?' on':''}" data-filter="${k}">${l}${k==='blocked'?` · ${jobs.filter(j=>j.status==='BLOCKED'&&(isMine(j)||S.scope==='all')).length}`:''}</button>`).join('')}</div>`;
+  if(S.signal==='off')html+=`<div class="banner warn">You're offline. Showing the jobs on this phone, updated 08:41. Everything you do is saved and sent later.</div>`;
+  if(S.period==='current'&&stops&&S.filter==='all')html+=`<button class="route" data-screen="route"><span class="ic">${I.nav}</span><span style="flex:1"><div class="h3">Plan my route</div><div class="cap">${stops} stops today · about 64 km</div></span><span class="muted">›</span></button>`;
+  if(next&&S.period==='current'&&S.filter==='all'&&!S.q)html+=`<div class="ey acc" style="margin-top:4px">Next up</div>${activeCard(next,'')}`;
+  const rest=list.filter(j=>j!==next||S.filter!=='all'||S.period!=='current'||S.q);
+  if(!rest.length&&!next)html+=`<div class="well"><div class="h3">${S.q?'No jobs match that search.':S.filter==='blocked'?'Nothing is blocked.':S.period==='history'?'No finished jobs yet this month.':'No jobs here.'}</div><div class="cap">${S.q?'Try a street, a client or part of the title.':'New jobs you are given appear here.'}</div></div>`;
+  for(const [k,l] of BANDS){const g=rest.filter(j=>band(j)===k);if(!g.length)continue;
+    html+=`<div class="well" style="padding:10px 14px 8px"><div class="ey${k==='blocked'?' crit':k==='overdue'?' warn':''}" style="padding:6px 2px 2px">${l} · ${g.length}</div>${g.map((j,i)=>(i?'<div class="divider"></div>':'')+jobRow(j)).join('')}</div>`;}
+  if(oversee()&&S.scope==='all'&&S.period==='current')html+=`<p class="cap" style="text-align:center">Showing today's jobs across your sites. 160 more in Everyone.</p>`;
+  $('#main').innerHTML=html;
+}
+
+/* ---------------- New job ---------------- */
+function renderCreate(){
+  const c=S.create;
+  $('#main').innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding-top:4px"><button class="close" data-screen="jobs" aria-label="Back">‹</button><div class="h1" style="flex:1">New job</div></div>
+  <div class="well" style="gap:12px">
+    <input class="field" id="c-t" placeholder="What needs doing?" value="${esc(c.t)}">
+    <textarea class="field" id="c-d" placeholder="Details for whoever does it (optional)"></textarea>
+    <div class="ey">Workspace</div><div class="hscroll">${['BILLA AG','REWE Group','Service Center','Main Office'].map(s=>`<button class="chip${c.space===s?' on':''}" data-cspace="${s}">${s}</button>`).join('')}</div>
+    <div class="ey">How urgent</div><div class="sev">${['LOW','MEDIUM','HIGH','URGENT'].map(p=>`<button class="${c.prio===p?'on':''}" data-cprio="${p}">${p[0]+p.slice(1).toLowerCase()}</button>`).join('')}</div>
+    <div class="ey">When</div><div style="display:flex;gap:8px"><button class="ghost" style="flex:1">${c.when}</button><button class="ghost mono" style="flex:1">${c.time}</button></div>
+    <div class="ey">Where</div><button class="ghost" style="text-align:left">📍 Industriezentrum NÖ-Süd, Wr. Neudorf</button>
+    <div class="ey">Who does it</div><button class="ghost acc" data-sheet="assignNew" style="text-align:left">${memberName(c.who)||'Nobody yet'} ›</button>
+    <div class="ey">Photos</div><div class="photos"><button class="ph add" aria-label="Add photo">+</button></div>
+  </div>
+  <button class="primary" data-create ${c.t.trim()?'':'disabled'}>Create job</button>`;
+}
+
+/* ---------------- the job ---------------- */
+function mapDraw(){const cv=document.querySelector('.map canvas');if(!cv)return;const r=cv.getBoundingClientRect();cv.width=r.width*2;cv.height=r.height*2;const g=cv.getContext('2d');g.scale(2,2);
+  const dark=S.ph==='dark';g.fillStyle=dark?'#0e1518':'#e4eee9';g.fillRect(0,0,r.width,r.height);
+  g.strokeStyle=dark?'#1d2a2e':'#ffffff';g.lineWidth=7;[[0,.3,1,.45],[.2,0,.35,1],[0,.8,1,.7],[.7,0,.6,1]].forEach(([a,b,c,d])=>{g.beginPath();g.moveTo(a*r.width,b*r.height);g.lineTo(c*r.width,d*r.height);g.stroke();});
+  g.strokeStyle=dark?'#66dbba':'#0b8168';g.lineWidth=3;g.setLineDash([6,5]);g.beginPath();g.moveTo(r.width*.12,r.height*.9);g.quadraticCurveTo(r.width*.3,r.height*.35,r.width*.5,r.height*.44);g.stroke();}
+function renderDetail(){
+  const el=$('#detail');const j=job(S.open);if(!j){el.innerHTML='';return;}
+  const st=stepOf(j);const d=decision(j);const idx=steps(j).findIndex(s=>s.key===j.status);
+  const doer=isMine(j);const overseeOnly=oversee()&&!isMine(j);
+  const moving=['ACCEPTED','EN_ROUTE'].includes(j.status);
+  const tstart=S.timer[j.id];const mins=tstart?Math.floor((Date.now()-tstart)/60000):0;
+  const feed=j.feed.map(f=>f.k==='c'?`<div class="comment"><span class="av">${f.who.split(' ').map(x=>x[0]).join('')}</span><div style="flex:1"><div class="cap"><b style="color:var(--inkS);font-weight:500">${esc(f.who)}</b> · ${esc(f.at)}${f.pend?' · waiting to send':''}</div><div>${esc(f.t)}</div></div></div>`:`<div class="event"><i>•</i><span>${esc(f.t)} · ${esc(f.at)}</span></div>`).join('');
+  el.innerHTML=`<div class="detail" data-closedetail><div class="panel" data-stop>
+    <div class="handle"></div>
+    <div class="top"><span class="mono cap" style="flex:1">${j.id}</span>${S.pending.has(j.id)?'<span class="pill">Waiting to send</span>':''}<button class="close" data-closedetail aria-label="Close">✕</button></div>
+    <div class="scroll" style="padding-top:0">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px"><span class="dot${j.status==='BLOCKED'?' crit':closed(j)?' dim':''}"></span><span class="ey ${j.status==='BLOCKED'?'crit':'acc'}">${esc(st.label)}</span>${j.late&&!closed(j)?`<span class="ey warn">· ${j.late} days late</span>`:''}${j.prio==='URGENT'||j.prio==='HIGH'?`<span class="pill ${j.prio==='URGENT'?'crit':'warn'}" style="margin-left:auto">${j.prio.toLowerCase()}</span>`:''}</div>
+        <div class="h2">${esc(j.title)}</div>
+        ${idx>=0?`<div class="steps" aria-label="Step ${idx+1} of ${steps(j).length}">${steps(j).map((s,i)=>`<i class="${i<idx?'done':i===idx?'now':''}"></i>`).join('')}</div><div class="cap">Step ${idx+1} of ${steps(j).length}${idx+1<steps(j).length?` · next: ${esc(steps(j)[idx+1].label)}`:''}</div>`:''}
+      </div>
+      ${doer&&j.status==='ASSIGNED'&&j.due.startsWith('Today')?`<div class="banner acc">Leave by 09:05 · about 18 min drive</div>`:''}
+      ${doer&&j.status==='EN_ROUTE'?`<div class="banner acc">You look like you're there. <button data-go="${j.id}" data-to="ARRIVED">${esc(labelOf(j,'ARRIVED'))}</button></div>`:''}
+      ${j.status==='BLOCKED'?`<div class="banner warn">Blocked: ${esc((j.feed.find(f=>f.t.startsWith('Blocked'))||{t:'waiting on something'}).t.replace('Blocked: ',''))}</div>`:''}
+      <div class="facts">
+        <div class="fact"><b>When</b><span>${esc(j.due)}</span></div>
+        <div class="fact"><b>Where</b><span>${esc(j.addr)}</span></div>
+        <div class="fact"><b>Workspace</b><span>${esc(j.space)}</span></div>
+        <div class="fact"><b>Who</b><span>${j.who?esc(memberName(j.who))+(isMine(j)?' (you)':''):'<span style="color:var(--warn)">Nobody yet</span>'}</span></div>
+        <div class="fact"><b>From</b><span>${esc(j.by)}</span></div>
+      </div>
+      <div class="map" data-nav="${j.id}" role="button" aria-label="Open in maps"><canvas></canvas><span class="pin">${I.pin}</span></div>
+      ${j.desc?`<div><div class="ey" style="margin-bottom:6px">Details</div><div class="muted" style="font-size:14px">${esc(j.desc)}</div></div>`:''}
+      ${doer&&hasCap(j,'checklist')&&j.checklist.length?`<div class="well" style="padding:12px 14px"><div class="ey">This step · ${j.checklist.filter(c=>c.on).length} of ${j.checklist.length}</div>${j.checklist.map((c,i)=>`<button class="check${c.on?' on':''}" data-tick="${i}"><span class="box">${c.on?I.check:''}</span><span class="lbl">${esc(c.t)}</span></button>`).join('')}</div>`:''}
+      ${j.checklist.length&&!(doer&&hasCap(j,'checklist'))?`<div class="well" style="padding:12px 14px"><div class="ey">Checklist · ${j.checklist.filter(c=>c.on).length} of ${j.checklist.length}</div><div class="cap">Opens for ticking at the Working step.</div></div>`:''}
+      ${j.cf.length?`<div><div class="ey" style="margin-bottom:6px">Job fields</div><div class="cf">${j.cf.map(([k,v])=>`<div><span class="cap">${esc(k)}</span><span>${esc(v)}</span></div>`).join('')}</div></div>`:''}
+      <div><div class="ey" style="margin-bottom:8px">Photos &amp; files · ${j.photos}</div><div class="photos">${Array.from({length:j.photos},(_,i)=>`<button class="ph img" aria-label="Photo ${i+1}">${i>=j.photos-(j.pendPh||0)?'<span class="pend">sending</span>':''}</button>`).join('')}<button class="ph add" data-photo aria-label="Add photo">+</button></div></div>
+      <div style="display:flex;flex-direction:column;gap:12px"><div class="ey">Activity</div>${feed||'<div class="cap">Nothing yet. Notes and photos you add show here, with every step.</div>'}
+        <div class="compose"><textarea class="field" id="cm" rows="1" placeholder="Add a note for the office"></textarea><button class="disc jade" data-comment aria-label="Send">${I.send}</button></div></div>
+    </div>
+    <div class="dock">
+      ${doer&&tstart&&!closed(j)?`<div class="timer"><span class="dot"></span><b>${Math.floor(mins/60)}:${String(mins%60).padStart(2,'0')}</b> on this job${j.status==='EN_ROUTE'||hasCap(j,'gps')?' · tracking your route':''}</div>`:doer&&j.status==='EN_ROUTE'?'<div class="timer"><span class="dot"></span>Tracking your route</div>':''}
+      ${closed(j)?`<div class="banner acc" style="justify-content:center">${j.status==='CANCELED'?'This job was cancelled.':'Done. The office has your report.'}</div>`:
+       overseeOnly?`<div class="acts"><button class="primary" data-sheet="assign">${j.who?'Reassign':'Assign someone'}</button><button class="disc" data-sheet="edit" aria-label="Edit">✎</button><button class="disc" data-more="${j.id}" aria-label="More">${I.more}</button></div>`:
+       d?`<div class="acts"><button class="primary" data-go="${j.id}" data-to="${d.primary}">${I[MARK[d.primary]]||''}${esc(labelOf(j,d.primary))}</button>${moving?`<button class="disc jade" data-nav="${j.id}" aria-label="Navigate">${I.nav}</button>`:''}<button class="disc" data-more="${j.id}" aria-label="More">${I.more}</button></div>`:''}
+    </div>
+  </div></div>`;
+  mapDraw();
+}
+
+/* ---------------- sheets ---------------- */
+function renderSheet(){
+  const el=$('#sheet');const s=S.sheet;if(!s){el.innerHTML='';return;}
+  const j=job(S.open||s.id);let body='';
+  if(s.k==='more'){
+    const d=decision(j);const opts=[];
+    (d?.rest||[]).forEach(k=>opts.push(k==='BLOCKED'?`<button class="opt crit" data-sheet="report">⚠ Report an issue<small>stops the job, tells the office</small></button>`:`<button class="opt" data-go="${j.id}" data-to="${k}">${esc(labelOf(j,k))}</button>`));
+    if(isMine(j)&&stepOf(j).to.includes('CANCELED'))opts.push(`<button class="opt crit" data-sheet="decline">Decline this job<small>goes back to the office</small></button>`);
+    opts.push(`<button class="opt" data-nav="${j.id}">Open in maps</button>`);
+    if(oversee()){opts.push(`<button class="opt" data-sheet="assign">${j.who?'Reassign':'Assign someone'}</button>`,`<button class="opt" data-sheet="edit">Edit details</button>`,`<button class="opt crit" data-sheet="cancel">Cancel job</button>`);}
+    if(!S.open)opts.unshift(`<button class="opt" data-open="${j.id}">Open the job</button>`);
+    body=`<div class="hd"><div class="h3" style="flex:1">${esc(j.title)}</div></div>${opts.join('')}`;
+  }
+  if(s.k==='report'){
+    body=`<div class="h2">Report an issue</div><div class="banner acc" style="background:var(--tile);color:var(--inkP)">${esc(j.title)} · ${esc(j.space)}. This goes with the report.</div>
+    <input class="field" id="r-t" placeholder="What is stopping you?" value="${esc(S.report.t)}">
+    <div class="ey">How badly</div><div class="sev">${['Low','Medium','High','Urgent'].map(v=>`<button class="${S.report.sev===v?'on':''}" data-sev="${v}">${v}</button>`).join('')}</div>
+    <textarea class="field" placeholder="Anything that would help (optional)"></textarea>
+    <button class="ghost" style="border:1.5px dashed var(--lineW);background:transparent">+ Add a photo</button>
+    <button class="primary" data-sendreport ${S.report.t.trim()?'':'disabled'}>Send</button><p class="cap" style="text-align:center;margin:0">The people responsible for this workspace are told straight away.</p>`;
+  }
+  if(s.k==='decline'||s.k==='cancel'){
+    const dec=s.k==='decline';
+    body=`<div class="h2">${dec?'Decline this job?':'Cancel this job?'}</div><p class="muted" style="margin:0">${dec?'It goes back to the office unassigned, and whoever assigned it is told.':'Nobody will be able to work on it. It stays in History.'}</p>
+    <button class="ghost crit" data-confirm="${s.k}">${dec?'Decline':'Cancel job'}</button><button class="ghost" data-closesheet>Keep it</button>`;
+  }
+  if(s.k==='assign'||s.k==='assignNew'){
+    const cur=s.k==='assignNew'?S.create.who:j.who;
+    body=`<div class="h2">Who does it?</div>${MEMBERS.map(m=>`<button class="member${cur===m.id?' sel':''}" data-assign="${m.id}"><span class="av">${m.name.split(' ').map(x=>x[0]).join('')}</span><span class="body"><div>${esc(m.name)}</div><div class="cap">${esc(m.role)} · ${esc(m.state)}</div></span>${cur===m.id?'<span class="pill acc">now</span>':''}</button>`).join('')}`;
+  }
+  if(s.k==='edit'){
+    body=`<div class="h2">Edit details</div><input class="field" value="${esc(j.title)}" id="e-t"><textarea class="field">${esc(j.desc)}</textarea>
+    <div class="ey">How urgent</div><div class="sev">${['LOW','MEDIUM','HIGH','URGENT'].map(p=>`<button class="${j.prio===p?'on':''}" data-eprio="${p}">${p[0]+p.slice(1).toLowerCase()}</button>`).join('')}</div>
+    <input class="field" value="${esc(j.addr)}"><button class="primary" data-saveedit>Save</button>`;
+  }
+  if(s.k==='finish'){
+    const f=S.finish;const labels=['What you did','Photos','Sign-off'];
+    const head=`<div class="stepper">${labels.map((l,i)=>`<i class="${i<=f.step?'on':''}"></i>`).join('')}</div><div class="cap">Step ${f.step+1} of 3 · ${labels[f.step]}</div>`;
+    if(f.step===0)body=`<div class="h2">Finish the job</div>${head}<div class="timer"><span class="dot"></span><b class="mono">1:12</b> on this job</div>
+      <textarea class="field" id="f-sum" placeholder="What did you do? (required)">${esc(f.summary)}</textarea><textarea class="field" placeholder="Parts used, what to watch next time (optional)"></textarea>
+      <button class="primary" data-fnext ${f.summary.trim()?'':'disabled'}>Next</button>`;
+    if(f.step===1)body=`<div class="h2">Photos</div>${head}<div class="ey">Before</div><div class="photos"><button class="ph img"></button><button class="ph add">+</button></div><div class="ey">After</div><div class="photos"><button class="ph add">+</button></div><button class="primary" data-fnext>Next</button><button class="ghost" data-fback>Back</button>`;
+    if(f.step===2)body=`<div class="h2">Sign-off</div>${head}<div class="ey">Your signature</div><div class="sig"><canvas data-sig="tech"></canvas><span>Sign here</span></div>
+      <input class="field" id="f-name" placeholder="Customer's name" value="${esc(f.name)}"><div class="ey">Customer's signature</div><div class="sig"><canvas data-sig="cust"></canvas><span>Hand the phone over</span></div>
+      <button class="primary" data-fdone ${f.name.trim()?'':'disabled'}>${I.finish}Complete job</button><button class="ghost" data-fback>Back</button>`;
+  }
+  el.innerHTML=`<div class="scrim" data-closesheet><div class="sheet" data-stop><span class="handle" style="margin:8px auto 4px"></span>${body}</div></div>`;
+  document.querySelectorAll('[data-sig]').forEach(sigPad);
+}
+function sigPad(cv){const r=cv.getBoundingClientRect();cv.width=r.width*2;cv.height=r.height*2;const g=cv.getContext('2d');g.scale(2,2);g.lineWidth=2.4;g.lineCap='round';g.strokeStyle=getComputedStyle($('#phone')).getPropertyValue('--inkS');let on=false;
+  const p=e=>{const b=cv.getBoundingClientRect();return[e.clientX-b.left,e.clientY-b.top];};
+  cv.onpointerdown=e=>{on=true;g.beginPath();g.moveTo(...p(e));cv.setPointerCapture(e.pointerId);cv.nextElementSibling.textContent='';};
+  cv.onpointermove=e=>{if(on){g.lineTo(...p(e));g.stroke();}};cv.onpointerup=()=>on=false;}
+
+/* ---------------- actions ---------------- */
+function go(j,to){
+  if(to==='BLOCKED'){S.sheet={k:'report',id:j.id};render();return;}
+  if(targetCap(j,to,'report')){S.finish={step:0,summary:'',details:'',name:''};S.sheet={k:'finish',id:j.id};render();return;}
+  const from=j.status;j.status=to;S.sheet=null;
+  if(['ARRIVED','IN_PROGRESS','TRIAGING'].includes(to)&&!S.timer[j.id])S.timer[j.id]=Date.now();
+  j.feed.push({k:'ev',t:`${labelOf(j,to)}`,at:'now'});
+  if(S.signal==='off'){S.pending.add(j.id);island(labelOf(j,to),'Saved on this phone. It sends when you are back online.','queued');}
+  else island(labelOf(j,to),j.title);
+  render();
+}
+function render(){
+  document.querySelectorAll('.opts').forEach(o=>{const k=o.dataset.k;o.innerHTML=({role:[['doer','Doing the job'],['overseer','Overseeing']],flow:[['field','Field service'],['support','Support']],signal:[['on','On'],['off','Off']],ph:[['dark','Dark'],['light','Light']]})[k].map(([v,l])=>`<button data-set="${k}" data-v="${v}" aria-pressed="${S[k]===v}">${l}</button>`).join('');});
+  $('#h-role').textContent=oversee()?'Sees everyone\'s jobs. On jobs that are not theirs the bottom button is Assign, with Edit and Cancel.':'Sees their own jobs. The bottom button is always the next step.';
+  $('#phone').dataset.ph=S.ph;
+  $('#flow').innerHTML=[['jobs','Jobs tab','list, next up, groups'],['detail','A job','first job, full sheet'],['more','⋯ on a job','other steps'],['report','Report an issue','sheet'],['finish','Finish the job','3 short steps'],['assign','Assign / reassign','sheet'],['create','New job','screen'],['decline','Decline','confirm']].map(([k,l,s])=>`<li><button data-jump="${k}">${l}<span>${s}</span></button></li>`).join('');
+  $('#tabbar').innerHTML=`<span>⌂</span><span class="on">▢ Jobs</span><span>◷</span><span>▭</span><span>⋯</span>`;
+  if(S.screen==='create')renderCreate();else renderJobs();
+  renderDetail();renderSheet();
+}
+
+document.addEventListener('input',e=>{
+  if(e.target.id==='q'){S.q=e.target.value;const p=e.target.selectionStart;renderJobs();const q=$('#q');q.focus();q.setSelectionRange(p,p);}
+  if(e.target.id==='c-t'){S.create.t=e.target.value;const b=document.querySelector('[data-create]');if(b)b.disabled=!S.create.t.trim();}
+  if(e.target.id==='r-t'){S.report.t=e.target.value;document.querySelector('[data-sendreport]').disabled=!S.report.t.trim();}
+  if(e.target.id==='f-sum'){S.finish.summary=e.target.value;document.querySelector('[data-fnext]').disabled=!S.finish.summary.trim();}
+  if(e.target.id==='f-name'){S.finish.name=e.target.value;document.querySelector('[data-fdone]').disabled=!S.finish.name.trim();}
+});
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button,[data-closedetail],[data-closesheet],[data-nav]');if(!t)return;const D=t.dataset;
+  if(D.set){S[D.set]=D.v;if(D.set==='flow')applyFlow();if(D.set==='signal'&&D.v==='on'&&S.pending.size){const n=S.pending.size;setTimeout(()=>{S.pending.clear();island('Back online',`${n} change${n>1?'s':''} sent`);render();},800);}if(D.set==='role'){S.scope=D.v==='overseer'?'all':'mine';S.filter='all';}render();return;}
+  if(D.jump){const k=D.jump;S.sheet=null;S.screen=k==='create'?'create':'jobs';S.open=null;
+    if(k!=='jobs'&&k!=='create'){S.open=jobs[0].id;}
+    if(k==='more')S.sheet={k:'more',id:jobs[0].id};if(k==='report')S.sheet={k:'report',id:jobs[0].id};if(k==='assign'){S.sheet={k:'assign',id:jobs[0].id};}
+    if(k==='decline'){jobs[0].status=FLOWS[jobs[0].flow].steps[0].key;S.sheet={k:'decline',id:jobs[0].id};}
+    if(k==='finish'){const j=jobs[0];if(j.flow!=='field'){S.flow='field';applyFlow();}j.status='IN_PROGRESS';S.timer[j.id]=Date.now()-72*60000;S.finish={step:0,summary:'',details:'',name:''};S.sheet={k:'finish',id:j.id};}
+    render();return;}
+  if(D.stop!==undefined)return;
+  if(D.screen){if(D.screen==='route'){island('Plan my route','Opens the route planner');return;}S.screen=D.screen;S.open=null;S.sheet=null;render();return;}
+  if(D.scope){S.scope=D.scope;render();return;}
+  if(D.period){S.period=D.period;S.filter='all';render();return;}
+  if(D.filter){S.filter=D.filter;render();return;}
+  if(D.open){S.open=D.open;S.sheet=null;render();return;}
+  if(D.go){go(job(D.go),D.to);return;}
+  if(D.more){S.sheet={k:'more',id:D.more};render();return;}
+  if(D.nav!==undefined&&D.nav){island('Opening maps',job(D.nav).addr);return;}
+  if(D.sheet){S.sheet={k:D.sheet,id:S.open||S.sheet?.id};render();return;}
+  if(D.tick!==undefined){const j=job(S.open);j.checklist[+D.tick].on=!j.checklist[+D.tick].on;if(S.signal==='off')S.pending.add(j.id);renderDetail();return;}
+  if(D.photo!==undefined){const j=job(S.open);j.photos++;j.pendPh=(j.pendPh||0)+1;j.feed.push({k:'ev',t:'Photo added',at:'now'});island('Photo added',S.signal==='off'?'Saved on this phone':'Uploading');setTimeout(()=>{if(S.signal==='on'){j.pendPh=0;renderDetail();}},1400);renderDetail();return;}
+  if(D.comment!==undefined){const v=$('#cm').value.trim();if(!v)return;const j=job(S.open);j.feed.push({k:'c',who:'Mike Weber',t:v,at:'now',pend:S.signal==='off'});renderDetail();const sc=document.querySelector('.detail .scroll');sc.scrollTop=sc.scrollHeight;return;}
+  if(D.sev){S.report.sev=D.sev;renderSheet();return;}
+  if(D.sendreport!==undefined){const j=job(S.sheet.id);j.status='BLOCKED';j.feed.push({k:'ev',t:'Blocked: '+S.report.t,at:'now'});S.report={sev:'Medium',t:''};S.sheet=null;island('Issue reported','The office has it. The job is marked Blocked.','warn');render();return;}
+  if(D.confirm){const j=job(S.sheet.id);if(D.confirm==='decline'){j.who=null;island('Declined',j.title,'warn');S.open=null;}else{j.status='CANCELED';island('Job cancelled',j.title,'warn');}S.sheet=null;render();return;}
+  if(D.assign){if(S.sheet.k==='assignNew'){S.create.who=D.assign;S.sheet=null;render();return;}const j=job(S.sheet.id);j.who=D.assign;S.sheet=null;island('Assigned',`${memberName(D.assign)} is told now`);render();return;}
+  if(D.eprio){job(S.sheet.id).prio=D.eprio;renderSheet();return;}
+  if(D.saveedit!==undefined){const j=job(S.sheet.id);j.title=$('#e-t').value;S.sheet=null;island('Saved',j.title);render();return;}
+  if(D.fnext!==undefined){S.finish.step++;renderSheet();return;}
+  if(D.fback!==undefined){S.finish.step--;renderSheet();return;}
+  if(D.fdone!==undefined){const j=job(S.sheet.id);j.status='COMPLETED';j.feed.push({k:'ev',t:'Completed with report',at:'now'});S.sheet=null;if(S.signal==='off')S.pending.add(j.id);island('Job complete',S.signal==='off'?'Report saved on this phone':'Report sent to the office');render();return;}
+  if(D.cspace){S.create.space=D.cspace;renderCreate();return;}
+  if(D.cprio){S.create.prio=D.cprio;renderCreate();return;}
+  if(D.create!==undefined){const c=S.create;const id='J-'+(2100+jobs.length);jobs.unshift({id,title:c.t,status:'ASSIGNED',flow:'field',prio:c.prio,due:'Today '+c.time,band:'today',addr:'Industriezentrum NÖ-Süd, Wr. Neudorf',space:c.space,who:c.who,by:'You',desc:'',km:11,checklist:[],photos:0,feed:[{k:'ev',t:'Created',at:'now'}],cf:[]});S.create={t:'',prio:'MEDIUM',when:'Today',time:'14:00',who:'me',space:'BILLA AG'};S.screen='jobs';S.open=id;island('Job created',c.t);render();return;}
+  if(D.closesheet!==undefined&&(!e.target.closest('[data-stop]')||t.matches('button'))){S.sheet=null;renderSheet();return;}
+  if(D.closedetail!==undefined&&(!e.target.closest('[data-stop]')||t.matches('button'))){S.open=null;S.sheet=null;render();return;}
+});
+setInterval(()=>{if(S.open&&S.timer[S.open])renderDetailSafe();},30000);
+function renderDetailSafe(){if(!document.activeElement||document.activeElement.id!=='cm')renderDetail();}
+render();
+</script>
+
+</body></html>

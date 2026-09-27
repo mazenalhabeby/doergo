@@ -1,6 +1,6 @@
 import { fetchWithAuth } from './client';
 import { buildUrlWithQuery } from '@hbcfield/shared/client';
-import type { Task, Comment, TaskEvent, CreateTaskInput, UpdateTaskInput, LocationUpdate, LocationResponse, LocationBatchUpdate } from './types';
+import type { Task, Comment, TaskEvent, CreateTaskInput, UpdateTaskInput, LocationUpdate, LocationResponse, LocationBatchUpdate, ChecklistItem } from './types';
 
 export interface TasksListParams {
   status?: string;
@@ -75,9 +75,14 @@ export const tasksApi = {
     });
   },
 
+  /*
+    ⚠️ PUT, NOT PATCH. The gateway declares `@Put(':id')` and nothing answers
+    `PATCH /tasks/:id` — every edit from the phone was a 404 that read as
+    "Failed to update", with no change on the server.
+  */
   update: async (id: string, input: UpdateTaskInput): Promise<Task> => {
     return fetchWithAuth<Task>(`/tasks/${id}`, {
-      method: 'PATCH',
+      method: 'PUT',
       body: JSON.stringify(input),
     });
   },
@@ -92,6 +97,20 @@ export const tasksApi = {
   delete: async (id: string): Promise<void> => {
     return fetchWithAuth<void>(`/tasks/${id}`, {
       method: 'DELETE',
+    });
+  },
+
+  /**
+   * Tick or untick one checklist item — `PATCH /tasks/:id/checklist/:itemId`.
+   *
+   * ⚠️ NOT QUEUED. There is no outbox operation for it, so it needs a signal;
+   * the job page disables the boxes when the phone knows it has none rather
+   * than pretending a tick was kept.
+   */
+  toggleChecklistItem: async (taskId: string, itemId: string, isCompleted: boolean): Promise<ChecklistItem> => {
+    return fetchWithAuth<ChecklistItem>(`/tasks/${taskId}/checklist/${itemId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isCompleted }),
     });
   },
 

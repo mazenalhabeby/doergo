@@ -3369,5 +3369,170 @@
     "testing": "Test",
     "backlog": "Backlog",
     "draft": "Entwurf"
+  },
+  "job": {
+    "stepOf": "Schritt {{index}} von {{total}}",
+    "stepOfNext": "Schritt {{index}} von {{total}} · als Nächstes: {{next}}",
+    "arrivedBanner": "Sie scheinen angekommen zu sein.",
+    "blockedBanner": "Blockiert: {{reason}}",
+    "blockedNoReason": "Blockiert. Das Büro ist informiert.",
+    "details": "Details",
+    "keep": "Behalten",
+    "needsSignal": "Dafür ist eine Verbindung nötig. Versuchen Sie es erneut, sobald Sie wieder online sind.",
+    "leave": {
+      "drive": "ca. {{count}} Min. Fahrt"
+    },
+    "facts": {
+      "when": "Wann",
+      "where": "Wo",
+      "workspace": "Arbeitsort",
+      "who": "Wer",
+      "from": "Von",
+      "you": "(Sie)",
+      "nobody": "Noch niemand"
+    },
+    "checklist": {
+      "thisStep": "Dieser Schritt · {{done}} von {{total}}",
+      "title": "Checkliste · {{done}} von {{total}}",
+      "opensAt": "Kann im Schritt „{{step}}“ abgehakt werden.",
+      "offline": "Zum Abhaken ist eine Verbindung nötig. Was Sie jetzt abhaken, würde nicht gespeichert.",
+      "failed": "Dieser Haken wurde nicht gespeichert. Bitte erneut versuchen."
+    },
+    "fields": {
+      "title": "Auftragsfelder",
+      "edit": "Bearbeiten"
+    },
+    "files": {
+      "title": "Fotos & Dateien · {{count}}",
+      "sending": "wird gesendet",
+      "camera": "Foto aufnehmen",
+      "gallery": "Aus Ihren Fotos wählen",
+      "deleteTitle": "Diese Datei löschen?",
+      "deleteBody": "„{{name}}“ wird für alle aus dem Auftrag entfernt."
+    },
+    "activity": {
+      "title": "Verlauf",
+      "empty": "Noch nichts. Notizen und Fotos, die Sie hinzufügen, erscheinen hier – mit jedem Schritt.",
+      "placeholder": "Notiz für das Büro hinzufügen",
+      "visitPlaceholder": "Besuchsnotizen für das Büro",
+      "send": "Senden",
+      "waiting": "wartet auf Senden",
+      "created": "Erstellt von {{name}}",
+      "createdPlain": "Erstellt",
+      "blocked": "Blockiert: {{reason}}",
+      "assigned": "Zugewiesen",
+      "unassigned": "Zuweisung aufgehoben",
+      "photoAdded": "Foto hinzugefügt",
+      "ticked": "Abgehakt: {{text}}",
+      "unticked": "Haken entfernt: {{text}}"
+    },
+    "timer": {
+      "onJob": "{{time}} an diesem Auftrag",
+      "onJobTracking": "{{time}} an diesem Auftrag · Route wird aufgezeichnet",
+      "onJobNotTracking": "{{time}} an diesem Auftrag · Route wird nicht aufgezeichnet",
+      "tracking": "Route wird aufgezeichnet",
+      "notTracking": "Route wird nicht aufgezeichnet"
+    },
+    "dock": {
+      "navigate": "Navigieren",
+      "more": "Mehr",
+      "edit": "Details bearbeiten",
+      "assign": "Jemanden zuweisen",
+      "reassign": "Neu zuweisen",
+      "backToWork": "Weiterarbeiten"
+    },
+    "done": {
+      "completed": "Erledigt. Das Büro hat Ihren Bericht.",
+      "closed": "Dieser Auftrag ist abgeschlossen.",
+      "canceled": "Dieser Auftrag wurde storniert."
+    },
+    "more": {
+      "issue": "Problem melden",
+      "issueHint": "stoppt den Auftrag, informiert das Büro",
+      "decline": "Auftrag ablehnen",
+      "declineHint": "geht zurück ans Büro",
+      "maps": "In Karten öffnen",
+      "edit": "Details bearbeiten",
+      "cancel": "Auftrag stornieren",
+      "nothing": "Für diesen Auftrag ist sonst nichts zu tun."
+    },
+    "issue": {
+      "title": "Problem melden",
+      "context": "{{context}}. Das wird mit der Meldung gesendet.",
+      "sentTitle": "Problem gemeldet",
+      "sentBody": "Das Büro weiß Bescheid. Der Auftrag ist als blockiert markiert."
+    },
+    "decline": {
+      "title": "Diesen Auftrag ablehnen?",
+      "body": "Er geht ohne Zuweisung zurück ans Büro, und wer ihn zugewiesen hat, wird informiert.",
+      "confirm": "Ablehnen"
+    },
+    "cancel": {
+      "title": "Diesen Auftrag stornieren?",
+      "body": "Niemand kann mehr daran arbeiten. Er bleibt im Verlauf.",
+      "confirm": "Auftrag stornieren"
+    },
+    "assign": {
+      "title": "Wer übernimmt ihn?",
+      "now": "jetzt",
+      "online": "Online",
+      "jobs_one": "{{count}} offener Auftrag",
+      "jobs_other": "{{count}} offene Aufträge",
+      "search": "Personen suchen",
+      "none": "Hier gibt es niemanden, dem Sie den Auftrag geben können.",
+      "failed": "Die Personen konnten nicht geladen werden.",
+      "doneTitle": "Zugewiesen",
+      "doneBody": "{{name}} wird jetzt informiert"
+    },
+    "edit": {
+      "title": "Details bearbeiten",
+      "titlePlaceholder": "Was ist zu tun?",
+      "detailsPlaceholder": "Details für die ausführende Person (optional)",
+      "urgency": "Wie dringend",
+      "address": "Adresse",
+      "doneTitle": "Gespeichert"
+    },
+    "finish": {
+      "title": "Auftrag abschließen",
+      "step": "Schritt {{index}} von {{total}} · {{name}}",
+      "stepDid": "Was Sie gemacht haben",
+      "stepPhotos": "Fotos",
+      "stepSign": "Abnahme",
+      "summary": "Was haben Sie gemacht? (Pflichtfeld)",
+      "details": "Verwendete Teile, worauf beim nächsten Mal zu achten ist (optional)",
+      "before": "Vorher",
+      "after": "Nachher",
+      "yourSignature": "Ihre Unterschrift",
+      "customerName": "Name des Kunden",
+      "customerSignature": "Unterschrift des Kunden",
+      "signHere": "Hier unterschreiben",
+      "handOver": "Telefon dem Kunden geben",
+      "complete": "Auftrag abschließen",
+      "stillNeeded": "Noch nötig: {{list}}",
+      "missing": {
+        "summary": "was Sie gemacht haben",
+        "techSignature": "Ihre Unterschrift",
+        "customerName": "der Name des Kunden",
+        "customerSignature": "die Unterschrift des Kunden"
+      },
+      "doneTitle": "Auftrag abgeschlossen",
+      "doneBody": "Bericht ans Büro gesendet"
+    },
+    "report": {
+      "title": "Servicebericht",
+      "loading": "Bericht wird geladen…",
+      "offline": "Zum Laden des Berichts ist eine Verbindung nötig.",
+      "none": "Zu diesem Auftrag wurde kein Bericht abgegeben.",
+      "summary": "Was gemacht wurde",
+      "work": "Ausgeführte Arbeiten",
+      "duration": "Zeit am Auftrag",
+      "completedAt": "Abgeschlossen",
+      "customer": "Unterschrieben von"
+    },
+    "sign": {
+      "needed": "Für diesen Schritt ist eine Unterschrift nötig.",
+      "open": "Unterschreiben",
+      "save": "Unterschrift speichern"
+    }
   }
 }
