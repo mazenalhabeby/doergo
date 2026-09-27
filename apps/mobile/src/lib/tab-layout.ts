@@ -33,7 +33,7 @@ export const MAX_TABS = 5;
  * menu.
  */
 /*
-  v2 — THE SET IS FIXED: Home · Jobs · Clock · Messages, then More.
+  v2 — THE SET IS FIXED: Home · Jobs · Clock · Team, then More.
 
   ⚠️ Three routes LEFT the bar and none of them lost its door.
 
@@ -54,7 +54,12 @@ export const MAX_TABS = 5;
   memory is the entire value of a tab bar and it is the one thing an adaptive
   bar destroys.
 */
-export const TAB_PRIORITY = ['index', 'tasks', 'attendance', 'chat', 'time-off', 'team', 'create-task'];
+/*
+  ⚠️ TEAM BEFORE CHAT (2026-09-27, asked for by the owner). Who is working —
+  and a message to any of them — is one tap from the bar; the conversation
+  list sits one step further, in More.
+*/
+export const TAB_PRIORITY = ['index', 'tasks', 'attendance', 'team', 'chat', 'time-off', 'create-task'];
 
 export const byPriority = (a: { name: string }, b: { name: string }) => {
   const ia = TAB_PRIORITY.indexOf(a.name);

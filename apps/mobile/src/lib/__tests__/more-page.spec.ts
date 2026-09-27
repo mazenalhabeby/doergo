@@ -25,8 +25,8 @@ describe('who gets which tab — one answer', () => {
   it('what the bar leaves out is what More offers — four on the bar, the rest overflow', () => {
     const visible = ROUTES.filter((n) => tabVisible(n, all)).map((name) => ({ name }));
     const { barRoutes, overflowRoutes } = splitTabs(visible, true);
-    expect(barRoutes.map((r) => r.name)).toEqual(['index', 'tasks', 'attendance', 'chat']);
-    expect(overflowRoutes.map((r) => r.name)).toEqual(['time-off', 'team', 'create-task']);
+    expect(barRoutes.map((r) => r.name)).toEqual(['index', 'tasks', 'attendance', 'team']);
+    expect(overflowRoutes.map((r) => r.name)).toEqual(['chat', 'time-off', 'create-task']);
   });
 
   it('a member with nothing reads nothing', () => {
