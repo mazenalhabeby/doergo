@@ -7,7 +7,9 @@ import {
   BadRequestException,
   ForbiddenException,
   HttpStatus,
+  type OnApplicationBootstrap,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -117,8 +119,54 @@ const ORG_MEMBER_SELECT = {
 } as const;
 
 @Injectable()
-export class UsersService {
+export class UsersService implements OnApplicationBootstrap {
   private readonly logger = new Logger(UsersService.name);
+
+  /** Built-ins catch up with their definitions once per boot, across every organization. */
+  async onApplicationBootstrap() {
+    await this.syncBuiltInRoles().catch((e) => this.logger.warn(`Built-in role sync skipped: ${e?.message ?? e}`));
+  }
+
+  /**
+   * ⭐ BUILT-IN ROLES FOLLOW THEIR DEFINITION — ADDITIVELY, UNTIL AN ADMIN EDITS THEM.
+   *
+   * The lazy seed only ever CREATED a built-in, so a role seeded before its
+   * definition gained a permission never received it (the Sales Rep who could
+   * not add clients). Every built-in nobody has edited now gains what its
+   * definition in code gains.
+   *
+   * ⚠️ ADD ONLY, NEVER REMOVE. Stored roles hold more than their definitions
+   * (migrations granted canManageAssets to every Manager, for one), so copying
+   * the definition over them would silently take access away. A removal from a
+   * built-in stays a deliberate, reviewed migration.
+   *
+   * ⚠️ AN EDITED ROLE IS THE ORGANIZATION'S OWN (`isCustomized`). Unticked
+   * permissions are stored as ABSENT, so "missing" cannot tell "never had it"
+   * from "an admin took it away" — only the flag can, and code never re-grants
+   * what an admin removed.
+   *
+   * Custom roles have no definition in code and are never touched. One
+   * statement per built-in, and it writes only rows that actually lack
+   * something, so a boot with nothing new writes nothing.
+   */
+  async syncBuiltInRoles(organizationId?: string): Promise<number> {
+    let changed = 0;
+    for (const p of BUILTIN_ROLES) {
+      const granted = Object.fromEntries(Object.entries(p.permissions).filter(([, v]) => v === true));
+      if (!Object.keys(granted).length) continue;
+      const def = JSON.stringify(granted);
+      changed += await this.prisma.$executeRaw(Prisma.sql`
+        UPDATE "roles"
+        SET "permissions" = "permissions"::jsonb || ${def}::jsonb, "updatedAt" = NOW()
+        WHERE "slug" = ${p.slug}
+          AND "isSystem" = true
+          AND "isCustomized" = false
+          AND NOT ("permissions"::jsonb @> ${def}::jsonb)
+          ${organizationId ? Prisma.sql`AND "organizationId" = ${organizationId}` : Prisma.empty}`);
+    }
+    if (changed) this.logger.log(`Built-in roles updated from their definitions: ${changed}`);
+    return changed;
+  }
 
   constructor(
     private readonly prisma: PrismaService,
@@ -1783,6 +1831,7 @@ export class UsersService {
         },
       });
     }
+    await this.syncBuiltInRoles(data.organizationId);
     const scopes = data.scope === 'space' ? ['SPACE', 'BOTH'] : ['ORG', 'BOTH'];
     const [roles, holders] = await Promise.all([
       this.prisma.accessRole.findMany({
@@ -1969,12 +2018,21 @@ export class UsersService {
     }
     if (data.description !== undefined) patch.description = data.description?.trim() || null;
     if (data.color !== undefined) patch.color = data.color;
-    if (data.permissions !== undefined)
+    if (data.permissions !== undefined) {
       patch.permissions = (await this.sanitizeRolePermissionsForRequester(
         data.permissions,
         data.requesterId,
         data.organizationId,
       )) as any;
+      /*
+        A built-in whose permissions an admin CHANGES becomes theirs: code never
+        adds to it again (see syncBuiltInRoles). Saving the same set is not a
+        change — a rename or a colour does not stop a role following its definition.
+      */
+      const granted = (x: unknown) => Object.entries((x ?? {}) as Record<string, unknown>)
+        .filter(([, v]) => v === true).map(([k]) => k).sort().join(',');
+      if (role.isSystem && granted(patch.permissions) !== granted(role.permissions)) patch.isCustomized = true;
+    }
     const updated = await this.prisma.accessRole.update({
       where: { id: role.id },
       data: patch,

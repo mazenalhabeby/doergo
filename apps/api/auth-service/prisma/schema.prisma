@@ -3060,6 +3060,10 @@ model AccessRole {
   color       String?   @default("#6b7280")
   scope       RoleScope @default(BOTH)
   isSystem    Boolean   @default(false) // Seeded built-in, editable but non-deletable
+  /// An admin has changed this role's permissions. A built-in role that is still
+  /// as seeded GAINS what its definition in code gains (never loses anything);
+  /// once edited it is the organization's own and code never touches it again.
+  isCustomized Boolean  @default(false)
   legacyKind  String? // migration provenance: 'org' | 'space'
   position    Int       @default(0)
   isActive    Boolean   @default(true)

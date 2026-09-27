@@ -18,6 +18,7 @@ describe('listAccessRoles — member counts', () => {
 
   const prisma: Record<string, any> = {
     accessRole: { findMany: jest.fn(), upsert: jest.fn().mockResolvedValue({}) },
+    $executeRaw: jest.fn().mockResolvedValue(0),
     user: { groupBy: jest.fn() },
   };
 
