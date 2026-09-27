@@ -36,3 +36,14 @@ describe('said on the page', () => {
     expect(writes).toMatch(/setNotice\(body \|\| title\)/);
   });
 });
+
+describe('the direct status write sends only what the endpoint takes', () => {
+  it('a full status fix (fixAt, mocked) is trimmed to lat, lng, accuracy', async () => {
+    jest.resetModules();
+    const calls: Array<{ url: string; init: { body: string } }> = [];
+    jest.doMock('../api/client', () => ({ fetchWithAuth: jest.fn(async (url: string, init: { body: string }) => { calls.push({ url, init }); return {}; }) }));
+    const { tasksApi } = require('../api/tasks');
+    await tasksApi.updateStatus('t1', 'ARRIVED', undefined, { lat: 48.1, lng: 16.3, accuracy: 12, fixAt: '2026-09-27T09:00:00Z', mocked: false } as never);
+    expect(JSON.parse(calls[0]!.init.body)).toEqual({ status: 'ARRIVED', lat: 48.1, lng: 16.3, accuracy: 12 });
+  });
+});

@@ -45,9 +45,16 @@ export const tasksApi = {
   // `accuracy` travels with the fix: the arrival check widens its zone by it
   // rather than judging a fuzzy position as though it were exact.
   updateStatus: async (id: string, status: string, reason?: string, location?: { lat: number; lng: number; accuracy?: number }): Promise<Task> => {
+    /*
+      ⚠️ ONLY THE THREE FIELDS THE ENDPOINT TAKES. Callers hand over a whole
+      status fix (with `fixAt` and `mocked` for the outbox), and spreading it
+      sent those too — the server refuses unknown fields, so "Arrived" failed
+      with "property fixAt should not exist".
+    */
+    const where = location ? { lat: location.lat, lng: location.lng, accuracy: location.accuracy } : {};
     return fetchWithAuth<Task>(`/tasks/${id}/status`, {
       method: 'PATCH',
-      body: JSON.stringify({ status, reason, ...location }),
+      body: JSON.stringify({ status, reason, ...where }),
     });
   },
 
