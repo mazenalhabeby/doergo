@@ -28,8 +28,13 @@ import { deviceKeyModule } from './native';
  */
 
 export type Capability =
-  /** No sensor, or an MDM policy switched it off. Show nothing at all. */
-  | { kind: 'unavailable' }
+  /** Cannot be used on this phone. The settings row still shows, and says why. */
+  /**
+   * Cannot be offered here — and WHY, because the settings row now says so
+   * instead of vanishing: this build has no module (update the app), the
+   * phone has no sensor, or the check itself failed. Absent = not recorded.
+   */
+  | { kind: 'unavailable'; reason?: UnavailableReason }
   /** Hardware is there and unused. Offer a deep link, not a broken switch. */
   | { kind: 'none-enrolled' }
   /** Enrolled, but Class 2 — it can never hold a key. Say why, and what fixes it. */
@@ -42,6 +47,8 @@ export type Capability =
   | { kind: 'ready'; label: string; method: BiometricMethod };
 
 /** What the member will actually present. `generic` when the phone will not say. */
+export type UnavailableReason = 'no-module' | 'no-hardware' | 'failed';
+
 export type BiometricMethod = 'face' | 'fingerprint' | 'generic';
 
 /** Can this capability be used to protect a credential? One question, one place. */
@@ -68,14 +75,14 @@ export async function resolveCapability(): Promise<Capability> {
       // Logged for the same reason as the catch below: without it, a stale
       // binary looks exactly like a phone with no sensor.
       console.warn('[biometrics] ReactNativeBiometrics is not in this binary — rebuild to enable');
-      return { kind: 'unavailable' };
+      return { kind: 'unavailable', reason: 'no-module' };
     }
     const LocalAuthentication = localAuthentication();
     if (!LocalAuthentication) {
       console.warn('[biometrics] ExpoLocalAuthentication is not in this binary — rebuild to enable');
-      return { kind: 'unavailable' };
+      return { kind: 'unavailable', reason: 'no-module' };
     }
-    if (!(await LocalAuthentication.hasHardwareAsync())) return { kind: 'unavailable' };
+    if (!(await LocalAuthentication.hasHardwareAsync())) return { kind: 'unavailable', reason: 'no-hardware' };
     if (!(await LocalAuthentication.isEnrolledAsync())) return { kind: 'none-enrolled' };
 
     // ⚠️ THE gate. See note 1 above — everything else is presentation.
@@ -97,7 +104,7 @@ export async function resolveCapability(): Promise<Capability> {
       has a fingerprint reader, this line is where to look.
     */
     console.warn('[biometrics] capability check failed:', err);
-    return { kind: 'unavailable' };
+    return { kind: 'unavailable', reason: 'failed' };
   }
 }
 

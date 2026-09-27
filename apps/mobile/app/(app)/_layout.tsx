@@ -275,13 +275,12 @@ export default function AppLayout() {
             headerShown: false,
           }}
         />
+        <Stack.Screen name="profile/password" options={{ headerShown: false }} />
         <Stack.Screen
           name="profile/account"
           options={{
             title: t('navTitles.account'),
-            presentation: 'transparentModal',
             headerShown: false,
-            animation: 'slide_from_bottom',
           }}
         />
         <Stack.Screen

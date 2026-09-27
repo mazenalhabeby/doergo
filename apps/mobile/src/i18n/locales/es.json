@@ -4054,6 +4054,46 @@
     },
     "lang": {
       "emails": "Sus correos de HBCField llegan también en este idioma."
+    },
+    "bio": {
+      "eitherTitle": "Face ID o huella",
+      "off": "Desactivado — entra con su contraseña",
+      "notSetUp": "No configurado en este teléfono",
+      "tooWeak": "Este teléfono no es lo bastante seguro",
+      "needsUpdate": "Necesita una versión más nueva de la app",
+      "needsUpdateBody": "Esta versión de HBCField no puede usarlo. La siguiente de la tienda sí.",
+      "update": "Actualizar",
+      "noSensor": "Este teléfono no tiene ninguno",
+      "failed": "No se pudo comprobar en este teléfono"
+    },
+    "account": {
+      "signingIn": "Acceso",
+      "passwordRule": "Al menos {{count}} caracteres",
+      "you": "Usted",
+      "leaving": "Salir",
+      "delete": "Eliminar mi cuenta",
+      "deleteSub": "Primero pide su contraseña",
+      "deleteBody": "Se eliminan su acceso, su foto y sus ajustes, y se cierra su sesión en todos los teléfonos. Su trabajo queda en su organización: trabajos, horas, documentos.",
+      "yourPassword": "Su contraseña",
+      "keep": "Mantener mi cuenta",
+      "deleteIt": "Eliminarla",
+      "hide": "Ocultar",
+      "show": "Mostrar",
+      "again": "Repita la nueva contraseña",
+      "passwordNote": "Al menos {{count}} caracteres. Sigue conectado en este teléfono.",
+      "title": "Cuenta"
+    },
+    "sync": {
+      "needYou_one": "{{count}} le necesita",
+      "needYou_other": "{{count}} le necesitan",
+      "needYouSub": "El servidor los rechazó. Cada uno dice por qué.",
+      "onPhone_one": "{{count}} cosa está en este teléfono",
+      "onPhone_other": "{{count}} cosas están en este teléfono",
+      "sending": "Enviando…",
+      "noSignal": "Sin cobertura. Se envían solos cuando haya.",
+      "allSent": "Todo está en el servidor",
+      "lastSent": "Último envío a las {{time}}",
+      "sentToday": "Enviado hoy"
     }
   }
 }

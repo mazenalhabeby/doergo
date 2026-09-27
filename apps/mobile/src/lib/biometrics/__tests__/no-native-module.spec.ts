@@ -39,7 +39,7 @@ describe('biometrics without the native key module', () => {
 
   it('is not offered, even on a phone with a strong sensor', async () => {
     const { resolveCapability } = require('../index');
-    await expect(resolveCapability()).resolves.toEqual({ kind: 'unavailable' });
+    await expect(resolveCapability()).resolves.toEqual({ kind: 'unavailable', reason: 'no-module' });
   });
 
   it('reads as not enrolled, and forgetting still clears local state', async () => {

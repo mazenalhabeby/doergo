@@ -4054,6 +4054,46 @@
     },
     "lang": {
       "emails": "Your emails from HBCField come in this language too."
+    },
+    "bio": {
+      "eitherTitle": "Face ID or fingerprint",
+      "off": "Off — you sign in with your password",
+      "notSetUp": "Not set up on this phone",
+      "tooWeak": "This phone is not secure enough for it",
+      "needsUpdate": "Needs a newer version of the app",
+      "needsUpdateBody": "This version of HBCField cannot use it. The next one from the store can.",
+      "update": "Update",
+      "noSensor": "This phone has neither",
+      "failed": "Could not be checked on this phone"
+    },
+    "account": {
+      "signingIn": "Signing in",
+      "passwordRule": "At least {{count}} characters",
+      "you": "You",
+      "leaving": "Leaving",
+      "delete": "Delete my account",
+      "deleteSub": "Asks for your password first",
+      "deleteBody": "Your sign-in, your photo and your settings are deleted, and you are signed out on every phone. The work you did stays with your organization: jobs, hours, documents.",
+      "yourPassword": "Your password",
+      "keep": "Keep my account",
+      "deleteIt": "Delete it",
+      "hide": "Hide",
+      "show": "Show",
+      "again": "New password again",
+      "passwordNote": "At least {{count}} characters. You stay signed in on this phone.",
+      "title": "Account"
+    },
+    "sync": {
+      "needYou_one": "{{count}} needs you",
+      "needYou_other": "{{count}} need you",
+      "needYouSub": "The server said no to these. Each says why.",
+      "onPhone_one": "{{count}} thing is on this phone",
+      "onPhone_other": "{{count}} things are on this phone",
+      "sending": "Sending now…",
+      "noSignal": "No signal. They send by themselves when there is one.",
+      "allSent": "Everything is on the server",
+      "lastSent": "Last sent at {{time}}",
+      "sentToday": "Sent today"
     }
   }
 }

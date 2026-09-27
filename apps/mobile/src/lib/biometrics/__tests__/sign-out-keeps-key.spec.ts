@@ -24,7 +24,7 @@ describe('sign-out keeps the device key', () => {
   });
 
   it('account deletion is the one sign-out that asks', () => {
-    expect(read('app/(app)/profile/account.tsx')).toContain('logout({ forgetBiometrics: true })');
+    expect(read('src/components/settings/account-page.tsx')).toContain('logout({ forgetBiometrics: true })');
   });
 
   it('the login screen does not auto-prompt straight after a sign-out', () => {

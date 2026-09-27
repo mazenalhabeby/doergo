@@ -4054,6 +4054,46 @@
     },
     "lang": {
       "emails": "Ihre E-Mails von HBCField kommen auch in dieser Sprache."
+    },
+    "bio": {
+      "eitherTitle": "Face ID oder Fingerabdruck",
+      "off": "Aus — Sie melden sich mit Ihrem Passwort an",
+      "notSetUp": "Auf diesem Telefon nicht eingerichtet",
+      "tooWeak": "Dieses Telefon ist dafür nicht sicher genug",
+      "needsUpdate": "Braucht eine neuere App-Version",
+      "needsUpdateBody": "Diese Version von HBCField kann es nicht nutzen. Die nächste aus dem Store kann es.",
+      "update": "Aktualisieren",
+      "noSensor": "Dieses Telefon hat keines von beiden",
+      "failed": "Konnte auf diesem Telefon nicht geprüft werden"
+    },
+    "account": {
+      "signingIn": "Anmelden",
+      "passwordRule": "Mindestens {{count}} Zeichen",
+      "you": "Sie",
+      "leaving": "Gehen",
+      "delete": "Mein Konto löschen",
+      "deleteSub": "Fragt zuerst nach Ihrem Passwort",
+      "deleteBody": "Ihre Anmeldung, Ihr Foto und Ihre Einstellungen werden gelöscht, und Sie werden auf allen Telefonen abgemeldet. Ihre Arbeit bleibt bei Ihrer Organisation: Aufträge, Stunden, Dokumente.",
+      "yourPassword": "Ihr Passwort",
+      "keep": "Konto behalten",
+      "deleteIt": "Löschen",
+      "hide": "Verbergen",
+      "show": "Zeigen",
+      "again": "Neues Passwort wiederholen",
+      "passwordNote": "Mindestens {{count}} Zeichen. Sie bleiben auf diesem Telefon angemeldet.",
+      "title": "Konto"
+    },
+    "sync": {
+      "needYou_one": "{{count}} braucht Sie",
+      "needYou_other": "{{count}} brauchen Sie",
+      "needYouSub": "Der Server hat diese abgelehnt. Jeder Eintrag sagt, warum.",
+      "onPhone_one": "{{count}} Eintrag ist auf diesem Telefon",
+      "onPhone_other": "{{count}} Einträge sind auf diesem Telefon",
+      "sending": "Wird gesendet…",
+      "noSignal": "Kein Netz. Sie werden von selbst gesendet, sobald es eines gibt.",
+      "allSent": "Alles ist auf dem Server",
+      "lastSent": "Zuletzt gesendet um {{time}}",
+      "sentToday": "Heute gesendet"
     }
   }
 }

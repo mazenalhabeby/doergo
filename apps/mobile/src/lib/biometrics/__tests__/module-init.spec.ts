@@ -56,6 +56,6 @@ describe('biometrics module graph', () => {
     const la = require('expo-local-authentication');
     la.hasHardwareAsync.mockRejectedValueOnce(new Error('no module'));
     const { resolveCapability } = require('../index');
-    await expect(resolveCapability()).resolves.toEqual({ kind: 'unavailable' });
+    await expect(resolveCapability()).resolves.toMatchObject({ kind: 'unavailable' });
   });
 });
