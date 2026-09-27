@@ -1,25 +1,32 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, Href } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
+import { Pressable, View } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/contexts/auth-context';
+import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/island/island-context';
 import { onboardingApi } from '../../src/lib/api';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, ROUTES } from '../../src/lib/constants';
-import { ConfirmSheet, ScreenContainer } from '../../src/components';
+import { ROUTES } from '../../src/lib/constants';
+import { ConfirmSheet } from '../../src/components';
+import { AText, PrimaryButton } from '../../src/components/amazen';
+import { PassBadge } from '../../src/components/onboarding/pass-badge';
+import { PassFrame } from '../../src/components/onboarding/pass-frame';
 
-const POLL_INTERVAL = 30000; // 30 seconds
+const POLL_INTERVAL = 30000;
 
+/**
+ * A request to join, waiting at reception — the same pass, stamped PENDING
+ * while an admin decides and NOT ISSUED (with their reason) if they refuse.
+ * It checks every 30 seconds and lets the member in the moment it is approved.
+ */
 export default function PendingApprovalScreen() {
   const router = useRouter();
-  const { refreshUser, logout } = useAuth();
-  const insets = useSafeAreaInsets();
-  const pollRef = useRef<ReturnType<typeof setInterval>>(undefined);
+  const { user, refreshUser } = useAuth();
+  const { amazen } = useTheme();
+  const c = amazen.color;
   const toast = useToast();
   const { t } = useTranslation();
+  const pollRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   const [orgName, setOrgName] = useState('');
   const [requestMessage, setRequestMessage] = useState('');
@@ -30,38 +37,32 @@ export default function PendingApprovalScreen() {
   const [rejectionReason, setRejectionReason] = useState('');
 
   useEffect(() => {
-    loadStatus();
+    void loadStatus();
     pollRef.current = setInterval(loadStatus, POLL_INTERVAL);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadStatus = async () => {
     try {
       const result = await onboardingApi.getStatus();
-      if (!result.needsOnboarding) {
-        // Approved! Refresh user and navigate
-        await refreshUser();
-        return;
-      }
-      if (result.pendingRequest) {
-        setOrgName(result.pendingRequest.organizationName);
-        setRequestMessage(result.pendingRequest.message || '');
-        setRequestId(result.pendingRequest.id);
-        if (result.pendingRequest.status === 'APPROVED') {
+      if (!result.needsOnboarding) { await refreshUser(); return; }
+      const req = result.pendingRequest;
+      if (req) {
+        setOrgName(req.organizationName);
+        setRequestMessage(req.message || '');
+        setRequestId(req.id);
+        if (req.status === 'APPROVED') {
           setStatus('approved');
-          toast.success(t('onboarding.pendingApproval.approvedToast'), orgName || result.pendingRequest.organizationName);
+          toast.success(t('onboarding.pendingApproval.approvedToast'), req.organizationName);
           await refreshUser();
-        } else if (result.pendingRequest.status === 'REJECTED') {
-          // Stop polling — user needs to take action
+        } else if (req.status === 'REJECTED') {
+          // Nothing more will change on its own — stop asking.
           if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = undefined; }
-          if (status !== 'rejected') {
-            toast.error(t('onboarding.pendingApproval.rejectedToast'), result.pendingRequest.rejectionReason || t('onboarding.pendingApproval.rejectedSubtitle'));
-          }
           setStatus('rejected');
-          setRejectionReason(result.pendingRequest.rejectionReason || '');
+          setRejectionReason(req.rejectionReason || '');
         }
       } else if (!result.hasPendingJoinRequest) {
-        // No pending request - go back to choose path
         router.replace(ROUTES.choosePath as Href);
       }
     } catch (error) {
@@ -69,17 +70,12 @@ export default function PendingApprovalScreen() {
     }
   };
 
-  const handleCancel = () => {
-    if (!requestId) return;
-    setShowCancelConfirm(true);
-  };
-
   const confirmCancel = async () => {
-    setShowCancelConfirm(false);
     setIsCanceling(true);
     try {
       await onboardingApi.cancelJoinRequest(requestId);
-      router.replace(ROUTES.choosePath as Href);
+      setShowCancelConfirm(false);
+      router.replace(`${ROUTES.choosePath}?fresh=1` as Href);
     } catch (err) {
       toast.error(t('common.error'), err instanceof Error ? err.message : t('onboarding.pendingApproval.failedToCancel'));
     } finally {
@@ -87,83 +83,49 @@ export default function PendingApprovalScreen() {
     }
   };
 
+  const refused = status === 'rejected';
+  const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ');
+  const anotherCode = () => router.replace(`${ROUTES.choosePath}?fresh=1` as Href);
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top + SPACING.xl }]}>
-      <StatusBar style="dark" />
-
-      <ScreenContainer width="content">
-      <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <View style={styles.iconBg}>
-            <Ionicons name="hourglass-outline" size={48} color={COLORS.primary} />
-          </View>
-        </View>
-
-        <Text style={styles.title}>
-          {status === 'rejected' ? t('onboarding.pendingApproval.rejectedTitle') : t('onboarding.pendingApproval.waitingTitle')}
-        </Text>
-
-        <Text style={styles.subtitle}>
-          {status === 'rejected'
-            ? t('onboarding.pendingApproval.rejectedSubtitle')
-            : t('onboarding.pendingApproval.waitingSubtitle')
-          }
-        </Text>
-
-        {orgName ? (
-          <View style={styles.infoBadge}>
-            <Ionicons name="business-outline" size={18} color={COLORS.primary} />
-            <Text style={styles.infoText}>{orgName}</Text>
-          </View>
-        ) : null}
-
-        {requestMessage ? (
-          <View style={styles.messageBadge}>
-            <Text style={styles.messageLabel}>{t('onboarding.pendingApproval.yourMessage')}</Text>
-            <Text style={styles.messageText}>{requestMessage}</Text>
-          </View>
-        ) : null}
-
-        {status === 'rejected' && rejectionReason ? (
-          <View style={styles.rejectionBadge}>
-            <Ionicons name="close-circle" size={18} color={COLORS.error} />
-            <Text style={styles.rejectionText}>{rejectionReason}</Text>
+    <>
+      <PassFrame
+        heading={refused ? t('onboarding.pass.headingRefused') : t('onboarding.pass.headingWaiting')}
+        dock={
+          refused ? (
+            <PrimaryButton label={t('onboarding.pass.tryAnother')} onPress={anotherCode} />
+          ) : (
+            <View style={{ gap: amazen.space(3) }}>
+              <PrimaryButton label={t('onboarding.pass.haveAnother')} onPress={anotherCode} />
+              {requestId ? (
+                <Pressable onPress={() => setShowCancelConfirm(true)} hitSlop={10} accessibilityRole="button" style={{ alignSelf: 'center' }}>
+                  <AText variant="body" style={{ color: c.critical, fontSize: 13.5 }}>{t('onboarding.pendingApproval.cancelRequest')}</AText>
+                </Pressable>
+              ) : null}
+            </View>
+          )
+        }
+      >
+        <PassBadge
+          face={refused ? 'refused' : 'reception'}
+          strip={refused ? t('onboarding.pass.stripRefused') : t('onboarding.pass.stripReception')}
+          company={orgName}
+          name={name}
+          role={refused
+            ? (rejectionReason ? `“${rejectionReason}”` : t('onboarding.pass.refusedNoReason', { org: orgName }))
+            : t('onboarding.pass.waitingFor', { org: orgName })}
+          roleTone={refused ? 'critical' : 'warn'}
+          footLeft="HBCFIELD"
+          footRight={refused ? '' : t('onboarding.pass.checksEvery')}
+          stamp={{ text: refused ? t('onboarding.pass.stripRefused') : t('onboarding.pass.stampPending'), tone: refused ? 'critical' : 'warn' }}
+        />
+        {requestMessage && !refused ? (
+          <View style={{ backgroundColor: c.glass, borderWidth: 1, borderColor: c.lineGlass, borderRadius: 18, padding: amazen.space(3.5), gap: 4 }}>
+            <AText style={{ color: c.inkOnGlass, fontFamily: amazen.font.mono, fontSize: 10, letterSpacing: 1.3, textTransform: 'uppercase' }}>{t('onboarding.pendingApproval.yourMessage')}</AText>
+            <AText variant="body" tone="strong" style={{ fontSize: 14, lineHeight: 20 }}>{requestMessage}</AText>
           </View>
         ) : null}
-
-        {status === 'pending' && (
-          <View style={styles.pollIndicator}>
-            <ActivityIndicator size="small" color={COLORS.primary} />
-            <Text style={styles.pollText}>{t('onboarding.pendingApproval.checkingEvery30Seconds')}</Text>
-          </View>
-        )}
-      </View>
-      </ScreenContainer>
-
-      <View style={[styles.footer, { paddingBottom: insets.bottom + SPACING.md }]}>
-        {status === 'rejected' && (
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => {
-              if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = undefined; }
-              router.replace(ROUTES.choosePath as Href);
-            }}
-          >
-            <Text style={styles.retryButtonText}>{t('onboarding.pendingApproval.tryDifferentPath')}</Text>
-          </TouchableOpacity>
-        )}
-
-        {status === 'pending' && (
-          <TouchableOpacity style={styles.cancelButton} onPress={handleCancel} disabled={isCanceling}>
-            {isCanceling ? <ActivityIndicator color={COLORS.error} size="small" /> : <Text style={styles.cancelButtonText}>{t('onboarding.pendingApproval.cancelRequest')}</Text>}
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity style={styles.logoutRow} onPress={() => void logout()}>
-          <Ionicons name="log-out-outline" size={18} color={COLORS.slate500} />
-          <Text style={styles.logoutText}>{t('common.logOut')}</Text>
-        </TouchableOpacity>
-      </View>
+      </PassFrame>
 
       <ConfirmSheet
         visible={showCancelConfirm}
@@ -176,46 +138,6 @@ export default function PendingApprovalScreen() {
         variant="warning"
         isLoading={isCanceling}
       />
-    </View>
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.slate50 },
-  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: SPACING.xl },
-  iconContainer: { marginBottom: SPACING.xl },
-  iconBg: {
-    width: 96, height: 96, borderRadius: 48, backgroundColor: COLORS.primaryLight,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  title: { fontSize: 24, fontWeight: FONT_WEIGHT.bold, color: COLORS.slate800, textAlign: 'center', marginBottom: SPACING.sm },
-  subtitle: { fontSize: FONT_SIZE.lg, color: COLORS.slate500, textAlign: 'center', marginBottom: SPACING.xl },
-  infoBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm,
-    backgroundColor: COLORS.primaryLight, borderRadius: RADIUS.full, marginBottom: SPACING.md,
-  },
-  infoText: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, color: COLORS.primary },
-  messageBadge: {
-    width: '100%', padding: SPACING.md, backgroundColor: COLORS.white, borderRadius: RADIUS.md,
-    borderWidth: 1, borderColor: COLORS.slate200, marginBottom: SPACING.md,
-  },
-  messageLabel: { fontSize: FONT_SIZE.xs, color: COLORS.slate400, marginBottom: SPACING.xs },
-  messageText: { fontSize: FONT_SIZE.md, color: COLORS.slate600, fontStyle: 'italic' },
-  rejectionBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, width: '100%', padding: SPACING.md,
-    backgroundColor: COLORS.errorLight, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.errorBorder,
-  },
-  rejectionText: { flex: 1, fontSize: FONT_SIZE.md, color: COLORS.error },
-  pollIndicator: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: SPACING.lg },
-  pollText: { fontSize: FONT_SIZE.sm, color: COLORS.slate400 },
-  footer: { padding: SPACING.xl, gap: SPACING.md, alignItems: 'center' },
-  cancelButton: { paddingVertical: SPACING.sm, paddingHorizontal: SPACING.xl },
-  cancelButtonText: { fontSize: FONT_SIZE.md, color: COLORS.error, fontWeight: FONT_WEIGHT.semibold },
-  retryButton: {
-    backgroundColor: COLORS.primary, borderRadius: RADIUS.md, paddingVertical: SPACING.md, paddingHorizontal: SPACING.xl,
-    width: '100%', alignItems: 'center',
-  },
-  retryButtonText: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.white },
-  logoutRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
-  logoutText: { fontSize: FONT_SIZE.md, color: COLORS.slate500 },
-});
