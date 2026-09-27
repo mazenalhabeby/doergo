@@ -287,9 +287,7 @@ export default function AppLayout() {
           name="profile/about"
           options={{
             title: t('navTitles.about'),
-            presentation: 'transparentModal',
             headerShown: false,
-            animation: 'slide_from_bottom',
           }}
         />
         <Stack.Screen

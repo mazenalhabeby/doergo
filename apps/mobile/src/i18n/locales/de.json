@@ -4094,6 +4094,20 @@
       "allSent": "Alles ist auf dem Server",
       "lastSent": "Zuletzt gesendet um {{time}}",
       "sentToday": "Heute gesendet"
+    },
+    "about": {
+      "version": "Version",
+      "build": "Build",
+      "built": "Erstellt",
+      "update": "Update",
+      "ready": "Version {{version}} ist bereit",
+      "upToDate": "Aktuell",
+      "youHave": "Sie haben {{version}}. Im Store gibt es die neue.",
+      "received": "Version {{version}} · letzte Verbesserungen erhalten am {{date}}",
+      "versionOnly": "Version {{version}}",
+      "forSupport": "Für den Support",
+      "copy": "Für den Support kopieren",
+      "updateShort": "Update bereit"
     }
   }
 }

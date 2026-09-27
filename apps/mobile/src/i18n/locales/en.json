@@ -4094,6 +4094,20 @@
       "allSent": "Everything is on the server",
       "lastSent": "Last sent at {{time}}",
       "sentToday": "Sent today"
+    },
+    "about": {
+      "version": "Version",
+      "build": "Build",
+      "built": "Built",
+      "update": "Update",
+      "ready": "Version {{version}} is ready",
+      "upToDate": "Up to date",
+      "youHave": "You have {{version}}. The store has the new one.",
+      "received": "Version {{version}} · latest improvements received {{date}}",
+      "versionOnly": "Version {{version}}",
+      "forSupport": "For support",
+      "copy": "Copy for support",
+      "updateShort": "Update ready"
     }
   }
 }

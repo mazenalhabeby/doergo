@@ -359,10 +359,9 @@ export function ProfileScreen() {
           <Row glyph="rate" label={t('profile.menu.rateApp')} onPress={() => Linking.openURL('https://apps.apple.com').catch(() => {})} />
         </Group>
 
-        <Group label={t('profile.menu.legal')}>
-          <Row glyph="terms" label={t('profile.menu.termsOfService')} onPress={() => Linking.openURL('https://hbcfield.com/terms').catch(() => {})} />
-          <Row glyph="privacy" label={t('profile.menu.privacyPolicy')} onPress={() => Linking.openURL('https://hbcfield.com/privacy').catch(() => {})} />
-          <Row glyph="about" label={t('profile.menu.about')} value={`v${appVersion}`} valueTone={versionStatus?.updateAvailable ? 'accent' : undefined} onPress={() => router.push('/profile/about' as Href)} />
+        {/* Terms and privacy live on About now: one row, not a group of three for two links. */}
+        <Group label={t('profile.menu.about')}>
+          <Row glyph="about" label={t('profile.menu.about')} value={versionStatus?.updateAvailable ? t('settings.about.updateShort', 'Update ready') : `v${appVersion}`} valueTone={versionStatus?.updateAvailable ? 'accent' : undefined} onPress={() => router.push('/profile/about' as Href)} />
         </Group>
 
         {/* ── Sign out, last ── */}
