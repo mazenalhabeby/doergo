@@ -41,6 +41,9 @@ export interface OrgMember {
   enabledModules?: string[] | Record<string, unknown> | null;
   presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null;
   lastActiveAt?: string | null;
+  /** The organization role this member holds — its own name and colour. */
+  memberRole?: { id: string; name: string; color?: string | null } | null;
+  isExternal?: boolean;
   canCreateTasks: boolean;
   canViewAllTasks: boolean;
   canAssignTasks: boolean;
@@ -59,6 +62,13 @@ export interface Invitation {
   maxDailyJobs?: number;
   createdBy?: { id: string; firstName: string; lastName: string };
   acceptedBy?: { id: string; firstName: string; lastName: string };
+  /** The code itself — kept so it can be shared again (see CLAUDE.md §3.4). */
+  code?: string | null;
+  position?: string | null;
+  spaceId?: string | null;
+  isExternal?: boolean;
+  usedAt?: string | null;
+  acceptedById?: string | null;
 }
 
 export interface CreateInvitationInput {
@@ -113,17 +123,18 @@ export const membersApi = {
     return Array.isArray(result) ? result : result?.data || result?.members || [];
   },
 
-  updateRole: async (id: string, data: {
-    role?: string;
-    platform?: string;
-    canCreateTasks?: boolean;
-    canViewAllTasks?: boolean;
-    canAssignTasks?: boolean;
-    canManageUsers?: boolean;
-  }): Promise<void> => {
-    await fetchWithAuth<any>(`/organizations/members/${id}/role`, {
+  /**
+   * Give a member one of the organization's roles (or none).
+   *
+   * ⚠️ THE ONE GRANT PATH. `PATCH /organizations/members/:id` — the route the web
+   * uses — enforces the ceiling: a role granting more than the caller holds is
+   * refused. The phone's old `/members/:id/role` named a route that no longer
+   * exists; a second grant path would be a second place to forget the ceiling.
+   */
+  setRole: async (id: string, memberRoleId: string | null): Promise<void> => {
+    await fetchWithAuth<any>(`/organizations/members/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ memberRoleId }),
     });
   },
 
@@ -162,8 +173,18 @@ export const adminInvitationsApi = {
 // ORGANIZATION SETTINGS API
 // ============================================================================
 
+/** The organization's roles (org scope) — the names the Members screen filters by and approving assigns. */
+export interface OrgRole { id: string; name: string; slug?: string; color?: string | null; scope: string; isSystem?: boolean }
+export const rolesApi = {
+  list: async (): Promise<OrgRole[]> => {
+    const result = await fetchWithAuth<any>('/organizations/roles');
+    return Array.isArray(result) ? result : result?.data ?? [];
+  },
+};
+
 export const orgSettingsApi = {
-  getJoinCode: async (): Promise<{ hasJoinCode: boolean; joinPolicy: string; code?: string }> => {
+  /** ⚠️ The server answers `joinCode`, not `code` — the old type named a field that never arrived. */
+  getJoinCode: async (): Promise<{ hasJoinCode: boolean; joinPolicy: string; joinCode?: string | null }> => {
     return fetchWithAuth<any>('/organizations/join-code');
   },
 

@@ -45,6 +45,7 @@ const ONLINE_ONLY: Record<string, string> = {
   '/onboarding/status': 'joining an organization is not something that happens in a basement',
   '/onboarding/validate-org-code/:x': 'the server is the only thing that knows whether a code is real',
   '/rota/week': 'other people’s staffing, for a rota manager: not the member’s own data to hold on a phone, and a stale week is a wrong one',
+  '/organizations/roles': 'the org role catalogue, read only by an admin approving a join request — an approval is itself online, so there is nothing to do with a cached list',
   '/billing/subscription': "Stripe's own status; a kept copy would be a stale claim about money",
   // Presence — who is on RIGHT NOW. The Crew card says it needs a connection rather than show this morning.
   '/attendance/no-shows': 'presence: a kept answer would name somebody late who has since arrived',
