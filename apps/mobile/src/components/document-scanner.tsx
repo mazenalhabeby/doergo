@@ -131,12 +131,15 @@ export function DocumentScanner({
 
   // Held in a ref, not state: a barcode fires many times a second and each
   // re-render would restart the camera preview.
-  const barcode = useRef<{ data: string; type: string } | null>(null);
+  const barcode = useRef<{ data: string; type: string; side: 'front' | 'back' } | null>(null);
+  // The side on screen, for the barcode callback (a closure would keep the first render's).
+  const sideRef = useRef<'front' | 'back'>('front');
   const capturing = useRef(false);
 
   useEffect(() => {
     if (!visible) {
       setSide('front');
+      sideRef.current = 'front';
       setFront(null);
       setPreview(null);
       setTorch(false);
@@ -187,12 +190,15 @@ export function DocumentScanner({
       setBusy(false);
       capturing.current = false;
     }
-  }, []);
+    // ⚠️ `shape` is a dependency: with none, the crop kept the FIRST type's frame
+    // after the member switched from a card to a passport.
+  }, [shape]);
 
   const onBarcode = useCallback(
     (result: BarcodeScanningResult) => {
-      if (barcode.current || capturing.current) return;
-      barcode.current = { data: result.data, type: result.type };
+      // One code per side: a code read on the front used to stop the back from ever auto-capturing.
+      if (capturing.current || barcode.current?.side === sideRef.current) return;
+      barcode.current = { data: result.data, type: result.type, side: sideRef.current };
       // The document is in frame and square enough to decode — the best moment
       // to take the picture, and better than any moment a person picks.
       void capture();
@@ -206,6 +212,7 @@ export function DocumentScanner({
       setFront(preview);
       setPreview(null);
       setSide('back');
+      sideRef.current = 'back';
       return;
     }
     const first = twoSided ? front! : preview;
@@ -276,7 +283,14 @@ export function DocumentScanner({
                 {t(twoSided && side === 'front' ? 'documents.scanner.frontReadable' : 'documents.scanner.readable')}
               </Text>
               <View style={s.previewActions}>
-                <PressableScale onPress={() => setPreview(null)} style={[s.secondary]}>
+                <PressableScale
+                  onPress={() => {
+                    // A code read from the discarded shot must not travel with the next one.
+                    if (barcode.current?.side === side) barcode.current = null;
+                    setPreview(null);
+                  }}
+                  style={[s.secondary]}
+                >
                   <Ionicons name="refresh" size={18} color="#fff" />
                   <Text style={s.secondaryText}>{t('documents.scanner.retake')}</Text>
                 </PressableScale>
@@ -296,8 +310,9 @@ export function DocumentScanner({
               style={s.fill}
               facing="back"
               enableTorch={torch}
-              barcodeScannerSettings={{ barcodeTypes: [...DOCUMENT_BARCODES] }}
-              onBarcodeScanned={onBarcode}
+              /* A paper page carries no code to read — no auto-capture there. */
+              barcodeScannerSettings={shape === 'PAGE' ? undefined : { barcodeTypes: [...DOCUMENT_BARCODES] }}
+              onBarcodeScanned={shape === 'PAGE' ? undefined : onBarcode}
             />
 
             <Frame shape={shape} />
@@ -323,7 +338,7 @@ export function DocumentScanner({
                     : 'documents.scanner.fit',
                 )}
               </Text>
-              <Text style={s.instructionHint}>{t('documents.scanner.autoHint')}</Text>
+              {shape === 'PAGE' ? null : <Text style={s.instructionHint}>{t('documents.scanner.autoHint')}</Text>}
             </View>
 
             <View style={[s.shutterBar, { paddingBottom: insets.bottom + SPACING.lg }]}>

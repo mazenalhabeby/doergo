@@ -2386,7 +2386,17 @@
       "dateCorrecting": "Saisissez la date telle qu'elle figure sur le document.",
       "forOffice": "Pour le bureau",
       "contract": "Contrat pour un véhicule ou un équipement",
-      "contractHint": "Location, leasing ou achat — le bureau l’enregistre"
+      "contractHint": "Location, leasing ou achat — le bureau l’enregistre",
+      "groupAsked": "Demandé · {{count}}",
+      "groupChecking": "En cours de vérification",
+      "groupOther": "Autre chose",
+      "onPhone": "Sur ce téléphone · envoyé dès que vous êtes en ligne",
+      "checking": "Envoyé · le bureau le vérifie",
+      "sentBackWhy": "Renvoyé · {{reason}}",
+      "expiringOn": "Expire le {{date}} · envoyez le renouvelé",
+      "askedMissing": "Demandé · pas encore envoyé",
+      "nameOnIt": "Nom",
+      "numberOnIt": "Numéro"
     },
     "status": {
       "pendingVerification": "En attente de vérification",
@@ -2473,6 +2483,31 @@
       "fromFiles": "Joindre un PDF",
       "noFilePicker": "Cette version de l'app ne peut pas joindre de fichiers. Mettez-la à jour pour ajouter un PDF.",
       "failedGeneric": "Cette page n'a pas été envoyée. Touchez-la pour réessayer."
+    },
+    "add": "Ajouter",
+    "sectionSign_one": "En attente de votre signature · {{count}}",
+    "sectionSign_other": "En attente de votre signature · {{count}}",
+    "waitingToSend": "En attente d’envoi · {{count}}",
+    "queuedLine": "Ajouté sans réseau · envoyé dès que vous êtes en ligne",
+    "clearFilters": "Effacer",
+    "openTheFile": "Ouvrir le fichier",
+    "sendNew": "En envoyer un nouveau",
+    "onPaperHint": "Signez une copie imprimée et remettez-la au bureau.",
+    "tag": {
+      "sign": "Signer",
+      "sentBack": "Renvoyé",
+      "expiredOn": "Expiré le {{date}}",
+      "expiresOn": "Expire le {{date}}",
+      "validTo": "Valable jusqu’au {{date}}",
+      "signed": "Signé"
+    },
+    "fact": {
+      "kind": "Type",
+      "sentIn": "Envoyé le",
+      "issued": "Émis le",
+      "period": "Pour",
+      "validUntil": "Valable jusqu’au",
+      "state": "État"
     }
   },
   "attendanceReview": {

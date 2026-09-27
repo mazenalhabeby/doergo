@@ -2386,7 +2386,17 @@
       "dateCorrecting": "Inserisca la data come è stampata sul documento.",
       "forOffice": "Per l’ufficio",
       "contract": "Contratto per un veicolo o un’attrezzatura",
-      "contractHint": "Noleggio, leasing o acquisto — l’ufficio lo registra"
+      "contractHint": "Noleggio, leasing o acquisto — l’ufficio lo registra",
+      "groupAsked": "Richiesto · {{count}}",
+      "groupChecking": "In verifica",
+      "groupOther": "Altro",
+      "onPhone": "Su questo telefono · inviato quando sarà online",
+      "checking": "Inviato · l’ufficio lo sta verificando",
+      "sentBackWhy": "Rimandato · {{reason}}",
+      "expiringOn": "Scade il {{date}} · invii quello rinnovato",
+      "askedMissing": "Richiesto · non ancora inviato",
+      "nameOnIt": "Nome",
+      "numberOnIt": "Numero"
     },
     "status": {
       "pendingVerification": "In attesa di verifica",
@@ -2473,6 +2483,31 @@
       "fromFiles": "Allega un PDF",
       "noFilePicker": "Questa versione dell'app non può allegare file. Aggiornala per aggiungere un PDF.",
       "failedGeneric": "Quella pagina non è stata inviata. Toccala per riprovare."
+    },
+    "add": "Aggiungi",
+    "sectionSign_one": "In attesa della sua firma · {{count}}",
+    "sectionSign_other": "In attesa della sua firma · {{count}}",
+    "waitingToSend": "In attesa di invio · {{count}}",
+    "queuedLine": "Aggiunto senza rete · inviato quando sarà online",
+    "clearFilters": "Cancella",
+    "openTheFile": "Apri il file",
+    "sendNew": "Inviane uno nuovo",
+    "onPaperHint": "Firmi una copia stampata e la consegni all’ufficio.",
+    "tag": {
+      "sign": "Firmare",
+      "sentBack": "Rimandato",
+      "expiredOn": "Scaduto il {{date}}",
+      "expiresOn": "Scade il {{date}}",
+      "validTo": "Valido fino al {{date}}",
+      "signed": "Firmato"
+    },
+    "fact": {
+      "kind": "Tipo",
+      "sentIn": "Inviato il",
+      "issued": "Emesso il",
+      "period": "Per",
+      "validUntil": "Valido fino al",
+      "state": "Stato"
     }
   },
   "attendanceReview": {

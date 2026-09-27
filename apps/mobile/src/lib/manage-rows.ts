@@ -143,8 +143,15 @@ export interface Destination {
  * and they are not tiles.
  */
 export const MEMBER_ROWS: Destination[] = [
-  { icon: 'document-text', labelKey: 'shortcuts.documents', descKey: 'shortcuts.documentsDesc', route: '/(app)/documents', color: '#0b8168', permission: '', orgWide: false, internal: true, home: true, badge: 'documents.due' },
-  { icon: 'create', labelKey: 'shortcuts.sign', descKey: 'shortcuts.signDesc', route: '/(app)/sign-document', color: '#0b8168', permission: '', orgWide: false, home: true, badge: 'documents.toSign' },
+  /*
+    Both behind the Documents OPTION, like the profile row and the badges they
+    carry — without it they led to a screen with nothing on it.
+    ⚠️ Sign opens Documents, where anything waiting on a signature is the first
+    section. It used to open the signing screen with no document at all, which
+    can sign nothing.
+  */
+  { icon: 'document-text', labelKey: 'shortcuts.documents', descKey: 'shortcuts.documentsDesc', route: '/(app)/documents', color: '#0b8168', permission: '', orgWide: false, internal: true, gate: { addOn: 'documents' }, home: true, badge: 'documents.due' },
+  { icon: 'create', labelKey: 'shortcuts.sign', descKey: 'shortcuts.signDesc', route: '/(app)/documents', color: '#0b8168', permission: '', orgWide: false, gate: { addOn: 'documents' }, home: true, badge: 'documents.toSign' },
   { icon: 'cube', labelKey: 'shortcuts.myEquipment', descKey: 'shortcuts.myEquipmentDesc', route: '/(app)/my-assets', color: '#0f766e', permission: '', orgWide: false, module: 'assets', internal: true, home: true, badge: 'assets.due' },
   /*
     ⚠️ MESSAGES IS NOT HERE ANY MORE. It took a permanent slot in the tab pill

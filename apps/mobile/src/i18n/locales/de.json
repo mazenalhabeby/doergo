@@ -2386,7 +2386,17 @@
       "dateCorrecting": "Geben Sie das Datum so ein, wie es auf dem Dokument steht.",
       "forOffice": "Für das Büro",
       "contract": "Vertrag für ein Fahrzeug oder Gerät",
-      "contractHint": "Miete, Leasing oder Kauf — das Büro legt es an"
+      "contractHint": "Miete, Leasing oder Kauf — das Büro legt es an",
+      "groupAsked": "Angefordert · {{count}}",
+      "groupChecking": "Wird geprüft",
+      "groupOther": "Etwas anderes",
+      "onPhone": "Auf diesem Telefon · wird gesendet, sobald Sie online sind",
+      "checking": "Gesendet · das Büro prüft es",
+      "sentBackWhy": "Zurückgeschickt · {{reason}}",
+      "expiringOn": "Läuft ab am {{date}} · senden Sie das erneuerte",
+      "askedMissing": "Angefordert · noch nicht gesendet",
+      "nameOnIt": "Name darauf",
+      "numberOnIt": "Nummer"
     },
     "status": {
       "pendingVerification": "Wird geprüft",
@@ -2473,6 +2483,31 @@
       "fromFiles": "PDF anhängen",
       "noFilePicker": "Diese App-Version kann keine Dateien anhängen. Aktualisieren Sie sie, um ein PDF hinzuzufügen.",
       "failedGeneric": "Diese Seite wurde nicht gesendet. Zum Wiederholen antippen."
+    },
+    "add": "Hinzufügen",
+    "sectionSign_one": "Wartet auf Ihre Unterschrift · {{count}}",
+    "sectionSign_other": "Warten auf Ihre Unterschrift · {{count}}",
+    "waitingToSend": "Wartet auf Versand · {{count}}",
+    "queuedLine": "Ohne Netz hinzugefügt · wird gesendet, sobald Sie online sind",
+    "clearFilters": "Zurücksetzen",
+    "openTheFile": "Datei öffnen",
+    "sendNew": "Neues senden",
+    "onPaperHint": "Unterschreiben Sie einen Ausdruck und geben Sie ihn im Büro ab.",
+    "tag": {
+      "sign": "Unterschreiben",
+      "sentBack": "Zurückgeschickt",
+      "expiredOn": "Abgelaufen am {{date}}",
+      "expiresOn": "Läuft ab am {{date}}",
+      "validTo": "Gültig bis {{date}}",
+      "signed": "Unterschrieben"
+    },
+    "fact": {
+      "kind": "Art",
+      "sentIn": "Eingereicht",
+      "issued": "Ausgestellt",
+      "period": "Für",
+      "validUntil": "Gültig bis",
+      "state": "Status"
     }
   },
   "attendanceReview": {

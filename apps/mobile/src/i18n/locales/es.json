@@ -2386,7 +2386,17 @@
       "dateCorrecting": "Introduzca la fecha tal como aparece en el documento.",
       "forOffice": "Para la oficina",
       "contract": "Contrato de un vehículo o equipo",
-      "contractHint": "Alquiler, leasing o compra — la oficina lo registra"
+      "contractHint": "Alquiler, leasing o compra — la oficina lo registra",
+      "groupAsked": "Solicitado · {{count}}",
+      "groupChecking": "En revisión",
+      "groupOther": "Otra cosa",
+      "onPhone": "En este teléfono · se envía cuando tenga conexión",
+      "checking": "Enviado · la oficina lo está revisando",
+      "sentBackWhy": "Devuelto · {{reason}}",
+      "expiringOn": "Caduca el {{date}} · envíe el renovado",
+      "askedMissing": "Solicitado · aún no enviado",
+      "nameOnIt": "Nombre",
+      "numberOnIt": "Número"
     },
     "status": {
       "pendingVerification": "Pendiente de revisión",
@@ -2473,6 +2483,31 @@
       "fromFiles": "Adjuntar un PDF",
       "noFilePicker": "Esta versión de la app no puede adjuntar archivos. Actualízala para añadir un PDF.",
       "failedGeneric": "Esa página no se envió. Tócala para reintentar."
+    },
+    "add": "Añadir",
+    "sectionSign_one": "Esperando su firma · {{count}}",
+    "sectionSign_other": "Esperando su firma · {{count}}",
+    "waitingToSend": "Pendiente de envío · {{count}}",
+    "queuedLine": "Añadido sin conexión · se envía cuando tenga conexión",
+    "clearFilters": "Borrar",
+    "openTheFile": "Abrir el archivo",
+    "sendNew": "Enviar uno nuevo",
+    "onPaperHint": "Firme una copia impresa y entréguela en la oficina.",
+    "tag": {
+      "sign": "Firmar",
+      "sentBack": "Devuelto",
+      "expiredOn": "Caducó el {{date}}",
+      "expiresOn": "Caduca el {{date}}",
+      "validTo": "Válido hasta {{date}}",
+      "signed": "Firmado"
+    },
+    "fact": {
+      "kind": "Tipo",
+      "sentIn": "Enviado",
+      "issued": "Emitido",
+      "period": "Para",
+      "validUntil": "Válido hasta",
+      "state": "Estado"
     }
   },
   "attendanceReview": {

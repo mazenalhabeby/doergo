@@ -2386,7 +2386,17 @@
       "dateCorrecting": "Set the date as printed on the document.",
       "forOffice": "For the office",
       "contract": "Contract for a vehicle or equipment",
-      "contractHint": "Rental, leasing or purchase — the office adds it"
+      "contractHint": "Rental, leasing or purchase — the office adds it",
+      "groupAsked": "Asked for · {{count}}",
+      "groupChecking": "Being checked",
+      "groupOther": "Something else",
+      "onPhone": "On this phone · sends when you are online",
+      "checking": "Sent · the office is checking it",
+      "sentBackWhy": "Sent back · {{reason}}",
+      "expiringOn": "Expires {{date}} · send the renewed one",
+      "askedMissing": "Asked for · not sent yet",
+      "nameOnIt": "Name on it",
+      "numberOnIt": "Number"
     },
     "status": {
       "pendingVerification": "Awaiting review",
@@ -2473,6 +2483,31 @@
       "fromFiles": "Attach a PDF",
       "noFilePicker": "This version of the app cannot attach files. Update it to add a PDF.",
       "failedGeneric": "That page did not send. Tap it to try again."
+    },
+    "add": "Add",
+    "sectionSign_one": "Waiting for your signature · {{count}}",
+    "sectionSign_other": "Waiting for your signature · {{count}}",
+    "waitingToSend": "Waiting to send · {{count}}",
+    "queuedLine": "Added with no signal · sends when you are online",
+    "clearFilters": "Clear",
+    "openTheFile": "Open the file",
+    "sendNew": "Send a new one",
+    "onPaperHint": "Sign a printed copy and hand it back to the office.",
+    "tag": {
+      "sign": "Sign",
+      "sentBack": "Sent back",
+      "expiredOn": "Expired {{date}}",
+      "expiresOn": "Expires {{date}}",
+      "validTo": "Valid to {{date}}",
+      "signed": "Signed"
+    },
+    "fact": {
+      "kind": "Kind",
+      "sentIn": "Sent in",
+      "issued": "Issued",
+      "period": "For",
+      "validUntil": "Valid until",
+      "state": "State"
     }
   },
   "attendanceReview": {

@@ -33,7 +33,8 @@ const member = (over: Record<string, unknown> = {}) => ({
   enabledModules: profile(['tasks', 'clock']),
   spaceModules: ['tracking', 'assets', 'crm'],
   orgModules: [],
-  orgAddOns: ['overtime'],
+  // Documents is an Option: the Documents and Sign tiles only exist where it was bought.
+  orgAddOns: ['overtime', 'documents'],
   ...over,
 });
 const widgets = (u: object) => availableWidgets(u as never).map((w) => w.key);

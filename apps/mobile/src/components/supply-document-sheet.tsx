@@ -14,6 +14,9 @@ import { stagePage } from '../lib/page-upload';
 import { useImagePicker } from '../hooks/useImagePicker';
 import { File as FsFile } from 'expo-file-system';
 import { documentsApi, type DocumentType } from '../lib/api/documents';
+import { typeGroups, type AskDocument, type AskRequirement, type AskType, type AskedRow } from '../lib/document-asks';
+import { useSyncStatus } from '../offline/offline-context';
+import { STILL_MINE } from '../offline/actions/outcome';
 import { uploadToPresignedUrl } from '../lib/api/attachments';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
 import { documentTypeIcon } from '../lib/document-icons';
@@ -56,6 +59,8 @@ export function SupplyDocumentSheet({
   onSubmitted,
   initialTypeId,
   onContract,
+  requirements,
+  documents,
 }: {
   types: DocumentType[];
   visible: boolean;
@@ -73,11 +78,30 @@ export function SupplyDocumentSheet({
    * profile) to the same question — what are you handing in?
    */
   onContract?: () => void;
+  /**
+   * What is asked of the member, and what they already have — so "What is it?"
+   * lists what is needed first, shows what is being checked without offering
+   * it again, and leaves out what was approved. Absent (the home strip, which
+   * opens the sheet FOR one type), every type is simply offered.
+   */
+  requirements?: readonly AskRequirement[];
+  documents?: readonly AskDocument[];
 }) {
-  const { colors } = useTheme();
+  const { amazen } = useTheme();
+  const a = amazen.color;
+  /*
+    The sheet's words and surfaces, in the app's own design. Named after the
+    old palette's roles so the long form below reads unchanged.
+  */
+  const colors = {
+    textPrimary: a.inkStrong, textSecondary: a.ink, textMuted: a.inkMuted,
+    surface: a.well, surfaceRaised: a.tile, border: a.lineWell, primaryLight: a.accentTint,
+  };
+  const COLORS = { primary: a.accentSolid, white: a.accentInk };
   const { t } = useTranslation();
   const toast = useToast();
   const offline = useOffline();
+  const { operations } = useSyncStatus();
   const connectivity = useConnectivity();
   const { pickFromGallery, takePhoto } = useImagePicker();
 
@@ -130,6 +154,8 @@ export function SupplyDocumentSheet({
   */
   const [dateSource, setDateSource] = useState<'MRZ' | 'TEXT' | 'NOTHING' | null>(null);
   const [reading, setReading] = useState(false);
+  /* The name and number the server read — shown so a wrong card is caught before it is sent. */
+  const [readFields, setReadFields] = useState<{ holderName: string | null; documentNumber: string | null } | null>(null);
   /*
     The member has asked to set the date themselves.
 
@@ -157,7 +183,64 @@ export function SupplyDocumentSheet({
   /** The scanner, opened for a SHEET rather than a card. */
   const [scanningPage, setScanningPage] = useState(false);
 
-  const type = suppliable.find((ty) => ty.id === typeId) ?? suppliable[0];
+  /*
+    "What is it?", sorted by what is asked of the member — `document-asks`, the
+    same rule as the Still needed card. Being checked is shown and not offered;
+    approved and valid is left out.
+  */
+  const queuedTypeIds = useMemo(() => new Set(
+    operations
+      .filter((o) => o.op === 'document.supply' && STILL_MINE.has(o.state))
+      .map((o) => String((o.payload.body as { typeId?: string } | undefined)?.typeId ?? '')),
+  ), [operations]);
+  const groups = useMemo(
+    () => typeGroups(suppliable, requirements ?? [], documents ?? [], queuedTypeIds),
+    [suppliable, requirements, documents, queuedTypeIds],
+  );
+  const selectable = useMemo(
+    () => [...groups.asked.map((r) => r.type), ...groups.other] as DocumentType[],
+    [groups],
+  );
+  const type = selectable.find((ty) => ty.id === typeId) ?? selectable[0];
+
+  const askedLine = (row: AskedRow) => {
+    if (row.why === 'sentBack') return row.reason ? t('documents.supply.sentBackWhy', { reason: row.reason, defaultValue: 'Sent back · {{reason}}' }) : t('documents.required.state.REJECTED');
+    if (row.why === 'expired') return t('documents.required.state.EXPIRED');
+    if (row.why === 'expiring') return row.expiresOn
+      ? t('documents.supply.expiringOn', { date: formatCalendarDate(row.expiresOn.slice(0, 10)), defaultValue: 'Expires {{date}} · send the renewed one' })
+      : t('documents.required.state.EXPIRING');
+    return t('documents.supply.askedMissing', 'Asked for · not sent yet');
+  };
+
+  /* One row of "What is it?" — every row the same height, whatever its description. */
+  const typeRow = (ty: AskType, sub: string | null, o: { tone?: 'warn' | 'crit'; off?: boolean } = {}) => {
+    const full = ty as DocumentType;
+    const on = !o.off && ty.id === type?.id;
+    const hint = o.tone === 'crit' ? a.critical : o.tone === 'warn' ? a.warn : colors.textMuted;
+    return (
+      <PressableScale
+        key={ty.id}
+        onPress={() => chooseType(ty.id)}
+        disabled={o.off}
+        accessibilityRole="radio"
+        accessibilityState={{ selected: on, disabled: !!o.off }}
+        style={[
+          s.typeRow,
+          on ? { backgroundColor: a.accentTint, borderWidth: 1.5, borderColor: a.accent } : { backgroundColor: colors.surfaceRaised },
+          o.off && { opacity: 0.6 },
+        ]}
+      >
+        <View style={[s.typeIcon, { backgroundColor: o.tone === 'crit' ? a.criticalTint : o.tone === 'warn' ? a.warnTint : colors.surface }]}>
+          <Ionicons name={o.off ? 'time-outline' : o.tone ? 'add' : documentTypeIcon(full.key)} size={19} color={o.tone === 'crit' ? a.critical : o.tone === 'warn' ? a.warn : on ? a.accent : colors.textSecondary} />
+        </View>
+        <View style={s.typeText}>
+          <Text style={[s.typeLabel, { color: on ? a.accent : colors.textPrimary }]} numberOfLines={1}>{ty.label}</Text>
+          {sub ? <Text style={[s.typeHint, { color: hint }]} numberOfLines={1}>{sub}</Text> : null}
+        </View>
+        {on && <Ionicons name="checkmark-circle" size={20} color={a.accent} />}
+      </PressableScale>
+    );
+  };
 
   /*
     One rule, shared with the web.
@@ -177,16 +260,41 @@ export function SupplyDocumentSheet({
     overriding,
   });
 
-  const reset = () => {
+  /*
+    ⚠️ Everything read off a photo goes WITH the photo. Removing it used to keep
+    its date, its staged upload and its barcode, so the next photo was sent
+    with the last one's expiry.
+  */
+  const clearPhoto = () => {
     setPhoto(null);
     setScanned(null);
     setExpiresOn(null);
     setDateSource(null);
     setOverriding(false);
     setStaged(null);
+    setReadFields(null);
+  };
+
+  const reset = () => {
+    clearPhoto();
     setPages([]);
     setPageTitle('');
     setBusy(false);
+  };
+
+  /* A photo belongs to the type it was taken for — changing the type starts again. */
+  const chooseType = (id: string) => {
+    if (id === type?.id) return;
+    clearPhoto();
+    setPages([]);
+    setTypeId(id);
+  };
+
+  /* Closing is not keeping: an abandoned passport photo must not be there next time. */
+  const close = () => {
+    if (busy) return;
+    reset();
+    onClose();
   };
 
   /**
@@ -310,6 +418,7 @@ export function SupplyDocumentSheet({
           "nothing readable" — losing a date already on screen because a second,
           weaker reader missed it would be the worst of both.
         */
+        setReadFields(read.fields ?? null);
         if (read.expiresOn) {
           setDateSource(read.source);
           setExpiresOn(new Date(read.expiresOn));
@@ -587,7 +696,7 @@ export function SupplyDocumentSheet({
   };
 
   return (
-    <BlurSheet visible={visible} onClose={busy ? () => {} : onClose}>
+    <BlurSheet visible={visible} onClose={close}>
       {/*
         The shared surface. Passing a bare ScrollView to BlurSheet left the
         content floating over the blurred page with no panel behind it — the
@@ -595,9 +704,10 @@ export function SupplyDocumentSheet({
       */}
       <SheetPanel
         title={t('documents.supply.title')}
-        onClose={onClose}
+        onClose={close}
         closeDisabled={busy}
         maxHeightFraction={0.9}
+        style={{ backgroundColor: a.well, borderTopLeftRadius: amazen.radius.sheet, borderTopRightRadius: amazen.radius.sheet }}
       >
         <Text style={[s.subtitle, { color: colors.textSecondary }]}>
           {t('documents.supply.subtitle')}
@@ -617,7 +727,7 @@ export function SupplyDocumentSheet({
           keyboardShouldPersistTaps="handled"
         >
 
-        {suppliable.length === 0 ? (
+        {selectable.length === 0 && groups.checking.length === 0 ? (
           officeRow ?? (
             <Text style={[s.empty, { color: colors.textSecondary }]}>
               {t('documents.supply.nothingToSupply')}
@@ -637,60 +747,26 @@ export function SupplyDocumentSheet({
             <Text style={[s.eyebrow, { color: colors.textMuted }]}>
               {t('documents.supply.whatIsIt')}
             </Text>
+            {groups.asked.length ? <Text style={[s.eyebrow, { color: a.warn, marginTop: 0 }]}>{t('documents.supply.groupAsked', { count: groups.asked.length, defaultValue: 'Asked for · {{count}}' })}</Text> : null}
             <View style={s.typeList}>
-              {suppliable.map((ty) => {
-                const on = ty.id === type?.id;
-                return (
-                  <PressableScale
-                    key={ty.id}
-                    onPress={() => setTypeId(ty.id)}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected: on }}
-                    style={[
-                      s.typeRow,
-                      on
-                        ? [s.typeRowOn, { backgroundColor: COLORS.primary }]
-                        : { backgroundColor: colors.surfaceRaised },
-                    ]}
-                  >
-                    {/* The glyph does the identifying at a glance; the radio
-                        only ever repeated what the fill already says. */}
-                    <View
-                      style={[
-                        s.typeIcon,
-                        { backgroundColor: on ? 'rgba(255,255,255,0.18)' : colors.surface },
-                      ]}
-                    >
-                      <Ionicons
-                        name={documentTypeIcon(ty.key)}
-                        size={19}
-                        color={on ? COLORS.white : colors.textSecondary}
-                      />
-                    </View>
-                    <View style={s.typeText}>
-                      <Text
-                        style={[s.typeLabel, { color: on ? COLORS.white : colors.textPrimary }]}
-                        numberOfLines={1}
-                      >
-                        {ty.label}
-                      </Text>
-                      {!!ty.description && (
-                        <Text
-                          style={[
-                            s.typeHint,
-                            { color: on ? 'rgba(255,255,255,0.75)' : colors.textMuted },
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {ty.description}
-                        </Text>
-                      )}
-                    </View>
-                    {on && <Ionicons name="checkmark-circle" size={20} color={COLORS.white} />}
-                  </PressableScale>
-                );
-              })}
+              {groups.asked.map((row) => typeRow(row.type, askedLine(row), { tone: row.why === 'sentBack' || row.why === 'expired' ? 'crit' : 'warn' }))}
             </View>
+            {groups.checking.length ? (
+              <>
+                <Text style={[s.eyebrow, { color: colors.textMuted }]}>{t('documents.supply.groupChecking', 'Being checked')}</Text>
+                <View style={s.typeList}>
+                  {groups.checking.map((row) => typeRow(row.type, row.onPhone ? t('documents.supply.onPhone', 'On this phone · sends when you are online') : t('documents.supply.checking', 'Sent · the office is checking it'), { off: true }))}
+                </View>
+              </>
+            ) : null}
+            {groups.other.length ? (
+              <>
+                {groups.asked.length || groups.checking.length ? <Text style={[s.eyebrow, { color: colors.textMuted }]}>{t('documents.supply.groupOther', 'Something else')}</Text> : null}
+                <View style={s.typeList}>
+                  {groups.other.map((ty) => typeRow(ty, ty.description ?? null))}
+                </View>
+              </>
+            ) : null}
 
             {officeRow}
 
@@ -744,7 +820,7 @@ export function SupplyDocumentSheet({
                 <Text style={[s.pickedName, { color: colors.textPrimary }]} numberOfLines={1}>
                   {photo.fileName}
                 </Text>
-                <Pressable onPress={() => setPhoto(null)} hitSlop={10}>
+                <Pressable onPress={clearPhoto} hitSlop={10}>
                   <Ionicons name="close-circle" size={22} color={colors.textMuted} />
                 </Pressable>
               </View>
@@ -841,6 +917,23 @@ export function SupplyDocumentSheet({
               </View>
             )}
 
+            {/* What the server read off it — a wrong card is caught here, not by the office. */}
+            {readFields && (readFields.holderName || readFields.documentNumber) ? (
+              <View style={{ backgroundColor: colors.surfaceRaised, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 4, marginTop: SPACING.sm }}>
+                {readFields.holderName ? (
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 }}>
+                    <Text style={{ color: colors.textMuted, fontSize: 13 }}>{t('documents.supply.nameOnIt', 'Name on it')}</Text>
+                    <Text style={{ color: colors.textPrimary, fontSize: 13.5 }}>{readFields.holderName}</Text>
+                  </View>
+                ) : null}
+                {readFields.documentNumber ? (
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderTopWidth: readFields.holderName ? 1 : 0, borderTopColor: colors.border }}>
+                    <Text style={{ color: colors.textMuted, fontSize: 13 }}>{t('documents.supply.numberOnIt', 'Number')}</Text>
+                    <Text style={{ color: colors.textPrimary, fontSize: 13.5 }}>{readFields.documentNumber}</Text>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
             {prompt.state === 'ASK' && (
               /*
                 The last resort, and it says why it is asking. A bare date
@@ -887,7 +980,6 @@ export function SupplyDocumentSheet({
               onClose={() => setShowDate(false)}
               // An expiry date is in the future — the calendar no longer
               // assumes that for everybody.
-              minDate={new Date()}
               title={t('documents.supply.expiresOn')}
             />
 
@@ -919,7 +1011,7 @@ export function SupplyDocumentSheet({
           reach — on a short phone the form is taller than the sheet, and an
           action that scrolls out of view reads as an action that is missing.
         */}
-        {suppliable.length > 0 && (
+        {!!type && (
           <PressableScale
             onPress={multi ? submitPages : submit}
             /*
@@ -940,7 +1032,7 @@ export function SupplyDocumentSheet({
             */
             style={[
               s.submit,
-              (multi ? pages.length === 0 || busy : !photo || busy)
+              (multi ? pages.length === 0 || busy : !photo || busy || reading)
                 ? { backgroundColor: colors.surfaceRaised }
                 : [s.submitOn, { backgroundColor: COLORS.primary, shadowColor: COLORS.primary }],
             ]}
@@ -951,7 +1043,7 @@ export function SupplyDocumentSheet({
                 <Text
                   style={[
                     s.submitText,
-                    { color: (multi ? pages.length > 0 : !!photo) ? COLORS.white : colors.textMuted },
+                    { color: (multi ? pages.length > 0 : !!photo && !reading) ? COLORS.white : colors.textMuted },
                   ]}
                 >
                   {t('documents.supply.send')}
