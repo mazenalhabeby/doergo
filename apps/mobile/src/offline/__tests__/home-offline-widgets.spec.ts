@@ -176,7 +176,9 @@ describe('what the cards do with it, pinned in the source', () => {
   });
 
   it('clients hides a queued tick, and re-reads on reconnect only after the queue has gone', () => {
-    const card = code('components/home/clients-card.tsx');
+    // The card and the top of the client book share one loader, so this pins both.
+    const card = code('components/home/use-clients-due.ts');
+    expect(code('components/home/clients-card.tsx')).toMatch(/useClientsDue\(ROWS\)/);
     expect(card).toMatch(/queuedDoneIds\(operations\)/);
     expect(card).toMatch(/onReconnect: true, beforeReconnect: \(\) => running\?\.flush\(\)/);
   });

@@ -40,6 +40,16 @@ describe('client language — the phone form', () => {
     expect(replayed.email).toBe('a.gruber@siemens.com');
   });
 
+  it('carries the kind, and a person never carries a contact person', () => {
+    const typed = { ...blank, contactName: 'Anna Gruber' };
+    expect(newClientInput({ ...typed, type: 'COMPANY' }, null, '')).toMatchObject({ type: 'COMPANY', contactName: 'Anna Gruber' });
+    const person = newClientInput({ ...typed, type: 'PERSON' }, null, '')!;
+    expect(person.type).toBe('PERSON');
+    expect(person.contactName).toBeUndefined();
+    // No kind chosen (the card reader's form) — nothing sent, the server's default stands.
+    expect('type' in newClientInput(typed, null, '')!).toBe(false);
+  });
+
   it('refuses to build a client without a name', () => {
     expect(newClientInput({ ...blank, name: '   ' }, null, 'de')).toBeNull();
   });
@@ -62,8 +72,8 @@ describe('client language — wired into the screens', () => {
   const read = (rel: string) => fs.readFileSync(path.join(__dirname, '../../..', rel), 'utf8');
 
   it('the add form sends ONE body both directly and through the outbox', () => {
-    const src = read('app/(app)/customers.tsx');
-    expect(src).toMatch(/const input = newClientInput\(form, formSpaceId, formLocale\)/);
+    const src = read('src/components/clients/add-client-sheet.tsx');
+    expect(src).toMatch(/const input = newClientInput\(form, spaceId, locale\)/);
     expect(src).toMatch(/clientCreate\.run\(\{ lane: 'crm:new', body: input \}, \(\) => customersApi\.create\(input\)\)/);
   });
 

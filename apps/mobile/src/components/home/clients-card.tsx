@@ -1,25 +1,18 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
+import React from 'react';
+import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
-import { customersApi, type ClientsDue, type DueReminder } from '../../lib/api/customers';
-import { useQueuedWrite } from '../../offline/actions/queued-write';
-import { setActivityDoneFromPhone } from '../../offline/crm/client-actions';
-import { useOffline, useSyncStatus } from '../../offline/offline-context';
-import { useToast } from '../../island/island-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { AText, Eyebrow, CardSurface } from '../amazen';
-import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { usePhrase } from './phrase';
 import { GlyphTile } from './glyph-tile';
 import { WellDoor } from './well-door';
 import { FinishGlyph } from '../glyphs/work-glyphs';
 import { ColdGlyph } from '../glyphs/crm-glyphs';
-import { daysLate, headline, localDay, queuedDoneIds, rowLines, withoutDone } from './clients-state';
-import { ReminderRow, UNDO_MS, type RowState } from './reminder-row';
+import { headline } from './clients-state';
+import { ReminderList } from './reminder-list';
+import { useClientsDue } from './use-clients-due';
 import { usePitch } from '../../home/pitch';
-import { impact, selection } from '../../lib/haptics';
 
 /**
  * ⭐ CLIENTS — `docs/design/clients`. What is owed today, what is going cold,
@@ -39,116 +32,22 @@ import { impact, selection } from '../../lib/haptics';
  */
 
 const ROWS = 3;
-const REFRESH_MS = 60_000;
 
 export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const { amazen } = useTheme();
   const c = amazen.color;
   const { t } = useTranslation();
   const router = useRouter();
-  const toast = useToast();
-  const write = useQueuedWrite();
-  const { formatClock } = useTimeFormat();
-
-  const [due, setDue] = useState<ClientsDue | null>(null);
-  const [failed, setFailed] = useState(false);
-  const day = useRef(localDay());
-  const live = useRef(true);
-  useEffect(() => () => { live.current = false; }, []);
-
-  const refresh = useCallback(async () => {
-    day.current = localDay();
-    try {
-      const d = await customersApi.due(day.current, ROWS);
-      if (live.current) { setDue(d); setFailed(false); }
-    } catch {
-      if (live.current) setFailed(true);
-    }
-  }, []);
-
-  /*
-    ⚠️ AND WHEN THE SIGNAL RETURNS — AFTER THE QUEUE HAS GONE. A reminder ticked
-    off with no signal is still in the outbox when the phone reconnects; asked
-    first, the server answers with it still owed. `flush()` joins the send the
-    reconnect already started rather than starting another.
-  */
-  const { running } = useOffline();
-  useLiveRefresh(refresh, REFRESH_MS, { onReconnect: true, beforeReconnect: () => running?.flush() });
-  const { operations } = useSyncStatus();
-  const queued = useMemo(() => queuedDoneIds(operations), [operations]);
+  const model = useClientsDue(ROWS);
+  const { due, shown, failed } = model;
   const say = usePhrase();
   const openBook = () => router.push('/(app)/customers' as Href);
-  const openClient = (r: DueReminder) => router.push(`/(app)/customer/${r.customerId}` as Href);
-
-  /* The jade disc: the act itself. No number or address on file → the client, where one can be added. */
-  const act = (r: DueReminder) => {
-    const url = r.kind === 'CALL' && r.phone ? `tel:${r.phone.replace(/\s+/g, '')}` : r.kind === 'EMAIL' && r.email ? `mailto:${r.email}` : null;
-    if (!url) { openClient(r); return; }
-    Linking.openURL(url).catch(() => openClient(r));
-  };
-
-  /*
-    ⭐ DONE, WITH A WAY BACK. The ring closes at once and the count drops, but
-    nothing is sent for UNDO_MS: a reminder ticked off by mistake would
-    otherwise be gone from the card with no way to find it again. Then it is
-    sent through the queue (still works with no signal) and the row folds away.
-  */
-  const [marked, setMarked] = useState<Record<string, { r: DueReminder; state: RowState | 'gone' }>>({});
-  const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-
-  const send = useCallback(async (r: DueReminder) => {
-    const outcome = await write.run(
-      (e) => setActivityDoneFromPhone(e, { customerId: r.customerId, activityId: r.id, done: true }),
-      () => customersApi.updateActivity(r.customerId, r.id, { done: true }),
-    );
-    if (outcome.kind === 'refused') {
-      toast.error((outcome as { message?: string }).message || t('customers.record.reminderFailed'));
-      if (live.current) setMarked((m) => { const { [r.id]: _, ...rest } = m; return rest; });
-    }
-    // The next reminder in line takes the freed row.
-    if (live.current) void refresh();
-  }, [write, toast, t, refresh]);
-
-  const done = (r: DueReminder) => {
-    impact('light');
-    setMarked((m) => ({ ...m, [r.id]: { r, state: 'undo' } }));
-    timers.current[r.id] = setTimeout(() => {
-      delete timers.current[r.id];
-      setMarked((m) => (m[r.id] ? { ...m, [r.id]: { r, state: 'leaving' } } : m));
-      void send(r);
-    }, UNDO_MS);
-  };
-  const undo = (r: DueReminder) => {
-    clearTimeout(timers.current[r.id]);
-    delete timers.current[r.id];
-    selection();
-    setMarked((m) => { const { [r.id]: _, ...rest } = m; return rest; });
-  };
-  const gone = useCallback((id: string) => setMarked((m) => (m[id] ? { ...m, [id]: { ...m[id]!, state: 'gone' } } : m)), []);
-
-  /* Leaving the screen inside the undo window is not an undo: send what was ticked. */
-  const pending = useRef(marked);
-  pending.current = marked;
-  const sendRef = useRef(send);
-  sendRef.current = send;
-  useEffect(() => () => {
-    for (const [id, tm] of Object.entries(timers.current)) {
-      clearTimeout(tm);
-      const e = pending.current[id];
-      if (e) void sendRef.current(e.r);
-    }
-  }, []);
 
   /*
     ⚠️ The pitch counts what is LEFT, not what the server last said: ticking a
     reminder off drops the card's count at once, and the line above the home
     must drop with it rather than trailing until the next refresh.
   */
-  /* Ticked on this card, plus ticked earlier and still in the queue — `queuedDoneIds`. */
-  const doneHere = due
-    ? [...Object.values(marked).map((x) => x.r), ...due.items.filter((r) => queued.has(r.id) && !marked[r.id])]
-    : [];
-  const shown = due ? withoutDone(due, doneHere, day.current.start) : null;
   usePitch(!shown || !shown.allowed ? null : shown.total
     ? { need: shown.total, line: t('pitch.clients', { count: shown.total }) }
     : { need: 0, line: t('pitch.clientsCalm') });
@@ -192,34 +91,7 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
           </View>
         )}
 
-        {due && due.items.length ? (
-          <View style={{ marginTop: amazen.space(3) }}>
-            {due.items.filter((r) => marked[r.id]?.state !== 'gone' && (!queued.has(r.id) || marked[r.id])).map((r, i) => {
-              const l = rowLines(r);
-              const late = daysLate(r.dueAt, day.current.start);
-              const midnight = r.dueAt ? new Date(r.dueAt).getHours() === 0 && new Date(r.dueAt).getMinutes() === 0 : true;
-              const state = marked[r.id]?.state;
-              return (
-                <ReminderRow
-                  key={r.id}
-                  r={r}
-                  first={i === 0}
-                  state={state && state !== 'gone' ? state : 'open'}
-                  title={say(l.title)}
-                  reason={say(l.reason)}
-                  due={late ? t('clientsCard.late', { count: late }) : midnight ? t('clientsCard.today') : formatClock(r.dueAt)}
-                  dueColor={late ? c.warn : c.accent}
-                  reasonColor={r.shared > 1 ? c.warn : c.inkMuted}
-                  onOpen={() => openClient(r)}
-                  onAct={() => act(r)}
-                  onDone={() => done(r)}
-                  onUndo={() => undo(r)}
-                  onGone={() => gone(r.id)}
-                />
-              );
-            })}
-          </View>
-        ) : null}
+        <ReminderList model={model} />
 
         <View style={{ gap: amazen.space(3), marginTop: amazen.space(1), paddingBottom: amazen.space(3) }}>
           {due && due.cold.count > 0 ? (

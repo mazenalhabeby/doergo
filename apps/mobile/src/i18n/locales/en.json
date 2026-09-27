@@ -1904,8 +1904,8 @@
   },
   "customers": {
     "appAccess": "App access",
-    "empty": "No customers",
-    "title": "Customers",
+    "empty": "No clients yet",
+    "title": "Clients",
     "allSpaces": "All workspaces",
     "noSpace": "No workspace",
     "capped": "Showing the first {{n}}. Search to narrow it down.",
@@ -2097,6 +2097,19 @@
       "bic": "BIC",
       "hours": "Opening hours",
       "skype": "Skype"
+    },
+    "search": "Search clients",
+    "addShort": "Add",
+    "newClient": "New client",
+    "fCompanyName": "Company name",
+    "fPersonName": "Full name",
+    "fContactOptional": "Contact person (optional)",
+    "stages": {
+      "LEAD": "Lead",
+      "CONTACTED": "Contacted",
+      "QUALIFIED": "Qualified",
+      "CUSTOMER": "Customer",
+      "INACTIVE": "Inactive"
     }
   },
   "issues": {

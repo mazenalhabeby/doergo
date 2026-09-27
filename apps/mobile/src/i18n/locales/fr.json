@@ -2061,6 +2061,19 @@
       "bic": "BIC",
       "hours": "Horaires d'ouverture",
       "skype": "Skype"
+    },
+    "search": "Rechercher des clients",
+    "addShort": "Ajouter",
+    "newClient": "Nouveau client",
+    "fCompanyName": "Nom de l’entreprise",
+    "fPersonName": "Nom complet",
+    "fContactOptional": "Personne de contact (facultatif)",
+    "stages": {
+      "LEAD": "Prospect",
+      "CONTACTED": "Contacté",
+      "QUALIFIED": "Qualifié",
+      "CUSTOMER": "Client",
+      "INACTIVE": "Inactif"
     }
   },
   "issues": {

@@ -20,12 +20,19 @@ export interface NewClientForm {
   contactName: string;
   email: string;
   phone: string;
+  /**
+   * Company or person. Optional so the card reader's form, which decides the
+   * kind elsewhere, is unchanged. A person has no contact person — they ARE
+   * the contact — so one typed before switching is dropped, not saved.
+   */
+  type?: 'PERSON' | 'COMPANY';
 }
 
 // A type alias, not an interface: the outbox takes `Record<string, unknown>`,
 // and only an alias is assignable to an index signature.
 export type NewClientInput = {
   name: string;
+  type?: 'PERSON' | 'COMPANY';
   contactName?: string;
   email?: string;
   phone?: string;
@@ -47,7 +54,8 @@ export function newClientInput(form: NewClientForm, spaceId: string | null, loca
   if (!name) return null;
   return {
     name,
-    contactName: form.contactName.trim() || undefined,
+    ...(form.type ? { type: form.type } : {}),
+    contactName: form.type === 'PERSON' ? undefined : form.contactName.trim() || undefined,
     email: form.email.trim() || undefined,
     phone: form.phone.trim() || undefined,
     spaceId: spaceId ?? undefined,
