@@ -8,7 +8,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
 
-import { ScreenHeader, DateField } from '../../src/components';
+import { DateField } from '../../src/components';
+import { EquipmentFrame, useFormPalette } from '../../src/components/equipment/equipment-frame';
+import { forgetHeldAssets } from '../../src/hooks/use-held-assets';
+import { EquipmentPicker } from '../../src/components/equipment/equipment-picker';
 import { useAuth } from '../../src/contexts/auth-context';
 import { assetEntryDateText, dayKeyOf, logEntryDayBounds, occurredAtForDay } from '../../src/lib/log-dates';
 import { useTheme } from '../../src/contexts/theme-context';
@@ -48,8 +51,17 @@ type Draft = Record<string, string>;
 /** Today as a LOCAL day — `toISOString()` answers yesterday's date after midnight east of Greenwich. */
 const today = () => dayKeyOf(new Date());
 
-export default function AssetLogScreen() {
-  const { colors } = useTheme();
+/**
+ * Opened from a home shortcut there is no equipment in the link: ask which one
+ * first (or go straight to the only one) instead of "You do not have this one".
+ */
+export default function AssetLogScreenRoute() {
+  const { assetId } = useLocalSearchParams<{ assetId?: string }>();
+  return assetId ? <AssetLogScreen /> : <EquipmentPicker what="log" />;
+}
+
+function AssetLogScreen() {
+  const { colors, COLORS } = useFormPalette();
   const { t } = useTranslation();
   const tt = t as unknown as (k: string, d: string, o?: Record<string, unknown>) => string;
   const toast = useToast();
@@ -199,6 +211,7 @@ export default function AssetLogScreen() {
         }
         toast.success(outcome.kind === 'queued' ? tt('offline.savedForLater', 'Saved — it will send itself') : tt('logbook.sent', 'Logged'));
         if (photo) forgetPhoto(photo.uri);
+        forgetHeldAssets(); // the profile's count and list read this again
         router.back();
         return;
       }
@@ -225,6 +238,7 @@ export default function AssetLogScreen() {
       });
       toast.success(tt('logbook.sent', 'Logged'));
       if (photo) forgetPhoto(photo.uri);
+      forgetHeldAssets(); // the profile's count and list read this again
       router.back();
     } catch (e: any) {
       toast.error(e?.message || tt('logbook.sendFailed', 'Could not send it'));
@@ -238,24 +252,22 @@ export default function AssetLogScreen() {
 
   if (loading || logKey === COST_LOG_KEY) {
     return (
-      <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <ScreenHeader title={title} />
+      <EquipmentFrame title={title}>
         <View style={s.centre}><ActivityIndicator color={COLORS.primary} /></View>
-      </SafeAreaView>
+      </EquipmentFrame>
     );
   }
   if (!held || !type) {
     // Reachable by deep link whatever a button points at; the server refuses too.
     return (
-      <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <ScreenHeader title={title} />
+      <EquipmentFrame title={title}>
         <View style={s.centre}>
           <Ionicons name="lock-closed-outline" size={40} color={colors.textMuted} />
           <Text style={[s.hint, { color: colors.textMuted }]}>
             {held ? tt('logbook.unknownType', 'This kind no longer logs that.') : tt('expenses.notYours', 'You do not have this one.')}
           </Text>
         </View>
-      </SafeAreaView>
+      </EquipmentFrame>
     );
   }
 
@@ -263,8 +275,7 @@ export default function AssetLogScreen() {
   const needsApproval = type.needsApproval;
 
   return (
-    <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-      <ScreenHeader title={title} />
+    <EquipmentFrame title={title}>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: SPACING.lg, paddingBottom: SPACING.xxxl + insets.bottom }}
@@ -326,7 +337,7 @@ export default function AssetLogScreen() {
           style={[s.primary, { backgroundColor: COLORS.primary }]}
         >
           {sending ? <ActivityIndicator size="small" color="#fff" />
-                   : <Text style={s.primaryText}>{tt('logbook.send', 'Log it')}</Text>}
+                   : <Text style={[s.primaryText, { color: COLORS.onPrimary }]}>{tt('logbook.send', 'Log it')}</Text>}
         </TouchableOpacity>
         {needsApproval && (
           <Text style={[s.footnote, { color: colors.textMuted }]}>
@@ -334,7 +345,7 @@ export default function AssetLogScreen() {
           </Text>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </EquipmentFrame>
   );
 }
 
@@ -352,6 +363,7 @@ function FieldInput({
   colors: any;
   t: (k: string, d: string, o?: Record<string, unknown>) => string;
 }) {
+  const { COLORS } = useFormPalette();
   const border = problem ? COLORS.error : colors.border;
   const label = `${field.label}${field.required ? ' *' : ''}`;
   const error = problem ? (

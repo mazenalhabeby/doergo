@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { useDocumentRequirements } from '../../contexts/document-requirements-context';
+import { knownEquipmentDue } from '../../lib/equipment-cache';
 import { useSyncStatus } from '../../offline/offline-context';
 import { destinationsFor, type Destination } from '../../lib/manage-rows';
 import { over } from '../../theme/amazen';
@@ -40,11 +41,15 @@ import { loadShortcuts, saveShortcuts } from '../../home/layout-store';
 function useShortcutBadges(): Badges {
   const docs = useDocumentRequirements();
   const { snapshot } = useSyncStatus();
+  const { user } = useAuth();
+  const equipmentDue = knownEquipmentDue(user?.id);
   return useMemo(() => ({
     'documents.due': docs.toUpload.length + docs.rejected.length,
     'documents.toSign': docs.toSign.length,
     'sync.queued': snapshot.waiting + snapshot.attention,
-  }), [docs.toUpload.length, docs.rejected.length, docs.toSign.length, snapshot.waiting, snapshot.attention]);
+    // What My equipment last read — the tile declared this badge and nothing ever filled it.
+    'assets.due': equipmentDue,
+  }), [docs.toUpload.length, docs.rejected.length, docs.toSign.length, snapshot.waiting, snapshot.attention, equipmentDue]);
 }
 
 /*

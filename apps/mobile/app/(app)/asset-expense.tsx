@@ -9,7 +9,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
 
-import { ScreenHeader, DateField } from '../../src/components';
+import { DateField } from '../../src/components';
+import { EquipmentFrame, useFormPalette } from '../../src/components/equipment/equipment-frame';
+import { forgetHeldAssets } from '../../src/hooks/use-held-assets';
+import { EquipmentPicker } from '../../src/components/equipment/equipment-picker';
 import { useAuth } from '../../src/contexts/auth-context';
 import { assetEntryDateText, dayKeyOf, logEntryDayBounds, occurredAtForDay } from '../../src/lib/log-dates';
 import { documentPicker } from '../../src/lib/optional-native';
@@ -47,8 +50,17 @@ import { submitExpenseFromPhone } from '../../src/offline/assets/expense-actions
 
 type Stage = 'camera' | 'review';
 
-export default function AssetExpenseScreen() {
-  const { colors } = useTheme();
+/**
+ * Opened from a home shortcut there is no equipment in the link: ask which one
+ * first (or go straight to the only one) instead of "You do not have this one".
+ */
+export default function AssetExpenseScreenRoute() {
+  const { assetId } = useLocalSearchParams<{ assetId?: string }>();
+  return assetId ? <AssetExpenseScreen /> : <EquipmentPicker what="expense" />;
+}
+
+function AssetExpenseScreen() {
+  const { colors, COLORS } = useFormPalette();
   const { t } = useTranslation();
   const tt = t as unknown as (k: string, d: string, o?: Record<string, unknown>) => string;
   const toast = useToast();
@@ -296,6 +308,7 @@ export default function AssetExpenseScreen() {
         }
         toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('expenses.sent', 'Sent — the office will confirm it.'));
         discardShot();
+        forgetHeldAssets(); // the profile's count and list read this again
         router.back();
         return;
       }
@@ -341,6 +354,7 @@ export default function AssetExpenseScreen() {
 
       toast.success(t('expenses.sent', 'Sent — the office will confirm it.'));
       discardShot();
+      forgetHeldAssets(); // the profile's count and list read this again
       router.back();
     } catch (e: any) {
       toast.error(e?.message || t('expenses.sendFailed', 'Could not send it'));
@@ -352,10 +366,9 @@ export default function AssetExpenseScreen() {
   // ── Is this mine at all? ──────────────────────────────────────────────────
   if (loading) {
     return (
-      <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <ScreenHeader title={t('expenses.title', 'Add a receipt')} />
+      <EquipmentFrame title={t('expenses.title', 'Add a receipt')}>
         <View style={s.centre}><ActivityIndicator color={COLORS.primary} /></View>
-      </SafeAreaView>
+      </EquipmentFrame>
     );
   }
   if (!held) {
@@ -365,39 +378,34 @@ export default function AssetExpenseScreen() {
       somebody photograph a slip and only then be refused wastes their time.
     */
     return (
-      <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <ScreenHeader title={t('expenses.title', 'Add a receipt')} />
+      <EquipmentFrame title={t('expenses.title', 'Add a receipt')}>
         <View style={s.centre}>
           <Ionicons name="lock-closed-outline" size={40} color={colors.textMuted} />
           <Text style={[s.hint, { color: colors.textMuted }]}>
             {t('expenses.notYours', 'You do not have this one.')}
           </Text>
         </View>
-      </SafeAreaView>
+      </EquipmentFrame>
     );
   }
 
   // ── Camera permission ─────────────────────────────────────────────────────
   if (stage === 'camera' && !cam.granted) {
     return (
-      <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <ScreenHeader title={t('expenses.title', 'Add a receipt')} />
+      <EquipmentFrame title={t('expenses.title', 'Add a receipt')}>
         <MediaAccessScreen
           purpose="receipt"
           access={cam}
           onCancel={() => setStage('review')}
         />
-      </SafeAreaView>
+      </EquipmentFrame>
     );
   }
 
   // ── Check before sending ──────────────────────────────────────────────────
   if (stage === 'review') {
     return (
-      <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <ScreenHeader title={t('expenses.review', 'Check before sending')}
-          onBack={() => { discardShot(); setStage('camera'); }}
-        />
+      <EquipmentFrame title={t('expenses.review', 'Check before sending')} onBack={() => { discardShot(); setStage('camera'); }}>
         <ScrollView contentContainerStyle={{ padding: SPACING.lg, paddingBottom: SPACING.xxxl + insets.bottom }}>
           <Text style={[s.asset, { color: colors.textMuted }]} numberOfLines={1}>
             {held.asset?.name ?? ''}
@@ -495,13 +503,13 @@ export default function AssetExpenseScreen() {
             style={[s.primary, { backgroundColor: cents && category ? COLORS.primary : colors.border }]}
           >
             {sending ? <ActivityIndicator size="small" color="#fff" />
-                     : <Text style={s.primaryText}>{t('expenses.send', 'Send it in')}</Text>}
+                     : <Text style={[s.primaryText, { color: COLORS.onPrimary }]}>{t('expenses.send', 'Send it in')}</Text>}
           </TouchableOpacity>
           <Text style={[s.footnote, { color: colors.textMuted }]}>
             {t('expenses.pendingHint', 'It counts once the office accepts it.')}
           </Text>
         </ScrollView>
-      </SafeAreaView>
+      </EquipmentFrame>
     );
   }
 

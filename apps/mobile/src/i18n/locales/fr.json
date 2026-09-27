@@ -2672,8 +2672,9 @@
     "sent": "Ce que j’ai envoyé"
   },
   "custody": {
-    "days": "{{count}} jours",
-    "whatHappens": "Ce qui va se passer"
+    "whatHappens": "Ce qui va se passer",
+    "days_one": "{{count}} jour",
+    "days_other": "{{count}} jours"
   },
   "logbook": {
     "cost": "Coût",
@@ -2711,13 +2712,15 @@
     "withdrawFailed": "Impossible de la reprendre",
     "overdue": "En retard",
     "overdueUnits": "{{amount}} de retard",
-    "overdueDays": "{{count}} jours de retard",
-    "inDays": "dans {{count}} jours",
     "inUnits": "dans {{amount}}",
     "or": "ou",
     "soon": "Bientôt",
     "recorded": "Enregistrée",
-    "submitted": "En attente du bureau"
+    "submitted": "En attente du bureau",
+    "inDays_one": "dans {{count}} jour",
+    "inDays_other": "dans {{count}} jours",
+    "overdueDays_one": "{{count}} jour de retard",
+    "overdueDays_other": "{{count}} jours de retard"
   },
   "expenses": {
     "title": "Ajouter un reçu",
@@ -2784,7 +2787,9 @@
     "applyFailed": "Impossible de le faire",
     "notAllowed": "Réservé à qui gère le registre des biens.",
     "aim": "Cadrez la page — la lecture reste sur ce téléphone",
-    "typeInstead": "Saisir à la main"
+    "typeInstead": "Saisir à la main",
+    "fStartsOn": "Commence le",
+    "fEndsOn": "Se termine le"
   },
   "sendDoc": {
     "title": "Envoyer un document",
@@ -2963,7 +2968,9 @@
       "shiftIssue_message": "Message d'incident",
       "timeOff_request": "Demande d'absence",
       "expense_submit": "Dépense",
-      "chat_send": "Message"
+      "chat_send": "Message",
+      "log_create": "Saisie du carnet",
+      "proposal_raise": "Contrat envoyé"
     },
     "errors": {
       "DEPENDENCY_FAILED": "Une étape précédente dont cela dépend n'a pas été acceptée.",
@@ -3985,5 +3992,33 @@
     "validFor": "Valable 3 jours · pour une personne",
     "revokeBody": "Plus personne ne pourra rejoindre avec ce code. Ceux déjà inscrits restent.",
     "keep": "Le garder"
+  },
+  "equipment": {
+    "contract": "Contrat",
+    "logSomething": "Noter quelque chose",
+    "held": "Depuis",
+    "cost": "Coût",
+    "youHold": "Vous avez",
+    "sentIn": "Envoyé",
+    "stale": "Chargement impossible pour l’instant — voici ce que l’app savait en dernier.",
+    "makeModel": "Marque · modèle",
+    "serial": "N° de série",
+    "withYouSince": "Chez vous depuis",
+    "out": "Dépenses",
+    "in": "Recettes",
+    "entries": "Saisies",
+    "due": "À faire",
+    "lastEntries": "Vos dernières saisies",
+    "takeBackTitle": "Le reprendre ?",
+    "takeBackBody": "Personne ne le vérifiera.",
+    "keepIt": "Le garder",
+    "whichOne": "Pour lequel ?",
+    "nothingFits": "Rien de ce que vous avez ne convient.",
+    "state": {
+      "office": "En attente du bureau",
+      "accepted": "Accepté",
+      "refused": "Refusé",
+      "takenBack": "Repris"
+    }
   }
 }

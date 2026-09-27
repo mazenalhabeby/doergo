@@ -2672,8 +2672,9 @@
     "sent": "Cosa ho inviato"
   },
   "custody": {
-    "days": "{{count}} giorni",
-    "whatHappens": "Cosa succede"
+    "whatHappens": "Cosa succede",
+    "days_one": "{{count}} giorno",
+    "days_other": "{{count}} giorni"
   },
   "logbook": {
     "cost": "Costo",
@@ -2711,13 +2712,15 @@
     "withdrawFailed": "Impossibile ritirarla",
     "overdue": "Scaduto",
     "overdueUnits": "{{amount}} di ritardo",
-    "overdueDays": "{{count}} giorni di ritardo",
-    "inDays": "tra {{count}} giorni",
     "inUnits": "tra {{amount}}",
     "or": "o",
     "soon": "A breve",
     "recorded": "Registrata",
-    "submitted": "In attesa dell'ufficio"
+    "submitted": "In attesa dell'ufficio",
+    "inDays_one": "tra {{count}} giorno",
+    "inDays_other": "tra {{count}} giorni",
+    "overdueDays_one": "{{count}} giorno di ritardo",
+    "overdueDays_other": "{{count}} giorni di ritardo"
   },
   "expenses": {
     "title": "Aggiungi una ricevuta",
@@ -2784,7 +2787,9 @@
     "applyFailed": "Non è stato possibile",
     "notAllowed": "Può farlo solo chi gestisce il registro dei beni.",
     "aim": "Inquadra la pagina — la lettura resta su questo telefono",
-    "typeInstead": "Scrivilo a mano"
+    "typeInstead": "Scrivilo a mano",
+    "fStartsOn": "Inizia il",
+    "fEndsOn": "Termina il"
   },
   "sendDoc": {
     "title": "Invia un documento",
@@ -2963,7 +2968,9 @@
       "shiftIssue_message": "Messaggio sul problema",
       "timeOff_request": "Richiesta di assenza",
       "expense_submit": "Spesa",
-      "chat_send": "Messaggio"
+      "chat_send": "Messaggio",
+      "log_create": "Voce del registro",
+      "proposal_raise": "Contratto inviato"
     },
     "errors": {
       "DEPENDENCY_FAILED": "Un passaggio precedente da cui dipende non è stato accettato.",
@@ -3985,5 +3992,33 @@
     "validFor": "Valido 3 giorni · per una persona",
     "revokeBody": "Nessuno potrà più entrare con questo codice. Chi è già entrato resta.",
     "keep": "Tienilo"
+  },
+  "equipment": {
+    "contract": "Contratto",
+    "logSomething": "Registra qualcosa",
+    "held": "Da",
+    "cost": "Costo",
+    "youHold": "Ha con sé",
+    "sentIn": "Inviato",
+    "stale": "Impossibile caricare ora — questo è l’ultimo stato noto.",
+    "makeModel": "Marca · modello",
+    "serial": "N. di serie",
+    "withYouSince": "Con lei dal",
+    "out": "Uscite",
+    "in": "Entrate",
+    "entries": "Voci",
+    "due": "In scadenza",
+    "lastEntries": "Le sue ultime voci",
+    "takeBackTitle": "Ritirarlo?",
+    "takeBackBody": "Nessuno lo esaminerà.",
+    "keepIt": "Tienilo",
+    "whichOne": "Per quale?",
+    "nothingFits": "Niente di ciò che ha accetta questo.",
+    "state": {
+      "office": "In attesa dell’ufficio",
+      "accepted": "Accettato",
+      "refused": "Rifiutato",
+      "takenBack": "Ritirato"
+    }
   }
 }

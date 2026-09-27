@@ -9,7 +9,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
 
-import { ScreenHeader } from '../../src/components';
+import { ScreenHeader, DateField } from '../../src/components';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/island/island-context';
 import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
@@ -243,6 +243,17 @@ export default function SendDocumentScreen() {
             value={fields.manufacturer ?? ''} onChange={(v) => setFields((f) => ({ ...f, manufacturer: v }))} />
           <Field colors={colors} label={t('contract.fModel', 'Model')}
             value={fields.model ?? ''} onChange={(v) => setFields((f) => ({ ...f, model: v }))} />
+          {/* The term, as read — it was sent unseen, so a misread date reached the office unchecked. */}
+          <View style={{ flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.sm }}>
+            <View style={{ flex: 1 }}>
+              <DateField value={(fields.startsOn ?? '').slice(0, 10)} onChange={(v) => setFields((f) => ({ ...f, startsOn: v }))} clearable
+                placeholder={t('contract.fStartsOn', 'Starts on')} title={t('contract.fStartsOn', 'Starts on')} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <DateField value={(fields.endsOn ?? '').slice(0, 10)} onChange={(v) => setFields((f) => ({ ...f, endsOn: v }))} clearable
+                placeholder={t('contract.fEndsOn', 'Ends on')} title={t('contract.fEndsOn', 'Ends on')} />
+            </View>
+          </View>
 
           {!named && (
             <Text style={s.warn}>

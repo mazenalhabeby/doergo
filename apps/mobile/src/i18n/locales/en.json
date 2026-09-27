@@ -2672,8 +2672,9 @@
     "sent": "What I sent in"
   },
   "custody": {
-    "days": "{{count}} days",
-    "whatHappens": "What happens"
+    "whatHappens": "What happens",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days"
   },
   "logbook": {
     "cost": "Cost",
@@ -2711,13 +2712,15 @@
     "withdrawFailed": "Could not take it back",
     "overdue": "Overdue",
     "overdueUnits": "{{amount}} overdue",
-    "overdueDays": "{{count}} days overdue",
-    "inDays": "in {{count}} days",
     "inUnits": "in {{amount}}",
     "or": "or",
     "soon": "Soon",
     "recorded": "Recorded",
-    "submitted": "Waiting for the office"
+    "submitted": "Waiting for the office",
+    "inDays_one": "in {{count}} day",
+    "inDays_other": "in {{count}} days",
+    "overdueDays_one": "{{count}} day overdue",
+    "overdueDays_other": "{{count}} days overdue"
   },
   "expenses": {
     "title": "Add a receipt",
@@ -2784,7 +2787,9 @@
     "applyFailed": "Could not do it",
     "notAllowed": "Only somebody who manages the asset register can do this.",
     "aim": "Get the page in shot — the reading stays on this phone",
-    "typeInstead": "Type it instead"
+    "typeInstead": "Type it instead",
+    "fStartsOn": "Starts on",
+    "fEndsOn": "Ends on"
   },
   "sendDoc": {
     "title": "Send a document",
@@ -2963,7 +2968,9 @@
       "shiftIssue_message": "Issue message",
       "timeOff_request": "Time off request",
       "expense_submit": "Expense",
-      "chat_send": "Message"
+      "chat_send": "Message",
+      "log_create": "Equipment log entry",
+      "proposal_raise": "Contract sent in"
     },
     "errors": {
       "DEPENDENCY_FAILED": "An earlier step this depends on wasn't accepted.",
@@ -3985,5 +3992,33 @@
     "validFor": "Valid for 3 days · one person can use it",
     "revokeBody": "Nobody will be able to join with it. People who already joined stay.",
     "keep": "Keep it"
+  },
+  "equipment": {
+    "contract": "Contract",
+    "logSomething": "Log something",
+    "held": "Held",
+    "cost": "Cost",
+    "youHold": "You hold",
+    "sentIn": "Sent in",
+    "stale": "Could not load just now — this is what the app last knew.",
+    "makeModel": "Make · model",
+    "serial": "Serial",
+    "withYouSince": "With you since",
+    "out": "Out",
+    "in": "In",
+    "entries": "Entries",
+    "due": "Due",
+    "lastEntries": "Your last entries",
+    "takeBackTitle": "Take it back?",
+    "takeBackBody": "Nobody will review it.",
+    "keepIt": "Keep it",
+    "whichOne": "For which one?",
+    "nothingFits": "Nothing you hold takes this.",
+    "state": {
+      "office": "Waiting for the office",
+      "accepted": "Accepted",
+      "refused": "Refused",
+      "takenBack": "Taken back"
+    }
   }
 }

@@ -2672,8 +2672,9 @@
     "sent": "Lo que he enviado"
   },
   "custody": {
-    "days": "{{count}} días",
-    "whatHappens": "Qué pasará"
+    "whatHappens": "Qué pasará",
+    "days_one": "{{count}} día",
+    "days_other": "{{count}} días"
   },
   "logbook": {
     "cost": "Coste",
@@ -2711,13 +2712,15 @@
     "withdrawFailed": "No se pudo retirar",
     "overdue": "Vencido",
     "overdueUnits": "{{amount}} de retraso",
-    "overdueDays": "{{count}} días de retraso",
-    "inDays": "en {{count}} días",
     "inUnits": "en {{amount}}",
     "or": "o",
     "soon": "Pronto",
     "recorded": "Registrado",
-    "submitted": "Esperando a la oficina"
+    "submitted": "Esperando a la oficina",
+    "inDays_one": "en {{count}} día",
+    "inDays_other": "en {{count}} días",
+    "overdueDays_one": "{{count}} día de retraso",
+    "overdueDays_other": "{{count}} días de retraso"
   },
   "expenses": {
     "title": "Añadir un recibo",
@@ -2784,7 +2787,9 @@
     "applyFailed": "No se pudo hacer",
     "notAllowed": "Solo quien gestiona el inventario puede hacer esto.",
     "aim": "Encuadra la página: lo leído se queda en este teléfono",
-    "typeInstead": "Escribirlo a mano"
+    "typeInstead": "Escribirlo a mano",
+    "fStartsOn": "Empieza el",
+    "fEndsOn": "Termina el"
   },
   "sendDoc": {
     "title": "Enviar un documento",
@@ -2963,7 +2968,9 @@
       "shiftIssue_message": "Mensaje de incidencia",
       "timeOff_request": "Solicitud de ausencia",
       "expense_submit": "Gasto",
-      "chat_send": "Mensaje"
+      "chat_send": "Mensaje",
+      "log_create": "Registro de equipo",
+      "proposal_raise": "Contrato enviado"
     },
     "errors": {
       "DEPENDENCY_FAILED": "No se aceptó un paso anterior del que depende.",
@@ -3985,5 +3992,33 @@
     "validFor": "Válido 3 días · para una persona",
     "revokeBody": "Nadie podrá unirse con él. Quienes ya se unieron se quedan.",
     "keep": "Conservarlo"
+  },
+  "equipment": {
+    "contract": "Contrato",
+    "logSomething": "Registrar algo",
+    "held": "Tiempo",
+    "cost": "Coste",
+    "youHold": "Tiene",
+    "sentIn": "Enviado",
+    "stale": "No se pudo cargar ahora — esto es lo último que sabía la app.",
+    "makeModel": "Marca · modelo",
+    "serial": "N.º de serie",
+    "withYouSince": "Con usted desde",
+    "out": "Gastos",
+    "in": "Ingresos",
+    "entries": "Registros",
+    "due": "Pendiente",
+    "lastEntries": "Sus últimos registros",
+    "takeBackTitle": "¿Retirarlo?",
+    "takeBackBody": "Nadie lo revisará.",
+    "keepIt": "Mantenerlo",
+    "whichOne": "¿Para cuál?",
+    "nothingFits": "Nada de lo que tiene admite esto.",
+    "state": {
+      "office": "Esperando a la oficina",
+      "accepted": "Aceptado",
+      "refused": "Rechazado",
+      "takenBack": "Retirado"
+    }
   }
 }

@@ -2672,8 +2672,9 @@
     "sent": "Was ich eingereicht habe"
   },
   "custody": {
-    "days": "{{count}} Tage",
-    "whatHappens": "Was passiert"
+    "whatHappens": "Was passiert",
+    "days_one": "{{count}} Tag",
+    "days_other": "{{count}} Tage"
   },
   "logbook": {
     "cost": "Kosten",
@@ -2711,13 +2712,15 @@
     "withdrawFailed": "Konnte nicht zurückgenommen werden",
     "overdue": "Überfällig",
     "overdueUnits": "{{amount}} überfällig",
-    "overdueDays": "{{count}} Tage überfällig",
-    "inDays": "in {{count}} Tagen",
     "inUnits": "in {{amount}}",
     "or": "oder",
     "soon": "Bald",
     "recorded": "Erfasst",
-    "submitted": "Wartet auf das Büro"
+    "submitted": "Wartet auf das Büro",
+    "inDays_one": "in {{count}} Tag",
+    "inDays_other": "in {{count}} Tagen",
+    "overdueDays_one": "{{count}} Tag überfällig",
+    "overdueDays_other": "{{count}} Tage überfällig"
   },
   "expenses": {
     "title": "Beleg hinzufügen",
@@ -2784,7 +2787,9 @@
     "applyFailed": "Konnte nicht ausgeführt werden",
     "notAllowed": "Das darf nur jemand, der das Anlagenverzeichnis verwaltet.",
     "aim": "Die Seite ins Bild nehmen — das Gelesene bleibt auf diesem Telefon",
-    "typeInstead": "Stattdessen eingeben"
+    "typeInstead": "Stattdessen eingeben",
+    "fStartsOn": "Beginnt am",
+    "fEndsOn": "Endet am"
   },
   "sendDoc": {
     "title": "Dokument senden",
@@ -2963,7 +2968,9 @@
       "shiftIssue_message": "Nachricht zum Problem",
       "timeOff_request": "Abwesenheitsantrag",
       "expense_submit": "Ausgabe",
-      "chat_send": "Nachricht"
+      "chat_send": "Nachricht",
+      "log_create": "Geräte-Logbucheintrag",
+      "proposal_raise": "Vertrag eingereicht"
     },
     "errors": {
       "DEPENDENCY_FAILED": "Ein vorheriger Schritt, von dem dies abhängt, wurde nicht übernommen.",
@@ -3985,5 +3992,33 @@
     "validFor": "3 Tage gültig · für eine Person",
     "revokeBody": "Mit diesem Code kann niemand mehr beitreten. Wer bereits beigetreten ist, bleibt.",
     "keep": "Behalten"
+  },
+  "equipment": {
+    "contract": "Vertrag",
+    "logSomething": "Eintragen",
+    "held": "Seit",
+    "cost": "Kosten",
+    "youHold": "Bei Ihnen",
+    "sentIn": "Eingereicht",
+    "stale": "Gerade nicht ladbar — das ist der letzte bekannte Stand.",
+    "makeModel": "Hersteller · Modell",
+    "serial": "Seriennummer",
+    "withYouSince": "Bei Ihnen seit",
+    "out": "Ausgaben",
+    "in": "Einnahmen",
+    "entries": "Einträge",
+    "due": "Fällig",
+    "lastEntries": "Ihre letzten Einträge",
+    "takeBackTitle": "Zurücknehmen?",
+    "takeBackBody": "Niemand wird es prüfen.",
+    "keepIt": "Behalten",
+    "whichOne": "Für welches?",
+    "nothingFits": "Nichts, was Sie haben, passt dazu.",
+    "state": {
+      "office": "Wartet auf das Büro",
+      "accepted": "Angenommen",
+      "refused": "Abgelehnt",
+      "takenBack": "Zurückgenommen"
+    }
   }
 }
