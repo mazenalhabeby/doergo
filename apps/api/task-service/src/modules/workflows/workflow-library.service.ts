@@ -239,7 +239,7 @@ export class WorkflowLibraryService implements OnModuleInit {
           orderBy: { position: 'asc' },
           select: {
             name: true, key: true, color: true, icon: true, position: true,
-            isFinal: true, isCanceled: true, transitions: true, capabilities: true,
+            isFinal: true, isCanceled: true, transitions: true, capabilities: true, form: true,
           },
         },
       },
@@ -508,7 +508,7 @@ export class WorkflowLibraryService implements OnModuleInit {
           orderBy: { position: 'asc' },
           select: {
             name: true, key: true, color: true, icon: true, position: true,
-            isFinal: true, isCanceled: true, transitions: true, capabilities: true,
+            isFinal: true, isCanceled: true, transitions: true, capabilities: true, form: true,
           },
         },
       },

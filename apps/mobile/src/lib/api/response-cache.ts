@@ -80,6 +80,10 @@ const KEEP: readonly RegExp[] = [
   // The report a finished job was closed with — already-happened facts, read by
   // the job page's Service report section only once the job is closed.
   /^\/tasks\/[^/]+\/report(\?|$)/,
+  // The step forms a job was moved through with — the same already-happened
+  // facts as the report above (signed links included, as there), read only when
+  // a report section is opened.
+  /^\/tasks\/[^/]+\/submissions(\?|$)/,
   // The kinds of thing an organization owns — the vocabulary every asset screen
   // reads before it can label a single row.
   /^\/asset-categories(\/|\?|$)/,

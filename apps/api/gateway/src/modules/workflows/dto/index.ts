@@ -10,6 +10,7 @@ import {
   IsArray,
   IsIn,
   ValidateNested,
+  IsObject,
 } from 'class-validator';
 
 const TASK_CAPABILITIES = ['gps', 'timer', 'checklist', 'photos', 'signature', 'report', 'form'];
@@ -150,6 +151,18 @@ export class CreateWorkflowStatusDto {
   @IsIn(TASK_CAPABILITIES, { each: true })
   @IsOptional()
   capabilities?: string[];
+
+  /**
+   * "Ask when a job moves here": `{ fields: [{ id?, type, label, required, options?, crm? }] }`.
+   * Judged in full by `validateStepFormDefinition` in the service (refused with
+   * 400 STEP_FORM_DEFINITION_INVALID), versioned by the server — a `version`
+   * sent here is ignored. `null` clears it (back to "not set"); `{ fields: [] }`
+   * means "ask nothing", including on a legacy report step.
+   */
+  @ApiPropertyOptional({ description: 'The step form (fields asked when a job moves into this step); null clears it', type: Object, nullable: true })
+  @IsOptional()
+  @IsObject()
+  form?: Record<string, unknown> | null;
 }
 
 export class UpdateWorkflowStatusDto {
@@ -196,6 +209,18 @@ export class UpdateWorkflowStatusDto {
   @IsIn(TASK_CAPABILITIES, { each: true })
   @IsOptional()
   capabilities?: string[];
+
+  /**
+   * "Ask when a job moves here": `{ fields: [{ id?, type, label, required, options?, crm? }] }`.
+   * Judged in full by `validateStepFormDefinition` in the service (refused with
+   * 400 STEP_FORM_DEFINITION_INVALID), versioned by the server — a `version`
+   * sent here is ignored. `null` clears it (back to "not set"); `{ fields: [] }`
+   * means "ask nothing", including on a legacy report step.
+   */
+  @ApiPropertyOptional({ description: 'The step form (fields asked when a job moves into this step); null clears it', type: Object, nullable: true })
+  @IsOptional()
+  @IsObject()
+  form?: Record<string, unknown> | null;
 }
 
 // ==================== Definition of Done DTOs ====================

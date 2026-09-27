@@ -1032,6 +1032,8 @@ model UserPushToken {
 
 model Task {
   id             String       @id @default(cuid())
+  /// The step forms answered on the way through its workflow — one row per move with a form.
+  stepSubmissions TaskStepSubmission[]
   title          String
   description    String?
   status         String       @default("NEW")
@@ -3858,11 +3860,50 @@ model WorkflowStatus {
   isCanceled   Boolean        @default(false) // marks cancellation states
   transitions  String[] // array of WorkflowStatus keys this status can transition TO
   capabilities String[]       @default([]) // execution widgets active at this step (gps, timer, …)
+  /**
+   * "Ask when a job moves here" — the step's FORM: `{ version, fields[] }`, see
+   * `workflows/step-form` in shared. NULL = not set (a legacy final step with
+   * the `report` capability still asks the field-service report); an empty
+   * `fields` = set to ask nothing. Validated and versioned by the server on
+   * every save; rides with the workflow (per-org cache, sync pull), so moving a
+   * job needs no extra request to know what to ask.
+   */
+  form         Json?
   createdAt    DateTime       @default(now())
 
   @@unique([workflowId, key])
   @@index([workflowId])
   @@map("workflow_statuses")
+}
+
+/**
+ * The answers to a step's form, given when a job moved into that step.
+ *
+ * ONE row per move — the answers together as JSON, not a row per field: they
+ * are read together (the report section of a job) and never queried by value.
+ * The FORM is snapshotted with them: a definition edited next month must not
+ * change what this report asked, nor orphan its answers.
+ *
+ * `submittedById` is not a foreign key — history, like `asset_custody`:
+ * removing a member must neither be blocked by it nor erase it.
+ */
+model TaskStepSubmission {
+  id             String   @id @default(cuid())
+  organizationId String
+  taskId         String
+  task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  /// The step moved INTO.
+  statusKey      String
+  formVersion    Int
+  /// The definition used, as it was.
+  form           Json
+  answers        Json
+  submittedById  String
+  submittedAt    DateTime @default(now())
+
+  @@index([taskId, submittedAt])
+  @@index([organizationId])
+  @@map("task_step_submissions")
 }
 
 // ==================== CUSTOM FIELDS ====================

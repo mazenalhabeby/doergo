@@ -10,6 +10,7 @@ import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.se
 import { success, missingModulesForWorkflow, explainModuleRequirement, validateWorkflow, summarizeWorkflowProblems, spaceMayOffer, isTypeCapability } from '@hbcfield/shared';
 import { assertSpaceInOrg, assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import { resolveSpaceDefaultWorkflowId } from '../../common/space-workflow.util';
+import { stepFormForSave } from '../../common/step-form.util';
 
 @Injectable()
 export class WorkflowsService {
@@ -92,9 +93,13 @@ export class WorkflowsService {
       isCanceled?: boolean;
       transitions?: string[];
       capabilities?: string[];
+      /** "Ask when a job moves here" — validated and versioned (starts at 1). */
+      form?: unknown;
     }>;
   }) {
     const name = data.name?.trim();
+    // Judged BEFORE anything is written: a bad form refuses the whole create.
+    const statusForms = (data.statuses ?? []).map((s) => stepFormForSave(s.form, null));
     if (!name) {
       throw new BadRequestException('Task type name is required');
     }
@@ -152,6 +157,7 @@ export class WorkflowsService {
             ? {
                 statuses: {
                   create: data.statuses.map((s, i) => ({
+                    ...(statusForms[i] !== undefined ? { form: statusForms[i] } : {}),
                     name: s.name,
                     nameKey: s.nameKey ?? null,
                     key: s.key.toUpperCase(),
@@ -367,6 +373,7 @@ export class WorkflowsService {
     isCanceled?: boolean;
     transitions?: string[];
     capabilities?: string[];
+    form?: unknown;
   }) {
     const workflow = await this.prisma.statusWorkflow.findUnique({
       where: { id: data.workflowId },
@@ -379,6 +386,8 @@ export class WorkflowsService {
     if (workflow.organizationId !== data.organizationId) {
       throw new NotFoundException('Workflow not found');
     }
+
+    const form = stepFormForSave(data.form, null);
 
     // Determine position if not provided
     let position = data.position;
@@ -403,6 +412,7 @@ export class WorkflowsService {
         isCanceled: data.isCanceled || false,
         transitions: data.transitions || [],
         capabilities: data.capabilities || [],
+        ...(form !== undefined ? { form } : {}),
       },
     });
 
@@ -425,6 +435,8 @@ export class WorkflowsService {
     isCanceled?: boolean;
     transitions?: string[];
     capabilities?: string[];
+    /** The step's form; null clears it (back to "not set"). */
+    form?: unknown;
   }) {
     const workflow = await this.prisma.statusWorkflow.findUnique({
       where: { id: data.workflowId },
@@ -445,6 +457,9 @@ export class WorkflowsService {
     if (!existing || existing.workflowId !== data.workflowId) {
       throw new NotFoundException('Status not found in this workflow');
     }
+
+    // Versioned against what the step holds: an identical save keeps the version.
+    const form = stepFormForSave(data.form, existing.form);
 
     const status = await this.prisma.workflowStatus.update({
       where: { id: data.statusId },
@@ -471,6 +486,7 @@ export class WorkflowsService {
         ...(data.isCanceled !== undefined && { isCanceled: data.isCanceled }),
         ...(data.transitions !== undefined && { transitions: data.transitions }),
         ...(data.capabilities !== undefined && { capabilities: data.capabilities }),
+        ...(form !== undefined && { form }),
       },
     });
 
@@ -900,7 +916,7 @@ export class WorkflowsService {
           orderBy: { position: 'asc' },
           select: {
             name: true, key: true, color: true, icon: true, position: true,
-            isFinal: true, isCanceled: true, transitions: true, capabilities: true,
+            isFinal: true, isCanceled: true, transitions: true, capabilities: true, form: true,
           },
         },
       },

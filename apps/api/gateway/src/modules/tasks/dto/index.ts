@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsEnum, IsOptional, IsDateString, IsNumber, IsNotEmpty, MaxLength, IsArray, IsBoolean, IsInt, Min, Max, ValidateNested, Matches } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsDateString, IsNumber, IsNotEmpty, MaxLength, IsArray, IsBoolean, IsInt, Min, Max, ValidateNested, Matches, IsObject } from 'class-validator';
 import { OmitType, PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import { OccurrenceEvidenceDto } from '../../../common/dto/occurrence.dto';
@@ -199,6 +199,21 @@ export class UpdateStatusDto {
   @ValidateNested()
   @Type(() => OccurrenceEvidenceDto)
   evidence?: OccurrenceEvidenceDto;
+
+  /**
+   * Answers to the form of the step being moved into, keyed by field id —
+   * see `workflows/step-form` in shared. Only its SHAPE is checked here (an
+   * object); every value is judged in task-service against the step's own
+   * definition, where an unknown key, a missing required answer or a photo
+   * from another job is refused (400 STEP_FORM_INVALID / STEP_FORM_FOREIGN_FILE).
+   */
+  @ApiPropertyOptional({
+    description: 'Step form answers, keyed by field id (note/name/choice/date/signature: string; photos: string[]; number: number; yesno: boolean)',
+    type: Object,
+  })
+  @IsOptional()
+  @IsObject()
+  answers?: Record<string, unknown>;
 }
 
 export class AddAssigneeDto {

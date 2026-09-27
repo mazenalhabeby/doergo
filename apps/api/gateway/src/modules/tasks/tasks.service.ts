@@ -38,6 +38,13 @@ export class TasksService extends BaseGatewayService {
   }
 
   /**
+   * The step-form submissions of one task (its reports)
+   */
+  async getSubmissions(data: Record<string, any>) {
+    return this.send({ cmd: 'get_task_submissions' }, data);
+  }
+
+  /**
    * Get task timeline/activity
    */
   async getTimeline(data: Record<string, any>) {

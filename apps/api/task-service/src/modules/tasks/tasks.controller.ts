@@ -56,6 +56,12 @@ export class TasksController {
     return this.tasksService.findOne(data);
   }
 
+  /** The step forms answered on this job — gated like reading the task. */
+  @MessagePattern({ cmd: 'get_task_submissions' })
+  async getSubmissions(@Payload() data: any) {
+    return this.tasksService.getSubmissions(data);
+  }
+
   @MessagePattern({ cmd: 'get_task_timeline' })
   async getTimeline(
     @Payload()

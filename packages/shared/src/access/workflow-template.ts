@@ -24,6 +24,7 @@
 
 import { isStepCapability, isTypeCapability } from './workflow-modules';
 import { workflowStatusKey } from './workflow-status-label';
+import { validateStepFormDefinition, type StepFormField } from '../workflows/step-form';
 
 /**
  * Bounds on what a template may contain.
@@ -57,6 +58,13 @@ export interface TemplateStatusShape {
   isCanceled: boolean;
   transitions: string[];
   capabilities: string[];
+  /**
+   * The step's form, when the template carries one. Travels with the copy;
+   * the tenant's copy is re-validated and versioned from 1 when written.
+   * Absent = not set. A malformed one is DROPPED (lenient about shape, strict
+   * about content — like everything else here).
+   */
+  form?: { fields: StepFormField[] };
 }
 
 const DEFAULT_COLOR = '#3b82f6';
@@ -127,6 +135,7 @@ export function normalizeTemplateStatuses(raw: unknown): TemplateStatusShape[] {
     seen.add(key);
 
     const icon = str(s.icon, 32).toLowerCase();
+    const form = s.form === undefined || s.form === null ? null : validateStepFormDefinition(s.form);
 
     out.push({
       key,
@@ -144,6 +153,7 @@ export function normalizeTemplateStatuses(raw: unknown): TemplateStatusShape[] {
           )
         : [],
       capabilities: normalizeCapabilities(s.capabilities),
+      ...(form?.ok ? { form: form.form } : {}),
     });
   }
 

@@ -6,6 +6,7 @@ import {
   ConflictException,
   ForbiddenException,
   Inject,
+  Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
@@ -21,6 +22,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import { resolveSpaceDefaultWorkflowId, listSpaceWorkflowIds } from '../../common/space-workflow.util';
+import { prepareStepSubmission, crmIntents, type PreparedStepSubmission } from './step-submission';
 import {
   TaskStatus,
   TaskEventType,
@@ -48,7 +50,11 @@ import {
   tzOffsetMs,
   SELECTABLE_ASSET_WHERE,
   ONE_AT_A_TIME_STATUSES,
+  parseStoredStepForm,
+  stepFormFileIds,
+  type StepFormAnswers,
 } from '@hbcfield/shared';
+import { firstValueFrom, timeout } from 'rxjs';
 
 const STATUS_COUNTS_TTL = 30; // seconds
 
@@ -88,6 +94,9 @@ export class TasksService {
     private readonly media: MediaSigner,
     // A job on its way or arrived puts its member in the field at once, not at the next heartbeat.
     private readonly presence: PresenceService,
+    // The CRM side of step forms (add_customer_activity). Optional: absent, the
+    // answers are still stored — only the client-timeline echo is skipped.
+    @Optional() @Inject('AUTH_SERVICE') private readonly authClient?: ClientProxy,
   ) {
     const redisHost = configService.get<string>('REDIS_HOST', 'localhost') || 'localhost';
     const redisPort = configService.get<number>('REDIS_PORT', 6379) || 6379;
@@ -1579,6 +1588,11 @@ export class TasksService {
     expectedFrom?: string;
     /** When and where the tap happened, from a phone that may have been offline. */
     evidence?: OccurrenceEvidence;
+    /**
+     * Answers to the form of the step being moved into — see step-submission.ts.
+     * Untrusted: re-validated here against the step's own definition.
+     */
+    answers?: unknown;
     // Server-authoritative cross-org grant map (forwarded from the gateway).
     // Used to allow a guest org to move a task in a space explicitly shared to it.
     access?: unknown;
@@ -1721,9 +1735,11 @@ export class TasksService {
       task.status === TaskStatus.COMPLETED ||
       task.status === TaskStatus.CLOSED ||
       task.status === TaskStatus.CANCELED;
+    // The task's effective workflow — also where the target step's FORM is read.
+    let wf: any = null;
     if (effWorkflowId) {
       // Read from the per-org workflow cache (Redis) instead of the DB.
-      const wf = await this.workflowCache.getWorkflow(data.organizationId, effWorkflowId);
+      wf = await this.workflowCache.getWorkflow(data.organizationId, effWorkflowId);
       workflowStatusKeys = wf?.statuses?.map((s: { key: string }) => s.key) ?? null;
       const cur = wf?.statuses?.find((s: { key: string }) => s.key === task.status);
       if (cur) allowedTransitions = cur.transitions ?? [];
@@ -1890,6 +1906,20 @@ export class TasksService {
       }
     }
 
+    /*
+      ── What this step asks ──
+
+      Judged after every other gate and BEFORE anything is written: a refused
+      form must leave the job exactly where it was.
+    */
+    const submission: PreparedStepSubmission | null = await prepareStepSubmission(this.prisma as any, {
+      task: { id: task.id },
+      workflow: wf,
+      statusKey: data.status,
+      answers: data.answers,
+      isAssignedUser,
+    });
+
     // Build update data with route timestamps
     const updateData: any = { status: data.status as any };
 
@@ -1911,10 +1941,37 @@ export class TasksService {
       against. Two changes racing (a phone replaying while the office drags the
       card) used to both pass their checks and the second silently won.
     */
-    const moved = await this.prisma.task.updateMany({
-      where: { id: data.id, status: task.status },
-      data: updateData,
-    });
+    /*
+      With a form, the move and its answers are ONE write: either the job moved
+      and its report exists, or neither happened. The form is snapshotted with
+      the answers, so a definition edited later cannot change what was asked.
+    */
+    let submissionId = null as string | null;
+    const moved = submission
+      ? await this.prisma.$transaction(async (tx) => {
+          const m = await tx.task.updateMany({ where: { id: data.id, status: task.status }, data: updateData });
+          if (m.count === 0) return m;
+          const row = await tx.taskStepSubmission.create({
+            data: {
+              organizationId: task.organizationId,
+              taskId: task.id,
+              statusKey: submission.statusKey,
+              formVersion: submission.form.version,
+              form: submission.form as any,
+              answers: submission.answers as any,
+              submittedById: data.userId,
+              // When the member answered: the tap, not when the phone found signal.
+              submittedAt: occurredAt,
+            },
+            select: { id: true },
+          });
+          submissionId = row.id;
+          return m;
+        })
+      : await this.prisma.task.updateMany({
+          where: { id: data.id, status: task.status },
+          data: updateData,
+        });
     if (moved.count === 0) {
       const now = await this.prisma.task.findUnique({ where: { id: data.id }, select: { id: true, status: true, assignedToId: true, updatedAt: true } });
       throw new ConflictException({
@@ -1938,7 +1995,19 @@ export class TasksService {
       // The tap's time, always — the next change is ordered against it.
       occurredAt: occurredAt.toISOString(),
       ...(occurrenceFlags.length ? { occurrenceFlags } : {}),
+      ...(submissionId ? { stepSubmissionId: submissionId } : {}),
     });
+
+    // The answers' CRM side — never allowed to undo the move.
+    if (submission && submissionId && task.customerId) {
+      await this.applyStepFormCrm({
+        submissionId,
+        submission,
+        task: { title: updatedTask.title, customerId: task.customerId, spaceId: task.spaceId, organizationId: task.organizationId, timezone: task.space?.timezone ?? null },
+        userId: data.userId,
+        userRole: data.userRole,
+      });
+    }
 
     // Notify about status change
     this.notificationClient.emit('task_status_changed', {
@@ -1982,7 +2051,138 @@ export class TasksService {
 
     this.invalidateStatusCountsCache(updatedTask.organizationId);
 
-    return success(updatedTask);
+    return success(submissionId ? { ...updatedTask, stepSubmissionId: submissionId } : updatedTask);
+  }
+
+  /**
+   * A step form's CRM fields, written to the job's client — through the SAME
+   * service path a member uses (`add_customer_activity`), as the member who
+   * moved the job, so the CRM's own reach and work rules decide. Only when the
+   * job's workspace (else the organization) runs CRM.
+   *
+   * ⚠️ Best-effort by design: the move and its answers are already committed.
+   * A client the mover cannot reach, CRM being off, or auth-service being down
+   * is logged and passed over — never a reason to refuse the move after the fact.
+   */
+  private async applyStepFormCrm(args: {
+    submissionId: string;
+    submission: PreparedStepSubmission;
+    task: { title: string; customerId: string; spaceId: string | null; organizationId: string; timezone: string | null };
+    userId: string;
+    userRole: string;
+  }): Promise<void> {
+    try {
+      const intents = crmIntents({
+        submissionId: args.submissionId,
+        form: args.submission.form,
+        answers: args.submission.answers,
+        taskTitle: args.task.title,
+        moverId: args.userId,
+        timezone: args.task.timezone,
+      });
+      if (!intents.length || !this.authClient) return;
+      if (!(await this.runsCrm(args.task.spaceId, args.task.organizationId))) return;
+      for (const intent of intents) {
+        try {
+          await firstValueFrom(
+            this.authClient.send(
+              { cmd: 'add_customer_activity' },
+              {
+                ...intent,
+                customerId: args.task.customerId,
+                organizationId: args.task.organizationId,
+                authorId: args.userId,
+                caller: { userId: args.userId, role: args.userRole },
+              },
+            ).pipe(timeout(5000)),
+          );
+        } catch (err: any) {
+          this.logger.warn(`Step form CRM ${intent.type} skipped for submission ${args.submissionId}: ${err?.message ?? err}`);
+        }
+      }
+    } catch (err: any) {
+      this.logger.warn(`Step form CRM failed for submission ${args.submissionId}: ${err?.message ?? err}`);
+    }
+  }
+
+  /** Does the job's workspace (else its organization) run the CRM module? */
+  private async runsCrm(spaceId: string | null, organizationId: string): Promise<boolean> {
+    if (spaceId) {
+      const space = await this.prisma.companyLocation.findFirst({
+        where: { id: spaceId, organizationId },
+        select: { enabledModules: true, organization: { select: { enabledModules: true } } },
+      });
+      if (space) {
+        const mods = ((space.enabledModules as string[] | null) ?? (space.organization?.enabledModules as string[] | null) ?? []);
+        return mods.includes('crm');
+      }
+    }
+    const org = await this.prisma.organization.findUnique({ where: { id: organizationId }, select: { enabledModules: true } });
+    return ((org?.enabledModules as string[] | null) ?? []).includes('crm');
+  }
+
+  /**
+   * The step forms answered on the way through this job — its report section.
+   *
+   * Gated exactly like reading the task. Each submission carries the form it
+   * answered (the snapshot, not today's definition), and every photo and
+   * signature it names is resolved to a short-lived signed link, the same way
+   * attachments are everywhere else. One query for the submissions, one for all
+   * their files — no N+1 however many moves the job made.
+   */
+  async getSubmissions(data: TaskAccessFacts & { id: string }) {
+    const task = await this.prisma.task.findUnique({ where: { id: data.id } });
+    if (!task) throw new NotFoundException('Task not found');
+    await this.checkTaskAccess(task, data);
+
+    const rows = await this.prisma.taskStepSubmission.findMany({
+      where: { taskId: task.id },
+      orderBy: { submittedAt: 'asc' },
+      take: 100,
+      select: { id: true, statusKey: true, formVersion: true, form: true, answers: true, submittedById: true, submittedAt: true },
+    });
+    if (!rows.length) return success([]);
+
+    const fileIds = new Set<string>();
+    for (const r of rows) {
+      const form = parseStoredStepForm(r.form);
+      if (form) stepFormFileIds(form, (r.answers ?? {}) as StepFormAnswers).forEach((id) => fileIds.add(id));
+    }
+    const userIds = [...new Set(rows.map((r) => r.submittedById))];
+    const [files, users] = await Promise.all([
+      fileIds.size
+        ? this.prisma.attachment.findMany({
+            // Scoped to THIS task: a stored id can only ever resolve to this job's own file.
+            where: { id: { in: [...fileIds] }, taskId: task.id },
+            select: { id: true, fileName: true, fileKey: true, fileUrl: true, mimeType: true, fileType: true, fileSize: true, createdAt: true },
+          })
+        : Promise.resolve([]),
+      this.prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+      }),
+    ]);
+    const signed = await this.media.signAll(files);
+    const fileById = Object.fromEntries(signed.map((f) => [f.id, f]));
+    const userById = new Map(users.map((u) => [u.id, u]));
+
+    return success(
+      rows.map((r) => {
+        const form = parseStoredStepForm(r.form);
+        const answers = (r.answers ?? {}) as StepFormAnswers;
+        const own = form ? stepFormFileIds(form, answers) : [];
+        return {
+          id: r.id,
+          statusKey: r.statusKey,
+          formVersion: r.formVersion,
+          form: r.form,
+          answers,
+          files: Object.fromEntries(own.filter((id) => fileById[id]).map((id) => [id, fileById[id]])),
+          submittedAt: r.submittedAt,
+          submittedBy: userById.get(r.submittedById) ?? { id: r.submittedById, firstName: null, lastName: null, avatarUrl: null },
+        };
+      }),
+    );
   }
 
   /**

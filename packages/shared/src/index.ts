@@ -88,6 +88,9 @@ export * from './assets';
 
 export * from './access/asset-kind-templates';
 export * from './access/workflow-status-label';
+// Step forms — what a workflow step asks when a job moves into it. Pure; phone, web and server judge alike.
+export * from './workflows/step-form';
+
 
 // SMTP connection settings — one decision, both sending services.
 export * from './mail/transport';

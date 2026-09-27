@@ -1,4 +1,4 @@
-import type { OccurrenceFix } from '@hbcfield/shared/client';
+import type { OccurrenceFix, StepFormAnswers } from '@hbcfield/shared/client';
 import { captureEvidence } from '../clock';
 import { uuidv7 } from '../ids';
 import type { SyncEngine } from '../sync-engine';
@@ -18,12 +18,23 @@ export type { ActionOutcome };
  */
 export async function changeTaskStatus(
   engine: SyncEngine,
-  input: { taskId: string; from: string; to: string; reason?: string; fix?: OccurrenceFix | null },
+  input: {
+    taskId: string;
+    from: string;
+    to: string;
+    reason?: string;
+    fix?: OccurrenceFix | null;
+    /** The step form's answers; photo/signature values are attachment ids. */
+    answers?: StepFormAnswers;
+    /** The `task.attachment` operations those photos/signatures were queued as — sent first. */
+    dependsOn?: string[];
+  },
 ): Promise<ActionOutcome> {
   const op = await engine.enqueueAndSettle({
     op: 'task.status',
     lane: `task:${input.taskId}`,
     entityId: input.taskId,
+    ...(input.dependsOn?.length ? { dependsOn: input.dependsOn } : {}),
     payload: {
       params: { taskId: input.taskId },
       body: {
@@ -32,6 +43,7 @@ export async function changeTaskStatus(
         ...(input.reason !== undefined ? { reason: input.reason } : {}),
         ...(input.fix ? { lat: input.fix.lat, lng: input.fix.lng, accuracy: input.fix.accuracy } : {}),
         evidence: captureEvidence(input.fix),
+        ...(input.answers ? { answers: input.answers } : {}),
       },
     },
   });

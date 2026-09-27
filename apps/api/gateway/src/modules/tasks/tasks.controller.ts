@@ -400,6 +400,26 @@ export class TasksController {
     });
   }
 
+  /**
+   * The step forms answered on this job, oldest first — each with the form it
+   * answered (the snapshot) and its photos / signatures as short-lived signed
+   * links. Gated exactly like GET /tasks/:id (the same facts, the same check in
+   * task-service). Read only when a report section is opened.
+   */
+  @Get(':id/submissions')
+  @ApiOperation({ summary: "The job's step-form submissions (its reports), with signed file links" })
+  async getSubmissions(@Param('id') id: string, @Request() req: any) {
+    return this.tasksService.getSubmissions({
+      id,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
+      organizationId: req.user.organizationId,
+      sharedSpaceIds: (req.user.access?.sharedSpaces ?? []).map((sp: any) => sp.spaceId),
+    });
+  }
+
   @Get(':id/timeline')
   @ApiOperation({ summary: 'Get task timeline/activity' })
   async getTimeline(@Param('id') id: string, @Request() req: any) {

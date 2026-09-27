@@ -11,7 +11,11 @@ import { PresenceModule } from '../attendance/presence/presence.module';
 
 @Module({
   imports: [
-    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
+    ClientsModule.registerAsync([
+      createClientOptions(SERVICE_NAMES.NOTIFICATION),
+      // Step forms write their CRM fields through auth-service's own activity path.
+      createClientOptions(SERVICE_NAMES.AUTH),
+    ]),
     AttachmentsModule,
     PresenceModule,
   ],
