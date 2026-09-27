@@ -3809,5 +3809,23 @@
     "rejectBody": "Die Zeit zählt bis zum Schichtende, {{time}}. Die Person wird informiert.",
     "rejectBodyNoEnd": "Die Person wird informiert.",
     "keepWaiting": "Offen lassen"
+  },
+  "more": {
+    "tab": {
+      "time-off": "Abwesenheit beantragen oder ansehen",
+      "team": "Wer heute arbeitet",
+      "chat": "Ihre Unterhaltungen",
+      "tasks": "Ihre Aufträge",
+      "attendance": "Ihre Schichten",
+      "create-task": "Neuen Auftrag anlegen",
+      "index": "Ihr Tag"
+    },
+    "group": {
+      "time": "Zeit",
+      "people": "Personen",
+      "work": "Arbeit"
+    },
+    "waiting_one": "{{count}} offen",
+    "waiting_other": "{{count}} offen"
   }
 }

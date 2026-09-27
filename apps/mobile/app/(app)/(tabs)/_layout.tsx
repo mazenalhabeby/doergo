@@ -1,23 +1,15 @@
-import { View, Text, StyleSheet, Platform, Pressable, Animated, TouchableOpacity, Image, ScrollView } from 'react-native';
-import { Tabs, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRef, useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, Animated, Image } from 'react-native';
+import { Tabs } from 'expo-router';
+import { useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BlurSheet } from '../../../src/components/blur-sheet';
-import { SheetPanel } from '../../../src/components/sheet-panel';
-import { splitTabs, tabIconName } from '../../../src/lib/tab-layout';
+import { splitTabs, tabAccessFor, tabVisible } from '../../../src/lib/tab-layout';
 import { manageRowsFor } from '../../../src/lib/manage-rows';
-import { holds } from '../../../src/lib/permissions';
-import { ShiftIssueListSheet, ShiftIssueThreadSheet } from '../../../src/components/shift-issue-sheet';
 import { AnimatedLogo } from '../../../src/components';
 import { TabPill } from '../../../src/components/amazen';
-import { TAB_GLYPHS } from '../../../src/components/glyphs/tab-glyphs';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
 import { TourTarget, useTourTarget } from '../../../src/components/tour';
-import { Role, hasAccessModule, normalizeRole, canContactColleagues, orgHasAddOn } from '@hbcfield/shared/client';
 import { hasManageSurface } from '../../../src/lib/manage-rows';
 import { useProfileAvatar } from '../../../src/lib/use-profile-avatar';
 
@@ -111,82 +103,15 @@ function ProfileButton() {
 
 // Custom Tab Bar - Full width premium design
 function CustomTabBar({ state, descriptors, navigation }: any) {
-  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const { colors: themeColors } = useTheme();
   const { user } = useAuth();
-  const isAdmin = normalizeRole(user?.role || '') === Role.ADMIN;
-  // Tab visibility is driven by the per-user Access Profile. hasAccessModule
-  // defaults to ON for users without a profile (admins/managers), so the admin
-  // branch below still governs their tabs.
-  const showTasks = hasAccessModule(user || {}, 'tasks');
-  const showAttendance = hasAccessModule(user || {}, 'clock');
-  const showTimeOff = hasAccessModule(user || {}, 'time_off');
   /*
-    One question, asked once.
-
-    `hasAccessModule('create_task')` already IS the create permission — it
-    derives from `canCreateTasks`, org-wide or held in a space. The second half
-    of this was the same decision asked a narrower way, and it cancelled the
-    first: a member granted "create tasks" by a space role passed the module
-    check and was then refused by the org column.
+    ⚠️ WHO GETS WHICH TAB IS ONE FUNCTION — `tabVisible` in tab-layout.ts —
+    read here, by the navigator's `href`s below and by the More page. Three
+    inline copies is how the bar hides a tab More still offers.
   */
-  const showCreate = hasAccessModule(user || {}, 'create_task');
-  const showTeam = canContactColleagues(user || {});
-  /*
-    Messages is one of the five now.
-
-    Two gates, because they answer different questions: the organization has to
-    have BOUGHT chat, and this member has to be allowed to talk to colleagues —
-    an admin can switch the second off per person in the Access Builder. Either
-    one missing and the slot is not drawn at all, rather than drawn and refused.
-  */
-  const showChat = orgHasAddOn(user?.orgAddOns ?? null, 'live_chat') && canContactColleagues(user || {});
-
-  // Filter routes based on role and modules (profile is in header, not tab bar)
-  const visibleRoutes = state.routes.filter((route: any) => {
-    if (route.name === 'profile') return false;
-    /*
-      Manage is not a tab any more, in any role.
-
-      It was a tab whose entire content was a list of links, sitting beside
-      More, which is also a list of links. Its rows are in More now — see
-      manageRows below. The ROUTE stays registered so a push notification or a
-      deep link into it still resolves.
-    */
-    if (route.name === 'manage') return false;
-    if (route.name === 'chat') return showChat;
-    if (route.name === 'team') return showTeam;
-    if (isAdmin) {
-      // Clock is module-driven, not role-locked: an admin/owner who also works
-      // on site (has the `clock` module) sees the Clock tab too — optional, never
-      // required. Matches the web navbar clock. The route href already gates on
-      // showAttendance; this lets the tab button through.
-      if (route.name === 'attendance') return showAttendance;
-      if (route.name === 'time-off') return false;
-      /*
-        ⚠️ Chat is checked ABOVE this branch and not here, because this branch
-        ends in `return true` — anything an admin is not explicitly asked about
-        is allowed through. A Messages tab for an organization that never
-        bought chat opens onto a 402.
-      */
-      return true;
-    }
-    /*
-      Manage is a PERMISSION, not a rank.
-
-      It was `isAdmin`, so the management surface was invisible to everyone
-      whose authority comes from a space — the shift leader who approves the
-      hours, the supervisor who signs them off. The tab now appears when at
-      least one row inside it would open (see manage-rows.ts), so it is never
-      an empty tab and never a wall of refusals.
-    */
-    if (route.name === 'create-task') return showCreate;
-    if (route.name === 'tasks') return showTasks;
-    if (route.name === 'attendance') return showAttendance;
-    if (route.name === 'time-off') return showTimeOff;
-    return true;
-  });
+  const access = useMemo(() => tabAccessFor(user as never), [user]);
+  const visibleRoutes = state.routes.filter((route: any) => tabVisible(route.name, access));
 
   /*
     Split into what fits and what does not.
@@ -207,13 +132,10 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     [routeNames, manageRows.length],
   );
 
-  const [moreOpen, setMoreOpen] = useState(false);
-  const [issuesOpen, setIssuesOpen] = useState(false);
-  const [issueId, setIssueId] = useState<string | null>(null);
   const currentRoute = state.routes[state.index];
-  // Being INSIDE the overflow has to look different from being anywhere else,
-  // or the bar shows nothing selected and the person cannot tell where they are.
-  const inOverflow = overflowRoutes.some((r: any) => r.key === currentRoute?.key);
+  // Being on More — or INSIDE the overflow — has to look different from being
+  // anywhere else, or the bar shows nothing selected and the person cannot tell where they are.
+  const inOverflow = currentRoute?.name === 'more' || overflowRoutes.some((r: any) => r.key === currentRoute?.key);
 
   const getAdjustedIndex = () => barRoutes.findIndex((r: any) => r.key === currentRoute.key);
 
@@ -257,138 +179,18 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                   person cannot tell where they are.
                 */
                 focused: inOverflow,
-                onPress: () => setMoreOpen(true),
+                /*
+                  ⚠️ A PAGE, NOT A SHEET. More was a popup list; it is a tab
+                  page now (`more.tsx`), so it has room to group what it holds,
+                  show what waits, and keep the bar — with ••• lit — under it.
+                */
+                onPress: () => navigation.navigate('more'),
               }
             : undefined
         }
       />
 
-      {/*
-        The overflow, as a list rather than a second row of icons.
 
-        A row would recreate the problem it exists to solve; a list has room for
-        a full label, which is what these less-frequent destinations need — a
-        person opening More is looking for something by name, not by glyph.
-      */}
-      <BlurSheet visible={moreOpen} onClose={() => setMoreOpen(false)}>
-        {/*
-          The surface comes from SheetPanel — background, rounded top, handle,
-          and the bottom inset. Drawn by hand here it had a flat 28px foot, so
-          the last row sat behind the Android navigation keys.
-
-          No title: this is a list of places, and the handle plus a tap outside
-          already say everything a title and a cross would.
-        */}
-        <SheetPanel onClose={() => setMoreOpen(false)} style={styles.moreSheet}>
-          <ScrollView showsVerticalScrollIndicator={false} style={styles.moreScroll}>
-            {/* The tabs that did not fit. Plain rows — they are places. */}
-            {overflowRoutes.map((route: any) => {
-              const { options } = descriptors[route.key];
-              const active = route.key === currentRoute?.key;
-              return (
-                <Pressable
-                  key={route.key}
-                  style={[styles.moreRow, { borderColor: themeColors.border }]}
-                  onPress={() => {
-                    setMoreOpen(false);
-                    navigation.navigate(route.name);
-                  }}
-                >
-                  {/*
-                    The SAME mark the pill draws.
-
-                    ⚠️ The overflow is part of the footer, and it was still on
-                    Ionicons while the pill had moved to the house set — so
-                    Time off was a calendar in two different drawings depending
-                    on which door you came through. `TAB_GLYPHS` is the one map
-                    and both surfaces read it.
-                  */}
-                  <View style={[styles.moreIcon, { backgroundColor: COLORS.primary + '15' }]}>
-                    {(() => {
-                      const G = TAB_GLYPHS[route.name];
-                      return G ? (
-                        <G size={19} color={active ? COLORS.primary : themeColors.textMuted} />
-                      ) : (
-                        <Ionicons
-                          name={tabIconName(route.name, active) as any}
-                          size={19}
-                          color={active ? COLORS.primary : themeColors.textMuted}
-                        />
-                      );
-                    })()}
-                  </View>
-                  <Text style={[styles.moreLabel, { color: active ? COLORS.primary : themeColors.textPrimary }]}>
-                    {options.title || route.name}
-                  </Text>
-                  {active && <Ionicons name="checkmark" size={16} color={COLORS.primary} />}
-                </Pressable>
-              );
-            })}
-
-            {/*
-              What Manage used to be.
-
-              Each row keeps its own colour and description: these are nine
-              different jobs, not variations of one, and the description is
-              often the only thing that tells "Attendance" (approve other
-              people's hours) from the Clock tab (your own).
-            */}
-            {manageRows.length > 0 && (
-              <>
-                {overflowRoutes.length > 0 && (
-                  <Text style={[styles.moreSectionLabel, { color: themeColors.textMuted }]}>
-                    {t('tabs.manage', 'Manage')}
-                  </Text>
-                )}
-                {manageRows.map((row) => (
-                  <Pressable
-                    key={row.route}
-                    style={[styles.moreRow, { borderColor: themeColors.border }]}
-                    onPress={() => {
-                      setMoreOpen(false);
-                      // Shift issues are sheets, not a route — see below.
-                      if (row.route === 'sheet:issues') setIssuesOpen(true);
-                      else router.push(row.route as any);
-                    }}
-                  >
-                    <View style={[styles.moreIcon, { backgroundColor: row.color + '15' }]}>
-                      <Ionicons name={row.icon as any} size={19} color={row.color} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.moreLabel, { color: themeColors.textPrimary }]}>{t(row.labelKey)}</Text>
-                      <Text style={[styles.moreDesc, { color: themeColors.textMuted }]} numberOfLines={1}>
-                        {t(row.descKey)}
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={16} color={themeColors.textMuted} />
-                  </Pressable>
-                ))}
-              </>
-            )}
-          </ScrollView>
-        </SheetPanel>
-      </BlurSheet>
-
-      {/*
-        Shift issues are a list sheet and a thread sheet, not a route. The
-        Manage screen used to host them; with Manage gone from the bar, More is
-        their door — the alternative was a route that exists only to open a
-        sheet.
-      */}
-      <ShiftIssueListSheet
-        visible={issuesOpen}
-        onClose={() => setIssuesOpen(false)}
-        onOpen={(id) => { setIssuesOpen(false); setIssueId(id); }}
-      />
-      <ShiftIssueThreadSheet
-        visible={!!issueId}
-        issueId={issueId}
-        onClose={() => setIssueId(null)}
-        /* Whether the actions render is the server's call in the end; this only
-           decides what to draw, and it asks the same question the API does. */
-        canManage={holds(user, 'canViewAllTasks')}
-        currentUserId={user?.id}
-      />
     </>
   );
 }
@@ -397,30 +199,15 @@ export default function TabsLayout() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
-  const isAdmin = normalizeRole(user?.role || '') === Role.ADMIN;
-  const showTechTasks = hasAccessModule(user || {}, 'tasks');
-  const showAttendance = hasAccessModule(user || {}, 'clock');
-  const showTimeOff = hasAccessModule(user || {}, 'time_off');
-  /*
-    One question, asked once.
-
-    `hasAccessModule('create_task')` already IS the create permission — it
-    derives from `canCreateTasks`, org-wide or held in a space. The second half
-    of this was the same decision asked a narrower way, and it cancelled the
-    first: a member granted "create tasks" by a space role passed the module
-    check and was then refused by the org column.
-  */
-  const showCreate = hasAccessModule(user || {}, 'create_task');
-  const showTeam = canContactColleagues(user || {});
-  /*
-    Messages is one of the five now.
-
-    Two gates, because they answer different questions: the organization has to
-    have BOUGHT chat, and this member has to be allowed to talk to colleagues —
-    an admin can switch the second off per person in the Access Builder. Either
-    one missing and the slot is not drawn at all, rather than drawn and refused.
-  */
-  const showChat = orgHasAddOn(user?.orgAddOns ?? null, 'live_chat') && canContactColleagues(user || {});
+  // ⚠️ The same answer the bar reads — `tabAccessFor` in tab-layout.ts.
+  const access = useMemo(() => tabAccessFor(user as never), [user]);
+  const { isAdmin } = access;
+  const showTechTasks = access.tasks;
+  const showAttendance = access.attendance;
+  const showTimeOff = access.timeOff;
+  const showCreate = access.create;
+  const showTeam = access.team;
+  const showChat = access.chat;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
@@ -616,6 +403,15 @@ export default function TabsLayout() {
             headerShown: false,
           }}
         />
+        {/* More — a page now, not a popup. Reached from the bar's •••, never a slot of its own. */}
+        <Tabs.Screen
+          name="more"
+          options={{
+            title: t('tabs.more', 'More'),
+            href: null,
+            headerShown: false,
+          }}
+        />
         <Tabs.Screen
           name="profile"
           options={{
@@ -630,21 +426,6 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  // Tighter than SheetPanel's default: these rows carry their own padding.
-  moreSheet: { paddingHorizontal: 16, paddingTop: 12, gap: 8 },
-  moreRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    paddingVertical: 14, paddingHorizontal: 14,
-    borderRadius: 12, borderWidth: 1,
-  },
-  moreLabel: { flex: 1, fontSize: 15, fontWeight: '600' },
-  moreDesc: { fontSize: 12, marginTop: 1 },
-  moreIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  moreScroll: { maxHeight: 420 },
-  moreSectionLabel: {
-    fontSize: 11, fontWeight: '700', letterSpacing: 0.6,
-    textTransform: 'uppercase', marginTop: 14, marginBottom: 6, paddingHorizontal: 4,
-  },
   container: {
     flex: 1,
   },

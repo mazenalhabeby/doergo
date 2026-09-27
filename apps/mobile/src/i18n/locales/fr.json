@@ -3809,5 +3809,23 @@
     "rejectBody": "Son temps compte jusqu’à la fin du poste, {{time}}. La personne est prévenue.",
     "rejectBodyNoEnd": "La personne est prévenue.",
     "keepWaiting": "Laisser en attente"
+  },
+  "more": {
+    "tab": {
+      "time-off": "Demandez ou consultez vos congés",
+      "team": "Qui travaille aujourd’hui",
+      "chat": "Vos conversations",
+      "tasks": "Vos interventions",
+      "attendance": "Vos postes",
+      "create-task": "Créer une intervention",
+      "index": "Votre journée"
+    },
+    "group": {
+      "time": "Temps",
+      "people": "Personnes",
+      "work": "Travail"
+    },
+    "waiting_one": "{{count}} en attente",
+    "waiting_other": "{{count}} en attente"
   }
 }

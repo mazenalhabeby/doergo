@@ -49,10 +49,12 @@ describe('the registry row asks what the tab asks', () => {
     expect(row).toMatch(/requires:\s*\{\s*module:\s*'clock',\s*internal:\s*true,\s*self:\s*true\s*\}/);
   });
 
-  it('tabs: the Clock tab is gated by hasAccessModule(…, "clock") in BOTH places it is decided', () => {
-    const tabs = code(path.join(APP, '(app)/(tabs)/_layout.tsx'));
-    const asks = tabs.match(/hasAccessModule\(user \|\| \{\}, 'clock'\)/g) ?? [];
-    expect(asks.length).toBe(2);
+  it('tabs: the Clock tab is gated by hasAccessModule(…, "clock") ONCE, and the bar and the navigator both read it', () => {
+    const tabs = code(path.join(SRC, 'lib/tab-layout.ts'));
+    const asks = tabs.match(/hasAccessModule\(u, 'clock'\)/g) ?? [];
+    expect(asks.length).toBe(1);
+    const layout = code(path.join(APP, '(app)/(tabs)/_layout.tsx'));
+    expect(layout.match(/tabAccessFor\(/g)?.length).toBe(2);
     // and never the raw storage reader, which is the drift entitlement.ts names
     expect(tabs).not.toMatch(/hasModule\(user[^)]*'clock'\)/);
   });

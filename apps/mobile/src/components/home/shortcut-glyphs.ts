@@ -8,6 +8,7 @@ import {
 import { ExpenseQueueGlyph, LeaveQueueGlyph, JoinQueueGlyph } from '../glyphs/queue-glyphs';
 import { PlanRouteGlyph } from '../glyphs/route-glyphs';
 import { RosterGlyph, HoursWaitingGlyph } from '../glyphs/crew-glyphs';
+import { IssueNewGlyph } from '../glyphs/shift-glyphs';
 
 /**
  * Each destination's mark, keyed by the table row's `labelKey`.
@@ -41,4 +42,5 @@ export const SHORTCUT_GLYPHS: Record<string, React.ComponentType<GlyphProps>> = 
   'manage.invitations.label': InvitationsGlyph,
   'manage.schedules.label': SchedulesGlyph,
   'manage.contract.label': ContractGlyph,
+  'manage.issues.label': IssueNewGlyph,
 };

@@ -115,9 +115,9 @@ describe('the footer', () => {
     expect(pill).toContain('TAB_GLYPHS');
   });
 
-  it('draws the same marks in the overflow sheet', () => {
-    const layout = read(path.resolve(SRC, '../app/(app)/(tabs)/_layout.tsx'));
-    expect(layout).toContain('TAB_GLYPHS');
+  it('draws the same marks on the More page', () => {
+    const more = read(path.join(SRC, 'components/more/more-screen.tsx'));
+    expect(more).toContain('TAB_GLYPHS');
   });
 
   it('keeps every footer mark a stroked outline, except the dots', () => {

@@ -770,8 +770,8 @@ describe('the shift clock is a row', () => {
     expect(registry).toMatch(/key: 'shift-clock'/);
     expect(registry).toMatch(/surface: 'glass'/);
     expect(registry).toMatch(/module: 'clock'/);
-    const tabs = fs.readFileSync(path.resolve(SRC, '../app/(app)/(tabs)/_layout.tsx'), 'utf8');
-    expect(tabs).toContain("hasAccessModule(user || {}, 'clock')");
+    const tabs = fs.readFileSync(path.resolve(SRC, 'lib/tab-layout.ts'), 'utf8');
+    expect(tabs).toContain("hasAccessModule(u, 'clock')");
   });
 
   it('is in the default order', () => {

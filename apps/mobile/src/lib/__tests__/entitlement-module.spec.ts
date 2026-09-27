@@ -52,9 +52,10 @@ describe('a module a member holds', () => {
 describe('one question, asked once', () => {
   it('the registry and the tab bar call the same function', () => {
     const entitlement = fs.readFileSync(path.join(SRC, 'home/entitlement.ts'), 'utf8');
-    const tabs = fs.readFileSync(path.resolve(SRC, '../app/(app)/(tabs)/_layout.tsx'), 'utf8');
+    // The tab bar's rule lives in tab-layout.ts now, read by the bar and the More page alike.
+    const tabs = fs.readFileSync(path.resolve(SRC, 'lib/tab-layout.ts'), 'utf8');
     expect(entitlement).toContain('hasAccessModule(user as never, r.module)');
-    expect(tabs).toContain("hasAccessModule(user || {}, 'clock')");
+    expect(tabs).toContain("hasAccessModule(u, 'clock')");
   });
 
   it('nothing on the home screen asks the raw storage reader', () => {

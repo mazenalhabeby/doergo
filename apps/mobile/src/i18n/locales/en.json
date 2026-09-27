@@ -3809,5 +3809,23 @@
     "rejectBody": "Their time counts until the shift end, {{time}}. They are told.",
     "rejectBodyNoEnd": "They are told.",
     "keepWaiting": "Keep it waiting"
+  },
+  "more": {
+    "tab": {
+      "time-off": "Request or see your leave",
+      "team": "Who is working today",
+      "chat": "Your conversations",
+      "tasks": "Your jobs",
+      "attendance": "Your shifts",
+      "create-task": "Start a new job",
+      "index": "Your day"
+    },
+    "group": {
+      "time": "Time",
+      "people": "People",
+      "work": "Work"
+    },
+    "waiting_one": "{{count}} waiting",
+    "waiting_other": "{{count}} waiting"
   }
 }

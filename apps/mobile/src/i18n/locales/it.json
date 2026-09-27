@@ -3809,5 +3809,23 @@
     "rejectBody": "Il tempo conta fino alla fine del turno, {{time}}. Viene avvisata.",
     "rejectBodyNoEnd": "Viene avvisata.",
     "keepWaiting": "Lascia in attesa"
+  },
+  "more": {
+    "tab": {
+      "time-off": "Richiedi o vedi le tue assenze",
+      "team": "Chi lavora oggi",
+      "chat": "Le tue conversazioni",
+      "tasks": "I tuoi lavori",
+      "attendance": "I tuoi turni",
+      "create-task": "Crea un lavoro",
+      "index": "La tua giornata"
+    },
+    "group": {
+      "time": "Tempo",
+      "people": "Persone",
+      "work": "Lavoro"
+    },
+    "waiting_one": "{{count}} in attesa",
+    "waiting_other": "{{count}} in attesa"
   }
 }

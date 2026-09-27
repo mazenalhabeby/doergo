@@ -1,3 +1,4 @@
+import { Role, canContactColleagues, hasAccessModule, normalizeRole, orgHasAddOn } from '@hbcfield/shared/client';
 /*
   Five is the whole bar.
 
@@ -112,3 +113,72 @@ export function tabIconName(routeName: string, focused: boolean): string {
   }
 }
 
+
+/* ------------------------------------------------------------------ */
+/* Who sees which tab — ONE answer for the bar and the More page        */
+/* ------------------------------------------------------------------ */
+
+
+export interface TabAccess {
+  isAdmin: boolean;
+  tasks: boolean;
+  attendance: boolean;
+  timeOff: boolean;
+  create: boolean;
+  team: boolean;
+  chat: boolean;
+}
+
+/**
+ * What a member may have as a tab, from the member alone.
+ *
+ * ⚠️ ONE COPY. The tab bar decided this inline and the navigator's `href`s
+ * decided it again beside it; the More page is a third reader. Three copies of
+ * "who gets Time off" is how the bar hides a tab the More page still offers.
+ *
+ * `create` IS the create permission (`create_task` derives from
+ * `canCreateTasks`, org-wide or in a space). Chat needs BOTH the bought add-on
+ * and permission to talk to colleagues — either missing and there is no slot.
+ */
+export function tabAccessFor(user: Record<string, unknown> | null | undefined): TabAccess {
+  const u = (user ?? {}) as never;
+  return {
+    isAdmin: normalizeRole(((user as { role?: string } | null)?.role) || '') === Role.ADMIN,
+    tasks: hasAccessModule(u, 'tasks'),
+    attendance: hasAccessModule(u, 'clock'),
+    timeOff: hasAccessModule(u, 'time_off'),
+    create: hasAccessModule(u, 'create_task'),
+    team: canContactColleagues(u),
+    chat: orgHasAddOn((user as { orgAddOns?: string[] } | null)?.orgAddOns ?? null, 'live_chat') && canContactColleagues(u),
+  };
+}
+
+/**
+ * Is this route a tab for this member?
+ *
+ * `profile` is the avatar, `manage` and `more` are pages reached from More —
+ * none of them is ever a slot. An admin gets everything they are not refused,
+ * except Time off (they approve leave; they do not have a Time off tab).
+ */
+export function tabVisible(name: string, a: TabAccess): boolean {
+  if (name === 'profile' || name === 'manage' || name === 'more') return false;
+  if (name === 'chat') return a.chat;
+  if (name === 'team') return a.team;
+  if (name === 'attendance') return a.attendance;
+  if (a.isAdmin) return name !== 'time-off';
+  if (name === 'create-task') return a.create;
+  if (name === 'tasks') return a.tasks;
+  if (name === 'time-off') return a.timeOff;
+  return true;
+}
+
+/** A tab's name as the bar and the More page both say it. */
+export const TAB_TITLE_KEY: Record<string, string> = {
+  index: 'tabs.home',
+  tasks: 'tabs.tasks',
+  'create-task': 'tabs.createTask',
+  attendance: 'tabs.attendance',
+  'time-off': 'tabs.timeOff',
+  team: 'tabs.team',
+  chat: 'tabs.messages',
+};
