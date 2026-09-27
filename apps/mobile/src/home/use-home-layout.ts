@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../contexts/auth-context';
-import { availableWidgets, DEFAULT_ORDER, type WidgetRow } from './registry';
+import { availableWidgets, DEFAULT_ORDER, WIDGETS, type WidgetRow } from './registry';
+import { defaultHomeKeys, seedLayout } from './default-home';
 import { loadLayout, saveLayout, EMPTY_LAYOUT, type HomeLayout } from './layout-store';
 import { move as moveInList, withVisibleOrder, type Moved } from './arrange-list';
 
@@ -77,6 +78,8 @@ export function useHomeLayout(): HomeLayoutApi {
     arranged by the previous person is a strange thing to be handed.
   */
   const loadedFor = useRef<string | null>(null);
+  const userRef = useRef(user);
+  userRef.current = user;
 
   useEffect(() => {
     loadedFor.current = userId;
@@ -84,6 +87,16 @@ export function useHomeLayout(): HomeLayoutApi {
     setLoading(true);
     void loadLayout(userId).then((l) => {
       if (loadedFor.current !== userId) return;
+      /*
+        ⚠️ A NEW ACCOUNT'S HOME IS CHOSEN ONCE AND SAVED. Two widgets picked
+        for the member's work (`default-home.ts`), written down as their own
+        layout on the first open — so it never shifts under them afterwards,
+        and every change they make from here is saved over it.
+      */
+      if (!l.keys.length) {
+        l = firstHome(userRef.current);
+        void saveLayout(userId, l);
+      }
       setLayout(l);
       setLoading(false);
     });
@@ -96,13 +109,14 @@ export function useHomeLayout(): HomeLayoutApi {
 
   const available = useMemo(() => availableWidgets(user), [user]);
 
+
   /*
     The saved order, then anything the registry has gained since — at the END,
     where a new widget cannot displace something the member arranged.
   */
   const orderedKeys = useMemo(() => {
     const known = new Set(available.map((w) => w.key));
-    const saved = layout.keys.length ? layout.keys : DEFAULT_ORDER;
+    const saved = layout.keys;
     const seen = new Set<string>();
     const out: string[] = [];
     for (const k of saved) { if (!seen.has(k)) { seen.add(k); out.push(k); } }
@@ -211,7 +225,7 @@ export function useHomeLayout(): HomeLayoutApi {
     persist({ keys: orderedKeys, hidden: layout.hidden.filter((k) => k !== key) });
   }, [layout.hidden, orderedKeys, persist]);
 
-  const reset = useCallback(() => persist(EMPTY_LAYOUT), [persist]);
+  const reset = useCallback(() => persist(firstHome(userRef.current)), [persist]);
 
   /*
     ⚠️ ONE IDENTITY UNTIL SOMETHING IN IT CHANGES. The screen keys its
@@ -224,4 +238,11 @@ export function useHomeLayout(): HomeLayoutApi {
     () => ({ rows, available, offScreen, loading, move, setOrder, hide, show, add, reset }),
     [rows, available, offScreen, loading, move, setOrder, hide, show, add, reset],
   );
+}
+
+
+/** The two widgets a member starts with, every other one switched off. */
+function firstHome(user: Parameters<typeof availableWidgets>[0]): HomeLayout {
+  const defaults = defaultHomeKeys(user, availableWidgets(user).map((w) => w.key));
+  return seedLayout(defaults, WIDGETS.map((w) => w.key));
 }
