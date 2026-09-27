@@ -1167,10 +1167,6 @@
     "issues": {
       "label": "Problemi di turno",
       "desc": "Blocchi segnalati in cantiere"
-    },
-    "contract": {
-      "label": "Da un contratto",
-      "desc": "Fotografa il contratto: crea la cosa, la consegna e dismette la vecchia"
     }
   },
   "components": {

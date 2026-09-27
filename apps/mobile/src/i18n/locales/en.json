@@ -1167,10 +1167,6 @@
     "issues": {
       "label": "Shift issues",
       "desc": "Blockers reported on site"
-    },
-    "contract": {
-      "label": "From a contract",
-      "desc": "Photograph a rental agreement — it creates the thing, hands it over and retires the old one"
     }
   },
   "components": {

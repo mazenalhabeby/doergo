@@ -46,23 +46,6 @@ export const MANAGE_ROWS = [
     floor, not on `canViewAllTasks`, which the €2 observer holds.
   */
   { icon: 'time', labelKey: 'manage.schedules.label', descKey: 'manage.schedules.desc', route: '/(app)/manage/schedules', color: '#10b981', permission: 'canViewSpaceAttendance', orgWide: false },
-  /*
-    Photograph a rental agreement at the desk and the van is on the books before
-    you are out of the car park — created, handed over, and the one it replaces
-    retired.
-
-    `canManageAssets`, held org-wide OR in a space, matching the endpoint:
-    `POST /assets/contracts/apply` is `@RequirePermissionInSpace` and narrows
-    each kind to the workspaces the grant covers. It used to be org-wide only,
-    which refused a Space Manager the one flow built for their depot's desk —
-    the screen itself then offers only the kinds of their own workspaces.
-  */
-  /*
-    ⚠️ The contract screen opens by reading the asset kinds (`GET
-    /asset-categories`: canViewAllTasks + the assets module). Gated on
-    canManageAssets alone it was offered to members whose first read 403s.
-  */
-  { icon: 'document-attach', labelKey: 'manage.contract.label', descKey: 'manage.contract.desc', route: '/(app)/asset-contract', color: '#0f766e', permission: 'canManageAssets', orgWide: false, module: 'assets', internal: true, gate: { alsoHolds: 'canViewAllTasks' } as ExtraGate },
 ] as const;
 
 export type ManageRow = (typeof MANAGE_ROWS)[number];

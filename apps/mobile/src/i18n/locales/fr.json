@@ -1167,10 +1167,6 @@
     "issues": {
       "label": "Incidents de poste",
       "desc": "Blocages signalés sur site"
-    },
-    "contract": {
-      "label": "À partir d’un contrat",
-      "desc": "Photographiez le contrat — il crée le bien, le remet et retire l’ancien"
     }
   },
   "components": {

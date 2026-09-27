@@ -21,7 +21,6 @@ const GROUP_OF: Record<string, MoreGroupKey> = {
   '/(app)/manage/invitations': 'people',
   '/(app)/manage/join-requests': 'people',
   '/(app)/customers': 'work',
-  '/(app)/asset-contract': 'work',
 };
 
 const ORDER: MoreGroupKey[] = ['time', 'people', 'work'];

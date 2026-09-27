@@ -97,22 +97,19 @@ describe('what Manage offers', () => {
   });
 
   /*
-    A Space Manager whose `canManageAssets` comes from their depot's role. The
-    contract endpoints accept that grant for the depot's kinds now, so the row
-    that leads there must be offered — it used to be org-wide only, and the one
-    person at the desk when a rental agreement arrives had no way in.
+    "From a contract" was taken off the phone (2026-09-27): creating a vehicle
+    from a rental agreement is done on the web. Drivers still send a page in
+    from Send a document, which raises a proposal for the office.
   */
-  it('offers "From a contract" to a manager whose asset grant is a space role', () => {
+  it('no longer offers "From a contract", even to a manager of assets', () => {
     const depotManager = {
       role: 'EMPLOYEE',
       canManageAssets: false,
       access: { org: {}, perSpace: { depot: { canManageAssets: true, canViewAllTasks: true } } },
-      // The contract screen needs the assets module where they work.
       spaceModules: ['assets'],
     };
-    expect(keys(depotManager)).toContain('manage.contract.label');
-    // …and still not to somebody who only oversees the work there.
-    expect(keys(supervisor)).not.toContain('manage.contract.label');
+    expect(keys(depotManager)).not.toContain('manage.contract.label');
+    expect(keys(admin)).not.toContain('manage.contract.label');
   });
 
   it('shows the tab to anyone with at least one row', () => {

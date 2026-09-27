@@ -352,28 +352,6 @@ export function SchedulesGlyph({ size = 24, color, contrast = '#0b0f12' }: Glyph
   );
 }
 
-/** A PAGE WITH A SEAL, RIBBON AND ALL. Agreed, not merely filed. */
-export function ContractGlyph({ size = 24, color, contrast = '#0b0f12' }: GlyphProps) {
-  return (
-    <Svg {...svg(size)}>
-      <Path d="M3.4 2.6h8.8l5.8 5.6v13.2H3.4Z" fill={color} fillOpacity={0.95} />
-      <Path d="M12.2 2.6v5.6H18Z" fill={contrast} />
-      <Path d="M6.4 11.8h7.6M6.4 14.8h5" fill="none" stroke={contrast} strokeWidth={1.6} strokeLinecap="round" />
-      <Circle cx={17.6} cy={17.4} r={5.4} fill={contrast} />
-      <Circle cx={17.6} cy={17.4} r={4.4} fill={color} fillOpacity={0.95} />
-      <Circle cx={17.6} cy={17.4} r={2.4} fill={contrast} />
-      <Path
-        d="M17.6 21.8v1.8"
-        fill="none"
-        stroke={color}
-        strokeOpacity={0.55}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-    </Svg>
-  );
-}
-
 /**
  * A BOOK OF THEM, NOT ONE OF THEM.
  *

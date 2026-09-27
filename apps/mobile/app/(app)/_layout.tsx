@@ -261,7 +261,6 @@ export default function AppLayout() {
             covers the viewfinder and titles it "asset-expense". */}
         <Stack.Screen name="asset-expense" options={{ headerShown: false }} />
         <Stack.Screen name="asset-log" options={{ headerShown: false }} />
-        <Stack.Screen name="asset-contract" options={{ headerShown: false }} />
         <Stack.Screen name="send-document" options={{ headerShown: false }} />
         <Stack.Screen name="overtime/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="overtime/sign/[id]" options={{ headerShown: false }} />

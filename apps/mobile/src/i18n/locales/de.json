@@ -1167,10 +1167,6 @@
     "issues": {
       "label": "Schichtprobleme",
       "desc": "Vor Ort gemeldete Blocker"
-    },
-    "contract": {
-      "label": "Aus einem Vertrag",
-      "desc": "Mietvertrag fotografieren — legt die Sache an, übergibt sie und mustert die alte aus"
     }
   },
   "components": {

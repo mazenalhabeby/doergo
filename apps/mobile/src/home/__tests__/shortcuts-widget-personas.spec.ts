@@ -36,13 +36,13 @@ describe('Shortcuts widget — every persona', () => {
   const EXPECTED: Record<string, string[]> = {
     client: [
       'manage.attendance.label', 'manage.extraTime.label', 'manage.timeOff.label', 'manage.members.label', 'manage.customers.label',
-      'manage.joinRequests.label', 'manage.invitations.label', 'manage.schedules.label', 'manage.contract.label',
+      'manage.joinRequests.label', 'manage.invitations.label', 'manage.schedules.label',
       'shortcuts.documents', 'shortcuts.sign', 'shortcuts.myEquipment', 'shortcuts.sync', 'shortcuts.overtime', 'shortcuts.logExpense',
       'shortcuts.newJob', 'shortcuts.scanCard', 'shortcuts.addClient', 'shortcuts.sendDoc', 'shortcuts.planRoute', 'shortcuts.support', 'shortcuts.equipmentLog',
     ],
     manager: [
       'manage.attendance.label', 'manage.extraTime.label', 'manage.timeOff.label', 'manage.members.label',
-      'manage.joinRequests.label', 'manage.invitations.label', 'manage.schedules.label', 'manage.contract.label',
+      'manage.joinRequests.label', 'manage.invitations.label', 'manage.schedules.label',
       'shortcuts.documents', 'shortcuts.sign', 'shortcuts.myEquipment', 'shortcuts.sync', 'shortcuts.logExpense',
       'shortcuts.newJob', 'shortcuts.scanCard', 'shortcuts.addClient', 'shortcuts.sendDoc', 'shortcuts.support', 'shortcuts.equipmentLog',
     ],
@@ -53,7 +53,7 @@ describe('Shortcuts widget — every persona', () => {
     mike: [
       'manage.attendance.label', 'manage.extraTime.label', 'manage.timeOff.label', 'manage.customers.label',
     // Schedules follows canViewSpaceAttendance (in a space) — the leader permission Attendance uses.
-    'manage.schedules.label', 'manage.contract.label',
+    'manage.schedules.label',
       'shortcuts.documents', 'shortcuts.sign', 'shortcuts.myEquipment', 'shortcuts.sync', 'shortcuts.overtime', 'shortcuts.logExpense',
       'shortcuts.newJob', 'shortcuts.sendDoc', 'shortcuts.planRoute', 'shortcuts.support', 'shortcuts.equipmentLog',
     ],
@@ -135,17 +135,11 @@ describe('Shortcuts widget — every persona', () => {
     the report; none is fixable from the card, because the card is a view of
     the shared table.
 
-      noor/karim · Contract   — GET /asset-categories is canViewAllTasks + the
-        assets MODULE; the row asks canManageAssets (held here only as a
-        LEGACY flat column, not in `access`) and names no module (karim's
-        workspaces run no assets at all).
       noor · Scan card / Add client — GET /customers 403: the phone's
         `resolveCrmCaps` legacy bridge (canManageUsers ⇒ CRM writer) reads
         `access.org` and says yes; the server said no.
   */
   const REFUSED_BUT_SHOWN: Array<[string, string]> = [
-    ['noor', 'manage.contract.label'],
-    ['karim', 'manage.contract.label'],
     ['noor', 'shortcuts.scanCard'],
     ['noor', 'shortcuts.addClient'],
   ];

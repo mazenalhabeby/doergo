@@ -1167,10 +1167,6 @@
     "issues": {
       "label": "Incidencias de turno",
       "desc": "Bloqueos reportados en obra"
-    },
-    "contract": {
-      "label": "Desde un contrato",
-      "desc": "Fotografía el contrato: crea la cosa, la entrega y retira la anterior"
     }
   },
   "components": {
