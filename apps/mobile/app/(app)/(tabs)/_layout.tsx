@@ -145,6 +145,8 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     hook above, so the hook order never changes with the route.
   */
   if (currentRoute?.name === 'profile') return null;
+  // A screen can ask for the room — a conversation, with its keyboard.
+  if (descriptors[currentRoute?.key]?.options?.tabBarHidden) return null;
 
   return (
     <>
@@ -390,6 +392,8 @@ export default function TabsLayout() {
           options={{
             title: t('tabs.team'),
             href: showTeam ? '/team' : null,
+            // The page draws the shared ScreenHeader — no navigator band.
+            headerShown: false,
           }}
         />
         {/*

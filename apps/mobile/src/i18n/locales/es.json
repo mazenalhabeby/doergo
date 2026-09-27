@@ -1360,7 +1360,16 @@
     "managers": "Responsables",
     "members": "Equipo",
     "messagingSoon": "Mensajería próximamente",
-    "callsSoon": "Llamadas próximamente"
+    "callsSoon": "Llamadas próximamente",
+    "message": "Escribir a {{name}}",
+    "search": "Buscar en el equipo",
+    "noMatch": "Nadie coincide.",
+    "filter": {
+      "all": "Todos {{count}}",
+      "AVAILABLE": "{{count}} disponibles",
+      "BUSY": "{{count}} ocupados",
+      "AWAY": "{{count}} ausentes"
+    }
   },
   "navTitles": {
     "taskDetails": "Detalles de la tarea",
@@ -1420,7 +1429,16 @@
     "external": "Externo",
     "closed": "Cerrada",
     "conversationClosed": "Este espacio de trabajo ya no está compartido, por lo que esta conversación está cerrada. Todavía puedes leer lo que se dijo.",
-    "externalMember": "En otra organización"
+    "externalMember": "En otra organización",
+    "emptyTitle": "Aún no hay conversaciones",
+    "emptyBody": "Empieza una con cualquiera de tu equipo.",
+    "you": "Tú",
+    "availableNow": "Disponibles",
+    "everyoneElse": "Todos los demás",
+    "sayHello": "Saluda",
+    "new": "Nuevo",
+    "send": "Enviar",
+    "noMessagesYet": "Aún no hay mensajes"
   },
   "locationConsent": {
     "title": "Ubicación en segundo plano",

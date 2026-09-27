@@ -1360,7 +1360,16 @@
     "managers": "Manager",
     "members": "Team",
     "messagingSoon": "Nachrichten folgen in Kürze",
-    "callsSoon": "Anrufe folgen in Kürze"
+    "callsSoon": "Anrufe folgen in Kürze",
+    "message": "{{name}} schreiben",
+    "search": "Team durchsuchen",
+    "noMatch": "Niemand gefunden.",
+    "filter": {
+      "all": "Alle {{count}}",
+      "AVAILABLE": "{{count}} verfügbar",
+      "BUSY": "{{count}} beschäftigt",
+      "AWAY": "{{count}} abwesend"
+    }
   },
   "navTitles": {
     "taskDetails": "Aufgabendetails",
@@ -1420,7 +1429,16 @@
     "external": "Extern",
     "closed": "Geschlossen",
     "conversationClosed": "Dieser Arbeitsbereich wird nicht mehr geteilt, daher ist diese Unterhaltung geschlossen. Sie können den bisherigen Verlauf weiterhin lesen.",
-    "externalMember": "In einer anderen Organisation"
+    "externalMember": "In einer anderen Organisation",
+    "emptyTitle": "Noch keine Unterhaltungen",
+    "emptyBody": "Beginnen Sie eine mit jemandem aus Ihrem Team.",
+    "you": "Sie",
+    "availableNow": "Verfügbar",
+    "everyoneElse": "Alle anderen",
+    "sayHello": "Sagen Sie Hallo",
+    "new": "Neu",
+    "send": "Senden",
+    "noMessagesYet": "Noch keine Nachrichten"
   },
   "locationConsent": {
     "title": "Standort im Hintergrund",
