@@ -57,8 +57,8 @@ describe('Shortcuts widget — every persona', () => {
     ],
     sales: [
       'manage.customers.label', 'shortcuts.documents', 'shortcuts.sign', 'shortcuts.myEquipment', 'shortcuts.sync', 'shortcuts.overtime',
-      // Scan card / Add client need "add clients"; this org's Sales Rep role predates that
-      // grant and the server refuses the create — the phone now agrees.
+      // Scan card / Add client need "add clients". This FIXTURE was captured before migration
+      // 20260927090000 gave existing Sales Rep roles that grant — a rep signed in today gets both.
       'shortcuts.logExpense', 'shortcuts.newJob', 'shortcuts.sendDoc', 'shortcuts.support', 'shortcuts.equipmentLog',
     ],
     'a.test': [
