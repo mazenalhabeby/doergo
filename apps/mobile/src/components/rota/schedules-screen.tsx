@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -51,6 +51,17 @@ export function SchedulesScreen() {
     }
   }, [spaceId, from]);
   useLiveRefresh(load, null);
+  /*
+    ⚠️ A NEW WORKSPACE OR WEEK IS A NEW QUESTION. `useLiveRefresh` asks on
+    focus and resume only — it holds the latest `load` by ref precisely so an
+    identity change is NOT a trigger — so tapping a chip or an arrow changed
+    the selection and asked nothing until a pull. The first run is the focus's.
+  */
+  const firstChoice = useRef(true);
+  useEffect(() => {
+    if (firstChoice.current) { firstChoice.current = false; return; }
+    void load();
+  }, [spaceId, from, load]);
 
   const canEdit = !!week?.canEdit && orgHasAddOn(user?.orgAddOns ?? null, 'shift_scheduling');
   const shiftsById = useMemo(() => new Map((week?.shifts ?? []).map((s) => [s.id, s])), [week?.shifts]);
