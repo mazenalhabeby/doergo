@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { Animated, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { orgHasAddOn } from '@hbcfield/shared/client';
@@ -42,14 +42,46 @@ export function SchedulesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [editing, setEditing] = useState<{ userId: string; name: string; cell: RotaCell } | null>(null);
 
+  /*
+    ⚠️ SMOOTH BY CONSTRUCTION, NOT BY ANIMATION ALONE.
+     • A week already seen comes back from memory at once and refreshes
+       behind — flicking back and forth never waits.
+     • A reply that arrives after a newer choice is dropped — a slow answer
+       for BILLA must not land on top of Main Office.
+     • While a new one loads, the grid stays where it is, dimmed, and fades in
+       when the answer lands — no blank, no jump.
+  */
+  const seen = useRef(new Map<string, RotaWeek>());
+  const asked = useRef(0);
+  const [pending, setPending] = useState(false);
+  const fade = useRef(new Animated.Value(1)).current;
+  const keyOf = (sp?: string, f?: string) => `${sp ?? ''}|${f ?? ''}`;
   const load = useCallback(async () => {
+    const ticket = ++asked.current;
+    const key = keyOf(spaceId, from);
+    const kept = seen.current.get(key);
+    if (kept) setWeek(kept);
+    else {
+      setPending(true);
+      Animated.timing(fade, { toValue: 0.4, duration: 120, useNativeDriver: true }).start();
+    }
     try {
-      setWeek(await rotaApi.week({ spaceId, from }));
+      const next = await rotaApi.week({ spaceId, from });
+      if (ticket !== asked.current) return;
+      seen.current.set(key, next);
+      // The answer names the space and week it chose — remember it under those too.
+      seen.current.set(keyOf(next.space?.id, next.days[0]), next);
+      setWeek(next);
       setFailed(false);
     } catch {
-      setFailed(true);
+      if (ticket === asked.current) setFailed(true);
+    } finally {
+      if (ticket === asked.current) {
+        setPending(false);
+        Animated.timing(fade, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+      }
     }
-  }, [spaceId, from]);
+  }, [spaceId, from, fade]);
   useLiveRefresh(load, null);
   /*
     ⚠️ A NEW WORKSPACE OR WEEK IS A NEW QUESTION. `useLiveRefresh` asks on
@@ -69,13 +101,22 @@ export function SchedulesScreen() {
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const dayDate = (k: string) => new Date(`${k}T12:00:00`);
   const shiftWeek = (n: number) => {
-    const first = week?.days[0];
+    const first = shownDays[0];
     if (!first) return;
     const d = dayDate(first);
     d.setDate(d.getDate() + n * 7);
     setFrom(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
   };
   const fmt = (k: string, o: Intl.DateTimeFormatOptions) => dayDate(k).toLocaleDateString(i18n.language, o);
+  /* The week the member CHOSE, drawn the moment they tap — not when the server answers. */
+  const shownDays = (() => {
+    if (!from || week?.days[0] === from) return week?.days ?? [];
+    const d = dayDate(from);
+    return Array.from({ length: 7 }, (_, i) => {
+      const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + i);
+      return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+    });
+  })();
   const back = () => (router.canGoBack() ? router.back() : router.navigate('/(app)/(tabs)/more' as Href));
 
   return (
@@ -91,7 +132,7 @@ export function SchedulesScreen() {
         {week && week.spaces.length > 1 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: amazen.space(1.5) }}>
             {week.spaces.map((s) => {
-              const on = s.id === week.space?.id;
+              const on = s.id === (spaceId ?? week.space?.id);
               return (
                 <Pressable key={s.id} onPress={() => setSpaceId(s.id)} accessibilityRole="button" accessibilityState={{ selected: on }}
                   style={{ borderRadius: amazen.radius.full, paddingHorizontal: amazen.space(3), paddingVertical: amazen.space(2), backgroundColor: on ? c.accentTint : c.tile, borderWidth: 1.5, borderColor: on ? c.accent : 'transparent' }}>
@@ -102,17 +143,18 @@ export function SchedulesScreen() {
           </ScrollView>
         ) : null}
 
-        {week?.days.length ? (
+        {shownDays.length ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
             <RoundArrow label="‹" a11y={t('rota.prevWeek', 'Previous week')} onPress={() => shiftWeek(-1)} />
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <AText variant="body" tone="strong" style={{ fontSize: 15 }}>{`${fmt(week.days[0]!, { day: 'numeric', month: 'short' })} – ${fmt(week.days[6]!, { day: 'numeric', month: 'short' })}`}</AText>
-              {week.days.includes(todayKey) ? <SectionLabel tone="accent">{t('rota.thisWeek', 'This week')}</SectionLabel> : null}
+              <AText variant="body" tone="strong" style={{ fontSize: 15 }}>{`${fmt(shownDays[0]!, { day: 'numeric', month: 'short' })} – ${fmt(shownDays[6]!, { day: 'numeric', month: 'short' })}`}</AText>
+              {shownDays.includes(todayKey) ? <SectionLabel tone="accent">{t('rota.thisWeek', 'This week')}</SectionLabel> : null}
             </View>
             <RoundArrow label="›" a11y={t('rota.nextWeek', 'Next week')} onPress={() => shiftWeek(1)} />
           </View>
         ) : null}
 
+        <Animated.View style={{ opacity: fade, gap: amazen.space(3) }} pointerEvents={pending ? 'none' : 'auto'}>
         {!week ? (
           failed ? null : <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(6) }}>{t('common.loading', 'Loading…')}</AText>
         ) : !week.space ? (
@@ -160,6 +202,7 @@ export function SchedulesScreen() {
             ) : null}
           </>
         )}
+        </Animated.View>
       </ScrollView>
 
       {editing && week?.space ? (
@@ -170,7 +213,7 @@ export function SchedulesScreen() {
           label={fmt(editing.cell.date, { weekday: 'long', day: 'numeric', month: 'short' })}
           weekday={fmt(editing.cell.date, { weekday: 'long' })}
           onClose={() => setEditing(null)}
-          onSaved={() => { setEditing(null); void load(); }}
+          onSaved={() => { setEditing(null); seen.current.clear(); void load(); }}
         />
       ) : null}
     </Ground>
