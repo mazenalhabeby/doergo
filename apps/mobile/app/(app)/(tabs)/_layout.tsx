@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Platform, Pressable, Animated, TouchableOpacity, Image, ScrollView } from 'react-native';
-import { Tabs, useRouter, router } from 'expo-router';
+import { Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRef, useEffect, useMemo, useState } from 'react';
@@ -19,7 +19,7 @@ import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/consta
 import { TourTarget, useTourTarget } from '../../../src/components/tour';
 import { Role, hasAccessModule, normalizeRole, canContactColleagues, orgHasAddOn } from '@hbcfield/shared/client';
 import { hasManageSurface } from '../../../src/lib/manage-rows';
-import { resolveMediaUrl } from '../../../src/lib/api';
+import { useProfileAvatar } from '../../../src/lib/use-profile-avatar';
 
 /*
   Which tabs the tours spotlight.
@@ -57,13 +57,10 @@ function presenceColor(presence?: string | null): string {
 function ProfileButton() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
-  const router = useRouter();
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const initial = user?.firstName?.[0]?.toUpperCase() || '?';
-  // Uploaded avatars are stored as a relative path (/uploads/avatars/…).
-  // React Native's <Image> can't load a relative URI, so resolve it to the
-  // absolute host URL — otherwise the header avatar renders blank.
-  const avatarUrl = resolveMediaUrl(user?.avatarUrl);
+  // The same picture and the same destination as every amazen header's avatar.
+  const { avatarUrl, openProfile } = useProfileAvatar();
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, { toValue: 0.88, friction: 5, useNativeDriver: true }).start();
@@ -74,7 +71,7 @@ function ProfileButton() {
 
   return (
     <Pressable
-      onPress={() => router.push('/(app)/(tabs)/profile')}
+      onPress={openProfile}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       style={styles.profileBtn}
@@ -553,6 +550,8 @@ export default function TabsLayout() {
           options={{
             title: t('tabs.tasks'),
             href: isAdmin || showTechTasks ? '/tasks' : null,
+            // The screen draws its own "Jobs" header with the New job disc — job-flow.html.
+            headerShown: false,
           }}
         />
         {/* Create Task tab - ADMIN or technicians with canCreateTasks */}
@@ -561,6 +560,8 @@ export default function TabsLayout() {
           options={{
             title: t('tabs.createTask'),
             href: (isAdmin || showCreate) ? '/create-task' : null,
+            // The screen draws its own back button and "New job" — job-flow.html.
+            headerShown: false,
           }}
         />
         {/* Manage tab — offered to whoever holds something inside it. */}

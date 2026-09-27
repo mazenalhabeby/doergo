@@ -1,0 +1,230 @@
+/**
+ * The Jobs tab's decisions — `docs/design/job-flow.html`, `renderJobs()`,
+ * `band()`, `BANDS`, `jobRow()`.
+ *
+ * ⚠️ PURE AND REACT-NATIVE-FREE on purpose, like `job/job-logic.ts`: every
+ * rule the list acts on is tested (`jobs-tab-*.spec.ts`), and the screen only
+ * draws what these return.
+ */
+import {
+  getEndOfMonth, getStartOfMonth, hasAccessModule, rankMyWork, toISODateString, workBand,
+  daysLate, normalizeRole, Role,
+} from '@hbcfield/shared/client';
+import type { Task } from '../../lib/api/types';
+import type { TasksListParams } from '../../lib/api/tasks';
+
+/* ---------------- the period ---------------- */
+
+export type Period = 'current' | 'upcoming' | 'history';
+export const PERIODS: readonly Period[] = ['current', 'upcoming', 'history'];
+
+/**
+ * The date window each period asks for — unchanged from the tab it replaces:
+ * Now is this month (plus undated and still-open overdue work), Upcoming is
+ * next month onwards, History is up to the end of last month.
+ */
+export function periodParams(period: Period, now: Date = new Date()): Pick<TasksListParams, 'startDate' | 'endDate' | 'includeNoDueDate'> {
+  switch (period) {
+    case 'current':
+      return { startDate: toISODateString(getStartOfMonth(now)), endDate: toISODateString(getEndOfMonth(now)), includeNoDueDate: true };
+    case 'upcoming':
+      return { startDate: toISODateString(getStartOfMonth(new Date(now.getFullYear(), now.getMonth() + 1, 1))) };
+    case 'history':
+      return { endDate: toISODateString(getEndOfMonth(new Date(now.getFullYear(), now.getMonth() - 1, 1))) };
+  }
+}
+
+/* ---------------- the facts about one row ---------------- */
+
+/** What the list needs to know about a job that depends on WHO is looking and on its workflow. */
+export interface JobFacts {
+  /** Assigned to the reader. */
+  mine: boolean;
+  /** Finished or called off, by its own workflow. */
+  closed: boolean;
+  /** Called off, by its own workflow. */
+  canceled: boolean;
+  /** Under way on its own workflow (a custom step counts, not only the built-in ones). */
+  underWay: boolean;
+}
+
+/* ---------------- bands ---------------- */
+
+export type JobBand = 'doing' | 'blocked' | 'overdue' | 'today' | 'later' | 'done';
+
+/** In the order they are drawn — `BANDS`. */
+export const JOB_BANDS: readonly JobBand[] = ['doing', 'blocked', 'overdue', 'today', 'later', 'done'];
+
+/**
+ * Which well a job sits in — `band()`.
+ *
+ *  - over (finished or called off) → Done
+ *  - Blocked → Blocked, whoever holds it
+ *  - under way AND mine → Doing now. ⚠️ Somebody else's job under way is not
+ *    what the READER is doing; it sits by its date (overdue, else today).
+ *  - otherwise by its date, the shared `workBand` rule — upcoming reads Later.
+ */
+export function bandOf(task: Pick<Task, 'status' | 'dueDate' | 'priority' | 'id' | 'title'>, facts: JobFacts, now: Date = new Date()): JobBand {
+  if (facts.closed) return 'done';
+  if (task.status === 'BLOCKED') return 'blocked';
+  const shared = workBand(task as never, now);
+  if (facts.underWay || shared === 'doing') {
+    if (facts.mine) return 'doing';
+    return (daysLate(task.dueDate ?? null, now) ?? 0) > 0 ? 'overdue' : 'today';
+  }
+  if (shared === 'upcoming') return 'later';
+  if (shared === 'blocked') return 'blocked';
+  return shared;
+}
+
+export interface JobGroup<T> {
+  band: JobBand;
+  items: T[];
+}
+
+/**
+ * The wells, in order, empty ones dropped. Inside a well the shared ranking
+ * decides (urgency, then the day, then the title) — the same order the home
+ * widget reads, so the two cannot disagree about which job comes first.
+ */
+export function groupJobs<T extends Task>(tasks: readonly T[], factsOf: (t: T) => JobFacts, now: Date = new Date()): JobGroup<T>[] {
+  const ranked = rankMyWork([...tasks] as never[], now) as unknown as T[];
+  const by = new Map<JobBand, T[]>();
+  for (const t of ranked) {
+    const b = bandOf(t, factsOf(t), now);
+    const list = by.get(b) ?? [];
+    list.push(t);
+    by.set(b, list);
+  }
+  return JOB_BANDS.filter((b) => (by.get(b)?.length ?? 0) > 0).map((b) => ({ band: b, items: by.get(b)! }));
+}
+
+/* ---------------- filters ---------------- */
+
+export type JobsFilter = 'all' | 'nobody' | 'active' | 'blocked' | 'done';
+
+/** The chips — the person overseeing also gets "Nobody on". */
+export function filtersFor(oversee: boolean): JobsFilter[] {
+  return oversee ? ['all', 'nobody', 'active', 'blocked', 'done'] : ['all', 'active', 'blocked', 'done'];
+}
+
+/** Nobody has been given it — neither the one assignee nor any of the several. */
+export function nobodyOn(task: Pick<Task, 'assignedToId'> & { assignees?: unknown[] | null }): boolean {
+  return !task.assignedToId && !(task.assignees?.length);
+}
+
+/**
+ * Does a job pass the chip?
+ *  - Active = what is on today's plate: doing now, overdue, or today
+ *  - Nobody on = open and given to nobody
+ */
+export function passesFilter(task: Task, filter: JobsFilter, band: JobBand, facts: JobFacts): boolean {
+  switch (filter) {
+    case 'all': return true;
+    case 'active': return band === 'doing' || band === 'today' || band === 'overdue';
+    case 'blocked': return task.status === 'BLOCKED';
+    case 'nobody': return !facts.closed && nobodyOn(task as never);
+    case 'done': return facts.closed;
+  }
+}
+
+/** The count on the Blocked chip — what the chip would show. */
+export function blockedCount(tasks: readonly Pick<Task, 'status'>[]): number {
+  return tasks.filter((t) => t.status === 'BLOCKED').length;
+}
+
+/* ---------------- Next up ---------------- */
+
+/**
+ * Next up is drawn only on the plain view of now: no chip, no search. With a
+ * chip or a search the list is an answer to a different question.
+ */
+export function showsNextUp(v: { period: Period; filter: JobsFilter; search: string }): boolean {
+  return v.period === 'current' && v.filter === 'all' && !v.search.trim();
+}
+
+/**
+ * The job Next up offers — the reader's own first open job, by band then by
+ * the shared ranking. Never somebody else's: "what do I do next" has no
+ * answer in another person's work.
+ */
+export function pickNextUp<T extends Task>(tasks: readonly T[], factsOf: (t: T) => JobFacts, now: Date = new Date()): T | null {
+  const own = tasks.filter((t) => { const f = factsOf(t); return f.mine && !f.closed; });
+  const groups = groupJobs(own, factsOf, now);
+  return groups[0]?.items[0] ?? null;
+}
+
+/* ---------------- Plan my route ---------------- */
+
+/**
+ * Offered to somebody who drives (`drivesRoutes`), with stops today, on the
+ * plain view of now. A chip or another period is a different question.
+ */
+export function showsRouteRow(v: { drives: boolean; stops: number; period: Period; filter: JobsFilter }): boolean {
+  return v.drives && v.stops > 0 && v.period === 'current' && v.filter === 'all';
+}
+
+/* ---------------- a row ---------------- */
+
+export type RowRight =
+  | { kind: 'pending' }
+  | { kind: 'late'; days: number }
+  | { kind: 'done' }
+  | { kind: 'due'; at: string }
+  | { kind: 'none' };
+
+/** The right-hand fact of a row — `jobRow()`: waiting to send, late, done, or when. */
+export function rowRight(task: Pick<Task, 'dueDate'> & { pendingSync?: boolean }, facts: JobFacts, now: Date = new Date()): RowRight {
+  if (task.pendingSync) return { kind: 'pending' };
+  if (facts.closed) return facts.canceled ? { kind: 'none' } : { kind: 'done' };
+  const late = daysLate(task.dueDate ?? null, now) ?? 0;
+  if (late > 0) return { kind: 'late', days: late };
+  return task.dueDate ? { kind: 'due', at: task.dueDate } : { kind: 'none' };
+}
+
+export type RowWho = { kind: 'you' } | { kind: 'nobody' } | { kind: 'name'; name: string } | null;
+
+/**
+ * Who has it — said only in Everyone, where the rows are other people's work.
+ * In Mine (and for a member whose list IS their own) it is always the reader.
+ */
+export function rowWho(
+  task: Pick<Task, 'assignedToId'> & { assignedTo?: { firstName?: string | null } | null; assignees?: unknown[] | null },
+  facts: JobFacts,
+  view: { oversee: boolean; everyone: boolean },
+): RowWho {
+  if (!view.oversee || !view.everyone) return null;
+  if (facts.mine) return { kind: 'you' };
+  if (nobodyOn(task as never)) return { kind: 'nobody' };
+  const name = task.assignedTo?.firstName?.trim();
+  return name ? { kind: 'name', name } : null;
+}
+
+/** "Industriezentrum NÖ-Süd" out of "Industriezentrum NÖ-Süd, Wr. Neudorf" — the place, not the postcode. */
+export function placeOf(task: Pick<Task, 'locationAddress'> & { space?: { name?: string | null } | null }): string | null {
+  const first = task.locationAddress?.split(',')[0]?.trim();
+  return first || task.space?.name?.trim() || null;
+}
+
+/* ---------------- the empty well ---------------- */
+
+export type EmptyKind = 'search' | 'blocked' | 'history' | 'none';
+
+export function emptyKind(v: { search: string; filter: JobsFilter; period: Period }): EmptyKind {
+  if (v.search.trim()) return 'search';
+  if (v.filter === 'blocked') return 'blocked';
+  if (v.period === 'history') return 'history';
+  return 'none';
+}
+
+/* ---------------- who may make one ---------------- */
+
+/**
+ * The New job disc — the same question the tab bar asks for the New job tab:
+ * an admin, or the `create_task` module (which IS the create permission,
+ * org-wide or held in a space).
+ */
+export function canCreateJobs(user: { role?: string | null } | null | undefined): boolean {
+  if (!user) return false;
+  return normalizeRole(user.role ?? '') === Role.ADMIN || hasAccessModule(user as never, 'create_task');
+}

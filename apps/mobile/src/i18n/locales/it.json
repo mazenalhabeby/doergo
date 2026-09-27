@@ -3534,5 +3534,58 @@
       "open": "Firma",
       "save": "Salva firma"
     }
+  },
+  "jobsList": {
+    "title": "Lavori",
+    "newJob": "Nuovo lavoro",
+    "search": "Cerca lavori",
+    "scope": {
+      "mine": "Miei",
+      "everyone": "Tutti"
+    },
+    "period": {
+      "current": "Ora",
+      "upcoming": "In arrivo",
+      "history": "Cronologia"
+    },
+    "filters": {
+      "all": "Tutti",
+      "nobody": "Senza nessuno",
+      "active": "Attivi",
+      "blocked": "Bloccati",
+      "blockedCount": "Bloccati · {{count}}",
+      "done": "Completati"
+    },
+    "bands": {
+      "doing": "In corso",
+      "blocked": "Bloccati",
+      "overdue": "Scaduti",
+      "today": "Oggi",
+      "later": "Più avanti",
+      "done": "Completati"
+    },
+    "late_one": "{{count}} g di ritardo",
+    "late_other": "{{count}} g di ritardo",
+    "done": "Completato",
+    "you": "Tu",
+    "nobody": "Nessuno",
+    "empty": {
+      "search": "Nessun lavoro corrisponde a questa ricerca.",
+      "searchHint": "Prova con una parte del titolo o dei dettagli.",
+      "blocked": "Niente è bloccato.",
+      "history": "Niente dei mesi precedenti.",
+      "none": "Nessun lavoro qui.",
+      "hint": "I nuovi lavori che ti vengono assegnati compaiono qui."
+    },
+    "capped": "Sono mostrati i primi {{count}} lavori. Cerca per trovare gli altri."
+  },
+  "newJob": {
+    "title": "Nuovo lavoro",
+    "pickDay": "Scegli un giorno",
+    "noHour": "Nessun orario fisso",
+    "whichDay": "Quale giorno?",
+    "who": "Chi lo fa",
+    "create": "Crea lavoro",
+    "doneTitle": "Lavoro creato"
   }
 }

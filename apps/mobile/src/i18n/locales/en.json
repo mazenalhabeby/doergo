@@ -3534,5 +3534,58 @@
       "open": "Sign",
       "save": "Save signature"
     }
+  },
+  "jobsList": {
+    "title": "Jobs",
+    "newJob": "New job",
+    "search": "Search jobs",
+    "scope": {
+      "mine": "Mine",
+      "everyone": "Everyone"
+    },
+    "period": {
+      "current": "Now",
+      "upcoming": "Upcoming",
+      "history": "History"
+    },
+    "filters": {
+      "all": "All",
+      "nobody": "Nobody on",
+      "active": "Active",
+      "blocked": "Blocked",
+      "blockedCount": "Blocked · {{count}}",
+      "done": "Done"
+    },
+    "bands": {
+      "doing": "Doing now",
+      "blocked": "Blocked",
+      "overdue": "Overdue",
+      "today": "Today",
+      "later": "Later",
+      "done": "Done"
+    },
+    "late_one": "{{count}} d late",
+    "late_other": "{{count}} d late",
+    "done": "Done",
+    "you": "You",
+    "nobody": "Nobody",
+    "empty": {
+      "search": "No jobs match that search.",
+      "searchHint": "Try part of the title or the details.",
+      "blocked": "Nothing is blocked.",
+      "history": "Nothing from earlier months.",
+      "none": "No jobs here.",
+      "hint": "New jobs you are given appear here."
+    },
+    "capped": "Showing the first {{count}} jobs. Search to find the rest."
+  },
+  "newJob": {
+    "title": "New job",
+    "pickDay": "Pick a day",
+    "noHour": "No fixed hour",
+    "whichDay": "Which day?",
+    "who": "Who does it",
+    "create": "Create job",
+    "doneTitle": "Job created"
   }
 }

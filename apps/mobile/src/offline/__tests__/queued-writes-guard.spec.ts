@@ -53,7 +53,11 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     },
     why: FALLBACK,
   },
-  'app/(app)/(tabs)/create-task.tsx': {
+  /*
+    New job was rebuilt to `docs/design/job-flow.html`; the route is thin now
+    and the send moved with the code into its hook — the same two calls.
+  */
+  'src/components/new-job/use-create-job.ts': {
     calls: { 'tasksApi.create': 1, 'taskAttachmentsApi.confirmUpload': 1 },
     why: FALLBACK,
   },

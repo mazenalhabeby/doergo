@@ -3534,5 +3534,58 @@
       "open": "Signer",
       "save": "Enregistrer la signature"
     }
+  },
+  "jobsList": {
+    "title": "Tâches",
+    "newJob": "Nouvelle tâche",
+    "search": "Rechercher des tâches",
+    "scope": {
+      "mine": "À moi",
+      "everyone": "Tout le monde"
+    },
+    "period": {
+      "current": "Maintenant",
+      "upcoming": "À venir",
+      "history": "Historique"
+    },
+    "filters": {
+      "all": "Tout",
+      "nobody": "Personne dessus",
+      "active": "Actives",
+      "blocked": "Bloquées",
+      "blockedCount": "Bloquées · {{count}}",
+      "done": "Terminées"
+    },
+    "bands": {
+      "doing": "En cours",
+      "blocked": "Bloquées",
+      "overdue": "En retard",
+      "today": "Aujourd’hui",
+      "later": "Plus tard",
+      "done": "Terminées"
+    },
+    "late_one": "{{count}} j de retard",
+    "late_other": "{{count}} j de retard",
+    "done": "Terminée",
+    "you": "Vous",
+    "nobody": "Personne",
+    "empty": {
+      "search": "Aucune tâche ne correspond à cette recherche.",
+      "searchHint": "Essayez une partie du titre ou des détails.",
+      "blocked": "Rien n’est bloqué.",
+      "history": "Rien des mois précédents.",
+      "none": "Aucune tâche ici.",
+      "hint": "Les nouvelles tâches qui vous sont confiées apparaissent ici."
+    },
+    "capped": "Les {{count}} premières tâches sont affichées. Recherchez pour trouver les autres."
+  },
+  "newJob": {
+    "title": "Nouvelle tâche",
+    "pickDay": "Choisir un jour",
+    "noHour": "Pas d’heure fixe",
+    "whichDay": "Quel jour ?",
+    "who": "Qui s’en charge",
+    "create": "Créer la tâche",
+    "doneTitle": "Tâche créée"
   }
 }

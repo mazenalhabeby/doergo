@@ -92,7 +92,8 @@ export function JobFiles({
   );
 }
 
-function AddTile({ side, label, onPress, disabled, children }: { side: number; label: string; onPress: () => void; disabled?: boolean; children: React.ReactNode }) {
+/** A dashed square that adds — the camera and the gallery. Also New job's photo row. */
+export function AddTile({ side, label, onPress, disabled, children }: { side: number; label: string; onPress: () => void; disabled?: boolean; children: React.ReactNode }) {
   const { amazen } = useTheme();
   const c = amazen.color;
   return (

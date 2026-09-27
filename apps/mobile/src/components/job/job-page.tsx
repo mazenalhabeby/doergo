@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Animated, Linking, Platform, Pressable, ScrollView, StyleSheet, View,
+  ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, View,
   type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { router, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { daysLate, getFlowSteps, hasCapability, hasFeatureModule, type FlowStatus, type TaskCapability } from '@hbcfield/shared/client';
+import { daysLate, getFlowSteps, hasCapability, hasFeatureModule, type TaskCapability } from '@hbcfield/shared/client';
 import { TaskStatus } from '../../lib/api';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
@@ -21,16 +21,16 @@ import { useConnectivity } from '../../offline/offline-context';
 import { OfflineBanner } from '../../offline/components/offline-banner';
 import { taskDestination } from '../../offline/tasks/status-fix';
 import { Ground, AText } from '../amazen';
-import { AcceptGlyph, ArrivedGlyph, FinishGlyph, OnMyWayGlyph, StartWorkGlyph } from '../glyphs';
-import type { GlyphProps } from '../glyphs/glyphs';
 import { centeredContent } from '../screen-container';
 import { flowIdOf, hasHour, stepLabelFor } from '../home/my-work';
 import { useJob } from './use-job';
 import { useJobWrites, type WriteStatus } from './use-job-writes';
 import {
-  capsAt, checklistMode, checklistStep, decideNext, dockMode, heldUntilDue, isCanceledStatus, isClosedStatus,
-  moreOptions, needsReport, stepPosition, formatOnJob, type MoreOption,
+  checklistMode, checklistStep, decideNext, dockMode, heldUntilDue, isCanceledStatus, isClosedStatus,
+  moreOptions, needsReport, stepPosition, formatOnJob, type MoreOption, type OpenSheet,
 } from './job-logic';
+import { glyphFor } from './step-glyph';
+import { openJobInMaps } from './maps';
 import { JobHeader, JobTopRow } from './job-header';
 import { JobBanners } from './job-banners';
 import { JobFacts, JobMap } from './job-facts';
@@ -53,16 +53,6 @@ type SheetKind = 'more' | 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | '
 
 const ACTIVE: string[] = [TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED];
 
-/** The mark on the primary follows the TRANSITION, never the organization's wording. */
-function glyphFor(key: string, steps: FlowStatus[], workflowName?: string | null): React.ComponentType<GlyphProps> {
-  const step = steps.find((s) => s.key === key);
-  if (step?.isFinal) return FinishGlyph;
-  if (key === 'ACCEPTED') return AcceptGlyph;
-  if (key === 'ARRIVED' || key === 'VISITED' || key === 'DELIVERED') return ArrivedGlyph;
-  if (hasCapability(capsAt(key, steps, workflowName), 'gps')) return OnMyWayGlyph;
-  return StartWorkGlyph;
-}
-
 /**
  * THE JOB — `docs/design/job-flow.html`, `renderDetail()`.
  *
@@ -80,11 +70,18 @@ export function JobPage({
   embedded = false,
   onClose,
   writeStatus,
+  initialSheet = null,
 }: {
   taskId: string;
   embedded?: boolean;
   onClose?: () => void;
   writeStatus: WriteStatus;
+  /**
+   * A sheet to open as the page arrives — the Jobs tab's Next up card hands
+   * over here for the steps that need the page (Finish, Report an issue,
+   * Decline…) rather than keeping a second copy of them.
+   */
+  initialSheet?: OpenSheet | null;
 }) {
   const insets = useSafeAreaInsets();
   const r = useResponsive();
@@ -130,7 +127,7 @@ export function JobPage({
   );
 
   const writes = useJobWrites(job, { writeStatus, onClosed: close, labelOf });
-  const [sheet, setSheet] = useState<SheetKind | null>(null);
+  const [sheet, setSheet] = useState<SheetKind | null>(initialSheet);
   const [deleting, setDeleting] = useState<JobFile | null>(null);
   const closeSheet = useCallback(() => setSheet(null), []);
 
@@ -229,22 +226,8 @@ export function JobPage({
   const options = moreOptions({ mode, decision, isMine, status: task.status, hasPlace, oversees: oversee, canAssign, canEdit });
   const blocked = task.status === TaskStatus.BLOCKED;
 
-  const openMaps = () => {
-    if (!hasPlace) return;
-    const url = Platform.select({
-      ios: `maps:0,0?q=${task.locationLat},${task.locationLng}`,
-      android: `geo:0,0?q=${task.locationLat},${task.locationLng}(${encodeURIComponent(task.locationAddress || 'Location')})`,
-    });
-    if (url) void Linking.openURL(url);
-  };
-  const navigate = () => {
-    if (!hasPlace) return;
-    const url = Platform.select({
-      ios: `maps:0,0?daddr=${task.locationLat},${task.locationLng}`,
-      android: `google.navigation:q=${task.locationLat},${task.locationLng}`,
-    });
-    if (url) void Linking.openURL(url);
-  };
+  const openMaps = () => openJobInMaps(task, 'show');
+  const navigate = () => openJobInMaps(task, 'navigate');
 
   /** Take the job to a step: Blocked asks what is wrong, a report step opens Finish, anything else just goes. */
   const go = (to: string) => {

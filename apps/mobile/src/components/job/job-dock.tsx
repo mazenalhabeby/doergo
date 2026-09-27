@@ -81,8 +81,8 @@ export function JobDock({
   );
 }
 
-/** The lit jade pill with the step's mark in it — `.primary`. */
-function JadeButton({ label, detail, Glyph, onPress, disabled, loading }: DockPrimary) {
+/** The lit jade pill with the step's mark in it — `.primary`. Also the Jobs tab's Next up button. */
+export function JadeButton({ label, detail, Glyph, onPress, disabled, loading }: DockPrimary) {
   const { amazen } = useTheme();
   const c = amazen.color;
   const off = disabled || loading;

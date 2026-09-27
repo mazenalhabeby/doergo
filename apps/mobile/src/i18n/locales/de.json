@@ -3534,5 +3534,58 @@
       "open": "Unterschreiben",
       "save": "Unterschrift speichern"
     }
+  },
+  "jobsList": {
+    "title": "Aufträge",
+    "newJob": "Neuer Auftrag",
+    "search": "Aufträge suchen",
+    "scope": {
+      "mine": "Meine",
+      "everyone": "Alle"
+    },
+    "period": {
+      "current": "Jetzt",
+      "upcoming": "Anstehend",
+      "history": "Verlauf"
+    },
+    "filters": {
+      "all": "Alle",
+      "nobody": "Niemand dran",
+      "active": "Aktiv",
+      "blocked": "Blockiert",
+      "blockedCount": "Blockiert · {{count}}",
+      "done": "Erledigt"
+    },
+    "bands": {
+      "doing": "Gerade dabei",
+      "blocked": "Blockiert",
+      "overdue": "Überfällig",
+      "today": "Heute",
+      "later": "Später",
+      "done": "Erledigt"
+    },
+    "late_one": "{{count}} T. überfällig",
+    "late_other": "{{count}} T. überfällig",
+    "done": "Erledigt",
+    "you": "Sie",
+    "nobody": "Niemand",
+    "empty": {
+      "search": "Kein Auftrag passt zu dieser Suche.",
+      "searchHint": "Versuchen Sie einen Teil des Titels oder der Details.",
+      "blocked": "Nichts ist blockiert.",
+      "history": "Nichts aus früheren Monaten.",
+      "none": "Hier gibt es keine Aufträge.",
+      "hint": "Neue Aufträge, die Sie erhalten, erscheinen hier."
+    },
+    "capped": "Die ersten {{count}} Aufträge werden angezeigt. Suchen Sie, um die übrigen zu finden."
+  },
+  "newJob": {
+    "title": "Neuer Auftrag",
+    "pickDay": "Tag wählen",
+    "noHour": "Keine feste Uhrzeit",
+    "whichDay": "Welcher Tag?",
+    "who": "Wer macht es",
+    "create": "Auftrag erstellen",
+    "doneTitle": "Auftrag erstellt"
   }
 }

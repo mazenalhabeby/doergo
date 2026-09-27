@@ -6,12 +6,11 @@ import DraggableFlatList, {
   type RenderItemParams,
 } from 'react-native-draggable-flatlist';
 import { useTranslation } from 'react-i18next';
-import { useRouter, type Href } from 'expo-router';
 import { useAuth } from '../contexts/auth-context';
 import { useTheme } from '../contexts/theme-context';
 import { Ground, ScreenHeader, SurfaceProvider, useTabSafe } from '../components/amazen';
-import { resolveMediaUrl } from '../lib/api';
-import { displayName, initialsOf } from '../lib/people';
+import { displayName } from '../lib/people';
+import { useProfileAvatar } from '../lib/use-profile-avatar';
 import { impact, selection } from '../lib/haptics';
 import { announce, useScreenReader } from '../hooks/use-a11y';
 import { OfflineBanner } from '../offline/components/offline-banner';
@@ -96,7 +95,6 @@ export function HomeScreen() {
     [tabSafe],
   );
   const { t } = useTranslation();
-  const router = useRouter();
   const [refreshKey, setRefreshKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [picking, setPicking] = useState(false);
@@ -208,7 +206,7 @@ export function HomeScreen() {
   );
 
   const fullName = displayName(user);
-  const initials = initialsOf(user);
+  const avatar = useProfileAvatar();
 
   /* ── the a11y arrows, which are also the rotor actions ─────────────── */
   const moveBy = useCallback(
@@ -342,9 +340,9 @@ export function HomeScreen() {
             ? t('home.edit.hint', { defaultValue: 'Hold to move · tap ⊖ to remove' })
             : undefined
         }
-        avatarUrl={resolveMediaUrl(user?.avatarUrl)}
-        initials={initials}
-        onPressAvatar={() => router.push('/(app)/(tabs)/profile' as Href)}
+        avatarUrl={avatar.avatarUrl}
+        initials={avatar.initials}
+        onPressAvatar={avatar.openProfile}
         actions={
           editing
             ? [

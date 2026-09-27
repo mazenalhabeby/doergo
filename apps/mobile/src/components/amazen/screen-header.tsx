@@ -47,6 +47,7 @@ export function ScreenHeader({
   /** An extra control to the left of the avatar — Arrange, on the home screen. */
   action,
   actions,
+  leading,
   style,
 }: {
   title: string;
@@ -91,6 +92,12 @@ export function ScreenHeader({
    * the same control: a corner of the chrome, not a row in the grid.
    */
   actions?: HeaderAction[];
+  /**
+   * One control before the text — Back, on a screen reached from another
+   * (New job). Absent on the home and every tab root, which is why it is a
+   * slot and not a flag: the header does not know what "back" means.
+   */
+  leading?: React.ReactNode;
   style?: ViewStyle;
 }) {
   const { amazen } = useTheme();
@@ -128,6 +135,7 @@ export function ScreenHeader({
         style,
       ]}
     >
+      {leading ?? null}
       <View style={{ flex: 1, minWidth: 0 }}>
         {hint ? (
           /*

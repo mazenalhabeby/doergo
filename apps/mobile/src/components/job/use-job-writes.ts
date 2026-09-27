@@ -22,6 +22,40 @@ export type WriteStatus = (task: Task, to: string, reason?: string) => Promise<A
 
 export interface Member { id: string; firstName: string; lastName: string }
 
+type Translate = (key: string, opts?: Record<string, unknown>) => string;
+
+/**
+ * A refusal in the member's language: the server's code first, its message
+ * second. Exported because the Jobs tab's Next up card moves a job with the
+ * same write and has to say the same sentence when it is refused.
+ */
+export function refusalMessage(t: Translate, o: { code?: string; message?: string; conflict?: boolean }): string {
+  return (o.code && t(`offline.errors.${o.code}`, { defaultValue: '' })) ||
+    o.message ||
+    t(o.conflict ? 'offline.errors.CONFLICT' : 'taskDetail.failedToUpdateStatus');
+}
+
+interface RouteTracking {
+  startTracking: (taskId: string, destination: ReturnType<typeof taskDestination>) => unknown;
+  stopTracking: () => unknown;
+}
+
+/**
+ * The route recorder follows the step: it starts on the way there and stops
+ * on arrival. ⚠️ ONE RULE for the job page AND the Jobs tab — a step taken
+ * from the list that skipped this would drive a route nobody records.
+ */
+export function trackRouteFor(tracking: RouteTracking, task: Task, from: string, to: string): void {
+  if (from === TaskStatus.EN_ROUTE && to === TaskStatus.ARRIVED) tracking.stopTracking();
+  if (to === TaskStatus.EN_ROUTE) void tracking.startTracking(task.id, taskDestination(task));
+}
+
+/** Put the recorder back the way it was when the step was refused. */
+export function untrackRouteFor(tracking: RouteTracking, task: Task, from: string, to: string): void {
+  if (from === TaskStatus.EN_ROUTE && to === TaskStatus.ARRIVED) void tracking.startTracking(task.id, taskDestination(task));
+  if (to === TaskStatus.EN_ROUTE) tracking.stopTracking();
+}
+
 /**
  * Everything the job page WRITES.
  *
@@ -43,9 +77,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
 
   /** A refusal in the member's language: the server's code first, its message second. */
   const refusalText = useCallback((o: { code?: string; message?: string; conflict?: boolean }) =>
-    (o.code && t(`offline.errors.${o.code}`, { defaultValue: '' })) ||
-    o.message ||
-    t(o.conflict ? 'offline.errors.CONFLICT' : 'taskDetail.failedToUpdateStatus'), [t]);
+    refusalMessage(t as Translate, o), [t]);
 
   /** Apply an outcome to the page: the server's copy, or the step marked waiting to send. */
   const settle = useCallback((base: JobTask, to: string, outcome: ActionOutcome) => {
@@ -65,8 +97,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
     const from = task.status;
     try {
       setBusy(true);
-      if (from === TaskStatus.EN_ROUTE && to === TaskStatus.ARRIVED) tracking.stopTracking();
-      if (to === TaskStatus.EN_ROUTE) void tracking.startTracking(task.id, taskDestination(task));
+      trackRouteFor(tracking, task, from, to);
       const outcome = await writeStatus(task, to, reason);
       settle(task, to, outcome);
       pushLocalEvent({ eventType: 'STATUS_CHANGED', metadata: { oldStatus: from, newStatus: to, reason }, pendingSync: outcome.kind === 'queued' });
@@ -75,8 +106,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
       return true;
     } catch (err) {
       // Put the route back the way it was.
-      if (from === TaskStatus.EN_ROUTE && to === TaskStatus.ARRIVED) void tracking.startTracking(task.id, taskDestination(task));
-      if (to === TaskStatus.EN_ROUTE) tracking.stopTracking();
+      untrackRouteFor(tracking, task, from, to);
       toast.error(err instanceof Error && err.message ? err.message : t('taskDetail.failedToUpdateStatus'));
       return false;
     } finally {

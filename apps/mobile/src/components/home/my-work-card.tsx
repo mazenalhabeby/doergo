@@ -6,25 +6,25 @@ import { daysLate, hasAccessModule } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useHomeTasks } from '../../offline/tasks/use-home-tasks';
-import { useConnectivity, useOffline } from '../../offline/offline-context';
+import { useOffline } from '../../offline/offline-context';
 import { isUnreachable } from '../../offline/actions/unreachable';
-import { knownOffline } from '../../offline/connectivity';
 import { FreshnessLabel } from '../../offline/components/freshness-label';
 import { SyncChip } from '../../offline/components/sync-chip';
 import { useShift } from '../../offline/attendance/use-shift';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { weekdayName } from '../../lib/app-dates';
-import { scheduleApi, tasksApi } from '../../lib/api';
+import { scheduleApi } from '../../lib/api';
 import type { ScheduleEntry, Task } from '../../lib/api/types';
 import { AText, Eyebrow, CardSurface, WellDivider } from '../amazen';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePitch } from '../../home/pitch';
 import {
   shapeFor, faceFor, viewAllSpaceIds, weekOf, sameDay, startOfDay, tasksOn, hasHour, isMine,
-  flowIdOf, stepsFor, isClosed, isUnderWay, shiftOn, shiftHours, nextJobAfter, figuresFor, todaysOwn,
+  stepsFor, isClosed, isUnderWay, shiftOn, shiftHours, nextJobAfter, figuresFor, todaysOwn,
   msUntilNextDay, withoutCanceled, stepLabelFor,
 } from './my-work';
+import { useTaskFlows } from './use-task-flows';
 
 /**
  * My work — `docs/design/my-work/`. Today's jobs, this week and the next job
@@ -163,47 +163,10 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
   }, [user?.id, shape]);
 
   /*
-    The workflows the rows run on, from the offline engine's copy — the same
-    lookup the task screen does. A row whose workflow is not here offers no
-    verb (it opens the job) rather than guessing the field-service one.
+    The workflows the rows run on — `useTaskFlows`, the same lookup the Jobs
+    tab reads, so a job's step and verb are the same words in both places.
   */
-  const flowIds = useMemo(() => [...new Set(held.map(flowIdOf).filter((x): x is string => !!x))].sort().join(','), [held]);
-  const [flows, setFlows] = useState<Map<string, unknown>>(() => new Map());
-  /*
-    ⚠️ A workflow that could not be asked for offline is asked again when the
-    signal returns — keyed on the set of ids alone, it waited for the NEXT
-    job on a new workflow, and until then its rows could only open the job.
-  */
-  const online = useConnectivity() === 'online';
-  useEffect(() => {
-    if (!flowIds) return;
-    const records = offline.records;
-    let live = true;
-    void (async () => {
-      const next = new Map<string, unknown>();
-      for (const id of flowIds.split(',')) {
-        const row = records ? await records.get<unknown>('workflows', id).catch(() => null) : null;
-        if (row?.data) { next.set(id, row.data); continue; }
-        /*
-          ⚠️ NOT ON THIS PHONE — ASK THE JOB. The phone's copy of workflows can
-          lag its copy of tasks (the iPhone showed "Open the job" where the
-          emulator showed "Arrived", 02.png / 21:20). `GET /tasks/:id` already
-          carries the job's full workflow, so one job per missing workflow is
-          asked for it. Offline this fails quietly and the row opens the job,
-          which is the honest answer when the verbs are unknown.
-        */
-        const sample = held.find((x) => flowIdOf(x) === id);
-        /* ⚠️ With no network it cannot answer — the row opens the job, as below, without the failed round trip. */
-        if (!sample || knownOffline()) continue;
-        const detail = await tasksApi.getById(sample.id).catch(() => null);
-        const flow = (detail as unknown as { workflow?: { id?: string } } | null)?.workflow;
-        if (flow) next.set(id, flow);
-      }
-      if (live) setFlows(next);
-    })();
-    return () => { live = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the SET of workflow ids, not every task change
-  }, [offline.records, flowIds, online]);
+  const flows = useTaskFlows(held);
 
   // Today on mount, always. Selecting a day is a READ.
   const today = useMemo(() => new Date(todayMs), [todayMs]);

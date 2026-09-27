@@ -178,6 +178,20 @@ export function moreOptions(input: {
   return out;
 }
 
+/**
+ * A sheet another screen may open the job page on — `/task/:id?sheet=finish`.
+ * The Jobs tab hands over here for the steps that live on the page. Anything
+ * else in the parameter is ignored: a link must never open a sheet the page
+ * does not offer from its own buttons.
+ */
+export type OpenSheet = 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'finish';
+const OPEN_SHEETS: readonly OpenSheet[] = ['issue', 'decline', 'cancel', 'assign', 'edit', 'finish'];
+
+export function parseOpenSheet(v: unknown): OpenSheet | null {
+  const one = Array.isArray(v) ? v[0] : v;
+  return typeof one === 'string' && (OPEN_SHEETS as readonly string[]).includes(one) ? (one as OpenSheet) : null;
+}
+
 /* ---------------- dates ---------------- */
 
 /** Due on a later day than today — the job cannot be started yet. */
