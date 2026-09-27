@@ -331,22 +331,33 @@ function TileView({ tile, you, showPlace, onPress }: { tile: CrewTile | QuietTil
         backgroundColor: quiet ? 'transparent' : c.tile, borderWidth: quiet ? 1 : 0, borderColor: c.lineGlass,
       })}>
       {/* ⚠️ The reason, in a word. */}
-      <View style={{ alignSelf: 'flex-start', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, backgroundColor: tint, marginBottom: 8 }}>
-        <AText variant="caption" numeric style={{ color: tone, fontSize: 9.5, letterSpacing: 1.1, textTransform: 'uppercase' }}>{t(TAG[b].key, { defaultValue: TAG[b].fallback })}</AText>
+      <View style={{ alignSelf: 'flex-start', maxWidth: '100%', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, backgroundColor: tint, marginBottom: 8 }}>
+        <AText variant="caption" numeric numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}
+          style={{ color: tone, fontSize: 9.5, letterSpacing: 1.1, textTransform: 'uppercase' }}>{t(TAG[b].key, { defaultValue: TAG[b].fallback })}</AText>
       </View>
       <View style={{ width: RING, height: RING, marginBottom: 8 }}>
         <RingSvg ring={tile.ring} tone={tone} />
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
-          <AText variant="caption" tone="strong" style={{ fontSize: 13 }}>{initials(p)}</AText>
+          <AText variant="caption" tone="strong" numberOfLines={1} style={{ fontSize: 13 }}>{initials(p)}</AText>
         </View>
       </View>
-      <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14 }}>{name}</AText>
+      <AText variant="body" tone="strong" numberOfLines={1} ellipsizeMode="tail" style={{ fontSize: 14 }}>{name}</AText>
       {showPlace && p.spaceName ? <AText variant="caption" tone="muted" numberOfLines={1} style={{ fontSize: 11 }}>{p.spaceName}</AText> : null}
-      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 8 }}>
-        <AText variant="h3" numeric style={{ color: tone, fontSize: 18 }}>{figure}</AText>
-        <AText variant="caption" tone="muted" style={{ fontSize: 11 }} numberOfLines={1}>{unit}</AText>
+      {/*
+        ⚠️ NOTHING HERE MAY OUTGROW THE TILE. The tile is 94pt inside, and the
+        longest words are long ("nicht gekommen", "di ritardo", "LIBERO A
+        BREVE"): every line keeps to ONE line, shrinks to fit, and ends in "…"
+        as the last resort. A missed shift has no figure, so its words get the
+        whole row instead of sitting behind a dash.
+      */}
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 8, width: '100%' }}>
+        {b === 'missed' ? null : (
+          <AText variant="h3" numeric numberOfLines={1} style={{ color: tone, fontSize: 18, flexShrink: 0 }}>{figure}</AText>
+        )}
+        <AText variant="caption" tone="muted" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}
+          style={{ fontSize: b === 'missed' ? 13 : 11, flexShrink: 1 }}>{unit}</AText>
       </View>
-      <AText variant="caption" tone="muted" numeric numberOfLines={1} style={{ fontSize: 10, marginTop: 4 }}>{spanLine}</AText>
+      <AText variant="caption" tone="muted" numeric numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontSize: 10, marginTop: 4 }}>{spanLine}</AText>
     </Pressable>
   );
 }
