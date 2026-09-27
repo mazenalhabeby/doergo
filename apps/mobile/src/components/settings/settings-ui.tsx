@@ -4,6 +4,7 @@ import { router, type Href } from 'expo-router';
 import { useTheme } from '../../contexts/theme-context';
 import { useResponsive } from '../../lib/responsive';
 import { AText, Ground, HeaderBack, ScreenHeader } from '../amazen';
+import { FinishGlyph } from '../glyphs/work-glyphs';
 import { centeredContent } from '../screen-container';
 
 /**
@@ -78,6 +79,41 @@ export function SwitchRow({ title, sub, value, onChange, disabled, first, note }
         ios_backgroundColor={c.tile}
         accessibilityLabel={title}
       />
+    </View>
+  );
+}
+
+/**
+ * The one-line answer at the top of a settings page — "up to date",
+ * "everything is on the server", "this phone can notify you" — or what is
+ * wrong. Done is the app's own finish mark (the disc the home cards use for
+ * "nobody is waiting on you"), not a tick in a box; anything else carries its
+ * count or sign on a tint of its tone.
+ */
+export function StateCard({ tone, mark, title, sub }: {
+  tone: 'accent' | 'warn' | 'critical';
+  /** Omitted when done — the finish mark is drawn instead. */
+  mark?: React.ReactNode;
+  title: string;
+  sub?: string;
+}) {
+  const { amazen } = useTheme();
+  const c = amazen.color;
+  const fg = tone === 'critical' ? c.critical : tone === 'warn' ? c.warn : c.accent;
+  const bg = tone === 'critical' ? c.criticalTint : tone === 'warn' ? c.warnTint : c.accentTint;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), padding: amazen.space(3.5), borderRadius: 20, backgroundColor: bg }}>
+      {tone === 'accent' && mark === undefined ? (
+        <FinishGlyph size={40} color={c.accent} contrast={c.accentInk} />
+      ) : (
+        <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: fg, alignItems: 'center', justifyContent: 'center' }}>
+          {typeof mark === 'string' ? <AText numeric style={{ color: c.accentInk, fontSize: 17, fontFamily: amazen.font.sansMedium }}>{mark}</AText> : mark}
+        </View>
+      )}
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <AText variant="body" tone="strong" style={{ fontSize: 15.5 }}>{title}</AText>
+        {sub ? <AText variant="caption" tone="muted">{sub}</AText> : null}
+      </View>
     </View>
   );
 }

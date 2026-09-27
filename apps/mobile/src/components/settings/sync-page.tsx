@@ -14,7 +14,7 @@ import type { OutboxOp } from '../../offline/outbox/types';
 import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Well } from '../amazen';
 import { centeredContent } from '../screen-container';
 import { Pill, SectionLabel } from '../job/job-ui';
-import { SwitchRow } from './settings-ui';
+import { StateCard, SwitchRow } from './settings-ui';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const STORAGE_WARN_BYTES = 500 * 1024 * 1024;
@@ -99,8 +99,6 @@ export function SyncPage() {
     : waiting
       ? { tone: 'warn' as const, mark: String(waiting), title: t('settings.sync.onPhone', { count: waiting, defaultValue: '{{count}} things are on this phone' }), sub: online ? t('settings.sync.sending', 'Sending now…') : t('settings.sync.noSignal', 'No signal. They send by themselves when there is one.') }
       : { tone: 'accent' as const, mark: '✓', title: t('settings.sync.allSent', 'Everything is on the server'), sub: snapshot.lastSuccessAt ? t('settings.sync.lastSent', { time: time(snapshot.lastSuccessAt), defaultValue: 'Last sent at {{time}}' }) : t('offline.sync.neverSynced') };
-  const toneBg = head.tone === 'critical' ? c.criticalTint : head.tone === 'warn' ? c.warnTint : c.accentTint;
-  const toneFg = head.tone === 'critical' ? c.critical : head.tone === 'warn' ? c.warn : c.accent;
 
   const back = () => (router.canGoBack() ? router.back() : router.navigate('/(app)/profile' as Href));
   const row = (o: OutboxOp, i: number, right: React.ReactNode, sub?: string) => (
@@ -132,15 +130,7 @@ export function SyncPage() {
           </View>
         ) : (
           <>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), padding: amazen.space(4), borderRadius: 22, backgroundColor: toneBg }}>
-              <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: toneBg, alignItems: 'center', justifyContent: 'center' }}>
-                <AText numeric style={{ color: toneFg, fontSize: 18 }}>{head.mark}</AText>
-              </View>
-              <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                <AText variant="body" tone="strong" style={{ fontSize: 16 }}>{head.title}</AText>
-                <AText variant="caption" tone="muted">{head.sub}</AText>
-              </View>
-            </View>
+            <StateCard tone={head.tone} mark={head.tone === 'accent' ? undefined : head.mark} title={head.title} sub={head.sub} />
             {online ? <PrimaryButton label={t('offline.sync.syncNow', 'Sync now')} loading={refreshing} onPress={() => void refresh()} /> : null}
 
             {need ? (

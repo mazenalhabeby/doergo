@@ -9,7 +9,7 @@ import { useToast } from '../../island/island-context';
 import { userApi } from '../../lib/api';
 import { AText, PrimaryButton, Well } from '../amazen';
 import { SectionLabel } from '../job/job-ui';
-import { SettingsPage, SwitchRow } from './settings-ui';
+import { SettingsPage, StateCard, SwitchRow } from './settings-ui';
 
 /** Where the switches used to live — on the phone, read by nothing. Moved to the account once, then forgotten. */
 const OLD_PHONE_KEY = 'hbcfield_notification_prefs';
@@ -109,15 +109,12 @@ export function NotificationsPage() {
   return (
     <SettingsPage title={t('profile.notifications.title', 'Notifications')}>
       {/* First: may this phone notify at all. Everything below depends on it. */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), padding: amazen.space(3.5), borderRadius: 20, backgroundColor: granted ? c.accentTint : c.warnTint }}>
-        <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: granted ? c.accentTint : c.warnTint, alignItems: 'center', justifyContent: 'center' }}>
-          <AText style={{ color: granted ? c.accent : c.warn, fontSize: 16 }}>{granted ? '✓' : '!'}</AText>
-        </View>
-        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-          <AText variant="body" tone="strong" style={{ fontSize: 14.5 }}>{granted ? t('settings.notif.allowed', 'This phone can notify you') : t('settings.notif.blocked', 'Notifications are off for this app')}</AText>
-          <AText variant="caption" tone="muted">{granted ? t('settings.notif.allowedSub', "Allowed in the phone's settings") : t('settings.notif.blockedSub', "You will not hear about new jobs or your shift. Turn them on in the phone's settings.")}</AText>
-        </View>
-      </View>
+      <StateCard
+        tone={granted ? 'accent' : 'warn'}
+        mark={granted ? undefined : '!'}
+        title={granted ? t('settings.notif.allowed', 'This phone can notify you') : t('settings.notif.blocked', 'Notifications are off for this app')}
+        sub={granted ? t('settings.notif.allowedSub', "Allowed in the phone's settings") : t('settings.notif.blockedSub', "You will not hear about new jobs or your shift. Turn them on in the phone's settings.")}
+      />
       {!granted ? <PrimaryButton label={t('settings.notif.allow', 'Allow notifications')} onPress={() => void fixPermission()} /> : null}
 
       <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>{t('settings.notif.onPhone', 'On this phone')}</SectionLabel>

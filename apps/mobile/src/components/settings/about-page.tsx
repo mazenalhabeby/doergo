@@ -10,7 +10,7 @@ import { openUpdate } from '../../lib/in-app-updates';
 import { formatDay } from '../../lib/money';
 import { AText, PrimaryButton, Well } from '../amazen';
 import { SectionLabel } from '../job/job-ui';
-import { SettingsPage } from './settings-ui';
+import { SettingsPage, StateCard } from './settings-ui';
 
 /**
  * ABOUT — is my app up to date, what is this app, and (for support) exactly
@@ -64,23 +64,16 @@ export function AboutPage() {
       </View>
 
       {/* The answer first: up to date, or not — in words. */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), padding: amazen.space(3.5), borderRadius: 20, backgroundColor: behind ? c.warnTint : c.accentTint }}>
-        <View style={{ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: behind ? c.warnTint : c.accentTint }}>
-          <Ionicons name={behind ? 'arrow-up' : 'checkmark'} size={19} color={behind ? c.warn : c.accent} />
-        </View>
-        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-          <AText variant="body" tone="strong" style={{ fontSize: 15 }}>
-            {behind ? t('settings.about.ready', { version: status!.latest, defaultValue: 'Version {{version}} is ready' }) : t('settings.about.upToDate', 'Up to date')}
-          </AText>
-          <AText variant="caption" tone="muted">
-            {behind
-              ? t('settings.about.youHave', { version, defaultValue: 'You have {{version}}. The store has the new one.' })
-              : updateAt
-                ? t('settings.about.received', { version, date: updateAt, defaultValue: 'Version {{version}} · latest improvements received {{date}}' })
-                : t('settings.about.versionOnly', { version, defaultValue: 'Version {{version}}' })}
-          </AText>
-        </View>
-      </View>
+      <StateCard
+        tone={behind ? 'warn' : 'accent'}
+        mark={behind ? '↑' : undefined}
+        title={behind ? t('settings.about.ready', { version: status!.latest, defaultValue: 'Version {{version}} is ready' }) : t('settings.about.upToDate', 'Up to date')}
+        sub={behind
+          ? t('settings.about.youHave', { version, defaultValue: 'You have {{version}}. The store has the new one.' })
+          : updateAt
+            ? t('settings.about.received', { version, date: updateAt, defaultValue: 'Version {{version}} · latest improvements received {{date}}' })
+            : t('settings.about.versionOnly', { version, defaultValue: 'Version {{version}}' })}
+      />
       {behind && status?.downloadUrl ? <PrimaryButton label={t('settings.bio.update', 'Update')} onPress={() => void openUpdate(status.downloadUrl)} /> : null}
 
       <Well style={{ padding: amazen.space(3.5) }}>
