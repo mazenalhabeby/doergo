@@ -2009,7 +2009,24 @@
         "whoAll": "Vengono avvisati tutti i membri che seguono questo cliente.",
         "whoOne": "Viene avvisata solo la persona scelta."
       },
-      "newTask": "Attività"
+      "newTask": "Attività",
+      "title": "Cliente",
+      "directions": "Indicazioni",
+      "remind": "Promemoria",
+      "markInactive": "Segna come inattivo",
+      "app": {
+        "invited": "Invitato all’app · non ancora registrato",
+        "accepted": "Ha un account nell’app",
+        "active": "Usa l’app"
+      },
+      "fAddress": "Indirizzo",
+      "write": "Scrivi",
+      "open": "Apri",
+      "emailsIn": "E-mail in",
+      "more": "Altro",
+      "newReminder": "Nuovo promemoria",
+      "today": "Oggi",
+      "yesterday": "Ieri"
     },
     "form": {
       "title": "Modifica cliente",

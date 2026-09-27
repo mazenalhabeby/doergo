@@ -42,6 +42,14 @@ export interface MobileCustomer {
    * offers to name somebody who is ON this list.
    */
   managerIds?: string[] | null;
+  /** The client's own address — one line, as typed. Sites live in `addresses`. */
+  address?: string | null;
+  /**
+   * Where this client stands with the app, from the single-client read:
+   * invited, accepted (has an account), active (using it lately), and the
+   * portal it belongs to.
+   */
+  app?: { invited?: boolean; accepted?: boolean; active?: boolean; portalName?: string | null } | null;
   notes?: string | null;
   /** Company-only. Blank on a person; see COMPANY_ONLY_FIELDS in shared. */
   legalName?: string | null;

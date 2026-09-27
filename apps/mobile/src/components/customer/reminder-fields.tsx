@@ -1,6 +1,5 @@
 import { memo, useMemo, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
   REMINDER_KINDS,
@@ -14,13 +13,15 @@ import {
   type ReminderPresetKey,
 } from '@hbcfield/shared/client';
 import { PressableScale } from '../pressable-scale';
-import { ChipRow } from '../chip-row';
+import { AText, FilterRow } from '../amazen';
+import { SectionLabel } from '../job/job-ui';
 import { DateField } from '../date-field';
 import { TimePickerModal } from '../time-picker-modal';
 import { ChoiceChip } from './client-fields';
 import { useTheme } from '../../contexts/theme-context';
 import type { ReminderDraft } from '../../lib/reminder-draft';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type ThemeColors } from '../../lib/constants';
+import { SPACING } from '../../lib/constants';
+import type { Amazen } from '../../theme/amazen';
 
 // Re-exported so a caller wiring the form does not have to know that the pure
 // half lives elsewhere — it is there to be testable, not to be looked up twice.
@@ -73,8 +74,9 @@ export const ReminderFields = memo(function ReminderFields({
   preset: ReminderPresetKey | null;
   onPreset: (key: ReminderPresetKey) => void;
 }) {
-  const { colors } = useTheme();
-  const s = useMemo(() => styles(colors), [colors]);
+  const { amazen } = useTheme();
+  const c = amazen.color;
+  const s = useMemo(() => styles(amazen), [amazen]);
   const { t } = useTranslation();
   const [timeOpen, setTimeOpen] = useState(false);
 
@@ -136,10 +138,9 @@ export const ReminderFields = memo(function ReminderFields({
           onPress={() => setTimeOpen(true)}
           accessibilityRole="button"
           accessibilityLabel={t('customers.record.reminderForm.time')}
-          style={[s.timeBox, { borderColor: colors.border }]}
+          style={[s.timeBox, { borderColor: c.lineWell, backgroundColor: c.sunken }]}
         >
-          <Ionicons name="time-outline" size={16} color={COLORS.primary} />
-          <Text style={s.timeText}>{value.time}</Text>
+          <AText variant="body" tone="strong" numeric style={{ fontSize: 14 }}>{value.time}</AText>
         </PressableScale>
       </View>
 
@@ -151,7 +152,7 @@ export const ReminderFields = memo(function ReminderFields({
         at "At time".
       */}
       <Label text={t('customers.record.reminderForm.lead')} />
-      <ChipRow fadeColor={colors.surfaceRaised} style={s.leadRow}>
+      <FilterRow>
         {REMINDER_LEADS.map((min) => (
           <ChoiceChip
             key={min}
@@ -160,7 +161,7 @@ export const ReminderFields = memo(function ReminderFields({
             onPress={() => set('lead', min)}
           />
         ))}
-      </ChipRow>
+      </FilterRow>
 
       {/* ---- Repeat ---- */}
       <Label text={t('customers.record.reminderForm.repeat')} />
@@ -202,11 +203,11 @@ export const ReminderFields = memo(function ReminderFields({
           </View>
         </>
       )}
-      <Text style={s.hint}>
+      <AText variant="caption" tone="muted" style={s.hint}>
         {value.assigneeId
           ? t('customers.record.reminderForm.whoOne')
           : t('customers.record.reminderForm.whoAll')}
-      </Text>
+      </AText>
 
       <TimePickerModal
         visible={timeOpen}
@@ -224,26 +225,17 @@ export const ReminderFields = memo(function ReminderFields({
 });
 
 function Label({ text }: { text: string }) {
-  const { colors } = useTheme();
-  const s = useMemo(() => styles(colors), [colors]);
-  return <Text style={s.label}>{text}</Text>;
+  const { amazen } = useTheme();
+  return <SectionLabel style={{ marginTop: amazen.space(3.5), marginBottom: amazen.space(0.5) }}>{text}</SectionLabel>;
 }
 
-const styles = (c: ThemeColors) =>
+const styles = (a: Amazen) =>
   StyleSheet.create({
     block: {
-      marginTop: SPACING.md,
-      backgroundColor: c.surfaceRaised,
-      borderRadius: RADIUS.md,
-      padding: SPACING.md,
-    },
-    label: {
-      fontSize: FONT_SIZE.xs,
-      fontWeight: FONT_WEIGHT.semibold,
-      color: c.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
-      marginTop: SPACING.md,
+      marginTop: a.space(3),
+      backgroundColor: a.color.sunken,
+      borderRadius: 18,
+      padding: a.space(3.5),
     },
     wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginTop: SPACING.sm },
     whenRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: SPACING.sm },
@@ -254,12 +246,11 @@ const styles = (c: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: SPACING.xs,
-      borderWidth: 1,
-      borderRadius: RADIUS.md,
+      borderWidth: 1.5,
+      borderRadius: 14,
       paddingHorizontal: SPACING.md,
       paddingVertical: 12,
     },
-    timeText: { fontSize: FONT_SIZE.base, color: c.textPrimary, fontWeight: FONT_WEIGHT.medium },
     /*
       Bled to the block's edge so the scroll fades sit on the boundary rather
       than floating inside the padding, where they read as a stray line.
@@ -267,5 +258,5 @@ const styles = (c: ThemeColors) =>
       up with the labels above them.
     */
     leadRow: { marginHorizontal: -SPACING.md, marginTop: SPACING.xs },
-    hint: { fontSize: FONT_SIZE.xs, color: c.textMuted, marginTop: SPACING.md, lineHeight: 16 },
+    hint: { marginTop: SPACING.md, lineHeight: 16 },
   });

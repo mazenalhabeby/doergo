@@ -2009,7 +2009,24 @@
         "whoAll": "Tous les membres qui suivent ce client sont prévenus.",
         "whoOne": "Seule la personne choisie est prévenue."
       },
-      "newTask": "Tâche"
+      "newTask": "Tâche",
+      "title": "Client",
+      "directions": "Itinéraire",
+      "remind": "Rappeler",
+      "markInactive": "Marquer inactif",
+      "app": {
+        "invited": "Invité à l’app · pas encore inscrit",
+        "accepted": "A un compte dans l’app",
+        "active": "Utilise l’app"
+      },
+      "fAddress": "Adresse",
+      "write": "Écrire",
+      "open": "Ouvrir",
+      "emailsIn": "E-mails en",
+      "more": "Plus",
+      "newReminder": "Nouveau rappel",
+      "today": "Aujourd’hui",
+      "yesterday": "Hier"
     },
     "form": {
       "title": "Modifier le client",

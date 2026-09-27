@@ -2009,7 +2009,24 @@
         "whoAll": "Alle Mitglieder, die diesen Kunden betreuen, werden benachrichtigt.",
         "whoOne": "Nur die ausgewählte Person wird benachrichtigt."
       },
-      "newTask": "Aufgabe"
+      "newTask": "Aufgabe",
+      "title": "Kunde",
+      "directions": "Route",
+      "remind": "Erinnern",
+      "markInactive": "Als inaktiv markieren",
+      "app": {
+        "invited": "Zur App eingeladen · noch nicht registriert",
+        "accepted": "Hat ein App-Konto",
+        "active": "Nutzt die App"
+      },
+      "fAddress": "Adresse",
+      "write": "Schreiben",
+      "open": "Öffnen",
+      "emailsIn": "E-Mails auf",
+      "more": "Mehr",
+      "newReminder": "Neue Erinnerung",
+      "today": "Heute",
+      "yesterday": "Gestern"
     },
     "form": {
       "title": "Kunde bearbeiten",

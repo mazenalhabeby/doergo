@@ -2045,7 +2045,24 @@
         "whoAll": "Every member who looks after this client is told.",
         "whoOne": "Only the person chosen is told."
       },
-      "newTask": "Task"
+      "newTask": "Task",
+      "title": "Client",
+      "directions": "Directions",
+      "remind": "Remind",
+      "markInactive": "Mark inactive",
+      "app": {
+        "invited": "Invited to the app · not signed up yet",
+        "accepted": "Has an app account",
+        "active": "Uses the app"
+      },
+      "fAddress": "Address",
+      "write": "Write",
+      "open": "Open",
+      "emailsIn": "Emails in",
+      "more": "More",
+      "newReminder": "New reminder",
+      "today": "Today",
+      "yesterday": "Yesterday"
     },
     "form": {
       "title": "Edit client",

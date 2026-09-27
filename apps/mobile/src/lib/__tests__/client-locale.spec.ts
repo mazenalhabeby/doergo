@@ -78,12 +78,15 @@ describe('client language — wired into the screens', () => {
   });
 
   it('the record shows the language and gates changing it on editInfo', () => {
-    const src = read('app/(app)/customer/[id].tsx');
-    expect(src).toContain("t('customers.locale'");
+    // The record is drawn by three files and written by one hook; each claim is pinned where it lives.
+    expect(read('src/components/customer/record/record-screen.tsx')).toContain("t('customers.locale'");
+    const about = read('src/components/customer/record/record-about.tsx');
     // `record` is the client with whatever is still in the outbox applied to it
     // (crm/client-overlay). The gate is the same one, asked of the same record —
     // so a language chosen with no signal shows while it waits.
-    expect(src).toMatch(/disabled=\{!canEditClientLocale\(record\)\}/);
+    expect(about).toMatch(/const editLocale = canEditClientLocale\(record\)/);
+    expect(about).toMatch(/disabled=\{!editLocale\}/);
+    const src = read('src/components/customer/record/use-client-record.ts');
     // ONE body for the queued change and the direct call, exactly as the add
     // form: a language that reached one path and not the other is what this pins.
     expect(src).toMatch(/updateClientFromPhone\(e, \{ customerId: id, patch: patch as Record<string, unknown> \}\)/);

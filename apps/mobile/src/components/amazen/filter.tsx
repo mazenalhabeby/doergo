@@ -11,11 +11,13 @@ import { AText } from './text';
  * look: tile when off, jade outline when on.
  */
 export function FilterPill({
-  label, on, onPress, dot,
+  label, on, onPress, dot, disabled,
 }: {
   label: string;
   on: boolean;
   onPress: () => void;
+  /** Shown, not offered — a value somebody may read and not change. */
+  disabled?: boolean;
   /** A colour mark before the label — a role's colour, a presence. */
   dot?: string | null;
 }) {
@@ -24,9 +26,11 @@ export function FilterPill({
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       accessibilityRole="button"
-      accessibilityState={{ selected: on }}
+      accessibilityState={{ selected: on, disabled: !!disabled }}
       style={{
+        opacity: disabled && !on ? 0.5 : 1,
         flexDirection: 'row', alignItems: 'center', gap: 6, maxWidth: 220,
         borderRadius: amazen.radius.full, paddingHorizontal: amazen.space(3), paddingVertical: amazen.space(1.75),
         backgroundColor: on ? c.accentTint : c.tile, borderWidth: 1.5, borderColor: on ? c.accent : 'transparent',

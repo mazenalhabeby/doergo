@@ -1,14 +1,13 @@
-import { memo, useCallback, useMemo, useState } from 'react';
-import { View, TextInput, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
   reminderPresetDue,
   reminderPayload,
   type ReminderPresetKey,
 } from '@hbcfield/shared/client';
-import { PressableScale } from '../pressable-scale';
-import { RecordCard } from './record-card';
+import { FilterPill, PrimaryButton, Well } from '../amazen';
+import { JobField } from '../job/job-ui';
 import { ChoiceChip } from './client-fields';
 import {
   ReminderFields,
@@ -18,7 +17,6 @@ import {
   type ReminderAssignee,
 } from './reminder-fields';
 import { useTheme } from '../../contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type ThemeColors } from '../../lib/constants';
 
 /**
  * The two things a member WRITES here.
@@ -97,16 +95,23 @@ export const ActivityComposer = memo(function ActivityComposer({
   onCreateTask,
   /** This client's managers, already resolved to names by the screen. */
   assignees = [],
+  /**
+   * Somebody asked for a reminder from elsewhere on the record — the Remind
+   * button, or "New reminder" on the Reminders tab. A counter rather than a
+   * flag, so asking twice in a row still switches.
+   */
+  reminderRequest = 0,
 }: {
   onSubmit: (input: ComposedActivity) => Promise<boolean>;
   onCreateTask?: () => void;
   assignees?: ReminderAssignee[];
+  reminderRequest?: number;
 }) {
-  const { colors } = useTheme();
-  const s = useMemo(() => styles(colors), [colors]);
+  const { amazen } = useTheme();
   const { t } = useTranslation();
 
   const [type, setType] = useState<string>('NOTE');
+  useEffect(() => { if (reminderRequest) setType('REMINDER'); }, [reminderRequest]);
   const [body, setBody] = useState('');
   const [preset, setPreset] = useState<ReminderPresetKey | null>(null);
   /*
@@ -182,8 +187,8 @@ export const ActivityComposer = memo(function ActivityComposer({
       provides. The chips are the first thing in the card now, which is also the
       first DECISION: what is being written.
     */
-    <RecordCard>
-      <View style={s.typeRow}>
+    <Well style={{ padding: amazen.space(3.5), gap: amazen.space(3) }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(1.5) }}>
         {KINDS.map((c) => (
           <ChoiceChip key={c.type} label={t(c.key)} selected={type === c.type} onPress={() => setType(c.type)} />
         ))}
@@ -196,10 +201,10 @@ export const ActivityComposer = memo(function ActivityComposer({
           answers, and looking like a chip would make it read as one.
         */}
         {!!onCreateTask && (
-          <ActionChip icon="checkbox-outline" label={t('customers.record.newTask')} onPress={onCreateTask} />
+          <FilterPill label={`＋ ${t('customers.record.newTask')}`} on={false} onPress={onCreateTask} />
         )}
       </View>
-      <TextInput
+      <JobField
         value={body}
         onChangeText={setBody}
         multiline
@@ -208,8 +213,6 @@ export const ActivityComposer = memo(function ActivityComposer({
             ? 'customers.record.composer.reminderPlaceholder'
             : 'customers.record.composer.notePlaceholder',
         )}
-        placeholderTextColor={colors.textMuted}
-        style={s.input}
         /*
           The removed heading was also the field's accessible name, so it is
           replaced rather than dropped — a screen reader would otherwise reach an
@@ -250,17 +253,13 @@ export const ActivityComposer = memo(function ActivityComposer({
             />
         </>
       )}
-      <PressableScale
+      <PrimaryButton
+        label={t('customers.record.composer.add')}
         onPress={() => void submit()}
         disabled={saving || empty}
-        accessibilityRole="button"
-        accessibilityLabel={t('customers.record.composer.add')}
-        accessibilityState={{ busy: saving, disabled: saving || empty }}
-        style={[s.add, (saving || empty) && { opacity: 0.45 }]}
-      >
-        <Text style={s.addText}>{t('customers.record.composer.add')}</Text>
-      </PressableScale>
-    </RecordCard>
+        loading={saving}
+      />
+    </Well>
   );
 });
 
@@ -277,78 +276,3 @@ export const ActivityComposer = memo(function ActivityComposer({
  * whole job is to look unlike its neighbours is how one of them ends up looking
  * exactly like them.
  */
-function ActionChip({
-  icon,
-  label,
-  onPress,
-  /** Drawn in the brand colour while what it opened is showing. */
-  active,
-  /** Set only on a control that reveals something in place — not on a link out. */
-  expanded,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  onPress: () => void;
-  active?: boolean;
-  expanded?: boolean;
-}) {
-  const { colors } = useTheme();
-  const s = useMemo(() => styles(colors), [colors]);
-  const tint = active ? COLORS.primary : colors.textMuted;
-  return (
-    <PressableScale
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={expanded === undefined ? undefined : { expanded }}
-      accessibilityLabel={label}
-      style={[s.action, { borderColor: active ? COLORS.primary : colors.border }]}
-    >
-      <Ionicons name={icon} size={14} color={tint} />
-      <Text style={[s.actionText, { color: tint }]}>{label}</Text>
-    </PressableScale>
-  );
-}
-
-const styles = (c: ThemeColors) =>
-  StyleSheet.create({
-    chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginTop: SPACING.sm },
-    // The first row in the card, so it brings no top margin of its own — the
-    // headerless card already insets it. Wraps rather than reserving a spacer:
-    // "Note", "Reminder" and "Task" translate long, and a fixed row would push
-    // the third one off a narrow screen with nothing to catch it.
-    typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
-    input: {
-      backgroundColor: c.input,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.inputBorder,
-      borderRadius: RADIUS.md,
-      paddingHorizontal: SPACING.md,
-      paddingVertical: SPACING.md,
-      marginTop: SPACING.md,
-      minHeight: 72,
-      textAlignVertical: 'top',
-      fontSize: FONT_SIZE.lg,
-      color: c.textPrimary,
-    },
-    // `ActionChip`'s outline — see its own note for why it is dashed.
-    action: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: SPACING.xs,
-      borderWidth: 1,
-      borderStyle: 'dashed',
-      borderRadius: RADIUS.full,
-      paddingHorizontal: SPACING.md,
-      paddingVertical: SPACING.sm,
-    },
-    actionText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium },
-    add: {
-      alignSelf: 'flex-end',
-      marginTop: SPACING.md,
-      backgroundColor: COLORS.primary,
-      borderRadius: RADIUS.md,
-      paddingHorizontal: SPACING.xxl,
-      paddingVertical: SPACING.md,
-    },
-    addText: { color: COLORS.white, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold },
-  });

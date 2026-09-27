@@ -1,10 +1,13 @@
-import { memo, useMemo } from 'react';
-import { View, Text, StyleSheet, Linking } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { PressableScale } from '../pressable-scale';
+import { memo } from 'react';
+import { Linking, Pressable, View } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type ThemeColors } from '../../lib/constants';
+import { AText } from '../amazen';
+import { Pill, RoundButton } from '../job/job-ui';
+import { CallGlyph } from '../glyphs/work-glyphs';
+import { EmailGlyph } from '../glyphs/crm-glyphs';
+import { initials } from './client-avatar';
 import type { MobileCustomerContact } from '../../lib/api/customers';
+
 
 /**
  * One end of a contact link, drawn the same whichever end you are standing on.
@@ -20,157 +23,61 @@ import type { MobileCustomerContact } from '../../lib/api/customers';
  */
 export interface ContactRowProps {
   link: MobileCustomerContact;
-  /**
-   * Which end to render. 'person' for a company's staff list, 'company' for a
-   * person's employers. The other end is the record you are already looking at.
-   */
   side: 'person' | 'company';
-  /** Opens the record for the end being shown. */
   onOpen: (customerId: string) => void;
   /**
-   * Writes. Absent (not disabled) when the reader may not edit this client's
-   * info — a control that exists only to be refused is worse than no control.
+   * The row's other acts — make main contact, remove — live behind one "more"
+   * button that opens the record's contact sheet. Two text actions on a row
+   * that also rings and writes squeezed the name to nothing on a phone.
    */
-  onTogglePrimary?: (link: MobileCustomerContact) => void;
-  onRemove?: (link: MobileCustomerContact) => void;
-  /** Screen-reader labels; the icons say nothing to one. */
-  labels: { primary: string; makePrimary: string; remove: string; call: string; email: string };
-  /**
-   * The words for "not sent yet", when this row exists only in the outbox.
-   *
-   * ⚠️ Such a row is NOT tappable, and that is the honest answer rather than a
-   * missing convenience: a person being created along with the link has no
-   * record to open, and the link itself has no id until the server mints one.
-   * Localised by the caller — this component writes no words.
-   */
+  onMore?: (link: MobileCustomerContact) => void;
+  labels: { primary: string; more: string; call: string; email: string };
   waiting?: string;
-  /** While this specific row has work in flight. */
   busy?: boolean;
+  /** No divider above the first row of a well. */
+  first?: boolean;
 }
 
-function ContactRowBase({ link, side, onOpen, onTogglePrimary, onRemove, labels, waiting, busy }: ContactRowProps) {
-  const { colors } = useTheme();
-  const s = useMemo(() => styles(colors), [colors]);
-
+function ContactRowBase({ link, side, onOpen, onMore, labels, waiting, busy, first }: ContactRowProps) {
+  const { amazen } = useTheme();
+  const c = amazen.color;
   const end = side === 'person' ? link.person : link.company;
-  // A link whose far end did not come back is a row that can do nothing: no
-  // name to show and no record to open. Rendering an empty card would be worse
-  // than the gap, because it looks tappable.
   if (!end) return null;
-
-  // Only the person end carries contact details — a company's own number lives
-  // on its record, which this row is not.
   const person = side === 'person' ? link.person : null;
   const primary = link.isPrimary === true;
-
   return (
-    <View style={[s.row, busy && { opacity: 0.5 }]}>
-      <PressableScale
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.75), borderTopWidth: first ? 0 : 1, borderTopColor: c.lineWell, opacity: busy ? 0.5 : 1 }}>
+      <Pressable
         onPress={() => onOpen(end.id)}
         disabled={busy || !!waiting}
         accessibilityRole={waiting ? 'text' : 'button'}
         accessibilityLabel={waiting ? `${end.name} — ${waiting}` : end.name}
-        style={s.main}
+        style={({ pressed }) => ({ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), opacity: pressed ? 0.75 : 1 })}
       >
-        <View style={s.nameLine}>
-          <Text style={s.name} numberOfLines={1}>{end.name}</Text>
-          {primary && (
-            <Ionicons name="star" size={13} color={COLORS.amber} accessibilityLabel={labels.primary} />
-          )}
+        {/* A person is round and a company square — the rule `ClientAvatar` keeps everywhere. */}
+        <View style={{ width: 38, height: 38, borderRadius: side === 'company' ? 12 : 19, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
+          <AText variant="caption" style={{ color: c.accent, fontFamily: amazen.font.sansMedium, fontSize: 12.5 }}>{initials(end.name) || '·'}</AText>
         </View>
-        {/* One line under the name, where the role would be: a row says either
-            what this person does here or that it has not been sent yet, and
-            both at once on a phone is noise. */}
-        {waiting ? (
-          <Text style={s.waiting} numberOfLines={1}>{waiting}</Text>
-        ) : (
-          !!link.role && <Text style={s.role} numberOfLines={1}>{link.role}</Text>
-        )}
-      </PressableScale>
-
-      <View style={s.actions}>
-        {!!person?.phone && (
-          <RowIcon icon="call" label={labels.call} onPress={() => void Linking.openURL(`tel:${person.phone}`)} />
-        )}
-        {!!person?.email && (
-          <RowIcon icon="mail" label={labels.email} onPress={() => void Linking.openURL(`mailto:${person.email}`)} />
-        )}
-        {onTogglePrimary && !primary && (
-          <RowIcon icon="star-outline" label={labels.makePrimary} onPress={() => onTogglePrimary(link)} disabled={busy} />
-        )}
-        {onRemove && (
-          <RowIcon icon="close" label={labels.remove} tone="danger" onPress={() => onRemove(link)} disabled={busy} />
-        )}
-      </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <AText variant="body" tone="strong" numberOfLines={1} style={{ flexShrink: 1, fontSize: 14.5 }}>{end.name}</AText>
+            {primary ? <Pill label={labels.primary} tone="accent" /> : null}
+            {waiting ? <Pill label={waiting} tone="warn" /> : null}
+          </View>
+          {/* What this person does here — one line; the waiting mark already said the other thing. */}
+          {!waiting && link.role ? <AText variant="caption" tone="muted" numberOfLines={1}>{link.role}</AText> : null}
+        </View>
+      </Pressable>
+      {person?.phone ? <RoundButton Glyph={CallGlyph} label={labels.call} size={34} onPress={() => void Linking.openURL(`tel:${person.phone}`)} /> : null}
+      {person?.email ? <RoundButton Glyph={EmailGlyph} label={labels.email} size={34} onPress={() => void Linking.openURL(`mailto:${person.email}`)} /> : null}
+      {onMore ? (
+        <Pressable onPress={() => onMore(link)} disabled={busy} hitSlop={10} accessibilityRole="button" accessibilityLabel={`${labels.more}: ${end.name}`}
+          style={({ pressed }) => ({ width: 30, height: 34, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+          <AText variant="body" tone="muted" style={{ fontSize: 18, lineHeight: 20 }}>⋯</AText>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
 
-/**
- * A row is re-rendered only when its own link changes.
- *
- * A company with thirty staff re-renders thirty rows every time the composer's
- * text input takes a keystroke otherwise — the parent owns that state and this
- * list sits under it.
- */
 export const ContactRow = memo(ContactRowBase);
-
-function RowIcon({
-  icon,
-  label,
-  onPress,
-  disabled,
-  tone,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  onPress: () => void;
-  disabled?: boolean;
-  tone?: 'danger';
-}) {
-  const { colors } = useTheme();
-  const s = useMemo(() => styles(colors), [colors]);
-  return (
-    <PressableScale
-      onPress={onPress}
-      disabled={disabled}
-      hitSlop={8}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={s.iconBtn}
-    >
-      <Ionicons name={icon} size={16} color={tone === 'danger' ? COLORS.error : COLORS.primary} />
-    </PressableScale>
-  );
-}
-
-const styles = (c: ThemeColors) =>
-  StyleSheet.create({
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: SPACING.sm,
-      paddingVertical: SPACING.sm,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: c.border,
-    },
-    main: { flex: 1, minWidth: 0, paddingVertical: SPACING.xs },
-    nameLine: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
-    name: {
-      fontSize: FONT_SIZE.lg,
-      fontWeight: FONT_WEIGHT.medium,
-      color: c.textPrimary,
-      flexShrink: 1,
-    },
-    role: { fontSize: FONT_SIZE.sm, color: c.textMuted, marginTop: 2 },
-    waiting: { fontSize: FONT_SIZE.sm, color: COLORS.amber, marginTop: 2 },
-    actions: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
-    iconBtn: {
-      width: 30,
-      height: 30,
-      borderRadius: RADIUS.sm,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: c.surfaceRaised,
-    },
-  });

@@ -2009,7 +2009,24 @@
         "whoAll": "Se avisa a todos los miembros que atienden a este cliente.",
         "whoOne": "Solo se avisa a la persona elegida."
       },
-      "newTask": "Tarea"
+      "newTask": "Tarea",
+      "title": "Cliente",
+      "directions": "Cómo llegar",
+      "remind": "Recordar",
+      "markInactive": "Marcar como inactivo",
+      "app": {
+        "invited": "Invitado a la app · aún sin registrarse",
+        "accepted": "Tiene cuenta en la app",
+        "active": "Usa la app"
+      },
+      "fAddress": "Dirección",
+      "write": "Escribir",
+      "open": "Abrir",
+      "emailsIn": "Correos en",
+      "more": "Más",
+      "newReminder": "Nuevo recordatorio",
+      "today": "Hoy",
+      "yesterday": "Ayer"
     },
     "form": {
       "title": "Editar cliente",

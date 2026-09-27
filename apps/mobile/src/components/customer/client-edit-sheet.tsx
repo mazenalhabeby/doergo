@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { AText } from '../amazen';
 import { useTranslation } from 'react-i18next';
 import {
   clientKind,
@@ -9,8 +10,7 @@ import {
   type ClientKind,
   type CompanyOnlyField,
 } from '@hbcfield/shared/client';
-import { BlurSheet } from '../blur-sheet';
-import { SheetPanel } from '../sheet-panel';
+import { JobSheet } from '../job/job-ui';
 import { LabelledField, ChoiceChip, FieldGroupTitle, PrimaryButton } from './client-fields';
 import { CLIENT_LOCALE_OPTIONS, clientLocaleFormValue, clientLocalePayload } from '../../lib/client-locale';
 import { useTheme } from '../../contexts/theme-context';
@@ -180,9 +180,7 @@ export function ClientEditSheet({
   };
 
   return (
-    <BlurSheet visible={visible} onClose={saving ? () => {} : onClose}>
-      <SheetPanel title={t('customers.form.title')} onClose={onClose} closeDisabled={saving}>
-        <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+    <JobSheet visible={visible} onClose={onClose} busy={saving} title={t('customers.form.title')}>
           {/*
             The Company/Person toggle comes FIRST because it decides what the
             rest of the form asks for. Below it, and the company block would
@@ -252,11 +250,11 @@ export function ClientEditSheet({
               <ChoiceChip key={o.value || 'same'} label={o.label} selected={form.locale === o.value} onPress={() => set('locale', o.value)} />
             ))}
           </View>
-          <Text style={s.hint}>{t('customers.localeHint')}</Text>
+          <AText variant="caption" tone="muted" style={{ marginTop: 8, lineHeight: 17 }}>{t('customers.localeHint')}</AText>
 
           <LabelledField label={t('customers.form.notes')} value={form.notes} onChangeText={(v) => set('notes', v)} multiline />
 
-          {!!error && <Text style={s.error}>{error}</Text>}
+          {!!error && <AText variant="body" tone="critical" style={{ marginTop: 12 }}>{error}</AText>}
 
           <PrimaryButton
             label={saving ? t('customers.form.saving') : t('customers.form.save')}
@@ -264,10 +262,7 @@ export function ClientEditSheet({
             disabled={!form.name.trim()}
             busy={saving}
           />
-          <View style={{ height: SPACING.lg }} />
-        </ScrollView>
-      </SheetPanel>
-    </BlurSheet>
+    </JobSheet>
   );
 }
 

@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, StyleSheet } from 'react-native';
+import { AText } from '../amazen';
 import { useTranslation } from 'react-i18next';
-import { BlurSheet } from '../blur-sheet';
-import { SheetPanel } from '../sheet-panel';
+import { JobSheet } from '../job/job-ui';
 import { PressableScale } from '../pressable-scale';
 import { LabelledField, ChoiceChip, PrimaryButton } from './client-fields';
 import { ClientPicker } from './client-picker';
@@ -74,7 +73,7 @@ export function AddContactSheet({
   onAdded: (queued: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { amazen } = useTheme();
   const write = useQueuedWrite();
   const [mode, setMode] = useState<'find' | 'create'>('find');
   const [picked, setPicked] = useState<MobileCustomer | null>(null);
@@ -151,9 +150,7 @@ export function AddContactSheet({
       : t('customers.record.newContact');
 
   return (
-    <BlurSheet visible={visible} onClose={saving ? () => {} : onClose}>
-      <SheetPanel title={title} onClose={onClose} closeDisabled={saving}>
-        <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+    <JobSheet visible={visible} onClose={onClose} busy={saving} title={title}>
           {finding ? (
             <ClientPicker
               kind={side === 'company' ? 'COMPANY' : 'PERSON'}
@@ -168,7 +165,7 @@ export function AddContactSheet({
               <LabelledField label={t('customers.fPhone')} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
               {/* The sentence that makes this safe to use freely — it says what
                   creating somebody here does NOT do to the bill. */}
-              <Text style={[s.notice, { color: colors.textMuted }]}>{t('customers.record.contactNotAClient')}</Text>
+              <AText variant="caption" tone="muted" style={{ marginTop: 12, lineHeight: 18 }}>{t('customers.record.contactNotAClient')}</AText>
             </>
           )}
 
@@ -197,14 +194,13 @@ export function AddContactSheet({
               accessibilityRole="button"
               style={s.switch}
             >
-              <Ionicons name={mode === 'find' ? 'add' : 'search'} size={15} color={COLORS.primary} />
-              <Text style={s.switchText}>
-                {t(mode === 'find' ? 'customers.record.createPerson' : 'customers.record.backToSearch')}
-              </Text>
+              <AText variant="body" style={{ color: amazen.color.accent, fontSize: 14 }}>
+                {mode === 'find' ? '＋ ' : '⌕ '}{t(mode === 'find' ? 'customers.record.createPerson' : 'customers.record.backToSearch')}
+              </AText>
             </PressableScale>
           )}
 
-          {!!error && <Text style={s.error}>{error}</Text>}
+          {!!error && <AText variant="body" tone="critical" style={{ marginTop: 12 }}>{error}</AText>}
 
           <PrimaryButton
             label={t('customers.record.addContactSave')}
@@ -212,10 +208,7 @@ export function AddContactSheet({
             disabled={!ready}
             busy={saving}
           />
-          <View style={{ height: SPACING.lg }} />
-        </ScrollView>
-      </SheetPanel>
-    </BlurSheet>
+    </JobSheet>
   );
 }
 
