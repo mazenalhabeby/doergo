@@ -15,7 +15,8 @@ const stripComments = (s: string) =>
 
 const CONTEXT = 'src/contexts/version-context.tsx';
 const BANNER = 'src/components/update-banner.tsx';
-const PROFILE = 'app/(app)/(tabs)/profile.tsx';
+// The Profile page's body lives in src/components/profile/ now; the route only mounts it.
+const PROFILE = 'src/components/profile/profile-screen.tsx';
 
 describe('a new version is noticed more than once per launch', () => {
   /*

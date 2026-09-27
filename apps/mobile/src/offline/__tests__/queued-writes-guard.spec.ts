@@ -94,7 +94,7 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
   'app/(app)/send-document.tsx': { calls: { 'assetProposalsApi.raise': 1 }, why: FALLBACK },
   // One copy of a member's leave, shared by the Time off tab and the Time tab.
   'src/components/time/use-my-time-off.ts': { calls: { 'timeOffApi.cancel': 1 }, why: FALLBACK },
-  'app/(app)/(tabs)/profile.tsx': { calls: { 'userApi.setPresence': 1 }, why: FALLBACK },
+  'src/components/profile/profile-screen.tsx': { calls: { 'userApi.setPresence': 1 }, why: FALLBACK },
   'app/(app)/profile/time-format.tsx': { calls: { 'userApi.setTimeFormat': 1 }, why: FALLBACK },
   'app/(app)/profile/language.tsx': { calls: { 'userApi.setLocale': 1 }, why: FALLBACK },
   // The client portal runs no offline layer: a client edits their name at home, not in a basement.

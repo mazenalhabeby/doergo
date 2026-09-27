@@ -1044,7 +1044,12 @@
       "auto": "Auto",
       "failed": "No se pudo actualizar el estado"
     },
-    "documents": "Documentos"
+    "documents": "Documentos",
+    "group": {
+      "yours": "Lo tuyo",
+      "settings": "Ajustes"
+    },
+    "syncAllSent": "Todo enviado"
   },
   "manage": {
     "timeOff": {

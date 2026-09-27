@@ -1044,7 +1044,12 @@
       "auto": "Auto",
       "failed": "Status konnte nicht aktualisiert werden"
     },
-    "documents": "Dokumente"
+    "documents": "Dokumente",
+    "group": {
+      "yours": "Ihres",
+      "settings": "Einstellungen"
+    },
+    "syncAllSent": "Alles gesendet"
   },
   "manage": {
     "timeOff": {

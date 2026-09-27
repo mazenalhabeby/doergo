@@ -46,6 +46,7 @@ export function ScreenHeader({
   action,
   actions,
   leading,
+  showAvatar = true,
   style,
 }: {
   title: string;
@@ -93,6 +94,8 @@ export function ScreenHeader({
    * slot and not a flag: the header does not know what "back" means.
    */
   leading?: React.ReactNode;
+  /** Off on the Profile page — the avatar is a door to the page you are on. */
+  showAvatar?: boolean;
   style?: ViewStyle;
 }) {
   const { amazen } = useTheme();
@@ -228,30 +231,32 @@ export function ScreenHeader({
         </Pressable>
       ))}
 
+      {showAvatar ? (
       <Pressable
-        onPress={onPressAvatar}
-        accessibilityRole="button"
-        accessibilityLabel={initials ? `Profile, ${initials}` : 'Profile'}
-        hitSlop={8}
-        style={({ pressed }) => ({
-          width: 43,
-          height: 43,
-          borderRadius: amazen.radius.full,
-          backgroundColor: c.tile,
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden',
-          opacity: pressed ? 0.75 : 1,
-        })}
-      >
-        {avatarUrl ? (
-          <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} />
-        ) : (
-          <AText variant="body" tone="strong" style={{ fontFamily: amazen.font.sansMedium, fontSize: 15 }}>
-            {initials}
-          </AText>
-        )}
-      </Pressable>
+          onPress={onPressAvatar}
+          accessibilityRole="button"
+          accessibilityLabel={initials ? `Profile, ${initials}` : 'Profile'}
+          hitSlop={8}
+          style={({ pressed }) => ({
+            width: 43,
+            height: 43,
+            borderRadius: amazen.radius.full,
+            backgroundColor: c.tile,
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+            opacity: pressed ? 0.75 : 1,
+          })}
+        >
+          {avatarUrl ? (
+            <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} />
+          ) : (
+            <AText variant="body" tone="strong" style={{ fontFamily: amazen.font.sansMedium, fontSize: 15 }}>
+              {initials}
+            </AText>
+          )}
+        </Pressable>
+      ) : null}
     </View>
   );
 }

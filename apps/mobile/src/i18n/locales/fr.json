@@ -1044,7 +1044,12 @@
       "auto": "Auto",
       "failed": "Impossible de mettre à jour le statut"
     },
-    "documents": "Documents"
+    "documents": "Documents",
+    "group": {
+      "yours": "À vous",
+      "settings": "Réglages"
+    },
+    "syncAllSent": "Tout est envoyé"
   },
   "manage": {
     "timeOff": {

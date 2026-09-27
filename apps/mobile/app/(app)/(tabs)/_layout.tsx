@@ -139,6 +139,13 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
   const getAdjustedIndex = () => barRoutes.findIndex((r: any) => r.key === currentRoute.key);
 
+  /*
+    ⚠️ NO BAR ON THE PROFILE PAGE. It is a page you go INTO — from the avatar —
+    with Back in its header, not a place among the tabs. Returned after every
+    hook above, so the hook order never changes with the route.
+  */
+  if (currentRoute?.name === 'profile') return null;
+
   return (
     <>
       {/*
@@ -416,7 +423,8 @@ export default function TabsLayout() {
           name="profile"
           options={{
             title: t('tabs.profile'),
-            headerRight: () => null,
+            // The page draws the shared ScreenHeader with Back — no navigator band.
+            headerShown: false,
           }}
         />
       </Tabs>
