@@ -8,7 +8,7 @@ import { MoreGlyph, NavigateGlyph } from '../glyphs';
 import type { GlyphProps } from '../glyphs/glyphs';
 import { TourTarget } from '../tour';
 import { EditGlyph } from './job-glyphs';
-import { Banner, RoundButton } from './job-ui';
+import { Banner, RoundButton, type Tone } from './job-ui';
 
 export interface DockPrimary {
   label: string;
@@ -37,6 +37,7 @@ export function JobDock({
   onMore,
   onEdit,
   bottomInset,
+  notice = null,
 }: {
   /** "1:12 on this job · tracking your route" — and whether the route is live. */
   timer: { text: string; live: boolean; retry?: () => void } | null;
@@ -46,6 +47,8 @@ export function JobDock({
   onMore: (() => void) | null;
   onEdit: (() => void) | null;
   bottomInset: number;
+  /** Said in the dock itself — the island is drawn under this modal page. */
+  notice?: { tone: Tone; text: string; action?: { label: string; onPress: () => void } } | null;
 }) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
@@ -67,6 +70,7 @@ export function JobDock({
           ) : null}
         </View>
       ) : null}
+      {notice ? <Banner tone={notice.tone} text={notice.text} action={notice.action} /> : null}
       {closedText ? (
         <Banner tone="accent" text={closedText} />
       ) : (

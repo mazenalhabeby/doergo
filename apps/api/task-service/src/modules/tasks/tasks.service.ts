@@ -46,6 +46,7 @@ import {
   endOfSiteDay,
   tzOffsetMs,
   SELECTABLE_ASSET_WHERE,
+  ONE_AT_A_TIME_STATUSES,
 } from '@hbcfield/shared';
 
 const STATUS_COUNTS_TTL = 30; // seconds
@@ -1857,7 +1858,8 @@ export class TasksService {
       const activeTaskCount = await this.prisma.task.count({
         where: {
           assignedToId: data.userId,
-          status: { in: [TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS] },
+          // The one list, shared with the phone (it says this before the tap).
+          status: { in: [...ONE_AT_A_TIME_STATUSES] as TaskStatus[] },
           id: { not: data.id },
         },
       });
@@ -1866,7 +1868,7 @@ export class TasksService {
         const activeTask = await this.prisma.task.findFirst({
           where: {
             assignedToId: data.userId,
-            status: { in: [TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS] },
+            status: { in: [...ONE_AT_A_TIME_STATUSES] as TaskStatus[] },
             id: { not: data.id },
           },
           select: { title: true },

@@ -3371,6 +3371,8 @@
     "draft": "Entwurf"
   },
   "job": {
+    "oneAtATime": "Sie arbeiten an „{{title}}“. Schließen oder blockieren Sie diesen Auftrag, bevor Sie diesen beginnen.",
+    "openIt": "Öffnen",
     "stepOf": "Schritt {{index}} von {{total}}",
     "stepOfNext": "Schritt {{index}} von {{total}} · als Nächstes: {{next}}",
     "arrivedBanner": "Sie scheinen angekommen zu sein.",

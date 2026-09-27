@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
-import { needsTravelEstimate } from '@hbcfield/shared/client';
+import { needsTravelEstimate, slotHeldBy } from '@hbcfield/shared/client';
 import { tasksApi, reportsApi, TaskStatus, type Comment, type ServiceReport, type Task, type TaskEvent } from '../../lib/api';
 import { useAuth } from '../../contexts/auth-context';
 import { useSocketContext } from '../../contexts/socket-context';
@@ -12,6 +12,7 @@ import { hasArrivalPrompt } from '../../services/route-arrival';
 import { useOffline } from '../../offline/offline-context';
 import { knownOffline } from '../../offline/connectivity';
 import { loadTaskDetail } from '../../offline/tasks/task-source';
+import { overlayTask } from '../../offline/tasks/overlay';
 import { taskDestination } from '../../offline/tasks/status-fix';
 
 /** The task as the page holds it: the server's copy, or the phone's with unsent changes on top. */
@@ -233,7 +234,27 @@ export function useJob(taskId: string) {
       .catch(() => setReport(knownOffline() ? 'unreachable' : null));
   }, [taskId]);
 
+  /*
+    ⭐ ONE JOB AT A TIME, KNOWN BEFORE THE TAP. The server refuses accepting a
+    job while another of the member's holds the slot; the page reads the
+    phone's own copy of their jobs (no request) and names the one in the way.
+    With no copy on the phone (offline mode off) it is unknown, and a refusal
+    is shown in the dock instead.
+  */
+  const [slotHolder, setSlotHolder] = useState<Task | null>(null);
+  useEffect(() => {
+    const records = offline.records;
+    if (!records || !task?.id) { setSlotHolder(null); return; }
+    let live = true;
+    const ops = offline.engine?.operations() ?? [];
+    records.list<Task>('tasks')
+      .then((rows) => { if (live) setSlotHolder(slotHeldBy(task.id, user?.id, rows.map((r) => overlayTask(r.data, ops) as Task))); })
+      .catch(() => undefined);
+    return () => { live = false; };
+  }, [offline.records, offline.engine, task?.id, task?.status, user?.id]);
+
   return {
+    slotHolder,
     task, setTask, comments, setComments, attachments, setAttachments,
     source, loading, error, retry, reload: () => load({ cancelled: false }),
     elapsed, hasArrived, here, tracking,

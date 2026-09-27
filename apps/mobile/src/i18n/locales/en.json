@@ -3371,6 +3371,8 @@
     "draft": "Draft"
   },
   "job": {
+    "oneAtATime": "You are on “{{title}}”. Finish or block it before starting this one.",
+    "openIt": "Open it",
     "stepOf": "Step {{index}} of {{total}}",
     "stepOfNext": "Step {{index}} of {{total}} · next: {{next}}",
     "arrivedBanner": "You look like you're there.",

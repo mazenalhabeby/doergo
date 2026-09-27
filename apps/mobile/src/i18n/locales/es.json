@@ -3371,6 +3371,8 @@
     "draft": "Borrador"
   },
   "job": {
+    "oneAtATime": "Estás con «{{title}}». Termínalo o bloquéalo antes de empezar este.",
+    "openIt": "Abrir",
     "stepOf": "Paso {{index}} de {{total}}",
     "stepOfNext": "Paso {{index}} de {{total}} · siguiente: {{next}}",
     "arrivedBanner": "Parece que ya has llegado.",

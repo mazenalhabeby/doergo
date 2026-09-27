@@ -3371,6 +3371,8 @@
     "draft": "Brouillon"
   },
   "job": {
+    "oneAtATime": "Vous êtes sur « {{title}} ». Terminez-le ou bloquez-le avant de commencer celui-ci.",
+    "openIt": "Ouvrir",
     "stepOf": "Étape {{index}} sur {{total}}",
     "stepOfNext": "Étape {{index}} sur {{total}} · ensuite : {{next}}",
     "arrivedBanner": "Vous semblez être arrivé.",

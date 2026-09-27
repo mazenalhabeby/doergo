@@ -201,3 +201,22 @@ export function summariseMyWork<T extends WorkItem>(tasks: T[], now: Date = new 
 export function isWorkOver(status: string): boolean {
   return isOver(status);
 }
+
+/**
+ * ⭐ ONE JOB AT A TIME — the statuses that hold a member's single slot.
+ *
+ * The server refuses ACCEPTING a job while another of the member's is in one
+ * of these (BLOCKED frees the slot). Stated once so the phone can say it
+ * BEFORE the tap, instead of learning it from a refusal.
+ */
+export const ONE_AT_A_TIME_STATUSES = ['ACCEPTED', 'EN_ROUTE', 'ARRIVED', 'IN_PROGRESS'] as const;
+
+/** The member's other job holding the slot, if accepting `taskId` would be refused. */
+export function slotHeldBy<T extends { id: string; status: string; assignedToId?: string | null }>(
+  taskId: string,
+  userId: string | null | undefined,
+  tasks: readonly T[],
+): T | null {
+  if (!userId) return null;
+  return tasks.find((t) => t.id !== taskId && t.assignedToId === userId && (ONE_AT_A_TIME_STATUSES as readonly string[]).includes(t.status)) ?? null;
+}

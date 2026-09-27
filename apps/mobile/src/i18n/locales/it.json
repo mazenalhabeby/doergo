@@ -3371,6 +3371,8 @@
     "draft": "Bozza"
   },
   "job": {
+    "oneAtATime": "Stai lavorando a «{{title}}». Completalo o bloccalo prima di iniziare questo.",
+    "openIt": "Apri",
     "stepOf": "Passo {{index}} di {{total}}",
     "stepOfNext": "Passo {{index}} di {{total}} · poi: {{next}}",
     "arrivedBanner": "Sembra che tu sia arrivato.",

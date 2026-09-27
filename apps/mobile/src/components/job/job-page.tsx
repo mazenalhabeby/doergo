@@ -253,13 +253,15 @@ export function JobPage({
 
   const target = decision.primary;
   const held = heldUntilDue(target, task.dueDate);
+  /* One job at a time: accepting this one is refused while another holds the slot. */
+  const slotHolder = mode === 'doer' && target === TaskStatus.ACCEPTED ? job.slotHolder : null;
   let primary: DockPrimary | null = null;
   if (mode === 'doer' && target) {
     primary = {
       label: held ? t('taskDetail.statusActions.notYetAvailable') : decision.resume ? t('job.dock.backToWork') : labelOf(target),
       Glyph: glyphFor(target, steps, workflowName),
       onPress: () => go(target),
-      disabled: held || writes.busy,
+      disabled: held || !!slotHolder || writes.busy,
       loading: writes.busy && sheet === null,
     };
   } else if (mode === 'overseer' && canAssign) {
@@ -422,6 +424,9 @@ export function JobPage({
           onMore={closed && !hasPlace ? null : () => setSheet('more')}
           onEdit={mode === 'overseer' && canEdit ? () => setSheet('edit') : null}
           bottomInset={bottom}
+          notice={slotHolder
+            ? { tone: 'warn', text: t('job.oneAtATime', { title: slotHolder.title }), action: { label: t('job.openIt'), onPress: () => router.replace(`/task/${slotHolder.id}` as never) } }
+            : writes.notice ? { tone: 'critical', text: writes.notice } : null}
         />
       ) : null}
 

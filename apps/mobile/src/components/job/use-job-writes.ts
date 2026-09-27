@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   tasksApi, reportsApi, reportAttachmentsApi, taskAttachmentsApi, uploadToPresignedUrl, TaskStatus,
@@ -75,6 +75,23 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
 
+  /*
+    ⚠️ A FAILURE IS SAID ON THE PAGE, NOT ONLY IN THE ISLAND. The job page is a
+    modal screen, and the island is drawn UNDER it — every refusal ("You
+    already have an active job") was shown where nobody could see it, so the
+    button simply looked dead. The island still speaks (it is seen once the
+    page closes); the page shows the same words in its dock.
+  */
+  const [notice, setNotice] = useState<string | null>(null);
+  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (noticeTimer.current) clearTimeout(noticeTimer.current); }, []);
+  const fail = (title: string, body?: string) => {
+    setNotice(body || title);
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    noticeTimer.current = setTimeout(() => setNotice(null), 8000);
+    toast.error(title, body);
+  };
+
   /** A refusal in the member's language: the server's code first, its message second. */
   const refusalText = useCallback((o: { code?: string; message?: string; conflict?: boolean }) =>
     refusalMessage(t as Translate, o), [t]);
@@ -107,7 +124,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
     } catch (err) {
       // Put the route back the way it was.
       untrackRouteFor(tracking, task, from, to);
-      toast.error(err instanceof Error && err.message ? err.message : t('taskDetail.failedToUpdateStatus'));
+      fail(err instanceof Error && err.message ? err.message : t('taskDetail.failedToUpdateStatus'));
       return false;
     } finally {
       setBusy(false);
@@ -129,7 +146,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
       if (offline.engine) {
         // Saved on the phone first; shown at once, marked until the server has it.
         const { id: commentId, outcome } = await addTaskComment(offline.engine, { taskId: task.id, content });
-        if (outcome.kind === 'refused') { toast.error(refusalText(outcome)); return false; }
+        if (outcome.kind === 'refused') { fail(refusalText(outcome)); return false; }
         const saved = (outcome.kind === 'done' ? outcome.response : null) as any;
         setComments((prev) => [
           ...prev.filter((c) => c.id !== commentId),
@@ -150,7 +167,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
       setComments((prev) => [...prev, comment]);
       return true;
     } catch (err) {
-      toast.error(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToAddComment'));
+      fail(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToAddComment'));
       return false;
     } finally {
       setBusy(false);
@@ -210,7 +227,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
             height: photo.height,
             ...(photo.uri.startsWith('data:') ? { base64: photo.uri, kind: 'signature' as const } : { uri: photo.uri }),
           });
-          if (outcome.kind === 'refused') toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('offline.errors.PHOTO_REFUSED'));
+          if (outcome.kind === 'refused') fail(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('offline.errors.PHOTO_REFUSED'));
           if (outcome.kind === 'queued') queued = true;
           continue;
         }
@@ -220,7 +237,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
           fileName: photo.fileName, fileKey, fileUrl, fileType: photo.mimeType, fileSize: photo.fileSize,
         });
       } catch {
-        toast.error(t('common.error'), t('offline.errors.PHOTO_NOT_KEPT'));
+        fail(t('common.error'), t('offline.errors.PHOTO_NOT_KEPT'));
       }
     }
     if (queued) toast.info(t('offline.savedForLater'));
@@ -243,7 +260,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
       await taskAttachmentsApi.delete(task.id, attachmentId);
       setAttachments((prev) => prev.filter((a: any) => a.id !== attachmentId));
     } catch (err) {
-      toast.error(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToDelete'));
+      fail(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToDelete'));
     }
   }, [task, setAttachments, toast, t]);
 
@@ -255,7 +272,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
       setBusy(true);
       if (offline.engine) {
         const outcome = await declineTask(offline.engine, { taskId: task.id });
-        if (outcome.kind === 'refused') { toast.error(t('common.error'), refusalText(outcome)); return; }
+        if (outcome.kind === 'refused') { fail(t('common.error'), refusalText(outcome)); return; }
         if (outcome.kind === 'queued') { toast.info(t('offline.savedForLater')); onClosed(); return; }
       } else {
         await tasksApi.declineTask(task.id);
@@ -263,7 +280,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
       toast.info(t('taskDetail.declineTask.successTitle'), t('taskDetail.declineTask.successMessage'));
       onClosed();
     } catch (err) {
-      toast.error(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToDecline'));
+      fail(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToDecline'));
     } finally {
       setBusy(false);
     }
@@ -308,7 +325,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
           report: input,
           photos: [...photos.before.map(asPhoto('BEFORE')), ...photos.after.map(asPhoto('AFTER'))],
         });
-        if (outcome.kind === 'refused') { toast.error(t('common.error'), refusalText(outcome)); return false; }
+        if (outcome.kind === 'refused') { fail(t('common.error'), refusalText(outcome)); return false; }
         await reload();
         if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
         else toast.success(t('job.finish.doneTitle'), t('job.finish.doneBody'));
@@ -322,7 +339,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
       toast.success(t('job.finish.doneTitle'), t('job.finish.doneBody'));
       return true;
     } catch (err) {
-      toast.error(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToComplete'));
+      fail(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToComplete'));
       return false;
     } finally {
       setBusy(false);
@@ -340,7 +357,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
       toast.success(t('job.assign.doneTitle'), t('job.assign.doneBody', { name: `${member.firstName} ${member.lastName}`.trim() }));
       return true;
     } catch (err) {
-      toast.error(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToAssign'));
+      fail(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToAssign'));
       return false;
     } finally {
       setBusy(false);
@@ -356,7 +373,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
       toast.success(t('job.edit.doneTitle'), input.title ?? task.title);
       return true;
     } catch (err) {
-      toast.error(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToUpdate'));
+      fail(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToUpdate'));
       return false;
     } finally {
       setBusy(false);
@@ -365,6 +382,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
 
   return {
     busy, uploading,
+    notice, clearNotice: () => setNotice(null),
     changeStatus, cancelJob, addComment, addPhotos, addSignature, deleteAttachment,
     decline, reportIssue, complete, assign, edit, refreshAttachments,
   };
