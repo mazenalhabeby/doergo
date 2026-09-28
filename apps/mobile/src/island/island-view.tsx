@@ -12,10 +12,10 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ISLAND, TONES, type Tone } from './tokens';
 import { FONT } from '../theme/amazen';
+import { impact } from '../lib/haptics';
 import { CAP, DROP_SIDE, EDGE, MAX_BODY_LINES, ICON, ICON_GAP, SIDE, readLayout, sealedBox, sealedVisible, type Cutout, type Layout, type Measured } from './geometry';
 
 /**
@@ -192,7 +192,7 @@ export function IslandView({
     }
 
     /* ⚠️ One soft impact on ARRIVAL, never on collapse. */
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+    impact('light');
     /* ⚠️ The toast this replaces announced nothing at all. */
     AccessibilityInfo.announceForAccessibility([msg.title, msg.value, msg.body].filter(Boolean).join('. '));
   };
