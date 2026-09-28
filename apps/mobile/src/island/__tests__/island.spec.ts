@@ -260,9 +260,9 @@ describe('§8/§10 — the motion and the rules', () => {
   });
 
   it('⚠️ one haptic on arrival, never on collapse', () => {
-    expect((view.match(/Haptics\.impactAsync/g) ?? []).length).toBe(1);
+    expect((view.match(/\bimpact\('light'\)/g) ?? []).length).toBe(1);
     const collapse = view.slice(view.indexOf('if (message || !shown) return;'), view.indexOf('const commit'));
-    expect(collapse).not.toMatch(/Haptics/);
+    expect(collapse).not.toMatch(/\bimpact\(/);
   });
 
   it('⚠️ reduce motion cross-fades — no spring, no travel, no overshoot', () => {
