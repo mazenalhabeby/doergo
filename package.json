@@ -15,7 +15,8 @@
     },
     "patchedDependencies": {
       "react-native-draggable-flatlist@4.0.3": "patches/react-native-draggable-flatlist@4.0.3.patch"
-    }
+    },
+    "allowNonAppliedPatches": true
   },
   "scripts": {
     "dev": "pnpm run --parallel dev",
