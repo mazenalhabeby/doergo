@@ -5,6 +5,8 @@ WORKDIR /app
 # -- Dependencies (admin is independent — no @hbcfield/shared) --
 FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
+# pnpm refuses a frozen install when a patch listed in package.json is missing.
+COPY patches ./patches
 COPY apps/admin/package.json ./apps/admin/
 RUN pnpm install --frozen-lockfile --prod=false --filter @hbcfield/admin...
 

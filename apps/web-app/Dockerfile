@@ -5,6 +5,8 @@ WORKDIR /app
 # -- Dependencies --
 FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
+# pnpm refuses a frozen install when a patch listed in package.json is missing.
+COPY patches ./patches
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/web-app/package.json ./apps/web-app/
 RUN pnpm install --frozen-lockfile --prod=false
