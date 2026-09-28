@@ -29,7 +29,7 @@ import { ConfirmSheet } from '../confirm-sheet';
 import { centeredContent } from '../screen-container';
 import { JobSheet, SectionLabel, SheetOption } from '../job/job-ui';
 import { CameraGlyph, CloseGlyph, GalleryGlyph } from '../job/job-glyphs';
-import { TourTarget, GuideSheet } from '../tour';
+import { TourTarget, GuideSheet, useTourScroll } from '../tour';
 import { PROFILE_GLYPHS } from './profile-glyphs';
 
 function getInitials(firstName?: string, lastName?: string): string {
@@ -77,6 +77,7 @@ export function ProfileScreen() {
   const [savingPresence, setSavingPresence] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [guidesOpen, setGuidesOpen] = useState(false);
+  const tourScroll = useTourScroll();
 
   // Availability control (mirrors the web navbar toggle): Available / Busy / Away.
   const handleSetPresence = useCallback(async (presence: 'AVAILABLE' | 'BUSY' | 'AWAY') => {
@@ -253,6 +254,7 @@ export function ProfileScreen() {
       {/* ⚠️ No avatar in the corner — you are on it. Back, because the tab bar is not drawn here. */}
       <ScreenHeader title={t('tabs.profile', 'Profile')} leading={<HeaderBack onPress={back} />} showAvatar={false} style={wide ?? undefined} />
       <ScrollView
+        {...tourScroll}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12), gap: amazen.space(3) }, wide]}
       >
@@ -342,6 +344,7 @@ export function ProfileScreen() {
         </TourTarget>
 
         {/* ── Settings — each row says what it is set to ── */}
+        <TourTarget name="profile-settings">
         <Group label={t('profile.group.settings', 'Settings')}>
           <Row glyph="notifications" label={t('profile.menu.notifications')} onPress={() => router.push('/profile/notifications' as Href)} />
           <Row glyph="appearance" label={t('profile.menu.appearance')} value={t(THEME_MODE_I18N[mode])} onPress={handleAppearancePress} />
@@ -349,6 +352,7 @@ export function ProfileScreen() {
           <Row glyph="language" label={t('profile.menu.language')} value={lang?.label} onPress={() => router.push('/profile/language' as Href)} />
           <Row glyph="account" label={t('profile.menu.accountSecurity')} onPress={() => router.push('/profile/account' as Href)} />
         </Group>
+        </TourTarget>
 
         <Group label={t('profile.menu.support')}>
           <Row glyph="help" label={t('profile.menu.helpCenter')} onPress={() => Linking.openURL('https://hbcfield.com/help').catch(() => {})} />

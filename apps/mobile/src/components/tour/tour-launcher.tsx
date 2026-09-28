@@ -51,7 +51,13 @@ export function GuideSheet({ visible, onClose }: { visible: boolean; onClose: ()
           )}
 
           <Text style={[styles.section, { color: colors.textMuted }]}>{t('tours.allGuides')}</Text>
-          {availableTours.map((tr) => (
+          {/*
+            ⚠️ A tour that belongs to ONE record (a job's details) cannot be
+            started from here: there is no job to open, and navigating to its
+            bare route opened an empty page. It is offered on that page, as
+            "This screen", and nowhere else.
+          */}
+          {availableTours.filter((tr) => !tr.autoRunOn?.endsWith('/') || tr.id === contextualTourId).map((tr) => (
             <Row key={tr.id} icon={tr.icon} label={t(tr.titleKey)} colors={colors} onPress={() => launch(tr.id)} />
           ))}
           <View style={{ height: SPACING.xl }} />

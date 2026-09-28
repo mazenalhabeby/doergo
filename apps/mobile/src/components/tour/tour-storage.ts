@@ -21,7 +21,11 @@ export interface TourStorage {
 
 // Bump this suffix whenever the guides change materially so completion resets and
 // the updated walkthrough auto-runs again for everyone.
-const KEY = 'hbcfield.tours.completed.v1';
+/*
+  ⚠️ v2 — every screen the tours describe was rebuilt, and the tours with them.
+  A member who finished the old ones has never seen these, so they run once more.
+*/
+const KEY = 'hbcfield.tours.completed.v2';
 
 export function createTourStorage(): TourStorage {
   let done = new Set<string>();

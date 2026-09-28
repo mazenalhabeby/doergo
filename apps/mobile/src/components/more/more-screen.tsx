@@ -18,6 +18,7 @@ import { TAB_GLYPHS } from '../glyphs/tab-glyphs';
 import { SHORTCUT_GLYPHS } from '../home/shortcut-glyphs';
 import { ShiftIssueListSheet, ShiftIssueThreadSheet } from '../shift-issue-sheet';
 import { groupManageRows, type MoreGroup } from './more-groups';
+import { TourTarget, useTourScroll } from '../tour/tour-target';
 
 /**
  * MORE — the tab bar's •••, as a page.
@@ -77,6 +78,8 @@ export function MoreScreen() {
   const [issuesOpen, setIssuesOpen] = useState(false);
   const [issueId, setIssueId] = useState<string | null>(null);
 
+  const tourScroll = useTourScroll();
+
   const open = (row: ManageRow) => {
     if (row.route === 'sheet:issues') setIssuesOpen(true);
     else router.push(row.route as Href);
@@ -84,14 +87,15 @@ export function MoreScreen() {
 
   return (
     <Ground style={{ flex: 1 }}>
-      <ScreenHeader title={t('tabs.more', 'More')} style={wide ?? undefined} />
+      <ScreenHeader title={t('tabs.more', 'More')} tour={{ title: 'more-header' }} style={wide ?? undefined} />
       <ScrollView
+        {...tourScroll}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe, gap: amazen.space(3) }, wide]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await loadCounts(); setRefreshing(false); }} tintColor={c.accent} colors={[c.accent]} />}
       >
         {overflow.length ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(2) }}>
+          <TourTarget name="more-tiles" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(2) }}>
             {overflow.map((name) => {
               const G = TAB_GLYPHS[name];
               return (
@@ -114,11 +118,11 @@ export function MoreScreen() {
                 </Pressable>
               );
             })}
-          </View>
+          </TourTarget>
         ) : null}
 
-        {groups.map((g: MoreGroup) => (
-          <View key={g.key} style={{ gap: amazen.space(2) }}>
+        {groups.map((g: MoreGroup, gi: number) => (
+          <GroupAnchor key={g.key} first={gi === 0}>
             <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(1) }}>{t(`more.group.${g.key}`)}</SectionLabel>
             <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
               {g.rows.map((row, i) => {
@@ -151,7 +155,7 @@ export function MoreScreen() {
                 );
               })}
             </Well>
-          </View>
+          </GroupAnchor>
         ))}
       </ScrollView>
 
@@ -165,5 +169,15 @@ export function MoreScreen() {
         currentUserId={user?.id}
       />
     </Ground>
+  );
+}
+
+/** A group of rows; the FIRST is the tour's "everything else lives here" step. */
+function GroupAnchor({ first, children }: { first: boolean; children: React.ReactNode }) {
+  const { amazen } = useTheme();
+  return first ? (
+    <TourTarget name="more-manage" style={{ gap: amazen.space(2) }}>{children}</TourTarget>
+  ) : (
+    <View style={{ gap: amazen.space(2) }}>{children}</View>
   );
 }

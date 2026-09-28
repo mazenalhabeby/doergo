@@ -1516,7 +1516,7 @@
       "steps": {
         "greeting": {
           "title": "Welcome to HBCField",
-          "body": "This is your home base. Here is a quick tour of the app — you can replay it anytime from your profile."
+          "body": "This is your home: today's date and your name at the top. Here is a short tour, and you can replay it any time from your profile."
         },
         "today": {
           "title": "Your day at a glance",
@@ -1528,11 +1528,11 @@
         },
         "tabsTasks": {
           "title": "Jobs",
-          "body": "Find every job assigned to you here — search, filter and open them."
+          "body": "Every job you have been given, with the next step one tap away. Search, filter and plan your route here."
         },
         "tabsClock": {
-          "title": "Clock in & out",
-          "body": "Start and end your shift, and take breaks, from the clock tab."
+          "title": "Time",
+          "body": "Clock in and out, take a rest, and see your hours for today and this week."
         },
         "tabsTimeOff": {
           "title": "Time off",
@@ -1540,7 +1540,27 @@
         },
         "profile": {
           "title": "Your profile",
-          "body": "Your account, availability, language, notifications — and this guided tour — live here."
+          "body": "Tap your picture for your account, availability, language, notifications and these guided tours."
+        },
+        "needs": {
+          "title": "What needs you",
+          "body": "Anything waiting on you shows up here first: a document to upload, a shift to confirm, a request to answer. Tap it to deal with it."
+        },
+        "widgets": {
+          "title": "Your widgets",
+          "body": "Cards like this one answer a question at a glance: your shift, your jobs, your crew. Press and hold a card to move it, remove it or add another."
+        },
+        "tabsTeam": {
+          "title": "Team",
+          "body": "Who you work with, and who is available right now. Tap someone to send them a message."
+        },
+        "tabsChat": {
+          "title": "Messages",
+          "body": "Your conversations with the office and your colleagues."
+        },
+        "tabsMore": {
+          "title": "More",
+          "body": "Everything else lives here: time off, documents, clients and the pages you manage."
         }
       }
     },
@@ -1549,19 +1569,39 @@
       "steps": {
         "intro": {
           "title": "Your jobs",
-          "body": "Every job assigned to you shows up here, newest first."
+          "body": "Every job you have been given, sorted so the one that needs you next is at the top."
         },
         "search": {
           "title": "Search",
-          "body": "Quickly find a job by title, customer or address."
+          "body": "Find a job by its title, client or address."
         },
         "filters": {
-          "title": "Filter",
-          "body": "Narrow the list by status — active, completed or blocked."
+          "title": "Filter by state",
+          "body": "Show only active, blocked or done jobs. The numbers tell you how many are in each."
         },
         "card": {
           "title": "Open a job",
-          "body": "Tap a job to see the full details, update its status and add photos or notes."
+          "body": "Tap any job to see everything about it, update it and add photos or notes."
+        },
+        "newJob": {
+          "title": "New job",
+          "body": "Create a job yourself, for you or for someone on your team."
+        },
+        "scope": {
+          "title": "Mine or everyone",
+          "body": "Switch between your own jobs and every job in the workspaces you oversee."
+        },
+        "period": {
+          "title": "Now, upcoming, history",
+          "body": "What is on today, what is planned later, and what is already finished."
+        },
+        "route": {
+          "title": "Plan my route",
+          "body": "Put today's stops in the best order and open them in your navigation app."
+        },
+        "next": {
+          "title": "Next up",
+          "body": "The job to do next, with its next step as one button: on my way, arrived, start, done."
         }
       }
     },
@@ -1569,37 +1609,85 @@
       "title": "Job details",
       "steps": {
         "intro": {
-          "title": "Job details",
-          "body": "Everything about this job — location, description, customer and history — in one place."
+          "title": "The job",
+          "body": "Where the job stands, how late it is and how urgent, above its title."
         },
         "status": {
-          "title": "Progress",
-          "body": "Follow the job through its stages, from accepted to completed."
+          "title": "Its steps",
+          "body": "Each bar is one step of the job. This says which step you are on and what comes next."
         },
         "actions": {
-          "title": "Update the job",
-          "body": "Accept, start, block or complete the job from here as you work through it."
+          "title": "The next step",
+          "body": "One button moves the job forward: on my way, arrived, start, done. It always shows the next step."
+        },
+        "facts": {
+          "title": "When, where, who",
+          "body": "The time, the address, the workspace, who does it and who sent it."
+        },
+        "map": {
+          "title": "The place",
+          "body": "Tap the map to open the address in your maps app."
+        },
+        "checklist": {
+          "title": "Checklist",
+          "body": "Tick off each item as you go. Some items open only at a certain step."
+        },
+        "files": {
+          "title": "Photos and files",
+          "body": "Take a photo or pick one from your gallery. The office sees it straight away."
+        },
+        "activity": {
+          "title": "Activity and notes",
+          "body": "Everything that happened on this job. Write a note for the office at the bottom."
+        },
+        "timer": {
+          "title": "Time on this job",
+          "body": "How long you have spent on the job, and whether your route is being recorded."
+        },
+        "navigate": {
+          "title": "Navigate",
+          "body": "Open directions to the job in your navigation app."
+        },
+        "more": {
+          "title": "More actions",
+          "body": "Report a problem, block the job or use the other actions for this job."
         }
       }
     },
     "attendance": {
-      "title": "Clock in & out",
+      "title": "Time",
       "steps": {
         "intro": {
-          "title": "Attendance",
-          "body": "Track your working hours here — clock in when you start and out when you finish."
+          "title": "Your time",
+          "body": "Your shift, your rests and your hours, all on this page."
         },
         "clock": {
-          "title": "Clock in / out",
-          "body": "One tap to start or end your shift. Your location confirms you are at the right place."
+          "title": "The clock",
+          "body": "Clock in when you start and out when you finish. While you work it shows your time, with buttons for a rest or a report."
         },
         "status": {
-          "title": "Your status",
-          "body": "See at a glance whether you are on the clock and how long you have worked today."
+          "title": "Today",
+          "body": "What you did today: when you clocked in, your rests, and a note of your work."
         },
         "history": {
-          "title": "History",
-          "body": "Review your recent shifts, breaks and hours."
+          "title": "Recent shifts",
+          "body": "Your last shifts, with their times and rests."
+        },
+        "places": {
+          "title": "Where you work",
+          "body": "The places you can clock in at, and how far you are from each."
+        },
+        "week": {
+          "title": "This week",
+          "body": "Your hours day by day, with the totals for the week and the month."
+        },
+        "leave": {
+          "title": "Time off",
+          "body": "Your time off coming up and the days you have used this year."
+        },
+        "timeOffButton": {
+          "title": "Ask for time off",
+          "body": "Tap here to request days off. Your manager gets it for approval."
         }
       }
     },
@@ -1607,16 +1695,16 @@
       "title": "Time off",
       "steps": {
         "intro": {
-          "title": "Time off",
-          "body": "Request days off and follow your requests from here."
+          "title": "Your year so far",
+          "body": "Days used, time off coming up, requests waiting for an answer and requests declined."
         },
         "request": {
-          "title": "Request time off",
-          "body": "Pick your dates and a reason — your manager gets it for approval."
+          "title": "Pick your days",
+          "body": "Choose the days on the calendar to ask for time off. Your manager gets it for approval."
         },
         "list": {
           "title": "Your requests",
-          "body": "Track each request — pending, approved or declined."
+          "body": "Every request and where it stands: waiting, approved or declined."
         }
       }
     },
@@ -1624,20 +1712,66 @@
       "title": "Your profile",
       "steps": {
         "intro": {
-          "title": "Your profile",
-          "body": "Manage your account and app preferences from here."
+          "title": "You",
+          "body": "Your picture, your name and your organization. Tap the picture to change it."
         },
         "availability": {
           "title": "Availability",
-          "body": "Set yourself as available, busy or away so your team knows your status."
+          "body": "Tell your team whether you are available, busy or away."
         },
         "menu": {
-          "title": "Settings",
-          "body": "Language, appearance, notifications, security and support all live in this menu."
+          "title": "Yours",
+          "body": "Your equipment, your documents, and whether everything from this phone has been sent."
         },
         "guide": {
           "title": "Guided tours",
-          "body": "Replay any walkthrough anytime — tap here to open the guides."
+          "body": "Replay any of these tours here, whenever you like."
+        },
+        "settings": {
+          "title": "Settings",
+          "body": "Notifications, appearance, time format, language and your account."
+        }
+      }
+    },
+    "team": {
+      "title": "Team",
+      "steps": {
+        "intro": {
+          "title": "Your team",
+          "body": "The people you work with, managers first."
+        },
+        "messages": {
+          "title": "Messages",
+          "body": "Your conversations. The number shows how many messages you have not read."
+        },
+        "search": {
+          "title": "Find someone",
+          "body": "Search by name, job title or workspace."
+        },
+        "filters": {
+          "title": "Who is around",
+          "body": "See who is available, busy or away right now."
+        },
+        "person": {
+          "title": "Message someone",
+          "body": "Tap a colleague to start a conversation with them."
+        }
+      }
+    },
+    "more": {
+      "title": "More",
+      "steps": {
+        "intro": {
+          "title": "More",
+          "body": "Everything that is not in the bar at the bottom."
+        },
+        "tiles": {
+          "title": "Your pages",
+          "body": "Pages that did not fit in the bar, one tap away."
+        },
+        "manage": {
+          "title": "Things to look after",
+          "body": "Requests and approvals waiting on you, with a number when something is waiting."
         }
       }
     }

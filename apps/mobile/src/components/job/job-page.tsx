@@ -50,6 +50,7 @@ import { AssignSheet } from './sheets/assign-sheet';
 import { EditSheet } from './sheets/edit-sheet';
 import { StepFormSheet } from './sheets/step-form-sheet';
 import { SignSheet } from './sheets/sign-sheet';
+import { TourTarget, useTourScroll } from '../tour/tour-target';
 
 type SheetKind = 'more' | 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'form' | 'sign' | 'delete';
 
@@ -94,6 +95,7 @@ export function JobPage({
 }) {
   const insets = useSafeAreaInsets();
   const r = useResponsive();
+  const tourScroll = useTourScroll();
   const { amazen } = useTheme();
   const c = amazen.color;
   const { t } = useTranslation();
@@ -374,9 +376,10 @@ export function JobPage({
     <View style={{ flex: 1, paddingBottom: iosKeyboard }}>
       <JobTopRow taskId={task.id} jobId={getJobId(task.id)} pendingSync={task.pendingSync} fromPhone={job.source === 'phone'} onClose={close} />
       <ScrollView
+        ref={tourScroll.ref}
         style={{ flex: 1 }}
         onLayout={onViewport}
-        onScroll={onScroll}
+        onScroll={(e) => { onScroll(e); tourScroll.onScroll(e); }}
         scrollEventThrottle={200}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -412,8 +415,8 @@ export function JobPage({
           futureLine={futureLine}
         />
 
-        <JobFacts facts={facts} />
-        {hasPlace ? <JobMap lat={task.locationLat!} lng={task.locationLng!} title={task.locationAddress} onOpen={openMaps} /> : null}
+        <TourTarget name="taskdetail-facts"><JobFacts facts={facts} /></TourTarget>
+        {hasPlace ? <TourTarget name="taskdetail-map"><JobMap lat={task.locationLat!} lng={task.locationLng!} title={task.locationAddress} onOpen={openMaps} /></TourTarget> : null}
 
         {task.description ? (
           <View style={{ gap: amazen.space(1.5) }}>
@@ -422,12 +425,14 @@ export function JobPage({
           </View>
         ) : null}
 
-        <JobChecklist
-          taskId={task.id}
-          items={task.checklistItems ?? []}
-          mode={checkMode}
-          opensAtLabel={opensAt ? labelOf(opensAt) : null}
-        />
+        <TourTarget name="taskdetail-checklist">
+          <JobChecklist
+            taskId={task.id}
+            items={task.checklistItems ?? []}
+            mode={checkMode}
+            opensAtLabel={opensAt ? labelOf(opensAt) : null}
+          />
+        </TourTarget>
 
         {stepSignature ? (
           <Banner tone="neutral" text={t('job.sign.needed')} action={{ label: t('job.sign.open'), onPress: () => setSheet('sign'), disabled: writes.uploading }} />
@@ -435,6 +440,7 @@ export function JobPage({
 
         {hasFeatureModule({ orgModules: user?.orgModules }, 'custom_fields') ? <JobFields taskId={task.id} editable={!canceled} /> : null}
 
+        <TourTarget name="taskdetail-files">
         <JobFiles
           files={job.attachments}
           uploading={writes.uploading}
@@ -443,11 +449,13 @@ export function JobPage({
           onGallery={async () => { const ps = await pickFromGallery(); if (ps.length) void writes.addPhotos(ps); }}
           onDelete={(f) => { setDeleting(f); setSheet('delete'); }}
         />
+        </TourTarget>
 
         {submissionsShown ? <JobSubmissions submissions={job.submissions} labelOf={labelOf} onLayout={at(submissionsY)} /> : null}
 
         {reportShown ? <JobReport report={job.report} sayNone={reportSaysNone} onLayout={at(reportY)} /> : null}
 
+        <TourTarget name="taskdetail-activity">
         <JobActivity
           comments={job.comments}
           events={job.events}
@@ -460,6 +468,7 @@ export function JobPage({
           onSend={writes.addComment}
           onLayout={at(activityY)}
         />
+        </TourTarget>
       </ScrollView>
 
       {keyboard === 0 ? (

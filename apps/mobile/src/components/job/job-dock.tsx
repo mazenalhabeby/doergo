@@ -55,12 +55,11 @@ export function JobDock({
   const c = amazen.color;
   if (!timer && !closedText && !primary && !onMore) return null;
   return (
-    <TourTarget
-      name="taskdetail-actions"
+    <View
       style={{ paddingTop: amazen.space(3), paddingHorizontal: amazen.space(4), paddingBottom: Math.max(bottomInset, amazen.space(4)), gap: amazen.space(2), backgroundColor: c.canvas }}
     >
       {timer ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1.5) }}>
+        <TourTarget name="taskdetail-timer" style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1.5), alignSelf: 'flex-start' }}>
           <LiveDot color={c.accent} live={timer.live} size={7} />
           <AText variant="caption" tone="ink" numeric numberOfLines={1} style={{ flexShrink: 1 }}>{timer.text}</AText>
           {timer.retry ? (
@@ -68,20 +67,20 @@ export function JobDock({
               <AText variant="caption" tone="accent">{t('common.retry')}</AText>
             </Pressable>
           ) : null}
-        </View>
+        </TourTarget>
       ) : null}
       {notice ? <Banner tone={notice.tone} text={notice.text} action={notice.action} /> : null}
       {closedText ? (
         <Banner tone="accent" text={closedText} />
       ) : (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
-          {primary ? <JadeButton {...primary} /> : <View style={{ flex: 1 }} />}
+          {primary ? <TourTarget name="taskdetail-actions" style={{ flex: 1, flexDirection: 'row' }}><JadeButton {...primary} /></TourTarget> : <View style={{ flex: 1 }} />}
           {onEdit ? <RoundButton Glyph={EditGlyph} label={t('job.dock.edit')} onPress={onEdit} /> : null}
-          {navigate ? <RoundButton Glyph={NavigateGlyph} label={t('job.dock.navigate')} tone="jade" onPress={navigate} /> : null}
-          {onMore ? <RoundButton Glyph={MoreGlyph} label={t('job.dock.more')} onPress={onMore} /> : null}
+          {navigate ? <TourTarget name="taskdetail-navigate"><RoundButton Glyph={NavigateGlyph} label={t('job.dock.navigate')} tone="jade" onPress={navigate} /></TourTarget> : null}
+          {onMore ? <TourTarget name="taskdetail-more"><RoundButton Glyph={MoreGlyph} label={t('job.dock.more')} onPress={onMore} /></TourTarget> : null}
         </View>
       )}
-    </TourTarget>
+    </View>
   );
 }
 

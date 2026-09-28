@@ -23,8 +23,11 @@ import { useProfileAvatar } from '../../../src/lib/use-profile-avatar';
   than one that is honestly shorter. The step is removed from the registry too.
 */
 const TAB_TOUR_KEY: Record<string, string> = {
+  index: 'tab-home',
   tasks: 'tab-tasks',
   attendance: 'tab-attendance',
+  team: 'tab-team',
+  chat: 'tab-chat',
 };
 
 // Logo icon for header left

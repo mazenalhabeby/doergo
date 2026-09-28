@@ -10,7 +10,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { View, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { isComfortablyInView, offsetToCentre, type Box, type Viewport } from './measure';
+import { offsetToCentre, type Box, type Viewport } from './measure';
 import type { TargetRect } from './types';
 
 /**
@@ -27,13 +27,15 @@ interface Scroller {
 interface ScrollLike {
   scrollToOffset?: (opts: { offset: number; animated?: boolean }) => void;
   scrollTo?: (opts: { y: number; animated?: boolean }) => void;
+  /** SectionList speaks neither — it hands out the ScrollView underneath. */
+  getScrollResponder?: () => { scrollTo?: (opts: { y: number; animated?: boolean }) => void } | null | undefined;
 }
 
 interface TargetRegistry {
   register: (name: string, node: View | null) => void;
   registerAction: (name: string, fn: (() => void) | null) => void;
   /** The FOCUSED screen's scrollable (see `useTourScroll`). */
-  registerScroller: (s: Scroller | null) => void;
+  registerScroller: (s: Scroller | null, owner?: Scroller) => void;
   /** Tell the engine the list moved, so it can re-measure without polling. */
   notifyScroll: () => void;
 }
@@ -72,12 +74,22 @@ export function useTargetRegistry() {
     });
   }, []);
 
+  /** Is a target on screen right now? Sync — the counter and Back read it. */
+  const isRegistered = useCallback((name: string) => nodes.current.has(name), []);
+
   const runAction = useCallback((name: string) => {
     actions.current.get(name)?.();
   }, []);
 
-  const registerScroller = useCallback((s: Scroller | null) => {
-    scroller.current = s;
+  /*
+    ⚠️ COMPARE-AND-CLEAR. Switching tabs focuses the new screen BEFORE the old
+    one's blur cleanup runs, so a blind `null` from the old screen wiped the
+    list the new one had just registered — and a target below the fold was
+    ringed under the tab bar, never scrolled to. A screen may only clear its own.
+  */
+  const registerScroller = useCallback((s: Scroller | null, owner?: Scroller) => {
+    if (s) scroller.current = s;
+    else if (!owner || scroller.current === owner) scroller.current = null;
   }, []);
 
   const notifyScroll = useCallback(() => {
@@ -96,7 +108,7 @@ export function useTargetRegistry() {
   const bringIntoView = useCallback((box: Box, viewport: Viewport): boolean => {
     const s = scroller.current;
     if (!s) return false;
-    if (isComfortablyInView(box, viewport)) return false;
+    if (!cutOff(box, viewport)) return false;
     s.scrollToY(offsetToCentre(box, viewport, s.offsetY()));
     return true;
   }, []);
@@ -114,7 +126,26 @@ export function useTargetRegistry() {
     [register, registerAction, registerScroller, notifyScroll],
   );
 
-  return { api, measure, runAction, bringIntoView, onScrolled, Provider: Ctx.Provider };
+  return { api, measure, isRegistered, runAction, bringIntoView, onScrolled, Provider: Ctx.Provider };
+}
+
+/** The tab bar and the home indicator: a target under them is not "on screen". */
+const BOTTOM_CHROME_PX = 120;
+
+/**
+ * Is the target cut off — above the screen, or under the bottom chrome?
+ *
+ * ⚠️ NOT "is it near an edge". The engine used to scroll any target within 96pt
+ * of the top, which includes every header button: the list jumped for a step
+ * about the header, which is not in the list at all. The card finds room above
+ * or below on its own; scrolling is only for a target the member cannot see.
+ */
+function cutOff(box: Box, viewport: Viewport): boolean {
+  const bottom = viewport.height - BOTTOM_CHROME_PX;
+  if (box.y < 0) return true;
+  // Taller than the space: seeing its top half is the best available.
+  if (box.height > bottom - 80) return box.y > bottom / 2;
+  return box.y + box.height > bottom;
 }
 
 /**
@@ -164,8 +195,11 @@ export function useTourScroll() {
   // A CALLBACK ref, not an object ref: one object ref cannot be typed for both
   // <FlatList> and <ScrollView>, while a callback taking the two methods we
   // actually call is accepted by either.
-  const ref = useCallback((n: ScrollLike | null) => {
-    node.current = n;
+  // ⚠️ Typed as `never` on purpose: a ScrollView, a FlatList and a SectionList
+  // all accept a callback taking their own instance, and none of the three
+  // types is assignable to the others. We read only the methods in ScrollLike.
+  const ref = useCallback((n: never) => {
+    node.current = n as unknown as ScrollLike | null;
   }, []);
 
   const onScroll = useCallback(
@@ -186,10 +220,11 @@ export function useTourScroll() {
           // FlatList speaks `scrollToOffset`, ScrollView `scrollTo`.
           if (typeof list.scrollToOffset === 'function') list.scrollToOffset({ offset: y, animated: true });
           else if (typeof list.scrollTo === 'function') list.scrollTo({ y, animated: true });
+          else list.getScrollResponder?.()?.scrollTo?.({ y, animated: true });
         },
       };
       reg?.registerScroller(mine);
-      return () => reg?.registerScroller(null);
+      return () => reg?.registerScroller(null, mine);
     }, [reg]),
   );
 
@@ -208,9 +243,28 @@ export function TourTarget({
   style?: StyleProp<ViewStyle>;
   children: ReactNode;
 }) {
-  const ref = useTourTarget(name);
+  const reg = useContext(Ctx);
+  const node = useRef<View | null>(null);
+  /*
+    ⚠️ REGISTERED ONLY WHILE IT HAS A SIZE. A wrapper around something that
+    renders nothing today (no reminders, an empty strip) is still a View, and
+    counting it made the step counter promise steps the member never saw.
+  */
+  const ref = useCallback((n: View | null) => {
+    node.current = n;
+    if (!n) reg?.register(name, null);
+  }, [reg, name]);
+  useEffect(() => () => reg?.register(name, null), [reg, name]);
   return (
-    <View ref={ref} collapsable={false} style={style}>
+    <View
+      ref={ref}
+      collapsable={false}
+      style={style}
+      onLayout={(e) => {
+        const { width, height } = e.nativeEvent.layout;
+        reg?.register(name, width > 0 && height > 0 ? node.current : null);
+      }}
+    >
       {children}
     </View>
   );

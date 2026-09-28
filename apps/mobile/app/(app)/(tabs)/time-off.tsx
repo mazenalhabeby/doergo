@@ -19,7 +19,7 @@ import { useMyTimeOff } from '../../../src/components/time/use-my-time-off';
 import { SyncChip } from '../../../src/offline/components/sync-chip';
 import { LoadingState, ErrorState } from '../../../src/components/screen-states';
 import { ConfirmSheet, ScreenContainer } from '../../../src/components';
-import { TourTarget } from '../../../src/components/tour';
+import { TourTarget, useTourScroll } from '../../../src/components/tour';
 import {
   timeOffApi,
   availabilityApi,
@@ -145,6 +145,7 @@ export default function TimeOffScreen() {
 
   // Calendar
   const today = useMemo(() => new Date(), []);
+  const tourScroll = useTourScroll();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
 
@@ -518,6 +519,7 @@ export default function TimeOffScreen() {
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
       <ScreenContainer width="content">
       <ScrollView
+        {...tourScroll}
         style={styles.scrollView}
         // ⚠️ Room for the floating tab pill — it reserves no layout of its own.
         contentContainerStyle={{ paddingBottom: tabSafe }}

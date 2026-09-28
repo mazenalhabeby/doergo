@@ -14,6 +14,7 @@ import { hasAccessModule, hasFeatureModule, normalizeRole } from '@hbcfield/shar
 
 import { useAuth } from '../../contexts/auth-context';
 import { TOURS } from './registry';
+import { tabAccessFor } from '../../lib/tab-layout';
 import { createTourStorage } from './tour-storage';
 import { useTargetRegistry } from './tour-target';
 import { TourOverlay } from './tour-overlay';
@@ -91,7 +92,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
-  const { api, measure, runAction, bringIntoView, onScrolled, Provider } = useTargetRegistry();
+  const { api, measure, isRegistered, runAction, bringIntoView, onScrolled, Provider } = useTargetRegistry();
 
   const [ready, setReady] = useState(false);
   const [tourId, setTourId] = useState<string | null>(null);
@@ -122,6 +123,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
       hasFeature: (f) => (user ? hasFeatureModule(user as never, f) : false),
       canManageUsers: !!user?.canManageUsers,
       canCreateTasks: !!user?.canCreateTasks,
+      team: tabAccessFor(user as never).team,
     }),
     [user],
   );
@@ -172,19 +174,41 @@ export function TourProvider({ children }: { children: ReactNode }) {
   // cursor. The two differ while a step is resolving — and by several steps if
   // the engine is skipping targets that never registered — so reading the cursor
   // made Next jump past a step the member never saw, and Back walk forward.
+  /*
+    ⚠️ BACK LANDS ON A STEP THAT CAN BE SHOWN. Stepping to `index - 1` when that
+    step's target was missing made the engine skip it forward again — Back
+    re-showed the same step, and the member could never go back past a gap.
+    A step on another route is assumed reachable: its screen is not mounted
+    until the engine navigates there.
+  */
+  const reachable = useCallback(
+    (i: number) => {
+      const st = tour?.steps[i];
+      if (!st) return false;
+      if (st.route && !routeMatches(pathname, st.route)) return true;
+      return isRegistered(st.target);
+    },
+    [tour, pathname, isRegistered],
+  );
   const next = useCallback(() => {
     if (!tour) return;
     const from = shown?.index ?? stepIndex;
-    if (from >= tour.steps.length - 1) {
+    // Straight to the next step that can be shown — stepping into a missing
+    // target left the old card up for up to four seconds while it gave up.
+    let i = from + 1;
+    while (i < tour.steps.length && !reachable(i)) i++;
+    if (i >= tour.steps.length) {
       finish(true);
       return;
     }
-    setStepIndex(from + 1);
-  }, [tour, stepIndex, shown, finish]);
+    setStepIndex(i);
+  }, [tour, stepIndex, shown, finish, reachable]);
 
   const back = useCallback(() => {
-    setStepIndex(Math.max(0, (shown?.index ?? stepIndex) - 1));
-  }, [shown, stepIndex]);
+    let i = (shown?.index ?? stepIndex) - 1;
+    while (i > 0 && !reachable(i)) i--;
+    setStepIndex(Math.max(0, i));
+  }, [shown, stepIndex, reachable]);
 
   // Do-it-with-me: run the action of the target the member is LOOKING at, then
   // advance. Reading it off `shown` rather than `stepIndex` means a tap during
@@ -345,6 +369,26 @@ export function TourProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, user?.id, user?.role, tourId, ready, start]);
 
+  /*
+    ⚠️ "STEP 4 OF 6" ON THE FIRST CARD ANYBODY SAW. The counter used the
+    registry's list, so every step whose target is not on this member's screen
+    (no crew, no time off, an empty list) was counted and never shown. It counts
+    what can be shown now: the steps whose targets are mounted, plus any that
+    wait on another screen.
+  */
+  const progress = useMemo(() => {
+    if (!tour || !shown) return { position: 1, total: 1 };
+    let position = 0;
+    let total = 0;
+    tour.steps.forEach((_, i) => {
+      if (i === shown.index || reachable(i)) {
+        total++;
+        if (i <= shown.index) position++;
+      }
+    });
+    return { position, total };
+  }, [tour, shown, reachable]);
+
   const value: TourContextValue = {
     start,
     stop,
@@ -364,8 +408,8 @@ export function TourProvider({ children }: { children: ReactNode }) {
           <TourOverlay
             rect={shown.rect}
             step={tour.steps[shown.index]!}
-            index={shown.index}
-            total={tour.steps.length}
+            position={progress.position}
+            total={progress.total}
             onNext={next}
             onBack={back}
             onSkip={stop}

@@ -41,6 +41,12 @@ export interface TourStep {
   optional?: boolean;
   /** Extra spotlight padding in px (default 8). */
   padding?: number;
+  /**
+   * Corner radius of the highlight ring, so it follows the SHAPE of what it
+   * rings: 999 for a round avatar or a pill in the tab bar, ~24 for a card.
+   * One square-ish ring for everything read as "near the thing", not "this".
+   */
+  radius?: number;
 }
 
 /** Context passed to a tour's `gate` so it can decide if it applies to the user. */
@@ -53,6 +59,8 @@ export interface TourGateContext {
   hasFeature: (feature: string) => boolean;
   canManageUsers: boolean;
   canCreateTasks: boolean;
+  /** Has the Team tab — the SAME rule the tab bar uses (`tabAccessFor`). */
+  team: boolean;
 }
 
 export interface TourDef {

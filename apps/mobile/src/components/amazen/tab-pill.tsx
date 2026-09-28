@@ -15,7 +15,7 @@ import { useTheme } from '../../contexts/theme-context';
 import { over } from '../../theme/amazen';
 import { AText } from './text';
 import { TAB_GLYPHS, TabMoreGlyph, type TabGlyphProps } from '../glyphs/tab-glyphs';
-import { TourTarget } from '../tour';
+import { TourTarget } from '../tour/tour-target';
 
 /**
  * The bar at the bottom, as a floating pill.
@@ -333,7 +333,7 @@ export function TabPill({
   const slots: TabPillItem[] = [
     ...items,
     ...(more
-      ? [{ key: '__more__', name: '__more__', label: more.label, focused: more.focused, badge: more.badge, onPress: more.onPress }]
+      ? [{ key: '__more__', name: '__more__', label: more.label, focused: more.focused, badge: more.badge, onPress: more.onPress, tourKey: 'tab-more' }]
       : []),
   ];
   const activeIndex = Math.max(0, slots.findIndex((s) => s.focused));

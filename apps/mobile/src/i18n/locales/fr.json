@@ -1516,7 +1516,7 @@
       "steps": {
         "greeting": {
           "title": "Bienvenue sur HBCField",
-          "body": "Voici votre écran d'accueil. Découvrez l'application en quelques étapes — vous pouvez revoir cette visite à tout moment depuis votre profil."
+          "body": "Voici votre accueil : en haut, la date du jour et votre nom. Voici une courte visite, que vous pouvez relancer à tout moment depuis votre profil."
         },
         "today": {
           "title": "Votre journée en un coup d'œil",
@@ -1527,12 +1527,12 @@
           "body": "Vos interventions et votre planning sont ici. Appuyez sur une carte pour l'ouvrir et voir les détails."
         },
         "tabsTasks": {
-          "title": "Interventions",
-          "body": "Retrouvez ici toutes les interventions qui vous sont assignées — recherchez, filtrez et ouvrez-les."
+          "title": "Tâches",
+          "body": "Toutes les tâches qui vous sont confiées, avec l'étape suivante à portée de doigt. Cherchez, filtrez et planifiez votre itinéraire ici."
         },
         "tabsClock": {
-          "title": "Pointer l'arrivée et le départ",
-          "body": "Commencez et terminez votre service, et prenez vos pauses, depuis l'onglet de pointage."
+          "title": "Temps",
+          "body": "Pointez votre arrivée et votre départ, prenez une pause et consultez vos heures du jour et de la semaine."
         },
         "tabsTimeOff": {
           "title": "Congés",
@@ -1540,66 +1540,154 @@
         },
         "profile": {
           "title": "Votre profil",
-          "body": "Votre compte, votre disponibilité, la langue, les notifications — et cette visite guidée — se trouvent ici."
+          "body": "Touchez votre photo pour votre compte, votre disponibilité, la langue, les notifications et ces visites guidées."
+        },
+        "needs": {
+          "title": "Ce qui vous attend",
+          "body": "Tout ce qui vous attend s'affiche d'abord ici : un document à envoyer, un poste à confirmer, une demande à traiter. Touchez-le pour vous en occuper."
+        },
+        "widgets": {
+          "title": "Vos widgets",
+          "body": "Les cartes comme celle-ci répondent à une question d'un coup d'œil : votre poste, vos tâches, votre équipe. Maintenez une carte appuyée pour la déplacer, la retirer ou en ajouter une autre."
+        },
+        "tabsTeam": {
+          "title": "Équipe",
+          "body": "Les personnes avec qui vous travaillez, et qui est disponible en ce moment. Touchez quelqu'un pour lui écrire."
+        },
+        "tabsChat": {
+          "title": "Messages",
+          "body": "Vos conversations avec le bureau et vos collègues."
+        },
+        "tabsMore": {
+          "title": "Plus",
+          "body": "Tout le reste se trouve ici : congés, documents, clients et les pages que vous gérez."
         }
       }
     },
     "tasks": {
-      "title": "Interventions",
+      "title": "Tâches",
       "steps": {
         "intro": {
-          "title": "Vos interventions",
-          "body": "Chaque intervention qui vous est assignée apparaît ici, la plus récente en premier."
+          "title": "Vos tâches",
+          "body": "Toutes les tâches qui vous sont confiées, triées pour que la prochaine soit en haut."
         },
         "search": {
           "title": "Rechercher",
-          "body": "Trouvez rapidement une intervention par titre, client ou adresse."
+          "body": "Trouvez une tâche par son titre, son client ou son adresse."
         },
         "filters": {
-          "title": "Filtrer",
-          "body": "Affinez la liste par statut — active, terminée ou bloquée."
+          "title": "Filtrer par état",
+          "body": "Affichez seulement les tâches actives, bloquées ou terminées. Les chiffres indiquent combien il y en a."
         },
         "card": {
-          "title": "Ouvrir une intervention",
-          "body": "Appuyez sur une intervention pour voir tous les détails, mettre à jour son statut et ajouter des photos ou des notes."
+          "title": "Ouvrir une tâche",
+          "body": "Touchez une tâche pour tout voir, la mettre à jour et ajouter des photos ou des notes."
+        },
+        "newJob": {
+          "title": "Nouvelle tâche",
+          "body": "Créez vous-même une tâche, pour vous ou pour un membre de votre équipe."
+        },
+        "scope": {
+          "title": "Les miennes ou toutes",
+          "body": "Passez de vos propres tâches à toutes les tâches des espaces que vous supervisez."
+        },
+        "period": {
+          "title": "Maintenant, à venir, historique",
+          "body": "Ce qui est prévu aujourd'hui, ce qui est planifié plus tard et ce qui est déjà terminé."
+        },
+        "route": {
+          "title": "Planifier mon itinéraire",
+          "body": "Mettez les arrêts du jour dans le meilleur ordre et ouvrez-les dans votre application de navigation."
+        },
+        "next": {
+          "title": "À suivre",
+          "body": "La prochaine tâche, avec son étape suivante en un seul bouton : en route, arrivé, commencer, terminé."
         }
       }
     },
     "taskDetail": {
-      "title": "Détails de l'intervention",
+      "title": "Détails de la tâche",
       "steps": {
         "intro": {
-          "title": "Détails de l'intervention",
-          "body": "Tout sur cette intervention — lieu, description, client et historique — au même endroit."
+          "title": "La tâche",
+          "body": "Où en est la tâche, son retard et son urgence, au-dessus de son titre."
         },
         "status": {
-          "title": "Progression",
-          "body": "Suivez l'intervention à travers ses étapes, de l'acceptation à la clôture."
+          "title": "Ses étapes",
+          "body": "Chaque barre est une étape de la tâche. Vous voyez ici à quelle étape vous êtes et ce qui suit."
         },
         "actions": {
-          "title": "Mettre à jour l'intervention",
-          "body": "Acceptez, démarrez, bloquez ou terminez l'intervention ici au fil de votre travail."
+          "title": "L'étape suivante",
+          "body": "Un bouton fait avancer la tâche : en route, arrivé, commencer, terminé. Il affiche toujours l'étape suivante."
+        },
+        "facts": {
+          "title": "Quand, où, qui",
+          "body": "L'heure, l'adresse, l'espace, qui s'en charge et qui l'a envoyée."
+        },
+        "map": {
+          "title": "Le lieu",
+          "body": "Touchez la carte pour ouvrir l'adresse dans votre application de cartes."
+        },
+        "checklist": {
+          "title": "Liste de contrôle",
+          "body": "Cochez chaque point au fur et à mesure. Certains points ne s'ouvrent qu'à une étape précise."
+        },
+        "files": {
+          "title": "Photos et fichiers",
+          "body": "Prenez une photo ou choisissez-en une dans votre galerie. Le bureau la voit aussitôt."
+        },
+        "activity": {
+          "title": "Activité et notes",
+          "body": "Tout ce qui s'est passé sur cette tâche. Écrivez une note pour le bureau en bas."
+        },
+        "timer": {
+          "title": "Temps sur cette tâche",
+          "body": "Depuis combien de temps vous êtes sur la tâche, et si votre itinéraire est enregistré."
+        },
+        "navigate": {
+          "title": "Naviguer",
+          "body": "Ouvrez l'itinéraire jusqu'à la tâche dans votre application de navigation."
+        },
+        "more": {
+          "title": "Autres actions",
+          "body": "Signalez un problème, bloquez la tâche ou utilisez les autres actions de cette tâche."
         }
       }
     },
     "attendance": {
-      "title": "Pointer l'arrivée et le départ",
+      "title": "Temps",
       "steps": {
         "intro": {
-          "title": "Pointage",
-          "body": "Suivez ici vos heures de travail — pointez à l'arrivée quand vous commencez et au départ quand vous finissez."
+          "title": "Votre temps",
+          "body": "Votre poste, vos pauses et vos heures, tout sur cette page."
         },
         "clock": {
-          "title": "Pointer l'arrivée / le départ",
-          "body": "Une seule pression pour commencer ou terminer votre service. Votre position confirme que vous êtes au bon endroit."
+          "title": "La pointeuse",
+          "body": "Pointez en arrivant et en partant. Pendant que vous travaillez, elle affiche votre temps, avec des boutons pour une pause ou un signalement."
         },
         "status": {
-          "title": "Votre statut",
-          "body": "Voyez en un coup d'œil si vous êtes en service et combien de temps vous avez travaillé aujourd'hui."
+          "title": "Aujourd'hui",
+          "body": "Ce que vous avez fait aujourd'hui : quand vous avez pointé, vos pauses et une note sur votre travail."
         },
         "history": {
-          "title": "Historique",
-          "body": "Consultez vos services, pauses et heures récents."
+          "title": "Derniers postes",
+          "body": "Vos derniers postes, avec leurs horaires et leurs pauses."
+        },
+        "places": {
+          "title": "Où vous travaillez",
+          "body": "Les lieux où vous pouvez pointer, et à quelle distance vous êtes de chacun."
+        },
+        "week": {
+          "title": "Cette semaine",
+          "body": "Vos heures jour par jour, avec les totaux de la semaine et du mois."
+        },
+        "leave": {
+          "title": "Congés",
+          "body": "Vos prochains congés et les jours utilisés cette année."
+        },
+        "timeOffButton": {
+          "title": "Demander un congé",
+          "body": "Touchez ici pour demander des jours de congé. Votre responsable reçoit la demande pour l'approuver."
         }
       }
     },
@@ -1607,16 +1695,16 @@
       "title": "Congés",
       "steps": {
         "intro": {
-          "title": "Congés",
-          "body": "Demandez des jours de congé et suivez vos demandes depuis cet écran."
+          "title": "Votre année jusqu'ici",
+          "body": "Jours utilisés, congés à venir, demandes en attente de réponse et demandes refusées."
         },
         "request": {
-          "title": "Demander un congé",
-          "body": "Choisissez vos dates et un motif — votre responsable le reçoit pour approbation."
+          "title": "Choisissez vos jours",
+          "body": "Choisissez les jours dans le calendrier pour demander un congé. Votre responsable reçoit la demande pour l'approuver."
         },
         "list": {
           "title": "Vos demandes",
-          "body": "Suivez chaque demande — en attente, approuvée ou refusée."
+          "body": "Chaque demande et son état : en attente, approuvée ou refusée."
         }
       }
     },
@@ -1624,20 +1712,66 @@
       "title": "Votre profil",
       "steps": {
         "intro": {
-          "title": "Votre profil",
-          "body": "Gérez votre compte et vos préférences d'application depuis cet écran."
+          "title": "Vous",
+          "body": "Votre photo, votre nom et votre organisation. Touchez la photo pour la changer."
         },
         "availability": {
           "title": "Disponibilité",
-          "body": "Indiquez si vous êtes disponible, occupé ou absent pour que votre équipe connaisse votre statut."
+          "body": "Indiquez à votre équipe si vous êtes disponible, occupé ou absent."
         },
         "menu": {
-          "title": "Paramètres",
-          "body": "La langue, l'apparence, les notifications, la sécurité et l'assistance se trouvent tous dans ce menu."
+          "title": "À vous",
+          "body": "Votre équipement, vos documents, et si tout ce qui vient de ce téléphone a été envoyé."
         },
         "guide": {
           "title": "Visites guidées",
-          "body": "Revoyez n'importe quelle présentation à tout moment — appuyez ici pour ouvrir les visites."
+          "body": "Relancez ici n'importe laquelle de ces visites, quand vous le souhaitez."
+        },
+        "settings": {
+          "title": "Réglages",
+          "body": "Notifications, apparence, format de l'heure, langue et votre compte."
+        }
+      }
+    },
+    "team": {
+      "title": "Équipe",
+      "steps": {
+        "intro": {
+          "title": "Votre équipe",
+          "body": "Les personnes avec qui vous travaillez, les responsables d'abord."
+        },
+        "messages": {
+          "title": "Messages",
+          "body": "Vos conversations. Le chiffre indique combien de messages vous n'avez pas lus."
+        },
+        "search": {
+          "title": "Trouver quelqu'un",
+          "body": "Cherchez par nom, poste ou espace."
+        },
+        "filters": {
+          "title": "Qui est là",
+          "body": "Voyez qui est disponible, occupé ou absent en ce moment."
+        },
+        "person": {
+          "title": "Écrire à quelqu'un",
+          "body": "Touchez un collègue pour commencer une conversation."
+        }
+      }
+    },
+    "more": {
+      "title": "Plus",
+      "steps": {
+        "intro": {
+          "title": "Plus",
+          "body": "Tout ce qui ne figure pas dans la barre du bas."
+        },
+        "tiles": {
+          "title": "Vos pages",
+          "body": "Les pages qui ne tiennent pas dans la barre, à portée de doigt."
+        },
+        "manage": {
+          "title": "Ce que vous gérez",
+          "body": "Les demandes et validations qui vous attendent, avec un chiffre quand quelque chose attend."
         }
       }
     }

@@ -1515,8 +1515,8 @@
       "title": "Tour di benvenuto",
       "steps": {
         "greeting": {
-          "title": "Le diamo il benvenuto in HBCField",
-          "body": "Questa è la Sua schermata iniziale. Ecco un breve tour dell'app: può rivederlo quando vuole dal Suo profilo."
+          "title": "Benvenuto in HBCField",
+          "body": "Questa è la Sua home: in alto la data di oggi e il Suo nome. Ecco un breve tour, che può rivedere in qualsiasi momento dal Suo profilo."
         },
         "today": {
           "title": "La Sua giornata in sintesi",
@@ -1528,11 +1528,11 @@
         },
         "tabsTasks": {
           "title": "Lavori",
-          "body": "Qui trova ogni lavoro assegnato a Lei: cerchi, filtri e apra i lavori."
+          "body": "Tutti i lavori che Le sono stati assegnati, con il passo successivo a portata di tocco. Qui cerca, filtra e pianifica il Suo percorso."
         },
         "tabsClock": {
-          "title": "Timbrare entrata e uscita",
-          "body": "Inizi e termini il turno, e faccia le pause, dalla scheda di timbratura."
+          "title": "Tempo",
+          "body": "Timbri l'entrata e l'uscita, faccia una pausa e veda le Sue ore di oggi e di questa settimana."
         },
         "tabsTimeOff": {
           "title": "Permessi",
@@ -1540,7 +1540,27 @@
         },
         "profile": {
           "title": "Il Suo profilo",
-          "body": "Il Suo account, la disponibilità, la lingua, le notifiche e questo tour guidato si trovano qui."
+          "body": "Tocchi la Sua foto per l'account, la disponibilità, la lingua, le notifiche e questi tour guidati."
+        },
+        "needs": {
+          "title": "Cosa La aspetta",
+          "body": "Tutto ciò che La aspetta compare prima qui: un documento da caricare, un turno da confermare, una richiesta a cui rispondere. Lo tocchi per occuparsene."
+        },
+        "widgets": {
+          "title": "I Suoi widget",
+          "body": "Schede come questa rispondono a una domanda a colpo d'occhio: il Suo turno, i Suoi lavori, la Sua squadra. Tenga premuta una scheda per spostarla, rimuoverla o aggiungerne un'altra."
+        },
+        "tabsTeam": {
+          "title": "Team",
+          "body": "Con chi lavora e chi è disponibile in questo momento. Tocchi una persona per inviarle un messaggio."
+        },
+        "tabsChat": {
+          "title": "Messaggi",
+          "body": "Le Sue conversazioni con l'ufficio e con i colleghi."
+        },
+        "tabsMore": {
+          "title": "Altro",
+          "body": "Tutto il resto è qui: assenze, documenti, clienti e le pagine che gestisce."
         }
       }
     },
@@ -1549,19 +1569,39 @@
       "steps": {
         "intro": {
           "title": "I Suoi lavori",
-          "body": "Ogni lavoro assegnato a Lei compare qui, dal più recente."
+          "body": "Tutti i lavori che Le sono stati assegnati, ordinati in modo che il prossimo sia in alto."
         },
         "search": {
           "title": "Cerca",
-          "body": "Trovi rapidamente un lavoro per titolo, cliente o indirizzo."
+          "body": "Trovi un lavoro per titolo, cliente o indirizzo."
         },
         "filters": {
-          "title": "Filtra",
-          "body": "Restringa l'elenco per stato: attivo, completato o bloccato."
+          "title": "Filtra per stato",
+          "body": "Mostri solo i lavori attivi, bloccati o conclusi. I numeri indicano quanti ce ne sono."
         },
         "card": {
-          "title": "Apri un lavoro",
-          "body": "Tocchi un lavoro per vederne tutti i dettagli, aggiornarne lo stato e aggiungere foto o note."
+          "title": "Aprire un lavoro",
+          "body": "Tocchi un lavoro per vedere tutto, aggiornarlo e aggiungere foto o note."
+        },
+        "newJob": {
+          "title": "Nuovo lavoro",
+          "body": "Crei Lei stesso un lavoro, per sé o per qualcuno della Sua squadra."
+        },
+        "scope": {
+          "title": "Miei o di tutti",
+          "body": "Passi dai Suoi lavori a tutti i lavori degli spazi che supervisiona."
+        },
+        "period": {
+          "title": "Ora, in arrivo, storico",
+          "body": "Cosa c'è oggi, cosa è previsto più avanti e cosa è già concluso."
+        },
+        "route": {
+          "title": "Pianifica il percorso",
+          "body": "Metta le fermate di oggi nell'ordine migliore e le apra nella Sua app di navigazione."
+        },
+        "next": {
+          "title": "Il prossimo",
+          "body": "Il prossimo lavoro, con il passo successivo in un solo pulsante: in viaggio, arrivato, inizia, fatto."
         }
       }
     },
@@ -1569,54 +1609,102 @@
       "title": "Dettagli del lavoro",
       "steps": {
         "intro": {
-          "title": "Dettagli del lavoro",
-          "body": "Tutto su questo lavoro: luogo, descrizione, cliente e cronologia, in un unico posto."
+          "title": "Il lavoro",
+          "body": "A che punto è il lavoro, quanto è in ritardo e quanto è urgente, sopra il titolo."
         },
         "status": {
-          "title": "Avanzamento",
-          "body": "Segua il lavoro attraverso le sue fasi, da accettato a completato."
+          "title": "I suoi passi",
+          "body": "Ogni barra è un passo del lavoro. Qui vede a quale passo si trova e cosa viene dopo."
         },
         "actions": {
-          "title": "Aggiorna il lavoro",
-          "body": "Accetti, avvii, blocchi o completi il lavoro da qui mentre procede."
+          "title": "Il passo successivo",
+          "body": "Un pulsante fa avanzare il lavoro: in viaggio, arrivato, inizia, fatto. Mostra sempre il passo successivo."
+        },
+        "facts": {
+          "title": "Quando, dove, chi",
+          "body": "L'orario, l'indirizzo, lo spazio, chi lo svolge e chi lo ha inviato."
+        },
+        "map": {
+          "title": "Il luogo",
+          "body": "Tocchi la mappa per aprire l'indirizzo nella Sua app di mappe."
+        },
+        "checklist": {
+          "title": "Lista di controllo",
+          "body": "Spunti ogni voce man mano. Alcune voci si aprono solo a un certo passo."
+        },
+        "files": {
+          "title": "Foto e file",
+          "body": "Scatti una foto o ne scelga una dalla galleria. L'ufficio la vede subito."
+        },
+        "activity": {
+          "title": "Attività e note",
+          "body": "Tutto ciò che è successo su questo lavoro. In basso scriva una nota per l'ufficio."
+        },
+        "timer": {
+          "title": "Tempo su questo lavoro",
+          "body": "Da quanto tempo è sul lavoro e se il Suo percorso viene registrato."
+        },
+        "navigate": {
+          "title": "Naviga",
+          "body": "Apra le indicazioni per il lavoro nella Sua app di navigazione."
+        },
+        "more": {
+          "title": "Altre azioni",
+          "body": "Segnali un problema, blocchi il lavoro o usi le altre azioni di questo lavoro."
         }
       }
     },
     "attendance": {
-      "title": "Timbrare entrata e uscita",
+      "title": "Tempo",
       "steps": {
         "intro": {
-          "title": "Presenze",
-          "body": "Registri qui le Sue ore di lavoro: timbri l'entrata quando inizia e l'uscita quando finisce."
+          "title": "Il Suo tempo",
+          "body": "Il Suo turno, le Sue pause e le Sue ore, tutto in questa pagina."
         },
         "clock": {
-          "title": "Timbra entrata / uscita",
-          "body": "Un tocco per iniziare o terminare il turno. La Sua posizione conferma che si trova nel posto giusto."
+          "title": "L'orologio",
+          "body": "Timbri l'entrata quando inizia e l'uscita quando finisce. Mentre lavora mostra il Suo tempo, con pulsanti per una pausa o una segnalazione."
         },
         "status": {
-          "title": "Il Suo stato",
-          "body": "Veda a colpo d'occhio se è in servizio e quanto ha lavorato oggi."
+          "title": "Oggi",
+          "body": "Cosa ha fatto oggi: quando ha timbrato, le Sue pause e una nota sul Suo lavoro."
         },
         "history": {
-          "title": "Cronologia",
-          "body": "Riveda i Suoi turni, le pause e le ore recenti."
+          "title": "Ultimi turni",
+          "body": "I Suoi ultimi turni, con orari e pause."
+        },
+        "places": {
+          "title": "Dove lavora",
+          "body": "I luoghi in cui può timbrare e quanto dista da ciascuno."
+        },
+        "week": {
+          "title": "Questa settimana",
+          "body": "Le Sue ore giorno per giorno, con i totali della settimana e del mese."
+        },
+        "leave": {
+          "title": "Assenze",
+          "body": "Le Sue prossime assenze e i giorni usati quest'anno."
+        },
+        "timeOffButton": {
+          "title": "Chiedere un'assenza",
+          "body": "Tocchi qui per chiedere giorni liberi. Il Suo responsabile riceve la richiesta da approvare."
         }
       }
     },
     "timeOff": {
-      "title": "Permessi",
+      "title": "Assenze",
       "steps": {
         "intro": {
-          "title": "Permessi",
-          "body": "Richieda giorni di permesso e segua le Sue richieste da qui."
+          "title": "Il Suo anno finora",
+          "body": "Giorni usati, assenze in arrivo, richieste in attesa di risposta e richieste rifiutate."
         },
         "request": {
-          "title": "Richiedi un permesso",
-          "body": "Scelga le date e un motivo: il Suo responsabile lo riceve per l'approvazione."
+          "title": "Scelga i giorni",
+          "body": "Scelga i giorni sul calendario per chiedere un'assenza. Il Suo responsabile riceve la richiesta da approvare."
         },
         "list": {
           "title": "Le Sue richieste",
-          "body": "Segua ogni richiesta: in attesa, approvata o rifiutata."
+          "body": "Ogni richiesta e il suo stato: in attesa, approvata o rifiutata."
         }
       }
     },
@@ -1624,20 +1712,66 @@
       "title": "Il Suo profilo",
       "steps": {
         "intro": {
-          "title": "Il Suo profilo",
-          "body": "Gestisca il Suo account e le preferenze dell'app da qui."
+          "title": "Lei",
+          "body": "La Sua foto, il Suo nome e la Sua organizzazione. Tocchi la foto per cambiarla."
         },
         "availability": {
           "title": "Disponibilità",
-          "body": "Si imposti come disponibile, occupato o assente così che il Suo team conosca il Suo stato."
+          "body": "Dica alla Sua squadra se è disponibile, occupato o assente."
         },
         "menu": {
-          "title": "Impostazioni",
-          "body": "Lingua, aspetto, notifiche, sicurezza e assistenza si trovano tutti in questo menu."
+          "title": "Suo",
+          "body": "La Sua attrezzatura, i Suoi documenti e se tutto da questo telefono è stato inviato."
         },
         "guide": {
           "title": "Tour guidati",
-          "body": "Riveda qualsiasi guida quando vuole: tocchi qui per aprire i tour."
+          "body": "Riveda qui uno qualsiasi di questi tour, quando vuole."
+        },
+        "settings": {
+          "title": "Impostazioni",
+          "body": "Notifiche, aspetto, formato dell'ora, lingua e il Suo account."
+        }
+      }
+    },
+    "team": {
+      "title": "Team",
+      "steps": {
+        "intro": {
+          "title": "La Sua squadra",
+          "body": "Le persone con cui lavora, prima i responsabili."
+        },
+        "messages": {
+          "title": "Messaggi",
+          "body": "Le Sue conversazioni. Il numero indica quanti messaggi non ha ancora letto."
+        },
+        "search": {
+          "title": "Trovare qualcuno",
+          "body": "Cerchi per nome, ruolo o spazio."
+        },
+        "filters": {
+          "title": "Chi c'è",
+          "body": "Veda chi è disponibile, occupato o assente in questo momento."
+        },
+        "person": {
+          "title": "Scrivere a qualcuno",
+          "body": "Tocchi un collega per iniziare una conversazione."
+        }
+      }
+    },
+    "more": {
+      "title": "Altro",
+      "steps": {
+        "intro": {
+          "title": "Altro",
+          "body": "Tutto ciò che non è nella barra in basso."
+        },
+        "tiles": {
+          "title": "Le Sue pagine",
+          "body": "Le pagine che non entrano nella barra, a portata di tocco."
+        },
+        "manage": {
+          "title": "Cosa gestisce",
+          "body": "Richieste e approvazioni che La aspettano, con un numero quando qualcosa è in attesa."
         }
       }
     }

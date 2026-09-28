@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { useProfileAvatar } from '../../lib/use-profile-avatar';
 import { AText } from './text';
+import { TourTarget } from '../tour/tour-target';
 
 /**
  * The top of a screen — a date, a name, and who you are.
@@ -34,6 +35,8 @@ export interface HeaderAction {
   a11yLabel?: string;
   active?: boolean;
   onPress: () => void;
+  /** Registers this button for a guided tour step, under this key. */
+  tourKey?: string;
 }
 
 export function ScreenHeader({
@@ -48,6 +51,7 @@ export function ScreenHeader({
   leading,
   showAvatar = true,
   style,
+  tour,
 }: {
   title: string;
   subtitle?: string;
@@ -97,6 +101,13 @@ export function ScreenHeader({
   /** Off on the Profile page — the avatar is a door to the page you are on. */
   showAvatar?: boolean;
   style?: ViewStyle;
+  /**
+   * Guided-tour anchors on the header's PARTS — the date and name, and the
+   * avatar. ⚠️ Never wrap the whole header: it carries the status bar's inset
+   * as padding, so a ring around it sat above the words it described and
+   * swallowed the empty strip under the clock.
+   */
+  tour?: { title?: string; avatar?: string };
 }) {
   const { amazen } = useTheme();
   const { i18n } = useTranslation();
@@ -154,7 +165,7 @@ export function ScreenHeader({
             </AText>
           </View>
         ) : (
-          <>
+          <TitleAnchor name={tour?.title}>
             <AText variant="caption" tone="onGradient" numberOfLines={1} style={{ fontSize: 13 }}>
               {date}
             </AText>
@@ -194,7 +205,7 @@ export function ScreenHeader({
             >
               {title}
             </AText>
-          </>
+          </TitleAnchor>
         )}
       </View>
 
@@ -206,8 +217,8 @@ export function ScreenHeader({
           anything about widgets. These are the only things in this header that
           change, so they should be the only things that have to be read.
         */
+        <Anchor key={a.label} name={a.tourKey}>
         <Pressable
-          key={a.label}
           onPress={a.onPress}
           accessibilityRole="button"
           accessibilityLabel={a.a11yLabel ?? a.label}
@@ -229,9 +240,11 @@ export function ScreenHeader({
             {a.label}
           </AText>
         </Pressable>
+        </Anchor>
       ))}
 
       {showAvatar ? (
+      <Anchor name={tour?.avatar}>
       <Pressable
           onPress={onPressAvatar}
           accessibilityRole="button"
@@ -256,8 +269,26 @@ export function ScreenHeader({
             </AText>
           )}
         </Pressable>
+      </Anchor>
       ) : null}
     </View>
+  );
+}
+
+/** A tour anchor when a key is given; otherwise nothing is added to the tree. */
+function Anchor({ name, children }: { name?: string; children: React.ReactNode }) {
+  return name ? <TourTarget name={name}>{children}</TourTarget> : <>{children}</>;
+}
+
+/**
+ * The date and the name, as one target sized to the TEXT — `alignSelf` keeps
+ * the ring on the words, not on the empty width up to the buttons.
+ */
+function TitleAnchor({ name, children }: { name?: string; children: React.ReactNode }) {
+  return name ? (
+    <TourTarget name={name} style={{ alignSelf: 'flex-start', maxWidth: '100%' }}>{children}</TourTarget>
+  ) : (
+    <>{children}</>
   );
 }
 

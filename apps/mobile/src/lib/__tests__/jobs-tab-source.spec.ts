@@ -74,7 +74,11 @@ describe('the one status write', () => {
 
 describe('the tour, the tablet, the list', () => {
   it('the tour still finds its four targets', () => {
-    for (const name of ['tasks-header', 'tasks-search', 'tasks-filters', 'tasks-card']) {
+    // The header anchors its TITLE through ScreenHeader's `tour` prop, not a
+    // wrapper — a wrapper rang the status bar too. `tour-registry.spec.ts`
+    // checks every step of every tour against the source.
+    expect(all).toContain(`tour={{ title: 'tasks-header' }}`);
+    for (const name of ['tasks-search', 'tasks-filters', 'tasks-card']) {
       expect(all).toContain(`name="${name}"`);
     }
   });

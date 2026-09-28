@@ -12,7 +12,7 @@ import { ROUTES } from '../../lib/constants';
 import { OfflineBanner } from '../../offline/components/offline-banner';
 import { FreshnessLabel } from '../../offline/components/freshness-label';
 import { Ground, AText, ScreenHeader, WellDivider, useTabSafe } from '../amazen';
-import { TourTarget } from '../tour';
+import { TourTarget, useTourScroll } from '../tour';
 import { centeredContent } from '../screen-container';
 import { isCanceled, isClosed, isMine, isUnderWay, stepLabelFor, stepsFor } from '../home/my-work';
 import { useTaskFlows } from '../home/use-task-flows';
@@ -158,6 +158,7 @@ export function JobsScreen({
   /* ---------------- the pieces ---------------- */
 
   const wide = r.isTablet && !r.isSplit ? centeredContent(720) : null;
+  const tourScroll = useTourScroll();
   const pad = amazen.space(4);
 
   /*
@@ -167,17 +168,17 @@ export function JobsScreen({
     scrolls away and nothing in it can move the column.
   */
   const header = (
-    <TourTarget name="tasks-header">
-      <ScreenHeader
-        title={t('jobsList.title')}
-        actions={canCreateJobs(user as never) ? [{
-          label: `＋ ${t('jobsList.newJob')}`,
-          a11yLabel: t('jobsList.newJob'),
-          onPress: () => router.push('/(app)/(tabs)/create-task' as Href),
-        }] : undefined}
-        style={wide ?? undefined}
-      />
-    </TourTarget>
+    <ScreenHeader
+      title={t('jobsList.title')}
+      tour={{ title: 'tasks-header' }}
+      actions={canCreateJobs(user as never) ? [{
+        label: `＋ ${t('jobsList.newJob')}`,
+        a11yLabel: t('jobsList.newJob'),
+        onPress: () => router.push('/(app)/(tabs)/create-task' as Href),
+        tourKey: 'tasks-new',
+      }] : undefined}
+      style={wide ?? undefined}
+    />
   );
 
   const listHeader = (
@@ -186,6 +187,7 @@ export function JobsScreen({
         <SearchField value={search} onChange={setSearch} placeholder={t('jobsList.search')} clearLabel={t('common.clear')} />
       </TourTarget>
       {oversee ? (
+        <TourTarget name="tasks-scope">
         <Segmented
           options={[
             { key: 'mine', label: t('jobsList.scope.mine'), count: list.counts.mine },
@@ -194,8 +196,11 @@ export function JobsScreen({
           value={mineOnly ? 'mine' : 'all'}
           onChange={(k) => setMineOnly(k === 'mine')}
         />
+        </TourTarget>
       ) : null}
-      <Segmented options={PERIODS.map((p) => ({ key: p, label: t(`jobsList.period.${p}`) }))} value={period} onChange={changePeriod} />
+      <TourTarget name="tasks-period">
+        <Segmented options={PERIODS.map((p) => ({ key: p, label: t(`jobsList.period.${p}`) }))} value={period} onChange={changePeriod} />
+      </TourTarget>
       <TourTarget name="tasks-filters">
         <FilterChips options={filterOptions} value={filter} onChange={setFilter} />
       </TourTarget>
@@ -203,11 +208,13 @@ export function JobsScreen({
       {list.localUpdatedAt !== null ? (
         <View style={{ alignItems: 'flex-end', marginTop: -amazen.space(2) }}><FreshnessLabel at={list.localUpdatedAt} /></View>
       ) : null}
-      {routeShown ? <RouteRow stops={routeStops} onPress={() => router.push('/(app)/route-planner' as Href)} /> : null}
+      {routeShown ? <TourTarget name="tasks-route"><RouteRow stops={routeStops} onPress={() => router.push('/(app)/route-planner' as Href)} /></TourTarget> : null}
       {next ? (
         <View style={{ gap: amazen.space(2) }}>
           <SectionLabel tone="accent">{t('tasks.myWork.next.label')}</SectionLabel>
-          <NextUp task={next} flows={flows} writeStatus={writeStatus} onOpen={(sheet) => open(next, sheet)} onChanged={() => void list.fetchTasks()} />
+          <TourTarget name="tasks-next">
+            <NextUp task={next} flows={flows} writeStatus={writeStatus} onOpen={(sheet) => open(next, sheet)} onChanged={() => void list.fetchTasks()} />
+          </TourTarget>
         </View>
       ) : null}
       {list.isLoading && tasks.length > 0 ? <ActivityIndicator size="small" color={c.accent} /> : null}
@@ -239,6 +246,7 @@ export function JobsScreen({
     <Ground style={{ flex: 1 }}>
       {header}
       <SectionList
+        {...tourScroll}
         sections={sections}
         keyExtractor={(item) => item.id}
         stickySectionHeadersEnabled={false}

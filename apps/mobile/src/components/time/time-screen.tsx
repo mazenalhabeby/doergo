@@ -24,7 +24,7 @@ import { ShiftClockCardView } from '../home/shift-clock-card';
 import { scheduleFor } from '../home/shift-state';
 import { useScheduleTotals } from '../home/use-schedule-totals';
 import { TimePickerModal } from '../time-picker-modal';
-import { TourTarget } from '../tour';
+import { TourTarget, useTourScroll } from '../tour';
 import { TimeBanners, TimeLink } from './time-banners';
 import { TimeHistory } from './time-history';
 import { placesView } from './time-logic';
@@ -229,17 +229,18 @@ export function TimeScreen() {
     : 0;
   const finishedToday = !entry ? totals.lastToday : null;
   const wide = r.isTablet ? centeredContent(720) : null;
+  const tourScroll = useTourScroll();
 
   return (
     <Ground style={{ flex: 1 }}>
-      <TourTarget name="attendance-header">
-        <ScreenHeader
-          title={t('tabs.attendance')}
-          actions={timeOffOn ? [{ label: t('time.off.title', 'Time off'), onPress: () => setRequestOpen(true) }] : undefined}
-          style={wide ?? undefined}
-        />
-      </TourTarget>
+      <ScreenHeader
+        title={t('tabs.attendance')}
+        tour={{ title: 'attendance-header' }}
+        actions={timeOffOn ? [{ label: t('time.off.title', 'Time off'), onPress: () => setRequestOpen(true), tourKey: 'attendance-timeoff' }] : undefined}
+        style={wide ?? undefined}
+      />
       <ScrollView
+        {...tourScroll}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe, gap: amazen.space(3) }, wide]}
@@ -269,15 +270,23 @@ export function TimeScreen() {
           />
         </TourTarget>
 
-        <TimePlaces tiles={tiles} />
+        <TourTarget name="attendance-places">
+          <TimePlaces tiles={tiles} />
+        </TourTarget>
 
         <TourTarget name="attendance-status">
           <TimeToday running={entry} finished={finishedToday} breaks={shift.breaks?.todayBreaks ?? []} />
         </TourTarget>
 
-        <TimeWeek weekDays={totals.weekDays} runningMinutes={runningMinutes} monthMinutes={totals.monthMinutes} now={now} />
+        <TourTarget name="attendance-week">
+          <TimeWeek weekDays={totals.weekDays} runningMinutes={runningMinutes} monthMinutes={totals.monthMinutes} now={now} />
+        </TourTarget>
 
-        {timeOffOn ? <TimeOffSection leave={leave} requestOpen={requestOpen} setRequestOpen={setRequestOpen} now={now} /> : null}
+        {timeOffOn ? (
+          <TourTarget name="attendance-leave">
+            <TimeOffSection leave={leave} requestOpen={requestOpen} setRequestOpen={setRequestOpen} now={now} />
+          </TourTarget>
+        ) : null}
 
         <TourTarget name="attendance-history">
           <TimeHistory entries={recent} now={now} />

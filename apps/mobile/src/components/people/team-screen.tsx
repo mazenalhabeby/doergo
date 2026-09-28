@@ -15,6 +15,7 @@ import { centeredContent } from '../screen-container';
 import { RoundButton, SectionLabel } from '../job/job-ui';
 import { MessagesGlyph } from '../glyphs/glyphs';
 import { PersonAvatar, PRESENCE_DOT, presenceKey } from './person-avatar';
+import { TourTarget, useTourScroll } from '../tour/tour-target';
 
 type Filter = 'all' | 'AVAILABLE' | 'BUSY' | 'AWAY';
 
@@ -85,6 +86,9 @@ export function TeamScreen() {
     (filter === 'all' || presenceKey(x.presence) === filter)
     && (!q || `${x.firstName} ${x.lastName} ${x.position ?? ''} ${x.spaceName ?? ''}`.toLowerCase().includes(q));
   const count = (k: Filter) => all.filter((x) => presenceKey(x.presence) === k).length;
+  // The one row the tour rings: the first person on screen, whichever section it is in.
+  const firstShownId = all.find(keep)?.id ?? null;
+  const tourScroll = useTourScroll();
   const message = (id: string) => router.push({ pathname: '/chat', params: { userId: id } } as never);
 
   const row = (x: Colleague) => (
@@ -111,7 +115,7 @@ export function TeamScreen() {
       <View style={{ gap: amazen.space(2) }}>
         <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(1) }}>{label}</SectionLabel>
         <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
-          {shown.map((x, i) => <React.Fragment key={x.id}>{i > 0 ? <WellDivider /> : null}{row(x)}</React.Fragment>)}
+          {shown.map((x, i) => <React.Fragment key={x.id}>{i > 0 ? <WellDivider /> : null}{x.id === firstShownId ? <TourTarget name="team-person">{row(x)}</TourTarget> : row(x)}</React.Fragment>)}
         </Well>
       </View>
     );
@@ -121,15 +125,18 @@ export function TeamScreen() {
     <Ground style={{ flex: 1 }}>
       <ScreenHeader
         title={t('team.title', 'Team')}
-        actions={canChat ? [{ label: unread ? `${t('chat.title', 'Messages')} · ${unread}` : t('chat.title', 'Messages'), onPress: () => router.push('/chat' as Href), active: unread > 0 }] : undefined}
+        tour={{ title: 'team-header' }}
+        actions={canChat ? [{ label: unread ? `${t('chat.title', 'Messages')} · ${unread}` : t('chat.title', 'Messages'), onPress: () => router.push('/chat' as Href), active: unread > 0, tourKey: 'team-messages' }] : undefined}
         style={wide ?? undefined}
       />
       <ScrollView
+        {...tourScroll}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe, gap: amazen.space(3) }, wide]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} tintColor={c.accent} colors={[c.accent]} />}
       >
+        <TourTarget name="team-search">
         <TextInput
           value={query}
           onChangeText={setQuery}
@@ -137,6 +144,8 @@ export function TeamScreen() {
           placeholderTextColor={c.inkOnGlass}
           style={{ backgroundColor: c.glass, borderWidth: 1, borderColor: c.lineGlass, borderRadius: 16, paddingHorizontal: amazen.space(3.5), paddingVertical: amazen.space(3), color: c.inkStrong, fontFamily: amazen.font.sans, fontSize: 14 }}
         />
+        </TourTarget>
+        <TourTarget name="team-filters">
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: amazen.space(1.5) }}>
           {(['all', 'AVAILABLE', 'BUSY', 'AWAY'] as const).map((k) => {
             const on = k === filter;
@@ -152,6 +161,7 @@ export function TeamScreen() {
             );
           })}
         </ScrollView>
+        </TourTarget>
 
         {colleagues === null ? (
           <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(6) }}>{t('common.loading', 'Loading…')}</AText>

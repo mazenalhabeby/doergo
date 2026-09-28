@@ -1512,11 +1512,11 @@
     "showMeAround": "Diesen Bildschirm erklären",
     "allGuides": "Alle Touren",
     "welcome": {
-      "title": "Willkommenstour",
+      "title": "Einführung",
       "steps": {
         "greeting": {
           "title": "Willkommen bei HBCField",
-          "body": "Das ist Ihre Startseite. Hier ist eine kurze Tour durch die App – Sie können sie jederzeit über Ihr Profil erneut ansehen."
+          "body": "Das ist Ihre Startseite: oben das heutige Datum und Ihr Name. Hier folgt eine kurze Tour, die Sie jederzeit in Ihrem Profil wiederholen können."
         },
         "today": {
           "title": "Ihr Tag auf einen Blick",
@@ -1528,11 +1528,11 @@
         },
         "tabsTasks": {
           "title": "Aufträge",
-          "body": "Hier finden Sie jeden Ihnen zugewiesenen Auftrag – suchen, filtern und öffnen."
+          "body": "Alle Aufträge, die Ihnen zugewiesen wurden, mit dem nächsten Schritt nur einen Tipp entfernt. Hier suchen, filtern und Ihre Route planen."
         },
         "tabsClock": {
-          "title": "Ein- und ausstempeln",
-          "body": "Beginnen und beenden Sie Ihre Schicht und machen Sie Pausen im Zeiterfassungs-Tab."
+          "title": "Zeit",
+          "body": "Ein- und ausstempeln, eine Pause machen und Ihre Stunden für heute und diese Woche sehen."
         },
         "tabsTimeOff": {
           "title": "Abwesenheit",
@@ -1540,7 +1540,27 @@
         },
         "profile": {
           "title": "Ihr Profil",
-          "body": "Ihr Konto, Ihre Verfügbarkeit, Sprache, Benachrichtigungen – und diese geführte Tour – finden Sie hier."
+          "body": "Tippen Sie auf Ihr Bild für Ihr Konto, Ihre Verfügbarkeit, Sprache, Benachrichtigungen und diese geführten Touren."
+        },
+        "needs": {
+          "title": "Was Sie braucht",
+          "body": "Alles, was auf Sie wartet, erscheint zuerst hier: ein Dokument zum Hochladen, eine Schicht zum Bestätigen, eine Anfrage zum Beantworten. Tippen Sie darauf, um es zu erledigen."
+        },
+        "widgets": {
+          "title": "Ihre Widgets",
+          "body": "Karten wie diese beantworten eine Frage auf einen Blick: Ihre Schicht, Ihre Aufträge, Ihr Team. Halten Sie eine Karte gedrückt, um sie zu verschieben, zu entfernen oder eine weitere hinzuzufügen."
+        },
+        "tabsTeam": {
+          "title": "Team",
+          "body": "Mit wem Sie arbeiten und wer gerade verfügbar ist. Tippen Sie auf eine Person, um ihr eine Nachricht zu senden."
+        },
+        "tabsChat": {
+          "title": "Nachrichten",
+          "body": "Ihre Unterhaltungen mit dem Büro und Ihren Kolleginnen und Kollegen."
+        },
+        "tabsMore": {
+          "title": "Mehr",
+          "body": "Alles Weitere finden Sie hier: Abwesenheiten, Dokumente, Kunden und die Seiten, die Sie verwalten."
         }
       }
     },
@@ -1549,19 +1569,39 @@
       "steps": {
         "intro": {
           "title": "Ihre Aufträge",
-          "body": "Jeder Ihnen zugewiesene Auftrag erscheint hier, der neueste zuerst."
+          "body": "Alle Aufträge, die Ihnen zugewiesen wurden, so sortiert, dass der nächste oben steht."
         },
         "search": {
           "title": "Suchen",
-          "body": "Finden Sie schnell einen Auftrag nach Titel, Kunde oder Adresse."
+          "body": "Finden Sie einen Auftrag über Titel, Kunde oder Adresse."
         },
         "filters": {
-          "title": "Filtern",
-          "body": "Grenzen Sie die Liste nach Status ein – aktiv, abgeschlossen oder blockiert."
+          "title": "Nach Status filtern",
+          "body": "Zeigen Sie nur aktive, blockierte oder erledigte Aufträge. Die Zahlen sagen, wie viele es jeweils sind."
         },
         "card": {
-          "title": "Auftrag öffnen",
-          "body": "Tippen Sie auf einen Auftrag, um alle Details zu sehen, den Status zu aktualisieren und Fotos oder Notizen hinzuzufügen."
+          "title": "Einen Auftrag öffnen",
+          "body": "Tippen Sie auf einen Auftrag, um alles darüber zu sehen, ihn zu aktualisieren und Fotos oder Notizen hinzuzufügen."
+        },
+        "newJob": {
+          "title": "Neuer Auftrag",
+          "body": "Legen Sie selbst einen Auftrag an, für sich oder für jemanden aus Ihrem Team."
+        },
+        "scope": {
+          "title": "Meine oder alle",
+          "body": "Wechseln Sie zwischen Ihren eigenen Aufträgen und allen Aufträgen in den Bereichen, die Sie betreuen."
+        },
+        "period": {
+          "title": "Jetzt, geplant, erledigt",
+          "body": "Was heute ansteht, was später geplant ist und was bereits abgeschlossen ist."
+        },
+        "route": {
+          "title": "Route planen",
+          "body": "Bringen Sie die heutigen Stopps in die beste Reihenfolge und öffnen Sie sie in Ihrer Navigations-App."
+        },
+        "next": {
+          "title": "Als Nächstes",
+          "body": "Der nächste Auftrag, mit seinem nächsten Schritt als ein Knopf: unterwegs, angekommen, starten, erledigt."
         }
       }
     },
@@ -1569,37 +1609,85 @@
       "title": "Auftragsdetails",
       "steps": {
         "intro": {
-          "title": "Auftragsdetails",
-          "body": "Alles zu diesem Auftrag – Standort, Beschreibung, Kunde und Verlauf – an einem Ort."
+          "title": "Der Auftrag",
+          "body": "Wo der Auftrag steht, wie verspätet und wie dringend er ist, über seinem Titel."
         },
         "status": {
-          "title": "Fortschritt",
-          "body": "Verfolgen Sie den Auftrag durch seine Phasen, von angenommen bis abgeschlossen."
+          "title": "Seine Schritte",
+          "body": "Jeder Balken ist ein Schritt des Auftrags. Hier steht, bei welchem Schritt Sie sind und was als Nächstes kommt."
         },
         "actions": {
-          "title": "Auftrag aktualisieren",
-          "body": "Nehmen Sie den Auftrag an, starten, blockieren oder schließen Sie ihn hier ab, während Sie ihn bearbeiten."
+          "title": "Der nächste Schritt",
+          "body": "Ein Knopf bringt den Auftrag weiter: unterwegs, angekommen, starten, erledigt. Er zeigt immer den nächsten Schritt."
+        },
+        "facts": {
+          "title": "Wann, wo, wer",
+          "body": "Die Zeit, die Adresse, der Bereich, wer ihn erledigt und wer ihn geschickt hat."
+        },
+        "map": {
+          "title": "Der Ort",
+          "body": "Tippen Sie auf die Karte, um die Adresse in Ihrer Karten-App zu öffnen."
+        },
+        "checklist": {
+          "title": "Checkliste",
+          "body": "Haken Sie jeden Punkt ab, während Sie arbeiten. Manche Punkte öffnen sich erst bei einem bestimmten Schritt."
+        },
+        "files": {
+          "title": "Fotos und Dateien",
+          "body": "Machen Sie ein Foto oder wählen Sie eines aus Ihrer Galerie. Das Büro sieht es sofort."
+        },
+        "activity": {
+          "title": "Verlauf und Notizen",
+          "body": "Alles, was bei diesem Auftrag passiert ist. Unten schreiben Sie eine Notiz für das Büro."
+        },
+        "timer": {
+          "title": "Zeit bei diesem Auftrag",
+          "body": "Wie lange Sie an dem Auftrag sind und ob Ihre Route aufgezeichnet wird."
+        },
+        "navigate": {
+          "title": "Navigieren",
+          "body": "Öffnen Sie die Wegbeschreibung zum Auftrag in Ihrer Navigations-App."
+        },
+        "more": {
+          "title": "Weitere Aktionen",
+          "body": "Ein Problem melden, den Auftrag blockieren oder die anderen Aktionen für diesen Auftrag nutzen."
         }
       }
     },
     "attendance": {
-      "title": "Ein- und ausstempeln",
+      "title": "Zeit",
       "steps": {
         "intro": {
-          "title": "Zeiterfassung",
-          "body": "Erfassen Sie hier Ihre Arbeitszeit – stempeln Sie sich ein, wenn Sie beginnen, und aus, wenn Sie fertig sind."
+          "title": "Ihre Zeit",
+          "body": "Ihre Schicht, Ihre Pausen und Ihre Stunden, alles auf dieser Seite."
         },
         "clock": {
-          "title": "Ein- / ausstempeln",
-          "body": "Ein Tippen startet oder beendet Ihre Schicht. Ihr Standort bestätigt, dass Sie am richtigen Ort sind."
+          "title": "Die Stempeluhr",
+          "body": "Stempeln Sie ein, wenn Sie beginnen, und aus, wenn Sie fertig sind. Während Sie arbeiten, zeigt sie Ihre Zeit, mit Knöpfen für eine Pause oder eine Meldung."
         },
         "status": {
-          "title": "Ihr Status",
-          "body": "Sehen Sie auf einen Blick, ob Sie im Dienst sind und wie lange Sie heute gearbeitet haben."
+          "title": "Heute",
+          "body": "Was Sie heute gemacht haben: wann Sie eingestempelt haben, Ihre Pausen und eine Notiz zu Ihrer Arbeit."
         },
         "history": {
-          "title": "Verlauf",
-          "body": "Sehen Sie Ihre letzten Schichten, Pausen und Stunden ein."
+          "title": "Letzte Schichten",
+          "body": "Ihre letzten Schichten, mit ihren Zeiten und Pausen."
+        },
+        "places": {
+          "title": "Wo Sie arbeiten",
+          "body": "Die Orte, an denen Sie einstempeln können, und wie weit Sie von jedem entfernt sind."
+        },
+        "week": {
+          "title": "Diese Woche",
+          "body": "Ihre Stunden Tag für Tag, mit den Summen für die Woche und den Monat."
+        },
+        "leave": {
+          "title": "Abwesenheit",
+          "body": "Ihre anstehende Abwesenheit und die Tage, die Sie dieses Jahr genommen haben."
+        },
+        "timeOffButton": {
+          "title": "Abwesenheit beantragen",
+          "body": "Tippen Sie hier, um freie Tage zu beantragen. Ihre Führungskraft erhält den Antrag zur Genehmigung."
         }
       }
     },
@@ -1607,16 +1695,16 @@
       "title": "Abwesenheit",
       "steps": {
         "intro": {
-          "title": "Abwesenheit",
-          "body": "Beantragen Sie freie Tage und verfolgen Sie Ihre Anträge von hier aus."
+          "title": "Ihr Jahr bisher",
+          "body": "Genommene Tage, anstehende Abwesenheit, Anträge, die auf eine Antwort warten, und abgelehnte Anträge."
         },
         "request": {
-          "title": "Abwesenheit beantragen",
-          "body": "Wählen Sie Ihre Termine und einen Grund – Ihr Vorgesetzter erhält den Antrag zur Genehmigung."
+          "title": "Tage wählen",
+          "body": "Wählen Sie die Tage im Kalender, um Abwesenheit zu beantragen. Ihre Führungskraft erhält den Antrag zur Genehmigung."
         },
         "list": {
           "title": "Ihre Anträge",
-          "body": "Verfolgen Sie jeden Antrag – ausstehend, genehmigt oder abgelehnt."
+          "body": "Jeder Antrag und sein Stand: offen, genehmigt oder abgelehnt."
         }
       }
     },
@@ -1624,20 +1712,66 @@
       "title": "Ihr Profil",
       "steps": {
         "intro": {
-          "title": "Ihr Profil",
-          "body": "Verwalten Sie hier Ihr Konto und Ihre App-Einstellungen."
+          "title": "Sie",
+          "body": "Ihr Bild, Ihr Name und Ihre Organisation. Tippen Sie auf das Bild, um es zu ändern."
         },
         "availability": {
           "title": "Verfügbarkeit",
-          "body": "Legen Sie fest, ob Sie verfügbar, beschäftigt oder abwesend sind, damit Ihr Team Ihren Status kennt."
+          "body": "Zeigen Sie Ihrem Team, ob Sie verfügbar, beschäftigt oder abwesend sind."
         },
         "menu": {
-          "title": "Einstellungen",
-          "body": "Sprache, Erscheinungsbild, Benachrichtigungen, Sicherheit und Support finden Sie alle in diesem Menü."
+          "title": "Ihres",
+          "body": "Ihre Ausrüstung, Ihre Dokumente und ob von diesem Telefon alles gesendet wurde."
         },
         "guide": {
           "title": "Geführte Touren",
-          "body": "Sehen Sie jede Anleitung jederzeit erneut an – tippen Sie hier, um die Touren zu öffnen."
+          "body": "Wiederholen Sie jede dieser Touren hier, wann immer Sie möchten."
+        },
+        "settings": {
+          "title": "Einstellungen",
+          "body": "Benachrichtigungen, Darstellung, Zeitformat, Sprache und Ihr Konto."
+        }
+      }
+    },
+    "team": {
+      "title": "Team",
+      "steps": {
+        "intro": {
+          "title": "Ihr Team",
+          "body": "Die Menschen, mit denen Sie arbeiten, Führungskräfte zuerst."
+        },
+        "messages": {
+          "title": "Nachrichten",
+          "body": "Ihre Unterhaltungen. Die Zahl zeigt, wie viele Nachrichten Sie noch nicht gelesen haben."
+        },
+        "search": {
+          "title": "Jemanden finden",
+          "body": "Suchen Sie nach Name, Position oder Bereich."
+        },
+        "filters": {
+          "title": "Wer ist da",
+          "body": "Sehen Sie, wer gerade verfügbar, beschäftigt oder abwesend ist."
+        },
+        "person": {
+          "title": "Eine Nachricht senden",
+          "body": "Tippen Sie auf eine Kollegin oder einen Kollegen, um eine Unterhaltung zu beginnen."
+        }
+      }
+    },
+    "more": {
+      "title": "Mehr",
+      "steps": {
+        "intro": {
+          "title": "Mehr",
+          "body": "Alles, was nicht in der Leiste unten ist."
+        },
+        "tiles": {
+          "title": "Ihre Seiten",
+          "body": "Seiten, die nicht in die Leiste passen, nur einen Tipp entfernt."
+        },
+        "manage": {
+          "title": "Was Sie betreuen",
+          "body": "Anträge und Freigaben, die auf Sie warten, mit einer Zahl, wenn etwas wartet."
         }
       }
     }

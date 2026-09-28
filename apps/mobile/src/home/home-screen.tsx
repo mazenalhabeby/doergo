@@ -20,6 +20,7 @@ import { EmptyHome, type Suggestion } from '../components/home/empty-home';
 import { DropSlot, EditableWidget, LIFT_FACTOR } from '../components/home/editable-widget';
 import { WidgetGallery } from '../components/home/widget-gallery';
 import { ActionStrip } from '../components/home/action-strip';
+import { TourTarget } from '../components/tour/tour-target';
 import { editShortcutsOnArrival } from '../components/home/shortcuts-card';
 import { answerFor, useWidgetAnswers } from './answers';
 import { useHomeEditing } from './use-home-editing';
@@ -277,6 +278,7 @@ export function HomeScreen() {
           >
             {/* ⭐ THE FIRST CARD LEADS — glass at the top, a well everywhere else (amazen/surfaces.tsx). */}
             <SurfaceProvider value={index === 0 ? 'glass' : 'well'}>
+            <WidgetAnchor first={index === 0 && !editing}>
             <HomeCard id={item.key} restHeight={item.restHeight}>
             <EditableWidget
               key={`${item.key}:${refreshKey}`}
@@ -293,6 +295,7 @@ export function HomeScreen() {
               landed={landed.includes(item.key)}
             />
             </HomeCard>
+            </WidgetAnchor>
             </SurfaceProvider>
           </ShadowDecorator>
         </ScaleDecorator>
@@ -333,6 +336,7 @@ export function HomeScreen() {
       */}
       <ScreenHeader
         title={fullName}
+        tour={editing ? undefined : { title: 'home-greeting', avatar: 'home-avatar' }}
         hint={
           editing
             ? t('home.edit.hint', { defaultValue: 'Hold to move · tap ⊖ to remove' })
@@ -401,7 +405,7 @@ export function HomeScreen() {
             {/* ⭐ What the app needs from the member. Chrome, not a widget —
                 never in the registry — and away while arranging, so nothing
                 above the column moves under the finger. */}
-            {editing ? null : <ActionStrip />}
+            {editing ? null : <TourTarget name="home-needs"><ActionStrip /></TourTarget>}
           </>
         }
         ListEmptyComponent={
@@ -517,4 +521,12 @@ export function HomeScreen() {
     </Ground>
     </HomeLoadContext.Provider>
   );
+}
+
+/**
+ * The first card on the home, as the tour's "these are your widgets" step.
+ * Only the first: one ring says "cards like this", five would say nothing.
+ */
+function WidgetAnchor({ first, children }: { first: boolean; children: React.ReactNode }) {
+  return first ? <TourTarget name="home-widgets">{children}</TourTarget> : <>{children}</>;
 }
