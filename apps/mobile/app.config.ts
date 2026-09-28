@@ -52,7 +52,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       overtime and forgotten-shift handling, iOS time-sensitive pushes and
       navigation-app detection.
 
-      1.0.5 — the store release carrying the business-card scanner.
+      1.0.7 — the store release carrying v2 (haptics, the drag-to-arrange
+      home) and the Play hardening (R8, edge-to-edge, large screens).
 
       ⚠️ `runtimeVersion` follows this, so bumping it opens a NEW OTA train.
       Updates published from here reach 1.0.5 installs only; anyone still on
@@ -60,7 +61,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       — their binary has different native code. Never publish current JS to an
       older train: the older native side crashes on it.
     */
-    version: '1.0.6',
+    version: '1.0.7',
     // 'default' allows landscape on tablets. Phones are kept portrait so their
     // phone-first UI is never shown rotated: iPhone via the idiom-specific
     // infoPlist keys below, Android phones via a runtime lock in the root layout.
