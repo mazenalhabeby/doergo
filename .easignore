@@ -1,34 +1,33 @@
-# What an EAS build of the MOBILE app does not need.
+# What an EAS build of the MOBILE app is allowed to upload.
 #
-# Without this the archive is the whole monorepo — the web app, all four API
-# services, infra and tooling — 202 MB that took nineteen minutes to upload
-# before a build could even start. Three attempts died on that upload before
-# one got through.
+# ⚠️ AN ALLOWLIST, NOT A BLOCKLIST. The blocklist that stood here let the
+# archive grow to 373 MB — `.claude/` alone (agent worktrees) was 869 MB
+# uncompressed — and it swept every loose file in the repository root onto
+# Expo's build servers: security audit reports, pricing proposals, a company
+# list and personal PDFs. A blocklist has to be told about each new file; this
+# refuses everything at the root and names the few things a build reads.
 #
 # .easignore REPLACES .gitignore for the build archive, so the usual ignores
-# have to be restated below. Anything not listed is uploaded.
+# are restated below for what IS allowed in.
 
-# ── Not part of the mobile app ──────────────────────────────────────────────
-# Design sources, screenshots, store artwork and a stray build output: 170 MB
-# of material no compiler ever reads. Most is not in .gitignore because it is
-# meant to be version-controlled — it just has no business in a build archive.
-android-build/
-doergo design/
-screenshots/
-store-listing/
-.mockups/
+/*
+!/apps
+!/packages
+!/patches
+!/package.json
+!/pnpm-lock.yaml
+!/pnpm-workspace.yaml
+!/tsconfig.json
+!/tsconfig.base.json
+!/eas.json
+!/app.json
+!/.npmrc
+!/.nvmrc
 
-apps/web-app/
-apps/admin/
-apps/api/
-infra/
-docs/
-tools/
-backups/
-scripts/
-
-# packages/shared IS needed — apps/mobile imports @hbcfield/shared — so it is
-# deliberately absent from the list above.
+# Of the apps, only the phone. packages/shared IS needed — apps/mobile imports
+# @hbcfield/shared.
+/apps/*
+!/apps/mobile
 
 # ── The usual ignores, restated because .easignore replaces .gitignore ──────
 #
@@ -63,3 +62,7 @@ logs/
 *.aab
 *.ipa
 .DS_Store
+
+# ⚠️ The Play Console service-account key. `eas submit` reads it on THIS
+# machine; the build never does, so it has no business on a build server.
+play-store-key.json
