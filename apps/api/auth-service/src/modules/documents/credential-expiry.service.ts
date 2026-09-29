@@ -96,6 +96,8 @@ export class CredentialExpiryService {
         expiresOn: { gte: now, lte: horizon },
         status: { in: ['ISSUED', 'SIGNED'] },
         type: { isCredential: true },
+        // Nobody is reminded about a document hidden from its member.
+        hiddenFromMember: false,
       },
       select: {
         id: true,

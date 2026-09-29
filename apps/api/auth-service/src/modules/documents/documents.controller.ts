@@ -81,6 +81,16 @@ export class DocumentsController {
     return this.documents.revoke(data);
   }
 
+  @MessagePattern({ cmd: 'documents_set_visibility' })
+  setVisibility(@Payload() data: any) {
+    return this.documents.setVisibility(data);
+  }
+
+  @MessagePattern({ cmd: 'documents_delete' })
+  deleteDocuments(@Payload() data: any) {
+    return this.documents.deleteDocuments(data);
+  }
+
   // ── Credentials ──────────────────────────────────────────────────────────
   @MessagePattern({ cmd: 'documents_compliance' })
   compliance(@Payload() data: any) { return this.credentials.listCompliance(data); }

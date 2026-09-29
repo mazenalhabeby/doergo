@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayMaxSize,
+  ArrayMinSize,
+  ValidateIf,
   IsArray,
   IsBoolean,
   IsBooleanString,
@@ -321,6 +323,13 @@ export class ConfirmUploadDto {
     email?: string | null;
     name?: string | null;
   }>;
+
+  /** Replace this document: it is superseded and hidden from its member. */
+  @ApiPropertyOptional({ description: 'Document this one replaces (needs canReplaceDocuments)' })
+  @IsOptional()
+  @IsString()
+  @Length(1, 64)
+  replacesId?: string;
 
   @ApiProperty({ description: 'The key returned by /presign' })
   @IsString()
@@ -827,4 +836,46 @@ export class SignDocumentDto {
   @IsString()
   @Length(8, 100)
   idempotencyKey!: string;
+}
+
+/** "Who can see this" for one or more documents. */
+export class SetDocumentVisibilityDto {
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(100)
+  @IsString({ each: true })
+  @Length(1, 64, { each: true })
+  documentIds!: string[];
+
+  @ApiPropertyOptional({ description: 'Hide the documents from the member they belong to' })
+  @IsOptional()
+  @IsBoolean()
+  hiddenFromMember?: boolean;
+
+  /** null = follow the type again; a list = only these org roles (empty = administrators only). */
+  @ApiPropertyOptional({ type: [String], nullable: true })
+  @ValidateIf((o: SetDocumentVisibilityDto) => o.roleIds !== null && o.roleIds !== undefined)
+  @IsArray()
+  @ArrayMaxSize(50)
+  @IsString({ each: true })
+  @Length(1, 64, { each: true })
+  roleIds?: string[] | null;
+}
+
+/** Erase documents for good. */
+export class DeleteDocumentsDto {
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(100)
+  @IsString({ each: true })
+  @Length(1, 64, { each: true })
+  documentIds!: string[];
+
+  /** Required when any of them carries a signature — the server re-checks. */
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  confirmSignaturesLost?: boolean;
 }

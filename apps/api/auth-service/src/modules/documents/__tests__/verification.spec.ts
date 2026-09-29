@@ -102,9 +102,17 @@ describe('DocumentsService — reviewing a supplied document', () => {
       */
       prisma.document.findMany.mockResolvedValue([]);
       await service.listAwaitingVerification({ actor: actor() });
+      // Their own documents (minus any hidden from them), or somebody else's
+      // under an unrestricted type with no per-document override. A reviewer
+      // with no role matches no override: an override names roles.
       expect(prisma.document.findMany.mock.calls[0][0].where.OR).toEqual([
-        { type: { OR: [{ visibleToRoleIds: { isEmpty: true } }] } },
-        { userId: 'reviewer' },
+        { userId: 'reviewer', hiddenFromMember: false },
+        {
+          AND: [
+            { userId: { not: 'reviewer' } },
+            { OR: [{ rolesOverridden: false, type: { OR: [{ visibleToRoleIds: { isEmpty: true } }] } }] },
+          ],
+        },
       ]);
     });
 

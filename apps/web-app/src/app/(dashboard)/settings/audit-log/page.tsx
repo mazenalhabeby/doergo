@@ -32,7 +32,12 @@ import { Combobox } from "@/components/ui/combobox"
  */
 function auditDetail(metadata: unknown): string {
   if (!metadata || typeof metadata !== "object") return ""
-  const m = metadata as { email?: unknown; reason?: unknown; method?: unknown; path?: unknown }
+  const m = metadata as { email?: unknown; reason?: unknown; method?: unknown; path?: unknown; title?: unknown; member?: unknown }
+  // A document action names the document and whose it was — after a delete,
+  // this line is the only place either survives.
+  if (typeof m.title === "string" && m.title) {
+    return typeof m.member === "string" && m.member ? `${m.title} · ${m.member}` : m.title
+  }
   if (typeof m.email === "string" && m.email) return m.email
   if (typeof m.reason === "string" && m.reason) return m.reason
   if (typeof m.method === "string" && typeof m.path === "string") return `${m.method} ${m.path}`
@@ -61,6 +66,9 @@ const EVENT_COLORS: Record<string, string> = {
   ORG_JOIN_CODE_REGENERATED: "text-amber-600",
   INVITATION_CREATED: "text-blue-600",
   INVITATION_REVOKED: "text-red-600",
+  DOCUMENT_DELETED: "text-red-600",
+  DOCUMENT_VISIBILITY_CHANGED: "text-amber-600",
+  DOCUMENT_REPLACED: "text-purple-600",
   INVITATION_ACCEPTED: "text-green-600",
   JOIN_REQUEST_APPROVED: "text-green-600",
   JOIN_REQUEST_REJECTED: "text-red-600",

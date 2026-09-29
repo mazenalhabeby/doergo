@@ -15,6 +15,11 @@ import { UserAvatar } from "@/components/user-avatar"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { FolderBrowser } from "./_components/folder-browser"
+import {
+  DocumentActionDialogs, DocumentRowMenu, SelectionBar, VisibilityChip,
+  useDocumentControl, useRowSelection, type DocumentAction,
+} from "./_components/document-control"
+import { Checkbox } from "@/components/ui/checkbox"
 
 /*
   What the organization has sent.
@@ -81,6 +86,13 @@ export default function SentDocumentsPage() {
 
   const rows = data?.rows ?? []
   const counts = data?.counts
+
+  // Hide / replace / delete. Ticking only appears for someone who can act on a
+  // selection; the menu per row covers the rest.
+  const control = useDocumentControl()
+  const canSelect = control.canVisibility || control.canDelete
+  const selection = useRowSelection(rows)
+  const [action, setAction] = useState<{ kind: DocumentAction; rows: IssuedRow[] } | null>(null)
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1
 
   /*
@@ -243,6 +255,24 @@ export default function SentDocumentsPage() {
                 </div>
               ) : (
                 <div>
+                  <SelectionBar
+                    selected={selection.selected}
+                    onClear={selection.clear}
+                    onAction={(kind, picked) => setAction({ kind, rows: picked })}
+                  />
+                  {canSelect && selection.selected.length === 0 && rows.length > 1 && (
+                    <div className="flex items-center gap-2.5 border-b border-border/40 px-5 py-2">
+                      <Checkbox
+                        id="docs-select-all"
+                        checked={selection.allSelected}
+                        onCheckedChange={() => selection.toggleAll()}
+                        aria-label={t("documents.control.selectAll", "Select all on this page")}
+                      />
+                      <label htmlFor="docs-select-all" className="cursor-pointer text-xs text-muted-foreground">
+                        {t("documents.control.selectAll", "Select all on this page")}
+                      </label>
+                    </div>
+                  )}
                   {rows.map((row, i) => {
                     const period = periodLabel(row, i18n.language)
                     const [first = "", ...rest] = row.memberName.split(" ")
@@ -250,8 +280,18 @@ export default function SentDocumentsPage() {
                       <div
                         key={row.id}
                         style={{ animation: `fadeSlideIn 0.25s ease-out ${i * 40}ms both` }}
-                        className="group flex items-center gap-4 border-b border-border/50 px-5 py-3.5 transition-colors last:border-0 hover:bg-accent/30"
+                        className={cn(
+                          "group flex items-center gap-4 border-b border-border/50 px-5 py-3.5 transition-colors last:border-0 hover:bg-accent/30",
+                          selection.isSelected(row.id) && "bg-primary/5",
+                        )}
                       >
+                        {canSelect && (
+                          <Checkbox
+                            checked={selection.isSelected(row.id)}
+                            onCheckedChange={() => selection.toggle(row.id)}
+                            aria-label={t("documents.control.selectOne", { defaultValue: "Select {{title}}", title: row.title })}
+                          />
+                        )}
                         <UserAvatar
                           firstName={first}
                           lastName={rest.join(" ")}
@@ -274,6 +314,7 @@ export default function SentDocumentsPage() {
                           <ChainLine chain={row.chain} />
                         </div>
 
+                        <VisibilityChip row={row} />
                         <StateChip row={row} />
 
                         <Button
@@ -290,6 +331,7 @@ export default function SentDocumentsPage() {
                             <Eye className="h-4 w-4" />
                           )}
                         </Button>
+                        <DocumentRowMenu row={row} onAction={(kind, picked) => setAction({ kind, rows: picked })} />
                       </div>
                     )
                   })}
@@ -322,6 +364,12 @@ export default function SentDocumentsPage() {
           </>
         )}
       </div>
+      <DocumentActionDialogs
+        action={action?.kind ?? null}
+        rows={action?.rows ?? []}
+        onClose={() => setAction(null)}
+        onDone={selection.clear}
+      />
     </div>
   )
 }
@@ -401,6 +449,8 @@ function StateChip({ row }: { row: IssuedRow }) {
         ? [t("documents.all.state.signed", "Signed"), "ok"]
         : row.status === "REVOKED"
           ? [t("documents.all.state.revoked", "Revoked"), "mute"]
+          : row.status === "SUPERSEDED"
+            ? [t("documents.all.state.replaced", "Replaced"), "mute"]
           : row.status === "EXPIRED"
             ? [t("documents.all.state.expired", "Expired"), "bad"]
             : !row.openedAt

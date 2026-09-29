@@ -4713,6 +4713,8 @@ enum DocumentEventType {
   SENT_BACK
   REVOKED
   SUPERSEDED
+  /// Who may see it changed: hidden from or shown to its member, or limited to roles.
+  VISIBILITY_CHANGED
 }
 
 /// A kind of document, defined per organization.
@@ -4919,6 +4921,17 @@ model Document {
   /// Null means keep indefinitely; see DocumentType.retentionMonths.
   retentionUntil DateTime?
 
+  /// Who may see THIS document, overriding its type. Set from "Who can see this".
+  ///
+  /// hiddenFromMember: the document leaves its subject's file entirely — their
+  /// lists, their signing queue, their reminders. The organization keeps it.
+  hiddenFromMember Boolean  @default(false)
+  /// rolesOverridden: when true, `visibleToRoleIds` REPLACES the type's list for
+  /// this one document, and an empty list means administrators only. When false
+  /// the list is ignored and the type decides, as it always has.
+  rolesOverridden  Boolean  @default(false)
+  visibleToRoleIds String[] @default([])
+
   /// A renewal points at what it replaces, so history stays readable.
   supersedesId String?   @unique
   supersedes   Document? @relation("DocumentSupersession", fields: [supersedesId], references: [id], onDelete: SetNull)
@@ -4944,6 +4957,8 @@ model Document {
   // Dedup: the same bytes issued to thirty people are one object, but each
   // member still gets their own row.
   @@index([organizationId, sha256])
+  // A member's own file, minus what was hidden from them.
+  @@index([userId, hiddenFromMember])
   @@map("documents")
 }
 

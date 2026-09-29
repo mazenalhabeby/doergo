@@ -32,6 +32,12 @@ export interface DocumentActor {
   canOpenMemberDocuments: boolean;
   canIssueDocuments: boolean;
   canManageDocumentTemplates: boolean;
+  /** Hide a document from its member, or limit it to roles. */
+  canManageDocumentVisibility: boolean;
+  /** Swap a document for a new version. */
+  canReplaceDocuments: boolean;
+  /** Erase documents for good, signatures included. */
+  canDeleteDocuments: boolean;
   /*
     The two facts a document TYPE's visibility is decided from.
 
@@ -61,6 +67,9 @@ export function documentActor(user: CurrentUserData): DocumentActor {
     canOpenMemberDocuments: admin || !!user.canOpenMemberDocuments,
     canIssueDocuments: admin || !!user.canIssueDocuments,
     canManageDocumentTemplates: admin || !!user.canManageDocumentTemplates,
+    canManageDocumentVisibility: admin || !!user.canManageDocumentVisibility,
+    canReplaceDocuments: admin || !!user.canReplaceDocuments,
+    canDeleteDocuments: admin || !!user.canDeleteDocuments,
     roleId: user.memberRoleId ?? null,
     isAdmin: admin,
   };

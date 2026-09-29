@@ -17,6 +17,8 @@ import { RequirePermission, RequirePermissionInSpace } from '../../common/decora
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { documentActor, requestContext } from './documents.actor';
 import {
+  SetDocumentVisibilityDto,
+  DeleteDocumentsDto,
   ConfirmUploadDto,
   CreateDocumentTypeDto,
   CreateTemplateDto,
@@ -68,6 +70,24 @@ export class DocumentsController {
   ) {}
 
   // ── Types ────────────────────────────────────────────────────────────────
+
+  /**
+   * The roles a document can be limited to — names only.
+   *
+   * Its own route because the full role list sits behind `canManageUsers`, and
+   * whoever decides who reads a contract (HR) is usually not who manages
+   * members. Returns id, name and colour: never what a role grants.
+   */
+  @Get('visibility-roles')
+  @RequirePermission('canManageDocumentVisibility')
+  @ApiOperation({ summary: 'Org roles a document can be limited to (id, name, colour)' })
+  async visibilityRoles(@CurrentUser() user: CurrentUserData) {
+    const res: any = await this.documents.listOrgRoles(user.organizationId ?? '');
+    const list: any[] = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+    return list
+      .filter((r) => r && r.isActive !== false)
+      .map((r) => ({ id: r.id as string, name: r.name as string, color: (r.color as string) ?? null }));
+  }
 
   @Get('types')
   @ApiOperation({ summary: 'Document types defined by this organization' })
@@ -144,11 +164,61 @@ export class DocumentsController {
     @Body() body: ConfirmUploadDto,
     @Req() req: any,
   ) {
-    return this.documents.confirmUpload({
+    const created = await this.documents.confirmUpload({
       actor: documentActor(user),
       ...body,
       ctx: requestContext(req),
     });
+    // A replacement hides the old version from its member; let open screens know.
+    if (body.replacesId) this.orgEvents.documentTypesChanged(user.organizationId, null);
+    return created;
+  }
+
+  /*
+    Control over existing documents. Bulk by design (1–100 ids) and POST with a
+    body, because the web selects several rows at once. The service scopes every
+    id by what the caller may see and refuses the whole request if one is out of
+    scope, so the guard here is the first gate, not the only one.
+  */
+  @Post('bulk/visibility')
+  @RequirePermission('canManageDocumentVisibility')
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Choose who sees documents: hide from the member, or limit to roles' })
+  async setVisibility(
+    @CurrentUser() user: CurrentUserData,
+    @Body() body: SetDocumentVisibilityDto,
+    @Req() req: any,
+  ) {
+    const result = await this.documents.setVisibility({
+      actor: documentActor(user),
+      documentIds: body.documentIds,
+      hiddenFromMember: body.hiddenFromMember,
+      roleIds: body.roleIds,
+      ctx: requestContext(req),
+    });
+    // Every open document screen in the organization re-reads — including the
+    // member's own, so a hidden document leaves their phone without a refresh.
+    this.orgEvents.documentTypesChanged(user.organizationId, null);
+    return result;
+  }
+
+  @Post('bulk/delete')
+  @RequirePermission('canDeleteDocuments')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Erase documents for good (signatures included); audit-logged' })
+  async deleteDocuments(
+    @CurrentUser() user: CurrentUserData,
+    @Body() body: DeleteDocumentsDto,
+    @Req() req: any,
+  ) {
+    const result = await this.documents.deleteDocuments({
+      actor: documentActor(user),
+      documentIds: body.documentIds,
+      confirmSignaturesLost: body.confirmSignaturesLost === true,
+      ctx: requestContext(req),
+    });
+    this.orgEvents.documentTypesChanged(user.organizationId, null);
+    return result;
   }
 
   @Post(':id/revoke')

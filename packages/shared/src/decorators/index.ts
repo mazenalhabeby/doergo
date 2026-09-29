@@ -86,6 +86,9 @@ export interface CurrentUserData {
   canOpenMemberDocuments?: boolean;
   canIssueDocuments?: boolean;
   canManageDocumentTemplates?: boolean;
+  canManageDocumentVisibility?: boolean;
+  canReplaceDocuments?: boolean;
+  canDeleteDocuments?: boolean;
   /**
    * The member's org-wide role id — WHICH role, not what it grants.
    *
@@ -179,7 +182,8 @@ export type PermissionField =
   | 'canReconcileAttendance' | 'canViewSpaceAttendance' | 'canApproveOvertime'
   | 'crmEditInfo' | 'crmManageClients'
   | 'canViewMemberDocuments' | 'canOpenMemberDocuments'
-  | 'canIssueDocuments' | 'canManageDocumentTemplates';
+  | 'canIssueDocuments' | 'canManageDocumentTemplates'
+  | 'canManageDocumentVisibility' | 'canReplaceDocuments' | 'canDeleteDocuments';
 
 /**
  * Decorator to specify required permissions for a route.

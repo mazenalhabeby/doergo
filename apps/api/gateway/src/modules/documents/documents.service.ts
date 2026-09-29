@@ -45,6 +45,8 @@ export class DocumentsGatewayService extends BaseGatewayService {
 
   // ── Writes ───────────────────────────────────────────────────────────────
   sendBack(data: unknown) { return this.sendOnce({ cmd: 'documents_send_back' }, data); }
+  // A read: the org's roles, for "Who can see this".
+  listOrgRoles(organizationId: string) { return this.send({ cmd: 'list_access_roles' }, { organizationId, scope: 'org' }); }
   createType(data: unknown) { return this.sendOnce({ cmd: 'documents_create_type' }, data); }
   updateType(data: unknown) { return this.sendOnce({ cmd: 'documents_update_type' }, data); }
   deactivateType(data: unknown) { return this.sendOnce({ cmd: 'documents_deactivate_type' }, data); }
@@ -60,6 +62,8 @@ export class DocumentsGatewayService extends BaseGatewayService {
   submitOwnDocument(data: unknown) { return this.sendOnce({ cmd: 'documents_submit_own' }, data); }
   confirmUpload(data: unknown) { return this.sendOnce({ cmd: 'documents_confirm_upload' }, data); }
   revoke(data: unknown) { return this.sendOnce({ cmd: 'documents_revoke' }, data); }
+  setVisibility(data: unknown) { return this.sendOnce({ cmd: 'documents_set_visibility' }, data); }
+  deleteDocuments(data: unknown) { return this.sendOnce({ cmd: 'documents_delete' }, data); }
   deleteOwn(data: unknown) { return this.sendOnce({ cmd: 'documents_delete_own' }, data); }
   /* A write — it records a DOWNLOADED event per document — and slow enough to
      need the wider window when a file is large. */

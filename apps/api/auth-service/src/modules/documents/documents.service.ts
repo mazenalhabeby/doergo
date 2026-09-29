@@ -7,7 +7,7 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { visibleTypeWhere, documentTypeVisibleTo, visibleTypeSelfWhere } from '@hbcfield/shared';
+import { visibleTypeSelfWhere, visibleDocumentWhere, documentVisibleTo } from '@hbcfield/shared';
 import { ClientProxy } from '@nestjs/microservices';
 import { Prisma } from '@prisma/client';
 import {
@@ -101,6 +101,13 @@ export interface DocumentActor {
   roleId?: string | null;
   /** An administrator sees every type. */
   isAdmin?: boolean;
+  /*
+    Control over one document. Optional so every existing caller that builds an
+    actor by hand fails CLOSED: absent is false.
+  */
+  canManageDocumentVisibility?: boolean;
+  canReplaceDocuments?: boolean;
+  canDeleteDocuments?: boolean;
 }
 
 /** Request provenance, recorded on every evidence-trail entry. */
@@ -145,12 +152,28 @@ export interface DocumentActor {
  */
 function assertTypeVisible(
   actor: DocumentActor,
-  doc: { userId: string; type?: { visibleToRoleIds?: string[] | null } | null },
+  doc: {
+    userId: string;
+    hiddenFromMember?: boolean | null;
+    rolesOverridden?: boolean | null;
+    visibleToRoleIds?: string[] | null;
+    type?: { visibleToRoleIds?: string[] | null } | null;
+  },
   routedSigner = false,
 ): void {
-  if (routedSigner) return;
-  if (doc.userId === actor.userId) return;
-  if (documentTypeVisibleTo(doc.type, { roleId: actor.roleId ?? null, isAdmin: !!actor.isAdmin })) return;
+  // A routed signer reads the one document they were asked to sign — unless it
+  // is their OWN and was hidden from them, which is the one case where being on
+  // the route is not enough: hiding it from them is the instruction.
+  if (routedSigner && !(doc.userId === actor.userId && doc.hiddenFromMember)) return;
+  if (
+    documentVisibleTo(doc, {
+      roleId: actor.roleId ?? null,
+      isAdmin: !!actor.isAdmin,
+      userId: actor.userId,
+    })
+  ) {
+    return;
+  }
   throw new NotFoundException('Document not found');
 }
 
@@ -163,7 +186,10 @@ function assertTypeVisible(
  * OTHER documents you may read.
  */
 function typeScope(actor: DocumentActor) {
-  return visibleTypeWhere({
+  // Named for history: it now scopes by the TYPE and by the document's own
+  // override (hidden from its member, or limited to roles). One fragment, so no
+  // list can apply one rule and forget the other.
+  return visibleDocumentWhere({
     roleId: actor.roleId ?? null,
     isAdmin: !!actor.isAdmin,
     userId: actor.userId,
@@ -579,6 +605,12 @@ export class DocumentsService {
       somewhere it is harder to watch.
     */
     asDraft?: boolean;
+    /**
+     * Replace this document with the new one: the old one is SUPERSEDED and
+     * hidden from its member, so they see only the version they are now asked
+     * to sign. Its record, signatures included, stays with the organization.
+     */
+    replacesId?: string | null;
     ctx?: RequestContext;
   }) {
     this.assertCanIssue(data.actor);
@@ -586,6 +618,30 @@ export class DocumentsService {
 
     const member = await this.assertMemberOfOrg(data.userId, data.actor.organizationId);
     const type = await this.findTypeOr404(data.typeId, data.actor.organizationId);
+
+    let replaced: { id: string; title: string; userId: string } | null = null;
+    if (data.replacesId) {
+      if (!data.actor.canReplaceDocuments || data.actor.isExternal) {
+        throw new ForbiddenException('You cannot replace documents');
+      }
+      if (data.asDraft) throw new BadRequestException('A replacement is issued, not staged');
+      replaced = await this.prisma.document.findFirst({
+        where: {
+          ...typeScope(data.actor),
+          id: data.replacesId,
+          organizationId: data.actor.organizationId,
+          status: { notIn: ['DRAFT', 'SUPERSEDED'] },
+          supersededBy: { is: null },
+        },
+        select: { id: true, title: true, userId: true },
+      });
+      if (!replaced) throw new NotFoundException('Document not found');
+      // Same person, always: a "replacement" filed to somebody else would be a
+      // second document wearing the first one's history.
+      if (replaced.userId !== data.userId) {
+        throw new BadRequestException('A replacement goes to the same member');
+      }
+    }
 
     if (!periodIsValid(type.cadence, data.periodYear, data.periodMonth)) {
       throw new BadRequestException(
@@ -631,8 +687,47 @@ export class DocumentsService {
           issuedAt,
           expiresOn: data.expiresOn ? new Date(data.expiresOn) : null,
           retentionUntil: retentionUntil(issuedAt, type.retentionMonths),
+          ...(replaced ? { supersedesId: replaced.id } : {}),
         },
       });
+      if (replaced) {
+        await tx.document.update({
+          where: { id: replaced.id },
+          data: { status: 'SUPERSEDED', hiddenFromMember: true },
+        });
+        // Nobody is still waiting to sign the version that was replaced.
+        await tx.documentSigner.updateMany({
+          where: { documentId: replaced.id, status: 'PENDING' },
+          data: { status: 'SKIPPED' },
+        });
+        await tx.documentEvent.create({
+          data: {
+            documentId: replaced.id,
+            type: 'SUPERSEDED',
+            actorId: data.actor.userId,
+            meta: { replacedBy: created.id },
+            ...eventContext(data.ctx),
+          },
+        });
+        await tx.activityLog.create({
+          data: {
+            eventType: 'DOCUMENT_REPLACED',
+            userId: data.actor.userId,
+            targetUserId: data.userId,
+            organizationId: data.actor.organizationId,
+            resourceType: 'documents',
+            resourceId: replaced.id,
+            ipAddress: data.ctx?.ip ?? null,
+            userAgent: data.ctx?.userAgent ?? null,
+            metadata: {
+              title: replaced.title,
+              newTitle: created.title,
+              newDocumentId: created.id,
+              member: `${member.firstName ?? ''} ${member.lastName ?? ''}`.trim(),
+            },
+          },
+        });
+      }
       /*
         No event for a staged row.
 
@@ -2051,6 +2146,7 @@ export class DocumentsService {
           typeId: true,
           status: true,
           expiresOn: true,
+          hiddenFromMember: true,
           // Same reason as the documents list: with a route, AWAITING_SIGNATURE
           // means somebody has to sign, not that THIS person does.
           signers: { select: { order: true, role: true, status: true, userId: true, eligibleUserIds: true, customerId: true } },
@@ -2071,6 +2167,9 @@ export class DocumentsService {
         ...held
           .filter(
             (d) =>
+              // A hidden document still counts as held for requirements, but
+              // it is never asked of the member it was hidden from.
+              !d.hiddenFromMember &&
               d.status === 'AWAITING_SIGNATURE' &&
               ((d.signers ?? []).length === 0 ||
                 isCurrentSigner((d.signers ?? []) as unknown as SignerStep[], data.actor.userId)),
@@ -3294,7 +3393,11 @@ export class DocumentsService {
    */
   private async freeStorageIfUnreferenced(storageKey: string): Promise<void> {
     try {
-      const stillUsed = await this.prisma.document.count({ where: { storageKey } });
+      // A key may be one document's current file, another's original, or a
+      // sealed copy that a later signature moved past — all are "in use".
+      const stillUsed = await this.prisma.document.count({
+        where: { OR: [{ storageKey }, { originalKey: storageKey }] },
+      });
       if (stillUsed > 0) return;
       const store = this.store;
       if (store) await store.delete(storageKey);
@@ -3472,6 +3575,8 @@ export class DocumentsService {
           id: true, title: true, status: true,
           periodYear: true, periodMonth: true, issuedAt: true,
           firstOpenedAt: true, expiresOn: true, sizeBytes: true, mimeType: true,
+          hiddenFromMember: true, rolesOverridden: true, visibleToRoleIds: true,
+          _count: { select: { signatures: true } },
           user: { select: { id: true, firstName: true, lastName: true } },
           type: { select: { id: true, label: true } },
           signatures: {
@@ -3504,6 +3609,10 @@ export class DocumentsService {
           memberName: `${d.user.firstName} ${d.user.lastName}`.trim(),
           typeId: d.type.id,
           typeLabel: d.type.label,
+          hiddenFromMember: d.hiddenFromMember,
+          rolesOverridden: d.rolesOverridden,
+          visibleToRoleIds: d.visibleToRoleIds,
+          signatureCount: d._count.signatures,
         })),
       };
     }
@@ -3912,7 +4021,7 @@ export class DocumentsService {
   async documentChain(data: { actor: DocumentActor; documentId: string }) {
     const document = await this.prisma.document.findFirst({
       where: { id: data.documentId, organizationId: data.actor.organizationId },
-      select: { id: true, title: true, userId: true, type: { select: { visibleToRoleIds: true } } },
+      select: { id: true, title: true, userId: true, hiddenFromMember: true, rolesOverridden: true, visibleToRoleIds: true, type: { select: { visibleToRoleIds: true } } },
     });
     if (!document) throw new NotFoundException('Document not found');
 
@@ -4386,6 +4495,10 @@ export class DocumentsService {
           expiresOn: true,
           sizeBytes: true,
           mimeType: true,
+          hiddenFromMember: true,
+          rolesOverridden: true,
+          visibleToRoleIds: true,
+          _count: { select: { signatures: true } },
           user: { select: { id: true, firstName: true, lastName: true } },
           type: { select: { id: true, label: true, signatureMode: true, isCredential: true } },
           signatures: {
@@ -4439,6 +4552,10 @@ export class DocumentsService {
         typeLabel: d.type.label,
         signatureMode: d.type.signatureMode,
         isCredential: d.type.isCredential,
+        hiddenFromMember: d.hiddenFromMember,
+        rolesOverridden: d.rolesOverridden,
+        visibleToRoleIds: d.visibleToRoleIds,
+        signatureCount: d._count.signatures,
         /*
           Where the document has got to. Absent for a document with no route,
           which is not "0 of 0" — it is a document that was never a chain, and
@@ -4505,7 +4622,9 @@ export class DocumentsService {
       idea of whose file this is.
     */
     const where: Prisma.DocumentWhereInput = {
-      ...(isSelf ? {} : typeScope(data.actor)),
+      // Somebody else's file by type and override; your own minus anything
+      // hidden from you. The same fragment answers both.
+      ...typeScope(data.actor),
       // Both, always. The organization scope is what stops a stale or guessed
       // user id reaching across tenants even when the id is otherwise valid.
       organizationId: data.actor.organizationId,
@@ -4769,7 +4888,7 @@ export class DocumentsService {
   async listEvents(data: { actor: DocumentActor; documentId: string }) {
     const document = await this.prisma.document.findFirst({
       where: { id: data.documentId, organizationId: data.actor.organizationId },
-      select: { id: true, userId: true, type: { select: { visibleToRoleIds: true } } },
+      select: { id: true, userId: true, hiddenFromMember: true, rolesOverridden: true, visibleToRoleIds: true, type: { select: { visibleToRoleIds: true } } },
     });
     if (!document) throw new NotFoundException('Document not found');
 
@@ -4873,6 +4992,224 @@ export class DocumentsService {
     }
 
     return { exportedAt: new Date(), count: files.length, files };
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Control over one document — who sees it, and erasing it
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Decide who may see these documents.
+   *
+   * `hiddenFromMember` takes a document out of its subject's file entirely.
+   * `roleIds` null puts the documents back under their type's rule; an array
+   * REPLACES it for these documents (empty = administrators only). Either may be
+   * left undefined to leave that half alone, so the bulk bar can hide without
+   * touching roles.
+   *
+   * ⚠️ The documents are fetched through `typeScope`: nobody may change who sees
+   * a document they cannot see themselves, and a document outside that scope is
+   * 404 — the same answer as a document that does not exist.
+   */
+  async setVisibility(data: {
+    actor: DocumentActor;
+    documentIds: string[];
+    hiddenFromMember?: boolean;
+    roleIds?: string[] | null;
+    ctx?: RequestContext;
+  }) {
+    if (!data.actor.canManageDocumentVisibility || data.actor.isExternal) {
+      throw new ForbiddenException('You cannot change who sees documents');
+    }
+    const ids = boundedIds(data.documentIds);
+    if (data.hiddenFromMember === undefined && data.roleIds === undefined) {
+      throw new BadRequestException('Nothing to change');
+    }
+
+    let roles: { id: string; name: string }[] | null = null;
+    if (Array.isArray(data.roleIds)) {
+      const wanted = [...new Set(data.roleIds)];
+      if (wanted.length > 50) throw new BadRequestException('Too many roles');
+      // Org roles only: a document belongs to a person, not to a site, and the
+      // viewer is matched on their ORG role (memberRoleId).
+      roles = await this.prisma.accessRole.findMany({
+        where: {
+          id: { in: wanted },
+          organizationId: data.actor.organizationId,
+          isActive: true,
+          scope: { in: ['ORG', 'BOTH'] },
+        },
+        select: { id: true, name: true },
+      });
+      if (roles.length !== wanted.length) {
+        throw new BadRequestException('One of those roles does not exist');
+      }
+    }
+
+    const docs = await this.prisma.document.findMany({
+      where: {
+        ...typeScope(data.actor),
+        id: { in: ids },
+        organizationId: data.actor.organizationId,
+        status: { not: 'DRAFT' },
+      },
+      select: {
+        id: true,
+        title: true,
+        userId: true,
+        user: { select: { firstName: true, lastName: true } },
+        type: { select: { label: true } },
+      },
+    });
+    if (docs.length !== ids.length) throw new NotFoundException('Document not found');
+
+    const change: Prisma.DocumentUpdateManyMutationInput = {
+      ...(data.hiddenFromMember !== undefined ? { hiddenFromMember: data.hiddenFromMember } : {}),
+      ...(data.roleIds === null ? { rolesOverridden: false, visibleToRoleIds: [] } : {}),
+      ...(roles ? { rolesOverridden: true, visibleToRoleIds: roles.map((r) => r.id) } : {}),
+    };
+    const meta = {
+      ...(data.hiddenFromMember !== undefined ? { hiddenFromMember: data.hiddenFromMember } : {}),
+      ...(data.roleIds === null ? { roles: 'type' } : {}),
+      ...(roles ? { roles: roles.map((r) => r.name) } : {}),
+    };
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.document.updateMany({
+        where: { id: { in: ids }, organizationId: data.actor.organizationId },
+        data: change,
+      });
+      await tx.documentEvent.createMany({
+        data: docs.map((d) => ({
+          documentId: d.id,
+          type: 'VISIBILITY_CHANGED' as const,
+          actorId: data.actor.userId,
+          meta,
+          ...eventContext(data.ctx),
+        })),
+      });
+      await tx.activityLog.createMany({
+        data: docs.map((d) => ({
+          eventType: 'DOCUMENT_VISIBILITY_CHANGED',
+          userId: data.actor.userId,
+          targetUserId: d.userId,
+          organizationId: data.actor.organizationId,
+          resourceType: 'documents',
+          resourceId: d.id,
+          ipAddress: data.ctx?.ip ?? null,
+          userAgent: data.ctx?.userAgent ?? null,
+          metadata: {
+            title: d.title,
+            type: d.type.label,
+            member: `${d.user.firstName} ${d.user.lastName}`.trim(),
+            ...meta,
+          },
+        })),
+      });
+    });
+
+    return { updated: docs.length };
+  }
+
+  /**
+   * Erase documents for good — the row, its signatures, its trail and its files.
+   *
+   * ⚠️ The one operation in this service that destroys evidence, so it is
+   * shaped to be hard to do by accident:
+   *   - its own permission, held by nobody but administrators until granted;
+   *   - scoped by `typeScope`, so you cannot erase what you cannot see (404);
+   *   - all-or-nothing: one id out of scope refuses the whole request, rather
+   *     than deleting the rest and leaving the caller to guess which survived;
+   *   - a signed document needs `confirmSignaturesLost`, the server-side twin of
+   *     the tick-box, so a client cannot skip the question;
+   *   - the audit rows are written in the SAME transaction as the delete — the
+   *     document's own trail dies with it, so this is the only record left, and
+   *     a delete that could commit without it would be a delete with no witness.
+   */
+  async deleteDocuments(data: {
+    actor: DocumentActor;
+    documentIds: string[];
+    confirmSignaturesLost?: boolean;
+    ctx?: RequestContext;
+  }) {
+    if (!data.actor.canDeleteDocuments || data.actor.isExternal) {
+      throw new ForbiddenException('You cannot delete documents');
+    }
+    const ids = boundedIds(data.documentIds);
+
+    const docs = await this.prisma.document.findMany({
+      where: { ...typeScope(data.actor), id: { in: ids }, organizationId: data.actor.organizationId },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        userId: true,
+        storageKey: true,
+        originalKey: true,
+        user: { select: { firstName: true, lastName: true } },
+        type: { select: { label: true } },
+        signatures: { select: { signatureKey: true, hashAfter: true } },
+      },
+    });
+    if (docs.length !== ids.length) throw new NotFoundException('Document not found');
+
+    const signatureCount = docs.reduce((n, d) => n + d.signatures.length, 0);
+    if ((signatureCount > 0 || docs.some((d) => d.status === 'SIGNED')) && !data.confirmSignaturesLost) {
+      throw new BadRequestException(
+        'These documents carry signatures. Confirm that the signatures will be lost to delete them.',
+      );
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.activityLog.createMany({
+        data: docs.map((d) => ({
+          eventType: 'DOCUMENT_DELETED',
+          userId: data.actor.userId,
+          targetUserId: d.userId,
+          organizationId: data.actor.organizationId,
+          resourceType: 'documents',
+          resourceId: d.id,
+          ipAddress: data.ctx?.ip ?? null,
+          userAgent: data.ctx?.userAgent ?? null,
+          // What it WAS — after this, nothing else remembers.
+          metadata: {
+            title: d.title,
+            type: d.type.label,
+            member: `${d.user.firstName} ${d.user.lastName}`.trim(),
+            previousStatus: d.status,
+            signatures: d.signatures.length,
+          },
+        })),
+      });
+      // Signers, signatures and events cascade; a newer version that pointed
+      // at one of these is set to point at nothing.
+      await tx.document.deleteMany({
+        where: { id: { in: ids }, organizationId: data.actor.organizationId },
+      });
+    });
+
+    // Files after the rows, and only those nothing else still points at.
+    const org = data.actor.organizationId;
+    for (const d of docs) {
+      await this.freeStorageIfUnreferenced(d.storageKey);
+      if (d.originalKey && d.originalKey !== d.storageKey) await this.freeStorageIfUnreferenced(d.originalKey);
+      for (const s of d.signatures) {
+        await this.freeStorageIfUnreferenced(documentKey(org, s.hashAfter, 'pdf'));
+        await this.freeSignatureImageIfUnreferenced(s.signatureKey);
+      }
+    }
+
+    return { deleted: docs.length };
+  }
+
+  /** A signature image goes when no remaining signature row uses it. Never throws. */
+  private async freeSignatureImageIfUnreferenced(key: string): Promise<void> {
+    try {
+      if ((await this.prisma.documentSignature.count({ where: { signatureKey: key } })) > 0) return;
+      if (this.store) await this.store.delete(key);
+    } catch (err) {
+      this.logger.warn(`Could not free ${key}: ${(err as Error).message}`);
+    }
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -5009,6 +5346,9 @@ export class DocumentsService {
         // checked. Without one, the caller must be the subject — scoped here so
         // a colleague's id is not found rather than found-and-refused.
         ...(steps.length > 0 ? {} : { userId: actor.userId }),
+        // Hidden from its member means not signable by them either — whatever
+        // the route says. Another signer on the route is unaffected.
+        NOT: { userId: actor.userId, hiddenFromMember: true },
       },
       include: {
         type: { select: { label: true, signatureMode: true } },
@@ -5369,6 +5709,21 @@ function downloadName(title: string, mimeType: string): string {
 }
 
 /** Request provenance, flattened onto an event row. */
+/**
+ * The ids a bulk action may touch: de-duplicated, non-empty, at most 100.
+ * A cap keeps one request from turning into an unbounded transaction.
+ */
+function boundedIds(ids: unknown): string[] {
+  if (!Array.isArray(ids)) throw new BadRequestException('documentIds must be a list');
+  const out = [...new Set(ids.filter((v): v is string => typeof v === 'string' && v.length > 0 && v.length <= 64))];
+  if (out.length === 0) throw new BadRequestException('Choose at least one document');
+  if (out.length > 100) throw new BadRequestException('At most 100 documents at a time');
+  if (out.length !== ids.length && new Set(ids).size === ids.length) {
+    throw new BadRequestException('documentIds must be document ids');
+  }
+  return out;
+}
+
 function eventContext(ctx?: RequestContext) {
   return {
     ip: ctx?.ip ?? null,

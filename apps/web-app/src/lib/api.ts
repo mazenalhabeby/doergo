@@ -7146,6 +7146,12 @@ export interface IssuedRow {
   isCredential: boolean
   /** Null for a document whose type has no route — not an empty chain. */
   chain?: DocumentChain | null
+  /** Hidden from the member it belongs to ("Who can see this"). */
+  hiddenFromMember?: boolean
+  /** True when `visibleToRoleIds` replaces the type's rule for this document. */
+  rolesOverridden?: boolean
+  visibleToRoleIds?: string[]
+  signatureCount?: number
 }
 
 /** A folder in the cabinet: a type, a member, or a year. */
@@ -7332,9 +7338,29 @@ export const documentsApi = {
     expiresOn?: string;
     /** Stage it: invisible to the member, no notification, until published. */
     asDraft?: boolean;
+    /** Replace this document: it is superseded and hidden from its member. */
+    replacesId?: string;
   }) => {
     const response = await api.post<{ success: boolean; data: MemberDocumentRow }>('/documents', data);
     return unwrapDocuments<any>(response);
+  },
+
+  /** "Who can see this": hide from the member, and/or limit to roles (null = follow the type). */
+  setVisibility: async (data: { documentIds: string[]; hiddenFromMember?: boolean; roleIds?: string[] | null }) => {
+    const response = await api.post<{ success: boolean; data: { updated: number } }>('/documents/bulk/visibility', data);
+    return unwrapDocuments<{ updated: number }>(response)
+  },
+
+  /** Erase documents for good. `confirmSignaturesLost` is required when any is signed. */
+  deleteMany: async (data: { documentIds: string[]; confirmSignaturesLost?: boolean }) => {
+    const response = await api.post<{ success: boolean; data: { deleted: number } }>('/documents/bulk/delete', data);
+    return unwrapDocuments<{ deleted: number }>(response)
+  },
+
+  /** Org roles a document can be limited to — names only. */
+  visibilityRoles: async () => {
+    const response = await api.get<{ success: boolean; data: { id: string; name: string; color: string | null }[] }>('/documents/visibility-roles');
+    return unwrapDocuments<{ id: string; name: string; color: string | null }[]>(response) ?? []
   },
 
   /** What the organization still expects from you (or, with an id, from them). */

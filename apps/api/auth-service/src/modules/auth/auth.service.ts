@@ -183,6 +183,9 @@ function orgPermissionFields(
     canOpenMemberDocuments: accessAllows(access, 'canOpenMemberDocuments'),
     canIssueDocuments: accessAllows(access, 'canIssueDocuments'),
     canManageDocumentTemplates: accessAllows(access, 'canManageDocumentTemplates'),
+    canManageDocumentVisibility: accessAllows(access, 'canManageDocumentVisibility'),
+    canReplaceDocuments: accessAllows(access, 'canReplaceDocuments'),
+    canDeleteDocuments: accessAllows(access, 'canDeleteDocuments'),
   };
 }
 

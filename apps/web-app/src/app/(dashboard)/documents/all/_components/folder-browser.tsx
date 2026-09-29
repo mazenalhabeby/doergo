@@ -12,6 +12,11 @@ import { Button } from "@/components/ui/button"
 import { UserAvatar } from "@/components/user-avatar"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  DocumentActionDialogs, DocumentRowMenu, SelectionBar, VisibilityChip,
+  useDocumentControl, useRowSelection, type DocumentAction,
+} from "./document-control"
 
 /*
   The filing cabinet.
@@ -73,6 +78,14 @@ export function FolderBrowser() {
     queryFn: () => documentsApi.browse(params),
     staleTime: 30_000,
   })
+
+  // A member's folder is where "clear their contracts" happens: tick, then act.
+  const shelf = data?.level === "documents" ? data.documents : []
+  const control = useDocumentControl()
+  const canSelect = control.canVisibility || control.canDelete
+  const selection = useRowSelection(shelf)
+  const [action, setAction] = useState<{ kind: DocumentAction; rows: IssuedRow[] } | null>(null)
+  const act = (kind: DocumentAction, rows: IssuedRow[]) => setAction({ kind, rows })
 
   const open = useMutation({
     mutationFn: (id: string) => documentsApi.downloadUrl(id),
@@ -168,6 +181,19 @@ export function FolderBrowser() {
             <Empty />
           ) : (
             <div>
+              <SelectionBar selected={selection.selected} onClear={selection.clear} onAction={act} />
+              {canSelect && selection.selected.length === 0 && data.documents.length > 1 && (
+                <div className="flex items-center gap-2.5 border-b border-border/40 px-5 py-2">
+                  <Checkbox
+                    id="folder-select-all"
+                    checked={selection.allSelected}
+                    onCheckedChange={() => selection.toggleAll()}
+                  />
+                  <label htmlFor="folder-select-all" className="cursor-pointer text-xs text-muted-foreground">
+                    {t("documents.control.selectAllFolder", "Select all in this folder")}
+                  </label>
+                </div>
+              )}
               {data.documents.map((d, i) => (
                 <DocumentRow
                   key={d.id}
@@ -176,6 +202,10 @@ export function FolderBrowser() {
                   locale={i18n.language}
                   busy={opening === d.id}
                   onOpen={() => open.mutate(d.id)}
+                  selectable={canSelect}
+                  selected={selection.isSelected(d.id)}
+                  onToggle={() => selection.toggle(d.id)}
+                  onAction={act}
                 />
               ))}
             </div>
@@ -224,6 +254,12 @@ export function FolderBrowser() {
           </div>
         )}
       </div>
+      <DocumentActionDialogs
+        action={action?.kind ?? null}
+        rows={action?.rows ?? []}
+        onClose={() => setAction(null)}
+        onDone={selection.clear}
+      />
     </div>
   )
 }
@@ -243,8 +279,12 @@ function Empty() {
 }
 
 function DocumentRow({
-  doc, index, locale, busy, onOpen,
-}: { doc: IssuedRow; index: number; locale: string; busy: boolean; onOpen: () => void }) {
+  doc, index, locale, busy, onOpen, selectable, selected, onToggle, onAction,
+}: {
+  doc: IssuedRow; index: number; locale: string; busy: boolean; onOpen: () => void
+  selectable: boolean; selected: boolean; onToggle: () => void
+  onAction: (kind: DocumentAction, rows: IssuedRow[]) => void
+}) {
   const { t } = useTranslation()
   const month =
     doc.periodYear && doc.periodMonth
@@ -256,8 +296,18 @@ function DocumentRow({
   return (
     <div
       style={{ animation: `fadeSlideIn 0.25s ease-out ${index * 40}ms both` }}
-      className="group flex items-center gap-4 border-b border-border/50 px-5 py-3.5 transition-colors last:border-0 hover:bg-accent/30"
+      className={cn(
+        "group flex items-center gap-4 border-b border-border/50 px-5 py-3.5 transition-colors last:border-0 hover:bg-accent/30",
+        selected && "bg-primary/5",
+      )}
     >
+      {selectable && (
+        <Checkbox
+          checked={selected}
+          onCheckedChange={onToggle}
+          aria-label={t("documents.control.selectOne", { defaultValue: "Select {{title}}", title: doc.title })}
+        />
+      )}
       <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
         <FileText className="h-4 w-4" />
       </span>
@@ -273,6 +323,7 @@ function DocumentRow({
           )}
         </p>
       </div>
+      <VisibilityChip row={doc} />
       {!doc.openedAt && (
         <span className="hidden shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary sm:inline-block">
           {t("documents.all.state.unopened", "Not opened")}
@@ -286,6 +337,7 @@ function DocumentRow({
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
       </Button>
+      <DocumentRowMenu row={doc} onAction={onAction} />
     </div>
   )
 }

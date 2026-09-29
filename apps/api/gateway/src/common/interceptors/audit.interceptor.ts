@@ -25,6 +25,11 @@ const MUTATING = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
 // record every offline action twice.
 const SKIP_PREFIXES = ['/tracking', '/auth', '/users/push-token', '/sync'];
 
+// Routes whose service writes its own, richer audit rows in the same
+// transaction as the change (titles, member, what was lost). A second, generic
+// row from here would only say the same thing worse.
+const SELF_AUDITED = new Set(['POST /documents/bulk/delete', 'POST /documents/bulk/visibility']);
+
 // Redact anything that looks secret from the logged body.
 const SENSITIVE_KEY = /pass|token|secret|otp|code|hash|authorization/i;
 
@@ -214,6 +219,7 @@ export class AuditInterceptor implements NestInterceptor {
       const { path } = guessed;
       const { normalized, resourceId, resourceType } = resolved;
       if (SKIP_PREFIXES.some((p) => path.startsWith(p))) return;
+      if (SELF_AUDITED.has(`${method} ${normalized}`)) return;
 
       const eventType =
         ROUTE_ACTIONS[`${method} ${normalized}`] ||

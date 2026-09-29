@@ -67,6 +67,12 @@ export const PERMISSION_KEYS = [
   'canOpenMemberDocuments',
   'canIssueDocuments',
   'canManageDocumentTemplates',
+  // Control over ONE document, split from issuing because each is a bigger power
+  // than the last: choosing who sees it, swapping it for a new version, and
+  // erasing it — signatures included — are three separate trusts.
+  'canManageDocumentVisibility',
+  'canReplaceDocuments',
+  'canDeleteDocuments',
 ] as const;
 
 export type AccessPermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -118,7 +124,10 @@ export const ACCESS_PERMISSION_SCHEMA: {
   { key: 'canViewMemberDocuments', label: 'See member documents', description: 'See that a member has documents — names and dates only, never the contents', domain: 'documents', scopes: ['org'] },
   { key: 'canOpenMemberDocuments', label: 'Open member documents', description: 'Open and download another member’s documents, including payslips', domain: 'documents', scopes: ['org'] },
   { key: 'canIssueDocuments', label: 'Issue documents', description: 'Upload and publish documents to members, and withdraw them', domain: 'documents', scopes: ['org'] },
-  { key: 'canManageDocumentTemplates', label: 'Manage document types', description: 'Define document types, contract templates and retention rules', domain: 'documents', scopes: ['org'] }
+  { key: 'canManageDocumentTemplates', label: 'Manage document types', description: 'Define document types, contract templates and retention rules', domain: 'documents', scopes: ['org'] },
+  { key: 'canManageDocumentVisibility', label: 'Choose who sees a document', description: 'Hide a document from the member it belongs to, or limit it to certain roles', domain: 'documents', scopes: ['org'] },
+  { key: 'canReplaceDocuments', label: 'Replace documents', description: 'Swap a document for a new version and ask for signature again', domain: 'documents', scopes: ['org'] },
+  { key: 'canDeleteDocuments', label: 'Delete documents', description: 'Erase documents for good, including signed ones', domain: 'documents', scopes: ['org'] }
 ];
 
 /** Resolved CRM abilities for a caller — what the customers service enforces. */

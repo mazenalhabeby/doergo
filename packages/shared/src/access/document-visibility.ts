@@ -137,3 +137,94 @@ export function visibleTypeSelfWhere(viewer: DocumentViewer): object | undefined
     ],
   };
 }
+
+/*
+  ────────────────────────────────────────────────────────────────────────────
+  Per-DOCUMENT visibility — "Who can see this document".
+
+  The type answers for a whole shelf; this answers for one file on it. Two
+  levers, both set by somebody holding `canManageDocumentVisibility`:
+
+    hiddenFromMember   the document leaves its subject's file entirely. This is
+                       the ONE thing that overrides the subject exemption above —
+                       deliberately, because hiding it from them is the request.
+
+    rolesOverridden    the document's own `visibleToRoleIds` replaces the type's
+                       list. Empty then means "administrators only", NOT "no
+                       restriction": an override exists precisely to narrow, and
+                       reading empty as "everybody" would make clearing the last
+                       role silently publish the document to the whole office.
+
+  Defaults (false / false / []) reproduce the type rule exactly, which is what
+  makes adding the columns a non-event for every existing document.
+  ────────────────────────────────────────────────────────────────────────────
+*/
+
+/** The visibility half of one document. */
+export interface DocumentVisibility {
+  userId: string;
+  hiddenFromMember?: boolean | null;
+  rolesOverridden?: boolean | null;
+  visibleToRoleIds?: string[] | null;
+  type?: TypeVisibility | null;
+}
+
+/**
+ * Can this viewer see this document?
+ *
+ * `viewer.userId` must be set for the subject rule to apply; a viewer without
+ * one is treated as somebody else looking at the file.
+ */
+export function documentVisibleTo(doc: DocumentVisibility, viewer: DocumentViewer): boolean {
+  if (viewer.isAdmin) return true;
+  if (viewer.userId && doc.userId === viewer.userId) return !doc.hiddenFromMember;
+  if (doc.rolesOverridden) {
+    return !!viewer.roleId && (doc.visibleToRoleIds ?? []).includes(viewer.roleId);
+  }
+  return documentTypeVisibleTo(doc.type, viewer);
+}
+
+/**
+ * The same rule as a Prisma `where` fragment on DOCUMENTS.
+ *
+ * Replaces `visibleTypeWhere` wherever documents (not types) are listed, so the
+ * count and the pagination describe exactly the rows the reader can open.
+ * `undefined` for an administrator — their queries are untouched.
+ */
+export function visibleDocumentWhere(viewer: DocumentViewer): object | undefined {
+  if (viewer.isAdmin) return undefined;
+  const role = viewer.roleId ?? null;
+
+  const asOthers = {
+    OR: [
+      // No override: the type decides, exactly as before.
+      {
+        rolesOverridden: false,
+        type: {
+          OR: [
+            { visibleToRoleIds: { isEmpty: true } },
+            ...(role ? [{ visibleToRoleIds: { has: role } }] : []),
+          ],
+        },
+      },
+      // An override names this viewer's role. A viewer with no role matches
+      // nothing here, which is right: empty means administrators only.
+      ...(role ? [{ rolesOverridden: true, visibleToRoleIds: { has: role } }] : []),
+    ],
+  };
+
+  if (!viewer.userId) return asOthers;
+  return {
+    OR: [
+      // Their own file, minus what was hidden from them.
+      { userId: viewer.userId, hiddenFromMember: false },
+      { AND: [{ userId: { not: viewer.userId } }, asOthers] },
+    ],
+  };
+}
+
+/**
+ * For reads confined to the caller's OWN documents (their signing queue, their
+ * reminders, what is still asked of them): leave out what was hidden from them.
+ */
+export const NOT_HIDDEN_FROM_MEMBER = { hiddenFromMember: false } as const;
