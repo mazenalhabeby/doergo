@@ -45,6 +45,7 @@ export * from './timezone-country';
 // Which narrated video explains which guided tour — read by the web app's tour
 // UI, so it has to be on the browser-safe entry too.
 export * from './video-guides';
+export * from './assigned-home';
 
 // Client-safe constants (pure data — no server deps)
 export * from './constants/attendance';

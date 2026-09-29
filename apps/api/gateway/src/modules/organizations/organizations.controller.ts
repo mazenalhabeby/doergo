@@ -14,6 +14,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { OrgEventsService } from '../../common/events/org-events.service';
@@ -22,7 +23,7 @@ import { isFeatureEntitled } from '../../common/entitlements';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
-import { UpdateOrgSettingsDto, UpdateMemberDto, ListMembersQueryDto, UpdateOrgProfileDto, UpdateNotificationPrefsDto, UpdateSecuritySettingsDto, TransferOwnershipDto } from './dto';
+import { SetMemberHomeDto, UpdateOrgSettingsDto, UpdateMemberDto, ListMembersQueryDto, UpdateOrgProfileDto, UpdateNotificationPrefsDto, UpdateSecuritySettingsDto, TransferOwnershipDto } from './dto';
 
 @ApiTags('organizations')
 @Controller('organizations')
@@ -401,6 +402,43 @@ export class OrganizationsController {
       );
     }
 
+    return result;
+  }
+
+  /*
+    A member's phone home screen, set up from the office. The phone applies it
+    once and the member can change it afterwards. PUT with a layout sets it;
+    DELETE clears it (the member keeps whatever they have).
+  */
+  @Put('members/:id/home')
+  @RequirePermission('canManageUsers')
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @ApiOperation({ summary: "Set up a member's phone home screen (applied once, then theirs)" })
+  async setMemberHome(
+    @Param('id') memberId: string,
+    @Body() body: SetMemberHomeDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'set_member_home' }, {
+        memberId,
+        organizationId: user.organizationId,
+        layout: { widgets: body?.widgets, shortcuts: body?.shortcuts },
+      }),
+    );
+    // Their next /auth/me carries it, not a cached copy.
+    await this.authCache.invalidateUser(memberId);
+    return result;
+  }
+
+  @Delete('members/:id/home')
+  @RequirePermission('canManageUsers')
+  @ApiOperation({ summary: "Clear an office-set home screen" })
+  async clearMemberHome(@Param('id') memberId: string, @CurrentUser() user: CurrentUserData) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'set_member_home' }, { memberId, organizationId: user.organizationId, layout: null }),
+    );
+    await this.authCache.invalidateUser(memberId);
     return result;
   }
 

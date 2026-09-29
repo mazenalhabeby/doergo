@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { HOME_WIDGET_KEYS, type AssignedHome } from '@hbcfield/shared/client';
 
 /**
  * The member's arrangement of their own home screen.
@@ -101,4 +102,52 @@ export async function saveShortcuts(userId: string, keys: string[] | null): Prom
   } catch {
     /* A lost choice falls back to the smart picks — a disappointment, not an error. */
   }
+  shortcutListeners.forEach((fn) => fn(userId));
+}
+
+/*
+  A card already on screen hears about a change it did not make — the office's
+  layout being applied while the home is open. Its own saves notify too, which
+  only re-reads what it just wrote.
+*/
+const shortcutListeners = new Set<(userId: string) => void>();
+export function onShortcutsChanged(fn: (userId: string) => void): () => void {
+  shortcutListeners.add(fn);
+  return () => { shortcutListeners.delete(fn); };
+}
+
+/*
+  ── A home screen the office set up ──
+  Applied ONCE per assignment: the phone remembers which `setAt` it applied, so
+  the member can rearrange freely afterwards and nothing puts it back — until
+  the office sets a new one, which carries a newer `setAt`.
+*/
+
+const appliedKey = (userId: string) => `@hbcfield/home-assigned/${userId}`;
+
+export async function appliedAssignment(userId: string): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(appliedKey(userId));
+  } catch {
+    return null;
+  }
+}
+
+export async function markAssignmentApplied(userId: string, setAt: string): Promise<void> {
+  try {
+    await AsyncStorage.setItem(appliedKey(userId), setAt);
+  } catch {
+    /* Worst case it is applied again next launch — the same layout, harmless. */
+  }
+}
+
+/**
+ * The assignment as a layout: its widgets in its order, then every other widget
+ * switched OFF — so the defaults do not reappear beside it, and each one is
+ * still in the gallery for the member to add back.
+ */
+export function layoutFromAssignment(assigned: Pick<AssignedHome, 'widgets'>): HomeLayout {
+  const chosen = assigned.widgets.filter((k, i, all) => all.indexOf(k) === i);
+  const rest = HOME_WIDGET_KEYS.filter((k) => !chosen.includes(k));
+  return { keys: [...chosen, ...rest], hidden: [...rest] };
 }

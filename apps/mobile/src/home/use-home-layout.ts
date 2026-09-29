@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../contexts/auth-context';
 import { availableWidgets, DEFAULT_ORDER, WIDGETS, type WidgetRow } from './registry';
 import { defaultHomeKeys, seedLayout } from './default-home';
-import { loadLayout, saveLayout, EMPTY_LAYOUT, type HomeLayout } from './layout-store';
+import {
+  loadLayout, saveLayout, saveShortcuts, EMPTY_LAYOUT, type HomeLayout,
+  appliedAssignment, markAssignmentApplied, layoutFromAssignment,
+} from './layout-store';
+import { readAssignedHome } from '@hbcfield/shared/client';
 import { move as moveInList, withVisibleOrder, type Moved } from './arrange-list';
 
 /**
@@ -81,12 +85,37 @@ export function useHomeLayout(): HomeLayoutApi {
   const userRef = useRef(user);
   userRef.current = user;
 
+  /*
+    A home screen the office set up rides on the session. Keyed by its `setAt`
+    so a new assignment arriving with a refreshed session applies without a
+    restart — and the SAME one never applies twice.
+  */
+  const assignedAt = user?.assignedHome?.setAt ?? null;
+
   useEffect(() => {
     loadedFor.current = userId;
     if (!userId) { setLayout(EMPTY_LAYOUT); setLoading(false); return; }
     setLoading(true);
-    void loadLayout(userId).then((l) => {
+    void loadLayout(userId).then(async (l) => {
       if (loadedFor.current !== userId) return;
+      const assigned = readAssignedHome(userRef.current?.assignedHome);
+      if (assigned && assigned.widgets.length && (await appliedAssignment(userId)) !== assigned.setAt) {
+        if (loadedFor.current !== userId) return;
+        /*
+          ⚠️ SHORTCUTS FIRST, THEN THE LAYOUT, THEN THE MARK. The card mounts
+          when the layout lands, so it must find the new tiles already written;
+          and the mark goes last so a crash half-way re-applies next launch
+          rather than leaving half an assignment behind.
+        */
+        await saveShortcuts(userId, assigned.shortcuts.length ? assigned.shortcuts : null);
+        l = layoutFromAssignment(assigned);
+        await saveLayout(userId, l);
+        await markAssignmentApplied(userId, assigned.setAt);
+        if (loadedFor.current !== userId) return;
+        setLayout(l);
+        setLoading(false);
+        return;
+      }
       /*
         ⚠️ A NEW ACCOUNT'S HOME IS CHOSEN ONCE AND SAVED. Two widgets picked
         for the member's work (`default-home.ts`), written down as their own
@@ -100,7 +129,7 @@ export function useHomeLayout(): HomeLayoutApi {
       setLayout(l);
       setLoading(false);
     });
-  }, [userId]);
+  }, [userId, assignedAt]);
 
   const persist = useCallback((next: HomeLayout) => {
     setLayout(next);

@@ -19,7 +19,7 @@ import {
   smartPicks, type Badges, type ShortcutGroup,
 } from '../../home/shortcuts';
 import { useInGallery, usePitch } from '../../home/pitch';
-import { loadShortcuts, saveShortcuts } from '../../home/layout-store';
+import { loadShortcuts, saveShortcuts, onShortcutsChanged } from '../../home/layout-store';
 
 /**
  * ⭐ SHORTCUTS — `docs/design/shortcuts`. Four tiles the member chooses.
@@ -86,7 +86,11 @@ export function ShortcutsCard({ style }: { style?: StyleProp<ViewStyle> }) {
     setChosen(undefined);
     let live = true;
     void loadShortcuts(user.id).then((k) => { if (live) setChosen(k); });
-    return () => { live = false; };
+    // Tiles set from the office land while the card is on screen.
+    const off = onShortcutsChanged((id) => {
+      if (id === user.id) void loadShortcuts(id).then((k) => { if (live) setChosen(k); });
+    });
+    return () => { live = false; off(); };
   }, [user?.id]);
 
   const shown = useMemo(() => shownShortcuts(chosen ?? null, cands, badges), [chosen, cands, badges]);

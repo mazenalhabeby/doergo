@@ -233,6 +233,11 @@ export class UsersController {
     return this.usersService.recordAppVersion(data);
   }
 
+  @MessagePattern({ cmd: 'set_member_home' })
+  async setMemberHome(@Payload() data: { memberId: string; organizationId: string; layout: unknown }) {
+    return this.usersService.setAssignedHome(data);
+  }
+
   @MessagePattern({ cmd: 'remove_member' })
   async removeMember(
     @Payload()

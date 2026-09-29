@@ -1,4 +1,4 @@
-import { memberScopeFilter, cleanRateCents, normalizeLocale, MEMBER_EMAILS, MEMBER_NOTIFICATION_PREF_KEYS, orgAllowsEmail, pickBooleanPrefs } from '@hbcfield/shared';
+import { parseAssignedHome, memberScopeFilter, cleanRateCents, normalizeLocale, MEMBER_EMAILS, MEMBER_NOTIFICATION_PREF_KEYS, orgAllowsEmail, pickBooleanPrefs } from '@hbcfield/shared';
 import {
   Injectable,
   Logger,
@@ -1378,6 +1378,34 @@ export class UsersService implements OnApplicationBootstrap {
       data: { ownerId: target.id, ownerName: `${target.firstName} ${target.lastName}`.trim() },
       message: 'Ownership transferred',
     };
+  }
+
+  /**
+   * Set up a member's phone home screen from the office (or clear it: null).
+   *
+   * The phone applies each assignment once and then leaves the member free to
+   * change it. Validated here against the shared definition, scoped to the
+   * caller's organization, and never for a portal customer (they have no app
+   * home). Entitlement is still decided by the phone at render time, so an
+   * assignment cannot show anybody something they may not open.
+   */
+  async setAssignedHome(data: { memberId: string; organizationId: string; layout: unknown }) {
+    const member = await this.prisma.user.findFirst({
+      where: { id: data.memberId, organizationId: data.organizationId, role: { not: 'CUSTOMER' as any } },
+      select: { id: true },
+    });
+    if (!member) throw new NotFoundException('Member not found');
+
+    let value: Prisma.InputJsonValue | typeof Prisma.DbNull = Prisma.DbNull;
+    if (data.layout !== null && data.layout !== undefined) {
+      try {
+        value = parseAssignedHome(data.layout) as unknown as Prisma.InputJsonValue;
+      } catch (err) {
+        throw new BadRequestException((err as Error).message);
+      }
+    }
+    await this.prisma.user.update({ where: { id: member.id }, data: { assignedHome: value } });
+    return { success: true, data: value === Prisma.DbNull ? null : value };
   }
 
   async removeMember(dto: RemoveMemberDto) {

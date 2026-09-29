@@ -1,3 +1,4 @@
+import { readAssignedHome } from '@hbcfield/shared';
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -923,6 +924,8 @@ export class AuthService {
           ...orgPermissionFields(access, user.taskCreationScope),
           // See validateToken: a document type may name the roles that see it.
           memberRoleId: user.memberRoleId ?? null,
+          // A home screen the office set up; the phone applies it once.
+          assignedHome: readAssignedHome(user.assignedHome),
         },
         ...tokens,
       },
@@ -1325,6 +1328,7 @@ export class AuthService {
             ...orgPermissionFields(refreshAccess, storedToken.user.taskCreationScope),
             // See validateToken: a document type may name the roles that see it.
             memberRoleId: storedToken.user.memberRoleId ?? null,
+            assignedHome: readAssignedHome(storedToken.user.assignedHome),
             allowRemote: storedToken.user.allowRemote,
             presence: storedToken.user.presence,
             specialty: storedToken.user.specialty,
@@ -1704,6 +1708,8 @@ export class AuthService {
             like a permissions bug and be nothing of the kind.
           */
           memberRoleId: true,
+          // The office-set home screen, carried on the session (see login).
+          assignedHome: true,
           spaceAssignments: {
             where: {
               effectiveFrom: { lte: new Date() },
@@ -1843,6 +1849,7 @@ export class AuthService {
             role become invisible on whichever path missed it.
           */
           memberRoleId: (userData as { memberRoleId?: string | null }).memberRoleId ?? null,
+          assignedHome: readAssignedHome((userData as { assignedHome?: unknown }).assignedHome),
           role: normalizeRole(userData.role),
           organizationName: organization?.name || null,
           // Must match the login path exactly — see orgAddOns for what happens

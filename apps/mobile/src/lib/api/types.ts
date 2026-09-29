@@ -63,6 +63,12 @@ export interface User {
   onboardingCompleted: boolean;
   /** Works for a client or partner (server-resolved). Absent on an older server = not external. */
   isExternal?: boolean;
+  /**
+   * A home screen the office set up for this member (`@hbcfield/shared`
+   * `AssignedHome`). Applied once per `setAt`, then theirs to change.
+   * Absent on an older server.
+   */
+  assignedHome?: { widgets: string[]; shortcuts: string[]; setAt: string } | null;
   // Customer portal: bound Customer + default unit (only for role=CUSTOMER).
   customerId?: string | null;
   unitId?: string | null;

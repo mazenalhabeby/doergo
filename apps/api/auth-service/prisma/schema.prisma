@@ -857,6 +857,12 @@ model User {
 
   // Unified org-wide role (Phase 1) — supersedes orgRole
   memberRoleId String?
+
+  /// A phone home screen the office set up for this member:
+  /// { widgets: string[], shortcuts: string[], setAt: ISO }. Applied ONCE by the
+  /// phone (it remembers `setAt`), after which the member arranges it freely.
+  /// Setting it again with a newer `setAt` applies again. Null = never set.
+  assignedHome Json?
   memberRole   AccessRole? @relation(fields: [memberRoleId], references: [id], onDelete: SetNull)
 
   createdTasks        Task[]               @relation("TaskCreator")

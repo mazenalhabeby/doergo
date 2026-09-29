@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsBoolean, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 /**
@@ -408,4 +408,23 @@ export class TransferOwnershipDto {
   @IsString()
   @IsNotEmpty()
   newOwnerId!: string;
+}
+
+/** A member's phone home screen, set up from the office. The service validates the values. */
+export class SetMemberHomeDto {
+  @ApiProperty({ type: [String], description: 'Widgets to show, in order' })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(6)
+  @IsString({ each: true })
+  @MaxLength(40, { each: true })
+  widgets!: string[];
+
+  @ApiPropertyOptional({ type: [String], description: 'Shortcut tiles, in order (at most 4)' })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(4)
+  @IsString({ each: true })
+  @MaxLength(60, { each: true })
+  shortcuts?: string[];
 }
