@@ -47,7 +47,7 @@ export function flagEmoji(code: string): string {
     .replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)))
 }
 
-export interface Country {
+interface Country {
   code: string
   name: string
 }
@@ -66,14 +66,4 @@ export function getCountries(locale = "en"): Country[] {
   cache = ISO_ALPHA2.map((code) => ({ code, name: dn?.of(code) || code }))
     .sort((a, b) => a.name.localeCompare(b.name))
   return cache
-}
-
-/** Localized country name for a code (falls back to the code). */
-export function countryName(code: string | null | undefined, locale = "en"): string {
-  if (!code) return ""
-  try {
-    return new Intl.DisplayNames([locale], { type: "region" }).of(code) || code
-  } catch {
-    return code
-  }
 }

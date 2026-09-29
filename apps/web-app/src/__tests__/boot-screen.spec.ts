@@ -30,8 +30,8 @@ const code = (p: string) =>
     .replace(/(^|[^:])\/\/[^\n]*/g, "$1")
 
 describe("the boot screen", () => {
-  it("is what both auth gates draw while the answer is unknown", () => {
-    for (const f of ["app/(dashboard)/layout.tsx", "contexts/auth-context.tsx"]) {
+  it("is what the auth gate draws while the answer is unknown", () => {
+    for (const f of ["app/(dashboard)/layout.tsx"]) {
       const src = read(f)
       expect(src).toContain("<BootScreen />")
       // The signed-in application must not be drawn before we know.
@@ -45,7 +45,7 @@ describe("the boot screen", () => {
       login page, so the sequence was skeleton, then nothing, then login. Three
       screens for one navigation.
     */
-    for (const f of ["app/(dashboard)/layout.tsx", "contexts/auth-context.tsx"]) {
+    for (const f of ["app/(dashboard)/layout.tsx"]) {
       const src = read(f)
       /*
         The LAST one — the render guard. The first `if (!isAuthenticated)` in the

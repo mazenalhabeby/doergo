@@ -11,7 +11,7 @@ export const STALE_AFTER_MS = 12 * 60 * 60 * 1000;
 /** Past this without a sync, the banner says so. */
 export const LONG_OFFLINE_MS = 3 * 24 * 60 * 60 * 1000;
 
-export type Freshness =
+type Freshness =
   | { kind: 'never' }
   /** Recent: shown as the clock time it was updated. */
   | { kind: 'at'; at: number; stale: false }

@@ -17,7 +17,7 @@ import { useTimeFormat } from "@/hooks"
  * nothing at all. What this buys is the reason, at the moment somebody still
  * remembers it, on its way to whoever is responsible.
  */
-export interface ClockOutEarlyDialogProps {
+interface ClockOutEarlyDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   shortfallMinutes: number

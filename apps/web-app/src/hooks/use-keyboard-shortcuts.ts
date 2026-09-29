@@ -6,7 +6,7 @@ import { useEffect, useRef, useCallback } from "react"
 // Types
 // ---------------------------------------------------------------------------
 
-export interface KeyboardShortcutHandlers {
+interface KeyboardShortcutHandlers {
   /** Create new task (C) */
   onCreateTask?: () => void
   /** Focus search input (/) */

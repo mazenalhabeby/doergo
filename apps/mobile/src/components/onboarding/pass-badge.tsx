@@ -5,7 +5,7 @@ import { useTheme } from '../../contexts/theme-context';
 import { AText } from '../amazen';
 
 /** What the front of the pass says — or `blank` for the side the code is typed onto. */
-export type PassFace = 'blank' | 'staff' | 'visitor' | 'reception' | 'refused';
+type PassFace = 'blank' | 'staff' | 'visitor' | 'reception' | 'refused';
 
 const STRIP: Record<Exclude<PassFace, 'blank'>, [string, string]> = {
   staff: ['#0b8168', '#7fe6c8'],
@@ -17,7 +17,7 @@ const INK = '#0b1f1a';
 const CARD = ['#f4f8f6', '#e3ebe8'] as const;
 
 /** Up to two letters for a company's mark. */
-export const monogram = (name?: string | null) =>
+const monogram = (name?: string | null) =>
   (name ?? '').split(/\s+/).filter(Boolean).map((w) => w[0]!).slice(0, 2).join('').toUpperCase() || '·';
 
 /**

@@ -10,7 +10,7 @@ import { manageRowsFor } from '../../../src/lib/manage-rows';
 import { holds } from '../../../src/lib/permissions';
 import { ShiftIssueListSheet, ShiftIssueThreadSheet } from '../../../src/components/shift-issue-sheet';
 import {
-  COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS, ROUTES,
+  SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS
 } from '../../../src/lib/constants';
 import { useTabSafe } from '../../../src/components/amazen';
 

@@ -16,7 +16,7 @@
 
 import { ADMIN_LOGIN, WEB_URL } from '../../config.ts';
 import { openStage } from '../runner.ts';
-import { DIALOG, dialogWith, goTo, pickFromSelect, reveal, signIn, typeSlowly, wheel } from '../screen.ts';
+import { DIALOG, goTo, pickFromSelect, signIn, wheel } from '../screen.ts';
 import type { Timeline } from '../../timeline.ts';
 
 export async function captureGetYourTeamIn(

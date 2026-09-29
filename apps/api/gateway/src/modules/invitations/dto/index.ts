@@ -18,7 +18,7 @@ import {
 import { Transform, Type } from 'class-transformer';
 import { EmailField, StrongPasswordField, NameField } from '@hbcfield/shared';
 
-export class InvitationScheduleEntryDto {
+class InvitationScheduleEntryDto {
   @IsNumber()
   dayOfWeek: number;
 
@@ -37,7 +37,7 @@ export class InvitationScheduleEntryDto {
 // are re-sanitized server-side via `normalizeAccessProfile`, so this validation
 // is a first line of defence, not the only one.
 
-export class EnabledModulesDto {
+class EnabledModulesDto {
   @IsArray()
   @IsOptional()
   @IsString({ each: true })
@@ -56,7 +56,7 @@ export class EnabledModulesDto {
   canContact?: boolean;
 }
 
-export class AccessProfileDto {
+class AccessProfileDto {
   // serializeAccessDraft() always emits memberRoleId (a value or null) as the
   // first field of the persisted access blob. Declare it here so the global
   // forbidNonWhitelisted pipe doesn't reject the nested property. The real role

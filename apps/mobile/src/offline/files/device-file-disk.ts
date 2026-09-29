@@ -3,7 +3,7 @@ import { loadImageManipulator } from '../native';
 import type { FileDisk, KeepInput } from './types';
 
 /** Longest edge a job photo is kept at. Enough to read a serial plate; a tenth of a 12 MP original. */
-export const PHOTO_MAX_EDGE = 2048;
+const PHOTO_MAX_EDGE = 2048;
 const PHOTO_QUALITY = 0.8;
 
 /** Types re-encoded as JPEG on the way in. A PNG signature stays a PNG — it is line art. */

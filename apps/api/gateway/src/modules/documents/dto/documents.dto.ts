@@ -581,7 +581,7 @@ export class PresignOwnUploadDto {
  * the picture it took, and the server should not have to be told the picture's
  * dimensions to believe it.
  */
-export class ScanCropDto {
+class ScanCropDto {
   @ApiProperty() @IsNumber() @Min(0) @Max(1) left!: number;
   @ApiProperty() @IsNumber() @Min(0) @Max(1) top!: number;
   @ApiProperty() @IsNumber() @Min(0) @Max(1) width!: number;

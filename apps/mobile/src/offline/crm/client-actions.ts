@@ -23,7 +23,7 @@ import type { MobileCustomer } from '../../lib/api';
 export const clientLane = (customerId: string) => `crm:${customerId}`;
 
 /** The queued create for this client, if it has not been accepted yet. */
-export function pendingClientCreate(ops: readonly OutboxOp[], customerId: string | null | undefined): string | undefined {
+function pendingClientCreate(ops: readonly OutboxOp[], customerId: string | null | undefined): string | undefined {
   if (!customerId) return undefined;
   return openOpFor(ops, 'customer.create', (b) => b.id === customerId)?.id;
 }

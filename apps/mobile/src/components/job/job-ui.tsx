@@ -1,5 +1,5 @@
 import React, { type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
 import { BlurSheet } from '../blur-sheet';
 import { SheetPanel } from '../sheet-panel';
@@ -368,5 +368,3 @@ export function Initials({ first, last, size = 30 }: { first?: string | null; la
     </View>
   );
 }
-
-export const hairline = StyleSheet.hairlineWidth;

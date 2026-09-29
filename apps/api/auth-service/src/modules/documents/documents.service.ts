@@ -170,7 +170,7 @@ function typeScope(actor: DocumentActor) {
   });
 }
 
-export interface RequestContext {
+interface RequestContext {
   ip?: string | null;
   userAgent?: string | null;
   appVersion?: string | null;
@@ -202,7 +202,7 @@ const ALLOWED_MIME: Record<string, string> = {
 };
 
 /** One person (or client) a route step could resolve to. */
-export interface SignerCandidate {
+interface SignerCandidate {
   /** CONTACT is a space's own client contact — an address with no client row. */
   kind: 'USER' | 'CUSTOMER' | 'CONTACT';
   id: string;
@@ -5272,7 +5272,7 @@ function contractValues(
 }
 
 /** Terms that are not on the member record and are supplied at issue time. */
-export interface ContractTerms {
+interface ContractTerms {
   startDate?: string;
   weeklyHours?: number | string;
   endDate?: string;

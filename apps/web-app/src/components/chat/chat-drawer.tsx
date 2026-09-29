@@ -110,25 +110,6 @@ function Avatar({ u, size = 40, dot = true }: { u?: ChatUserRef | null; size?: n
   );
 }
 
-export function MessagesButton() {
-  const { openMessages, unread } = useChat();
-  const { t } = useTranslation();
-  return (
-    <button
-      onClick={openMessages}
-      aria-label={t('chat.title', 'Messages')}
-      className="relative flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-    >
-      <MessageSquare className="size-4" />
-      {unread > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[9px] font-bold text-white">
-          {unread > 9 ? '9+' : unread}
-        </span>
-      )}
-    </button>
-  );
-}
-
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();

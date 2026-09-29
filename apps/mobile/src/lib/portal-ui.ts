@@ -5,7 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
  * to concrete MaterialCommunityIcons names + the HBCField semantic palette, so
  * the same intake config renders identically on web and mobile.
  */
-export const PORTAL_COLORS: Record<string, string> = {
+const PORTAL_COLORS: Record<string, string> = {
   emerald: '#059669',
   blue: '#3B82F6',
   amber: '#D97706',

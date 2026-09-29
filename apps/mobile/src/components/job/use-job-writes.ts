@@ -32,7 +32,7 @@ export interface StatusExtras {
 }
 
 /** How a move with a form ended: sent (or kept to send), or refused with the fields to point at. */
-export type FormMoveResult = { ok: true } | { ok: false; fieldErrors?: Record<string, string> };
+type FormMoveResult = { ok: true } | { ok: false; fieldErrors?: Record<string, string> };
 
 export interface Member { id: string; firstName: string; lastName: string }
 
@@ -434,5 +434,3 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
     decline, reportIssue, moveWithForm, resetFormFiles, assign, edit, refreshAttachments,
   };
 }
-
-export type JobWrites = ReturnType<typeof useJobWrites>;

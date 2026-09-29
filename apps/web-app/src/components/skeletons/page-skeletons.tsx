@@ -62,48 +62,6 @@ function TabStrip({ count = 5 }: { count?: number }) {
   )
 }
 
-/** Polished table skeleton */
-function TableSkeleton({ cols = 5, rows = 6 }: { cols?: number; rows?: number }) {
-  return (
-    <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-4 px-6 py-3.5 bg-muted/50 border-b border-border">
-        {Array.from({ length: cols }).map((_, i) => (
-          <S
-            key={i}
-            className={cn(
-              "h-4 rounded",
-              i === 0 ? "w-36 flex-shrink-0" : "w-20 flex-1",
-              i === cols - 1 && "w-12 flex-none ml-auto"
-            )}
-          />
-        ))}
-      </div>
-      {/* Rows */}
-      {Array.from({ length: rows }).map((_, r) => (
-        <div
-          key={r}
-          className="flex items-center gap-4 px-6 py-4 border-b border-border/50 last:border-0"
-        >
-          {r < 3 && (
-            <S className="w-10 h-10 rounded-full flex-shrink-0" />
-          )}
-          {Array.from({ length: cols }).map((_, c) => (
-            <S
-              key={c}
-              className={cn(
-                "h-4 rounded",
-                c === 0 && r >= 3 ? "w-36 flex-shrink-0" : c === 0 ? "w-28" : "w-20 flex-1",
-                c === cols - 1 && "w-12 flex-none ml-auto"
-              )}
-            />
-          ))}
-        </div>
-      ))}
-    </div>
-  )
-}
-
 /** Simple table (no avatars) */
 function SimpleTableSkeleton({ cols = 5, rows = 6 }: { cols?: number; rows?: number }) {
   return (

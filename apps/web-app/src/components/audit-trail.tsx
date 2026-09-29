@@ -36,7 +36,7 @@ interface AuditLogEntry {
 // ---------------------------------------------------------------------------
 
 /** True when the current user is allowed to view per-entity audit trails. */
-export function useCanViewAudit(): boolean {
+function useCanViewAudit(): boolean {
   const { user, hasPermission } = useAuth()
   if (!user) return false
   return user.role === "ADMIN" || hasPermission('canViewAllTasks')
@@ -52,7 +52,7 @@ export function useCanViewAudit(): boolean {
  *  - opts.enabled !== false, AND
  *  - the current user may view audit (admin or canViewAllTasks).
  */
-export function useAuditTrail(
+function useAuditTrail(
   resourceType: string,
   resourceId: string | undefined,
   opts?: { limit?: number; enabled?: boolean },
@@ -229,43 +229,3 @@ function auditRowDetail(log: AuditLogEntry): string | null {
 // ---------------------------------------------------------------------------
 // <Attribution> — tiny muted "Created by X · Updated …" line.
 // ---------------------------------------------------------------------------
-
-interface AttributionProps {
-  createdBy?: { firstName?: string | null; lastName?: string | null } | string | null
-  createdAt?: string | null
-  updatedAt?: string | null
-  className?: string
-}
-
-export function Attribution({ createdBy, createdAt, updatedAt, className }: AttributionProps) {
-  const { t } = useTranslation()
-
-  const name =
-    typeof createdBy === "string"
-      ? createdBy
-      : createdBy
-        ? `${createdBy.firstName ?? ""} ${createdBy.lastName ?? ""}`.trim()
-        : null
-
-  const parts: string[] = []
-  if (name) {
-    parts.push(
-      createdAt
-        ? `${t("audit.createdBy")} ${name} · ${formatTimeAgo(createdAt)}`
-        : `${t("audit.createdBy")} ${name}`,
-    )
-  } else if (createdAt) {
-    parts.push(formatTimeAgo(createdAt))
-  }
-  if (updatedAt) {
-    parts.push(`${t("audit.updated")} · ${formatTimeAgo(updatedAt)}`)
-  }
-
-  if (parts.length === 0) return null
-
-  return (
-    <p className={cn("text-xs text-muted-foreground", className)}>
-      {parts.join(" · ")}
-    </p>
-  )
-}

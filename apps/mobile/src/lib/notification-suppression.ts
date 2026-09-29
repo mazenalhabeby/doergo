@@ -10,7 +10,7 @@
  * A registry rather than an import so the push hook stays free of the offline
  * layer — it runs on builds that have none.
  */
-export type NotificationSuppressor = (data: Record<string, unknown> | undefined, notifiedAt: number) => boolean;
+type NotificationSuppressor = (data: Record<string, unknown> | undefined, notifiedAt: number) => boolean;
 
 let suppressor: NotificationSuppressor | null = null;
 

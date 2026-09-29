@@ -20,7 +20,7 @@ import type { ScheduleEntry, Task } from '../../lib/api/types';
  */
 
 /** Axis 1 — modules decide the shape. */
-export type WorkShape = 'both' | 'tasks' | 'shifts' | 'none';
+type WorkShape = 'both' | 'tasks' | 'shifts' | 'none';
 
 export function shapeFor(has: { tasks: boolean; clock: boolean }): WorkShape {
   if (has.tasks && has.clock) return 'both';
@@ -34,7 +34,7 @@ export function shapeFor(has: { tasks: boolean; clock: boolean }): WorkShape {
 }
 
 /** Axis 2 — grants decide the content. */
-export type WorkFace = 'executor' | 'spaceSupervisor' | 'orgWide';
+type WorkFace = 'executor' | 'spaceSupervisor' | 'orgWide';
 
 export function faceFor(caller: { canViewAllTasks?: boolean; role?: string | null; viewAllSpaceIds?: string[] }): WorkFace {
   if (caller.role === 'ADMIN' || caller.canViewAllTasks) return 'orgWide';

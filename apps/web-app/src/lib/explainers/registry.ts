@@ -26,9 +26,9 @@ import {
  * otherwise: the button simply does not render, and nobody notices the gap.
  */
 
-export type ExplainerKind = 'module' | 'option';
+type ExplainerKind = 'module' | 'option';
 
-export interface ExplainerMeta {
+interface ExplainerMeta {
   /** Module key or add-on key. Must match the billing catalogue exactly. */
   key: string;
   kind: ExplainerKind;

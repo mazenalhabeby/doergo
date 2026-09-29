@@ -17,7 +17,7 @@ import {
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
 /** The columns of an open entry this service reads. */
-export interface PresenceEntry {
+interface PresenceEntry {
   id: string;
   userId: string;
   organizationId: string;

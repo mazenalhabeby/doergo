@@ -24,35 +24,6 @@ import type { GlyphProps } from './glyphs';
 const svg = (size: number) => ({ width: size, height: size, viewBox: '0 0 24 24' });
 
 /**
- * A PERSON AND THE HOUR THEY ARE KEEPING.
- *
- * The clock overlaps the figure and is punched out of it first, so the two
- * forms read as one object rather than a badge stuck on a silhouette. That
- * punch is what survives at 17px.
- */
-export function OnClockGlyph({ size = 24, color, contrast = '#0b0f12' }: GlyphProps) {
-  return (
-    <Svg {...svg(size)}>
-      <Path
-        d="M9.4 12.6c-3.4 0-6.2 2.6-6.2 5.9v2.3h12.4v-2.3c0-3.3-2.8-5.9-6.2-5.9Z"
-        fill={color}
-        fillOpacity={0.95}
-      />
-      <Circle cx={9.4} cy={6.6} r={4.3} fill={color} fillOpacity={0.95} />
-      <Circle cx={17.6} cy={16.4} r={6.3} fill={contrast} />
-      <Circle cx={17.6} cy={16.4} r={5.3} fill={color} fillOpacity={0.95} />
-      <Path
-        d="M17.6 13.2v3.2l2.2 1.4"
-        fill="none"
-        stroke={contrast}
-        strokeWidth={1.7}
-        strokeLinecap="round"
-      />
-    </Svg>
-  );
-}
-
-/**
  * THE SHAPE OF SOMEBODY WHO SHOULD BE HERE.
  *
  * The identical figure at .26 — present as an expectation, absent as a

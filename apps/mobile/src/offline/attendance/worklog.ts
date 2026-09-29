@@ -11,7 +11,7 @@ import { openOpFor } from '../outbox/open-ops';
 
 const SCOPE = 'worklog';
 
-export interface WorklogPhoto {
+interface WorklogPhoto {
   uri: string;
   fileName: string;
   mimeType: string;

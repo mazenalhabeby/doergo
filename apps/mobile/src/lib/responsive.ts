@@ -22,7 +22,7 @@ export const BREAKPOINTS = {
   large: 900,
 } as const;
 
-export interface Responsive {
+interface Responsive {
   /** Live window width (updates on rotation). */
   width: number;
   /** Live window height (updates on rotation). */

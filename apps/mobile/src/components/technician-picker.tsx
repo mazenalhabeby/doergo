@@ -22,8 +22,7 @@ import {
   SPACING,
   RADIUS,
   FONT_SIZE,
-  FONT_WEIGHT,
-  SHADOWS,
+  FONT_WEIGHT
 } from '../lib/constants';
 import { useTheme } from '../contexts/theme-context';
 

@@ -3,7 +3,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { computeCountedTime, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN } from '@hbcfield/shared';
 
 /** The row shape the calculation needs — nothing more, so any caller can supply it. */
-export interface CountableEntry {
+interface CountableEntry {
   clockInAt: Date;
   expectedClockInAt?: Date | null;
   expectedClockOutAt?: Date | null;
@@ -14,7 +14,7 @@ export interface CountableEntry {
   shiftId?: string | null;
 }
 
-export interface CountedColumns {
+interface CountedColumns {
   countedStartAt: Date;
   countedEndAt: Date | null;
   paidMinutes: number | null;

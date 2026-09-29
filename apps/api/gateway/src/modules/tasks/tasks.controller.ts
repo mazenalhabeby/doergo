@@ -14,9 +14,9 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { Role, canCreateTaskFor, addOnDef, moduleMonthlyCents, isAdmin, spacesGranting, accessAllowsAnywhere } from '@hbcfield/shared';
+import { Role, addOnDef, moduleMonthlyCents, isAdmin, spacesGranting, accessAllowsAnywhere } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
+import { RequirePermissionInSpace } from '../../common/decorators';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { isFeatureEntitled } from '../../common/entitlements';

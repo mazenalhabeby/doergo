@@ -2,7 +2,7 @@ import type { AttendanceStatus, Break, BreakStatus, CompanyLocation, TimeEntry }
 import { STILL_MINE } from '../actions/outcome';
 import type { OutboxOp } from '../outbox/types';
 
-export const ATTENDANCE_OPS: ReadonlySet<string> = new Set([
+const ATTENDANCE_OPS: ReadonlySet<string> = new Set([
   'attendance.clockIn',
   'attendance.clockOut',
   'attendance.breakStart',

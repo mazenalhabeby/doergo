@@ -4,7 +4,7 @@
  * engine. (Dependency-inversion: the engine depends on `TourStorage`, not on
  * localStorage.)
  */
-export interface TourStorage {
+interface TourStorage {
   isCompleted(id: string): boolean
   markCompleted(id: string): void
   /** Reset one tour (or all when id is omitted) — powers "replay". */

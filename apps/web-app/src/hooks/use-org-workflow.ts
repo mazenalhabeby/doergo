@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { workflowsApi, type StatusWorkflow, type WorkflowStatus } from "@/lib/api"
+import { workflowsApi, type WorkflowStatus } from "@/lib/api"
 
 /**
  * Hook to fetch the organization's workflows and derive the default workflow.

@@ -31,7 +31,7 @@ function hm(mins: number): string {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-export interface RestCardProps {
+interface RestCardProps {
   /** The shift these rests belong to — a rest recorded offline names it. */
   entryId: string;
   plan: BreakPlanItem[];

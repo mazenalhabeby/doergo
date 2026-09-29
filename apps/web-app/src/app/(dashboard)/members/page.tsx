@@ -23,7 +23,6 @@ import {
   X,
   ChevronDown,
   ChevronUp,
-  Plus,
   Trash2,
   Shield,
   ShieldCheck,
@@ -80,7 +79,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"

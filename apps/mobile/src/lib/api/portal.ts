@@ -9,7 +9,7 @@ import type {
 
 // Customer-portal API (external CUSTOMER persona). Mirrors the gateway /portal/*
 // routes. `fetchWithAuth` already unwraps the `{ data }` envelope.
-export interface PortalConfig {
+interface PortalConfig {
   id?: string;
   /** The portal's display name (e.g. "Rivergate Rentals"). */
   name: string | null;
@@ -22,7 +22,7 @@ export interface PortalConfig {
   categories: IntakeCategory[];
 }
 
-export type PortalRequestDetail = CustomerRequestView & {
+type PortalRequestDetail = CustomerRequestView & {
   description?: string | null;
   attachments?: { id: string; fileUrl: string; fileType: string; fileName: string }[];
 };

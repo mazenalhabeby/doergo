@@ -5,7 +5,7 @@ import { portalColor } from '../../lib/portal-ui';
 import { CategoryGlyph } from './portal-glyphs';
 
 /** Status → semantic base colour (reads well on translucent tint in both themes). */
-export function statusColor(status: string): string {
+function statusColor(status: string): string {
   const s = (status || '').toUpperCase();
   if (/COMPLET|CLOSED|RESOLV|DONE/.test(s)) return '#16A34A';
   if (/CANCEL/.test(s)) return '#64748B';

@@ -133,14 +133,3 @@ export async function stopBackgroundHeartbeat(): Promise<void> {
     console.error('[Heartbeat] Failed to stop:', err);
   }
 }
-
-/**
- * Check if background heartbeat is currently running.
- */
-export async function isHeartbeatRunning(): Promise<boolean> {
-  try {
-    return await TaskManager.isTaskRegisteredAsync(TASK_NAME);
-  } catch {
-    return false;
-  }
-}

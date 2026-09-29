@@ -3,7 +3,7 @@ import { ClientsModule } from '@nestjs/microservices';
 import { BullModule } from '@nestjs/bullmq';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
-import { QUEUE_NAMES, SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
+import { QUEUE_NAMES } from '@hbcfield/shared';
 import { TasksController } from './tasks.controller';
 import { TasksQueueService } from './tasks.queue.service';
 import { TasksService } from './tasks.service';

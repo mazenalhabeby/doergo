@@ -28,7 +28,7 @@ export class GetEmployeeTaskHistoryDto {
 // Schedule DTOs
 // ===========================
 
-export interface ScheduleEntryInput {
+interface ScheduleEntryInput {
   dayOfWeek: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
   startTime: string; // "09:00"
   endTime: string; // "17:00"
@@ -112,6 +112,3 @@ export class GetAvailabilityDto {
 }
 
 // Backward-compatible aliases for internal message patterns
-export type GetTechnicianStatsDto = GetEmployeeStatsDto;
-export type GetTechnicianPerformanceDto = GetEmployeePerformanceDto;
-export type GetTechnicianTaskHistoryDto = GetEmployeeTaskHistoryDto;

@@ -29,7 +29,7 @@ import {
  * stays free of React and is the part worth testing.
  */
 
-export interface BiometricUnlock {
+interface BiometricUnlock {
   /** What this phone can do. `null` until the first resolve finishes. */
   capability: Capability | null;
   /** Is this phone bound to an account right now? */

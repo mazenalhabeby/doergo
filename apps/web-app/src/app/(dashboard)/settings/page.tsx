@@ -14,7 +14,6 @@ import {
   Tag,
   Building2,
   Bell,
-  Paintbrush,
   Users,
   Save,
   Globe,
@@ -23,8 +22,6 @@ import {
   Link2,
   MapPin,
   Clock,
-  AlertCircle,
-  Puzzle,
   Image as ImageIcon,
   Upload,
   Trash2,
@@ -66,13 +63,6 @@ import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,

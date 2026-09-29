@@ -17,7 +17,7 @@ const TIME_BUDGET_MS = 25_000;
 /** One replay may take this long before it counts as a transient failure. */
 const OPERATION_TIMEOUT_MS = 20_000;
 
-export interface PushCaller {
+interface PushCaller {
   headers: Record<string, string | string[] | undefined>;
   ip?: string;
 }

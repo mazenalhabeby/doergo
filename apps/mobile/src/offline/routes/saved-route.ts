@@ -13,19 +13,19 @@ import type { OptimizedRoute } from '@hbcfield/shared/client';
  * plan from yesterday, or one that includes a job no longer on the list, is not
  * restored.
  */
-export interface SavedRoute {
+interface SavedRoute {
   /** Local calendar day it was planned, "YYYY-MM-DD". */
   day: string;
   savedAt: number;
   route: OptimizedRoute;
 }
 
-export interface KeyValueStorage {
+interface KeyValueStorage {
   getItem(key: string): Promise<string | null>;
   setItem(key: string, value: string): Promise<void>;
 }
 
-export const SAVED_ROUTE_KEY = (memberId: string) => `route_plan_v1_${memberId}`;
+const SAVED_ROUTE_KEY = (memberId: string) => `route_plan_v1_${memberId}`;
 
 export function localDay(at: number): string {
   const d = new Date(at);

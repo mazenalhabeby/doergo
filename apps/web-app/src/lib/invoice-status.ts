@@ -25,7 +25,7 @@
  * (`INVOICE_DOCUMENT_LABELS[locale].stamp[kind]`), so this names the kind.
  * A settled invoice's kind is `settled` — the product never prints "paid".
  */
-export type InvoiceStampKind = "draft" | "canceled" | "settled"
+type InvoiceStampKind = "draft" | "canceled" | "settled"
 
 export function invoiceStamp(
   status: string,

@@ -32,7 +32,7 @@ function useLoadState(queue: LoadQueue | null, key: string): LoadState {
 }
 
 /** How long an answer may take before the card says it is updating — no flicker on a fast open. */
-export const UPDATING_AFTER_MS = 400;
+const UPDATING_AFTER_MS = 400;
 
 /**
  * ⭐ ONE CARD ON THE HOME: its key for the hooks inside it, a hairline while an

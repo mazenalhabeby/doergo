@@ -3,7 +3,7 @@ import { APP_VERSION, fetchWithAuth } from '../lib/api/client';
 import { ATTENTION_STATES, OPEN_STATES, type OutboxOp } from './outbox/types';
 
 /** At most one report in this long; the latest replaces the last on the server anyway. */
-export const TELEMETRY_EVERY_MS = 10 * 60 * 1000;
+const TELEMETRY_EVERY_MS = 10 * 60 * 1000;
 
 /**
  * How this phone's queue is doing, for the office's device health and the

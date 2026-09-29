@@ -8,7 +8,7 @@
  *  - `search` on title and description, case-insensitive
  *  - `assignedToMe`: lead OR co-assignee
  */
-export interface LocalTaskQuery {
+interface LocalTaskQuery {
   startDate?: string;
   endDate?: string;
   includeNoDueDate?: boolean;

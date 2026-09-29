@@ -225,7 +225,7 @@ export class UpdateWorkflowStatusDto {
 
 // ==================== Definition of Done DTOs ====================
 
-export class DodItemDto {
+class DodItemDto {
   @ApiProperty({ example: 'Code review completed' })
   @IsString()
   @IsNotEmpty()

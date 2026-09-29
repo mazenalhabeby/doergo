@@ -13,7 +13,7 @@
  * the arithmetic and none of them were visible in review.
  */
 
-export interface ArrangeLayout {
+interface ArrangeLayout {
   /** Every key the member has, in order — including the ones switched off. */
   keys: string[];
   /** ⚠️ Switched off, NEVER deleted. Un-hiding restores the original place. */

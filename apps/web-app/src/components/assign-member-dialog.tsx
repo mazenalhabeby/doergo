@@ -22,7 +22,7 @@ import { UserAvatar } from "@/components/user-avatar"
 // TYPES
 // =============================================================================
 
-export interface AssignMemberDialogProps {
+interface AssignMemberDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   taskId: string | null

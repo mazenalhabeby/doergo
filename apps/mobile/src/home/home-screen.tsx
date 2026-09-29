@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { BackHandler, Pressable, RefreshControl, StyleSheet, type FlatList } from 'react-native';
+import { Pressable, RefreshControl, StyleSheet, type FlatList } from 'react-native';
 import DraggableFlatList, {
   ScaleDecorator,
   ShadowDecorator,

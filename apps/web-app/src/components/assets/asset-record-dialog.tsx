@@ -10,8 +10,7 @@ import { assetsApi, locationsApi, type AssetCategory } from "@/lib/api"
 import { HolderPicker, decodeHolders, encodeHolderList, type HolderKey } from "./holder-picker"
 import { fieldsDroppedByMove } from "@hbcfield/shared/client"
 import {
-  normalizeKindShape, detailRowsForKind, kindHolderLabel, kindNameLabel,
-  KIND_SHAPE_LIMITS, type DetailRow,
+  normalizeKindShape, detailRowsForKind, kindHolderLabel, kindNameLabel, type DetailRow,
   ASSET_RECORD_LIMITS, assetDateProblems, type AssetStatusKey,
 } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"

@@ -37,11 +37,11 @@ const SIZES = {
   "2xl": { box: "size-16", text: "text-xl",    font: "font-bold" },
 } as const
 
-export type AvatarSize = keyof typeof SIZES
+type AvatarSize = keyof typeof SIZES
 
 // ─── Component ────────────────────────────────────────────────────────────
 
-export interface UserAvatarProps {
+interface UserAvatarProps {
   firstName?: string | null
   lastName?: string | null
   avatarUrl?: string | null
@@ -103,7 +103,7 @@ export const UserAvatar = React.memo(function UserAvatar({
 
 // ─── Stacked avatars (for multi-assignee displays) ────────────────────────
 
-export interface StackedAvatarsProps {
+interface StackedAvatarsProps {
   users: {
     id?: string
     firstName?: string | null

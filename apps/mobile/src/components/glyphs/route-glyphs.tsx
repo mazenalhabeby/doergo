@@ -1,5 +1,5 @@
 import React from 'react';
-import Svg, { Path, Circle, Ellipse } from 'react-native-svg';
+import Svg, { Path, Circle } from 'react-native-svg';
 // ⚠️ Resolves once this file is MOVED to apps/mobile/src/components/home/.
 // It will not compile in the handoff folder — deliberately, so there is
 // nothing to edit after the move.
@@ -95,102 +95,4 @@ export function OptimizedGlyph({ size = 24, color, contrast = '#0b0f12' }: Glyph
 }
 
 /* ── The two state marks ───────────────────────────────────────────────────── */
-
-/**
- * A PIN YOU HAVE ALREADY STOOD IN.
- *
- * `ArrivedGlyph` from `work-glyphs.tsx` with the check PUNCHED THROUGH the
- * head instead of a hole. Drawing the tick on top instead reads as a smudge
- * at 15px; cutting it out keeps the pin's silhouette intact, which is the
- * only thing legible at that size.
- *
- * The ellipse under it is the same shadow `ArrivedGlyph` uses, so a done stop
- * and a current stop sit at the same optical height in a list.
- */
-export function StopDoneGlyph({ size = 24, color, contrast = '#0b0f12' }: GlyphProps) {
-  return (
-    <Svg {...svg(size)}>
-      <Ellipse cx={12} cy={20.6} rx={5} ry={1.7} fill={color} fillOpacity={0.22} />
-      <Path
-        d="M12 2.2a6.7 6.7 0 0 0-6.7 6.7c0 4.9 6.7 11.2 6.7 11.2s6.7-6.3 6.7-11.2A6.7 6.7 0 0 0 12 2.2Z"
-        fill={color}
-        fillOpacity={0.95}
-      />
-      <Path
-        d="m9.1 9 2 2 3.8-4.2"
-        fill="none"
-        stroke={contrast}
-        strokeWidth={1.9}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
-  );
-}
-
-/**
- * PINS THAT NEVER GOT JOINED UP.
- *
- * The road is reduced to dashes and the second pin drops to .55 — the stops
- * are certain, the way between them is not. This is the mark for
- * `engine: 'nearest-neighbour'`, which is the DEFAULT for a deployment with
- * neither OSRM_URL nor GOOGLE_PLACES_API_KEY set. See FINDINGS §3.
- *
- * Use it in `warn`, never `crit`. Nothing is broken — the order is real and
- * the addresses are real. Only the road times are missing.
- */
-export function NoRoadGlyph({ size = 24, color, contrast = '#0b0f12' }: GlyphProps) {
-  return (
-    <Svg {...svg(size)}>
-      <Path
-        d="M3.6 19.4h2.6M9.4 19.4h2.6M15.2 19.4h2.6M21 19.4h.4"
-        fill="none"
-        stroke={color}
-        strokeOpacity={0.3}
-        strokeWidth={2.1}
-        strokeLinecap="round"
-      />
-      <Path
-        d="M7 1.8a4.6 4.6 0 0 0-4.6 4.6c0 3.4 4.6 7.7 4.6 7.7s4.6-4.3 4.6-7.7A4.6 4.6 0 0 0 7 1.8Z"
-        fill={color}
-        fillOpacity={0.95}
-      />
-      <Circle cx={7} cy={6.4} r={1.8} fill={contrast} />
-      <Path
-        d="M17.6 4.4a4 4 0 0 0-4 4c0 3 4 6.7 4 6.7s4-3.7 4-6.7a4 4 0 0 0-4-4Z"
-        fill={color}
-        fillOpacity={0.55}
-      />
-      <Circle cx={17.6} cy={8.4} r={1.5} fill={contrast} />
-    </Svg>
-  );
-}
-
 /* ── The end of the day ────────────────────────────────────────────────────── */
-
-/**
- * A ROOF WITH THE HOUR COMING ROUND.
- *
- * "Back by 16:40" and, in the finished state, "back at 16:12". The clock face
- * is punched out of the house and redrawn at .95 inside it, so the two forms
- * read as one object rather than a badge stuck on a building.
- *
- * ⚠️ Only render this beside a time the data can actually support.
- * `OptimizedRoute` carries `totalSeconds`, not a clock time — see DATA §3.
- */
-export function BackHomeGlyph({ size = 24, color, contrast = '#0b0f12' }: GlyphProps) {
-  return (
-    <Svg {...svg(size)}>
-      <Path d="M12 2.6 2.4 10.4v.2h3.1v10.8h13V10.6h3.1v-.2Z" fill={color} fillOpacity={0.95} />
-      <Circle cx={12} cy={13.4} r={4.4} fill={contrast} />
-      <Circle cx={12} cy={13.4} r={3.4} fill={color} fillOpacity={0.95} />
-      <Path
-        d="M12 11.1v2.5l1.7 1.1"
-        fill="none"
-        stroke={contrast}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-      />
-    </Svg>
-  );
-}

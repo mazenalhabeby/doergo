@@ -24,7 +24,7 @@ export const INDUSTRY_SLUGS = [
   "security-guarding",
   "landscaping-grounds",
 ] as const;
-export type IndustrySlug = (typeof INDUSTRY_SLUGS)[number];
+type IndustrySlug = (typeof INDUSTRY_SLUGS)[number];
 
 export function isIndustrySlug(slug: string): slug is IndustrySlug {
   return (INDUSTRY_SLUGS as readonly string[]).includes(slug);

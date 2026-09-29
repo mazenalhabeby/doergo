@@ -48,7 +48,7 @@ export const STEP_FORM_DEFINITION_INVALID = "STEP_FORM_DEFINITION_INVALID"
 export type StepFormDraft = { fields: StepFormField[] } | null
 
 /** What the API is sent for a step's form: a definition, or null to clear. */
-export type StepFormPayload = { fields: StepFormField[] } | null
+type StepFormPayload = { fields: StepFormField[] } | null
 
 /** A stored form (from the API) as builder state. A copy — the builder edits it. */
 export function draftFromStored(stored: StepForm | { fields?: unknown } | null | undefined): StepFormDraft {
@@ -85,7 +85,7 @@ export function moveField<T>(list: readonly T[], from: number, to: number): T[] 
 }
 
 /** The label a new field of each type starts with (the translation key; English default). */
-export const NEW_FIELD_LABEL: Record<StepFormFieldType, { key: string; en: string }> = {
+const NEW_FIELD_LABEL: Record<StepFormFieldType, { key: string; en: string }> = {
   note: { key: "stepForm.newLabel.note", en: "Notes" },
   choice: { key: "stepForm.newLabel.choice", en: "Outcome" },
   photos: { key: "stepForm.newLabel.photos", en: "Photos" },
@@ -136,7 +136,7 @@ export function askNothingDraft(): { fields: StepFormField[] } {
 }
 
 /** A step as the builder holds it, for deciding which form it asks. */
-export interface BuilderStep {
+interface BuilderStep {
   key: string
   isFinal?: boolean | null
   capabilities?: readonly string[] | null
@@ -173,7 +173,7 @@ export function definitionErrors(draft: StepFormDraft): DefinitionErrors {
 }
 
 /** Group definition errors by the field they name (by id, else by position). */
-export function groupDefinitionErrors(errors: readonly StepFormDefinitionError[], fields: readonly Pick<StepFormField, "id">[]): DefinitionErrors {
+function groupDefinitionErrors(errors: readonly StepFormDefinitionError[], fields: readonly Pick<StepFormField, "id">[]): DefinitionErrors {
   const out: DefinitionErrors = {}
   for (const e of errors) {
     const id = e.fieldId ?? (e.index !== undefined ? fields[e.index]?.id : undefined) ?? "*"
@@ -299,7 +299,7 @@ export function checkAnswers(form: Pick<StepForm, "fields">, answers: StepFormAn
   return groupAnswerErrors(res.errors)
 }
 
-export function groupAnswerErrors(errors: readonly StepAnswerError[]): AnswerErrors {
+function groupAnswerErrors(errors: readonly StepAnswerError[]): AnswerErrors {
   const out: AnswerErrors = {}
   for (const e of errors) (out[e.fieldId || "*"] ??= []).push(e.code)
   return out

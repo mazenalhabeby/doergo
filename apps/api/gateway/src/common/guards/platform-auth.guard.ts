@@ -4,7 +4,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { SERVICE_NAMES, platformCan, type PlatformCapability } from '@hbcfield/shared';
 
-export const PLATFORM_PERM_KEY = 'platform_required_perm';
+const PLATFORM_PERM_KEY = 'platform_required_perm';
 /** Gate a platform route on a capability from the shared RBAC matrix. */
 export const RequirePlatformPerm = (cap: PlatformCapability) => SetMetadata(PLATFORM_PERM_KEY, cap);
 

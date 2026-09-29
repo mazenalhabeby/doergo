@@ -18,7 +18,7 @@
  * have to change to make room.
  */
 
-export interface NamedPerson {
+interface NamedPerson {
   firstName?: string | null;
   lastName?: string | null;
   email?: string | null;

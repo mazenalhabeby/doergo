@@ -17,7 +17,6 @@ import {
   isMaterialAgreementDrift,
   type BillingMode,
   countSeats,
-  subscriptionTotalCents,
   isLocked,
   trialDaysLeft,
   TRIAL_DAYS,
@@ -27,13 +26,6 @@ import type { PlanTier, SeatCounts, SubStatus, SubscriptionView } from '@hbcfiel
 
 type PrismaTier = 'STARTER' | 'PROFESSIONAL' | 'BUSINESS' | 'ENTERPRISE';
 type PrismaStatus = 'TRIALING' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED' | 'INCOMPLETE';
-
-const TIER_TO_PRISMA: Record<PlanTier, PrismaTier> = {
-  starter: 'STARTER',
-  professional: 'PROFESSIONAL',
-  business: 'BUSINESS',
-  enterprise: 'ENTERPRISE',
-};
 const tierFromPrisma = (p: PrismaTier | null): PlanTier | null => (p ? (p.toLowerCase() as PlanTier) : null);
 const statusFromPrisma = (p: PrismaStatus): SubStatus =>
   ({ TRIALING: 'trialing', ACTIVE: 'active', PAST_DUE: 'past_due', CANCELED: 'canceled', INCOMPLETE: 'incomplete' } as const)[p];

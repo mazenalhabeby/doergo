@@ -8,7 +8,7 @@ import { type TimeEntry } from "@/lib/api"
  * never counts past the clock-out: that is the server's rule
  * (`overtimeEndFor` + counted time), repeated here only to preview it.
  */
-export interface OvertimePreview {
+interface OvertimePreview {
   /** Minutes the member stayed past the shift end (0 when they left on time). */
   pastEnd: number
   /** Sensible starting value: the time they actually stayed. */

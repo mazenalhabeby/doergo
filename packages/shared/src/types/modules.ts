@@ -153,7 +153,7 @@ export function hasModule(user: { enabledModules?: unknown }, module: MobileModu
 }
 
 /** Permission fields read off a user for access resolution. */
-export interface UserPermissionFields {
+interface UserPermissionFields {
   role?: string | null;
   canCreateTasks?: boolean;
   canAssignTasks?: boolean;
@@ -285,7 +285,7 @@ export function byAssignableFirst(
 // (authorization). Every consumer (web nav, mobile nav, presets) reads this so
 // there is a single, coherent notion of "access" across the app.
 
-export interface ResolvedAccess {
+interface ResolvedAccess {
   platforms: AccessPlatform;
   spaceScope: SpaceScope;
   canContact: boolean;

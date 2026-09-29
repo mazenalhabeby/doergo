@@ -30,7 +30,7 @@ export interface NewClientForm {
 
 // A type alias, not an interface: the outbox takes `Record<string, unknown>`,
 // and only an alias is assignable to an index signature.
-export type NewClientInput = {
+type NewClientInput = {
   name: string;
   type?: 'PERSON' | 'COMPANY';
   contactName?: string;

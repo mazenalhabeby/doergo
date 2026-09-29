@@ -16,7 +16,7 @@ const isImg = (m: string) => m.startsWith('image/');
 /** Phrases a note usually starts with — one tap puts them in the box, where they can still be edited. */
 const QUICK = ['finished', 'waitingParts', 'handedOver', 'cleanedUp'] as const;
 
-export interface WorkLogShift {
+interface WorkLogShift {
   workspace: string | null;
   clockInAt: string;
   /** Null while the shift is running. */

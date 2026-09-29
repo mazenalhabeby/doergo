@@ -32,7 +32,7 @@ export const logEntryDayBounds = assetEntryDayBounds;
 export const occurredAtForDay = assetEntryOccurredAt;
 
 /** Where the phone's catalogue keeps the shared refusals. */
-export const PHONE_ENTRY_DATE_KEYS: AssetEntryDateKeys = {
+const PHONE_ENTRY_DATE_KEYS: AssetEntryDateKeys = {
   future: 'logbook.dateFuture',
   'too-old': 'logbook.dateTooOld',
   unreadable: 'logbook.badDate',

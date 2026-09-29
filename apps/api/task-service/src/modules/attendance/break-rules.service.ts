@@ -211,7 +211,7 @@ function clamp(v: number | null | undefined, min: number, max: number): number |
   return Math.min(max, Math.max(min, Math.round(v)));
 }
 
-export interface BreakRuleInput {
+interface BreakRuleInput {
   spaceId?: string | null;
   shiftId?: string | null;
   name?: string;

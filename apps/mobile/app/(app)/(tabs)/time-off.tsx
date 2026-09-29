@@ -21,12 +21,9 @@ import { LoadingState, ErrorState } from '../../../src/components/screen-states'
 import { ConfirmSheet, ScreenContainer } from '../../../src/components';
 import { TourTarget, useTourScroll } from '../../../src/components/tour';
 import {
-  timeOffApi,
   availabilityApi,
-  scheduleApi,
   type TimeOffRequest,
-  type AvailabilityResponse,
-  type ScheduleEntry,
+  type AvailabilityResponse
 } from '../../../src/lib/api';
 import {
   COLORS,

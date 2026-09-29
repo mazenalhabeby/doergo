@@ -24,7 +24,7 @@ const keyFor = (entryId: string) => `worklog_pending_${entryId}`;
 const localId = () => `${Date.now()}_${Math.random().toString(36).slice(2)}`;
 const DIR = FileSystem.documentDirectory ? `${FileSystem.documentDirectory}worklog/` : null;
 
-export type LegacyItem = { id: string; body: string; at: string; photos?: PickedImage[] };
+type LegacyItem = { id: string; body: string; at: string; photos?: PickedImage[] };
 
 export async function readLegacy(entryId: string): Promise<LegacyItem[]> {
   try {

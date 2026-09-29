@@ -20,7 +20,6 @@ import { CollapsibleSection } from "./collapsible-section"
 import {
   customFieldsApi,
   type CustomFieldDefinition,
-  type CustomFieldValue,
   type CustomFieldType,
 } from "@/lib/api"
 import { Input } from "@/components/ui/input"

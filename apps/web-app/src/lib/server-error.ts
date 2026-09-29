@@ -16,7 +16,7 @@ import { distanceRefusalParams } from "@hbcfield/shared/client"
  */
 
 /** An Error that came from the API, possibly carrying a refusal code. */
-export interface ServerError extends Error {
+interface ServerError extends Error {
   code?: string
   params?: Record<string, unknown>
 }

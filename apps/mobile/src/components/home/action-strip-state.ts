@@ -29,7 +29,7 @@ export interface StripItem {
   daysLeft?: number | null;
 }
 
-export interface StripInput {
+interface StripInput {
   toUpload: { typeId: string; label: string; blocksWork: boolean }[];
   rejected: { typeId: string; label: string; blocksWork: boolean }[];
   toSign: { id: string; title: string; forMember?: string | null }[];

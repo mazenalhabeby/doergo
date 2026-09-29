@@ -32,7 +32,7 @@ import { changedFields, updateClientFromPhone } from '../../offline/crm/client-a
  * boundary — but a pencil that opens a form whose Save always 403s teaches
  * people the app is broken rather than that they lack an ability.
  */
-export interface ClientEditForm {
+interface ClientEditForm {
   name: string;
   kind: ClientKind;
   contactName: string;
@@ -47,7 +47,7 @@ export interface ClientEditForm {
 }
 
 /** The record as the form holds it — strings throughout, never null. */
-export function formFromCustomer(c: MobileCustomer): ClientEditForm {
+function formFromCustomer(c: MobileCustomer): ClientEditForm {
   return {
     name: c.name ?? '',
     kind: clientKind(c),
@@ -72,7 +72,7 @@ export function formFromCustomer(c: MobileCustomer): ClientEditForm {
  * invisible, waiting to reappear the day somebody switches it back. The rule
  * lives in shared precisely so both clients cannot disagree about it.
  */
-export function payloadFromForm(form: ClientEditForm): Partial<MobileCustomer> {
+function payloadFromForm(form: ClientEditForm): Partial<MobileCustomer> {
   const body = {
     name: form.name.trim(),
     type: form.kind,

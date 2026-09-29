@@ -19,7 +19,7 @@ import { SYNC_OPERATIONS, SYNC_PUSH_MAX_OPS, SYNC_PULL_SCOPES, SYNC_PULL_MAX_ROW
 
 const ID = /^[A-Za-z0-9_-]{16,128}$/;
 
-export class SyncOperationDto {
+class SyncOperationDto {
   @ApiProperty({ description: 'UUIDv7 made on the phone; also the Idempotency-Key' })
   @IsString()
   @Matches(ID)

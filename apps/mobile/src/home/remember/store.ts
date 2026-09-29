@@ -65,7 +65,7 @@ export interface KeepRules {
   sameDay?: boolean;
 }
 
-export function stillGood(kept: Kept<unknown>, rules: KeepRules = {}, now = Date.now()): boolean {
+function stillGood(kept: Kept<unknown>, rules: KeepRules = {}, now = Date.now()): boolean {
   if (now - kept.at > (rules.goodForMs ?? GOOD_FOR_MS)) return false;
   if (rules.sameDay && kept.day !== localDay(new Date(now))) return false;
   return true;

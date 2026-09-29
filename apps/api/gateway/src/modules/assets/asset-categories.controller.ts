@@ -17,7 +17,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Role, isAdmin, spacesGranting } from '@hbcfield/shared';
+import { isAdmin, spacesGranting } from '@hbcfield/shared';
 import { RequirePermission, RequirePermissionInSpace, DenyExternal } from '../../common/decorators';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';

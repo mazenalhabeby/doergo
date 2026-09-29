@@ -10,7 +10,7 @@
  *
  * A burst (an admin reassigning ten jobs) is one pull, not ten.
  */
-export const POKE_DEBOUNCE_MS = 2000;
+const POKE_DEBOUNCE_MS = 2000;
 
 export function createPoke(
   pull: () => Promise<unknown>,

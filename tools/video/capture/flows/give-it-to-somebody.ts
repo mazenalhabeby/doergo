@@ -13,7 +13,7 @@
 
 import { ADMIN_LOGIN } from '../../config.ts';
 import { openStage } from '../runner.ts';
-import { DIALOG, dialogWith, goTo, openTab, reveal, scrollBy, signIn, wheel } from '../screen.ts';
+import { DIALOG, dialogWith, goTo, reveal, scrollBy, signIn, wheel } from '../screen.ts';
 import type { Timeline } from '../../timeline.ts';
 
 const UNASSIGNED = 'Site survey — new tenant fit-out';

@@ -99,7 +99,7 @@ export function daysOff(a: Date, b: Date, weekdays: Set<number> | null): number 
   return n;
 }
 
-export type LeaveMark = 'approved' | 'pending';
+type LeaveMark = 'approved' | 'pending';
 
 /** Every day this member already has off, or has asked for — keyed by `dayKey`. */
 export function leaveDays(
@@ -199,7 +199,7 @@ export function minutesPastEnd(e: { expectedClockOutAt?: string | null; clockOut
 }
 
 /** The step the approve sheet moves in, and its bounds (the server takes 1–1440). */
-export const EXTRA_STEP = 15;
+const EXTRA_STEP = 15;
 export const EXTRA_MAX = 12 * 60;
 
 /**

@@ -3,7 +3,7 @@
  * Centralized status badges, priority indicators, and common style patterns
  */
 
-import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS, type ThemeColors } from './constants';
 import type { TaskStatus } from './api';
 
@@ -14,7 +14,7 @@ export type { TaskStatus };
 // STATUS BADGE STYLES
 // =============================================================================
 
-export type StatusStyle = {
+type StatusStyle = {
   bg: string;
   text: string;
   border: string;
@@ -25,7 +25,7 @@ export type StatusStyle = {
  * Get theme-aware status styles.
  * Most statuses use fixed accent colors; DRAFT/CANCELED/CLOSED adapt to theme.
  */
-export function getThemedStatusStyles(colors: ThemeColors): Record<TaskStatus, StatusStyle> {
+function getThemedStatusStyles(colors: ThemeColors): Record<TaskStatus, StatusStyle> {
   return {
     DRAFT: {
       bg: colors.surfaceRaised,
@@ -129,13 +129,13 @@ export function getStatusStyle(status: string, colors?: ThemeColors): StatusStyl
 
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
-export type PriorityStyle = {
+type PriorityStyle = {
   color: string;
   bg: string;
   label: string;
 };
 
-export const PRIORITY_STYLES: Record<TaskPriority, PriorityStyle> = {
+const PRIORITY_STYLES: Record<TaskPriority, PriorityStyle> = {
   LOW: { color: COLORS.slate400, bg: COLORS.slate100, label: 'Low' },
   MEDIUM: { color: COLORS.primary, bg: COLORS.primaryLight, label: 'Medium' },
   HIGH: { color: COLORS.amber, bg: COLORS.amberLight, label: 'High' },
@@ -145,7 +145,7 @@ export const PRIORITY_STYLES: Record<TaskPriority, PriorityStyle> = {
 /**
  * Get theme-aware priority styles. LOW adapts to theme.
  */
-export function getThemedPriorityStyles(colors: ThemeColors): Record<TaskPriority, PriorityStyle> {
+function getThemedPriorityStyles(colors: ThemeColors): Record<TaskPriority, PriorityStyle> {
   return {
     LOW: { color: colors.textMuted, bg: colors.surfaceRaised, label: 'Low' },
     MEDIUM: { color: COLORS.primary, bg: colors.primaryLight, label: 'Medium' },
@@ -170,16 +170,16 @@ export function getPriorityStyle(priority: string, colors?: ThemeColors): Priori
 // TIME OFF REQUEST STATUS STYLES
 // =============================================================================
 
-export type TimeOffStatus = 'APPROVED' | 'PENDING' | 'REJECTED' | 'CANCELED';
+type TimeOffStatus = 'APPROVED' | 'PENDING' | 'REJECTED' | 'CANCELED';
 
-export type TimeOffStatusStyle = {
+type TimeOffStatusStyle = {
   bg: string;
   text: string;
   border: string;
   label: string;
 };
 
-export const TIME_OFF_STATUS_STYLES: Record<TimeOffStatus, TimeOffStatusStyle> = {
+const TIME_OFF_STATUS_STYLES: Record<TimeOffStatus, TimeOffStatusStyle> = {
   APPROVED: { bg: COLORS.successLight, text: COLORS.success, border: COLORS.success, label: 'Approved' },
   PENDING: { bg: COLORS.amberLight, text: COLORS.amber, border: COLORS.amber, label: 'Pending' },
   REJECTED: { bg: COLORS.errorLight, text: COLORS.error, border: COLORS.error, label: 'Rejected' },
@@ -208,7 +208,7 @@ export function getTimeOffStatusStyle(status: string, colors?: ThemeColors): Tim
 // COMMON STYLES
 // =============================================================================
 
-export const commonStyles = StyleSheet.create({
+const commonStyles = StyleSheet.create({
   // Containers — backgroundColor provided inline via colors.surface
   container: {
     flex: 1,
@@ -311,41 +311,3 @@ export const commonStyles = StyleSheet.create({
 // =============================================================================
 // STYLE HELPERS
 // =============================================================================
-
-/**
- * Create a status badge style object
- */
-export function createStatusBadgeStyle(status: string): {
-  container: ViewStyle;
-  text: TextStyle;
-} {
-  const style = getStatusStyle(status);
-  return {
-    container: {
-      backgroundColor: style.bg,
-      borderColor: style.border,
-      borderWidth: 1,
-      borderRadius: RADIUS.sm,
-      paddingHorizontal: SPACING.sm,
-      paddingVertical: SPACING.xs,
-    },
-    text: {
-      color: style.text,
-      fontSize: FONT_SIZE.xs,
-      fontWeight: FONT_WEIGHT.semibold,
-    },
-  };
-}
-
-/**
- * Create a priority dot style
- */
-export function createPriorityDotStyle(priority: string): ViewStyle {
-  const style = getPriorityStyle(priority);
-  return {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: style.color,
-  };
-}

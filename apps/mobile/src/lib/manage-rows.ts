@@ -312,8 +312,3 @@ export function destinationsFor(user: DestinationSubject): Destination[] {
     return passesGate(user, row.gate);
   });
 }
-
-/** The rail's question — one filter away from the Manage list's. */
-export function homeDestinationsFor(user: DestinationSubject): Destination[] {
-  return destinationsFor(user).filter((r) => r.home === true);
-}

@@ -10,7 +10,7 @@ import { mergeAttachments, mergeComments, overlayTask, pendingAttachments, pendi
 /** Where a task detail came from — the screen says "saved on this phone" for the second. */
 export type Source = 'server' | 'phone';
 
-export interface TaskDetail {
+interface TaskDetail {
   task: Task & { pendingSync?: boolean; workflow?: any; capabilities?: string[] };
   comments: (Comment & { pendingSync?: boolean })[];
   attachments: any[];

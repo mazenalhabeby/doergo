@@ -94,7 +94,7 @@ export async function readCardLines(
   return toCardLines(blocks as never, image.height, crop, image.width);
 }
 
-export interface CardScan {
+interface CardScan {
   card: ParsedCard;
   /** Was that a good look? The screen says so out loud when it was not. */
   quality: CardReadQuality;

@@ -24,7 +24,7 @@ function chapterStamp(seconds: number): string {
     : `${m}:${String(s).padStart(2, '0')}`;
 }
 
-export function renderYouTubeMetadata(
+function renderYouTubeMetadata(
   script: VideoScript,
   timeline: Timeline,
   titleCardSec: number,

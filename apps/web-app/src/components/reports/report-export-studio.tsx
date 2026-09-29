@@ -86,7 +86,7 @@ function TemplateThumb({ template, accent }: { template: PdfTemplate; accent: st
   }
 }
 
-export interface ReportExportStudioProps {
+interface ReportExportStudioProps {
   open: boolean
   onOpenChange: (v: boolean) => void
   result: ReportResult | null

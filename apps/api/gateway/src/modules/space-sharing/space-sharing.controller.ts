@@ -4,7 +4,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role, CurrentUser, CurrentUserData } from '@hbcfield/shared';
+import { CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { OrgEventsService } from '../../common/events/org-events.service';

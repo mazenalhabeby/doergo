@@ -9,7 +9,7 @@ import { format } from "date-fns"
 import { notify } from "@/lib/toast"
 
 import { useAuth } from "@/contexts/auth-context"
-import { attendanceApi, employeesApi, locationsApi, type TimeEntry, type TimeEntryStatus, type Break, type BreakType } from "@/lib/api"
+import { attendanceApi, employeesApi, locationsApi, type TimeEntry, type TimeEntryStatus, type BreakType } from "@/lib/api"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useTranslation } from "react-i18next"
 import { workedMinutes } from "@hbcfield/shared/client"

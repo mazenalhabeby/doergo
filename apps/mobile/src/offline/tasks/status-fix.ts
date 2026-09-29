@@ -9,7 +9,7 @@ import { TaskStatus } from '../../lib/api';
  * sending the accuracy and a member at the customer's door is refused for
  * being 35 metres out.
  */
-export interface StatusFix {
+interface StatusFix {
   lat: number;
   lng: number;
   /** The device's own error radius — the server widens the zone by it. */

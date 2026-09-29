@@ -11,7 +11,7 @@ import {
 } from 'class-validator';
 
 /** A GPS fix taken at the moment of the tap. */
-export class OccurrenceFixDto {
+class OccurrenceFixDto {
   @ApiProperty() @IsNumber() @Min(-90) @Max(90) lat: number;
   @ApiProperty() @IsNumber() @Min(-180) @Max(180) lng: number;
   @ApiProperty({ description: 'Metres' }) @IsNumber() @Min(0) @Max(100_000) accuracy: number;

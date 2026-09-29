@@ -110,7 +110,7 @@ export interface SharedSpaceAccess {
 }
 
 // Token info type
-export interface TokenInfo {
+interface TokenInfo {
   accessToken: string | null;
   refreshToken: string | null;
   accessTokenExp: Date | null;
@@ -453,47 +453,6 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
-
-// HOC for protected routes
-export function withAuth<P extends object>(
-  WrappedComponent: React.ComponentType<P>,
-  allowedRoles?: string[]
-) {
-  return function WithAuthComponent(props: P) {
-    const { user, isLoading, isAuthenticated } = useAuth();
-
-    useEffect(() => {
-      if (!isLoading && !isAuthenticated) {
-        window.location.href = '/login';
-      }
-
-      if (!isLoading && isAuthenticated && allowedRoles && user) {
-        if (!allowedRoles.includes(user.role)) {
-          window.location.href = '/unauthorized';
-        }
-      }
-    }, [isLoading, isAuthenticated, user]);
-
-    /*
-      The same reasoning as the dashboard layout: until the auth check answers,
-      drawing the signed-in application is a guess, and it is wrong for everybody
-      who is about to be sent to the login page.
-    */
-    if (isLoading) {
-      return <BootScreen />;
-    }
-
-    if (!isAuthenticated) {
-      return <BootScreen />;
-    }
-
-    if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-      return null;
-    }
-
-    return <WrappedComponent {...props} />;
-  };
 }
 
 export default AuthContext;

@@ -3,7 +3,7 @@ import { ClientsModule } from '@nestjs/microservices';
 import { BullModule } from '@nestjs/bullmq';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
-import { SERVICE_NAMES, createClientOptions, QUEUE_NAMES } from '@hbcfield/shared';
+import { QUEUE_NAMES } from '@hbcfield/shared';
 import { OvertimeController } from './overtime.controller';
 import { OvertimeGatewayService } from './overtime.service';
 import { OvertimeQueueService } from './overtime.queue.service';

@@ -88,18 +88,6 @@ export interface ListOrgMembersDto {
 }
 
 /**
- * DTO for updating a member's role/permissions
- */
-export interface UpdateMemberRoleDto {
-  role: Role;
-  canCreateTasks?: boolean;
-  taskCreationScope?: string;
-  canViewAllTasks?: boolean;
-  canAssignTasks?: boolean;
-  canManageUsers?: boolean;
-}
-
-/**
  * DTO for updating a member's profile + role/permissions (combined)
  */
 export interface UpdateMemberProfileDto {
@@ -130,8 +118,3 @@ export interface RemoveMemberDto {
 }
 
 // Backward-compatible aliases for internal message patterns
-export type CreateTechnicianDto = CreateEmployeeDto;
-export type UpdateTechnicianDto = UpdateEmployeeDto;
-export type ListTechniciansDto = ListEmployeesDto;
-export type GetTechnicianDetailDto = GetEmployeeDetailDto;
-export type GetTechnicianPerformanceDto = GetEmployeePerformanceDto;

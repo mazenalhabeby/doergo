@@ -21,7 +21,7 @@ export interface PendingAvatarDeps {
   isUnreachable(err: unknown): boolean;
 }
 
-export const PENDING_AVATAR_KEY = (memberId: string) => `pending_avatar_v1_${memberId}`;
+const PENDING_AVATAR_KEY = (memberId: string) => `pending_avatar_v1_${memberId}`;
 
 export function createPendingAvatar(memberId: string, deps: PendingAvatarDeps) {
   const key = PENDING_AVATAR_KEY(memberId);

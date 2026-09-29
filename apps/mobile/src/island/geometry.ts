@@ -256,7 +256,7 @@ export function coversStatusBar(hole: Cutout): boolean {
 }
 
 /** How many lines the dropped title needs across the open width. */
-export function titleLines(m: Measured, w: number): number {
+function titleLines(m: Measured, w: number): number {
   if (m.titleWrapped && m.titleWrapped > 0) return m.titleWrapped;
   const room = Math.max(1, w - DROP_SIDE * 2);
   return Math.max(1, Math.ceil(m.title / room));
@@ -266,7 +266,7 @@ export function titleLines(m: Measured, w: number): number {
  * ⚠️ DECIDED, NOT DISCOVERED. The height comes from the line boxes before
  * anything moves.
  */
-export function droppedHeight(headH: number, m: Measured, lines: number): number {
+function droppedHeight(headH: number, m: Measured, lines: number): number {
   const blocks = [
     lines > 0 ? lines * TITLE_LH : 0,
     m.bodyLines > 0 ? Math.min(m.bodyLines, MAX_BODY_LINES) * BODY_LH : 0,

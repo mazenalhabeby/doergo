@@ -16,10 +16,9 @@ import {
   AlertCircle,
   Upload,
   Loader2,
-  Trash2,
   X,
 } from "lucide-react"
-import { reportsApi, reportAttachmentsApi, uploadToS3, type ServiceReport, type ReportAttachment, type PartUsed } from "@/lib/api"
+import { reportsApi, reportAttachmentsApi, uploadToS3, type ReportAttachment, type PartUsed } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"

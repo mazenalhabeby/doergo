@@ -6,8 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
-  Image,
-  Platform,
+  Image
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';

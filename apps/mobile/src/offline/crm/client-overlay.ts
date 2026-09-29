@@ -32,7 +32,7 @@ type AddBody = {
 const open = (o: OutboxOp) => STILL_MINE.has(o.state);
 
 /** The client with every queued change to it applied, oldest first. */
-export type PendingCustomer = MobileCustomer & { pendingSync?: boolean };
+type PendingCustomer = MobileCustomer & { pendingSync?: boolean };
 
 /**
  * The fields still waiting to reach the server for this client, merged.
@@ -97,7 +97,7 @@ export function pendingContactLinks(
 }
 
 /** Links with a detach still on the phone — gone from the panel, and not sent yet. */
-export function pendingContactRemovals(ops: readonly OutboxOp[]): ReadonlySet<string> {
+function pendingContactRemovals(ops: readonly OutboxOp[]): ReadonlySet<string> {
   return new Set(
     ops
       .filter((o) => o.op === 'customer.contactRemove' && open(o))

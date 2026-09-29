@@ -29,7 +29,7 @@ export const ISLAND = {
  */
 export type Tone = 'done' | 'waiting' | 'failed' | 'queued';
 
-export interface ToneLook {
+interface ToneLook {
   /** The accent for the icon and any ring. */
   fg: string;
   /** ⚠️ Mono for `queued`, because the thing being counted is a queue. */

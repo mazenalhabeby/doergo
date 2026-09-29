@@ -12,9 +12,6 @@ import { apiError } from './server-error';
 import {
   TimeEntryStatus,
   BreakType,
-  InvitationStatus,
-  JoinRequestStatus,
-  JoinPolicy,
   buildUrlWithQuery,
 } from '@hbcfield/shared/client';
 import type { StepForm, StepFormField, StepFormAnswers } from '@hbcfield/shared/client';
@@ -23,9 +20,6 @@ import type {
   TimeEntry,
   Break,
   BreakStatus,
-  BreakSummary as SharedBreakSummary,
-  AttendanceSummary as SharedAttendanceSummary,
-  AttendanceQueryParams as SharedAttendanceQueryParams,
   PaginatedResponse,
   EmployeeProfile,
   EmployeeListItem,
@@ -117,7 +111,7 @@ export function getAccessToken(): string | null {
 }
 
 // Store the access token (refresh token is set as an httpOnly cookie by the gateway).
-export function setTokens(tokens: AuthTokens): void {
+function setTokens(tokens: AuthTokens): void {
   memoryAccessToken = tokens.accessToken;
   if (typeof window === 'undefined') return;
   localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
@@ -481,7 +475,7 @@ export const authApi = {
 
 // Task types
 /** This year's vacation allowance for one person. */
-export interface LeaveBalance {
+interface LeaveBalance {
   year: number;
   allowance: number;
   taken: number;
@@ -539,7 +533,7 @@ export interface Sprint {
   tasks?: Task[];
 }
 
-export interface SprintReport {
+interface SprintReport {
   id: string;
   sprintId: string;
   committedPoints: number;
@@ -711,7 +705,7 @@ export interface TasksListResponse {
   };
 }
 
-export interface TaskResponse {
+interface TaskResponse {
   success: boolean;
   data: Task;
 }
@@ -761,7 +755,7 @@ export interface UpdateTaskInput {
   position?: number;
 }
 
-export interface TasksQueryParams {
+interface TasksQueryParams {
   status?: string;
   /** A tab group — several statuses at once. Sent comma-separated. */
   statuses?: string[];
@@ -792,7 +786,7 @@ export interface TasksQueryParams {
 }
 
 // Suggested employee response types
-export interface SuggestedEmployee {
+interface SuggestedEmployee {
   id: string;
   firstName: string;
   lastName: string;
@@ -817,16 +811,11 @@ export interface SuggestedEmployee {
   };
 }
 
-export interface SuggestedEmployeesResponse {
+interface SuggestedEmployeesResponse {
   taskId: string;
   technicians: SuggestedEmployee[];
   suggestedTechnicianId: string | null;
 }
-
-/** @deprecated Use SuggestedEmployee */
-export type SuggestedTechnician = SuggestedEmployee;
-/** @deprecated Use SuggestedEmployeesResponse */
-export type SuggestedTechniciansResponse = SuggestedEmployeesResponse;
 
 // Tasks API methods
 // User/Worker types
@@ -964,7 +953,7 @@ export const usersApi = {
 };
 
 // Status counts response type
-export interface StatusCountsResponse {
+interface StatusCountsResponse {
   success: boolean;
   data: Record<string, number>;
 }
@@ -1428,7 +1417,7 @@ export function uploadToS3(
 }
 
 // Worker location types for tracking
-export interface WorkerLocation {
+interface WorkerLocation {
   id: string;
   email: string;
   firstName: string;
@@ -1446,14 +1435,14 @@ export interface WorkerLocation {
 }
 
 // Route tracking types
-export interface RoutePoint {
+interface RoutePoint {
   lat: number;
   lng: number;
   accuracy?: number;
   timestamp: string;
 }
 
-export interface TaskRoute {
+interface TaskRoute {
   taskId: string;
   workerId: string | null;
   status: string;
@@ -1467,7 +1456,7 @@ export interface TaskRoute {
   matchedPath?: [number, number][] | null;
 }
 
-export interface WorkerCurrentRoute {
+interface WorkerCurrentRoute {
   taskId: string;
   taskTitle: string;
   startTime: string | null;
@@ -1559,7 +1548,7 @@ export interface AssetCategory {
   };
 }
 
-export interface AssetType {
+interface AssetType {
   id: string;
   name: string;
   description: string | null;
@@ -1655,7 +1644,7 @@ export interface AssetLogEntry extends AssetMoneyEntry {
   createdAt: string;
 }
 
-export interface AssetLogPage {
+interface AssetLogPage {
   entries: AssetLogEntry[];
   nextCursor: string | null;
 }
@@ -1681,14 +1670,14 @@ export interface AssetLogDue {
   unitsLeft: number | null;
 }
 
-export interface AssetLogCredit {
+interface AssetLogCredit {
   inCents: number;
   outCents: number;
   netCents: number;
   entries: number;
 }
 
-export interface AssetLogSummary {
+interface AssetLogSummary {
   period: { from: string; to: string };
   readings: Record<string, { value: number; at: string; entryId: string }>;
   due: AssetLogDue[];
@@ -1697,7 +1686,7 @@ export interface AssetLogSummary {
   byType: Array<AssetLogCredit & { logType: string; label: string; color: string }>;
 }
 
-export interface CreateAssetLogInput {
+interface CreateAssetLogInput {
   /** Made here, so a double click files one entry. */
   entryId?: string;
   logType: string;
@@ -1709,7 +1698,7 @@ export interface CreateAssetLogInput {
   receiptMime?: string;
 }
 
-export interface AssetMoneySummary {
+interface AssetMoneySummary {
   entries: AssetMoneyEntry[];
   totals: {
     inCents: number;
@@ -1759,7 +1748,7 @@ export interface CustodyPeriodDto {
   };
 }
 
-export interface CustodyTimeline {
+interface CustodyTimeline {
   periods: CustodyPeriodDto[];
   /** Money that falls in no period — real, and deliberately not hidden. */
   unattributed: { inCents: number; outCents: number; netCents: number; entries: number };
@@ -1805,7 +1794,7 @@ export interface ContractPreview {
   startClamped: boolean;
 }
 
-export interface ContractProposalInput {
+interface ContractProposalInput {
   categoryId: string;
   typeId?: string;
   holderUserId: string;
@@ -1829,18 +1818,6 @@ export interface AssetProposal {
   createdAt: string;
 }
 
-/** One of mine, and what happened to it. */
-export interface MyAssetProposal {
-  id: string;
-  fields: ContractFields;
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
-  reviewNote: string | null;
-  reviewedAt: string | null;
-  createdAssetId: string | null;
-  hasDocument: boolean;
-  createdAt: string;
-}
-
 /** One expense waiting on a decision, in the office's queue. */
 export interface PendingExpense extends AssetMoneyEntry {
   assetId: string;
@@ -1859,7 +1836,7 @@ export interface AssetActivity {
   createdAt: string;
 }
 
-export interface CreateAssetCategoryInput {
+interface CreateAssetCategoryInput {
   name: string;
   description?: string;
   icon?: string;
@@ -1870,24 +1847,24 @@ export interface CreateAssetCategoryInput {
   config?: unknown;
 }
 
-export interface UpdateAssetCategoryInput {
+interface UpdateAssetCategoryInput {
   name?: string;
   description?: string;
   icon?: string;
   color?: string;
 }
 
-export interface CreateAssetTypeInput {
+interface CreateAssetTypeInput {
   name: string;
   description?: string;
 }
 
-export interface UpdateAssetTypeInput {
+interface UpdateAssetTypeInput {
   name?: string;
   description?: string;
 }
 
-export interface CreateAssetInput {
+interface CreateAssetInput {
   name: string;
   serialNumber?: string;
   model?: string;
@@ -1914,12 +1891,12 @@ export interface CreateAssetInput {
 }
 
 /** One holder on an asset: a member OR a client, never both. */
-export interface AssetHolderInput {
+interface AssetHolderInput {
   userId?: string | null;
   customerId?: string | null;
 }
 
-export interface UpdateAssetInput {
+interface UpdateAssetInput {
   name?: string;
   /** null clears the fact — "" would be stored as a blank serial number. */
   serialNumber?: string | null;
@@ -1940,7 +1917,7 @@ export interface UpdateAssetInput {
 }
 
 /** One counted module's numbers — the same shape for assets, clients and portals. */
-export interface ModuleUsageCounts {
+interface ModuleUsageCounts {
   total: number;
   /** Records in no space — billed by nobody. For assets, listed by `getOrphans`. */
   unassigned: number;
@@ -1955,7 +1932,7 @@ export interface ModuleUsageCounts {
  * the space header read them there; `modules` is the shape everything new
  * should use, keyed by the same module keys the pricing ladders are.
  */
-export interface AssetUsage extends ModuleUsageCounts {
+interface AssetUsage extends ModuleUsageCounts {
   modules?: Record<string, ModuleUsageCounts>;
 }
 
@@ -1971,7 +1948,7 @@ export interface OrphanAsset {
   _count: { tasks: number };
 }
 
-export interface AssetsQueryParams {
+interface AssetsQueryParams {
   /** One workspace. The server intersects it with the caller's own. */
   spaceId?: string;
   categoryId?: string;
@@ -2554,7 +2531,7 @@ export interface ServiceReportSummary {
   hasAfterPhotos: boolean;
 }
 
-export interface CompleteTaskInput {
+interface CompleteTaskInput {
   summary: string;
   workPerformed?: string;
   workDuration: number;
@@ -2570,7 +2547,7 @@ export interface CompleteTaskInput {
   }[];
 }
 
-export interface UpdateReportInput {
+interface UpdateReportInput {
   summary?: string;
   workPerformed?: string;
   technicianSignature?: string;
@@ -2744,7 +2721,7 @@ export interface BreakSummary {
   };
 }
 
-export interface AttendanceSummary {
+interface AttendanceSummary {
   period: {
     startDate: string;
     endDate: string;
@@ -2783,7 +2760,7 @@ export interface AttendanceSummary {
   }>;
 }
 
-export interface AttendanceQueryParams {
+interface AttendanceQueryParams {
   locationId?: string;
   date?: string;
   startDate?: string;
@@ -2796,7 +2773,7 @@ export interface AttendanceQueryParams {
   sortOrder?: "asc" | "desc";
 }
 
-export interface AttendanceListResponse {
+interface AttendanceListResponse {
   success: boolean;
   data: TimeEntry[];
   meta: {
@@ -3937,10 +3914,6 @@ export const employeesApi = {
     return response.data?.data || [];
   },
 };
-
-/** @deprecated Use employeesApi */
-export const techniciansApi = employeesApi;
-
 // ========================================================================
 // TYPES FOR AVAILABILITY
 // ========================================================================
@@ -3988,7 +3961,7 @@ export interface TimeOffRequest {
  * shaped as PARTS rather than a sentence, so the screen writes the words in the
  * viewer's language. See `assessLeave` in @hbcfield/shared for the rule.
  */
-export interface CoverName {
+interface CoverName {
   id: string;
   firstName: string;
   lastName: string;
@@ -4021,7 +3994,7 @@ export interface CoverVerdict {
 }
 
 /** One workspace's cover for every day of a window — the chart footer. */
-export interface CoverRangeSpace {
+interface CoverRangeSpace {
   spaceId: string;
   minCover: number;
   rotaKnown: boolean;
@@ -4071,7 +4044,7 @@ export interface FloorSpace {
   people: FloorPerson[];
 }
 
-export interface EmployeeAvailability {
+interface EmployeeAvailability {
   id: string;
   firstName: string;
   lastName: string;
@@ -4090,7 +4063,7 @@ export interface EmployeeAvailability {
   } | null;
 }
 
-export interface AvailabilityResponse {
+interface AvailabilityResponse {
   date: string;
   dayOfWeek: number;
   dayName: string;
@@ -4196,7 +4169,7 @@ function unwrap<T>(body: unknown): T {
  * (organizationName, status, rejectionReason) rather than returning the full
  * JoinRequest relation, so this differs from the shared OnboardingStatus type.
  */
-export interface OnboardingStatusResult {
+interface OnboardingStatusResult {
   needsOnboarding: boolean;
   hasPendingJoinRequest: boolean;
   pendingRequest: {
@@ -4349,7 +4322,7 @@ export interface OrgMember {
 
 /** An org-assignable role (Admin, Manager, or a custom role). */
 /** One break on a shift. `addedBy` is null when the member recorded it themselves. */
-export interface EntryBreak {
+interface EntryBreak {
   id: string;
   type: string;
   startedAt: string;
@@ -4398,7 +4371,7 @@ export interface UpdateMemberInput {
   dateOfBirth?: string | null;
 }
 
-export interface MemberWatcher {
+interface MemberWatcher {
   id: string;
   firstName: string;
   lastName: string;
@@ -4739,7 +4712,7 @@ export interface LocationAssignment {
   currentTaskStatus?: string | null;
 }
 
-export interface AssignMemberInput {
+interface AssignMemberInput {
   userId: string;
   isPrimary?: boolean;
   schedule?: string[];
@@ -4747,7 +4720,7 @@ export interface AssignMemberInput {
   effectiveTo?: string;
 }
 
-export interface UpdateAssignmentInput {
+interface UpdateAssignmentInput {
   isPrimary?: boolean;
   schedule?: string[];
   effectiveFrom?: string;
@@ -5048,7 +5021,7 @@ export const spaceMembersApi = {
   },
 };
 
-export interface Colleague {
+interface Colleague {
   id: string;
   firstName: string;
   lastName: string;
@@ -5275,7 +5248,7 @@ export interface WorkflowStatus {
 }
 
 /** What a step's form is SENT as: no version (the server decides it). `null` clears it. */
-export type StepFormInput = { fields: Array<Omit<StepFormField, 'id'> & { id?: string }> } | null;
+type StepFormInput = { fields: Array<Omit<StepFormField, 'id'> & { id?: string }> } | null;
 
 /** One step form answered on a job — its report for that move. */
 export interface TaskStepSubmission {
@@ -5292,7 +5265,7 @@ export interface TaskStepSubmission {
 }
 
 /** A task type in the shared library, as a tenant sees it. */
-export interface WorkflowLibraryTemplate {
+interface WorkflowLibraryTemplate {
   id: string;
   slug: string;
   name: string;
@@ -5712,7 +5685,7 @@ export const epicsApi = {
 };
 
 /** One day's row inside a schedule template's `entries` JSON. */
-export interface ScheduleTemplateEntry {
+interface ScheduleTemplateEntry {
   dayOfWeek: number;
   startTime: string;
   endTime: string;
@@ -5721,7 +5694,7 @@ export interface ScheduleTemplateEntry {
 }
 
 /** A reusable weekly pattern ("Morning Shift", "Flex 4x10"). */
-export interface ScheduleTemplate {
+interface ScheduleTemplate {
   id: string;
   name: string;
   description?: string | null;
@@ -5839,7 +5812,7 @@ export interface Invoice {
 }
 
 /** What a new invoice needs; everything else is server-decided. */
-export interface CreateInvoiceInput {
+interface CreateInvoiceInput {
   spaceId?: string | null;
   clientName: string;
   clientEmail?: string;
@@ -5857,7 +5830,7 @@ export interface CreateInvoiceInput {
   items?: Array<Omit<InvoiceItem, 'id' | 'invoiceId' | 'amount' | 'createdAt'> & { amount?: number }>;
 }
 
-export type UpdateInvoiceInput = Partial<CreateInvoiceInput>;
+type UpdateInvoiceInput = Partial<CreateInvoiceInput>;
 
 /** One line added to an existing invoice. */
 export interface InvoiceItemInput {
@@ -5879,7 +5852,7 @@ export interface InvoiceItemInput {
 }
 
 /** A part fitted during a job, priced for the invoice. */
-export interface InvoiceGatherPart {
+interface InvoiceGatherPart {
   name: string;
   partNumber?: string | null;
   quantity: number;
@@ -5888,7 +5861,7 @@ export interface InvoiceGatherPart {
 }
 
 /** One completed job the gather endpoint offers as billable work. */
-export interface InvoiceGatherEntry {
+interface InvoiceGatherEntry {
   /** This member's own resolved rates, from the ladder. */
   billRateCents?: number | null;
   costRateCents?: number | null;
@@ -5912,7 +5885,7 @@ export interface InvoiceGatherEntry {
  * "list of lines" the screen's `as any` implied, including the hourly rate and
  * a per-worker hours summary.
  */
-export interface InvoiceGatherResult {
+interface InvoiceGatherResult {
   /** Null when the work was gathered by CLIENT rather than by workspace. */
   spaceId: string | null;
   /** The service period this covers, echoed back. Null ends mean "everything". */
@@ -6027,12 +6000,12 @@ export interface SpaceShare {
 }
 
 /** A share as seen by the GUEST org (adds space + owner naming). */
-export interface SharedSpace extends SpaceShare {
+interface SharedSpace extends SpaceShare {
   spaceName: string;
   ownerOrgName: string;
 }
 
-export interface SpaceShareRequest {
+interface SpaceShareRequest {
   id: string;
   spaceId: string;
   type: SpaceShareRequestType;
@@ -6042,7 +6015,7 @@ export interface SpaceShareRequest {
   createdAt: string;
 }
 
-export interface CreateSpaceShareInput {
+interface CreateSpaceShareInput {
   guestOrgCode: string;
   level: SpaceShareLevel;
   showWorkers: boolean;
@@ -6052,7 +6025,7 @@ export interface CreateSpaceShareInput {
   allowRequests: boolean;
 }
 
-export interface UpdateSpaceShareInput {
+interface UpdateSpaceShareInput {
   level?: SpaceShareLevel;
   showWorkers?: boolean;
   showAttendance?: boolean;
@@ -6136,7 +6109,7 @@ export { TimeEntryStatus, BreakType, InvitationStatus, JoinRequestStatus, JoinPo
 // ──────────────────────────────────────────────────────────────────────────────
 // Billing / Subscriptions
 // ──────────────────────────────────────────────────────────────────────────────
-import type { SubscriptionView, PlanTier, BillingInterval, OrgCostBreakdown } from '@hbcfield/shared/client';
+import type { SubscriptionView, OrgCostBreakdown } from '@hbcfield/shared/client';
 
 export const billingApi = {
   /** The itemised bill: seats, every space's modules and ladders, org add-ons. */
@@ -6194,7 +6167,7 @@ export const billingApi = {
 // ============================================================================
 import type { SupportTicket, SupportMessage, SupportAttachment } from '@hbcfield/shared/client';
 
-export interface SupportConfig {
+interface SupportConfig {
   tier: string | null;
   slaBusinessMinutes: number;
   liveChat: boolean;
@@ -6337,7 +6310,7 @@ export interface CustomerContactLink {
 }
 
 /** The mirror, read from the person's record. */
-export interface CustomerCompanyLink {
+interface CustomerCompanyLink {
   id: string;
   role?: string | null;
   isPrimary: boolean;
@@ -6346,7 +6319,7 @@ export interface CustomerCompanyLink {
 
 export interface CustomerDetail { label: string; value: string }
 
-export type CustomerInput = Partial<Omit<Customer, "id" | "createdAt" | "updatedAt">>;
+type CustomerInput = Partial<Omit<Customer, "id" | "createdAt" | "updatedAt">>;
 
 export interface CustomerAddress {
   id: string;
@@ -6362,7 +6335,7 @@ export interface CustomerAddress {
 }
 
 // ── Per-space B2C portal (config + unit/apartment catalog) ──
-export interface SpacePortalConfig { id: string; templateKey: string; entityLabel: string; name: string }
+interface SpacePortalConfig { id: string; templateKey: string; entityLabel: string; name: string }
 export interface SpaceUnit extends CustomerAddress {
   customer?: { id: string; name: string; email?: string | null; phone?: string | null } | null;
   residentUserId?: string | null;
@@ -6372,7 +6345,7 @@ export interface SpaceUnit extends CustomerAddress {
   createdAt?: string;
 }
 
-export interface UnitActivity {
+interface UnitActivity {
   id: string;
   type: "NOTE" | "SYSTEM";
   body?: string | null;
@@ -6427,13 +6400,6 @@ export const spaceUnitsApi = {
     return res.data!.data;
   },
 };
-
-/** A portal whose entity is an Apartment (rental vertical). This is the switch
- *  that links apartments ↔ clients: only when a space runs one of these can an
- *  apartment host a CLIENT resident (vs. member-only housing). */
-export const isApartmentPortal = (p: PortalSummary): boolean =>
-  p.templateKey === "rental" || (p.entityLabel || "").toLowerCase().startsWith("apartment")
-
 export const spacePortalApi = {
   /** All client portals bound to this space (a space can run several). */
   listPortals: async (spaceId: string): Promise<PortalSummary[]> => {
@@ -6646,7 +6612,7 @@ export interface PortalSummary {
   categoryCount: number;
 }
 
-export interface PortalDetail {
+interface PortalDetail {
   id: string;
   name: string;
   enabled: boolean;
@@ -6661,7 +6627,7 @@ export interface PortalDetail {
 }
 
 /** A vacant apartment offered in the invite dialog (portal's space catalog). */
-export interface PortalAvailableUnit {
+interface PortalAvailableUnit {
   id: string;
   name: string;
   address?: string | null;
@@ -6670,7 +6636,7 @@ export interface PortalAvailableUnit {
 }
 
 /** An existing CRM customer offered in the invite dialog (portal's space). */
-export interface PortalAssignableCustomer {
+interface PortalAssignableCustomer {
   id: string;
   name: string;
   email?: string | null;
@@ -6687,15 +6653,6 @@ export interface PortalCategoryInput {
   defaultPriority?: string | null;
   issues?: string[];
   position?: number;
-}
-
-export interface PortalUnitInput {
-  customerId?: string;
-  portalId?: string;
-  name: string;
-  label?: string | null;
-  address?: string | null;
-  spaceId?: string | null;
 }
 
 export const portalAdminApi = {
@@ -6883,7 +6840,7 @@ export interface ReportDefinition {
 export interface ReportColumn { key: string; labelKey?: string; label: string; kind: "dimension" | "measure" | "period"; format?: string }
 export interface ReportResult { columns: ReportColumn[]; rows: Array<Record<string, unknown>> }
 
-export interface ReportTemplate { key: string; name: string; description: string; def: ReportDefinition }
+interface ReportTemplate { key: string; name: string; description: string; def: ReportDefinition }
 export interface DatasetMeta {
   key: string;
   labelKey?: string;
@@ -6965,7 +6922,7 @@ export const analyticsApi = {
 };
 
 export type ReportCadence = "daily" | "weekly" | "monthly";
-export interface ReportSchedule {
+interface ReportSchedule {
   id: string;
   reportDefinitionId: string;
   cadence: ReportCadence;
@@ -6978,7 +6935,7 @@ export interface ReportSchedule {
   nextRunAt: string;
   createdAt: string;
 }
-export interface ScheduleInput {
+interface ScheduleInput {
   reportDefinitionId: string;
   cadence: ReportCadence;
   hour?: number;
@@ -6991,7 +6948,7 @@ export interface ScheduleInput {
 // ===========================================================================
 // Global search (command palette) — unified across tasks, people, spaces, customers
 // ===========================================================================
-export interface GlobalSearchResults {
+interface GlobalSearchResults {
   tasks: { id: string; title: string; status: string }[];
   members: { id: string; firstName: string; lastName: string; email: string | null; avatarUrl: string | null }[];
   spaces: { id: string; name: string; address: string | null }[];
@@ -7023,7 +6980,7 @@ export interface RequirementRow {
 }
 
 /** What the signed-in member still has to do, of either kind. */
-export interface PendingDocumentsSummary {
+interface PendingDocumentsSummary {
   toUpload: RequirementRow[]
   expiring: RequirementRow[]
   /*
@@ -7154,7 +7111,7 @@ export interface DraftDocumentRow {
 }
 
 /** One person or client a route step could resolve to. */
-export interface SignerCandidate {
+interface SignerCandidate {
   /** CONTACT is a client space's own contact — an address with no client row. */
   kind: "USER" | "CUSTOMER" | "CONTACT";
   id: string;
@@ -7256,7 +7213,7 @@ export interface ContractTemplateRow {
   isActive: boolean;
 }
 
-export interface DocumentEventRow {
+interface DocumentEventRow {
   id: string;
   type: string;
   at: string;
@@ -7290,7 +7247,7 @@ function unwrapDocuments<T>(response: { data?: unknown; error?: string }): T | u
   return body as T;
 }
 
-export interface TemplatePreview {
+interface TemplatePreview {
   /** The PDF, base64. Null when only the values were asked for. */
   pdf: string | null;
   /** Every merge field resolved for one real member; '—' where the record is blank. */

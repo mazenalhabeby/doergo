@@ -140,23 +140,6 @@ export function useCameraAccess(): MediaAccess {
   return useAccess(useCameraPermissions());
 }
 
-/** Handing off to the system camera app (`expo-image-picker`). */
-export function usePickerCameraAccess(): MediaAccess {
-  return useAccess(ImagePicker.useCameraPermissions());
-}
-
-/**
- * The photo library.
- *
- * ⚠️ iOS has a THIRD answer here — "limited", where the person chose specific
- * photos. `granted` is true for it and the picker works, which is the correct
- * outcome: the app sees what they picked and nothing else. It must not be
- * treated as a denial and nagged about.
- */
-export function usePickerLibraryAccess(): MediaAccess {
-  return useAccess(ImagePicker.useMediaLibraryPermissions());
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // The imperative half
 // ─────────────────────────────────────────────────────────────────────────────

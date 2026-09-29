@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, shiftCrossesMidnight, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN , scopeWhere, scopeWhereOn, scopeAllows, type SpaceScopeIds, rotaFor, planRotaDay, RotaDayRefused, dowOfDay } from '@hbcfield/shared';
+import { success, shiftCrossesMidnight, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN , scopeWhereOn, scopeAllows, type SpaceScopeIds, rotaFor, planRotaDay, RotaDayRefused, dowOfDay } from '@hbcfield/shared';
 
 const HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
 

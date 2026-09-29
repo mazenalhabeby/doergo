@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Pressable, Animated, Image } from 'react-native';
 import { Tabs } from 'expo-router';
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { splitTabs, tabAccessFor, tabVisible } from '../../../src/lib/tab-layout';
 import { manageRowsFor } from '../../../src/lib/manage-rows';
@@ -8,8 +8,8 @@ import { AnimatedLogo } from '../../../src/components';
 import { TabPill } from '../../../src/components/amazen';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
-import { TourTarget, useTourTarget } from '../../../src/components/tour';
+import { COLORS, SPACING } from '../../../src/lib/constants';
+import { TourTarget } from '../../../src/components/tour';
 import { hasManageSurface } from '../../../src/lib/manage-rows';
 import { useProfileAvatar } from '../../../src/lib/use-profile-avatar';
 

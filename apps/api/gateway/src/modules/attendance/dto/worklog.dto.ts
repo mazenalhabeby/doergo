@@ -52,7 +52,7 @@ export class AddWorklogNoteDto {
 }
 
 /** A note in an offline flush from app 1.0.5 — no ids, so no `id`. */
-export class WorklogBatchNoteDto {
+class WorklogBatchNoteDto {
   @ApiProperty() @IsString() @MaxLength(5000) body: string;
   @ApiPropertyOptional() @IsOptional() @IsISO8601() at?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(64) taskId?: string;

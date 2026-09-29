@@ -19,7 +19,7 @@
  * component does.
  */
 
-export interface TransitionStatus {
+interface TransitionStatus {
   name: string
   isFinal: boolean
   isCanceled: boolean

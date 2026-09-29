@@ -76,7 +76,7 @@ export function checklistStep(steps: readonly FlowStatus[], workflowName?: strin
 
 /* ---------------- what the bottom button does ---------------- */
 
-export interface Decision {
+interface Decision {
   /** The one button. `null` = nothing to press. */
   primary: string | null;
   /** Every other onward step, for ⋯ — in the flow's order. */
@@ -122,7 +122,7 @@ export function decideNext(status: string, steps: readonly FlowStatus[]): Decisi
 
 /* ---------------- who is looking ---------------- */
 
-export type DockMode = 'closed' | 'overseer' | 'doer';
+type DockMode = 'closed' | 'overseer' | 'doer';
 
 /**
  * ⚠️ "Am I doing this job", NOT "am I an admin". Somebody who oversees AND is
@@ -213,7 +213,7 @@ export function formSheetTarget(sheet: OpenSheet | null | undefined): string | n
 /* ---------------- dates ---------------- */
 
 /** Due on a later day than today — the job cannot be started yet. */
-export function isFutureDue(dueDate: string | null | undefined, now: Date = new Date()): boolean {
+function isFutureDue(dueDate: string | null | undefined, now: Date = new Date()): boolean {
   if (!dueDate) return false;
   const endOfToday = new Date(now);
   endOfToday.setHours(23, 59, 59, 999);

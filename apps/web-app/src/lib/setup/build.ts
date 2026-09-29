@@ -7,7 +7,7 @@
  */
 import { organizationsApi, locationsApi } from "@/lib/api"
 
-export interface BuildInput {
+interface BuildInput {
   /** Canonical English industry label to store on the org. */
   industryLabel: string
   /** Feature-module keys to enable org-wide + on each space. */
@@ -16,7 +16,7 @@ export interface BuildInput {
   spaceNames: string[]
 }
 
-export interface BuildResult {
+interface BuildResult {
   spacesCreated: number
   profileUpdated: boolean
 }

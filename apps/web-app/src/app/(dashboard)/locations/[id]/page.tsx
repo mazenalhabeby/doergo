@@ -11,7 +11,6 @@ import {
   Building2,
   CalendarClock,
   ChevronRight as ChevronRightNav,
-  Home,
   Loader2,
   Share2,
   ShieldAlert,
@@ -19,7 +18,7 @@ import {
   Workflow,
 } from "lucide-react"
 
-import { accessAllows, canManageSpace } from "@hbcfield/shared/client"
+import { canManageSpace } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { locationsApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"

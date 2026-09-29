@@ -102,7 +102,7 @@ export function inPlanOrder(plan: OptimizedRoute | null, stops: readonly DayStop
   return plan.order.map((id) => by.get(id)).filter((s): s is DayStop => !!s);
 }
 
-export type RouteState = 'none' | 'noLocation' | 'notPlanned' | 'finished' | 'midRoute' | 'startOfDay';
+type RouteState = 'none' | 'noLocation' | 'notPlanned' | 'finished' | 'midRoute' | 'startOfDay';
 
 /** DATA.md §2 — the order matters. `straight` (no road data) is a modifier, not a state. */
 export function routeState(input: {
@@ -228,7 +228,7 @@ export function legInto(plan: OptimizedRoute | null, stopId: string) {
 }
 
 /** The big button — SPEC §5. Only Google takes several stops; the label must not promise the others what they cannot do. */
-export type PrimaryVerb = { kind: 'driveTo'; stop: DayStop } | { kind: 'continue' } | { kind: 'start' };
+type PrimaryVerb = { kind: 'driveTo'; stop: DayStop } | { kind: 'continue' } | { kind: 'start' };
 export function primaryVerb(app: NavApp, doneCount: number, next: DayStop | undefined): PrimaryVerb | null {
   if (!next) return null;
   if (!supportsMultiStop(app)) return { kind: 'driveTo', stop: next };
@@ -268,7 +268,7 @@ export function thin<T>(points: readonly T[], max = 240): T[] {
   return Array.from({ length: max }, (_, i) => points[Math.round(i * step)]!);
 }
 
-export interface Projection { x: (p: LatLng) => number; y: (p: LatLng) => number }
+interface Projection { x: (p: LatLng) => number; y: (p: LatLng) => number }
 
 /**
  * Fit a set of places into a box, keeping their true shape.

@@ -23,7 +23,7 @@ export interface ResolverSpace {
  * redo timezone math. `expectedClockOutAt` is midnight/DST-safe (a 22:00→06:00
  * night shift resolves to *tomorrow* 06:00 as a real instant).
  */
-export interface ResolvedShift {
+interface ResolvedShift {
   shiftId: string | null; // null when resolved from a legacy weekly schedule
   expectedClockInAt: Date; // when the shift is expected to START (for late/no-show)
   expectedClockOutAt: Date; // when the shift is expected to end

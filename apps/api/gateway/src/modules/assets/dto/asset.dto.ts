@@ -9,7 +9,6 @@ import {
   IsNumber,
   IsEnum,
   IsDateString,
-  IsBoolean,
   Max,
   Min,
   IsObject,

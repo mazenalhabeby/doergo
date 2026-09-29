@@ -22,7 +22,7 @@ export interface RingReading {
   distanceM: number;
 }
 
-export interface OutsidePeriod {
+interface OutsidePeriod {
   leftAt: Date;
   /** Null: still outside at the last reading. */
   backAt: Date | null;
@@ -33,7 +33,7 @@ export interface OutsidePeriod {
 }
 
 /** How old the last reading may be and still stand for "now". */
-export const LATE_POINT_FRESH_MS = 20 * 60 * 1000;
+const LATE_POINT_FRESH_MS = 20 * 60 * 1000;
 
 export function replayRing(readings: readonly RingReading[], startsOutsideSince: Date | null): OutsidePeriod[] {
   const sorted = [...readings].sort((a, b) => a.at.getTime() - b.at.getTime());

@@ -15,7 +15,7 @@ import { LANDED_MS } from '../components/home/editable-widget';
  * Kept in `src/home/` rather than `hooks/` because it is not general: it knows
  * what a widget key is and how long a new card wears its ring.
  */
-export interface HomeEditing {
+interface HomeEditing {
   editing: boolean;
   /** Open the mode. Buzzes once, and only when it was not already open. */
   enter: () => void;

@@ -71,8 +71,3 @@ export function missingOfflineParts(): string[] {
   if (expoCrypto() === null) missing.push('expo-crypto');
   return missing;
 }
-
-/** Can this build run offline at all? Every part, or none. */
-export function offlineCapableBuild(): boolean {
-  return missingOfflineParts().length === 0;
-}

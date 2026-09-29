@@ -33,7 +33,7 @@ export const TASK_STATUSES = [
   "CLOSED",
 ] as const
 
-export type StatusConfig = {
+type StatusConfig = {
   label: string
   className: string
   hex: string
@@ -141,13 +141,6 @@ export function getStatusConfig(status: string): StatusConfig {
   return STATUS_CONFIG[normalized] || STATUS_CONFIG.DRAFT
 }
 
-/**
- * Get hex color for a status (for charts)
- */
-export function getStatusHex(status: string): string {
-  return getStatusConfig(status).hex
-}
-
 // =============================================================================
 // TASK PRIORITY
 // =============================================================================
@@ -157,7 +150,7 @@ export { TaskPriority } from "@hbcfield/shared/types"
 
 export const TASK_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const
 
-export type PriorityConfig = {
+type PriorityConfig = {
   label: string
   description: string
   className: string
@@ -168,7 +161,7 @@ export type PriorityConfig = {
   dotColor: string
 }
 
-export const PRIORITY_CONFIG: Record<TaskPriority, PriorityConfig> = {
+const PRIORITY_CONFIG: Record<TaskPriority, PriorityConfig> = {
   LOW: {
     get label() { return i18n.t("tasks.priority.LOW") },
     get description() { return i18n.t("tasks.priorityDescriptions.LOW") },
@@ -219,86 +212,18 @@ export function getPriorityConfig(priority: string): PriorityConfig {
   return PRIORITY_CONFIG[normalized] || PRIORITY_CONFIG.MEDIUM
 }
 
-/**
- * Get hex color for a priority (for charts)
- */
-export function getPriorityHex(priority: string): string {
-  return getPriorityConfig(priority).hex
-}
-
 // =============================================================================
 // FILTER OPTIONS
 // =============================================================================
-
-export const STATUS_FILTER_OPTIONS = [
-  { value: "all", label: "All" },
-  { value: "NEW", label: "New" },
-  { value: "ASSIGNED", label: "Assigned" },
-  { value: "IN_PROGRESS", label: "In Progress" },
-  { value: "BLOCKED", label: "Blocked" },
-  { value: "COMPLETED", label: "Completed" },
-  { value: "CANCELED", label: "Canceled" },
-  { value: "CLOSED", label: "Closed" },
-] as const
-
-export const PRIORITY_FILTER_OPTIONS = [
-  { value: "all", label: "All" },
-  { value: "URGENT", label: "Urgent" },
-  { value: "HIGH", label: "High" },
-  { value: "MEDIUM", label: "Medium" },
-  { value: "LOW", label: "Low" },
-] as const
-
 // =============================================================================
 // CHART COLORS (for compatibility with existing chart components)
 // =============================================================================
-
-export const taskStatusColors: Record<TaskStatus, string> = {
-  NEW: STATUS_CONFIG.NEW.hex,
-  ASSIGNED: STATUS_CONFIG.ASSIGNED.hex,
-  ACCEPTED: STATUS_CONFIG.ACCEPTED.hex,
-  EN_ROUTE: STATUS_CONFIG.EN_ROUTE.hex,
-  ARRIVED: STATUS_CONFIG.ARRIVED.hex,
-  IN_PROGRESS: STATUS_CONFIG.IN_PROGRESS.hex,
-  BLOCKED: STATUS_CONFIG.BLOCKED.hex,
-  COMPLETED: STATUS_CONFIG.COMPLETED.hex,
-  CANCELED: STATUS_CONFIG.CANCELED.hex,
-  DRAFT: STATUS_CONFIG.DRAFT.hex,
-  CLOSED: STATUS_CONFIG.CLOSED.hex,
-}
-
-export const priorityColors: Record<TaskPriority, string> = {
-  LOW: PRIORITY_CONFIG.LOW.hex,
-  MEDIUM: PRIORITY_CONFIG.MEDIUM.hex,
-  HIGH: PRIORITY_CONFIG.HIGH.hex,
-  URGENT: PRIORITY_CONFIG.URGENT.hex,
-}
-
 // =============================================================================
 // FORM STYLES
 // =============================================================================
-
-export const FORM_STYLES = {
-  input:
-    "h-12 rounded-xl border-slate-200 bg-white text-base placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20",
-  textarea:
-    "rounded-xl border-slate-200 bg-white text-base placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20 resize-none",
-  select:
-    "h-12 rounded-xl border-slate-200 bg-white text-base focus:border-blue-500 focus:ring-blue-500/20",
-  label: "text-sm font-medium text-slate-700",
-} as const
-
 // =============================================================================
 // AVATAR STYLES
 // =============================================================================
-
-export const AVATAR_STYLES = {
-  user: "bg-blue-100 text-blue-600 font-medium",
-  technician: "bg-orange-100 text-orange-600 font-medium",
-  client: "bg-green-100 text-green-600 font-medium",
-  default: "bg-slate-100 text-slate-600 font-medium",
-} as const
-
 // =============================================================================
 // API ROUTES
 // =============================================================================

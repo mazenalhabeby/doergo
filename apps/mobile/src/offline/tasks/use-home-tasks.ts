@@ -60,7 +60,7 @@ export function homeTasksSignature(rows: readonly RecordRow<Task>[], ops: readon
  * moves, and a pull kicked off in the background while there is a connection.
  * Two screens showing the same jobs must not disagree about them.
  */
-export interface HomeTasks {
+interface HomeTasks {
   tasks: Task[];
   /**
    * When the phone's copy was last brought up to date, for `FreshnessLabel` —

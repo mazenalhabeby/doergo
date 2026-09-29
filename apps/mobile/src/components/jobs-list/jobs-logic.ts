@@ -53,7 +53,7 @@ export interface JobFacts {
 export type JobBand = 'doing' | 'blocked' | 'overdue' | 'today' | 'later' | 'done';
 
 /** In the order they are drawn — `BANDS`. */
-export const JOB_BANDS: readonly JobBand[] = ['doing', 'blocked', 'overdue', 'today', 'later', 'done'];
+const JOB_BANDS: readonly JobBand[] = ['doing', 'blocked', 'overdue', 'today', 'later', 'done'];
 
 /**
  * Which well a job sits in — `band()`.
@@ -77,7 +77,7 @@ export function bandOf(task: Pick<Task, 'status' | 'dueDate' | 'priority' | 'id'
   return shared;
 }
 
-export interface JobGroup<T> {
+interface JobGroup<T> {
   band: JobBand;
   items: T[];
 }
@@ -259,7 +259,7 @@ export function placeOf(task: Pick<Task, 'locationAddress'> & { space?: { name?:
 
 /* ---------------- the empty well ---------------- */
 
-export type EmptyKind = 'search' | 'blocked' | 'history' | 'none';
+type EmptyKind = 'search' | 'blocked' | 'history' | 'none';
 
 export function emptyKind(v: { search: string; filter: JobsFilter; period: Period }): EmptyKind {
   if (v.search.trim()) return 'search';

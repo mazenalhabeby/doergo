@@ -23,7 +23,7 @@ export interface ExpenseSubmittedEvent {
   recipientIds: string[];
 }
 
-export interface ExpenseDecidedEvent {
+interface ExpenseDecidedEvent {
   organizationId: string;
   entryId: string;
   assetId: string;
@@ -35,7 +35,7 @@ export interface ExpenseDecidedEvent {
   category: string;
 }
 
-export interface HandedOverEvent {
+interface HandedOverEvent {
   organizationId: string;
   assetId: string;
   assetName: string;

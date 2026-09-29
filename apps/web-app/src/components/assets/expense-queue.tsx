@@ -78,7 +78,7 @@ export function ExpenseQueue() {
   )
 }
 
-export function PendingRow({ entry, onDone }: { entry: PendingExpense; onDone: () => void }) {
+function PendingRow({ entry, onDone }: { entry: PendingExpense; onDone: () => void }) {
   const { t } = useTranslation()
   const author = entry.author
     ? `${entry.author.firstName ?? ""} ${entry.author.lastName ?? ""}`.trim()

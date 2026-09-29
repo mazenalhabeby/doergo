@@ -9,7 +9,7 @@ import { addTaskPhoto } from '../../offline/tasks/task-actions';
 import { uuidv7 } from '../../offline/ids';
 
 /** What happened to a New job: on the server (open it), saved for later, or refused. */
-export type CreateResult = { kind: 'created'; id: string } | { kind: 'queued' } | { kind: 'failed' };
+type CreateResult = { kind: 'created'; id: string } | { kind: 'queued' } | { kind: 'failed' };
 
 /**
  * Sending a New job — unchanged from the tab it replaces.

@@ -28,7 +28,7 @@ import { AText, Eyebrow } from './amazen';
  * the clock-out bug again in a smaller place: a person may always take their
  * break, and a time system that argues about it is one people work around.
  */
-export interface BreakSheetProps {
+interface BreakSheetProps {
   visible: boolean;
   onClose: () => void;
   /** `type` and `notes` are both optional — see the notes above. */

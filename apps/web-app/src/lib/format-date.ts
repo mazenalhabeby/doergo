@@ -26,15 +26,6 @@ export function dateLocale(): string {
   return i18n.language || "en"
 }
 
-/** Full date — "24 August 2026" / "24. August 2026". */
-export function formatFullDate(value: string | number | Date): string {
-  return new Date(value).toLocaleDateString(dateLocale(), {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  })
-}
-
 /** Compact date — "24 Aug" / "24. Aug.". Adds the year when it isn't this one. */
 export function formatDayMonth(value: string | number | Date, withYear?: boolean): string {
   const d = new Date(value)
@@ -43,15 +34,6 @@ export function formatDayMonth(value: string | number | Date, withYear?: boolean
     day: "numeric",
     month: "short",
     ...(showYear ? { year: "numeric" } : {}),
-  })
-}
-
-/** Compact date with weekday — "Mon, 24 Aug". */
-export function formatWeekdayDate(value: string | number | Date): string {
-  return new Date(value).toLocaleDateString(dateLocale(), {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
   })
 }
 
@@ -70,26 +52,6 @@ export function formatMediumDate(value: string | number | Date): string {
     month: "short",
     year: "numeric",
   })
-}
-
-/**
- * Clock time. `hour12` is passed in by the caller because it is a per-user
- * PREFERENCE (`useTimeFormat`), not a property of the locale — leaving it to the
- * locale would silently override what the member chose in their profile.
- * Omitting it falls back to the locale's own convention.
- */
-export function formatClockTime(value: string | number | Date, hour12?: boolean): string {
-  return new Date(value).toLocaleTimeString(dateLocale(), {
-    hour: "numeric",
-    minute: "2-digit",
-    ...(hour12 === undefined ? {} : { hour12 }),
-  })
-}
-
-/** Date + time in one string. */
-export function formatDateTime(value: string | number | Date, hour12?: boolean): string {
-  const d = new Date(value)
-  return `${formatMediumDate(d)}, ${formatClockTime(d, hour12)}`
 }
 
 /**

@@ -6,7 +6,7 @@ import type { OutboxOp } from '../outbox/types';
 import type { SyncEngine } from '../sync-engine';
 import { outcomeOf, STILL_MINE, type ActionOutcome } from './outcome';
 
-export interface CreateInput {
+interface CreateInput {
   op: SyncOperationName;
   lane: string;
   entityId?: string;
@@ -48,7 +48,7 @@ export async function createFromPhone(engine: SyncEngine, input: CreateInput): P
 }
 
 /** What a create is still waiting to send, for a screen to show in place. */
-export interface PendingCreate<B> {
+interface PendingCreate<B> {
   id: string;
   body: B;
   params: Record<string, string>;

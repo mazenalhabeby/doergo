@@ -21,7 +21,7 @@ import { routesApi } from '../../src/lib/api';
 import { useTheme } from '../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import {
-  buildGoogleMapsUrl, buildNavUrl, stopsAheadOf, straightLineRoute,
+  buildGoogleMapsUrl, buildNavUrl, stopsAheadOf,
   type NavApp, type RouteStop, type OptimizedRoute,
 } from '@hbcfield/shared/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';

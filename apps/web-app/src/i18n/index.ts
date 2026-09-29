@@ -140,10 +140,4 @@ export async function changeLanguage(lang: string): Promise<void> {
   await i18n.changeLanguage(lang);
 }
 
-export function getCurrentLanguage(): string {
-  return i18n.language || 'en';
-}
-
-
-
 export default i18n;

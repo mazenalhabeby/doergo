@@ -16,7 +16,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class WaypointDto {
+class WaypointDto {
   /*
     ⚠️ A REAL PLACE ONLY. `@IsNumber()` alone accepted lat 999, which the
     optimizer then measured: an 18 000 km "route" handed back as a plan.
@@ -40,7 +40,7 @@ export class WaypointDto {
   label?: string;
 }
 
-export class RouteStopDto extends WaypointDto {
+class RouteStopDto extends WaypointDto {
   @ApiProperty({ description: "Caller's stop id (taskId / leadId / free) — echoed back in order" })
   @IsString()
   @MaxLength(64)

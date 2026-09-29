@@ -51,7 +51,7 @@ const STATE: Record<string, SentState> = { SUBMITTED: 'office', RECORDED: 'accep
  * The reading an entry carries — "48 210 km". Only a field the kind gives a UNIT
  * counts: the first bare number could as well be a price or a count of litres.
  */
-export function readingOf(values: Record<string, string | number> | null | undefined, unitOf?: (field: string) => string | null): string | null {
+function readingOf(values: Record<string, string | number> | null | undefined, unitOf?: (field: string) => string | null): string | null {
   if (!values) return null;
   for (const [k, v] of Object.entries(values)) {
     const n = typeof v === 'number' ? v : Number(String(v).replace(',', '.'));

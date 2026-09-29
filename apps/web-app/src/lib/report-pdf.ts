@@ -30,7 +30,7 @@ export type HeaderStyle = "line" | "band" | "minimal"
 export type Density = "comfortable" | "compact"
 
 /** Fully-resolved render config. Templates are presets over this shape. */
-export interface PdfConfig {
+interface PdfConfig {
   accent: RGB
   orientation: "portrait" | "landscape"
   paper: PaperSize
@@ -81,7 +81,7 @@ const SLATE: RGB = { r: 51, g: 65, b: 85 } // slate-700
 const INK: RGB = { r: 30, g: 41, b: 59 } // slate-800
 const MUTED: RGB = { r: 100, g: 116, b: 139 } // slate-500
 
-export interface PdfTemplateMeta {
+interface PdfTemplateMeta {
   key: PdfTemplate
   name: string
   description: string

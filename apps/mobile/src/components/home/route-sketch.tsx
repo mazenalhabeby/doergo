@@ -1,5 +1,5 @@
 import React, { memo, useMemo, useState } from 'react';
-import { Pressable, View, type LayoutChangeEvent } from 'react-native';
+import { Pressable, type LayoutChangeEvent } from 'react-native';
 import Svg, { Circle, Defs, Path, Pattern, Rect, Text as SvgText } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 import type { LatLng, OptimizedRoute } from '@hbcfield/shared/client';

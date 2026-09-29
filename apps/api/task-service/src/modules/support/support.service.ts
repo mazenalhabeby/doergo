@@ -9,7 +9,6 @@ import {
   supportPriority,
   slaFirstResponseDueAt,
   resolveTeamForOrg,
-  type PlanTier,
   type SupportAuthorType,
   type SupportStatus,
 } from '@hbcfield/shared';

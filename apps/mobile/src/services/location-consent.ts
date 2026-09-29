@@ -29,20 +29,11 @@ export function registerConsentUI(fn: ShowFn): () => void {
 }
 
 /** Has the user already accepted the background-location disclosure? */
-export async function hasBackgroundLocationConsent(): Promise<boolean> {
+async function hasBackgroundLocationConsent(): Promise<boolean> {
   try {
     return (await AsyncStorage.getItem(CONSENT_KEY)) === 'granted';
   } catch {
     return false;
-  }
-}
-
-/** Reset the stored decision (e.g. on account switch) so it is asked again. */
-export async function clearBackgroundLocationConsent(): Promise<void> {
-  try {
-    await AsyncStorage.removeItem(CONSENT_KEY);
-  } catch {
-    /* ignore */
   }
 }
 

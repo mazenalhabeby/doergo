@@ -14,7 +14,7 @@ import type { ShiftIssue, ShiftIssueEvent, ShiftIssueStatus, ShiftIssueSeverity 
  * the whole read of the list at arm's length, before any word is read, which
  * is why the dot carries it and not the colour alone.
  */
-export interface IssueLook {
+interface IssueLook {
   /** Which colour token the dot takes. */
   tone: 'warn' | 'accent' | 'muted';
   /** Solid = still wants something from somebody. */

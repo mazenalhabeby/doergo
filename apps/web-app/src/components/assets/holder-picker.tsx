@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Ban, Check, Search, Smartphone, User, X } from "lucide-react"
 
 import { customersApi, organizationsApi, type OrgMember } from "@/lib/api"
-import { kindHolderLabel, type KindShape } from "@hbcfield/shared/client"
+import { type KindShape } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 
 /**
@@ -198,12 +198,6 @@ export function HolderPicker({
       </div>
     </div>
   )
-}
-
-/** The word this kind uses for whoever holds one — "Driver", "Resident". */
-export function useHolderLabel(shape: KindShape) {
-  const { t } = useTranslation()
-  return kindHolderLabel(shape, t("assetRecords.holder", "Held by"))
 }
 
 function TabBtn({ active, onClick, icon: Icon, label }: {

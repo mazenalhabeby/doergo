@@ -28,8 +28,6 @@ import {
   type Sprint,
   type Epic,
   type CustomFieldDefinition,
-  type CustomerAddress,
-  type OrgMember,
   type RecurringFrequency,
   workflowsApi,
 } from "@/lib/api"

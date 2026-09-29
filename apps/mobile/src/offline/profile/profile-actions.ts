@@ -2,7 +2,7 @@ import { outcomeOf, type ActionOutcome } from '../actions/outcome';
 import type { SyncEngine } from '../sync-engine';
 
 /** What a member changes about themselves from the phone. */
-export interface OwnProfilePatch {
+interface OwnProfilePatch {
   firstName?: string;
   lastName?: string;
   presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null;

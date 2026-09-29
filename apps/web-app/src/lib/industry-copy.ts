@@ -25,7 +25,7 @@ import { INDUSTRY_SLUGS } from "./industries";
  */
 
 type IndustryField = { name: string; who: string; how: string; benefit: string };
-export type HomeCopy = {
+type HomeCopy = {
   nav?: { industries?: string };
   industries?: { heading?: string; lead?: string; whoLabel?: string; howLabel?: string; more?: string; fields?: IndustryField[] };
   field?: { label?: string; features?: { title: string; desc: string }[] };

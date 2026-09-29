@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { AText } from '../amazen';
 
-export interface Fact {
+interface Fact {
   label: string;
   value: string;
   tone?: 'warn';

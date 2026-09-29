@@ -6,7 +6,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
   ActivityIndicator,
   StyleSheet,
   Keyboard,
@@ -21,7 +20,6 @@ import {
   SPACING,
   RADIUS,
   FONT_SIZE,
-  FONT_WEIGHT,
   SHADOWS,
 } from '../lib/constants';
 import { useTheme } from '../contexts/theme-context';

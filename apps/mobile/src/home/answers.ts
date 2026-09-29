@@ -22,7 +22,7 @@ import { useMemo } from 'react';
  * would mean opening the gallery fires one round trip per widget the member
  * does not have.
  */
-export interface WidgetAnswer {
+interface WidgetAnswer {
   /**
    * Has this widget's answer arrived?
    *
@@ -41,10 +41,10 @@ export interface WidgetAnswer {
   line: string | null;
 }
 
-export type WidgetAnswers = Readonly<Record<string, WidgetAnswer>>;
+type WidgetAnswers = Readonly<Record<string, WidgetAnswer>>;
 
 /** A widget nothing on screen can speak for. Offered, never suggested. */
-export const NO_ANSWER: WidgetAnswer = { ready: true, line: null };
+const NO_ANSWER: WidgetAnswer = { ready: true, line: null };
 
 /**
  * ⚠️ EVERY CONTEXT THIS READS GOES AT THE TOP, UNCONDITIONALLY.

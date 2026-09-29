@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Role, spacesGranting, isAdmin } from '@hbcfield/shared';
-import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
+import { RequirePermissionInSpace } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { CreateRecurringTaskDto, UpdateRecurringTaskDto } from './dto';

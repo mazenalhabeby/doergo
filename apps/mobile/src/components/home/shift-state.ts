@@ -42,7 +42,7 @@ export type ShiftStateKind =
  */
 export type ScheduleKind = 'FIXED' | 'FLEXIBLE' | 'NONE';
 
-export interface ShiftState {
+interface ShiftState {
   kind: ShiftStateKind;
   /** ⑤ Not a state of its own — a chip on ②. The clock-in is in the outbox. */
   queued: boolean;

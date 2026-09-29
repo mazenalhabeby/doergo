@@ -53,7 +53,7 @@ function aggregate(agg: string, sql: string): string {
   }
 }
 
-export interface CompiledQuery {
+interface CompiledQuery {
   sql: string;
   params: unknown[];
   /**

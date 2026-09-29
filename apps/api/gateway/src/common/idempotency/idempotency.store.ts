@@ -8,9 +8,9 @@ export type IdempotencyEntry =
   | { state: 'done'; hash: string; status: number; body: unknown };
 
 /** How long a finished answer is remembered. A phone offline for a week still retries safely. */
-export const IDEMPOTENCY_TTL_SECONDS = 7 * 24 * 60 * 60;
+const IDEMPOTENCY_TTL_SECONDS = 7 * 24 * 60 * 60;
 /** How long a claim may stay "running" before a retry is allowed to run it again. */
-export const IDEMPOTENCY_LOCK_SECONDS = 120;
+const IDEMPOTENCY_LOCK_SECONDS = 120;
 
 /**
  * Where idempotency keys live: Redis, shared by every gateway replica, so a

@@ -14,7 +14,7 @@ export interface NotificationTarget {
   params?: Record<string, string>;
 }
 
-export interface NotificationViewer {
+interface NotificationViewer {
   /** Holds the Manage tab's shift-issue row (canViewAllTasks somewhere). */
   managesIssues: boolean;
 }

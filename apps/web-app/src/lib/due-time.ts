@@ -30,7 +30,7 @@ import { hasAppointmentTime } from "@hbcfield/shared/client"
 const browserOffset = (d: Date) => -d.getTimezoneOffset()
 
 /** Does this value name an hour, or is it only a date? */
-export function hasTime(value?: string | Date | null): boolean {
+function hasTime(value?: string | Date | null): boolean {
   if (!value) return false
   const d = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(d.getTime())) return false

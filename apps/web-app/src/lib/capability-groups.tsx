@@ -19,7 +19,7 @@ import type { ReactNode } from 'react';
  * organization, not per space, and the price shown for it is a "from".
  */
 
-export type CapabilityGroup = {
+type CapabilityGroup = {
   key: string;
   icon: ReactNode;
   /** Module keys, in the order they should read. Empty for the add-on group. */

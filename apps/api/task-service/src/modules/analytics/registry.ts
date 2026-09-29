@@ -14,9 +14,9 @@
  */
 import { reportLabelEn, type ReportLabelKey } from '@hbcfield/shared';
 
-export type Agg = 'sum' | 'count' | 'countDistinct' | 'avg';
-export type FieldType = 'string' | 'number' | 'date' | 'boolean';
-export type ValueFormat = 'number' | 'hours' | 'currency' | 'percent';
+type Agg = 'sum' | 'count' | 'countDistinct' | 'avg';
+type FieldType = 'string' | 'number' | 'date' | 'boolean';
+type ValueFormat = 'number' | 'hours' | 'currency' | 'percent';
 
 export interface Dimension {
   labelKey: ReportLabelKey;

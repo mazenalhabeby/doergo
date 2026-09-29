@@ -4,7 +4,7 @@ import { STILL_MINE } from '../actions/outcome';
 import type { OutboxOp } from '../outbox/types';
 
 /** A row of "My entries" — the server's, or one this phone has not delivered yet. */
-export type MyLogRow = MyLogEntry & { pendingSync?: boolean };
+type MyLogRow = MyLogEntry & { pendingSync?: boolean };
 
 type LogBody = {
   entryId?: string;

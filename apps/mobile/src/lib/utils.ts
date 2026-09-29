@@ -232,58 +232,6 @@ export function formatShortDate(date: string | Date, locale: string = 'en-US'): 
 // WEEK/CALENDAR HELPERS
 // =============================================================================
 
-export type WeekDay = {
-  date: Date;
-  dayName: string;
-  dayNumber: number;
-  isToday: boolean;
-  isWeekend: boolean;
-};
-
-/**
- * Get the days of the week (Mon–Sun) that contains the given reference date.
- * Defaults to the current week when no argument is provided.
- */
-export function getWeekDays(referenceDate?: Date): WeekDay[] {
-  const today = new Date();
-  const ref = referenceDate ?? today;
-  const currentDay = ref.getDay();
-  // Adjust to start from Monday (0 = Monday, 6 = Sunday)
-  const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
-
-  const monday = new Date(ref);
-  monday.setDate(ref.getDate() + mondayOffset);
-
-  const days: WeekDay[] = [];
-  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(monday);
-    date.setDate(monday.getDate() + i);
-
-    const isToday = date.toDateString() === today.toDateString();
-    const isWeekend = i >= 5; // Saturday and Sunday
-
-    days.push({
-      date,
-      dayName: dayNames[i],
-      dayNumber: date.getDate(),
-      isToday,
-      isWeekend,
-    });
-  }
-
-  return days;
-}
-
-/**
- * Check if a date is a weekend
- */
-export function isWeekend(date: Date): boolean {
-  const day = date.getDay();
-  return day === 0 || day === 6;
-}
-
 /**
  * Check if two dates are the same day
  */

@@ -18,7 +18,7 @@ const GONE_BAD = new Set(['conflict', 'failed', 'discarded']);
  * request would be refused whole. The first operation always goes, whatever
  * its size, so nothing can be stuck behind this.
  */
-export const PUSH_BUDGET_BYTES = 4 * 1024 * 1024;
+const PUSH_BUDGET_BYTES = 4 * 1024 * 1024;
 
 const sizeOf = (op: OutboxOp) => JSON.stringify(op.payload).length + (op.evidence ? 400 : 0);
 

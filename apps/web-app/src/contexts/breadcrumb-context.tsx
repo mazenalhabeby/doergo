@@ -2,11 +2,6 @@
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 
-interface BreadcrumbOverride {
-  segment: string; // The URL segment to override (e.g., the task ID)
-  label: string;   // The label to display instead (e.g., task title)
-}
-
 interface BreadcrumbContextType {
   overrides: Map<string, string>;
   setOverride: (segment: string, label: string) => void;

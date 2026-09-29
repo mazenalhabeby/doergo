@@ -35,7 +35,7 @@ import {
  * key absent from the outbox entry — where it can never be added later.
  */
 
-export interface ScannedCardSave {
+interface ScannedCardSave {
   kind: CardKind;
   destination: CardDestination;
   /** The company this person belongs to. Required when `destination` is 'contact'. */

@@ -37,7 +37,7 @@ const DESTINATION_KEY = 'active_route_destination';
  * boundary: too early is a notification the member ignores for a minute, too
  * late is the silence this exists to end.
  */
-export const ARRIVAL_RADIUS_M = 150;
+const ARRIVAL_RADIUS_M = 150;
 
 /**
  * Ignore fixes vaguer than this. A point that could be anywhere within 100 m
@@ -49,7 +49,7 @@ const MAX_USABLE_ACCURACY_M = 100;
 /** Once outside this, treat a later approach as a fresh arrival. */
 const RE_ARM_MULTIPLIER = 2;
 
-export interface RouteDestination {
+interface RouteDestination {
   taskId: string;
   lat: number;
   lng: number;
@@ -139,7 +139,7 @@ async function notifyArrived(dest: RouteDestination): Promise<void> {
   });
 }
 
-export interface FixCandidate {
+interface FixCandidate {
   lat: number;
   lng: number;
   accuracy?: number;
@@ -149,7 +149,7 @@ export interface FixCandidate {
  * The most recent fix worth trusting: where they are NOW, not where the burst
  * began — a burst can span several hundred metres of driving.
  */
-export function pickLatestUsableFix<T extends FixCandidate>(points: T[]): T | null {
+function pickLatestUsableFix<T extends FixCandidate>(points: T[]): T | null {
   for (let i = points.length - 1; i >= 0; i--) {
     const p = points[i];
     if (p.accuracy === undefined || p.accuracy <= MAX_USABLE_ACCURACY_M) return p;
@@ -171,7 +171,7 @@ export function pickLatestUsableFix<T extends FixCandidate>(points: T[]): T | nu
  *              of the ring with GPS drifting a few metres either way would be
  *              re-armed and re-notified over and over.
  */
-export function decideArrival(distanceM: number, alreadyNotified: boolean): 'notify' | 'rearm' | 'none' {
+function decideArrival(distanceM: number, alreadyNotified: boolean): 'notify' | 'rearm' | 'none' {
   if (distanceM <= ARRIVAL_RADIUS_M) return alreadyNotified ? 'none' : 'notify';
   if (alreadyNotified && distanceM > ARRIVAL_RADIUS_M * RE_ARM_MULTIPLIER) return 'rearm';
   return 'none';

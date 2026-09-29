@@ -10,7 +10,7 @@ import { OPEN_SHIFT_CLOSE } from '@hbcfield/shared';
  *  3. CLOCK_IN_PLUS_8H — no planned end and no better evidence.
  * Always between clock-in and now, and never past the planned end.
  */
-export type ClockOutBasis = 'LEFT_SITE' | 'SHIFT_END' | 'CLOCK_IN_PLUS_8H';
+type ClockOutBasis = 'LEFT_SITE' | 'SHIFT_END' | 'CLOCK_IN_PLUS_8H';
 
 export function provisionalClockOut(input: {
   clockInAt: Date;

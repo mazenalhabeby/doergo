@@ -52,7 +52,7 @@ const QUALITY = 0.75;
  * compress is still a sheet worth filing, and it is the SERVER's bound that is
  * load-bearing. This one only saves the member's data.
  */
-export async function compressSheet(uri: string): Promise<{ uri: string; bytes: number }> {
+async function compressSheet(uri: string): Promise<{ uri: string; bytes: number }> {
   /*
     ⚠️ Through the LOADER, never a top-level import.
 

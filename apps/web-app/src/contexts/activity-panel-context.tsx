@@ -2,9 +2,6 @@
 
 import { createContext, useContext, useState, useCallback, useEffect } from "react"
 
-/** Width of the docked activity panel when open (matches w-[300px] in ActivityPanel). */
-export const ACTIVITY_PANEL_WIDTH = 300
-
 interface ActivityPanelContextType {
   isOpen: boolean
   toggle: () => void

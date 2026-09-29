@@ -18,7 +18,7 @@ import { EmailService, type EmailRecipient } from './email.service';
 export const MEMBER_EMAIL_WINDOW_MS = 2 * 60_000;
 
 /** The facts a task email needs. What the task-service event already carries. */
-export interface TaskEmailFacts {
+interface TaskEmailFacts {
   id: string;
   title?: string | null;
   description?: string | null;
@@ -31,7 +31,7 @@ interface HeldTask {
 }
 
 /** Somebody an email may go to, after every rule below. */
-export interface MemberEmailRecipient extends EmailRecipient {
+interface MemberEmailRecipient extends EmailRecipient {
   id: string;
   firstName: string;
 }

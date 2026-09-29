@@ -6,7 +6,7 @@ import { uuidv7 } from '../ids';
 import type { OutboxOp } from '../outbox/types';
 import type { SyncEngine } from '../sync-engine';
 
-export interface IssuePhoto {
+interface IssuePhoto {
   uri: string;
   fileName: string;
   mimeType: string;

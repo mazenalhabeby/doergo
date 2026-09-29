@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export interface OfflinePreferences {
+interface OfflinePreferences {
   /** Send photos only on Wi-Fi — for somebody on a small data plan. */
   photosOnWifiOnly: boolean;
 }

@@ -25,12 +25,12 @@ type NativeOcr = {
 };
 
 /** A line as the reader reports it, with its box in image pixels. */
-export interface OcrLine {
+interface OcrLine {
   text: string;
   boundingBox: { x: number; y: number; width: number; height: number };
 }
 
-export interface OcrBlock {
+interface OcrBlock {
   lines: OcrLine[];
 }
 
@@ -120,7 +120,7 @@ export async function readLines(uri: string): Promise<string[]> {
 }
 
 /** Exported for the parsers that already hold blocks. */
-export function toLines(blocks: OcrBlock[]): string[] {
+function toLines(blocks: OcrBlock[]): string[] {
   return blocks
     .flatMap((b) => b.lines ?? [])
     .filter((l) => !!l?.text?.trim())

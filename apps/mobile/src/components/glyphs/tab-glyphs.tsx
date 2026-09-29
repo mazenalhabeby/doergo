@@ -48,7 +48,7 @@ const stroke = (color: string) => ({
  * bottom. A door would be a third element inside a 21px square and the first
  * thing to close up.
  */
-export function TabHomeGlyph({ size = 22, color }: TabGlyphProps) {
+function TabHomeGlyph({ size = 22, color }: TabGlyphProps) {
   return (
     <Svg {...svg(size)}>
       <Path d="M2.8 10.9 12 2.9l9.2 8V22H2.8Z" {...stroke(color)} />
@@ -65,7 +65,7 @@ export function TabHomeGlyph({ size = 22, color }: TabGlyphProps) {
  * its own — a rule at 21px is one pixel of ink that reads as dirt on the
  * screen. The clip straddles the top edge rather than floating above it.
  */
-export function TabJobsGlyph({ size = 22, color }: TabGlyphProps) {
+function TabJobsGlyph({ size = 22, color }: TabGlyphProps) {
   return (
     <Svg {...svg(size)}>
       <Rect x={3.5} y={5.5} width={17} height={17} rx={2.6} {...stroke(color)} />
@@ -82,7 +82,7 @@ export function TabJobsGlyph({ size = 22, color }: TabGlyphProps) {
  * traced: one hand straight up from the centre, one down-right at about the
  * same length.
  */
-export function TabClockGlyph({ size = 22, color }: TabGlyphProps) {
+function TabClockGlyph({ size = 22, color }: TabGlyphProps) {
   return (
     <Svg {...svg(size)}>
       <Circle cx={12} cy={12} r={8.75} {...stroke(color)} />
@@ -106,7 +106,7 @@ export function TabClockGlyph({ size = 22, color }: TabGlyphProps) {
  * one and it becomes a blob. Same idea, different size, different drawing —
  * which is the one case where two marks for one thing is correct.
  */
-export function TabMessagesGlyph({ size = 22, color }: TabGlyphProps) {
+function TabMessagesGlyph({ size = 22, color }: TabGlyphProps) {
   return (
     <Svg {...svg(size)}>
       <Path
@@ -134,7 +134,7 @@ export function TabMoreGlyph({ size = 22, color }: TabGlyphProps) {
 }
 
 /** A CALENDAR with one day taken out — time off, not "a date". */
-export function TabTimeOffGlyph({ size = 22, color }: TabGlyphProps) {
+function TabTimeOffGlyph({ size = 22, color }: TabGlyphProps) {
   return (
     <Svg {...svg(size)}>
       <Rect x={3.4} y={5.2} width={17.2} height={15.4} rx={2.6} {...stroke(color)} />
@@ -145,7 +145,7 @@ export function TabTimeOffGlyph({ size = 22, color }: TabGlyphProps) {
 }
 
 /** TWO FIGURES. The far one is a shoulder and a head, no more. */
-export function TabTeamGlyph({ size = 22, color }: TabGlyphProps) {
+function TabTeamGlyph({ size = 22, color }: TabGlyphProps) {
   return (
     <Svg {...svg(size)}>
       <Circle cx={9.4} cy={8.2} r={3.6} {...stroke(color)} />
@@ -156,7 +156,7 @@ export function TabTeamGlyph({ size = 22, color }: TabGlyphProps) {
 }
 
 /** A PLUS IN A RING — an action, not a place. */
-export function TabNewJobGlyph({ size = 22, color }: TabGlyphProps) {
+function TabNewJobGlyph({ size = 22, color }: TabGlyphProps) {
   return (
     <Svg {...svg(size)}>
       <Circle cx={12} cy={12} r={8.6} {...stroke(color)} />

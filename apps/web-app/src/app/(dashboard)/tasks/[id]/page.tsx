@@ -14,8 +14,7 @@ import {
   GitBranch,
   Link2,
   FileText,
-  MapPin,
-  Settings2,
+  MapPin
 } from "lucide-react"
 
 import { STATUS_TRANSITIONS } from "@hbcfield/shared/client"

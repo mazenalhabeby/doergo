@@ -7,7 +7,7 @@ import { useTimeFormat } from '../../../hooks/useTimeFormat';
 import { useImagePicker } from '../../../hooks/useImagePicker';
 import { AText, PrimaryButton, Well } from '../../amazen';
 import { CameraGlyph, GalleryGlyph } from '../job-glyphs';
-import { Banner, JobField, JobSheet, QuietButton, SectionLabel } from '../job-ui';
+import { Banner, JobField, JobSheet, QuietButton } from '../job-ui';
 import { SignPad, type SignPadHandle } from '../sign-pad';
 import { monthGrid } from '../../new-job/new-job-logic';
 import {

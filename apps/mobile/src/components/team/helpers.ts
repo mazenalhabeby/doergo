@@ -8,47 +8,11 @@ import type { Task } from '../../lib/api';
 import type { TimeEntry } from '../../lib/api/types';
 import { initialsOf } from '../../lib/people';
 
-export type WorkerStatus = 'on' | 'busy' | 'away' | 'off';
-export type TagVariant = 'task' | 'hrs';
-export interface PersonTag {
+type WorkerStatus = 'on' | 'busy' | 'away' | 'off';
+type TagVariant = 'task' | 'hrs';
+interface PersonTag {
   text: string;
   variant: TagVariant;
-}
-export type DotColor = 'green' | 'blue' | 'amber' | 'red' | 'purple';
-
-export const AVATAR_COLORS: [string, string][] = [
-  ['#6366f1', '#8b5cf6'],
-  ['#3b82f6', '#06b6d4'],
-  ['#10b981', '#059669'],
-  ['#f59e0b', '#d97706'],
-  ['#ef4444', '#dc2626'],
-  ['#ec4899', '#db2777'],
-  ['#8b5cf6', '#a855f7'],
-  ['#14b8a6', '#0d9488'],
-];
-
-/**
- * ⚠️ RE-EXPORT. The rule moved to `src/lib/people.ts`, because seven other
- * places in this app wrote their own copy rather than look for it in a Team
- * helper file. The signature is kept so this file's caller did not have to
- * change to make room.
- */
-export function getInitials(firstName?: string, lastName?: string): string {
-  return initialsOf({ firstName, lastName });
-}
-
-function hashString(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
-/** Returns a [start, end] gradient color pair for a stable avatar background. */
-export function getAvatarColors(id: string): [string, string] {
-  return AVATAR_COLORS[hashString(id) % AVATAR_COLORS.length]!;
 }
 
 /**
@@ -105,54 +69,4 @@ export function timeAgo(dateStr: string): string {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return i18n.t('common.timeAgo.hours', { count: hrs });
   return i18n.t('common.timeAgo.days', { count: Math.floor(hrs / 24) });
-}
-
-/** Short display name: "Mike W." */
-export function shortName(firstName?: string, lastName?: string): string {
-  return `${firstName || ''} ${lastName?.[0] || ''}.`.trim();
-}
-
-/** Map task status → activity dot color. */
-export const STATUS_DOT: Record<string, DotColor> = {
-  IN_PROGRESS: 'green',
-  EN_ROUTE: 'blue',
-  ARRIVED: 'green',
-  COMPLETED: 'blue',
-  BLOCKED: 'red',
-  ASSIGNED: 'amber',
-  ACCEPTED: 'green',
-  NEW: 'purple',
-  CANCELED: 'red',
-};
-
-/**
- * Map task status → i18n KEY for the activity verb. Values are resolved via
- * i18n.t() at the CALL SITE (not module load) so language switches take effect.
- */
-export const STATUS_ACTION: Record<string, string> = {
-  IN_PROGRESS: 'home.admin.activity.actions.IN_PROGRESS',
-  EN_ROUTE: 'home.admin.activity.actions.EN_ROUTE',
-  ARRIVED: 'home.admin.activity.actions.ARRIVED',
-  COMPLETED: 'home.admin.activity.actions.COMPLETED',
-  BLOCKED: 'home.admin.activity.actions.BLOCKED',
-  ASSIGNED: 'home.admin.activity.actions.ASSIGNED',
-  ACCEPTED: 'home.admin.activity.actions.ACCEPTED',
-  NEW: 'home.admin.activity.actions.NEW',
-  CANCELED: 'home.admin.activity.actions.CANCELED',
-};
-
-/** Priority ranking used to pick a worker's single "active" task. */
-export const ACTIVE_TASK_PRIORITY: Record<string, number> = {
-  IN_PROGRESS: 4,
-  ARRIVED: 3,
-  EN_ROUTE: 2,
-  BLOCKED: 1,
-};
-
-export function isTaskOverdue(task: Task): boolean {
-  return (
-    !!task.dueDate &&
-    new Date(task.dueDate) < new Date() &&
-    !['COMPLETED', 'CLOSED', 'CANCELED'].includes(task.status)
-  );
 }

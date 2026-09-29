@@ -34,7 +34,7 @@ import {
 /** A fixed epoch for PDF metadata. Any constant works; it must not be `now`. */
 const FIXED_EPOCH = new Date(Date.UTC(2000, 0, 1));
 
-export interface ContractValues {
+interface ContractValues {
   title: string;
   body: string;
   /** Rendered into the footer of every page. Passed in, never read from a clock. */
@@ -161,7 +161,7 @@ export function describeDevice(userAgent: string): string {
  * WHO signed, the second says the link was used. Both are legitimate; printing
  * them identically would overstate the weaker one.
  */
-export interface SignerEvidence {
+interface SignerEvidence {
   role: string;
   signerName: string;
   signerEmail: string;
@@ -181,7 +181,7 @@ export interface SignerEvidence {
   strength?: 'SESSION' | 'LINK';
 }
 
-export interface SealEvidence {
+interface SealEvidence {
   documentTitle: string;
   organizationName: string;
   /** In signing order. One entry for a document nobody else has to sign. */

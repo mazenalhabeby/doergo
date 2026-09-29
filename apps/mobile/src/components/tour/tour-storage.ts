@@ -10,7 +10,7 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export interface TourStorage {
+interface TourStorage {
   /** Hydrate the in-memory set from disk. Call once before reading. */
   load(): Promise<void>;
   isCompleted(id: string): boolean;

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useCallback, useEffect } from "react"
-import { Ghost, Circle, Briefcase, Clock, AlertTriangle, WifiOff, Lock, X, Settings, UserPlus, Maximize2, ChevronLeft, CalendarOff, ShieldAlert, ClipboardList, MessageCircle, Phone, Video, User, ArrowUpRight, ExternalLink } from "lucide-react"
+import { Ghost, Circle, Briefcase, Clock, AlertTriangle, WifiOff, X, Settings, UserPlus, Maximize2, ChevronLeft, CalendarOff, ShieldAlert, ClipboardList, MessageCircle, Phone, Video, User, ArrowUpRight } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -16,10 +16,6 @@ import { WorkerAvatar } from "./worker-avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-  DropdownMenuGroup,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 

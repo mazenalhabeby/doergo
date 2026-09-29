@@ -87,7 +87,7 @@ export class UpdateCustomFieldDto {
   isActive?: boolean;
 }
 
-export class CustomFieldValueDto {
+class CustomFieldValueDto {
   @ApiProperty({ description: 'Custom field definition ID' })
   @IsString()
   @IsNotEmpty()

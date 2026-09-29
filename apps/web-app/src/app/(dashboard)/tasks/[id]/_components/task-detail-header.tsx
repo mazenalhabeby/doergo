@@ -8,7 +8,6 @@ import Link from "next/link"
 import {
   Calendar,
   Pencil,
-  User,
   MoreHorizontal,
   Trash2,
   MapPin,

@@ -49,7 +49,7 @@ const JAVA_HOME =
 const MAESTRO_BIN = process.env.VIDEO_MAESTRO_BIN ?? `${process.env.HOME}/.maestro/bin/maestro`;
 
 /** The app under the camera. The same id on both platforms. */
-export const APP_ID = process.env.VIDEO_APP_ID ?? 'com.hbcfield.app';
+const APP_ID = process.env.VIDEO_APP_ID ?? 'com.hbcfield.app';
 
 /**
  * A Maestro command, as it appears in the flow file.
@@ -86,7 +86,7 @@ export interface MobileBeat {
  */
 export type Phone = 'android' | 'ios';
 
-export interface MobileStageOptions {
+interface MobileStageOptions {
   /** Beat id -> how many seconds its narration runs. */
   narrationDurations: Record<string, number>;
   /** Names the output directory under renders/. */

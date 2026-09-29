@@ -9,7 +9,7 @@
  * ⚠️ FOUR FACES AND ONLY THESE. A fifth would be a variance nobody named, and
  * this sheet is pressed every single day by people who are already leaving.
  */
-export type ClockOutFace =
+type ClockOutFace =
   /** ① On time — or no roster to be early or late against. */
   | 'onTime'
   /** ② Early — there is a target and they are under it. */
@@ -49,7 +49,7 @@ export interface ClockOutShift {
   now?: Date;
 }
 
-export interface ClockOutView {
+interface ClockOutView {
   face: ClockOutFace;
   /** Minutes short of the roster. Positive only on ②. */
   shortBy: number;

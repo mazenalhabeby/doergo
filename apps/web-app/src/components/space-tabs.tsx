@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next"
  * choice is remembered are decisions for `useSpaceScope`, because they differ
  * per screen while this does not.
  */
-export interface SpaceTabItem {
+interface SpaceTabItem {
   id: string
   name: string
   /** Optional count shown beside the name — omitted when the screen has none. */

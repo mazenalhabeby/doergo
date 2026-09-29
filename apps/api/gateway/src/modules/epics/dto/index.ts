@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNotEmpty, MaxLength, IsDateString, IsInt, IsEnum, Min } from 'class-validator';
+import { IsString, IsOptional, IsNotEmpty, MaxLength, IsDateString, IsInt, Min } from 'class-validator';
 
 export class CreateEpicDto {
   @ApiPropertyOptional({

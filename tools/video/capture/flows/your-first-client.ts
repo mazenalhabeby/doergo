@@ -8,9 +8,9 @@
  * would be teaching the shape of that bug.
  */
 
-import { ADMIN_LOGIN, WEB_URL } from '../../config.ts';
+import { ADMIN_LOGIN } from '../../config.ts';
 import { openStage } from '../runner.ts';
-import { DIALOG, dialogWith, pickFromSelect, signIn, typeSlowly, wheel } from '../screen.ts';
+import { DIALOG, pickFromSelect, signIn, typeSlowly, wheel } from '../screen.ts';
 import type { Timeline } from '../../timeline.ts';
 
 const CLIENT = 'Marchfield Cold Storage';

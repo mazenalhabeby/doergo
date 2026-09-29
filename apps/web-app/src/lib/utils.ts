@@ -22,8 +22,6 @@ export function cn(...inputs: ClassValue[]) {
 // CLOCK FORMAT (per-user 12h / 24h preference — see useTimeFormat hook)
 // =============================================================================
 
-export type TimeFormatPref = "12h" | "24h"
-
 /**
  * Format a time-of-day honoring the user's 12h/24h preference.
  * `hour12=true`  -> "2:30 PM"   `hour12=false` -> "14:30"

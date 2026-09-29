@@ -37,7 +37,7 @@ export function overlayTask<T extends { id: string; status: string }>(
     : { ...task, status, pendingSync: pending };
 }
 
-export interface LocalComment {
+interface LocalComment {
   id: string;
   content: string;
   createdAt: string;
@@ -79,7 +79,7 @@ export function mergeComments<C extends { id: string; createdAt: string }>(serve
   );
 }
 
-export interface LocalAttachment {
+interface LocalAttachment {
   id: string;
   fileName: string;
   fileType: string;

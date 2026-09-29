@@ -28,6 +28,3 @@ export const MAP_TILE_URL =
 export const MAP_TILE_ATTRIBUTION =
   process.env.NEXT_PUBLIC_MAP_TILE_ATTRIBUTION ||
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
-
-/** True while still pointed at OSM's public servers — i.e. not for real volume. */
-export const USING_PUBLIC_OSM_TILES = !process.env.NEXT_PUBLIC_MAP_TILE_URL;

@@ -26,7 +26,7 @@ import {
   normalizeKindShape, categoryForReceipt, moneyToCents, assetEntryDateExempt,
   type KindMoneyCategory, type ParsedReceipt,
 } from '@hbcfield/shared/client';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../src/lib/constants';
 import { useOffline } from '../../src/offline/offline-context';
 import { submitExpenseFromPhone } from '../../src/offline/assets/expense-actions';
 

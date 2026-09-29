@@ -18,7 +18,7 @@ export interface StoredHealth extends SyncTelemetry {
 }
 
 /** One member's phone, as the office's Phone sync tab reads it. The shape is shared with the web. */
-export type MemberSyncHealth = SyncMemberHealth;
+type MemberSyncHealth = SyncMemberHealth;
 
 /**
  * What every phone last said about its queue, and what pushes have come to.

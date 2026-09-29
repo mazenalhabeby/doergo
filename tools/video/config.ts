@@ -16,7 +16,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 
 export const ROOT = here;
 export const OUT_DIR = path.join(here, 'renders');
-export const REPO_ROOT = path.resolve(here, '..', '..');
+const REPO_ROOT = path.resolve(here, '..', '..');
 
 /**
  * Borrow the auth service's own .env for DATABASE_URL.

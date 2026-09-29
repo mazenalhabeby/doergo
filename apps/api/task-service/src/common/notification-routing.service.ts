@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
 import { resolveMemberRouting } from '@hbcfield/shared';
 
-export type NotificationCategory = 'attendance' | 'tasks';
+type NotificationCategory = 'attendance' | 'tasks';
 
 /** true unless the recipient explicitly opted out of this category. */
 function prefEnabled(prefs: unknown, category: string): boolean {

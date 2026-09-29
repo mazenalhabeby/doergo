@@ -965,7 +965,7 @@ export class AttendanceNotificationHandler {
  * zone and the reader's language. A function of the locale, because the same
  * event reaches a German manager and a Spanish driver.
  */
-export function weekdayIn(iso: string, timezone?: string | null) {
+function weekdayIn(iso: string, timezone?: string | null) {
   return (locale: SupportedLocale): string => {
     const d = new Date(iso);
     try {

@@ -46,7 +46,7 @@ export function compareVersions(a: string, b: string): number {
   return 0;
 }
 
-export function currentVersion(): string {
+function currentVersion(): string {
   return Constants.expoConfig?.version ?? '0.0.0';
 }
 

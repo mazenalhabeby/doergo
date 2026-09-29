@@ -9,17 +9,14 @@ import {
   Trash2,
   Pencil,
   Loader2,
-  RefreshCw,
   Play,
-  Pause,
   Calendar,
   Clock,
   Repeat,
   ChevronLeft,
   MapPin,
   GitBranch,
-  X,
-  AlertCircle,
+  X
 } from "lucide-react"
 import { notify } from "@/lib/toast"
 

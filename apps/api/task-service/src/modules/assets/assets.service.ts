@@ -7,7 +7,7 @@ import {
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
-  Role, success, paginated, TaskStatus, normalizeDetailRows, keepFieldsForKind,
+  success, paginated, TaskStatus, normalizeDetailRows, keepFieldsForKind,
   isAssetStatus, assetDateProblems, SELECTABLE_ASSET_WHERE, type AssetDateProblem, type HandoverPlan,
 } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';

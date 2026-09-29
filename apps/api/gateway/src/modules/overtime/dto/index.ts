@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsEnum, IsIn, Min, Max, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsIn, Min, Max, MaxLength } from 'class-validator';
 
 export class RespondToOvertimeDto {
   @ApiProperty({ enum: ['YES', 'NO'], description: 'Technician response to overtime prompt' })

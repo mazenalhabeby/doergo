@@ -22,14 +22,14 @@ import { useAuth } from "@/contexts/auth-context"
  * actions on different flags again. One hook, so a button appears exactly when
  * the action behind it will succeed.
  */
-export interface TaskPermissionSubject {
+interface TaskPermissionSubject {
   /** The space the task lives in — permissions are resolved per space. */
   spaceId?: string | null
   /** Terminal tasks are read-only regardless of permission. */
   isFinished?: boolean
 }
 
-export interface TaskPermissions {
+interface TaskPermissions {
   /** Edit fields, move between spaces/sprints, change the title. */
   canEdit: boolean
   /** Add or remove assignees. */

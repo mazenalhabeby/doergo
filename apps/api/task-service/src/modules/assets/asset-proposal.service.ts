@@ -26,7 +26,7 @@ const PENDING_SCAN = 500;
 /** The columns that decide where a proposal belongs. */
 type Placeable = { id: string; categoryId: string | null; holderUserId: string | null; raisedById: string };
 
-export const PROPOSAL_STATUS = {
+const PROPOSAL_STATUS = {
   PENDING: 'PENDING',
   ACCEPTED: 'ACCEPTED',
   REJECTED: 'REJECTED',

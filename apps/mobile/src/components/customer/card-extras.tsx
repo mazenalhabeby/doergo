@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { PressableScale } from '../pressable-scale';

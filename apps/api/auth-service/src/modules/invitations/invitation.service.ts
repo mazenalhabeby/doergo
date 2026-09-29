@@ -10,7 +10,6 @@ import { DocumentsService } from '../documents/documents.service';
 import {
   BCRYPT_COST_FACTOR,
   DEFAULT_PERMISSIONS,
-  getDefaultModules,
   normalizeAccessProfile,
   Role,
   INVITATION_CODE_LENGTH,
@@ -23,7 +22,6 @@ import {
   permissionsFromOrgRole,
   mergePermissions,
   permissionsExceed,
-  externalMayHold,
   clientEmailLocale,
   DEFAULT_LOCALE,
   type SupportedLocale,

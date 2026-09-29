@@ -43,7 +43,7 @@ export interface Viewport {
  * last decimal without anything actually moving. A larger value would call the
  * tail of a smooth scroll "settled" while it is still gliding.
  */
-export const STABLE_EPSILON_PX = 0.5
+const STABLE_EPSILON_PX = 0.5
 
 /**
  * How often to re-read. ~4 frames: long enough that an animation has visibly
@@ -94,14 +94,14 @@ export function isDrawableBox(box: Box | null, viewport: Viewport): boolean {
 }
 
 /** What the loop remembers between reads. */
-export interface SettleState {
+interface SettleState {
   /** The previous DRAWABLE reading, or null if the last read was unusable. */
   readonly last: Box | null
   /** Reads taken so far, against MAX_SETTLE_TICKS. */
   readonly ticks: number
 }
 
-export type SettleStatus =
+type SettleStatus =
   /** Keep reading: nothing usable yet, or the target is still moving. */
   | "measuring"
   /** Two consecutive reads agreed — this position is real. */
@@ -109,7 +109,7 @@ export type SettleStatus =
   /** Out of patience. `box` holds the best reading, or null if there never was one. */
   | "exhausted"
 
-export interface SettleResult {
+interface SettleResult {
   state: SettleState
   status: SettleStatus
   /** The box to draw. Non-null only for "settled", or "exhausted" with a usable reading. */

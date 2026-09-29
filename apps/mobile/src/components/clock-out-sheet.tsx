@@ -41,7 +41,7 @@ import { formatDistance } from '../lib/distance';
  * ⚠️ THE CLOCK-OUT TIME IS FROZEN AT OPEN — rule 4. A sheet left sitting on a
  * table must not silently bill more minutes than the receipt showed.
  */
-export interface ClockOutSheetProps {
+interface ClockOutSheetProps {
   visible: boolean;
   onClose: () => void;
   /**

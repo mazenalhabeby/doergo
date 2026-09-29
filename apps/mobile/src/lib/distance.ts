@@ -16,7 +16,7 @@ import {
  * German member reads "1,2 km" where an English one reads "1.2 km".
  * `distance-display-guard.spec.ts` fails if a screen builds "km" itself again.
  */
-export function readerLocale(): string {
+function readerLocale(): string {
   return i18next.language || 'en';
 }
 

@@ -53,7 +53,7 @@ interface CustomerDto {
  * sync reaches it by another route — but a request that can only fail should
  * fail here, without a round trip and without a module check on the way.
  */
-export function assertClientLocale(dto: CustomerDto): void {
+function assertClientLocale(dto: CustomerDto): void {
   if (dto.locale !== undefined && !parseClientLocale(dto.locale).ok) {
     throw new BadRequestException(CLIENT_LOCALE_INVALID_MESSAGE);
   }

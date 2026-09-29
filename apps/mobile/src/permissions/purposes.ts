@@ -22,10 +22,10 @@ import type { Ionicons } from '@expo/vector-icons';
  * Adding a surface is adding a row here. No screen changes, no hook changes.
  */
 
-export type IoniconName = keyof typeof Ionicons.glyphMap;
+type IoniconName = keyof typeof Ionicons.glyphMap;
 
 /** Which OS permission a flow needs. Some need both. */
-export type MediaKind = 'camera' | 'library';
+type MediaKind = 'camera' | 'library';
 
 /** One translatable line: the key, and the English it falls back to. */
 export interface Line {
@@ -33,7 +33,7 @@ export interface Line {
   d: string;
 }
 
-export interface Promise_ extends Line {
+interface Promise_ extends Line {
   icon: IoniconName;
 }
 
@@ -92,7 +92,7 @@ export const PROMISE = {
   },
 } as const satisfies Record<string, Promise_>;
 
-export interface Purpose {
+interface Purpose {
   /** Which permissions the flow actually needs. */
   needs: readonly MediaKind[];
   /**

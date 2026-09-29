@@ -54,7 +54,7 @@ function refuseInvalid(statusKey: string, errors: StepAnswerError[]): never {
  * moving to a canonical status its workflow does not define) then falls to the
  * shipped field-service preset, exactly as the phone's `needsReport` does.
  */
-export function targetStep(workflow: { statuses?: Array<Record<string, unknown>> } | null | undefined, statusKey: string): StepFormStep {
+function targetStep(workflow: { statuses?: Array<Record<string, unknown>> } | null | undefined, statusKey: string): StepFormStep {
   const row = workflow?.statuses?.find((s) => s.key === statusKey) as StepFormStep | undefined;
   return row ?? { key: statusKey };
 }
@@ -145,7 +145,7 @@ export async function prepareStepSubmission(
 }
 
 /** A CRM activity the answers ask for, in the shape `add_customer_activity` takes. */
-export interface CrmActivityIntent {
+interface CrmActivityIntent {
   clientId: string;
   type: 'NOTE' | 'REMINDER';
   body: string;

@@ -19,7 +19,7 @@ import { SyncEngine } from './sync-engine';
 */
 export { connectivity };
 
-export interface OfflineRuntime {
+interface OfflineRuntime {
   records: RecordsStore;
   files: OfflineFiles;
   media: MediaCache;

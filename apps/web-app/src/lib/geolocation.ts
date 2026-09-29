@@ -21,7 +21,7 @@ export class GeolocationError extends Error {
   }
 }
 
-export interface BrowserPosition {
+interface BrowserPosition {
   lat: number;
   lng: number;
   /** Reading accuracy radius in meters (lower is better). */

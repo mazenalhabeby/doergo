@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog"
 
 /** What the server keeps of a reason — `reviewNote` is sliced to this. */
-export const REFUSE_NOTE_MAX = 300
+const REFUSE_NOTE_MAX = 300
 
 /**
  * Refuse an expense, and say why.

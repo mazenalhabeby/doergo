@@ -12,16 +12,6 @@ export class UpdateOrgSettingsDto {
 }
 
 /**
- * Invite by email DTO
- */
-export class InviteByEmailDto {
-  @ApiProperty({ example: 'user@example.com', description: 'Email of existing user to invite' })
-  @IsString()
-  @Transform(({ value }) => typeof value === 'string' ? value.trim().toLowerCase() : value)
-  email: string;
-}
-
-/**
  * Query params for listing members
  */
 export class ListMembersQueryDto {

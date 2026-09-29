@@ -135,19 +135,6 @@ export class SubmitExpenseDto {
   receiptMime?: string;
 }
 
-/** Accept it, or refuse it with a reason the member reads. */
-export class ReviewExpenseDto {
-  @ApiProperty({ enum: ['accept', 'reject'] })
-  @IsIn(['accept', 'reject'])
-  decision!: 'accept' | 'reject';
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @MaxLength(300)
-  note?: string;
-}
-
 /**
  * The reading off a contract, after a person has corrected it.
  *
@@ -156,7 +143,7 @@ export class ReviewExpenseDto {
  * actually holds, on the preview and again on the apply. A client that could
  * name the record to retire could retire any record.
  */
-export class ContractFieldsDto {
+class ContractFieldsDto {
   @ApiPropertyOptional({ description: 'Overrides whatever the reader assembled.' })
   @IsOptional()
   @IsString()

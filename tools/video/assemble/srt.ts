@@ -82,7 +82,7 @@ function layout(cue: string): string {
   return second ? `${first}\n${second}` : first;
 }
 
-export function renderSrt(script: VideoScript, timeline: Timeline, locale: Locale): string {
+function renderSrt(script: VideoScript, timeline: Timeline, locale: Locale): string {
   const cues: string[] = [];
   let index = 1;
 

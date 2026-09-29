@@ -18,7 +18,7 @@ import { normalizeRole, Role } from "@hbcfield/shared/client"
  * `normalizeRole` from the shared package rather than re-listed here, so retiring
  * or aliasing a role is still a one-place change.
  */
-export interface RoleBadge {
+interface RoleBadge {
   /** Tailwind classes for an outline badge (bg + text + border), both themes. */
   className: string
   /** The dot inside the badge — same treatment a named AccessRole gets, so the

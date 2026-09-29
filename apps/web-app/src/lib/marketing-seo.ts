@@ -8,13 +8,12 @@
 export const SITE_URL = "https://hbcfield.com";
 export const DEFAULT_LOCALE = "en" as const;
 export const MARKETING_LOCALES = ["de", "es", "fr", "it"] as const;
-export type MarketingLocale = (typeof MARKETING_LOCALES)[number];
 export const ALL_LOCALES = [DEFAULT_LOCALE, ...MARKETING_LOCALES] as const;
 
 type Meta = { title: string; description: string };
 
 // Full <title> (already includes "HBCField" — use as absolute, no template).
-export const LOCALE_META: Record<string, Meta> = {
+const LOCALE_META: Record<string, Meta> = {
   en: {
     title: "HBCField — Field Service Management, Time & Attendance Software",
     description:

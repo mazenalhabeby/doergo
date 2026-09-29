@@ -29,7 +29,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
  * trap on the display side, where an ISO date rendered through `new Date()`
  * prints the day before anywhere west of Greenwich.
  */
-export interface DatePickerProps {
+interface DatePickerProps {
   /** `YYYY-MM-DD`, or "" for no date. */
   value: string
   onChange: (value: string) => void

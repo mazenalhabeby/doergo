@@ -49,7 +49,7 @@ export type CardValues = Record<CardFieldKey, string>;
 export type CardCertainty = Partial<Record<CardFieldKey, boolean>>;
 
 /** Why the reader thinks what it thinks — an i18n key under `scan.why…`. */
-export type CardKindReason = 'personTitled' | 'personNamed' | 'companyNoPerson' | 'unsure';
+type CardKindReason = 'personTitled' | 'personNamed' | 'companyNoPerson' | 'unsure';
 
 /**
  * COMPANY CARD OR PERSON CARD, and one sentence saying why.
@@ -264,13 +264,13 @@ export interface CardExtraRow extends CardExtra {
 }
 
 /** What the reader found and what it could not place, in one pass. */
-export interface CardRead {
+interface CardRead {
   values: CardValues;
   extras: CardExtraRow[];
 }
 
 /** The candidates for one field, best first — the winner, then its runners-up. */
-export function cardCandidates(card: ParsedCard, key: CardFieldKey): CardCandidate[] {
+function cardCandidates(card: ParsedCard, key: CardFieldKey): CardCandidate[] {
   const field = card[key] as CardField | undefined;
   if (!field) return [];
   return [

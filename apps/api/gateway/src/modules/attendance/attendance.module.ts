@@ -4,8 +4,6 @@ import { BullModule } from '@nestjs/bullmq';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import {
-  SERVICE_NAMES,
-  createClientOptions,
   QUEUE_NAMES,
 } from '@hbcfield/shared';
 import { AttendanceController } from './attendance.controller';

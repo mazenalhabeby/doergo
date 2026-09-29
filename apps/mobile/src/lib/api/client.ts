@@ -42,7 +42,7 @@ export const API_URL = getApiUrl();
   it silently stops being true.
 */
 export const APP_VERSION: string = Constants.expoConfig?.version ?? '0.0.0';
-export const APP_PLATFORM: string = Platform.OS === 'ios' ? 'ios' : 'android';
+const APP_PLATFORM: string = Platform.OS === 'ios' ? 'ios' : 'android';
 
 /**
  * Resolve a media path (e.g. an uploaded avatar `/uploads/avatars/…`) to an

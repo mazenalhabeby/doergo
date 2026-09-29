@@ -33,7 +33,7 @@ import { connectivity } from '../../offline/connectivity';
 
 const REFRESH_MS = 60_000;
 
-export interface CrewData {
+interface CrewData {
   people: CrewPerson[];
   /** Everybody expected by now: on the clock + rostered and not in. 0 = no roster in scope. */
   expected: number;

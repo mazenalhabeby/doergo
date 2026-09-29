@@ -52,7 +52,7 @@ export interface OperationPreparer {
   release(ops: readonly OutboxOp[]): Promise<void>;
 }
 
-export interface EnqueueInput {
+interface EnqueueInput {
   op: SyncOperationName;
   lane: string;
   entityId?: string;

@@ -25,7 +25,7 @@ function hm(mins: number): string {
   return h > 0 ? `${h}h ${m}m` : `${m}m`
 }
 
-export interface RestPanelProps {
+interface RestPanelProps {
   /** The plan frozen onto the open entry at clock-in. */
   plan: BreakPlanRow[]
   /** The rest in progress, if there is one. */

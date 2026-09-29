@@ -2,7 +2,7 @@ import { OfflineProvider } from '../../src/offline/offline-context';
 import { OfflineSocketPoke } from '../../src/offline/components/offline-socket-poke';
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { Stack, useRouter, useRootNavigationState, useSegments, Href } from 'expo-router';
-import { AppState, AppStateStatus, Platform, View } from 'react-native';
+import { AppState, AppStateStatus, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import * as Location from 'expo-location';
 import { type NotificationResponse } from 'expo-notifications';

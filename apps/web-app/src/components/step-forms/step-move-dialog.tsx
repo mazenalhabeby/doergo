@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils"
 const PHOTO_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/heic", "image/heif"]
 const MAX_PHOTO_BYTES = 20 * 1024 * 1024
 
-export interface StepMoveDialogProps {
+interface StepMoveDialogProps {
   open: boolean
   taskId: string
   /** The step's name, as the reader sees it. */

@@ -22,7 +22,7 @@ export interface KeptCheckIn {
   recordedAt: string;
 }
 
-export interface CheckInBufferDeps {
+interface CheckInBufferDeps {
   storage: { getItem(key: string): Promise<string | null>; setItem(key: string, value: string): Promise<void>; removeItem(key: string): Promise<void> };
   send(points: KeptCheckIn[]): Promise<void>;
   /** True for "no network"; anything else is the server refusing, and retrying will not help. */

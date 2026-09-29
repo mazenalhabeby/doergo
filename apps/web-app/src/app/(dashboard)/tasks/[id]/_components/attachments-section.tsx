@@ -6,8 +6,6 @@ import {
   Upload,
   Trash2,
   FileText,
-  Image as ImageIcon,
-  X,
   Download,
   Loader2,
 } from "lucide-react"

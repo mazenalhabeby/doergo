@@ -18,7 +18,7 @@ import { ATTENDANCE_CONSTANTS, GEOFENCE_POLYGON_LIMITS, WorkModel, SpaceKind } f
 import { GEOFENCE_POLICIES, DEFAULT_GEOFENCE_POLICY, MIN_COVER_MAX, NO_SHIFT_POLICIES, NO_SHIFT_LIMIT } from '@hbcfield/shared';
 
 /** One corner of a drawn site boundary. */
-export class GeoPointDto {
+class GeoPointDto {
   @ApiProperty({ example: 48.135048 })
   @IsNumber()
   @Min(-90)

@@ -52,7 +52,7 @@ export async function signIn(
  * `addInitScript` rather than a per-beat helper: it runs before the app's own
  * code on every document, so nothing has to remember to re-install it.
  */
-export async function installScroller(page: Page): Promise<void> {
+async function installScroller(page: Page): Promise<void> {
   /*
     ⚠️ HIDE THE DEV OVERLAY, on every document.
 
@@ -104,13 +104,6 @@ export async function scrollBy(page: Page, distance: number): Promise<void> {
   await page.waitForTimeout(900);
 }
 
-export async function scrollTop(page: Page): Promise<void> {
-  await page.evaluate(() =>
-    (window as unknown as PageWithScroller).scroller().scrollTo({ top: 0, behavior: 'smooth' }),
-  );
-  await page.waitForTimeout(700);
-}
-
 /**
  * Bring one named panel into view and rest on it.
  *
@@ -132,7 +125,7 @@ export async function reveal(page: Page, selector: string, restSec = 1.1): Promi
  * carry no id, and the one tour anchor on a list sits on whichever item
  * renders first — which is not the one the narration means.
  */
-export function itemFor(page: Page, container: string, name: string): Locator {
+function itemFor(page: Page, container: string, name: string): Locator {
   return page.locator(container).filter({ hasText: name }).first();
 }
 
@@ -152,7 +145,7 @@ export function spaceCard(page: Page, name: string): Locator {
  *
  * Some entries are two clicks because the product puts them behind a menu.
  */
-export const NAV = {
+const NAV = {
   dashboard: ['[data-tour="nav-dashboard"]'],
   tasks: ['[data-tour="nav-tasks"]'],
   spaces: ['[data-tour="nav-spaces"]'],
@@ -165,7 +158,7 @@ export const NAV = {
   documents: ['[data-tour="nav-documents"]'],
 } as const;
 
-export type NavKey = keyof typeof NAV;
+type NavKey = keyof typeof NAV;
 
 /** Click through to a screen and wait for something on it. */
 export async function goTo(
@@ -281,18 +274,6 @@ export async function wheel(page: Page, distance: number): Promise<void> {
     await page.mouse.wheel(0, distance / steps);
     await page.waitForTimeout(27);
   }
-}
-
-/**
- * Save a dialog and wait for the server to have taken it.
- *
- * ⚠️ THE DIALOG CLOSING IS THE ONLY HONEST SIGNAL. A validation error or a
- * rejected field leaves it open with a message — and a flow that pressed on
- * regardless would film the next beat over a dialog nobody dismissed.
- */
-export async function saveDialog(page: Page, saveSelector: string): Promise<void> {
-  await page.locator(saveSelector).first().click();
-  await page.locator(DIALOG).waitFor({ state: 'hidden', timeout: 30_000 });
 }
 
 /**

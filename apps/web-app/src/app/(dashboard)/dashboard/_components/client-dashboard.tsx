@@ -1,21 +1,17 @@
 "use client"
 
 import { useMemo, useCallback, useState } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Plus, Users } from "lucide-react"
+import { Plus } from "lucide-react"
 
-import { getSpaceScope, canManageSpace } from "@hbcfield/shared/client"
+import { canManageSpace } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import {
-  tasksApi,
   locationsApi,
   attendanceApi,
-  organizationsApi,
-  type OrgMember,
-  type LocationAssignment,
   type Task,
 } from "@/lib/api"
 import type { TimeEntry } from "@hbcfield/shared"

@@ -11,8 +11,7 @@ import {
   setUserRefreshedCallback,
   getAccessToken as getStoredAccessToken,
   clearTokens,
-  type User,
-  type LoginResponse,
+  type User
 } from '../lib/api';
 import { stopRouteTracking } from '../services/background-route-tracking';
 import { stopBackgroundHeartbeat } from '../services/background-heartbeat';

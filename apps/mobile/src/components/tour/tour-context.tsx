@@ -7,7 +7,7 @@
  * RN specifics: targets are measured via a ref registry (no DOM); navigation via
  * expo-router; step.enter runs a registered callback (no synthetic clicks).
  */
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AppState, Dimensions } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { hasAccessModule, hasFeatureModule, normalizeRole } from '@hbcfield/shared/client';

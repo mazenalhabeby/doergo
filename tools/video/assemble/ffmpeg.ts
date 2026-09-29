@@ -134,7 +134,7 @@ function phoneOnBlur(): string {
   );
 }
 
-export interface NormaliseOptions {
+interface NormaliseOptions {
   /**
    * Portrait phone footage. Filled behind rather than letterboxed.
    * ⚠️ Stated by the caller rather than probed from the file: the flow knows

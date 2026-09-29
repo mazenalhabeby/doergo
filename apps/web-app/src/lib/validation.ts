@@ -12,13 +12,13 @@ import { z } from 'zod';
 // ============================================================================
 
 /** Name validation: only letters, spaces, hyphens, and apostrophes */
-export const NAME_REGEX = /^[a-zA-Z\s\-']+$/;
+const NAME_REGEX = /^[a-zA-Z\s\-']+$/;
 
 /** Company name: letters, numbers, spaces, and common punctuation */
-export const COMPANY_REGEX = /^[a-zA-Z0-9\s\-'&.,]+$/;
+const COMPANY_REGEX = /^[a-zA-Z0-9\s\-'&.,]+$/;
 
 /** Password requirements pattern */
-export const PASSWORD_PATTERNS = {
+const PASSWORD_PATTERNS = {
   uppercase: /[A-Z]/,
   lowercase: /[a-z]/,
   number: /[0-9]/,
@@ -28,25 +28,25 @@ export const PASSWORD_PATTERNS = {
 // Field Schemas (reusable building blocks)
 // ============================================================================
 
-export const emailSchema = z
+const emailSchema = z
   .string()
   .min(1, 'Email is required')
   .email('Please enter a valid email address')
   .max(255, 'Email must not exceed 255 characters')
   .transform((val) => val.trim().toLowerCase());
 
-export const passwordSchema = z
+const passwordSchema = z
   .string()
   .min(1, 'Password is required')
   .min(8, 'Password must be at least 8 characters')
   .max(128, 'Password must not exceed 128 characters');
 
-export const strongPasswordSchema = passwordSchema
+const strongPasswordSchema = passwordSchema
   .regex(PASSWORD_PATTERNS.uppercase, 'Password must contain at least one uppercase letter')
   .regex(PASSWORD_PATTERNS.lowercase, 'Password must contain at least one lowercase letter')
   .regex(PASSWORD_PATTERNS.number, 'Password must contain at least one number');
 
-export const firstNameSchema = z
+const firstNameSchema = z
   .string()
   .min(1, 'First name is required')
   .min(2, 'First name must be at least 2 characters')
@@ -54,7 +54,7 @@ export const firstNameSchema = z
   .regex(NAME_REGEX, 'First name can only contain letters, spaces, hyphens, and apostrophes')
   .transform((val) => val.trim().toLowerCase());
 
-export const lastNameSchema = z
+const lastNameSchema = z
   .string()
   .min(1, 'Last name is required')
   .min(2, 'Last name must be at least 2 characters')
@@ -62,7 +62,7 @@ export const lastNameSchema = z
   .regex(NAME_REGEX, 'Last name can only contain letters, spaces, hyphens, and apostrophes')
   .transform((val) => val.trim().toLowerCase());
 
-export const companyNameSchema = z
+const companyNameSchema = z
   .string()
   .min(1, 'Company name is required')
   .min(2, 'Company name must be at least 2 characters')
@@ -79,9 +79,6 @@ export const loginSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
 });
-
-export type LoginFormData = z.infer<typeof loginSchema>;
-
 /**
  * Registration form validation.
  *
@@ -107,7 +104,7 @@ export type RegisterFormData = z.infer<typeof registerSchema>;
 // Password Strength Helpers
 // ============================================================================
 
-export interface PasswordRequirement {
+interface PasswordRequirement {
   label: string;
   test: (password: string) => boolean;
 }
@@ -118,10 +115,3 @@ export const passwordRequirements: PasswordRequirement[] = [
   { label: 'Lower', test: (p) => PASSWORD_PATTERNS.lowercase.test(p) },
   { label: 'Number', test: (p) => PASSWORD_PATTERNS.number.test(p) },
 ];
-
-/**
- * Calculate password strength score (0-4)
- */
-export function getPasswordStrength(password: string): number {
-  return passwordRequirements.filter((req) => req.test(password)).length;
-}

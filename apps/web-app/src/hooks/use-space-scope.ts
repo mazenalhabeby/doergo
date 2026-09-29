@@ -27,7 +27,7 @@ import { useAuth } from "@/contexts/auth-context"
  * scoped, so this costs no request of its own: a member sees their sites and an
  * admin sees all of them, decided where it is always decided.
  */
-export interface SpaceScope {
+interface SpaceScope {
   /** Workspaces that have the module on — what the tab row should offer. */
   spaces: CompanyLocation[]
   /** The chosen workspace, or null for "All". */

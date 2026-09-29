@@ -54,7 +54,7 @@ import type { ContactSide } from '../add-contact-sheet';
 
 export const TABS = ['information', 'activity', 'reminders'] as const;
 export type RecordTab = (typeof TABS)[number];
-export const isTab = (v: unknown): v is RecordTab => typeof v === 'string' && (TABS as readonly string[]).includes(v);
+const isTab = (v: unknown): v is RecordTab => typeof v === 'string' && (TABS as readonly string[]).includes(v);
 
 /** What the Activity feed is narrowed to. A note and a call are the two kinds a member files. */
 export const FILTERS = [
@@ -62,7 +62,7 @@ export const FILTERS = [
   { key: 'notes', label: 'customers.record.filter.notes', types: ['NOTE'] },
   { key: 'calls', label: 'customers.record.filter.calls', types: ['CALL'] },
 ] as const;
-export type ActivityFilter = (typeof FILTERS)[number]['key'];
+type ActivityFilter = (typeof FILTERS)[number]['key'];
 
 /**
  * A contact row that exists only in the outbox. It carries the OPERATION's id

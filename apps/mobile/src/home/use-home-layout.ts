@@ -25,7 +25,7 @@ import { move as moveInList, withVisibleOrder, type Moved } from './arrange-list
  * not appear, rather than error or be deleted. Filtering earlier would bake
  * today's permissions into the saved arrangement.
  */
-export interface HomeLayoutApi {
+interface HomeLayoutApi {
   /** What actually renders, in order. */
   rows: WidgetRow[];
   /** Everything this person COULD have — feeds the picker. */

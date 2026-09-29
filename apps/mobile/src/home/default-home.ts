@@ -17,7 +17,7 @@ import type { HomeLayout } from './layout-store';
  * Chosen ONCE, the first time the home opens, and saved as the member's own
  * layout. From then on it is theirs to arrange, and nothing here moves it.
  */
-export const DEFAULT_HOME_SIZE = 2;
+const DEFAULT_HOME_SIZE = 2;
 
 type Persona = 'lead' | 'sales' | 'driver' | 'worker';
 

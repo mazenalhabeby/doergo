@@ -61,7 +61,7 @@ export const MAX_TABS = 5;
 */
 export const TAB_PRIORITY = ['index', 'tasks', 'attendance', 'team', 'chat', 'time-off', 'create-task'];
 
-export const byPriority = (a: { name: string }, b: { name: string }) => {
+const byPriority = (a: { name: string }, b: { name: string }) => {
   const ia = TAB_PRIORITY.indexOf(a.name);
   const ib = TAB_PRIORITY.indexOf(b.name);
   // An unknown route keeps its position rather than jumping to the front.
@@ -98,33 +98,12 @@ export function splitTabs<T extends { name: string }>(
   };
 }
 
-/**
- * A tab's icon, filled when it is the one you are on.
- *
- * Extracted because the overflow sheet draws the same tabs: two copies of this
- * map is one of them quietly disagreeing the next time a tab is added.
- */
-export function tabIconName(routeName: string, focused: boolean): string {
-  switch (routeName) {
-    case 'index': return focused ? 'home' : 'home-outline';
-    case 'tasks': return focused ? 'clipboard' : 'clipboard-outline';
-    case 'create-task': return focused ? 'add-circle' : 'add-circle-outline';
-    case 'manage': return focused ? 'grid' : 'grid-outline';
-    case 'attendance': return focused ? 'time' : 'time-outline';
-    case 'time-off': return focused ? 'calendar' : 'calendar-outline';
-    case 'team': return focused ? 'people' : 'people-outline';
-    case 'chat': return focused ? 'chatbubble' : 'chatbubble-outline';
-    default: return focused ? 'person' : 'person-outline';
-  }
-}
-
-
 /* ------------------------------------------------------------------ */
 /* Who sees which tab — ONE answer for the bar and the More page        */
 /* ------------------------------------------------------------------ */
 
 
-export interface TabAccess {
+interface TabAccess {
   isAdmin: boolean;
   tasks: boolean;
   attendance: boolean;

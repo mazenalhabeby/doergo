@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 
-export interface OverflowNavItem {
+interface OverflowNavItem {
   label: string
   href: string
 }

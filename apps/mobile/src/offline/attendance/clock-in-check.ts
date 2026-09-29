@@ -8,7 +8,7 @@ import {
   type OccurrenceFix,
 } from '@hbcfield/shared/client';
 
-export type LocalClockInVerdict =
+type LocalClockInVerdict =
   | { ok: true; away: boolean; distanceM: number | null }
   | {
       ok: false;

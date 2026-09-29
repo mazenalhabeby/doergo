@@ -29,7 +29,7 @@ import { useAuth } from "@/contexts/auth-context"
  * member can never be offered a tab the menu hides — or land on a page that has
  * no tab.
  */
-export interface MySection {
+interface MySection {
   href: string
   label: string
   /** Ties the tour and the nav markup to the same entry. */

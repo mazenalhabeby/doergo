@@ -17,7 +17,7 @@ const ExplainerDialog = dynamic(
   { ssr: false },
 );
 
-export interface ExplainerButtonProps {
+interface ExplainerButtonProps {
   /** Module key or add-on key. */
   explainerKey: string;
   /** Shown in the header, and in the button's accessible name. */

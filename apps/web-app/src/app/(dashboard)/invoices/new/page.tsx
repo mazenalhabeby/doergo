@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { ArrowLeft, Plus, Trash2, Loader2, Clock, Package, FileText, ChevronDown, ChevronRight } from "lucide-react"
+import { Loader2, Clock, Package, FileText, ChevronDown, ChevronRight } from "lucide-react"
 
 import { invoicesApi, locationsApi, customersApi, organizationsApi, type Invoice, type InvoiceItemInput } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils"
 import {
   InvoiceTopBar, InvoiceNotice, InvoiceWorkbench, RailSection,
 } from "../_components/invoice-shell"
-import { InvoiceDocument, money, fmtDate, type DocumentView } from "../_components/invoice-document"
+import { InvoiceDocument, money, fmtDate } from "../_components/invoice-document"
 import {
   ClientFields, TermsFields, LineEditor, num, type EditableLine,
 } from "../_components/invoice-fields"
@@ -80,8 +80,6 @@ function isPreset(key: "lastMonth" | "thisMonth" | "all", from: string, to: stri
   const [f, t] = monthBounds(key === "lastMonth" ? -1 : 0)
   return from === f && to === t
 }
-
-const round2 = (n: number) => Math.round(n * 100) / 100
 
 /** "Sarah Wagner" → "SW", for the avatar beside a gathered job. */
 function initials(name?: string | null) {

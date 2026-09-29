@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react"
 import { BaseTiles } from "@/components/map/base-tiles"
 import { MapContainer, Marker, Circle, Polygon, useMapEvents, useMap } from "react-leaflet"
 import L from "leaflet"
-import { Search, Loader2, MapPin, Keyboard, LocateFixed, Spline, Undo2, Trash2, Maximize2, Minimize2 } from "lucide-react"
+import { Search, Loader2, MapPin, LocateFixed, Spline, Undo2, Trash2, Maximize2, Minimize2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
@@ -13,7 +13,6 @@ import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "react-i18next"
 import { useFormatDistance } from "@/hooks/use-format-distance"
-import { formatNominatimAddress, formatPhotonFeature, type PhotonProperties, type NominatimAddress } from "@/lib/geocode"
 import { polygonAreaSqm, GEOFENCE_POLYGON_LIMITS, type LatLng } from "@hbcfield/shared/client"
 
 import "leaflet/dist/leaflet.css"
@@ -89,19 +88,6 @@ interface LocationPickerProps {
    */
   polygon?: LatLng[] | null
   onPolygonChange?: (ring: LatLng[] | null) => void
-}
-
-/** The two upstream geocoders, as much of them as this file reads. */
-interface PhotonFeature {
-  properties?: PhotonProperties
-  geometry: { coordinates: [number, number] }
-}
-
-interface NominatimResult {
-  address?: NominatimAddress
-  display_name?: string
-  lat: string
-  lon: string
 }
 
 function MapClickHandler({ onClick }: { onClick: (lat: number, lng: number) => void }) {

@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { assessFix, assessOccurrence, type OccurrenceEvidence } from '@hbcfield/shared';
 
-export interface JudgedOccurrence {
+interface JudgedOccurrence {
   /** The time to record: the tap's own, when the phone sent one; otherwise now. */
   at: Date;
   /** How it was recorded, for the person who reviews it. */

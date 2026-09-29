@@ -29,7 +29,7 @@ const MIME = /^[a-z]+\/[a-z0-9.+-]+$/i;
 const KEY = /^[A-Za-z0-9_\-./]+$/;
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
-export class ShiftIssueAttachmentDto {
+class ShiftIssueAttachmentDto {
   @ApiPropertyOptional() @ValidateIf((o) => !o.fileUrl) @IsString() @MaxLength(512) @Matches(KEY) fileKey?: string;
   @ApiPropertyOptional({ deprecated: true })
   @ValidateIf((o) => !o.fileKey) @IsUrl({ require_protocol: true, protocols: ['https', 'http'], require_tld: false }) @MaxLength(1024)

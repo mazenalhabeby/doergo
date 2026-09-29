@@ -20,7 +20,7 @@ export class HeartbeatDto {
 }
 
 /** One check-in the phone kept while it had no signal, with the moment it was taken. */
-export class HeartbeatPointDto {
+class HeartbeatPointDto {
   @ApiProperty() @IsNumber() @Min(-90) @Max(90)
   lat: number;
 

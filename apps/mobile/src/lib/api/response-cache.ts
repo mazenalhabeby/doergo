@@ -12,7 +12,7 @@
  * and never shared between members. A build without the offline layer plugs in
  * nothing and behaves exactly as before.
  */
-export interface ResponseCacheStore {
+interface ResponseCacheStore {
   get(key: string): Promise<unknown | undefined>;
   put(key: string, body: unknown): Promise<void>;
 }

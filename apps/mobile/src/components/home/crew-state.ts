@@ -110,7 +110,7 @@ export interface CrewTile {
   minutes: number;
 }
 
-export type CrewStateKind =
+type CrewStateKind =
   /** ① Any band non-empty. */
   | 'busy'
   /** ② Every band empty, somebody on. No tiles at all. */
@@ -123,9 +123,9 @@ export type CrewStateKind =
   | 'offline';
 
 /** 1 workspace shows people; 4+ shows workspaces. Never chosen, always derived. */
-export type CrewUnit = 'people' | 'peopleWithSite' | 'workspaces';
+type CrewUnit = 'people' | 'peopleWithSite' | 'workspaces';
 
-export interface SiteRow {
+interface SiteRow {
   spaceId: string;
   spaceName: string;
   on: number;
@@ -134,7 +134,7 @@ export interface SiteRow {
   trouble: { band: Band; count: number } | null;
 }
 
-export interface CrewState {
+interface CrewState {
   kind: CrewStateKind;
   unit: CrewUnit;
   /** On the clock right now. */
@@ -224,7 +224,7 @@ export function ringOf(p: CrewPerson, band: Band | null, now: number): Ring {
 }
 
 /** What the figure on the tile is about. */
-export function minutesOf(p: CrewPerson, band: Band, now: number): number {
+function minutesOf(p: CrewPerson, band: Band, now: number): number {
   if (band === 'late' || band === 'missed') return Math.max(0, mins(at(p.scheduledStartAt) ?? now, now));
   if (band === 'breakOver') return p.breakMinutes ?? 0;
   const end = at(p.expectedClockOutAt);

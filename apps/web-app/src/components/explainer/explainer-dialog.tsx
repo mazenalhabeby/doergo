@@ -22,7 +22,7 @@ import { ExplainerDiagram, hasDiagram } from './diagrams';
  * this component never assumes it has arrived.
  */
 
-export interface ExplainerDialogProps {
+interface ExplainerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   explainerKey: string;

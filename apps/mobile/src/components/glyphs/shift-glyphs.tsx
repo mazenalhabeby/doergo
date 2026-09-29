@@ -157,32 +157,3 @@ export function IssueMineGlyph({ size = 24, color, contrast = '#FFFFFF' }: Glyph
     </Svg>
   );
 }
-
-/**
- * A FAINT PATH, A SOFT START, A SOLID PIN.
- *
- * Depth does the work colour used to: the path is the same hue at .42, so the
- * pin is the only thing that reads as an object and the route is the ground it
- * sits on.
- */
-export function RouteGlyph({ size = 24, color, contrast = '#FFFFFF' }: GlyphProps) {
-  return (
-    <Svg {...svg(size)}>
-      <Path
-        d="M5 19.6c0-6.2 6.6-5 6.6-10.2C11.6 5.2 15.4 4.6 19 4.6"
-        fill="none"
-        stroke={color}
-        strokeOpacity={0.42}
-        strokeWidth={2.2}
-        strokeLinecap="round"
-      />
-      <Circle cx={5} cy={19.6} r={2.8} fill={color} fillOpacity={0.55} />
-      <Path
-        d="M19.2 13C19.2 13 23.6 9.3 23.6 6.1A4.4 4.4 0 0 0 14.8 6.1C14.8 9.3 19.2 13 19.2 13Z"
-        fill={color}
-        fillOpacity={0.95}
-      />
-      <Circle cx={19.2} cy={6.1} r={1.8} fill={contrast} />
-    </Svg>
-  );
-}

@@ -44,7 +44,7 @@ import {
   type StepFormDraft,
 } from "@/lib/step-forms"
 
-export const FIELD_TYPE_ICON: Record<StepFormFieldType, LucideIcon> = {
+const FIELD_TYPE_ICON: Record<StepFormFieldType, LucideIcon> = {
   note: AlignLeft,
   choice: CircleDot,
   photos: ImageIcon,
@@ -74,7 +74,7 @@ const PRESET_NAME: Record<StepFormPresetId, string> = {
   support: "Support",
 }
 
-export interface StepFormEditorProps {
+interface StepFormEditorProps {
   /** The step's name, for the preview. */
   stepName: string
   /** What the step asks as it stands: its own list, the standard report, or nothing. */

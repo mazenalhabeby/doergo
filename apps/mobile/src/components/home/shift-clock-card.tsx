@@ -18,7 +18,7 @@ import { stopBackgroundHeartbeat } from '../../services/background-heartbeat';
 import { stopGeofence } from '../../services/background-geofence';
 import { formatDurationMinutes as formatDuration } from '../../lib/utils';
 import { AText, CardSurface, Chip, Disc, DiscRow, Eyebrow, Hero, LiveDot } from '../amazen';
-import { BreakGlyph, ClockInGlyph, ClockOutGlyph, IssueMineGlyph, IssueNewGlyph } from '../glyphs/shift-glyphs';
+import { BreakGlyph, ClockOutGlyph, IssueMineGlyph, IssueNewGlyph } from '../glyphs/shift-glyphs';
 import { heroParts, readShiftState, scheduleFor, targetLabel } from './shift-state';
 import { useScheduleTotals, type ScheduleTotalsView } from './use-schedule-totals';
 import { useUnreadIssues } from './use-unread-issues';
@@ -65,7 +65,7 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
   return <ShiftClockCardView shift={shift} style={style} />;
 }
 
-export interface ShiftClockCardViewProps {
+interface ShiftClockCardViewProps {
   shift: ReturnType<typeof useShift>;
   style?: StyleProp<ViewStyle>;
   /**

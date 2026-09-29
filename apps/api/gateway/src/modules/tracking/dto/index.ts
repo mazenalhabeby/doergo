@@ -39,7 +39,7 @@ export class UpdateTrackingLocationDto {
   taskId?: string;
 }
 
-export class TrackingLocationPointDto {
+class TrackingLocationPointDto {
   @ApiProperty({ example: 40.7128 })
   @IsNumber()
   @Min(-90)

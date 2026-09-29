@@ -14,7 +14,6 @@ import {
   success,
   SERVICE_NAMES,
   QUEUE_NAMES,
-  OVERTIME_JOB_TYPES,
   OVERTIME_CONSTANTS,
   TimeEntryStatus,
   scopeWhere,

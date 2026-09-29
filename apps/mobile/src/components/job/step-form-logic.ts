@@ -60,7 +60,7 @@ export function formForMove(
   );
 }
 
-export type MoveKind = 'direct' | 'form' | 'issue';
+type MoveKind = 'direct' | 'form' | 'issue';
 
 /**
  * What taking a job to `to` opens:
@@ -81,7 +81,7 @@ export function workflowAsks(workflow: WorkflowWithForms | null | undefined, ste
 
 /* ---------------- pages ---------------- */
 
-export type FormGroup = 'answers' | 'photos' | 'signoff';
+type FormGroup = 'answers' | 'photos' | 'signoff';
 
 /** Words and choices first, then the camera, then the hand-over — the old Finish sheet's order. */
 export function groupOf(type: StepFormFieldType): FormGroup {
@@ -218,7 +218,7 @@ export function stillNeeded(form: Pick<StepForm, 'fields'>, draft: FormDraft, pa
 
 /* ---------------- sending ---------------- */
 
-export interface FileToSend {
+interface FileToSend {
   fieldId: string;
   kind: 'photo' | 'signature';
   /** A photo's picked image; for a signature, the pad's PNG data URL is supplied at send time. */
@@ -259,7 +259,7 @@ export interface SentFile {
   outcome: { kind: 'done' | 'queued' | 'refused'; code?: string; message?: string };
 }
 
-export type PreparedStepForm =
+type PreparedStepForm =
   | { ok: true; answers: StepFormAnswers; dependsOn: string[]; queuedFiles: boolean }
   | { ok: false; fieldErrors: Record<string, string>; refused?: { code?: string; message?: string } };
 
@@ -378,7 +378,7 @@ export function errorKey(code: string): string {
  * on the old Finish sheet and must keep doing so. Any label the organization
  * wrote is shown exactly as written.
  */
-export const PRESET_LABEL_KEYS: Readonly<Record<string, string>> = {
+const PRESET_LABEL_KEYS: Readonly<Record<string, string>> = {
   work_done: 'job.finish.stepDid',
   photos_before: 'job.finish.before',
   photos_after: 'job.finish.after',
@@ -421,7 +421,7 @@ export function dayOf(iso: string | undefined | null): Date | null {
 export type { StepSubmission } from '../../lib/api/types';
 
 /** What one answer reads as, for the report view. Files are resolved by the view from `files`. */
-export type ShownAnswer =
+type ShownAnswer =
   | { kind: 'text'; text: string }
   | { kind: 'yesno'; value: boolean }
   | { kind: 'photos'; ids: string[] }

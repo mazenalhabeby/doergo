@@ -136,11 +136,3 @@ export async function stopGeofence(): Promise<void> {
     console.error('[Geofence] failed to stop:', err);
   }
 }
-
-export async function isGeofenceRunning(): Promise<boolean> {
-  try {
-    return await TaskManager.isTaskRegisteredAsync(GEOFENCE_TASK);
-  } catch {
-    return false;
-  }
-}

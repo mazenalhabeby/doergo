@@ -18,7 +18,7 @@ import { CLIENT_ID } from '../../../common/dto/upload.dto';
 import { Type } from 'class-transformer';
 import { SUPPORT_CATEGORIES, SUPPORT_STATUSES } from '@hbcfield/shared';
 
-export class SupportAttachmentDto {
+class SupportAttachmentDto {
   @IsString() @MaxLength(255) fileName!: string;
   @IsUrl({ require_protocol: true, protocols: ['http', 'https'] }) fileUrl!: string;
   @IsString() @MaxLength(120) fileType!: string;

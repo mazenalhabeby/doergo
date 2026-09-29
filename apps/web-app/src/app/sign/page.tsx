@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { useTranslation } from "react-i18next"
-import { CheckCircle2, Clock, ExternalLink, FileText, Loader2, Mail, PenLine } from "lucide-react"
+import { CheckCircle2, Clock, ExternalLink, FileText, Loader2, Mail } from "lucide-react"
 
 import { signLinkApi, type LinkDocumentRow, type LinkOpenResult } from "@/lib/api"
 import { SignaturePad } from "@/components/signature-pad"

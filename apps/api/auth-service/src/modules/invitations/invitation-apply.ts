@@ -26,7 +26,7 @@ import {
  * own their own transaction, their own create-vs-update, and the fields that
  * genuinely differ (email, password hash, names).
  */
-export interface InvitationFieldsSource {
+interface InvitationFieldsSource {
   targetRole: PrismaRole;
   position: string | null;
   specialty: string | null;

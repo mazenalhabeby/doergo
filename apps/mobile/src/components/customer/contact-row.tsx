@@ -21,7 +21,7 @@ import type { MobileCustomerContact } from '../../lib/api/customers';
  * So the row takes the link and is told which side to SHOW; everything else —
  * the role, the primary star, what may be done to it — is identical.
  */
-export interface ContactRowProps {
+interface ContactRowProps {
   link: MobileCustomerContact;
   side: 'person' | 'company';
   onOpen: (customerId: string) => void;

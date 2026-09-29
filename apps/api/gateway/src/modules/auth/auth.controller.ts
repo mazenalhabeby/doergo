@@ -10,14 +10,13 @@ import {
   Inject,
   HttpCode,
   HttpStatus,
-  UseGuards,
   HttpException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ClientProxy } from '@nestjs/microservices';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { Throttle, SkipThrottle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import { LoginDto, RegisterDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto, ChangePasswordDto, DeleteAccountDto } from './dto';
 import { Public } from '../../common/decorators';

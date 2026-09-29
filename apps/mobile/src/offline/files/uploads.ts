@@ -15,7 +15,7 @@ type Body = Record<string, unknown>;
  *
  * Adding one is adding a row. Its presign route must return `{ uploadUrl, fileKey }`.
  */
-export interface UploadRoute {
+interface UploadRoute {
   /** The presign path, from the operation's params. Null when a param is missing. */
   presign(params: Record<string, string>): string | null;
   /** The body the presign route takes. */

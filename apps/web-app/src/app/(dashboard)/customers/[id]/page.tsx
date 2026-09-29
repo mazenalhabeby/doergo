@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
-  ArrowLeft, Mail, Phone, MapPin, Send, Copy, Check, Trash2,
+  ArrowLeft, Mail, Phone, Send, Copy, Check, Trash2,
   StickyNote, PhoneCall, Mails, Users, Clock, RefreshCw, Settings2, Loader2,
   Smartphone, CheckCircle2, AlertTriangle, CalendarClock, Plus,
   Building2, Bell,

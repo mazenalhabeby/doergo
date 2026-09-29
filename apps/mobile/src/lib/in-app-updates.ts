@@ -77,7 +77,7 @@ function nativeModule(): InAppUpdatesModule | null {
  */
 export const IN_APP_UPDATES_SUPPORTED = Platform.OS === 'android' && nativeModule() !== null;
 
-export interface StoreUpdateState {
+interface StoreUpdateState {
   /** Play has a newer build than the one running. */
   available: boolean;
   /** The version Play actually serves — authoritative, unlike a configured one. */

@@ -1,4 +1,4 @@
-import { DEFAULT_LOCALE, normalizeLocale, SUPPORTED_LOCALES, type SupportedLocale } from "@hbcfield/shared/client"
+import { DEFAULT_LOCALE, normalizeLocale, type SupportedLocale } from "@hbcfield/shared/client"
 import { formatMoneyIn } from "./money"
 
 /**
@@ -204,6 +204,3 @@ export function termsSentence(
     ? fillLabel(l.termsDue, { total, date: formatDocumentDate(inv.dueDate, locale) })
     : fillLabel(l.termsOnReceipt, { total })
 }
-
-/** The five choices for "Language" on a download, each named in itself. */
-export const DOCUMENT_LOCALES: readonly SupportedLocale[] = SUPPORTED_LOCALES

@@ -10,7 +10,7 @@ import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { useToast } from '../../island/island-context';
 import { useResponsive } from '../../lib/responsive';
-import { assetsApi, assetProposalsApi, type HeldAsset, type MyExpense, type MyProposal, type MyLogEntry, type DueItem } from '../../lib/api';
+import { assetsApi, assetProposalsApi, type HeldAsset, type MyExpense, type DueItem } from '../../lib/api';
 import { logColor, logTypeLabel } from '../../lib/log-display';
 import { formatDay, formatMoney } from '../../lib/money';
 import { sentIn, canTakeBack, type QueuedSend, type SentItem } from '../../lib/sent-in';

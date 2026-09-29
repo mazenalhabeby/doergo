@@ -58,7 +58,7 @@ export interface AskedRow {
   reason: string | null;
 }
 
-export interface CheckingRow {
+interface CheckingRow {
   typeId: string;
   label: string;
   /** Still on this phone, not yet sent — no signal. */

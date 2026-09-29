@@ -84,14 +84,14 @@ const CURSOR_SCRIPT = `
 })();
 `;
 
-export interface StageOptions {
+interface StageOptions {
   /** Beat id -> how many seconds its narration runs. */
   narrationDurations: Record<string, number>;
   /** Names the output directory under out/. */
   videoId: string;
 }
 
-export interface Stage {
+interface Stage {
   page: Page;
   /**
    * Run one beat. The work inside happens at its own pace; the beat as a whole

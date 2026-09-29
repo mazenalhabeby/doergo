@@ -23,7 +23,6 @@ import {
   success,
   paginated,
   TimeEntryStatus,
-  haversineDistance,
   isAtSite,
   formatDistance,
   siteEnforcesZone,
@@ -32,10 +31,8 @@ import {
   ATTENDANCE_CONSTANTS,
   GEOFENCE_EXCURSION,
   computeScheduleFlags,
-  SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
   SHIFT_REMINDER_DEFAULTS,
   OPEN_SHIFT_CLOSE,
-  computeCountedTime,
   shortfallMinutes,
   resolveAwayAccess,
   UNSCHEDULED_SESSION_DEFAULTS,
@@ -3757,7 +3754,7 @@ export class AttendanceService {
 }
 
 /** How long after its clock-out a shift's extra time may still be decided. */
-export const EXTRA_TIME_DECIDABLE_AFTER_CLOSE_MS = 7 * 24 * 60 * 60 * 1000;
+const EXTRA_TIME_DECIDABLE_AFTER_CLOSE_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * A shift whose extra-time request a leader may still decide: open and waiting,
@@ -3793,7 +3790,7 @@ export function respondedAt(occurredAt: string | null | undefined, clockInAt: Da
  * member was working to, never after the moment of approval. Pure and shared by
  * a leader's approval and a manager adding overtime to a closed shift.
  */
-export function overtimeEndFor(input: {
+function overtimeEndFor(input: {
   expectedEndAt: Date | null;
   requestStartedAt: Date | null;
   clockOutAt: Date | null;
@@ -3805,7 +3802,7 @@ export function overtimeEndFor(input: {
 }
 
 /** Why a clock-in with no shift was refused, in words and a code the phone translates. */
-export function noShiftRefusal(allowance: Extract<NoShiftAllowance, { kind: 'refused' }>, spaceName: string): BadRequestException {
+function noShiftRefusal(allowance: Extract<NoShiftAllowance, { kind: 'refused' }>, spaceName: string): BadRequestException {
   if (allowance.reason === 'SHIFT_ONLY') {
     return new BadRequestException({
       message: `You have no shift today. ${spaceName} only allows clocking in with a shift.`,

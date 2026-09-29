@@ -30,30 +30,6 @@ import type { GlyphProps } from './glyphs';
  */
 
 const svg = (size: number) => ({ width: size, height: size, viewBox: '0 0 24 24' });
-/**
- * A LICENCE.
- *
- * Portrait punched left, three rules right, and a hairline across the top at
- * .35 for the card's band. The portrait is what tells it apart from every
- * other rectangle at 26px.
- */
-export function CredentialGlyph({ size = 24, color, contrast = '#0b0f12' }: GlyphProps) {
-  return (
-    <Svg {...svg(size)}>
-      <Rect x={1.8} y={4.4} width={20.4} height={15.2} rx={3.2} fill={color} fillOpacity={0.95} />
-      <Circle cx={7.8} cy={10.6} r={2.6} fill={contrast} />
-      <Path d="M4 16.4c.7-1.7 2.1-2.6 3.8-2.6s3.1.9 3.8 2.6Z" fill={contrast} />
-      <Path
-        d="M14.4 9.4h4.4M14.4 12.6h4.4M14.4 15.8h2.8"
-        fill="none"
-        stroke={contrast}
-        strokeWidth={1.7}
-        strokeLinecap="round"
-      />
-      <Path d="M1.8 7.6h20.4" fill="none" stroke={contrast} strokeOpacity={0.35} strokeWidth={1.4} />
-    </Svg>
-  );
-}
 
 /**
  * TWO ARCS CHASING EACH OTHER.
@@ -368,65 +344,6 @@ export function ClientsGlyph({ size = 24, color, contrast = '#0b0f12' }: GlyphPr
       <Circle cx={7.8} cy={12.2} r={2.4} fill={contrast} />
       <Path d="M4.4 17.6c.7-1.8 2-2.7 3.4-2.7s2.7.9 3.4 2.7Z" fill={contrast} />
       <Path d="M12.8 11.4h3.6M12.8 14.4h3.6" fill="none" stroke={contrast} strokeWidth={1.6} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-/**
- * A BILL, WITH ITS TOTAL RULED OFF.
- *
- * §3.24. The bottom rule is twice the weight of the others — that is the
- * total, and it is the only thing that separates this from every other sheet
- * in the set at 26px. The coin behind at .45 says money without naming a
- * currency, because a € or a $ punched into a mark is wrong in half the
- * places this app ships.
- *
- * ⚠️ §3.24's own warning belongs with this mark: *a draft's PDF is
- * watermarked; only ISSUED produces a clean document.* Never put a "send"
- * action behind this tile — the tile opens the list, and the list knows which
- * are drafts.
- */
-export function InvoicesGlyph({ size = 24, color, contrast = '#0b0f12' }: GlyphProps) {
-  return (
-    <Svg {...svg(size)}>
-      <Circle cx={18.2} cy={17.4} r={5.2} fill={color} fillOpacity={0.45} />
-      <Path d="M3.4 2.6h9L18 8.2v10.4H3.4Z" fill={color} fillOpacity={0.95} />
-      <Path d="M12.4 2.6v5.6H18Z" fill={contrast} />
-      <Path
-        d="M6.2 11.2h7.8M6.2 13.8h5.2"
-        fill="none"
-        stroke={contrast}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-      />
-      <Path d="M6.2 16.4h7.8" fill="none" stroke={contrast} strokeWidth={2.6} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-/**
- * A CHART, KEPT.
- *
- * §3.26. Three bars punched out of a solid square, and a bookmark at .55 in
- * the corner — the bookmark is the whole difference between *a report* and
- * *the report I check*.
- *
- * ⚠️ §3.26 is the only widget needing per-instance configuration: the saved
- * report's id lives in the layout row. As a TILE it needs none of that — it
- * opens the reports screen and that screen remembers. That is the argument
- * for the tile over the widget.
- *
- * ⚠️ `ActivityGlyph` in `glyphs.tsx` is a live feed, not a report. Different
- * claim, both stay.
- */
-export function SavedReportGlyph({ size = 24, color, contrast = '#0b0f12' }: GlyphProps) {
-  return (
-    <Svg {...svg(size)}>
-      <Rect x={1.8} y={1.8} width={20.4} height={20.4} rx={5.2} fill={color} fillOpacity={0.95} />
-      <Rect x={5.8} y={12.6} width={3} height={5.6} rx={1.4} fill={contrast} />
-      <Rect x={10.5} y={9} width={3} height={9.2} rx={1.4} fill={contrast} />
-      <Rect x={15.2} y={14.6} width={3} height={3.6} rx={1.4} fill={contrast} />
-      <Path d="M14.4 1.8h5.2v7.4l-2.6-2-2.6 2Z" fill={color} fillOpacity={0.55} />
     </Svg>
   );
 }

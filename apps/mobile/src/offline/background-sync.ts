@@ -24,7 +24,7 @@ import { reportTelemetry } from './telemetry';
   from the keychain, and the runtime is built by the same factory the app uses,
   so the Wi-Fi-only rule and every store are the same ones.
 */
-export const BACKGROUND_SYNC_TASK = 'HBC_OFFLINE_SYNC';
+const BACKGROUND_SYNC_TASK = 'HBC_OFFLINE_SYNC';
 const MEMBER_KEY = 'offline_background_member';
 const STUCK_WARNED_KEY = 'offline_stuck_warned_at';
 

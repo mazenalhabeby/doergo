@@ -88,35 +88,6 @@ export function ExpenseQueueGlyph({ size = 24, color, contrast = '#0b0f12' }: Gl
 }
 
 /**
- * A PAGE SENT IN, LANDING IN A TRAY.
- *
- * The page sits at .34 and the arrow through it at .95: the motion is the
- * subject, not the document. The tray is solid, because the tray is where it
- * stops — which is the problem the widget exists to surface.
- */
-export function ProposalQueueGlyph({ size = 24, color, contrast = '#0b0f12' }: GlyphProps) {
-  return (
-    <Svg {...svg(size)}>
-      <Rect x={6.2} y={1.6} width={11.6} height={9.4} rx={2.2} fill={color} fillOpacity={0.34} />
-      <Path
-        d="M12 5.2v6.4M9.2 9l2.8 2.8L14.8 9"
-        fill="none"
-        stroke={color}
-        strokeOpacity={0.95}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Path
-        d="M2.6 14.4h5.2l1.6 2.6h5.2l1.6-2.6h5.2v5a2 2 0 0 1-2 2H4.6a2 2 0 0 1-2-2Z"
-        fill={color}
-        fillOpacity={0.95}
-      />
-    </Svg>
-  );
-}
-
-/**
  * SOMEBODY ASKING TO BE COUNTED IN.
  *
  * The figure is `OnClockGlyph`'s, so the family reads as one set, with a plus
@@ -140,59 +111,6 @@ export function JoinQueueGlyph({ size = 24, color, contrast = '#0b0f12' }: Glyph
         stroke={contrast}
         strokeWidth={1.8}
         strokeLinecap="round"
-      />
-    </Svg>
-  );
-}
-
-/**
- * THE FLOOR, WITH A POST MISSING FROM IT.
- *
- * Two solid figures and one drawn in dashes: the shift that would be left
- * uncovered. Used only on the leave row's second line, and only when the
- * SERVER says cover is short or tight.
- *
- * ⚠️ Never render this off a number the widget worked out. `floorStatus()`
- * and `coverNeedsAttention()` live in `packages/shared/src/attendance/cover.ts`
- * and `minCover <= 0` there means "not set", not "nobody needed" — see
- * FINDINGS §1.
- */
-export function CoverGlyph({ size = 24, color }: GlyphProps) {
-  return (
-    <Svg {...svg(size)}>
-      <Path
-        d="M1.8 20.4h20.4"
-        fill="none"
-        stroke={color}
-        strokeOpacity={0.34}
-        strokeWidth={2.2}
-        strokeLinecap="round"
-      />
-      <Rect x={2.6} y={11} width={4.6} height={7.6} rx={1.8} fill={color} fillOpacity={0.95} />
-      <Rect x={9.7} y={11} width={4.6} height={7.6} rx={1.8} fill={color} fillOpacity={0.95} />
-      <Rect
-        x={16.8}
-        y={11}
-        width={4.6}
-        height={7.6}
-        rx={1.8}
-        fill="none"
-        stroke={color}
-        strokeOpacity={0.45}
-        strokeWidth={1.7}
-        strokeDasharray="3 3"
-      />
-      <Circle cx={4.9} cy={6.6} r={2.6} fill={color} fillOpacity={0.95} />
-      <Circle cx={12} cy={6.6} r={2.6} fill={color} fillOpacity={0.95} />
-      <Circle
-        cx={19.1}
-        cy={6.6}
-        r={2.6}
-        fill="none"
-        stroke={color}
-        strokeOpacity={0.45}
-        strokeWidth={1.7}
-        strokeDasharray="2.6 2.8"
       />
     </Svg>
   );

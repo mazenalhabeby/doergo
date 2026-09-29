@@ -13,7 +13,7 @@
  * `maxPages` is a runaway guard, not a product limit — a server that reports a
  * nonsense `totalPages` can't spin this into thousands of requests.
  */
-export interface PagedResponse<T> {
+interface PagedResponse<T> {
   data?: T[]
   meta?: { totalPages?: number }
 }

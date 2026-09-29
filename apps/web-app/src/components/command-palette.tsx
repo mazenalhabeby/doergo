@@ -16,9 +16,6 @@ import {
   Sun,
   Moon,
   PanelRight,
-  Plus,
-  Search,
-  Archive,
   type LucideIcon,
 } from "lucide-react"
 

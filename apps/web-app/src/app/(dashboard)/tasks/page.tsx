@@ -26,7 +26,7 @@ import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts"
 import { useBillingLock } from "@/hooks/use-billing-lock"
 import { useOrgWorkflow, useWorkflow, buildStatusTabs, buildKanbanColumns, type StatusTabGroup } from "@/hooks/use-org-workflow"
 import { useSpaceWorkflow } from "@/hooks/use-space-modules"
-import { tasksApi, phasesApi, sprintsApi, epicsApi, locationsApi, type Task, type Phase, type Sprint, type Epic, type TasksListResponse } from "@/lib/api"
+import { tasksApi, phasesApi, sprintsApi, epicsApi, locationsApi, type Task, type Sprint, type Epic, type TasksListResponse } from "@/lib/api"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { AssignMemberDialog } from "@/components/assign-member-dialog"
@@ -150,13 +150,6 @@ const VIEW_OPTIONS: { mode: ViewMode; icon: typeof LayoutList; label: string }[]
 ]
 
 type TaskScope = "all" | "backlog" | string
-
-const SPRINT_STATUS_LABEL: Record<string, string> = {
-  ACTIVE: "Active",
-  PLANNING: "Planning",
-  COMPLETED: "Completed",
-}
-
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function TasksPage() {

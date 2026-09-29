@@ -17,7 +17,7 @@ import path from "node:path";
  *   ---
  */
 
-export interface BlogPost {
+interface BlogPost {
   slug: string;
   title: string;
   description: string;
