@@ -61,10 +61,11 @@ const esmImport = new Function('s', 'return import(s)') as (s: string) => Promis
  * a failed upload.
  */
 export async function pdfToLines(bytes: Buffer): Promise<string[]> {
+  let task: any;
   let doc: any;
   try {
     const pdfjs = await esmImport('pdfjs-dist/legacy/build/pdf.mjs');
-    doc = await pdfjs.getDocument({
+    task = pdfjs.getDocument({
       data: new Uint8Array(bytes),
       /*
         This reads text and never renders, so everything that exists to make
@@ -79,7 +80,8 @@ export async function pdfToLines(bytes: Buffer): Promise<string[]> {
       // ⚠️ No worker. A worker thread per receipt on a box that also runs the
       // database is not worth the parallelism for a two-page invoice.
       disableWorker: true,
-    }).promise;
+    });
+    doc = await task.promise;
   } catch {
     return [];
   }
@@ -130,7 +132,8 @@ export async function pdfToLines(bytes: Buffer): Promise<string[]> {
     return [];
   } finally {
     // Frees the engine's copy of the file rather than waiting for a GC that
-    // does not know how large it is.
-    try { await doc.destroy(); } catch { /* already gone */ }
+    // does not know how large it is. (pdf.js 6 removed the document's own
+    // destroy(); the loading task owns it now.)
+    try { await task?.destroy(); } catch { /* already gone */ }
   }
 }

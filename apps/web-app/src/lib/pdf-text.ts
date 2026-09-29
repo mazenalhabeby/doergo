@@ -51,7 +51,7 @@ export async function extractPdfText(file: File): Promise<string> {
   ).toString()
 
   const data = new Uint8Array(await file.arrayBuffer())
-  const doc = await pdfjs.getDocument({
+  const task = pdfjs.getDocument({
     data,
     /*
       This reads text. It never renders, so every option that exists to make
@@ -67,7 +67,8 @@ export async function extractPdfText(file: File): Promise<string> {
     // where one bad PDF loses the other twenty-nine is worse than no scanning.
     stopAtErrors: false,
     verbosity: 0,
-  }).promise
+  })
+  const doc = await task.promise
 
   try {
     const pages: string[] = []
@@ -93,8 +94,9 @@ export async function extractPdfText(file: File): Promise<string> {
     return pages.join("\n")
   } finally {
     // Frees the worker's copy of the file. Thirty of these in a payroll batch
-    // is thirty documents' worth of memory if nobody closes them.
-    await doc.destroy()
+    // is thirty documents' worth of memory if nobody closes them. (pdf.js 6
+    // removed the document's own destroy(); the loading task owns it now.)
+    await task.destroy()
   }
 }
 
