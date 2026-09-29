@@ -1,0 +1,129 @@
+diff --git a/ios/ExpoMlkitOcrModule.swift b/ios/ExpoMlkitOcrModule.swift
+index b8efaa280f961b66395c9ad7b5a32598b103ce8a..f86f446ffa68b65b77f33591cacaa89777e79556 100644
+--- a/ios/ExpoMlkitOcrModule.swift
++++ b/ios/ExpoMlkitOcrModule.swift
+@@ -140,93 +140,77 @@ public class ExpoMlkitOcrModule: Module {
+         ])
+       }
+ #else
+-      // Fallback for iOS Simulator arm64-only runtimes where ML Kit cannot be linked.
++      // Apple Vision — the engine behind iOS Live Text.
++      //
++      // HBCField patch (patches/expo-mlkit-ocr@0.2.7.patch):
++      //  1. Boxes are measured against the UPRIGHT image. Vision reports
++      //     coordinates relative to the image AFTER the orientation it is given
++      //     is applied, but the original scaled them by the raw CGImage size,
++      //     which for a portrait photo (stored landscape, EXIF .right) swaps
++      //     width and height. The card parser reads positions as fractions of
++      //     the upright photo, the way Android's ML Kit reports them.
++      //  2. No per-word boxes. The app reads lines only, and each word box was
++      //     a separate call into Vision — most of the cost on a dense page.
++      //  3. The app's languages are named rather than guessed, which is faster
++      //     and better at umlauts and accents.
+       guard let cgImage = image.cgImage else {
+         promise.reject("IMAGE_LOAD_FAILED", "Failed to access CGImage for: \(filePath)")
+         return
+       }
+ 
++      let imageSize = CGSize(
++        width: image.size.width * image.scale,
++        height: image.size.height * image.scale
++      )
++
+       let request = VNRecognizeTextRequest { request, error in
+         if let error = error {
+           promise.reject("RECOGNITION_FAILED", "Text recognition failed: \(error.localizedDescription)")
+           return
+         }
+ 
+-        let observationsUnsorted = (request.results as? [VNRecognizedTextObservation]) ?? []
+-        // Keep output stable: sort top-to-bottom, then left-to-right.
+-        let observations = observationsUnsorted.sorted { a, b in
++        let observations = ((request.results as? [VNRecognizedTextObservation]) ?? []).sorted { a, b in
+           if a.boundingBox.minY != b.boundingBox.minY {
+             return a.boundingBox.minY > b.boundingBox.minY
+           }
+           return a.boundingBox.minX < b.boundingBox.minX
+         }
+-        let imageSize = CGSize(width: cgImage.width, height: cgImage.height)
+ 
+         var lines: [[String: Any]] = []
+         var lineRects: [CGRect] = []
+         var fullTextParts: [String] = []
++        lines.reserveCapacity(observations.count)
+ 
+         for obs in observations {
+           guard let top = obs.topCandidates(1).first else { continue }
+-
+           let lineText = top.string
+           fullTextParts.append(lineText)
+-
+-          let lineRectNorm = obs.boundingBox
+-          lineRects.append(lineRectNorm)
+-
+-          var elements: [[String: Any]] = []
+-
+-          // Try to create word-level elements with per-range bounding boxes when available.
+-          let words = lineText.split(whereSeparator: { $0.isWhitespace }).map(String.init)
+-          var searchStart = lineText.startIndex
+-
+-          for word in words {
+-            guard let range = lineText.range(of: word, range: searchStart..<lineText.endIndex) else {
+-              continue
+-            }
+-            searchStart = range.upperBound
+-
+-            if let wordRect = try? top.boundingBox(for: range) {
+-              elements.append([
+-                "text": word,
+-                "boundingBox": denormalizeVisionRect(wordRect.boundingBox, imageSize: imageSize)
+-              ])
+-            } else {
+-              // Fallback to line bounding box if Vision can't provide per-word boxes.
+-              elements.append([
+-                "text": word,
+-                "boundingBox": denormalizeVisionRect(lineRectNorm, imageSize: imageSize)
+-              ])
+-            }
+-          }
+-
++          lineRects.append(obs.boundingBox)
+           lines.append([
+             "text": lineText,
+-            "boundingBox": denormalizeVisionRect(lineRectNorm, imageSize: imageSize),
+-            "elements": elements
++            "boundingBox": denormalizeVisionRect(obs.boundingBox, imageSize: imageSize),
++            "elements": [] as [[String: Any]]
+           ])
+         }
+ 
+         let fullText = fullTextParts.joined(separator: "\n")
+         let blockRectNorm = unionRects(lineRects) ?? .zero
+ 
+-        let blocks: [[String: Any]] = [
+-          [
+-            "text": fullText,
+-            "boundingBox": denormalizeVisionRect(blockRectNorm, imageSize: imageSize),
+-            "lines": lines
+-          ]
+-        ]
+-
+         promise.resolve([
+           "text": fullText,
+-          "blocks": blocks
++          "blocks": [
++            [
++              "text": fullText,
++              "boundingBox": denormalizeVisionRect(blockRectNorm, imageSize: imageSize),
++              "lines": lines
++            ]
++          ]
+         ])
+       }
+ 
+       request.recognitionLevel = .accurate
+       request.usesLanguageCorrection = true
++      request.recognitionLanguages = ["de-DE", "en-US", "fr-FR", "it-IT", "es-ES"]
+ 
+       let handler = VNImageRequestHandler(
+         cgImage: cgImage,

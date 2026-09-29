@@ -41,6 +41,9 @@ overrides:
   multer@<2.3.0: ^2.3.0
 
 patchedDependencies:
+  expo-mlkit-ocr@0.2.7:
+    hash: zumozwbb2er64lj552mhktvzui
+    path: patches/expo-mlkit-ocr@0.2.7.patch
   react-native-draggable-flatlist@4.0.3:
     hash: okbznilxmd5c7tzfcoz5r5kpoq
     path: patches/react-native-draggable-flatlist@4.0.3.patch
@@ -670,7 +673,7 @@ importers:
         version: 19.0.8(expo@54.0.35)
       expo-mlkit-ocr:
         specifier: ^0.2.7
-        version: 0.2.7(expo@54.0.35)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0)
+        version: 0.2.7(patch_hash=zumozwbb2er64lj552mhktvzui)(expo@54.0.35)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0)
       expo-navigation-bar:
         specifier: ~5.0.10
         version: 5.0.10(expo@54.0.35)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0)
@@ -15933,7 +15936,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  expo-mlkit-ocr@0.2.7(expo@54.0.35)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0):
+  expo-mlkit-ocr@0.2.7(patch_hash=zumozwbb2er64lj552mhktvzui)(expo@54.0.35)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0):
     dependencies:
       expo: 54.0.35(@babel/core@7.29.0)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(react-native-webview@13.16.1(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0)
       react: 19.1.0

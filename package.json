@@ -41,7 +41,8 @@
       "multer@<2.3.0": "^2.3.0"
     },
     "patchedDependencies": {
-      "react-native-draggable-flatlist@4.0.3": "patches/react-native-draggable-flatlist@4.0.3.patch"
+      "react-native-draggable-flatlist@4.0.3": "patches/react-native-draggable-flatlist@4.0.3.patch",
+      "expo-mlkit-ocr@0.2.7": "patches/expo-mlkit-ocr@0.2.7.patch"
     },
     "allowNonAppliedPatches": true
   },

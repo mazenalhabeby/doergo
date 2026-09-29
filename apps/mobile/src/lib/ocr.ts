@@ -97,9 +97,31 @@ export function canReadText(): boolean {
  */
 export async function readBlocks(uri: string): Promise<OcrBlock[]> {
   if (!binding) throw new Error('This build cannot read text from images');
-  const result = await binding.recognizeText(uri);
-  return result.blocks as OcrBlock[];
+  /*
+    ⚠️ BOUNDED. A native reader that never answers is not hypothetical — it is
+    what scanning did on every iPhone while iOS used ML Kit: the promise simply
+    never settled, so the scan screen spun forever and nothing said why. Every
+    caller already turns a throw into "type it in", so a timeout converts a hang
+    into the outcome the member can act on. Vision reads a page in a fraction of
+    a second once its models are ready; the very first read on a device may
+    prepare them, which is why the limit is generous. It only ever catches a hang.
+  */
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const result = await Promise.race([
+      binding.recognizeText(uri),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('Text recognition timed out')), READ_TIMEOUT_MS);
+      }),
+    ]);
+    return result.blocks as OcrBlock[];
+  } finally {
+    clearTimeout(timer);
+  }
 }
+
+/** Long enough for a first read that prepares the models; short of an endless spinner. */
+const READ_TIMEOUT_MS = 30_000;
 
 /**
  * The page as lines, top to bottom, as printed.

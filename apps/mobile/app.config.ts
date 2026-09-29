@@ -250,6 +250,23 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       */
       ['expo-sqlite', { useSQLCipher: true }],
       /*
+        The text reader on iOS is APPLE VISION, not Google ML Kit.
+
+        ⚠️ Scanning — business cards, documents, receipts — did nothing at all
+        on iPhones while Android read fine. The ML Kit path in expo-mlkit-ocr
+        builds its recognizer as a local and lets it go the moment process()
+        returns, and ML Kit on iOS answers late, empty or never when nothing
+        holds the recognizer. Vision is the engine behind iOS Live Text: native,
+        on-device, reads German and English print well, and ships no Google
+        frameworks. Android keeps ML Kit, which works.
+
+        It also gives iOS its simulator back: the ML Kit pods carry no arm64
+        simulator slice, which is why the app could not run in one on this Mac.
+        Vision's coordinates are corrected by
+        patches/expo-mlkit-ocr@0.2.7.patch — see there.
+      */
+      ['expo-mlkit-ocr', { iosEngine: 'vision' }],
+      /*
         Background sync — sending queued work now and then with the app closed.
         Best effort (WorkManager on Android, BGTaskScheduler on iOS) and NATIVE:
         the offline layer checks for the module, so an older build just syncs
