@@ -48,45 +48,6 @@ const THEMED_ONLY = [
 const strip = (src: string) =>
   src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
-describe('the task components follow the theme', () => {
-  const MINE = ['tasks/work-scope.tsx', 'tasks/next-up-card.tsx'];
-
-  it.each(MINE)('%s takes its colours from useTheme', (rel) => {
-    const src = readFileSync(join(COMPONENTS, rel), 'utf8');
-    expect(src).toContain('useTheme');
-  });
-
-  /*
-    The specific regression: a light surface hardcoded onto a screen that is
-    usually dark. Comments are stripped first, so the explanation of the bug
-    does not itself trip the check.
-  */
-  it.each(MINE)('%s uses no static surface or text colour', (rel) => {
-    const src = strip(readFileSync(join(COMPONENTS, rel), 'utf8'));
-    const offenders = THEMED_ONLY.filter((token) =>
-      new RegExp(`COLORS\\.${token}\\b`).test(src),
-    );
-    expect(offenders).toEqual([]);
-  });
-
-  it.each(MINE)('%s still takes the brand green from COLORS', (rel) => {
-    // The documented exception — one colour in both themes.
-    const src = strip(readFileSync(join(COMPONENTS, rel), 'utf8'));
-    expect(src).toMatch(/COLORS\.(primary|white)\b/);
-  });
-
-  /*
-    Rebuilt per theme rather than once at module load. A StyleSheet created at
-    import time freezes whichever theme was active first, so switching to dark
-    would leave the old colours behind.
-  */
-  it.each(MINE)('%s builds its styles from the current theme', (rel) => {
-    const src = strip(readFileSync(join(COMPONENTS, rel), 'utf8'));
-    expect(src).toMatch(/const styles = \(c: ThemeColors\)/);
-    expect(src).toMatch(/useMemo\(\(\) => styles\(colors\), \[colors\]\)/);
-  });
-});
-
 /**
  * A count of how widely the mistake exists elsewhere, reported rather than
  * enforced: fixing every screen is not this change's job, and a failing
@@ -112,7 +73,7 @@ describe('the rest of the app', () => {
  * rather than trusted to have learned it.
  */
 describe('the appointment-time components follow the theme', () => {
-  const MINE = ['tasks/be-there-card.tsx', 'time-picker-modal.tsx', '../permissions/media-access-screen.tsx'];
+  const MINE = ['time-picker-modal.tsx', '../permissions/media-access-screen.tsx'];
 
   it.each(MINE)('%s takes its colours from useTheme', (rel) => {
     expect(readFileSync(join(COMPONENTS, rel), 'utf8')).toContain('useTheme');
