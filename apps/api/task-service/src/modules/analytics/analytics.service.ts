@@ -62,13 +62,31 @@ export class AnalyticsService {
       -- A shift belongs to the day it STARTS on, in its own time zone. The UTC
       -- date put a US evening shift (18:00 New York = 22:00 UTC… or later) on
       -- the next day's row. Read a day either side, then keep the range.
-      te_local AS (
+      te_base AS (
         SELECT te.*, COALESCE(te.timezone, cl.timezone, 'UTC') AS zone, cl.name AS space_name,
-               ((te."clockInAt" AT TIME ZONE 'UTC') AT TIME ZONE COALESCE(te.timezone, cl.timezone, 'UTC'))::date AS local_day
+               ((te."clockInAt" AT TIME ZONE 'UTC') AT TIME ZONE COALESCE(te.timezone, cl.timezone, 'UTC'))::date AS local_day,
+               sh."startLocal" AS rota_start_local, sh."endLocal" AS rota_end_local
         FROM "time_entries" te
         LEFT JOIN "company_locations" cl ON cl.id = te."locationId"
+        LEFT JOIN "shifts" sh ON sh.id = te."shiftId"
         WHERE te."userId" = $1 AND te."organizationId" = $4
           AND te."clockInAt" >= ($2::date - 1) AND te."clockInAt" < ($3::date + 2)
+      ),
+      -- The ROTA window, as UTC instants: the stored start, else the shift's
+      -- start on the day; the end is start + the shift's length. Never the
+      -- expected END — approving overtime moves that one, and the rota must not.
+      te_rota AS (
+        SELECT b.*,
+               COALESCE(b."expectedClockInAt",
+                 ((b.local_day + b.rota_start_local::time) AT TIME ZONE b.zone) AT TIME ZONE 'UTC') AS rota_start
+        FROM te_base b
+      ),
+      te_local AS (
+        SELECT r.*,
+               r.rota_start + ((r.rota_end_local::time - r.rota_start_local::time)
+                 + CASE WHEN r.rota_end_local::time <= r.rota_start_local::time THEN interval '24 hours' ELSE interval '0' END) AS rota_end,
+               COALESCE(r."unpaidBreakMinutes", r."breakMinutes", 0) AS unpaid_break
+        FROM te_rota r
       ),
       entries AS (
         SELECT te.local_day AS day,
@@ -76,23 +94,35 @@ export class AnalyticsService {
                MAX(te."clockOutAt") AS clock_out,
                -- The shift they clocked in to: the time stored on the entry,
                -- else the shift's own start/end ("18:00" local).
-               MIN(COALESCE(to_char((te."expectedClockInAt" AT TIME ZONE 'UTC') AT TIME ZONE te.zone, 'HH24:MI'), sh."startLocal")) AS shift_start,
-               MAX(COALESCE(to_char((te."expectedClockOutAt" AT TIME ZONE 'UTC') AT TIME ZONE te.zone, 'HH24:MI'), sh."endLocal")) AS shift_end,
+               MIN(to_char((te.rota_start AT TIME ZONE 'UTC') AT TIME ZONE te.zone, 'HH24:MI')) AS shift_start,
+               MAX(to_char((te.rota_end AT TIME ZONE 'UTC') AT TIME ZONE te.zone, 'HH24:MI')) AS shift_end,
                SUM(COALESCE(te."totalMinutes", 0)) AS minutes,
-               -- Hours IN THE SHIFT: the counted time the app keeps per entry
-               -- (shared counted-time rule — later of clock-in/shift start to
-               -- earlier of clock-out/shift end, minus unpaid rests; approved
-               -- extra time moves the end). An entry never counted falls back
-               -- to its clock time minus breaks.
-               SUM(COALESCE(te."paidMinutes", GREATEST(COALESCE(te."totalMinutes", 0) - COALESCE(te."unpaidBreakMinutes", te."breakMinutes", 0), 0))) AS shift_minutes,
+               /*
+                 Three parts, so the page can add them by what is selected:
+                   planned — inside the rota as if on time: rota start to the
+                             earlier of clock-out and rota end, minus rests;
+                   late    — clock-in after rota start;
+                   extra   — APPROVED overtime: past the rota end up to the
+                             approved end (approval moves expectedClockOutAt),
+                             never past the real clock-out.
+                 An entry with no shift has no rota: all of it is planned.
+               */
+               SUM(CASE WHEN te.rota_start IS NULL OR te.rota_end IS NULL
+                        THEN GREATEST(COALESCE(te."totalMinutes", 0) - te.unpaid_break, 0)
+                        ELSE GREATEST(EXTRACT(EPOCH FROM (LEAST(COALESCE(te."clockOutAt", (now() AT TIME ZONE 'UTC')), te.rota_end) - te.rota_start)) / 60 - te.unpaid_break, 0)
+                   END) AS planned_minutes,
+               SUM(CASE WHEN te.rota_start IS NULL OR te.rota_end IS NULL THEN 0
+                        ELSE GREATEST(EXTRACT(EPOCH FROM (LEAST(te."clockInAt", te.rota_end) - te.rota_start)) / 60, 0)
+                   END) AS late_minutes,
+               SUM(CASE WHEN te.rota_end IS NULL OR te."expectedClockOutAt" IS NULL OR te."clockOutAt" IS NULL THEN 0
+                        ELSE GREATEST(EXTRACT(EPOCH FROM (LEAST(te."clockOutAt", te."expectedClockOutAt") - te.rota_end)) / 60, 0)
+                   END) AS extra_minutes,
                SUM(COALESCE(te."breakMinutes", 0)) AS break_minutes,
-               SUM(CASE WHEN 'OVERTIME' = ANY(te."flagReasons") THEN COALESCE(te."totalMinutes", 0) ELSE 0 END) AS ot_minutes,
                bool_or(te."isRemote") AS remote,
                NULLIF(string_agg(DISTINCT COALESCE(te.space_name, te."clockInPlace"), ', '), '') AS location,
                MIN(te.zone) AS tz,
                NULLIF(string_agg(NULLIF(te.notes, ''), ' · '), '') AS note
         FROM te_local te
-        LEFT JOIN "shifts" sh ON sh.id = te."shiftId"
         WHERE te.local_day >= $2::date AND te.local_day <= $3::date
         GROUP BY 1
       ),
@@ -130,9 +160,13 @@ export class AnalyticsService {
         -- implied 14h on site. GREATEST guards a break longer than its shift,
         -- which is a data error and must not net against other rows.
         ROUND(GREATEST(COALESCE(e.minutes, 0) - COALESCE(e.break_minutes, 0), 0) / 60.0, 2) AS "hours",
-        ROUND(COALESCE(e.shift_minutes, 0) / 60.0, 2) AS "hoursInShift",
+        -- Hours in shift as planned; the page takes off Late and adds Overtime
+        -- when those columns are chosen (planned − late + overtime).
+        ROUND(COALESCE(e.planned_minutes, 0) / 60.0, 2) AS "hoursInShift",
+        ROUND(COALESCE(e.planned_minutes, 0) / 60.0, 2) AS "plannedInShift",
+        ROUND(COALESCE(e.late_minutes, 0) / 60.0, 2) AS "late",
         ROUND(COALESCE(e.break_minutes, 0) / 60.0, 2) AS "break",
-        ROUND(COALESCE(e.ot_minutes, 0) / 60.0, 2) AS "overtime",
+        ROUND(COALESCE(e.extra_minutes, 0) / 60.0, 2) AS "overtime",
         COALESCE(j.n, 0) AS "jobs",
         COALESCE(l.reason, '') AS "leaveReason",
         COALESCE(e.location, '') AS "location",
@@ -153,7 +187,7 @@ export class AnalyticsService {
     `;
 
     const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(sql, data.userId, fromStr, toStr, data.organizationId);
-    const numKeys = ['hours', 'hoursInShift', 'break', 'overtime', 'jobs'];
+    const numKeys = ['hours', 'hoursInShift', 'plannedInShift', 'late', 'break', 'overtime', 'jobs'];
     const normalized = rows.map((r) => {
       const o = { ...r };
       for (const k of numKeys) o[k] = o[k] == null ? 0 : Number(o[k]);
@@ -174,6 +208,7 @@ export class AnalyticsService {
       // Key kept as `hours` so saved column choices still find it.
       column('hours', 'col.hoursWorked', 'measure', 'hours'),
       column('hoursInShift', 'col.hoursInShift', 'measure', 'hours'),
+      column('late', 'col.late', 'measure', 'hours'),
       column('break', 'col.break', 'measure', 'hours'),
       column('overtime', 'col.overtime', 'measure', 'hours'),
       column('jobs', 'col.jobs', 'measure', 'number'),

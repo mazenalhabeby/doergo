@@ -70,7 +70,7 @@ function toCSV(result: ReportResult): string {
 // chip and the column it adds cannot be called two different things.
 const TIMESHEET_COLS: string[] = [
   "date", "day", "shiftStart", "shiftEnd", "clockIn", "clockOut", "break", "hours", "hoursInShift",
-  "overtime", "jobs", "leaveReason", "location", "remote", "note", "status",
+  "late", "overtime", "jobs", "leaveReason", "location", "remote", "note", "status",
 ]
 const TIMESHEET_DEFAULT = ["date", "day", "shiftStart", "shiftEnd", "clockIn", "clockOut", "break", "hours", "hoursInShift", "status"]
 /*
@@ -294,9 +294,21 @@ export default function ReportsPage() {
     // Clock-in/out arrive from the backend as 24h "HH:MM" strings. Re-format them
     // to honor the user's 12h/24h preference (set in Settings). Only non-empty
     // values are touched, so blank days still render "—".
+    /*
+      Hours in shift follow the columns chosen: the planned time inside the
+      rota, minus Late when Late is shown, plus approved Overtime when Overtime
+      is shown. Recomputed here so the table, the totals and the CSV/PDF all
+      carry the same number.
+    */
+    const lateOn = keep.has("late")
+    const otOn = keep.has("overtime")
     const rows = result.rows.map((r) => {
       const nr = { ...r }
       for (const k of ["shiftStart", "shiftEnd", "clockIn", "clockOut"]) if (nr[k]) nr[k] = formatSchedule(String(nr[k]))
+      if (nr.plannedInShift !== undefined) {
+        const v = Number(nr.plannedInShift) - (lateOn ? Number(nr.late) || 0 : 0) + (otOn ? Number(nr.overtime) || 0 : 0)
+        nr.hoursInShift = Math.max(0, Math.round(v * 100) / 100)
+      }
       return nr
     })
     return { columns: localizeReportColumns(result.columns.filter((c) => keep.has(c.key)), lang), rows }

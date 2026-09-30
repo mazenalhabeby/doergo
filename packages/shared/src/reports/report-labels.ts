@@ -79,6 +79,7 @@ export const REPORT_LABELS = {
   'col.hoursInShift': { en: 'Hours in shift', de: 'Stunden in der Schicht', es: 'Horas en el turno', fr: 'Heures dans le poste', it: 'Ore nel turno' },
   'col.shiftStart': { en: 'Shift start', de: 'Schichtbeginn', es: 'Inicio del turno', fr: 'Début du poste', it: 'Inizio turno' },
   'col.shiftEnd': { en: 'Shift end', de: 'Schichtende', es: 'Fin del turno', fr: 'Fin du poste', it: 'Fine turno' },
+  'col.late': { en: 'Late', de: 'Verspätung', es: 'Retraso', fr: 'Retard', it: 'Ritardo' },
   'col.break': { en: 'Break', de: 'Pause', es: 'Descanso', fr: 'Pause', it: 'Pausa' },
   'col.overtime': { en: 'Overtime', de: 'Überstunden', es: 'Horas extra', fr: 'Heures supplémentaires', it: 'Straordinario' },
   'col.jobs': { en: 'Jobs', de: 'Aufträge', es: 'Trabajos', fr: 'Interventions', it: 'Interventi' },
