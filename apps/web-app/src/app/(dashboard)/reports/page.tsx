@@ -69,10 +69,16 @@ function toCSV(result: ReportResult): string {
 // Named from the same catalogue as the table headings (`col.<key>`), so the
 // chip and the column it adds cannot be called two different things.
 const TIMESHEET_COLS: string[] = [
-  "date", "day", "clockIn", "clockOut", "hours", "break", "overtime",
-  "jobs", "leaveReason", "location", "remote", "note", "status",
+  "date", "day", "shiftStart", "shiftEnd", "clockIn", "clockOut", "break", "hours", "hoursInShift",
+  "overtime", "jobs", "leaveReason", "location", "remote", "note", "status",
 ]
-const TIMESHEET_DEFAULT = ["date", "day", "clockIn", "clockOut", "hours", "status"]
+const TIMESHEET_DEFAULT = ["date", "day", "shiftStart", "shiftEnd", "clockIn", "clockOut", "break", "hours", "hoursInShift", "status"]
+/*
+  The column key stays `hours` (saved choices keep working); what it holds is
+  clock time minus breaks, so its chip reads "Hours worked" beside "Hours in
+  shift" — two numbers called "Hours" would be read as the same thing.
+*/
+const TIMESHEET_LABEL: Record<string, string> = { hours: "col.hoursWorked" }
 
 /** KPI totals for the measure columns — sum, or average for percentages. */
 function statCards(result: ReportResult): { label: string; value: string; format?: string }[] {
@@ -290,7 +296,7 @@ export default function ReportsPage() {
     // values are touched, so blank days still render "—".
     const rows = result.rows.map((r) => {
       const nr = { ...r }
-      for (const k of ["clockIn", "clockOut"]) if (nr[k]) nr[k] = formatSchedule(String(nr[k]))
+      for (const k of ["shiftStart", "shiftEnd", "clockIn", "clockOut"]) if (nr[k]) nr[k] = formatSchedule(String(nr[k]))
       return nr
     })
     return { columns: localizeReportColumns(result.columns.filter((c) => keep.has(c.key)), lang), rows }
@@ -456,7 +462,7 @@ export default function ReportsPage() {
                                     onClick={() => setTsCols((cur) => (cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key]))}
                                     className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground", isLast && "cursor-default")}
                                   >
-                                    {reportLabel(lang, `col.${key}`, key)}
+                                    {reportLabel(lang, TIMESHEET_LABEL[key] ?? `col.${key}`, key)}
                                   </button>
                                 )
                               })}

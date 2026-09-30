@@ -75,6 +75,10 @@ export const REPORT_LABELS = {
   'col.clockIn': { en: 'Clock in', de: 'Einstempeln', es: 'Entrada', fr: 'Pointage entrée', it: 'Entrata' },
   'col.clockOut': { en: 'Clock out', de: 'Ausstempeln', es: 'Salida', fr: 'Pointage sortie', it: 'Uscita' },
   'col.hours': { en: 'Hours', de: 'Stunden', es: 'Horas', fr: 'Heures', it: 'Ore' },
+  // Clock-based vs shift-based hours. Never "paid": they are counted time.
+  'col.hoursInShift': { en: 'Hours in shift', de: 'Stunden in der Schicht', es: 'Horas en el turno', fr: 'Heures dans le poste', it: 'Ore nel turno' },
+  'col.shiftStart': { en: 'Shift start', de: 'Schichtbeginn', es: 'Inicio del turno', fr: 'Début du poste', it: 'Inizio turno' },
+  'col.shiftEnd': { en: 'Shift end', de: 'Schichtende', es: 'Fin del turno', fr: 'Fin du poste', it: 'Fine turno' },
   'col.break': { en: 'Break', de: 'Pause', es: 'Descanso', fr: 'Pause', it: 'Pausa' },
   'col.overtime': { en: 'Overtime', de: 'Überstunden', es: 'Horas extra', fr: 'Heures supplémentaires', it: 'Straordinario' },
   'col.jobs': { en: 'Jobs', de: 'Aufträge', es: 'Trabajos', fr: 'Interventions', it: 'Interventi' },
