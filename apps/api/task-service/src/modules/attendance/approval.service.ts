@@ -712,6 +712,12 @@ export class ApprovalService {
         isRemote: false,
         totalMinutes,
         breakMinutes: breakMin,
+        // The break row below is unpaid (isPaid defaults to false), so the
+        // unpaid total is the same minutes. Left at its default 0, the entry
+        // claimed a break that reduced nothing: any later recount (an edit,
+        // an approval) and the report's hours-in-shift read the shift an hour
+        // long — 12h for a 06:00–18:00 day with an hour's lunch.
+        unpaidBreakMinutes: breakMin,
         countedStartAt: counted.countedStartAt,
         countedEndAt: counted.countedEndAt,
         paidMinutes: counted.paidMinutes,

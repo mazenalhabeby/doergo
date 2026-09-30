@@ -85,7 +85,14 @@ export class AnalyticsService {
         SELECT r.*,
                r.rota_start + ((r.rota_end_local::time - r.rota_start_local::time)
                  + CASE WHEN r.rota_end_local::time <= r.rota_start_local::time THEN interval '24 hours' ELSE interval '0' END) AS rota_end,
-               COALESCE(r."unpaidBreakMinutes", r."breakMinutes", 0) AS unpaid_break
+               -- Unpaid rest, from the break ROWS (the source of truth: each
+               -- says whether it is paid); an entry with no rows falls back to
+               -- its stored totals. The stored unpaid total alone was 0 on
+               -- hand-added shifts and counted their lunch as work.
+               COALESCE(
+                 (SELECT SUM(COALESCE(b."durationMinutes", 0)) FROM "breaks" b
+                   WHERE b."timeEntryId" = r.id AND b."endedAt" IS NOT NULL AND b."isPaid" = FALSE),
+                 NULLIF(r."unpaidBreakMinutes", 0), r."breakMinutes", 0) AS unpaid_break
         FROM te_rota r
       ),
       entries AS (
