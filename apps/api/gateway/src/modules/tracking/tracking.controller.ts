@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, Inject, Request, Query, ForbiddenEx
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import { Role, SERVICE_NAMES } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -54,6 +55,13 @@ export class TrackingController {
     );
   }
 
+  /*
+    Tracking has its own, more generous limit. A phone coming out of a dead zone
+    sends what it held in a few quick requests, and the general 10/second limit
+    refused them — the phone then lost the points. Points are cheap and bounded
+    (≤500 per batch, validated), so a burst is not a capacity risk here.
+  */
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 150, ttl: 10_000 }, long: { limit: 600, ttl: 60_000 } })
   @Post('location')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Update user location (any authenticated user on a task)' })
@@ -67,6 +75,13 @@ export class TrackingController {
     );
   }
 
+  /*
+    Tracking has its own, more generous limit. A phone coming out of a dead zone
+    sends what it held in a few quick requests, and the general 10/second limit
+    refused them — the phone then lost the points. Points are cheap and bounded
+    (≤500 per batch, validated), so a burst is not a capacity risk here.
+  */
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 150, ttl: 10_000 }, long: { limit: 600, ttl: 60_000 } })
   @Post('location/batch')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Batch-update route points (mobile background tracker flush)' })

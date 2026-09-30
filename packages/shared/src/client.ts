@@ -46,6 +46,7 @@ export * from './timezone-country';
 // UI, so it has to be on the browser-safe entry too.
 export * from './video-guides';
 export * from './assigned-home';
+export * from './tracking/route-points';
 
 // Client-safe constants (pure data — no server deps)
 export * from './constants/attendance';

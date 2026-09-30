@@ -51,6 +51,7 @@ export * from './timezone-country';
 // Which narrated video explains which guided tour. Pure data; rendered by tools/video.
 export * from './video-guides';
 export * from './assigned-home';
+export * from './tracking/route-points';
 
 // Export crypto utilities (Node-only, not in client bundle)
 export * from './utils/crypto';

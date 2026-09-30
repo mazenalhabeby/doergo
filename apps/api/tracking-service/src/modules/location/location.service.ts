@@ -1,3 +1,4 @@
+import { cleanRoutePoints } from '@hbcfield/shared';
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -232,17 +233,41 @@ export class LocationService {
         const lastPoint = await this.prisma.locationHistory.findFirst({
           where: { taskId, userId },
           orderBy: { timestamp: 'desc' },
-          select: { lat: true, lng: true },
+          select: { lat: true, lng: true, timestamp: true },
         });
+
+        /*
+          The same filter the phone applies (shared), so an older app is held
+          to it too: no fix worse than ±50 m, no impossible jumps, nothing timed
+          in the future or before this trip started. Then drop anything already
+          stored — a retry after a lost response must never count the same
+          metres twice.
+        */
+        const earliest = task.routeStartedAt ? task.routeStartedAt.getTime() - 60_000 : -Infinity;
+        const cleaned = cleanRoutePoints(valid, {
+          previous: lastPoint ? { lat: lastPoint.lat, lng: lastPoint.lng, timestamp: lastPoint.timestamp.toISOString() } : null,
+        }).filter((p) => !p.timestamp || Date.parse(p.timestamp) >= earliest);
+
+        const stamped = cleaned.filter((p) => p.timestamp).map((p) => new Date(p.timestamp as string));
+        const known = new Set<number>(
+          stamped.length
+            ? (
+                await this.prisma.locationHistory.findMany({
+                  where: { taskId, userId, timestamp: { in: stamped } },
+                  select: { timestamp: true },
+                })
+              ).map((e) => e.timestamp.getTime())
+            : [],
+        );
+        const fresh = cleaned.filter((p) => !p.timestamp || !known.has(Date.parse(p.timestamp)));
 
         let prevLat = lastPoint?.lat ?? null;
         let prevLng = lastPoint?.lng ?? null;
         let totalIncrement = 0;
 
-        // Build the rows in one pass (accumulating route distance), then insert
-        // them with a single createMany instead of N individual INSERTs in the
-        // transaction — this is the hottest write path (burst flush). (Audit P7.)
-        const rows = valid.map((p) => {
+        // One pass builds the rows and the distance; one createMany inserts
+        // them — this is the hottest write path (burst flush). (Audit P7.)
+        const rows = fresh.map((p) => {
           if (prevLat !== null && prevLng !== null) {
             totalIncrement += haversineDistance(prevLat, prevLng, p.lat, p.lng);
           }
@@ -258,17 +283,19 @@ export class LocationService {
           };
         });
 
-        await this.prisma.$transaction([
-          this.prisma.locationHistory.createMany({ data: rows }),
-          ...(totalIncrement > 0
-            ? [
-                this.prisma.task.update({
-                  where: { id: taskId },
-                  data: { routeDistance: { increment: totalIncrement } },
-                }),
-              ]
-            : []),
-        ]);
+        if (rows.length) {
+          await this.prisma.$transaction([
+            this.prisma.locationHistory.createMany({ data: rows }),
+            ...(totalIncrement > 0
+              ? [
+                  this.prisma.task.update({
+                    where: { id: taskId },
+                    data: { routeDistance: { increment: totalIncrement } },
+                  }),
+                ]
+              : []),
+          ]);
+        }
       }
     }
 
@@ -307,7 +334,7 @@ export class LocationService {
     endedAt: Date,
     points: { lat: number; lng: number; accuracy?: number; timestamp?: string }[],
   ): Promise<void> {
-    const inWindow = points
+    const inWindow = cleanRoutePoints(points)
       .map((p) => ({ ...p, at: p.timestamp ? new Date(p.timestamp) : null }))
       .filter((p): p is typeof p & { at: Date } => !!p.at && !Number.isNaN(p.at.getTime()) && p.at >= startedAt && p.at <= endedAt);
     if (!inWindow.length) return;

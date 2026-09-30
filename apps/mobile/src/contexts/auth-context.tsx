@@ -13,7 +13,7 @@ import {
   clearTokens,
   type User
 } from '../lib/api';
-import { stopRouteTracking } from '../services/background-route-tracking';
+import { forgetRouteData } from '../services/background-route-tracking';
 import { stopBackgroundHeartbeat } from '../services/background-heartbeat';
 import { stopGeofence } from '../services/background-geofence';
 import { purgePushTokenRegistration } from '../hooks/usePushNotifications';
@@ -166,7 +166,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // notification and GPS subscription are torn down immediately — otherwise
     // a distance-based tracker can linger until the device next moves.
     await Promise.all([
-      stopRouteTracking().catch(() => undefined),
+      // …and wipe any route points still held for upload (shared devices).
+      forgetRouteData().catch(() => undefined),
       stopBackgroundHeartbeat().catch(() => undefined),
       stopGeofence().catch(() => undefined),
       // Unregister this device's push token while the session token is still

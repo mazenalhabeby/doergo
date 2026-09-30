@@ -12,6 +12,11 @@ const START = new Date('2026-09-14T08:00:00Z');
 const END = new Date('2026-09-14T08:30:00Z');
 const at = (min: number) => new Date(START.getTime() + min * 60_000).toISOString();
 
+// Points older than 72 h are not a live trip (shared cleanRoutePoints), so the
+// clock is pinned to just after this route rather than to the day the test runs.
+beforeEach(() => jest.spyOn(Date, 'now').mockReturnValue(END.getTime() + 60 * 60_000));
+afterEach(() => jest.restoreAllMocks());
+
 function build(task: Record<string, unknown>, stored: { lat: number; lng: number; timestamp: Date }[] = []) {
   const history = [...stored];
   const prisma: any = {

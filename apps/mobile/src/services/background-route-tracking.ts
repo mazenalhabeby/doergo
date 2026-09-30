@@ -6,6 +6,7 @@ import { trackingApi, ApiError } from '../lib/api';
 import { getAccessToken } from '../lib/api/client';
 import { requestBackgroundLocationConsent } from './location-consent';
 import { checkArrival, setRouteDestination, clearRouteDestination } from './route-arrival';
+import { cleanRoutePoints, type RoutePoint } from '@hbcfield/shared/client';
 
 /**
  * Background route tracking.
@@ -29,23 +30,30 @@ import { checkArrival, setRouteDestination, clearRouteDestination } from './rout
 const ROUTE_TASK = 'ROUTE_TRACKING';
 const ROUTE_TASK_KEY = 'active_route_task_id';
 
-// Log a point roughly every 25 m moved — fine enough to capture turns, coarse
-// enough to be easy on the battery.
-const DISTANCE_INTERVAL_M = 25;
-// Batch radio wake-ups: the OS may hold points up to this long before delivering.
-const DEFERRED_INTERVAL_MS = 12000;
+// A point every ~20 m moved — fine enough to draw every turn. Standing still
+// produces nothing, which is most of what keeps this easy on the battery.
+const DISTANCE_INTERVAL_M = 20;
+// …and at least one every 15 s while moving (Android), so a slow crawl in a
+// jam or the last stretch on foot still draws. iOS decides by distance alone.
+const TIME_INTERVAL_MS = 15_000;
+// Radio wake-ups are the expensive part: the OS may hold points this long and
+// hand them over together, and they go to the server as ONE request.
+const DEFERRED_INTERVAL_MS = 30_000;
+// Largest request the server accepts (BatchTrackingLocationDto).
+const BATCH_MAX_POINTS = 500;
+// The last point kept, so a jump is judged across bursts and app restarts.
+const LAST_POINT_KEY = 'route_last_point';
 
 // Bursts that couldn't be delivered wait here until the next one succeeds.
 const PENDING_KEY = 'route_pending_bursts';
-// Ceiling on what we hold. At ~25 m per point that is roughly 12 km of route —
-// far more than a normal signal gap — and it bounds both the storage write and
-// the catch-up upload. Past it the OLDEST points go, because the recent ones
-// describe where the member is now.
-const MAX_PENDING_POINTS = 500;
-// A burst older than this is not sent. A full working day: the server files a
+// Ceiling on what we hold without signal: at ~20 m per point about 100 km of
+// route, under 1 MB on the phone. Past it the OLDEST points go, because the
+// recent ones describe where the member is now.
+const MAX_PENDING_POINTS = 5000;
+// A burst older than this is not sent. Two working days: the server files a
 // late point only inside its own route's start-to-arrival window, so an old
-// point cannot muddy another route — but a day in a dead zone must still land.
-const MAX_PENDING_AGE_MS = 24 * 60 * 60 * 1000;
+// point cannot muddy another route — but a long dead zone must still land.
+const MAX_PENDING_AGE_MS = 48 * 60 * 60 * 1000;
 
 interface RawLocation {
   coords: { latitude: number; longitude: number; accuracy: number | null };
@@ -123,42 +131,53 @@ async function savePending(bursts: PendingBurst[]): Promise<void> {
  * tracking keeps working against an older backend. Order is preserved
  * (sequential) to keep route distance accurate.
  */
+/** Worth trying again later: no connection, a timeout, the server busy or limiting, or a login being refreshed. */
+function retryable(err: unknown): boolean {
+  if (!(err instanceof ApiError)) return true;
+  const c = err.statusCode;
+  return c === 0 || c === 401 || c === 408 || c === 429 || c >= 500;
+}
+
 async function sendBurst(taskId: string | undefined, points: FlushPoint[]): Promise<FlushPoint[]> {
   if (!batchUnsupported) {
-    try {
-      await trackingApi.updateLocationBatch({ taskId, points });
-      return [];
-    } catch (err) {
-      if (err instanceof ApiError && err.statusCode === 404) {
-        // Endpoint missing — downgrade permanently and fall through.
-        batchUnsupported = true;
-      } else if (err instanceof ApiError && err.statusCode < 500) {
-        // The server understood and refused: the task isn't EN_ROUTE any more,
-        // or this member isn't on it. Retrying can only fail identically, so
-        // drop the burst instead of carrying it forever.
-        console.warn('[Route] Burst rejected, discarding:', err.statusCode);
-        return [];
-      } else {
-        // Offline, timeout, or a server fault — keep the points for next time.
-        console.warn('[Route] Batch flush failed, will retry:', err);
-        return points;
+    // ≤500 per request — a long dead zone goes up as a few requests, never one per point.
+    for (let at = 0; at < points.length; at += BATCH_MAX_POINTS) {
+      const chunk = points.slice(at, at + BATCH_MAX_POINTS);
+      try {
+        await trackingApi.updateLocationBatch({ taskId, points: chunk });
+      } catch (err) {
+        if (err instanceof ApiError && err.statusCode === 404) {
+          // Endpoint missing (an older server) — downgrade and send the rest one by one.
+          batchUnsupported = true;
+          return sendOneByOne(taskId, points.slice(at));
+        }
+        if (retryable(err)) {
+          // Offline, rate-limited, or a server fault — keep this chunk and the rest.
+          console.warn('[Route] Batch not delivered, will retry:', err);
+          return points.slice(at);
+        }
+        // The server understood and refused (not on this job any more, bad
+        // data): retrying can only fail the same way, so this chunk goes.
+        console.warn('[Route] Burst rejected, discarding:', (err as ApiError).statusCode);
       }
     }
+    return [];
   }
+  return sendOneByOne(taskId, points);
+}
 
-  const failed: FlushPoint[] = [];
-  for (const p of points) {
+/** Older servers only. Stops at the first point that should be retried and keeps it and everything after. */
+async function sendOneByOne(taskId: string | undefined, points: FlushPoint[]): Promise<FlushPoint[]> {
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
     try {
       await trackingApi.updateLocation({ lat: p.lat, lng: p.lng, accuracy: p.accuracy, taskId });
     } catch (err) {
-      if (err instanceof ApiError && err.statusCode < 500 && err.statusCode !== 404) {
-        console.warn('[Route] Point rejected, discarding:', err.statusCode);
-        continue;
-      }
-      failed.push(p);
+      if (retryable(err) || (err instanceof ApiError && err.statusCode === 404)) return points.slice(i);
+      console.warn('[Route] Point rejected, discarding:', (err as ApiError).statusCode);
     }
   }
-  return failed;
+  return [];
 }
 
 /**
@@ -232,12 +251,18 @@ TaskManager.defineTask(ROUTE_TASK, async ({ data, error }: any) => {
   // can't see the React tree.
   const taskId = (await SecureStore.getItemAsync(ROUTE_TASK_KEY)) || undefined;
 
-  const points = locations.map((l) => ({
+  const raw = locations.map((l) => ({
     lat: l.coords.latitude,
     lng: l.coords.longitude,
     accuracy: l.coords.accuracy ?? undefined,
     timestamp: new Date(l.timestamp).toISOString(),
   }));
+  // The same rule the server applies (shared): no fix worse than ±50 m, no
+  // impossible jump from the last point kept — so the line follows the road
+  // instead of leaping across a field after a tunnel.
+  const previous = await loadLastPoint();
+  const points = cleanRoutePoints(raw, { previous });
+  if (points.length) await saveLastPoint(points[points.length - 1]);
 
   // flushPoints handles batch→per-point fallback and buffers what it can't
   // deliver, and never throws, so the background task can't crash here.
@@ -263,8 +288,17 @@ export async function startRouteTracking(
     // task can recognise arrival without a network round trip.
     await setRouteDestination(taskId, destination?.lat, destination?.lng, destination?.address);
 
-    const alreadyRunning = await TaskManager.isTaskRegisteredAsync(ROUTE_TASK);
+    /*
+      ⚠️ STARTED, NOT MERELY REGISTERED. A task stays registered after the OS
+      stops the location service (a force-stop, a battery saver, an update),
+      and asking only "registered?" returned early here — so a new trip began
+      with GPS off and recorded nothing, silently. Ask whether updates are
+      actually flowing, and start them if not.
+    */
+    const alreadyRunning = await Location.hasStartedLocationUpdatesAsync(ROUTE_TASK).catch(() => false);
     if (alreadyRunning) return true;
+    // A fresh trip judges its first point on its own, not against the last trip's end.
+    await AsyncStorage.removeItem(LAST_POINT_KEY).catch(() => undefined);
 
     // Foreground permission is required to even start; background permission
     // makes it keep going when the screen is off. We start with whatever we
@@ -281,6 +315,7 @@ export async function startRouteTracking(
     await Location.startLocationUpdatesAsync(ROUTE_TASK, {
       accuracy: Location.Accuracy.High, // ~10m — needed to trace roads/turns
       distanceInterval: DISTANCE_INTERVAL_M,
+      timeInterval: TIME_INTERVAL_MS,
       deferredUpdatesInterval: DEFERRED_INTERVAL_MS,
       activityType: Location.ActivityType.AutomotiveNavigation,
       pausesUpdatesAutomatically: false,
@@ -320,22 +355,50 @@ export async function stopRouteTracking(): Promise<void> {
   // What is held belongs to the route that is ending; try to send it with it.
   void flushPendingRoute();
   try {
-    const running = await TaskManager.isTaskRegisteredAsync(ROUTE_TASK);
-    if (running) {
+    const running = await Location.hasStartedLocationUpdatesAsync(ROUTE_TASK).catch(() => false);
+    const registered = await TaskManager.isTaskRegisteredAsync(ROUTE_TASK).catch(() => false);
+    if (running || registered) {
       await Location.stopLocationUpdatesAsync(ROUTE_TASK);
     }
   } catch (err) {
     console.error('[Route] Failed to stop:', err);
   } finally {
     await SecureStore.deleteItemAsync(ROUTE_TASK_KEY).catch(() => undefined);
+    await AsyncStorage.removeItem(LAST_POINT_KEY).catch(() => undefined);
     await clearRouteDestination();
+  }
+}
+
+/**
+ * Sign-out: stop recording and wipe every held point from the phone. Somebody
+ * else may sign in next, and a route is where a person was.
+ */
+export async function forgetRouteData(): Promise<void> {
+  await stopRouteTracking().catch(() => undefined);
+  await AsyncStorage.multiRemove([PENDING_KEY, LAST_POINT_KEY]).catch(() => undefined);
+}
+
+async function loadLastPoint(): Promise<RoutePoint | null> {
+  try {
+    const raw = await AsyncStorage.getItem(LAST_POINT_KEY);
+    return raw ? (JSON.parse(raw) as RoutePoint) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveLastPoint(p: RoutePoint): Promise<void> {
+  try {
+    await AsyncStorage.setItem(LAST_POINT_KEY, JSON.stringify({ lat: p.lat, lng: p.lng, timestamp: p.timestamp }));
+  } catch {
+    /* only costs the jump check across one restart */
   }
 }
 
 /** Is the background route tracker currently registered? */
 export async function isRouteTrackingRunning(): Promise<boolean> {
   try {
-    return await TaskManager.isTaskRegisteredAsync(ROUTE_TASK);
+    return await Location.hasStartedLocationUpdatesAsync(ROUTE_TASK);
   } catch {
     return false;
   }
