@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Upload, Loader2, FileText, AlertTriangle, ShieldCheck, CalendarDays, Pencil } from "lucide-react"
-import { expiryPrompt, expiryReady, formatCalendarDate, suggestExpiry } from "@hbcfield/shared/client"
+import { documentTitleFromText, expiryPrompt, expiryReady, formatCalendarDate, suggestExpiry } from "@hbcfield/shared/client"
 import { documentsApi, uploadToS3, type DocumentTypeRow } from "@/lib/api"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -69,6 +69,7 @@ export function SupplyDocumentDialog({
   const [typeId, setTypeId] = useState("")
   const [file, setFile] = useState<File | null>(null)
   const [expiresOn, setExpiresOn] = useState("")
+  const [docTitle, setDocTitle] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
   /*
     Where the date came from.
@@ -151,6 +152,8 @@ export function SupplyDocumentDialog({
         // The same rule the server runs on an image and the phone runs on a
         // photograph. One set of rules, three places they can run.
         const found = text ? suggestExpiry(text) : null
+        // Its name, from its own heading — "Insurance Confirmation Letter", not "scan_0042".
+        setDocTitle(text ? documentTitleFromText(text) : null)
         if (found) {
           setDateSource("TEXT")
           setExpiresOn(found.iso)
@@ -212,7 +215,7 @@ export function SupplyDocumentDialog({
       return documentsApi.submitOwn({
         stagingKey: key,
         typeId: type.id,
-        title: file.name.replace(/\.[^.]+$/, ""),
+        title: docTitle ?? file.name.replace(/\.[^.]+$/, ""),
         expiresOn: type.hasExpiry ? expiresOn : undefined,
       })
     },

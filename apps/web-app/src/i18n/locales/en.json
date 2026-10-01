@@ -7970,7 +7970,8 @@
       "discardDraft": "Discard",
       "discarded": "Draft discarded",
       "openFailed": "Could not open this document",
-      "answerSignersFirst": "Answer the signing questions below first."
+      "answerSignersFirst": "Answer the signing questions below first.",
+      "namedAs": "Will be filed as “{{title}}”"
     },
     "sign": {
       "title": "Sign document",

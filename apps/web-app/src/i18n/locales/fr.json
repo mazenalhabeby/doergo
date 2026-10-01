@@ -7979,7 +7979,8 @@
       "discardDraft": "Supprimer",
       "discarded": "Brouillon supprimé",
       "openFailed": "Impossible d'ouvrir ce document",
-      "answerSignersFirst": "Répondez d'abord aux questions de signature ci-dessous."
+      "answerSignersFirst": "Répondez d'abord aux questions de signature ci-dessous.",
+      "namedAs": "Sera classé sous « {{title}} »"
     },
     "sign": {
       "title": "Signer le document",

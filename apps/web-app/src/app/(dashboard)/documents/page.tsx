@@ -12,7 +12,7 @@ import {
   type DocumentTypeRow, type MatchCandidateRow, type DraftDocumentRow,
 } from "@/lib/api"
 import {
-  matchBatch, batchIsPublishable, needsScan, mergeMatch, readContent,
+  matchBatch, batchIsPublishable, needsScan, mergeMatch, readContent, documentTitleFromText,
   type FileMatch, type DocumentCadence,
 } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
@@ -50,6 +50,8 @@ type Row = FileMatch & {
   error?: string
   /** True while the file is being read, so the row can say so rather than sit blank. */
   scanning?: boolean
+  /** Its name from its own heading ("Insurance Confirmation Letter"); null = the type's label. */
+  docTitle?: string | null
 }
 
 const MONTHS_KEY = [
@@ -159,7 +161,11 @@ export default function IssueDocumentsPage() {
         let refined: FileMatch | null = null
         try {
           const text = await extractPdfText(file)
-          refined = mergeMatch(matches[i]!, readContent(text, candidatesRef.current))
+          refined = {
+            ...mergeMatch(matches[i]!, readContent(text, candidatesRef.current)),
+            // Named by its own heading, so fourteen files are not all "Employment contract".
+            docTitle: documentTitleFromText(text),
+          } as FileMatch
         } catch {
           refined = null
         }
@@ -442,6 +448,11 @@ export default function IssueDocumentsPage() {
                         <span className="truncate font-mono text-xs text-slate-700 dark:text-slate-300">{row.fileName}</span>
                       </div>
                       <div className="mt-0.5 pl-6 text-[11px] text-slate-400">{fileSize(row.file.size)}</div>
+                      {row.docTitle && (
+                        <div className="mt-0.5 pl-6 text-[11px] text-slate-600 dark:text-slate-300">
+                          {t("documents.issue.namedAs", { title: row.docTitle })}
+                        </div>
+                      )}
                       {row.state === "uploading" && (
                         <div className="mt-1 ml-6 h-1 w-32 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
                           <div className="h-full bg-blue-600 transition-all" style={{ width: `${row.progress * 100}%` }} />
@@ -663,7 +674,7 @@ function PeriodCell({
 
 /** A title a person would recognise in their own document list. */
 function titleFor(row: Row, type: DocumentTypeRow | null, t: (k: string) => string): string {
-  const label = type?.label ?? "Document"
+  const label = row.docTitle || type?.label || "Document"
   if (row.periodMonth && row.periodYear) {
     return `${label} ${t(`documents.months.${MONTHS_KEY[row.periodMonth - 1]}`)} ${row.periodYear}`
   }

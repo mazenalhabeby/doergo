@@ -7979,7 +7979,8 @@
       "discardDraft": "Scarta",
       "discarded": "Bozza scartata",
       "openFailed": "Impossibile aprire questo documento",
-      "answerSignersFirst": "Rispondi prima alle domande sulla firma qui sotto."
+      "answerSignersFirst": "Rispondi prima alle domande sulla firma qui sotto.",
+      "namedAs": "Sarà archiviato come «{{title}}»"
     },
     "sign": {
       "title": "Firma documento",

@@ -46,6 +46,21 @@ const SAME_LINE_TOLERANCE = 2.5;
 */
 const esmImport = new Function('s', 'return import(s)') as (s: string) => Promise<any>;
 
+/*
+  ⚠️ pdf.js 6 calls Promise.withResolvers, which Node only has from 22. The
+  containers run Node 20, so EVERY PDF threw inside getDocument, the catch
+  below turned that into "no lines", and PDF receipts were silently never read
+  in production. Supplied once, here, before pdf.js loads.
+*/
+if (typeof (Promise as any).withResolvers !== 'function') {
+  (Promise as any).withResolvers = function withResolvers<T>() {
+    let resolve!: (v: T) => void;
+    let reject!: (e: unknown) => void;
+    const promise = new Promise<T>((a, b) => { resolve = a; reject = b; });
+    return { promise, resolve, reject };
+  };
+}
+
 /**
  * The visual lines of a PDF, top to bottom, left to right within each line.
  *

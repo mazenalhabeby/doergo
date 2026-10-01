@@ -7970,7 +7970,8 @@
       "discardDraft": "Descartar",
       "discarded": "Borrador descartado",
       "openFailed": "No se pudo abrir este documento",
-      "answerSignersFirst": "Responde primero a las preguntas de firma de abajo."
+      "answerSignersFirst": "Responde primero a las preguntas de firma de abajo.",
+      "namedAs": "Se archivará como «{{title}}»"
     },
     "sign": {
       "title": "Firmar documento",

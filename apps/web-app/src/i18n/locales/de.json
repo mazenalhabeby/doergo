@@ -7970,7 +7970,8 @@
       "discardDraft": "Verwerfen",
       "discarded": "Entwurf verworfen",
       "openFailed": "Dieses Dokument konnte nicht geöffnet werden",
-      "answerSignersFirst": "Bitte zuerst die Signaturfragen unten beantworten."
+      "answerSignersFirst": "Bitte zuerst die Signaturfragen unten beantworten.",
+      "namedAs": "Wird abgelegt als „{{title}}“"
     },
     "sign": {
       "title": "Dokument unterschreiben",
