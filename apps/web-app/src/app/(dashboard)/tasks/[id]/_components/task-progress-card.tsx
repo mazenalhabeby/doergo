@@ -92,7 +92,8 @@ export function TaskProgressCard({
   const currentStepIndex = getStepIndex(taskStatus, steps, workflowStatuses)
 
   const elapsedTime = (() => {
-    if (isCompleted && routeEndedAt && routeStartedAt) {
+    // The drive ends at the arrival, not at the job's completion.
+    if (routeEndedAt && routeStartedAt) {
       return formatDurationMs(new Date(routeEndedAt).getTime() - new Date(routeStartedAt).getTime())
     }
     if (routeStartedAt) {

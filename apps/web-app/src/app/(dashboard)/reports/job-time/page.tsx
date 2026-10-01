@@ -48,7 +48,7 @@ export default function JobTimeReportPage() {
 
   const { data: members } = useQuery({
     queryKey: ["employees", "job-time-picker"],
-    queryFn: () => employeesApi.list({ status: "active", limit: 200 }),
+    queryFn: () => employeesApi.list({ status: "active", limit: 100 }), // the server's own maximum
     enabled: seesOthers,
     staleTime: 5 * 60_000,
   })

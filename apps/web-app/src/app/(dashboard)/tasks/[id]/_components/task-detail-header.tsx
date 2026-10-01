@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import type { Task } from "@/lib/api"
+import { formatDuration } from "@hbcfield/shared/client"
+import { useJobTime } from "@/hooks/use-job-time"
 import type { User as AuthUser } from "@/contexts/auth-context"
 import { useTranslation } from "react-i18next"
 import Link from "next/link"
@@ -176,7 +177,7 @@ export function TaskDetailHeader({
         </span>
 
         {/* Time on task — DB-anchored, live; same value on web, mobile & for admins */}
-        <TaskTimer acceptedAt={task.acceptedAt} completedAt={task.completedAt} />
+        <TaskTimer taskId={task.id} paused={!!task.pausedAt} />
 
         {/*
           Transitions as pills — offered exactly when one exists.
@@ -269,41 +270,23 @@ export function TaskDetailHeader({
 }
 
 // ---------------------------------------------------------------------------
-// TaskTimer — live "time on task", anchored to the DB acceptedAt timestamp so
-// it is identical on web & mobile and never resets. Ticks while running, shows
-// the frozen total once completedAt is set. Renders nothing before accept.
+// TaskTimer — the job's WORKING time (shared tasks/job-time.ts), the same
+// figure as the job-time card below it. It used to count from Accepted to
+// Completed — the evening before, every night and the weekend — and read
+// "13d 17h" above a card saying 68h of work.
 // ---------------------------------------------------------------------------
-function formatTaskDuration(totalSeconds: number): string {
-  const s = Math.max(0, Math.floor(totalSeconds))
-  const d = Math.floor(s / 86400)
-  const h = Math.floor((s % 86400) / 3600)
-  const m = Math.floor((s % 3600) / 60)
-  return d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m`
-}
-
-function TaskTimer({ acceptedAt, completedAt }: { acceptedAt?: string | null; completedAt?: string | null }) {
+function TaskTimer({ taskId, paused }: { taskId: string; paused: boolean }) {
   const { t } = useTranslation()
-  const accepted = acceptedAt ? new Date(acceptedAt).getTime() : null
-  const end = completedAt ? new Date(completedAt).getTime() : null
-  const [now, setNow] = useState(() => Date.now())
-
-  useEffect(() => {
-    if (!accepted || end) return // not started, or frozen → no ticking
-    const id = window.setInterval(() => setNow(Date.now()), 1000)
-    return () => window.clearInterval(id)
-  }, [accepted, end])
-
-  if (!accepted) return null
-  const elapsed = ((end ?? now) - accepted) / 1000
-  const running = !end
-
+  const { time, live } = useJobTime(taskId, paused)
+  if (!time || time.working + time.travel === 0) return null
   return (
     <span
       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold tabular-nums bg-muted text-foreground"
-      title={running ? t("tasks.timer.sinceAccepted") : t("tasks.timer.totalOnTask")}
+      title={t("tasks.jobTime.title")}
     >
       <Clock className="size-3" />
-      {formatTaskDuration(elapsed)}
+      {formatDuration(time.working)}
+      {live ? <span className="size-1.5 rounded-full bg-green-500" /> : null}
     </span>
   )
 }

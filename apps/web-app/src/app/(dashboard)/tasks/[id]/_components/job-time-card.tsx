@@ -1,11 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Timer } from "lucide-react"
-import { formatDuration, jobTimeAt } from "@hbcfield/shared/client"
-import { tasksApi } from "@/lib/api"
+import { formatDuration } from "@hbcfield/shared/client"
+import { useJobTime } from "@/hooks/use-job-time"
 import { UserAvatar } from "@/components/user-avatar"
 
 const KINDS = ["travel", "working", "blocked"] as const
@@ -23,19 +21,9 @@ const TEXT = { travel: "text-sky-600 dark:text-sky-400", working: "text-green-60
  */
 export function JobTimeCard({ taskId, paused }: { taskId: string; paused: boolean }) {
   const { t } = useTranslation()
-  const { data } = useQuery({ queryKey: ["task-time", taskId], queryFn: () => tasksApi.jobTime(taskId), staleTime: 60_000 })
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    if (!data?.live || paused) return
-    setNow(Date.now())
-    const timer = setInterval(() => setNow(Date.now()), 30_000)
-    return () => clearInterval(timer)
-  }, [data?.live, paused])
-
-  const time = jobTimeAt(data, null, now)
+  const { data, time, live } = useJobTime(taskId, paused)
   if (!data || !time || time.travel + time.working + time.blocked === 0) return null
   const sum = time.travel + time.working + time.blocked
-  const live = !paused && !!time.live
   const name = (p?: { firstName: string; lastName: string } | null) => (p ? `${p.firstName} ${p.lastName}`.trim() : "")
   const started = data.startedBy
 
