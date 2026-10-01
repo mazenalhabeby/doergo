@@ -58,7 +58,7 @@ describe('TasksService.updateStatus — clocked in to start work', () => {
     taskEvent: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
     companyLocation: { findUnique: jest.fn() },
     organization: { findUnique: jest.fn() },
-    spaceAssignment: { findMany: jest.fn().mockResolvedValue([]) },
+    spaceAssignment: { findMany: jest.fn() },
     spaceWorkflow: { findFirst: jest.fn().mockResolvedValue(null) },
     user: { findMany: jest.fn() },
     timeEntry: { findFirst: jest.fn() },
@@ -78,6 +78,7 @@ describe('TasksService.updateStatus — clocked in to start work', () => {
     prisma.companyLocation.findUnique.mockResolvedValue({ enabledModules: ['time_tracking'], organization: { enabledModules: [] } });
     prisma.user.findMany.mockResolvedValue([{ id: 'mike', firstName: 'Mike', lastName: 'Weber' }]);
     prisma.timeEntry.findFirst.mockResolvedValue(null);
+    prisma.spaceAssignment.findMany.mockResolvedValue([]);
     const module = await Test.createTestingModule({
       providers: [
         TasksService, { provide: JobPauseService, useValue: {} }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
@@ -126,11 +127,24 @@ describe('TasksService.updateStatus — clocked in to start work', () => {
     expect(prisma.timeEntry.findFirst).not.toHaveBeenCalled();
   });
 
-  it('asks nothing where the workspace runs no clock', async () => {
+  it('asks nothing of somebody with no clock anywhere, where the job\'s workspace runs none', async () => {
     prisma.task.findUnique.mockResolvedValue(task());
     prisma.companyLocation.findUnique.mockResolvedValue({ enabledModules: ['tasks'], organization: { enabledModules: ['time_tracking'] } });
+    // Mike's only workspace has Time Tracking off too.
+    prisma.spaceAssignment.findMany.mockResolvedValue([{ userId: 'mike', space: { enabledModules: [], organization: { enabledModules: ['time_tracking'] } } }]);
     await expect(service.updateStatus({ ...mike, status: TaskStatus.EN_ROUTE })).resolves.toBeDefined();
     expect(prisma.timeEntry.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('follows the person: a warehouse job with no clock still needs the worker who clocks in at the office', async () => {
+    prisma.task.findUnique.mockResolvedValue(task());
+    prisma.companyLocation.findUnique.mockResolvedValue({ enabledModules: [], organization: { enabledModules: ['time_tracking'] } });
+    prisma.spaceAssignment.findMany.mockResolvedValue([{ userId: 'mike', space: { enabledModules: ['time_tracking'], organization: { enabledModules: [] } } }]);
+    const err = await service.updateStatus({ ...mike, status: TaskStatus.EN_ROUTE }).catch((e) => e);
+    expect(err.getResponse()).toMatchObject({ code: 'NOT_CLOCKED_IN' });
+    // Clocked in at the office: the warehouse job starts.
+    prisma.timeEntry.findFirst.mockResolvedValue({ id: 'e1' });
+    await expect(service.updateStatus({ ...mike, status: TaskStatus.EN_ROUTE })).resolves.toBeDefined();
   });
 
   it('never holds an external member to a clock they do not have', async () => {

@@ -12,7 +12,8 @@
  * then refused, which reads to the member as the product being broken; a picker
  * built on a stricter one hides a site they are standing in.
  */
-export function activeAssignmentWhere(userId: string, now: Date = new Date()) {
+/** `userId` may be several people at once (`{ in: [...] }`) — the window is the same rule. */
+export function activeAssignmentWhere(userId: string | { in: string[] }, now: Date = new Date()) {
   return {
     userId,
     effectiveFrom: { lte: now },

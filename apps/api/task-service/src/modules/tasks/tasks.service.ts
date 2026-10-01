@@ -53,6 +53,7 @@ import {
   type StepFormAnswers,
   CLOCK_GATE_CODES,
   spaceRunsClock,
+  activeAssignmentWhere,
   stepCapabilities,
   stepStartsWork,
 } from '@hbcfield/shared';
@@ -1671,7 +1672,7 @@ export class TasksService {
       : null;
     const orgModules = where?.organization?.enabledModules
       ?? (await this.prisma.organization.findUnique({ where: { id: task.organizationId }, select: { enabledModules: true } }))?.enabledModules;
-    if (!spaceRunsClock(where?.enabledModules as string[] | null | undefined, orgModules as string[] | null | undefined)) return;
+    const jobRunsClock = spaceRunsClock(where?.enabledModules as string[] | null | undefined, orgModules as string[] | null | undefined);
 
     let workerIds: string[];
     if (moverIsOnTheJob) {
@@ -1682,15 +1683,27 @@ export class TasksService {
     }
     if (workerIds.length === 0) return;
 
+    /*
+      ⚠️ THE RULE FOLLOWS THE PERSON, NOT ONLY THE JOB'S WORKSPACE. A job in a
+      workspace with Time Tracking off (a warehouse, a depot) was started by
+      somebody who clocks in every day at the office — the job's time and the
+      timesheet disagreed again. So: where the job's workspace runs no clock,
+      the worker is still held to one if they can clock in ANYWHERE (an active
+      assignment to a workspace that runs Time Tracking — the same answer as
+      their clock-in list). Somebody with no clock at all is never asked.
+    */
+    const heldIds = jobRunsClock ? workerIds : await this.workersWithAClock(workerIds, task.organizationId);
+    if (heldIds.length === 0) return;
+
     // External members hold no clock (EXTERNAL_FORBIDDEN_MODULES): never theirs to be on.
-    const workers = await this.prisma.user.findMany({
-      where: { id: { in: workerIds }, organizationId: task.organizationId, isExternal: false },
+    const held = await this.prisma.user.findMany({
+      where: { id: { in: heldIds }, organizationId: task.organizationId, isExternal: false },
       select: { id: true, firstName: true, lastName: true },
     });
-    if (workers.length === 0) return;
+    if (held.length === 0) return;
 
     const onTheClock = await this.prisma.timeEntry.findFirst({
-      where: { organizationId: task.organizationId, userId: { in: workers.map((w) => w.id) }, status: 'CLOCKED_IN' },
+      where: { organizationId: task.organizationId, userId: { in: held.map((w) => w.id) }, status: 'CLOCKED_IN' },
       select: { id: true },
     });
     if (onTheClock) return;
@@ -1701,12 +1714,29 @@ export class TasksService {
         code: CLOCK_GATE_CODES.SELF,
       });
     }
-    const name = `${workers[0]!.firstName} ${workers[0]!.lastName}`.trim();
+    const name = `${held[0]!.firstName} ${held[0]!.lastName}`.trim();
     throw new BadRequestException({
       message: `${name} is not clocked in. They need to clock in before this job can start.`,
       code: CLOCK_GATE_CODES.ASSIGNEE,
       params: { name },
     });
+  }
+
+  /** Of these people, those who can clock in somewhere — the clock-in list's own rule, in one query. */
+  private async workersWithAClock(workerIds: string[], organizationId: string): Promise<string[]> {
+    const rows = await this.prisma.spaceAssignment.findMany({
+      where: {
+        ...activeAssignmentWhere({ in: workerIds }),
+        space: { organizationId, isActive: true, isRemote: false },
+      },
+      select: { userId: true, space: { select: { enabledModules: true, organization: { select: { enabledModules: true } } } } },
+    });
+    const withClock = new Set(
+      rows
+        .filter((r) => spaceRunsClock(r.space.enabledModules as string[] | null, r.space.organization?.enabledModules as string[] | null))
+        .map((r) => r.userId),
+    );
+    return workerIds.filter((id) => withClock.has(id));
   }
 
   async updateStatus(data: {
