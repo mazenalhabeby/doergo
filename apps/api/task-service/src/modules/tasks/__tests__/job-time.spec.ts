@@ -2,7 +2,7 @@
  * Job time: travel, working and blocked, counted only inside a shift, per person.
  * The rule: packages/shared/src/tasks/job-time.ts.
  */
-import { clockMinutes, exclusiveSpans, jobSpans, joinedJobAt, shiftsWithoutRests, stepTimeKind, workerJobTime, type WorkTimelineEvent } from '@hbcfield/shared';
+import { clockMinutes, exclusiveSpans, jobSpans, jobWindows, joinedJobAt, shiftsWithoutRests, stepTimeKind, workerJobTime, type WorkTimelineEvent } from '@hbcfield/shared';
 
 const T = (hhmm: string) => new Date(`2026-09-29T${hhmm}:00Z`);
 const kindOf = (s: string) => stepTimeKind(s, s === 'EN_ROUTE' ? ['gps', 'timer'] : s === 'BLOCKED' ? ['timer'] : s === 'ACCEPTED' ? ['timer'] : ['timer']);
@@ -89,5 +89,21 @@ describe('one person, one job at a time', () => {
     const tb = workerJobTime(mine.get('b')!, -Infinity, shift);
     // The job moved most recently takes the overlap: 08–10 on A, 10–12 on B.
     expect([ta.working, tb.working]).toEqual([120, 120]);
+  });
+});
+
+describe('handed away', () => {
+  it('a worker taken off the job stops being credited at the hand-over, however long they stay clocked in', () => {
+    const events: WorkTimelineEvent[] = [
+      ev('08:00', 'mike', 'STATUS', 'IN_PROGRESS'),
+      { at: T('10:00'), userId: 'mike', kind: 'LEFT' },
+      ev('10:30', 'sarah', 'RESUMED'),
+    ];
+    const until = T('12:00');
+    const spans = jobSpans(events, until, kindOf);
+    const allDay = [{ start: T('07:00'), end: null }];
+    const share = (who: string) => workerJobTime(exclusiveSpans([{ id: 'j', spans, windows: jobWindows(events, who) }]).get('j')!, -Infinity, allDay).working;
+    expect(share('mike')).toBe(120);
+    expect(share('sarah')).toBe(90);
   });
 });

@@ -7,6 +7,7 @@ import {
   clockMinutes,
   shiftsWithoutRests,
   joinedJobAt,
+  jobWindows,
   jobSpans,
   liveJobKind,
   stepCapabilities,
@@ -25,6 +26,8 @@ type TaskRef = { id: string; workflowId: string | null; spaceId: string | null; 
 type EventRow = { taskId: string; createdAt: Date; userId: string; eventType: TaskEventType; metadata: unknown };
 const PERSON = { select: { id: true, firstName: true, lastName: true } } as const;
 const TIME_EVENTS = [TaskEventType.STATUS_CHANGED, TaskEventType.PAUSED, TaskEventType.RESUMED];
+/** Taken off the job: who is credited changes there (shared jobWindows). */
+const LEAVE_EVENTS = [TaskEventType.UNASSIGNED, TaskEventType.ASSIGNEE_REMOVED];
 /** Built-in closed steps — a custom flow's own final step simply counts nothing after it. */
 const CLOSED_KEYS = ['COMPLETED', 'CLOSED', 'CANCELED'];
 
@@ -64,7 +67,7 @@ export class JobTimeService {
   private async eventsOf(taskIds: string[]): Promise<Map<string, EventRow[]>> {
     const rows = taskIds.length
       ? await this.prisma.taskEvent.findMany({
-          where: { taskId: { in: taskIds }, eventType: { in: TIME_EVENTS } },
+          where: { taskId: { in: taskIds }, eventType: { in: [...TIME_EVENTS, ...LEAVE_EVENTS] } },
           orderBy: { createdAt: 'asc' },
           select: { taskId: true, createdAt: true, userId: true, eventType: true, metadata: true },
           take: 500 * Math.max(1, taskIds.length),
@@ -76,15 +79,20 @@ export class JobTimeService {
   }
 
   private timeline(rows: readonly EventRow[]): WorkTimelineEvent[] {
-    return rows.map((e) => {
+    return rows.flatMap((e): WorkTimelineEvent[] => {
+      if (e.eventType === TaskEventType.UNASSIGNED || e.eventType === TaskEventType.ASSIGNEE_REMOVED) {
+        const m = (e.metadata ?? {}) as { previousWorkerId?: string; assigneeId?: string };
+        const left = m.previousWorkerId ?? m.assigneeId;
+        return left ? [{ at: e.createdAt, userId: left, kind: 'LEFT' }] : [];
+      }
       const m = (e.metadata ?? {}) as MoveMeta;
-      return {
+      return [{
         at: m.occurredAt ?? m.at ?? e.createdAt,
         userId: e.userId,
         kind: e.eventType === TaskEventType.STATUS_CHANGED ? 'STATUS' : e.eventType === TaskEventType.PAUSED ? 'PAUSED' : 'RESUMED',
         status: m.newStatus,
         forUserId: m.forUserId ?? null,
-      };
+      }];
     });
   }
 
@@ -184,9 +192,9 @@ export class JobTimeService {
       const rows = events.get(t.id) ?? [];
       const timeline = this.timeline(rows);
       const kindOf = await kinds(t);
-      return { task: t, rows, kindOf, spans: jobSpans(timeline, until, kindOf), joinedAt: joinedJobAt(timeline, userId) };
+      return { task: t, rows, kindOf, spans: jobSpans(timeline, until, kindOf), joinedAt: joinedJobAt(timeline, userId), windows: jobWindows(timeline, userId) };
     }));
-    const mine = exclusiveSpans(jobs.map((j) => ({ id: j.task.id, spans: j.spans, joinedAt: j.joinedAt })));
+    const mine = exclusiveSpans(jobs.map((j) => ({ id: j.task.id, spans: j.spans, windows: j.windows })));
     const earliest = Math.min(...jobs.map((j) => j.joinedAt ?? Infinity));
     const shifts = (await this.shiftsOf([userId], organizationId, from ?? (Number.isFinite(earliest) ? new Date(earliest) : null), until)).get(userId) ?? [];
     const window = from ? { from, to: until } : { to: until };

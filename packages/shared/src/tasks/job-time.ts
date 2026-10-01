@@ -35,7 +35,8 @@ export interface WorkTimelineEvent {
   at: Date | string;
   /** Who made the move. */
   userId: string;
-  kind: 'STATUS' | 'PAUSED' | 'RESUMED';
+  /** LEFT: `userId` was taken off the job (unassigned, removed from the crew). */
+  kind: 'STATUS' | 'PAUSED' | 'RESUMED' | 'LEFT';
   /** For STATUS: the step moved into. */
   status?: string;
   /** The office moved it FOR this person — it counts as their move. */
@@ -90,6 +91,8 @@ export function jobSpans(
   let since = 0;
   for (const e of sortedEvents(events)) {
     if (e.t > end) break;
+    // Somebody leaving the crew changes who is credited, not what the job is doing.
+    if (e.kind === 'LEFT') continue;
     if (kind && !paused && e.t > since) spans.push({ start: since, end: e.t, kind });
     since = e.t;
     if (e.kind === 'STATUS') { kind = kindOf(e.status ?? ''); paused = false; }
@@ -101,8 +104,28 @@ export function jobSpans(
 
 /** When this person joined the job: their first move on it, or the office's move for them. */
 export function joinedJobAt(events: readonly WorkTimelineEvent[], workerId: string): number | null {
-  const first = sortedEvents(events).find((e) => (e.forUserId ?? e.userId) === workerId);
+  const first = sortedEvents(events).find((e) => e.kind !== 'LEFT' && (e.forUserId ?? e.userId) === workerId);
   return first ? first.t : null;
+}
+
+/**
+ * The stretches a person was ON the job: from their own move (or the office's
+ * move for them) until they are taken off it — and again from their next move,
+ * if they are put back. A worker the job was handed away from stops being
+ * credited at the hand-over, however long they stay clocked in.
+ */
+export function jobWindows(events: readonly WorkTimelineEvent[], workerId: string): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
+  let since: number | null = null;
+  for (const e of sortedEvents(events)) {
+    if (e.kind === 'LEFT') {
+      if (e.userId === workerId && since != null) { out.push([since, e.t]); since = null; }
+      continue;
+    }
+    if (since == null && (e.forUserId ?? e.userId) === workerId) since = e.t;
+  }
+  if (since != null) out.push([since, Infinity]);
+  return out;
 }
 
 /**
@@ -145,14 +168,19 @@ export function workerJobTime(
  * Input: each job's spans and when the person joined it. Output: each job's
  * spans with the overlaps given away, already clipped to the join.
  */
-export function exclusiveSpans(jobs: ReadonlyArray<{ id: string; spans: readonly JobSpan[]; joinedAt: number | null }>): Map<string, JobSpan[]> {
-  type Piece = JobSpan & { id: string };
+export function exclusiveSpans(jobs: ReadonlyArray<{ id: string; spans: readonly JobSpan[]; joinedAt?: number | null; windows?: ReadonlyArray<[number, number]> }>): Map<string, JobSpan[]> {
+  type Piece = JobSpan & { id: string; rank: number };
   const all: Piece[] = [];
   for (const j of jobs) {
-    if (j.joinedAt == null) continue;
+    // The stretches the person was on this job (jobWindows), or from when they joined.
+    const windows = j.windows ?? (j.joinedAt == null ? [] : [[j.joinedAt, Infinity] as [number, number]]);
     for (const sp of j.spans) {
-      const start = Math.max(sp.start, j.joinedAt);
-      if (sp.end > start) all.push({ ...sp, start, id: j.id });
+      for (const [w0, w1] of windows) {
+        const start = Math.max(sp.start, w0);
+        const end = Math.min(sp.end, w1);
+        // Ranked by the span's OWN start: "moved most recently" is about the job, not the window.
+        if (end > start) all.push({ ...sp, start, end, id: j.id, rank: sp.start });
+      }
     }
   }
   const out = new Map<string, JobSpan[]>(jobs.map((j) => [j.id, []]));
@@ -168,7 +196,7 @@ export function exclusiveSpans(jobs: ReadonlyArray<{ id: string; spans: readonly
     active = active.filter((p) => p.end > lo);
     if (!active.length) continue;
     // The most recently entered wins the moment.
-    const win = active.reduce((w, p) => (p.start > w.start ? p : w));
+    const win = active.reduce((w, p) => (p.rank > w.rank ? p : w));
     const list = out.get(win.id)!;
     const last = list[list.length - 1];
     if (last && last.end === lo && last.kind === win.kind) last.end = hi;

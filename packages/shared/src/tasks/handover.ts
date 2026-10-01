@@ -17,7 +17,7 @@
  *     (clock-gate.ts) applies to it. Any move of the job clears it too.
  */
 
-import { joinedJobAt, jobSpans, workerJobTime, type JobTimeKind, type ShiftSpan, type WorkTimelineEvent } from './job-time';
+import { exclusiveSpans, joinedJobAt, jobSpans, jobWindows, workerJobTime, type JobTimeKind, type ShiftSpan, type WorkTimelineEvent } from './job-time';
 
 /** Longest note kept. A handover is a paragraph, not a report. */
 export const HANDOVER_NOTE_MAX = 2000;
@@ -45,7 +45,8 @@ export function workedMinutesOnJob(
   kindOf: (status: string) => JobTimeKind | null,
   shifts?: readonly ShiftSpan[],
 ): number {
-  return workerJobTime(jobSpans(events, until, kindOf), joinedJobAt(events, workerId), shifts ?? null).working;
+  const mine = exclusiveSpans([{ id: 'job', spans: jobSpans(events, until, kindOf), windows: jobWindows(events, workerId) }]).get('job') ?? [];
+  return workerJobTime(mine, joinedJobAt(events, workerId) == null ? null : -Infinity, shifts ?? null).working;
 }
 
 /** What a screen needs to know about a job's pause. */

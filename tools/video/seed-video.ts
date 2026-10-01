@@ -32,6 +32,7 @@ import {
   DEFAULT_WORKFLOW_TEMPLATE,
 } from './shared-bridge.ts';
 import { assertLocalDatabase } from './config.ts';
+import { seedTenDayJob, type StoryState } from './story-ten-day.ts';
 import {
   CLIENTS,
   CLIENT_SITE,
@@ -1657,6 +1658,18 @@ async function main(): Promise<void> {
   const portals = await seedPortal(org.id, spaceIds.clientSite, clientIds);
   const taskIds = await seedTasks(org.id, spaceIds.depot, workflowId, lead.id, crew, clientIds);
   const storyRows = await seedOneJobInFull(org.id, taskIds, crew, lead.id, clientIds);
+  /*
+    The ten-day job of the "Time in HBCField" explainer — only when a snapshot
+    is asked for (`VIDEO_STORY=start|office|live|nextmorning|handover|done`),
+    so every other video's board stays exactly as it was.
+  */
+  if (process.env.VIDEO_STORY) {
+    const story = await seedTenDayJob(prisma, {
+      orgId: org.id, spaceId: spaceIds.depot, workflowId, leadId: lead.id, crew, clientIds,
+      state: process.env.VIDEO_STORY as StoryState,
+    });
+    console.log(`  the ten-day job, snapshot "${story.state}" — task ${story.taskId}`);
+  }
   const routePoints = await seedRoute(taskIds, crew);
   const assetCount = await seedAssets(org.id, spaceIds.depot, crew);
   const invoiceCount = await seedInvoices(org.id, spaceIds.clientSite, owner.id);
