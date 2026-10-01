@@ -392,6 +392,11 @@ export default function TaskDetailPage({
             ...added.map(uid => tasksApi.addAssignee(id, uid)),
           ]
           await Promise.allSettled(ops)
+          // The note for whoever takes the job over — posted here too, not only on a single reassign.
+          if (added.length && reassignNote.trim()) {
+            await tasksApi.addComment(id, reassignNote.trim()).catch(() => undefined)
+            setReassignNote("")
+          }
           notify.success(t("tasks.detail.assigneesUpdated"))
           queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
         }}

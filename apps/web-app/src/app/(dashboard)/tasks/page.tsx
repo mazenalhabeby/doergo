@@ -1768,6 +1768,11 @@ export default function TasksPage() {
             ...added.map(id => tasksApi.addAssignee(selectedTaskId, id)),
           ]
           const results = await Promise.allSettled(ops)
+          // The note for whoever takes the job over (handover still owed) — posted on the job.
+          if (added.length && reassignNote.trim()) {
+            await tasksApi.addComment(selectedTaskId, reassignNote.trim()).catch(() => undefined)
+            setReassignNote("")
+          }
           const failed = results.filter(r => r.status === "rejected").length
           if (failed > 0) {
             restoreTasksCache(queryClient, snapshot)
