@@ -1,0 +1,288 @@
+{
+ "lang": "en",
+ "chapters": [
+  {
+   "id": "intro",
+   "phrases": [
+    {
+     "text": "Every minute you work in HBCField is measured by two clocks.",
+     "pause": 0.55
+    },
+    {
+     "text": "The first is your shift. It starts when you clock in, and stops when you clock out. That is your working day.",
+     "pause": 0.55
+    },
+    {
+     "text": "The second is job time: the minutes you spend on one job.",
+     "pause": 0.55
+    },
+    {
+     "text": "And one rule sits under everything else in this video.",
+     "pause": 0.55
+    },
+    {
+     "text": "Job time only ever counts inside your shift. Never before you clock in. Never after you clock out.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "clock",
+   "phrases": [
+    {
+     "text": "You clock in on your phone when you arrive.",
+     "pause": 0.55
+    },
+    {
+     "text": "At a site with an address, the phone checks that you are really there. Working away from a site is possible only where your workspace allows it.",
+     "pause": 0.55
+    },
+    {
+     "text": "During the day you take your rests. A rest is cut out of your time, and out of any job you are on.",
+     "pause": 0.55
+    },
+    {
+     "text": "When the day is done, you clock out. From clock in to clock out, minus the rests: that is your shift.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "gate",
+   "phrases": [
+    {
+     "text": "A job can only start when the person doing it is clocked in. In the office, out on the road, on the phone and on the web.",
+     "pause": 0.55
+    },
+    {
+     "text": "If you tap a step that starts work, and you are not clocked in, the app does not just refuse.",
+     "pause": 0.55
+    },
+    {
+     "text": "It offers one button: clock in, and start work. One tap does both.",
+     "pause": 0.55
+    },
+    {
+     "text": "And if your phone dies on site, the office can start the job for you. But only with a reason, and never before your clock in.",
+     "pause": 0.55
+    },
+    {
+     "text": "The job's history then says exactly who did it, for whom, and why. And you get a message.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "steps",
+   "phrases": [
+    {
+     "text": "A job moves through steps, and each step counts as a different kind of time.",
+     "pause": 0.55
+    },
+    {
+     "text": "Accepting a job, the evening before, counts nothing.",
+     "pause": 0.55
+    },
+    {
+     "text": "From On the way until you arrive is travel.",
+     "pause": 0.55
+    },
+    {
+     "text": "From Start work until Complete is working time. That is the number people mean when they ask how long a job took.",
+     "pause": 0.55
+    },
+    {
+     "text": "If something stops you, you report an issue. From that moment until you resume, the time is blocked. It is kept apart, so a missing part never looks like slow work.",
+     "pause": 0.55
+    },
+    {
+     "text": "None of this needs a timer running. Every tap is saved with its own time, even without signal, and the times are worked out from those moments.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "rules",
+   "phrases": [
+    {
+     "text": "Two more rules keep the numbers honest.",
+     "pause": 0.55
+    },
+    {
+     "text": "First: job time only counts while you are clocked in, and your rests are taken out.",
+     "pause": 0.55
+    },
+    {
+     "text": "Second: you can only be on one job at a time. If two of your jobs are open at once, each minute goes to the job you moved last.",
+     "pause": 0.55
+    },
+    {
+     "text": "So the hours on your jobs can never add up to more than the hours on your timesheet. What a client is billed, and what you worked, come from the same moments.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "clockout",
+   "phrases": [
+    {
+     "text": "So what happens when your shift ends, and the job is not finished?",
+     "pause": 0.55
+    },
+    {
+     "text": "When you clock out, the app shows the jobs you are still working on. For each one, you can finish it, or leave a handover note: what you did, and what is left.",
+     "pause": 0.55
+    },
+    {
+     "text": "Either way, the job pauses at the exact minute you clock out. Nothing counts overnight.",
+     "pause": 0.55
+    },
+    {
+     "text": "And clocking out is never blocked. If your phone is dead, or the shift is closed for you, the job still pauses. It is simply marked: no handover yet.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "morning",
+   "phrases": [
+    {
+     "text": "If you did not write a note, the app asks you every time you open it, until you do. It never stops you from clocking in.",
+     "pause": 0.55
+    },
+    {
+     "text": "Once you are clocked in, the paused job is right there. Resume work, and your time starts counting again from that tap.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "tendays",
+   "phrases": [
+    {
+     "text": "Now let's follow one big job, from start to finish. A boiler room replacement at Pilgrove Hotels. It takes ten working days.",
+     "pause": 0.55
+    },
+    {
+     "text": "Days one to four belong to Tobias.",
+     "pause": 0.55
+    },
+    {
+     "text": "On day one he clocks in, taps On the way, and arrives thirty minutes later. That half hour is the job's only travel.",
+     "pause": 0.55
+    },
+    {
+     "text": "Every morning after that he clocks in, drives to the hotel, and taps Resume work on site. The drive is on his shift, but not on the job.",
+     "pause": 0.55
+    },
+    {
+     "text": "His lunch is taken out. At half past three he clocks out, and the job pauses until the next morning.",
+     "pause": 0.55
+    },
+    {
+     "text": "On day three, a pump part is missing. Tobias reports an issue. One hour and twenty minutes are blocked, until the part arrives and he resumes.",
+     "pause": 0.55
+    },
+    {
+     "text": "On day four, his phone dies before he clocks out. The shift is closed for him, the job pauses, and it is marked: no handover yet.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "handover",
+   "phrases": [
+    {
+     "text": "Day five. Tobias is off sick, and Mara, in the office, gives the job to Priya.",
+     "pause": 0.55
+    },
+    {
+     "text": "Before she does, she is warned. Tobias has not written a handover yet, and he has worked twenty-eight hours and twenty minutes on this job.",
+     "pause": 0.55
+    },
+    {
+     "text": "She can wait for his note, or reassign anyway, and leave Priya a note of her own.",
+     "pause": 0.55
+    },
+    {
+     "text": "Later that morning, Tobias writes his handover from home. Priya gets it straight away. It sits at the top of the job: what was done, what is left, and his time.",
+     "pause": 0.55
+    },
+    {
+     "text": "Priya's own time starts when she taps Start work. Tobias's hours stay his. Priya's start from zero.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "done",
+   "phrases": [
+    {
+     "text": "Priya works the job for the rest of that week and the next, and on day ten, at twenty-five to one, she completes it.",
+     "pause": 0.55
+    },
+    {
+     "text": "Here is what the system knows.",
+     "pause": 0.55
+    },
+    {
+     "text": "Tobias: twenty-eight hours and twenty minutes of work, half an hour of travel, and one hour twenty blocked.",
+     "pause": 0.55
+    },
+    {
+     "text": "Priya: forty hours and twenty-five minutes of work.",
+     "pause": 0.55
+    },
+    {
+     "text": "The whole job: sixty-eight hours and forty-five minutes of work, over ten working days.",
+     "pause": 0.55
+    },
+    {
+     "text": "The weekend, the nights, the lunch breaks, the morning drives and the day the job sat paused: none of it counted as job time.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "report",
+   "phrases": [
+    {
+     "text": "You will find all of this on the job itself, and in Reports, Job time: every job a person worked on, with travel, working and blocked time, right beside their time on the clock.",
+     "pause": 0.55
+    },
+    {
+     "text": "So, six rules.",
+     "pause": 0.55
+    },
+    {
+     "text": "One: clock in to start work.",
+     "pause": 0.55
+    },
+    {
+     "text": "Two: travel, working and blocked are kept apart.",
+     "pause": 0.55
+    },
+    {
+     "text": "Three: time only counts inside your shift, with rests taken out.",
+     "pause": 0.55
+    },
+    {
+     "text": "Four: one job at a time.",
+     "pause": 0.55
+    },
+    {
+     "text": "Five: clocking out pauses the job.",
+     "pause": 0.55
+    },
+    {
+     "text": "And six: whoever takes a job over starts from zero.",
+     "pause": 0.55
+    },
+    {
+     "text": "That is time in HBCField.",
+     "pause": 1.1
+    }
+   ]
+  }
+ ]
+}

@@ -85,13 +85,31 @@ async function main() {
     await openStoryJob(page);
     await shot(page, 'task-top');
     // Reassign: the warning, before anybody is picked.
-    await page.locator('button:has-text("Reassign"), button:has-text("Assign")').first().click();
-    await page.locator('text=/hasn.t written a handover/').waitFor({ timeout: 30_000 });
+    // The sidebar's Assignees → Add opens the assign dialog.
+    await page.getByRole('button', { name: /^\+?\s*Add$/ }).first().click();
+    await page.waitForTimeout(2500);
+    await page.screenshot({ path: `${OUT}debug-assign.png` });
+    await page.locator('[role="dialog"] >> text=/hasn.t written a handover/').waitFor({ timeout: 30_000 });
     await page.fill('#reassign-note', 'Tobias is off sick today. Call me if anything is unclear.');
     await shot(page, 'reassign-warning', { selector: '[role="dialog"]', pad: 24 });
   }
 
   if (state === 'office') {
+    await openStoryJob(page);
+    await shot(page, 'task-top');
+    // Mara moves Tobias's job to On the way: the office start asks why.
+    const step = page.locator('button:has-text("On The Way")').first();
+    if (await step.count()) await step.click();
+    else {
+      await page.locator('[data-tour="task-header"] button:has-text("Accepted"), [data-tour="task-header"] [role="combobox"]').first().click();
+      await page.locator('[role="menuitem"]:has-text("On The Way"), [role="option"]:has-text("On The Way")').first().click();
+    }
+    await page.locator('#office-start-reason').waitFor({ timeout: 30_000 });
+    await page.fill('#office-start-reason', "Tobias's phone is dead, he called from site");
+    await shot(page, 'office-dialog', { selector: '[role="dialog"]', pad: 24 });
+  }
+
+  if (state === 'nextmorning') {
     await openStoryJob(page);
     await shot(page, 'task-top');
   }

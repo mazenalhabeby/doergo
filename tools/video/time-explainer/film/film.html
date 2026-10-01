@@ -1,0 +1,376 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--g:#05080f;--ink:#e8eef8;--muted:#93a1b8;--dim:#5c6b82;--brand:#2563eb;--brand2:#60a5fa;
+  --travel:#38bdf8;--work:#22c55e;--block:#f59e0b;--off:#1b2433;--red:#f87171}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--g);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+#stage{position:absolute;inset:0;overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(140px);opacity:.5;will-change:transform}
+#grain{position:absolute;inset:-50%;opacity:.06;mix-blend-mode:overlay;pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+.scene{position:absolute;inset:0;opacity:0;will-change:opacity,transform}
+.abs{position:absolute}
+.disp{font-family:Archivo,sans-serif;font-weight:900;letter-spacing:-.02em;line-height:1}
+.lbl{font-family:Archivo,sans-serif;font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:22px;color:var(--brand2)}
+.win{position:absolute;border-radius:22px;background:#0e1524;border:2px solid #24324a;box-shadow:0 40px 90px #000c;overflow:hidden}
+.win .bar{height:44px;background:#121b2c;display:flex;gap:10px;align-items:center;padding:0 18px}
+.win .bar i{width:13px;height:13px;border-radius:50%;background:#334155;display:block}
+.win .vp{position:relative;overflow:hidden}
+.win .vp img{position:absolute;left:0;top:0;transform-origin:0 0}
+.phone{position:absolute;border-radius:56px;background:#05070a;border:10px solid #1f2937;box-shadow:0 40px 90px #000d;overflow:hidden}
+.phone img{width:100%;display:block}
+.rib{position:relative;height:72px;border-radius:16px;background:var(--off);overflow:hidden;display:flex}
+.rib span{height:100%;display:flex;align-items:center;justify-content:center;font-family:Archivo;font-weight:800;font-size:24px;color:#04121a;white-space:nowrap;overflow:hidden}
+.t{background:var(--travel)}.w{background:var(--work)}.b{background:var(--block)}
+.r{background:repeating-linear-gradient(135deg,#334155 0 10px,#1e293b 10px 20px);color:#cbd5e1!important}
+.o{background:transparent}
+.pill{display:inline-flex;align-items:center;gap:12px;border-radius:999px;padding:14px 28px;font-family:Archivo;font-weight:800;font-size:30px}
+#sub{position:absolute;left:160px;right:160px;bottom:46px;text-align:center;font-family:Inter;font-weight:600;font-size:38px;line-height:1.3;color:#fff;
+  text-shadow:0 2px 10px #000,0 0 3px #000}
+#sub b{color:#9cc6ff;font-weight:700}
+#chap{position:absolute;left:96px;top:72px;display:flex;align-items:baseline;gap:18px;opacity:0}
+#chap .n{font-family:Archivo;font-weight:900;font-size:26px;color:var(--brand2);letter-spacing:.08em}
+#chap .tt{font-family:Archivo;font-weight:800;font-size:26px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.day{position:absolute;width:300px;height:200px;border-radius:22px;background:#ffffff0d;border:2px solid #ffffff14;padding:20px;display:flex;flex-direction:column;gap:10px}
+.day .d{font-family:Archivo;font-weight:900;font-size:30px}
+.day .who{font-size:22px;color:var(--muted)}
+.day .note{font-size:20px}
+.mini{height:22px;border-radius:7px;display:flex;overflow:hidden;background:var(--off)}
+.mini span{height:100%}
+</style></head>
+<body><div id="stage">
+<div class="blob" id="b1" style="width:900px;height:900px;background:#1d4ed8;left:-200px;top:-300px"></div>
+<div class="blob" id="b2" style="width:800px;height:800px;background:#0f766e;right:-220px;bottom:-320px"></div>
+<div class="blob" id="b3" style="width:600px;height:600px;background:#4338ca;left:700px;top:500px;opacity:.28"></div>
+<div id="scenes"></div>
+<div id="chap"><span class="n"></span><span class="tt"></span></div>
+<div id="subbg" style="position:absolute;left:0;right:0;bottom:0;height:240px;background:linear-gradient(transparent,#05080fe6 55%)"></div>
+<div id="sub"></div>
+<div id="grain"></div>
+</div>
+<script>
+const TL = __TIMELINE__;
+const CH = Object.fromEntries(TL.chapters.map(c => [c.id, c]));
+const P = (c, i) => CH[c].phrases[Math.min(i, CH[c].phrases.length - 1)].start;
+const CEND = c => CH[c].end;
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const spring = x => x <= 0 ? 0 : x >= 1.6 ? 1 : 1 - Math.exp(-7 * x) * Math.cos(11 * x);
+const easeOut = x => 1 - Math.pow(1 - clamp(x), 3);
+const sp = (t, at, dur = 1) => spring((t - at) / dur);           // spring progress from `at`
+const fade = (t, at, d = .4) => clamp((t - at) / d);
+const el = (tag, cls, html, style) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; if (style) Object.assign(e.style, style); return e; };
+const fmt = m => { m = Math.round(m); const h = Math.floor(m / 60), mm = m % 60; return h ? (mm ? `${h}h ${String(mm).padStart(2, '0')}m` : `${h}h`) : `${mm}m`; };
+const TITLES = { intro: 'Two clocks', clock: 'Clocking in and out', gate: 'No clock-in, no job', steps: 'The steps of a job', rules: 'Inside the shift, one job at a time', clockout: 'Clocking out mid-job', morning: 'The next morning', tendays: 'One job, ten days', handover: 'Day five: the job changes hands', done: 'Day ten: the numbers', report: 'Where to see it' };
+
+/* ── building blocks ── */
+function win(src, { x, y, w, h, iw, ix = 0, iy = 0 }) {
+  const box = el('div', 'win', null, { left: x + 'px', top: y + 'px', width: w + 'px' });
+  box.innerHTML = '<div class="bar"><i></i><i></i><i></i></div>';
+  const vp = el('div', 'vp', null, { height: (h - 44) + 'px' });
+  const img = el('img'); img.src = 'img/' + src; img.style.width = iw + 'px'; img.style.transform = `translate(${-ix}px,${-iy}px)`;
+  vp.appendChild(img); box.appendChild(vp); box._img = img; box._base = { ix, iy, iw };
+  return box;
+}
+function phone(src, { x, y, h }) {
+  const w = Math.round(h * 1280 / 2856);
+  const p = el('div', 'phone', null, { left: x + 'px', top: y + 'px', width: (w + 20) + 'px', height: (h + 20) + 'px' });
+  const img = el('img'); img.src = 'img/' + src; p.appendChild(img);
+  return p;
+}
+function rib(segs) {
+  const r = el('div', 'rib');
+  for (const s of segs) r.appendChild(el('span', s.k, s.l || '', { flex: s.f }));
+  return r;
+}
+/* entrance: from 3D tilt + scale, settles */
+function enter(node, t, at, { from = 'up', dur = 1 } = {}) {
+  const k = sp(t, at, dur), o = fade(t, at, .35);
+  const dy = from === 'up' ? 60 : 0, dx = from === 'left' ? -120 : from === 'right' ? 120 : 0;
+  node.style.opacity = o;
+  node.style.transform = `perspective(1600px) translate(${dx * (1 - k)}px,${dy * (1 - k)}px) rotateY(${(1 - k) * (from === 'right' ? 14 : -14)}deg) scale(${.94 + .06 * k})`;
+}
+function show(node, t, at, d = .4) { node.style.opacity = fade(t, at, d); }
+
+/* ── scenes: [chapter, from phrase, build] ── */
+const SCENES = [];
+const scene = (c, i, build) => SCENES.push({ c, i, build });
+
+// 1 · Two clocks
+scene('intro', 0, root => {
+  const title = el('div', 'abs disp', 'Two clocks.<br><span style="color:var(--brand2)">One truth.</span>', { left: '160px', top: '230px', fontSize: '150px' });
+  const l1 = el('div', 'abs lbl', 'Your shift · clock in → clock out', { left: '160px', top: '640px' });
+  const shift = el('div', 'abs', null, { left: '160px', top: '690px', width: '1600px', border: '5px solid var(--brand2)', borderRadius: '24px', padding: '12px' });
+  const r = rib([{ k: 'o', f: 2 }, { k: 't', f: 1.2, l: 'travel' }, { k: 'w', f: 5, l: 'working' }, { k: 'o', f: 1.8 }]);
+  shift.appendChild(r);
+  const l2 = el('div', 'abs lbl', 'Your job time · always inside the shift', { left: '160px', top: '820px', color: 'var(--work)' });
+  const rule = el('div', 'abs disp', 'Job time only counts <span style="color:var(--work)">inside</span> your shift.', { left: '160px', top: '230px', fontSize: '96px', width: '1600px', lineHeight: '1.05' });
+  root.append(title, l1, shift, l2, rule);
+  return t => {
+    const out = fade(t, P('intro', 3) - .2, .4);
+    title.style.opacity = fade(t, P('intro', 0)) * (1 - out);
+    title.style.transform = `scale(${1.25 - .25 * sp(t, P('intro', 0), 1.2)})`; title.style.transformOrigin = 'left top';
+    show(l1, t, P('intro', 1)); show(shift, t, P('intro', 1));
+    shift.style.clipPath = `inset(0 ${100 - 100 * easeOut((t - P('intro', 1)) / 2.4)}% 0 0)`;
+    // the job bar inside appears with phrase 2
+    const kids = r.children; const k = fade(t, P('intro', 2), .8);
+    kids[1].style.opacity = kids[2].style.opacity = k;
+    show(l2, t, P('intro', 2));
+    rule.style.opacity = out; rule.style.transform = `translateY(${30 * (1 - sp(t, P('intro', 3), 1))}px)`;
+    // last phrase: "never before, never after" — the shift box pulses
+    const pulse = t > P('intro', 4) ? .5 + .5 * Math.sin((t - P('intro', 4)) * 4) : 0;
+    shift.style.boxShadow = `0 0 ${40 * pulse}px #60a5fa88`;
+  };
+});
+
+// 2 · Clocking in and out
+scene('clock', 0, root => {
+  const ph = phone('ph-live-time.jpg', { x: 260, y: 110, h: 760 });
+  const h1 = el('div', 'abs disp', 'Clock in at your site', { left: '760px', top: '200px', fontSize: '68px' });
+  const s1 = el('div', 'abs', 'The phone checks you are there. Working away from a site only where your workspace allows it.', { left: '760px', top: '300px', width: '1000px', fontSize: '32px', color: 'var(--muted)', lineHeight: '1.4' });
+  const h2 = el('div', 'abs disp', 'Rests are cut out', { left: '760px', top: '470px', fontSize: '68px' });
+  const r = rib([{ k: 'w', f: 5, l: 'morning' }, { k: 'r', f: 1, l: 'rest' }, { k: 'w', f: 4, l: 'afternoon' }]); r.classList.add('abs'); Object.assign(r.style, { left: '760px', top: '580px', width: '980px' });
+  const f = el('div', 'abs pill', 'clock in → clock out − rests = <span style="color:var(--work)">your shift</span>', { left: '760px', top: '720px', background: '#ffffff10', color: 'var(--ink)' });
+  root.append(ph, h1, s1, h2, r, f);
+  return t => { enter(ph, t, P('clock', 0) - .3, { from: 'left' }); show(h1, t, P('clock', 0)); show(s1, t, P('clock', 1)); show(h2, t, P('clock', 2)); show(r, t, P('clock', 2) + .3);
+    r.children[1].style.transform = `scaleY(${.4 + .6 * sp(t, P('clock', 2) + .6, 1)})`; enter(f, t, P('clock', 3), { from: 'up', dur: .9 }); };
+});
+
+// 3 · No clock-in, no job
+scene('gate', 0, root => {
+  const big = el('div', 'abs disp', 'No clock-in,<br><span style="color:var(--brand2)">no job.</span>', { left: '160px', top: '300px', fontSize: '140px' });
+  const sub = el('div', 'abs', 'In the office or on the road · on the phone and on the web', { left: '160px', top: '640px', fontSize: '36px', color: 'var(--muted)' });
+  const p1 = phone('ph-start-job.jpg', { x: 1260, y: 100, h: 760 });
+  const p2 = phone('ph-start-clockin-sheet.jpg', { x: 1260, y: 100, h: 760 });
+  const cap = el('div', 'abs disp', 'One tap:<br><span style="color:var(--work)">clock in and start</span>', { left: '160px', top: '380px', fontSize: '84px', lineHeight: '1.1' });
+  const w = win('office-office-dialog.jpg', { x: 900, y: 100, w: 820, h: 800, iw: 820 });
+  const cap2 = el('div', 'abs', null, { left: '120px', top: '330px', width: '560px' });
+  cap2.innerHTML = '<div class="disp" style="font-size:66px;line-height:1.1">The office can start it for you</div><div style="margin-top:28px;font-size:32px;color:var(--block);line-height:1.4">Only with a reason · never before your clock-in · you are told</div>';
+  root.append(big, sub, p1, p2, cap, w, cap2);
+  return t => {
+    const a = P('gate', 1), b = P('gate', 2), c = P('gate', 3);
+    big.style.opacity = fade(t, P('gate', 0)) * (1 - fade(t, a - .3)); sub.style.opacity = big.style.opacity;
+    enter(p1, t, a - .2, { from: 'right' }); p1.style.opacity = Math.min(+p1.style.opacity, 1 - fade(t, b));
+    enter(p2, t, b - .1, { from: 'up', dur: .7 }); p2.style.opacity = Math.min(+p2.style.opacity, 1 - fade(t, c - .2));
+    cap.style.opacity = fade(t, b) * (1 - fade(t, c - .2));
+    enter(w, t, c, { from: 'right' }); cap2.style.opacity = fade(t, c + .4);
+  };
+});
+
+// 4 · The steps of a job
+scene('steps', 0, root => {
+  const h = el('div', 'abs lbl', 'One job, one afternoon', { left: '160px', top: '210px' });
+  const shift = el('div', 'abs', null, { left: '160px', top: '260px', width: '1600px', border: '5px solid #60a5fa66', borderRadius: '24px', padding: '12px' });
+  const segs = [{ k: 'o', f: 1.2 }, { k: 't', f: 1.4, l: 'travel 22m' }, { k: 'w', f: 4.6, l: 'working 1h 45m' }, { k: 'b', f: .8, l: '10m' }, { k: 'w', f: 2.4, l: '55m' }, { k: 'r', f: .8, l: 'rest' }, { k: 'w', f: 1.6, l: '35m' }, { k: 'o', f: .6 }];
+  const r = rib(segs); shift.appendChild(r);
+  const ticks = el('div', 'abs', null, { left: '172px', top: '370px', width: '1576px', display: 'flex', fontSize: '22px', color: 'var(--muted)' });
+  ticks.innerHTML = [['Accepted', 1.2], ['On the way', 1.4], ['Start work', 4.6], ['Issue', .8], ['Resume', 2.4], ['Rest', .8], ['→ Complete', 2.2]].map(([s, f]) => `<span style="flex:${f};white-space:nowrap;border-left:2px solid #ffffff22;padding-left:8px">${s}</span>`).join('');
+  const tot = el('div', 'abs', null, { left: '160px', top: '470px', display: 'flex', gap: '60px', fontFamily: 'Archivo', fontWeight: '900', fontSize: '54px' });
+  tot.innerHTML = '<span style="color:var(--work)">Working 3h 15m</span><span style="color:var(--travel)">Travel 22m</span><span style="color:var(--block)">Blocked 10m</span>';
+  const ph = phone('ph-live-job.jpg', { x: 260, y: 110, h: 760 });
+  const w = win('done-jobtime-card.jpg', { x: 760, y: 300, w: 1000, h: 300, iw: 1000 });
+  const cap = el('div', 'abs', 'No timer running · every tap saved with its own time, even offline', { left: '760px', top: '640px', width: '1000px', fontSize: '30px', color: 'var(--muted)' });
+  root.append(h, shift, ticks, tot, ph, w, cap);
+  return t => {
+    const e = P('steps', 5);
+    const g = 1 - fade(t, e - .3);
+    for (const n of [h, shift, ticks]) n.style.opacity = fade(t, P('steps', 0)) * g;
+    // reveal segment by segment with the words
+    const at = [P('steps', 1), P('steps', 2), P('steps', 3), P('steps', 4), P('steps', 4) + 2.5, P('steps', 4) + 4, P('steps', 4) + 5.5, P('steps', 4) + 6.5];
+    [...r.children].forEach((s, i) => { s.style.opacity = i === 0 ? fade(t, P('steps', 1)) : fade(t, at[Math.min(i, at.length - 1)] + (i === 2 || i === 1 ? .4 : 0)); });
+    [...ticks.children].forEach((s, i) => s.style.opacity = fade(t, [P('steps', 1), P('steps', 2), P('steps', 3), P('steps', 4), P('steps', 4) + 2, P('steps', 4) + 4, P('steps', 4) + 6][i]) * g);
+    tot.style.opacity = fade(t, P('steps', 4) + 7) * g;
+    enter(ph, t, e, { from: 'left' }); enter(w, t, e + .5, { from: 'right' }); cap.style.opacity = fade(t, e + 1.2);
+  };
+});
+
+// 5 · Inside the shift, one job at a time
+scene('rules', 0, root => {
+  const h = el('div', 'abs disp', 'Two more rules', { left: '160px', top: '170px', fontSize: '90px' });
+  const r1 = el('div', 'abs', null, { left: '160px', top: '320px', width: '1600px' });
+  r1.innerHTML = '<div class="lbl" style="margin-bottom:16px">1 · Only on the clock, rests out</div>';
+  const sh = el('div', null, null, { border: '5px solid var(--brand2)', borderRadius: '24px', padding: '12px', width: '1100px' });
+  sh.appendChild(rib([{ k: 'w', f: 4, l: 'job' }, { k: 'r', f: 1, l: 'rest' }, { k: 'w', f: 3, l: 'job' }]));
+  r1.appendChild(sh);
+  const r2 = el('div', 'abs', null, { left: '160px', top: '560px', width: '1600px' });
+  r2.innerHTML = '<div class="lbl" style="margin-bottom:16px">2 · One job at a time — the one you moved last</div>';
+  const a = rib([{ k: 'w', f: 2, l: 'Job A 08–10' }, { k: 'o', f: 2, l: '' }]); a.style.width = '1100px'; a.style.marginBottom = '14px';
+  const b = rib([{ k: 'o', f: 2 }, { k: 'w', f: 2, l: 'Job B 10–12' }]); b.style.width = '1100px';
+  r2.append(a, b);
+  const badge = el('div', 'abs pill', '4h on the clock = 4h of job time. Never more.', { left: '160px', top: '880px', background: '#22c55e22', color: '#86efac' });
+  root.append(h, r1, r2, badge);
+  return t => { show(h, t, P('rules', 0)); show(r1, t, P('rules', 1)); show(r2, t, P('rules', 2)); enter(badge, t, P('rules', 3), { dur: .9 }); };
+});
+
+// 6 · Clocking out mid-job
+scene('clockout', 0, root => {
+  const q = el('div', 'abs disp', 'The shift ends.<br><span style="color:var(--block)">The job doesn\'t.</span>', { left: '160px', top: '320px', fontSize: '120px' });
+  const ph = phone('ph-live-clockout.jpg', { x: 260, y: 110, h: 760 });
+  const h1 = el('div', 'abs disp', 'The job pauses at the clock-out minute', { left: '760px', top: '210px', width: '1000px', fontSize: '60px', lineHeight: '1.08' });
+  const r = rib([{ k: 'w', f: 4, l: 'working' }, { k: 'o', f: 3, l: 'paused · nothing counts overnight' }]); r.classList.add('abs');
+  Object.assign(r.style, { left: '760px', top: '400px', width: '1000px' }); r.children[1].style.color = 'var(--dim)'; r.children[1].style.borderLeft = '6px dashed var(--red)';
+  const s1 = el('div', 'abs', 'Finish it — or leave a handover note: what you did, what is left.', { left: '760px', top: '520px', width: '1000px', fontSize: '32px', color: 'var(--muted)', lineHeight: '1.4' });
+  const w = win('nextmorning-task-top.jpg', { x: 760, y: 600, w: 1000, h: 300, iw: 1000, iy: 170 });
+  const tag = el('div', 'abs pill', 'Clocking out is never blocked', { left: '760px', top: '640px', background: '#ffffff12', color: 'var(--ink)' });
+  root.append(q, ph, h1, r, s1, tag, w);
+  return t => {
+    q.style.opacity = fade(t, P('clockout', 0)) * (1 - fade(t, P('clockout', 1) - .3));
+    enter(ph, t, P('clockout', 1) - .2, { from: 'left' }); show(s1, t, P('clockout', 1) + 1);
+    show(h1, t, P('clockout', 2)); show(r, t, P('clockout', 2) + .3);
+    r.style.clipPath = `inset(0 ${100 - 100 * easeOut((t - P('clockout', 2) - .3) / 1.6)}% 0 0)`;
+    tag.style.opacity = fade(t, P('clockout', 3)) * (1 - fade(t, P('clockout', 3) + 3));
+    enter(w, t, P('clockout', 3) + 3.2, { from: 'up' });
+  };
+});
+
+// 7 · The next morning
+scene('morning', 0, root => {
+  const w = win('nextmorning-task-top.jpg', { x: 260, y: 120, w: 1400, h: 600, iw: 1400, iy: 0 });
+  const t1 = el('div', 'abs disp', 'No note? Asked on every app open.', { left: '160px', top: '770px', fontSize: '58px' });
+  const t2 = el('div', 'abs disp', 'Clocked in again? <span style="color:var(--work)">Resume work.</span>', { left: '160px', top: '770px', fontSize: '58px' });
+  root.append(w, t1, t2);
+  return t => { enter(w, t, P('morning', 0) - .2, { from: 'up' }); t1.style.opacity = fade(t, P('morning', 0) + .3) * (1 - fade(t, P('morning', 1) - .2)); show(t2, t, P('morning', 1));
+    w._img.style.transform = `translate(0,${-40 * easeOut((t - P('morning', 0)) / 12)}px)`; };
+});
+
+// 8 · Ten days
+scene('tendays', 0, root => {
+  const h = el('div', 'abs', null, { left: '160px', top: '110px' });
+  h.innerHTML = '<div class="disp" style="font-size:64px">Boiler room replacement</div><div style="font-size:30px;color:var(--muted);margin-top:10px">Pilgrove Hotels · 10 working days</div>';
+  const days = [];
+  const spec = [
+    ['Tobias', [['t', .5], ['w', 7.4]], 'On the way · 30m travel'],
+    ['Tobias', [['o', .5], ['w', 7.4]], 'Resume work 07:35'],
+    ['Tobias', [['o', .5], ['w', 2.4], ['b', 1.3], ['w', 3.7]], 'Part missing · 1h 20m'],
+    ['Tobias', [['o', .5], ['w', 7.4]], 'Phone dead · no note'],
+    ['→ Priya', [['o', 2.5], ['w', 6.3]], 'Reassigned 08:30'],
+    ['Priya', [['o', .5], ['w', 7.4]], ''], ['Priya', [['o', .5], ['w', 7.4]], ''], ['Priya', [['o', .5], ['w', 7.4]], ''], ['Priya', [['o', .5], ['w', 7.4]], ''],
+    ['Priya', [['o', .5], ['w', 4.5], ['o', 3]], 'Complete 12:35 ✓'],
+  ];
+  spec.forEach(([who, segs, note], i) => {
+    const col = i % 5, row = Math.floor(i / 5);
+    const d = el('div', 'day', null, { left: (160 + col * 324) + 'px', top: (310 + row * 300) + 'px' });
+    d.innerHTML = `<div class="d">Day ${i + 1}</div><div class="who">${who}</div><div class="mini">${segs.map(([k, f]) => `<span class="${k}" style="flex:${f}"></span>`).join('')}</div><div class="note" style="color:${i === 2 ? 'var(--block)' : i === 3 ? 'var(--red)' : i === 9 ? 'var(--work)' : 'var(--muted)'}">${note}</div>`;
+    root.appendChild(d); days.push(d);
+  });
+  const wk = el('div', 'abs', 'weekend · nobody clocked in · nothing counts', { left: '160px', top: '523px', width: '1596px', textAlign: 'center', fontSize: '24px', color: 'var(--dim)' });
+  root.append(h, wk);
+  return t => {
+    show(h, t, P('tendays', 0));
+    const at = [P('tendays', 2), P('tendays', 3), P('tendays', 5), P('tendays', 6), CEND('tendays') + 99];
+    days.forEach((d, i) => {
+      const a = i < 4 ? at[i] : (i === 4 ? 1e9 : 1e9);
+      const base = i < 4 ? a : 1e9;
+      // all ten appear dim at phrase 1, each lights up when its story is told
+      d.style.opacity = Math.max(fade(t, P('tendays', 1)) * .35, fade(t, base));
+      d.style.borderColor = t > base && t < base + 6 ? '#60a5fa' : '#ffffff14';
+      d.style.transform = `scale(${t > base ? 1 + .05 * (1 - sp(t, base, .8)) : 1})`;
+    });
+    show(wk, t, P('tendays', 1));
+  };
+});
+
+// 9 · Handover
+scene('handover', 0, root => {
+  const w1 = win('handover-reassign-warning.jpg', { x: 1100, y: 90, w: 600, h: 840, iw: 600 });
+  const c1 = el('div', 'abs', null, { left: '160px', top: '300px', width: '620px' });
+  c1.innerHTML = '<div class="disp" style="font-size:66px;line-height:1.08">Mara is warned before she reassigns</div><div style="margin-top:28px;font-size:32px;color:var(--block);line-height:1.4">Wait for the note — or reassign anyway, with a note for Priya</div>';
+  const w2 = win('done-handover-card.jpg', { x: 160, y: 260, w: 1600, h: 340, iw: 1600 });
+  const c2 = el('div', 'abs disp', 'Tobias writes it later. <span style="color:var(--brand2)">Priya gets it at once.</span>', { left: '160px', top: '160px', fontSize: '56px' });
+  const bars = el('div', 'abs', null, { left: '160px', top: '680px', width: '1600px' });
+  bars.innerHTML = '<div class="lbl" style="margin-bottom:14px;color:var(--muted)">Tobias · his time stays his</div>';
+  const bt = rib([{ k: 'w', f: 28.3, l: '28h 20m' }, { k: 'o', f: 40.4 }]); bt.style.marginBottom = '24px';
+  const lp = el('div', 'lbl', 'Priya · starts from zero at her Start work', { marginBottom: '14px', color: 'var(--muted)' });
+  const bp = rib([{ k: 'o', f: 28.3 }, { k: 'w', f: 40.4, l: 'Priya →' }]);
+  bars.append(bt, lp, bp);
+  root.append(w1, c1, w2, c2, bars);
+  return t => {
+    const a = P('handover', 1), b = P('handover', 3), c = P('handover', 4);
+    enter(w1, t, P('handover', 0) + 2, { from: 'right' }); w1.style.opacity = Math.min(+w1.style.opacity, 1 - fade(t, b - .3));
+    c1.style.opacity = fade(t, P('handover', 0) + .5) * (1 - fade(t, b - .3));
+    enter(w2, t, b, { from: 'up' }); show(c2, t, b + .3);
+    show(bars, t, c); bp.style.clipPath = `inset(0 ${100 - 100 * easeOut((t - c - 1.2) / 2)}% 0 0)`;
+  };
+});
+
+// 10 · Done
+scene('done', 0, root => {
+  const w = win('done-task-top.jpg', { x: 260, y: 120, w: 1400, h: 700, iw: 1400, iy: 100 });
+  const box = el('div', 'abs', null, { left: '160px', top: '140px', width: '1600px' });
+  const rows = [['Tobias · days 1–4', [['t', 0.5], ['w', 28.33], ['b', 1.33]], 'working 28h 20m · travel 30m · blocked 1h 20m'], ['Priya · days 5–10', [['w', 40.42]], 'working 40h 25m']];
+  box.innerHTML = rows.map(([n, s, txt]) => `<div style="display:grid;grid-template-columns:380px 1fr;gap:30px;align-items:center;margin-bottom:46px"><div style="font-family:Archivo;font-weight:800;font-size:34px">${n}<div style="font-family:Inter;font-weight:500;font-size:24px;color:var(--muted);margin-top:8px">${txt}</div></div><div class="rib">${s.map(([k, f]) => `<span class="${k}" style="flex:${f}"></span>`).join('')}<span class="o" style="flex:${41 - s.reduce((a, b) => a + b[1], 0) + .1}"></span></div></div>`).join('');
+  const total = el('div', 'abs disp', '', { left: '160px', top: '560px', fontSize: '90px' });
+  const not = el('div', 'abs', 'Not counted as job time: the weekend · the nights · the lunch breaks · the morning drives · the day it sat paused', { left: '160px', top: '780px', width: '1600px', fontSize: '32px', color: 'var(--muted)', lineHeight: '1.4' });
+  root.append(w, box, total, not);
+  return t => {
+    const a = P('done', 2);
+    enter(w, t, P('done', 0) - .2, { from: 'up' }); w.style.opacity = Math.min(+w.style.opacity, 1 - fade(t, a - .4));
+    w._img.style.transform = `translate(0,${-120 - 60 * easeOut((t - P('done', 0)) / 8)}px)`;
+    const r = box.children; r[0].style.opacity = fade(t, a); r[1].style.opacity = fade(t, P('done', 3));
+    const k = easeOut((t - P('done', 4)) / 2.2);
+    total.innerHTML = `<span style="color:var(--work)">${fmt(4125 * k)}</span> <span style="font-size:48px;color:var(--muted)">of work on the job</span>`;
+    total.style.opacity = fade(t, P('done', 4)); show(not, t, P('done', 5));
+  };
+});
+
+// 11 · Report + rules + end
+scene('report', 0, root => {
+  const w = win('done-report-tobias.jpg', { x: 260, y: 110, w: 1400, h: 760, iw: 1400 });
+  const h = el('div', 'abs disp', 'Six rules', { left: '160px', top: '130px', fontSize: '96px' });
+  const rules = ['Clock in to start work', 'Travel, working, blocked: apart', 'Only inside your shift, rests out', 'One job at a time', 'Clocking out pauses the job', 'A new person starts from zero'];
+  const list = rules.map((r, i) => el('div', 'abs', `<span style="color:var(--brand2);font-family:Archivo;font-weight:900">${i + 1}</span>&nbsp;&nbsp;${r}`, { left: (160 + (i % 2) * 820) + 'px', top: (320 + Math.floor(i / 2) * 150) + 'px', fontFamily: 'Archivo', fontWeight: '800', fontSize: '48px' }));
+  const end = el('div', 'abs', null, { left: 0, right: 0, top: '380px', textAlign: 'center' });
+  end.innerHTML = '<div class="disp" style="font-size:120px">Time in <span style="color:var(--brand2)">HBCField</span></div><div style="font-size:34px;color:var(--muted);margin-top:24px">Every minute, counted the same way — on the job, on the timesheet, on the invoice.</div>';
+  root.append(w, h, ...list, end);
+  return t => {
+    enter(w, t, P('report', 0) - .2, { from: 'up' }); w.style.opacity = Math.min(+w.style.opacity, 1 - fade(t, P('report', 1) - .3));
+    const fin = P('report', 8); const g = 1 - fade(t, fin - .2);
+    h.style.opacity = fade(t, P('report', 1)) * g;
+    list.forEach((n, i) => { n.style.opacity = fade(t, P('report', 2 + i)) * g; n.style.transform = `translateX(${-40 * (1 - sp(t, P('report', 2 + i), .8))}px)`; });
+    end.style.opacity = fade(t, fin, .6); end.style.transform = `scale(${1.15 - .15 * sp(t, fin, 1.2)})`;
+  };
+});
+
+/* ── assemble ── */
+const root = document.getElementById('scenes');
+SCENES.forEach(s => { s.root = el('div', 'scene'); root.appendChild(s.root); s.upd = s.build(s.root); s.start = Math.max(0, P(s.c, s.i) - .5); });
+SCENES.forEach((s, i) => { s.end = i + 1 < SCENES.length ? SCENES[i + 1].start : TL.duration; });
+const chap = document.getElementById('chap'), sub = document.getElementById('sub');
+const allPhr = TL.chapters.flatMap((c, ci) => c.phrases.map(p => ({ ...p, c: c.id, ci })));
+const KEY = /(\d+h(?: \d+m)?|\d+ minutes|twenty-eight hours and twenty minutes|forty hours and twenty-five minutes|sixty-eight hours and forty-five minutes|travel|working time|blocked|clock in|clock out|pauses|handover|zero|one job at a time)/gi;
+
+function render(t) {
+  // background drift
+  const b = Math.sin(t / 9), c = Math.cos(t / 11);
+  document.getElementById('b1').style.transform = `translate(${80 * b}px,${60 * c}px)`;
+  document.getElementById('b2').style.transform = `translate(${-70 * c}px,${-50 * b}px)`;
+  document.getElementById('b3').style.transform = `translate(${120 * c}px,${-80 * b}px)`;
+  document.getElementById('grain').style.transform = `translate(${(Math.floor(t * 24) * 37) % 200 - 100}px,${(Math.floor(t * 24) * 53) % 200 - 100}px)`;
+  for (const s of SCENES) {
+    const vis = t >= s.start - .01 && t < s.end + .4;
+    if (!vis) { s.root.style.opacity = 0; continue; }
+    const o = Math.min(fade(t, s.start, .45), 1 - fade(t, s.end, .4));
+    s.root.style.opacity = o; s.upd(t);
+  }
+  // chapter label
+  const ch = TL.chapters.findIndex(c => t >= c.start - .3 && t < c.end + .2);
+  if (ch >= 0) {
+    const c = TL.chapters[ch];
+    chap.querySelector('.n').textContent = String(ch + 1).padStart(2, '0');
+    chap.querySelector('.tt').textContent = TITLES[c.id];
+    chap.style.opacity = Math.min(fade(t, c.start - .3, .5), 1 - fade(t, c.end - .3, .4)) * (ch === 0 && t < 1 ? 0 : 1);
+  } else chap.style.opacity = 0;
+  // subtitle: the phrase being spoken (held until the next one starts, within the chapter)
+  let cur = null;
+  for (const p of allPhr) if (t >= p.start - .15 && t <= p.end + .6) cur = p;
+  if (cur) {
+    const txt = cur.text.replace(KEY, '<b>$1</b>');
+    if (sub._t !== cur.text) { sub.innerHTML = txt; sub._t = cur.text; }
+    sub.style.opacity = Math.min(fade(t, cur.start - .15, .2), 1 - fade(t, cur.end + .4, .2));
+  } else sub.style.opacity = 0;
+}
+window.__ready = Promise.all([document.fonts.ready, ...[...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; }))]);
+window.SFX = [];
+</script></body></html>

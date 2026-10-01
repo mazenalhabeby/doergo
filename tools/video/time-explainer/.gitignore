@@ -1,0 +1,9 @@
+film/img/
+film/vo/
+film/*.wav
+film/*.mp4
+film/index.html
+film/ad.html
+film/render.log
+film/sfx.json
+film/still-*

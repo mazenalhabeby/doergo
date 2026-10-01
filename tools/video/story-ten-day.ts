@@ -119,8 +119,9 @@ export async function seedTenDayJob(
       events.push({ type: 'STATUS_CHANGED', by: who, at: local(d, 12, 35), meta: { oldStatus: 'IN_PROGRESS', newStatus: 'COMPLETED' } });
       return;
     }
-    events.push({ type: 'PAUSED', by: who, at: local(d, oh, om), meta: { reason: opts.noNote ? 'AUTO_CLOSE' : 'CLOCK_OUT', at: local(d, oh, om).toISOString() } });
-    void n;
+    // What a real clock-out records: the worker's time on the job so far (JobPauseService).
+    const workedSoFar = who === tobias ? [445, 890, 1255, 1700][n - 1] : undefined;
+    events.push({ type: 'PAUSED', by: who, at: local(d, oh, om), meta: { reason: opts.noNote ? 'AUTO_CLOSE' : 'CLOCK_OUT', at: local(d, oh, om).toISOString(), ...(workedSoFar ? { workedMinutes: workedSoFar } : {}) } });
   };
 
   // ── The days behind us ──
