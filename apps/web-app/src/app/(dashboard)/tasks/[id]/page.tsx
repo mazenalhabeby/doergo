@@ -1,5 +1,8 @@
 "use client"
 
+import { useClockGate } from "@/hooks"
+import { ClockGateDialog } from "@/components/clock-gate-dialog"
+
 import { useState, use, useEffect, useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
@@ -232,8 +235,13 @@ export default function TaskDetailPage({
       // between spaces makes those numbers stale.
       queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
     },
-    onError: (e: Error) => notify.error(serverErrorMessage(e, t)),
+    // Off the clock: offer to clock in, then the same move again by itself.
+    onError: (e: Error, newStatus) => {
+      if (clockGate.intercept(e, () => statusChangeMutation.mutate(newStatus))) return
+      notify.error(serverErrorMessage(e, t))
+    },
   })
+  const clockGate = useClockGate()
 
   /*
     Inline field save — title, description, hours, points.
@@ -341,6 +349,7 @@ export default function TaskDetailPage({
         }}
       />
       <EditTaskDialog task={task} open={showEditDialog} onOpenChange={setShowEditDialog} />
+      <ClockGateDialog {...clockGate.dialogProps} />
       {stepMove.dialog}
 
       <div className="p-8 max-w-7xl mx-auto">

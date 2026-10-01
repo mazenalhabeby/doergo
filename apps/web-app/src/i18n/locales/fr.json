@@ -1700,6 +1700,12 @@
         "mine": "À moi",
         "all": "Tous"
       }
+    },
+    "clockGate": {
+      "title": "Vous n'avez pas pointé",
+      "body": "Le temps sur un travail suit votre service. Pointez, et le travail démarre aussitôt.",
+      "clockInAndStart": "Pointer et commencer",
+      "notNow": "Pas maintenant"
     }
   },
   "technicians": {
@@ -8608,7 +8614,9 @@
     "STEP_FORM_DEFINITION_INVALID": "Certaines questions de cette étape ne sont pas valides.",
     "TIMEOFF_OVERLAP": "Cet employé a déjà une absence du {{from}} au {{to}} ({{status}}). Choisissez d'autres dates ou modifiez cette entrée.",
     "OUTSIDE_GEOFENCE": "{{location}} n'accepte les pointages que sur place. Vous êtes à {{distance}}.",
-    "AWAY_NOT_ALLOWED": "Vous êtes à {{distance}} de {{location}} et vous n'êtes pas autorisé à travailler à distance. Demandez à votre administrateur de l'autoriser."
+    "AWAY_NOT_ALLOWED": "Vous êtes à {{distance}} de {{location}} et vous n'êtes pas autorisé à travailler à distance. Demandez à votre administrateur de l'autoriser.",
+    "NOT_CLOCKED_IN": "Pointez pour commencer ce travail.",
+    "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} n'a pas pointé. Il faut pointer avant que ce travail puisse commencer."
   },
   "signLink": {
     "tabs": {

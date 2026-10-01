@@ -3181,7 +3181,9 @@
       "TOO_FAR_TO_ARRIVE": "Sie sind {{distance}} vom Einsatzort entfernt. Um die Ankunft zu melden, müssen Sie sich im Umkreis von {{radius}} befinden. Bitte gehen Sie näher heran und versuchen Sie es erneut.",
       "TOO_FAR_TO_START": "Sie sind {{distance}} vom Einsatzort entfernt. Um den Auftrag zu starten, müssen Sie sich im Umkreis von {{radius}} befinden. Bitte gehen Sie näher heran und versuchen Sie es erneut.",
       "OUTSIDE_GEOFENCE": "Bei {{location}} ist Einstempeln nur vor Ort möglich. Sie sind {{distance}} entfernt.",
-      "AWAY_NOT_ALLOWED": "Sie sind {{distance}} von {{location}} entfernt und nicht für das Arbeiten außerhalb eingerichtet. Bitten Sie Ihre Administration, es zu erlauben."
+      "AWAY_NOT_ALLOWED": "Sie sind {{distance}} von {{location}} entfernt und nicht für das Arbeiten außerhalb eingerichtet. Bitten Sie Ihre Administration, es zu erlauben.",
+      "NOT_CLOCKED_IN": "Stempeln Sie ein, um mit diesem Auftrag zu beginnen.",
+      "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} ist nicht eingestempelt. Der Auftrag kann erst starten, wenn {{name}} eingestempelt ist."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",
@@ -3882,6 +3884,12 @@
       "needed": "Für diesen Schritt ist eine Unterschrift nötig.",
       "open": "Unterschreiben",
       "save": "Unterschrift speichern"
+    },
+    "clockGate": {
+      "title": "Sie sind nicht eingestempelt",
+      "body": "Ihre Zeit an diesem Auftrag beginnt mit Ihrer Schicht. Stempeln Sie ein, danach startet der Auftrag sofort.",
+      "clockInAndStart": "Einstempeln und Arbeit starten",
+      "notNow": "Nicht jetzt"
     }
   },
   "jobsList": {

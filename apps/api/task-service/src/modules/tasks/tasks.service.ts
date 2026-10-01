@@ -51,6 +51,10 @@ import {
   parseStoredStepForm,
   stepFormFileIds,
   type StepFormAnswers,
+  CLOCK_GATE_CODES,
+  spaceRunsClock,
+  stepCapabilities,
+  stepStartsWork,
 } from '@hbcfield/shared';
 import { firstValueFrom, timeout } from 'rxjs';
 
@@ -1564,6 +1568,70 @@ export class TasksService {
    * - CLIENT: can cancel their own tasks
    * - DISPATCHER: can cancel any task in their org
    */
+  /**
+   * The person doing the job must be on the clock to start or resume it.
+   *
+   * WHO is "the person": the mover, when they are on the job; otherwise (the
+   * office moving it for them) whoever it is assigned to — any one of them
+   * clocked in will do, since a crew shares a job. Nobody assigned: nobody to
+   * hold to a clock. Rule and exemptions: packages/shared/src/tasks/clock-gate.ts.
+   *
+   * Asked only on a move INTO a working step, so the board's ordinary moves and
+   * every other status change pay nothing for it. One indexed query
+   * (time_entries [userId, status]) when it does run.
+   */
+  private async assertWorkerClockedIn(
+    task: { id: string; organizationId: string; spaceId?: string | null; assignedToId?: string | null },
+    moverId: string,
+    organizationId: string,
+    moverIsOnTheJob: boolean,
+  ): Promise<void> {
+    const where = task.spaceId
+      ? await this.prisma.companyLocation.findUnique({
+          where: { id: task.spaceId },
+          select: { enabledModules: true, organization: { select: { enabledModules: true } } },
+        })
+      : null;
+    const orgModules = where?.organization?.enabledModules
+      ?? (await this.prisma.organization.findUnique({ where: { id: task.organizationId }, select: { enabledModules: true } }))?.enabledModules;
+    if (!spaceRunsClock(where?.enabledModules as string[] | null | undefined, orgModules as string[] | null | undefined)) return;
+
+    let workerIds: string[];
+    if (moverIsOnTheJob) {
+      workerIds = [moverId];
+    } else {
+      const crew = await this.prisma.taskAssignee.findMany({ where: { taskId: task.id }, select: { userId: true } });
+      workerIds = [...new Set([task.assignedToId, ...crew.map((c) => c.userId)].filter((id): id is string => !!id))];
+    }
+    if (workerIds.length === 0) return;
+
+    // External members hold no clock (EXTERNAL_FORBIDDEN_MODULES): never theirs to be on.
+    const workers = await this.prisma.user.findMany({
+      where: { id: { in: workerIds }, organizationId: task.organizationId, isExternal: false },
+      select: { id: true, firstName: true, lastName: true },
+    });
+    if (workers.length === 0) return;
+
+    const onTheClock = await this.prisma.timeEntry.findFirst({
+      where: { organizationId: task.organizationId, userId: { in: workers.map((w) => w.id) }, status: 'CLOCKED_IN' },
+      select: { id: true },
+    });
+    if (onTheClock) return;
+
+    if (moverIsOnTheJob) {
+      throw new BadRequestException({
+        message: 'Clock in to start work on this job.',
+        code: CLOCK_GATE_CODES.SELF,
+      });
+    }
+    const name = `${workers[0]!.firstName} ${workers[0]!.lastName}`.trim();
+    throw new BadRequestException({
+      message: `${name} is not clocked in. They need to clock in before this job can start.`,
+      code: CLOCK_GATE_CODES.ASSIGNEE,
+      params: { name },
+    });
+  }
+
   async updateStatus(data: {
     id: string;
     status: string;
@@ -1781,6 +1849,13 @@ export class TasksService {
       throw new BadRequestException(
         `Invalid status transition from ${task.status} to ${data.status}. Allowed: ${allowedTransitions.join(', ') || 'none'}`,
       );
+    }
+
+    // ── Clocked in to start work ──
+    // Before the location check: "clock in first" is the more useful thing to
+    // hear than "you are 3 km away" — the clock-in itself checks where they are.
+    if (stepStartsWork(data.status, stepCapabilities(wf, data.status))) {
+      await this.assertWorkerClockedIn(task, data.userId, data.organizationId, isAssignedUser);
     }
 
     // ── Assigned user execution enforcement ──

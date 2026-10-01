@@ -1700,6 +1700,12 @@
         "mine": "Miei",
         "all": "Tutti"
       }
+    },
+    "clockGate": {
+      "title": "Non hai timbrato",
+      "body": "Il tempo su un lavoro scorre con il turno. Timbra l'entrata e il lavoro parte subito dopo.",
+      "clockInAndStart": "Timbra e inizia",
+      "notNow": "Non ora"
     }
   },
   "technicians": {
@@ -8608,7 +8614,9 @@
     "STEP_FORM_DEFINITION_INVALID": "Alcune domande di questo passaggio non sono valide.",
     "TIMEOFF_OVERLAP": "Questo dipendente ha già un’assenza dal {{from}} al {{to}} ({{status}}). Scegli altre date o modifica quella voce.",
     "OUTSIDE_GEOFENCE": "{{location}} accetta timbrature solo in sede. Sei a {{distance}}.",
-    "AWAY_NOT_ALLOWED": "Sei a {{distance}} da {{location}} e non sei abilitato a lavorare fuori sede. Chiedi al tuo amministratore di consentirlo."
+    "AWAY_NOT_ALLOWED": "Sei a {{distance}} da {{location}} e non sei abilitato a lavorare fuori sede. Chiedi al tuo amministratore di consentirlo.",
+    "NOT_CLOCKED_IN": "Timbra l'entrata per iniziare questo lavoro.",
+    "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} non ha timbrato. Deve timbrare prima che questo lavoro possa iniziare."
   },
   "signLink": {
     "tabs": {

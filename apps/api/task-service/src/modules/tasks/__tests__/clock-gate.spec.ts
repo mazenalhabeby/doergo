@@ -1,0 +1,141 @@
+/**
+ * Clocked in to start work.
+ *
+ * Job time used to run with nobody on the clock: an employee could start a job
+ * from home, or the office could start it for them, and the job's hours and the
+ * timesheet then told two different stories.
+ */
+import { Test } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
+import { BadRequestException } from '@nestjs/common';
+import { OBJECT_STORE } from '@hbcfield/shared/storage';
+import { Role, TaskStatus, stepStartsWork, stepCapabilities, spaceRunsClock } from '@hbcfield/shared';
+import { TasksService } from '../tasks.service';
+import { PrismaService } from '../../../common/prisma/prisma.service';
+import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
+import { NotificationRoutingService } from '../../../common/notification-routing.service';
+import { MediaSigner } from '../../../common/storage/media-signer.service';
+import { PresenceService } from '../../attendance/presence/presence.service';
+
+describe('the rule (shared)', () => {
+  it('starting or resuming work needs the clock; taking a job on or pausing it does not', () => {
+    const at = (key: string) => stepStartsWork(key, stepCapabilities(null, key));
+    expect(at(TaskStatus.EN_ROUTE)).toBe(true);
+    expect(at(TaskStatus.ARRIVED)).toBe(true);
+    expect(at(TaskStatus.IN_PROGRESS)).toBe(true);
+    expect(at(TaskStatus.ACCEPTED)).toBe(false);
+    expect(at(TaskStatus.BLOCKED)).toBe(false);
+    expect(at(TaskStatus.COMPLETED)).toBe(false);
+  });
+
+  it('reads a custom workflow by its step capabilities, not by names', () => {
+    const wf = { name: 'Workshop', statuses: [{ key: 'ON_THE_BENCH', capabilities: ['timer'] }, { key: 'QUEUED', capabilities: [] }] };
+    expect(stepStartsWork('ON_THE_BENCH', stepCapabilities(wf, 'ON_THE_BENCH'))).toBe(true);
+    expect(stepStartsWork('QUEUED', stepCapabilities(wf, 'QUEUED'))).toBe(false);
+  });
+
+  it('a workspace runs a clock only with Time Tracking on (its own list, else the organization\'s)', () => {
+    expect(spaceRunsClock(['time_tracking'], [])).toBe(true);
+    expect(spaceRunsClock(null, ['time_tracking'])).toBe(true);
+    expect(spaceRunsClock([], ['time_tracking'])).toBe(false);
+    expect(spaceRunsClock(null, null)).toBe(false);
+  });
+});
+
+describe('TasksService.updateStatus — clocked in to start work', () => {
+  let service: TasksService;
+  const prisma: any = {
+    task: {
+      findUnique: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
+      updateMany: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
+      findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn(),
+    },
+    taskAssignee: { findFirst: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]) },
+    taskEvent: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
+    companyLocation: { findUnique: jest.fn() },
+    organization: { findUnique: jest.fn() },
+    spaceAssignment: { findMany: jest.fn().mockResolvedValue([]) },
+    spaceWorkflow: { findFirst: jest.fn().mockResolvedValue(null) },
+    user: { findMany: jest.fn() },
+    timeEntry: { findFirst: jest.fn() },
+  };
+
+  const task = (over: Record<string, unknown> = {}) => ({
+    id: 't1', title: 'Boiler', status: TaskStatus.ACCEPTED, organizationId: 'o1', assignedToId: 'mike',
+    createdById: 'boss', spaceId: 's1', workflowId: null, dueDate: null,
+    locationLat: null, locationLng: null, updatedAt: new Date(), space: { timezone: 'Europe/Vienna' },
+    ...over,
+  });
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    prisma.task.updateMany.mockResolvedValue({ count: 1 });
+    prisma.task.findUniqueOrThrow.mockImplementation(async () => ({ ...task(), status: TaskStatus.EN_ROUTE }));
+    prisma.companyLocation.findUnique.mockResolvedValue({ enabledModules: ['time_tracking'], organization: { enabledModules: [] } });
+    prisma.user.findMany.mockResolvedValue([{ id: 'mike', firstName: 'Mike', lastName: 'Weber' }]);
+    prisma.timeEntry.findFirst.mockResolvedValue(null);
+    const module = await Test.createTestingModule({
+      providers: [
+        TasksService, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
+        { provide: PrismaService, useValue: prisma },
+        { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
+        { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },
+        { provide: WorkflowConfigCache, useValue: { getWorkflow: jest.fn().mockResolvedValue(null) } },
+        { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) } },
+        MediaSigner,
+        { provide: OBJECT_STORE, useValue: null },
+      ],
+    }).compile();
+    service = module.get(TasksService);
+  });
+
+  const mike = { id: 't1', userId: 'mike', userRole: Role.EMPLOYEE, organizationId: 'o1' };
+  const office = { id: 't1', userId: 'anna', userRole: Role.ADMIN, organizationId: 'o1' };
+
+  it('refuses the worker who is not clocked in, with a code the screens translate', async () => {
+    prisma.task.findUnique.mockResolvedValue(task());
+    const err = await service.updateStatus({ ...mike, status: TaskStatus.EN_ROUTE }).catch((e) => e);
+    expect(err).toBeInstanceOf(BadRequestException);
+    expect(err.getResponse()).toMatchObject({ code: 'NOT_CLOCKED_IN' });
+    expect(prisma.task.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('lets them through once they are clocked in — anywhere, at a site or away', async () => {
+    prisma.task.findUnique.mockResolvedValue(task());
+    prisma.timeEntry.findFirst.mockResolvedValue({ id: 'e1' });
+    await expect(service.updateStatus({ ...mike, status: TaskStatus.EN_ROUTE })).resolves.toBeDefined();
+    expect(prisma.timeEntry.findFirst.mock.calls[0][0].where).toMatchObject({ organizationId: 'o1', userId: { in: ['mike'] }, status: 'CLOCKED_IN' });
+  });
+
+  it('the office starting it for someone: THAT person must be clocked in, and the refusal names them', async () => {
+    prisma.task.findUnique.mockResolvedValue(task());
+    const err = await service.updateStatus({ ...office, status: TaskStatus.EN_ROUTE }).catch((e) => e);
+    expect(err.getResponse()).toMatchObject({ code: 'ASSIGNEE_NOT_CLOCKED_IN', params: { name: 'Mike Weber' } });
+    expect(prisma.timeEntry.findFirst.mock.calls[0][0].where.userId).toEqual({ in: ['mike'] });
+  });
+
+  it('never refuses accepting a job, or reporting an issue', async () => {
+    prisma.task.findUnique.mockResolvedValue(task({ status: TaskStatus.ASSIGNED }));
+    await expect(service.updateStatus({ ...mike, status: TaskStatus.ACCEPTED })).resolves.toBeDefined();
+    prisma.task.findUnique.mockResolvedValue(task({ status: TaskStatus.IN_PROGRESS }));
+    await expect(service.updateStatus({ ...mike, status: TaskStatus.BLOCKED, reason: 'Part missing' } as any)).resolves.toBeDefined();
+    expect(prisma.timeEntry.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('asks nothing where the workspace runs no clock', async () => {
+    prisma.task.findUnique.mockResolvedValue(task());
+    prisma.companyLocation.findUnique.mockResolvedValue({ enabledModules: ['tasks'], organization: { enabledModules: ['time_tracking'] } });
+    await expect(service.updateStatus({ ...mike, status: TaskStatus.EN_ROUTE })).resolves.toBeDefined();
+    expect(prisma.timeEntry.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('never holds an external member to a clock they do not have', async () => {
+    prisma.task.findUnique.mockResolvedValue(task());
+    prisma.user.findMany.mockResolvedValue([]); // the query excludes isExternal
+    await expect(service.updateStatus({ ...mike, status: TaskStatus.EN_ROUTE })).resolves.toBeDefined();
+    expect(prisma.user.findMany.mock.calls[0][0].where).toMatchObject({ isExternal: false });
+  });
+});

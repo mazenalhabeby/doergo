@@ -3181,7 +3181,9 @@
       "TOO_FAR_TO_ARRIVE": "Sei a {{distance}} dal luogo dell'intervento. Devi essere entro {{radius}} per segnare l'arrivo. Avvicinati e riprova.",
       "TOO_FAR_TO_START": "Sei a {{distance}} dal luogo dell'intervento. Devi essere entro {{radius}} per iniziare il lavoro. Avvicinati e riprova.",
       "OUTSIDE_GEOFENCE": "{{location}} accetta timbrature solo in sede. Sei a {{distance}}.",
-      "AWAY_NOT_ALLOWED": "Sei a {{distance}} da {{location}} e non sei abilitato a lavorare fuori sede. Chiedi al tuo amministratore di consentirlo."
+      "AWAY_NOT_ALLOWED": "Sei a {{distance}} da {{location}} e non sei abilitato a lavorare fuori sede. Chiedi al tuo amministratore di consentirlo.",
+      "NOT_CLOCKED_IN": "Timbra l'entrata per iniziare questo lavoro.",
+      "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} non ha timbrato. Deve timbrare prima che questo lavoro possa iniziare."
     },
     "signOut": {
       "title_one": "{{count}} modifica non è stata inviata",
@@ -3882,6 +3884,12 @@
       "needed": "Questo passo richiede una firma.",
       "open": "Firma",
       "save": "Salva firma"
+    },
+    "clockGate": {
+      "title": "Non hai timbrato",
+      "body": "Il tuo tempo su questo lavoro inizia con il turno. Timbra l'entrata e il lavoro parte subito dopo.",
+      "clockInAndStart": "Timbra e inizia",
+      "notNow": "Non ora"
     }
   },
   "jobsList": {

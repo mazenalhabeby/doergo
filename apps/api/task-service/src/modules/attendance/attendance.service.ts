@@ -47,6 +47,7 @@ import {
   endOfDayIn,
   type NoShiftAllowance,
   type NoShiftTag,
+  spaceRunsClock,
 } from '@hbcfield/shared';
 import { scopeWhere, scopeWhereOn, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
 import { CountedTimeService } from './counted-time.service';
@@ -427,10 +428,10 @@ export class AttendanceService {
       (the module gate read `spaceId`, the clock-in sends `locationId`). Both
       now ask the workspace — the list must never be looser than the check.
     */
-    const clockable = locations.filter((l) => {
-      const mods = (l.enabledModules as string[] | null) ?? (l.organization?.enabledModules as string[] | null) ?? [];
-      return mods.includes('time_tracking');
-    }).map(({ enabledModules: _m, organization: _o, ...rest }) => rest);
+    const clockable = locations.filter((l) =>
+      // The same answer the job-start gate uses (shared clock-gate.ts).
+      spaceRunsClock(l.enabledModules as string[] | null, l.organization?.enabledModules as string[] | null),
+    ).map(({ enabledModules: _m, organization: _o, ...rest }) => rest);
 
     // The overrides are already on the assignment rows read above, so tagging
     // costs one lookup for the member and no second query for them.

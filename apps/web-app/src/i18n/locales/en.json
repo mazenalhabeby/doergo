@@ -1700,6 +1700,12 @@
         "mine": "Mine",
         "all": "All"
       }
+    },
+    "clockGate": {
+      "title": "You're not clocked in",
+      "body": "Time on a job runs with your shift. Clock in, and the job starts straight after.",
+      "clockInAndStart": "Clock in and start",
+      "notNow": "Not now"
     }
   },
   "technicians": {
@@ -8599,7 +8605,9 @@
     "STEP_FORM_DEFINITION_INVALID": "Some questions on this step are not valid.",
     "TIMEOFF_OVERLAP": "This employee already has time off from {{from}} to {{to}} ({{status}}). Choose different dates, or edit that entry.",
     "OUTSIDE_GEOFENCE": "{{location}} only accepts clock-ins on site. You are {{distance}} away.",
-    "AWAY_NOT_ALLOWED": "You are {{distance}} from {{location}}, and you are not set up to work away from it. Ask your administrator to allow it."
+    "AWAY_NOT_ALLOWED": "You are {{distance}} from {{location}}, and you are not set up to work away from it. Ask your administrator to allow it.",
+    "NOT_CLOCKED_IN": "Clock in to start work on this job.",
+    "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} is not clocked in. They need to clock in before this job can start."
   },
   "signLink": {
     "tabs": {

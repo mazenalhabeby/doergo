@@ -1,5 +1,8 @@
 "use client"
 
+import { useClockGate } from "@/hooks"
+import { ClockGateDialog } from "@/components/clock-gate-dialog"
+
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import dynamic from "next/dynamic"
@@ -607,6 +610,8 @@ export default function TasksPage() {
     [orgWorkflows, contextDefaultWorkflowId],
   )
 
+  const clockGate = useClockGate()
+
   // Kanban drag-and-drop status change
   const statusChangeMutation = useMutation({
     mutationFn: ({ taskId, status, answers }: { taskId: string; status: string; answers?: StepFormAnswers }) =>
@@ -617,8 +622,10 @@ export default function TasksPage() {
       optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, status }))
       return { snapshot }
     },
-    onError: (e: Error, _vars, context) => {
+    onError: (e: Error, vars, context) => {
       if (context?.snapshot) restoreTasksCache(queryClient, context.snapshot)
+      // Off the clock: offer to clock in, then the same move again by itself.
+      if (clockGate.intercept(e, () => statusChangeMutation.mutate(vars))) return
       // A step-form refusal is answered by the step's dialog, not a toast.
       if (!isStepFormRefusal(e)) notify.error(serverErrorMessage(e, t))
     },
@@ -1163,6 +1170,7 @@ export default function TasksPage() {
 
   return (
     <div className="min-h-full bg-background">
+      <ClockGateDialog {...clockGate.dialogProps} />
       <style>{`
         @keyframes fadeSlideIn {
           from { opacity: 0; transform: translateY(6px); }

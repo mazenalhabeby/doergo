@@ -3181,7 +3181,9 @@
       "TOO_FAR_TO_ARRIVE": "Estás a {{distance}} del lugar del trabajo. Tienes que estar a menos de {{radius}} para marcar la llegada. Acércate e inténtalo de nuevo.",
       "TOO_FAR_TO_START": "Estás a {{distance}} del lugar del trabajo. Tienes que estar a menos de {{radius}} para empezar el trabajo. Acércate e inténtalo de nuevo.",
       "OUTSIDE_GEOFENCE": "{{location}} solo admite fichajes en el sitio. Estás a {{distance}}.",
-      "AWAY_NOT_ALLOWED": "Estás a {{distance}} de {{location}} y no tienes permiso para trabajar fuera. Pide a tu administrador que lo permita."
+      "AWAY_NOT_ALLOWED": "Estás a {{distance}} de {{location}} y no tienes permiso para trabajar fuera. Pide a tu administrador que lo permita.",
+      "NOT_CLOCKED_IN": "Ficha la entrada para empezar este trabajo.",
+      "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} no ha fichado la entrada. Tiene que fichar antes de que este trabajo pueda empezar."
     },
     "signOut": {
       "title_one": "{{count}} cambio no se ha enviado",
@@ -3882,6 +3884,12 @@
       "needed": "Este paso necesita una firma.",
       "open": "Firmar",
       "save": "Guardar firma"
+    },
+    "clockGate": {
+      "title": "No has fichado la entrada",
+      "body": "Tu tiempo en este trabajo empieza con tu turno. Ficha la entrada y el trabajo empieza justo después.",
+      "clockInAndStart": "Fichar y empezar",
+      "notNow": "Ahora no"
     }
   },
   "jobsList": {

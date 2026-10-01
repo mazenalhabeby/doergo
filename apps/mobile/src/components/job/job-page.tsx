@@ -7,7 +7,7 @@ import { BlurView } from 'expo-blur';
 import { router, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { daysLate, getFlowSteps, hasCapability, hasFeatureModule, type TaskCapability } from '@hbcfield/shared/client';
+import { daysLate, getFlowSteps, hasAccessModule, hasCapability, hasFeatureModule, spaceRunsClock, stepStartsWork, type TaskCapability } from '@hbcfield/shared/client';
 import { TaskStatus } from '../../lib/api';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
@@ -26,7 +26,7 @@ import { flowIdOf, hasHour, stepLabelFor } from '../home/my-work';
 import { useJob } from './use-job';
 import { useJobWrites, type WriteStatus } from './use-job-writes';
 import {
-  checklistMode, checklistStep, decideNext, dockMode, heldUntilDue, isCanceledStatus, isClosedStatus,
+  capsAt, checklistMode, checklistStep, decideNext, dockMode, heldUntilDue, isCanceledStatus, isClosedStatus,
   formSheetTarget, moreOptions, needsReport, stepPosition, formatOnJob, type MoreOption, type OpenSheet,
 } from './job-logic';
 import { formForMove, moveKind, workflowAsks } from './step-form-logic';
@@ -46,13 +46,17 @@ import { Banner, QuietButton, SectionLabel } from './job-ui';
 import { MoreSheet } from './sheets/more-sheet';
 import { ReportIssueSheet } from './sheets/report-issue-sheet';
 import { JobConfirmSheet } from './sheets/confirm-sheet';
+import { ClockInToStartSheet } from './sheets/clock-in-to-start-sheet';
+import { LocationPickerSheet } from '../index';
+import { useShift } from '../../offline/attendance/use-shift';
+import { useClockIn } from '../../hooks/useClockIn';
 import { AssignSheet } from './sheets/assign-sheet';
 import { EditSheet } from './sheets/edit-sheet';
 import { StepFormSheet } from './sheets/step-form-sheet';
 import { SignSheet } from './sheets/sign-sheet';
 import { TourTarget, useTourScroll } from '../tour/tour-target';
 
-type SheetKind = 'more' | 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'form' | 'sign' | 'delete';
+type SheetKind = 'more' | 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'form' | 'sign' | 'delete' | 'clockIn';
 
 /** A link's sheet as the page's own: `finish` and `form:<STEP>` are both the step form. */
 function sheetOf(open: OpenSheet | null): SheetKind | null {
@@ -148,6 +152,25 @@ export function JobPage({
   const [formErrors, setFormErrors] = useState<Record<string, string> | null>(null);
   const [deleting, setDeleting] = useState<JobFile | null>(null);
   const closeSheet = useCallback(() => setSheet(null), []);
+
+  /*
+    Clocked in to start work (shared clock-gate.ts). The step waits here while
+    the member clocks in; the clock-in's own success moves the job on, so one
+    tap does both and nothing is lost if they close the sheet.
+  */
+  const shift = useShift();
+  const [startAfterClockIn, setStartAfterClockIn] = useState<string | null>(null);
+  const clockIn = useClockIn({
+    assignedLocations: shift.status?.assignedLocations ?? [],
+    isClockedIn: !!shift.status?.isClockedIn,
+    onClockedIn: () => {
+      void shift.refresh();
+      const to = startAfterClockIn;
+      setStartAfterClockIn(null);
+      setSheet(null);
+      if (to) void writes.changeStatus(to);
+    },
+  });
 
   /* ---------------- what is on screen ---------------- */
 
@@ -256,7 +279,21 @@ export function JobPage({
    * report step asks), Blocked asks what is wrong (unless it has a form of its
    * own), anything else just goes.
    */
+  /**
+   * Would this move start work while the member is off the clock? Asked only
+   * where a clock exists: their own access has one and the workspace runs Time
+   * Tracking. Where the phone cannot tell (a workspace whose modules it was not
+   * sent), the server still decides — its refusal is translated like any other.
+   */
+  const mustClockInFirst = (to: string): boolean =>
+    doingTheWork
+    && !shift.status?.isClockedIn
+    && hasAccessModule(user ?? {}, 'clock')
+    && !!task.space?.enabledModules && spaceRunsClock(task.space.enabledModules, null)
+    && stepStartsWork(to, capsAt(to, steps, workflowName));
+
   const go = (to: string) => {
+    if (mustClockInFirst(to)) { setStartAfterClockIn(to); setSheet('clockIn'); return; }
     const kind = moveKind(to, formForMove(task.workflow, steps, to, workflowName));
     if (kind === 'issue') { setSheet('issue'); return; }
     if (kind === 'form') {
@@ -487,6 +524,14 @@ export function JobPage({
       ) : null}
 
       {/* ⚠️ ONE sheet state — two can never be asked for at once. */}
+      <ClockInToStartSheet
+        visible={sheet === 'clockIn'}
+        onClose={() => { setStartAfterClockIn(null); closeSheet(); }}
+        jobTitle={[task.title, task.space?.name].filter(Boolean).join(' · ')}
+        busy={clockIn.isBusy || writes.busy}
+        onClockIn={clockIn.openClockInModal}
+      />
+      <LocationPickerSheet {...clockIn.pickerProps} confirmDisabled={clockIn.isClockingIn} />
       <MoreSheet
         visible={sheet === 'more'}
         onClose={closeSheet}

@@ -1700,6 +1700,12 @@
         "mine": "Míos",
         "all": "Todos"
       }
+    },
+    "clockGate": {
+      "title": "No has fichado la entrada",
+      "body": "El tiempo en un trabajo corre con tu turno. Ficha la entrada y el trabajo empieza justo después.",
+      "clockInAndStart": "Fichar y empezar",
+      "notNow": "Ahora no"
     }
   },
   "technicians": {
@@ -8599,7 +8605,9 @@
     "STEP_FORM_DEFINITION_INVALID": "Algunas preguntas de este paso no son válidas.",
     "TIMEOFF_OVERLAP": "Este empleado ya tiene ausencia del {{from}} al {{to}} ({{status}}). Elige otras fechas o edita esa entrada.",
     "OUTSIDE_GEOFENCE": "{{location}} solo admite fichajes en el sitio. Estás a {{distance}}.",
-    "AWAY_NOT_ALLOWED": "Estás a {{distance}} de {{location}} y no tienes permiso para trabajar fuera. Pide a tu administrador que lo permita."
+    "AWAY_NOT_ALLOWED": "Estás a {{distance}} de {{location}} y no tienes permiso para trabajar fuera. Pide a tu administrador que lo permita.",
+    "NOT_CLOCKED_IN": "Ficha la entrada para empezar este trabajo.",
+    "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} no ha fichado la entrada. Tiene que fichar antes de que este trabajo pueda empezar."
   },
   "signLink": {
     "tabs": {

@@ -1700,6 +1700,12 @@
         "mine": "Meine",
         "all": "Alle"
       }
+    },
+    "clockGate": {
+      "title": "Sie sind nicht eingestempelt",
+      "body": "Die Zeit an einem Auftrag läuft mit Ihrer Schicht. Stempeln Sie ein, danach startet der Auftrag sofort.",
+      "clockInAndStart": "Einstempeln und starten",
+      "notNow": "Nicht jetzt"
     }
   },
   "technicians": {
@@ -8599,7 +8605,9 @@
     "STEP_FORM_DEFINITION_INVALID": "Einige Fragen in diesem Schritt sind ungültig.",
     "TIMEOFF_OVERLAP": "Dieser Mitarbeiter hat bereits Abwesenheit von {{from}} bis {{to}} ({{status}}). Wählen Sie andere Daten oder bearbeiten Sie den vorhandenen Eintrag.",
     "OUTSIDE_GEOFENCE": "Bei {{location}} ist Einstempeln nur vor Ort möglich. Sie sind {{distance}} entfernt.",
-    "AWAY_NOT_ALLOWED": "Sie sind {{distance}} von {{location}} entfernt und nicht für das Arbeiten außerhalb eingerichtet. Bitten Sie Ihre Administration, es zu erlauben."
+    "AWAY_NOT_ALLOWED": "Sie sind {{distance}} von {{location}} entfernt und nicht für das Arbeiten außerhalb eingerichtet. Bitten Sie Ihre Administration, es zu erlauben.",
+    "NOT_CLOCKED_IN": "Stempeln Sie ein, um mit diesem Auftrag zu beginnen.",
+    "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} ist nicht eingestempelt. Der Auftrag kann erst starten, wenn {{name}} eingestempelt ist."
   },
   "signLink": {
     "tabs": {

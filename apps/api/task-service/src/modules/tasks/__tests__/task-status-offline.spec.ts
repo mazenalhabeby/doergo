@@ -43,6 +43,7 @@ describe('status change recorded offline', () => {
     taskAssignee: { findFirst: jest.fn().mockResolvedValue(null) },
     taskEvent: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
     companyLocation: { findUnique: jest.fn().mockResolvedValue(null) },
+    organization: { findUnique: jest.fn().mockResolvedValue({ enabledModules: [] }) },
     spaceAssignment: { findMany: jest.fn().mockResolvedValue([]) },
   };
 

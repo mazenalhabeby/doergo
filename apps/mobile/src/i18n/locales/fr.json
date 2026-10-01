@@ -3181,7 +3181,9 @@
       "TOO_FAR_TO_ARRIVE": "Vous êtes à {{distance}} du lieu d'intervention. Vous devez être à moins de {{radius}} pour signaler votre arrivée. Rapprochez-vous et réessayez.",
       "TOO_FAR_TO_START": "Vous êtes à {{distance}} du lieu d'intervention. Vous devez être à moins de {{radius}} pour démarrer l'intervention. Rapprochez-vous et réessayez.",
       "OUTSIDE_GEOFENCE": "{{location}} n'accepte les pointages que sur place. Vous êtes à {{distance}}.",
-      "AWAY_NOT_ALLOWED": "Vous êtes à {{distance}} de {{location}} et vous n'êtes pas autorisé à travailler à distance. Demandez à votre administrateur de l'autoriser."
+      "AWAY_NOT_ALLOWED": "Vous êtes à {{distance}} de {{location}} et vous n'êtes pas autorisé à travailler à distance. Demandez à votre administrateur de l'autoriser.",
+      "NOT_CLOCKED_IN": "Pointez pour commencer ce travail.",
+      "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} n'a pas pointé. Il faut pointer avant que ce travail puisse commencer."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",
@@ -3882,6 +3884,12 @@
       "needed": "Cette étape demande une signature.",
       "open": "Signer",
       "save": "Enregistrer la signature"
+    },
+    "clockGate": {
+      "title": "Vous n'avez pas pointé",
+      "body": "Votre temps sur ce travail commence avec votre service. Pointez, et le travail démarre aussitôt.",
+      "clockInAndStart": "Pointer et commencer",
+      "notNow": "Pas maintenant"
     }
   },
   "jobsList": {

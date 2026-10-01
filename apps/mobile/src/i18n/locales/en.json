@@ -3181,7 +3181,9 @@
       "TOO_FAR_TO_ARRIVE": "You are {{distance}} from the job site. You need to be within {{radius}} to mark it as arrived. Please move closer and try again.",
       "TOO_FAR_TO_START": "You are {{distance}} from the job site. You need to be within {{radius}} to start the job. Please move closer and try again.",
       "OUTSIDE_GEOFENCE": "{{location}} only accepts clock-ins on site. You are {{distance}} away.",
-      "AWAY_NOT_ALLOWED": "You are {{distance}} from {{location}}, and you are not set up to work away from it. Ask your administrator to allow it."
+      "AWAY_NOT_ALLOWED": "You are {{distance}} from {{location}}, and you are not set up to work away from it. Ask your administrator to allow it.",
+      "NOT_CLOCKED_IN": "Clock in to start work on this job.",
+      "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} is not clocked in. They need to clock in before this job can start."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",
@@ -3882,6 +3884,12 @@
       "needed": "This step needs a signature.",
       "open": "Sign",
       "save": "Save signature"
+    },
+    "clockGate": {
+      "title": "You're not clocked in",
+      "body": "Your time on this job starts with your shift. Clock in, and the job starts straight after.",
+      "clockInAndStart": "Clock in and start work",
+      "notNow": "Not now"
     }
   },
   "jobsList": {

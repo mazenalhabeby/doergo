@@ -89,6 +89,9 @@ describe('TasksService', () => {
       findMany: jest.fn(),
       findUnique: jest.fn(),
     },
+    // The workspace runs no clock unless a test says so (job-start clock gate).
+    organization: { findUnique: jest.fn().mockResolvedValue({ enabledModules: [] }) },
+    timeEntry: { findFirst: jest.fn().mockResolvedValue(null) },
     // Models the service also touches (default space, assignees, deps, etc.).
     companyLocation: {
       findFirst: jest.fn().mockResolvedValue(null),
