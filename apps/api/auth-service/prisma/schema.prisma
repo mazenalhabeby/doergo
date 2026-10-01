@@ -102,6 +102,12 @@ enum TaskEventType {
   CHECKLIST_ITEM_ADDED
   CHECKLIST_ITEM_TOGGLED
   CHECKLIST_ITEM_REMOVED
+  /// Work stopped because the worker clocked out (see Task.pausedAt).
+  PAUSED
+  /// Work picked up again after a pause.
+  RESUMED
+  /// A worker wrote what they did and what is left (TaskHandover).
+  HANDOVER_ADDED
 }
 
 enum TaskAssigneeRole {
@@ -871,6 +877,7 @@ model User {
   comments            Comment[]
   attachments         Attachment[]
   taskEvents          TaskEvent[]
+  taskHandovers       TaskHandover[]      @relation("TaskHandovers")
   lastLocation        WorkerLastLocation?
   locationHistory     LocationHistory[]
   refreshTokens       RefreshToken[]
@@ -1065,6 +1072,16 @@ model Task {
   routeEndedAt   DateTime? // When ARRIVED
   routeDistance  Float? // Total distance in meters
 
+  /// Work paused because the worker clocked out with the job in a working step.
+  /// Cleared by "Resume work" (clock gate applies) or by any move of the job.
+  /// A flag, not a status: workflows are the organization's own and need not
+  /// have a step for it. packages/shared/src/tasks/handover.ts
+  pausedAt   DateTime?
+  pausedById String?
+  /// Who still owes a handover note for this job (set at the pause when they
+  /// left none; cleared when they write it). Never blocks anything — it nags.
+  handoverDueById String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1133,7 +1150,10 @@ model Task {
   assignees       TaskAssignee[]
   checklistItems  ChecklistItem[]
   customFields    CustomFieldValue[]
+  handovers       TaskHandover[]
 
+  @@index([pausedById]) // "you paused a job" — the member's own paused jobs
+  @@index([handoverDueById]) // "write what you did on X" — every app open
   @@index([status])
   /// "Which tasks are mine, soonest first" — every technician's list, and now
   /// the admin's own work. Unindexed until 2026-09-09, so it scanned.
@@ -1157,6 +1177,27 @@ model Task {
   @@index([organizationId, spaceId, status]) // space + status filtering
   @@index([organizationId, updatedAt]) // offline sync: pull changes in order
   @@map("tasks")
+}
+
+/// What a worker did on a job and what is left — written when they stop
+/// (clock-out) or later, and read by whoever picks the job up.
+model TaskHandover {
+  /// Client-made on the phone, so a replayed offline write is created once.
+  id             String   @id @default(cuid())
+  organizationId String
+  taskId         String
+  task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User     @relation("TaskHandovers", fields: [authorId], references: [id], onDelete: Cascade)
+  note           String
+  /// Photos, as the job's own attachments (uploaded to the task first).
+  attachmentIds  String[] @default([])
+  /// The author's working time on the job up to the pause, for the reader.
+  workedMinutes  Int?
+  createdAt      DateTime @default(now())
+
+  @@index([taskId, createdAt])
+  @@map("task_handovers")
 }
 
 model TaskAssignee {

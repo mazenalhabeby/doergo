@@ -54,6 +54,9 @@ import {
   TaskDetailHeader,
   TaskDetailSidebar,
   DescriptionSection,
+  HandoverCard,
+  HandoverPendingNotice,
+  useHandoverPendingText,
 } from "./_components"
 
 export default function TaskDetailPage({
@@ -244,6 +247,36 @@ export default function TaskDetailPage({
   const clockGate = useClockGate()
 
   /*
+    Paused at a clock-out (shared tasks/handover.ts). Resume is a move into work:
+    off the clock, the same "clock in first" dialog answers and repeats it.
+  */
+  const refreshTask = () => {
+    queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
+    queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+    queryClient.invalidateQueries({ queryKey: ["taskTimeline", id], refetchType: "all" })
+  }
+  const resumeMutation = useMutation({
+    mutationFn: () => tasksApi.resumeWork(id),
+    onSuccess: () => { notify.success(t("tasks.handover.resumed")); refreshTask() },
+    onError: (e: Error) => {
+      if (clockGate.intercept(e, () => resumeMutation.mutate())) return
+      notify.error(serverErrorMessage(e, t))
+    },
+  })
+  // "Mike hasn't written a handover yet" — the job's card and the reassign dialog say the same.
+  const handoverPending = useHandoverPendingText(task)
+  const writeHandover = async (note: string) => {
+    try {
+      await tasksApi.writeHandover(id, note)
+      notify.success(t("tasks.handover.saved"))
+      refreshTask()
+    } catch (e) {
+      notify.error(serverErrorMessage(e as Error, t))
+      throw e
+    }
+  }
+
+  /*
     Inline field save — title, description, hours, points.
 
     This refreshed only THIS task, so an edit made here was invisible on the
@@ -325,6 +358,7 @@ export default function TaskDetailPage({
    * its body, so it costs no query either.
    */
   const openIfPresent = (n: number) => n > 0
+  const onTheJob = !!user?.id && assigneeIds(task).includes(user.id)
 
   return (
     <div className="min-h-full bg-background">
@@ -337,6 +371,7 @@ export default function TaskDetailPage({
         currentAssigneeId={task?.assignedToId}
         currentAssigneeIds={task?.assignees?.map((a) => a.userId) || []}
         isAssigning={assignMutation.isPending}
+        notice={handoverPending ? <HandoverPendingNotice text={handoverPending} onWait={() => setShowAssignModal(false)} /> : null}
         onAssign={(memberId) => assignMutation.mutate(memberId)}
         onSave={async (added, removed) => {
           const ops: Promise<unknown>[] = [
@@ -373,6 +408,18 @@ export default function TaskDetailPage({
           onCancelTask={() => deleteMutation.mutate()}
           isStatusChanging={statusChangeMutation.isPending}
         />
+        </div>
+
+        {/* ─── Stopped work: paused, the handover owed, the newest note ─── */}
+        <div className="mb-4">
+          <HandoverCard
+            task={task}
+            meId={user?.id}
+            canResume={onTheJob && !isCompleted && !isCanceled}
+            resuming={resumeMutation.isPending}
+            onResume={() => resumeMutation.mutate()}
+            onWrite={writeHandover}
+          />
         </div>
 
         {/* ─── Progress Card — always visible ─────────────────────── */}

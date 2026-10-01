@@ -31,6 +31,8 @@ import {
   ReorderChecklistDto,
   CreateDependencyDto,
   AddCommentDto,
+  HandoverDto,
+  ResumeWorkDto,
   PresignAttachmentDto,
   ConfirmAttachmentDto,
 } from './dto';
@@ -253,6 +255,17 @@ export class TasksController {
     });
   }
 
+  /**
+   * The caller's own: jobs in work (the clock-out sheet), notes they owe (asked
+   * on every open) and jobs paused on them (offered at the next clock-in).
+   * No permission: the filter IS the authorization — it only ever reads the caller.
+   */
+  @Get('handover/mine')
+  @ApiOperation({ summary: "The caller's jobs in work, handovers owed, and paused jobs" })
+  async myHandovers(@Request() req: any) {
+    return this.tasksService.myHandovers({ userId: req.user.id, organizationId: req.user.organizationId });
+  }
+
   @Get(':id/suggested-employees')
   @RequirePermissionInSpace('canAssignTasks')
   @ApiOperation({ summary: 'Get suggested employees for a task with scoring' })
@@ -360,6 +373,32 @@ export class TasksController {
       canAssignTasks: req.user.canAssignTasks,
       organizationId: req.user.organizationId,
       access: req.user.access, // server-authoritative; task-service enforces the real space for foreign tasks
+    });
+  }
+
+  /** "Resume work" on a job paused at a clock-out. The clock gate applies. */
+  @Post(':id/resume')
+  @ApiOperation({ summary: 'Resume work on a job paused at a clock-out' })
+  async resumeWork(@Param('id') id: string, @Body() body: ResumeWorkDto, @Request() req: any) {
+    return this.tasksQueueService.resumeWork({
+      id,
+      ...body,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  /** "What I did, and what is left" — by somebody on the job, or who owes the note. */
+  @Post(':id/handover')
+  @ApiOperation({ summary: 'Write the handover note for a job' })
+  async addHandover(@Param('id') id: string, @Body() body: HandoverDto, @Request() req: any) {
+    return this.tasksQueueService.addHandover({
+      ...body,
+      taskId: id,
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
     });
   }
 

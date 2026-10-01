@@ -1,8 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString, MaxLength, Matches, ValidateNested } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsNumber, IsOptional, IsString, MaxLength, Matches, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CLIENT_ID } from '../../../common/dto/upload.dto';
 import { OccurrenceEvidenceDto } from '../../../common/dto/occurrence.dto';
+import { ClockOutHandoverDto } from '../../tasks/dto';
 
 export class ClockOutDto {
   // Optional: clock-out is allowed without a GPS fix. When absent the geofence
@@ -59,4 +60,16 @@ export class ClockOutDto {
   @ValidateNested()
   @Type(() => OccurrenceEvidenceDto)
   evidence?: OccurrenceEvidenceDto;
+
+  /**
+   * "What I did and what is left", per job still in work. The clock-out pauses
+   * those jobs either way; a job with no note here is flagged "no handover yet".
+   */
+  @ApiPropertyOptional({ type: [ClockOutHandoverDto] })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @ValidateNested({ each: true })
+  @Type(() => ClockOutHandoverDto)
+  handovers?: ClockOutHandoverDto[];
 }

@@ -3183,7 +3183,9 @@
       "OUTSIDE_GEOFENCE": "{{location}} only accepts clock-ins on site. You are {{distance}} away.",
       "AWAY_NOT_ALLOWED": "You are {{distance}} from {{location}}, and you are not set up to work away from it. Ask your administrator to allow it.",
       "NOT_CLOCKED_IN": "Clock in to start work on this job.",
-      "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} is not clocked in. They need to clock in before this job can start."
+      "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} is not clocked in. They need to clock in before this job can start.",
+      "HANDOVER_NOT_ON_THE_JOB": "This job is no longer yours, so the handover was not saved.",
+      "HANDOVER_NOTE_REQUIRED": "Write what you did before saving."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",
@@ -3432,7 +3434,17 @@
       "unwell": "Unwell",
       "other": "Something else"
     },
-    "countedTotal": "Counted"
+    "countedTotal": "Counted",
+    "pauseAndClockOut_one": "Pause job & clock out",
+    "pauseAndClockOut_other": "Pause jobs & clock out",
+    "jobs": {
+      "eyebrow_one": "STILL IN WORK · IT PAUSES WHEN YOU CLOCK OUT",
+      "eyebrow_other": "{{count}} STILL IN WORK · THEY PAUSE WHEN YOU CLOCK OUT",
+      "leaveNote": "Leave a handover note",
+      "editNote": "Edit the note",
+      "finish": "It's done — finish it",
+      "hint": "No note now? You will be asked for it later. Nothing stops you clocking out."
+    }
   },
   "myWork": {
     "all": "All {{count}}",
@@ -3743,14 +3755,18 @@
       "unassigned": "Unassigned",
       "photoAdded": "Photo added",
       "ticked": "Ticked: {{text}}",
-      "unticked": "Unticked: {{text}}"
+      "unticked": "Unticked: {{text}}",
+      "paused": "Paused at clock-out",
+      "resumed": "Work resumed",
+      "handover": "Handover: {{text}}"
     },
     "timer": {
       "onJob": "{{time}} on this job",
       "onJobTracking": "{{time}} on this job · tracking your route",
       "onJobNotTracking": "{{time}} on this job · route not recording",
       "tracking": "Tracking your route",
-      "notTracking": "Route not recording"
+      "notTracking": "Route not recording",
+      "paused": "Paused — nobody is on this job"
     },
     "dock": {
       "navigate": "Navigate",
@@ -3890,6 +3906,25 @@
       "body": "Your time on this job starts with your shift. Clock in, and the job starts straight after.",
       "clockInAndStart": "Clock in and start work",
       "notNow": "Not now"
+    },
+    "handover": {
+      "title": "What you did, and what is left",
+      "why": "Whoever picks this job up next reads this first.",
+      "placeholder": "What did you do? What still needs doing?",
+      "save": "Save handover",
+      "later": "Later",
+      "saved": "Handover saved",
+      "resumed": "Back at work",
+      "resume": "Resume work",
+      "startWork": "Start work",
+      "label": "HANDOVER",
+      "worked": "worked {{time}}",
+      "pausedYou": "Paused when you clocked out · {{time}}",
+      "pausedBy": "Paused when {{name}} clocked out · {{time}}",
+      "youOwe": "Write what you did on this job and what is left.",
+      "write": "Write it",
+      "notYet": "{{name}} hasn't written a handover yet.",
+      "notYetWorked": "{{name}} hasn't written a handover yet — worked {{time}} on it."
     }
   },
   "jobsList": {
@@ -4299,5 +4334,13 @@
       "copy": "Copy for support",
       "updateShort": "Update ready"
     }
+  },
+  "jobsStrip": {
+    "owedTitle": "Write what you did on {{title}}",
+    "owedSub": "The next person on the job reads it first.",
+    "pausedTitle": "You paused {{title}}",
+    "pausedSub": "Resume work when you are back on it.",
+    "more_one": "And {{count}} more job",
+    "more_other": "And {{count}} more jobs"
   }
 }

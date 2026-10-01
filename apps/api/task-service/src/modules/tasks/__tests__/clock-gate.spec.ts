@@ -16,6 +16,7 @@ import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { MediaSigner } from '../../../common/storage/media-signer.service';
 import { PresenceService } from '../../attendance/presence/presence.service';
+import { JobPauseService } from '../handover/job-pause.service';
 
 describe('the rule (shared)', () => {
   it('starting or resuming work needs the clock; taking a job on or pausing it does not', () => {
@@ -79,7 +80,7 @@ describe('TasksService.updateStatus — clocked in to start work', () => {
     prisma.timeEntry.findFirst.mockResolvedValue(null);
     const module = await Test.createTestingModule({
       providers: [
-        TasksService, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
+        TasksService, { provide: JobPauseService, useValue: {} }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },
@@ -137,5 +138,44 @@ describe('TasksService.updateStatus — clocked in to start work', () => {
     prisma.user.findMany.mockResolvedValue([]); // the query excludes isExternal
     await expect(service.updateStatus({ ...mike, status: TaskStatus.EN_ROUTE })).resolves.toBeDefined();
     expect(prisma.user.findMany.mock.calls[0][0].where).toMatchObject({ isExternal: false });
+  });
+
+  describe('resume after a pause at clock-out', () => {
+    const paused = (over: Record<string, unknown> = {}) => task({ status: TaskStatus.IN_PROGRESS, pausedAt: new Date('2026-10-01T15:00:00Z'), pausedById: 'mike', ...over });
+
+    it('is a move into work: off the clock, it asks to clock in first', async () => {
+      prisma.task.findUnique.mockResolvedValue(paused());
+      const err = await service.resumeWork({ ...mike }).catch((e) => e);
+      expect(err.getResponse()).toMatchObject({ code: 'NOT_CLOCKED_IN' });
+      expect(prisma.task.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('clocked in: clears the pause and records it', async () => {
+      prisma.task.findUnique.mockResolvedValue(paused());
+      prisma.timeEntry.findFirst.mockResolvedValue({ id: 'e1' });
+      await service.resumeWork({ ...mike });
+      expect(prisma.task.updateMany).toHaveBeenCalledWith({ where: { id: 't1', pausedAt: { not: null } }, data: { pausedAt: null, pausedById: null } });
+      expect(prisma.taskEvent.create.mock.calls[0][0].data.eventType).toBe('RESUMED');
+    });
+
+    it('the new worker the job was given to may pick it up', async () => {
+      prisma.task.findUnique.mockResolvedValue(paused({ assignedToId: 'ali' }));
+      prisma.timeEntry.findFirst.mockResolvedValue({ id: 'e1' });
+      await expect(service.resumeWork({ ...mike, userId: 'ali' })).resolves.toBeDefined();
+      await expect(service.resumeWork({ ...mike, userId: 'stranger' })).rejects.toThrow('resume');
+    });
+
+    it('a second tap (or an offline replay) writes nothing', async () => {
+      prisma.task.findUnique.mockResolvedValue(task({ status: TaskStatus.IN_PROGRESS }));
+      await service.resumeWork({ ...mike });
+      expect(prisma.task.updateMany).not.toHaveBeenCalled();
+      expect(prisma.timeEntry.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('any move of a paused job ends the pause', async () => {
+      prisma.task.findUnique.mockResolvedValue(paused());
+      await service.updateStatus({ ...mike, status: TaskStatus.BLOCKED, reason: 'Part missing' } as any);
+      expect(prisma.task.updateMany.mock.calls[0][0].data).toMatchObject({ status: TaskStatus.BLOCKED, pausedAt: null, pausedById: null });
+    });
   });
 });

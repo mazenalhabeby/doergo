@@ -1619,7 +1619,10 @@
         "CANCELED": "Aufgabe storniert",
         "CLOSED": "Aufgabe geschlossen",
         "ATTACHMENT_ADDED": "Anhang hinzugefügt",
-        "ATTACHMENT_REMOVED": "Anhang entfernt"
+        "ATTACHMENT_REMOVED": "Anhang entfernt",
+        "PAUSED": "Beim Ausstempeln pausiert",
+        "RESUMED": "Arbeit fortgesetzt",
+        "HANDOVER_ADDED": "Übergabe geschrieben"
       }
     },
     "assignees": {
@@ -1706,6 +1709,32 @@
       "body": "Die Zeit an einem Auftrag läuft mit Ihrer Schicht. Stempeln Sie ein, danach startet der Auftrag sofort.",
       "clockInAndStart": "Einstempeln und starten",
       "notNow": "Nicht jetzt"
+    },
+    "handover": {
+      "title": "Was Sie erledigt haben und was noch fehlt",
+      "why": "Wer den Auftrag als Nächstes übernimmt, liest das zuerst.",
+      "placeholder": "Was haben Sie gemacht? Was ist noch zu tun?",
+      "save": "Übergabe speichern",
+      "saved": "Übergabe gespeichert",
+      "resumed": "Wieder bei der Arbeit",
+      "resume": "Arbeit fortsetzen",
+      "startWork": "Arbeit beginnen",
+      "label": "Übergabe",
+      "worked": "{{time}} gearbeitet",
+      "photos_one": "{{count}} Foto zu dieser Notiz – siehe Anhänge",
+      "photos_other": "{{count}} Fotos zu dieser Notiz – siehe Anhänge",
+      "pausedYou": "Pausiert, als Sie ausgestempelt haben · {{when}}",
+      "pausedBy": "Pausiert, als {{name}} ausgestempelt hat · {{when}}",
+      "youOwe": "Notieren Sie, was Sie an diesem Auftrag erledigt haben und was noch fehlt.",
+      "write": "Übergabe schreiben",
+      "notYet": "{{name}} hat noch keine Übergabe geschrieben.",
+      "notYetWorked": "{{name}} hat noch keine Übergabe geschrieben – {{time}} daran gearbeitet.",
+      "reassignHint": "Sie können jetzt neu zuweisen: Eine später geschriebene Notiz erreicht trotzdem, wer den Auftrag hat.",
+      "wait": "Auf die Notiz warten",
+      "chip": "Pausiert",
+      "chipOwed": "Pausiert · keine Übergabe",
+      "chipTitle": "Angehalten, als ausgestempelt wurde",
+      "chipOwedTitle": "Angehalten, als ausgestempelt wurde – noch keine Übergabenotiz"
     }
   },
   "technicians": {
@@ -8607,7 +8636,9 @@
     "OUTSIDE_GEOFENCE": "Bei {{location}} ist Einstempeln nur vor Ort möglich. Sie sind {{distance}} entfernt.",
     "AWAY_NOT_ALLOWED": "Sie sind {{distance}} von {{location}} entfernt und nicht für das Arbeiten außerhalb eingerichtet. Bitten Sie Ihre Administration, es zu erlauben.",
     "NOT_CLOCKED_IN": "Stempeln Sie ein, um mit diesem Auftrag zu beginnen.",
-    "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} ist nicht eingestempelt. Der Auftrag kann erst starten, wenn {{name}} eingestempelt ist."
+    "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} ist nicht eingestempelt. Der Auftrag kann erst starten, wenn {{name}} eingestempelt ist.",
+    "HANDOVER_NOT_ON_THE_JOB": "Nur wer an diesem Auftrag arbeitet, kann die Übergabe schreiben.",
+    "HANDOVER_NOTE_REQUIRED": "Schreiben Sie vor dem Speichern, was Sie gemacht haben."
   },
   "signLink": {
     "tabs": {

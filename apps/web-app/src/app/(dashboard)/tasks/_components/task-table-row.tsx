@@ -1,5 +1,6 @@
 "use client"
 
+import { PausedChip } from "@/components/paused-chip"
 import React from "react"
 import { isTaskOverdue, isFinishedStatus, mayChangeStatus, hasAnyTransition, STATUS_TRANSITIONS } from "@hbcfield/shared/client"
 import { useWorkflow } from "@/hooks/use-org-workflow"
@@ -161,6 +162,7 @@ function TaskTableRowInner({
         <span className="text-sm font-medium text-foreground truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-100">
           {task.title}
         </span>
+        <PausedChip task={task} className="flex-shrink-0" />
       </div>
 
       {/* Priority */}

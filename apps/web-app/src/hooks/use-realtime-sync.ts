@@ -33,6 +33,9 @@ const Events = {
   TASK_ATTACHMENT_ADDED: "task.attachmentAdded",
   TASK_DECLINED: "task.declined",
   TASK_DELETED: "task.deleted",
+  // Paused at a clock-out, and the handover note (shared tasks/handover.ts)
+  TASKS_PAUSED: "tasks.paused",
+  TASK_HANDOVER_ADDED: "task.handoverAdded",
   // Attendance
   CLOCK_IN: "attendance.clockIn",
   CLOCK_OUT: "attendance.clockOut",
@@ -144,6 +147,9 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   [Events.TASK_ATTACHMENT_ADDED]: [["tasks"]],
   [Events.TASK_DECLINED]: [["tasks"], ["taskStatusCounts"]],
   [Events.TASK_DELETED]: [["tasks"], ["taskStatusCounts"]],
+  // The board's "Paused" chips and the job's handover card.
+  [Events.TASKS_PAUSED]: [["tasks"], ["task"]],
+  [Events.TASK_HANDOVER_ADDED]: [["tasks"], ["task"], ["taskTimeline"]],
 
   // Attendance events → invalidate the REAL dashboard attendance queries so a
   // clock-in/out live-updates the presence labels without a manual refresh.

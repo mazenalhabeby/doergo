@@ -212,6 +212,36 @@ export interface UpdateTaskInput {
   locationAddress?: string;
 }
 
+/** "What I did, and what is left" — written by a worker who stopped. */
+export interface TaskHandover {
+  id: string;
+  note: string;
+  attachmentIds: string[];
+  workedMinutes: number | null;
+  createdAt: string;
+  author: { id: string; firstName: string; lastName: string; avatarUrl?: string | null };
+}
+
+/** One job in the member's own handover picture (GET /tasks/handover/mine). */
+export interface HandoverJob {
+  id: string;
+  title: string;
+  status: string;
+  pausedAt: string | null;
+  pausedById: string | null;
+  locationAddress: string | null;
+  customer: { name: string } | null;
+}
+
+export interface MyHandovers {
+  /** In a working step now — what the clock-out sheet lists. */
+  open: HandoverJob[];
+  /** A note I still owe. */
+  owed: HandoverJob[];
+  /** Paused on me — offered at the next clock-in. */
+  paused: HandoverJob[];
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -233,6 +263,19 @@ export interface Task {
   assignedToId?: string;
   createdAt: string;
   updatedAt: string;
+  /*
+    Paused at a clock-out (packages/shared/src/tasks/handover.ts): the job is in a
+    working step with nobody on it. "Resume work" clears it; so does any move.
+  */
+  pausedAt?: string | null;
+  pausedById?: string | null;
+  /** Who still owes the note of what they did — asked on every app open until written. */
+  handoverDueById?: string | null;
+  /** Detail only: the names, and the time the one who owes it put in. */
+  pausedBy?: { id: string; firstName: string; lastName: string } | null;
+  handoverDue?: { user: { id: string; firstName: string; lastName: string } | null; workedMinutes: number | null } | null;
+  /** Detail only: the newest notes first. */
+  handovers?: TaskHandover[];
   // DB-derived task-time anchors (timer counts from acceptedAt; freezes at completedAt)
   acceptedAt?: string | null;
   completedAt?: string | null;

@@ -55,6 +55,9 @@ export const TASK_JOB_TYPES = {
   CREATE_SUBTASK: 'task.createSubtask',
   ADD_DEPENDENCY: 'task.addDependency',
   REMOVE_DEPENDENCY: 'task.removeDependency',
+  // Paused at clock-out (packages/shared/src/tasks/handover.ts)
+  RESUME_WORK: 'task.resumeWork',
+  ADD_HANDOVER: 'task.addHandover',
 } as const;
 
 export type TaskJobType = (typeof TASK_JOB_TYPES)[keyof typeof TASK_JOB_TYPES];

@@ -188,8 +188,9 @@ export function moreOptions(input: {
  * hands a step with a form over this way). `finish` is the older link and
  * means the same for the dock's own next step.
  */
-export type OpenSheet = 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'finish' | `form:${string}`;
-const OPEN_SHEETS: readonly string[] = ['issue', 'decline', 'cancel', 'assign', 'edit', 'finish'];
+export type OpenSheet = 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'finish' | 'handover' | `form:${string}`;
+// `handover`: "write what you did" — the home strip opens the job on it.
+const OPEN_SHEETS: readonly string[] = ['issue', 'decline', 'cancel', 'assign', 'edit', 'finish', 'handover'];
 const FORM_SHEET = /^form:([A-Za-z0-9_-]{1,64})$/;
 
 export function parseOpenSheet(v: unknown): OpenSheet | null {

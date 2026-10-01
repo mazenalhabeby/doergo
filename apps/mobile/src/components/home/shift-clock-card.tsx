@@ -12,6 +12,7 @@ import { SyncChip } from '../../offline/components/sync-chip';
 import { BreakSheet, LocationPickerSheet, ClockOutSheet } from '../index';
 import { ReportIssueSheet, ShiftIssueListSheet, ShiftIssueThreadSheet } from '../shift-issue-sheet';
 import { useClockIn } from '../../hooks/useClockIn';
+import { useMyHandovers, useRefreshMyHandovers } from '../../hooks/useMyHandovers';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { monthName, weekdayName } from '../../lib/app-dates';
 import { stopBackgroundHeartbeat } from '../../services/background-heartbeat';
@@ -199,10 +200,12 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
     now,
   });
 
+  const refreshHandovers = useRefreshMyHandovers();
   const clockIn = useClockIn({
     assignedLocations: status?.assignedLocations ?? [],
     isClockedIn: !!status?.isClockedIn,
-    onClockedIn: () => { void refresh(); },
+    // A clock-in is when a paused job is offered back (the home jobs strip).
+    onClockedIn: () => { void refresh(); refreshHandovers(); },
   });
 
   const entryId = status?.currentEntry?.id;
@@ -214,8 +217,15 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
   */
   const unread = useUnreadIssues(true);
 
+  /*
+    Jobs still in work: listed in the clock-out sheet, paused by the clock-out
+    (shared tasks/handover.ts). Read by the card, like every other figure the
+    sheet shows — the sheet itself fetches nothing.
+  */
+  const handovers = useMyHandovers({ enabled: !!status?.isClockedIn });
+
   const confirmClockOut = useCallback(async (input: {
-    notes?: string; earlyReason?: string; overtimeReason?: string;
+    notes?: string; earlyReason?: string; overtimeReason?: string; handovers?: { taskId: string; note: string }[];
   }) => {
     setClockOutAt(null);
     if (!entryId) return;
@@ -241,12 +251,13 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
       await stopBackgroundHeartbeat();
       await stopGeofence();
       await refresh();
+      handovers.refetch();
     } catch (err) {
       toast.error(t('common.error'), (err as Error)?.message || t('home.fullTime.failedToClockOut'));
     } finally {
       setBusy(false);
     }
-  }, [entryId, clockIn, actions, toast, t, refresh]);
+  }, [entryId, clockIn, actions, toast, t, refresh, handovers]);
 
   /*
     The rests. Both go through `useShiftActions`, so they queue with no signal
@@ -564,6 +575,8 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
           onClose={() => setClockOutAt(null)}
           onConfirm={confirmClockOut}
           isLoading={busy}
+          openJobs={handovers.open}
+          onFinishJob={(id) => router.push({ pathname: '/task/[id]', params: { id } } as unknown as Href)}
           shift={{
             workspace: st.workspace,
             clockInAt: new Date(status.currentEntry.clockInAt),

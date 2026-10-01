@@ -51,6 +51,7 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
   status_change: TASK,
   comment_added: TASK,
   blocked_tasks_reminder: TASK,
+  task_handover: TASK, // "Handover from Mike" — the job, with the note on top
 
   // The member's own shift
   shift_reminder: CLOCK, // "Still clocked in?" — the clock-out button

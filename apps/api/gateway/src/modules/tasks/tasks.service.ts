@@ -55,6 +55,10 @@ export class TasksService extends BaseGatewayService {
   /**
    * Get task comments
    */
+  async myHandovers(data: { userId: string; organizationId: string }) {
+    return this.send({ cmd: 'get_my_handovers' }, data);
+  }
+
   async getComments(data: Record<string, any>) {
     this.logger.debug(`Getting comments for task ${data.taskId} via direct microservice call`);
     return this.send({ cmd: 'get_comments' }, data);

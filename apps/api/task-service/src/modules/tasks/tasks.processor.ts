@@ -4,6 +4,7 @@ import { Job } from 'bullmq';
 import { QUEUE_NAMES, TASK_JOB_TYPES, buildJobError } from '@hbcfield/shared';
 import { TasksService } from './tasks.service';
 import { AttachmentsService } from '../attachments/attachments.service';
+import { JobPauseService } from './handover/job-pause.service';
 
 /**
  * BullMQ Processor for Task Queue
@@ -22,6 +23,7 @@ export class TasksProcessor extends WorkerHost {
   constructor(
     private readonly tasksService: TasksService,
     private readonly attachmentsService: AttachmentsService,
+    private readonly jobPause: JobPauseService,
   ) {
     super();
   }
@@ -75,6 +77,13 @@ export class TasksProcessor extends WorkerHost {
       // ============ Comment Write Operations ============
       case TASK_JOB_TYPES.ADD_COMMENT:
         return this.tasksService.addComment(data);
+
+      // ============ Paused at clock-out, and the handover ============
+      case TASK_JOB_TYPES.RESUME_WORK:
+        return this.tasksService.resumeWork(data);
+
+      case TASK_JOB_TYPES.ADD_HANDOVER:
+        return this.jobPause.addHandover(data);
 
       // ============ Assignee Write Operations ============
       case TASK_JOB_TYPES.ADD_ASSIGNEE:

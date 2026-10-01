@@ -15,6 +15,7 @@ import { BreakRulesService } from './break-rules.service';
 import { BreakReminderService } from './break-reminder.service';
 import { PresenceModule } from './presence/presence.module';
 import { ShiftRematchService } from './shift-rematch.service';
+import { HandoverModule } from '../tasks/handover/handover.module';
 
 @Module({
   imports: [
@@ -22,6 +23,8 @@ import { ShiftRematchService } from './shift-rematch.service';
     BullModule.registerQueue({ name: QUEUE_NAMES.ATTENDANCE }),
     BullModule.registerQueue({ name: QUEUE_NAMES.OVERTIME }),
     PresenceModule,
+    // Every way a shift ends pauses the jobs left in work.
+    HandoverModule,
   ],
   controllers: [AttendanceController],
   providers: [

@@ -1,5 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import { JobPauseService } from './handover/job-pause.service';
 import { TasksService } from './tasks.service';
 
 /**
@@ -13,7 +14,10 @@ import { TasksService } from './tasks.service';
  */
 @Controller()
 export class TasksController {
-  constructor(private readonly tasksService: TasksService) {}
+  constructor(
+    private readonly tasksService: TasksService,
+    private readonly jobPause: JobPauseService,
+  ) {}
 
   @MessagePattern({ cmd: 'health' })
   async health() {
@@ -78,6 +82,12 @@ export class TasksController {
     },
   ) {
     return this.tasksService.getTimeline(data);
+  }
+
+  /** The member's own: jobs in work, notes owed, jobs paused on them. */
+  @MessagePattern({ cmd: 'get_my_handovers' })
+  async myHandovers(@Payload() data: { userId: string; organizationId: string }) {
+    return this.jobPause.mine(data);
   }
 
   @MessagePattern({ cmd: 'get_comments' })

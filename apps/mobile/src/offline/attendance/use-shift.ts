@@ -181,7 +181,7 @@ function shiftActions(engine: ReturnType<typeof useOffline>['engine']) {
             }),
           ),
 
-    clockOut: (input: { entryId: string; fix?: OccurrenceFix | null; notes?: string; earlyReason?: string; overtimeReason?: string }) =>
+    clockOut: (input: { entryId: string; fix?: OccurrenceFix | null; notes?: string; earlyReason?: string; overtimeReason?: string; handovers?: { taskId: string; note: string }[] }) =>
       engine
         ? clockOutFromPhone(engine, input)
         : direct(() =>
@@ -190,6 +190,7 @@ function shiftActions(engine: ReturnType<typeof useOffline>['engine']) {
               notes: input.notes,
               earlyReason: input.earlyReason,
               overtimeReason: input.overtimeReason,
+              ...(input.handovers?.length ? { handovers: input.handovers } : {}),
             }),
           ),
 

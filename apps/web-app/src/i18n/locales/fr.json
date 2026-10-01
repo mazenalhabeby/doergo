@@ -1619,7 +1619,10 @@
         "CANCELED": "Tâche annulée",
         "CLOSED": "Tâche clôturée",
         "ATTACHMENT_ADDED": "Pièce jointe ajoutée",
-        "ATTACHMENT_REMOVED": "Pièce jointe supprimée"
+        "ATTACHMENT_REMOVED": "Pièce jointe supprimée",
+        "PAUSED": "Mise en pause au pointage de sortie",
+        "RESUMED": "Travail repris",
+        "HANDOVER_ADDED": "Passation écrite"
       }
     },
     "assignees": {
@@ -1706,6 +1709,32 @@
       "body": "Le temps sur un travail suit votre service. Pointez, et le travail démarre aussitôt.",
       "clockInAndStart": "Pointer et commencer",
       "notNow": "Pas maintenant"
+    },
+    "handover": {
+      "title": "Ce que vous avez fait, et ce qui reste",
+      "why": "La personne qui reprendra cette intervention le lira en premier.",
+      "placeholder": "Qu'avez-vous fait ? Que reste-t-il à faire ?",
+      "save": "Enregistrer la passation",
+      "saved": "Passation enregistrée",
+      "resumed": "De retour au travail",
+      "resume": "Reprendre le travail",
+      "startWork": "Commencer le travail",
+      "label": "Passation",
+      "worked": "{{time}} de travail",
+      "photos_one": "{{count}} photo avec cette note — voir Pièces jointes",
+      "photos_other": "{{count}} photos avec cette note — voir Pièces jointes",
+      "pausedYou": "En pause depuis votre fin de pointage · {{when}}",
+      "pausedBy": "En pause depuis la fin de pointage de {{name}} · {{when}}",
+      "youOwe": "Notez ce que vous avez fait sur cette intervention et ce qui reste.",
+      "write": "Écrire la passation",
+      "notYet": "{{name}} n'a pas encore écrit de passation.",
+      "notYetWorked": "{{name}} n'a pas encore écrit de passation — {{time}} de travail dessus.",
+      "reassignHint": "Vous pouvez réattribuer maintenant : une note écrite plus tard parviendra quand même à la personne qui a l'intervention.",
+      "wait": "Attendre la note",
+      "chip": "En pause",
+      "chipOwed": "En pause · sans passation",
+      "chipTitle": "Arrêtée au pointage de sortie de la personne",
+      "chipOwedTitle": "Arrêtée au pointage de sortie — pas encore de note de passation"
     }
   },
   "technicians": {
@@ -8616,7 +8645,9 @@
     "OUTSIDE_GEOFENCE": "{{location}} n'accepte les pointages que sur place. Vous êtes à {{distance}}.",
     "AWAY_NOT_ALLOWED": "Vous êtes à {{distance}} de {{location}} et vous n'êtes pas autorisé à travailler à distance. Demandez à votre administrateur de l'autoriser.",
     "NOT_CLOCKED_IN": "Pointez pour commencer ce travail.",
-    "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} n'a pas pointé. Il faut pointer avant que ce travail puisse commencer."
+    "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} n'a pas pointé. Il faut pointer avant que ce travail puisse commencer.",
+    "HANDOVER_NOT_ON_THE_JOB": "Seule une personne sur cette intervention peut écrire sa passation.",
+    "HANDOVER_NOTE_REQUIRED": "Écrivez ce que vous avez fait avant d'enregistrer."
   },
   "signLink": {
     "tabs": {

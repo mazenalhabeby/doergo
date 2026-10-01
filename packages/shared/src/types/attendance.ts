@@ -360,6 +360,19 @@ export interface ClockOutInput {
   earlyReason?: string;
   /** Why they stayed past the shift end — sent with a late clock-out, it asks a leader for the overtime. */
   overtimeReason?: string;
+  /**
+   * "What I did and what is left", per job still in work — the clock-out pauses
+   * those jobs either way (tasks/handover.ts). Optional: never a gate.
+   */
+  handovers?: ClockOutHandoverInput[];
+}
+
+/** One job's note, written in the clock-out sheet. */
+export interface ClockOutHandoverInput {
+  /** Made on the phone, so a replay writes it once. */
+  id?: string;
+  taskId: string;
+  note: string;
 }
 
 export interface StartBreakInput {

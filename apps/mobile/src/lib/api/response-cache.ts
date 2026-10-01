@@ -43,6 +43,12 @@ const KEEP: readonly RegExp[] = [
   /^\/assets\/log\/(mine|due-mine)(\?|$)/,
   /^\/shift-issues(\/|\?|$)/,
   /*
+    My own stopped work: the jobs I am on, the handover notes I owe, the jobs
+    paused on me. The member's own data — and "write what you did on X" must
+    still be asked in a basement, where the note can be queued.
+  */
+  /^\/tasks\/handover\/mine$/,
+  /*
     ⚠️ `(\/|\?|$)`, not `\/`. The pattern used to demand a trailing slash, so
     `/employees/:id` was kept and the LIST behind it — `/employees?page=1`, the
     whole Team tab — was not. A member offline could open one colleague and

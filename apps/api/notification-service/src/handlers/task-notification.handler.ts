@@ -250,6 +250,31 @@ export class TaskNotificationHandler {
     }
   }
 
+  /**
+   * A worker wrote what they did on a job and what is left — the people who have
+   * the job now hear it, including a note written after it was given to them.
+   */
+  @EventPattern('task_handover_added')
+  async handleHandoverAdded(@Payload() data: { taskId: string; taskTitle: string; authorName: string; recipientIds: string[]; organizationId: string }) {
+    this.websocketGateway.emitToOrganization(data.organizationId, 'task.handoverAdded', { taskId: data.taskId });
+    if (!data.recipientIds?.length) return;
+    try {
+      await this.pushService.sendToUsers(
+        data.recipientIds,
+        { title: msg('task.handover.title', { name: data.authorName }), body: msg('task.handover.body', { name: data.authorName, task: data.taskTitle }) },
+        { type: 'task_handover', taskId: data.taskId },
+      );
+    } catch (error) {
+      this.logger.error(`Failed to send handover push: ${error}`);
+    }
+  }
+
+  /** Jobs paused at a clock-out — the office's boards refresh and show them paused. */
+  @EventPattern('tasks_paused')
+  async handleTasksPaused(@Payload() data: { taskIds: string[]; userId: string; organizationId: string }) {
+    this.websocketGateway.emitToOrganization(data.organizationId, 'tasks.paused', { taskIds: data.taskIds, userId: data.userId });
+  }
+
   @EventPattern('worker_location_updated')
   async handleWorkerLocationUpdated(@Payload() data: any) {
     this.websocketGateway.emitWorkerLocationUpdated(data.organizationId, data.workerId, data.location);

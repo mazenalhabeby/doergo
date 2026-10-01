@@ -17,6 +17,9 @@ export {
 
 // All types (local + re-exported from @hbcfield/shared)
 export type {
+  MyHandovers,
+  HandoverJob,
+  TaskHandover,
   User,
   LoginResponse,
   Task,

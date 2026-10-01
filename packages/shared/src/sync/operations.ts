@@ -31,6 +31,9 @@ export const SYNC_OPERATIONS = {
   'task.decline': { method: 'POST', path: '/tasks/:taskId/decline' },
   'task.attachment': { method: 'POST', path: '/tasks/:taskId/attachments' },
   'task.complete': { method: 'POST', path: '/tasks/:taskId/complete' },
+  // Paused at a clock-out: picking it up again, and saying what was done (tasks/handover.ts).
+  'task.resume': { method: 'POST', path: '/tasks/:taskId/resume' },
+  'task.handover': { method: 'POST', path: '/tasks/:taskId/handover' },
   'report.attachment': { method: 'POST', path: '/reports/:reportId/attachments' },
   // Attendance
   'attendance.clockIn': { method: 'POST', path: '/attendance/clock-in' },

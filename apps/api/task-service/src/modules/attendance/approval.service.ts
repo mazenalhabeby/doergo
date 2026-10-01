@@ -7,6 +7,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { JobPauseService } from '../tasks/handover/job-pause.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, paginated, ApprovalStatus, computeScheduleFlags, computeCountedTime, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, SERVICE_NAMES } from '@hbcfield/shared';
 import { scopeWhere, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
@@ -29,6 +30,8 @@ export class ApprovalService {
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
     // An edited entry that still holds no shift gets another look at the rota.
     @Optional() private readonly rematch?: ShiftRematchService,
+    // A manager closing an open shift ends it like any clock-out: jobs left in work pause.
+    @Optional() private readonly jobPause?: JobPauseService,
   ) {}
 
   /**
@@ -397,6 +400,15 @@ export class ApprovalService {
         },
       },
     });
+
+    if (entry.status === 'CLOCKED_IN' && updated.status === 'CLOCKED_OUT' && updated.clockOutAt) {
+      await this.jobPause?.pauseAtClockOut({
+        userId: updated.userId,
+        organizationId: data.organizationId,
+        at: updated.clockOutAt,
+        reason: 'OFFICE_CLOSE',
+      });
+    }
 
     // Append a per-edit row to the shared activity log — reuses the indexed
     // per-entity audit trail ([resourceId, createdAt]); no dedicated table. This

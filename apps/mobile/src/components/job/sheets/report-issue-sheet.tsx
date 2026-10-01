@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../../contexts/theme-context';
-import { useImagePicker, type PickedImage } from '../../../hooks/useImagePicker';
+import type { PickedImage } from '../../../hooks/useImagePicker';
 import { AText, PrimaryButton } from '../../amazen';
-import { Banner, ChoiceRow, JobField, JobSheet, QuietButton, SectionLabel } from '../job-ui';
+import { Banner, ChoiceRow, JobField, JobSheet, SectionLabel } from '../job-ui';
+import { PhotoPicks, usePhotoPicks } from '../photo-picks';
 import { issueReason, type Severity } from '../job-logic';
 
 const SEVERITIES: Severity[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
@@ -32,29 +32,21 @@ export function ReportIssueSheet({
   busy: boolean;
   onSend: (reason: string, photos: PickedImage[]) => Promise<boolean>;
 }) {
-  const { amazen } = useTheme();
   const { t } = useTranslation();
-  const { takePhoto, pickFromGallery } = useImagePicker();
+  const picks = usePhotoPicks(MAX_PHOTOS, 'issue-photo');
   const [what, setWhat] = useState('');
   const [severity, setSeverity] = useState<Severity>('MEDIUM');
   const [note, setNote] = useState('');
-  const [photos, setPhotos] = useState<PickedImage[]>([]);
 
+  const { reset } = picks;
   useEffect(() => {
     if (!visible) return;
-    setWhat(''); setSeverity('MEDIUM'); setNote(''); setPhotos([]);
-  }, [visible]);
-
-  const addPhoto = async () => {
-    const img = await takePhoto('issue-photo');
-    if (img) { setPhotos((p) => [...p, img].slice(0, MAX_PHOTOS)); return; }
-    const imgs = await pickFromGallery('issue-photo');
-    if (imgs.length) setPhotos((p) => [...p, ...imgs].slice(0, MAX_PHOTOS));
-  };
+    setWhat(''); setSeverity('MEDIUM'); setNote(''); reset();
+  }, [visible, reset]);
 
   const send = async () => {
     const reason = issueReason(what, t(`issues.severity.${severity}`), note);
-    if (await onSend(reason, photos)) onClose();
+    if (await onSend(reason, picks.photos)) onClose();
   };
 
   return (
@@ -64,22 +56,7 @@ export function ReportIssueSheet({
       <SectionLabel>{t('issues.howBadly')}</SectionLabel>
       <ChoiceRow options={SEVERITIES.map((k) => ({ key: k, label: t(`issues.severity.${k}`) }))} value={severity} onChange={setSeverity} />
       <JobField value={note} onChangeText={setNote} placeholder={t('issues.descriptionPlaceholder')} multiline maxLength={600} />
-      {photos.length ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {photos.map((p, i) => (
-            <Pressable
-              key={`${p.uri}:${i}`}
-              onPress={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-              accessibilityRole="button"
-              accessibilityLabel={t('common.remove')}
-              style={{ marginRight: amazen.space(2) }}
-            >
-              <Image source={{ uri: p.uri }} style={{ width: 56, height: 56, borderRadius: amazen.radius.tile }} />
-            </Pressable>
-          ))}
-        </ScrollView>
-      ) : null}
-      <QuietButton dashed label={`＋  ${t('issues.addPhoto')}`} onPress={() => void addPhoto()} disabled={photos.length >= MAX_PHOTOS} />
+      <PhotoPicks picks={picks} addLabel={t('issues.addPhoto')} />
       <PrimaryButton label={t('issues.send')} onPress={() => void send()} disabled={!what.trim()} loading={busy} />
       <View>
         <AText variant="caption" tone="ink" style={{ textAlign: 'center' }}>{t('issues.sendHint')}</AText>

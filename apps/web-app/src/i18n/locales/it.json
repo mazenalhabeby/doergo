@@ -1619,7 +1619,10 @@
         "CANCELED": "Attività annullata",
         "CLOSED": "Attività chiusa",
         "ATTACHMENT_ADDED": "Allegato aggiunto",
-        "ATTACHMENT_REMOVED": "Allegato rimosso"
+        "ATTACHMENT_REMOVED": "Allegato rimosso",
+        "PAUSED": "In pausa all'uscita",
+        "RESUMED": "Lavoro ripreso",
+        "HANDOVER_ADDED": "Consegne scritte"
       }
     },
     "assignees": {
@@ -1706,6 +1709,32 @@
       "body": "Il tempo su un lavoro scorre con il turno. Timbra l'entrata e il lavoro parte subito dopo.",
       "clockInAndStart": "Timbra e inizia",
       "notNow": "Non ora"
+    },
+    "handover": {
+      "title": "Cosa hai fatto e cosa manca",
+      "why": "Chi riprende questo lavoro lo leggerà per primo.",
+      "placeholder": "Cosa hai fatto? Cosa resta da fare?",
+      "save": "Salva passaggio di consegne",
+      "saved": "Passaggio di consegne salvato",
+      "resumed": "Di nuovo al lavoro",
+      "resume": "Riprendi il lavoro",
+      "startWork": "Inizia il lavoro",
+      "label": "Passaggio di consegne",
+      "worked": "{{time}} di lavoro",
+      "photos_one": "{{count}} foto con questa nota — vedi Allegati",
+      "photos_other": "{{count}} foto con questa nota — vedi Allegati",
+      "pausedYou": "In pausa da quando hai timbrato l'uscita · {{when}}",
+      "pausedBy": "In pausa da quando {{name}} ha timbrato l'uscita · {{when}}",
+      "youOwe": "Scrivi cosa hai fatto su questo lavoro e cosa manca.",
+      "write": "Scrivi le consegne",
+      "notYet": "{{name}} non ha ancora scritto il passaggio di consegne.",
+      "notYetWorked": "{{name}} non ha ancora scritto il passaggio di consegne — {{time}} di lavoro.",
+      "reassignHint": "Puoi riassegnare ora: una nota scritta dopo arriva comunque a chi ha il lavoro.",
+      "wait": "Aspetta la nota",
+      "chip": "In pausa",
+      "chipOwed": "In pausa · senza consegne",
+      "chipTitle": "Fermato quando chi ci lavorava ha timbrato l'uscita",
+      "chipOwedTitle": "Fermato all'uscita — ancora nessuna nota di consegne"
     }
   },
   "technicians": {
@@ -8616,7 +8645,9 @@
     "OUTSIDE_GEOFENCE": "{{location}} accetta timbrature solo in sede. Sei a {{distance}}.",
     "AWAY_NOT_ALLOWED": "Sei a {{distance}} da {{location}} e non sei abilitato a lavorare fuori sede. Chiedi al tuo amministratore di consentirlo.",
     "NOT_CLOCKED_IN": "Timbra l'entrata per iniziare questo lavoro.",
-    "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} non ha timbrato. Deve timbrare prima che questo lavoro possa iniziare."
+    "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} non ha timbrato. Deve timbrare prima che questo lavoro possa iniziare.",
+    "HANDOVER_NOT_ON_THE_JOB": "Solo chi è su questo lavoro può scriverne le consegne.",
+    "HANDOVER_NOTE_REQUIRED": "Scrivi cosa hai fatto prima di salvare."
   },
   "signLink": {
     "tabs": {

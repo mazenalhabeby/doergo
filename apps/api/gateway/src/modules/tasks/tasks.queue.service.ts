@@ -56,6 +56,14 @@ export class TasksQueueService extends BaseQueueService {
     return this.addJobAndWait(TASK_JOB_TYPES.ADD_COMMENT, data);
   }
 
+  async resumeWork(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.RESUME_WORK, data);
+  }
+
+  async addHandover(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.ADD_HANDOVER, data);
+  }
+
   // ============ Attachment Operations ============
 
   async addAttachment(data: Record<string, any>) {

@@ -36,6 +36,8 @@ interface AssignMemberDialogProps {
   onAssign: (memberId: string) => void
   onRemove?: (memberId: string) => void
   isAssigning?: boolean
+  /** Shown under the title — something the caller needs said before a pick (e.g. a handover still owed). */
+  notice?: React.ReactNode
 }
 
 // =============================================================================
@@ -117,6 +119,7 @@ export function AssignMemberDialog({
   onAssign,
   onRemove,
   isAssigning = false,
+  notice,
 }: AssignMemberDialogProps) {
   const { t } = useTranslation()
   const isMultiMode = !!onSave || !!onRemove
@@ -265,6 +268,8 @@ export function AssignMemberDialog({
               : t("assignMembers.selectDescription")}
           </DialogDescription>
         </DialogHeader>
+
+        {notice}
 
         {/* Search */}
         <div className="px-5 pb-3">

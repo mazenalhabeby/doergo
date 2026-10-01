@@ -50,7 +50,7 @@ export async function clockInFromPhone(
 
 export async function clockOutFromPhone(
   engine: SyncEngine,
-  input: { entryId: string; fix?: OccurrenceFix | null; notes?: string; earlyReason?: string; overtimeReason?: string },
+  input: { entryId: string; fix?: OccurrenceFix | null; notes?: string; earlyReason?: string; overtimeReason?: string; handovers?: { taskId: string; note: string }[] },
 ): Promise<ActionOutcome> {
   const clockIn = openOpFor(engine.operations(), 'attendance.clockIn', (b) => b.id === input.entryId);
   const op = await engine.enqueueAndSettle({
@@ -65,6 +65,8 @@ export async function clockOutFromPhone(
         ...(input.notes ? { notes: input.notes } : {}),
         ...(input.earlyReason ? { earlyReason: input.earlyReason } : {}),
         ...(input.overtimeReason ? { overtimeReason: input.overtimeReason } : {}),
+        // Each note named on the phone, so a replay can never write it twice.
+        ...(input.handovers?.length ? { handovers: input.handovers.map((h) => ({ id: uuidv7(), ...h })) } : {}),
         evidence: captureEvidence(input.fix),
       },
     },

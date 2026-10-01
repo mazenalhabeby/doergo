@@ -141,3 +141,4 @@ export * from './attendance/rota';
 export * from './tasks/my-work';
 export * from './tasks/be-there';
 export * from './tasks/clock-gate';
+export * from './tasks/handover';

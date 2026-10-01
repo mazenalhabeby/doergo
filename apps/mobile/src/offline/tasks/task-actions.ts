@@ -129,3 +129,39 @@ export async function addTaskComment(
   });
   return { id, outcome: await outcomeOf(engine, op) };
 }
+
+/**
+ * "Resume work" on a job paused at a clock-out. A move into work: the server
+ * holds it to the clock gate, and the tap's own time is what is recorded.
+ */
+export async function resumeJob(engine: SyncEngine, input: { taskId: string }): Promise<ActionOutcome> {
+  const op = await engine.enqueueAndSettle({
+    op: 'task.resume',
+    lane: `task:${input.taskId}`,
+    entityId: input.taskId,
+    payload: { params: { taskId: input.taskId }, body: { evidence: captureEvidence(null) } },
+  });
+  return outcomeOf(engine, op);
+}
+
+/**
+ * "What I did, and what is left." The phone names it, so a resend never makes a
+ * second one; photos are the job's own attachments, queued first (`dependsOn`).
+ */
+export async function writeHandover(
+  engine: SyncEngine,
+  input: { taskId: string; note: string; attachmentIds?: string[]; dependsOn?: string[] },
+): Promise<{ id: string; outcome: ActionOutcome }> {
+  const id = uuidv7();
+  const op = await engine.enqueueAndSettle({
+    op: 'task.handover',
+    lane: `task:${input.taskId}`,
+    entityId: input.taskId,
+    ...(input.dependsOn?.length ? { dependsOn: input.dependsOn } : {}),
+    payload: {
+      params: { taskId: input.taskId },
+      body: { id, note: input.note, ...(input.attachmentIds?.length ? { attachmentIds: input.attachmentIds } : {}) },
+    },
+  });
+  return { id, outcome: await outcomeOf(engine, op) };
+}

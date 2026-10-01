@@ -3183,7 +3183,9 @@
       "OUTSIDE_GEOFENCE": "{{location}} accetta timbrature solo in sede. Sei a {{distance}}.",
       "AWAY_NOT_ALLOWED": "Sei a {{distance}} da {{location}} e non sei abilitato a lavorare fuori sede. Chiedi al tuo amministratore di consentirlo.",
       "NOT_CLOCKED_IN": "Timbra l'entrata per iniziare questo lavoro.",
-      "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} non ha timbrato. Deve timbrare prima che questo lavoro possa iniziare."
+      "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} non ha timbrato. Deve timbrare prima che questo lavoro possa iniziare.",
+      "HANDOVER_NOT_ON_THE_JOB": "Questo lavoro non è più tuo, quindi il passaggio di consegne non è stato salvato.",
+      "HANDOVER_NOTE_REQUIRED": "Scrivi cosa hai fatto prima di salvare."
     },
     "signOut": {
       "title_one": "{{count}} modifica non è stata inviata",
@@ -3432,7 +3434,17 @@
       "unwell": "Indisposto",
       "other": "Altro"
     },
-    "countedTotal": "Conteggiato"
+    "countedTotal": "Conteggiato",
+    "pauseAndClockOut_one": "Metti in pausa e timbra l'uscita",
+    "pauseAndClockOut_other": "Metti in pausa e timbra l'uscita",
+    "jobs": {
+      "eyebrow_one": "ANCORA IN CORSO · VA IN PAUSA QUANDO TIMBRI L'USCITA",
+      "eyebrow_other": "{{count}} ANCORA IN CORSO · VANNO IN PAUSA QUANDO TIMBRI L'USCITA",
+      "leaveNote": "Lascia una nota di consegna",
+      "editNote": "Modifica la nota",
+      "finish": "È fatto — completalo",
+      "hint": "Nessuna nota ora? Te la chiederemo dopo. Puoi timbrare l'uscita comunque."
+    }
   },
   "myWork": {
     "all": "Tutti {{count}}",
@@ -3743,14 +3755,18 @@
       "unassigned": "Assegnazione rimossa",
       "photoAdded": "Foto aggiunta",
       "ticked": "Spuntato: {{text}}",
-      "unticked": "Spunta tolta: {{text}}"
+      "unticked": "Spunta tolta: {{text}}",
+      "paused": "In pausa all'uscita",
+      "resumed": "Lavoro ripreso",
+      "handover": "Consegne: {{text}}"
     },
     "timer": {
       "onJob": "{{time}} su questo lavoro",
       "onJobTracking": "{{time}} su questo lavoro · percorso registrato",
       "onJobNotTracking": "{{time}} su questo lavoro · percorso non registrato",
       "tracking": "Percorso registrato",
-      "notTracking": "Percorso non registrato"
+      "notTracking": "Percorso non registrato",
+      "paused": "In pausa — nessuno su questo lavoro"
     },
     "dock": {
       "navigate": "Naviga",
@@ -3890,6 +3906,25 @@
       "body": "Il tuo tempo su questo lavoro inizia con il turno. Timbra l'entrata e il lavoro parte subito dopo.",
       "clockInAndStart": "Timbra e inizia",
       "notNow": "Non ora"
+    },
+    "handover": {
+      "title": "Cosa hai fatto e cosa manca",
+      "why": "Chi riprende questo lavoro lo leggerà per primo.",
+      "placeholder": "Cosa hai fatto? Cosa resta da fare?",
+      "save": "Salva passaggio di consegne",
+      "later": "Più tardi",
+      "saved": "Passaggio di consegne salvato",
+      "resumed": "Di nuovo al lavoro",
+      "resume": "Riprendi il lavoro",
+      "startWork": "Inizia il lavoro",
+      "label": "PASSAGGIO DI CONSEGNE",
+      "worked": "{{time}} di lavoro",
+      "pausedYou": "In pausa da quando hai timbrato l'uscita · {{time}}",
+      "pausedBy": "In pausa da quando {{name}} ha timbrato l'uscita · {{time}}",
+      "youOwe": "Scrivi cosa hai fatto su questo lavoro e cosa manca.",
+      "write": "Scrivilo",
+      "notYet": "{{name}} non ha ancora scritto il passaggio di consegne.",
+      "notYetWorked": "{{name}} non ha ancora scritto il passaggio di consegne — {{time}} di lavoro."
     }
   },
   "jobsList": {
@@ -4299,5 +4334,13 @@
       "copy": "Copia per l’assistenza",
       "updateShort": "Aggiornamento pronto"
     }
+  },
+  "jobsStrip": {
+    "owedTitle": "Scrivi cosa hai fatto su {{title}}",
+    "owedSub": "La prossima persona lo leggerà per prima.",
+    "pausedTitle": "Hai messo in pausa {{title}}",
+    "pausedSub": "Riprendi il lavoro quando ci torni.",
+    "more_one": "E {{count}} altro lavoro",
+    "more_other": "E altri {{count}} lavori"
   }
 }

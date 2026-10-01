@@ -561,6 +561,16 @@ export interface TaskDependency {
   successor?: { id: string; title: string; status: string };
 }
 
+/** "What I did, and what is left" — written by a worker who stopped. */
+export interface TaskHandover {
+  id: string;
+  note: string;
+  attachmentIds: string[];
+  workedMinutes: number | null;
+  createdAt: string;
+  author: { id: string; firstName: string; lastName: string; avatarUrl?: string | null };
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -585,6 +595,19 @@ export interface Task {
   // DB-derived task-time anchors (timer counts from acceptedAt; freezes at completedAt)
   acceptedAt?: string | null;
   completedAt?: string | null;
+  /*
+    Paused at a clock-out (packages/shared/src/tasks/handover.ts): in a working
+    step with nobody on it. "Resume work" clears it; so does any move.
+  */
+  pausedAt?: string | null;
+  pausedById?: string | null;
+  /** Who still owes the note of what they did. */
+  handoverDueById?: string | null;
+  /** Detail only: names, and the time the one who owes the note put in. */
+  pausedBy?: { id: string; firstName: string; lastName: string } | null;
+  handoverDue?: { user: { id: string; firstName: string; lastName: string } | null; workedMinutes: number | null } | null;
+  /** Detail only: newest first. */
+  handovers?: TaskHandover[];
   // Hierarchy fields
   parentId?: string | null;
   depth?: number;
@@ -1073,6 +1096,20 @@ export const tasksApi = {
       throw apiError(response);
     }
 
+    return response.data?.data;
+  },
+
+  /** "Resume work" on a job paused at a clock-out. Coded refusal: the clock gate. */
+  resumeWork: async (id: string) => {
+    const response = await api.post<TaskResponse>(`/tasks/${id}/resume`, {});
+    if (response.error) throw apiError(response);
+    return response.data?.data;
+  },
+
+  /** "What I did, and what is left." */
+  writeHandover: async (id: string, note: string): Promise<TaskHandover | undefined> => {
+    const response = await api.post<{ success: boolean; data: TaskHandover }>(`/tasks/${id}/handover`, { note });
+    if (response.error) throw apiError(response);
     return response.data?.data;
   },
 

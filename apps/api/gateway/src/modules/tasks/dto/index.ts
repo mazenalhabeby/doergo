@@ -4,7 +4,7 @@ import { OmitType, PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import { OccurrenceEvidenceDto } from '../../../common/dto/occurrence.dto';
 import { CLIENT_ID } from '../../../common/dto/upload.dto';
-import { TaskPriority, TaskAssigneeRole, DependencyType, TASK_TITLE_MAX_LENGTH, TASK_DESCRIPTION_MAX_LENGTH, ATTENDANCE_CONSTANTS } from '@hbcfield/shared';
+import { TaskPriority, TaskAssigneeRole, DependencyType, TASK_TITLE_MAX_LENGTH, TASK_DESCRIPTION_MAX_LENGTH, ATTENDANCE_CONSTANTS, HANDOVER_NOTE_MAX, HANDOVER_PHOTOS_MAX } from '@hbcfield/shared';
 
 /**
  * Create task request DTO
@@ -291,6 +291,46 @@ export class AddCommentDto {
   @IsNotEmpty()
   @MaxLength(5000)
   content!: string;
+}
+
+/**
+ * "What I did, and what is left" on a job — packages/shared/src/tasks/handover.ts.
+ * Also the shape of one note sent with a clock-out.
+ */
+export class HandoverDto {
+  @ApiPropertyOptional({ description: 'Id made on the phone; a retry with the same id returns the same note' })
+  @IsOptional()
+  @IsString()
+  @Matches(CLIENT_ID)
+  id?: string;
+
+  @ApiProperty({ description: 'What was done and what is left' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(HANDOVER_NOTE_MAX)
+  note!: string;
+
+  @ApiPropertyOptional({ description: "Photos, as the job's own attachment ids", type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Matches(CLIENT_ID, { each: true })
+  attachmentIds?: string[];
+}
+
+export class ClockOutHandoverDto extends HandoverDto {
+  @ApiProperty({ description: 'The job the note is about' })
+  @IsString()
+  @Matches(CLIENT_ID)
+  taskId!: string;
+}
+
+export class ResumeWorkDto {
+  @ApiPropertyOptional({ type: OccurrenceEvidenceDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OccurrenceEvidenceDto)
+  evidence?: OccurrenceEvidenceDto;
 }
 
 // Upload DTOs are shared by every route that stores a file.

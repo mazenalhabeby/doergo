@@ -3183,7 +3183,9 @@
       "OUTSIDE_GEOFENCE": "Bei {{location}} ist Einstempeln nur vor Ort möglich. Sie sind {{distance}} entfernt.",
       "AWAY_NOT_ALLOWED": "Sie sind {{distance}} von {{location}} entfernt und nicht für das Arbeiten außerhalb eingerichtet. Bitten Sie Ihre Administration, es zu erlauben.",
       "NOT_CLOCKED_IN": "Stempeln Sie ein, um mit diesem Auftrag zu beginnen.",
-      "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} ist nicht eingestempelt. Der Auftrag kann erst starten, wenn {{name}} eingestempelt ist."
+      "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} ist nicht eingestempelt. Der Auftrag kann erst starten, wenn {{name}} eingestempelt ist.",
+      "HANDOVER_NOT_ON_THE_JOB": "Dieser Auftrag gehört nicht mehr Ihnen, die Übergabe wurde nicht gespeichert.",
+      "HANDOVER_NOTE_REQUIRED": "Schreiben Sie vor dem Speichern, was Sie gemacht haben."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",
@@ -3432,7 +3434,17 @@
       "unwell": "Krank",
       "other": "Etwas anderes"
     },
-    "countedTotal": "Gezählt"
+    "countedTotal": "Gezählt",
+    "pauseAndClockOut_one": "Auftrag pausieren & ausstempeln",
+    "pauseAndClockOut_other": "Aufträge pausieren & ausstempeln",
+    "jobs": {
+      "eyebrow_one": "NOCH IN ARBEIT · WIRD BEIM AUSSTEMPELN PAUSIERT",
+      "eyebrow_other": "{{count}} NOCH IN ARBEIT · WERDEN BEIM AUSSTEMPELN PAUSIERT",
+      "leaveNote": "Übergabenotiz hinterlassen",
+      "editNote": "Notiz bearbeiten",
+      "finish": "Fertig – abschließen",
+      "hint": "Jetzt keine Notiz? Sie werden später daran erinnert. Ausstempeln geht trotzdem."
+    }
   },
   "myWork": {
     "all": "Alle {{count}}",
@@ -3743,14 +3755,18 @@
       "unassigned": "Zuweisung aufgehoben",
       "photoAdded": "Foto hinzugefügt",
       "ticked": "Abgehakt: {{text}}",
-      "unticked": "Haken entfernt: {{text}}"
+      "unticked": "Haken entfernt: {{text}}",
+      "paused": "Beim Ausstempeln pausiert",
+      "resumed": "Arbeit fortgesetzt",
+      "handover": "Übergabe: {{text}}"
     },
     "timer": {
       "onJob": "{{time}} an diesem Auftrag",
       "onJobTracking": "{{time}} an diesem Auftrag · Route wird aufgezeichnet",
       "onJobNotTracking": "{{time}} an diesem Auftrag · Route wird nicht aufgezeichnet",
       "tracking": "Route wird aufgezeichnet",
-      "notTracking": "Route wird nicht aufgezeichnet"
+      "notTracking": "Route wird nicht aufgezeichnet",
+      "paused": "Pausiert – niemand arbeitet an diesem Auftrag"
     },
     "dock": {
       "navigate": "Navigieren",
@@ -3890,6 +3906,25 @@
       "body": "Ihre Zeit an diesem Auftrag beginnt mit Ihrer Schicht. Stempeln Sie ein, danach startet der Auftrag sofort.",
       "clockInAndStart": "Einstempeln und Arbeit starten",
       "notNow": "Nicht jetzt"
+    },
+    "handover": {
+      "title": "Was Sie erledigt haben und was noch fehlt",
+      "why": "Wer den Auftrag als Nächstes übernimmt, liest das zuerst.",
+      "placeholder": "Was haben Sie gemacht? Was ist noch zu tun?",
+      "save": "Übergabe speichern",
+      "later": "Später",
+      "saved": "Übergabe gespeichert",
+      "resumed": "Wieder bei der Arbeit",
+      "resume": "Arbeit fortsetzen",
+      "startWork": "Arbeit beginnen",
+      "label": "ÜBERGABE",
+      "worked": "{{time}} gearbeitet",
+      "pausedYou": "Pausiert, als Sie ausgestempelt haben · {{time}}",
+      "pausedBy": "Pausiert, als {{name}} ausgestempelt hat · {{time}}",
+      "youOwe": "Notieren Sie, was Sie an diesem Auftrag erledigt haben und was noch fehlt.",
+      "write": "Jetzt schreiben",
+      "notYet": "{{name}} hat noch keine Übergabe geschrieben.",
+      "notYetWorked": "{{name}} hat noch keine Übergabe geschrieben – {{time}} daran gearbeitet."
     }
   },
   "jobsList": {
@@ -4299,5 +4334,13 @@
       "copy": "Für den Support kopieren",
       "updateShort": "Update bereit"
     }
+  },
+  "jobsStrip": {
+    "owedTitle": "Notieren Sie, was Sie an {{title}} gemacht haben",
+    "owedSub": "Wer den Auftrag übernimmt, liest das zuerst.",
+    "pausedTitle": "Sie haben {{title}} pausiert",
+    "pausedSub": "Setzen Sie die Arbeit fort, sobald Sie wieder dran sind.",
+    "more_one": "Und {{count}} weiterer Auftrag",
+    "more_other": "Und {{count}} weitere Aufträge"
   }
 }

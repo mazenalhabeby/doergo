@@ -8,6 +8,7 @@ import { TasksProcessor } from './tasks.processor';
 import { AttachmentsModule } from '../attachments/attachments.module';
 
 import { PresenceModule } from '../attendance/presence/presence.module';
+import { HandoverModule } from './handover/handover.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { PresenceModule } from '../attendance/presence/presence.module';
     ]),
     AttachmentsModule,
     PresenceModule,
+    HandoverModule,
   ],
   controllers: [TasksController], // Keep for backwards compatibility (Redis pub/sub)
   providers: [

@@ -1,10 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Pressable, ScrollView, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Pressable, ScrollView, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
-import { over } from '../../theme/amazen';
 import { useDocumentRequirements } from '../../contexts/document-requirements-context';
 import { documentsApi, type DocumentType } from '../../lib/api/documents';
 import { AText, Eyebrow, LiveDot, PrimaryButton } from '../amazen';
@@ -16,6 +15,7 @@ import { CountersignGlyph, DocBlockedGlyph, DocExpiringGlyph, DocNeededGlyph, Do
 import { itemLines, stripItems, stripLines, stripTone, type StripItem, type StripTone } from './action-strip-state';
 import { usePhrase, type Phrase } from './phrase';
 import { GlyphTile } from './glyph-tile';
+import { StripBox } from './strip-box';
 import type { GlyphProps } from '../glyphs/glyphs';
 
 /**
@@ -54,13 +54,7 @@ export function ActionStrip() {
   const [supply, setSupply] = useState<{ typeId: string } | null>(null);
   const [types, setTypes] = useState<DocumentType[] | null>(null);
 
-  /* It slides in ONCE, on arrival, and never animates to get attention again. */
-  const arrive = useRef(new Animated.Value(0)).current;
   const shown = reqs.ready && items.length > 0;
-  useEffect(() => {
-    if (shown) Animated.timing(arrive, { toValue: 1, duration: 420, useNativeDriver: true }).start();
-    else arrive.setValue(0);
-  }, [shown, arrive]);
 
   /* The upload sheet needs the catalogue; fetched only once somebody goes there. */
   const loadTypes = async () => {
@@ -90,52 +84,18 @@ export function ActionStrip() {
   const tone = stripTone(items);
   const lines = stripLines(items)!;
   const ink = tone === 'crit' ? c.critical : tone === 'warn' ? c.warn : c.ink;
-  /*
-    ⚠️ OPAQUE, BECAUSE THE GLYPH IS PUNCHED. `contrast` must be the exact
-    colour behind the mark (docs/design/icons/README.md rule 2), and a
-    translucent strip over the home gradient has no single colour. So the
-    strip is the tint composited over the gradient where it sits, and the
-    mark's tile is composited over the strip — both solid, both matchable.
-  */
-  const ground = over(`${amazen.gradient.ground[1]}80`, amazen.gradient.ground[0]);
-  const tint = over(tone === 'crit' ? c.criticalTint : tone === 'warn' ? c.warnTint : c.tile, ground);
   const single = items.length === 1;
 
   return (
     <>
-      <Animated.View
-        style={{
-          opacity: arrive,
-          transform: [{ translateY: arrive.interpolate({ inputRange: [0, 1], outputRange: [-8, 0] }) }],
-          marginBottom: amazen.space(3),
-        }}
-      >
-        <Pressable
-          onPress={() => (single ? go(items[0]!) : setOpen(true))}
-          accessibilityRole="button"
-          accessibilityLabel={`${say(lines.title)}. ${say(lines.sub)}`}
-          style={({ pressed }) => ({
-            flexDirection: 'row', alignItems: 'center', gap: amazen.space(3),
-            minHeight: 54, paddingVertical: 11, paddingHorizontal: 14,
-            borderRadius: 18, borderWidth: 1, borderColor: tone === 'calm' ? c.lineGlass : `${ink}2e`,
-            backgroundColor: tint, opacity: pressed ? 0.85 : 1,
-          })}
-        >
-          {/* One item: its mark. Several: the count sits where the mark sat. */}
-          <GlyphTile Glyph={single ? glyphFor(items[0]!) : undefined} color={ink} tint={tone === 'calm' ? c.tile : `${ink}1f`} behind={tint} glyphSize={17}>
-            <AText variant="h3" numeric style={{ color: ink, fontSize: 19, lineHeight: 24 }}>{items.length}</AText>
-          </GlyphTile>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14, lineHeight: 19, fontFamily: amazen.font.sansMedium }}>
-              {say(lines.title)}
-            </AText>
-            <AText variant="caption" numberOfLines={2} style={{ color: tone === 'calm' ? c.inkMuted : ink, marginTop: 1 }}>
-              {say(lines.sub)}
-            </AText>
-          </View>
-          <AText variant="body" style={{ color: tone === 'calm' ? c.inkMuted : ink }}>›</AText>
-        </Pressable>
-      </Animated.View>
+      <StripBox
+        tone={tone}
+        Glyph={single ? glyphFor(items[0]!) : undefined}
+        count={single ? undefined : items.length}
+        title={say(lines.title)}
+        sub={say(lines.sub)}
+        onPress={() => (single ? go(items[0]!) : setOpen(true))}
+      />
 
       <BlurSheet visible={open} onClose={() => setOpen(false)}>
         <SheetPanel onClose={() => setOpen(false)}>

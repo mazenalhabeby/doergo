@@ -1022,6 +1022,12 @@ export class TasksService {
           include: { user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
         },
         attachments: { orderBy: { createdAt: 'desc' }, take: 50 },
+        // What the people before wrote — the newest is the card at the top of the job.
+        handovers: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          include: { author: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+        },
         assignees: {
           take: 20,
           include: {
@@ -1117,11 +1123,82 @@ export class TasksService {
       ...task,
       // Signed links, never the stored provider URL — see MediaSigner.
       attachments: await this.media.signAll(task.attachments),
+      ...(await this.pauseFacts(task)),
       acceptedAt,
       completedAt,
       capabilities,
       workflow: effectiveWorkflow,
     });
+  }
+
+  /**
+   * Who paused the job and who still owes its note, by name, with the time they
+   * put in — what the reassign warning says ("Mike hasn't written a handover yet
+   * — he worked 2h 15m"). Nothing is asked of a job that is neither.
+   */
+  private async pauseFacts(task: { id: string; pausedById?: string | null; handoverDueById?: string | null }) {
+    const ids = [...new Set([task.pausedById, task.handoverDueById].filter((x): x is string => !!x))];
+    if (ids.length === 0) return { pausedBy: null, handoverDue: null };
+    const [people, lastPause] = await Promise.all([
+      this.prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, firstName: true, lastName: true } }),
+      task.handoverDueById
+        ? this.prisma.taskEvent.findFirst({
+            where: { taskId: task.id, userId: task.handoverDueById, eventType: TaskEventType.PAUSED },
+            orderBy: { createdAt: 'desc' },
+            select: { metadata: true },
+          })
+        : null,
+    ]);
+    const byId = new Map(people.map((p) => [p.id, p]));
+    const who = (id?: string | null) => (id && byId.get(id)) || null;
+    return {
+      pausedBy: who(task.pausedById),
+      handoverDue: task.handoverDueById
+        ? { user: who(task.handoverDueById), workedMinutes: (lastPause?.metadata as { workedMinutes?: number } | null)?.workedMinutes ?? null }
+        : null,
+    };
+  }
+
+  /**
+   * "Resume work" on a paused job — by somebody on it (the one who stopped, or
+   * whoever has been given it since: their own time starts here). A move into
+   * work, so the clock gate applies exactly as it does to Start work.
+   *
+   * Not paused any more (a second tap, an offline replay, or the job was moved
+   * meanwhile): answered with the job as it is, nothing written.
+   */
+  async resumeWork(data: TaskAccessFacts & { id: string; evidence?: OccurrenceEvidence }) {
+    const task = await this.prisma.task.findUnique({ where: { id: data.id } });
+    if (!task) throw new NotFoundException('Task not found');
+    const onTheJob =
+      task.assignedToId === data.userId ||
+      !!(await this.prisma.taskAssignee.findFirst({ where: { taskId: task.id, userId: data.userId }, select: { id: true } }));
+    if (!onTheJob || task.organizationId !== data.organizationId) {
+      throw new ForbiddenException({ message: 'Only somebody on this job can resume it', code: 'TASK_REASSIGNED' });
+    }
+    if (task.pausedAt) {
+      await this.assertWorkerClockedIn(task, data.userId, data.organizationId, true);
+      const at = judgeOccurrence(data.evidence, task.pausedAt).at;
+      const resumed = await this.prisma.task.updateMany({
+        where: { id: task.id, pausedAt: { not: null } },
+        data: { pausedAt: null, pausedById: null },
+      });
+      if (resumed.count > 0) {
+        await this.createTaskEvent(task.id, data.userId, TaskEventType.RESUMED, { at: at.toISOString() });
+        this.notificationClient.emit('task_updated', {
+          task: await this.prisma.task.findUnique({ where: { id: task.id } }),
+          actorId: data.userId,
+        });
+        this.invalidateStatusCountsCache(task.organizationId);
+      }
+    }
+    return success(await this.prisma.task.findUnique({
+      where: { id: task.id },
+      include: {
+        assignedTo: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+        createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+      },
+    }));
   }
 
   /**
@@ -1995,6 +2072,11 @@ export class TasksService {
 
     // Build update data with route timestamps
     const updateData: any = { status: data.status as any };
+    // Any move of a paused job ends the pause — the job is being dealt with.
+    if (task.pausedAt) {
+      updateData.pausedAt = null;
+      updateData.pausedById = null;
+    }
 
     // Set routeStartedAt when transitioning to EN_ROUTE
     if (data.status === TaskStatus.EN_ROUTE) {

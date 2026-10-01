@@ -3183,7 +3183,9 @@
       "OUTSIDE_GEOFENCE": "{{location}} n'accepte les pointages que sur place. Vous êtes à {{distance}}.",
       "AWAY_NOT_ALLOWED": "Vous êtes à {{distance}} de {{location}} et vous n'êtes pas autorisé à travailler à distance. Demandez à votre administrateur de l'autoriser.",
       "NOT_CLOCKED_IN": "Pointez pour commencer ce travail.",
-      "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} n'a pas pointé. Il faut pointer avant que ce travail puisse commencer."
+      "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} n'a pas pointé. Il faut pointer avant que ce travail puisse commencer.",
+      "HANDOVER_NOT_ON_THE_JOB": "Cette intervention n'est plus la vôtre, la passation n'a pas été enregistrée.",
+      "HANDOVER_NOTE_REQUIRED": "Écrivez ce que vous avez fait avant d'enregistrer."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",
@@ -3432,7 +3434,17 @@
       "unwell": "Souffrant",
       "other": "Autre chose"
     },
-    "countedTotal": "Compté"
+    "countedTotal": "Compté",
+    "pauseAndClockOut_one": "Mettre en pause & pointer la sortie",
+    "pauseAndClockOut_other": "Mettre en pause & pointer la sortie",
+    "jobs": {
+      "eyebrow_one": "ENCORE EN COURS · MISE EN PAUSE AU POINTAGE DE SORTIE",
+      "eyebrow_other": "{{count}} ENCORE EN COURS · MISES EN PAUSE AU POINTAGE DE SORTIE",
+      "leaveNote": "Laisser une note de passation",
+      "editNote": "Modifier la note",
+      "finish": "C'est fait — la terminer",
+      "hint": "Pas de note maintenant ? Elle vous sera demandée plus tard. Rien ne vous empêche de pointer."
+    }
   },
   "myWork": {
     "all": "Tout {{count}}",
@@ -3743,14 +3755,18 @@
       "unassigned": "Désattribuée",
       "photoAdded": "Photo ajoutée",
       "ticked": "Coché : {{text}}",
-      "unticked": "Décoché : {{text}}"
+      "unticked": "Décoché : {{text}}",
+      "paused": "Mise en pause au pointage de sortie",
+      "resumed": "Travail repris",
+      "handover": "Passation : {{text}}"
     },
     "timer": {
       "onJob": "{{time}} sur cette intervention",
       "onJobTracking": "{{time}} sur cette intervention · trajet enregistré",
       "onJobNotTracking": "{{time}} sur cette intervention · trajet non enregistré",
       "tracking": "Trajet enregistré",
-      "notTracking": "Trajet non enregistré"
+      "notTracking": "Trajet non enregistré",
+      "paused": "En pause — personne sur cette intervention"
     },
     "dock": {
       "navigate": "Itinéraire",
@@ -3890,6 +3906,25 @@
       "body": "Votre temps sur ce travail commence avec votre service. Pointez, et le travail démarre aussitôt.",
       "clockInAndStart": "Pointer et commencer",
       "notNow": "Pas maintenant"
+    },
+    "handover": {
+      "title": "Ce que vous avez fait, et ce qui reste",
+      "why": "La personne qui reprendra cette intervention le lira en premier.",
+      "placeholder": "Qu'avez-vous fait ? Que reste-t-il à faire ?",
+      "save": "Enregistrer la passation",
+      "later": "Plus tard",
+      "saved": "Passation enregistrée",
+      "resumed": "De retour au travail",
+      "resume": "Reprendre le travail",
+      "startWork": "Commencer le travail",
+      "label": "PASSATION",
+      "worked": "{{time}} de travail",
+      "pausedYou": "En pause depuis votre fin de pointage · {{time}}",
+      "pausedBy": "En pause depuis la fin de pointage de {{name}} · {{time}}",
+      "youOwe": "Notez ce que vous avez fait sur cette intervention et ce qui reste.",
+      "write": "L'écrire",
+      "notYet": "{{name}} n'a pas encore écrit de passation.",
+      "notYetWorked": "{{name}} n'a pas encore écrit de passation — {{time}} de travail dessus."
     }
   },
   "jobsList": {
@@ -4299,5 +4334,13 @@
       "copy": "Copier pour le support",
       "updateShort": "Mise à jour prête"
     }
+  },
+  "jobsStrip": {
+    "owedTitle": "Notez ce que vous avez fait sur {{title}}",
+    "owedSub": "La prochaine personne le lira en premier.",
+    "pausedTitle": "Vous avez mis {{title}} en pause",
+    "pausedSub": "Reprenez le travail quand vous y retournez.",
+    "more_one": "Et {{count}} autre intervention",
+    "more_other": "Et {{count}} autres interventions"
   }
 }

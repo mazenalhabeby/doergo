@@ -46,6 +46,9 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     calls: {
       'tasksApi.addComment': 1,
       'tasksApi.declineTask': 1,
+      // Paused at a clock-out: picking it back up, and the handover note.
+      'tasksApi.resumeWork': 1,
+      'tasksApi.writeHandover': 1,
       /*
         ONE uploader (`sendFile`) for a photo added to the job and for a step
         form's photos and signatures. The old finish path (`reportsApi.completeTask`

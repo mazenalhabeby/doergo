@@ -9,6 +9,8 @@ import { AText, Eyebrow, LiveDot } from './amazen';
 import { heroParts } from './home/shift-state';
 import { readClockOut, type ClockOutShift } from './home/clock-out-state';
 import { formatDistance } from '../lib/distance';
+import { HANDOVER_NOTE_MAX } from '@hbcfield/shared/client';
+import type { HandoverJob } from '../lib/api';
 
 /**
  * CLOCK OUT — THE SHEET.
@@ -49,16 +51,24 @@ interface ClockOutSheetProps {
    * columns and mean different things to an approver; writing either into
    * `notes` (rule 6) buries a reason in free text nothing can read.
    */
-  onConfirm: (input: { notes?: string; earlyReason?: string; overtimeReason?: string }) => void;
+  onConfirm: (input: { notes?: string; earlyReason?: string; overtimeReason?: string; handovers?: { taskId: string; note: string }[] }) => void;
   isLoading?: boolean;
   /** Everything the sheet shows. ⚠️ Nothing new is fetched — §11.4. */
   shift: ClockOutShift;
+  /**
+   * Jobs still in work — they PAUSE at this clock-out (shared tasks/handover.ts).
+   * Each may carry a note of what was done and what is left; none is required:
+   * a job left without one is flagged "no handover yet" and asked for later.
+   */
+  openJobs?: HandoverJob[];
+  /** "It's done" — leave the sheet for the job, to finish it the normal way. */
+  onFinishJob?: (taskId: string) => void;
 }
 
 /** ② — the reasons, as KEYS. The label is looked up where it is rendered. */
 const EARLY_REASONS = ['finished', 'sentHome', 'unwell', 'other'] as const;
 
-export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, shift }: ClockOutSheetProps) {
+export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, shift, openJobs = [], onFinishJob }: ClockOutSheetProps) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const c = amazen.color;
@@ -74,13 +84,14 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
   const [notes, setNotes] = useState('');
   const [noteOpen, setNoteOpen] = useState(false);
   const [earlyReason, setEarlyReason] = useState<string | null>(null);
+  const [jobNotes, setJobNotes] = useState<Record<string, string>>({});
 
   const view = useMemo(() => readClockOut(shift), [shift]);
   const late = view.face === 'late';
   const early = view.face === 'early';
 
   const close = useCallback(() => {
-    setNotes(''); setNoteOpen(false); setEarlyReason(null);
+    setNotes(''); setNoteOpen(false); setEarlyReason(null); setJobNotes({});
     onClose();
   }, [onClose]);
 
@@ -105,9 +116,12 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
           })
         : undefined,
     };
-    setNotes(''); setNoteOpen(false); setEarlyReason(null);
-    onConfirm(body);
-  }, [isLoading, notes, early, earlyReason, late, view.overBy, onConfirm, t]);
+    const handovers = openJobs
+      .map((j) => ({ taskId: j.id, note: (jobNotes[j.id] ?? '').trim() }))
+      .filter((h) => h.note);
+    setNotes(''); setNoteOpen(false); setEarlyReason(null); setJobNotes({});
+    onConfirm(handovers.length ? { ...body, handovers } : body);
+  }, [isLoading, notes, early, earlyReason, late, view.overBy, onConfirm, t, openJobs, jobNotes]);
 
   const eyebrow = late
     ? t('shiftEnd.pastEnd', { defaultValue: 'PAST YOUR SHIFT END' })
@@ -208,6 +222,15 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
           </Strip>
         ) : null}
 
+        {openJobs.length ? (
+          <OpenJobs
+            jobs={openJobs}
+            notes={jobNotes}
+            onNote={(id, text) => setJobNotes((n) => ({ ...n, [id]: text }))}
+            onFinish={onFinishJob ? (id) => { close(); onFinishJob(id); } : undefined}
+          />
+        ) : null}
+
         {/*
           ⚠️ COLLAPSED, AND MARKED OPTIONAL. A 500-character box with a counter
           is a wall of blank at the moment somebody wants to go home.
@@ -281,7 +304,9 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
           <AText variant="body" style={{ color: c.accentInk, fontFamily: amazen.font.sansMedium }}>
             {late
               ? t('shiftEnd.clockOutAndAsk', { defaultValue: 'Clock out & ask' })
-              : t('home.fullTime.clockOut')}
+              : openJobs.length
+                ? t('shiftEnd.pauseAndClockOut', { count: openJobs.length })
+                : t('home.fullTime.clockOut')}
           </AText>
         </Pressable>
 
@@ -296,6 +321,80 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
         </Pressable>
       </SheetPanel>
     </BlurSheet>
+  );
+}
+
+/**
+ * JOBS STILL IN WORK — they pause at the clock-out minute either way.
+ *
+ * ⚠️ AN OFFER, NEVER A GATE (rule 1). Each job may take a note of what was done
+ * and what is left; the button works with none, and a job left without one is
+ * asked for later ("Write what you did on …"), never held against the clock-out.
+ */
+function OpenJobs({
+  jobs, notes, onNote, onFinish,
+}: {
+  jobs: HandoverJob[];
+  notes: Record<string, string>;
+  onNote: (taskId: string, text: string) => void;
+  onFinish?: (taskId: string) => void;
+}) {
+  const { amazen } = useTheme();
+  const { t } = useTranslation();
+  const c = amazen.color;
+  const [open, setOpen] = useState<string | null>(jobs.length === 1 ? jobs[0]!.id : null);
+  return (
+    <View style={{ marginTop: amazen.space(4), gap: amazen.space(2) }}>
+      <Eyebrow tone="warn">{t('shiftEnd.jobs.eyebrow', { count: jobs.length })}</Eyebrow>
+      {jobs.map((j) => {
+        const writing = open === j.id;
+        const sub = [j.customer?.name, j.locationAddress].filter(Boolean).join(' · ');
+        return (
+          <View key={j.id} style={{ backgroundColor: c.tile, borderRadius: amazen.radius.field, padding: amazen.space(3), gap: amazen.space(2) }}>
+            <View>
+              <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>{j.title}</AText>
+              {sub ? <AText variant="caption" tone="muted" numberOfLines={1}>{sub}</AText> : null}
+            </View>
+            {writing ? (
+              <TextInput
+                value={notes[j.id] ?? ''}
+                onChangeText={(text) => onNote(j.id, text)}
+                multiline
+                maxLength={HANDOVER_NOTE_MAX}
+                placeholder={t('job.handover.placeholder')}
+                placeholderTextColor={c.inkMuted}
+                style={{
+                  backgroundColor: c.sunken,
+                  borderRadius: amazen.radius.field,
+                  borderWidth: StyleSheet.hairlineWidth * 2,
+                  borderColor: c.lineField,
+                  paddingHorizontal: amazen.space(3),
+                  paddingVertical: amazen.space(2.5),
+                  color: c.inkStrong,
+                  fontFamily: amazen.font.sans,
+                  fontSize: 14.5,
+                  minHeight: 76,
+                  textAlignVertical: 'top',
+                }}
+              />
+            ) : null}
+            <View style={{ flexDirection: 'row', gap: amazen.space(4) }}>
+              {!writing ? (
+                <Pressable onPress={() => setOpen(j.id)} accessibilityRole="button" hitSlop={8}>
+                  <AText variant="caption" tone="accent">{notes[j.id]?.trim() ? t('shiftEnd.jobs.editNote') : t('shiftEnd.jobs.leaveNote')}</AText>
+                </Pressable>
+              ) : null}
+              {onFinish ? (
+                <Pressable onPress={() => onFinish(j.id)} accessibilityRole="button" hitSlop={8}>
+                  <AText variant="caption" tone="ink">{t('shiftEnd.jobs.finish')}</AText>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+        );
+      })}
+      <AText variant="caption" tone="muted">{t('shiftEnd.jobs.hint')}</AText>
+    </View>
   );
 }
 

@@ -3183,7 +3183,9 @@
       "OUTSIDE_GEOFENCE": "{{location}} solo admite fichajes en el sitio. Estás a {{distance}}.",
       "AWAY_NOT_ALLOWED": "Estás a {{distance}} de {{location}} y no tienes permiso para trabajar fuera. Pide a tu administrador que lo permita.",
       "NOT_CLOCKED_IN": "Ficha la entrada para empezar este trabajo.",
-      "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} no ha fichado la entrada. Tiene que fichar antes de que este trabajo pueda empezar."
+      "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} no ha fichado la entrada. Tiene que fichar antes de que este trabajo pueda empezar.",
+      "HANDOVER_NOT_ON_THE_JOB": "Este trabajo ya no es tuyo, así que el traspaso no se guardó.",
+      "HANDOVER_NOTE_REQUIRED": "Escribe lo que hiciste antes de guardar."
     },
     "signOut": {
       "title_one": "{{count}} cambio no se ha enviado",
@@ -3432,7 +3434,17 @@
       "unwell": "Indispuesto",
       "other": "Otra cosa"
     },
-    "countedTotal": "Contabilizado"
+    "countedTotal": "Contabilizado",
+    "pauseAndClockOut_one": "Pausar trabajo y fichar salida",
+    "pauseAndClockOut_other": "Pausar trabajos y fichar salida",
+    "jobs": {
+      "eyebrow_one": "AÚN EN CURSO · SE PAUSA AL FICHAR LA SALIDA",
+      "eyebrow_other": "{{count}} AÚN EN CURSO · SE PAUSAN AL FICHAR LA SALIDA",
+      "leaveNote": "Dejar nota de traspaso",
+      "editNote": "Editar la nota",
+      "finish": "Está hecho: terminarlo",
+      "hint": "¿Sin nota ahora? Te la pediremos después. Nada te impide fichar la salida."
+    }
   },
   "myWork": {
     "all": "Todos {{count}}",
@@ -3743,14 +3755,18 @@
       "unassigned": "Sin asignar",
       "photoAdded": "Foto añadida",
       "ticked": "Marcado: {{text}}",
-      "unticked": "Desmarcado: {{text}}"
+      "unticked": "Desmarcado: {{text}}",
+      "paused": "En pausa al fichar la salida",
+      "resumed": "Trabajo reanudado",
+      "handover": "Traspaso: {{text}}"
     },
     "timer": {
       "onJob": "{{time}} en este trabajo",
       "onJobTracking": "{{time}} en este trabajo · registrando tu ruta",
       "onJobNotTracking": "{{time}} en este trabajo · la ruta no se registra",
       "tracking": "Registrando tu ruta",
-      "notTracking": "La ruta no se registra"
+      "notTracking": "La ruta no se registra",
+      "paused": "En pausa: nadie está en este trabajo"
     },
     "dock": {
       "navigate": "Navegar",
@@ -3890,6 +3906,25 @@
       "body": "Tu tiempo en este trabajo empieza con tu turno. Ficha la entrada y el trabajo empieza justo después.",
       "clockInAndStart": "Fichar y empezar",
       "notNow": "Ahora no"
+    },
+    "handover": {
+      "title": "Lo que hiciste y lo que falta",
+      "why": "Quien retome este trabajo lo leerá primero.",
+      "placeholder": "¿Qué hiciste? ¿Qué queda por hacer?",
+      "save": "Guardar traspaso",
+      "later": "Más tarde",
+      "saved": "Traspaso guardado",
+      "resumed": "De vuelta al trabajo",
+      "resume": "Reanudar trabajo",
+      "startWork": "Empezar trabajo",
+      "label": "TRASPASO",
+      "worked": "trabajó {{time}}",
+      "pausedYou": "En pausa desde que fichaste la salida · {{time}}",
+      "pausedBy": "En pausa desde que {{name}} fichó la salida · {{time}}",
+      "youOwe": "Escribe lo que hiciste en este trabajo y lo que falta.",
+      "write": "Escribirlo",
+      "notYet": "{{name}} aún no ha escrito el traspaso.",
+      "notYetWorked": "{{name}} aún no ha escrito el traspaso; trabajó {{time}} en esto."
     }
   },
   "jobsList": {
@@ -4299,5 +4334,13 @@
       "copy": "Copiar para soporte",
       "updateShort": "Actualización lista"
     }
+  },
+  "jobsStrip": {
+    "owedTitle": "Escribe lo que hiciste en {{title}}",
+    "owedSub": "La próxima persona lo leerá primero.",
+    "pausedTitle": "Pausaste {{title}}",
+    "pausedSub": "Reanuda el trabajo cuando vuelvas a él.",
+    "more_one": "Y {{count}} trabajo más",
+    "more_other": "Y {{count}} trabajos más"
   }
 }

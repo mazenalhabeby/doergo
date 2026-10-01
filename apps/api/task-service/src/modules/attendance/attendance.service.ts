@@ -9,11 +9,13 @@ import {
   ConflictException,
   ForbiddenException,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { JobPauseService, type ClockOutHandover } from '../tasks/handover/job-pause.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { ShiftResolverService, ResolverSpace } from './shift-resolver.service';
 
@@ -101,6 +103,8 @@ export class AttendanceService {
     private readonly breakRules: BreakRulesService,
     // Where they are working now — display only, and never in the way of a clock-in.
     private readonly presence: PresenceService,
+    // Jobs left in work are paused at every way a shift ends (packages/shared/src/tasks/handover.ts).
+    @Optional() private readonly jobPause?: JobPauseService,
   ) {}
 
   /**
@@ -1029,6 +1033,8 @@ export class AttendanceService {
     entryId?: string;
     /** When and where the tap happened, for a clock-out recorded offline. */
     evidence?: OccurrenceEvidence;
+    /** "What I did and what is left", per job, written in the clock-out sheet. */
+    handovers?: ClockOutHandover[];
   }) {
     this.logger.log(`Clock out attempt: user=${data.userId}${data.entryId ? `, entry=${data.entryId}` : ''}`);
 
@@ -1307,6 +1313,16 @@ export class AttendanceService {
       });
     }
 
+    // Jobs left in work stop with the shift — at its minute, not when the phone found signal.
+    await this.jobPause?.pauseAtClockOut({
+      userId: data.userId,
+      organizationId: data.organizationId,
+      at: clockOutTime,
+      since: entry.clockInAt,
+      reason: 'CLOCK_OUT',
+      handovers: data.handovers,
+    });
+
     // Emit real-time event for dashboard/team updates
     this.notificationClient.emit('attendance_clock_out', {
       userId: data.userId,
@@ -1437,6 +1453,14 @@ export class AttendanceService {
         nextRemindAt: null,
       },
       include: { location: true, user: { select: { firstName: true, lastName: true } } },
+    });
+
+    await this.jobPause?.pauseAtClockOut({
+      userId: data.userId,
+      organizationId: data.organizationId,
+      at: clockOutTime,
+      since: entry.clockInAt,
+      reason: 'FORGOT',
     });
 
     this.notificationClient.emit('attendance_clock_out', {
@@ -2340,6 +2364,9 @@ export class AttendanceService {
       });
       if (!outcome) continue;
       closed++;
+
+      // The jobs stop at the same guess; the member's real clock-out moves them.
+      await this.jobPause?.pauseAtClockOut({ userId: entry.userId, organizationId: entry.organizationId, at, reason: 'AUTO_CLOSE' });
 
       this.notificationClient.emit('attendance_shift_closed_provisionally', {
         entryId: entry.id,

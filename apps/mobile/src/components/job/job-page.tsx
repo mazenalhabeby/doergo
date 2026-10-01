@@ -7,7 +7,7 @@ import { BlurView } from 'expo-blur';
 import { router, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { daysLate, getFlowSteps, hasAccessModule, hasCapability, hasFeatureModule, spaceRunsClock, stepStartsWork, type TaskCapability } from '@hbcfield/shared/client';
+import { daysLate, getFlowSteps, hasAccessModule, hasCapability, hasFeatureModule, isJobPaused, spaceRunsClock, stepStartsWork, type TaskCapability } from '@hbcfield/shared/client';
 import { TaskStatus } from '../../lib/api';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
@@ -47,6 +47,8 @@ import { MoreSheet } from './sheets/more-sheet';
 import { ReportIssueSheet } from './sheets/report-issue-sheet';
 import { JobConfirmSheet } from './sheets/confirm-sheet';
 import { ClockInToStartSheet } from './sheets/clock-in-to-start-sheet';
+import { HandoverSheet } from './sheets/handover-sheet';
+import { JobHandover } from './job-handover';
 import { LocationPickerSheet } from '../index';
 import { useShift } from '../../offline/attendance/use-shift';
 import { useClockIn } from '../../hooks/useClockIn';
@@ -56,7 +58,10 @@ import { StepFormSheet } from './sheets/step-form-sheet';
 import { SignSheet } from './sheets/sign-sheet';
 import { TourTarget, useTourScroll } from '../tour/tour-target';
 
-type SheetKind = 'more' | 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'form' | 'sign' | 'delete' | 'clockIn';
+type SheetKind = 'more' | 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'form' | 'sign' | 'delete' | 'clockIn' | 'handover';
+
+/** What waits for the clock-in: a step to move into, or picking a paused job back up. */
+const RESUME = '__resume__';
 
 /** A link's sheet as the page's own: `finish` and `form:<STEP>` are both the step form. */
 function sheetOf(open: OpenSheet | null): SheetKind | null {
@@ -168,7 +173,8 @@ export function JobPage({
       const to = startAfterClockIn;
       setStartAfterClockIn(null);
       setSheet(null);
-      if (to) void writes.changeStatus(to);
+      if (to === RESUME) void writes.resume();
+      else if (to) void writes.changeStatus(to);
     },
   });
 
@@ -292,6 +298,17 @@ export function JobPage({
     && !!task.space?.enabledModules && spaceRunsClock(task.space.enabledModules, null)
     && stepStartsWork(to, capsAt(to, steps, workflowName));
 
+  /*
+    Paused at a clock-out (shared tasks/handover.ts): the job is in a working step
+    with nobody on it. Picking it up is a move into work — same clock gate — and
+    whoever has it now may: the one who stopped, or whoever it was given to.
+  */
+  const paused = !closed && isJobPaused(task);
+  const resume = () => {
+    if (mustClockInFirst(task.status)) { setStartAfterClockIn(RESUME); setSheet('clockIn'); return; }
+    void writes.resume();
+  };
+
   const go = (to: string) => {
     if (mustClockInFirst(to)) { setStartAfterClockIn(to); setSheet('clockIn'); return; }
     const kind = moveKind(to, formForMove(task.workflow, steps, to, workflowName));
@@ -326,7 +343,14 @@ export function JobPage({
   /* One job at a time: accepting this one is refused while another holds the slot. */
   const slotHolder = mode === 'doer' && target === TaskStatus.ACCEPTED ? job.slotHolder : null;
   let primary: DockPrimary | null = null;
-  if (mode === 'doer' && target) {
+  if (mode === 'doer' && paused) {
+    primary = {
+      label: task.pausedById && task.pausedById !== user?.id ? t('job.handover.startWork') : t('job.handover.resume'),
+      onPress: resume,
+      disabled: writes.busy,
+      loading: writes.busy && sheet === null,
+    };
+  } else if (mode === 'doer' && target) {
     primary = {
       label: held ? t('taskDetail.statusActions.notYetAvailable') : decision.resume ? t('job.dock.backToWork') : labelOf(target),
       Glyph: glyphFor(target, steps, workflowName),
@@ -341,7 +365,7 @@ export function JobPage({
   const showTimer = doingTheWork && !closed && hasCapability(caps, 'timer') && !!task.acceptedAt && ACTIVE.includes(task.status);
   const tracksRoute = doingTheWork && task.status === TaskStatus.EN_ROUTE;
   const { isTracking, error: trackingError, startTracking } = job.tracking;
-  const timer = showTimer || tracksRoute ? {
+  const timer = paused && doingTheWork ? { text: t('job.timer.paused'), live: false } : showTimer || tracksRoute ? {
     text: showTimer && tracksRoute
       ? t(isTracking ? 'job.timer.onJobTracking' : 'job.timer.onJobNotTracking', { time: formatOnJob(job.elapsed) })
       : showTimer
@@ -452,6 +476,8 @@ export function JobPage({
           futureLine={futureLine}
         />
 
+        <JobHandover task={task} files={job.attachments} meId={user?.id} onWrite={() => setSheet('handover')} />
+
         <TourTarget name="taskdetail-facts"><JobFacts facts={facts} /></TourTarget>
         {hasPlace ? <TourTarget name="taskdetail-map"><JobMap lat={task.locationLat!} lng={task.locationLng!} title={task.locationAddress} onOpen={openMaps} /></TourTarget> : null}
 
@@ -532,6 +558,13 @@ export function JobPage({
         onClockIn={clockIn.openClockInModal}
       />
       <LocationPickerSheet {...clockIn.pickerProps} confirmDisabled={clockIn.isClockingIn} />
+      <HandoverSheet
+        visible={sheet === 'handover'}
+        onClose={closeSheet}
+        context={[task.title, task.space?.name].filter(Boolean).join(' · ')}
+        busy={writes.busy}
+        onSend={writes.handover}
+      />
       <MoreSheet
         visible={sheet === 'more'}
         onClose={closeSheet}

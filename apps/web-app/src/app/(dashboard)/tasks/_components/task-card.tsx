@@ -1,5 +1,6 @@
 "use client"
 
+import { PausedChip } from "@/components/paused-chip"
 import React from "react"
 import { isTaskOverdue } from "@hbcfield/shared/client"
 import Link from "next/link"
@@ -87,6 +88,7 @@ export const TaskCard = React.memo(function TaskCard({
         <span className="text-[11px] font-medium" style={{ color: priorityConfig.hex }}>
           {priorityConfig.label}
         </span>
+        <PausedChip task={task} />
         {hasModule('story_points') && task.storyPoints != null && (
           <span className="bg-muted rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-muted-foreground ml-auto">
             {task.storyPoints}

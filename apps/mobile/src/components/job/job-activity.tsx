@@ -67,6 +67,10 @@ export function JobActivity({
         case 'ASSIGNED': return by(t('job.activity.assigned'));
         case 'UNASSIGNED': return by(t('job.activity.unassigned'));
         case 'ATTACHMENT_ADDED': return by(t('job.activity.photoAdded'));
+        // Stopped at a clock-out, picked back up, and what was written about it.
+        case 'PAUSED': return by(t('job.activity.paused'));
+        case 'RESUMED': return by(t('job.activity.resumed'));
+        case 'HANDOVER_ADDED': return meta?.content ? by(t('job.activity.handover', { text: String(meta.content) })) : null;
         case 'CHECKLIST_ITEM_TOGGLED':
           return meta?.text ? by(t(meta?.isCompleted ? 'job.activity.ticked' : 'job.activity.unticked', { text: String(meta.text) })) : null;
         default: return null; // Comments are drawn as themselves; the rest is office bookkeeping.

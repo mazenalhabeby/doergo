@@ -1619,7 +1619,10 @@
         "CANCELED": "Task canceled",
         "CLOSED": "Task closed",
         "ATTACHMENT_ADDED": "Attachment added",
-        "ATTACHMENT_REMOVED": "Attachment removed"
+        "ATTACHMENT_REMOVED": "Attachment removed",
+        "PAUSED": "Paused at clock-out",
+        "RESUMED": "Work resumed",
+        "HANDOVER_ADDED": "Handover written"
       }
     },
     "assignees": {
@@ -1706,6 +1709,32 @@
       "body": "Time on a job runs with your shift. Clock in, and the job starts straight after.",
       "clockInAndStart": "Clock in and start",
       "notNow": "Not now"
+    },
+    "handover": {
+      "title": "What you did, and what is left",
+      "why": "Whoever picks this job up next reads this first.",
+      "placeholder": "What did you do? What still needs doing?",
+      "save": "Save handover",
+      "saved": "Handover saved",
+      "resumed": "Back at work",
+      "resume": "Resume work",
+      "startWork": "Start work",
+      "label": "Handover",
+      "worked": "worked {{time}}",
+      "photos_one": "{{count}} photo with this note — see Attachments",
+      "photos_other": "{{count}} photos with this note — see Attachments",
+      "pausedYou": "Paused when you clocked out · {{when}}",
+      "pausedBy": "Paused when {{name}} clocked out · {{when}}",
+      "youOwe": "Write what you did on this job and what is left.",
+      "write": "Write handover",
+      "notYet": "{{name}} hasn't written a handover yet.",
+      "notYetWorked": "{{name}} hasn't written a handover yet — worked {{time}} on it.",
+      "reassignHint": "You can reassign now: a note written later still reaches whoever has the job.",
+      "wait": "Wait for the note",
+      "chip": "Paused",
+      "chipOwed": "Paused · no handover",
+      "chipTitle": "Stopped when its worker clocked out",
+      "chipOwedTitle": "Stopped when its worker clocked out — no handover note yet"
     }
   },
   "technicians": {
@@ -8607,7 +8636,9 @@
     "OUTSIDE_GEOFENCE": "{{location}} only accepts clock-ins on site. You are {{distance}} away.",
     "AWAY_NOT_ALLOWED": "You are {{distance}} from {{location}}, and you are not set up to work away from it. Ask your administrator to allow it.",
     "NOT_CLOCKED_IN": "Clock in to start work on this job.",
-    "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} is not clocked in. They need to clock in before this job can start."
+    "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} is not clocked in. They need to clock in before this job can start.",
+    "HANDOVER_NOT_ON_THE_JOB": "Only somebody on this job can write its handover.",
+    "HANDOVER_NOTE_REQUIRED": "Write what you did before saving."
   },
   "signLink": {
     "tabs": {

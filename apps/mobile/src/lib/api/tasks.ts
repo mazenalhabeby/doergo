@@ -1,6 +1,6 @@
 import { fetchWithAuth } from './client';
 import { buildUrlWithQuery, type StepFormAnswers } from '@hbcfield/shared/client';
-import type { StepSubmission, Task, Comment, TaskEvent, CreateTaskInput, UpdateTaskInput, LocationUpdate, LocationResponse, LocationBatchUpdate, ChecklistItem } from './types';
+import type { MyHandovers, TaskHandover, StepSubmission, Task, Comment, TaskEvent, CreateTaskInput, UpdateTaskInput, LocationUpdate, LocationResponse, LocationBatchUpdate, ChecklistItem } from './types';
 
 export interface TasksListParams {
   status?: string;
@@ -75,6 +75,15 @@ export const tasksApi = {
       body: JSON.stringify({ content }),
     });
   },
+
+  /** My jobs in work, notes I owe, jobs paused on me — one read. */
+  myHandovers: async (): Promise<MyHandovers> => fetchWithAuth<MyHandovers>('/tasks/handover/mine', { method: 'GET' }),
+
+  /** Direct path for a build without the offline engine — see offline/tasks/task-actions.ts. */
+  resumeWork: async (taskId: string): Promise<Task> => fetchWithAuth<Task>(`/tasks/${taskId}/resume`, { method: 'POST', body: '{}' }),
+
+  writeHandover: async (taskId: string, body: { id?: string; note: string; attachmentIds?: string[] }): Promise<TaskHandover> =>
+    fetchWithAuth<TaskHandover>(`/tasks/${taskId}/handover`, { method: 'POST', body: JSON.stringify(body) }),
 
   declineTask: async (taskId: string): Promise<void> => {
     return fetchWithAuth<void>(`/tasks/${taskId}/decline`, {

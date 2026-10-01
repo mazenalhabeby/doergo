@@ -20,6 +20,7 @@ import { EmptyHome, type Suggestion } from '../components/home/empty-home';
 import { DropSlot, EditableWidget, LIFT_FACTOR } from '../components/home/editable-widget';
 import { WidgetGallery } from '../components/home/widget-gallery';
 import { ActionStrip } from '../components/home/action-strip';
+import { JobsStrip } from '../components/home/jobs-strip';
 import { TourTarget } from '../components/tour/tour-target';
 import { editShortcutsOnArrival } from '../components/home/shortcuts-card';
 import { answerFor, useWidgetAnswers } from './answers';
@@ -406,6 +407,8 @@ export function HomeScreen() {
                 never in the registry — and away while arranging, so nothing
                 above the column moves under the finger. */}
             {editing ? null : <TourTarget name="home-needs"><ActionStrip /></TourTarget>}
+            {/* Stopped work: a handover note owed, or a paused job to pick back up. */}
+            {editing ? null : <JobsStrip />}
           </>
         }
         ListEmptyComponent={

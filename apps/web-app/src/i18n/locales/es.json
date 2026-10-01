@@ -1619,7 +1619,10 @@
         "CANCELED": "Tarea cancelada",
         "CLOSED": "Tarea cerrada",
         "ATTACHMENT_ADDED": "Adjunto agregado",
-        "ATTACHMENT_REMOVED": "Adjunto quitado"
+        "ATTACHMENT_REMOVED": "Adjunto quitado",
+        "PAUSED": "En pausa al fichar la salida",
+        "RESUMED": "Trabajo reanudado",
+        "HANDOVER_ADDED": "Traspaso escrito"
       }
     },
     "assignees": {
@@ -1706,6 +1709,32 @@
       "body": "El tiempo en un trabajo corre con tu turno. Ficha la entrada y el trabajo empieza justo después.",
       "clockInAndStart": "Fichar y empezar",
       "notNow": "Ahora no"
+    },
+    "handover": {
+      "title": "Lo que hiciste y lo que falta",
+      "why": "Quien retome este trabajo lo leerá primero.",
+      "placeholder": "¿Qué hiciste? ¿Qué queda por hacer?",
+      "save": "Guardar traspaso",
+      "saved": "Traspaso guardado",
+      "resumed": "De vuelta al trabajo",
+      "resume": "Reanudar trabajo",
+      "startWork": "Empezar trabajo",
+      "label": "Traspaso",
+      "worked": "trabajó {{time}}",
+      "photos_one": "{{count}} foto con esta nota: ver Adjuntos",
+      "photos_other": "{{count}} fotos con esta nota: ver Adjuntos",
+      "pausedYou": "En pausa desde que fichaste la salida · {{when}}",
+      "pausedBy": "En pausa desde que {{name}} fichó la salida · {{when}}",
+      "youOwe": "Escribe lo que hiciste en este trabajo y lo que falta.",
+      "write": "Escribir traspaso",
+      "notYet": "{{name}} aún no ha escrito el traspaso.",
+      "notYetWorked": "{{name}} aún no ha escrito el traspaso; trabajó {{time}} en esto.",
+      "reassignHint": "Puedes reasignar ahora: una nota escrita después llega igualmente a quien tenga el trabajo.",
+      "wait": "Esperar la nota",
+      "chip": "En pausa",
+      "chipOwed": "En pausa · sin traspaso",
+      "chipTitle": "Se detuvo cuando su trabajador fichó la salida",
+      "chipOwedTitle": "Se detuvo cuando su trabajador fichó la salida; aún sin nota de traspaso"
     }
   },
   "technicians": {
@@ -8607,7 +8636,9 @@
     "OUTSIDE_GEOFENCE": "{{location}} solo admite fichajes en el sitio. Estás a {{distance}}.",
     "AWAY_NOT_ALLOWED": "Estás a {{distance}} de {{location}} y no tienes permiso para trabajar fuera. Pide a tu administrador que lo permita.",
     "NOT_CLOCKED_IN": "Ficha la entrada para empezar este trabajo.",
-    "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} no ha fichado la entrada. Tiene que fichar antes de que este trabajo pueda empezar."
+    "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} no ha fichado la entrada. Tiene que fichar antes de que este trabajo pueda empezar.",
+    "HANDOVER_NOT_ON_THE_JOB": "Solo alguien en este trabajo puede escribir su traspaso.",
+    "HANDOVER_NOTE_REQUIRED": "Escribe lo que hiciste antes de guardar."
   },
   "signLink": {
     "tabs": {

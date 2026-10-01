@@ -14,6 +14,8 @@ import {
   AlertTriangle,
   MapPin,
   FileEdit,
+  PauseCircle,
+  PenLine,
   type LucideIcon,
 } from "lucide-react"
 
@@ -47,6 +49,10 @@ const EVENT_CONFIG: Record<
   CLOSED: { icon: CheckCircle2, color: "text-muted-foreground", labelKey: "tasks.activity.events.CLOSED" },
   ATTACHMENT_ADDED: { icon: Paperclip, color: "text-indigo-500", labelKey: "tasks.activity.events.ATTACHMENT_ADDED" },
   ATTACHMENT_REMOVED: { icon: Paperclip, color: "text-red-500", labelKey: "tasks.activity.events.ATTACHMENT_REMOVED" },
+  // Stopped at a clock-out, picked back up, and what the worker wrote about it.
+  PAUSED: { icon: PauseCircle, color: "text-muted-foreground", labelKey: "tasks.activity.events.PAUSED" },
+  RESUMED: { icon: PlayCircle, color: "text-amber-500", labelKey: "tasks.activity.events.RESUMED" },
+  HANDOVER_ADDED: { icon: PenLine, color: "text-primary", labelKey: "tasks.activity.events.HANDOVER_ADDED" },
 }
 
 const EXCLUDED_EVENTS = ["COMMENT_ADDED"]
