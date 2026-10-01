@@ -125,3 +125,48 @@ describe('a later, proven read', () => {
     expect(prisma.document.updateMany.mock.calls[0][0].data.scanVerdict).toBe('CONSISTENT');
   });
 });
+
+describe('PdfTextReader — PDFs members upload', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { PDFDocument, StandardFonts } = require('pdf-lib');
+  const { PdfTextReader } = require('../document-reader');
+
+  async function pdf(rows: { y: number; size: number; text: string }[]): Promise<Buffer> {
+    const doc = await PDFDocument.create();
+    const page = doc.addPage([595, 842]);
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    for (const r of rows) page.drawText(r.text, { x: 50, y: r.y, size: r.size, font });
+    return Buffer.from(await doc.save());
+  }
+
+  it('reads the expiry by its label, and the document\'s own name', async () => {
+    const bytes = await pdf([
+      { y: 780, size: 18, text: 'Gas Safe Services Ltd' },
+      { y: 750, size: 13, text: 'GAS SAFETY CERTIFICATE' },
+      { y: 700, size: 10, text: 'Issued: 01.04.2026' },
+      { y: 680, size: 10, text: 'Valid until: 31.03.2027' },
+      { y: 660, size: 10, text: 'Next service recommended 15.09.2027' },
+    ]);
+    const r = await new PdfTextReader().read({ bytes, mimeType: 'application/pdf', member });
+    expect(r).toMatchObject({ expiresOn: '2027-03-31', certainty: 'SUGGESTED', source: 'LABEL', title: 'Gas Safety Certificate' });
+  });
+
+  it('declines an image, and says NO_TEXT for a PDF with no text layer', async () => {
+    const reader = new PdfTextReader();
+    expect((await reader.read({ bytes: Buffer.from('x'), mimeType: 'image/jpeg', member })).unreadable).toBe('NOT_AN_IMAGE');
+    expect((await reader.read({ bytes: await pdf([]), mimeType: 'application/pdf', member })).unreadable).toBe('NO_TEXT');
+  });
+});
+
+describe('the queue names a document it reads', () => {
+  it('replaces a type label or a file name, never a title somebody chose', async () => {
+    for (const [title, expected] of [['Other document', 'Gas Safety Certificate'], ['IMG_0042', 'Gas Safety Certificate'], ['My gas cert 2026', undefined]] as const) {
+      const prisma: any = { document: { findUnique: jest.fn(), findFirst: jest.fn().mockResolvedValue(null), updateMany: jest.fn().mockResolvedValue({ count: 1 }) } };
+      const reader = { name: 'x', read: jest.fn().mockResolvedValue({ expiresOn: null, certainty: null, source: null, label: null, engine: 'x', scan: null, unreadable: null, title: 'Gas Safety Certificate' }) };
+      const queue = new DocumentReadQueue(prisma, { get: jest.fn().mockResolvedValue(Buffer.from('x')) } as any, [reader]);
+      prisma.document.findUnique.mockResolvedValue({ id: 'd', organizationId: 'o', userId: 'u', status: 'PENDING_VERIFICATION', storageKey: 'k', mimeType: 'application/pdf', expiresOn: null, scanVerdict: null, scanData: null, title, type: { label: 'Other document' }, user: { firstName: 'a', lastName: 'b' } });
+      await queue.readOne('d');
+      expect(prisma.document.updateMany.mock.calls[0][0].data.title).toBe(expected);
+    }
+  });
+});

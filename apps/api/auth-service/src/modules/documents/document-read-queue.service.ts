@@ -89,20 +89,24 @@ export class DocumentReadQueue implements OnApplicationBootstrap, OnModuleDestro
       where: { id: documentId },
       select: {
         id: true, organizationId: true, userId: true, status: true, storageKey: true, mimeType: true,
-        expiresOn: true, scanVerdict: true, scanData: true,
+        expiresOn: true, scanVerdict: true, scanData: true, title: true,
         user: { select: { firstName: true, lastName: true, dateOfBirth: true } },
+        type: { select: { label: true } },
       },
     });
     if (!doc || doc.status !== 'PENDING_VERIFICATION' || !doc.storageKey) return null;
 
     const bytes = await this.store.get(doc.storageKey);
     let best: DocumentReading | null = null;
+    let title: string | null = null;
     for (const reader of this.readers) {
-      const reading = await reader.read({ bytes, mimeType: doc.mimeType, member: doc.user });
+      const reading: DocumentReading = await reader.read({ bytes, mimeType: doc.mimeType, member: doc.user });
+      title = title ?? reading.title ?? null;
       if (!best || rank(reading) > rank(best)) best = reading;
       if (best.certainty === 'PROVEN') break; // nothing beats proof
     }
     if (!best) return null;
+    best = { ...best, title };
 
     // A zone or barcode found here gets the same duplicate check the upload path runs.
     let scan = best.scan;
@@ -160,6 +164,9 @@ export class DocumentReadQueue implements OnApplicationBootstrap, OnModuleDestro
               issuingState: scan!.extracted.issuingState,
             }
           : {}),
+        // Its own name, but only where it still carries the type's label or a
+        // file name — never over a title somebody chose.
+        ...(best.title && isGenericTitle(doc.title, doc.type.label) ? { title: best.title } : {}),
         // Only a proven date stands on its own, and never over one already there.
         ...(best.certainty === 'PROVEN' && best.expiresOn && !doc.expiresOn && scan?.verdict !== 'SUSPECT'
           ? { expiresOn: new Date(`${best.expiresOn}T12:00:00Z`) }
@@ -171,6 +178,12 @@ export class DocumentReadQueue implements OnApplicationBootstrap, OnModuleDestro
     );
     return best;
   }
+}
+
+/** "Other document", or "IMG_0042" / "scan 3" — a name nobody chose. */
+function isGenericTitle(title: string, typeLabel: string): boolean {
+  const t = title.trim();
+  return t === typeLabel.trim() || /^(img|image|scan|photo|dsc|pxl|document|doc|file|whatsapp)[\s_\-]*[\w\s\-.]*$/i.test(t) || /^\d[\d_\-\s]*$/.test(t);
 }
 
 /** PROVEN beats SUGGESTED beats a reading with a zone but no date beats nothing. */

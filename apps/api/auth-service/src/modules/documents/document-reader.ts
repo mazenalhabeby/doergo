@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { checkScan, suggestExpiry, type ScanResult } from '@hbcfield/shared';
+import { checkScan, suggestExpiry, documentTitleFromLines, pdfLines, type ScanResult } from '@hbcfield/shared';
 import { MrzOcrService } from './mrz-ocr.service';
 
 /**
@@ -29,6 +29,8 @@ export interface DocumentReading {
   scan: ScanResult | null;
   /** Why nothing could be read, in a word the screen can translate. */
   unreadable: 'HEIC' | 'NOT_AN_IMAGE' | 'NO_TEXT' | null;
+  /** The document's name from its own heading, when the reader could tell. */
+  title?: string | null;
 }
 
 export interface ReadInput {
@@ -106,6 +108,61 @@ export class OcrRulesReader implements DocumentReader {
       engine: this.name,
       scan: scan.raw || scan.format ? scan : null,
       unreadable: null,
+    };
+  }
+}
+
+/**
+ * ⚠️ `import()` through `new Function`: this service compiles to CommonJS, and
+ * TypeScript would rewrite a plain dynamic import into `require()`, which
+ * throws on pdf.js's ESM-only build — at runtime, with an error that says
+ * nothing about why. Loaded on first use, never at boot.
+ */
+const esmImport = new Function('s', 'return import(s)') as (s: string) => Promise<any>;
+let pdfjsModule: Promise<any> | null = null;
+const loadPdfjs = () => (pdfjsModule ??= esmImport('pdfjs-dist/legacy/build/pdf.mjs').catch((e) => { pdfjsModule = null; throw e; }));
+
+/**
+ * PDFs members upload: the text layer, read exactly — a certificate emailed as
+ * a PDF says "Valid until 31.03.2027" in characters, not pixels. Gives the
+ * expiry (by its label first, as everywhere) and the document's own name.
+ * A scanned PDF has no text layer and says so (NO_TEXT) instead of guessing.
+ */
+@Injectable()
+export class PdfTextReader implements DocumentReader {
+  readonly name = 'pdf-text';
+
+  async read({ bytes, mimeType, member }: ReadInput): Promise<DocumentReading> {
+    const nothing = (unreadable: DocumentReading['unreadable']): DocumentReading => ({
+      expiresOn: null, certainty: null, source: null, label: null, engine: this.name, scan: null, unreadable,
+    });
+    if (mimeType !== 'application/pdf') return nothing('NOT_AN_IMAGE');
+    let pdfjs: any;
+    try {
+      pdfjs = await loadPdfjs();
+    } catch {
+      return nothing('NO_TEXT');
+    }
+    const lines = await pdfLines(pdfjs, bytes, { maxPages: 3 });
+    if (lines.length === 0) return nothing('NO_TEXT');
+
+    const text = lines.map((l) => l.text).join('\n');
+    const title = documentTitleFromLines(lines.filter((l) => l.page === 1));
+    // A PDF may carry a zone too (a scanned passport exported with OCR).
+    const scan = checkScan({ mrzText: text, member });
+    if (scan.raw?.allChecksPassed && scan.extracted.dateOfExpiry) {
+      return { expiresOn: scan.extracted.dateOfExpiry, certainty: 'PROVEN', source: 'MRZ', label: null, engine: this.name, scan, unreadable: null, title };
+    }
+    const found = suggestExpiry(text);
+    return {
+      expiresOn: found?.iso ?? null,
+      certainty: found ? 'SUGGESTED' : null,
+      source: found ? (found.basis === 'LABEL' ? 'LABEL' : 'TEXT') : null,
+      label: found?.label ?? null,
+      engine: this.name,
+      scan: scan.raw || scan.format ? scan : null,
+      unreadable: null,
+      title,
     };
   }
 }

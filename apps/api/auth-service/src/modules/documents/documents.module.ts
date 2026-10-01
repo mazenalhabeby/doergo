@@ -8,7 +8,7 @@ import { CustomerSignMailerService } from './customer-sign-mailer.service';
 import { MrzOcrService } from './mrz-ocr.service';
 import { objectStoreProvider } from './object-store.provider';
 import { CredentialExpiryService } from './credential-expiry.service';
-import { DOCUMENT_READERS, OcrRulesReader } from './document-reader';
+import { DOCUMENT_READERS, OcrRulesReader, PdfTextReader } from './document-reader';
 import { DocumentReadQueue } from './document-read-queue.service';
 
 @Module({
@@ -32,7 +32,14 @@ import { DocumentReadQueue } from './document-read-queue.service';
       queue, the review screen and the approval do not change.
     */
     OcrRulesReader,
-    { provide: DOCUMENT_READERS, useFactory: (ocr: OcrRulesReader) => [ocr], inject: [OcrRulesReader] },
+    PdfTextReader,
+    {
+      provide: DOCUMENT_READERS,
+      // Each reader declines what it cannot read (an image to the PDF reader,
+      // a PDF to the OCR), so the order only decides ties.
+      useFactory: (pdf: PdfTextReader, ocr: OcrRulesReader) => [pdf, ocr],
+      inject: [PdfTextReader, OcrRulesReader],
+    },
     // Reads members' documents after they are filed, never while they wait.
     DocumentReadQueue,
   ],

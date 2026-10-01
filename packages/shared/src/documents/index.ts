@@ -15,6 +15,7 @@ export * from './aamva';
 export * from './scan-checks';
 export * from './dates-from-text';
 export * from './doc-title';
+export * from './pdf-lines';
 export * from './expiry-prompt';
 export * from './pages';
 export * from './frame-crop';

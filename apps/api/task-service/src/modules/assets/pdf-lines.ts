@@ -1,3 +1,4 @@
+import { pdfLines } from '@hbcfield/shared';
 /**
  * A PDF invoice → the lines a receipt reader can work with.
  *
@@ -22,13 +23,6 @@
 /** How much of a document is worth reading. */
 const MAX_PAGES = 3;
 
-/**
- * Items on roughly the same baseline belong to the same line.
- *
- * In PDF units, which are points: 2.5 is well under a line of body text and
- * comfortably over the jitter in a table row's baselines.
- */
-const SAME_LINE_TOLERANCE = 2.5;
 
 /*
   ⚠️ `import()` THROUGH `new Function`, DELIBERATELY.
@@ -46,20 +40,6 @@ const SAME_LINE_TOLERANCE = 2.5;
 */
 const esmImport = new Function('s', 'return import(s)') as (s: string) => Promise<any>;
 
-/*
-  ⚠️ pdf.js 6 calls Promise.withResolvers, which Node only has from 22. The
-  containers run Node 20, so EVERY PDF threw inside getDocument, the catch
-  below turned that into "no lines", and PDF receipts were silently never read
-  in production. Supplied once, here, before pdf.js loads.
-*/
-if (typeof (Promise as any).withResolvers !== 'function') {
-  (Promise as any).withResolvers = function withResolvers<T>() {
-    let resolve!: (v: T) => void;
-    let reject!: (e: unknown) => void;
-    const promise = new Promise<T>((a, b) => { resolve = a; reject = b; });
-    return { promise, resolve, reject };
-  };
-}
 
 /**
  * The visual lines of a PDF, top to bottom, left to right within each line.
@@ -76,79 +56,12 @@ if (typeof (Promise as any).withResolvers !== 'function') {
  * a failed upload.
  */
 export async function pdfToLines(bytes: Buffer): Promise<string[]> {
-  let task: any;
-  let doc: any;
+  let pdfjs: any;
   try {
-    const pdfjs = await esmImport('pdfjs-dist/legacy/build/pdf.mjs');
-    task = pdfjs.getDocument({
-      data: new Uint8Array(bytes),
-      /*
-        This reads text and never renders, so everything that exists to make
-        glyphs look right is dead weight — and each of those is a fetch or a
-        font installed into the document for no reason.
-      */
-      disableFontFace: true,
-      useSystemFonts: false,
-      // A malformed page should cost that page, not the whole file.
-      stopAtErrors: false,
-      verbosity: 0,
-      // ⚠️ No worker. A worker thread per receipt on a box that also runs the
-      // database is not worth the parallelism for a two-page invoice.
-      disableWorker: true,
-    });
-    doc = await task.promise;
+    pdfjs = await esmImport('pdfjs-dist/legacy/build/pdf.mjs');
   } catch {
     return [];
   }
-
-  try {
-    const out: string[] = [];
-    for (let i = 1; i <= Math.min(doc.numPages, MAX_PAGES); i++) {
-      const page = await doc.getPage(i);
-      const content = await page.getTextContent();
-
-      // Baseline → the runs sitting on it, each with its x for ordering.
-      const byLine = new Map<number, { x: number; text: string }[]>();
-      for (const item of content.items) {
-        if (!('str' in item) || !item.str.trim()) continue;
-        const x = item.transform[4] as number;
-        const y = item.transform[5] as number;
-        // Snap to an existing baseline within tolerance, so a row whose cells
-        // differ by a fraction of a point stays one row.
-        let key = y;
-        for (const existing of byLine.keys()) {
-          if (Math.abs(existing - y) <= SAME_LINE_TOLERANCE) { key = existing; break; }
-        }
-        const row = byLine.get(key) ?? [];
-        row.push({ x, text: item.str });
-        byLine.set(key, row);
-      }
-
-      // Descending y: in PDF space the origin is the BOTTOM-left, so the
-      // largest y is the top of the page. Sorting ascending reads the invoice
-      // upside down — and the reader's vendor rule takes the first line.
-      const lines = [...byLine.entries()]
-        .sort((a, b) => b[0] - a[0])
-        .map(([, runs]) =>
-          runs
-            .sort((a, b) => a.x - b.x)
-            .map((r) => r.text)
-            .join(' ')
-            .replace(/\s+/g, ' ')
-            .trim(),
-        )
-        .filter(Boolean);
-
-      out.push(...lines);
-      page.cleanup();
-    }
-    return out;
-  } catch {
-    return [];
-  } finally {
-    // Frees the engine's copy of the file rather than waiting for a GC that
-    // does not know how large it is. (pdf.js 6 removed the document's own
-    // destroy(); the loading task owns it now.)
-    try { await task?.destroy(); } catch { /* already gone */ }
-  }
+  // One reader for every service — see packages/shared/src/documents/pdf-lines.ts.
+  return (await pdfLines(pdfjs, bytes, { maxPages: MAX_PAGES })).map((l) => l.text);
 }
