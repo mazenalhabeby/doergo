@@ -1,10 +1,11 @@
 import { assertMemberInScope } from '@hbcfield/shared';
-import { Inject, Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, BadRequestException, ForbiddenException, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, SERVICE_NAMES, TaskStatus, success } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { findPrior } from '../../common/create-once.util';
 import { CoverService } from './cover.service';
+import { ShiftRematchService } from '../attendance/shift-rematch.service';
 import {
   GetEmployeeStatsDto,
   GetEmployeePerformanceDto,
@@ -50,6 +51,8 @@ export class TechniciansService {
     */
     private readonly cover: CoverService,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+    // A weekly schedule set after the clock-in reaches the entries it now covers.
+    @Optional() private readonly rematch?: ShiftRematchService,
   ) {}
 
   /**
@@ -435,6 +438,9 @@ export class TechniciansService {
       orderBy: { dayOfWeek: 'asc' },
     });
 
+    if (schedule.some((e) => e.isActive !== false)) {
+      this.rematch?.schedule({ organizationId, userId: technicianId, spaceId: null });
+    }
     return success(updatedSchedule);
   }
 

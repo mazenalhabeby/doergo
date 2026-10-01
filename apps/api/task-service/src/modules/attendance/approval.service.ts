@@ -4,12 +4,14 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, paginated, ApprovalStatus, computeScheduleFlags, computeCountedTime, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, SERVICE_NAMES } from '@hbcfield/shared';
 import { scopeWhere, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
 import { CountedTimeService } from './counted-time.service';
+import { ShiftRematchService } from './shift-rematch.service';
 
 // Flags that depend on the clock TIMES vs the shift expectation — these must be
 // re-evaluated when an admin edits an entry's clock-in/out. Everything else
@@ -25,6 +27,8 @@ export class ApprovalService {
     // An admin editing hours moves the paid figure like any other close path.
     private readonly countedTime: CountedTimeService,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+    // An edited entry that still holds no shift gets another look at the rota.
+    @Optional() private readonly rematch?: ShiftRematchService,
   ) {}
 
   /**
@@ -426,6 +430,15 @@ export class ApprovalService {
       `Entry edited: entry=${data.entryId}, editor=${data.editorId}, reason=${data.reason}`,
     );
 
+    if (!updated.shiftId && (updated.flagReasons ?? []).includes('UNSCHEDULED_DAY')) {
+      this.rematch?.schedule({
+        organizationId: data.organizationId,
+        userId: updated.userId,
+        spaceId: updated.locationId,
+        from: updated.clockInAt,
+        actorId: data.editorId,
+      });
+    }
     this.emitChanged(data.organizationId, 'edit', data.entryId);
     return success(updated, 'Time entry updated');
   }

@@ -1,5 +1,6 @@
-import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger, Optional } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { ShiftRematchService } from '../attendance/shift-rematch.service';
 import { success, shiftCrossesMidnight, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN , scopeWhereOn, scopeAllows, type SpaceScopeIds, rotaFor, planRotaDay, RotaDayRefused, dowOfDay } from '@hbcfield/shared';
 
 const HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -14,7 +15,15 @@ const HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
 export class ShiftsService {
   private readonly logger = new Logger(ShiftsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    /*
+      A shift added after somebody already clocked in must reach that entry —
+      the clock-in matches once and never looks again. Optional only so a unit
+      test can build this service bare; the module always provides it.
+    */
+    @Optional() private readonly rematch?: ShiftRematchService,
+  ) {}
 
   // ── Shifts ─────────────────────────────────────────────────────────────
 
@@ -135,6 +144,15 @@ export class ShiftsService {
     patch.crossesMidnight = shiftCrossesMidnight(start, end);
 
     const updated = await this.prisma.shift.update({ where: { id: shift.id }, data: patch });
+    if (this.rematch) {
+      const rostered = await this.prisma.shiftAssignment.findMany({
+        where: { shiftId: shift.id, organizationId: data.organizationId, isActive: true },
+        select: { userId: true, spaceId: true },
+        distinct: ['userId', 'spaceId'],
+        take: 500,
+      });
+      for (const r of rostered) this.rematch.schedule({ organizationId: data.organizationId, userId: r.userId, spaceId: r.spaceId });
+    }
     return success(updated, 'Shift updated');
   }
 
@@ -213,6 +231,13 @@ export class ShiftsService {
         user: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
       },
     });
+    this.rematch?.schedule({
+      organizationId: data.organizationId,
+      userId: data.userId,
+      spaceId: data.spaceId,
+      from: earliestOf(assignment.effectiveFrom, ...assignment.dates),
+      actorId: data.createdById ?? null,
+    });
     return success(assignment, 'Assigned to shift');
   }
 
@@ -230,6 +255,8 @@ export class ShiftsService {
     effectiveTo?: string | null;
     priority?: number;
     isActive?: boolean;
+    /** Who made the change — recorded on any entry it re-matches. */
+    actorId?: string;
   }) {
     const existing = await this.prisma.shiftAssignment.findFirst({
       where: { id: data.assignmentId, organizationId: data.organizationId },
@@ -273,6 +300,13 @@ export class ShiftsService {
     }
 
     const updated = await this.prisma.shiftAssignment.update({ where: { id: existing.id }, data: patch });
+    this.rematch?.schedule({
+      organizationId: existing.organizationId,
+      userId: existing.userId,
+      spaceId: existing.spaceId,
+      from: earliestOf(existing.effectiveFrom, updated.effectiveFrom, ...updated.dates),
+      actorId: data.actorId ?? null,
+    });
     return success(updated, 'Assignment updated');
   }
 
@@ -492,6 +526,15 @@ export class ShiftsService {
         throw new BadRequestException({ code: 'OUTRANKED_BY_RULE', message: 'Another rule decides this day (daily or monthly). Change it in the workspace rota on the web.' });
       }
     });
+    if (data.shiftId) {
+      this.rematch?.schedule({
+        organizationId: data.organizationId,
+        userId: data.userId,
+        spaceId: data.spaceId,
+        from: day(data.date),
+        actorId: data.createdById ?? null,
+      });
+    }
     return success({ ok: true });
   }
 
@@ -583,4 +626,10 @@ export function weekOf(from?: string): string[] {
   const base = from && /^\d{4}-\d{2}-\d{2}$/.test(from) ? new Date(`${from}T00:00:00.000Z`) : new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z');
   const monday = new Date(base.getTime() - ((base.getUTCDay() + 6) % 7) * 86_400_000);
   return Array.from({ length: 7 }, (_, i) => new Date(monday.getTime() + i * 86_400_000).toISOString().slice(0, 10));
+}
+
+/** The earliest of some dates — where a rota change can start to matter. */
+function earliestOf(...dates: Array<Date | null | undefined>): Date | null {
+  const t = dates.filter((d): d is Date => d instanceof Date && !isNaN(d.getTime())).map((d) => d.getTime());
+  return t.length ? new Date(Math.min(...t)) : null;
 }

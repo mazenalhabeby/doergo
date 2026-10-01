@@ -4,11 +4,13 @@ import { PrismaModule, SERVICE_NAMES, createClientOptions } from '@hbcfield/shar
 import { TechniciansController } from './technicians.controller';
 import { TechniciansService } from './technicians.service';
 import { CoverService } from './cover.service';
+import { AttendanceModule } from '../attendance/attendance.module';
 
 @Module({
   // NotificationRoutingService needs no import — NotificationRoutingModule is
   // @Global, deliberately, so one instance holds one recipient cache.
   imports: [
+    AttendanceModule,
     PrismaModule,
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
   ],

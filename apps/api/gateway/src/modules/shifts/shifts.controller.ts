@@ -131,7 +131,7 @@ export class ShiftsController {
   @RequirePermissionInSpace('canManageRota')
   @ApiOperation({ summary: 'Update a rota assignment' })
   updateAssignment(@Param('id') assignmentId: string, @Body() body: any, @Request() req: any) {
-    return this.service.updateAssignment({ ...body, assignmentId, organizationId: req.user.organizationId, scopeSpaceIds: this.scope(req, 'canManageRota') });
+    return this.service.updateAssignment({ ...body, assignmentId, organizationId: req.user.organizationId, actorId: req.user.id, scopeSpaceIds: this.scope(req, 'canManageRota') });
   }
 
   @Delete('rota/:id')

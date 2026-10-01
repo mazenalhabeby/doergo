@@ -14,6 +14,7 @@ import { CountedTimeService } from './counted-time.service';
 import { BreakRulesService } from './break-rules.service';
 import { BreakReminderService } from './break-reminder.service';
 import { PresenceModule } from './presence/presence.module';
+import { ShiftRematchService } from './shift-rematch.service';
 
 @Module({
   imports: [
@@ -33,11 +34,13 @@ import { PresenceModule } from './presence/presence.module';
     BreakRulesService,
     BreakReminderService,
     BreakService,
+    // A shift added after the clock-in reaches the entries it covers.
+    ShiftRematchService,
     AttendanceReportService,
     ApprovalService,
     AttendanceProcessor,
     AttendanceScheduler,
   ],
-  exports: [AttendanceService, AttendanceScheduler],
+  exports: [AttendanceService, AttendanceScheduler, ShiftRematchService],
 })
 export class AttendanceModule {}
