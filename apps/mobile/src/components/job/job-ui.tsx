@@ -50,7 +50,8 @@ export function JobSheet({
   const close = busy ? () => undefined : onClose;
   const body = (
     <View style={{ gap: amazen.space(3), paddingBottom: amazen.space(2) }}>
-      {eyebrow ?? null}
+      {/* A plain string is wrapped: raw text in a View is not drawn (and is a console error). */}
+      {typeof eyebrow === 'string' ? <AText variant="caption" tone="muted" numberOfLines={1}>{eyebrow}</AText> : eyebrow ?? null}
       {title ? <AText variant="h2" tone="strong" numberOfLines={2} style={{ fontFamily: amazen.font.sansLight }}>{title}</AText> : null}
       {children}
     </View>
