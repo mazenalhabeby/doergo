@@ -73,7 +73,6 @@ function TaskTableRowInner({
   const { hasModule: spaceHasModule } = useSpaceModules(task.spaceId ?? null)
   const hasModule = task.spaceId ? spaceHasModule : orgHasModule
   const router = useRouter()
-  const statusConfig = getStatusConfig(task.status)
 
   /*
     The statuses THIS task can be in — its own task type's, not a fixed list.
@@ -83,7 +82,17 @@ function TaskTableRowInner({
     reads the task's workflow now, falling back to the canonical machine only
     when the task has none.
   */
-  const { statuses: flowStatuses, hasWorkflow: taskHasWorkflow } = useWorkflow(task.workflowId)
+  // The task's own flow, else its workspace's — a task with no type of its own inherits it.
+  const { statuses: flowStatuses, hasWorkflow: taskHasWorkflow } = useWorkflow(task.workflowId ?? task.space?.workflowId ?? null)
+  /*
+    The label and colour of the step it is IN, read from that flow. The fixed
+    list knows only the built-in steps, so DELIVERED or DONE fell back to its
+    first entry and every finished delivery read "Draft".
+  */
+  const ownStep = flowStatuses.find((st) => st.key === task.status)
+  const statusConfig = ownStep
+    ? { ...getStatusConfig(task.status), label: ownStep.name, hex: ownStep.color }
+    : getStatusConfig(task.status)
   const statusOptions = taskHasWorkflow && flowStatuses.length
     ? flowStatuses.map((st) => ({ key: st.key, label: st.name, hex: st.color }))
     : TASK_STATUSES.filter((st) => st !== "DRAFT").map((st) => {

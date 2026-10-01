@@ -635,7 +635,7 @@ export interface Task {
   _count?: { subtasks?: number };
   // Space
   spaceId?: string | null;
-  space?: { id: string; name: string } | null;
+  space?: { id: string; name: string; workflowId?: string | null } | null;
   // Multi-assignee & checklist
   assignees?: TaskAssignee[];
   checklistItems?: ChecklistItem[];
