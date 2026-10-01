@@ -7,7 +7,8 @@ import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { UserAvatar } from "@/components/user-avatar"
-import { getStatusConfig } from "@/lib/constants"
+import type { StatusConfig } from "@/lib/constants"
+import { useStepConfigs } from "@/hooks/use-step-config"
 import type { Task, Phase } from "@/lib/api"
 import { dateLocale } from "@/lib/format-date"
 
@@ -57,18 +58,6 @@ function getMonthLabel(d: Date): string {
   return d.toLocaleDateString(dateLocale(), { month: "long", year: "numeric" })
 }
 
-// Status to bar color mapping
-function getBarColor(status: string): { bg: string; border: string; text: string } {
-  const s = status.toUpperCase()
-  if (["NEW"].includes(s)) return { bg: "bg-blue-500/80", border: "border-blue-600/30", text: "text-white" }
-  if (["ASSIGNED", "ACCEPTED"].includes(s)) return { bg: "bg-purple-500/80", border: "border-purple-600/30", text: "text-white" }
-  if (["EN_ROUTE", "ARRIVED", "IN_PROGRESS"].includes(s)) return { bg: "bg-amber-500/80", border: "border-amber-600/30", text: "text-white" }
-  if (["BLOCKED"].includes(s)) return { bg: "bg-red-500/80", border: "border-red-600/30", text: "text-white" }
-  if (["COMPLETED", "CLOSED"].includes(s)) return { bg: "bg-green-500/80", border: "border-green-600/30", text: "text-white" }
-  if (["CANCELED"].includes(s)) return { bg: "bg-slate-400/80", border: "border-slate-500/30", text: "text-white" }
-  return { bg: "bg-slate-400/80", border: "border-slate-500/30", text: "text-white" }
-}
-
 const ROW_HEIGHT = 36
 const HEADER_HEIGHT = 52
 const LEFT_PANEL_WIDTH = 260
@@ -93,13 +82,15 @@ interface TimelineViewProps {
 
 const TaskTooltip = React.memo(function TaskTooltip({
   task,
+  statusConfig,
   style,
 }: {
   task: Task
+  /** The step's look from the task's own flow — see useStepConfigs. */
+  statusConfig: StatusConfig
   style: React.CSSProperties
 }) {
   const { t } = useTranslation()
-  const statusConfig = getStatusConfig(task.status)
   return (
     <div
       className="fixed z-[100] pointer-events-none px-3 py-2.5 bg-popover border border-border rounded-xl shadow-xl min-w-[200px] max-w-[280px]"
@@ -143,13 +134,14 @@ const TaskTooltip = React.memo(function TaskTooltip({
 
 const TaskRow = React.memo(function TaskRow({
   task,
+  statusConfig,
   animDelay,
 }: {
   task: Task
+  statusConfig: StatusConfig
   animDelay: number
 }) {
   const isOverdue = isTaskOverdue(task)
-  const statusConfig = getStatusConfig(task.status)
 
   return (
     <Link
@@ -192,6 +184,7 @@ const TaskRow = React.memo(function TaskRow({
 
 export function TimelineView({ tasks, phases }: TimelineViewProps) {
   const { t } = useTranslation()
+  const stepOf = useStepConfigs(tasks)
   const [scale, setScale] = useState<TimeScale>("week")
   const timelineRef = useRef<HTMLDivElement>(null)
   const leftPanelRef = useRef<HTMLDivElement>(null)
@@ -464,6 +457,7 @@ export function TimelineView({ tasks, phases }: TimelineViewProps) {
                   <TaskRow
                     key={task.id}
                     task={task}
+                    statusConfig={stepOf(task)}
                     animDelay={(gi * 3 + ti) * 20}
                   />
                 ))}
@@ -568,7 +562,8 @@ export function TimelineView({ tasks, phases }: TimelineViewProps) {
                 // Task bars
                 for (const task of group.tasks) {
                   const barStyle = getBarStyle(task)
-                  const barColors = getBarColor(task.status)
+                  // The step's own colour — a custom step is not a grey bar.
+                  const barHex = stepOf(task).hex
                   const isMilestone = !task.startDate && task.dueDate
                   const rowTop = currentRow * ROW_HEIGHT
 
@@ -582,11 +577,12 @@ export function TimelineView({ tasks, phases }: TimelineViewProps) {
                         <div
                           className={cn(
                             "absolute rounded-lg border cursor-pointer shadow-sm",
-                            "hover:brightness-110 hover:shadow-md hover:scale-y-110 transition-all duration-150",
-                            barColors.bg, barColors.border
+                            "hover:brightness-110 hover:shadow-md hover:scale-y-110 transition-all duration-150"
                           )}
                           style={{
                             ...barStyle,
+                            backgroundColor: `${barHex}cc`,
+                            borderColor: `${barHex}4d`,
                             animation: `fadeSlideIn 0.4s ${APPLE_EASE} ${currentRow * 20}ms both`,
                           }}
                           onMouseEnter={(e) =>
@@ -601,7 +597,7 @@ export function TimelineView({ tasks, phases }: TimelineViewProps) {
                             href={`/tasks/${task.id}`}
                             className={cn(
                               "h-full px-2 flex items-center overflow-hidden",
-                              barColors.text
+                              "text-white"
                             )}
                           >
                             <span className="text-[11px] font-medium truncate leading-none">
@@ -630,8 +626,8 @@ export function TimelineView({ tasks, phases }: TimelineViewProps) {
                             <svg
                               className="size-6 drop-shadow-sm"
                               viewBox="0 0 24 24"
-                              fill={getStatusConfig(task.status).hex}
-                              stroke={getStatusConfig(task.status).hex}
+                              fill={barHex}
+                              stroke={barHex}
                               strokeWidth="1"
                             >
                               <path d="M12 2 L22 12 L12 22 L2 12 Z" />
@@ -693,6 +689,7 @@ export function TimelineView({ tasks, phases }: TimelineViewProps) {
       {tooltip && typeof document !== 'undefined' && ReactDOM.createPortal(
         <TaskTooltip
           task={tooltip.task}
+          statusConfig={stepOf(tooltip.task)}
           style={{ left: tooltip.x, top: tooltip.y }}
         />,
         document.body

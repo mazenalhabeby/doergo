@@ -6,7 +6,8 @@ import ReactDOM from "react-dom"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getStatusConfig } from "@/lib/constants"
+import type { StatusConfig } from "@/lib/constants"
+import { useStepConfigs } from "@/hooks/use-step-config"
 import type { Task } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { dateLocale } from "@/lib/format-date"
@@ -73,12 +74,14 @@ interface CalendarViewProps {
 
 const PillTooltip = React.memo(function PillTooltip({
   task,
+  statusConfig,
   style,
 }: {
   task: Task
+  /** The step's look from the task's own flow — see useStepConfigs. */
+  statusConfig: StatusConfig
   style: React.CSSProperties
 }) {
-  const statusConfig = getStatusConfig(task.status)
   return (
     <div
       className="fixed z-[100] pointer-events-none px-3 py-2.5 bg-popover border border-border rounded-xl shadow-xl min-w-[180px] max-w-[260px]"
@@ -119,6 +122,8 @@ interface CalendarCellProps {
   idx: number
   onTooltipShow: (task: Task, x: number, y: number) => void
   onTooltipHide: () => void
+  /** A step's name and colour, from the task's own flow. */
+  stepOf: (task: Task) => StatusConfig
 }
 
 const CalendarCell = React.memo(function CalendarCell({
@@ -135,6 +140,7 @@ const CalendarCell = React.memo(function CalendarCell({
   idx,
   onTooltipShow,
   onTooltipHide,
+  stepOf,
 }: CalendarCellProps) {
   return (
     <div
@@ -173,7 +179,7 @@ const CalendarCell = React.memo(function CalendarCell({
         style={{ marginTop: dayInWeek === 0 ? multiDayAreaHeight : weekBars.length > 0 ? multiDayAreaHeight : 0 }}
       >
         {dayTasks.slice(0, MAX_VISIBLE_PILLS).map((task) => {
-          const statusConfig = getStatusConfig(task.status)
+          const statusConfig = stepOf(task)
           return (
             <Link
               key={task.id}
@@ -208,6 +214,7 @@ const CalendarCell = React.memo(function CalendarCell({
 
 export function CalendarView({ tasks }: CalendarViewProps) {
   const { t } = useTranslation()
+  const stepOf = useStepConfigs(tasks)
   const today = startOfDay(new Date())
   const [viewDate, setViewDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1))
   const [tooltip, setTooltip] = useState<{ task: Task; x: number; y: number } | null>(null)
@@ -264,7 +271,7 @@ export function CalendarView({ tasks }: CalendarViewProps) {
     return tasks
       .filter((t) => t.startDate && t.dueDate)
       .map((task) => {
-        const statusConfig = getStatusConfig(task.status)
+        const statusConfig = stepOf(task)
         return {
           task,
           startDay: startOfDay(new Date(task.startDate!)),
@@ -273,7 +280,7 @@ export function CalendarView({ tasks }: CalendarViewProps) {
           colorHex: statusConfig.hex,
         }
       })
-  }, [tasks])
+  }, [tasks, stepOf])
 
   // ─── Build rows of multi-day bars per week ───
   const weekMultiDayRows = useMemo(() => {
@@ -455,6 +462,7 @@ export function CalendarView({ tasks }: CalendarViewProps) {
                     idx={idx}
                     onTooltipShow={handleTooltipShow}
                     onTooltipHide={handleTooltipHide}
+                    stepOf={stepOf}
                   />
                 )
               })}
@@ -467,6 +475,7 @@ export function CalendarView({ tasks }: CalendarViewProps) {
       {tooltip && typeof document !== 'undefined' && ReactDOM.createPortal(
         <PillTooltip
           task={tooltip.task}
+          statusConfig={stepOf(tooltip.task)}
           style={{ left: tooltip.x, top: tooltip.y }}
         />,
         document.body

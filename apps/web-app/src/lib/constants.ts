@@ -33,7 +33,7 @@ export const TASK_STATUSES = [
   "CLOSED",
 ] as const
 
-type StatusConfig = {
+export type StatusConfig = {
   label: string
   className: string
   hex: string

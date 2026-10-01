@@ -1,5 +1,6 @@
 "use client"
 
+import { flowIdOf, stepConfig } from "@/hooks/use-step-config"
 import { PausedChip } from "@/components/paused-chip"
 import React from "react"
 import { isTaskOverdue, isFinishedStatus, mayChangeStatus, hasAnyTransition, STATUS_TRANSITIONS } from "@hbcfield/shared/client"
@@ -83,16 +84,8 @@ function TaskTableRowInner({
     when the task has none.
   */
   // The task's own flow, else its workspace's — a task with no type of its own inherits it.
-  const { statuses: flowStatuses, hasWorkflow: taskHasWorkflow } = useWorkflow(task.workflowId ?? task.space?.workflowId ?? null)
-  /*
-    The label and colour of the step it is IN, read from that flow. The fixed
-    list knows only the built-in steps, so DELIVERED or DONE fell back to its
-    first entry and every finished delivery read "Draft".
-  */
-  const ownStep = flowStatuses.find((st) => st.key === task.status)
-  const statusConfig = ownStep
-    ? { ...getStatusConfig(task.status), label: ownStep.name, hex: ownStep.color }
-    : getStatusConfig(task.status)
+  const { statuses: flowStatuses, hasWorkflow: taskHasWorkflow } = useWorkflow(flowIdOf(task))
+  const statusConfig = stepConfig(task.status, flowStatuses)
   const statusOptions = taskHasWorkflow && flowStatuses.length
     ? flowStatuses.map((st) => ({ key: st.key, label: st.name, hex: st.color }))
     : TASK_STATUSES.filter((st) => st !== "DRAFT").map((st) => {

@@ -1,5 +1,6 @@
 "use client"
 
+import { flowIdOf, stepConfig } from "@/hooks/use-step-config"
 import React from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
@@ -77,7 +78,7 @@ function TaskContextMenuInner({
     derivation as the table row; both feed the shared rule so what is offered
     matches what the service accepts.
   */
-  const { statuses: flowStatuses, hasWorkflow: taskHasWorkflow } = useWorkflow(task.workflowId)
+  const { statuses: flowStatuses, hasWorkflow: taskHasWorkflow } = useWorkflow(flowIdOf(task))
   const usesFlow = taskHasWorkflow && flowStatuses.length > 0
   const statusOptions = usesFlow
     ? flowStatuses.map((st) => ({ key: st.key, label: st.name, hex: st.color }))
@@ -122,7 +123,7 @@ function TaskContextMenuInner({
             <ContextMenuSubTrigger>
               <span
                 className="size-2 rounded-full mr-2 flex-shrink-0"
-                style={{ backgroundColor: getStatusConfig(task.status).hex }}
+                style={{ backgroundColor: stepConfig(task.status, flowStatuses).hex }}
               />
               {t("tasks.menu.status")}
             </ContextMenuSubTrigger>
