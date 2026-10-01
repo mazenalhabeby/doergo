@@ -37,6 +37,7 @@ import {
   IBMPlexMono_500Medium,
 } from '@expo-google-fonts/ibm-plex-mono';
 import { AuthProvider, useAuth } from '../src/contexts/auth-context';
+import { AppQueryProvider } from '../src/contexts/query-provider';
 import { ThemeProvider, useTheme } from '../src/contexts/theme-context';
 import { IslandProvider } from '../src/island/island-context';
 import { UpdateRequired } from '../src/components/update-required';
@@ -264,9 +265,11 @@ export default function RootLayout() {
             <AuthProvider>
               {/* Above the navigator, so the banner and the entry in Profile
                   read one answer to one question. */}
-              <VersionProvider>
-                <RootLayoutNav />
-              </VersionProvider>
+              <AppQueryProvider>
+                <VersionProvider>
+                  <RootLayoutNav />
+                </VersionProvider>
+              </AppQueryProvider>
             </AuthProvider>
           </ThemeProvider>
         </SafeAreaProvider>
