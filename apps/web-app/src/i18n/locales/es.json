@@ -3022,7 +3022,8 @@
         "today": "Hoy",
         "last7": "Últimos 7 días",
         "thisWeek": "Esta semana",
-        "thisMonth": "Este mes"
+        "thisMonth": "Este mes",
+        "lastMonth": "Mes pasado"
       }
     },
     "reports": {

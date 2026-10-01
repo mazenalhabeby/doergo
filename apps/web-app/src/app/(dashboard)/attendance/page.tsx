@@ -305,7 +305,8 @@ export default function AttendancePage() {
       active: activeCount,
       completed: completedCount,
       autoOut: autoOutCount,
-      totalHours: Math.round((countedMinutes / 60) * 10) / 10,
+      // Exact — the card rounds it to the minute when it draws it.
+      totalHours: countedMinutes / 60,
     }
   }, [entries])
 

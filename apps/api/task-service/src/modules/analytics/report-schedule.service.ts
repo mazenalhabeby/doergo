@@ -6,6 +6,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import {
   SERVICE_NAMES,
   emailLocale,
+  formatHours,
   formatNumberFor,
   groupByLocale,
   localesByAddress,
@@ -140,7 +141,7 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
 
   private fmt(v: unknown, format: string | undefined, locale: SupportedLocale): string {
     if (v == null) return '—';
-    if (format === 'hours') return `${formatNumberFor(locale, Number(v), 1)}h`;
+    if (format === 'hours') return formatHours(Number(v));
     if (format === 'currency') return new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(Number(v));
     if (format === 'percent') return `${formatNumberFor(locale, Number(v), 2)}%`;
     if (format === 'number') return formatNumberFor(locale, Number(v), 2);

@@ -1,6 +1,6 @@
 import React from "react"
 import type { PaginationMeta } from "@/lib/api"
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from "date-fns"
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, subMonths } from "date-fns"
 import { cn, formatDurationMinutes } from "@/lib/utils"
 import { type TimeEntry, type CompanyLocation } from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
@@ -21,7 +21,7 @@ import { EditDayOffDialog } from "./edit-dayoff-dialog"
 import { OutOfRingPanel } from "./out-of-ring-panel"
 import { PresenceDay } from "@/components/attendance/presence-day"
 import { useTimeFormat } from "@/hooks"
-import { workedMinutes } from "@hbcfield/shared/client"
+import { workedMinutes, formatHours } from "@hbcfield/shared/client"
 
 // Approved time-off shown inline as a "day off" row in the tracking table.
 export type DayOffRow = {
@@ -98,6 +98,8 @@ export function TrackingTab({
       { key: "last7", from: f(subDays(now, 6)), to: f(now) },
       { key: "thisWeek", from: f(startOfWeek(now, { weekStartsOn: 1 })), to: f(endOfWeek(now, { weekStartsOn: 1 })) },
       { key: "thisMonth", from: f(startOfMonth(now)), to: f(endOfMonth(now)) },
+      // The whole previous calendar month — the range payroll is checked against.
+      { key: "lastMonth", from: f(startOfMonth(subMonths(now, 1))), to: f(endOfMonth(subMonths(now, 1))) },
     ]
   }, [])
 
@@ -133,7 +135,7 @@ export function TrackingTab({
             />
             <StatCard
               title={t("attendance.tracking.totalHours")}
-              value={`${stats.totalHours}h`}
+              value={formatHours(stats.totalHours)}
               icon={Clock}
               color="slate"
             />

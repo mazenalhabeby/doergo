@@ -1,6 +1,7 @@
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import type { ReportResult } from "@/lib/api"
+import { formatHours } from "@hbcfield/shared/client"
 
 /**
  * Company branding pulled from `organizationsApi.getProfile()`. Every field is
@@ -150,7 +151,7 @@ function presetFor(template: PdfTemplate, custom?: CustomPdfOptions): PdfConfig 
 /** Format a cell value the same way the on-screen table does. */
 function fmt(value: unknown, format?: string): string {
   if (value == null) return "—"
-  if (format === "hours") return `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 })}h`
+  if (format === "hours") return formatHours(Number(value))
   if (format === "currency") return `€${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
   if (format === "percent") return `${Number(value)}%`
   if (format === "number") return Number(value).toLocaleString()

@@ -68,6 +68,20 @@ export function formatDuration(minutes: number | null | undefined): string {
 }
 
 /**
+ * Hours as people read them: 0.5 → "30m", 1.5 → "1h 30m", 11 → "11h".
+ *
+ * Reports carry hours as decimals (they are summed and charted), and "0.5h"
+ * reads as a typo on a timesheet. Rounded to the minute here, at display, so
+ * the totals underneath stay exact. Negative values keep their sign.
+ */
+export function formatHours(hours: number | null | undefined): string {
+  if (hours === null || hours === undefined || !Number.isFinite(Number(hours))) return '-';
+  const totalMinutes = Math.round(Math.abs(Number(hours)) * 60);
+  const text = formatDuration(totalMinutes);
+  return Number(hours) < 0 && totalMinutes > 0 ? `-${text}` : text;
+}
+
+/**
  * Format a date to time only (e.g., "2:30 PM")
  */
 export function formatTime(dateInput: Date | string | null | undefined): string {

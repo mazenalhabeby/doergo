@@ -58,7 +58,8 @@ describe('scheduled report email language', () => {
     });
     const german = sends.find((s) => s.subject.startsWith('Bericht'))!;
     expect(german.html).toContain('<html lang="de" dir="ltr">');
-    expect(german.html).toContain('8,5h');
+    // Hours as hours and minutes, never a decimal: 8.5 → "8h 30m".
+    expect(german.html).toContain('8h 30m');
     expect(german.html).toContain('&lt;b&gt;Ana&lt;/b&gt;');
     // Column names in each group's language, from the catalogue the web table reads.
     expect(german.html).toContain('Gearbeitete Stunden');

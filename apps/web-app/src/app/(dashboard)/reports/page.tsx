@@ -33,7 +33,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import { localizeReportColumns, reportLabel } from "@hbcfield/shared/client"
+import { localizeReportColumns, reportLabel, formatHours } from "@hbcfield/shared/client"
 
 const DATE_PRESETS: { value: ReportDatePreset; label: string }[] = [
   { value: "last_7d", label: "Last 7 days" }, { value: "last_30d", label: "Last 30 days" },
@@ -47,7 +47,7 @@ const GRANULARITIES: { value: ReportGranularity; label: string }[] = [
 
 function fmt(value: unknown, format?: string): string {
   if (value == null) return "—"
-  if (format === "hours") return `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 })}h`
+  if (format === "hours") return formatHours(Number(value))
   if (format === "currency") return `€${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
   if (format === "percent") return `${Number(value)}%`
   if (format === "number") return Number(value).toLocaleString()
