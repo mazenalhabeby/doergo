@@ -43,6 +43,15 @@ RUN rm -rf /prod/node_modules/.prisma /prod/node_modules/@prisma /prod/node_modu
     cp -R node_modules/@prisma /prod/node_modules/@prisma && \
     cp -R node_modules/prisma /prod/node_modules/prisma && \
     cp -R node_modules/.bin/prisma /prod/node_modules/.bin/prisma
+# Prisma's config loader needs `effect` 3.x. The deploy above hoists whatever
+# other package wants -- on 2026-10-01 that was effect 4.0.0, `prisma migrate
+# deploy` crashed at boot ("members.map is not a function") and sign-in was down
+# for eight minutes. Give @prisma/config its own copy of the version the
+# lockfile pins (with effect's own dependencies beside it), so nothing hoisted
+# can reach it.
+RUN set -e; EFF=$(ls -d node_modules/.pnpm/effect@3*/node_modules | sort -V | tail -1); \
+    mkdir -p /prod/node_modules/@prisma/config/node_modules && \
+    cp -RL "$EFF"/. /prod/node_modules/@prisma/config/node_modules/
 
 FROM base AS production
 ENV NODE_ENV=production
