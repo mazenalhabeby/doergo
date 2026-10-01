@@ -113,3 +113,15 @@ describe('DocumentReadQueue', () => {
     expect(spy.mock.calls.map((c) => c[0])).toEqual(['new']);
   });
 });
+
+describe('a later, proven read', () => {
+  it('replaces the verdict an earlier, worse read left behind', async () => {
+    const prisma: any = { document: { findUnique: jest.fn(), findFirst: jest.fn().mockResolvedValue(null), updateMany: jest.fn().mockResolvedValue({ count: 1 }) } };
+    const scan = { format: 'MRVA', verdict: 'CONSISTENT', checks: [], extracted: { holderName: 'X', documentNumber: '1', dateOfBirth: null, dateOfExpiry: '2033-10-30', issuingState: 'USA', nationality: null, sex: null }, raw: {} };
+    const reader = { name: 'x', read: jest.fn().mockResolvedValue({ expiresOn: '2033-10-30', certainty: 'PROVEN', source: 'MRZ', label: null, engine: 'x', scan, unreadable: null }) };
+    const queue = new DocumentReadQueue(prisma, { get: jest.fn().mockResolvedValue(Buffer.from('x')) } as any, [reader]);
+    prisma.document.findUnique.mockResolvedValue({ id: 'd', organizationId: 'o', userId: 'u', status: 'PENDING_VERIFICATION', storageKey: 'k', mimeType: 'image/jpeg', expiresOn: null, scanVerdict: 'SUSPECT', scanData: null, user: { firstName: 'a', lastName: 'b' } });
+    await queue.readOne('d');
+    expect(prisma.document.updateMany.mock.calls[0][0].data.scanVerdict).toBe('CONSISTENT');
+  });
+});

@@ -140,7 +140,10 @@ export class DocumentReadQueue implements OnApplicationBootstrap, OnModuleDestro
       attempts: (previous?.attempts ?? 0) + 1,
     };
     const baseScanData = (doc.scanData && typeof doc.scanData === 'object' ? doc.scanData : {}) as Record<string, unknown>;
-    const useScan = scan && !doc.scanVerdict;
+    // A read whose zone PROVES itself replaces an older verdict — that one came
+    // from a worse read of the same picture, and showing it would flag a
+    // document the arithmetic has just cleared.
+    const useScan = scan && (!doc.scanVerdict || best.certainty === 'PROVEN');
 
     await this.prisma.document.updateMany({
       where: { id: doc.id, status: 'PENDING_VERIFICATION' },
