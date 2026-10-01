@@ -49,9 +49,10 @@ RUN rm -rf /prod/node_modules/.prisma /prod/node_modules/@prisma /prod/node_modu
 # for eight minutes. Give @prisma/config its own copy of the version the
 # lockfile pins (with effect's own dependencies beside it), so nothing hoisted
 # can reach it.
-RUN set -e; EFF=$(ls -d node_modules/.pnpm/effect@3*/node_modules | sort -V | tail -1); \
-    mkdir -p /prod/node_modules/@prisma/config/node_modules && \
-    cp -RL "$EFF"/. /prod/node_modules/@prisma/config/node_modules/
+# The workspace is hoisted (.npmrc node-linker=hoisted), so the lockfile's
+# effect sits at node_modules/effect. Copy it and everything it depends on;
+# a missing package throws and fails the build instead of shipping a broken image.
+RUN node -e "const fs=require('fs'),path=require('path');const dst='/prod/node_modules/@prisma/config/node_modules';const seen=new Set();const add=(n)=>{if(seen.has(n))return;seen.add(n);const src=path.join('node_modules',n);const pkg=JSON.parse(fs.readFileSync(path.join(src,'package.json'),'utf8'));fs.cpSync(src,path.join(dst,n),{recursive:true,dereference:true});Object.keys(pkg.dependencies||{}).forEach(add)};add('effect');console.log('prisma config deps:',[...seen].join(' '))"
 
 FROM base AS production
 ENV NODE_ENV=production
