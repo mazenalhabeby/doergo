@@ -47,7 +47,13 @@ const WEIGHTS = [7, 3, 1] as const;
  */
 const MAX_VALIDITY_YEARS = 20;
 
-export type MrzFormat = 'TD1' | 'TD2' | 'TD3';
+/**
+ * TD1/TD2/TD3 are identity documents. MRVA/MRVB are VISAS (ICAO 9303 part 7):
+ * the same two lines as a passport or an old ID card, starting with "V", and
+ * with NO composite check digit — the space it would use holds optional data.
+ * Read as a passport, every visa failed its composite and was thrown away.
+ */
+export type MrzFormat = 'TD1' | 'TD2' | 'TD3' | 'MRVA' | 'MRVB';
 
 export interface MrzField<T = string> {
   value: T;
@@ -211,6 +217,12 @@ const LAYOUT: Record<string, Slot[]> = {
   'TD1:3': slots('x'.repeat(30)),
   'TD2:1': slots('aa', 'aaa', 'x'.repeat(31)),
   'TD2:2': slots('xxxxxxxxx', 'n', 'aaa', 'nnnnnn', 'n', 'a', 'nnnnnn', 'n', 'x'.repeat(7), 'n'),
+  // Visas: the passport and old-ID layouts, with optional data where the
+  // composite would be — so nothing past the expiry digit is forced to a digit.
+  'MRVA:1': slots('aa', 'aaa', 'x'.repeat(39)),
+  'MRVA:2': slots('xxxxxxxxx', 'n', 'aaa', 'nnnnnn', 'n', 'a', 'nnnnnn', 'n', 'x'.repeat(16)),
+  'MRVB:1': slots('aa', 'aaa', 'x'.repeat(31)),
+  'MRVB:2': slots('xxxxxxxxx', 'n', 'aaa', 'nnnnnn', 'n', 'a', 'nnnnnn', 'n', 'x'.repeat(8)),
 };
 
 function slots(...parts: string[]): Slot[] {
@@ -248,6 +260,15 @@ export function parseMrz(raw: string, now: Date = new Date()): MrzResult | null 
 
   if (lines.length >= 3 && lines.every((l) => l.length === 30)) {
     return parseTd1(repair('TD1', 3) as [string, string, string], now);
+  }
+  // A visa announces itself with its document code. Checked before the
+  // passport and ID layouts, which it would otherwise be mistaken for.
+  const isVisa = lines.length >= 2 && lines[0]![0] === 'V';
+  if (isVisa && lines[0]!.length === 44 && lines[1]!.length === 44) {
+    return parseMrv('MRVA', repair('MRVA', 2) as [string, string], now);
+  }
+  if (isVisa && lines[0]!.length === 36 && lines[1]!.length === 36) {
+    return parseMrv('MRVB', repair('MRVB', 2) as [string, string], now);
   }
   if (lines.length >= 2 && lines[0]!.length === 44 && lines[1]!.length === 44) {
     return parseTd3(repair('TD3', 2) as [string, string], now);
@@ -332,6 +353,30 @@ function parseTd3([l1, l2]: [string, string], now: Date): MrzResult {
       l2.slice(0, 10) + l2.slice(13, 20) + l2.slice(21, 43),
       l2[43]!,
     ),
+  });
+}
+
+/**
+ * Visas: line two carries the same fields at the same places as a passport's,
+ * each with its own check digit — and no composite. `compositeValid: null`
+ * says "this format has none", which `finish` does not count as a failure.
+ */
+function parseMrv(format: 'MRVA' | 'MRVB', [l1, l2]: [string, string], now: Date): MrzResult {
+  const documentNumber = l2.slice(0, 9);
+  const birth = l2.slice(13, 19);
+  const expiry = l2.slice(21, 27);
+
+  return finish({
+    format,
+    documentCode: l1.slice(0, 2).replace(/</g, ''),
+    issuingState: l1.slice(2, 5).replace(/</g, ''),
+    documentNumber: { value: documentNumber.replace(/</g, ''), checkDigitValid: checks(documentNumber, l2[9]!) },
+    nationality: l2.slice(10, 13).replace(/</g, ''),
+    dateOfBirth: { value: mrzDate(birth, 'birth', now), checkDigitValid: checks(birth, l2[19]!) },
+    sex: l2[20]!.replace(/</g, ''),
+    dateOfExpiry: { value: mrzDate(expiry, 'expiry', now), checkDigitValid: checks(expiry, l2[27]!) },
+    ...mrzNames(l1.slice(5)),
+    compositeValid: null,
   });
 }
 

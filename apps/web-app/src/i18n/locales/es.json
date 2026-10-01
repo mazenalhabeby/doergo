@@ -8423,6 +8423,18 @@
         "wrongDocument": "Este no es el documento solicitado",
         "expired": "Este ya ha caducado",
         "dateMismatch": "La fecha introducida no coincide con el documento"
+      },
+      "expiry": {
+        "field": "Vence el",
+        "proven": "Leído de la zona del documento · todas las comprobaciones correctas",
+        "label": "Encontrado junto a \"{{label}}\" · compruébelo",
+        "latest": "Fecha más reciente del documento · compruébelo",
+        "barcode": "Leído del código de barras · compruébelo",
+        "given": "Indicado al enviarlo · compruébelo",
+        "reading": "Leyendo el documento…",
+        "heic": "Esta foto de iPhone no se puede leer aquí · ábrala y escriba la fecha",
+        "unreadable": "No se pudo leer la fecha · abra el documento y escríbala",
+        "needed": "Aceptar se activa cuando se indica la fecha de vencimiento."
       }
     },
     "required": {

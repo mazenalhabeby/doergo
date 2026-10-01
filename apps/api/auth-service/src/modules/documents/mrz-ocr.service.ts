@@ -134,7 +134,11 @@ export class MrzOcrService implements OnModuleDestroy {
   async read(
     image: Buffer,
     mimeType: string,
-    opts: { wholeFrame?: boolean } = {},
+    /**
+     * `timeoutMs`: the background reader allows far longer than an upload can
+     * wait. Nobody is waiting on it, and a dense visa foil needs the time.
+     */
+    opts: { wholeFrame?: boolean; timeoutMs?: number } = {},
   ): Promise<string | null> {
     // A PDF is a scan somebody already made; rasterising one needs a renderer
     // this service does not have, and the member's own camera path produces an
@@ -142,7 +146,7 @@ export class MrzOcrService implements OnModuleDestroy {
     if (!mimeType.startsWith('image/')) return null;
 
     try {
-      return await this.withTimeout(this.attempt(image, opts.wholeFrame === true), ocrTimeoutMs());
+      return await this.withTimeout(this.attempt(image, opts.wholeFrame === true), opts.timeoutMs ?? ocrTimeoutMs());
     } catch (err) {
       this.logger.warn(`Document read failed: ${(err as Error).message}`);
       return null;

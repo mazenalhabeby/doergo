@@ -7011,6 +7011,17 @@ export interface PendingReviewRow {
   scanChecks: { id: string; outcome: 'PASS' | 'FAIL' | 'WARN' | 'SKIP'; detail?: string }[] | null;
   holderName: string | null;
   documentNumber: string | null;
+  /** Accept needs a date when this is true and `expiresOn` is empty. */
+  hasExpiry: boolean;
+  issuingState: string | null;
+  /** What the background reader found; null until the document has been read. */
+  reading: {
+    expiresOn: string | null;
+    certainty: 'PROVEN' | 'SUGGESTED' | null;
+    source: 'MRZ' | 'BARCODE' | 'LABEL' | 'TEXT' | null;
+    label: string | null;
+    unreadable: 'HEIC' | 'NOT_AN_IMAGE' | 'NO_TEXT' | null;
+  } | null;
 }
 
 export interface MemberDocumentRow {
@@ -7399,8 +7410,9 @@ export const documentsApi = {
   },
 
   /** Accept it. From here it counts — the dispatch gate reads the status. */
-  verify: async (id: string) => {
-    const response = await api.post<{ success: boolean }>(`/documents/${id}/verify`, {});
+  /** Accept it. `expiresOn` ("YYYY-MM-DD") settles the date the reviewer confirmed. */
+  verify: async (id: string, expiresOn?: string | null) => {
+    const response = await api.post<{ success: boolean }>(`/documents/${id}/verify`, expiresOn ? { expiresOn } : {});
     return unwrapDocuments<any>(response);
   },
 

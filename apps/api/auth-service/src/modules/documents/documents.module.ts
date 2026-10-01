@@ -8,6 +8,8 @@ import { CustomerSignMailerService } from './customer-sign-mailer.service';
 import { MrzOcrService } from './mrz-ocr.service';
 import { objectStoreProvider } from './object-store.provider';
 import { CredentialExpiryService } from './credential-expiry.service';
+import { DOCUMENT_READERS, OcrRulesReader } from './document-reader';
+import { DocumentReadQueue } from './document-read-queue.service';
 
 @Module({
   imports: [
@@ -24,6 +26,15 @@ import { CredentialExpiryService } from './credential-expiry.service';
     // passports never leave the box.
     MrzOcrService,
     objectStoreProvider,
+    /*
+      The readers, in the order they are tried. Today: this server's OCR plus
+      the shared rules. A local AI engine later is one more entry here — the
+      queue, the review screen and the approval do not change.
+    */
+    OcrRulesReader,
+    { provide: DOCUMENT_READERS, useFactory: (ocr: OcrRulesReader) => [ocr], inject: [OcrRulesReader] },
+    // Reads members' documents after they are filed, never while they wait.
+    DocumentReadQueue,
   ],
   exports: [DocumentsService, CredentialExpiryService, CustomerSignLinkService, CustomerSignMailerService],
 })

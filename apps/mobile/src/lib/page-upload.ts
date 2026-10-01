@@ -81,6 +81,31 @@ async function compressSheet(uri: string): Promise<{ uri: string; bytes: number 
 }
 
 /**
+ * An iPhone photo as JPEG.
+ *
+ * ⚠️ iPhones shoot HEIC, and the server cannot decode it — its image library
+ * ships without the HEVC codec, a licensing matter. A HEIC uploaded under an
+ * image/jpeg label was filed fine and then NEVER READ: the reader failed on
+ * every attempt and the reviewer was left typing the date. Converted here,
+ * once, before a byte leaves the phone.
+ *
+ * Only a HEIC/HEIF is touched: a JPEG goes up exactly as it was taken, so the
+ * frame the member drew still matches the pixels the server crops.
+ */
+export async function ensureJpeg(uri: string, mimeType?: string | null): Promise<{ uri: string; bytes: number; converted: boolean }> {
+  const heic = /hei[cf]/i.test(mimeType ?? '') || /\.hei[cf]$/i.test(uri.split('?')[0] ?? '');
+  if (!heic) return { uri, bytes: fileSize(uri), converted: false };
+  const manipulator = loadImageManipulator();
+  if (!manipulator) return { uri, bytes: fileSize(uri), converted: false };
+  try {
+    const out = await manipulator.manipulateAsync(uri, [], { compress: 0.9, format: manipulator.SaveFormat.JPEG });
+    return { uri: out.uri, bytes: fileSize(out.uri), converted: true };
+  } catch {
+    return { uri, bytes: fileSize(uri), converted: false };
+  }
+}
+
+/**
  * Compress one sheet and put it on the server, reporting each step.
  *
  * `onChange` is called on every transition so the thumbnail can show progress

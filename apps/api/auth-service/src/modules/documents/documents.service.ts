@@ -5,6 +5,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { visibleTypeSelfWhere, visibleDocumentWhere, documentVisibleTo } from '@hbcfield/shared';
@@ -58,6 +59,7 @@ import {
 // the root export. Services that never touch object storage stay free of it.
 import { ObjectStore, documentKey, signatureKey, sha256 } from '@hbcfield/shared/storage';
 import { MrzOcrService } from './mrz-ocr.service';
+import { DocumentReadQueue, readingOf } from './document-read-queue.service';
 import { renderContractPdf, sealSignedPdf } from './contract-pdf';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { OBJECT_STORE } from './object-store.provider';
@@ -281,6 +283,8 @@ export class DocumentsService {
     // Injected, not constructed here — see object-store.provider.ts. Null when
     // no credentials are configured; every path that needs it says so plainly.
     @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+    // Optional so the many unit tests that build this service bare keep working.
+    @Optional() private readonly readQueue?: DocumentReadQueue,
   ) {
     if (!this.store) {
       this.logger.warn('S3 is not configured — document upload and download are unavailable');
@@ -1591,8 +1595,14 @@ export class DocumentsService {
       a slow OCR, a document with no zone at all: each files the document with
       no verdict, exactly as a gas certificate does.
     */
-    const mrzText =
-      data.mrzText?.trim() || (await this.ocr.read(filed.bytes, filed.mimeType));
+    /*
+      ⚠️ NO SERVER READ HERE ANY MORE. It ran inline with a 12-second limit, so
+      the member waited on it and a dense page (a visa foil) timed out and was
+      filed unread. The phone's own reading, when it sent one, is used now; the
+      server's read runs after filing in DocumentReadQueue, with all the time it
+      needs, and its answer reaches the reviewer before they open the queue.
+    */
+    const mrzText = data.mrzText?.trim() || null;
 
     const scan = await this.checkSubmittedScan(mrzText, member, data.actor.organizationId);
 
@@ -1671,6 +1681,8 @@ export class DocumentsService {
       type.label,
       document.title,
     );
+    // Anything not already settled is read in the background, after this returns.
+    if (!document.expiresOn || !scan) this.readQueue?.enqueue(document.id);
     return document;
   }
 
@@ -2215,9 +2227,11 @@ export class DocumentsService {
         scanChecks: true,
         holderName: true,
         documentNumber: true,
+        issuingState: true,
+        scanData: true,
         user: { select: { id: true, firstName: true, lastName: true } },
         type: {
-          select: { id: true, label: true, isCredential: true, requiredForWorkflowIds: true },
+          select: { id: true, label: true, isCredential: true, requiredForWorkflowIds: true, hasExpiry: true },
         },
       },
       // Indexed on [organizationId, status].
@@ -2237,6 +2251,20 @@ export class DocumentsService {
       typeId: r.type.id,
       typeLabel: r.type.label,
       isCredential: r.type.isCredential,
+      /** Accept needs a date when this is true and `expiresOn` is empty. */
+      hasExpiry: r.type.hasExpiry,
+      issuingState: r.issuingState,
+      /**
+       * What the background reader found, for the reviewer to confirm: the date,
+       * how sure it is, and where on the document it came from. Null while the
+       * document has not been read yet.
+       */
+      reading: (() => {
+        const rd = readingOf(r.scanData);
+        return rd
+          ? { expiresOn: rd.expiresOn, certainty: rd.certainty, source: rd.source, label: rd.label, unreadable: rd.unreadable }
+          : null;
+      })(),
       /*
         Whether somebody is WAITING ON THIS to be able to work.
 
@@ -2293,8 +2321,15 @@ export class DocumentsService {
       compliance board as EXPIRY_UNKNOWN and leave it there.
     */
     const suppliedExpiry = data.expiresOn ? new Date(`${data.expiresOn}T12:00:00Z`) : null;
+    if (data.expiresOn && !/^\d{4}-\d{2}-\d{2}$/.test(data.expiresOn)) {
+      throw new BadRequestException('That expiry date could not be read');
+    }
     if (suppliedExpiry && Number.isNaN(suppliedExpiry.getTime())) {
       throw new BadRequestException('That expiry date could not be read');
+    }
+    // The same bound the upload applies: a year this far out is a typo, not a certificate.
+    if (suppliedExpiry && (suppliedExpiry.getUTCFullYear() > new Date().getUTCFullYear() + 50 || suppliedExpiry.getUTCFullYear() < 1950)) {
+      throw new BadRequestException('That expiry date is not plausible');
     }
     if (document.type.hasExpiry && !document.expiresOn && !suppliedExpiry) {
       throw new BadRequestException(`${document.type.label} needs an expiry date before it can be approved`);

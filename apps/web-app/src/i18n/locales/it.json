@@ -8432,6 +8432,18 @@
         "wrongDocument": "Non è il documento richiesto",
         "expired": "Questo è già scaduto",
         "dateMismatch": "La data inserita non corrisponde al documento"
+      },
+      "expiry": {
+        "field": "Scade il",
+        "proven": "Letto dalla zona del documento · tutti i controlli superati",
+        "label": "Trovato accanto a \"{{label}}\" · da verificare",
+        "latest": "Data più recente del documento · da verificare",
+        "barcode": "Letto dal codice a barre · da verificare",
+        "given": "Indicato all'invio · da verificare",
+        "reading": "Lettura del documento…",
+        "heic": "Questa foto iPhone non può essere letta qui · aprila e inserisci la data",
+        "unreadable": "Non è stato possibile leggere la data · apri il documento e inseriscila",
+        "needed": "Accetta si attiva quando la data di scadenza è inserita."
       }
     },
     "required": {

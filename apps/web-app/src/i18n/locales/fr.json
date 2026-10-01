@@ -8432,6 +8432,18 @@
         "wrongDocument": "Ce n’est pas le document demandé",
         "expired": "Celui-ci est déjà expiré",
         "dateMismatch": "La date saisie ne correspond pas au document"
+      },
+      "expiry": {
+        "field": "Expire le",
+        "proven": "Lu dans la zone du document · tous les contrôles réussis",
+        "label": "Trouvé à côté de « {{label}} » · à vérifier",
+        "latest": "Date la plus tardive du document · à vérifier",
+        "barcode": "Lu dans le code-barres · à vérifier",
+        "given": "Indiqué à l'envoi · à vérifier",
+        "reading": "Lecture du document…",
+        "heic": "Cette photo iPhone ne peut pas être lue ici · ouvrez-la et saisissez la date",
+        "unreadable": "La date n'a pas pu être lue · ouvrez le document et saisissez-la",
+        "needed": "Accepter s'active dès que la date d'expiration est saisie."
       }
     },
     "required": {

@@ -8423,6 +8423,18 @@
         "wrongDocument": "Das ist nicht das angeforderte Dokument",
         "expired": "Dieser Nachweis ist bereits abgelaufen",
         "dateMismatch": "Das eingetragene Datum stimmt nicht mit dem Dokument überein"
+      },
+      "expiry": {
+        "field": "Gültig bis",
+        "proven": "Aus der maschinenlesbaren Zone gelesen · alle Prüfungen bestanden",
+        "label": "Neben „{{label}}“ gefunden · bitte prüfen",
+        "latest": "Spätestes Datum im Dokument · bitte prüfen",
+        "barcode": "Aus dem Barcode gelesen · bitte prüfen",
+        "given": "Beim Einreichen angegeben · bitte prüfen",
+        "reading": "Dokument wird gelesen…",
+        "heic": "Dieses iPhone-Foto kann hier nicht gelesen werden · öffnen Sie es und tragen Sie das Datum ein",
+        "unreadable": "Das Datum konnte nicht gelesen werden · öffnen Sie das Dokument und tragen Sie es ein",
+        "needed": "Annehmen ist möglich, sobald das Ablaufdatum eingetragen ist."
       }
     },
     "required": {

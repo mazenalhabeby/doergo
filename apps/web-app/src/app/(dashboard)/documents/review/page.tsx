@@ -45,7 +45,16 @@ export default function ReviewQueuePage() {
   const { data: rows = [], isLoading } = useQuery<PendingReviewRow[]>({
     queryKey: ["documents-awaiting-verification"],
     queryFn: () => documentsApi.awaitingVerification(),
+    // A document is read in the background after it is sent. While one is
+    // still being read, look again so its date arrives without a reload.
+    refetchInterval: (q) =>
+      (q.state.data as PendingReviewRow[] | undefined)?.some((r) => r.hasExpiry && !r.expiresOn && !r.reading) ? 15_000 : false,
   })
+
+  // The date each row will be accepted with: what the reviewer typed, else what was read.
+  const [dates, setDates] = useState<Record<string, string>>({})
+  const dateFor = (r: PendingReviewRow) =>
+    dates[r.id] ?? (r.expiresOn ? r.expiresOn.slice(0, 10) : r.reading?.expiresOn ?? "")
 
   const blocking = useMemo(() => rows.filter((r) => r.blocksWork), [rows])
 
@@ -67,7 +76,7 @@ export default function ReviewQueuePage() {
   })
 
   const verify = useMutation({
-    mutationFn: (id: string) => documentsApi.verify(id),
+    mutationFn: ({ id, expiresOn }: { id: string; expiresOn?: string | null }) => documentsApi.verify(id, expiresOn),
     onSuccess: () => { notify.success(t("documents.review.accepted")); refresh() },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -175,6 +184,17 @@ export default function ReviewQueuePage() {
                   */}
                   {r.scanVerdict && <ScanVerdict row={r} />}
 
+                  {/* The expiry, read for them and confirmed by them. Accept
+                      waits for it: a credential with no date sits on the
+                      compliance board as "unknown" for good. */}
+                  {r.hasExpiry && (
+                    <ExpiryField
+                      row={r}
+                      value={dateFor(r)}
+                      onChange={(v) => setDates((d) => ({ ...d, [r.id]: v }))}
+                    />
+                  )}
+
                   {/* Approving a certificate that has ALREADY lapsed would put a
                       tick on something the dispatch gate still refuses. */}
                   {r.standing === "EXPIRED" && (
@@ -202,8 +222,15 @@ export default function ReviewQueuePage() {
                   </Button>
                   <Button
                     size="sm"
-                    onClick={() => verify.mutate(r.id)}
-                    disabled={verify.isPending}
+                    onClick={() => {
+                      const date = dateFor(r)
+                      // Sent whenever it is not exactly what is already filed, so a
+                      // date the reviewer corrected, or one only suggested, is settled.
+                      const filed = r.expiresOn ? r.expiresOn.slice(0, 10) : null
+                      verify.mutate({ id: r.id, expiresOn: r.hasExpiry && date && date !== filed ? date : null })
+                    }}
+                    disabled={verify.isPending || (r.hasExpiry && !dateFor(r))}
+                    title={r.hasExpiry && !dateFor(r) ? t("documents.review.expiry.needed") : undefined}
                   >
                     <Check className="mr-1.5 h-4 w-4" />
                     {t("documents.review.accept")}
@@ -282,7 +309,9 @@ function ScanVerdict({ row }: { row: PendingReviewRow }) {
           picture, which is the one thing a machine cannot do for them. */}
       {(row.holderName || row.documentNumber) && (
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-          {[row.holderName, row.documentNumber].filter(Boolean).join(" · ")}
+          {/* The number's last digits only: the whole value is on the document
+              one click away, and need not sit on a screen somebody walks past. */}
+          {[row.holderName, row.documentNumber && maskNumber(row.documentNumber), row.issuingState].filter(Boolean).join(" · ")}
         </p>
       )}
 
@@ -393,5 +422,76 @@ function RejectDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+
+/** "BO334448" → "•••• 4448". */
+function maskNumber(n: string): string {
+  return n.length <= 4 ? n : `•••• ${n.slice(-4)}`
+}
+
+/**
+ * The expiry, with where it came from.
+ *
+ * PROVEN (the zone's check digits agree) reads as settled; everything else says
+ * "please check", because a date read off printed text is a good guess and a
+ * guess accepted without looking is how a wrong date becomes a fact.
+ */
+function ExpiryField({ row, value, onChange }: { row: PendingReviewRow; value: string; onChange: (v: string) => void }) {
+  const { t } = useTranslation()
+  const rd = row.reading
+  const filed = row.expiresOn ? row.expiresOn.slice(0, 10) : null
+
+  let tone: "ok" | "check" | "need" | "wait" = "check"
+  let note: string
+  if (filed && (!rd?.expiresOn || rd.expiresOn === filed) && rd?.certainty === "PROVEN") {
+    tone = "ok"; note = t("documents.review.expiry.proven")
+  } else if (filed && !rd?.expiresOn) {
+    note = t("documents.review.expiry.given")
+  } else if (rd?.certainty === "PROVEN") {
+    tone = "ok"; note = t("documents.review.expiry.proven")
+  } else if (rd?.source === "LABEL" && rd.label) {
+    note = t("documents.review.expiry.label", { label: rd.label })
+  } else if (rd?.source === "BARCODE") {
+    note = t("documents.review.expiry.barcode")
+  } else if (rd?.source === "TEXT") {
+    note = t("documents.review.expiry.latest")
+  } else if (!rd) {
+    tone = "wait"; note = t("documents.review.expiry.reading")
+  } else {
+    tone = "need"
+    note = rd.unreadable === "HEIC" ? t("documents.review.expiry.heic") : t("documents.review.expiry.unreadable")
+  }
+  if (!value && tone !== "wait") tone = "need"
+
+  const id = `expiry-${row.id}`
+  return (
+    <div className={cn(
+      "mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border p-2.5",
+      tone === "ok" ? "border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30"
+        : tone === "need" ? "border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30"
+          : "border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50",
+    )}>
+      <label htmlFor={id} className="text-sm font-medium text-slate-700 dark:text-slate-200">
+        {t("documents.review.expiry.field")}
+      </label>
+      <Input
+        id={id}
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-8 w-auto"
+      />
+      <span className={cn(
+        "flex items-center gap-1.5 text-xs",
+        tone === "ok" ? "text-green-700 dark:text-green-400"
+          : tone === "need" ? "text-amber-700 dark:text-amber-400" : "text-slate-500 dark:text-slate-400",
+      )}>
+        {tone === "wait" && <Loader2 className="h-3 w-3 animate-spin" />}
+        {tone === "ok" && <ShieldCheck className="h-3 w-3" />}
+        {note}
+      </span>
+    </div>
   )
 }

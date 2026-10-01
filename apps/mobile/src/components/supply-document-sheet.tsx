@@ -10,7 +10,7 @@ import { MultiPageCapture } from './multi-page-capture';
 import { newPageId, readyKeys, allStaged, pendingCount, failedCount, type Page } from '../lib/page-order';
 import { MAX_PAGES } from '@hbcfield/shared/client';
 import { documentPicker } from '../lib/optional-native';
-import { stagePage } from '../lib/page-upload';
+import { stagePage, ensureJpeg } from '../lib/page-upload';
 import { useImagePicker } from '../hooks/useImagePicker';
 import { File as FsFile } from 'expo-file-system';
 import { documentsApi, type DocumentType } from '../lib/api/documents';
@@ -379,12 +379,14 @@ export function SupplyDocumentSheet({
         }
 
         const put = async (uri: string, sizeBytes: number) => {
+          // An iPhone HEIC goes up as JPEG — the server cannot read HEIC at all.
+          const jpeg = await ensureJpeg(uri, uri === picked.uri ? picked.mimeType : null);
           const p = await documentsApi.ownUploadUrl({
             typeId: forType.id,
             mimeType: 'image/jpeg',
-            sizeBytes,
+            sizeBytes: jpeg.converted ? jpeg.bytes || sizeBytes : sizeBytes,
           });
-          await uploadToPresignedUrl(p.url, uri, 'image/jpeg');
+          await uploadToPresignedUrl(p.url, jpeg.uri, 'image/jpeg');
           return p.key;
         };
 
@@ -640,7 +642,11 @@ export function SupplyDocumentSheet({
           ...((staged?.back?.crop ?? back?.crop) ? { backCrop: staged?.back?.crop ?? back?.crop } : {}),
         };
         if (staged?.key) body.stagingKey = staged.key;
-        else body.$front = (await offline.files.keep({ id: uuidv7(), kind: 'document', mime: photo.mimeType || 'image/jpeg', uri: photo.uri })).id;
+        else {
+          // Kept for the queue as JPEG — a HEIC queued offline is just as unreadable later.
+          const front = await ensureJpeg(photo.uri, photo.mimeType);
+          body.$front = (await offline.files.keep({ id: uuidv7(), kind: 'document', mime: front.converted ? 'image/jpeg' : photo.mimeType || 'image/jpeg', uri: front.uri })).id;
+        }
         if (staged?.back?.key) body.backStagingKey = staged.back.key;
         else if (back) body.$back = (await offline.files.keep({ id: uuidv7(), kind: 'document', mime: 'image/jpeg', uri: back.uri })).id;
 
@@ -659,12 +665,14 @@ export function SupplyDocumentSheet({
 
       // Already uploaded while the member was confirming the date.
       const key = staged?.key ?? (await (async () => {
+        const jpeg = await ensureJpeg(photo.uri, photo.mimeType);
+        const mime = jpeg.converted ? 'image/jpeg' : photo.mimeType || 'image/jpeg';
         const p = await documentsApi.ownUploadUrl({
           typeId: type.id,
-          mimeType: photo.mimeType || 'image/jpeg',
-          sizeBytes: photo.fileSize,
+          mimeType: mime,
+          sizeBytes: jpeg.converted ? jpeg.bytes || photo.fileSize : photo.fileSize,
         });
-        await uploadToPresignedUrl(p.url, photo.uri, photo.mimeType || 'image/jpeg');
+        await uploadToPresignedUrl(p.url, jpeg.uri, mime);
         return p.key;
       })());
 

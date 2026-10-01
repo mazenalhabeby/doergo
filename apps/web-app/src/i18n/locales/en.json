@@ -8423,6 +8423,18 @@
         "wrongDocument": "This is not the document that was asked for",
         "expired": "This one has already expired",
         "dateMismatch": "The date entered does not match the document"
+      },
+      "expiry": {
+        "field": "Expires on",
+        "proven": "Read from the document's zone · all checks passed",
+        "label": "Found next to \"{{label}}\" · please check",
+        "latest": "Latest date on the document · please check",
+        "barcode": "Read from the barcode · please check",
+        "given": "Given when it was sent · please check",
+        "reading": "Reading the document…",
+        "heic": "This iPhone photo cannot be read here · open it and type the date",
+        "unreadable": "The date could not be read · open the document and type it",
+        "needed": "Accept turns on once the expiry date is filled in."
       }
     },
     "required": {
