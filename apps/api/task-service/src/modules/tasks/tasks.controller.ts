@@ -85,6 +85,16 @@ export class TasksController {
   }
 
   /** The member's own: jobs in work, notes owed, jobs paused on them. */
+  @MessagePattern({ cmd: 'get_task_time' })
+  async jobTime(@Payload() data: any) {
+    return this.tasksService.getJobTime(data);
+  }
+
+  @MessagePattern({ cmd: 'get_job_time_report' })
+  async jobTimeReport(@Payload() data: { userId: string; organizationId: string; from: string; to: string }) {
+    return this.tasksService.getJobTimeReport(data);
+  }
+
   @MessagePattern({ cmd: 'get_my_handovers' })
   async myHandovers(@Payload() data: { userId: string; organizationId: string }) {
     return this.jobPause.mine(data);

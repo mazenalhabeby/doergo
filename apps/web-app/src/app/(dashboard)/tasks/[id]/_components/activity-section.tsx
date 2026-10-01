@@ -70,6 +70,11 @@ function getEventDescription(event: TaskEvent, t: (key: string, options?: Record
     const reason = metadata.reason as string | undefined
     if (oldStatus && newStatus) {
       const desc = `${oldStatus.replace(/_/g, " ")} → ${newStatus.replace(/_/g, " ")}`
+      // The office moved it FOR somebody: say so, with why (shared tasks/job-time.ts).
+      if (metadata.byOffice) {
+        const why = metadata.officeReason ? ` · “${String(metadata.officeReason)}”` : ""
+        return `${desc} · ${t("tasks.activity.byOffice")}${why}`
+      }
       if (reason && newStatus === "BLOCKED") {
         return `${desc}: ${reason.length > 30 ? reason.slice(0, 30) + "..." : reason}`
       }

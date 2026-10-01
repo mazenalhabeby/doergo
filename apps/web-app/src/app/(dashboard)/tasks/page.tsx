@@ -1,6 +1,8 @@
 "use client"
 
-import { useClockGate } from "@/hooks"
+import { useClockGate, useOfficeStart } from "@/hooks"
+import { HandoverPendingNotice, useHandoverPendingText } from "@/components/handover-pending-notice"
+import { OfficeStartDialog } from "@/components/office-start-dialog"
 import { ClockGateDialog } from "@/components/clock-gate-dialog"
 
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react"
@@ -29,7 +31,7 @@ import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts"
 import { useBillingLock } from "@/hooks/use-billing-lock"
 import { useOrgWorkflow, useWorkflow, buildStatusTabs, buildKanbanColumns, type StatusTabGroup } from "@/hooks/use-org-workflow"
 import { useSpaceWorkflow } from "@/hooks/use-space-modules"
-import { tasksApi, phasesApi, sprintsApi, epicsApi, locationsApi, type Task, type Sprint, type Epic, type TasksListResponse } from "@/lib/api"
+import { tasksApi, phasesApi, sprintsApi, epicsApi, locationsApi, type Task, type Sprint, type Epic, type TasksListResponse, type OnBehalf } from "@/lib/api"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { AssignMemberDialog } from "@/components/assign-member-dialog"
@@ -518,11 +520,28 @@ export default function TasksPage() {
     }
   }, [completingSprint, completeSprintMutation])
 
+  /*
+    Reassigning a job whose handover is still owed (shared tasks/handover.ts):
+    the list row carries no names, so the job itself is read — only while the
+    dialog is open, under the key the task page caches it by.
+  */
+  const { data: assignDetail } = useQuery({
+    queryKey: ["task", selectedTaskId],
+    queryFn: () => tasksApi.getById(selectedTaskId!),
+    enabled: assignDialogOpen && !!selectedTaskId,
+    staleTime: 30_000,
+  })
+  const handoverPending = useHandoverPendingText(assignDetail)
+  const [reassignNote, setReassignNote] = useState("")
+
   // Assign mutation
   const assignMutation = useMutation({
-    mutationFn: (workerId: string) => {
+    mutationFn: async (workerId: string) => {
       if (!selectedTaskId) throw new Error(t("tasks.notify.noTaskSelected"))
-      return tasksApi.assign(selectedTaskId, workerId)
+      const done = await tasksApi.assign(selectedTaskId, workerId)
+      // A note for whoever takes the job over, posted on the job.
+      if (reassignNote.trim()) await tasksApi.addComment(selectedTaskId, reassignNote.trim())
+      return done
     },
     onMutate: async (workerId) => {
       if (!selectedTaskId) return
@@ -540,6 +559,7 @@ export default function TasksPage() {
       notify.error(e.message)
     },
     onSuccess: () => {
+      setReassignNote("")
       notify.success(t("tasks.notify.memberAssigned"))
     },
     onSettled: () => {
@@ -611,11 +631,12 @@ export default function TasksPage() {
   )
 
   const clockGate = useClockGate()
+  const officeStart = useOfficeStart()
 
   // Kanban drag-and-drop status change
   const statusChangeMutation = useMutation({
-    mutationFn: ({ taskId, status, answers }: { taskId: string; status: string; answers?: StepFormAnswers }) =>
-      tasksApi.updateStatus(taskId, status, undefined, answers),
+    mutationFn: ({ taskId, status, answers, onBehalf }: { taskId: string; status: string; answers?: StepFormAnswers; onBehalf?: OnBehalf }) =>
+      tasksApi.updateStatus(taskId, status, undefined, answers, onBehalf),
     onMutate: async ({ taskId, status }) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
       const snapshot = snapshotTasksCache(queryClient)
@@ -626,6 +647,8 @@ export default function TasksPage() {
       if (context?.snapshot) restoreTasksCache(queryClient, context.snapshot)
       // Off the clock: offer to clock in, then the same move again by itself.
       if (clockGate.intercept(e, () => statusChangeMutation.mutate(vars))) return
+      // The office starting somebody's job: say why, then the same move again.
+      if (officeStart.intercept(e, (onBehalf) => statusChangeMutation.mutate({ ...vars, onBehalf }))) return
       // A step-form refusal is answered by the step's dialog, not a toast.
       if (!isStepFormRefusal(e)) notify.error(serverErrorMessage(e, t))
     },
@@ -1171,6 +1194,7 @@ export default function TasksPage() {
   return (
     <div className="min-h-full bg-background">
       <ClockGateDialog {...clockGate.dialogProps} />
+      <OfficeStartDialog {...officeStart.dialogProps} />
       <style>{`
         @keyframes fadeSlideIn {
           from { opacity: 0; transform: translateY(6px); }
@@ -1715,6 +1739,7 @@ export default function TasksPage() {
         currentAssigneeId={selectedTaskId ? (tasks.find((t: Task) => t.id === selectedTaskId)?.assignedToId ?? null) : null}
         currentAssigneeIds={selectedTaskId ? (tasks.find((t: Task) => t.id === selectedTaskId)?.assignees?.map((a) => a.userId) ?? []) : []}
         isAssigning={assignMutation.isPending}
+        notice={handoverPending ? <HandoverPendingNotice text={handoverPending} onWait={() => { setAssignDialogOpen(false); setSelectedTaskId(null) }} note={reassignNote} onNoteChange={setReassignNote} /> : null}
         onAssign={(memberId) => assignMutation.mutate(memberId)}
         onSave={async (added, removed) => {
           if (!selectedTaskId) return

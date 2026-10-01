@@ -48,6 +48,8 @@ const KEEP: readonly RegExp[] = [
     still be asked in a basement, where the note can be queued.
   */
   /^\/tasks\/handover\/mine$/,
+  // A job's time: what the job page shows of a job the member opened — held so it reads the same with no signal.
+  /^\/tasks\/[^/?]+\/time$/,
   /*
     ⚠️ `(\/|\?|$)`, not `\/`. The pattern used to demand a trailing slash, so
     `/employees/:id` was kept and the LIST behind it — `/employees?page=1`, the

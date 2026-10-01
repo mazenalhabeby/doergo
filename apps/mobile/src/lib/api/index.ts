@@ -17,6 +17,8 @@ export {
 
 // All types (local + re-exported from @hbcfield/shared)
 export type {
+  JobTimeView,
+  JobTimeSplit,
   MyHandovers,
   HandoverJob,
   TaskHandover,

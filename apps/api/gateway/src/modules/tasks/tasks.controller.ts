@@ -256,6 +256,26 @@ export class TasksController {
   }
 
   /**
+   * One worker's job time over a period — travel, working, blocked, and the time
+   * on the clock beside it. Your own always; somebody else's needs the
+   * organization-wide view of every task (an admin, or "view all tasks").
+   */
+  @Get('job-time/report')
+  @ApiOperation({ summary: "A worker's job time over a period" })
+  async jobTimeReport(
+    @Query('userId') userId: string | undefined,
+    @Query('from') from: string,
+    @Query('to') to: string,
+    @Request() req: any,
+  ) {
+    const who = userId || req.user.id;
+    if (who !== req.user.id && !isAdmin(req.user) && !req.user.canViewAllTasks) {
+      throw new ForbiddenException("You can only see your own job time");
+    }
+    return this.tasksService.jobTimeReport({ userId: who, organizationId: req.user.organizationId, from, to });
+  }
+
+  /**
    * The caller's own: jobs in work (the clock-out sheet), notes they owe (asked
    * on every open) and jobs paused on them (offered at the next clock-in).
    * No permission: the filter IS the authorization — it only ever reads the caller.
@@ -445,6 +465,21 @@ export class TasksController {
    * links. Gated exactly like GET /tasks/:id (the same facts, the same check in
    * task-service). Read only when a report section is opened.
    */
+  /** A job's time: travel, working, blocked — per worker, and who started it. */
+  @Get(':id/time')
+  @ApiOperation({ summary: "A job's time, split into travel, working and blocked" })
+  async jobTime(@Param('id') id: string, @Request() req: any) {
+    return this.tasksService.jobTime({
+      id,
+      userId: req.user.id,
+      userRole: req.user.role,
+      canViewAllTasks: req.user.canViewAllTasks,
+      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
+      sharedSpaceIds: (req.user.access?.sharedSpaces ?? []).map((s: any) => s.spaceId),
+      organizationId: req.user.organizationId,
+    });
+  }
+
   @Get(':id/submissions')
   @ApiOperation({ summary: "The job's step-form submissions (its reports), with signed file links" })
   async getSubmissions(@Param('id') id: string, @Request() req: any) {

@@ -49,6 +49,9 @@ import { JobConfirmSheet } from './sheets/confirm-sheet';
 import { ClockInToStartSheet } from './sheets/clock-in-to-start-sheet';
 import { HandoverSheet } from './sheets/handover-sheet';
 import { JobHandover } from './job-handover';
+import { JobTimeCard } from './job-time-card';
+import { jobTimeNow } from './job-time-logic';
+import { useJobTime } from '../../hooks/useJobTime';
 import { LocationPickerSheet } from '../index';
 import { useShift } from '../../offline/attendance/use-shift';
 import { useClockIn } from '../../hooks/useClockIn';
@@ -114,6 +117,8 @@ export function JobPage({
   const connectivity = useConnectivity();
   const { takePhoto, pickFromGallery } = useImagePicker();
   const job = useJob(taskId);
+  // Job time — read here, before any early return (rules of hooks).
+  const jobTime = useJobTime(taskId);
   const { task } = job;
 
   /* ---------------- the panel ---------------- */
@@ -362,14 +367,21 @@ export function JobPage({
     primary = { label: task.assignedToId ? t('job.dock.reassign') : t('job.dock.assign'), onPress: () => setSheet('assign'), disabled: writes.busy };
   }
   const travelling = task.status === TaskStatus.ACCEPTED || task.status === TaskStatus.EN_ROUTE;
-  const showTimer = doingTheWork && !closed && hasCapability(caps, 'timer') && !!task.acceptedAt && ACTIVE.includes(task.status);
+  /*
+    Job time (shared tasks/job-time.ts): working, travel and blocked apart, only
+    inside a shift. A worker reads their OWN share; the office reads the job's.
+    The dock's figure is the working time — not "since accepted", which counted
+    the evening before and every night after.
+  */
+  const timeNow = jobTimeNow(jobTime.view, doingTheWork ? user?.id : null, jobTime.now);
+  const showTimer = doingTheWork && !closed && hasCapability(caps, 'timer') && ACTIVE.includes(task.status) && (timeNow?.working ?? 0) + (timeNow?.travel ?? 0) > 0;
   const tracksRoute = doingTheWork && task.status === TaskStatus.EN_ROUTE;
   const { isTracking, error: trackingError, startTracking } = job.tracking;
   const timer = paused && doingTheWork ? { text: t('job.timer.paused'), live: false } : showTimer || tracksRoute ? {
     text: showTimer && tracksRoute
-      ? t(isTracking ? 'job.timer.onJobTracking' : 'job.timer.onJobNotTracking', { time: formatOnJob(job.elapsed) })
+      ? t(isTracking ? 'job.timer.onJobTracking' : 'job.timer.onJobNotTracking', { time: formatOnJob((timeNow?.working ?? 0) * 60) })
       : showTimer
-        ? t('job.timer.onJob', { time: formatOnJob(job.elapsed) })
+        ? t('job.timer.onJob', { time: formatOnJob((timeNow?.working ?? 0) * 60) })
         : isTracking ? t('job.timer.tracking') : t('job.timer.notTracking'),
     live: tracksRoute ? isTracking : true,
     retry: tracksRoute && trackingError ? () => void startTracking(task.id, taskDestination(task)) : undefined,
@@ -476,7 +488,9 @@ export function JobPage({
           futureLine={futureLine}
         />
 
-        <JobHandover task={task} files={job.attachments} meId={user?.id} onWrite={() => setSheet('handover')} />
+        <JobHandover task={task} files={job.attachments} meId={user?.id} timeOf={(id) => jobTime.view?.byWorker.find((w) => w.user.id === id) ?? null} onWrite={() => setSheet('handover')} />
+
+        <JobTimeCard time={timeNow} paused={paused} startedBy={jobTime.view?.startedBy ?? null} meId={user?.id} />
 
         <TourTarget name="taskdetail-facts"><JobFacts facts={facts} /></TourTarget>
         {hasPlace ? <TourTarget name="taskdetail-map"><JobMap lat={task.locationLat!} lng={task.locationLng!} title={task.locationAddress} onOpen={openMaps} /></TourTarget> : null}

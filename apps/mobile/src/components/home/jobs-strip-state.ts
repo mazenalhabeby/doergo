@@ -15,13 +15,15 @@ export interface JobsStripItem {
   kind: JobsStripKind;
   taskId: string;
   title: string;
+  /** My working minutes on a paused job so far — "2h 15m so far". */
+  workedMinutes?: number;
 }
 
 export function jobsStripItems(mine: Pick<MyHandovers, 'owed' | 'paused'>, clockedIn: boolean): JobsStripItem[] {
   const owed = mine.owed.map((j) => ({ kind: 'owed' as const, taskId: j.id, title: j.title }));
   const seen = new Set(owed.map((o) => o.taskId));
   const paused = clockedIn
-    ? mine.paused.filter((j) => !seen.has(j.id)).map((j) => ({ kind: 'paused' as const, taskId: j.id, title: j.title }))
+    ? mine.paused.filter((j) => !seen.has(j.id)).map((j) => ({ kind: 'paused' as const, taskId: j.id, title: j.title, ...(j.workedMinutes ? { workedMinutes: j.workedMinutes } : {}) }))
     : [];
   return [...owed, ...paused];
 }
@@ -39,6 +41,8 @@ export function jobsStripLines(items: JobsStripItem[]): { title: { k: string; v:
       ? { k: 'jobsStrip.more', v: { count: more } }
       : first.kind === 'owed'
         ? { k: 'jobsStrip.owedSub', v: {} }
-        : { k: 'jobsStrip.pausedSub', v: {} },
+        : first.workedMinutes
+          ? { k: 'jobsStrip.pausedSoFar', v: { minutes: first.workedMinutes } }
+          : { k: 'jobsStrip.pausedSub', v: {} },
   };
 }

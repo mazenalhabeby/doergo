@@ -17,6 +17,7 @@ import { buildTaskVisibilityWhere, type TaskVisibilityFacts } from './task-visib
 import { fixOfTap, judgeOccurrence } from '../../common/occurrence.util';
 import { createOnce, findPrior } from '../../common/create-once.util';
 import { MediaSigner } from '../../common/storage/media-signer.service';
+import { JobTimeService } from './handover/job-time.service';
 import { PresenceService } from '../attendance/presence/presence.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
@@ -54,6 +55,8 @@ import {
   CLOCK_GATE_CODES,
   spaceRunsClock,
   activeAssignmentWhere,
+  OFFICE_START_CODES,
+  OFFICE_START_REASON_MAX,
   stepCapabilities,
   stepStartsWork,
 } from '@hbcfield/shared';
@@ -97,6 +100,8 @@ export class TasksService {
     private readonly media: MediaSigner,
     // A job on its way or arrived puts its member in the field at once, not at the next heartbeat.
     private readonly presence: PresenceService,
+    // Job time (shared tasks/job-time.ts) — read, never stored.
+    private readonly jobTime: JobTimeService,
     // The CRM side of step forms (add_customer_activity). Optional: absent, the
     // answers are still stored — only the client-timeline echo is skipped.
     @Optional() @Inject('AUTH_SERVICE') private readonly authClient?: ClientProxy,
@@ -1161,6 +1166,27 @@ export class TasksService {
   }
 
   /**
+   * A job's time — travel, working, blocked — per worker and in total, and who
+   * started it. Anybody who may see the job may see its time.
+   */
+  async getJobTime(data: TaskAccessFacts & { id: string }) {
+    const task = await this.prisma.task.findUnique({ where: { id: data.id } });
+    if (!task) throw new NotFoundException('Task not found');
+    await this.checkTaskAccess(task, data);
+    return success(await this.jobTime.forTask(task));
+  }
+
+  /** One worker's job time over a period. The gateway decides who may ask about whom. */
+  async getJobTimeReport(data: { userId: string; organizationId: string; from: string; to: string }) {
+    const from = new Date(data.from);
+    const to = new Date(data.to);
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || to <= from || to.getTime() - from.getTime() > 93 * 86_400_000) {
+      throw new BadRequestException('Choose a period of up to three months.');
+    }
+    return success(await this.jobTime.report({ userId: data.userId, organizationId: data.organizationId, from, to }));
+  }
+
+  /**
    * "Resume work" on a paused job — by somebody on it (the one who stopped, or
    * whoever has been given it since: their own time starts here). A move into
    * work, so the clock gate applies exactly as it does to Start work.
@@ -1663,7 +1689,7 @@ export class TasksService {
     moverId: string,
     organizationId: string,
     moverIsOnTheJob: boolean,
-  ): Promise<void> {
+  ): Promise<{ userId: string; clockInAt: Date } | null> {
     const where = task.spaceId
       ? await this.prisma.companyLocation.findUnique({
           where: { id: task.spaceId },
@@ -1681,7 +1707,7 @@ export class TasksService {
       const crew = await this.prisma.taskAssignee.findMany({ where: { taskId: task.id }, select: { userId: true } });
       workerIds = [...new Set([task.assignedToId, ...crew.map((c) => c.userId)].filter((id): id is string => !!id))];
     }
-    if (workerIds.length === 0) return;
+    if (workerIds.length === 0) return null;
 
     /*
       ⚠️ THE RULE FOLLOWS THE PERSON, NOT ONLY THE JOB'S WORKSPACE. A job in a
@@ -1693,20 +1719,20 @@ export class TasksService {
       their clock-in list). Somebody with no clock at all is never asked.
     */
     const heldIds = jobRunsClock ? workerIds : await this.workersWithAClock(workerIds, task.organizationId);
-    if (heldIds.length === 0) return;
+    if (heldIds.length === 0) return null;
 
     // External members hold no clock (EXTERNAL_FORBIDDEN_MODULES): never theirs to be on.
     const held = await this.prisma.user.findMany({
       where: { id: { in: heldIds }, organizationId: task.organizationId, isExternal: false },
       select: { id: true, firstName: true, lastName: true },
     });
-    if (held.length === 0) return;
+    if (held.length === 0) return null;
 
     const onTheClock = await this.prisma.timeEntry.findFirst({
       where: { organizationId: task.organizationId, userId: { in: held.map((w) => w.id) }, status: 'CLOCKED_IN' },
-      select: { id: true },
+      select: { userId: true, clockInAt: true },
     });
-    if (onTheClock) return;
+    if (onTheClock) return onTheClock;
 
     if (moverIsOnTheJob) {
       throw new BadRequestException({
@@ -1769,6 +1795,12 @@ export class TasksService {
     // Server-authoritative cross-org grant map (forwarded from the gateway).
     // Used to allow a guest org to move a task in a space explicitly shared to it.
     access?: unknown;
+    /**
+     * The office starting somebody's job for them (packages/shared/src/tasks/job-time.ts):
+     * why — required — and optionally when it really started. Recorded as the
+     * office's action, and the worker is told.
+     */
+    onBehalf?: { reason?: string; at?: string };
   }) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
@@ -1881,7 +1913,7 @@ export class TasksService {
       seconds apart, and the second must be compared with 09:00, not 11:14.
     */
     let previousAt: Date | null = null;
-    if (data.evidence) {
+    if (data.evidence || data.onBehalf?.at) {
       const lastChange = await this.prisma.taskEvent.findFirst({
         where: { taskId: task.id, eventType: TaskEventType.STATUS_CHANGED },
         orderBy: { createdAt: 'desc' },
@@ -1891,7 +1923,7 @@ export class TasksService {
       previousAt = previousOccurred ? new Date(previousOccurred) : lastChange?.createdAt ?? null;
     }
     const judged = judgeOccurrence(data.evidence, previousAt);
-    const occurredAt = judged.at;
+    let occurredAt = judged.at;
     const occurrenceFlags = judged.flags;
 
     // Validate status transition — honor the task's workflow (its own, else its
@@ -1961,9 +1993,48 @@ export class TasksService {
     // ── Clocked in to start work ──
     // Before the location check: "clock in first" is the more useful thing to
     // hear than "you are 3 km away" — the clock-in itself checks where they are.
-    if (stepStartsWork(data.status, stepCapabilities(wf, data.status))) {
-      await this.assertWorkerClockedIn(task, data.userId, data.organizationId, isAssignedUser);
+    const startsWork = stepStartsWork(data.status, stepCapabilities(wf, data.status));
+    const onClock = startsWork ? await this.assertWorkerClockedIn(task, data.userId, data.organizationId, isAssignedUser) : null;
+
+    /*
+      ── The office starting somebody's job for them ──
+
+      Allowed — a phone dies on site — but never silent: it needs a reason, it
+      is recorded as the office's action FOR that person ("Started by Anna
+      (office) for Mike"), and they are told. The time it really started may be
+      given, never before they clocked in and never in the future, so job time
+      still only runs inside their shift.
+    */
+    let officeStart: { forUserId: string; reason: string; at: Date | null } | null = null;
+    if (startsWork && !isAssignedUser && task.assignedToId) {
+      const reason = (data.onBehalf?.reason ?? '').trim().slice(0, OFFICE_START_REASON_MAX);
+      if (!reason) {
+        const who = await this.prisma.user.findUnique({ where: { id: onClock?.userId ?? task.assignedToId }, select: { firstName: true, lastName: true } });
+        throw new BadRequestException({
+          message: 'Say why the office is starting this job for them.',
+          code: OFFICE_START_CODES.REASON_REQUIRED,
+          params: {
+            name: who ? `${who.firstName} ${who.lastName}`.trim() : '',
+            clockInAt: onClock?.clockInAt.toISOString() ?? null,
+          },
+        });
+      }
+      let at: Date | null = null;
+      if (data.onBehalf?.at) {
+        at = new Date(data.onBehalf.at);
+        const tooEarly = onClock ? at.getTime() < onClock.clockInAt.getTime() : false;
+        if (Number.isNaN(at.getTime()) || at.getTime() > Date.now() + 60_000 || tooEarly || (previousAt && at.getTime() < previousAt.getTime())) {
+          throw new BadRequestException({
+            message: 'The start time must be inside their shift, after the last change and not in the future.',
+            code: OFFICE_START_CODES.TIME_OUTSIDE_SHIFT,
+            params: { clockInAt: onClock?.clockInAt.toISOString() ?? null },
+          });
+        }
+      }
+      officeStart = { forUserId: onClock?.userId ?? task.assignedToId, reason, at };
     }
+    // The office's own time for the start, when it gave one.
+    if (officeStart?.at) occurredAt = officeStart.at;
 
     // ── Assigned user execution enforcement ──
 
@@ -2181,7 +2252,21 @@ export class TasksService {
       occurredAt: occurredAt.toISOString(),
       ...(occurrenceFlags.length ? { occurrenceFlags } : {}),
       ...(submissionId ? { stepSubmissionId: submissionId } : {}),
+      // Read by the history ("Started by Anna (office) for Mike") and by job time (it is Mike's).
+      ...(officeStart ? { byOffice: true, forUserId: officeStart.forUserId, officeReason: officeStart.reason } : {}),
     });
+
+    if (officeStart) {
+      const by = await this.prisma.user.findUnique({ where: { id: data.userId }, select: { firstName: true, lastName: true } });
+      this.notificationClient.emit('task_started_for_you', {
+        taskId: task.id,
+        taskTitle: updatedTask.title,
+        userId: officeStart.forUserId,
+        byName: by ? `${by.firstName} ${by.lastName}`.trim() : '',
+        reason: officeStart.reason,
+        organizationId: task.organizationId,
+      });
+    }
 
     // The answers' CRM side — never allowed to undo the move.
     if (submission && submissionId && task.customerId) {

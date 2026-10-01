@@ -1623,7 +1623,8 @@
         "PAUSED": "Paused at clock-out",
         "RESUMED": "Work resumed",
         "HANDOVER_ADDED": "Handover written"
-      }
+      },
+      "byOffice": "by the office"
     },
     "assignees": {
       "addTeamMember": "Add Team Member",
@@ -1734,7 +1735,56 @@
       "chip": "Paused",
       "chipOwed": "Paused · no handover",
       "chipTitle": "Stopped when its worker clocked out",
-      "chipOwedTitle": "Stopped when its worker clocked out — no handover note yet"
+      "chipOwedTitle": "Stopped when its worker clocked out — no handover note yet",
+      "noteForNew": "Note for the new person (optional)",
+      "noteForNewPlaceholder": "e.g. Call them if anything is unclear"
+    },
+    "officeStart": {
+      "title": "Start this job for {{name}}?",
+      "body": "{{name}} has not started it on their phone. Starting it here is recorded as the office's action, with your reason, and {{name}} is told.",
+      "reason": "Reason (required)",
+      "reasonPlaceholder": "e.g. Phone is dead, called from site",
+      "startedAt": "Started at",
+      "notBefore": "Not before {{name}}'s clock-in today ({{time}}), and not in the future.",
+      "noClock": "Not in the future.",
+      "preview": "The job history will read: Started by {{me}} (office) for {{name}} · {{time}} · \"{{reason}}\"",
+      "confirm": "Start for {{name}}"
+    },
+    "jobTime": {
+      "title": "Job time",
+      "live": "live",
+      "paused": "paused",
+      "working": "Working",
+      "travel": "Travel",
+      "blocked": "Blocked",
+      "travelShort": "travel {{time}}",
+      "startedFor": "Started by {{name}} (office) for {{for}}",
+      "onlyInShift": "Counted only while somebody on the job is clocked in.",
+      "reportTitle": "Job time",
+      "reportSubtitle": "Working, travel and blocked time on each job, beside the time on the clock.",
+      "pickMember": "Choose a member",
+      "you": "you",
+      "period": {
+        "thisWeek": "This week",
+        "lastWeek": "Last week",
+        "thisMonth": "This month",
+        "lastMonth": "Last month"
+      },
+      "total": {
+        "working": "Working on jobs",
+        "travel": "Travel",
+        "blocked": "Blocked",
+        "clock": "Worked (clock)"
+      },
+      "col": {
+        "job": "Job",
+        "startedBy": "Started by",
+        "note": "Note"
+      },
+      "empty": "No job time in this period.",
+      "office": "{{name}} (office)",
+      "pausedAt": "Paused at clock-out {{time}}",
+      "onlyInShiftLong": "Job time is never more than the time clocked in: hours billed to a client and hours worked by the person come from the same moments, so the two cannot disagree."
     }
   },
   "technicians": {
@@ -8638,7 +8688,9 @@
     "NOT_CLOCKED_IN": "Clock in to start work on this job.",
     "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} is not clocked in. They need to clock in before this job can start.",
     "HANDOVER_NOT_ON_THE_JOB": "Only somebody on this job can write its handover.",
-    "HANDOVER_NOTE_REQUIRED": "Write what you did before saving."
+    "HANDOVER_NOTE_REQUIRED": "Write what you did before saving.",
+    "OFFICE_START_REASON_REQUIRED": "Say why the office is starting this job for them.",
+    "OFFICE_START_TIME_OUTSIDE_SHIFT": "The start time must be inside their shift and not in the future."
   },
   "signLink": {
     "tabs": {

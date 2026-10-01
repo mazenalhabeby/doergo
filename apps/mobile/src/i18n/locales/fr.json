@@ -3185,7 +3185,9 @@
       "NOT_CLOCKED_IN": "Pointez pour commencer ce travail.",
       "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} n'a pas pointé. Il faut pointer avant que ce travail puisse commencer.",
       "HANDOVER_NOT_ON_THE_JOB": "Cette intervention n'est plus la vôtre, la passation n'a pas été enregistrée.",
-      "HANDOVER_NOTE_REQUIRED": "Écrivez ce que vous avez fait avant d'enregistrer."
+      "HANDOVER_NOTE_REQUIRED": "Écrivez ce que vous avez fait avant d'enregistrer.",
+      "OFFICE_START_REASON_REQUIRED": "Commencer l'intervention de quelqu'un d'autre demande un motif — faites-le depuis le web.",
+      "OFFICE_START_TIME_OUTSIDE_SHIFT": "Cette heure de début est en dehors de son poste."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",
@@ -3443,7 +3445,8 @@
       "leaveNote": "Laisser une note de passation",
       "editNote": "Modifier la note",
       "finish": "C'est fait — la terminer",
-      "hint": "Pas de note maintenant ? Elle vous sera demandée plus tard. Rien ne vous empêche de pointer."
+      "hint": "Pas de note maintenant ? Elle vous sera demandée plus tard. Rien ne vous empêche de pointer.",
+      "working": "{{time}} de travail"
     }
   },
   "myWork": {
@@ -3758,7 +3761,8 @@
       "unticked": "Décoché : {{text}}",
       "paused": "Mise en pause au pointage de sortie",
       "resumed": "Travail repris",
-      "handover": "Passation : {{text}}"
+      "handover": "Passation : {{text}}",
+      "startedByOffice": "{{step}} · commencée par {{name}} (bureau)"
     },
     "timer": {
       "onJob": "{{time}} sur cette intervention",
@@ -3924,7 +3928,18 @@
       "youOwe": "Notez ce que vous avez fait sur cette intervention et ce qui reste.",
       "write": "L'écrire",
       "notYet": "{{name}} n'a pas encore écrit de passation.",
-      "notYetWorked": "{{name}} n'a pas encore écrit de passation — {{time}} de travail dessus."
+      "notYetWorked": "{{name}} n'a pas encore écrit de passation — {{time}} de travail dessus.",
+      "theirTime": "Temps de {{name}} sur l'intervention : {{time}}",
+      "travel": "Trajet {{time}}"
+    },
+    "time": {
+      "working": "TRAVAIL",
+      "live": "en cours",
+      "paused": "en pause",
+      "travel": "Trajet",
+      "blocked": "Bloqué",
+      "startedFor": "Commencée par {{name}} (bureau) pour {{for}}",
+      "startedForYou": "Commencée pour vous par {{name}} (bureau)"
     }
   },
   "jobsList": {
@@ -4341,6 +4356,7 @@
     "pausedTitle": "Vous avez mis {{title}} en pause",
     "pausedSub": "Reprenez le travail quand vous y retournez.",
     "more_one": "Et {{count}} autre intervention",
-    "more_other": "Et {{count}} autres interventions"
+    "more_other": "Et {{count}} autres interventions",
+    "pausedSoFar": "{{time}} jusqu'ici — reprenez quand vous y retournez."
   }
 }

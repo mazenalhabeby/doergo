@@ -269,6 +269,20 @@ export class TaskNotificationHandler {
     }
   }
 
+  /** The office started somebody's job for them — they hear who, and why. */
+  @EventPattern('task_started_for_you')
+  async handleStartedForYou(@Payload() data: { taskId: string; taskTitle: string; userId: string; byName: string; reason: string; organizationId: string }) {
+    try {
+      await this.pushService.sendToUser(
+        data.userId,
+        { title: msg('task.startedForYou.title', { name: data.byName }), body: msg('task.startedForYou.body', { task: data.taskTitle, reason: data.reason }) },
+        { type: 'task_started_for_you', taskId: data.taskId },
+      );
+    } catch (error) {
+      this.logger.error(`Failed to send started-for-you push: ${error}`);
+    }
+  }
+
   /** Jobs paused at a clock-out — the office's boards refresh and show them paused. */
   @EventPattern('tasks_paused')
   async handleTasksPaused(@Payload() data: { taskIds: string[]; userId: string; organizationId: string }) {

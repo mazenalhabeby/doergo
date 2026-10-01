@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/auth-context';
 import { useToast } from '../../island/island-context';
 import { useOffline } from '../../offline/offline-context';
 import { useRefreshMyHandovers } from '../../hooks/useMyHandovers';
+import { useRefreshJobTime } from '../../hooks/useJobTime';
 import { mergeAttachments, pendingAttachments } from '../../offline/tasks/overlay';
 import { addTaskComment, addTaskPhoto, declineTask, resumeJob, writeHandover, type ActionOutcome } from '../../offline/tasks/task-actions';
 import { taskDestination } from '../../offline/tasks/status-fix';
@@ -85,6 +86,8 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
   const offline = useOffline();
   // The home strip and the clock-out sheet read the same picture this changes.
   const refreshHandovers = useRefreshMyHandovers();
+  // Every move changes the job's time split; read it again.
+  const refreshJobTime = useRefreshJobTime();
   const { task, setTask, setComments, setAttachments, pushLocalEvent, tracking, reloadSubmissions } = job;
   const { writeStatus, onClosed, labelOf } = deps;
   const [busy, setBusy] = useState(false);
@@ -133,6 +136,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
       const outcome = await writeStatus(task, to, reason);
       settle(task, to, outcome);
       pushLocalEvent({ eventType: 'STATUS_CHANGED', metadata: { oldStatus: from, newStatus: to, reason }, pendingSync: outcome.kind === 'queued' });
+      refreshJobTime(task.id);
       // Blocked says its own sentence (reportIssue) — one island, not two.
       if (outcome.kind === 'done' && to !== TaskStatus.BLOCKED) toast.success(labelOf(to), task.title);
       return true;
@@ -144,7 +148,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
     } finally {
       setBusy(false);
     }
-  }, [task, tracking, writeStatus, settle, pushLocalEvent, toast, labelOf, t]);
+  }, [task, tracking, writeStatus, settle, pushLocalEvent, toast, labelOf, t, refreshJobTime]);
 
   const cancelJob = useCallback(async () => {
     const ok = await changeStatus(TaskStatus.CANCELED);
@@ -341,6 +345,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
       }
       pushLocalEvent({ eventType: 'RESUMED', metadata: {}, pendingSync: false });
       refreshHandovers();
+      refreshJobTime(task.id);
       toast.success(t('job.handover.resumed'), task.title);
       return true;
     } catch (err) {
@@ -349,7 +354,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
     } finally {
       setBusy(false);
     }
-  }, [task, offline.engine, refusalText, setTask, pushLocalEvent, toast, t, refreshHandovers]);
+  }, [task, offline.engine, refusalText, setTask, pushLocalEvent, toast, t, refreshHandovers, refreshJobTime]);
 
   /**
    * "What I did, and what is left." The photos go onto the job first (queued
@@ -459,6 +464,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
       settle(task, to, outcome);
       sentFiles.current.clear();
       pushLocalEvent({ eventType: 'STATUS_CHANGED', metadata: { oldStatus: from, newStatus: to, reason }, pendingSync: outcome.kind === 'queued' });
+      refreshJobTime(task.id);
       if (outcome.kind === 'done') toast.success(labelOf(to), task.title);
       // The photos and signatures are the job's files too.
       if (form.fields.some((f) => (f.type === 'photos' || f.type === 'signature') && answers[f.id] !== undefined)) {
@@ -473,7 +479,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
     } finally {
       setBusy(false);
     }
-  }, [task, tracking, writeStatus, sendFile, settle, pushLocalEvent, refreshAttachments, reloadSubmissions, refusalText, toast, labelOf, t]);
+  }, [task, tracking, writeStatus, sendFile, settle, pushLocalEvent, refreshAttachments, reloadSubmissions, refusalText, toast, labelOf, t, refreshJobTime]);
 
   /** A sheet opened afresh starts with nothing sent. */
   const resetFormFiles = useCallback(() => sentFiles.current.clear(), []);

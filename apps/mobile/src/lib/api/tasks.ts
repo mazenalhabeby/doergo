@@ -1,6 +1,6 @@
 import { fetchWithAuth } from './client';
 import { buildUrlWithQuery, type StepFormAnswers } from '@hbcfield/shared/client';
-import type { MyHandovers, TaskHandover, StepSubmission, Task, Comment, TaskEvent, CreateTaskInput, UpdateTaskInput, LocationUpdate, LocationResponse, LocationBatchUpdate, ChecklistItem } from './types';
+import type { JobTimeView, MyHandovers, TaskHandover, StepSubmission, Task, Comment, TaskEvent, CreateTaskInput, UpdateTaskInput, LocationUpdate, LocationResponse, LocationBatchUpdate, ChecklistItem } from './types';
 
 export interface TasksListParams {
   status?: string;
@@ -75,6 +75,9 @@ export const tasksApi = {
       body: JSON.stringify({ content }),
     });
   },
+
+  /** A job's time — travel, working, blocked, per worker. */
+  jobTime: async (taskId: string): Promise<JobTimeView> => fetchWithAuth<JobTimeView>(`/tasks/${taskId}/time`, { method: 'GET' }),
 
   /** My jobs in work, notes I owe, jobs paused on me — one read. */
   myHandovers: async (): Promise<MyHandovers> => fetchWithAuth<MyHandovers>('/tasks/handover/mine', { method: 'GET' }),

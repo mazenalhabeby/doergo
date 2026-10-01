@@ -3185,7 +3185,9 @@
       "NOT_CLOCKED_IN": "Ficha la entrada para empezar este trabajo.",
       "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} no ha fichado la entrada. Tiene que fichar antes de que este trabajo pueda empezar.",
       "HANDOVER_NOT_ON_THE_JOB": "Este trabajo ya no es tuyo, así que el traspaso no se guardó.",
-      "HANDOVER_NOTE_REQUIRED": "Escribe lo que hiciste antes de guardar."
+      "HANDOVER_NOTE_REQUIRED": "Escribe lo que hiciste antes de guardar.",
+      "OFFICE_START_REASON_REQUIRED": "Iniciar el trabajo de otra persona necesita un motivo: hazlo desde la web.",
+      "OFFICE_START_TIME_OUTSIDE_SHIFT": "Esa hora de inicio está fuera de su turno."
     },
     "signOut": {
       "title_one": "{{count}} cambio no se ha enviado",
@@ -3443,7 +3445,8 @@
       "leaveNote": "Dejar nota de traspaso",
       "editNote": "Editar la nota",
       "finish": "Está hecho: terminarlo",
-      "hint": "¿Sin nota ahora? Te la pediremos después. Nada te impide fichar la salida."
+      "hint": "¿Sin nota ahora? Te la pediremos después. Nada te impide fichar la salida.",
+      "working": "Trabajando {{time}}"
     }
   },
   "myWork": {
@@ -3758,7 +3761,8 @@
       "unticked": "Desmarcado: {{text}}",
       "paused": "En pausa al fichar la salida",
       "resumed": "Trabajo reanudado",
-      "handover": "Traspaso: {{text}}"
+      "handover": "Traspaso: {{text}}",
+      "startedByOffice": "{{step}} · iniciado por {{name}} (oficina)"
     },
     "timer": {
       "onJob": "{{time}} en este trabajo",
@@ -3924,7 +3928,18 @@
       "youOwe": "Escribe lo que hiciste en este trabajo y lo que falta.",
       "write": "Escribirlo",
       "notYet": "{{name}} aún no ha escrito el traspaso.",
-      "notYetWorked": "{{name}} aún no ha escrito el traspaso; trabajó {{time}} en esto."
+      "notYetWorked": "{{name}} aún no ha escrito el traspaso; trabajó {{time}} en esto.",
+      "theirTime": "Tiempo de {{name}} en el trabajo: {{time}}",
+      "travel": "Trayecto {{time}}"
+    },
+    "time": {
+      "working": "TRABAJO",
+      "live": "en curso",
+      "paused": "en pausa",
+      "travel": "Trayecto",
+      "blocked": "Bloqueado",
+      "startedFor": "Iniciado por {{name}} (oficina) para {{for}}",
+      "startedForYou": "Iniciado para ti por {{name}} (oficina)"
     }
   },
   "jobsList": {
@@ -4341,6 +4356,7 @@
     "pausedTitle": "Pausaste {{title}}",
     "pausedSub": "Reanuda el trabajo cuando vuelvas a él.",
     "more_one": "Y {{count}} trabajo más",
-    "more_other": "Y {{count}} trabajos más"
+    "more_other": "Y {{count}} trabajos más",
+    "pausedSoFar": "{{time}} hasta ahora: reanuda cuando vuelvas a él."
   }
 }

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { formatDuration } from '@hbcfield/shared/client';
 import { useMyHandovers } from '../../hooks/useMyHandovers';
 import { useShift } from '../../offline/attendance/use-shift';
 import { StartWorkGlyph } from '../glyphs/work-glyphs';
@@ -37,7 +38,7 @@ export function JobsStrip() {
       Glyph={items.length === 1 ? (first.kind === 'owed' ? IssueMineGlyph : StartWorkGlyph) : undefined}
       count={items.length === 1 ? undefined : items.length}
       title={t(lines.title.k, lines.title.v)}
-      sub={t(lines.sub.k, lines.sub.v)}
+      sub={t(lines.sub.k, 'minutes' in lines.sub.v ? { time: formatDuration(Number(lines.sub.v.minutes)) } : lines.sub.v)}
       onPress={open}
     />
   );

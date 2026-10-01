@@ -561,6 +561,35 @@ export interface TaskDependency {
   successor?: { id: string; title: string; status: string };
 }
 
+/** Minutes of a job's time (packages/shared/src/tasks/job-time.ts). */
+export interface JobTimeSplit { travel: number; working: number; blocked: number }
+type PersonRef = { id: string; firstName: string; lastName: string };
+
+/** GET /tasks/:id/time — read, never stored; only time inside shifts counts. */
+export interface JobTimeView {
+  asOf: string;
+  total: JobTimeSplit;
+  byWorker: Array<JobTimeSplit & { user: PersonRef }>;
+  live: { kind: keyof JobTimeSplit; workers: number } | null;
+  startedBy: { user: PersonRef | null; forUser: PersonRef | null; office: boolean; reason: string | null; at: string } | null;
+}
+
+/** GET /tasks/job-time/report */
+export interface JobTimeReport {
+  totals: JobTimeSplit & { clock: number };
+  rows: Array<JobTimeSplit & {
+    taskId: string;
+    title: string;
+    startedBy: { userId: string; office: boolean; user: PersonRef | null } | null;
+    officeReason: string | null;
+    pausedAt: string | null;
+    blockedReason: string | null;
+  }>;
+}
+
+/** The office starting somebody's job for them: why, and when it really started. */
+export interface OnBehalf { reason: string; at?: string }
+
 /** "What I did, and what is left" — written by a worker who stopped. */
 export interface TaskHandover {
   id: string;
@@ -1082,12 +1111,14 @@ export const tasksApi = {
   },
 
   // Update task status (TECHNICIAN only)
-  updateStatus: async (id: string, status: string, reason?: string, answers?: StepFormAnswers) => {
+  updateStatus: async (id: string, status: string, reason?: string, answers?: StepFormAnswers, onBehalf?: OnBehalf) => {
     const response = await api.patch<TaskResponse>(`/tasks/${id}/status`, {
       status,
       reason,
       // Only when the step asked something — see `useStepMove`.
       ...(answers !== undefined ? { answers } : {}),
+      // The office starting somebody's job for them — see `useOfficeStart`.
+      ...(onBehalf ? { onBehalf } : {}),
     });
 
     // Coded: a step-form refusal (STEP_FORM_INVALID / _FOREIGN_FILE) names the
@@ -1096,6 +1127,21 @@ export const tasksApi = {
       throw apiError(response);
     }
 
+    return response.data?.data;
+  },
+
+  /** A job's time: travel, working, blocked — per worker, and who started it. */
+  jobTime: async (id: string): Promise<JobTimeView | undefined> => {
+    const response = await api.get<{ success: boolean; data: JobTimeView }>(`/tasks/${id}/time`);
+    if (response.error) throw apiError(response);
+    return response.data?.data;
+  },
+
+  /** One worker's job time over a period, beside their time on the clock. */
+  jobTimeReport: async (params: { userId?: string; from: string; to: string }): Promise<JobTimeReport | undefined> => {
+    const q = new URLSearchParams({ from: params.from, to: params.to, ...(params.userId ? { userId: params.userId } : {}) })
+    const response = await api.get<{ success: boolean; data: JobTimeReport }>(`/tasks/job-time/report?${q}`);
+    if (response.error) throw apiError(response);
     return response.data?.data;
   },
 

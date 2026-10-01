@@ -1623,7 +1623,8 @@
         "PAUSED": "En pausa al fichar la salida",
         "RESUMED": "Trabajo reanudado",
         "HANDOVER_ADDED": "Traspaso escrito"
-      }
+      },
+      "byOffice": "por la oficina"
     },
     "assignees": {
       "addTeamMember": "Agregar miembro del equipo",
@@ -1734,7 +1735,56 @@
       "chip": "En pausa",
       "chipOwed": "En pausa · sin traspaso",
       "chipTitle": "Se detuvo cuando su trabajador fichó la salida",
-      "chipOwedTitle": "Se detuvo cuando su trabajador fichó la salida; aún sin nota de traspaso"
+      "chipOwedTitle": "Se detuvo cuando su trabajador fichó la salida; aún sin nota de traspaso",
+      "noteForNew": "Nota para la nueva persona (opcional)",
+      "noteForNewPlaceholder": "p. ej. Llámale si algo no está claro"
+    },
+    "officeStart": {
+      "title": "¿Iniciar este trabajo por {{name}}?",
+      "body": "{{name}} no lo ha iniciado en su teléfono. Iniciarlo aquí queda registrado como acción de la oficina, con tu motivo, y se avisa a {{name}}.",
+      "reason": "Motivo (obligatorio)",
+      "reasonPlaceholder": "p. ej. Sin batería, llamó desde el sitio",
+      "startedAt": "Iniciado a las",
+      "notBefore": "No antes del fichaje de {{name}} hoy ({{time}}) ni en el futuro.",
+      "noClock": "No en el futuro.",
+      "preview": "El historial dirá: Iniciado por {{me}} (oficina) para {{name}} · {{time}} · \"{{reason}}\"",
+      "confirm": "Iniciar por {{name}}"
+    },
+    "jobTime": {
+      "title": "Tiempo del trabajo",
+      "live": "en curso",
+      "paused": "en pausa",
+      "working": "Trabajo",
+      "travel": "Trayecto",
+      "blocked": "Bloqueado",
+      "travelShort": "trayecto {{time}}",
+      "startedFor": "Iniciado por {{name}} (oficina) para {{for}}",
+      "onlyInShift": "Solo cuenta mientras alguien del trabajo está fichado.",
+      "reportTitle": "Tiempo de trabajos",
+      "reportSubtitle": "Tiempo de trabajo, trayecto y bloqueo en cada trabajo, junto al tiempo fichado.",
+      "pickMember": "Elige un miembro",
+      "you": "tú",
+      "period": {
+        "thisWeek": "Esta semana",
+        "lastWeek": "La semana pasada",
+        "thisMonth": "Este mes",
+        "lastMonth": "El mes pasado"
+      },
+      "total": {
+        "working": "Trabajando en trabajos",
+        "travel": "Trayecto",
+        "blocked": "Bloqueado",
+        "clock": "Trabajado (fichaje)"
+      },
+      "col": {
+        "job": "Trabajo",
+        "startedBy": "Iniciado por",
+        "note": "Nota"
+      },
+      "empty": "Sin tiempo de trabajo en este periodo.",
+      "office": "{{name}} (oficina)",
+      "pausedAt": "En pausa al fichar la salida {{time}}",
+      "onlyInShiftLong": "El tiempo de trabajo nunca supera el tiempo fichado: las horas facturadas al cliente y las trabajadas salen de los mismos momentos, así que no pueden contradecirse."
     }
   },
   "technicians": {
@@ -8638,7 +8688,9 @@
     "NOT_CLOCKED_IN": "Ficha la entrada para empezar este trabajo.",
     "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} no ha fichado la entrada. Tiene que fichar antes de que este trabajo pueda empezar.",
     "HANDOVER_NOT_ON_THE_JOB": "Solo alguien en este trabajo puede escribir su traspaso.",
-    "HANDOVER_NOTE_REQUIRED": "Escribe lo que hiciste antes de guardar."
+    "HANDOVER_NOTE_REQUIRED": "Escribe lo que hiciste antes de guardar.",
+    "OFFICE_START_REASON_REQUIRED": "Indica por qué la oficina inicia este trabajo por esa persona.",
+    "OFFICE_START_TIME_OUTSIDE_SHIFT": "La hora de inicio debe estar dentro de su turno y no en el futuro."
   },
   "signLink": {
     "tabs": {

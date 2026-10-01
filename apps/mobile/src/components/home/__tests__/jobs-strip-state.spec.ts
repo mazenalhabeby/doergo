@@ -27,3 +27,10 @@ describe('the home jobs strip', () => {
     expect(two.sub).toEqual({ k: 'jobsStrip.more', v: { count: 1 } });
   });
 });
+
+describe('a paused job says how long it has taken so far', () => {
+  it('the "so far" line carries my own minutes', () => {
+    const items = jobsStripItems({ owed: [], paused: [{ ...job('b', 'Boiler'), workedMinutes: 135 }] }, true);
+    expect(jobsStripLines(items)!.sub).toEqual({ k: 'jobsStrip.pausedSoFar', v: { minutes: 135 } });
+  });
+});

@@ -1,6 +1,7 @@
 "use client"
 
-import { useClockGate } from "@/hooks"
+import { useClockGate, useOfficeStart } from "@/hooks"
+import { OfficeStartDialog } from "@/components/office-start-dialog"
 import { ClockGateDialog } from "@/components/clock-gate-dialog"
 
 import { useState, use, useEffect, useCallback, useMemo } from "react"
@@ -29,7 +30,7 @@ import { TaskDetailPageSkeleton } from "@/components/skeletons"
 import { useTaskPermissions } from "@/hooks/use-task-permissions"
 import { assigneeIds } from "@/lib/task-assignment"
 import { useWorkflow, getTransitionsForStatus } from "@/hooks/use-org-workflow"
-import { tasksApi, trackingApi, sprintsApi, phasesApi, epicsApi, type WorkflowStatus } from "@/lib/api"
+import { tasksApi, trackingApi, sprintsApi, phasesApi, epicsApi, type WorkflowStatus, type OnBehalf } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { notify } from "@/lib/toast"
@@ -55,9 +56,9 @@ import {
   TaskDetailSidebar,
   DescriptionSection,
   HandoverCard,
-  HandoverPendingNotice,
-  useHandoverPendingText,
+  JobTimeCard,
 } from "./_components"
+import { HandoverPendingNotice, useHandoverPendingText } from "@/components/handover-pending-notice"
 
 export default function TaskDetailPage({
   params,
@@ -184,9 +185,16 @@ export default function TaskDetailPage({
   }, [task?.status, hasWorkflow, workflowStatuses])
 
   // ─── Mutations ──────────────────────────────────────────────────────────
+  // A note for whoever takes the job over while a handover is still owed — posted on the job.
+  const [reassignNote, setReassignNote] = useState("")
   const assignMutation = useMutation({
-    mutationFn: (workerId: string) => tasksApi.assign(id, workerId),
+    mutationFn: async (workerId: string) => {
+      const done = await tasksApi.assign(id, workerId)
+      if (reassignNote.trim()) await tasksApi.addComment(id, reassignNote.trim())
+      return done
+    },
     onSuccess: () => {
+      setReassignNote("")
       notify.success(t("tasks.detail.technicianAssigned"))
       setShowAssignModal(false)
       queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
@@ -220,17 +228,18 @@ export default function TaskDetailPage({
   })
 
   const statusChangeMutation = useMutation({
-    mutationFn: (newStatus: string) =>
+    mutationFn: ({ status: newStatus, onBehalf }: { status: string; onBehalf?: OnBehalf }) =>
       stepMove.move({
         task: task!,
         status: newStatus,
         workflow: moveWorkflow,
-        send: (answers) => tasksApi.updateStatus(id, newStatus, undefined, answers),
+        send: (answers) => tasksApi.updateStatus(id, newStatus, undefined, answers, onBehalf),
       }),
     onSuccess: (result) => {
       // The step's dialog was closed without answering — nothing moved.
       if (result === "cancelled") return
       queryClient.invalidateQueries({ queryKey: ["task-submissions", id] })
+      queryClient.invalidateQueries({ queryKey: ["task-time", id] })
       notify.success(t("tasks.detail.statusUpdated"))
       queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
       queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
@@ -239,12 +248,15 @@ export default function TaskDetailPage({
       queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
     },
     // Off the clock: offer to clock in, then the same move again by itself.
-    onError: (e: Error, newStatus) => {
-      if (clockGate.intercept(e, () => statusChangeMutation.mutate(newStatus))) return
+    onError: (e: Error, vars) => {
+      if (clockGate.intercept(e, () => statusChangeMutation.mutate(vars))) return
+      // The office starting somebody's job: say why, then the same move again.
+      if (officeStart.intercept(e, (onBehalf) => statusChangeMutation.mutate({ ...vars, onBehalf }))) return
       notify.error(serverErrorMessage(e, t))
     },
   })
   const clockGate = useClockGate()
+  const officeStart = useOfficeStart()
 
   /*
     Paused at a clock-out (shared tasks/handover.ts). Resume is a move into work:
@@ -254,6 +266,7 @@ export default function TaskDetailPage({
     queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
     queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
     queryClient.invalidateQueries({ queryKey: ["taskTimeline", id], refetchType: "all" })
+    queryClient.invalidateQueries({ queryKey: ["task-time", id] })
   }
   const resumeMutation = useMutation({
     mutationFn: () => tasksApi.resumeWork(id),
@@ -371,7 +384,7 @@ export default function TaskDetailPage({
         currentAssigneeId={task?.assignedToId}
         currentAssigneeIds={task?.assignees?.map((a) => a.userId) || []}
         isAssigning={assignMutation.isPending}
-        notice={handoverPending ? <HandoverPendingNotice text={handoverPending} onWait={() => setShowAssignModal(false)} /> : null}
+        notice={handoverPending ? <HandoverPendingNotice text={handoverPending} onWait={() => setShowAssignModal(false)} note={reassignNote} onNoteChange={setReassignNote} /> : null}
         onAssign={(memberId) => assignMutation.mutate(memberId)}
         onSave={async (added, removed) => {
           const ops: Promise<unknown>[] = [
@@ -385,6 +398,7 @@ export default function TaskDetailPage({
       />
       <EditTaskDialog task={task} open={showEditDialog} onOpenChange={setShowEditDialog} />
       <ClockGateDialog {...clockGate.dialogProps} />
+      <OfficeStartDialog {...officeStart.dialogProps} />
       {stepMove.dialog}
 
       <div className="p-8 max-w-7xl mx-auto">
@@ -402,7 +416,7 @@ export default function TaskDetailPage({
           hasModule={hasModule}
           allowedTransitions={allowedTransitions}
           onTitleSave={(v) => handleFieldSave("title", v)}
-          onStatusChange={(s) => statusChangeMutation.mutate(s)}
+          onStatusChange={(s) => statusChangeMutation.mutate({ status: s })}
           onAssignClick={() => setShowAssignModal(true)}
           onEditClick={() => setShowEditDialog(true)}
           onCancelTask={() => deleteMutation.mutate()}
@@ -420,6 +434,11 @@ export default function TaskDetailPage({
             onResume={() => resumeMutation.mutate()}
             onWrite={writeHandover}
           />
+        </div>
+
+        {/* ─── Job time: working, with travel and blocked apart ─── */}
+        <div className="mb-4">
+          <JobTimeCard taskId={id} paused={!!task.pausedAt} />
         </div>
 
         {/* ─── Progress Card — always visible ─────────────────────── */}

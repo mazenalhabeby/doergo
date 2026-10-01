@@ -17,6 +17,8 @@
  *     (clock-gate.ts) applies to it. Any move of the job clears it too.
  */
 
+import { joinedJobAt, jobSpans, workerJobTime, type JobTimeKind, type ShiftSpan, type WorkTimelineEvent } from './job-time';
+
 /** Longest note kept. A handover is a paragraph, not a report. */
 export const HANDOVER_NOTE_MAX = 2000;
 
@@ -31,73 +33,19 @@ export const HANDOVER_CODES = {
   NOT_PAUSED: 'JOB_NOT_PAUSED',
 } as const;
 
-/** One entry of a job's history, as far as working time is concerned. */
-export interface WorkTimelineEvent {
-  at: Date | string;
-  userId: string;
-  kind: 'STATUS' | 'PAUSED' | 'RESUMED';
-  /** For STATUS: the step moved into. */
-  status?: string;
-}
-
-/** A stretch the worker was on the clock. `end` null = still clocked in. */
-export interface ShiftSpan {
-  start: Date | string;
-  end: Date | string | null;
-}
-
 /**
- * How long somebody worked on a job, in whole minutes, up to `until`.
- *
- * Counted from their own first move on it — a crew member who joins later is
- * not credited with the morning — over the time the job was in a working step
- * (`isWorkingStep`, the clock gate's own rule) and not paused. Blocked, waiting
- * and paused time are not work.
- *
- * ⚠️ With `shifts`, only time ON THE CLOCK counts. A job left "in progress"
- * before pausing existed would otherwise claim every night and weekend since —
- * one real job read "worked 2588h". The job's time and the timesheet must tell
- * the same story; this is where they are made to.
+ * How long somebody WORKED on a job (travel and blocked time apart), in whole
+ * minutes, up to `until` — the figure the handover and the reassign warning
+ * quote. The general rule, and why only time on the clock counts: job-time.ts.
  */
 export function workedMinutesOnJob(
   events: readonly WorkTimelineEvent[],
   workerId: string,
   until: Date,
-  isWorkingStep: (status: string) => boolean,
+  kindOf: (status: string) => JobTimeKind | null,
   shifts?: readonly ShiftSpan[],
 ): number {
-  const sorted = [...events]
-    .map((e) => ({ ...e, t: new Date(e.at).getTime() }))
-    .filter((e) => Number.isFinite(e.t))
-    .sort((a, b) => a.t - b.t);
-  const firstOwn = sorted.find((e) => e.userId === workerId);
-  if (!firstOwn) return 0;
-
-  const end = until.getTime();
-  let working = false;
-  let paused = false;
-  let since = firstOwn.t;
-  const spans: Array<[number, number]> = [];
-  for (const e of sorted) {
-    if (e.t > end) break;
-    // From their first move on, each stretch counts if the job was in work.
-    if (e.t >= firstOwn.t) {
-      if (working && !paused && e.t > since) spans.push([since, e.t]);
-      since = e.t;
-    }
-    if (e.kind === 'STATUS') { working = isWorkingStep(e.status ?? ''); paused = false; }
-    else paused = e.kind === 'PAUSED';
-  }
-  if (working && !paused && end > since) spans.push([since, end]);
-
-  const clock = shifts?.map((x) => [new Date(x.start).getTime(), x.end == null ? end : Math.min(new Date(x.end).getTime(), end)] as [number, number])
-    .filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b) && b > a);
-  let total = 0;
-  for (const [a, b] of spans) {
-    if (!clock) { total += b - a; continue; }
-    for (const [c, d] of clock) total += Math.max(0, Math.min(b, d) - Math.max(a, c));
-  }
-  return Math.max(0, Math.round(total / 60_000));
+  return workerJobTime(jobSpans(events, until, kindOf), joinedJobAt(events, workerId), shifts ?? null).working;
 }
 
 /** What a screen needs to know about a job's pause. */

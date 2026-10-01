@@ -8,6 +8,7 @@ import { MediaSigner } from '../../../common/storage/media-signer.service';
 import { OBJECT_STORE } from '@hbcfield/shared/storage';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { Role, TaskStatus, TaskEventType } from '@hbcfield/shared';
+import { JobTimeService } from '../handover/job-time.service';
 import { PresenceService } from '../../attendance/presence/presence.service';
 
 describe('TasksService', () => {
@@ -139,7 +140,7 @@ describe('TasksService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        TasksService, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
+        TasksService, { provide: JobTimeService, useValue: {} }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: 'NOTIFICATION_SERVICE', useValue: mockNotificationClient },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },

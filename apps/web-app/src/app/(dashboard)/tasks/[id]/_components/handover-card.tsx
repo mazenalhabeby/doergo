@@ -10,24 +10,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { UserAvatar } from "@/components/user-avatar"
 import { formatTimeAgo } from "@/lib/format-date"
-
-const WARN = "rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300"
+import { HANDOVER_WARN_CLASS as WARN, useHandoverPendingText } from "@/components/handover-pending-notice"
 
 type PauseFacts = Pick<Task, "pausedAt" | "pausedById" | "handoverDueById" | "pausedBy" | "handoverDue" | "handovers">
 const nameOf = (p?: { firstName: string; lastName: string } | null) => (p ? `${p.firstName} ${p.lastName}`.trim() : "")
-
-/**
- * "Mike hasn't written a handover yet — worked 2h 15m on it." One sentence, read
- * by the job's card AND the reassign dialog, so the two always say the same.
- */
-export function useHandoverPendingText(task: PauseFacts | null | undefined): string | null {
-  const { t } = useTranslation()
-  const due = task?.handoverDue
-  if (!due?.user) return null
-  return due.workedMinutes
-    ? t("tasks.handover.notYetWorked", { name: nameOf(due.user), time: formatDuration(due.workedMinutes) })
-    : t("tasks.handover.notYet", { name: nameOf(due.user) })
-}
 
 /**
  * The top of a job somebody stopped (packages/shared/src/tasks/handover.ts):
@@ -157,14 +143,3 @@ function HandoverDialog({ open, onOpenChange, onSave }: { open: boolean; onOpenC
   )
 }
 
-/** The reassign dialog's warning: wait for the note, or give the job away anyway. */
-export function HandoverPendingNotice({ text, onWait }: { text: string; onWait: () => void }) {
-  const { t } = useTranslation()
-  return (
-    <div className={`mx-5 mb-3 space-y-2 ${WARN}`}>
-      <p>{text}</p>
-      <p className="text-xs opacity-80">{t("tasks.handover.reassignHint")}</p>
-      <Button size="sm" variant="outline" onClick={onWait}>{t("tasks.handover.wait")}</Button>
-    </div>
-  )
-}

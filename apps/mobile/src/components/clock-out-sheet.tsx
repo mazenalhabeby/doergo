@@ -9,7 +9,7 @@ import { AText, Eyebrow, LiveDot } from './amazen';
 import { heroParts } from './home/shift-state';
 import { readClockOut, type ClockOutShift } from './home/clock-out-state';
 import { formatDistance } from '../lib/distance';
-import { HANDOVER_NOTE_MAX } from '@hbcfield/shared/client';
+import { HANDOVER_NOTE_MAX, formatDuration } from '@hbcfield/shared/client';
 import type { HandoverJob } from '../lib/api';
 
 /**
@@ -348,7 +348,8 @@ function OpenJobs({
       <Eyebrow tone="warn">{t('shiftEnd.jobs.eyebrow', { count: jobs.length })}</Eyebrow>
       {jobs.map((j) => {
         const writing = open === j.id;
-        const sub = [j.customer?.name, j.locationAddress].filter(Boolean).join(' · ');
+        // "Working 2h 15m" — your own share, only time on the clock (shared tasks/job-time.ts).
+        const sub = [j.workedMinutes ? t('shiftEnd.jobs.working', { time: formatDuration(j.workedMinutes) }) : null, j.customer?.name, j.locationAddress].filter(Boolean).join(' · ');
         return (
           <View key={j.id} style={{ backgroundColor: c.tile, borderRadius: amazen.radius.field, padding: amazen.space(3), gap: amazen.space(2) }}>
             <View>

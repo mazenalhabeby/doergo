@@ -62,6 +62,11 @@ export function JobActivity({
           const to = String(meta?.newStatus ?? '');
           if (!to) return null;
           if (to === 'BLOCKED' && meta?.reason) return t('job.activity.blocked', { reason: String(meta.reason) });
+          // The office started it for somebody: said so, with why (shared tasks/job-time.ts).
+          if (meta?.byOffice) {
+            const line = t('job.activity.startedByOffice', { step: labelOf(to), name: who });
+            return meta.officeReason ? `${line} · “${String(meta.officeReason)}”` : line;
+          }
           return by(labelOf(to));
         }
         case 'ASSIGNED': return by(t('job.activity.assigned'));

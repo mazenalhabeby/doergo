@@ -3185,7 +3185,9 @@
       "NOT_CLOCKED_IN": "Stempeln Sie ein, um mit diesem Auftrag zu beginnen.",
       "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} ist nicht eingestempelt. Der Auftrag kann erst starten, wenn {{name}} eingestempelt ist.",
       "HANDOVER_NOT_ON_THE_JOB": "Dieser Auftrag gehört nicht mehr Ihnen, die Übergabe wurde nicht gespeichert.",
-      "HANDOVER_NOTE_REQUIRED": "Schreiben Sie vor dem Speichern, was Sie gemacht haben."
+      "HANDOVER_NOTE_REQUIRED": "Schreiben Sie vor dem Speichern, was Sie gemacht haben.",
+      "OFFICE_START_REASON_REQUIRED": "Einen Auftrag für jemand anderen zu beginnen braucht einen Grund – bitte im Web.",
+      "OFFICE_START_TIME_OUTSIDE_SHIFT": "Diese Startzeit liegt außerhalb der Schicht."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",
@@ -3443,7 +3445,8 @@
       "leaveNote": "Übergabenotiz hinterlassen",
       "editNote": "Notiz bearbeiten",
       "finish": "Fertig – abschließen",
-      "hint": "Jetzt keine Notiz? Sie werden später daran erinnert. Ausstempeln geht trotzdem."
+      "hint": "Jetzt keine Notiz? Sie werden später daran erinnert. Ausstempeln geht trotzdem.",
+      "working": "{{time}} gearbeitet"
     }
   },
   "myWork": {
@@ -3758,7 +3761,8 @@
       "unticked": "Haken entfernt: {{text}}",
       "paused": "Beim Ausstempeln pausiert",
       "resumed": "Arbeit fortgesetzt",
-      "handover": "Übergabe: {{text}}"
+      "handover": "Übergabe: {{text}}",
+      "startedByOffice": "{{step}} · von {{name}} (Büro) begonnen"
     },
     "timer": {
       "onJob": "{{time}} an diesem Auftrag",
@@ -3924,7 +3928,18 @@
       "youOwe": "Notieren Sie, was Sie an diesem Auftrag erledigt haben und was noch fehlt.",
       "write": "Jetzt schreiben",
       "notYet": "{{name}} hat noch keine Übergabe geschrieben.",
-      "notYetWorked": "{{name}} hat noch keine Übergabe geschrieben – {{time}} daran gearbeitet."
+      "notYetWorked": "{{name}} hat noch keine Übergabe geschrieben – {{time}} daran gearbeitet.",
+      "theirTime": "Auftragszeit von {{name}}: {{time}}",
+      "travel": "Anfahrt {{time}}"
+    },
+    "time": {
+      "working": "ARBEIT",
+      "live": "läuft",
+      "paused": "pausiert",
+      "travel": "Anfahrt",
+      "blocked": "Blockiert",
+      "startedFor": "Von {{name}} (Büro) für {{for}} begonnen",
+      "startedForYou": "Von {{name}} (Büro) für Sie begonnen"
     }
   },
   "jobsList": {
@@ -4341,6 +4356,7 @@
     "pausedTitle": "Sie haben {{title}} pausiert",
     "pausedSub": "Setzen Sie die Arbeit fort, sobald Sie wieder dran sind.",
     "more_one": "Und {{count}} weiterer Auftrag",
-    "more_other": "Und {{count}} weitere Aufträge"
+    "more_other": "Und {{count}} weitere Aufträge",
+    "pausedSoFar": "Bisher {{time}} – setzen Sie die Arbeit fort, sobald Sie wieder dran sind."
   }
 }

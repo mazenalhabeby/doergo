@@ -1623,7 +1623,8 @@
         "PAUSED": "Mise en pause au pointage de sortie",
         "RESUMED": "Travail repris",
         "HANDOVER_ADDED": "Passation écrite"
-      }
+      },
+      "byOffice": "par le bureau"
     },
     "assignees": {
       "addTeamMember": "Ajouter un membre de l'équipe",
@@ -1734,7 +1735,56 @@
       "chip": "En pause",
       "chipOwed": "En pause · sans passation",
       "chipTitle": "Arrêtée au pointage de sortie de la personne",
-      "chipOwedTitle": "Arrêtée au pointage de sortie — pas encore de note de passation"
+      "chipOwedTitle": "Arrêtée au pointage de sortie — pas encore de note de passation",
+      "noteForNew": "Note pour la nouvelle personne (facultatif)",
+      "noteForNewPlaceholder": "p. ex. Appelez-le en cas de doute"
+    },
+    "officeStart": {
+      "title": "Commencer cette intervention pour {{name}} ?",
+      "body": "{{name}} ne l'a pas commencée sur son téléphone. La commencer ici est enregistré comme une action du bureau, avec votre motif, et {{name}} est prévenu·e.",
+      "reason": "Motif (obligatoire)",
+      "reasonPlaceholder": "p. ex. Téléphone déchargé, a appelé depuis le site",
+      "startedAt": "Commencée à",
+      "notBefore": "Pas avant le pointage de {{name}} aujourd'hui ({{time}}), ni dans le futur.",
+      "noClock": "Pas dans le futur.",
+      "preview": "L'historique indiquera : Commencée par {{me}} (bureau) pour {{name}} · {{time}} · « {{reason}} »",
+      "confirm": "Commencer pour {{name}}"
+    },
+    "jobTime": {
+      "title": "Temps d'intervention",
+      "live": "en cours",
+      "paused": "en pause",
+      "working": "Travail",
+      "travel": "Trajet",
+      "blocked": "Bloqué",
+      "travelShort": "trajet {{time}}",
+      "startedFor": "Commencée par {{name}} (bureau) pour {{for}}",
+      "onlyInShift": "Compté seulement tant qu'une personne de l'intervention est pointée.",
+      "reportTitle": "Temps d'intervention",
+      "reportSubtitle": "Travail, trajet et blocage par intervention, à côté du temps pointé.",
+      "pickMember": "Choisir un membre",
+      "you": "vous",
+      "period": {
+        "thisWeek": "Cette semaine",
+        "lastWeek": "Semaine dernière",
+        "thisMonth": "Ce mois-ci",
+        "lastMonth": "Mois dernier"
+      },
+      "total": {
+        "working": "Travail sur interventions",
+        "travel": "Trajet",
+        "blocked": "Bloqué",
+        "clock": "Travaillé (pointage)"
+      },
+      "col": {
+        "job": "Intervention",
+        "startedBy": "Commencée par",
+        "note": "Note"
+      },
+      "empty": "Aucun temps d'intervention sur cette période.",
+      "office": "{{name}} (bureau)",
+      "pausedAt": "Mise en pause au pointage de sortie {{time}}",
+      "onlyInShiftLong": "Le temps d'intervention ne dépasse jamais le temps pointé : les heures facturées au client et les heures travaillées viennent des mêmes moments, elles ne peuvent pas se contredire."
     }
   },
   "technicians": {
@@ -8647,7 +8697,9 @@
     "NOT_CLOCKED_IN": "Pointez pour commencer ce travail.",
     "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} n'a pas pointé. Il faut pointer avant que ce travail puisse commencer.",
     "HANDOVER_NOT_ON_THE_JOB": "Seule une personne sur cette intervention peut écrire sa passation.",
-    "HANDOVER_NOTE_REQUIRED": "Écrivez ce que vous avez fait avant d'enregistrer."
+    "HANDOVER_NOTE_REQUIRED": "Écrivez ce que vous avez fait avant d'enregistrer.",
+    "OFFICE_START_REASON_REQUIRED": "Indiquez pourquoi le bureau commence cette intervention pour cette personne.",
+    "OFFICE_START_TIME_OUTSIDE_SHIFT": "L'heure de début doit être dans son poste et pas dans le futur."
   },
   "signLink": {
     "tabs": {

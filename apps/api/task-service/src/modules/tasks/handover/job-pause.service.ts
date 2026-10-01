@@ -10,12 +10,11 @@ import {
   stepCapabilities,
   stepStartsWork,
   success,
-  workedMinutesOnJob,
-  type WorkTimelineEvent,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
 import { resolveSpaceDefaultWorkflowId } from '../../../common/space-workflow.util';
+import { JobTimeService } from './job-time.service';
 
 /** A note written at the clock-out, for one job. */
 export interface ClockOutHandover {
@@ -52,6 +51,8 @@ export class JobPauseService {
     private readonly prisma: PrismaService,
     private readonly workflows: WorkflowConfigCache,
     @Inject('NOTIFICATION_SERVICE') private readonly notifications: ClientProxy,
+    // The one job-time rule — the pause records what it says the worker put in.
+    private readonly jobTime: JobTimeService,
   ) {}
 
   /**
@@ -153,6 +154,8 @@ export class JobPauseService {
     const notes = new Map<string, ClockOutHandover>();
     for (const h of args.handovers ?? []) if (h?.taskId && cleanHandoverNote(h.note)) notes.set(h.taskId, h);
 
+    // Each job's time up to the pause, for the record — one calculation for all of them.
+    const worked = await this.jobTime.workedForMany(toPause, userId, at);
     const paused: string[] = [];
     for (const job of toPause) {
       const claimed = await this.prisma.task.updateMany({
@@ -161,7 +164,7 @@ export class JobPauseService {
       });
       if (claimed.count === 0) continue;
       paused.push(job.id);
-      const workedMinutes = await this.workedMinutes(job.id, userId, at, job);
+      const workedMinutes = worked.get(job.id) ?? 0;
       await this.prisma.taskEvent.create({
         data: { taskId: job.id, userId, eventType: TaskEventType.PAUSED, metadata: { reason: args.reason, at: at.toISOString(), workedMinutes } },
       });
@@ -178,43 +181,6 @@ export class JobPauseService {
       this.notifications.emit('tasks_paused', { taskIds: paused, userId, organizationId, reason: args.reason });
     }
     return { paused };
-  }
-
-  /** The worker's time on the job up to `until` — shared rule, this job's own steps. */
-  private async workedMinutes(taskId: string, userId: string, until: Date, job: Pick<Candidate, 'workflowId' | 'spaceId' | 'organizationId'>): Promise<number> {
-    const flowId = job.workflowId ?? (await resolveSpaceDefaultWorkflowId(this.prisma, job.spaceId));
-    const wf = await this.workflows.getWorkflow(job.organizationId, flowId);
-    const events = await this.prisma.taskEvent.findMany({
-      where: { taskId, eventType: { in: [TaskEventType.STATUS_CHANGED, TaskEventType.PAUSED, TaskEventType.RESUMED] } },
-      orderBy: { createdAt: 'asc' },
-      select: { createdAt: true, userId: true, eventType: true, metadata: true },
-      take: 500,
-    });
-    const timeline: WorkTimelineEvent[] = events.map((e) => {
-      const m = (e.metadata ?? {}) as { newStatus?: string; occurredAt?: string; at?: string };
-      return {
-        at: m.occurredAt ?? m.at ?? e.createdAt,
-        userId: e.userId,
-        kind: e.eventType === TaskEventType.STATUS_CHANGED ? 'STATUS' : e.eventType === TaskEventType.PAUSED ? 'PAUSED' : 'RESUMED',
-        status: m.newStatus,
-      };
-    });
-    // Only time on the clock is work — see workedMinutesOnJob.
-    const first = events.find((e) => e.userId === userId)?.createdAt;
-    const shifts = first
-      ? await this.prisma.timeEntry.findMany({
-          where: {
-            userId,
-            organizationId: job.organizationId,
-            clockInAt: { lte: until },
-            OR: [{ clockOutAt: null }, { clockOutAt: { gte: first } }],
-          },
-          select: { clockInAt: true, clockOutAt: true },
-          orderBy: { clockInAt: 'asc' },
-          take: 400,
-        })
-      : [];
-    return workedMinutesOnJob(timeline, userId, until, (s) => stepStartsWork(s, stepCapabilities(wf, s)), shifts.map((x) => ({ start: x.clockInAt, end: x.clockOutAt })));
   }
 
   /**
@@ -330,6 +296,13 @@ export class JobPauseService {
     const open = working.length
       ? await this.prisma.task.findMany({ where: { id: { in: working.map((w) => w.id) } }, select, take: 50 })
       : [];
-    return success({ open, owed, paused });
+    // "Working 2h 15m" on the clock-out sheet, "2h 15m so far" on a paused job — the member's own share.
+    const refs = await this.prisma.task.findMany({
+      where: { id: { in: [...new Set([...open, ...paused].map((t) => t.id))] } },
+      select: { id: true, workflowId: true, spaceId: true, organizationId: true },
+    });
+    const mins = await this.jobTime.workedForMany(refs, data.userId);
+    const withTime = <T extends { id: string }>(list: T[]) => list.map((t) => ({ ...t, workedMinutes: mins.get(t.id) ?? 0 }));
+    return success({ open: withTime(open), owed, paused: withTime(paused) });
   }
 }

@@ -8,9 +8,11 @@
 import { ForbiddenException } from '@nestjs/common';
 import { TaskStatus, workedMinutesOnJob, cleanHandoverNote, HANDOVER_NOTE_MAX, type WorkTimelineEvent } from '@hbcfield/shared';
 import { JobPauseService } from '../handover/job-pause.service';
+import { JobTimeService } from '../handover/job-time.service';
 
 const T = (hhmm: string) => new Date(`2026-10-01T${hhmm}:00Z`);
-const working = (s: string) => ['EN_ROUTE', 'ARRIVED', 'IN_PROGRESS'].includes(s);
+// The shared rule's kinds: travel on the way, working on site, blocked apart.
+const working = (s: string) => (s === 'EN_ROUTE' ? 'travel' : ['ARRIVED', 'IN_PROGRESS'].includes(s) ? 'working' : s === 'BLOCKED' ? 'blocked' : null) as any;
 
 describe('workedMinutesOnJob (shared)', () => {
   const ev = (at: string, userId: string, kind: WorkTimelineEvent['kind'], status?: string): WorkTimelineEvent => ({ at: T(at), userId, kind, status });
@@ -69,9 +71,9 @@ describe('JobPauseService', () => {
       },
       taskAssignee: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
       // On the clock since 08:00 (the shifts the worked time is counted inside).
-      timeEntry: { findMany: jest.fn().mockResolvedValue([{ clockInAt: T('08:00'), clockOutAt: null }]) },
+      timeEntry: { findMany: jest.fn().mockResolvedValue([{ userId: 'mike', clockInAt: T('08:00'), clockOutAt: null, breaks: [] }]), count: jest.fn().mockResolvedValue(1) },
       taskEvent: {
-        findMany: jest.fn().mockResolvedValue([{ createdAt: T('09:00'), userId: 'mike', eventType: 'STATUS_CHANGED', metadata: { newStatus: 'IN_PROGRESS' } }]),
+        findMany: jest.fn().mockResolvedValue([{ taskId: 't1', createdAt: T('09:00'), userId: 'mike', eventType: 'STATUS_CHANGED', metadata: { newStatus: 'IN_PROGRESS' } }]),
         findFirst: jest.fn().mockResolvedValue({ metadata: { workedMinutes: 135 } }),
         create: jest.fn(),
       },
@@ -84,7 +86,7 @@ describe('JobPauseService', () => {
       companyLocation: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     const workflows: any = { getWorkflow: jest.fn().mockResolvedValue(null) };
-    service = new JobPauseService(prisma, workflows, { emit } as any);
+    service = new JobPauseService(prisma, workflows, { emit } as any, new JobTimeService(prisma, workflows));
   });
 
   const clockOut = (over: Record<string, unknown> = {}) =>

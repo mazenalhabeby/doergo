@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import dynamic from "next/dynamic"
+import Link from "next/link"
 import { CHART_COLORS } from "./_components/chart-colors"
 
 // recharts is heavy and only renders when a report actually produces a chart
@@ -12,7 +13,7 @@ const ReportBarChart = dynamic(
   () => import("./_components/report-bar-chart").then((m) => m.ReportBarChart),
   { ssr: false },
 )
-import { BarChart3, Download, FileText, Play, Clock, Save, Trash2, Pencil, Lock, CalendarClock, ChevronDown, Table2, SlidersHorizontal } from "lucide-react"
+import { Timer, BarChart3, Download, FileText, Play, Clock, Save, Trash2, Pencil, Lock, CalendarClock, ChevronDown, Table2, SlidersHorizontal } from "lucide-react"
 
 import {
   analyticsApi, organizationsApi, customersApi, type ReportDefinition, type ReportResult,
@@ -342,6 +343,10 @@ export default function ReportsPage() {
             <h1 data-tour="reports-header" className="text-3xl font-bold text-foreground tracking-tight">{t("reports.title", "Reports")}</h1>
             <p className="mt-1.5 text-muted-foreground">{t("reports.subtitle", "Run reports on your team, jobs, tasks and customers.")}</p>
           </div>
+          {/* Job time — travel, working, blocked per job, beside the time on the clock. */}
+          <Button asChild variant="outline">
+            <Link href="/reports/job-time"><Timer className="h-4 w-4" /> {t("tasks.jobTime.reportTitle")}</Link>
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">

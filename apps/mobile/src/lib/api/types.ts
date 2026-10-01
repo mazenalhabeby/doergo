@@ -222,9 +222,27 @@ export interface TaskHandover {
   author: { id: string; firstName: string; lastName: string; avatarUrl?: string | null };
 }
 
+/** Minutes of a job's time, split (packages/shared/src/tasks/job-time.ts). */
+export interface JobTimeSplit { travel: number; working: number; blocked: number }
+
+type Person = { id: string; firstName: string; lastName: string };
+
+/** GET /tasks/:id/time — read, never stored; only time inside shifts counts. */
+export interface JobTimeView {
+  asOf: string;
+  total: JobTimeSplit;
+  byWorker: Array<JobTimeSplit & { user: Person }>;
+  /** Running now (somebody credited is on the clock): a screen may tick it forward from `asOf`. */
+  live: { kind: keyof JobTimeSplit; workers: number } | null;
+  /** The first move into counted time — and, when the office made it for somebody, who and why. */
+  startedBy: { user: Person | null; forUser: Person | null; office: boolean; reason: string | null; at: string } | null;
+}
+
 /** One job in the member's own handover picture (GET /tasks/handover/mine). */
 export interface HandoverJob {
   id: string;
+  /** My working minutes on it so far (open and paused jobs only). */
+  workedMinutes?: number;
   title: string;
   status: string;
   pausedAt: string | null;

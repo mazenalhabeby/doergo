@@ -15,8 +15,8 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { MediaSigner } from '../../../common/storage/media-signer.service';
+import { JobTimeService } from '../handover/job-time.service';
 import { PresenceService } from '../../attendance/presence/presence.service';
-import { JobPauseService } from '../handover/job-pause.service';
 
 describe('the rule (shared)', () => {
   it('starting or resuming work needs the clock; taking a job on or pausing it does not', () => {
@@ -81,7 +81,7 @@ describe('TasksService.updateStatus — clocked in to start work', () => {
     prisma.spaceAssignment.findMany.mockResolvedValue([]);
     const module = await Test.createTestingModule({
       providers: [
-        TasksService, { provide: JobPauseService, useValue: {} }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
+        TasksService, { provide: JobTimeService, useValue: {} }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },
@@ -152,6 +152,43 @@ describe('TasksService.updateStatus — clocked in to start work', () => {
     prisma.user.findMany.mockResolvedValue([]); // the query excludes isExternal
     await expect(service.updateStatus({ ...mike, status: TaskStatus.EN_ROUTE })).resolves.toBeDefined();
     expect(prisma.user.findMany.mock.calls[0][0].where).toMatchObject({ isExternal: false });
+  });
+
+  describe('the office starting a job for someone', () => {
+    beforeEach(() => {
+      prisma.timeEntry.findFirst.mockResolvedValue({ userId: 'mike', clockInAt: new Date(Date.now() - 3 * 3_600_000) });
+      prisma.user.findUnique = jest.fn().mockResolvedValue({ firstName: 'Anna', lastName: 'Müller' });
+    });
+
+    it('needs a reason, and the refusal names the person and their clock-in', async () => {
+      prisma.task.findUnique.mockResolvedValue(task());
+      const err = await service.updateStatus({ ...office, status: TaskStatus.EN_ROUTE }).catch((e) => e);
+      expect(err.getResponse()).toMatchObject({ code: 'OFFICE_START_REASON_REQUIRED' });
+      expect(err.getResponse().params.clockInAt).toBeTruthy();
+      expect(prisma.task.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('with a reason: recorded as the office FOR Mike, and Mike is told', async () => {
+      prisma.task.findUnique.mockResolvedValue(task());
+      await service.updateStatus({ ...office, status: TaskStatus.EN_ROUTE, onBehalf: { reason: 'Phone is dead, he called from site' } } as any);
+      expect(prisma.taskEvent.create.mock.calls[0][0].data.metadata).toMatchObject({ byOffice: true, forUserId: 'mike', officeReason: 'Phone is dead, he called from site' });
+      const emit = (service as any).notificationClient.emit as jest.Mock;
+      expect(emit.mock.calls.find((c: any[]) => c[0] === 'task_started_for_you')?.[1]).toMatchObject({ userId: 'mike', reason: 'Phone is dead, he called from site' });
+    });
+
+    it('a start time before their clock-in, or in the future, is refused', async () => {
+      prisma.task.findUnique.mockResolvedValue(task());
+      for (const at of [new Date(Date.now() - 5 * 3_600_000), new Date(Date.now() + 3_600_000)]) {
+        const err = await service.updateStatus({ ...office, status: TaskStatus.EN_ROUTE, onBehalf: { reason: 'x', at: at.toISOString() } } as any).catch((e) => e);
+        expect(err.getResponse()).toMatchObject({ code: 'OFFICE_START_TIME_OUTSIDE_SHIFT' });
+      }
+    });
+
+    it('the worker moving their own job is never asked for a reason', async () => {
+      prisma.task.findUnique.mockResolvedValue(task());
+      await expect(service.updateStatus({ ...mike, status: TaskStatus.EN_ROUTE })).resolves.toBeDefined();
+      expect(prisma.taskEvent.create.mock.calls[0][0].data.metadata.byOffice).toBeUndefined();
+    });
   });
 
   describe('resume after a pause at clock-out', () => {

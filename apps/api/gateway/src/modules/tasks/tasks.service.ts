@@ -55,6 +55,14 @@ export class TasksService extends BaseGatewayService {
   /**
    * Get task comments
    */
+  async jobTime(data: Record<string, any>) {
+    return this.send({ cmd: 'get_task_time' }, data);
+  }
+
+  async jobTimeReport(data: Record<string, any>) {
+    return this.send({ cmd: 'get_job_time_report' }, data);
+  }
+
   async myHandovers(data: { userId: string; organizationId: string }) {
     return this.send({ cmd: 'get_my_handovers' }, data);
   }

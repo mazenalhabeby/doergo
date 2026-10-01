@@ -3185,7 +3185,9 @@
       "NOT_CLOCKED_IN": "Clock in to start work on this job.",
       "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} is not clocked in. They need to clock in before this job can start.",
       "HANDOVER_NOT_ON_THE_JOB": "This job is no longer yours, so the handover was not saved.",
-      "HANDOVER_NOTE_REQUIRED": "Write what you did before saving."
+      "HANDOVER_NOTE_REQUIRED": "Write what you did before saving.",
+      "OFFICE_START_REASON_REQUIRED": "Starting somebody else's job needs a reason — do it from the web.",
+      "OFFICE_START_TIME_OUTSIDE_SHIFT": "That start time is outside their shift."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",
@@ -3443,7 +3445,8 @@
       "leaveNote": "Leave a handover note",
       "editNote": "Edit the note",
       "finish": "It's done — finish it",
-      "hint": "No note now? You will be asked for it later. Nothing stops you clocking out."
+      "hint": "No note now? You will be asked for it later. Nothing stops you clocking out.",
+      "working": "Working {{time}}"
     }
   },
   "myWork": {
@@ -3758,7 +3761,8 @@
       "unticked": "Unticked: {{text}}",
       "paused": "Paused at clock-out",
       "resumed": "Work resumed",
-      "handover": "Handover: {{text}}"
+      "handover": "Handover: {{text}}",
+      "startedByOffice": "{{step}} · started by {{name}} (office)"
     },
     "timer": {
       "onJob": "{{time}} on this job",
@@ -3924,7 +3928,18 @@
       "youOwe": "Write what you did on this job and what is left.",
       "write": "Write it",
       "notYet": "{{name}} hasn't written a handover yet.",
-      "notYetWorked": "{{name}} hasn't written a handover yet — worked {{time}} on it."
+      "notYetWorked": "{{name}} hasn't written a handover yet — worked {{time}} on it.",
+      "theirTime": "{{name}}'s job time {{time}}",
+      "travel": "Travel {{time}}"
+    },
+    "time": {
+      "working": "WORKING",
+      "live": "live",
+      "paused": "paused",
+      "travel": "Travel",
+      "blocked": "Blocked",
+      "startedFor": "Started by {{name}} (office) for {{for}}",
+      "startedForYou": "Started for you by {{name}} (office)"
     }
   },
   "jobsList": {
@@ -4341,6 +4356,7 @@
     "pausedTitle": "You paused {{title}}",
     "pausedSub": "Resume work when you are back on it.",
     "more_one": "And {{count}} more job",
-    "more_other": "And {{count}} more jobs"
+    "more_other": "And {{count}} more jobs",
+    "pausedSoFar": "{{time}} so far — resume work when you are back on it."
   }
 }

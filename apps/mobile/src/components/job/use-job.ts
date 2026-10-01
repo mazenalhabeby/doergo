@@ -28,7 +28,6 @@ export interface LocalEvent {
   pendingSync?: boolean;
 }
 
-const ACTIVE: string[] = [TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED];
 
 /**
  * Everything the job page READS, and keeps fresh.
@@ -118,25 +117,6 @@ export function useJob(taskId: string) {
     ];
     return () => unsubs.forEach((fn) => fn());
   }, [isConnected, subscribe, taskId]);
-
-  /* ---------------- time on the job ---------------- */
-
-  /*
-    DB-anchored to `acceptedAt`, so it never resets when the job is reopened:
-    recomputed from the timestamp each tick, frozen at `completedAt`. A minute
-    is the resolution the dock shows, so it ticks every 15 seconds, not every one.
-  */
-  const [elapsed, setElapsed] = useState(0);
-  useEffect(() => {
-    const acceptedAt = task?.acceptedAt ? new Date(task.acceptedAt).getTime() : null;
-    if (!acceptedAt) { setElapsed(0); return; }
-    const end = task?.completedAt ? new Date(task.completedAt).getTime() : null;
-    const compute = () => Math.max(0, Math.floor(((end ?? Date.now()) - acceptedAt) / 1000));
-    setElapsed(compute());
-    if (end || !ACTIVE.includes(task?.status as string)) return;
-    const timer = setInterval(() => setElapsed(compute()), 15_000);
-    return () => clearInterval(timer);
-  }, [task?.acceptedAt, task?.completedAt, task?.status]);
 
   /* ---------------- arrival ---------------- */
 
@@ -280,7 +260,7 @@ export function useJob(taskId: string) {
     slotHolder,
     task, setTask, comments, setComments, attachments, setAttachments,
     source, loading, error, retry, reload: () => load({ cancelled: false }),
-    elapsed, hasArrived, here, tracking,
+    hasArrived, here, tracking,
     events, loadEvents, localEvents, pushLocalEvent,
     report, loadReport,
     submissions, loadSubmissions, reloadSubmissions,

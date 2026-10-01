@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ClientsModule } from '@nestjs/microservices';
 import { SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
 import { JobPauseService } from './job-pause.service';
+import { JobTimeService } from './job-time.service';
 
 /**
  * Paused at clock-out, and the handover note. Its own module so attendance (every
@@ -10,7 +11,7 @@ import { JobPauseService } from './job-pause.service';
  */
 @Module({
   imports: [ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)])],
-  providers: [JobPauseService],
-  exports: [JobPauseService],
+  providers: [JobPauseService, JobTimeService],
+  exports: [JobPauseService, JobTimeService],
 })
 export class HandoverModule {}

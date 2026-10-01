@@ -23,11 +23,14 @@ export function JobHandover({
   task,
   files,
   meId,
+  timeOf,
   onWrite,
 }: {
   task: Pick<Task, 'pausedAt' | 'pausedById' | 'handoverDueById' | 'pausedBy' | 'handoverDue' | 'handovers'>;
   files: readonly JobFile[];
   meId: string | null | undefined;
+  /** A person's share of the job's time, when it has been read (job-time.ts). */
+  timeOf?: (userId: string) => { working: number; travel: number } | null;
   onWrite: () => void;
 }) {
   const { amazen } = useTheme();
@@ -71,14 +74,21 @@ export function JobHandover({
             <View style={{ flex: 1 }}>
               <AText variant="caption" tone="strong">{name(latest.author)}</AText>
               <AText variant="caption" tone="muted" numeric style={{ fontSize: 11.5 }}>
-                {[
-                  `${formatDueDate(latest.createdAt)} ${formatTime(latest.createdAt, null)}`,
-                  latest.workedMinutes ? t('job.handover.worked', { time: formatDuration(latest.workedMinutes) }) : null,
-                ].filter(Boolean).join(' · ')}
+                {`${formatDueDate(latest.createdAt)} ${formatTime(latest.createdAt, null)}`}
               </AText>
             </View>
           </View>
           <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 21 }}>{latest.note}</AText>
+          {(() => {
+            // "Mike's job time 2h 15m · Travel 22m" — theirs, so the next person's starts at their own Start work.
+            const share = timeOf?.(latest.author.id);
+            const worked = share?.working ?? latest.workedMinutes ?? 0;
+            const parts = [
+              worked ? t('job.handover.theirTime', { name: latest.author.firstName, time: formatDuration(worked) }) : null,
+              share?.travel ? t('job.handover.travel', { time: formatDuration(share.travel) }) : null,
+            ].filter(Boolean);
+            return parts.length ? <AText variant="caption" tone="muted" numeric>{parts.join(' · ')}</AText> : null;
+          })()}
           {photos.length ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {photos.map((p) => (

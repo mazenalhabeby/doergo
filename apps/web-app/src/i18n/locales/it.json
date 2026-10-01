@@ -1623,7 +1623,8 @@
         "PAUSED": "In pausa all'uscita",
         "RESUMED": "Lavoro ripreso",
         "HANDOVER_ADDED": "Consegne scritte"
-      }
+      },
+      "byOffice": "dall'ufficio"
     },
     "assignees": {
       "addTeamMember": "Aggiungi membro del team",
@@ -1734,7 +1735,56 @@
       "chip": "In pausa",
       "chipOwed": "In pausa · senza consegne",
       "chipTitle": "Fermato quando chi ci lavorava ha timbrato l'uscita",
-      "chipOwedTitle": "Fermato all'uscita — ancora nessuna nota di consegne"
+      "chipOwedTitle": "Fermato all'uscita — ancora nessuna nota di consegne",
+      "noteForNew": "Nota per la nuova persona (facoltativa)",
+      "noteForNewPlaceholder": "es. Chiamalo se qualcosa non è chiaro"
+    },
+    "officeStart": {
+      "title": "Iniziare questo lavoro per {{name}}?",
+      "body": "{{name}} non l'ha iniziato dal telefono. Iniziarlo qui viene registrato come azione dell'ufficio, con il tuo motivo, e {{name}} viene avvisato.",
+      "reason": "Motivo (obbligatorio)",
+      "reasonPlaceholder": "es. Telefono scarico, ha chiamato dal cantiere",
+      "startedAt": "Iniziato alle",
+      "notBefore": "Non prima della timbratura di {{name}} oggi ({{time}}) e non nel futuro.",
+      "noClock": "Non nel futuro.",
+      "preview": "Nella cronologia: Iniziato da {{me}} (ufficio) per {{name}} · {{time}} · \"{{reason}}\"",
+      "confirm": "Inizia per {{name}}"
+    },
+    "jobTime": {
+      "title": "Tempo del lavoro",
+      "live": "in corso",
+      "paused": "in pausa",
+      "working": "Lavoro",
+      "travel": "Viaggio",
+      "blocked": "Bloccato",
+      "travelShort": "viaggio {{time}}",
+      "startedFor": "Iniziato da {{name}} (ufficio) per {{for}}",
+      "onlyInShift": "Conta solo mentre qualcuno sul lavoro ha timbrato.",
+      "reportTitle": "Tempo dei lavori",
+      "reportSubtitle": "Lavoro, viaggio e blocchi per ogni lavoro, accanto al tempo timbrato.",
+      "pickMember": "Scegli un membro",
+      "you": "tu",
+      "period": {
+        "thisWeek": "Questa settimana",
+        "lastWeek": "Settimana scorsa",
+        "thisMonth": "Questo mese",
+        "lastMonth": "Mese scorso"
+      },
+      "total": {
+        "working": "Lavoro sui lavori",
+        "travel": "Viaggio",
+        "blocked": "Bloccato",
+        "clock": "Lavorato (timbrature)"
+      },
+      "col": {
+        "job": "Lavoro",
+        "startedBy": "Iniziato da",
+        "note": "Nota"
+      },
+      "empty": "Nessun tempo di lavoro in questo periodo.",
+      "office": "{{name}} (ufficio)",
+      "pausedAt": "In pausa all'uscita {{time}}",
+      "onlyInShiftLong": "Il tempo del lavoro non supera mai il tempo timbrato: le ore fatturate al cliente e quelle lavorate vengono dagli stessi momenti, quindi non possono contraddirsi."
     }
   },
   "technicians": {
@@ -8647,7 +8697,9 @@
     "NOT_CLOCKED_IN": "Timbra l'entrata per iniziare questo lavoro.",
     "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} non ha timbrato. Deve timbrare prima che questo lavoro possa iniziare.",
     "HANDOVER_NOT_ON_THE_JOB": "Solo chi è su questo lavoro può scriverne le consegne.",
-    "HANDOVER_NOTE_REQUIRED": "Scrivi cosa hai fatto prima di salvare."
+    "HANDOVER_NOTE_REQUIRED": "Scrivi cosa hai fatto prima di salvare.",
+    "OFFICE_START_REASON_REQUIRED": "Indica perché l'ufficio inizia questo lavoro per quella persona.",
+    "OFFICE_START_TIME_OUTSIDE_SHIFT": "L'orario di inizio deve essere nel suo turno e non nel futuro."
   },
   "signLink": {
     "tabs": {

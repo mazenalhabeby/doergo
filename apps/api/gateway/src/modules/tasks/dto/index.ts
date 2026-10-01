@@ -4,7 +4,7 @@ import { OmitType, PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import { OccurrenceEvidenceDto } from '../../../common/dto/occurrence.dto';
 import { CLIENT_ID } from '../../../common/dto/upload.dto';
-import { TaskPriority, TaskAssigneeRole, DependencyType, TASK_TITLE_MAX_LENGTH, TASK_DESCRIPTION_MAX_LENGTH, ATTENDANCE_CONSTANTS, HANDOVER_NOTE_MAX, HANDOVER_PHOTOS_MAX } from '@hbcfield/shared';
+import { TaskPriority, TaskAssigneeRole, DependencyType, TASK_TITLE_MAX_LENGTH, TASK_DESCRIPTION_MAX_LENGTH, ATTENDANCE_CONSTANTS, HANDOVER_NOTE_MAX, HANDOVER_PHOTOS_MAX, OFFICE_START_REASON_MAX } from '@hbcfield/shared';
 
 /**
  * Create task request DTO
@@ -145,6 +145,20 @@ export class AssignTaskDto {
   workerId: string;
 }
 
+/** The office starting somebody's job for them: why, and when it really started. */
+export class OnBehalfDto {
+  @ApiPropertyOptional({ description: 'Why the office is starting it (required by the server when it is somebody else\'s job)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(OFFICE_START_REASON_MAX)
+  reason?: string;
+
+  @ApiPropertyOptional({ description: 'When it really started — inside their shift, not in the future' })
+  @IsOptional()
+  @IsDateString()
+  at?: string;
+}
+
 export class UpdateStatusDto {
   @ApiProperty({ description: 'Target status key (e.g. "IN_PROGRESS", "COMPLETED", or custom workflow status key)' })
   @IsString()
@@ -199,6 +213,12 @@ export class UpdateStatusDto {
   @ValidateNested()
   @Type(() => OccurrenceEvidenceDto)
   evidence?: OccurrenceEvidenceDto;
+
+  @ApiPropertyOptional({ type: OnBehalfDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OnBehalfDto)
+  onBehalf?: OnBehalfDto;
 
   /**
    * Answers to the form of the step being moved into, keyed by field id —

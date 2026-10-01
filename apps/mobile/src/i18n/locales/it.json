@@ -3185,7 +3185,9 @@
       "NOT_CLOCKED_IN": "Timbra l'entrata per iniziare questo lavoro.",
       "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} non ha timbrato. Deve timbrare prima che questo lavoro possa iniziare.",
       "HANDOVER_NOT_ON_THE_JOB": "Questo lavoro non è più tuo, quindi il passaggio di consegne non è stato salvato.",
-      "HANDOVER_NOTE_REQUIRED": "Scrivi cosa hai fatto prima di salvare."
+      "HANDOVER_NOTE_REQUIRED": "Scrivi cosa hai fatto prima di salvare.",
+      "OFFICE_START_REASON_REQUIRED": "Iniziare il lavoro di un altro richiede un motivo: fallo dal web.",
+      "OFFICE_START_TIME_OUTSIDE_SHIFT": "Quell'orario di inizio è fuori dal suo turno."
     },
     "signOut": {
       "title_one": "{{count}} modifica non è stata inviata",
@@ -3443,7 +3445,8 @@
       "leaveNote": "Lascia una nota di consegna",
       "editNote": "Modifica la nota",
       "finish": "È fatto — completalo",
-      "hint": "Nessuna nota ora? Te la chiederemo dopo. Puoi timbrare l'uscita comunque."
+      "hint": "Nessuna nota ora? Te la chiederemo dopo. Puoi timbrare l'uscita comunque.",
+      "working": "Lavoro {{time}}"
     }
   },
   "myWork": {
@@ -3758,7 +3761,8 @@
       "unticked": "Spunta tolta: {{text}}",
       "paused": "In pausa all'uscita",
       "resumed": "Lavoro ripreso",
-      "handover": "Consegne: {{text}}"
+      "handover": "Consegne: {{text}}",
+      "startedByOffice": "{{step}} · iniziato da {{name}} (ufficio)"
     },
     "timer": {
       "onJob": "{{time}} su questo lavoro",
@@ -3924,7 +3928,18 @@
       "youOwe": "Scrivi cosa hai fatto su questo lavoro e cosa manca.",
       "write": "Scrivilo",
       "notYet": "{{name}} non ha ancora scritto il passaggio di consegne.",
-      "notYetWorked": "{{name}} non ha ancora scritto il passaggio di consegne — {{time}} di lavoro."
+      "notYetWorked": "{{name}} non ha ancora scritto il passaggio di consegne — {{time}} di lavoro.",
+      "theirTime": "Tempo di {{name}} sul lavoro: {{time}}",
+      "travel": "Viaggio {{time}}"
+    },
+    "time": {
+      "working": "LAVORO",
+      "live": "in corso",
+      "paused": "in pausa",
+      "travel": "Viaggio",
+      "blocked": "Bloccato",
+      "startedFor": "Iniziato da {{name}} (ufficio) per {{for}}",
+      "startedForYou": "Iniziato per te da {{name}} (ufficio)"
     }
   },
   "jobsList": {
@@ -4341,6 +4356,7 @@
     "pausedTitle": "Hai messo in pausa {{title}}",
     "pausedSub": "Riprendi il lavoro quando ci torni.",
     "more_one": "E {{count}} altro lavoro",
-    "more_other": "E altri {{count}} lavori"
+    "more_other": "E altri {{count}} lavori",
+    "pausedSoFar": "{{time}} finora — riprendi quando ci torni."
   }
 }

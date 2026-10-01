@@ -1623,7 +1623,8 @@
         "PAUSED": "Beim Ausstempeln pausiert",
         "RESUMED": "Arbeit fortgesetzt",
         "HANDOVER_ADDED": "Übergabe geschrieben"
-      }
+      },
+      "byOffice": "durch das Büro"
     },
     "assignees": {
       "addTeamMember": "Teammitglied hinzufügen",
@@ -1734,7 +1735,56 @@
       "chip": "Pausiert",
       "chipOwed": "Pausiert · keine Übergabe",
       "chipTitle": "Angehalten, als ausgestempelt wurde",
-      "chipOwedTitle": "Angehalten, als ausgestempelt wurde – noch keine Übergabenotiz"
+      "chipOwedTitle": "Angehalten, als ausgestempelt wurde – noch keine Übergabenotiz",
+      "noteForNew": "Hinweis für die neue Person (optional)",
+      "noteForNewPlaceholder": "z. B. Bei Fragen bitte anrufen"
+    },
+    "officeStart": {
+      "title": "Diesen Auftrag für {{name}} beginnen?",
+      "body": "{{name}} hat ihn nicht am Handy begonnen. Hier begonnen, wird er als Aktion des Büros mit Ihrem Grund gespeichert, und {{name}} wird benachrichtigt.",
+      "reason": "Grund (Pflicht)",
+      "reasonPlaceholder": "z. B. Handy leer, hat von der Baustelle angerufen",
+      "startedAt": "Begonnen um",
+      "notBefore": "Nicht vor dem Einstempeln von {{name}} heute ({{time}}) und nicht in der Zukunft.",
+      "noClock": "Nicht in der Zukunft.",
+      "preview": "Im Verlauf steht: Von {{me}} (Büro) für {{name}} begonnen · {{time}} · „{{reason}}“",
+      "confirm": "Für {{name}} beginnen"
+    },
+    "jobTime": {
+      "title": "Auftragszeit",
+      "live": "läuft",
+      "paused": "pausiert",
+      "working": "Arbeit",
+      "travel": "Anfahrt",
+      "blocked": "Blockiert",
+      "travelShort": "Anfahrt {{time}}",
+      "startedFor": "Von {{name}} (Büro) für {{for}} begonnen",
+      "onlyInShift": "Gezählt nur, solange jemand am Auftrag eingestempelt ist.",
+      "reportTitle": "Auftragszeit",
+      "reportSubtitle": "Arbeits-, Anfahrts- und Blockierzeit je Auftrag, neben der gestempelten Zeit.",
+      "pickMember": "Mitglied wählen",
+      "you": "Sie",
+      "period": {
+        "thisWeek": "Diese Woche",
+        "lastWeek": "Letzte Woche",
+        "thisMonth": "Dieser Monat",
+        "lastMonth": "Letzter Monat"
+      },
+      "total": {
+        "working": "Arbeit an Aufträgen",
+        "travel": "Anfahrt",
+        "blocked": "Blockiert",
+        "clock": "Gearbeitet (Stempeluhr)"
+      },
+      "col": {
+        "job": "Auftrag",
+        "startedBy": "Begonnen von",
+        "note": "Hinweis"
+      },
+      "empty": "Keine Auftragszeit in diesem Zeitraum.",
+      "office": "{{name}} (Büro)",
+      "pausedAt": "Beim Ausstempeln pausiert {{time}}",
+      "onlyInShiftLong": "Auftragszeit ist nie mehr als die gestempelte Zeit: Dem Kunden berechnete und von der Person gearbeitete Stunden stammen aus denselben Zeitpunkten und können sich nicht widersprechen."
     }
   },
   "technicians": {
@@ -8638,7 +8688,9 @@
     "NOT_CLOCKED_IN": "Stempeln Sie ein, um mit diesem Auftrag zu beginnen.",
     "ASSIGNEE_NOT_CLOCKED_IN": "{{name}} ist nicht eingestempelt. Der Auftrag kann erst starten, wenn {{name}} eingestempelt ist.",
     "HANDOVER_NOT_ON_THE_JOB": "Nur wer an diesem Auftrag arbeitet, kann die Übergabe schreiben.",
-    "HANDOVER_NOTE_REQUIRED": "Schreiben Sie vor dem Speichern, was Sie gemacht haben."
+    "HANDOVER_NOTE_REQUIRED": "Schreiben Sie vor dem Speichern, was Sie gemacht haben.",
+    "OFFICE_START_REASON_REQUIRED": "Geben Sie an, warum das Büro diesen Auftrag für die Person beginnt.",
+    "OFFICE_START_TIME_OUTSIDE_SHIFT": "Die Startzeit muss in der Schicht liegen und darf nicht in der Zukunft sein."
   },
   "signLink": {
     "tabs": {
