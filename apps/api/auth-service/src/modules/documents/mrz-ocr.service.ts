@@ -176,12 +176,12 @@ export class MrzOcrService implements OnModuleDestroy {
 
     if (!wholeFrame) {
       const band = await this.prepare(image, true);
-      const fromBand = await this.recognise(band);
+      const fromBand = await this.recognise(band, 'zone');
       if (fromBand && mrzLines(fromBand).length >= 2) return fromBand;
     }
 
     const whole = await this.prepare(image, false);
-    return (await this.recognise(whole)) || null;
+    return (await this.recognise(whole, 'page')) || null;
   }
 
   /**
@@ -229,9 +229,21 @@ export class MrzOcrService implements OnModuleDestroy {
       .toBuffer();
   }
 
-  private async recognise(image: Buffer): Promise<string | null> {
+  /**
+   * ⚠️ TWO MODES, set per read. The zone alphabet (A–Z, 0–9, "<") used to be
+   * set once on the worker and applied to EVERY read — so the whole-page pass
+   * that looks for a printed expiry could not return a dot, a slash, a colon or
+   * a lowercase letter. "Valid until: 31.03.2027" came back as "VALIDUNTIL31032027"
+   * and no date was ever found on a page without a zone.
+   */
+  private async recognise(image: Buffer, mode: 'zone' | 'page'): Promise<string | null> {
     const run = this.queue.then(async () => {
       const worker = await this.ensureWorker();
+      await worker.setParameters(
+        mode === 'zone'
+          ? { tessedit_char_whitelist: MRZ_ALPHABET, tessedit_pageseg_mode: '6' as never, preserve_interword_spaces: '0' }
+          : { tessedit_char_whitelist: '', tessedit_pageseg_mode: '3' as never, preserve_interword_spaces: '1' },
+      );
       const { data } = await worker.recognize(image);
       return data.text?.trim() || null;
     });

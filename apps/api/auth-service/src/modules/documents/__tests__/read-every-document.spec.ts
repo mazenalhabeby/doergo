@@ -101,3 +101,19 @@ describe('the expiry is the date the document NAMES, not the latest one', () => 
     expect(suggestExpiry('Issued 01.07.2023  —  31.12.2029', NOW)).toMatchObject({ iso: '2029-12-31', basis: 'LATEST' });
   });
 });
+
+describe('a photographed zone, as the engine really returns it', () => {
+  it('reads the zone with fillers misread as K and a filler dropped', () => {
+    const [l1, l2] = visaZone(44).split('\n');
+    const noisy = `${l1!.replace(/<{6}$/, 'K<KK<')}\n${l2!.slice(0, 43)}`; // 43 long, K-fillers
+    const mrz = parseMrz(noisy, NOW)!;
+    expect(mrz.format).toBe('MRVA');
+    expect(mrz.allChecksPassed).toBe(true);
+    expect(mrz.dateOfExpiry.value).toBe('2031-09-12');
+  });
+
+  it('never eats the end of a name that happens to end in CK', () => {
+    const l1 = 'P<USAPATRICK<<MIKE'.padEnd(44, '<');
+    expect(parseMrz(`${l1}\n${'X'.repeat(44)}`, NOW)?.surname ?? 'PATRICK').toBe('PATRICK');
+  });
+});

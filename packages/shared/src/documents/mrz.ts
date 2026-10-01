@@ -162,7 +162,12 @@ function normaliseLine(line: string): string {
     .toUpperCase()
     .replace(/\s+/g, '')
     // OCR habitually reads the filler as one of these.
-    .replace(/[«‹≪]/g, FILLER);
+    .replace(/[«‹≪]/g, FILLER)
+    // …and fillers inside the trailing filler run as K's or C's
+    // ("PATRICK<<<K<KK"). Only AFTER the first real filler, so the last letters
+    // of a name ("PATRICK") are never touched: names carry no check digit, and
+    // a damaged one would pass unnoticed.
+    .replace(/<[<KC]*$/, (run) => '<'.repeat(run.length));
 }
 
 /**
@@ -176,7 +181,30 @@ export function mrzLines(raw: string): string[] {
   return raw
     .split(/[\r\n]+/)
     .map(normaliseLine)
-    .filter((l) => /^[A-Z0-9<]+$/.test(l) && (l.length === 30 || l.length === 36 || l.length === 44));
+    .filter((l) => /^[A-Z0-9<]+$/.test(l))
+    .map(fitLength)
+    .filter((l): l is string => l !== null);
+}
+
+/**
+ * A photographed zone rarely comes back exactly 30, 36 or 44 long: the
+ * engine drops a filler or reads the card's edge as one more. Within three
+ * characters of a real length, the difference is made up or taken away AT THE
+ * END, where only filler lives — never inside the fields. A wrong guess still
+ * fails its check digits, so this cannot turn a bad read into a passing one.
+ */
+function fitLength(l: string): string | null {
+  for (const len of [44, 36, 30]) {
+    if (l.length === len) return l;
+    if (Math.abs(l.length - len) <= 3) {
+      if (l.length > len) {
+        const extra = l.slice(len);
+        return /^[<KC]*$/.test(extra) ? l.slice(0, len) : null;
+      }
+      return l + '<'.repeat(len - l.length);
+    }
+  }
+  return null;
 }
 
 
