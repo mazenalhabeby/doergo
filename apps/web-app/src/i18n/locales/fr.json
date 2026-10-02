@@ -1827,7 +1827,18 @@
       "reason": "Raison (facultatif)",
       "reasonPlaceholder": "Tobias est en arrêt maladie",
       "handOver": "Passer",
-      "changed": "Responsable changé"
+      "changed": "Responsable changé",
+      "putOn": "Mettre sur le travail",
+      "takeOff": "Retirer du travail",
+      "putOnTitle": "Mettre {{name}} sur ce travail ?",
+      "takeOffTitle": "Retirer {{name}} de ce travail ?",
+      "putOnBody": "Son temps sur ce travail commence maintenant. L'historique garde qui l'a fait et pourquoi.",
+      "takeOffBody": "Son temps sur ce travail s'arrête maintenant. Si personne d'autre n'est pointé, le travail est mis en pause.",
+      "reasonRequired": "Raison (obligatoire)",
+      "putOnPlaceholder": "Sur place avec l'équipe, téléphone à plat",
+      "takeOffPlaceholder": "Envoyé sur un autre chantier",
+      "putOnDone": "{{name}} est sur le travail",
+      "takeOffDone": "{{name}} n'est plus sur le travail"
     }
   },
   "technicians": {

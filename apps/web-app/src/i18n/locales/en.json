@@ -1827,7 +1827,18 @@
       "reason": "Reason (optional)",
       "reasonPlaceholder": "Tobias is on sick leave",
       "handOver": "Hand over",
-      "changed": "Leader changed"
+      "changed": "Leader changed",
+      "putOn": "Put on the job",
+      "takeOff": "Take off the job",
+      "putOnTitle": "Put {{name}} on this job?",
+      "takeOffTitle": "Take {{name}} off this job?",
+      "putOnBody": "Their time on this job starts now. The job's history keeps who did it and why.",
+      "takeOffBody": "Their time on this job stops now. If nobody else on it is clocked in, the job pauses.",
+      "reasonRequired": "Reason (required)",
+      "putOnPlaceholder": "On site with the crew, phone flat",
+      "takeOffPlaceholder": "Sent to another site",
+      "putOnDone": "{{name}} is on the job",
+      "takeOffDone": "{{name}} is off the job"
     }
   },
   "technicians": {

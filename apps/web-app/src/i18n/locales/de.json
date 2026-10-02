@@ -1827,7 +1827,18 @@
       "reason": "Grund (optional)",
       "reasonPlaceholder": "Tobias ist im Krankenstand",
       "handOver": "Übergeben",
-      "changed": "Leitung geändert"
+      "changed": "Leitung geändert",
+      "putOn": "Zum Auftrag hinzufügen",
+      "takeOff": "Vom Auftrag abziehen",
+      "putOnTitle": "{{name}} zu diesem Auftrag hinzufügen?",
+      "takeOffTitle": "{{name}} von diesem Auftrag abziehen?",
+      "putOnBody": "Die Zeit am Auftrag beginnt jetzt. Der Verlauf hält fest, wer es getan hat und warum.",
+      "takeOffBody": "Die Zeit am Auftrag endet jetzt. Ist sonst niemand eingestempelt, pausiert der Auftrag.",
+      "reasonRequired": "Grund (Pflicht)",
+      "putOnPlaceholder": "Mit dem Team vor Ort, Handy leer",
+      "takeOffPlaceholder": "Zu einer anderen Baustelle geschickt",
+      "putOnDone": "{{name}} ist am Auftrag",
+      "takeOffDone": "{{name}} ist nicht mehr am Auftrag"
     }
   },
   "technicians": {

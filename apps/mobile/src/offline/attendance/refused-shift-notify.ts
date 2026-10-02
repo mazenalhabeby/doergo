@@ -5,10 +5,12 @@ import { PUSH_CHANNELS } from '@hbcfield/shared/client';
 import i18n, { i18nReady } from '../../i18n';
 import type { OutboxOp } from '../outbox/types';
 import { refusedShiftCopy, refusedShiftOps } from './refused-shift';
+import { refusedCrewCopy, refusedCrewOps } from '../tasks/refused-crew';
 
 /*
   Telling the member, when the app is not in front of them, that a clock-in,
-  clock-out or rest it had shown as done was refused.
+  clock-out or rest it had shown as done was refused — or a crew action on a
+  job (join, leave, my issue, back to work, the lead: tasks/refused-crew.ts).
 
   ⚠️ ONCE PER REFUSAL, ACROSS BOTH CONTEXTS. The app (in the background) and
   the background sync task (app closed) can each be the one that hears the
@@ -22,15 +24,18 @@ async function told(): Promise<string[]> {
 }
 
 /** Mark refusals as known without telling — the ones already there when the app opens. */
+/** Every refusal the member may not have heard about — shift and crew alike. */
+const refusedOf = (ops: readonly OutboxOp[]) => [...refusedShiftOps(ops), ...refusedCrewOps(ops)].sort((a, b) => b.createdAt - a.createdAt);
+
 export async function markRefusedShiftsKnown(ops: readonly OutboxOp[]): Promise<void> {
-  const ids = refusedShiftOps(ops).map((o) => o.id);
+  const ids = refusedOf(ops).map((o) => o.id);
   if (!ids.length) return;
   const seen = await told();
   await AsyncStorage.setItem(TOLD_KEY, JSON.stringify([...new Set([...ids, ...seen])].slice(0, KEEP))).catch(() => undefined);
 }
 
 export async function notifyRefusedShifts(ops: readonly OutboxOp[]): Promise<void> {
-  const refused = refusedShiftOps(ops);
+  const refused = refusedOf(ops);
   if (!refused.length) return;
   const seen = await told();
   const fresh = refused.filter((o) => !seen.includes(o.id));
@@ -41,17 +46,21 @@ export async function notifyRefusedShifts(ops: readonly OutboxOp[]): Promise<voi
   if (status !== 'granted') return;
   await i18nReady.catch(() => undefined);
   const locale = i18n.language;
-  const copy = refusedShiftCopy(i18n.t.bind(i18n), fresh[0]!, {
-    clock: (d) => d.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' }),
-    date: (d) => d.toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' }),
-  });
+  const op = fresh[0]!;
+  const crew = refusedCrewOps([op]).length > 0;
+  const copy = crew
+    ? refusedCrewCopy(i18n.t.bind(i18n), op)
+    : refusedShiftCopy(i18n.t.bind(i18n), op, {
+        clock: (d) => d.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' }),
+        date: (d) => d.toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' }),
+      });
   await Notifications.scheduleNotificationAsync({
     content: {
       title: copy.title,
       body: copy.reason,
-      // No route of its own: opening the app lands on the home card, which shows it.
-      data: { type: 'shift_refused' },
-      ...(Platform.OS === 'android' ? { channelId: PUSH_CHANNELS.ATTENDANCE } : {}),
+      // A shift refusal opens on the home card; a crew one on its job, whose crew card shows it.
+      data: crew ? { type: 'task_crew_refused', taskId: op.entityId } : { type: 'shift_refused' },
+      ...(Platform.OS === 'android' ? { channelId: crew ? PUSH_CHANNELS.TASKS : PUSH_CHANNELS.ATTENDANCE } : {}),
     },
     trigger: null,
   }).catch(() => undefined);

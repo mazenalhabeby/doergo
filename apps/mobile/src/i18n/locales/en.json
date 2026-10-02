@@ -3469,7 +3469,10 @@
       "editNote": "Edit the note",
       "finish": "It's done — finish it",
       "hint": "No note now? You will be asked for it later. Nothing stops you clocking out.",
-      "working": "Working {{time}}"
+      "working": "Working {{time}}",
+      "crewCarriesOn": "The crew carries on — it doesn't pause.",
+      "noteForCrew": "Leave the crew a note",
+      "eyebrowCrew": "STILL IN WORK · THE CREW CARRIES ON"
     }
   },
   "myWork": {
@@ -4009,7 +4012,14 @@
       "left": "You left the job",
       "issueSent": "Your time is stopped",
       "resumed": "Back to work",
-      "leadHandedOver": "Lead handed over"
+      "leadHandedOver": "Lead handed over",
+      "refused": {
+        "join": "Your join wasn't saved",
+        "leave": "Your leaving wasn't saved",
+        "selfIssue": "Your stop wasn't saved",
+        "selfResume": "Your return to work wasn't saved",
+        "lead": "The lead hand-over wasn't saved"
+      }
     }
   },
   "jobsList": {

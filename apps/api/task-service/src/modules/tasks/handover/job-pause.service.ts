@@ -147,25 +147,7 @@ export class JobPauseService {
       job "running" with nobody counted on it; somebody joined and still on
       the clock keeps it running, and is not stopped under.
     */
-    const [timelines, rows] = await Promise.all([
-      this.jobTime.timelinesOf(jobs.map((j) => j.id)),
-      jobs.length
-        ? this.prisma.taskAssignee.findMany({ where: { taskId: { in: jobs.map((j) => j.id) } }, select: { taskId: true, userId: true } })
-        : Promise.resolve([] as Array<{ taskId: string; userId: string }>),
-    ]);
-    // ⚠️ THE CREW, not everybody in the history: a dispatcher dragging the card
-    // on the board is a STATUS event too, and must never keep a job running.
-    const crewOf = new Map(jobs.map((j) => [j.id, new Set([j.assignedToId, ...rows.filter((r) => r.taskId === j.id).map((r) => r.userId)].filter((x): x is string => !!x))]));
-    const joinedOf = new Map(jobs.map((j) => {
-      const people = [...(crewOf.get(j.id) ?? [])];
-      return [j.id, [...crewPresence(timelines.get(j.id) ?? [], people)].filter(([, p]) => p.joined).map(([id]) => id)] as const;
-    }));
-    const others = [...new Set([...joinedOf.values()].flat().filter((id) => id !== userId))];
-    const onClock = new Set(
-      others.length
-        ? (await this.prisma.timeEntry.findMany({ where: { organizationId, userId: { in: others }, status: 'CLOCKED_IN' }, select: { userId: true } })).map((e) => e.userId)
-        : [],
-    );
+    const { joinedOf, onClock } = await this.crewOnJobs(jobs, userId, organizationId);
     const toPause = jobs.filter((j) => pausesAtClockOut({ leaverId: userId, joined: joinedOf.get(j.id) ?? [], onClock }));
 
     // Clocking out is leaving every job they were on — tomorrow they join again.
@@ -206,6 +188,41 @@ export class JobPauseService {
       this.notifications.emit('tasks_paused', { taskIds: paused, userId, organizationId, reason: args.reason });
     }
     return { paused };
+  }
+
+  /**
+   * Who has joined each of these jobs (the CREW only), and which of the others
+   * are on the clock — one history read, one assignee read, one clock read.
+   *
+   * ⚠️ THE CREW, not everybody in the history: a dispatcher dragging the card
+   * on the board is a STATUS event too, and must never keep a job running.
+   */
+  private async crewOnJobs(jobs: Candidate[], userId: string, organizationId: string) {
+    const [timelines, rows] = await Promise.all([
+      this.jobTime.timelinesOf(jobs.map((j) => j.id)),
+      jobs.length
+        ? this.prisma.taskAssignee.findMany({ where: { taskId: { in: jobs.map((j) => j.id) } }, select: { taskId: true, userId: true } })
+        : Promise.resolve([] as Array<{ taskId: string; userId: string }>),
+    ]);
+    const crewOf = new Map(jobs.map((j) => [j.id, new Set([j.assignedToId, ...rows.filter((r) => r.taskId === j.id).map((r) => r.userId)].filter((x): x is string => !!x))]));
+    const joinedOf = new Map(jobs.map((j) => {
+      const people = [...(crewOf.get(j.id) ?? [])];
+      return [j.id, [...crewPresence(timelines.get(j.id) ?? [], people)].filter(([, p]) => p.joined).map(([id]) => id)] as const;
+    }));
+    const others = [...new Set([...joinedOf.values()].flat().filter((id) => id !== userId))];
+    const onClock = new Set(
+      others.length
+        ? (await this.prisma.timeEntry.findMany({ where: { organizationId, userId: { in: others }, status: 'CLOCKED_IN' }, select: { userId: true } })).map((e) => e.userId)
+        : [],
+    );
+    return { joinedOf, onClock };
+  }
+
+  /** The jobs that keep running after this person clocks out — somebody else who joined is still on the clock. */
+  private async crewCarriesOn(jobs: Candidate[], userId: string, organizationId: string): Promise<Set<string>> {
+    if (!jobs.length) return new Set();
+    const { joinedOf, onClock } = await this.crewOnJobs(jobs, userId, organizationId);
+    return new Set(jobs.filter((j) => !pausesAtClockOut({ leaverId: userId, joined: joinedOf.get(j.id) ?? [], onClock })).map((j) => j.id));
   }
 
   /**
@@ -349,6 +366,9 @@ export class JobPauseService {
     });
     const mins = await this.jobTime.workedForMany(refs, data.userId);
     const withTime = <T extends { id: string }>(list: T[]) => list.map((t) => ({ ...t, workedMinutes: mins.get(t.id) ?? 0 }));
-    return success({ open: withTime(open), owed, paused: withTime(paused) });
+    // Which open jobs the crew carries on after this person clocks out (shared crew.ts) —
+    // the clock-out sheet says "leave the crew a note" there, not "pauses".
+    const carriesOn = await this.crewCarriesOn(working, data.userId, data.organizationId);
+    return success({ open: withTime(open).map((t) => ({ ...t, crewContinues: carriesOn.has(t.id) })), owed, paused: withTime(paused) });
   }
 }

@@ -158,6 +158,16 @@ check('Priya leads today', crew['leader']['userId'] == uid[P] and crew['leader']
 r = call('PATCH', f'/tasks/{job}/status', tok[T], {'status': 'BLOCKED', 'reason': 'x'})
 check('…and Tobias no longer moves the step', r[0] == 400, r)
 
+# The office takes somebody off, and puts them back — always with a reason.
+r = call('POST', f'/tasks/{job}/crew/leave', tok[P], {'forUserId': uid[C], 'reason': 'x'})
+check('a member cannot take somebody else off (404)', r[0] == 404, r)
+r = call('POST', f'/tasks/{job}/crew/join', office, {'forUserId': uid[C]})
+check('the office needs a reason to put somebody on', r[0] == 400, r)
+s, b = call('POST', f'/tasks/{job}/crew/leave', office, {'forUserId': uid[C], 'reason': 'Sent to another site'})
+check('the office takes Conor off', s < 300 and not {m['user']['id']: m for m in data((s, b))['members']}[uid[C]]['joined'], (s, b.get('message')))
+s, b = call('POST', f'/tasks/{job}/crew/join', office, {'forUserId': uid[C], 'reason': 'Back on site, phone flat'})
+check('…and puts him back on', s < 300 and {m['user']['id']: m for m in data((s, b))['members']}[uid[C]]['joined'], (s, b.get('message')))
+
 # Leaving: the last joined member out pauses it.
 for k in [T, P]:
     s, b = call('POST', f'/tasks/{job}/crew/leave', tok[k], {})
@@ -197,6 +207,8 @@ for to in ['ACCEPTED', 'EN_ROUTE', 'ARRIVED', 'IN_PROGRESS']:
     check(f'B: leader moves to {to}', s < 300, (s, b.get('message')))
 call('POST', f'/tasks/{jobB}/crew/join', tok[P], {'viaLeaderStart': True})
 # Conor is on the crew and on the clock but never joins.
+mine = {j['id']: j for j in data(call('GET', '/tasks/handover/mine', tok[T]))['open']}
+check("B: Tobias's clock-out list knows the crew carries job B on", mine.get(jobB, {}).get('crewContinues') is True, mine.get(jobB))
 st = data(call('GET', '/attendance/status', tok[T]))
 call('POST', '/attendance/clock-out', tok[T], {'entryId': st['currentEntry']['id']})
 task = data(call('GET', f'/tasks/{jobB}', office))
@@ -205,6 +217,8 @@ crew = data(call('GET', f'/tasks/{jobB}/time', office))['crew']
 m = {x['user']['id']: x for x in crew['members']}
 check("B: Tobias's clock-out took him off the job", not m[uid[T]]['joined'], m[uid[T]])
 check('B: Priya stands in as acting leader', crew['leader'] == {'userId': uid[P], 'acting': True, 'source': 'ACTING'}, crew['leader'])
+mine = {j['id']: j for j in data(call('GET', '/tasks/handover/mine', tok[P]))['open']}
+check("B: Priya's list says it pauses with her (Conor never joined)", mine.get(jobB, {}).get('crewContinues') is False, mine.get(jobB))
 st = data(call('GET', '/attendance/status', tok[P]))
 call('POST', '/attendance/clock-out', tok[P], {'entryId': st['currentEntry']['id']})
 task = data(call('GET', f'/tasks/{jobB}', office))

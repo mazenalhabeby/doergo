@@ -263,6 +263,8 @@ export interface HandoverJob {
   id: string;
   /** My working minutes on it so far (open and paused jobs only). */
   workedMinutes?: number;
+  /** Somebody else who joined is still on the clock: the crew carries on after this clock-out (shared tasks/crew.ts). */
+  crewContinues?: boolean;
   title: string;
   status: string;
   pausedAt: string | null;

@@ -1827,7 +1827,18 @@
       "reason": "Motivo (opcional)",
       "reasonPlaceholder": "Tobias está de baja",
       "handOver": "Pasar",
-      "changed": "Responsable cambiado"
+      "changed": "Responsable cambiado",
+      "putOn": "Añadir al trabajo",
+      "takeOff": "Quitar del trabajo",
+      "putOnTitle": "¿Añadir a {{name}} a este trabajo?",
+      "takeOffTitle": "¿Quitar a {{name}} de este trabajo?",
+      "putOnBody": "Su tiempo en este trabajo empieza ahora. El historial guarda quién lo hizo y por qué.",
+      "takeOffBody": "Su tiempo en este trabajo termina ahora. Si nadie más está fichado, el trabajo se pausa.",
+      "reasonRequired": "Motivo (obligatorio)",
+      "putOnPlaceholder": "En el sitio con el equipo, sin batería",
+      "takeOffPlaceholder": "Enviado a otra obra",
+      "putOnDone": "{{name}} está en el trabajo",
+      "takeOffDone": "{{name}} ya no está en el trabajo"
     }
   },
   "technicians": {

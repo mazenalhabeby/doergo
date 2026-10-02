@@ -6,6 +6,8 @@ import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { AText, PrimaryButton } from '../amazen';
 import { Banner, ChoiceRow, Dot, Initials, JobField, JobSheet, Pill, QuietButton, SectionLabel, SheetOption } from './job-ui';
 import type { CrewControls, CrewMember } from './use-crew';
+import { useOffline, useSyncStatus } from '../../offline/offline-context';
+import { refusedCrewCopy, refusedCrewOps } from '../../offline/tasks/refused-crew';
 
 const fullName = (u: { firstName: string; lastName: string }) => `${u.firstName} ${u.lastName}`.trim();
 
@@ -17,11 +19,13 @@ const fullName = (u: { firstName: string; lastName: string }) => `${u.firstName}
  * Renders nothing on a job with one worker: they are the crew and the leader.
  */
 export function JobCrewCard({
+  taskId,
   crew,
   counting,
   onMyIssue,
   onHandOver,
 }: {
+  taskId: string;
   crew: CrewControls;
   /** The job is under way (a counted step, not paused) — joining means something. */
   counting: boolean;
@@ -33,7 +37,23 @@ export function JobCrewCard({
   const { formatClock } = useTimeFormat();
   const c = amazen.color;
   const { view, me, leader, isLeader, isCrew, busy } = crew;
-  if (!view || !isCrew) return null;
+  /*
+    A crew action this phone queued and the server refused after (join, leave,
+    my issue…): said here, on its job, until dismissed — refused-crew.ts.
+  */
+  const { operations } = useSyncStatus();
+  const { running: engine } = useOffline();
+  const refused = refusedCrewOps(operations, taskId)[0] ?? null;
+  const refusedCopy = refused ? refusedCrewCopy(t, refused) : null;
+  if ((!view || !isCrew) && !refused) return null;
+  const notice = refused && refusedCopy ? (
+    <Banner
+      tone="critical"
+      text={`${refusedCopy.title} — ${refusedCopy.reason}`}
+      action={{ label: t('shiftClock.refused.dismiss'), onPress: () => void engine?.discard(refused.id) }}
+    />
+  ) : null;
+  if (!view || !isCrew) return notice;
 
   const onJob = view.members.filter((m) => m.joined).length;
   const leadLine = !leader
@@ -53,6 +73,7 @@ export function JobCrewCard({
 
   return (
     <View style={{ backgroundColor: c.tile, borderRadius: amazen.radius.field, padding: amazen.space(4), gap: amazen.space(3) }}>
+      {notice}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
         <SectionLabel>{t('job.crew.title', { count: onJob, total: view.members.length })}</SectionLabel>
         <View style={{ flex: 1 }} />

@@ -513,6 +513,7 @@ export function JobPage({
         <JobTimeCard time={timeNow} paused={paused} startedBy={jobTime.view?.startedBy ?? null} meId={user?.id} />
 
         <JobCrewCard
+          taskId={task.id}
           crew={crew}
           counting={!paused && !closed && stepStartsWork(task.status, capsAt(task.status, steps, workflowName))}
           onMyIssue={() => setSheet('myIssue')}

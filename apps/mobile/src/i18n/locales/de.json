@@ -3469,7 +3469,10 @@
       "editNote": "Notiz bearbeiten",
       "finish": "Fertig – abschließen",
       "hint": "Jetzt keine Notiz? Sie werden später daran erinnert. Ausstempeln geht trotzdem.",
-      "working": "{{time}} gearbeitet"
+      "working": "{{time}} gearbeitet",
+      "crewCarriesOn": "Das Team macht weiter — der Auftrag pausiert nicht.",
+      "noteForCrew": "Notiz für das Team",
+      "eyebrowCrew": "NOCH IN ARBEIT · DAS TEAM MACHT WEITER"
     }
   },
   "myWork": {
@@ -4009,7 +4012,14 @@
       "left": "Sie haben den Auftrag verlassen",
       "issueSent": "Ihre Zeit ist gestoppt",
       "resumed": "Weiter geht's",
-      "leadHandedOver": "Leitung übergeben"
+      "leadHandedOver": "Leitung übergeben",
+      "refused": {
+        "join": "Ihr Beitritt wurde nicht gespeichert",
+        "leave": "Ihr Verlassen wurde nicht gespeichert",
+        "selfIssue": "Ihr Stopp wurde nicht gespeichert",
+        "selfResume": "Ihr Weiterarbeiten wurde nicht gespeichert",
+        "lead": "Die Übergabe der Leitung wurde nicht gespeichert"
+      }
     }
   },
   "jobsList": {

@@ -58,7 +58,8 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
   task_crew_started: TASK,
   task_lead_changed: TASK,
   task_lead_needed: TASK,
-  task_crew_issue: TASK, // "Anna started a job for you" // "Handover from Mike" — the job, with the note on top
+  task_crew_issue: TASK,
+  task_crew_refused: TASK, // a crew action this phone queued was refused — its job shows why // "Anna started a job for you" // "Handover from Mike" — the job, with the note on top
 
   // The member's own shift
   shift_reminder: CLOCK, // "Still clocked in?" — the clock-out button

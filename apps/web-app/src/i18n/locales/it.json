@@ -1827,7 +1827,18 @@
       "reason": "Motivo (facoltativo)",
       "reasonPlaceholder": "Tobias è in malattia",
       "handOver": "Passa",
-      "changed": "Responsabile cambiato"
+      "changed": "Responsabile cambiato",
+      "putOn": "Metti sul lavoro",
+      "takeOff": "Togli dal lavoro",
+      "putOnTitle": "Mettere {{name}} su questo lavoro?",
+      "takeOffTitle": "Togliere {{name}} da questo lavoro?",
+      "putOnBody": "Il suo tempo su questo lavoro inizia ora. La cronologia tiene chi l'ha fatto e perché.",
+      "takeOffBody": "Il suo tempo su questo lavoro finisce ora. Se nessun altro è timbrato, il lavoro va in pausa.",
+      "reasonRequired": "Motivo (obbligatorio)",
+      "putOnPlaceholder": "Sul posto con la squadra, telefono scarico",
+      "takeOffPlaceholder": "Mandato in un altro cantiere",
+      "putOnDone": "{{name}} è sul lavoro",
+      "takeOffDone": "{{name}} non è più sul lavoro"
     }
   },
   "technicians": {

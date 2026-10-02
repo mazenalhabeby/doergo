@@ -33,11 +33,14 @@ export function TaskCrewCard({ taskId, paused }: { taskId: string; paused: boole
   const { user, hasPermission } = useAuth()
   const { data } = useJobTime(taskId, paused)
   const [open, setOpen] = useState(false)
+  // The office putting somebody on the job, or taking them off it — always with a reason.
+  const [forMember, setForMember] = useState<{ member: Member; action: "join" | "leave" } | null>(null)
   const crew = data?.crew
   if (!crew || crew.members.length <= 1) return null
 
   const leader = crew.members.find((m) => m.user.id === crew.leader.userId) ?? null
-  const mayHandOver = user?.role === "ADMIN" || hasPermission("canAssignTasks") || (!!user?.id && crew.leader.userId === user.id)
+  const office = user?.role === "ADMIN" || hasPermission("canAssignTasks")
+  const mayHandOver = office || (!!user?.id && crew.leader.userId === user.id)
   const onJob = crew.members.filter((m) => m.joined).length
   const time = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "")
 
@@ -86,6 +89,11 @@ export function TaskCrewCard({ taskId, paused }: { taskId: string; paused: boole
                   {s.text}
                 </p>
               </div>
+              {office && (m.joined || m.onClock) ? (
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground" onClick={() => setForMember({ member: m, action: m.joined ? "leave" : "join" })}>
+                  {m.joined ? t("tasks.crew.takeOff") : t("tasks.crew.putOn")}
+                </Button>
+              ) : null}
               {leads ? (
                 <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
                   crew.leader.acting ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300" : "bg-primary/10 text-primary")}>
@@ -99,6 +107,7 @@ export function TaskCrewCard({ taskId, paused }: { taskId: string; paused: boole
       </ul>
 
       <ChangeLeaderDialog open={open} onClose={() => setOpen(false)} taskId={taskId} crew={crew} />
+      <MemberOnJobDialog request={forMember} onClose={() => setForMember(null)} taskId={taskId} />
     </div>
   )
 }
@@ -182,6 +191,69 @@ function ChangeLeaderDialog({ open, onClose, taskId, crew }: { open: boolean; on
           <Button onClick={() => void submit()} disabled={pending || !to}>
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             {t("tasks.crew.handOver")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/**
+ * The office putting somebody on the job (their phone is flat, they are there)
+ * or taking them off it — the job's history says who did it and why. The
+ * server holds them to the clock gate and their own last leave.
+ */
+function MemberOnJobDialog({ request, onClose, taskId }: { request: { member: Member; action: "join" | "leave" } | null; onClose: () => void; taskId: string }) {
+  const { t } = useTranslation()
+  const client = useQueryClient()
+  const [reason, setReason] = useState("")
+  const [pending, setPending] = useState(false)
+  useEffect(() => { if (request) setReason("") }, [request])
+  if (!request) return null
+  const name = fullName(request.member.user)
+  const joining = request.action === "join"
+
+  const submit = async () => {
+    if (!reason.trim()) return
+    setPending(true)
+    try {
+      await tasksApi.crewForMember(taskId, request.action, { forUserId: request.member.user.id, reason: reason.trim() })
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["task-time", taskId] }),
+        client.invalidateQueries({ queryKey: ["taskTimeline", taskId] }),
+      ])
+      toast.success(joining ? t("tasks.crew.putOnDone", { name }) : t("tasks.crew.takeOffDone", { name }))
+      onClose()
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : t("common.error"))
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose() }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{joining ? t("tasks.crew.putOnTitle", { name }) : t("tasks.crew.takeOffTitle", { name })}</DialogTitle>
+          <DialogDescription>{joining ? t("tasks.crew.putOnBody", { name }) : t("tasks.crew.takeOffBody", { name })}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-1.5">
+          <Label htmlFor="crew-member-reason">{t("tasks.crew.reasonRequired")}</Label>
+          <Input
+            id="crew-member-reason"
+            value={reason}
+            autoFocus
+            maxLength={CREW_REASON_MAX}
+            placeholder={joining ? t("tasks.crew.putOnPlaceholder") : t("tasks.crew.takeOffPlaceholder")}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={pending}>{t("common.cancel")}</Button>
+          <Button onClick={() => void submit()} disabled={pending || !reason.trim()}>
+            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {joining ? t("tasks.crew.putOn") : t("tasks.crew.takeOff")}
           </Button>
         </DialogFooter>
       </DialogContent>

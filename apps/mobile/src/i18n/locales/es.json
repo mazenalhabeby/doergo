@@ -3469,7 +3469,10 @@
       "editNote": "Editar la nota",
       "finish": "Está hecho: terminarlo",
       "hint": "¿Sin nota ahora? Te la pediremos después. Nada te impide fichar la salida.",
-      "working": "Trabajando {{time}}"
+      "working": "Trabajando {{time}}",
+      "crewCarriesOn": "El equipo sigue — no se pausa.",
+      "noteForCrew": "Deja una nota al equipo",
+      "eyebrowCrew": "AÚN EN CURSO · EL EQUIPO SIGUE"
     }
   },
   "myWork": {
@@ -4009,7 +4012,14 @@
       "left": "Dejaste el trabajo",
       "issueSent": "Tu tiempo está detenido",
       "resumed": "De vuelta al trabajo",
-      "leadHandedOver": "Dirección pasada"
+      "leadHandedOver": "Dirección pasada",
+      "refused": {
+        "join": "Tu unión no se guardó",
+        "leave": "Tu salida no se guardó",
+        "selfIssue": "Tu parada no se guardó",
+        "selfResume": "Tu vuelta al trabajo no se guardó",
+        "lead": "El paso de la dirección no se guardó"
+      }
     }
   },
   "jobsList": {
