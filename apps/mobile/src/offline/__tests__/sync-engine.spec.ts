@@ -94,6 +94,33 @@ describe('SyncEngine', () => {
     expect(e.hasUnsent()).toBe(false);
   });
 
+  it('comes back for a failed batch by itself — no other nudge needed', async () => {
+    // A weak line or a server restarting: the network never flips, nothing else is
+    // tapped. The retry used to be written and never come back.
+    jest.useFakeTimers();
+    try {
+      const { transport, pushes } = fakeTransport();
+      transport.mode = 'offline';
+      const { e } = engine(transport);
+      await e.start();
+      // Like a tap: the enqueue's OWN flush, and nothing else — a second flush()
+      // call here would run a second pass that happens to set the alarm.
+      await e.enqueue(comment());
+      for (let i = 0; i < 20 && e.operations()[0]!.state !== 'retry'; i++) await jest.advanceTimersByTimeAsync(0);
+      expect(e.operations()[0]!.state).toBe('retry');
+
+      transport.mode = 'ok';
+      t += 2_500;
+      // Only the alarm may send it — no flush is called from here.
+      await jest.advanceTimersByTimeAsync(2_500);
+      for (let i = 0; i < 20 && e.operations()[0]!.state !== 'done'; i++) await jest.advanceTimersByTimeAsync(0);
+      expect(pushes).toHaveLength(2);
+      expect(e.operations()[0]!.state).toBe('done');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('puts operations left in flight by a crash back in the queue', async () => {
     const store = new MemoryOutboxStore();
     await store.save([{ id: 'x-crashed-op-0000000001', userId: 'u1', organizationId: 'o1', op: 'task.comment', lane: 'task:t1', dependsOn: [], payload: {}, state: 'inflight', attempts: 0, createdAt: t, updatedAt: t }]);

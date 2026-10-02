@@ -261,7 +261,20 @@ export class SyncEngine {
     await this.refreshCache();
     // Stop on a failure that affects everything (offline, signed out): retrying
     // the next batch immediately would only fail the same way.
-    return progressed && !settled.some((o) => o.state === 'awaiting_auth');
+    const more = progressed && !settled.some((o) => o.state === 'awaiting_auth');
+    /*
+      ⚠️ …BUT SET THE ALARM FOR THE RETRY. Only the "nothing to send yet" path
+      scheduled a wake, so a batch that FAILED wrote its backoff and nothing
+      ever came back for it — the change waited for an unrelated nudge (the
+      network flipping, the app reopening, another tap). With signal the whole
+      time — a weak line, the server restarting during a deploy — that nudge
+      never comes, and a clock-out sat on the phone saying "Weak connection".
+    */
+    if (!more) {
+      const retries = settled.filter((o) => o.state === 'retry' && o.nextAttemptAt !== undefined).map((o) => o.nextAttemptAt!);
+      if (retries.length) this.scheduleWake(Math.min(...retries));
+    }
+    return more;
   }
 
   /**
