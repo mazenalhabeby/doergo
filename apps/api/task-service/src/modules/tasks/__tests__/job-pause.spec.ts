@@ -118,6 +118,7 @@ describe('JobPauseService', () => {
 
   it('keeps a crew job running while somebody else who JOINED it is still clocked in', async () => {
     prisma.task.findMany.mockResolvedValue([job({ assignedToId: 'ali' })]);
+    prisma.taskAssignee.findMany.mockResolvedValue([{ taskId: 't1', userId: 'mike' }, { taskId: 't1', userId: 'ali' }]);
     prisma.taskEvent.findMany.mockResolvedValue([
       { taskId: 't1', createdAt: T('09:00'), userId: 'mike', eventType: 'STATUS_CHANGED', metadata: { newStatus: 'IN_PROGRESS' } },
       { taskId: 't1', createdAt: T('09:05'), userId: 'ali', eventType: 'CREW_JOINED', metadata: { at: T('09:05').toISOString() } },
@@ -132,6 +133,15 @@ describe('JobPauseService', () => {
     prisma.task.findMany.mockResolvedValue([job({ assignedToId: 'ali' })]);
     // Ali is on the crew and on the clock, but never joined: the job does not run on for nobody.
     prisma.timeEntry.findMany.mockImplementation(async ({ select }: any) => (select?.breaks ? [{ userId: 'mike', clockInAt: T('08:00'), clockOutAt: null, breaks: [] }] : [{ userId: 'ali' }]));
+    await expect(clockOut()).resolves.toEqual({ paused: ['t1'] });
+  });
+
+  it('a dispatcher moving the card is not on the job: the last WORKER out still pauses it', async () => {
+    prisma.taskEvent.findMany.mockResolvedValue([
+      { taskId: 't1', createdAt: T('09:00'), userId: 'mike', eventType: 'STATUS_CHANGED', metadata: { newStatus: 'IN_PROGRESS' } },
+      { taskId: 't1', createdAt: T('10:00'), userId: 'dispatcher', eventType: 'STATUS_CHANGED', metadata: { newStatus: 'IN_PROGRESS' } },
+    ]);
+    prisma.timeEntry.findMany.mockImplementation(async ({ select }: any) => (select?.breaks ? [{ userId: 'mike', clockInAt: T('08:00'), clockOutAt: null, breaks: [] }] : [{ userId: 'dispatcher' }]));
     await expect(clockOut()).resolves.toEqual({ paused: ['t1'] });
   });
 

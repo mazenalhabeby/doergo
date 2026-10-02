@@ -46,6 +46,8 @@ export interface WorkTimelineEvent {
   status?: string;
   /** The office moved it FOR this person — it counts as their move. */
   forUserId?: string | null;
+  /** SELF_BLOCKED: what stopped them (shown on the crew panel). */
+  reason?: string | null;
 }
 
 /** A stretch the worker was on the clock. `end` null = still clocked in. */

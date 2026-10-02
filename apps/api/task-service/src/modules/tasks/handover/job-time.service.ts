@@ -33,6 +33,10 @@ const TIME_EVENTS = [TaskEventType.STATUS_CHANGED, TaskEventType.PAUSED, TaskEve
 const LEAVE_EVENTS = [TaskEventType.UNASSIGNED, TaskEventType.ASSIGNEE_REMOVED];
 /** One person's own presence on a crew job (shared crew.ts). */
 const CREW_EVENTS = [TaskEventType.CREW_JOINED, TaskEventType.CREW_LEFT, TaskEventType.SELF_BLOCKED, TaskEventType.SELF_RESUMED];
+/** A job's history is read whole up to this many rows (newest kept) — years of a daily crew. */
+const EVENTS_PER_TASK = 5000;
+/** Up to this many jobs are read one query each; more share one query. */
+const PER_TASK_READS = 20;
 /** Built-in closed steps — a custom flow's own final step simply counts nothing after it. */
 const CLOSED_KEYS = ['COMPLETED', 'CLOSED', 'CANCELED'];
 
@@ -76,15 +80,28 @@ export class JobTimeService {
     };
   }
 
+  /**
+   * Each job's history, as far as its time is concerned — the NEWEST rows when
+   * one must be cut. Oldest-first with a cap cut the newest: a long crew job
+   * (a join and a clock-out leave per person per day) stopped seeing today's
+   * moves after a few weeks. A few jobs (the job page, the pause, the crew) are
+   * read one query each so a busy job cannot starve the others; a report over
+   * many jobs shares one, newest first.
+   */
   private async eventsOf(taskIds: string[]): Promise<Map<string, EventRow[]>> {
-    const rows = taskIds.length
-      ? await this.prisma.taskEvent.findMany({
-          where: { taskId: { in: taskIds }, eventType: { in: [...TIME_EVENTS, ...LEAVE_EVENTS, ...CREW_EVENTS] } },
-          orderBy: { createdAt: 'asc' },
-          select: { taskId: true, createdAt: true, userId: true, eventType: true, metadata: true },
-          take: 500 * Math.max(1, taskIds.length),
-        })
-      : [];
+    const read = (ids: string[], take: number) =>
+      this.prisma.taskEvent.findMany({
+        where: { taskId: { in: ids }, eventType: { in: [...TIME_EVENTS, ...LEAVE_EVENTS, ...CREW_EVENTS] } },
+        orderBy: { createdAt: 'desc' },
+        select: { taskId: true, createdAt: true, userId: true, eventType: true, metadata: true },
+        take,
+      });
+    const rows = !taskIds.length
+      ? []
+      : taskIds.length <= PER_TASK_READS
+        ? (await Promise.all(taskIds.map((id) => read([id], EVENTS_PER_TASK)))).flat()
+        : await read(taskIds, 500 * taskIds.length);
+    rows.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
     const by = new Map<string, EventRow[]>();
     for (const r of rows) (by.get(r.taskId) ?? by.set(r.taskId, []).get(r.taskId)!).push(r);
     return by;
@@ -100,8 +117,8 @@ export class JobTimeService {
       // A crew member's own presence: `userId` is the person, `at` the moment it counts from.
       const personal = PERSONAL_KIND[e.eventType as string];
       if (personal) {
-        const m = (e.metadata ?? {}) as { at?: string };
-        return [{ at: m.at ?? e.createdAt, userId: e.userId, kind: personal }];
+        const m = (e.metadata ?? {}) as { at?: string; reason?: string };
+        return [{ at: m.at ?? e.createdAt, userId: e.userId, kind: personal, ...(personal === 'SELF_BLOCKED' ? { reason: m.reason ?? null } : {}) }];
       }
       const m = (e.metadata ?? {}) as MoveMeta;
       return [{

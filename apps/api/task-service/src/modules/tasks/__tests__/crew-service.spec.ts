@@ -55,8 +55,10 @@ function setup(opts: { task?: Record<string, unknown>; events?: any[]; onClock?:
     organization: { findUnique: jest.fn().mockResolvedValue({ crewMode: !!opts.crewMode, timezone: 'America/Los_Angeles' }) },
     companyLocation: { findUnique: jest.fn().mockResolvedValue({ timezone: 'America/Los_Angeles' }) },
     spaceWorkflow: { findFirst: jest.fn().mockResolvedValue(null) },
-    $transaction: jest.fn().mockResolvedValue([]),
+    $queryRaw: jest.fn().mockResolvedValue([]),
   };
+  // Interactive transactions run on the same mock; the row lock is recorded.
+  prisma.$transaction = jest.fn(async (fn: any) => (typeof fn === 'function' ? fn(prisma) : fn));
   const workflows: any = { getWorkflow: jest.fn().mockResolvedValue(null) };
   const clockGate: any = { assertWorkerClockedIn: jest.fn().mockResolvedValue({ userId: 'x', clockInAt: T('07:00') }) };
   const jobPause: any = { workingJobsOf: jest.fn().mockResolvedValue([]), pauseOnLeave: jest.fn().mockResolvedValue(true) };
@@ -95,8 +97,10 @@ describe('CrewService.join', () => {
     const { service } = setup();
     await expect(service.join({ ...actor('priya'), taskId: 'job1', forUserId: 'conor' })).rejects.toBeInstanceOf(NotFoundException);
     const office = setup();
-    await expect(office.service.join({ ...actor('anna', { canViewAllTasks: true }), taskId: 'job1', forUserId: 'conor' })).rejects.toMatchObject({ response: { code: 'OFFICE_START_REASON_REQUIRED' } });
-    await office.service.join({ ...actor('anna', { canViewAllTasks: true }), taskId: 'job1', forUserId: 'conor', reason: 'He is on site, phone flat' });
+    // "View all" is not enough to put somebody on a job: that is a decision about who works it.
+    await expect(office.service.join({ ...actor('viewer', { canViewAllTasks: true }), taskId: 'job1', forUserId: 'conor', reason: 'x' })).rejects.toBeInstanceOf(NotFoundException);
+    await expect(office.service.join({ ...actor('anna', { canAssignTasks: true }), taskId: 'job1', forUserId: 'conor' })).rejects.toMatchObject({ response: { code: 'OFFICE_START_REASON_REQUIRED' } });
+    await office.service.join({ ...actor('anna', { canAssignTasks: true }), taskId: 'job1', forUserId: 'conor', reason: 'He is on site, phone flat' });
     expect(created(office.prisma, 'CREW_JOINED')[0]).toMatchObject({ userId: 'conor', metadata: { byUserId: 'anna', reason: 'He is on site, phone flat' } });
   });
 
@@ -109,6 +113,25 @@ describe('CrewService.join', () => {
   it('a paused job is picked up with Resume, not joined', async () => {
     const { service } = setup({ task: { pausedAt: T('12:00') } });
     await expect(service.join({ ...actor('priya'), taskId: 'job1' })).rejects.toMatchObject({ response: { code: CREW_CODES.JOB_NOT_STARTED } });
+  });
+
+  it('a tap cannot be back-dated before the job was under way, and odd evidence is kept', async () => {
+    const { service, prisma } = setup();
+    // The job started at 07:30; a tap claiming 07:05 joins at 07:30, never earlier.
+    await service.join({ ...actor('priya'), taskId: 'job1', evidence: { occurredAt: T('07:05').toISOString(), fix: { lat: 1, lng: 2, accuracy: 9, fixAt: T('07:05').toISOString() } } as any });
+    const [joined] = created(prisma, 'CREW_JOINED');
+    expect(joined.metadata.at).toBe(T('07:30').toISOString());
+    expect(joined.metadata.fix).toEqual({ lat: 1, lng: 2, accuracy: 9 });
+  });
+
+  it('a join cannot reopen time after their own leave', async () => {
+    const s = setup();
+    s.events.push(
+      { taskId: 'job1', createdAt: T('08:10'), userId: 'priya', eventType: 'CREW_JOINED', metadata: { at: T('08:10').toISOString() } },
+      { taskId: 'job1', createdAt: T('10:00'), userId: 'priya', eventType: 'CREW_LEFT', metadata: { at: T('10:00').toISOString(), why: 'SELF' } },
+    );
+    await s.service.join({ ...actor('priya'), taskId: 'job1', evidence: { occurredAt: T('09:00').toISOString() } as any });
+    expect(created(s.prisma, 'CREW_JOINED')[0].metadata.at).toBe(T('10:00').toISOString());
   });
 
   it('is idempotent while joined', async () => {
@@ -182,6 +205,18 @@ describe('CrewService.changeLead — this job only', () => {
     expect(s.prisma.taskAssignee.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: { taskId: 'job1', userId: 'priya', role: 'LEAD' } }));
   });
 
+  it('an acting leader hands over for today only — never takes the job from the absent leader for good', async () => {
+    const s = setup({ onClock: ['priya', 'conor'] });
+    s.events.push({ taskId: 'job1', createdAt: T('07:40'), userId: 'conor', eventType: 'CREW_JOINED', metadata: { at: T('07:40').toISOString() } });
+    await expect(s.service.changeLead({ ...actor('conor'), taskId: 'job1', toUserId: 'conor', scope: 'PERMANENT' })).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('two hand-overs at once: the job row is locked first', async () => {
+    const s = setup();
+    await s.service.changeLead({ ...actor('tobias'), taskId: 'job1', toUserId: 'priya', scope: 'PERMANENT' });
+    expect(s.prisma.$queryRaw).toHaveBeenCalled();
+  });
+
   it('a member who is not the leader cannot', async () => {
     const s = setup();
     await expect(s.service.changeLead({ ...actor('conor'), taskId: 'job1', toUserId: 'conor', scope: 'TODAY' })).rejects.toBeInstanceOf(ForbiddenException);
@@ -213,6 +248,19 @@ describe('CrewService.changeLead — this job only', () => {
     // Tobias is off: Tobias's own moves opened him, but he is not on the clock; Conor stands in.
     await s.service.changeLead({ ...actor('conor'), taskId: 'job1', toUserId: 'priya', scope: 'TODAY' });
     expect(created(s.prisma, 'LEAD_CHANGED')[0]).toMatchObject({ metadata: { by: 'LEADER' } });
+  });
+});
+
+describe('a sick leader never stops a job from starting', () => {
+  it('with nobody joined yet, the first crew member on the clock stands in', async () => {
+    const s = setup({ crewMode: true, onClock: ['priya', 'conor'], task: { status: 'ACCEPTED' }, events: [] });
+    await expect(s.service.assertMayMoveStep(s.task as any, actor('priya'), false)).resolves.toBeUndefined();
+    await expect(s.service.assertMayMoveStep(s.task as any, actor('conor'), false)).rejects.toMatchObject({ response: { code: CREW_CODES.LEADER_MOVES_STEPS } });
+  });
+
+  it("today's lead ends with their place on the crew", async () => {
+    const s = setup({ crewMode: true, task: { leadOverrideId: 'gone', leadOverrideUntil: new Date(Date.now() + 3_600_000) } });
+    await expect(s.service.assertMayMoveStep(s.task as any, actor('tobias'), false)).resolves.toBeUndefined();
   });
 });
 

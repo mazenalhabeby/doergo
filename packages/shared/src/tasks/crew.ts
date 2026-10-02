@@ -43,17 +43,31 @@ export interface CrewPresence {
   joined: boolean;
   /** When the current stretch on the job began (epoch ms), or null. */
   since: number | null;
-  /** Stopped on their own ("My issue"), and since when. */
+  /** When their last stretch on the job ended (epoch ms) — a new join can never count from before it. */
+  lastLeftAt: number | null;
+  /** Stopped on their own ("My issue"), and since when, and why. */
   selfBlockedSince: number | null;
+  selfBlockReason: string | null;
 }
 
 /** Each person's presence on a job, from its history. */
 export function crewPresence(events: readonly WorkTimelineEvent[], people: readonly string[]): Map<string, CrewPresence> {
   const out = new Map<string, CrewPresence>();
   for (const id of people) {
-    const open = jobWindows(events, id).find(([, end]) => end === Infinity);
-    const stop = selfBlockWindows(events, id).find(([, end]) => end === Infinity);
-    out.set(id, { joined: !!open, since: open ? open[0] : null, selfBlockedSince: open && stop ? stop[0] : null });
+    const windows = jobWindows(events, id);
+    const open = windows.find(([, end]) => end === Infinity);
+    const closed = windows.filter(([, end]) => end !== Infinity);
+    const stop = open ? selfBlockWindows(events, id).find(([, end]) => end === Infinity) : undefined;
+    const why = stop
+      ? events.find((e) => e.kind === 'SELF_BLOCKED' && e.userId === id && new Date(e.at).getTime() === stop[0])?.reason ?? null
+      : null;
+    out.set(id, {
+      joined: !!open,
+      since: open ? open[0] : null,
+      lastLeftAt: closed.length ? closed[closed.length - 1]![1] : null,
+      selfBlockedSince: stop ? stop[0] : null,
+      selfBlockReason: why,
+    });
   }
   return out;
 }
@@ -101,11 +115,21 @@ export function effectiveLeader(args: {
   onClock: ReadonlySet<string>;
   /** Crew members currently joined, in the order they joined. */
   joinedInOrder: readonly string[];
+  /**
+   * The whole crew, in its own order. Before anybody has joined (the job not
+   * started), the first of them on the clock stands in — or a job whose leader
+   * is off sick could never be started at all.
+   */
+  crewInOrder?: readonly string[];
 }): EffectiveLeader {
-  const today = args.today && args.today.until > args.now ? args.today.userId : null;
+  const crew = args.crewInOrder ? new Set(args.crewInOrder) : null;
+  // A hand-over for today only holds while that person is still on this job's crew.
+  const today = args.today && args.today.until > args.now && (!crew || crew.has(args.today.userId)) ? args.today.userId : null;
   if (today && args.onClock.has(today)) return { userId: today, acting: false, source: 'TODAY' };
   if (args.leadId && args.onClock.has(args.leadId)) return { userId: args.leadId, acting: false, source: 'LEAD' };
-  const stand = args.joinedInOrder.find((id) => args.onClock.has(id) && id !== args.leadId && id !== today);
+  const absent = (id: string) => id !== args.leadId && id !== today;
+  const stand = args.joinedInOrder.find((id) => args.onClock.has(id) && absent(id))
+    ?? args.crewInOrder?.find((id) => args.onClock.has(id) && absent(id));
   if (stand) return { userId: stand, acting: true, source: 'ACTING' };
   const named = today ?? args.leadId;
   return named ? { userId: named, acting: false, source: today ? 'TODAY' : 'LEAD' } : { userId: null, acting: false, source: 'NONE' };
@@ -140,11 +164,25 @@ export function pausesAtClockOut(args: { leaverId: string; joined: readonly stri
   return !args.joined.some((id) => id !== args.leaverId && args.onClock.has(id));
 }
 
-/** The end of a calendar day in a time zone — when a hand-over "for today" runs out. */
+/** How far a zone's wall clock is ahead of UTC at an instant (ms). */
+function zoneOffset(at: number, timeZone: string): number {
+  const p = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' })
+    .formatToParts(new Date(at))
+    .reduce<Record<string, string>>((m, x) => ((m[x.type] = x.value), m), {});
+  return Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day), Number(p.hour), Number(p.minute), Number(p.second)) - Math.floor(at / 1000) * 1000;
+}
+
+/**
+ * The end of a calendar day in a time zone — when a hand-over "for today" runs
+ * out. The next local midnight, found from the zone's own offset, so a day
+ * that is 23 or 25 hours long (a clock change) still ends at midnight.
+ */
 export function endOfLocalDay(at: Date, timeZone: string): Date {
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' })
+  const p = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' })
     .formatToParts(at)
-    .reduce<Record<string, string>>((m, p) => ((m[p.type] = p.value), m), {});
-  const sinceMidnight = (Number(parts.hour) * 3600 + Number(parts.minute) * 60 + Number(parts.second)) * 1000;
-  return new Date(at.getTime() - sinceMidnight - at.getMilliseconds() + 86_400_000 - 1);
+    .reduce<Record<string, string>>((m, x) => ((m[x.type] = x.value), m), {});
+  const nextMidnightWall = Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day) + 1);
+  let utc = nextMidnightWall - zoneOffset(nextMidnightWall, timeZone);
+  utc = nextMidnightWall - zoneOffset(utc, timeZone); // settle across an offset change
+  return new Date(utc - 1);
 }

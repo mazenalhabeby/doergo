@@ -58,6 +58,11 @@ const TASK_SELECT = {
   assignedToId: true, pausedAt: true, leadOverrideId: true, leadOverrideUntil: true,
 } as const;
 const PERSON = { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } as const;
+/** What the phone said about a crew tap, kept on the event like a status move keeps it. */
+const evidenceMeta = (evidence: OccurrenceEvidence | undefined, flags: readonly string[]) => ({
+  ...(flags.length ? { occurrenceFlags: [...flags] } : {}),
+  ...(evidence?.fix ? { fix: { lat: evidence.fix.lat, lng: evidence.fix.lng, accuracy: evidence.fix.accuracy } } : {}),
+});
 const cleanReason = (r?: string | null) => (typeof r === 'string' ? r.replace(/\s+/g, ' ').trim().slice(0, CREW_REASON_MAX) : '');
 
 /**
@@ -129,6 +134,8 @@ export class CrewService {
       now,
       onClock: new Set(onClock.keys()),
       joinedInOrder,
+      // Before anybody joined, the crew itself (leader row first) — a job with a sick leader can still start.
+      crewInOrder: [...crew].sort((a, b) => (a.role === 'LEAD' ? -1 : 0) - (b.role === 'LEAD' ? -1 : 0)).map((c) => c.userId),
     });
   }
 
@@ -156,22 +163,14 @@ export class CrewService {
   private async viewOf(task: CrewTask) {
     const crew = await this.crewOf(task);
     const ids = crew.map((c) => c.userId);
-    const [timeline, onClock, people, org, stops] = await Promise.all([
+    const [timeline, onClock, people, org] = await Promise.all([
       this.jobTime.timelinesOf([task.id]).then((m) => m.get(task.id) ?? []),
       this.onClock(ids, task.organizationId),
       this.prisma.user.findMany({ where: { id: { in: ids } }, ...PERSON }),
       this.prisma.organization.findUnique({ where: { id: task.organizationId }, select: { crewMode: true } }),
-      this.prisma.taskEvent.findMany({
-        where: { taskId: task.id, eventType: TaskEventType.SELF_BLOCKED },
-        orderBy: { createdAt: 'desc' },
-        select: { userId: true, metadata: true },
-        take: 50,
-      }),
     ]);
     const presence = crewPresence(timeline, ids);
     const leader = this.leaderFrom(task, crew, timeline, onClock);
-    const reasonOf = new Map<string, string>();
-    for (const s of stops) if (!reasonOf.has(s.userId)) reasonOf.set(s.userId, ((s.metadata ?? {}) as { reason?: string }).reason ?? '');
     const byId = new Map(people.map((p) => [p.id, p]));
     return {
       crewMode: !!org?.crewMode,
@@ -187,7 +186,7 @@ export class CrewService {
           joined: !!p?.joined,
           since: p?.since != null ? new Date(p.since).toISOString() : null,
           selfBlockedSince: p?.selfBlockedSince != null ? new Date(p.selfBlockedSince).toISOString() : null,
-          selfBlockReason: p?.selfBlockedSince != null ? reasonOf.get(c.userId) ?? null : null,
+          selfBlockReason: p?.selfBlockReason ?? null,
           onClock: onClock.has(c.userId),
         };
       }),
@@ -204,20 +203,24 @@ export class CrewService {
   async join(data: CrewActor & { taskId: string; evidence?: OccurrenceEvidence; viaLeaderStart?: boolean; forUserId?: string; reason?: string }) {
     const task = await this.taskOf(data.taskId, data.organizationId);
     const forOther = !!data.forUserId && data.forUserId !== data.userId;
-    if (forOther && !this.isOffice(data, task, 'canViewAllTasks')) throw new NotFoundException('Task not found');
+    // Putting somebody ON a job is a decision about who works it: assign rights, not "view all".
+    if (forOther && !this.isOffice(data, task, 'canAssignTasks')) throw new NotFoundException('Task not found');
     const reason = cleanReason(data.reason);
     if (forOther && !reason) throw new BadRequestException({ message: 'Say why you are adding them to the job.', code: 'OFFICE_START_REASON_REQUIRED' });
     const who = forOther ? data.forUserId! : data.userId;
-    const result = await this.joinAs(task, who, { evidence: data.evidence, viaLeaderStart: !!data.viaLeaderStart, byUserId: forOther ? data.userId : undefined, reason: forOther ? reason : undefined });
-    return success(result);
+    await this.joinAs(task, who, { evidence: data.evidence, viaLeaderStart: !!data.viaLeaderStart, byUserId: forOther ? data.userId : undefined, reason: forOther ? reason : undefined });
+    return success(await this.viewOf(task));
   }
 
-  /** The join itself — also how a crew member's tap on the step the job is already in counts. */
+  /**
+   * The join itself — also how a crew member's tap on the step the job is
+   * already in counts. Writes only; answers whether a join was written.
+   */
   async joinAs(
     task: CrewTask,
     who: string,
     opts: { evidence?: OccurrenceEvidence; viaLeaderStart?: boolean; byUserId?: string; reason?: string },
-  ) {
+  ): Promise<boolean> {
     const crew = await this.crewOf(task);
     if (!crew.some((c) => c.userId === who)) throw new BadRequestException({ message: 'They are not on this job.', code: CREW_CODES.NOT_ON_CREW });
     const person = await this.prisma.user.findUnique({ where: { id: who }, select: { isExternal: true, organizationId: true } });
@@ -227,7 +230,7 @@ export class CrewService {
     }
     const timeline = (await this.jobTime.timelinesOf([task.id])).get(task.id) ?? [];
     const presence = crewPresence(timeline, [who]).get(who);
-    if (presence?.joined) return this.viewOf(task);
+    if (presence?.joined) return false;
 
     const { kind } = await this.kindOf(task);
     // Not under way: a paused job is picked up with Resume; one not started with its first step.
@@ -235,12 +238,21 @@ export class CrewService {
 
     // On the clock, as for any way onto a job; the tap's own time, never before the clock-in.
     const clock = await this.clockGate.assertWorkerClockedIn(task, who, task.organizationId, true);
-    const tapAt = judgeOccurrence(opts.evidence, clock?.clockInAt ?? null).at.getTime();
-    const at = joinMoment({
-      tapAt,
-      leaderStartAt: opts.viaLeaderStart ? this.runStart(timeline, kind) : null,
-      clockInAt: clock?.clockInAt ? clock.clockInAt.getTime() : null,
-    });
+    const judged = judgeOccurrence(opts.evidence, clock?.clockInAt ?? null);
+    const tapAt = judged.at.getTime();
+    const runStart = this.runStart(timeline, kind);
+    /*
+      ⚠️ NEVER BACK-DATED PAST WHAT HAPPENED. A tap's time comes from the phone;
+      it is held to the job's own stretch of work (a join before the job was
+      under way joins when it started) and to their own last leave (a join
+      cannot reopen time they were off the job). "I'm with him" counts from
+      the leader's start only through joinMoment's window.
+    */
+    const floor = Math.max(runStart ?? -Infinity, presence?.lastLeftAt ?? -Infinity);
+    const at = Math.max(
+      joinMoment({ tapAt, leaderStartAt: opts.viaLeaderStart ? runStart : null, clockInAt: clock?.clockInAt ? clock.clockInAt.getTime() : null }),
+      floor,
+    );
 
     await this.prisma.taskEvent.create({
       data: {
@@ -249,14 +261,17 @@ export class CrewService {
         eventType: TaskEventType.CREW_JOINED,
         metadata: {
           at: new Date(at).toISOString(),
-          ...(at !== tapAt ? { viaLeaderAt: new Date(at).toISOString() } : {}),
+          ...(opts.viaLeaderStart && at < tapAt ? { viaLeaderAt: new Date(at).toISOString() } : {}),
           ...(opts.byUserId ? { byUserId: opts.byUserId, reason: opts.reason } : {}),
+          // As status moves keep them: what the phone said, and what looked odd about it.
+          ...evidenceMeta(opts.evidence, judged.flags),
         },
       },
     });
-    await this.leaveOtherJobs(who, task.organizationId, task.id, new Date(at));
+    // Their other job ends at the tap itself, never at a moment counted back from it.
+    await this.leaveOtherJobs(who, task.organizationId, task.id, new Date(tapAt));
     this.changed(task, who);
-    return this.viewOf(task);
+    return true;
   }
 
   /** When the job's current stretch of counted time began — what "I'm with him" counts from. */
@@ -301,7 +316,7 @@ export class CrewService {
   async leave(data: CrewActor & { taskId: string; evidence?: OccurrenceEvidence; forUserId?: string; reason?: string }) {
     const task = await this.taskOf(data.taskId, data.organizationId);
     const forOther = !!data.forUserId && data.forUserId !== data.userId;
-    if (forOther && !this.isOffice(data, task, 'canViewAllTasks')) throw new NotFoundException('Task not found');
+    if (forOther && !this.isOffice(data, task, 'canAssignTasks')) throw new NotFoundException('Task not found');
     const who = forOther ? data.forUserId! : data.userId;
     const crew = await this.crewOf(task);
     if (!crew.some((c) => c.userId === who)) throw new BadRequestException({ message: 'They are not on this job.', code: CREW_CODES.NOT_ON_CREW });
@@ -311,14 +326,25 @@ export class CrewService {
     const mine = presence.get(who);
     if (!mine?.joined) return success(await this.viewOf(task));
 
-    const at = judgeOccurrence(data.evidence, mine.since != null ? new Date(mine.since) : null).at;
-    await this.prisma.taskEvent.create({
-      data: {
-        taskId: task.id, userId: who, eventType: TaskEventType.CREW_LEFT,
-        metadata: { at: at.toISOString(), why: forOther ? 'OFFICE' : 'SELF', ...(forOther ? { byUserId: data.userId, reason: cleanReason(data.reason) } : {}) },
-      },
+    const judged = judgeOccurrence(data.evidence, mine.since != null ? new Date(mine.since) : null);
+    const at = judged.at;
+    /*
+      ⚠️ ONE LEAVE AT A TIME PER JOB. The last two leaving at the same moment
+      would each see the other still on and neither would pause it — a job
+      running with nobody counted. The job's row is locked for the write, and
+      who is still on is read only AFTER it — the second to commit sees both.
+    */
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "tasks" WHERE id = ${task.id} FOR UPDATE`;
+      await tx.taskEvent.create({
+        data: {
+          taskId: task.id, userId: who, eventType: TaskEventType.CREW_LEFT,
+          metadata: { at: at.toISOString(), why: forOther ? 'OFFICE' : 'SELF', ...(forOther ? { byUserId: data.userId, reason: cleanReason(data.reason) } : {}), ...evidenceMeta(data.evidence, judged.flags) },
+        },
+      });
     });
-    const othersJoined = [...presence].filter(([id, p]) => id !== who && p.joined).map(([id]) => id);
+    const after = crewPresence((await this.jobTime.timelinesOf([task.id])).get(task.id) ?? [], crew.map((c) => c.userId));
+    const othersJoined = [...after].filter(([id, p]) => id !== who && p.joined).map(([id]) => id);
     const stillOn = await this.onClock(othersJoined, task.organizationId);
     if (stillOn.size === 0) await this.jobPause.pauseOnLeave(task.id, who, task.organizationId, at);
     this.changed(task, who);
@@ -332,9 +358,9 @@ export class CrewService {
     if (!reason) throw new BadRequestException({ message: 'Say what stopped you.', code: 'REASON_REQUIRED' });
     const { presence } = await this.mustBeJoined(task, data.userId);
     if (presence.selfBlockedSince != null) return success(await this.viewOf(task));
-    const at = judgeOccurrence(data.evidence, presence.since != null ? new Date(presence.since) : null).at;
+    const judged = judgeOccurrence(data.evidence, presence.since != null ? new Date(presence.since) : null);
     await this.prisma.taskEvent.create({
-      data: { taskId: task.id, userId: data.userId, eventType: TaskEventType.SELF_BLOCKED, metadata: { at: at.toISOString(), reason } },
+      data: { taskId: task.id, userId: data.userId, eventType: TaskEventType.SELF_BLOCKED, metadata: { at: judged.at.toISOString(), reason, ...evidenceMeta(data.evidence, judged.flags) } },
     });
     // The leader is told why one of the crew has stopped.
     const view = await this.viewOf(task);
@@ -352,9 +378,9 @@ export class CrewService {
     const { presence } = await this.mustBeJoined(task, data.userId);
     if (presence.selfBlockedSince == null) return success(await this.viewOf(task));
     await this.clockGate.assertWorkerClockedIn(task, data.userId, task.organizationId, true);
-    const at = judgeOccurrence(data.evidence, new Date(presence.selfBlockedSince)).at;
+    const judged = judgeOccurrence(data.evidence, new Date(presence.selfBlockedSince));
     await this.prisma.taskEvent.create({
-      data: { taskId: task.id, userId: data.userId, eventType: TaskEventType.SELF_RESUMED, metadata: { at: at.toISOString() } },
+      data: { taskId: task.id, userId: data.userId, eventType: TaskEventType.SELF_RESUMED, metadata: { at: judged.at.toISOString(), ...evidenceMeta(data.evidence, judged.flags) } },
     });
     this.changed(task, data.userId);
     return success(await this.viewOf(task));
@@ -398,6 +424,10 @@ export class CrewService {
       throw new BadRequestException({ message: 'They cannot lead this job.', code: CREW_CODES.LEAD_TARGET_NOT_ON_CREW });
     }
     const scope: LeadScope = data.scope === 'PERMANENT' ? 'PERMANENT' : 'TODAY';
+    // A member standing in for an absent leader hands over for today — never takes the job from them for good.
+    if (scope === 'PERMANENT' && !office && leader.acting) {
+      throw new ForbiddenException({ message: 'Standing in, you can hand the lead over for today only.', code: CREW_CODES.LEAD_NOT_YOURS });
+    }
     const reason = cleanReason(data.reason);
 
     if (scope === 'TODAY') {
@@ -405,15 +435,20 @@ export class CrewService {
       await this.prisma.task.update({ where: { id: task.id }, data: { leadOverrideId: data.toUserId, leadOverrideUntil: endOfLocalDay(new Date(), tz) } });
     } else {
       // The same shape the assign path writes: the LEAD row, the legacy column, and no stale override.
-      await this.prisma.$transaction([
-        this.prisma.taskAssignee.updateMany({ where: { taskId: task.id, role: 'LEAD' }, data: { role: 'MEMBER' } }),
-        this.prisma.taskAssignee.upsert({
+      /*
+        ⚠️ The job's row is locked first: two hand-overs at once each demoted
+        only the LEAD rows they saw and promoted their own pick — two leaders.
+      */
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM "tasks" WHERE id = ${task.id} FOR UPDATE`;
+        await tx.taskAssignee.updateMany({ where: { taskId: task.id, role: 'LEAD' }, data: { role: 'MEMBER' } });
+        await tx.taskAssignee.upsert({
           where: { taskId_userId: { taskId: task.id, userId: data.toUserId } },
           create: { taskId: task.id, userId: data.toUserId, role: 'LEAD' },
           update: { role: 'LEAD' },
-        }),
-        this.prisma.task.update({ where: { id: task.id }, data: { assignedToId: data.toUserId, leadOverrideId: null, leadOverrideUntil: null } }),
-      ]);
+        });
+        await tx.task.update({ where: { id: task.id }, data: { assignedToId: data.toUserId, leadOverrideId: null, leadOverrideUntil: null } });
+      });
     }
     await this.prisma.taskEvent.create({
       data: {
@@ -454,7 +489,8 @@ export class CrewService {
    * crew member who is not the office — every other move pays nothing.
    */
   async assertMayMoveStep(task: CrewTask, actor: CrewActor, isOffice: boolean): Promise<void> {
-    if (isOffice) return;
+    // The office — org-wide, or "view all tasks" in THIS job's workspace — always moves it.
+    if (isOffice || this.isOffice(actor, task, 'canViewAllTasks')) return;
     const org = await this.prisma.organization.findUnique({ where: { id: task.organizationId }, select: { crewMode: true } });
     if (!org?.crewMode) return;
     const crew = await this.crewOf(task);
@@ -464,11 +500,10 @@ export class CrewService {
       this.jobTime.timelinesOf([task.id]).then((m) => m.get(task.id) ?? []),
       this.onClock(ids, task.organizationId),
     ]);
-    const verdict = mayMoveStep({ actorId: actor.userId, isOffice, onCrew: ids.includes(actor.userId), crewMode: true, leader: this.leaderFrom(task, crew, timeline, onClock) });
+    const leader = this.leaderFrom(task, crew, timeline, onClock);
+    const verdict = mayMoveStep({ actorId: actor.userId, isOffice: false, onCrew: ids.includes(actor.userId), crewMode: true, leader });
     if (!verdict.ok) {
-      const leaderId = this.leaderFrom(task, crew, timeline, onClock).userId;
-      const lead = leaderId ? await this.prisma.user.findUnique({ where: { id: leaderId }, select: { firstName: true, lastName: true } }) : null;
-      const name = lead ? `${lead.firstName} ${lead.lastName}`.trim() : '';
+      const name = leader.userId ? await this.nameOf(leader.userId) : '';
       throw new BadRequestException({ message: `${name || 'The leader'} moves this job's steps.`, code: verdict.code, params: { name } });
     }
   }

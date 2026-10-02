@@ -5,6 +5,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  HttpException,
   Inject,
   Optional,
 } from '@nestjs/common';
@@ -37,6 +38,7 @@ import {
   isAtSite,
   formatDistance,
   type OccurrenceEvidence,
+  type ResolvedAccess,
   ATTENDANCE_CONSTANTS,
   getStatusCapabilities,
   accessAllowsInSpace,
@@ -1811,9 +1813,14 @@ export class TasksService {
       with nothing written — the second and third person counted nothing.
     */
     if (isAssignedUser && task.status === data.status) {
-      await this.crew.joinAs(task, data.userId, { evidence: data.evidence }).catch((err: { response?: { code?: string } }) => {
-        // A step that counts no time (accepted, waiting) has nothing to join.
-        if (err?.response?.code !== CREW_CODES.JOB_NOT_STARTED) throw err;
+      await this.crew.joinAs(task, data.userId, { evidence: data.evidence }).catch((err: unknown) => {
+        /*
+          ⚠️ NEVER A NEW REFUSAL HERE. This tap was always answered "done"; an
+          old app or a replayed outbox op treats a refusal as permanent. A join
+          that cannot happen (a step that counts no time, off the clock, a guest
+          from another organization) leaves it at that.
+        */
+        if (!(err instanceof HttpException) || err.getStatus() >= 500) throw err;
       });
       return success(await this.prisma.task.findUnique({
         where: { id: data.id },
@@ -1932,7 +1939,9 @@ export class TasksService {
     }
 
     // ── Crew mode: the leader moves the step (shared crew.ts mayMoveStep) ──
-    if (isAssignedUser) await this.crew.assertMayMoveStep(task, { userId: data.userId, userRole: data.userRole, organizationId: data.organizationId }, hasManageAuthority);
+    if (isAssignedUser) {
+      await this.crew.assertMayMoveStep(task, { userId: data.userId, userRole: data.userRole, organizationId: data.organizationId, access: data.access as ResolvedAccess | undefined }, hasManageAuthority);
+    }
 
     // ── Clocked in to start work ──
     // Before the location check: "clock in first" is the more useful thing to
@@ -2949,6 +2958,12 @@ export class TasksService {
     actorId: string,
   ): Promise<void> {
     await this.syncPrimaryAssignee(taskId);
+    // A lead handed over for today ends when that person is no longer on the crew (shared crew.ts).
+    const lead = await this.prisma.task.findUnique({ where: { id: taskId }, select: { leadOverrideId: true, assignedToId: true } });
+    if (lead?.leadOverrideId && lead.leadOverrideId !== lead.assignedToId) {
+      const still = await this.prisma.taskAssignee.findUnique({ where: { taskId_userId: { taskId, userId: lead.leadOverrideId } }, select: { id: true } });
+      if (!still) await this.prisma.task.update({ where: { id: taskId }, data: { leadOverrideId: null, leadOverrideUntil: null } });
+    }
 
     /*
       A task with somebody on it is ASSIGNED.

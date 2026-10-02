@@ -147,11 +147,18 @@ export class JobPauseService {
       job "running" with nobody counted on it; somebody joined and still on
       the clock keeps it running, and is not stopped under.
     */
-    const timelines = await this.jobTime.timelinesOf(jobs.map((j) => j.id));
+    const [timelines, rows] = await Promise.all([
+      this.jobTime.timelinesOf(jobs.map((j) => j.id)),
+      jobs.length
+        ? this.prisma.taskAssignee.findMany({ where: { taskId: { in: jobs.map((j) => j.id) } }, select: { taskId: true, userId: true } })
+        : Promise.resolve([] as Array<{ taskId: string; userId: string }>),
+    ]);
+    // ⚠️ THE CREW, not everybody in the history: a dispatcher dragging the card
+    // on the board is a STATUS event too, and must never keep a job running.
+    const crewOf = new Map(jobs.map((j) => [j.id, new Set([j.assignedToId, ...rows.filter((r) => r.taskId === j.id).map((r) => r.userId)].filter((x): x is string => !!x))]));
     const joinedOf = new Map(jobs.map((j) => {
-      const tl = timelines.get(j.id) ?? [];
-      const people = [...new Set(tl.map((e) => e.forUserId ?? e.userId))];
-      return [j.id, [...crewPresence(tl, people)].filter(([, p]) => p.joined).map(([id]) => id)] as const;
+      const people = [...(crewOf.get(j.id) ?? [])];
+      return [j.id, [...crewPresence(timelines.get(j.id) ?? [], people)].filter(([, p]) => p.joined).map(([id]) => id)] as const;
     }));
     const others = [...new Set([...joinedOf.values()].flat().filter((id) => id !== userId))];
     const onClock = new Set(

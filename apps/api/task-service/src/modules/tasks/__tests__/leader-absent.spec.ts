@@ -25,6 +25,8 @@ describe('LeaderAbsentService.sweep', () => {
         }]),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
+      // The creator is told only when they are staff (not a portal client, not external).
+      user: { findFirst: jest.fn().mockImplementation(async ({ where }: any) => (where.id === 'anna' ? { id: 'anna' } : null)) },
     };
     routing.resolveWatchers.mockResolvedValue({ ids: ['mara'], emails: [] });
     crew.viewFor.mockResolvedValue({ leader: { userId: 'priya', acting: true }, members: [{ user: { id: 'priya', firstName: 'Priya', lastName: 'Rhodes' } }] });
@@ -56,6 +58,12 @@ describe('LeaderAbsentService.sweep', () => {
   it('leave that does not cover today where the work is: nothing', async () => {
     prisma.timeOff.findMany.mockResolvedValue([{ technicianId: 'tobias', startDate: new Date('2026-10-02T00:00:00Z'), endDate: new Date('2026-10-03T00:00:00Z') }]);
     await expect(service.sweep(now)).resolves.toBe(0);
+  });
+
+  it('a portal client who created the job never hears about staff leave', async () => {
+    prisma.user.findFirst.mockResolvedValue(null);
+    await service.sweep(now);
+    expect(emit).toHaveBeenCalledWith('task_lead_needed', expect.objectContaining({ recipientIds: ['mara'] }));
   });
 
   it('nobody routed and no creator: nobody is blasted', async () => {

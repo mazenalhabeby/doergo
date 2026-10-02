@@ -96,6 +96,7 @@ describe('the crew day — crew rules', () => {
     const p = crewPresence(at, ['tobias', 'priya', 'conor']);
     expect(p.get('tobias')).toMatchObject({ joined: true, selfBlockedSince: null });
     expect(p.get('priya')).toMatchObject({ joined: true, selfBlockedSince: ms('13:00') });
+    expect(crewPresence(events, ['tobias']).get('tobias')).toMatchObject({ joined: false, lastLeftAt: ms('15:00') });
     expect(p.get('conor')?.since).toBe(ms('07:30'));
   });
 
@@ -142,6 +143,12 @@ describe('effectiveLeader — a job is never stuck behind one absent person', ()
   it("today's hand-over wins while it lasts", () => {
     expect(effectiveLeader({ leadId: 't', today: { userId: 'p', until: ms('23:59') }, now, onClock: new Set(['t', 'p']), joinedInOrder: [] }).userId).toBe('p');
     expect(effectiveLeader({ leadId: 't', today: { userId: 'p', until: ms('08:00') }, now, onClock: new Set(['t', 'p']), joinedInOrder: [] }).userId).toBe('t');
+  });
+  it('before anybody joined, the first crew member on the clock stands in (a job with a sick leader can start)', () => {
+    expect(effectiveLeader({ leadId: 't', now, onClock: new Set(['c', 'p']), joinedInOrder: [], crewInOrder: ['t', 'p', 'c'] })).toEqual({ userId: 'p', acting: true, source: 'ACTING' });
+  });
+  it("today's hand-over to somebody no longer on the crew is ignored", () => {
+    expect(effectiveLeader({ leadId: 't', today: { userId: 'gone', until: ms('23:59') }, now, onClock: new Set(['t', 'gone']), joinedInOrder: [], crewInOrder: ['t', 'p'] }).userId).toBe('t');
   });
   it('nobody on the clock: stays with the named leader', () => {
     expect(effectiveLeader({ leadId: 't', now, onClock: new Set(), joinedInOrder: ['p'] })).toEqual({ userId: 't', acting: false, source: 'LEAD' });
@@ -191,5 +198,15 @@ describe('endOfLocalDay', () => {
   it('is the last millisecond of the day where the work is', () => {
     const end = endOfLocalDay(new Date('2026-10-01T15:00:00Z'), 'America/Los_Angeles');
     expect(end.toISOString()).toBe('2026-10-02T06:59:59.999Z');
+  });
+
+  it('a 25-hour day (clocks back) still ends at midnight', () => {
+    // Vienna, Sunday 25 October 2026: CEST → CET at 03:00. Midnight that night is 23:00Z.
+    expect(endOfLocalDay(new Date('2026-10-25T10:00:00Z'), 'Europe/Vienna').toISOString()).toBe('2026-10-25T22:59:59.999Z');
+  });
+
+  it('a 23-hour day (clocks forward) still ends at midnight', () => {
+    // Vienna, Sunday 29 March 2026: CET → CEST. Midnight that night is 22:00Z.
+    expect(endOfLocalDay(new Date('2026-03-29T10:00:00Z'), 'Europe/Vienna').toISOString()).toBe('2026-03-29T21:59:59.999Z');
   });
 });

@@ -79,6 +79,8 @@ export class LeaderAbsentService {
         organization: { select: { timezone: true } },
         assignedTo: { select: { firstName: true, lastName: true } },
       },
+      // Soonest first, so a very busy day never leaves today's jobs out.
+      orderBy: { dueDate: 'asc' },
       take: 500,
     });
 
@@ -100,7 +102,18 @@ export class LeaderAbsentService {
         this.routing.resolveWatchers(job.assignedToId!, job.organizationId, 'tasks'),
         this.crew.viewFor(job.id),
       ]);
-      const recipients = [...new Set([...watchers.ids, ...(job.createdById ? [job.createdById] : [])])].filter((id) => id !== job.assignedToId);
+      /*
+        ⚠️ The creator only when they are STAFF. A portal client or an external
+        observer can create a job; the leave of somebody who works here is not
+        theirs to hear.
+      */
+      const creator = job.createdById
+        ? await this.prisma.user.findFirst({
+            where: { id: job.createdById, organizationId: job.organizationId, isExternal: false, isActive: true, role: { not: 'CUSTOMER' } },
+            select: { id: true },
+          })
+        : null;
+      const recipients = [...new Set([...watchers.ids, ...(creator ? [creator.id] : [])])].filter((id) => id !== job.assignedToId);
       if (!recipients.length) continue;
       const acting = view?.leader.acting ? view.members.find((m) => m.user.id === view.leader.userId)?.user : null;
       this.notifications.emit('task_lead_needed', {
