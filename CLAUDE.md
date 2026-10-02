@@ -1324,7 +1324,7 @@ docker exec -it hbcfield-redis redis-cli
 
 ### Recently Completed (2026-10-02) — A crew on one job (BUILT, NOT DEPLOYED)
 
-Migration `20261002180000_task_crew` (additive: 5 event types, `Task.leadOverrideId/Until`, `Task.leadNoticeOn`, `Organization.crewMode` default off). Commits `b429f119`…`6d2ab2e6`. See the endpoint section "A crew on one job" for the rules that bite.
+Migration `20261002180000_task_crew` (additive: 5 event types, `Task.leadOverrideId/Until`, `Task.leadNoticeOn`, `Organization.crewMode` default off). Commits `b429f119`…`24de5a3a` (the last is the fixes from an independent audit). See the endpoint section "A crew on one job" for the rules that bite.
 
 - **Credit was only a person's own step move**: in a crew where one person taps, the rest counted 0; simultaneous "On the way" credited the first; one person's issue blocked everyone; the leader was a label; a job ran on with nobody counted; a sick leader stopped nothing.
 - Shared rules + 29 rule tests (the mockup day: 7h/3h/0 before, 7h/8h30/9h30 = 25h after), `CrewService` 24 tests (the security boundary), `LeaderAbsentService` 6, `tools/crew-e2e.py` **45 checks over real HTTP** against the local demo org (never prod).
