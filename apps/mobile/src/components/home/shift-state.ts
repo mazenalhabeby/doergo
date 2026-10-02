@@ -448,3 +448,17 @@ export function budgetParts(doneMinutes: number, targetHours: number): { value: 
   ];
 }
 
+/**
+ * When the totals must be asked again: on and off the clock, a new entry — and
+ * ⚠️ when a queued shift change finishes sending. A clock-out is optimistic:
+ * the status flips at the tap and the history is asked at once, BEFORE the
+ * queued clock-out reached the server, so ⑥ showed the shift before this one
+ * with nothing to ask again once it landed. ONE key for the Time page and the
+ * home card — they were two copies, and fixing one left the other wrong.
+ */
+export function totalsRevision(
+  status: { isClockedIn?: boolean; currentEntry?: { id?: string } | null } | null | undefined,
+  pendingSync: boolean,
+): string {
+  return `${status?.isClockedIn ? '1' : '0'}:${status?.currentEntry?.id ?? ''}:${pendingSync ? 'q' : ''}`;
+}

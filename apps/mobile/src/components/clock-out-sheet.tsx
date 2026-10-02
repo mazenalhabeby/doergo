@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTimeFormat } from '../hooks/useTimeFormat';
 import { useTheme } from '../contexts/theme-context';
@@ -140,6 +140,13 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
         surface, one component.
       */}
       <SheetPanel onClose={close}>
+        {/*
+          ⚠️ THE BODY SCROLLS, THE BUTTONS DO NOT. Away from the site, a job still
+          in work and an open note box together are taller than a phone, and
+          SheetPanel only CAPS the height — the jade button was clipped off the
+          bottom with nothing to scroll it back.
+        */}
+        <ScrollView style={{ flexShrink: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {/* The eyebrow says WHERE. You have not left the card; it has opened. */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1) }}>
           <LiveDot color={late || early ? c.warn : c.accent} live={false} />
@@ -284,6 +291,8 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
             </AText>
           </Pressable>
         )}
+
+        </ScrollView>
 
         {/*
           ⚠️ ONE JADE BUTTON, AND NOTHING DISABLES IT — rule 1. `disabled` here

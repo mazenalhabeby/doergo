@@ -21,7 +21,7 @@ import { Ground, ScreenHeader, Well, useTabSafe } from '../amazen';
 import { centeredContent } from '../screen-container';
 import { ApproveGlyph } from '../glyphs/glyphs';
 import { ShiftClockCardView } from '../home/shift-clock-card';
-import { scheduleFor } from '../home/shift-state';
+import { scheduleFor, totalsRevision } from '../home/shift-state';
 import { useScheduleTotals } from '../home/use-schedule-totals';
 import { TimePickerModal } from '../time-picker-modal';
 import { TourTarget, useTourScroll } from '../tour';
@@ -77,7 +77,7 @@ export function TimeScreen() {
   const actions = useShiftActions();
   const totals = useScheduleTotals({
     schedule: scheduleFor(user?.scheduleType),
-    revision: `${status?.isClockedIn ? '1' : '0'}:${status?.currentEntry?.id ?? ''}`,
+    revision: totalsRevision(status, shift.pendingSync),
     // The week bars need the week whatever the schedule — and the card reads the same answer.
     enabled: true,
     userId: user?.id ?? null,

@@ -23,7 +23,7 @@ import { stopGeofence } from '../../services/background-geofence';
 import { formatDurationMinutes as formatDuration } from '../../lib/utils';
 import { AText, CardSurface, Chip, Disc, DiscRow, Eyebrow, Hero, LiveDot } from '../amazen';
 import { BreakGlyph, ClockOutGlyph, IssueMineGlyph, IssueNewGlyph } from '../glyphs/shift-glyphs';
-import { heroParts, readShiftState, scheduleFor, targetLabel } from './shift-state';
+import { heroParts, readShiftState, scheduleFor, targetLabel, totalsRevision } from './shift-state';
 import { useScheduleTotals, type ScheduleTotalsView } from './use-schedule-totals';
 import { useUnreadIssues } from './use-unread-issues';
 
@@ -186,7 +186,7 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
   */
   const own = useScheduleTotals({
     schedule,
-    revision: `${status?.isClockedIn ? '1' : '0'}:${status?.currentEntry?.id ?? ''}`,
+    revision: totalsRevision(status, shift.pendingSync),
     enabled: !given && (!status?.isClockedIn || schedule !== 'FIXED'),
     userId: user?.id ?? null,
   });
