@@ -2,7 +2,7 @@
 
 > One job, several workers, one leader. Every worker's time counted from their
 > own join to their own leave, inside their own shift, for every workflow.
-> Status: **plan, nothing built**. Explained in Arabic with voice:
+> Status: **BUILT 2026-10-02, not deployed** (commits `b429f119`…). The crew panel rides on `GET /tasks/:id/time` instead of a separate `GET /tasks/:id/crew`. Explained in Arabic with voice:
 > https://claude.ai/artifact/XY2a2RVnrXusz8THnS8rw3
 
 ---

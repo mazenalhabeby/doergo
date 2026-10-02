@@ -485,6 +485,29 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 >
 > ⚠️ The migration BACKFILLS an open period per existing holder row, dated from `AssetHolder.createdAt`. Without it every asset in somebody's hands reads "held by nobody" on the day it ships, and its whole ledger attributes to nobody with it.
 
+### A crew on one job (`/tasks`) — presence, own stops, the lead
+> One job, several workers, one leader. Each person's time counts from **their join** to **their leave**, inside **their own shift**, in the job's kind of time — `blocked` for them alone while they are stopped. Rules: `packages/shared/src/tasks/crew.ts` (+ `job-time.ts`); server: `task-service/.../handover/crew.service.ts`. Plan: `docs/plans/crew-job-time.md`.
+
+| Method | Endpoint | Description | Gate |
+|--------|----------|-------------|------|
+| POST | `/tasks/:id/crew/join` | Join — own tap, "I'm with him" (`viaLeaderStart`: from the leader's start, within 30 min, never before the clock-in), or the office for somebody (`forUserId` + reason) | on the crew; clock gate; `@DenyExternal` |
+| POST | `/tasks/:id/crew/leave` | Leave — the last JOINED member on the clock leaving pauses the job and owes the note | joined |
+| POST | `/tasks/:id/crew/issue` · `/crew/resume` | "My issue": only this person's time is blocked; the job and the crew carry on (the leader is pushed the reason) | joined; resume asks the clock gate |
+| PUT | `/tasks/:id/lead` | Hand THIS job's lead to somebody already on its crew — `TODAY` (until the end of the workspace's day) or `PERMANENT` (the LEAD row + `assignedToId`) | the effective leader, or `canAssignTasks` org-wide / in the job's space |
+| GET | `/tasks/:id/time` | now also carries `crew`: members, presence, own stops, the effective leader | the task read gate |
+
+> ⚠️ **A crew member tapping the step the job is ALREADY in joins** (three people pressing "On the way" together). It used to be answered "done" with nothing written — the second and third counted nothing.
+>
+> ⚠️ **The pause is the last JOINED member out**, not the last person on the crew; **a clock-out is a leave** (`CREW_LEFT why: CLOCK_OUT`) — tomorrow they join again ("I'm with him" on the crew push, or Resume).
+>
+> ⚠️ **Effective leader**: today's hand-over (while on the clock) → the LEAD (while on the clock) → **the first joined member on the clock, acting, automatically** — a job is never stuck behind one absent person. Derived, never stored.
+>
+> ⚠️ **`Organization.crewMode` is OFF by default**: then any crew member moves the step, as before (old phones keep working). ON (Settings): only the effective leader or the office — `CREW_LEADER_MOVES_STEPS {name}`.
+>
+> ⚠️ **The morning notice** (`LeaderAbsentService`, every 30 min under the cron lease, from 06:00 local): a job whose LEAD has approved leave today → the leader's routing ∪ the job's creator, once per day (`Task.leadNoticeOn`), naming the stand-in. Never every admin.
+>
+> ⚠️ **Refusals**: a job the caller cannot see is 404; a rule they can act on is 400 with a `CREW_*` code; a member taking the lead is 403. The new leader must already be on THIS crew — nobody is ADDED to a crew here.
+
 ### Users (`/users`) - Push Tokens
 | Method | Endpoint | Description | Roles |
 |--------|----------|-------------|-------|
@@ -1134,6 +1157,8 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `assertMemberInScope()`, `memberScopeFilter()` | "Is this person in my crew?" — one rule for both services |
 | `formatDistance()`, `distanceParts()`, `distanceRefusalParams()` | THE distance formatter — "85 m", "850 m", "1.2 km", "9,631 km", per locale, no-break space. Mobile `lib/distance`, web `useFormatDistance` only bind the locale. Distance refusals are CODED (`TOO_FAR_TO_ARRIVE`/`TOO_FAR_TO_START`/`OUTSIDE_GEOFENCE`/`AWAY_NOT_ALLOWED` + `params.distanceMetres/radiusMetres`); `distance-display-guard.spec.ts` fails on a hand-built km/m |
 | `activeAssignmentWhere()` | "Is this member assigned to this workspace RIGHT NOW?" — shared by the clock-in list and the clock-in check |
+| `crewPresence()`, `joinMoment()`, `effectiveLeader()`, `mayMoveStep()`, `pausesAtClockOut()`, `endOfLocalDay()` | A crew on one job (tasks/crew.ts): who is on it, when a join counts from, who leads now (acting included), who may move the step, does a clock-out pause it |
+| `selfBlockWindows()`, `personalSpans()` | A person's own stop ("My issue") turns THEIR share blocked; the job's own line is untouched (job-time.ts) |
 | `planHandover()`, `canHandOver()`, `partiesAfter()` | What handing an asset over WILL do — the confirm dialog renders it, the server executes it |
 | `holderOn()`, `holdersOn()`, `totalsByPeriod()`, `attribute()` | Whose cost was this? Computed from the date, never stored |
 | `custodyDays()`, `openPeriods()`, `partyKey()` | One custody, read for a screen |
@@ -1296,6 +1321,16 @@ docker exec -it hbcfield-redis redis-cli
 ## 17. NEXT IMMEDIATE TASKS
 
 **Current Sprint**: nothing blocking. Outstanding and NOT doable from the machine: (1) **one real card payment has never completed** — pending since July; (2) INVOICE mode has produced a real subscription (`sub_1UC6kH…`, `send_invoice`, €472.78 incl. AT VAT, due 18 Sept) but **no customer has paid one yet**, and HBC GmbH has since been moved to EXTERNAL; (3) the app stores still serve an older binary, so an OTA only reaches installed 1.0.3/1.0.4 apps.
+
+### Recently Completed (2026-10-02) — A crew on one job (BUILT, NOT DEPLOYED)
+
+Migration `20261002180000_task_crew` (additive: 5 event types, `Task.leadOverrideId/Until`, `Task.leadNoticeOn`, `Organization.crewMode` default off). Commits `b429f119`…`6d2ab2e6`. See the endpoint section "A crew on one job" for the rules that bite.
+
+- **Credit was only a person's own step move**: in a crew where one person taps, the rest counted 0; simultaneous "On the way" credited the first; one person's issue blocked everyone; the leader was a label; a job ran on with nobody counted; a sick leader stopped nothing.
+- Shared rules + 29 rule tests (the mockup day: 7h/3h/0 before, 7h/8h30/9h30 = 25h after), `CrewService` 24 tests (the security boundary), `LeaderAbsentService` 6, `tools/crew-e2e.py` **45 checks over real HTTP** against the local demo org (never prod).
+- `ClockGateService` extracted from `TasksService`: ONE clock gate for step moves, Resume and joining.
+- Phone: crew card, "I'm with them" push button (notification category, JS-only — OTA-safe), My issue / Leave / Hand over sheets, crew-mode dock; web: crew card, Change leader dialog, history wording, Settings switch. Five languages.
+- ⚠️ `pdf-receipt.spec.ts` and `recurring-customer.spec.ts` (task-service) fail on main BEFORE this work — not caused by it.
 
 ### Recently Completed (2026-09-10) — Custody: who holds a thing, and what they spend on it
 
