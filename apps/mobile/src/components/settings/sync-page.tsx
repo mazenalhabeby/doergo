@@ -15,6 +15,10 @@ import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Well } from '..
 import { centeredContent } from '../screen-container';
 import { Pill, SectionLabel } from '../job/job-ui';
 import { StateCard, SwitchRow } from './settings-ui';
+import { useTimeFormat } from '../../hooks/useTimeFormat';
+import { useToast } from '../../island/island-context';
+import { refusedShiftCopy, refusedSpaceId, SHIFT_OPS } from '../../offline/attendance/refused-shift';
+import { ReportIssueSheet } from '../shift-issue-sheet';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const STORAGE_WARN_BYTES = 500 * 1024 * 1024;
@@ -90,6 +94,28 @@ export function SyncPage() {
     return o.lastError?.message || t('offline.errors.default');
   };
   const time = (ms: number) => formatTimeOfDay(ms, hour12);
+  const timeFormat = useTimeFormat();
+  const toast = useToast();
+  const [report, setReport] = useState<{ opId: string; title: string; body: string; spaceId?: string } | null>(null);
+  /*
+    A refused clock-in, clock-out or rest says why in the member's terms, and
+    offers no "Try again": that would resend the OLD time, and a day-old
+    clock-in replayed is a back-dated shift with nobody to clock it out.
+  */
+  const shiftCopy = (o: OutboxOp) =>
+    SHIFT_OPS.has(o.op) ? refusedShiftCopy(t, o, { clock: (d) => timeFormat.formatClock(d), date: (d) => timeFormat.formatDate(d) }) : null;
+  /* Why something is still waiting, when the last attempt said. */
+  const waitingWhy = (o: OutboxOp) => {
+    const code = o.lastError?.code;
+    if (code === 'WAITING_FOR_WIFI') return t('offline.errors.WAITING_FOR_WIFI');
+    if (o.state === 'awaiting_auth') return t('settings.sync.waitingSignIn', 'Waiting for you to sign in again.');
+    if (o.state === 'retry') return t('settings.sync.waitingRetry', "The server didn't answer. It tries again by itself.");
+    return null;
+  };
+  const removeWaiting = async (o: OutboxOp) => {
+    const gone = await engine?.cancelPending(o.id);
+    if (!gone) toast.info(t('settings.sync.cantRemove', 'This already reached the server, so it stays. It finishes by itself.'));
+  };
 
   /* The answer, in one line. */
   const need = groups.attention.length;
@@ -137,19 +163,36 @@ export function SyncPage() {
               <>
                 <SectionLabel tone="critical" style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>{`${t('offline.sync.attention')} · ${need}`}</SectionLabel>
                 <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
-                  {groups.attention.map((o, i) => (
-                    <View key={o.id} style={{ paddingVertical: amazen.space(3), gap: 4, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell }}>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-                        <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5, flexShrink: 1 }}>{label(o)}</AText>
-                        <AText variant="caption" tone="muted" numeric>{time(o.createdAt)}</AText>
+                  {groups.attention.map((o, i) => {
+                    const shiftWords = shiftCopy(o);
+                    return (
+                      <View key={o.id} style={{ paddingVertical: amazen.space(3), gap: 4, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+                          <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5, flexShrink: 1 }}>{label(o)}</AText>
+                          <AText variant="caption" tone="muted" numeric>{time(o.createdAt)}</AText>
+                        </View>
+                        <AText variant="caption" style={{ color: c.critical, lineHeight: 18 }}>{shiftWords?.reason ?? reason(o)}</AText>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(2), marginTop: 6 }}>
+                          {shiftWords ? (
+                            <>
+                              {shiftWords.canClockInNow ? (
+                                <SmallButton accent label={t('shiftClock.refused.clockInNow', 'Clock in now')} onPress={() => router.navigate('/(app)/(tabs)' as Href)} />
+                              ) : null}
+                              <SmallButton
+                                label={t('shiftClock.refused.tellOffice', 'Tell my office')}
+                                onPress={() => setReport({ opId: o.id, title: shiftWords.issueTitle, body: shiftWords.issueBody, spaceId: refusedSpaceId(o) })}
+                              />
+                            </>
+                          ) : o.state === 'failed' ? <SmallButton label={t('offline.sync.retry')} onPress={() => void engine?.retry(o.id)} /> : null}
+                          <SmallButton
+                            label={o.state === 'conflict' ? t('offline.sync.gotIt') : shiftWords ? t('settings.sync.remove', 'Remove') : t('offline.sync.discard')}
+                            critical={o.state !== 'conflict'}
+                            onPress={() => void engine?.discard(o.id)}
+                          />
+                        </View>
                       </View>
-                      <AText variant="caption" style={{ color: c.critical, lineHeight: 18 }}>{reason(o)}</AText>
-                      <View style={{ flexDirection: 'row', gap: amazen.space(2), marginTop: 6 }}>
-                        {o.state === 'failed' ? <SmallButton label={t('offline.sync.retry')} onPress={() => void engine?.retry(o.id)} /> : null}
-                        <SmallButton label={o.state === 'conflict' ? t('offline.sync.gotIt') : t('offline.sync.discard')} critical={o.state !== 'conflict'} onPress={() => void engine?.discard(o.id)} />
-                      </View>
-                    </View>
-                  ))}
+                    );
+                  })}
                 </Well>
               </>
             ) : null}
@@ -160,8 +203,23 @@ export function SyncPage() {
                 <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
                   {groups.waiting.map((o, i) => {
                     const wifi = o.lastError?.code === 'WAITING_FOR_WIFI';
-                    return row(o, i, <Pill label={wifi ? 'Wi-Fi' : t('offline.chip.waiting')} tone="warn" />,
-                      wifi ? t('offline.errors.WAITING_FOR_WIFI') : t('offline.sync.waitingSince', { time: time(o.createdAt) }));
+                    const why = waitingWhy(o);
+                    const removable = o.state === 'pending' || o.state === 'retry';
+                    return (
+                      <View key={o.id} style={{ paddingVertical: amazen.space(3), gap: 4, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                          <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5, flexShrink: 1 }}>{label(o)}</AText>
+                          <Pill label={wifi ? 'Wi-Fi' : t('offline.chip.waiting')} tone="warn" />
+                        </View>
+                        <AText variant="caption" tone="muted">{t('offline.sync.waitingSince', { time: time(o.createdAt) })}{why ? ` · ${why}` : ''}</AText>
+                        {o.state === 'retry' || removable ? (
+                          <View style={{ flexDirection: 'row', gap: amazen.space(2), marginTop: 6 }}>
+                            {o.state === 'retry' && online ? <SmallButton label={t('settings.sync.tryNow', 'Try now')} onPress={() => void refresh()} /> : null}
+                            {removable ? <SmallButton critical label={t('settings.sync.remove', 'Remove')} onPress={() => void removeWaiting(o)} /> : null}
+                          </View>
+                        ) : null}
+                      </View>
+                    );
                   })}
                 </Well>
               </>
@@ -197,16 +255,28 @@ export function SyncPage() {
           </>
         )}
       </ScrollView>
+      <ReportIssueSheet
+        visible={!!report}
+        onClose={() => setReport(null)}
+        spaceId={report?.spaceId}
+        initialTitle={report?.title}
+        initialDescription={report?.body}
+        onCreated={(id) => {
+          if (report) void engine?.discard(report.opId);
+          setReport(null);
+          router.navigate({ pathname: '/(app)/(tabs)/attendance', params: { issueId: id } } as unknown as Href);
+        }}
+      />
     </Ground>
   );
 }
 
-function SmallButton({ label, onPress, critical }: { label: string; onPress: () => void; critical?: boolean }) {
+function SmallButton({ label, onPress, critical, accent }: { label: string; onPress: () => void; critical?: boolean; accent?: boolean }) {
   const { amazen } = useTheme();
   const c = amazen.color;
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => ({ borderRadius: amazen.radius.full, backgroundColor: c.tile, paddingHorizontal: 14, paddingVertical: 8, opacity: pressed ? 0.8 : 1 })}>
-      <AText variant="caption" style={{ fontSize: 13, color: critical ? c.critical : c.inkStrong }}>{label}</AText>
+    <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => ({ borderRadius: amazen.radius.full, backgroundColor: accent ? c.accentSolid : c.tile, paddingHorizontal: 14, paddingVertical: 8, opacity: pressed ? 0.8 : 1 })}>
+      <AText variant="caption" style={{ fontSize: 13, color: accent ? c.accentInk : critical ? c.critical : c.inkStrong, fontFamily: accent ? amazen.font.sansMedium : undefined }}>{label}</AText>
     </Pressable>
   );
 }

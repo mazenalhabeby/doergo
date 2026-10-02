@@ -135,12 +135,20 @@ export function useShift(): ShiftView & { source: Loaded['source']; refresh: () 
     return () => { alive = false; };
   }, [userId]);
 
-  // A shift operation the server just accepted: fetch what it now says.
+  /*
+    A shift operation the server just ANSWERED: fetch what it now says.
+
+    ⚠️ Refused too, not only accepted. A queued clock-in drops out of the
+    overlay the moment it is refused, and without a fresh read the card went on
+    drawing whatever the last copy said — which is how a member came to be
+    shown clocked in on a shift the server never had.
+  */
   const accepted = useRef(new Set<string>());
   useEffect(() => {
     let fresh = false;
     for (const o of operations) {
-      if (!o.op.startsWith('attendance.') || o.state !== 'done' || accepted.current.has(o.id)) continue;
+      const answered = o.state === 'done' || o.state === 'failed' || o.state === 'conflict';
+      if (!o.op.startsWith('attendance.') || !answered || accepted.current.has(o.id)) continue;
       accepted.current.add(o.id);
       fresh = true;
     }

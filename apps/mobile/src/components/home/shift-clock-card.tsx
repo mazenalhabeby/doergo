@@ -8,6 +8,9 @@ import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
 import { useShift, useShiftActions } from '../../offline/attendance/use-shift';
+import { refusedShiftCopy, refusedSpaceId } from '../../offline/attendance/refused-shift';
+import { useRefusedShift } from '../../offline/attendance/use-refused-shift';
+import { useOffline } from '../../offline/offline-context';
 import { SyncChip } from '../../offline/components/sync-chip';
 import { BreakSheet, LocationPickerSheet, ClockOutSheet } from '../index';
 import { ReportIssueSheet, ShiftIssueListSheet, ShiftIssueThreadSheet } from '../shift-issue-sheet';
@@ -108,6 +111,7 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
     clocked at 23:50 read as tomorrow to somebody who travelled.
   */
   const clockOf = useTimeFormat().formatTime;
+  const timeFormat = useTimeFormat();
 
   /*
     ⚠️ THE SHIFT COMES FROM `use-shift.ts` AND NEVER FROM THE RESPONSE CACHE
@@ -134,6 +138,8 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
   */
   const [breakOpen, setBreakOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  /** A report already written — a refused clock-in, what and why — or null for a blank one. */
+  const [reportPrefill, setReportPrefill] = useState<{ title: string; body: string; spaceId?: string } | null>(null);
   const [listOpen, setListOpen] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
   useEffect(() => {
@@ -209,6 +215,21 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
   });
 
   const entryId = status?.currentEntry?.id;
+
+  /*
+    A clock-in, clock-out or rest the server refused AFTER the card had shown
+    it done (see refused-shift.ts). Said on the card until the member deals
+    with it — the card used to drop back to "Ready to start" and say nothing.
+  */
+  const { running: engine } = useOffline();
+  const refused = useRefusedShift();
+  const refusedCopy = refused
+    ? refusedShiftCopy(t, refused, { clock: (d) => timeFormat.formatClock(d), date: (d) => timeFormat.formatDate(d) })
+    : null;
+  /* A clock-in that went through replaces the refused one — nothing is left to deal with. */
+  useEffect(() => {
+    if (refused?.op === 'attendance.clockIn' && status?.isClockedIn && !shift.pendingSync && engine) void engine.discard(refused.id);
+  }, [refused, status?.isClockedIn, shift.pendingSync, engine]);
 
   /*
     ⚠️ THE SAME NUMBER THE LIST SHOWS — see `use-unread-issues.ts`. The disc
@@ -522,6 +543,39 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
           ) : null}
         </Pressable>
 
+        {refused && refusedCopy ? (
+          <View
+            accessibilityRole="alert"
+            style={{
+              marginTop: amazen.space(4),
+              backgroundColor: c.criticalTint,
+              borderRadius: amazen.radius.field,
+              padding: amazen.space(3.5),
+              gap: amazen.space(1.5),
+            }}
+          >
+            <AText variant="body" style={{ color: c.critical, fontFamily: amazen.font.sansMedium }}>{refusedCopy.title}</AText>
+            <AText variant="caption" tone="ink" style={{ lineHeight: 18 }}>{refusedCopy.reason}</AText>
+            <View style={{ flexDirection: 'row', gap: amazen.space(5), marginTop: amazen.space(1) }}>
+              <Pressable
+                accessibilityRole="button"
+                hitSlop={8}
+                onPress={() => {
+                  setReportPrefill({ title: refusedCopy.issueTitle, body: refusedCopy.issueBody, spaceId: refusedSpaceId(refused) });
+                  setReportOpen(true);
+                }}
+              >
+                <AText variant="caption" style={{ color: c.critical, fontFamily: amazen.font.sansMedium }}>
+                  {t('shiftClock.refused.tellOffice', { defaultValue: 'Tell my office' })}
+                </AText>
+              </Pressable>
+              <Pressable accessibilityRole="button" hitSlop={8} onPress={() => void engine?.discard(refused.id)}>
+                <AText variant="caption" tone="onGlass">{t('shiftClock.refused.dismiss', { defaultValue: 'Dismiss' })}</AText>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
         {/*
           ⚠️ EXACTLY ONE DISC IS FILLED (rule 2), and its GLOW is what marks it
           primary — not its size and not its position. That is what lets the
@@ -553,9 +607,11 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
             })}
           >
             <AText variant="body" style={{ color: c.accentInk, fontFamily: amazen.font.sansMedium }}>
-              {st.kind === 'done'
-                ? t('shiftClock.clockInAgain', { defaultValue: 'Clock in again' })
-                : t('home.fullTime.clockIn')}
+              {refusedCopy?.canClockInNow
+                ? t('shiftClock.refused.clockInNow', { defaultValue: 'Clock in now' })
+                : st.kind === 'done'
+                  ? t('shiftClock.clockInAgain', { defaultValue: 'Clock in again' })
+                  : t('home.fullTime.clockIn')}
             </AText>
           </Pressable>
         )}
@@ -615,12 +671,20 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
 
       <ReportIssueSheet
         visible={reportOpen}
-        onClose={() => setReportOpen(false)}
-        timeEntryId={entryId}
-        spaceId={status?.currentEntry?.location?.id}
-        workspace={st.workspace}
-        since={status?.currentEntry?.clockInAt ? clockOf(status.currentEntry.clockInAt) : null}
-        onCreated={(id) => { setReportOpen(false); setThreadId(id); }}
+        onClose={() => { setReportOpen(false); setReportPrefill(null); }}
+        timeEntryId={reportPrefill ? undefined : entryId}
+        spaceId={reportPrefill ? reportPrefill.spaceId : status?.currentEntry?.location?.id}
+        workspace={reportPrefill ? null : st.workspace}
+        since={!reportPrefill && status?.currentEntry?.clockInAt ? clockOf(status.currentEntry.clockInAt) : null}
+        initialTitle={reportPrefill?.title}
+        initialDescription={reportPrefill?.body}
+        onCreated={(id) => {
+          // The office has it now: the refusal is dealt with.
+          if (reportPrefill && refused) void engine?.discard(refused.id);
+          setReportOpen(false);
+          setReportPrefill(null);
+          setThreadId(id);
+        }}
       />
       <ShiftIssueListSheet
         visible={listOpen}

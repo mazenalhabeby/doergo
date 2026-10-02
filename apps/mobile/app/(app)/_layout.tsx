@@ -1,4 +1,5 @@
 import { OfflineProvider } from '../../src/offline/offline-context';
+import { RefusedShiftNotifier } from '../../src/offline/attendance/refused-shift-notifier';
 import { OfflineSocketPoke } from '../../src/offline/components/offline-socket-poke';
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { Stack, useRouter, useRootNavigationState, useSegments, Href } from 'expo-router';
@@ -186,6 +187,7 @@ export default function AppLayout() {
 
   return (
     <OfflineProvider>
+    <RefusedShiftNotifier />
     <SocketProvider>
     <GlobalChatNotifier />
     <OfflineSocketPoke />

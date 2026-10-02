@@ -3292,7 +3292,18 @@
     "breakReason": "Pour quoi ? (facultatif)",
     "restOf": "{{duration}}",
     "restCounts": "compte comme du travail",
-    "restDoesNotCount": "ne compte pas"
+    "restDoesNotCount": "ne compte pas",
+    "refused": {
+      "clockIn": "Votre pointage d'arrivée à {{time}} n'a pas été enregistré",
+      "clockOut": "Votre pointage de départ à {{time}} n'a pas été enregistré",
+      "rest": "Votre pause à {{time}} n'a pas été enregistrée",
+      "outOfOrder": "Vos heures indiquent déjà un service qui se termine plus tard ({{date}}). Demandez à votre bureau de vérifier vos heures.",
+      "noClockIn": "Votre pointage d'arrivée n'a pas été enregistré, il n'y avait donc rien à clôturer. Votre bureau peut ajouter vos heures.",
+      "issueBody": "Le {{day}} à {{time}}, l'application a refusé ceci.\nRaison : {{reason}}\nMerci de vérifier mes heures.",
+      "tellOffice": "Prévenir mon bureau",
+      "dismiss": "Ignorer",
+      "clockInNow": "Pointer maintenant"
+    }
   },
   "crew": {
     "onTheClock": "pointés",
@@ -4333,7 +4344,12 @@
       "noSignal": "Pas de réseau. Ils partiront d’eux-mêmes dès qu’il y en aura.",
       "allSent": "Tout est sur le serveur",
       "lastSent": "Dernier envoi à {{time}}",
-      "sentToday": "Envoyé aujourd’hui"
+      "sentToday": "Envoyé aujourd’hui",
+      "waitingSignIn": "En attente de votre reconnexion.",
+      "waitingRetry": "Le serveur n'a pas répondu. Il réessaie tout seul.",
+      "cantRemove": "Ceci a déjà atteint le serveur, il reste donc. Il se termine tout seul.",
+      "tryNow": "Réessayer maintenant",
+      "remove": "Retirer"
     },
     "about": {
       "version": "Version",

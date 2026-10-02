@@ -3292,7 +3292,18 @@
     "breakReason": "Wofür? (optional)",
     "restOf": "{{duration}}",
     "restCounts": "zählt als Arbeitszeit",
-    "restDoesNotCount": "zählt nicht"
+    "restDoesNotCount": "zählt nicht",
+    "refused": {
+      "clockIn": "Ihr Einstempeln um {{time}} wurde nicht gespeichert",
+      "clockOut": "Ihr Ausstempeln um {{time}} wurde nicht gespeichert",
+      "rest": "Ihre Pause um {{time}} wurde nicht gespeichert",
+      "outOfOrder": "Ihre Stunden zeigen bereits eine Schicht, die später endet ({{date}}). Bitten Sie Ihr Büro, Ihre Stunden zu prüfen.",
+      "noClockIn": "Ihr Einstempeln wurde nicht gespeichert, daher gab es nichts zum Ausstempeln. Ihr Büro kann Ihre Stunden nachtragen.",
+      "issueBody": "Am {{day}} um {{time}} hat die App dies abgelehnt.\nGrund: {{reason}}\nBitte prüfen Sie meine Stunden.",
+      "tellOffice": "Büro informieren",
+      "dismiss": "Ausblenden",
+      "clockInNow": "Jetzt einstempeln"
+    }
   },
   "crew": {
     "onTheClock": "eingestempelt",
@@ -4333,7 +4344,12 @@
       "noSignal": "Kein Netz. Sie werden von selbst gesendet, sobald es eines gibt.",
       "allSent": "Alles ist auf dem Server",
       "lastSent": "Zuletzt gesendet um {{time}}",
-      "sentToday": "Heute gesendet"
+      "sentToday": "Heute gesendet",
+      "waitingSignIn": "Wartet darauf, dass Sie sich wieder anmelden.",
+      "waitingRetry": "Der Server hat nicht geantwortet. Es wird automatisch erneut versucht.",
+      "cantRemove": "Das hat den Server bereits erreicht und bleibt bestehen. Es wird von selbst abgeschlossen.",
+      "tryNow": "Jetzt versuchen",
+      "remove": "Entfernen"
     },
     "about": {
       "version": "Version",

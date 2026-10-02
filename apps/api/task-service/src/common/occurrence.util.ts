@@ -25,7 +25,10 @@ export function judgeOccurrence(
   if (!evidence) return { at: now, flags: [], fromEvidence: false };
   const assessed = assessOccurrence(evidence, { now, previousAt: previousAt ?? null });
   if (assessed.refusal) {
-    throw new BadRequestException({ message: assessed.refusal.message, code: assessed.refusal.code });
+    // OUT_OF_ORDER names the moment it had to follow, so the phone can say "your hours
+    // already show a shift ending later (Mon 5 Oct)" instead of a sentence nobody can act on.
+    const params = assessed.refusal.code === 'OUT_OF_ORDER' && previousAt ? { previousAt: previousAt.toISOString() } : undefined;
+    throw new BadRequestException({ message: assessed.refusal.message, code: assessed.refusal.code, ...(params ? { params } : {}) });
   }
   return { at: assessed.occurredAt, flags: [...assessed.flags], fromEvidence: true };
 }

@@ -3292,7 +3292,18 @@
     "breakReason": "Per cosa? (facoltativo)",
     "restOf": "{{duration}}",
     "restCounts": "conta come lavoro",
-    "restDoesNotCount": "non conta"
+    "restDoesNotCount": "non conta",
+    "refused": {
+      "clockIn": "La tua entrata delle {{time}} non è stata salvata",
+      "clockOut": "La tua uscita delle {{time}} non è stata salvata",
+      "rest": "La tua pausa delle {{time}} non è stata salvata",
+      "outOfOrder": "Le tue ore mostrano già un turno che finisce più tardi ({{date}}). Chiedi al tuo ufficio di controllare le tue ore.",
+      "noClockIn": "La tua entrata non è stata salvata, quindi non c'era nulla da chiudere. Il tuo ufficio può aggiungere le tue ore.",
+      "issueBody": "Il {{day}} alle {{time}} l'app ha rifiutato questo.\nMotivo: {{reason}}\nPer favore controllate le mie ore.",
+      "tellOffice": "Avvisa il mio ufficio",
+      "dismiss": "Ignora",
+      "clockInNow": "Timbra ora"
+    }
   },
   "crew": {
     "onTheClock": "in servizio",
@@ -4333,7 +4344,12 @@
       "noSignal": "Nessuna rete. Partono da soli appena c’è.",
       "allSent": "Tutto è sul server",
       "lastSent": "Ultimo invio alle {{time}}",
-      "sentToday": "Inviato oggi"
+      "sentToday": "Inviato oggi",
+      "waitingSignIn": "In attesa che tu acceda di nuovo.",
+      "waitingRetry": "Il server non ha risposto. Riprova da solo.",
+      "cantRemove": "Questo ha già raggiunto il server, quindi resta. Si completa da solo.",
+      "tryNow": "Riprova ora",
+      "remove": "Rimuovi"
     },
     "about": {
       "version": "Versione",

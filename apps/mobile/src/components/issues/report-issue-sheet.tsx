@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
@@ -41,6 +41,8 @@ export function ReportIssueSheet({
   spaceId,
   workspace,
   since,
+  initialTitle,
+  initialDescription,
   onCreated,
 }: {
   visible: boolean;
@@ -51,6 +53,9 @@ export function ReportIssueSheet({
   workspace?: string | null;
   /** When the shift started — shown for the same reason. */
   since?: string | null;
+  /** A report the app has already written for them — a refused clock-in says what was refused, when, and why. */
+  initialTitle?: string;
+  initialDescription?: string;
   /** The thread, once the member asks to open it. */
   onCreated: (id: string) => void;
 }) {
@@ -74,6 +79,13 @@ export function ReportIssueSheet({
   }, []);
 
   const close = useCallback(() => { reset(); onClose(); }, [reset, onClose]);
+
+  // Opened with a report already written: put it in the fields, still editable.
+  useEffect(() => {
+    if (!visible) return;
+    if (initialTitle) setTitle((cur) => cur || initialTitle);
+    if (initialDescription) setDescription((cur) => cur || initialDescription);
+  }, [visible, initialTitle, initialDescription]);
 
   const submit = useCallback(async () => {
     if (!title.trim()) return;

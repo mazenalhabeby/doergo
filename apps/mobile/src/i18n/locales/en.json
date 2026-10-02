@@ -3292,7 +3292,18 @@
     "breakReason": "What is it for? (optional)",
     "restOf": "{{duration}}",
     "restCounts": "counts as worked",
-    "restDoesNotCount": "does not count"
+    "restDoesNotCount": "does not count",
+    "refused": {
+      "clockIn": "Your clock-in at {{time}} wasn't saved",
+      "clockOut": "Your clock-out at {{time}} wasn't saved",
+      "rest": "Your break at {{time}} wasn't saved",
+      "outOfOrder": "Your hours already show a shift ending later ({{date}}). Ask your office to check your hours.",
+      "noClockIn": "Your clock-in wasn't saved, so there was nothing to clock out of. Your office can add your hours.",
+      "issueBody": "On {{day}} at {{time}} the app refused this.\nReason: {{reason}}\nPlease check my hours.",
+      "tellOffice": "Tell my office",
+      "dismiss": "Dismiss",
+      "clockInNow": "Clock in now"
+    }
   },
   "crew": {
     "onTheClock": "on the clock",
@@ -4333,7 +4344,12 @@
       "noSignal": "No signal. They send by themselves when there is one.",
       "allSent": "Everything is on the server",
       "lastSent": "Last sent at {{time}}",
-      "sentToday": "Sent today"
+      "sentToday": "Sent today",
+      "waitingSignIn": "Waiting for you to sign in again.",
+      "waitingRetry": "The server didn't answer. It tries again by itself.",
+      "cantRemove": "This already reached the server, so it stays. It finishes by itself.",
+      "tryNow": "Try now",
+      "remove": "Remove"
     },
     "about": {
       "version": "Version",

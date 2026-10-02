@@ -11,6 +11,7 @@ import { OPEN_STATES } from './outbox/types';
 import { STUCK_AFTER_MS, stuckFor } from './outbox/stuck';
 import { connectivity, createOfflineRuntime } from './runtime';
 import { reportTelemetry } from './telemetry';
+import { notifyRefusedShifts } from './attendance/refused-shift-notify';
 
 /*
   Sending what waits, now and then, with the app closed.
@@ -79,6 +80,8 @@ async function runOnce(): Promise<boolean> {
     await runtime.engine.flush();
     await flushPendingRoute();
     await warnIfStuck(runtime.engine.operations());
+    // A clock-in this run sent and the server refused: the member is told now, not when they next open the app.
+    await notifyRefusedShifts(runtime.engine.operations()).catch(() => undefined);
     await reportTelemetry(runtime.engine, runtime.files);
     return true;
   } finally {

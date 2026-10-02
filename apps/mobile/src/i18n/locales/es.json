@@ -3292,7 +3292,18 @@
     "breakReason": "¿Para qué? (opcional)",
     "restOf": "{{duration}}",
     "restCounts": "cuenta como trabajado",
-    "restDoesNotCount": "no cuenta"
+    "restDoesNotCount": "no cuenta",
+    "refused": {
+      "clockIn": "Tu entrada a las {{time}} no se guardó",
+      "clockOut": "Tu salida a las {{time}} no se guardó",
+      "rest": "Tu pausa a las {{time}} no se guardó",
+      "outOfOrder": "Tus horas ya muestran un turno que termina más tarde ({{date}}). Pide a tu oficina que revise tus horas.",
+      "noClockIn": "Tu entrada no se guardó, así que no había nada de lo que marcar la salida. Tu oficina puede añadir tus horas.",
+      "issueBody": "El {{day}} a las {{time}} la app rechazó esto.\nMotivo: {{reason}}\nPor favor, revisen mis horas.",
+      "tellOffice": "Avisar a mi oficina",
+      "dismiss": "Descartar",
+      "clockInNow": "Marcar entrada ahora"
+    }
   },
   "crew": {
     "onTheClock": "fichados",
@@ -4333,7 +4344,12 @@
       "noSignal": "Sin cobertura. Se envían solos cuando haya.",
       "allSent": "Todo está en el servidor",
       "lastSent": "Último envío a las {{time}}",
-      "sentToday": "Enviado hoy"
+      "sentToday": "Enviado hoy",
+      "waitingSignIn": "Esperando a que vuelvas a iniciar sesión.",
+      "waitingRetry": "El servidor no respondió. Lo vuelve a intentar solo.",
+      "cantRemove": "Esto ya llegó al servidor, así que se queda. Termina solo.",
+      "tryNow": "Intentar ahora",
+      "remove": "Quitar"
     },
     "about": {
       "version": "Versión",
