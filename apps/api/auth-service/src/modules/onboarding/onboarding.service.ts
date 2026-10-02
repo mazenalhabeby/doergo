@@ -919,6 +919,8 @@ export class OnboardingService {
         name: true,
         industry: true,
         usesExternalWorkers: true,
+        // Crew rules: only a job's leader moves its step (shared tasks/crew.ts).
+        crewMode: true,
         // Shown on the Settings screen, so an admin can see and change the
         // number every member's vacation balance is measured against.
         defaultLeaveAllowance: true,
@@ -956,7 +958,7 @@ export class OnboardingService {
   async updateOrgProfile(organizationId: string, updates: any) {
     // `usesExternalWorkers` (the in-house/external field-worker capability) is
     // settable directly by the Settings toggle.
-    const allowedFields = ['name', 'industry', 'usesExternalWorkers', 'address', 'addressLine1', 'addressLine2', 'city', 'state', 'postalCode', 'country', 'phone', 'email', 'website', 'timezone', 'logoUrl', 'vatId', 'billableRateCents', 'costRateCents', 'enabledModules'];
+    const allowedFields = ['name', 'industry', 'usesExternalWorkers', 'crewMode', 'address', 'addressLine1', 'addressLine2', 'city', 'state', 'postalCode', 'country', 'phone', 'email', 'website', 'timezone', 'logoUrl', 'vatId', 'billableRateCents', 'costRateCents', 'enabledModules'];
     const data: any = {};
 
     for (const key of allowedFields) {
@@ -985,6 +987,7 @@ export class OnboardingService {
       return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'No valid fields to update' };
     }
 
+    if (typeof data.crewMode !== 'undefined') data.crewMode = data.crewMode === true;
     if (typeof data.usesExternalWorkers !== 'undefined') {
       data.usesExternalWorkers = !!data.usesExternalWorkers;
     } else if (typeof data.industry === 'string') {
@@ -997,7 +1000,7 @@ export class OnboardingService {
     const org = await this.prisma.organization.update({
       where: { id: organizationId },
       data,
-      select: { id: true, name: true, industry: true, usesExternalWorkers: true, address: true, addressLine1: true, addressLine2: true, city: true, state: true, postalCode: true, country: true, phone: true, email: true, website: true, timezone: true, logoUrl: true, vatId: true, billableRateCents: true, enabledModules: true },
+      select: { id: true, name: true, industry: true, usesExternalWorkers: true, crewMode: true, address: true, addressLine1: true, addressLine2: true, city: true, state: true, postalCode: true, country: true, phone: true, email: true, website: true, timezone: true, logoUrl: true, vatId: true, billableRateCents: true, enabledModules: true },
     });
 
     return { success: true, data: org };

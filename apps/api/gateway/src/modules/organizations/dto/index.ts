@@ -99,6 +99,11 @@ export class UpdateOrgProfileDto {
   @IsBoolean()
   usesExternalWorkers?: boolean;
 
+  @ApiPropertyOptional({ description: "Crew rules: only a job's leader (or the acting leader, or the office) moves its step" })
+  @IsOptional()
+  @IsBoolean()
+  crewMode?: boolean;
+
   @ApiPropertyOptional({ description: 'Address (legacy single line)' })
   @IsOptional()
   @IsString()

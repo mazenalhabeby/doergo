@@ -4,6 +4,7 @@ import { SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
 import { TasksController } from './tasks.controller';
 import { TasksService } from './tasks.service';
 import { DepartureReminderService } from './departure-reminder.service';
+import { LeaderAbsentService } from './leader-absent.service';
 import { TasksProcessor } from './tasks.processor';
 import { AttachmentsModule } from '../attachments/attachments.module';
 
@@ -26,6 +27,7 @@ import { HandoverModule } from './handover/handover.module';
     TasksService,
     TasksProcessor, // BullMQ processor for exactly-once job processing
     DepartureReminderService, // sweep: tells a member when to set off
+    LeaderAbsentService, // sweep: tells the office a job's leader is off today
   ],
   exports: [TasksService],
 })
