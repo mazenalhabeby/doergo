@@ -492,7 +492,9 @@ export class AttendanceService {
     */
     const lastClosed = data.evidence
       ? await this.prisma.timeEntry.findFirst({
-          where: { userId: data.userId, clockOutAt: { not: null } },
+          // Only a shift that has actually ended. One entered for a day still to
+          // come would make every real clock-in before it "out of order".
+          where: { userId: data.userId, clockOutAt: { not: null, lte: new Date() } },
           orderBy: { clockOutAt: 'desc' },
           select: { clockOutAt: true },
         })

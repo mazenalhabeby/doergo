@@ -58,6 +58,11 @@ export function AddAttendanceDialog({
   const [locationId, setLocationId] = useState("")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
+  // A shift is added once it has happened; the server refuses one that ends later than now.
+  const today = useMemo(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+  }, [])
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5])
   const [startTime, setStartTime] = useState("08:00")
   const [endTime, setEndTime] = useState("16:00")
@@ -330,6 +335,7 @@ export function AddAttendanceDialog({
               <Input
                 type="date"
                 value={startDate}
+                max={today}
                 onChange={(e) => setStartDate(e.target.value)}
               />
             </div>
@@ -340,6 +346,7 @@ export function AddAttendanceDialog({
                 <Input
                   type="date"
                   value={startDate}
+                  max={today}
                   onChange={(e) => setStartDate(e.target.value)}
                 />
               </div>
@@ -349,6 +356,7 @@ export function AddAttendanceDialog({
                   type="date"
                   value={endDate}
                   min={startDate || undefined}
+                  max={today}
                   onChange={(e) => setEndDate(e.target.value)}
                 />
               </div>

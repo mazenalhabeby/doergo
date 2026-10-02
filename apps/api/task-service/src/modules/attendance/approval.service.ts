@@ -692,6 +692,22 @@ export class ApprovalService {
       let clockOut = zonedWallTimeToUtc(ymd, data.endTime);
       if (clockOut <= clockIn) clockOut = new Date(clockOut.getTime() + 24 * 3600_000); // overnight
       /*
+        Never a shift that has not happened yet.
+
+        A clock-in is judged against the end of the member's last shift, and a
+        tap earlier than that is refused as out of order. A hand-entered shift
+        ending next Monday therefore refused every real clock-in until Monday
+        evening: the phone showed the member clocked in, the server had nothing,
+        and they could neither clock out nor clock in again. Refused here, before
+        anything is written, naming the day.
+      */
+      if (clockOut.getTime() > now.getTime()) {
+        throw new BadRequestException({
+          code: 'MANUAL_ENTRY_IN_FUTURE',
+          message: `A shift can only be added once it has ended — ${ymd} ${data.endTime} is still to come.`,
+        });
+      }
+      /*
         GROSS minutes. The break is stored beside it, never inside it.
 
         This subtracted `breakMin` here, which made a manually added entry mean
