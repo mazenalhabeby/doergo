@@ -76,6 +76,12 @@ export function JobActivity({
         case 'PAUSED': return by(t('job.activity.paused'));
         case 'RESUMED': return by(t('job.activity.resumed'));
         case 'HANDOVER_ADDED': return meta?.content ? by(t('job.activity.handover', { text: String(meta.content) })) : null;
+        // A crew on one job (shared tasks/crew.ts): one person's own presence, and the lead.
+        case 'CREW_JOINED': return by(t(meta?.viaLeaderAt ? 'job.activity.crewJoinedWithLeader' : 'job.activity.crewJoined'));
+        case 'CREW_LEFT': return by(t(meta?.why === 'CLOCK_OUT' ? 'job.activity.crewLeftClockOut' : meta?.why === 'OTHER_JOB' ? 'job.activity.crewLeftOtherJob' : 'job.activity.crewLeft'));
+        case 'SELF_BLOCKED': return by(meta?.reason ? t('job.activity.selfBlocked', { reason: String(meta.reason) }) : t('job.activity.selfBlockedPlain'));
+        case 'SELF_RESUMED': return by(t('job.activity.selfResumed'));
+        case 'LEAD_CHANGED': return t(meta?.scope === 'TODAY' ? 'job.activity.leadToday' : 'job.activity.leadForGood', { name: String(meta?.toName ?? '') });
         case 'CHECKLIST_ITEM_TOGGLED':
           return meta?.text ? by(t(meta?.isCompleted ? 'job.activity.ticked' : 'job.activity.unticked', { text: String(meta.text) })) : null;
         default: return null; // Comments are drawn as themselves; the rest is office bookkeeping.

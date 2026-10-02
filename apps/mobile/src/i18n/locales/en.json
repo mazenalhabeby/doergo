@@ -3785,7 +3785,17 @@
       "paused": "Paused at clock-out",
       "resumed": "Work resumed",
       "handover": "Handover: {{text}}",
-      "startedByOffice": "{{step}} · started by {{name}} (office)"
+      "startedByOffice": "{{step}} · started by {{name}} (office)",
+      "crewJoined": "Joined the job",
+      "crewJoinedWithLeader": "Joined the job with the leader",
+      "crewLeft": "Left the job",
+      "crewLeftClockOut": "Left the job at clock-out",
+      "crewLeftOtherJob": "Moved to another job",
+      "selfBlocked": "Stopped: {{reason}}",
+      "selfBlockedPlain": "Stopped",
+      "selfResumed": "Back to work",
+      "leadToday": "{{name}} leads today",
+      "leadForGood": "{{name}} is the new leader"
     },
     "timer": {
       "onJob": "{{time}} on this job",

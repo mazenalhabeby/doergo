@@ -3785,7 +3785,17 @@
       "paused": "Mise en pause au pointage de sortie",
       "resumed": "Travail repris",
       "handover": "Passation : {{text}}",
-      "startedByOffice": "{{step}} · commencée par {{name}} (bureau)"
+      "startedByOffice": "{{step}} · commencée par {{name}} (bureau)",
+      "crewJoined": "A rejoint le travail",
+      "crewJoinedWithLeader": "A rejoint avec le responsable",
+      "crewLeft": "A quitté le travail",
+      "crewLeftClockOut": "A quitté le travail au pointage de départ",
+      "crewLeftOtherJob": "Passé à un autre travail",
+      "selfBlocked": "Arrêté : {{reason}}",
+      "selfBlockedPlain": "Arrêté",
+      "selfResumed": "A repris",
+      "leadToday": "{{name}} dirige aujourd'hui",
+      "leadForGood": "{{name}} est le nouveau responsable"
     },
     "timer": {
       "onJob": "{{time}} sur cette intervention",

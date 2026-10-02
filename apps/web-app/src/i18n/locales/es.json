@@ -1622,9 +1622,26 @@
         "ATTACHMENT_REMOVED": "Adjunto quitado",
         "PAUSED": "En pausa al fichar la salida",
         "RESUMED": "Trabajo reanudado",
-        "HANDOVER_ADDED": "Traspaso escrito"
+        "HANDOVER_ADDED": "Traspaso escrito",
+        "CREW_JOINED": "Se unió al trabajo",
+        "CREW_LEFT": "Dejó el trabajo",
+        "SELF_BLOCKED": "Se detuvo",
+        "SELF_RESUMED": "Volvió al trabajo",
+        "LEAD_CHANGED": "Responsable cambiado"
       },
-      "byOffice": "por la oficina"
+      "byOffice": "por la oficina",
+      "crew": {
+        "addedByOffice": "Añadido al trabajo por la oficina",
+        "joinedWithLeader": "Se unió con el responsable",
+        "left": {
+          "SELF": "Dejó el trabajo",
+          "CLOCK_OUT": "Dejó el trabajo al fichar la salida",
+          "OTHER_JOB": "Pasó a otro trabajo",
+          "OFFICE": "Retirado del trabajo por la oficina"
+        },
+        "leadToday": "{{name}} dirige hoy",
+        "leadForGood": "{{name}} es el nuevo responsable"
+      }
     },
     "assignees": {
       "addTeamMember": "Agregar miembro del equipo",
@@ -1785,6 +1802,32 @@
       "office": "{{name}} (oficina)",
       "pausedAt": "En pausa al fichar la salida {{time}}",
       "onlyInShiftLong": "El tiempo de trabajo nunca supera el tiempo fichado: las horas facturadas al cliente y las trabajadas salen de los mismos momentos, así que no pueden contradecirse."
+    },
+    "crew": {
+      "title": "Equipo",
+      "onJob": "{{count}} de {{total}} en el trabajo",
+      "changeLeader": "Cambiar responsable",
+      "acting": "{{name}} sustituye hoy al responsable",
+      "leadsToday": "{{name}} dirige hoy",
+      "leads": "{{name}} dirige",
+      "stoppedWhy": "Detenido: {{reason}}",
+      "stopped": "Se detuvo",
+      "onSince": "En el trabajo desde las {{time}}",
+      "notOnJob": "No está en el trabajo",
+      "notClockedIn": "Sin fichar",
+      "actingChip": "Suplente",
+      "leaderChip": "Responsable",
+      "changeLeaderTitle": "Cambiar el responsable de este trabajo",
+      "changeLeaderBody": "Solo para este trabajo y solo a alguien de su equipo. Sus otros trabajos no cambian.",
+      "newLeader": "Nuevo responsable",
+      "onJobShort": "En el trabajo",
+      "howLong": "Por cuánto tiempo",
+      "forToday": "Por hoy",
+      "forGood": "Para siempre",
+      "reason": "Motivo (opcional)",
+      "reasonPlaceholder": "Tobias está de baja",
+      "handOver": "Pasar",
+      "changed": "Responsable cambiado"
     }
   },
   "technicians": {
@@ -2682,7 +2725,11 @@
       "vatId": "NIF / IVA (UID)",
       "vatIdPlaceholder": "p. ej. ATU12345678",
       "billableRate": "Tarifa facturable predeterminada (por hora)",
-      "billableRatePlaceholder": "p. ej. 85"
+      "billableRatePlaceholder": "p. ej. 85",
+      "crewMode": {
+        "label": "Trabajos en equipo: el responsable avanza los pasos",
+        "hint": "En un trabajo con varias personas, solo su responsable (o quien lo sustituya, o la oficina) lo avanza de paso en paso. Los demás se unen, informan de su propio problema y lo dejan. Actívalo cuando los teléfonos de tu equipo tengan la última versión de la app."
+      }
     },
     "members": {
       "defaultPermissions": "Permisos por defecto",

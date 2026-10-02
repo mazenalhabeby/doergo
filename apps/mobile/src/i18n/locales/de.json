@@ -3785,7 +3785,17 @@
       "paused": "Beim Ausstempeln pausiert",
       "resumed": "Arbeit fortgesetzt",
       "handover": "Übergabe: {{text}}",
-      "startedByOffice": "{{step}} · von {{name}} (Büro) begonnen"
+      "startedByOffice": "{{step}} · von {{name}} (Büro) begonnen",
+      "crewJoined": "Dem Auftrag beigetreten",
+      "crewJoinedWithLeader": "Mit der Leitung beigetreten",
+      "crewLeft": "Auftrag verlassen",
+      "crewLeftClockOut": "Beim Ausstempeln verlassen",
+      "crewLeftOtherJob": "Zu einem anderen Auftrag gewechselt",
+      "selfBlocked": "Gestoppt: {{reason}}",
+      "selfBlockedPlain": "Gestoppt",
+      "selfResumed": "Weitergearbeitet",
+      "leadToday": "{{name}} leitet heute",
+      "leadForGood": "{{name}} ist die neue Leitung"
     },
     "timer": {
       "onJob": "{{time}} an diesem Auftrag",

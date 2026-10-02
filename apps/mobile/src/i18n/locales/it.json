@@ -3785,7 +3785,17 @@
       "paused": "In pausa all'uscita",
       "resumed": "Lavoro ripreso",
       "handover": "Consegne: {{text}}",
-      "startedByOffice": "{{step}} · iniziato da {{name}} (ufficio)"
+      "startedByOffice": "{{step}} · iniziato da {{name}} (ufficio)",
+      "crewJoined": "Si è unito al lavoro",
+      "crewJoinedWithLeader": "Si è unito con il responsabile",
+      "crewLeft": "Ha lasciato il lavoro",
+      "crewLeftClockOut": "Ha lasciato il lavoro all'uscita",
+      "crewLeftOtherJob": "Passato a un altro lavoro",
+      "selfBlocked": "Fermo: {{reason}}",
+      "selfBlockedPlain": "Fermo",
+      "selfResumed": "Tornato al lavoro",
+      "leadToday": "{{name}} guida oggi",
+      "leadForGood": "{{name}} è il nuovo responsabile"
     },
     "timer": {
       "onJob": "{{time}} su questo lavoro",

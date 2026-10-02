@@ -420,7 +420,8 @@ export class CrewService {
         taskId: task.id,
         userId: data.userId,
         eventType: TaskEventType.LEAD_CHANGED,
-        metadata: { from: leader.userId, to: data.toUserId, scope, by: leader.userId === data.userId ? 'LEADER' : 'OFFICE', ...(reason ? { reason } : {}) },
+        // The new leader's name rides along, so the history reads it without a lookup.
+        metadata: { from: leader.userId, to: data.toUserId, toName: await this.nameOf(data.toUserId), scope, by: leader.userId === data.userId ? 'LEADER' : 'OFFICE', ...(reason ? { reason } : {}) },
       },
     });
     if (data.toUserId !== data.userId) {
@@ -430,6 +431,11 @@ export class CrewService {
     const fresh = await this.taskOf(task.id, task.organizationId);
     this.changed(fresh, data.userId);
     return success(await this.viewOf(fresh));
+  }
+
+  private async nameOf(userId: string): Promise<string> {
+    const u = await this.prisma.user.findUnique({ where: { id: userId }, select: { firstName: true, lastName: true } });
+    return u ? `${u.firstName} ${u.lastName}`.trim() : '';
   }
 
   /** The zone the work is in — what "today" means for a hand-over. */

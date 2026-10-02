@@ -1622,9 +1622,26 @@
         "ATTACHMENT_REMOVED": "Anhang entfernt",
         "PAUSED": "Beim Ausstempeln pausiert",
         "RESUMED": "Arbeit fortgesetzt",
-        "HANDOVER_ADDED": "Übergabe geschrieben"
+        "HANDOVER_ADDED": "Übergabe geschrieben",
+        "CREW_JOINED": "Dem Auftrag beigetreten",
+        "CREW_LEFT": "Auftrag verlassen",
+        "SELF_BLOCKED": "Selbst gestoppt",
+        "SELF_RESUMED": "Weitergearbeitet",
+        "LEAD_CHANGED": "Leitung geändert"
       },
-      "byOffice": "durch das Büro"
+      "byOffice": "durch das Büro",
+      "crew": {
+        "addedByOffice": "Vom Büro dem Auftrag hinzugefügt",
+        "joinedWithLeader": "Mit der Leitung beigetreten",
+        "left": {
+          "SELF": "Auftrag verlassen",
+          "CLOCK_OUT": "Beim Ausstempeln verlassen",
+          "OTHER_JOB": "Zu einem anderen Auftrag gewechselt",
+          "OFFICE": "Vom Büro abgezogen"
+        },
+        "leadToday": "{{name}} leitet heute",
+        "leadForGood": "{{name}} ist die neue Leitung"
+      }
     },
     "assignees": {
       "addTeamMember": "Teammitglied hinzufügen",
@@ -1785,6 +1802,32 @@
       "office": "{{name}} (Büro)",
       "pausedAt": "Beim Ausstempeln pausiert {{time}}",
       "onlyInShiftLong": "Auftragszeit ist nie mehr als die gestempelte Zeit: Dem Kunden berechnete und von der Person gearbeitete Stunden stammen aus denselben Zeitpunkten und können sich nicht widersprechen."
+    },
+    "crew": {
+      "title": "Team",
+      "onJob": "{{count}} von {{total}} am Auftrag",
+      "changeLeader": "Leitung ändern",
+      "acting": "{{name}} vertritt heute die Leitung",
+      "leadsToday": "{{name}} leitet heute",
+      "leads": "{{name}} leitet",
+      "stoppedWhy": "Gestoppt: {{reason}}",
+      "stopped": "Selbst gestoppt",
+      "onSince": "Am Auftrag seit {{time}}",
+      "notOnJob": "Nicht am Auftrag",
+      "notClockedIn": "Nicht eingestempelt",
+      "actingChip": "Vertretung",
+      "leaderChip": "Leitung",
+      "changeLeaderTitle": "Leitung dieses Auftrags ändern",
+      "changeLeaderBody": "Nur für diesen Auftrag und nur an jemanden aus seinem Team. Andere Aufträge ändern sich nicht.",
+      "newLeader": "Neue Leitung",
+      "onJobShort": "Am Auftrag",
+      "howLong": "Wie lange",
+      "forToday": "Für heute",
+      "forGood": "Dauerhaft",
+      "reason": "Grund (optional)",
+      "reasonPlaceholder": "Tobias ist im Krankenstand",
+      "handOver": "Übergeben",
+      "changed": "Leitung geändert"
     }
   },
   "technicians": {
@@ -2682,7 +2725,11 @@
       "vatId": "USt-IdNr. / UID",
       "vatIdPlaceholder": "z. B. ATU12345678",
       "billableRate": "Standard-Stundensatz (pro Stunde)",
-      "billableRatePlaceholder": "z. B. 85"
+      "billableRatePlaceholder": "z. B. 85",
+      "crewMode": {
+        "label": "Teamaufträge: Die Leitung bewegt die Schritte",
+        "hint": "Bei einem Auftrag mit mehreren Personen bewegt nur die Leitung (oder ihre Vertretung oder das Büro) ihn von Schritt zu Schritt. Alle anderen treten bei, melden ihr eigenes Problem und verlassen ihn. Einschalten, sobald die Handys Ihres Teams die neueste App haben."
+      }
     },
     "members": {
       "defaultPermissions": "Standardberechtigungen",

@@ -57,6 +57,7 @@ import {
   DescriptionSection,
   HandoverCard,
   JobTimeCard,
+  TaskCrewCard,
 } from "./_components"
 import { HandoverPendingNotice, useHandoverPendingText } from "@/components/handover-pending-notice"
 
@@ -442,8 +443,10 @@ export default function TaskDetailPage({
         </div>
 
         {/* ─── Job time: working, with travel and blocked apart ─── */}
-        <div className="mb-4">
+        <div className="mb-4 space-y-4">
           <JobTimeCard taskId={id} paused={!!task.pausedAt} />
+          {/* The crew: who is on the job now, who leads (shared tasks/crew.ts). */}
+          <TaskCrewCard taskId={id} paused={!!task.pausedAt} />
         </div>
 
         {/* ─── Progress Card — always visible ─────────────────────── */}

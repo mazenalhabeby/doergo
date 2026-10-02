@@ -1622,9 +1622,26 @@
         "ATTACHMENT_REMOVED": "Attachment removed",
         "PAUSED": "Paused at clock-out",
         "RESUMED": "Work resumed",
-        "HANDOVER_ADDED": "Handover written"
+        "HANDOVER_ADDED": "Handover written",
+        "CREW_JOINED": "Joined the job",
+        "CREW_LEFT": "Left the job",
+        "SELF_BLOCKED": "Stopped on their own",
+        "SELF_RESUMED": "Back to work",
+        "LEAD_CHANGED": "Leader changed"
       },
-      "byOffice": "by the office"
+      "byOffice": "by the office",
+      "crew": {
+        "addedByOffice": "Added to the job by the office",
+        "joinedWithLeader": "Joined the job with the leader",
+        "left": {
+          "SELF": "Left the job",
+          "CLOCK_OUT": "Left the job at clock-out",
+          "OTHER_JOB": "Moved to another job",
+          "OFFICE": "Taken off the job by the office"
+        },
+        "leadToday": "{{name}} leads today",
+        "leadForGood": "{{name}} is the new leader"
+      }
     },
     "assignees": {
       "addTeamMember": "Add Team Member",
@@ -1785,6 +1802,32 @@
       "office": "{{name}} (office)",
       "pausedAt": "Paused at clock-out {{time}}",
       "onlyInShiftLong": "Job time is never more than the time clocked in: hours billed to a client and hours worked by the person come from the same moments, so the two cannot disagree."
+    },
+    "crew": {
+      "title": "Crew",
+      "onJob": "{{count}} of {{total}} on the job",
+      "changeLeader": "Change leader",
+      "acting": "{{name}} is standing in for the leader today",
+      "leadsToday": "{{name}} leads today",
+      "leads": "{{name}} leads",
+      "stoppedWhy": "Stopped: {{reason}}",
+      "stopped": "Stopped on their own",
+      "onSince": "On the job since {{time}}",
+      "notOnJob": "Not on the job",
+      "notClockedIn": "Not clocked in",
+      "actingChip": "Acting",
+      "leaderChip": "Leader",
+      "changeLeaderTitle": "Change this job's leader",
+      "changeLeaderBody": "Only for this job, and only to somebody already on its crew. Their other jobs don't change.",
+      "newLeader": "New leader",
+      "onJobShort": "On the job",
+      "howLong": "For how long",
+      "forToday": "For today",
+      "forGood": "Permanently",
+      "reason": "Reason (optional)",
+      "reasonPlaceholder": "Tobias is on sick leave",
+      "handOver": "Hand over",
+      "changed": "Leader changed"
     }
   },
   "technicians": {
@@ -2682,7 +2725,11 @@
       "vatId": "VAT / UID number",
       "vatIdPlaceholder": "e.g. ATU12345678",
       "billableRate": "Default billable rate (per hour)",
-      "billableRatePlaceholder": "e.g. 85"
+      "billableRatePlaceholder": "e.g. 85",
+      "crewMode": {
+        "label": "Crew jobs: the leader moves the steps",
+        "hint": "On a job with several workers, only its leader (or whoever stands in for them, or the office) moves it from step to step. Everyone else joins the job, reports their own issue and leaves it. Turn on once your team's phones have the latest app."
+      }
     },
     "members": {
       "defaultPermissions": "Default Permissions",

@@ -16,6 +16,7 @@ import {
   FileEdit,
   PauseCircle,
   PenLine,
+  Crown,
   type LucideIcon,
 } from "lucide-react"
 
@@ -53,6 +54,12 @@ const EVENT_CONFIG: Record<
   PAUSED: { icon: PauseCircle, color: "text-muted-foreground", labelKey: "tasks.activity.events.PAUSED" },
   RESUMED: { icon: PlayCircle, color: "text-amber-500", labelKey: "tasks.activity.events.RESUMED" },
   HANDOVER_ADDED: { icon: PenLine, color: "text-primary", labelKey: "tasks.activity.events.HANDOVER_ADDED" },
+  // A crew on one job (shared tasks/crew.ts): one person's own presence, and the lead.
+  CREW_JOINED: { icon: UserPlus, color: "text-green-500", labelKey: "tasks.activity.events.CREW_JOINED" },
+  CREW_LEFT: { icon: UserMinus, color: "text-muted-foreground", labelKey: "tasks.activity.events.CREW_LEFT" },
+  SELF_BLOCKED: { icon: AlertTriangle, color: "text-amber-500", labelKey: "tasks.activity.events.SELF_BLOCKED" },
+  SELF_RESUMED: { icon: PlayCircle, color: "text-green-500", labelKey: "tasks.activity.events.SELF_RESUMED" },
+  LEAD_CHANGED: { icon: Crown, color: "text-primary", labelKey: "tasks.activity.events.LEAD_CHANGED" },
 }
 
 const EXCLUDED_EVENTS = ["COMMENT_ADDED"]
@@ -80,6 +87,24 @@ function getEventDescription(event: TaskEvent, t: (key: string, options?: Record
       }
       return desc
     }
+  }
+
+  // A crew on one job: say what happened in the person's terms, with the reason the history keeps.
+  if (metadata && event.eventType === "CREW_JOINED") {
+    if (metadata.byUserId) return `${t("tasks.activity.crew.addedByOffice")}${metadata.reason ? ` · “${String(metadata.reason)}”` : ""}`
+    return metadata.viaLeaderAt ? t("tasks.activity.crew.joinedWithLeader") : t("tasks.activity.events.CREW_JOINED")
+  }
+  if (metadata && event.eventType === "CREW_LEFT") {
+    const why = String(metadata.why ?? "SELF")
+    return t(`tasks.activity.crew.left.${["CLOCK_OUT", "OTHER_JOB", "OFFICE"].includes(why) ? why : "SELF"}`)
+  }
+  if (metadata && event.eventType === "SELF_BLOCKED" && metadata.reason) {
+    const reason = String(metadata.reason)
+    return `${t("tasks.activity.events.SELF_BLOCKED")}: ${reason.length > 40 ? reason.slice(0, 40) + "…" : reason}`
+  }
+  if (metadata && event.eventType === "LEAD_CHANGED") {
+    const name = String(metadata.toName ?? "")
+    return t(metadata.scope === "TODAY" ? "tasks.activity.crew.leadToday" : "tasks.activity.crew.leadForGood", { name })
   }
 
   if (event.eventType === "ASSIGNED" && metadata) {

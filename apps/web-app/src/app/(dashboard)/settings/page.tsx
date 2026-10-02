@@ -322,6 +322,8 @@ function GeneralSection() {
     vatId: "", billableRate: "",
     // Opt-in capability: distinguish in-house vs external field workers.
     usesExternalWorkers: false as boolean,
+    // Crew rules (shared tasks/crew.ts): only a job's leader moves its step.
+    crewMode: false as boolean,
   })
   const [initialized, setInitialized] = useState(false)
 
@@ -339,6 +341,7 @@ function GeneralSection() {
         vatId: profile.vatId ?? "",
         billableRate: profile.billableRateCents != null ? (profile.billableRateCents / 100).toString() : "",
         usesExternalWorkers: profile.usesExternalWorkers ?? false,
+        crewMode: profile.crewMode ?? false,
       })
       setInitialized(true)
     }
@@ -486,6 +489,19 @@ function GeneralSection() {
             <Switch
               checked={form.usesExternalWorkers}
               onCheckedChange={v => setForm(prev => ({ ...prev, usesExternalWorkers: v }))}
+            />
+          </div>
+
+          {/* Crew rules: off keeps today's behaviour; on once the phones run the app with the crew controls. */}
+          <div className="flex items-start justify-between gap-4 rounded-xl border border-border p-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">{t("settings.general.crewMode.label")}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t("settings.general.crewMode.hint")}</p>
+            </div>
+            <Switch
+              checked={form.crewMode}
+              onCheckedChange={v => setForm(prev => ({ ...prev, crewMode: v }))}
+              aria-label={t("settings.general.crewMode.label")}
             />
           </div>
 

@@ -3785,7 +3785,17 @@
       "paused": "En pausa al fichar la salida",
       "resumed": "Trabajo reanudado",
       "handover": "Traspaso: {{text}}",
-      "startedByOffice": "{{step}} · iniciado por {{name}} (oficina)"
+      "startedByOffice": "{{step}} · iniciado por {{name}} (oficina)",
+      "crewJoined": "Se unió al trabajo",
+      "crewJoinedWithLeader": "Se unió con el responsable",
+      "crewLeft": "Dejó el trabajo",
+      "crewLeftClockOut": "Dejó el trabajo al fichar la salida",
+      "crewLeftOtherJob": "Pasó a otro trabajo",
+      "selfBlocked": "Detenido: {{reason}}",
+      "selfBlockedPlain": "Detenido",
+      "selfResumed": "Volvió al trabajo",
+      "leadToday": "{{name}} dirige hoy",
+      "leadForGood": "{{name}} es el nuevo responsable"
     },
     "timer": {
       "onJob": "{{time}} en este trabajo",

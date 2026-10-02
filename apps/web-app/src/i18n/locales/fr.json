@@ -1622,9 +1622,26 @@
         "ATTACHMENT_REMOVED": "Pièce jointe supprimée",
         "PAUSED": "Mise en pause au pointage de sortie",
         "RESUMED": "Travail repris",
-        "HANDOVER_ADDED": "Passation écrite"
+        "HANDOVER_ADDED": "Passation écrite",
+        "CREW_JOINED": "A rejoint le travail",
+        "CREW_LEFT": "A quitté le travail",
+        "SELF_BLOCKED": "S'est arrêté",
+        "SELF_RESUMED": "A repris",
+        "LEAD_CHANGED": "Responsable changé"
       },
-      "byOffice": "par le bureau"
+      "byOffice": "par le bureau",
+      "crew": {
+        "addedByOffice": "Ajouté au travail par le bureau",
+        "joinedWithLeader": "A rejoint avec le responsable",
+        "left": {
+          "SELF": "A quitté le travail",
+          "CLOCK_OUT": "A quitté le travail au pointage de départ",
+          "OTHER_JOB": "Passé à un autre travail",
+          "OFFICE": "Retiré du travail par le bureau"
+        },
+        "leadToday": "{{name}} dirige aujourd'hui",
+        "leadForGood": "{{name}} est le nouveau responsable"
+      }
     },
     "assignees": {
       "addTeamMember": "Ajouter un membre de l'équipe",
@@ -1785,6 +1802,32 @@
       "office": "{{name}} (bureau)",
       "pausedAt": "Mise en pause au pointage de sortie {{time}}",
       "onlyInShiftLong": "Le temps d'intervention ne dépasse jamais le temps pointé : les heures facturées au client et les heures travaillées viennent des mêmes moments, elles ne peuvent pas se contredire."
+    },
+    "crew": {
+      "title": "Équipe",
+      "onJob": "{{count}} sur {{total}} sur le travail",
+      "changeLeader": "Changer de responsable",
+      "acting": "{{name}} remplace le responsable aujourd'hui",
+      "leadsToday": "{{name}} dirige aujourd'hui",
+      "leads": "{{name}} dirige",
+      "stoppedWhy": "Arrêté : {{reason}}",
+      "stopped": "Arrêté de lui-même",
+      "onSince": "Sur le travail depuis {{time}}",
+      "notOnJob": "Pas sur le travail",
+      "notClockedIn": "Pas pointé",
+      "actingChip": "Remplaçant",
+      "leaderChip": "Responsable",
+      "changeLeaderTitle": "Changer le responsable de ce travail",
+      "changeLeaderBody": "Uniquement pour ce travail, et seulement à quelqu'un de son équipe. Ses autres travaux ne changent pas.",
+      "newLeader": "Nouveau responsable",
+      "onJobShort": "Sur le travail",
+      "howLong": "Pour combien de temps",
+      "forToday": "Pour aujourd'hui",
+      "forGood": "Définitivement",
+      "reason": "Raison (facultatif)",
+      "reasonPlaceholder": "Tobias est en arrêt maladie",
+      "handOver": "Passer",
+      "changed": "Responsable changé"
     }
   },
   "technicians": {
@@ -2682,7 +2725,11 @@
       "vatId": "Numéro de TVA / UID",
       "vatIdPlaceholder": "ex. ATU12345678",
       "billableRate": "Taux facturable par défaut (par heure)",
-      "billableRatePlaceholder": "ex. 85"
+      "billableRatePlaceholder": "ex. 85",
+      "crewMode": {
+        "label": "Travaux d'équipe : le responsable fait avancer les étapes",
+        "hint": "Sur un travail à plusieurs, seul son responsable (ou son remplaçant, ou le bureau) le fait passer d'étape en étape. Les autres le rejoignent, signalent leur propre problème et le quittent. À activer quand les téléphones de votre équipe ont la dernière version de l'app."
+      }
     },
     "members": {
       "defaultPermissions": "Autorisations par défaut",

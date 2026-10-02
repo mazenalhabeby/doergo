@@ -572,6 +572,25 @@ export interface JobTimeView {
   byWorker: Array<JobTimeSplit & { user: PersonRef }>;
   live: { kind: keyof JobTimeSplit; workers: number } | null;
   startedBy: { user: PersonRef | null; forUser: PersonRef | null; office: boolean; reason: string | null; at: string } | null;
+  /** Who is on the crew now, and who leads (packages/shared/src/tasks/crew.ts). */
+  crew?: CrewView | null;
+}
+
+/** A crew on one job — rides on GET /tasks/:id/time. */
+export interface CrewView {
+  /** The organization's crew rules: only the leader moves the job's step. */
+  crewMode: boolean;
+  leader: { userId: string | null; acting: boolean; source: "TODAY" | "LEAD" | "ACTING" | "NONE" };
+  today: { userId: string; until: string } | null;
+  members: Array<{
+    user: PersonRef & { avatarUrl?: string | null };
+    role: "LEAD" | "MEMBER";
+    joined: boolean;
+    since: string | null;
+    selfBlockedSince: string | null;
+    selfBlockReason: string | null;
+    onClock: boolean;
+  }>;
 }
 
 /** GET /tasks/job-time/report */
@@ -1133,6 +1152,20 @@ export const tasksApi = {
   /** A job's time: travel, working, blocked — per worker, and who started it. */
   jobTime: async (id: string): Promise<JobTimeView | undefined> => {
     const response = await api.get<{ success: boolean; data: JobTimeView }>(`/tasks/${id}/time`);
+    if (response.error) throw apiError(response);
+    return response.data?.data;
+  },
+
+  /** Hand THIS job's lead to somebody on its crew — for today, or for good. */
+  changeLead: async (id: string, body: { toUserId: string; scope: "TODAY" | "PERMANENT"; reason?: string }): Promise<CrewView | undefined> => {
+    const response = await api.put<{ success: boolean; data: CrewView }>(`/tasks/${id}/lead`, body);
+    if (response.error) throw apiError(response);
+    return response.data?.data;
+  },
+
+  /** The office joining or taking somebody off a crew job, with the reason the history keeps. */
+  crewForMember: async (id: string, action: "join" | "leave", body: { forUserId: string; reason: string }): Promise<CrewView | undefined> => {
+    const response = await api.post<{ success: boolean; data: CrewView }>(`/tasks/${id}/crew/${action}`, body);
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -5816,6 +5849,8 @@ export interface OrganizationProfile {
   vatId?: string | null;
   billableRateCents?: number | null;
   usesExternalWorkers?: boolean | null;
+  /** Crew rules: only a job's leader moves its step (shared tasks/crew.ts). */
+  crewMode?: boolean | null;
   enabledModules?: string[] | null;
   notificationPrefs?: Record<string, boolean> | null;
   securitySettings?: Record<string, boolean | number> | null;
