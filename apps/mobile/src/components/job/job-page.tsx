@@ -403,7 +403,8 @@ export function JobPage({
       : showTimer
         ? t('job.timer.onJob', { time: formatOnJob((timeNow?.working ?? 0) * 60) })
         : isTracking ? t('job.timer.tracking') : t('job.timer.notTracking'),
-    live: tracksRoute ? isTracking : true,
+    // The dot pulses only while the figure beside it is running — a crew member on their own stop has a still working figure.
+    live: tracksRoute ? isTracking : timeNow?.live === 'working',
     retry: tracksRoute && trackingError ? () => void startTracking(task.id, taskDestination(task)) : undefined,
   } : null;
   const closedText = !closed ? null : canceled ? t('job.done.canceled') : needsReport(task.status, steps, workflowName) || task.status === TaskStatus.COMPLETED ? t('job.done.completed') : t('job.done.closed');

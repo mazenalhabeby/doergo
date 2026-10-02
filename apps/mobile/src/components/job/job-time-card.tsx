@@ -46,8 +46,9 @@ export function JobTimeCard({
         <View style={{ flex: 1 }} />
         {live ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1) }}>
-            <LiveDot color={c.accent} live />
-            <AText variant="caption" tone="accent">{t('job.time.live')}</AText>
+            {/* In the colour of what is running — a crew member's own stop runs as blocked. */}
+            <LiveDot color={tone[time.live!]} live />
+            <AText variant="caption" style={{ color: tone[time.live!] }}>{t('job.time.live')}</AText>
           </View>
         ) : paused ? (
           <AText variant="caption" tone="muted">{t('job.time.paused')}</AText>
