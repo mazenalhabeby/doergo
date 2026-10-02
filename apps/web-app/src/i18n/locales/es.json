@@ -4051,7 +4051,8 @@
     "noMembersFound": "No se encontraron miembros",
     "spaceMembers": "Miembros del espacio de trabajo",
     "otherMembers": "Otros miembros",
-    "membersSelected": "{{count}} miembros seleccionados"
+    "membersSelected": "{{count}} miembros seleccionados",
+    "membersSelected_one": "{{count}} miembro seleccionado"
   },
   "locationPicker": {
     "searchPlaceholder": "Busca una dirección..."

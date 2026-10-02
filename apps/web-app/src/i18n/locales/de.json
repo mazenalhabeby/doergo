@@ -4051,7 +4051,8 @@
     "noMembersFound": "Keine Mitglieder gefunden",
     "spaceMembers": "Arbeitsbereichsmitglieder",
     "otherMembers": "Andere Mitglieder",
-    "membersSelected": "{{count}} Mitglieder ausgewählt"
+    "membersSelected": "{{count}} Mitglieder ausgewählt",
+    "membersSelected_one": "{{count}} Mitglied ausgewählt"
   },
   "locationPicker": {
     "searchPlaceholder": "Nach einer Adresse suchen..."

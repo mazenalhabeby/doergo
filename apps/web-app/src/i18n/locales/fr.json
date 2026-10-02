@@ -4060,7 +4060,8 @@
     "noMembersFound": "Aucun membre trouvé",
     "spaceMembers": "Membres de l’espace de travail",
     "otherMembers": "Autres membres",
-    "membersSelected": "{{count}} membres sélectionnés"
+    "membersSelected": "{{count}} membres sélectionnés",
+    "membersSelected_one": "{{count}} membre sélectionné"
   },
   "locationPicker": {
     "searchPlaceholder": "Rechercher une adresse..."

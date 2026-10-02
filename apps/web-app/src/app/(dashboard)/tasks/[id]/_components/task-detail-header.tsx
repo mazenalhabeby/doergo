@@ -34,7 +34,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getStatusConfig } from "@/lib/constants"
+import { useStepConfigs } from "@/hooks/use-step-config"
 import { getRequestId } from "@/lib/utils"
 import { formatMediumDate as formatShortDate } from "@/lib/format-date"
 import { InlineEditField } from "./inline-edit-field"
@@ -81,7 +81,8 @@ export function TaskDetailHeader({
   const { t } = useTranslation()
   const requestId = getRequestId(task, user?.organizationName)
   const taskDate = formatShortDate(task.createdAt)
-  const statusConfig = getStatusConfig(task.status)
+  // The step's own name from the task's flow — the fixed table is English and knows only built-in steps.
+  const statusConfig = useStepConfigs([task])(task)
 
   return (
     <div className="mb-6">
