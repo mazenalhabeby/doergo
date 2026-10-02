@@ -1801,7 +1801,8 @@
       "empty": "Aucun temps d'intervention sur cette période.",
       "office": "{{name}} (bureau)",
       "pausedAt": "Mise en pause au pointage de sortie {{time}}",
-      "onlyInShiftLong": "Le temps d'intervention ne dépasse jamais le temps pointé : les heures facturées au client et les heures travaillées viennent des mêmes moments, elles ne peuvent pas se contredire."
+      "onlyInShiftLong": "Le temps d'intervention ne dépasse jamais le temps pointé : les heures facturées au client et les heures travaillées viennent des mêmes moments, elles ne peuvent pas se contredire.",
+      "blockedShort": "bloqué {{time}}"
     },
     "crew": {
       "title": "Équipe",

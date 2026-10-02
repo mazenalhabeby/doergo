@@ -1801,7 +1801,8 @@
       "empty": "Nessun tempo di lavoro in questo periodo.",
       "office": "{{name}} (ufficio)",
       "pausedAt": "In pausa all'uscita {{time}}",
-      "onlyInShiftLong": "Il tempo del lavoro non supera mai il tempo timbrato: le ore fatturate al cliente e quelle lavorate vengono dagli stessi momenti, quindi non possono contraddirsi."
+      "onlyInShiftLong": "Il tempo del lavoro non supera mai il tempo timbrato: le ore fatturate al cliente e quelle lavorate vengono dagli stessi momenti, quindi non possono contraddirsi.",
+      "blockedShort": "bloccato {{time}}"
     },
     "crew": {
       "title": "Squadra",

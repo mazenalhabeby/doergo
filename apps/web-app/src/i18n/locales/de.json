@@ -1801,7 +1801,8 @@
       "empty": "Keine Auftragszeit in diesem Zeitraum.",
       "office": "{{name}} (Büro)",
       "pausedAt": "Beim Ausstempeln pausiert {{time}}",
-      "onlyInShiftLong": "Auftragszeit ist nie mehr als die gestempelte Zeit: Dem Kunden berechnete und von der Person gearbeitete Stunden stammen aus denselben Zeitpunkten und können sich nicht widersprechen."
+      "onlyInShiftLong": "Auftragszeit ist nie mehr als die gestempelte Zeit: Dem Kunden berechnete und von der Person gearbeitete Stunden stammen aus denselben Zeitpunkten und können sich nicht widersprechen.",
+      "blockedShort": "blockiert {{time}}"
     },
     "crew": {
       "title": "Team",

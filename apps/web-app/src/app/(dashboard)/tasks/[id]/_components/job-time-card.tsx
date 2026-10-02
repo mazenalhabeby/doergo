@@ -71,7 +71,12 @@ export function JobTimeCard({ taskId, paused }: { taskId: string; paused: boolea
               <UserAvatar firstName={w.user.firstName} lastName={w.user.lastName} seed={w.user.id} size="xs" />
               <span className="flex-1 truncate text-foreground">{name(w.user)}</span>
               <span className="tabular-nums text-muted-foreground">
-                {[formatDuration(w.working), w.travel ? t("tasks.jobTime.travelShort", { time: formatDuration(w.travel) }) : null].filter(Boolean).join(" · ")}
+                {[
+                  formatDuration(w.working),
+                  w.travel ? t("tasks.jobTime.travelShort", { time: formatDuration(w.travel) }) : null,
+                  // A crew member's own stop is their blocked time — said on their row, or it reads as nothing.
+                  w.blocked ? t("tasks.jobTime.blockedShort", { time: formatDuration(w.blocked) }) : null,
+                ].filter(Boolean).join(" · ")}
               </span>
             </div>
           ))}

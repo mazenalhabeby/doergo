@@ -1801,7 +1801,8 @@
       "empty": "Sin tiempo de trabajo en este periodo.",
       "office": "{{name}} (oficina)",
       "pausedAt": "En pausa al fichar la salida {{time}}",
-      "onlyInShiftLong": "El tiempo de trabajo nunca supera el tiempo fichado: las horas facturadas al cliente y las trabajadas salen de los mismos momentos, así que no pueden contradecirse."
+      "onlyInShiftLong": "El tiempo de trabajo nunca supera el tiempo fichado: las horas facturadas al cliente y las trabajadas salen de los mismos momentos, así que no pueden contradecirse.",
+      "blockedShort": "bloqueado {{time}}"
     },
     "crew": {
       "title": "Equipo",

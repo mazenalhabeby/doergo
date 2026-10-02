@@ -1801,7 +1801,8 @@
       "empty": "No job time in this period.",
       "office": "{{name}} (office)",
       "pausedAt": "Paused at clock-out {{time}}",
-      "onlyInShiftLong": "Job time is never more than the time clocked in: hours billed to a client and hours worked by the person come from the same moments, so the two cannot disagree."
+      "onlyInShiftLong": "Job time is never more than the time clocked in: hours billed to a client and hours worked by the person come from the same moments, so the two cannot disagree.",
+      "blockedShort": "blocked {{time}}"
     },
     "crew": {
       "title": "Crew",
