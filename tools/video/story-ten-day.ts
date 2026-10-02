@@ -27,7 +27,26 @@ import type { PrismaClient } from '@prisma/client';
 import { DEPOT, ORG_TIMEZONE } from './demo-data.ts';
 
 export type StoryState = 'start' | 'office' | 'live' | 'nextmorning' | 'handover' | 'done';
-export const STORY_TITLE = 'Boiler room replacement';
+/** VIDEO_LANG=de writes the job's own words in German, for the German film. */
+const DE = process.env.VIDEO_LANG === 'de';
+const TEXT = DE
+  ? {
+      title: 'Austausch Heizraum',
+      description: 'Die zwei alten Gaskessel im Heizraum im Keller ausbauen und das neue Brennwert-Paar mit Pumpen und Druckhaltung einbauen. Das Hotel bleibt offen: jeden Abend wieder Warmwasser.',
+      address: 'Lindenallee 40, 4020 Linz',
+      blocked: 'Pumpenflansch-Satz fehlt — bestellt, kommt um 11:15',
+      note: 'Alte Kessel raus, neues Paar montiert und an den Kamin angeschlossen. Linker Kreis noch offen, Druckprobe nicht gemacht. Flansch-Satz liegt im Heizraum.',
+      noteShort: 'Alte Kessel raus, neues Paar montiert…',
+    }
+  : {
+      title: 'Boiler room replacement',
+      description: TEXT.description,
+      address: '40 Marchmont Street, Reading RG1',
+      blocked: 'Pump flange kit missing — ordered, arrives 11:15',
+      note: TEXT.note,
+      noteShort: 'Old boilers out, new pair mounted and flued…',
+    };
+export const STORY_TITLE = TEXT.title;
 export const STORY_CLIENT = 'Pilgrove Hotels';
 
 const MIN = 60_000;
@@ -112,7 +131,7 @@ export async function seedTenDayJob(
       events.push({ type: 'RESUMED', by: who, at: local(d, startH, startM) });
     }
     if (opts.blocked) {
-      events.push({ type: 'STATUS_CHANGED', by: who, at: local(d, 10, 0), meta: { oldStatus: 'IN_PROGRESS', newStatus: 'BLOCKED', reason: 'Pump flange kit missing — ordered, arrives 11:15' } });
+      events.push({ type: 'STATUS_CHANGED', by: who, at: local(d, 10, 0), meta: { oldStatus: 'IN_PROGRESS', newStatus: 'BLOCKED', reason: TEXT.blocked } });
       events.push({ type: 'STATUS_CHANGED', by: who, at: local(d, 11, 20), meta: { oldStatus: 'BLOCKED', newStatus: 'IN_PROGRESS' } });
     }
     if (opts.complete) {
@@ -188,11 +207,11 @@ export async function seedTenDayJob(
       assignedToId,
       customerId: clientIds.get(STORY_CLIENT) ?? null,
       title: STORY_TITLE,
-      description: 'Strip out the two old gas boilers in the basement plant room and install the new condensing pair, pumps and pressurisation unit. Hotel stays open: hot water back on every evening.',
+      description: TEXT.description,
       status,
       priority: 'HIGH' as never,
       dueDate: local(days[days.length - 1] ?? now, 17, 0),
-      locationAddress: '40 Marchmont Street, Reading RG1',
+      locationAddress: TEXT.address,
       pausedAt,
       pausedById,
       handoverDueById,
@@ -219,11 +238,11 @@ export async function seedTenDayJob(
     const h = await prisma.taskHandover.create({
       data: {
         organizationId: orgId, taskId: task.id, authorId: tobias, workedMinutes: 28 * 60 + 20, createdAt: at,
-        note: 'Old boilers out, new pair mounted and flued. Left loop pipework still open, pressure test not done. Pump flange kit is in the plant room.',
+        note: TEXT.note,
       },
       select: { id: true },
     });
-    await prisma.taskEvent.create({ data: { taskId: task.id, userId: tobias, eventType: 'HANDOVER_ADDED' as never, metadata: { handoverId: h.id, content: 'Old boilers out, new pair mounted and flued…' } as never, createdAt: at } });
+    await prisma.taskEvent.create({ data: { taskId: task.id, userId: tobias, eventType: 'HANDOVER_ADDED' as never, metadata: { handoverId: h.id, content: TEXT.noteShort } as never, createdAt: at } });
   }
   if (assignedToId === priya) {
     await prisma.taskAssignee.create({ data: { taskId: task.id, userId: priya, role: 'LEAD' as never } }).catch(() => undefined);

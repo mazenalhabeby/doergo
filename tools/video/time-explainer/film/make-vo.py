@@ -3,12 +3,14 @@
 drifts in tone and is one failure from starting over), with per-word times, the
 script's pauses cut in, chapters joined with a breath between them.
   ./make-vo.py            → voice.wav + timeline.json   (key: repo-root .env)
-  ./make-vo.py <chapter>  → re-record just that chapter (the others are reused)"""
+  ./make-vo.py <chapter>  → re-record just that chapter (the others are reused)
+  LANG_VO=de ./make-vo.py    → script.de.json → vo-de/, voice-de.wav, timeline-de.json"""
 import json,sys,os,base64,urllib.request,subprocess,array,time
 here=os.path.dirname(os.path.abspath(__file__))
 env=open(os.path.join(here,'../../../../.env')).read().splitlines()
 key=[l.split('=',1)[1].strip().strip('"') for l in env if l.startswith('ELEVENLABS_API_KEY=')][0]
-S=json.load(open(f'{here}/script.json')); R=44100; os.makedirs(f'{here}/vo',exist_ok=True)
+L=os.environ.get('LANG_VO','en'); X='' if L=='en' else f'.{L}'; V='vo' if L=='en' else f'vo-{L}'; W='' if L=='en' else f'-{L}'
+S=json.load(open(f'{here}/script{X}.json')); R=44100; os.makedirs(f'{here}/{V}',exist_ok=True)
 only=sys.argv[1] if len(sys.argv)>1 else None
 chs=S['chapters']
 def take(i,ch):
@@ -22,15 +24,15 @@ def take(i,ch):
     for a in range(4):
         try: r=json.load(urllib.request.urlopen(req,timeout=240)); break
         except Exception as e: print('retry',ch['id'],e); time.sleep(8*(a+1))
-    open(f"{here}/vo/{ch['id']}.mp3",'wb').write(base64.b64decode(r['audio_base64']))
-    json.dump({'text':text,'alignment':r['alignment']},open(f"{here}/vo/{ch['id']}.json",'w'))
+    open(f"{here}/{V}/{ch['id']}.mp3",'wb').write(base64.b64decode(r['audio_base64']))
+    json.dump({'text':text,'alignment':r['alignment']},open(f"{here}/{V}/{ch['id']}.json",'w'))
 for i,ch in enumerate(chs):
-    if only and ch['id']!=only and os.path.exists(f"{here}/vo/{ch['id']}.json"): continue
-    if not only and os.path.exists(f"{here}/vo/{ch['id']}.json"): continue
+    if only and ch['id']!=only and os.path.exists(f"{here}/{V}/{ch['id']}.json"): continue
+    if not only and os.path.exists(f"{here}/{V}/{ch['id']}.json"): continue
     print('recording',ch['id']); take(i,ch)
 out=array.array('h',[0]*int(.4*R)); timeline=[]
 for ch in chs:
-    v=json.load(open(f"{here}/vo/{ch['id']}.json")); text=v['text']; al=v['alignment']
+    v=json.load(open(f"{here}/{V}/{ch['id']}.json")); text=v['text']; al=v['alignment']
     cs,ce=al['character_start_times_seconds'],al['character_end_times_seconds']
     pos=0;raw=[]
     for p in ch['phrases']:
@@ -39,7 +41,7 @@ for ch in chs:
         for w in p['text'].split(' '):
             j=text.index(w,k);ws.append(cs[j]);k=j+len(w)
         raw.append((cs[a],ce[b-1],ws))
-    pcm=subprocess.run(['ffmpeg','-v','error','-i',f"{here}/vo/{ch['id']}.mp3",'-f','s16le','-ac','1','-ar',str(R),'-'],capture_output=True).stdout
+    pcm=subprocess.run(['ffmpeg','-v','error','-i',f"{here}/{V}/{ch['id']}.mp3",'-f','s16le','-ac','1','-ar',str(R),'-'],capture_output=True).stdout
     A=array.array('h');A.frombytes(pcm)
     cuts=[max(0,raw[0][0]-.05)]+[(raw[i][1]+raw[i+1][0])/2 for i in range(len(raw)-1)]+[min(len(A)/R,raw[-1][1]+.25)]
     cstart=len(out)/R; phr=[]
@@ -51,7 +53,7 @@ for ch in chs:
         out.extend([0]*int(p['pause']*R))
     timeline.append({'id':ch['id'],'start':round(cstart,3),'end':round(len(out)/R,3),'phrases':phr})
 out.extend([0]*int(2.5*R))
-subprocess.run(['ffmpeg','-v','error','-y','-f','s16le','-ac','1','-ar',str(R),'-i','-',f'{here}/voice.wav'],input=out.tobytes(),check=True)
+subprocess.run(['ffmpeg','-v','error','-y','-f','s16le','-ac','1','-ar',str(R),'-i','-',f'{here}/voice{W}.wav'],input=out.tobytes(),check=True)
 dur=round(len(out)/R,2)
-json.dump({'chapters':timeline,'duration':dur,'lang':S.get('lang','en')},open(f'{here}/timeline.json','w'),indent=1)
+json.dump({'chapters':timeline,'duration':dur,'lang':S.get('lang','en')},open(f'{here}/timeline{W}.json','w'),indent=1)
 print('voice',dur,'s =',round(dur/60,2),'min')

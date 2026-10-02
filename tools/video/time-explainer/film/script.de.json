@@ -1,0 +1,288 @@
+{
+ "lang": "de",
+ "chapters": [
+  {
+   "id": "intro",
+   "phrases": [
+    {
+     "text": "Jede Minute, die Sie in HBCField arbeiten, wird von zwei Uhren gemessen.",
+     "pause": 0.55
+    },
+    {
+     "text": "Die erste ist Ihre Schicht. Sie beginnt, wenn Sie einstempeln, und endet, wenn Sie ausstempeln. Das ist Ihr Arbeitstag.",
+     "pause": 0.55
+    },
+    {
+     "text": "Die zweite ist die Auftragszeit: die Minuten, die Sie an einem Auftrag arbeiten.",
+     "pause": 0.55
+    },
+    {
+     "text": "Und eine Regel liegt unter allem anderen in diesem Video.",
+     "pause": 0.55
+    },
+    {
+     "text": "Auftragszeit zählt nur innerhalb Ihrer Schicht. Nie bevor Sie einstempeln. Nie nachdem Sie ausstempeln.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "clock",
+   "phrases": [
+    {
+     "text": "Wenn Sie ankommen, stempeln Sie auf Ihrem Handy ein.",
+     "pause": 0.55
+    },
+    {
+     "text": "An einem Standort mit Adresse prüft das Handy, ob Sie wirklich dort sind. Arbeiten außerhalb eines Standorts geht nur, wo Ihr Arbeitsbereich es erlaubt.",
+     "pause": 0.55
+    },
+    {
+     "text": "Über den Tag machen Sie Ihre Pausen. Eine Pause wird aus Ihrer Zeit herausgenommen, und aus jedem Auftrag, an dem Sie gerade sind.",
+     "pause": 0.55
+    },
+    {
+     "text": "Wenn der Tag vorbei ist, stempeln Sie aus. Vom Einstempeln bis zum Ausstempeln, minus die Pausen: Das ist Ihre Schicht.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "gate",
+   "phrases": [
+    {
+     "text": "Ein Auftrag kann nur beginnen, wenn die Person, die ihn ausführt, eingestempelt ist. Im Büro, unterwegs, auf dem Handy und im Web.",
+     "pause": 0.55
+    },
+    {
+     "text": "Wenn Sie einen Schritt antippen, mit dem die Arbeit beginnt, und nicht eingestempelt sind, lehnt die App nicht einfach ab.",
+     "pause": 0.55
+    },
+    {
+     "text": "Sie bietet einen Knopf an: einstempeln und Arbeit starten. Ein Tippen erledigt beides.",
+     "pause": 0.55
+    },
+    {
+     "text": "Und wenn Ihr Handy auf der Baustelle leer ist, kann das Büro den Auftrag für Sie starten. Aber nur mit einem Grund, und nie vor Ihrem Einstempeln.",
+     "pause": 0.55
+    },
+    {
+     "text": "Im Verlauf des Auftrags steht dann genau, wer es getan hat, für wen, und warum. Und Sie bekommen eine Nachricht.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "steps",
+   "phrases": [
+    {
+     "text": "Ein Auftrag läuft durch Schritte, und jeder Schritt zählt als eine andere Art von Zeit.",
+     "pause": 0.55
+    },
+    {
+     "text": "Einen Auftrag am Vorabend anzunehmen, zählt nichts.",
+     "pause": 0.55
+    },
+    {
+     "text": "Von Unterwegs bis zur Ankunft ist Anfahrt.",
+     "pause": 0.55
+    },
+    {
+     "text": "Von Arbeit beginnen bis Abschließen ist Arbeitszeit. Das ist die Zahl, die gemeint ist, wenn jemand fragt, wie lange ein Auftrag gedauert hat.",
+     "pause": 0.55
+    },
+    {
+     "text": "Wenn Sie etwas aufhält, melden Sie ein Problem. Ab diesem Moment, bis Sie fortsetzen, ist die Zeit blockiert. Sie wird getrennt gehalten, damit ein fehlendes Teil nie wie langsame Arbeit aussieht.",
+     "pause": 0.55
+    },
+    {
+     "text": "Dafür muss keine Stoppuhr laufen. Jedes Tippen wird mit seiner eigenen Uhrzeit gespeichert, auch ohne Netz, und die Zeiten werden aus diesen Momenten berechnet.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "rules",
+   "phrases": [
+    {
+     "text": "Zwei weitere Regeln halten die Zahlen ehrlich.",
+     "pause": 0.55
+    },
+    {
+     "text": "Erstens: Auftragszeit zählt nur, solange Sie eingestempelt sind, und Ihre Pausen werden herausgenommen.",
+     "pause": 0.55
+    },
+    {
+     "text": "Zweitens: Sie können immer nur an einem Auftrag gleichzeitig sein. Wenn zwei Ihrer Aufträge offen sind, geht jede Minute an den Auftrag, den Sie zuletzt bewegt haben.",
+     "pause": 0.55
+    },
+    {
+     "text": "Die Stunden auf Ihren Aufträgen können also nie mehr ergeben als die Stunden auf Ihrem Stundenzettel. Was einem Kunden berechnet wird und was Sie gearbeitet haben, kommt aus denselben Momenten.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "clockout",
+   "phrases": [
+    {
+     "text": "Was passiert also, wenn Ihre Schicht endet, und der Auftrag nicht fertig ist?",
+     "pause": 0.55
+    },
+    {
+     "text": "Wenn Sie ausstempeln, zeigt die App die Aufträge, an denen Sie noch arbeiten. Für jeden können Sie ihn abschließen, oder eine Übergabe-Notiz hinterlassen: was Sie getan haben, und was noch fehlt.",
+     "pause": 0.55
+    },
+    {
+     "text": "So oder so pausiert der Auftrag genau in der Minute, in der Sie ausstempeln. Über Nacht zählt nichts.",
+     "pause": 0.55
+    },
+    {
+     "text": "Und das Ausstempeln wird nie blockiert. Wenn Ihr Handy leer ist, oder die Schicht für Sie geschlossen wird, pausiert der Auftrag trotzdem. Er wird einfach markiert: noch keine Übergabe.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "morning",
+   "phrases": [
+    {
+     "text": "Wenn Sie keine Notiz geschrieben haben, fragt die App bei jedem Öffnen danach, bis Sie es tun. Sie hält Sie aber nie vom Einstempeln ab.",
+     "pause": 0.55
+    },
+    {
+     "text": "Sobald Sie eingestempelt sind, ist der pausierte Auftrag direkt da. Arbeit fortsetzen, und Ihre Zeit zählt ab diesem Tippen wieder.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "tendays",
+   "phrases": [
+    {
+     "text": "Folgen wir jetzt einem großen Auftrag, von Anfang bis Ende. Der Austausch eines Heizraums bei Pilgrove Hotels. Er dauert zehn Arbeitstage.",
+     "pause": 0.55
+    },
+    {
+     "text": "Die Tage eins bis vier gehören Tobias.",
+     "pause": 0.55
+    },
+    {
+     "text": "Am ersten Tag stempelt er ein, tippt auf Unterwegs, und kommt dreißig Minuten später an. Diese halbe Stunde ist die einzige Anfahrt des Auftrags.",
+     "pause": 0.55
+    },
+    {
+     "text": "Jeden Morgen danach stempelt er ein, fährt zum Hotel, und tippt vor Ort auf Arbeit fortsetzen. Die Fahrt ist auf seiner Schicht, aber nicht auf dem Auftrag.",
+     "pause": 0.55
+    },
+    {
+     "text": "Seine Mittagspause wird herausgenommen. Um halb vier stempelt er aus, und der Auftrag pausiert bis zum nächsten Morgen.",
+     "pause": 0.55
+    },
+    {
+     "text": "Am dritten Tag fehlt ein Pumpenteil. Tobias meldet ein Problem. Eine Stunde und zwanzig Minuten sind blockiert, bis das Teil ankommt und er fortsetzt.",
+     "pause": 0.55
+    },
+    {
+     "text": "Am vierten Tag ist sein Handy leer, bevor er ausstempelt. Die Schicht wird für ihn geschlossen, der Auftrag pausiert, und er wird markiert: noch keine Übergabe.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "handover",
+   "phrases": [
+    {
+     "text": "Tag fünf. Tobias ist krank, und Mara im Büro gibt den Auftrag an Priya.",
+     "pause": 0.55
+    },
+    {
+     "text": "Bevor sie das tut, wird sie gewarnt. Tobias hat noch keine Übergabe geschrieben, und er hat achtundzwanzig Stunden und zwanzig Minuten an diesem Auftrag gearbeitet.",
+     "pause": 0.55
+    },
+    {
+     "text": "Sie kann auf seine Notiz warten, oder trotzdem neu zuweisen, und Priya selbst eine Notiz hinterlassen.",
+     "pause": 0.55
+    },
+    {
+     "text": "Später am Vormittag schreibt Tobias seine Übergabe von zu Hause. Priya bekommt sie sofort. Sie steht oben im Auftrag: was erledigt ist, was fehlt, und seine Zeit.",
+     "pause": 0.55
+    },
+    {
+     "text": "Priyas eigene Zeit beginnt, wenn sie auf Arbeit beginnen tippt. Tobias' Stunden bleiben seine. Priyas beginnen bei null.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "done",
+   "phrases": [
+    {
+     "text": "Priya arbeitet den Rest dieser Woche und die nächste an dem Auftrag, und am zehnten Tag, um fünf nach halb eins, schließt sie ihn ab.",
+     "pause": 0.55
+    },
+    {
+     "text": "Das weiß das System.",
+     "pause": 0.55
+    },
+    {
+     "text": "Tobias: achtundzwanzig Stunden und zwanzig Minuten Arbeit, eine halbe Stunde Anfahrt, und eine Stunde zwanzig blockiert.",
+     "pause": 0.55
+    },
+    {
+     "text": "Priya: vierzig Stunden und fünfundzwanzig Minuten Arbeit.",
+     "pause": 0.55
+    },
+    {
+     "text": "Der ganze Auftrag: achtundsechzig Stunden und fünfundvierzig Minuten Arbeit, über zehn Arbeitstage.",
+     "pause": 0.55
+    },
+    {
+     "text": "Das Wochenende, die Nächte, die Mittagspausen, die Fahrten am Morgen und der Tag, an dem der Auftrag pausiert war: nichts davon zählte als Auftragszeit.",
+     "pause": 1.1
+    }
+   ]
+  },
+  {
+   "id": "report",
+   "phrases": [
+    {
+     "text": "All das finden Sie am Auftrag selbst, und unter Berichte, Auftragszeit: jeder Auftrag, an dem eine Person gearbeitet hat, mit Anfahrt, Arbeit und blockierter Zeit, direkt neben ihrer Zeit auf der Uhr.",
+     "pause": 0.55
+    },
+    {
+     "text": "Also, sechs Regeln.",
+     "pause": 0.55
+    },
+    {
+     "text": "Eins: Einstempeln, um die Arbeit zu beginnen.",
+     "pause": 0.55
+    },
+    {
+     "text": "Zwei: Anfahrt, Arbeit und Blockiert werden getrennt gehalten.",
+     "pause": 0.55
+    },
+    {
+     "text": "Drei: Zeit zählt nur innerhalb Ihrer Schicht, ohne die Pausen.",
+     "pause": 0.55
+    },
+    {
+     "text": "Vier: ein Auftrag gleichzeitig.",
+     "pause": 0.55
+    },
+    {
+     "text": "Fünf: Ausstempeln pausiert den Auftrag.",
+     "pause": 0.55
+    },
+    {
+     "text": "Und sechs: Wer einen Auftrag übernimmt, beginnt bei null.",
+     "pause": 0.55
+    },
+    {
+     "text": "Das ist Zeit in HBCField.",
+     "pause": 1.1
+    }
+   ]
+  }
+ ]
+}

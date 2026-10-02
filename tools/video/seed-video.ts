@@ -303,6 +303,12 @@ async function createAccessRoles(orgId: string): Promise<Map<string, string>> {
   return bySlug;
 }
 
+/** The German film's step names — an org names its own steps, so they are seeded in its language. */
+const STEP_NAMES_DE: Record<string, string> = {
+  Assigned: 'Zugewiesen', Accepted: 'Angenommen', 'On The Way': 'Unterwegs', Arrived: 'Angekommen',
+  'In Progress': 'In Bearbeitung', Blocked: 'Blockiert', Completed: 'Abgeschlossen', Canceled: 'Storniert',
+};
+
 /** The org's default task flow. Without one the status pills have no labels. */
 async function createWorkflow(orgId: string): Promise<string> {
   const template = DEFAULT_WORKFLOW_TEMPLATE;
@@ -314,7 +320,7 @@ async function createWorkflow(orgId: string): Promise<string> {
       isActive: true,
       statuses: {
         create: template.statuses.map((s) => ({
-          name: s.name,
+          name: process.env.VIDEO_LANG === 'de' ? (STEP_NAMES_DE[s.name] ?? s.name) : s.name,
           key: s.key,
           color: s.color,
           icon: s.icon,
