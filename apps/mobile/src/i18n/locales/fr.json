@@ -3152,7 +3152,12 @@
       "expense_submit": "Dépense",
       "chat_send": "Message",
       "log_create": "Saisie du carnet",
-      "proposal_raise": "Contrat envoyé"
+      "proposal_raise": "Contrat envoyé",
+      "task_join": "Travail rejoint",
+      "task_leave": "Travail quitté",
+      "task_selfIssue": "Mon problème",
+      "task_selfResume": "Reprise",
+      "task_lead": "Direction passée"
     },
     "errors": {
       "DEPENDENCY_FAILED": "Une étape précédente dont cela dépend n'a pas été acceptée.",
@@ -3187,7 +3192,14 @@
       "HANDOVER_NOT_ON_THE_JOB": "Cette intervention n'est plus la vôtre, la passation n'a pas été enregistrée.",
       "HANDOVER_NOTE_REQUIRED": "Écrivez ce que vous avez fait avant d'enregistrer.",
       "OFFICE_START_REASON_REQUIRED": "Commencer l'intervention de quelqu'un d'autre demande un motif — faites-le depuis le web.",
-      "OFFICE_START_TIME_OUTSIDE_SHIFT": "Cette heure de début est en dehors de son poste."
+      "OFFICE_START_TIME_OUTSIDE_SHIFT": "Cette heure de début est en dehors de son poste.",
+      "CREW_NOT_ON_CREW": "Vous ne faites pas partie de l'équipe de ce travail.",
+      "CREW_NOT_JOINED": "Rejoignez d'abord le travail.",
+      "CREW_LEADER_MOVES_STEPS": "{{name}} fait avancer les étapes de ce travail.",
+      "CREW_LEAD_TARGET_NOT_ON_CREW": "Choisissez quelqu'un de ce travail.",
+      "CREW_LEAD_NOT_YOURS": "Seul le responsable de ce travail, ou le bureau, passe la direction.",
+      "CREW_JOB_NOT_STARTED": "Le travail n'est pas en cours.",
+      "REASON_REQUIRED": "Dites ce qui vous arrête."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",
@@ -3951,6 +3963,43 @@
       "blocked": "Bloqué",
       "startedFor": "Commencée par {{name}} (bureau) pour {{for}}",
       "startedForYou": "Commencée pour vous par {{name}} (bureau)"
+    },
+    "crew": {
+      "title": "Équipe · {{count}} sur {{total}} sur le travail",
+      "noLeader": "Pas de responsable",
+      "acting": "{{name}} remplace",
+      "leadsToday": "{{name}} dirige aujourd'hui",
+      "leads": "{{name}} dirige",
+      "stoppedWhy": "Arrêté : {{reason}}",
+      "stopped": "Arrêté",
+      "onSince": "Sur le travail depuis {{time}}",
+      "notClockedIn": "Pas pointé",
+      "notOnJob": "Pas sur le travail",
+      "actingPill": "Remplaçant",
+      "leaderPill": "Responsable",
+      "withThem": "Je suis avec {{name}}",
+      "join": "Rejoindre le travail",
+      "backToWork": "Reprendre",
+      "myIssue": "Mon problème",
+      "leave": "Quitter le travail",
+      "handOver": "Passer la direction",
+      "myIssueTitle": "Qu'est-ce qui vous arrête ?",
+      "myIssueHint": "Seul votre temps s'arrête. Le travail et le reste de l'équipe continuent, et le responsable est prévenu.",
+      "myIssuePlaceholder": "J'attends une pièce…",
+      "myIssueSend": "Arrêter mon temps",
+      "handOverTitle": "Passer la direction",
+      "handOverHint": "Uniquement pour ce travail. Vos autres travaux ne changent pas.",
+      "onJobShort": "Sur le travail",
+      "forToday": "Pour aujourd'hui",
+      "forGood": "Définitivement",
+      "handOverSend": "Passer",
+      "leaderMoves": "{{name}} fait avancer les étapes de ce travail",
+      "pushJoin": "Je suis avec lui",
+      "joined": "Vous êtes sur le travail",
+      "left": "Vous avez quitté le travail",
+      "issueSent": "Votre temps est arrêté",
+      "resumed": "Reprise",
+      "leadHandedOver": "Direction passée"
     }
   },
   "jobsList": {

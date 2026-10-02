@@ -52,7 +52,13 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
   comment_added: TASK,
   blocked_tasks_reminder: TASK,
   task_handover: TASK,
-  task_started_for_you: TASK, // "Anna started a job for you" // "Handover from Mike" — the job, with the note on top
+  task_started_for_you: TASK,
+  // A crew on one job: "Tobias started — are you with him?", the lead handed to you,
+  // a crew member stopped, the leader off today — each opens the job.
+  task_crew_started: TASK,
+  task_lead_changed: TASK,
+  task_lead_needed: TASK,
+  task_crew_issue: TASK, // "Anna started a job for you" // "Handover from Mike" — the job, with the note on top
 
   // The member's own shift
   shift_reminder: CLOCK, // "Still clocked in?" — the clock-out button
@@ -156,4 +162,10 @@ export function notificationTarget(data: Data | null | undefined, viewer: Notifi
   if (resolve) return resolve(data, viewer);
   // An unknown type that still names a task: the task is the best guess there is.
   return TASK(data, viewer);
+}
+
+/** "I'm with him" on a crew push: the job, joining as it opens. */
+export function crewJoinTarget(data: Data | null | undefined): NotificationTarget | null {
+  const id = data ? str(data.taskId) : null;
+  return id ? to('/(app)/task/[id]', { id, sheet: 'join' }) : null;
 }

@@ -7,8 +7,8 @@ import { AppState, AppStateStatus, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import * as Location from 'expo-location';
 import { type NotificationResponse } from 'expo-notifications';
-import { usePushNotifications } from '../../src/hooks/usePushNotifications';
-import { notificationTarget, type NotificationTarget } from '../../src/lib/notification-route';
+import { crewJoinTarget, notificationTarget, type NotificationTarget } from '../../src/lib/notification-route';
+import { CREW_JOIN_ACTION, usePushNotifications } from '../../src/hooks/usePushNotifications';
 import { holds } from '../../src/lib/permissions';
 import { SocketProvider, useSocketContext } from '../../src/contexts/socket-context';
 import { LocationTrackingProvider } from '../../src/contexts/location-tracking-context';
@@ -125,7 +125,8 @@ export default function AppLayout() {
   const [pendingTarget, setPendingTarget] = useState<NotificationTarget | null>(null);
   const handleNotificationResponse = useCallback((response: NotificationResponse) => {
     const data = response.notification?.request?.content?.data as Record<string, unknown> | undefined;
-    const target = notificationTarget(data, { managesIssues });
+    // The crew push's button ("I'm with him") joins as the job opens; a plain tap just opens it.
+    const target = response.actionIdentifier === CREW_JOIN_ACTION ? crewJoinTarget(data) : notificationTarget(data, { managesIssues });
     if (target) setPendingTarget(target);
   }, [managesIssues]);
 

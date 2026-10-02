@@ -1,6 +1,6 @@
 import { fetchWithAuth } from './client';
 import { buildUrlWithQuery, type StepFormAnswers } from '@hbcfield/shared/client';
-import type { JobTimeView, MyHandovers, TaskHandover, StepSubmission, Task, Comment, TaskEvent, CreateTaskInput, UpdateTaskInput, LocationUpdate, LocationResponse, LocationBatchUpdate, ChecklistItem } from './types';
+import type { CrewView, JobTimeView, MyHandovers, TaskHandover, StepSubmission, Task, Comment, TaskEvent, CreateTaskInput, UpdateTaskInput, LocationUpdate, LocationResponse, LocationBatchUpdate, ChecklistItem } from './types';
 
 export interface TasksListParams {
   status?: string;
@@ -81,6 +81,14 @@ export const tasksApi = {
 
   /** My jobs in work, notes I owe, jobs paused on me — one read. */
   myHandovers: async (): Promise<MyHandovers> => fetchWithAuth<MyHandovers>('/tasks/handover/mine', { method: 'GET' }),
+
+  /** A crew on one job — direct path for a build without the offline engine (offline/tasks/crew-actions.ts). */
+  crew: async (taskId: string, action: 'join' | 'leave' | 'issue' | 'resume', body: Record<string, unknown> = {}): Promise<CrewView> =>
+    fetchWithAuth<CrewView>(`/tasks/${taskId}/crew/${action}`, { method: 'POST', body: JSON.stringify(body) }),
+
+  /** Hand THIS job's lead to somebody on its crew — for today, or for good. */
+  changeLead: async (taskId: string, body: { toUserId: string; scope: 'TODAY' | 'PERMANENT'; reason?: string }): Promise<CrewView> =>
+    fetchWithAuth<CrewView>(`/tasks/${taskId}/lead`, { method: 'PUT', body: JSON.stringify(body) }),
 
   /** Direct path for a build without the offline engine — see offline/tasks/task-actions.ts. */
   resumeWork: async (taskId: string): Promise<Task> => fetchWithAuth<Task>(`/tasks/${taskId}/resume`, { method: 'POST', body: '{}' }),

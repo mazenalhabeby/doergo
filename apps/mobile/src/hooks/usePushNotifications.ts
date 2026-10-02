@@ -5,9 +5,13 @@ import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { forgetPushToken, rememberPushToken, storedPushToken } from '../lib/push-token-store';
 import { pushApi } from '../lib/api';
-import { getPreferredLanguage } from '../i18n';
+import i18n, { getPreferredLanguage } from '../i18n';
 import { isNotificationSuppressed } from '../lib/notification-suppression';
 import { PUSH_CHANNELS, RETIRED_PUSH_CHANNELS } from '@hbcfield/shared/client';
+
+/** The crew push's category and its one button (notification-service sends `category: 'crew_join'`). */
+export const CREW_JOIN_CATEGORY = 'crew_join';
+export const CREW_JOIN_ACTION = 'crew_join';
 
 
 // Configure how notifications appear when the app is in the foreground.
@@ -279,6 +283,17 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
     }
     onResponse(response);
   }, [onResponse]);
+
+  /*
+    The crew push's button — "I'm with them" (shared tasks/crew.ts). A category
+    is the JS API on both platforms (no native change, OTA-safe). Opening the app
+    is what joins: the job page asks the server with the leader's start.
+  */
+  useEffect(() => {
+    void Notifications.setNotificationCategoryAsync(CREW_JOIN_CATEGORY, [
+      { identifier: CREW_JOIN_ACTION, buttonTitle: i18n.t('job.crew.pushJoin'), options: { opensAppToForeground: true } },
+    ]).catch(() => undefined);
+  }, []);
 
   // Android notification channel setup
   useEffect(() => {

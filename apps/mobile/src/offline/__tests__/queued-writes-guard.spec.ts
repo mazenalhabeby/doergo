@@ -42,6 +42,11 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     calls: { 'tasksApi.updateStatus': 1 },
     why: FALLBACK,
   },
+  // A crew on one job (offline/tasks/crew-actions.ts): the lead hand-over's direct path.
+  'src/components/job/use-crew.ts': {
+    calls: { 'tasksApi.changeLead': 1 },
+    why: FALLBACK,
+  },
   'src/components/job/use-job-writes.ts': {
     calls: {
       'tasksApi.addComment': 1,

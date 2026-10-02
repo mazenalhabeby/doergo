@@ -3152,7 +3152,12 @@
       "expense_submit": "Ausgabe",
       "chat_send": "Nachricht",
       "log_create": "Geräte-Logbucheintrag",
-      "proposal_raise": "Vertrag eingereicht"
+      "proposal_raise": "Vertrag eingereicht",
+      "task_join": "Auftrag beigetreten",
+      "task_leave": "Auftrag verlassen",
+      "task_selfIssue": "Mein Problem",
+      "task_selfResume": "Weiterarbeiten",
+      "task_lead": "Leitung übergeben"
     },
     "errors": {
       "DEPENDENCY_FAILED": "Ein vorheriger Schritt, von dem dies abhängt, wurde nicht übernommen.",
@@ -3187,7 +3192,14 @@
       "HANDOVER_NOT_ON_THE_JOB": "Dieser Auftrag gehört nicht mehr Ihnen, die Übergabe wurde nicht gespeichert.",
       "HANDOVER_NOTE_REQUIRED": "Schreiben Sie vor dem Speichern, was Sie gemacht haben.",
       "OFFICE_START_REASON_REQUIRED": "Einen Auftrag für jemand anderen zu beginnen braucht einen Grund – bitte im Web.",
-      "OFFICE_START_TIME_OUTSIDE_SHIFT": "Diese Startzeit liegt außerhalb der Schicht."
+      "OFFICE_START_TIME_OUTSIDE_SHIFT": "Diese Startzeit liegt außerhalb der Schicht.",
+      "CREW_NOT_ON_CREW": "Sie gehören nicht zum Team dieses Auftrags.",
+      "CREW_NOT_JOINED": "Treten Sie zuerst dem Auftrag bei.",
+      "CREW_LEADER_MOVES_STEPS": "{{name}} bewegt die Schritte dieses Auftrags.",
+      "CREW_LEAD_TARGET_NOT_ON_CREW": "Wählen Sie jemanden aus diesem Auftrag.",
+      "CREW_LEAD_NOT_YOURS": "Nur die Leitung dieses Auftrags oder das Büro übergibt die Leitung.",
+      "CREW_JOB_NOT_STARTED": "Der Auftrag läuft nicht.",
+      "REASON_REQUIRED": "Sagen Sie, was Sie aufhält."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",
@@ -3951,6 +3963,43 @@
       "blocked": "Blockiert",
       "startedFor": "Von {{name}} (Büro) für {{for}} begonnen",
       "startedForYou": "Von {{name}} (Büro) für Sie begonnen"
+    },
+    "crew": {
+      "title": "Team · {{count}} von {{total}} am Auftrag",
+      "noLeader": "Keine Leitung",
+      "acting": "{{name}} vertritt",
+      "leadsToday": "{{name}} leitet heute",
+      "leads": "{{name}} leitet",
+      "stoppedWhy": "Gestoppt: {{reason}}",
+      "stopped": "Gestoppt",
+      "onSince": "Am Auftrag seit {{time}}",
+      "notClockedIn": "Nicht eingestempelt",
+      "notOnJob": "Nicht am Auftrag",
+      "actingPill": "Vertretung",
+      "leaderPill": "Leitung",
+      "withThem": "Ich bin bei {{name}}",
+      "join": "Dem Auftrag beitreten",
+      "backToWork": "Weiterarbeiten",
+      "myIssue": "Mein Problem",
+      "leave": "Auftrag verlassen",
+      "handOver": "Leitung übergeben",
+      "myIssueTitle": "Was hält Sie auf?",
+      "myIssueHint": "Nur Ihre Zeit stoppt. Der Auftrag und das restliche Team machen weiter, und die Leitung wird informiert.",
+      "myIssuePlaceholder": "Warte auf ein Teil…",
+      "myIssueSend": "Meine Zeit stoppen",
+      "handOverTitle": "Leitung übergeben",
+      "handOverHint": "Nur für diesen Auftrag. Ihre anderen Aufträge ändern sich nicht.",
+      "onJobShort": "Am Auftrag",
+      "forToday": "Für heute",
+      "forGood": "Dauerhaft",
+      "handOverSend": "Übergeben",
+      "leaderMoves": "{{name}} bewegt die Schritte dieses Auftrags",
+      "pushJoin": "Ich bin dabei",
+      "joined": "Sie sind am Auftrag",
+      "left": "Sie haben den Auftrag verlassen",
+      "issueSent": "Ihre Zeit ist gestoppt",
+      "resumed": "Weiter geht's",
+      "leadHandedOver": "Leitung übergeben"
     }
   },
   "jobsList": {

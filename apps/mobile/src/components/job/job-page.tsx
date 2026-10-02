@@ -50,6 +50,8 @@ import { ClockInToStartSheet } from './sheets/clock-in-to-start-sheet';
 import { HandoverSheet } from './sheets/handover-sheet';
 import { JobHandover } from './job-handover';
 import { JobTimeCard } from './job-time-card';
+import { HandOverLeadSheet, JobCrewCard, MyIssueSheet } from './job-crew';
+import { useCrew } from './use-crew';
 import { jobTimeNow } from './job-time-logic';
 import { useJobTime } from '../../hooks/useJobTime';
 import { LocationPickerSheet } from '../index';
@@ -61,16 +63,16 @@ import { StepFormSheet } from './sheets/step-form-sheet';
 import { SignSheet } from './sheets/sign-sheet';
 import { TourTarget, useTourScroll } from '../tour/tour-target';
 
-type SheetKind = 'more' | 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'form' | 'sign' | 'delete' | 'clockIn' | 'handover';
+type SheetKind = 'more' | 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'form' | 'sign' | 'delete' | 'clockIn' | 'handover' | 'myIssue' | 'handOverLead';
 
 /** What waits for the clock-in: a step to move into, or picking a paused job back up. */
 const RESUME = '__resume__';
 
 /** A link's sheet as the page's own: `finish` and `form:<STEP>` are both the step form. */
 function sheetOf(open: OpenSheet | null): SheetKind | null {
-  if (!open) return null;
+  if (!open || open === 'join') return null;
   if (open === 'finish' || formSheetTarget(open)) return 'form';
-  return open as Exclude<OpenSheet, 'finish' | `form:${string}`>;
+  return open as Exclude<OpenSheet, 'finish' | 'join' | `form:${string}`>;
 }
 
 const ACTIVE: string[] = [TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED];
@@ -119,6 +121,19 @@ export function JobPage({
   const job = useJob(taskId);
   // Job time — read here, before any early return (rules of hooks).
   const jobTime = useJobTime(taskId);
+  // A crew on this job (shared tasks/crew.ts) — rides on the job's time read.
+  const crew = useCrew(taskId, jobTime.view?.crew, user?.id);
+  /*
+    "I'm with him" on the crew push: the job opens and joins, from the leader's
+    start (the server allows it within 30 minutes). Asked once, when the crew
+    is known — joined already, or not on this crew, it does nothing.
+  */
+  const joinAsked = useRef(false);
+  useEffect(() => {
+    if (initialSheet !== 'join' || joinAsked.current || !crew.view || !crew.me) return;
+    joinAsked.current = true;
+    if (!crew.me.joined) void crew.join(true);
+  }, [initialSheet, crew]);
   const { task } = job;
 
   /* ---------------- the panel ---------------- */
@@ -278,7 +293,9 @@ export function JobPage({
   const hasPlace = task.locationLat != null && task.locationLng != null;
   const canAssign = holds(user, 'canAssignTasks');
   const canEdit = holds(user, 'canCreateTasks');
-  const options = moreOptions({ mode, decision, isMine, status: task.status, hasPlace, oversees: oversee, canAssign, canEdit });
+  const options = moreOptions({ mode, decision, isMine, status: task.status, hasPlace, oversees: oversee, canAssign, canEdit })
+    // Crew mode: the leader moves the step and reports a job issue; a member has "My issue" on the crew card.
+    .filter((o) => !(crew.stepsAreLeaders && (o.kind === 'step' || o.kind === 'issue')));
   const blocked = task.status === TaskStatus.BLOCKED;
 
   const openMaps = () => openJobInMaps(task, 'show');
@@ -355,6 +372,9 @@ export function JobPage({
       disabled: writes.busy,
       loading: writes.busy && sheet === null,
     };
+  } else if (mode === 'doer' && target && crew.stepsAreLeaders) {
+    // Crew mode: the leader moves this job's step — this phone offers the crew controls instead.
+    primary = null;
   } else if (mode === 'doer' && target) {
     primary = {
       label: held ? t('taskDetail.statusActions.notYetAvailable') : decision.resume ? t('job.dock.backToWork') : labelOf(target),
@@ -492,6 +512,13 @@ export function JobPage({
 
         <JobTimeCard time={timeNow} paused={paused} startedBy={jobTime.view?.startedBy ?? null} meId={user?.id} />
 
+        <JobCrewCard
+          crew={crew}
+          counting={!paused && !closed && stepStartsWork(task.status, capsAt(task.status, steps, workflowName))}
+          onMyIssue={() => setSheet('myIssue')}
+          onHandOver={() => setSheet('handOverLead')}
+        />
+
         <TourTarget name="taskdetail-facts"><JobFacts facts={facts} /></TourTarget>
         {hasPlace ? <TourTarget name="taskdetail-map"><JobMap lat={task.locationLat!} lng={task.locationLng!} title={task.locationAddress} onOpen={openMaps} /></TourTarget> : null}
 
@@ -559,7 +586,10 @@ export function JobPage({
           bottomInset={bottom}
           notice={slotHolder
             ? { tone: 'warn', text: t('job.oneAtATime', { title: slotHolder.title }), action: { label: t('job.openIt'), onPress: () => router.replace(`/task/${slotHolder.id}` as never) } }
-            : writes.notice ? { tone: 'critical', text: writes.notice } : null}
+            : writes.notice ? { tone: 'critical', text: writes.notice }
+            : mode === 'doer' && !paused && !closed && crew.stepsAreLeaders && crew.leader
+              ? { tone: 'neutral', text: t('job.crew.leaderMoves', { name: crew.leader.user.firstName }) }
+              : null}
         />
       ) : null}
 
@@ -572,6 +602,8 @@ export function JobPage({
         onClockIn={clockIn.openClockInModal}
       />
       <LocationPickerSheet {...clockIn.pickerProps} confirmDisabled={clockIn.isClockingIn} />
+      <MyIssueSheet visible={sheet === 'myIssue'} onClose={closeSheet} busy={crew.busy} onSend={crew.reportMine} />
+      <HandOverLeadSheet visible={sheet === 'handOverLead'} onClose={closeSheet} crew={crew} jobTitle={task.title} />
       <HandoverSheet
         visible={sheet === 'handover'}
         onClose={closeSheet}

@@ -3152,7 +3152,12 @@
       "expense_submit": "Expense",
       "chat_send": "Message",
       "log_create": "Equipment log entry",
-      "proposal_raise": "Contract sent in"
+      "proposal_raise": "Contract sent in",
+      "task_join": "Joined a job",
+      "task_leave": "Left a job",
+      "task_selfIssue": "My issue",
+      "task_selfResume": "Back to work",
+      "task_lead": "Lead handed over"
     },
     "errors": {
       "DEPENDENCY_FAILED": "An earlier step this depends on wasn't accepted.",
@@ -3187,7 +3192,14 @@
       "HANDOVER_NOT_ON_THE_JOB": "This job is no longer yours, so the handover was not saved.",
       "HANDOVER_NOTE_REQUIRED": "Write what you did before saving.",
       "OFFICE_START_REASON_REQUIRED": "Starting somebody else's job needs a reason — do it from the web.",
-      "OFFICE_START_TIME_OUTSIDE_SHIFT": "That start time is outside their shift."
+      "OFFICE_START_TIME_OUTSIDE_SHIFT": "That start time is outside their shift.",
+      "CREW_NOT_ON_CREW": "You are not on this job's crew.",
+      "CREW_NOT_JOINED": "Join the job first.",
+      "CREW_LEADER_MOVES_STEPS": "{{name}} moves this job's steps.",
+      "CREW_LEAD_TARGET_NOT_ON_CREW": "Choose somebody on this job.",
+      "CREW_LEAD_NOT_YOURS": "Only the leader of this job, or the office, hands its lead over.",
+      "CREW_JOB_NOT_STARTED": "The job is not under way.",
+      "REASON_REQUIRED": "Say what stopped you."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",
@@ -3951,6 +3963,43 @@
       "blocked": "Blocked",
       "startedFor": "Started by {{name}} (office) for {{for}}",
       "startedForYou": "Started for you by {{name}} (office)"
+    },
+    "crew": {
+      "title": "Crew · {{count}} of {{total}} on the job",
+      "noLeader": "No leader",
+      "acting": "{{name}} is standing in",
+      "leadsToday": "{{name}} leads today",
+      "leads": "{{name}} leads",
+      "stoppedWhy": "Stopped: {{reason}}",
+      "stopped": "Stopped",
+      "onSince": "On the job since {{time}}",
+      "notClockedIn": "Not clocked in",
+      "notOnJob": "Not on the job",
+      "actingPill": "Acting",
+      "leaderPill": "Leader",
+      "withThem": "I'm with {{name}}",
+      "join": "Join the job",
+      "backToWork": "Back to work",
+      "myIssue": "My issue",
+      "leave": "Leave the job",
+      "handOver": "Hand over the lead",
+      "myIssueTitle": "What stopped you?",
+      "myIssueHint": "Only your time stops. The job and the rest of the crew carry on, and the leader is told.",
+      "myIssuePlaceholder": "Waiting for a part…",
+      "myIssueSend": "Stop my time",
+      "handOverTitle": "Hand over the lead",
+      "handOverHint": "Only for this job. Your other jobs don't change.",
+      "onJobShort": "On the job",
+      "forToday": "For today",
+      "forGood": "Permanently",
+      "handOverSend": "Hand over",
+      "leaderMoves": "{{name}} moves this job's steps",
+      "pushJoin": "I'm with them",
+      "joined": "You're on the job",
+      "left": "You left the job",
+      "issueSent": "Your time is stopped",
+      "resumed": "Back to work",
+      "leadHandedOver": "Lead handed over"
     }
   },
   "jobsList": {

@@ -228,10 +228,30 @@ export interface JobTimeSplit { travel: number; working: number; blocked: number
 type Person = { id: string; firstName: string; lastName: string };
 
 /** GET /tasks/:id/time — read, never stored; only time inside shifts counts. */
+/** Who is on a crew job now, and who leads (shared tasks/crew.ts) — rides on GET /tasks/:id/time. */
+export interface CrewView {
+  /** The organization's crew rules: only the leader moves the job's step. */
+  crewMode: boolean;
+  leader: { userId: string | null; acting: boolean; source: 'TODAY' | 'LEAD' | 'ACTING' | 'NONE' };
+  /** A lead handed over for today, while it lasts. */
+  today: { userId: string; until: string } | null;
+  members: Array<{
+    user: Person;
+    role: 'LEAD' | 'MEMBER';
+    joined: boolean;
+    since: string | null;
+    selfBlockedSince: string | null;
+    selfBlockReason: string | null;
+    onClock: boolean;
+  }>;
+}
+
 export interface JobTimeView {
   asOf: string;
   total: JobTimeSplit;
-  byWorker: Array<JobTimeSplit & { user: Person }>;
+  /** `live`: what that person's time is running as now — their own stop makes it blocked. */
+  byWorker: Array<JobTimeSplit & { user: Person; live?: keyof JobTimeSplit | null }>;
+  crew?: CrewView | null;
   /** Running now (somebody credited is on the clock): a screen may tick it forward from `asOf`. */
   live: { kind: keyof JobTimeSplit; workers: number } | null;
   /** The first move into counted time — and, when the office made it for somebody, who and why. */

@@ -3152,7 +3152,12 @@
       "expense_submit": "Spesa",
       "chat_send": "Messaggio",
       "log_create": "Voce del registro",
-      "proposal_raise": "Contratto inviato"
+      "proposal_raise": "Contratto inviato",
+      "task_join": "Unito a un lavoro",
+      "task_leave": "Lavoro lasciato",
+      "task_selfIssue": "Il mio problema",
+      "task_selfResume": "Di nuovo al lavoro",
+      "task_lead": "Guida passata"
     },
     "errors": {
       "DEPENDENCY_FAILED": "Un passaggio precedente da cui dipende non è stato accettato.",
@@ -3187,7 +3192,14 @@
       "HANDOVER_NOT_ON_THE_JOB": "Questo lavoro non è più tuo, quindi il passaggio di consegne non è stato salvato.",
       "HANDOVER_NOTE_REQUIRED": "Scrivi cosa hai fatto prima di salvare.",
       "OFFICE_START_REASON_REQUIRED": "Iniziare il lavoro di un altro richiede un motivo: fallo dal web.",
-      "OFFICE_START_TIME_OUTSIDE_SHIFT": "Quell'orario di inizio è fuori dal suo turno."
+      "OFFICE_START_TIME_OUTSIDE_SHIFT": "Quell'orario di inizio è fuori dal suo turno.",
+      "CREW_NOT_ON_CREW": "Non sei nella squadra di questo lavoro.",
+      "CREW_NOT_JOINED": "Prima unisciti al lavoro.",
+      "CREW_LEADER_MOVES_STEPS": "{{name}} fa avanzare i passi di questo lavoro.",
+      "CREW_LEAD_TARGET_NOT_ON_CREW": "Scegli qualcuno di questo lavoro.",
+      "CREW_LEAD_NOT_YOURS": "Solo il responsabile di questo lavoro, o l'ufficio, passa la guida.",
+      "CREW_JOB_NOT_STARTED": "Il lavoro non è in corso.",
+      "REASON_REQUIRED": "Di' cosa ti ferma."
     },
     "signOut": {
       "title_one": "{{count}} modifica non è stata inviata",
@@ -3951,6 +3963,43 @@
       "blocked": "Bloccato",
       "startedFor": "Iniziato da {{name}} (ufficio) per {{for}}",
       "startedForYou": "Iniziato per te da {{name}} (ufficio)"
+    },
+    "crew": {
+      "title": "Squadra · {{count}} di {{total}} sul lavoro",
+      "noLeader": "Nessun responsabile",
+      "acting": "{{name}} lo sostituisce",
+      "leadsToday": "{{name}} guida oggi",
+      "leads": "{{name}} guida",
+      "stoppedWhy": "Fermo: {{reason}}",
+      "stopped": "Fermo",
+      "onSince": "Sul lavoro dalle {{time}}",
+      "notClockedIn": "Non timbrato",
+      "notOnJob": "Non sul lavoro",
+      "actingPill": "Sostituto",
+      "leaderPill": "Responsabile",
+      "withThem": "Sono con {{name}}",
+      "join": "Unisciti al lavoro",
+      "backToWork": "Torna al lavoro",
+      "myIssue": "Il mio problema",
+      "leave": "Lascia il lavoro",
+      "handOver": "Passa la guida",
+      "myIssueTitle": "Cosa ti ferma?",
+      "myIssueHint": "Si ferma solo il tuo tempo. Il lavoro e il resto della squadra continuano, e il responsabile viene avvisato.",
+      "myIssuePlaceholder": "Aspetto un pezzo…",
+      "myIssueSend": "Ferma il mio tempo",
+      "handOverTitle": "Passa la guida",
+      "handOverHint": "Solo per questo lavoro. Gli altri tuoi lavori non cambiano.",
+      "onJobShort": "Sul lavoro",
+      "forToday": "Per oggi",
+      "forGood": "Per sempre",
+      "handOverSend": "Passa",
+      "leaderMoves": "{{name}} fa avanzare i passi di questo lavoro",
+      "pushJoin": "Sono con lui",
+      "joined": "Sei sul lavoro",
+      "left": "Hai lasciato il lavoro",
+      "issueSent": "Il tuo tempo è fermo",
+      "resumed": "Di nuovo al lavoro",
+      "leadHandedOver": "Guida passata"
     }
   },
   "jobsList": {

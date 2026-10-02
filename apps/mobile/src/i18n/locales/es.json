@@ -3152,7 +3152,12 @@
       "expense_submit": "Gasto",
       "chat_send": "Mensaje",
       "log_create": "Registro de equipo",
-      "proposal_raise": "Contrato enviado"
+      "proposal_raise": "Contrato enviado",
+      "task_join": "Unido a un trabajo",
+      "task_leave": "Dejó un trabajo",
+      "task_selfIssue": "Mi problema",
+      "task_selfResume": "Volver al trabajo",
+      "task_lead": "Dirección pasada"
     },
     "errors": {
       "DEPENDENCY_FAILED": "No se aceptó un paso anterior del que depende.",
@@ -3187,7 +3192,14 @@
       "HANDOVER_NOT_ON_THE_JOB": "Este trabajo ya no es tuyo, así que el traspaso no se guardó.",
       "HANDOVER_NOTE_REQUIRED": "Escribe lo que hiciste antes de guardar.",
       "OFFICE_START_REASON_REQUIRED": "Iniciar el trabajo de otra persona necesita un motivo: hazlo desde la web.",
-      "OFFICE_START_TIME_OUTSIDE_SHIFT": "Esa hora de inicio está fuera de su turno."
+      "OFFICE_START_TIME_OUTSIDE_SHIFT": "Esa hora de inicio está fuera de su turno.",
+      "CREW_NOT_ON_CREW": "No estás en el equipo de este trabajo.",
+      "CREW_NOT_JOINED": "Únete primero al trabajo.",
+      "CREW_LEADER_MOVES_STEPS": "{{name}} avanza los pasos de este trabajo.",
+      "CREW_LEAD_TARGET_NOT_ON_CREW": "Elige a alguien de este trabajo.",
+      "CREW_LEAD_NOT_YOURS": "Solo el responsable de este trabajo, o la oficina, pasa la dirección.",
+      "CREW_JOB_NOT_STARTED": "El trabajo no está en marcha.",
+      "REASON_REQUIRED": "Di qué te detiene."
     },
     "signOut": {
       "title_one": "{{count}} cambio no se ha enviado",
@@ -3951,6 +3963,43 @@
       "blocked": "Bloqueado",
       "startedFor": "Iniciado por {{name}} (oficina) para {{for}}",
       "startedForYou": "Iniciado para ti por {{name}} (oficina)"
+    },
+    "crew": {
+      "title": "Equipo · {{count}} de {{total}} en el trabajo",
+      "noLeader": "Sin responsable",
+      "acting": "{{name}} lo sustituye",
+      "leadsToday": "{{name}} dirige hoy",
+      "leads": "{{name}} dirige",
+      "stoppedWhy": "Detenido: {{reason}}",
+      "stopped": "Detenido",
+      "onSince": "En el trabajo desde las {{time}}",
+      "notClockedIn": "Sin fichar",
+      "notOnJob": "No está en el trabajo",
+      "actingPill": "Suplente",
+      "leaderPill": "Responsable",
+      "withThem": "Estoy con {{name}}",
+      "join": "Unirme al trabajo",
+      "backToWork": "Volver al trabajo",
+      "myIssue": "Mi problema",
+      "leave": "Dejar el trabajo",
+      "handOver": "Pasar la dirección",
+      "myIssueTitle": "¿Qué te detiene?",
+      "myIssueHint": "Solo se detiene tu tiempo. El trabajo y el resto del equipo siguen, y se avisa al responsable.",
+      "myIssuePlaceholder": "Esperando una pieza…",
+      "myIssueSend": "Detener mi tiempo",
+      "handOverTitle": "Pasar la dirección",
+      "handOverHint": "Solo para este trabajo. Tus otros trabajos no cambian.",
+      "onJobShort": "En el trabajo",
+      "forToday": "Por hoy",
+      "forGood": "Para siempre",
+      "handOverSend": "Pasar",
+      "leaderMoves": "{{name}} avanza los pasos de este trabajo",
+      "pushJoin": "Estoy con él",
+      "joined": "Estás en el trabajo",
+      "left": "Dejaste el trabajo",
+      "issueSent": "Tu tiempo está detenido",
+      "resumed": "De vuelta al trabajo",
+      "leadHandedOver": "Dirección pasada"
     }
   },
   "jobsList": {
