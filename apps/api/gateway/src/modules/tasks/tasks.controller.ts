@@ -18,6 +18,7 @@ import { Role, addOnDef, moduleMonthlyCents, isAdmin, spacesGranting, accessAllo
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermissionInSpace } from '../../common/decorators';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
+import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { isFeatureEntitled } from '../../common/entitlements';
 import {
@@ -33,6 +34,10 @@ import {
   AddCommentDto,
   HandoverDto,
   ResumeWorkDto,
+  CrewJoinDto,
+  CrewLeaveDto,
+  CrewIssueDto,
+  ChangeLeadDto,
   PresignAttachmentDto,
   ConfirmAttachmentDto,
 } from './dto';
@@ -420,6 +425,58 @@ export class TasksController {
       userId: req.user.id,
       organizationId: req.user.organizationId,
     });
+  }
+
+  // ─── A crew on one job (packages/shared/src/tasks/crew.ts) ───
+  // No route permission: the caller's place on THIS job's crew is the
+  // authorization, checked in task-service. External members hold no clock
+  // and work no job of ours.
+
+  /** The facts every crew route passes: who, and the grants the office acts on. */
+  private crewActor(req: any) {
+    return {
+      userId: req.user.id,
+      userRole: req.user.role,
+      organizationId: req.user.organizationId,
+      canViewAllTasks: req.user.canViewAllTasks,
+      canAssignTasks: req.user.canAssignTasks,
+      access: req.user.access,
+    };
+  }
+
+  @Post(':id/crew/join')
+  @DenyExternal()
+  @ApiOperation({ summary: 'Join a crew job (own tap, "I\'m with him", or the office for somebody)' })
+  async crewJoin(@Param('id') id: string, @Body() body: CrewJoinDto, @Request() req: any) {
+    return this.tasksQueueService.crewJoin({ ...body, taskId: id, ...this.crewActor(req) });
+  }
+
+  @Post(':id/crew/leave')
+  @DenyExternal()
+  @ApiOperation({ summary: 'Leave a crew job' })
+  async crewLeave(@Param('id') id: string, @Body() body: CrewLeaveDto, @Request() req: any) {
+    return this.tasksQueueService.crewLeave({ ...body, taskId: id, ...this.crewActor(req) });
+  }
+
+  @Post(':id/crew/issue')
+  @DenyExternal()
+  @ApiOperation({ summary: '"My issue": only the caller\'s own time is blocked' })
+  async crewIssue(@Param('id') id: string, @Body() body: CrewIssueDto, @Request() req: any) {
+    return this.tasksQueueService.crewSelfIssue({ ...body, taskId: id, ...this.crewActor(req) });
+  }
+
+  @Post(':id/crew/resume')
+  @DenyExternal()
+  @ApiOperation({ summary: 'Back to work after their own stop' })
+  async crewResume(@Param('id') id: string, @Body() body: ResumeWorkDto, @Request() req: any) {
+    return this.tasksQueueService.crewSelfResume({ ...body, taskId: id, ...this.crewActor(req) });
+  }
+
+  @Put(':id/lead')
+  @DenyExternal()
+  @ApiOperation({ summary: "Hand this job's lead to somebody on its crew — for today, or for good" })
+  async changeLead(@Param('id') id: string, @Body() body: ChangeLeadDto, @Request() req: any) {
+    return this.tasksQueueService.crewChangeLead({ ...body, taskId: id, ...this.crewActor(req) });
   }
 
   @Post(':id/decline')

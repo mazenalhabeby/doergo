@@ -1,10 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsEnum, IsOptional, IsDateString, IsNumber, IsNotEmpty, MaxLength, IsArray, IsBoolean, IsInt, Min, Max, ValidateNested, Matches, IsObject } from 'class-validator';
+import { IsIn, IsString, IsEnum, IsOptional, IsDateString, IsNumber, IsNotEmpty, MaxLength, IsArray, IsBoolean, IsInt, Min, Max, ValidateNested, Matches, IsObject } from 'class-validator';
 import { OmitType, PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import { OccurrenceEvidenceDto } from '../../../common/dto/occurrence.dto';
 import { CLIENT_ID } from '../../../common/dto/upload.dto';
-import { TaskPriority, TaskAssigneeRole, DependencyType, TASK_TITLE_MAX_LENGTH, TASK_DESCRIPTION_MAX_LENGTH, ATTENDANCE_CONSTANTS, HANDOVER_NOTE_MAX, HANDOVER_PHOTOS_MAX, OFFICE_START_REASON_MAX } from '@hbcfield/shared';
+import { TaskPriority, TaskAssigneeRole, DependencyType, TASK_TITLE_MAX_LENGTH, TASK_DESCRIPTION_MAX_LENGTH, ATTENDANCE_CONSTANTS, HANDOVER_NOTE_MAX, HANDOVER_PHOTOS_MAX, OFFICE_START_REASON_MAX, CREW_REASON_MAX, LEAD_SCOPES, type LeadScope } from '@hbcfield/shared';
 
 /**
  * Create task request DTO
@@ -351,6 +351,68 @@ export class ResumeWorkDto {
   @ValidateNested()
   @Type(() => OccurrenceEvidenceDto)
   evidence?: OccurrenceEvidenceDto;
+}
+
+// ─── A crew on one job (packages/shared/src/tasks/crew.ts) ───
+
+/** Join a crew job — their own tap, "I'm with him", or the office for somebody (with a reason). */
+export class CrewJoinDto {
+  @ApiPropertyOptional({ type: OccurrenceEvidenceDto })
+  @IsOptional() @ValidateNested() @Type(() => OccurrenceEvidenceDto)
+  evidence?: OccurrenceEvidenceDto;
+
+  @ApiPropertyOptional({ description: "Confirming the leader's start: counts from it, within 30 minutes" })
+  @IsOptional() @IsBoolean()
+  viaLeaderStart?: boolean;
+
+  @ApiPropertyOptional({ description: 'The office joining somebody else (needs a reason)' })
+  @IsOptional() @IsString() @Matches(CLIENT_ID)
+  forUserId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional() @IsString() @MaxLength(CREW_REASON_MAX)
+  reason?: string;
+}
+
+/** Leave a crew job — their own, or the office for somebody. */
+export class CrewLeaveDto {
+  @ApiPropertyOptional({ type: OccurrenceEvidenceDto })
+  @IsOptional() @ValidateNested() @Type(() => OccurrenceEvidenceDto)
+  evidence?: OccurrenceEvidenceDto;
+
+  @ApiPropertyOptional()
+  @IsOptional() @IsString() @Matches(CLIENT_ID)
+  forUserId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional() @IsString() @MaxLength(CREW_REASON_MAX)
+  reason?: string;
+}
+
+/** "My issue": only the caller's own time is blocked. */
+export class CrewIssueDto {
+  @ApiProperty({ example: 'Waiting for the pump flange kit' })
+  @IsString() @IsNotEmpty() @MaxLength(CREW_REASON_MAX)
+  reason: string;
+
+  @ApiPropertyOptional({ type: OccurrenceEvidenceDto })
+  @IsOptional() @ValidateNested() @Type(() => OccurrenceEvidenceDto)
+  evidence?: OccurrenceEvidenceDto;
+}
+
+/** Hand THIS job's lead to somebody already on its crew. */
+export class ChangeLeadDto {
+  @ApiProperty()
+  @IsString() @Matches(CLIENT_ID)
+  toUserId: string;
+
+  @ApiProperty({ enum: LEAD_SCOPES })
+  @IsIn(LEAD_SCOPES as unknown as string[])
+  scope: LeadScope;
+
+  @ApiPropertyOptional()
+  @IsOptional() @IsString() @MaxLength(CREW_REASON_MAX)
+  reason?: string;
 }
 
 // Upload DTOs are shared by every route that stores a file.

@@ -40,6 +40,12 @@ const ROUTE_ACTIONS: Record<string, string> = {
   'DELETE /tasks/:id': 'TASK_DELETED',
   'POST /tasks/:id/assign': 'TASK_ASSIGNED',
   'POST /tasks/:id/status': 'TASK_STATUS_CHANGED',
+  // A crew on one job (tasks/crew.ts)
+  'POST /tasks/:id/crew/join': 'TASK_CREW_JOINED',
+  'POST /tasks/:id/crew/leave': 'TASK_CREW_LEFT',
+  'POST /tasks/:id/crew/issue': 'TASK_CREW_SELF_BLOCKED',
+  'POST /tasks/:id/crew/resume': 'TASK_CREW_SELF_RESUMED',
+  'PUT /tasks/:id/lead': 'TASK_LEAD_CHANGED',
   'PATCH /organizations/members/:id/role': 'MEMBER_ROLE_CHANGED',
   'DELETE /organizations/members/:id': 'MEMBER_REMOVED',
   'PATCH /organizations/settings': 'ORG_SETTINGS_UPDATED',

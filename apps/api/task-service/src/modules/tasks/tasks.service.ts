@@ -18,6 +18,8 @@ import { fixOfTap, judgeOccurrence } from '../../common/occurrence.util';
 import { createOnce, findPrior } from '../../common/create-once.util';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { JobTimeService } from './handover/job-time.service';
+import { ClockGateService } from './handover/clock-gate.service';
+import { CrewService } from './handover/crew.service';
 import { PresenceService } from '../attendance/presence/presence.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
@@ -53,6 +55,7 @@ import {
   stepFormFileIds,
   type StepFormAnswers,
   CLOCK_GATE_CODES,
+  CREW_CODES,
   spaceRunsClock,
   activeAssignmentWhere,
   OFFICE_START_CODES,
@@ -102,6 +105,10 @@ export class TasksService {
     private readonly presence: PresenceService,
     // Job time (shared tasks/job-time.ts) — read, never stored.
     private readonly jobTime: JobTimeService,
+    // "Clocked in to start work" — one gate for step moves, resume and joining a crew.
+    private readonly clockGate: ClockGateService,
+    // A crew on one job: presence, own stops, the lead (shared tasks/crew.ts).
+    private readonly crew: CrewService,
     // The CRM side of step forms (add_customer_activity). Optional: absent, the
     // answers are still stored — only the client-timeline echo is skipped.
     @Optional() @Inject('AUTH_SERVICE') private readonly authClient?: ClientProxy,
@@ -1173,7 +1180,9 @@ export class TasksService {
     const task = await this.prisma.task.findUnique({ where: { id: data.id } });
     if (!task) throw new NotFoundException('Task not found');
     await this.checkTaskAccess(task, data);
-    return success(await this.jobTime.forTask(task));
+    // The crew panel rides with the time: one request for the job page and the phone.
+    const [time, crew] = await Promise.all([this.jobTime.forTask(task), this.crew.viewFor(task.id)]);
+    return success({ ...time, crew });
   }
 
   /** One worker's job time over a period. The gateway decides who may ask about whom. */
@@ -1204,7 +1213,7 @@ export class TasksService {
       throw new ForbiddenException({ message: 'Only somebody on this job can resume it', code: 'TASK_REASSIGNED' });
     }
     if (task.pausedAt) {
-      await this.assertWorkerClockedIn(task, data.userId, data.organizationId, true);
+      await this.clockGate.assertWorkerClockedIn(task, data.userId, data.organizationId, true);
       const at = judgeOccurrence(data.evidence, task.pausedAt).at;
       const resumed = await this.prisma.task.updateMany({
         where: { id: task.id, pausedAt: { not: null } },
@@ -1212,6 +1221,9 @@ export class TasksService {
       });
       if (resumed.count > 0) {
         await this.createTaskEvent(task.id, data.userId, TaskEventType.RESUMED, { at: at.toISOString() });
+        // Picked up again: one job at a time for whoever resumed it, and the crew is asked to join.
+        await this.crew.leaveOtherJobs(data.userId, task.organizationId, task.id, at);
+        void this.crew.announceStart(task.id, data.userId, at);
         this.notificationClient.emit('task_updated', {
           task: await this.prisma.task.findUnique({ where: { id: task.id } }),
           actorId: data.userId,
@@ -1672,99 +1684,6 @@ export class TasksService {
    * - CLIENT: can cancel their own tasks
    * - DISPATCHER: can cancel any task in their org
    */
-  /**
-   * The person doing the job must be on the clock to start or resume it.
-   *
-   * WHO is "the person": the mover, when they are on the job; otherwise (the
-   * office moving it for them) whoever it is assigned to — any one of them
-   * clocked in will do, since a crew shares a job. Nobody assigned: nobody to
-   * hold to a clock. Rule and exemptions: packages/shared/src/tasks/clock-gate.ts.
-   *
-   * Asked only on a move INTO a working step, so the board's ordinary moves and
-   * every other status change pay nothing for it. One indexed query
-   * (time_entries [userId, status]) when it does run.
-   */
-  private async assertWorkerClockedIn(
-    task: { id: string; organizationId: string; spaceId?: string | null; assignedToId?: string | null },
-    moverId: string,
-    organizationId: string,
-    moverIsOnTheJob: boolean,
-  ): Promise<{ userId: string; clockInAt: Date } | null> {
-    const where = task.spaceId
-      ? await this.prisma.companyLocation.findUnique({
-          where: { id: task.spaceId },
-          select: { enabledModules: true, organization: { select: { enabledModules: true } } },
-        })
-      : null;
-    const orgModules = where?.organization?.enabledModules
-      ?? (await this.prisma.organization.findUnique({ where: { id: task.organizationId }, select: { enabledModules: true } }))?.enabledModules;
-    const jobRunsClock = spaceRunsClock(where?.enabledModules as string[] | null | undefined, orgModules as string[] | null | undefined);
-
-    let workerIds: string[];
-    if (moverIsOnTheJob) {
-      workerIds = [moverId];
-    } else {
-      const crew = await this.prisma.taskAssignee.findMany({ where: { taskId: task.id }, select: { userId: true } });
-      workerIds = [...new Set([task.assignedToId, ...crew.map((c) => c.userId)].filter((id): id is string => !!id))];
-    }
-    if (workerIds.length === 0) return null;
-
-    /*
-      ⚠️ THE RULE FOLLOWS THE PERSON, NOT ONLY THE JOB'S WORKSPACE. A job in a
-      workspace with Time Tracking off (a warehouse, a depot) was started by
-      somebody who clocks in every day at the office — the job's time and the
-      timesheet disagreed again. So: where the job's workspace runs no clock,
-      the worker is still held to one if they can clock in ANYWHERE (an active
-      assignment to a workspace that runs Time Tracking — the same answer as
-      their clock-in list). Somebody with no clock at all is never asked.
-    */
-    const heldIds = jobRunsClock ? workerIds : await this.workersWithAClock(workerIds, task.organizationId);
-    if (heldIds.length === 0) return null;
-
-    // External members hold no clock (EXTERNAL_FORBIDDEN_MODULES): never theirs to be on.
-    const held = await this.prisma.user.findMany({
-      where: { id: { in: heldIds }, organizationId: task.organizationId, isExternal: false },
-      select: { id: true, firstName: true, lastName: true },
-    });
-    if (held.length === 0) return null;
-
-    const onTheClock = await this.prisma.timeEntry.findFirst({
-      where: { organizationId: task.organizationId, userId: { in: held.map((w) => w.id) }, status: 'CLOCKED_IN' },
-      select: { userId: true, clockInAt: true },
-    });
-    if (onTheClock) return onTheClock;
-
-    if (moverIsOnTheJob) {
-      throw new BadRequestException({
-        message: 'Clock in to start work on this job.',
-        code: CLOCK_GATE_CODES.SELF,
-      });
-    }
-    const name = `${held[0]!.firstName} ${held[0]!.lastName}`.trim();
-    throw new BadRequestException({
-      message: `${name} is not clocked in. They need to clock in before this job can start.`,
-      code: CLOCK_GATE_CODES.ASSIGNEE,
-      params: { name },
-    });
-  }
-
-  /** Of these people, those who can clock in somewhere — the clock-in list's own rule, in one query. */
-  private async workersWithAClock(workerIds: string[], organizationId: string): Promise<string[]> {
-    const rows = await this.prisma.spaceAssignment.findMany({
-      where: {
-        ...activeAssignmentWhere({ in: workerIds }),
-        space: { organizationId, isActive: true, isRemote: false },
-      },
-      select: { userId: true, space: { select: { enabledModules: true, organization: { select: { enabledModules: true } } } } },
-    });
-    const withClock = new Set(
-      rows
-        .filter((r) => spaceRunsClock(r.space.enabledModules as string[] | null, r.space.organization?.enabledModules as string[] | null))
-        .map((r) => r.userId),
-    );
-    return workerIds.filter((id) => withClock.has(id));
-  }
-
   async updateStatus(data: {
     id: string;
     status: string;
@@ -1883,6 +1802,28 @@ export class TasksService {
       Already where they were moving it (another device got there first, or the
       office did): nothing to do, answered as done, and no second event.
     */
+    /*
+      ── The step the job is already in ──
+
+      A crew member tapping it (three people pressing "On the way" together,
+      or a phone that had not caught up) is WITH the job: joined from their own
+      tap (shared crew.ts), and nothing moves. It used to be answered "done"
+      with nothing written — the second and third person counted nothing.
+    */
+    if (isAssignedUser && task.status === data.status) {
+      await this.crew.joinAs(task, data.userId, { evidence: data.evidence }).catch((err: { response?: { code?: string } }) => {
+        // A step that counts no time (accepted, waiting) has nothing to join.
+        if (err?.response?.code !== CREW_CODES.JOB_NOT_STARTED) throw err;
+      });
+      return success(await this.prisma.task.findUnique({
+        where: { id: data.id },
+        include: {
+          assignedTo: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+          createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+        },
+      }));
+    }
+
     if (data.expectedFrom && task.status !== data.expectedFrom) {
       if (task.status === data.status) {
         return success(await this.prisma.task.findUnique({
@@ -1990,11 +1931,16 @@ export class TasksService {
       );
     }
 
+    // ── Crew mode: the leader moves the step (shared crew.ts mayMoveStep) ──
+    if (isAssignedUser) await this.crew.assertMayMoveStep(task, { userId: data.userId, userRole: data.userRole, organizationId: data.organizationId }, hasManageAuthority);
+
     // ── Clocked in to start work ──
     // Before the location check: "clock in first" is the more useful thing to
     // hear than "you are 3 km away" — the clock-in itself checks where they are.
     const startsWork = stepStartsWork(data.status, stepCapabilities(wf, data.status));
-    const onClock = startsWork ? await this.assertWorkerClockedIn(task, data.userId, data.organizationId, isAssignedUser) : null;
+    // Was the job already counting before this move? (Starting it asks the crew to join.)
+    const wasCounting = !task.pausedAt && stepStartsWork(task.status as string, stepCapabilities(wf, task.status as string));
+    const onClock = startsWork ? await this.clockGate.assertWorkerClockedIn(task, data.userId, data.organizationId, isAssignedUser) : null;
 
     /*
       ── The office starting somebody's job for them ──
@@ -2255,6 +2201,14 @@ export class TasksService {
       // Read by the history ("Started by Anna (office) for Mike") and by job time (it is Mike's).
       ...(officeStart ? { byOffice: true, forUserId: officeStart.forUserId, officeReason: officeStart.reason } : {}),
     });
+
+    // Into work: the worker leaves any other job they were on (one job at a time),
+    // and a job that has just started asks its crew on the clock to join.
+    if (startsWork) {
+      const worker = officeStart?.forUserId ?? (isAssignedUser ? data.userId : null);
+      if (worker) await this.crew.leaveOtherJobs(worker, task.organizationId, task.id, occurredAt);
+      if (!wasCounting) void this.crew.announceStart(task.id, worker ?? data.userId, occurredAt);
+    }
 
     if (officeStart) {
       const by = await this.prisma.user.findUnique({ where: { id: data.userId }, select: { firstName: true, lastName: true } });

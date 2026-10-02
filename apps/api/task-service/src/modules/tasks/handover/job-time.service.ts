@@ -10,6 +10,9 @@ import {
   jobWindows,
   jobSpans,
   liveJobKind,
+  crewPresence,
+  personalSpans,
+  selfBlockWindows,
   stepCapabilities,
   stepTimeKind,
   workerJobTime,
@@ -28,8 +31,17 @@ const PERSON = { select: { id: true, firstName: true, lastName: true } } as cons
 const TIME_EVENTS = [TaskEventType.STATUS_CHANGED, TaskEventType.PAUSED, TaskEventType.RESUMED];
 /** Taken off the job: who is credited changes there (shared jobWindows). */
 const LEAVE_EVENTS = [TaskEventType.UNASSIGNED, TaskEventType.ASSIGNEE_REMOVED];
+/** One person's own presence on a crew job (shared crew.ts). */
+const CREW_EVENTS = [TaskEventType.CREW_JOINED, TaskEventType.CREW_LEFT, TaskEventType.SELF_BLOCKED, TaskEventType.SELF_RESUMED];
 /** Built-in closed steps — a custom flow's own final step simply counts nothing after it. */
 const CLOSED_KEYS = ['COMPLETED', 'CLOSED', 'CANCELED'];
+
+const PERSONAL_KIND: Record<string, WorkTimelineEvent['kind']> = {
+  [TaskEventType.CREW_JOINED]: 'JOINED',
+  [TaskEventType.CREW_LEFT]: 'LEFT',
+  [TaskEventType.SELF_BLOCKED]: 'SELF_BLOCKED',
+  [TaskEventType.SELF_RESUMED]: 'SELF_RESUMED',
+};
 
 /** What the office wrote on a move it made for somebody — see TasksService.updateStatus. */
 type MoveMeta = { newStatus?: string; occurredAt?: string; at?: string; byOffice?: boolean; forUserId?: string; officeReason?: string; reason?: string };
@@ -67,7 +79,7 @@ export class JobTimeService {
   private async eventsOf(taskIds: string[]): Promise<Map<string, EventRow[]>> {
     const rows = taskIds.length
       ? await this.prisma.taskEvent.findMany({
-          where: { taskId: { in: taskIds }, eventType: { in: [...TIME_EVENTS, ...LEAVE_EVENTS] } },
+          where: { taskId: { in: taskIds }, eventType: { in: [...TIME_EVENTS, ...LEAVE_EVENTS, ...CREW_EVENTS] } },
           orderBy: { createdAt: 'asc' },
           select: { taskId: true, createdAt: true, userId: true, eventType: true, metadata: true },
           take: 500 * Math.max(1, taskIds.length),
@@ -85,6 +97,12 @@ export class JobTimeService {
         const left = m.previousWorkerId ?? m.assigneeId;
         return left ? [{ at: e.createdAt, userId: left, kind: 'LEFT' }] : [];
       }
+      // A crew member's own presence: `userId` is the person, `at` the moment it counts from.
+      const personal = PERSONAL_KIND[e.eventType as string];
+      if (personal) {
+        const m = (e.metadata ?? {}) as { at?: string };
+        return [{ at: m.at ?? e.createdAt, userId: e.userId, kind: personal }];
+      }
       const m = (e.metadata ?? {}) as MoveMeta;
       return [{
         at: m.occurredAt ?? m.at ?? e.createdAt,
@@ -94,6 +112,12 @@ export class JobTimeService {
         forUserId: m.forUserId ?? null,
       }];
     });
+  }
+
+  /** Several jobs' histories as job time reads them — one query (crew presence, the pause rule). */
+  async timelinesOf(taskIds: string[]): Promise<Map<string, WorkTimelineEvent[]>> {
+    const events = await this.eventsOf(taskIds);
+    return new Map(taskIds.map((id) => [id, this.timeline(events.get(id) ?? [])]));
   }
 
   /** Everyone's shifts that could overlap [from, to], in one query. */
@@ -132,7 +156,7 @@ export class JobTimeService {
    */
   private workersOf(timeline: WorkTimelineEvent[], kindOf: (s: string) => JobTimeKind | null, assigned: string[]): string[] {
     const ids = new Set(assigned);
-    for (const e of timeline) if (e.kind !== 'PAUSED' && (e.kind === 'RESUMED' || kindOf(e.status ?? ''))) ids.add(e.forUserId ?? e.userId);
+    for (const e of timeline) if (e.kind === 'JOINED' || e.kind === 'RESUMED' || (e.kind === 'STATUS' && kindOf(e.status ?? ''))) ids.add(e.forUserId ?? e.userId);
     return [...ids];
   }
 
@@ -192,14 +216,18 @@ export class JobTimeService {
       const rows = events.get(t.id) ?? [];
       const timeline = this.timeline(rows);
       const kindOf = await kinds(t);
-      return { task: t, rows, kindOf, spans: jobSpans(timeline, until, kindOf), joinedAt: joinedJobAt(timeline, userId), windows: jobWindows(timeline, userId) };
+      return { task: t, rows, timeline, kindOf, spans: jobSpans(timeline, until, kindOf), joinedAt: joinedJobAt(timeline, userId), windows: jobWindows(timeline, userId) };
     }));
     const mine = exclusiveSpans(jobs.map((j) => ({ id: j.task.id, spans: j.spans, windows: j.windows })));
     const earliest = Math.min(...jobs.map((j) => j.joinedAt ?? Infinity));
     const shifts = (await this.shiftsOf([userId], organizationId, from ?? (Number.isFinite(earliest) ? new Date(earliest) : null), until)).get(userId) ?? [];
     const window = from ? { from, to: until } : { to: until };
     const times = new Map<string, JobTime>();
-    for (const j of jobs) times.set(j.task.id, workerJobTime(mine.get(j.task.id) ?? [], j.joinedAt == null ? null : -Infinity, shifts, window));
+    // Their own stops ("My issue") turn their share blocked; the job's line is untouched.
+    for (const j of jobs) {
+      const own = personalSpans(mine.get(j.task.id) ?? [], selfBlockWindows(j.timeline, userId));
+      times.set(j.task.id, workerJobTime(own, j.joinedAt == null ? null : -Infinity, shifts, window));
+    }
     // Still on the clock now: an open shift, read as it was before rests were cut out of it.
     const onClockNow = await this.prisma.timeEntry.count({ where: { organizationId, userId, status: 'CLOCKED_IN' } }) > 0;
     return { jobs, times, shifts, onClockNow };
@@ -222,13 +250,20 @@ export class JobTimeService {
       this.prisma.user.findMany({ where: { id: { in: workerIds } }, ...PERSON }),
     ]);
     const byId = new Map(shares.map((s) => [s.id, s]));
-    const byWorker = people
-      .map((p) => ({ user: p, ...(byId.get(p.id)?.times.get(task.id) ?? NO_JOB_TIME) }))
-      .filter((w) => w.travel + w.working + w.blocked > 0);
-    const total = byWorker.reduce<JobTime>((sum, w) => addJobTime(sum, w), NO_JOB_TIME);
     const liveKind = liveJobKind(spans, until);
-    // Ticking on a screen only means something while somebody credited is on the clock.
-    const onClock = liveKind ? shares.filter((s) => s.onClockNow).length : 0;
+    const presence = crewPresence(timeline, workerIds);
+    // What each person's time is running as NOW: on the clock, on the job, and their own stop makes it blocked.
+    const liveOf = (id: string) => {
+      const p = presence.get(id);
+      if (!liveKind || !p?.joined || !byId.get(id)?.onClockNow) return null;
+      return p.selfBlockedSince != null ? ('blocked' as const) : liveKind;
+    };
+    const byWorker = people
+      .map((p) => ({ user: p, ...(byId.get(p.id)?.times.get(task.id) ?? NO_JOB_TIME), live: liveOf(p.id) }))
+      .filter((w) => w.travel + w.working + w.blocked > 0 || w.live);
+    const total = byWorker.reduce<JobTime>((sum, w) => addJobTime(sum, w), NO_JOB_TIME);
+    // Ticking on a screen only while somebody counted on it is on the clock.
+    const onClock = byWorker.filter((w) => w.live).length;
     const started = this.startedBy(rows, kindOf);
     const names = new Map(people.map((p) => [p.id, p]));
     let startedBy = null as null | { user: { id: string; firstName: string; lastName: string } | null; forUser: { id: string; firstName: string; lastName: string } | null; office: boolean; reason: string | null; at: string };

@@ -108,6 +108,17 @@ enum TaskEventType {
   RESUMED
   /// A worker wrote what they did and what is left (TaskHandover).
   HANDOVER_ADDED
+  /// Crew presence (packages/shared/src/tasks/crew.ts): `userId` is the person.
+  /// metadata { at, viaLeaderAt?, byUserId?, reason? }
+  CREW_JOINED
+  /// metadata { at, why: SELF | CLOCK_OUT | OTHER_JOB | OFFICE, byUserId? }
+  CREW_LEFT
+  /// "My issue": only this person's time is blocked. metadata { at, reason }
+  SELF_BLOCKED
+  /// metadata { at }
+  SELF_RESUMED
+  /// The lead changed. metadata { from, to, scope: TODAY | PERMANENT, by: LEADER | OFFICE, reason? }
+  LEAD_CHANGED
 }
 
 enum TaskAssigneeRole {
@@ -393,6 +404,11 @@ model Organization {
   // members carry an employmentType and in-house ones get the €9 seat. Defaulted
   // from industry at setup (trades on, IT/office off), toggleable in Settings.
   usesExternalWorkers   Boolean @default(false)
+  /// Crew rules (packages/shared/src/tasks/crew.ts): with it ON only the leader
+  /// (or the acting leader, or the office) moves a crew job's step. Off = any
+  /// crew member moves it, as before — switched on once the org's phones run
+  /// the app that has the crew controls.
+  crewMode              Boolean @default(false)
   address               String? // Legacy single-line address (kept for back-compat)
   addressLine1          String? // Street address
   addressLine2          String? // Suite / floor / unit (optional)
@@ -1081,6 +1097,13 @@ model Task {
   /// Who still owes a handover note for this job (set at the pause when they
   /// left none; cleared when they write it). Never blocks anything — it nags.
   handoverDueById String?
+  /// The lead handed over FOR TODAY (crew.ts effectiveLeader): who leads until
+  /// when. A permanent hand-over is the TaskAssignee role itself, never this.
+  leadOverrideId    String?
+  leadOverrideUntil DateTime?
+  /// The workspace-local day the office was last told this job's leader is
+  /// off ("YYYY-MM-DD") — the morning notice is sent once per day.
+  leadNoticeOn      String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

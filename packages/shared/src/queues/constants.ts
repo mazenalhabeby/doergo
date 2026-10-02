@@ -58,6 +58,12 @@ export const TASK_JOB_TYPES = {
   // Paused at clock-out (packages/shared/src/tasks/handover.ts)
   RESUME_WORK: 'task.resumeWork',
   ADD_HANDOVER: 'task.addHandover',
+  // A crew on one job (tasks/crew.ts)
+  CREW_JOIN: 'task.crewJoin',
+  CREW_LEAVE: 'task.crewLeave',
+  CREW_SELF_ISSUE: 'task.crewSelfIssue',
+  CREW_SELF_RESUME: 'task.crewSelfResume',
+  CREW_CHANGE_LEAD: 'task.crewChangeLead',
 } as const;
 
 export type TaskJobType = (typeof TASK_JOB_TYPES)[keyof typeof TASK_JOB_TYPES];

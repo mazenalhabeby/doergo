@@ -143,3 +143,4 @@ export * from './tasks/be-there';
 export * from './tasks/clock-gate';
 export * from './tasks/handover';
 export * from './tasks/job-time';
+export * from './tasks/crew';

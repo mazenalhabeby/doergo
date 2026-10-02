@@ -34,6 +34,12 @@ export const SYNC_OPERATIONS = {
   // Paused at a clock-out: picking it up again, and saying what was done (tasks/handover.ts).
   'task.resume': { method: 'POST', path: '/tasks/:taskId/resume' },
   'task.handover': { method: 'POST', path: '/tasks/:taskId/handover' },
+  // A crew on one job (tasks/crew.ts): each person's own presence, and the lead.
+  'task.join': { method: 'POST', path: '/tasks/:taskId/crew/join' },
+  'task.leave': { method: 'POST', path: '/tasks/:taskId/crew/leave' },
+  'task.selfIssue': { method: 'POST', path: '/tasks/:taskId/crew/issue' },
+  'task.selfResume': { method: 'POST', path: '/tasks/:taskId/crew/resume' },
+  'task.lead': { method: 'PUT', path: '/tasks/:taskId/lead' },
   'report.attachment': { method: 'POST', path: '/reports/:reportId/attachments' },
   // Attendance
   'attendance.clockIn': { method: 'POST', path: '/attendance/clock-in' },

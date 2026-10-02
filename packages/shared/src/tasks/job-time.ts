@@ -35,8 +35,13 @@ export interface WorkTimelineEvent {
   at: Date | string;
   /** Who made the move. */
   userId: string;
-  /** LEFT: `userId` was taken off the job (unassigned, removed from the crew). */
-  kind: 'STATUS' | 'PAUSED' | 'RESUMED' | 'LEFT';
+  /**
+   * LEFT: `userId` was taken off the job, or left it (unassigned, removed,
+   * their own Leave, their clock-out, another job).
+   * JOINED / SELF_BLOCKED / SELF_RESUMED are about ONE person (crew.ts): they
+   * change who is credited and how, never the job's own line.
+   */
+  kind: 'STATUS' | 'PAUSED' | 'RESUMED' | 'LEFT' | 'JOINED' | 'SELF_BLOCKED' | 'SELF_RESUMED';
   /** For STATUS: the step moved into. */
   status?: string;
   /** The office moved it FOR this person — it counts as their move. */
@@ -57,6 +62,8 @@ export interface JobSpan {
 }
 
 const BLOCKED_KEYS = new Set(['BLOCKED']);
+/** One person's own moves — they never change what the job is doing. */
+const PERSONAL = new Set<WorkTimelineEvent['kind']>(['LEFT', 'JOINED', 'SELF_BLOCKED', 'SELF_RESUMED']);
 const ROUTE_ONLY = new Set(['gps', 'timer']);
 
 /** Which kind of time a step is, or null when time there is not job time (accepted, done, waiting). */
@@ -91,8 +98,8 @@ export function jobSpans(
   let since = 0;
   for (const e of sortedEvents(events)) {
     if (e.t > end) break;
-    // Somebody leaving the crew changes who is credited, not what the job is doing.
-    if (e.kind === 'LEFT') continue;
+    // Somebody joining, leaving or stopping on their own changes who is credited, not what the job is doing.
+    if (PERSONAL.has(e.kind)) continue;
     if (kind && !paused && e.t > since) spans.push({ start: since, end: e.t, kind });
     since = e.t;
     if (e.kind === 'STATUS') { kind = kindOf(e.status ?? ''); paused = false; }
@@ -104,7 +111,7 @@ export function jobSpans(
 
 /** When this person joined the job: their first move on it, or the office's move for them. */
 export function joinedJobAt(events: readonly WorkTimelineEvent[], workerId: string): number | null {
-  const first = sortedEvents(events).find((e) => e.kind !== 'LEFT' && (e.forUserId ?? e.userId) === workerId);
+  const first = sortedEvents(events).find((e) => e.kind !== 'LEFT' && e.kind !== 'SELF_RESUMED' && e.kind !== 'PAUSED' && (e.forUserId ?? e.userId) === workerId);
   return first ? first.t : null;
 }
 
@@ -122,9 +129,54 @@ export function jobWindows(events: readonly WorkTimelineEvent[], workerId: strin
       if (e.userId === workerId && since != null) { out.push([since, e.t]); since = null; }
       continue;
     }
+    // Pausing a job (a clock-out) or resuming one's own stop is not a way onto it.
+    if (e.kind === 'SELF_RESUMED' || e.kind === 'PAUSED') continue;
     if (since == null && (e.forUserId ?? e.userId) === workerId) since = e.t;
   }
   if (since != null) out.push([since, Infinity]);
+  return out;
+}
+
+/**
+ * When this person had stopped on their own ("My issue"): from their
+ * SELF_BLOCKED to their SELF_RESUMED, or to their leaving the job.
+ */
+export function selfBlockWindows(events: readonly WorkTimelineEvent[], workerId: string): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
+  let since: number | null = null;
+  for (const e of sortedEvents(events)) {
+    if (e.userId !== workerId) continue;
+    if (e.kind === 'SELF_BLOCKED' && since == null) since = e.t;
+    else if ((e.kind === 'SELF_RESUMED' || e.kind === 'LEFT') && since != null) { out.push([since, e.t]); since = null; }
+  }
+  if (since != null) out.push([since, Infinity]);
+  return out;
+}
+
+/**
+ * One person's spans with their OWN stops applied: inside a self-block every
+ * moment is `blocked` for them, whatever the job is doing — the crew carries
+ * on working, one person waits for a part.
+ */
+export function personalSpans(spans: readonly JobSpan[], selfBlocks: ReadonlyArray<[number, number]>): JobSpan[] {
+  if (!selfBlocks.length) return [...spans];
+  const out: JobSpan[] = [];
+  const push = (sp: JobSpan) => {
+    if (sp.end <= sp.start) return;
+    const last = out[out.length - 1];
+    if (last && last.end === sp.start && last.kind === sp.kind) last.end = sp.end;
+    else out.push({ ...sp });
+  };
+  for (const sp of spans) {
+    let cursor = sp.start;
+    for (const [b0, b1] of selfBlocks) {
+      if (b1 <= cursor || b0 >= sp.end) continue;
+      push({ start: cursor, end: Math.max(cursor, b0), kind: sp.kind });
+      push({ start: Math.max(cursor, b0), end: Math.min(sp.end, b1), kind: 'blocked' });
+      cursor = Math.min(sp.end, b1);
+    }
+    push({ start: cursor, end: sp.end, kind: sp.kind });
+  }
   return out;
 }
 
@@ -243,7 +295,8 @@ export const OFFICE_START_CODES = {
 export interface JobTimeReading {
   asOf: string;
   total: JobTime;
-  byWorker: ReadonlyArray<JobTime & { user: { id: string } }>;
+  /** `live`: what this person's time is running as now (their own stop makes it `blocked`), null when not counting. */
+  byWorker: ReadonlyArray<JobTime & { user: { id: string }; live?: JobTimeKind | null }>;
   live: { kind: JobTimeKind } | null;
 }
 
@@ -255,10 +308,23 @@ export interface JobTimeReading {
  */
 export function jobTimeAt(reading: JobTimeReading | null | undefined, meId: string | null | undefined, now: number): (JobTime & { live: JobTimeKind | null }) | null {
   if (!reading) return null;
+  const minutes = Math.max(0, Math.floor((now - new Date(reading.asOf).getTime()) / 60_000));
   const mine = meId ? reading.byWorker.find((w) => w.user.id === meId) : undefined;
-  const base: JobTime = mine ? { travel: mine.travel, working: mine.working, blocked: mine.blocked } : { ...reading.total };
-  const live = reading.live && (!meId || mine || reading.byWorker.length === 0) ? reading.live.kind : null;
-  if (live) base[live] += Math.max(0, Math.floor((now - new Date(reading.asOf).getTime()) / 60_000));
+  const perPerson = reading.byWorker.some((w) => w.live !== undefined);
+  if (mine) {
+    const base: JobTime = { travel: mine.travel, working: mine.working, blocked: mine.blocked };
+    const live = mine.live !== undefined ? mine.live : reading.live?.kind ?? null;
+    if (live) base[live] += minutes;
+    return { ...base, live };
+  }
+  const base: JobTime = { ...reading.total };
+  if (perPerson) {
+    // The job's total runs once per person counting now — a crew of three adds three minutes a minute.
+    for (const w of reading.byWorker) if (w.live) base[w.live] += minutes;
+    return { ...base, live: reading.live?.kind ?? null };
+  }
+  const live = reading.live && (!meId || reading.byWorker.length === 0) ? reading.live.kind : null;
+  if (live) base[live] += minutes;
   return { ...base, live };
 }
 

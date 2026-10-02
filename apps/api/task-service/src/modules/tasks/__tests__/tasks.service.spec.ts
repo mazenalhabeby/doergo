@@ -10,6 +10,17 @@ import { NotificationRoutingService } from '../../../common/notification-routing
 import { Role, TaskStatus, TaskEventType } from '@hbcfield/shared';
 import { JobTimeService } from '../handover/job-time.service';
 import { PresenceService } from '../../attendance/presence/presence.service';
+import { ClockGateService } from '../handover/clock-gate.service';
+import { CrewService } from '../handover/crew.service';
+
+/** The crew rules are their own service (crew.spec.ts); here they say nothing. */
+const crewStub = () => ({
+  joinAs: jest.fn().mockResolvedValue(null),
+  assertMayMoveStep: jest.fn().mockResolvedValue(undefined),
+  leaveOtherJobs: jest.fn().mockResolvedValue(undefined),
+  announceStart: jest.fn().mockResolvedValue(undefined),
+  viewFor: jest.fn().mockResolvedValue(null),
+});
 
 describe('TasksService', () => {
   let service: TasksService;
@@ -140,7 +151,7 @@ describe('TasksService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        TasksService, { provide: JobTimeService, useValue: {} }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
+        TasksService, { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: 'NOTIFICATION_SERVICE', useValue: mockNotificationClient },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },

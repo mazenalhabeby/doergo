@@ -76,6 +76,8 @@ describe('JobPauseService', () => {
         findMany: jest.fn().mockResolvedValue([{ taskId: 't1', createdAt: T('09:00'), userId: 'mike', eventType: 'STATUS_CHANGED', metadata: { newStatus: 'IN_PROGRESS' } }]),
         findFirst: jest.fn().mockResolvedValue({ metadata: { workedMinutes: 135 } }),
         create: jest.fn(),
+        createMany: jest.fn(),
+        update: jest.fn(),
       },
       attachment: { findMany: jest.fn().mockResolvedValue([{ id: 'a1' }]) },
       taskHandover: {
@@ -114,10 +116,23 @@ describe('JobPauseService', () => {
     expect(prisma.task.updateMany).not.toHaveBeenCalled();
   });
 
-  it('keeps a crew job running while somebody else on it is still clocked in', async () => {
+  it('keeps a crew job running while somebody else who JOINED it is still clocked in', async () => {
     prisma.task.findMany.mockResolvedValue([job({ assignedToId: 'ali' })]);
+    prisma.taskEvent.findMany.mockResolvedValue([
+      { taskId: 't1', createdAt: T('09:00'), userId: 'mike', eventType: 'STATUS_CHANGED', metadata: { newStatus: 'IN_PROGRESS' } },
+      { taskId: 't1', createdAt: T('09:05'), userId: 'ali', eventType: 'CREW_JOINED', metadata: { at: T('09:05').toISOString() } },
+    ]);
     prisma.timeEntry.findMany.mockResolvedValue([{ userId: 'ali' }]);
     await expect(clockOut()).resolves.toEqual({ paused: [] });
+    // Mike's clock-out is his leaving the job.
+    expect(prisma.taskEvent.createMany.mock.calls[0][0].data).toEqual([expect.objectContaining({ taskId: 't1', userId: 'mike', eventType: 'CREW_LEFT' })]);
+  });
+
+  it('pauses a crew job when nobody who joined it is left on the clock — even with crew members who never joined', async () => {
+    prisma.task.findMany.mockResolvedValue([job({ assignedToId: 'ali' })]);
+    // Ali is on the crew and on the clock, but never joined: the job does not run on for nobody.
+    prisma.timeEntry.findMany.mockImplementation(async ({ select }: any) => (select?.breaks ? [{ userId: 'mike', clockInAt: T('08:00'), clockOutAt: null, breaks: [] }] : [{ userId: 'ali' }]));
+    await expect(clockOut()).resolves.toEqual({ paused: ['t1'] });
   });
 
   it('a real clock-out after the overnight guess moves the pause to the real minute', async () => {

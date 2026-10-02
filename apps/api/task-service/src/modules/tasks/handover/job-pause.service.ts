@@ -6,6 +6,8 @@ import {
   HANDOVER_PHOTOS_MAX,
   TaskStatus,
   cleanHandoverNote,
+  crewPresence,
+  pausesAtClockOut,
   createOnce,
   stepCapabilities,
   stepStartsWork,
@@ -127,28 +129,44 @@ export class JobPauseService {
         where: { organizationId, pausedById: userId, pausedAt: { gte: args.since } },
         data: { pausedAt: at },
       });
+      // The leave this shift's end already wrote moves with it.
+      const lefts = await this.prisma.taskEvent.findMany({
+        where: { userId, eventType: TaskEventType.CREW_LEFT, createdAt: { gte: args.since }, task: { organizationId }, metadata: { path: ['why'], equals: 'CLOCK_OUT' } },
+        select: { id: true, metadata: true },
+        take: 50,
+      });
+      for (const l of lefts) {
+        await this.prisma.taskEvent.update({ where: { id: l.id }, data: { metadata: { ...((l.metadata ?? {}) as object), at: at.toISOString() } } });
+      }
     }
 
     const jobs = await this.workingJobsOf(userId, organizationId);
-    const toPause: Candidate[] = [];
-    if (jobs.length) {
-      const crew = await this.prisma.taskAssignee.findMany({
-        where: { taskId: { in: jobs.map((j) => j.id) }, userId: { not: userId } },
-        select: { taskId: true, userId: true },
+    /*
+      ⚠️ THE LAST JOINED MEMBER OUT PAUSES IT (shared crew.ts pausesAtClockOut) —
+      not the last person on the crew. A crew member who never joined kept a
+      job "running" with nobody counted on it; somebody joined and still on
+      the clock keeps it running, and is not stopped under.
+    */
+    const timelines = await this.jobTime.timelinesOf(jobs.map((j) => j.id));
+    const joinedOf = new Map(jobs.map((j) => {
+      const tl = timelines.get(j.id) ?? [];
+      const people = [...new Set(tl.map((e) => e.forUserId ?? e.userId))];
+      return [j.id, [...crewPresence(tl, people)].filter(([, p]) => p.joined).map(([id]) => id)] as const;
+    }));
+    const others = [...new Set([...joinedOf.values()].flat().filter((id) => id !== userId))];
+    const onClock = new Set(
+      others.length
+        ? (await this.prisma.timeEntry.findMany({ where: { organizationId, userId: { in: others }, status: 'CLOCKED_IN' }, select: { userId: true } })).map((e) => e.userId)
+        : [],
+    );
+    const toPause = jobs.filter((j) => pausesAtClockOut({ leaverId: userId, joined: joinedOf.get(j.id) ?? [], onClock }));
+
+    // Clocking out is leaving every job they were on — tomorrow they join again.
+    const leftOn = jobs.filter((j) => (joinedOf.get(j.id) ?? []).includes(userId));
+    if (leftOn.length) {
+      await this.prisma.taskEvent.createMany({
+        data: leftOn.map((j) => ({ taskId: j.id, userId, eventType: TaskEventType.CREW_LEFT, metadata: { at: at.toISOString(), why: 'CLOCK_OUT' } })),
       });
-      const others = new Map<string, Set<string>>();
-      for (const j of jobs) if (j.assignedToId && j.assignedToId !== userId) others.set(j.id, new Set([j.assignedToId]));
-      for (const c of crew) (others.get(c.taskId) ?? others.set(c.taskId, new Set()).get(c.taskId)!).add(c.userId);
-      const otherIds = [...new Set([...others.values()].flatMap((s) => [...s]))];
-      const stillOn = otherIds.length
-        ? new Set(
-            (await this.prisma.timeEntry.findMany({
-              where: { organizationId, userId: { in: otherIds }, status: 'CLOCKED_IN' },
-              select: { userId: true },
-            })).map((e) => e.userId),
-          )
-        : new Set<string>();
-      for (const j of jobs) if (![...(others.get(j.id) ?? [])].some((id) => stillOn.has(id))) toPause.push(j);
     }
 
     const notes = new Map<string, ClockOutHandover>();
@@ -181,6 +199,27 @@ export class JobPauseService {
       this.notifications.emit('tasks_paused', { taskIds: paused, userId, organizationId, reason: args.reason });
     }
     return { paused };
+  }
+
+  /**
+   * The last joined member left a crew job by their own "Leave job" (not a
+   * clock-out): it pauses there, and they owe the note — the same pause a
+   * clock-out makes, for one job. False when it was not in work.
+   */
+  async pauseOnLeave(taskId: string, userId: string, organizationId: string, at: Date): Promise<boolean> {
+    const job = (await this.workingJobsOf(userId, organizationId)).find((j) => j.id === taskId);
+    if (!job) return false;
+    const workedMinutes = (await this.jobTime.workedForMany([job], userId, at)).get(job.id) ?? 0;
+    const claimed = await this.prisma.task.updateMany({
+      where: { id: job.id, pausedAt: null, status: job.status },
+      data: { pausedAt: at, pausedById: userId, handoverDueById: userId },
+    });
+    if (claimed.count === 0) return false;
+    await this.prisma.taskEvent.create({
+      data: { taskId: job.id, userId, eventType: TaskEventType.PAUSED, metadata: { reason: 'LEFT', at: at.toISOString(), workedMinutes } },
+    });
+    this.notifications.emit('tasks_paused', { taskIds: [job.id], userId, organizationId, reason: 'LEFT' });
+    return true;
   }
 
   /**

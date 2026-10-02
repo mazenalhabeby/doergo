@@ -5,6 +5,7 @@ import { QUEUE_NAMES, TASK_JOB_TYPES, buildJobError } from '@hbcfield/shared';
 import { TasksService } from './tasks.service';
 import { AttachmentsService } from '../attachments/attachments.service';
 import { JobPauseService } from './handover/job-pause.service';
+import { CrewService } from './handover/crew.service';
 
 /**
  * BullMQ Processor for Task Queue
@@ -24,6 +25,7 @@ export class TasksProcessor extends WorkerHost {
     private readonly tasksService: TasksService,
     private readonly attachmentsService: AttachmentsService,
     private readonly jobPause: JobPauseService,
+    private readonly crew: CrewService,
   ) {
     super();
   }
@@ -84,6 +86,18 @@ export class TasksProcessor extends WorkerHost {
 
       case TASK_JOB_TYPES.ADD_HANDOVER:
         return this.jobPause.addHandover(data);
+
+      // ============ A crew on one job ============
+      case TASK_JOB_TYPES.CREW_JOIN:
+        return this.crew.join(data);
+      case TASK_JOB_TYPES.CREW_LEAVE:
+        return this.crew.leave(data);
+      case TASK_JOB_TYPES.CREW_SELF_ISSUE:
+        return this.crew.selfIssue(data);
+      case TASK_JOB_TYPES.CREW_SELF_RESUME:
+        return this.crew.selfResume(data);
+      case TASK_JOB_TYPES.CREW_CHANGE_LEAD:
+        return this.crew.changeLead(data);
 
       // ============ Assignee Write Operations ============
       case TASK_JOB_TYPES.ADD_ASSIGNEE:

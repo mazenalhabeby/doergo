@@ -17,6 +17,17 @@ import { NotificationRoutingService } from '../../../common/notification-routing
 import { MediaSigner } from '../../../common/storage/media-signer.service';
 import { JobTimeService } from '../handover/job-time.service';
 import { PresenceService } from '../../attendance/presence/presence.service';
+import { ClockGateService } from '../handover/clock-gate.service';
+import { CrewService } from '../handover/crew.service';
+
+/** The crew rules are their own service (crew.spec.ts); here they say nothing. */
+const crewStub = () => ({
+  joinAs: jest.fn().mockResolvedValue(null),
+  assertMayMoveStep: jest.fn().mockResolvedValue(undefined),
+  leaveOtherJobs: jest.fn().mockResolvedValue(undefined),
+  announceStart: jest.fn().mockResolvedValue(undefined),
+  viewFor: jest.fn().mockResolvedValue(null),
+});
 
 const NOW = new Date();
 const minutesAgo = (m: number) => new Date(NOW.getTime() - m * 60_000);
@@ -55,7 +66,7 @@ describe('status change recorded offline', () => {
     prisma.task.findUniqueOrThrow.mockImplementation(async () => ({ ...base(), status: TaskStatus.ARRIVED }));
     const module = await Test.createTestingModule({
       providers: [
-        TasksService, { provide: JobTimeService, useValue: {} }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
+        TasksService, { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },

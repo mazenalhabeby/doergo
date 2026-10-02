@@ -64,6 +64,28 @@ export class TasksQueueService extends BaseQueueService {
     return this.addJobAndWait(TASK_JOB_TYPES.ADD_HANDOVER, data);
   }
 
+  // ============ A crew on one job ============
+
+  async crewJoin(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.CREW_JOIN, data);
+  }
+
+  async crewLeave(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.CREW_LEAVE, data);
+  }
+
+  async crewSelfIssue(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.CREW_SELF_ISSUE, data);
+  }
+
+  async crewSelfResume(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.CREW_SELF_RESUME, data);
+  }
+
+  async crewChangeLead(data: Record<string, any>) {
+    return this.addJobAndWait(TASK_JOB_TYPES.CREW_CHANGE_LEAD, data);
+  }
+
   // ============ Attachment Operations ============
 
   async addAttachment(data: Record<string, any>) {

@@ -187,6 +187,8 @@ export class PushService {
       priority: 'high',
       channelId: routing.channelId,
       interruptionLevel: routing.interruptionLevel,
+      // A notification with buttons ("I'm with him") names its category; the app registers it.
+      ...(typeof data?.category === 'string' ? { categoryId: data.category } : {}),
     }));
 
     const chunks = this.expo.chunkPushNotifications(messages);
