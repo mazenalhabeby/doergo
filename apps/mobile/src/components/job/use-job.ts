@@ -6,6 +6,7 @@ import { needsTravelEstimate, slotHeldBy } from '@hbcfield/shared/client';
 import { tasksApi, reportsApi, TaskStatus, type Comment, type ServiceReport, type StepSubmission, type Task, type TaskEvent } from '../../lib/api';
 import { useAuth } from '../../contexts/auth-context';
 import { useSocketContext } from '../../contexts/socket-context';
+import { useRefreshJobTime } from '../../hooks/useJobTime';
 import { SocketEvents } from '../../lib/socket';
 import { useLocationTrackingContext } from '../../contexts/location-tracking-context';
 import { hasArrivalPrompt } from '../../services/route-arrival';
@@ -101,10 +102,18 @@ export function useJob(taskId: string) {
   /* ---------------- live updates ---------------- */
 
   const { isConnected, subscribe } = useSocketContext();
+  const refreshJobTime = useRefreshJobTime();
   useEffect(() => {
     if (!isConnected || !taskId) return;
+    /*
+      ⚠️ THE TIME AND THE CREW TOO. A crew change (somebody joined, left,
+      stopped, the lead moved) is announced as task.updated — reloading only
+      the task left the crew card saying "3 of 3 on the job" after Conor had
+      gone, until this phone's OWN next tap.
+    */
     const refreshTask = () => {
       tasksApi.getById(taskId).then((next) => setTask(next as JobTask)).catch(() => undefined);
+      refreshJobTime(taskId);
     };
     const refreshComments = () => {
       tasksApi.getComments(taskId).then(setComments).catch(() => undefined);
@@ -116,6 +125,7 @@ export function useJob(taskId: string) {
       subscribe(SocketEvents.TASK_COMMENT_ADDED, (d: any) => { if (d?.taskId === taskId) refreshComments(); }),
     ];
     return () => unsubs.forEach((fn) => fn());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, subscribe, taskId]);
 
   /* ---------------- arrival ---------------- */
