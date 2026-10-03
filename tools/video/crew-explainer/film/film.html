@@ -322,7 +322,7 @@ SCENES.forEach(s => { s.root = el('div', 'scene'); root.appendChild(s.root); s.u
 SCENES.forEach((s, i) => { s.end = i + 1 < SCENES.length ? SCENES[i + 1].start : TL.duration; });
 const chap = document.getElementById('chap'), sub = document.getElementById('sub');
 const allPhr = TL.chapters.flatMap((c, ci) => c.phrases.map(p => ({ ...p, c: c.id, ci })));
-const KEY = /(one leader|join|leave|on the clock|I.m with him|all three count|half an hour|My issue|blocked|Back to work|Leave the job|pause|stands in|standing in|for today|for good|eight hours|seven hours and twenty minutes|forty minutes|five and a half hours|twenty hours and fifty minutes|never twice)/gi;
+const KEY = /\b(one leader|join|leave|on the clock|I.m with him|all three count|half an hour|My issue|blocked|Back to work|Leave the job|pause|stands in|standing in|for today|for good|eight hours|seven hours and twenty minutes|forty minutes|five and a half hours|twenty hours and fifty minutes|never twice)\b/gi;
 
 function render(t) {
   // background drift
