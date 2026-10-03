@@ -1322,7 +1322,9 @@ docker exec -it hbcfield-redis redis-cli
 
 **Current Sprint**: nothing blocking. Outstanding and NOT doable from the machine: (1) **one real card payment has never completed** — pending since July; (2) INVOICE mode has produced a real subscription (`sub_1UC6kH…`, `send_invoice`, €472.78 incl. AT VAT, due 18 Sept) but **no customer has paid one yet**, and HBC GmbH has since been moved to EXTERNAL; (3) the app stores still serve an older binary, so an OTA only reaches installed 1.0.3/1.0.4 apps.
 
-### Recently Completed (2026-10-02) — A crew on one job (BUILT, NOT DEPLOYED)
+### Recently Completed (2026-10-03) — A crew on one job — PROD `e38c75c1` + OTA
+
+**PROD 2026-10-03** (rollback tag `prod-pre-crew` → `bfdb5483`; backup `pre-crew_20261003_091030.sql.gz`, 111 tables). OTA 1.0.7 `2719c6ea`, 1.0.6 `2f9c18fa`. `crewMode` is OFF for every organization until switched on.
 
 Migration `20261002180000_task_crew` (additive: 5 event types, `Task.leadOverrideId/Until`, `Task.leadNoticeOn`, `Organization.crewMode` default off). Commits `b429f119`…`24de5a3a` (the last is the fixes from an independent audit). See the endpoint section "A crew on one job" for the rules that bite.
 
