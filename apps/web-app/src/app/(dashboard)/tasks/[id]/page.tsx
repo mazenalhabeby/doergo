@@ -488,7 +488,7 @@ export default function TaskDetailPage({
             {hasModule("checklists") && (checklistTotal > 0 || !isCanceled) && (
               <div data-tour="task-checklist">
               <CollapsibleSection id="checklist" icon={ListChecks} title={t("tasks.sections.checklist")} count={checklistTotal > 0 ? `${checklistDone}/${checklistTotal}` : undefined} defaultOpen={openIfPresent(checklistTotal)}>
-                <ChecklistSection taskId={id} items={task.checklistItems || []} />
+                <ChecklistSection taskId={id} items={task.checklistItems || []} paused={!!task.pausedAt} />
               </CollapsibleSection>
               </div>
             )}

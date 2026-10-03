@@ -14,6 +14,7 @@ import {
   stepCapabilities,
   stepTimeKind,
   success,
+  type ChecklistAuthority,
   type EffectiveLeader,
   type LeadScope,
   type OccurrenceEvidence,
@@ -142,6 +143,25 @@ export class CrewService {
   /** May the office act on this job's step and lead (role, org-wide grant, or the job's workspace)? */
   private isOffice(actor: CrewActor, task: Pick<CrewTask, 'spaceId'>, key: 'canViewAllTasks' | 'canAssignTasks'): boolean {
     return actor.userRole === Role.ADMIN || !!actor[key] || actor.access?.org?.[key] === true || accessAllowsInSpace(actor.access, key, task.spaceId ?? undefined);
+  }
+
+  /**
+   * Who may give this job's checklist items to whom (shared tasks/checklist.ts):
+   * the crew, the office, and who leads now. The leader is only worked out for
+   * a caller who is not the office — the office pays one crew read, nothing more.
+   * The caller's access to the task itself is checked BEFORE this, by the task gate.
+   */
+  async checklistAuthority(taskId: string, actor: CrewActor): Promise<ChecklistAuthority> {
+    const task = await this.taskOf(taskId, actor.organizationId);
+    const crew = await this.crewOf(task);
+    const crewIds = crew.map((c) => c.userId);
+    const isOffice = this.isOffice(actor, task, 'canAssignTasks');
+    if (isOffice || !crewIds.includes(actor.userId)) return { actorId: actor.userId, isOffice, leaderId: null, crewIds };
+    const [timeline, onClock] = await Promise.all([
+      this.jobTime.timelinesOf([task.id]).then((m) => m.get(task.id) ?? []),
+      this.onClock(crewIds, task.organizationId),
+    ]);
+    return { actorId: actor.userId, isOffice, leaderId: this.leaderFrom(task, crew, timeline, onClock).userId, crewIds };
   }
 
   /**

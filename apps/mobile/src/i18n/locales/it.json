@@ -3199,7 +3199,9 @@
       "CREW_LEAD_TARGET_NOT_ON_CREW": "Scegli qualcuno di questo lavoro.",
       "CREW_LEAD_NOT_YOURS": "Solo il responsabile di questo lavoro, o l'ufficio, passa la guida.",
       "CREW_JOB_NOT_STARTED": "Il lavoro non è in corso.",
-      "REASON_REQUIRED": "Di' cosa ti ferma."
+      "REASON_REQUIRED": "Di' cosa ti ferma.",
+      "CHECKLIST_OWNER_NOT_ON_CREW": "Scegli qualcuno di questo lavoro.",
+      "CHECKLIST_OWNER_NOT_YOURS": "Solo il capo di questo lavoro, o l’ufficio, assegna i punti."
     },
     "signOut": {
       "title_one": "{{count}} modifica non è stata inviata",
@@ -3472,7 +3474,9 @@
       "working": "Lavoro {{time}}",
       "crewCarriesOn": "La squadra continua — non va in pausa.",
       "noteForCrew": "Lascia una nota alla squadra",
-      "eyebrowCrew": "ANCORA IN CORSO · LA SQUADRA CONTINUA"
+      "eyebrowCrew": "ANCORA IN CORSO · LA SQUADRA CONTINUA",
+      "myOpenItems_one": "{{count}} dei tuoi punti della lista è ancora aperto",
+      "myOpenItems_other": "{{count}} dei tuoi punti della lista sono ancora aperti"
     }
   },
   "myWork": {
@@ -3756,7 +3760,21 @@
       "title": "Checklist · {{done}} di {{total}}",
       "opensAt": "Si spunta al passo «{{step}}».",
       "offline": "Per spuntare serve una connessione. Quello che spunti ora non verrebbe salvato.",
-      "failed": "La spunta non è stata salvata. Riprova."
+      "failed": "La spunta non è stata salvata. Riprova.",
+      "yoursOpen_one": "{{count}} è tuo",
+      "yoursOpen_other": "{{count}} sono tuoi",
+      "you": "Tu",
+      "doneBy": "{{name}} · {{time}}",
+      "doneFor": "Di {{owner}} · fatto da {{name}} · {{time}}",
+      "ownerLeft": "{{name}} ha lasciato il lavoro — ancora aperto",
+      "giveTo": "Assegna…",
+      "takeIt": "Lo faccio io",
+      "mine_one": "Miei · {{count}}",
+      "mine_other": "Miei · {{count}}",
+      "crew_one": "La squadra · {{count}}",
+      "crew_other": "La squadra · {{count}}",
+      "ownerTitle": "Di chi è questo punto?",
+      "nobody": "Nessuno"
     },
     "fields": {
       "title": "Campi del lavoro",
@@ -3798,7 +3816,9 @@
       "selfBlockedPlain": "Fermo",
       "selfResumed": "Tornato al lavoro",
       "leadToday": "{{name}} guida oggi",
-      "leadForGood": "{{name}} è il nuovo responsabile"
+      "leadForGood": "{{name}} è il nuovo responsabile",
+      "checklistOwner": "«{{text}}» → {{name}}",
+      "checklistNoOwner": "«{{text}}» non ha più un responsabile"
     },
     "timer": {
       "onJob": "{{time}} su questo lavoro",

@@ -373,6 +373,7 @@ function OpenJobs({
               <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>{j.title}</AText>
               {sub ? <AText variant="caption" tone="muted" numberOfLines={1}>{sub}</AText> : null}
               {carriesOn ? <AText variant="caption" tone="accent" numberOfLines={2}>{t('shiftEnd.jobs.crewCarriesOn')}</AText> : null}
+              {j.myOpenItems ? <AText variant="caption" tone="warn" numberOfLines={2}>{t('shiftEnd.jobs.myOpenItems', { count: j.myOpenItems })}</AText> : null}
             </View>
             {writing ? (
               <TextInput

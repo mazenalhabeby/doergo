@@ -148,6 +148,18 @@ export const tasksApi = {
     });
   },
 
+  /**
+   * Give a checklist item to somebody on the crew, take a free one, or give one
+   * back (`assigneeId: null`). The server judges it (shared mayChangeChecklistOwner).
+   * ⚠️ NOT QUEUED, like the tick.
+   */
+  setChecklistOwner: async (taskId: string, itemId: string, assigneeId: string | null): Promise<ChecklistItem> => {
+    return fetchWithAuth<ChecklistItem>(`/tasks/${taskId}/checklist/${itemId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ assigneeId }),
+    });
+  },
+
   getTimeline: async (taskId: string): Promise<TaskEvent[]> => {
     return fetchWithAuth<TaskEvent[]>(`/tasks/${taskId}/timeline`, { method: 'GET' });
   },

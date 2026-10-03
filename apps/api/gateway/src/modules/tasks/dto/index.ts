@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsString, IsEnum, IsOptional, IsDateString, IsNumber, IsNotEmpty, MaxLength, IsArray, IsBoolean, IsInt, Min, Max, ValidateNested, Matches, IsObject } from 'class-validator';
+import { IsIn, IsString, IsEnum, IsOptional, IsDateString, IsNumber, IsNotEmpty, MaxLength, IsArray, IsBoolean, IsInt, Min, Max, ValidateNested, Matches, IsObject, ValidateIf } from 'class-validator';
 import { OmitType, PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import { OccurrenceEvidenceDto } from '../../../common/dto/occurrence.dto';
@@ -260,6 +260,13 @@ export class AddChecklistItemDto {
   @IsOptional()
   @Min(0)
   position?: number;
+
+  @ApiPropertyOptional({ description: 'Whose part of the work it is — somebody on the job\'s crew, or null for nobody', nullable: true })
+  @IsOptional()
+  @ValidateIf((o) => o.assigneeId !== null)
+  @IsString()
+  @Matches(CLIENT_ID)
+  assigneeId?: string | null;
 }
 
 export class UpdateChecklistItemDto {
@@ -273,6 +280,13 @@ export class UpdateChecklistItemDto {
   @IsBoolean()
   @IsOptional()
   isCompleted?: boolean;
+
+  @ApiPropertyOptional({ description: 'Whose part of the work it is — somebody on the job\'s crew, or null for nobody', nullable: true })
+  @IsOptional()
+  @ValidateIf((o) => o.assigneeId !== null)
+  @IsString()
+  @Matches(CLIENT_ID)
+  assigneeId?: string | null;
 }
 
 export class ReorderChecklistDto {

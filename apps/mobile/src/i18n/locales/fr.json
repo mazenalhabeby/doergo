@@ -3199,7 +3199,9 @@
       "CREW_LEAD_TARGET_NOT_ON_CREW": "Choisissez quelqu'un de ce travail.",
       "CREW_LEAD_NOT_YOURS": "Seul le responsable de ce travail, ou le bureau, passe la direction.",
       "CREW_JOB_NOT_STARTED": "Le travail n'est pas en cours.",
-      "REASON_REQUIRED": "Dites ce qui vous arrête."
+      "REASON_REQUIRED": "Dites ce qui vous arrête.",
+      "CHECKLIST_OWNER_NOT_ON_CREW": "Choisissez quelqu’un de cette intervention.",
+      "CHECKLIST_OWNER_NOT_YOURS": "Seul le chef de cette intervention, ou le bureau, attribue un point."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",
@@ -3472,7 +3474,9 @@
       "working": "{{time}} de travail",
       "crewCarriesOn": "L'équipe continue — il n'est pas mis en pause.",
       "noteForCrew": "Laisser une note à l'équipe",
-      "eyebrowCrew": "ENCORE EN COURS · L'ÉQUIPE CONTINUE"
+      "eyebrowCrew": "ENCORE EN COURS · L'ÉQUIPE CONTINUE",
+      "myOpenItems_one": "{{count}} de vos points de liste est encore ouvert",
+      "myOpenItems_other": "{{count}} de vos points de liste sont encore ouverts"
     }
   },
   "myWork": {
@@ -3756,7 +3760,21 @@
       "title": "Liste de contrôle · {{done}} sur {{total}}",
       "opensAt": "À cocher à l’étape « {{step}} ».",
       "offline": "Cocher demande une connexion. Ce que vous cochez maintenant ne serait pas gardé.",
-      "failed": "Cette case n’a pas été enregistrée. Réessayez."
+      "failed": "Cette case n’a pas été enregistrée. Réessayez.",
+      "yoursOpen_one": "{{count}} est à vous",
+      "yoursOpen_other": "{{count}} sont à vous",
+      "you": "Vous",
+      "doneBy": "{{name}} · {{time}}",
+      "doneFor": "À {{owner}} · fait par {{name}} · {{time}}",
+      "ownerLeft": "{{name}} a quitté l’intervention — encore ouvert",
+      "giveTo": "Attribuer…",
+      "takeIt": "Je m’en charge",
+      "mine_one": "Les miens · {{count}}",
+      "mine_other": "Les miens · {{count}}",
+      "crew_one": "L’équipe · {{count}}",
+      "crew_other": "L’équipe · {{count}}",
+      "ownerTitle": "À qui est ce point ?",
+      "nobody": "Personne"
     },
     "fields": {
       "title": "Champs de l’intervention",
@@ -3798,7 +3816,9 @@
       "selfBlockedPlain": "Arrêté",
       "selfResumed": "A repris",
       "leadToday": "{{name}} dirige aujourd'hui",
-      "leadForGood": "{{name}} est le nouveau responsable"
+      "leadForGood": "{{name}} est le nouveau responsable",
+      "checklistOwner": "« {{text}} » → {{name}}",
+      "checklistNoOwner": "« {{text}} » n’a plus de responsable"
     },
     "timer": {
       "onJob": "{{time}} sur cette intervention",

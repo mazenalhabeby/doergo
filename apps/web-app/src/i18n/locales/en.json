@@ -1627,7 +1627,9 @@
         "CREW_LEFT": "Left the job",
         "SELF_BLOCKED": "Stopped on their own",
         "SELF_RESUMED": "Back to work",
-        "LEAD_CHANGED": "Leader changed"
+        "LEAD_CHANGED": "Leader changed",
+        "CHECKLIST_ITEM_TOGGLED": "Checklist",
+        "CHECKLIST_ITEM_ASSIGNED": "Checklist"
       },
       "byOffice": "by the office",
       "crew": {
@@ -1641,6 +1643,12 @@
         },
         "leadToday": "{{name}} leads today",
         "leadForGood": "{{name}} is the new leader"
+      },
+      "checklist": {
+        "ticked": "Ticked “{{text}}”",
+        "unticked": "Unticked “{{text}}”",
+        "owner": "“{{text}}” → {{name}}",
+        "noOwner": "“{{text}}” has no owner now"
       }
     },
     "assignees": {
@@ -1653,7 +1661,11 @@
     },
     "checklist": {
       "addItemPlaceholder": "Add an item...",
-      "updateFailed": "Failed to update checklist item"
+      "updateFailed": "Failed to update checklist item",
+      "doneBy": "{{name}} · {{time}}",
+      "doneFor": "{{owner}}’s · done by {{name}} · {{time}}",
+      "giveTo": "Give to…",
+      "nobody": "Nobody"
     },
     "dependencies": {
       "add": "Add Dependency",

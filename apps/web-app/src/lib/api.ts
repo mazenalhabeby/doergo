@@ -496,12 +496,21 @@ export interface TaskAssignee {
   createdAt: string;
 }
 
+export interface ChecklistPerson { id: string; firstName: string; lastName: string }
+
 export interface ChecklistItem {
   id: string;
   text: string;
   isCompleted: boolean;
   position: number;
   createdAt: string;
+  /** Whose part of the work it is (shared tasks/checklist.ts) — somebody on the crew, or nobody. */
+  assigneeId?: string | null;
+  assignee?: ChecklistPerson | null;
+  /** Who ticked it, and when — written by the tick itself. */
+  completedById?: string | null;
+  completedBy?: ChecklistPerson | null;
+  completedAt?: string | null;
 }
 
 export interface Phase {
@@ -1263,7 +1272,7 @@ export const tasksApi = {
   updateChecklistItem: async (
     taskId: string,
     itemId: string,
-    data: { text?: string; isCompleted?: boolean },
+    data: { text?: string; isCompleted?: boolean; assigneeId?: string | null },
   ) => {
     const response = await api.patch<{ success: boolean; data: ChecklistItem }>(
       `/tasks/${taskId}/checklist/${itemId}`,

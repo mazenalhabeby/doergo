@@ -537,6 +537,9 @@ export function JobPage({
             items={task.checklistItems ?? []}
             mode={checkMode}
             opensAtLabel={opensAt ? labelOf(opensAt) : null}
+            meId={user?.id}
+            crew={crew.view}
+            mayHandOut={crew.isLeader || canAssign}
           />
         </TourTarget>
 

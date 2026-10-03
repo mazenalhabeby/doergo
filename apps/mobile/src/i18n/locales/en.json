@@ -3199,7 +3199,9 @@
       "CREW_LEAD_TARGET_NOT_ON_CREW": "Choose somebody on this job.",
       "CREW_LEAD_NOT_YOURS": "Only the leader of this job, or the office, hands its lead over.",
       "CREW_JOB_NOT_STARTED": "The job is not under way.",
-      "REASON_REQUIRED": "Say what stopped you."
+      "REASON_REQUIRED": "Say what stopped you.",
+      "CHECKLIST_OWNER_NOT_ON_CREW": "Choose somebody on this job.",
+      "CHECKLIST_OWNER_NOT_YOURS": "Only the leader of this job, or the office, gives an item to somebody."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",
@@ -3472,7 +3474,9 @@
       "working": "Working {{time}}",
       "crewCarriesOn": "The crew carries on — it doesn't pause.",
       "noteForCrew": "Leave the crew a note",
-      "eyebrowCrew": "STILL IN WORK · THE CREW CARRIES ON"
+      "eyebrowCrew": "STILL IN WORK · THE CREW CARRIES ON",
+      "myOpenItems_one": "{{count}} of your checklist items is still open",
+      "myOpenItems_other": "{{count}} of your checklist items are still open"
     }
   },
   "myWork": {
@@ -3756,7 +3760,21 @@
       "title": "Checklist · {{done}} of {{total}}",
       "opensAt": "Opens for ticking at the {{step}} step.",
       "offline": "Ticking needs a signal. Nothing you tick now would be kept.",
-      "failed": "That tick was not saved. Try again."
+      "failed": "That tick was not saved. Try again.",
+      "yoursOpen_one": "{{count}} of them is yours",
+      "yoursOpen_other": "{{count}} of them are yours",
+      "you": "You",
+      "doneBy": "{{name}} · {{time}}",
+      "doneFor": "{{owner}}’s · done by {{name}} · {{time}}",
+      "ownerLeft": "{{name}} has left the job — still open",
+      "giveTo": "Give to…",
+      "takeIt": "Take it",
+      "mine_one": "Mine · {{count}}",
+      "mine_other": "Mine · {{count}}",
+      "crew_one": "The crew · {{count}}",
+      "crew_other": "The crew · {{count}}",
+      "ownerTitle": "Whose item is it?",
+      "nobody": "Nobody"
     },
     "fields": {
       "title": "Job fields",
@@ -3798,7 +3816,9 @@
       "selfBlockedPlain": "Stopped",
       "selfResumed": "Back to work",
       "leadToday": "{{name}} leads today",
-      "leadForGood": "{{name}} is the new leader"
+      "leadForGood": "{{name}} is the new leader",
+      "checklistOwner": "“{{text}}” → {{name}}",
+      "checklistNoOwner": "“{{text}}” has no owner now"
     },
     "timer": {
       "onJob": "{{time}} on this job",

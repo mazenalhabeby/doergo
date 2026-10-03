@@ -1627,7 +1627,9 @@
         "CREW_LEFT": "A quitté le travail",
         "SELF_BLOCKED": "S'est arrêté",
         "SELF_RESUMED": "A repris",
-        "LEAD_CHANGED": "Responsable changé"
+        "LEAD_CHANGED": "Responsable changé",
+        "CHECKLIST_ITEM_TOGGLED": "Liste",
+        "CHECKLIST_ITEM_ASSIGNED": "Liste"
       },
       "byOffice": "par le bureau",
       "crew": {
@@ -1641,6 +1643,12 @@
         },
         "leadToday": "{{name}} dirige aujourd'hui",
         "leadForGood": "{{name}} est le nouveau responsable"
+      },
+      "checklist": {
+        "ticked": "A coché « {{text}} »",
+        "unticked": "A décoché « {{text}} »",
+        "owner": "« {{text}} » → {{name}}",
+        "noOwner": "« {{text}} » n’a plus de responsable"
       }
     },
     "assignees": {
@@ -1653,7 +1661,11 @@
     },
     "checklist": {
       "addItemPlaceholder": "Ajouter un élément...",
-      "updateFailed": "Échec de la mise à jour de l'élément de la liste de contrôle"
+      "updateFailed": "Échec de la mise à jour de l'élément de la liste de contrôle",
+      "doneBy": "{{name}} · {{time}}",
+      "doneFor": "À {{owner}} · fait par {{name}} · {{time}}",
+      "giveTo": "Attribuer…",
+      "nobody": "Personne"
     },
     "dependencies": {
       "add": "Ajouter une dépendance",

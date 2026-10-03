@@ -102,6 +102,7 @@ enum TaskEventType {
   CHECKLIST_ITEM_ADDED
   CHECKLIST_ITEM_TOGGLED
   CHECKLIST_ITEM_REMOVED
+  CHECKLIST_ITEM_ASSIGNED
   /// Work stopped because the worker clocked out (see Task.pausedAt).
   PAUSED
   /// Work picked up again after a pause.
@@ -893,6 +894,8 @@ model User {
   comments            Comment[]
   attachments         Attachment[]
   taskEvents          TaskEvent[]
+  checklistOwned      ChecklistItem[]      @relation("ChecklistAssignee")
+  checklistCompleted  ChecklistItem[]      @relation("ChecklistCompletedBy")
   taskHandovers       TaskHandover[]      @relation("TaskHandovers")
   lastLocation        WorkerLastLocation?
   locationHistory     LocationHistory[]
@@ -1245,10 +1248,19 @@ model ChecklistItem {
   text        String
   isCompleted Boolean  @default(false)
   position    Int      @default(0)
+  /// Whose part of the work it is — somebody on the job's crew, or nobody. Not a lock (shared tasks/checklist.ts).
+  assigneeId    String?
+  assignee      User?     @relation("ChecklistAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  /// Who ticked it, and when — written by the tick itself, cleared by an untick.
+  completedById String?
+  completedBy   User?     @relation("ChecklistCompletedBy", fields: [completedById], references: [id], onDelete: SetNull)
+  completedAt   DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([taskId, position])
+  /// "What is still open of mine" — the clock-out sheet asks it for the jobs in work.
+  @@index([assigneeId, isCompleted])
   @@map("checklist_items")
 }
 

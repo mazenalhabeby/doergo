@@ -11,6 +11,7 @@
  */
 import { getStatusCapabilities, hasCapability, type FlowStatus, type TaskCapability } from '@hbcfield/shared/client';
 import { getStatusAction } from '../task-detail/task-detail-helpers';
+import type { ChecklistItem } from '../../lib/api/types';
 
 const BLOCKED = 'BLOCKED';
 const IN_PROGRESS = 'IN_PROGRESS';
@@ -237,12 +238,8 @@ export function formatOnJob(seconds: number): string {
 
 /* ---------------- the checklist ---------------- */
 
-export interface CheckItem {
-  id: string;
-  text: string;
-  isCompleted: boolean;
-  position: number;
-}
+/** A checklist item as the job page holds it — the API's own shape, owner and tick included. */
+export type CheckItem = ChecklistItem;
 
 export type ChecklistMode = 'tick' | 'offline' | 'readonly';
 
@@ -263,25 +260,47 @@ export function withTick(items: readonly CheckItem[], id: string, value: boolean
 }
 
 /**
- * Tick optimistically; put back ONLY that item if the server says no.
+ * Change ONE item optimistically; put back ONLY that item if the server says no,
+ * and take the server's copy of it when it says yes (who ticked it, the owner's name).
  *
- * ⚠️ Rolling back the whole list would undo a second tick made while the
+ * ⚠️ Rolling back the whole list would undo a second change made while the
  * first was in flight. `apply` receives an updater, never a snapshot.
  */
-export async function tickOptimistic(
+export async function patchOptimistic(
+  id: string,
+  patch: Partial<CheckItem>,
+  apply: (update: (items: CheckItem[]) => CheckItem[]) => void,
+  send: () => Promise<unknown>,
+): Promise<boolean> {
+  let before: CheckItem | undefined;
+  apply((items) => items.map((it) => (it.id === id ? ((before = it), { ...it, ...patch }) : it)));
+  try {
+    const saved = await send();
+    if (saved && typeof saved === 'object' && (saved as { id?: unknown }).id === id) {
+      apply((items) => items.map((it) => (it.id === id ? { ...it, ...(saved as Partial<CheckItem>) } : it)));
+    }
+    return true;
+  } catch {
+    const back = before;
+    if (back) apply((items) => items.map((it) => (it.id === id ? { ...it, ...pick(back, Object.keys(patch) as Array<keyof CheckItem>) } : it)));
+    return false;
+  }
+}
+
+/** Tick optimistically — a tick is one kind of change to one item. */
+export function tickOptimistic(
   id: string,
   value: boolean,
   apply: (update: (items: CheckItem[]) => CheckItem[]) => void,
   send: () => Promise<unknown>,
 ): Promise<boolean> {
-  apply((items) => withTick(items, id, value));
-  try {
-    await send();
-    return true;
-  } catch {
-    apply((items) => withTick(items, id, !value));
-    return false;
-  }
+  return patchOptimistic(id, { isCompleted: value }, apply, send);
+}
+
+function pick<T>(o: T, keys: Array<keyof T>): Partial<T> {
+  const out: Partial<T> = {};
+  for (const k of keys) out[k] = o[k];
+  return out;
 }
 
 /* ---------------- reporting an issue ---------------- */

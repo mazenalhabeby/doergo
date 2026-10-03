@@ -701,6 +701,8 @@ export class TasksController {
       // had just created themselves.
       viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
+      // An owner change is judged on the resolved grants (shared tasks/checklist.ts) — never on the body.
+      access: req.user.access,
       organizationId: req.user.organizationId,
     });
   }
@@ -725,6 +727,8 @@ export class TasksController {
       // had just created themselves.
       viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
+      // An owner change is judged on the resolved grants (shared tasks/checklist.ts) — never on the body.
+      access: req.user.access,
       organizationId: req.user.organizationId,
     });
   }
@@ -751,6 +755,8 @@ export class TasksController {
       // had just created themselves.
       viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
+      // An owner change is judged on the resolved grants (shared tasks/checklist.ts) — never on the body.
+      access: req.user.access,
       organizationId: req.user.organizationId,
     });
   }

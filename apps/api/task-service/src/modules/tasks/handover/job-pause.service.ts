@@ -368,7 +368,23 @@ export class JobPauseService {
     const withTime = <T extends { id: string }>(list: T[]) => list.map((t) => ({ ...t, workedMinutes: mins.get(t.id) ?? 0 }));
     // Which open jobs the crew carries on after this person clocks out (shared crew.ts) —
     // the clock-out sheet says "leave the crew a note" there, not "pauses".
-    const carriesOn = await this.crewCarriesOn(working, data.userId, data.organizationId);
-    return success({ open: withTime(open).map((t) => ({ ...t, crewContinues: carriesOn.has(t.id) })), owed, paused: withTime(paused) });
+    // …and "2 of your items are still open" (shared tasks/checklist.ts): one grouped read on the
+    // owner index, only for the jobs in work, only when there are any.
+    const [carriesOn, openItems] = await Promise.all([
+      this.crewCarriesOn(working, data.userId, data.organizationId),
+      working.length
+        ? this.prisma.checklistItem.groupBy({
+            by: ['taskId'],
+            where: { assigneeId: data.userId, isCompleted: false, taskId: { in: working.map((w) => w.id) } },
+            _count: { _all: true },
+          })
+        : Promise.resolve([] as Array<{ taskId: string; _count: { _all: number } }>),
+    ]);
+    const openOf = new Map(openItems.map((r) => [r.taskId, r._count._all]));
+    return success({
+      open: withTime(open).map((t) => ({ ...t, crewContinues: carriesOn.has(t.id), myOpenItems: openOf.get(t.id) ?? 0 })),
+      owed,
+      paused: withTime(paused),
+    });
   }
 }

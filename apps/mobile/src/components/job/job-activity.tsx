@@ -84,6 +84,9 @@ export function JobActivity({
         case 'LEAD_CHANGED': return t(meta?.scope === 'TODAY' ? 'job.activity.leadToday' : 'job.activity.leadForGood', { name: String(meta?.toName ?? '') });
         case 'CHECKLIST_ITEM_TOGGLED':
           return meta?.text ? by(t(meta?.isCompleted ? 'job.activity.ticked' : 'job.activity.unticked', { text: String(meta.text) })) : null;
+        // Whose item it is now (shared tasks/checklist.ts) — given, taken, or given back.
+        case 'CHECKLIST_ITEM_ASSIGNED':
+          return meta?.text ? by(meta?.toName ? t('job.activity.checklistOwner', { text: String(meta.text), name: String(meta.toName) }) : t('job.activity.checklistNoOwner', { text: String(meta.text) })) : null;
         default: return null; // Comments are drawn as themselves; the rest is office bookkeeping.
       }
     };

@@ -1627,7 +1627,9 @@
         "CREW_LEFT": "Auftrag verlassen",
         "SELF_BLOCKED": "Selbst gestoppt",
         "SELF_RESUMED": "Weitergearbeitet",
-        "LEAD_CHANGED": "Leitung geändert"
+        "LEAD_CHANGED": "Leitung geändert",
+        "CHECKLIST_ITEM_TOGGLED": "Checkliste",
+        "CHECKLIST_ITEM_ASSIGNED": "Checkliste"
       },
       "byOffice": "durch das Büro",
       "crew": {
@@ -1641,6 +1643,12 @@
         },
         "leadToday": "{{name}} leitet heute",
         "leadForGood": "{{name}} ist die neue Leitung"
+      },
+      "checklist": {
+        "ticked": "„{{text}}“ abgehakt",
+        "unticked": "Haken bei „{{text}}“ entfernt",
+        "owner": "„{{text}}“ → {{name}}",
+        "noOwner": "„{{text}}“ hat keinen Verantwortlichen mehr"
       }
     },
     "assignees": {
@@ -1653,7 +1661,11 @@
     },
     "checklist": {
       "addItemPlaceholder": "Eintrag hinzufügen...",
-      "updateFailed": "Checklisteneintrag konnte nicht aktualisiert werden"
+      "updateFailed": "Checklisteneintrag konnte nicht aktualisiert werden",
+      "doneBy": "{{name}} · {{time}}",
+      "doneFor": "Für {{owner}} · erledigt von {{name}} · {{time}}",
+      "giveTo": "Zuweisen…",
+      "nobody": "Niemandem"
     },
     "dependencies": {
       "add": "Abhängigkeit hinzufügen",

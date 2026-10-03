@@ -17,6 +17,7 @@ import {
   PauseCircle,
   PenLine,
   Crown,
+  CheckSquare,
   type LucideIcon,
 } from "lucide-react"
 
@@ -60,6 +61,9 @@ const EVENT_CONFIG: Record<
   SELF_BLOCKED: { icon: AlertTriangle, color: "text-amber-500", labelKey: "tasks.activity.events.SELF_BLOCKED" },
   SELF_RESUMED: { icon: PlayCircle, color: "text-green-500", labelKey: "tasks.activity.events.SELF_RESUMED" },
   LEAD_CHANGED: { icon: Crown, color: "text-primary", labelKey: "tasks.activity.events.LEAD_CHANGED" },
+  // The checklist (shared tasks/checklist.ts): who ticked what, and whose item it became.
+  CHECKLIST_ITEM_TOGGLED: { icon: CheckSquare, color: "text-green-500", labelKey: "tasks.activity.events.CHECKLIST_ITEM_TOGGLED" },
+  CHECKLIST_ITEM_ASSIGNED: { icon: CheckSquare, color: "text-primary", labelKey: "tasks.activity.events.CHECKLIST_ITEM_ASSIGNED" },
 }
 
 const EXCLUDED_EVENTS = ["COMMENT_ADDED"]
@@ -101,6 +105,14 @@ function getEventDescription(event: TaskEvent, t: (key: string, options?: Record
   if (metadata && event.eventType === "SELF_BLOCKED" && metadata.reason) {
     const reason = String(metadata.reason)
     return `${t("tasks.activity.events.SELF_BLOCKED")}: ${reason.length > 40 ? reason.slice(0, 40) + "…" : reason}`
+  }
+  if (metadata && event.eventType === "CHECKLIST_ITEM_TOGGLED" && metadata.text) {
+    return t(metadata.isCompleted ? "tasks.activity.checklist.ticked" : "tasks.activity.checklist.unticked", { text: String(metadata.text) })
+  }
+  if (metadata && event.eventType === "CHECKLIST_ITEM_ASSIGNED" && metadata.text) {
+    return metadata.toName
+      ? t("tasks.activity.checklist.owner", { text: String(metadata.text), name: String(metadata.toName) })
+      : t("tasks.activity.checklist.noOwner", { text: String(metadata.text) })
   }
   if (metadata && event.eventType === "LEAD_CHANGED") {
     const name = String(metadata.toName ?? "")

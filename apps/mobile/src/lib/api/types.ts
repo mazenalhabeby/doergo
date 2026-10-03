@@ -265,6 +265,8 @@ export interface HandoverJob {
   workedMinutes?: number;
   /** Somebody else who joined is still on the clock: the crew carries on after this clock-out (shared tasks/crew.ts). */
   crewContinues?: boolean;
+  /** Checklist items given to me on this job that are still open (shared tasks/checklist.ts). */
+  myOpenItems?: number;
   title: string;
   status: string;
   pausedAt: string | null;
@@ -343,11 +345,21 @@ export interface Task {
   space?: { id: string; name: string; enabledModules?: string[] | null; workflowId?: string | null } | null;
 }
 
+/** A person named on a checklist item — names only. */
+export interface ChecklistPerson { id: string; firstName: string; lastName: string }
+
 export interface ChecklistItem {
   id: string;
   text: string;
   isCompleted: boolean;
   position: number;
+  /** Whose part of the work it is (shared tasks/checklist.ts) — somebody on the crew, or nobody. */
+  assigneeId?: string | null;
+  assignee?: ChecklistPerson | null;
+  /** Who ticked it, and when — written by the tick itself. */
+  completedById?: string | null;
+  completedBy?: ChecklistPerson | null;
+  completedAt?: string | null;
 }
 
 export interface Comment {
