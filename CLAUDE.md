@@ -507,6 +507,14 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 > ⚠️ **The morning notice** (`LeaderAbsentService`, every 30 min under the cron lease, from 06:00 local): a job whose LEAD has approved leave today → the leader's routing ∪ the job's creator, once per day (`Task.leadNoticeOn`), naming the stand-in. Never every admin.
 >
 > ⚠️ **Refusals**: a job the caller cannot see is 404; a rule they can act on is 400 with a `CREW_*` code; a member taking the lead is 403. The new leader must already be on THIS crew — nobody is ADDED to a crew here.
+>
+> **The crew's checklist** (`packages/shared/src/tasks/checklist.ts`): `PATCH /tasks/:id/checklist/:itemId` and `POST /tasks/:id/checklist` take an optional `assigneeId` (somebody on THIS crew, or null). Every tick records `completedById`/`completedAt` from the TOKEN — a body field for it is refused by validation; an untick clears both.
+>
+> ⚠️ **An owner is not a lock.** Anybody on the job ticks any item; the item then shows who really did it (`tickedByOther`).
+>
+> ⚠️ **Who may change an owner** (`mayChangeChecklistOwner`): the effective leader or the office give anything to anybody on the crew; a member TAKES a free item or GIVES BACK their own. Judged on `CrewService.checklistAuthority` — resolved by the server; the office skips the leader lookup. 403 `CHECKLIST_OWNER_NOT_YOURS`, 400 `CHECKLIST_OWNER_NOT_ON_CREW`.
+>
+> ⚠️ **No time per item**, by design — time stays per person on the job. A part that needs its own time is its own task.
 
 ### Users (`/users`) - Push Tokens
 | Method | Endpoint | Description | Roles |
@@ -1158,6 +1166,7 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `formatDistance()`, `distanceParts()`, `distanceRefusalParams()` | THE distance formatter — "85 m", "850 m", "1.2 km", "9,631 km", per locale, no-break space. Mobile `lib/distance`, web `useFormatDistance` only bind the locale. Distance refusals are CODED (`TOO_FAR_TO_ARRIVE`/`TOO_FAR_TO_START`/`OUTSIDE_GEOFENCE`/`AWAY_NOT_ALLOWED` + `params.distanceMetres/radiusMetres`); `distance-display-guard.spec.ts` fails on a hand-built km/m |
 | `activeAssignmentWhere()` | "Is this member assigned to this workspace RIGHT NOW?" — shared by the clock-in list and the clock-in check |
 | `crewPresence()`, `joinMoment()`, `effectiveLeader()`, `mayMoveStep()`, `pausesAtClockOut()`, `endOfLocalDay()` | A crew on one job (tasks/crew.ts): who is on it, when a join counts from, who leads now (acting included), who may move the step, does a clock-out pause it |
+| `mayChangeChecklistOwner()`, `checklistCompletion()`, `splitChecklist()`, `openChecklistOf()`, `tickedByOther()` | A crew's checklist: who may give an item to whom, what a tick writes, Mine-first grouping (tasks/checklist.ts) |
 | `selfBlockWindows()`, `personalSpans()` | A person's own stop ("My issue") turns THEIR share blocked; the job's own line is untouched (job-time.ts) |
 | `planHandover()`, `canHandOver()`, `partiesAfter()` | What handing an asset over WILL do — the confirm dialog renders it, the server executes it |
 | `holderOn()`, `holdersOn()`, `totalsByPeriod()`, `attribute()` | Whose cost was this? Computed from the date, never stored |
@@ -1326,7 +1335,7 @@ docker exec -it hbcfield-redis redis-cli
 
 **PROD 2026-10-03** (rollback tag `prod-pre-crew` → `bfdb5483`; backup `pre-crew_20261003_091030.sql.gz`, 111 tables). OTA 1.0.7 `2719c6ea`, 1.0.6 `2f9c18fa`. `crewMode` is OFF for every organization until switched on.
 
-Migration `20261002180000_task_crew` (additive: 5 event types, `Task.leadOverrideId/Until`, `Task.leadNoticeOn`, `Organization.crewMode` default off). Commits `b429f119`…`24de5a3a` (the last is the fixes from an independent audit). See the endpoint section "A crew on one job" for the rules that bite.
+Migration `20261002180000_task_crew` (additive: 5 event types, `Task.leadOverrideId/Until`, `Task.leadNoticeOn`, `Organization.crewMode` default off). **Checklist owners** (`33e2b3a6`, NOT deployed): migration `20261003150000_checklist_owner` (additive). Commits `b429f119`…`24de5a3a` (the last is the fixes from an independent audit). See the endpoint section "A crew on one job" for the rules that bite.
 
 - **Credit was only a person's own step move**: in a crew where one person taps, the rest counted 0; simultaneous "On the way" credited the first; one person's issue blocked everyone; the leader was a label; a job ran on with nobody counted; a sick leader stopped nothing.
 - Shared rules + 29 rule tests (the mockup day: 7h/3h/0 before, 7h/8h30/9h30 = 25h after), `CrewService` 24 tests (the security boundary), `LeaderAbsentService` 6, `tools/crew-e2e.py` **45 checks over real HTTP** against the local demo org (never prod).
