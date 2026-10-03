@@ -1,0 +1,967 @@
+{
+ "chapters": [
+  {
+   "id": "intro",
+   "start": 0.4,
+   "end": 19.925,
+   "phrases": [
+    {
+     "text": "One job. Three people. One leader.",
+     "start": 0.4,
+     "end": 3.558,
+     "wordStarts": [
+      0.4,
+      0.737,
+      1.526,
+      1.921,
+      2.641,
+      2.966
+     ]
+    },
+    {
+     "text": "When a crew shares a job, HBCField counts every person on their own.",
+     "start": 4.637,
+     "end": 10.198,
+     "wordStarts": [
+      4.637,
+      4.88,
+      5.02,
+      5.484,
+      5.925,
+      6.041,
+      6.738,
+      7.771,
+      8.27,
+      8.723,
+      9.222,
+      9.443,
+      9.687
+     ]
+    },
+    {
+     "text": "From the moment they join the job, to the moment they leave it.",
+     "start": 11.023,
+     "end": 14.97,
+     "wordStarts": [
+      11.023,
+      11.267,
+      11.452,
+      11.87,
+      12.103,
+      12.404,
+      12.544,
+      13.275,
+      13.519,
+      13.716,
+      14.181,
+      14.413,
+      14.726
+     ]
+    },
+    {
+     "text": "And only while they are on the clock.",
+     "start": 15.493,
+     "end": 18.825,
+     "wordStarts": [
+      15.493,
+      16.12,
+      16.736,
+      17.003,
+      17.154,
+      17.351,
+      17.583,
+      17.699
+     ]
+    }
+   ]
+  },
+  {
+   "id": "crew",
+   "start": 19.925,
+   "end": 38.605,
+   "phrases": [
+    {
+     "text": "The office puts the crew on the job, and names the leader.",
+     "start": 19.925,
+     "end": 23.814,
+     "wordStarts": [
+      19.925,
+      20.227,
+      20.726,
+      21.028,
+      21.156,
+      21.504,
+      21.69,
+      21.817,
+      22.27,
+      22.642,
+      23.025,
+      23.153
+     ]
+    },
+    {
+     "text": "Here, Tobias leads. Priya and Conor work with him.",
+     "start": 24.744,
+     "end": 28.54,
+     "wordStarts": [
+      24.744,
+      25.301,
+      26.044,
+      26.799,
+      27.205,
+      27.391,
+      27.763,
+      27.96,
+      28.122
+     ]
+    },
+    {
+     "text": "Everybody sees the crew card on the job: who is on it right now, since when, and who leads.",
+     "start": 29.354,
+     "end": 37.504,
+     "wordStarts": [
+      29.354,
+      29.992,
+      30.271,
+      30.376,
+      30.573,
+      30.828,
+      30.944,
+      31.061,
+      31.757,
+      32.163,
+      32.384,
+      32.639,
+      32.848,
+      33.255,
+      34.009,
+      34.381,
+      34.811,
+      35.205,
+      36.018
+     ]
+    }
+   ]
+  },
+  {
+   "id": "start",
+   "start": 38.605,
+   "end": 69.686,
+   "phrases": [
+    {
+     "text": "In the morning, Tobias taps On the way.",
+     "start": 38.605,
+     "end": 41.809,
+     "wordStarts": [
+      38.605,
+      38.826,
+      38.953,
+      39.383,
+      40.021,
+      40.823,
+      41.124,
+      41.264
+     ]
+    },
+    {
+     "text": "His crew get a notification: Tobias has started. One tap on I'm with him, and they are on the job too.",
+     "start": 42.552,
+     "end": 50.772,
+     "wordStarts": [
+      42.552,
+      42.808,
+      43.075,
+      43.237,
+      43.33,
+      44.445,
+      45.339,
+      45.571,
+      46.662,
+      46.987,
+      47.44,
+      47.939,
+      48.264,
+      48.485,
+      49.054,
+      49.309,
+      49.495,
+      49.657,
+      49.785,
+      49.913,
+      50.25
+     ]
+    },
+    {
+     "text": "If all three press the same step at the same moment, all three count. Nobody loses minutes because somebody else was faster.",
+     "start": 51.755,
+     "end": 60.207,
+     "wordStarts": [
+      51.755,
+      51.976,
+      52.161,
+      52.44,
+      52.765,
+      52.963,
+      53.334,
+      53.659,
+      53.775,
+      53.915,
+      54.217,
+      54.6,
+      54.902,
+      55.285,
+      56.376,
+      56.922,
+      57.351,
+      57.746,
+      58.245,
+      58.838,
+      59.221,
+      59.464
+     ]
+    },
+    {
+     "text": "A join counts from the leader's start, if it comes within half an hour, and never from before your own clock-in.",
+     "start": 61.25,
+     "end": 68.587,
+     "wordStarts": [
+      61.25,
+      61.459,
+      61.83,
+      62.225,
+      62.434,
+      62.573,
+      63.003,
+      63.514,
+      63.688,
+      63.815,
+      64.222,
+      64.628,
+      64.965,
+      65.069,
+      65.894,
+      66.196,
+      66.544,
+      66.753,
+      67.124,
+      67.31,
+      67.531
+     ]
+    }
+   ]
+  },
+  {
+   "id": "leader",
+   "start": 69.686,
+   "end": 90.037,
+   "phrases": [
+    {
+     "text": "With crew mode on, the leader moves the job from step to step.",
+     "start": 69.686,
+     "end": 74.4,
+     "wordStarts": [
+      69.686,
+      69.941,
+      70.208,
+      70.522,
+      71.23,
+      71.474,
+      71.927,
+      72.368,
+      72.519,
+      73.041,
+      73.355,
+      73.715,
+      73.854
+     ]
+    },
+    {
+     "text": "The others see who does it, so nobody moves the job by accident.",
+     "start": 75.341,
+     "end": 80.043,
+     "wordStarts": [
+      75.341,
+      75.573,
+      76.003,
+      76.235,
+      76.432,
+      76.711,
+      76.955,
+      77.303,
+      77.837,
+      78.208,
+      78.359,
+      78.835,
+      79.126
+     ]
+    },
+    {
+     "text": "The office can always step in. And with crew mode off, anybody on the crew moves the steps, as before.",
+     "start": 80.984,
+     "end": 88.937,
+     "wordStarts": [
+      80.984,
+      81.239,
+      81.843,
+      82.087,
+      82.493,
+      82.842,
+      83.608,
+      83.956,
+      84.165,
+      84.421,
+      84.722,
+      85.186,
+      85.802,
+      85.976,
+      86.092,
+      86.464,
+      86.789,
+      86.94,
+      87.613,
+      87.938
+     ]
+    }
+   ]
+  },
+  {
+   "id": "issue",
+   "start": 90.037,
+   "end": 115.546,
+   "phrases": [
+    {
+     "text": "At nine, the crane is late. Priya taps My issue, and writes why.",
+     "start": 90.037,
+     "end": 95.552,
+     "wordStarts": [
+      90.037,
+      90.327,
+      90.861,
+      91.035,
+      91.384,
+      91.581,
+      92.51,
+      92.893,
+      93.357,
+      93.752,
+      94.217,
+      94.426,
+      94.878
+     ]
+    },
+    {
+     "text": "Only her time stops. It counts as blocked, for her alone.",
+     "start": 96.581,
+     "end": 101.132,
+     "wordStarts": [
+      96.581,
+      96.964,
+      97.115,
+      97.498,
+      98.543,
+      98.752,
+      99.17,
+      99.449,
+      99.995,
+      100.238,
+      100.447
+     ]
+    },
+    {
+     "text": "The job, and the rest of the crew, carry on. And Tobias is told what stopped her.",
+     "start": 102.004,
+     "end": 107.46,
+     "wordStarts": [
+      102.004,
+      102.225,
+      102.759,
+      102.991,
+      103.165,
+      103.536,
+      103.653,
+      103.769,
+      104.152,
+      104.581,
+      104.964,
+      105.197,
+      105.963,
+      106.207,
+      106.497,
+      106.706,
+      107.089
+     ]
+    },
+    {
+     "text": "When the crane arrives, she taps Back to work, and her working time runs again.",
+     "start": 108.49,
+     "end": 114.446,
+     "wordStarts": [
+      108.49,
+      108.711,
+      108.838,
+      109.152,
+      109.814,
+      110.069,
+      110.499,
+      110.789,
+      110.951,
+      111.334,
+      111.683,
+      111.88,
+      112.286,
+      112.89,
+      113.262
+     ]
+    }
+   ]
+  },
+  {
+   "id": "leave",
+   "start": 115.546,
+   "end": 131.16,
+   "phrases": [
+    {
+     "text": "Conor is needed on another job. He taps Leave the job.",
+     "start": 115.546,
+     "end": 119.969,
+     "wordStarts": [
+      115.546,
+      116.022,
+      116.173,
+      116.556,
+      116.742,
+      117.09,
+      117.845,
+      118.089,
+      118.774,
+      119.226,
+      119.377
+     ]
+    },
+    {
+     "text": "His time on this job stops. The others keep going.",
+     "start": 120.62,
+     "end": 124.347,
+     "wordStarts": [
+      120.62,
+      120.934,
+      121.282,
+      121.41,
+      121.619,
+      121.979,
+      122.861,
+      123.093,
+      123.488,
+      123.778
+     ]
+    },
+    {
+     "text": "When he comes back, one tap, and he counts again from that moment.",
+     "start": 124.963,
+     "end": 130.06,
+     "wordStarts": [
+      124.963,
+      125.195,
+      125.323,
+      125.625,
+      126.287,
+      126.635,
+      127.436,
+      127.657,
+      127.843,
+      128.272,
+      128.62,
+      128.829,
+      129.073
+     ]
+    }
+   ]
+  },
+  {
+   "id": "clockout",
+   "start": 131.16,
+   "end": 146.728,
+   "phrases": [
+    {
+     "text": "Clocking out is the same as leaving.",
+     "start": 131.16,
+     "end": 133.169,
+     "wordStarts": [
+      131.16,
+      131.659,
+      131.857,
+      131.996,
+      132.135,
+      132.414,
+      132.576
+     ]
+    },
+    {
+     "text": "When one of the crew clocks out, the job carries on with the others.",
+     "start": 133.843,
+     "end": 137.384,
+     "wordStarts": [
+      133.843,
+      134.098,
+      134.261,
+      134.342,
+      134.458,
+      134.702,
+      135.062,
+      135.34,
+      135.526,
+      135.874,
+      136.304,
+      136.443,
+      136.606,
+      136.745
+     ]
+    },
+    {
+     "text": "Only when the last person on the job clocks out does the job pause, and nothing counts overnight.",
+     "start": 138.395,
+     "end": 145.628,
+     "wordStarts": [
+      138.395,
+      138.952,
+      139.184,
+      139.37,
+      139.915,
+      140.391,
+      140.554,
+      140.682,
+      141.018,
+      141.402,
+      141.645,
+      141.866,
+      141.994,
+      142.33,
+      143.166,
+      143.41,
+      143.77,
+      144.246
+     ]
+    }
+   ]
+  },
+  {
+   "id": "absent",
+   "start": 146.728,
+   "end": 174.477,
+   "phrases": [
+    {
+     "text": "And if the leader is sick, or simply has not clocked in? The job never waits for him.",
+     "start": 146.728,
+     "end": 153.055,
+     "wordStarts": [
+      146.728,
+      146.995,
+      147.181,
+      147.378,
+      147.808,
+      148.017,
+      148.516,
+      148.841,
+      149.329,
+      149.561,
+      149.781,
+      150.188,
+      150.977,
+      151.209,
+      151.697,
+      152.057,
+      152.394,
+      152.579
+     ]
+    },
+    {
+     "text": "The first person who joined, and is on the clock, stands in automatically. The card says who is standing in.",
+     "start": 154.166,
+     "end": 162.201,
+     "wordStarts": [
+      154.166,
+      154.41,
+      154.735,
+      155.118,
+      155.316,
+      155.838,
+      156.047,
+      156.244,
+      156.511,
+      156.639,
+      157.08,
+      157.58,
+      157.719,
+      159.193,
+      159.379,
+      159.785,
+      160.389,
+      160.946,
+      161.179,
+      161.725
+     ]
+    },
+    {
+     "text": "When the leader has approved leave, the office gets one notice in the morning, naming the stand-in. Keep him, or choose somebody else.",
+     "start": 163.497,
+     "end": 173.377,
+     "wordStarts": [
+      163.497,
+      163.718,
+      163.846,
+      164.182,
+      164.357,
+      164.867,
+      165.518,
+      165.761,
+      166.284,
+      166.632,
+      166.922,
+      167.282,
+      167.375,
+      167.491,
+      168.118,
+      168.513,
+      168.641,
+      170.069,
+      170.417,
+      170.661,
+      170.881,
+      171.52,
+      172.216
+     ]
+    }
+   ]
+  },
+  {
+   "id": "handover",
+   "start": 174.477,
+   "end": 194.928,
+   "phrases": [
+    {
+     "text": "A leader can also hand the lead over himself. For today, or for good.",
+     "start": 174.477,
+     "end": 180.224,
+     "wordStarts": [
+      174.477,
+      174.663,
+      174.988,
+      175.185,
+      175.626,
+      175.882,
+      176.01,
+      176.323,
+      176.648,
+      177.856,
+      178.111,
+      178.924,
+      179.446,
+      179.794
+     ]
+    },
+    {
+     "text": "Only on this one job. His other jobs do not change.",
+     "start": 181.13,
+     "end": 185.031,
+     "wordStarts": [
+      181.13,
+      181.548,
+      181.711,
+      181.931,
+      182.175,
+      182.872,
+      183.174,
+      183.51,
+      183.986,
+      184.242,
+      184.439
+     ]
+    },
+    {
+     "text": "And the office can change the leader, or put somebody on or off the job, with a reason that goes into the history.",
+     "start": 185.933,
+     "end": 193.828,
+     "wordStarts": [
+      185.933,
+      186.119,
+      186.316,
+      186.85,
+      187.048,
+      187.5,
+      187.721,
+      188.569,
+      188.789,
+      189.021,
+      189.486,
+      189.718,
+      189.88,
+      190.136,
+      190.264,
+      190.902,
+      191.134,
+      191.309,
+      191.819,
+      191.994,
+      192.261,
+      192.516,
+      192.632
+     ]
+    }
+   ]
+  },
+  {
+   "id": "numbers",
+   "start": 194.928,
+   "end": 234.705,
+   "phrases": [
+    {
+     "text": "At the end of the day, every person has their own line.",
+     "start": 194.928,
+     "end": 199.177,
+     "wordStarts": [
+      194.928,
+      195.149,
+      195.334,
+      195.636,
+      195.752,
+      195.868,
+      196.577,
+      197.122,
+      197.68,
+      197.947,
+      198.214,
+      198.55
+     ]
+    },
+    {
+     "text": "Tobias: eight hours of work on the job.",
+     "start": 199.944,
+     "end": 203.207,
+     "wordStarts": [
+      199.944,
+      201.082,
+      201.314,
+      201.709,
+      201.837,
+      202.243,
+      202.522,
+      202.661
+     ]
+    },
+    {
+     "text": "Priya: seven hours and twenty minutes, and forty minutes blocked, waiting for the crane.",
+     "start": 203.92,
+     "end": 209.377,
+     "wordStarts": [
+      203.92,
+      204.826,
+      205.197,
+      205.534,
+      205.662,
+      205.998,
+      206.347,
+      206.59,
+      206.927,
+      207.264,
+      207.972,
+      208.494,
+      208.692,
+      208.796
+     ]
+    },
+    {
+     "text": "Conor: five and a half hours. The time he spent on the other job is not counted here.",
+     "start": 210.207,
+     "end": 217.266,
+     "wordStarts": [
+      210.207,
+      211.194,
+      211.716,
+      211.879,
+      211.995,
+      212.331,
+      213.283,
+      213.516,
+      213.98,
+      214.143,
+      214.537,
+      214.677,
+      214.828,
+      215.153,
+      215.594,
+      215.896,
+      216.221,
+      216.755
+     ]
+    },
+    {
+     "text": "Together, twenty hours and fifty minutes of work. Counted once per person, never twice, and never more than anybody was on the clock.",
+     "start": 218.26,
+     "end": 227.49,
+     "wordStarts": [
+      218.26,
+      219.201,
+      219.584,
+      219.99,
+      220.188,
+      220.559,
+      220.942,
+      221.151,
+      221.987,
+      222.533,
+      222.893,
+      223.09,
+      223.81,
+      224.1,
+      224.82,
+      225.099,
+      225.412,
+      225.784,
+      226.062,
+      226.62,
+      226.771,
+      226.875,
+      226.98
+     ]
+    },
+    {
+     "text": "The same figures go to the timesheet, the report and the invoice.",
+     "start": 228.532,
+     "end": 233.605,
+     "wordStarts": [
+      228.532,
+      228.775,
+      229.217,
+      229.669,
+      229.936,
+      230.134,
+      230.25,
+      231.365,
+      231.55,
+      232.131,
+      232.317,
+      232.491
+     ]
+    }
+   ]
+  },
+  {
+   "id": "rules",
+   "start": 234.705,
+   "end": 262.028,
+   "phrases": [
+    {
+     "text": "Six rules.",
+     "start": 234.705,
+     "end": 235.599,
+     "wordStarts": [
+      234.705,
+      235.1
+     ]
+    },
+    {
+     "text": "Each person counts from join to leave.",
+     "start": 236.308,
+     "end": 239.292,
+     "wordStarts": [
+      236.308,
+      236.691,
+      237.19,
+      237.655,
+      237.991,
+      238.537,
+      238.769
+     ]
+    },
+    {
+     "text": "Only inside their own shift.",
+     "start": 240.005,
+     "end": 241.874,
+     "wordStarts": [
+      240.005,
+      240.388,
+      240.829,
+      241.038,
+      241.294
+     ]
+    },
+    {
+     "text": "Pressing the same step together: everyone counts.",
+     "start": 242.646,
+     "end": 246.512,
+     "wordStarts": [
+      242.646,
+      243.064,
+      243.25,
+      243.644,
+      243.981,
+      245.061,
+      245.827
+     ]
+    },
+    {
+     "text": "My issue stops only you.",
+     "start": 247.144,
+     "end": 249.013,
+     "wordStarts": [
+      247.144,
+      247.423,
+      247.748,
+      248.143,
+      248.526
+     ]
+    },
+    {
+     "text": "The leader moves the steps, and somebody stands in when he is away.",
+     "start": 249.576,
+     "end": 253.384,
+     "wordStarts": [
+      249.576,
+      249.855,
+      250.273,
+      250.598,
+      250.725,
+      251.12,
+      251.387,
+      251.968,
+      252.363,
+      252.479,
+      252.641,
+      252.757,
+      252.897
+     ]
+    },
+    {
+     "text": "The last one out pauses the job.",
+     "start": 253.993,
+     "end": 256.13,
+     "wordStarts": [
+      253.993,
+      254.225,
+      254.574,
+      254.76,
+      254.969,
+      255.468,
+      255.607
+     ]
+    },
+    {
+     "text": "A crew on one job. In HBCField.",
+     "start": 257.08,
+     "end": 260.529,
+     "wordStarts": [
+      257.08,
+      257.278,
+      257.754,
+      257.986,
+      258.218,
+      258.822,
+      259.124
+     ]
+    }
+   ]
+  }
+ ],
+ "duration": 264.53,
+ "lang": "en"
+}

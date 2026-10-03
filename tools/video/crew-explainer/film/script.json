@@ -1,0 +1,71 @@
+{
+ "lang": "en",
+ "chapters": [
+  {"id": "intro", "phrases": [
+   {"text": "One job. Three people. One leader.", "pause": 0.8},
+   {"text": "When a crew shares a job, HBCField counts every person on their own.", "pause": 0.5},
+   {"text": "From the moment they join the job, to the moment they leave it.", "pause": 0.5},
+   {"text": "And only while they are on the clock.", "pause": 1.1}
+  ]},
+  {"id": "crew", "phrases": [
+   {"text": "The office puts the crew on the job, and names the leader.", "pause": 0.5},
+   {"text": "Here, Tobias leads. Priya and Conor work with him.", "pause": 0.5},
+   {"text": "Everybody sees the crew card on the job: who is on it right now, since when, and who leads.", "pause": 1.1}
+  ]},
+  {"id": "start", "phrases": [
+   {"text": "In the morning, Tobias taps On the way.", "pause": 0.5},
+   {"text": "His crew get a notification: Tobias has started. One tap on I'm with him, and they are on the job too.", "pause": 0.6},
+   {"text": "If all three press the same step at the same moment, all three count. Nobody loses minutes because somebody else was faster.", "pause": 0.6},
+   {"text": "A join counts from the leader's start, if it comes within half an hour, and never from before your own clock-in.", "pause": 1.1}
+  ]},
+  {"id": "leader", "phrases": [
+   {"text": "With crew mode on, the leader moves the job from step to step.", "pause": 0.5},
+   {"text": "The others see who does it, so nobody moves the job by accident.", "pause": 0.5},
+   {"text": "The office can always step in. And with crew mode off, anybody on the crew moves the steps, as before.", "pause": 1.1}
+  ]},
+  {"id": "issue", "phrases": [
+   {"text": "At nine, the crane is late. Priya taps My issue, and writes why.", "pause": 0.6},
+   {"text": "Only her time stops. It counts as blocked, for her alone.", "pause": 0.5},
+   {"text": "The job, and the rest of the crew, carry on. And Tobias is told what stopped her.", "pause": 0.6},
+   {"text": "When the crane arrives, she taps Back to work, and her working time runs again.", "pause": 1.1}
+  ]},
+  {"id": "leave", "phrases": [
+   {"text": "Conor is needed on another job. He taps Leave the job.", "pause": 0.5},
+   {"text": "His time on this job stops. The others keep going.", "pause": 0.5},
+   {"text": "When he comes back, one tap, and he counts again from that moment.", "pause": 1.1}
+  ]},
+  {"id": "clockout", "phrases": [
+   {"text": "Clocking out is the same as leaving.", "pause": 0.5},
+   {"text": "When one of the crew clocks out, the job carries on with the others.", "pause": 0.5},
+   {"text": "Only when the last person on the job clocks out does the job pause, and nothing counts overnight.", "pause": 1.1}
+  ]},
+  {"id": "absent", "phrases": [
+   {"text": "And if the leader is sick, or simply has not clocked in? The job never waits for him.", "pause": 0.6},
+   {"text": "The first person who joined, and is on the clock, stands in automatically. The card says who is standing in.", "pause": 0.6},
+   {"text": "When the leader has approved leave, the office gets one notice in the morning, naming the stand-in. Keep him, or choose somebody else.", "pause": 1.1}
+  ]},
+  {"id": "handover", "phrases": [
+   {"text": "A leader can also hand the lead over himself. For today, or for good.", "pause": 0.5},
+   {"text": "Only on this one job. His other jobs do not change.", "pause": 0.6},
+   {"text": "And the office can change the leader, or put somebody on or off the job, with a reason that goes into the history.", "pause": 1.1}
+  ]},
+  {"id": "numbers", "phrases": [
+   {"text": "At the end of the day, every person has their own line.", "pause": 0.5},
+   {"text": "Tobias: eight hours of work on the job.", "pause": 0.4},
+   {"text": "Priya: seven hours and twenty minutes, and forty minutes blocked, waiting for the crane.", "pause": 0.4},
+   {"text": "Conor: five and a half hours. The time he spent on the other job is not counted here.", "pause": 0.6},
+   {"text": "Together, twenty hours and fifty minutes of work. Counted once per person, never twice, and never more than anybody was on the clock.", "pause": 0.6},
+   {"text": "The same figures go to the timesheet, the report and the invoice.", "pause": 1.1}
+  ]},
+  {"id": "rules", "phrases": [
+   {"text": "Six rules.", "pause": 0.5},
+   {"text": "Each person counts from join to leave.", "pause": 0.4},
+   {"text": "Only inside their own shift.", "pause": 0.4},
+   {"text": "Pressing the same step together: everyone counts.", "pause": 0.4},
+   {"text": "My issue stops only you.", "pause": 0.4},
+   {"text": "The leader moves the steps, and somebody stands in when he is away.", "pause": 0.4},
+   {"text": "The last one out pauses the job.", "pause": 0.8},
+   {"text": "A crew on one job. In HBCField.", "pause": 1.5}
+  ]}
+ ]
+}

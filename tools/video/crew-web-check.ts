@@ -10,7 +10,7 @@ import { signIn } from './capture/screen.ts';
 const [taskId, out] = process.argv.slice(2);
 const errors: string[] = [];
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark', locale: 'en-GB' });
+const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: Number(process.env.DPR || 1), colorScheme: 'dark', locale: 'en-GB', timezoneId: 'Europe/London' });
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text().slice(0, 300)); });
 page.on('pageerror', (e) => errors.push('PAGEERROR ' + e.message));
 page.on('response', (r) => { if (r.status() >= 400) errors.push(`${r.status()} ${r.request().method()} ${r.url().replace(/^https?:\/\/[^/]+/, '')}`); });

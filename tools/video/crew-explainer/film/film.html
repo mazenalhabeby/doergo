@@ -1,0 +1,359 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--g:#05080f;--ink:#e8eef8;--muted:#93a1b8;--dim:#5c6b82;--brand:#2563eb;--brand2:#60a5fa;
+  --travel:#38bdf8;--work:#22c55e;--block:#f59e0b;--off:#1b2433;--red:#f87171}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--g);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+#stage{position:absolute;inset:0;overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(140px);opacity:.5;will-change:transform}
+#grain{position:absolute;inset:-50%;opacity:.06;mix-blend-mode:overlay;pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+.scene{position:absolute;inset:0;opacity:0;will-change:opacity,transform}
+.abs{position:absolute}
+.disp{font-family:Archivo,sans-serif;font-weight:900;letter-spacing:-.02em;line-height:1}
+.lbl{font-family:Archivo,sans-serif;font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:22px;color:var(--brand2)}
+.win{position:absolute;border-radius:22px;background:#0e1524;border:2px solid #24324a;box-shadow:0 40px 90px #000c;overflow:hidden}
+.win .bar{height:44px;background:#121b2c;display:flex;gap:10px;align-items:center;padding:0 18px}
+.win .bar i{width:13px;height:13px;border-radius:50%;background:#334155;display:block}
+.win .vp{position:relative;overflow:hidden}
+.win .vp img{position:absolute;left:0;top:0;transform-origin:0 0}
+.phone{position:absolute;border-radius:56px;background:#05070a;border:10px solid #1f2937;box-shadow:0 40px 90px #000d;overflow:hidden}
+.phone img{width:100%;display:block}
+.rib{position:relative;height:72px;border-radius:16px;background:var(--off);overflow:hidden;display:flex}
+.rib span{height:100%;display:flex;align-items:center;justify-content:center;font-family:Archivo;font-weight:800;font-size:24px;color:#04121a;white-space:nowrap;overflow:hidden}
+.t{background:var(--travel)}.w{background:var(--work)}.b{background:var(--block)}
+.r{background:repeating-linear-gradient(135deg,#334155 0 10px,#1e293b 10px 20px);color:#cbd5e1!important}
+.o{background:transparent}
+.pill{display:inline-flex;align-items:center;gap:12px;border-radius:999px;padding:14px 28px;font-family:Archivo;font-weight:800;font-size:30px}
+#sub{position:absolute;left:160px;right:160px;bottom:46px;text-align:center;font-family:Inter;font-weight:600;font-size:38px;line-height:1.3;color:#fff;
+  text-shadow:0 2px 10px #000,0 0 3px #000}
+#sub b{color:#9cc6ff;font-weight:700}
+#chap{position:absolute;left:96px;top:72px;display:flex;align-items:baseline;gap:18px;opacity:0}
+#chap .n{font-family:Archivo;font-weight:900;font-size:26px;color:var(--brand2);letter-spacing:.08em}
+#chap .tt{font-family:Archivo;font-weight:800;font-size:26px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.day{position:absolute;width:300px;height:200px;border-radius:22px;background:#ffffff0d;border:2px solid #ffffff14;padding:20px;display:flex;flex-direction:column;gap:10px}
+.day .d{font-family:Archivo;font-weight:900;font-size:30px}
+.day .who{font-size:22px;color:var(--muted)}
+.day .note{font-size:20px}
+.mini{height:22px;border-radius:7px;display:flex;overflow:hidden;background:var(--off)}
+.mini span{height:100%}
+</style></head>
+<body><div id="stage">
+<div class="blob" id="b1" style="width:900px;height:900px;background:#1d4ed8;left:-200px;top:-300px"></div>
+<div class="blob" id="b2" style="width:800px;height:800px;background:#0f766e;right:-220px;bottom:-320px"></div>
+<div class="blob" id="b3" style="width:600px;height:600px;background:#4338ca;left:700px;top:500px;opacity:.28"></div>
+<div id="scenes"></div>
+<div id="chap"><span class="n"></span><span class="tt"></span></div>
+<div id="subbg" style="position:absolute;left:0;right:0;bottom:0;height:240px;background:linear-gradient(transparent,#05080fe6 55%)"></div>
+<div id="sub"></div>
+<div id="grain"></div>
+</div>
+<script>
+const TL = __TIMELINE__;
+const CH = Object.fromEntries(TL.chapters.map(c => [c.id, c]));
+const P = (c, i) => CH[c].phrases[Math.min(i, CH[c].phrases.length - 1)].start;
+const CEND = c => CH[c].end;
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const spring = x => x <= 0 ? 0 : x >= 1.6 ? 1 : 1 - Math.exp(-7 * x) * Math.cos(11 * x);
+const easeOut = x => 1 - Math.pow(1 - clamp(x), 3);
+const sp = (t, at, dur = 1) => spring((t - at) / dur);
+const fade = (t, at, d = .4) => clamp((t - at) / d);
+const el = (tag, cls, html, style) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; if (style) Object.assign(e.style, style); return e; };
+const fmt = m => { m = Math.round(m); const h = Math.floor(m / 60), mm = m % 60; return h ? (mm ? `${h}h ${String(mm).padStart(2, '0')}m` : `${h}h`) : `${mm}m`; };
+const TITLES = { intro: 'A crew on one job', crew: 'The crew', start: 'Starting together', leader: 'The leader moves the steps', issue: 'My issue', leave: 'Leaving the job', clockout: 'Clocking out', absent: 'When the leader is away', handover: 'Handing over the lead', numbers: 'The numbers', rules: 'Six rules' };
+
+function win(src, { x, y, w, h, iw, ix = 0, iy = 0 }) {
+  const box = el('div', 'win', null, { left: x + 'px', top: y + 'px', width: w + 'px' });
+  box.innerHTML = '<div class="bar"><i></i><i></i><i></i></div>';
+  const vp = el('div', 'vp', null, { height: (h - 44) + 'px' });
+  const img = el('img'); img.src = 'img/' + src; img.style.width = iw + 'px'; img.style.transform = `translate(${-ix}px,${-iy}px)`;
+  vp.appendChild(img); box.appendChild(vp); box._img = img;
+  return box;
+}
+function card(src, { x, y, w }) {
+  const box = el('div', 'abs', null, { left: x + 'px', top: y + 'px', width: w + 'px', borderRadius: '22px', overflow: 'hidden', boxShadow: '0 40px 90px #000c', border: '2px solid #24324a' });
+  const img = el('img', null, null, { width: '100%', display: 'block' }); img.src = 'img/' + src; box.appendChild(img);
+  return box;
+}
+function phone(src, { x, y, h }) {
+  const w = Math.round(h * 1280 / 2856);
+  const p = el('div', 'phone', null, { left: x + 'px', top: y + 'px', width: (w + 20) + 'px', height: (h + 20) + 'px' });
+  const img = el('img'); img.src = 'img/' + src; p.appendChild(img);
+  return p;
+}
+function rib(segs) {
+  const r = el('div', 'rib');
+  for (const s of segs) r.appendChild(el('span', s.k, s.l || '', { flex: s.f }));
+  return r;
+}
+function enter(node, t, at, { from = 'up', dur = 1 } = {}) {
+  const k = sp(t, at, dur), o = fade(t, at, .35);
+  const dy = from === 'up' ? 60 : 0, dx = from === 'left' ? -120 : from === 'right' ? 120 : 0;
+  node.style.opacity = o;
+  node.style.transform = `perspective(1600px) translate(${dx * (1 - k)}px,${dy * (1 - k)}px) rotateY(${(1 - k) * (from === 'right' ? 14 : -14)}deg) scale(${.94 + .06 * k})`;
+}
+function show(node, t, at, d = .4) { node.style.opacity = fade(t, at, d); }
+/** One person's row: name, then their own shift box with their job time inside. */
+function person(name, segs, { left = 160, top, width = 1600, nameW = 260, color = 'var(--ink)' } = {}) {
+  const row = el('div', 'abs', null, { left: left + 'px', top: top + 'px', width: width + 'px', display: 'grid', gridTemplateColumns: `${nameW}px 1fr`, gap: '28px', alignItems: 'center' });
+  const n = el('div', null, name, { fontFamily: 'Archivo', fontWeight: '800', fontSize: '34px', color });
+  const r = rib(segs); row.append(n, r); row._rib = r;
+  return row;
+}
+const notif = (title, body, btn) => {
+  const n = el('div', 'abs', null, { width: '720px', borderRadius: '30px', background: '#f2f6f4', color: '#0b1f17', padding: '26px 30px', boxShadow: '0 30px 80px #000d', fontFamily: 'Inter' });
+  n.innerHTML = `<div style="display:flex;align-items:center;gap:14px;font-size:22px;color:#4b5f57"><span style="width:34px;height:34px;border-radius:9px;background:#0c7d63;display:inline-block"></span>HBCField · now</div>
+    <div style="font-weight:700;font-size:32px;margin-top:14px">${title}</div><div style="font-size:27px;margin-top:6px;color:#2c3e37">${body}</div>
+    ${btn ? `<div style="margin-top:20px;display:flex;gap:14px"><span style="flex:1;text-align:center;padding:16px;border-radius:16px;background:#0c7d63;color:#fff;font-weight:700;font-size:28px">${btn}</span><span style="flex:1;text-align:center;padding:16px;border-radius:16px;background:#dfe7e3;font-weight:600;font-size:28px">Open</span></div>` : ''}`;
+  return n;
+};
+
+const SCENES = [];
+const scene = (c, i, build) => SCENES.push({ c, i, build });
+
+// 1 · A crew on one job
+scene('intro', 0, root => {
+  const title = el('div', 'abs disp', 'One job.<br>Three people.<br><span style="color:var(--brand2)">One leader.</span>', { left: '160px', top: '200px', fontSize: '130px', lineHeight: '1.02' });
+  const rows = [
+    person('Tobias <span style="color:var(--brand2);font-size:22px">LEADER</span>', [{ k: 'o', f: 1 }, { k: 'w', f: 7, l: 'from his start' }, { k: 'o', f: 1 }], { top: 330 }),
+    person('Priya', [{ k: 'o', f: 1.6 }, { k: 'w', f: 6.4, l: 'from her join' }, { k: 'o', f: 1 }], { top: 470 }),
+    person('Conor', [{ k: 'o', f: 2.6 }, { k: 'w', f: 4, l: 'from his join to his leave' }, { k: 'o', f: 2.4 }], { top: 610 }),
+  ];
+  const lbl = el('div', 'abs lbl', 'Each person · their own time', { left: '160px', top: '250px' });
+  const clock = el('div', 'abs pill', 'Only while they are on the clock', { left: '160px', top: '790px', background: '#22c55e22', color: '#86efac' });
+  root.append(title, lbl, ...rows, clock);
+  return t => {
+    const out = fade(t, P('intro', 1) - .3, .4);
+    title.style.opacity = fade(t, P('intro', 0)) * (1 - out);
+    title.style.transform = `scale(${1.2 - .2 * sp(t, P('intro', 0), 1.2)})`; title.style.transformOrigin = 'left top';
+    show(lbl, t, P('intro', 1));
+    rows.forEach((r, i) => { show(r, t, P('intro', 1) + .3 + i * .5); r._rib.style.clipPath = `inset(0 ${100 - 100 * easeOut((t - P('intro', 2) - i * .4) / 1.8)}% 0 0)`; });
+    enter(clock, t, P('intro', 3), { dur: .9 });
+  };
+});
+
+// 2 · The crew
+scene('crew', 0, root => {
+  const w = win('web-1-task.jpg', { x: 120, y: 190, w: 1100, h: 610, iw: 1100, iy: 170 });
+  const ph = phone('ph-t-leader.jpg', { x: 1350, y: 100, h: 760 });
+  const cap = el('div', 'abs lbl', 'The office · on the web', { left: '120px', top: '148px', color: 'var(--muted)' });
+  const cap2 = el('div', 'abs lbl', 'Tobias · his phone', { left: '1340px', top: '50px', color: 'var(--muted)', fontSize: '18px' });
+  root.append(w, ph, cap, cap2);
+  return t => {
+    enter(w, t, P('crew', 0) - .2, { from: 'left' });
+    w._img.style.transform = `translate(0,${-170 - 30 * easeOut((t - P('crew', 0)) / 8)}px)`;
+    enter(ph, t, P('crew', 1), { from: 'right' }); show(cap, t, P('crew', 0)); show(cap2, t, P('crew', 1));
+  };
+});
+
+// 3 · Starting together
+scene('start', 0, root => {
+  const h = el('div', 'abs disp', 'Tobias taps <span style="color:var(--travel)">On the way</span>', { left: '160px', top: '200px', fontSize: '84px' });
+  const n = notif('Tobias started Rooftop AC install', 'You are on his crew.', 'I’m with him'); Object.assign(n.style, { left: '1040px', top: '300px' });
+  const sub = el('div', 'abs', 'One tap, and you are on the job too.', { left: '160px', top: '330px', width: '800px', fontSize: '40px', color: 'var(--muted)', lineHeight: '1.35' });
+  const same = el('div', 'abs', null, { left: '160px', top: '200px', width: '1600px' });
+  same.innerHTML = '<div class="disp" style="font-size:72px">Same step, same moment?</div><div class="disp" style="font-size:72px;color:var(--work);margin-top:10px">All three count.</div>';
+  const taps = ['Tobias', 'Priya', 'Conor'].map((nm, i) => person(nm, [{ k: 't', f: 6, l: 'travel · counted' }, { k: 'o', f: 1 }], { top: 470 + i * 130 }));
+  const rule = el('div', 'abs', null, { left: '160px', top: '200px', width: '1600px' });
+  rule.innerHTML = '<div class="lbl" style="margin-bottom:22px">“I’m with him” counts from</div>';
+  const tl = el('div', 'abs', null, { left: '160px', top: '330px', width: '1600px', height: '420px' });
+  tl.innerHTML = `
+    <div style="position:absolute;left:0;right:0;top:150px;height:6px;background:#334155;border-radius:3px"></div>
+    <div style="position:absolute;left:160px;top:60px;font-family:Archivo;font-weight:800;font-size:30px;color:var(--travel)">Tobias starts · <span style="color:var(--muted)">08:00</span></div>
+    <div style="position:absolute;left:200px;top:140px;width:26px;height:26px;border-radius:50%;background:var(--travel)"></div>
+    <div style="position:absolute;left:600px;top:140px;width:26px;height:26px;border-radius:50%;background:var(--brand2)"></div>
+    <div style="position:absolute;left:560px;top:60px;font-family:Archivo;font-weight:800;font-size:30px;color:var(--brand2)">Priya taps · <span style="color:var(--muted)">08:12, within 30 min</span></div>
+    <div style="position:absolute;left:213px;width:400px;top:200px;height:64px;border-radius:14px;background:var(--work);color:#04121a;display:flex;align-items:center;justify-content:center;font-family:Archivo;font-weight:800;font-size:24px">counts from 08:00</div>
+    <div style="position:absolute;left:0;top:310px;font-size:34px;color:var(--block)">…but never from before her own clock-in.</div>`;
+  root.append(h, n, sub, same, ...taps, rule, tl);
+  return t => {
+    const a = P('start', 1), b = P('start', 2), c = P('start', 3);
+    const g1 = 1 - fade(t, b - .3);
+    h.style.opacity = fade(t, P('start', 0)) * g1; sub.style.opacity = fade(t, a + .8) * g1;
+    enter(n, t, a, { from: 'right', dur: .8 }); n.style.opacity = Math.min(+n.style.opacity, g1);
+    const g2 = 1 - fade(t, c - .3);
+    same.style.opacity = fade(t, b) * g2;
+    taps.forEach((r, i) => { r.style.opacity = fade(t, b + .6) * g2; r._rib.style.clipPath = `inset(0 ${100 - 100 * easeOut((t - b - .9) / 1.6)}% 0 0)`; });
+    show(rule, t, c); show(tl, t, c + .3);
+  };
+});
+
+// 4 · The leader moves the steps
+scene('leader', 0, root => {
+  const ph = phone('ph-p-conorleft.jpg', { x: 220, y: 110, h: 740 });
+  const h1 = el('div', 'abs disp', 'The leader moves the job', { left: '760px', top: '210px', fontSize: '72px', width: '1000px' });
+  const s1 = el('div', 'abs', 'Everyone else sees who does it — <b style="color:var(--ink)">“Tobias moves this job’s steps”</b>', { left: '760px', top: '320px', width: '1000px', fontSize: '34px', color: 'var(--muted)', lineHeight: '1.4' });
+  const sw = card('web-8-switch.jpg', { x: 760, y: 520, w: 1000 });
+  const s2 = el('div', 'abs', 'Crew mode · Settings. Off: anybody on the crew moves the steps, as before. The office can always step in.', { left: '760px', top: '700px', width: '1000px', fontSize: '30px', color: 'var(--muted)', lineHeight: '1.4' });
+  root.append(ph, h1, s1, sw, s2);
+  return t => { enter(ph, t, P('leader', 0) - .2, { from: 'left' }); show(h1, t, P('leader', 0)); show(s1, t, P('leader', 1)); enter(sw, t, P('leader', 2), { from: 'up' }); show(s2, t, P('leader', 2) + .8); };
+});
+
+// 5 · My issue
+scene('issue', 0, root => {
+  const p1 = phone('ph-p-issue-sheet.jpg', { x: 220, y: 110, h: 740 });
+  const p2 = phone('ph-p-stopped.jpg', { x: 220, y: 110, h: 740 });
+  const h1 = el('div', 'abs disp', 'Only <span style="color:var(--block)">her</span> time stops', { left: '760px', top: '200px', fontSize: '76px' });
+  const rows = [
+    person('Tobias', [{ k: 'w', f: 9, l: 'working' }], { left: 760, top: 360, width: 1000, nameW: 170 }),
+    person('Priya', [{ k: 'w', f: 3, l: 'working' }, { k: 'b', f: 2, l: 'blocked' }, { k: 'w', f: 4, l: 'working' }], { left: 760, top: 480, width: 1000, nameW: 170 }),
+    person('Conor', [{ k: 'w', f: 9, l: 'working' }], { left: 760, top: 600, width: 1000, nameW: 170 }),
+  ];
+  const s1 = el('div', 'abs', 'The job and the crew carry on · Tobias is told why', { left: '760px', top: '740px', width: '1000px', fontSize: '32px', color: 'var(--muted)' });
+  const back = el('div', 'abs pill', 'Back to work → working again', { left: '760px', top: '820px', background: '#22c55e22', color: '#86efac' });
+  root.append(p1, p2, h1, ...rows, s1, back);
+  return t => {
+    const b = P('issue', 1), c = P('issue', 2), d = P('issue', 3);
+    enter(p1, t, P('issue', 0) - .2, { from: 'left' }); p1.style.opacity = Math.min(+p1.style.opacity, 1 - fade(t, b));
+    enter(p2, t, b, { from: 'up', dur: .7 });
+    show(h1, t, b); rows.forEach((r, i) => show(r, t, b + .3 + i * .2));
+    rows[1]._rib.style.clipPath = `inset(0 ${100 - 100 * easeOut((t - b - .5) / (d - b + 1.5))}% 0 0)`;
+    show(s1, t, c); enter(back, t, d, { dur: .9 });
+  };
+});
+
+// 6 · Leaving
+scene('leave', 0, root => {
+  const ph = phone('ph-p-conorleft.jpg', { x: 220, y: 110, h: 740 });
+  const h1 = el('div', 'abs disp', 'Conor leaves the job', { left: '760px', top: '210px', fontSize: '76px' });
+  const r = person('Conor', [{ k: 'w', f: 3, l: 'this job' }, { k: 'o', f: 3, l: 'other job' }, { k: 'w', f: 3, l: 'back' }], { left: 760, top: 380, width: 1000, nameW: 170 });
+  r._rib.children[1].style.color = 'var(--dim)'; r._rib.children[1].style.fontSize = '20px';
+  const s1 = el('div', 'abs', 'The others keep going. One tap to come back — he counts again from that moment.', { left: '760px', top: '520px', width: '1000px', fontSize: '34px', color: 'var(--muted)', lineHeight: '1.4' });
+  root.append(ph, h1, r, s1);
+  return t => { enter(ph, t, P('leave', 0) - .2, { from: 'left' }); show(h1, t, P('leave', 0)); show(r, t, P('leave', 1)); r._rib.style.clipPath = `inset(0 ${100 - 100 * easeOut((t - P('leave', 1)) / (P('leave', 2) - P('leave', 1) + 2))}% 0 0)`; show(s1, t, P('leave', 2)); };
+});
+
+// 7 · Clocking out
+scene('clockout', 0, root => {
+  const ph = phone('ph-t-clockout.jpg', { x: 220, y: 110, h: 740 });
+  const h1 = el('div', 'abs disp', 'Clocking out = leaving', { left: '760px', top: '200px', fontSize: '76px' });
+  const rows = [
+    person('Tobias', [{ k: 'w', f: 4 }, { k: 'o', f: 5 }], { left: 760, top: 360, width: 1000, nameW: 170 }),
+    person('Priya', [{ k: 'w', f: 7 }, { k: 'o', f: 2 }], { left: 760, top: 480, width: 1000, nameW: 170 }),
+    person('Conor', [{ k: 'w', f: 8.2 }, { k: 'o', f: .8 }], { left: 760, top: 600, width: 1000, nameW: 170 }),
+  ];
+  const mark = el('div', 'abs', null, { left: '1680px', top: '340px', width: '6px', height: '360px', background: 'repeating-linear-gradient(var(--red) 0 12px, transparent 12px 22px)' });
+  const s1 = el('div', 'abs', 'The crew carries on…', { left: '760px', top: '730px', fontSize: '36px', color: 'var(--work)' });
+  const s2 = el('div', 'abs', '…the last one out pauses the job. Nothing counts overnight.', { left: '760px', top: '790px', width: '1000px', fontSize: '36px', color: 'var(--block)' });
+  root.append(ph, h1, ...rows, mark, s1, s2);
+  return t => {
+    enter(ph, t, P('clockout', 0) - .2, { from: 'left' }); show(h1, t, P('clockout', 0));
+    rows.forEach((r, i) => { show(r, t, P('clockout', 1) - .2); r._rib.style.clipPath = `inset(0 ${100 - 100 * easeOut((t - P('clockout', 1)) / 4)}% 0 0)`; });
+    show(s1, t, P('clockout', 1) + .8); show(mark, t, P('clockout', 2) + 1.2); show(s2, t, P('clockout', 2));
+  };
+});
+
+// 8 · Leader away
+scene('absent', 0, root => {
+  const q = el('div', 'abs disp', 'The leader is sick?<br><span style="color:var(--work)">The job doesn’t wait.</span>', { left: '160px', top: '330px', fontSize: '110px', lineHeight: '1.05' });
+  const ph = phone('ph-p-acting.jpg', { x: 220, y: 110, h: 740 });
+  const h1 = el('div', 'abs disp', 'Somebody stands in — automatically', { left: '760px', top: '210px', width: '1000px', fontSize: '64px', lineHeight: '1.1' });
+  const s1 = el('div', 'abs', 'The first person who joined and is on the clock. The card says <b style="color:var(--block)">“Priya is standing in”</b>.', { left: '760px', top: '380px', width: '1000px', fontSize: '34px', color: 'var(--muted)', lineHeight: '1.4' });
+  const n = notif('Tobias is on leave today', 'Rooftop AC install · Priya is standing in. Keep her, or choose somebody.', null); Object.assign(n.style, { left: '760px', top: '520px', width: '900px' });
+  const s2 = el('div', 'abs', 'One notice for the office, in the morning', { left: '760px', top: '780px', fontSize: '28px', color: 'var(--dim)' });
+  root.append(q, ph, h1, s1, n, s2);
+  return t => {
+    const b = P('absent', 1);
+    q.style.opacity = fade(t, P('absent', 0)) * (1 - fade(t, b - .3));
+    enter(ph, t, b - .1, { from: 'left' }); show(h1, t, b); show(s1, t, b + 1.2);
+    enter(n, t, P('absent', 2), { from: 'right', dur: .8 }); show(s2, t, P('absent', 2) + 1);
+  };
+});
+
+// 9 · Handing over
+scene('handover', 0, root => {
+  const ph = phone('ph-t-handover.jpg', { x: 220, y: 110, h: 740 });
+  const h1 = el('div', 'abs disp', 'For today, or for good', { left: '760px', top: '200px', fontSize: '72px' });
+  const s1 = el('div', 'abs', 'Only this job. His other jobs don’t change.', { left: '760px', top: '300px', fontSize: '36px', color: 'var(--muted)' });
+  const w1 = card('web-3-change-leader.jpg', { x: 760, y: 390, w: 420 });
+  const w2 = card('web-4-put-on.jpg', { x: 1220, y: 390, w: 420 });
+  const s2 = el('div', 'abs', 'The office: change the leader, or put somebody on or off — the reason goes into the history.', { left: '760px', top: '810px', width: '1000px', fontSize: '28px', color: 'var(--muted)', lineHeight: '1.4' });
+  root.append(ph, h1, s1, w1, w2, s2);
+  return t => { enter(ph, t, P('handover', 0) - .2, { from: 'left' }); show(h1, t, P('handover', 0)); show(s1, t, P('handover', 1)); enter(w1, t, P('handover', 2), { from: 'up' }); enter(w2, t, P('handover', 2) + .6, { from: 'up' }); show(s2, t, P('handover', 2) + 1.2); };
+});
+
+// 10 · The numbers
+scene('numbers', 0, root => {
+  const h = el('div', 'abs lbl', 'Rooftop AC install · one day · each their own line', { left: '160px', top: '170px' });
+  const rows = [
+    ['Tobias', [{ k: 'w', f: 480 }, { k: 'o', f: 60 }], 'working 8h'],
+    ['Priya', [{ k: 'o', f: 20 }, { k: 'w', f: 60 }, { k: 'b', f: 40 }, { k: 'w', f: 380 }, { k: 'o', f: 40 }], 'working 7h 20m · blocked 40m'],
+    ['Conor', [{ k: 'w', f: 180 }, { k: 'o', f: 150 }, { k: 'w', f: 150 }, { k: 'o', f: 60 }], 'working 5h 30m · the other job not counted'],
+  ].map(([nm, segs, txt], i) => {
+    const r = el('div', 'abs', null, { left: '160px', top: (240 + i * 150) + 'px', width: '1600px', display: 'grid', gridTemplateColumns: '420px 1fr', gap: '30px', alignItems: 'center' });
+    r.innerHTML = `<div style="font-family:Archivo;font-weight:800;font-size:36px">${nm}<div style="font-family:Inter;font-weight:500;font-size:24px;color:var(--muted);margin-top:8px">${txt}</div></div>`;
+    const rb = rib(segs); r.appendChild(rb); r._rib = rb; return r;
+  });
+  const total = el('div', 'abs disp', '', { left: '160px', top: '720px', fontSize: '96px' });
+  const not = el('div', 'abs', 'Once per person · never twice · never more than anybody was on the clock', { left: '160px', top: '860px', width: '1600px', fontSize: '32px', color: 'var(--muted)' });
+  const ts = el('div', 'abs pill', 'Same figures → timesheet · report · invoice', { left: '160px', top: '860px', background: '#2563eb33', color: '#bfdbfe' });
+  root.append(h, ...rows, total, not, ts);
+  return t => {
+    show(h, t, P('numbers', 0));
+    rows.forEach((r, i) => { show(r, t, P('numbers', 1 + i)); r._rib.style.clipPath = `inset(0 ${100 - 100 * easeOut((t - P('numbers', 1 + i)) / 1.6)}% 0 0)`; });
+    const k = easeOut((t - P('numbers', 4)) / 2.2);
+    total.innerHTML = `<span style="color:var(--work)">${fmt(1250 * k)}</span> <span style="font-size:48px;color:var(--muted)">of work, together</span>`;
+    total.style.opacity = fade(t, P('numbers', 4));
+    not.style.opacity = fade(t, P('numbers', 4) + 2) * (1 - fade(t, P('numbers', 5) - .3)); enter(ts, t, P('numbers', 5), { dur: .9 });
+  };
+});
+
+// 11 · Rules + end
+scene('rules', 0, root => {
+  const h = el('div', 'abs disp', 'Six rules', { left: '160px', top: '130px', fontSize: '96px' });
+  const rules = ['Join to leave, per person', 'Only inside your own shift', 'Same step together: all count', 'My issue stops only you', 'Leader moves the steps · a stand-in when away', 'The last one out pauses the job'];
+  const list = rules.map((r, i) => el('div', 'abs', `<span style="color:var(--brand2);font-family:Archivo;font-weight:900">${i + 1}</span>&nbsp;&nbsp;${r}`, { left: (160 + (i % 2) * 820) + 'px', top: (320 + Math.floor(i / 2) * 150) + 'px', width: '780px', fontFamily: 'Archivo', fontWeight: '800', fontSize: '40px', lineHeight: '1.15' }));
+  const end = el('div', 'abs', null, { left: 0, right: 0, top: '380px', textAlign: 'center' });
+  end.innerHTML = '<div class="disp" style="font-size:120px">A crew in <span style="color:var(--brand2)">HBCField</span></div><div style="font-size:34px;color:var(--muted);margin-top:24px">Everyone counted on their own — on the job, on the timesheet, on the invoice.</div>';
+  root.append(h, ...list, end);
+  return t => {
+    const fin = P('rules', 7); const g = 1 - fade(t, fin - .2);
+    h.style.opacity = fade(t, P('rules', 0)) * g;
+    list.forEach((n, i) => { n.style.opacity = fade(t, P('rules', 1 + i)) * g; n.style.transform = `translateX(${-40 * (1 - sp(t, P('rules', 1 + i), .8))}px)`; });
+    end.style.opacity = fade(t, fin, .6); end.style.transform = `scale(${1.15 - .15 * sp(t, fin, 1.2)})`;
+  };
+});
+/* ── assemble ── */
+const root = document.getElementById('scenes');
+SCENES.forEach(s => { s.root = el('div', 'scene'); root.appendChild(s.root); s.upd = s.build(s.root); s.start = Math.max(0, P(s.c, s.i) - .5); });
+SCENES.forEach((s, i) => { s.end = i + 1 < SCENES.length ? SCENES[i + 1].start : TL.duration; });
+const chap = document.getElementById('chap'), sub = document.getElementById('sub');
+const allPhr = TL.chapters.flatMap((c, ci) => c.phrases.map(p => ({ ...p, c: c.id, ci })));
+const KEY = /(one leader|join|leave|on the clock|I.m with him|all three count|half an hour|My issue|blocked|Back to work|Leave the job|pause|stands in|standing in|for today|for good|eight hours|seven hours and twenty minutes|forty minutes|five and a half hours|twenty hours and fifty minutes|never twice)/gi;
+
+function render(t) {
+  // background drift
+  const b = Math.sin(t / 9), c = Math.cos(t / 11);
+  document.getElementById('b1').style.transform = `translate(${80 * b}px,${60 * c}px)`;
+  document.getElementById('b2').style.transform = `translate(${-70 * c}px,${-50 * b}px)`;
+  document.getElementById('b3').style.transform = `translate(${120 * c}px,${-80 * b}px)`;
+  document.getElementById('grain').style.transform = `translate(${(Math.floor(t * 24) * 37) % 200 - 100}px,${(Math.floor(t * 24) * 53) % 200 - 100}px)`;
+  for (const s of SCENES) {
+    const vis = t >= s.start - .01 && t < s.end + .4;
+    if (!vis) { s.root.style.opacity = 0; continue; }
+    const o = Math.min(fade(t, s.start, .45), 1 - fade(t, s.end, .4));
+    s.root.style.opacity = o; s.upd(t);
+  }
+  // chapter label
+  const ch = TL.chapters.findIndex(c => t >= c.start - .3 && t < c.end + .2);
+  if (ch >= 0) {
+    const c = TL.chapters[ch];
+    chap.querySelector('.n').textContent = String(ch + 1).padStart(2, '0');
+    chap.querySelector('.tt').textContent = TITLES[c.id];
+    chap.style.opacity = Math.min(fade(t, c.start - .3, .5), 1 - fade(t, c.end - .3, .4)) * (ch === 0 && t < 1 ? 0 : 1);
+  } else chap.style.opacity = 0;
+  // subtitle: the phrase being spoken (held until the next one starts, within the chapter)
+  let cur = null;
+  for (const p of allPhr) if (t >= p.start - .15 && t <= p.end + .6) cur = p;
+  if (cur) {
+    const txt = cur.text.replace(KEY, '<b>$1</b>');
+    if (sub._t !== cur.text) { sub.innerHTML = txt; sub._t = cur.text; }
+    sub.style.opacity = Math.min(fade(t, cur.start - .15, .2), 1 - fade(t, cur.end + .4, .2));
+  } else sub.style.opacity = 0;
+}
+window.__ready = Promise.all([document.fonts.ready, ...[...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; }))]);
+window.SFX = [];
+</script></body></html>
