@@ -11,6 +11,7 @@ import { tasksApi, type ChecklistItem, type CrewView } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
 import { useJobTime } from "@/hooks/use-job-time"
+import { useTaskPermissions } from "@/hooks/use-task-permissions"
 import { tickedByOther } from "@hbcfield/shared/client"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -30,6 +31,8 @@ interface ChecklistItemRowProps {
   crew: CrewView | null
   /** The leader or the office: may give the item to anybody on the crew. The server judges it again. */
   mayHandOut: boolean
+  /** The viewer — a member on the crew takes a free item or gives their own back. */
+  meId: string | null
   onOwner: (itemId: string, assigneeId: string | null) => void
 }
 
@@ -41,6 +44,7 @@ const ChecklistItemRow = React.memo(function ChecklistItemRow({
   isDeleting,
   crew,
   mayHandOut,
+  meId,
   onOwner,
 }: ChecklistItemRowProps) {
   const { t } = useTranslation()
@@ -114,20 +118,29 @@ const ChecklistItemRow = React.memo(function ChecklistItemRow({
               <DropdownMenuItem onSelect={() => onOwner(item.id, null)}>{t("tasks.checklist.nobody")}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        ) : meId && item.assigneeId === meId && !item.isCompleted ? (
+          // My own item: give it back (shared mayChangeChecklistOwner — a member may).
+          <button type="button" onClick={() => onOwner(item.id, null)} className="flex-shrink-0 text-xs rounded-full px-2.5 py-1 border border-border text-foreground hover:bg-accent" title={t("tasks.checklist.giveBack")}>
+            {t("tasks.checklist.you")} ×
+          </button>
+        ) : !item.assigneeId && !item.isCompleted && meId && crew.members.some((m) => m.user.id === meId) ? (
+          <button type="button" onClick={() => onOwner(item.id, meId)} className="flex-shrink-0 text-xs rounded-full px-2.5 py-1 bg-primary text-primary-foreground hover:opacity-90">
+            {t("tasks.checklist.takeIt")}
+          </button>
         ) : item.assignee ? (
           <span className="flex-shrink-0 text-xs rounded-full px-2.5 py-1 bg-muted text-muted-foreground">{name(item.assignee)}</span>
         ) : null
       )}
 
-      {/* Delete */}
-      <button
+      {/* Delete — somebody else's item only for them, the leader or the office (shared mayEditChecklistItem) */}
+      {(!item.assigneeId || item.assigneeId === meId || mayHandOut) && <button
         type="button"
         onClick={() => onDelete(item.id)}
         disabled={isDeleting}
         className="flex-shrink-0 p-1 rounded-md opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-150"
       >
         <Trash2 className="size-3.5" />
-      </button>
+      </button>}
     </div>
   )
 })
@@ -139,20 +152,25 @@ interface ChecklistSectionProps {
   items: ChecklistItem[]
   /** The job is paused — passed on to the shared job-time read the crew comes from. */
   paused?: boolean
+  /** The job's workspace — "assign tasks" counts org-wide or HERE, as the server decides it. */
+  spaceId?: string | null
 }
 
 export const ChecklistSection = React.memo(function ChecklistSection({
   taskId,
   items,
   paused = false,
+  spaceId = null,
 }: ChecklistSectionProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   // The crew rides on the job-time read the crew card already makes — one cached request, not two.
   const { data: jobTime } = useJobTime(taskId, paused)
   const crew = jobTime?.crew ?? null
-  const { user, hasPermission } = useAuth()
-  const mayHandOut = user?.role === "ADMIN" || hasPermission("canAssignTasks") || (!!user?.id && crew?.leader.userId === user.id)
+  const { user } = useAuth()
+  // The server's rule (CrewService.checklistAuthority): "assign tasks" org-wide or in THIS job's space, or leading it now.
+  const { canAssign } = useTaskPermissions({ spaceId })
+  const mayHandOut = canAssign || (!!user?.id && crew?.leader.userId === user.id)
   const [newItemText, setNewItemText] = useState("")
 
   const sorted = [...items].sort((a, b) => a.position - b.position)
@@ -189,15 +207,16 @@ export const ChecklistSection = React.memo(function ChecklistSection({
     onSettled: invalidateTask,
   })
 
-  const ownerMutation = useMutation({
+  // `mutate` is stable across renders — the rows stay memoized while the job time ticks.
+  const { mutate: changeOwner } = useMutation({
     mutationFn: ({ itemId, assigneeId }: { itemId: string; assigneeId: string | null }) =>
       tasksApi.updateChecklistItem(taskId, itemId, { assigneeId }),
     onError: (e: Error) => notify.error(e.message),
     onSettled: invalidateTask,
   })
   const handleOwner = useCallback(
-    (itemId: string, assigneeId: string | null) => ownerMutation.mutate({ itemId, assigneeId }),
-    [ownerMutation],
+    (itemId: string, assigneeId: string | null) => changeOwner({ itemId, assigneeId }),
+    [changeOwner],
   )
 
   const addMutation = useMutation({
@@ -288,6 +307,7 @@ export const ChecklistSection = React.memo(function ChecklistSection({
               isDeleting={deleteMutation.isPending}
               crew={crew}
               mayHandOut={mayHandOut}
+              meId={user?.id ?? null}
               onOwner={handleOwner}
             />
           </div>

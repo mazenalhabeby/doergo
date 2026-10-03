@@ -118,10 +118,17 @@ export function useJob(taskId: string) {
     const refreshComments = () => {
       tasksApi.getComments(taskId).then(setComments).catch(() => undefined);
     };
+    /*
+      ⚠️ THE SERVER SENDS THE TASK ITSELF for updated/assigned (websocket.gateway
+      emitTaskUpdated(task)), and `{ task, … }` for a status change. Reading only
+      `d.task.id` matched nothing on an update, so this page never redrew for
+      anybody else's change — a checklist item somebody took, a renamed item.
+    */
+    const isThisJob = (d: any) => (d?.task?.id ?? d?.id) === taskId;
     const unsubs = [
-      subscribe(SocketEvents.TASK_STATUS_CHANGED, (d: any) => { if (d?.task?.id === taskId) refreshTask(); }),
-      subscribe(SocketEvents.TASK_UPDATED, (d: any) => { if (d?.task?.id === taskId) refreshTask(); }),
-      subscribe(SocketEvents.TASK_ASSIGNED, (d: any) => { if (d?.task?.id === taskId) refreshTask(); }),
+      subscribe(SocketEvents.TASK_STATUS_CHANGED, (d: any) => { if (isThisJob(d)) refreshTask(); }),
+      subscribe(SocketEvents.TASK_UPDATED, (d: any) => { if (isThisJob(d)) refreshTask(); }),
+      subscribe(SocketEvents.TASK_ASSIGNED, (d: any) => { if (isThisJob(d)) refreshTask(); }),
       subscribe(SocketEvents.TASK_COMMENT_ADDED, (d: any) => { if (d?.taskId === taskId) refreshComments(); }),
     ];
     return () => unsubs.forEach((fn) => fn());

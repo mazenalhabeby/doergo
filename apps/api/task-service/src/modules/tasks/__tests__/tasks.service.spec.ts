@@ -127,6 +127,8 @@ describe('TasksService', () => {
     checklistItem: {
       findMany: jest.fn().mockResolvedValue([]),
       createMany: jest.fn(),
+      // A crew change frees open items of somebody taken off the job (shared tasks/checklist.ts).
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
     },
     spaceAssignment: {
       findFirst: jest.fn().mockResolvedValue(null),

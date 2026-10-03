@@ -596,6 +596,8 @@ export interface CrewView {
     role: "LEAD" | "MEMBER";
     joined: boolean;
     since: string | null;
+    /** When they last left the job — null if they never joined it. */
+    lastLeftAt?: string | null;
     selfBlockedSince: string | null;
     selfBlockReason: string | null;
     onClock: boolean;

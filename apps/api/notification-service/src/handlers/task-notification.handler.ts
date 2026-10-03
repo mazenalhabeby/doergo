@@ -39,6 +39,13 @@ export class TaskNotificationHandler {
     }
   }
 
+  /** Something on a job changed — every open screen on it re-reads (websocket.gateway announceTaskChanged). */
+  @EventPattern('task_updated')
+  handleTaskUpdated(@Payload() data: { task?: { id?: string } }) {
+    const id = data?.task?.id;
+    if (typeof id === 'string' && id) this.websocketGateway.announceTaskChanged(id);
+  }
+
   @EventPattern('task_created')
   async handleTaskCreated(@Payload() data: any) {
     this.logger.log(`Task created: ${data.id}`);

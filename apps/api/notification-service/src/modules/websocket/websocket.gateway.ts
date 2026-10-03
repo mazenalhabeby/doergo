@@ -671,6 +671,44 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     this.server.to(`user:${workerId}`).emit(SocketEvents.TASK_ASSIGNED, task);
   }
 
+  /*
+    "Something on this job changed" — a checklist tick, an owner, a file, a
+    dependency, somebody joining the crew. ⚠️ task-service has emitted
+    `task_updated` from fourteen places and nothing here listened, so no open
+    screen ever heard of any of them: a phone showed an item as free after
+    somebody had taken it, until its own next tap.
+
+    • THE ID ONLY. Each screen re-reads through its own authorized request; the
+      payload carries nothing a room member could not already open.
+    • TO WHO COULD SEE IT: the task viewers of its org, its workspace's room
+      (cross-org shares), and every person on its crew — a field worker is in
+      none of the first two.
+    • COALESCED per job: a burst (three people ticking together) is one
+      announcement, so an office list is not refetched per tap.
+  */
+  private readonly updatePending = new Map<string, ReturnType<typeof setTimeout>>();
+  announceTaskChanged(taskId: string, delayMs = 400): void {
+    if (!taskId || this.updatePending.has(taskId)) return;
+    this.updatePending.set(taskId, setTimeout(() => {
+      this.updatePending.delete(taskId);
+      void this.sendTaskChanged(taskId).catch((e) => this.logger.warn(`[EMIT] task.updated ${taskId} failed: ${e}`));
+    }, delayMs));
+  }
+
+  private async sendTaskChanged(taskId: string): Promise<void> {
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      select: { id: true, organizationId: true, spaceId: true, assignedToId: true, assignees: { select: { userId: true }, take: 50 } },
+    });
+    if (!task) return;
+    const people = new Set([task.assignedToId, ...task.assignees.map((a) => a.userId)].filter((x): x is string => !!x));
+    let target = this.taskTargets(task).to(`task:${task.id}`);
+    for (const id of people) target = target.to(`user:${id}`);
+    this.messagesSent++;
+    target.emit(SocketEvents.TASK_UPDATED, { id: task.id, task: { id: task.id } });
+    this.logger.debug(`[EMIT] task.updated ${task.id} → viewers, space, ${people.size} on the crew`);
+  }
+
   emitTaskUpdated(task: any) {
     this.logger.log(`[EMIT] task.updated to org:${task.organizationId}`);
     this.messagesSent++;

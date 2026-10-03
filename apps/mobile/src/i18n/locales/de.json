@@ -3201,7 +3201,9 @@
       "CREW_JOB_NOT_STARTED": "Der Auftrag läuft nicht.",
       "REASON_REQUIRED": "Sagen Sie, was Sie aufhält.",
       "CHECKLIST_OWNER_NOT_ON_CREW": "Wählen Sie jemanden aus diesem Auftrag.",
-      "CHECKLIST_OWNER_NOT_YOURS": "Nur der Leiter dieses Auftrags oder das Büro weist Punkte zu."
+      "CHECKLIST_OWNER_NOT_YOURS": "Nur der Leiter dieses Auftrags oder das Büro weist Punkte zu.",
+      "CHECKLIST_CHANGED": "Jemand hat diesen Punkt gerade geändert. Bitte erneut ansehen.",
+      "CHECKLIST_ITEM_NOT_YOURS": "Nur die zuständige Person, der Leiter dieses Auftrags oder das Büro ändert diesen Punkt."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",
@@ -3774,7 +3776,8 @@
       "crew_one": "Das Team · {{count}}",
       "crew_other": "Das Team · {{count}}",
       "ownerTitle": "Wem gehört dieser Punkt?",
-      "nobody": "Niemandem"
+      "nobody": "Niemandem",
+      "giveBack": "Zurückgeben"
     },
     "fields": {
       "title": "Auftragsfelder",

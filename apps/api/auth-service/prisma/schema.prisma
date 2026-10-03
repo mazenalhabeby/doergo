@@ -1259,8 +1259,10 @@ model ChecklistItem {
   updatedAt   DateTime @updatedAt
 
   @@index([taskId, position])
-  /// "What is still open of mine" — the clock-out sheet asks it for the jobs in work.
-  @@index([assigneeId, isCompleted])
+  /// "What is still open of mine" — the clock-out sheet asks it for the jobs in work (answered from the index alone).
+  @@index([assigneeId, isCompleted, taskId])
+  /// A deleted user's ticks are set to null — without this, that is a scan of every item.
+  @@index([completedById])
   @@map("checklist_items")
 }
 

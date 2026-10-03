@@ -35,7 +35,10 @@ import {
   success,
   checklistCompletion,
   mayChangeChecklistOwner,
+  mayEditChecklistItem,
   CHECKLIST_CODES,
+  type ChecklistAuthority,
+  type ChecklistVerdict,
   paginated,
   buildDateRangeFilter,
   isAtSite,
@@ -2977,6 +2980,18 @@ export class TasksService {
       const still = await this.prisma.taskAssignee.findUnique({ where: { taskId_userId: { taskId, userId: lead.leadOverrideId } }, select: { id: true } });
       if (!still) await this.prisma.task.update({ where: { id: taskId }, data: { leadOverrideId: null, leadOverrideUntil: null } });
     }
+    /*
+      An OPEN checklist item owned by somebody taken off the crew goes back to
+      nobody (shared tasks/checklist.ts): left owned, they could not give it back
+      (no longer on the crew) and nobody could take it (not free). A DONE item
+      keeps its owner — that is the record of whose part it was.
+    */
+    const crew = await this.prisma.taskAssignee.findMany({ where: { taskId }, select: { userId: true } });
+    const keep = [...new Set([...crew.map((c) => c.userId), ...(lead?.assignedToId ? [lead.assignedToId] : [])])];
+    await this.prisma.checklistItem.updateMany({
+      where: { taskId, isCompleted: false, assigneeId: { not: null, notIn: keep } },
+      data: { assigneeId: null },
+    });
 
     /*
       A task with somebody on it is ASSIGNED.
@@ -3078,7 +3093,7 @@ export class TasksService {
     if (!task) throw new NotFoundException('Task not found');
     await this.checkTaskAccess(task, data);
     const assigneeId = data.assigneeId ?? null;
-    if (assigneeId) await this.assertChecklistOwner(data, null, assigneeId);
+    if (assigneeId) this.refuseChecklist(mayChangeChecklistOwner(await this.checklistAuthorityOnce(data)(), null, assigneeId));
 
     // Determine position: use provided or append at end
     let position = data.position;
@@ -3124,25 +3139,40 @@ export class TasksService {
 
     const existing = await this.prisma.checklistItem.findFirst({
       where: { id: data.itemId, taskId: data.taskId },
-      select: { id: true, assigneeId: true, isCompleted: true },
+      select: { id: true, text: true, assigneeId: true, isCompleted: true },
     });
     if (!existing) throw new NotFoundException('Checklist item not found');
 
     const ownerChange = data.assigneeId !== undefined && (data.assigneeId ?? null) !== existing.assigneeId;
-    if (ownerChange) await this.assertChecklistOwner(data, existing.assigneeId, data.assigneeId ?? null);
-
-    // Only what was asked changes. A tick records who and when (shared checklistCompletion);
-    // ticking an item that is already ticked keeps the first name and time.
+    const textChange = data.text !== undefined && data.text !== existing.text;
     const toggled = data.isCompleted !== undefined && data.isCompleted !== existing.isCompleted;
-    const item = await this.prisma.checklistItem.update({
-      where: { id: data.itemId },
+    // Who leads and who is on the crew — read once, and only when a rule needs it.
+    const authority = this.checklistAuthorityOnce(data);
+    if (ownerChange) this.refuseChecklist(mayChangeChecklistOwner(await authority(), existing.assigneeId, data.assigneeId ?? null));
+    if (textChange) this.refuseChecklist(mayEditChecklistItem(await authority(), existing.assigneeId));
+    if (!ownerChange && !textChange && !toggled) {
+      return success(await this.prisma.checklistItem.findUniqueOrThrow({ where: { id: existing.id }, include: CHECKLIST_PEOPLE }));
+    }
+
+    /*
+      ⚠️ WRITTEN ONLY IF NOBODY GOT THERE FIRST. Two people pressing "Take it"
+      together both read the item as free; an unconditional write let the second
+      silently erase the first. The write is conditional on what was read, and
+      the loser is told (409) rather than shown an ownership that is gone.
+    */
+    const written = await this.prisma.checklistItem.updateMany({
+      where: { id: existing.id, taskId: data.taskId, assigneeId: existing.assigneeId, isCompleted: existing.isCompleted },
       data: {
-        ...(data.text !== undefined ? { text: data.text } : {}),
+        ...(textChange ? { text: data.text } : {}),
+        // A tick records who and when (shared checklistCompletion), from the token.
         ...(toggled ? checklistCompletion(data.isCompleted!, data.userId, new Date()) : {}),
         ...(ownerChange ? { assigneeId: data.assigneeId ?? null } : {}),
       },
-      include: CHECKLIST_PEOPLE,
     });
+    if (written.count === 0) {
+      throw new ConflictException({ message: 'Somebody changed this item just now. Look again.', code: CHECKLIST_CODES.CHANGED });
+    }
+    const item = await this.prisma.checklistItem.findUniqueOrThrow({ where: { id: existing.id }, include: CHECKLIST_PEOPLE });
 
     if (toggled) {
       await this.createTaskEvent(data.taskId, data.userId, TaskEventType.CHECKLIST_ITEM_TOGGLED, {
@@ -3167,34 +3197,39 @@ export class TasksService {
     return success(item);
   }
 
-  /**
-   * Refuse an owner change the rules do not allow (shared mayChangeChecklistOwner).
-   * A rule the caller can act on is a 400 with a code; giving somebody else's
-   * item away is a 403. The task gate has already run, so nothing here leaks a job.
-   */
-  private async assertChecklistOwner(data: TaskAccessFacts & ChecklistActor & { taskId: string }, from: string | null, to: string | null) {
-    const authority = await this.crew.checklistAuthority(data.taskId, {
+  /** The crew's authority over this job's checklist, read at most once per request (CrewService). */
+  private checklistAuthorityOnce(data: TaskAccessFacts & ChecklistActor & { taskId: string }) {
+    let once: Promise<ChecklistAuthority> | null = null;
+    return () => (once ??= this.crew.checklistAuthority(data.taskId, {
       userId: data.userId, userRole: data.userRole, organizationId: data.organizationId,
       canAssignTasks: data.canAssignTasks, access: data.access,
-    });
-    const verdict = mayChangeChecklistOwner(authority, from, to);
+    }));
+  }
+
+  /**
+   * Turn a "no" from the shared rules into the refusal the screens translate.
+   * Something the caller may not do with somebody else's item is 403; a target
+   * off the crew is 400. The task gate has run, so nothing here leaks a job.
+   */
+  private refuseChecklist(verdict: ChecklistVerdict): void {
     if (verdict.ok) return;
-    if (verdict.code === CHECKLIST_CODES.OWNER_NOT_YOURS) {
-      throw new ForbiddenException({ message: 'Only the leader of this job, or the office, gives an item to somebody.', code: verdict.code });
+    if (verdict.code === CHECKLIST_CODES.OWNER_NOT_ON_CREW) {
+      throw new BadRequestException({ message: 'Choose somebody on this job.', code: verdict.code });
     }
-    throw new BadRequestException({ message: 'Choose somebody on this job.', code: verdict.code });
+    throw new ForbiddenException({
+      message: verdict.code === CHECKLIST_CODES.ITEM_NOT_YOURS
+        ? 'Only the person it belongs to, the leader of this job, or the office changes this item.'
+        : 'Only the leader of this job, or the office, gives an item to somebody.',
+      code: verdict.code,
+    });
   }
 
   /**
    * Delete a checklist item
    */
-  async deleteChecklistItem(data: {
+  async deleteChecklistItem(data: TaskAccessFacts & ChecklistActor & {
     taskId: string;
     itemId: string;
-    userId: string;
-    userRole: string;
-    canViewAllTasks?: boolean;
-    organizationId: string;
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
@@ -3204,6 +3239,10 @@ export class TasksService {
       where: { id: data.itemId, taskId: data.taskId },
     });
     if (!existing) throw new NotFoundException('Checklist item not found');
+    // Somebody else's item is removed only by them, the leader or the office (shared mayEditChecklistItem).
+    if (existing.assigneeId && existing.assigneeId !== data.userId) {
+      this.refuseChecklist(mayEditChecklistItem(await this.checklistAuthorityOnce(data)(), existing.assigneeId));
+    }
 
     await this.prisma.checklistItem.delete({ where: { id: data.itemId } });
 

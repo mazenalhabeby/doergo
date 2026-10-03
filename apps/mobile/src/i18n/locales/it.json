@@ -3201,7 +3201,9 @@
       "CREW_JOB_NOT_STARTED": "Il lavoro non è in corso.",
       "REASON_REQUIRED": "Di' cosa ti ferma.",
       "CHECKLIST_OWNER_NOT_ON_CREW": "Scegli qualcuno di questo lavoro.",
-      "CHECKLIST_OWNER_NOT_YOURS": "Solo il capo di questo lavoro, o l’ufficio, assegna i punti."
+      "CHECKLIST_OWNER_NOT_YOURS": "Solo il capo di questo lavoro, o l’ufficio, assegna i punti.",
+      "CHECKLIST_CHANGED": "Qualcuno ha appena cambiato questo punto. Guarda di nuovo.",
+      "CHECKLIST_ITEM_NOT_YOURS": "Solo il responsabile, il capo di questo lavoro o l’ufficio modifica questo punto."
     },
     "signOut": {
       "title_one": "{{count}} modifica non è stata inviata",
@@ -3774,7 +3776,8 @@
       "crew_one": "La squadra · {{count}}",
       "crew_other": "La squadra · {{count}}",
       "ownerTitle": "Di chi è questo punto?",
-      "nobody": "Nessuno"
+      "nobody": "Nessuno",
+      "giveBack": "Restituisci"
     },
     "fields": {
       "title": "Campi del lavoro",

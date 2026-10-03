@@ -205,6 +205,8 @@ export class CrewService {
           role: c.role,
           joined: !!p?.joined,
           since: p?.since != null ? new Date(p.since).toISOString() : null,
+          // Joined and gone again (not "never came") — the checklist's "has left, still open".
+          lastLeftAt: p?.lastLeftAt != null ? new Date(p.lastLeftAt).toISOString() : null,
           selfBlockedSince: p?.selfBlockedSince != null ? new Date(p.selfBlockedSince).toISOString() : null,
           selfBlockReason: p?.selfBlockReason ?? null,
           onClock: onClock.has(c.userId),

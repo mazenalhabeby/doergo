@@ -1,4 +1,4 @@
-import { accessAllowsAnywhere, isAdmin as isAdminRole } from '@hbcfield/shared/client';
+import { accessAllowsAnywhere, accessAllowsInSpace, isAdmin as isAdminRole } from '@hbcfield/shared/client';
 
 /**
  * Does this member hold a permission — org-wide, or in any space?
@@ -49,6 +49,19 @@ export function holdsOrgWide(user: Parameters<typeof holds>[0], key: string): bo
   if (isAdminRole(user as never)) return true;
   if ((user as unknown as Record<string, unknown>)[key] === true) return true;
   return (user.access?.org as Record<string, boolean> | undefined)?.[key] === true;
+}
+
+/**
+ * Does this member hold a permission org-wide OR in THIS space?
+ *
+ * The question a control on one RESOURCE must ask — the server resolves the
+ * permission against the resource's own space. `holds` (any space) would offer
+ * a member with "assign tasks" in workspace A a control on a job in workspace B
+ * that only ever comes back refused.
+ */
+export function holdsIn(user: Parameters<typeof holds>[0], key: string, spaceId: string | null | undefined): boolean {
+  if (holdsOrgWide(user, key)) return true;
+  return accessAllowsInSpace(user?.access as never, key as never, spaceId ?? undefined);
 }
 
 /**

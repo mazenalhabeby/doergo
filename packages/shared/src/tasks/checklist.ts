@@ -22,6 +22,10 @@ export const CHECKLIST_CODES = {
   OWNER_NOT_ON_CREW: 'CHECKLIST_OWNER_NOT_ON_CREW',
   /** Only the leader or the office give an item to somebody; a member takes a free one or gives back their own. */
   OWNER_NOT_YOURS: 'CHECKLIST_OWNER_NOT_YOURS',
+  /** Somebody else's item is reworded or removed only by them, the leader or the office. */
+  ITEM_NOT_YOURS: 'CHECKLIST_ITEM_NOT_YOURS',
+  /** The item changed between reading and writing it — two people at once. Nothing was written. */
+  CHANGED: 'CHECKLIST_CHANGED',
 } as const;
 export type ChecklistCode = (typeof CHECKLIST_CODES)[keyof typeof CHECKLIST_CODES];
 
@@ -53,6 +57,17 @@ export function mayChangeChecklistOwner(a: ChecklistAuthority, from: string | nu
   if (onCrew && from === null && to === a.actorId) return { ok: true };
   if (onCrew && from === a.actorId && to === null) return { ok: true };
   return { ok: false, code: CHECKLIST_CODES.OWNER_NOT_YOURS };
+}
+
+/**
+ * May this person reword or remove an item? Their own, a free one, or — as the
+ * leader or the office — anybody's. ⚠️ Without this the owner rule was one
+ * step deep: delete Conor's item, add it back as your own.
+ */
+export function mayEditChecklistItem(a: ChecklistAuthority, ownerId: string | null): ChecklistVerdict {
+  if (!ownerId || ownerId === a.actorId) return { ok: true };
+  if (a.isOffice || (a.leaderId !== null && a.leaderId === a.actorId)) return { ok: true };
+  return { ok: false, code: CHECKLIST_CODES.ITEM_NOT_YOURS };
 }
 
 /**

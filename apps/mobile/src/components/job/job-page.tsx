@@ -15,7 +15,7 @@ import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
 import { useImagePicker } from '../../hooks/useImagePicker';
 import { useResponsive } from '../../lib/responsive';
-import { oversees, holds } from '../../lib/permissions';
+import { oversees, holds, holdsIn } from '../../lib/permissions';
 import { getJobId } from '../../lib/utils';
 import { useConnectivity } from '../../offline/offline-context';
 import { OfflineBanner } from '../../offline/components/offline-banner';
@@ -539,7 +539,8 @@ export function JobPage({
             opensAtLabel={opensAt ? labelOf(opensAt) : null}
             meId={user?.id}
             crew={crew.view}
-            mayHandOut={crew.isLeader || canAssign}
+            // The server's rule (CrewService.checklistAuthority): leading it now, or "assign tasks" org-wide or in THIS job's space.
+            mayHandOut={crew.isLeader || holdsIn(user, 'canAssignTasks', task.space?.id)}
           />
         </TourTarget>
 

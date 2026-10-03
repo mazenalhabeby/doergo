@@ -140,7 +140,9 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   // but only the task lists were invalidated, so the portal inbox stayed stale and
   // an external customer's request sat unseen until someone reloaded (audit P-D1).
   [Events.TASK_CREATED]: [["tasks"], ["taskStatusCounts"], ["portalAllRequests"]],
-  [Events.TASK_UPDATED]: [["tasks"], ["taskStatusCounts"], ["portalAllRequests"]],
+  // `task` and `task-time`: the OPEN job too — its checklist, its crew, its time.
+  // Only queries in use refetch, so this is the one job on screen, not every job.
+  [Events.TASK_UPDATED]: [["tasks"], ["taskStatusCounts"], ["portalAllRequests"], ["task"], ["task-time"]],
   [Events.TASK_ASSIGNED]: [["tasks"], ["taskStatusCounts"]],
   [Events.TASK_STATUS_CHANGED]: [["tasks"], ["taskStatusCounts"], ["attendance-active"], ["locationAttendanceBatch"], ["portalAllRequests"]],
   [Events.TASK_COMMENT_ADDED]: [["tasks"]],

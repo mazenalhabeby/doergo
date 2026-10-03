@@ -3201,7 +3201,9 @@
       "CREW_JOB_NOT_STARTED": "The job is not under way.",
       "REASON_REQUIRED": "Say what stopped you.",
       "CHECKLIST_OWNER_NOT_ON_CREW": "Choose somebody on this job.",
-      "CHECKLIST_OWNER_NOT_YOURS": "Only the leader of this job, or the office, gives an item to somebody."
+      "CHECKLIST_OWNER_NOT_YOURS": "Only the leader of this job, or the office, gives an item to somebody.",
+      "CHECKLIST_CHANGED": "Somebody changed this item just now. Look again.",
+      "CHECKLIST_ITEM_NOT_YOURS": "Only the person it belongs to, the leader of this job, or the office changes this item."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",
@@ -3774,7 +3776,8 @@
       "crew_one": "The crew · {{count}}",
       "crew_other": "The crew · {{count}}",
       "ownerTitle": "Whose item is it?",
-      "nobody": "Nobody"
+      "nobody": "Nobody",
+      "giveBack": "Give back"
     },
     "fields": {
       "title": "Job fields",

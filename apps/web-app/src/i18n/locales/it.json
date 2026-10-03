@@ -1665,7 +1665,10 @@
       "doneBy": "{{name}} · {{time}}",
       "doneFor": "Di {{owner}} · fatto da {{name}} · {{time}}",
       "giveTo": "Assegna…",
-      "nobody": "Nessuno"
+      "nobody": "Nessuno",
+      "giveBack": "Restituisci",
+      "you": "Tu",
+      "takeIt": "Lo faccio io"
     },
     "dependencies": {
       "add": "Aggiungi dipendenza",

@@ -680,9 +680,14 @@ export class TasksController {
 
      A checklist lives on a task but is written through its own routes, so it can
      be refused without refusing the task.
+
+     ⚠️ @DenyExternal on every write: the checklist now records WHO did the work
+     (shared tasks/checklist.ts). An external supervisor or observer watches the
+     work; ticking it would put a client's name on our record of who did it.
   */
   @RequireModule('checklists')
   @Post(':id/checklist')
+  @DenyExternal()
   @ApiOperation({ summary: 'Add a checklist item to a task' })
   async addChecklistItem(
     @Param('id') id: string,
@@ -709,6 +714,7 @@ export class TasksController {
 
   @RequireModule('checklists')
   @Patch(':id/checklist/reorder')
+  @DenyExternal()
   @ApiOperation({ summary: 'Reorder checklist items' })
   async reorderChecklist(
     @Param('id') id: string,
@@ -735,6 +741,7 @@ export class TasksController {
 
   @RequireModule('checklists')
   @Patch(':id/checklist/:itemId')
+  @DenyExternal()
   @ApiOperation({ summary: 'Update a checklist item (text or toggle completion)' })
   async updateChecklistItem(
     @Param('id') id: string,
@@ -763,6 +770,7 @@ export class TasksController {
 
   @RequireModule('checklists')
   @Delete(':id/checklist/:itemId')
+  @DenyExternal()
   @ApiOperation({ summary: 'Delete a checklist item' })
   async deleteChecklistItem(
     @Param('id') id: string,
@@ -781,6 +789,8 @@ export class TasksController {
       // had just created themselves.
       viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
       canAssignTasks: req.user.canAssignTasks,
+      // Removing somebody else's item is judged on the resolved grants (shared mayEditChecklistItem).
+      access: req.user.access,
       organizationId: req.user.organizationId,
     });
   }

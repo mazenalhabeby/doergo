@@ -296,3 +296,37 @@ describe('CrewService.view', () => {
     expect(v.members.find((m: any) => m.user.id === 'conor')).toMatchObject({ joined: false });
   });
 });
+
+describe('CrewService.checklistAuthority — who may give a checklist item away', () => {
+  it('the leader, read from the job\'s own history', async () => {
+    const { service } = setup();
+    await expect(service.checklistAuthority('job1', actor('priya'))).resolves.toMatchObject({ isOffice: false, leaderId: 'tobias', crewIds: ['tobias', 'priya', 'conor'] });
+  });
+
+  it('a stand-in leads when the leader is off the clock', async () => {
+    const { service } = setup({
+      onClock: ['priya', 'conor'],
+      events: [{ taskId: 'job1', createdAt: T('08:00'), userId: 'priya', eventType: 'CREW_JOINED', metadata: { at: T('08:00').toISOString() } }],
+    });
+    await expect(service.checklistAuthority('job1', actor('conor'))).resolves.toMatchObject({ leaderId: 'priya' });
+  });
+
+  it('"assign tasks" in THIS job\'s workspace is the office; in another workspace it is not', async () => {
+    const here = { perSpace: { sp1: { canAssignTasks: true } } };
+    const elsewhere = { perSpace: { sp9: { canAssignTasks: true } } };
+    const { service } = setup();
+    await expect(service.checklistAuthority('job1', actor('mara', { access: here }))).resolves.toMatchObject({ isOffice: true });
+    await expect(service.checklistAuthority('job1', actor('priya', { access: elsewhere }))).resolves.toMatchObject({ isOffice: false });
+  });
+
+  it('the office skips the leader lookup — one crew read, no history read', async () => {
+    const { service, prisma } = setup();
+    await service.checklistAuthority('job1', actor('mara', { canAssignTasks: true }));
+    expect(prisma.taskEvent.findMany).not.toHaveBeenCalled();
+  });
+
+  it('another organization\'s job is not found', async () => {
+    const { service } = setup({ task: { organizationId: 'other' } });
+    await expect(service.checklistAuthority('job1', actor('priya'))).rejects.toBeInstanceOf(NotFoundException);
+  });
+});

@@ -3201,7 +3201,9 @@
       "CREW_JOB_NOT_STARTED": "Le travail n'est pas en cours.",
       "REASON_REQUIRED": "Dites ce qui vous arrête.",
       "CHECKLIST_OWNER_NOT_ON_CREW": "Choisissez quelqu’un de cette intervention.",
-      "CHECKLIST_OWNER_NOT_YOURS": "Seul le chef de cette intervention, ou le bureau, attribue un point."
+      "CHECKLIST_OWNER_NOT_YOURS": "Seul le chef de cette intervention, ou le bureau, attribue un point.",
+      "CHECKLIST_CHANGED": "Quelqu’un vient de modifier ce point. Regardez à nouveau.",
+      "CHECKLIST_ITEM_NOT_YOURS": "Seule la personne responsable, le chef de cette intervention ou le bureau modifie ce point."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",
@@ -3774,7 +3776,8 @@
       "crew_one": "L’équipe · {{count}}",
       "crew_other": "L’équipe · {{count}}",
       "ownerTitle": "À qui est ce point ?",
-      "nobody": "Personne"
+      "nobody": "Personne",
+      "giveBack": "Rendre"
     },
     "fields": {
       "title": "Champs de l’intervention",

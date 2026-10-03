@@ -15,4 +15,5 @@ DO $$ BEGIN
     FOREIGN KEY ("completedById") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE INDEX IF NOT EXISTS "checklist_items_assigneeId_isCompleted_idx" ON "checklist_items"("assigneeId", "isCompleted");
+CREATE INDEX IF NOT EXISTS "checklist_items_assigneeId_isCompleted_taskId_idx" ON "checklist_items"("assigneeId", "isCompleted", "taskId");
+CREATE INDEX IF NOT EXISTS "checklist_items_completedById_idx" ON "checklist_items"("completedById");

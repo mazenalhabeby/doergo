@@ -6,6 +6,7 @@ import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { useToast } from '../../island/island-context';
 import { tasksApi, type CrewView } from '../../lib/api';
+import { refusalText } from '../../lib/distance';
 import { AText, Well } from '../amazen';
 import { TickGlyph } from './job-glyphs';
 import { JobSheet, SectionLabel, SheetOption } from './job-ui';
@@ -59,12 +60,37 @@ export function JobChecklist({
   const [items, setItems] = useState<CheckItem[]>(() => fromServer);
   const [picking, setPicking] = useState<CheckItem | null>(null);
   const inFlight = useRef(0);
-  // The server's copy wins again once nothing is in flight — a socket refresh after a change converges here.
-  const key = fromServer.map((i) => `${i.id}:${i.isCompleted}:${i.assigneeId ?? ''}:${i.completedById ?? ''}`).join('|');
+  const latest = useRef(fromServer);
+  latest.current = fromServer;
+  const keyNow = useRef('');
+  /*
+    The server's copy wins again once nothing is in flight — a socket refresh
+    after somebody else's change converges here. ⚠️ Every field a screen shows
+    is in the key (a reworded or reordered item from the office reached nobody),
+    and a refresh that lands MID-change is applied when the change settles
+    rather than dropped.
+  */
+  const key = fromServer.map((i) => `${i.id}:${i.position}:${i.text}:${i.isCompleted}:${i.assigneeId ?? ''}:${i.completedById ?? ''}:${i.completedAt ?? ''}`).join('|');
+  keyNow.current = key;
   useEffect(() => {
     if (inFlight.current === 0) setItems(fromServer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
+  // The server copy the screen last took — a refresh that lands mid-change differs from it.
+  const taken = useRef(key);
+  useEffect(() => { if (inFlight.current === 0) taken.current = key; }, [key]);
+  const settle = () => {
+    inFlight.current -= 1;
+    /*
+      ⚠️ ONLY A NEWER SERVER COPY. Re-applying the props unconditionally put back
+      the copy from BEFORE this change (the page had not refetched yet) and the
+      item the member had just taken showed "Take it" again.
+    */
+    if (inFlight.current === 0 && taken.current !== keyNow.current) {
+      taken.current = keyNow.current;
+      setItems(latest.current);
+    }
+  };
 
   if (items.length === 0) return null;
   const members = crew?.members ?? [];
@@ -86,14 +112,16 @@ export function JobChecklist({
 
   const change = async (item: CheckItem, patch: Partial<CheckItem>, send: () => Promise<unknown>) => {
     inFlight.current += 1;
-    const ok = await patchOptimistic(item.id, patch, setItems, send);
-    inFlight.current -= 1;
-    if (!ok) toast.error(t('job.checklist.failed'));
+    // Keep the refusal: "somebody took it just now" is a different sentence from "no signal".
+    let refused: { code?: string; message?: string } = {};
+    const ok = await patchOptimistic(item.id, patch, setItems, () => send().catch((e) => { refused = e ?? {}; throw e; }));
+    settle();
+    if (!ok) toast.error(refusalText(t, refused, t('job.checklist.failed')));
   };
   const tick = async (item: CheckItem) => {
     inFlight.current += 1;
     const ok = await tickOptimistic(item.id, !item.isCompleted, setItems, () => tasksApi.toggleChecklistItem(taskId, item.id, !item.isCompleted));
-    inFlight.current -= 1;
+    settle();
     if (!ok) toast.error(t('job.checklist.failed'));
   };
   const giveTo = (item: CheckItem, userId: string | null) => {
@@ -102,9 +130,14 @@ export function JobChecklist({
   };
 
   const canTick = mode === 'tick';
+  /*
+    Has the owner LEFT the job — taken off the crew, or joined and gone again?
+    ⚠️ Not "not joined": before the crew arrives in the morning nobody has
+    joined, and every owned item read "has left" to the leader.
+  */
   const left = (userId: string) => {
     const m = members.find((x) => x.user.id === userId);
-    return !m || !m.joined;
+    return !m || (!m.joined && !!m.lastLeftAt);
   };
 
   const row = (item: CheckItem) => {
@@ -146,6 +179,12 @@ export function JobChecklist({
         </Pressable>
         {team && item.assigneeId && !mine ? (
           <OwnerTag label={firstName(item.assignee)} onPress={mayHandOut && canTick ? () => setPicking(item) : undefined} />
+        ) : team && mine && !on && canTick ? (
+          // My own item: the leader passes it on; a member gives it back (shared mayChangeChecklistOwner).
+          <OwnerTag
+            label={mayHandOut ? t('job.checklist.you') : t('job.checklist.giveBack')}
+            onPress={() => (mayHandOut ? setPicking(item) : giveTo(item, null))}
+          />
         ) : free && canTick && (onCrew || mayHandOut) ? (
           <OwnerTag
             label={mayHandOut ? t('job.checklist.giveTo') : t('job.checklist.takeIt')}
