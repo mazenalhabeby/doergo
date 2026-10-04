@@ -1,4 +1,4 @@
-import { parseAssignedHome, memberScopeFilter, cleanRateCents, normalizeLocale, MEMBER_EMAILS, MEMBER_NOTIFICATION_PREF_KEYS, orgAllowsEmail, pickBooleanPrefs } from '@hbcfield/shared';
+import { parseAssignedHome, memberScopeFilter, writeRateChange, RateChangeError, normalizeLocale, MEMBER_EMAILS, MEMBER_NOTIFICATION_PREF_KEYS, orgAllowsEmail, pickBooleanPrefs } from '@hbcfield/shared';
 import {
   Injectable,
   Logger,
@@ -739,12 +739,7 @@ export class UsersService implements OnApplicationBootstrap {
           shared — which is the only place the order of the four levels is
           written down.
         */
-        ...((dto as any).billRateCents !== undefined && {
-          billRateCents: cleanRateCents((dto as any).billRateCents),
-        }),
-        ...((dto as any).costRateCents !== undefined && {
-          costRateCents: cleanRateCents((dto as any).costRateCents),
-        }),
+        // Rates are written below through the ONE dated writer, never here.
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
         ...(dto.rating !== undefined && { rating: dto.rating }),
         ...(dto.ratingCount !== undefined && { ratingCount: dto.ratingCount }),
@@ -771,8 +766,42 @@ export class UsersService implements OnApplicationBootstrap {
         updatedAt: true,
       },
     });
+    await this.writeMemberRates(id, organizationId, dto as any);
 
     return { success: true, data: employee };
+  }
+
+  /**
+   * A member's own hourly rates, through the shared dated writer: a history
+   * row from the start day (default today), then the column set to whatever is
+   * in force today. Undefined leaves a rate alone; null clears it to inherit.
+   */
+  private async writeMemberRates(
+    userId: string,
+    organizationId: string,
+    dto: { billRateCents?: unknown; costRateCents?: unknown; rateEffectiveFrom?: string },
+  ) {
+    if (dto.billRateCents === undefined && dto.costRateCents === undefined) return;
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        const patch: Record<string, number | null> = {};
+        const write = (kind: 'BILL_HOUR' | 'COST_HOUR', cents: unknown) =>
+          writeRateChange(tx as any, {
+            organizationId,
+            target: 'MEMBER',
+            targetId: userId,
+            kind,
+            cents,
+            effectiveFrom: dto.rateEffectiveFrom,
+          });
+        if (dto.billRateCents !== undefined) patch.billRateCents = (await write('BILL_HOUR', dto.billRateCents)).nowCents;
+        if (dto.costRateCents !== undefined) patch.costRateCents = (await write('COST_HOUR', dto.costRateCents)).nowCents;
+        await tx.user.update({ where: { id: userId }, data: patch });
+      });
+    } catch (e) {
+      if (e instanceof RateChangeError) throw new BadRequestException(e.message);
+      throw e;
+    }
   }
 
   /**

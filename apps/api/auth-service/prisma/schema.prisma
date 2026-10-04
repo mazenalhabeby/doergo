@@ -525,6 +525,7 @@ model Organization {
   // Unified role model (Phase 1) — supersedes orgRoles + spaceRoles
   accessRoles      AccessRole[]
   spaceAssignments SpaceAssignment[]
+  rateHistory      RateHistory[]
 
   // Personnel file
   documentTypes     DocumentType[]
@@ -3129,6 +3130,44 @@ model ShiftInstance {
 // kept intact during migration and removed in Phase 5. Nothing reads these two
 // new tables yet — Phase 2 wires the resolver/guards.
 
+/// What a workspace role IS. A MANAGEMENT role carries permissions; a WORK
+/// role is a trade (Mechanic, Electrician) that carries how the person's work
+/// is billed and grants NOTHING — which is what lets a member hold one of each
+/// without the second one ever becoming a way to gain authority.
+enum RoleKind {
+  WORK
+  MANAGEMENT
+}
+
+/// How somebody's work is charged: by the hour, by the day, or both.
+enum BillBy {
+  HOUR
+  DAY
+  BOTH
+}
+
+/// Which record a dated rate belongs to.
+enum RateTarget {
+  ORGANIZATION
+  SPACE
+  MEMBER
+  ASSIGNMENT
+  ROLE
+}
+
+enum RateKind {
+  BILL_HOUR
+  COST_HOUR
+  BILL_DAY
+}
+
+/// What an invoice line is, beyond "a charge".
+enum InvoiceLineKind {
+  HOURS
+  DAYS
+  HEADING
+}
+
 enum RoleScope {
   ORG // applies org-wide (assigned on the member)
   SPACE // applies within a space (assigned on a space)
@@ -3160,11 +3199,19 @@ model AccessRole {
   //   canReconcileAttendance, canViewSpaceAttendance }
   permissions Json
 
+  /// WORK roles grant nothing (permissions are forced empty) and carry billing.
+  /// Every role that existed before work roles is MANAGEMENT, so nothing that
+  /// already grants authority changes meaning.
+  kind   RoleKind @default(MANAGEMENT)
+  /// WORK roles only: how holders are billed unless their assignment overrides.
+  billBy BillBy?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   members           User[] // org-wide holders (User.memberRoleId)
-  spaceAssignments  SpaceAssignment[] // per-space holders
+  spaceAssignments  SpaceAssignment[] @relation("AssignmentRole") // per-space holders (permissions)
+  workAssignments   SpaceAssignment[] @relation("AssignmentWorkRole") // per-space holders (trade)
   documentTemplates DocumentTemplate[] // contract templates bound to this role
   invitations       Invitation[] // invites pre-assigning this role
 
@@ -3188,7 +3235,16 @@ model SpaceAssignment {
   space   CompanyLocation @relation(fields: [spaceId], references: [id], onDelete: Cascade)
 
   roleId String?
-  role   AccessRole? @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  role   AccessRole? @relation("AssignmentRole", fields: [roleId], references: [id], onDelete: SetNull)
+
+  /// The member's TRADE in this workspace (a WORK role). Grants nothing — every
+  /// permission check keeps reading `roleId` alone, by design.
+  workRoleId String?
+  workRole   AccessRole? @relation("AssignmentWorkRole", fields: [workRoleId], references: [id], onDelete: SetNull)
+  /// May this member hold a work role AND a management role here at once?
+  allowSecondRole Boolean @default(false)
+  /// Overrides the work role's billBy for this member here. Null = as the role.
+  billBy BillBy?
 
   /// The negotiated rate for THIS member at THIS client — the top rung.
   ///
@@ -3237,7 +3293,39 @@ model SpaceAssignment {
   @@index([userId])
   @@index([organizationId])
   @@index([roleId])
+  @@index([workRoleId])
   @@map("space_assignments")
+}
+
+/// Every rate, as of the day it took effect.
+///
+/// ⚠️ A RATE CHANGE NEVER WRITES OVER THE PAST. Raising the Mechanic day rate on
+/// 1 November adds a row from that date; October's days are still priced at
+/// what applied in October, even on an invoice raised in December. The rate
+/// columns on the owning records are a mirror of the rate in force when it was
+/// last written, kept for the screens that show "the rate now".
+///
+/// `cents` NULL means "cleared — inherit from the next level" from that day.
+/// ROLE rows are per workspace (`spaceId`): a Mechanic costs what it costs at
+/// THIS client.
+model RateHistory {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  target   RateTarget
+  targetId String
+  spaceId  String?
+  kind     RateKind
+  cents    Int?
+  /// The first day this rate applies, a calendar date.
+  effectiveFrom DateTime @db.Date
+
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@index([organizationId, target, targetId, kind, effectiveFrom])
+  @@map("rate_history")
 }
 
 // Time-off request (vacation, sick day, personal leave)
@@ -4203,8 +4291,19 @@ model InvoiceItem {
   costRateCents Int?
   /// Hours this line was billed for, when it came from tracked work.
   billedHours   Float?
+  /// Days this line was billed for (a day = a day clocked in at the workspace).
+  billedDays    Float?
+  /// HOURS / DAYS for labour lines; HEADING for a work-role heading row, which
+  /// is priced at zero and only organizes the document. Null = an ordinary line.
+  lineKind      InvoiceLineKind?
+  /// DAYS lines: whose days, and the first and last day of the run. What stops
+  /// the same days being billed on a second invoice — the way `taskId` does for jobs.
+  workerId      String?
+  dayFrom       DateTime? @db.Date
+  dayTo         DateTime? @db.Date
 
   @@index([invoiceId])
+  @@index([workerId, dayFrom])
   @@map("invoice_items")
 }
 

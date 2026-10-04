@@ -39,6 +39,8 @@ export interface InvoicePdfItem {
   quantity: number
   unitPrice: number
   amount: number
+  /** HEADING = a work-role heading: one cell across the table, no figures. */
+  lineKind?: "HOURS" | "DAYS" | "HEADING" | null
 }
 
 export interface InvoicePdfData {
@@ -221,12 +223,20 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
   autoTable(doc, {
     startY: y,
     head: [[L.description, L.qty, L.unitPrice, L.amount]],
-    body: inv.items.map((it) => [
-      it.description,
-      formatDocumentQuantity(it.quantity, locale),
-      fmtMoney(it.unitPrice, inv.currency),
-      fmtMoney(it.amount, inv.currency),
-    ]),
+    body: inv.items.map((it) =>
+      it.lineKind === "HEADING"
+        ? [{
+            content: it.description.toUpperCase(),
+            colSpan: 4,
+            styles: { fontStyle: "bold" as const, fontSize: 7.5, textColor: [MUTED.r, MUTED.g, MUTED.b] as [number, number, number], fillColor: [248, 250, 252] as [number, number, number], cellPadding: { top: 3.5, bottom: 1.5, left: 2.5, right: 2.5 } },
+          }]
+        : [
+            it.description,
+            formatDocumentQuantity(it.quantity, locale),
+            fmtMoney(it.unitPrice, inv.currency),
+            fmtMoney(it.amount, inv.currency),
+          ],
+    ),
     theme: "grid",
     styles: { font: "helvetica", fontSize: 9, cellPadding: 2.5, textColor: [INK.r, INK.g, INK.b], lineColor: [LINE.r, LINE.g, LINE.b], lineWidth: 0.2 },
     headStyles: { fillColor: [ACCENT.r, ACCENT.g, ACCENT.b], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8.5 },

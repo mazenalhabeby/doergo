@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Request, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Put, Delete, Body, Param, Request, ForbiddenException, UseInterceptors } from '@nestjs/common';
+import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import {
   isAdmin,
@@ -7,7 +8,10 @@ import {
   permissionsFromOrgRole,
   type PermissionSet,
   type ResolvedAccess,
+  type BillByValue,
+  type RoleKindValue,
 } from '@hbcfield/shared';
+import { SetDayRateDto, UpdateMemberRateDto, UpdateMemberRolesDto } from './space-roles.dto';
 import { RequirePermission } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { SpaceRolesService } from './space-roles.service';
@@ -83,6 +87,7 @@ function assertMayGrant(user: any, rolePerms: unknown, spaceId?: string) {
 @ApiTags('space-roles')
 @ApiBearerAuth()
 @RequirePlan('shift_scheduling')
+@UseInterceptors(LabourCostInterceptor)
 @Controller()
 export class SpaceRolesController {
   constructor(private readonly service: SpaceRolesService) {}
@@ -99,11 +104,26 @@ export class SpaceRolesController {
   @ApiOperation({ summary: 'Create a space sub-role' })
   createRole(
     @Body()
-    body: { name: string; description?: string; color?: string; permissions?: PermissionSet },
+    body: {
+      name: string;
+      description?: string;
+      color?: string;
+      permissions?: PermissionSet;
+      kind?: RoleKindValue;
+      billBy?: BillByValue | null;
+    },
     @Request() req: any,
   ) {
     assertMayGrant(req.user, body.permissions);
-    return this.service.createRole({ ...body, organizationId: req.user.organizationId });
+    return this.service.createRole({
+      name: body.name,
+      description: body.description,
+      color: body.color,
+      permissions: body.permissions,
+      kind: body.kind,
+      billBy: body.billBy,
+      organizationId: req.user.organizationId,
+    });
   }
 
   @Patch('space-roles/:id')
@@ -118,12 +138,20 @@ export class SpaceRolesController {
       color?: string;
       permissions?: PermissionSet;
       isActive?: boolean;
+      kind?: RoleKindValue;
+      billBy?: BillByValue | null;
     },
     @Request() req: any,
   ) {
     if (body.permissions !== undefined) assertMayGrant(req.user, body.permissions);
     return this.service.updateRole({
-      ...body,
+      name: body.name,
+      description: body.description,
+      color: body.color,
+      permissions: body.permissions,
+      isActive: body.isActive,
+      kind: body.kind,
+      billBy: body.billBy,
       roleId,
       organizationId: req.user.organizationId,
       // The ceiling also applies to what the role ALREADY grants: editing a role
@@ -148,7 +176,70 @@ export class SpaceRolesController {
   @ApiOperation({ summary: 'List members of a space with their roles + routing' })
   listMembers(@Param('spaceId') spaceId: string, @Request() req: any) {
     assertCanManageSpace(req.user, spaceId);
+    // ⚠️ Cost rates are stripped by LabourCostInterceptor for anyone without
+    // canViewLabourCost: managing a workspace's people is not the same as being
+    // allowed to see what their hours cost the company.
     return this.service.listMembers({ spaceId, organizationId: req.user.organizationId });
+  }
+
+  /**
+   * The roles as THIS workspace sees them: who holds each one here, and each
+   * work role's day rate here — now, scheduled and past.
+   */
+  @Get('spaces/:spaceId/roles')
+  @ApiOperation({ summary: 'Roles in a workspace: holders here, and work roles\' day rates here' })
+  listSpaceRoles(@Param('spaceId') spaceId: string, @Request() req: any) {
+    assertCanManageSpace(req.user, spaceId);
+    return this.service.listSpaceRoles({ spaceId, organizationId: req.user.organizationId });
+  }
+
+  /**
+   * A work role's day rate in this workspace, from a day.
+   *
+   * ⚠️ Never written over: every day already worked keeps the rate it was
+   * worked at. `canManageSpace`, like the hourly rate per member — it is a term
+   * of the agreement with THIS client.
+   */
+  @Put('spaces/:spaceId/roles/:roleId/day-rate')
+  @ApiOperation({ summary: 'Set (or schedule) a work role\'s day rate in this workspace' })
+  setRoleDayRate(
+    @Param('spaceId') spaceId: string,
+    @Param('roleId') roleId: string,
+    @Body() body: SetDayRateDto,
+    @Request() req: any,
+  ) {
+    assertCanManageSpace(req.user, spaceId);
+    return this.service.setRoleDayRate({
+      spaceId,
+      roleId,
+      cents: body.cents,
+      effectiveFrom: body.effectiveFrom,
+      organizationId: req.user.organizationId,
+      createdById: req.user.id,
+    });
+  }
+
+  /** A member's trade, management role, two-role switch and billing here. */
+  @Patch('spaces/:spaceId/members/:memberId/roles')
+  @ApiOperation({ summary: 'Set a member\'s work role, management role and billing in this workspace' })
+  updateMemberRoles(
+    @Param('spaceId') spaceId: string,
+    @Param('memberId') memberId: string,
+    @Body() body: UpdateMemberRolesDto,
+    @Request() req: any,
+  ) {
+    assertCanManageSpace(req.user, spaceId);
+    return this.service.updateMemberRoles({
+      spaceId,
+      memberId,
+      organizationId: req.user.organizationId,
+      workRoleId: body.workRoleId,
+      managementRoleId: body.managementRoleId,
+      allowSecondRole: body.allowSecondRole,
+      billBy: body.billBy,
+      // The management role is authority: same ceiling as assigning one.
+      requesterPerms: isAdmin(req.user) ? null : actorPermsForSpace(req.user, spaceId),
+    });
   }
 
   @Post('spaces/:spaceId/members')
@@ -222,21 +313,24 @@ export class SpaceRolesController {
   updateMemberRate(
     @Param('spaceId') spaceId: string,
     @Param('memberId') memberId: string,
-    @Body() body: { billRateCents?: number | null; costRateCents?: number | null },
+    @Body() body: UpdateMemberRateDto,
     @Request() req: any,
   ) {
     assertCanManageSpace(req.user, spaceId);
+    // A cost from somebody who may not see costs is refused by LabourCostInterceptor.
     return this.service.updateMemberRate({
       spaceId,
       memberId,
       organizationId: req.user.organizationId,
+      effectiveFrom: body.effectiveFrom,
+      createdById: req.user.id,
       billRateCents: body.billRateCents,
       /*
         ⚠️ A per-client COST is only accepted from somebody who may see costs at
         all. It is rare and real — a contractor who charges more for one site —
         but writing it must not be a way to learn it.
       */
-      costRateCents: req.user?.canViewLabourCost === true ? body.costRateCents : undefined,
+      costRateCents: body.costRateCents,
     });
   }
 }

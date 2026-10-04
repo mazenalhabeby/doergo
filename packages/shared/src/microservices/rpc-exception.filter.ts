@@ -28,7 +28,21 @@ export class RpcHttpExceptionFilter implements RpcExceptionFilter {
         typeof res === 'string'
           ? res
           : ((res as { message?: unknown })?.message ?? exception.message);
-      return throwError(() => ({ status, statusCode: status, message }));
+      /*
+        A refusal's machine-readable code (and its parameters) travel with it,
+        for 4xx only — the gateway renders them, and a client translates the
+        refusal instead of showing the English sentence. A 5xx never carries
+        either, so this cannot become a channel for internal detail.
+      */
+      const body = typeof res === 'object' && res ? (res as { code?: unknown; params?: unknown }) : {};
+      const extra =
+        status < 500
+          ? {
+              ...(typeof body.code === 'string' ? { code: body.code } : {}),
+              ...(body.params && typeof body.params === 'object' ? { params: body.params } : {}),
+            }
+          : {};
+      return throwError(() => ({ status, statusCode: status, message, ...extra }));
     }
 
     if (exception instanceof RpcException) {

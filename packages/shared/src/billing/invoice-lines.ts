@@ -50,9 +50,55 @@ export interface LabourEntry {
   workerId?: string | null;
   workerName?: string | null;
   hours: number;
-  /** Resolved through the rate ladder. Null means no rate applies. */
+  /** Resolved through the rate ladder ON THE DAY the work was done. Null means no rate applies. */
   billRateCents: number | null;
   costRateCents: number | null;
+  /** The worker's trade in this workspace, when they have one. */
+  workRoleId?: string | null;
+  workRoleName?: string | null;
+  /**
+   * False when this worker is billed by the DAY only: the job is still listed
+   * (and so marked billed — it must not come back on next month's invoice) but
+   * its hours are not charged, because the days already pay for them.
+   */
+  hoursBillable?: boolean;
+}
+
+/**
+ * Days worked at the workspace, at ONE day rate.
+ *
+ * A person whose day rate changed inside the period arrives as two of these —
+ * "7 days at $200" and "4 days at $220" — never as an average.
+ */
+export interface DayEntry {
+  workerId: string;
+  workerName: string;
+  workRoleId?: string | null;
+  workRoleName?: string | null;
+  days: number;
+  /** First and last day of this run, `YYYY-MM-DD`. */
+  fromDay: string;
+  toDay: string;
+  dayRateCents: number | null;
+}
+
+export interface LabourLineOptions {
+  /** Days worked, priced per day. Empty or absent = nobody is billed by the day. */
+  days?: DayEntry[];
+  /**
+   * Put the lines under a heading per work role (Mechanic, Electrician).
+   * Off: one list, and each worker's line names their role at the end instead.
+   */
+  groupByRole?: boolean;
+  /** The heading for people with no work role, when others have one. */
+  noRoleLabel?: string;
+  /**
+   * How a run of days reads — the caller's, because this module does not speak
+   * the reader's language or format their dates. `split` is true when the same
+   * person has more than one run (a rate changed), which is when the dates
+   * matter.
+   */
+  describeDays?: (entry: DayEntry, split: boolean) => string;
 }
 
 export interface LabourLine {
@@ -75,6 +121,17 @@ export interface LabourLine {
   billRateCents: number | null;
   costRateCents: number | null;
   billedHours: number | null;
+  /** Days, on a DAYS line. */
+  billedDays: number | null;
+  /**
+   * HOURS / DAYS for a charged labour line, HEADING for a work-role heading
+   * (priced at zero, only organizes the page), null for a listed job.
+   */
+  kind: 'HOURS' | 'DAYS' | 'HEADING' | null;
+  /** DAYS lines: whose days and which run, recorded so they are never billed twice. */
+  workerId: string | null;
+  dayFrom: string | null;
+  dayTo: string | null;
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -121,85 +178,262 @@ function byWorker(entries: LabourEntry[]): Map<string, LabourEntry[]> {
   return out;
 }
 
+/** The default wording of a run of days, for callers that do not supply one. */
+function defaultDescribeDays(d: DayEntry, split: boolean): string {
+  const n = `${d.days} day${d.days === 1 ? '' : 's'}`;
+  return split ? `${d.workerName} · ${n} worked, ${d.fromDay} – ${d.toDay}` : `${d.workerName} · ${n} worked`;
+}
+
+const withRole = (text: string, role: string | null | undefined) => (role ? `${text} · ${role}` : text);
+
+/** One charged line for a worker's hours at one rate. */
+function hoursLine(bucket: LabourEntry[], name: string, roleSuffix: string | null): LabourLine {
+  const hours = bucket.reduce((s, e) => s + (e.hours > 0 ? e.hours : 0), 0);
+  const rate = bucket[0]!.billRateCents;
+  /*
+    ⚠️ The hours are summed, THEN rounded, and the money follows the rounded
+    figure — so this line multiplies out exactly as printed.
+
+    It also means the three groupings can land a cent or two apart on awkward
+    hours, and that is the right trade. A total that differs by 2c between two
+    layouts is invisible to everyone; a LINE that does not multiply out is
+    found by the first customer with a calculator. The document a person
+    checks has to be internally true before two documents have to agree.
+  */
+  return {
+    description: withRole(`${name} · ${hoursLabel(hours)}`, roleSuffix),
+    quantity: round2(hours),
+    unitPriceCents: rate ?? 0,
+    amountCents: amountCentsOf(hours, rate),
+    descriptive: false,
+    taskId: null,
+    reportId: null,
+    billRateCents: rate,
+    costRateCents: bucket[0]!.costRateCents,
+    billedHours: round2(hours),
+    billedDays: null,
+    kind: 'HOURS',
+    workerId: null,
+    dayFrom: null,
+    dayTo: null,
+  };
+}
+
+/** One job, charged on its own (BY JOB). */
+function jobLine(e: LabourEntry, roleSuffix: string | null): LabourLine {
+  return {
+    description: withRole(`${e.taskTitle}${e.workerName ? ` — ${e.workerName}` : ''} · ${hoursLabel(e.hours)}`, roleSuffix),
+    quantity: round2(e.hours),
+    unitPriceCents: e.billRateCents ?? 0,
+    amountCents: amountCentsOf(e.hours, e.billRateCents),
+    descriptive: false,
+    taskId: e.taskId,
+    reportId: e.reportId ?? null,
+    billRateCents: e.billRateCents,
+    costRateCents: e.costRateCents,
+    billedHours: round2(e.hours),
+    billedDays: null,
+    kind: 'HOURS',
+    workerId: null,
+    dayFrom: null,
+    dayTo: null,
+  };
+}
+
+/**
+ * One job, listed and NOT charged — under a per-person line, or under somebody
+ * billed by the day. The client sees what was done; charging it too would bill
+ * the same work twice, which is why `descriptive` exists rather than a comment
+ * asking the next person to remember.
+ */
+function listedJob(e: LabourEntry): LabourLine {
+  return {
+    description: `${e.taskTitle} — ${hoursLabel(e.hours)}`,
+    quantity: 1,
+    unitPriceCents: 0,
+    amountCents: 0,
+    descriptive: true,
+    taskId: e.taskId,
+    reportId: e.reportId ?? null,
+    billRateCents: null,
+    costRateCents: null,
+    billedHours: null,
+    billedDays: null,
+    kind: null,
+    workerId: null,
+    dayFrom: null,
+    dayTo: null,
+  };
+}
+
+function dayLine(d: DayEntry, text: string): LabourLine {
+  return {
+    description: text,
+    quantity: d.days,
+    unitPriceCents: d.dayRateCents ?? 0,
+    amountCents: d.dayRateCents === null ? 0 : d.dayRateCents * d.days,
+    descriptive: false,
+    taskId: null,
+    reportId: null,
+    billRateCents: d.dayRateCents,
+    costRateCents: null,
+    billedHours: null,
+    billedDays: d.days,
+    kind: 'DAYS',
+    workerId: d.workerId,
+    dayFrom: d.fromDay,
+    dayTo: d.toDay,
+  };
+}
+
+function headingLine(text: string): LabourLine {
+  return {
+    description: text,
+    quantity: 0,
+    unitPriceCents: 0,
+    amountCents: 0,
+    descriptive: true,
+    taskId: null,
+    reportId: null,
+    billRateCents: null,
+    costRateCents: null,
+    billedHours: null,
+    billedDays: null,
+    kind: 'HEADING',
+    workerId: null,
+    dayFrom: null,
+    dayTo: null,
+  };
+}
+
+const workerKey = (id: string | null | undefined, name: string | null | undefined) => id ?? name ?? 'unassigned';
+
+/** The lines of ONE block of workers (a role's, or everybody's). */
+function blockLines(
+  entries: LabourEntry[],
+  days: DayEntry[],
+  grouping: LabourGrouping,
+  unassignedLabel: string,
+  roleSuffixOf: (e: { workRoleName?: string | null }) => string | null,
+  describe: (d: DayEntry, split: boolean) => string,
+): LabourLine[] {
+  const charged = entries.filter((e) => e.hoursBillable !== false);
+  const listedOnly = entries.filter((e) => e.hoursBillable === false);
+
+  // Runs per worker, so a person's dates show only when their rate changed.
+  const runsOf = new Map<string, DayEntry[]>();
+  for (const d of days) {
+    const k = workerKey(d.workerId, d.workerName);
+    const list = runsOf.get(k);
+    if (list) list.push(d);
+    else runsOf.set(k, [d]);
+  }
+  const daysFor = (k: string): LabourLine[] => {
+    const runs = runsOf.get(k) ?? [];
+    runsOf.delete(k);
+    return runs.map((d) => dayLine(d, withRole(describe(d, runs.length > 1), roleSuffixOf(d))));
+  };
+  const listedFor = (k: string) =>
+    listedOnly.filter((e) => workerKey(e.workerId, e.workerName) === k).map(listedJob);
+
+  const lines: LabourLine[] = [];
+  const seen = new Set<string>();
+
+  if (grouping === 'task') {
+    for (const e of charged) lines.push(jobLine(e, roleSuffixOf(e)));
+    // Days after the jobs; a day-billed worker's jobs are listed under their days.
+    for (const e of [...charged, ...listedOnly]) seen.add(workerKey(e.workerId, e.workerName));
+    for (const k of seen) {
+      lines.push(...daysFor(k));
+      lines.push(...listedFor(k));
+    }
+  } else {
+    // Each worker's rate buckets together, in order of first appearance.
+    const byPerson = new Map<string, LabourEntry[][]>();
+    for (const bucket of byWorker(charged).values()) {
+      const k = workerKey(bucket[0]!.workerId, bucket[0]!.workerName);
+      const list = byPerson.get(k);
+      if (list) list.push(bucket);
+      else byPerson.set(k, [bucket]);
+    }
+    for (const [k, buckets] of byPerson) {
+      for (const bucket of buckets) {
+        lines.push(hoursLine(bucket, bucket[0]!.workerName || unassignedLabel, roleSuffixOf(bucket[0]!)));
+        if (grouping === 'both') for (const e of bucket) lines.push(listedJob(e));
+      }
+      // A person's days sit right under their hours.
+      lines.push(...daysFor(k));
+      lines.push(...listedFor(k));
+      seen.add(k);
+    }
+    for (const e of listedOnly) {
+      const k = workerKey(e.workerId, e.workerName);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      lines.push(...daysFor(k));
+      lines.push(...listedFor(k));
+    }
+  }
+  // Anyone billed by the day who finished no job in the period still worked.
+  for (const k of [...runsOf.keys()]) lines.push(...daysFor(k));
+  return lines;
+}
+
 /**
  * Write the work up.
  *
  * @param unassignedLabel what to call work with no worker on it — the caller's,
  *                        because this module does not speak the user's language.
+ * @param options         days worked and the role grouping; absent, this is
+ *                        exactly the invoice it always was.
  */
 export function buildLabourLines(
   entries: LabourEntry[],
   grouping: LabourGrouping,
   unassignedLabel = 'Unassigned',
+  options: LabourLineOptions = {},
 ): LabourLine[] {
   const usable = entries.filter((e) => e && Number.isFinite(e.hours));
+  const days = (options.days ?? []).filter((d) => d && d.days > 0);
+  const describe = options.describeDays ?? defaultDescribeDays;
+  const anyRole = usable.some((e) => e.workRoleId) || days.some((d) => d.workRoleId);
 
-  if (grouping === 'task') {
-    return usable.map((e) => ({
-      description: `${e.taskTitle}${e.workerName ? ` — ${e.workerName}` : ''} · ${hoursLabel(e.hours)}`,
-      quantity: round2(e.hours),
-      unitPriceCents: e.billRateCents ?? 0,
-      amountCents: amountCentsOf(e.hours, e.billRateCents),
-      descriptive: false,
-      taskId: e.taskId,
-      reportId: e.reportId ?? null,
-      billRateCents: e.billRateCents,
-      costRateCents: e.costRateCents,
-      billedHours: round2(e.hours),
-    }));
+  if (!options.groupByRole || !anyRole) {
+    // One list. Where people have trades, each worker's line names it.
+    const suffix = anyRole ? (e: { workRoleName?: string | null }) => e.workRoleName ?? null : () => null;
+    return blockLines(usable, days, grouping, unassignedLabel, suffix, describe);
   }
 
+  /*
+    A heading per work role, named roles alphabetically, then the people with
+    no trade. The heading is a zero-priced line: it organizes the page and can
+    never change what it adds up to.
+  */
+  const roleKey = (r: { workRoleId?: string | null }) => r.workRoleId ?? '';
+  const names = new Map<string, string>();
+  for (const r of [...usable, ...days]) {
+    const k = roleKey(r);
+    if (!names.has(k)) names.set(k, r.workRoleName || options.noRoleLabel || 'Other');
+  }
+  const order = [...names.keys()].sort((a, b) => {
+    if (!a) return 1;
+    if (!b) return -1;
+    return names.get(a)!.localeCompare(names.get(b)!);
+  });
+
   const lines: LabourLine[] = [];
-  for (const bucket of byWorker(usable).values()) {
-    const hours = bucket.reduce((s, e) => s + (e.hours > 0 ? e.hours : 0), 0);
-    const rate = bucket[0]!.billRateCents;
-    const name = bucket[0]!.workerName || unassignedLabel;
-
-    /*
-      ⚠️ The hours are summed, THEN rounded, and the money follows the rounded
-      figure — so this line multiplies out exactly as printed.
-
-      It also means the three groupings can land a cent or two apart on awkward
-      hours, and that is the right trade. A total that differs by 2c between two
-      layouts is invisible to everyone; a LINE that does not multiply out is
-      found by the first customer with a calculator. The document a person
-      checks has to be internally true before two documents have to agree.
-    */
-    lines.push({
-      description: `${name} · ${hoursLabel(hours)}`,
-      quantity: round2(hours),
-      unitPriceCents: rate ?? 0,
-      amountCents: amountCentsOf(hours, rate),
-      descriptive: false,
-      taskId: null,
-      reportId: null,
-      billRateCents: rate,
-      costRateCents: bucket[0]!.costRateCents,
-      billedHours: round2(hours),
-    });
-
-    if (grouping === 'both') {
-      /*
-        The jobs, listed and NOT charged. The client sees what was done; the
-        hours above are what they pay for. Charging these too would bill the
-        same work twice, which is why `descriptive` exists rather than a
-        comment asking the next person to remember.
-      */
-      for (const e of bucket) {
-        lines.push({
-          description: `${e.taskTitle} — ${hoursLabel(e.hours)}`,
-          quantity: 1,
-          unitPriceCents: 0,
-          amountCents: 0,
-          descriptive: true,
-          taskId: e.taskId,
-          reportId: e.reportId ?? null,
-          billRateCents: null,
-          costRateCents: null,
-          billedHours: null,
-        });
-      }
-    }
+  for (const k of order) {
+    lines.push(headingLine(names.get(k)!));
+    lines.push(
+      ...blockLines(
+        usable.filter((e) => roleKey(e) === k),
+        days.filter((d) => roleKey(d) === k),
+        grouping,
+        unassignedLabel,
+        () => null,
+        describe,
+      ),
+    );
   }
   return lines;
 }
@@ -214,4 +448,9 @@ export function buildLabourLines(
  */
 export function labourTotalCents(lines: LabourLine[]): number {
   return lines.reduce((sum, l) => sum + (l.descriptive ? 0 : l.amountCents), 0);
+}
+
+/** Day entries' total, for the summary above the lines. */
+export function daysTotal(days: DayEntry[]): number {
+  return days.reduce((s, d) => s + (d.days > 0 ? d.days : 0), 0);
 }

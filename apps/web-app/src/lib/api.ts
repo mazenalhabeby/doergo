@@ -37,6 +37,8 @@ import type {
   Shift,
   ShiftAssignment,
   SpaceRole,
+  SpaceRoleInSpace,
+  DayEntry,
   SpaceMember,
   PermissionSet,
   GeofenceExcursion,
@@ -5076,14 +5078,29 @@ export const spaceRolesApi = {
     if (res.error) throw new Error(res.error);
     return res.data?.data || [];
   },
-  create: async (data: { name: string; description?: string; color?: string; permissions?: PermissionSet }) => {
+  /** The roles as ONE workspace sees them: holders here, and work roles' day rates here. */
+  listInSpace: async (spaceId: string) => {
+    const res = await api.get<{ success: boolean; data: SpaceRoleInSpace[] }>(`/spaces/${spaceId}/roles`);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data || [];
+  },
+  /**
+   * A work role's day rate in one workspace, from a day. Earlier days keep the
+   * rate they were worked at — nothing is written over.
+   */
+  setDayRate: async (spaceId: string, roleId: string, data: { cents: number | null; effectiveFrom?: string }) => {
+    const res = await api.put<{ success: boolean; data: unknown }>(`/spaces/${spaceId}/roles/${roleId}/day-rate`, data);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data;
+  },
+  create: async (data: { name: string; description?: string; color?: string; permissions?: PermissionSet; kind?: 'WORK' | 'MANAGEMENT'; billBy?: 'HOUR' | 'DAY' | 'BOTH' | null }) => {
     const res = await api.post<{ success: boolean; data: SpaceRole }>('/space-roles', data);
     if (res.error) throw new Error(res.error);
     return res.data?.data;
   },
   update: async (
     id: string,
-    data: { name?: string; description?: string; color?: string; permissions?: PermissionSet; isActive?: boolean },
+    data: { name?: string; description?: string; color?: string; permissions?: PermissionSet; isActive?: boolean; kind?: 'WORK' | 'MANAGEMENT'; billBy?: 'HOUR' | 'DAY' | 'BOTH' | null },
   ) => {
     const res = await api.patch<{ success: boolean; data: SpaceRole }>(`/space-roles/${id}`, data);
     if (res.error) throw new Error(res.error);
@@ -5127,6 +5144,24 @@ export const spaceMembersApi = {
     const res = await api.patch<{ success: boolean; data: unknown }>(
       `/spaces/${spaceId}/members/${memberId}/rate`, data,
     );
+    if (res.error) throw new Error(res.error);
+    return res.data?.data;
+  },
+  /**
+   * A member's roles and billing here. Undefined leaves a field alone; null
+   * clears it. The management role is checked against the caller's own grants.
+   */
+  updateRoles: async (
+    spaceId: string,
+    memberId: string,
+    data: {
+      workRoleId?: string | null
+      managementRoleId?: string | null
+      allowSecondRole?: boolean
+      billBy?: 'HOUR' | 'DAY' | 'BOTH' | null
+    },
+  ) => {
+    const res = await api.patch<{ success: boolean; data: SpaceMember }>(`/spaces/${spaceId}/members/${memberId}/roles`, data);
     if (res.error) throw new Error(res.error);
     return res.data?.data;
   },
@@ -5892,6 +5927,13 @@ export interface InvoiceItem {
   /** Set when the line came from a task or its service report. */
   taskId?: string | null;
   reportId?: string | null;
+  /** HOURS / DAYS for labour, HEADING for a work-role heading (priced at zero). */
+  lineKind?: 'HOURS' | 'DAYS' | 'HEADING' | null;
+  billedDays?: number | null;
+  /** DAYS lines: whose days, and the run — what stops them being billed twice. */
+  workerId?: string | null;
+  dayFrom?: string | null;
+  dayTo?: string | null;
   createdAt: string;
 }
 
@@ -5978,6 +6020,11 @@ export interface InvoiceItemInput {
   billRateCents?: number | null;
   costRateCents?: number | null;
   billedHours?: number | null;
+  billedDays?: number | null;
+  lineKind?: 'HOURS' | 'DAYS' | 'HEADING' | null;
+  workerId?: string | null;
+  dayFrom?: string | null;
+  dayTo?: string | null;
 }
 
 /** A part fitted during a job, priced for the invoice. */
@@ -6005,6 +6052,11 @@ interface InvoiceGatherEntry {
   notes?: string | null;
   parts: InvoiceGatherPart[];
   hasReport: boolean;
+  /** The worker's trade here, when they have one. */
+  workRoleId?: string | null;
+  workRoleName?: string | null;
+  /** False when billed by the DAY only: the job is listed, the days are charged. */
+  hoursBillable?: boolean;
 }
 
 /**
@@ -6040,6 +6092,10 @@ interface InvoiceGatherResult {
    */
   twoRates?: boolean;
   workEntries: InvoiceGatherEntry[];
+  /** The workspace's zone — day keys below are calendar days there. */
+  timezone?: string;
+  /** Days worked by people billed by the day, split wherever the day rate changed. */
+  dayEntries?: DayEntry[];
 }
 
 export const invoicesApi = {

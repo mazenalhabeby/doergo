@@ -11,7 +11,9 @@ import {
   UseGuards,
   BadRequestException,
   ForbiddenException,
+  UseInterceptors,
 } from '@nestjs/common';
+import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
 import { ClientProxy } from '@nestjs/microservices';
 import {
   ApiTags,
@@ -36,6 +38,7 @@ import {
 
 @ApiTags('employees')
 @ApiBearerAuth()
+@UseInterceptors(LabourCostInterceptor)
 @Controller('employees')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class EmployeesController {

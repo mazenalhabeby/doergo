@@ -14,7 +14,7 @@ import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_N
 } from '@hbcfield/shared';
 import { isGeofencePolicy,
   isNoShiftPolicy,
-  clampDailyMinutes, validateMinCover, cleanRateCents } from '@hbcfield/shared';
+  clampDailyMinutes, validateMinCover, writeRateChange, RateChangeError } from '@hbcfield/shared';
 
 // tz-lookup: offline coords → IANA timezone (no types pkg).
 const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
@@ -127,12 +127,12 @@ export class LocationsService {
         contactName: data.contactName ?? undefined,
         contactEmail: data.contactEmail ?? undefined,
         contactPhone: data.contactPhone ?? undefined,
-        billableRateCents: cleanRateCents(data.billableRateCents),
-        costRateCents: cleanRateCents(data.costRateCents),
         organizationId: data.organizationId,
         isDefault: existingDefault === 0,
       },
     });
+    // Rates go through the ONE dated writer, so a new workspace starts with history.
+    await this.writeSpaceRates(location.id, data.organizationId, data, data.userId);
 
     this.logger.log(`Company location created: ${location.id}`);
     this.announce('space_changed', data.organizationId, location.id);
@@ -399,6 +399,7 @@ export class LocationsService {
     contactPhone?: string;
     billableRateCents?: number | null;
     costRateCents?: number | null;
+    rateEffectiveFrom?: string;
     notifyRoleIds?: string[];
     contactRoleIds?: string[];
   }) {
@@ -470,11 +471,12 @@ export class LocationsService {
     if (data.contactName !== undefined) updateData.contactName = data.contactName || null;
     if (data.contactEmail !== undefined) updateData.contactEmail = data.contactEmail || null;
     if (data.contactPhone !== undefined) updateData.contactPhone = data.contactPhone || null;
-    if (data.billableRateCents !== undefined)
-      updateData.billableRateCents =
-        data.billableRateCents != null && data.billableRateCents > 0
-          ? Math.round(data.billableRateCents)
-          : null;
+    /*
+      Rates are NOT written here: they go through `writeSpaceRates` below — a
+      dated history row and then the column — so a change never re-prices work
+      already done. (This used to turn a typed 0 into "inherit"; zero is a real
+      rate, and the shared cleaner keeps it.)
+    */
     // Space-driven routing (Phase 3): which roles are notified about / contactable
     // by members here. Whitelist to string arrays (fail closed).
     if (Array.isArray(data.notifyRoleIds)) {
@@ -492,14 +494,53 @@ export class LocationsService {
       if (derived) updateData.timezone = derived;
     }
 
-    const location = await this.prisma.companyLocation.update({
+    await this.prisma.companyLocation.update({
       where: { id: data.id },
       data: updateData,
     });
+    await this.writeSpaceRates(data.id, data.organizationId, data, data.userId);
+    const location = await this.prisma.companyLocation.findUniqueOrThrow({ where: { id: data.id } });
 
     this.logger.log(`Company location updated: ${location.id}`);
     this.announce('space_changed', data.organizationId, location.id);
     return success(location, 'Company location updated successfully');
+  }
+
+  /**
+   * A workspace's hourly rates, through the shared dated writer.
+   *
+   * Undefined leaves a rate alone; null clears it back to "inherit". Each one
+   * written is a history row from `rateEffectiveFrom` (default today) and then
+   * the column set to whatever is in force today — in one transaction.
+   */
+  private async writeSpaceRates(
+    spaceId: string,
+    organizationId: string,
+    data: { billableRateCents?: number | null; costRateCents?: number | null; rateEffectiveFrom?: string },
+    createdById?: string,
+  ) {
+    if (data.billableRateCents === undefined && data.costRateCents === undefined) return;
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        const patch: Record<string, number | null> = {};
+        const write = (kind: 'BILL_HOUR' | 'COST_HOUR', cents: number | null | undefined) =>
+          writeRateChange(tx as any, {
+            organizationId,
+            target: 'SPACE',
+            targetId: spaceId,
+            kind,
+            cents,
+            effectiveFrom: data.rateEffectiveFrom,
+            createdById: createdById ?? null,
+          });
+        if (data.billableRateCents !== undefined) patch.billableRateCents = (await write('BILL_HOUR', data.billableRateCents)).nowCents;
+        if (data.costRateCents !== undefined) patch.costRateCents = (await write('COST_HOUR', data.costRateCents)).nowCents;
+        await tx.companyLocation.update({ where: { id: spaceId }, data: patch });
+      });
+    } catch (e) {
+      if (e instanceof RateChangeError) throw new BadRequestException(e.message);
+      throw e;
+    }
   }
 
   /**

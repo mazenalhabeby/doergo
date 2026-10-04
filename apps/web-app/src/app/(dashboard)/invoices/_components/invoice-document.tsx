@@ -37,7 +37,15 @@ export interface DocumentRow {
    */
   descriptive?: boolean
   taskId?: string | null
+  /**
+   * HEADING = a work-role heading ("Mechanic"): spans the row, carries no
+   * figures and charges nothing. It organizes the page; it can never change
+   * what the page adds up to.
+   */
+  lineKind?: "HOURS" | "DAYS" | "HEADING" | null
 }
+
+const isHeading = (row: DocumentRow) => row.lineKind === "HEADING"
 
 export type DocumentView = "build" | "client"
 
@@ -205,7 +213,13 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
                 </tr>
               </thead>
               <tbody>
-                {items.map((row, i) => (
+                {items.map((row, i) => isHeading(row) ? (
+                  <tr key={`h-${i}`} className="border-b border-border">
+                    <td colSpan={4} className="bg-muted/40 px-5 pb-1.5 pt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground sm:px-7">
+                      {row.description}
+                    </td>
+                  </tr>
+                ) : (
                   <tr
                     key={`${row.taskId ?? "line"}-${i}`}
                     className={cn("border-b border-border/50 last:border-0", row.descriptive && "text-muted-foreground")}
@@ -371,7 +385,13 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((row, i) => (
+                  {items.map((row, i) => isHeading(row) ? (
+                    <tr key={`ch-${i}`} className="border-b border-border">
+                      <td colSpan={4} className="pb-1.5 pt-4 text-[10.5px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                        {row.description}
+                      </td>
+                    </tr>
+                  ) : (
                     <tr
                       key={`c-${row.taskId ?? "line"}-${i}`}
                       className={cn("border-b border-border/50 last:border-0", row.descriptive && "text-muted-foreground")}

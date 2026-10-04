@@ -1,3 +1,4 @@
+import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
 import {
   Controller,
   Get,
@@ -10,6 +11,7 @@ import {
   Request,
   Inject,
   ForbiddenException,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -33,6 +35,7 @@ import {
 
 @ApiTags('locations')
 @ApiBearerAuth()
+@UseInterceptors(LabourCostInterceptor)
 @Controller('locations')
 export class LocationsController {
   constructor(

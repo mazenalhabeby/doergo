@@ -1,4 +1,4 @@
-import { cleanRateCents, ORG_NOTIFICATION_PREF_KEYS, pickBooleanPrefs } from '@hbcfield/shared';
+import { writeRateChange, RateChangeError, ORG_NOTIFICATION_PREF_KEYS, pickBooleanPrefs } from '@hbcfield/shared';
 import { Injectable, Logger, HttpStatus, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -976,14 +976,18 @@ export class OnboardingService {
       "inherit", 0 means "€0 an hour". Two rules about the same column is how
       one of them quietly stops being true, so both ends use `cleanRateCents`.
     */
-    if (data.billableRateCents !== undefined) {
-      data.billableRateCents = cleanRateCents(data.billableRateCents);
-    }
-    if (data.costRateCents !== undefined) {
-      data.costRateCents = cleanRateCents(data.costRateCents);
-    }
+    /*
+      ⚠️ Rates are taken OUT of the plain update and written through the shared
+      dated writer below: a history row from the start day, then the column set
+      to whatever is in force today. Writing the column alone re-priced every
+      un-invoiced day before the change.
+    */
+    const rates = { billableRateCents: data.billableRateCents, costRateCents: data.costRateCents };
+    delete data.billableRateCents;
+    delete data.costRateCents;
+    const ratesChanged = rates.billableRateCents !== undefined || rates.costRateCents !== undefined;
 
-    if (Object.keys(data).length === 0) {
+    if (Object.keys(data).length === 0 && !ratesChanged) {
       return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'No valid fields to update' };
     }
 
@@ -997,13 +1001,31 @@ export class OnboardingService {
       data.usesExternalWorkers = industryUsesExternalWorkers(data.industry);
     }
 
-    const org = await this.prisma.organization.update({
-      where: { id: organizationId },
-      data,
-      select: { id: true, name: true, industry: true, usesExternalWorkers: true, crewMode: true, address: true, addressLine1: true, addressLine2: true, city: true, state: true, postalCode: true, country: true, phone: true, email: true, website: true, timezone: true, logoUrl: true, vatId: true, billableRateCents: true, enabledModules: true },
-    });
-
-    return { success: true, data: org };
+    try {
+      const org = await this.prisma.$transaction(async (tx) => {
+        const rateCols: Record<string, number | null> = {};
+        const write = (kind: 'BILL_HOUR' | 'COST_HOUR', cents: unknown) =>
+          writeRateChange(tx as any, {
+            organizationId,
+            target: 'ORGANIZATION',
+            targetId: organizationId,
+            kind,
+            cents,
+            effectiveFrom: updates?.rateEffectiveFrom,
+          });
+        if (rates.billableRateCents !== undefined) rateCols.billableRateCents = (await write('BILL_HOUR', rates.billableRateCents)).nowCents;
+        if (rates.costRateCents !== undefined) rateCols.costRateCents = (await write('COST_HOUR', rates.costRateCents)).nowCents;
+        return tx.organization.update({
+          where: { id: organizationId },
+          data: { ...data, ...rateCols },
+          select: { id: true, name: true, industry: true, usesExternalWorkers: true, crewMode: true, address: true, addressLine1: true, addressLine2: true, city: true, state: true, postalCode: true, country: true, phone: true, email: true, website: true, timezone: true, logoUrl: true, vatId: true, billableRateCents: true, costRateCents: true, enabledModules: true },
+        });
+      });
+      return { success: true, data: org };
+    } catch (e) {
+      if (e instanceof RateChangeError) return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: e.message };
+      throw e;
+    }
   }
 
   /**

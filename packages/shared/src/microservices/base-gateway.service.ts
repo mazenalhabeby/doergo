@@ -26,6 +26,9 @@ interface ServiceError {
   statusCode?: number;
   response?: { statusCode?: number; message?: string | string[] };
   message?: string;
+  /** A 4xx refusal's machine-readable code, when the service sent one. */
+  code?: string;
+  params?: Record<string, unknown>;
 }
 
 export abstract class BaseGatewayService {
@@ -71,23 +74,8 @@ export abstract class BaseGatewayService {
       );
       return result;
     } catch (err) {
-      const error = err as ServiceError;
-      if (error.name === 'TimeoutError') {
-        throw new HttpException('Service timeout', HttpStatus.REQUEST_TIMEOUT);
-      }
-      // Re-throw HTTP exceptions from the microservice with their real status.
-      // A NestJS HttpException serialized over RPC exposes the code as
-      // `statusCode` (or nested under `response`), not `status` — so check all
-      // forms; otherwise a 404/403 would collapse into a generic 500.
-      const status = error.status ?? error.statusCode ?? error.response?.statusCode;
-      const message = error.response?.message ?? error.message;
-      if (status && message) {
-        throw new HttpException(message, status);
-      }
-      throw new HttpException(
-        error.message || 'Service error',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      // One mapping for both send paths — see toHttpException.
+      throw this.toHttpException(err as ServiceError);
     }
   }
 
@@ -136,7 +124,18 @@ export abstract class BaseGatewayService {
     }
     const status = error?.status ?? error?.statusCode ?? error?.response?.statusCode;
     const message = error?.response?.message ?? error?.message;
-    if (status && message) return new HttpException(message, status);
+    if (status && message) {
+      /*
+        A refusal's code and parameters ride along on a 4xx, so a client can say
+        it in the reader's language ("SECOND_ROLE_NOT_ALLOWED") rather than show
+        the service's English sentence. Never on a 5xx.
+      */
+      const code = status < 500 && typeof error?.code === 'string' ? error.code : undefined;
+      const params = status < 500 && error?.params && typeof error.params === 'object' ? error.params : undefined;
+      return code || params
+        ? new HttpException({ message, ...(code ? { code } : {}), ...(params ? { params } : {}) }, status)
+        : new HttpException(message, status);
+    }
     return new HttpException(error?.message || 'Service error', HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }

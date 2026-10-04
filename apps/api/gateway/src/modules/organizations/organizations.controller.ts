@@ -12,7 +12,9 @@ import {
   HttpException,
   HttpStatus,
   ForbiddenException,
+  UseInterceptors,
 } from '@nestjs/common';
+import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
 import { ClientProxy } from '@nestjs/microservices';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
@@ -26,6 +28,7 @@ import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { SetMemberHomeDto, UpdateOrgSettingsDto, UpdateMemberDto, ListMembersQueryDto, UpdateOrgProfileDto, UpdateNotificationPrefsDto, UpdateSecuritySettingsDto, TransferOwnershipDto } from './dto';
 
 @ApiTags('organizations')
+@UseInterceptors(LabourCostInterceptor)
 @Controller('organizations')
 @ApiBearerAuth()
 export class OrganizationsController {

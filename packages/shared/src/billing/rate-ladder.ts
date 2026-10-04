@@ -262,3 +262,46 @@ export function cleanRateCents(raw: unknown): number | null {
   if (whole < 0 || whole > MAX_RATE_CENTS) return null;
   return whole;
 }
+
+/**
+ * May this caller see — or set — what labour COSTS?
+ *
+ * Admins hold every permission by being admins; everyone else needs
+ * `canViewLabourCost`, read from the server-resolved access first and the
+ * flattened flag second. One answer for every route that carries a cost.
+ */
+export function mayViewLabourCost(user: unknown): boolean {
+  const u = user as { role?: string; canViewLabourCost?: boolean; access?: { org?: Record<string, boolean> } } | null;
+  if (!u) return false;
+  if (u.role === 'ADMIN' || u.role === 'CLIENT') return true;
+  return u.access?.org?.canViewLabourCost === true || u.canViewLabourCost === true;
+}
+
+const COST_KEYS = new Set(['costRateCents', 'inheritedCostRateCents']);
+
+/**
+ * Remove every cost rate from a response on its way to somebody who may not see
+ * one — workspaces, members, assignments, at any depth.
+ *
+ * ⚠️ At the BOUNDARY, not in the screen: a field that reaches the browser has
+ * been disclosed whatever the page chooses to draw. Unlike `stripLabourCost`
+ * (two named invoice lists) this walks the whole payload, because a cost rate
+ * rides on records — a workspace, a member, an assignment — that appear inside
+ * many different responses. Bounded: plain objects and arrays only, depth 8.
+ */
+export function stripCostRates<T>(payload: T, mayViewCost: boolean): T {
+  if (mayViewCost) return payload;
+  const walk = (v: unknown, depth: number): unknown => {
+    if (depth > 8 || v === null || typeof v !== 'object') return v;
+    if (Array.isArray(v)) return v.map((x) => walk(x, depth + 1));
+    if (v instanceof Date) return v;
+    const out: Record<string, unknown> = {};
+    for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
+      if (COST_KEYS.has(k)) continue;
+      out[k] = walk(x, depth + 1);
+    }
+    if ('twoRates' in out) out.twoRates = false;
+    return out;
+  };
+  return walk(payload, 0) as T;
+}

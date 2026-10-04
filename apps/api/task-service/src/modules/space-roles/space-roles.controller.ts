@@ -22,6 +22,8 @@ export class SpaceRolesController {
       description?: string;
       color?: string;
       permissions?: PermissionSet;
+      kind?: any;
+      billBy?: any;
     },
   ) {
     return this.service.createRole(data);
@@ -38,6 +40,8 @@ export class SpaceRolesController {
       color?: string;
       permissions?: PermissionSet;
       isActive?: boolean;
+      kind?: any;
+      billBy?: any;
       requesterPerms?: PermissionSet | null;
     },
   ) {
@@ -73,6 +77,21 @@ export class SpaceRolesController {
   @MessagePattern({ cmd: 'remove_space_member' })
   removeMember(@Payload() data: { organizationId: string; spaceId: string; memberId: string }) {
     return this.service.removeMember(data);
+  }
+
+  @MessagePattern({ cmd: 'list_space_roles_in_space' })
+  listSpaceRoles(@Payload() data: { organizationId: string; spaceId: string }) {
+    return this.service.listSpaceRoles(data);
+  }
+
+  @MessagePattern({ cmd: 'set_space_role_day_rate' })
+  setRoleDayRate(@Payload() data: any) {
+    return this.service.setRoleDayRate(data);
+  }
+
+  @MessagePattern({ cmd: 'update_space_member_roles' })
+  updateMemberRoles(@Payload() data: any) {
+    return this.service.updateMemberRoles(data);
   }
 
   @MessagePattern({ cmd: 'update_space_member_rate' })

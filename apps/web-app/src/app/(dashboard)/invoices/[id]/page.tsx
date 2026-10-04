@@ -82,6 +82,7 @@ function toPdfData(inv: Invoice, locale: SupportedLocale): InvoicePdfData {
       quantity: i.quantity,
       unitPrice: i.unitPrice,
       amount: i.amount,
+      lineKind: i.lineKind ?? null,
     })),
   }
 }
@@ -392,6 +393,7 @@ function InvoiceDetailInner({ id }: { id: string }) {
               description: i.description,
               quantity: i.quantity,
               unitPrice: i.unitPrice,
+              lineKind: i.lineKind ?? null,
             }))}
             subtotal={inv.subtotal}
             taxAmount={inv.taxAmount}

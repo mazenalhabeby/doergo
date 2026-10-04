@@ -122,8 +122,10 @@ function EditInvoiceInner({ id }: { id: string }) {
       description: l.description,
       quantity: num(l.quantity),
       unitPrice: num(l.unitPrice),
+      // A heading stays a heading while the draft is edited.
+      lineKind: l.id ? inv?.items?.find((i) => i.id === l.id)?.lineKind ?? null : null,
     })),
-    [lines],
+    [lines, inv?.items],
   )
 
   const subtotal = useMemo(
@@ -176,6 +178,21 @@ function EditInvoiceInner({ id }: { id: string }) {
             description: line.description.trim(),
             quantity: num(line.quantity),
             unitPrice: num(line.unitPrice),
+            /*
+              ⚠️ A CHANGED LINE KEEPS WHAT WORK IT IS. There is no item PATCH,
+              so a change is a remove and an add — and the add used to drop the
+              job and the days it covered, which let the same job or the same
+              days come back on the next invoice. A new price is not new work.
+            */
+            ...(item && {
+              taskId: item.taskId ?? null,
+              reportId: item.reportId ?? null,
+              lineKind: item.lineKind ?? null,
+              workerId: item.workerId ?? null,
+              dayFrom: item.dayFrom ? item.dayFrom.slice(0, 10) : null,
+              dayTo: item.dayTo ? item.dayTo.slice(0, 10) : null,
+              billedDays: item.lineKind === "DAYS" ? num(line.quantity) : null,
+            }),
           })
         }
       }

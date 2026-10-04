@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, Shield, ShieldCheck, Pencil, Trash2, Loader2, UserPlus, UserCog, Users, Lock, SlidersHorizontal, ChevronDown, Home, Check } from "lucide-react"
+import { Plus, Shield, ShieldCheck, Trash2, Loader2, UserPlus, UserCog, Users, SlidersHorizontal, ChevronDown, Home, Wrench, CalendarClock } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import { notify } from "@/lib/toast"
@@ -12,21 +12,13 @@ import { fetchAllPages } from "@/lib/paginate"
 import {
   ACCESS_PERMISSION_SCHEMA,
   jobTitleOf,
-  type SpaceRole,
+  type SpaceRoleInSpace,
   type SpaceMember,
   type PermissionSet,
   type AccessPermissionKey,
 } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -37,7 +29,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
@@ -63,11 +57,23 @@ import { SectionHeader, EmptyState } from "./section-header"
 import { RoutingSection } from "./routing-section"
 import { MemberRoutingEditor } from "./member-routing-editor"
 import { MemberRateChip, MemberRateEditor } from "./member-rate-editor"
+import {
+  BILL_BY,
+  ChangeDayRateDialog,
+  DayRateHistory,
+  DEFAULT_ROLE_COLOR,
+  RoleCard,
+  Segmented,
+  roleQueryKey,
+  useBillByLabel,
+  useCents,
+  type BillBy,
+} from "./work-roles"
+import { MemberBillingMenu, MemberRoleChips } from "./member-role-chips"
 
 const fullName = (p: { firstName?: string | null; lastName?: string | null }) =>
   `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim()
 
-const DEFAULT_ROLE_COLOR = "#2563eb"
 const NO_ROLE = "__none__"
 
 /*
@@ -98,7 +104,7 @@ const emptyPermissions = (): PermissionSet =>
 export function MembersTab({ spaceId, hasApartments }: { spaceId: string; hasApartments?: boolean }) {
   return (
     <div className="space-y-8">
-      <SubRolesSection />
+      <SubRolesSection spaceId={spaceId} />
       <Separator />
       <SpaceMembersSection spaceId={spaceId} hasApartments={hasApartments} />
       <Separator />
@@ -107,23 +113,31 @@ export function MembersTab({ spaceId, hasApartments }: { spaceId: string; hasApa
   )
 }
 
-// ── Section (a): Space sub-roles ────────────────────────────────────────────
+// ── Section (a): roles in this workspace ─────────────────────────────────────
+//
+// Two lists, because they are two different things. WORK roles are trades —
+// they carry how the work is billed and a day rate HERE, and grant nothing.
+// MANAGEMENT roles carry permissions. Each card says who holds it here, so
+// "who is a Mechanic at BILLA" is answered on the card rather than by reading
+// down the member list.
 
-function SubRolesSection() {
+function SubRolesSection({ spaceId }: { spaceId: string }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [editTarget, setEditTarget] = useState<SpaceRole | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<SpaceRole | null>(null)
+  const [dialog, setDialog] = useState<{ role: SpaceRoleInSpace | null; kind: "WORK" | "MANAGEMENT" } | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<SpaceRoleInSpace | null>(null)
 
   const { data: roles, isLoading } = useQuery({
-    queryKey: ["space-roles"],
-    queryFn: () => spaceRolesApi.list(),
+    queryKey: roleQueryKey(spaceId),
+    queryFn: () => spaceRolesApi.listInSpace(spaceId),
   })
+  const workRoles = (roles ?? []).filter((r) => r.kind === "WORK")
+  const mgmtRoles = (roles ?? []).filter((r) => r.kind !== "WORK")
 
   const removeMutation = useMutation({
     mutationFn: (id: string) => spaceRolesApi.remove(id),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
       queryClient.invalidateQueries({ queryKey: ["space-roles"] })
       setDeleteTarget(null)
       notify.success(t("scheduling.roles.toast.deleted"))
@@ -131,95 +145,81 @@ function SubRolesSection() {
     onError: (err: Error) => notify.error(err.message || t("scheduling.roles.toast.deleteFailed")),
   })
 
-  return (
-    <div className="space-y-4">
-      <SectionHeader
-        icon={ShieldCheck}
-        accent="violet"
-        title={t("scheduling.roles.heading")}
-        description={t("scheduling.roles.intro")}
-        action={
-          <Button onClick={() => { setEditTarget(null); setDialogOpen(true) }} className="gap-1.5">
-            <Plus className="h-4 w-4" />
-            {t("scheduling.roles.new")}
-          </Button>
-        }
-      />
+  const list = (items: SpaceRoleInSpace[]) => (
+    <div className="space-y-2">
+      {items.map((role) => (
+        <RoleCard
+          key={role.id}
+          role={role}
+          onEdit={() => setDialog({ role, kind: role.kind === "WORK" ? "WORK" : "MANAGEMENT" })}
+          onDelete={() => setDeleteTarget(role)}
+        />
+      ))}
+    </div>
+  )
 
-      {isLoading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full" />
-          ))}
-        </div>
-      ) : !roles || roles.length === 0 ? (
-        <EmptyState
-          icon={Shield}
-          title={t("scheduling.roles.empty.title")}
-          description={t("scheduling.roles.empty.description")}
+  return (
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <SectionHeader
+          icon={Wrench}
+          accent="blue"
+          title={t("scheduling.workRoles.workHeading")}
+          description={t("scheduling.workRoles.workIntro")}
           action={
-            <Button onClick={() => { setEditTarget(null); setDialogOpen(true) }} className="gap-1.5">
+            <Button onClick={() => setDialog({ role: null, kind: "WORK" })} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              {t("scheduling.workRoles.newWork")}
+            </Button>
+          }
+        />
+        {isLoading ? (
+          <Skeleton className="h-16 w-full" />
+        ) : workRoles.length === 0 ? (
+          <EmptyState icon={Wrench} title={t("scheduling.workRoles.nobodyHere")} description={t("scheduling.workRoles.workIntro")} />
+        ) : (
+          list(workRoles)
+        )}
+      </div>
+
+      <div className="space-y-3">
+        <SectionHeader
+          icon={ShieldCheck}
+          accent="violet"
+          title={t("scheduling.workRoles.managementHeading")}
+          description={t("scheduling.roles.intro")}
+          action={
+            <Button variant="outline" onClick={() => setDialog({ role: null, kind: "MANAGEMENT" })} className="gap-1.5">
               <Plus className="h-4 w-4" />
               {t("scheduling.roles.new")}
             </Button>
           }
         />
-      ) : (
-        <div className="space-y-2">
-          {roles.map((role) => {
-            const activePerms = SPACE_PERMISSIONS.filter((p) => role.permissions?.[p.key])
-            return (
-              <div
-                key={role.id}
-                className="flex items-center justify-between gap-4 rounded-xl border p-4 transition-colors hover:bg-muted/50"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="h-9 w-9 rounded-lg shrink-0 flex items-center justify-center" style={{ backgroundColor: `${role.color || DEFAULT_ROLE_COLOR}20` }}>
-                    <Shield className="h-4 w-4" style={{ color: role.color || DEFAULT_ROLE_COLOR }} />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold text-foreground truncate">{role.name}</span>
-                      {role.isSystem && (
-                        <Badge
-                          variant="outline"
-                          className="text-[11px] gap-1 border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                        >
-                          <Lock className="h-3 w-3" />
-                          {t("scheduling.roles.builtIn")}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                      {activePerms.length > 0
-                        ? activePerms.map((p) => t(`scheduling.roles.permissions.${p.key}.label`)).join(" · ")
-                        : t("scheduling.roles.noPermissions")}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditTarget(role); setDialogOpen(true) }}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  {!role.isSystem && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-red-600"
-                      onClick={() => setDeleteTarget(role)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        ) : mgmtRoles.length === 0 ? (
+          <EmptyState
+            icon={Shield}
+            title={t("scheduling.roles.empty.title")}
+            description={t("scheduling.roles.empty.description")}
+          />
+        ) : (
+          list(mgmtRoles)
+        )}
+      </div>
 
-      {dialogOpen && (
-        <RoleDialog role={editTarget} open={dialogOpen} onOpenChange={setDialogOpen} />
+      {dialog && (
+        <RoleDialog
+          spaceId={spaceId}
+          role={dialog.role}
+          defaultKind={dialog.kind}
+          open
+          onOpenChange={(o) => { if (!o) setDialog(null) }}
+        />
       )}
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
@@ -248,32 +248,59 @@ function SubRolesSection() {
 }
 
 function RoleDialog({
+  spaceId,
   role,
+  defaultKind,
   open,
   onOpenChange,
 }: {
-  role: SpaceRole | null
+  spaceId: string
+  role: SpaceRoleInSpace | null
+  defaultKind: "WORK" | "MANAGEMENT"
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const billByLabel = useBillByLabel()
+  const cents = useCents()
   const isEdit = !!role
 
   const [name, setName] = useState(role?.name || "")
   const [description, setDescription] = useState(role?.description || "")
   const [color, setColor] = useState(role?.color || DEFAULT_ROLE_COLOR)
+  const [kind, setKind] = useState<"WORK" | "MANAGEMENT">(role?.kind === "WORK" ? "WORK" : role ? "MANAGEMENT" : defaultKind)
+  const [billBy, setBillBy] = useState<BillBy>((role?.billBy as BillBy | null) ?? "HOUR")
+  const [initialDayRate, setInitialDayRate] = useState("")
+  const [changeOpen, setChangeOpen] = useState(false)
   const [permissions, setPermissions] = useState<PermissionSet>(
     role?.permissions || emptyPermissions(),
   )
 
+  // The kind moves only while nobody holds the role — the server says the same.
+  const kindLocked = isEdit && (role!.isSystem || role!.inUseCount > 0)
+  const isWork = kind === "WORK"
+
   const mutation = useMutation({
-    mutationFn: () => {
-      const payload = { name: name.trim(), description: description.trim() || undefined, color, permissions }
-      return isEdit ? spaceRolesApi.update(role!.id, payload) : spaceRolesApi.create(payload)
+    mutationFn: async () => {
+      const payload = {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        color,
+        kind,
+        ...(isWork ? { billBy } : { permissions }),
+      }
+      const saved = isEdit ? await spaceRolesApi.update(role!.id, payload) : await spaceRolesApi.create(payload)
+      // A new trade can start with a day rate here, from today.
+      if (!isEdit && isWork && saved?.id && initialDayRate.trim() !== "") {
+        await spaceRolesApi.setDayRate(spaceId, saved.id, { cents: Math.round(Number(initialDayRate) * 100) })
+      }
+      return saved
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
       queryClient.invalidateQueries({ queryKey: ["space-roles"] })
+      queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
       notify.success(isEdit ? t("scheduling.roles.toast.updated") : t("scheduling.roles.toast.created"))
       onOpenChange(false)
     },
@@ -285,6 +312,7 @@ function RoleDialog({
 
   const handleSave = () => {
     if (!name.trim()) return notify.error(t("scheduling.roles.nameRequired"))
+    if (initialDayRate.trim() !== "" && !(Number(initialDayRate) >= 0)) return
     mutation.mutate()
   }
 
@@ -292,8 +320,12 @@ function RoleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEdit ? t("scheduling.roles.editTitle") : t("scheduling.roles.new")}</DialogTitle>
-          <DialogDescription>{t("scheduling.roles.dialogDescription")}</DialogDescription>
+          <DialogTitle>
+            {isEdit ? t("scheduling.roles.editTitle") : isWork ? t("scheduling.workRoles.newWork") : t("scheduling.roles.new")}
+          </DialogTitle>
+          <DialogDescription>
+            {isWork ? t("scheduling.workRoles.workIntro") : t("scheduling.roles.dialogDescription")}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
@@ -301,6 +333,88 @@ function RoleDialog({
             <Label htmlFor="role-name">{t("scheduling.roles.fields.name")}</Label>
             <Input id="role-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("scheduling.roles.namePlaceholder")} />
           </div>
+
+          <div className="space-y-2">
+            <Label>{t("scheduling.workRoles.kind")}</Label>
+            <div>
+              <Segmented
+                ariaLabel={t("scheduling.workRoles.kind")}
+                value={kind}
+                onChange={setKind}
+                disabled={kindLocked}
+                options={[
+                  { value: "WORK", label: t("scheduling.workRoles.kindWork") },
+                  { value: "MANAGEMENT", label: t("scheduling.workRoles.kindManagement") },
+                ]}
+              />
+            </div>
+            {kindLocked && (
+              <p className="text-xs text-muted-foreground">
+                {role!.isSystem
+                  ? t("scheduling.workRoles.kindBuiltIn")
+                  : t("scheduling.workRoles.kindLocked", { count: role!.inUseCount })}
+              </p>
+            )}
+          </div>
+
+          {isWork && (
+            <div className="space-y-2">
+              <Label>{t("scheduling.workRoles.billBy")}</Label>
+              <div>
+                <Segmented
+                  ariaLabel={t("scheduling.workRoles.billBy")}
+                  value={billBy}
+                  onChange={setBillBy}
+                  options={BILL_BY.map((b) => ({ value: b, label: billByLabel(b) }))}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">{t("scheduling.workRoles.billByHint")}</p>
+            </div>
+          )}
+
+          {isWork && !isEdit && (
+            <div className="space-y-2">
+              <Label htmlFor="role-day-rate">{t("scheduling.workRoles.initialDayRate")}</Label>
+              <div className="relative max-w-[12rem]">
+                <Input
+                  id="role-day-rate"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  inputMode="decimal"
+                  value={initialDayRate}
+                  onChange={(e) => setInitialDayRate(e.target.value)}
+                  className="pr-14 tabular-nums"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                  {t("scheduling.workRoles.perDay")}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">{t("scheduling.workRoles.dayRateHint")}</p>
+            </div>
+          )}
+
+          {isWork && isEdit && (
+            <div className="space-y-2">
+              <Label>{t("scheduling.workRoles.dayRateHere")}</Label>
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
+                <span className="text-sm font-semibold tabular-nums">
+                  {role!.dayRateCents != null
+                    ? `${cents(role!.dayRateCents)} ${t("scheduling.workRoles.perDay")}`
+                    : <span className="font-normal text-muted-foreground">{t("scheduling.workRoles.dayRateNone")}</span>}
+                </span>
+                <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => setChangeOpen(true)}>
+                  <CalendarClock className="h-4 w-4" />
+                  {role!.dayRateCents != null || (role!.dayRateHistory?.length ?? 0) > 0
+                    ? t("scheduling.workRoles.changeRate")
+                    : t("scheduling.workRoles.setRate")}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">{t("scheduling.workRoles.dayRateHint")}</p>
+              <DayRateHistory role={role!} />
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="role-desc">{t("scheduling.roles.fields.description")}</Label>
             <Textarea id="role-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
@@ -319,45 +433,52 @@ function RoleDialog({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>{t("scheduling.roles.fields.permissions")}</Label>
-            <div className="space-y-4">
-              {SPACE_PERMISSION_DOMAINS.map((domain) => (
-                <div key={domain}>
-                  <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    {t(`roles.domains.${domain}`, domain)}
-                  </p>
-                  <div className="space-y-1.5">
-                    {SPACE_PERMISSIONS.filter((p) => p.domain === domain).map((perm) => (
-                      <label
-                        key={perm.key}
-                        className="flex items-start gap-3 rounded-lg border p-2.5 cursor-pointer hover:bg-muted/40 transition-colors"
-                      >
-                        <Checkbox
-                          checked={permissions[perm.key] === true}
-                          onCheckedChange={() => togglePerm(perm.key)}
-                          className="mt-0.5"
-                        />
-                        <div className="min-w-0">
-                          {/*
-                            The catalogue's own label and description are the
-                            fallback, so a newly added permission is readable
-                            here the day it exists rather than rendering its key.
-                          */}
-                          <p className="text-sm font-medium text-foreground">
-                            {t(`scheduling.roles.permissions.${perm.key}.label`, perm.label)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {t(`scheduling.roles.permissions.${perm.key}.description`, perm.description)}
-                          </p>
-                        </div>
-                      </label>
-                    ))}
+          {isWork ? (
+            /* A trade grants nothing — said, not merely hidden. */
+            <p className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+              {t("scheduling.workRoles.grantsNothing")}
+            </p>
+          ) : (
+            <div className="space-y-2">
+              <Label>{t("scheduling.roles.fields.permissions")}</Label>
+              <div className="space-y-4">
+                {SPACE_PERMISSION_DOMAINS.map((domain) => (
+                  <div key={domain}>
+                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {t(`roles.domains.${domain}`, domain)}
+                    </p>
+                    <div className="space-y-1.5">
+                      {SPACE_PERMISSIONS.filter((p) => p.domain === domain).map((perm) => (
+                        <label
+                          key={perm.key}
+                          className="flex items-start gap-3 rounded-lg border p-2.5 cursor-pointer hover:bg-muted/40 transition-colors"
+                        >
+                          <Checkbox
+                            checked={permissions[perm.key] === true}
+                            onCheckedChange={() => togglePerm(perm.key)}
+                            className="mt-0.5"
+                          />
+                          <div className="min-w-0">
+                            {/*
+                              The catalogue's own label and description are the
+                              fallback, so a newly added permission is readable
+                              here the day it exists rather than rendering its key.
+                            */}
+                            <p className="text-sm font-medium text-foreground">
+                              {t(`scheduling.roles.permissions.${perm.key}.label`, perm.label)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {t(`scheduling.roles.permissions.${perm.key}.description`, perm.description)}
+                            </p>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <DialogFooter>
@@ -370,6 +491,9 @@ function RoleDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+      {changeOpen && role && (
+        <ChangeDayRateDialog spaceId={spaceId} role={role} open={changeOpen} onOpenChange={setChangeOpen} />
+      )}
     </Dialog>
   )
 }
@@ -432,9 +556,10 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
         organizationsApi.getMembers({ limit: 200, page, lite: true }),
       ),
   })
+  // The same query the roles section reads — one request for the whole tab.
   const { data: roles } = useQuery({
-    queryKey: ["space-roles"],
-    queryFn: () => spaceRolesApi.list(),
+    queryKey: roleQueryKey(spaceId),
+    queryFn: () => spaceRolesApi.listInSpace(spaceId),
   })
 
   const assignedIds = new Set((members || []).map((m) => m.userId))
@@ -472,6 +597,7 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
+      queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
       notify.success(t("scheduling.members.toast.added"))
       setSelectedUserId("")
       setSelectedRoleId(NO_ROLE)
@@ -563,7 +689,7 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
                         {jobTitleOf({ position: m.user?.position, memberRole: m.spaceRole })}
                       </span>
                     )}
-                    <MemberRoleSelect spaceId={spaceId} member={m} roles={roles ?? []} />
+                    <MemberRoleChips spaceId={spaceId} member={m} roles={roles ?? []} />
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -605,6 +731,8 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
                     {t("scheduling.routing.perMember", "Routing")}
                     <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", routingOpen === m.id && "rotate-180")} />
                   </Button>
+                  {/* How this member is billed here, and whether they may hold two roles. */}
+                  <MemberBillingMenu spaceId={spaceId} member={m} />
                   {/* Remove is a destructive action, visually separated + confirmed,
                       so it can't be hit by mistake when collapsing the panel. */}
                   <Button
@@ -686,11 +814,24 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={NO_ROLE}>{t("scheduling.members.noRole")}</SelectItem>
-                {(roles || []).map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.name}
-                  </SelectItem>
-                ))}
+                {/* A trade lands in the work slot, anything else in the management slot. */}
+                {([
+                  ["WORK", t("scheduling.workRoles.groupWork")],
+                  ["MANAGEMENT", t("scheduling.workRoles.groupManagement")],
+                ] as const).map(([kind, label]) => {
+                  const group = (roles || []).filter((r) => (r.kind === "WORK") === (kind === "WORK"))
+                  if (group.length === 0) return null
+                  return (
+                    <SelectGroup key={kind}>
+                      <SelectLabel className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</SelectLabel>
+                      {group.map((r) => (
+                        <SelectItem key={r.id} value={r.id}>
+                          {r.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -737,121 +878,6 @@ function SpaceMembersSection({ spaceId, hasApartments }: { spaceId: string; hasA
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
-}
-
-// ── A member's role in this space, changeable in place ───────────────────────
-//
-// The role could only be chosen while ADDING somebody; afterwards it was a
-// read-only badge. The only way to correct it was to remove the member and add
-// them again, which deletes the membership row — and with it their routing
-// overrides, including who signs off for them, and the record of when they
-// joined. A promotion should not cost somebody their history.
-//
-// It stays a BADGE rather than becoming a form control. The role is identity
-// first — colour-coded, scanned down a column of twenty people — and a select
-// box on every row turns a list you read into a form you fill in, while
-// throwing away the one thing that made the column readable. So the badge
-// keeps its colour and opens a menu when clicked: the control appears on
-// intent, and costs nothing until then.
-//
-// The backend already did this: assign is an upsert keyed on (userId, spaceId)
-// whose update touches roleId alone, so the routing columns survive.
-
-function MemberRoleSelect({
-  spaceId,
-  member,
-  roles,
-}: {
-  spaceId: string
-  member: SpaceMember
-  roles: SpaceRole[]
-}) {
-  const { t } = useTranslation()
-  const queryClient = useQueryClient()
-  const current = member.spaceRole ?? null
-
-  const change = useMutation({
-    mutationFn: (roleId: string | null) =>
-      spaceMembersApi.assign(spaceId, { userId: member.userId, spaceRoleId: roleId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
-      notify.success(t("scheduling.members.toast.roleUpdated", "Role updated"))
-    },
-    onError: (err: Error) => notify.error(err.message || t("common.error", "Something went wrong")),
-  })
-
-  const tint = current?.color ?? undefined
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild disabled={change.isPending}>
-        <button
-          type="button"
-          aria-label={t("scheduling.members.roleFor", "Role in this workspace")}
-          className={cn(
-            "group mt-0.5 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors",
-            current
-              ? "bg-transparent"
-              : // No role is the ordinary case, so it whispers: dashed and muted
-                // until hovered, rather than an empty field demanding to be filled.
-                "border-dashed border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground",
-          )}
-          style={current ? { borderColor: `${tint}66`, color: tint } : undefined}
-        >
-          {change.isPending ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            current && (
-              <span
-                className="h-1.5 w-1.5 shrink-0 rounded-full"
-                style={{ backgroundColor: tint ?? "currentColor" }}
-              />
-            )
-          )}
-          {current ? current.name : t("scheduling.members.setRole", "Add role")}
-          <ChevronDown className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-60 group-data-[state=open]:opacity-60" />
-        </button>
-      </DropdownMenuTrigger>
-
-      <DropdownMenuContent align="start" className="w-56">
-        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-          {t("scheduling.members.roleFor", "Role in this workspace")}
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {roles.map((r) => (
-          <DropdownMenuItem
-            key={r.id}
-            onSelect={() => r.id !== current?.id && change.mutate(r.id)}
-            className="gap-2 text-sm"
-          >
-            <span
-              className="h-2 w-2 shrink-0 rounded-full"
-              style={{ backgroundColor: r.color ?? "hsl(var(--muted-foreground))" }}
-            />
-            <span className="min-w-0 flex-1 truncate">{r.name}</span>
-            {r.id === current?.id && <Check className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-          </DropdownMenuItem>
-        ))}
-        {roles.length > 0 && <DropdownMenuSeparator />}
-        {/*
-          Removing the role is a real choice, not an empty one — a member who
-          works here and leads nothing. Kept below the line so it reads as the
-          deliberate act it is rather than the first item on the list.
-        */}
-        <DropdownMenuItem
-          onSelect={() => current && change.mutate(null)}
-          disabled={!current}
-          className="gap-2 text-sm text-muted-foreground"
-        >
-          <span className="h-2 w-2 shrink-0 rounded-full border border-dashed border-current" />
-          <span className="min-w-0 flex-1 truncate">
-            {t("scheduling.members.noRole", "No role")}
-          </span>
-          {!current && <Check className="h-3.5 w-3.5 shrink-0" />}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
   )
 }
 

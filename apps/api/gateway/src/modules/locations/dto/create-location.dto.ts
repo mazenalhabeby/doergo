@@ -7,6 +7,7 @@ import {
   IsOptional,
   IsArray,
   IsIn,
+  Matches,
   MaxLength,
   Min,
   Max,
@@ -220,6 +221,12 @@ export class CreateLocationDto {
   @Min(0)
   @Max(1000000)
   costRateCents?: number | null;
+
+  @ApiPropertyOptional({ description: 'First day a changed rate applies, YYYY-MM-DD. Default today; earlier days keep their rate.' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  rateEffectiveFrom?: string;
 
   @ApiPropertyOptional({
     example: ['time_tracking', 'sprints'],

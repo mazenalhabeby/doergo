@@ -144,6 +144,21 @@ export interface SpaceRole {
   createdAt: string;
   updatedAt: string;
   _count?: { members: number };
+  /** WORK = a trade (grants nothing, carries billing); MANAGEMENT = permissions. */
+  kind?: 'WORK' | 'MANAGEMENT';
+  /** WORK roles: how holders are billed unless their assignment overrides it. */
+  billBy?: 'HOUR' | 'DAY' | 'BOTH' | null;
+}
+
+/** A role as one workspace sees it: who holds it HERE, and its day rate HERE. */
+export interface SpaceRoleInSpace extends SpaceRole {
+  holders: Array<{ id: string; firstName: string; lastName: string; avatarUrl?: string | null; position?: string | null }>;
+  /** Holders across every workspace — while non-zero, the kind cannot change. */
+  inUseCount: number;
+  /** In force today; null when none is set. */
+  dayRateCents: number | null;
+  /** Oldest first. `scheduled` = starts after today. */
+  dayRateHistory: Array<{ cents: number | null; effectiveFrom: string; state: 'past' | 'scheduled' }>;
 }
 
 export interface SpaceMember {
@@ -174,7 +189,16 @@ export interface SpaceMember {
   // Populated relations (optional)
   /** `isExternal`: works for a client or partner — no rate, no clock, no file. */
   user?: { id: string; firstName: string; lastName: string; email?: string; avatarUrl?: string | null; position?: string | null; isExternal?: boolean };
-  spaceRole?: Pick<SpaceRole, 'id' | 'name' | 'slug' | 'color' | 'permissions'> | null;
+  /** The management role here — the ONLY role that grants permissions. */
+  spaceRole?: Pick<SpaceRole, 'id' | 'name' | 'slug' | 'color' | 'permissions' | 'kind' | 'billBy'> | null;
+  /** The trade here (a WORK role). Grants nothing; decides how work is billed. */
+  workRole?: Pick<SpaceRole, 'id' | 'name' | 'slug' | 'color' | 'kind' | 'billBy'> | null;
+  /** May this member hold a work role AND a management role here? */
+  allowSecondRole?: boolean;
+  /** The member's own billing choice here; null = as the work role. */
+  billBy?: 'HOUR' | 'DAY' | 'BOTH' | null;
+  /** What actually applies: own choice → work role → HOUR. */
+  effectiveBillBy?: 'HOUR' | 'DAY' | 'BOTH';
   // Per-member, per-space routing override (Phase 4d). Empty = space default.
   notifyRoleIds?: string[];
   notifyUserIds?: string[];

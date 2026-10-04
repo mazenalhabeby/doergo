@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { SERVICE_NAMES, BaseGatewayService, type PermissionSet } from '@hbcfield/shared';
+import { SERVICE_NAMES, BaseGatewayService, type PermissionSet, type BillByValue, type RoleKindValue } from '@hbcfield/shared';
 
 @Injectable()
 export class SpaceRolesService extends BaseGatewayService {
@@ -18,6 +18,8 @@ export class SpaceRolesService extends BaseGatewayService {
     description?: string;
     color?: string;
     permissions?: PermissionSet;
+    kind?: RoleKindValue;
+    billBy?: BillByValue | null;
   }) {
     return this.send({ cmd: 'create_space_role' }, data);
   }
@@ -29,6 +31,8 @@ export class SpaceRolesService extends BaseGatewayService {
     color?: string;
     permissions?: PermissionSet;
     isActive?: boolean;
+    kind?: RoleKindValue;
+    billBy?: BillByValue | null;
     /** Ceiling for what the caller may author. Null = admin, no ceiling. */
     requesterPerms?: PermissionSet | null;
   }) {
@@ -77,7 +81,37 @@ export class SpaceRolesService extends BaseGatewayService {
     memberId: string;
     billRateCents?: number | null;
     costRateCents?: number | null;
+    effectiveFrom?: string;
+    createdById?: string;
   }) {
     return this.send({ cmd: 'update_space_member_rate' }, data);
+  }
+
+  listSpaceRoles(data: { organizationId: string; spaceId: string }) {
+    return this.send({ cmd: 'list_space_roles_in_space' }, data);
+  }
+
+  setRoleDayRate(data: {
+    organizationId: string;
+    spaceId: string;
+    roleId: string;
+    cents: number | null;
+    effectiveFrom?: string;
+    createdById?: string;
+  }) {
+    return this.send({ cmd: 'set_space_role_day_rate' }, data);
+  }
+
+  updateMemberRoles(data: {
+    organizationId: string;
+    spaceId: string;
+    memberId: string;
+    workRoleId?: string | null;
+    managementRoleId?: string | null;
+    allowSecondRole?: boolean;
+    billBy?: BillByValue | null;
+    requesterPerms?: PermissionSet | null;
+  }) {
+    return this.send({ cmd: 'update_space_member_roles' }, data);
   }
 }

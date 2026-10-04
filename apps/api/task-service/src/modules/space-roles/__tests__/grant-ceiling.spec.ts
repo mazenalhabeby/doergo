@@ -35,7 +35,7 @@ describe('SpaceRolesService — the grant ceiling', () => {
       update: jest.fn(),
       aggregate: jest.fn(),
     },
-    spaceAssignment: { upsert: jest.fn() },
+    spaceAssignment: { upsert: jest.fn(), findUnique: jest.fn().mockResolvedValue(null) },
   };
 
   /** A role that hands out real authority, not just attendance. */

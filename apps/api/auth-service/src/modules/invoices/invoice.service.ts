@@ -3,7 +3,12 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   paginated, snapshotRates, usesTwoRates, cleanRateCents,
   clientDocumentLocale, DEFAULT_LOCALE, type SupportedLocale,
+  loadRateBook, dayKeyIn, parseDayKey, effectiveBillBy, billsHours, billsDays, workedDays,
+  type BillByValue, type DayEntry,
 } from '@hbcfield/shared';
+
+/** The invoice line kinds a caller may file. */
+const LINE_KINDS = new Set(['HOURS', 'DAYS', 'HEADING']);
 
 /**
  * `YYYY-MM-DD` → the first and last instant of that day.
@@ -55,6 +60,11 @@ export class InvoiceService {
       billRateCents?: number | null;
       costRateCents?: number | null;
       billedHours?: number | null;
+      billedDays?: number | null;
+      lineKind?: 'HOURS' | 'DAYS' | 'HEADING' | null;
+      workerId?: string | null;
+      dayFrom?: string | null;
+      dayTo?: string | null;
     }[];
   }) {
     // When tied to a CUSTOMER space, snapshot its contact details as fallbacks so
@@ -117,8 +127,11 @@ export class InvoiceService {
           typeof item.billedHours === 'number' && Number.isFinite(item.billedHours) && item.billedHours >= 0
             ? Math.min(item.billedHours, 100_000)
             : null,
+        ...this.dayLineFields(item),
       };
     });
+    const badWorker = await this.unknownWorker(data.organizationId, items);
+    if (badWorker) return badWorker;
 
     const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
     const taxRate = data.taxRate ?? 0;
@@ -456,8 +469,13 @@ export class InvoiceService {
       description: string;
       quantity?: number;
       unitPrice?: number;
-      taskId?: string;
-      reportId?: string;
+      taskId?: string | null;
+      reportId?: string | null;
+      lineKind?: 'HOURS' | 'DAYS' | 'HEADING' | null;
+      billedDays?: number | null;
+      workerId?: string | null;
+      dayFrom?: string | null;
+      dayTo?: string | null;
     },
   ) {
     const invoice = await this.prisma.invoice.findFirst({
@@ -483,6 +501,10 @@ export class InvoiceService {
     const quantity = item.quantity ?? 1;
     const unitPrice = item.unitPrice ?? 0;
     const amount = quantity * unitPrice;
+    // A re-added line keeps which job and which days it covers (cleaned, as on create).
+    const dayFields = this.dayLineFields(item);
+    const badWorker = await this.unknownWorker(organizationId, [dayFields]);
+    if (badWorker) return badWorker;
 
     await this.prisma.invoiceItem.create({
       data: {
@@ -491,8 +513,9 @@ export class InvoiceService {
         quantity,
         unitPrice,
         amount,
-        taskId: item.taskId,
-        reportId: item.reportId,
+        taskId: item.taskId ?? undefined,
+        reportId: item.reportId ?? undefined,
+        ...dayFields,
       },
     });
 
@@ -636,6 +659,7 @@ export class InvoiceService {
             address: true,
             billableRateCents: true,
             costRateCents: true,
+            timezone: true,
           },
         })
       : null;
@@ -774,12 +798,11 @@ export class InvoiceService {
       u ? `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || null : null;
 
     /*
-      The top rung: what THIS member was agreed at for THIS client.
-
-      One query for every worker on the job rather than one per line — the
-      alternative is a round trip per task, on a screen that opens with fifty of
-      them. Blank on almost every assignment, because it exists for the
-      exception and not the rule.
+      Everybody who works HERE: their assignment carries the top rung of the rate
+      ladder, their trade (work role) and how they are billed. Loaded for the
+      whole workspace — not only the people on a job — because somebody billed
+      by the day may have worked every day of the month and closed no job.
+      One query; the space has tens of members, not thousands.
     */
     const workerIds = Array.from(
       new Set(
@@ -788,16 +811,47 @@ export class InvoiceService {
           .filter((id): id is string => !!id),
       ),
     );
-    const contractRates = new Map<string, { billRateCents: number | null; costRateCents: number | null }>();
-    if (space && workerIds.length > 0) {
-      const assignments = await this.prisma.spaceAssignment.findMany({
-        where: { spaceId: space.id, userId: { in: workerIds } },
-        select: { userId: true, billRateCents: true, costRateCents: true },
-      });
-      for (const a of assignments) {
-        contractRates.set(a.userId, { billRateCents: a.billRateCents, costRateCents: a.costRateCents });
-      }
-    }
+    const assignments = space
+      ? await this.prisma.spaceAssignment.findMany({
+          where: { spaceId: space.id, organizationId: data.organizationId },
+          select: {
+            id: true,
+            userId: true,
+            billRateCents: true,
+            costRateCents: true,
+            billBy: true,
+            workRole: { select: { id: true, name: true, billBy: true, kind: true } },
+            user: { select: { id: true, firstName: true, lastName: true, billRateCents: true, costRateCents: true, isExternal: true } },
+          },
+        })
+      : [];
+    const assignmentOf = new Map(assignments.map((a) => [a.userId, a]));
+    const billByOf = (userId?: string | null): BillByValue => {
+      const a = userId ? assignmentOf.get(userId) : undefined;
+      return effectiveBillBy(
+        (a?.billBy as BillByValue | null) ?? null,
+        a?.workRole?.kind === 'WORK' ? ((a.workRole.billBy as BillByValue | null) ?? null) : null,
+      );
+    };
+
+    /*
+      ⚠️ EVERY RATE AS IT WAS ON THE DAY THE WORK WAS DONE.
+
+      All the dated rates this invoice could need — organization, client,
+      members, assignments, work-role day rates here — in ONE query, then each
+      job and each day is priced by the rate in force on its own day. A raise
+      from 1 November leaves every October day at October's rate, on this
+      invoice or any later one.
+    */
+    const book = await loadRateBook(this.prisma, data.organizationId, {
+      organizationIds: [data.organizationId],
+      spaceIds: space ? [space.id] : [],
+      memberIds: [...workerIds, ...assignments.map((a) => a.userId)],
+      assignmentIds: assignments.map((a) => a.id),
+      roleIds: assignments.map((a) => a.workRole?.id).filter((x): x is string => !!x),
+      roleSpaceId: space?.id ?? null,
+    });
+    const tz = space?.timezone || 'UTC';
 
     /*
       ⚠️ ONE resolver, shared with the screen and the phone. The order of the
@@ -805,15 +859,29 @@ export class InvoiceService {
       here would be a second answer to "why is this €40", and the first person
       to find them disagreeing is looking at an invoice that is already wrong.
     */
-    const ratesFor = (worker: { billRateCents?: number | null; costRateCents?: number | null; id?: string } | null) =>
-      snapshotRates({
-        contract: worker?.id ? contractRates.get(worker.id) ?? null : null,
-        member: worker ? { billRateCents: worker.billRateCents, costRateCents: worker.costRateCents } : null,
-        client: space
-          ? { billRateCents: space.billableRateCents, costRateCents: space.costRateCents }
+    const ratesFor = (
+      worker: { billRateCents?: number | null; costRateCents?: number | null; id?: string } | null,
+      day: string,
+    ) => {
+      const a = worker?.id ? assignmentOf.get(worker.id) : undefined;
+      const at = (target: 'ORGANIZATION' | 'SPACE' | 'MEMBER' | 'ASSIGNMENT', id: string | undefined, kind: 'BILL_HOUR' | 'COST_HOUR', column: number | null | undefined) =>
+        book.on(day, target, id, kind, column ?? null);
+      return snapshotRates({
+        contract: a
+          ? { billRateCents: at('ASSIGNMENT', a.id, 'BILL_HOUR', a.billRateCents), costRateCents: at('ASSIGNMENT', a.id, 'COST_HOUR', a.costRateCents) }
           : null,
-        organization: { billRateCents: org?.billableRateCents, costRateCents: org?.costRateCents },
+        member: worker?.id
+          ? { billRateCents: at('MEMBER', worker.id, 'BILL_HOUR', worker.billRateCents), costRateCents: at('MEMBER', worker.id, 'COST_HOUR', worker.costRateCents) }
+          : null,
+        client: space
+          ? { billRateCents: at('SPACE', space.id, 'BILL_HOUR', space.billableRateCents), costRateCents: at('SPACE', space.id, 'COST_HOUR', space.costRateCents) }
+          : null,
+        organization: {
+          billRateCents: at('ORGANIZATION', data.organizationId, 'BILL_HOUR', org?.billableRateCents),
+          costRateCents: at('ORGANIZATION', data.organizationId, 'COST_HOUR', org?.costRateCents),
+        },
       });
+    };
 
     const workEntries: any[] = [];
     const workerHours = new Map<string, { name: string; hours: number }>();
@@ -836,15 +904,15 @@ export class InvoiceService {
       }));
 
       /*
-        The rate THIS person is billed at, not one rate for the job.
-
-        ⚠️ A single job rate was the old behaviour, and it is wrong the moment
-        two people with different rates work the same site — which is the normal
-        case for anyone who bills labour at all. `laborAmount` keeps its meaning
-        and stops being a lie.
+        The rate THIS person is billed at, ON THE DAY the job was done — not one
+        rate for the job, and not today's rate.
       */
-      const resolved = ratesFor(worker);
+      const workedOn = dayKeyIn(report?.completedAt ?? t.updatedAt, tz);
+      const resolved = ratesFor(worker, workedOn);
       const billRate = resolved.billRateCents != null ? resolved.billRateCents / 100 : rate;
+      const a = worker?.id ? assignmentOf.get(worker.id) : undefined;
+      const workRole = a?.workRole?.kind === 'WORK' ? a.workRole : null;
+      const billBy = billByOf(worker?.id);
 
       workEntries.push({
         taskId: t.id,
@@ -855,8 +923,14 @@ export class InvoiceService {
         hours,
         billRateCents: resolved.billRateCents,
         costRateCents: resolved.costRateCents,
-        laborAmount: billRate != null ? Math.round(hours * billRate * 100) / 100 : 0,
+        laborAmount: billRate != null && billsHours(billBy) ? Math.round(hours * billRate * 100) / 100 : 0,
         completedAt: report?.completedAt ?? t.updatedAt ?? null,
+        workedOn,
+        workRoleId: workRole?.id ?? null,
+        workRoleName: workRole?.name ?? null,
+        billBy,
+        // Day-only: listed (and so marked billed) but not charged — the days pay for it.
+        hoursBillable: billsHours(billBy),
         notes: report?.workPerformed || report?.summary || null,
         parts,
         hasReport: !!report,
@@ -869,6 +943,7 @@ export class InvoiceService {
       }
     }
 
+    const dayEntries = space ? await this.gatherDays(data.organizationId, space.id, tz, data.from, data.to, assignments, billByOf, book) : [];
     return {
       success: true,
       data: {
@@ -893,6 +968,14 @@ export class InvoiceService {
            makes two monthly invoices for one client tellable apart. */
         periodFrom: data.from ?? null,
         periodTo: data.to ?? null,
+        /** The workspace's zone — the days below are calendar days there. */
+        timezone: tz,
+        /**
+         * Days worked here, per person, split wherever their day rate changed.
+         * Only people whose billing includes days; days already on a live
+         * invoice are left out, exactly as billed jobs are.
+         */
+        dayEntries,
         twoRates: usesTwoRates([
           { billRateCents: org?.billableRateCents, costRateCents: org?.costRateCents },
           space ? { billRateCents: space.billableRateCents, costRateCents: space.costRateCents } : null,
@@ -901,6 +984,141 @@ export class InvoiceService {
         workEntries,
       },
     };
+  }
+
+  /**
+   * The day-line fields of one incoming item, cleaned.
+   *
+   * ⚠️ NOT TRUSTED: these arrive from a browser. A kind outside the three is
+   * dropped; days are bounded; the run's days must be real calendar days in
+   * order. Only a DAYS line keeps the worker and the run — on any other line
+   * they would mark days as billed that nobody billed.
+   */
+  private dayLineFields(item: {
+    lineKind?: string | null;
+    billedDays?: number | null;
+    workerId?: string | null;
+    dayFrom?: string | null;
+    dayTo?: string | null;
+  }) {
+    const lineKind = item.lineKind && LINE_KINDS.has(item.lineKind) ? (item.lineKind as 'HOURS' | 'DAYS' | 'HEADING') : null;
+    const isDays = lineKind === 'DAYS';
+    const from = isDays ? parseDayKey(item.dayFrom) : null;
+    const to = isDays ? parseDayKey(item.dayTo) : null;
+    return {
+      lineKind,
+      billedDays:
+        isDays && typeof item.billedDays === 'number' && Number.isFinite(item.billedDays) && item.billedDays >= 0
+          ? Math.min(item.billedDays, 3_660)
+          : null,
+      workerId: isDays && typeof item.workerId === 'string' ? item.workerId : null,
+      dayFrom: from ? new Date(`${from}T00:00:00Z`) : null,
+      dayTo: from && to && to >= from ? new Date(`${to}T00:00:00Z`) : from ? new Date(`${from}T00:00:00Z`) : null,
+    };
+  }
+
+  /**
+   * A DAYS line may only name somebody in THIS organization — otherwise a
+   * crafted request could mark another tenant's days as billed. One query.
+   */
+  private async unknownWorker(organizationId: string, items: Array<{ workerId: string | null }>) {
+    const ids = [...new Set(items.map((i) => i.workerId).filter((x): x is string => !!x))];
+    if (ids.length === 0) return null;
+    const found = await this.prisma.user.count({ where: { id: { in: ids }, organizationId } });
+    return found === ids.length
+      ? null
+      : { success: false as const, message: 'A day line names somebody outside this organization', statusCode: HttpStatus.BAD_REQUEST };
+  }
+
+  /**
+   * Days worked at a workspace by the people billed by the day, priced per day.
+   *
+   * ⚠️ A DAY WORKED IS ANY DAY THEY CLOCKED IN HERE — read in the workspace's
+   * own time zone, with no minimum hours, once per day however many shifts.
+   * A clock-in that a manager REJECTED is not a day worked.
+   *
+   * ⚠️ NEVER BILLED TWICE. Every DAYS line on a live invoice records whose days
+   * and which run (`workerId`, `dayFrom`–`dayTo`); those days are skipped here,
+   * the way a job on a live invoice is skipped by its `taskId`. Cancelling the
+   * invoice releases them.
+   *
+   * Three queries for the whole workspace, whatever its size.
+   */
+  private async gatherDays(
+    organizationId: string,
+    spaceId: string,
+    tz: string,
+    from: string | undefined,
+    to: string | undefined,
+    assignments: Array<{
+      userId: string;
+      workRole: { id: string; name: string; kind: string } | null;
+      user: { id: string; firstName: string | null; lastName: string | null; isExternal: boolean } | null;
+    }>,
+    billByOf: (userId: string) => BillByValue,
+    book: Awaited<ReturnType<typeof loadRateBook>>,
+  ): Promise<DayEntry[]> {
+    const byDay = assignments.filter(
+      (a) => a.workRole?.kind === 'WORK' && !a.user?.isExternal && billsDays(billByOf(a.userId)),
+    );
+    if (byDay.length === 0) return [];
+    const ids = byDay.map((a) => a.userId);
+    const fromDay = parseDayKey(from);
+    const toDay = parseDayKey(to);
+    // A day of slack each side: the period is in the workspace's zone, the column is UTC.
+    const DAY_MS = 86_400_000;
+    const clockInAt = {
+      ...(fromDay && { gte: new Date(Date.parse(`${fromDay}T00:00:00Z`) - DAY_MS) }),
+      ...(toDay && { lte: new Date(Date.parse(`${toDay}T23:59:59.999Z`) + DAY_MS) }),
+    };
+
+    const [entries, billedRuns] = await Promise.all([
+      this.prisma.timeEntry.findMany({
+        where: {
+          organizationId,
+          locationId: spaceId,
+          userId: { in: ids },
+          approvalStatus: { not: 'REJECTED' },
+          ...(fromDay || toDay ? { clockInAt } : {}),
+        },
+        select: { userId: true, clockInAt: true },
+      }),
+      this.prisma.invoiceItem.findMany({
+        where: {
+          lineKind: 'DAYS',
+          workerId: { in: ids },
+          invoice: { organizationId, spaceId, status: { not: 'CANCELED' } },
+        },
+        select: { workerId: true, dayFrom: true, dayTo: true },
+      }),
+    ]);
+
+    const key = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
+    const out: DayEntry[] = [];
+    for (const a of byDay) {
+      const runs = billedRuns.filter((r) => r.workerId === a.userId);
+      const days = workedDays(
+        entries.filter((e) => e.userId === a.userId),
+        (at) => dayKeyIn(at, tz),
+        fromDay,
+        toDay,
+      ).filter((d) => !runs.some((r) => key(r.dayFrom)! <= d && d <= (key(r.dayTo) ?? key(r.dayFrom))!));
+      if (days.length === 0) continue;
+      const name = `${a.user?.firstName ?? ''} ${a.user?.lastName ?? ''}`.trim() || 'Worker';
+      for (const run of book.splitDays(days, 'ROLE', a.workRole!.id, 'BILL_DAY', spaceId)) {
+        out.push({
+          workerId: a.userId,
+          workerName: name,
+          workRoleId: a.workRole!.id,
+          workRoleName: a.workRole!.name,
+          days: run.days,
+          fromDay: run.fromDay,
+          toDay: run.toDay,
+          dayRateCents: run.cents,
+        });
+      }
+    }
+    return out;
   }
 
   private async generateInvoiceNumber(organizationId: string): Promise<string> {
