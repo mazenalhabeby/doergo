@@ -9426,5 +9426,39 @@
     "dayCost": "Tarifa diaria con usted (por día)",
     "dayCostHint": "Lo que le cuesta un día de esta persona cuando se factura por días. Fila propia en su extracto.",
     "dayCostHere": "Tarifa diaria con usted aquí"
+  },
+  "currency": {
+    "choose": "Elija una moneda",
+    "sameAsOrganization": "Igual que la organización ({{code}})",
+    "more": "Más monedas",
+    "followsOrganization": "igual que la organización",
+    "saved": "Moneda guardada",
+    "changeTitle": "Cambiar: {{name}}",
+    "changeDescription": "Las tarifas fijadas aquí son números. Una moneda nueva cambia lo que significan, no los números.",
+    "invoicesKeep": "Las facturas ya creadas conservan su propia moneda.",
+    "ratesReread_one": "{{count}} tarifa está fijada aquí en {{from}}. Tras el cambio se leerá en {{to}}: 85 {{from}} pasa a ser 85 {{to}}. Revísela en las pestañas Facturación y Roles.",
+    "ratesReread_other": "{{count}} tarifas están fijadas aquí en {{from}}. Tras el cambio se leerán en {{to}}: 85 {{from}} pasa a ser 85 {{to}}. Revíselas en las pestañas Facturación y Roles.",
+    "switchTo": "Cambiar a {{code}}",
+    "orgLabel": "Moneda",
+    "orgHint": "Su moneda: las tarifas de sus trabajadores, sus extractos y las facturas a clientes sin moneda propia.",
+    "spaceLabel": "Moneda de facturación",
+    "spaceHint": "La moneda en la que se factura a este cliente. Todas las tarifas de este espacio de trabajo están en ella. Lo que paga a los trabajadores sigue en la moneda de la organización.",
+    "clientLabel": "Moneda de factura",
+    "clientHint": "Para facturas a este cliente fuera de un espacio de trabajo. La moneda de un espacio de trabajo tiene prioridad.",
+    "from": {
+      "workspace": "del espacio de trabajo",
+      "client": "del cliente",
+      "organization": "su moneda"
+    },
+    "rateLabel": "Tipo de cambio",
+    "rateLoading": "Buscando el tipo…",
+    "rateFromEcb": "Tipo del Banco Central Europeo del {{date}}. Se guarda con la factura.",
+    "rateManual": "Su tipo. Se guarda con la factura.",
+    "useEcb": "Usar el tipo del BCE",
+    "rateNone": "No se encontró ningún tipo. Introduzca uno para ver el margen en {{to}}.",
+    "rateInvalid": "Introduzca un número positivo o deje el campo vacío.",
+    "marginNeedsRate": "Margen no mostrado: al cliente se le factura en {{from}} y los costes están en {{to}}. Introduzca un tipo de cambio para verlo.",
+    "convertedAt": "≈ {{amount}} a 1 {{from}} = {{rate}} {{to}}",
+    "ecbOn": "BCE, {{date}}"
   }
 }

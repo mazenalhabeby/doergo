@@ -9426,5 +9426,39 @@
     "dayCost": "Day rate with you (per day)",
     "dayCostHint": "What a day of this person costs you when billed by the day. Shown as its own row on their statement.",
     "dayCostHere": "Day rate with you here"
+  },
+  "currency": {
+    "choose": "Choose a currency",
+    "sameAsOrganization": "Same as the organization ({{code}})",
+    "more": "More currencies",
+    "followsOrganization": "same as the organization",
+    "saved": "Currency saved",
+    "changeTitle": "Change: {{name}}",
+    "changeDescription": "Rates set here are numbers. A new currency changes what they mean, not the numbers.",
+    "invoicesKeep": "Invoices already created keep their own currency.",
+    "ratesReread_one": "{{count}} rate here is set in {{from}}. After the switch it reads as {{to}}: 85 {{from}} becomes 85 {{to}}. Check it on the Billing and Roles tabs.",
+    "ratesReread_other": "{{count}} rates here are set in {{from}}. After the switch they read as {{to}}: 85 {{from}} becomes 85 {{to}}. Check them on the Billing and Roles tabs.",
+    "switchTo": "Switch to {{code}}",
+    "orgLabel": "Currency",
+    "orgHint": "What you pay in: workers' rates with you, their statements, and invoices to clients that have no currency of their own.",
+    "spaceLabel": "Billing currency",
+    "spaceHint": "What this client is invoiced in. Every rate on this workspace is in it. What you pay workers stays in the organization's currency.",
+    "clientLabel": "Invoice currency",
+    "clientHint": "For invoices to this client outside a workspace. A workspace's own currency comes first.",
+    "from": {
+      "workspace": "from the workspace",
+      "client": "from the client",
+      "organization": "your currency"
+    },
+    "rateLabel": "Exchange rate",
+    "rateLoading": "Looking up the rate…",
+    "rateFromEcb": "European Central Bank rate for {{date}}. Saved with the invoice.",
+    "rateManual": "Your rate. Saved with the invoice.",
+    "useEcb": "Use the ECB rate",
+    "rateNone": "No rate found. Enter one to see the margin in {{to}}.",
+    "rateInvalid": "Enter a positive number, or leave it empty.",
+    "marginNeedsRate": "Margin not shown: the client is billed in {{from}} and costs are in {{to}}. Enter an exchange rate to see it.",
+    "convertedAt": "≈ {{amount}} at 1 {{from}} = {{rate}} {{to}}",
+    "ecbOn": "ECB, {{date}}"
   }
 }

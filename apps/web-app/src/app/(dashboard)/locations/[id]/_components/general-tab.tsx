@@ -11,6 +11,7 @@ import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { locationsApi, rateHistoryApi, type CompanyLocation, type UpdateLocationInput } from "@/lib/api"
 import { DatedRateField } from "@/components/rates/dated-rate"
+import { CurrencySetting } from "@/components/rates/currency-setting"
 import { ATTENDANCE_CONSTANTS, parseGeofencePolygon, type LatLng } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -41,6 +42,7 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
   const queryClient = useQueryClient()
   const { hasPlanFeature, user } = useAuth()
   const canViewLabourCost = (user as { canViewLabourCost?: boolean } | null)?.canViewLabourCost === true
+  const orgCurrency = user?.orgCurrency ?? "EUR"
   // This workspace's rates and their history, read only where they are shown (a client).
   const { data: spaceRates } = useQuery({
     queryKey: ["rate-history", "SPACE", space.id],
@@ -407,12 +409,26 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
                 Each changes from a day and keeps its history — never part of
                 the Save above, which would otherwise date every edit "today".
               */}
+              {/*
+                What this client is billed in. Every rate on this workspace is
+                in it; a worker's cost stays in the organization's currency.
+              */}
+              <CurrencySetting
+                id="cfg-currency"
+                label={t("currency.spaceLabel")}
+                hint={t("currency.spaceHint")}
+                value={space.currency ?? null}
+                inheritFrom={space.organizationCurrency ?? orgCurrency}
+                ratesSet={space.ratesSet ?? 0}
+                onSave={(code) => saveSpaceRate({ currency: code })}
+              />
               <div className="grid gap-4 sm:grid-cols-2">
                 <DatedRateField
                   id="cfg-billable-rate"
                   label={t("rates.spaceBill")}
                   hint={t("rates.spaceBillHint")}
                   currentCents={space.billableRateCents ?? null}
+                  currency={space.effectiveCurrency ?? orgCurrency}
                   history={spaceRates?.filter((r) => r.kind === "BILL_HOUR")}
                   onSubmit={(c, from) => saveSpaceRate({ billableRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })}
                 />
@@ -422,6 +438,7 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
                     label={t("rates.spaceCost")}
                     hint={t("rates.spaceCostHint")}
                     currentCents={(space as { costRateCents?: number | null }).costRateCents ?? null}
+                    currency={space.organizationCurrency ?? orgCurrency}
                     history={spaceRates?.filter((r) => r.kind === "COST_HOUR")}
                     onSubmit={(c, from) => saveSpaceRate({ costRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })}
                   />

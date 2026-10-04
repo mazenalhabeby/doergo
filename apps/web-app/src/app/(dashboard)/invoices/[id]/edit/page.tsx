@@ -22,6 +22,7 @@ import {
   ClientFields, TermsFields, LineEditor, num,
   type EditableLine,
 } from "../../_components/invoice-fields"
+import { useExchangeRate } from "../../_lib/use-exchange-rate"
 
 /*
   Correcting a draft invoice.
@@ -111,6 +112,15 @@ function EditInvoiceInner({ id }: { id: string }) {
     setLines((inv.items ?? []).map(toLine))
     setSeeded(true)
   }, [inv, seeded])
+
+  // The rate this draft was saved with — kept until its currency or day changes.
+  const exchange = useExchangeRate({
+    currency,
+    baseCurrency: inv?.baseCurrency ?? user?.orgCurrency ?? "EUR",
+    issueDate,
+    seed: inv ? { rate: inv.exchangeRate ?? null, source: inv.exchangeRateSource ?? null, date: inv.exchangeRateDate ? inv.exchangeRateDate.slice(0, 10) : null } : undefined,
+    ready: seeded,
+  })
 
   /*
     ⚠️ THE VERY ROWS THE DOCUMENT RENDERS are what the mutation sends. Rebuilt
@@ -203,6 +213,7 @@ function EditInvoiceInner({ id }: { id: string }) {
         clientEmail: clientEmail.trim() || undefined,
         clientAddress: clientAddress.trim() || undefined,
         currency,
+        ...exchange.payload,
         issueDate: issueDate || undefined,
         // Cleared on purpose stays cleared: the PDF then reads "On receipt"
         // rather than inventing a term nobody agreed.
@@ -251,7 +262,7 @@ function EditInvoiceInner({ id }: { id: string }) {
     )
   }
 
-  const canSave = clientName.trim().length > 0 && documentItems.length > 0
+  const canSave = clientName.trim().length > 0 && documentItems.length > 0 && exchange.valid
 
   return (
     <div className="min-h-full bg-background">
@@ -301,6 +312,7 @@ function EditInvoiceInner({ id }: { id: string }) {
                 issueDate={issueDate} setIssueDate={setIssueDate}
                 dueDate={dueDate} setDueDate={setDueDate}
                 currency={currency} setCurrency={setCurrency}
+                exchange={exchange}
                 taxPct={taxPct} setTaxPct={setTaxPct}
                 discount={discount} setDiscount={setDiscount}
               />

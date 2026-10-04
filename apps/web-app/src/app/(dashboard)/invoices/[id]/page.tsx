@@ -339,6 +339,18 @@ function InvoiceDetailInner({ id }: { id: string }) {
               <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-foreground">
                 {money(inv.total, inv.currency)}
               </p>
+              {/* In another currency than yours: what it was worth on the day, at the rate saved with it. */}
+              {inv.exchangeRate != null && inv.baseCurrency && inv.baseCurrency !== inv.currency && (
+                <p className="mt-0.5 text-xs tabular-nums text-muted-foreground">
+                  {t("currency.convertedAt", {
+                    amount: money(inv.total * inv.exchangeRate, inv.baseCurrency),
+                    from: inv.currency,
+                    rate: inv.exchangeRate,
+                    to: inv.baseCurrency,
+                  })}
+                  {inv.exchangeRateSource === "ECB" && inv.exchangeRateDate && ` · ${t("currency.ecbOn", { date: fmtDate(inv.exchangeRateDate) })}`}
+                </p>
+              )}
               <p className={cn("mt-1 text-xs", standing.tone)}>{standing.text}</p>
             </div>
 

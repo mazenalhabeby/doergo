@@ -10,6 +10,7 @@ import { Contact, Plus, Smartphone, ChevronRight, User, Building2, Trash2, Globe
 import { notify } from "@/lib/toast"
 import { customersApi, locationsApi, type CompanyLocation, type Customer, type CustomerDetail } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
+import { CurrencySelect } from "@/components/rates/currency-setting"
 import { CLIENT_LOCALE_OPTIONS, clientLocaleFormValue, clientLocalePayload } from "@/lib/client-locale"
 import { customerStageLabel } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
@@ -265,6 +266,8 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
   // "" = same as the organization; kept apart from `form` because it is sent as
   // null, not as an empty string, when nothing is chosen.
   const [locale, setLocale] = useState<string>(clientLocaleFormValue(existing))
+  // null = the organization's currency (used for invoices outside a workspace).
+  const [currency, setCurrency] = useState<string | null>(existing?.currency ?? null)
 
   /*
     Workspaces this client could belong to — those with the CRM module on.
@@ -320,6 +323,7 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
         vatId: isCompany ? form.vatId : "",
         regNumber: isCompany ? form.regNumber : "",
         locale: clientLocalePayload(locale),
+        currency,
         details: cleanDetails,
       }
       return existing
@@ -430,6 +434,19 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
             <p className="text-[11px] text-muted-foreground">
               {t("customers.localeHint", "Invitations and signing links to this client are written in this language. If the client picked a language in the app, that one is used. With “Same as the organization”, emails follow your organization’s country, otherwise English.")}
             </p>
+          </div>
+
+          {/* What invoices to this client are written in, outside a workspace. */}
+          <div className="space-y-1">
+            <Label htmlFor="client-currency">{t("currency.clientLabel")}</Label>
+            <CurrencySelect
+              id="client-currency"
+              value={currency}
+              onChange={setCurrency}
+              inheritFrom={user?.orgCurrency ?? "EUR"}
+              className="h-9 rounded-md"
+            />
+            <p className="text-[11px] text-muted-foreground">{t("currency.clientHint")}</p>
           </div>
 
           {/* Company-only fields */}

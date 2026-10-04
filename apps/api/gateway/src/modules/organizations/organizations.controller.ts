@@ -578,6 +578,12 @@ export class OrganizationsController {
       throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
     }
 
+    // The currency rides on every session (orgCurrency); drop the cached ones so
+    // screens read the new one on their next request, not a minute later.
+    if ((dto as any).currency !== undefined) {
+      await this.authCache.invalidateOrganization(user.organizationId!).catch(() => undefined);
+    }
+
     // Toggling the in-house/external capability (or changing industry, which can
     // re-default it) changes how field seats are classified → re-sync to Stripe.
     if ((dto as any).usesExternalWorkers !== undefined || (dto as any).industry !== undefined) {

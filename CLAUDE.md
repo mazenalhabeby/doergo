@@ -1,6 +1,6 @@
 # HBCFIELD - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-10-04 (work roles + day rates, dated rates, worker statement)
+> **Last Updated**: 2026-10-04 (work roles + day rates, dated rates, worker statement, currencies)
 
 ---
 
@@ -539,6 +539,20 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 > ⚠️ Refusal `code`s now survive RPC → gateway (`RpcHttpExceptionFilter` + `BaseGatewayService.toHttpException`).
 >
 > E2E: `python3 tools/work-roles-e2e.py` (LOCAL only).
+
+### Currencies — organization, workspace, client, invoice
+| Method | Endpoint | Description | Gate |
+|--------|----------|-------------|------|
+| PATCH | `/organizations/profile` `{currency}` | What the organization pays in (never empty) | ADMIN |
+| PATCH | `/locations/:id` `{currency}` | What this workspace's client is billed in; null = the organization's | canManageSpace |
+| PATCH | `/customers/:id` `{currency}` | A client's invoice currency outside a workspace; null = the organization's | `editInfo` |
+| GET | `/invoices/exchange-rate?currency&date` | ECB rate `1 {currency} = x {org currency}` on a day (null = none known) | canManageInvoices |
+
+> ⚠️ **A rate is a number without a unit**: its currency is the PLACE it is set on. Client-facing rates in a workspace are in the workspace's currency; what you pay people (cost rates, statements) is in the organization's. Switching a currency re-reads every rate set there — the screen says so first (`ratesSet` on `GET /locations/:id`).
+>
+> ⚠️ **An invoice takes workspace → client → organization** (`resolveInvoiceCurrency`) and **stores its exchange rate** (`exchangeRate`, `exchangeRateSource` ECB|MANUAL, `exchangeRateDate`, `baseCurrency`). A margin converts only through that saved rate; no rate = no margin, never a guess.
+>
+> ⚠️ **ECB's static files, not its data API** — the data API took ~28 s for all currencies. `eurofxref-hist-90d.xml` (70 KB) for recent days, `eurofxref-hist.xml` (8 MB, cached a day) for older ones. Weekend/holiday = the last working day. Migration `20261004180000_currencies` (additive). E2E: `python3 tools/currency-e2e.py`.
 
 ### Users (`/users`) - Push Tokens
 | Method | Endpoint | Description | Roles |
@@ -1187,6 +1201,7 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `formatNumberFor()`, `pluralFormFor()` | Numbers and one/other plurals per locale — shared by the push and email renderers |
 | `documentTypeVisibleTo()`, `visibleTypeWhere()`, `visibleTypeSelfWhere()` | Who may SEE documents of a type — one rule in three shapes (predicate / documents `where` / catalogue `where`). Empty list = no restriction |
 | `assertMemberInScope()`, `memberScopeFilter()` | "Is this person in my crew?" — one rule for both services |
+| `SUPPORTED_CURRENCIES`, `parseCurrency()`, `resolveInvoiceCurrency()`, `workspaceCurrency()`, `crossRate()`, `parseExchangeRate()`, `toOrganizationCurrency()` | Which currency an amount is in, and converting it only through a known rate (billing/currency.ts) |
 | `formatDistance()`, `distanceParts()`, `distanceRefusalParams()` | THE distance formatter — "85 m", "850 m", "1.2 km", "9,631 km", per locale, no-break space. Mobile `lib/distance`, web `useFormatDistance` only bind the locale. Distance refusals are CODED (`TOO_FAR_TO_ARRIVE`/`TOO_FAR_TO_START`/`OUTSIDE_GEOFENCE`/`AWAY_NOT_ALLOWED` + `params.distanceMetres/radiusMetres`); `distance-display-guard.spec.ts` fails on a hand-built km/m |
 | `activeAssignmentWhere()` | "Is this member assigned to this workspace RIGHT NOW?" — shared by the clock-in list and the clock-in check |
 | `crewPresence()`, `joinMoment()`, `effectiveLeader()`, `mayMoveStep()`, `pausesAtClockOut()`, `endOfLocalDay()` | A crew on one job (tasks/crew.ts): who is on it, when a join counts from, who leads now (acting included), who may move the step, does a clock-out pause it |

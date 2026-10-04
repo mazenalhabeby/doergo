@@ -9426,5 +9426,39 @@
     "dayCost": "Tagessatz bei Ihnen (pro Tag)",
     "dayCostHint": "Was Sie ein Tag dieser Person kostet, wenn nach Tagen abgerechnet wird. Eigene Zeile in ihrer Abrechnung.",
     "dayCostHere": "Tagessatz bei Ihnen hier"
+  },
+  "currency": {
+    "choose": "Währung wählen",
+    "sameAsOrganization": "Wie die Organisation ({{code}})",
+    "more": "Weitere Währungen",
+    "followsOrganization": "wie die Organisation",
+    "saved": "Währung gespeichert",
+    "changeTitle": "Ändern: {{name}}",
+    "changeDescription": "Hier gesetzte Sätze sind Zahlen. Eine neue Währung ändert ihre Bedeutung, nicht die Zahlen.",
+    "invoicesKeep": "Bereits erstellte Rechnungen behalten ihre eigene Währung.",
+    "ratesReread_one": "{{count}} Satz ist hier in {{from}} gesetzt. Nach dem Wechsel gilt er in {{to}}: aus 85 {{from}} werden 85 {{to}}. Prüfen Sie ihn in den Reitern Abrechnung und Rollen.",
+    "ratesReread_other": "{{count}} Sätze sind hier in {{from}} gesetzt. Nach dem Wechsel gelten sie in {{to}}: aus 85 {{from}} werden 85 {{to}}. Prüfen Sie sie in den Reitern Abrechnung und Rollen.",
+    "switchTo": "Auf {{code}} umstellen",
+    "orgLabel": "Währung",
+    "orgHint": "Ihre Währung: die Sätze Ihrer Mitarbeitenden, ihre Abrechnungen und Rechnungen an Kunden ohne eigene Währung.",
+    "spaceLabel": "Abrechnungswährung",
+    "spaceHint": "In dieser Währung wird dieser Kunde abgerechnet. Alle Sätze in diesem Arbeitsbereich gelten in ihr. Was Sie Mitarbeitenden zahlen, bleibt in der Währung der Organisation.",
+    "clientLabel": "Rechnungswährung",
+    "clientHint": "Für Rechnungen an diesen Kunden außerhalb eines Arbeitsbereichs. Die Währung eines Arbeitsbereichs hat Vorrang.",
+    "from": {
+      "workspace": "vom Arbeitsbereich",
+      "client": "vom Kunden",
+      "organization": "Ihre Währung"
+    },
+    "rateLabel": "Wechselkurs",
+    "rateLoading": "Kurs wird gesucht…",
+    "rateFromEcb": "Kurs der Europäischen Zentralbank vom {{date}}. Wird mit der Rechnung gespeichert.",
+    "rateManual": "Ihr Kurs. Wird mit der Rechnung gespeichert.",
+    "useEcb": "EZB-Kurs verwenden",
+    "rateNone": "Kein Kurs gefunden. Geben Sie einen ein, um die Marge in {{to}} zu sehen.",
+    "rateInvalid": "Geben Sie eine positive Zahl ein oder lassen Sie das Feld leer.",
+    "marginNeedsRate": "Marge nicht angezeigt: Der Kunde wird in {{from}} abgerechnet, die Kosten sind in {{to}}. Geben Sie einen Wechselkurs ein, um sie zu sehen.",
+    "convertedAt": "≈ {{amount}} zu 1 {{from}} = {{rate}} {{to}}",
+    "ecbOn": "EZB, {{date}}"
   }
 }

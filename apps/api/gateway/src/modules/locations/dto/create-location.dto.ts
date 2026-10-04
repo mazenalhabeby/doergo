@@ -208,6 +208,12 @@ export class CreateLocationDto {
   @MaxLength(50)
   contactPhone?: string;
 
+  @ApiPropertyOptional({ description: "What this workspace's client is billed in (ISO code). Null or empty = the organization's currency. Every rate here is in it." })
+  @IsOptional()
+  @IsString()
+  @MaxLength(3)
+  currency?: string | null;
+
   @ApiPropertyOptional({ description: 'CUSTOMER kind: billable rate override (EUR cents/hour; null falls back to org default)' })
   @IsNumber()
   @Min(0)

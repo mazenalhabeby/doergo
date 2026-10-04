@@ -31,6 +31,11 @@ export class InvoiceController {
     return this.invoiceService.gather(data);
   }
 
+  @MessagePattern({ cmd: 'invoice_exchange_rate' })
+  async exchangeRate(@Payload() data: { organizationId: string; currency: string; date?: string }) {
+    return this.invoiceService.exchangeRate(data);
+  }
+
   @MessagePattern({ cmd: 'invoice_get' })
   async findOne(@Payload() data: { id: string; organizationId: string }) {
     return this.invoiceService.findOne(data.id, data.organizationId);

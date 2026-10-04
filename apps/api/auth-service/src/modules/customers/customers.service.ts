@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { resolveCrmCaps, ownsClient, parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, CRM_COLD_DAYS, CRM_CONTACT_TYPES, type CrmCaps } from '@hbcfield/shared';
+import { resolveCrmCaps, ownsClient, parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, parseCurrency, CURRENCY_INVALID_MESSAGE, CRM_COLD_DAYS, CRM_CONTACT_TYPES, type CrmCaps } from '@hbcfield/shared';
 import { findPrior } from '@hbcfield/shared';
 
 /** An id a phone made (UUIDv7) — the same alphabet the gateway accepts. */
@@ -53,6 +53,8 @@ export interface CustomerInput {
   regNumber?: string | null;
   /** The language email to this client is written in; null / "" = not set. */
   locale?: string | null;
+  /** Invoice currency outside a workspace; null / "" = the organization's. */
+  currency?: string | null;
   details?: CustomerDetail[] | null; // flexible custom key-value attributes
 }
 
@@ -78,6 +80,7 @@ const customerSelect = {
   vatId: true,
   regNumber: true,
   locale: true,
+  currency: true,
   details: true,
   createdAt: true,
   updatedAt: true,
@@ -103,6 +106,17 @@ function clientLocaleFrom(value: unknown): string | null | undefined {
   const parsed = parseClientLocale(value);
   if (!parsed.ok) throw new BadRequestException(CLIENT_LOCALE_INVALID_MESSAGE);
   return parsed.locale;
+}
+
+/**
+ * The client's invoice currency, as a write may carry it — the same three answers
+ * as the language: leave, clear, set; anything else refused.
+ */
+function clientCurrencyFrom(value: unknown): string | null | undefined {
+  if (value === undefined) return undefined;
+  const parsed = parseCurrency(value, { optional: true });
+  if (!parsed.ok) throw new BadRequestException(CURRENCY_INVALID_MESSAGE);
+  return parsed.currency;
 }
 
 const MAX_TEXT = 10000; // generous cap for free-text notes / activity bodies
@@ -696,6 +710,7 @@ export class CustomersService {
     const name = (dto.name || '').trim();
     if (!name) throw new BadRequestException('Customer name is required');
     const locale = clientLocaleFrom(dto.locale) ?? null;
+    const currency = clientCurrencyFrom(dto.currency) ?? null;
     await this.assertRefsInOrg(dto, organizationId);
     // ownerId must be a real member of this org (else drop it).
     const ownerId = dto.ownerId ? ((await this.keepOrgUserIds([dto.ownerId], organizationId))[0] ?? null) : null;
@@ -727,6 +742,7 @@ export class CustomersService {
         vatId: dto.vatId ?? null,
         regNumber: dto.regNumber ?? null,
         locale,
+        currency,
         details: (sanitizeDetails(dto.details) ?? undefined) as any,
       },
       select: customerSelect,
@@ -744,7 +760,7 @@ export class CustomersService {
     const touchesPortal = dto.isPortalResident !== undefined || dto.portalId !== undefined;
     const touchesOwnership = dto.ownerId !== undefined || dto.managerIds !== undefined;
     const touchesStatus = dto.status !== undefined;
-    const infoKeys = ['name', 'contactName', 'email', 'phone', 'address', 'notes', 'isActive', 'spaceId', 'type', 'details', 'legalName', 'website', 'industry', 'vatId', 'regNumber', 'locale'] as const;
+    const infoKeys = ['name', 'contactName', 'email', 'phone', 'address', 'notes', 'isActive', 'spaceId', 'type', 'details', 'legalName', 'website', 'industry', 'vatId', 'regNumber', 'locale', 'currency'] as const;
     const touchesInfo = infoKeys.some((k) => dto[k] !== undefined);
     const reach = this.canReach(caps, existing, caller);
     if (existing.isPortalResident || touchesPortal || touchesOwnership) {
@@ -782,6 +798,8 @@ export class CustomersService {
     // Info, like the phone number: gated on editInfo above, no permission of its own.
     const locale = clientLocaleFrom(dto.locale);
     if (locale !== undefined) data.locale = locale;
+    const currency = clientCurrencyFrom(dto.currency);
+    if (currency !== undefined) data.currency = currency;
     if (dto.type !== undefined) data.type = dto.type === 'COMPANY' ? 'COMPANY' : 'PERSON';
     if (dto.details !== undefined) data.details = (sanitizeDetails(dto.details) ?? []) as any;
     if (dto.managerIds !== undefined) data.managerIds = await this.keepOrgUserIds(sanitizeIds(dto.managerIds) ?? [], organizationId);

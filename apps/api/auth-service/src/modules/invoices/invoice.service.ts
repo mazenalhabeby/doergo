@@ -5,7 +5,10 @@ import {
   clientDocumentLocale, DEFAULT_LOCALE, type SupportedLocale,
   loadRateBook, dayKeyIn, parseDayKey, effectiveBillBy, billsHours, billsDays, workedDays,
   type BillByValue, type DayEntry, type HoursEntry,
+  parseCurrency, resolveInvoiceCurrency, currencyOrNull, parseExchangeRate, DEFAULT_CURRENCY,
+  CURRENCY_INVALID_MESSAGE, EXCHANGE_RATE_INVALID_MESSAGE,
 } from '@hbcfield/shared';
+import { ExchangeRateService } from './exchange-rate.service';
 
 /** The invoice line kinds a caller may file. */
 const LINE_KINDS = new Set(['HOURS', 'DAYS', 'HEADING']);
@@ -16,7 +19,72 @@ import { dayStart, dayEnd, jobsInPeriod, jobHours, FINISHED, countedMinutesByDay
 export class InvoiceService {
   private readonly logger = new Logger(InvoiceService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly rates: ExchangeRateService,
+  ) {}
+
+  /** The organization's currency — what costs, statements and margins are in. */
+  private async organizationCurrency(organizationId: string): Promise<string> {
+    const org = await this.prisma.organization.findUnique({ where: { id: organizationId }, select: { currency: true } });
+    return currencyOrNull(org?.currency) ?? DEFAULT_CURRENCY;
+  }
+
+  /** `1 {currency} = rate {the organization's}` on a day, for the invoice screen. */
+  async exchangeRate(data: { organizationId: string; currency: string; date?: string }) {
+    const parsed = parseCurrency(data.currency);
+    if (!parsed.ok || !parsed.currency) return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: CURRENCY_INVALID_MESSAGE };
+    const base = await this.organizationCurrency(data.organizationId);
+    const day = data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date : new Date().toISOString().slice(0, 10);
+    const answer = await this.rates.rate(parsed.currency, base, day);
+    return { success: true, data: { from: parsed.currency, to: base, ...(answer ?? { rate: null, date: null, source: null }) } };
+  }
+
+  /**
+   * The currency and exchange rate an invoice is saved with.
+   *
+   * ⚠️ FROZEN on the invoice. The rate is what the screen showed (the ECB's for
+   * the issue date, or one typed in); when the screen sent none, the server asks
+   * the ECB itself. No rate found is saved as none — the margin then reads "—"
+   * rather than a number nobody can stand behind.
+   */
+  private async currencyFields(
+    organizationId: string,
+    input: { currency?: string; exchangeRate?: unknown; exchangeRateSource?: string | null; exchangeRateDate?: string | null; issueDate?: string | Date | null },
+    fallbackCurrency: string | null,
+  ): Promise<{ error: string } | { currency: string; baseCurrency: string; exchangeRate: number | null; exchangeRateSource: string | null; exchangeRateDate: Date | null }> {
+    let currency = fallbackCurrency;
+    if (input.currency !== undefined) {
+      const parsed = parseCurrency(input.currency);
+      if (!parsed.ok || !parsed.currency) return { error: CURRENCY_INVALID_MESSAGE };
+      currency = parsed.currency;
+    }
+    const baseCurrency = await this.organizationCurrency(organizationId);
+    currency = currency ?? baseCurrency;
+    if (currency === baseCurrency) {
+      return { currency, baseCurrency, exchangeRate: null, exchangeRateSource: null, exchangeRateDate: null };
+    }
+    const typed = parseExchangeRate(input.exchangeRate);
+    if (!typed.ok) return { error: EXCHANGE_RATE_INVALID_MESSAGE };
+    const issued = input.issueDate ? new Date(input.issueDate) : new Date();
+    const issueDay = Number.isNaN(issued.getTime()) ? new Date().toISOString().slice(0, 10) : issued.toISOString().slice(0, 10);
+    if (typed.rate != null) {
+      const source = input.exchangeRateSource === 'ECB' ? 'ECB' : 'MANUAL';
+      const day = input.exchangeRateDate && /^\d{4}-\d{2}-\d{2}$/.test(input.exchangeRateDate) ? input.exchangeRateDate : issueDay;
+      return { currency, baseCurrency, exchangeRate: typed.rate, exchangeRateSource: source, exchangeRateDate: new Date(`${day}T00:00:00Z`) };
+    }
+    if (input.exchangeRate === null) {
+      // Cleared on purpose: no margin for this invoice.
+      return { currency, baseCurrency, exchangeRate: null, exchangeRateSource: null, exchangeRateDate: null };
+    }
+    const ecb = await this.rates.rate(currency, baseCurrency, issueDay);
+    return {
+      currency, baseCurrency,
+      exchangeRate: ecb?.rate ?? null,
+      exchangeRateSource: ecb ? 'ECB' : null,
+      exchangeRateDate: ecb ? new Date(`${ecb.date}T00:00:00Z`) : null,
+    };
+  }
 
   async create(data: {
     organizationId: string;
@@ -26,6 +94,10 @@ export class InvoiceService {
     clientEmail?: string;
     clientAddress?: string;
     currency?: string;
+    /** 1 {currency} = exchangeRate {the organization's}; null clears, omitted asks the ECB. */
+    exchangeRate?: number | string | null;
+    exchangeRateSource?: string | null;
+    exchangeRateDate?: string | null;
     taxRate?: number;
     discount?: number;
     issueDate?: string;
@@ -57,11 +129,13 @@ export class InvoiceService {
     let clientName = data.clientName;
     let clientEmail = data.clientEmail;
     let clientAddress = data.clientAddress;
+    let spaceCurrencyValue: string | null = null;
     if (data.spaceId) {
       const space = await this.prisma.companyLocation.findFirst({
         where: { id: data.spaceId, organizationId: data.organizationId },
-        select: { name: true, contactName: true, contactEmail: true, address: true },
+        select: { name: true, contactName: true, contactEmail: true, address: true, currency: true },
       });
+      spaceCurrencyValue = space?.currency ?? null;
       if (space) {
         clientName = clientName || space.contactName || space.name;
         clientEmail = clientEmail ?? space.contactEmail ?? undefined;
@@ -118,6 +192,10 @@ export class InvoiceService {
     const badWorker = await this.unknownWorker(data.organizationId, items);
     if (badWorker) return badWorker;
 
+    // The currency: what the screen sent, else the workspace's, else the organization's.
+    const money = await this.currencyFields(data.organizationId, data, currencyOrNull(spaceCurrencyValue));
+    if ('error' in money) return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: money.error };
+
     const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
     const taxRate = data.taxRate ?? 0;
     const discount = data.discount ?? 0;
@@ -139,7 +217,7 @@ export class InvoiceService {
             clientName,
             clientEmail,
             clientAddress,
-            currency: data.currency ?? 'EUR',
+            ...money,
             taxRate,
             discount,
             subtotal,
@@ -273,6 +351,9 @@ export class InvoiceService {
       clientEmail?: string;
       clientAddress?: string;
       currency?: string;
+      exchangeRate?: number | string | null;
+      exchangeRateSource?: string | null;
+      exchangeRateDate?: string | null;
       taxRate?: number;
       discount?: number;
       issueDate?: string;
@@ -306,7 +387,17 @@ export class InvoiceService {
     if (data.clientName !== undefined) updateData.clientName = data.clientName;
     if (data.clientEmail !== undefined) updateData.clientEmail = data.clientEmail;
     if (data.clientAddress !== undefined) updateData.clientAddress = data.clientAddress;
-    if (data.currency !== undefined) updateData.currency = data.currency;
+    // Currency or its rate changed (or the issue day, which the ECB rate follows
+    // when nobody typed one): work the pair out again, through the same rule.
+    const ratesFollowDay = data.issueDate !== undefined && invoice.exchangeRateSource !== 'MANUAL' && data.exchangeRate === undefined;
+    if (data.currency !== undefined || data.exchangeRate !== undefined || ratesFollowDay) {
+      const money = await this.currencyFields(organizationId, {
+        ...data,
+        issueDate: data.issueDate ?? invoice.issueDate,
+      }, invoice.currency);
+      if ('error' in money) return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: money.error };
+      Object.assign(updateData, money);
+    }
     if (data.notes !== undefined) updateData.notes = data.notes;
     if (data.issueDate !== undefined) updateData.issueDate = new Date(data.issueDate);
     if (data.dueDate !== undefined) updateData.dueDate = new Date(data.dueDate);
@@ -646,6 +737,7 @@ export class InvoiceService {
             billableRateCents: true,
             costRateCents: true,
             timezone: true,
+            currency: true,
           },
         })
       : null;
@@ -674,7 +766,7 @@ export class InvoiceService {
     const customer = data.customerId
       ? await this.prisma.customer.findFirst({
           where: { id: data.customerId, organizationId: data.organizationId },
-          select: { id: true, name: true, email: true, address: true },
+          select: { id: true, name: true, email: true, address: true, currency: true },
         })
       : null;
     if (data.customerId && !customer) {
@@ -683,8 +775,11 @@ export class InvoiceService {
 
     const org = await this.prisma.organization.findUnique({
       where: { id: data.organizationId },
-      select: { billableRateCents: true, costRateCents: true },
+      select: { billableRateCents: true, costRateCents: true, currency: true },
     });
+    // Workspace → client → organization: the same order the rates follow.
+    const invoiceCurrency = resolveInvoiceCurrency({ space, customer, organization: org });
+    const baseCurrency = currencyOrNull(org?.currency) ?? DEFAULT_CURRENCY;
     /*
       A client has no rate of its own, so it falls to the organization's. That is
       the honest answer rather than nothing: the form shows the rate and the
@@ -935,7 +1030,10 @@ export class InvoiceService {
         clientName: space ? space.contactName || space.name : customer!.name,
         clientEmail: (space ? space.contactEmail : customer!.email) ?? null,
         clientAddress: (space ? space.address : customer!.address) ?? null,
-        currency: 'EUR',
+        currency: invoiceCurrency.currency,
+        currencySource: invoiceCurrency.source,
+        /** What costs and the margin are in — the organization's. */
+        baseCurrency,
         billableRateCents: rateCents,
         rate,
         taskCount: workEntries.length,

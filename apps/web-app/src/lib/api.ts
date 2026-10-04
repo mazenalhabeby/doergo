@@ -4790,6 +4790,8 @@ export interface CreateLocationInput {
 
 export interface UpdateLocationInput {
   name?: string;
+  /** What the client here is billed in; null = the organization's. */
+  currency?: string | null;
   address?: string | null;
   lat?: number | null;
   lng?: number | null;
@@ -5936,6 +5938,8 @@ export interface OrganizationProfile {
   usesExternalWorkers?: boolean | null;
   /** Crew rules: only a job's leader moves its step (shared tasks/crew.ts). */
   crewMode?: boolean | null;
+  /** What the organization pays in (ISO code). */
+  currency?: string | null;
   enabledModules?: string[] | null;
   notificationPrefs?: Record<string, boolean> | null;
   securitySettings?: Record<string, boolean | number> | null;
@@ -5999,6 +6003,12 @@ export interface Invoice {
   discount: number;
   total: number;
   currency: string;
+  /** 1 {currency} = exchangeRate {baseCurrency}, frozen with the invoice. Null = same currency or no rate known. */
+  exchangeRate?: number | null;
+  exchangeRateSource?: 'ECB' | 'MANUAL' | null;
+  exchangeRateDate?: string | null;
+  /** The organization's currency when this was issued. */
+  baseCurrency?: string | null;
   issueDate: string;
   dueDate?: string | null;
   paidAt?: string | null;
@@ -6031,6 +6041,10 @@ interface CreateInvoiceInput {
   taxRate?: number;
   discount?: number;
   currency?: string;
+  /** 1 {currency} = exchangeRate {the organization's}. Null clears; omitted lets the server ask the ECB. */
+  exchangeRate?: number | null;
+  exchangeRateSource?: 'ECB' | 'MANUAL' | null;
+  exchangeRateDate?: string | null;
   /** Both accepted by the server; it defaults issueDate to now when omitted. */
   issueDate?: string;
   dueDate?: string;
@@ -6142,6 +6156,10 @@ interface InvoiceGatherEntry {
 interface InvoiceGatherResult {
   /** Null when the work was gathered by CLIENT rather than by workspace. */
   spaceId: string | null;
+  /** Workspace → client → organization; where `currency` came from. */
+  currencySource?: 'workspace' | 'client' | 'organization';
+  /** The organization's currency — what costs and the margin are in. */
+  baseCurrency?: string;
   /** The service period this covers, echoed back. Null ends mean "everything". */
   periodFrom?: string | null;
   periodTo?: string | null;
@@ -6207,6 +6225,14 @@ export const invoicesApi = {
     // undefined here sent it to /invoices/undefined.
     if (!response.data?.data) throw new Error('The invoice was not created');
     return response.data.data;
+  },
+  /** `1 {currency} = rate {the organization's}` on a day (ECB). `rate` null = none known. */
+  exchangeRate: async (currency: string, date?: string) => {
+    const response = await api.get<{ success: boolean; data: { from: string; to: string; rate: number | null; date: string | null; source: 'ECB' | null } }>(
+      buildUrlWithQuery('/invoices/exchange-rate', { currency, date }),
+    );
+    if (response.error) throw new Error(response.error);
+    return response.data?.data ?? null;
   },
   update: async (id: string, data: UpdateInvoiceInput) => {
     const response = await api.patch<{ success: boolean; data: Invoice }>(`/invoices/${id}`, data);
@@ -6542,6 +6568,8 @@ export interface Customer {
   regNumber?: string | null;
   /** The language email to this client is written in (en|de|es|fr|it); null = same as the organization. */
   locale?: string | null;
+  /** Invoice currency outside a workspace; null = the organization's. */
+  currency?: string | null;
   details?: CustomerDetail[] | null;
   /**
    * The caller's CRM abilities ON THIS RECORD, resolved server-side and returned

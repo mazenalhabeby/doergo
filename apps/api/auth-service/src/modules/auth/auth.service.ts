@@ -600,7 +600,7 @@ export class AuthService {
       const user = await this.prisma.user.findUnique({
         where: { email },
         include: {
-          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, offlineMode: true, usesExternalWorkers: true, suspendedAt: true, ownerId: true } },
+          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, currency: true, offlineMode: true, usesExternalWorkers: true, suspendedAt: true, ownerId: true } },
           // Unified roles (Phase 2) → resolved `access` on the login response.
           // isActive so a deactivated role stops granting (M1). Space grants are
           // filtered to their effective window so expired/future grants don't
@@ -914,6 +914,8 @@ export class AuthService {
           // Capabilities the org has BOUGHT — the only thing PlanGuard reads.
           // Resolved here, server-side, so it can never be a client claim.
           orgAddOns: user.organization?.addOns ?? [],
+          // What the organization pays in — costs, statements, margins (shared billing/currency.ts).
+          orgCurrency: user.organization?.currency ?? 'EUR',
           // The offline-first app, switched on per organization (rollout).
           offlineMode: user.organization?.offlineMode ?? false,
           // Unified resolved access (Phase 2): org-wide ∪ per-space grants.
@@ -952,7 +954,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
-        organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, offlineMode: true, usesExternalWorkers: true, suspendedAt: true, ownerId: true } },
+        organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, currency: true, offlineMode: true, usesExternalWorkers: true, suspendedAt: true, ownerId: true } },
         memberRole: { select: { permissions: true, isActive: true } },
         spaceAssignments: {
           where: {
@@ -1029,7 +1031,7 @@ export class AuthService {
         include: {
           user: {
             include: {
-              organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, offlineMode: true, usesExternalWorkers: true, suspendedAt: true, ownerId: true } },
+              organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, currency: true, offlineMode: true, usesExternalWorkers: true, suspendedAt: true, ownerId: true } },
               /*
                 The role and space assignments, because this response REPLACES
                 the mobile client's stored user (see `onUserRefreshed`).
@@ -1344,6 +1346,7 @@ export class AuthService {
             subStatus: storedToken.user.organization?.suspendedAt ? 'canceled' : (storedToken.user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
             planTier: storedToken.user.organization?.planTier ? storedToken.user.organization.planTier.toString().toLowerCase() : null,
             orgAddOns: storedToken.user.organization?.addOns ?? [],
+            orgCurrency: storedToken.user.organization?.currency ?? 'EUR',
             // Refreshed with the session, so switching it reaches a phone within one token lifetime.
             offlineMode: storedToken.user.organization?.offlineMode ?? false,
           },
@@ -1689,7 +1692,7 @@ export class AuthService {
           // can scope to it the way they already scope to a unit. Without this
           // req.user.assetId is undefined and the binding does nothing.
           assetId: true,
-          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, offlineMode: true, customerPortalEnabled: true, usesExternalWorkers: true, suspendedAt: true, ownerId: true } },
+          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, currency: true, offlineMode: true, customerPortalEnabled: true, usesExternalWorkers: true, suspendedAt: true, ownerId: true } },
           // Custom role
           // Unified roles (Phase 2): org-wide role + per-space assignments. Read
           // to build the resolved `access` object. Legacy space memberships are
@@ -1881,6 +1884,7 @@ export class AuthService {
           // undefined list is an empty list, and an empty list 402s every
           // premium mutation for that caller.
           orgAddOns: organization?.addOns ?? [],
+          orgCurrency: organization?.currency ?? 'EUR',
           offlineMode: organization?.offlineMode ?? false,
           // Org-level portal opt-in (customers only exist when enabled).
           customerPortalEnabled: organization?.customerPortalEnabled ?? false,

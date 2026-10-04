@@ -393,6 +393,9 @@ enum SprintStatus {
 model Organization {
   id        String   @id @default(cuid())
   name      String
+  // What the organization pays in: workers' own rates, statements, the default
+  // for workspaces and clients that set none (shared billing/currency.ts).
+  currency  String   @default("EUR")
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1847,6 +1850,8 @@ model Customer {
   /// (`clientEmailLocales` in shared). Only the system's own wording follows it;
   /// what the organization wrote (document titles, invoice lines) goes as written.
   locale String?
+  // Invoice currency for this client outside a workspace; null = the organization's.
+  currency String?
 
   /// This person exists as somebody's CONTACT, not as a client of yours.
   ///
@@ -2331,6 +2336,9 @@ model PartUsed {
 // belongs to a space; modules + workflow are configured per space.
 model CompanyLocation {
   id              String    @id @default(cuid())
+  // What this workspace's client is billed in; null = the organization's.
+  // Every rate on the workspace is in it (shared billing/currency.ts).
+  currency        String?
   name            String // "Main Office", "Warehouse A", "General"
   address         String? // Full address string
   lat             Float? // Latitude (only for physical locations / attendance)
@@ -4226,6 +4234,14 @@ model Invoice {
   discount  Float  @default(0)
   total     Float  @default(0)
   currency  String @default("USD")
+  // 1 {currency} = exchangeRate {the organization's currency} on this invoice —
+  // filled from the ECB rate of the issue date, editable, then FROZEN with the
+  // invoice so a margin or report later reads what it was worth that day.
+  // Null when the currencies match, or no rate is known (margin then not shown).
+  exchangeRate       Float?
+  exchangeRateSource String? // 'ECB' | 'MANUAL'
+  exchangeRateDate   DateTime? @db.Date
+  baseCurrency       String? // the organization's currency when it was issued
 
   // Dates
   issueDate DateTime  @default(now())

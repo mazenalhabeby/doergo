@@ -632,6 +632,7 @@ export function EditMemberDialog({
             */}
             {canViewLabourCost ? (
               <DatedRateField
+                currency={user?.orgCurrency}
                 id="member-cost-rate"
                 label={t("members.memberEditor.costRateLabel")}
                 hint={t("members.memberEditor.costRateHint")}
@@ -646,6 +647,7 @@ export function EditMemberDialog({
             ) : null}
             {canViewLabourCost ? (
               <DatedRateField
+                currency={user?.orgCurrency}
                 id="member-day-cost"
                 label={t("rates.dayCost")}
                 hint={t("rates.dayCostHint")}

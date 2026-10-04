@@ -1,4 +1,4 @@
-import { writeRateChange, RateChangeError, ORG_NOTIFICATION_PREF_KEYS, pickBooleanPrefs } from '@hbcfield/shared';
+import { writeRateChange, RateChangeError, ORG_NOTIFICATION_PREF_KEYS, pickBooleanPrefs, parseCurrency, CURRENCY_INVALID_MESSAGE } from '@hbcfield/shared';
 import { Injectable, Logger, HttpStatus, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -921,6 +921,8 @@ export class OnboardingService {
         usesExternalWorkers: true,
         // Crew rules: only a job's leader moves its step (shared tasks/crew.ts).
         crewMode: true,
+        // What the organization pays in (shared billing/currency.ts).
+        currency: true,
         // Shown on the Settings screen, so an admin can see and change the
         // number every member's vacation balance is measured against.
         defaultLeaveAllowance: true,
@@ -959,7 +961,7 @@ export class OnboardingService {
   async updateOrgProfile(organizationId: string, updates: any) {
     // `usesExternalWorkers` (the in-house/external field-worker capability) is
     // settable directly by the Settings toggle.
-    const allowedFields = ['name', 'industry', 'usesExternalWorkers', 'crewMode', 'address', 'addressLine1', 'addressLine2', 'city', 'state', 'postalCode', 'country', 'phone', 'email', 'website', 'timezone', 'logoUrl', 'vatId', 'billableRateCents', 'costRateCents', 'enabledModules'];
+    const allowedFields = ['name', 'industry', 'usesExternalWorkers', 'crewMode', 'address', 'addressLine1', 'addressLine2', 'city', 'state', 'postalCode', 'country', 'phone', 'email', 'website', 'timezone', 'logoUrl', 'vatId', 'billableRateCents', 'costRateCents', 'enabledModules', 'currency'];
     const data: any = {};
 
     for (const key of allowedFields) {
@@ -993,6 +995,13 @@ export class OnboardingService {
     }
 
     if (typeof data.crewMode !== 'undefined') data.crewMode = data.crewMode === true;
+    if (data.currency !== undefined) {
+      // The organization's own currency can never be empty — it is what every
+      // workspace and client without one falls back to.
+      const parsed = parseCurrency(data.currency);
+      if (!parsed.ok) return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: CURRENCY_INVALID_MESSAGE };
+      data.currency = parsed.currency;
+    }
     if (typeof data.usesExternalWorkers !== 'undefined') {
       data.usesExternalWorkers = !!data.usesExternalWorkers;
     } else if (typeof data.industry === 'string') {
@@ -1019,7 +1028,7 @@ export class OnboardingService {
         return tx.organization.update({
           where: { id: organizationId },
           data: { ...data, ...rateCols },
-          select: { id: true, name: true, industry: true, usesExternalWorkers: true, crewMode: true, address: true, addressLine1: true, addressLine2: true, city: true, state: true, postalCode: true, country: true, phone: true, email: true, website: true, timezone: true, logoUrl: true, vatId: true, billableRateCents: true, costRateCents: true, enabledModules: true },
+          select: { id: true, name: true, industry: true, usesExternalWorkers: true, crewMode: true, address: true, addressLine1: true, addressLine2: true, city: true, state: true, postalCode: true, country: true, phone: true, email: true, website: true, timezone: true, logoUrl: true, vatId: true, billableRateCents: true, costRateCents: true, enabledModules: true, currency: true },
         });
       });
       return { success: true, data: org };

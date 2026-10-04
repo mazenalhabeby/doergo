@@ -15,3 +15,4 @@ export * from './rate-ladder';
 export * from './invoice-lines';
 export * from './rate-history';
 export * from './work-roles';
+export * from './currency';

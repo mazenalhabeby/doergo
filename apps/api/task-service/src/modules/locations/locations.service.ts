@@ -14,7 +14,8 @@ import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_N
 } from '@hbcfield/shared';
 import { isGeofencePolicy,
   isNoShiftPolicy,
-  clampDailyMinutes, validateMinCover, writeRateChange, RateChangeError } from '@hbcfield/shared';
+  clampDailyMinutes, validateMinCover, writeRateChange, RateChangeError, parseCurrency, CURRENCY_INVALID_MESSAGE,
+  currencyOrNull, workspaceCurrency, DEFAULT_CURRENCY } from '@hbcfield/shared';
 
 // tz-lookup: offline coords → IANA timezone (no types pkg).
 const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
@@ -31,6 +32,13 @@ function tzFromCoords(lat?: number | null, lng?: number | null): string | null {
 
 // Valid schedule days
 const VALID_DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+
+/** A workspace currency as stored: a supported code, or null for the organization's. Anything else is refused. */
+function spaceCurrency(value: unknown): string | null {
+  const parsed = parseCurrency(value, { optional: true });
+  if (!parsed.ok) throw new BadRequestException(CURRENCY_INVALID_MESSAGE);
+  return parsed.currency;
+}
 
 @Injectable()
 export class LocationsService {
@@ -76,6 +84,7 @@ export class LocationsService {
     contactPhone?: string;
     billableRateCents?: number | null;
     costRateCents?: number | null;
+    currency?: string | null;
     enabledModules?: string[];
     workflowId?: string;
     organizationId: string;
@@ -127,6 +136,7 @@ export class LocationsService {
         contactName: data.contactName ?? undefined,
         contactEmail: data.contactEmail ?? undefined,
         contactPhone: data.contactPhone ?? undefined,
+        currency: data.currency !== undefined ? spaceCurrency(data.currency) : undefined,
         organizationId: data.organizationId,
         isDefault: existingDefault === 0,
       },
@@ -290,7 +300,28 @@ export class LocationsService {
       throw new NotFoundException('Company location not found');
     }
 
-    return success(location);
+    // How many client-facing rates this workspace has set — what a currency
+    // switch would re-read. Bill rates only: costs are in the organization's.
+    const ratesSet = await this.prisma.rateHistory.count({
+      where: {
+        organizationId: location.organizationId,
+        kind: { in: ['BILL_HOUR', 'BILL_DAY'] },
+        cents: { not: null },
+        OR: [{ target: 'SPACE', targetId: location.id }, { spaceId: location.id }],
+      },
+    });
+
+    // What its rates are in: its own currency, else the organization's — said
+    // here so a workspace page never has to ask for the organization profile.
+    const org = await this.prisma.organization.findUnique({ where: { id: location.organizationId }, select: { currency: true } });
+    const organizationCurrency = currencyOrNull(org?.currency) ?? DEFAULT_CURRENCY;
+
+    return success({
+      ...location,
+      ratesSet,
+      organizationCurrency,
+      effectiveCurrency: workspaceCurrency(location, { currency: organizationCurrency }),
+    });
   }
 
   /**
@@ -400,6 +431,7 @@ export class LocationsService {
     billableRateCents?: number | null;
     costRateCents?: number | null;
     rateEffectiveFrom?: string;
+    currency?: string | null;
     notifyRoleIds?: string[];
     contactRoleIds?: string[];
   }) {
@@ -471,6 +503,12 @@ export class LocationsService {
     if (data.contactName !== undefined) updateData.contactName = data.contactName || null;
     if (data.contactEmail !== undefined) updateData.contactEmail = data.contactEmail || null;
     if (data.contactPhone !== undefined) updateData.contactPhone = data.contactPhone || null;
+    /*
+      The currency this workspace bills in. ⚠️ Its rates are plain numbers, so a
+      switch re-reads every one of them in the new currency — the screen says so
+      before it sends this. Issued invoices keep their own currency.
+    */
+    if (data.currency !== undefined) updateData.currency = spaceCurrency(data.currency);
     /*
       Rates are NOT written here: they go through `writeSpaceRates` below — a
       dated history row and then the column — so a change never re-prices work

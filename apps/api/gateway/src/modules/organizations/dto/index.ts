@@ -104,6 +104,11 @@ export class UpdateOrgProfileDto {
   @IsBoolean()
   crewMode?: boolean;
 
+  @ApiPropertyOptional({ description: "What the organization pays in (ISO code, e.g. EUR). Workspaces and clients without their own use it." })
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
   @ApiPropertyOptional({ description: 'Address (legacy single line)' })
   @IsOptional()
   @IsString()

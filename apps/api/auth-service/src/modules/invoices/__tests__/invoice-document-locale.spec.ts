@@ -51,7 +51,7 @@ function setup(opts: {
       }),
     },
   };
-  return { service: new InvoiceService(prisma as any), prisma };
+  return { service: new InvoiceService(prisma as any, { rate: async () => null } as any), prisma };
 }
 
 describe('invoice documentLocale', () => {

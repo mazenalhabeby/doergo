@@ -18,7 +18,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { RequirePermission, DenyExternal } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
-import { parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, moduleAnywhere } from '@hbcfield/shared';
+import { parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, parseCurrency, CURRENCY_INVALID_MESSAGE, moduleAnywhere } from '@hbcfield/shared';
 
 interface CustomerDto {
   /** Made on the phone when creating: a client added twice is one client. Ignored on update. */
@@ -43,6 +43,8 @@ interface CustomerDto {
   regNumber?: string | null;
   /** The language email to this client is written in. null / "" = not set. */
   locale?: string | null;
+  /** Invoice currency outside a workspace. null / "" = the organization's. */
+  currency?: string | null;
   details?: { label: string; value: string }[] | null;
 }
 
@@ -56,6 +58,9 @@ interface CustomerDto {
 function assertClientLocale(dto: CustomerDto): void {
   if (dto.locale !== undefined && !parseClientLocale(dto.locale).ok) {
     throw new BadRequestException(CLIENT_LOCALE_INVALID_MESSAGE);
+  }
+  if (dto.currency !== undefined && !parseCurrency(dto.currency, { optional: true }).ok) {
+    throw new BadRequestException(CURRENCY_INVALID_MESSAGE);
   }
 }
 

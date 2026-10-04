@@ -110,6 +110,33 @@ export class InvoicesController {
     );
   }
 
+  /**
+   * `1 {currency} = rate {the organization's currency}` on a day — the ECB's
+   * reference rate, for a cross-currency invoice's margin. Null when none is
+   * known. Declared before ':id' for the same reason as gather.
+   */
+  @Get('exchange-rate')
+  @RequirePermission('canManageInvoices')
+  @ApiOperation({ summary: "ECB exchange rate from a currency to the organization's, on a day" })
+  async exchangeRate(
+    @Query('currency') currency: string | undefined,
+    @Query('date') date: string | undefined,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'invoice_exchange_rate' }, {
+        organizationId: user.organizationId,
+        currency: String(currency ?? ''),
+        date: typeof date === 'string' ? date : undefined,
+      }),
+    );
+    if (result && result.success === false) {
+      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
+    }
+    // Carries no cost — through the funnel anyway, so "every route" stays true.
+    return this.forCaller(result, user);
+  }
+
   // NOTE: must be declared BEFORE the ':id' route so "gather" isn't captured as an id.
   @Get('gather')
   @RequirePermission('canManageInvoices')

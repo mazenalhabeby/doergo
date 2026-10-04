@@ -40,9 +40,17 @@ export interface CompanyLocation {
   contactName?: string | null;
   contactEmail?: string | null;
   contactPhone?: string | null;
-  // CUSTOMER kind: per-space billable rate override (EUR cents/hour; null =
-  // fall back to the org default). Used to auto-price invoice labor lines.
+  // CUSTOMER kind: per-space billable rate override (cents/hour in the
+  // workspace's currency; null = fall back to the org default).
   billableRateCents?: number | null;
+  /** What this workspace's client is billed in; null = the organization's. */
+  currency?: string | null;
+  /** Read only (GET one): its own currency, else the organization's — what its rates are in. */
+  effectiveCurrency?: string;
+  /** Read only (GET one): the organization's currency — what costs here are in. */
+  organizationCurrency?: string;
+  /** Read only (GET one): client-facing rates set here, re-read by a currency switch. */
+  ratesSet?: number;
   // Space-driven routing (Phase 3): role ids notified about / contactable by
   // members here. Empty = default to the space's leader roles.
   notifyRoleIds?: string[] | null;

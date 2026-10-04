@@ -56,6 +56,7 @@ function EmbeddedPage({ children }: { children: React.ReactNode }) {
 function LazyAuditLog() { return <Suspense fallback={<LazyFallback />}><EmbeddedPage><AuditLogPage /></EmbeddedPage></Suspense> }
 import { organizationsApi, usersApi, authApi, rateHistoryApi, JoinPolicy } from "@/lib/api"
 import { DatedRateField } from "@/components/rates/dated-rate"
+import { CurrencySetting } from "@/components/rates/currency-setting"
 import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -309,6 +310,7 @@ function resizeImageToDataUrl(file: File, max = 400): Promise<string> {
 function GeneralSection() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const { refreshUser } = useAuth()
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["organization-profile"],
@@ -616,12 +618,32 @@ function GeneralSection() {
             address was edited would re-price nothing, but would bury the date
             the rate really changed.
           */}
+          {/*
+            The organization's currency: what workers' own rates, statements and
+            margins are in, and what a workspace or client without one bills in.
+            Its own Change button for the same reason as the rates below — a
+            switch re-reads every rate set at this level.
+          */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <CurrencySetting
+              id="org-currency"
+              label={t("currency.orgLabel")}
+              hint={t("currency.orgHint")}
+              value={profile?.currency ?? "EUR"}
+              ratesSet={orgRates?.filter((r) => r.cents != null).length ?? 0}
+              onSave={async (code) => {
+                await saveOrgRate({ currency: code })
+                await refreshUser()
+              }}
+            />
+          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <DatedRateField
               id="org-bill-rate"
               label={t("rates.orgBill")}
               hint={t("rates.orgBillHint")}
               currentCents={profile?.billableRateCents ?? null}
+              currency={profile?.currency ?? undefined}
               history={orgRates?.filter((r) => r.kind === "BILL_HOUR")}
               onSubmit={(c, from) => saveOrgRate({ billableRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })}
             />
@@ -630,6 +652,7 @@ function GeneralSection() {
               label={t("rates.orgCost")}
               hint={t("rates.orgCostHint")}
               currentCents={profile?.costRateCents ?? null}
+              currency={profile?.currency ?? undefined}
               history={orgRates?.filter((r) => r.kind === "COST_HOUR")}
               onSubmit={(c, from) => saveOrgRate({ costRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })}
             />

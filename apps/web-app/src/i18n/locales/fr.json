@@ -9435,5 +9435,39 @@
     "dayCost": "Tarif journalier chez vous (par jour)",
     "dayCostHint": "Ce que vous coûte une journée de cette personne quand elle est facturée à la journée. Ligne à part sur son relevé.",
     "dayCostHere": "Tarif journalier chez vous ici"
+  },
+  "currency": {
+    "choose": "Choisir une devise",
+    "sameAsOrganization": "Comme l'organisation ({{code}})",
+    "more": "Autres devises",
+    "followsOrganization": "comme l'organisation",
+    "saved": "Devise enregistrée",
+    "changeTitle": "Modifier : {{name}}",
+    "changeDescription": "Les tarifs définis ici sont des nombres. Une nouvelle devise change leur sens, pas les nombres.",
+    "invoicesKeep": "Les factures déjà créées gardent leur propre devise.",
+    "ratesReread_one": "{{count}} tarif est défini ici en {{from}}. Après le changement, il se lit en {{to}} : 85 {{from}} devient 85 {{to}}. Vérifiez-le dans les onglets Facturation et Rôles.",
+    "ratesReread_other": "{{count}} tarifs sont définis ici en {{from}}. Après le changement, ils se lisent en {{to}} : 85 {{from}} devient 85 {{to}}. Vérifiez-les dans les onglets Facturation et Rôles.",
+    "switchTo": "Passer en {{code}}",
+    "orgLabel": "Devise",
+    "orgHint": "Votre devise : les tarifs de vos collaborateurs, leurs relevés et les factures aux clients sans devise propre.",
+    "spaceLabel": "Devise de facturation",
+    "spaceHint": "La devise dans laquelle ce client est facturé. Tous les tarifs de cet espace de travail sont dans cette devise. Ce que vous versez aux collaborateurs reste dans la devise de l'organisation.",
+    "clientLabel": "Devise de facture",
+    "clientHint": "Pour les factures à ce client hors d'un espace de travail. La devise d'un espace de travail est prioritaire.",
+    "from": {
+      "workspace": "de l'espace de travail",
+      "client": "du client",
+      "organization": "votre devise"
+    },
+    "rateLabel": "Taux de change",
+    "rateLoading": "Recherche du taux…",
+    "rateFromEcb": "Taux de la Banque centrale européenne du {{date}}. Enregistré avec la facture.",
+    "rateManual": "Votre taux. Enregistré avec la facture.",
+    "useEcb": "Utiliser le taux de la BCE",
+    "rateNone": "Aucun taux trouvé. Saisissez-en un pour voir la marge en {{to}}.",
+    "rateInvalid": "Saisissez un nombre positif ou laissez le champ vide.",
+    "marginNeedsRate": "Marge non affichée : le client est facturé en {{from}} et les coûts sont en {{to}}. Saisissez un taux de change pour la voir.",
+    "convertedAt": "≈ {{amount}} à 1 {{from}} = {{rate}} {{to}}",
+    "ecbOn": "BCE, {{date}}"
   }
 }

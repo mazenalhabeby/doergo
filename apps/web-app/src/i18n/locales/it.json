@@ -9435,5 +9435,39 @@
     "dayCost": "Tariffa giornaliera con voi (al giorno)",
     "dayCostHint": "Quanto vi costa una giornata di questa persona quando è fatturata a giornata. Riga a parte nel suo estratto.",
     "dayCostHere": "Tariffa giornaliera con voi qui"
+  },
+  "currency": {
+    "choose": "Scegli una valuta",
+    "sameAsOrganization": "Come l'organizzazione ({{code}})",
+    "more": "Altre valute",
+    "followsOrganization": "come l'organizzazione",
+    "saved": "Valuta salvata",
+    "changeTitle": "Modifica: {{name}}",
+    "changeDescription": "Le tariffe impostate qui sono numeri. Una nuova valuta ne cambia il significato, non i numeri.",
+    "invoicesKeep": "Le fatture già create mantengono la propria valuta.",
+    "ratesReread_one": "{{count}} tariffa è impostata qui in {{from}}. Dopo il cambio si legge in {{to}}: 85 {{from}} diventa 85 {{to}}. Controllala nelle schede Fatturazione e Ruoli.",
+    "ratesReread_other": "{{count}} tariffe sono impostate qui in {{from}}. Dopo il cambio si leggono in {{to}}: 85 {{from}} diventa 85 {{to}}. Controllale nelle schede Fatturazione e Ruoli.",
+    "switchTo": "Passa a {{code}}",
+    "orgLabel": "Valuta",
+    "orgHint": "La vostra valuta: le tariffe dei collaboratori, i loro estratti e le fatture ai clienti senza una valuta propria.",
+    "spaceLabel": "Valuta di fatturazione",
+    "spaceHint": "La valuta in cui viene fatturato questo cliente. Tutte le tariffe di questo spazio di lavoro sono in questa valuta. Ciò che corrispondete ai collaboratori resta nella valuta dell'organizzazione.",
+    "clientLabel": "Valuta della fattura",
+    "clientHint": "Per le fatture a questo cliente fuori da uno spazio di lavoro. La valuta di uno spazio di lavoro ha la precedenza.",
+    "from": {
+      "workspace": "dallo spazio di lavoro",
+      "client": "dal cliente",
+      "organization": "la vostra valuta"
+    },
+    "rateLabel": "Tasso di cambio",
+    "rateLoading": "Ricerca del tasso…",
+    "rateFromEcb": "Tasso della Banca centrale europea del {{date}}. Salvato con la fattura.",
+    "rateManual": "Il vostro tasso. Salvato con la fattura.",
+    "useEcb": "Usa il tasso BCE",
+    "rateNone": "Nessun tasso trovato. Inseritene uno per vedere il margine in {{to}}.",
+    "rateInvalid": "Inserite un numero positivo o lasciate il campo vuoto.",
+    "marginNeedsRate": "Margine non mostrato: il cliente è fatturato in {{from}} e i costi sono in {{to}}. Inserite un tasso di cambio per vederlo.",
+    "convertedAt": "≈ {{amount}} a 1 {{from}} = {{rate}} {{to}}",
+    "ecbOn": "BCE, {{date}}"
   }
 }

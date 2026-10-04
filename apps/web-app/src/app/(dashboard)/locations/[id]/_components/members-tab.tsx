@@ -52,6 +52,7 @@ import {
   Segmented,
   roleQueryKey,
   useCents,
+  useSpaceCurrency,
 } from "./work-roles"
 import { PeopleSection } from "./members-people"
 import {
@@ -135,6 +136,7 @@ export function MembersTab({ spaceId, hasApartments }: { spaceId: string; hasApa
 // down the member list.
 
 function SubRolesSection({ spaceId }: { spaceId: string }) {
+  const money = useSpaceCurrency(spaceId)
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [dialog, setDialog] = useState<{ role: SpaceRoleInSpace | null; kind: "WORK" | "MANAGEMENT" } | null>(null)
@@ -168,6 +170,7 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
         <RoleCard
           key={role.id}
           role={role}
+          currency={money.bill}
           onEdit={() => setDialog({ role, kind: role.kind === "WORK" ? "WORK" : "MANAGEMENT" })}
           onDelete={() => setDeleteTarget(role)}
         />
@@ -288,7 +291,8 @@ function RoleDialog({
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const cents = useCents()
+  const money = useSpaceCurrency(spaceId)
+  const cents = useCents(money.bill)
   const isEdit = !!role
 
   const [name, setName] = useState(role?.name || "")
@@ -410,6 +414,7 @@ function RoleDialog({
                 label={t("scheduling.workRoles.dayRateHere")}
                 hint={t("scheduling.workRoles.dayRateHint")}
                 unit="day"
+                currency={money.bill}
                 currentCents={role!.dayRateSource === "workspace" ? role!.dayRateCents : null}
                 emptyLabel={
                   role!.defaultDayRateCents != null
@@ -427,6 +432,7 @@ function RoleDialog({
                 label={t("rates.defaultDayRate")}
                 hint={t("rates.defaultDayRateHint")}
                 unit="day"
+                currency={money.bill}
                 currentCents={role!.defaultDayRateCents ?? null}
                 history={role!.defaultDayRateHistory ?? []}
                 onSubmit={async (c, from) => {

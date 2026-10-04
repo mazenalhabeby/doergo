@@ -5,6 +5,9 @@ import { CalendarClock, Lock, Pencil, Shield, Trash2, Wrench } from "lucide-reac
 
 import { cn } from "@/lib/utils"
 import { formatMoney } from "@/lib/money"
+import { useQuery } from "@tanstack/react-query"
+import { locationsApi } from "@/lib/api"
+import { useAuth } from "@/contexts/auth-context"
 import { formatDayKey } from "@/lib/day-key"
 import { ACCESS_PERMISSION_SCHEMA, type SpaceRoleInSpace } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
@@ -36,6 +39,23 @@ export function useBillByLabel() {
 
 export function useCents(currency = "EUR") {
   return (cents: number) => formatMoney(cents / 100, currency)
+}
+
+/**
+ * What a workspace's money is in: `bill` — the client's rates here (its own
+ * currency, else the organization's) — and `cost` — what you pay people, always
+ * the organization's. Reads the workspace the page already loaded.
+ */
+export function useSpaceCurrency(spaceId: string): { bill: string; cost: string } {
+  const { user } = useAuth()
+  const { data } = useQuery({
+    queryKey: ["location", spaceId],
+    queryFn: () => locationsApi.getById(spaceId),
+    enabled: !!spaceId,
+    staleTime: 60_000,
+  })
+  const cost = data?.organizationCurrency ?? user?.orgCurrency ?? "EUR"
+  return { bill: data?.effectiveCurrency ?? cost, cost }
 }
 
 /** Small segmented control — the page's own idiom for a choice of two or three. */
@@ -117,15 +137,18 @@ export function RoleHolders({ holders }: { holders: SpaceRoleInSpace["holders"] 
 /** One role, as a card in the workspace's list. */
 export function RoleCard({
   role,
+  currency,
   onEdit,
   onDelete,
 }: {
   role: SpaceRoleInSpace
+  /** The workspace's billing currency — a day rate is charged to the client. */
+  currency?: string
   onEdit: () => void
   onDelete?: () => void
 }) {
   const { t, i18n } = useTranslation()
-  const cents = useCents()
+  const cents = useCents(currency)
   const isWork = role.kind === "WORK"
   const color = role.color || DEFAULT_ROLE_COLOR
   const Icon = isWork ? Wrench : Shield

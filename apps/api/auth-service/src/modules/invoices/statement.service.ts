@@ -11,6 +11,7 @@ import {
   billsHours,
   type BillByValue,
   type RateLevel,
+  currencyOrNull, DEFAULT_CURRENCY,
 } from '@hbcfield/shared';
 import { FINISHED, countedMinutesByDay, jobHours, jobsInPeriod } from './work-source';
 
@@ -74,7 +75,7 @@ export class StatementService {
       }),
       this.prisma.organization.findUnique({
         where: { id: data.organizationId },
-        select: { name: true, costRateCents: true, timezone: true },
+        select: { name: true, costRateCents: true, timezone: true, currency: true },
       }),
     ]);
     // 404, not 403: whether somebody is a member here is not for an outsider to learn.
@@ -321,7 +322,8 @@ export class StatementService {
         organizationName: org?.name ?? null,
         from,
         to,
-        currency: 'EUR',
+        // What a worker is paid in: the organization's currency, never a workspace's.
+        currency: currencyOrNull(org?.currency) ?? DEFAULT_CURRENCY,
         lines: priced,
         daysBySpace,
         totalHours: round2(totalHours),

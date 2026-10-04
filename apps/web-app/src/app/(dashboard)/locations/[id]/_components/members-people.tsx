@@ -7,7 +7,6 @@ import { Home, Loader2, Search, Trash2, UserPlus, Users } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
-import { formatMoney } from "@/lib/money"
 import { fetchAllPages } from "@/lib/paginate"
 import { useAuth } from "@/contexts/auth-context"
 import {
@@ -43,7 +42,7 @@ import {
 import { DatedRateField, currentOf } from "@/components/rates/dated-rate"
 import { EmptyState } from "./section-header"
 import { MemberRoutingEditor } from "./member-routing-editor"
-import { BILL_BY, roleQueryKey, Segmented, useBillByLabel, type BillBy } from "./work-roles"
+import { BILL_BY, roleQueryKey, Segmented, useBillByLabel, useCents, useSpaceCurrency, type BillBy } from "./work-roles"
 
 /**
  * The People tab of a workspace's Members page.
@@ -63,9 +62,6 @@ const fullName = (p: { firstName?: string | null; lastName?: string | null }) =>
 const initials = (p?: { firstName?: string | null; lastName?: string | null } | null) =>
   ((p?.firstName?.[0] || "") + (p?.lastName?.[0] || "")).toUpperCase()
 
-function useCents(currency = "EUR") {
-  return (cents: number) => formatMoney(cents / 100, currency)
-}
 
 /** One role's coloured dot + name, read-only. */
 function RoleTag({ role }: { role?: { name: string; color?: string | null } | null }) {
@@ -80,7 +76,7 @@ function RoleTag({ role }: { role?: { name: string; color?: string | null } | nu
 
 export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; hasApartments?: boolean }) {
   const { t } = useTranslation()
-  const cents = useCents()
+  const cents = useCents(useSpaceCurrency(spaceId).bill)
   const billByLabel = useBillByLabel()
   const [query, setQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<string>("all")
@@ -297,7 +293,8 @@ function MemberPanel({
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const billByLabel = useBillByLabel()
-  const cents = useCents()
+  const money = useSpaceCurrency(spaceId)
+  const cents = useCents(money.bill)
   const { user } = useAuth()
   const canViewLabourCost = (user as { canViewLabourCost?: boolean } | null)?.canViewLabourCost === true
   const [confirmRemove, setConfirmRemove] = useState(false)
@@ -428,6 +425,7 @@ function MemberPanel({
                     <DatedRateField
                       id={`panel-bill-${member.id}`}
                       label={t("rates.spaceBill")}
+                      currency={money.bill}
                       currentCents={member.billRateCents ?? null}
                       emptyLabel={member.inheritedBillRateCents != null ? t("rates.usesDefault", { rate: cents(member.inheritedBillRateCents) }) : undefined}
                       history={rates?.filter((r) => r.kind === "BILL_HOUR")}
@@ -451,6 +449,7 @@ function MemberPanel({
                       label={t("rates.dayCostHere")}
                       hint={t("rates.dayCostHint")}
                       unit="day"
+                      currency={money.cost}
                       currentCents={currentOf(rates?.filter((r) => r.kind === "COST_DAY"))}
                       history={rates?.filter((r) => r.kind === "COST_DAY")}
                       onSubmit={(c, from) => saveRate({ costDayCents: c }, from)}
@@ -461,6 +460,7 @@ function MemberPanel({
                       id={`panel-cost-${member.id}`}
                       label={t("rates.costHere")}
                       hint={t("rates.spaceCostHint")}
+                      currency={money.cost}
                       currentCents={member.costRateCents ?? null}
                       history={rates?.filter((r) => r.kind === "COST_HOUR")}
                       onSubmit={(c, from) => saveRate({ costRateCents: c }, from)}

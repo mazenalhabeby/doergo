@@ -30,6 +30,7 @@ import { InvoiceDocument, money, fmtDate } from "../_components/invoice-document
 import {
   ClientFields, TermsFields, LineEditor, num, type EditableLine,
 } from "../_components/invoice-fields"
+import { useExchangeRate } from "../_lib/use-exchange-rate"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -196,7 +197,9 @@ function NewInvoiceInner() {
   const [clientName, setClientName] = useState("")
   const [clientEmail, setClientEmail] = useState("")
   const [clientAddress, setClientAddress] = useState("")
-  const [currency, setCurrency] = useState("EUR")
+  const [currency, setCurrency] = useState(user?.orgCurrency ?? "EUR")
+  // Where the currency came from (workspace → client → organization); cleared once somebody picks one.
+  const [currencySource, setCurrencySource] = useState<"workspace" | "client" | "organization" | null>(null)
   const [issueDate, setIssueDate] = useState(todayIso())
   const [dueDate, setDueDate] = useState("")
   const [taxPct, setTaxPct] = useState("20")
@@ -334,7 +337,10 @@ function NewInvoiceInner() {
       if (g.clientName) setClientName((p) => p || g.clientName || "")
       if (g.clientEmail) setClientEmail((p) => p || g.clientEmail || "")
       if (g.clientAddress) setClientAddress((p) => p || g.clientAddress || "")
-      if (g.currency) setCurrency(g.currency)
+      if (g.currency) {
+        setCurrency(g.currency)
+        setCurrencySource(g.currencySource ?? null)
+      }
       if (g.rate != null) setRate(String(g.rate))
       setEntries(
         (g.workEntries || []).map((w) => ({
@@ -590,6 +596,14 @@ function NewInvoiceInner() {
     return [...names]
   }, [entries, includedDays, includedHours, siteMode, t])
   const canViewLabourCost = (user as { canViewLabourCost?: boolean } | null)?.canViewLabourCost === true
+  /*
+    ⚠️ COSTS ARE IN THE ORGANIZATION'S CURRENCY, the bill in the invoice's. A
+    margin subtracts one from the other only through the rate saved with this
+    invoice — with no rate there is no margin, never one converted at a guess.
+  */
+  const baseCurrency = gather?.baseCurrency ?? user?.orgCurrency ?? "EUR"
+  const exchange = useExchangeRate({ currency, baseCurrency, issueDate })
+  const billedInBase = exchange.toBase(workSubtotal)
   const showMargin =
     canViewLabourCost &&
     gather?.twoRates === true &&
@@ -623,6 +637,7 @@ function NewInvoiceInner() {
         clientEmail: clientEmail.trim() || undefined,
         clientAddress: clientAddress.trim() || undefined,
         currency,
+        ...exchange.payload,
         taxRate: (Number(taxPct) || 0) / 100,
         discount: Number(discount) || 0,
         issueDate,
@@ -670,6 +685,7 @@ function NewInvoiceInner() {
   const includedCount = entries.filter((e) => e.include).length
   const canSave =
     clientName.trim().length > 0 &&
+    exchange.valid &&
     (includedCount > 0 || includedDays.length > 0 || includedHours.length > 0 || manualLines.some((m) => m.description.trim()))
 
   return (
@@ -1009,7 +1025,10 @@ function NewInvoiceInner() {
               <TermsFields
                 issueDate={issueDate} setIssueDate={setIssueDate}
                 dueDate={dueDate} setDueDate={setDueDate}
-                currency={currency} setCurrency={setCurrency}
+                currency={currency}
+                setCurrency={(c) => { setCurrency(c); setCurrencySource(null) }}
+                currencySource={currencySource}
+                exchange={exchange}
                 taxPct={taxPct} setTaxPct={setTaxPct}
                 discount={discount} setDiscount={setDiscount}
               >
@@ -1087,21 +1106,33 @@ function NewInvoiceInner() {
               <div>
                 <p className="text-xs text-muted-foreground">{t("invoices.create.billed")}</p>
                 <p className="text-lg font-semibold tabular-nums text-foreground">{money(workSubtotal, currency)}</p>
+                {exchange.differs && billedInBase != null && (
+                  <p className="text-[11px] tabular-nums text-muted-foreground">≈ {money(billedInBase, baseCurrency)}</p>
+                )}
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">{t("invoices.create.labourCost")}</p>
-                <p className="text-lg font-semibold tabular-nums text-amber-700 dark:text-amber-500">{money(workCost, currency)}</p>
+                <p className="text-lg font-semibold tabular-nums text-amber-700 dark:text-amber-500">{money(workCost, baseCurrency)}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">{t("invoices.create.margin")}</p>
-                <p className={cn(
-                  "text-lg font-semibold tabular-nums",
-                  workSubtotal - workCost < 0 ? "text-red-600 dark:text-red-400" : "text-teal-700 dark:text-teal-400",
-                )}>
-                  {money(workSubtotal - workCost, currency)}
-                </p>
+                {billedInBase == null ? (
+                  <p className="text-lg font-semibold tabular-nums text-muted-foreground">—</p>
+                ) : (
+                  <p className={cn(
+                    "text-lg font-semibold tabular-nums",
+                    billedInBase - workCost < 0 ? "text-red-600 dark:text-red-400" : "text-teal-700 dark:text-teal-400",
+                  )}>
+                    {money(billedInBase - workCost, baseCurrency)}
+                  </p>
+                )}
               </div>
             </div>
+            {billedInBase == null && (
+              <p className="mt-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs text-blue-800 dark:text-blue-300">
+                {t("currency.marginNeedsRate", { from: currency, to: baseCurrency })}
+              </p>
+            )}
             {/* Billing under cost is a real thing — a fixed price, a goodwill
                 rate — and hiding it is how somebody finds out at quarter end. */}
             <p className="mt-2 text-[11px] text-muted-foreground">{t("invoices.create.marginHint")}</p>
