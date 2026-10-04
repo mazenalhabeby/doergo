@@ -6059,8 +6059,12 @@ export interface MemberStatement {
     jobs: number;
     fromDay: string;
     toDay: string;
+    /** `hours` = job hours; `days` = counted time on the days worked (billed by the day here). */
+    basis?: 'hours' | 'days';
+    /** `days` lines: how many days the run covers. */
+    days?: number;
   }>;
-  /** Days clocked in, per workspace id — for reference; the statement is hourly. */
+  /** Days on site, per workspace id. */
   daysBySpace: Record<string, number>;
   totalHours: number;
   totalCents: number;

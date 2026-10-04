@@ -10,7 +10,7 @@ import {
 /** The invoice line kinds a caller may file. */
 const LINE_KINDS = new Set(['HOURS', 'DAYS', 'HEADING']);
 
-import { dayStart, dayEnd, jobsInPeriod, jobHours, FINISHED } from './work-source';
+import { dayStart, dayEnd, jobsInPeriod, jobHours, FINISHED, countedMinutesByDay } from './work-source';
 
 @Injectable()
 export class InvoiceService {
@@ -1094,26 +1094,17 @@ export class InvoiceService {
     const jobDays = jobs.map((j) => ({
       userId: j.serviceReport?.completedById ?? j.assignedToId,
       clockInAt: j.serviceReport?.completedAt ?? j.updatedAt,
-      minutes: Math.max(0, Math.round((j.serviceReport?.workDuration ?? 0) / 60)),
     }));
-    /*
-      Counted minutes per (person, day): the counted time of their clock-ins
-      there; a day with only a finished job counts that job's time. What a day
-      COSTS follows from this — their actual time, counted once.
-    */
-    const minutesOn = new Map<string, number>();
-    const add = (k: string, m: number) => minutesOn.set(k, (minutesOn.get(k) ?? 0) + m);
-    for (const e of entries) {
-      const m =
-        e.paidMinutes ?? e.totalMinutes ??
-        (e.clockOutAt ? Math.max(0, Math.round((e.clockOutAt.getTime() - e.clockInAt.getTime()) / 60000)) : 0);
-      add(`${e.userId}|${dayKeyIn(e.clockInAt, tz)}`, m);
-    }
-    const clockedDays = new Set(minutesOn.keys());
-    for (const j of jobDays) {
-      const k = `${j.userId}|${dayKeyIn(j.clockInAt, tz)}`;
-      if (!clockedDays.has(k)) add(k, j.minutes);
-    }
+    // Counted time per person per day — the rule shared with the worker's statement.
+    const minutesOn = countedMinutesByDay(
+      entries,
+      jobs.map((j) => ({
+        userId: j.serviceReport?.completedById ?? j.assignedToId,
+        at: j.serviceReport?.completedAt ?? j.updatedAt,
+        minutes: Math.round((j.serviceReport?.workDuration ?? 0) / 60),
+      })),
+      (at) => dayKeyIn(at, tz),
+    );
 
     const key = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
     const out: DayEntry[] = [];

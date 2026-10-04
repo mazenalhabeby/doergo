@@ -45,3 +45,51 @@ export const FINISHED = { in: ['COMPLETED', 'CLOSED'] };
 export function jobHours(report: { workDuration: number } | null | undefined): number {
   return report && report.workDuration > 0 ? Math.round((report.workDuration / 3600) * 100) / 100 : 0;
 }
+
+/** A clock-in, with whatever counted time it carries. */
+export interface CountedClockIn {
+  userId: string;
+  clockInAt: Date;
+  clockOutAt?: Date | null;
+  paidMinutes?: number | null;
+  totalMinutes?: number | null;
+}
+
+/** A finished job, as a mark on a day with its own duration. */
+export interface CountedJob {
+  userId: string | null;
+  at: Date;
+  minutes: number;
+}
+
+/**
+ * Counted minutes per person per day — ONE rule for the invoice margin and the
+ * worker's statement.
+ *
+ * ⚠️ A person's time on a day is the counted time of their clock-ins that day.
+ * A day with no clock-in but a finished job counts that job's time instead.
+ * Never both: a job done during a clocked shift is already inside the shift.
+ *
+ * Keyed `userId|YYYY-MM-DD`, the day read by `dayOf` (the workspace's zone).
+ */
+export function countedMinutesByDay(
+  clockIns: CountedClockIn[],
+  jobs: CountedJob[],
+  dayOf: (at: Date) => string,
+): Map<string, number> {
+  const out = new Map<string, number>();
+  const add = (k: string, m: number) => out.set(k, (out.get(k) ?? 0) + m);
+  for (const e of clockIns) {
+    const m =
+      e.paidMinutes ?? e.totalMinutes ??
+      (e.clockOutAt ? Math.max(0, Math.round((e.clockOutAt.getTime() - e.clockInAt.getTime()) / 60000)) : 0);
+    add(`${e.userId}|${dayOf(e.clockInAt)}`, m);
+  }
+  const clocked = new Set(out.keys());
+  for (const j of jobs) {
+    if (!j.userId) continue;
+    const k = `${j.userId}|${dayOf(j.at)}`;
+    if (!clocked.has(k)) add(k, Math.max(0, j.minutes));
+  }
+  return out;
+}

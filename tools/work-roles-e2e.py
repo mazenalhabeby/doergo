@@ -93,6 +93,13 @@ ADMIN, MGR = tok['douglas.ferriby'], tok['mara.kellner']
 ORG = psql(f"select \"organizationId\" from users where id='{uid['douglas.ferriby']}'")
 PATRICK, MARK, AHMED = uid['tobias.okafor'], uid['conor.devlin'], uid['niamh.brennan']
 
+def reset_member_costs():
+    # The workers' own cost rates live on their account, outside the workspace this run deletes.
+    ids = ','.join(f"'{u}'" for u in (PATRICK, MARK, AHMED))
+    psql(f'delete from rate_history where target=\'MEMBER\' and "targetId" in ({ids}); '
+         f'update users set "costRateCents" = null, "billRateCents" = null where id in ({ids});')
+
+reset_member_costs()
 space = None
 made_roles = []
 try:
@@ -292,6 +299,16 @@ try:
     r = call('GET', f'/invoices/gather?spaceId={space}&from={day(-20)}&to={day(-1)}', tok['niamh.brennan'])
     check('day cost never reaches somebody without labour cost', r[0] != 200 or 'costCents' not in json.dumps(r[1]), r[0])
 
+    # ── The statement says what the margin says ─────────────────────────────
+    sp = data(call('GET', f'/organizations/members/{PATRICK}/statement?from={day(-20)}&to={day(-1)}', ADMIN))
+    margin_days = sum(d.get('costCents') or 0 for d in gc['dayEntries'] if d['workerId'] == PATRICK)
+    here = [l for l in sp['lines'] if l['spaceId'] == space]
+    check('statement for a day-billed person = the margin\'s cost of their days (€2,160)',
+          sum(l['amountCents'] for l in here) == margin_days == 216000, (here, margin_days))
+    # His cost rate did not change, so his days are one line — split only where HIS rate changes.
+    check('…as one run at his cost rate: 9 days, 72h × €30',
+          [(l.get('days'), l['hours'], l['rateCents']) for l in here] == [(9, 72, 3000)], here)
+
     # ── Invoice the days: never billed twice ─────────────────────────────────
     pd = [d for d in g['dayEntries'] if d['workerId'] == PATRICK]
     items = [{'description': 'Mechanic', 'quantity': 0, 'unitPrice': 0, 'lineKind': 'HEADING'}] + [
@@ -321,6 +338,8 @@ try:
     check('a raise TODAY leaves every earlier day at its own rate',
           sorted((d['days'], d['dayRateCents']) for d in g4['dayEntries'] if d['workerId'] == PATRICK) == [(4, 22000), (5, 20000)], g4['dayEntries'])
 finally:
+    if not KEEP:
+        reset_member_costs()
     if KEEP:
         print(f'kept: workspace {space}')
     elif space:

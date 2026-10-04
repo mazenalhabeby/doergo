@@ -61,4 +61,23 @@ describe('StatementService', () => {
     expect((await service.forMember({ organizationId: 'org', memberId: 'mark', from: '2026-10-31', to: '2026-10-01' })).statusCode).toBe(400);
     expect((await service.forMember({ organizationId: 'org', memberId: 'mark', from: '2026-02-30' })).statusCode).toBe(400);
   });
+
+  it('somebody billed by the day is counted on their clocked time on those days — the margin\'s rule', async () => {
+    prisma.spaceAssignment.findMany.mockResolvedValueOnce([
+      { id: 'a1', spaceId: 's1', costRateCents: null, billBy: 'BOTH', space: { id: 's1', name: 'BILLA', timezone: 'Europe/Vienna', costRateCents: null } },
+    ]);
+    prisma.timeEntry.findMany.mockResolvedValueOnce([
+      { userId: 'mark', locationId: 's1', clockInAt: new Date('2026-10-09T06:00:00Z'), clockOutAt: new Date('2026-10-09T14:00:00Z'), paidMinutes: 450, totalMinutes: 480, location: { timezone: 'Europe/Vienna' } },
+      { userId: 'mark', locationId: 's1', clockInAt: new Date('2026-10-10T06:00:00Z'), clockOutAt: null, paidMinutes: null, totalMinutes: 480, location: { timezone: 'Europe/Vienna' } },
+    ]);
+    // Jobs on the 10th (inside a shift: not counted again) and the 25th (no clock-in: its own 6h count).
+    prisma.task.findMany.mockResolvedValueOnce([job('t1', '2026-10-10', 4), job('t2', '2026-10-25', 6)]);
+    const r: any = await service.forMember({ organizationId: 'org', memberId: 'mark', from: '2026-10-01', to: '2026-10-31' });
+    // 7.5h (counted, not 8) + 8h + 6h — split where HIS cost rate changed on the 20th.
+    expect(r.data.lines.map((l: any) => [l.basis, l.days, l.hours, l.rateCents, l.amountCents])).toEqual([
+      ['days', 2, 15.5, 2500, 38750],
+      ['days', 1, 6, 2800, 16800],
+    ]);
+    expect(r.data.totalCents).toBe(55550);
+  });
 });

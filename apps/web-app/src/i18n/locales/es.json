@@ -2577,7 +2577,9 @@
       "levelClient": "tarifa del espacio",
       "levelOrganization": "predeterminada de la organización",
       "missingRate": "Algunas horas no tienen tarifa en ningún nivel: fije la tarifa de coste en el perfil del miembro.",
-      "sameHours": "Los mismos trabajos y horas que la factura del cliente; solo cambia la tarifa. Cada trabajo se valora a la tarifa vigente el día en que se hizo."
+      "sameHours": "Las horas cuentan una vez: horas de trabajos donde se factura por horas, el tiempo contado en los días trabajados donde se factura por días — la misma regla que el margen de la factura. Cada día se valora a la tarifa vigente ese día.",
+      "daysRun_one": "{{count}} día trabajado",
+      "daysRun_other": "{{count}} días trabajados"
     }
   },
   "invitations": {

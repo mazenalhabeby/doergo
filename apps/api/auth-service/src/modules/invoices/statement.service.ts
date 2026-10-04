@@ -6,9 +6,12 @@ import {
   parseDayKey,
   resolveRate,
   workedDays,
+  effectiveBillBy,
+  billsDays,
+  type BillByValue,
   type RateLevel,
 } from '@hbcfield/shared';
-import { FINISHED, jobHours, jobsInPeriod } from './work-source';
+import { FINISHED, countedMinutesByDay, jobHours, jobsInPeriod } from './work-source';
 
 /** One workspace's hours at one rate, on the statement. */
 export interface StatementLine {
@@ -24,6 +27,13 @@ export interface StatementLine {
   /** First and last day of work in this line, `YYYY-MM-DD`. */
   fromDay: string;
   toDay: string;
+  /**
+   * `hours` = job hours (billed by the hour here). `days` = counted time on the
+   * days worked (billed by the day or hour + day here) — the margin's rule.
+   */
+  basis: 'hours' | 'days';
+  /** `days` lines: how many days the run covers. */
+  days?: number;
 }
 
 /**
@@ -98,15 +108,22 @@ export class StatementService {
       orderBy: { updatedAt: 'asc' },
     });
 
-    const spaceIds = [...new Set(tasks.map((t) => t.spaceId).filter((x): x is string => !!x))];
+    /*
+      Every workspace this person belongs to — not only where they finished a
+      job — because somebody billed by the day may have worked there all month
+      and closed nothing. Their billing there decides how their time is counted.
+    */
     const [assignments, clockIns] = await Promise.all([
-      spaceIds.length
-        ? this.prisma.spaceAssignment.findMany({
-            where: { userId: member.id, spaceId: { in: spaceIds } },
-            select: { id: true, spaceId: true, costRateCents: true },
-          })
-        : Promise.resolve([]),
-      // Days on site, for the reader's reference — the statement is hourly.
+      this.prisma.spaceAssignment.findMany({
+        where: { userId: member.id, organizationId: data.organizationId },
+        select: {
+          id: true,
+          spaceId: true,
+          costRateCents: true,
+          billBy: true,
+          space: { select: { id: true, name: true, timezone: true, costRateCents: true } },
+        },
+      }),
       this.prisma.timeEntry.findMany({
         where: {
           userId: member.id,
@@ -116,10 +133,17 @@ export class StatementService {
             ? { clockInAt: { ...(from && { gte: new Date(Date.parse(`${from}T00:00:00Z`) - 86_400_000) }), ...(to && { lte: new Date(Date.parse(`${to}T23:59:59.999Z`) + 86_400_000) }) } }
             : {}),
         },
-        select: { locationId: true, clockInAt: true, location: { select: { timezone: true } } },
+        select: {
+          userId: true, locationId: true, clockInAt: true, clockOutAt: true, paidMinutes: true, totalMinutes: true,
+          location: { select: { timezone: true } },
+        },
       }),
     ]);
     const assignmentIn = new Map(assignments.map((a) => [a.spaceId, a]));
+    const spaceInfo = new Map<string, { id: string; name: string; timezone: string | null; costRateCents: number | null }>();
+    for (const a of assignments) if (a.space) spaceInfo.set(a.spaceId, a.space);
+    for (const t of tasks) if (t.spaceId && t.space && !spaceInfo.has(t.spaceId)) spaceInfo.set(t.spaceId, t.space);
+    const spaceIds = [...spaceInfo.keys()];
     const book = await loadRateBook(this.prisma, data.organizationId, {
       organizationIds: [data.organizationId],
       spaceIds,
@@ -127,55 +151,108 @@ export class StatementService {
       assignmentIds: assignments.map((a) => a.id),
     });
 
-    // Price each job on its own day, then gather by (workspace, rate).
-    const buckets = new Map<string, StatementLine>();
-    let totalHours = 0;
-    for (const t of tasks) {
-      const hours = jobHours(t.serviceReport);
-      if (hours <= 0) continue;
-      const tz = t.space?.timezone || org?.timezone || 'UTC';
-      const day = dayKeyIn(t.serviceReport?.completedAt ?? t.updatedAt, tz);
-      const a = t.spaceId ? assignmentIn.get(t.spaceId) : undefined;
-      const resolved = resolveRate('cost', {
+    // Their cost rate on a day, in a workspace — the cost side of the ladder, dated.
+    const costOn = (spaceId: string | null, day: string) => {
+      const a = spaceId ? assignmentIn.get(spaceId) : undefined;
+      const sp = spaceId ? spaceInfo.get(spaceId) : undefined;
+      return resolveRate('cost', {
         contract: a ? { costRateCents: book.on(day, 'ASSIGNMENT', a.id, 'COST_HOUR', a.costRateCents) } : null,
         member: { costRateCents: book.on(day, 'MEMBER', member.id, 'COST_HOUR', member.costRateCents) },
-        client: t.space ? { costRateCents: book.on(day, 'SPACE', t.space.id, 'COST_HOUR', t.space.costRateCents) } : null,
+        client: sp ? { costRateCents: book.on(day, 'SPACE', sp.id, 'COST_HOUR', sp.costRateCents) } : null,
         organization: { costRateCents: book.on(day, 'ORGANIZATION', data.organizationId, 'COST_HOUR', org?.costRateCents) },
       });
+    };
+    const tzOfSpace = (spaceId: string | null) => (spaceId && spaceInfo.get(spaceId)?.timezone) || org?.timezone || 'UTC';
+    /*
+      ⚠️ THE SAME RULE AS THE INVOICE MARGIN. Somebody billed by the DAY (or
+      hour + day) somewhere is counted there on their counted time on those
+      days; anywhere else, on their job hours. Two rules here would make the
+      statement and the margin disagree about one person's month.
+    */
+    const byDays = (spaceId: string | null) => {
+      const b = (spaceId ? (assignmentIn.get(spaceId)?.billBy as BillByValue | null) : null) ?? null;
+      return billsDays(effectiveBillBy(b));
+    };
+
+    const lines: StatementLine[] = [];
+    let totalHours = 0;
+    const round2 = (n: number) => Math.round(n * 100) / 100;
+
+    // 1 · Hour-billed work: each job priced on its own day, gathered by (workspace, rate).
+    const buckets = new Map<string, StatementLine>();
+    for (const t of tasks) {
+      if (byDays(t.spaceId)) continue;
+      const hours = jobHours(t.serviceReport);
+      if (hours <= 0) continue;
+      const day = dayKeyIn(t.serviceReport?.completedAt ?? t.updatedAt, tzOfSpace(t.spaceId));
+      const resolved = costOn(t.spaceId, day);
       const key = `${t.spaceId ?? ''}|${resolved.cents ?? 'none'}`;
       const line = buckets.get(key) ?? {
-        spaceId: t.spaceId,
-        spaceName: t.space?.name ?? null,
-        hours: 0,
-        rateCents: resolved.cents,
-        rateLevel: resolved.level,
-        amountCents: 0,
-        jobs: 0,
-        fromDay: day,
-        toDay: day,
+        spaceId: t.spaceId, spaceName: t.space?.name ?? null, hours: 0,
+        rateCents: resolved.cents, rateLevel: resolved.level, amountCents: 0, jobs: 0,
+        fromDay: day, toDay: day, basis: 'hours' as const,
       };
-      line.hours = Math.round((line.hours + hours) * 100) / 100;
+      line.hours = round2(line.hours + hours);
       line.jobs += 1;
       if (day < line.fromDay) line.fromDay = day;
       if (day > line.toDay) line.toDay = day;
       buckets.set(key, line);
-      totalHours += hours;
     }
+    lines.push(...buckets.values());
+
+    // 2 · Day-billed workspaces: counted time on each day, in runs that share a cost rate.
+    for (const sid of spaceIds.filter((x) => byDays(x))) {
+      const tz = tzOfSpace(sid);
+      const dayOf = (at: Date) => dayKeyIn(at, tz);
+      const jobsHere = tasks.filter((t) => t.spaceId === sid);
+      const minutes = countedMinutesByDay(
+        clockIns.filter((c) => c.locationId === sid),
+        jobsHere.map((t) => ({ userId: member.id, at: t.serviceReport?.completedAt ?? t.updatedAt, minutes: Math.round((t.serviceReport?.workDuration ?? 0) / 60) })),
+        dayOf,
+      );
+      const days = [...minutes.keys()]
+        .map((k) => k.split('|')[1]!)
+        .filter((d) => (!from || d >= from) && (!to || d <= to))
+        .sort();
+      // One entry per day, then consecutive days at the same cost rate become one line.
+      const runs: Array<StatementLine & { minutes: number }> = [];
+      for (const d of days) {
+        const resolved = costOn(sid, d);
+        const m = minutes.get(`${member.id}|${d}`) ?? 0;
+        const jobsThatDay = jobsHere.filter((t) => dayOf(t.serviceReport?.completedAt ?? t.updatedAt) === d).length;
+        const last = runs[runs.length - 1];
+        if (last && last.rateCents === resolved.cents) {
+          last.minutes += m;
+          last.days = (last.days ?? 0) + 1;
+          last.jobs += jobsThatDay;
+          last.toDay = d;
+        } else {
+          runs.push({
+            spaceId: sid, spaceName: spaceInfo.get(sid)?.name ?? null, hours: 0,
+            rateCents: resolved.cents, rateLevel: resolved.level, amountCents: 0, jobs: jobsThatDay,
+            fromDay: d, toDay: d, basis: 'days', days: 1, minutes: m,
+          });
+        }
+      }
+      for (const { minutes: m, ...l } of runs) lines.push({ ...l, hours: round2(m / 60) });
+    }
+
     /*
       ⚠️ The money follows the PRINTED hours, rounded once per line — so every
       line multiplies out for whoever checks it with a calculator, the same
       promise the invoice makes.
     */
-    const lines = [...buckets.values()]
+    const priced = lines
       .map((l) => ({ ...l, amountCents: l.rateCents === null ? 0 : Math.round(l.rateCents * l.hours) }))
       .sort((a, b) => (a.spaceName ?? '').localeCompare(b.spaceName ?? '') || a.fromDay.localeCompare(b.fromDay));
+    totalHours = priced.reduce((s2, l) => s2 + l.hours, 0);
 
     // Days on site, by the invoice's rule: a day clocked in OR a day a job was finished there.
     const daysBySpace: Record<string, number> = {};
     const tzOf = new Map<string, string>();
     for (const c of clockIns) if (c.location?.timezone) tzOf.set(c.locationId, c.location.timezone);
     for (const t of tasks) if (t.spaceId && t.space?.timezone) tzOf.set(t.spaceId, t.space.timezone);
-    const sids = new Set([...clockIns.map((c) => c.locationId), ...spaceIds]);
+    const sids = new Set([...clockIns.map((c) => c.locationId), ...tasks.map((t) => t.spaceId).filter((x): x is string => !!x)]);
     for (const sid of sids) {
       const tz = tzOf.get(sid) || org?.timezone || 'UTC';
       const marks = [
@@ -193,12 +270,12 @@ export class StatementService {
         from,
         to,
         currency: 'EUR',
-        lines,
+        lines: priced,
         daysBySpace,
-        totalHours: Math.round(totalHours * 100) / 100,
-        totalCents: lines.reduce((s, l) => s + l.amountCents, 0),
+        totalHours: round2(totalHours),
+        totalCents: priced.reduce((sum, l) => sum + l.amountCents, 0),
         /** Lines with hours and no rate anywhere on the ladder — worth saying, never a silent zero. */
-        missingRate: lines.some((l) => l.rateCents === null),
+        missingRate: priced.some((l) => l.rateCents === null),
       },
     };
   }

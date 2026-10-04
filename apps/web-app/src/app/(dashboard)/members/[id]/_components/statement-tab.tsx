@@ -149,12 +149,15 @@ export function StatementTab({ memberId }: { memberId: string }) {
                     <td className="px-5 py-2.5">
                       <span className="font-medium text-foreground">{l.spaceName ?? t("members.statement.noWorkspace")}</span>
                       <span className="block text-xs text-muted-foreground">
-                        {t("members.statement.jobs", { count: l.jobs })} · {formatDayKey(l.fromDay, i18n.language, { year: false })}
+                        {l.basis === "days"
+                          ? t("members.statement.daysRun", { count: l.days ?? 0 })
+                          : t("members.statement.jobs", { count: l.jobs })}
+                        {" · "}{formatDayKey(l.fromDay, i18n.language, { year: false })}
                         {l.toDay !== l.fromDay && ` – ${formatDayKey(l.toDay, i18n.language, { year: false })}`}
                       </span>
                     </td>
                     <td className="px-2 py-2.5 text-right tabular-nums text-muted-foreground">
-                      {l.spaceId != null ? data.daysBySpace[l.spaceId] ?? 0 : ""}
+                      {l.basis === "days" ? l.days : l.spaceId != null ? data.daysBySpace[l.spaceId] ?? 0 : ""}
                     </td>
                     <td className="px-2 py-2.5 text-right tabular-nums">{l.hours}</td>
                     <td className="px-2 py-2.5 text-right tabular-nums">

@@ -2577,7 +2577,9 @@
       "levelClient": "tarif de l’espace",
       "levelOrganization": "par défaut de l’organisation",
       "missingRate": "Certaines heures n’ont de tarif à aucun niveau : définissez le coût horaire dans le profil du membre.",
-      "sameHours": "Les mêmes interventions et heures que la facture client ; seul le tarif change. Chaque intervention est valorisée au tarif en vigueur le jour où elle a été faite."
+      "sameHours": "Les heures comptent une fois : heures d’intervention là où la personne est facturée à l’heure, temps compté sur les jours travaillés là où elle l’est à la journée — la même règle que la marge de la facture. Chaque jour est valorisé au tarif en vigueur ce jour-là.",
+      "daysRun_one": "{{count}} jour travaillé",
+      "daysRun_other": "{{count}} jours travaillés"
     }
   },
   "invitations": {

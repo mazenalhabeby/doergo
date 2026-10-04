@@ -2577,7 +2577,9 @@
       "levelClient": "Satz des Arbeitsbereichs",
       "levelOrganization": "Standard der Organisation",
       "missingRate": "Für einige Stunden ist nirgends ein Satz hinterlegt — legen Sie den Kostensatz im Profil des Mitglieds fest.",
-      "sameHours": "Dieselben Aufträge und Stunden wie auf der Kundenrechnung; nur der Satz unterscheidet sich. Jeder Auftrag wird zum Satz des Tages bewertet, an dem er erledigt wurde."
+      "sameHours": "Stunden zählen einmal: Auftragsstunden, wo die Person nach Stunden abgerechnet wird, die gezählte Zeit an den Arbeitstagen, wo nach Tagen abgerechnet wird — dieselbe Regel wie die Marge der Rechnung. Jeder Tag wird zum Satz dieses Tages bewertet.",
+      "daysRun_one": "{{count}} Arbeitstag",
+      "daysRun_other": "{{count}} Arbeitstage"
     }
   },
   "invitations": {

@@ -64,7 +64,7 @@ export function exportStatementPdf(
     head: [[labels.workspace, labels.days, labels.hours, labels.rate, labels.amount]],
     body: s.lines.map((l) => [
       l.spaceName ?? labels.noWorkspace,
-      l.spaceId && s.daysBySpace[l.spaceId] != null ? String(s.daysBySpace[l.spaceId]) : "",
+      l.basis === "days" ? String(l.days ?? "") : l.spaceId && s.daysBySpace[l.spaceId] != null ? String(s.daysBySpace[l.spaceId]) : "",
       String(l.hours),
       l.rateCents == null ? labels.noRate : fmt.money(l.rateCents),
       fmt.money(l.amountCents),
