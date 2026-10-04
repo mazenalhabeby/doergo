@@ -6120,6 +6120,8 @@ interface InvoiceGatherEntry {
   workRoleName?: string | null;
   /** False when billed by the DAY only: the job is listed, the days are charged. */
   hoursBillable?: boolean;
+  /** How this person is billed here — decides where their cost is counted. */
+  billBy?: 'HOUR' | 'DAY' | 'BOTH';
 }
 
 /**

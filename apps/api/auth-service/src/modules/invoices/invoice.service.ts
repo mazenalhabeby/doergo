@@ -910,7 +910,14 @@ export class InvoiceService {
       }
     }
 
-    const dayEntries = space ? await this.gatherDays(data.organizationId, space.id, tz, data.from, data.to, assignments, billByOf, book) : [];
+    // A person's cost rate on a day — the same ladder as their hours, cost side.
+    const costOn = (userId: string, day: string) => {
+      const a = assignmentOf.get(userId);
+      return ratesFor(a?.user ? { ...a.user, id: userId } : { id: userId }, day).costRateCents;
+    };
+    const dayEntries = space
+      ? await this.gatherDays(data.organizationId, space.id, tz, data.from, data.to, assignments, billByOf, book, costOn)
+      : [];
     return {
       success: true,
       data: {
@@ -947,6 +954,7 @@ export class InvoiceService {
           { billRateCents: org?.billableRateCents, costRateCents: org?.costRateCents },
           space ? { billRateCents: space.billableRateCents, costRateCents: space.costRateCents } : null,
           ...workEntries.map((w: any) => ({ costRateCents: w.costRateCents })),
+          ...dayEntries.map((d) => ({ costRateCents: d.costCents ?? null })),
         ]),
         workEntries,
       },
@@ -1026,6 +1034,7 @@ export class InvoiceService {
     }>,
     billByOf: (userId: string) => BillByValue,
     book: Awaited<ReturnType<typeof loadRateBook>>,
+    costOn: (userId: string, day: string) => number | null,
   ): Promise<DayEntry[]> {
     const byDay = assignments.filter(
       (a) => a.workRole?.kind === 'WORK' && !a.user?.isExternal && billsDays(billByOf(a.userId)),
@@ -1054,7 +1063,7 @@ export class InvoiceService {
           approvalStatus: { not: 'REJECTED' },
           ...(fromDay || toDay ? { clockInAt } : {}),
         },
-        select: { userId: true, clockInAt: true },
+        select: { userId: true, clockInAt: true, clockOutAt: true, paidMinutes: true, totalMinutes: true },
       }),
       this.prisma.invoiceItem.findMany({
         where: {
@@ -1075,13 +1084,36 @@ export class InvoiceService {
             { serviceReport: null, assignedToId: { in: ids }, ...(fromDay || toDay ? { updatedAt: jobRange } : {}) },
           ],
         },
-        select: { assignedToId: true, updatedAt: true, serviceReport: { select: { completedById: true, completedAt: true } } },
+        select: {
+          assignedToId: true,
+          updatedAt: true,
+          serviceReport: { select: { completedById: true, completedAt: true, workDuration: true } },
+        },
       }),
     ]);
     const jobDays = jobs.map((j) => ({
       userId: j.serviceReport?.completedById ?? j.assignedToId,
       clockInAt: j.serviceReport?.completedAt ?? j.updatedAt,
+      minutes: Math.max(0, Math.round((j.serviceReport?.workDuration ?? 0) / 60)),
     }));
+    /*
+      Counted minutes per (person, day): the counted time of their clock-ins
+      there; a day with only a finished job counts that job's time. What a day
+      COSTS follows from this — their actual time, counted once.
+    */
+    const minutesOn = new Map<string, number>();
+    const add = (k: string, m: number) => minutesOn.set(k, (minutesOn.get(k) ?? 0) + m);
+    for (const e of entries) {
+      const m =
+        e.paidMinutes ?? e.totalMinutes ??
+        (e.clockOutAt ? Math.max(0, Math.round((e.clockOutAt.getTime() - e.clockInAt.getTime()) / 60000)) : 0);
+      add(`${e.userId}|${dayKeyIn(e.clockInAt, tz)}`, m);
+    }
+    const clockedDays = new Set(minutesOn.keys());
+    for (const j of jobDays) {
+      const k = `${j.userId}|${dayKeyIn(j.clockInAt, tz)}`;
+      if (!clockedDays.has(k)) add(k, j.minutes);
+    }
 
     const key = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
     const out: DayEntry[] = [];
@@ -1098,7 +1130,20 @@ export class InvoiceService {
       // This workspace's day rate on each day, else the role's default.
       const roleId = a.workRole!.id;
       for (const run of book.splitDaysWith(days, (d) => book.dayRateOn(d, roleId, spaceId))) {
+        // What this run cost: each day's counted hours × the cost rate that day.
+        let costCents: number | null = 0;
+        let minutes = 0;
+        for (const d of days) {
+          if (d < run.fromDay || d > run.toDay) continue;
+          const m = minutesOn.get(`${a.userId}|${d}`) ?? 0;
+          minutes += m;
+          const rate = costOn(a.userId, d);
+          if (rate === null) costCents = null;
+          else if (costCents !== null) costCents += (rate * m) / 60;
+        }
         out.push({
+          costCents: costCents === null ? null : Math.round(costCents),
+          hours: Math.round((minutes / 60) * 100) / 100,
           workerId: a.userId,
           workerName: name,
           workRoleId: a.workRole!.id,

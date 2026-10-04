@@ -57,6 +57,8 @@ interface WorkEntry {
   workRoleName?: string | null
   /** False = billed by the day only: listed on the invoice, not charged by the hour. */
   hoursBillable: boolean
+  /** How this person is billed here — decides where their COST is counted. */
+  billBy: "HOUR" | "DAY" | "BOTH"
 }
 
 /** A run of days worked at one day rate, as the screen holds it. */
@@ -341,6 +343,7 @@ function NewInvoiceInner() {
           workRoleId: w.workRoleId ?? null,
           workRoleName: w.workRoleName ?? null,
           hoursBillable: w.hoursBillable !== false,
+          billBy: w.billBy ?? "HOUR",
         })),
       )
       setDayRuns(
@@ -359,8 +362,13 @@ function NewInvoiceInner() {
   const entryRate = (e: WorkEntry) => (e.billRateCents != null ? e.billRateCents / 100 : rateNum)
   // Day-billed work is listed but not charged by the hour — the days pay for it.
   const entryLabor = (e: WorkEntry) => (e.include && e.hoursBillable ? e.hours * entryRate(e) : 0)
+  /*
+    ⚠️ A PERSON'S TIME IS COSTED ONCE. Somebody billed by the day (or hour + day)
+    is costed on their counted hours on those days — the day rows carry that —
+    so their jobs add no cost here, or the same time would be counted twice.
+  */
   const entryCost = (e: WorkEntry) =>
-    e.include && e.costRateCents != null ? e.hours * (e.costRateCents / 100) : 0
+    e.include && e.billBy === "HOUR" && e.costRateCents != null ? e.hours * (e.costRateCents / 100) : 0
   const entryParts = (e: WorkEntry) => (e.include && e.includeParts ? e.parts.reduce((s, p) => s + p.quantity * p.unitCost, 0) : 0)
 
   /*
@@ -500,9 +508,31 @@ function NewInvoiceInner() {
     here. A browser that computed a margin from rates it happened to hold would
     be a second answer to the question the boundary exists to control.
   */
-  const workCost = useMemo(() => entries.reduce((s, e) => s + entryCost(e), 0), [entries])
+  const workCost = useMemo(
+    () =>
+      entries.reduce((s, e) => s + entryCost(e), 0) +
+      includedDays.reduce((s, d) => s + (d.costCents ?? 0) / 100, 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [entries, includedDays],
+  )
+  /*
+    Who has NO cost rate anywhere. Their time is left out of the cost — and the
+    screen says so by name, because a margin quietly counting them as free is
+    the number somebody would later quote.
+  */
+  const costMissing = useMemo(() => {
+    const names = new Set<string>()
+    for (const e of entries) {
+      if (e.include && e.billBy === "HOUR" && e.hours > 0 && e.costRateCents == null) names.add(e.workerName || t("invoices.create.unassignedWorker"))
+    }
+    for (const d of includedDays) if (d.costCents == null) names.add(d.workerName)
+    return [...names]
+  }, [entries, includedDays, t])
   const canViewLabourCost = (user as { canViewLabourCost?: boolean } | null)?.canViewLabourCost === true
-  const showMargin = canViewLabourCost && gather?.twoRates === true && entries.some((e) => e.include && e.costRateCents != null)
+  const showMargin =
+    canViewLabourCost &&
+    gather?.twoRates === true &&
+    (entries.some((e) => e.include && e.costRateCents != null) || includedDays.some((d) => d.costCents != null))
 
 
   const createMutation = useMutation({
@@ -1012,6 +1042,11 @@ function NewInvoiceInner() {
             {/* Billing under cost is a real thing — a fixed price, a goodwill
                 rate — and hiding it is how somebody finds out at quarter end. */}
             <p className="mt-2 text-[11px] text-muted-foreground">{t("invoices.create.marginHint")}</p>
+            {costMissing.length > 0 && (
+              <p className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+                {t("invoices.create.costMissing", { names: costMissing.join(", "), count: costMissing.length })}
+              </p>
+            )}
           </div>
         )}
 

@@ -4771,7 +4771,8 @@
       "otherRole": "Autres",
       "daysWorked_one": "{{count}} jour travaillé",
       "daysWorked_other": "{{count}} jours travaillés",
-      "dayBilled": "Facturé à la journée ici : les interventions sont listées, les jours sont facturés."
+      "dayBilled": "Facturé à la journée ici : les interventions sont listées, les jours sont facturés.",
+      "costMissing": "Aucun coût horaire pour {{names}} : leur travail n’entre pas dans le coût, la marge est donc trop élevée."
     },
     "oldestDebt": "Plus ancienne impayée",
     "nothingOutstanding": "Tout est réglé — rien en attente.",

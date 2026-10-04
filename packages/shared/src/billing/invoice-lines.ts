@@ -80,6 +80,14 @@ export interface DayEntry {
   fromDay: string;
   toDay: string;
   dayRateCents: number | null;
+  /**
+   * What these days COST — the person's counted hours on them × their cost
+   * rate on each day. Null when a day has no cost rate anywhere (unknown, not
+   * free). Internal: stripped for anyone without canViewLabourCost.
+   */
+  costCents?: number | null;
+  /** Counted hours on these days, for the reader. */
+  hours?: number;
 }
 
 export interface LabourLineOptions {

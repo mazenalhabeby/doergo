@@ -4762,7 +4762,8 @@
       "otherRole": "Other",
       "daysWorked_one": "{{count}} day worked",
       "daysWorked_other": "{{count}} days worked",
-      "dayBilled": "Billed by the day here: the jobs are listed, the days are charged."
+      "dayBilled": "Billed by the day here: the jobs are listed, the days are charged.",
+      "costMissing": "No cost rate for {{names}} — their work is left out of the cost, so the margin is too high."
     },
     "oldestDebt": "Oldest unpaid",
     "nothingOutstanding": "Everything is settled — nothing outstanding.",

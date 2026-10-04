@@ -210,7 +210,7 @@ export function snapshotRates(sources: RateSources): {
  * unrelated field goes missing; a named list is how a NEW one gets forgotten,
  * so `COST_BEARING_LISTS` is the place to add it and the guard test reads it.
  */
-const COST_BEARING_LISTS = ['items', 'workEntries'] as const;
+const COST_BEARING_LISTS = ['items', 'workEntries', 'dayEntries'] as const;
 
 export function stripLabourCost<T>(payload: T, mayViewCost: boolean): T {
   if (mayViewCost || !payload || typeof payload !== 'object') return payload;
@@ -224,8 +224,9 @@ export function stripLabourCost<T>(payload: T, mayViewCost: boolean): T {
     touched = true;
     out[key] = list.map((line) => {
       if (!line || typeof line !== 'object') return line;
-      const { costRateCents, ...rest } = line as Record<string, unknown>;
+      const { costRateCents, costCents, ...rest } = line as Record<string, unknown>;
       void costRateCents;
+      void costCents;
       return rest;
     });
   }
@@ -277,7 +278,7 @@ export function mayViewLabourCost(user: unknown): boolean {
   return u.access?.org?.canViewLabourCost === true || u.canViewLabourCost === true;
 }
 
-const COST_KEYS = new Set(['costRateCents', 'inheritedCostRateCents']);
+const COST_KEYS = new Set(['costRateCents', 'inheritedCostRateCents', 'costCents']);
 
 /**
  * Remove every cost rate from a response on its way to somebody who may not see

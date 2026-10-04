@@ -4762,7 +4762,8 @@
       "otherRole": "Otros",
       "daysWorked_one": "{{count}} día trabajado",
       "daysWorked_other": "{{count}} días trabajados",
-      "dayBilled": "Aquí se factura por días: los trabajos se listan, se cobran los días."
+      "dayBilled": "Aquí se factura por días: los trabajos se listan, se cobran los días.",
+      "costMissing": "Sin tarifa de coste para {{names}}: su trabajo no entra en el coste, así que el margen sale demasiado alto."
     },
     "oldestDebt": "Más antigua sin pagar",
     "nothingOutstanding": "Todo saldado: nada pendiente.",

@@ -4771,7 +4771,8 @@
       "otherRole": "Altri",
       "daysWorked_one": "{{count}} giorno lavorato",
       "daysWorked_other": "{{count}} giorni lavorati",
-      "dayBilled": "Qui si fattura a giornata: gli interventi sono elencati, si addebitano i giorni."
+      "dayBilled": "Qui si fattura a giornata: gli interventi sono elencati, si addebitano i giorni.",
+      "costMissing": "Nessun costo orario per {{names}}: il loro lavoro resta fuori dal costo, quindi il margine è troppo alto."
     },
     "oldestDebt": "Più vecchia non pagata",
     "nothingOutstanding": "Tutto saldato — nulla in sospeso.",

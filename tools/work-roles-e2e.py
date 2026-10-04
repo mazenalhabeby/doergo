@@ -280,6 +280,18 @@ try:
     r = call('PATCH', f'/employees/{MARK}', tok['niamh.brennan'], {'costRateCents': 1})
     check('…but not by somebody without labour cost', r[0] == 403, r)
 
+    # ── What the days COST: counted hours × cost rate, each day ─────────────
+    by = {(d['workerId'], d['dayRateCents']): d for d in g['dayEntries']}
+    check('a day with no cost rate anywhere is unknown, not free', by[(PATRICK, 20000)].get('costCents') is None, by[(PATRICK, 20000)])
+    call('PATCH', f'/employees/{PATRICK}', ADMIN, {'costRateCents': 3000})
+    gc = data(call('GET', f'/invoices/gather?spaceId={space}&from={day(-20)}&to={day(-1)}', ADMIN))
+    byc = {(d['workerId'], d['dayRateCents']): d for d in gc['dayEntries']}
+    # Before the raise: 8h + 3h (a job, no clock-in) + 2×8h (two shifts one day) + 8h + 8h = 43h × €30.
+    check('day cost = counted hours × cost rate (43h × €30 = €1,290)', byc[(PATRICK, 20000)].get('costCents') == 129000, byc[(PATRICK, 20000)])
+    check('…after the raise: 8h + 8h + 5h (job) + 8h = 29h × €30 = €870', byc[(PATRICK, 22000)].get('costCents') == 87000, byc[(PATRICK, 22000)])
+    r = call('GET', f'/invoices/gather?spaceId={space}&from={day(-20)}&to={day(-1)}', tok['niamh.brennan'])
+    check('day cost never reaches somebody without labour cost', r[0] != 200 or 'costCents' not in json.dumps(r[1]), r[0])
+
     # ── Invoice the days: never billed twice ─────────────────────────────────
     pd = [d for d in g['dayEntries'] if d['workerId'] == PATRICK]
     items = [{'description': 'Mechanic', 'quantity': 0, 'unitPrice': 0, 'lineKind': 'HEADING'}] + [
