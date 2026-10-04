@@ -74,6 +74,8 @@ const INK = { r: 30, g: 41, b: 59 } // slate-800
 const MUTED = { r: 100, g: 116, b: 139 } // slate-500
 const ACCENT = { r: 37, g: 99, b: 235 } // brand-600
 const LINE = { r: 226, g: 232, b: 240 } // slate-200
+/** The document palette, shared with every PDF this product draws so they read as one family. */
+export const PDF_PALETTE = { INK, MUTED, ACCENT, LINE } as const
 
 /** Load a (possibly cross-origin) logo into a PNG data URL. Resolves null on any failure. */
 async function loadLogo(url?: string | null): Promise<{ dataUrl: string; w: number; h: number } | null> {

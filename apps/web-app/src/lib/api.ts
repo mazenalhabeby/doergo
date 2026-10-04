@@ -4610,6 +4610,17 @@ export const organizationsApi = {
 
   // Fetch a SINGLE member by id (same shape as a list row) — for the member
   // detail page, so it doesn't pull the whole org and find() one (P1).
+  /**
+   * A worker's statement: hours per workspace × their rate with us, for a
+   * period. Needs `canViewLabourCost`. Read-only — nothing is stored.
+   */
+  getStatement: async (memberId: string, period: { from?: string; to?: string }) => {
+    const res = await api.get<{ success: boolean; data: MemberStatement }>(
+      buildUrlWithQuery(`/organizations/members/${memberId}/statement`, period),
+    );
+    if (res.error) throw new Error(res.error);
+    return res.data?.data;
+  },
   getMember: async (memberId: string) => {
     const response = await api.get<{ success: boolean; data: OrgMember }>(
       `/organizations/members/${memberId}`,
@@ -6004,6 +6015,31 @@ interface CreateInvoiceInput {
 type UpdateInvoiceInput = Partial<CreateInvoiceInput>;
 
 /** One line added to an existing invoice. */
+/** A worker's statement — see `organizationsApi.getStatement`. */
+export interface MemberStatement {
+  member: { id: string; name: string };
+  organizationName: string | null;
+  from: string | null;
+  to: string | null;
+  currency: string;
+  lines: Array<{
+    spaceId: string | null;
+    spaceName: string | null;
+    hours: number;
+    rateCents: number | null;
+    rateLevel: 'contract' | 'member' | 'client' | 'organization' | null;
+    amountCents: number;
+    jobs: number;
+    fromDay: string;
+    toDay: string;
+  }>;
+  /** Days clocked in, per workspace id — for reference; the statement is hourly. */
+  daysBySpace: Record<string, number>;
+  totalHours: number;
+  totalCents: number;
+  missingRate: boolean;
+}
+
 export interface InvoiceItemInput {
   description: string;
   quantity: number;

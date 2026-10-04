@@ -215,6 +215,19 @@ try:
           jobs['Wiring']['hoursBillable'] is False and jobs['Wiring']['laborAmount'] == 0, jobs['Wiring'])
     check('jobs carry the trade', jobs['Pump']['workRoleName'] == f'{TAG} Mechanic', jobs['Pump'])
 
+    # ── The worker's statement: same hours, HIS rate ─────────────────────────
+    st = data(call('GET', f'/organizations/members/{MARK}/statement?from={day(-20)}&to={day(-1)}', ADMIN))
+    here = [l for l in st.get('lines', []) if l['spaceId'] == space]
+    check('statement: Mark\'s 10 hours here (4 + 6)', sum(l['hours'] for l in here) == 10, st)
+    check('statement: at his cost with us (25/h), never the client\'s 85 or 90',
+          all(l['rateCents'] == 2500 for l in here) and sum(l['amountCents'] for l in here) == 25000, here)
+    check('statement: says where the rate came from', all(l['rateLevel'] == 'contract' for l in here), here)
+    check('statement: days on site for reference', st.get('daysBySpace', {}).get(space) == 2, st.get('daysBySpace'))
+    r = call('GET', f'/organizations/members/{MARK}/statement?from={day(-20)}&to={day(-1)}', tok['niamh.brennan'])
+    check('statement: refused to somebody without labour cost (403)', r[0] == 403, r)
+    r = call('GET', f'/organizations/members/{MARK}/statement?from=2026-02-30', ADMIN)
+    check('statement: an impossible day is a 400', r[0] == 400, r)
+
     # ── Invoice the days: never billed twice ─────────────────────────────────
     pd = [d for d in g['dayEntries'] if d['workerId'] == PATRICK]
     items = [{'description': 'Mechanic', 'quantity': 0, 'unitPrice': 0, 'lineKind': 'HEADING'}] + [

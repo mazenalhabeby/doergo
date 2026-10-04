@@ -19,7 +19,10 @@ import {
   Umbrella,
   BarChart3,
   Package,
+  Receipt,
 } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
+import { StatementTab } from "./_components/statement-tab"
 
 import { useMemberData } from "./_lib/use-member-data"
 import { UserAvatar } from "@/components/user-avatar"
@@ -107,6 +110,9 @@ export default function MemberProfilePage({
     refetchMember, handleMemberSaved,
   } = useMemberData(memberId)
   const [editOpen, setEditOpen] = useState(false)
+  // The statement is what a person's hours cost the company — only for those who may see that.
+  const { user: viewer } = useAuth()
+  const canViewLabourCost = (viewer as { canViewLabourCost?: boolean } | null)?.canViewLabourCost === true
 
   const hs = memberProfile?.stats
   const headerStats = hs
@@ -606,6 +612,13 @@ export default function MemberProfilePage({
                         {t("technicians.detail.tabs.performance")}
                       </TabsTrigger>
                     )}
+                    {/* We neither pay nor bill an external member, so there is no statement. */}
+                    {!isExternalMember && canViewLabourCost && (
+                      <TabsTrigger value="statement" className={triggerCls}>
+                        <Receipt className="size-3.5" />
+                        {t("members.statement.tab")}
+                      </TabsTrigger>
+                    )}
                   </>
                 )}
               </TabsList>
@@ -688,6 +701,11 @@ export default function MemberProfilePage({
                   {!isExternalMember && (
                     <TabsContent value="performance" className="mt-6">
                       <PerformanceTab performance={performance} />
+                    </TabsContent>
+                  )}
+                  {!isExternalMember && canViewLabourCost && (
+                    <TabsContent value="statement" className="mt-6">
+                      <StatementTab memberId={memberId} />
                     </TabsContent>
                   )}
                 </>

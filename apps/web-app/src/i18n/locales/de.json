@@ -2549,6 +2549,35 @@
         "REPORT_EXISTS": "Der Auftrag hatte bereits einen Servicebericht",
         "OTHER": "Nicht angenommen ({{code}})"
       }
+    },
+    "statement": {
+      "tab": "Abrechnung",
+      "title": "Abrechnung",
+      "intro": "Die Stunden je Arbeitsbereich zu ihrem Satz bei Ihnen — nicht zu dem, was dem Kunden berechnet wird.",
+      "member": "Mitglied",
+      "period": "Zeitraum",
+      "lastMonth": "Letzter Monat",
+      "thisMonth": "Dieser Monat",
+      "custom": "Benutzerdefiniert",
+      "workspace": "Arbeitsbereich",
+      "days": "Tage",
+      "hours": "Stunden",
+      "rate": "Satz bei Ihnen",
+      "amount": "Betrag",
+      "total": "Summe",
+      "noWorkspace": "Kein Arbeitsbereich",
+      "noRate": "Kein Satz",
+      "generated": "Erstellt",
+      "downloadPdf": "PDF herunterladen",
+      "empty": "Keine abgeschlossenen Aufträge mit Stunden in diesem Zeitraum.",
+      "jobs_one": "{{count}} Auftrag",
+      "jobs_other": "{{count}} Aufträge",
+      "levelContract": "für diesen Kunden festgelegt",
+      "levelMember": "eigener Satz",
+      "levelClient": "Satz des Arbeitsbereichs",
+      "levelOrganization": "Standard der Organisation",
+      "missingRate": "Für einige Stunden ist nirgends ein Satz hinterlegt — legen Sie den Kostensatz im Profil des Mitglieds fest.",
+      "sameHours": "Dieselben Aufträge und Stunden wie auf der Kundenrechnung; nur der Satz unterscheidet sich. Jeder Auftrag wird zum Satz des Tages bewertet, an dem er erledigt wurde."
     }
   },
   "invitations": {

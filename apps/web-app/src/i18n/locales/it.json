@@ -2549,6 +2549,35 @@
         "REPORT_EXISTS": "L'intervento aveva già un rapporto",
         "OTHER": "Non accettato ({{code}})"
       }
+    },
+    "statement": {
+      "tab": "Estratto",
+      "title": "Estratto",
+      "intro": "Le sue ore in ogni spazio, alla sua tariffa con voi — non quanto si fattura al cliente.",
+      "member": "Membro",
+      "period": "Periodo",
+      "lastMonth": "Mese scorso",
+      "thisMonth": "Questo mese",
+      "custom": "Personalizzato",
+      "workspace": "Spazio di lavoro",
+      "days": "Giorni",
+      "hours": "Ore",
+      "rate": "Tariffa con voi",
+      "amount": "Importo",
+      "total": "Totale",
+      "noWorkspace": "Nessuno spazio",
+      "noRate": "Nessuna tariffa",
+      "generated": "Generato il",
+      "downloadPdf": "Scarica PDF",
+      "empty": "Nessun intervento concluso con ore in questo periodo.",
+      "jobs_one": "{{count}} intervento",
+      "jobs_other": "{{count}} interventi",
+      "levelContract": "fissata per questo cliente",
+      "levelMember": "la sua tariffa",
+      "levelClient": "tariffa dello spazio",
+      "levelOrganization": "predefinita dell’organizzazione",
+      "missingRate": "Alcune ore non hanno una tariffa a nessun livello: imposti il costo orario nel profilo del membro.",
+      "sameHours": "Gli stessi interventi e le stesse ore della fattura al cliente; cambia solo la tariffa. Ogni intervento è valutato alla tariffa in vigore il giorno in cui è stato fatto."
     }
   },
   "invitations": {

@@ -2549,6 +2549,35 @@
         "REPORT_EXISTS": "El trabajo ya tenía un informe de servicio",
         "OTHER": "No aceptado ({{code}})"
       }
+    },
+    "statement": {
+      "tab": "Extracto",
+      "title": "Extracto",
+      "intro": "Sus horas en cada espacio, a su tarifa con usted — no lo que se factura al cliente.",
+      "member": "Miembro",
+      "period": "Periodo",
+      "lastMonth": "Mes pasado",
+      "thisMonth": "Este mes",
+      "custom": "Personalizado",
+      "workspace": "Espacio de trabajo",
+      "days": "Días",
+      "hours": "Horas",
+      "rate": "Tarifa con usted",
+      "amount": "Importe",
+      "total": "Total",
+      "noWorkspace": "Sin espacio",
+      "noRate": "Sin tarifa",
+      "generated": "Generado",
+      "downloadPdf": "Descargar PDF",
+      "empty": "No hay trabajos terminados con horas en este periodo.",
+      "jobs_one": "{{count}} trabajo",
+      "jobs_other": "{{count}} trabajos",
+      "levelContract": "fijada para este cliente",
+      "levelMember": "su propia tarifa",
+      "levelClient": "tarifa del espacio",
+      "levelOrganization": "predeterminada de la organización",
+      "missingRate": "Algunas horas no tienen tarifa en ningún nivel: fije la tarifa de coste en el perfil del miembro.",
+      "sameHours": "Los mismos trabajos y horas que la factura del cliente; solo cambia la tarifa. Cada trabajo se valora a la tarifa vigente el día en que se hizo."
     }
   },
   "invitations": {

@@ -2549,6 +2549,35 @@
         "REPORT_EXISTS": "L'intervention avait déjà un rapport",
         "OTHER": "Non accepté ({{code}})"
       }
+    },
+    "statement": {
+      "tab": "Relevé",
+      "title": "Relevé",
+      "intro": "Ses heures dans chaque espace, à son tarif chez vous — pas ce qui est facturé au client.",
+      "member": "Membre",
+      "period": "Période",
+      "lastMonth": "Mois dernier",
+      "thisMonth": "Ce mois-ci",
+      "custom": "Personnalisée",
+      "workspace": "Espace de travail",
+      "days": "Jours",
+      "hours": "Heures",
+      "rate": "Tarif chez vous",
+      "amount": "Montant",
+      "total": "Total",
+      "noWorkspace": "Aucun espace",
+      "noRate": "Aucun tarif",
+      "generated": "Généré le",
+      "downloadPdf": "Télécharger le PDF",
+      "empty": "Aucune intervention terminée avec des heures sur cette période.",
+      "jobs_one": "{{count}} intervention",
+      "jobs_other": "{{count}} interventions",
+      "levelContract": "défini pour ce client",
+      "levelMember": "son propre tarif",
+      "levelClient": "tarif de l’espace",
+      "levelOrganization": "par défaut de l’organisation",
+      "missingRate": "Certaines heures n’ont de tarif à aucun niveau : définissez le coût horaire dans le profil du membre.",
+      "sameHours": "Les mêmes interventions et heures que la facture client ; seul le tarif change. Chaque intervention est valorisée au tarif en vigueur le jour où elle a été faite."
     }
   },
   "invitations": {

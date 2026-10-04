@@ -183,7 +183,8 @@ export type PermissionField =
   | 'crmEditInfo' | 'crmManageClients'
   | 'canViewMemberDocuments' | 'canOpenMemberDocuments'
   | 'canIssueDocuments' | 'canManageDocumentTemplates'
-  | 'canManageDocumentVisibility' | 'canReplaceDocuments' | 'canDeleteDocuments';
+  | 'canManageDocumentVisibility' | 'canReplaceDocuments' | 'canDeleteDocuments'
+  | 'canViewLabourCost';
 
 /**
  * Decorator to specify required permissions for a route.

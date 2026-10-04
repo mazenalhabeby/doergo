@@ -2549,6 +2549,35 @@
         "REPORT_EXISTS": "The job already had a service report",
         "OTHER": "Not accepted ({{code}})"
       }
+    },
+    "statement": {
+      "tab": "Statement",
+      "title": "Statement",
+      "intro": "Their hours in each workspace, at their rate with you — not what the client is billed.",
+      "member": "Member",
+      "period": "Period",
+      "lastMonth": "Last month",
+      "thisMonth": "This month",
+      "custom": "Custom",
+      "workspace": "Workspace",
+      "days": "Days",
+      "hours": "Hours",
+      "rate": "Rate with you",
+      "amount": "Amount",
+      "total": "Total",
+      "noWorkspace": "No workspace",
+      "noRate": "No rate set",
+      "generated": "Generated",
+      "downloadPdf": "Download PDF",
+      "empty": "No finished jobs with hours in this period.",
+      "jobs_one": "{{count}} job",
+      "jobs_other": "{{count}} jobs",
+      "levelContract": "set for this client",
+      "levelMember": "their own rate",
+      "levelClient": "workspace rate",
+      "levelOrganization": "organization default",
+      "missingRate": "Some hours have no rate with you anywhere — set the member's cost rate on their profile.",
+      "sameHours": "The same jobs and hours as the client invoice; only the rate differs. Each job is priced at the rate in force on the day it was done."
     }
   },
   "invitations": {

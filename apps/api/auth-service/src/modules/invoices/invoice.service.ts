@@ -10,23 +10,7 @@ import {
 /** The invoice line kinds a caller may file. */
 const LINE_KINDS = new Set(['HOURS', 'DAYS', 'HEADING']);
 
-/**
- * `YYYY-MM-DD` → the first and last instant of that day.
- *
- * ⚠️ Both ends INCLUSIVE, and the `to` end is pushed to 23:59:59.999. A
- * half-open range silently drops everything finished on the last day of the
- * month, which is the single most common day to close a job before billing it.
- *
- * ⚠️ One pair of helpers for the gather filter AND for what is written onto the
- * invoice, so the days an invoice SAYS it covers are the same days it was built
- * from. Two parsers here is how those two quietly come apart by a day.
- */
-function dayStart(iso?: string | null): Date | null {
-  return iso ? new Date(`${iso}T00:00:00.000Z`) : null;
-}
-function dayEnd(iso?: string | null): Date | null {
-  return iso ? new Date(`${iso}T23:59:59.999Z`) : null;
-}
+import { dayStart, dayEnd, jobsInPeriod, jobHours, FINISHED } from './work-source';
 
 @Injectable()
 export class InvoiceService {
@@ -727,26 +711,14 @@ export class InvoiceService {
       half-open range here silently drops everything done on the last day of the
       month, which is the single most common day to finish a job before billing.
     */
-    const from = dayStart(data.from);
-    const to = dayEnd(data.to);
-    const withinPeriod =
-      from || to
-        ? {
-            OR: [
-              { serviceReport: { completedAt: { ...(from && { gte: from }), ...(to && { lte: to }) } } },
-              {
-                serviceReport: null,
-                updatedAt: { ...(from && { gte: from }), ...(to && { lte: to }) },
-              },
-            ],
-          }
-        : {};
+    // Which jobs, in which period — the rule shared with the worker's statement.
+    const withinPeriod = jobsInPeriod(data.from, data.to);
 
     const tasks = await this.prisma.task.findMany({
       where: {
         organizationId: data.organizationId,
         ...(space ? { spaceId: space.id } : { customerId: customer!.id }),
-        status: { in: ['COMPLETED', 'CLOSED'] },
+        status: FINISHED,
         ...withinPeriod,
       },
       select: {
@@ -891,10 +863,7 @@ export class InvoiceService {
       const report = t.serviceReport;
       const worker = report?.completedBy ?? t.assignedTo ?? null;
       const workerName = fullName(worker);
-      const hours =
-        report && report.workDuration > 0
-          ? Math.round((report.workDuration / 3600) * 100) / 100
-          : 0;
+      const hours = jobHours(report);
       const parts = (report?.partsUsed ?? []).map((p) => ({
         name: p.name,
         partNumber: p.partNumber ?? null,

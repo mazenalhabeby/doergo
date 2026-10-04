@@ -1,10 +1,20 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { InvoiceService } from './invoice.service';
+import { StatementService } from './statement.service';
 
 @Controller()
 export class InvoiceController {
-  constructor(private readonly invoiceService: InvoiceService) {}
+  constructor(
+    private readonly invoiceService: InvoiceService,
+    private readonly statementService: StatementService,
+  ) {}
+
+  /** A worker's statement: their hours at their rate with us. Read-only. */
+  @MessagePattern({ cmd: 'member_statement' })
+  async memberStatement(@Payload() data: { organizationId: string; memberId: string; from?: string; to?: string }) {
+    return this.statementService.forMember(data);
+  }
 
   @MessagePattern({ cmd: 'invoice_create' })
   async create(@Payload() data: any) {

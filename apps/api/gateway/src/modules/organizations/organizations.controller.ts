@@ -162,6 +162,37 @@ export class OrganizationsController {
     return result;
   }
 
+  /**
+   * A worker's statement: their hours, per workspace, at THEIR rate with us —
+   * never the client's. Same jobs and hours as the client invoice.
+   *
+   * ⚠️ `canViewLabourCost`, not `canManageUsers`: the whole document is what a
+   * person's hours cost the company. (Org-wide user managers hold it through
+   * the existing bridge.) Read-only; nothing is stored.
+   */
+  @Get('members/:id/statement')
+  @RequirePermission('canViewLabourCost')
+  @ApiOperation({ summary: "A worker's statement: hours × their rate with us, for a period" })
+  async memberStatement(
+    @Param('id') memberId: string,
+    @Query('from') from: string | undefined,
+    @Query('to') to: string | undefined,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'member_statement' }, {
+        memberId,
+        organizationId: user.organizationId,
+        from: typeof from === 'string' ? from.slice(0, 10) : undefined,
+        to: typeof to === 'string' ? to.slice(0, 10) : undefined,
+      }),
+    );
+    if (result && result.success === false) {
+      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
+    }
+    return result;
+  }
+
   @Get('members/:id')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Get a single organization member (same shape as the list row)' })
