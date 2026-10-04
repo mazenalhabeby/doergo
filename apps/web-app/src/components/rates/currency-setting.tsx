@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation } from "@tanstack/react-query"
 import { Check, Loader2 } from "lucide-react"
-import { COMMON_CURRENCIES, SUPPORTED_CURRENCIES } from "@hbcfield/shared"
+import { COMMON_CURRENCIES, SUPPORTED_CURRENCIES } from "@hbcfield/shared/client"
 
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"

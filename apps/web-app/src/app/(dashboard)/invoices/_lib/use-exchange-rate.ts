@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { parseExchangeRate, toOrganizationCurrency } from "@hbcfield/shared"
+import { parseExchangeRate, toOrganizationCurrency } from "@hbcfield/shared/client"
 
 import { invoicesApi } from "@/lib/api"
 
