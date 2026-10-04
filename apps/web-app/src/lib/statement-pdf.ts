@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable"
 
 import type { MemberStatement } from "./api"
 import { PDF_PALETTE } from "./invoice-pdf"
+import { fileNamePart, pdfFileName, periodPart } from "./pdf-filename"
 
 /**
  * A worker's statement as a PDF — the same family as the invoice (palette,
@@ -84,6 +85,5 @@ export function exportStatementPdf(
     margin: { left: margin, right: margin },
   })
 
-  const safe = s.member.name.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "") || "member"
-  doc.save(`${labels.title}-${safe}-${fmt.period.replace(/[^\p{L}\p{N}]+/gu, "-")}.pdf`)
+  doc.save(pdfFileName([fileNamePart(s.member.name), fileNamePart(labels.title), periodPart(s.from, s.to)], "statement"))
 }

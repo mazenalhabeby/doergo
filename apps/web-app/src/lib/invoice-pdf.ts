@@ -2,6 +2,7 @@ import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import type { SupportedLocale } from "@hbcfield/shared/client"
 import { invoiceStamp } from "./invoice-status"
+import { dayKeyOf, fileNamePart, pdfFileName, periodPart } from "./pdf-filename"
 import {
   documentUpper, fillLabel, formatDocumentDate, formatDocumentMoney, formatDocumentQuantity,
   invoiceDocumentLabels, termsSentence, type InvoiceDocumentLabels,
@@ -377,7 +378,12 @@ function drawStatusStamp(
 /** Download the invoice as a PDF file. */
 export async function exportInvoicePdf(inv: InvoicePdfData, branding: InvoiceBranding): Promise<void> {
   const doc = await buildDoc(inv, branding)
-  doc.save(`${inv.invoiceNumber || "invoice"}.pdf`)
+  doc.save(pdfFileName([
+    fileNamePart(inv.clientName),
+    fileNamePart(invoiceDocumentLabels(inv.locale ?? null).invoice),
+    fileNamePart(inv.invoiceNumber),
+    periodPart(inv.servicePeriodFrom, inv.servicePeriodTo) || dayKeyOf(inv.issueDate),
+  ], "invoice"))
 }
 
 /** Render the invoice to a blob URL (for print / preview in a new window). */
