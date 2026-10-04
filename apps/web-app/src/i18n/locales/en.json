@@ -6832,7 +6832,6 @@
       "workIntro": "A trade in this workspace, such as Mechanic or Electrician. It carries a day rate and never grants permissions. How each person is billed (hour, day or both) is set on the person.",
       "managementHeading": "Management roles",
       "managementIntro": "Permissions in this workspace, such as Team Leader.",
-      "newWork": "New work role",
       "kind": "Kind",
       "kindWork": "Work role",
       "kindManagement": "Management",

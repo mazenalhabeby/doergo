@@ -6841,7 +6841,6 @@
       "workIntro": "Un mestiere in questo spazio, come meccanico o elettricista. Porta una tariffa giornaliera e non concede mai permessi. Come viene fatturata ogni persona (ore, giorni o entrambi) si imposta sulla persona.",
       "managementHeading": "Ruoli di gestione",
       "managementIntro": "I permessi in questo spazio di lavoro, come caposquadra.",
-      "newWork": "Nuovo ruolo operativo",
       "kind": "Tipo",
       "kindWork": "Ruolo operativo",
       "kindManagement": "Gestione",

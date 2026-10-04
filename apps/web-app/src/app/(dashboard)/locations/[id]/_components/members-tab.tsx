@@ -175,20 +175,24 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
     </div>
   )
 
+  /*
+    ONE "New role" button. The two section buttons opened the same dialog with
+    a different kind pre-selected — and the dialog asks the kind anyway.
+  */
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button onClick={() => setDialog({ role: null, kind: "WORK" })} className="gap-1.5">
+          <Plus className="h-4 w-4" />
+          {t("scheduling.roles.new")}
+        </Button>
+      </div>
       <div className="space-y-3">
         <SectionHeader
           icon={Wrench}
           accent="blue"
           title={t("scheduling.workRoles.workHeading")}
           description={t("scheduling.workRoles.workIntro")}
-          action={
-            <Button onClick={() => setDialog({ role: null, kind: "WORK" })} className="gap-1.5">
-              <Plus className="h-4 w-4" />
-              {t("scheduling.workRoles.newWork")}
-            </Button>
-          }
         />
         {isLoading ? (
           <Skeleton className="h-16 w-full" />
@@ -205,12 +209,6 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
           accent="violet"
           title={t("scheduling.workRoles.managementHeading")}
           description={t("scheduling.workRoles.managementIntro")}
-          action={
-            <Button variant="outline" onClick={() => setDialog({ role: null, kind: "MANAGEMENT" })} className="gap-1.5">
-              <Plus className="h-4 w-4" />
-              {t("scheduling.roles.new")}
-            </Button>
-          }
         />
         {isLoading ? (
           <div className="space-y-2">
@@ -346,7 +344,7 @@ function RoleDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? t("scheduling.roles.editTitle") : isWork ? t("scheduling.workRoles.newWork") : t("scheduling.roles.new")}
+            {isEdit ? t("scheduling.roles.editTitle") : t("scheduling.roles.new")}
           </DialogTitle>
           <DialogDescription>
             {isWork ? t("scheduling.workRoles.workIntro") : t("scheduling.roles.dialogDescription")}

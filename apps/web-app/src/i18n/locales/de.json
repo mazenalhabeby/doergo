@@ -6832,7 +6832,6 @@
       "workIntro": "Ein Gewerk in diesem Arbeitsbereich, etwa Mechaniker oder Elektriker. Es trägt einen Tagessatz und vergibt nie Berechtigungen. Wie jede Person abgerechnet wird (Stunden, Tage oder beides), wird bei der Person festgelegt.",
       "managementHeading": "Leitungsrollen",
       "managementIntro": "Berechtigungen in diesem Arbeitsbereich, etwa Teamleiter.",
-      "newWork": "Neue Arbeitsrolle",
       "kind": "Art",
       "kindWork": "Arbeitsrolle",
       "kindManagement": "Leitung",
