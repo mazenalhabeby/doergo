@@ -233,9 +233,13 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
             styles: { fontStyle: "bold" as const, fontSize: 7.5, textColor: [MUTED.r, MUTED.g, MUTED.b] as [number, number, number], fillColor: [248, 250, 252] as [number, number, number], cellPadding: { top: 3.5, bottom: 1.5, left: 2.5, right: 2.5 } },
           }]
         : [
-            it.description,
-            formatDocumentQuantity(it.quantity, locale),
-            fmtMoney(it.unitPrice, inv.currency),
+            // Hours and days said out loud: a tag, a unit on the quantity, per hour / per day on the price.
+            it.lineKind === "HOURS" ? `${L.units.hoursTag} · ${it.description}`
+              : it.lineKind === "DAYS" ? `${L.units.daysTag} · ${it.description}` : it.description,
+            it.lineKind === "HOURS" ? `${formatDocumentQuantity(it.quantity, locale)} ${L.units.h}`
+              : it.lineKind === "DAYS" ? `${formatDocumentQuantity(it.quantity, locale)} ${it.quantity === 1 ? L.units.day : L.units.days}`
+                : formatDocumentQuantity(it.quantity, locale),
+            fmtMoney(it.unitPrice, inv.currency) + (it.lineKind === "HOURS" ? ` ${L.units.perHour}` : it.lineKind === "DAYS" ? ` ${L.units.perDay}` : ""),
             fmtMoney(it.amount, inv.currency),
           ],
     ),
@@ -244,8 +248,8 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
     headStyles: { fillColor: [ACCENT.r, ACCENT.g, ACCENT.b], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8.5 },
     columnStyles: {
       0: { cellWidth: "auto" },
-      1: { halign: "right", cellWidth: 18 },
-      2: { halign: "right", cellWidth: 32 },
+      1: { halign: "right", cellWidth: 22 },
+      2: { halign: "right", cellWidth: 36 },
       3: { halign: "right", cellWidth: 32 },
     },
     margin: { left: margin, right: margin },

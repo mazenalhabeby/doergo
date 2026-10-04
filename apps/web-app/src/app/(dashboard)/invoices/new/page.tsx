@@ -9,7 +9,16 @@ import { Loader2, Clock, Package, FileText, ChevronDown, ChevronRight, CalendarD
 
 import { invoicesApi, locationsApi, customersApi, organizationsApi, type Invoice, type InvoiceItemInput } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
-import { buildLabourLines, labourTotalCents, type LabourGrouping, type LabourEntry, type DayEntry } from "@hbcfield/shared/client"
+import {
+  buildLabourLines,
+  buildWorkspaceLines,
+  labourTotalCents,
+  type LabourGrouping,
+  type LabourEntry,
+  type DayEntry,
+  type HoursEntry,
+  type PersonWork,
+} from "@hbcfield/shared/client"
 import { formatDayKey } from "@/lib/day-key"
 import { Switch } from "@/components/ui/switch"
 import { notify } from "@/lib/toast"
@@ -63,6 +72,8 @@ interface WorkEntry {
 
 /** A run of days worked at one day rate, as the screen holds it. */
 type DayRun = DayEntry & { key: string; include: boolean }
+/** A run of hours on site at one hourly rate, as the screen holds it. */
+type HourRun = HoursEntry & { key: string; include: boolean }
 /**
  * A Date → `YYYY-MM-DD`, from the LOCAL parts.
  *
@@ -194,6 +205,7 @@ function NewInvoiceInner() {
   const [rate, setRate] = useState("") // euros/hour applied to labor lines
   const [entries, setEntries] = useState<WorkEntry[]>([])
   const [dayRuns, setDayRuns] = useState<DayRun[]>([])
+  const [hourRuns, setHourRuns] = useState<HourRun[]>([])
   // On by default: where people have trades, the client reads the work by trade.
   const [groupByRole, setGroupByRole] = useState(true)
   const [manualLines, setManualLines] = useState<EditableLine[]>([])
@@ -349,6 +361,11 @@ function NewInvoiceInner() {
       setDayRuns(
         (g.dayEntries || []).map((d) => ({ ...d, key: `${d.workerId}|${d.fromDay}`, include: true })),
       )
+      setHourRuns(
+        (g.hourEntries || []).map((h) => ({ ...h, key: `${h.workerId}|${h.fromDay}`, include: true })),
+      )
+      // A workspace invoice charges time on site per person — "one line per job" does not apply.
+      if (g.spaceId) setGrouping((prev) => (prev === "task" ? "member" : prev))
       setSeeded(true)
     }
   }, [gather, seeded])
@@ -404,11 +421,49 @@ function NewInvoiceInner() {
     [entries, rateNum],
   )
   const includedDays = useMemo(() => dayRuns.filter((d) => d.include), [dayRuns])
-  const anyWorkRole = entries.some((e) => e.workRoleId) || dayRuns.some((d) => d.workRoleId)
+  const includedHours = useMemo(() => hourRuns.filter((h) => h.include), [hourRuns])
+  const anyWorkRole = entries.some((e) => e.workRoleId) || dayRuns.some((d) => d.workRoleId) || hourRuns.some((h) => h.workRoleId)
+  // A WORKSPACE invoice charges each person's time on site; a CLIENT invoice charges job hours.
+  const siteMode = !!gather?.spaceId
 
+  const range = (from: string, to: string) => ({
+    from: formatDayKey(from, i18n.language, { year: false }),
+    to: formatDayKey(to, i18n.language, { year: false }),
+  })
   const labourLines = useMemo(
-    () =>
-      buildLabourLines(labourEntries, grouping, t("invoices.create.unassignedWorker"), {
+    () => siteMode
+      ? buildWorkspaceLines(
+          (() => {
+            const people = new Map<string, PersonWork>()
+            const person = (id: string, name: string, roleId?: string | null, roleName?: string | null) => {
+              const p = people.get(id) ?? { workerId: id, workerName: name, workRoleId: roleId ?? null, workRoleName: roleName ?? null, hours: [], days: [], jobs: [] }
+              if (!p.workRoleId && roleId) { p.workRoleId = roleId; p.workRoleName = roleName ?? null }
+              people.set(id, p)
+              return p
+            }
+            for (const h of includedHours) person(h.workerId, h.workerName, h.workRoleId, h.workRoleName).hours.push(h)
+            for (const d of includedDays) person(d.workerId, d.workerName, d.workRoleId, d.workRoleName).days.push(d)
+            for (const e of labourEntries) {
+              if (!e.workerId) continue
+              person(e.workerId, e.workerName ?? t("invoices.create.unassignedWorker"), e.workRoleId, e.workRoleName).jobs.push(e)
+            }
+            return [...people.values()]
+          })(),
+          {
+            listJobs: grouping === "both",
+            groupByRole,
+            noRoleLabel: t("invoices.create.otherRole"),
+            describeHours: (h, split) =>
+              split
+                ? t("invoices.create.hoursLineRange", { name: h.workerName, ...range(h.fromDay, h.toDay) })
+                : t("invoices.create.hoursLine", { name: h.workerName }),
+            describeDays: (d, split) =>
+              split
+                ? t("invoices.create.daysLineRange", { name: d.workerName, count: d.days, ...range(d.fromDay, d.toDay) })
+                : t("invoices.create.daysLine", { name: d.workerName, count: d.days }),
+          },
+        )
+      : buildLabourLines(labourEntries, grouping, t("invoices.create.unassignedWorker"), {
         days: includedDays,
         groupByRole,
         noRoleLabel: t("invoices.create.otherRole"),
@@ -423,7 +478,8 @@ function NewInvoiceInner() {
               })
             : t("invoices.create.daysLine", { name: d.workerName, count: d.days }),
       }),
-    [labourEntries, grouping, t, includedDays, groupByRole, i18n.language],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [labourEntries, grouping, t, includedDays, includedHours, groupByRole, i18n.language, siteMode],
   )
 
   const labourSubtotal = useMemo(() => labourTotalCents(labourLines) / 100, [labourLines])
@@ -454,6 +510,7 @@ function NewInvoiceInner() {
         workerId: line.workerId,
         dayFrom: line.dayFrom,
         dayTo: line.dayTo,
+        taskIds: line.taskIds,
         descriptive: line.descriptive,
       })
     }
@@ -510,10 +567,11 @@ function NewInvoiceInner() {
   */
   const workCost = useMemo(
     () =>
-      entries.reduce((s, e) => s + entryCost(e), 0) +
+      (siteMode ? 0 : entries.reduce((s, e) => s + entryCost(e), 0)) +
+      includedHours.reduce((s, h) => s + (h.costCents ?? 0) / 100, 0) +
       includedDays.reduce((s, d) => s + (d.costCents ?? 0) / 100, 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [entries, includedDays],
+    [entries, includedDays, includedHours, siteMode],
   )
   /*
     Who has NO cost rate anywhere. Their time is left out of the cost — and the
@@ -522,17 +580,22 @@ function NewInvoiceInner() {
   */
   const costMissing = useMemo(() => {
     const names = new Set<string>()
-    for (const e of entries) {
-      if (e.include && e.billBy !== "DAY" && e.hours > 0 && e.costRateCents == null) names.add(e.workerName || t("invoices.create.unassignedWorker"))
+    if (!siteMode) {
+      for (const e of entries) {
+        if (e.include && e.billBy !== "DAY" && e.hours > 0 && e.costRateCents == null) names.add(e.workerName || t("invoices.create.unassignedWorker"))
+      }
     }
+    for (const h of includedHours) if (h.costCents == null) names.add(h.workerName)
     for (const d of includedDays) if (d.costCents == null) names.add(d.workerName)
     return [...names]
-  }, [entries, includedDays, t])
+  }, [entries, includedDays, includedHours, siteMode, t])
   const canViewLabourCost = (user as { canViewLabourCost?: boolean } | null)?.canViewLabourCost === true
   const showMargin =
     canViewLabourCost &&
     gather?.twoRates === true &&
-    (entries.some((e) => e.include && e.costRateCents != null) || includedDays.some((d) => d.costCents != null))
+    (entries.some((e) => e.include && e.costRateCents != null) ||
+      includedDays.some((d) => d.costCents != null) ||
+      includedHours.some((h) => h.costCents != null))
 
 
   const createMutation = useMutation({
@@ -607,7 +670,7 @@ function NewInvoiceInner() {
   const includedCount = entries.filter((e) => e.include).length
   const canSave =
     clientName.trim().length > 0 &&
-    (includedCount > 0 || includedDays.length > 0 || manualLines.some((m) => m.description.trim()))
+    (includedCount > 0 || includedDays.length > 0 || includedHours.length > 0 || manualLines.some((m) => m.description.trim()))
 
   return (
     /*
@@ -835,7 +898,7 @@ function NewInvoiceInner() {
                       ["task", t("invoices.create.groupByTask")],
                       ["member", t("invoices.create.groupByMember")],
                       ["both", t("invoices.create.groupByBoth")],
-                    ] as const).map(([key, label]) => (
+                    ] as const).filter(([key]) => !siteMode || key !== "task").map(([key, label]) => (
                       <button
                         key={key}
                         type="button"
@@ -1063,7 +1126,7 @@ function NewInvoiceInner() {
 
             {gatherLoading ? (
               <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-xl" />)}</div>
-            ) : entries.length === 0 && dayRuns.length === 0 ? (
+            ) : entries.length === 0 && dayRuns.length === 0 && hourRuns.length === 0 ? (
               <div className="bg-card rounded-2xl border border-border text-center py-12">
                 <FileText className="size-10 mx-auto text-muted-foreground/20 mb-3" />
                 <p className="text-sm text-muted-foreground">{t("invoices.create.noWork")}</p>
@@ -1143,6 +1206,45 @@ function NewInvoiceInner() {
               day rate, so a rate change inside the period is two rows here
               exactly as it is two lines on the invoice.
             */}
+            {hourRuns.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {hourRuns.map((h) => (
+                  <div
+                    key={h.key}
+                    className={cn("flex items-start gap-3 rounded-xl border bg-card p-4 transition-colors", h.include ? "border-border" : "border-border/40 opacity-60")}
+                  >
+                    <Checkbox
+                      checked={h.include}
+                      onCheckedChange={(v) => setHourRuns((prev) => prev.map((x) => (x.key === h.key ? { ...x, include: !!v } : x)))}
+                      className="mt-0.5"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          <span className="mr-2 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300">{t("invoices.create.tagHours")}</span>
+                          {h.workerName}
+                          {h.workRoleName && <span className="ml-2 text-xs font-normal text-muted-foreground">{h.workRoleName}</span>}
+                        </p>
+                        <span className="shrink-0 text-sm font-semibold tabular-nums">
+                          {money((Math.round(h.hours * 100) / 100) * ((h.hourRateCents ?? 0) / 100), currency)}
+                        </span>
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="size-3" />
+                          {t("invoices.create.hoursOnSite", { hours: h.hours, days: h.days })} × {money((h.hourRateCents ?? 0) / 100, currency)}
+                        </span>
+                        <span>
+                          {formatDayKey(h.fromDay, i18n.language)}
+                          {h.toDay !== h.fromDay && ` – ${formatDayKey(h.toDay, i18n.language)}`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {dayRuns.length > 0 && (
               <div className="mt-3 space-y-2">
                 {dayRuns.map((d) => (
@@ -1158,6 +1260,7 @@ function NewInvoiceInner() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-3">
                         <p className="truncate text-sm font-medium text-foreground">
+                          <span className="mr-2 rounded bg-teal-500/15 px-1.5 py-0.5 text-[10px] font-bold text-teal-700 dark:text-teal-300">{t("invoices.create.tagDays")}</span>
                           {d.workerName}
                           {d.workRoleName && <span className="ml-2 text-xs font-normal text-muted-foreground">{d.workRoleName}</span>}
                         </p>

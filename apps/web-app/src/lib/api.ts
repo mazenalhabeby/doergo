@@ -39,6 +39,7 @@ import type {
   SpaceRole,
   SpaceRoleInSpace,
   DayEntry,
+  HoursEntry,
   SpaceMember,
   PermissionSet,
   GeofenceExcursion,
@@ -5972,6 +5973,7 @@ export interface InvoiceItem {
   workerId?: string | null;
   dayFrom?: string | null;
   dayTo?: string | null;
+  taskIds?: string[];
   createdAt: string;
 }
 
@@ -6092,6 +6094,8 @@ export interface InvoiceItemInput {
   workerId?: string | null;
   dayFrom?: string | null;
   dayTo?: string | null;
+  /** HOURS lines on a workspace invoice: the jobs those hours cover. */
+  taskIds?: string[];
 }
 
 /** A part fitted during a job, priced for the invoice. */
@@ -6165,6 +6169,8 @@ interface InvoiceGatherResult {
   timezone?: string;
   /** Days worked by people billed by the day, split wherever the day rate changed. */
   dayEntries?: DayEntry[];
+  /** Hours ON SITE by people billed by the hour, split wherever their rate changed (workspace invoices). */
+  hourEntries?: HoursEntry[];
 }
 
 export const invoicesApi = {

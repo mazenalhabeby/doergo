@@ -4299,11 +4299,14 @@ model InvoiceItem {
   /// HOURS / DAYS for labour lines; HEADING for a work-role heading row, which
   /// is priced at zero and only organizes the document. Null = an ordinary line.
   lineKind      InvoiceLineKind?
-  /// DAYS lines: whose days, and the first and last day of the run. What stops
-  /// the same days being billed on a second invoice — the way `taskId` does for jobs.
+  /// HOURS and DAYS lines: whose time, and the first and last day of the run.
+  /// What stops the same hours or days being billed on a second invoice.
   workerId      String?
   dayFrom       DateTime? @db.Date
   dayTo         DateTime? @db.Date
+  /// HOURS lines on a workspace invoice: the finished jobs those hours cover —
+  /// marked billed with the line so they do not come back on the next invoice.
+  taskIds       String[]  @default([])
 
   @@index([invoiceId])
   @@index([workerId, dayFrom])

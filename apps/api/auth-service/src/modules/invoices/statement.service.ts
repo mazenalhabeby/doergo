@@ -177,19 +177,68 @@ export class StatementService {
     let totalHours = 0;
     const round2 = (n: number) => Math.round(n * 100) / 100;
 
-    // 1 · Hours rows: each job priced on its own day, gathered by (workspace, rate).
+    // Counted time per day in each workspace — the invoice's own rule.
+    const minutesIn = new Map<string, Map<string, number>>();
+    for (const sid of spaceIds) {
+      const dayOf = (at: Date) => dayKeyIn(at, tzOfSpace(sid));
+      minutesIn.set(
+        sid,
+        countedMinutesByDay(
+          clockIns.filter((c) => c.locationId === sid),
+          tasks
+            .filter((t) => t.spaceId === sid)
+            .map((t) => ({ userId: member.id, at: t.serviceReport?.completedAt ?? t.updatedAt, minutes: Math.round((t.serviceReport?.workDuration ?? 0) / 60) })),
+          dayOf,
+        ),
+      );
+    }
+    const daysIn = (sid: string) =>
+      [...(minutesIn.get(sid)?.keys() ?? [])]
+        .map((k) => k.split('|')[1]!)
+        .filter((d) => (!from || d >= from) && (!to || d <= to))
+        .sort();
+
+    /*
+      1 · HOURS rows — the time ON SITE, like the workspace invoice: counted
+      clock-in time per day (a job's time on a day with no clock-in), at the
+      hourly rate with us in force each day, split where that rate changed.
+      Jobs with no workspace keep their own hours.
+    */
+    for (const sid of spaceIds.filter((x) => billsHours(billingIn(x)))) {
+      const runs: StatementLine[] = [];
+      for (const d of daysIn(sid)) {
+        const m = minutesIn.get(sid)!.get(`${member.id}|${d}`) ?? 0;
+        if (m <= 0) continue;
+        const resolved = costOn(sid, d);
+        const last = runs[runs.length - 1];
+        if (last && last.rateCents === resolved.cents) {
+          last.hours = round2(last.hours + m / 60);
+          last.days = (last.days ?? 0) + 1;
+          last.toDay = d;
+        } else {
+          runs.push({
+            spaceId: sid, spaceName: spaceInfo.get(sid)?.name ?? null, hours: round2(m / 60),
+            rateCents: resolved.cents, rateLevel: resolved.level, amountCents: 0,
+            jobs: 0, fromDay: d, toDay: d, basis: 'hours', days: 1,
+          });
+        }
+      }
+      for (const r of runs) {
+        r.jobs = tasks.filter((t) => t.spaceId === sid && r.fromDay <= dayKeyIn(t.serviceReport?.completedAt ?? t.updatedAt, tzOfSpace(sid)) && dayKeyIn(t.serviceReport?.completedAt ?? t.updatedAt, tzOfSpace(sid)) <= r.toDay).length;
+      }
+      lines.push(...runs);
+    }
     const buckets = new Map<string, StatementLine>();
     for (const t of tasks) {
-      if (!billsHours(billingIn(t.spaceId))) continue;
+      if (t.spaceId) continue;
       const hours = jobHours(t.serviceReport);
       if (hours <= 0) continue;
-      const day = dayKeyIn(t.serviceReport?.completedAt ?? t.updatedAt, tzOfSpace(t.spaceId));
-      const resolved = costOn(t.spaceId, day);
-      const key = `${t.spaceId ?? ''}|${resolved.cents ?? 'none'}`;
+      const day = dayKeyIn(t.serviceReport?.completedAt ?? t.updatedAt, tzOfSpace(null));
+      const resolved = costOn(null, day);
+      const key = `none|${resolved.cents ?? 'none'}`;
       const line = buckets.get(key) ?? {
-        spaceId: t.spaceId, spaceName: t.space?.name ?? null, hours: 0,
-        rateCents: resolved.cents, rateLevel: resolved.level, amountCents: 0, jobs: 0,
-        fromDay: day, toDay: day, basis: 'hours' as const,
+        spaceId: null, spaceName: null, hours: 0, rateCents: resolved.cents, rateLevel: resolved.level,
+        amountCents: 0, jobs: 0, fromDay: day, toDay: day, basis: 'hours' as const,
       };
       line.hours = round2(line.hours + hours);
       line.jobs += 1;
@@ -201,18 +250,10 @@ export class StatementService {
 
     // 2 · Days rows: every day worked there × their day rate with you, in runs at one rate.
     for (const sid of spaceIds.filter((x) => billsDays(billingIn(x)))) {
-      const tz = tzOfSpace(sid);
-      const dayOf = (at: Date) => dayKeyIn(at, tz);
+      const dayOf = (at: Date) => dayKeyIn(at, tzOfSpace(sid));
       const jobsHere = tasks.filter((t) => t.spaceId === sid);
-      const minutes = countedMinutesByDay(
-        clockIns.filter((c) => c.locationId === sid),
-        jobsHere.map((t) => ({ userId: member.id, at: t.serviceReport?.completedAt ?? t.updatedAt, minutes: Math.round((t.serviceReport?.workDuration ?? 0) / 60) })),
-        dayOf,
-      );
-      const days = [...minutes.keys()]
-        .map((k) => k.split('|')[1]!)
-        .filter((d) => (!from || d >= from) && (!to || d <= to))
-        .sort();
+      const minutes = minutesIn.get(sid)!;
+      const days = daysIn(sid);
       // One entry per day, then consecutive days at the same day rate become one line.
       const assignmentId = assignmentIn.get(sid)?.id ?? null;
       const runs: Array<StatementLine & { minutes: number }> = [];

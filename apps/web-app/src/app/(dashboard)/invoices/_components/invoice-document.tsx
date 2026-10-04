@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import type { OrganizationProfile } from "@/lib/api"
 import { formatMoney } from "@/lib/money"
+import { hoursAndDaysTotals } from "@hbcfield/shared/client"
 
 /**
  * The invoice, as a document.
@@ -46,6 +47,59 @@ export interface DocumentRow {
 }
 
 const isHeading = (row: DocumentRow) => row.lineKind === "HEADING"
+
+/**
+ * Hours and days, said out loud on every line.
+ *
+ * ⚠️ A Qty column that means "hours" on one line and "days" on the next is
+ * unreadable — "3" at €60 and "3" at €180 look like the same kind of thing.
+ * So a charged labour line carries a HOURS / DAYS tag, its quantity carries
+ * its unit ("200 h", "20 days") and its price says per hour or per day.
+ */
+function useUnits() {
+  const { t } = useTranslation()
+  return {
+    tag: (row: DocumentRow) =>
+      row.lineKind === "HOURS" ? (
+        <span className="mr-2 rounded bg-blue-500/15 px-1.5 py-0.5 align-[1px] text-[10px] font-bold text-blue-700 dark:text-blue-300">
+          {t("invoices.create.tagHours")}
+        </span>
+      ) : row.lineKind === "DAYS" ? (
+        <span className="mr-2 rounded bg-teal-500/15 px-1.5 py-0.5 align-[1px] text-[10px] font-bold text-teal-700 dark:text-teal-300">
+          {t("invoices.create.tagDays")}
+        </span>
+      ) : null,
+    qty: (row: DocumentRow) =>
+      row.lineKind === "HOURS"
+        ? t("invoices.create.qtyHours", { count: row.quantity })
+        : row.lineKind === "DAYS"
+          ? t("invoices.create.qtyDays", { count: row.quantity })
+          : String(row.quantity),
+    per: (row: DocumentRow) =>
+      row.lineKind === "HOURS" ? ` ${t("rates.perHour")}` : row.lineKind === "DAYS" ? ` ${t("rates.perDay")}` : "",
+  }
+}
+
+/** "Hours · 200 h · €5,000 | Days · 20 days · €3,000" — the two figures a reader looks for first. */
+function HoursDaysSummary({ items, currency }: { items: DocumentRow[]; currency: string }) {
+  const { t } = useTranslation()
+  const tot = hoursAndDaysTotals(Array.from(items, (r) => ({ lineKind: r.lineKind, quantity: r.quantity, amount: r.quantity * r.unitPrice })))
+  if (tot.hours === 0 && tot.days === 0) return null
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {tot.hours > 0 && (
+        <span className="rounded-lg bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
+          {t("invoices.create.summaryHours", { hours: tot.hours, amount: money(tot.hoursCents / 100, currency) })}
+        </span>
+      )}
+      {tot.days > 0 && (
+        <span className="rounded-lg bg-teal-500/10 px-2.5 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300">
+          {t("invoices.create.summaryDays", { count: tot.days, amount: money(tot.daysCents / 100, currency) })}
+        </span>
+      )}
+    </div>
+  )
+}
 
 export type DocumentView = "build" | "client"
 
@@ -137,6 +191,7 @@ function ViewToggle({ view, onView }: { view: DocumentView; onView: (v: Document
 
 export function InvoiceDocument(props: InvoiceDocumentProps) {
   const { t } = useTranslation()
+  const units = useUnits()
   const {
     view, onView, frames = "both", clientName, clientEmail = "", clientAddress = "",
     issueDate, dueDate, periodLabel, currency, taxPct, discount, notes = "",
@@ -203,6 +258,7 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
           </div>
         ) : (
           <div className="overflow-x-auto">
+            <div className="px-5 pt-4 sm:px-7"><HoursDaysSummary items={items} currency={currency} /></div>
             <table className="w-full min-w-[34rem] text-sm">
               <thead>
                 <tr className="border-b border-border text-[11px] uppercase tracking-wider text-muted-foreground">
@@ -226,11 +282,12 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
                   >
                     <td className={cn("px-5 py-2.5 sm:px-7", row.descriptive && "pl-9 sm:pl-12")}>
                       {row.descriptive && <span className="mr-1.5 opacity-40">↳</span>}
+                      {units.tag(row)}
                       {row.description}
                     </td>
-                    <td className="px-2 py-2.5 text-right tabular-nums">{row.descriptive ? "" : row.quantity}</td>
-                    <td className="px-2 py-2.5 text-right tabular-nums">
-                      {row.descriptive ? "" : money(row.unitPrice, currency)}
+                    <td className="whitespace-nowrap px-2 py-2.5 text-right tabular-nums">{row.descriptive ? "" : units.qty(row)}</td>
+                    <td className="whitespace-nowrap px-2 py-2.5 text-right tabular-nums">
+                      {row.descriptive ? "" : <>{money(row.unitPrice, currency)}<span className="text-xs text-muted-foreground">{units.per(row)}</span></>}
                     </td>
                     <td className="px-5 py-2.5 text-right tabular-nums sm:px-7">
                       {row.descriptive
@@ -375,6 +432,7 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
             </p>
           ) : (
             <div className="mt-7 overflow-x-auto">
+              <div className="mb-3"><HoursDaysSummary items={items} currency={currency} /></div>
               <table className="w-full min-w-[26rem] text-[13.5px]">
                 <thead>
                   <tr className="border-b border-border text-[10px] uppercase tracking-[0.11em] text-muted-foreground">
@@ -398,11 +456,12 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
                     >
                       <td className={cn("py-2.5", row.descriptive && "pl-5 text-[12.5px]")}>
                         {row.descriptive && <span className="mr-1.5 opacity-40">↳</span>}
+                        {units.tag(row)}
                         {row.description}
                       </td>
-                      <td className="py-2.5 text-right tabular-nums">{row.descriptive ? "" : row.quantity}</td>
-                      <td className="py-2.5 text-right tabular-nums">
-                        {row.descriptive ? "" : money(row.unitPrice, currency)}
+                      <td className="whitespace-nowrap py-2.5 text-right tabular-nums">{row.descriptive ? "" : units.qty(row)}</td>
+                      <td className="whitespace-nowrap py-2.5 text-right tabular-nums">
+                        {row.descriptive ? "" : <>{money(row.unitPrice, currency)}<span className="text-[11px] text-muted-foreground">{units.per(row)}</span></>}
                       </td>
                       <td className="py-2.5 text-right tabular-nums">
                         {row.descriptive

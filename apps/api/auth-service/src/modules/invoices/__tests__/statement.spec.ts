@@ -62,7 +62,7 @@ describe('StatementService', () => {
     expect((await service.forMember({ organizationId: 'org', memberId: 'mark', from: '2026-02-30' })).statusCode).toBe(400);
   });
 
-  it('hour + day: an hours row at the hourly rate AND a days row at the day rate — like the invoice', async () => {
+  it('hour + day: hours ON SITE at the hourly rate AND days at the day rate — like the invoice', async () => {
     prisma.spaceAssignment.findMany.mockResolvedValueOnce([
       { id: 'a1', spaceId: 's1', costRateCents: null, billBy: 'BOTH', space: { id: 's1', name: 'BILLA', timezone: 'Europe/Vienna', costRateCents: null } },
     ]);
@@ -78,13 +78,14 @@ describe('StatementService', () => {
     ]);
     const r: any = await service.forMember({ organizationId: 'org', memberId: 'mark', from: '2026-10-01', to: '2026-10-31' });
     const rows = r.data.lines.map((l: any) => [l.basis, l.days ?? null, l.hours, l.rateCents, l.amountCents]);
-    // Hours: the two jobs, 4h + 6h at €25. Days: 9th, 10th, 25th × €150; 7.5 + 8 + 6 h on site, shown not priced.
+    // Hours: time on site — 7.5h (counted) + 8h + 6h (a job, no clock-in) = 21.5h × €25.
+    // Days: the same 3 days × €150. The job on the 10th sits inside that shift: not counted again.
     expect(rows).toEqual([
-      ['hours', null, 10, 2500, 25000],
+      ['hours', 3, 21.5, 2500, 53750],
       ['days', 3, 21.5, 15000, 45000],
     ]);
-    expect(r.data.totalCents).toBe(70000);
-    expect(r.data.totalHours).toBe(10);
+    expect(r.data.totalCents).toBe(98750);
+    expect(r.data.totalHours).toBe(21.5);
   });
 
   it('a days row with no day rate is flagged, never a silent zero', async () => {

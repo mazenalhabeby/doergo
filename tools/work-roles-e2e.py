@@ -237,13 +237,26 @@ try:
     check('Ahmed (days only): his job is listed, not charged by the hour',
           jobs['Wiring']['hoursBillable'] is False and jobs['Wiring']['laborAmount'] == 0, jobs['Wiring'])
     check('jobs carry the trade', jobs['Pump']['workRoleName'] == N('Mechanic'), jobs['Pump'])
+    check('in a workspace, jobs are listed — the hours line carries the money',
+          all(w['hoursBillable'] is False for w in g['workEntries']), [w['hoursBillable'] for w in g['workEntries']])
+
+    # ── Hours ON SITE: one total per person, split only where a rate changes ─
+    hrs = sorted((h['workerId'], h['hours'], h['hourRateCents']) for h in g.get('hourEntries', []))
+    check('Patrick: 72 h on site at the client\'s 60/h (7 shifts + a 2nd shift + 2 job-only days)',
+          [(h, r) for w, h, r in hrs if w == PATRICK] == [(72, 6000)], hrs)
+    check('Mark: 12 h at 85, then 14 h at 90 (split at his raise)',
+          sorted((h, r) for w, h, r in hrs if w == MARK) == [(12, 8500), (14, 9000)], hrs)
+    check('Ahmed (days only): no hours line', all(w != AHMED for w, _, _ in hrs), hrs)
+    pump = jobs['Pump']['taskId'] if 'taskId' in jobs['Pump'] else None
+    check('the hours line names the jobs it covers',
+          pump is None or any(pump in (h.get('taskIds') or []) for h in g['hourEntries'] if h['workerId'] == PATRICK), g['hourEntries'])
 
     # ── The worker's statement: same hours, HIS rate ─────────────────────────
     st = data(call('GET', f'/organizations/members/{MARK}/statement?from={day(-20)}&to={day(-1)}', ADMIN))
     here = [l for l in st.get('lines', []) if l['spaceId'] == space]
-    check('statement: Mark\'s 10 hours here (4 + 6)', sum(l['hours'] for l in here) == 10, st)
+    check('statement: Mark\'s 26 hours on site here — the invoice\'s hours', sum(l['hours'] for l in here) == 26, st)
     check('statement: at his cost with us (25/h), never the client\'s 85 or 90',
-          all(l['rateCents'] == 2500 for l in here) and sum(l['amountCents'] for l in here) == 25000, here)
+          all(l['rateCents'] == 2500 for l in here) and sum(l['amountCents'] for l in here) == 65000, here)
     check('statement: says where the rate came from', all(l['rateLevel'] == 'contract' for l in here), here)
     check('statement: days on site, by the invoice\'s rule (2 clock-ins + 2 job days)', st.get('daysBySpace', {}).get(space) == 4, st.get('daysBySpace'))
     r = call('GET', f'/organizations/members/{MARK}/statement?from={day(-20)}&to={day(-1)}', tok['niamh.brennan'])
@@ -304,34 +317,40 @@ try:
     here = [l for l in sp['lines'] if l['spaceId'] == space]
     hours_rows = [l for l in here if l['basis'] == 'hours']
     day_rows = [l for l in here if l['basis'] == 'days']
-    check('statement: an hours row — 8 job hours × €30 = €240',
-          [(l['hours'], l['rateCents'], l['amountCents']) for l in hours_rows] == [(8, 3000, 24000)], hours_rows)
+    check('statement: an hours row — 72 h on site × €30 = €2,160',
+          [(l['hours'], l['rateCents'], l['amountCents']) for l in hours_rows] == [(72, 3000, 216000)], hours_rows)
     check('statement: a days row — 9 days × €150 = €1,350 (72h on site, shown)',
           [(l['days'], l['rateCents'], l['amountCents'], l['hours']) for l in day_rows] == [(9, 15000, 135000, 72)], day_rows)
-    margin = sum(round(w['hours'] * (w['costRateCents'] or 0)) for w in gc['workEntries'] if w['workerId'] == PATRICK) \
+    margin = sum(h.get('costCents') or 0 for h in gc['hourEntries'] if h['workerId'] == PATRICK) \
         + sum(d.get('costCents') or 0 for d in gc['dayEntries'] if d['workerId'] == PATRICK)
-    check('statement total == the margin\'s cost of him (€1,590)', sum(l['amountCents'] for l in here) == margin == 159000, (here, margin))
+    check('statement total == the margin\'s cost of him (€3,510)', sum(l['amountCents'] for l in here) == margin == 351000, (here, margin))
 
     # ── Invoice the days: never billed twice ─────────────────────────────────
     pd = [d for d in g['dayEntries'] if d['workerId'] == PATRICK]
     items = [{'description': 'Mechanic', 'quantity': 0, 'unitPrice': 0, 'lineKind': 'HEADING'}] + [
         {'description': f"Patrick · {d['days']} days", 'quantity': d['days'], 'unitPrice': d['dayRateCents'] / 100,
          'lineKind': 'DAYS', 'billedDays': d['days'], 'workerId': PATRICK, 'dayFrom': d['fromDay'], 'dayTo': d['toDay'],
-         'billRateCents': d['dayRateCents']} for d in pd]
+         'billRateCents': d['dayRateCents']} for d in pd] + [
+        {'description': f"Patrick · {h['hours']} h", 'quantity': h['hours'], 'unitPrice': h['hourRateCents'] / 100,
+         'lineKind': 'HOURS', 'workerId': PATRICK, 'dayFrom': h['fromDay'], 'dayTo': h['toDay'],
+         'billRateCents': h['hourRateCents'], 'taskIds': h.get('taskIds') or []} for h in g['hourEntries'] if h['workerId'] == PATRICK]
     s, b = call('POST', '/invoices', ADMIN, {'spaceId': space, 'clientName': 'BILLA', 'servicePeriodFrom': day(-20), 'servicePeriodTo': day(-1), 'items': items})
     check('an invoice with day lines is created', s in (200, 201), b)
     inv = data((s, b))
-    check('it adds up: 5×200 + 4×220 = 1,880', abs((inv.get('subtotal') or 0) - 1880) < 0.001, inv.get('subtotal'))
+    check('it adds up: 5×200 + 4×220 + 72×60 = 6,200', abs((inv.get('subtotal') or 0) - 6200) < 0.001, inv.get('subtotal'))
     check('the heading row charges nothing and keeps its kind',
           any(i.get('lineKind') == 'HEADING' and i['amount'] == 0 for i in inv['items']), inv['items'])
     g2 = data(call('GET', f'/invoices/gather?spaceId={space}&from={day(-20)}&to={day(-1)}', ADMIN))
     check('Patrick\'s invoiced days are not offered again', all(d['workerId'] != PATRICK for d in g2['dayEntries']), g2['dayEntries'])
+    check('Patrick\'s invoiced hours are not offered again', all(h['workerId'] != PATRICK for h in g2['hourEntries']), g2['hourEntries'])
+    check('Mark\'s hours are still offered', any(h['workerId'] == MARK for h in g2['hourEntries']), g2['hourEntries'])
     check('Ahmed\'s days are still offered', any(d['workerId'] == AHMED for d in g2['dayEntries']), g2['dayEntries'])
     s, b = call('POST', '/invoices', ADMIN, {'spaceId': space, 'clientName': 'X', 'items': [
         {'description': 'x', 'quantity': 1, 'unitPrice': 1, 'lineKind': 'DAYS', 'workerId': 'not-in-this-org', 'dayFrom': day(-3), 'dayTo': day(-3)}]})
     check('a day line naming somebody outside the organization is refused', s == 400, (s, b))
     call('DELETE', f"/invoices/{inv['id']}", ADMIN)
     g3 = data(call('GET', f'/invoices/gather?spaceId={space}&from={day(-20)}&to={day(-1)}', ADMIN))
+    check('deleting the draft releases the hours', any(h['workerId'] == PATRICK for h in g3['hourEntries']), g3['hourEntries'])
     check('deleting the draft releases the days', sum(d['days'] for d in g3['dayEntries'] if d['workerId'] == PATRICK) == 9, g3['dayEntries'])
 
     if KEEP: raise SystemExit(0)

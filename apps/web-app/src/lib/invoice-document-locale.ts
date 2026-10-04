@@ -56,6 +56,8 @@ export interface InvoiceDocumentLabels {
   /** Letterhead fallback when the organization has no name on file. */
   company: string
   stamp: { draft: string; canceled: string; settled: string }
+  /** Labour lines say what they count: tags, units, per hour / per day. */
+  units: { hoursTag: string; daysTag: string; h: string; days: string; day: string; perHour: string; perDay: string }
 }
 
 /*
@@ -72,6 +74,7 @@ export const INVOICE_DOCUMENT_LABELS: Record<SupportedLocale, InvoiceDocumentLab
     termsDue: "Please settle {{total}} by {{date}}.", termsOnReceipt: "Please settle {{total}} on receipt.",
     page: "Page {{page}} of {{pages}}", vatId: "VAT / UID", company: "Company",
     stamp: { draft: "Draft", canceled: "Canceled", settled: "Settled" },
+    units: { hoursTag: "HOURS", daysTag: "DAYS", h: "h", days: "days", day: "day", perHour: "/ h", perDay: "/ day" },
   },
   de: {
     invoice: "Rechnung", invoiceNumber: "Rechnungsnr.", issueDate: "Rechnungsdatum", dueDate: "Fälligkeitsdatum", onReceipt: "Sofort fällig",
@@ -81,6 +84,7 @@ export const INVOICE_DOCUMENT_LABELS: Record<SupportedLocale, InvoiceDocumentLab
     termsDue: "Bitte begleichen Sie {{total}} bis zum {{date}}.", termsOnReceipt: "Bitte begleichen Sie {{total}} sofort nach Erhalt.",
     page: "Seite {{page}} von {{pages}}", vatId: "USt-IdNr.", company: "Unternehmen",
     stamp: { draft: "Entwurf", canceled: "Storniert", settled: "Beglichen" },
+    units: { hoursTag: "STUNDEN", daysTag: "TAGE", h: "h", days: "Tage", day: "Tag", perHour: "/ Std.", perDay: "/ Tag" },
   },
   es: {
     invoice: "Factura", invoiceNumber: "N.º de factura", issueDate: "Fecha de emisión", dueDate: "Fecha de vencimiento", onReceipt: "Al recibir",
@@ -90,6 +94,7 @@ export const INVOICE_DOCUMENT_LABELS: Record<SupportedLocale, InvoiceDocumentLab
     termsDue: "Le rogamos abone {{total}} antes del {{date}}.", termsOnReceipt: "Le rogamos abone {{total}} a la recepción.",
     page: "Página {{page}} de {{pages}}", vatId: "NIF-IVA", company: "Empresa",
     stamp: { draft: "Borrador", canceled: "Anulada", settled: "Liquidada" },
+    units: { hoursTag: "HORAS", daysTag: "DÍAS", h: "h", days: "días", day: "día", perHour: "/ h", perDay: "/ día" },
   },
   fr: {
     invoice: "Facture", invoiceNumber: "Facture n°", issueDate: "Date d'émission", dueDate: "Date d'échéance", onReceipt: "À réception",
@@ -99,6 +104,7 @@ export const INVOICE_DOCUMENT_LABELS: Record<SupportedLocale, InvoiceDocumentLab
     termsDue: "Merci de régler {{total}} avant le {{date}}.", termsOnReceipt: "Merci de régler {{total}} à réception.",
     page: "Page {{page}} sur {{pages}}", vatId: "N° TVA", company: "Entreprise",
     stamp: { draft: "Brouillon", canceled: "Annulée", settled: "Réglée" },
+    units: { hoursTag: "HEURES", daysTag: "JOURS", h: "h", days: "jours", day: "jour", perHour: "/ h", perDay: "/ jour" },
   },
   it: {
     invoice: "Fattura", invoiceNumber: "Fattura n.", issueDate: "Data di emissione", dueDate: "Data di scadenza", onReceipt: "Al ricevimento",
@@ -108,6 +114,7 @@ export const INVOICE_DOCUMENT_LABELS: Record<SupportedLocale, InvoiceDocumentLab
     termsDue: "La preghiamo di saldare {{total}} entro il {{date}}.", termsOnReceipt: "La preghiamo di saldare {{total}} al ricevimento.",
     page: "Pagina {{page}} di {{pages}}", vatId: "P. IVA", company: "Azienda",
     stamp: { draft: "Bozza", canceled: "Annullata", settled: "Saldata" },
+    units: { hoursTag: "ORE", daysTag: "GIORNI", h: "h", days: "giorni", day: "giorno", perHour: "/ h", perDay: "/ giorno" },
   },
 }
 

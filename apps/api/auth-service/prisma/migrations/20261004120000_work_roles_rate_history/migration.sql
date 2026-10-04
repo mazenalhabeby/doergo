@@ -28,6 +28,8 @@ ALTER TABLE "invoice_items" ADD COLUMN IF NOT EXISTS "lineKind" "InvoiceLineKind
 ALTER TABLE "invoice_items" ADD COLUMN IF NOT EXISTS "workerId" TEXT;
 ALTER TABLE "invoice_items" ADD COLUMN IF NOT EXISTS "dayFrom" DATE;
 ALTER TABLE "invoice_items" ADD COLUMN IF NOT EXISTS "dayTo" DATE;
+-- An hours line on a workspace invoice names the jobs those hours cover.
+ALTER TABLE "invoice_items" ADD COLUMN IF NOT EXISTS "taskIds" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];
 CREATE INDEX IF NOT EXISTS "invoice_items_workerId_dayFrom_idx" ON "invoice_items"("workerId", "dayFrom");
 
 CREATE TABLE IF NOT EXISTS "rate_history" (

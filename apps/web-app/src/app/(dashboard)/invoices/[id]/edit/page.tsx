@@ -191,6 +191,7 @@ function EditInvoiceInner({ id }: { id: string }) {
               workerId: item.workerId ?? null,
               dayFrom: item.dayFrom ? item.dayFrom.slice(0, 10) : null,
               dayTo: item.dayTo ? item.dayTo.slice(0, 10) : null,
+              ...(item.taskIds?.length ? { taskIds: item.taskIds } : {}),
               billedDays: item.lineKind === "DAYS" ? num(line.quantity) : null,
             }),
           })

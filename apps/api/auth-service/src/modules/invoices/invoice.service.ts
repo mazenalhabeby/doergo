@@ -4,7 +4,7 @@ import {
   paginated, snapshotRates, usesTwoRates, cleanRateCents,
   clientDocumentLocale, DEFAULT_LOCALE, type SupportedLocale,
   loadRateBook, dayKeyIn, parseDayKey, effectiveBillBy, billsHours, billsDays, workedDays,
-  type BillByValue, type DayEntry,
+  type BillByValue, type DayEntry, type HoursEntry,
 } from '@hbcfield/shared';
 
 /** The invoice line kinds a caller may file. */
@@ -49,6 +49,7 @@ export class InvoiceService {
       workerId?: string | null;
       dayFrom?: string | null;
       dayTo?: string | null;
+      taskIds?: string[];
     }[];
   }) {
     // When tied to a CUSTOMER space, snapshot its contact details as fallbacks so
@@ -460,6 +461,7 @@ export class InvoiceService {
       workerId?: string | null;
       dayFrom?: string | null;
       dayTo?: string | null;
+      taskIds?: string[];
     },
   ) {
     const invoice = await this.prisma.invoice.findFirst({
@@ -755,16 +757,17 @@ export class InvoiceService {
 
     // Exclude tasks already billed on a live invoice (any status except CANCELED).
     const taskIds = tasks.map((t) => t.id);
+    // A job is billed by its own line (`taskId`) or by the hours line that covered it (`taskIds`).
     const alreadyBilled = taskIds.length
       ? await this.prisma.invoiceItem.findMany({
           where: {
-            taskId: { in: taskIds },
+            OR: [{ taskId: { in: taskIds } }, { taskIds: { hasSome: taskIds } }],
             invoice: { organizationId: data.organizationId, status: { not: 'CANCELED' } },
           },
-          select: { taskId: true },
+          select: { taskId: true, taskIds: true },
         })
       : [];
-    const billed = new Set(alreadyBilled.map((i) => i.taskId).filter(Boolean) as string[]);
+    const billed = new Set(alreadyBilled.flatMap((i) => [i.taskId, ...i.taskIds]).filter(Boolean) as string[]);
 
     const fullName = (u?: { firstName: string | null; lastName: string | null } | null) =>
       u ? `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || null : null;
@@ -890,14 +893,19 @@ export class InvoiceService {
         hours,
         billRateCents: resolved.billRateCents,
         costRateCents: resolved.costRateCents,
-        laborAmount: billRate != null && billsHours(billBy) ? Math.round(hours * billRate * 100) / 100 : 0,
+        laborAmount: !space && billRate != null && billsHours(billBy) ? Math.round(hours * billRate * 100) / 100 : 0,
         completedAt: report?.completedAt ?? t.updatedAt ?? null,
         workedOn,
         workRoleId: workRole?.id ?? null,
         workRoleName: workRole?.name ?? null,
         billBy,
-        // Day-only: listed (and so marked billed) but not charged — the days pay for it.
-        hoursBillable: billsHours(billBy),
+        /*
+          On a WORKSPACE invoice the hours charged are the time ON SITE (the
+          hours lines below), so a job's own hours are never charged — it is
+          listed, and marked billed by the hours line. On a CLIENT invoice
+          (no site) a job's hours are what is charged, as before.
+        */
+        hoursBillable: space ? false : billsHours(billBy),
         notes: report?.workPerformed || report?.summary || null,
         parts,
         hasReport: !!report,
@@ -910,9 +918,15 @@ export class InvoiceService {
       }
     }
 
-    const dayEntries = space
-      ? await this.gatherDays(data.organizationId, space.id, tz, data.from, data.to, assignments, billByOf, book)
-      : [];
+    // Time on site: each person's hours runs and day runs at this workspace.
+    const jobWorkers = new Map<string, string>();
+    for (const w of workEntries) if (w.workerId && w.workerName) jobWorkers.set(w.workerId, w.workerName);
+    const { hourEntries, dayEntries } = space
+      ? await this.gatherSiteTime({
+          organizationId: data.organizationId, spaceId: space.id, tz, from: data.from, to: data.to,
+          assignments, jobWorkers, billByOf, book, ratesFor, billedTasks: billed,
+        })
+      : { hourEntries: [] as HoursEntry[], dayEntries: [] as DayEntry[] };
     return {
       success: true,
       data: {
@@ -945,11 +959,18 @@ export class InvoiceService {
          * invoice are left out, exactly as billed jobs are.
          */
         dayEntries,
+        /**
+         * Hours ON SITE here, per person, split wherever their hourly rate
+         * changed — what a workspace invoice charges by the hour. Hours already
+         * on a live invoice are left out.
+         */
+        hourEntries,
         twoRates: usesTwoRates([
           { billRateCents: org?.billableRateCents, costRateCents: org?.costRateCents },
           space ? { billRateCents: space.billableRateCents, costRateCents: space.costRateCents } : null,
           ...workEntries.map((w: any) => ({ costRateCents: w.costRateCents })),
           ...dayEntries.map((d) => ({ costRateCents: d.costCents ?? null })),
+          ...hourEntries.map((h) => ({ costRateCents: h.costCents ?? null })),
         ]),
         workEntries,
       },
@@ -967,21 +988,28 @@ export class InvoiceService {
   private dayLineFields(item: {
     lineKind?: string | null;
     billedDays?: number | null;
+    taskIds?: unknown[] | null;
     workerId?: string | null;
     dayFrom?: string | null;
     dayTo?: string | null;
   }) {
     const lineKind = item.lineKind && LINE_KINDS.has(item.lineKind) ? (item.lineKind as 'HOURS' | 'DAYS' | 'HEADING') : null;
     const isDays = lineKind === 'DAYS';
-    const from = isDays ? parseDayKey(item.dayFrom) : null;
-    const to = isDays ? parseDayKey(item.dayTo) : null;
+    // A run of time on site — hours or days — names whose time and which days.
+    const isRun = isDays || (lineKind === 'HOURS' && typeof item.workerId === 'string' && !!item.dayFrom);
+    const from = isRun ? parseDayKey(item.dayFrom) : null;
+    const to = isRun ? parseDayKey(item.dayTo) : null;
     return {
       lineKind,
       billedDays:
         isDays && typeof item.billedDays === 'number' && Number.isFinite(item.billedDays) && item.billedDays >= 0
           ? Math.min(item.billedDays, 3_660)
           : null,
-      workerId: isDays && typeof item.workerId === 'string' ? item.workerId : null,
+      workerId: isRun && typeof item.workerId === 'string' ? item.workerId : null,
+      taskIds:
+        lineKind === 'HOURS' && Array.isArray(item.taskIds)
+          ? [...new Set(item.taskIds.filter((x): x is string => typeof x === 'string' && x.length <= 64))].slice(0, 2000)
+          : [],
       dayFrom: from ? new Date(`${from}T00:00:00Z`) : null,
       dayTo: from && to && to >= from ? new Date(`${to}T00:00:00Z`) : from ? new Date(`${from}T00:00:00Z`) : null,
     };
@@ -1001,151 +1029,179 @@ export class InvoiceService {
   }
 
   /**
-   * Days worked at a workspace by the people billed by the day, priced per day.
+   * TIME ON SITE at a workspace, per person: HOURS runs (everybody billed by
+   * the hour or hour + day) and DAY runs (people with a trade billed by the day
+   * or hour + day), each priced on its own day.
    *
-   * ⚠️ A DAY WORKED IS ANY DAY THEY CLOCKED IN HERE OR FINISHED A JOB HERE —
-   * read in the workspace's own time zone, with no minimum hours, once per day
-   * however many shifts or jobs. A clock-in a manager REJECTED is not a day.
-   * Finished jobs count too, so somebody who forgot to clock in but did the
-   * work is not silently a day short.
+   * ⚠️ HOURS ARE THE TIME THEY WERE THERE — the counted time of their clock-ins
+   * at this workspace; a day with a finished job and no clock-in counts that
+   * job's time (`countedMinutesByDay`, shared with the statement and margin).
    *
-   * ⚠️ NEVER BILLED TWICE. Every DAYS line on a live invoice records whose days
-   * and which run (`workerId`, `dayFrom`–`dayTo`); those days are skipped here,
-   * the way a job on a live invoice is skipped by its `taskId`. Cancelling the
-   * invoice releases them.
+   * ⚠️ A DAY WORKED is any day with a clock-in (not REJECTED) or a finished job
+   * there, in the workspace's zone, once per day.
+   *
+   * ⚠️ NEVER BILLED TWICE. Every HOURS and DAYS line on a live invoice records
+   * whose time and which run (`workerId`, `dayFrom`–`dayTo`); those days are
+   * skipped for that kind. Cancelling or deleting the invoice releases them.
    *
    * Three queries for the whole workspace, whatever its size.
    */
-  private async gatherDays(
-    organizationId: string,
-    spaceId: string,
-    tz: string,
-    from: string | undefined,
-    to: string | undefined,
+  private async gatherSiteTime(args: {
+    organizationId: string;
+    spaceId: string;
+    tz: string;
+    from?: string;
+    to?: string;
     assignments: Array<{
       id: string;
       userId: string;
       workRole: { id: string; name: string; kind: string } | null;
-      user: { id: string; firstName: string | null; lastName: string | null; isExternal: boolean } | null;
-    }>,
-    billByOf: (userId: string) => BillByValue,
-    book: Awaited<ReturnType<typeof loadRateBook>>,
-  ): Promise<DayEntry[]> {
-    const byDay = assignments.filter(
-      (a) => a.workRole?.kind === 'WORK' && !a.user?.isExternal && billsDays(billByOf(a.userId)),
-    );
-    if (byDay.length === 0) return [];
-    const ids = byDay.map((a) => a.userId);
-    const fromDay = parseDayKey(from);
-    const toDay = parseDayKey(to);
-    // A day of slack each side: the period is in the workspace's zone, the column is UTC.
+      user: { id: string; firstName: string | null; lastName: string | null; isExternal: boolean; billRateCents: number | null; costRateCents: number | null } | null;
+    }>;
+    /** People who finished jobs here, by name — billed by the hour if they hold no assignment. */
+    jobWorkers: Map<string, string>;
+    billByOf: (userId: string) => BillByValue;
+    book: Awaited<ReturnType<typeof loadRateBook>>;
+    ratesFor: (worker: { id?: string; billRateCents?: number | null; costRateCents?: number | null } | null, day: string) => { billRateCents: number | null; costRateCents: number | null };
+    billedTasks: Set<string>;
+  }): Promise<{ hourEntries: HoursEntry[]; dayEntries: DayEntry[] }> {
+    const { organizationId, spaceId, tz, assignments, billByOf, book, ratesFor } = args;
+    const people = new Map<string, { name: string; assignment?: (typeof assignments)[number] }>();
+    for (const a of assignments) {
+      if (a.user?.isExternal) continue; // neither paid nor billed by us
+      people.set(a.userId, { name: `${a.user?.firstName ?? ''} ${a.user?.lastName ?? ''}`.trim() || 'Worker', assignment: a });
+    }
+    for (const [id, name] of args.jobWorkers) if (!people.has(id)) people.set(id, { name });
+    if (people.size === 0) return { hourEntries: [], dayEntries: [] };
+    const ids = [...people.keys()];
+    const fromDay = parseDayKey(args.from);
+    const toDay = parseDayKey(args.to);
+    // A day of slack each side: the period is in the workspace's zone, the columns are UTC.
     const DAY_MS = 86_400_000;
-    const clockInAt = {
+    const range = {
       ...(fromDay && { gte: new Date(Date.parse(`${fromDay}T00:00:00Z`) - DAY_MS) }),
       ...(toDay && { lte: new Date(Date.parse(`${toDay}T23:59:59.999Z`) + DAY_MS) }),
     };
+    const bounded = !!(fromDay || toDay);
 
-    const jobRange = {
-      ...(fromDay && { gte: new Date(Date.parse(`${fromDay}T00:00:00Z`) - DAY_MS) }),
-      ...(toDay && { lte: new Date(Date.parse(`${toDay}T23:59:59.999Z`) + DAY_MS) }),
-    };
     const [entries, billedRuns, jobs] = await Promise.all([
       this.prisma.timeEntry.findMany({
         where: {
-          organizationId,
-          locationId: spaceId,
-          userId: { in: ids },
+          organizationId, locationId: spaceId, userId: { in: ids },
           approvalStatus: { not: 'REJECTED' },
-          ...(fromDay || toDay ? { clockInAt } : {}),
+          ...(bounded ? { clockInAt: range } : {}),
         },
         select: { userId: true, clockInAt: true, clockOutAt: true, paidMinutes: true, totalMinutes: true },
       }),
       this.prisma.invoiceItem.findMany({
         where: {
-          lineKind: 'DAYS',
+          lineKind: { in: ['HOURS', 'DAYS'] },
           workerId: { in: ids },
           invoice: { organizationId, spaceId, status: { not: 'CANCELED' } },
         },
-        select: { workerId: true, dayFrom: true, dayTo: true },
+        select: { lineKind: true, workerId: true, dayFrom: true, dayTo: true },
       }),
       // Every finished job here by these people — billed or not, a day worked is a day worked.
       this.prisma.task.findMany({
         where: {
-          organizationId,
-          spaceId,
-          status: FINISHED,
+          organizationId, spaceId, status: FINISHED,
           OR: [
-            { serviceReport: { completedById: { in: ids }, ...(fromDay || toDay ? { completedAt: jobRange } : {}) } },
-            { serviceReport: null, assignedToId: { in: ids }, ...(fromDay || toDay ? { updatedAt: jobRange } : {}) },
+            { serviceReport: { completedById: { in: ids }, ...(bounded ? { completedAt: range } : {}) } },
+            { serviceReport: null, assignedToId: { in: ids }, ...(bounded ? { updatedAt: range } : {}) },
           ],
         },
         select: {
-          assignedToId: true,
-          updatedAt: true,
+          id: true, assignedToId: true, updatedAt: true,
           serviceReport: { select: { completedById: true, completedAt: true, workDuration: true } },
         },
       }),
     ]);
-    const jobDays = jobs.map((j) => ({
+    const dayOf = (at: Date) => dayKeyIn(at, tz);
+    const jobMarks = jobs.map((j) => ({
+      id: j.id,
       userId: j.serviceReport?.completedById ?? j.assignedToId,
-      clockInAt: j.serviceReport?.completedAt ?? j.updatedAt,
+      at: j.serviceReport?.completedAt ?? j.updatedAt,
+      minutes: Math.round((j.serviceReport?.workDuration ?? 0) / 60),
     }));
-    // Counted time per person per day — the rule shared with the worker's statement.
-    const minutesOn = countedMinutesByDay(
-      entries,
-      jobs.map((j) => ({
-        userId: j.serviceReport?.completedById ?? j.assignedToId,
-        at: j.serviceReport?.completedAt ?? j.updatedAt,
-        minutes: Math.round((j.serviceReport?.workDuration ?? 0) / 60),
-      })),
-      (at) => dayKeyIn(at, tz),
-    );
-
+    // Counted time per person per day — the rule shared with the statement and the margin.
+    const minutesOn = countedMinutesByDay(entries, jobMarks, dayOf);
     const key = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
-    const out: DayEntry[] = [];
-    for (const a of byDay) {
-      const runs = billedRuns.filter((r) => r.workerId === a.userId);
-      const days = workedDays(
-        [...entries, ...jobDays].filter((e) => e.userId === a.userId),
-        (at) => dayKeyIn(at, tz),
-        fromDay,
-        toDay,
-      ).filter((d) => !runs.some((r) => key(r.dayFrom)! <= d && d <= (key(r.dayTo) ?? key(r.dayFrom))!));
-      if (days.length === 0) continue;
-      const name = `${a.user?.firstName ?? ''} ${a.user?.lastName ?? ''}`.trim() || 'Worker';
-      // This workspace's day rate on each day, else the role's default.
-      const roleId = a.workRole!.id;
-      for (const run of book.splitDaysWith(days, (d) => book.dayRateOn(d, roleId, spaceId))) {
-        /*
-          What this run COSTS: each day × what a day of this person costs you
-          on that day (their rate at this client, else their own). Null when a
-          day has no day rate anywhere — unknown, never free. Their counted
-          hours are carried alongside, for the reader.
-        */
-        let costCents: number | null = 0;
-        let minutes = 0;
-        for (const d of days) {
-          if (d < run.fromDay || d > run.toDay) continue;
-          minutes += minutesOn.get(`${a.userId}|${d}`) ?? 0;
-          const dayCost = book.personDayCostOn(d, a.userId, a.id);
-          if (dayCost === null) costCents = null;
-          else if (costCents !== null) costCents += dayCost;
+    const alreadyBilled = (userId: string, kind: 'HOURS' | 'DAYS', d: string) =>
+      billedRuns.some((r) => r.workerId === userId && r.lineKind === kind && key(r.dayFrom)! <= d && d <= (key(r.dayTo) ?? key(r.dayFrom))!);
+    const inPeriod = (d: string) => (!fromDay || d >= fromDay) && (!toDay || d <= toDay);
+
+    const hourEntries: HoursEntry[] = [];
+    const dayEntries: DayEntry[] = [];
+    for (const [userId, p] of people) {
+      const a = p.assignment;
+      const workRole = a?.workRole?.kind === 'WORK' ? a.workRole : null;
+      const billBy = billByOf(userId);
+      const worker = a?.user ? { ...a.user, id: userId } : { id: userId };
+      const daysWithTime = [...minutesOn.keys()]
+        .filter((k) => k.startsWith(`${userId}|`))
+        .map((k) => k.split('|')[1]!)
+        .filter(inPeriod)
+        .sort();
+      const base = { workerId: userId, workerName: p.name, workRoleId: workRole?.id ?? null, workRoleName: workRole?.name ?? null };
+
+      // HOURS: time on site, at the hourly rate in force each day; split where it changed.
+      if (billsHours(billBy)) {
+        const days = daysWithTime.filter((d) => !alreadyBilled(userId, 'HOURS', d) && (minutesOn.get(`${userId}|${d}`) ?? 0) > 0);
+        for (const run of book.splitDaysWith(days, (d) => ratesFor(worker, d).billRateCents)) {
+          let minutes = 0;
+          let cost: number | null = 0;
+          let count = 0;
+          for (const d of days) {
+            if (d < run.fromDay || d > run.toDay) continue;
+            const m = minutesOn.get(`${userId}|${d}`) ?? 0;
+            minutes += m;
+            count += 1;
+            const c = ratesFor(worker, d).costRateCents;
+            if (c === null) cost = null;
+            else if (cost !== null) cost += (c * m) / 60;
+          }
+          hourEntries.push({
+            ...base,
+            hours: Math.round((minutes / 60) * 100) / 100,
+            days: count,
+            fromDay: run.fromDay,
+            toDay: run.toDay,
+            hourRateCents: run.cents,
+            costCents: cost === null ? null : Math.round(cost),
+            // The jobs these hours cover — marked billed with the line.
+            taskIds: jobMarks
+              .filter((j) => j.userId === userId && !args.billedTasks.has(j.id) && run.fromDay <= dayOf(j.at) && dayOf(j.at) <= run.toDay)
+              .map((j) => j.id),
+          });
         }
-        out.push({
-          costCents: costCents === null ? null : Math.round(costCents),
-          hours: Math.round((minutes / 60) * 100) / 100,
-          workerId: a.userId,
-          workerName: name,
-          workRoleId: a.workRole!.id,
-          workRoleName: a.workRole!.name,
-          days: run.days,
-          fromDay: run.fromDay,
-          toDay: run.toDay,
-          dayRateCents: run.cents,
-        });
+      }
+
+      // DAYS: every day worked, at the role's day rate here (else its default).
+      if (workRole && billsDays(billBy)) {
+        const days = daysWithTime.filter((d) => !alreadyBilled(userId, 'DAYS', d));
+        for (const run of book.splitDaysWith(days, (d) => book.dayRateOn(d, workRole.id, spaceId))) {
+          let minutes = 0;
+          let cost: number | null = 0;
+          for (const d of days) {
+            if (d < run.fromDay || d > run.toDay) continue;
+            minutes += minutesOn.get(`${userId}|${d}`) ?? 0;
+            const dayCost = book.personDayCostOn(d, userId, a?.id);
+            if (dayCost === null) cost = null;
+            else if (cost !== null) cost += dayCost;
+          }
+          dayEntries.push({
+            ...base,
+            days: run.days,
+            fromDay: run.fromDay,
+            toDay: run.toDay,
+            dayRateCents: run.cents,
+            costCents: cost === null ? null : Math.round(cost),
+            hours: Math.round((minutes / 60) * 100) / 100,
+          });
+        }
       }
     }
-    return out;
+    return { hourEntries, dayEntries };
   }
 
   private async generateInvoiceNumber(organizationId: string): Promise<string> {
