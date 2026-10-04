@@ -1,6 +1,6 @@
 # HBCFIELD - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-09-06 (shift clock: two clocks, planned rests, away-from-site; per-type document visibility)
+> **Last Updated**: 2026-10-04 (work roles + day rates, dated rates, worker statement)
 
 ---
 
@@ -515,6 +515,30 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 > ⚠️ **Who may change an owner** (`mayChangeChecklistOwner`): the effective leader or the office give anything to anybody on the crew; a member TAKES a free item or GIVES BACK their own. Judged on `CrewService.checklistAuthority` — resolved by the server; the office skips the leader lookup. 403 `CHECKLIST_OWNER_NOT_YOURS`, 400 `CHECKLIST_OWNER_NOT_ON_CREW`.
 >
 > ⚠️ **No time per item**, by design — time stays per person on the job. A part that needs its own time is its own task.
+
+### Rates, work roles and the worker's statement
+> A workspace role is a **WORK** role (a trade: carries how work is billed — HOUR / DAY / BOTH — and a day rate, grants NOTHING) or a **MANAGEMENT** role (permissions). Rules: `packages/shared/src/billing/{rate-history,rate-writer,work-roles,invoice-lines}.ts`. Migration `20261004120000_work_roles_rate_history`.
+
+| Method | Endpoint | Description | Gate |
+|--------|----------|-------------|------|
+| GET | `/spaces/:spaceId/roles` | Roles as one workspace sees them: holders here, day rate here (own or default) + history | canManageSpace |
+| PUT | `/spaces/:spaceId/roles/:roleId/day-rate` | A work role's day rate in this workspace, from a day (`effectiveFrom`) | canManageSpace |
+| PUT | `/space-roles/:roleId/day-rate` | A work role's DEFAULT day rate for every workspace without its own | canManageWorkspaces |
+| PATCH | `/spaces/:spaceId/members/:memberId/roles` | `workRoleId`, `managementRoleId`, `allowSecondRole`, `billBy` override | canManageSpace (+ grant ceiling on the management role) |
+| GET | `/rate-history?target&targetId&spaceId` | One rate's dated history | the right to WRITE that rate; cost rows only with canViewLabourCost |
+| GET | `/organizations/members/:id/statement?from&to` | The worker's statement: hours per workspace × their cost rate on each job's day | canViewLabourCost |
+
+> ⚠️ **The trade is its own column** (`SpaceAssignment.workRoleId`). Every permission/routing/notification check still reads `roleId` only; a work role's permissions are forced `{}` on every write. Two roles only when `allowSecondRole`.
+>
+> ⚠️ **A rate change never rewrites the past.** Every rate is a dated row in `rate_history`; work is priced by the rate in force ON THE DAY it was done. The rate columns are a mirror of "today". ONE writer: `writeRateChange` in shared — `rate-writer-guard.spec.ts` fails on a direct column write. The FIRST rate ever, saved with no start day, applies since always (else last month bills at 0).
+>
+> ⚠️ **A day worked** = any day clocked in (not REJECTED) OR a job finished at that workspace, in the workspace's zone, once per day. Hour+Day bills BOTH rows; Day-only jobs are listed, not charged. DAYS lines store `workerId`/`dayFrom`/`dayTo` so days are never billed twice (deleting/cancelling the invoice releases them).
+>
+> ⚠️ **Labour cost** leaves the gateway only for `canViewLabourCost` (org-wide `canManageUsers` bridges to it): `LabourCostInterceptor` on the locations, space-roles, organizations and employees controllers strips `costRateCents` and refuses setting one.
+>
+> ⚠️ Refusal `code`s now survive RPC → gateway (`RpcHttpExceptionFilter` + `BaseGatewayService.toHttpException`).
+>
+> E2E: `python3 tools/work-roles-e2e.py` (LOCAL only).
 
 ### Users (`/users`) - Push Tokens
 | Method | Endpoint | Description | Roles |

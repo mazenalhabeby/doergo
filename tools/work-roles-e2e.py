@@ -177,7 +177,7 @@ try:
     check('…but can set what the client pays', r[0] == 200 and 'costRateCents' not in json.dumps(r[1]), r)
     s, b = call('GET', f'/spaces/{space}/members', ADMIN)
     check('an admin sees the cost rate', '2500' in json.dumps(b), b)
-    r = call('PATCH', f'/spaces/{space}/members/{aid}/roles', NIAMH, {'managementRoleId': lead['id']})
+    r = call('PATCH', f'/spaces/{space}/members/{pid}/roles', NIAMH, {'managementRoleId': lead['id']})
     check('a workspace manager may hand out what they hold', r[0] == 200, r)
 
     # ── Work done: clock-ins and finished jobs, straight into the database ───
@@ -201,10 +201,11 @@ try:
     # ── Gather: every job and day at the rate of ITS day ─────────────────────
     g = data(call('GET', f'/invoices/gather?spaceId={space}&from={day(-20)}&to={day(-1)}', ADMIN))
     runs = [(d['workerId'], d['days'], d['dayRateCents']) for d in g.get('dayEntries', [])]
-    check('Patrick: 4 days at 200, then 3 at 220 (split at the raise)',
-          (PATRICK, 4, 20000) in runs and (PATRICK, 3, 22000) in runs, runs)
-    check('the rejected clock-in and the second shift added no day',
-          sum(d['days'] for d in g['dayEntries'] if d['workerId'] == PATRICK) == 7, runs)
+    # Patrick clocked in on 7 days and finished jobs on 2 more (-13, -4) without clocking in.
+    check('Patrick: 5 days at 200, then 4 at 220 (split at the raise)',
+          (PATRICK, 5, 20000) in runs and (PATRICK, 4, 22000) in runs, runs)
+    check('a finished job counts its day; the rejected clock-in and the second shift add none',
+          sum(d['days'] for d in g['dayEntries'] if d['workerId'] == PATRICK) == 9, runs)
     check('Ahmed: 3 days at 180', (AHMED, 3, 18000) in runs, runs)
     check('Mark: hours only — no days', all(w != MARK for w, _, _ in runs), runs)
     jobs = {w['taskTitle'].split(' ', 1)[1]: w for w in g['workEntries'] if w['taskTitle'].startswith(TAG)}
@@ -222,11 +223,47 @@ try:
     check('statement: at his cost with us (25/h), never the client\'s 85 or 90',
           all(l['rateCents'] == 2500 for l in here) and sum(l['amountCents'] for l in here) == 25000, here)
     check('statement: says where the rate came from', all(l['rateLevel'] == 'contract' for l in here), here)
-    check('statement: days on site for reference', st.get('daysBySpace', {}).get(space) == 2, st.get('daysBySpace'))
+    check('statement: days on site, by the invoice\'s rule (2 clock-ins + 2 job days)', st.get('daysBySpace', {}).get(space) == 4, st.get('daysBySpace'))
     r = call('GET', f'/organizations/members/{MARK}/statement?from={day(-20)}&to={day(-1)}', tok['niamh.brennan'])
     check('statement: refused to somebody without labour cost (403)', r[0] == 403, r)
     r = call('GET', f'/organizations/members/{MARK}/statement?from=2026-02-30', ADMIN)
     check('statement: an impossible day is a 400', r[0] == 400, r)
+
+    # ── Rate history: read with the right to write it; cost only for cost ───
+    q = f'/rate-history?target=ASSIGNMENT&targetId={mid}&spaceId={space}'
+    h = data(call('GET', q, ADMIN))
+    check('history: an admin sees bill AND cost rows, dated',
+          [(x['kind'], x['cents']) for x in h if x['kind'] == 'BILL_HOUR'] == [('BILL_HOUR', 8500), ('BILL_HOUR', 9000), ('BILL_HOUR', 9000)]
+          and any(x['kind'] == 'COST_HOUR' for x in h), h)
+    hm = data(call('GET', q, tok['niamh.brennan']))
+    check('history: a workspace manager sees bill rows only', hm and all(x['kind'] == 'BILL_HOUR' for x in hm), hm)
+    r = call('GET', q, tok['tobias.okafor'])
+    check('history: refused to a member who does not manage the workspace (403)', r[0] == 403, r)
+    r = call('GET', f'/rate-history?target=ASSIGNMENT&targetId={mid}&spaceId=video-space-depot', ADMIN)
+    check('history: an assignment read through another workspace finds nothing (404)', r[0] == 404, r)
+    r = call('GET', f"/rate-history?target=ORGANIZATION&targetId={ORG}", tok['niamh.brennan'])
+    check('history: the organization default is the owner\'s (403)', r[0] == 403, r)
+
+    # ── A role's default day rate, for workspaces without their own ─────────
+    r = call('PUT', f"/space-roles/{elec['id']}/day-rate", ADMIN, {'cents': 15000})
+    check('a default day rate for every workspace is saved', r[0] in (200, 201), r)
+    roles = {x['id']: x for x in data(call('GET', f'/spaces/{space}/roles', ADMIN))}
+    e = roles[elec['id']]
+    check('…the workspace keeps its own 180, and shows the default beside it',
+          e['dayRateCents'] == 18000 and e['dayRateSource'] == 'workspace' and e['defaultDayRateCents'] == 15000, e)
+    call('PUT', f"/spaces/{space}/roles/{elec['id']}/day-rate", ADMIN, {'cents': None, 'effectiveFrom': day(-30)})
+    roles = {x['id']: x for x in data(call('GET', f'/spaces/{space}/roles', ADMIN))}
+    check('…clearing the workspace rate falls back to the default', roles[elec['id']]['dayRateCents'] == 15000
+          and roles[elec['id']]['dayRateSource'] == 'default', roles[elec['id']])
+    gd = data(call('GET', f'/invoices/gather?spaceId={space}&from={day(-20)}&to={day(-1)}', ADMIN))
+    check('…and Ahmed\'s days are priced at the default', (AHMED, 3, 15000) in [(d['workerId'], d['days'], d['dayRateCents']) for d in gd['dayEntries']], gd['dayEntries'])
+    call('PUT', f"/spaces/{space}/roles/{elec['id']}/day-rate", ADMIN, {'cents': 18000, 'effectiveFrom': day(-30)})
+
+    # ── A member's own cost rate saves (it was refused by validation before) ─
+    r = call('PATCH', f'/employees/{MARK}', ADMIN, {'costRateCents': 2700})
+    check('a member\'s cost rate saves from the member screen', r[0] == 200, r)
+    r = call('PATCH', f'/employees/{MARK}', tok['niamh.brennan'], {'costRateCents': 1})
+    check('…but not by somebody without labour cost', r[0] == 403, r)
 
     # ── Invoice the days: never billed twice ─────────────────────────────────
     pd = [d for d in g['dayEntries'] if d['workerId'] == PATRICK]
@@ -237,7 +274,7 @@ try:
     s, b = call('POST', '/invoices', ADMIN, {'spaceId': space, 'clientName': 'BILLA', 'servicePeriodFrom': day(-20), 'servicePeriodTo': day(-1), 'items': items})
     check('an invoice with day lines is created', s in (200, 201), b)
     inv = data((s, b))
-    check('it adds up: 4×200 + 3×220 = 1,460', abs((inv.get('subtotal') or 0) - 1460) < 0.001, inv.get('subtotal'))
+    check('it adds up: 5×200 + 4×220 = 1,880', abs((inv.get('subtotal') or 0) - 1880) < 0.001, inv.get('subtotal'))
     check('the heading row charges nothing and keeps its kind',
           any(i.get('lineKind') == 'HEADING' and i['amount'] == 0 for i in inv['items']), inv['items'])
     g2 = data(call('GET', f'/invoices/gather?spaceId={space}&from={day(-20)}&to={day(-1)}', ADMIN))
@@ -248,13 +285,13 @@ try:
     check('a day line naming somebody outside the organization is refused', s == 400, (s, b))
     call('DELETE', f"/invoices/{inv['id']}", ADMIN)
     g3 = data(call('GET', f'/invoices/gather?spaceId={space}&from={day(-20)}&to={day(-1)}', ADMIN))
-    check('deleting the draft releases the days', sum(d['days'] for d in g3['dayEntries'] if d['workerId'] == PATRICK) == 7, g3['dayEntries'])
+    check('deleting the draft releases the days', sum(d['days'] for d in g3['dayEntries'] if d['workerId'] == PATRICK) == 9, g3['dayEntries'])
 
     # ── The past never moves ─────────────────────────────────────────────────
     call('PUT', f'/spaces/{space}/roles/{mech["id"]}/day-rate', ADMIN, {'cents': 99900})
     g4 = data(call('GET', f'/invoices/gather?spaceId={space}&from={day(-20)}&to={day(-1)}', ADMIN))
     check('a raise TODAY leaves every earlier day at its own rate',
-          sorted((d['days'], d['dayRateCents']) for d in g4['dayEntries'] if d['workerId'] == PATRICK) == [(3, 22000), (4, 20000)], g4['dayEntries'])
+          sorted((d['days'], d['dayRateCents']) for d in g4['dayEntries'] if d['workerId'] == PATRICK) == [(4, 22000), (5, 20000)], g4['dayEntries'])
 finally:
     if space:
         psql(f"""

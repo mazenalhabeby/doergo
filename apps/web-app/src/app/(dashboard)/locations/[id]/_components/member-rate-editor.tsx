@@ -1,16 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { Copy, Check, Loader2, Pencil } from "lucide-react"
+import { Pencil } from "lucide-react"
 
-import { spaceMembersApi } from "@/lib/api"
+import { rateHistoryApi, spaceMembersApi } from "@/lib/api"
+import { useAuth } from "@/contexts/auth-context"
+import { DatedRateField } from "@/components/rates/dated-rate"
 import type { SpaceMember } from "@hbcfield/shared/client"
-import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { formatMoney } from "@/lib/money"
 
 /**
@@ -33,9 +32,6 @@ import { formatMoney } from "@/lib/money"
  * empty box with nothing beside it reads as "this person bills nothing here",
  * which is the one reading that must not happen on a screen about money.
  */
-
-/** Euros in the box, cents on the wire. */
-const toField = (cents?: number | null) => (cents == null ? "" : String(cents / 100))
 
 function useMoney(currency: string) {
   return (cents: number) => formatMoney(cents / 100, currency)
@@ -114,7 +110,11 @@ export function MemberRateChip({
   )
 }
 
-/** The editor, opened from the chip. */
+/**
+ * The editor, opened from the chip: this member's rates HERE, each changed from
+ * a day with its history — the same control as every other rate in the product.
+ * The cost side only for people who may see what labour costs.
+ */
 export function MemberRateEditor({
   spaceId,
   member,
@@ -129,91 +129,44 @@ export function MemberRateEditor({
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const money = useMoney(currency)
+  const { user } = useAuth()
+  const canViewLabourCost = (user as { canViewLabourCost?: boolean } | null)?.canViewLabourCost === true
 
-  const [value, setValue] = useState(toField(member.billRateCents))
-  // Re-seed when the row changes underneath — a refetch after somebody else's
-  // edit must not leave a stale number in a box that looks saved.
-  useEffect(() => { setValue(toField(member.billRateCents)) }, [member.billRateCents])
+  const { data: rates } = useQuery({
+    queryKey: ["rate-history", "ASSIGNMENT", member.id],
+    queryFn: () => rateHistoryApi.list({ target: "ASSIGNMENT", targetId: member.id, spaceId }),
+  })
+  const save = async (patch: { billRateCents?: number | null; costRateCents?: number | null }, from?: string) => {
+    await spaceMembersApi.updateRate(spaceId, member.id, { ...patch, ...(from ? { effectiveFrom: from } : {}) })
+    queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
+    queryClient.invalidateQueries({ queryKey: ["rate-history", "ASSIGNMENT", member.id] })
+    onDone?.()
+  }
 
   const inherited = member.inheritedBillRateCents
-  const dirty = value.trim() !== toField(member.billRateCents)
-
-  const save = useMutation({
-    mutationFn: () =>
-      spaceMembersApi.updateRate(spaceId, member.id, {
-        // ⚠️ Blank sends NULL, never 0. Null means inherit; 0 means this person
-        // is billed nothing here, and nothing downstream could tell them apart.
-        billRateCents: value.trim() === "" ? null : Math.round(Number(value) * 100),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
-      notify.success(t("scheduling.members.rateSaved"))
-      onDone?.()
-    },
-    onError: (e: Error) => notify.error(e.message),
-  })
-
   return (
-    <div className="mt-3 rounded-lg border bg-muted/30 p-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          type="number"
-          min={0}
-          step="0.01"
-          inputMode="decimal"
-          autoFocus
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={inherited != null ? String(inherited / 100) : t("scheduling.members.rateSet")}
-          className="h-8 w-28 text-sm tabular-nums"
+    <div className="mt-3 grid gap-4 rounded-lg border bg-muted/30 p-3 sm:grid-cols-2">
+      <DatedRateField
+        id={`bill-${member.id}`}
+        label={t("rates.spaceBill")}
+        hint={t("scheduling.members.rateSetHint")}
+        currentCents={member.billRateCents ?? null}
+        emptyLabel={inherited != null ? t("rates.usesDefault", { rate: money(inherited) }) : undefined}
+        history={rates?.filter((r) => r.kind === "BILL_HOUR")}
+        currency={currency}
+        onSubmit={(c, from) => save({ billRateCents: c }, from)}
+      />
+      {canViewLabourCost && (
+        <DatedRateField
+          id={`cost-${member.id}`}
+          label={t("rates.costHere")}
+          hint={t("rates.spaceCostHint")}
+          currentCents={member.costRateCents ?? null}
+          history={rates?.filter((r) => r.kind === "COST_HOUR")}
+          currency={currency}
+          onSubmit={(c, from) => save({ costRateCents: c }, from)}
         />
-
-        {/*
-          The common edit is "the usual rate, but different here". Copying the
-          inherited figure in beats sending somebody to another screen to look
-          it up and retype it. Hidden once there is anything in the box.
-        */}
-        {inherited != null && value.trim() === "" && (
-          <Button
-            type="button" variant="ghost" size="sm"
-            className="h-8 gap-1.5 text-xs text-muted-foreground"
-            onClick={() => setValue(String(inherited / 100))}
-          >
-            <Copy className="h-3.5 w-3.5" />
-            {t("scheduling.members.copyRate", { rate: money(inherited) })}
-          </Button>
-        )}
-
-        {value.trim() !== "" && (
-          <Button
-            type="button" variant="ghost" size="sm"
-            className="h-8 text-xs text-muted-foreground"
-            onClick={() => setValue("")}
-          >
-            {t("scheduling.members.rateClear")}
-          </Button>
-        )}
-
-        {dirty && (
-          <Button
-            type="button" size="sm" className="h-8 gap-1.5 text-xs"
-            disabled={save.isPending}
-            onClick={() => save.mutate()}
-          >
-            {save.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-            {t("common.save", "Save")}
-          </Button>
-        )}
-      </div>
-
-      {/* One line, and only while the editor is open — not eight copies down a roster. */}
-      <p className="mt-2 text-[11px] text-muted-foreground">
-        {value.trim() === ""
-          ? inherited != null
-            ? t("scheduling.members.rateBlankInherits", { rate: money(inherited) })
-            : t("scheduling.members.rateBlankNone")
-          : t("scheduling.members.rateSetHint")}
-      </p>
+      )}
     </div>
   )
 }

@@ -216,3 +216,31 @@ describe('the BILLA invoice from the mockup', () => {
     expect(lines.map((l) => l.description)).toEqual(['Patrick Kern · 88h', 'Mark Weber · 96h', 'Ahmed Hassan · 40h']);
   });
 });
+
+describe('a work role\'s default day rate', () => {
+  const r = (spaceId: string | null, cents: number | null, from: string) =>
+    ({ target: 'ROLE' as const, targetId: 'mech', spaceId, kind: 'BILL_DAY' as const, cents, effectiveFrom: from, createdAt: '2026-01-01' });
+
+  it('a workspace without its own rate uses the default', () => {
+    const book = new RateBook([r(null, 15000, '1970-01-01')]);
+    expect(book.dayRateOn('2026-10-01', 'mech', 'siemens')).toBe(15000);
+    expect(book.dayRateSourceOn('2026-10-01', 'mech', 'siemens')).toBe('default');
+  });
+
+  it('its own rate wins once it has started; before that, and once cleared, the default applies', () => {
+    const book = new RateBook([r(null, 15000, '1970-01-01'), r('billa', 20000, '2026-10-10'), r('billa', null, '2026-11-01')]);
+    expect(book.dayRateOn('2026-10-09', 'mech', 'billa')).toBe(15000);
+    expect(book.dayRateOn('2026-10-10', 'mech', 'billa')).toBe(20000);
+    expect(book.dayRateSourceOn('2026-10-10', 'mech', 'billa')).toBe('workspace');
+    expect(book.dayRateOn('2026-11-02', 'mech', 'billa')).toBe(15000);
+  });
+
+  it('days split where either rate changes', () => {
+    const book = new RateBook([r(null, 15000, '1970-01-01'), r('billa', 20000, '2026-10-10')]);
+    expect(book.splitDaysWith(['2026-10-08', '2026-10-09', '2026-10-10', '2026-10-10'], (d) => book.dayRateOn(d, 'mech', 'billa')))
+      .toEqual([
+        { fromDay: '2026-10-08', toDay: '2026-10-09', days: 2, cents: 15000 },
+        { fromDay: '2026-10-10', toDay: '2026-10-10', days: 1, cents: 20000 },
+      ]);
+  });
+});

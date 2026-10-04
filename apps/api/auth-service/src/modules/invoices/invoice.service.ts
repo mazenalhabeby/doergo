@@ -1002,9 +1002,11 @@ export class InvoiceService {
   /**
    * Days worked at a workspace by the people billed by the day, priced per day.
    *
-   * ⚠️ A DAY WORKED IS ANY DAY THEY CLOCKED IN HERE — read in the workspace's
-   * own time zone, with no minimum hours, once per day however many shifts.
-   * A clock-in that a manager REJECTED is not a day worked.
+   * ⚠️ A DAY WORKED IS ANY DAY THEY CLOCKED IN HERE OR FINISHED A JOB HERE —
+   * read in the workspace's own time zone, with no minimum hours, once per day
+   * however many shifts or jobs. A clock-in a manager REJECTED is not a day.
+   * Finished jobs count too, so somebody who forgot to clock in but did the
+   * work is not silently a day short.
    *
    * ⚠️ NEVER BILLED TWICE. Every DAYS line on a live invoice records whose days
    * and which run (`workerId`, `dayFrom`–`dayTo`); those days are skipped here,
@@ -1041,7 +1043,11 @@ export class InvoiceService {
       ...(toDay && { lte: new Date(Date.parse(`${toDay}T23:59:59.999Z`) + DAY_MS) }),
     };
 
-    const [entries, billedRuns] = await Promise.all([
+    const jobRange = {
+      ...(fromDay && { gte: new Date(Date.parse(`${fromDay}T00:00:00Z`) - DAY_MS) }),
+      ...(toDay && { lte: new Date(Date.parse(`${toDay}T23:59:59.999Z`) + DAY_MS) }),
+    };
+    const [entries, billedRuns, jobs] = await Promise.all([
       this.prisma.timeEntry.findMany({
         where: {
           organizationId,
@@ -1060,21 +1066,40 @@ export class InvoiceService {
         },
         select: { workerId: true, dayFrom: true, dayTo: true },
       }),
+      // Every finished job here by these people — billed or not, a day worked is a day worked.
+      this.prisma.task.findMany({
+        where: {
+          organizationId,
+          spaceId,
+          status: FINISHED,
+          OR: [
+            { serviceReport: { completedById: { in: ids }, ...(fromDay || toDay ? { completedAt: jobRange } : {}) } },
+            { serviceReport: null, assignedToId: { in: ids }, ...(fromDay || toDay ? { updatedAt: jobRange } : {}) },
+          ],
+        },
+        select: { assignedToId: true, updatedAt: true, serviceReport: { select: { completedById: true, completedAt: true } } },
+      }),
     ]);
+    const jobDays = jobs.map((j) => ({
+      userId: j.serviceReport?.completedById ?? j.assignedToId,
+      clockInAt: j.serviceReport?.completedAt ?? j.updatedAt,
+    }));
 
     const key = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
     const out: DayEntry[] = [];
     for (const a of byDay) {
       const runs = billedRuns.filter((r) => r.workerId === a.userId);
       const days = workedDays(
-        entries.filter((e) => e.userId === a.userId),
+        [...entries, ...jobDays].filter((e) => e.userId === a.userId),
         (at) => dayKeyIn(at, tz),
         fromDay,
         toDay,
       ).filter((d) => !runs.some((r) => key(r.dayFrom)! <= d && d <= (key(r.dayTo) ?? key(r.dayFrom))!));
       if (days.length === 0) continue;
       const name = `${a.user?.firstName ?? ''} ${a.user?.lastName ?? ''}`.trim() || 'Worker';
-      for (const run of book.splitDays(days, 'ROLE', a.workRole!.id, 'BILL_DAY', spaceId)) {
+      // This workspace's day rate on each day, else the role's default.
+      const roleId = a.workRole!.id;
+      for (const run of book.splitDaysWith(days, (d) => book.dayRateOn(d, roleId, spaceId))) {
         out.push({
           workerId: a.userId,
           workerName: name,

@@ -26,7 +26,6 @@ import {
   Upload,
   Trash2,
   Receipt,
-  Euro,
   CalendarDays,
 } from "lucide-react"
 import NextLink from "next/link"
@@ -55,7 +54,8 @@ function EmbeddedPage({ children }: { children: React.ReactNode }) {
 }
 
 function LazyAuditLog() { return <Suspense fallback={<LazyFallback />}><EmbeddedPage><AuditLogPage /></EmbeddedPage></Suspense> }
-import { organizationsApi, usersApi, authApi, JoinPolicy } from "@/lib/api"
+import { organizationsApi, usersApi, authApi, rateHistoryApi, JoinPolicy } from "@/lib/api"
+import { DatedRateField } from "@/components/rates/dated-rate"
 import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -319,7 +319,7 @@ function GeneralSection() {
     name: "", industry: "", phone: "", email: "", website: "", timezone: "",
     addressLine1: "", addressLine2: "", city: "", state: "", postalCode: "", country: "",
     // Invoicing: VAT/UID for the invoice header + default billable rate (euros/hour).
-    vatId: "", billableRate: "",
+    vatId: "",
     // Opt-in capability: distinguish in-house vs external field workers.
     usesExternalWorkers: false as boolean,
     // Crew rules (shared tasks/crew.ts): only a job's leader moves its step.
@@ -339,7 +339,6 @@ function GeneralSection() {
         city: profile.city ?? "", state: profile.state ?? "",
         postalCode: profile.postalCode ?? "", country: profile.country ?? "",
         vatId: profile.vatId ?? "",
-        billableRate: profile.billableRateCents != null ? (profile.billableRateCents / 100).toString() : "",
         usesExternalWorkers: profile.usesExternalWorkers ?? false,
         crewMode: profile.crewMode ?? false,
       })
@@ -357,6 +356,18 @@ function GeneralSection() {
   })
 
   const set = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }))
+
+  // The organization's own rates and their history — saved on their own, from a day.
+  const { data: orgRates } = useQuery({
+    queryKey: ["rate-history", "ORGANIZATION", profile?.id],
+    queryFn: () => rateHistoryApi.list({ target: "ORGANIZATION", targetId: profile!.id! }),
+    enabled: !!profile?.id,
+  })
+  const saveOrgRate = async (patch: Record<string, unknown>) => {
+    await organizationsApi.updateProfile(patch)
+    queryClient.invalidateQueries({ queryKey: ["organization-profile"] })
+    queryClient.invalidateQueries({ queryKey: ["rate-history", "ORGANIZATION"] })
+  }
 
   const [logoBusy, setLogoBusy] = useState(false)
   const saveLogo = async (logoUrl: string) => {
@@ -597,27 +608,35 @@ function GeneralSection() {
                 className="h-11 rounded-xl"
               />
             </FormField>
-            <FormField icon={Euro} label={t("settings.general.billableRate", "Default billable rate (per hour)")}>
-              <Input
-                type="number"
-                min={0}
-                step="0.01"
-                value={form.billableRate}
-                onChange={e => set("billableRate", e.target.value)}
-                placeholder={t("settings.general.billableRatePlaceholder", "e.g. 85")}
-                className="h-11 rounded-xl"
-              />
-            </FormField>
+          </div>
+          {/*
+            ⚠️ Rates are NOT part of this form's Save. Each one changes from a
+            day and keeps its history, so it has its own Change button that asks
+            from when — a Save button that rewrote it "from today" every time the
+            address was edited would re-price nothing, but would bury the date
+            the rate really changed.
+          */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <DatedRateField
+              id="org-bill-rate"
+              label={t("rates.orgBill")}
+              hint={t("rates.orgBillHint")}
+              currentCents={profile?.billableRateCents ?? null}
+              history={orgRates?.filter((r) => r.kind === "BILL_HOUR")}
+              onSubmit={(c, from) => saveOrgRate({ billableRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })}
+            />
+            <DatedRateField
+              id="org-cost-rate"
+              label={t("rates.orgCost")}
+              hint={t("rates.orgCostHint")}
+              currentCents={profile?.costRateCents ?? null}
+              history={orgRates?.filter((r) => r.kind === "COST_HOUR")}
+              onSubmit={(c, from) => saveOrgRate({ costRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })}
+            />
           </div>
 
           <SaveBar
-            onSave={() => {
-              const { billableRate, ...rest } = form
-              updateMutation.mutate({
-                ...rest,
-                billableRateCents: billableRate.trim() && parseFloat(billableRate) > 0 ? Math.round(parseFloat(billableRate) * 100) : null,
-              })
-            }}
+            onSave={() => updateMutation.mutate({ ...form })}
             isPending={updateMutation.isPending}
             t={t}
           />

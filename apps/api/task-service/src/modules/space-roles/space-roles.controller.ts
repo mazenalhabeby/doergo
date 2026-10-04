@@ -89,6 +89,11 @@ export class SpaceRolesController {
     return this.service.setRoleDayRate(data);
   }
 
+  @MessagePattern({ cmd: 'list_rate_history' })
+  listRateHistory(@Payload() data: any) {
+    return this.service.listRateHistory(data);
+  }
+
   @MessagePattern({ cmd: 'update_space_member_roles' })
   updateMemberRoles(@Payload() data: any) {
     return this.service.updateMemberRoles(data);

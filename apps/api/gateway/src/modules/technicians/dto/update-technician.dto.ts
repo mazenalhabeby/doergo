@@ -9,9 +9,39 @@ import {
   Max,
   MinLength,
   MaxLength,
+  Matches,
+  IsInt,
+  ValidateIf,
 } from 'class-validator';
 
 export class UpdateEmployeeDto {
+  /*
+    ⚠️ These three were missing, so with forbidNonWhitelisted every save of a
+    member's cost rate from the edit dialog was refused with "property
+    costRateCents should not exist". The service always handled them.
+  */
+  @ApiPropertyOptional({ description: 'What this person bills per hour, in cents. Null inherits; 0 is a real rate.' })
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsInt()
+  @Min(0)
+  @Max(1000000)
+  billRateCents?: number | null;
+
+  @ApiPropertyOptional({ description: 'What this person costs per hour, in cents. Needs canViewLabourCost.' })
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsInt()
+  @Min(0)
+  @Max(1000000)
+  costRateCents?: number | null;
+
+  @ApiPropertyOptional({ description: 'First day a changed rate applies, YYYY-MM-DD. Default today; earlier work keeps its rate.' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  rateEffectiveFrom?: string;
+
   @ApiPropertyOptional({
     example: 'John',
     description: 'First name',

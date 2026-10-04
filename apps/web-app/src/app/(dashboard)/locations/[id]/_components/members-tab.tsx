@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, Shield, ShieldCheck, Trash2, Loader2, UserPlus, UserCog, Users, SlidersHorizontal, ChevronDown, Home, Wrench, CalendarClock } from "lucide-react"
+import { Plus, Shield, ShieldCheck, Trash2, Loader2, UserPlus, UserCog, Users, SlidersHorizontal, ChevronDown, Home, Wrench } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import { notify } from "@/lib/toast"
@@ -57,10 +57,9 @@ import { SectionHeader, EmptyState } from "./section-header"
 import { RoutingSection } from "./routing-section"
 import { MemberRoutingEditor } from "./member-routing-editor"
 import { MemberRateChip, MemberRateEditor } from "./member-rate-editor"
+import { DatedRateField } from "@/components/rates/dated-rate"
 import {
   BILL_BY,
-  ChangeDayRateDialog,
-  DayRateHistory,
   DEFAULT_ROLE_COLOR,
   RoleCard,
   Segmented,
@@ -272,7 +271,6 @@ function RoleDialog({
   const [kind, setKind] = useState<"WORK" | "MANAGEMENT">(role?.kind === "WORK" ? "WORK" : role ? "MANAGEMENT" : defaultKind)
   const [billBy, setBillBy] = useState<BillBy>((role?.billBy as BillBy | null) ?? "HOUR")
   const [initialDayRate, setInitialDayRate] = useState("")
-  const [changeOpen, setChangeOpen] = useState(false)
   const [permissions, setPermissions] = useState<PermissionSet>(
     role?.permissions || emptyPermissions(),
   )
@@ -395,23 +393,37 @@ function RoleDialog({
           )}
 
           {isWork && isEdit && (
-            <div className="space-y-2">
-              <Label>{t("scheduling.workRoles.dayRateHere")}</Label>
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
-                <span className="text-sm font-semibold tabular-nums">
-                  {role!.dayRateCents != null
-                    ? `${cents(role!.dayRateCents)} ${t("scheduling.workRoles.perDay")}`
-                    : <span className="font-normal text-muted-foreground">{t("scheduling.workRoles.dayRateNone")}</span>}
-                </span>
-                <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => setChangeOpen(true)}>
-                  <CalendarClock className="h-4 w-4" />
-                  {role!.dayRateCents != null || (role!.dayRateHistory?.length ?? 0) > 0
-                    ? t("scheduling.workRoles.changeRate")
-                    : t("scheduling.workRoles.setRate")}
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">{t("scheduling.workRoles.dayRateHint")}</p>
-              <DayRateHistory role={role!} />
+            <div className="space-y-4">
+              {/* This workspace's own rate — and, below it, the default every other workspace uses. */}
+              <DatedRateField
+                id="role-day-rate-here"
+                label={t("scheduling.workRoles.dayRateHere")}
+                hint={t("scheduling.workRoles.dayRateHint")}
+                unit="day"
+                currentCents={role!.dayRateSource === "workspace" ? role!.dayRateCents : null}
+                emptyLabel={
+                  role!.defaultDayRateCents != null
+                    ? t("rates.usesDefault", { rate: `${cents(role!.defaultDayRateCents)} ${t("rates.perDay")}` })
+                    : undefined
+                }
+                history={role!.dayRateHistory}
+                onSubmit={async (c, from) => {
+                  await spaceRolesApi.setDayRate(spaceId, role!.id, { cents: c, ...(from ? { effectiveFrom: from } : {}) })
+                  queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
+                }}
+              />
+              <DatedRateField
+                id="role-day-rate-default"
+                label={t("rates.defaultDayRate")}
+                hint={t("rates.defaultDayRateHint")}
+                unit="day"
+                currentCents={role!.defaultDayRateCents ?? null}
+                history={role!.defaultDayRateHistory ?? []}
+                onSubmit={async (c, from) => {
+                  await spaceRolesApi.setDefaultDayRate(role!.id, { cents: c, ...(from ? { effectiveFrom: from } : {}) })
+                  queryClient.invalidateQueries({ queryKey: ["space-roles-in-space"] })
+                }}
+              />
             </div>
           )}
 
@@ -491,9 +503,6 @@ function RoleDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
-      {changeOpen && role && (
-        <ChangeDayRateDialog spaceId={spaceId} role={role} open={changeOpen} onOpenChange={setChangeOpen} />
-      )}
     </Dialog>
   )
 }

@@ -138,7 +138,10 @@ export async function loadRateBook(
   add('SPACE', targets.spaceIds);
   add('MEMBER', targets.memberIds);
   add('ASSIGNMENT', targets.assignmentIds);
-  if (targets.roleSpaceId) add('ROLE', targets.roleIds, { spaceId: targets.roleSpaceId });
+  // A role's day rate: this workspace's own rows AND the role's default (no workspace).
+  if (targets.roleIds?.length) {
+    add('ROLE', targets.roleIds, targets.roleSpaceId ? { OR: [{ spaceId: targets.roleSpaceId }, { spaceId: null }] } : { spaceId: null });
+  }
   if (or.length === 0) return new RateBook([]);
   const rows = await store.rateHistory.findMany({
     where: { organizationId, OR: or },

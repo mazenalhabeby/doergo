@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Put, Delete, Body, Param, Request, ForbiddenException, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Put, Delete, Body, Param, Query, Request, ForbiddenException, UseInterceptors } from '@nestjs/common';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import {
@@ -6,12 +6,13 @@ import {
   accessAllows,
   permissionsExceed,
   permissionsFromOrgRole,
+  mayViewLabourCost,
   type PermissionSet,
   type ResolvedAccess,
   type BillByValue,
   type RoleKindValue,
 } from '@hbcfield/shared';
-import { SetDayRateDto, UpdateMemberRateDto, UpdateMemberRolesDto } from './space-roles.dto';
+import { RateHistoryQueryDto, SetDayRateDto, UpdateMemberRateDto, UpdateMemberRolesDto } from './space-roles.dto';
 import { RequirePermission } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { SpaceRolesService } from './space-roles.service';
@@ -216,6 +217,54 @@ export class SpaceRolesController {
       effectiveFrom: body.effectiveFrom,
       organizationId: req.user.organizationId,
       createdById: req.user.id,
+    });
+  }
+
+  /**
+   * A work role's DEFAULT day rate — for every workspace that has not set its
+   * own. Org-wide, so the org-wide workspace permission, like the role itself.
+   */
+  @Put('space-roles/:roleId/day-rate')
+  @RequirePermission('canManageWorkspaces')
+  @ApiOperation({ summary: "Set (or schedule) a work role's default day rate for every workspace" })
+  setRoleDefaultDayRate(@Param('roleId') roleId: string, @Body() body: SetDayRateDto, @Request() req: any) {
+    return this.service.setRoleDayRate({
+      spaceId: null,
+      roleId,
+      cents: body.cents,
+      effectiveFrom: body.effectiveFrom,
+      organizationId: req.user.organizationId,
+      createdById: req.user.id,
+    });
+  }
+
+  /**
+   * One rate's dated history, for the "rate history" panel beside it.
+   *
+   * ⚠️ Read with the SAME right as writing that rate: the organization default
+   * is the owner's, a workspace's is whoever manages it, a member's is whoever
+   * manages people, a member-at-a-client is that workspace's manager. Cost rows
+   * only for somebody who may see labour cost.
+   */
+  @Get('rate-history')
+  @ApiOperation({ summary: 'The dated history of one hourly rate' })
+  listRateHistory(@Query() q: RateHistoryQueryDto, @Request() req: any) {
+    const u = req.user;
+    const allowed =
+      q.target === 'ORGANIZATION'
+        ? isAdmin(u) && q.targetId === u.organizationId
+        : q.target === 'SPACE'
+          ? u?.canManageWorkspaces === true || canManageSpace(u, q.targetId)
+          : q.target === 'MEMBER'
+            ? isAdmin(u) || u?.canManageUsers === true
+            : !!q.spaceId && canManageSpace(u, q.spaceId);
+    if (!allowed) throw new ForbiddenException('You cannot read this rate');
+    return this.service.listRateHistory({
+      organizationId: u.organizationId,
+      target: q.target,
+      targetId: q.targetId,
+      spaceId: q.spaceId,
+      kinds: mayViewLabourCost(u) ? ['BILL_HOUR', 'COST_HOUR'] : ['BILL_HOUR'],
     });
   }
 

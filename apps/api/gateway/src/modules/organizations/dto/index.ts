@@ -183,6 +183,12 @@ export class UpdateOrgProfileDto {
   @Max(1000000)
   costRateCents?: number | null;
 
+  @ApiPropertyOptional({ description: 'First day a changed rate applies, YYYY-MM-DD. Default today; earlier work keeps its rate.' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  rateEffectiveFrom?: string;
+
   @ApiPropertyOptional({ description: 'Enabled modules', type: [String] })
   @IsOptional()
   @IsString({ each: true })

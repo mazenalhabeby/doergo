@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, memo } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { DatedRateField } from "@/components/rates/dated-rate"
 import { useTranslation } from "react-i18next"
 import { Check, Copy, KeyRound, AlertTriangle, MapPin, X, Plus, ChevronsUpDown } from "lucide-react"
 import { notify } from "@/lib/toast"
@@ -12,6 +13,7 @@ import {
   organizationsApi,
   locationsApi,
   employeesApi,
+  rateHistoryApi,
   type OrgMember,
   type UpdateMemberInput,
   type UpdateEmployeeInput,
@@ -236,7 +238,6 @@ export function EditMemberDialog({
     customer workspace, because that is the contract — and leaving this blank is
     what lets the client's rate win.
   */
-  const [costRate, setCostRate] = useState("")
   /*
     Works for a client or partner.
 
@@ -266,11 +267,15 @@ export function EditMemberDialog({
     const m = member as { leaveAllowance?: number | null; employmentStartDate?: string | null }
     setLeaveAllowance(m.leaveAllowance === null || m.leaveAllowance === undefined ? "" : String(m.leaveAllowance))
     setEmploymentStartDate(m.employmentStartDate ? String(m.employmentStartDate).slice(0, 10) : "")
-    const r = member as { billRateCents?: number | null; costRateCents?: number | null }
-    setCostRate(r.costRateCents == null ? "" : String(r.costRateCents / 100))
   }, [member])
 
   // ── Data (self-contained; shared query keys dedupe across pages) ──
+  // The member's own cost rate and its history — only for people who may see cost.
+  const { data: memberRates } = useQuery({
+    queryKey: ["rate-history", "MEMBER", member?.id],
+    queryFn: () => rateHistoryApi.list({ target: "MEMBER", targetId: member!.id }),
+    enabled: !!member?.id && canViewLabourCost,
+  })
   const { data: membersData } = useQuery({
     queryKey: ["orgMembers", "positions"],
     queryFn: () => organizationsApi.getMembers({ limit: 200 }),
@@ -431,11 +436,11 @@ export function EditMemberDialog({
       leaveAllowance: isExternalMember ? null : leaveAllowance.trim() === "" ? null : Number(leaveAllowance),
       employmentStartDate: isExternalMember ? null : employmentStartDate || null,
       /*
-        ⚠️ Blank sends NULL, never 0. Null means "inherit"; 0 would mean this
-        person bills nothing, and the ladder cannot tell the difference after
-        the fact.
+        ⚠️ The cost rate is NOT sent from here: it has its own dated Change
+        control (it starts on a day and keeps its history). Sending it on every
+        save also re-dated it "today" — and, from somebody without the labour
+        cost permission, had the whole save refused.
       */
-      costRateCents: costRate.trim() === "" ? null : Math.round(Number(costRate) * 100),
     }
     workerMutation.mutate(workerPatch)
   }
@@ -626,19 +631,18 @@ export function EditMemberDialog({
               allowed to fix somebody's job title.
             */}
             {canViewLabourCost ? (
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">
-                  {t("members.memberEditor.costRateLabel")}
-                </Label>
-                <Input
-                  type="number" min={0} step="0.01" inputMode="decimal"
-                  value={costRate}
-                  onChange={(e) => setCostRate(e.target.value)}
-                  placeholder={t("members.memberEditor.ratePlaceholder")}
-                  className="h-9"
-                />
-                <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.costRateHint")}</p>
-              </div>
+              <DatedRateField
+                id="member-cost-rate"
+                label={t("members.memberEditor.costRateLabel")}
+                hint={t("members.memberEditor.costRateHint")}
+                currentCents={(member as { costRateCents?: number | null } | null)?.costRateCents ?? null}
+                history={memberRates?.filter((r) => r.kind === "COST_HOUR")}
+                onSubmit={async (c, from) => {
+                  await employeesApi.update(member!.id, { costRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })
+                  queryClient.invalidateQueries({ queryKey: ["orgMember", member?.id] })
+                  queryClient.invalidateQueries({ queryKey: ["rate-history", "MEMBER", member?.id] })
+                }}
+              />
             ) : (
               /*
                 ⚠️ Say it is hidden rather than simply omitting it. A person who

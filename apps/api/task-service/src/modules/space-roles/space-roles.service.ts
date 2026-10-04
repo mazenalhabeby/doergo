@@ -127,18 +127,24 @@ export class SpaceRolesService {
         const holders = assignments
           .filter((a) => (r.kind === 'WORK' ? a.workRoleId === r.id : a.roleId === r.id))
           .map((a) => a.user);
-        const timeline = r.kind === 'WORK' ? book.timeline('ROLE', r.id, 'BILL_DAY', data.spaceId) : [];
+        const isWork = r.kind === 'WORK';
+        const timeline = isWork ? book.timeline('ROLE', r.id, 'BILL_DAY', data.spaceId) : [];
+        const defaults = isWork ? book.timeline('ROLE', r.id, 'BILL_DAY', null) : [];
+        const asHistory = (rows: typeof timeline) =>
+          rows.map((row) => ({ cents: row.cents, effectiveFrom: row.effectiveFrom, state: row.effectiveFrom > today ? 'scheduled' : 'past' }));
         return {
           ...r,
           holders,
           /** Holders across ALL workspaces — what decides whether the kind may still change. */
           inUseCount: _count.spaceAssignments + _count.workAssignments,
-          dayRateCents: r.kind === 'WORK' ? book.on(today, 'ROLE', r.id, 'BILL_DAY', null, data.spaceId) : null,
-          dayRateHistory: timeline.map((row) => ({
-            cents: row.cents,
-            effectiveFrom: row.effectiveFrom,
-            state: row.effectiveFrom > today ? 'scheduled' : 'past',
-          })),
+          /** What applies here today: this workspace's own rate, else the role's default. */
+          dayRateCents: isWork ? book.dayRateOn(today, r.id, data.spaceId) : null,
+          dayRateSource: isWork ? book.dayRateSourceOn(today, r.id, data.spaceId) : null,
+          /** This workspace's own rates. */
+          dayRateHistory: asHistory(timeline),
+          /** The role's default for every workspace. */
+          defaultDayRateCents: isWork ? book.on(today, 'ROLE', r.id, 'BILL_DAY', null, null) : null,
+          defaultDayRateHistory: asHistory(defaults),
         };
       }),
     );
@@ -275,13 +281,14 @@ export class SpaceRolesService {
    */
   async setRoleDayRate(data: {
     organizationId: string;
-    spaceId: string;
+    /** Null = the role's default for every workspace. */
+    spaceId: string | null;
     roleId: string;
     cents: number | null;
     effectiveFrom?: string;
     createdById?: string;
   }) {
-    await this.assertSpaceInOrg(data.organizationId, data.spaceId);
+    if (data.spaceId) await this.assertSpaceInOrg(data.organizationId, data.spaceId);
     const role = await this.getOwnedRole(data.organizationId, data.roleId);
     if (role.kind !== 'WORK') throw new BadRequestException('Only a work role has a day rate');
     const result = await withRateErrors(() =>
@@ -671,6 +678,45 @@ export class SpaceRolesService {
       }),
     );
     return success(updated);
+  }
+
+  /**
+   * The dated history of one rate, oldest first — what a "rate history" panel
+   * lists. The gateway has already decided the caller may read this record;
+   * here the record is checked to belong to the organization (and an
+   * assignment to the workspace named), so an id from elsewhere reads nothing.
+   */
+  async listRateHistory(data: {
+    organizationId: string;
+    target: 'ORGANIZATION' | 'SPACE' | 'MEMBER' | 'ASSIGNMENT';
+    targetId: string;
+    kinds: Array<'BILL_HOUR' | 'COST_HOUR'>;
+    spaceId?: string;
+  }) {
+    const owned =
+      data.target === 'ORGANIZATION'
+        ? data.targetId === data.organizationId
+        : data.target === 'SPACE'
+          ? !!(await this.prisma.companyLocation.findFirst({ where: { id: data.targetId, organizationId: data.organizationId }, select: { id: true } }))
+          : data.target === 'MEMBER'
+            ? !!(await this.prisma.user.findFirst({ where: { id: data.targetId, organizationId: data.organizationId }, select: { id: true } }))
+            : !!(await this.prisma.spaceAssignment.findFirst({
+                where: { id: data.targetId, organizationId: data.organizationId, ...(data.spaceId ? { spaceId: data.spaceId } : {}) },
+                select: { id: true },
+              }));
+    if (!owned) throw new NotFoundException('Not found');
+    const rows = await this.prisma.rateHistory.findMany({
+      where: { organizationId: data.organizationId, target: data.target, targetId: data.targetId, kind: { in: data.kinds }, spaceId: null },
+      orderBy: [{ effectiveFrom: 'asc' }, { createdAt: 'asc' }],
+      select: { kind: true, cents: true, effectiveFrom: true },
+    });
+    const today = utcTodayKey();
+    return success(
+      rows.map((r) => {
+        const day = r.effectiveFrom.toISOString().slice(0, 10);
+        return { kind: r.kind, cents: r.cents, effectiveFrom: day, state: day > today ? 'scheduled' : 'past' };
+      }),
+    );
   }
 
   async updateMemberRouting(data: {

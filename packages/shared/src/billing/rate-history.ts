@@ -142,9 +142,35 @@ export class RateBook {
     spaceId?: string | null,
     fallback: number | null = null,
   ): Array<{ fromDay: string; toDay: string; days: number; cents: number | null }> {
+    return this.splitDaysWith(days, (day) => this.on(day, target, targetId, kind, fallback, spaceId));
+  }
+
+  /**
+   * A work role's day rate on a day, in a workspace: that workspace's own rate
+   * where one applies, else the role's default for every workspace.
+   *
+   * A workspace rate that has not started yet, or was cleared, falls back to
+   * the default — "inherit", the same meaning a null has everywhere else.
+   */
+  dayRateOn(day: string, roleId: string, spaceId: string | null): number | null {
+    const own = spaceId ? this.on(day, 'ROLE', roleId, 'BILL_DAY', null, spaceId) : null;
+    return own ?? this.on(day, 'ROLE', roleId, 'BILL_DAY', null, null);
+  }
+
+  /** Which of the two answered `dayRateOn` — for a screen that has to explain itself. */
+  dayRateSourceOn(day: string, roleId: string, spaceId: string | null): 'workspace' | 'default' | null {
+    if (spaceId && this.on(day, 'ROLE', roleId, 'BILL_DAY', null, spaceId) !== null) return 'workspace';
+    return this.on(day, 'ROLE', roleId, 'BILL_DAY', null, null) !== null ? 'default' : null;
+  }
+
+  /** Sorted days split into runs that share one rate, the rate decided per day by `centsOn`. */
+  splitDaysWith(
+    days: string[],
+    centsOn: (day: string) => number | null,
+  ): Array<{ fromDay: string; toDay: string; days: number; cents: number | null }> {
     const out: Array<{ fromDay: string; toDay: string; days: number; cents: number | null }> = [];
-    for (const day of [...days].sort()) {
-      const cents = this.on(day, target, targetId, kind, fallback, spaceId);
+    for (const day of [...new Set(days)].sort()) {
+      const cents = centsOn(day);
       const last = out[out.length - 1];
       if (last && last.cents === cents) {
         last.toDay = day;

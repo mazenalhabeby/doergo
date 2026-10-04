@@ -157,8 +157,13 @@ export interface SpaceRoleInSpace extends SpaceRole {
   inUseCount: number;
   /** In force today; null when none is set. */
   dayRateCents: number | null;
-  /** Oldest first. `scheduled` = starts after today. */
+  /** Where today's day rate comes from: this workspace's own, or the role's default. */
+  dayRateSource?: 'workspace' | 'default' | null;
+  /** This workspace's own day rates, oldest first. `scheduled` = starts after today. */
   dayRateHistory: Array<{ cents: number | null; effectiveFrom: string; state: 'past' | 'scheduled' }>;
+  /** The role's default for every workspace that has not set its own. */
+  defaultDayRateCents?: number | null;
+  defaultDayRateHistory?: Array<{ cents: number | null; effectiveFrom: string; state: 'past' | 'scheduled' }>;
 }
 
 export interface SpaceMember {

@@ -93,13 +93,24 @@ export class SpaceRolesService extends BaseGatewayService {
 
   setRoleDayRate(data: {
     organizationId: string;
-    spaceId: string;
+    /** Null = the role's default for every workspace. */
+    spaceId: string | null;
     roleId: string;
     cents: number | null;
     effectiveFrom?: string;
     createdById?: string;
   }) {
     return this.send({ cmd: 'set_space_role_day_rate' }, data);
+  }
+
+  listRateHistory(data: {
+    organizationId: string;
+    target: 'ORGANIZATION' | 'SPACE' | 'MEMBER' | 'ASSIGNMENT';
+    targetId: string;
+    spaceId?: string;
+    kinds: Array<'BILL_HOUR' | 'COST_HOUR'>;
+  }) {
+    return this.send({ cmd: 'list_rate_history' }, data);
   }
 
   updateMemberRoles(data: {

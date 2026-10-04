@@ -4,12 +4,13 @@ import { useState, useRef } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Boxes, Building2, CheckCircle2, Inbox, Loader2, MapPin, PauseCircle, Briefcase, Handshake, Contact, Package, LayoutTemplate, FileText, ChevronRight } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
-import { locationsApi, type CompanyLocation, type UpdateLocationInput } from "@/lib/api"
+import { locationsApi, rateHistoryApi, type CompanyLocation, type UpdateLocationInput } from "@/lib/api"
+import { DatedRateField } from "@/components/rates/dated-rate"
 import { ATTENDANCE_CONSTANTS, parseGeofencePolygon, type LatLng } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -38,7 +39,19 @@ const LocationPicker = dynamic(() => import("../../_components/location-picker")
 export function GeneralTab({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const { hasPlanFeature } = useAuth()
+  const { hasPlanFeature, user } = useAuth()
+  const canViewLabourCost = (user as { canViewLabourCost?: boolean } | null)?.canViewLabourCost === true
+  // This workspace's rates and their history, read only where they are shown (a client).
+  const { data: spaceRates } = useQuery({
+    queryKey: ["rate-history", "SPACE", space.id],
+    queryFn: () => rateHistoryApi.list({ target: "SPACE", targetId: space.id }),
+    enabled: space.kind === "CUSTOMER",
+  })
+  const saveSpaceRate = async (patch: UpdateLocationInput) => {
+    await locationsApi.update(space.id, patch)
+    queryClient.invalidateQueries({ queryKey: ["location", space.id] })
+    queryClient.invalidateQueries({ queryKey: ["rate-history", "SPACE", space.id] })
+  }
 
   const [makingDefault, setMakingDefault] = useState(false)
   const [name, setName] = useState(space.name)
@@ -66,9 +79,6 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
   const [contactName, setContactName] = useState(space.contactName || "")
   const [contactEmail, setContactEmail] = useState(space.contactEmail || "")
   const [contactPhone, setContactPhone] = useState(space.contactPhone || "")
-  const [billableRate, setBillableRate] = useState(
-    space.billableRateCents != null ? (space.billableRateCents / 100).toString() : "",
-  )
 
   const isPhysical = type === "physical"
   const KIND_OPTIONS = [
@@ -115,10 +125,7 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
       contactName: kind === "CUSTOMER" ? contactName.trim() || null : null,
       contactEmail: kind === "CUSTOMER" ? contactEmail.trim() || null : null,
       contactPhone: kind === "CUSTOMER" ? contactPhone.trim() || null : null,
-      billableRateCents:
-        kind === "CUSTOMER" && billableRate.trim() && parseFloat(billableRate) > 0
-          ? Math.round(parseFloat(billableRate) * 100)
-          : null,
+      // Rates are not part of this Save — each has its own dated Change (below).
       // Physical → persist the pin/address/geofence. Workspace → clear the
       // physical attributes (null) so the space becomes a logical one.
       ...(isPhysical
@@ -395,18 +402,30 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
                   <Input id="cfg-contact-phone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="cfg-billable-rate">{t("locations.form.billableRate", "Billable rate (per hour)")}</Label>
-                <Input
+              {/*
+                What this client pays per hour, and what an hour here costs you.
+                Each changes from a day and keeps its history — never part of
+                the Save above, which would otherwise date every edit "today".
+              */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <DatedRateField
                   id="cfg-billable-rate"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={billableRate}
-                  onChange={(e) => setBillableRate(e.target.value)}
-                  placeholder={t("locations.form.billableRatePlaceholder", "Uses org default if empty")}
+                  label={t("rates.spaceBill")}
+                  hint={t("rates.spaceBillHint")}
+                  currentCents={space.billableRateCents ?? null}
+                  history={spaceRates?.filter((r) => r.kind === "BILL_HOUR")}
+                  onSubmit={(c, from) => saveSpaceRate({ billableRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })}
                 />
-                <p className="text-[11px] text-muted-foreground">{t("locations.form.billableRateHint", "Auto-prices labor lines on this customer's invoices. Leave empty to use the organization default.")}</p>
+                {canViewLabourCost && (
+                  <DatedRateField
+                    id="cfg-cost-rate"
+                    label={t("rates.spaceCost")}
+                    hint={t("rates.spaceCostHint")}
+                    currentCents={(space as { costRateCents?: number | null }).costRateCents ?? null}
+                    history={spaceRates?.filter((r) => r.kind === "COST_HOUR")}
+                    onSubmit={(c, from) => saveSpaceRate({ costRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })}
+                  />
+                )}
               </div>
             </div>
           )}

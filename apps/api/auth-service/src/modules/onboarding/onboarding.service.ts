@@ -938,6 +938,7 @@ export class OnboardingService {
         logoUrl: true,
         vatId: true,
         billableRateCents: true,
+        costRateCents: true,
         joinPolicy: true,
         profileBadges: true,
         notificationPrefs: true,

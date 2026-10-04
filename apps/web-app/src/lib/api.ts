@@ -4819,6 +4819,9 @@ export interface UpdateLocationInput {
   contactEmail?: string | null;
   contactPhone?: string | null;
   billableRateCents?: number | null;
+  costRateCents?: number | null;
+  /** First day a changed rate applies, `YYYY-MM-DD`; default today. */
+  rateEffectiveFrom?: string;
   notifyRoleIds?: string[];
   contactRoleIds?: string[];
   approveRoleIds?: string[];
@@ -5104,6 +5107,12 @@ export const spaceRolesApi = {
     if (res.error) throw new Error(res.error);
     return res.data?.data;
   },
+  /** A work role's DEFAULT day rate — for every workspace without its own. */
+  setDefaultDayRate: async (roleId: string, data: { cents: number | null; effectiveFrom?: string }) => {
+    const res = await api.put<{ success: boolean; data: unknown }>(`/space-roles/${roleId}/day-rate`, data);
+    if (res.error) throw new Error(res.error);
+    return res.data?.data;
+  },
   create: async (data: { name: string; description?: string; color?: string; permissions?: PermissionSet; kind?: 'WORK' | 'MANAGEMENT'; billBy?: 'HOUR' | 'DAY' | 'BOTH' | null }) => {
     const res = await api.post<{ success: boolean; data: SpaceRole }>('/space-roles', data);
     if (res.error) throw new Error(res.error);
@@ -5121,6 +5130,21 @@ export const spaceRolesApi = {
     const res = await api.delete<{ success: boolean }>(`/space-roles/${id}`);
     if (res.error) throw new Error(res.error);
     return res.data;
+  },
+};
+
+/**
+ * The dated history of one hourly rate — read with the same right as writing it.
+ * Cost rows come back only for people who may see labour cost.
+ */
+export const rateHistoryApi = {
+  list: async (q: { target: 'ORGANIZATION' | 'SPACE' | 'MEMBER' | 'ASSIGNMENT'; targetId: string; spaceId?: string }) => {
+    const res = await api.get<{
+      success: boolean;
+      data: Array<{ kind: 'BILL_HOUR' | 'COST_HOUR'; cents: number | null; effectiveFrom: string; state: 'past' | 'scheduled' }>;
+    }>(buildUrlWithQuery('/rate-history', q));
+    if (res.error) throw new Error(res.error);
+    return res.data?.data || [];
   },
 };
 
@@ -5150,7 +5174,7 @@ export const spaceMembersApi = {
   updateRate: async (
     spaceId: string,
     memberId: string,
-    data: { billRateCents?: number | null; costRateCents?: number | null },
+    data: { billRateCents?: number | null; costRateCents?: number | null; effectiveFrom?: string },
   ) => {
     const res = await api.patch<{ success: boolean; data: unknown }>(
       `/spaces/${spaceId}/members/${memberId}/rate`, data,
@@ -5905,6 +5929,9 @@ export interface OrganizationProfile {
   country?: string | null;
   vatId?: string | null;
   billableRateCents?: number | null;
+  costRateCents?: number | null;
+  /** First day a changed rate applies, `YYYY-MM-DD`; default today. Write-only. */
+  rateEffectiveFrom?: string;
   usesExternalWorkers?: boolean | null;
   /** Crew rules: only a job's leader moves its step (shared tasks/crew.ts). */
   crewMode?: boolean | null;

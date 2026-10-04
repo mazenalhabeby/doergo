@@ -170,11 +170,19 @@ export class StatementService {
       .map((l) => ({ ...l, amountCents: l.rateCents === null ? 0 : Math.round(l.rateCents * l.hours) }))
       .sort((a, b) => (a.spaceName ?? '').localeCompare(b.spaceName ?? '') || a.fromDay.localeCompare(b.fromDay));
 
+    // Days on site, by the invoice's rule: a day clocked in OR a day a job was finished there.
     const daysBySpace: Record<string, number> = {};
-    for (const sid of new Set(clockIns.map((c) => c.locationId))) {
-      const entries = clockIns.filter((c) => c.locationId === sid);
-      const tz = entries[0]?.location?.timezone || org?.timezone || 'UTC';
-      daysBySpace[sid] = workedDays(entries, (at) => dayKeyIn(at, tz), from, to).length;
+    const tzOf = new Map<string, string>();
+    for (const c of clockIns) if (c.location?.timezone) tzOf.set(c.locationId, c.location.timezone);
+    for (const t of tasks) if (t.spaceId && t.space?.timezone) tzOf.set(t.spaceId, t.space.timezone);
+    const sids = new Set([...clockIns.map((c) => c.locationId), ...spaceIds]);
+    for (const sid of sids) {
+      const tz = tzOf.get(sid) || org?.timezone || 'UTC';
+      const marks = [
+        ...clockIns.filter((c) => c.locationId === sid),
+        ...tasks.filter((t) => t.spaceId === sid).map((t) => ({ clockInAt: t.serviceReport?.completedAt ?? t.updatedAt })),
+      ];
+      daysBySpace[sid] = workedDays(marks, (at) => dayKeyIn(at, tz), from, to).length;
     }
 
     return {

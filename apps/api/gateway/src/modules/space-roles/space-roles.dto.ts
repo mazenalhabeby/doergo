@@ -83,3 +83,19 @@ export class UpdateMemberRateDto {
   @Matches(DAY)
   effectiveFrom?: string;
 }
+
+/** Which rate's history to read. */
+export class RateHistoryQueryDto {
+  @IsIn(['ORGANIZATION', 'SPACE', 'MEMBER', 'ASSIGNMENT'])
+  target!: 'ORGANIZATION' | 'SPACE' | 'MEMBER' | 'ASSIGNMENT';
+
+  @IsString()
+  @MaxLength(64)
+  targetId!: string;
+
+  /** ASSIGNMENT: the workspace it belongs to — what the caller must manage. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  spaceId?: string;
+}
