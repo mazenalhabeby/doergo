@@ -1370,6 +1370,15 @@ docker exec -it hbcfield-redis redis-cli
 
 **Current Sprint**: nothing blocking. Outstanding and NOT doable from the machine: (1) **one real card payment has never completed** — pending since July; (2) INVOICE mode has produced a real subscription (`sub_1UC6kH…`, `send_invoice`, €472.78 incl. AT VAT, due 18 Sept) but **no customer has paid one yet**, and HBC GmbH has since been moved to EXTERNAL; (3) the app stores still serve an older binary, so an OTA only reaches installed 1.0.3/1.0.4 apps.
 
+### Recently Completed (2026-10-04) — Work roles, day rates, worker statement, currencies — PROD `94c414fa`
+
+**PROD 2026-10-04** (`9d8014a3 → 94c414fa`, bundle + ff; rollback tag `prod-pre-rates-currency` → `9d8014a3`; backup `pre-rates-currency_20261004_213821.sql.gz`, 111 tables). Migrations `20261004120000_work_roles_rate_history`, `20261004180000_currencies`, `20261004200000_invoice_line_tags` (all additive) — **dry-run first on a restored copy of the 03:30 backup**: every existing figure identical before/after, 27 roles → MANAGEMENT, the 3 rates set → "since always", re-run idempotent. Images rebuilt: auth, task, gateway, web (notification/tracking untouched; no OTA — no mobile code changed). Server reaches the ECB (verified from the auth container).
+
+- Work roles + day rates, two roles per member, billing (hour/day/both) on the member, dated rates; the worker's statement; workspace Members page in tabs.
+- Workspace invoices: one HOURS total (counted time on site) and one DAYS total per person; HOURS/DAYS tags, units, per-unit prices; line wording options (`showLineTags` saved per invoice).
+- PDF file names `Client_Invoice_Number_Period.pdf`.
+- Currencies: organization / workspace / client, invoice keeps the ECB rate. See the endpoint section "Currencies".
+
 ### Recently Completed (2026-10-03) — A crew on one job — PROD `e38c75c1` + OTA
 
 **PROD 2026-10-03** (rollback tag `prod-pre-crew` → `bfdb5483`; backup `pre-crew_20261003_091030.sql.gz`, 111 tables). OTA 1.0.7 `2719c6ea`, 1.0.6 `2f9c18fa`. `crewMode` is OFF for every organization until switched on.
