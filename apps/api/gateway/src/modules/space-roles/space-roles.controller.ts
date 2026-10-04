@@ -111,7 +111,6 @@ export class SpaceRolesController {
       color?: string;
       permissions?: PermissionSet;
       kind?: RoleKindValue;
-      billBy?: BillByValue | null;
     },
     @Request() req: any,
   ) {
@@ -122,7 +121,6 @@ export class SpaceRolesController {
       color: body.color,
       permissions: body.permissions,
       kind: body.kind,
-      billBy: body.billBy,
       organizationId: req.user.organizationId,
     });
   }
@@ -140,7 +138,6 @@ export class SpaceRolesController {
       permissions?: PermissionSet;
       isActive?: boolean;
       kind?: RoleKindValue;
-      billBy?: BillByValue | null;
     },
     @Request() req: any,
   ) {
@@ -152,7 +149,6 @@ export class SpaceRolesController {
       permissions: body.permissions,
       isActive: body.isActive,
       kind: body.kind,
-      billBy: body.billBy,
       roleId,
       organizationId: req.user.organizationId,
       // The ceiling also applies to what the role ALREADY grants: editing a role

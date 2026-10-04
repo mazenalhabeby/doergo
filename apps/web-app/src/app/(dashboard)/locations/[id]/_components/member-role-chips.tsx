@@ -36,7 +36,7 @@ import { roleQueryKey, useBillByLabel, type BillBy } from "./work-roles"
  * history survive. Removing a member and adding them back would not.
  */
 
-type RoleLite = Pick<SpaceRole, "id" | "name" | "color" | "kind" | "billBy">
+type RoleLite = Pick<SpaceRole, "id" | "name" | "color" | "kind">
 
 function useUpdateMember(spaceId: string, memberId: string) {
   const { t } = useTranslation()
@@ -165,8 +165,8 @@ export function MemberRoleChips({
   const workGroup = { label: t("scheduling.workRoles.groupWork"), roles: workRoles }
   const mgmtGroup = { label: t("scheduling.workRoles.groupManagement"), roles: mgmtRoles }
 
-  // The member's own billing, when it differs from their trade's.
-  const override = member.billBy && work && member.billBy !== work.billBy ? member.billBy : null
+  // How this person is billed here — shown wherever they have a trade.
+  const billing = work ? (member.billBy ?? "HOUR") : null
 
   let chips: ReactNode
   if (!work && !mgmt) {
@@ -212,12 +212,12 @@ export function MemberRoleChips({
   return (
     <span className="mt-0.5 flex flex-wrap items-center gap-1">
       {chips}
-      {override && (
+      {billing && (
         <span
-          title={t("scheduling.workRoles.differsFromRole")}
-          className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-400"
+          title={t("scheduling.workRoles.billByFor")}
+          className="rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[11px] font-semibold text-foreground"
         >
-          {billByLabel(override)}
+          {billByLabel(billing)}
         </span>
       )}
     </span>
@@ -233,8 +233,8 @@ export function MemberBillingMenu({ spaceId, member }: { spaceId: string; member
   const billByLabel = useBillByLabel()
   const update = useUpdateMember(spaceId, member.id)
   if (member.user?.isExternal) return null
-  const roleBillBy = (member.workRole?.billBy as BillBy | null | undefined) ?? null
-  const value = member.billBy ?? "ROLE"
+  // Not chosen = by the hour, as everybody was billed before day rates.
+  const value: BillBy = member.billBy ?? "HOUR"
 
   return (
     <DropdownMenu>
@@ -247,21 +247,14 @@ export function MemberBillingMenu({ spaceId, member }: { spaceId: string; member
         <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
           {t("scheduling.workRoles.billByFor")}
         </DropdownMenuLabel>
-        <DropdownMenuRadioGroup
-          value={value}
-          onValueChange={(v) => update.mutate({ billBy: v === "ROLE" ? null : (v as BillBy) })}
-        >
-          <DropdownMenuRadioItem value="ROLE" className="text-sm">
-            {roleBillBy
-              ? t("scheduling.workRoles.sameAsRoleWith", { billBy: billByLabel(roleBillBy) })
-              : t("scheduling.workRoles.sameAsRole")}
-          </DropdownMenuRadioItem>
+        <DropdownMenuRadioGroup value={value} onValueChange={(v) => update.mutate({ billBy: v as BillBy })}>
           {(["HOUR", "DAY", "BOTH"] as const).map((b) => (
             <DropdownMenuRadioItem key={b} value={b} className="text-sm">
               {billByLabel(b)}
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
+        <p className="px-2 pb-1.5 text-[11px] text-muted-foreground">{t("scheduling.workRoles.billByHint")}</p>
         <DropdownMenuSeparator />
         {/*
           ⚠️ Switching it OFF while two roles are held is refused by the server

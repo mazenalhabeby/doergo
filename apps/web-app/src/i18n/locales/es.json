@@ -6828,7 +6828,7 @@
     },
     "workRoles": {
       "workHeading": "Roles de trabajo",
-      "workIntro": "Un oficio en este espacio de trabajo, como mecánico o electricista. Decide cómo se factura el trabajo y nunca concede permisos.",
+      "workIntro": "Un oficio en este espacio, como mecánico o electricista. Lleva una tarifa diaria y nunca concede permisos. Cómo se factura a cada persona (horas, días o ambos) se fija en la persona.",
       "managementHeading": "Roles de gestión",
       "managementIntro": "Permisos en este espacio de trabajo, como jefe de equipo.",
       "newWork": "Nuevo rol de trabajo",
@@ -6846,7 +6846,7 @@
       "dayRate": "Tarifa diaria",
       "perDay": "/ día",
       "dayRateHere": "Tarifa diaria en este espacio",
-      "dayRateHint": "Todas las personas con este rol aquí se facturan con ella. La tarifa por hora sigue en cada persona, porque dos personas del mismo oficio pueden tener tarifas por hora distintas.",
+      "dayRateHint": "Todas las personas con este rol aquí que se facturan por días se facturan a esta tarifa. Las tarifas por hora siguen en cada persona.",
       "dayRateNone": "Sin tarifa diaria",
       "initialDayRate": "Tarifa diaria, desde hoy",
       "grantsNothing": "Un rol de trabajo no concede permisos.",
@@ -6866,12 +6866,9 @@
       "addWork": "+ Rol de trabajo",
       "billingMenu": "Facturación y roles",
       "billByFor": "Facturar por, en este espacio",
-      "sameAsRole": "Igual que el rol",
-      "sameAsRoleWith": "Igual que el rol ({{billBy}})",
       "allowSecond": "Permitir un segundo rol",
       "allowSecondHint": "Un rol de trabajo y un rol de gestión a la vez",
-      "memberSaved": "Guardado",
-      "differsFromRole": "Se factura distinto que su rol de trabajo"
+      "memberSaved": "Guardado"
     }
   },
   "spaceSharing": {

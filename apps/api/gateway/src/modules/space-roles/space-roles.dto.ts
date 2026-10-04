@@ -1,22 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Matches, Max, Min, MaxLength, ValidateIf } from 'class-validator';
-import { BILL_BY_VALUES, MAX_RATE_CENTS, ROLE_KINDS, type BillByValue, type RoleKindValue } from '@hbcfield/shared';
+import { BILL_BY_VALUES, MAX_RATE_CENTS, type BillByValue } from '@hbcfield/shared';
 
 /** `YYYY-MM-DD`. The shared rule then refuses impossible days and far-off dates. */
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
-
-/** Kind and billing on a role definition — alongside the existing name/colour/permissions body. */
-export class RoleKindFieldsDto {
-  @ApiPropertyOptional({ enum: ROLE_KINDS, description: 'WORK = a trade that carries billing and grants nothing; MANAGEMENT = permissions' })
-  @IsOptional()
-  @IsIn(ROLE_KINDS as unknown as string[])
-  kind?: RoleKindValue;
-
-  @ApiPropertyOptional({ enum: BILL_BY_VALUES, description: 'WORK roles: how holders are billed unless their assignment overrides' })
-  @IsOptional()
-  @IsIn(BILL_BY_VALUES as unknown as string[])
-  billBy?: BillByValue | null;
-}
 
 export class SetDayRateDto {
   @ApiPropertyOptional({ description: 'Cents per day. Null clears it from that day; 0 is a real rate of nothing.' })
@@ -53,7 +40,7 @@ export class UpdateMemberRolesDto {
   @IsBoolean()
   allowSecondRole?: boolean;
 
-  @ApiPropertyOptional({ enum: BILL_BY_VALUES, description: 'Overrides the work role\'s billing for this member. Null = as the role.' })
+  @ApiPropertyOptional({ enum: BILL_BY_VALUES, description: 'How this member is billed here: HOUR, DAY or BOTH. Null = by the hour.' })
   @IsOptional()
   @ValidateIf((_, v) => v !== null)
   @IsIn(BILL_BY_VALUES as unknown as string[])

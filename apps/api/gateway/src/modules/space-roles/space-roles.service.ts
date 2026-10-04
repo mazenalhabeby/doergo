@@ -19,7 +19,6 @@ export class SpaceRolesService extends BaseGatewayService {
     color?: string;
     permissions?: PermissionSet;
     kind?: RoleKindValue;
-    billBy?: BillByValue | null;
   }) {
     return this.send({ cmd: 'create_space_role' }, data);
   }
@@ -32,7 +31,6 @@ export class SpaceRolesService extends BaseGatewayService {
     permissions?: PermissionSet;
     isActive?: boolean;
     kind?: RoleKindValue;
-    billBy?: BillByValue | null;
     /** Ceiling for what the caller may author. Null = admin, no ceiling. */
     requesterPerms?: PermissionSet | null;
   }) {

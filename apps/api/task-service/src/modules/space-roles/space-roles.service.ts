@@ -45,7 +45,7 @@ const userSelect = {
     avatarUrl: true, position: true, isExternal: true,
   },
 };
-const roleSelect = { select: { id: true, name: true, slug: true, color: true, permissions: true, kind: true, billBy: true } };
+const roleSelect = { select: { id: true, name: true, slug: true, color: true, permissions: true, kind: true } };
 
 /** A refusal the screens can translate, with the rule's own sentence as the fallback. */
 function comboRefusal(code: keyof typeof ROLE_COMBO_MESSAGES): BadRequestException {
@@ -108,7 +108,7 @@ export class SpaceRolesService {
         orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
         select: {
           id: true, name: true, slug: true, color: true, description: true, permissions: true,
-          kind: true, billBy: true, isSystem: true, isActive: true, scope: true,
+          kind: true, isSystem: true, isActive: true, scope: true,
           _count: { select: { spaceAssignments: true, workAssignments: true } },
         },
       }),
@@ -157,7 +157,6 @@ export class SpaceRolesService {
     color?: string;
     permissions?: PermissionSet;
     kind?: RoleKindValue;
-    billBy?: BillByValue | null;
   }) {
     const name = (data.name || '').trim();
     if (!name) throw new BadRequestException('Role name is required');
@@ -174,8 +173,6 @@ export class SpaceRolesService {
         scope: 'SPACE',
         isSystem: false,
         kind,
-        // A work role is billed one way or another; a management role is not billed at all.
-        billBy: kind === 'WORK' ? (isBillBy(data.billBy) ? data.billBy : 'HOUR') : null,
         // ⚠️ A work role grants nothing — forced here, whatever the request said.
         permissions: permissionsForKind(kind, this.normalizePermissions(data.permissions)) as any,
         position: (max._max.position ?? -1) + 1,
@@ -193,7 +190,6 @@ export class SpaceRolesService {
     permissions?: PermissionSet;
     isActive?: boolean;
     kind?: RoleKindValue;
-    billBy?: BillByValue | null;
     /** Ceiling on what the caller may author. Null/undefined = admin. */
     requesterPerms?: PermissionSet | null;
   }) {
@@ -244,13 +240,9 @@ export class SpaceRolesService {
       patch.kind = kind;
     }
     if (kind === 'WORK') {
-      if (data.billBy !== undefined || patch.kind) {
-        patch.billBy = isBillBy(data.billBy) ? data.billBy : (role.billBy ?? 'HOUR');
-      }
       // ⚠️ Whatever was sent, and whatever it had before: a trade grants nothing.
       patch.permissions = {};
     } else {
-      if (patch.kind) patch.billBy = null;
       if (data.permissions !== undefined) {
         patch.permissions = this.normalizePermissions({
           ...(role.permissions as PermissionSet),
@@ -362,9 +354,9 @@ export class SpaceRolesService {
         /** The trade here — grants nothing, decides billing. */
         workRole: m.workRole,
         allowSecondRole: m.allowSecondRole,
-        /** The member's own choice; null = as the work role. */
+        /** How this member is billed here; null = by the hour. */
         billBy: m.billBy,
-        effectiveBillBy: effectiveBillBy(m.billBy as BillByValue | null, (m.workRole?.billBy as BillByValue | null) ?? null),
+        effectiveBillBy: effectiveBillBy(m.billBy as BillByValue | null),
         billRateCents: m.billRateCents,
         costRateCents: m.costRateCents,
         // What it falls back to — the ladder MINUS this assignment's own rung.
@@ -590,7 +582,7 @@ export class SpaceRolesService {
         workRole: updated.workRole,
         allowSecondRole: updated.allowSecondRole,
         billBy: updated.billBy,
-        effectiveBillBy: effectiveBillBy(updated.billBy as BillByValue | null, (updated.workRole?.billBy as BillByValue | null) ?? null),
+        effectiveBillBy: effectiveBillBy(updated.billBy as BillByValue | null),
       },
       'Member updated',
     );

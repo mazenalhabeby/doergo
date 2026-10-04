@@ -792,18 +792,16 @@ export class InvoiceService {
             billRateCents: true,
             costRateCents: true,
             billBy: true,
-            workRole: { select: { id: true, name: true, billBy: true, kind: true } },
+            workRole: { select: { id: true, name: true, kind: true } },
             user: { select: { id: true, firstName: true, lastName: true, billRateCents: true, costRateCents: true, isExternal: true } },
           },
         })
       : [];
     const assignmentOf = new Map(assignments.map((a) => [a.userId, a]));
+    // How each person here is billed — their own choice on the assignment.
     const billByOf = (userId?: string | null): BillByValue => {
       const a = userId ? assignmentOf.get(userId) : undefined;
-      return effectiveBillBy(
-        (a?.billBy as BillByValue | null) ?? null,
-        a?.workRole?.kind === 'WORK' ? ((a.workRole.billBy as BillByValue | null) ?? null) : null,
-      );
+      return effectiveBillBy((a?.billBy as BillByValue | null) ?? null);
     };
 
     /*

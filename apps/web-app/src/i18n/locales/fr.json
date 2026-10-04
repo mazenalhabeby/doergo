@@ -6837,7 +6837,7 @@
     },
     "workRoles": {
       "workHeading": "Rôles métier",
-      "workIntro": "Un métier dans cet espace de travail, comme mécanicien ou électricien. Il décide comment le travail est facturé et n’accorde jamais de droits.",
+      "workIntro": "Un métier dans cet espace, comme mécanicien ou électricien. Il porte un tarif journalier et n’accorde jamais de droits. La façon de facturer chaque personne (heures, jours ou les deux) se règle sur la personne.",
       "managementHeading": "Rôles d’encadrement",
       "managementIntro": "Les droits dans cet espace de travail, comme chef d’équipe.",
       "newWork": "Nouveau rôle métier",
@@ -6855,7 +6855,7 @@
       "dayRate": "Tarif journalier",
       "perDay": "/ jour",
       "dayRateHere": "Tarif journalier dans cet espace",
-      "dayRateHint": "Toutes les personnes ayant ce rôle ici sont facturées à ce tarif. Le tarif horaire reste propre à chaque personne, car deux personnes du même métier peuvent avoir des tarifs horaires différents.",
+      "dayRateHint": "Toutes les personnes ayant ce rôle ici et facturées à la journée le sont à ce tarif. Les tarifs horaires restent propres à chaque personne.",
       "dayRateNone": "Aucun tarif journalier",
       "initialDayRate": "Tarif journalier, à partir d’aujourd’hui",
       "grantsNothing": "Un rôle métier n’accorde aucun droit.",
@@ -6875,12 +6875,9 @@
       "addWork": "+ Rôle métier",
       "billingMenu": "Facturation et rôles",
       "billByFor": "Facturer à, dans cet espace",
-      "sameAsRole": "Comme le rôle",
-      "sameAsRoleWith": "Comme le rôle ({{billBy}})",
       "allowSecond": "Autoriser un second rôle",
       "allowSecondHint": "Un rôle métier et un rôle d’encadrement ensemble",
-      "memberSaved": "Enregistré",
-      "differsFromRole": "Facturé autrement que son rôle métier"
+      "memberSaved": "Enregistré"
     }
   },
   "spaceSharing": {

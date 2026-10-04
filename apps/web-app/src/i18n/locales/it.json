@@ -6837,7 +6837,7 @@
     },
     "workRoles": {
       "workHeading": "Ruoli operativi",
-      "workIntro": "Un mestiere in questo spazio di lavoro, come meccanico o elettricista. Decide come viene fatturato il lavoro e non concede mai permessi.",
+      "workIntro": "Un mestiere in questo spazio, come meccanico o elettricista. Porta una tariffa giornaliera e non concede mai permessi. Come viene fatturata ogni persona (ore, giorni o entrambi) si imposta sulla persona.",
       "managementHeading": "Ruoli di gestione",
       "managementIntro": "I permessi in questo spazio di lavoro, come caposquadra.",
       "newWork": "Nuovo ruolo operativo",
@@ -6855,7 +6855,7 @@
       "dayRate": "Tariffa giornaliera",
       "perDay": "/ giorno",
       "dayRateHere": "Tariffa giornaliera in questo spazio",
-      "dayRateHint": "Tutte le persone con questo ruolo qui vengono fatturate a questa tariffa. La tariffa oraria resta su ogni persona, perché due persone con lo stesso mestiere possono avere tariffe orarie diverse.",
+      "dayRateHint": "Tutte le persone con questo ruolo qui fatturate a giornata lo sono a questa tariffa. Le tariffe orarie restano su ogni persona.",
       "dayRateNone": "Nessuna tariffa giornaliera",
       "initialDayRate": "Tariffa giornaliera, da oggi",
       "grantsNothing": "Un ruolo operativo non concede permessi.",
@@ -6875,12 +6875,9 @@
       "addWork": "+ Ruolo operativo",
       "billingMenu": "Fatturazione e ruoli",
       "billByFor": "Fatturare a, in questo spazio",
-      "sameAsRole": "Come il ruolo",
-      "sameAsRoleWith": "Come il ruolo ({{billBy}})",
       "allowSecond": "Consenti un secondo ruolo",
       "allowSecondHint": "Un ruolo operativo e un ruolo di gestione insieme",
-      "memberSaved": "Salvato",
-      "differsFromRole": "Fatturato diversamente dal suo ruolo operativo"
+      "memberSaved": "Salvato"
     }
   },
   "spaceSharing": {

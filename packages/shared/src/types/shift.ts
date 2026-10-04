@@ -144,10 +144,8 @@ export interface SpaceRole {
   createdAt: string;
   updatedAt: string;
   _count?: { members: number };
-  /** WORK = a trade (grants nothing, carries billing); MANAGEMENT = permissions. */
+  /** WORK = a trade (grants nothing, carries a day rate); MANAGEMENT = permissions. */
   kind?: 'WORK' | 'MANAGEMENT';
-  /** WORK roles: how holders are billed unless their assignment overrides it. */
-  billBy?: 'HOUR' | 'DAY' | 'BOTH' | null;
 }
 
 /** A role as one workspace sees it: who holds it HERE, and its day rate HERE. */
@@ -195,14 +193,14 @@ export interface SpaceMember {
   /** `isExternal`: works for a client or partner — no rate, no clock, no file. */
   user?: { id: string; firstName: string; lastName: string; email?: string; avatarUrl?: string | null; position?: string | null; isExternal?: boolean };
   /** The management role here — the ONLY role that grants permissions. */
-  spaceRole?: Pick<SpaceRole, 'id' | 'name' | 'slug' | 'color' | 'permissions' | 'kind' | 'billBy'> | null;
+  spaceRole?: Pick<SpaceRole, 'id' | 'name' | 'slug' | 'color' | 'permissions' | 'kind'> | null;
   /** The trade here (a WORK role). Grants nothing; decides how work is billed. */
-  workRole?: Pick<SpaceRole, 'id' | 'name' | 'slug' | 'color' | 'kind' | 'billBy'> | null;
+  workRole?: Pick<SpaceRole, 'id' | 'name' | 'slug' | 'color' | 'kind'> | null;
   /** May this member hold a work role AND a management role here? */
   allowSecondRole?: boolean;
-  /** The member's own billing choice here; null = as the work role. */
+  /** How this member's work here is billed; null = by the hour. */
   billBy?: 'HOUR' | 'DAY' | 'BOTH' | null;
-  /** What actually applies: own choice → work role → HOUR. */
+  /** What applies: their choice, else HOUR. */
   effectiveBillBy?: 'HOUR' | 'DAY' | 'BOTH';
   // Per-member, per-space routing override (Phase 4d). Empty = space default.
   notifyRoleIds?: string[];

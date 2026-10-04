@@ -3131,8 +3131,8 @@ model ShiftInstance {
 // new tables yet — Phase 2 wires the resolver/guards.
 
 /// What a workspace role IS. A MANAGEMENT role carries permissions; a WORK
-/// role is a trade (Mechanic, Electrician) that carries how the person's work
-/// is billed and grants NOTHING — which is what lets a member hold one of each
+/// role is a trade (Mechanic, Electrician) that carries a day rate and grants
+/// NOTHING — which is what lets a member hold one of each
 /// without the second one ever becoming a way to gain authority.
 enum RoleKind {
   WORK
@@ -3199,12 +3199,11 @@ model AccessRole {
   //   canReconcileAttendance, canViewSpaceAttendance }
   permissions Json
 
-  /// WORK roles grant nothing (permissions are forced empty) and carry billing.
-  /// Every role that existed before work roles is MANAGEMENT, so nothing that
-  /// already grants authority changes meaning.
-  kind   RoleKind @default(MANAGEMENT)
-  /// WORK roles only: how holders are billed unless their assignment overrides.
-  billBy BillBy?
+  /// WORK roles grant nothing (permissions are forced empty) and carry a day
+  /// rate per workspace. HOW a person is billed (hour / day / both) is decided
+  /// on the person's assignment, not here. Every role that existed before work
+  /// roles is MANAGEMENT, so nothing that already grants authority changes meaning.
+  kind RoleKind @default(MANAGEMENT)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -3243,7 +3242,8 @@ model SpaceAssignment {
   workRole   AccessRole? @relation("AssignmentWorkRole", fields: [workRoleId], references: [id], onDelete: SetNull)
   /// May this member hold a work role AND a management role here at once?
   allowSecondRole Boolean @default(false)
-  /// Overrides the work role's billBy for this member here. Null = as the role.
+  /// How this member's work here is billed: by the hour, the day, or both.
+  /// Null = by the hour, which is how everybody was billed before day rates.
   billBy BillBy?
 
   /// The negotiated rate for THIS member at THIS client — the top rung.

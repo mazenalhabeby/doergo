@@ -5113,14 +5113,14 @@ export const spaceRolesApi = {
     if (res.error) throw new Error(res.error);
     return res.data?.data;
   },
-  create: async (data: { name: string; description?: string; color?: string; permissions?: PermissionSet; kind?: 'WORK' | 'MANAGEMENT'; billBy?: 'HOUR' | 'DAY' | 'BOTH' | null }) => {
+  create: async (data: { name: string; description?: string; color?: string; permissions?: PermissionSet; kind?: 'WORK' | 'MANAGEMENT' }) => {
     const res = await api.post<{ success: boolean; data: SpaceRole }>('/space-roles', data);
     if (res.error) throw new Error(res.error);
     return res.data?.data;
   },
   update: async (
     id: string,
-    data: { name?: string; description?: string; color?: string; permissions?: PermissionSet; isActive?: boolean; kind?: 'WORK' | 'MANAGEMENT'; billBy?: 'HOUR' | 'DAY' | 'BOTH' | null },
+    data: { name?: string; description?: string; color?: string; permissions?: PermissionSet; isActive?: boolean; kind?: 'WORK' | 'MANAGEMENT' },
   ) => {
     const res = await api.patch<{ success: boolean; data: SpaceRole }>(`/space-roles/${id}`, data);
     if (res.error) throw new Error(res.error);

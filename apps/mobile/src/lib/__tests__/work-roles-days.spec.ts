@@ -103,10 +103,10 @@ describe('planRateChange — one writer for every rate path', () => {
 });
 
 describe('work roles', () => {
-  it('a member\'s own choice beats the role; no trade bills by the hour as before', () => {
-    expect(effectiveBillBy('HOUR', 'BOTH')).toBe('HOUR'); // Mark
-    expect(effectiveBillBy(null, 'BOTH')).toBe('BOTH'); // Patrick
-    expect(effectiveBillBy(null, null)).toBe('HOUR');
+  it('billing is the member\'s own choice; none chosen bills by the hour, as before', () => {
+    expect(effectiveBillBy('HOUR')).toBe('HOUR'); // Mark
+    expect(effectiveBillBy('BOTH')).toBe('BOTH'); // Patrick — same trade, billed differently
+    expect(effectiveBillBy(null)).toBe('HOUR');
     expect(billsHours('BOTH') && billsDays('BOTH')).toBe(true);
     expect(billsHours('DAY')).toBe(false);
   });

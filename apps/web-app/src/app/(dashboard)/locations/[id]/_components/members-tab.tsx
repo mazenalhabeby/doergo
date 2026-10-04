@@ -59,14 +59,11 @@ import { MemberRoutingEditor } from "./member-routing-editor"
 import { MemberRateChip, MemberRateEditor } from "./member-rate-editor"
 import { DatedRateField } from "@/components/rates/dated-rate"
 import {
-  BILL_BY,
   DEFAULT_ROLE_COLOR,
   RoleCard,
   Segmented,
   roleQueryKey,
-  useBillByLabel,
   useCents,
-  type BillBy,
 } from "./work-roles"
 import { MemberBillingMenu, MemberRoleChips } from "./member-role-chips"
 
@@ -186,7 +183,7 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
           icon={ShieldCheck}
           accent="violet"
           title={t("scheduling.workRoles.managementHeading")}
-          description={t("scheduling.roles.intro")}
+          description={t("scheduling.workRoles.managementIntro")}
           action={
             <Button variant="outline" onClick={() => setDialog({ role: null, kind: "MANAGEMENT" })} className="gap-1.5">
               <Plus className="h-4 w-4" />
@@ -261,7 +258,6 @@ function RoleDialog({
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const billByLabel = useBillByLabel()
   const cents = useCents()
   const isEdit = !!role
 
@@ -269,7 +265,6 @@ function RoleDialog({
   const [description, setDescription] = useState(role?.description || "")
   const [color, setColor] = useState(role?.color || DEFAULT_ROLE_COLOR)
   const [kind, setKind] = useState<"WORK" | "MANAGEMENT">(role?.kind === "WORK" ? "WORK" : role ? "MANAGEMENT" : defaultKind)
-  const [billBy, setBillBy] = useState<BillBy>((role?.billBy as BillBy | null) ?? "HOUR")
   const [initialDayRate, setInitialDayRate] = useState("")
   const [permissions, setPermissions] = useState<PermissionSet>(
     role?.permissions || emptyPermissions(),
@@ -286,7 +281,7 @@ function RoleDialog({
         description: description.trim() || undefined,
         color,
         kind,
-        ...(isWork ? { billBy } : { permissions }),
+        ...(isWork ? {} : { permissions }),
       }
       const saved = isEdit ? await spaceRolesApi.update(role!.id, payload) : await spaceRolesApi.create(payload)
       // A new trade can start with a day rate here, from today.
@@ -354,21 +349,6 @@ function RoleDialog({
               </p>
             )}
           </div>
-
-          {isWork && (
-            <div className="space-y-2">
-              <Label>{t("scheduling.workRoles.billBy")}</Label>
-              <div>
-                <Segmented
-                  ariaLabel={t("scheduling.workRoles.billBy")}
-                  value={billBy}
-                  onChange={setBillBy}
-                  options={BILL_BY.map((b) => ({ value: b, label: billByLabel(b) }))}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">{t("scheduling.workRoles.billByHint")}</p>
-            </div>
-          )}
 
           {isWork && !isEdit && (
             <div className="space-y-2">

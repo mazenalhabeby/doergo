@@ -14,9 +14,19 @@ Each check prints PASS/FAIL; the exit code is the number of failures.
 import datetime as dt, json, subprocess, sys, time, urllib.request, urllib.error, uuid
 
 API = 'http://localhost:4000/api/v1'
-PW = 'VideoDemo!2026'
-MAIL = {k: f'{k}@halsteadfield.example' for k in ['douglas.ferriby', 'mara.kellner', 'tobias.okafor', 'conor.devlin', 'niamh.brennan']}
-TAG = f'E2E-WR-{int(time.time())}'
+import os as _os
+if _os.environ.get('DEMO_ORG') == 'acme':
+    # The seed-demo organization (password123), for a walk-through in the browser.
+    PW = 'password123'
+    MAIL = {'douglas.ferriby': 'client@example.com', 'mara.kellner': 'manager@example.com',
+            'tobias.okafor': 'karim@example.com', 'conor.devlin': 'noor@example.com', 'niamh.brennan': 'dana@example.com'}
+else:
+    PW = 'VideoDemo!2026'
+    MAIL = {k: f'{k}@halsteadfield.example' for k in ['douglas.ferriby', 'mara.kellner', 'tobias.okafor', 'conor.devlin', 'niamh.brennan']}
+import os
+KEEP = os.environ.get('KEEP') == '1'  # leave the data in place to look at it in the browser
+TAG = '' if KEEP else f'E2E-WR-{int(time.time())}'
+N = lambda x: f'{TAG} {x}'.strip()
 fails = 0
 
 
@@ -63,7 +73,7 @@ TODAY = dt.date.today()
 day = lambda n: (TODAY + dt.timedelta(days=n)).isoformat()
 
 # ── Sign in (tokens cached between runs: sign-ins are rate limited) ──────────
-CACHE = '/tmp/work-roles-e2e-tokens.json'
+CACHE = f"/tmp/work-roles-e2e-tokens{'-acme' if _os.environ.get('DEMO_ORG') == 'acme' else ''}.json"
 try: cached = json.load(open(CACHE))
 except Exception: cached = {}
 tok, uid = {}, {}
@@ -87,7 +97,7 @@ space = None
 made_roles = []
 try:
     # ── A workspace for a client, with an hourly rate ────────────────────────
-    s, b = call('POST', '/locations', ADMIN, {'name': f'{TAG} BILLA', 'kind': 'CUSTOMER', 'billableRateCents': 6000})
+    s, b = call('POST', '/locations', ADMIN, {'name': N('BILLA demo' if KEEP else 'BILLA AG'), 'kind': 'CUSTOMER', 'billableRateCents': 6000})
     check('create a CUSTOMER workspace', s in (200, 201), b)
     space = data((s, b))['id']
 
@@ -95,11 +105,11 @@ try:
     def mk(body):
         s, b = call('POST', '/space-roles', ADMIN, body)
         r = data((s, b)); made_roles.append(r['id']); return s, r
-    s, mech = mk({'name': f'{TAG} Mechanic', 'kind': 'WORK', 'billBy': 'BOTH', 'permissions': {'canManageUsers': True}})
+    s, mech = mk({'name': N('Mechanic'), 'kind': 'WORK', 'permissions': {'canManageUsers': True}})
     check('a work role is created', s in (200, 201), mech)
     check('…and grants nothing, whatever was sent', mech.get('permissions') == {}, mech.get('permissions'))
-    _, elec = mk({'name': f'{TAG} Electrician', 'kind': 'WORK', 'billBy': 'DAY'})
-    _, lead = mk({'name': f'{TAG} Team Leader', 'kind': 'MANAGEMENT', 'permissions': {'canApproveOvertime': True}})
+    _, elec = mk({'name': N('Electrician'), 'kind': 'WORK'})
+    _, lead = mk({'name': N('Team Leader'), 'kind': 'MANAGEMENT', 'permissions': {'canApproveOvertime': True}})
     check('a management role keeps its permissions', lead.get('permissions') == {'canApproveOvertime': True}, lead)
 
     # ── Day rates: first one applies since always, later ones from their day ─
@@ -131,6 +141,11 @@ try:
     members = {x['userId']: x for x in data(call('GET', f'/spaces/{space}/members', ADMIN))}
     check('a trade lands in the work slot', members[PATRICK]['workRole']['id'] == mech['id'] and members[PATRICK]['spaceRole'] is None, members[PATRICK])
     pid, mid = members[PATRICK]['id'], members[MARK]['id']
+    # Billing is set on each PERSON: Patrick hours + days, Ahmed days only, Mark left as default (hours).
+    r = call('PATCH', f'/spaces/{space}/members/{pid}/roles', ADMIN, {'billBy': 'BOTH'})
+    check('billing is set on the member (Patrick: hour + day)', data(r).get('effectiveBillBy') == 'BOTH', r)
+    call('PATCH', f"/spaces/{space}/members/{members[AHMED]['id']}/roles", ADMIN, {'billBy': 'DAY'})
+    check('a member with no billing chosen is billed by the hour', members[MARK].get('effectiveBillBy') == 'HOUR', members[MARK])
 
     r = call('PATCH', f'/spaces/{space}/members/{pid}/roles', ADMIN, {'managementRoleId': lead['id']})
     check('a second role is refused until allowed', r[0] == 400 and code_of(r) == 'SECOND_ROLE_NOT_ALLOWED', r)
@@ -140,7 +155,7 @@ try:
     r = call('PATCH', f'/spaces/{space}/members/{pid}/roles', ADMIN, {'allowSecondRole': False})
     check('switching it off while holding both is refused, not a silent drop', r[0] == 400, r)
     r = call('PATCH', f'/spaces/{space}/members/{mid}/roles', ADMIN, {'billBy': 'HOUR'})
-    check('Mark: hours only, though Mechanic bills hours + days', data(r).get('effectiveBillBy') == 'HOUR', r)
+    check('Mark: hours only, chosen on Mark (same trade as Patrick, billed differently)', data(r).get('effectiveBillBy') == 'HOUR', r)
     r = call('PATCH', f'/spaces/{space}/members/{mid}/roles', ADMIN, {'workRoleId': lead['id']})
     check('a management role cannot sit in the work slot', r[0] == 400 and code_of(r) == 'WORK_ROLE_NOT_WORK', r)
     r = call('PATCH', '/space-roles/' + mech['id'], ADMIN, {'kind': 'MANAGEMENT'})
@@ -186,7 +201,7 @@ try:
                 f"values ('{uuid.uuid4()}','{user}','{space}','{ORG}',0,0,'{day(n)} 08:00','{day(n)} 16:00','CLOCKED_OUT','{status}',now());")
     def job(user, n, hours, title):
         t = str(uuid.uuid4())
-        return (f"insert into tasks (id,title,status,\"organizationId\",\"createdById\",\"assignedToId\",\"spaceId\",\"updatedAt\") values ('{t}','{TAG} {title}','COMPLETED','{ORG}','{uid['douglas.ferriby']}','{user}','{space}',now());"
+        return (f"insert into tasks (id,title,status,\"organizationId\",\"createdById\",\"assignedToId\",\"spaceId\",\"updatedAt\") values ('{t}','{N(title)}','COMPLETED','{ORG}','{uid['douglas.ferriby']}','{user}','{space}',now());"
                 f"insert into service_reports (id,\"taskId\",summary,\"workDuration\",\"completedAt\",\"completedById\",\"organizationId\",\"updatedAt\") values ('{uuid.uuid4()}','{t}','done',{int(hours*3600)},'{day(n)} 12:00','{user}','{ORG}',now());")
     sql = ''.join(clock(PATRICK, n) for n in [-15, -12, -10, -9, -7, -5, -3])
     sql += clock(PATRICK, -12)  # a second shift the same day — still one day
@@ -208,13 +223,13 @@ try:
           sum(d['days'] for d in g['dayEntries'] if d['workerId'] == PATRICK) == 9, runs)
     check('Ahmed: 3 days at 180', (AHMED, 3, 18000) in runs, runs)
     check('Mark: hours only — no days', all(w != MARK for w, _, _ in runs), runs)
-    jobs = {w['taskTitle'].split(' ', 1)[1]: w for w in g['workEntries'] if w['taskTitle'].startswith(TAG)}
+    jobs = {w['taskTitle'].split(' ', 1)[-1]: w for w in g['workEntries'] if w['taskTitle'].startswith(TAG)}
     check('Mark\'s job before his raise: 85/h', jobs['Cooling']['billRateCents'] == 8500, jobs['Cooling'])
     check('Mark\'s job after his raise: 90/h', jobs['Leak']['billRateCents'] == 9000, jobs['Leak'])
     check('Patrick\'s jobs: the client\'s 60/h', jobs['Pump']['billRateCents'] == 6000, jobs['Pump'])
     check('Ahmed (days only): his job is listed, not charged by the hour',
           jobs['Wiring']['hoursBillable'] is False and jobs['Wiring']['laborAmount'] == 0, jobs['Wiring'])
-    check('jobs carry the trade', jobs['Pump']['workRoleName'] == f'{TAG} Mechanic', jobs['Pump'])
+    check('jobs carry the trade', jobs['Pump']['workRoleName'] == N('Mechanic'), jobs['Pump'])
 
     # ── The worker's statement: same hours, HIS rate ─────────────────────────
     st = data(call('GET', f'/organizations/members/{MARK}/statement?from={day(-20)}&to={day(-1)}', ADMIN))
@@ -287,13 +302,16 @@ try:
     g3 = data(call('GET', f'/invoices/gather?spaceId={space}&from={day(-20)}&to={day(-1)}', ADMIN))
     check('deleting the draft releases the days', sum(d['days'] for d in g3['dayEntries'] if d['workerId'] == PATRICK) == 9, g3['dayEntries'])
 
+    if KEEP: raise SystemExit(0)
     # ── The past never moves ─────────────────────────────────────────────────
     call('PUT', f'/spaces/{space}/roles/{mech["id"]}/day-rate', ADMIN, {'cents': 99900})
     g4 = data(call('GET', f'/invoices/gather?spaceId={space}&from={day(-20)}&to={day(-1)}', ADMIN))
     check('a raise TODAY leaves every earlier day at its own rate',
           sorted((d['days'], d['dayRateCents']) for d in g4['dayEntries'] if d['workerId'] == PATRICK) == [(4, 22000), (5, 20000)], g4['dayEntries'])
 finally:
-    if space:
+    if KEEP:
+        print(f'kept: workspace {space}')
+    elif space:
         psql(f"""
         delete from invoice_items where "invoiceId" in (select id from invoices where "spaceId"='{space}');
         delete from invoices where "spaceId"='{space}';
@@ -305,7 +323,7 @@ finally:
         delete from space_assignments where "spaceId"='{space}';
         delete from company_locations where id='{space}';
         """)
-    if made_roles:
+    if made_roles and not KEEP:
         ids = ','.join(f"'{i}'" for i in made_roles)
         psql(f'delete from rate_history where "targetId" in ({ids}); delete from roles where id in ({ids});')
     print('cleaned up')

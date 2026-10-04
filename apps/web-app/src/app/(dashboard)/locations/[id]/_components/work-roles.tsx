@@ -125,7 +125,6 @@ export function RoleCard({
   onDelete?: () => void
 }) {
   const { t, i18n } = useTranslation()
-  const billByLabel = useBillByLabel()
   const cents = useCents()
   const isWork = role.kind === "WORK"
   const color = role.color || DEFAULT_ROLE_COLOR
@@ -149,11 +148,6 @@ export function RoleCard({
               >
                 <Lock className="h-3 w-3" />
                 {t("scheduling.roles.builtIn")}
-              </Badge>
-            )}
-            {isWork && role.billBy && (
-              <Badge variant="outline" className="text-[11px] font-medium">
-                {billByLabel(role.billBy)}
               </Badge>
             )}
             {isWork && (

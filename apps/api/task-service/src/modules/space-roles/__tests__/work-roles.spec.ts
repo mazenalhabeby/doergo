@@ -15,7 +15,7 @@ describe('SpaceRolesService — work roles', () => {
   let service: SpaceRolesService;
 
   const roles: Record<string, any> = {
-    mech: { id: 'mech', organizationId: 'org1', name: 'Mechanic', kind: 'WORK', billBy: 'BOTH', permissions: {}, isSystem: false },
+    mech: { id: 'mech', organizationId: 'org1', name: 'Mechanic', kind: 'WORK', permissions: {}, isSystem: false },
     lead: { id: 'lead', organizationId: 'org1', name: 'Team Leader', kind: 'MANAGEMENT', permissions: { canApproveOvertime: true }, isSystem: false },
     boss: { id: 'boss', organizationId: 'org1', name: 'Space Manager', kind: 'MANAGEMENT', permissions: { canManageUsers: true, canManageAssets: true }, isSystem: true },
   };
@@ -71,7 +71,8 @@ describe('SpaceRolesService — work roles', () => {
       const data = prisma.accessRole.create.mock.calls[0][0].data;
       expect(data.permissions).toEqual({});
       expect(data.kind).toBe('WORK');
-      expect(data.billBy).toBe('HOUR');
+      // How a person is billed lives on the PERSON — never on the role.
+      expect(data).not.toHaveProperty('billBy');
     });
 
     it('drops them again on every update', async () => {
@@ -79,9 +80,11 @@ describe('SpaceRolesService — work roles', () => {
       expect(prisma.accessRole.update.mock.calls[0][0].data.permissions).toEqual({});
     });
 
-    it('a management role carries no billing', async () => {
-      await service.createRole({ organizationId: 'org1', name: 'Lead', kind: 'MANAGEMENT', billBy: 'DAY' });
-      expect(prisma.accessRole.create.mock.calls[0][0].data.billBy).toBeNull();
+    it('billing is set on the member, and saved there', async () => {
+      prisma.spaceAssignment.findFirst.mockResolvedValue(member({ workRoleId: 'mech', workRole: roles.mech }));
+      const r: any = await service.updateMemberRoles({ organizationId: 'org1', spaceId: 's1', memberId: 'a1', billBy: 'DAY' });
+      expect(prisma.spaceAssignment.update.mock.calls[0][0].data).toEqual({ billBy: 'DAY' });
+      expect(r.data.effectiveBillBy).toBe('DAY');
     });
   });
 

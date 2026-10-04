@@ -23,7 +23,6 @@ export class SpaceRolesController {
       color?: string;
       permissions?: PermissionSet;
       kind?: any;
-      billBy?: any;
     },
   ) {
     return this.service.createRole(data);
@@ -41,7 +40,6 @@ export class SpaceRolesController {
       permissions?: PermissionSet;
       isActive?: boolean;
       kind?: any;
-      billBy?: any;
       requesterPerms?: PermissionSet | null;
     },
   ) {

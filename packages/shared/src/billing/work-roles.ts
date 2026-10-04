@@ -6,8 +6,9 @@
  *   MANAGEMENT  Team Leader, Space Manager — carries PERMISSIONS. Every role that
  *               existed before work roles is this kind, so nothing that grants
  *               authority today changed meaning.
- *   WORK        Mechanic, Electrician — carries BILLING (hour, day or both, and a
- *               day rate per workspace). Grants nothing.
+ *   WORK        Mechanic, Electrician — carries a DAY RATE per workspace (and an
+ *               organization default). Grants nothing. Whether a person is
+ *               billed by the hour, the day or both is set on the PERSON.
  *
  * ⚠️ A WORK ROLE GRANTS NOTHING, and that is what makes two roles per person
  * safe. Every permission, routing and notification check in the product reads
@@ -30,17 +31,14 @@ export function isBillBy(v: unknown): v is BillByValue {
 }
 
 /**
- * How this member is billed in this workspace.
- *
- * Their own choice first ("Mark: hours only"), then their work role's, then
- * HOUR — which is how everybody was billed before work roles existed, so a
- * member with no trade keeps exactly today's invoice.
+ * How this member is billed in this workspace — the MEMBER's choice, never the
+ * role's: two mechanics at one client can be billed differently (one by the
+ * day, one by the hour only). Not chosen = HOUR, which is how everybody was
+ * billed before day rates existed, so nobody's invoice changed on the day this
+ * shipped.
  */
-export function effectiveBillBy(
-  assignmentBillBy: BillByValue | null | undefined,
-  workRoleBillBy: BillByValue | null | undefined,
-): BillByValue {
-  return assignmentBillBy ?? workRoleBillBy ?? 'HOUR';
+export function effectiveBillBy(assignmentBillBy: BillByValue | null | undefined): BillByValue {
+  return assignmentBillBy ?? 'HOUR';
 }
 
 export const billsHours = (b: BillByValue) => b === 'HOUR' || b === 'BOTH';

@@ -6828,7 +6828,7 @@
     },
     "workRoles": {
       "workHeading": "Work roles",
-      "workIntro": "A trade in this workspace, such as Mechanic or Electrician. It decides how the work is billed and never grants permissions.",
+      "workIntro": "A trade in this workspace, such as Mechanic or Electrician. It carries a day rate and never grants permissions. How each person is billed (hour, day or both) is set on the person.",
       "managementHeading": "Management roles",
       "managementIntro": "Permissions in this workspace, such as Team Leader.",
       "newWork": "New work role",
@@ -6846,7 +6846,7 @@
       "dayRate": "Day rate",
       "perDay": "/ day",
       "dayRateHere": "Day rate in this workspace",
-      "dayRateHint": "Everyone with this role here is billed at it. The hourly rate stays on each person, because two people with one trade can earn different hourly rates.",
+      "dayRateHint": "Everyone with this role here who is billed by the day is billed at it. Hourly rates stay on each person.",
       "dayRateNone": "No day rate",
       "initialDayRate": "Day rate, from today",
       "grantsNothing": "A work role grants no permissions.",
@@ -6866,12 +6866,9 @@
       "addWork": "+ Work role",
       "billingMenu": "Billing and roles",
       "billByFor": "Bill by, in this workspace",
-      "sameAsRole": "Same as role",
-      "sameAsRoleWith": "Same as role ({{billBy}})",
       "allowSecond": "Allow a second role",
       "allowSecondHint": "A work role and a management role together",
-      "memberSaved": "Saved",
-      "differsFromRole": "Billed differently from their work role"
+      "memberSaved": "Saved"
     }
   },
   "spaceSharing": {
