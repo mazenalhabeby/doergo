@@ -260,7 +260,7 @@ export class SpaceRolesController {
       target: q.target,
       targetId: q.targetId,
       spaceId: q.spaceId,
-      kinds: mayViewLabourCost(u) ? ['BILL_HOUR', 'COST_HOUR'] : ['BILL_HOUR'],
+      kinds: mayViewLabourCost(u) ? ['BILL_HOUR', 'COST_HOUR', 'COST_DAY'] : ['BILL_HOUR'],
     });
   }
 
@@ -376,6 +376,7 @@ export class SpaceRolesController {
         but writing it must not be a way to learn it.
       */
       costRateCents: body.costRateCents,
+      costDayCents: body.costDayCents,
     });
   }
 }

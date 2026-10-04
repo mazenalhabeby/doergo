@@ -2579,7 +2579,8 @@
       "missingRate": "Alcune ore non hanno una tariffa a nessun livello: imposti il costo orario nel profilo del membro.",
       "sameHours": "Le ore contano una volta: ore degli interventi dove la persona è fatturata a ore, tempo conteggiato nei giorni lavorati dove è fatturata a giornata — la stessa regola del margine della fattura. Ogni giorno è valutato alla tariffa in vigore quel giorno.",
       "daysRun_one": "{{count}} giorno lavorato",
-      "daysRun_other": "{{count}} giorni lavorati"
+      "daysRun_other": "{{count}} giorni lavorati",
+      "onSite": "{{hours}} h sul posto"
     }
   },
   "invitations": {
@@ -9418,6 +9419,9 @@
     "defaultDayRate": "Tariffa giornaliera predefinita, tutti gli spazi",
     "defaultDayRateHint": "Usata in ogni spazio che non ha la propria.",
     "sourceWorkspace": "impostata per questo spazio",
-    "sourceDefault": "quella di tutti gli spazi"
+    "sourceDefault": "quella di tutti gli spazi",
+    "dayCost": "Tariffa giornaliera con voi (al giorno)",
+    "dayCostHint": "Quanto vi costa una giornata di questa persona quando è fatturata a giornata. Riga a parte nel suo estratto.",
+    "dayCostHere": "Tariffa giornaliera con voi qui"
   }
 }

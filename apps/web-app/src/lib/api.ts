@@ -5141,7 +5141,7 @@ export const rateHistoryApi = {
   list: async (q: { target: 'ORGANIZATION' | 'SPACE' | 'MEMBER' | 'ASSIGNMENT'; targetId: string; spaceId?: string }) => {
     const res = await api.get<{
       success: boolean;
-      data: Array<{ kind: 'BILL_HOUR' | 'COST_HOUR'; cents: number | null; effectiveFrom: string; state: 'past' | 'scheduled' }>;
+      data: Array<{ kind: 'BILL_HOUR' | 'COST_HOUR' | 'COST_DAY'; cents: number | null; effectiveFrom: string; state: 'past' | 'scheduled' }>;
     }>(buildUrlWithQuery('/rate-history', q));
     if (res.error) throw new Error(res.error);
     return res.data?.data || [];
@@ -5174,7 +5174,7 @@ export const spaceMembersApi = {
   updateRate: async (
     spaceId: string,
     memberId: string,
-    data: { billRateCents?: number | null; costRateCents?: number | null; effectiveFrom?: string },
+    data: { billRateCents?: number | null; costRateCents?: number | null; costDayCents?: number | null; effectiveFrom?: string },
   ) => {
     const res = await api.patch<{ success: boolean; data: unknown }>(
       `/spaces/${spaceId}/members/${memberId}/rate`, data,

@@ -246,6 +246,8 @@ export interface UpdateEmployeeInput {
    */
   billRateCents?: number | null;
   costRateCents?: number | null;
+  /** What a DAY of this person costs you, in cents (paid per day worked). */
+  costDayCents?: number | null;
   /** First day a changed rate applies, `YYYY-MM-DD`; default today. */
   rateEffectiveFrom?: string;
   firstName?: string;

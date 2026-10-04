@@ -2579,7 +2579,8 @@
       "missingRate": "Certaines heures n’ont de tarif à aucun niveau : définissez le coût horaire dans le profil du membre.",
       "sameHours": "Les heures comptent une fois : heures d’intervention là où la personne est facturée à l’heure, temps compté sur les jours travaillés là où elle l’est à la journée — la même règle que la marge de la facture. Chaque jour est valorisé au tarif en vigueur ce jour-là.",
       "daysRun_one": "{{count}} jour travaillé",
-      "daysRun_other": "{{count}} jours travaillés"
+      "daysRun_other": "{{count}} jours travaillés",
+      "onSite": "{{hours}} h sur place"
     }
   },
   "invitations": {
@@ -9418,6 +9419,9 @@
     "defaultDayRate": "Tarif journalier par défaut, tous les espaces",
     "defaultDayRateHint": "Utilisé dans chaque espace qui n’a pas le sien.",
     "sourceWorkspace": "défini pour cet espace",
-    "sourceDefault": "celui de tous les espaces"
+    "sourceDefault": "celui de tous les espaces",
+    "dayCost": "Tarif journalier chez vous (par jour)",
+    "dayCostHint": "Ce que vous coûte une journée de cette personne quand elle est facturée à la journée. Ligne à part sur son relevé.",
+    "dayCostHere": "Tarif journalier chez vous ici"
   }
 }

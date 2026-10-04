@@ -159,13 +159,18 @@ export function StatementTab({ memberId }: { memberId: string }) {
                     <td className="px-2 py-2.5 text-right tabular-nums text-muted-foreground">
                       {l.basis === "days" ? l.days : l.spaceId != null ? data.daysBySpace[l.spaceId] ?? 0 : ""}
                     </td>
-                    <td className="px-2 py-2.5 text-right tabular-nums">{l.hours}</td>
+                    <td className="px-2 py-2.5 text-right tabular-nums">
+                      {l.basis === "days" ? (
+                        <span className="text-muted-foreground" title={t("members.statement.onSite", { hours: l.hours })}>{l.hours}</span>
+                      ) : l.hours}
+                    </td>
                     <td className="px-2 py-2.5 text-right tabular-nums">
                       {l.rateCents == null ? (
                         <span className="text-amber-600 dark:text-amber-400">{t("members.statement.noRate")}</span>
                       ) : (
                         <>
                           {money(l.rateCents)}
+                          {l.basis === "days" && <span className="text-[11px] text-muted-foreground"> {t("rates.perDay")}</span>}
                           {l.rateLevel && (
                             <span className="block text-[11px] text-muted-foreground">{t(LEVEL_KEY[l.rateLevel])}</span>
                           )}

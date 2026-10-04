@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, memo } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { DatedRateField } from "@/components/rates/dated-rate"
+import { DatedRateField, currentOf } from "@/components/rates/dated-rate"
 import { useTranslation } from "react-i18next"
 import { Check, Copy, KeyRound, AlertTriangle, MapPin, X, Plus, ChevronsUpDown } from "lucide-react"
 import { notify } from "@/lib/toast"
@@ -640,6 +640,20 @@ export function EditMemberDialog({
                 onSubmit={async (c, from) => {
                   await employeesApi.update(member!.id, { costRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })
                   queryClient.invalidateQueries({ queryKey: ["orgMember", member?.id] })
+                  queryClient.invalidateQueries({ queryKey: ["rate-history", "MEMBER", member?.id] })
+                }}
+              />
+            ) : null}
+            {canViewLabourCost ? (
+              <DatedRateField
+                id="member-day-cost"
+                label={t("rates.dayCost")}
+                hint={t("rates.dayCostHint")}
+                unit="day"
+                currentCents={currentOf(memberRates?.filter((r) => r.kind === "COST_DAY"))}
+                history={memberRates?.filter((r) => r.kind === "COST_DAY")}
+                onSubmit={async (c, from) => {
+                  await employeesApi.update(member!.id, { costDayCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })
                   queryClient.invalidateQueries({ queryKey: ["rate-history", "MEMBER", member?.id] })
                 }}
               />

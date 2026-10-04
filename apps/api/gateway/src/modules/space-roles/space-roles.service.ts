@@ -79,6 +79,7 @@ export class SpaceRolesService extends BaseGatewayService {
     memberId: string;
     billRateCents?: number | null;
     costRateCents?: number | null;
+    costDayCents?: number | null;
     effectiveFrom?: string;
     createdById?: string;
   }) {
@@ -106,7 +107,7 @@ export class SpaceRolesService extends BaseGatewayService {
     target: 'ORGANIZATION' | 'SPACE' | 'MEMBER' | 'ASSIGNMENT';
     targetId: string;
     spaceId?: string;
-    kinds: Array<'BILL_HOUR' | 'COST_HOUR'>;
+    kinds: Array<'BILL_HOUR' | 'COST_HOUR' | 'COST_DAY'>;
   }) {
     return this.send({ cmd: 'list_rate_history' }, data);
   }

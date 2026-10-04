@@ -36,6 +36,14 @@ export class UpdateEmployeeDto {
   @Max(1000000)
   costRateCents?: number | null;
 
+  @ApiPropertyOptional({ description: 'What a DAY of this person costs, in cents. Needs canViewLabourCost.' })
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsInt()
+  @Min(0)
+  @Max(1000000)
+  costDayCents?: number | null;
+
   @ApiPropertyOptional({ description: 'First day a changed rate applies, YYYY-MM-DD. Default today; earlier work keeps its rate.' })
   @IsOptional()
   @IsString()

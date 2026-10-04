@@ -617,6 +617,8 @@ export class SpaceRolesService {
     memberId: string;
     billRateCents?: number | null;
     costRateCents?: number | null;
+    /** What a DAY of this member costs you here. History only. */
+    costDayCents?: number | null;
     /** The first day the new rate applies, `YYYY-MM-DD`. Default today. */
     effectiveFrom?: string;
     createdById?: string;
@@ -640,7 +642,9 @@ export class SpaceRolesService {
       throw new BadRequestException('An external member has no billing rate — they do not work for you');
     }
 
-    if (data.billRateCents === undefined && data.costRateCents === undefined) return success(member);
+    if (data.billRateCents === undefined && data.costRateCents === undefined && data.costDayCents === undefined) {
+      return success(member);
+    }
 
     /*
       ⚠️ Through the ONE rate writer: a dated history row, then the column set to
@@ -650,7 +654,7 @@ export class SpaceRolesService {
     const updated = await withRateErrors(() =>
       this.prisma.$transaction(async (tx) => {
         const patch: Record<string, number | null> = {};
-        const write = (kind: 'BILL_HOUR' | 'COST_HOUR', cents: number | null | undefined) =>
+        const write = (kind: 'BILL_HOUR' | 'COST_HOUR' | 'COST_DAY', cents: number | null | undefined) =>
           writeRateChange(tx as any, {
             organizationId: data.organizationId,
             target: 'ASSIGNMENT',
@@ -662,6 +666,7 @@ export class SpaceRolesService {
           });
         if (data.billRateCents !== undefined) patch.billRateCents = (await write('BILL_HOUR', data.billRateCents)).nowCents;
         if (data.costRateCents !== undefined) patch.costRateCents = (await write('COST_HOUR', data.costRateCents)).nowCents;
+        if (data.costDayCents !== undefined) await write('COST_DAY', data.costDayCents);
         return tx.spaceAssignment.update({
           where: { id: member.id },
           data: patch,
@@ -682,7 +687,7 @@ export class SpaceRolesService {
     organizationId: string;
     target: 'ORGANIZATION' | 'SPACE' | 'MEMBER' | 'ASSIGNMENT';
     targetId: string;
-    kinds: Array<'BILL_HOUR' | 'COST_HOUR'>;
+    kinds: Array<'BILL_HOUR' | 'COST_HOUR' | 'COST_DAY'>;
     spaceId?: string;
   }) {
     const owned =

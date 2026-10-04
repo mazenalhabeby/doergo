@@ -779,13 +779,13 @@ export class UsersService implements OnApplicationBootstrap {
   private async writeMemberRates(
     userId: string,
     organizationId: string,
-    dto: { billRateCents?: unknown; costRateCents?: unknown; rateEffectiveFrom?: string },
+    dto: { billRateCents?: unknown; costRateCents?: unknown; costDayCents?: unknown; rateEffectiveFrom?: string },
   ) {
-    if (dto.billRateCents === undefined && dto.costRateCents === undefined) return;
+    if (dto.billRateCents === undefined && dto.costRateCents === undefined && dto.costDayCents === undefined) return;
     try {
       await this.prisma.$transaction(async (tx) => {
         const patch: Record<string, number | null> = {};
-        const write = (kind: 'BILL_HOUR' | 'COST_HOUR', cents: unknown) =>
+        const write = (kind: 'BILL_HOUR' | 'COST_HOUR' | 'COST_DAY', cents: unknown) =>
           writeRateChange(tx as any, {
             organizationId,
             target: 'MEMBER',
@@ -796,7 +796,9 @@ export class UsersService implements OnApplicationBootstrap {
           });
         if (dto.billRateCents !== undefined) patch.billRateCents = (await write('BILL_HOUR', dto.billRateCents)).nowCents;
         if (dto.costRateCents !== undefined) patch.costRateCents = (await write('COST_HOUR', dto.costRateCents)).nowCents;
-        await tx.user.update({ where: { id: userId }, data: patch });
+        // What a DAY of this person costs — history only, read through the rate book.
+        if (dto.costDayCents !== undefined) await write('COST_DAY', dto.costDayCents);
+        if (Object.keys(patch).length) await tx.user.update({ where: { id: userId }, data: patch });
       });
     } catch (e) {
       if (e instanceof RateChangeError) throw new BadRequestException(e.message);

@@ -21,7 +21,7 @@ import { localPartsIn } from '../attendance/zoned-time';
 import { cleanRateCents } from './rate-ladder';
 
 export type RateTargetKind = 'ORGANIZATION' | 'SPACE' | 'MEMBER' | 'ASSIGNMENT' | 'ROLE';
-export type RateHistoryKind = 'BILL_HOUR' | 'COST_HOUR' | 'BILL_DAY';
+export type RateHistoryKind = 'BILL_HOUR' | 'COST_HOUR' | 'BILL_DAY' | 'COST_DAY';
 
 /** One dated rate. `effectiveFrom` is a calendar day, `YYYY-MM-DD`. */
 export interface RateHistoryRow {
@@ -155,6 +155,17 @@ export class RateBook {
   dayRateOn(day: string, roleId: string, spaceId: string | null): number | null {
     const own = spaceId ? this.on(day, 'ROLE', roleId, 'BILL_DAY', null, spaceId) : null;
     return own ?? this.on(day, 'ROLE', roleId, 'BILL_DAY', null, null);
+  }
+
+  /**
+   * What a DAY of this person costs you on `day`: their rate at this client
+   * (the assignment) if one applies, else their own. Null = no day rate set —
+   * unknown, never free. One answer for the invoice margin and the worker's
+   * statement.
+   */
+  personDayCostOn(day: string, memberId: string, assignmentId?: string | null): number | null {
+    const here = assignmentId ? this.on(day, 'ASSIGNMENT', assignmentId, 'COST_DAY', null) : null;
+    return here ?? this.on(day, 'MEMBER', memberId, 'COST_DAY', null);
   }
 
   /** Which of the two answered `dayRateOn` — for a screen that has to explain itself. */

@@ -3159,6 +3159,9 @@ enum RateKind {
   BILL_HOUR
   COST_HOUR
   BILL_DAY
+  /// What a DAY of this person costs you — paid per day worked. Dated, never
+  /// written over, no mirror column: always read through the history.
+  COST_DAY
 }
 
 /// What an invoice line is, beyond "a charge".

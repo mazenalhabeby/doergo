@@ -2579,7 +2579,8 @@
       "missingRate": "Für einige Stunden ist nirgends ein Satz hinterlegt — legen Sie den Kostensatz im Profil des Mitglieds fest.",
       "sameHours": "Stunden zählen einmal: Auftragsstunden, wo die Person nach Stunden abgerechnet wird, die gezählte Zeit an den Arbeitstagen, wo nach Tagen abgerechnet wird — dieselbe Regel wie die Marge der Rechnung. Jeder Tag wird zum Satz dieses Tages bewertet.",
       "daysRun_one": "{{count}} Arbeitstag",
-      "daysRun_other": "{{count}} Arbeitstage"
+      "daysRun_other": "{{count}} Arbeitstage",
+      "onSite": "{{hours}} h vor Ort"
     }
   },
   "invitations": {
@@ -9409,6 +9410,9 @@
     "defaultDayRate": "Standard-Tagessatz, alle Arbeitsbereiche",
     "defaultDayRateHint": "Gilt in jedem Arbeitsbereich ohne eigenen Satz.",
     "sourceWorkspace": "für diesen Arbeitsbereich festgelegt",
-    "sourceDefault": "Standard für alle Arbeitsbereiche"
+    "sourceDefault": "Standard für alle Arbeitsbereiche",
+    "dayCost": "Tagessatz bei Ihnen (pro Tag)",
+    "dayCostHint": "Was Sie ein Tag dieser Person kostet, wenn nach Tagen abgerechnet wird. Eigene Zeile in ihrer Abrechnung.",
+    "dayCostHere": "Tagessatz bei Ihnen hier"
   }
 }

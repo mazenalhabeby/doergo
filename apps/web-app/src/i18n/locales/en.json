@@ -2579,7 +2579,8 @@
       "missingRate": "Some hours have no rate with you anywhere — set the member's cost rate on their profile.",
       "sameHours": "Hours are counted once: job hours where the person is billed by the hour, their counted time on the days worked where they are billed by the day — the same rule as the invoice margin. Each day is priced at the rate in force that day.",
       "daysRun_one": "{{count}} day worked",
-      "daysRun_other": "{{count}} days worked"
+      "daysRun_other": "{{count}} days worked",
+      "onSite": "{{hours}} h on site"
     }
   },
   "invitations": {
@@ -9409,6 +9410,9 @@
     "defaultDayRate": "Default day rate, all workspaces",
     "defaultDayRateHint": "Used in every workspace that has not set its own.",
     "sourceWorkspace": "set for this workspace",
-    "sourceDefault": "the default for all workspaces"
+    "sourceDefault": "the default for all workspaces",
+    "dayCost": "Day rate with you (per day)",
+    "dayCostHint": "What a day of this person costs you when billed by the day. Shown as its own row on their statement.",
+    "dayCostHere": "Day rate with you here"
   }
 }

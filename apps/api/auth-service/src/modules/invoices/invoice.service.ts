@@ -910,13 +910,8 @@ export class InvoiceService {
       }
     }
 
-    // A person's cost rate on a day — the same ladder as their hours, cost side.
-    const costOn = (userId: string, day: string) => {
-      const a = assignmentOf.get(userId);
-      return ratesFor(a?.user ? { ...a.user, id: userId } : { id: userId }, day).costRateCents;
-    };
     const dayEntries = space
-      ? await this.gatherDays(data.organizationId, space.id, tz, data.from, data.to, assignments, billByOf, book, costOn)
+      ? await this.gatherDays(data.organizationId, space.id, tz, data.from, data.to, assignments, billByOf, book)
       : [];
     return {
       success: true,
@@ -1028,13 +1023,13 @@ export class InvoiceService {
     from: string | undefined,
     to: string | undefined,
     assignments: Array<{
+      id: string;
       userId: string;
       workRole: { id: string; name: string; kind: string } | null;
       user: { id: string; firstName: string | null; lastName: string | null; isExternal: boolean } | null;
     }>,
     billByOf: (userId: string) => BillByValue,
     book: Awaited<ReturnType<typeof loadRateBook>>,
-    costOn: (userId: string, day: string) => number | null,
   ): Promise<DayEntry[]> {
     const byDay = assignments.filter(
       (a) => a.workRole?.kind === 'WORK' && !a.user?.isExternal && billsDays(billByOf(a.userId)),
@@ -1121,16 +1116,20 @@ export class InvoiceService {
       // This workspace's day rate on each day, else the role's default.
       const roleId = a.workRole!.id;
       for (const run of book.splitDaysWith(days, (d) => book.dayRateOn(d, roleId, spaceId))) {
-        // What this run cost: each day's counted hours × the cost rate that day.
+        /*
+          What this run COSTS: each day × what a day of this person costs you
+          on that day (their rate at this client, else their own). Null when a
+          day has no day rate anywhere — unknown, never free. Their counted
+          hours are carried alongside, for the reader.
+        */
         let costCents: number | null = 0;
         let minutes = 0;
         for (const d of days) {
           if (d < run.fromDay || d > run.toDay) continue;
-          const m = minutesOn.get(`${a.userId}|${d}`) ?? 0;
-          minutes += m;
-          const rate = costOn(a.userId, d);
-          if (rate === null) costCents = null;
-          else if (costCents !== null) costCents += (rate * m) / 60;
+          minutes += minutesOn.get(`${a.userId}|${d}`) ?? 0;
+          const dayCost = book.personDayCostOn(d, a.userId, a.id);
+          if (dayCost === null) costCents = null;
+          else if (costCents !== null) costCents += dayCost;
         }
         out.push({
           costCents: costCents === null ? null : Math.round(costCents),

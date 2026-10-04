@@ -8,6 +8,7 @@ import {
   workedDays,
   effectiveBillBy,
   billsDays,
+  billsHours,
   type BillByValue,
   type RateLevel,
 } from '@hbcfield/shared';
@@ -28,8 +29,8 @@ export interface StatementLine {
   fromDay: string;
   toDay: string;
   /**
-   * `hours` = job hours (billed by the hour here). `days` = counted time on the
-   * days worked (billed by the day or hour + day here) — the margin's rule.
+   * `hours` = job hours × hourly rate with us. `days` = days worked × day rate
+   * with us; its `hours` is the counted time on those days, shown, not priced.
    */
   basis: 'hours' | 'days';
   /** `days` lines: how many days the run covers. */
@@ -164,24 +165,22 @@ export class StatementService {
     };
     const tzOfSpace = (spaceId: string | null) => (spaceId && spaceInfo.get(spaceId)?.timezone) || org?.timezone || 'UTC';
     /*
-      ⚠️ THE SAME RULE AS THE INVOICE MARGIN. Somebody billed by the DAY (or
-      hour + day) somewhere is counted there on their counted time on those
-      days; anywhere else, on their job hours. Two rules here would make the
-      statement and the margin disagree about one person's month.
+      ⚠️ THE INVOICE'S SHAPE AND THE MARGIN'S RULE — two rows, like the invoice.
+      Where somebody is billed by the hour (or hour + day) their jobs give an
+      HOURS row at their hourly rate with you; where they are billed by the day
+      (or hour + day) their days give a DAYS row at their day rate with you.
     */
-    const byDays = (spaceId: string | null) => {
-      const b = (spaceId ? (assignmentIn.get(spaceId)?.billBy as BillByValue | null) : null) ?? null;
-      return billsDays(effectiveBillBy(b));
-    };
+    const billingIn = (spaceId: string | null): BillByValue =>
+      effectiveBillBy((spaceId ? (assignmentIn.get(spaceId)?.billBy as BillByValue | null) : null) ?? null);
 
     const lines: StatementLine[] = [];
     let totalHours = 0;
     const round2 = (n: number) => Math.round(n * 100) / 100;
 
-    // 1 · Hour-billed work: each job priced on its own day, gathered by (workspace, rate).
+    // 1 · Hours rows: each job priced on its own day, gathered by (workspace, rate).
     const buckets = new Map<string, StatementLine>();
     for (const t of tasks) {
-      if (byDays(t.spaceId)) continue;
+      if (!billsHours(billingIn(t.spaceId))) continue;
       const hours = jobHours(t.serviceReport);
       if (hours <= 0) continue;
       const day = dayKeyIn(t.serviceReport?.completedAt ?? t.updatedAt, tzOfSpace(t.spaceId));
@@ -200,8 +199,8 @@ export class StatementService {
     }
     lines.push(...buckets.values());
 
-    // 2 · Day-billed workspaces: counted time on each day, in runs that share a cost rate.
-    for (const sid of spaceIds.filter((x) => byDays(x))) {
+    // 2 · Days rows: every day worked there × their day rate with you, in runs at one rate.
+    for (const sid of spaceIds.filter((x) => billsDays(billingIn(x)))) {
       const tz = tzOfSpace(sid);
       const dayOf = (at: Date) => dayKeyIn(at, tz);
       const jobsHere = tasks.filter((t) => t.spaceId === sid);
@@ -214,14 +213,15 @@ export class StatementService {
         .map((k) => k.split('|')[1]!)
         .filter((d) => (!from || d >= from) && (!to || d <= to))
         .sort();
-      // One entry per day, then consecutive days at the same cost rate become one line.
+      // One entry per day, then consecutive days at the same day rate become one line.
+      const assignmentId = assignmentIn.get(sid)?.id ?? null;
       const runs: Array<StatementLine & { minutes: number }> = [];
       for (const d of days) {
-        const resolved = costOn(sid, d);
+        const dayCost = book.personDayCostOn(d, member.id, assignmentId);
         const m = minutes.get(`${member.id}|${d}`) ?? 0;
         const jobsThatDay = jobsHere.filter((t) => dayOf(t.serviceReport?.completedAt ?? t.updatedAt) === d).length;
         const last = runs[runs.length - 1];
-        if (last && last.rateCents === resolved.cents) {
+        if (last && last.rateCents === dayCost) {
           last.minutes += m;
           last.days = (last.days ?? 0) + 1;
           last.jobs += jobsThatDay;
@@ -229,7 +229,7 @@ export class StatementService {
         } else {
           runs.push({
             spaceId: sid, spaceName: spaceInfo.get(sid)?.name ?? null, hours: 0,
-            rateCents: resolved.cents, rateLevel: resolved.level, amountCents: 0, jobs: jobsThatDay,
+            rateCents: dayCost, rateLevel: null, amountCents: 0, jobs: jobsThatDay,
             fromDay: d, toDay: d, basis: 'days', days: 1, minutes: m,
           });
         }
@@ -243,9 +243,20 @@ export class StatementService {
       promise the invoice makes.
     */
     const priced = lines
-      .map((l) => ({ ...l, amountCents: l.rateCents === null ? 0 : Math.round(l.rateCents * l.hours) }))
-      .sort((a, b) => (a.spaceName ?? '').localeCompare(b.spaceName ?? '') || a.fromDay.localeCompare(b.fromDay));
-    totalHours = priced.reduce((s2, l) => s2 + l.hours, 0);
+      .map((l) => ({
+        ...l,
+        amountCents:
+          l.rateCents === null ? 0 : l.basis === 'days' ? l.rateCents * (l.days ?? 0) : Math.round(l.rateCents * l.hours),
+      }))
+      // Per workspace: hours rows, then days rows — the invoice's order.
+      .sort(
+        (a, b) =>
+          (a.spaceName ?? '').localeCompare(b.spaceName ?? '') ||
+          (a.basis === b.basis ? 0 : a.basis === 'hours' ? -1 : 1) ||
+          a.fromDay.localeCompare(b.fromDay),
+      );
+    // Hours priced on the statement — a days row's hours are information, not paid hours.
+    totalHours = priced.reduce((s2, l) => s2 + (l.basis === 'hours' ? l.hours : 0), 0);
 
     // Days on site, by the invoice's rule: a day clocked in OR a day a job was finished there.
     const daysBySpace: Record<string, number> = {};

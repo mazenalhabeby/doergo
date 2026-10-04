@@ -2579,7 +2579,8 @@
       "missingRate": "Algunas horas no tienen tarifa en ningún nivel: fije la tarifa de coste en el perfil del miembro.",
       "sameHours": "Las horas cuentan una vez: horas de trabajos donde se factura por horas, el tiempo contado en los días trabajados donde se factura por días — la misma regla que el margen de la factura. Cada día se valora a la tarifa vigente ese día.",
       "daysRun_one": "{{count}} día trabajado",
-      "daysRun_other": "{{count}} días trabajados"
+      "daysRun_other": "{{count}} días trabajados",
+      "onSite": "{{hours}} h en el sitio"
     }
   },
   "invitations": {
@@ -9409,6 +9410,9 @@
     "defaultDayRate": "Tarifa diaria por defecto, todos los espacios",
     "defaultDayRateHint": "Se usa en cada espacio que no tenga la suya.",
     "sourceWorkspace": "fijada para este espacio",
-    "sourceDefault": "la de todos los espacios"
+    "sourceDefault": "la de todos los espacios",
+    "dayCost": "Tarifa diaria con usted (por día)",
+    "dayCostHint": "Lo que le cuesta un día de esta persona cuando se factura por días. Fila propia en su extracto.",
+    "dayCostHere": "Tarifa diaria con usted aquí"
   }
 }

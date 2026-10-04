@@ -287,27 +287,30 @@ try:
     r = call('PATCH', f'/employees/{MARK}', tok['niamh.brennan'], {'costRateCents': 1})
     check('…but not by somebody without labour cost', r[0] == 403, r)
 
-    # ── What the days COST: counted hours × cost rate, each day ─────────────
+    # ── Two rows, like the invoice: hours × hourly cost, days × day cost ────
     by = {(d['workerId'], d['dayRateCents']): d for d in g['dayEntries']}
-    check('a day with no cost rate anywhere is unknown, not free', by[(PATRICK, 20000)].get('costCents') is None, by[(PATRICK, 20000)])
-    call('PATCH', f'/employees/{PATRICK}', ADMIN, {'costRateCents': 3000})
+    check('a day with no day rate anywhere is unknown, not free', by[(PATRICK, 20000)].get('costCents') is None, by[(PATRICK, 20000)])
+    call('PATCH', f'/employees/{PATRICK}', ADMIN, {'costRateCents': 3000, 'costDayCents': 15000})
     gc = data(call('GET', f'/invoices/gather?spaceId={space}&from={day(-20)}&to={day(-1)}', ADMIN))
     byc = {(d['workerId'], d['dayRateCents']): d for d in gc['dayEntries']}
-    # Before the raise: 8h + 3h (a job, no clock-in) + 2×8h (two shifts one day) + 8h + 8h = 43h × €30.
-    check('day cost = counted hours × cost rate (43h × €30 = €1,290)', byc[(PATRICK, 20000)].get('costCents') == 129000, byc[(PATRICK, 20000)])
-    check('…after the raise: 8h + 8h + 5h (job) + 8h = 29h × €30 = €870', byc[(PATRICK, 22000)].get('costCents') == 87000, byc[(PATRICK, 22000)])
+    check('days row cost = days × day rate with us (5 × €150 = €750)', byc[(PATRICK, 20000)].get('costCents') == 75000, byc[(PATRICK, 20000)])
+    check('…and 4 × €150 = €600, with the counted hours alongside (29h)',
+          byc[(PATRICK, 22000)].get('costCents') == 60000 and byc[(PATRICK, 22000)].get('hours') == 29, byc[(PATRICK, 22000)])
     r = call('GET', f'/invoices/gather?spaceId={space}&from={day(-20)}&to={day(-1)}', tok['niamh.brennan'])
     check('day cost never reaches somebody without labour cost', r[0] != 200 or 'costCents' not in json.dumps(r[1]), r[0])
 
-    # ── The statement says what the margin says ─────────────────────────────
+    # ── The statement shows both rows, and says what the margin says ────────
     sp = data(call('GET', f'/organizations/members/{PATRICK}/statement?from={day(-20)}&to={day(-1)}', ADMIN))
-    margin_days = sum(d.get('costCents') or 0 for d in gc['dayEntries'] if d['workerId'] == PATRICK)
     here = [l for l in sp['lines'] if l['spaceId'] == space]
-    check('statement for a day-billed person = the margin\'s cost of their days (€2,160)',
-          sum(l['amountCents'] for l in here) == margin_days == 216000, (here, margin_days))
-    # His cost rate did not change, so his days are one line — split only where HIS rate changes.
-    check('…as one run at his cost rate: 9 days, 72h × €30',
-          [(l.get('days'), l['hours'], l['rateCents']) for l in here] == [(9, 72, 3000)], here)
+    hours_rows = [l for l in here if l['basis'] == 'hours']
+    day_rows = [l for l in here if l['basis'] == 'days']
+    check('statement: an hours row — 8 job hours × €30 = €240',
+          [(l['hours'], l['rateCents'], l['amountCents']) for l in hours_rows] == [(8, 3000, 24000)], hours_rows)
+    check('statement: a days row — 9 days × €150 = €1,350 (72h on site, shown)',
+          [(l['days'], l['rateCents'], l['amountCents'], l['hours']) for l in day_rows] == [(9, 15000, 135000, 72)], day_rows)
+    margin = sum(round(w['hours'] * (w['costRateCents'] or 0)) for w in gc['workEntries'] if w['workerId'] == PATRICK) \
+        + sum(d.get('costCents') or 0 for d in gc['dayEntries'] if d['workerId'] == PATRICK)
+    check('statement total == the margin\'s cost of him (€1,590)', sum(l['amountCents'] for l in here) == margin == 159000, (here, margin))
 
     # ── Invoice the days: never billed twice ─────────────────────────────────
     pd = [d for d in g['dayEntries'] if d['workerId'] == PATRICK]

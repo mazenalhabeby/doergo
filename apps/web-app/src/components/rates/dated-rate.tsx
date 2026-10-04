@@ -42,6 +42,13 @@ export interface RateHistoryRow {
 
 export type RateUnit = "hour" | "day"
 
+/** The rate in force today from a history (oldest first) — the last row that has started. */
+export function currentOf(rows: RateHistoryRow[] | undefined): number | null {
+  let cents: number | null = null
+  for (const r of rows ?? []) if (r.state === "past") cents = r.cents
+  return cents
+}
+
 const useCents = (currency = "EUR") => (cents: number) => formatMoney(cents / 100, currency)
 
 /** The history of one rate, newest first, with today's marked. */

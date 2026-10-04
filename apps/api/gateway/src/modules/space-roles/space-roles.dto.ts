@@ -64,6 +64,14 @@ export class UpdateMemberRateDto {
   @Max(MAX_RATE_CENTS)
   costRateCents?: number | null;
 
+  @ApiPropertyOptional({ description: 'What a DAY of this person costs, in cents. Needs canViewLabourCost.' })
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsInt()
+  @Min(0)
+  @Max(MAX_RATE_CENTS)
+  costDayCents?: number | null;
+
   @ApiPropertyOptional({ description: 'First day the new rate applies, YYYY-MM-DD. Default today.' })
   @IsOptional()
   @IsString()

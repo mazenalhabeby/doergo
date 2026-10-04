@@ -40,7 +40,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { DatedRateField } from "@/components/rates/dated-rate"
+import { DatedRateField, currentOf } from "@/components/rates/dated-rate"
 import { EmptyState } from "./section-header"
 import { MemberRoutingEditor } from "./member-routing-editor"
 import { BILL_BY, roleQueryKey, Segmented, useBillByLabel, type BillBy } from "./work-roles"
@@ -331,7 +331,7 @@ function MemberPanel({
     queryFn: () => rateHistoryApi.list({ target: "ASSIGNMENT", targetId: member!.id, spaceId }),
     enabled: !!member && isClient && !external,
   })
-  const saveRate = async (patch: { billRateCents?: number | null; costRateCents?: number | null }, from?: string) => {
+  const saveRate = async (patch: { billRateCents?: number | null; costRateCents?: number | null; costDayCents?: number | null }, from?: string) => {
     await spaceMembersApi.updateRate(spaceId, member!.id, { ...patch, ...(from ? { effectiveFrom: from } : {}) })
     invalidate()
     queryClient.invalidateQueries({ queryKey: ["rate-history", "ASSIGNMENT", member!.id] })
@@ -444,6 +444,17 @@ function MemberPanel({
                         {workRole && <span className="block text-right text-[11px] font-normal text-muted-foreground">{t("scheduling.membersPage.fromRole", { role: workRole.name })}</span>}
                       </span>
                     </div>
+                  )}
+                  {canViewLabourCost && bill !== "HOUR" && (
+                    <DatedRateField
+                      id={`panel-daycost-${member.id}`}
+                      label={t("rates.dayCostHere")}
+                      hint={t("rates.dayCostHint")}
+                      unit="day"
+                      currentCents={currentOf(rates?.filter((r) => r.kind === "COST_DAY"))}
+                      history={rates?.filter((r) => r.kind === "COST_DAY")}
+                      onSubmit={(c, from) => saveRate({ costDayCents: c }, from)}
+                    />
                   )}
                   {canViewLabourCost && (
                     <DatedRateField

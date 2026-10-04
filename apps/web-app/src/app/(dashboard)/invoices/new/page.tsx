@@ -363,12 +363,12 @@ function NewInvoiceInner() {
   // Day-billed work is listed but not charged by the hour — the days pay for it.
   const entryLabor = (e: WorkEntry) => (e.include && e.hoursBillable ? e.hours * entryRate(e) : 0)
   /*
-    ⚠️ A PERSON'S TIME IS COSTED ONCE. Somebody billed by the day (or hour + day)
-    is costed on their counted hours on those days — the day rows carry that —
-    so their jobs add no cost here, or the same time would be counted twice.
+    Cost mirrors the invoice, row for row: an HOURS row costs job hours × the
+    hourly rate with you; a DAYS row costs days × the day rate with you (the
+    server prices those). Day-only work has no hours row, so no hours cost.
   */
   const entryCost = (e: WorkEntry) =>
-    e.include && e.billBy === "HOUR" && e.costRateCents != null ? e.hours * (e.costRateCents / 100) : 0
+    e.include && e.billBy !== "DAY" && e.costRateCents != null ? e.hours * (e.costRateCents / 100) : 0
   const entryParts = (e: WorkEntry) => (e.include && e.includeParts ? e.parts.reduce((s, p) => s + p.quantity * p.unitCost, 0) : 0)
 
   /*
@@ -523,7 +523,7 @@ function NewInvoiceInner() {
   const costMissing = useMemo(() => {
     const names = new Set<string>()
     for (const e of entries) {
-      if (e.include && e.billBy === "HOUR" && e.hours > 0 && e.costRateCents == null) names.add(e.workerName || t("invoices.create.unassignedWorker"))
+      if (e.include && e.billBy !== "DAY" && e.hours > 0 && e.costRateCents == null) names.add(e.workerName || t("invoices.create.unassignedWorker"))
     }
     for (const d of includedDays) if (d.costCents == null) names.add(d.workerName)
     return [...names]
