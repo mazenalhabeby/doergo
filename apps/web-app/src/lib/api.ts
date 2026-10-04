@@ -6009,6 +6009,8 @@ export interface Invoice {
   exchangeRateDate?: string | null;
   /** The organization's currency when this was issued. */
   baseCurrency?: string | null;
+  /** The HOURS / DAYS tag before each labour line. */
+  showLineTags?: boolean;
   issueDate: string;
   dueDate?: string | null;
   paidAt?: string | null;
@@ -6045,6 +6047,8 @@ interface CreateInvoiceInput {
   exchangeRate?: number | null;
   exchangeRateSource?: 'ECB' | 'MANUAL' | null;
   exchangeRateDate?: string | null;
+  /** The HOURS / DAYS tag before each labour line (default shown). */
+  showLineTags?: boolean;
   /** Both accepted by the server; it defaults issueDate to now when omitted. */
   issueDate?: string;
   dueDate?: string;

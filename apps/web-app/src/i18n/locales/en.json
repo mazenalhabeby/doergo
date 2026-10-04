@@ -4778,7 +4778,17 @@
       "summaryDays_other": "Days · {{count}} days · {{amount}}",
       "hoursLine": "{{name}} · hours worked",
       "hoursLineRange": "{{name}} · hours worked, {{from}} – {{to}}",
-      "hoursOnSite": "{{hours}} h on site, {{days}} days"
+      "hoursOnSite": "{{hours}} h on site, {{days}} days",
+      "lineStyle": "Line description",
+      "lineWords": {
+        "full": "Name and \"hours worked\"",
+        "fullExample": "Karim Ahmad · hours worked",
+        "name": "Name only",
+        "nameExample": "Karim Ahmad"
+      },
+      "lineDates": "Dates on lines that cover part of the period",
+      "lineTags": "Hours and days tags",
+      "nameLineRange": "{{name}} · {{from}} – {{to}}"
     },
     "oldestDebt": "Oldest unpaid",
     "nothingOutstanding": "Everything is settled — nothing outstanding.",

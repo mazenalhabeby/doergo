@@ -4787,7 +4787,17 @@
       "summaryDays_other": "Giorni · {{count}} giorni · {{amount}}",
       "hoursLine": "{{name}} · ore lavorate",
       "hoursLineRange": "{{name}} · ore lavorate, {{from}} – {{to}}",
-      "hoursOnSite": "{{hours}} h sul posto, {{days}} giorni"
+      "hoursOnSite": "{{hours}} h sul posto, {{days}} giorni",
+      "lineStyle": "Descrizione delle righe",
+      "lineWords": {
+        "full": "Nome e «ore lavorate»",
+        "fullExample": "Karim Ahmad · ore lavorate",
+        "name": "Solo il nome",
+        "nameExample": "Karim Ahmad"
+      },
+      "lineDates": "Date sulle righe che coprono parte del periodo",
+      "lineTags": "Etichette ore e giorni",
+      "nameLineRange": "{{name}} · {{from}} – {{to}}"
     },
     "oldestDebt": "Più vecchia non pagata",
     "nothingOutstanding": "Tutto saldato — nulla in sospeso.",

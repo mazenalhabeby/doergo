@@ -75,6 +75,7 @@ function toPdfData(inv: Invoice, locale: SupportedLocale): InvoicePdfData {
     issueDate: inv.issueDate,
     dueDate: inv.dueDate,
     servicePeriodFrom: inv.servicePeriodFrom,
+    showLineTags: inv.showLineTags,
     servicePeriodTo: inv.servicePeriodTo,
     notes: inv.notes,
     items: (inv.items || []).map((i) => ({
@@ -388,6 +389,7 @@ function InvoiceDetailInner({ id }: { id: string }) {
             invites the question of which one the client got.
           */}
           <InvoiceDocument
+            showTags={inv.showLineTags !== false}
             view="client"
             onView={() => {}}
             frames="client"

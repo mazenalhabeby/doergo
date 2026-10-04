@@ -98,6 +98,8 @@ export class InvoiceService {
     exchangeRate?: number | string | null;
     exchangeRateSource?: string | null;
     exchangeRateDate?: string | null;
+    /** The HOURS / DAYS tag before each labour line (default shown). */
+    showLineTags?: boolean;
     taxRate?: number;
     discount?: number;
     issueDate?: string;
@@ -218,6 +220,7 @@ export class InvoiceService {
             clientEmail,
             clientAddress,
             ...money,
+            showLineTags: data.showLineTags !== false,
             taxRate,
             discount,
             subtotal,
@@ -354,6 +357,7 @@ export class InvoiceService {
       exchangeRate?: number | string | null;
       exchangeRateSource?: string | null;
       exchangeRateDate?: string | null;
+      showLineTags?: boolean;
       taxRate?: number;
       discount?: number;
       issueDate?: string;
@@ -399,6 +403,7 @@ export class InvoiceService {
       Object.assign(updateData, money);
     }
     if (data.notes !== undefined) updateData.notes = data.notes;
+    if (typeof data.showLineTags === 'boolean') updateData.showLineTags = data.showLineTags;
     if (data.issueDate !== undefined) updateData.issueDate = new Date(data.issueDate);
     if (data.dueDate !== undefined) updateData.dueDate = new Date(data.dueDate);
     // Null clears the period back to "everything outstanding" — a real answer,

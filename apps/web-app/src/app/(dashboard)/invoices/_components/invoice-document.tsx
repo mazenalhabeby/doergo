@@ -56,11 +56,11 @@ const isHeading = (row: DocumentRow) => row.lineKind === "HEADING"
  * So a charged labour line carries a HOURS / DAYS tag, its quantity carries
  * its unit ("200 h", "20 days") and its price says per hour or per day.
  */
-function useUnits() {
+function useUnits(showTags = true) {
   const { t } = useTranslation()
   return {
     tag: (row: DocumentRow) =>
-      row.lineKind === "HOURS" ? (
+      !showTags ? null : row.lineKind === "HOURS" ? (
         <span className="mr-2 rounded bg-blue-500/15 px-1.5 py-0.5 align-[1px] text-[10px] font-bold text-blue-700 dark:text-blue-300">
           {t("invoices.create.tagHours")}
         </span>
@@ -158,6 +158,8 @@ export interface InvoiceDocumentProps {
   org?: OrganizationProfile
   /** The real letterhead, where the organisation has uploaded one. */
   logoUrl?: string | null
+  /** The HOURS / DAYS tag before each labour line — saved with the invoice. Default shown. */
+  showTags?: boolean
 }
 
 /** The toggle — one document, two frames. */
@@ -191,7 +193,7 @@ function ViewToggle({ view, onView }: { view: DocumentView; onView: (v: Document
 
 export function InvoiceDocument(props: InvoiceDocumentProps) {
   const { t } = useTranslation()
-  const units = useUnits()
+  const units = useUnits(props.showTags !== false)
   const {
     view, onView, frames = "both", clientName, clientEmail = "", clientAddress = "",
     issueDate, dueDate, periodLabel, currency, taxPct, discount, notes = "",

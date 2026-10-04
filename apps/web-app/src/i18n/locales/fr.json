@@ -4787,7 +4787,17 @@
       "summaryDays_other": "Jours · {{count}} jours · {{amount}}",
       "hoursLine": "{{name}} · heures travaillées",
       "hoursLineRange": "{{name}} · heures travaillées, {{from}} – {{to}}",
-      "hoursOnSite": "{{hours}} h sur place, {{days}} jours"
+      "hoursOnSite": "{{hours}} h sur place, {{days}} jours",
+      "lineStyle": "Description des lignes",
+      "lineWords": {
+        "full": "Nom et « heures travaillées »",
+        "fullExample": "Karim Ahmad · heures travaillées",
+        "name": "Nom seul",
+        "nameExample": "Karim Ahmad"
+      },
+      "lineDates": "Dates sur les lignes qui couvrent une partie de la période",
+      "lineTags": "Étiquettes heures et jours",
+      "nameLineRange": "{{name}} · {{from}} – {{to}}"
     },
     "oldestDebt": "Plus ancienne impayée",
     "nothingOutstanding": "Tout est réglé — rien en attente.",

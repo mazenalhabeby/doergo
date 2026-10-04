@@ -4778,7 +4778,17 @@
       "summaryDays_other": "Tage · {{count}} Tage · {{amount}}",
       "hoursLine": "{{name}} · Arbeitsstunden",
       "hoursLineRange": "{{name}} · Arbeitsstunden, {{from}} – {{to}}",
-      "hoursOnSite": "{{hours}} h vor Ort, {{days}} Tage"
+      "hoursOnSite": "{{hours}} h vor Ort, {{days}} Tage",
+      "lineStyle": "Positionsbeschreibung",
+      "lineWords": {
+        "full": "Name und „Arbeitsstunden“",
+        "fullExample": "Karim Ahmad · Arbeitsstunden",
+        "name": "Nur Name",
+        "nameExample": "Karim Ahmad"
+      },
+      "lineDates": "Daten bei Positionen, die einen Teil des Zeitraums abdecken",
+      "lineTags": "Kennzeichen Stunden und Tage",
+      "nameLineRange": "{{name}} · {{from}} – {{to}}"
     },
     "oldestDebt": "Älteste offene",
     "nothingOutstanding": "Alles beglichen — nichts offen.",

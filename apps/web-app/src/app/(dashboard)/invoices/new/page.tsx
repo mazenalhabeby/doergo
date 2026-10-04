@@ -112,6 +112,25 @@ function initials(name?: string | null) {
   return name.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("") || "?"
 }
 
+/** How a labour line's description reads. Remembered per browser — a convenience, not a record. */
+type LineStyle = { words: "full" | "name"; dates: boolean; tags: boolean }
+const LINE_STYLE_KEY = "hbc.invoice.lineStyle"
+const DEFAULT_LINE_STYLE: LineStyle = { words: "full", dates: true, tags: true }
+function readLineStyle(): LineStyle {
+  const fallback = DEFAULT_LINE_STYLE
+  try {
+    const v = JSON.parse(localStorage.getItem(LINE_STYLE_KEY) ?? "null")
+    if (!v || typeof v !== "object") return fallback
+    return {
+      words: v.words === "name" ? "name" : "full",
+      dates: v.dates !== false,
+      tags: v.tags !== false,
+    }
+  } catch {
+    return fallback
+  }
+}
+
 export default function NewInvoicePage() {
   return (
     <PlanGate feature="invoicing">
@@ -211,6 +230,16 @@ function NewInvoiceInner() {
   const [hourRuns, setHourRuns] = useState<HourRun[]>([])
   // On by default: where people have trades, the client reads the work by trade.
   const [groupByRole, setGroupByRole] = useState(true)
+  // How much a labour line's description says — remembered for the next invoice.
+  const [lineStyle, setLineStyleState] = useState<LineStyle>(DEFAULT_LINE_STYLE)
+  // Read after mount: the server render has no storage, and both renders must match.
+  useEffect(() => { setLineStyleState(readLineStyle()) }, [])
+  const setLineStyle = (patch: Partial<LineStyle>) =>
+    setLineStyleState((prev) => {
+      const next = { ...prev, ...patch }
+      try { localStorage.setItem(LINE_STYLE_KEY, JSON.stringify(next)) } catch { /* private window: not remembered, still applied */ }
+      return next
+    })
   const [manualLines, setManualLines] = useState<EditableLine[]>([])
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [seeded, setSeeded] = useState(false)
@@ -436,6 +465,23 @@ function NewInvoiceInner() {
     from: formatDayKey(from, i18n.language, { year: false }),
     to: formatDayKey(to, i18n.language, { year: false }),
   })
+  /*
+    One labour line's words, by the chosen style. The tag, the "72 h" and the
+    "/ hour" already say what the line is, so "hours worked" may go; the dates
+    only appear where a line covers part of the period.
+  */
+  const describe = (kind: "hours" | "days", name: string, count: number, split: boolean, fromDay: string, toDay: string) => {
+    const dated = split && lineStyle.dates
+    if (lineStyle.words === "name") {
+      return dated ? t("invoices.create.nameLineRange", { name, ...range(fromDay, toDay) }) : name
+    }
+    if (kind === "hours") {
+      return dated ? t("invoices.create.hoursLineRange", { name, ...range(fromDay, toDay) }) : t("invoices.create.hoursLine", { name })
+    }
+    return dated
+      ? t("invoices.create.daysLineRange", { name, count, ...range(fromDay, toDay) })
+      : t("invoices.create.daysLine", { name, count })
+  }
   const labourLines = useMemo(
     () => siteMode
       ? buildWorkspaceLines(
@@ -459,14 +505,8 @@ function NewInvoiceInner() {
             listJobs: grouping === "both",
             groupByRole,
             noRoleLabel: t("invoices.create.otherRole"),
-            describeHours: (h, split) =>
-              split
-                ? t("invoices.create.hoursLineRange", { name: h.workerName, ...range(h.fromDay, h.toDay) })
-                : t("invoices.create.hoursLine", { name: h.workerName }),
-            describeDays: (d, split) =>
-              split
-                ? t("invoices.create.daysLineRange", { name: d.workerName, count: d.days, ...range(d.fromDay, d.toDay) })
-                : t("invoices.create.daysLine", { name: d.workerName, count: d.days }),
+            describeHours: (h, split) => describe("hours", h.workerName, h.hours, split, h.fromDay, h.toDay),
+            describeDays: (d, split) => describe("days", d.workerName, d.days, split, d.fromDay, d.toDay),
           },
         )
       : buildLabourLines(labourEntries, grouping, t("invoices.create.unassignedWorker"), {
@@ -474,18 +514,10 @@ function NewInvoiceInner() {
         groupByRole,
         noRoleLabel: t("invoices.create.otherRole"),
         // The reader's language and the reader's dates; the shared rule only arranges.
-        describeDays: (d, split) =>
-          split
-            ? t("invoices.create.daysLineRange", {
-                name: d.workerName,
-                count: d.days,
-                from: formatDayKey(d.fromDay, i18n.language, { year: false }),
-                to: formatDayKey(d.toDay, i18n.language, { year: false }),
-              })
-            : t("invoices.create.daysLine", { name: d.workerName, count: d.days }),
+        describeDays: (d, split) => describe("days", d.workerName, d.days, split, d.fromDay, d.toDay),
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [labourEntries, grouping, t, includedDays, includedHours, groupByRole, i18n.language, siteMode],
+    [labourEntries, grouping, t, includedDays, includedHours, groupByRole, i18n.language, siteMode, lineStyle],
   )
 
   const labourSubtotal = useMemo(() => labourTotalCents(labourLines) / 100, [labourLines])
@@ -638,6 +670,7 @@ function NewInvoiceInner() {
         clientAddress: clientAddress.trim() || undefined,
         currency,
         ...exchange.payload,
+        showLineTags: lineStyle.tags,
         taxRate: (Number(taxPct) || 0) / 100,
         discount: Number(discount) || 0,
         issueDate,
@@ -955,6 +988,40 @@ function NewInvoiceInner() {
                   </p>
                 </div>
               )}
+              {/*
+                What a labour line says. The same words go onto the client's
+                copy and the PDF — they ARE the line's text — and the tag choice
+                is saved with the invoice.
+              */}
+              <div className="mt-4 space-y-3 border-t border-border pt-3">
+                <p className="text-xs font-medium text-foreground">{t("invoices.create.lineStyle")}</p>
+                <div role="radiogroup" aria-label={t("invoices.create.lineStyle")} className="grid gap-1 rounded-xl border border-border bg-muted/50 p-1">
+                  {(["full", "name"] as const).map((w) => (
+                    <button
+                      key={w}
+                      type="button"
+                      role="radio"
+                      aria-checked={lineStyle.words === w}
+                      onClick={() => setLineStyle({ words: w })}
+                      className={cn(
+                        "rounded-lg px-2.5 py-1.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        lineStyle.words === w ? "bg-card shadow-sm" : "hover:bg-card/60",
+                      )}
+                    >
+                      <span className="block text-xs font-semibold text-foreground">{t(`invoices.create.lineWords.${w}`)}</span>
+                      <span className="block text-[11px] text-muted-foreground">{t(`invoices.create.lineWords.${w}Example`)}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="line-dates" className="text-xs">{t("invoices.create.lineDates")}</Label>
+                  <Switch id="line-dates" checked={lineStyle.dates} onCheckedChange={(v) => setLineStyle({ dates: v })} />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="line-tags" className="text-xs">{t("invoices.create.lineTags")}</Label>
+                  <Switch id="line-tags" checked={lineStyle.tags} onCheckedChange={(v) => setLineStyle({ tags: v })} />
+                </div>
+              </div>
             </RailSection>
 
             <RailSection step={2} title={t("invoices.create.clientSection")}>
@@ -1067,6 +1134,7 @@ function NewInvoiceInner() {
               ⚠️ It renders `documentItems` — the very rows the mutation sends.
             */}
             <InvoiceDocument
+              showTags={lineStyle.tags}
               view={view}
               onView={setView}
               clientName={clientName}

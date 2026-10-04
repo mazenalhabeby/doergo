@@ -4242,6 +4242,9 @@ model Invoice {
   exchangeRateSource String? // 'ECB' | 'MANUAL'
   exchangeRateDate   DateTime? @db.Date
   baseCurrency       String? // the organization's currency when it was issued
+  // Show the HOURS / DAYS tag before each labour line — on the screen, the
+  // client's copy and the PDF alike. The rest of a line's wording is its text.
+  showLineTags       Boolean   @default(true)
 
   // Dates
   issueDate DateTime  @default(now())

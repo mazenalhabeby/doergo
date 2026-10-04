@@ -13,6 +13,7 @@ import { notify } from "@/lib/toast"
 import { errorMessage } from "@/lib/errors"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -95,6 +96,7 @@ function EditInvoiceInner({ id }: { id: string }) {
   const [notes, setNotes] = useState("")
   const [lines, setLines] = useState<EditableLine[]>([])
   const [seeded, setSeeded] = useState(false)
+  const [showLineTags, setShowLineTags] = useState(true)
 
   // Seeded once. Re-seeding on every render of a refetched query would discard
   // whatever the person had typed.
@@ -110,6 +112,7 @@ function EditInvoiceInner({ id }: { id: string }) {
     setDiscount(String(inv.discount ?? 0))
     setNotes(inv.notes ?? "")
     setLines((inv.items ?? []).map(toLine))
+    setShowLineTags(inv.showLineTags !== false)
     setSeeded(true)
   }, [inv, seeded])
 
@@ -214,6 +217,7 @@ function EditInvoiceInner({ id }: { id: string }) {
         clientAddress: clientAddress.trim() || undefined,
         currency,
         ...exchange.payload,
+        showLineTags,
         issueDate: issueDate || undefined,
         // Cleared on purpose stays cleared: the PDF then reads "On receipt"
         // rather than inventing a term nobody agreed.
@@ -315,7 +319,13 @@ function EditInvoiceInner({ id }: { id: string }) {
                 exchange={exchange}
                 taxPct={taxPct} setTaxPct={setTaxPct}
                 discount={discount} setDiscount={setDiscount}
-              />
+              >
+                {/* Saved with the invoice: the client's copy and the PDF follow it. */}
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="line-tags" className="text-xs">{t("invoices.create.lineTags")}</Label>
+                  <Switch id="line-tags" checked={showLineTags} onCheckedChange={setShowLineTags} />
+                </div>
+              </TermsFields>
             </RailSection>
 
             <RailSection step={3} title={t("invoices.create.notes")}>
@@ -333,6 +343,7 @@ function EditInvoiceInner({ id }: { id: string }) {
         }
       >
         <InvoiceDocument
+          showTags={showLineTags}
           view={view}
           onView={setView}
           clientName={clientName}

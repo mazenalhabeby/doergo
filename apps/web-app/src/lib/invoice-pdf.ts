@@ -63,6 +63,8 @@ export interface InvoicePdfData {
   servicePeriodTo?: string | Date | null
   notes?: string | null
   items: InvoicePdfItem[]
+  /** The HOURS / DAYS tag before each labour line, as on the screen. Default shown. */
+  showLineTags?: boolean | null
   /**
    * The language the client's copy is written in: the invoice's
    * `documentLocale`, or the one the office picked for this download.
@@ -235,7 +237,8 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
           }]
         : [
             // Hours and days said out loud: a tag, a unit on the quantity, per hour / per day on the price.
-            it.lineKind === "HOURS" ? `${L.units.hoursTag} · ${it.description}`
+            inv.showLineTags === false ? it.description
+              : it.lineKind === "HOURS" ? `${L.units.hoursTag} · ${it.description}`
               : it.lineKind === "DAYS" ? `${L.units.daysTag} · ${it.description}` : it.description,
             it.lineKind === "HOURS" ? `${formatDocumentQuantity(it.quantity, locale)} ${L.units.h}`
               : it.lineKind === "DAYS" ? `${formatDocumentQuantity(it.quantity, locale)} ${it.quantity === 1 ? L.units.day : L.units.days}`

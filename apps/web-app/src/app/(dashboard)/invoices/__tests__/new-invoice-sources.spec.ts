@@ -552,6 +552,7 @@ describe("the rail survives being narrow", () => {
     */
     const s = src()
     expect(s).not.toMatch(/flex flex-wrap gap-2/)
-    expect(s.match(/grid gap-1 rounded-xl border border-border bg-muted\/50 p-1/g) ?? []).toHaveLength(2)
+    // The two three-way choices, and the line-description choice stacked the same way.
+    expect(s.match(/grid gap-1 rounded-xl border border-border bg-muted\/50 p-1/g) ?? []).toHaveLength(3)
   })
 })
