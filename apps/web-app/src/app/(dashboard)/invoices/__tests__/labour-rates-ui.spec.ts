@@ -86,76 +86,50 @@ describe("the member editor carries COST, and only cost", () => {
   })
 
   it("sends null for a blank field, never zero", () => {
-    // Null means "inherit"; 0 means this person costs nothing.
-    expect(src()).toMatch(/costRate\.trim\(\) === ""[\s\S]{0,30}\? null/)
+    // Null means "inherit"; 0 means this person costs nothing. Every rate is
+    // now entered through ONE dialog, so the rule is checked there.
+    expect(code("../../../components/rates/dated-rate.tsx")).toMatch(/value\.trim\(\) === ""[\s\S]{0,30}\? null/)
   })
 })
 
 describe("the client-facing rate lives on the assignment", () => {
-  const EDITOR = "../locations/[id]/_components/member-rate-editor.tsx"
-  const src = () => code(EDITOR)
+  const PEOPLE = "../locations/[id]/_components/members-people.tsx"
+  const src = () => code(PEOPLE)
 
   it("exists, and is per workspace", () => {
     expect(src()).toContain("spaceMembersApi.updateRate")
   })
 
-  it("rests as a chip showing the figure, not a field on every row", () => {
+  it("is read in the table and edited in the person's panel, not a field on every row", () => {
     /*
       ⚠️ The first version put a label, a full-width input and a sentence of
-      hint under EVERY member — eight copies of the same sentence on a roster of
-      eight, tripling each row and repeating an organisation-level fact ("no
-      rate set anywhere") as though it were about each person.
-
-      A rate is read far more often than edited and blank is the normal state,
-      so the resting form shows the number and the editor opens on demand.
+      hint under EVERY member. A rate is read far more often than edited, so
+      the table shows the figure and the dated editor lives in the side panel.
     */
     const s = src()
-    expect(s).toMatch(/export function MemberRateChip/)
-    expect(s).toContain("effective != null")
-    // The hint belongs inside the editor, not on the row.
-    const chipEnd = s.indexOf("export function MemberRateEditor")
-    expect(s.slice(0, chipEnd)).not.toContain("rateSetHint")
+    expect(s).toMatch(/function MemberPanel/)
+    const panel = s.indexOf("function MemberPanel")
+    expect(s.lastIndexOf("<DatedRateField")).toBeGreaterThan(panel)
   })
 
   it("shows a figure wherever one exists, inherited or not", () => {
-    // An empty box with nothing beside it reads as "this person bills nothing
-    // here" — the one reading that must not happen on a screen about money.
+    // An empty cell reads as "this person bills nothing here" — the one reading
+    // that must not happen on a screen about money.
     const s = src()
-    expect(s).toContain("inheritedBillRateCents")
-    expect(s).toMatch(/own \?\? inherited/)
-  })
-
-  it("offers to copy the inherited figure so it can be edited", () => {
-    // The common edit is "the usual rate, but different here" — copying beats
-    // making somebody find the number on another screen and retype it.
-    const s = src()
-    expect(s).toContain("scheduling.members.copyRate")
-    expect(s).toMatch(/setValue\(String\(inherited \/ 100\)\)/)
-  })
-
-  it("sends null for blank, never zero", () => {
-    expect(src()).toMatch(/value\.trim\(\) === ""[\s\S]{0,20}\? null/)
+    expect(s).toMatch(/m\.billRateCents \?\? m\.inheritedBillRateCents/)
+    expect(s).toContain("rates.usesDefault")
   })
 
   it("is not offered to an EXTERNAL member, anywhere", () => {
     /*
-      ⚠️ An external member works for a client or a partner, not for us. We
-      neither pay them nor bill their hours, so a rate on them is a number with
-      no meaning — and on a customer workspace, which is exactly where externals
-      appear, it would be the most visible field on their row.
-
-      Both screens AND the server: a list must not be looser than the check
-      behind it, or a stored rate quietly feeds the ladder onto an invoice.
+      ⚠️ An external member works for a client or a partner, not for us: no
+      rate, no billing. Screens AND the server — a list must not be looser than
+      the check behind it.
     */
-    const tab = code("../locations/[id]/_components/members-tab.tsx")
-    expect(tab).toMatch(/m\.user\?\.isExternal !== true/)
+    const s = src()
+    expect(s).toMatch(/isClient && !external && \(/)
+    expect(s).toMatch(/external \|\| bill === "DAY"/)
 
-    /*
-      Anchored on STRUCTURE, not on how far apart the two happen to sit. A
-      distance window broke the moment the explanatory comment above the block
-      grew — a test failing on layout rather than on behaviour, which is the
-      second time that shape has bitten in this file.
-    */
     const member = code(MEMBER)
     const guard = member.indexOf("{!isExternalMember && (\n            <>")
     expect(guard).toBeGreaterThan(-1)
@@ -169,8 +143,7 @@ describe("the client-facing rate lives on the assignment", () => {
   })
 
   it("resolves the inherited rate on the SERVER", () => {
-    // The order of the four levels is written down once, in `resolveRate`. A
-    // second copy in a browser is a second answer to "why is this €40".
+    // The order of the four levels is written down once, in `resolveRate`.
     const svc = fs.readFileSync(
       path.join(ROOT, "../../../../../api/task-service/src/modules/space-roles/space-roles.service.ts"),
       "utf8",
@@ -188,8 +161,8 @@ describe("every new string is translated", () => {
       .filter((k) => typeof d.invoices?.create?.[k] !== "string")
     const missingMember = ["costRateLabel", "ratePlaceholder", "costRateHint", "costRateHidden"]
       .filter((k) => typeof d.members?.memberEditor?.[k] !== "string")
-    const missingRate = ["rateSet", "rateSetHere", "rateInherited", "rateNone", "copyRate", "rateSaved", "rateClear", "rateBlankInherits", "rateBlankNone", "rateSetHint"]
-      .filter((k) => typeof d.scheduling?.members?.[k] !== "string")
+    const missingRate = ["perHour", "perDay", "change", "set", "history", "notSet", "newRate", "startsFrom", "firstRate", "keeps", "uses", "issuedSafe", "usesDefault", "spaceBill", "costHere"]
+      .filter((k) => typeof d.rates?.[k] !== "string")
     expect({ lang, missingRate }).toEqual({ lang, missingRate: [] })
     expect({ lang, missingInvoice, missingMember })
       .toEqual({ lang, missingInvoice: [], missingMember: [] })

@@ -35,7 +35,17 @@ const SERVICE = path.join(
   "../../../../../../api/auth-service/src/modules/invoices/invoice.service.ts",
 )
 
+/*
+  The "which jobs, which period" rule moved into work-source.ts so the client
+  invoice and the worker's statement read the same one. The parse now lives
+  there; the service must USE it rather than parse a day of its own.
+*/
+const WORK_SOURCE = path.join(
+  __dirname,
+  "../../../../../../api/auth-service/src/modules/invoices/work-source.ts",
+)
 const read = (p: string) => fs.readFileSync(p, "utf8")
+const workSource = () => strip(read(WORK_SOURCE))
 
 const service = () => strip(read(SERVICE))
 /*
@@ -47,13 +57,13 @@ const page = () => createScreen()
 
 describe("the service period", () => {
   it("is inclusive at both ends of the day", () => {
-    const src = service()
+    const src = workSource()
     // Start of the first day, end of the last. A `to` that stops at midnight
     // would exclude the whole of the closing day.
     expect(src).toContain("T00:00:00.000Z")
     expect(src).toContain("T23:59:59.999Z")
-    expect(src).toMatch(/gte:\s*from/)
-    expect(src).toMatch(/lte:\s*to/)
+    expect(src).toMatch(/\{\s*gte\s*\}/)
+    expect(src).toMatch(/\{\s*lte\s*\}/)
   })
 
   it("parses a day in exactly one place", () => {
@@ -63,17 +73,21 @@ describe("the service period", () => {
       covers drift by one from the days it was built from — and nothing on any
       screen would show it.
     */
-    const src = service()
+    const src = workSource()
     const starts = src.match(/T00:00:00\.000Z/g) ?? []
     const ends = src.match(/T23:59:59\.999Z/g) ?? []
     expect(starts).toHaveLength(1)
     expect(ends).toHaveLength(1)
     expect(src).toMatch(/function dayStart\(/)
     expect(src).toMatch(/function dayEnd\(/)
+    // …and the invoice service parses no day of its own: it imports these.
+    const svc = service()
+    expect(svc).not.toContain("T00:00:00.000Z")
+    expect(svc).toMatch(/from '\.\/work-source'/)
   })
 
   it("dates a job by when the work was done, not when the row was touched", () => {
-    const src = service()
+    const src = workSource()
     // `updatedAt` is allowed, but only as the fallback for a task with no
     // report — which is what the `serviceReport: null` branch says.
     expect(src).toMatch(/serviceReport:\s*\{\s*completedAt:/)

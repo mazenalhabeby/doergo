@@ -50,10 +50,13 @@ export function MemberRoutingEditor({
   spaceId,
   member,
   roster,
+  stacked = false,
 }: {
   spaceId: string
   member: SpaceMember
   roster: SpaceMember[]
+  /** One column — for a narrow side panel, where three columns cut every title. */
+  stacked?: boolean
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -101,7 +104,7 @@ export function MemberRoutingEditor({
 
   return (
     <div className="mt-2 space-y-3 rounded-xl border border-dashed border-border bg-muted/20 p-3">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className={stacked ? "grid gap-3" : "grid gap-3 sm:grid-cols-2 lg:grid-cols-3"}>
         <PeoplePicker
           icon={Bell}
           title={t("scheduling.routing.memberNotify", "Notified about {{name}}", { name })}
