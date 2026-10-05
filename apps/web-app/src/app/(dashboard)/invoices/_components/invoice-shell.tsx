@@ -1,6 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useLayoutEffect, useRef, type ReactNode, type RefObject } from "react"
 import { ArrowLeft } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -74,7 +74,7 @@ export function InvoiceTopBar({
   children?: ReactNode
 }) {
   return (
-    <div className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
+    <div data-invoice-topbar className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
       <div className={cn(PAGE_WIDTH, "flex items-center gap-3.5 py-2.5")}>
         <Button variant="outline" size="icon" className="size-[30px] shrink-0" onClick={onBack}>
           <ArrowLeft className="size-4" />
@@ -131,10 +131,61 @@ export function InvoiceNotice({ children }: { children: ReactNode }) {
  * a column that cannot hold them — which is how "Rate (per hour)" ended up on
  * three lines beside a currency box reading "EUF".
  */
+/** The nearest ancestor that scrolls — the dashboard's content pane, not the window. */
+function scrollParent(el: HTMLElement): HTMLElement | null {
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    const o = getComputedStyle(p).overflowY
+    if (o === "auto" || o === "scroll") return p
+  }
+  return null
+}
+
+/**
+ * Fit the rail to the space that is really there: below the top bar, down to
+ * the bottom of the scrolling pane.
+ *
+ * ⚠️ MEASURED, NOT TYPED. The rail used to be `top: 53px; height: 100dvh - 53px`
+ * — but the pane scrolls under the app's own navigation, and the top bar grew
+ * past 53px. So the rail was taller than what could be seen, its last controls
+ * sat below the screen, and the only way to reach them was to scroll the whole
+ * page. A number typed here goes wrong the next time either bar changes.
+ */
+function useRailFit(ref: RefObject<HTMLElement | null>) {
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const scroller = scrollParent(el)
+    const bar = document.querySelector<HTMLElement>("[data-invoice-topbar]")
+    const fit = () => {
+      const top = bar?.offsetHeight ?? 0
+      const visible = scroller ? scroller.clientHeight : window.innerHeight
+      el.style.setProperty("--rail-top", `${top}px`)
+      el.style.setProperty("--rail-h", `${Math.max(240, visible - top)}px`)
+    }
+    fit()
+    const ro = new ResizeObserver(fit)
+    if (bar) ro.observe(bar)
+    if (scroller) ro.observe(scroller)
+    window.addEventListener("resize", fit)
+    return () => { ro.disconnect(); window.removeEventListener("resize", fit) }
+  }, [ref])
+}
+
 export function InvoiceWorkbench({ rail, children }: { rail: ReactNode; children: ReactNode }) {
+  const railRef = useRef<HTMLElement>(null)
+  useRailFit(railRef)
   return (
     <div className={cn(PAGE_WIDTH, "grid items-start lg:grid-cols-[320px_minmax(0,1fr)]")}>
-      <aside className="border-b border-border bg-muted/30 px-4 py-5 lg:sticky lg:top-[53px] lg:h-[calc(100dvh-53px)] lg:overflow-y-auto lg:border-b-0 lg:border-r">
+      {/*
+        On a wide screen the rail is its own scrolling column: it stays put
+        while the document scrolls, and scrolling inside it never drags the
+        page along (overscroll-contain). On a phone it is simply the top of
+        the page.
+      */}
+      <aside
+        ref={railRef}
+        className="border-b border-border bg-muted/30 px-4 py-5 lg:sticky lg:top-[var(--rail-top,53px)] lg:h-[var(--rail-h,calc(100dvh-53px))] lg:overflow-y-auto lg:overscroll-contain lg:border-b-0 lg:border-r [scrollbar-gutter:stable]"
+      >
         <div className="space-y-5 [&>*+*]:border-t [&>*+*]:border-border [&>*+*]:pt-5">{rail}</div>
       </aside>
 
