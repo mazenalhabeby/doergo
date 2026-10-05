@@ -6918,7 +6918,9 @@
       "addHereIntro": "Use uno de los roles de la empresa en este espacio, con su propia tarifa diaria aquí, o cree uno nuevo.",
       "createNew": "Crear un rol nuevo",
       "rateHere": "Ya {{rate}} aquí",
-      "deleteUnused": "No se usa en ningún sitio: eliminarlo"
+      "deleteUnused": "No se usa en ningún sitio: eliminarlo",
+      "duplicateNotice": "Hay {{count}} roles llamados {{name}}. Combínelos en uno, conservando la tarifa diaria de cada espacio.",
+      "combine": "Combinarlos"
     },
     "membersPage": {
       "people": "Personas",

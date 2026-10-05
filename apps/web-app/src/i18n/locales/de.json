@@ -6918,7 +6918,9 @@
       "addHereIntro": "Nutzen Sie eine Rolle des Unternehmens in diesem Arbeitsbereich, mit eigenem Tagessatz hier, oder legen Sie eine neue an.",
       "createNew": "Neue Rolle anlegen",
       "rateHere": "Hier bereits {{rate}}",
-      "deleteUnused": "Nirgends genutzt: löschen"
+      "deleteUnused": "Nirgends genutzt: löschen",
+      "duplicateNotice": "Es gibt {{count}} Rollen namens {{name}}. Führen Sie sie zu einer zusammen; der Tagessatz jedes Arbeitsbereichs bleibt erhalten.",
+      "combine": "Zusammenführen"
     },
     "membersPage": {
       "people": "Personen",

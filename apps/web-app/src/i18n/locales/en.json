@@ -6918,7 +6918,9 @@
       "addHereIntro": "Use one of the company's roles in this workspace, with its own day rate here, or create a new one.",
       "createNew": "Create a new role",
       "rateHere": "{{rate}} here already",
-      "deleteUnused": "Not used anywhere: delete it"
+      "deleteUnused": "Not used anywhere: delete it",
+      "duplicateNotice": "There are {{count}} roles called {{name}}. Combine them into one, keeping each workspace's day rate.",
+      "combine": "Combine them"
     },
     "membersPage": {
       "people": "People",

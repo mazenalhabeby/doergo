@@ -160,6 +160,31 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
   const workRoles = allWork.filter((r) => r.activeHere !== false)
   const notHere = allWork.filter((r) => r.activeHere === false)
   const [picking, setPicking] = useState(false)
+  /*
+    Two roles with one name are a duplicate made before names had to be unique
+    (one priced in this workspace, one in another). Say so, and fix it in one
+    click: keep the one people hold (else the oldest), fold the rest into it —
+    their day rates move over, per workspace.
+  */
+  const duplicates = Object.values(
+    allWork.reduce<Record<string, SpaceRoleInSpace[]>>((acc, r) => {
+      const k = r.name.trim().toLowerCase()
+      ;(acc[k] ??= []).push(r)
+      return acc
+    }, {}),
+  ).filter((g) => g.length > 1)
+  const combine = useMutation({
+    mutationFn: async (group: SpaceRoleInSpace[]) => {
+      const keep = [...group].sort((a, b) => b.inUseCount - a.inUseCount)[0]
+      for (const r of group) if (r.id !== keep.id) await spaceRolesApi.merge(r.id, keep.id)
+    },
+    onSuccess: () => {
+      refreshRoles()
+      queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
+      notify.success(t("scheduling.workRoles.merged"))
+    },
+    onError: (err: Error) => notify.error(err.message),
+  })
   const refreshRoles = () => {
     queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
     queryClient.invalidateQueries({ queryKey: ["space-roles"] })
@@ -227,6 +252,15 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
           title={t("scheduling.workRoles.workHeading")}
           description={t("scheduling.workRoles.workIntro")}
         />
+        {duplicates.map((g) => (
+          <div key={g[0].id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+            <span>{t("scheduling.workRoles.duplicateNotice", { count: g.length, name: g[0].name })}</span>
+            <Button size="sm" variant="outline" disabled={combine.isPending} onClick={() => combine.mutate(g)}>
+              {combine.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+              {t("scheduling.workRoles.combine")}
+            </Button>
+          </div>
+        ))}
         {isLoading ? (
           <Skeleton className="h-16 w-full" />
         ) : workRoles.length === 0 ? (
@@ -297,7 +331,7 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
                       {t("scheduling.workRoles.useHere")}
                     </Button>
                     {/* Held by nobody, anywhere: it can go for good. */}
-                    {r.inUseCount === 0 && !r.isSystem && (
+                    {r.inUseCount === 0 && !r.isSystem && !duplicates.some((g) => g.some((x) => x.id === r.id)) && (
                       <Button
                         size="icon"
                         variant="ghost"
