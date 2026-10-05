@@ -128,7 +128,8 @@ describe("the client-facing rate lives on the assignment", () => {
     */
     const s = src()
     expect(s).toMatch(/isClient && !external && \(/)
-    expect(s).toMatch(/external \|\| bill === "DAY"/)
+    // The table's billing cell: an external member shows a dash, never a rate.
+    expect(s).toMatch(/\{external \? <span className="text-muted-foreground">—<\/span> : \(\s*<div className="inline-flex flex-col items-end gap-1">/)
 
     const member = code(MEMBER)
     const guard = member.indexOf("{!isExternalMember && (\n            <>")
