@@ -1924,7 +1924,9 @@
       "colTopTakers": "Chi prende di più",
       "minutes_one": "{{count}} min",
       "minutes_other": "{{count}} min",
-      "summaryHint": "Ultimi 30 giorni. «Non preso in tempo» = ancora aperto dopo l’ora dell’avviso."
+      "summaryHint": "Ultimi 30 giorni. «Non preso in tempo» = ancora aperto dopo l’ora dell’avviso.",
+      "moreThanHolders_one": "Solo {{count}} persona ha questo ruolo qui: gli altri posti non possono essere coperti.",
+      "moreThanHolders_other": "Solo {{count}} persone hanno questo ruolo qui: gli altri posti non possono essere coperti."
     }
   },
   "technicians": {

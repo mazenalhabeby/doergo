@@ -158,18 +158,27 @@ export class TasksController {
       same right: org-wide, or in the task's own workspace. Stripped like the
       assignee above, never refused — the job is still raised.
     */
-    if (
-      createTaskDto.openRoleId &&
-      !isAdmin(req.user) &&
-      req.user.canAssignTasks !== true &&
-      !(targetSpaceId && (spacesGranting(req.user?.access, 'canAssignTasks') ?? []).includes(targetSpaceId))
-    ) {
-      createTaskDto.openRoleId = undefined;
-      createTaskDto.openSpots = undefined;
+    /*
+      ⚠️ No workspace named = the task-service files it in the organization's
+      default workspace, which only it knows. So for a caller who may assign
+      only in SOME workspaces, the spaces are forwarded and the decision is made
+      there, on the FINAL workspace — stripping here would drop the role for
+      every such person who left the workspace blank.
+    */
+    let roleAssignSpaceIds: string[] | undefined;
+    if (createTaskDto.openRoleId && !isAdmin(req.user) && req.user.canAssignTasks !== true) {
+      const granted = spacesGranting(req.user?.access, 'canAssignTasks') ?? [];
+      if (targetSpaceId && !granted.includes(targetSpaceId)) {
+        createTaskDto.openRoleId = undefined;
+        createTaskDto.openSpots = undefined;
+      } else if (!targetSpaceId) {
+        roleAssignSpaceIds = granted;
+      }
     }
 
     return this.tasksQueueService.createTask({
       ...createTaskDto,
+      ...(roleAssignSpaceIds ? { roleAssignSpaceIds } : {}),
       userId: req.user.id,
       organizationId: req.user.organizationId,
       access: req.user.access, // server-authoritative; task-service enforces the real space

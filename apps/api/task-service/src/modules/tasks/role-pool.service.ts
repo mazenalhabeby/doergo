@@ -32,6 +32,7 @@ import { TaskEventType } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CoverService } from '../technicians/cover.service';
 import { TasksService } from './tasks.service';
+import { holdsOpenRole as holdsOpenRoleRule } from './role-holder';
 
 /** Statuses that are certainly over — the indexed half of "still open"; `isWorkOver` is the rest. */
 const OVER = [TaskStatus.COMPLETED, TaskStatus.CANCELED, TaskStatus.CLOSED];
@@ -331,15 +332,9 @@ export class RolePoolService {
 
   // ── Taking and handing back ──────────────────────────────────────────
 
-  /** Does this person hold the task's open role in its workspace, right now? */
+  /** Does this person hold the task's open role in its workspace, right now? (role-holder.ts — one rule) */
   async holdsOpenRole(task: { openRoleId?: string | null; spaceId?: string | null; openSpotsLeft?: number | null; status?: string | null }, userId: string): Promise<boolean> {
-    if (!isOpenToRole(task) || !task.spaceId) return false;
-    const row = await this.prisma.spaceAssignment.findFirst({
-      where: { userId, spaceId: task.spaceId, workRoleId: task.openRoleId!, ...this.activeNow() },
-      select: { user: { select: { role: true, enabledModules: true, isExternal: true } } },
-    });
-    // Holding the role is not enough: an access profile without Tasks, or somebody else's employee, is never offered a job.
-    return !!row && !row.user.isExternal && canReceiveTasks(row.user);
+    return holdsOpenRoleRule(this.prisma as never, task, userId);
   }
 
   async take(data: Facts & { taskId: string }) {
@@ -626,7 +621,8 @@ export class RolePoolService {
 
   /**
    * Per role: how many were opened, taken, still open and overdue, the average
-   * minutes to take, and who takes most. From the task rows and TAKEN events —
+   * minutes to take (from the latest offer — a hand-back re-offers it), and who
+   * takes most. From the OPENED_TO_ROLE / TAKEN events and the open rows —
    * three queries for any period.
    */
   async stats(data: { organizationId: string; spaceIds?: string[]; from?: string; to?: string }) {
@@ -637,10 +633,16 @@ export class RolePoolService {
     };
     const spaceWhere = data.spaceIds ? { spaceId: { in: data.spaceIds } } : {};
     const [opened, openNow, takes] = await Promise.all([
-      this.prisma.task.groupBy({
-        by: ['openRoleId'],
-        where: { organizationId: data.organizationId, openRoleId: { not: null }, ...spaceWhere, ...(data.from || data.to ? { openedAt: range } : {}) },
-        _count: { _all: true },
+      // "Opened" from the history, not `Task.openedAt` — a hand-back restarts that clock and would move the job into another period.
+      this.prisma.taskEvent.findMany({
+        where: {
+          eventType: TaskEventType.OPENED_TO_ROLE,
+          task: { organizationId: data.organizationId, ...spaceWhere },
+          ...(data.from || data.to ? { createdAt: range } : {}),
+        },
+        select: { metadata: true },
+        orderBy: { createdAt: 'desc' },
+        take: 5000,
       }),
       this.prisma.task.findMany({
         where: { organizationId: data.organizationId, openRoleId: { not: null }, openSpotsLeft: { gt: 0 }, status: { notIn: OVER }, ...spaceWhere },
@@ -657,7 +659,12 @@ export class RolePoolService {
         take: 5000,
       }),
     ]);
-    const roleIds = [...new Set([...opened.map((o) => o.openRoleId!), ...openNow.map((o) => o.openRoleId!)])];
+    const openedBy = new Map<string, number>();
+    for (const o of opened) {
+      const id = (o.metadata as any)?.roleId as string | undefined;
+      if (id) openedBy.set(id, (openedBy.get(id) ?? 0) + 1);
+    }
+    const roleIds = [...new Set([...openedBy.keys(), ...openNow.map((o) => o.openRoleId!)])];
     const roles = await this.prisma.accessRole.findMany({ where: { id: { in: roleIds } }, select: { id: true, name: true } });
     const out = roles.map((r) => {
       const mine = takes.filter((t) => (t.metadata as any)?.roleId === r.id);
@@ -671,7 +678,7 @@ export class RolePoolService {
       return {
         roleId: r.id,
         roleName: r.name,
-        opened: opened.find((o) => o.openRoleId === r.id)?._count._all ?? 0,
+        opened: openedBy.get(r.id) ?? 0,
         taken: mine.length,
         avgMinutesToTake: waits.length ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length) : null,
         openNow: openNow.filter((o) => o.openRoleId === r.id).length,

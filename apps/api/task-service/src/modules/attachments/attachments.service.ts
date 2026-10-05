@@ -13,6 +13,7 @@ import {
   newObjectKey,
   requireObjectStore,
 } from '@hbcfield/shared/storage';
+import { holdsOpenRole } from '../tasks/role-holder';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { createOnce } from '../../common/create-once.util';
 import { MediaSigner } from '../../common/storage/media-signer.service';
@@ -186,7 +187,8 @@ export class AttachmentsService {
     if (!task) {
       throw new NotFoundException('Task not found');
     }
-    this.checkTaskAccess(task, data);
+    // A holder of the job's OPEN role may see its photos before taking it — read only (tasks/role-holder.ts).
+    if (!(await holdsOpenRole(this.prisma as never, task, data.userId))) this.checkTaskAccess(task, data);
 
     const attachments = await this.prisma.attachment.findMany({
       where: { taskId: data.taskId },

@@ -1924,7 +1924,9 @@
       "colTopTakers": "Quién toma más",
       "minutes_one": "{{count}} min",
       "minutes_other": "{{count}} min",
-      "summaryHint": "Últimos 30 días. «Sin tomar a tiempo» = aún abierto tras la hora del aviso."
+      "summaryHint": "Últimos 30 días. «Sin tomar a tiempo» = aún abierto tras la hora del aviso.",
+      "moreThanHolders_one": "Solo {{count}} persona tiene este rol aquí: los demás puestos no se pueden cubrir.",
+      "moreThanHolders_other": "Solo {{count}} personas tienen este rol aquí: los demás puestos no se pueden cubrir."
     }
   },
   "technicians": {

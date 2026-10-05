@@ -117,6 +117,12 @@ export function RoleAssignField({
               ))}
             </ol>
           )}
+          {/* More places than people who could ever fill them — said now, not discovered at the 30-minute alert. */}
+          {value.spots > preview.total && (
+            <p className="mt-2 rounded-md bg-amber-500/10 px-2 py-1 text-[11px] text-amber-800 dark:text-amber-300">
+              {t("tasks.role.moreThanHolders", { count: preview.total })}
+            </p>
+          )}
           <p className="mt-2 text-[11px] text-muted-foreground">{t("tasks.role.offerHint")}</p>
         </div>
       )}

@@ -1924,7 +1924,9 @@
       "colTopTakers": "Takes most",
       "minutes_one": "{{count}} min",
       "minutes_other": "{{count}} min",
-      "summaryHint": "Last 30 days. “Not taken in time” = still open after the alert time."
+      "summaryHint": "Last 30 days. “Not taken in time” = still open after the alert time.",
+      "moreThanHolders_one": "Only {{count}} person holds this role here — the other places cannot be filled.",
+      "moreThanHolders_other": "Only {{count}} people hold this role here — the other places cannot be filled."
     }
   },
   "technicians": {

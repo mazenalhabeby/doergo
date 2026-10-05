@@ -1924,7 +1924,9 @@
       "colTopTakers": "Prend le plus",
       "minutes_one": "{{count}} min",
       "minutes_other": "{{count}} min",
-      "summaryHint": "30 derniers jours. « Non prise à temps » = encore ouverte après l’heure d’alerte."
+      "summaryHint": "30 derniers jours. « Non prise à temps » = encore ouverte après l’heure d’alerte.",
+      "moreThanHolders_one": "Seule {{count}} personne a ce rôle ici — les autres places ne peuvent pas être pourvues.",
+      "moreThanHolders_other": "Seules {{count}} personnes ont ce rôle ici — les autres places ne peuvent pas être pourvues."
     }
   },
   "technicians": {

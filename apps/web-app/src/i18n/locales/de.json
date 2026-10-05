@@ -1924,7 +1924,9 @@
       "colTopTakers": "Übernimmt am meisten",
       "minutes_one": "{{count}} Min.",
       "minutes_other": "{{count}} Min.",
-      "summaryHint": "Letzte 30 Tage. „Nicht rechtzeitig“ = nach der Hinweiszeit noch offen."
+      "summaryHint": "Letzte 30 Tage. „Nicht rechtzeitig“ = nach der Hinweiszeit noch offen.",
+      "moreThanHolders_one": "Nur {{count}} Person hat diese Rolle hier — die übrigen Plätze können nicht besetzt werden.",
+      "moreThanHolders_other": "Nur {{count}} Personen haben diese Rolle hier — die übrigen Plätze können nicht besetzt werden."
     }
   },
   "technicians": {

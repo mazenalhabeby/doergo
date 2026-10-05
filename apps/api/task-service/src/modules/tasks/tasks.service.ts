@@ -367,8 +367,19 @@ export class TasksService {
       if (!ownCustomer) effCustomerId = null;
     }
 
-    // The role is checked against the task's FINAL workspace (after the default-space fallback).
-    const openRole = openRoleId && !isUntriaged
+    // A role belongs to a workspace; an un-triaged request has none yet — say so rather than drop it.
+    if (openRoleId && isUntriaged) {
+      throw new BadRequestException({ message: 'Choose a workspace to open a task to a role', code: 'ROLE_TASK_NEEDS_SPACE' });
+    }
+    /*
+      The role is checked against the task's FINAL workspace (after the default-
+      space fallback) — including the right to open it there, for a caller whose
+      assign right is per workspace (the gateway forwards those spaces only when
+      no workspace was named). Not refused: the task is still raised, unopened,
+      exactly as the gateway strips it when the named workspace is not theirs.
+    */
+    const mayOpenHere = !Array.isArray(data.roleAssignSpaceIds) || data.roleAssignSpaceIds.includes(data.spaceId);
+    const openRole = openRoleId && mayOpenHere
       ? await this.rolePool.resolveOpenRole(effectiveOrgId, data.spaceId, openRoleId)
       : null;
 

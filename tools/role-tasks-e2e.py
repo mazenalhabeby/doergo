@@ -116,8 +116,15 @@ lst = data(r)
 items = lst if isinstance(lst, list) else (lst.get('data') or lst.get('items') or [])
 check('the normal task list is unchanged (an open task is not "mine")', not any(x.get('id') == T2 for x in items), [x.get('id') for x in items][:5])
 
+s, r = call('GET', f'/tasks/{T2}/attachments', karim)
+check('a holder may read its attachments before taking it (same rule as the page)', s == 200, (s, r))
 s, r = call('POST', f'/tasks/{T2}/comments', karim, {'content': 'not mine yet'})
 check('a holder may READ but not comment before taking it', s in (403, 404), (s, r))
+
+s, td = call('POST', '/tasks', dana, {'title': 'E2E role by space manager', 'spaceId': SPACE, 'openRoleId': DANA_ROLE or ROLE})
+td = data(td)
+if isinstance(td, dict) and td.get('id'): made.append(td['id'])
+check('a workspace-level assigner opens a task to a role in THEIR workspace', s in (200, 201) and td.get('openRoleId') == (DANA_ROLE or ROLE), (s, td))
 
 # ── Taking ─────────────────────────────────────────────────────────────
 s, r = call('POST', f'/tasks/{T2}/take', dana)

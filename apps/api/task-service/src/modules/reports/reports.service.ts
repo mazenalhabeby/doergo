@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { OBJECT_STORE, ObjectStore, newObjectKey, requireObjectStore } from '@hbcfield/shared/storage';
+import { holdsOpenRole } from '../tasks/role-holder';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { createOnce } from '../../common/create-once.util';
 import { MediaSigner } from '../../common/storage/media-signer.service';
@@ -268,8 +269,8 @@ export class ReportsService {
       throw new NotFoundException('Task not found');
     }
 
-    // Authorization check
-    await this.checkTaskAccess(task, data);
+    // Authorization check — a holder of the job's OPEN role may read it too (tasks/role-holder.ts), never write.
+    if (!(await holdsOpenRole(this.prisma as never, task, data.userId))) await this.checkTaskAccess(task, data);
 
     const report = await this.prisma.serviceReport.findUnique({
       where: { taskId: data.taskId },
