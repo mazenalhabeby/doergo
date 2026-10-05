@@ -308,6 +308,11 @@ export class SpaceRolesService {
       const dropIds = fromRows.filter((r) => priced.has(r.spaceId ?? '__default__')).map((r) => r.id);
       if (moveIds.length) await tx.rateHistory.updateMany({ where: { id: { in: moveIds } }, data: { targetId: into.id } });
       if (dropIds.length) await tx.rateHistory.deleteMany({ where: { id: { in: dropIds } } });
+      // Where the merged role was PRICED, the kept role is now used — even if the
+      // merged one had been switched off there in the meantime.
+      for (const spaceId of new Set(fromRows.map((r) => r.spaceId).filter((x): x is string => !!x))) {
+        await this.useWorkRoleIn(tx, spaceId, into.id);
+      }
       // Any list that names the role by id names the kept one instead.
       // The workspaces that used the merged role now use the kept one — once each.
       await tx.$executeRawUnsafe(

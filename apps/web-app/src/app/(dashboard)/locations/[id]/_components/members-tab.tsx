@@ -20,6 +20,7 @@ import {
   type AccessPermissionKey,
 } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
+import { formatMoney } from "@/lib/money"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -109,7 +110,7 @@ export function MembersTab({ spaceId, hasApartments }: { spaceId: string; hasApa
           {t("scheduling.membersPage.people")}{count(members?.length)}
         </TabsTrigger>
         <TabsTrigger value="roles" className="rounded-md px-3 py-1.5 text-[13px]">
-          {t("scheduling.membersPage.roles")}{count(roles?.filter((r) => r.holders.length > 0 || !r.isSystem).length)}
+          {t("scheduling.membersPage.roles")}{count(roles?.filter((r) => (r.kind === "WORK" ? r.activeHere !== false : r.holders.length > 0 || !r.isSystem)).length)}
         </TabsTrigger>
         <TabsTrigger value="notifications" className="rounded-md px-3 py-1.5 text-[13px]">
           {t("scheduling.membersPage.notifications")}
@@ -135,6 +136,8 @@ export function MembersTab({ spaceId, hasApartments }: { spaceId: string; hasApa
 // MANAGEMENT roles carry permissions. Each card says who holds it here, so
 // "who is a Mechanic at BILLA" is answered on the card rather than by reading
 // down the member list.
+
+const formatMoneyCents = (cents: number, currency: string) => formatMoney(cents / 100, currency)
 
 function SubRolesSection({ spaceId }: { spaceId: string }) {
   const money = useSpaceCurrency(spaceId)
@@ -209,10 +212,11 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
   */
   return (
     <div className="space-y-6">
+      {/* ONE way in: pick a company role for this workspace, or create a new one — in the same dialog. */}
       <div className="flex justify-end">
-        <Button onClick={() => setDialog({ role: null, kind: "WORK" })} className="gap-1.5">
+        <Button onClick={() => setPicking(true)} className="gap-1.5">
           <Plus className="h-4 w-4" />
-          {t("scheduling.roles.new")}
+          {t("scheduling.workRoles.addHere")}
         </Button>
       </div>
       <div className="space-y-3">
@@ -228,36 +232,6 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
           <EmptyState icon={Wrench} title={t("scheduling.workRoles.noneHere")} description={t("scheduling.workRoles.noneHereHint")} />
         ) : (
           list(workRoles)
-        )}
-        <div className="flex justify-start">
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setPicking((v) => !v)}>
-            <Plus className="h-4 w-4" />
-            {t("scheduling.workRoles.addHere")}
-          </Button>
-        </div>
-        {picking && (
-          <div className="space-y-2 rounded-xl border border-dashed p-3">
-            <p className="text-xs font-medium text-foreground">{t("scheduling.workRoles.companyRoles")}</p>
-            {notHere.length === 0 ? (
-              <p className="text-xs text-muted-foreground">{t("scheduling.workRoles.allUsedHere")}</p>
-            ) : (
-              notHere.map((r) => (
-                <div key={r.id} className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/50">
-                  <span className="text-sm font-medium">{r.name}</span>
-                  <Button size="sm" variant="secondary" disabled={useHere.isPending} onClick={() => useHere.mutate(r.id)}>
-                    {t("scheduling.workRoles.useHere")}
-                  </Button>
-                </div>
-              ))
-            )}
-            <button
-              type="button"
-              className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400"
-              onClick={() => { setPicking(false); setDialog({ role: null, kind: "WORK" }) }}
-            >
-              {t("scheduling.workRoles.orNewRole")}
-            </button>
-          </div>
         )}
       </div>
 
@@ -295,6 +269,44 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
           </button>
         )}
       </div>
+
+      <Dialog open={picking} onOpenChange={setPicking}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("scheduling.workRoles.addHere")}</DialogTitle>
+            <DialogDescription>{t("scheduling.workRoles.addHereIntro")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-muted-foreground">{t("scheduling.workRoles.companyRoles")}</p>
+            {notHere.length === 0 ? (
+              <p className="py-2 text-sm text-muted-foreground">{t("scheduling.workRoles.allUsedHere")}</p>
+            ) : (
+              notHere.map((r) => (
+                <div key={r.id} className="flex items-center justify-between gap-3 rounded-lg px-2 py-2 hover:bg-muted/50">
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium">{r.name}</span>
+                    {r.dayRateCents != null && (
+                      <span className="block text-xs text-muted-foreground">
+                        {t("scheduling.workRoles.rateHere", { rate: `${formatMoneyCents(r.dayRateCents, money.bill)} ${t("rates.perDay")}` })}
+                      </span>
+                    )}
+                  </span>
+                  <Button size="sm" variant="secondary" disabled={useHere.isPending} onClick={() => useHere.mutate(r.id)}>
+                    {t("scheduling.workRoles.useHere")}
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+          <DialogFooter className="sm:justify-between">
+            <Button variant="outline" className="gap-1.5" onClick={() => { setPicking(false); setDialog({ role: null, kind: "WORK" }) }}>
+              <Plus className="h-4 w-4" />
+              {t("scheduling.workRoles.createNew")}
+            </Button>
+            <Button variant="ghost" onClick={() => setPicking(false)}>{t("common.close")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {dialog && (
         <RoleDialog

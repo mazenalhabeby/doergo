@@ -6914,7 +6914,10 @@
       "mergeChoose": "Elija un rol",
       "mergeAction": "Fusionar",
       "mergeConfirm": "Fusionar {{name}} con {{into}}",
-      "merged": "Roles fusionados"
+      "merged": "Roles fusionados",
+      "addHereIntro": "Use uno de los roles de la empresa en este espacio, con su propia tarifa diaria aquí, o cree uno nuevo.",
+      "createNew": "Crear un rol nuevo",
+      "rateHere": "Ya {{rate}} aquí"
     },
     "membersPage": {
       "people": "Personas",

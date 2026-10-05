@@ -6923,7 +6923,10 @@
       "mergeChoose": "Scegli un ruolo",
       "mergeAction": "Unisci",
       "mergeConfirm": "Unisci {{name}} in {{into}}",
-      "merged": "Ruoli uniti"
+      "merged": "Ruoli uniti",
+      "addHereIntro": "Usate uno dei ruoli dell'azienda in questo spazio, con la sua tariffa giornaliera qui, oppure createne uno nuovo.",
+      "createNew": "Crea un nuovo ruolo",
+      "rateHere": "Già {{rate}} qui"
     },
     "membersPage": {
       "people": "Persone",
