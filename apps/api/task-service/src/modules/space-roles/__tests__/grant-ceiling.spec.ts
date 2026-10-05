@@ -25,6 +25,7 @@ describe('SpaceRolesService — the grant ceiling', () => {
   let service: SpaceRolesService;
 
   const prisma: Record<string, any> = {
+    $executeRawUnsafe: jest.fn(),
     companyLocation: { findFirst: jest.fn() },
     user: { findFirst: jest.fn() },
     accessRole: {
@@ -53,7 +54,8 @@ describe('SpaceRolesService — the grant ceiling', () => {
     jest.clearAllMocks();
     prisma.companyLocation.findFirst.mockResolvedValue({ id: 's1' });
     prisma.user.findFirst.mockResolvedValue({ id: 'u2' });
-    prisma.accessRole.findFirst.mockResolvedValue(powerfulRole);
+    // A lookup BY NAME is the duplicate check: no clash unless a test says so.
+    prisma.accessRole.findFirst.mockImplementation((args: any) => Promise.resolve(args?.where?.name ? null : powerfulRole));
     prisma.spaceAssignment.upsert.mockResolvedValue({
       id: 'a1', userId: 'u2', user: null, role: powerfulRole,
     });
@@ -135,6 +137,16 @@ describe('SpaceRolesService — the grant ceiling', () => {
         requesterPerms: { ...powerfulRole.permissions },
       });
       expect(prisma.accessRole.update).toHaveBeenCalled();
+    });
+  });
+
+  describe('one role per name', () => {
+    it('refuses a second role with a name that exists, in any case, and names the existing one', async () => {
+      prisma.accessRole.findFirst.mockImplementation((args: any) =>
+        Promise.resolve(args?.where?.name ? { id: 'r-elec', name: 'Electric' } : powerfulRole));
+      await expect(service.createRole({ organizationId: 'org1', name: 'electric', kind: 'WORK' }))
+        .rejects.toMatchObject({ response: { code: 'ROLE_NAME_TAKEN', params: { roleId: 'r-elec', name: 'Electric' } } });
+      expect(prisma.accessRole.create).not.toHaveBeenCalled();
     });
   });
 

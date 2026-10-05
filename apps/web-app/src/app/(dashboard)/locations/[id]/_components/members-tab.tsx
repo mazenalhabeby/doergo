@@ -20,6 +20,7 @@ import {
   type AccessPermissionKey,
 } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -147,7 +148,28 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
     queryFn: () => spaceRolesApi.listInSpace(spaceId),
   })
   const [showUnused, setShowUnused] = useState(false)
-  const workRoles = (roles ?? []).filter((r) => r.kind === "WORK")
+  /*
+    Roles are one list for the company; a workspace shows only the work roles
+    it has switched on. "Add a role" offers the rest, or a new one.
+  */
+  const allWork = (roles ?? []).filter((r) => r.kind === "WORK")
+  const workRoles = allWork.filter((r) => r.activeHere !== false)
+  const notHere = allWork.filter((r) => r.activeHere === false)
+  const [picking, setPicking] = useState(false)
+  const refreshRoles = () => {
+    queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
+    queryClient.invalidateQueries({ queryKey: ["space-roles"] })
+  }
+  const useHere = useMutation({
+    mutationFn: (roleId: string) => spaceRolesApi.useHere(spaceId, roleId),
+    onSuccess: () => { refreshRoles(); setPicking(false); notify.success(t("scheduling.workRoles.addedHere")) },
+    onError: (err: Error) => notify.error(err.message),
+  })
+  const dropHere = useMutation({
+    mutationFn: (roleId: string) => spaceRolesApi.dropHere(spaceId, roleId),
+    onSuccess: () => { refreshRoles(); notify.success(t("scheduling.workRoles.removedHere")) },
+    onError: (err: Error) => notify.error(err.message),
+  })
   const allMgmt = (roles ?? []).filter((r) => r.kind !== "WORK")
   // Built-in roles nobody holds here are folded away — they exist in every workspace.
   const unused = allMgmt.filter((r) => r.isSystem && r.holders.length === 0)
@@ -172,7 +194,10 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
           role={role}
           currency={money.bill}
           onEdit={() => setDialog({ role, kind: role.kind === "WORK" ? "WORK" : "MANAGEMENT" })}
-          onDelete={() => setDeleteTarget(role)}
+          // A work role leaves THIS workspace; deleting it everywhere is not done from here.
+          {...(role.kind === "WORK"
+            ? { onRemoveHere: () => dropHere.mutate(role.id) }
+            : { onDelete: () => setDeleteTarget(role) })}
         />
       ))}
     </div>
@@ -200,9 +225,39 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
         {isLoading ? (
           <Skeleton className="h-16 w-full" />
         ) : workRoles.length === 0 ? (
-          <EmptyState icon={Wrench} title={t("scheduling.workRoles.nobodyHere")} description={t("scheduling.workRoles.workIntro")} />
+          <EmptyState icon={Wrench} title={t("scheduling.workRoles.noneHere")} description={t("scheduling.workRoles.noneHereHint")} />
         ) : (
           list(workRoles)
+        )}
+        <div className="flex justify-start">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setPicking((v) => !v)}>
+            <Plus className="h-4 w-4" />
+            {t("scheduling.workRoles.addHere")}
+          </Button>
+        </div>
+        {picking && (
+          <div className="space-y-2 rounded-xl border border-dashed p-3">
+            <p className="text-xs font-medium text-foreground">{t("scheduling.workRoles.companyRoles")}</p>
+            {notHere.length === 0 ? (
+              <p className="text-xs text-muted-foreground">{t("scheduling.workRoles.allUsedHere")}</p>
+            ) : (
+              notHere.map((r) => (
+                <div key={r.id} className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/50">
+                  <span className="text-sm font-medium">{r.name}</span>
+                  <Button size="sm" variant="secondary" disabled={useHere.isPending} onClick={() => useHere.mutate(r.id)}>
+                    {t("scheduling.workRoles.useHere")}
+                  </Button>
+                </div>
+              ))
+            )}
+            <button
+              type="button"
+              className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400"
+              onClick={() => { setPicking(false); setDialog({ role: null, kind: "WORK" }) }}
+            >
+              {t("scheduling.workRoles.orNewRole")}
+            </button>
+          </div>
         )}
       </div>
 
@@ -244,6 +299,7 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
       {dialog && (
         <RoleDialog
           spaceId={spaceId}
+          allRoles={roles ?? []}
           role={dialog.role}
           defaultKind={dialog.kind}
           open
@@ -278,12 +334,15 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
 
 function RoleDialog({
   spaceId,
+  allRoles,
   role,
   defaultKind,
   open,
   onOpenChange,
 }: {
   spaceId: string
+  /** Every role in the company — a name that exists is offered, not made twice. */
+  allRoles: SpaceRoleInSpace[]
   role: SpaceRoleInSpace | null
   defaultKind: "WORK" | "MANAGEMENT"
   open: boolean
@@ -305,6 +364,37 @@ function RoleDialog({
     role?.permissions || emptyPermissions(),
   )
 
+  // A name that already exists (any case) is the existing role: offer it, never make a second.
+  const clash = name.trim()
+    ? allRoles.find((r) => r.id !== role?.id && r.name.trim().toLowerCase() === name.trim().toLowerCase())
+    : undefined
+  const useExisting = useMutation({
+    mutationFn: (id: string) => spaceRolesApi.useHere(spaceId, id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
+      notify.success(t("scheduling.workRoles.addedHere"))
+      onOpenChange(false)
+    },
+    onError: (err: Error) => notify.error(err.message),
+  })
+  // Merging a duplicate trade into another: holders and day rates move.
+  const mergeTargets = isEdit && role!.kind === "WORK" && !role!.isSystem
+    ? allRoles.filter((r) => r.kind === "WORK" && r.id !== role!.id)
+    : []
+  const [mergeInto, setMergeInto] = useState<string>("")
+  const [confirmMerge, setConfirmMerge] = useState(false)
+  const merge = useMutation({
+    mutationFn: () => spaceRolesApi.merge(role!.id, mergeInto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
+      queryClient.invalidateQueries({ queryKey: ["space-roles"] })
+      queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
+      notify.success(t("scheduling.workRoles.merged"))
+      onOpenChange(false)
+    },
+    onError: (err: Error) => notify.error(err.message),
+  })
+
   // The kind moves only while nobody holds the role — the server says the same.
   const kindLocked = isEdit && (role!.isSystem || role!.inUseCount > 0)
   const isWork = kind === "WORK"
@@ -318,7 +408,8 @@ function RoleDialog({
         kind,
         ...(isWork ? {} : { permissions }),
       }
-      const saved = isEdit ? await spaceRolesApi.update(role!.id, payload) : await spaceRolesApi.create(payload)
+      // Made here: a work role is switched on in this workspace at once.
+      const saved = isEdit ? await spaceRolesApi.update(role!.id, payload) : await spaceRolesApi.create({ ...payload, spaceId })
       // A new trade can start with a day rate here, from today.
       if (!isEdit && isWork && saved?.id && initialDayRate.trim() !== "") {
         await spaceRolesApi.setDayRate(spaceId, saved.id, { cents: Math.round(Number(initialDayRate) * 100) })
@@ -340,6 +431,7 @@ function RoleDialog({
 
   const handleSave = () => {
     if (!name.trim()) return notify.error(t("scheduling.roles.nameRequired"))
+    if (clash) return notify.error(t("scheduling.workRoles.nameExists", { name: clash.name }))
     if (initialDayRate.trim() !== "" && !(Number(initialDayRate) >= 0)) return
     mutation.mutate()
   }
@@ -360,6 +452,16 @@ function RoleDialog({
           <div className="space-y-2">
             <Label htmlFor="role-name">{t("scheduling.roles.fields.name")}</Label>
             <Input id="role-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("scheduling.roles.namePlaceholder")} />
+            {clash && (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+                <span>{t("scheduling.workRoles.nameExists", { name: clash.name })}</span>
+                {clash.kind === "WORK" && clash.activeHere === false && (
+                  <Button size="sm" variant="outline" className="h-7" disabled={useExisting.isPending} onClick={() => useExisting.mutate(clash.id)}>
+                    {t("scheduling.workRoles.useNamedHere", { name: clash.name })}
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -519,6 +621,31 @@ function RoleDialog({
             </div>
           )}
         </div>
+
+        {mergeTargets.length > 0 && (
+          <div className="space-y-2 rounded-xl border border-dashed p-3">
+            <p className="text-xs font-medium text-foreground">{t("scheduling.workRoles.mergeTitle")}</p>
+            <p className="text-[11px] text-muted-foreground">{t("scheduling.workRoles.mergeHint", { name: role!.name })}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={mergeInto} onValueChange={(v) => { setMergeInto(v); setConfirmMerge(false) }}>
+                <SelectTrigger className="h-8 w-56"><SelectValue placeholder={t("scheduling.workRoles.mergeChoose")} /></SelectTrigger>
+                <SelectContent>
+                  {mergeTargets.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {!confirmMerge ? (
+                <Button size="sm" variant="outline" disabled={!mergeInto} onClick={() => setConfirmMerge(true)}>
+                  {t("scheduling.workRoles.mergeAction")}
+                </Button>
+              ) : (
+                <Button size="sm" variant="destructive" disabled={merge.isPending} onClick={() => merge.mutate()}>
+                  {merge.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                  {t("scheduling.workRoles.mergeConfirm", { name: role!.name, into: mergeTargets.find((r) => r.id === mergeInto)?.name ?? "" })}
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={mutation.isPending}>

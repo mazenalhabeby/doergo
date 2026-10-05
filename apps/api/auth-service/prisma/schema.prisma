@@ -2336,6 +2336,10 @@ model PartUsed {
 // belongs to a space; modules + workflow are configured per space.
 model CompanyLocation {
   id              String    @id @default(cuid())
+  // The company's work roles (trades) used in this workspace — only these show
+  // here and in its people's work-role picker. A role is a company-wide list;
+  // each workspace switches on what it uses, with its own day rate.
+  workRoleIds     String[]  @default([])
   // What this workspace's client is billed in; null = the organization's.
   // Every rate on the workspace is in it (shared billing/currency.ts).
   currency        String?

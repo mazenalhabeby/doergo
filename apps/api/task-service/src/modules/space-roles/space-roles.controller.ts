@@ -23,6 +23,7 @@ export class SpaceRolesController {
       color?: string;
       permissions?: PermissionSet;
       kind?: any;
+      spaceId?: string;
     },
   ) {
     return this.service.createRole(data);
@@ -44,6 +45,16 @@ export class SpaceRolesController {
     },
   ) {
     return this.service.updateRole(data);
+  }
+
+  @MessagePattern({ cmd: 'set_work_role_here' })
+  setWorkRoleHere(@Payload() data: { organizationId: string; spaceId: string; roleId: string; active: boolean }) {
+    return this.service.setWorkRoleHere(data);
+  }
+
+  @MessagePattern({ cmd: 'merge_space_role' })
+  mergeRole(@Payload() data: { organizationId: string; roleId: string; intoRoleId: string }) {
+    return this.service.mergeRole(data);
   }
 
   @MessagePattern({ cmd: 'delete_space_role' })

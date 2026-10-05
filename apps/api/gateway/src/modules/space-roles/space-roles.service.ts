@@ -19,6 +19,7 @@ export class SpaceRolesService extends BaseGatewayService {
     color?: string;
     permissions?: PermissionSet;
     kind?: RoleKindValue;
+    spaceId?: string;
   }) {
     return this.send({ cmd: 'create_space_role' }, data);
   }
@@ -36,6 +37,14 @@ export class SpaceRolesService extends BaseGatewayService {
   }) {
     return this.send({ cmd: 'update_space_role' }, data);
   }
+  setWorkRoleHere(data: { organizationId: string; spaceId: string; roleId: string; active: boolean }) {
+    return this.send({ cmd: 'set_work_role_here' }, data);
+  }
+
+  mergeRole(data: { organizationId: string; roleId: string; intoRoleId: string }) {
+    return this.send({ cmd: 'merge_space_role' }, data);
+  }
+
   deleteRole(data: { organizationId: string; roleId: string }) {
     return this.send({ cmd: 'delete_space_role' }, data);
   }

@@ -358,7 +358,8 @@ function MemberPanel({
   const [confirmRemove, setConfirmRemove] = useState(false)
 
   const external = member?.user?.isExternal === true
-  const workRoles = roles.filter((r) => r.kind === "WORK")
+  // Only the trades this workspace uses — plus the one this person already holds.
+  const workRoles = roles.filter((r) => r.kind === "WORK" && (r.activeHere !== false || r.id === member?.workRole?.id))
   const mgmtRoles = roles.filter((r) => r.kind !== "WORK")
   const allow = member?.allowSecondRole === true
   const hasWork = !!member?.workRole
@@ -431,7 +432,12 @@ function MemberPanel({
                       <SelectTrigger className="h-8 w-48"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value={NONE}>{t("scheduling.workRoles.noWorkRole")}</SelectItem>
-                        {workRoles.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                        {workRoles.map((r) => (
+                          <SelectItem key={r.id} value={r.id}>
+                            {r.name}
+                            {r.dayRateCents != null && <span className="ml-1.5 text-xs text-muted-foreground">· {cents(r.dayRateCents)} {t("rates.perDay")}</span>}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -685,7 +691,8 @@ function AddMemberDialog({
               <SelectContent>
                 <SelectItem value={NONE}>{t("scheduling.members.noRole")}</SelectItem>
                 {([["WORK", t("scheduling.workRoles.groupWork")], ["MANAGEMENT", t("scheduling.workRoles.groupManagement")]] as const).map(([kind, label]) => {
-                  const group = roles.filter((r) => (r.kind === "WORK") === (kind === "WORK"))
+                  // Work roles: only those this workspace uses.
+                  const group = roles.filter((r) => (r.kind === "WORK") === (kind === "WORK") && (r.kind !== "WORK" || r.activeHere !== false))
                   if (group.length === 0) return null
                   return (
                     <SelectGroup key={kind}>

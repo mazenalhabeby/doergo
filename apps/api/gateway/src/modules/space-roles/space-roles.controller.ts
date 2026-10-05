@@ -12,7 +12,7 @@ import {
   type BillByValue,
   type RoleKindValue,
 } from '@hbcfield/shared';
-import { RateHistoryQueryDto, SetDayRateDto, UpdateMemberRateDto, UpdateMemberRolesDto } from './space-roles.dto';
+import { MergeRoleDto, RateHistoryQueryDto, SetDayRateDto, UpdateMemberRateDto, UpdateMemberRolesDto } from './space-roles.dto';
 import { RequirePermission } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { SpaceRolesService } from './space-roles.service';
@@ -111,11 +111,15 @@ export class SpaceRolesController {
       color?: string;
       permissions?: PermissionSet;
       kind?: RoleKindValue;
+      /** Made from a workspace: a work role is switched on there at once. */
+      spaceId?: string;
     },
     @Request() req: any,
   ) {
     assertMayGrant(req.user, body.permissions);
+    if (body.spaceId) assertCanManageSpace(req.user, body.spaceId);
     return this.service.createRole({
+      spaceId: typeof body.spaceId === 'string' ? body.spaceId : undefined,
       name: body.name,
       description: body.description,
       color: body.color,
@@ -232,6 +236,33 @@ export class SpaceRolesController {
       organizationId: req.user.organizationId,
       createdById: req.user.id,
     });
+  }
+
+  /**
+   * Fold a duplicate work role into another: its holders and day rates move,
+   * it is deleted. Org-wide, like creating a role — the workspace permission.
+   */
+  /** Switch a company work role on in this workspace (it then shows here and in its pickers). */
+  @Put('spaces/:spaceId/work-roles/:roleId')
+  @ApiOperation({ summary: 'Use a company work role in this workspace' })
+  useWorkRole(@Param('spaceId') spaceId: string, @Param('roleId') roleId: string, @Request() req: any) {
+    assertCanManageSpace(req.user, spaceId);
+    return this.service.setWorkRoleHere({ spaceId, roleId, active: true, organizationId: req.user.organizationId });
+  }
+
+  /** Switch it off here only — refused while somebody here holds it. */
+  @Delete('spaces/:spaceId/work-roles/:roleId')
+  @ApiOperation({ summary: 'Stop using a work role in this workspace' })
+  dropWorkRole(@Param('spaceId') spaceId: string, @Param('roleId') roleId: string, @Request() req: any) {
+    assertCanManageSpace(req.user, spaceId);
+    return this.service.setWorkRoleHere({ spaceId, roleId, active: false, organizationId: req.user.organizationId });
+  }
+
+  @Post('space-roles/:roleId/merge')
+  @RequirePermission('canManageWorkspaces')
+  @ApiOperation({ summary: 'Merge a work role into another (holders and day rates move; the role is deleted)' })
+  mergeRole(@Param('roleId') roleId: string, @Body() body: MergeRoleDto, @Request() req: any) {
+    return this.service.mergeRole({ roleId, intoRoleId: body.intoRoleId, organizationId: req.user.organizationId });
   }
 
   /**

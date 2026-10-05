@@ -53,6 +53,12 @@ export class UpdateMemberRolesDto {
   hoursBasis?: 'COUNTED' | 'CLOCKED' | 'SHIFT' | null;
 }
 
+export class MergeRoleDto {
+  @ApiPropertyOptional({ description: 'The work role to keep; the one in the path is folded into it and deleted' })
+  @IsString()
+  intoRoleId!: string;
+}
+
 export class UpdateMemberRateDto {
   @ApiPropertyOptional({ description: 'Cents per hour this member is billed at for this client. Null inherits.' })
   @IsOptional()

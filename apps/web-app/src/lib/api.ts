@@ -5116,7 +5116,7 @@ export const spaceRolesApi = {
     if (res.error) throw new Error(res.error);
     return res.data?.data;
   },
-  create: async (data: { name: string; description?: string; color?: string; permissions?: PermissionSet; kind?: 'WORK' | 'MANAGEMENT' }) => {
+  create: async (data: { name: string; description?: string; color?: string; permissions?: PermissionSet; kind?: 'WORK' | 'MANAGEMENT'; spaceId?: string }) => {
     const res = await api.post<{ success: boolean; data: SpaceRole }>('/space-roles', data);
     if (res.error) throw new Error(res.error);
     return res.data?.data;
@@ -5131,6 +5131,24 @@ export const spaceRolesApi = {
   },
   remove: async (id: string) => {
     const res = await api.delete<{ success: boolean }>(`/space-roles/${id}`);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+  /** Switch a company work role on in this workspace. */
+  useHere: async (spaceId: string, roleId: string) => {
+    const res = await api.put<{ success: boolean }>(`/spaces/${spaceId}/work-roles/${roleId}`, {});
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+  /** Switch it off here only (refused while somebody here holds it). */
+  dropHere: async (spaceId: string, roleId: string) => {
+    const res = await api.delete<{ success: boolean }>(`/spaces/${spaceId}/work-roles/${roleId}`);
+    if (res.error) throw new Error(res.error);
+    return res.data;
+  },
+  /** Fold a duplicate work role into another: its holders and day rates move, it is deleted. */
+  merge: async (roleId: string, intoRoleId: string) => {
+    const res = await api.post<{ success: boolean }>(`/space-roles/${roleId}/merge`, { intoRoleId });
     if (res.error) throw new Error(res.error);
     return res.data;
   },

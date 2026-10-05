@@ -150,6 +150,8 @@ export interface SpaceRole {
 
 /** A role as one workspace sees it: who holds it HERE, and its day rate HERE. */
 export interface SpaceRoleInSpace extends SpaceRole {
+  /** A work role switched on in this workspace (shown here, offered in its pickers). */
+  activeHere?: boolean;
   holders: Array<{ id: string; firstName: string; lastName: string; avatarUrl?: string | null; position?: string | null }>;
   /** Holders across every workspace — while non-zero, the kind cannot change. */
   inUseCount: number;

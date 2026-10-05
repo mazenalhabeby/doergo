@@ -25,6 +25,7 @@ describe('SpaceRolesService — work roles', () => {
     spaceAssignment: { update: jest.fn() },
   };
   const prisma: Record<string, any> = {
+    $executeRawUnsafe: jest.fn(),
     companyLocation: { findFirst: jest.fn() },
     user: { findFirst: jest.fn() },
     accessRole: {
@@ -225,6 +226,31 @@ describe('SpaceRolesService — work roles', () => {
       tx.rateHistory.findMany.mockResolvedValue([]);
       await service.updateMemberRate({ organizationId: 'org1', spaceId: 's1', memberId: 'a1', billRateCents: 8500 });
       expect(tx.rateHistory.create.mock.calls[0][0].data.effectiveFrom.toISOString()).toBe('1970-01-01T00:00:00.000Z');
+    });
+  });
+
+  describe('a workspace uses the roles it switches on', () => {
+    const workId = () => Object.values(roles as Record<string, any>).find((r: any) => r.kind === 'WORK')!.id as string;
+    const mgmtId = () => Object.values(roles as Record<string, any>).find((r: any) => r.kind === 'MANAGEMENT')!.id as string;
+
+    it('switching a role off is refused while somebody here holds it', async () => {
+      prisma.spaceAssignment.count.mockResolvedValue(2);
+      await expect(service.setWorkRoleHere({ organizationId: 'org1', spaceId: 's1', roleId: workId(), active: false }))
+        .rejects.toMatchObject({ response: { code: 'WORK_ROLE_HELD_HERE', params: { count: 2 } } });
+      expect(prisma.$executeRawUnsafe).not.toHaveBeenCalled();
+    });
+
+    it('switching one on is one idempotent update', async () => {
+      await service.setWorkRoleHere({ organizationId: 'org1', spaceId: 's1', roleId: workId(), active: true });
+      expect(prisma.$executeRawUnsafe).toHaveBeenCalledTimes(1);
+      expect(prisma.$executeRawUnsafe.mock.calls[0][0]).toMatch(/NOT \(\$1 = ANY\("workRoleIds"\)\)/);
+    });
+
+    it('only a trade is switched on per workspace, and only trades merge', async () => {
+      await expect(service.setWorkRoleHere({ organizationId: 'org1', spaceId: 's1', roleId: mgmtId(), active: true }))
+        .rejects.toBeInstanceOf(BadRequestException);
+      await expect(service.mergeRole({ organizationId: 'org1', roleId: workId(), intoRoleId: mgmtId() }))
+        .rejects.toBeInstanceOf(BadRequestException);
     });
   });
 });

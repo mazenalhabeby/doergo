@@ -140,12 +140,15 @@ export function RoleCard({
   currency,
   onEdit,
   onDelete,
+  onRemoveHere,
 }: {
   role: SpaceRoleInSpace
   /** The workspace's billing currency — a day rate is charged to the client. */
   currency?: string
   onEdit: () => void
   onDelete?: () => void
+  /** A work role: switch it off in this workspace only (disabled while somebody here holds it). */
+  onRemoveHere?: () => void
 }) {
   const { t, i18n } = useTranslation()
   const cents = useCents(currency)
@@ -205,6 +208,18 @@ export function RoleCard({
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit} aria-label={t("common.edit", "Edit")}>
           <Pencil className="h-4 w-4" />
         </Button>
+        {onRemoveHere && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs text-muted-foreground"
+            onClick={onRemoveHere}
+            disabled={role.holders.length > 0}
+            title={role.holders.length > 0 ? t("scheduling.workRoles.heldHere") : undefined}
+          >
+            {t("scheduling.workRoles.removeHere")}
+          </Button>
+        )}
         {onDelete && !role.isSystem && (
           <Button
             variant="ghost"
