@@ -636,7 +636,10 @@ export function EditMemberDialog({
                 id="member-cost-rate"
                 label={t("members.memberEditor.costRateLabel")}
                 hint={t("members.memberEditor.costRateHint")}
-                currentCents={(member as { costRateCents?: number | null } | null)?.costRateCents ?? null}
+                /* From the dated history, like the day rate below: the member object the
+                   page opened with may not carry the cost, and does not move when a new
+                   rate is saved — the field then read "Not set" next to its own history. */
+                currentCents={memberRates?.some((r) => r.kind === "COST_HOUR") ? currentOf(memberRates.filter((r) => r.kind === "COST_HOUR")) : ((member as { costRateCents?: number | null } | null)?.costRateCents ?? null)}
                 history={memberRates?.filter((r) => r.kind === "COST_HOUR")}
                 onSubmit={async (c, from) => {
                   await employeesApi.update(member!.id, { costRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })
