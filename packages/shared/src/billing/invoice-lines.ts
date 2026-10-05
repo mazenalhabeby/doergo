@@ -1,3 +1,4 @@
+import type { HoursBasis } from './hours-basis';
 /**
  * The same work, written up three ways.
  *
@@ -142,6 +143,8 @@ export interface LabourLine {
   dayTo: string | null;
   /** HOURS lines on a workspace invoice: the jobs those hours cover, so they are marked billed. */
   taskIds?: string[];
+  /** HOURS lines on a workspace invoice: which hours were billed (counted / clocked / shift). */
+  hoursBasis?: HoursBasis | null;
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -485,6 +488,10 @@ export interface HoursEntry {
   costCents?: number | null;
   /** The finished jobs inside these days — marked billed with the line. */
   taskIds?: string[];
+  /** Which hours these are (billing/hours-basis.ts). Absent = COUNTED. */
+  hoursBasis?: HoursBasis;
+  /** SHIFT only: days in the run with no planned shift, billed at counted time instead. */
+  noShiftDays?: number;
 }
 
 /** One person on a WORKSPACE invoice: their hours runs, day runs and jobs. */
@@ -528,6 +535,7 @@ function hoursRunLine(h: HoursEntry, text: string): LabourLine {
     dayFrom: h.fromDay,
     dayTo: h.toDay,
     taskIds: h.taskIds ?? [],
+    hoursBasis: h.hoursBasis ?? 'COUNTED',
   };
 }
 

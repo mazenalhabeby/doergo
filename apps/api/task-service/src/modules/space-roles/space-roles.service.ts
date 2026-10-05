@@ -22,6 +22,9 @@ import {
   type PermissionSet,
   type BillByValue,
   type RoleKindValue,
+  effectiveHoursBasis,
+  isHoursBasis,
+  type HoursBasis,
 } from '@hbcfield/shared';
 
 // Permission keys that make sense on a SPACE role.
@@ -357,6 +360,9 @@ export class SpaceRolesService {
         /** How this member is billed here; null = by the hour. */
         billBy: m.billBy,
         effectiveBillBy: effectiveBillBy(m.billBy as BillByValue | null),
+        /** Which hours go on the client's invoice; null = counted. */
+        hoursBasis: m.hoursBasis,
+        effectiveHoursBasis: effectiveHoursBasis(m.hoursBasis),
         billRateCents: m.billRateCents,
         costRateCents: m.costRateCents,
         // What it falls back to — the ladder MINUS this assignment's own rung.
@@ -511,6 +517,7 @@ export class SpaceRolesService {
     managementRoleId?: string | null;
     allowSecondRole?: boolean;
     billBy?: BillByValue | null;
+    hoursBasis?: HoursBasis | null;
     requesterPerms?: PermissionSet | null;
   }) {
     const member = await this.prisma.spaceAssignment.findFirst({
@@ -562,6 +569,12 @@ export class SpaceRolesService {
     if (data.billBy && member.user?.isExternal) {
       throw new BadRequestException('An external member is not billed by you');
     }
+    if (data.hoursBasis !== undefined && data.hoursBasis !== null && !isHoursBasis(data.hoursBasis)) {
+      throw new BadRequestException('Hours on the invoice must be COUNTED, CLOCKED or SHIFT');
+    }
+    if (data.hoursBasis && member.user?.isExternal) {
+      throw new BadRequestException('An external member is not billed by you');
+    }
 
     const updated = await this.prisma.spaceAssignment.update({
       where: { id: member.id },
@@ -570,6 +583,8 @@ export class SpaceRolesService {
         ...(data.managementRoleId !== undefined && { roleId: mgmtRole?.id ?? null }),
         ...(data.allowSecondRole !== undefined && { allowSecondRole }),
         ...(data.billBy !== undefined && { billBy: data.billBy }),
+        // COUNTED is the default: store it as null so "never chosen" and "counted" stay one answer.
+        ...(data.hoursBasis !== undefined && { hoursBasis: data.hoursBasis === 'COUNTED' ? null : data.hoursBasis }),
       },
       include: { user: userSelect, role: roleSelect, workRole: roleSelect },
     });
@@ -583,6 +598,8 @@ export class SpaceRolesService {
         allowSecondRole: updated.allowSecondRole,
         billBy: updated.billBy,
         effectiveBillBy: effectiveBillBy(updated.billBy as BillByValue | null),
+        hoursBasis: updated.hoursBasis,
+        effectiveHoursBasis: effectiveHoursBasis(updated.hoursBasis),
       },
       'Member updated',
     );

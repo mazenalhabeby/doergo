@@ -4797,7 +4797,9 @@
       },
       "lineDates": "Dates sur les lignes qui couvrent une partie de la période",
       "lineTags": "Étiquettes heures et jours",
-      "nameLineRange": "{{name}} · {{from}} – {{to}}"
+      "nameLineRange": "{{name}} · {{from}} – {{to}}",
+      "noShiftDays_one": "{{count}} jour sans créneau prévu utilise le temps compté",
+      "noShiftDays_other": "{{count}} jours sans créneau prévu utilisent le temps compté"
     },
     "oldestDebt": "Plus ancienne impayée",
     "nothingOutstanding": "Tout est réglé — rien en attente.",
@@ -6932,7 +6934,17 @@
       "secondRoleOff": "Activez « Autoriser un second rôle » pour ajouter un rôle d’encadrement à côté du rôle métier.",
       "showUnused_one": "+ {{count}} rôle intégré que personne n’a ici ({{names}})",
       "showUnused_other": "+ {{count}} rôles intégrés que personne n’a ici ({{names}})",
-      "hideUnused": "Masquer les rôles que personne n’a ici"
+      "hideUnused": "Masquer les rôles que personne n’a ici",
+      "hoursBasis": "Heures sur la facture",
+      "hoursBasisHint": "Uniquement ce qui est facturé au client. Sa propre rémunération et le coût de la marge restent sur le temps compté.",
+      "basis": {
+        "COUNTED": "Temps compté",
+        "COUNTEDHint": "Pointage dans le créneau, moins les pauses. Comme la feuille de temps",
+        "CLOCKED": "Temps pointé",
+        "CLOCKEDHint": "Du pointage d'arrivée au pointage de départ, moins les pauses",
+        "SHIFT": "Heures de créneau",
+        "SHIFTHint": "Le créneau prévu chaque jour travaillé, moins les pauses"
+      }
     }
   },
   "spaceSharing": {

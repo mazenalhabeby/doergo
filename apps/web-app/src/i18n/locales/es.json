@@ -4788,7 +4788,9 @@
       },
       "lineDates": "Fechas en las líneas que cubren parte del periodo",
       "lineTags": "Etiquetas de horas y días",
-      "nameLineRange": "{{name}} · {{from}} – {{to}}"
+      "nameLineRange": "{{name}} · {{from}} – {{to}}",
+      "noShiftDays_one": "{{count}} día no tenía turno previsto y usa el tiempo contado",
+      "noShiftDays_other": "{{count}} días no tenían turno previsto y usan el tiempo contado"
     },
     "oldestDebt": "Más antigua sin pagar",
     "nothingOutstanding": "Todo saldado: nada pendiente.",
@@ -6923,7 +6925,17 @@
       "secondRoleOff": "Active «Permitir un segundo rol» para añadir un rol de gestión junto al de trabajo.",
       "showUnused_one": "+ {{count}} rol integrado que nadie tiene aquí ({{names}})",
       "showUnused_other": "+ {{count}} roles integrados que nadie tiene aquí ({{names}})",
-      "hideUnused": "Ocultar roles que nadie tiene aquí"
+      "hideUnused": "Ocultar roles que nadie tiene aquí",
+      "hoursBasis": "Horas en la factura",
+      "hoursBasisHint": "Solo lo que se cobra al cliente. Su propia retribución y el coste del margen siguen con el tiempo contado.",
+      "basis": {
+        "COUNTED": "Tiempo contado",
+        "COUNTEDHint": "Fichaje dentro del turno, menos pausas. Igual que la hoja de horas",
+        "CLOCKED": "Tiempo fichado",
+        "CLOCKEDHint": "De la entrada a la salida, menos pausas",
+        "SHIFT": "Horas de turno",
+        "SHIFTHint": "El turno previsto de cada día trabajado, menos pausas"
+      }
     }
   },
   "spaceSharing": {

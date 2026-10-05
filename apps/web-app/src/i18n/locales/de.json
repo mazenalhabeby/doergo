@@ -4788,7 +4788,9 @@
       },
       "lineDates": "Daten bei Positionen, die einen Teil des Zeitraums abdecken",
       "lineTags": "Kennzeichen Stunden und Tage",
-      "nameLineRange": "{{name}} · {{from}} – {{to}}"
+      "nameLineRange": "{{name}} · {{from}} – {{to}}",
+      "noShiftDays_one": "An {{count}} Tag war keine Schicht geplant; er zählt mit der gezählten Zeit",
+      "noShiftDays_other": "An {{count}} Tagen war keine Schicht geplant; sie zählen mit der gezählten Zeit"
     },
     "oldestDebt": "Älteste offene",
     "nothingOutstanding": "Alles beglichen — nichts offen.",
@@ -6923,7 +6925,17 @@
       "secondRoleOff": "Schalten Sie „Zweite Rolle erlauben“ ein, um neben der Arbeitsrolle eine Leitungsrolle zu vergeben.",
       "showUnused_one": "+ {{count}} integrierte Rolle, die hier niemand hat ({{names}})",
       "showUnused_other": "+ {{count}} integrierte Rollen, die hier niemand hat ({{names}})",
-      "hideUnused": "Rollen ausblenden, die hier niemand hat"
+      "hideUnused": "Rollen ausblenden, die hier niemand hat",
+      "hoursBasis": "Stunden auf der Rechnung",
+      "hoursBasisHint": "Nur, was dem Kunden berechnet wird. Die eigene Vergütung und die Kosten in der Marge bleiben bei der gezählten Zeit.",
+      "basis": {
+        "COUNTED": "Gezählte Zeit",
+        "COUNTEDHint": "Einstempeln innerhalb der Schicht, abzüglich Pausen. Wie im Stundenzettel",
+        "CLOCKED": "Gestempelte Zeit",
+        "CLOCKEDHint": "Vom Einstempeln bis zum Ausstempeln, abzüglich Pausen",
+        "SHIFT": "Schichtstunden",
+        "SHIFTHint": "Die geplante Schicht an jedem Arbeitstag, abzüglich Pausen"
+      }
     }
   },
   "spaceSharing": {

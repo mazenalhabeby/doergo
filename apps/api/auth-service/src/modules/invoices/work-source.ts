@@ -1,3 +1,4 @@
+import { minutesByBasis, type ClockInForHours, type HoursBasis } from '@hbcfield/shared';
 /**
  * What counts as billable work, and when — ONE answer for the client invoice
  * and the worker's statement.
@@ -46,13 +47,9 @@ export function jobHours(report: { workDuration: number } | null | undefined): n
   return report && report.workDuration > 0 ? Math.round((report.workDuration / 3600) * 100) / 100 : 0;
 }
 
-/** A clock-in, with whatever counted time it carries. */
-export interface CountedClockIn {
+/** A clock-in, with whatever counted time it carries (and what the other bases read). */
+export interface CountedClockIn extends ClockInForHours {
   userId: string;
-  clockInAt: Date;
-  clockOutAt?: Date | null;
-  paidMinutes?: number | null;
-  totalMinutes?: number | null;
 }
 
 /** A finished job, as a mark on a day with its own duration. */
@@ -77,13 +74,29 @@ export function countedMinutesByDay(
   jobs: CountedJob[],
   dayOf: (at: Date) => string,
 ): Map<string, number> {
+  return minutesByDay(clockIns, jobs, dayOf).minutes;
+}
+
+/**
+ * The same days, with each person's clock-ins read by THEIR basis (counted,
+ * clocked or shift — billing/hours-basis.ts). Only the client's invoice asks
+ * this; pay and cost stay on counted time. `noShift` holds the days where SHIFT
+ * was asked for and no shift was planned, so counted time stood in.
+ */
+export function minutesByDay(
+  clockIns: CountedClockIn[],
+  jobs: CountedJob[],
+  dayOf: (at: Date) => string,
+  basisOf: (userId: string) => HoursBasis = () => 'COUNTED',
+): { minutes: Map<string, number>; noShift: Set<string> } {
   const out = new Map<string, number>();
+  const noShift = new Set<string>();
   const add = (k: string, m: number) => out.set(k, (out.get(k) ?? 0) + m);
   for (const e of clockIns) {
-    const m =
-      e.paidMinutes ?? e.totalMinutes ??
-      (e.clockOutAt ? Math.max(0, Math.round((e.clockOutAt.getTime() - e.clockInAt.getTime()) / 60000)) : 0);
-    add(`${e.userId}|${dayOf(e.clockInAt)}`, m);
+    const k = `${e.userId}|${dayOf(e.clockInAt)}`;
+    const r = minutesByBasis(e, basisOf(e.userId));
+    if (r.fellBack) noShift.add(k);
+    add(k, r.minutes);
   }
   const clocked = new Set(out.keys());
   for (const j of jobs) {
@@ -91,5 +104,5 @@ export function countedMinutesByDay(
     const k = `${j.userId}|${dayOf(j.at)}`;
     if (!clocked.has(k)) add(k, Math.max(0, j.minutes));
   }
-  return out;
+  return { minutes: out, noShift };
 }

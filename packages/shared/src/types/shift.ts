@@ -202,6 +202,10 @@ export interface SpaceMember {
   billBy?: 'HOUR' | 'DAY' | 'BOTH' | null;
   /** What applies: their choice, else HOUR. */
   effectiveBillBy?: 'HOUR' | 'DAY' | 'BOTH';
+  /** Which hours go on the client's invoice; null = counted. */
+  hoursBasis?: 'COUNTED' | 'CLOCKED' | 'SHIFT' | null;
+  /** What applies: their choice, else COUNTED. */
+  effectiveHoursBasis?: 'COUNTED' | 'CLOCKED' | 'SHIFT';
   // Per-member, per-space routing override (Phase 4d). Empty = space default.
   notifyRoleIds?: string[];
   notifyUserIds?: string[];

@@ -120,6 +120,7 @@ export class SpaceRolesService extends BaseGatewayService {
     managementRoleId?: string | null;
     allowSecondRole?: boolean;
     billBy?: BillByValue | null;
+    hoursBasis?: 'COUNTED' | 'CLOCKED' | 'SHIFT' | null;
     requesterPerms?: PermissionSet | null;
   }) {
     return this.send({ cmd: 'update_space_member_roles' }, data);

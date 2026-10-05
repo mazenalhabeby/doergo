@@ -45,6 +45,12 @@ export class UpdateMemberRolesDto {
   @ValidateIf((_, v) => v !== null)
   @IsIn(BILL_BY_VALUES as unknown as string[])
   billBy?: BillByValue | null;
+
+  @ApiPropertyOptional({ enum: ['COUNTED', 'CLOCKED', 'SHIFT'], nullable: true, description: "Which hours go on the client's invoice; null = counted" })
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsIn(['COUNTED', 'CLOCKED', 'SHIFT'])
+  hoursBasis?: 'COUNTED' | 'CLOCKED' | 'SHIFT' | null;
 }
 
 export class UpdateMemberRateDto {

@@ -4788,7 +4788,9 @@
       },
       "lineDates": "Dates on lines that cover part of the period",
       "lineTags": "Hours and days tags",
-      "nameLineRange": "{{name}} · {{from}} – {{to}}"
+      "nameLineRange": "{{name}} · {{from}} – {{to}}",
+      "noShiftDays_one": "{{count}} day had no shift planned and uses counted time",
+      "noShiftDays_other": "{{count}} days had no shift planned and use counted time"
     },
     "oldestDebt": "Oldest unpaid",
     "nothingOutstanding": "Everything is settled — nothing outstanding.",
@@ -6923,7 +6925,17 @@
       "secondRoleOff": "Switch on \"Allow a second role\" to add a management role next to the work role.",
       "showUnused_one": "+ {{count}} built-in role nobody holds here ({{names}})",
       "showUnused_other": "+ {{count}} built-in roles nobody holds here ({{names}})",
-      "hideUnused": "Hide roles nobody holds here"
+      "hideUnused": "Hide roles nobody holds here",
+      "hoursBasis": "Hours on the invoice",
+      "hoursBasisHint": "Only what the client is charged. Their own pay and the margin's cost stay on counted time.",
+      "basis": {
+        "COUNTED": "Counted time",
+        "COUNTEDHint": "Clock-in inside the shift, less rests. Same as the timesheet",
+        "CLOCKED": "Clocked time",
+        "CLOCKEDHint": "From clock-in to clock-out, less rests",
+        "SHIFT": "Shift hours",
+        "SHIFTHint": "The planned shift on each day worked, less rests"
+      }
     }
   },
   "spaceSharing": {

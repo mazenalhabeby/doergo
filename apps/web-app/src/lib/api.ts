@@ -5197,6 +5197,7 @@ export const spaceMembersApi = {
       managementRoleId?: string | null
       allowSecondRole?: boolean
       billBy?: 'HOUR' | 'DAY' | 'BOTH' | null
+      hoursBasis?: 'COUNTED' | 'CLOCKED' | 'SHIFT' | null
     },
   ) => {
     const res = await api.patch<{ success: boolean; data: SpaceMember }>(`/spaces/${spaceId}/members/${memberId}/roles`, data);
@@ -5978,6 +5979,8 @@ export interface InvoiceItem {
   dayFrom?: string | null;
   dayTo?: string | null;
   taskIds?: string[];
+  /** HOURS runs: which hours were billed (counted / clocked / shift). */
+  hoursBasis?: 'COUNTED' | 'CLOCKED' | 'SHIFT' | null;
   createdAt: string;
 }
 
@@ -6114,6 +6117,8 @@ export interface InvoiceItemInput {
   dayTo?: string | null;
   /** HOURS lines on a workspace invoice: the jobs those hours cover. */
   taskIds?: string[];
+  /** HOURS runs: which hours were billed (counted / clocked / shift). */
+  hoursBasis?: 'COUNTED' | 'CLOCKED' | 'SHIFT' | null;
 }
 
 /** A part fitted during a job, priced for the invoice. */

@@ -131,6 +131,17 @@ function readLineStyle(): LineStyle {
   }
 }
 
+/** Which hours a person's line bills — shown on the working view, never on the client's copy. */
+function HoursBasisChip({ basis }: { basis?: string | null }) {
+  const { t } = useTranslation()
+  if (!basis) return null
+  const tone =
+    basis === "SHIFT" ? "bg-violet-500/15 text-violet-700 dark:text-violet-300"
+      : basis === "CLOCKED" ? "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300"
+        : "bg-green-500/15 text-green-700 dark:text-green-300"
+  return <span className={cn("ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold", tone)}>{t(`scheduling.membersPage.basis.${basis}`)}</span>
+}
+
 export default function NewInvoicePage() {
   return (
     <PlanGate feature="invoicing">
@@ -549,6 +560,7 @@ function NewInvoiceInner() {
         dayFrom: line.dayFrom,
         dayTo: line.dayTo,
         taskIds: line.taskIds,
+        hoursBasis: line.hoursBasis ?? null,
         descriptive: line.descriptive,
       })
     }
@@ -1323,6 +1335,7 @@ function NewInvoiceInner() {
                           <span className="mr-2 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300">{t("invoices.create.tagHours")}</span>
                           {h.workerName}
                           {h.workRoleName && <span className="ml-2 text-xs font-normal text-muted-foreground">{h.workRoleName}</span>}
+                          <HoursBasisChip basis={h.hoursBasis} />
                         </p>
                         <span className="shrink-0 text-sm font-semibold tabular-nums">
                           {money((Math.round(h.hours * 100) / 100) * ((h.hourRateCents ?? 0) / 100), currency)}
@@ -1338,6 +1351,11 @@ function NewInvoiceInner() {
                           {h.toDay !== h.fromDay && ` – ${formatDayKey(h.toDay, i18n.language)}`}
                         </span>
                       </div>
+                      {(h.noShiftDays ?? 0) > 0 && (
+                        <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-400">
+                          {t("invoices.create.noShiftDays", { count: h.noShiftDays })}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}

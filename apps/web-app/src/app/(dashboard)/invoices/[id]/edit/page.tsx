@@ -137,6 +137,7 @@ function EditInvoiceInner({ id }: { id: string }) {
       unitPrice: num(l.unitPrice),
       // A heading stays a heading while the draft is edited.
       lineKind: l.id ? inv?.items?.find((i) => i.id === l.id)?.lineKind ?? null : null,
+      hoursBasis: l.id ? inv?.items?.find((i) => i.id === l.id)?.hoursBasis ?? null : null,
     })),
     [lines, inv?.items],
   )
@@ -205,6 +206,7 @@ function EditInvoiceInner({ id }: { id: string }) {
               dayFrom: item.dayFrom ? item.dayFrom.slice(0, 10) : null,
               dayTo: item.dayTo ? item.dayTo.slice(0, 10) : null,
               ...(item.taskIds?.length ? { taskIds: item.taskIds } : {}),
+              ...(item.hoursBasis ? { hoursBasis: item.hoursBasis } : {}),
               billedDays: item.lineKind === "DAYS" ? num(line.quantity) : null,
             }),
           })

@@ -282,6 +282,7 @@ export class SpaceRolesController {
       managementRoleId: body.managementRoleId,
       allowSecondRole: body.allowSecondRole,
       billBy: body.billBy,
+      hoursBasis: body.hoursBasis,
       // The management role is authority: same ceiling as assigning one.
       requesterPerms: isAdmin(req.user) ? null : actorPermsForSpace(req.user, spaceId),
     });

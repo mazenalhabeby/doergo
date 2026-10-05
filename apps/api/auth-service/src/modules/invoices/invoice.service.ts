@@ -6,14 +6,14 @@ import {
   loadRateBook, dayKeyIn, parseDayKey, effectiveBillBy, billsHours, billsDays, workedDays,
   type BillByValue, type DayEntry, type HoursEntry,
   parseCurrency, resolveInvoiceCurrency, currencyOrNull, parseExchangeRate, DEFAULT_CURRENCY,
-  CURRENCY_INVALID_MESSAGE, EXCHANGE_RATE_INVALID_MESSAGE,
+  CURRENCY_INVALID_MESSAGE, EXCHANGE_RATE_INVALID_MESSAGE, effectiveHoursBasis, isHoursBasis,
 } from '@hbcfield/shared';
 import { ExchangeRateService } from './exchange-rate.service';
 
 /** The invoice line kinds a caller may file. */
 const LINE_KINDS = new Set(['HOURS', 'DAYS', 'HEADING']);
 
-import { dayStart, dayEnd, jobsInPeriod, jobHours, FINISHED, countedMinutesByDay } from './work-source';
+import { dayStart, dayEnd, jobsInPeriod, jobHours, FINISHED, countedMinutesByDay, minutesByDay } from './work-source';
 
 @Injectable()
 export class InvoiceService {
@@ -124,6 +124,7 @@ export class InvoiceService {
       dayFrom?: string | null;
       dayTo?: string | null;
       taskIds?: string[];
+      hoursBasis?: string | null;
     }[];
   }) {
     // When tied to a CUSTOMER space, snapshot its contact details as fallbacks so
@@ -895,6 +896,7 @@ export class InvoiceService {
             billRateCents: true,
             costRateCents: true,
             billBy: true,
+            hoursBasis: true,
             workRole: { select: { id: true, name: true, kind: true } },
             user: { select: { id: true, firstName: true, lastName: true, billRateCents: true, costRateCents: true, isExternal: true } },
           },
@@ -1095,6 +1097,7 @@ export class InvoiceService {
     workerId?: string | null;
     dayFrom?: string | null;
     dayTo?: string | null;
+    hoursBasis?: string | null;
   }) {
     const lineKind = item.lineKind && LINE_KINDS.has(item.lineKind) ? (item.lineKind as 'HOURS' | 'DAYS' | 'HEADING') : null;
     const isDays = lineKind === 'DAYS';
@@ -1113,6 +1116,8 @@ export class InvoiceService {
         lineKind === 'HOURS' && Array.isArray(item.taskIds)
           ? [...new Set(item.taskIds.filter((x): x is string => typeof x === 'string' && x.length <= 64))].slice(0, 2000)
           : [],
+      // Which hours an hours run billed — kept with the line; anything else is no basis.
+      hoursBasis: lineKind === 'HOURS' && isRun && isHoursBasis(item.hoursBasis) ? item.hoursBasis : null,
       dayFrom: from ? new Date(`${from}T00:00:00Z`) : null,
       dayTo: from && to && to >= from ? new Date(`${to}T00:00:00Z`) : from ? new Date(`${from}T00:00:00Z`) : null,
     };
@@ -1158,6 +1163,7 @@ export class InvoiceService {
     assignments: Array<{
       id: string;
       userId: string;
+      hoursBasis?: string | null;
       workRole: { id: string; name: string; kind: string } | null;
       user: { id: string; firstName: string | null; lastName: string | null; isExternal: boolean; billRateCents: number | null; costRateCents: number | null } | null;
     }>;
@@ -1194,7 +1200,10 @@ export class InvoiceService {
           approvalStatus: { not: 'REJECTED' },
           ...(bounded ? { clockInAt: range } : {}),
         },
-        select: { userId: true, clockInAt: true, clockOutAt: true, paidMinutes: true, totalMinutes: true },
+        select: {
+          userId: true, clockInAt: true, clockOutAt: true, paidMinutes: true, totalMinutes: true,
+          unpaidBreakMinutes: true, expectedClockInAt: true, expectedClockOutAt: true,
+        },
       }),
       this.prisma.invoiceItem.findMany({
         where: {
@@ -1228,6 +1237,13 @@ export class InvoiceService {
     }));
     // Counted time per person per day — the rule shared with the statement and the margin.
     const minutesOn = countedMinutesByDay(entries, jobMarks, dayOf);
+    /*
+      What the CLIENT is charged per day: each person's own basis (counted,
+      clocked or shift). Cost stays on `minutesOn` — what the person is owed
+      does not change with what the client is billed.
+    */
+    const basisOf = (userId: string) => effectiveHoursBasis(people.get(userId)?.assignment?.hoursBasis);
+    const billed = minutesByDay(entries, jobMarks, dayOf, basisOf);
     const key = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
     const alreadyBilled = (userId: string, kind: 'HOURS' | 'DAYS', d: string) =>
       billedRuns.some((r) => r.workerId === userId && r.lineKind === kind && key(r.dayFrom)! <= d && d <= (key(r.dayTo) ?? key(r.dayFrom))!);
@@ -1249,19 +1265,24 @@ export class InvoiceService {
 
       // HOURS: time on site, at the hourly rate in force each day; split where it changed.
       if (billsHours(billBy)) {
-        const days = daysWithTime.filter((d) => !alreadyBilled(userId, 'HOURS', d) && (minutesOn.get(`${userId}|${d}`) ?? 0) > 0);
+        const basis = basisOf(userId);
+        const days = daysWithTime.filter((d) => !alreadyBilled(userId, 'HOURS', d) && (billed.minutes.get(`${userId}|${d}`) ?? 0) > 0);
         for (const run of book.splitDaysWith(days, (d) => ratesFor(worker, d).billRateCents)) {
           let minutes = 0;
           let cost: number | null = 0;
           let count = 0;
+          let noShiftDays = 0;
           for (const d of days) {
             if (d < run.fromDay || d > run.toDay) continue;
-            const m = minutesOn.get(`${userId}|${d}`) ?? 0;
-            minutes += m;
+            const k = `${userId}|${d}`;
+            minutes += billed.minutes.get(k) ?? 0;
             count += 1;
+            if (billed.noShift.has(k)) noShiftDays += 1;
+            // Cost: the hours the person is owed (counted), whatever the client is billed.
+            const owed = minutesOn.get(k) ?? 0;
             const c = ratesFor(worker, d).costRateCents;
             if (c === null) cost = null;
-            else if (cost !== null) cost += (c * m) / 60;
+            else if (cost !== null) cost += (c * owed) / 60;
           }
           hourEntries.push({
             ...base,
@@ -1271,6 +1292,8 @@ export class InvoiceService {
             toDay: run.toDay,
             hourRateCents: run.cents,
             costCents: cost === null ? null : Math.round(cost),
+            hoursBasis: basis,
+            ...(basis === 'SHIFT' ? { noShiftDays } : {}),
             // The jobs these hours cover — marked billed with the line.
             taskIds: jobMarks
               .filter((j) => j.userId === userId && !args.billedTasks.has(j.id) && run.fromDay <= dayOf(j.at) && dayOf(j.at) <= run.toDay)

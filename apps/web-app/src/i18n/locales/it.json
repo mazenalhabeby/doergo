@@ -4797,7 +4797,9 @@
       },
       "lineDates": "Date sulle righe che coprono parte del periodo",
       "lineTags": "Etichette ore e giorni",
-      "nameLineRange": "{{name}} · {{from}} – {{to}}"
+      "nameLineRange": "{{name}} · {{from}} – {{to}}",
+      "noShiftDays_one": "{{count}} giorno senza turno previsto usa il tempo conteggiato",
+      "noShiftDays_other": "{{count}} giorni senza turno previsto usano il tempo conteggiato"
     },
     "oldestDebt": "Più vecchia non pagata",
     "nothingOutstanding": "Tutto saldato — nulla in sospeso.",
@@ -6932,7 +6934,17 @@
       "secondRoleOff": "Attivi «Consenti un secondo ruolo» per aggiungere un ruolo di gestione accanto a quello operativo.",
       "showUnused_one": "+ {{count}} ruolo predefinito che qui nessuno ha ({{names}})",
       "showUnused_other": "+ {{count}} ruoli predefiniti che qui nessuno ha ({{names}})",
-      "hideUnused": "Nascondi i ruoli che qui nessuno ha"
+      "hideUnused": "Nascondi i ruoli che qui nessuno ha",
+      "hoursBasis": "Ore in fattura",
+      "hoursBasisHint": "Solo ciò che viene addebitato al cliente. La sua retribuzione e il costo del margine restano sul tempo conteggiato.",
+      "basis": {
+        "COUNTED": "Tempo conteggiato",
+        "COUNTEDHint": "Timbratura dentro il turno, meno le pause. Come nel foglio ore",
+        "CLOCKED": "Tempo timbrato",
+        "CLOCKEDHint": "Dall'entrata all'uscita, meno le pause",
+        "SHIFT": "Ore di turno",
+        "SHIFTHint": "Il turno previsto in ogni giorno lavorato, meno le pause"
+      }
     }
   },
   "spaceSharing": {

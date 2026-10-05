@@ -44,6 +44,8 @@ export interface DocumentRow {
    * what the page adds up to.
    */
   lineKind?: "HOURS" | "DAYS" | "HEADING" | null
+  /** HOURS runs: which hours were billed. The working view says so; the client's copy does not. */
+  hoursBasis?: "COUNTED" | "CLOCKED" | "SHIFT" | null
 }
 
 const isHeading = (row: DocumentRow) => row.lineKind === "HEADING"
@@ -286,6 +288,11 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
                       {row.descriptive && <span className="mr-1.5 opacity-40">↳</span>}
                       {units.tag(row)}
                       {row.description}
+                      {row.lineKind === "HOURS" && row.hoursBasis && (
+                        <span className="ml-2 rounded-full bg-muted px-2 py-0.5 align-[1px] text-[10px] font-semibold text-muted-foreground">
+                          {t(`scheduling.membersPage.basis.${row.hoursBasis}`)}
+                        </span>
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-2 py-2.5 text-right tabular-nums">{row.descriptive ? "" : units.qty(row)}</td>
                     <td className="whitespace-nowrap px-2 py-2.5 text-right tabular-nums">

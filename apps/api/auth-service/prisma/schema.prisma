@@ -3154,6 +3154,15 @@ enum BillBy {
   BOTH
 }
 
+/// Which hours of a person's day go on a client invoice (shared billing/hours-basis.ts).
+/// COUNTED = clock-in inside the shift less rests (the timesheet); CLOCKED = clock-in
+/// to clock-out less rests; SHIFT = the planned shift less rests, on each day worked.
+enum HoursBasis {
+  COUNTED
+  CLOCKED
+  SHIFT
+}
+
 /// Which record a dated rate belongs to.
 enum RateTarget {
   ORGANIZATION
@@ -3256,6 +3265,8 @@ model SpaceAssignment {
   /// How this member's work here is billed: by the hour, the day, or both.
   /// Null = by the hour, which is how everybody was billed before day rates.
   billBy BillBy?
+  /// Which hours go on the client's invoice; null = COUNTED. The worker's own pay never follows it.
+  hoursBasis HoursBasis?
 
   /// The negotiated rate for THIS member at THIS client — the top rung.
   ///
@@ -4318,6 +4329,8 @@ model InvoiceItem {
   /// HOURS / DAYS for labour lines; HEADING for a work-role heading row, which
   /// is priced at zero and only organizes the document. Null = an ordinary line.
   lineKind      InvoiceLineKind?
+  /// An HOURS line: which hours it billed — saved so a later setting change never moves it.
+  hoursBasis    HoursBasis?
   /// HOURS and DAYS lines: whose time, and the first and last day of the run.
   /// What stops the same hours or days being billed on a second invoice.
   workerId      String?
