@@ -29,6 +29,8 @@ import {
   InvoiceTopBar, InvoiceNotice, InvoiceWorkbench, RailSection,
 } from "../_components/invoice-shell"
 import { InvoiceDocument, money, fmtDate } from "../_components/invoice-document"
+import { LabourCostPanel } from "../_components/labour-cost-panel"
+import { labourCostRows } from "../_lib/labour-cost-rows"
 import {
   ClientFields, TermsFields, LineEditor, num, type EditableLine,
 } from "../_components/invoice-fields"
@@ -529,13 +531,6 @@ function NewInvoiceInner() {
   const entryRate = (e: WorkEntry) => (e.billRateCents != null ? e.billRateCents / 100 : rateNum)
   // Day-billed work is listed but not charged by the hour — the days pay for it.
   const entryLabor = (e: WorkEntry) => (e.include && e.hoursBillable ? e.hours * entryRate(e) : 0)
-  /*
-    Cost mirrors the invoice, row for row: an HOURS row costs job hours × the
-    hourly rate with you; a DAYS row costs days × the day rate with you (the
-    server prices those). Day-only work has no hours row, so no hours cost.
-  */
-  const entryCost = (e: WorkEntry) =>
-    e.include && e.billBy !== "DAY" && e.costRateCents != null ? e.hours * (e.costRateCents / 100) : 0
   const entryParts = (e: WorkEntry) => (e.include && e.includeParts ? e.parts.reduce((s, p) => s + p.quantity * p.unitCost, 0) : 0)
 
   /*
@@ -719,30 +714,15 @@ function NewInvoiceInner() {
     here. A browser that computed a margin from rates it happened to hold would
     be a second answer to the question the boundary exists to control.
   */
-  const workCost = useMemo(
-    () =>
-      (siteMode ? 0 : entries.reduce((s, e) => s + entryCost(e), 0)) +
-      includedHours.reduce((s, h) => s + (h.costCents ?? 0) / 100, 0) +
-      includedDays.reduce((s, d) => s + (d.costCents ?? 0) / 100, 0),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [entries, includedDays, includedHours, siteMode],
-  )
   /*
-    Who has NO cost rate anywhere. Their time is left out of the cost — and the
-    screen says so by name, because a margin quietly counting them as free is
-    the number somebody would later quote.
+    One row per person — the cost the SERVER put on each included line, added
+    up (never a rate multiplied here). Client invoices cost their jobs by the
+    hour; workspace invoices cost hours and days lines.
   */
-  const costMissing = useMemo(() => {
-    const names = new Set<string>()
-    if (!siteMode) {
-      for (const e of entries) {
-        if (e.include && e.billBy !== "DAY" && e.hours > 0 && e.costRateCents == null) names.add(e.workerName || t("invoices.create.unassignedWorker"))
-      }
-    }
-    for (const h of includedHours) if (h.costCents == null) names.add(h.workerName)
-    for (const d of includedDays) if (d.costCents == null) names.add(d.workerName)
-    return [...names]
-  }, [entries, includedDays, includedHours, siteMode, t])
+  const costRows = useMemo(
+    () => labourCostRows(includedHours, includedDays, siteMode ? [] : entries, t("invoices.create.unassignedWorker")),
+    [entries, includedDays, includedHours, siteMode, t],
+  )
   const canViewLabourCost = (user as { canViewLabourCost?: boolean } | null)?.canViewLabourCost === true
   /*
     ⚠️ COSTS ARE IN THE ORGANIZATION'S CURRENCY, the bill in the invoice's. A
@@ -755,9 +735,7 @@ function NewInvoiceInner() {
   const showMargin =
     canViewLabourCost &&
     gather?.twoRates === true &&
-    (entries.some((e) => e.include && e.costRateCents != null) ||
-      includedDays.some((d) => d.costCents != null) ||
-      includedHours.some((h) => h.costCents != null))
+    costRows.some((r) => r.costCents != null)
 
 
   const createMutation = useMutation({
@@ -1249,48 +1227,14 @@ function NewInvoiceInner() {
           this is the screen agreeing with the boundary — not the boundary.
         */}
         {showMargin && (
-          <div className="bg-card rounded-2xl border border-border p-4">
-            <p className="text-sm font-medium text-foreground mb-3">{t("invoices.create.marginTitle")}</p>
-            <div className="flex flex-wrap gap-x-8 gap-y-3">
-              <div>
-                <p className="text-xs text-muted-foreground">{t("invoices.create.billed")}</p>
-                <p className="text-lg font-semibold tabular-nums text-foreground">{money(workSubtotal, currency)}</p>
-                {exchange.differs && billedInBase != null && (
-                  <p className="text-[11px] tabular-nums text-muted-foreground">≈ {money(billedInBase, baseCurrency)}</p>
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{t("invoices.create.labourCost")}</p>
-                <p className="text-lg font-semibold tabular-nums text-amber-700 dark:text-amber-500">{money(workCost, baseCurrency)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{t("invoices.create.margin")}</p>
-                {billedInBase == null ? (
-                  <p className="text-lg font-semibold tabular-nums text-muted-foreground">—</p>
-                ) : (
-                  <p className={cn(
-                    "text-lg font-semibold tabular-nums",
-                    billedInBase - workCost < 0 ? "text-red-600 dark:text-red-400" : "text-teal-700 dark:text-teal-400",
-                  )}>
-                    {money(billedInBase - workCost, baseCurrency)}
-                  </p>
-                )}
-              </div>
-            </div>
-            {billedInBase == null && (
-              <p className="mt-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs text-blue-800 dark:text-blue-300">
-                {t("currency.marginNeedsRate", { from: currency, to: baseCurrency })}
-              </p>
-            )}
-            {/* Billing under cost is a real thing — a fixed price, a goodwill
-                rate — and hiding it is how somebody finds out at quarter end. */}
-            <p className="mt-2 text-[11px] text-muted-foreground">{t("invoices.create.marginHint")}</p>
-            {costMissing.length > 0 && (
-              <p className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
-                {t("invoices.create.costMissing", { names: costMissing.join(", "), count: costMissing.length })}
-              </p>
-            )}
-          </div>
+          <LabourCostPanel
+            rows={costRows}
+            billed={workSubtotal}
+            billedInBase={billedInBase}
+            currency={currency}
+            baseCurrency={baseCurrency}
+            needsRate={billedInBase == null}
+          />
         )}
 
         {/* Billable work (system-sourced) */}

@@ -89,6 +89,9 @@ export interface DayEntry {
   costCents?: number | null;
   /** Counted hours on these days, for the reader. */
   hours?: number;
+  /** The person's hourly / day cost on the last day — what "You pay them" shows. Internal. */
+  costHourRateCents?: number | null;
+  costDayRateCents?: number | null;
 }
 
 export interface LabourLineOptions {
@@ -502,8 +505,13 @@ export interface HoursEntry {
   fromDay: string;
   toDay: string;
   hourRateCents: number | null;
-  /** What these hours cost you; null when a day has no cost rate. Internal. */
+  /** What these days cost you (billing/labour-cost.ts); null = no cost rate at all. Internal. */
   costCents?: number | null;
+  /** The person's hourly / day cost on the last day — what "You pay them" shows. Internal. */
+  costHourRateCents?: number | null;
+  costDayRateCents?: number | null;
+  /** Counted hours on these days — what the cost is reckoned on, whatever the client's basis. */
+  countedHours?: number;
   /** The finished jobs inside these days — marked billed with the line. */
   taskIds?: string[];
   /** Which hours these are (billing/hours-basis.ts). Absent = COUNTED. */

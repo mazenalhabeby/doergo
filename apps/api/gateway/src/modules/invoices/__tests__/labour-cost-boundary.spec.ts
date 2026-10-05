@@ -104,6 +104,21 @@ describe('a rate on its way into the database', () => {
   });
 });
 
+describe('a gather for somebody without the permission', () => {
+  it('carries no cost on any line — hours lines included', () => {
+    const line = { workerId: 'u', costCents: 100, costRateCents: 5, costHourRateCents: 3000, costDayRateCents: 16000, hours: 8 };
+    const out = stripLabourCost(
+      { hourEntries: [line], dayEntries: [line], workEntries: [line], twoRates: true },
+      false,
+    ) as any;
+    for (const key of ['hourEntries', 'dayEntries', 'workEntries']) {
+      expect(Object.keys(out[key][0]).filter((k) => /cost/i.test(k))).toEqual([]);
+      expect(out[key][0].hours).toBe(8);
+    }
+    expect(out.twoRates).toBe(false);
+  });
+});
+
 describe('the controller funnels every response', () => {
   const SRC = fs.readFileSync(path.join(__dirname, '..', 'invoices.controller.ts'), 'utf8');
   const code = SRC.replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, '$1').replace(/(^|[^:/])\/\/[^\n]*/g, '$1');

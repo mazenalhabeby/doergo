@@ -17,3 +17,4 @@ export * from './rate-history';
 export * from './work-roles';
 export * from './currency';
 export * from './hours-basis';
+export * from './labour-cost';

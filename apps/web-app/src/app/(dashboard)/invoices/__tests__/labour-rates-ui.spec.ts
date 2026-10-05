@@ -32,8 +32,14 @@ describe("the invoice draft", () => {
       the strip started removing them.
     */
     const src = code(DRAFT)
-    expect(src).toMatch(/costRateCents != null/)
     expect(src).not.toMatch(/costRate\s*=\s*Number\(/)
+    // The per-person panel ADDS the cost each line arrived with; it never
+    // multiplies a workspace line's rate itself.
+    const rows = code("_lib/labour-cost-rows.ts")
+    expect(rows).toContain("addCost(r, h.costCents)")
+    expect(rows).toContain("addCost(r, d.costCents)")
+    expect(rows).not.toMatch(/costHourRateCents\s*\*/)
+    expect(rows).not.toMatch(/costDayRateCents\s*\*/)
   })
 
   it("bills each line at that member's own rate, not one rate for the job", () => {

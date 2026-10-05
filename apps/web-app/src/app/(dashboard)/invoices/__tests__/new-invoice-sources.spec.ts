@@ -364,8 +364,11 @@ describe("the page has a shape", () => {
     */
     const s = src()
     expect(s).toMatch(/lg:grid-cols-\[320px_minmax\(0,1fr\)\]/)
-    // The rail stays put while the document does not move.
-    expect(s).toMatch(/lg:sticky lg:top-\[53px\]/)
+    // The rail stays put and scrolls on its own, fitted to the space MEASURED
+    // below the top bar — a typed offset left its last controls off-screen.
+    expect(s).toMatch(/lg:sticky lg:top-\[var\(--rail-top/)
+    expect(s).toMatch(/lg:overflow-y-auto lg:overscroll-contain/)
+    expect(s).toContain("useRailFit")
   })
 
   it("offers the client's copy as well as the working view", () => {

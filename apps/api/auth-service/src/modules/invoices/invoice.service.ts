@@ -8,6 +8,7 @@ import {
   parseCurrency, resolveInvoiceCurrency, currencyOrNull, parseExchangeRate, DEFAULT_CURRENCY,
   CURRENCY_INVALID_MESSAGE, EXCHANGE_RATE_INVALID_MESSAGE, effectiveHoursBasis, isHoursBasis,
   shiftLengthMinutes,
+  labourCost,
 } from '@hbcfield/shared';
 import { ExchangeRateService } from './exchange-rate.service';
 
@@ -1300,23 +1301,30 @@ export class InvoiceService {
         for (const d of days) workDays.add(d);
         for (const run of book.splitDaysWith(days, (d) => ratesFor(worker, d).billRateCents)) {
           let minutes = 0;
-          let cost: number | null = 0;
+          let owedMinutes = 0;
           let count = 0;
           let noShiftDays = 0;
           const alt = { COUNTED: 0, CLOCKED: 0, SHIFT: 0 };
+          const runDays: string[] = [];
           for (const d of days) {
             if (d < run.fromDay || d > run.toDay) continue;
             const k = `${userId}|${d}`;
             for (const b of ['COUNTED', 'CLOCKED', 'SHIFT'] as const) alt[b] += byBasis[b].get(k) ?? 0;
             minutes += billed.minutes.get(k) ?? 0;
+            owedMinutes += minutesOn.get(k) ?? 0;
             count += 1;
+            runDays.push(d);
             if (billed.noShift.has(k)) noShiftDays += 1;
-            // Cost: the hours the person is owed (counted), whatever the client is billed.
-            const owed = minutesOn.get(k) ?? 0;
-            const c = ratesFor(worker, d).costRateCents;
-            if (c === null) cost = null;
-            else if (cost !== null) cost += (c * owed) / 60;
           }
+          // Cost: what the person is owed for these days (counted time), whatever the client is billed.
+          const cost = labourCost({
+            days: runDays,
+            minutesOn: (d) => minutesOn.get(`${userId}|${d}`) ?? 0,
+            hourCostOn: (d) => ratesFor(worker, d).costRateCents,
+            dayCostOn: (d) => book.personDayCostOn(d, userId, a?.id),
+            withHourly: true,
+            withDaily: !(workRole && billsDays(billBy)),
+          });
           hourEntries.push({
             ...base,
             // To the minute — shown as "113 h 59 min" (shared formatHoursMinutes).
@@ -1325,7 +1333,10 @@ export class InvoiceService {
             fromDay: run.fromDay,
             toDay: run.toDay,
             hourRateCents: run.cents,
-            costCents: cost === null ? null : Math.round(cost),
+            costCents: cost.cents,
+            costHourRateCents: cost.hourRateCents,
+            costDayRateCents: cost.dayRateCents,
+            countedHours: Math.round(owedMinutes) / 60,
             hoursBasis: basis,
             ...(basis === 'SHIFT' ? { noShiftDays } : {}),
             hoursByBasis: {
@@ -1348,21 +1359,29 @@ export class InvoiceService {
         for (const d of days) workDays.add(d);
         for (const run of book.splitDaysWith(days, (d) => book.dayRateOn(d, workRole.id, spaceId))) {
           let minutes = 0;
-          let cost: number | null = 0;
+          const runDays: string[] = [];
           for (const d of days) {
             if (d < run.fromDay || d > run.toDay) continue;
             minutes += minutesOn.get(`${userId}|${d}`) ?? 0;
-            const dayCost = book.personDayCostOn(d, userId, a?.id);
-            if (dayCost === null) cost = null;
-            else if (cost !== null) cost += dayCost;
+            runDays.push(d);
           }
+          const cost = labourCost({
+            days: runDays,
+            minutesOn: (d) => minutesOn.get(`${userId}|${d}`) ?? 0,
+            hourCostOn: (d) => ratesFor(worker, d).costRateCents,
+            dayCostOn: (d) => book.personDayCostOn(d, userId, a?.id),
+            withHourly: !billsHours(billBy),
+            withDaily: true,
+          });
           dayEntries.push({
             ...base,
             days: run.days,
             fromDay: run.fromDay,
             toDay: run.toDay,
             dayRateCents: run.cents,
-            costCents: cost === null ? null : Math.round(cost),
+            costCents: cost.cents,
+            costHourRateCents: cost.hourRateCents,
+            costDayRateCents: cost.dayRateCents,
             hours: Math.round((minutes / 60) * 100) / 100,
           });
         }

@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useState } from "react"
+import { use, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
@@ -110,6 +110,16 @@ export default function MemberProfilePage({
     refetchMember, handleMemberSaved,
   } = useMemberData(memberId)
   const [editOpen, setEditOpen] = useState(false)
+  /*
+    `?edit=1` opens the editor straight away — the invoice's "Set rate" link
+    lands here, and a link that then asks for one more click to find the field
+    is a link half done. Read once, from the URL, after the member has loaded.
+  */
+  const memberLoaded = !!member
+  useEffect(() => {
+    if (!memberLoaded) return
+    if (new URLSearchParams(window.location.search).get("edit") === "1") setEditOpen(true)
+  }, [memberLoaded])
   // The statement is what a person's hours cost the company — only for those who may see that.
   const { user: viewer } = useAuth()
   const canViewLabourCost = (viewer as { canViewLabourCost?: boolean } | null)?.canViewLabourCost === true
