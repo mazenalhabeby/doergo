@@ -241,9 +241,8 @@ function NewInvoiceInner() {
     Blank means "everything outstanding", which is the right answer for a
     one-off and was the only answer before.
   */
-  const [periodValue, setPeriodValue] = useState<PeriodValue>({ mode: "all", from: "", to: "" })
-  // The calendar's dots need every unbilled day — loaded only once it is opened.
-  const [periodOpen, setPeriodOpen] = useState(false)
+  // Last month by default — what an invoice raised on the 1st is nearly always for.
+  const [periodValue, setPeriodValue] = useState<PeriodValue>({ mode: "last", from: "", to: "" })
 
   const spaceId = source === "space" ? pickedSpaceId || undefined : undefined
 
@@ -387,22 +386,20 @@ function NewInvoiceInner() {
     },
   })
   /*
-    Every unbilled day, whatever period is chosen — the same request as
-    "Outstanding" (one cache entry), asked for only when it is not already the
-    one on screen and the calendar is open.
+    Every unbilled day, whatever period is chosen: marks the calendar and says
+    when older work is still waiting before the chosen dates — without it, an
+    unbilled month would never reach any invoice and nothing would say so.
   */
   const allSource = gatherSource ? { ...gatherSource, from: undefined, to: undefined } : null
   const { data: allGather } = useQuery({
     queryKey: ["invoice-gather", allSource],
     queryFn: () => invoicesApi.gather(allSource!),
-    enabled: !!allSource && periodValue.mode !== "all" && periodOpen,
-    staleTime: 30_000,
+    enabled: !!allSource,
+    staleTime: 60_000,
   })
-  const workDays: string[] | undefined = periodValue.mode === "all"
-    ? gather?.outstandingDays
-    : allGather?.outstandingDays
+  const workDays: string[] | undefined = allGather?.outstandingDays
   // The days this invoice covers — shown, sent and stored as the same two dates.
-  const { from: periodFrom, to: periodTo } = periodDays(periodValue, workDays)
+  const { from: periodFrom, to: periodTo } = periodDays(periodValue)
 
   /**
    * The period, as the client reads it on the document.
@@ -1015,7 +1012,6 @@ function NewInvoiceInner() {
                     value={periodValue}
                     onChange={setPeriodValue}
                     workDays={workDays}
-                    onOpenChange={setPeriodOpen}
                   />
                 </div>
               )}

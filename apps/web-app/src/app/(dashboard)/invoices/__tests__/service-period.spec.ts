@@ -109,7 +109,7 @@ describe("the service period", () => {
     const src = page()
     // The gather and the create read ONE value; the dates come from one derivation.
     expect(src).toContain("periodQuery(periodValue)")
-    expect(src).toContain("periodDays(periodValue, workDays)")
+    expect(src).toContain("periodDays(periodValue)")
     expect(src).toMatch(/servicePeriodFrom:\s*periodFrom\s*\|\|\s*undefined/)
     expect(src).toMatch(/servicePeriodTo:\s*periodTo\s*\|\|\s*undefined/)
   })

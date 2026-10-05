@@ -1,4 +1,4 @@
-import { monthBounds, periodDays, periodQuery } from "../period-picker"
+import { monthBounds, periodQuery } from "../period-picker"
 
 /*
   The service period: every choice stands for real dates, and the dates sent
@@ -12,14 +12,7 @@ describe("period picker", () => {
     expect(monthBounds(-3, new Date(2026, 0, 31))).toEqual(["2025-10-01", "2025-10-31"])
   })
 
-  it("Outstanding reads its dates from the first and last unbilled day", () => {
-    const days = ["2026-08-14", "2026-09-02", "2026-10-03"]
-    expect(periodDays({ mode: "all", from: "", to: "" }, days)).toEqual({ from: "2026-08-14", to: "2026-10-03" })
-    expect(periodDays({ mode: "all", from: "", to: "" }, [])).toEqual({ from: "", to: "" })
-  })
-
-  it("asks the server for everything on Outstanding, and for the days otherwise", () => {
-    expect(periodQuery({ mode: "all", from: "x", to: "y" })).toEqual({})
+  it("asks the server for the days on screen", () => {
     expect(periodQuery({ mode: "custom", from: "2026-09-03", to: "2026-09-20" })).toEqual({ from: "2026-09-03", to: "2026-09-20" })
     const [f, t] = monthBounds(-1)
     expect(periodQuery({ mode: "last", from: "", to: "" })).toEqual({ from: f, to: t })

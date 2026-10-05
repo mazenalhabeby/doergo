@@ -25,11 +25,11 @@ import { useIsMobile } from "@/hooks/use-mobile"
  * ⚠️ ISO IN, ISO OUT (`YYYY-MM-DD`), read and written from LOCAL parts, for the
  * same reason as DatePicker: a Date carries a timezone this field has none of.
  */
-export type PeriodMode = "last" | "this" | "all" | "custom"
+export type PeriodMode = "last" | "this" | "custom"
 
 export interface PeriodValue {
   mode: PeriodMode
-  /** The chosen days; for "all" these are ignored and the work's own span is used. */
+  /** The chosen days (custom); a month preset carries its own. */
   from: string
   to: string
 }
@@ -38,8 +38,8 @@ interface PeriodPickerProps {
   value: PeriodValue
   onChange: (value: PeriodValue) => void
   /**
-   * Days with something still to bill, sorted. Marks the calendar, and gives
-   * "all" its dates. `undefined` = not known yet (still loading).
+   * Days with something still to bill, sorted. Marks the calendar and finds
+   * work left BEFORE the dates. `undefined` = not known yet (still loading).
    */
   workDays?: string[]
   /** Asked for when the calendar opens — lets the caller load `workDays` only then. */
@@ -67,16 +67,14 @@ export function monthBounds(shift: number, now = new Date()): [string, string] {
 }
 
 /** The days a value stands for: a preset's month, the work's span, or the chosen range. */
-export function periodDays(value: PeriodValue, workDays?: string[]): { from: string; to: string } {
+export function periodDays(value: PeriodValue): { from: string; to: string } {
   if (value.mode === "last") { const [from, to] = monthBounds(-1); return { from, to } }
   if (value.mode === "this") { const [from, to] = monthBounds(0); return { from, to } }
-  if (value.mode === "all") return { from: workDays?.[0] ?? "", to: workDays?.[workDays.length - 1] ?? "" }
   return { from: value.from, to: value.to }
 }
 
-/** What to ASK the server for: nothing for "all" (everything outstanding), else the days. */
+/** What to ASK the server for: the days on screen. */
 export function periodQuery(value: PeriodValue): { from?: string; to?: string } {
-  if (value.mode === "all") return {}
   const { from, to } = periodDays(value)
   return { from: from || undefined, to: to || undefined }
 }
@@ -96,12 +94,12 @@ export function PeriodPicker({ value, onChange, workDays, onOpenChange, classNam
   const [open, setOpen] = React.useState(false)
   const [start, setStart] = React.useState<string | null>(null)
 
-  const { from, to } = periodDays(value, workDays)
+  const { from, to } = periodDays(value)
   const lang = i18n.language || "en"
-  const monthName = (shift: number) => {
+  const monthLong = (shift: number) => {
     const now = new Date()
     return new Date(now.getFullYear(), now.getMonth() + shift, 1)
-      .toLocaleDateString(lang, { month: "short", year: "numeric" })
+      .toLocaleDateString(lang, { month: "long", year: "numeric" })
   }
   const fmt = (iso: string) =>
     dayOf(iso)?.toLocaleDateString(lang, { day: "numeric", month: "short", year: "numeric" }) ?? ""
@@ -111,6 +109,11 @@ export function PeriodPicker({ value, onChange, workDays, onOpenChange, classNam
     () => (from && to && workDays ? workDays.filter((d) => d >= from && d <= to).length : null),
     [from, to, workDays],
   )
+  /*
+    Unbilled days BEFORE the chosen dates — an older month still owed an
+    invoice. Work AFTER them is simply next month's invoice, not a warning.
+  */
+  const outside = from && workDays ? workDays.filter((d) => d < from).length : 0
   const span = from && to ? Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000) + 1 : 0
 
   const setOpenTo = (o: boolean) => {
@@ -120,9 +123,8 @@ export function PeriodPicker({ value, onChange, workDays, onOpenChange, classNam
   }
 
   const presets: [PeriodMode, string][] = [
-    ["last", monthName(-1)],
-    ["this", monthName(0)],
-    ["all", t("invoices.create.periodOutstanding")],
+    ["last", t("invoices.create.periodLastMonth")],
+    ["this", t("invoices.create.periodThisMonth")],
     ["custom", t("invoices.create.periodCustom")],
   ]
 
@@ -135,7 +137,7 @@ export function PeriodPicker({ value, onChange, workDays, onOpenChange, classNam
       <div
         role="group"
         aria-label={t("invoices.create.period")}
-        className="grid grid-cols-4 gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5"
+        className="grid grid-cols-3 gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5"
       >
         {presets.map(([mode, label]) => (
           <button
@@ -172,18 +174,12 @@ export function PeriodPicker({ value, onChange, workDays, onOpenChange, classNam
             <CalendarIcon className="size-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0">
               <span className="block truncate text-sm font-medium tabular-nums">
-                {from && to
-                  ? `${fmt(from)} – ${fmt(to)}`
-                  : value.mode === "all" && workDays === undefined
-                    ? "…"
-                    : t("invoices.create.periodNothing")}
+                {from && to ? `${fmt(from)} – ${fmt(to)}` : t("invoices.create.periodPickDates")}
               </span>
               <span className="block text-[11px] text-muted-foreground">
-                {value.mode === "all"
-                  ? t("invoices.create.periodAllSpan")
-                  : value.mode === "custom"
-                    ? t("invoices.create.periodCustomHint")
-                    : t("invoices.create.periodMonthHint")}
+                {value.mode === "custom"
+                  ? from && to ? t("invoices.create.periodCustomHint") : t("invoices.create.periodPickDatesHint")
+                  : monthLong(value.mode === "last" ? -1 : 0)}
               </span>
             </span>
           </button>
@@ -223,9 +219,21 @@ export function PeriodPicker({ value, onChange, workDays, onOpenChange, classNam
             : t("invoices.create.periodSpanWork", { count: span, work: inRange })}
         </p>
       )}
-      {inRange === 0 && value.mode !== "all" && workDays && workDays.length > 0 && (
+      {/*
+        ⚠️ WORK OUTSIDE THE DATES IS SAID, never silently left behind. With no
+        "everything outstanding" choice, a month that is still unbilled from
+        before would otherwise simply never appear on any invoice.
+      */}
+      {outside > 0 && workDays && (
         <p className="mt-1.5 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-          {t("invoices.create.periodNoWork", { from: fmt(workDays[0]!) })}
+          {t("invoices.create.periodOutside", { count: outside, from: fmt(workDays[0]!) })}
+          <button
+            type="button"
+            className="ml-1.5 font-semibold underline underline-offset-2"
+            onClick={() => onChange(normalise(workDays[0]!, to))}
+          >
+            {t("invoices.create.periodIncludeAll")}
+          </button>
         </p>
       )}
     </div>
