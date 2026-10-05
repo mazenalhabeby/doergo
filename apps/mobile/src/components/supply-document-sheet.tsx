@@ -126,7 +126,7 @@ export function SupplyDocumentSheet({
   ) : null;
 
   const suppliable = useMemo(
-    () => types.filter((ty) => ty.direction === 'SUPPLIED' && ty.isActive),
+    () => types.filter((ty) => ty.direction !== 'ISSUED' && ty.isActive),
     [types],
   );
 

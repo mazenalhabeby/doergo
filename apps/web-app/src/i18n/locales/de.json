@@ -8594,11 +8594,13 @@
       "keyTaken": "Es gibt bereits eine Art mit dem Schlüssel {{key}}",
       "direction": {
         "issued": "Sie stellen es aus",
-        "supplied": "Das Teammitglied reicht es ein"
+        "supplied": "Das Teammitglied reicht es ein",
+        "both": "Beide"
       },
       "directionHint": {
         "issued": "Lohnzettel, Verträge, Schreiben. Sie laden es hoch und legen es ab.",
-        "supplied": "Führerschein, Zeugnisse, Ausweis. Nur die Person hat es, also lädt sie es hoch und Sie bestätigen."
+        "supplied": "Führerschein, Zeugnisse, Ausweis. Nur die Person hat es, also lädt sie es hoch und Sie bestätigen.",
+        "both": "Schulungsnachweise, Atteste. Sie legen es ab, oder das Mitglied lädt es hoch und Sie bestätigen es."
       },
       "directionLocked": "Wer es bereitstellt, lässt sich später nicht ändern — sonst bekämen Teammitglieder einen Löschknopf für Lohnzettel oder verlören ihre eigenen Uploads.",
       "cadence": {
@@ -8640,7 +8642,8 @@
           "CARD": "Kartenformat",
           "PASSPORT": "Passseite",
           "PAGE": "A4-Seite"
-        }
+        },
+        "eitherFiles": "Beide Seiten können es ablegen"
       },
       "starters": {
         "payslip": {

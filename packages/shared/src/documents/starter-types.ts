@@ -305,7 +305,7 @@ export function typeConsequences(type: {
   twoSided?: boolean;
 }): string[] {
   const out: string[] = [];
-  out.push(type.direction === 'SUPPLIED' ? 'memberUploads' : 'youIssue');
+  out.push(type.direction === 'SUPPLIED' ? 'memberUploads' : type.direction === 'BOTH' ? 'eitherFiles' : 'youIssue');
 
   /*
     How it will be scanned, said out loud on the row.
@@ -315,7 +315,7 @@ export function typeConsequences(type: {
     licence. A setting nobody can see is a setting nobody corrects, and this one
     decides how well the document can be read.
   */
-  if (type.direction === 'SUPPLIED') {
+  if (type.direction !== 'ISSUED') {
     out.push(`shape.${type.scanShape ?? 'CARD'}`);
     if (type.twoSided) out.push('bothSides');
   }

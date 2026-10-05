@@ -8594,11 +8594,13 @@
       "keyTaken": "Ya existe un tipo guardado como {{key}}",
       "direction": {
         "issued": "Lo emites tú",
-        "supplied": "Lo aporta la persona"
+        "supplied": "Lo aporta la persona",
+        "both": "Cualquiera de los dos"
       },
       "directionHint": {
         "issued": "Nóminas, contratos, cartas. Tú lo subes y lo archivas en su expediente.",
-        "supplied": "Carnés, certificados, DNI. Solo lo tiene esa persona, así que lo sube y tú lo apruebas."
+        "supplied": "Carnés, certificados, DNI. Solo lo tiene esa persona, así que lo sube y tú lo apruebas.",
+        "both": "Certificados de formación, notas médicas. Usted lo archiva, o el miembro lo sube y usted lo aprueba."
       },
       "directionLocked": "Quién lo aporta no puede cambiar después: daría a las personas un botón de borrar nóminas, o les quitaría sus propias subidas.",
       "cadence": {
@@ -8640,7 +8642,8 @@
           "CARD": "tamaño tarjeta",
           "PASSPORT": "página de pasaporte",
           "PAGE": "página A4"
-        }
+        },
+        "eitherFiles": "Lo archiva cualquiera de los dos"
       },
       "starters": {
         "payslip": {

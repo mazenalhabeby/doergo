@@ -8603,11 +8603,13 @@
       "keyTaken": "Un type enregistré sous {{key}} existe déjà",
       "direction": {
         "issued": "Vous l’émettez",
-        "supplied": "Le membre le fournit"
+        "supplied": "Le membre le fournit",
+        "both": "L’un ou l’autre"
       },
       "directionHint": {
         "issued": "Bulletins, contrats, courriers. Vous le déposez et le classez dans son dossier.",
-        "supplied": "Permis, attestations, pièce d’identité. Lui seul l’a : il le dépose et vous l’approuvez."
+        "supplied": "Permis, attestations, pièce d’identité. Lui seul l’a : il le dépose et vous l’approuvez.",
+        "both": "Attestations de formation, certificats médicaux. Vous le classez, ou le membre le dépose et vous l’approuvez."
       },
       "directionLocked": "Qui le fournit ne peut plus changer : cela donnerait aux membres un bouton pour supprimer des bulletins, ou leur retirerait leurs propres dépôts.",
       "cadence": {
@@ -8649,7 +8651,8 @@
           "CARD": "format carte",
           "PASSPORT": "page de passeport",
           "PAGE": "page A4"
-        }
+        },
+        "eitherFiles": "L’un ou l’autre le classe"
       },
       "starters": {
         "payslip": {

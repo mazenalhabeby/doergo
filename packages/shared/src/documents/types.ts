@@ -21,8 +21,12 @@ export type DocumentCadence = 'MONTHLY' | 'ANNUAL' | 'ONE_OFF';
  *           A payslip they could remove is not a record of anything.
  * SUPPLIED — member → company. The member owns it and may replace it; the
  *           company verifies it.
+ * BOTH     — either. The office may file it AND the member may upload it
+ *           (a training certificate either side may hold). Each COPY keeps
+ *           the rules of whoever filed it: the office's is locked like a
+ *           payslip, the member's own (`issuedById` null) they may replace.
  */
-export type DocumentDirection = 'ISSUED' | 'SUPPLIED';
+export type DocumentDirection = 'ISSUED' | 'SUPPLIED' | 'BOTH';
 
 /**
  * What the member has to do before a document counts as dealt with.

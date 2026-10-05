@@ -62,7 +62,7 @@ export function SupplyDocumentDialog({
   const inputRef = useRef<HTMLInputElement>(null)
 
   const suppliable = useMemo(
-    () => types.filter((ty) => ty.direction === "SUPPLIED" && ty.isActive),
+    () => types.filter((ty) => ty.direction !== "ISSUED" && ty.isActive),
     [types],
   )
 

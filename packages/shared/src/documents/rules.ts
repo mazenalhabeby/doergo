@@ -106,10 +106,25 @@ export function retentionUntil(
   return d;
 }
 
-/** Whether a member may delete this document themselves. */
-export function memberMayDelete(direction: DocumentDirection): boolean {
-  // Only what the member supplied. A payslip they could remove is not a record.
-  return direction === 'SUPPLIED';
+/**
+ * May a member upload a document of this type themselves? Also decides whether
+ * the type can be REQUIRED of a member — asking for something they have no way
+ * to hand in would chase them forever.
+ */
+export function memberMaySupply(direction: DocumentDirection): boolean {
+  return direction === 'SUPPLIED' || direction === 'BOTH';
+}
+
+/**
+ * Whether a member may delete this document themselves.
+ *
+ * Only what the member supplied — a payslip they could remove is not a record.
+ * On a BOTH type that is decided per COPY: their own upload (`suppliedByMember`,
+ * i.e. no `issuedById`) yes, a copy the office filed no.
+ */
+export function memberMayDelete(direction: DocumentDirection, suppliedByMember = true): boolean {
+  if (direction === 'SUPPLIED') return true;
+  return direction === 'BOTH' && suppliedByMember;
 }
 
 /** Whether this document blocks the member until they act on it. */

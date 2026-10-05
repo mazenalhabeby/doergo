@@ -9,7 +9,7 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { documentsApi, type MemberDocumentRow, type DocumentTypeRow, type RequirementRow } from "@/lib/api"
-import { waitingOnMember } from "@hbcfield/shared/client"
+import { memberMayDelete, waitingOnMember } from "@hbcfield/shared/client"
 import { SupplyDocumentDialog } from "./_components/supply-document-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -99,6 +99,11 @@ export default function MyDocumentsPage() {
     queryKey: ["document-types"],
     queryFn: () => documentsApi.listTypes(),
   })
+  // Only what they supplied themselves — on an "either" type, never the office's copy.
+  const mayRemove = (d: MemberDocumentRow) => {
+    const dir = types.find((ty) => ty.id === d.typeId)?.direction
+    return !!dir && memberMayDelete(dir, d.suppliedByMember === true)
+  }
 
   const { data: documents = [], isLoading } = useQuery<MemberDocumentRow[]>({
     queryKey: ["my-documents"],
@@ -202,7 +207,7 @@ export default function MyDocumentsPage() {
           {/* And never for an external member: the company asks somebody else's
               employee for nothing, so there is nothing here for them to supply.
               The server refuses it too — this only avoids offering it. */}
-          {!isExternalMember && types.some((ty) => ty.direction === "SUPPLIED" && ty.isActive) && (
+          {!isExternalMember && types.some((ty) => ty.direction !== "ISSUED" && ty.isActive) && (
             <Button size="sm" onClick={() => setSupplying(true)}>
               <Upload className="mr-2 h-4 w-4" />
               {t("documents.supply.action")}
@@ -518,7 +523,8 @@ export default function MyDocumentsPage() {
                     refuses anything ISSUED regardless of what the UI shows —
                     this just avoids offering a button that always fails.
                   */}
-                  {types.find((ty) => ty.id === d.typeId)?.direction === "SUPPLIED" && (
+                  {/* On an "either" type only their OWN upload — a copy the office filed is locked. */}
+                  {mayRemove(d) && (
                     <Button
                       size="sm"
                       variant="ghost"

@@ -361,7 +361,7 @@ export default function IssueDocumentsPage() {
             className="h-10 appearance-none rounded-md border border-slate-200 bg-white pl-3 pr-9 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           >
             <option value="">{t("documents.issue.choose")}</option>
-            {types.filter((ty) => ty.direction === "ISSUED").map((ty) => (
+            {types.filter((ty) => ty.direction !== "SUPPLIED").map((ty) => (
               <option key={ty.id} value={ty.id}>{ty.label}</option>
             ))}
           </select>

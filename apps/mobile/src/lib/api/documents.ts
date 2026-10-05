@@ -47,7 +47,7 @@ export interface DocumentType {
   key: string;
   label: string;
   cadence: 'MONTHLY' | 'ANNUAL' | 'ONE_OFF';
-  direction: 'ISSUED' | 'SUPPLIED';
+  direction: 'ISSUED' | 'SUPPLIED' | 'BOTH';
   /** Decides whether a waiting document asks for a drawing or an acknowledgement. */
   signatureMode: 'NONE' | 'ACKNOWLEDGE' | 'IN_APP' | 'WET_INK';
   isCredential: boolean;

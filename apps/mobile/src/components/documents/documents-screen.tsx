@@ -101,7 +101,7 @@ export function DocumentsScreen() {
   const queuedTypeIds = useMemo(() => new Set(queued.map((q) => q.typeId)), [queued]);
   const need = useMemo(() => stillNeeded(requirements, documents, queuedTypeIds), [requirements, documents, queuedTypeIds]);
 
-  const canAdd = types.some((ty) => ty.direction === 'SUPPLIED' && ty.isActive) || canPropose;
+  const canAdd = types.some((ty) => ty.direction !== 'ISSUED' && ty.isActive) || canPropose;
   const onPaperOf = useCallback((d: MemberDocument) => types.find((ty) => ty.id === d.typeId)?.signatureMode === 'WET_INK', [types]);
 
   /* One box across the title, the type and the year — whichever the half-remembered word belongs to. */

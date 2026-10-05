@@ -8594,11 +8594,13 @@
       "keyTaken": "You already have a type stored as {{key}}",
       "direction": {
         "issued": "You issue it",
-        "supplied": "The member provides it"
+        "supplied": "The member provides it",
+        "both": "Either of you"
       },
       "directionHint": {
         "issued": "Payslips, contracts, letters. You upload or generate it and file it to them.",
-        "supplied": "Licences, certificates, ID. Only they have it, so they upload it and you approve it."
+        "supplied": "Licences, certificates, ID. Only they have it, so they upload it and you approve it.",
+        "both": "Training certificates, medical notes. You file it, or the member uploads it and you approve it."
       },
       "directionLocked": "Who provides it cannot change later — it would hand members a delete button for payslips, or take their own uploads away from them.",
       "cadence": {
@@ -8640,7 +8642,8 @@
           "CARD": "card-sized",
           "PASSPORT": "passport page",
           "PAGE": "A4 page"
-        }
+        },
+        "eitherFiles": "Either of you files it"
       },
       "starters": {
         "payslip": {

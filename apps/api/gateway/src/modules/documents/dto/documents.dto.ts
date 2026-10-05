@@ -23,7 +23,7 @@ import {
 import { Type } from 'class-transformer';
 
 const CADENCES = ['MONTHLY', 'ANNUAL', 'ONE_OFF'] as const;
-const DIRECTIONS = ['ISSUED', 'SUPPLIED'] as const;
+const DIRECTIONS = ['ISSUED', 'SUPPLIED', 'BOTH'] as const;
 const SCAN_SHAPES = ['CARD', 'PASSPORT', 'PAGE'] as const;
 const SIGNATURE_MODES = ['NONE', 'ACKNOWLEDGE', 'IN_APP', 'WET_INK'] as const;
 

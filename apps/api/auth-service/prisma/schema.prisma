@@ -4895,6 +4895,7 @@ enum DocumentCadence {
 enum DocumentDirection {
   ISSUED // company → member. Read and download, never delete.
   SUPPLIED // member → company. The member owns it and may replace it.
+  BOTH // either: the office files it OR the member uploads it. Each copy keeps its filer's rules.
 }
 
 /// What the member must do before a document stops blocking them.

@@ -31,7 +31,7 @@ export interface AskRequirement {
 export interface AskType {
   id: string;
   label: string;
-  direction: 'ISSUED' | 'SUPPLIED';
+  direction: 'ISSUED' | 'SUPPLIED' | 'BOTH';
   isActive: boolean;
   multiPage?: boolean;
   description?: string | null;
@@ -122,7 +122,7 @@ export function typeGroups(
   docs: readonly AskDocument[],
   queuedTypeIds: ReadonlySet<string>,
 ): { asked: (AskedRow & { type: AskType })[]; checking: (CheckingRow & { type: AskType })[]; other: AskType[] } {
-  const suppliable = types.filter((ty) => ty.direction === 'SUPPLIED' && ty.isActive);
+  const suppliable = types.filter((ty) => ty.direction !== 'ISSUED' && ty.isActive);
   const need = stillNeeded(requirements, docs, queuedTypeIds);
   const byId = new Map(suppliable.map((ty) => [ty.id, ty] as const));
   const required = new Set(requirements.map((r) => r.typeId));

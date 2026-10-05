@@ -18,7 +18,7 @@ import type { CredentialStanding } from './types';
 export interface RequirableType {
   id: string;
   label: string;
-  direction: 'ISSUED' | 'SUPPLIED';
+  direction: 'ISSUED' | 'SUPPLIED' | 'BOTH';
   isActive: boolean;
   isCredential: boolean;
   hasExpiry: boolean;
@@ -101,7 +101,8 @@ export function requirementsFor(
   */
   if (member.isExternal) return [];
   return types.filter((t) => {
-    if (!t.isActive || t.direction !== 'SUPPLIED') return false;
+    // Only what a member can hand in — a SUPPLIED or BOTH type. On BOTH an office copy counts too.
+    if (!t.isActive || t.direction === 'ISSUED') return false;
     if (t.requiredFromAll) return true;
     return !!member.memberRoleId && t.requiredFromRoleIds.includes(member.memberRoleId);
   });

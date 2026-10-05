@@ -7362,6 +7362,8 @@ export interface MemberDocumentRow {
   expiresOn: string | null;
   unread: boolean;
   needsSignature: boolean;
+  /** Their own upload (nobody issued it) — on an "either" type, the copy they may replace. */
+  suppliedByMember?: boolean;
   standing: 'VALID' | 'EXPIRING' | 'EXPIRED' | 'MISSING' | null;
   /**
    * Whose document this is, when it is not yours.
@@ -7381,7 +7383,7 @@ export interface DocumentTypeRow {
   label: string;
   description: string | null;
   cadence: 'MONTHLY' | 'ANNUAL' | 'ONE_OFF';
-  direction: 'ISSUED' | 'SUPPLIED';
+  direction: 'ISSUED' | 'SUPPLIED' | 'BOTH';
   retentionMonths: number | null;
   signatureMode: 'NONE' | 'ACKNOWLEDGE' | 'IN_APP' | 'WET_INK';
   isCredential: boolean;

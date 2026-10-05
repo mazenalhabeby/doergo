@@ -8603,11 +8603,13 @@
       "keyTaken": "Esiste già un tipo salvato come {{key}}",
       "direction": {
         "issued": "Lo emetti tu",
-        "supplied": "Lo fornisce la persona"
+        "supplied": "Lo fornisce la persona",
+        "both": "Entrambi"
       },
       "directionHint": {
         "issued": "Buste paga, contratti, lettere. Lo carichi tu e lo archivi nel fascicolo.",
-        "supplied": "Patenti, attestati, documenti. Ce l’ha solo la persona: lo carica e tu lo approvi."
+        "supplied": "Patenti, attestati, documenti. Ce l’ha solo la persona: lo carica e tu lo approvi.",
+        "both": "Attestati di formazione, certificati medici. Lo archivia lei, oppure il membro lo carica e lei lo approva."
       },
       "directionLocked": "Chi lo fornisce non può cambiare in seguito: darebbe alle persone un pulsante per cancellare le buste paga, o toglierebbe loro i propri caricamenti.",
       "cadence": {
@@ -8649,7 +8651,8 @@
           "CARD": "formato tessera",
           "PASSPORT": "pagina del passaporto",
           "PAGE": "pagina A4"
-        }
+        },
+        "eitherFiles": "Può archiviarlo l’uno o l’altro"
       },
       "starters": {
         "payslip": {

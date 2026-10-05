@@ -16,6 +16,7 @@ import {
   periodIsValid,
   retentionUntil,
   memberMayDelete,
+  memberMaySupply,
   isBlocking,
   canSignInApp,
   credentialStanding,
@@ -1982,7 +1983,7 @@ export class DocumentsService {
     if (!type.isActive) {
       throw new BadRequestException('That document type is no longer in use');
     }
-    if (type.direction !== 'SUPPLIED') {
+    if (!memberMaySupply(type.direction)) {
       throw new ForbiddenException(
         `${type.label} is issued by your organization — you cannot upload one yourself`,
       );
@@ -2106,7 +2107,7 @@ export class DocumentsService {
 
     const [types, held] = await Promise.all([
       this.prisma.documentType.findMany({
-        where: { organizationId: data.actor.organizationId, isActive: true, direction: 'SUPPLIED' },
+        where: { organizationId: data.actor.organizationId, isActive: true, direction: { in: ['SUPPLIED', 'BOTH'] } },
       }),
       this.prisma.document.findMany({
         where: { organizationId: data.actor.organizationId, userId: targetUserId },
@@ -2148,7 +2149,7 @@ export class DocumentsService {
 
     const [types, held] = await Promise.all([
       this.prisma.documentType.findMany({
-        where: { organizationId: data.actor.organizationId, isActive: true, direction: 'SUPPLIED' },
+        where: { organizationId: data.actor.organizationId, isActive: true, direction: { in: ['SUPPLIED', 'BOTH'] } },
       }),
       this.prisma.document.findMany({
         where: { organizationId: data.actor.organizationId, userId: data.actor.userId },
@@ -4687,6 +4688,7 @@ export class DocumentsService {
         expiresOn: true,
         firstOpenedAt: true,
         rejectionReason: true,
+        issuedById: true,
         type: { select: { key: true, label: true, signatureMode: true, isCredential: true } },
         // Only what deciding "is this waiting on you" needs. Selected with the
         // documents so the list does not become one query per row.
@@ -4781,6 +4783,8 @@ export class DocumentsService {
         pending one is theirs.
       */
       needsSignature: waitingOnViewer(d),
+      // Their OWN upload (nobody issued it) — on an "either" type, the copy they may replace.
+      suppliedByMember: d.issuedById === null,
       // Only ever set on something the member supplied. Shown to them verbatim:
       // "rejected" with no reason is an instruction to upload the same photo.
       rejectionReason: d.rejectionReason,
@@ -5307,7 +5311,8 @@ export class DocumentsService {
     });
     if (!document) throw new NotFoundException('Document not found');
 
-    if (!memberMayDelete(document.type.direction)) {
+    // On a BOTH type only their OWN upload: a copy the office filed carries `issuedById`.
+    if (!memberMayDelete(document.type.direction, document.issuedById === null)) {
       throw new ForbiddenException('This document was issued to you and cannot be removed');
     }
 

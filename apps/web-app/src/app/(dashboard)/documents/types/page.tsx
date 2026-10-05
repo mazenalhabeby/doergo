@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import {
-  FileText, Plus, ArrowLeft, PenSquare, Archive, ShieldCheck, Upload, Building2,
+  FileText, Plus, ArrowLeft, PenSquare, Archive, ShieldCheck, Upload, Building2, ArrowLeftRight,
   CalendarClock, PenLine, CheckCheck, Printer, Ban, AlertTriangle, RotateCcw, Loader2, CreditCard,
   User, UserCheck, Handshake, HardHat, ChevronUp, ChevronDown, X, Clock, EyeOff,
 } from "lucide-react"
@@ -43,7 +43,19 @@ import { cn } from "@/lib/utils"
 */
 
 const CADENCES = ["ONE_OFF", "MONTHLY", "ANNUAL"] as const
-const DIRECTIONS = ["ISSUED", "SUPPLIED"] as const
+const DIRECTIONS = ["ISSUED", "SUPPLIED", "BOTH"] as const
+/** Who files it decides the icon: the office, the member, or either. */
+const DIRECTION_ICON = { ISSUED: Building2, SUPPLIED: Upload, BOTH: ArrowLeftRight } as const
+const DIRECTION_TONE = {
+  ISSUED: "text-blue-600 dark:text-blue-400",
+  SUPPLIED: "text-emerald-600 dark:text-emerald-400",
+  BOTH: "text-violet-600 dark:text-violet-400",
+} as const
+function DirectionIcon({ direction }: { direction: string }) {
+  const d = (direction in DIRECTION_ICON ? direction : "ISSUED") as keyof typeof DIRECTION_ICON
+  const Icon = DIRECTION_ICON[d]
+  return <Icon className={cn("h-4 w-4 shrink-0", DIRECTION_TONE[d])} />
+}
 const SIGN_MODES = [
   { key: "NONE", Icon: Ban },
   { key: "ACKNOWLEDGE", Icon: CheckCheck },
@@ -171,9 +183,7 @@ export default function DocumentTypesPage() {
                   className="rounded-xl border border-slate-200 bg-white p-4 text-left transition-colors hover:border-blue-400 dark:border-slate-800 dark:bg-slate-900"
                 >
                   <div className="mb-1.5 flex items-center gap-2">
-                    {st.direction === "SUPPLIED"
-                      ? <Upload className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                      : <Building2 className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />}
+                    <DirectionIcon direction={st.direction} />
                     <span className="font-medium text-slate-900 dark:text-slate-100">
                       {t(`documents.types.starters.${st.key}.label`, { defaultValue: st.label })}
                     </span>
@@ -248,7 +258,8 @@ export default function DocumentTypesPage() {
  * saving, and half-set state left behind would require a payslip from everyone.
  */
 function requirementPayload(direction: string, all: boolean, roleIds: string[]) {
-  if (direction !== "SUPPLIED") return { requiredFromAll: false, requiredFromRoleIds: [] }
+  // Only what a member can hand in may be required of them — SUPPLIED or BOTH.
+  if (direction === "ISSUED") return { requiredFromAll: false, requiredFromRoleIds: [] }
   return {
     requiredFromAll: all && roleIds.length === 0,
     requiredFromRoleIds: all ? [] : roleIds,
@@ -289,9 +300,7 @@ function TypeRow({
     <li className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          {type.direction === "SUPPLIED"
-            ? <Upload className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-            : <Building2 className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />}
+          <DirectionIcon direction={type.direction} />
           <span className="font-medium text-slate-900 dark:text-slate-100">{type.label}</span>
           {type.isCredential && (
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-400">
@@ -414,8 +423,8 @@ function TypeEditor({
           requiredForWorkflowIds: isCredential ? gates : [],
           ...requirementPayload(direction, requiredFromAll, requiredFromRoleIds),
           visibleToRoleIds,
-          twoSided: direction === "SUPPLIED" && twoSided && !multiPage,
-          multiPage: direction === "SUPPLIED" && multiPage,
+          twoSided: direction !== "ISSUED" && twoSided && !multiPage,
+          multiPage: direction !== "ISSUED" && multiPage,
           scanShape,
           retentionMonths,
           // Sent on create as well as on edit. It was missing here, so "Who
@@ -438,8 +447,8 @@ function TypeEditor({
         requiredForWorkflowIds: isCredential ? gates : [],
         ...requirementPayload(direction, requiredFromAll, requiredFromRoleIds),
         visibleToRoleIds,
-        twoSided: direction === "SUPPLIED" && twoSided && !multiPage,
-        multiPage: direction === "SUPPLIED" && multiPage,
+        twoSided: direction !== "ISSUED" && twoSided && !multiPage,
+        multiPage: direction !== "ISSUED" && multiPage,
         scanShape,
         retentionMonths,
         // null, not [] — the server reads null as "no route" and an empty array
@@ -491,14 +500,14 @@ function TypeEditor({
         </Step>
 
         <Step n={2} title={t("documents.types.step2")}>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-3">
             {DIRECTIONS.map((d) => (
               <Choice
                 key={d}
                 selected={direction === d}
                 disabled={!isNew}
                 onClick={() => setDirection(d)}
-                Icon={d === "SUPPLIED" ? Upload : Building2}
+                Icon={DIRECTION_ICON[d]}
                 title={t(`documents.types.direction.${d.toLowerCase()}`)}
                 hint={t(`documents.types.directionHint.${d.toLowerCase()}`)}
               />
@@ -510,7 +519,7 @@ function TypeEditor({
               European ID cards and licences carry the machine-readable zone on
               the back, a passport carries it on the photo page, and a paper
               certificate has nothing on its reverse. */}
-          {direction === "SUPPLIED" && (
+          {direction !== "ISSUED" && (
             <div className="mt-3 space-y-3">
               {/*
                 The frame the scanner draws. Not decoration: a document held to
@@ -654,7 +663,7 @@ function TypeEditor({
           an employee to produce one is not a requirement, it is a category
           error. The server refuses it too.
         */}
-        {direction === "SUPPLIED" && (
+        {direction !== "ISSUED" && (
           <Step n={5} title={t("documents.types.stepRequired")}>
             <Toggle
               checked={requiredFromAll || requiredFromRoleIds.length > 0}
