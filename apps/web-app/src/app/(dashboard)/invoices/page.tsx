@@ -178,6 +178,7 @@ function InvoicesPageInner() {
     onSuccess: () => {
       notify.success(t("invoices.toast.statusUpdated"))
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
     },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -187,6 +188,7 @@ function InvoicesPageInner() {
     onSuccess: () => {
       notify.success(t("invoices.toast.deleted"))
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
     },
     onError: (e: Error) => notify.error(e.message),
   })

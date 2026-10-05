@@ -102,7 +102,7 @@ function InvoiceDetailInner({ id }: { id: string }) {
     queryFn: () => invoicesApi.getById(id),
   })
   const { data: org } = useQuery({
-    queryKey: ["orgProfile"],
+    queryKey: ["organization-profile"],
     queryFn: () => organizationsApi.getProfile(),
   })
 
@@ -112,6 +112,7 @@ function InvoiceDetailInner({ id }: { id: string }) {
       notify.success(t("invoices.toast.statusUpdated"))
       queryClient.invalidateQueries({ queryKey: ["invoice", id] })
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
     },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -131,6 +132,7 @@ function InvoiceDetailInner({ id }: { id: string }) {
     onSuccess: () => {
       notify.success(t("invoices.toast.deleted"))
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
       router.push("/invoices")
     },
     onError: (e: Error) => notify.error(e.message),

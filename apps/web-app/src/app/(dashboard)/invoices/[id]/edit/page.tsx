@@ -80,7 +80,7 @@ function EditInvoiceInner({ id }: { id: string }) {
 
   // The letterhead on the client's copy. Same source as the create screen.
   const { data: org } = useQuery({
-    queryKey: ["org-profile"],
+    queryKey: ["organization-profile"],
     queryFn: () => organizationsApi.getProfile(),
   })
 
@@ -232,6 +232,7 @@ function EditInvoiceInner({ id }: { id: string }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoice", id] })
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
       notify.success(t("invoices.toast.updated", "Invoice updated"))
       router.push(`/invoices/${id}`)
     },

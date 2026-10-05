@@ -269,7 +269,7 @@ function NewInvoiceInner() {
     this screen costs no extra request on a warm cache.
   */
   const { data: org } = useQuery({
-    queryKey: ["org-profile"],
+    queryKey: ["organization-profile"],
     queryFn: () => organizationsApi.getProfile(),
     staleTime: 5 * 60_000,
   })
@@ -341,10 +341,17 @@ function NewInvoiceInner() {
     : source === "client" && customerId
       ? { customerId, ...period }
       : null
+  /*
+    ⚠️ ALWAYS FRESH. What is still to bill moves whenever a rate, a role, a
+    clock-in or another invoice changes — often in another tab a moment ago.
+    Read on every visit and on returning to the window, never from a cache.
+  */
   const { data: gather, isLoading: gatherLoading } = useQuery({
     queryKey: ["invoice-gather", gatherSource],
     queryFn: () => invoicesApi.gather(gatherSource!),
     enabled: !!gatherSource,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   })
 
   useEffect(() => {
@@ -382,8 +389,34 @@ function NewInvoiceInner() {
         setCurrencySource(g.currencySource ?? null)
       }
       if (g.rate != null) setRate(String(g.rate))
-      setEntries(
-        (g.workEntries || []).map((w) => ({
+      applyLines(g, true)
+      // A workspace invoice charges time on site per person — "one line per job" does not apply.
+      if (g.spaceId) setGrouping((prev) => (prev === "task" ? "member" : prev))
+      setSeeded(true)
+    }
+  }, [gather, seeded])
+
+  /*
+    The WORK lines follow the data; what somebody typed does not. When the
+    gather answers again (a rate changed, a day was billed elsewhere), the lines
+    are rebuilt — keeping each line's include tick and any hours typed over —
+    while the client, currency and rate fields are left alone.
+  */
+  const linesFrom = useRef<unknown>(null)
+  useEffect(() => {
+    if (gather && seeded && linesFrom.current !== gather) applyLines(gather)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gather, seeded])
+
+  /** `fresh`: a new source (another workspace or client) — nothing of the old lists carries over. */
+  function applyLines(g: NonNullable<typeof gather>, fresh = false) {
+    // The server's previous hours per job — a line whose hours differ from them was typed over.
+    const before = linesFrom.current as typeof g | null
+    const serverHoursBefore = new Map((before?.workEntries ?? []).map((w) => [w.taskId, w.hours ?? 0]))
+    linesFrom.current = g
+      setEntries((prev) => {
+        const was = new Map((fresh ? [] : prev).map((e) => [e.taskId, e]))
+        return (g.workEntries || []).map((w) => ({
           taskId: w.taskId,
           taskTitle: w.taskTitle,
           reportId: w.reportId,
@@ -402,19 +435,28 @@ function NewInvoiceInner() {
           workRoleName: w.workRoleName ?? null,
           hoursBillable: w.hoursBillable !== false,
           billBy: w.billBy ?? "HOUR",
-        })),
-      )
-      setDayRuns(
-        (g.dayEntries || []).map((d) => ({ ...d, key: `${d.workerId}|${d.fromDay}`, include: true })),
-      )
-      setHourRuns(
-        (g.hourEntries || []).map((h) => ({ ...h, key: `${h.workerId}|${h.fromDay}`, include: true })),
-      )
-      // A workspace invoice charges time on site per person — "one line per job" does not apply.
-      if (g.spaceId) setGrouping((prev) => (prev === "task" ? "member" : prev))
-      setSeeded(true)
-    }
-  }, [gather, seeded])
+        })).map((e) => {
+          const old = was.get(e.taskId)
+          if (!old) return e
+          const typedOver = old.hours !== serverHoursBefore.get(e.taskId)
+          return { ...e, include: old.include, includeParts: old.includeParts, hours: typedOver ? old.hours : e.hours }
+        })
+      })
+      setDayRuns((prev) => {
+        const on = new Map((fresh ? [] : prev).map((d) => [d.key, d.include]))
+        return (g.dayEntries || []).map((d) => {
+          const key = `${d.workerId}|${d.fromDay}`
+          return { ...d, key, include: on.get(key) ?? true }
+        })
+      })
+      setHourRuns((prev) => {
+        const on = new Map((fresh ? [] : prev).map((h) => [h.key, h.include]))
+        return (g.hourEntries || []).map((h) => {
+          const key = `${h.workerId}|${h.fromDay}`
+          return { ...h, key, include: on.get(key) ?? true }
+        })
+      })
+  }
 
   const rateNum = Number(rate) || 0
 
@@ -698,6 +740,8 @@ function NewInvoiceInner() {
     onSuccess: async (inv: Invoice) => {
       notify.success(t("invoices.create.created"))
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      // What it billed is no longer to bill.
+      queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
 
       /*
         Keep the client, if they asked — AFTER the invoice exists, and never

@@ -128,7 +128,7 @@ export default function ReportsPage() {
 
   const { data: catalog } = useQuery({ queryKey: ["analyticsCatalog"], queryFn: () => analyticsApi.catalog() })
   const { data: saved } = useQuery({ queryKey: ["savedReports"], queryFn: () => analyticsApi.listSaved() })
-  const { data: orgProfile } = useQuery({ queryKey: ["orgProfile"], queryFn: () => organizationsApi.getProfile() })
+  const { data: orgProfile } = useQuery({ queryKey: ["organization-profile"], queryFn: () => organizationsApi.getProfile() })
   const { data: customersData } = useQuery({ queryKey: ["customersAll"], queryFn: () => customersApi.list({ limit: 200 }) })
   const customers = customersData?.data || []
   const { data: membersData } = useQuery({ queryKey: ["reportMembers"], queryFn: () => organizationsApi.getMembers({ limit: 200 }) })
