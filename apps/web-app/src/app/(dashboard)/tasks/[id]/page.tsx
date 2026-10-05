@@ -58,6 +58,7 @@ import {
   HandoverCard,
   JobTimeCard,
   TaskCrewCard,
+  OpenRoleCard,
 } from "./_components"
 import { HandoverPendingNotice, useHandoverPendingText } from "@/components/handover-pending-notice"
 
@@ -444,6 +445,8 @@ export default function TaskDetailPage({
 
         {/* ─── Job time: working, with travel and blocked apart ─── */}
         <div className="mb-4 space-y-4">
+          {/* Open to a work role: who may take it, how many are taken (shared tasks/role-pool.ts). */}
+          <OpenRoleCard task={task} />
           <JobTimeCard taskId={id} paused={!!task.pausedAt} />
           {/* The crew: who is on the job now, who leads (shared tasks/crew.ts). */}
           <TaskCrewCard taskId={id} paused={!!task.pausedAt} />

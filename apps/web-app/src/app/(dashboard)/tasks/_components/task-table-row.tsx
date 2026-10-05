@@ -1,5 +1,8 @@
 "use client"
 
+import { isOpenToRole } from "@hbcfield/shared/client"
+import { OpenRoleChip } from "./open-role-chip"
+
 import { flowIdOf, stepConfig } from "@/hooks/use-step-config"
 import { PausedChip } from "@/components/paused-chip"
 import React from "react"
@@ -235,6 +238,8 @@ function TaskTableRowInner({
               {task.assignedTo.firstName} {task.assignedTo.lastName}
             </span>
           </div>
+        ) : isOpenToRole(task) ? (
+          <OpenRoleChip task={task} />
         ) : (
           <span className="text-xs text-muted-foreground/40 flex items-center gap-1">
             <UserPlus className="size-3" />

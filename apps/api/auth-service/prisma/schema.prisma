@@ -120,6 +120,14 @@ enum TaskEventType {
   SELF_RESUMED
   /// The lead changed. metadata { from, to, scope: TODAY | PERMANENT, by: LEADER | OFFICE, reason? }
   LEAD_CHANGED
+  /// Opened to a WORK role (tasks/role-pool.ts). metadata { roleId, roleName, spots }
+  OPENED_TO_ROLE
+  /// Offered by push. metadata { wave, userIds }
+  OFFERED
+  /// Somebody holding the role took it. metadata { roleId, waitedMinutes, spotsLeft }
+  TAKEN
+  /// Handed back to the role, not to nobody. metadata { roleId, reason? }
+  RETURNED_TO_ROLE
 }
 
 enum TaskAssigneeRole {
@@ -1112,6 +1120,18 @@ model Task {
   /// off ("YYYY-MM-DD") — the morning notice is sent once per day.
   leadNoticeOn      String?
 
+  /// OPEN TO A WORK ROLE (packages/shared/src/tasks/role-pool.ts): whoever
+  /// holds this role in the task's workspace may take it. null = by name only.
+  openRoleId    String?
+  openRole      AccessRole? @relation("TaskOpenRole", fields: [openRoleId], references: [id], onDelete: SetNull)
+  /// People needed from the role, and places still free (0 = filled).
+  openSpots     Int?
+  openSpotsLeft Int?
+  /// When it was opened (the wait and the waves count from here).
+  openedAt      DateTime?
+  /// 0 = offered to the free · 1 = widened to everyone working today · 2 = creator told.
+  openWave      Int       @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1182,6 +1202,7 @@ model Task {
   customFields    CustomFieldValue[]
   handovers       TaskHandover[]
 
+  @@index([openRoleId, spaceId]) // "open for your role" — role holders, every app open
   @@index([pausedById]) // "you paused a job" — the member's own paused jobs
   @@index([handoverDueById]) // "write what you did on X" — every app open
   @@index([status])
@@ -2340,6 +2361,10 @@ model CompanyLocation {
   // here and in its people's work-role picker. A role is a company-wide list;
   // each workspace switches on what it uses, with its own day rate.
   workRoleIds     String[]  @default([])
+  /// Role tasks (tasks/role-pool.ts): minutes before the offer widens to everyone
+  /// working today, and before the creator is told nobody took it. null = 10 / 30.
+  roleOfferWidenMin Int?
+  roleOfferAlertMin Int?
   // What this workspace's client is billed in; null = the organization's.
   // Every rate on the workspace is in it (shared billing/currency.ts).
   currency        String?
@@ -3235,6 +3260,7 @@ model AccessRole {
   members           User[] // org-wide holders (User.memberRoleId)
   spaceAssignments  SpaceAssignment[] @relation("AssignmentRole") // per-space holders (permissions)
   workAssignments   SpaceAssignment[] @relation("AssignmentWorkRole") // per-space holders (trade)
+  openTasks         Task[]            @relation("TaskOpenRole") // tasks open to this work role
   documentTemplates DocumentTemplate[] // contract templates bound to this role
   invitations       Invitation[] // invites pre-assigning this role
 

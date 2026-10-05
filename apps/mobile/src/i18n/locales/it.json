@@ -3203,7 +3203,12 @@
       "CHECKLIST_OWNER_NOT_ON_CREW": "Scegli qualcuno di questo lavoro.",
       "CHECKLIST_OWNER_NOT_YOURS": "Solo il capo di questo lavoro, o l’ufficio, assegna i punti.",
       "CHECKLIST_CHANGED": "Qualcuno ha appena cambiato questo punto. Guarda di nuovo.",
-      "CHECKLIST_ITEM_NOT_YOURS": "Solo il responsabile, il capo di questo lavoro o l’ufficio modifica questo punto."
+      "CHECKLIST_ITEM_NOT_YOURS": "Solo il responsabile, il capo di questo lavoro o l’ufficio modifica questo punto.",
+      "ROLE_TASK_TAKEN": "Qualcun altro l’ha preso per primo.",
+      "ROLE_TASK_ALREADY_YOURS": "Sei già su questo lavoro.",
+      "ROLE_TASK_STARTED": "Il lavoro è iniziato: esci invece dalla squadra.",
+      "ROLE_TASK_NOT_ROLE": "Questo lavoro non è stato aperto a un ruolo.",
+      "ROLE_TASK_FINISHED": "Questo lavoro è concluso."
     },
     "signOut": {
       "title_one": "{{count}} modifica non è stata inviata",
@@ -4466,5 +4471,21 @@
     "more_one": "E {{count}} altro lavoro",
     "more_other": "E altri {{count}} lavori",
     "pausedSoFar": "{{time}} finora — riprendi quando ci torni."
+  },
+  "roleTasks": {
+    "title": "Aperto per il tuo ruolo",
+    "take": "Prendilo",
+    "taking": "In corso…",
+    "youTookIt": "È tuo",
+    "couldNotTake": "Impossibile prenderlo",
+    "couldNotReturn": "Impossibile restituirlo",
+    "returned": "Restituito al ruolo",
+    "giveBack": "Restituisci al ruolo",
+    "urgent": "Urgente",
+    "placesLeft_one": "Resta {{count}} posto",
+    "placesLeft_other": "Restano {{count}} posti",
+    "openTo": "Aperto a {{role}}",
+    "takenFrom": "Preso da {{role}}",
+    "takenOf": "{{taken}} su {{of}} presi"
   }
 }

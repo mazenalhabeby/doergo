@@ -34,6 +34,10 @@ const UI_ONLY_STATE: Record<string, string> = {
   isSubmittingLocal: "disables the form while the request is in flight",
   newChecklistItem: "the text being typed before it becomes a checklist item",
   isRecurring: "chooses WHICH payload is sent, rather than being a field in one",
+  assignMode:
+    "Person or Role — chooses WHICH fields travel (assigneeIds, or openRoleId + " +
+    "openSpots), never sent itself. The server refuses both at once, so the " +
+    "choice has no column.",
   visitAddressId:
     "a PICKER, not a field. It chooses WHICH of the client's addresses to copy " +
     "into locationLat/locationLng/locationAddress — and those three are what " +
@@ -94,6 +98,8 @@ function recurringPath(): string {
 const ONE_OFF_ONLY = new Set([
   "dueDate", "startDate", "phaseId", "sprintId", "epicId", "storyPoints",
   "parentTaskId", "customFieldValues", "attachments", "locationLat", "locationLng",
+  // A role belongs to a one-off task (shared tasks/role-pool.ts); a repeating template names people.
+  "openRole",
 ])
 
 /** Fields that describe a repeat, and exist nowhere else. */

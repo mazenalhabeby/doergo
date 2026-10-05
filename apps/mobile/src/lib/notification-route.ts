@@ -48,6 +48,10 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
   // Tasks
   task_assigned: TASK,
   task_departure_due: TASK,
+  // A task open to a work role (shared tasks/role-pool.ts): the job page shows Take it.
+  task_role_offer: TASK,
+  task_role_taken: TASK,
+  task_role_unclaimed: TASK,
   status_change: TASK,
   comment_added: TASK,
   blocked_tasks_reminder: TASK,

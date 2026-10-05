@@ -13,6 +13,7 @@ import {
   type ChecklistAuthority,
 } from '@hbcfield/shared';
 import { TasksService } from '../tasks.service';
+import { RolePoolService } from '../role-pool.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
@@ -120,7 +121,7 @@ describe('TasksService checklist — the boundary', () => {
     prisma.checklistItem.create.mockImplementation(async ({ data }: any) => ({ id: 'i2', ...data }));
     const module = await Test.createTestingModule({
       providers: [
-        TasksService, { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewService },
+        TasksService, { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewService }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false) } },
         { provide: PresenceService, useValue: { onJobMoved: jest.fn() } },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },

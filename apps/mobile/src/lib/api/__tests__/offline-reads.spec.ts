@@ -47,6 +47,7 @@ const ONLINE_ONLY: Record<string, string> = {
   '/rota/week': 'other people’s staffing, for a rota manager: not the member’s own data to hold on a phone, and a stale week is a wrong one',
   '/organizations/roles': 'the org role catalogue, read only by an admin approving a join request — an approval is itself online, so there is nothing to do with a cached list',
   '/billing/subscription': "Stripe's own status; a kept copy would be a stale claim about money",
+  '/tasks/open-for-me': 'jobs open to my role RIGHT NOW — the first to take each place gets it; a kept list would offer a job somebody else already took, so the section hides offline',
   // Presence — who is on RIGHT NOW. The Crew card says it needs a connection rather than show this morning.
   '/attendance/no-shows': 'presence: a kept answer would name somebody late who has since arrived',
   '/attendance/active-entries': 'presence: who is clocked in now',

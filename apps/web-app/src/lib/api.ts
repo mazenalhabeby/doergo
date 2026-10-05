@@ -636,6 +636,12 @@ export interface TaskHandover {
 export interface Task {
   id: string;
   title: string;
+  /** Open to a WORK role (shared tasks/role-pool.ts): whoever holds it in the workspace may take a place. */
+  openRoleId?: string | null;
+  openRole?: { id: string; name: string } | null;
+  openSpots?: number | null;
+  openSpotsLeft?: number | null;
+  openedAt?: string | null;
   description: string | null;
   status: string;
   priority: string;
@@ -795,6 +801,22 @@ interface TaskResponse {
   data: Task;
 }
 
+export interface RoleOption { id: string; name: string; holders: number }
+export type CandidateState = "FREE" | "BUSY" | "NOT_WORKING" | "ON_LEAVE";
+export interface RolePreview {
+  role: { id: string; name: string };
+  total: number; free: number; busy: number; notWorking: number; onLeave: number;
+  candidates: { userId: string; name: string; state: CandidateState; distanceKm: number | null; jobsToday: number; takenThisWeek: number }[];
+}
+export interface OpenRoleTask {
+  id: string; title: string; status: string; priority: string; dueDate: string | null; openedAt: string | null;
+  openSpots: number | null; openSpotsLeft: number | null; roleId: string | null; roleName: string | null;
+  spaceId: string | null; spaceName: string | null; locationAddress: string | null; distanceKm: number | null;
+}
+export interface RoleStats {
+  roles: { roleId: string; roleName: string; opened: number; taken: number; avgMinutesToTake: number | null; openNow: number; overdue: number; topTakers: { name: string; count: number }[] }[];
+}
+
 export interface CreateTaskInput {
   title: string;
   description?: string;
@@ -803,6 +825,9 @@ export interface CreateTaskInput {
   startDate?: string;
   estimatedHours?: number;
   assigneeIds?: string[];
+  /** Open the task to a work role instead of naming people (never both). */
+  openRoleId?: string;
+  openSpots?: number;
   locationLat?: number;
   locationLng?: number;
   locationAddress?: string;
@@ -1166,6 +1191,51 @@ export const tasksApi = {
   /** A job's time: travel, working, blocked — per worker, and who started it. */
   jobTime: async (id: string): Promise<JobTimeView | undefined> => {
     const response = await api.get<{ success: boolean; data: JobTimeView }>(`/tasks/${id}/time`);
+    if (response.error) throw apiError(response);
+    return response.data?.data;
+  },
+
+  // ── A task open to a WORK role (shared tasks/role-pool.ts) ──
+
+  /** The work roles a task in this workspace can be opened to, with how many hold each. */
+  roleOptions: async (spaceId: string): Promise<RoleOption[]> => {
+    const response = await api.get<{ success: boolean; data: RoleOption[] }>(buildUrlWithQuery("/tasks/role-options", { spaceId }));
+    if (response.error) throw apiError(response);
+    return response.data?.data ?? [];
+  },
+  /** Before saving: who holds the role here, who is free now, the best ten. */
+  rolePreview: async (q: { spaceId: string; roleId: string; lat?: number | null; lng?: number | null }): Promise<RolePreview | undefined> => {
+    const response = await api.get<{ success: boolean; data: RolePreview }>(buildUrlWithQuery("/tasks/role-preview", q));
+    if (response.error) throw apiError(response);
+    return response.data?.data;
+  },
+  /** Tasks open to a role the caller holds, in the workspace they hold it in. */
+  openForMe: async (): Promise<OpenRoleTask[]> => {
+    const response = await api.get<{ success: boolean; data: OpenRoleTask[] }>("/tasks/open-for-me");
+    if (response.error) throw apiError(response);
+    return response.data?.data ?? [];
+  },
+  /** Take a place — refused with ROLE_TASK_TAKEN (params.takers) when somebody was faster. */
+  take: async (id: string): Promise<{ id: string; spotsLeft: number; waitedMinutes: number | null } | undefined> => {
+    const response = await api.post<{ success: boolean; data: { id: string; spotsLeft: number; waitedMinutes: number | null } }>(`/tasks/${id}/take`, {});
+    if (response.error) throw apiError(response);
+    return response.data?.data;
+  },
+  /** Hand a role task back to its role (before the work starts); it is offered again. */
+  returnToRole: async (id: string, reason?: string) => {
+    const response = await api.post<{ success: boolean }>(`/tasks/${id}/return-to-role`, reason ? { reason } : {});
+    if (response.error) throw apiError(response);
+    return response.data;
+  },
+  /** Open to a role, change how many it needs, or close it (roleId null). */
+  setOpenRole: async (id: string, body: { roleId: string | null; spots?: number }) => {
+    const response = await api.put<{ success: boolean; data: { id: string; openRoleId: string | null; openSpots?: number; openSpotsLeft?: number } }>(`/tasks/${id}/open-role`, body);
+    if (response.error) throw apiError(response);
+    return response.data?.data;
+  },
+  /** Per role: opened, taken, average minutes to take, open now, overdue, who takes most. */
+  roleStats: async (q: { spaceId?: string; from?: string; to?: string } = {}): Promise<RoleStats | undefined> => {
+    const response = await api.get<{ success: boolean; data: RoleStats }>(buildUrlWithQuery("/tasks/role-stats", q));
     if (response.error) throw apiError(response);
     return response.data?.data;
   },

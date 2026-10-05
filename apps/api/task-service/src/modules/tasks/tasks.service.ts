@@ -8,7 +8,9 @@ import {
   HttpException,
   Inject,
   Optional,
+  forwardRef,
 } from '@nestjs/common';
+import { RolePoolService } from './role-pool.service';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
@@ -126,6 +128,8 @@ export class TasksService {
     private readonly clockGate: ClockGateService,
     // A crew on one job: presence, own stops, the lead (shared tasks/crew.ts).
     private readonly crew: CrewService,
+    // A task open to a WORK role (shared tasks/role-pool.ts) — beside the name flow.
+    @Inject(forwardRef(() => RolePoolService)) private readonly rolePool: RolePoolService,
     // The CRM side of step forms (add_customer_activity). Optional: absent, the
     // answers are still stored — only the client-timeline echo is skipped.
     @Optional() @Inject('AUTH_SERVICE') private readonly authClient?: ClientProxy,
@@ -169,6 +173,14 @@ export class TasksService {
 
     const hasAssignment = !!data.assignedToId;
     const assigneeIds: string[] = data.assigneeIds || [];
+    /*
+      People OR a role — never both at once. A task opened to "a Mechanic" with
+      Ahmad already named on it would offer a place he already holds.
+    */
+    const openRoleId: string | null = typeof data.openRoleId === 'string' && data.openRoleId ? data.openRoleId : null;
+    if (openRoleId && (hasAssignment || assigneeIds.length > 0)) {
+      throw new BadRequestException({ message: 'Assign people or open the task to a role, not both', code: 'ROLE_TASK_PEOPLE_OR_ROLE' });
+    }
 
     // One lookup for the primary assignee and the list together — a task must
     // not be created already assigned to someone who cannot see it.
@@ -354,10 +366,16 @@ export class TasksService {
       if (!ownCustomer) effCustomerId = null;
     }
 
+    // The role is checked against the task's FINAL workspace (after the default-space fallback).
+    const openRole = openRoleId && !isUntriaged
+      ? await this.rolePool.resolveOpenRole(effectiveOrgId, data.spaceId, openRoleId)
+      : null;
+
     const task = await this.prisma.$transaction(async (tx) => {
       const createdTask = await tx.task.create({
         data: {
           ...(typeof data.id === 'string' && data.id ? { id: data.id } : {}),
+          ...(openRole ? this.rolePool.openColumns(openRole.id, data.openSpots) : {}),
           title: data.title,
           description: data.description,
           priority: data.priority || 'MEDIUM',
@@ -453,6 +471,9 @@ export class TasksService {
 
     // Notify
     this.notificationClient.emit('task_created', task);
+
+    // Opened to a role: the record, then the first wave (the free ones now).
+    if (openRole) await this.rolePool.afterOpened(task.id, data.userId, openRole, (task as any).openSpots ?? 1);
 
     this.invalidateStatusCountsCache(task.organizationId);
 
@@ -1040,6 +1061,7 @@ export class TasksService {
         createdBy: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
         assignedTo: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
         organization: { select: { id: true, name: true } },
+        openRole: { select: { id: true, name: true } },
         asset: {
           include: {
             category: { select: { id: true, name: true, color: true, icon: true } },
@@ -1265,6 +1287,8 @@ export class TasksService {
     // `access` is the caller's resolved grant (for foreign-space authz) — pull it
     // out so it never leaks into the Prisma update payload.
     const { id, userId, userRole, organizationId, access, ...updateData } = data;
+    // The open-role columns have their own path (RolePoolService.setOpenRole) — never written raw.
+    for (const k of ['openRoleId', 'openSpots', 'openSpotsLeft', 'openedAt', 'openWave']) delete (updateData as any)[k];
 
     // Find existing task
     const existingTask = await this.prisma.task.findUnique({
@@ -1645,6 +1669,10 @@ export class TasksService {
       have moved on — each is said with a code the phone can put in words,
       rather than a bare 403/400 that reads as "the app broke".
     */
+    // A task taken from a ROLE goes back to the role — re-offered — never to nobody.
+    if (task.openRoleId) {
+      return this.rolePool.returnToRole({ taskId: task.id, userId: data.userId, organizationId: data.organizationId, reason: (data as any).reason ?? null });
+    }
     if (task.assignedToId !== data.userId) {
       throw new ForbiddenException({ message: 'You can only decline tasks assigned to you', code: 'TASK_REASSIGNED' });
     }
@@ -2567,7 +2595,12 @@ export class TasksService {
       assignee = !!membership;
     }
 
-    if (!canAccessTask(task, caller, assignee ?? false)) {
+    /*
+      A task OPEN TO A ROLE is also visible to whoever holds that role in its
+      workspace — the person who may take it. Asked only after the normal rule
+      said no, so nothing changes for any other task.
+    */
+    if (!canAccessTask(task, caller, assignee ?? false) && !(task.openRoleId && task.organizationId === organizationId && (await this.rolePool.holdsOpenRole(task, userId)))) {
       /*
         Log WHY, not just that.
 
@@ -2707,6 +2740,25 @@ export class TasksService {
   /**
    * Add an assignee to a task
    */
+  /** For the role pool: the picker's own refusals (access profile, credentials). */
+  async assertCanReceiveTasks(ids: string[], workflowId: string | null | undefined, organizationId: string) {
+    return this.assertAssigneesCanReceiveTasks(ids, workflowId, organizationId);
+  }
+
+  /** For the role pool: a crew change goes through the office's own path (primary, status, push). */
+  async onAssigneesChanged(taskId: string, newlyAssigned: string[], actorId: string) {
+    await this.afterAssigneesChanged(taskId, newlyAssigned, actorId);
+    const t = await this.prisma.task.findUnique({ where: { id: taskId }, select: { organizationId: true } });
+    if (t) this.invalidateStatusCountsCache(t.organizationId);
+  }
+
+  /** For the role pool: may this caller assign work on this task? (the same rule as the picker) */
+  async assertMayAssignTask(taskId: string, data: { userRole: string; canAssignTasks?: boolean; assignSpaceIds?: string[] }) {
+    const task = await this.prisma.task.findUnique({ where: { id: taskId }, select: { spaceId: true } });
+    if (!task) throw new NotFoundException('Task not found');
+    this.assertMayAssign(task, data);
+  }
+
   /**
    * May this caller put somebody on THIS task?
    *

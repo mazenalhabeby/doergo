@@ -3203,7 +3203,12 @@
       "CHECKLIST_OWNER_NOT_ON_CREW": "Wählen Sie jemanden aus diesem Auftrag.",
       "CHECKLIST_OWNER_NOT_YOURS": "Nur der Leiter dieses Auftrags oder das Büro weist Punkte zu.",
       "CHECKLIST_CHANGED": "Jemand hat diesen Punkt gerade geändert. Bitte erneut ansehen.",
-      "CHECKLIST_ITEM_NOT_YOURS": "Nur die zuständige Person, der Leiter dieses Auftrags oder das Büro ändert diesen Punkt."
+      "CHECKLIST_ITEM_NOT_YOURS": "Nur die zuständige Person, der Leiter dieses Auftrags oder das Büro ändert diesen Punkt.",
+      "ROLE_TASK_TAKEN": "Jemand anderes war schneller.",
+      "ROLE_TASK_ALREADY_YOURS": "Sie sind bereits bei diesem Auftrag.",
+      "ROLE_TASK_STARTED": "Die Arbeit hat begonnen — verlassen Sie stattdessen das Team.",
+      "ROLE_TASK_NOT_ROLE": "Dieser Auftrag wurde nicht für eine Rolle geöffnet.",
+      "ROLE_TASK_FINISHED": "Dieser Auftrag ist abgeschlossen."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",
@@ -4466,5 +4471,21 @@
     "more_one": "Und {{count}} weiterer Auftrag",
     "more_other": "Und {{count}} weitere Aufträge",
     "pausedSoFar": "Bisher {{time}} – setzen Sie die Arbeit fort, sobald Sie wieder dran sind."
+  },
+  "roleTasks": {
+    "title": "Offen für Ihre Rolle",
+    "take": "Übernehmen",
+    "taking": "Wird übernommen…",
+    "youTookIt": "Der Auftrag gehört Ihnen",
+    "couldNotTake": "Konnte nicht übernommen werden",
+    "couldNotReturn": "Konnte nicht zurückgegeben werden",
+    "returned": "An die Rolle zurückgegeben",
+    "giveBack": "An die Rolle zurückgeben",
+    "urgent": "Dringend",
+    "placesLeft_one": "{{count}} Platz frei",
+    "placesLeft_other": "{{count}} Plätze frei",
+    "openTo": "Offen für {{role}}",
+    "takenFrom": "Übernommen von {{role}}",
+    "takenOf": "{{taken}} von {{of}} übernommen"
   }
 }

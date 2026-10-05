@@ -61,6 +61,11 @@ const EVENT_CONFIG: Record<
   SELF_BLOCKED: { icon: AlertTriangle, color: "text-amber-500", labelKey: "tasks.activity.events.SELF_BLOCKED" },
   SELF_RESUMED: { icon: PlayCircle, color: "text-green-500", labelKey: "tasks.activity.events.SELF_RESUMED" },
   LEAD_CHANGED: { icon: Crown, color: "text-primary", labelKey: "tasks.activity.events.LEAD_CHANGED" },
+  // A task open to a work role (shared tasks/role-pool.ts): opened, offered, taken, handed back.
+  OPENED_TO_ROLE: { icon: UserPlus, color: "text-violet-500", labelKey: "tasks.activity.events.OPENED_TO_ROLE" },
+  OFFERED: { icon: UserPlus, color: "text-muted-foreground", labelKey: "tasks.activity.events.OFFERED" },
+  TAKEN: { icon: UserPlus, color: "text-green-500", labelKey: "tasks.activity.events.TAKEN" },
+  RETURNED_TO_ROLE: { icon: UserMinus, color: "text-amber-500", labelKey: "tasks.activity.events.RETURNED_TO_ROLE" },
   // The checklist (shared tasks/checklist.ts): who ticked what, and whose item it became.
   CHECKLIST_ITEM_TOGGLED: { icon: CheckSquare, color: "text-green-500", labelKey: "tasks.activity.events.CHECKLIST_ITEM_TOGGLED" },
   CHECKLIST_ITEM_ASSIGNED: { icon: CheckSquare, color: "text-primary", labelKey: "tasks.activity.events.CHECKLIST_ITEM_ASSIGNED" },
@@ -113,6 +118,23 @@ function getEventDescription(event: TaskEvent, t: (key: string, options?: Record
     return metadata.toName
       ? t("tasks.activity.checklist.owner", { text: String(metadata.text), name: String(metadata.toName) })
       : t("tasks.activity.checklist.noOwner", { text: String(metadata.text) })
+  }
+  if (metadata && event.eventType === "OPENED_TO_ROLE") {
+    return t("tasks.activity.role.opened", { role: String(metadata.roleName ?? ""), count: Number(metadata.spots ?? 1) })
+  }
+  if (metadata && event.eventType === "OFFERED") {
+    const n = Array.isArray(metadata.userIds) ? metadata.userIds.length : 0
+    return t(Number(metadata.wave) >= 1 ? "tasks.activity.role.offeredWide" : "tasks.activity.role.offeredFree", { count: n })
+  }
+  if (metadata && event.eventType === "TAKEN") {
+    const name = String(metadata.workerName ?? "")
+    return typeof metadata.waitedMinutes === "number"
+      ? t("tasks.activity.role.takenAfter", { name, count: metadata.waitedMinutes })
+      : t("tasks.activity.role.taken", { name })
+  }
+  if (metadata && event.eventType === "RETURNED_TO_ROLE") {
+    const base = t("tasks.activity.role.returned", { role: String(metadata.roleName ?? "") })
+    return metadata.reason ? `${base} · “${String(metadata.reason)}”` : base
   }
   if (metadata && event.eventType === "LEAD_CHANGED") {
     const name = String(metadata.toName ?? "")

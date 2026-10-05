@@ -46,6 +46,10 @@ const ROUTE_ACTIONS: Record<string, string> = {
   'POST /tasks/:id/crew/issue': 'TASK_CREW_SELF_BLOCKED',
   'POST /tasks/:id/crew/resume': 'TASK_CREW_SELF_RESUMED',
   'PUT /tasks/:id/lead': 'TASK_LEAD_CHANGED',
+  // A task open to a WORK role (tasks/role-pool.ts)
+  'POST /tasks/:id/take': 'TASK_TAKEN_FROM_ROLE',
+  'POST /tasks/:id/return-to-role': 'TASK_RETURNED_TO_ROLE',
+  'PUT /tasks/:id/open-role': 'TASK_OPEN_ROLE_SET',
   'PATCH /organizations/members/:id/role': 'MEMBER_ROLE_CHANGED',
   'DELETE /organizations/members/:id': 'MEMBER_REMOVED',
   'PATCH /organizations/settings': 'ORG_SETTINGS_UPDATED',

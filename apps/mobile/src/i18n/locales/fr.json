@@ -3203,7 +3203,12 @@
       "CHECKLIST_OWNER_NOT_ON_CREW": "Choisissez quelqu’un de cette intervention.",
       "CHECKLIST_OWNER_NOT_YOURS": "Seul le chef de cette intervention, ou le bureau, attribue un point.",
       "CHECKLIST_CHANGED": "Quelqu’un vient de modifier ce point. Regardez à nouveau.",
-      "CHECKLIST_ITEM_NOT_YOURS": "Seule la personne responsable, le chef de cette intervention ou le bureau modifie ce point."
+      "CHECKLIST_ITEM_NOT_YOURS": "Seule la personne responsable, le chef de cette intervention ou le bureau modifie ce point.",
+      "ROLE_TASK_TAKEN": "Quelqu’un d’autre l’a prise en premier.",
+      "ROLE_TASK_ALREADY_YOURS": "Vous êtes déjà sur cette mission.",
+      "ROLE_TASK_STARTED": "Le travail a commencé — quittez plutôt l’équipe.",
+      "ROLE_TASK_NOT_ROLE": "Cette mission n’a pas été ouverte à un rôle.",
+      "ROLE_TASK_FINISHED": "Cette mission est terminée."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",
@@ -4466,5 +4471,21 @@
     "more_one": "Et {{count}} autre intervention",
     "more_other": "Et {{count}} autres interventions",
     "pausedSoFar": "{{time}} jusqu'ici — reprenez quand vous y retournez."
+  },
+  "roleTasks": {
+    "title": "Ouvert à votre rôle",
+    "take": "La prendre",
+    "taking": "En cours…",
+    "youTookIt": "Elle est à vous",
+    "couldNotTake": "Impossible de la prendre",
+    "couldNotReturn": "Impossible de la rendre",
+    "returned": "Rendue au rôle",
+    "giveBack": "Rendre au rôle",
+    "urgent": "Urgent",
+    "placesLeft_one": "{{count}} place restante",
+    "placesLeft_other": "{{count}} places restantes",
+    "openTo": "Ouverte à {{role}}",
+    "takenFrom": "Prise par {{role}}",
+    "takenOf": "{{taken}} sur {{of}} prises"
   }
 }

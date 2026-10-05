@@ -17,6 +17,7 @@ export {
 
 // All types (local + re-exported from @hbcfield/shared)
 export type {
+  OpenRoleTask,
   JobTimeView,
   CrewView,
   JobTimeSplit,

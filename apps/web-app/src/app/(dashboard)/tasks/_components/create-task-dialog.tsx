@@ -67,6 +67,7 @@ import { cn } from "@/lib/utils"
 import { notify } from "@/lib/toast"
 import { PrioritySelector } from "@/components/tasks"
 import { useOrgWorkflow } from "@/hooks/use-org-workflow"
+import { RoleAssignField, type RoleAssignValue } from "./role-assign-field"
 
 const LocationPicker = lazy(() =>
   import("@/components/location-picker").then((m) => ({ default: m.LocationPicker }))
@@ -302,6 +303,8 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
       setEpicId("none")
       // Reopening the dialog must not silently reuse the last people picked.
       setAssigneeIds([])
+      setAssignMode("people")
+      setOpenRole({ roleId: null, spots: 1 })
     }
   }, [open])
 
@@ -350,6 +353,13 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
     open the task afterwards and do it again.
   */
   const [assigneeIds, setAssigneeIds] = useState<string[]>([])
+  /*
+    People, or a work role (shared tasks/role-pool.ts): "a Mechanic" instead of
+    "Ahmad". Only inside a workspace — a role is a fact about a workspace — and
+    only for a one-off task.
+  */
+  const [assignMode, setAssignMode] = useState<"people" | "role">("people")
+  const [openRole, setOpenRole] = useState<RoleAssignValue>({ roleId: null, spots: 1 })
 
   // ── Fetch members for assignee picker ──
   const taskCreationScope = user?.taskCreationScope || "NONE"
@@ -367,6 +377,10 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   const canAssign = user?.role === "ADMIN" || hasPermission("canAssignTasks")
   const showAssigneePicker =
     canAssign && (taskCreationScope === "SPACE" || taskCreationScope === "ORG")
+  // A role belongs to a workspace and a one-off task; a repeating template names people.
+  const roleModeAvailable = showAssigneePicker && spaceId !== "none" && !isRecurring
+  // A role is a fact about ONE workspace: another workspace starts the choice again.
+  useEffect(() => { setOpenRole((r) => (r.roleId ? { ...r, roleId: null } : r)) }, [spaceId])
 
   /*
     Who can be given this work.
@@ -692,6 +706,8 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
     // Build assignee list
     // A task takes several people; the dialog now says so too.
     const submitAssigneeIds: string[] = isSelfScope && user?.id ? [user.id] : assigneeIds
+    // A role is sent INSTEAD of people, never with them (the server refuses both).
+    const byRole = roleModeAvailable && assignMode === "role" && !!openRole.roleId
 
     // Recurring path — create a template instead of a one-off task. Reuses the
     // same title/space/type/priority/checklist already filled in above.
@@ -757,7 +773,9 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
         ? checklistItems.map((text) => ({ text }))
         : undefined,
       customFieldValues: cfValues.length > 0 ? cfValues : undefined,
-      assigneeIds: submitAssigneeIds.length > 0 ? submitAssigneeIds : undefined,
+      assigneeIds: !byRole && submitAssigneeIds.length > 0 ? submitAssigneeIds : undefined,
+      openRoleId: byRole ? openRole.roleId! : undefined,
+      openSpots: byRole ? openRole.spots : undefined,
     })
   }
 
@@ -1162,6 +1180,36 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                   </div>
                 ) : (
                   <div className="space-y-1.5">
+                    {roleModeAvailable && (
+                      <div role="group" aria-label={t("tasks.role.who")} className="mb-1 inline-grid grid-cols-2 gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5">
+                        {(["people", "role"] as const).map((m) => (
+                          <button
+                            key={m}
+                            type="button"
+                            aria-pressed={assignMode === m}
+                            onClick={() => setAssignMode(m)}
+                            disabled={isSubmitting}
+                            className={cn(
+                              "rounded-md px-3 py-1 text-xs transition-colors",
+                              assignMode === m ? "bg-card font-semibold text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                            )}
+                          >
+                            {t(m === "people" ? "tasks.role.byPerson" : "tasks.role.byRole")}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {roleModeAvailable && assignMode === "role" ? (
+                      <RoleAssignField
+                        spaceId={spaceId}
+                        lat={locationLat}
+                        lng={locationLng}
+                        value={openRole}
+                        onChange={setOpenRole}
+                        disabled={isSubmitting}
+                      />
+                    ) : (
+                    <>
                     <Label className="text-xs font-medium text-muted-foreground">{t("tasks.create.assignTo")}</Label>
 
                     {/* Who is on the task so far — removable, so a mistake is
@@ -1234,6 +1282,8 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                         })}
                       </SelectContent>
                     </Select>
+                    </>
+                    )}
                   </div>
                 )}
               </CollapsibleSection>

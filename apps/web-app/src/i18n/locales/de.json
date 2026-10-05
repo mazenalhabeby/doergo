@@ -1629,7 +1629,11 @@
         "SELF_RESUMED": "Weitergearbeitet",
         "LEAD_CHANGED": "Leitung geändert",
         "CHECKLIST_ITEM_TOGGLED": "Checkliste",
-        "CHECKLIST_ITEM_ASSIGNED": "Checkliste"
+        "CHECKLIST_ITEM_ASSIGNED": "Checkliste",
+        "OPENED_TO_ROLE": "Für eine Rolle geöffnet",
+        "OFFERED": "Angeboten",
+        "TAKEN": "Übernommen",
+        "RETURNED_TO_ROLE": "An die Rolle zurückgegeben"
       },
       "byOffice": "durch das Büro",
       "crew": {
@@ -1649,6 +1653,18 @@
         "unticked": "Haken bei „{{text}}“ entfernt",
         "owner": "„{{text}}“ → {{name}}",
         "noOwner": "„{{text}}“ hat keinen Verantwortlichen mehr"
+      },
+      "role": {
+        "opened_one": "Für {{role}} geöffnet · benötigt {{count}}",
+        "opened_other": "Für {{role}} geöffnet · benötigt {{count}}",
+        "offeredFree_one": "{{count}} freier Person angeboten",
+        "offeredFree_other": "{{count}} freien Personen angeboten",
+        "offeredWide_one": "{{count}} weiteren Anwesenden angeboten",
+        "offeredWide_other": "{{count}} weiteren Anwesenden angeboten",
+        "taken": "{{name}} hat übernommen",
+        "takenAfter_one": "{{name}} hat nach {{count}} Min. übernommen",
+        "takenAfter_other": "{{name}} hat nach {{count}} Min. übernommen",
+        "returned": "An {{role}} zurückgegeben"
       }
     },
     "assignees": {
@@ -1855,6 +1871,60 @@
       "takeOffPlaceholder": "Zu einer anderen Baustelle geschickt",
       "putOnDone": "{{name}} ist am Auftrag",
       "takeOffDone": "{{name}} ist nicht mehr am Auftrag"
+    },
+    "role": {
+      "noRoles": "In diesem Arbeitsbereich wird noch keine Arbeitsrolle verwendet. Fügen Sie eine unter Arbeitsbereich → Rollen hinzu.",
+      "role": "Rolle",
+      "choose": "Rolle wählen…",
+      "holders_one": "{{count}} Person",
+      "holders_other": "{{count}} Personen",
+      "people": "Personen",
+      "fewer": "Weniger",
+      "more": "Mehr",
+      "freeNow_one": "{{count}} jetzt frei",
+      "freeNow_other": "{{count}} jetzt frei",
+      "ofTotal_one": "von {{count}}",
+      "ofTotal_other": "von {{count}}",
+      "busyCount_one": "{{count}} im Einsatz",
+      "busyCount_other": "{{count}} im Einsatz",
+      "state": {
+        "FREE": "Frei",
+        "BUSY": "Im Einsatz",
+        "NOT_WORKING": "Nicht im Dienst",
+        "ON_LEAVE": "Abwesend"
+      },
+      "offerHint": "Die Freien werden sofort benachrichtigt, alle Anwesenden nach 10 Minuten. Wer zuerst übernimmt, bekommt den Auftrag.",
+      "who": "Wer erledigt es",
+      "byPerson": "Person",
+      "byRole": "Rolle",
+      "tookFirst": "{{names}} war schneller.",
+      "someoneElse": "Jemand anderes",
+      "youTookIt": "Der Auftrag gehört Ihnen.",
+      "returned": "An die Rolle zurückgegeben. Er wird erneut angeboten.",
+      "openTo": "Offen für {{role}}",
+      "filledFrom": "Übernommen von {{role}}",
+      "takenOf": "{{taken}} von {{of}} übernommen",
+      "openFor_one": "seit {{count}} Min. offen",
+      "openFor_other": "seit {{count}} Min. offen",
+      "take": "Übernehmen",
+      "giveBack": "Zurückgeben",
+      "reasonPlaceholder": "Warum? (optional)",
+      "confirmGiveBack": "An die Rolle zurückgeben",
+      "close": "Für die Rolle schließen",
+      "chip": "Offen · {{role}}",
+      "summaryTitle": "Für Rollen offen",
+      "openNow_one": "{{count}} offen",
+      "openNow_other": "{{count}} offen",
+      "overdue_one": "{{count}} nicht rechtzeitig übernommen",
+      "overdue_other": "{{count}} nicht rechtzeitig übernommen",
+      "colOpen": "Offen",
+      "colOverdue": "Nicht rechtzeitig",
+      "colTaken": "Übernommen",
+      "colAvg": "Ø bis Übernahme",
+      "colTopTakers": "Übernimmt am meisten",
+      "minutes_one": "{{count}} Min.",
+      "minutes_other": "{{count}} Min.",
+      "summaryHint": "Letzte 30 Tage. „Nicht rechtzeitig“ = nach der Hinweiszeit noch offen."
     }
   },
   "technicians": {
@@ -8990,7 +9060,16 @@
     "HANDOVER_NOT_ON_THE_JOB": "Nur wer an diesem Auftrag arbeitet, kann die Übergabe schreiben.",
     "HANDOVER_NOTE_REQUIRED": "Schreiben Sie vor dem Speichern, was Sie gemacht haben.",
     "OFFICE_START_REASON_REQUIRED": "Geben Sie an, warum das Büro diesen Auftrag für die Person beginnt.",
-    "OFFICE_START_TIME_OUTSIDE_SHIFT": "Die Startzeit muss in der Schicht liegen und darf nicht in der Zukunft sein."
+    "OFFICE_START_TIME_OUTSIDE_SHIFT": "Die Startzeit muss in der Schicht liegen und darf nicht in der Zukunft sein.",
+    "ROLE_TASK_NEEDS_SPACE": "Wählen Sie einen Arbeitsbereich, um einen Auftrag für eine Rolle zu öffnen.",
+    "ROLE_TASK_ROLE_UNKNOWN": "Diese Arbeitsrolle gibt es hier nicht.",
+    "ROLE_TASK_ROLE_NOT_HERE": "Diese Rolle wird in diesem Arbeitsbereich nicht verwendet.",
+    "ROLE_TASK_PEOPLE_OR_ROLE": "Personen zuweisen oder für eine Rolle öffnen — nicht beides.",
+    "ROLE_TASK_FINISHED": "Dieser Auftrag ist abgeschlossen.",
+    "ROLE_TASK_TAKEN": "Jemand anderes hat den letzten Platz übernommen.",
+    "ROLE_TASK_ALREADY_YOURS": "Sie sind bereits bei diesem Auftrag.",
+    "ROLE_TASK_NOT_ROLE": "Dieser Auftrag wurde nicht für eine Rolle geöffnet.",
+    "ROLE_TASK_STARTED": "Die Arbeit hat begonnen — verlassen Sie stattdessen das Team."
   },
   "signLink": {
     "tabs": {

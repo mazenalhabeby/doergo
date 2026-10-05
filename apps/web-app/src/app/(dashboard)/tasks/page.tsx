@@ -50,6 +50,7 @@ import { SpaceTabs } from "@/components/space-tabs"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
+import { RoleJobsSummary } from "./_components/role-jobs-summary"
 import { TaskTableRow } from "./_components/task-table-row"
 import { KanbanBoard } from "./_components/kanban-board"
 import type { GroupByOption } from "./_components/grouped-list"
@@ -1295,6 +1296,9 @@ export default function TasksPage() {
             </div>
           </div>
         </div>
+
+        {/* Tasks open to a work role: open now, overdue, minutes to take (renders nothing until used). */}
+        {canSeeOthers && <RoleJobsSummary spaceId={selectedSpaceId} />}
 
         {/* ── Space tabs ─────────────────────────────────────── */}
         {/*

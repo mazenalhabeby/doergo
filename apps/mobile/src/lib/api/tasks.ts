@@ -1,6 +1,6 @@
 import { fetchWithAuth } from './client';
 import { buildUrlWithQuery, type StepFormAnswers } from '@hbcfield/shared/client';
-import type { CrewView, JobTimeView, MyHandovers, TaskHandover, StepSubmission, Task, Comment, TaskEvent, CreateTaskInput, UpdateTaskInput, LocationUpdate, LocationResponse, LocationBatchUpdate, ChecklistItem } from './types';
+import type { CrewView, JobTimeView, MyHandovers, TaskHandover, StepSubmission, Task, Comment, TaskEvent, CreateTaskInput, UpdateTaskInput, OpenRoleTask, LocationUpdate, LocationResponse, LocationBatchUpdate, ChecklistItem } from './types';
 
 export interface TasksListParams {
   status?: string;
@@ -95,6 +95,16 @@ export const tasksApi = {
 
   writeHandover: async (taskId: string, body: { id?: string; note: string; attachmentIds?: string[] }): Promise<TaskHandover> =>
     fetchWithAuth<TaskHandover>(`/tasks/${taskId}/handover`, { method: 'POST', body: JSON.stringify(body) }),
+
+  // ── A task open to a WORK role (shared tasks/role-pool.ts) ──
+  /** Tasks open to a role I hold, in the workspace I hold it in — urgent first, then the longest waiting. */
+  openForMe: async (): Promise<OpenRoleTask[]> => fetchWithAuth<OpenRoleTask[]>('/tasks/open-for-me', { method: 'GET' }),
+  /** Take a place. Refused with ROLE_TASK_TAKEN (params.takers) when somebody was faster. */
+  take: async (taskId: string): Promise<{ id: string; spotsLeft: number; waitedMinutes: number | null }> =>
+    fetchWithAuth(`/tasks/${taskId}/take`, { method: 'POST', body: '{}' }),
+  /** Hand it back to its role before the work starts; it is offered again. */
+  returnToRole: async (taskId: string, reason?: string): Promise<void> =>
+    fetchWithAuth<void>(`/tasks/${taskId}/return-to-role`, { method: 'POST', body: JSON.stringify(reason ? { reason } : {}) }),
 
   declineTask: async (taskId: string): Promise<void> => {
     return fetchWithAuth<void>(`/tasks/${taskId}/decline`, {

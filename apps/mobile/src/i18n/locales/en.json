@@ -3203,7 +3203,12 @@
       "CHECKLIST_OWNER_NOT_ON_CREW": "Choose somebody on this job.",
       "CHECKLIST_OWNER_NOT_YOURS": "Only the leader of this job, or the office, gives an item to somebody.",
       "CHECKLIST_CHANGED": "Somebody changed this item just now. Look again.",
-      "CHECKLIST_ITEM_NOT_YOURS": "Only the person it belongs to, the leader of this job, or the office changes this item."
+      "CHECKLIST_ITEM_NOT_YOURS": "Only the person it belongs to, the leader of this job, or the office changes this item.",
+      "ROLE_TASK_TAKEN": "Somebody else took it first.",
+      "ROLE_TASK_ALREADY_YOURS": "You are already on this job.",
+      "ROLE_TASK_STARTED": "The work has started — leave the crew instead.",
+      "ROLE_TASK_NOT_ROLE": "This job was not opened to a role.",
+      "ROLE_TASK_FINISHED": "This job is finished."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",
@@ -4466,5 +4471,21 @@
     "more_one": "And {{count}} more job",
     "more_other": "And {{count}} more jobs",
     "pausedSoFar": "{{time}} so far — resume work when you are back on it."
+  },
+  "roleTasks": {
+    "title": "Open for your role",
+    "take": "Take it",
+    "taking": "Taking…",
+    "youTookIt": "It's yours",
+    "couldNotTake": "Could not take it",
+    "couldNotReturn": "Could not hand it back",
+    "returned": "Handed back to the role",
+    "giveBack": "Hand back to the role",
+    "urgent": "Urgent",
+    "placesLeft_one": "{{count}} place left",
+    "placesLeft_other": "{{count}} places left",
+    "openTo": "Open to {{role}}",
+    "takenFrom": "Taken from {{role}}",
+    "takenOf": "{{taken}} of {{of}} taken"
   }
 }

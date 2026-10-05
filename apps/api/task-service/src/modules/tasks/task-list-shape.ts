@@ -10,6 +10,8 @@ import { flowTracksLocation } from '@hbcfield/shared';
  */
 export const TASK_LIST_INCLUDE = {
   createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+  // "Open · Mechanic" on the row — a one-row lookup per open task, null for the rest.
+  openRole: { select: { id: true, name: true } },
   assignedTo: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
   assignees: {
     take: 4, // List view only needs a few for stacked avatars

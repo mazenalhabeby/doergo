@@ -29,6 +29,7 @@ import { FilterChips, SearchField, Segmented } from './jobs-controls';
 import { JobRow } from './job-row';
 import { NextUp } from './next-up';
 import { RouteRow } from './route-row';
+import { OpenForRole } from './open-for-role';
 
 /** The list is asked for 100 at a time; at the cap it says so rather than implying it is everything. */
 const PAGE = 100;
@@ -85,6 +86,8 @@ export function JobsScreen({
   /* Opens on MINE — "what do I do now" is why a person unlocks a phone. */
   const [mineOnly, setMineOnly] = useState(true);
   const [selected, setSelected] = useState<{ id: string; sheet: OpenSheet | null } | null>(null);
+  // One pull refreshes the jobs AND what is open for my role.
+  const [roleRefresh, setRoleRefresh] = useState(0);
 
   const list = useJobsList({ period, search, oversee, mineOnly });
   const { tasks } = list;
@@ -209,6 +212,12 @@ export function JobsScreen({
         <View style={{ alignItems: 'flex-end', marginTop: -amazen.space(2) }}><FreshnessLabel at={list.localUpdatedAt} /></View>
       ) : null}
       {routeShown ? <TourTarget name="tasks-route"><RouteRow stops={routeStops} onPress={() => router.push('/(app)/route-planner' as Href)} /></TourTarget> : null}
+      {/* Jobs open to a work role I hold — the first to take each place gets it (shared tasks/role-pool.ts). */}
+      <OpenForRole
+        refreshKey={roleRefresh}
+        onTaken={(id) => { void list.fetchTasks(); open({ id }); }}
+        onOpen={(id) => open({ id })}
+      />
       {next ? (
         <View style={{ gap: amazen.space(2) }}>
           <SectionLabel tone="accent">{t('tasks.myWork.next.label')}</SectionLabel>
@@ -259,7 +268,7 @@ export function JobsScreen({
         ListEmptyComponent={empty}
         ListFooterComponent={footer}
         contentContainerStyle={[{ paddingHorizontal: pad, paddingTop: amazen.space(1), paddingBottom: tabSafe }, wide]}
-        refreshControl={<RefreshControl refreshing={list.isRefreshing} onRefresh={() => void list.refresh()} colors={[c.accentSolid]} tintColor={c.accent} />}
+        refreshControl={<RefreshControl refreshing={list.isRefreshing} onRefresh={() => { setRoleRefresh((k) => k + 1); void list.refresh(); }} colors={[c.accentSolid]} tintColor={c.accent} />}
         renderSectionHeader={({ section }) => (
           <View style={[s.wellTop, { backgroundColor: c.well, marginTop: amazen.space(3.5), paddingHorizontal: amazen.space(3.5) }]}>
             <SectionLabel tone={section.band === 'blocked' ? 'critical' : section.band === 'overdue' ? 'warn' : 'muted'}>

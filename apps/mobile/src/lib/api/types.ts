@@ -287,6 +287,12 @@ export interface MyHandovers {
 }
 
 export interface Task {
+  /** Open to a WORK role (shared tasks/role-pool.ts): whoever holds it in the workspace may take a place. */
+  openRoleId?: string | null;
+  openRole?: { id: string; name: string } | null;
+  openSpots?: number | null;
+  openSpotsLeft?: number | null;
+  openedAt?: string | null;
   id: string;
   title: string;
   description: string;
@@ -524,4 +530,22 @@ export interface ScheduleEntry {
   endTime: string;
   isActive: boolean;
   notes?: string;
+}
+
+/** A task open to a role the member holds (GET /tasks/open-for-me). */
+export interface OpenRoleTask {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  dueDate: string | null;
+  openedAt: string | null;
+  openSpots: number | null;
+  openSpotsLeft: number | null;
+  roleId: string | null;
+  roleName: string | null;
+  spaceId: string | null;
+  spaceName: string | null;
+  locationAddress: string | null;
+  distanceKm: number | null;
 }

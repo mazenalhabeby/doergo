@@ -2,6 +2,7 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JobPauseService } from './handover/job-pause.service';
 import { TasksService } from './tasks.service';
+import { RolePoolService } from './role-pool.service';
 
 /**
  * Microservice Controller for Task READ Operations
@@ -17,7 +18,47 @@ export class TasksController {
   constructor(
     private readonly tasksService: TasksService,
     private readonly jobPause: JobPauseService,
+    private readonly rolePool: RolePoolService,
   ) {}
+
+  // ============ A task open to a WORK role (shared tasks/role-pool.ts) ============
+  // Direct, not through the queue: taking a place is ONE conditional update in
+  // the database, which is the guarantee — a queue in front would only add wait.
+
+  @MessagePattern({ cmd: 'role_tasks_open_for_me' })
+  async roleTasksOpenForMe(@Payload() data: any) {
+    return this.rolePool.openForMe(data);
+  }
+
+  @MessagePattern({ cmd: 'role_task_take' })
+  async roleTaskTake(@Payload() data: any) {
+    return this.rolePool.take(data);
+  }
+
+  @MessagePattern({ cmd: 'role_task_return' })
+  async roleTaskReturn(@Payload() data: any) {
+    return this.rolePool.returnToRole(data);
+  }
+
+  @MessagePattern({ cmd: 'role_task_set_open' })
+  async roleTaskSetOpen(@Payload() data: any) {
+    return this.rolePool.setOpenRole(data);
+  }
+
+  @MessagePattern({ cmd: 'role_task_options' })
+  async roleTaskOptions(@Payload() data: any) {
+    return this.rolePool.roleOptions(data);
+  }
+
+  @MessagePattern({ cmd: 'role_task_preview' })
+  async roleTaskPreview(@Payload() data: any) {
+    return this.rolePool.preview(data);
+  }
+
+  @MessagePattern({ cmd: 'role_task_stats' })
+  async roleTaskStats(@Payload() data: any) {
+    return this.rolePool.stats(data);
+  }
 
   @MessagePattern({ cmd: 'health' })
   async health() {

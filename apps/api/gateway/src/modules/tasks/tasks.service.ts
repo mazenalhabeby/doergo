@@ -21,6 +21,15 @@ export class TasksService extends BaseGatewayService {
 
   // ============ Read Operations (Direct Microservice) ============
 
+  // ── A task open to a WORK role (shared tasks/role-pool.ts) ──
+  roleTasksOpenForMe(data: Record<string, any>) { return this.send({ cmd: 'role_tasks_open_for_me' }, data); }
+  roleTaskTake(data: Record<string, any>) { return this.send({ cmd: 'role_task_take' }, data); }
+  roleTaskReturn(data: Record<string, any>) { return this.send({ cmd: 'role_task_return' }, data); }
+  roleTaskSetOpen(data: Record<string, any>) { return this.send({ cmd: 'role_task_set_open' }, data); }
+  roleTaskOptions(data: Record<string, any>) { return this.send({ cmd: 'role_task_options' }, data); }
+  roleTaskPreview(data: Record<string, any>) { return this.send({ cmd: 'role_task_preview' }, data); }
+  roleTaskStats(data: Record<string, any>) { return this.send({ cmd: 'role_task_stats' }, data); }
+
   /**
    * Get all tasks with pagination and filters
    */

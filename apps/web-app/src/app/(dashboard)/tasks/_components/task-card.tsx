@@ -1,5 +1,8 @@
 "use client"
 
+import { isOpenToRole } from "@hbcfield/shared/client"
+import { OpenRoleChip } from "./open-role-chip"
+
 import { PausedChip } from "@/components/paused-chip"
 import React from "react"
 import { isTaskOverdue } from "@hbcfield/shared/client"
@@ -141,6 +144,8 @@ export const TaskCard = React.memo(function TaskCard({
                 {task.assignedTo.firstName}
               </span>
             </div>
+          ) : isOpenToRole(task) ? (
+            <OpenRoleChip task={task} />
           ) : (
             <div className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
               <div className="size-5 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">

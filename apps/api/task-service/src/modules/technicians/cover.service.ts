@@ -289,6 +289,29 @@ export class CoverService {
   }
 
   /**
+   * Who in ONE workspace is expected at work today, and who is on approved
+   * leave — for a task open to a role (tasks/role-pool.ts).
+   *
+   * The same rota rules as the floor panel (`isRosteredOn`, `leaveCovers`), on
+   * the workspace's own day, so the role offer and the panel never disagree
+   * about who is working. Two queries for the roster, one for leave.
+   */
+  async expectedToday(organizationId: string, spaceId: string, timezone: string | null | undefined): Promise<Map<string, { rostered: boolean; onLeave: boolean }>> {
+    const out = new Map<string, { rostered: boolean; onLeave: boolean }>();
+    const roster = (await this.rosters(organizationId, [spaceId])).get(spaceId) ?? [];
+    if (!roster.length) return out;
+    const today = localPartsIn(new Date(), timezone || 'Europe/Berlin').dateStr;
+    const leave = await this.approvedLeave(roster.map((p) => p.id), today, today);
+    for (const p of roster) {
+      out.set(p.id, {
+        rostered: isRosteredOn(p, today),
+        onLeave: leave.some((l) => l.personId === p.id && leaveCovers(l, today)),
+      });
+    }
+    return out;
+  }
+
+  /**
    * Who is on the floor right now.
    *
    * Two numbers, deliberately: EXPECTED comes from the rota, HERE comes from the

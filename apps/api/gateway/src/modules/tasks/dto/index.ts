@@ -4,7 +4,7 @@ import { OmitType, PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import { OccurrenceEvidenceDto } from '../../../common/dto/occurrence.dto';
 import { CLIENT_ID } from '../../../common/dto/upload.dto';
-import { TaskPriority, TaskAssigneeRole, DependencyType, TASK_TITLE_MAX_LENGTH, TASK_DESCRIPTION_MAX_LENGTH, ATTENDANCE_CONSTANTS, HANDOVER_NOTE_MAX, HANDOVER_PHOTOS_MAX, OFFICE_START_REASON_MAX, CREW_REASON_MAX, LEAD_SCOPES, type LeadScope } from '@hbcfield/shared';
+import { TaskPriority, TaskAssigneeRole, DependencyType, TASK_TITLE_MAX_LENGTH, TASK_DESCRIPTION_MAX_LENGTH, ATTENDANCE_CONSTANTS, HANDOVER_NOTE_MAX, HANDOVER_PHOTOS_MAX, OFFICE_START_REASON_MAX, CREW_REASON_MAX, LEAD_SCOPES, ROLE_SPOTS_MAX, type LeadScope } from '@hbcfield/shared';
 
 /**
  * Create task request DTO
@@ -81,6 +81,19 @@ export class CreateTaskDto {
   @IsOptional()
   assigneeIds?: string[];
 
+  @ApiPropertyOptional({ description: 'Open the task to a WORK role in its workspace instead of naming people (shared tasks/role-pool.ts)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  openRoleId?: string;
+
+  @ApiPropertyOptional({ description: 'How many people the role should provide (1–20)', minimum: 1, maximum: ROLE_SPOTS_MAX })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(ROLE_SPOTS_MAX)
+  openSpots?: number;
+
   @ApiPropertyOptional({ description: 'Parent task ID (for creating as a subtask)' })
   @IsString()
   @IsOptional()
@@ -137,7 +150,39 @@ export class CreateTaskDto {
   Everything a create takes except the id: the phone names a task when it
   creates one, and an update must never be able to rename a task.
 */
-export class UpdateTaskDto extends PartialType(OmitType(CreateTaskDto, ['id'] as const)) {}
+/*
+  ⚠️ The role a task is open to is NOT a plain field: opening, re-sizing and
+  closing go through PUT /tasks/:id/open-role, which checks the role, counts who
+  already took a place and offers the task. Left in here, a PATCH would write
+  the columns raw.
+*/
+export class UpdateTaskDto extends PartialType(OmitType(CreateTaskDto, ['id', 'openRoleId', 'openSpots'] as const)) {}
+
+/** Open an existing task to a role, change how many it needs, or close it (roleId null). */
+export class SetOpenRoleDto {
+  @ApiPropertyOptional({ description: 'A WORK role used in the task\'s workspace; null closes it to the role', nullable: true })
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsString()
+  @MaxLength(64)
+  roleId?: string | null;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: ROLE_SPOTS_MAX })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(ROLE_SPOTS_MAX)
+  spots?: number;
+}
+
+/** Hand a role task back to its role, with why (optional). */
+export class ReturnToRoleDto {
+  @ApiPropertyOptional({ maxLength: 500 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+}
 
 export class AssignTaskDto {
   @ApiProperty({ example: 'worker-123' })

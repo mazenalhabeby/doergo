@@ -13,6 +13,7 @@ import { of, throwError } from 'rxjs';
 import { OBJECT_STORE } from '@hbcfield/shared/storage';
 import { Role, STEP_FORM_PRESETS } from '@hbcfield/shared';
 import { TasksService } from '../tasks.service';
+import { RolePoolService } from '../role-pool.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
@@ -101,7 +102,7 @@ describe('status change into a step with a form', () => {
     const module = await Test.createTestingModule({
       providers: [
         TasksService,
-        { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
+        { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false) } }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         { provide: 'AUTH_SERVICE', useValue: auth },
@@ -323,7 +324,7 @@ describe('reading a job\'s submissions', () => {
     const module = await Test.createTestingModule({
       providers: [
         TasksService,
-        { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: PresenceService, useValue: {} },
+        { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false) } }, { provide: PresenceService, useValue: {} },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },

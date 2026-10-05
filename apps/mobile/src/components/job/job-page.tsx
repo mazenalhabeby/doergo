@@ -51,6 +51,7 @@ import { HandoverSheet } from './sheets/handover-sheet';
 import { JobHandover } from './job-handover';
 import { JobTimeCard } from './job-time-card';
 import { HandOverLeadSheet, JobCrewCard, MyIssueSheet } from './job-crew';
+import { JobRoleCard } from './job-role';
 import { useCrew } from './use-crew';
 import { jobTimeNow } from './job-time-logic';
 import { useJobTime } from '../../hooks/useJobTime';
@@ -510,6 +511,9 @@ export function JobPage({
         />
 
         <JobHandover task={task} files={job.attachments} meId={user?.id} timeOf={(id) => jobTime.view?.byWorker.find((w) => w.user.id === id) ?? null} onWrite={() => setSheet('handover')} />
+
+        {/* Open to a work role: take a place, or hand it back (shared tasks/role-pool.ts). */}
+        <JobRoleCard task={task as never} meId={user?.id} onChanged={() => job.reload()} />
 
         <JobTimeCard time={timeNow} paused={paused} startedBy={jobTime.view?.startedBy ?? null} meId={user?.id} />
 

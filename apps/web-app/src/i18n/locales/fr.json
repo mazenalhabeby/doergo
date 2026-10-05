@@ -1629,7 +1629,11 @@
         "SELF_RESUMED": "A repris",
         "LEAD_CHANGED": "Responsable changé",
         "CHECKLIST_ITEM_TOGGLED": "Liste",
-        "CHECKLIST_ITEM_ASSIGNED": "Liste"
+        "CHECKLIST_ITEM_ASSIGNED": "Liste",
+        "OPENED_TO_ROLE": "Ouverte à un rôle",
+        "OFFERED": "Proposée",
+        "TAKEN": "Prise",
+        "RETURNED_TO_ROLE": "Rendue au rôle"
       },
       "byOffice": "par le bureau",
       "crew": {
@@ -1649,6 +1653,18 @@
         "unticked": "A décoché « {{text}} »",
         "owner": "« {{text}} » → {{name}}",
         "noOwner": "« {{text}} » n’a plus de responsable"
+      },
+      "role": {
+        "opened_one": "Ouverte à {{role}} · {{count}} requise",
+        "opened_other": "Ouverte à {{role}} · {{count}} requises",
+        "offeredFree_one": "Proposée à {{count}} personne libre",
+        "offeredFree_other": "Proposée à {{count}} personnes libres",
+        "offeredWide_one": "Proposée à {{count}} autre personne en service",
+        "offeredWide_other": "Proposée à {{count}} autres personnes en service",
+        "taken": "{{name}} l’a prise",
+        "takenAfter_one": "{{name}} l’a prise après {{count}} min",
+        "takenAfter_other": "{{name}} l’a prise après {{count}} min",
+        "returned": "Rendue à {{role}}"
       }
     },
     "assignees": {
@@ -1855,6 +1871,60 @@
       "takeOffPlaceholder": "Envoyé sur un autre chantier",
       "putOnDone": "{{name}} est sur le travail",
       "takeOffDone": "{{name}} n'est plus sur le travail"
+    },
+    "role": {
+      "noRoles": "Aucun rôle de travail n’est encore utilisé dans cet espace. Ajoutez-en un sous Espace → Rôles.",
+      "role": "Rôle",
+      "choose": "Choisissez un rôle…",
+      "holders_one": "{{count}} personne",
+      "holders_other": "{{count}} personnes",
+      "people": "Personnes",
+      "fewer": "Moins",
+      "more": "Plus",
+      "freeNow_one": "{{count}} libre maintenant",
+      "freeNow_other": "{{count}} libres maintenant",
+      "ofTotal_one": "sur {{count}}",
+      "ofTotal_other": "sur {{count}}",
+      "busyCount_one": "{{count}} en mission",
+      "busyCount_other": "{{count}} en mission",
+      "state": {
+        "FREE": "Libre",
+        "BUSY": "En mission",
+        "NOT_WORKING": "Pas en service",
+        "ON_LEAVE": "Absent"
+      },
+      "offerHint": "Les personnes libres sont prévenues tout de suite, toutes celles qui travaillent aujourd’hui après 10 minutes. La première qui la prend l’obtient.",
+      "who": "Qui s’en charge",
+      "byPerson": "Personne",
+      "byRole": "Rôle",
+      "tookFirst": "{{names}} l’a prise en premier.",
+      "someoneElse": "Quelqu’un d’autre",
+      "youTookIt": "Elle est à vous.",
+      "returned": "Rendue au rôle. Elle est de nouveau proposée.",
+      "openTo": "Ouverte à {{role}}",
+      "filledFrom": "Prise par {{role}}",
+      "takenOf": "{{taken}} sur {{of}} prises",
+      "openFor_one": "ouverte depuis {{count}} min",
+      "openFor_other": "ouverte depuis {{count}} min",
+      "take": "La prendre",
+      "giveBack": "Rendre",
+      "reasonPlaceholder": "Pourquoi ? (facultatif)",
+      "confirmGiveBack": "Rendre au rôle",
+      "close": "Fermer au rôle",
+      "chip": "Ouverte · {{role}}",
+      "summaryTitle": "Ouvertes aux rôles",
+      "openNow_one": "{{count}} ouverte",
+      "openNow_other": "{{count}} ouvertes",
+      "overdue_one": "{{count}} non prise à temps",
+      "overdue_other": "{{count}} non prises à temps",
+      "colOpen": "Ouvertes",
+      "colOverdue": "Non prises à temps",
+      "colTaken": "Prises",
+      "colAvg": "Moy. avant prise",
+      "colTopTakers": "Prend le plus",
+      "minutes_one": "{{count}} min",
+      "minutes_other": "{{count}} min",
+      "summaryHint": "30 derniers jours. « Non prise à temps » = encore ouverte après l’heure d’alerte."
     }
   },
   "technicians": {
@@ -8999,7 +9069,16 @@
     "HANDOVER_NOT_ON_THE_JOB": "Seule une personne sur cette intervention peut écrire sa passation.",
     "HANDOVER_NOTE_REQUIRED": "Écrivez ce que vous avez fait avant d'enregistrer.",
     "OFFICE_START_REASON_REQUIRED": "Indiquez pourquoi le bureau commence cette intervention pour cette personne.",
-    "OFFICE_START_TIME_OUTSIDE_SHIFT": "L'heure de début doit être dans son poste et pas dans le futur."
+    "OFFICE_START_TIME_OUTSIDE_SHIFT": "L'heure de début doit être dans son poste et pas dans le futur.",
+    "ROLE_TASK_NEEDS_SPACE": "Choisissez un espace pour ouvrir une tâche à un rôle.",
+    "ROLE_TASK_ROLE_UNKNOWN": "Ce rôle de travail n’existe pas ici.",
+    "ROLE_TASK_ROLE_NOT_HERE": "Ce rôle n’est pas utilisé dans cet espace.",
+    "ROLE_TASK_PEOPLE_OR_ROLE": "Affectez des personnes ou ouvrez la tâche à un rôle — pas les deux.",
+    "ROLE_TASK_FINISHED": "Cette tâche est terminée.",
+    "ROLE_TASK_TAKEN": "Quelqu’un d’autre a pris la dernière place.",
+    "ROLE_TASK_ALREADY_YOURS": "Vous êtes déjà sur cette tâche.",
+    "ROLE_TASK_NOT_ROLE": "Cette tâche n’a pas été ouverte à un rôle.",
+    "ROLE_TASK_STARTED": "Le travail a commencé — quittez plutôt l’équipe."
   },
   "signLink": {
     "tabs": {

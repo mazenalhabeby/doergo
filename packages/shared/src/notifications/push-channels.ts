@@ -80,6 +80,11 @@ const TIME_SENSITIVE_PREFIXES = [
     which is why the two lists below are no longer the same list.
   */
   'task_departure',
+  /*
+    "A job is open to your role — first to take it gets it." Waiting a quarter
+    of an hour to see it is how somebody else, or nobody, takes it.
+  */
+  'task_role_offer',
 ] as const;
 
 /**

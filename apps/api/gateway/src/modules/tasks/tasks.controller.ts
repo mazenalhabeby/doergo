@@ -40,6 +40,8 @@ import {
   ChangeLeadDto,
   PresignAttachmentDto,
   ConfirmAttachmentDto,
+  SetOpenRoleDto,
+  ReturnToRoleDto,
 } from './dto';
 import { TasksQueueService } from './tasks.queue.service';
 import { TasksService } from './tasks.service';
@@ -149,6 +151,21 @@ export class TasksController {
       !accessAllowsAnywhere(req.user?.access, 'canAssignTasks')
     ) {
       createTaskDto.assignedToId = undefined;
+    }
+
+    /*
+      Opening a job to a role IS assigning (to whoever takes it), so it asks the
+      same right: org-wide, or in the task's own workspace. Stripped like the
+      assignee above, never refused — the job is still raised.
+    */
+    if (
+      createTaskDto.openRoleId &&
+      !isAdmin(req.user) &&
+      req.user.canAssignTasks !== true &&
+      !(targetSpaceId && (spacesGranting(req.user?.access, 'canAssignTasks') ?? []).includes(targetSpaceId))
+    ) {
+      createTaskDto.openRoleId = undefined;
+      createTaskDto.openSpots = undefined;
     }
 
     return this.tasksQueueService.createTask({
@@ -313,6 +330,80 @@ export class TasksController {
       assignSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canAssignTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
+  }
+
+  // ── A task open to a WORK role (shared tasks/role-pool.ts) — literal routes before :id ──
+
+  @Get('open-for-me')
+  @DenyExternal()
+  @ApiOperation({ summary: 'Tasks open to a work role the caller holds, in the workspace they hold it in' })
+  async openForMe(@Request() req: any) {
+    return this.tasksService.roleTasksOpenForMe({ userId: req.user.id, organizationId: req.user.organizationId });
+  }
+
+  @Get('role-options')
+  @RequirePermissionInSpace('canAssignTasks')
+  @ApiOperation({ summary: 'Work roles a task in this workspace can be opened to, with how many hold each' })
+  @ApiQuery({ name: 'spaceId', required: true })
+  async roleOptions(@Query('spaceId') spaceId: string, @Request() req: any) {
+    this.assertMayAssignIn(req, spaceId);
+    return this.tasksService.roleTaskOptions({ organizationId: req.user.organizationId, spaceId: String(spaceId ?? '') });
+  }
+
+  @Get('role-preview')
+  @RequirePermissionInSpace('canAssignTasks')
+  @ApiOperation({ summary: 'Before opening a task to a role: who holds it here, who is free now, the best ten' })
+  @ApiQuery({ name: 'spaceId', required: true })
+  @ApiQuery({ name: 'roleId', required: true })
+  async rolePreview(@Query() q: Record<string, string>, @Request() req: any) {
+    this.assertMayAssignIn(req, q.spaceId);
+    const num = (v?: string) => (v != null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : null);
+    return this.tasksService.roleTaskPreview({
+      userId: req.user.id, organizationId: req.user.organizationId,
+      spaceId: String(q.spaceId ?? ''), roleId: String(q.roleId ?? ''), lat: num(q.lat), lng: num(q.lng),
+    });
+  }
+
+  @Get('role-stats')
+  @RequirePermissionInSpace('canViewAllTasks')
+  @ApiOperation({ summary: 'Per work role: opened, taken, average minutes to take, still open, overdue, who takes most' })
+  async roleStats(@Query() q: Record<string, string>, @Request() req: any) {
+    const scope = isAdmin(req.user) || req.user.canViewAllTasks === true ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? []);
+    const spaceIds = q.spaceId ? (scope === undefined || scope.includes(q.spaceId) ? [q.spaceId] : []) : scope;
+    return this.tasksService.roleTaskStats({ organizationId: req.user.organizationId, spaceIds, from: q.from, to: q.to });
+  }
+
+  @Post(':id/take')
+  @DenyExternal()
+  @ApiOperation({ summary: 'Take a place on a task open to your work role — the first to take each place gets it' })
+  async take(@Param('id') id: string, @Request() req: any) {
+    return this.tasksService.roleTaskTake({ taskId: id, userId: req.user.id, organizationId: req.user.organizationId });
+  }
+
+  @Post(':id/return-to-role')
+  @DenyExternal()
+  @ApiOperation({ summary: 'Hand a role task back to its role (before the work starts); it is offered again' })
+  async returnToRole(@Param('id') id: string, @Body() body: ReturnToRoleDto, @Request() req: any) {
+    return this.tasksService.roleTaskReturn({ taskId: id, userId: req.user.id, organizationId: req.user.organizationId, reason: body.reason ?? null });
+  }
+
+  @Put(':id/open-role')
+  @RequirePermissionInSpace('canAssignTasks')
+  @ApiOperation({ summary: 'Open a task to a work role, change how many it needs, or close it (roleId null)' })
+  async setOpenRole(@Param('id') id: string, @Body() body: SetOpenRoleDto, @Request() req: any) {
+    return this.tasksService.roleTaskSetOpen({
+      taskId: id, roleId: body.roleId ?? null, spots: body.spots,
+      userId: req.user.id, userRole: req.user.role, organizationId: req.user.organizationId,
+      canAssignTasks: req.user.canAssignTasks,
+      assignSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canAssignTasks') ?? undefined),
+    });
+  }
+
+  /** May the caller assign work in this workspace? (org-wide, or a space grant there) */
+  private assertMayAssignIn(req: any, spaceId?: string) {
+    if (isAdmin(req.user) || req.user.canAssignTasks === true) return;
+    if (spaceId && (spacesGranting(req.user?.access, 'canAssignTasks') ?? []).includes(spaceId)) return;
+    throw new ForbiddenException('You do not have permission to assign work in this workspace');
   }
 
   @Get(':id')
