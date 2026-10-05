@@ -4790,7 +4790,9 @@
       "lineTags": "Kennzeichen Stunden und Tage",
       "nameLineRange": "{{name}} · {{from}} – {{to}}",
       "noShiftDays_one": "An {{count}} Tag war keine Schicht geplant; er zählt mit der gezählten Zeit",
-      "noShiftDays_other": "An {{count}} Tagen war keine Schicht geplant; sie zählen mit der gezählten Zeit"
+      "noShiftDays_other": "An {{count}} Tagen war keine Schicht geplant; sie zählen mit der gezählten Zeit",
+      "basisSaved": "Für diese Person in diesem Arbeitsbereich gespeichert",
+      "basisSavedHint": "Wird bei der Person in diesem Arbeitsbereich gespeichert, für diese und spätere Rechnungen."
     },
     "oldestDebt": "Älteste offene",
     "nothingOutstanding": "Alles beglichen — nichts offen.",

@@ -492,6 +492,10 @@ export interface HoursEntry {
   hoursBasis?: HoursBasis;
   /** SHIFT only: days in the run with no planned shift, billed at counted time instead. */
   noShiftDays?: number;
+  /** The same days' hours under each basis — so the screen can offer the choice with its figures. */
+  hoursByBasis?: Record<HoursBasis, number>;
+  /** The person's place in this workspace — where a changed basis is saved. */
+  assignmentId?: string | null;
 }
 
 /** One person on a WORKSPACE invoice: their hours runs, day runs and jobs. */

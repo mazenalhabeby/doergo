@@ -1244,6 +1244,12 @@ export class InvoiceService {
     */
     const basisOf = (userId: string) => effectiveHoursBasis(people.get(userId)?.assignment?.hoursBasis);
     const billed = minutesByDay(entries, jobMarks, dayOf, basisOf);
+    // Every basis for everybody, so the screen can show what each choice would bill. In memory, no query.
+    const byBasis = {
+      COUNTED: minutesOn,
+      CLOCKED: minutesByDay(entries, jobMarks, dayOf, () => 'CLOCKED').minutes,
+      SHIFT: minutesByDay(entries, jobMarks, dayOf, () => 'SHIFT').minutes,
+    } as const;
     const key = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
     const alreadyBilled = (userId: string, kind: 'HOURS' | 'DAYS', d: string) =>
       billedRuns.some((r) => r.workerId === userId && r.lineKind === kind && key(r.dayFrom)! <= d && d <= (key(r.dayTo) ?? key(r.dayFrom))!);
@@ -1272,9 +1278,11 @@ export class InvoiceService {
           let cost: number | null = 0;
           let count = 0;
           let noShiftDays = 0;
+          const alt = { COUNTED: 0, CLOCKED: 0, SHIFT: 0 };
           for (const d of days) {
             if (d < run.fromDay || d > run.toDay) continue;
             const k = `${userId}|${d}`;
+            for (const b of ['COUNTED', 'CLOCKED', 'SHIFT'] as const) alt[b] += byBasis[b].get(k) ?? 0;
             minutes += billed.minutes.get(k) ?? 0;
             count += 1;
             if (billed.noShift.has(k)) noShiftDays += 1;
@@ -1294,6 +1302,12 @@ export class InvoiceService {
             costCents: cost === null ? null : Math.round(cost),
             hoursBasis: basis,
             ...(basis === 'SHIFT' ? { noShiftDays } : {}),
+            hoursByBasis: {
+              COUNTED: Math.round((alt.COUNTED / 60) * 100) / 100,
+              CLOCKED: Math.round((alt.CLOCKED / 60) * 100) / 100,
+              SHIFT: Math.round((alt.SHIFT / 60) * 100) / 100,
+            },
+            assignmentId: a?.id ?? null,
             // The jobs these hours cover — marked billed with the line.
             taskIds: jobMarks
               .filter((j) => j.userId === userId && !args.billedTasks.has(j.id) && run.fromDay <= dayOf(j.at) && dayOf(j.at) <= run.toDay)

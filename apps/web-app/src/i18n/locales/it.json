@@ -4799,7 +4799,9 @@
       "lineTags": "Etichette ore e giorni",
       "nameLineRange": "{{name}} · {{from}} – {{to}}",
       "noShiftDays_one": "{{count}} giorno senza turno previsto usa il tempo conteggiato",
-      "noShiftDays_other": "{{count}} giorni senza turno previsto usano il tempo conteggiato"
+      "noShiftDays_other": "{{count}} giorni senza turno previsto usano il tempo conteggiato",
+      "basisSaved": "Salvato per questa persona in questo spazio",
+      "basisSavedHint": "Salvato sulla persona in questo spazio, per questa fattura e le successive."
     },
     "oldestDebt": "Più vecchia non pagata",
     "nothingOutstanding": "Tutto saldato — nulla in sospeso.",

@@ -4799,7 +4799,9 @@
       "lineTags": "Étiquettes heures et jours",
       "nameLineRange": "{{name}} · {{from}} – {{to}}",
       "noShiftDays_one": "{{count}} jour sans créneau prévu utilise le temps compté",
-      "noShiftDays_other": "{{count}} jours sans créneau prévu utilisent le temps compté"
+      "noShiftDays_other": "{{count}} jours sans créneau prévu utilisent le temps compté",
+      "basisSaved": "Enregistré pour cette personne dans cet espace",
+      "basisSavedHint": "Enregistré sur la personne dans cet espace, pour cette facture et les suivantes."
     },
     "oldestDebt": "Plus ancienne impayée",
     "nothingOutstanding": "Tout est réglé — rien en attente.",

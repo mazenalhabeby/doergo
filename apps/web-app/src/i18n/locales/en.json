@@ -4790,7 +4790,9 @@
       "lineTags": "Hours and days tags",
       "nameLineRange": "{{name}} · {{from}} – {{to}}",
       "noShiftDays_one": "{{count}} day had no shift planned and uses counted time",
-      "noShiftDays_other": "{{count}} days had no shift planned and use counted time"
+      "noShiftDays_other": "{{count}} days had no shift planned and use counted time",
+      "basisSaved": "Saved for this person in this workspace",
+      "basisSavedHint": "Saved on the person in this workspace, for this and later invoices."
     },
     "oldestDebt": "Oldest unpaid",
     "nothingOutstanding": "Everything is settled — nothing outstanding.",

@@ -4790,7 +4790,9 @@
       "lineTags": "Etiquetas de horas y días",
       "nameLineRange": "{{name}} · {{from}} – {{to}}",
       "noShiftDays_one": "{{count}} día no tenía turno previsto y usa el tiempo contado",
-      "noShiftDays_other": "{{count}} días no tenían turno previsto y usan el tiempo contado"
+      "noShiftDays_other": "{{count}} días no tenían turno previsto y usan el tiempo contado",
+      "basisSaved": "Guardado para esta persona en este espacio",
+      "basisSavedHint": "Se guarda en la persona en este espacio, para esta factura y las siguientes."
     },
     "oldestDebt": "Más antigua sin pagar",
     "nothingOutstanding": "Todo saldado: nada pendiente.",

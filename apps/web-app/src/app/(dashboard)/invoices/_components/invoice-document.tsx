@@ -1,5 +1,7 @@
 "use client"
 
+import type { ReactNode } from "react"
+
 import { useTranslation } from "react-i18next"
 
 import { cn } from "@/lib/utils"
@@ -46,6 +48,9 @@ export interface DocumentRow {
   lineKind?: "HOURS" | "DAYS" | "HEADING" | null
   /** HOURS runs: which hours were billed. The working view says so; the client's copy does not. */
   hoursBasis?: "COUNTED" | "CLOCKED" | "SHIFT" | null
+  /** HOURS runs: whose time and from which day — lets the screen offer the basis switch on the row. */
+  workerId?: string | null
+  dayFrom?: string | null
 }
 
 const isHeading = (row: DocumentRow) => row.lineKind === "HEADING"
@@ -162,6 +167,8 @@ export interface InvoiceDocumentProps {
   logoUrl?: string | null
   /** The HOURS / DAYS tag before each labour line — saved with the invoice. Default shown. */
   showTags?: boolean
+  /** Working view: what to show for an hours line's basis (a switch, where the screen can save one). */
+  renderBasis?: (row: DocumentRow) => ReactNode
 }
 
 /** The toggle — one document, two frames. */
@@ -288,11 +295,11 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
                       {row.descriptive && <span className="mr-1.5 opacity-40">↳</span>}
                       {units.tag(row)}
                       {row.description}
-                      {row.lineKind === "HOURS" && row.hoursBasis && (
+                      {row.lineKind === "HOURS" && row.hoursBasis && (props.renderBasis ? props.renderBasis(row) : (
                         <span className="ml-2 rounded-full bg-muted px-2 py-0.5 align-[1px] text-[10px] font-semibold text-muted-foreground">
                           {t(`scheduling.membersPage.basis.${row.hoursBasis}`)}
                         </span>
-                      )}
+                      ))}
                     </td>
                     <td className="whitespace-nowrap px-2 py-2.5 text-right tabular-nums">{row.descriptive ? "" : units.qty(row)}</td>
                     <td className="whitespace-nowrap px-2 py-2.5 text-right tabular-nums">
