@@ -6964,7 +6964,7 @@
         "CLOCKED": "Gestempelte Zeit",
         "CLOCKEDHint": "Vom Einstempeln bis zum Ausstempeln, abzüglich Pausen",
         "SHIFT": "Schichtstunden",
-        "SHIFTHint": "Die geplante Schicht an jedem Arbeitstag, abzüglich Pausen"
+        "SHIFTHint": "Die geplante Schicht an jedem Arbeitstag, abzüglich Pausen. Überstunden und Verspätungen ändern sie nicht"
       },
       "colRoles": "Rollen"
     }

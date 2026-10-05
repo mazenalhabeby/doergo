@@ -6973,7 +6973,7 @@
         "CLOCKED": "Temps pointé",
         "CLOCKEDHint": "Du pointage d'arrivée au pointage de départ, moins les pauses",
         "SHIFT": "Heures de créneau",
-        "SHIFTHint": "Le créneau prévu chaque jour travaillé, moins les pauses"
+        "SHIFTHint": "Le poste prévu chaque jour travaillé, moins les pauses. Les heures supplémentaires et les retards ne le changent pas"
       },
       "colRoles": "Rôles"
     }

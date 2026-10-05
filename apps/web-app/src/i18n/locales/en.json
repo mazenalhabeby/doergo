@@ -6964,7 +6964,7 @@
         "CLOCKED": "Clocked time",
         "CLOCKEDHint": "From clock-in to clock-out, less rests",
         "SHIFT": "Shift hours",
-        "SHIFTHint": "The planned shift on each day worked, less rests"
+        "SHIFTHint": "The planned shift on each day worked, less rests. Overtime and late arrivals do not change it"
       },
       "colRoles": "Roles"
     }

@@ -6973,7 +6973,7 @@
         "CLOCKED": "Tempo timbrato",
         "CLOCKEDHint": "Dall'entrata all'uscita, meno le pause",
         "SHIFT": "Ore di turno",
-        "SHIFTHint": "Il turno previsto in ogni giorno lavorato, meno le pause"
+        "SHIFTHint": "Il turno previsto in ogni giorno lavorato, meno le pause. Straordinari e ritardi non lo cambiano"
       },
       "colRoles": "Ruoli"
     }

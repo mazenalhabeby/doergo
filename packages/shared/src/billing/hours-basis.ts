@@ -9,7 +9,14 @@ import { expectedPaidMinutes } from '../attendance/counted-time';
  * - CLOCKED: clock-in to clock-out, less unpaid rests. An early start and a late
  *   finish count.
  * - SHIFT:   the planned shift, less unpaid rests, on each day the person
- *   clocked in. A day with no shift planned falls back to COUNTED, and says so.
+ *   clocked in — nothing else. A late arrival is not taken off, and overtime
+ *   is not added (that is what COUNTED and CLOCKED are for). A day with no
+ *   shift planned falls back to COUNTED, and says so.
+ *
+ * ⚠️ Approving overtime MOVES `expectedClockOutAt`, so that column alone is the
+ * shift PLUS its overtime. The planned end is the earliest of: that column, the
+ * planned start + the shift's own length, and where the first approved round
+ * began (`overtimeStartAt`).
  *
  * ⚠️ ONLY WHAT THE CLIENT IS CHARGED. The worker's statement and the margin's
  * cost stay on counted time — that is what is owed to the person. Billing a
@@ -31,6 +38,8 @@ export function effectiveHoursBasis(v: unknown): HoursBasis {
   return isHoursBasis(v) ? v : 'COUNTED';
 }
 
+const MIN = 60_000;
+
 /** One clock-in, with the columns each basis reads. */
 export interface ClockInForHours {
   clockInAt: Date;
@@ -40,9 +49,36 @@ export interface ClockInForHours {
   unpaidBreakMinutes?: number | null;
   expectedClockInAt?: Date | null;
   expectedClockOutAt?: Date | null;
+  /** The shift's own length in minutes (start→end, before any overtime), when known. */
+  shiftLengthMinutes?: number | null;
+  /** Where the first approved overtime round began — the shift's end before it moved. */
+  overtimeStartAt?: Date | null;
 }
 
-const MIN = 60_000;
+/** "06:00"→"18:00" = 720; crossing midnight wraps ("22:00"→"06:00" = 480). Null on a bad time. */
+export function shiftLengthMinutes(startLocal: string, endLocal: string): number | null {
+  const m = (t: string) => {
+    const r = /^(\d{1,2}):(\d{2})$/.exec(t ?? '');
+    return r ? Number(r[1]) * 60 + Number(r[2]) : null;
+  };
+  const a = m(startLocal);
+  const b = m(endLocal);
+  if (a == null || b == null) return null;
+  const d = b - a;
+  return d > 0 ? d : d + 24 * 60;
+}
+
+/** The shift's planned end WITHOUT any approved overtime (see SHIFT above). */
+export function plannedShiftEnd(e: ClockInForHours): Date | null {
+  const ends: number[] = [];
+  if (e.expectedClockOutAt) ends.push(e.expectedClockOutAt.getTime());
+  if (e.expectedClockInAt && e.shiftLengthMinutes != null && e.shiftLengthMinutes > 0) {
+    ends.push(e.expectedClockInAt.getTime() + e.shiftLengthMinutes * MIN);
+  }
+  if (e.overtimeStartAt) ends.push(e.overtimeStartAt.getTime());
+  return ends.length ? new Date(Math.min(...ends)) : null;
+}
+
 
 /** Counted minutes of one clock-in — the timesheet's figure. */
 export function countedMinutesOf(e: ClockInForHours): number {
@@ -65,6 +101,6 @@ export function minutesByBasis(e: ClockInForHours, basis: HoursBasis): { minutes
   if (basis === 'CLOCKED') {
     return { minutes: Math.max(0, Math.round((e.clockOutAt.getTime() - e.clockInAt.getTime()) / MIN) - unpaid), fellBack: false };
   }
-  const shift = expectedPaidMinutes({ expectedStartAt: e.expectedClockInAt, expectedEndAt: e.expectedClockOutAt, unpaidBreakMinutes: unpaid });
+  const shift = expectedPaidMinutes({ expectedStartAt: e.expectedClockInAt, expectedEndAt: plannedShiftEnd(e), unpaidBreakMinutes: unpaid });
   return shift == null ? { minutes: counted, fellBack: true } : { minutes: shift, fellBack: false };
 }

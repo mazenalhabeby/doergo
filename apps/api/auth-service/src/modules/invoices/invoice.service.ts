@@ -7,6 +7,7 @@ import {
   type BillByValue, type DayEntry, type HoursEntry,
   parseCurrency, resolveInvoiceCurrency, currencyOrNull, parseExchangeRate, DEFAULT_CURRENCY,
   CURRENCY_INVALID_MESSAGE, EXCHANGE_RATE_INVALID_MESSAGE, effectiveHoursBasis, isHoursBasis,
+  shiftLengthMinutes,
 } from '@hbcfield/shared';
 import { ExchangeRateService } from './exchange-rate.service';
 
@@ -1203,8 +1204,20 @@ export class InvoiceService {
         select: {
           userId: true, clockInAt: true, clockOutAt: true, paidMinutes: true, totalMinutes: true,
           unpaidBreakMinutes: true, expectedClockInAt: true, expectedClockOutAt: true,
+          // Shift hours are the shift alone: its own length, and where approved overtime began.
+          shift: { select: { startLocal: true, endLocal: true } },
+          overtimeRequests: {
+            where: { status: { in: ['APPROVED', 'COMPLETED'] } },
+            select: { overtimeStartAt: true },
+            orderBy: { cycle: 'asc' },
+            take: 1,
+          },
         },
-      }),
+      }).then((rows) => rows.map(({ shift, overtimeRequests, ...e }) => ({
+        ...e,
+        shiftLengthMinutes: shift ? shiftLengthMinutes(shift.startLocal, shift.endLocal) : null,
+        overtimeStartAt: overtimeRequests[0]?.overtimeStartAt ?? null,
+      }))),
       this.prisma.invoiceItem.findMany({
         where: {
           lineKind: { in: ['HOURS', 'DAYS'] },

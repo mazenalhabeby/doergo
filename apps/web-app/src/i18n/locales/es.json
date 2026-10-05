@@ -6964,7 +6964,7 @@
         "CLOCKED": "Tiempo fichado",
         "CLOCKEDHint": "De la entrada a la salida, menos pausas",
         "SHIFT": "Horas de turno",
-        "SHIFTHint": "El turno previsto de cada día trabajado, menos pausas"
+        "SHIFTHint": "El turno previsto en cada día trabajado, menos los descansos. Las horas extra y los retrasos no lo cambian"
       },
       "colRoles": "Roles"
     }

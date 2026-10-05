@@ -1,4 +1,4 @@
-import { minutesByBasis, effectiveHoursBasis, countedMinutesOf } from '@hbcfield/shared/client';
+import { minutesByBasis, effectiveHoursBasis, countedMinutesOf, shiftLengthMinutes } from '@hbcfield/shared/client';
 
 /**
  * Which hours of a day go on a client's invoice (billing/hours-basis.ts).
@@ -11,6 +11,26 @@ describe('hours basis', () => {
     expectedClockInAt: at('07:00'), expectedClockOutAt: at('15:30'),
     unpaidBreakMinutes: 30, paidMinutes: 480, // counted: 07:00–15:30 less 30
   };
+
+  it('shift hours leave approved overtime out — the shift end it moved is ignored', () => {
+    // 45 min approved: expectedClockOutAt moved 15:30 → 16:15.
+    const ot = { ...day, expectedClockOutAt: at('16:15'), overtimeStartAt: at('15:30') };
+    expect(minutesByBasis(ot, 'SHIFT').minutes).toBe(480);
+    // The same, known only from the shift's own length (an extension with no round on record).
+    const ext = { ...day, expectedClockOutAt: at('18:14'), shiftLengthMinutes: 510 };
+    expect(minutesByBasis(ext, 'SHIFT').minutes).toBe(480);
+    // Overtime still counts where the person chose counted or clocked time.
+    expect(minutesByBasis({ ...ot, paidMinutes: 515 }, 'COUNTED').minutes).toBe(515);
+  });
+  it('shift hours do not take a late arrival off', () => {
+    const late = { ...day, clockInAt: at('07:40'), paidMinutes: 440 };
+    expect(minutesByBasis(late, 'SHIFT').minutes).toBe(480);
+  });
+  it('a shift length wraps midnight', () => {
+    expect(shiftLengthMinutes('06:00', '18:00')).toBe(720);
+    expect(shiftLengthMinutes('22:00', '06:00')).toBe(480);
+    expect(shiftLengthMinutes('bad', '06:00')).toBeNull();
+  });
 
   it('counted is the timesheet figure', () => {
     expect(minutesByBasis(day, 'COUNTED')).toEqual({ minutes: 480, fellBack: false });
