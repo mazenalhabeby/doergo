@@ -39,3 +39,16 @@ describe('hours basis', () => {
     expect(effectiveHoursBasis('SHIFT')).toBe('SHIFT');
   });
 });
+
+import { formatHoursMinutes, toMinute } from '@hbcfield/shared/client';
+describe('hours as people read them', () => {
+  it('shows hours and minutes, never a decimal', () => {
+    expect(formatHoursMinutes(6839 / 60)).toBe('113 h 59 min');
+    expect(formatHoursMinutes(8)).toBe('8 h');
+    expect(formatHoursMinutes(0.75)).toBe('45 min');
+    expect(formatHoursMinutes(0)).toBe('0 min');
+  });
+  it('holds hours to the whole minute', () => {
+    expect(toMinute(113.9833333) * 60).toBeCloseTo(6839);
+  });
+});

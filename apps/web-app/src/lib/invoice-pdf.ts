@@ -1,3 +1,4 @@
+import { formatHoursMinutes } from "@hbcfield/shared/client"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import type { SupportedLocale } from "@hbcfield/shared/client"
@@ -240,7 +241,7 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
             inv.showLineTags === false ? it.description
               : it.lineKind === "HOURS" ? `${L.units.hoursTag} · ${it.description}`
               : it.lineKind === "DAYS" ? `${L.units.daysTag} · ${it.description}` : it.description,
-            it.lineKind === "HOURS" ? `${formatDocumentQuantity(it.quantity, locale)} ${L.units.h}`
+            it.lineKind === "HOURS" ? formatHoursMinutes(it.quantity)
               : it.lineKind === "DAYS" ? `${formatDocumentQuantity(it.quantity, locale)} ${it.quantity === 1 ? L.units.day : L.units.days}`
                 : formatDocumentQuantity(it.quantity, locale),
             fmtMoney(it.unitPrice, inv.currency) + (it.lineKind === "HOURS" ? ` ${L.units.perHour}` : it.lineKind === "DAYS" ? ` ${L.units.perDay}` : ""),

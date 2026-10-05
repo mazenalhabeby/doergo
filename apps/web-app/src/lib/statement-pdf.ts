@@ -2,6 +2,7 @@ import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 
 import type { MemberStatement } from "./api"
+import { formatHoursMinutes } from "@hbcfield/shared/client"
 import { PDF_PALETTE } from "./invoice-pdf"
 import { fileNamePart, pdfFileName, periodPart } from "./pdf-filename"
 
@@ -66,11 +67,11 @@ export function exportStatementPdf(
     body: s.lines.map((l) => [
       l.spaceName ?? labels.noWorkspace,
       l.basis === "days" ? String(l.days ?? "") : l.spaceId && s.daysBySpace[l.spaceId] != null ? String(s.daysBySpace[l.spaceId]) : "",
-      String(l.hours),
+      formatHoursMinutes(l.hours),
       l.rateCents == null ? labels.noRate : fmt.money(l.rateCents),
       fmt.money(l.amountCents),
     ]),
-    foot: [[labels.total, "", String(s.totalHours), "", fmt.money(s.totalCents)]],
+    foot: [[labels.total, "", formatHoursMinutes(s.totalHours), "", fmt.money(s.totalCents)]],
     theme: "grid",
     styles: { font: "helvetica", fontSize: 9, cellPadding: 2.5, textColor: [INK.r, INK.g, INK.b], lineColor: [LINE.r, LINE.g, LINE.b], lineWidth: 0.2 },
     headStyles: { fillColor: [ACCENT.r, ACCENT.g, ACCENT.b], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8.5 },

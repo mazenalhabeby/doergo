@@ -166,6 +166,24 @@ function amountCentsOf(hours: number, billRateCents: number | null): number {
   return Math.round(billRateCents * h);
 }
 
+/** Hours held to the nearest whole minute. */
+export function toMinute(hours: number): number {
+  return Number.isFinite(hours) ? Math.round(hours * 60) / 60 : 0;
+}
+
+/**
+ * Hours as a person reads time: "113 h 59 min", "8 h", "45 min". Units are the
+ * same in every supported language, so this is not translated.
+ */
+export function formatHoursMinutes(hours: number): string {
+  const total = Math.max(0, Math.round((Number.isFinite(hours) ? hours : 0) * 60));
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h && m) return `${h} h ${m} min`;
+  if (h) return `${h} h`;
+  return `${m} min`;
+}
+
 /** Hours as a person reads them — two decimals, no trailing noise. */
 function hoursLabel(hours: number): string {
   return `${round2(hours)}h`;
@@ -521,12 +539,17 @@ export interface WorkspaceLineOptions {
 }
 
 function hoursRunLine(h: HoursEntry, text: string): LabourLine {
-  const qty = round2(h.hours);
+  /*
+    ⚠️ TO THE MINUTE, not to two decimals: time on site is shown as "113 h 59 min",
+    and 113.98 h is 113 h 58.8 min — a figure nobody worked. The amount follows
+    the exact minutes, so "113 h 59 min × $78" is still checkable by the payer.
+  */
+  const qty = toMinute(h.hours);
   return {
     description: text,
     quantity: qty,
     unitPriceCents: h.hourRateCents ?? 0,
-    amountCents: amountCentsOf(qty, h.hourRateCents),
+    amountCents: Number.isFinite(qty) && qty > 0 && h.hourRateCents != null ? Math.round(h.hourRateCents * qty) : 0,
     descriptive: false,
     taskId: null,
     reportId: null,
@@ -599,6 +622,6 @@ export function hoursAndDaysTotals(lines: Array<{ kind?: LabourLine['kind'] | nu
     if (kind === 'HOURS') { hours += l.quantity; hoursCents += cents; }
     if (kind === 'DAYS') { days += l.quantity; daysCents += cents; }
   }
-  return { hours: round2(hours), hoursCents, days, daysCents };
+  return { hours: toMinute(hours), hoursCents, days, daysCents };
 }
 

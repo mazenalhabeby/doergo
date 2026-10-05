@@ -1294,7 +1294,8 @@ export class InvoiceService {
           }
           hourEntries.push({
             ...base,
-            hours: Math.round((minutes / 60) * 100) / 100,
+            // To the minute — shown as "113 h 59 min" (shared formatHoursMinutes).
+            hours: Math.round(minutes) / 60,
             days: count,
             fromDay: run.fromDay,
             toDay: run.toDay,
@@ -1303,9 +1304,9 @@ export class InvoiceService {
             hoursBasis: basis,
             ...(basis === 'SHIFT' ? { noShiftDays } : {}),
             hoursByBasis: {
-              COUNTED: Math.round((alt.COUNTED / 60) * 100) / 100,
-              CLOCKED: Math.round((alt.CLOCKED / 60) * 100) / 100,
-              SHIFT: Math.round((alt.SHIFT / 60) * 100) / 100,
+              COUNTED: Math.round(alt.COUNTED) / 60,
+              CLOCKED: Math.round(alt.CLOCKED) / 60,
+              SHIFT: Math.round(alt.SHIFT) / 60,
             },
             assignmentId: a?.id ?? null,
             // The jobs these hours cover — marked billed with the line.

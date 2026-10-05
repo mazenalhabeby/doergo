@@ -19,6 +19,7 @@ import {
   type DayEntry,
   type HoursEntry,
   type PersonWork,
+  formatHoursMinutes,
 } from "@hbcfield/shared/client"
 import { formatDayKey } from "@/lib/day-key"
 import { Switch } from "@/components/ui/switch"
@@ -182,7 +183,7 @@ function HoursBasisChip({
         {(["COUNTED", "CLOCKED", "SHIFT"] as const).map((b) => (
           <DropdownMenuItem key={b} onSelect={() => b !== basis && save.mutate(b)} className="flex items-center justify-between gap-3">
             <span className={cn(b === basis && "font-semibold")}>{t(`scheduling.membersPage.basis.${b}`)}</span>
-            <span className="tabular-nums text-muted-foreground">{hoursByBasis[b] ?? 0} h</span>
+            <span className="tabular-nums text-muted-foreground">{formatHoursMinutes(hoursByBasis[b] ?? 0)}</span>
           </DropdownMenuItem>
         ))}
         <p className="px-2 pb-1.5 pt-1 text-[11px] text-muted-foreground">{t("invoices.create.basisSavedHint")}</p>
@@ -1435,13 +1436,13 @@ function NewInvoiceInner() {
                           <HoursBasisChip basis={h.hoursBasis} hoursByBasis={h.hoursByBasis} spaceId={gather?.spaceId} assignmentId={h.assignmentId} />
                         </p>
                         <span className="shrink-0 text-sm font-semibold tabular-nums">
-                          {money((Math.round(h.hours * 100) / 100) * ((h.hourRateCents ?? 0) / 100), currency)}
+                          {money(Math.round(h.hours * (h.hourRateCents ?? 0)) / 100, currency)}
                         </span>
                       </div>
                       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                         <span className="inline-flex items-center gap-1">
                           <Clock className="size-3" />
-                          {t("invoices.create.hoursOnSite", { hours: h.hours, days: h.days })} × {money((h.hourRateCents ?? 0) / 100, currency)}
+                          {t("invoices.create.hoursOnSite", { hours: formatHoursMinutes(h.hours), days: h.days })} × {money((h.hourRateCents ?? 0) / 100, currency)}
                         </span>
                         <span>
                           {formatDayKey(h.fromDay, i18n.language)}

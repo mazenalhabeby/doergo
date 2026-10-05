@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import type { OrganizationProfile } from "@/lib/api"
 import { formatMoney } from "@/lib/money"
-import { hoursAndDaysTotals } from "@hbcfield/shared/client"
+import { hoursAndDaysTotals , formatHoursMinutes } from "@hbcfield/shared/client"
 
 /**
  * The invoice, as a document.
@@ -78,7 +78,7 @@ function useUnits(showTags = true) {
       ) : null,
     qty: (row: DocumentRow) =>
       row.lineKind === "HOURS"
-        ? t("invoices.create.qtyHours", { count: row.quantity })
+        ? formatHoursMinutes(row.quantity)
         : row.lineKind === "DAYS"
           ? t("invoices.create.qtyDays", { count: row.quantity })
           : String(row.quantity),
@@ -96,7 +96,7 @@ function HoursDaysSummary({ items, currency }: { items: DocumentRow[]; currency:
     <div className="flex flex-wrap gap-1.5">
       {tot.hours > 0 && (
         <span className="rounded-lg bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
-          {t("invoices.create.summaryHours", { hours: tot.hours, amount: money(tot.hoursCents / 100, currency) })}
+          {t("invoices.create.summaryHours", { hours: formatHoursMinutes(tot.hours), amount: money(tot.hoursCents / 100, currency) })}
         </span>
       )}
       {tot.days > 0 && (

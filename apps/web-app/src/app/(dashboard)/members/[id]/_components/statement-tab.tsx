@@ -8,6 +8,7 @@ import { AlertTriangle, Download, FileText } from "lucide-react"
 import { organizationsApi } from "@/lib/api"
 import { formatMoney } from "@/lib/money"
 import { formatDayKey, todayDayKey } from "@/lib/day-key"
+import { formatHoursMinutes } from "@hbcfield/shared/client"
 import { exportStatementPdf } from "@/lib/statement-pdf"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -161,8 +162,8 @@ export function StatementTab({ memberId }: { memberId: string }) {
                     </td>
                     <td className="px-2 py-2.5 text-right tabular-nums">
                       {l.basis === "days" ? (
-                        <span className="text-muted-foreground" title={t("members.statement.onSite", { hours: l.hours })}>{l.hours}</span>
-                      ) : l.hours}
+                        <span className="text-muted-foreground" title={t("members.statement.onSite", { hours: formatHoursMinutes(l.hours) })}>{formatHoursMinutes(l.hours)}</span>
+                      ) : formatHoursMinutes(l.hours)}
                     </td>
                     <td className="px-2 py-2.5 text-right tabular-nums">
                       {l.rateCents == null ? (
@@ -185,7 +186,7 @@ export function StatementTab({ memberId }: { memberId: string }) {
                 <tr className="border-t border-border bg-muted/20 font-semibold">
                   <td className="px-5 py-3">{t("members.statement.total")}</td>
                   <td />
-                  <td className="px-2 py-3 text-right tabular-nums">{data.totalHours}</td>
+                  <td className="px-2 py-3 text-right tabular-nums">{formatHoursMinutes(data.totalHours)}</td>
                   <td />
                   <td className="px-5 py-3 text-right tabular-nums">{money(data.totalCents)}</td>
                 </tr>
