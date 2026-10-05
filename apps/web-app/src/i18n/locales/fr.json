@@ -6944,7 +6944,8 @@
         "CLOCKEDHint": "Du pointage d'arrivée au pointage de départ, moins les pauses",
         "SHIFT": "Heures de créneau",
         "SHIFTHint": "Le créneau prévu chaque jour travaillé, moins les pauses"
-      }
+      },
+      "colRoles": "Rôles"
     }
   },
   "spaceSharing": {

@@ -6935,7 +6935,8 @@
         "CLOCKEDHint": "From clock-in to clock-out, less rests",
         "SHIFT": "Shift hours",
         "SHIFTHint": "The planned shift on each day worked, less rests"
-      }
+      },
+      "colRoles": "Roles"
     }
   },
   "spaceSharing": {

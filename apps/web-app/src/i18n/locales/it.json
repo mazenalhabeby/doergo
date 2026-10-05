@@ -6944,7 +6944,8 @@
         "CLOCKEDHint": "Dall'entrata all'uscita, meno le pause",
         "SHIFT": "Ore di turno",
         "SHIFTHint": "Il turno previsto in ogni giorno lavorato, meno le pause"
-      }
+      },
+      "colRoles": "Ruoli"
     }
   },
   "spaceSharing": {

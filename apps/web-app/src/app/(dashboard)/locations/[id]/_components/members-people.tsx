@@ -164,15 +164,17 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
         <EmptyState icon={Users} title={t("scheduling.members.empty")} />
       ) : (
         <div className="overflow-x-auto rounded-xl border">
-          <table className="w-full min-w-[46rem] text-sm">
+          {/*
+            Three columns that fit the page: who, their roles, how they are
+            billed. Six narrow ones scrolled sideways and wrapped "set for this
+            person" over three lines.
+          */}
+          <table className="w-full min-w-[36rem] text-sm">
             <thead>
               <tr className="border-b bg-muted/40 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
-                <th className="px-3 py-2.5 font-medium">{t("scheduling.membersPage.colMember")}</th>
-                <th className="px-3 py-2.5 font-medium">{t("scheduling.membersPage.colWork")}</th>
-                <th className="px-3 py-2.5 font-medium">{t("scheduling.membersPage.colManagement")}</th>
-                {isClient && <th className="px-3 py-2.5 font-medium">{t("scheduling.membersPage.colBilling")}</th>}
-                {isClient && <th className="px-3 py-2.5 text-right font-medium">{t("scheduling.membersPage.colHourly")}</th>}
-                {isClient && <th className="px-3 py-2.5 text-right font-medium">{t("scheduling.membersPage.colDay")}</th>}
+                <th className="px-4 py-2.5 font-medium">{t("scheduling.membersPage.colMember")}</th>
+                <th className="px-4 py-2.5 font-medium">{t("scheduling.membersPage.colRoles")}</th>
+                {isClient && <th className="px-4 py-2.5 text-right font-medium">{t("scheduling.membersPage.colBilling")}</th>}
               </tr>
             </thead>
             <tbody>
@@ -193,7 +195,7 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
                       openId === m.id && "bg-muted/40",
                     )}
                   >
-                    <td className="px-3 py-2.5">
+                    <td className="px-4 py-3">
                       <div className="flex min-w-0 items-center gap-2.5">
                         <Avatar className="h-8 w-8">
                           {m.user?.avatarUrl && <AvatarImage src={m.user.avatarUrl} alt="" />}
@@ -217,35 +219,37 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-2.5"><RoleTag role={m.workRole} /></td>
-                    <td className="px-3 py-2.5"><RoleTag role={m.spaceRole} /></td>
+                    <td className="px-4 py-3">
+                      {m.workRole || m.spaceRole ? (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {m.workRole && <RoleTag role={m.workRole} />}
+                          {m.spaceRole && <RoleTag role={m.spaceRole} />}
+                        </div>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
                     {isClient && (
-                      <td className="px-3 py-2.5">
+                      <td className="px-4 py-3 text-right">
                         {external ? <span className="text-muted-foreground">—</span> : (
-                          <span className="whitespace-nowrap rounded-md border bg-muted/50 px-2 py-0.5 text-xs font-semibold">{billByLabel(bill)}</span>
-                        )}
-                      </td>
-                    )}
-                    {/* Only what is actually charged: no hourly figure for day-only, no day figure for hour-only. */}
-                    {isClient && (
-                      <td className="px-3 py-2.5 text-right tabular-nums">
-                        {external || bill === "DAY" || hourly == null ? <span className="text-muted-foreground">—</span> : (
-                          <span className={cn(m.billRateCents != null && "font-semibold text-blue-600 dark:text-blue-400")}>
-                            {cents(hourly)}
-                            <span className="block text-[11px] font-normal text-muted-foreground">
-                              {m.billRateCents != null ? t("scheduling.membersPage.setForPerson") : t("scheduling.membersPage.inherited")}
+                          <div className="inline-flex flex-col items-end gap-1">
+                            <span className="whitespace-nowrap rounded-md border bg-muted/50 px-2 py-0.5 text-[11px] font-semibold">{billByLabel(bill)}</span>
+                            {/* Only what is charged: no hourly figure for day-only, no day figure for hour-only. */}
+                            <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
+                              {bill !== "DAY" && (
+                                <span
+                                  className={cn(m.billRateCents != null && "font-semibold text-blue-600 dark:text-blue-400")}
+                                  title={m.billRateCents != null ? t("scheduling.membersPage.setForPerson") : t("scheduling.membersPage.inherited")}
+                                >
+                                  {hourly != null ? `${cents(hourly)} ${t("rates.perHour")}` : "—"}
+                                </span>
+                              )}
+                              {bill === "BOTH" && <span className="mx-1.5 opacity-50">·</span>}
+                              {bill !== "HOUR" && (
+                                <span title={workRole?.name}>
+                                  {workRole?.dayRateCents != null ? `${cents(workRole.dayRateCents)} ${t("rates.perDay")}` : "—"}
+                                </span>
+                              )}
                             </span>
-                          </span>
-                        )}
-                      </td>
-                    )}
-                    {isClient && (
-                      <td className="px-3 py-2.5 text-right tabular-nums">
-                        {external || bill === "HOUR" || workRole?.dayRateCents == null ? <span className="text-muted-foreground">—</span> : (
-                          <span>
-                            {cents(workRole.dayRateCents)}
-                            <span className="block text-[11px] text-muted-foreground">{workRole.name}</span>
-                          </span>
+                          </div>
                         )}
                       </td>
                     )}
@@ -253,7 +257,7 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
                 )
               })}
               {rows.length === 0 && (
-                <tr><td colSpan={6} className="px-3 py-8 text-center text-sm text-muted-foreground">{t("scheduling.membersPage.noMatch")}</td></tr>
+                <tr><td colSpan={3} className="px-3 py-8 text-center text-sm text-muted-foreground">{t("scheduling.membersPage.noMatch")}</td></tr>
               )}
             </tbody>
           </table>
