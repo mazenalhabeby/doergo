@@ -36,6 +36,8 @@ import { TasksService } from './tasks.service';
 /** Statuses that are certainly over — the indexed half of "still open"; `isWorkOver` is the rest. */
 const OVER = [TaskStatus.COMPLETED, TaskStatus.CANCELED, TaskStatus.CLOSED];
 const DAY_MS = 86_400_000;
+/** openWave past the creator's alert: closed at a finished step — never re-offered, places never reopen. */
+export const ROLE_WAVE_CLOSED = 3;
 
 type OpenRole = { id: string; name: string };
 type Facts = { userId: string; organizationId: string };
@@ -112,11 +114,23 @@ export class RolePoolService {
 
   /** After a task is opened (created, or re-opened by the office): the record, then the first wave. */
   async afterOpened(taskId: string, actorId: string, role: OpenRole, spots: number): Promise<void> {
-    await this.prisma.taskEvent.create({
-      data: { taskId, userId: actorId, eventType: TaskEventType.OPENED_TO_ROLE, metadata: { roleId: role.id, roleName: role.name, spots } },
-    });
-    // The first wave goes now — a push a minute late is a minute a free person waited for nothing.
-    await this.offer(taskId, 0).catch((e) => this.logger.error(`First offer for ${taskId} failed: ${e}`));
+    // The task already exists: nothing here may turn its creation into an error.
+    try {
+      await this.prisma.taskEvent.create({
+        data: { taskId, userId: actorId, eventType: TaskEventType.OPENED_TO_ROLE, metadata: { roleId: role.id, roleName: role.name, spots } },
+      });
+      const t = await this.prisma.task.findUnique({ where: { id: taskId }, select: { priority: true } });
+      if (t?.priority === 'URGENT') {
+        // Urgent goes to everyone working today at once — claimed, so the sweep cannot send it a second time.
+        const claimed = await this.prisma.task.updateMany({ where: { id: taskId, openWave: 0 }, data: { openWave: 1 } });
+        if (claimed.count === 1) await this.offer(taskId, 1);
+      } else {
+        // The first wave goes now — a push a minute late is a minute a free person waited for nothing.
+        await this.offer(taskId, 0);
+      }
+    } catch (e) {
+      this.logger.error(`Opening ${taskId} to a role: record/offer failed: ${e}`);
+    }
   }
 
   /**
@@ -143,18 +157,26 @@ export class RolePoolService {
 
     const role = await this.resolveOpenRole(data.organizationId, task.spaceId, data.roleId);
     const spots = parseRoleSpots(data.spots);
-    if (task.openRoleId === role.id && task.openSpots != null && task.openSpotsLeft != null) {
+    /*
+      The places left are ALWAYS asked for − people on it (syncSpots, in SQL):
+      a resize never writes an absolute "left" that a take landing in between
+      would make wrong, and reopening never hands out places people hold.
+      Never fewer places than people already on it.
+    */
+    const onIt = await this.prisma.taskAssignee.count({ where: { taskId: task.id } });
+    const asked = Math.max(spots, onIt);
+    if (task.openRoleId === role.id && task.openSpots != null) {
       // Same role, a different number: keep who already took it, and the wait.
-      const taken = task.openSpots - task.openSpotsLeft;
-      const left = Math.max(0, spots - taken);
-      await this.prisma.task.update({ where: { id: task.id }, data: { openSpots: Math.max(spots, taken), openSpotsLeft: left } });
-      this.notifications.emit('task_updated', { task: { id: task.id, organizationId: data.organizationId } });
-      return success({ id: task.id, openRoleId: role.id, openSpots: Math.max(spots, taken), openSpotsLeft: left });
+      await this.prisma.task.update({ where: { id: task.id }, data: { openSpots: asked } });
+      await this.syncSpots(task.id);
+    } else {
+      await this.prisma.task.update({ where: { id: task.id }, data: { ...this.openColumns(role.id, asked) } });
+      await this.syncSpots(task.id);
+      await this.afterOpened(task.id, data.userId, role, asked);
     }
-    await this.prisma.task.update({ where: { id: task.id }, data: this.openColumns(role.id, spots) });
-    await this.afterOpened(task.id, data.userId, role, spots);
+    const after = await this.prisma.task.findUniqueOrThrow({ where: { id: task.id }, select: { openSpots: true, openSpotsLeft: true } });
     this.notifications.emit('task_updated', { task: { id: task.id, organizationId: data.organizationId } });
-    return success({ id: task.id, openRoleId: role.id, openSpots: spots, openSpotsLeft: spots });
+    return success({ id: task.id, openRoleId: role.id, openSpots: after.openSpots, openSpotsLeft: after.openSpotsLeft });
   }
 
   /**
@@ -179,6 +201,20 @@ export class RolePoolService {
       orderBy: { name: 'asc' },
     });
     return success(roles.map((r) => ({ id: r.id, name: r.name, holders: count.get(r.id) ?? 0 })));
+  }
+
+  /**
+   * The places left = asked for − people on the task, however the crew changed
+   * (a take, a hand-back, the office's own picker, a decline). One statement,
+   * computed in the database, so it can never drift from the crew rows or race
+   * a take into a wrong absolute number. Nothing for a task not open to a role.
+   */
+  async syncSpots(taskId: string): Promise<void> {
+    // openWave 3 = closed at a finished step: places never reopen on it.
+    await this.prisma.$executeRaw`
+      UPDATE "tasks" t
+      SET "openSpotsLeft" = GREATEST(0, t."openSpots" - (SELECT COUNT(*) FROM "task_assignees" a WHERE a."taskId" = t."id"))::int
+      WHERE t."id" = ${taskId} AND t."openRoleId" IS NOT NULL AND t."openSpots" IS NOT NULL AND t."openWave" < ${ROLE_WAVE_CLOSED}`;
   }
 
   // ── Who could take it ─────────────────────────────────────────────────
@@ -300,10 +336,10 @@ export class RolePoolService {
     if (!isOpenToRole(task) || !task.spaceId) return false;
     const row = await this.prisma.spaceAssignment.findFirst({
       where: { userId, spaceId: task.spaceId, workRoleId: task.openRoleId!, ...this.activeNow() },
-      select: { user: { select: { role: true, enabledModules: true } } },
+      select: { user: { select: { role: true, enabledModules: true, isExternal: true } } },
     });
-    // Holding the role is not enough: an access profile without Tasks is never offered a job.
-    return !!row && canReceiveTasks(row.user);
+    // Holding the role is not enough: an access profile without Tasks, or somebody else's employee, is never offered a job.
+    return !!row && !row.user.isExternal && canReceiveTasks(row.user);
   }
 
   async take(data: Facts & { taskId: string }) {
@@ -317,7 +353,8 @@ export class RolePoolService {
     });
     // A task the caller may not take is a task they cannot see: 404, never "it exists".
     if (!task || !(await this.holdsOpenRole(task, data.userId))) {
-      if (task?.openRoleId && (task.openSpotsLeft ?? 0) <= 0) {
+      // "Somebody was faster" only to somebody who could have taken it — to anyone else it does not exist.
+      if (task?.openRoleId && (task.openSpotsLeft ?? 0) <= 0 && (await this.holdsOpenRole({ ...task, openSpotsLeft: 1 }, data.userId))) {
         throw new ConflictException({ message: 'Somebody else took the last place', code: 'ROLE_TASK_TAKEN', params: { takers: await this.takers(task.id) } });
       }
       throw new NotFoundException('Task not found');
@@ -392,22 +429,28 @@ export class RolePoolService {
     if (!task.openRoleId) {
       throw new BadRequestException({ message: 'This task was not opened to a role', code: 'ROLE_TASK_NOT_ROLE' });
     }
-    const notStarted: string[] = [TaskStatus.NEW, TaskStatus.ASSIGNED, TaskStatus.ACCEPTED];
-    if (!notStarted.includes(task.status)) {
+    /*
+      "Started" by facts, not by a list of step names — a custom flow's first
+      step ("Backlog") is not started: on the way / on site / working / blocked,
+      or this person has joined the crew's work, is.
+    */
+    const working: string[] = [TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED];
+    const joined = await this.prisma.taskEvent.count({ where: { taskId: task.id, userId: data.userId, eventType: TaskEventType.CREW_JOINED } });
+    if (working.includes(task.status) || joined > 0 || isWorkOver(task.status)) {
       throw new ConflictException({ message: 'The work has started — leave the crew instead', code: 'ROLE_TASK_STARTED' });
     }
     const reason = data.reason?.trim().slice(0, 500) || null;
 
-    await this.prisma.$transaction(async (tx) => {
-      await tx.taskAssignee.delete({ where: { id: mine.id } });
-      // Back to the role: one more place, offered afresh from the first wave — the clock restarts with it.
-      await tx.task.update({
-        where: { id: task.id },
-        data: { openSpotsLeft: { increment: 1 }, openWave: 0, openedAt: new Date() },
-      });
-      // Never more places than were asked for (a stale double return).
-      await tx.task.updateMany({ where: { id: task.id, openSpotsLeft: { gt: task.openSpots ?? 1 } }, data: { openSpotsLeft: task.openSpots ?? 1 } });
-    });
+    try {
+      // The row id from the read above: a second return arriving at once finds nothing to delete.
+      await this.prisma.taskAssignee.delete({ where: { id: mine.id } });
+    } catch (e: any) {
+      if (e?.code === 'P2025') throw new NotFoundException('Task not found');
+      throw e;
+    }
+    // Back to the role, offered afresh from the first wave — the clock restarts with it. The place itself
+    // comes back through syncSpots (asked for − people on it), via onAssigneesChanged below.
+    await this.prisma.task.update({ where: { id: task.id }, data: { openWave: 0, openedAt: new Date() } });
     await this.prisma.taskEvent.create({
       data: { taskId: task.id, userId: data.userId, eventType: TaskEventType.RETURNED_TO_ROLE, metadata: { roleId: task.openRoleId, roleName: task.openRole?.name ?? null, reason } },
     });
@@ -505,7 +548,11 @@ export class RolePoolService {
     });
     let moved = 0;
     for (const t of open) {
-      if (!t.openedAt || !isOpenToRole(t)) continue;
+      if (!t.openedAt || !isOpenToRole(t)) {
+        // Finished by a name the query cannot know ("DONE"…): out of the queue, so it never blocks the oldest-first window.
+        await this.prisma.task.updateMany({ where: { id: t.id, openWave: t.openWave }, data: { openWave: ROLE_WAVE_CLOSED, openSpotsLeft: 0 } });
+        continue;
+      }
       const due = dueWave({ openedAt: t.openedAt, priority: t.priority }, now, roleOfferTimings(t.space));
       if (due <= t.openWave) continue;
       const claimed = await this.prisma.task.updateMany({ where: { id: t.id, openWave: t.openWave }, data: { openWave: due } });
@@ -606,6 +653,7 @@ export class RolePoolService {
           ...(data.from || data.to ? { createdAt: range } : {}),
         },
         select: { userId: true, metadata: true, user: { select: { firstName: true, lastName: true } } },
+        orderBy: { createdAt: 'desc' },
         take: 5000,
       }),
     ]);

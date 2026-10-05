@@ -10,7 +10,7 @@ import {
   Optional,
   forwardRef,
 } from '@nestjs/common';
-import { RolePoolService } from './role-pool.service';
+import { RolePoolService, ROLE_WAVE_CLOSED } from './role-pool.service';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
@@ -72,6 +72,7 @@ import {
   OFFICE_START_REASON_MAX,
   stepCapabilities,
   stepStartsWork,
+  isWorkOver,
 } from '@hbcfield/shared';
 import { firstValueFrom, timeout } from 'rxjs';
 
@@ -1128,7 +1129,7 @@ export class TasksService {
     }
 
     // Authorization check
-    await this.checkTaskAccess(task, data);
+    await this.checkTaskAccess(task, data, { roleHolderMayRead: true });
 
     // Derive task-time anchors from the status history (no schema change), so the
     // timer is DB-backed and identical on web, mobile and the admin view:
@@ -1219,7 +1220,7 @@ export class TasksService {
   async getJobTime(data: TaskAccessFacts & { id: string }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.id } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data);
+    await this.checkTaskAccess(task, data, { roleHolderMayRead: true });
     // The crew panel rides with the time: one request for the job page and the phone.
     const [time, crew] = await Promise.all([this.jobTime.forTask(task), this.crew.viewFor(task.id)]);
     return success({ ...time, crew });
@@ -1287,7 +1288,8 @@ export class TasksService {
     // `access` is the caller's resolved grant (for foreign-space authz) — pull it
     // out so it never leaks into the Prisma update payload.
     const { id, userId, userRole, organizationId, access, ...updateData } = data;
-    // The open-role columns have their own path (RolePoolService.setOpenRole) — never written raw.
+    // The open-role columns have their own path (RolePoolService.setOpenRole) — never written raw. (The write
+    // below lists its fields explicitly too; this is the belt to that braces.)
     for (const k of ['openRoleId', 'openSpots', 'openSpotsLeft', 'openedAt', 'openWave']) delete (updateData as any)[k];
 
     // Find existing task
@@ -1311,6 +1313,9 @@ export class TasksService {
         throw new ForbiddenException('Cannot move a shared task to another space');
       }
     }
+
+    // A role is a fact about ONE workspace: moving the task closes it to the role (who took it stays on it).
+    const closeRole = updateData.spaceId !== undefined && (updateData.spaceId || null) !== existingTask.spaceId && !!existingTask.openRoleId;
 
     // Don't allow updating completed/closed tasks
     if ([TaskStatus.COMPLETED, TaskStatus.CLOSED, TaskStatus.CANCELED].includes(existingTask.status as TaskStatus)) {
@@ -1347,6 +1352,7 @@ export class TasksService {
       data: {
         ...(updateData.workflowId !== undefined && { workflowId: updateData.workflowId || null }),
         ...(statusOverride && { status: statusOverride }),
+        ...(closeRole && { openRoleId: null, openSpots: null, openSpotsLeft: null, openedAt: null, openWave: 0 }),
         ...(updateData.title && { title: updateData.title }),
         ...(updateData.description !== undefined && { description: updateData.description }),
         ...(updateData.priority && { priority: updateData.priority }),
@@ -2172,6 +2178,14 @@ export class TasksService {
 
     // Build update data with route timestamps
     const updateData: any = { status: data.status as any };
+    // A role task reaching a FINISHED step (canonical or the workflow's own) asks its role for nobody more.
+    if ((task as any).openRoleId) {
+      const target = wf?.statuses?.find((s: { key: string }) => s.key === data.status) as { isFinal?: boolean; isCanceled?: boolean } | undefined;
+      if ((target && (target.isFinal || target.isCanceled)) || isWorkOver(String(data.status))) {
+        updateData.openSpotsLeft = 0;
+        updateData.openWave = ROLE_WAVE_CLOSED;
+      }
+    }
     // Any move of a paused job ends the pause — the job is being dealt with.
     if (task.pausedAt) {
       updateData.pausedAt = null;
@@ -2410,7 +2424,7 @@ export class TasksService {
   async getSubmissions(data: TaskAccessFacts & { id: string }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.id } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data);
+    await this.checkTaskAccess(task, data, { roleHolderMayRead: true });
 
     const rows = await this.prisma.taskStepSubmission.findMany({
       where: { taskId: task.id },
@@ -2512,7 +2526,7 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    await this.checkTaskAccess(task, data);
+    await this.checkTaskAccess(task, data, { roleHolderMayRead: true });
 
     const events = await this.prisma.taskEvent.findMany({
       where: { taskId: data.id },
@@ -2565,7 +2579,7 @@ export class TasksService {
    * the co-assignee rows when they were not included with the task, and turns a
    * "no" into the exception the callers expect.
    */
-  private async checkTaskAccess(task: any, data: TaskAccessFacts) {
+  private async checkTaskAccess(task: any, data: TaskAccessFacts, opts: { roleHolderMayRead?: boolean } = {}) {
     /*
       The caller's whole identity, taken from the request payload in one piece.
 
@@ -2599,8 +2613,12 @@ export class TasksService {
       A task OPEN TO A ROLE is also visible to whoever holds that role in its
       workspace — the person who may take it. Asked only after the normal rule
       said no, so nothing changes for any other task.
+
+      ⚠️ READ ONLY. Only the reads opt in (`roleHolderMayRead`): somebody who
+      has not taken the job must not comment on it or tick its checklist — five
+      Mechanics are offered a job, one ticks half of it and never takes it.
     */
-    if (!canAccessTask(task, caller, assignee ?? false) && !(task.openRoleId && task.organizationId === organizationId && (await this.rolePool.holdsOpenRole(task, userId)))) {
+    if (!canAccessTask(task, caller, assignee ?? false) && !(opts.roleHolderMayRead && task.openRoleId && task.organizationId === organizationId && (await this.rolePool.holdsOpenRole(task, userId)))) {
       /*
         Log WHY, not just that.
 
@@ -2703,7 +2721,7 @@ export class TasksService {
     }
 
     // Authorization check
-    await this.checkTaskAccess(task, data);
+    await this.checkTaskAccess(task, data, { roleHolderMayRead: true });
 
     const comments = await this.prisma.comment.findMany({
       where: { taskId: data.taskId },
@@ -3026,6 +3044,8 @@ export class TasksService {
     actorId: string,
   ): Promise<void> {
     await this.syncPrimaryAssignee(taskId);
+    // A role task's places follow its crew, however the crew changed (the picker too).
+    await this.rolePool.syncSpots(taskId);
     // A lead handed over for today ends when that person is no longer on the crew (shared crew.ts).
     const lead = await this.prisma.task.findUnique({ where: { id: taskId }, select: { leadOverrideId: true, assignedToId: true } });
     if (lead?.leadOverrideId && lead.leadOverrideId !== lead.assignedToId) {
@@ -3355,7 +3375,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data);
+    await this.checkTaskAccess(task, data, { roleHolderMayRead: true });
 
     const assignees = await this.prisma.taskAssignee.findMany({
       where: { taskId: data.taskId },
@@ -3380,7 +3400,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data);
+    await this.checkTaskAccess(task, data, { roleHolderMayRead: true });
 
     const items = await this.prisma.checklistItem.findMany({
       where: { taskId: data.taskId },
@@ -3984,7 +4004,7 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    await this.checkTaskAccess(task, data);
+    await this.checkTaskAccess(task, data, { roleHolderMayRead: true });
 
     const subtasks = await this.prisma.task.findMany({
       where: { parentId: data.taskId },

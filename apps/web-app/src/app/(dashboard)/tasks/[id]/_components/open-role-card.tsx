@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Hand, Loader2, Minus, Plus, Undo2, UsersRound, X } from "lucide-react"
-import { ROLE_SPOTS_MAX, isOpenToRole, spotsTaken } from "@hbcfield/shared/client"
+import { ROLE_SPOTS_MAX, isOpenToRole, isWorkOver, spotsTaken } from "@hbcfield/shared/client"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -78,7 +78,8 @@ export function OpenRoleCard({ task }: { task: Task }) {
 
   if (!task.openRoleId) return null
   const roleName = task.openRole?.name ?? ""
-  const notStarted = ["NEW", "ASSIGNED", "ACCEPTED"].includes(task.status)
+  // "Not started" by facts, as the server asks it — a custom flow's first step counts (the server has the last word).
+  const notStarted = !["EN_ROUTE", "ARRIVED", "IN_PROGRESS", "BLOCKED"].includes(task.status) && !isWorkOver(task.status)
   const openMin = task.openedAt ? Math.max(0, Math.round((Date.now() - Date.parse(task.openedAt)) / 60_000)) : null
 
   return (

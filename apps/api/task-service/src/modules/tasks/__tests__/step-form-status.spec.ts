@@ -102,7 +102,7 @@ describe('status change into a step with a form', () => {
     const module = await Test.createTestingModule({
       providers: [
         TasksService,
-        { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false) } }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
+        { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         { provide: 'AUTH_SERVICE', useValue: auth },
@@ -324,7 +324,7 @@ describe('reading a job\'s submissions', () => {
     const module = await Test.createTestingModule({
       providers: [
         TasksService,
-        { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false) } }, { provide: PresenceService, useValue: {} },
+        { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } }, { provide: PresenceService, useValue: {} },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },

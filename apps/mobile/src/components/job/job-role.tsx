@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { isOpenToRole, spotsTaken } from '@hbcfield/shared/client';
+import { isOpenToRole, isWorkOver, spotsTaken } from '@hbcfield/shared/client';
 import { tasksApi } from '../../lib/api';
 import { refusalText } from '../../lib/distance';
 import { useTheme } from '../../contexts/theme-context';
@@ -50,7 +50,8 @@ export function JobRoleCard({ task, meId, onChanged }: { task: RoleTask; meId: s
 
   if (!task.openRoleId) return null;
   const { taken, of } = spotsTaken(task);
-  const notStarted = ['NEW', 'ASSIGNED', 'ACCEPTED'].includes(task.status);
+  // "Not started" by facts, as the server asks it — a custom flow's first step counts (the server has the last word).
+  const notStarted = !['EN_ROUTE', 'ARRIVED', 'IN_PROGRESS', 'BLOCKED'].includes(task.status) && !isWorkOver(task.status);
 
   const act = async (kind: 'take' | 'back') => {
     setBusy(true);

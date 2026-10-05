@@ -50,8 +50,12 @@ def sql(q):
 
 
 def login(email):
-    s, r = call('POST', '/auth/login', body={'email': email, 'password': PW})
-    return data(r)['accessToken']
+    # Several runs in a row meet the login rate limit — wait it out rather than fail.
+    for attempt in range(8):
+        s, r = call('POST', '/auth/login', body={'email': email, 'password': PW})
+        if isinstance(data(r), dict) and data(r).get('accessToken'): return data(r)['accessToken']
+        time.sleep(15)
+    raise SystemExit(f'cannot sign in as {email}: {r}')
 
 
 admin, karim, noor, dana, mike = (login(f'{n}@example.com') for n in ['client', 'karim', 'noor', 'dana', 'mike'])
@@ -112,6 +116,9 @@ lst = data(r)
 items = lst if isinstance(lst, list) else (lst.get('data') or lst.get('items') or [])
 check('the normal task list is unchanged (an open task is not "mine")', not any(x.get('id') == T2 for x in items), [x.get('id') for x in items][:5])
 
+s, r = call('POST', f'/tasks/{T2}/comments', karim, {'content': 'not mine yet'})
+check('a holder may READ but not comment before taking it', s in (403, 404), (s, r))
+
 # ── Taking ─────────────────────────────────────────────────────────────
 s, r = call('POST', f'/tasks/{T2}/take', dana)
 check('a non-holder cannot take it (404)', s == 404, (s, r))
@@ -158,10 +165,22 @@ s, r = call('POST', f'/tasks/{T1}/decline', wtok)
 st = sql(f"select status, \"openSpotsLeft\" from tasks where id='{T1}'")
 check('decline on a role task also returns it to the role', st == 'NEW|1', (s, r, st))
 
+# ── The places follow the crew, however it changes ─────────────────────
+MIKE_ID = sql("select id from users where email='mike@example.com'")
+s, r = call('DELETE', f'/tasks/{T2}/assignees/{MIKE_ID}', admin)
+left = sql(f"select \"openSpotsLeft\" from tasks where id='{T2}'")
+check('the office removing a taker gives the place back', s in (200, 204) and left == '1', (s, left))
+s, r = call('GET', '/tasks/open-for-me', mike)
+check('…and it is open to the role again', any(x['id'] == T2 for x in data(r)), data(r))
+OTHER = sql(f"select id from company_locations where \"organizationId\"=(select \"organizationId\" from users where email='client@example.com') and id<>'{SPACE}' and kind='CUSTOMER' limit 1")
+s, r = call('PUT', f'/tasks/{T2}', admin, {'spaceId': OTHER})
+st = sql(f"select coalesce(\"openRoleId\",'none') from tasks where id='{T2}'")
+check('moving the task to another workspace closes it to the role', st == 'none', (s, st))
+
 # ── The office's controls ──────────────────────────────────────────────
-s, r = call('PATCH', f'/tasks/{T1}', admin, {'openRoleId': DANA_ROLE or ROLE, 'openSpots': 9})
+s, r = call('PUT', f'/tasks/{T1}', admin, {'openRoleId': DANA_ROLE or ROLE, 'openSpots': 9})
 raw = sql(f"select \"openRoleId\", \"openSpots\" from tasks where id='{T1}'")
-check('a PATCH can never write the open-role columns', raw == f'{ROLE}|1', (s, raw))
+check('an update (PUT) can never write the open-role columns', raw == f'{ROLE}|1', (s, raw))
 s, r = call('PUT', f'/tasks/{T1}/open-role', admin, {'roleId': ROLE, 'spots': 3})
 check('the office changes how many it needs', s == 200 and data(r)['openSpotsLeft'] == 3, (s, r))
 s, r = call('PUT', f'/tasks/{T1}/open-role', mike, {'roleId': None})

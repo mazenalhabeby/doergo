@@ -154,7 +154,7 @@ describe('TasksService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        TasksService, { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false) } }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
+        TasksService, { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: 'NOTIFICATION_SERVICE', useValue: mockNotificationClient },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },

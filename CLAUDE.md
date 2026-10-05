@@ -516,6 +516,38 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 >
 > ⚠️ **No time per item**, by design — time stays per person on the job. A part that needs its own time is its own task.
 
+### A task open to a WORK role (`/tasks`) — "a Mechanic", not "Ahmad"
+> The office opens a task to a work role in its workspace, with how many people it needs; whoever holds that role there may take a place; the first to take each place gets it. Rules: `packages/shared/src/tasks/role-pool.ts`; server: `task-service/.../tasks/role-pool.service.ts`. Migration `20261006090000_task_open_to_role` (additive). E2E: `python3 tools/role-tasks-e2e.py` (LOCAL only, 38 checks).
+
+| Method | Endpoint | Description | Gate |
+|--------|----------|-------------|------|
+| POST | `/tasks` `{openRoleId, openSpots}` | Create open to a role (people OR a role — both is `ROLE_TASK_PEOPLE_OR_ROLE`) | canCreateTasks; the role part stripped without canAssignTasks (org-wide or in the space) |
+| GET | `/tasks/role-options?spaceId` · `/tasks/role-preview?spaceId&roleId&lat&lng` | Work roles used here (+ holders) · who is free now, ranked | canAssignTasks in the space |
+| GET | `/tasks/open-for-me` | Tasks open to a role the caller holds, in the workspace they hold it in | `@DenyExternal`; a profile without Tasks gets `[]` |
+| POST | `/tasks/:id/take` · `/tasks/:id/return-to-role` | Take a place (409 `ROLE_TASK_TAKEN` + `params.takers`) · hand back before the work starts (`ROLE_TASK_STARTED` after) | holder of the role (404 otherwise) · on the task |
+| PUT | `/tasks/:id/open-role` `{roleId|null, spots}` | Open an existing task, change how many, or close it | canAssignTasks (task's space) |
+| GET | `/tasks/role-stats?spaceId&from&to` | Per role: opened, taken, avg minutes to take, open now, overdue, top takers | canViewAllTasks (scoped) |
+
+> ⚠️ **Beside the name flow, never instead of it.** The task list, its counts and the phone's offline sync are UNCHANGED — an open task is reached through `open-for-me` and, for a holder, one extra branch in `checkTaskAccess` (asked only after the normal rule said no).
+>
+> ⚠️ **Taking is ONE conditional update** (`openSpotsLeft > 0` decrement + the crew row, one transaction). Two at once: exactly one wins (e2e race check). Once taken it is an ordinary assignment through `afterAssigneesChanged` — first taker LEAD.
+>
+> ⚠️ **Handing back (or declining) returns it to the ROLE**, re-offered from wave 0 with `openedAt` reset. Never to nobody.
+>
+> ⚠️ **Places follow the crew**: `openSpotsLeft = openSpots − people on it`, recomputed in SQL (`syncSpots`) after EVERY crew change (take, hand-back, the office's picker, decline) — never an absolute number written from a read. A finished step (canonical or the workflow's `isFinal`/`isCanceled`) sets `openWave = 3` (closed): places never reopen on it, the sweep skips it. Moving the task to another workspace closes the role.
+>
+> ⚠️ **A holder who has not taken it may only READ it** (`checkTaskAccess(..., { roleHolderMayRead })` on the reads only) — no comments, no checklist. An external member or a profile without Tasks is never a holder. "Somebody was faster" (409 + names) only to a holder; anyone else gets 404.
+>
+> ⚠️ "Started" for a hand-back = on the way / on site / working / blocked, finished, or this person joined the crew's work — never a list of step names (a custom flow's first step is not started).
+>
+> ⚠️ **Waves** (`RolePoolService.sweep`, every minute under the cron lease, each step CLAIMED `openWave from→to`): 0 the FREE (clocked in, no job running, not on leave) at once · 1 everyone working today after `CompanyLocation.roleOfferWidenMin` (10) · 2 the creator after `roleOfferAlertMin` (30) with the best three. URGENT skips to 1. Rota/leave from `CoverService.expectedToday` — the floor panel's rules.
+>
+> ⚠️ **`UpdateTaskDto` omits `openRoleId`/`openSpots` and the service strips the open-* columns** — a PATCH can never write them raw.
+>
+> ⚠️ Pushes `task_role_offer` (urgent channel) / `task_role_taken` / `task_role_unclaimed`, five languages; a person who took the job themselves is not pushed "you were assigned".
+>
+> ⚠️ Mobile: "Open for your role" on the Jobs tab and Take/Hand back on the job page are ONLINE ONLY (a queued take would promise a place somebody else got). Needs an OTA.
+
 ### Rates, work roles and the worker's statement
 > A workspace role is a **WORK** role (a trade: carries how work is billed — HOUR / DAY / BOTH — and a day rate, grants NOTHING) or a **MANAGEMENT** role (permissions). Rules: `packages/shared/src/billing/{rate-history,rate-writer,work-roles,invoice-lines}.ts`. Migration `20261004120000_work_roles_rate_history`.
 
