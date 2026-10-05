@@ -4824,7 +4824,12 @@
       "tagDay": "DÍA",
       "perHour": "/ hora",
       "perDay": "/ día",
-      "costTotal": "Total"
+      "costTotal": "Total",
+      "noClientsYet": "Aún no hay clientes",
+      "noClientsHint": "Escriba el cliente en la factura; puede añadirse a sus clientes al guardar. O añádalo primero en Clientes.",
+      "noClientsAsk": "Escriba el cliente en la factura o pida a alguien que gestione los clientes que lo añada.",
+      "noClientsWriteHere": "Escribir el cliente aquí",
+      "noClientsOpen": "Abrir Clientes"
     },
     "oldestDebt": "Más antigua sin pagar",
     "nothingOutstanding": "Todo saldado: nada pendiente.",

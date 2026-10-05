@@ -4824,7 +4824,12 @@
       "tagDay": "TAG",
       "perHour": "/ Stunde",
       "perDay": "/ Tag",
-      "costTotal": "Gesamt"
+      "costTotal": "Gesamt",
+      "noClientsYet": "Noch keine Kunden",
+      "noClientsHint": "Tragen Sie den Kunden auf der Rechnung ein – er kann beim Speichern zu Ihren Kunden hinzugefügt werden. Oder legen Sie ihn zuerst unter Kunden an.",
+      "noClientsAsk": "Tragen Sie den Kunden auf der Rechnung ein oder bitten Sie jemanden, der Kunden verwaltet, ihn anzulegen.",
+      "noClientsWriteHere": "Kunden hier eintragen",
+      "noClientsOpen": "Kunden öffnen"
     },
     "oldestDebt": "Älteste offene",
     "nothingOutstanding": "Alles beglichen — nichts offen.",

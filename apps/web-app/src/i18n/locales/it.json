@@ -4833,7 +4833,12 @@
       "tagDay": "GIORNO",
       "perHour": "/ ora",
       "perDay": "/ giorno",
-      "costTotal": "Totale"
+      "costTotal": "Totale",
+      "noClientsYet": "Ancora nessun cliente",
+      "noClientsHint": "Scriva il cliente sulla fattura: può essere aggiunto ai suoi clienti al salvataggio. Oppure lo aggiunga prima in Clienti.",
+      "noClientsAsk": "Scriva il cliente sulla fattura o chieda a chi gestisce i clienti di aggiungerlo.",
+      "noClientsWriteHere": "Scrivi qui il cliente",
+      "noClientsOpen": "Apri Clienti"
     },
     "oldestDebt": "Più vecchia non pagata",
     "nothingOutstanding": "Tutto saldato — nulla in sospeso.",

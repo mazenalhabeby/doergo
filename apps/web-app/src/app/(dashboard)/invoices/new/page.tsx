@@ -36,6 +36,7 @@ import {
 } from "../_components/invoice-fields"
 import { useExchangeRate } from "../_lib/use-exchange-rate"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -936,6 +937,38 @@ function NewInvoiceInner() {
                     looking for a client they invoiced last year remembers the
                     town far more often than the exact registered name.
                   */}
+                  {/*
+                    ⚠️ CRM ON, NO CLIENTS YET. An empty picker looks broken and
+                    says nothing about what to do. Say so, and offer the two
+                    ways forward: write the client in here (and, where this
+                    person may, add them to the CRM in the same step), or go
+                    to Clients.
+                  */}
+                  {clientPage && clients.length === 0 ? (
+                    <div className="mt-1 rounded-lg border border-dashed border-border p-3">
+                      <p className="text-sm font-medium text-foreground">{t("invoices.create.noClientsYet")}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {mayAddClient ? t("invoices.create.noClientsHint") : t("invoices.create.noClientsAsk")}
+                      </p>
+                      <div className="mt-2.5 grid gap-1.5">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => {
+                            setSource("none")
+                            if (mayAddClient) setAddToCrm(true)
+                          }}
+                        >
+                          {t("invoices.create.noClientsWriteHere")}
+                        </Button>
+                        {mayAddClient && (
+                          <Button type="button" size="sm" variant="outline" asChild>
+                            <Link href="/clients">{t("invoices.create.noClientsOpen")}</Link>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
                   <Combobox
                     value={customerId}
                     onChange={setCustomerId}
@@ -948,6 +981,7 @@ function NewInvoiceInner() {
                     searchPlaceholder={t("invoices.create.searchClient")}
                     className="mt-1"
                   />
+                  )}
                   {/*
                     The client's details fill the header below, and stay editable —
                     an invoice sometimes goes to a different address than the one on

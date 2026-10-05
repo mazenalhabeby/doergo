@@ -4833,7 +4833,12 @@
       "tagDay": "JOUR",
       "perHour": "/ heure",
       "perDay": "/ jour",
-      "costTotal": "Total"
+      "costTotal": "Total",
+      "noClientsYet": "Aucun client pour l’instant",
+      "noClientsHint": "Saisissez le client sur la facture — il peut être ajouté à vos clients à l’enregistrement. Ou ajoutez-le d’abord dans Clients.",
+      "noClientsAsk": "Saisissez le client sur la facture, ou demandez à une personne qui gère les clients de l’ajouter.",
+      "noClientsWriteHere": "Saisir le client ici",
+      "noClientsOpen": "Ouvrir Clients"
     },
     "oldestDebt": "Plus ancienne impayée",
     "nothingOutstanding": "Tout est réglé — rien en attente.",

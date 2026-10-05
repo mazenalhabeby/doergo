@@ -4824,7 +4824,12 @@
       "tagDay": "DAY",
       "perHour": "/ hour",
       "perDay": "/ day",
-      "costTotal": "Total"
+      "costTotal": "Total",
+      "noClientsYet": "No clients yet",
+      "noClientsHint": "Write the client in on the invoice — it can be added to your clients as you save. Or add them in Clients first.",
+      "noClientsAsk": "Write the client in on the invoice, or ask somebody who manages clients to add them.",
+      "noClientsWriteHere": "Write the client in here",
+      "noClientsOpen": "Open Clients"
     },
     "oldestDebt": "Oldest unpaid",
     "nothingOutstanding": "Everything is settled — nothing outstanding.",
