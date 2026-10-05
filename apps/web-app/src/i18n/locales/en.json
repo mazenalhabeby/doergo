@@ -8350,7 +8350,10 @@
       "discarded": "Draft discarded",
       "openFailed": "Could not open this document",
       "answerSignersFirst": "Answer the signing questions below first.",
-      "namedAs": "Will be filed as “{{title}}”"
+      "namedAs": "Will be filed as “{{title}}”",
+      "rename": "Rename",
+      "renameHint": "Enter to save, Esc to cancel. Leave empty for the automatic name. The month is added if you set one.",
+      "namePlaceholder": "Document name"
     },
     "sign": {
       "title": "Sign document",

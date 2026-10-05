@@ -8350,7 +8350,10 @@
       "discarded": "Entwurf verworfen",
       "openFailed": "Dieses Dokument konnte nicht geöffnet werden",
       "answerSignersFirst": "Bitte zuerst die Signaturfragen unten beantworten.",
-      "namedAs": "Wird abgelegt als „{{title}}“"
+      "namedAs": "Wird abgelegt als „{{title}}“",
+      "rename": "Umbenennen",
+      "renameHint": "Enter speichert, Esc bricht ab. Leer lassen für den automatischen Namen. Der Monat wird angehängt, wenn Sie einen wählen.",
+      "namePlaceholder": "Dokumentname"
     },
     "sign": {
       "title": "Dokument unterschreiben",

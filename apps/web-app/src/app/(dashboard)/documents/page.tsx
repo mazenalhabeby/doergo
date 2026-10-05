@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Upload, Check, AlertTriangle, X, Loader2, FileText,
-  CheckCircle2, ChevronDown, Users,
+  CheckCircle2, ChevronDown, Users, Pencil,
 } from "lucide-react"
 import {
   documentsApi, uploadToS3,
@@ -52,6 +52,8 @@ type Row = FileMatch & {
   scanning?: boolean
   /** Its name from its own heading ("Insurance Confirmation Letter"); null = the type's label. */
   docTitle?: string | null
+  /** A name somebody typed for this file. Empty = the automatic one above. */
+  customTitle?: string
 }
 
 const MONTHS_KEY = [
@@ -448,11 +450,13 @@ export default function IssueDocumentsPage() {
                         <span className="truncate font-mono text-xs text-slate-700 dark:text-slate-300">{row.fileName}</span>
                       </div>
                       <div className="mt-0.5 pl-6 text-[11px] text-slate-400">{fileSize(row.file.size)}</div>
-                      {row.docTitle && (
-                        <div className="mt-0.5 pl-6 text-[11px] text-slate-600 dark:text-slate-300">
-                          {t("documents.issue.namedAs", { title: row.docTitle })}
-                        </div>
-                      )}
+                      <FiledAs
+                        row={row}
+                        filedAs={titleFor(row, activeType, t)}
+                        baseName={baseTitle(row, activeType)}
+                        locked={row.state === "uploading" || row.state === "staged"}
+                        onRename={(customTitle) => setRow(row.fileName, { customTitle })}
+                      />
                       {row.state === "uploading" && (
                         <div className="mt-1 ml-6 h-1 w-32 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
                           <div className="h-full bg-blue-600 transition-all" style={{ width: `${row.progress * 100}%` }} />
@@ -672,14 +676,96 @@ function PeriodCell({
   )
 }
 
-/** A title a person would recognise in their own document list. */
+/** The name before the period: what was typed, else the file's own heading, else the type. */
+function baseTitle(row: Row, type: DocumentTypeRow | null): string {
+  return row.customTitle?.trim() || row.docTitle || type?.label || "Document"
+}
+
+/**
+ * A title a person would recognise in their own document list.
+ *
+ * ⚠️ The period is added to a TYPED name too. Twelve payslips renamed
+ * "Payslip" must still read as twelve months, not twelve copies of one.
+ */
 function titleFor(row: Row, type: DocumentTypeRow | null, t: (k: string) => string): string {
-  const label = row.docTitle || type?.label || "Document"
+  const label = baseTitle(row, type)
   if (row.periodMonth && row.periodYear) {
     return `${label} ${t(`documents.months.${MONTHS_KEY[row.periodMonth - 1]}`)} ${row.periodYear}`
   }
   if (row.periodYear) return `${label} ${row.periodYear}`
   return label
+}
+
+/**
+ * "Will be filed as …" on every row, with a pencil to name it yourself.
+ *
+ * Shown always — before, it appeared only when a PDF's heading was read, so a
+ * photo or a scan said nothing at all about what the member would see. Editing
+ * is local to the row: nothing is sent until the upload, which already carries
+ * the title. Clearing the field goes back to the automatic name.
+ */
+function FiledAs({
+  row,
+  filedAs,
+  baseName,
+  locked,
+  onRename,
+}: {
+  row: Row
+  filedAs: string
+  baseName: string
+  locked: boolean
+  onRename: (customTitle: string) => void
+}) {
+  const { t } = useTranslation()
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState("")
+  const inputRef = useRef<HTMLInputElement>(null)
+  useEffect(() => { if (editing) inputRef.current?.select() }, [editing])
+
+  const commit = () => {
+    onRename(draft.trim())
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <div className="mt-1 pl-6">
+        <input
+          ref={inputRef}
+          value={draft}
+          maxLength={200}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { e.preventDefault(); commit() }
+            if (e.key === "Escape") { e.preventDefault(); setEditing(false) }
+          }}
+          placeholder={row.docTitle || t("documents.issue.namePlaceholder")}
+          aria-label={t("documents.issue.rename")}
+          className="h-7 w-full max-w-sm rounded-md border border-blue-500 bg-white px-2 text-xs text-slate-900 outline-none dark:bg-slate-900 dark:text-slate-100"
+        />
+        <p className="mt-0.5 text-[10.5px] text-slate-400">{t("documents.issue.renameHint")}</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-0.5 flex items-center gap-1 pl-6 text-[11px] text-slate-600 dark:text-slate-300">
+      <span className="min-w-0 truncate">{t("documents.issue.namedAs", { title: filedAs })}</span>
+      {!locked && (
+        <button
+          type="button"
+          onClick={() => { setDraft(baseName); setEditing(true) }}
+          aria-label={t("documents.issue.rename")}
+          title={t("documents.issue.rename")}
+          className="shrink-0 rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+        >
+          <Pencil className="h-3 w-3" />
+        </button>
+      )}
+    </div>
+  )
 }
 
 /*

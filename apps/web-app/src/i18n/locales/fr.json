@@ -8359,7 +8359,10 @@
       "discarded": "Brouillon supprimé",
       "openFailed": "Impossible d'ouvrir ce document",
       "answerSignersFirst": "Répondez d'abord aux questions de signature ci-dessous.",
-      "namedAs": "Sera classé sous « {{title}} »"
+      "namedAs": "Sera classé sous « {{title}} »",
+      "rename": "Renommer",
+      "renameHint": "Entrée pour enregistrer, Échap pour annuler. Laissez vide pour le nom automatique. Le mois est ajouté si vous en choisissez un.",
+      "namePlaceholder": "Nom du document"
     },
     "sign": {
       "title": "Signer le document",

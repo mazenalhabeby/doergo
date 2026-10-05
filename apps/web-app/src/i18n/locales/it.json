@@ -8359,7 +8359,10 @@
       "discarded": "Bozza scartata",
       "openFailed": "Impossibile aprire questo documento",
       "answerSignersFirst": "Rispondi prima alle domande sulla firma qui sotto.",
-      "namedAs": "Sarà archiviato come «{{title}}»"
+      "namedAs": "Sarà archiviato come «{{title}}»",
+      "rename": "Rinomina",
+      "renameHint": "Invio per salvare, Esc per annullare. Lasci vuoto per il nome automatico. Il mese viene aggiunto se ne sceglie uno.",
+      "namePlaceholder": "Nome del documento"
     },
     "sign": {
       "title": "Firma documento",

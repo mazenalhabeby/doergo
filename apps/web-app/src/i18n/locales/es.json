@@ -8350,7 +8350,10 @@
       "discarded": "Borrador descartado",
       "openFailed": "No se pudo abrir este documento",
       "answerSignersFirst": "Responde primero a las preguntas de firma de abajo.",
-      "namedAs": "Se archivará como «{{title}}»"
+      "namedAs": "Se archivará como «{{title}}»",
+      "rename": "Cambiar nombre",
+      "renameHint": "Intro para guardar, Esc para cancelar. Déjelo vacío para el nombre automático. Se añade el mes si elige uno.",
+      "namePlaceholder": "Nombre del documento"
     },
     "sign": {
       "title": "Firmar documento",
