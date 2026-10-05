@@ -530,6 +530,8 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 
 > ⚠️ **The trade is its own column** (`SpaceAssignment.workRoleId`). Every permission/routing/notification check still reads `roleId` only; a work role's permissions are forced `{}` on every write. Two roles only when `allowSecondRole`.
 >
+> ⚠️ **A cost lives on the person, a price on the workspace** (`LEVELS_BY_KIND` in rate-ladder.ts): cost = member profile → organization; bill = the person's rate in the workspace → the workspace → organization. The server refuses a cost saved on a workspace/assignment and a price saved on a person; old rows at those levels stay in history and are not read. Per person, `SpaceAssignment.hoursBasis` (COUNTED/CLOCKED/SHIFT) picks which hours the CLIENT is charged; pay and margin cost stay on counted time.
+>
 > ⚠️ **A rate change never rewrites the past.** Every rate is a dated row in `rate_history`; work is priced by the rate in force ON THE DAY it was done. The rate columns are a mirror of "today". ONE writer: `writeRateChange` in shared — `rate-writer-guard.spec.ts` fails on a direct column write. The FIRST rate ever, saved with no start day, applies since always (else last month bills at 0).
 >
 > ⚠️ **A day worked** = any day clocked in (not REJECTED) OR a job finished at that workspace, in the workspace's zone, once per day. Hour+Day bills BOTH rows; Day-only jobs are listed, not charged. DAYS lines store `workerId`/`dayFrom`/`dayTo` so days are never billed twice (deleting/cancelling the invoice releases them).
