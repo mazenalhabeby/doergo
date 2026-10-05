@@ -4924,7 +4924,10 @@
     "statRunning": "läuft gerade",
     "statThisWeek": "diese Woche genehmigt",
     "andCounting": "und läuft",
-    "onShiftOf": "bei {{duration}} Schicht"
+    "onShiftOf": "bei {{duration}} Schicht",
+    "remove": "Entfernen",
+    "removeConfirm": "Entfernen — als wäre sie nie genehmigt worden",
+    "removed": "Überstunden entfernt. Der Tag wird ohne sie gezählt."
   },
   "payments": {
     "title": "Zahlungen",

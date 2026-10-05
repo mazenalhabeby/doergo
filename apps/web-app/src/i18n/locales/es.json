@@ -4924,7 +4924,10 @@
     "statRunning": "en curso ahora",
     "statThisWeek": "aprobadas esta semana",
     "andCounting": "y sigue",
-    "onShiftOf": "en un turno de {{duration}}"
+    "onShiftOf": "en un turno de {{duration}}",
+    "remove": "Quitar",
+    "removeConfirm": "Quitarla, como si nunca se hubiera aprobado",
+    "removed": "Horas extra quitadas. El día se cuenta sin ellas."
   },
   "payments": {
     "title": "Pagos",

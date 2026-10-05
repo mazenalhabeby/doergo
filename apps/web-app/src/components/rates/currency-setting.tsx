@@ -7,6 +7,7 @@ import { Check, Loader2 } from "lucide-react"
 import { COMMON_CURRENCIES, SUPPORTED_CURRENCIES } from "@hbcfield/shared/client"
 
 import { notify } from "@/lib/toast"
+import { currencySymbol } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -42,18 +43,6 @@ import {
 export function currencyName(code: string, locale: string): string {
   try {
     return new Intl.DisplayNames([locale], { type: "currency" }).of(code) ?? code
-  } catch {
-    return code
-  }
-}
-
-/** The local symbol ("$", "£", "CHF") — for the option label only. */
-function currencySymbol(code: string, locale: string): string {
-  try {
-    const part = new Intl.NumberFormat(locale, { style: "currency", currency: code, currencyDisplay: "narrowSymbol" })
-      .formatToParts(0)
-      .find((p) => p.type === "currency")
-    return part?.value ?? code
   } catch {
     return code
   }

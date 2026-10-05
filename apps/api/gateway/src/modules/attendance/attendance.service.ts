@@ -459,6 +459,11 @@ export class AttendanceService extends BaseGatewayService {
     return this.sendOnce({ cmd: 'add_overtime_to_entry' }, data);
   }
 
+  /** Remove an approved overtime as if it never was. A write: never retried. */
+  async removeApprovedOvertime(data: { actorId: string; overtimeId: string; organizationId: string; scopeSpaceIds?: string[] | null }) {
+    return this.sendOnce({ cmd: 'remove_approved_overtime' }, data);
+  }
+
   /** Leader rejects an extra-time request. */
   async rejectExtraTime(data: {
     approverId: string;

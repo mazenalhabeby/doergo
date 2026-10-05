@@ -1735,6 +1735,54 @@ export class AttendanceService {
   }
 
   /**
+   * Remove an APPROVED overtime round as if it had never been approved.
+   *
+   * Approving moved the shift end later by the approved minutes and, on a
+   * closed shift, recounted the day. This puts the end back where that round
+   * found it (`overtimeStartAt`, else the end minus the minutes), recounts the
+   * day, and deletes the round — so the timesheet, the margin and the next
+   * invoice read the day as planned. Only the LATEST approved round of a shift
+   * comes off (rounds add up; an earlier one sits under a later one). Same
+   * permission as approving, and nobody removes their own. The request log
+   * (audit) records who removed it.
+   */
+  async removeApprovedOvertime(data: { actorId: string; overtimeId: string; organizationId: string; scopeSpaceIds?: AttendanceScope }) {
+    const round = await this.prisma.overtimeRequest.findFirst({
+      where: { id: data.overtimeId, organizationId: data.organizationId, status: { in: ['APPROVED', 'COMPLETED'] } },
+    });
+    if (!round) throw new NotFoundException('Approved overtime not found');
+    const entry = await this.prisma.timeEntry.findFirst({
+      where: { id: round.timeEntryId, organizationId: data.organizationId, ...scopeWhere(data.scopeSpaceIds) },
+    });
+    if (!entry) throw new NotFoundException('Approved overtime not found');
+    const allowed = await this.userCanApproveOvertime(data.actorId, entry.locationId, data.organizationId);
+    if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
+    await this.assertNotSelfOvertimeDecision(data.actorId, entry.userId, data.organizationId);
+
+    const later = await this.prisma.overtimeRequest.count({
+      where: { timeEntryId: entry.id, status: { in: ['APPROVED', 'COMPLETED'] }, cycle: { gt: round.cycle } },
+    });
+    if (later > 0) {
+      throw new BadRequestException({ message: 'A later approved overtime on this shift has to be removed first.', code: 'OVERTIME_LATER_ROUND' });
+    }
+
+    const minutes = round.maxDurationMinutes ?? 0;
+    const back = round.overtimeStartAt
+      ?? (entry.expectedClockOutAt ? new Date(entry.expectedClockOutAt.getTime() - minutes * 60_000) : null);
+    await this.prisma.$transaction([
+      this.prisma.timeEntry.update({ where: { id: entry.id }, data: { expectedClockOutAt: back } }),
+      this.prisma.overtimeRequest.delete({ where: { id: round.id } }),
+    ]);
+    // A closed shift was counted with the approval — count it again without.
+    if (entry.clockOutAt) await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: back });
+
+    return success(
+      { entryId: entry.id, removedMinutes: minutes, expectedClockOutAt: back?.toISOString() ?? null },
+      `Removed ${minutes} min of approved overtime`,
+    );
+  }
+
+  /**
    * A manager adds overtime to a CLOSED shift nobody asked about.
    *
    * The member stayed late and never sent a request — they had no signal, or

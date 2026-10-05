@@ -53,3 +53,15 @@ export function formatMoneyIn(amount: number, currency: string | null | undefine
     }
   }
 }
+
+/** The local symbol alone ("$", "£", "CHF") — for a currency picker's label. Falls back to the code. */
+export function currencySymbol(code: string, locale: string = LOCALE): string {
+  try {
+    const part = new Intl.NumberFormat(locale, { style: "currency", currency: code, currencyDisplay: "narrowSymbol" })
+      .formatToParts(0)
+      .find((p) => p.type === "currency")
+    return part?.value ?? code
+  } catch {
+    return code
+  }
+}

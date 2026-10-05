@@ -4933,7 +4933,10 @@
     "statRunning": "en cours",
     "statThisWeek": "validées cette semaine",
     "andCounting": "et en cours",
-    "onShiftOf": "sur un poste de {{duration}}"
+    "onShiftOf": "sur un poste de {{duration}}",
+    "remove": "Retirer",
+    "removeConfirm": "La retirer, comme si elle n'avait jamais été approuvée",
+    "removed": "Heures supplémentaires retirées. La journée est comptée sans elles."
   },
   "payments": {
     "title": "Paiements",

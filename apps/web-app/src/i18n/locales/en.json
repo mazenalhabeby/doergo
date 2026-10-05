@@ -4924,7 +4924,10 @@
     "statRunning": "running now",
     "statThisWeek": "approved this week",
     "andCounting": "and counting",
-    "onShiftOf": "on a {{duration}} shift"
+    "onShiftOf": "on a {{duration}} shift",
+    "remove": "Remove",
+    "removeConfirm": "Remove it — as if never approved",
+    "removed": "Overtime removed. The day is counted without it."
   },
   "payments": {
     "title": "Payments",

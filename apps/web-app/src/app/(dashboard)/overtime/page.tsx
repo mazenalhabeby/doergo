@@ -22,6 +22,7 @@ import {
   User,
   Pen,
   Zap,
+  Loader2,
 } from "lucide-react"
 
 import {
@@ -110,6 +111,17 @@ function OvertimePageInner() {
   const [historyStatus, setHistoryStatus] = useState("all")
   const [historyPage, setHistoryPage] = useState(1)
 
+  const removeMutation = useMutation({
+    mutationFn: (id: string) => overtimeApi.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["overtime-history"] })
+      queryClient.invalidateQueries({ queryKey: ["overtime-pending"] })
+      // The day's hours changed: what is still to bill must re-read them.
+      queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
+      notify.success(t("overtime.removed"))
+    },
+    onError: (e: Error) => notify.error(e.message),
+  })
   const { data: pendingData, isLoading: pendingLoading, refetch: refetchPending } = useQuery({
     queryKey: ["overtime-pending"],
     queryFn: () => overtimeApi.getPendingApprovals(),
@@ -344,7 +356,7 @@ function OvertimePageInner() {
             ) : (
               <div className="grid gap-3">
                 {history.map((req: OvertimeRequest) => (
-                  <HistoryCard key={req.id} request={req} />
+                  <HistoryCard key={req.id} request={req} onRemove={() => removeMutation.mutate(req.id)} removing={removeMutation.isPending && removeMutation.variables === req.id} />
                 ))}
               </div>
             )}
@@ -584,8 +596,9 @@ function OvertimeCard({
 // HISTORY CARD
 // ============================================================================
 
-function HistoryCard({ request }: { request: OvertimeRequest }) {
+function HistoryCard({ request, onRemove, removing }: { request: OvertimeRequest; onRemove?: () => void; removing?: boolean }) {
   const { t } = useTranslation()
+  const [confirming, setConfirming] = useState(false)
   const { timeToken } = useTimeFormat()
   const badge = STATUS_BADGES[request.status] || STATUS_BADGES.COMPLETED
   const Icon = badge!.icon
@@ -603,6 +616,22 @@ function HistoryCard({ request }: { request: OvertimeRequest }) {
                 {request.technician?.firstName} {request.technician?.lastName}
               </span>
               <Badge variant="outline" className={`text-xs ${badge!.className}`}>{t(badge!.labelKey)}</Badge>
+              {/* Approved overtime can be taken off as if it never was — the shift end moves back, the day is recounted. */}
+              {onRemove && (request.status === "APPROVED" || request.status === "COMPLETED") && (
+                confirming ? (
+                  <span className="flex items-center gap-1">
+                    <Button size="sm" variant="destructive" className="h-6 px-2 text-[11px]" disabled={removing} onClick={onRemove}>
+                      {removing && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+                      {t("overtime.removeConfirm")}
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => setConfirming(false)}>{t("common.cancel")}</Button>
+                  </span>
+                ) : (
+                  <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px] text-muted-foreground hover:text-red-600" onClick={() => setConfirming(true)}>
+                    {t("overtime.remove")}
+                  </Button>
+                )
+              )}
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
               <span>{request.location?.name}</span>

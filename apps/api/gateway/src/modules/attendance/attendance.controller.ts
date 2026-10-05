@@ -978,6 +978,24 @@ export class AttendanceController {
     });
   }
 
+  /*
+    Remove an APPROVED overtime as if it never was: the shift end moves back,
+    the day is recounted, the record is deleted. Same permission as approving,
+    checked in task-service against the shift's own space.
+  */
+  @Delete('overtime/:id')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @RequirePlan('shift_scheduling')
+  @ApiOperation({ summary: 'Remove an approved overtime (restores the shift end and recounts the day)' })
+  async removeApprovedOvertime(@Param('id') overtimeId: string, @Request() req?: any) {
+    return this.attendanceService.removeApprovedOvertime({
+      overtimeId,
+      actorId: req.user.id,
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canApproveOvertime'),
+    });
+  }
+
   @Post('extra-time/:id/reject')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @RequirePlan('shift_scheduling')

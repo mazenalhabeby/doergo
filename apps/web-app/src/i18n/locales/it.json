@@ -4933,7 +4933,10 @@
     "statRunning": "in corso ora",
     "statThisWeek": "approvate questa settimana",
     "andCounting": "e in corso",
-    "onShiftOf": "su un turno di {{duration}}"
+    "onShiftOf": "su un turno di {{duration}}",
+    "remove": "Rimuovi",
+    "removeConfirm": "Rimuovila, come se non fosse mai stata approvata",
+    "removed": "Straordinario rimosso. La giornata è conteggiata senza."
   },
   "payments": {
     "title": "Pagamenti",

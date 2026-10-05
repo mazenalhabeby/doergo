@@ -5309,6 +5309,12 @@ export const overtimeApi = {
     if (response.error) throw new Error(response.error);
     return response.data?.data;
   },
+  /** Remove an approved overtime as if it never was: the shift end moves back and the day is recounted. */
+  remove: async (id: string) => {
+    const response = await api.delete<{ success: boolean }>(`/attendance/overtime/${id}`);
+    if (response.error) throw new Error(response.error);
+    return response.data;
+  },
 
   getHistory: async (params?: { technicianId?: string; status?: string; page?: number; limit?: number }) => {
     const endpoint = buildUrlWithQuery('/overtime/history', {
