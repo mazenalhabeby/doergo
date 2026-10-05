@@ -380,7 +380,15 @@ export class SpaceRolesService {
       where: { OR: [{ roleId: role.id }, { workRoleId: role.id }] },
     });
     if (inUse > 0) throw new BadRequestException(`This role is assigned to ${inUse} member(s). Reassign them first.`);
-    await this.prisma.accessRole.delete({ where: { id: role.id } });
+    // Nothing of it may linger: its dated day rates, and its place in every workspace's list.
+    await this.prisma.$transaction(async (tx) => {
+      await tx.rateHistory.deleteMany({ where: { organizationId: data.organizationId, target: 'ROLE', targetId: role.id } });
+      await tx.$executeRawUnsafe(
+        `UPDATE "company_locations" SET "workRoleIds" = array_remove("workRoleIds", $1) WHERE "organizationId" = $2 AND $1 = ANY("workRoleIds")`,
+        role.id, data.organizationId,
+      );
+      await tx.accessRole.delete({ where: { id: role.id } });
+    });
     return success({ id: role.id }, 'Space role deleted');
   }
 

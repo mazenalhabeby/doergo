@@ -6917,7 +6917,8 @@
       "merged": "Rollen zusammengeführt",
       "addHereIntro": "Nutzen Sie eine Rolle des Unternehmens in diesem Arbeitsbereich, mit eigenem Tagessatz hier, oder legen Sie eine neue an.",
       "createNew": "Neue Rolle anlegen",
-      "rateHere": "Hier bereits {{rate}}"
+      "rateHere": "Hier bereits {{rate}}",
+      "deleteUnused": "Nirgends genutzt: löschen"
     },
     "membersPage": {
       "people": "Personen",

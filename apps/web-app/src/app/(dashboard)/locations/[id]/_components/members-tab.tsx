@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Loader2,
   Wrench,
+  Trash2,
 } from "lucide-react"
 
 import { notify } from "@/lib/toast"
@@ -291,9 +292,24 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
                       </span>
                     )}
                   </span>
-                  <Button size="sm" variant="secondary" disabled={useHere.isPending} onClick={() => useHere.mutate(r.id)}>
-                    {t("scheduling.workRoles.useHere")}
-                  </Button>
+                  <span className="flex shrink-0 items-center gap-1">
+                    <Button size="sm" variant="secondary" disabled={useHere.isPending} onClick={() => useHere.mutate(r.id)}>
+                      {t("scheduling.workRoles.useHere")}
+                    </Button>
+                    {/* Held by nobody, anywhere: it can go for good. */}
+                    {r.inUseCount === 0 && !r.isSystem && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-muted-foreground hover:text-red-600"
+                        aria-label={t("common.delete")}
+                        title={t("scheduling.workRoles.deleteUnused")}
+                        onClick={() => { setPicking(false); setDeleteTarget(r) }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </span>
                 </div>
               ))
             )}
@@ -312,7 +328,9 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
         <RoleDialog
           spaceId={spaceId}
           allRoles={roles ?? []}
-          role={dialog.role}
+          // The LIVE role from the list, not the snapshot taken when it opened —
+          // or a day rate changed inside the dialog shows its old figure until a reload.
+          role={dialog.role ? (roles ?? []).find((r) => r.id === dialog.role!.id) ?? dialog.role : null}
           defaultKind={dialog.kind}
           open
           onOpenChange={(o) => { if (!o) setDialog(null) }}

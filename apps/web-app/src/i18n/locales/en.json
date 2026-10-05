@@ -6917,7 +6917,8 @@
       "merged": "Roles merged",
       "addHereIntro": "Use one of the company's roles in this workspace, with its own day rate here, or create a new one.",
       "createNew": "Create a new role",
-      "rateHere": "{{rate}} here already"
+      "rateHere": "{{rate}} here already",
+      "deleteUnused": "Not used anywhere: delete it"
     },
     "membersPage": {
       "people": "People",

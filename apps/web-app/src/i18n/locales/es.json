@@ -6917,7 +6917,8 @@
       "merged": "Roles fusionados",
       "addHereIntro": "Use uno de los roles de la empresa en este espacio, con su propia tarifa diaria aquí, o cree uno nuevo.",
       "createNew": "Crear un rol nuevo",
-      "rateHere": "Ya {{rate}} aquí"
+      "rateHere": "Ya {{rate}} aquí",
+      "deleteUnused": "No se usa en ningún sitio: eliminarlo"
     },
     "membersPage": {
       "people": "Personas",
