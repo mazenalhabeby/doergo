@@ -1024,12 +1024,21 @@ export class InvoiceService {
     // Time on site: each person's hours runs and day runs at this workspace.
     const jobWorkers = new Map<string, string>();
     for (const w of workEntries) if (w.workerId && w.workerName) jobWorkers.set(w.workerId, w.workerName);
-    const { hourEntries, dayEntries } = space
+    const { hourEntries, dayEntries, workDays } = space
       ? await this.gatherSiteTime({
           organizationId: data.organizationId, spaceId: space.id, tz, from: data.from, to: data.to,
           assignments, jobWorkers, billByOf, book, ratesFor, billedTasks: billed,
         })
-      : { hourEntries: [] as HoursEntry[], dayEntries: [] as DayEntry[] };
+      : { hourEntries: [] as HoursEntry[], dayEntries: [] as DayEntry[], workDays: [] as string[] };
+    /*
+      Every day with something still to bill — the period picker marks them and
+      "Outstanding" reads its dates from the first and last. Days, not a span:
+      a gap of three weeks with nothing in it should look like one.
+    */
+    const outstandingDays = [...new Set([
+      ...workDays,
+      ...workEntries.map((w: any) => w.workedOn as string).filter(Boolean),
+    ])].sort();
     return {
       success: true,
       data: {
@@ -1071,6 +1080,7 @@ export class InvoiceService {
          * on a live invoice are left out.
          */
         hourEntries,
+        outstandingDays,
         twoRates: usesTwoRates([
           { billRateCents: org?.billableRateCents, costRateCents: org?.costRateCents },
           space ? { billRateCents: space.billableRateCents, costRateCents: space.costRateCents } : null,
@@ -1174,7 +1184,7 @@ export class InvoiceService {
     book: Awaited<ReturnType<typeof loadRateBook>>;
     ratesFor: (worker: { id?: string; billRateCents?: number | null; costRateCents?: number | null } | null, day: string) => { billRateCents: number | null; costRateCents: number | null };
     billedTasks: Set<string>;
-  }): Promise<{ hourEntries: HoursEntry[]; dayEntries: DayEntry[] }> {
+  }): Promise<{ hourEntries: HoursEntry[]; dayEntries: DayEntry[]; workDays: string[] }> {
     const { organizationId, spaceId, tz, assignments, billByOf, book, ratesFor } = args;
     const people = new Map<string, { name: string; assignment?: (typeof assignments)[number] }>();
     for (const a of assignments) {
@@ -1182,7 +1192,7 @@ export class InvoiceService {
       people.set(a.userId, { name: `${a.user?.firstName ?? ''} ${a.user?.lastName ?? ''}`.trim() || 'Worker', assignment: a });
     }
     for (const [id, name] of args.jobWorkers) if (!people.has(id)) people.set(id, { name });
-    if (people.size === 0) return { hourEntries: [], dayEntries: [] };
+    if (people.size === 0) return { hourEntries: [], dayEntries: [], workDays: [] };
     const ids = [...people.keys()];
     const fromDay = parseDayKey(args.from);
     const toDay = parseDayKey(args.to);
@@ -1270,6 +1280,7 @@ export class InvoiceService {
 
     const hourEntries: HoursEntry[] = [];
     const dayEntries: DayEntry[] = [];
+    const workDays = new Set<string>();
     for (const [userId, p] of people) {
       const a = p.assignment;
       const workRole = a?.workRole?.kind === 'WORK' ? a.workRole : null;
@@ -1286,6 +1297,7 @@ export class InvoiceService {
       if (billsHours(billBy)) {
         const basis = basisOf(userId);
         const days = daysWithTime.filter((d) => !alreadyBilled(userId, 'HOURS', d) && (billed.minutes.get(`${userId}|${d}`) ?? 0) > 0);
+        for (const d of days) workDays.add(d);
         for (const run of book.splitDaysWith(days, (d) => ratesFor(worker, d).billRateCents)) {
           let minutes = 0;
           let cost: number | null = 0;
@@ -1333,6 +1345,7 @@ export class InvoiceService {
       // DAYS: every day worked, at the role's day rate here (else its default).
       if (workRole && billsDays(billBy)) {
         const days = daysWithTime.filter((d) => !alreadyBilled(userId, 'DAYS', d));
+        for (const d of days) workDays.add(d);
         for (const run of book.splitDaysWith(days, (d) => book.dayRateOn(d, workRole.id, spaceId))) {
           let minutes = 0;
           let cost: number | null = 0;
@@ -1355,7 +1368,7 @@ export class InvoiceService {
         }
       }
     }
-    return { hourEntries, dayEntries };
+    return { hourEntries, dayEntries, workDays: [...workDays] };
   }
 
   private async generateInvoiceNumber(organizationId: string): Promise<string> {

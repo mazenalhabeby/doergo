@@ -107,8 +107,9 @@ describe("the service period", () => {
 
   it("sends the period the screen showed", () => {
     const src = page()
-    // Both the gather and the create read the same two pieces of state.
-    expect(src).toMatch(/from:\s*periodFrom\s*\|\|\s*undefined/)
+    // The gather and the create read ONE value; the dates come from one derivation.
+    expect(src).toContain("periodQuery(periodValue)")
+    expect(src).toContain("periodDays(periodValue, workDays)")
     expect(src).toMatch(/servicePeriodFrom:\s*periodFrom\s*\|\|\s*undefined/)
     expect(src).toMatch(/servicePeriodTo:\s*periodTo\s*\|\|\s*undefined/)
   })

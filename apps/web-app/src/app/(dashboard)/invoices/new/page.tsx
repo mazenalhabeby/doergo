@@ -39,7 +39,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Combobox } from "@/components/ui/combobox"
-import { DatePicker } from "@/components/ui/date-picker"
+import { PeriodPicker, periodDays, periodQuery, type PeriodValue } from "@/components/ui/period-picker"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface PartEntry { name: string; partNumber?: string | null; quantity: number; unitCost: number }
@@ -90,23 +90,6 @@ function isoOf(d: Date): string {
 }
 
 function todayIso() { return isoOf(new Date()) }
-
-/** The first and last day of a whole month, `shift` months from now. */
-function monthBounds(shift: number): [string, string] {
-  const now = new Date()
-  const first = new Date(now.getFullYear(), now.getMonth() + shift, 1)
-  // Day 0 of the NEXT month is the last day of this one — which gets February
-  // and the 31st right without a table of month lengths.
-  const last = new Date(now.getFullYear(), now.getMonth() + shift + 1, 0)
-  return [isoOf(first), isoOf(last)]
-}
-
-/** Is the chosen range exactly this preset? Decides which chip reads as active. */
-function isPreset(key: "lastMonth" | "thisMonth" | "all", from: string, to: string): boolean {
-  if (key === "all") return !from && !to
-  const [f, t] = monthBounds(key === "lastMonth" ? -1 : 0)
-  return from === f && to === t
-}
 
 /** "Sarah Wagner" → "SW", for the avatar beside a gathered job. */
 function initials(name?: string | null) {
@@ -255,8 +238,9 @@ function NewInvoiceInner() {
     Blank means "everything outstanding", which is the right answer for a
     one-off and was the only answer before.
   */
-  const [periodFrom, setPeriodFrom] = useState("")
-  const [periodTo, setPeriodTo] = useState("")
+  const [periodValue, setPeriodValue] = useState<PeriodValue>({ mode: "all", from: "", to: "" })
+  // The calendar's dots need every unbilled day — loaded only once it is opened.
+  const [periodOpen, setPeriodOpen] = useState(false)
 
   const spaceId = source === "space" ? pickedSpaceId || undefined : undefined
 
@@ -370,22 +354,8 @@ function NewInvoiceInner() {
   // Completed, unbilled work — from whichever end was chosen, over whichever
   // days were named. Both ends are optional: blank means everything still
   // outstanding, which is right for a one-off job.
-  const period = { from: periodFrom || undefined, to: periodTo || undefined }
+  const period = periodQuery(periodValue)
 
-  /**
-   * The period, as the client reads it on the document.
-   *
-   * ⚠️ An invoice that says "37.5h — €1,500" without saying WHICH DAYS cannot be
-   * checked against anything on the client's side, and the question comes back
-   * as an email a week later. Where a period was chosen, the document states it.
-   */
-  const periodLabel = periodFrom && periodTo
-    ? `${fmtDate(periodFrom)} – ${fmtDate(periodTo)}`
-    : periodFrom
-      ? t("invoices.create.periodFromOnly", { from: fmtDate(periodFrom) })
-      : periodTo
-        ? t("invoices.create.periodToOnly", { to: fmtDate(periodTo) })
-        : ""
   const gatherSource = source === "space" && spaceId
     ? { spaceId, ...period }
     : source === "client" && customerId
@@ -402,7 +372,49 @@ function NewInvoiceInner() {
     enabled: !!gatherSource,
     staleTime: 0,
     refetchOnWindowFocus: true,
+    /*
+      Keep the lines on screen while another period loads — but only for the
+      SAME workspace or client, never another one's lines under a new name.
+    */
+    placeholderData: (prev, prevQuery) => {
+      const was = prevQuery?.queryKey[1] as { spaceId?: string; customerId?: string } | null | undefined
+      return was && gatherSource && was.spaceId === (gatherSource as any).spaceId && was.customerId === (gatherSource as any).customerId
+        ? prev
+        : undefined
+    },
   })
+  /*
+    Every unbilled day, whatever period is chosen — the same request as
+    "Outstanding" (one cache entry), asked for only when it is not already the
+    one on screen and the calendar is open.
+  */
+  const allSource = gatherSource ? { ...gatherSource, from: undefined, to: undefined } : null
+  const { data: allGather } = useQuery({
+    queryKey: ["invoice-gather", allSource],
+    queryFn: () => invoicesApi.gather(allSource!),
+    enabled: !!allSource && periodValue.mode !== "all" && periodOpen,
+    staleTime: 30_000,
+  })
+  const workDays: string[] | undefined = periodValue.mode === "all"
+    ? gather?.outstandingDays
+    : allGather?.outstandingDays
+  // The days this invoice covers — shown, sent and stored as the same two dates.
+  const { from: periodFrom, to: periodTo } = periodDays(periodValue, workDays)
+
+  /**
+   * The period, as the client reads it on the document.
+   *
+   * ⚠️ An invoice that says "37.5h — €1,500" without saying WHICH DAYS cannot be
+   * checked against anything on the client's side, and the question comes back
+   * as an email a week later. Where a period was chosen, the document states it.
+   */
+  const periodLabel = periodFrom && periodTo
+    ? `${fmtDate(periodFrom)} – ${fmtDate(periodTo)}`
+    : periodFrom
+      ? t("invoices.create.periodFromOnly", { from: fmtDate(periodFrom) })
+      : periodTo
+        ? t("invoices.create.periodToOnly", { to: fmtDate(periodTo) })
+        : ""
 
   useEffect(() => {
     if (space && !seeded) {
@@ -986,54 +998,13 @@ function NewInvoiceInner() {
               {source !== "none" && (
                 <div className="mt-4 border-t border-border pt-3">
                   <Label className="text-xs">{t("invoices.create.period")}</Label>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {([
-                      ["lastMonth", t("invoices.create.periodLastMonth")],
-                      ["thisMonth", t("invoices.create.periodThisMonth")],
-                      ["all", t("invoices.create.periodAll")],
-                    ] as const).map(([key, label]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => {
-                          if (key === "all") { setPeriodFrom(""); setPeriodTo(""); return }
-                          const [from, to] = monthBounds(key === "lastMonth" ? -1 : 0)
-                          setPeriodFrom(from)
-                          setPeriodTo(to)
-                        }}
-                        className={cn(
-                          "rounded-lg border px-2.5 py-1 text-xs transition-colors",
-                          isPreset(key, periodFrom, periodTo)
-                            ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
-                            : "border-border text-muted-foreground hover:border-slate-400",
-                        )}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="mt-2 space-y-2">
-                    <DatePicker
-                      value={periodFrom}
-                      onChange={setPeriodFrom}
-                      placeholder={t("invoices.create.periodFrom")}
-                      clearable
-                    />
-                    <DatePicker
-                      value={periodTo}
-                      onChange={setPeriodTo}
-                      placeholder={t("invoices.create.periodTo")}
-                      clearable
-                      fromDate={periodFrom ? new Date(periodFrom) : undefined}
-                    />
-                  </div>
-
-                  <p className="mt-1.5 text-[11px] text-muted-foreground">
-                    {periodFrom || periodTo
-                      ? t("invoices.create.periodHint")
-                      : t("invoices.create.periodAllHint")}
-                  </p>
+                  <PeriodPicker
+                    className="mt-2"
+                    value={periodValue}
+                    onChange={setPeriodValue}
+                    workDays={workDays}
+                    onOpenChange={setPeriodOpen}
+                  />
                 </div>
               )}
 

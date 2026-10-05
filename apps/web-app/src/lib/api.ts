@@ -6222,6 +6222,8 @@ interface InvoiceGatherResult {
   dayEntries?: DayEntry[];
   /** Hours ON SITE by people billed by the hour, split wherever their rate changed (workspace invoices). */
   hourEntries?: HoursEntry[];
+  /** Every day with something still to bill (`YYYY-MM-DD`, sorted). */
+  outstandingDays?: string[];
 }
 
 export const invoicesApi = {

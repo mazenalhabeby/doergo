@@ -103,7 +103,8 @@ describe("one date picker", () => {
     const s = code(fs.readFileSync(
       path.join(SRC, "app/(dashboard)/invoices/new/page.tsx"), "utf8",
     ))
-    expect(s).toContain("<DatePicker")
+    // The period is a range now — the shared PeriodPicker, built on the same Calendar.
+    expect(s).toMatch(/<(DatePicker|PeriodPicker)\b/)
     // …and no native date input survived there.
     expect(s).not.toMatch(/type="date"/)
   })
