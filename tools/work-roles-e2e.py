@@ -186,7 +186,10 @@ try:
     call('PATCH', f'/spaces/{space}/members/{aid}/roles', ADMIN, {'allowSecondRole': True})
     r = call('PATCH', f'/spaces/{space}/members/{aid}/roles', ADMIN, {'managementRoleId': sm['id']}) if sm else (0, {})
     check('Ahmed: Electrician + Space Manager here', r[0] == 200, r)
-    call('PATCH', f'/spaces/{space}/members/{mid}/rate', ADMIN, {'costRateCents': 2500})
+    # What a person costs lives on their PROFILE: a workspace cost is refused, the profile one is used.
+    r = call('PATCH', f'/spaces/{space}/members/{mid}/rate', ADMIN, {'costRateCents': 2500})
+    check('a cost typed in a workspace is refused (it lives on the profile)', r[0] == 400, r)
+    call('PATCH', f'/employees/{MARK}', ADMIN, {'costRateCents': 2500})
     time.sleep(65)  # the gateway caches a session's access for up to 60s
     NIAMH = tok['niamh.brennan']
     s, b = call('GET', f'/spaces/{space}/members', NIAMH)
@@ -257,7 +260,7 @@ try:
     check('statement: Mark\'s 26 hours on site here — the invoice\'s hours', sum(l['hours'] for l in here) == 26, st)
     check('statement: at his cost with us (25/h), never the client\'s 85 or 90',
           all(l['rateCents'] == 2500 for l in here) and sum(l['amountCents'] for l in here) == 65000, here)
-    check('statement: says where the rate came from', all(l['rateLevel'] == 'contract' for l in here), here)
+    check('statement: says where the rate came from', all(l['rateLevel'] == 'member' for l in here), here)
     check('statement: days on site, by the invoice\'s rule (2 clock-ins + 2 job days)', st.get('daysBySpace', {}).get(space) == 4, st.get('daysBySpace'))
     r = call('GET', f'/organizations/members/{MARK}/statement?from={day(-20)}&to={day(-1)}', tok['niamh.brennan'])
     check('statement: refused to somebody without labour cost (403)', r[0] == 403, r)
@@ -267,9 +270,8 @@ try:
     # ── Rate history: read with the right to write it; cost only for cost ───
     q = f'/rate-history?target=ASSIGNMENT&targetId={mid}&spaceId={space}'
     h = data(call('GET', q, ADMIN))
-    check('history: an admin sees bill AND cost rows, dated',
-          [(x['kind'], x['cents']) for x in h if x['kind'] == 'BILL_HOUR'] == [('BILL_HOUR', 8500), ('BILL_HOUR', 9000), ('BILL_HOUR', 9000)]
-          and any(x['kind'] == 'COST_HOUR' for x in h), h)
+    check('history: an admin sees the dated bill rows',
+          [(x['kind'], x['cents']) for x in h if x['kind'] == 'BILL_HOUR'] == [('BILL_HOUR', 8500), ('BILL_HOUR', 9000), ('BILL_HOUR', 9000)], h)
     hm = data(call('GET', q, tok['niamh.brennan']))
     check('history: a workspace manager sees bill rows only', hm and all(x['kind'] == 'BILL_HOUR' for x in hm), hm)
     r = call('GET', q, tok['tobias.okafor'])

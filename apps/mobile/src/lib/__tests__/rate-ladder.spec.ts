@@ -1,6 +1,6 @@
 import {
   resolveRate, explainRate, usesTwoRates, marginCents, lineTotals, snapshotRates,
-  RATE_LEVELS, type RateSources,
+  LEVELS_BY_KIND, type RateSources,
 } from '@hbcfield/shared/client';
 
 /**
@@ -44,8 +44,28 @@ describe('the ladder', () => {
       by the organization default — so an internal job deliberately billed at
       nothing quietly bills at €75.
     */
-    expect(resolveRate('bill', { member: cents(0), organization: cents(7500) }))
+    expect(resolveRate('bill', { client: cents(0), organization: cents(7500) }))
+      .toEqual({ cents: 0, level: 'client' });
+    expect(resolveRate('cost', { member: cents(null, 0), organization: cents(null, 2500) }))
       .toEqual({ cents: 0, level: 'member' });
+  });
+
+  it('a cost lives on the person; a price lives on the workspace', () => {
+    /*
+      ⚠️ The rule people work by. A cost typed "at this client" and a price
+      typed "on the person" both read as the same thing on screen; whichever
+      won silently decided the margin. Neither is read any more.
+    */
+    const s: RateSources = {
+      contract: { billRateCents: 9506, costRateCents: 20130 }, // a client's figure copied into a cost
+      member: { billRateCents: 5000, costRateCents: 2500 },    // a price typed on the person
+      client: cents(8500, 9999),
+      organization: cents(7500, 2000),
+    };
+    expect(resolveRate('cost', s)).toEqual({ cents: 2500, level: 'member' });
+    expect(resolveRate('bill', s)).toEqual({ cents: 9506, level: 'contract' });
+    expect(resolveRate('cost', { contract: cents(null, 20130), organization: cents(null, 2000) }))
+      .toEqual({ cents: 2000, level: 'organization' });
   });
 
   it('resolves bill and cost INDEPENDENTLY — the agency case', () => {
@@ -66,11 +86,11 @@ describe('the ladder', () => {
   it('explains itself with the same walk that decided it', () => {
     // A second traversal that disagreed would put an explanation on screen for
     // a number that came from somewhere else.
-    const s: RateSources = { member: cents(8500), organization: cents(7500) };
+    const s: RateSources = { client: cents(8500), organization: cents(7500) };
     const steps = explainRate('bill', s);
-    expect(steps.map((x) => x.level)).toEqual([...RATE_LEVELS]);
+    expect(steps.map((x) => x.level)).toEqual([...LEVELS_BY_KIND.bill]);
     expect(steps.filter((x) => x.won)).toHaveLength(1);
-    expect(steps.find((x) => x.won)!.level).toBe('member');
+    expect(steps.find((x) => x.won)!.level).toBe('client');
     expect(steps.find((x) => x.level === 'organization')!.cents).toBe(7500);
   });
 });

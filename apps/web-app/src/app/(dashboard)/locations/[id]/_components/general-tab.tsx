@@ -41,7 +41,6 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { hasPlanFeature, user } = useAuth()
-  const canViewLabourCost = (user as { canViewLabourCost?: boolean } | null)?.canViewLabourCost === true
   const orgCurrency = user?.orgCurrency ?? "EUR"
   // This workspace's rates and their history, read only where they are shown (a client).
   const { data: spaceRates } = useQuery({
@@ -423,6 +422,7 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
                 onSave={(code) => saveSpaceRate({ currency: code })}
               />
               <div className="grid gap-4 sm:grid-cols-2">
+                {/* What the client pays per hour. What a person COSTS is on their profile, not here. */}
                 <DatedRateField
                   id="cfg-billable-rate"
                   label={t("rates.spaceBill")}
@@ -432,17 +432,6 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
                   history={spaceRates?.filter((r) => r.kind === "BILL_HOUR")}
                   onSubmit={(c, from) => saveSpaceRate({ billableRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })}
                 />
-                {canViewLabourCost && (
-                  <DatedRateField
-                    id="cfg-cost-rate"
-                    label={t("rates.spaceCost")}
-                    hint={t("rates.spaceCostHint")}
-                    currentCents={(space as { costRateCents?: number | null }).costRateCents ?? null}
-                    currency={space.organizationCurrency ?? orgCurrency}
-                    history={spaceRates?.filter((r) => r.kind === "COST_HOUR")}
-                    onSubmit={(c, from) => saveSpaceRate({ costRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })}
-                  />
-                )}
               </div>
             </div>
           )}

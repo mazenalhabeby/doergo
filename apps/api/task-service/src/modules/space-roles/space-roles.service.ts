@@ -25,6 +25,7 @@ import {
   effectiveHoursBasis,
   isHoursBasis,
   type HoursBasis,
+  COST_ON_PROFILE_MESSAGE
 } from '@hbcfield/shared';
 
 // Permission keys that make sense on a SPACE role.
@@ -341,10 +342,23 @@ export class SpaceRolesService {
       }),
       this.prisma.user.findMany({
         where: { id: { in: members.map((m) => m.userId) } },
-        select: { id: true, billRateCents: true, costRateCents: true },
+        select: { id: true, costRateCents: true },
       }),
     ]);
     const byUser = new Map(users.map((u) => [u.id, u]));
+    // Each person's day cost today, from the dated history on their profile — one query.
+    const today = utcTodayKey();
+    const dayRows = await this.prisma.rateHistory.findMany({
+      where: {
+        organizationId: data.organizationId, target: 'MEMBER', kind: 'COST_DAY',
+        targetId: { in: members.map((m) => m.userId) },
+        effectiveFrom: { lte: new Date(`${today}T00:00:00Z`) },
+      },
+      orderBy: [{ effectiveFrom: 'asc' }, { createdAt: 'asc' }],
+      select: { targetId: true, cents: true },
+    });
+    const dayCostByUser = new Map<string, number | null>();
+    for (const r of dayRows) dayCostByUser.set(r.targetId, r.cents);
 
     // Shape to match the old response (spaceRole → role, + routing arrays).
     return success(
@@ -364,10 +378,18 @@ export class SpaceRolesService {
         hoursBasis: m.hoursBasis,
         effectiveHoursBasis: effectiveHoursBasis(m.hoursBasis),
         billRateCents: m.billRateCents,
-        costRateCents: m.costRateCents,
-        // What it falls back to — the ladder MINUS this assignment's own rung.
-        inheritedBillRateCents: resolveRate('bill', {
+        /*
+          What this person costs you — from their PROFILE (or the organization
+          default), the only place a cost lives. Shown read-only here; stripped
+          by the gateway for anybody without labour cost.
+        */
+        profileCostRateCents: resolveRate('cost', {
           member: byUser.get(m.userId) ?? null,
+          organization: org ? { costRateCents: org.costRateCents } : null,
+        }).cents,
+        profileCostDayCents: dayCostByUser.get(m.userId) ?? null,
+        // What it falls back to — the workspace, else the organization.
+        inheritedBillRateCents: resolveRate('bill', {
           client: space
             ? { billRateCents: space.billableRateCents, costRateCents: space.costRateCents }
             : null,
@@ -661,6 +683,10 @@ export class SpaceRolesService {
 
     if (data.billRateCents === undefined && data.costRateCents === undefined && data.costDayCents === undefined) {
       return success(member);
+    }
+    // What a person costs lives on their profile (rate-ladder LEVELS_BY_KIND), never per workspace.
+    if (data.costRateCents !== undefined || data.costDayCents !== undefined) {
+      throw new BadRequestException(COST_ON_PROFILE_MESSAGE);
     }
 
     /*

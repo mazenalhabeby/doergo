@@ -11,6 +11,7 @@ import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_N
   ATTENDANCE_CONSTANTS,
   validateGeofencePolygon,
   type GeofencePolygonError,
+  COST_ON_PROFILE_MESSAGE
 } from '@hbcfield/shared';
 import { isGeofencePolicy,
   isNoShiftPolicy,
@@ -558,6 +559,8 @@ export class LocationsService {
     createdById?: string,
   ) {
     if (data.billableRateCents === undefined && data.costRateCents === undefined) return;
+    // What a person costs lives on their profile (rate-ladder LEVELS_BY_KIND), never on a workspace.
+    if (data.costRateCents !== undefined) throw new BadRequestException(COST_ON_PROFILE_MESSAGE);
     try {
       await this.prisma.$transaction(async (tx) => {
         const patch: Record<string, number | null> = {};

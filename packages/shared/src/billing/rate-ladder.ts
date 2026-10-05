@@ -48,6 +48,26 @@ export const RATE_LEVELS: readonly RateLevel[] = [
   'organization',
 ] as const;
 
+/**
+ * ⚠️ WHERE EACH KIND MAY COME FROM — the rule people work by:
+ * WHAT A PERSON COSTS lives on the person (their profile), else the
+ * organization default; WHAT THE CLIENT PAYS lives on the workspace (the
+ * person's rate there, else the workspace's), else the organization default.
+ *
+ * A cost "at this client" and a price "on the person" both existed and both
+ * read as the same thing on screen; a figure typed in the wrong one silently
+ * won (a client's day rate copied into a person's cost made the margin zero).
+ * Levels outside this table are not read, so a stale value there cannot win.
+ */
+/** Said when a figure is sent to the place it no longer lives. */
+export const COST_ON_PROFILE_MESSAGE = "What a person costs is set on their profile, not in a workspace";
+export const PRICE_ON_WORKSPACE_MESSAGE = 'What a client pays is set on the workspace, not on a person';
+
+export const LEVELS_BY_KIND: Readonly<Record<RateKind, readonly RateLevel[]>> = {
+  bill: ['contract', 'client', 'organization'],
+  cost: ['member', 'organization'],
+};
+
 /** One level's pair of rates. Both nullable, independently. */
 export interface RatePair {
   billRateCents?: number | null;
@@ -96,7 +116,7 @@ function at(sources: RateSources, level: RateLevel, kind: RateKind): number | nu
  * one number chosen by whoever set the most specific one.
  */
 export function resolveRate(kind: RateKind, sources: RateSources): ResolvedRate {
-  for (const level of RATE_LEVELS) {
+  for (const level of LEVELS_BY_KIND[kind]) {
     const cents = at(sources, level, kind);
     if (cents !== null) return { cents, level };
   }
@@ -116,7 +136,7 @@ export function explainRate(
   sources: RateSources,
 ): Array<{ level: RateLevel; cents: number | null; won: boolean }> {
   const winner = resolveRate(kind, sources).level;
-  return RATE_LEVELS.map((level) => ({
+  return LEVELS_BY_KIND[kind].map((level) => ({
     level,
     cents: at(sources, level, kind),
     won: level === winner,
@@ -278,7 +298,7 @@ export function mayViewLabourCost(user: unknown): boolean {
   return u.access?.org?.canViewLabourCost === true || u.canViewLabourCost === true;
 }
 
-const COST_KEYS = new Set(['costRateCents', 'inheritedCostRateCents', 'costCents']);
+const COST_KEYS = new Set(['costRateCents', 'inheritedCostRateCents', 'costCents', 'profileCostRateCents', 'profileCostDayCents']);
 
 /**
  * Remove every cost rate from a response on its way to somebody who may not see

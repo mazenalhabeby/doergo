@@ -206,6 +206,9 @@ export interface SpaceMember {
   hoursBasis?: 'COUNTED' | 'CLOCKED' | 'SHIFT' | null;
   /** What applies: their choice, else COUNTED. */
   effectiveHoursBasis?: 'COUNTED' | 'CLOCKED' | 'SHIFT';
+  /** What they cost you per hour / per day — from their profile. Absent without labour cost. */
+  profileCostRateCents?: number | null;
+  profileCostDayCents?: number | null;
   // Per-member, per-space routing override (Phase 4d). Empty = space default.
   notifyRoleIds?: string[];
   notifyUserIds?: string[];

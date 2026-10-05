@@ -158,14 +158,15 @@ export class RateBook {
   }
 
   /**
-   * What a DAY of this person costs you on `day`: their rate at this client
-   * (the assignment) if one applies, else their own. Null = no day rate set —
+   * What a DAY of this person costs you on `day` — from their profile, the one
+   * place a cost lives (rate-ladder `LEVELS_BY_KIND`). Null = no day cost set —
    * unknown, never free. One answer for the invoice margin and the worker's
-   * statement.
+   * statement. `_assignmentId` is accepted and ignored: a per-workspace day cost
+   * is no longer read, so an old one cannot win.
    */
-  personDayCostOn(day: string, memberId: string, assignmentId?: string | null): number | null {
-    const here = assignmentId ? this.on(day, 'ASSIGNMENT', assignmentId, 'COST_DAY', null) : null;
-    return here ?? this.on(day, 'MEMBER', memberId, 'COST_DAY', null);
+  personDayCostOn(day: string, memberId: string, _assignmentId?: string | null): number | null {
+    void _assignmentId;
+    return this.on(day, 'MEMBER', memberId, 'COST_DAY', null);
   }
 
   /** Which of the two answered `dayRateOn` — for a screen that has to explain itself. */

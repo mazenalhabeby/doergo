@@ -1,7 +1,7 @@
 import {
   parseCurrency, resolveInvoiceCurrency, workspaceCurrency, crossRate,
   parseExchangeRate, toOrganizationCurrency,
-} from '@hbcfield/shared';
+} from '@hbcfield/shared/client';
 
 /** Which currency an amount is in — the rules in packages/shared/src/billing/currency.ts. */
 describe('currency', () => {

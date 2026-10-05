@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import Link from "next/link"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Home, Loader2, Search, Trash2, UserPlus, Users } from "lucide-react"
@@ -39,7 +40,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { DatedRateField, currentOf } from "@/components/rates/dated-rate"
+import { DatedRateField } from "@/components/rates/dated-rate"
 import { EmptyState } from "./section-header"
 import { MemberRoutingEditor } from "./member-routing-editor"
 import { BILL_BY, roleQueryKey, Segmented, useBillByLabel, useCents, useSpaceCurrency, type BillBy } from "./work-roles"
@@ -274,6 +275,59 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
   )
 }
 
+/**
+ * "Costs you", read from the person's profile, with the margin beside it when
+ * both figures are known and in the same currency. Nothing to type here: the
+ * link goes to the one place a cost is set.
+ */
+function CostFromProfile({
+  member, bill, hourPrice, dayPrice, priceCurrency, costCurrency,
+}: {
+  member: SpaceMember
+  bill: BillBy
+  hourPrice: number | null
+  dayPrice: number | null
+  priceCurrency: string
+  costCurrency: string
+}) {
+  const { t } = useTranslation()
+  const costMoney = useCents(costCurrency)
+  const rows = [
+    ...(bill !== "DAY" ? [{ key: "hour", label: t("rates.perHourLabel"), cost: member.profileCostRateCents ?? null, price: hourPrice }] : []),
+    ...(bill !== "HOUR" ? [{ key: "day", label: t("rates.perDayLabel"), cost: member.profileCostDayCents ?? null, price: dayPrice }] : []),
+  ]
+  const sameCurrency = priceCurrency === costCurrency
+  return (
+    <div className="space-y-2 rounded-xl border px-3 py-2.5">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-xs font-medium text-foreground">{t("rates.costsYou")}</span>
+        <Link href={`/members/${member.userId}`} className="text-[11px] font-semibold text-blue-600 hover:underline dark:text-blue-400">
+          {t("rates.changeOnProfile")}
+        </Link>
+      </div>
+      {rows.map((r) => {
+        const margin = sameCurrency && r.cost != null && r.price != null ? r.price - r.cost : null
+        return (
+          <div key={r.key} className="flex items-baseline justify-between gap-3 text-sm">
+            <span className="text-muted-foreground">{r.label}</span>
+            <span className="text-right">
+              {r.cost != null
+                ? <span className="font-semibold tabular-nums">{costMoney(r.cost)}</span>
+                : <span className="text-amber-700 dark:text-amber-400">{t("rates.costNotSet")}</span>}
+              {margin != null && (
+                <span className={cn("block text-[11px] tabular-nums", margin <= 0 ? "text-red-600 dark:text-red-400" : "text-teal-700 dark:text-teal-400")}>
+                  {margin <= 0 ? t("rates.costsMoreThanPrice") : t("rates.marginEach", { amount: costMoney(margin) })}
+                </span>
+              )}
+            </span>
+          </div>
+        )
+      })}
+      <p className="text-[11px] text-muted-foreground">{t("rates.costsYouHint")}</p>
+    </div>
+  )
+}
+
 /** Everything about one person in this workspace — what the row only shows. */
 function MemberPanel({
   spaceId,
@@ -328,7 +382,7 @@ function MemberPanel({
     queryFn: () => rateHistoryApi.list({ target: "ASSIGNMENT", targetId: member!.id, spaceId }),
     enabled: !!member && isClient && !external,
   })
-  const saveRate = async (patch: { billRateCents?: number | null; costRateCents?: number | null; costDayCents?: number | null }, from?: string) => {
+  const saveRate = async (patch: { billRateCents?: number | null }, from?: string) => {
     await spaceMembersApi.updateRate(spaceId, member!.id, { ...patch, ...(from ? { effectiveFrom: from } : {}) })
     invalidate()
     queryClient.invalidateQueries({ queryKey: ["rate-history", "ASSIGNMENT", member!.id] })
@@ -475,27 +529,20 @@ function MemberPanel({
                       </span>
                     </div>
                   )}
-                  {canViewLabourCost && bill !== "HOUR" && (
-                    <DatedRateField
-                      id={`panel-daycost-${member.id}`}
-                      label={t("rates.dayCostHere")}
-                      hint={t("rates.dayCostHint")}
-                      unit="day"
-                      currency={money.cost}
-                      currentCents={currentOf(rates?.filter((r) => r.kind === "COST_DAY"))}
-                      history={rates?.filter((r) => r.kind === "COST_DAY")}
-                      onSubmit={(c, from) => saveRate({ costDayCents: c }, from)}
-                    />
-                  )}
+                  {/*
+                    ⚠️ WHAT THIS PERSON COSTS LIVES ON THEIR PROFILE, read-only
+                    here. A second, per-workspace cost read the same on screen
+                    and silently won; a client's day rate copied into it made
+                    the margin zero (rate-ladder LEVELS_BY_KIND).
+                  */}
                   {canViewLabourCost && (
-                    <DatedRateField
-                      id={`panel-cost-${member.id}`}
-                      label={t("rates.costHere")}
-                      hint={t("rates.spaceCostHint")}
-                      currency={money.cost}
-                      currentCents={member.costRateCents ?? null}
-                      history={rates?.filter((r) => r.kind === "COST_HOUR")}
-                      onSubmit={(c, from) => saveRate({ costRateCents: c }, from)}
+                    <CostFromProfile
+                      member={member}
+                      bill={bill}
+                      hourPrice={member.billRateCents ?? member.inheritedBillRateCents ?? null}
+                      dayPrice={workRole?.dayRateCents ?? null}
+                      priceCurrency={money.bill}
+                      costCurrency={money.cost}
                     />
                   )}
                 </section>

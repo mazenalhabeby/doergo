@@ -1,4 +1,4 @@
-import { parseAssignedHome, memberScopeFilter, writeRateChange, RateChangeError, normalizeLocale, MEMBER_EMAILS, MEMBER_NOTIFICATION_PREF_KEYS, orgAllowsEmail, pickBooleanPrefs } from '@hbcfield/shared';
+import { parseAssignedHome, memberScopeFilter, writeRateChange, RateChangeError, normalizeLocale, MEMBER_EMAILS, MEMBER_NOTIFICATION_PREF_KEYS, orgAllowsEmail, pickBooleanPrefs , PRICE_ON_WORKSPACE_MESSAGE } from '@hbcfield/shared';
 import {
   Injectable,
   Logger,
@@ -782,6 +782,8 @@ export class UsersService implements OnApplicationBootstrap {
     dto: { billRateCents?: unknown; costRateCents?: unknown; costDayCents?: unknown; rateEffectiveFrom?: string },
   ) {
     if (dto.billRateCents === undefined && dto.costRateCents === undefined && dto.costDayCents === undefined) return;
+    // A price lives on the workspace (rate-ladder LEVELS_BY_KIND); a person carries only what they cost.
+    if (dto.billRateCents !== undefined) throw new BadRequestException(PRICE_ON_WORKSPACE_MESSAGE);
     try {
       await this.prisma.$transaction(async (tx) => {
         const patch: Record<string, number | null> = {};

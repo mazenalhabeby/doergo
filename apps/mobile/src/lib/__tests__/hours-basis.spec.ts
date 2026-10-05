@@ -1,4 +1,4 @@
-import { minutesByBasis, effectiveHoursBasis, countedMinutesOf } from '@hbcfield/shared';
+import { minutesByBasis, effectiveHoursBasis, countedMinutesOf } from '@hbcfield/shared/client';
 
 /**
  * Which hours of a day go on a client's invoice (billing/hours-basis.ts).

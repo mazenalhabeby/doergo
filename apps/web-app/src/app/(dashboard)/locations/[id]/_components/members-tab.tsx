@@ -293,6 +293,7 @@ function RoleDialog({
   const queryClient = useQueryClient()
   const money = useSpaceCurrency(spaceId)
   const cents = useCents(money.bill)
+  const [showDefault, setShowDefault] = useState(false)
   const isEdit = !!role
 
   const [name, setName] = useState(role?.name || "")
@@ -427,19 +428,29 @@ function RoleDialog({
                   queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
                 }}
               />
-              <DatedRateField
-                id="role-day-rate-default"
-                label={t("rates.defaultDayRate")}
-                hint={t("rates.defaultDayRateHint")}
-                unit="day"
-                currency={money.bill}
-                currentCents={role!.defaultDayRateCents ?? null}
-                history={role!.defaultDayRateHistory ?? []}
-                onSubmit={async (c, from) => {
-                  await spaceRolesApi.setDefaultDayRate(role!.id, { cents: c, ...(from ? { effectiveFrom: from } : {}) })
-                  queryClient.invalidateQueries({ queryKey: ["space-roles-in-space"] })
-                }}
-              />
+              {/*
+                The role's day rate in workspaces that set none. Optional and
+                rarely needed, so it stays folded until asked for.
+              */}
+              {showDefault || role!.defaultDayRateCents != null ? (
+                <DatedRateField
+                  id="role-day-rate-default"
+                  label={t("rates.defaultDayRate")}
+                  hint={t("rates.defaultDayRateHint")}
+                  unit="day"
+                  currency={money.bill}
+                  currentCents={role!.defaultDayRateCents ?? null}
+                  history={role!.defaultDayRateHistory ?? []}
+                  onSubmit={async (c, from) => {
+                    await spaceRolesApi.setDefaultDayRate(role!.id, { cents: c, ...(from ? { effectiveFrom: from } : {}) })
+                    queryClient.invalidateQueries({ queryKey: ["space-roles-in-space"] })
+                  }}
+                />
+              ) : (
+                <button type="button" onClick={() => setShowDefault(true)} className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
+                  {t("rates.otherWorkspaces")} ›
+                </button>
+              )}
             </div>
           )}
 
