@@ -164,7 +164,7 @@ try:
     sent = '0'
     for _ in range(14):
         time.sleep(6)
-        sent = sql(f"select count(*) from notification_deliveries where \"recipientId\"='{HASSAN}' and \"eventType\"='calendar.reminder' and \"createdAt\" > now() - interval '3 minutes'")
+        sent = sql(f"select count(*) from notification_deliveries where \"recipientId\"='{HASSAN}' and \"eventType\"='calendar.reminder' and payload->>'eventId'='{EID}'")
         if sent != '0': break
     check('the minute sweep sends a due reminder once', sent == '1', sent)
     nxt = sql(f"select \"nextRemindAt\" > now() from calendar_attendees where \"eventId\"='{EID}' and \"userId\"='{HASSAN}'")
