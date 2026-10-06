@@ -1926,7 +1926,11 @@
       "minutes_other": "{{count}} min",
       "summaryHint": "30 derniers jours. « Non prise à temps » = encore ouverte après l’heure d’alerte.",
       "moreThanHolders_one": "Seule {{count}} personne a ce rôle ici — les autres places ne peuvent pas être pourvues.",
-      "moreThanHolders_other": "Seules {{count}} personnes ont ce rôle ici — les autres places ne peuvent pas être pourvues."
+      "moreThanHolders_other": "Seules {{count}} personnes ont ce rôle ici — les autres places ne peuvent pas être pourvues.",
+      "openExisting": "Ouvrir à un rôle",
+      "openExistingHint": "Toute personne ayant ce rôle dans cet espace peut la prendre — les personnes libres sont prévenues tout de suite. Celles déjà sur la tâche comptent comme places prises.",
+      "openNowButton": "Ouvrir au rôle",
+      "openedNow": "Ouverte au rôle — les personnes libres sont prévenues."
     }
   },
   "technicians": {

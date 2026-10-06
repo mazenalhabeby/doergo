@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { InlineEditField } from "./inline-edit-field"
 import { LeaveByLine } from "./leave-by-line"
+import { OpenToRoleAction } from "./open-to-role-dialog"
 import { STORY_POINT_OPTIONS } from "@/lib/api"
 import { dateLocale } from "@/lib/format-date"
 
@@ -190,6 +191,8 @@ export function TaskDetailSidebar({
                 <span>{t("tasks.sidebar.assignSomeone")}</span>
               </button>
             )}
+            {/* Or let a role take it: whoever holds it here and is free (shared tasks/role-pool.ts). */}
+            <OpenToRoleAction task={task} canAssign={canAssign} />
           </div>
 
           {/*

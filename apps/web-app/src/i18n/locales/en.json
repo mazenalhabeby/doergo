@@ -1926,7 +1926,11 @@
       "minutes_other": "{{count}} min",
       "summaryHint": "Last 30 days. “Not taken in time” = still open after the alert time.",
       "moreThanHolders_one": "Only {{count}} person holds this role here — the other places cannot be filled.",
-      "moreThanHolders_other": "Only {{count}} people hold this role here — the other places cannot be filled."
+      "moreThanHolders_other": "Only {{count}} people hold this role here — the other places cannot be filled.",
+      "openExisting": "Open to a role",
+      "openExistingHint": "Anyone holding the role in this workspace can take it — the free ones are told now. People already on the task count as places taken.",
+      "openNowButton": "Open to the role",
+      "openedNow": "Opened to the role — the free ones are told now."
     }
   },
   "technicians": {

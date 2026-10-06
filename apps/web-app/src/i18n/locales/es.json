@@ -1926,7 +1926,11 @@
       "minutes_other": "{{count}} min",
       "summaryHint": "Últimos 30 días. «Sin tomar a tiempo» = aún abierto tras la hora del aviso.",
       "moreThanHolders_one": "Solo {{count}} persona tiene este rol aquí: los demás puestos no se pueden cubrir.",
-      "moreThanHolders_other": "Solo {{count}} personas tienen este rol aquí: los demás puestos no se pueden cubrir."
+      "moreThanHolders_other": "Solo {{count}} personas tienen este rol aquí: los demás puestos no se pueden cubrir.",
+      "openExisting": "Abrir a un rol",
+      "openExistingHint": "Cualquiera con este rol en este espacio puede tomarla; se avisa ya a los libres. Las personas que ya están en la tarea cuentan como puestos ocupados.",
+      "openNowButton": "Abrir al rol",
+      "openedNow": "Abierta al rol: se avisa ya a los libres."
     }
   },
   "technicians": {

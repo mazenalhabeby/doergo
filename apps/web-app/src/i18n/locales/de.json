@@ -1926,7 +1926,11 @@
       "minutes_other": "{{count}} Min.",
       "summaryHint": "Letzte 30 Tage. „Nicht rechtzeitig“ = nach der Hinweiszeit noch offen.",
       "moreThanHolders_one": "Nur {{count}} Person hat diese Rolle hier — die übrigen Plätze können nicht besetzt werden.",
-      "moreThanHolders_other": "Nur {{count}} Personen haben diese Rolle hier — die übrigen Plätze können nicht besetzt werden."
+      "moreThanHolders_other": "Nur {{count}} Personen haben diese Rolle hier — die übrigen Plätze können nicht besetzt werden.",
+      "openExisting": "Für eine Rolle öffnen",
+      "openExistingHint": "Jede Person mit dieser Rolle in diesem Arbeitsbereich kann ihn übernehmen — die Freien werden sofort benachrichtigt. Personen, die bereits dabei sind, zählen als besetzte Plätze.",
+      "openNowButton": "Für die Rolle öffnen",
+      "openedNow": "Für die Rolle geöffnet — die Freien werden jetzt benachrichtigt."
     }
   },
   "technicians": {
