@@ -8,6 +8,7 @@ import { ROLE_SPOTS_MAX } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { tasksApi, type CandidateState } from "@/lib/api"
 import { useFormatDistance } from "@/hooks/use-format-distance"
+import { useWorkspaceWorkRoles } from "@/hooks/use-workspace-work-roles"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
@@ -49,11 +50,8 @@ export function RoleAssignField({
 }) {
   const { t } = useTranslation()
   const formatDistance = useFormatDistance()
-  const { data: roles = [], isLoading } = useQuery({
-    queryKey: ["role-options", spaceId],
-    queryFn: () => tasksApi.roleOptions(spaceId),
-    staleTime: 60_000,
-  })
+  const { roles, loaded } = useWorkspaceWorkRoles(spaceId)
+  const isLoading = !loaded
   const { data: preview } = useQuery({
     queryKey: ["role-preview", spaceId, value.roleId, lat, lng],
     queryFn: () => tasksApi.rolePreview({ spaceId, roleId: value.roleId!, lat, lng }),

@@ -12,6 +12,7 @@ import { tasksApi, type Task } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { serverErrorMessage } from "@/lib/server-error"
 import { RoleAssignField, type RoleAssignValue } from "../../_components/role-assign-field"
+import { useWorkspaceWorkRoles } from "@/hooks/use-workspace-work-roles"
 
 /**
  * "Open to a role" on an EXISTING task (shared tasks/role-pool.ts) — the case
@@ -27,6 +28,9 @@ export function OpenToRoleAction({ task, canAssign }: { task: Task & { spaceId?:
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [value, setValue] = useState<RoleAssignValue>({ roleId: null, spots: 1 })
+  // Only offered where the workspace HAS work roles — asked once per workspace (cached), and only of an assigner.
+  const relevant = canAssign && !!task.spaceId && !task.openRoleId && !isWorkOver(task.status)
+  const { hasRoles } = useWorkspaceWorkRoles(task.spaceId, relevant)
 
   const save = useMutation({
     mutationFn: () => tasksApi.setOpenRole(task.id, { roleId: value.roleId, spots: value.spots }),
@@ -40,8 +44,8 @@ export function OpenToRoleAction({ task, canAssign }: { task: Task & { spaceId?:
     onError: (e) => notify.error(serverErrorMessage(e, t, i18n.language)),
   })
 
-  // Only where it means something: a task in a workspace, not finished, not already open to a role.
-  if (!canAssign || !task.spaceId || task.openRoleId || isWorkOver(task.status)) return null
+  // Only where it means something: a task in a workspace with work roles, not finished, not already open to a role.
+  if (!relevant || !hasRoles) return null
 
   return (
     <>
@@ -61,7 +65,7 @@ export function OpenToRoleAction({ task, canAssign }: { task: Task & { spaceId?:
           </DialogHeader>
           {open && (
             <RoleAssignField
-              spaceId={task.spaceId}
+              spaceId={task.spaceId!}
               lat={task.locationLat ?? null}
               lng={task.locationLng ?? null}
               value={value}

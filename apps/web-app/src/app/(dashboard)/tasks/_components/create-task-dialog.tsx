@@ -68,6 +68,7 @@ import { notify } from "@/lib/toast"
 import { PrioritySelector } from "@/components/tasks"
 import { useOrgWorkflow } from "@/hooks/use-org-workflow"
 import { RoleAssignField, type RoleAssignValue } from "./role-assign-field"
+import { useWorkspaceWorkRoles } from "@/hooks/use-workspace-work-roles"
 
 const LocationPicker = lazy(() =>
   import("@/components/location-picker").then((m) => ({ default: m.LocationPicker }))
@@ -377,8 +378,10 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   const canAssign = user?.role === "ADMIN" || hasPermission("canAssignTasks")
   const showAssigneePicker =
     canAssign && (taskCreationScope === "SPACE" || taskCreationScope === "ORG")
-  // A role belongs to a workspace and a one-off task; a repeating template names people.
-  const roleModeAvailable = showAssigneePicker && spaceId !== "none" && !isRecurring
+  // A role belongs to a workspace and a one-off task — and only where that workspace HAS work roles.
+  const roleCandidate = showAssigneePicker && spaceId !== "none" && !isRecurring
+  const { hasRoles: spaceHasRoles } = useWorkspaceWorkRoles(spaceId !== "none" ? spaceId : null, roleCandidate)
+  const roleModeAvailable = roleCandidate && spaceHasRoles
   // A role is a fact about ONE workspace: another workspace starts the choice again.
   useEffect(() => { setOpenRole((r) => (r.roleId ? { ...r, roleId: null } : r)) }, [spaceId])
 
