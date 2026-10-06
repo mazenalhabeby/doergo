@@ -5,12 +5,14 @@ import { TechniciansController } from './technicians.controller';
 import { TechniciansService } from './technicians.service';
 import { CoverService } from './cover.service';
 import { AttendanceModule } from '../attendance/attendance.module';
+import { CalendarRulesModule } from '../calendar/calendar-rules.module';
 
 @Module({
   // NotificationRoutingService needs no import — NotificationRoutingModule is
   // @Global, deliberately, so one instance holds one recipient cache.
   imports: [
     AttendanceModule,
+    CalendarRulesModule,
     PrismaModule,
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
   ],

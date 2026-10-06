@@ -1,10 +1,11 @@
-import { assertMemberInScope } from '@hbcfield/shared';
+import { assertMemberInScope, countLeave as countLeaveDays } from '@hbcfield/shared';
 import { Inject, Injectable, NotFoundException, BadRequestException, ForbiddenException, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, SERVICE_NAMES, TaskStatus, success } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { findPrior } from '../../common/create-once.util';
 import { CoverService } from './cover.service';
+import { CalendarRulesService } from '../calendar/calendar-rules.service';
 import { ShiftRematchService } from '../attendance/shift-rematch.service';
 import {
   GetEmployeeStatsDto,
@@ -50,6 +51,8 @@ export class TechniciansService {
       will see. One service, so those two can never disagree.
     */
     private readonly cover: CoverService,
+    // What a range of leave COSTS — weekends, rota rest days and holidays left out (shared calendar/days.ts).
+    private readonly calendarRules: CalendarRulesService,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
     // A weekly schedule set after the clock-in reaches the entries it now covers.
     @Optional() private readonly rematch?: ShiftRematchService,
@@ -534,6 +537,8 @@ export class TechniciansService {
       throw new BadRequestException('Time-off request overlaps with an existing request');
     }
 
+    const workingDays = await this.workingDaysOf(organizationId, technicianId, start, end);
+
     const timeOff = await this.prisma.timeOff.create({
       data: {
         ...(dto.id ? { id: dto.id } : {}),
@@ -543,6 +548,7 @@ export class TechniciansService {
         reason,
         type: type as any,
         status: 'PENDING',
+        workingDays,
       },
       include: {
         technician: {
@@ -683,12 +689,14 @@ export class TechniciansService {
       });
     }
 
+    const workingDays = await this.workingDaysOf(data.organizationId, data.technicianId, start, end);
     const timeOff = await this.prisma.timeOff.create({
       data: {
         technicianId: data.technicianId,
         startDate: start,
         endDate: end,
         reason: data.reason?.trim() || null,
+        workingDays,
         status: 'APPROVED',
         approvedById: data.editorId,
         approvedAt: new Date(),
@@ -731,6 +739,40 @@ export class TechniciansService {
     // Shape unchanged on purpose: mobile reads `data` as an array. The balance
     // is its own call (getLeaveBalance) rather than a new key here.
     return success(timeOffs);
+  }
+
+  /**
+   * What a leave range costs this person. Refuses a range with no working day in it — a request for
+   * a weekend is a mistake the person should see now, not a zero-day row in the manager's queue.
+   * `lenient` (a decision on an existing request) never refuses; it records what the range costs.
+   */
+  private async workingDaysOf(organizationId: string, userId: string, start: Date, end: Date, lenient = false): Promise<number> {
+    const count = await this.calendarRules.countLeaveFor(
+      organizationId, userId, start.toISOString().slice(0, 10), end.toISOString().slice(0, 10),
+    );
+    if (!lenient && count.counted === 0) {
+      throw new BadRequestException({
+        code: 'LEAVE_NO_WORKING_DAYS',
+        message: 'Those days are all weekends or holidays — there is nothing to take off.',
+      });
+    }
+    return count.counted;
+  }
+
+  /** What a range WOULD cost — the request form shows it before anything is sent. */
+  async countLeave(dto: { organizationId: string; technicianId: string; from: string; to: string }) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dto.from) || !/^\d{4}-\d{2}-\d{2}$/.test(dto.to) || dto.from > dto.to) {
+      throw new BadRequestException('Choose a start day on or before the end day');
+    }
+    const exists = await this.prisma.user.findFirst({ where: { id: dto.technicianId, organizationId: dto.organizationId }, select: { id: true } });
+    if (!exists) throw new NotFoundException('Employee not found in organization');
+    const c = await this.calendarRules.countLeaveFor(dto.organizationId, dto.technicianId, dto.from, dto.to);
+    return success({
+      from: dto.from, to: dto.to,
+      calendarDays: c.calendarDays, counted: c.counted, restDays: c.restDays,
+      holidays: c.holidays, byYear: c.byYear,
+      days: c.days.map((d) => ({ day: d.day, kind: d.kind, cost: d.cost, holiday: d.holiday ?? null })),
+    });
   }
 
   /** This year's allowance for one person, with what is taken and pending. */
@@ -799,16 +841,26 @@ export class TechniciansService {
       allowance = Math.round(((fullAllowance * monthsHere) / 12) * 2) / 2;
       prorated = true;
     }
-    const daysIn = (a: Date, b: Date) =>
-      Math.round((new Date(b).setHours(0, 0, 0, 0) - new Date(a).setHours(0, 0, 0, 0)) / 86400000) + 1;
-
+    /*
+      WORKING days, counted inside THIS year only: weekends, rota rest days and holidays cost nothing,
+      and a request over New Year draws on each year for its own days (shared calendar/days.ts).
+      One rule set for the whole year, then pure arithmetic per request — two or three queries, not
+      one per row.
+    */
+    const yearStart = `${year}-01-01`, yearEnd = `${year}-12-31`;
+    const relevant = timeOffs.filter((r) =>
+      (r.type ?? 'VACATION') === 'VACATION' && (r.status === 'APPROVED' || r.status === 'PENDING')
+      && r.startDate.toISOString().slice(0, 10) <= yearEnd && r.endDate.toISOString().slice(0, 10) >= yearStart);
     let taken = 0;
     let pending = 0;
-    for (const r of timeOffs) {
-      if ((r.type ?? 'VACATION') !== 'VACATION') continue;
-      if (new Date(r.startDate).getFullYear() !== year) continue;
-      if (r.status === 'APPROVED') taken += daysIn(r.startDate, r.endDate);
-      else if (r.status === 'PENDING') pending += daysIn(r.startDate, r.endDate);
+    if (relevant.length && technician.organizationId) {
+      const { rules, roster } = await this.calendarRules.personRules(technician.organizationId, technician.id, yearStart, yearEnd);
+      for (const r of relevant) {
+        const from = r.startDate.toISOString().slice(0, 10), to = r.endDate.toISOString().slice(0, 10);
+        const cost = countLeaveDays(from < yearStart ? yearStart : from, to > yearEnd ? yearEnd : to, rules, roster).counted;
+        if (r.status === 'APPROVED') taken += cost;
+        else pending += cost;
+      }
     }
 
     return {
@@ -968,9 +1020,14 @@ export class TechniciansService {
       throw new BadRequestException('Time-off request has already been processed');
     }
 
+    // Recounted at the decision: a holiday confirmed since the request moves the number once, here.
+    const workingDays = approved
+      ? await this.workingDaysOf(organizationId, timeOff.technicianId, timeOff.startDate, timeOff.endDate, true)
+      : undefined;
     const updated = await this.prisma.timeOff.update({
       where: { id: timeOffId },
       data: {
+        ...(workingDays !== undefined ? { workingDays } : {}),
         status: approved ? 'APPROVED' : 'REJECTED',
         approvedById: approverId,
         approvedAt: new Date(),
@@ -1087,9 +1144,13 @@ export class TechniciansService {
       throw new BadRequestException('This overlaps an existing time-off entry for the employee');
     }
 
+    const workingDays = data.startDate || data.endDate
+      ? await this.workingDaysOf(data.organizationId, timeOff.technicianId, start, end)
+      : undefined;
     const updated = await this.prisma.timeOff.update({
       where: { id: data.timeOffId },
       data: {
+        ...(workingDays !== undefined ? { workingDays } : {}),
         ...(data.startDate ? { startDate: start } : {}),
         ...(data.endDate ? { endDate: end } : {}),
         ...(data.reason !== undefined ? { reason: data.reason?.trim() || null } : {}),

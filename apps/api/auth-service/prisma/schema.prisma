@@ -435,6 +435,14 @@ model Organization {
   /// Annual paid vacation days for this organization. The per-person override
   /// lives on User.leaveAllowance; this is what applies when that is unset.
   defaultLeaveAllowance Int     @default(25)
+  /// Calendar (packages/shared/src/calendar/days.ts): the weekend for anyone in no workspace and every
+  /// workspace that sets none — 0 = Sunday … 6 = Saturday.
+  weekendDays           Int[]   @default([0, 6])
+  /// Where public holidays come from. NULL country = `country` above.
+  holidayCountry        String?
+  holidayRegion         String?
+  /// Members may switch on a private one-way feed of their own calendar (Google, Outlook, iPhone).
+  calendarFeedsEnabled  Boolean @default(true)
   logoUrl               String? // Organization logo
 
   // Join system
@@ -586,6 +594,8 @@ model Organization {
 
   // Company locations for full-time technician attendance
   companyLocations CompanyLocation[]
+  calendarHolidays CalendarHoliday[]
+  calendarEvents   CalendarEvent[]
 
   // Time entries for attendance tracking
   timeEntries TimeEntry[]
@@ -938,6 +948,9 @@ model User {
   schedules        TechnicianSchedule[] // Weekly recurring schedule
   timeOffRequests  TimeOff[]            @relation("TechnicianTimeOff") // Time-off requests submitted
   approvedTimeOffs TimeOff[]            @relation("TimeOffApprover") // Time-off requests approved by this user
+  calendarEventsCreated CalendarEvent[]    @relation("CalendarEventCreator")
+  calendarInvites       CalendarAttendee[]
+  calendarFeedToken     CalendarFeedToken?
 
   // Invitations
   createdInvitations Invitation[] @relation("InvitationCreator") // Invitations created by this user
@@ -1943,6 +1956,7 @@ model Customer {
   signLinks      CustomerSignLink[]
   /// Repeating visits booked for this client.
   recurringTasks RecurringTaskTemplate[] @relation("RecurringTaskCustomer")
+  calendarEvents CalendarEvent[]
 
   @@index([organizationId, isActive])
   @@index([organizationId, name])
@@ -2410,6 +2424,11 @@ model CompanyLocation {
   /// day. 0 = never set, which is NOT "nobody needed" — every surface reads it
   /// as "no floor configured" and reports the count without a verdict.
   minCover          Int       @default(0)
+  /// Calendar: this workspace's own weekend (0 = Sunday … 6 = Saturday). EMPTY = the organization's.
+  weekendDays       Int[]     @default([])
+  /// Public holidays from this country/region. NULL = the organization's.
+  holidayCountry    String?
+  holidayRegion     String?
   // Ownership classification (project / my company / customer company). Orthogonal
   // to physical-vs-workspace (derived from lat/lng). CUSTOMER spaces carry the
   // contact fields below and represent a customer you do work for.
@@ -2474,6 +2493,8 @@ model CompanyLocation {
   shifts           Shift[] // Shift definitions scoped to this space
   shiftAssignments ShiftAssignment[] // Rota: members assigned to shifts here
   breakRules       BreakRule[] // Planned rests for everyone working here
+  calendarHolidays CalendarHoliday[]
+  calendarEvents   CalendarEvent[]
 
   // Time entries at this location
   timeEntries TimeEntry[]
@@ -3391,6 +3412,11 @@ model TimeOff {
   endDate   DateTime    @db.Date // Last day of time off (inclusive)
   type      TimeOffType @default(VACATION) // Only VACATION is deducted from the allowance
   reason    String? // Free-text note; the KIND is `type`, not this
+  /// What this request costs the allowance — weekends, rota rest days and holidays left out
+  /// (shared calendar/days.ts countLeave). Frozen when asked, recounted when decided, so a holiday
+  /// confirmed later moves the count once and visibly. NULL on rows from before the calendar: those
+  /// are counted on read.
+  workingDays Float?
 
   status TimeOffStatus @default(PENDING)
 
@@ -5474,4 +5500,123 @@ model SyncTombstone {
   @@index([userId, deletedAt], map: "sync_tombstones_user_deletedAt_idx")
   @@index([deletedAt], map: "sync_tombstones_deletedAt_idx")
   @@map("sync_tombstones")
+}
+
+
+// ─── Calendar (packages/shared/src/calendar) ────────────────────────────────
+
+/// The organization's DIFFERENCE from the country's holiday list, plus its own days off.
+/// libraryKey set = a change to a library holiday in one year (moved, renamed, confirmed, removed);
+/// NULL = a company day. spaceId NULL = the organization's layer; set = one workspace's.
+model CalendarHoliday {
+  id             String   @id @default(cuid())
+  organizationId String
+  spaceId        String?
+  libraryKey     String?
+  date           DateTime @db.Date
+  days           Int      @default(1)
+  name           String
+  halfDay        Boolean  @default(false)
+  removed        Boolean  @default(false)
+  confirmed      Boolean  @default(false)
+  createdById    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  space        CompanyLocation? @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, spaceId, date])
+  @@map("calendar_holidays")
+}
+
+enum CalendarEventKind {
+  APPOINTMENT
+  REMINDER
+}
+
+enum CalendarVisibility {
+  BUSY
+  DETAILS
+}
+
+enum CalendarRsvp {
+  PENDING
+  ACCEPTED
+  MAYBE
+  DECLINED
+}
+
+/// An appointment or a reminder somebody put in the calendar. Repeats as JSON (shared Repeat), never
+/// a free RRULE string. `seriesEndAt` = when the last occurrence ends (NULL = repeats for ever), so a
+/// range read is two indexed comparisons.
+model CalendarEvent {
+  id              String             @id @default(cuid())
+  organizationId  String
+  spaceId         String?
+  createdById     String
+  kind            CalendarEventKind  @default(APPOINTMENT)
+  title           String
+  description     String?
+  location        String?
+  meetingUrl      String?
+  customerId      String?
+  startAt         DateTime
+  endAt           DateTime
+  allDay          Boolean            @default(false)
+  timezone        String
+  repeat          Json?
+  seriesEndAt     DateTime?
+  reminderOffsets Int[]              @default([10])
+  visibility      CalendarVisibility @default(BUSY)
+  canceledAt      DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  space        CompanyLocation?   @relation(fields: [spaceId], references: [id], onDelete: SetNull)
+  createdBy    User               @relation("CalendarEventCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  customer     Customer?          @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  attendees    CalendarAttendee[]
+
+  @@index([organizationId, startAt])
+  @@index([createdById])
+  @@map("calendar_events")
+}
+
+/// Who is on an event — the organizer included — with their answer and their NEXT reminder.
+/// `nextRemindAt` is the one indexed column the minute sweep reads.
+model CalendarAttendee {
+  id               String       @id @default(cuid())
+  eventId          String
+  userId           String
+  organizationId   String
+  isOrganizer      Boolean      @default(false)
+  response         CalendarRsvp @default(PENDING)
+  respondedAt      DateTime?
+  nextRemindAt     DateTime?
+  remindOccurrence DateTime?
+  createdAt        DateTime     @default(now())
+
+  event CalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([userId])
+  @@index([nextRemindAt])
+  @@map("calendar_attendees")
+}
+
+/// A member's private one-way feed. Only the SHA-256 of the token is stored; the link is shown once.
+model CalendarFeedToken {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  organizationId String
+  tokenHash      String    @unique
+  createdAt      DateTime  @default(now())
+  lastUsedAt     DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("calendar_feed_tokens")
 }

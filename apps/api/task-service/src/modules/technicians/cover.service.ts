@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { CalendarRulesService } from '../calendar/calendar-rules.service';
 import {
   PrismaService,
   assessLeave,
@@ -38,9 +39,46 @@ import {
  * class does the part a pure function cannot: fetch the roster and the leave, in
  * a bounded number of queries, whatever the size of the question.
  */
+/** A rota row → the shape the rules read. Shared with the calendar's person layer. */
+export function shiftRuleOf(r: {
+  recurrence: string; daysOfWeek: number[]; daysOfMonth: number[]; dates: Date[]; effectiveFrom: Date; effectiveTo: Date | null;
+}) {
+  const key = (d: Date) => d.toISOString().slice(0, 10);
+  return {
+    recurrence: r.recurrence as 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'ONE_OFF',
+    daysOfWeek: r.daysOfWeek,
+    daysOfMonth: r.daysOfMonth,
+    dates: r.dates.map(key),
+    effectiveFrom: key(r.effectiveFrom),
+    effectiveTo: r.effectiveTo ? key(r.effectiveTo) : null,
+  };
+}
+
 @Injectable()
 export class CoverService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly calendarRules: CalendarRulesService,
+  ) {}
+
+  /**
+   * The calendar layer on a roster: each workspace's weekend becomes the rest days of somebody
+   * with no rota, and its full holidays are closed days for everybody (a rota shift on one still
+   * counts). Three queries for every workspace together.
+   */
+  private async withCalendar(organizationId: string, bySpace: Map<string, CoverPerson[]>, from: DateKey, to: DateKey) {
+    const places = await this.calendarRules.places(organizationId, [...bySpace.keys()], from, to);
+    for (const [spaceId, people] of bySpace) {
+      const place = places.get(spaceId);
+      if (!place) continue;
+      const closed = [...place.rules.holidays.values()].filter((h) => !h.halfDay).map((h) => h.day);
+      for (const p of people) {
+        p.restDows = place.place.weekend;
+        p.closedDays = closed;
+      }
+    }
+    return bySpace;
+  }
 
   /** A Date → the local calendar day the rota means. */
   private static key(d: Date | string): DateKey {
@@ -55,7 +93,7 @@ export class CoverService {
    * workspace separately — is the N+1 that makes an approvals list unusable at
    * fifty pending requests.
    */
-  private async rosters(organizationId: string, spaceIds: string[]) {
+  private async rosters(organizationId: string, spaceIds: string[], window?: { from: DateKey; to: DateKey }) {
     const bySpace = new Map<string, CoverPerson[]>();
     if (!spaceIds.length) return bySpace;
 
@@ -118,18 +156,12 @@ export class CoverService {
         startByDow: Object.fromEntries(a.user.schedules.map((s) => [s.dayOfWeek, s.startTime])),
         shiftRules: shifts
           .filter((r) => r.userId === a.user.id && r.spaceId === a.spaceId)
-          .map((r) => ({
-            recurrence: r.recurrence as 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'ONE_OFF',
-            daysOfWeek: r.daysOfWeek,
-            daysOfMonth: r.daysOfMonth,
-            dates: r.dates.map((d) => CoverService.key(d)),
-            effectiveFrom: CoverService.key(r.effectiveFrom),
-            effectiveTo: r.effectiveTo ? CoverService.key(r.effectiveTo) : null,
-          })),
+          .map(shiftRuleOf),
       });
     }
-    return bySpace;
+    return window ? this.withCalendar(organizationId, bySpace, window.from, window.to) : bySpace;
   }
+
 
   /** Approved leave for these people, overlapping this window. One query. */
   private async approvedLeave(
@@ -207,11 +239,10 @@ export class CoverService {
       spaces.map((s) => [s.id, { id: s.id, name: s.name, minCover: s.minCover }]),
     );
 
-    const rosterBySpace = await this.rosters(organizationId, spaceIds);
-    const rosterIds = [...new Set([...rosterBySpace.values()].flat().map((p) => p.id))];
-
     const from = requests.map((r) => CoverService.key(r.startDate)).sort()[0]!;
     const to = requests.map((r) => CoverService.key(r.endDate)).sort().at(-1)!;
+    const rosterBySpace = await this.rosters(organizationId, spaceIds, { from, to });
+    const rosterIds = [...new Set([...rosterBySpace.values()].flat().map((p) => p.id))];
     const leave = await this.approvedLeave(rosterIds, from, to);
 
     for (const req of requests) {
@@ -269,7 +300,7 @@ export class CoverService {
     });
     if (!spaces.length) return [];
 
-    const rosterBySpace = await this.rosters(organizationId, spaces.map((s) => s.id));
+    const rosterBySpace = await this.rosters(organizationId, spaces.map((s) => s.id), { from, to });
     const personIds = [...new Set([...rosterBySpace.values()].flat().map((p) => p.id))];
     const leave = await this.approvedLeave(personIds, from, to);
 
@@ -298,9 +329,9 @@ export class CoverService {
    */
   async expectedToday(organizationId: string, spaceId: string, timezone: string | null | undefined): Promise<Map<string, { rostered: boolean; onLeave: boolean }>> {
     const out = new Map<string, { rostered: boolean; onLeave: boolean }>();
-    const roster = (await this.rosters(organizationId, [spaceId])).get(spaceId) ?? [];
-    if (!roster.length) return out;
     const today = localPartsIn(new Date(), timezone || 'Europe/Berlin').dateStr;
+    const roster = (await this.rosters(organizationId, [spaceId], { from: today, to: today })).get(spaceId) ?? [];
+    if (!roster.length) return out;
     const leave = await this.approvedLeave(roster.map((p) => p.id), today, today);
     for (const p of roster) {
       out.set(p.id, {
@@ -336,7 +367,9 @@ export class CoverService {
     if (!spaces.length) return [];
 
     const spaceIds = spaces.map((s) => s.id);
-    const rosterBySpace = await this.rosters(organizationId, spaceIds);
+    const nowForSpan = new Date();
+    const spanKeys = spaces.map((s) => localPartsIn(nowForSpan, s.timezone || 'Europe/Berlin').dateStr).sort();
+    const rosterBySpace = await this.rosters(organizationId, spaceIds, { from: spanKeys[0]!, to: spanKeys[spanKeys.length - 1]! });
     const people = [...rosterBySpace.values()].flat();
     const personIds = [...new Set(people.map((p) => p.id))];
     if (!personIds.length) {

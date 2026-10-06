@@ -71,6 +71,12 @@ export class TechniciansController {
     return this.techniciansService.getTimeOff(data);
   }
 
+  /** What a leave range would cost — weekends, rota rest days and holidays left out. */
+  @MessagePattern({ cmd: 'count_leave' })
+  async countLeave(@Payload() dto: { organizationId: string; technicianId: string; from: string; to: string }) {
+    return this.techniciansService.countLeave(dto);
+  }
+
   @MessagePattern({ cmd: 'get_leave_balance' })
   async getLeaveBalance(@Payload() dto: { technicianId: string; organizationId: string }) {
     return this.techniciansService.getLeaveBalance(dto);

@@ -25,6 +25,7 @@ import { SpaceRolesModule } from './modules/space-roles/space-roles.module';
 import { ShiftsModule } from './modules/shifts/shifts.module';
 import { OvertimeModule } from './modules/overtime/overtime.module';
 import { TechniciansModule } from './modules/technicians/technicians.module';
+import { CalendarModule } from './modules/calendar/calendar.module';
 import { PhasesModule } from './modules/phases/phases.module';
 import { SprintsModule } from './modules/sprints/sprints.module';
 import { EpicsModule } from './modules/epics/epics.module';
@@ -88,6 +89,7 @@ import { RetentionService } from './common/retention/retention.service';
     ShiftsModule,
     OvertimeModule,
     TechniciansModule,
+    CalendarModule,
     PhasesModule,
     SprintsModule,
     EpicsModule,

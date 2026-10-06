@@ -55,6 +55,13 @@ export interface CoverPerson {
   startByDow?: Record<number, string>;
   /** Their rota assignments in this space. */
   shiftRules: CoverShiftRule[];
+  /**
+   * The workspace's weekend (calendar/days.ts) — rest days for somebody with NO rota and no working
+   * week. Unset = every day is a working day, as before the calendar existed.
+   */
+  restDows?: number[];
+  /** Full public holidays / company days off in the window being asked about. A rota shift on one still counts. */
+  closedDays?: DateKey[];
 }
 
 /** One leave record, reduced to what cover cares about. */
@@ -128,8 +135,8 @@ function shiftRuleInForce(r: CoverShiftRule, day: DateKey): boolean {
   return true;
 }
 
-/** Does one rota rule put this person at work on this day? */
-function shiftRuleMatches(r: CoverShiftRule, day: DateKey): boolean {
+/** Does one rota rule put this person at work on this day? (The calendar draws shifts from it.) */
+export function shiftRuleMatches(r: CoverShiftRule, day: DateKey): boolean {
   if (!shiftRuleInForce(r, day)) return false;
   switch (r.recurrence) {
     case 'DAILY':
@@ -153,7 +160,8 @@ function shiftRuleMatches(r: CoverShiftRule, day: DateKey): boolean {
  *   • a rota rule puts them at work that day            → yes
  *   • a rota GOVERNS that day but excludes it           → no
  *   • no rota reaches that day, but a week is set       → the week decides
- *   • nothing is configured at all                      → yes, every day
+ *   • a public holiday / company day off (closedDays)    → no
+ *   • nothing is configured at all                      → yes, unless the workspace's weekend says rest
  *
  * ⚠️ The second and third branches were once one. "Has any rota at all → the
  * weekly schedule is irrelevant" reads fine and is wrong: a rota starting next
@@ -177,7 +185,11 @@ export function isRosteredOn(p: CoverPerson, day: DateKey): boolean {
     if (shiftRuleInForce(r, day)) governed = true;
   }
   if (governed) return false;
+  if (p.closedDays?.includes(day)) return false;
   if (p.scheduleDows.length > 0) return p.scheduleDows.includes(dowOf(day));
+  // Nobody told us their week: the workspace's weekend decides (calendar/days.ts), and with no
+  // weekend known, every day — "we were never told" must not read as "they are off".
+  if (p.restDows?.includes(dowOf(day))) return false;
   return true;
 }
 

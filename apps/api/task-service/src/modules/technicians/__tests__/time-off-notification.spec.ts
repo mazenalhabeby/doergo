@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { TechniciansService } from '../technicians.service';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { CoverService } from '../cover.service';
+import { CalendarRulesService } from '../../calendar/calendar-rules.service';
 import { PrismaService, SERVICE_NAMES } from '@hbcfield/shared';
 
 /**
@@ -66,6 +67,8 @@ describe('who is told about a leave request', () => {
         TechniciansService,
         { provide: NotificationRoutingService, useValue: routing },
         { provide: CoverService, useValue: cover },
+        // The leave count is the calendar's job; here every request costs its weekdays.
+        { provide: CalendarRulesService, useValue: { countLeaveFor: jest.fn().mockResolvedValue({ counted: 3 }) } },
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit } },
       ],
