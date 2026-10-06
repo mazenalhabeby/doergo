@@ -548,6 +548,33 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 >
 > ⚠️ Mobile: "Open for your role" on the Jobs tab and Take/Hand back on the job page are ONLINE ONLY (a queued take would promise a place somebody else got). Needs an OTA.
 
+### The company calendar (`/calendar`) — our own, Google only as an optional window
+> One calendar for jobs, appointments, reminders, client follow-ups, shifts, leave, public holidays and document expiries. Rules: `packages/shared/src/calendar/*` (days, holidays, recurrence, reminders, quick-add, ics, free-slots); server: `task-service/.../calendar/*`. Migration `20261007090000_company_calendar` (additive). E2E: `python3 tools/calendar-e2e.py` (LOCAL only, 39 checks). Web: `/calendar`, Settings → Holidays & weekends. Phone: Calendar (in More) + the Today home card.
+
+| Method | Endpoint | Description | Gate |
+|--------|----------|-------------|------|
+| GET | `/calendar?from&to&spaceId&layers&lang` | Every item the caller may see in a window (≤ 62 days) + the shaded days + the places | internal members; others' leave only in `teamSpaces`, others' work only in `viewTaskSpaces` |
+| POST · GET · PATCH · DELETE | `/calendar/events[/:id]` | Appointments / reminders; `respond` · `snooze` · `done` per attendee | on the event (404 otherwise); edit/cancel = organizer only |
+| GET · POST | `/calendar/people` · `/availability` · `/free-slots` | Invite picker, free/busy (times only), find a time | the caller's circle (shared workspace), wide for admin / org-wide view |
+| GET · PATCH | `/calendar/settings[/workspaces/:id]` · `/calendar/holidays` (+ POST/PATCH/DELETE) | Weekend + holiday country/region per org / workspace; confirm, move, remove, company days | read holidays: everyone; writes: `canManageWorkspaces` |
+| GET · POST · DELETE | `/calendar/feed` | The member's private one-way ICS link (shown once, hash stored) | the member |
+| GET | `/calendar-feed/:token.ics` | The ICS itself | **public**, throttled 20/min, same 404 for every failure |
+| GET | `/employees/:id/time-off/count?from&to` | What a leave range COSTS | self, or managers (same rule as the balance) |
+
+> ⚠️ **Three layers decide a day off: organization weekend → workspace weekend → the person's own rota/working week** (`personRoster` = cover's `isRosteredOn`). A person in several workspaces is off on a day only when it is off in ALL of them (`intersectDayRules`). Holidays never cost leave; a half holiday costs ½.
+>
+> ⚠️ **Leave is charged in WORKING days.** `TimeOff.workingDays` is frozen on the request and recounted at the decision; the balance recounts live per year (a request over New Year draws on both). A request with no working day is refused (`LEAVE_NO_WORKING_DAYS`). Old rows (NULL) are counted on read.
+>
+> ⚠️ **Cover now reads the calendar too**: a person with NO rota rests on the workspace weekend (`restDows`) and nobody is rostered on a full holiday (`closedDays`) unless a rota shift says so. With no weekend known, every day still counts.
+>
+> ⚠️ **Holidays come from `date-holidays` (offline, CC BY 3.0 — credited in Settings).** Only the organization's DIFFERENCE is stored (`calendar_holidays`: libraryKey = a change to one library holiday in one year; NULL = a company day). Moon-sighted (Hijri) holidays are `ESTIMATED` until confirmed. Library changes belong to the layer that chose the country.
+>
+> ⚠️ **Reminders: ONE indexed column per attendee** (`nextRemindAt` + `remindOccurrence`). The minute sweep (`task:calendarReminders` lease) claims each row with a conditional update on the instant it read, sends `calendar_reminder`, and stores the next one. Declined/canceled go quiet. Repeats are a closed JSON shape (`parseRepeat`), never a free RRULE; expansion is capped.
+>
+> ⚠️ **No two-way sync and no Zoom/Meet API, by decision.** A meeting link is a plain https field. The ICS feed carries the member's OWN things only; it dies with the account, a suspended org, or `Organization.calendarFeedsEnabled = false` (switching it off deletes every token).
+>
+> ⚠️ Push: `calendar_reminder` is time-sensitive; invite/reminder pushes carry categories with buttons (JS-only, OTA-safe). The phone keeps `/calendar` and `/calendar/events/:id` offline (KEEP in response-cache); adding and answering are online.
+
 ### Rates, work roles and the worker's statement
 > A workspace role is a **WORK** role (a trade: carries how work is billed — HOUR / DAY / BOTH — and a day rate, grants NOTHING) or a **MANAGEMENT** role (permissions). Rules: `packages/shared/src/billing/{rate-history,rate-writer,work-roles,invoice-lines}.ts`. Migration `20261004120000_work_roles_rate_history`.
 
