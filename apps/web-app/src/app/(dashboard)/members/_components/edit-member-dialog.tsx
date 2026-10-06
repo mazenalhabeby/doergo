@@ -454,6 +454,18 @@ export function EditMemberDialog({
   }
 
   const invalidateAssignments = () => queryClient.invalidateQueries({ queryKey: ["all-location-assignments"] })
+  /*
+    A cost lives on the PERSON and is read in several places: their profile,
+    its dated history, and "Costs you" beside them in EVERY workspace they work
+    in (["space-members", <space>]). Saving refreshes all of them — the
+    workspace list otherwise kept the old figure for up to a minute.
+  */
+  const refreshMemberRates = () => {
+    queryClient.invalidateQueries({ queryKey: ["orgMember", member?.id] })
+    queryClient.invalidateQueries({ queryKey: ["rate-history", "MEMBER", member?.id] })
+    queryClient.invalidateQueries({ queryKey: ["space-members"] })
+    queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
+  }
 
   return (
     <Dialog
@@ -643,8 +655,7 @@ export function EditMemberDialog({
                 history={memberRates?.filter((r) => r.kind === "COST_HOUR")}
                 onSubmit={async (c, from) => {
                   await employeesApi.update(member!.id, { costRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })
-                  queryClient.invalidateQueries({ queryKey: ["orgMember", member?.id] })
-                  queryClient.invalidateQueries({ queryKey: ["rate-history", "MEMBER", member?.id] })
+                  refreshMemberRates()
                 }}
               />
             ) : null}
@@ -659,7 +670,7 @@ export function EditMemberDialog({
                 history={memberRates?.filter((r) => r.kind === "COST_DAY")}
                 onSubmit={async (c, from) => {
                   await employeesApi.update(member!.id, { costDayCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })
-                  queryClient.invalidateQueries({ queryKey: ["rate-history", "MEMBER", member?.id] })
+                  refreshMemberRates()
                 }}
               />
             ) : (
