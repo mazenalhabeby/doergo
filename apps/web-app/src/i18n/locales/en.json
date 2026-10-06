@@ -859,7 +859,7 @@
     "manage": "Manage",
     "shop": "Shop",
     "team": "Team Members",
-    "timeAttendance": "Duty Roster",
+    "timeAttendance": "Shifts & Attendance",
     "lightMode": "Light Mode",
     "darkMode": "Dark Mode",
     "navigation": "Navigation",
@@ -9196,7 +9196,8 @@
       "unassigned": "Not in any workspace",
       "pendingTip": "pending — click to decide",
       "emptyTitle": "Nobody to show here",
-      "emptyBody": "No member is assigned to a workspace yet. Assign people to a workspace and their leave will appear here."
+      "emptyBody": "No member is assigned to a workspace yet. Assign people to a workspace and their leave will appear here.",
+      "openDay": "Open this day in the calendar"
     },
     "legend": {
       "pending": "Pending — yours to decide",
@@ -9813,7 +9814,11 @@
       "copied": "Link copied",
       "revoke": "Stop the link",
       "revoked": "The link no longer works"
-    }
+    },
+    "approveLeave": "Approve",
+    "declineLeave": "Decline",
+    "declineReason": "Reason (optional)",
+    "openSchedule": "Open in Schedule"
   },
   "holidays": {
     "orgTitle": "Organization",

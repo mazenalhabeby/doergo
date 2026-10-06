@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -10,7 +11,9 @@ import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { dateLocale } from "@/lib/format-date"
-import { calendarApi } from "@/lib/api"
+import { calendarApi, employeesApi } from "@/lib/api"
+import { invalidateTimeOff } from "@/lib/query-keys"
+import { Input } from "@/components/ui/input"
 import { serverErrorMessage } from "@/lib/server-error"
 import { KIND_COLOR } from "../_lib/kinds"
 import { fromKey } from "../_lib/layout"
@@ -21,6 +24,10 @@ interface Props {
   onClose: () => void
   onEdit: (eventId: string) => void
   myId?: string
+  /** May decide other people's leave (the approve route's permission; the server narrows it to whom they lead). */
+  canDecideLeave?: boolean
+  /** May open Schedule & Time Off — the only page a colleague's leave links to. */
+  scheduleAccess?: boolean
 }
 
 function whenText(item: CalendarItem): string {
@@ -41,7 +48,7 @@ const RSVP = [
 ]
 
 /** The quick card for anything on the calendar — the full page is one click further. */
-export function ItemPopover({ item, anchor, onClose, onEdit, myId }: Props) {
+export function ItemPopover({ item, anchor, onClose, onEdit, myId, canDecideLeave, scheduleAccess }: Props) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const eventId = item?.ref?.type === "event" ? item.ref.id : null
@@ -68,7 +75,28 @@ export function ItemPopover({ item, anchor, onClose, onEdit, myId }: Props) {
     onError: (e) => toast.error(serverErrorMessage(e, t)),
   })
 
+  const timeOffId = item?.ref?.type === "timeOff" ? item.ref.id : null
+  const [declining, setDeclining] = useState(false)
+  const [reason, setReason] = useState("")
+  // A different leave is a different decision — never carry the last one's typing over.
+  useEffect(() => { setDeclining(false); setReason("") }, [timeOffId])
+  const decide = useMutation({
+    mutationFn: ({ approved, why }: { approved: boolean; why?: string }) => employeesApi.approveTimeOff(timeOffId!, approved, why),
+    onSuccess: (_, v) => {
+      toast.success(v.approved ? t("cover.decision.approved", "Approved — they are told now") : t("cover.decision.rejected", "Not approved — they are told now"))
+      invalidateTimeOff(qc)
+      qc.invalidateQueries({ queryKey: ["calendar"] })
+      qc.invalidateQueries({ queryKey: ["cover-range"] })
+      qc.invalidateQueries({ queryKey: ["floor-now"] })
+      onClose()
+    },
+    onError: (e) => toast.error(serverErrorMessage(e, t)),
+  })
+
   if (!item || !anchor) return null
+  const othersLeave = item.kind === "leave" && !!item.personId && item.personId !== myId
+  const mayDecide = othersLeave && item.status === "PENDING" && !!canDecideLeave && !!timeOffId
+  const leaveHref = item.kind !== "leave" ? null : othersLeave ? (scheduleAccess ? "/employees/availability" : null) : "/my/time-off"
   const color = KIND_COLOR[item.kind]
   const going = ev?.attendees.filter((a) => a.response === "ACCEPTED").length ?? 0
 
@@ -155,6 +183,34 @@ export function ItemPopover({ item, anchor, onClose, onEdit, myId }: Props) {
           </div>
         )}
 
+        {mayDecide && (
+          <div className="mt-3 space-y-2">
+            {declining && (
+              <Input
+                autoFocus
+                value={reason}
+                maxLength={500}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder={t("calendar.declineReason")}
+                className="h-8 text-[13px]"
+              />
+            )}
+            <div className="flex gap-1.5">
+              {declining ? (
+                <>
+                  <Button size="sm" variant="ghost" className="flex-1" disabled={decide.isPending} onClick={() => setDeclining(false)}>{t("common.cancel", "Cancel")}</Button>
+                  <Button size="sm" variant="destructive" className="flex-1 gap-1" disabled={decide.isPending} onClick={() => decide.mutate({ approved: false, why: reason.trim() || undefined })}><X className="h-3.5 w-3.5" />{t("calendar.declineLeave")}</Button>
+                </>
+              ) : (
+                <>
+                  <Button size="sm" className="flex-1 gap-1" disabled={decide.isPending} onClick={() => decide.mutate({ approved: true })}><Check className="h-3.5 w-3.5" />{t("calendar.approveLeave")}</Button>
+                  <Button size="sm" variant="outline" className="flex-1 gap-1" disabled={decide.isPending} onClick={() => setDeclining(true)}><X className="h-3.5 w-3.5" />{t("calendar.declineLeave")}</Button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="mt-3 flex gap-2 border-t pt-3">
           {ev?.canEdit && (
             <>
@@ -165,7 +221,7 @@ export function ItemPopover({ item, anchor, onClose, onEdit, myId }: Props) {
           {item.ref?.type === "task" && <Link href={`/tasks/${item.ref.id}`} className="flex-1"><Button size="sm" className="w-full gap-1.5"><ExternalLink className="h-3.5 w-3.5" />{t("calendar.openJob")}</Button></Link>}
           {item.ref?.type === "customer" && <Link href={`/clients/${item.ref.id}`} className="flex-1"><Button size="sm" className="w-full gap-1.5"><ExternalLink className="h-3.5 w-3.5" />{t("calendar.openClient")}</Button></Link>}
           {item.ref?.type === "document" && <Link href="/documents" className="flex-1"><Button size="sm" variant="outline" className="w-full">{t("calendar.openDocuments")}</Button></Link>}
-          {item.kind === "leave" && <Link href={item.personId && item.personId !== myId ? "/employees/availability" : "/my/time-off"} className="flex-1"><Button size="sm" variant="outline" className="w-full gap-1.5"><CalendarClock className="h-3.5 w-3.5" />{t("calendar.openTimeOff")}</Button></Link>}
+          {leaveHref && <Link href={leaveHref} className="flex-1"><Button size="sm" variant="outline" className="w-full gap-1.5"><CalendarClock className="h-3.5 w-3.5" />{t(othersLeave ? "calendar.openSchedule" : "calendar.openTimeOff")}</Button></Link>}
         </div>
       </PopoverContent>
     </Popover>

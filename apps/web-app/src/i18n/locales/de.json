@@ -859,7 +859,7 @@
     "manage": "Verwalten",
     "shop": "Shop",
     "team": "Teammitglieder",
-    "timeAttendance": "Dienstplan",
+    "timeAttendance": "Schichten & Anwesenheit",
     "lightMode": "Heller Modus",
     "darkMode": "Dunkler Modus",
     "navigation": "Navigation",
@@ -9196,7 +9196,8 @@
       "unassigned": "Keinem Arbeitsbereich zugeordnet",
       "pendingTip": "offen – zum Entscheiden klicken",
       "emptyTitle": "Niemand anzuzeigen",
-      "emptyBody": "Noch ist kein Mitglied einem Arbeitsbereich zugeordnet. Ordnen Sie Personen einem Arbeitsbereich zu, dann erscheinen ihre Abwesenheiten hier."
+      "emptyBody": "Noch ist kein Mitglied einem Arbeitsbereich zugeordnet. Ordnen Sie Personen einem Arbeitsbereich zu, dann erscheinen ihre Abwesenheiten hier.",
+      "openDay": "Diesen Tag im Kalender öffnen"
     },
     "legend": {
       "pending": "Offen – von Ihnen zu entscheiden",
@@ -9813,7 +9814,11 @@
       "copied": "Link kopiert",
       "revoke": "Link beenden",
       "revoked": "Der Link funktioniert nicht mehr"
-    }
+    },
+    "approveLeave": "Genehmigen",
+    "declineLeave": "Ablehnen",
+    "declineReason": "Grund (optional)",
+    "openSchedule": "Im Zeitplan öffnen"
   },
   "holidays": {
     "orgTitle": "Organisation",

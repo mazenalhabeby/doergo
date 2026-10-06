@@ -31,6 +31,7 @@ import { hasAccessModule, resolveCrmCaps, moduleAnywhere as moduleAnywhereShared
 import { NAV_OPTION } from "@hbcfield/shared/client"
 import { useMySections } from "@/hooks/use-my-sections"
 import { useAuth } from "@/contexts/auth-context"
+import { useScheduleAccess } from "@/hooks/use-schedule-access"
 import { useCommandPalette } from "@/contexts/command-palette-context"
 import { NotificationBell } from "@/components/notification-bell"
 import { SupportButton } from "@/components/support/support-widget"
@@ -167,6 +168,7 @@ export function TopNavbar() {
     },
     [hasPlanFeature],
   )
+  const scheduleAccess = useScheduleAccess()
   const pathname = usePathname()
   const { resolvedTheme } = useTheme()
   const prefetch = usePrefetchRoutes()
@@ -207,7 +209,7 @@ export function TopNavbar() {
     403, which is the thing this navbar was just fixed to stop doing in the
     other direction.
   */
-  const showSchedule = (user.canViewAllTasks === true || user.canManageRota === true) && optionAllows("/schedule")
+  const showSchedule = scheduleAccess
   const showAttendance = hasPermission('canViewSpaceAttendance') || hasPermission('canViewAllTasks')
   // Every overtime route asks this one, reads included — so the link does too.
   const showOvertime = hasPermission('canApproveOvertime') && optionAllows("/overtime")

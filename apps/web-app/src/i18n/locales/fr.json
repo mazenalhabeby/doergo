@@ -859,7 +859,7 @@
     "manage": "Gérer",
     "shop": "Boutique",
     "team": "Membres de l’équipe",
-    "timeAttendance": "Planning",
+    "timeAttendance": "Équipes et présence",
     "lightMode": "Mode clair",
     "darkMode": "Mode sombre",
     "navigation": "Navigation",
@@ -9205,7 +9205,8 @@
       "unassigned": "Dans aucun espace de travail",
       "pendingTip": "en attente — cliquez pour décider",
       "emptyTitle": "Personne à afficher",
-      "emptyBody": "Aucun membre n'est encore affecté à un espace de travail. Affectez des personnes à un espace et leurs congés apparaîtront ici."
+      "emptyBody": "Aucun membre n'est encore affecté à un espace de travail. Affectez des personnes à un espace et leurs congés apparaîtront ici.",
+      "openDay": "Ouvrir ce jour dans le calendrier"
     },
     "legend": {
       "pending": "En attente — à vous de décider",
@@ -9822,7 +9823,11 @@
       "copied": "Lien copié",
       "revoke": "Désactiver le lien",
       "revoked": "Le lien ne fonctionne plus"
-    }
+    },
+    "approveLeave": "Approuver",
+    "declineLeave": "Refuser",
+    "declineReason": "Motif (facultatif)",
+    "openSchedule": "Ouvrir dans le planning"
   },
   "holidays": {
     "orgTitle": "Organisation",

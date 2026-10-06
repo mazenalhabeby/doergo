@@ -859,7 +859,7 @@
     "manage": "Gestisci",
     "shop": "Shop",
     "team": "Membri del team",
-    "timeAttendance": "Turni di servizio",
+    "timeAttendance": "Turni e presenze",
     "lightMode": "Tema chiaro",
     "darkMode": "Tema scuro",
     "navigation": "Navigazione",
@@ -9205,7 +9205,8 @@
       "unassigned": "In nessuno spazio di lavoro",
       "pendingTip": "in attesa — clicca per decidere",
       "emptyTitle": "Nessuno da mostrare",
-      "emptyBody": "Nessun membro è ancora assegnato a uno spazio di lavoro. Assegna delle persone a uno spazio e le loro assenze compariranno qui."
+      "emptyBody": "Nessun membro è ancora assegnato a uno spazio di lavoro. Assegna delle persone a uno spazio e le loro assenze compariranno qui.",
+      "openDay": "Apri questo giorno nel calendario"
     },
     "legend": {
       "pending": "In attesa — tocca a te decidere",
@@ -9822,7 +9823,11 @@
       "copied": "Link copiato",
       "revoke": "Disattiva il link",
       "revoked": "Il link non funziona più"
-    }
+    },
+    "approveLeave": "Approva",
+    "declineLeave": "Rifiuta",
+    "declineReason": "Motivo (facoltativo)",
+    "openSchedule": "Apri nella pianificazione"
   },
   "holidays": {
     "orgTitle": "Organizzazione",

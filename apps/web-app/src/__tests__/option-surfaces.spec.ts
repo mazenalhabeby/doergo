@@ -23,8 +23,22 @@ const read = (p: string) => readFileSync(join(SRC, p), 'utf8');
 describe('every surface an Option owns is gated', () => {
   it('the navigation asks about every href in the table', () => {
     const navbar = read('components/top-navbar.tsx');
-    const ungated = Object.keys(NAV_OPTION).filter((href) => !navbar.includes(`optionAllows("${href}")`));
+    // A surface reached from more than one place (Schedule: the navbar AND the calendar) asks
+    // through one shared hook instead — which must itself read the table, and the navbar must use it.
+    const DELEGATED: Record<string, { hook: string; file: string }> = {
+      '/schedule': { hook: 'useScheduleAccess', file: 'hooks/use-schedule-access.ts' },
+    };
+    const ungated = Object.keys(NAV_OPTION).filter((href) => {
+      if (navbar.includes(`optionAllows("${href}")`)) return false;
+      const d = DELEGATED[href];
+      return !(d && navbar.includes(`${d.hook}()`) && read(d.file).includes(`NAV_OPTION["${href}"]`));
+    });
     expect(ungated).toEqual([]);
+  });
+
+  it('every way into the Schedule asks the same hook', () => {
+    // The calendar's Team button and a colleague's leave both link to it.
+    expect(read('app/(dashboard)/calendar/page.tsx')).toContain('useScheduleAccess()');
   });
 
   it('the workspace tabs ask about every tab in the table', () => {

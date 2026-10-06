@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -10,11 +10,12 @@ import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { SpaceTabs } from "@/components/space-tabs"
 import { useSpaceScope } from "@/hooks/use-space-scope"
+import { useScheduleAccess } from "@/hooks/use-schedule-access"
 import { calendarApi } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { dateLocale } from "@/lib/format-date"
 import { addDays, dayKey, daysFrom, isoWeek, monthGrid, startOfWeek } from "./_lib/layout"
-import { useCalendarRange, useLayers, useStoredView, type CalendarView } from "./_lib/use-calendar"
+import { linkedDay, useCalendarRange, useLayers, useStoredView, type CalendarView } from "./_lib/use-calendar"
 import { WeekGrid } from "./_components/week-grid"
 import { MonthGrid } from "./_components/month-grid"
 import { AgendaList } from "./_components/agenda-list"
@@ -26,7 +27,7 @@ import { Rail } from "./_components/rail"
  * The organization's own calendar.
  *
  * One read per window (every layer the member may see, filtered on the server), drawn four ways —
- * day, week, month, agenda — plus a link to the team board for anybody who leads a workspace.
+ * day, week, month, agenda — plus a link to the Schedule (the team board) for whoever may open it.
  * "My calendar" is the member's own days (their workspaces' weekends and holidays, their rota);
  * picking a workspace shows that place's days and, for a leader, the team's leave.
  */
@@ -35,6 +36,7 @@ export default function CalendarPage() {
   const { user, hasPermission } = useAuth()
   const [anchor, setAnchor] = useState(() => new Date())
   const [view, setView] = useStoredView()
+  useEffect(() => { const d = linkedDay()?.date; if (d) setAnchor(d) }, [])
   const { layers, toggle } = useLayers()
   const { spaces, spaceId, setSpaceId } = useSpaceScope({ allowAll: true })
   const [selected, setSelected] = useState<{ item: CalendarItem; el: HTMLElement } | null>(null)
@@ -90,7 +92,10 @@ export default function CalendarPage() {
   }, [anchor, days, view])
 
   const week = view === "week" ? isoWeek(anchor) : null
-  const leadsTeam = user?.role === "ADMIN" || hasPermission("canViewSpaceAttendance") || hasPermission("canManageRota")
+  // The Team button opens the Schedule, so it asks what the Schedule asks (permission AND the bought Option).
+  const scheduleAccess = useScheduleAccess()
+  // Deciding a leave is the same permission the approve route asks; the server still narrows it to the people they lead.
+  const canDecideLeave = user?.role === "ADMIN" || hasPermission("canManageRota")
   const select = (item: CalendarItem, el: HTMLElement) => setSelected({ item, el })
   const views: CalendarView[] = ["day", "week", "month", "agenda"]
 
@@ -144,7 +149,7 @@ export default function CalendarPage() {
                     {t(`calendar.view.${v}`)}
                   </button>
                 ))}
-                {leadsTeam && (
+                {scheduleAccess && (
                   <Link
                     href={spaceId ? `/employees/availability?space=${spaceId}` : "/employees/availability"}
                     className="inline-flex items-center gap-1 rounded-lg px-3 py-1 text-[13px] font-medium text-muted-foreground transition hover:text-foreground"
@@ -202,6 +207,8 @@ export default function CalendarPage() {
         item={selected?.item ?? null}
         anchor={selected?.el ?? null}
         myId={user?.id}
+        canDecideLeave={canDecideLeave}
+        scheduleAccess={scheduleAccess}
         onClose={() => setSelected(null)}
         onEdit={(id) => setDialog({ eventId: id })}
       />

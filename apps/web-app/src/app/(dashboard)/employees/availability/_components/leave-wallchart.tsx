@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import Link from "next/link"
 import { format, isSameDay, parseISO } from "date-fns"
 import { Users } from "lucide-react"
 import { useTranslation } from "react-i18next"
@@ -166,10 +167,13 @@ export function LeaveWallchart({
               {t("cover.chart.team", "Team")}
             </div>
             {days.map((d) => (
-              <div
+              // The day opens in the calendar — everything on it, not only the leave.
+              <Link
                 key={d.toISOString()}
+                href={`/calendar?date=${format(d, "yyyy-MM-dd")}&view=day`}
+                title={t("cover.chart.openDay", "Open this day in the calendar")}
                 className={cn(
-                  "border-l border-border py-1.5 text-center",
+                  "border-l border-border py-1.5 text-center transition-colors hover:bg-primary/10",
                   isWeekend(d) && "bg-muted",
                 )}
               >
@@ -185,7 +189,7 @@ export function LeaveWallchart({
                 >
                   {format(d, "d")}
                 </span>
-              </div>
+              </Link>
             ))}
           </div>
 
