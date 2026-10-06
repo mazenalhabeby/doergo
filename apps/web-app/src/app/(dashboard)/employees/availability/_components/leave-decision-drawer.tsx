@@ -113,7 +113,9 @@ function DrawerBody({
   const { t } = useTranslation()
   const v = request.cover
   const tone = v ? COVER_TONE[v.level] : null
-  const days = differenceInCalendarDays(parseISO(request.endDate), parseISO(request.startDate)) + 1
+  const span = differenceInCalendarDays(parseISO(request.endDate), parseISO(request.startDate)) + 1
+  // What it costs (weekends, rota rest days and holidays left out); old rows have no count yet.
+  const days = request.workingDays ?? span
 
   /*
     The jobs already booked inside the window.
@@ -150,7 +152,9 @@ function DrawerBody({
           {format(parseISO(request.startDate), "d MMM")}
           {request.startDate !== request.endDate && <> – {format(parseISO(request.endDate), "d MMM")}</>}
           {" · "}
-          {t("cover.drawer.days", "{{count}} day", { count: days })}
+          {days !== span
+            ? t("cover.drawer.workingDays", "{{count}} working days of {{total}}", { count: days, total: span })
+            : t("cover.drawer.days", "{{count}} day", { count: days })}
           {" · "}
           {t("cover.drawer.asked", "asked {{date}}", { date: format(parseISO(request.createdAt), "d MMM") })}
         </p>

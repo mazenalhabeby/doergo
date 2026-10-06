@@ -8,7 +8,7 @@ import {
   Loader2, AlertTriangle, Clock3,
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
-import { employeesApi } from "@/lib/api"
+import { calendarApi, employeesApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { ProgressRing } from "@/components/progress-ring"
 import { notify } from "@/lib/toast"
@@ -211,7 +211,8 @@ export default function MyTimeOffPage() {
       if (r.status === "REJECTED" || r.status === "CANCELED") continue
       const s = startOfDay(new Date(r.startDate))
       const e = startOfDay(new Date(r.endDate))
-      if (s.getFullYear() === year) daysThisYear += dayDiff(s, e) + 1
+      // What it COSTS (weekends and holidays left out); old rows without a count fall back to the span.
+      if (s.getFullYear() === year) daysThisYear += r.workingDays ?? dayDiff(s, e) + 1
       if (s >= today && (!next || s < startOfDay(new Date(next.startDate)))) next = r
     }
     return { daysThisYear, pending, next }
@@ -270,6 +271,16 @@ export default function MyTimeOffPage() {
 
   const selectedEnd = rangeEnd ?? rangeStart
   const dayCount = rangeStart && selectedEnd ? dayDiff(rangeStart, selectedEnd) + 1 : 0
+  /*
+    What the range COSTS, asked of the server — the one rule (shared calendar/days.ts) that also
+    decides the request and the balance. Weekends, rota rest days and holidays cost nothing.
+  */
+  const { data: cost } = useQuery({
+    queryKey: ["leave-count", user?.id, rangeStart ? toISO(rangeStart) : null, selectedEnd ? toISO(selectedEnd) : null],
+    queryFn: () => calendarApi.countLeave(user!.id, toISO(rangeStart!), toISO(selectedEnd!)),
+    enabled: !!user?.id && !!rangeStart && !!selectedEnd,
+    staleTime: 60_000,
+  })
 
   // Caught before submitting rather than after a manager rejects it.
   const clash = useMemo(() => {
@@ -464,8 +475,18 @@ export default function MyTimeOffPage() {
                   {rangeEnd && !sameDay(rangeEnd, rangeStart!) && <> → {fmt(toISO(rangeEnd))}</>}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {t("timeOff.my.dayCount", { count: dayCount })}
+                  {cost && cost.counted !== cost.calendarDays
+                    ? t("timeOff.my.workingDayCount", { count: cost.counted, total: cost.calendarDays })
+                    : t("timeOff.my.dayCount", { count: cost?.counted ?? dayCount })}
                 </p>
+                {cost && (cost.restDays > 0 || cost.holidays.length > 0) && (
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {[
+                      cost.restDays > 0 ? t("timeOff.my.restDaysLeftOut", { count: cost.restDays }) : null,
+                      ...cost.holidays.map((h) => `${h.name}${h.halfDay ? ` (${t("timeOff.my.halfDay")})` : ""}`),
+                    ].filter(Boolean).join(" · ")}
+                  </p>
+                )}
               </div>
               {clash && (
                 <p className="flex items-start gap-2 rounded-xl bg-amber-500/10 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-400">

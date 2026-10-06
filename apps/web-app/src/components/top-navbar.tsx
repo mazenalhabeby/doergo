@@ -73,7 +73,7 @@ import { PAGE_WIDTH } from "@/components/ui/page-width";
   most specific route wins, which is what a person reads the highlight to mean.
 */
 const NAV_HREFS = [
-  "/dashboard", "/tasks", "/schedule", "/attendance", "/overtime", "/issues",
+  "/dashboard", "/tasks", "/calendar", "/schedule", "/attendance", "/overtime", "/issues",
   "/locations", "/members", "/clients", "/assets", "/portals", "/invoices", "/reports", "/manage",
   "/invitations", "/join-requests", "/settings", "/settings/billing",
   "/my/attendance", "/my/time-off", "/my/documents", "/documents", "/documents/review", "/documents/types", "/documents/templates", "/documents/compliance",
@@ -265,6 +265,8 @@ export function TopNavbar() {
     would only 403.
   */
   const isExternalMember = user.isExternal === true
+  // The calendar is everybody's own — except an external member, who holds no clock, leave or days of ours.
+  const showCalendar = !isExternalMember
   const showCrm = !isExternalMember && moduleAnywhere("crm") && resolveCrmCaps(uAccess.role, uAccess.access?.org).canAccess
 
   /*
@@ -421,6 +423,7 @@ export function TopNavbar() {
         showInvoices={showInvoices}
         showManage={showManage}
         showCrm={showCrm}
+        showCalendar={showCalendar}
         showAssets={showAssets}
         showPortals={showPortals}
         showMyDocuments={showMyDocuments}
@@ -482,6 +485,24 @@ export function TopNavbar() {
         >
           {t("nav.sidebar.tasks")}
         </Link>
+
+        {showCalendar && (
+          <Link
+            href="/calendar"
+            data-nav-item
+            data-nav-href="/calendar"
+            data-nav-label={t("nav.sidebar.calendar")}
+            data-nav-active={isActive(pathname, "/calendar")}
+            className={cn(
+              navItemBase,
+              isActive(pathname, "/calendar")
+                ? cn(navItemActiveStyle, bottomIndicator)
+                : navItemInactive,
+            )}
+          >
+            {t("nav.sidebar.calendar")}
+          </Link>
+        )}
 
         {/* CRM — a member's assigned clients (server-scoped). Reachable without
             space-manager rights, unlike the per-space Customers tab. */}
@@ -1029,6 +1050,7 @@ function MobileMenu({
   showDocumentCompliance,
   showManage,
   showCrm,
+  showCalendar,
   showIssues,
   showAssets,
   showPortals,
@@ -1044,6 +1066,7 @@ function MobileMenu({
   showInvoices: boolean
   showManage: boolean
   showCrm?: boolean
+  showCalendar?: boolean
   showAssets?: boolean
   showPortals?: boolean
   showMyDocuments: boolean
@@ -1085,6 +1108,18 @@ function MobileMenu({
             {t("nav.sidebar.tasks")}
           </Link>
         </DropdownMenuItem>
+
+        {showCalendar && (
+          <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
+            <Link
+              href="/calendar"
+              onClick={() => setOpen(false)}
+              className={cn(mobileItemBase, isActive(pathname, "/calendar") ? mobileItemActiveStyle : mobileItemInactive)}
+            >
+              {t("nav.sidebar.calendar")}
+            </Link>
+          </DropdownMenuItem>
+        )}
 
         {/* CRM — present on the desktop bar but previously missing here, so it was
             unreachable from the nav below the breakpoint. */}

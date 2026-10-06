@@ -77,8 +77,9 @@ const STATUS_PILLS: Record<
   CANCELED: { labelKey: "common.canceled", hex: "#64748b" },
 }
 
-function getDurationDays(start: string, end: string): number {
-  return differenceInCalendarDays(new Date(end), new Date(start)) + 1
+/** What a request costs — its stored working-day count, or the span for rows from before the calendar. */
+function getDurationDays(start: string, end: string, workingDays?: number | null): number {
+  return workingDays ?? differenceInCalendarDays(new Date(end), new Date(start)) + 1
 }
 
 interface TimeOffTabProps {
@@ -346,7 +347,7 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
                     </p>
                     <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
                       <span className="flex-shrink-0">
-                        {getDurationDays(request.startDate, request.endDate)}{" "}
+                        {getDurationDays(request.startDate, request.endDate, request.workingDays)}{" "}
                         {t('technicians.timeOffTab.days')}
                       </span>
                       {request.reason && (

@@ -17,7 +17,7 @@ import {
 import { AlertCircle, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
-import { employeesApi, type OrgTimeOffRequest } from "@/lib/api"
+import { calendarApi, employeesApi, type OrgTimeOffRequest } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { SpaceTabs } from "@/components/space-tabs"
@@ -91,6 +91,28 @@ export default function ScheduleAndTimeOffPage() {
     const start = startOfWeek(anchor, { weekStartsOn: 1 })
     return eachDayOfInterval({ start, end: addDays(start, 13) })
   }, [anchor, range])
+
+  /*
+    The workspace's own days from the calendar: its weekend (Fri+Sat in Riyadh, Sat+Sun in
+    Vienna) and its holidays. One read per window; the chart falls back to Sat+Sun until it lands.
+  */
+  const calendarDays = useQuery({
+    queryKey: ["calendar-team", space, format(days[0]!, "yyyy-MM-dd"), format(days[days.length - 1]!, "yyyy-MM-dd")],
+    queryFn: () => calendarApi.team({ spaceId: space, from: format(days[0]!, "yyyy-MM-dd"), to: format(days[days.length - 1]!, "yyyy-MM-dd") }),
+    enabled: !!space,
+    staleTime: 5 * 60_000,
+  })
+  const restDays = useMemo(
+    () => (calendarDays.data ? new Set(calendarDays.data.days.filter((d) => d.kind === "weekend").map((d) => d.day)) : undefined),
+    [calendarDays.data],
+  )
+  const holidayNames = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const h of calendarDays.data?.holidays ?? []) {
+      for (let d = new Date(`${h.date}T12:00:00`); format(d, "yyyy-MM-dd") <= h.endDate; d = addDays(d, 1)) m.set(format(d, "yyyy-MM-dd"), h.name)
+    }
+    return m
+  }, [calendarDays.data])
 
   const window = useMemo(
     () => ({
@@ -337,6 +359,8 @@ export default function ScheduleAndTimeOffPage() {
 
           <div data-tour="avail-calendar">
             <LeaveWallchart
+              restDays={restDays}
+              holidays={holidayNames}
               days={days}
               spaces={spaces}
               requests={requests}

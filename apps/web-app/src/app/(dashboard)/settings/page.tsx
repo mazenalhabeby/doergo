@@ -34,6 +34,8 @@ import { errorMessage } from "@/lib/errors"
 import { useTranslation } from "react-i18next"
 
 import { useAuth } from "@/contexts/auth-context"
+import { SettingCard } from "./_components/setting-card"
+import { HolidaysSection } from "./_components/holidays-section"
 
 // Lazy-load sub-pages so they render inline in the settings content area
 const AuditLogPage = lazy(() => import("./audit-log/page"))
@@ -122,7 +124,7 @@ function allTimezones(): string[] {
 
 type SettingsSection =
   // Organization
-  | "general" | "members" | "modules" | "audit-log"
+  | "general" | "members" | "modules" | "audit-log" | "holidays"
   // Personal
   | "profile" | "security" | "notifications" | "my-emails"
 
@@ -143,6 +145,8 @@ const ORG_NAV_ITEMS: NavItem[] = [
   // these prefs are org-scoped + admin-gated, so they belong here, not under
   // Personal (where non-admins would 403 loading/saving them).
   { key: "notifications", icon: Bell, labelKey: "settings.nav.notifications" },
+  // The calendar's days: the weekend, public holidays, company days off (shared calendar/*).
+  { key: "holidays", icon: CalendarDays, labelKey: "settings.nav.holidays" },
   { key: "audit-log", icon: Clock, labelKey: "settings.nav.auditLog" },
 ]
 
@@ -159,41 +163,6 @@ const NAV_ITEMS = [...ORG_NAV_ITEMS, ...PERSONAL_NAV_ITEMS]
 // ============================================================================
 // Reusable Components (DRY)
 // ============================================================================
-
-function SettingCard({
-  icon: Icon,
-  iconColor,
-  iconBg,
-  title,
-  description,
-  children,
-}: {
-  icon: typeof Building2
-  iconColor: string
-  iconBg: string
-  title: string
-  description?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-      <div className="px-6 py-5 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}>
-            <Icon className={`h-5 w-5 ${iconColor}`} />
-          </div>
-          <div>
-            <h3 className="text-base font-semibold text-foreground">{title}</h3>
-            {description && (
-              <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
-            )}
-          </div>
-        </div>
-      </div>
-      <div className="px-6 py-5">{children}</div>
-    </div>
-  )
-}
 
 function ToggleRow({
   id,
@@ -1437,7 +1406,7 @@ function SecuritySection() {
 
 export default function SettingsPage() {
   const { t } = useTranslation()
-  const { user, hasPlanFeature } = useAuth()
+  const { user, hasPlanFeature, hasPermission } = useAuth()
   const searchParams = useSearchParams()
 
   const isAdmin = user?.role === "ADMIN"
@@ -1452,6 +1421,7 @@ export default function SettingsPage() {
     is still PlanGate-guarded and the API still enforces it.
   */
   const orgNavItems = ORG_NAV_ITEMS.filter((i) => {
+    if (i.key === "holidays") return isAdmin || hasPermission("canManageWorkspaces")
     const feat = SETTINGS_OPTION[i.key]
     return !feat || hasPlanFeature(feat)
   })
@@ -1572,6 +1542,7 @@ export default function SettingsPage() {
             {activeSection === "members" && <div data-tour="settings-members"><MembersSection /></div>}
             {activeSection === "notifications" && <div data-tour="settings-notifications"><NotificationsSection /></div>}
             {/* Organization sections — lazy loaded from sub-pages */}
+            {activeSection === "holidays" && <div data-tour="settings-holidays"><HolidaysSection /></div>}
             {activeSection === "audit-log" && <div data-tour="settings-audit"><LazyAuditLog /></div>}
             {/* Personal sections */}
             {activeSection === "profile" && <div data-tour="settings-profile"><ProfileSection /></div>}

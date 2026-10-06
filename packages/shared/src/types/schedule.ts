@@ -65,6 +65,8 @@ export interface TimeOffRequest {
   } | null;
   approvedAt?: string | null;
   rejectionReason?: string | null;
+  /** What it costs the allowance — weekends, rota rest days and holidays left out (calendar/days.ts). Null on old rows. */
+  workingDays?: number | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -35,6 +35,15 @@ export interface CoverRangeSpace {
  * and the day it disagreed with the verdict on the bar above it, nobody could
  * say which was right.
  */
+/** A rest day or a holiday in this workspace. Without calendar data yet, Saturday and Sunday. */
+function restingFn(restDays?: Set<string>, holidays?: Map<string, string>) {
+  return (d: Date) => {
+    const k = format(d, "yyyy-MM-dd")
+    if (restDays) return restDays.has(k) || !!holidays?.has(k)
+    return d.getDay() === 0 || d.getDay() === 6
+  }
+}
+
 export function LeaveWallchart({
   days,
   spaces,
@@ -43,7 +52,12 @@ export function LeaveWallchart({
   selectedId,
   onSelect,
   isLoading,
+  restDays,
+  holidays,
 }: {
+  /** The workspace's rest days (its weekend) and holidays, from the calendar — never a hard-coded Sat+Sun. */
+  restDays?: Set<string>
+  holidays?: Map<string, string>
   days: Date[]
   spaces: FloorSpace[]
   requests: OrgTimeOffRequest[]
@@ -140,7 +154,7 @@ export function LeaveWallchart({
   // One grid template shared by every row, so the sticky name column and each
   // day column line up without any per-row measurement.
   const template = { gridTemplateColumns: `13rem repeat(${days.length}, minmax(2.1rem, 1fr))` }
-  const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6
+  const isWeekend = restingFn(restDays, holidays)
 
   return (
     <div className={cn("bg-card rounded-xl border border-border shadow-sm overflow-hidden", selected && "is-focused")}>
@@ -179,6 +193,8 @@ export function LeaveWallchart({
             const c = coverBySpace.get(space.spaceId)
             return (
               <SpaceBlock
+                restDays={restDays}
+                holidays={holidays}
                 key={space.spaceId}
                 title={space.spaceName}
                 minCover={space.minCover}
@@ -201,6 +217,8 @@ export function LeaveWallchart({
 
           {unassigned.length > 0 && (
             <SpaceBlock
+              restDays={restDays}
+              holidays={holidays}
               title={t("cover.chart.unassigned", "Not in any workspace")}
               minCover={0}
               rotaKnown={false}
@@ -223,6 +241,8 @@ export function LeaveWallchart({
 }
 
 function SpaceBlock({
+  restDays,
+  holidays,
   title,
   minCover,
   rotaKnown,
@@ -237,6 +257,8 @@ function SpaceBlock({
   selectedInThisSpace,
   onSelect,
 }: {
+  restDays?: Set<string>
+  holidays?: Map<string, string>
   title: string
   minCover: number
   rotaKnown: boolean
@@ -254,7 +276,7 @@ function SpaceBlock({
   const { t } = useTranslation()
   if (!people.length) return null
 
-  const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6
+  const isWeekend = restingFn(restDays, holidays)
   const dayCover = new Map((cover?.days ?? []).map((d) => [d.day, d]))
 
   /** Would the selected request take this day's count down? */

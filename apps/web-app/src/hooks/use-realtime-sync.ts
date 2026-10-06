@@ -61,6 +61,9 @@ const Events = {
   CUSTOMER_CHANGED: "customer.changed",
   // A document type changed — including WHO MAY SEE documents filed under it
   DOCUMENT_TYPES_CHANGED: "documents.typesChanged",
+  // Calendar: something on MY calendar changed; holidays/weekends changed for the org.
+  CALENDAR_CHANGED: "calendar.changed",
+  CALENDAR_SETTINGS_CHANGED: "calendar.settingsChanged",
   // Leave — asked for (to whoever is routed about that member) and answered (to them)
   TIME_OFF_REQUESTED: "time_off_requested",
   TIME_OFF_DECIDED: "time_off_decided",
@@ -235,6 +238,9 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
     scoped endpoint, so a viewer who has just LOST access refetches and gets a
     list without those documents; nothing in the payload widens anything.
   */
+  [Events.CALENDAR_CHANGED]: [["calendar"], ["calendar-event"]],
+  // A moved Eid or a new weekend changes counts and shading everywhere at once.
+  [Events.CALENDAR_SETTINGS_CHANGED]: [["calendar"], ["calendar-settings"], ["calendar-holidays"], ["leave-count"], ["my-leave-balance"], ["cover-range"], ["calendar-team"], ["orgTimeOff"]],
   [Events.DOCUMENT_TYPES_CHANGED]: [
     ["document-types"],                  // the picker on every documents screen
     ["documents-browse"],                // the folder register

@@ -4151,6 +4151,8 @@ export interface TimeOffRequest {
   approvedBy?: { id: string; firstName: string; lastName: string };
   approvedAt?: string;
   rejectionReason?: string;
+  /** What it costs the allowance — weekends, rota rest days and holidays left out. Null on old rows. */
+  workingDays?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -8198,4 +8200,156 @@ export const syncApi = {
     const rows = unwrap<import('@hbcfield/shared/client').SyncMemberHealth[]>(response.data);
     return Array.isArray(rows) ? rows : [];
   },
+}
+
+// ============================================================================
+// CALENDAR — the organization's own calendar (packages/shared/src/calendar)
+// ============================================================================
+
+import type {
+  CalendarItem, CalendarPlace, DayKind, ResolvedHoliday, Repeat, RsvpResponse, EventVisibility,
+} from '@hbcfield/shared/client';
+
+export interface CalendarRange {
+  from: string;
+  to: string;
+  timezone: string;
+  places: CalendarPlace[];
+  days: { day: string; kind: DayKind }[];
+  items: CalendarItem[];
+}
+
+export interface CalendarAttendee {
+  userId: string;
+  response: RsvpResponse;
+  isOrganizer: boolean;
+  firstName: string;
+  lastName: string;
+  avatarUrl?: string | null;
+}
+
+export interface CalendarEventDetail {
+  id: string;
+  kind: 'APPOINTMENT' | 'REMINDER';
+  title: string;
+  description: string | null;
+  location: string | null;
+  meetingUrl: string | null;
+  startAt: string;
+  endAt: string;
+  allDay: boolean;
+  timezone: string;
+  repeat: Repeat | null;
+  reminders: number[];
+  visibility: EventVisibility;
+  canceled: boolean;
+  space: { id: string; name: string } | null;
+  customer: { id: string; name: string } | null;
+  organizerId: string;
+  canEdit: boolean;
+  myResponse: RsvpResponse;
+  attendees: CalendarAttendee[];
+}
+
+export interface CalendarEventInput {
+  kind?: 'APPOINTMENT' | 'REMINDER';
+  title?: string;
+  description?: string | null;
+  location?: string | null;
+  meetingUrl?: string | null;
+  customerId?: string | null;
+  spaceId?: string | null;
+  allDay?: boolean;
+  startAt?: string;
+  endAt?: string;
+  startDate?: string;
+  endDate?: string;
+  timezone?: string;
+  repeat?: Repeat | null;
+  reminders?: number[];
+  visibility?: EventVisibility;
+  attendeeIds?: string[];
+}
+
+export interface CalendarPerson { id: string; firstName: string; lastName: string; avatarUrl?: string | null; position?: string | null }
+export interface CalendarAvailability {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  busy: { start: string; end: string }[];
+  days: { day: string; kind: DayKind; leave: 'APPROVED' | 'PENDING' | null }[];
+}
+
+export interface CalendarSettings {
+  year: number;
+  organization: {
+    weekendDays: number[]; holidayCountry: string | null; holidayRegion: string | null; addressCountry: string | null;
+    calendarFeedsEnabled: boolean; holidayCount: number; estimatedCount: number; country: string | null; region: string | null; weekend: number[];
+  };
+  workspaces: {
+    id: string; name: string; weekendDays: number[]; holidayCountry: string | null; holidayRegion: string | null; people: number;
+    holidayCount: number; estimatedCount: number; country: string | null; region: string | null; weekend: number[];
+    inherited: { weekend: boolean; holidays: boolean };
+  }[];
+}
+
+export interface LeaveCountResult {
+  from: string; to: string; calendarDays: number; counted: number; restDays: number;
+  holidays: { day: string; name: string; halfDay: boolean; estimated: boolean }[];
+  byYear: Record<string, number>;
+  days: { day: string; kind: DayKind; cost: number; holiday: string | null }[];
+}
+
+async function calendarCall<T>(p: Promise<{ data?: unknown; error?: string; errorCode?: string; errorParams?: Record<string, unknown> }>): Promise<T> {
+  const r = await p;
+  if (r.error) throw apiError(r);
+  const body = r.data as { data?: T } | T;
+  return ((body as { data?: T })?.data ?? body) as T;
+}
+
+export const calendarApi = {
+  range: (q: { from: string; to: string; spaceId?: string | null; layers?: string[]; lang?: string }) =>
+    calendarCall<CalendarRange>(api.get(buildUrlWithQuery('/calendar', {
+      from: q.from, to: q.to, spaceId: q.spaceId || undefined, layers: q.layers?.join(',') || undefined, lang: q.lang,
+    }))),
+  team: (q: { spaceId: string; from: string; to: string }) =>
+    calendarCall<{ place: CalendarPlace; holidays: ResolvedHoliday[]; days: { day: string; kind: DayKind }[] }>(api.get(buildUrlWithQuery('/calendar/team', q))),
+  people: (q?: string) => calendarCall<CalendarPerson[]>(api.get(buildUrlWithQuery('/calendar/people', { q: q || undefined }))),
+  availability: (userIds: string[], from: string, to: string) =>
+    calendarCall<CalendarAvailability[]>(api.post('/calendar/availability', { userIds, from, to })),
+  freeSlots: (body: { userIds: string[]; durationMin: number; from?: string; days?: number; timezone?: string }) =>
+    calendarCall<{ start: string; end: string }[]>(api.post('/calendar/free-slots', body)),
+
+  event: (id: string) => calendarCall<CalendarEventDetail>(api.get(`/calendar/events/${encodeURIComponent(id)}`)),
+  create: (input: CalendarEventInput) => calendarCall<CalendarEventDetail>(api.post('/calendar/events', input)),
+  update: (id: string, input: CalendarEventInput) => calendarCall<CalendarEventDetail>(api.patch(`/calendar/events/${encodeURIComponent(id)}`, input)),
+  cancel: (id: string) => calendarCall<{ ok: true }>(api.delete(`/calendar/events/${encodeURIComponent(id)}`)),
+  respond: (id: string, response: 'ACCEPTED' | 'MAYBE' | 'DECLINED') =>
+    calendarCall<{ response: RsvpResponse }>(api.post(`/calendar/events/${encodeURIComponent(id)}/respond`, { response })),
+
+  feedStatus: () => calendarCall<{ allowed: boolean; active: boolean; createdAt: string | null; lastUsedAt: string | null }>(api.get('/calendar/feed')),
+  feedRotate: () => calendarCall<{ path: string }>(api.post('/calendar/feed', {})),
+  feedRevoke: () => calendarCall<{ ok: true }>(api.delete('/calendar/feed')),
+
+  settings: (year?: number, lang?: string) => calendarCall<CalendarSettings>(api.get(buildUrlWithQuery('/calendar/settings', { year, lang }))),
+  updateOrg: (body: { weekendDays?: number[]; holidayCountry?: string | null; holidayRegion?: string | null; calendarFeedsEnabled?: boolean }) =>
+    calendarCall<{ ok: true }>(api.patch('/calendar/settings', body)),
+  updateWorkspace: (spaceId: string, body: { weekendDays?: number[]; holidayCountry?: string | null; holidayRegion?: string | null }) =>
+    calendarCall<{ ok: true }>(api.patch(`/calendar/settings/workspaces/${encodeURIComponent(spaceId)}`, body)),
+  holidays: (q: { spaceId?: string | null; year: number; lang?: string }) =>
+    calendarCall<{ year: number; place: CalendarPlace; holidays: (ResolvedHoliday & { removed?: boolean })[] }>(
+      api.get(buildUrlWithQuery('/calendar/holidays', { spaceId: q.spaceId || undefined, year: q.year, lang: q.lang })),
+    ),
+  saveHoliday: (body: { id?: string | null; spaceId?: string | null; libraryKey?: string | null; date: string; days?: number; name: string; halfDay?: boolean; confirmed?: boolean; removed?: boolean }) => {
+    const { id, ...rest } = body;
+    return calendarCall<{ id: string }>(id ? api.patch(`/calendar/holidays/${encodeURIComponent(id)}`, rest) : api.post('/calendar/holidays', rest));
+  },
+  removeHoliday: (id: string) => calendarCall<{ ok: true }>(api.delete(`/calendar/holidays/${encodeURIComponent(id)}`)),
+  countries: (lang?: string) => calendarCall<{ code: string; name: string }[]>(api.get(buildUrlWithQuery('/calendar/countries', { lang }))),
+  regions: (country: string, lang?: string) =>
+    calendarCall<{ code: string; name: string }[]>(api.get(buildUrlWithQuery(`/calendar/countries/${encodeURIComponent(country)}/regions`, { lang }))),
+
+  /** What a leave range would cost this person — weekends, rota rest days and holidays left out. */
+  countLeave: (personId: string, from: string, to: string) =>
+    calendarCall<LeaveCountResult>(api.get(buildUrlWithQuery(`/employees/${encodeURIComponent(personId)}/time-off/count`, { from, to }))),
 }
