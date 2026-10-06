@@ -1,6 +1,6 @@
 # HBCFIELD - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-10-04 (work roles + day rates, dated rates, worker statement, currencies)
+> **Last Updated**: 2026-10-06 (company calendar deployed)
 
 ---
 
@@ -1434,6 +1434,10 @@ docker exec -it hbcfield-redis redis-cli
 ## 17. NEXT IMMEDIATE TASKS
 
 **Current Sprint**: nothing blocking. Outstanding and NOT doable from the machine: (1) **one real card payment has never completed** — pending since July; (2) INVOICE mode has produced a real subscription (`sub_1UC6kH…`, `send_invoice`, €472.78 incl. AT VAT, due 18 Sept) but **no customer has paid one yet**, and HBC GmbH has since been moved to EXTERNAL; (3) the app stores still serve an older binary, so an OTA only reaches installed 1.0.3/1.0.4 apps.
+
+### Recently Completed (2026-10-06) — Company calendar — PROD `d1123e76` + OTA
+
+**PROD 2026-10-06** (`1d7777f4 → d1123e76`; rollback tag `prod-pre-calendar` → `1d7777f4`; backup `pre-calendar_20261006_183228.sql.gz`, 112 tables). Migration `20261007090000_company_calendar` (additive). Images rebuilt: auth, task (`date-holidays`), gateway, notification, web; static synced. OTA 1.0.7 `44ba92a0`, 1.0.6 `e096a1f7`. See the calendar endpoint section for the rules.
 
 ### Recently Completed (2026-10-04) — Work roles, day rates, worker statement, currencies — PROD `94c414fa`
 
