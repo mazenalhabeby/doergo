@@ -36,6 +36,18 @@ const SENSITIVE_KEY = /pass|token|secret|otp|code|hash|authorization/i;
 // Known routes → semantic action labels. Anything unlisted falls back to
 // `${RESOURCE}_${VERB}` (e.g. LOCATIONS_UPDATED), so coverage is total.
 const ROUTE_ACTIONS: Record<string, string> = {
+  // Calendar (shared calendar/*): appointments, answers, and the holiday/weekend settings.
+  'POST /calendar/events': 'CALENDAR_EVENT_CREATED',
+  'PATCH /calendar/events/:id': 'CALENDAR_EVENT_UPDATED',
+  'DELETE /calendar/events/:id': 'CALENDAR_EVENT_CANCELED',
+  'POST /calendar/events/:id/respond': 'CALENDAR_EVENT_ANSWERED',
+  'POST /calendar/feed': 'CALENDAR_LINK_CREATED',
+  'DELETE /calendar/feed': 'CALENDAR_LINK_REVOKED',
+  'PATCH /calendar/settings': 'CALENDAR_SETTINGS_UPDATED',
+  'PATCH /calendar/settings/workspaces/:spaceId': 'WORKSPACE_CALENDAR_UPDATED',
+  'POST /calendar/holidays': 'HOLIDAY_SAVED',
+  'PATCH /calendar/holidays/:id': 'HOLIDAY_SAVED',
+  'DELETE /calendar/holidays/:id': 'HOLIDAY_REMOVED',
   'POST /tasks': 'TASK_CREATED',
   'DELETE /tasks/:id': 'TASK_DELETED',
   'POST /tasks/:id/assign': 'TASK_ASSIGNED',

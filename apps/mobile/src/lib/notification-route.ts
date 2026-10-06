@@ -44,7 +44,16 @@ const HOME: Resolve = () => null;
 */
 const DOCUMENT: Resolve = (d) => to('/(app)/documents', { open: str(d.documentId) });
 
+/** The calendar, with the event opened (its sheet answers, snoozes, joins). */
+const CALENDAR: Resolve = (d) => to('/(app)/(tabs)/calendar', { event: str(d.eventId) });
+
 export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
+  // Calendar (shared calendar/*): an invitation, a moved or canceled event, an answer, a reminder.
+  calendar_invite: CALENDAR,
+  calendar_canceled: CALENDAR,
+  calendar_answer: CALENDAR,
+  calendar_reminder: CALENDAR,
+
   // Tasks
   task_assigned: TASK,
   task_departure_due: TASK,

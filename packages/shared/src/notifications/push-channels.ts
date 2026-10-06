@@ -85,6 +85,8 @@ const TIME_SENSITIVE_PREFIXES = [
     of an hour to see it is how somebody else, or nobody, takes it.
   */
   'task_role_offer',
+  /* A reminder the person set for themselves — ringing late is the same as not ringing. */
+  'calendar_reminder',
 ] as const;
 
 /**

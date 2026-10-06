@@ -226,6 +226,11 @@ export class EventsService {
     }
   }
 
+  private async nameOf(userId: string): Promise<string> {
+    const u = await this.prisma.user.findUnique({ where: { id: userId }, select: { firstName: true, lastName: true } });
+    return u ? `${u.firstName} ${u.lastName}`.trim() : '';
+  }
+
   private notify(pattern: string, payload: Record<string, unknown>) {
     this.notifications.emit(pattern, payload);
   }
@@ -289,7 +294,7 @@ export class EventsService {
     if (invitees.size) {
       this.notify('calendar_invited', {
         organizationId: dto.organizationId, eventId: created.id, title, startAt: startAt.toISOString(), allDay,
-        timezone: tz, organizerId: dto.userId, userIds: [...invitees.keys()],
+        timezone: tz, organizerId: dto.userId, organizerName: await this.nameOf(dto.userId), userIds: [...invitees.keys()],
       });
     }
     this.refresh(dto.organizationId, [dto.userId, ...invitees.keys()]);
@@ -371,9 +376,10 @@ export class EventsService {
       }
     });
     const stayed = [...before].filter((id) => !removed.includes(id));
-    if (added.length) this.notify('calendar_invited', { organizationId: dto.organizationId, eventId: ev.id, title, startAt: startAt.toISOString(), allDay, timezone: tz, organizerId: dto.userId, userIds: added });
+    const organizerName = added.length || removed.length ? await this.nameOf(dto.userId) : '';
+    if (added.length) this.notify('calendar_invited', { organizationId: dto.organizationId, eventId: ev.id, title, startAt: startAt.toISOString(), allDay, timezone: tz, organizerId: dto.userId, organizerName, userIds: added });
     if (timesChanged && stayed.length) this.notify('calendar_updated', { organizationId: dto.organizationId, eventId: ev.id, title, startAt: startAt.toISOString(), allDay, timezone: tz, organizerId: dto.userId, userIds: stayed });
-    if (removed.length) this.notify('calendar_canceled', { organizationId: dto.organizationId, eventId: ev.id, title, startAt: startAt.toISOString(), allDay, timezone: tz, organizerId: dto.userId, userIds: removed });
+    if (removed.length) this.notify('calendar_canceled', { organizationId: dto.organizationId, eventId: ev.id, title, startAt: startAt.toISOString(), allDay, timezone: tz, organizerId: dto.userId, organizerName, userIds: removed });
     this.refresh(dto.organizationId, [dto.userId, ...stayed, ...added, ...removed]);
     return this.get({ ...dto, eventId: ev.id });
   }
@@ -385,7 +391,7 @@ export class EventsService {
       this.prisma.calendarAttendee.updateMany({ where: { eventId: ev.id }, data: { nextRemindAt: null } }),
     ]);
     const others = ev.attendees.filter((a) => !a.isOrganizer && a.response !== 'DECLINED').map((a) => a.userId);
-    if (others.length) this.notify('calendar_canceled', { organizationId: dto.organizationId, eventId: ev.id, title: ev.title, startAt: ev.startAt.toISOString(), allDay: ev.allDay, timezone: ev.timezone, organizerId: dto.userId, userIds: others });
+    if (others.length) this.notify('calendar_canceled', { organizationId: dto.organizationId, eventId: ev.id, title: ev.title, startAt: ev.startAt.toISOString(), allDay: ev.allDay, timezone: ev.timezone, organizerId: dto.userId, organizerName: await this.nameOf(dto.userId), userIds: others });
     this.refresh(dto.organizationId, ev.attendees.map((a) => a.userId));
     return success({ ok: true });
   }
@@ -411,7 +417,7 @@ export class EventsService {
     if (row.response !== dto.response) {
       this.notify('calendar_responded', {
         organizationId: dto.organizationId, eventId: row.eventId, title: row.event.title,
-        organizerId: row.event.createdById, responderId: dto.userId, response: dto.response,
+        organizerId: row.event.createdById, responderId: dto.userId, responderName: await this.nameOf(dto.userId), response: dto.response,
       });
     }
     this.refresh(dto.organizationId, [dto.userId, row.event.createdById]);

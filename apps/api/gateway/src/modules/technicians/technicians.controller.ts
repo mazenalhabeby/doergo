@@ -35,6 +35,7 @@ import {
   ListEmployeesDto,
   RequestTimeOffDto,
 } from './dto';
+import { LeaveCountQueryDto } from '../calendar/calendar.dto';
 
 @ApiTags('employees')
 @ApiBearerAuth()
@@ -795,6 +796,24 @@ export class EmployeesController {
         technicianId: id,
         organizationId: user?.organizationId,
       }),
+    );
+  }
+
+  @Get(':id/time-off/count')
+  @ApiOperation({ summary: 'What a leave range would cost — weekends, rota rest days and holidays left out' })
+  @ApiParam({ name: 'id', description: 'Employee ID' })
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  async countLeave(
+    @Param('id') id: string,
+    @Query() q: LeaveCountQueryDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    // The same rule as the balance: your own, or as somebody who manages people's time.
+    const rota = spacesGranting(user?.access as any, 'canManageRota');
+    const privileged = user?.role === Role.ADMIN || !!user?.canViewAllTasks || rota === null || rota.length > 0;
+    if (!privileged && user?.id !== id) throw new ForbiddenException('You can only count your own leave');
+    return firstValueFrom(
+      this.taskClient.send({ cmd: 'count_leave' }, { technicianId: id, organizationId: user.organizationId, from: q.from, to: q.to }),
     );
   }
 

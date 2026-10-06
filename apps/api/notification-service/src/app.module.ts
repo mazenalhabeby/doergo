@@ -8,6 +8,7 @@ import { PushModule } from './modules/push/push.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
 import { NotificationController } from './notification.controller';
 import { TaskNotificationHandler } from './handlers/task-notification.handler';
+import { CalendarNotificationHandler } from './handlers/calendar-notification.handler';
 import { AttendanceNotificationHandler } from './handlers/attendance-notification.handler';
 import { JoinRequestNotificationHandler } from './handlers/join-request-notification.handler';
 import { SupportNotificationHandler } from './handlers/support-notification.handler';
@@ -37,6 +38,7 @@ import { NotificationStore } from './common/notification-store.service';
   controllers: [
     NotificationController,
     TaskNotificationHandler,
+    CalendarNotificationHandler,
     AttendanceNotificationHandler,
     JoinRequestNotificationHandler,
     SupportNotificationHandler,
