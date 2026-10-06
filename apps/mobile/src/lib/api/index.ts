@@ -106,3 +106,5 @@ export type { LocationAssignment, AssignMemberInput, LocationWithMembers } from 
 export { customFieldsApi } from './custom-fields';
 export type { MobileCustomFieldDefinition, MobileCustomFieldValue, MobileCustomFieldType } from './custom-fields';
 export * from './documents';
+export { calendarApi } from './calendar';
+export type { CalendarRange, CalendarEventDetail, CalendarEventInput, CalendarPerson, LeaveCount } from './calendar';

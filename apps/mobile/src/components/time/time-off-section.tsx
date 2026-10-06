@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
+import { useAuth } from '../../contexts/auth-context';
+import { calendarApi, type LeaveCount } from '../../lib/api';
 import { useToast } from '../../island/island-context';
 import { AText, PrimaryButton, Sunken, Well, WellDivider } from '../amazen';
 import { JobField, JobSheet, QuietButton, SectionLabel, StateEyebrow } from '../job/job-ui';
@@ -177,7 +179,25 @@ function RequestSheet({ visible, onClose, leave, weekdays, now }: { visible: boo
   };
 
   const end = b ?? a;
-  const n = a && end ? daysOff(a, end, weekdays) : 0;
+  /*
+    What the range COSTS, asked of the server — the one count the request is charged by: the
+    workspace's weekend, public holidays and the member's own rota (shared calendar/days.ts).
+    Offline, the phone's own count from the working week stands in.
+  */
+  const { user } = useAuth();
+  const [cost, setCost] = useState<LeaveCount | null>(null);
+  const aKey = a ? dayKey(a) : null, endKey = end ? dayKey(end) : null;
+  useEffect(() => {
+    setCost(null);
+    if (!user?.id || !aKey || !endKey) return;
+    let live = true;
+    const timer = setTimeout(() => {
+      calendarApi.countLeave(user.id, aKey, endKey).then((r) => { if (live) setCost(r); }).catch(() => undefined);
+    }, 250);
+    return () => { live = false; clearTimeout(timer); };
+  }, [user?.id, aKey, endKey]);
+  const costDay = useMemo(() => new Map((cost?.days ?? []).map((d) => [d.day, d])), [cost]);
+  const n = cost ? cost.counted : a && end ? daysOff(a, end, weekdays) : 0;
   const clash = a && end ? overlapIn(a, end, taken) : null;
   const kindLabel = t(`timeOff.reasonTypes.${kind}`);
 
@@ -278,7 +298,9 @@ function RequestSheet({ visible, onClose, leave, weekdays, now }: { visible: boo
             const mark = taken.get(k);
             const inRange = !!a && !!end && d >= a && d <= end;
             const edge = !!a && (k === dayKey(a) || (!!end && k === dayKey(end)));
-            const off = !works(d);
+            const known = costDay.get(k);
+            const holiday = known?.kind === 'holiday' || known?.kind === 'half-holiday';
+            const off = known ? known.cost === 0 : !works(d);
             return (
               <View key={k} style={{ width: `${100 / 7}%`, padding: 1.5 }}>
                 <Pressable
@@ -299,8 +321,9 @@ function RequestSheet({ visible, onClose, leave, weekdays, now }: { visible: boo
                     numeric
                     style={{
                       fontSize: 13.5,
-                      color: edge ? c.accentInk : mark === 'approved' ? c.accent : off ? c.inkMuted : dayKey(d) === dayKey(today) ? c.accent : c.inkStrong,
-                      opacity: off && !edge ? 0.55 : 1,
+                      color: edge ? c.accentInk : holiday ? c.critical : mark === 'approved' ? c.accent : off ? c.inkMuted : dayKey(d) === dayKey(today) ? c.accent : c.inkStrong,
+                      opacity: off && !edge && !holiday ? 0.55 : 1,
+                      textDecorationLine: inRange && (off || holiday) && !edge ? 'line-through' : 'none',
                     }}
                   >
                     {d.getDate()}
@@ -325,9 +348,17 @@ function RequestSheet({ visible, onClose, leave, weekdays, now }: { visible: boo
         <Sunken style={{ paddingVertical: amazen.space(3), paddingHorizontal: amazen.space(3.5), flexDirection: 'row', alignItems: 'center', gap: amazen.space(3) }}>
           <AText variant="body" tone="strong" style={{ flex: 1, fontSize: 14 }}>{range(a, end)}</AText>
           <AText variant="caption" tone="ink" numeric style={{ fontSize: 13 }}>
-            {weekdays ? t('time.off.workingDays', { count: n, defaultValue: '{{count}} working days' }) : t('time.off.days', { count: n, defaultValue: '{{count}} days' })}
+            {weekdays || (cost && cost.counted !== cost.calendarDays) ? t('time.off.workingDays', { count: n, defaultValue: '{{count}} working days' }) : t('time.off.days', { count: n, defaultValue: '{{count}} days' })}
           </AText>
         </Sunken>
+      ) : null}
+      {cost && (cost.restDays > 0 || cost.holidays.length > 0) ? (
+        <AText variant="caption" tone="muted" style={{ textAlign: 'center', fontSize: 12, marginTop: -amazen.space(1) }}>
+          {[
+            cost.restDays > 0 ? t('time.off.restLeftOut', { count: cost.restDays, defaultValue: '{{count}} days off not counted' }) : null,
+            ...cost.holidays.map((h) => h.name),
+          ].filter(Boolean).join(' · ')}
+        </AText>
       ) : null}
 
       {clash ? (

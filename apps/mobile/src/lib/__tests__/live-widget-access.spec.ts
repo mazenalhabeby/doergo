@@ -21,6 +21,7 @@ jest.mock('../../components/home/crew-card', () => ({ CrewCard: () => null }));
 jest.mock('../../components/home/clients-card', () => ({ ClientsCard: () => null }));
 jest.mock('../../components/home/shortcuts-card', () => ({ ShortcutsCard: () => null }));
 jest.mock('../../components/home/route-card', () => ({ RouteCard: () => null }));
+jest.mock('../../components/home/today-card', () => ({ TodayCard: () => null }));
 import { availableWidgets } from '../../home/registry';
 import { destinationsFor } from '../manage-rows';
 

@@ -52,7 +52,7 @@ describe('a home screen set up by the office', () => {
   it('shows the chosen widgets in order and switches every other one off', () => {
     const l = layoutFromAssignment({ widgets: ['shift-clock', 'shortcuts', 'crew', 'my-work'] });
     expect(l.keys.slice(0, 4)).toEqual(['shift-clock', 'shortcuts', 'crew', 'my-work']);
-    expect([...l.hidden].sort()).toEqual(['clients', 'my-route']);
+    expect([...l.hidden].sort()).toEqual(['clients', 'my-route', 'today']);
     expect(new Set(l.keys).size).toBe(HOME_WIDGET_KEYS.length);
   });
 

@@ -35,6 +35,12 @@ export function setResponseCache(next: ResponseCacheStore | null): void {
 */
 const KEEP: readonly RegExp[] = [
   /^\/attendance(\/|\?|$)/,
+  /*
+    My own calendar for a week (the member's own appointments, leave and their workspace's
+    holidays) and one of my own events — a day's plan must still read with no signal.
+  */
+  /^\/calendar(\?|$)/,
+  /^\/calendar\/events\/[^/?]+$/,
   /^\/reports\//,
   /^\/documents(\/|\?|$)/,
   /^\/assets\/(mine|expenses\/mine|proposals\/mine|custody)/,

@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Pressable, Animated, Image } from 'react-native';
-import { Tabs } from 'expo-router';
+import { Tabs, type Href } from 'expo-router';
 import { useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { splitTabs, tabAccessFor, tabVisible } from '../../../src/lib/tab-layout';
@@ -414,6 +414,15 @@ export default function TabsLayout() {
           options={{
             title: t('tabs.messages', 'Chat'),
             href: showChat ? '/chat' : null,
+            headerShown: false,
+          }}
+        />
+        {/* Calendar — the organization's own (shared calendar/*); in the overflow behind the fixed four. */}
+        <Tabs.Screen
+          name="calendar"
+          options={{
+            title: t('tabs.calendar', 'Calendar'),
+            href: access.calendar ? ('/calendar' as Href) : null,
             headerShown: false,
           }}
         />

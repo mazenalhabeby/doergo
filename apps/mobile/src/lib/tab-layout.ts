@@ -59,7 +59,11 @@ export const MAX_TABS = 5;
   and a message to any of them — is one tap from the bar; the conversation
   list sits one step further, in More.
 */
-export const TAB_PRIORITY = ['index', 'tasks', 'attendance', 'team', 'chat', 'time-off', 'create-task'];
+/*
+  The calendar sits in the overflow (More) behind the fixed four — the owner fixed the bar — and
+  its own day reaches the home screen through the Today card.
+*/
+export const TAB_PRIORITY = ['index', 'tasks', 'attendance', 'team', 'chat', 'calendar', 'time-off', 'create-task'];
 
 const byPriority = (a: { name: string }, b: { name: string }) => {
   const ia = TAB_PRIORITY.indexOf(a.name);
@@ -111,6 +115,8 @@ interface TabAccess {
   create: boolean;
   team: boolean;
   chat: boolean;
+  /** An external member holds no calendar of ours: no clock, no leave, no days. */
+  calendar: boolean;
 }
 
 /**
@@ -134,6 +140,7 @@ export function tabAccessFor(user: Record<string, unknown> | null | undefined): 
     create: hasAccessModule(u, 'create_task'),
     team: canContactColleagues(u),
     chat: orgHasAddOn((user as { orgAddOns?: string[] } | null)?.orgAddOns ?? null, 'live_chat') && canContactColleagues(u),
+    calendar: !!user && (user as { isExternal?: boolean }).isExternal !== true,
   };
 }
 
@@ -147,6 +154,7 @@ export function tabAccessFor(user: Record<string, unknown> | null | undefined): 
 export function tabVisible(name: string, a: TabAccess): boolean {
   if (name === 'profile' || name === 'manage' || name === 'more') return false;
   if (name === 'chat') return a.chat;
+  if (name === 'calendar') return a.calendar;
   if (name === 'team') return a.team;
   if (name === 'attendance') return a.attendance;
   if (a.isAdmin) return name !== 'time-off';
@@ -165,4 +173,5 @@ export const TAB_TITLE_KEY: Record<string, string> = {
   'time-off': 'tabs.timeOff',
   team: 'tabs.team',
   chat: 'tabs.messages',
+  calendar: 'tabs.calendar',
 };

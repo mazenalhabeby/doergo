@@ -278,7 +278,8 @@
     "team": "Team",
     "profile": "Profil",
     "more": "Mehr",
-    "messages": "Chat"
+    "messages": "Chat",
+    "calendar": "Kalender"
   },
   "home": {
     "admin": {
@@ -3208,7 +3209,8 @@
       "ROLE_TASK_ALREADY_YOURS": "Sie sind bereits bei diesem Auftrag.",
       "ROLE_TASK_STARTED": "Die Arbeit hat begonnen — verlassen Sie stattdessen das Team.",
       "ROLE_TASK_NOT_ROLE": "Dieser Auftrag wurde nicht für eine Rolle geöffnet.",
-      "ROLE_TASK_FINISHED": "Dieser Auftrag ist abgeschlossen."
+      "ROLE_TASK_FINISHED": "Dieser Auftrag ist abgeschlossen.",
+      "LEAVE_NO_WORKING_DAYS": "Diese Tage sind alle Wochenenden oder Feiertage – es gibt nichts freizunehmen."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",
@@ -3437,8 +3439,10 @@
       "crew": "Wer ist da, wer ist spät, und was wartet?",
       "clients": "Wen muss ich heute anrufen oder anschreiben?",
       "shortcuts": "Wohin gehe ich, und was tue ich am häufigsten?",
-      "myRoute": "Wohin fahre ich heute, und was kommt als Nächstes?"
-    }
+      "myRoute": "Wohin fahre ich heute, und was kommt als Nächstes?",
+      "today": "Was steht heute an, und was kommt?"
+    },
+    "today": "Heute"
   },
   "shiftEnd": {
     "finishingAt": "FEIERABEND BEI {{at}}",
@@ -4217,7 +4221,9 @@
       "workingDaysLabel": "Arbeitstage",
       "daysLabel": "Tage",
       "sentAt": "Gesendet",
-      "withdraw": "Antrag zurückziehen"
+      "withdraw": "Antrag zurückziehen",
+      "restLeftOut_one": "{{count}} freier Tag nicht gezählt",
+      "restLeftOut_other": "{{count}} freie Tage nicht gezählt"
     }
   },
   "extraTime": {
@@ -4487,5 +4493,109 @@
     "openTo": "Offen für {{role}}",
     "takenFrom": "Übernommen von {{role}}",
     "takenOf": "{{taken}} von {{of}} übernommen"
+  },
+  "todayCard": {
+    "count_one": "{{count}} Termin",
+    "count_other": "{{count}} Termine",
+    "clear": "Heute ist nichts weiter geplant.",
+    "offline": "Für Ihren Tag wird eine Verbindung benötigt.",
+    "coming": "Demnächst",
+    "leave": "Abwesenheit · {{name}}",
+    "invited": "Eingeladen",
+    "open": "Kalender öffnen"
+  },
+  "calendar": {
+    "title": "Kalender",
+    "today": "Heute",
+    "previous": "Vorige Woche",
+    "next": "Nächste Woche",
+    "holidayToday": "Heute ist {{name}}",
+    "holidayOn": "{{day}}: {{name}}",
+    "estimated": "geschätzt",
+    "holiday": "Feiertag",
+    "offline": "Zum Laden des Kalenders wird eine Verbindung benötigt.",
+    "requested": "beantragt",
+    "nothingDay": "Nichts geplant",
+    "addHint": "Tippen Sie auf + und schreiben Sie es – „Müller um 14 Uhr anrufen, 30 min“.",
+    "notAnswered": "keine Antwort",
+    "now": "Jetzt",
+    "new": "Neu",
+    "gone": "Das ist nicht mehr in Ihrem Kalender",
+    "reminder": "Erinnerung",
+    "appointment": "Termin",
+    "when": "Wann",
+    "where": "Wo",
+    "what": "Was",
+    "kindLabel": "Art",
+    "remind": "Erinnern",
+    "people": "Personen",
+    "going": "{{count}} von {{total}} kommen",
+    "organizer": "Organisator",
+    "join": "Beitreten",
+    "yourAnswer": "Ihre Antwort",
+    "answered": "Antwort gesendet",
+    "snooze": "+10 Min.",
+    "snoozed": "Erinnerung in 10 Minuten",
+    "done": "Erledigt",
+    "cancelEvent": "Absagen",
+    "canceledToast": "Abgesagt – alle wurden informiert",
+    "atStart": "Zu Beginn",
+    "minutes_one": "{{count}} Min. vorher",
+    "minutes_other": "{{count}} Min. vorher",
+    "hours_one": "{{count}} Stunde vorher",
+    "hours_other": "{{count}} Stunden vorher",
+    "days_one": "{{count}} Tag vorher",
+    "days_other": "{{count}} Tage vorher",
+    "weeks_one": "{{count}} Woche vorher",
+    "weeks_other": "{{count}} Wochen vorher",
+    "add": "Hinzufügen",
+    "smartPlaceholderShort": "Erinnere mich, Müller um 14 Uhr anzurufen, 30 min",
+    "allDay": "Ganztägig",
+    "online": "Online",
+    "invite": "Einladen",
+    "addPeople": "Personen hinzufügen",
+    "searchPeople": "Kollegen suchen…",
+    "remove": "Entfernen",
+    "save": "Speichern",
+    "saveAndInvite": "Speichern & einladen",
+    "invitedToast_one": "Gespeichert – {{count}} Person eingeladen",
+    "invitedToast_other": "Gespeichert – {{count}} Personen eingeladen",
+    "createdToast": "Zu Ihrem Kalender hinzugefügt",
+    "push": {
+      "done": "Erledigt",
+      "snooze": "+10 Min.",
+      "open": "Öffnen",
+      "accept": "Zusagen",
+      "maybe": "Vielleicht",
+      "decline": "Absagen"
+    },
+    "leaveType": {
+      "VACATION": "Urlaub",
+      "SICK": "Krank",
+      "FAMILY": "Familie",
+      "OTHER": "Sonstiges"
+    },
+    "kind": {
+      "job": "Auftrag",
+      "event": "Termin",
+      "reminder": "Erinnerung",
+      "crm": "Kunden-Nachfassen",
+      "shift": "Schicht",
+      "leave": "Abwesenheit",
+      "holiday": "Feiertag",
+      "document": "Dokument läuft ab"
+    },
+    "rsvp": {
+      "accept": "Zusagen",
+      "maybe": "Vielleicht",
+      "decline": "Absagen"
+    },
+    "errors": {
+      "EVENT_TIME_INVALID": "Prüfen Sie Beginn und Ende.",
+      "EVENT_TITLE_REQUIRED": "Geben Sie einen Titel ein.",
+      "EVENT_PERSON_NOT_REACHABLE": "Sie können Personen einladen, mit denen Sie in einem Arbeitsbereich arbeiten.",
+      "EVENT_NOT_ORGANIZER": "Nur die Person, die ihn erstellt hat, kann ihn ändern.",
+      "LEAVE_NO_WORKING_DAYS": "Diese Tage sind alle Wochenenden oder Feiertage – es gibt nichts freizunehmen."
+    }
   }
 }

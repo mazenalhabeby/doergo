@@ -9,6 +9,7 @@ import * as Location from 'expo-location';
 import { type NotificationResponse } from 'expo-notifications';
 import { crewJoinTarget, notificationTarget, type NotificationTarget } from '../../src/lib/notification-route';
 import { CREW_JOIN_ACTION, usePushNotifications } from '../../src/hooks/usePushNotifications';
+import { isCalendarAction, runCalendarAction } from '../../src/lib/calendar-push-actions';
 import { holds } from '../../src/lib/permissions';
 import { SocketProvider, useSocketContext } from '../../src/contexts/socket-context';
 import { LocationTrackingProvider } from '../../src/contexts/location-tracking-context';
@@ -123,12 +124,21 @@ export default function AppLayout() {
   const { user } = useAuth();
   const managesIssues = holds(user, 'canViewAllTasks');
   const [pendingTarget, setPendingTarget] = useState<NotificationTarget | null>(null);
+  const calendarToast = useToast();
   const handleNotificationResponse = useCallback((response: NotificationResponse) => {
     const data = response.notification?.request?.content?.data as Record<string, unknown> | undefined;
+    // A calendar button (Done, +10 min, Accept …) does its one thing and stays where the member is.
+    if (isCalendarAction(response.actionIdentifier)) {
+      void runCalendarAction(response.actionIdentifier, data).then((r) => {
+        if (r === 'failed') calendarToast.error(t('common.error', 'Error'), t('calendar.offline', 'Needs a connection to load your calendar.'));
+        else calendarToast.success(r === 'snoozed' ? t('calendar.snoozed', 'Reminding you again in 10 minutes') : r === 'answered' ? t('calendar.answered', 'Answer sent') : t('calendar.done', 'Done'));
+      });
+      return;
+    }
     // The crew push's button ("I'm with him") joins as the job opens; a plain tap just opens it.
     const target = response.actionIdentifier === CREW_JOIN_ACTION ? crewJoinTarget(data) : notificationTarget(data, { managesIssues });
     if (target) setPendingTarget(target);
-  }, [managesIssues]);
+  }, [managesIssues, calendarToast, t]);
 
   /*
     Navigate once the app has SETTLED, not the moment the tap is known.

@@ -278,7 +278,8 @@
     "team": "Team",
     "profile": "Profilo",
     "more": "Altro",
-    "messages": "Chat"
+    "messages": "Chat",
+    "calendar": "Calendario"
   },
   "home": {
     "admin": {
@@ -3208,7 +3209,8 @@
       "ROLE_TASK_ALREADY_YOURS": "Sei già su questo lavoro.",
       "ROLE_TASK_STARTED": "Il lavoro è iniziato: esci invece dalla squadra.",
       "ROLE_TASK_NOT_ROLE": "Questo lavoro non è stato aperto a un ruolo.",
-      "ROLE_TASK_FINISHED": "Questo lavoro è concluso."
+      "ROLE_TASK_FINISHED": "Questo lavoro è concluso.",
+      "LEAVE_NO_WORKING_DAYS": "Quei giorni sono tutti weekend o festività: non c’è nulla da chiedere."
     },
     "signOut": {
       "title_one": "{{count}} modifica non è stata inviata",
@@ -3437,8 +3439,10 @@
       "crew": "Chi c’è, chi è in ritardo e cosa aspetta?",
       "clients": "Chi devo chiamare o scrivere oggi?",
       "shortcuts": "Dove vado e cosa faccio più spesso?",
-      "myRoute": "Dove guido oggi, e qual è la prossima?"
-    }
+      "myRoute": "Dove guido oggi, e qual è la prossima?",
+      "today": "Cosa c’è oggi, e cosa arriva?"
+    },
+    "today": "Oggi"
   },
   "shiftEnd": {
     "finishingAt": "FINE TURNO A {{at}}",
@@ -4217,7 +4221,9 @@
       "workingDaysLabel": "Giorni lavorativi",
       "daysLabel": "Giorni",
       "sentAt": "Inviata",
-      "withdraw": "Ritira la richiesta"
+      "withdraw": "Ritira la richiesta",
+      "restLeftOut_one": "{{count}} giorno libero non contato",
+      "restLeftOut_other": "{{count}} giorni liberi non contati"
     }
   },
   "extraTime": {
@@ -4487,5 +4493,109 @@
     "openTo": "Aperto a {{role}}",
     "takenFrom": "Preso da {{role}}",
     "takenOf": "{{taken}} su {{of}} presi"
+  },
+  "todayCard": {
+    "count_one": "{{count}} impegno",
+    "count_other": "{{count}} impegni",
+    "clear": "Nient’altro in programma oggi.",
+    "offline": "Serve una connessione per vedere la tua giornata.",
+    "coming": "In arrivo",
+    "leave": "Assenza · {{name}}",
+    "invited": "Invitato",
+    "open": "Apri il calendario"
+  },
+  "calendar": {
+    "title": "Calendario",
+    "today": "Oggi",
+    "previous": "Settimana precedente",
+    "next": "Settimana successiva",
+    "holidayToday": "Oggi è {{name}}",
+    "holidayOn": "{{day}}: {{name}}",
+    "estimated": "stimato",
+    "holiday": "Festivo",
+    "offline": "Serve una connessione per caricare il calendario.",
+    "requested": "richiesto",
+    "nothingDay": "Niente in programma",
+    "addHint": "Tocca + e scrivilo: «chiamare Müller alle 14 per 30 min».",
+    "notAnswered": "nessuna risposta",
+    "now": "Ora",
+    "new": "Nuovo",
+    "gone": "Non è più nel tuo calendario",
+    "reminder": "Promemoria",
+    "appointment": "Appuntamento",
+    "when": "Quando",
+    "where": "Dove",
+    "what": "Cosa",
+    "kindLabel": "Tipo",
+    "remind": "Ricorda",
+    "people": "Persone",
+    "going": "{{count}} su {{total}} partecipano",
+    "organizer": "organizzatore",
+    "join": "Partecipa",
+    "yourAnswer": "La tua risposta",
+    "answered": "Risposta inviata",
+    "snooze": "+10 min",
+    "snoozed": "Te lo ricordo tra 10 minuti",
+    "done": "Fatto",
+    "cancelEvent": "Annulla",
+    "canceledToast": "Annullato: tutti sono stati avvisati",
+    "atStart": "All’inizio",
+    "minutes_one": "{{count}} min prima",
+    "minutes_other": "{{count}} min prima",
+    "hours_one": "{{count}} ora prima",
+    "hours_other": "{{count}} ore prima",
+    "days_one": "{{count}} giorno prima",
+    "days_other": "{{count}} giorni prima",
+    "weeks_one": "{{count}} settimana prima",
+    "weeks_other": "{{count}} settimane prima",
+    "add": "Aggiungi",
+    "smartPlaceholderShort": "Ricordami di chiamare Müller alle 14 per 30 min",
+    "allDay": "Tutto il giorno",
+    "online": "Online",
+    "invite": "Invita",
+    "addPeople": "Aggiungi persone",
+    "searchPeople": "Cerca colleghi…",
+    "remove": "Rimuovi",
+    "save": "Salva",
+    "saveAndInvite": "Salva e invita",
+    "invitedToast_one": "Salvato: {{count}} persona invitata",
+    "invitedToast_other": "Salvato: {{count}} persone invitate",
+    "createdToast": "Aggiunto al tuo calendario",
+    "push": {
+      "done": "Fatto",
+      "snooze": "+10 min",
+      "open": "Apri",
+      "accept": "Accetta",
+      "maybe": "Forse",
+      "decline": "Rifiuta"
+    },
+    "leaveType": {
+      "VACATION": "Ferie",
+      "SICK": "Malattia",
+      "FAMILY": "Famiglia",
+      "OTHER": "Altro"
+    },
+    "kind": {
+      "job": "Lavoro",
+      "event": "Appuntamento",
+      "reminder": "Promemoria",
+      "crm": "Follow-up cliente",
+      "shift": "Turno",
+      "leave": "Assenza",
+      "holiday": "Festività",
+      "document": "Documento in scadenza"
+    },
+    "rsvp": {
+      "accept": "Accetta",
+      "maybe": "Forse",
+      "decline": "Rifiuta"
+    },
+    "errors": {
+      "EVENT_TIME_INVALID": "Controlla inizio e fine.",
+      "EVENT_TITLE_REQUIRED": "Dagli un titolo.",
+      "EVENT_PERSON_NOT_REACHABLE": "Puoi invitare le persone con cui lavori in uno spazio.",
+      "EVENT_NOT_ORGANIZER": "Solo chi l’ha creato può modificarlo.",
+      "LEAVE_NO_WORKING_DAYS": "Quei giorni sono tutti weekend o festività: non c’è nulla da chiedere."
+    }
   }
 }

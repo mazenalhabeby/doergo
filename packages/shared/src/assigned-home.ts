@@ -12,7 +12,7 @@
  */
 
 /** Every home widget the phone knows. Mirrors `apps/mobile/src/home/registry.tsx`. */
-export const HOME_WIDGET_KEYS = ['shift-clock', 'my-work', 'crew', 'clients', 'shortcuts', 'my-route'] as const;
+export const HOME_WIDGET_KEYS = ['shift-clock', 'my-work', 'crew', 'clients', 'shortcuts', 'my-route', 'today'] as const;
 export type HomeWidgetKey = (typeof HOME_WIDGET_KEYS)[number];
 
 /** The Shortcuts card holds four. */

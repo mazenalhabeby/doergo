@@ -165,6 +165,16 @@ function TabNewJobGlyph({ size = 22, color }: TabGlyphProps) {
   );
 }
 
+/** A CALENDAR page — a frame, the binding line and two rings. Nothing inside: a grid would close up at 21px. */
+function TabCalendarGlyph({ size = 22, color }: TabGlyphProps) {
+  return (
+    <Svg {...svg(size)}>
+      <Path d="M4 6.2c0-1 .8-1.8 1.8-1.8h12.4c1 0 1.8.8 1.8 1.8v12.6c0 1-.8 1.8-1.8 1.8H5.8c-1 0-1.8-.8-1.8-1.8Z" {...stroke(color)} />
+      <Path d="M4 9.6h16M8.4 2.6v3.6M15.6 2.6v3.6" {...stroke(color)} />
+    </Svg>
+  );
+}
+
 /** Which mark a route wears. One map, so the pill and the More sheet agree. */
 export const TAB_GLYPHS: Record<string, React.ComponentType<TabGlyphProps>> = {
   index: TabHomeGlyph,
@@ -174,4 +184,5 @@ export const TAB_GLYPHS: Record<string, React.ComponentType<TabGlyphProps>> = {
   'time-off': TabTimeOffGlyph,
   team: TabTeamGlyph,
   'create-task': TabNewJobGlyph,
+  calendar: TabCalendarGlyph,
 };

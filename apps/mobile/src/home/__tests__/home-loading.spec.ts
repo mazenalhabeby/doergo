@@ -45,7 +45,7 @@ describe('the home asks through its queue', () => {
   it('every home widget gives the height its first answer will take', () => {
     const reg = code('home/registry.tsx');
     const keys = [...reg.matchAll(/key: '([a-z-]+)',\n    restHeight: \d+/g)].map((m) => m[1]);
-    expect(keys.sort()).toEqual(['clients', 'crew', 'my-route', 'my-work', 'shift-clock', 'shortcuts']);
+    expect(keys.sort()).toEqual(['clients', 'crew', 'my-route', 'my-work', 'shift-clock', 'shortcuts', 'today']);
   });
 });
 

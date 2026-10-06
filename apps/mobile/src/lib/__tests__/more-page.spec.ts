@@ -8,10 +8,10 @@ import { groupManageRows } from '../../components/more/more-groups';
 
 const SRC = path.resolve(__dirname, '../..');
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), 'utf8');
-const ROUTES = ['index', 'tasks', 'create-task', 'manage', 'attendance', 'time-off', 'team', 'chat', 'profile', 'more'];
+const ROUTES = ['index', 'tasks', 'create-task', 'manage', 'attendance', 'time-off', 'team', 'chat', 'calendar', 'profile', 'more'];
 
 describe('who gets which tab — one answer', () => {
-  const all = { isAdmin: false, tasks: true, attendance: true, timeOff: true, create: true, team: true, chat: true };
+  const all = { isAdmin: false, tasks: true, attendance: true, timeOff: true, create: true, team: true, chat: true, calendar: true };
 
   it('profile, manage and more are never slots', () => {
     for (const n of ['profile', 'manage', 'more']) expect(tabVisible(n, { ...all, isAdmin: true })).toBe(false);
@@ -26,13 +26,18 @@ describe('who gets which tab — one answer', () => {
     const visible = ROUTES.filter((n) => tabVisible(n, all)).map((name) => ({ name }));
     const { barRoutes, overflowRoutes } = splitTabs(visible, true);
     expect(barRoutes.map((r) => r.name)).toEqual(['index', 'tasks', 'attendance', 'team']);
-    expect(overflowRoutes.map((r) => r.name)).toEqual(['chat', 'time-off', 'create-task']);
+    expect(overflowRoutes.map((r) => r.name)).toEqual(['chat', 'calendar', 'time-off', 'create-task']);
   });
 
   it('a member with nothing reads nothing', () => {
     const a = tabAccessFor({ role: 'EMPLOYEE' } as never);
     expect(a.isAdmin).toBe(false);
     expect(tabVisible('chat', a)).toBe(false);
+  });
+
+  it('the calendar is everybody\'s except an external member\'s', () => {
+    expect(tabVisible('calendar', tabAccessFor({ role: 'EMPLOYEE' } as never))).toBe(true);
+    expect(tabVisible('calendar', tabAccessFor({ role: 'EMPLOYEE', isExternal: true } as never))).toBe(false);
   });
 });
 

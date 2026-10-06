@@ -5,6 +5,7 @@ import { CrewCard } from '../components/home/crew-card';
 import { ClientsCard } from '../components/home/clients-card';
 import { ShortcutsCard } from '../components/home/shortcuts-card';
 import { RouteCard } from '../components/home/route-card';
+import { TodayCard } from '../components/home/today-card';
 import type { Requires } from './entitlement';
 import { meets } from './entitlement';
 import type { User } from '../lib/api/types';
@@ -202,6 +203,21 @@ export const WIDGETS: WidgetRow[] = [
     empty: 'allClear',
     Component: RouteCard,
   },
+  /*
+    Today — the calendar on the home screen (shared calendar/*): appointments, reminders and
+    client follow-ups today, then a holiday, my leave and invitations waiting on me. Jobs stay on
+    My work. About the viewer, no permission; an external member holds no calendar.
+  */
+  {
+    key: 'today',
+    restHeight: 240,
+    title: 'widgets.today',
+    question: 'widgets.q.today',
+    requires: { internal: true, self: true },
+    surface: 'well',
+    empty: 'allClear',
+    Component: TodayCard,
+  },
 ];
 
 /**
@@ -216,7 +232,7 @@ export const WIDGETS: WidgetRow[] = [
  * skipped silently, which is right for a member whose entitlement changed and
  * wrong for a typo — so `registry.spec.ts` fails on one.
  */
-export const DEFAULT_ORDER: string[] = ['shift-clock', 'shortcuts', 'crew', 'my-work', 'clients'];
+export const DEFAULT_ORDER: string[] = ['shift-clock', 'shortcuts', 'crew', 'my-work', 'today', 'clients'];
 
 /**
  * ENTITLEMENT IS ASKED ONCE, AND FILTERED LAST.
