@@ -45,45 +45,12 @@ function yearsOf(from: string, to: string): number[] {
 export class CalendarRulesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * One person with their rota across EVERY workspace — the person layer (shared personRoster).
-   * Two queries; null when they are not in the org.
-   */
-  async personOf(organizationId: string, userId: string): Promise<CoverPerson | null> {
-    const [user, rules] = await Promise.all([
-      this.prisma.user.findFirst({
-        where: { id: userId, organizationId },
-        select: {
-          id: true, firstName: true, lastName: true, specialty: true, position: true,
-          schedules: { where: { isActive: true }, select: { dayOfWeek: true } },
-        },
-      }),
-      this.prisma.shiftAssignment.findMany({
-        where: { organizationId, userId, isActive: true },
-        select: { recurrence: true, daysOfWeek: true, daysOfMonth: true, dates: true, effectiveFrom: true, effectiveTo: true },
-      }),
-    ]);
-    if (!user) return null;
-    return {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      spaceId: '',
-      specialty: user.specialty,
-      position: user.position,
-      scheduleDows: [...new Set(user.schedules.map((s) => s.dayOfWeek))],
-      shiftRules: rules.map(shiftRuleOf),
-    };
-  }
-
   private org(organizationId: string): Promise<OrgRow | null> {
     return this.prisma.organization.findUnique({
       where: { id: organizationId },
       select: { id: true, name: true, weekendDays: true, holidayCountry: true, holidayRegion: true, country: true },
     });
   }
-
-  /** The organization's own holiday source: its holiday country, else its address country. */
   static orgCountry(o: Pick<OrgRow, 'holidayCountry' | 'country'>): string | null {
     return (o.holidayCountry || o.country || null)?.toUpperCase() ?? null;
   }
@@ -178,27 +145,74 @@ export class CalendarRulesService {
 
   /** The workspaces a person works in right now (not the Remote bucket, not archived). */
   async workspacesOf(organizationId: string, userId: string): Promise<string[]> {
+    return (await this.workspacesOfMany(organizationId, [userId])).get(userId) ?? [];
+  }
+
+  private async workspacesOfMany(organizationId: string, userIds: string[]): Promise<Map<string, string[]>> {
     const rows = await this.prisma.spaceAssignment.findMany({
       where: {
         organizationId,
-        userId,
+        userId: { in: userIds },
         OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
         space: { isActive: true, isRemote: false },
       },
-      select: { spaceId: true },
+      select: { userId: true, spaceId: true },
     });
-    return [...new Set(rows.map((r) => r.spaceId))];
+    const out = new Map<string, string[]>(userIds.map((id) => [id, []]));
+    for (const r of rows) {
+      const list = out.get(r.userId)!;
+      if (!list.includes(r.spaceId)) list.push(r.spaceId);
+    }
+    return out;
   }
 
   /**
-   * One person's days: off only when off in every place they work (shared intersectDayRules), and
-   * their own rota/working week above that.
+   * Several people's days at once — the invite dialog asks for up to twenty. A fixed number of
+   * queries however many people: their workspaces, their weeks, their rotas, then every place once.
+   *
+   * Each person is off on a day only when it is off in every place they work (shared
+   * intersectDayRules); their own rota/working week sits above that (personRoster). Somebody with
+   * a rota that does not reach a day rests on that intersected weekend (`restDows`) — without it a
+   * rota starting next month made every weekend a working day.
    */
+  async personRulesMany(organizationId: string, userIds: string[], from: string, to: string): Promise<Map<string, { rules: DayRules; roster?: RosterFn; spaceIds: string[] }>> {
+    const ids = [...new Set(userIds)];
+    const out = new Map<string, { rules: DayRules; roster?: RosterFn; spaceIds: string[] }>();
+    if (!ids.length) return out;
+    const [spacesOf, users, rotas] = await Promise.all([
+      this.workspacesOfMany(organizationId, ids),
+      this.prisma.user.findMany({
+        where: { id: { in: ids }, organizationId },
+        select: { id: true, firstName: true, lastName: true, specialty: true, position: true, schedules: { where: { isActive: true }, select: { dayOfWeek: true } } },
+      }),
+      this.prisma.shiftAssignment.findMany({
+        where: { organizationId, userId: { in: ids }, isActive: true },
+        select: { userId: true, recurrence: true, daysOfWeek: true, daysOfMonth: true, dates: true, effectiveFrom: true, effectiveTo: true },
+      }),
+    ]);
+    const allSpaces = [...new Set([...spacesOf.values()].flat())];
+    const places = await this.places(organizationId, allSpaces, from, to);
+    for (const u of users) {
+      const spaceIds = spacesOf.get(u.id) ?? [];
+      const list = (spaceIds.length ? spaceIds.map((id) => places.get(id)) : [places.get(null)]).filter(Boolean) as PlaceCalendar[];
+      const rules = intersectDayRules(list.map((p) => p.rules));
+      const person: CoverPerson = {
+        id: u.id, firstName: u.firstName, lastName: u.lastName, spaceId: '', specialty: u.specialty, position: u.position,
+        scheduleDows: [...new Set(u.schedules.map((x) => x.dayOfWeek))],
+        shiftRules: rotas.filter((r) => r.userId === u.id).map(shiftRuleOf),
+        restDows: [...rules.weekend],
+      };
+      out.set(u.id, { rules, roster: personRoster(person), spaceIds });
+    }
+    return out;
+  }
+
+  /** One person's days — `personRulesMany` for one. */
   async personRules(organizationId: string, userId: string, from: string, to: string): Promise<{ rules: DayRules; roster?: RosterFn; spaceIds: string[] }> {
-    const [spaceIds, person] = await Promise.all([this.workspacesOf(organizationId, userId), this.personOf(organizationId, userId)]);
-    const places = await this.places(organizationId, spaceIds, from, to);
-    const list = spaceIds.length ? spaceIds.map((id) => places.get(id)).filter(Boolean) as PlaceCalendar[] : [places.get(null)].filter(Boolean) as PlaceCalendar[];
-    return { rules: intersectDayRules(list.map((p) => p.rules)), roster: personRoster(person), spaceIds };
+    const r = (await this.personRulesMany(organizationId, [userId], from, to)).get(userId);
+    if (r) return r;
+    const org = (await this.places(organizationId, [], from, to)).get(null);
+    return { rules: org?.rules ?? intersectDayRules([]), spaceIds: [] };
   }
 
   /** What leave from `from` to `to` costs this person. */

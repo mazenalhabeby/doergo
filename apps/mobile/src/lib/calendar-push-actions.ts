@@ -30,9 +30,11 @@ export function isCalendarAction(actionId: string | undefined | null): boolean {
 export async function runCalendarAction(actionId: string, data: Record<string, unknown> | undefined): Promise<'done' | 'snoozed' | 'answered' | 'failed'> {
   const eventId = typeof data?.eventId === 'string' ? data.eventId : null;
   if (!eventId) return 'failed';
+  // Which occurrence the push was about — a weekly reminder's "Done" is about THIS week's.
+  const occurrence = typeof data?.occurrence === 'string' ? data.occurrence : undefined;
   try {
-    if (actionId === CALENDAR_ACTIONS.done) { await calendarApi.done(eventId); return 'done'; }
-    if (actionId === CALENDAR_ACTIONS.snooze) { await calendarApi.snooze(eventId, 10); return 'snoozed'; }
+    if (actionId === CALENDAR_ACTIONS.done) { await calendarApi.done(eventId, occurrence); return 'done'; }
+    if (actionId === CALENDAR_ACTIONS.snooze) { await calendarApi.snooze(eventId, 10, occurrence); return 'snoozed'; }
     const answer = ANSWER[actionId];
     if (answer) { await calendarApi.respond(eventId, answer); return 'answered'; }
   } catch {

@@ -146,7 +146,8 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId }: Props
     mutationFn: () => {
       const repeat: Repeat | null = freq === "NONE" ? null : event?.repeat?.freq === freq ? event.repeat : { freq, interval: 1 }
       const input: CalendarEventInput = {
-        kind, title: title.trim(), allDay, timezone: tz,
+        // An edit keeps the event's own zone; only a new event takes the browser's.
+        kind, title: title.trim(), allDay, ...(editing ? {} : { timezone: tz }),
         ...(allDay ? { startDate: date, endDate: endDate < date ? date : endDate } : { startAt: startAt.toISOString(), endAt: endAt.toISOString() }),
         meetingUrl: meetingUrl.trim() || null, location: location.trim() || null, description: description.trim() || null,
         reminders, repeat, visibility, attendeeIds: ids, spaceId: event ? undefined : spaceId ?? null,

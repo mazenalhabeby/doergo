@@ -558,12 +558,12 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 | GET · POST | `/calendar/people` · `/availability` · `/free-slots` | Invite picker, free/busy (times only), find a time | the caller's circle (shared workspace), wide for admin / org-wide view |
 | GET · PATCH | `/calendar/settings[/workspaces/:id]` · `/calendar/holidays` (+ POST/PATCH/DELETE) | Weekend + holiday country/region per org / workspace; confirm, move, remove, company days | read holidays: everyone; writes: `canManageWorkspaces` |
 | GET · POST · DELETE | `/calendar/feed` | The member's private one-way ICS link (shown once, hash stored) | the member |
-| GET | `/calendar-feed/:token.ics` | The ICS itself | **public**, throttled 20/min, same 404 for every failure |
-| GET | `/employees/:id/time-off/count?from&to` | What a leave range COSTS | self, or managers (same rule as the balance) |
+| GET | `/calendar-feed/:token.ics` | The ICS itself | **public**, 30/min per LINK (calendar services share IPs) + 600/min per IP, same 404 for every failure |
+| GET | `/employees/:id/time-off/count?from&to` | What a leave range COSTS (≤ 1 year) | self; others only in the caller's rota/view scope (`assertMemberInScope`) |
 
 > ⚠️ **Three layers decide a day off: organization weekend → workspace weekend → the person's own rota/working week** (`personRoster` = cover's `isRosteredOn`). A person in several workspaces is off on a day only when it is off in ALL of them (`intersectDayRules`). Holidays never cost leave; a half holiday costs ½.
 >
-> ⚠️ **Leave is charged in WORKING days.** `TimeOff.workingDays` is frozen on the request and recounted at the decision; the balance recounts live per year (a request over New Year draws on both). A request with no working day is refused (`LEAVE_NO_WORKING_DAYS`). Old rows (NULL) are counted on read.
+> ⚠️ **Leave is charged in WORKING days.** `TimeOff.workingDays` is frozen on the request and recounted at the decision; the balance recounts live per year (a request over New Year draws on both). A VACATION request with no working day is refused (`LEAVE_NO_WORKING_DAYS`); sickness and office-entered days are recorded as they come. Old rows (NULL) are counted on read.
 >
 > ⚠️ **Cover now reads the calendar too**: a person with NO rota rests on the workspace weekend (`restDows`) and nobody is rostered on a full holiday (`closedDays`) unless a rota shift says so. With no weekend known, every day still counts.
 >
@@ -572,6 +572,10 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 > ⚠️ **Reminders: ONE indexed column per attendee** (`nextRemindAt` + `remindOccurrence`). The minute sweep (`task:calendarReminders` lease) claims each row with a conditional update on the instant it read, sends `calendar_reminder`, and stores the next one. Declined/canceled go quiet. Repeats are a closed JSON shape (`parseRepeat`), never a free RRULE; expansion is capped.
 >
 > ⚠️ **No two-way sync and no Zoom/Meet API, by decision.** A meeting link is a plain https field. The ICS feed carries the member's OWN things only; it dies with the account, a suspended org, or `Organization.calendarFeedsEnabled = false` (switching it off deletes every token).
+>
+> ⚠️ **Audit 2026-10-06 (all fixed + pinned in `calendar/__tests__/audit-fixes.spec.ts`)**: a reminder button acts on the occurrence the push NAMED (`occurrence` in the push data, validated against the series — the row already points at the next one); an edit counts as a time change only when the VALUES differ (a form sends every field); a PATCH without an end keeps an all-day event's length; recurrence walks dates as strings and converts only near the window (the cap counts what is returned — it used to drop an open-ended daily series after ~2.7 years); availability shows a colleague's leave/rota only to who leads them ("off" otherwise); per-person rules are BATCHED (`personRulesMany`, fixed query count for 20 people); events are read from the attendee side; a person with a rota that does not reach a day rests on the intersected weekend (`restDows`); the feed writes repeating events with `TZID` (wall time across DST); holiday overrides have a derived id (no duplicates); a client on an event needs CRM access (and is hidden from invitees without it); the sweep skips people who left or orgs that are suspended.
+>
+> ⚠️ **Gap, by decision for now**: holiday/weekend settings need org-wide `canManageWorkspaces` — a workspace manager cannot edit their own workspace's holidays (the service already scopes by workspace; the gateway does not pass a scope yet).
 >
 > ⚠️ Push: `calendar_reminder` is time-sensitive; invite/reminder pushes carry categories with buttons (JS-only, OTA-safe). The phone keeps `/calendar` and `/calendar/events/:id` offline (KEEP in response-cache); adding and answering are online.
 

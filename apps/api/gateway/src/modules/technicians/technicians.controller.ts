@@ -808,12 +808,16 @@ export class EmployeesController {
     @Query() q: LeaveCountQueryDto,
     @CurrentUser() user: CurrentUserData,
   ) {
-    // The same rule as the balance: your own, or as somebody who manages people's time.
+    // Your own, or somebody you manage: an admin or org-wide view reaches everyone, the rota
+    // permission held in a workspace reaches that workspace's people (narrowed in the service).
+    const admin = user?.role === Role.ADMIN;
     const rota = spacesGranting(user?.access as any, 'canManageRota');
-    const privileged = user?.role === Role.ADMIN || !!user?.canViewAllTasks || rota === null || rota.length > 0;
-    if (!privileged && user?.id !== id) throw new ForbiddenException('You can only count your own leave');
+    const view = spacesGranting(user?.access as any, 'canViewAllTasks');
+    const orgWide = admin || rota === null || view === null;
+    const scope = orgWide ? undefined : [...new Set([...(rota ?? []), ...(view ?? [])])];
+    if (user?.id !== id && scope !== undefined && scope.length === 0) throw new ForbiddenException('You can only count your own leave');
     return firstValueFrom(
-      this.taskClient.send({ cmd: 'count_leave' }, { technicianId: id, organizationId: user.organizationId, from: q.from, to: q.to }),
+      this.taskClient.send({ cmd: 'count_leave' }, { technicianId: id, organizationId: user.organizationId, from: q.from, to: q.to, callerId: user.id, scopeSpaceIds: scope }),
     );
   }
 

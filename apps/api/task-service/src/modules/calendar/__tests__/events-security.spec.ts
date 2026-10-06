@@ -105,7 +105,8 @@ describe('calendar events — who may do what', () => {
 
 describe('the reminder sweep', () => {
   const row = (over: Record<string, any> = {}) => ({
-    id: 'a1', userId: 'me', response: 'ACCEPTED', nextRemindAt: new Date(Date.now() - 1000), remindOccurrence: soon(),
+    id: 'a1', userId: 'me', organizationId: 'org', response: 'ACCEPTED', nextRemindAt: new Date(Date.now() - 1000), remindOccurrence: soon(),
+    user: { isActive: true, organizationId: 'org', organization: { suspendedAt: null } },
     event: { id: 'e1', organizationId: 'org', kind: 'REMINDER', title: 'Call', startAt: soon(), endAt: new Date(soon().getTime() + 1800000), allDay: false, timezone: 'UTC', repeat: null, reminderOffsets: [10], canceledAt: null, meetingUrl: null },
     ...over,
   });
@@ -125,6 +126,17 @@ describe('the reminder sweep', () => {
     expect(await svc.sweepDue()).toBe(1);
     expect(prisma.calendarAttendee.updateMany.mock.calls[0][0].where).toEqual({ id: 'a1', nextRemindAt: r.nextRemindAt });
     expect(notifications.emit).toHaveBeenCalledWith('calendar_reminder', expect.objectContaining({ userId: 'me', eventId: 'e1' }));
+  });
+
+  it('a member who left or was switched off is not reminded', async () => {
+    const { svc, prisma, notifications } = make();
+    prisma.calendarAttendee.findMany.mockResolvedValue([
+      row({ user: { isActive: false, organizationId: 'org', organization: { suspendedAt: null } } }),
+      row({ id: 'a2', user: { isActive: true, organizationId: 'other', organization: { suspendedAt: null } } }),
+      row({ id: 'a3', user: { isActive: true, organizationId: 'org', organization: { suspendedAt: new Date() } } }),
+    ]);
+    expect(await svc.sweepDue()).toBe(0);
+    expect(notifications.emit).not.toHaveBeenCalled();
   });
 
   it('a canceled event or a declined invitation goes quiet for good', async () => {

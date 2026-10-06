@@ -537,7 +537,8 @@ export class TechniciansService {
       throw new BadRequestException('Time-off request overlaps with an existing request');
     }
 
-    const workingDays = await this.workingDaysOf(organizationId, technicianId, start, end);
+    // Only a vacation request is refused for falling on days off; sickness is recorded as it came.
+    const workingDays = await this.workingDaysOf(organizationId, technicianId, start, end, type !== 'VACATION');
 
     const timeOff = await this.prisma.timeOff.create({
       data: {
@@ -689,7 +690,8 @@ export class TechniciansService {
       });
     }
 
-    const workingDays = await this.workingDaysOf(data.organizationId, data.technicianId, start, end);
+    // The office recording a day off is never refused — it records what the range costs.
+    const workingDays = await this.workingDaysOf(data.organizationId, data.technicianId, start, end, true);
     const timeOff = await this.prisma.timeOff.create({
       data: {
         technicianId: data.technicianId,
@@ -760,12 +762,21 @@ export class TechniciansService {
   }
 
   /** What a range WOULD cost — the request form shows it before anything is sent. */
-  async countLeave(dto: { organizationId: string; technicianId: string; from: string; to: string }) {
+  async countLeave(dto: { organizationId: string; technicianId: string; from: string; to: string; callerId?: string; scopeSpaceIds?: string[] }) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dto.from) || !/^\d{4}-\d{2}-\d{2}$/.test(dto.to) || dto.from > dto.to) {
       throw new BadRequestException('Choose a start day on or before the end day');
     }
+    // A year at most — a longer range would be counted short, not refused, further down.
+    if ((Date.parse(dto.to) - Date.parse(dto.from)) / 86400000 > 366) throw new BadRequestException('Count at most a year at a time');
     const exists = await this.prisma.user.findFirst({ where: { id: dto.technicianId, organizationId: dto.organizationId }, select: { id: true } });
     if (!exists) throw new NotFoundException('Employee not found in organization');
+    /*
+      Somebody else's count shows their rota and days off: only for whoever manages that person —
+      the rota permission held in a workspace reaches the people OF that workspace, not the org.
+    */
+    if (dto.callerId !== dto.technicianId) {
+      await assertMemberInScope(this.prisma as any, { userId: dto.technicianId, organizationId: dto.organizationId, scopeSpaceIds: dto.scopeSpaceIds });
+    }
     const c = await this.calendarRules.countLeaveFor(dto.organizationId, dto.technicianId, dto.from, dto.to);
     return success({
       from: dto.from, to: dto.to,
@@ -1145,7 +1156,7 @@ export class TechniciansService {
     }
 
     const workingDays = data.startDate || data.endDate
-      ? await this.workingDaysOf(data.organizationId, timeOff.technicianId, start, end)
+      ? await this.workingDaysOf(data.organizationId, timeOff.technicianId, start, end, true)
       : undefined;
     const updated = await this.prisma.timeOff.update({
       where: { id: data.timeOffId },

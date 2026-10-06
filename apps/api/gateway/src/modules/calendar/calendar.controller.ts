@@ -1,13 +1,13 @@
 import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Role, CurrentUser, CurrentUserData, isAdmin, spacesGranting } from '@hbcfield/shared';
+import { Role, CurrentUser, CurrentUserData, isAdmin, resolveCrmCaps, spacesGranting } from '@hbcfield/shared';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { DenyExternal, RequirePermission, Roles } from '../../common/decorators';
 import { CalendarGatewayService } from './calendar.service';
 import {
   AvailabilityDto, CreateEventDto, EventDto, FreeSlotsDto, HolidayDto, HolidaysQueryDto, ItemsQueryDto,
-  OrgCalendarSettingsDto, PeopleQueryDto, PlaceSettingsDto, RespondDto, SnoozeDto, TeamQueryDto,
+  DoneDto, OrgCalendarSettingsDto, PeopleQueryDto, PlaceSettingsDto, RespondDto, SnoozeDto, TeamQueryDto,
 } from './calendar.dto';
 
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
@@ -39,6 +39,10 @@ export class CalendarController {
       role: String(u.role),
       canManageUsers: !!u.canManageUsers,
       orgWideView: admin || spacesGranting(u.access as any, 'canViewAllTasks') === null,
+      // A client on an event is shown (and may be set) only for somebody who reads the client book.
+      crm: resolveCrmCaps(String(u.role), (u.access as any)?.org).canAccess,
+      // Whose leave the caller may be told about — availability hides the reason from everyone else.
+      teamSpaces: this.teamSpaces(u),
     };
   }
 
@@ -140,12 +144,12 @@ export class CalendarController {
 
   @Post('events/:id/snooze')
   snooze(@Param('id') eventId: string, @Body() b: SnoozeDto, @CurrentUser() u: CurrentUserData) {
-    return this.svc.write('calendar_event_snooze', { ...this.caller(u), eventId: id(eventId), minutes: b.minutes });
+    return this.svc.write('calendar_event_snooze', { ...this.caller(u), eventId: id(eventId), minutes: b.minutes, occurrence: b.occurrence });
   }
 
   @Post('events/:id/done')
-  done(@Param('id') eventId: string, @CurrentUser() u: CurrentUserData) {
-    return this.svc.write('calendar_event_done', { ...this.caller(u), eventId: id(eventId) });
+  done(@Param('id') eventId: string, @Body() b: DoneDto, @CurrentUser() u: CurrentUserData) {
+    return this.svc.write('calendar_event_done', { ...this.caller(u), eventId: id(eventId), occurrence: b.occurrence });
   }
 
   // ─── the optional Google / Outlook link ─────────────────────────────────

@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { createHash } from 'crypto';
 import {
   HOLIDAY_MAX_DAYS,
   HOLIDAY_NAME_MAX,
@@ -217,11 +218,16 @@ export class HolidaysService {
       else if (dto.scopeSpaceIds !== undefined) throw new ForbiddenException('Only an administrator changes the organization\'s holidays');
       row = await this.prisma.calendarHoliday.update({ where: { id: existing.id }, data });
     } else if (libraryKey) {
-      // One override per (layer, holiday): update it when it exists.
-      const existing = await this.prisma.calendarHoliday.findFirst({ where: { organizationId: dto.organizationId, spaceId, libraryKey }, select: { id: true } });
-      row = existing
-        ? await this.prisma.calendarHoliday.update({ where: { id: existing.id }, data })
-        : await this.prisma.calendarHoliday.create({ data: { ...data, organizationId: dto.organizationId, spaceId, libraryKey, createdById: dto.userId } });
+      /*
+        One override per (layer, holiday), BY CONSTRUCTION: its id is derived from the three, so a
+        double-click or two admins at once upsert the same row instead of making two.
+      */
+      const id = `hol_${createHash('sha256').update(`${dto.organizationId}|${spaceId ?? ''}|${libraryKey}`).digest('hex').slice(0, 24)}`;
+      row = await this.prisma.calendarHoliday.upsert({
+        where: { id },
+        create: { ...data, id, organizationId: dto.organizationId, spaceId, libraryKey, createdById: dto.userId },
+        update: data,
+      });
     } else {
       row = await this.prisma.calendarHoliday.create({ data: { ...data, removed: false, confirmed: true, organizationId: dto.organizationId, spaceId, libraryKey: null, createdById: dto.userId } });
     }

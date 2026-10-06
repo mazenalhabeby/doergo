@@ -48,6 +48,12 @@ export class RespondDto {
 
 export class SnoozeDto {
   @IsOptional() @IsIn([5, 10, 15, 30, 60]) minutes?: number;
+  /** The occurrence the push was about (checked against the series in the service). */
+  @IsOptional() @IsISO8601({ strict: true }) occurrence?: string;
+}
+
+export class DoneDto {
+  @IsOptional() @IsISO8601({ strict: true }) occurrence?: string;
 }
 
 export class ItemsQueryDto {

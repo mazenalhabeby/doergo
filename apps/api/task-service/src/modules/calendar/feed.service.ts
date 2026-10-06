@@ -114,7 +114,8 @@ export class FeedService {
         allDay: e.allDay,
         start: e.allDay ? localPartsIn(e.startAt, e.timezone).dateStr : e.startAt,
         end: e.allDay ? localPartsIn(e.endAt, e.timezone).dateStr : e.endAt,
-        rrule: e.repeat ? repeatToRrule(e.repeat as unknown as Repeat) : null,
+        rrule: e.repeat ? repeatToRrule(e.repeat as unknown as Repeat, e.allDay) : null,
+        tzid: e.repeat && !e.allDay ? e.timezone : null,
         updatedAt: e.updatedAt,
       });
     }

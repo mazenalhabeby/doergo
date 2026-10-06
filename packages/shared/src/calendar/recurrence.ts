@@ -24,8 +24,13 @@ export interface Repeat {
 }
 
 export const REPEAT_MAX_COUNT = 500;
-/** No expansion ever produces more than this many occurrences in one call. */
-const EXPANSION_CAP = 1000;
+/** No expansion ever returns more than this many occurrences. */
+const EMIT_CAP = 1000;
+/**
+ * Steps walked from the series start. Walking is string arithmetic only — the zone conversion is
+ * paid just near the window — so a daily series a century long stays cheap.
+ */
+const STEP_CAP = 40000;
 
 /** Validate a repeat rule from a request. Returns null for "doesn't repeat", throws on nonsense. */
 export function parseRepeat(input: unknown): Repeat | null {
@@ -82,25 +87,35 @@ export function occurrences(
   const hh = Math.floor(local.minutesOfDay / 60);
   const mm = local.minutesOfDay % 60;
   const at = (dateStr: string) => zonedWallTimeToUtc(dateStr, hh, mm, tz);
+  /*
+    ⚠️ The cap counts what is RETURNED, never what was walked. Counting from the series start made
+    an open-ended daily stand-up vanish after ~2.7 years and cost a thousand zone conversions per
+    event per read. Dates well before the window are counted (for `count`) and skipped without
+    converting; an occurrence can start up to 15 days before `from` and still overlap (an event
+    lasts at most 14 days).
+  */
+  const skipBefore = addDaysStr(localPartsIn(from, tz).dateStr, -16);
+  const stopAfter = addDaysStr(localPartsIn(to, tz).dateStr, 1);
   const out: Date[] = [];
   let produced = 0;
-  const done = (dateStr: string) =>
-    (repeat.until && dateStr > repeat.until) || (repeat.count && produced >= repeat.count) || produced >= EXPANSION_CAP;
 
+  /** false = the series (or the window) has ended. */
   const emit = (dateStr: string): boolean => {
-    if (done(dateStr)) return false;
-    const s = at(dateStr);
+    if (repeat.until && dateStr > repeat.until) return false;
+    if (repeat.count && produced >= repeat.count) return false;
+    if (dateStr > stopAfter) return false;
     produced++;
+    if (dateStr < skipBefore) return true;
+    const s = at(dateStr);
     if (s.getTime() >= to.getTime()) return false;
     if (overlaps(s)) out.push(s);
-    return true;
+    return out.length < EMIT_CAP;
   };
 
   if (repeat.freq === 'WEEKLY') {
     const days = repeat.byDay?.length ? repeat.byDay : [local.dow];
-    // Walk week by week from the Sunday of the start's week.
     let weekStart = addDaysStr(local.dateStr, -local.dow);
-    for (let w = 0; w < EXPANSION_CAP; w++) {
+    for (let w = 0; w < STEP_CAP; w++) {
       for (const d of days) {
         const dateStr = addDaysStr(weekStart, d);
         if (dateStr < local.dateStr) continue;
@@ -111,7 +126,7 @@ export function occurrences(
     return out;
   }
 
-  for (let i = 0; i < EXPANSION_CAP * 2; i++) {
+  for (let i = 0; i < STEP_CAP; i++) {
     let dateStr: string | null;
     if (repeat.freq === 'DAILY') dateStr = addDaysStr(local.dateStr, i * repeat.interval);
     else if (repeat.freq === 'MONTHLY') dateStr = addMonthsStr(local.dateStr, i * repeat.interval);
@@ -128,13 +143,13 @@ export function nextOccurrence(startAt: Date, repeat: Repeat | null, tz: string,
   return list.find((d) => d.getTime() >= after.getTime()) ?? null;
 }
 
-/** RRULE text for the ICS feed. */
-export function repeatToRrule(r: Repeat): string {
+/** RRULE text for the ICS feed. An all-day series ends on a DATE (RFC 5545 forbids a time there). */
+export function repeatToRrule(r: Repeat, allDay = false): string {
   const DAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
   const parts = [`FREQ=${r.freq}`];
   if (r.interval > 1) parts.push(`INTERVAL=${r.interval}`);
   if (r.freq === 'WEEKLY' && r.byDay?.length) parts.push(`BYDAY=${r.byDay.map((d) => DAYS[d]).join(',')}`);
-  if (r.until) parts.push(`UNTIL=${r.until.replace(/-/g, '')}T235959Z`);
+  if (r.until) parts.push(allDay ? `UNTIL=${r.until.replace(/-/g, '')}` : `UNTIL=${r.until.replace(/-/g, '')}T235959Z`);
   else if (r.count) parts.push(`COUNT=${r.count}`);
   return parts.join(';');
 }

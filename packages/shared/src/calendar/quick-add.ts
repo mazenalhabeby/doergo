@@ -78,7 +78,9 @@ export function parseQuickAdd(input: string, today: string, nowMinutes = 0): Qui
     const wd = take(/\s(?:on |am |next |nächsten |naechsten )?(sunday|monday|tuesday|wednesday|thursday|friday|saturday|sonntag|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonnabend|sun|mon|tues?|wed|thurs?|fri|sat)\b\.?/i, 'when');
     if (wd) {
       const target = WEEKDAYS[wd[1]!.toLowerCase()]!;
-      const delta = (target - dowOfKey(today) + 7) % 7;
+      let delta = (target - dowOfKey(today) + 7) % 7;
+      // "next Friday" said on a Friday is a week away, not today.
+      if (delta === 0 && /\b(next|nächsten|naechsten)\b/i.test(wd[0])) delta = 7;
       date = addDaysStr(today, delta);
     } else {
       const dm = take(/\s(?:on |am )?(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?\.?(?=\s)/i, 'when');
@@ -86,7 +88,9 @@ export function parseQuickAdd(input: string, today: string, nowMinutes = 0): Qui
         const d = Number(dm[1]), m = Number(dm[2]);
         let y = dm[3] ? Number(dm[3]) : Number(today.slice(0, 4));
         if (y < 100) y += 2000;
-        if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+        // A real date only: "31.02" is refused, not rolled into March.
+        const real = new Date(Date.UTC(y, m - 1, d));
+        if (m >= 1 && m <= 12 && d >= 1 && real.getUTCMonth() === m - 1 && real.getUTCDate() === d) {
           const key = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
           // "31.10" said in November means next year.
           date = !dm[3] && key < today ? `${y + 1}${key.slice(4)}` : key;

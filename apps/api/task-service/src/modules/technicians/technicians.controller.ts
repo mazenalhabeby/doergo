@@ -73,7 +73,7 @@ export class TechniciansController {
 
   /** What a leave range would cost — weekends, rota rest days and holidays left out. */
   @MessagePattern({ cmd: 'count_leave' })
-  async countLeave(@Payload() dto: { organizationId: string; technicianId: string; from: string; to: string }) {
+  async countLeave(@Payload() dto: { organizationId: string; technicianId: string; from: string; to: string; callerId?: string; scopeSpaceIds?: string[] }) {
     return this.techniciansService.countLeave(dto);
   }
 

@@ -102,7 +102,7 @@ export class CalendarNotificationHandler {
     await this.deliver([d.userId], d.organizationId, 'calendar.reminder', {
       title: msg('common.verbatim', { text: d.title }, 80),
       body: d.minutes <= 0 ? msg('calendar.reminder.now', { when }) : msg('calendar.reminder.soon', { minutes: d.minutes, when }),
-    }, { type: 'calendar_reminder', eventId: d.eventId, category: CALENDAR_REMINDER_CATEGORY });
+    }, { type: 'calendar_reminder', eventId: d.eventId, occurrence: d.occurrence, category: CALENDAR_REMINDER_CATEGORY });
   }
 
   /** Something on these people's calendars changed — their open screens re-read. No push. */

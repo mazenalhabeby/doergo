@@ -78,10 +78,11 @@ export const calendarApi = {
   cancel: (eventId: string): Promise<{ ok: true }> => fetchWithAuth(`/calendar/events/${id(eventId)}`, { method: 'DELETE' }),
   respond: (eventId: string, response: 'ACCEPTED' | 'MAYBE' | 'DECLINED'): Promise<{ response: RsvpResponse }> =>
     fetchWithAuth(`/calendar/events/${id(eventId)}/respond`, { method: 'POST', body: JSON.stringify({ response }) }),
-  snooze: (eventId: string, minutes = 10): Promise<{ nextRemindAt: string }> =>
-    fetchWithAuth(`/calendar/events/${id(eventId)}/snooze`, { method: 'POST', body: JSON.stringify({ minutes }) }),
-  done: (eventId: string): Promise<{ nextRemindAt: string | null }> =>
-    fetchWithAuth(`/calendar/events/${id(eventId)}/done`, { method: 'POST', body: JSON.stringify({}) }),
+  /** `occurrence` = the one the push announced; without it, the next one the server has planned. */
+  snooze: (eventId: string, minutes = 10, occurrence?: string): Promise<{ nextRemindAt: string }> =>
+    fetchWithAuth(`/calendar/events/${id(eventId)}/snooze`, { method: 'POST', body: JSON.stringify({ minutes, ...(occurrence ? { occurrence } : {}) }) }),
+  done: (eventId: string, occurrence?: string): Promise<{ nextRemindAt: string | null }> =>
+    fetchWithAuth(`/calendar/events/${id(eventId)}/done`, { method: 'POST', body: JSON.stringify(occurrence ? { occurrence } : {}) }),
   people: (q?: string): Promise<CalendarPerson[]> =>
     fetchWithAuth(buildUrlWithQuery('/calendar/people', { q: q || undefined }), { method: 'GET' }),
   /** What a leave range would cost — the server's count, the one the request is charged by. */

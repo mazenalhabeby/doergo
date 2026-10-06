@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
   EVENT_MAX_ATTENDEES,
@@ -39,6 +39,10 @@ export interface Caller {
   canManageUsers?: boolean;
   /** Org-wide canViewAllTasks — may invite anybody in the organization. */
   orgWideView?: boolean;
+  /** May read the client book — only then may an event name a client, or show one. */
+  crm?: boolean;
+  /** Where the caller sees the team's leave (undefined = everywhere, [] = nowhere). */
+  teamSpaces?: string[];
 }
 
 export interface EventInput {
@@ -129,7 +133,8 @@ export class EventsService {
     let startAt: Date, endAt: Date;
     if (allDay) {
       const sd = input.startDate ?? (current ? localPartsIn(current.startAt, tz).dateStr : undefined);
-      const ed = input.endDate ?? sd;
+      // A PATCH without an end keeps the end it had — falling back to the start shrank a 5-day event to 1.
+      const ed = input.endDate ?? (current && current.allDay && !input.startDate ? localPartsIn(new Date(current.endAt.getTime() - 1), tz).dateStr : sd);
       if (!sd || !DATE.test(sd) || !ed || !DATE.test(ed) || ed < sd) throw new BadRequestException({ code: 'EVENT_TIME_INVALID', message: 'Choose a start day on or before the end day.' });
       startAt = zonedWallTimeToUtc(sd, 0, 0, tz);
       endAt = zonedWallTimeToUtc(addDaysStr(ed, 1), 0, 0, tz);
@@ -221,6 +226,7 @@ export class EventsService {
       if (!s) throw new BadRequestException('Workspace not found');
     }
     if (customerId) {
+      if (!caller.crm) throw new ForbiddenException({ code: 'EVENT_CLIENT_NOT_ALLOWED', message: 'Only somebody who works with clients can put one on an event.' });
       const c = await this.prisma.customer.findFirst({ where: { id: customerId, organizationId: caller.organizationId }, select: { id: true } });
       if (!c) throw new BadRequestException('Client not found');
     }
@@ -265,9 +271,18 @@ export class EventsService {
     const now = new Date();
     const first = firstReminder(reminderEventOf(ev), now);
 
+    // The same request sent twice (a phone retrying) is answered with the event it already made.
+    const clientId = dto.clientId && /^[A-Za-z0-9_-]{8,40}$/.test(dto.clientId) ? dto.clientId : null;
+    if (clientId) {
+      const prior = await this.prisma.calendarEvent.findUnique({ where: { id: clientId }, select: { createdById: true, organizationId: true } });
+      if (prior) {
+        if (prior.createdById !== dto.userId || prior.organizationId !== dto.organizationId) throw new ConflictException('That id is taken');
+        return this.get({ ...dto, eventId: clientId });
+      }
+    }
     const created = await this.prisma.calendarEvent.create({
       data: {
-        ...(dto.clientId && /^[A-Za-z0-9_-]{8,40}$/.test(dto.clientId) ? { id: dto.clientId } : {}),
+        ...(clientId ? { id: clientId } : {}),
         organizationId: dto.organizationId,
         createdById: dto.userId,
         spaceId, customerId, kind, title,
@@ -315,7 +330,6 @@ export class EventsService {
     const ev = await this.loadForOrganizer(dto, dto.eventId);
     const input = dto.input ?? {};
     const tz = input.timezone !== undefined ? (validZone(input.timezone) ? input.timezone : ev.timezone) : ev.timezone;
-    const timesChanged = ['allDay', 'startAt', 'endAt', 'startDate', 'endDate', 'timezone', 'repeat'].some((k) => (input as any)[k] !== undefined);
     const { allDay, startAt, endAt } = this.times(input, tz, ev as unknown as EventRow);
     let repeat: Repeat | null = (ev.repeat as Repeat | null) ?? null;
     let offsets = ev.reminderOffsets;
@@ -325,6 +339,13 @@ export class EventsService {
     } catch (e) {
       throw new BadRequestException({ code: (e as Error).message, message: 'The repeat or reminder settings are not valid.' });
     }
+    /*
+      A CHANGE of time is a new question for everybody — but only when the values differ. A form
+      sends every field on every save; reading "the key was present" as "it changed" reset every
+      answer and re-sent "moved" to everyone over a typo fixed in the title.
+    */
+    const timesChanged = startAt.getTime() !== ev.startAt.getTime() || endAt.getTime() !== ev.endAt.getTime()
+      || allDay !== ev.allDay || tz !== ev.timezone || JSON.stringify(repeat ?? null) !== JSON.stringify(ev.repeat ?? null);
     const title = input.title !== undefined ? clean(input.title, EVENT_TITLE_MAX) : ev.title;
     if (!title) throw new BadRequestException({ code: 'EVENT_TITLE_REQUIRED', message: 'Give it a title.' });
     const spaceId = input.spaceId !== undefined ? input.spaceId || null : ev.spaceId;
@@ -339,7 +360,7 @@ export class EventsService {
       removed = [...before].filter((id) => !wanted.has(id));
     }
 
-    const remindersChanged = timesChanged || input.reminders !== undefined;
+    const remindersChanged = timesChanged || JSON.stringify(offsets) !== JSON.stringify(ev.reminderOffsets);
     const next = remindersChanged ? firstReminder({ startAt, endAt, repeat, timezone: tz, offsets }, new Date()) : null;
     await this.prisma.$transaction(async (tx) => {
       await tx.calendarEvent.update({
@@ -424,19 +445,36 @@ export class EventsService {
     return success({ response: dto.response });
   }
 
-  /** "+10 min" on the reminder. */
-  async snooze(dto: Caller & { eventId: string; minutes?: number }) {
+  /**
+   * Which occurrence a button press is about. After a reminder is sent the row already points at
+   * the NEXT one, so the push carries the occurrence it announced; it is accepted only when it
+   * really is an occurrence of this series. Without one, the row's own.
+   */
+  private occurrenceOf(row: { event: unknown; remindOccurrence: Date | null }, claimed?: string): Date | null {
+    const ev = row.event as EventRow;
+    if (claimed && ISO.test(claimed)) {
+      const at = new Date(claimed);
+      const dur = Math.max(ev.endAt.getTime() - ev.startAt.getTime(), 0);
+      const hit = occurrences(ev.startAt, dur, (ev.repeat as Repeat | null) ?? null, ev.timezone, new Date(at.getTime() - 60000), new Date(at.getTime() + 60000))
+        .find((o) => o.getTime() === at.getTime());
+      if (hit) return hit;
+    }
+    return row.remindOccurrence ?? ev.startAt;
+  }
+
+  /** "+10 min" on the reminder — about the occurrence the push named. */
+  async snooze(dto: Caller & { eventId: string; minutes?: number; occurrence?: string }) {
     const row = await this.myRow(dto, dto.eventId);
     const minutes = [5, 10, 15, 30, 60].includes(Number(dto.minutes)) ? Number(dto.minutes) : SNOOZE_MINUTES;
     const at = new Date(Date.now() + minutes * 60000);
-    await this.prisma.calendarAttendee.update({ where: { id: row.id }, data: { nextRemindAt: at, remindOccurrence: row.remindOccurrence ?? row.event.startAt } });
+    await this.prisma.calendarAttendee.update({ where: { id: row.id }, data: { nextRemindAt: at, remindOccurrence: this.occurrenceOf(row, dto.occurrence) } });
     return success({ nextRemindAt: at.toISOString() });
   }
 
-  /** "Done" on the reminder: nothing more about this occurrence. */
-  async done(dto: Caller & { eventId: string }) {
+  /** "Done" on the reminder: nothing more about THIS occurrence; the next one is planned. */
+  async done(dto: Caller & { eventId: string; occurrence?: string }) {
     const row = await this.myRow(dto, dto.eventId);
-    const next = nextReminder(reminderEventOf(row.event as unknown as EventRow), new Date(), row.remindOccurrence);
+    const next = nextReminder(reminderEventOf(row.event as unknown as EventRow), new Date(), this.occurrenceOf(row, dto.occurrence));
     await this.prisma.calendarAttendee.update({ where: { id: row.id }, data: { nextRemindAt: next?.at ?? null, remindOccurrence: next?.occurrence ?? null } });
     return success({ nextRemindAt: next?.at.toISOString() ?? null });
   }
@@ -458,7 +496,7 @@ export class EventsService {
       id: ev.id, kind: ev.kind, title: ev.title, description: ev.description, location: ev.location, meetingUrl: ev.meetingUrl,
       startAt: ev.startAt.toISOString(), endAt: ev.endAt.toISOString(), allDay: ev.allDay, timezone: ev.timezone,
       repeat: ev.repeat ?? null, reminders: ev.reminderOffsets, visibility: ev.visibility, canceled: !!ev.canceledAt,
-      space: ev.space, customer: ev.customer,
+      space: ev.space, customer: dto.crm ? ev.customer : null,
       organizerId: ev.createdById, canEdit: ev.createdById === dto.userId, myResponse: me.response,
       attendees: ev.attendees.map((a) => ({
         userId: a.userId, response: a.response, isOrganizer: a.isOrganizer,
@@ -467,20 +505,34 @@ export class EventsService {
     });
   }
 
-  /** Events overlapping a window for these people. Not declined, not canceled. */
+  /**
+   * Events overlapping a window for these people. Not declined, not canceled.
+   *
+   * Asked from the ATTENDEE side (indexed by person) and ordered, so it reads a person's own few
+   * events rather than walking the organization's whole history, and a cap drops the furthest
+   * future rather than an arbitrary few.
+   */
   private async eventsFor(organizationId: string, userIds: string[], from: Date, to: Date, includeDeclined = false) {
-    return this.prisma.calendarEvent.findMany({
+    const rows = await this.prisma.calendarAttendee.findMany({
       where: {
-        organizationId, canceledAt: null,
-        startAt: { lt: to },
-        OR: [{ seriesEndAt: null }, { seriesEndAt: { gt: from } }],
-        attendees: { some: { userId: { in: userIds }, ...(includeDeclined ? {} : { response: { not: 'DECLINED' } }) } },
+        organizationId,
+        userId: { in: userIds },
+        ...(includeDeclined ? {} : { response: { not: 'DECLINED' } }),
+        event: { canceledAt: null, startAt: { lt: to }, OR: [{ seriesEndAt: null }, { seriesEndAt: { gt: from } }] },
       },
+      select: { eventId: true },
+      orderBy: { event: { startAt: 'asc' } },
+      take: 2000,
+    });
+    const ids = [...new Set(rows.map((r) => r.eventId))].slice(0, 1000);
+    if (!ids.length) return [];
+    return this.prisma.calendarEvent.findMany({
+      where: { id: { in: ids } },
       include: {
         attendees: { where: { userId: { in: userIds } }, select: { userId: true, response: true, isOrganizer: true } },
         createdBy: { select: { firstName: true, lastName: true } },
       },
-      take: 1000,
+      orderBy: { startAt: 'asc' },
     });
   }
 
@@ -533,6 +585,10 @@ export class EventsService {
     ]);
     const tz = await this.orgZone(dto.organizationId);
     const fromKey = localPartsIn(from, tz).dateStr, toKey = localPartsIn(to, tz).dateStr;
+    const [rulesOf, team] = await Promise.all([
+      this.rules.personRulesMany(dto.organizationId, ids, fromKey, toKey),
+      this.teamOf(dto, ids),
+    ]);
     const out = [];
     for (const u of users) {
       const busy: { start: string; end: string }[] = [];
@@ -542,15 +598,33 @@ export class EventsService {
           busy.push({ start: s.toISOString(), end: new Date(s.getTime() + dur).toISOString() });
         }
       }
-      const { rules, roster } = await this.rules.personRules(dto.organizationId, u.id, fromKey, toKey);
+      const r = rulesOf.get(u.id);
+      /*
+        Somebody's LEAVE (and their rota) is told only to who leads them — the cover chart's rule.
+        Anybody else learns "not working that day", never why.
+      */
+      const sees = u.id === dto.userId || team.has(u.id);
       const days: { day: string; kind: string; leave: 'APPROVED' | 'PENDING' | null }[] = [];
       for (let d = fromKey; d <= toKey; d = addDaysStr(d, 1)) {
         const l = leave.find((x) => x.technicianId === u.id && x.startDate.toISOString().slice(0, 10) <= d && x.endDate.toISOString().slice(0, 10) >= d);
-        days.push({ day: d, kind: dayKind(d, rules, roster), leave: (l?.status as 'APPROVED' | 'PENDING') ?? null });
+        const kind = r ? dayKind(d, r.rules, r.roster) : 'work';
+        if (sees) days.push({ day: d, kind, leave: (l?.status as 'APPROVED' | 'PENDING') ?? null });
+        else days.push({ day: d, kind: kind === 'work' && !(l && l.status === 'APPROVED') ? 'work' : 'off', leave: null });
       }
       out.push({ userId: u.id, firstName: u.firstName, lastName: u.lastName, busy, days });
     }
     return success(out);
+  }
+
+  /** Of these people, the ones the caller leads (their leave may be shown). */
+  private async teamOf(caller: Caller, ids: string[]): Promise<Set<string>> {
+    if (caller.teamSpaces === undefined) return new Set(ids);
+    if (!caller.teamSpaces.length) return new Set();
+    const rows = await this.prisma.spaceAssignment.findMany({
+      where: { organizationId: caller.organizationId, userId: { in: ids }, spaceId: { in: caller.teamSpaces }, OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }] },
+      select: { userId: true },
+    });
+    return new Set(rows.map((r) => r.userId));
   }
 
   /** The next times everybody is free, inside working days and hours. */
@@ -572,8 +646,9 @@ export class EventsService {
         select: { technicianId: true, startDate: true, endDate: true },
       }),
     ]);
-    const persons = await Promise.all(ids.map(async (id) => {
-      const { rules, roster } = await this.rules.personRules(dto.organizationId, id, fromKey, toKey);
+    const rulesOf = await this.rules.personRulesMany(dto.organizationId, ids, fromKey, toKey);
+    const persons = ids.map((id) => {
+      const r = rulesOf.get(id);
       const busy = events
         .filter((e) => e.attendees.some((a) => a.userId === id))
         .flatMap((ev) => {
@@ -584,10 +659,10 @@ export class EventsService {
       return {
         busy,
         works: (day: string) =>
-          dayKind(day, rules, roster) === 'work'
+          (!r || dayKind(day, r.rules, r.roster) === 'work')
           && !myLeave.some((l) => l.startDate.toISOString().slice(0, 10) <= day && l.endDate.toISOString().slice(0, 10) >= day),
       };
-    }));
+    });
     const slots = findFreeSlots({ people: persons, timezone: tz, durationMin: dur, from: start, days, limit: 3 });
     return success(slots.map((s) => ({ start: s.start.toISOString(), end: s.end.toISOString() })));
   }
@@ -601,14 +676,16 @@ export class EventsService {
   async sweepDue(now = new Date()): Promise<number> {
     const due = await this.prisma.calendarAttendee.findMany({
       where: { nextRemindAt: { lte: now } },
-      include: { event: true },
+      include: { event: true, user: { select: { isActive: true, organizationId: true, organization: { select: { suspendedAt: true } } } } },
       orderBy: { nextRemindAt: 'asc' },
       take: 200,
     });
     let sent = 0;
     for (const row of due) {
       const ev = row.event as unknown as EventRow;
-      const stale = ev.canceledAt || row.response === 'DECLINED';
+      // A member who left, was switched off, or whose organization is suspended is not reminded.
+      const gone = !row.user?.isActive || row.user.organizationId !== row.organizationId || !!row.user.organization?.suspendedAt;
+      const stale = ev.canceledAt || row.response === 'DECLINED' || gone;
       const next = stale ? null : nextReminder(reminderEventOf(ev), now);
       const claimed = await this.prisma.calendarAttendee.updateMany({
         where: { id: row.id, nextRemindAt: row.nextRemindAt },
