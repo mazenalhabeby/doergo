@@ -1,0 +1,94 @@
+# The calendar on the phone as Elena (sales@, LOCAL only): sign in, More → Calendar, the invitation, Accept.
+# Needs: emulator + dev build, `adb reverse tcp:4000 tcp:4000` and tcp:8081, Metro running, an event
+# "E2E phone review" today inviting sales@. Run: maestro test tools/maestro/calendar-phone.yaml
+appId: com.hbcfield.app
+---
+- launchApp:
+    stopApp: false
+- extendedWaitUntil:
+    visible:
+      text: "(More|you@company.com|Continue)"
+    timeout: 180000
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn:
+          point: "90%,77%"
+- extendedWaitUntil:
+    visible:
+      text: "(More|you@company.com)"
+    timeout: 180000
+- runFlow:
+    when:
+      visible: "you@company.com"
+    commands:
+      - tapOn: "you@company.com"
+      - inputText: "sales@example.com"
+      - tapOn: "Enter your password"
+      - inputText: "password123"
+      - tapOn: "Sign in"
+- extendedWaitUntil:
+    visible: "More"
+    timeout: 120000
+- runFlow:
+    when:
+      visible: "Skip"
+    commands:
+      - tapOn: "Skip"
+- takeScreenshot: m1-home
+- tapOn: "More"
+- extendedWaitUntil:
+    visible: "Calendar"
+    timeout: 30000
+- takeScreenshot: m2-more
+- runFlow:
+    when:
+      visible: "Skip"
+    commands:
+      - tapOn: "Skip"
+- tapOn: "Calendar"
+- extendedWaitUntil:
+    visible: "(E2E phone review|Nothing planned)"
+    timeout: 60000
+- runFlow:
+    when:
+      visible: "Skip"
+    commands:
+      - tapOn: "Skip"
+- extendedWaitUntil:
+    visible: "E2E phone review"
+    timeout: 60000
+- takeScreenshot: m3-calendar
+- tapOn: "E2E phone review"
+- extendedWaitUntil:
+    visible: "Your answer"
+    timeout: 30000
+- takeScreenshot: m4-event-sheet
+- tapOn: "Accept"
+- extendedWaitUntil:
+    visible: "2 of 2 going"
+    timeout: 20000
+- takeScreenshot: m5-accepted
+- back
+- tapOn: "New"
+- extendedWaitUntil:
+    visible: "Add"
+    timeout: 20000
+- inputText: "Remind me to call Mueller tomorrow at 2 for 30 min"
+- hideKeyboard
+- takeScreenshot: m6-quick-add
+- assertVisible: "Call Mueller"
+- tapOn: "Save"
+- extendedWaitUntil:
+    notVisible: "Call Mueller"
+    timeout: 20000
+- tapOn: "WED"
+- extendedWaitUntil:
+    visible: "Call Mueller"
+    timeout: 30000
+- takeScreenshot: m7-tomorrow
+- tapOn: "Next week"
+- takeScreenshot: m8-next-week
+- tapOn: "Today"
+- takeScreenshot: m9-today

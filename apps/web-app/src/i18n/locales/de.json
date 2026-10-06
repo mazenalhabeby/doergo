@@ -9844,7 +9844,7 @@
     "estimatedCount_other": "{{count}} geschätzt",
     "workspaceDialogBody": "Lassen Sie ein Feld auf „Organisation“, um der Organisation zu folgen.",
     "useOrganization": "Wie die Organisation",
-    "inheritsWeekend": "Keine Tage gewählt – dieser Arbeitsbereich nutzt das Wochenende der Organisation.",
+    "inheritsWeekend": "Folgt dem Wochenende der Organisation – klicken Sie einen Tag an, um diesem Arbeitsbereich ein eigenes zu geben.",
     "listTitle": "Feiertage & Betriebsruhetage",
     "listBody": "Aus einer Offline-Feiertagsliste. Mondabhängige Feiertage sind Schätzungen, bis Sie sie bestätigen.",
     "organization": "Organisation",

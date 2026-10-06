@@ -9853,7 +9853,7 @@
     "estimatedCount_other": "{{count}} stimate",
     "workspaceDialogBody": "Lascia un campo su «organizzazione» per seguire l’organizzazione.",
     "useOrganization": "Usa quello dell’organizzazione",
-    "inheritsWeekend": "Nessun giorno scelto: questo spazio usa il weekend dell’organizzazione.",
+    "inheritsWeekend": "Segue il weekend dell’organizzazione: fai clic su un giorno per dare a questo spazio il suo.",
     "listTitle": "Festività e giorni di chiusura",
     "listBody": "Da un elenco offline. Le festività lunari sono stime finché non le confermi.",
     "organization": "Organizzazione",

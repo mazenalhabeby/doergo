@@ -163,15 +163,16 @@ export function CalendarScreen() {
             <AText variant="caption" tone="muted" style={{ textAlign: 'center' }}>{t('calendar.addHint', 'Tap + and type it — “call Müller at 2 for 30 min”.')}</AText>
           </Well>
         ) : (
-          <View style={{ position: 'relative', paddingLeft: 48, gap: amazen.space(2.25) }}>
-            <View style={{ position: 'absolute', left: 54, top: 10, bottom: 10, width: 1, backgroundColor: c.lineWell }} />
+          <View style={{ position: 'relative', paddingLeft: 60, gap: amazen.space(2.25) }}>
+            <View style={{ position: 'absolute', left: 66, top: 10, bottom: 10, width: 1, backgroundColor: c.lineWell }} />
             {timed.map((x) => {
               const col = kindColor(x.kind, c, isDark);
               const now = Date.now();
               const live = new Date(x.start).getTime() <= now && new Date(x.end).getTime() > now;
               return (
                 <View key={x.id}>
-                  <AText variant="caption" numeric style={{ position: 'absolute', left: -48, top: 12, width: 40, textAlign: 'right', fontSize: 10.5, color: c.inkMuted, fontFamily: amazen.font.mono }}>{time(x.start)}</AText>
+                  {/* One line whatever the clock: "09:00" or "9:01 PM" — a 12-hour time wrapped in a 40pt column. */}
+                  <AText variant="caption" numeric numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ position: 'absolute', left: -60, top: 12, width: 54, textAlign: 'right', fontSize: 10.5, color: c.inkMuted, fontFamily: amazen.font.mono }}>{time(x.start)}</AText>
                   <View style={{ position: 'absolute', left: 3, top: 14, width: 8, height: 8, borderRadius: 4, backgroundColor: col, borderWidth: 2, borderColor: c.canvas }} />
                   <Pressable
                     onPress={() => open(x)}

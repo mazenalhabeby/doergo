@@ -259,16 +259,23 @@ function WorkspaceDialog({ ws, onClose, onSaved }: { ws: Ws | null; onClose: () 
   const { t } = useTranslation()
   const [country, setCountry] = useState<string | null>(null)
   const [region, setRegion] = useState<string | null>(null)
+  /*
+    The picker starts from the weekend that APPLIES here — the organization's when this workspace
+    has none of its own — so clicking adjusts what is really in force. Only once a day is touched
+    does the workspace get a weekend of its own; "Use the organization's" goes back to inheriting.
+  */
   const [weekend, setWeekend] = useState<number[]>([])
+  const [ownWeekend, setOwnWeekend] = useState(false)
   const [seen, setSeen] = useState<string | null>(null)
   if (ws && seen !== ws.id) {
     setSeen(ws.id)
     setCountry(ws.holidayCountry)
     setRegion(ws.holidayRegion)
-    setWeekend(ws.weekendDays)
+    setOwnWeekend(ws.weekendDays.length > 0)
+    setWeekend(ws.weekendDays.length ? ws.weekendDays : ws.weekend)
   }
   const save = useMutation({
-    mutationFn: () => calendarApi.updateWorkspace(ws!.id, { holidayCountry: country, holidayRegion: country ? region : null, weekendDays: weekend }),
+    mutationFn: () => calendarApi.updateWorkspace(ws!.id, { holidayCountry: country, holidayRegion: country ? region : null, weekendDays: ownWeekend ? weekend : [] }),
     onSuccess: () => { onSaved(); toast.success(t("holidays.saved")); onClose(); setSeen(null) },
     onError: (e) => toast.error(serverErrorMessage(e, t)),
   })
@@ -284,10 +291,10 @@ function WorkspaceDialog({ ws, onClose, onSaved }: { ws: Ws | null; onClose: () 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>{t("holidays.weekend")}</Label>
-              {weekend.length > 0 && <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setWeekend([])}>{t("holidays.useOrganization")}</button>}
+              {ownWeekend && <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => { setOwnWeekend(false); setWeekend(ws?.weekend ?? []) }}>{t("holidays.useOrganization")}</button>}
             </div>
-            <WeekendPicker value={weekend} onChange={setWeekend} />
-            {weekend.length === 0 && <p className="text-xs text-muted-foreground">{t("holidays.inheritsWeekend")}</p>}
+            <WeekendPicker value={weekend} onChange={(v) => { if (v.length) { setWeekend(v); setOwnWeekend(true) } }} />
+            {!ownWeekend && <p className="text-xs text-muted-foreground">{t("holidays.inheritsWeekend")}</p>}
           </div>
         </div>
         <DialogFooter>

@@ -9844,7 +9844,7 @@
     "estimatedCount_other": "{{count}} estimados",
     "workspaceDialogBody": "Deja un campo en «organización» para seguir a la organización.",
     "useOrganization": "Usar el de la organización",
-    "inheritsWeekend": "Sin días elegidos: este espacio usa el fin de semana de la organización.",
+    "inheritsWeekend": "Sigue el fin de semana de la organización: haz clic en un día para darle uno propio a este espacio.",
     "listTitle": "Festivos y días libres de empresa",
     "listBody": "De una lista de festivos sin conexión. Los festivos lunares son estimaciones hasta que los confirmes.",
     "organization": "Organización",

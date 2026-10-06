@@ -9844,7 +9844,7 @@
     "estimatedCount_other": "{{count}} estimated",
     "workspaceDialogBody": "Leave a field on “organization” to follow the organization.",
     "useOrganization": "Use the organization’s",
-    "inheritsWeekend": "No days chosen — this workspace uses the organization’s weekend.",
+    "inheritsWeekend": "Following the organization’s weekend — click a day to give this workspace its own.",
     "listTitle": "Public holidays & company days off",
     "listBody": "From an offline holiday list. Moon-sighted holidays are estimates until you confirm them.",
     "organization": "Organization",
