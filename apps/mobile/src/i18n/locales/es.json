@@ -4596,6 +4596,69 @@
       "EVENT_PERSON_NOT_REACHABLE": "Puedes invitar a personas con las que trabajas en un espacio.",
       "EVENT_NOT_ORGANIZER": "Solo quien la creó puede cambiarla.",
       "LEAVE_NO_WORKING_DAYS": "Esos días son todos fines de semana o festivos: no hay nada que pedir."
+    },
+    "show": "Mostrar",
+    "whatToShow": "Qué mostrar",
+    "whoseCalendar": "Qué calendario",
+    "myCalendar": "Mi calendario",
+    "workspace": "Espacio",
+    "layersTitle": "Mostrar",
+    "teamSchedule": "Equipo — quién falta, planificar",
+    "allDayShort": "todo el día",
+    "nothingAhead": "Nada próximo",
+    "kindTimeOff": "Ausencia",
+    "kindJob": "Trabajo",
+    "smartPlaceholder": "Dígalo: «Visitar BILLA el viernes a las 9:00»",
+    "readAs": "Entendido como",
+    "titleLabel": "Título",
+    "titlePlaceholder": "¿Qué es?",
+    "how": "Cómo",
+    "roomPlaceholder": "Sala (opcional)",
+    "officeAddressAuto": "La dirección de la oficina se añade automáticamente para todos.",
+    "pickClientFirst": "Elija primero el cliente abajo.",
+    "whichAddress": "Qué dirección",
+    "addressPlaceholder": "Calle, ciudad",
+    "linkRecognised": "{{name}} — aparecerá un botón Unirse en el calendario",
+    "phoneInvalid": "No parece un número de teléfono.",
+    "client": "Cliente",
+    "clientSearch": "Buscar clientes…",
+    "callNow": "Llamar",
+    "directions": "Cómo llegar",
+    "leaveApproved": "Aprobado — se le avisa ahora",
+    "leaveDeclined": "No aprobado — se le avisa ahora",
+    "declineReason": "Motivo (opcional)",
+    "declineLeave": "Rechazar",
+    "approveLeave": "Aprobar",
+    "openTimeOff": "Mis ausencias",
+    "openSchedule": "Abrir en Horario",
+    "view": {
+      "day": "Día",
+      "three": "3 días",
+      "month": "Mes",
+      "list": "Lista"
+    },
+    "mode": {
+      "IN_PERSON": "En persona",
+      "ONLINE": "En línea",
+      "PHONE": "Teléfono"
+    },
+    "place": {
+      "OFFICE": "Nuestra oficina",
+      "CLIENT_SITE": "En el cliente",
+      "ADDRESS": "Otra dirección"
+    },
+    "call": {
+      "OUTGOING": "Yo llamo",
+      "INCOMING": "Me llaman"
+    },
+    "layer": {
+      "jobs": "Trabajos",
+      "events": "Citas",
+      "crm": "Seguimientos",
+      "shifts": "Turnos",
+      "leave": "Ausencias",
+      "holidays": "Festivos",
+      "documents": "Documentos"
     }
   }
 }

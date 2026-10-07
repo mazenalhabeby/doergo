@@ -4596,6 +4596,69 @@
       "EVENT_PERSON_NOT_REACHABLE": "Puoi invitare le persone con cui lavori in uno spazio.",
       "EVENT_NOT_ORGANIZER": "Solo chi l’ha creato può modificarlo.",
       "LEAVE_NO_WORKING_DAYS": "Quei giorni sono tutti weekend o festività: non c’è nulla da chiedere."
+    },
+    "show": "Mostra",
+    "whatToShow": "Cosa mostrare",
+    "whoseCalendar": "Quale calendario",
+    "myCalendar": "Il mio calendario",
+    "workspace": "Sede",
+    "layersTitle": "Mostra",
+    "teamSchedule": "Team — chi è assente, pianificare",
+    "allDayShort": "tutto il giorno",
+    "nothingAhead": "Niente in arrivo",
+    "kindTimeOff": "Assenza",
+    "kindJob": "Lavoro",
+    "smartPlaceholder": "Dillo: «Visita BILLA venerdì alle 9:00»",
+    "readAs": "Letto come",
+    "titleLabel": "Titolo",
+    "titlePlaceholder": "Di cosa si tratta?",
+    "how": "Come",
+    "roomPlaceholder": "Sala (facoltativa)",
+    "officeAddressAuto": "L’indirizzo della sede viene aggiunto automaticamente per tutti.",
+    "pickClientFirst": "Scegli prima il cliente qui sotto.",
+    "whichAddress": "Quale indirizzo",
+    "addressPlaceholder": "Via, città",
+    "linkRecognised": "{{name}} — nel calendario compare il pulsante Partecipa",
+    "phoneInvalid": "Non sembra un numero di telefono.",
+    "client": "Cliente",
+    "clientSearch": "Cerca clienti…",
+    "callNow": "Chiama",
+    "directions": "Indicazioni",
+    "leaveApproved": "Approvato — la persona viene avvisata",
+    "leaveDeclined": "Non approvato — la persona viene avvisata",
+    "declineReason": "Motivo (facoltativo)",
+    "declineLeave": "Rifiuta",
+    "approveLeave": "Approva",
+    "openTimeOff": "Le mie assenze",
+    "openSchedule": "Apri nella pianificazione",
+    "view": {
+      "day": "Giorno",
+      "three": "3 giorni",
+      "month": "Mese",
+      "list": "Elenco"
+    },
+    "mode": {
+      "IN_PERSON": "Di persona",
+      "ONLINE": "Online",
+      "PHONE": "Telefono"
+    },
+    "place": {
+      "OFFICE": "Nostra sede",
+      "CLIENT_SITE": "Presso il cliente",
+      "ADDRESS": "Altro indirizzo"
+    },
+    "call": {
+      "OUTGOING": "Chiamo io",
+      "INCOMING": "Mi chiamano"
+    },
+    "layer": {
+      "jobs": "Lavori",
+      "events": "Appuntamenti",
+      "crm": "Follow-up clienti",
+      "shifts": "Turni",
+      "leave": "Assenze",
+      "holidays": "Festività",
+      "documents": "Documenti"
     }
   }
 }

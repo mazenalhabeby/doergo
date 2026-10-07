@@ -74,6 +74,22 @@ export function NewJobScreen() {
   const params = useLocalSearchParams<{ customerId?: string | string[]; spaceId?: string | string[]; customerName?: string | string[] }>() as ClientParams;
   const adopted = adoptClient(params);
   const adoptedKey = adopted ? `${adopted.client.id}|${adopted.client.name}|${adopted.spaceId ?? ''}` : '';
+  /*
+    OPENED FROM THE CALENDAR'S New › Job (`?due=<ISO>`): the day, and the hour unless it is
+    midnight ("no hour", as dueDateFor reads it). Adopted once, then cleared from the route.
+  */
+  const dueParam = useLocalSearchParams<{ due?: string | string[] }>().due;
+  const due = typeof dueParam === 'string' ? dueParam : '';
+  useEffect(() => {
+    if (!due) return;
+    const d = new Date(due);
+    if (!Number.isNaN(d.getTime())) {
+      setDay(new Date(d.getFullYear(), d.getMonth(), d.getDate()));
+      setTime(d.getHours() || d.getMinutes() ? `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` : '');
+    }
+    router.setParams({ due: '' });
+  }, [due]);
+
   useEffect(() => {
     if (!adopted) return;
     setClient(adopted.client);

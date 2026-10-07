@@ -4596,6 +4596,69 @@
       "EVENT_PERSON_NOT_REACHABLE": "You can invite people you work with in a workspace.",
       "EVENT_NOT_ORGANIZER": "Only the person who made it can change it.",
       "LEAVE_NO_WORKING_DAYS": "Those days are all weekends or holidays — there is nothing to take off."
+    },
+    "show": "Show",
+    "whatToShow": "What to show",
+    "whoseCalendar": "Whose calendar",
+    "myCalendar": "My calendar",
+    "workspace": "Workspace",
+    "layersTitle": "Show",
+    "teamSchedule": "Team — who is off, plan cover",
+    "allDayShort": "all day",
+    "nothingAhead": "Nothing coming up",
+    "kindTimeOff": "Time off",
+    "kindJob": "Job",
+    "smartPlaceholder": "Say it: “Visit BILLA Friday 9:00”",
+    "readAs": "Read as",
+    "titleLabel": "Title",
+    "titlePlaceholder": "What is it?",
+    "how": "How",
+    "roomPlaceholder": "Room (optional)",
+    "officeAddressAuto": "The office's address is added for everyone automatically.",
+    "pickClientFirst": "Choose the client below first.",
+    "whichAddress": "Which address",
+    "addressPlaceholder": "Street, town",
+    "linkRecognised": "{{name}} — a Join button appears in the calendar",
+    "phoneInvalid": "That does not look like a phone number.",
+    "client": "Client",
+    "clientSearch": "Search clients…",
+    "callNow": "Call",
+    "directions": "Directions",
+    "leaveApproved": "Approved — they are told now",
+    "leaveDeclined": "Not approved — they are told now",
+    "declineReason": "Reason (optional)",
+    "declineLeave": "Decline",
+    "approveLeave": "Approve",
+    "openTimeOff": "My time off",
+    "openSchedule": "Open in Schedule",
+    "view": {
+      "day": "Day",
+      "three": "3 days",
+      "month": "Month",
+      "list": "List"
+    },
+    "mode": {
+      "IN_PERSON": "In person",
+      "ONLINE": "Online",
+      "PHONE": "Phone"
+    },
+    "place": {
+      "OFFICE": "Our office",
+      "CLIENT_SITE": "Client's site",
+      "ADDRESS": "Other address"
+    },
+    "call": {
+      "OUTGOING": "I call them",
+      "INCOMING": "They call me"
+    },
+    "layer": {
+      "jobs": "Jobs",
+      "events": "Appointments",
+      "crm": "Client follow-ups",
+      "shifts": "Shifts",
+      "leave": "Time off",
+      "holidays": "Holidays",
+      "documents": "Documents"
     }
   }
 }

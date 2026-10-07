@@ -1,43 +1,55 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import type { CalendarItem } from '@hbcfield/shared/client';
+import { CALENDAR_LAYERS, type CalendarItem, type CalendarLayer } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
-import { AText, Ground, ScreenHeader, Well, useTabSafe } from '../amazen';
-import { SectionLabel } from '../job/job-ui';
+import { useAuth } from '../../contexts/auth-context';
+import { AText, FilterPill, Ground, ScreenHeader, Well, useTabSafe } from '../amazen';
 import { PlusGlyph } from '../job/job-glyphs';
-import { useResponsive } from '../../lib/responsive';
-import { centeredContent } from '../screen-container';
-import { addDays, dayKey, fromKey, itemsOn, kindColor, mondayOf, useCalendarWeek } from './calendar-data';
+import { holds } from '../../lib/permissions';
+import { addDays, dayKey, stepAnchor, useCalendarRange, type CalendarView } from './calendar-data';
+import { DayList, ListView, MonthGrid, TimeGrid } from './calendar-views';
+import { FiltersSheet, LeaveSheet } from './calendar-sheets';
 import { EventSheet } from './event-sheet';
-import { QuickAddSheet } from './quick-add-sheet';
+
+const VIEW_KEY = 'calendar.view.v1';
+const VIEWS: CalendarView[] = ['day', 'three', 'month', 'list'];
 
 /**
- * CALENDAR — the member's own days: a week strip with a dot per kind, the day as a timeline, a
- * banner for the next holiday, and + to add something in a sentence.
+ * CALENDAR — the web's calendar on the phone: Day · 3 days · Month · List, a workspace and what to
+ * show, the same colour per kind, and one + for everything new.
  *
- * One read per week (the same endpoint the web draws), kept by the client for offline viewing.
- * Adding and answering need a connection — a queued answer to an invitation would arrive after
- * the meeting it was about.
+ * One read per visible range (the web's endpoint), the neighbours read in the background so the
+ * arrows are instant, pages kept for offline viewing. Adding and answering need a connection.
  */
 export function CalendarScreen() {
-  const { amazen, isDark } = useTheme();
+  const { amazen } = useTheme();
   const c = amazen.color;
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const tabSafe = useTabSafe();
-  const r = useResponsive();
-  const wide = r.isTablet ? centeredContent(720) : null;
+  const { user } = useAuth();
   const params = useLocalSearchParams<{ event?: string }>();
 
+  const [view, setView] = useState<CalendarView>('month');
+  const [anchor, setAnchor] = useState(() => new Date());
   const [selected, setSelected] = useState(() => new Date());
-  const monday = useMemo(() => mondayOf(selected), [selected]);
-  const { data, kinds, failed, reload } = useCalendarWeek(monday);
-  const [refreshing, setRefreshing] = useState(false);
+  const [spaceId, setSpaceId] = useState<string | null>(null);
+  const [layers, setLayers] = useState<CalendarLayer[]>([...CALENDAR_LAYERS]);
+  const [filters, setFilters] = useState(false);
   const [openEvent, setOpenEvent] = useState<string | null>(null);
-  const [adding, setAdding] = useState(false);
+  const [leave, setLeave] = useState<CalendarItem | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // The last view is remembered on this phone (a convenience; Month when nothing is stored).
+  useEffect(() => {
+    AsyncStorage.getItem(VIEW_KEY).then((v) => { if (v && (VIEWS as string[]).includes(v)) setView(v as CalendarView); }).catch(() => undefined);
+  }, []);
+  // Switching view keeps the day in hand: Month opens on its month, the others start on it.
+  const choose = (v: CalendarView) => { setView(v); setAnchor(selected); AsyncStorage.setItem(VIEW_KEY, v).catch(() => undefined); };
 
   // A push names an event: open it once the screen is here.
   useEffect(() => {
@@ -47,161 +59,106 @@ export function CalendarScreen() {
     }
   }, [params.event, router]);
 
-  const items = data?.items ?? [];
-  const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-  const key = dayKey(selected);
-  const today = dayKey(new Date());
-  const day = itemsOn(items, key);
-  const allDay = day.filter((x) => x.allDay);
-  const timed = day.filter((x) => !x.allDay);
-  const nextHoliday = items.find((x) => x.kind === 'holiday' && x.end >= today);
+  const allLayers = layers.length === CALENDAR_LAYERS.length;
+  const { data, kinds, failed, reload, from } = useCalendarRange(view, anchor, spaceId, allLayers ? null : layers);
+  const items = useMemo(() => (layers.length ? data?.items ?? [] : []), [data, layers.length]);
+  const counts = useMemo(() => {
+    const m: Partial<Record<CalendarLayer, number>> = {};
+    for (const x of items) m[x.layer] = (m[x.layer] ?? 0) + 1;
+    return m;
+  }, [items]);
+  const places = useMemo(() => (data?.places ?? []).filter((p) => p.spaceId).map((p) => ({ spaceId: p.spaceId!, name: p.name })), [data]);
+  const placeName = spaceId ? places.find((p) => p.spaceId === spaceId)?.name ?? t('calendar.workspace', 'Workspace') : t('calendar.myCalendar', 'My calendar');
+  const canDecideLeave = holds(user as never, 'canManageRota');
+  const showSchedule = holds(user as never, 'canViewAllTasks');
   const loc = i18n.language;
+  const todayKey = dayKey(new Date());
+
+  const heading = view === 'month' || view === 'list'
+    ? anchor.toLocaleDateString(loc, { month: 'long', year: 'numeric' })
+    : view === 'day'
+      ? anchor.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' })
+      : `${anchor.toLocaleDateString(loc, { day: 'numeric', month: 'short' })} – ${addDays(anchor, 2).toLocaleDateString(loc, { day: 'numeric', month: 'short' })}`;
 
   const open = (x: CalendarItem) => {
     if (x.ref?.type === 'event') setOpenEvent(x.ref.id);
+    else if (x.kind === 'leave') setLeave(x);
     else if (x.ref?.type === 'task') router.push({ pathname: '/(app)/task/[id]', params: { id: x.ref.id } } as never);
     else if (x.ref?.type === 'customer') router.push({ pathname: '/(app)/customer/[id]', params: { id: x.ref.id } } as never);
-    else if (x.kind === 'leave') router.push('/(app)/(tabs)/time-off' as Href);
     else if (x.kind === 'document') router.push('/(app)/documents' as Href);
   };
-  const time = (iso: string) => new Date(iso).toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' });
+  const newAt = (at?: Date) => router.push({
+    pathname: '/(app)/calendar-new',
+    params: { day: dayKey(at ?? (view === 'month' ? selected : anchor)), ...(at ? { hour: String(at.getHours()) } : {}), ...(spaceId ? { spaceId } : {}) },
+  } as never);
+  const goToday = () => { const n = new Date(); setAnchor(n); setSelected(n); };
+  const step = (dir: -1 | 1) => {
+    const next = stepAnchor(view, anchor, dir);
+    setAnchor(next);
+    if (view !== 'month') setSelected(next);
+  };
+  const offToday = dayKey(anchor) !== todayKey || (view === 'month' && dayKey(selected) !== todayKey);
+
+  const iconBtn = { width: 36, height: 36, borderRadius: 18, alignItems: 'center' as const, justifyContent: 'center' as const, backgroundColor: c.glass, borderWidth: 1, borderColor: c.lineGlass };
 
   return (
     <Ground style={{ flex: 1 }}>
       <ScreenHeader
         title={t('calendar.title', 'Calendar')}
-        subtitle={selected.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' })}
-        actions={key !== today ? [{ label: t('calendar.today', 'Today'), onPress: () => setSelected(new Date()) }] : undefined}
-        style={wide ?? undefined}
+        subtitle={heading}
+        actions={[
+          ...(offToday ? [{ label: t('calendar.today', 'Today'), onPress: goToday }] : []),
+          { label: t('calendar.show', 'Show'), onPress: () => setFilters(true) },
+        ]}
       />
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe + 72, gap: amazen.space(3) }, wide]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await reload(); setRefreshing(false); }} tintColor={c.accent} colors={[c.accent]} />}
-      >
-        {/* Week strip */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1) }}>
-          <Pressable onPress={() => setSelected(addDays(selected, -7))} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('calendar.previous', 'Previous')} style={{ paddingHorizontal: 2 }}>
-            <AText variant="body" tone="onGlass">‹</AText>
-          </Pressable>
-          <View style={{ flex: 1, flexDirection: 'row', gap: 4, padding: 6, borderRadius: 22, backgroundColor: c.glass, borderWidth: 1, borderColor: c.lineGlass }}>
-            {week.map((d) => {
-              const k = dayKey(d);
-              const on = k === key;
-              const kind = kinds.get(k);
-              const rest = kind === 'weekend' || kind === 'off-rota';
-              const holiday = kind === 'holiday' || kind === 'half-holiday';
-              const dots = [...new Set(itemsOn(items, k).filter((x) => x.kind !== 'shift').map((x) => x.kind))].slice(0, 3);
-              const body = (
-                <>
-                  <AText variant="caption" style={{ fontSize: 10, letterSpacing: 0.4, color: on ? c.accentInk : c.inkMuted }}>
-                    {d.toLocaleDateString(loc, { weekday: 'short' }).toUpperCase().slice(0, 3)}
-                  </AText>
-                  <AText variant="body" numeric style={{ fontSize: 16, color: on ? c.accentInk : holiday ? c.critical : rest ? c.inkMuted : c.inkStrong }}>{d.getDate()}</AText>
-                  <View style={{ flexDirection: 'row', gap: 2, height: 4 }}>
-                    {dots.map((kd) => <View key={kd} style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: on ? c.accentInk : kindColor(kd, c, isDark) }} />)}
-                  </View>
-                </>
-              );
-              return (
-                <Pressable key={k} onPress={() => setSelected(d)} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={d.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' })} style={{ flex: 1 }}>
-                  {on ? (
-                    <LinearGradient colors={amazen.gradient.primary as unknown as [string, string]} style={{ alignItems: 'center', gap: 3, paddingVertical: 8, borderRadius: 16 }}>
-                      {body}
-                    </LinearGradient>
-                  ) : (
-                    <View style={{ alignItems: 'center', gap: 3, paddingVertical: 8, borderRadius: 16 }}>{body}</View>
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
-          <Pressable onPress={() => setSelected(addDays(selected, 7))} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('calendar.next', 'Next')} style={{ paddingHorizontal: 2 }}>
-            <AText variant="body" tone="onGlass">›</AText>
-          </Pressable>
+
+      <View style={{ paddingHorizontal: amazen.space(4), gap: amazen.space(2.5), paddingBottom: amazen.space(2) }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
+          <FilterPill label={`${placeName} ▾`} on={!!spaceId} onPress={() => setFilters(true)} />
+          <View style={{ flex: 1 }} />
+          <Pressable onPress={() => step(-1)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('calendar.previous', 'Previous')} style={iconBtn}><AText variant="body" tone="strong">‹</AText></Pressable>
+          <Pressable onPress={() => step(1)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('calendar.next', 'Next')} style={iconBtn}><AText variant="body" tone="strong">›</AText></Pressable>
         </View>
+        <View accessibilityRole="tablist" style={{ flexDirection: 'row', padding: 3, borderRadius: 14, backgroundColor: c.glass, borderWidth: 1, borderColor: c.lineGlass }}>
+          {VIEWS.map((v) => (
+            <Pressable key={v} onPress={() => choose(v)} accessibilityRole="tab" accessibilityState={{ selected: view === v }}
+              style={{ flex: 1, height: 32, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: view === v ? c.well : 'transparent' }}>
+              <AText variant="caption" style={{ fontSize: 13, color: view === v ? c.inkStrong : c.inkMuted }}>{t(`calendar.view.${v}`)}</AText>
+            </Pressable>
+          ))}
+        </View>
+      </View>
 
-        {nextHoliday ? (
-          <Pressable onPress={() => setSelected(fromKey(nextHoliday.start))} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2.5), borderRadius: 18, paddingVertical: amazen.space(2.5), paddingHorizontal: amazen.space(3), backgroundColor: c.criticalTint, borderWidth: 1, borderColor: c.critical + '40' }}>
-            <View style={{ width: 8, height: 8, borderRadius: 3, backgroundColor: c.critical }} />
-            <AText variant="caption" tone="strong" numberOfLines={1} style={{ flex: 1, fontSize: 13 }}>
-              {nextHoliday.start === today
-                ? t('calendar.holidayToday', { defaultValue: 'Today is {{name}}', name: nextHoliday.title })
-                : t('calendar.holidayOn', { defaultValue: '{{day}} is {{name}}', day: fromKey(nextHoliday.start).toLocaleDateString(loc, { weekday: 'long' }), name: nextHoliday.title })}
+      {failed && !data ? (
+        <Well style={{ marginHorizontal: amazen.space(4), padding: amazen.space(5), alignItems: 'center' }}>
+          <AText variant="body" tone="ink" style={{ textAlign: 'center' }}>{t('calendar.offline', 'Needs a connection to load your calendar.')}</AText>
+        </Well>
+      ) : null}
+
+      <View style={{ flex: 1, paddingHorizontal: view === 'day' || view === 'three' ? amazen.space(2) : amazen.space(4) }}>
+        {view === 'month' ? (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ gap: amazen.space(3), paddingBottom: tabSafe + 90 }}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await reload(); setRefreshing(false); }} tintColor={c.accent} colors={[c.accent]} />}
+          >
+            <MonthGrid anchor={anchor} selected={dayKey(selected)} items={items} kinds={kinds} onPick={(d) => { setSelected(d); if (d.getMonth() !== anchor.getMonth()) setAnchor(d); }} />
+            <AText variant="body" tone="strong" style={{ paddingHorizontal: 4, fontSize: 15 }}>
+              {dayKey(selected) === todayKey ? t('calendar.today', 'Today') : selected.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' })}
             </AText>
-            <AText variant="caption" tone="critical" style={{ fontSize: 11 }}>{nextHoliday.status === 'ESTIMATED' ? t('calendar.estimated', 'estimated') : t('calendar.holiday', 'Holiday')}</AText>
-          </Pressable>
-        ) : null}
-
-        {failed && !data ? (
-          <Well style={{ padding: amazen.space(5), alignItems: 'center' }}>
-            <AText variant="body" tone="ink" style={{ textAlign: 'center' }}>{t('calendar.offline', 'Needs a connection to load your calendar.')}</AText>
-          </Well>
-        ) : null}
-
-        {allDay.length > 0 ? (
-          <View style={{ gap: amazen.space(1.5) }}>
-            {allDay.map((x) => (
-              <Pressable key={x.id} onPress={() => open(x)} accessibilityRole="button" style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2.5), borderRadius: 16, paddingVertical: amazen.space(2.5), paddingHorizontal: amazen.space(3), backgroundColor: c.well, opacity: pressed ? 0.85 : 1 })}>
-                <View style={{ width: 4, height: 22, borderRadius: 2, backgroundColor: kindColor(x.kind, c, isDark), opacity: x.status === 'PENDING' ? 0.5 : 1 }} />
-                <AText variant="body" tone="strong" numberOfLines={1} style={{ flex: 1, fontSize: 14 }}>{x.title}</AText>
-                <AText variant="caption" tone="muted" style={{ fontSize: 11.5 }}>
-                  {x.kind === 'leave' ? t(`calendar.leaveType.${x.note ?? 'VACATION'}`, x.note ?? '') + (x.status === 'PENDING' ? ` · ${t('calendar.requested', 'requested')}` : '') : t(`calendar.kind.${x.kind}`)}
-                </AText>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-
-        <SectionLabel tone="accent" style={{ paddingHorizontal: amazen.space(1) }}>
-          {key === today ? t('calendar.today', 'Today') : selected.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'short' })}
-        </SectionLabel>
-
-        {timed.length === 0 ? (
-          <Well style={{ padding: amazen.space(5), alignItems: 'center', gap: amazen.space(1) }}>
-            <AText variant="body" tone="strong">{t('calendar.nothingDay', 'Nothing planned')}</AText>
-            <AText variant="caption" tone="muted" style={{ textAlign: 'center' }}>{t('calendar.addHint', 'Tap + and type it — “call Müller at 2 for 30 min”.')}</AText>
-          </Well>
+            <DayList items={items} day={dayKey(selected)} onOpen={open} />
+          </ScrollView>
+        ) : view === 'list' ? (
+          <ListView from={from} days={31} items={items} kinds={kinds} onOpen={open} />
         ) : (
-          <View style={{ position: 'relative', paddingLeft: 60, gap: amazen.space(2.25) }}>
-            <View style={{ position: 'absolute', left: 66, top: 10, bottom: 10, width: 1, backgroundColor: c.lineWell }} />
-            {timed.map((x) => {
-              const col = kindColor(x.kind, c, isDark);
-              const now = Date.now();
-              const live = new Date(x.start).getTime() <= now && new Date(x.end).getTime() > now;
-              return (
-                <View key={x.id}>
-                  {/* One line whatever the clock: "09:00" or "9:01 PM" — a 12-hour time wrapped in a 40pt column. */}
-                  <AText variant="caption" numeric numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ position: 'absolute', left: -60, top: 12, width: 54, textAlign: 'right', fontSize: 10.5, color: c.inkMuted, fontFamily: amazen.font.mono }}>{time(x.start)}</AText>
-                  <View style={{ position: 'absolute', left: 3, top: 14, width: 8, height: 8, borderRadius: 4, backgroundColor: col, borderWidth: 2, borderColor: c.canvas }} />
-                  <Pressable
-                    onPress={() => open(x)}
-                    accessibilityRole="button"
-                    style={({ pressed }) => ({
-                      marginLeft: 18, borderRadius: 20, paddingVertical: amazen.space(2.75), paddingHorizontal: amazen.space(3.25),
-                      backgroundColor: c.well, borderWidth: 1, borderColor: live ? col : col + '33', opacity: pressed ? 0.85 : 1,
-                    })}
-                  >
-                    <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5, textDecorationLine: x.status === 'DECLINED' ? 'line-through' : 'none' }}>{x.title}</AText>
-                    <AText variant="caption" tone="ink" numberOfLines={1} style={{ fontSize: 11.5, marginTop: 1 }}>
-                      {[`${time(x.start)}–${time(x.end)}`, x.kind === 'shift' ? x.note : x.location, x.status === 'PENDING' && x.kind !== 'job' ? t('calendar.notAnswered', 'not answered') : null].filter(Boolean).join(' · ')}
-                    </AText>
-                    {live ? (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}>
-                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.accent }} />
-                        <AText variant="caption" tone="accent" style={{ fontSize: 11 }}>{t('calendar.now', 'Now')}</AText>
-                      </View>
-                    ) : null}
-                  </Pressable>
-                </View>
-              );
-            })}
+          <View style={{ flex: 1, paddingBottom: tabSafe }}>
+            <TimeGrid days={view === 'day' ? [anchor] : [anchor, addDays(anchor, 1), addDays(anchor, 2)]} items={items} kinds={kinds} onOpen={open} onPressHour={view === 'day' ? newAt : undefined} />
           </View>
         )}
-      </ScrollView>
+      </View>
 
       <Pressable
-        onPress={() => setAdding(true)}
+        onPress={() => newAt()}
         accessibilityRole="button"
         accessibilityLabel={t('calendar.new', 'New')}
         style={({ pressed }) => ({ position: 'absolute', right: amazen.space(5), bottom: tabSafe + amazen.space(2), opacity: pressed ? 0.88 : 1 })}
@@ -211,8 +168,19 @@ export function CalendarScreen() {
         </LinearGradient>
       </Pressable>
 
+      <FiltersSheet
+        visible={filters}
+        onClose={() => setFilters(false)}
+        places={places}
+        spaceId={spaceId}
+        onSpace={(id) => { setSpaceId(id); setFilters(false); }}
+        layers={layers}
+        onLayers={setLayers}
+        counts={counts}
+        showSchedule={showSchedule}
+      />
       <EventSheet eventId={openEvent} onClose={() => setOpenEvent(null)} onChanged={reload} />
-      <QuickAddSheet visible={adding} day={selected} onClose={() => setAdding(false)} onSaved={reload} />
+      <LeaveSheet item={leave} mine={leave?.personId === (user as { id?: string } | null)?.id} canDecide={canDecideLeave} onClose={() => setLeave(null)} onChanged={reload} />
     </Ground>
   );
 }

@@ -30,6 +30,14 @@ export interface CalendarEventDetail {
   reminders: number[];
   visibility: EventVisibility;
   canceled: boolean;
+  customer?: { id: string; name: string } | null;
+  /** How and where (shared calendar/meeting.ts). */
+  meetingMode?: 'IN_PERSON' | 'ONLINE' | 'PHONE' | null;
+  placeKind?: 'OFFICE' | 'CLIENT_SITE' | 'ADDRESS' | null;
+  placeSpace?: { id: string; name: string; address: string | null; lat: number | null; lng: number | null } | null;
+  room?: string | null;
+  phone?: string | null;
+  callDirection?: 'OUTGOING' | 'INCOMING' | null;
   organizerId: string;
   canEdit: boolean;
   myResponse: RsvpResponse;
@@ -51,6 +59,14 @@ export interface CalendarEventInput {
   repeat?: Repeat | null;
   reminders?: number[];
   attendeeIds?: string[];
+  customerId?: string | null;
+  spaceId?: string | null;
+  meetingMode?: 'IN_PERSON' | 'ONLINE' | 'PHONE' | null;
+  placeKind?: 'OFFICE' | 'CLIENT_SITE' | 'ADDRESS' | null;
+  placeSpaceId?: string | null;
+  room?: string | null;
+  phone?: string | null;
+  callDirection?: 'OUTGOING' | 'INCOMING' | null;
 }
 
 export interface CalendarPerson { id: string; firstName: string; lastName: string; avatarUrl?: string | null; position?: string | null }

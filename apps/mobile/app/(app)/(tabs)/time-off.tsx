@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useToast } from '../../../src/island/island-context';
 import { useTheme } from '../../../src/contexts/theme-context';
@@ -149,6 +149,22 @@ export default function TimeOffScreen() {
   // Range selection
   const [rangeStart, setRangeStart] = useState<Date | null>(null);
   const [rangeEnd, setRangeEnd] = useState<Date | null>(null);
+  /*
+    Opened from the calendar's New › Time off (`?from=YYYY-MM-DD`): the request starts on that day
+    and the month opens on it. Adopted once, then cleared; a past or malformed day is ignored.
+  */
+  const fromParam = useLocalSearchParams<{ from?: string | string[] }>().from;
+  const linkedFrom = typeof fromParam === 'string' ? fromParam : '';
+  useEffect(() => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(linkedFrom)) return;
+    const [y, m, d] = linkedFrom.split('-').map(Number);
+    const day = new Date(y!, m! - 1, d!);
+    const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    if (day >= t0) {
+      setRangeStart(day); setRangeEnd(day); setViewYear(day.getFullYear()); setViewMonth(day.getMonth());
+    }
+    router.setParams({ from: '' });
+  }, [linkedFrom]);
   const [isSelecting, setIsSelecting] = useState(false);
 
   // Availability

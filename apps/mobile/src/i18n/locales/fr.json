@@ -4596,6 +4596,69 @@
       "EVENT_PERSON_NOT_REACHABLE": "Vous pouvez inviter les personnes avec qui vous travaillez dans un espace.",
       "EVENT_NOT_ORGANIZER": "Seule la personne qui l’a créé peut le modifier.",
       "LEAVE_NO_WORKING_DAYS": "Ces jours sont tous des week-ends ou des jours fériés : il n’y a rien à poser."
+    },
+    "show": "Afficher",
+    "whatToShow": "Que montrer",
+    "whoseCalendar": "Quel calendrier",
+    "myCalendar": "Mon calendrier",
+    "workspace": "Site",
+    "layersTitle": "Afficher",
+    "teamSchedule": "Équipe — qui est absent, planifier",
+    "allDayShort": "journée",
+    "nothingAhead": "Rien de prévu",
+    "kindTimeOff": "Absence",
+    "kindJob": "Intervention",
+    "smartPlaceholder": "Dites-le : « Visite BILLA vendredi 9h00 »",
+    "readAs": "Compris comme",
+    "titleLabel": "Titre",
+    "titlePlaceholder": "De quoi s’agit-il ?",
+    "how": "Comment",
+    "roomPlaceholder": "Salle (facultatif)",
+    "officeAddressAuto": "L’adresse du site est ajoutée automatiquement pour tous.",
+    "pickClientFirst": "Choisissez d’abord le client ci-dessous.",
+    "whichAddress": "Quelle adresse",
+    "addressPlaceholder": "Rue, ville",
+    "linkRecognised": "{{name}} — un bouton Rejoindre apparaît dans le calendrier",
+    "phoneInvalid": "Cela ne ressemble pas à un numéro de téléphone.",
+    "client": "Client",
+    "clientSearch": "Rechercher des clients…",
+    "callNow": "Appeler",
+    "directions": "Itinéraire",
+    "leaveApproved": "Approuvé — la personne est prévenue",
+    "leaveDeclined": "Refusé — la personne est prévenue",
+    "declineReason": "Motif (facultatif)",
+    "declineLeave": "Refuser",
+    "approveLeave": "Approuver",
+    "openTimeOff": "Mes absences",
+    "openSchedule": "Ouvrir dans le planning",
+    "view": {
+      "day": "Jour",
+      "three": "3 jours",
+      "month": "Mois",
+      "list": "Liste"
+    },
+    "mode": {
+      "IN_PERSON": "En personne",
+      "ONLINE": "En ligne",
+      "PHONE": "Téléphone"
+    },
+    "place": {
+      "OFFICE": "Nos locaux",
+      "CLIENT_SITE": "Chez le client",
+      "ADDRESS": "Autre adresse"
+    },
+    "call": {
+      "OUTGOING": "J’appelle",
+      "INCOMING": "On m’appelle"
+    },
+    "layer": {
+      "jobs": "Interventions",
+      "events": "Rendez-vous",
+      "crm": "Suivis clients",
+      "shifts": "Postes",
+      "leave": "Absences",
+      "holidays": "Jours fériés",
+      "documents": "Documents"
     }
   }
 }

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CalendarItem, CalendarItemKind, DayKind } from '@hbcfield/shared/client';
 import type { AmazenColors } from '../../theme/amazen';
 import { calendarApi, type CalendarRange } from '../../lib/api';
@@ -58,4 +58,115 @@ export function useCalendarWeek(monday: Date) {
   useLiveRefresh(load, 120_000);
   const kinds = useMemo(() => new Map<string, DayKind>((data?.days ?? []).map((d) => [d.day, d.kind])), [data]);
   return { data: data && data.from === from ? data : null, kinds, failed, reload: load };
+}
+
+export type CalendarView = 'day' | 'three' | 'month' | 'list';
+
+/** Pages read this session, newest last — bounded, so a long swipe never grows memory. */
+const PAGES = new Map<string, CalendarRange>();
+const PAGE_MAX = 24;
+const pageKey = (from: string, to: string, spaceId: string | null, layers: string, lang: string) => `${from}|${to}|${spaceId ?? ''}|${layers}|${lang}`;
+function remember(key: string, r: CalendarRange) {
+  PAGES.delete(key);
+  PAGES.set(key, r);
+  if (PAGES.size > PAGE_MAX) PAGES.delete(PAGES.keys().next().value as string);
+}
+/** After a write the cached pages are stale: drop them so the next look reads fresh. */
+export function forgetCalendarPages() { PAGES.clear(); }
+
+/** First day of the month grid (Monday on or before the 1st) — always 6 weeks, so the grid never jumps. */
+export function monthGridStart(anchor: Date): Date {
+  return mondayOf(new Date(anchor.getFullYear(), anchor.getMonth(), 1));
+}
+
+/** The days a view shows, from its anchor. */
+export function viewRange(view: CalendarView, anchor: Date): { from: Date; to: Date } {
+  const d0 = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate());
+  if (view === 'day') return { from: d0, to: d0 };
+  if (view === 'three') return { from: d0, to: addDays(d0, 2) };
+  if (view === 'month') { const s = monthGridStart(anchor); return { from: s, to: addDays(s, 41) }; }
+  return { from: d0, to: addDays(d0, 30) };
+}
+
+/** The anchor one page back or forward. */
+export function stepAnchor(view: CalendarView, anchor: Date, dir: -1 | 1): Date {
+  if (view === 'day') return addDays(anchor, dir);
+  if (view === 'three') return addDays(anchor, 3 * dir);
+  if (view === 'month') return new Date(anchor.getFullYear(), anchor.getMonth() + dir, 1);
+  return addDays(anchor, 31 * dir);
+}
+
+/**
+ * The calendar for what is on screen — ONE read per range (the web's endpoint), refreshed on focus
+ * and every two minutes, kept by the client for offline viewing. The neighbouring pages are read
+ * in the background once this one has arrived, so swiping to them is instant from the cache.
+ */
+export function useCalendarRange(view: CalendarView, anchor: Date, spaceId: string | null, layers: string[] | null) {
+  const { from, to } = viewRange(view, anchor);
+  const f = dayKey(from), tt = dayKey(to);
+  const lang = (i18n.language || 'en').slice(0, 2);
+  const layerKey = layers ? layers.join(',') : '';
+  const key = pageKey(f, tt, spaceId, layerKey, lang);
+  const [data, setData] = useState<CalendarRange | null>(() => PAGES.get(key) ?? null);
+  const [failed, setFailed] = useState(false);
+  // A page already read (or prefetched) is drawn at once; the read below refreshes it.
+  useEffect(() => { const hit = PAGES.get(key); if (hit) setData(hit); }, [key]);
+  const load = useCallback(async () => {
+    try {
+      const r = await calendarApi.range({ from: f, to: tt, spaceId, layers: layers ?? undefined, lang });
+      remember(key, r);
+      setData(r);
+      setFailed(false);
+    } catch {
+      setFailed(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- layerKey stands for layers
+  }, [f, tt, spaceId, layerKey, lang]);
+  useLiveRefresh(load, 120_000);
+  useEffect(() => {
+    if (!data || data.from !== f) return;
+    const timer = setTimeout(() => {
+      for (const dir of [1, -1] as const) {
+        const n = viewRange(view, stepAnchor(view, anchor, dir));
+        const nf = dayKey(n.from), nt = dayKey(n.to), nk = pageKey(nf, nt, spaceId, layerKey, lang);
+        if (PAGES.has(nk)) continue;
+        calendarApi.range({ from: nf, to: nt, spaceId, layers: layers ?? undefined, lang }).then((r) => remember(nk, r)).catch(() => undefined);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per arrived page
+  }, [data]);
+  const kinds = useMemo(() => new Map<string, DayKind>((data?.days ?? []).map((d) => [d.day, d.kind])), [data]);
+  return { data: data && data.from === f ? data : null, kinds, failed, reload: load, from, to };
+}
+
+/**
+ * Timed items of one day laid out side by side where they overlap: each gets a column and the
+ * number of columns in its cluster. Greedy, in start order — a day holds a handful, not hundreds.
+ */
+export function layoutDay(items: CalendarItem[], key: string): { item: CalendarItem; startMin: number; endMin: number; col: number; cols: number }[] {
+  const dayStart = fromKey(key).getTime();
+  const rows = items
+    .filter((i) => !i.allDay)
+    .map((i) => ({
+      item: i,
+      startMin: Math.max(0, (new Date(i.start).getTime() - dayStart) / 60000),
+      endMin: Math.min(1440, (new Date(i.end).getTime() - dayStart) / 60000),
+    }))
+    .filter((r) => r.endMin > 0 && r.startMin < 1440)
+    .sort((a, b) => a.startMin - b.startMin || b.endMin - a.endMin);
+  const out: { item: CalendarItem; startMin: number; endMin: number; col: number; cols: number }[] = [];
+  let cluster: typeof out = [];
+  let clusterEnd = -1;
+  const flush = () => { const n = Math.max(1, ...cluster.map((c) => c.col + 1)); cluster.forEach((c) => { c.cols = n; }); out.push(...cluster); cluster = []; };
+  for (const r of rows) {
+    if (r.startMin >= clusterEnd && cluster.length) flush();
+    const used = new Set(cluster.filter((c) => c.endMin > r.startMin).map((c) => c.col));
+    let col = 0;
+    while (used.has(col)) col++;
+    cluster.push({ ...r, col, cols: 1 });
+    clusterEnd = Math.max(clusterEnd, r.endMin);
+  }
+  if (cluster.length) flush();
+  return out;
 }

@@ -5,6 +5,7 @@ import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
 import { AText, PrimaryButton, Sunken } from '../amazen';
 import { JobSheet, QuietButton, SectionLabel } from '../job/job-ui';
+import { MEETING_PROVIDER_NAMES, meetingProvider, telHref } from '@hbcfield/shared/client';
 import { calendarApi, type CalendarEventDetail } from '../../lib/api';
 import { calendarError } from './errors';
 
@@ -74,7 +75,11 @@ export function EventSheet({ eventId, onClose, onChanged }: { eventId: string | 
         <>
           <Sunken style={{ padding: amazen.space(3.5), gap: amazen.space(2) }}>
             <Row label={t('calendar.when', 'When')} value={when} />
-            {ev.location ? <Row label={t('calendar.where', 'Where')} value={ev.location} /> : null}
+            {ev.meetingMode === 'IN_PERSON' && ev.placeKind === 'OFFICE' && ev.placeSpace ? <Row label={t('calendar.place.OFFICE', 'Our office')} value={[ev.placeSpace.name, ev.room].filter(Boolean).join(' · ')} /> : null}
+            {ev.location && ev.meetingMode !== 'PHONE' ? <Row label={t('calendar.where', 'Where')} value={ev.location} /> : null}
+            {ev.meetingMode === 'ONLINE' && meetingProvider(ev.meetingUrl) ? <Row label={t('calendar.mode.ONLINE', 'Online')} value={MEETING_PROVIDER_NAMES[meetingProvider(ev.meetingUrl)!]} /> : null}
+            {ev.meetingMode === 'PHONE' && ev.phone ? <Row label={t('calendar.mode.PHONE', 'Phone')} value={`${ev.phone} · ${t(`calendar.call.${ev.callDirection ?? 'OUTGOING'}`)}`} /> : null}
+            {ev.customer ? <Row label={t('calendar.client', 'Client')} value={ev.customer.name} /> : null}
             {ev.reminders.length ? <Row label={t('calendar.remind', 'Remind')} value={ev.reminders.map((m) => offsetText(m, t)).join(', ')} /> : null}
             {ev.attendees.length > 1 ? <Row label={t('calendar.people', 'People')} value={t('calendar.going', { count: going, total: ev.attendees.length })} /> : null}
           </Sunken>
@@ -96,6 +101,10 @@ export function EventSheet({ eventId, onClose, onChanged }: { eventId: string | 
           {ev.description ? <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 20 }}>{ev.description}</AText> : null}
 
           {safeLink ? <PrimaryButton label={t('calendar.join', 'Join')} onPress={() => void Linking.openURL(safeLink)} /> : null}
+          {ev.meetingMode === 'PHONE' && ev.phone ? <PrimaryButton label={t('calendar.callNow', 'Call')} onPress={() => void Linking.openURL(telHref(ev.phone!))} /> : null}
+          {ev.meetingMode === 'IN_PERSON' && ev.location ? (
+            <QuietButton label={t('calendar.directions', 'Directions')} tone="accent" onPress={() => void Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ev.location!)}`)} />
+          ) : null}
 
           {!ev.canEdit ? (
             <View style={{ gap: amazen.space(1.5) }}>

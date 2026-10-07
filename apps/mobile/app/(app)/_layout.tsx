@@ -255,6 +255,7 @@ export default function AppLayout() {
         <Stack.Screen name="support" options={{ headerShown: false }} />
         <Stack.Screen name="extra-time" options={{ headerShown: false }} />
         <Stack.Screen name="sync" options={{ headerShown: false }} />
+        <Stack.Screen name="calendar-new" options={{ headerShown: false }} />
         {/* ⚠️ EVERY route under app/(app) must appear in this list.
 
             A screen that is not registered inherits the stack's default header,
