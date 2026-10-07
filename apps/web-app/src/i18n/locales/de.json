@@ -8588,7 +8588,10 @@
           "address": "Firmenadresse",
           "country": "Land",
           "email": "Firmen-E-Mail",
-          "phone": "Firmentelefon"
+          "phone": "Firmentelefon",
+          "vatId": "UID-Nummer der Firma",
+          "taxId": "Steuernummer der Firma",
+          "registerNumber": "Firmenbuchnummer"
         },
         "space": {
           "name": "Arbeitsbereich",

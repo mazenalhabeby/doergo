@@ -127,6 +127,10 @@ try:
         check('a member refuses a foreign employer', call('PATCH', f"/organizations/members/{mike['id']}", ADMIN, {'employerEntityId': 'cforeignforeignforeign0'})[0] == 400)
         s, b = call('PATCH', f"/organizations/members/{mike['id']}", ADMIN, {'employerEntityId': company['id']})
         check('a member takes an employer', s == 200, (s, b))
+        # A contract names the EMPLOYER company, not the organization.
+        s, b = call('POST', '/documents/templates/preview', ADMIN, {'memberId': mike['id']})
+        vals = (data((s, b)) or {}).get('values') or {}
+        check("a contract names the member's employer", vals.get('org.legalName') == 'HBC Test USA Inc.' and vals.get('org.taxId') == '12-3456789', (s, {k: v for k, v in vals.items() if k.startswith('org.')}))
         call('PATCH', f"/organizations/members/{mike['id']}", ADMIN, {'employerEntityId': None})
 
     s, b = call('GET', f"/invoices?legalEntityId={company['id']}", ADMIN)

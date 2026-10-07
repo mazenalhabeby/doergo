@@ -8597,7 +8597,10 @@
           "address": "Indirizzo dell’azienda",
           "country": "Paese",
           "email": "E-mail aziendale",
-          "phone": "Telefono aziendale"
+          "phone": "Telefono aziendale",
+          "vatId": "Partita IVA della società",
+          "taxId": "Codice fiscale della società",
+          "registerNumber": "Numero di registro della società"
         },
         "space": {
           "name": "Spazio di lavoro",

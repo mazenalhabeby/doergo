@@ -941,10 +941,12 @@ export class DocumentsService {
         id: true, firstName: true, lastName: true, email: true,
         position: true, specialty: true, memberRoleId: true,
         employmentStartDate: true,
+        employerEntity: { select: EMPLOYER_COMPANY_SELECT },
         organization: {
           select: {
             name: true, addressLine1: true, city: true, postalCode: true,
             country: true, email: true, phone: true,
+            legalEntities: { where: { isMain: true }, take: 1, select: EMPLOYER_COMPANY_SELECT },
           },
         },
       },
@@ -1138,10 +1140,12 @@ export class DocumentsService {
       id: true, firstName: true, lastName: true, email: true,
       position: true, specialty: true, memberRoleId: true,
       employmentStartDate: true,
+      employerEntity: { select: EMPLOYER_COMPANY_SELECT },
       organization: {
         select: {
           name: true, addressLine1: true, city: true, postalCode: true,
           country: true, email: true, phone: true,
+          legalEntities: { where: { isMain: true }, take: 1, select: EMPLOYER_COMPANY_SELECT },
         },
       },
     } as const;
@@ -5584,16 +5588,33 @@ export class DocumentsService {
 export const CONSENT_TEXT =
   'I have read this document and agree to sign it electronically.';
 
+/**
+ * The company a contract names as the employer: the member's own (Settings › Companies), else the
+ * organization's main company. One select for every place that builds merge values.
+ */
+const EMPLOYER_COMPANY_SELECT = {
+  legalName: true, addressLine1: true, addressLine2: true, postalCode: true, city: true, state: true,
+  country: true, email: true, phone: true, vatId: true, taxId: true, registerNumber: true,
+} as const;
+
+type EmployerCompany = {
+  legalName: string; addressLine1: string | null; addressLine2: string | null; postalCode: string | null;
+  city: string | null; state: string | null; country: string | null; email: string | null; phone: string | null;
+  vatId: string | null; taxId: string | null; registerNumber: string | null;
+};
+
 /** Merge-field values for one member. */
 function contractValues(
   member: {
     firstName: string; lastName: string; email: string;
     position: string | null; specialty: string | null;
     employmentStartDate: Date | null;
+    employerEntity?: EmployerCompany | null;
     organization: {
       name: string; addressLine1: string | null; city: string | null;
       postalCode: string | null; country: string | null;
       email: string | null; phone: string | null;
+      legalEntities?: EmployerCompany[];
     } | null;
   },
   contract: ContractTerms | undefined,
@@ -5612,9 +5633,18 @@ function contractValues(
   },
 ): Record<string, string | number | null> {
   const org = member.organization;
-  const address = [org?.addressLine1, [org?.postalCode, org?.city].filter(Boolean).join(' ')]
-    .filter(Boolean)
-    .join(', ');
+  /*
+    ⚠️ THE EMPLOYER IS A COMPANY, not the organization. HBC USA's people are employed by HBC USA
+    Inc., not by the Austrian GmbH that shares their workspace — a contract naming the wrong legal
+    entity is a contract with the wrong party. Their own company, else the main one, else the
+    organization profile (an organization from before companies existed).
+  */
+  const company = member.employerEntity ?? org?.legalEntities?.[0] ?? null;
+  const address = company
+    ? [company.addressLine1, company.addressLine2, [company.postalCode, company.city].filter(Boolean).join(' '), company.state]
+        .filter(Boolean)
+        .join(', ')
+    : [org?.addressLine1, [org?.postalCode, org?.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
 
   const startDate =
     contract?.startDate ?? (member.employmentStartDate ? isoDate(member.employmentStartDate) : null);
@@ -5626,11 +5656,14 @@ function contractValues(
     'member.email': member.email,
     'member.jobTitle': member.position,
     'member.specialty': member.specialty,
-    'org.legalName': org?.name ?? null,
+    'org.legalName': company?.legalName ?? org?.name ?? null,
     'org.address': address || null,
-    'org.country': org?.country ?? null,
-    'org.email': org?.email ?? null,
-    'org.phone': org?.phone ?? null,
+    'org.country': company?.country ?? org?.country ?? null,
+    'org.email': company?.email ?? org?.email ?? null,
+    'org.phone': company?.phone ?? org?.phone ?? null,
+    'org.vatId': company?.vatId ?? null,
+    'org.taxId': company?.taxId ?? null,
+    'org.registerNumber': company?.registerNumber ?? null,
     // Space fields resolve to null for now — a member belongs to spaces, not to
     // one space, and picking arbitrarily would put the wrong site on a contract.
     'space.name': null,

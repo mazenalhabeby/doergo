@@ -58,6 +58,10 @@ export const MERGE_FIELDS: MergeFieldDef[] = [
   { token: 'org.country', namespace: 'org', label: 'Country', example: 'AT', required: false },
   { token: 'org.email', namespace: 'org', label: 'Company email', example: 'office@hbc-group.eu', required: false },
   { token: 'org.phone', namespace: 'org', label: 'Company phone', example: '+43 7613 12345', required: false },
+  // From the member's EMPLOYER company (Settings › Companies), else the main one.
+  { token: 'org.vatId', namespace: 'org', label: 'Company VAT ID', example: 'ATU12345678', required: false },
+  { token: 'org.taxId', namespace: 'org', label: 'Company tax ID', example: '12-3456789', required: false },
+  { token: 'org.registerNumber', namespace: 'org', label: 'Company register number', example: 'FN 123456a', required: false },
 
   // ── Where they work ──────────────────────────────────────────────────────
   { token: 'space.name', namespace: 'space', label: 'Workspace', example: 'Laakirchen', required: false },
