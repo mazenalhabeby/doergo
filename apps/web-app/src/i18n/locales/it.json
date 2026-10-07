@@ -9827,7 +9827,39 @@
     "approveLeave": "Approva",
     "declineLeave": "Rifiuta",
     "declineReason": "Motivo (facoltativo)",
-    "openSchedule": "Apri nella pianificazione"
+    "openSchedule": "Apri nella pianificazione",
+    "kindTimeOff": "Assenza",
+    "kindJob": "Lavoro",
+    "client": "Cliente",
+    "clientNone": "Nessun cliente",
+    "clientSearch": "Cerca clienti…",
+    "noClients": "Nessun cliente trovato",
+    "how": "Come",
+    "roomPlaceholder": "Sala (facoltativa)",
+    "room": "Sala",
+    "officeAddressAuto": "L’indirizzo della sede viene aggiunto automaticamente per tutti.",
+    "pickClientFirst": "Scegli prima il cliente qui sopra.",
+    "whichAddress": "Quale indirizzo",
+    "addressPlaceholder": "Via, città",
+    "linkRecognised": "{{name}} — nel calendario compare il pulsante Partecipa",
+    "phone": "Numero di telefono",
+    "phoneInvalid": "Non sembra un numero di telefono.",
+    "callNow": "Chiama",
+    "directions": "Indicazioni",
+    "mode": {
+      "IN_PERSON": "Di persona",
+      "ONLINE": "Online",
+      "PHONE": "Telefono"
+    },
+    "place": {
+      "OFFICE": "Nostra sede",
+      "CLIENT_SITE": "Presso il cliente",
+      "ADDRESS": "Altro indirizzo"
+    },
+    "call": {
+      "OUTGOING": "Chiamo io",
+      "INCOMING": "Mi chiamano"
+    }
   },
   "holidays": {
     "orgTitle": "Organizzazione",

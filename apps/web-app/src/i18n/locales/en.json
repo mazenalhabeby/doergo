@@ -9818,7 +9818,39 @@
     "approveLeave": "Approve",
     "declineLeave": "Decline",
     "declineReason": "Reason (optional)",
-    "openSchedule": "Open in Schedule"
+    "openSchedule": "Open in Schedule",
+    "kindTimeOff": "Time off",
+    "kindJob": "Job",
+    "client": "Client",
+    "clientNone": "No client",
+    "clientSearch": "Search clients…",
+    "noClients": "No clients found",
+    "how": "How",
+    "roomPlaceholder": "Room (optional)",
+    "room": "Room",
+    "officeAddressAuto": "The office's address is added for everyone automatically.",
+    "pickClientFirst": "Choose the client above first.",
+    "whichAddress": "Which address",
+    "addressPlaceholder": "Street, town",
+    "linkRecognised": "{{name}} — a Join button appears in the calendar",
+    "phone": "Phone number",
+    "phoneInvalid": "That does not look like a phone number.",
+    "callNow": "Call",
+    "directions": "Directions",
+    "mode": {
+      "IN_PERSON": "In person",
+      "ONLINE": "Online",
+      "PHONE": "Phone"
+    },
+    "place": {
+      "OFFICE": "Our office",
+      "CLIENT_SITE": "Client's site",
+      "ADDRESS": "Other address"
+    },
+    "call": {
+      "OUTGOING": "I call them",
+      "INCOMING": "They call me"
+    }
   },
   "holidays": {
     "orgTitle": "Organization",

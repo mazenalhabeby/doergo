@@ -9818,7 +9818,39 @@
     "approveLeave": "Genehmigen",
     "declineLeave": "Ablehnen",
     "declineReason": "Grund (optional)",
-    "openSchedule": "Im Zeitplan öffnen"
+    "openSchedule": "Im Zeitplan öffnen",
+    "kindTimeOff": "Abwesenheit",
+    "kindJob": "Auftrag",
+    "client": "Kunde",
+    "clientNone": "Kein Kunde",
+    "clientSearch": "Kunden suchen…",
+    "noClients": "Keine Kunden gefunden",
+    "how": "Wie",
+    "roomPlaceholder": "Raum (optional)",
+    "room": "Raum",
+    "officeAddressAuto": "Die Adresse des Standorts wird automatisch für alle eingetragen.",
+    "pickClientFirst": "Wählen Sie oben zuerst den Kunden.",
+    "whichAddress": "Welche Adresse",
+    "addressPlaceholder": "Straße, Ort",
+    "linkRecognised": "{{name}} — im Kalender erscheint ein Beitreten-Knopf",
+    "phone": "Telefonnummer",
+    "phoneInvalid": "Das sieht nicht nach einer Telefonnummer aus.",
+    "callNow": "Anrufen",
+    "directions": "Route",
+    "mode": {
+      "IN_PERSON": "Vor Ort",
+      "ONLINE": "Online",
+      "PHONE": "Telefon"
+    },
+    "place": {
+      "OFFICE": "Unser Standort",
+      "CLIENT_SITE": "Beim Kunden",
+      "ADDRESS": "Andere Adresse"
+    },
+    "call": {
+      "OUTGOING": "Ich rufe an",
+      "INCOMING": "Sie rufen mich an"
+    }
   },
   "holidays": {
     "orgTitle": "Organisation",

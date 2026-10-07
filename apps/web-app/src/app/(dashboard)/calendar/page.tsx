@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import type { CalendarItem, CalendarLayer, DayKind } from "@hbcfield/shared/client"
+import { hasAccessModule, moduleAnywhere, resolveCrmCaps, type CalendarItem, type CalendarLayer, type DayKind } from "@hbcfield/shared/client"
 import { AlertCircle, ChevronLeft, ChevronRight, Users } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
@@ -21,6 +22,7 @@ import { MonthGrid } from "./_components/month-grid"
 import { AgendaList } from "./_components/agenda-list"
 import { ItemPopover } from "./_components/item-popover"
 import { EventDialog } from "./_components/event-dialog"
+import { CreateTaskDialog } from "../tasks/_components/create-task-dialog"
 import { Rail } from "./_components/rail"
 
 /**
@@ -41,6 +43,8 @@ export default function CalendarPage() {
   const { spaces, spaceId, setSpaceId } = useSpaceScope({ allowAll: true })
   const [selected, setSelected] = useState<{ item: CalendarItem; el: HTMLElement } | null>(null)
   const [dialog, setDialog] = useState<{ start?: Date | null; eventId?: string | null } | null>(null)
+  const [jobAt, setJobAt] = useState<Date | null>(null)
+  const router = useRouter()
 
   const days = useMemo(() => {
     if (view === "day") return [new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate())]
@@ -96,6 +100,11 @@ export default function CalendarPage() {
   const scheduleAccess = useScheduleAccess()
   // Deciding a leave is the same permission the approve route asks; the server still narrows it to the people they lead.
   const canDecideLeave = user?.role === "ADMIN" || hasPermission("canManageRota")
+  // What New may offer — each the same gate the server asks (it refuses the rest anyway).
+  const crm = !!user && moduleAnywhere(user, "crm") && resolveCrmCaps(String(user.role), (user as { access?: { org?: unknown } }).access?.org as never).canAccess
+  const canNewJob = user?.role === "ADMIN" || hasPermission("canCreateTasks")
+  const canTimeOff = !!user && hasAccessModule(user, "time_off")
+  const offices = spaces.map((s) => ({ id: s.id, name: s.name }))
   const select = (item: CalendarItem, el: HTMLElement) => setSelected({ item, el })
   const views: CalendarView[] = ["day", "week", "month", "agenda"]
 
@@ -218,7 +227,14 @@ export default function CalendarPage() {
         start={dialog?.start ?? null}
         event={dialog?.eventId ? editing.data ?? null : null}
         spaceId={spaceId}
+        offices={offices}
+        crm={crm}
+        onNewJob={canNewJob ? (at) => setJobAt(at) : undefined}
+        onTimeOff={canTimeOff ? (day) => router.push(`/my/time-off?from=${day}`) : undefined}
       />
+      {canNewJob && (
+        <CreateTaskDialog open={!!jobAt} onOpenChange={(o) => { if (!o) setJobAt(null) }} defaultSpaceId={spaceId ?? null} defaultDueDate={jobAt} />
+      )}
     </div>
   )
 }

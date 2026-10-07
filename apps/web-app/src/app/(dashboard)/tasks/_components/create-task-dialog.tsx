@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo, lazy, Suspense, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
+import { useClientAddresses } from "@/hooks/use-client-addresses"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Building2, Calendar as CalendarIcon, CheckSquare, ChevronRight, Clock, FileText, GitBranch, Layers, Loader2, MapPin, Plus, Repeat, SlidersHorizontal, Trash2, Upload, User, Users, X } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
@@ -137,6 +138,8 @@ interface CreateTaskDialogProps {
   defaultSpaceId?: string | null
   /** Link the new task to a CRM customer (locks the space to the customer's). */
   defaultCustomerId?: string | null
+  /** Opened from the calendar: the day (and hour, when not midnight) that was tapped. */
+  defaultDueDate?: Date | null
 }
 
 // ---------------------------------------------------------------------------
@@ -156,7 +159,7 @@ type AssigneeOption = {
   enabledModules?: unknown
 }
 
-export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultSpaceId, defaultCustomerId }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultSpaceId, defaultCustomerId, defaultDueDate }: CreateTaskDialogProps) {
   const { t } = useTranslation()
   const { user, hasModule: orgHasModule, hasPlanFeature, hasPermission } = useAuth()
   const canRecur = hasPlanFeature("recurring") // Recurring tasks = Professional+
@@ -283,7 +286,8 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
       setTitle("")
       setDescription("")
       setPriority("MEDIUM")
-      setDueDate(undefined)
+      setDueDate(defaultDueDate ?? undefined)
+      setDueTime(defaultDueDate && (defaultDueDate.getHours() || defaultDueDate.getMinutes()) ? format(defaultDueDate, "HH:mm") : "")
       setStartDate(undefined)
       setEstimatedHours("")
       setCustomerId(defaultCustomerId ?? "none")
@@ -492,53 +496,11 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   })
   const visitClients = clientPage?.data ?? []
 
-  /*
-    The chosen client's own record.
-
-    Opened from a client's page the list above is never fetched — the client is
-    already decided — so without this the one address most records actually have
-    would be missing in exactly that flow.
-  */
-  const { data: pinnedClient } = useQuery({
-    queryKey: ["customer", customerId],
-    queryFn: () => customersApi.get(customerId),
-    staleTime: 60000,
-    enabled: open && customerId !== "none" && !visitClients.some((c) => c.id === customerId),
-  })
-
-  // Where that client actually is. Reach-gated server-side, so this returns
-  // nothing for a client the caller cannot see.
-  const { data: clientAddresses = [] } = useQuery({
-    queryKey: ["customer-addresses", customerId],
-    queryFn: () => customersApi.addresses(customerId),
-    staleTime: 60000,
-    enabled: open && customerId !== "none",
-  })
-
-
-  /*
-    Everywhere a client's address might be.
-
-    ⚠️ Reading only the address ROWS was wrong, and the live data says so
-    plainly: of thirteen clients, eight carry an address on the client record
-    and none of those has a row. Offering rows alone would have shown an empty
-    picker for exactly the clients that have an address — the feature looking
-    broken precisely where it should work.
-
-    The client's own address comes first because it is the one most records
-    have; the rows follow, primary first, because a client with sites has
-    chosen one.
-  */
-  const visitAddressOptions = useMemo(() => {
-    const chosen = visitClients.find((c) => c.id === customerId) ?? pinnedClient
-    const opts: { id: string; name: string; address: string | null; lat: number | null; lng: number | null; isPrimary: boolean }[] = []
-    const own = chosen?.address ?? null
-    if (own) opts.push({ id: "client", name: own, address: own, lat: null, lng: null, isPrimary: false })
-    for (const a of clientAddresses) {
-      opts.push({ id: a.id, name: a.name || a.address || "", address: a.address ?? null, lat: a.lat ?? null, lng: a.lng ?? null, isPrimary: a.isPrimary })
-    }
-    return opts
-  }, [visitClients, pinnedClient, customerId, clientAddresses])
+  // Where that client is: the record's own address, then its address rows (shared with the calendar).
+  const listedClient = visitClients.find((c) => c.id === customerId) ?? null
+  const { options: visitAddressOptions, client: chosenClient } = useClientAddresses(customerId, { enabled: open, known: listedClient })
+  // Opened from a client's page the list is never fetched — that client is shown from its own record.
+  const pinnedClient = listedClient ? null : chosenClient
 
   /*
     Put the client's address on the task, and find its point.

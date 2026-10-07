@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
@@ -177,6 +177,18 @@ export default function MyTimeOffPage() {
   const [rangeEnd, setRangeEnd] = useState<Date | null>(null)
   const [hovered, setHovered] = useState<Date | null>(null)
   const [cursor, setCursor] = useState(() => startOfDay(new Date()))
+  /*
+    Opened from the calendar's New › Time off (`?from=YYYY-MM-DD`): the request starts on that
+    day and the month opens on it. Read once after mount (the server has no address bar);
+    anything malformed or in the past is ignored.
+  */
+  useEffect(() => {
+    const v = new URLSearchParams(window.location.search).get("from")
+    const d = v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? new Date(`${v}T00:00:00`) : null
+    if (d && !Number.isNaN(d.getTime()) && d >= startOfDay(new Date())) {
+      setRangeStart(d); setRangeEnd(d); setCursor(startOfDay(d))
+    }
+  }, [])
 
   const today = startOfDay(new Date())
   const weeks = useMemo(() => monthGrid(cursor.getFullYear(), cursor.getMonth()), [cursor])

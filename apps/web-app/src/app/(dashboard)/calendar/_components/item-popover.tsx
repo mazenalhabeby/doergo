@@ -5,8 +5,8 @@ import Link from "next/link"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
-import type { CalendarItem } from "@hbcfield/shared/client"
-import { Bell, CalendarClock, Check, Clock, ExternalLink, Flag, HelpCircle, MapPin, Pencil, Trash2, Users, Video, X } from "lucide-react"
+import { MEETING_PROVIDER_NAMES, meetingProvider, telHref, type CalendarItem } from "@hbcfield/shared/client"
+import { Bell, Building2, CalendarClock, Check, Clock, ExternalLink, Flag, HelpCircle, MapPin, Navigation, Pencil, Phone, Trash2, Users, Video, X } from "lucide-react"
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -126,8 +126,17 @@ export function ItemPopover({ item, anchor, onClose, onEdit, myId, canDecideLeav
           {item.kind === "shift" && item.note && (
             <div className="flex items-center gap-2.5"><MapPin className="h-4 w-4 shrink-0" />{item.note}</div>
           )}
-          {(ev?.location || item.location) && (
+          {ev?.meetingMode === "IN_PERSON" && ev.placeKind === "OFFICE" && ev.placeSpace && (
+            <div className="flex items-center gap-2.5"><Building2 className="h-4 w-4 shrink-0" /><span className="truncate text-foreground">{ev.placeSpace.name}{ev.room ? ` · ${ev.room}` : ""}</span></div>
+          )}
+          {(ev?.location || item.location) && ev?.meetingMode !== "PHONE" && (
             <div className="flex items-center gap-2.5"><MapPin className="h-4 w-4 shrink-0" /><span className="truncate text-foreground">{ev?.location ?? item.location}</span></div>
+          )}
+          {ev?.meetingMode === "ONLINE" && ev.meetingUrl && meetingProvider(ev.meetingUrl) && (
+            <div className="flex items-center gap-2.5"><Video className="h-4 w-4 shrink-0" />{MEETING_PROVIDER_NAMES[meetingProvider(ev.meetingUrl)!]}</div>
+          )}
+          {ev?.meetingMode === "PHONE" && ev.phone && (
+            <div className="flex items-center gap-2.5"><Phone className="h-4 w-4 shrink-0" /><span className="text-foreground">{ev.phone}</span><span>· {t(`calendar.call.${ev.callDirection ?? "OUTGOING"}`)}</span></div>
           )}
           {ev && ev.attendees.length > 1 && (
             <div className="flex items-start gap-2.5">
@@ -163,6 +172,16 @@ export function ItemPopover({ item, anchor, onClose, onEdit, myId, canDecideLeav
         {ev?.meetingUrl && (
           <a href={ev.meetingUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex">
             <Button size="sm" className="gap-1.5"><Video className="h-4 w-4" />{t("calendar.join")}</Button>
+          </a>
+        )}
+        {ev?.meetingMode === "PHONE" && ev.phone && (
+          <a href={telHref(ev.phone)} className="mt-3 inline-flex">
+            <Button size="sm" className="gap-1.5"><Phone className="h-4 w-4" />{t("calendar.callNow")}</Button>
+          </a>
+        )}
+        {ev?.meetingMode === "IN_PERSON" && ev.location && (
+          <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ev.location)}`} target="_blank" rel="noopener noreferrer" className="ml-2 mt-3 inline-flex">
+            <Button size="sm" variant="outline" className="gap-1.5"><Navigation className="h-4 w-4" />{t("calendar.directions")}</Button>
           </a>
         )}
 

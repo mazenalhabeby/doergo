@@ -9818,7 +9818,39 @@
     "approveLeave": "Aprobar",
     "declineLeave": "Rechazar",
     "declineReason": "Motivo (opcional)",
-    "openSchedule": "Abrir en Horario"
+    "openSchedule": "Abrir en Horario",
+    "kindTimeOff": "Ausencia",
+    "kindJob": "Trabajo",
+    "client": "Cliente",
+    "clientNone": "Sin cliente",
+    "clientSearch": "Buscar clientes…",
+    "noClients": "No hay clientes",
+    "how": "Cómo",
+    "roomPlaceholder": "Sala (opcional)",
+    "room": "Sala",
+    "officeAddressAuto": "La dirección de la oficina se añade automáticamente para todos.",
+    "pickClientFirst": "Elija primero el cliente arriba.",
+    "whichAddress": "Qué dirección",
+    "addressPlaceholder": "Calle, ciudad",
+    "linkRecognised": "{{name}} — aparecerá un botón Unirse en el calendario",
+    "phone": "Número de teléfono",
+    "phoneInvalid": "No parece un número de teléfono.",
+    "callNow": "Llamar",
+    "directions": "Cómo llegar",
+    "mode": {
+      "IN_PERSON": "En persona",
+      "ONLINE": "En línea",
+      "PHONE": "Teléfono"
+    },
+    "place": {
+      "OFFICE": "Nuestra oficina",
+      "CLIENT_SITE": "En el cliente",
+      "ADDRESS": "Otra dirección"
+    },
+    "call": {
+      "OUTGOING": "Yo llamo",
+      "INCOMING": "Me llaman"
+    }
   },
   "holidays": {
     "orgTitle": "Organización",

@@ -8245,6 +8245,13 @@ export interface CalendarEventDetail {
   canceled: boolean;
   space: { id: string; name: string } | null;
   customer: { id: string; name: string } | null;
+  /** How and where (shared calendar/meeting.ts). */
+  meetingMode: 'IN_PERSON' | 'ONLINE' | 'PHONE' | null;
+  placeKind: 'OFFICE' | 'CLIENT_SITE' | 'ADDRESS' | null;
+  placeSpace: { id: string; name: string; address: string | null; lat: number | null; lng: number | null } | null;
+  room: string | null;
+  phone: string | null;
+  callDirection: 'OUTGOING' | 'INCOMING' | null;
   organizerId: string;
   canEdit: boolean;
   myResponse: RsvpResponse;
@@ -8269,6 +8276,12 @@ export interface CalendarEventInput {
   reminders?: number[];
   visibility?: EventVisibility;
   attendeeIds?: string[];
+  meetingMode?: 'IN_PERSON' | 'ONLINE' | 'PHONE' | null;
+  placeKind?: 'OFFICE' | 'CLIENT_SITE' | 'ADDRESS' | null;
+  placeSpaceId?: string | null;
+  room?: string | null;
+  phone?: string | null;
+  callDirection?: 'OUTGOING' | 'INCOMING' | null;
 }
 
 export interface CalendarPerson { id: string; firstName: string; lastName: string; avatarUrl?: string | null; position?: string | null }

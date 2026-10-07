@@ -5,9 +5,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import {
-  REMINDER_OFFSETS, parseQuickAdd, type Repeat, type RepeatFreq, type EventVisibility,
+  MEETING_PROVIDER_NAMES, REMINDER_OFFSETS, cleanPhone, meetingProvider, parseQuickAdd,
+  type CallDirection, type MeetingMode, type PlaceKind, type Repeat, type RepeatFreq, type EventVisibility,
 } from "@hbcfield/shared/client"
-import { AlertTriangle, Bell, CalendarDays, Link2, Lock, MapPin, Repeat as RepeatIcon, Search, Sparkles, UserPlus, Video, X } from "lucide-react"
+import { AlertTriangle, Bell, Briefcase, Building2, CalendarDays, Link2, Lock, MapPin, Palmtree, Phone, Repeat as RepeatIcon, Search, Sparkles, UserPlus, Users, Video, X } from "lucide-react"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -18,7 +19,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
 import { dateLocale } from "@/lib/format-date"
-import { calendarApi, type CalendarEventDetail, type CalendarEventInput, type CalendarPerson } from "@/lib/api"
+import { calendarApi, customersApi, type CalendarEventDetail, type CalendarEventInput, type CalendarPerson } from "@/lib/api"
+import { useClientAddresses } from "@/hooks/use-client-addresses"
 import { serverErrorMessage } from "@/lib/server-error"
 import { dayKey } from "../_lib/layout"
 import { offsetLabel } from "./item-popover"
@@ -31,6 +33,14 @@ interface Props {
   /** Edit an existing event. */
   event?: CalendarEventDetail | null
   spaceId?: string | null
+  /** Workspaces the person works in — "our office" offers these. */
+  offices?: { id: string; name: string }[]
+  /** May name a client (CRM access). */
+  crm?: boolean
+  /** New › Job opens the existing New Task with this moment (shown only with canCreateTasks + Tasks). */
+  onNewJob?: (at: Date) => void
+  /** New › Time off opens the existing request on this day (shown only with the Time off module). */
+  onTimeOff?: (day: string) => void
 }
 
 const pad = (n: number) => String(n).padStart(2, "0")
@@ -49,7 +59,7 @@ function roundUp(d: Date): Date {
 const DURATIONS = [15, 30, 45, 60, 90, 120]
 
 /** One form for an appointment or a reminder — type it as a sentence, or fill it in. */
-export function EventDialog({ open, onOpenChange, start, event, spaceId }: Props) {
+export function EventDialog({ open, onOpenChange, start, event, spaceId, offices = [], crm = false, onNewJob, onTimeOff }: Props) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const editing = !!event
@@ -72,6 +82,17 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId }: Props
   const [visibility, setVisibility] = useState<EventVisibility>("BUSY")
   const [pickOpen, setPickOpen] = useState(false)
   const [q, setQ] = useState("")
+  // How and where (shared calendar/meeting.ts — the server keeps only what the mode uses).
+  const [mode, setMode] = useState<MeetingMode>("IN_PERSON")
+  const [place, setPlace] = useState<PlaceKind>("OFFICE")
+  const [placeSpaceId, setPlaceSpaceId] = useState<string>("")
+  const [room, setRoom] = useState("")
+  const [phone, setPhone] = useState("")
+  const [callDirection, setCallDirection] = useState<CallDirection>("OUTGOING")
+  const [customer, setCustomer] = useState<{ id: string; name: string; address?: string | null; phone?: string | null } | null>(null)
+  const [clientQ, setClientQ] = useState("")
+  const [clientOpen, setClientOpen] = useState(false)
+  const [addressId, setAddressId] = useState("")
 
   // Fill from the event being edited, or from where the grid was double-clicked.
   useEffect(() => {
@@ -83,6 +104,10 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId }: Props
       setEndDate(dayKey(new Date(e.getTime() - 1))); setMeetingUrl(event.meetingUrl ?? ""); setLocation(event.location ?? "")
       setDescription(event.description ?? ""); setReminders(event.reminders); setFreq(event.repeat?.freq ?? "NONE")
       setVisibility(event.visibility)
+      setMode(event.meetingMode ?? (event.meetingUrl ? "ONLINE" : "IN_PERSON"))
+      setPlace(event.placeKind ?? (event.meetingMode ? "OFFICE" : "ADDRESS"))
+      setPlaceSpaceId(event.placeSpace?.id ?? ""); setRoom(event.room ?? ""); setPhone(event.phone ?? "")
+      setCallDirection(event.callDirection ?? "OUTGOING"); setCustomer(event.customer); setAddressId("")
       setPeople(event.attendees.filter((a) => !a.isOrganizer).map((a) => ({ id: a.userId, firstName: a.firstName, lastName: a.lastName, avatarUrl: a.avatarUrl })))
       setSmart("")
     } else {
@@ -90,8 +115,12 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId }: Props
       setKind("APPOINTMENT"); setTitle(""); setAllDay(false); setDate(dayKey(s)); setTime(hm(s)); setDuration(30)
       setEndDate(dayKey(s)); setMeetingUrl(""); setLocation(""); setDescription(""); setPeople([]); setReminders([10])
       setFreq("NONE"); setVisibility("BUSY"); setSmart("")
+      // A new appointment starts "in person at our office" — the workspace on screen, else the first.
+      const office = offices.find((o) => o.id === spaceId) ?? offices[0]
+      setMode("IN_PERSON"); setPlace(office ? "OFFICE" : "ADDRESS"); setPlaceSpaceId(office?.id ?? "")
+      setRoom(""); setPhone(""); setCallDirection("OUTGOING"); setCustomer(null); setAddressId("")
     }
-  }, [open, event, start])
+  }, [open, event, start]) // eslint-disable-line react-hooks/exhaustive-deps -- offices/spaceId seed a NEW form only
 
   // The sentence fills the fields as it is typed; every field stays editable.
   const parsed = useMemo(() => {
@@ -107,6 +136,22 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId }: Props
     if (parsed.time) { setTime(parsed.time); setAllDay(false) }
     if (parsed.durationMin) setDuration(parsed.durationMin)
   }, [parsed])
+
+  const { data: clientPage } = useQuery({
+    queryKey: ["customers", "calendar-pick", clientQ],
+    queryFn: () => customersApi.list({ search: clientQ || undefined, includeUnfiled: true, limit: 20 }),
+    enabled: open && crm && clientOpen,
+    staleTime: 60_000,
+  })
+  const { options: clientAddresses } = useClientAddresses(customer?.id ?? null, { enabled: open && crm && place === "CLIENT_SITE", known: customer })
+  // The client's address is chosen for you when there is only one it could be.
+  useEffect(() => {
+    if (place !== "CLIENT_SITE" || addressId || !clientAddresses.length) return
+    const pick = clientAddresses.find((a) => a.isPrimary) ?? (clientAddresses.length === 1 ? clientAddresses[0] : null)
+    if (pick) { setAddressId(pick.id); setLocation(pick.address ?? pick.name) }
+  }, [place, addressId, clientAddresses])
+  const provider = meetingProvider(meetingUrl.trim())
+  const phoneOk = !phone.trim() || !!cleanPhone(phone)
 
   const startAt = useMemo(() => at(date, time), [date, time])
   const endAt = useMemo(() => new Date(startAt.getTime() + duration * 60000), [startAt, duration])
@@ -151,6 +196,11 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId }: Props
         ...(allDay ? { startDate: date, endDate: endDate < date ? date : endDate } : { startAt: startAt.toISOString(), endAt: endAt.toISOString() }),
         meetingUrl: meetingUrl.trim() || null, location: location.trim() || null, description: description.trim() || null,
         reminders, repeat, visibility, attendeeIds: ids, spaceId: event ? undefined : spaceId ?? null,
+        ...(kind === "APPOINTMENT" ? {
+          meetingMode: mode, placeKind: mode === "IN_PERSON" ? place : null, placeSpaceId: place === "OFFICE" ? placeSpaceId || null : null,
+          room: room.trim() || null, phone: phone.trim() || null, callDirection,
+        } : {}),
+        ...(crm ? { customerId: customer?.id ?? null } : {}),
       }
       return editing ? calendarApi.update(event!.id, input) : calendarApi.create(input)
     },
@@ -187,10 +237,21 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId }: Props
                 onClick={() => setKind(k)}
                 className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition", kind === k && "bg-background text-foreground shadow-sm ring-1 ring-border")}
               >
-                {k === "APPOINTMENT" ? <Video className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
+                {k === "APPOINTMENT" ? <Users className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
                 {t(k === "APPOINTMENT" ? "calendar.appointment" : "calendar.reminder")}
               </button>
             ))}
+            {/* The two that already have their own forms open those, filled with this moment. */}
+            {!editing && onTimeOff && (
+              <button type="button" onClick={() => { onOpenChange(false); onTimeOff(date) }} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:text-foreground">
+                <Palmtree className="h-4 w-4" />{t("calendar.kindTimeOff")}
+              </button>
+            )}
+            {!editing && onNewJob && (
+              <button type="button" onClick={() => { onOpenChange(false); onNewJob(allDay ? at(date, "00:00") : startAt) }} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:text-foreground">
+                <Briefcase className="h-4 w-4" />{t("calendar.kindJob")}
+              </button>
+            )}
           </div>
 
           {!editing && (
@@ -261,14 +322,113 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId }: Props
           </div>
 
           {kind === "APPOINTMENT" && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="cal-link" className="flex items-center gap-1.5"><Link2 className="h-3.5 w-3.5" />{t("calendar.meetingLink")}</Label>
-                <Input id="cal-link" value={meetingUrl} onChange={(e) => setMeetingUrl(e.target.value)} placeholder="https://zoom.us/j/…" inputMode="url" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="cal-where" className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{t("calendar.where")}</Label>
-                <Input id="cal-where" value={location} onChange={(e) => setLocation(e.target.value)} maxLength={200} />
+            <div className="space-y-3">
+              {crm && (
+                <div className="space-y-1.5">
+                  <Label>{t("calendar.client")}</Label>
+                  <Popover open={clientOpen} onOpenChange={setClientOpen}>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="flex h-10 w-full items-center gap-2 rounded-md border border-input bg-background px-3 text-left text-sm">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <span className={cn("flex-1 truncate", !customer && "text-muted-foreground")}>{customer?.name ?? t("calendar.clientNone")}</span>
+                        {customer && <X className="h-4 w-4 text-muted-foreground" onClick={(e) => { e.stopPropagation(); setCustomer(null); setAddressId(""); if (place === "CLIENT_SITE") setLocation("") }} />}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 p-0" align="start">
+                      <Command shouldFilter={false}>
+                        <CommandInput value={clientQ} onValueChange={setClientQ} placeholder={t("calendar.clientSearch")} />
+                        <CommandList>
+                          <CommandEmpty>{t("calendar.noClients")}</CommandEmpty>
+                          <CommandGroup>
+                            {(clientPage?.data ?? []).map((c) => (
+                              <CommandItem key={c.id} value={c.id} onSelect={() => {
+                                setCustomer({ id: c.id, name: c.name, address: c.address ?? null, phone: (c as { phone?: string | null }).phone ?? null })
+                                setAddressId(""); setClientOpen(false); setClientQ("")
+                                if (!phone.trim() && (c as { phone?: string | null }).phone) setPhone((c as { phone?: string | null }).phone!)
+                              }}>
+                                <span className="truncate">{c.name}</span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t("calendar.how")}</span>
+                <div role="tablist" className="grid grid-cols-3 gap-1 rounded-xl border bg-muted/40 p-1">
+                  {([["IN_PERSON", MapPin], ["ONLINE", Video], ["PHONE", Phone]] as const).map(([m, Icon]) => (
+                    <button key={m} type="button" role="tab" aria-selected={mode === m} onClick={() => setMode(m)}
+                      className={cn("inline-flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition", mode === m && "bg-background text-foreground shadow-sm ring-1 ring-border")}>
+                      <Icon className="h-4 w-4" />{t(`calendar.mode.${m}`)}
+                    </button>
+                  ))}
+                </div>
+
+                {mode === "IN_PERSON" && (
+                  <div className="space-y-2.5">
+                    <div className="flex flex-wrap gap-1.5">
+                      {(["OFFICE", "CLIENT_SITE", "ADDRESS"] as const).filter((k) => (k !== "OFFICE" || offices.length > 0) && (k !== "CLIENT_SITE" || crm)).map((k) => (
+                        <button key={k} type="button" aria-pressed={place === k} onClick={() => { setPlace(k); if (k !== place) { setLocation(""); setAddressId("") } }}
+                          className={cn("rounded-full border px-3 py-1 text-xs transition", place === k ? "border-primary/50 bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent")}>
+                          {t(`calendar.place.${k}`)}
+                        </button>
+                      ))}
+                    </div>
+                    {place === "OFFICE" && (
+                      <div className="grid gap-3 sm:grid-cols-[1fr_200px]">
+                        <select aria-label={t("calendar.place.OFFICE")} value={placeSpaceId} onChange={(e) => setPlaceSpaceId(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                          {offices.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                        </select>
+                        <Input value={room} onChange={(e) => setRoom(e.target.value)} maxLength={80} placeholder={t("calendar.roomPlaceholder")} aria-label={t("calendar.room")} />
+                        <p className="text-xs text-muted-foreground sm:col-span-2">{t("calendar.officeAddressAuto")}</p>
+                      </div>
+                    )}
+                    {place === "CLIENT_SITE" && (
+                      !customer ? (
+                        <p className="text-xs text-amber-700 dark:text-amber-300">{t("calendar.pickClientFirst")}</p>
+                      ) : clientAddresses.length > 0 ? (
+                        <select aria-label={t("calendar.whichAddress")} value={addressId} onChange={(e) => { const a = clientAddresses.find((x) => x.id === e.target.value); setAddressId(e.target.value); setLocation(a?.address ?? a?.name ?? "") }} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                          <option value="" disabled>{t("calendar.whichAddress")}</option>
+                          {clientAddresses.map((a) => <option key={a.id} value={a.id}>{a.name}{a.address && a.address !== a.name ? ` · ${a.address}` : ""}</option>)}
+                        </select>
+                      ) : (
+                        <Input value={location} onChange={(e) => setLocation(e.target.value)} maxLength={200} placeholder={t("calendar.addressPlaceholder")} aria-label={t("calendar.where")} />
+                      )
+                    )}
+                    {place === "ADDRESS" && (
+                      <Input value={location} onChange={(e) => setLocation(e.target.value)} maxLength={200} placeholder={t("calendar.addressPlaceholder")} aria-label={t("calendar.where")} />
+                    )}
+                  </div>
+                )}
+
+                {mode === "ONLINE" && (
+                  <div className="space-y-1.5">
+                    <div className="relative">
+                      <Link2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input value={meetingUrl} onChange={(e) => setMeetingUrl(e.target.value)} placeholder="https://teams.microsoft.com/…" inputMode="url" className="pl-9" aria-label={t("calendar.meetingLink")} />
+                    </div>
+                    {provider && <span className="inline-flex rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300">{t("calendar.linkRecognised", { name: MEETING_PROVIDER_NAMES[provider] })}</span>}
+                  </div>
+                )}
+
+                {mode === "PHONE" && (
+                  <div className="space-y-2">
+                    <Input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" maxLength={30} placeholder="+43 1 234 5678" aria-label={t("calendar.phone")} aria-invalid={!phoneOk} className={cn(!phoneOk && "border-destructive")} />
+                    {!phoneOk && <p className="text-xs text-destructive">{t("calendar.phoneInvalid")}</p>}
+                    <div className="flex gap-1.5">
+                      {(["OUTGOING", "INCOMING"] as const).map((d) => (
+                        <button key={d} type="button" aria-pressed={callDirection === d} onClick={() => setCallDirection(d)}
+                          className={cn("rounded-full border px-3 py-1 text-xs transition", callDirection === d ? "border-primary/50 bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent")}>
+                          {t(`calendar.call.${d}`)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -424,7 +584,7 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId }: Props
           <span className="hidden text-xs text-muted-foreground sm:block">{ids.length ? t("calendar.inviteeNote") : " "}</span>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)}>{t("common.cancel", "Cancel")}</Button>
-            <Button disabled={!title.trim() || save.isPending} onClick={() => save.mutate()}>
+            <Button disabled={!title.trim() || save.isPending || (kind === "APPOINTMENT" && mode === "PHONE" && !phoneOk) || (kind === "APPOINTMENT" && mode === "IN_PERSON" && place === "CLIENT_SITE" && (!customer || !location.trim()))} onClick={() => save.mutate()}>
               {editing ? t("calendar.save") : ids.length ? t("calendar.saveAndInvite") : t("calendar.save")}
             </Button>
           </div>
