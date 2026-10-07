@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { DatePicker } from "@/components/ui/date-picker"
 import { money } from "./invoice-document"
 import { CurrencySelect } from "@/components/rates/currency-setting"
+import { CompanySelect, companyName, useCompanies } from "@/components/companies/company-select"
 import { formatDayKey } from "@/lib/day-key"
 import type { ExchangeRateState } from "../_lib/use-exchange-rate"
 
@@ -106,7 +107,7 @@ export function TermsFields({
   currency: string
   setCurrency: (v: string) => void
   /** Where the currency came from, when it was filled in rather than chosen. */
-  currencySource?: "workspace" | "client" | "organization" | null
+  currencySource?: "workspace" | "client" | "company" | "organization" | null
   /** The exchange rate, when the invoice is in another currency than the organization's. */
   exchange?: ExchangeRateState
   taxPct: string
@@ -313,6 +314,45 @@ export function LineEditor({
           </div>
         ))
       )}
+    </div>
+  )
+}
+
+/**
+ * "Issued by" — the company whose name, address and bank go on this invoice. `value` null =
+ * automatic (the workspace's → the client's → the main company), and `autoId` names which one
+ * that is right now. Renders nothing while the organization has a single company.
+ */
+export function IssuedByField({
+  value,
+  onChange,
+  autoId,
+  frozen,
+}: {
+  value: string | null
+  onChange: (id: string | null) => void
+  autoId?: string | null
+  /** Issued: the company is frozen on the invoice and can no longer be changed. */
+  frozen?: boolean
+}) {
+  const { t } = useTranslation()
+  const { companies, main, hasSeveral } = useCompanies()
+  if (!hasSeveral) return null
+  const auto = companies.find((c) => c.id === autoId) ?? main
+  return (
+    <div>
+      <Label className="text-xs" htmlFor="inv-company">{t("companies.invoiceIssuedBy")}</Label>
+      <CompanySelect
+        id="inv-company"
+        value={value}
+        onChange={onChange}
+        inheritLabel={t("companies.sameAsDefault", { name: companyName(auto) })}
+        disabled={frozen}
+        className="mt-1 h-9 rounded-md"
+      />
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        {frozen ? t("companies.invoiceIssuedFrozen") : t("companies.invoiceIssuedByHelp")}
+      </p>
     </div>
   )
 }

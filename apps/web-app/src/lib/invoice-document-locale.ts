@@ -1,4 +1,4 @@
-import { DEFAULT_LOCALE, normalizeLocale, type SupportedLocale } from "@hbcfield/shared/client"
+import { DEFAULT_LOCALE, normalizeLocale, issuerAddressLines, type IssuerSnapshot, type SupportedLocale } from "@hbcfield/shared/client"
 import { formatMoneyIn } from "./money"
 
 /**
@@ -53,6 +53,13 @@ export interface InvoiceDocumentLabels {
   /** `{{page}}`, `{{pages}}` */
   page: string
   vatId: string
+  /** The issuing company's other identifiers and how to pay it (Settings › Companies). */
+  taxId: string
+  register: string
+  payTo: string
+  holder: string
+  account: string
+  routing: string
   /** Letterhead fallback when the organization has no name on file. */
   company: string
   stamp: { draft: string; canceled: string; settled: string }
@@ -73,6 +80,7 @@ export const INVOICE_DOCUMENT_LABELS: Record<SupportedLocale, InvoiceDocumentLab
     subtotal: "Subtotal", discount: "Discount", vat: "VAT", total: "Total", notes: "Notes",
     termsDue: "Please settle {{total}} by {{date}}.", termsOnReceipt: "Please settle {{total}} on receipt.",
     page: "Page {{page}} of {{pages}}", vatId: "VAT / UID", company: "Company",
+    taxId: "Tax ID", register: "Register no.", payTo: "Bank details", holder: "Account holder", account: "Account", routing: "Routing",
     stamp: { draft: "Draft", canceled: "Canceled", settled: "Settled" },
     units: { hoursTag: "HOURS", daysTag: "DAYS", h: "h", days: "days", day: "day", perHour: "/ h", perDay: "/ day" },
   },
@@ -83,6 +91,7 @@ export const INVOICE_DOCUMENT_LABELS: Record<SupportedLocale, InvoiceDocumentLab
     subtotal: "Zwischensumme", discount: "Rabatt", vat: "USt.", total: "Gesamt", notes: "Anmerkungen",
     termsDue: "Bitte begleichen Sie {{total}} bis zum {{date}}.", termsOnReceipt: "Bitte begleichen Sie {{total}} sofort nach Erhalt.",
     page: "Seite {{page}} von {{pages}}", vatId: "USt-IdNr.", company: "Unternehmen",
+    taxId: "Steuernummer", register: "Firmenbuch", payTo: "Bankverbindung", holder: "Kontoinhaber", account: "Konto", routing: "Routing",
     stamp: { draft: "Entwurf", canceled: "Storniert", settled: "Beglichen" },
     units: { hoursTag: "STUNDEN", daysTag: "TAGE", h: "h", days: "Tage", day: "Tag", perHour: "/ Std.", perDay: "/ Tag" },
   },
@@ -93,6 +102,7 @@ export const INVOICE_DOCUMENT_LABELS: Record<SupportedLocale, InvoiceDocumentLab
     subtotal: "Subtotal", discount: "Descuento", vat: "IVA", total: "Total", notes: "Notas",
     termsDue: "Le rogamos abone {{total}} antes del {{date}}.", termsOnReceipt: "Le rogamos abone {{total}} a la recepción.",
     page: "Página {{page}} de {{pages}}", vatId: "NIF-IVA", company: "Empresa",
+    taxId: "Número fiscal", register: "Registro", payTo: "Datos bancarios", holder: "Titular", account: "Cuenta", routing: "Routing (ABA)",
     stamp: { draft: "Borrador", canceled: "Anulada", settled: "Liquidada" },
     units: { hoursTag: "HORAS", daysTag: "DÍAS", h: "h", days: "días", day: "día", perHour: "/ h", perDay: "/ día" },
   },
@@ -103,6 +113,7 @@ export const INVOICE_DOCUMENT_LABELS: Record<SupportedLocale, InvoiceDocumentLab
     subtotal: "Sous-total", discount: "Remise", vat: "TVA", total: "Total", notes: "Remarques",
     termsDue: "Merci de régler {{total}} avant le {{date}}.", termsOnReceipt: "Merci de régler {{total}} à réception.",
     page: "Page {{page}} sur {{pages}}", vatId: "N° TVA", company: "Entreprise",
+    taxId: "N° fiscal", register: "Registre", payTo: "Coordonnées bancaires", holder: "Titulaire", account: "Compte", routing: "Routing (ABA)",
     stamp: { draft: "Brouillon", canceled: "Annulée", settled: "Réglée" },
     units: { hoursTag: "HEURES", daysTag: "JOURS", h: "h", days: "jours", day: "jour", perHour: "/ h", perDay: "/ jour" },
   },
@@ -113,6 +124,7 @@ export const INVOICE_DOCUMENT_LABELS: Record<SupportedLocale, InvoiceDocumentLab
     subtotal: "Subtotale", discount: "Sconto", vat: "IVA", total: "Totale", notes: "Note",
     termsDue: "La preghiamo di saldare {{total}} entro il {{date}}.", termsOnReceipt: "La preghiamo di saldare {{total}} al ricevimento.",
     page: "Pagina {{page}} di {{pages}}", vatId: "P. IVA", company: "Azienda",
+    taxId: "Codice fiscale", register: "Registro imprese", payTo: "Coordinate bancarie", holder: "Intestatario", account: "Conto", routing: "Routing (ABA)",
     stamp: { draft: "Bozza", canceled: "Annullata", settled: "Saldata" },
     units: { hoursTag: "ORE", daysTag: "GIORNI", h: "h", days: "giorni", day: "giorno", perHour: "/ h", perDay: "/ giorno" },
   },
@@ -210,4 +222,66 @@ export function termsSentence(
   return inv.dueDate
     ? fillLabel(l.termsDue, { total, date: formatDocumentDate(inv.dueDate, locale) })
     : fillLabel(l.termsOnReceipt, { total })
+}
+
+/** The org-profile shape the letterhead fell back to before companies existed. */
+export interface LetterheadFallback {
+  name?: string | null
+  logoUrl?: string | null
+  addressLine1?: string | null
+  addressLine2?: string | null
+  address?: string | null
+  city?: string | null
+  state?: string | null
+  postalCode?: string | null
+  country?: string | null
+  vatId?: string | null
+}
+
+export interface DocumentIssuer {
+  name: string | null
+  logoUrl: string | null
+  addressLines: string[]
+  /** "VAT / UID: ATU…", "Tax ID: 12-…", "Register no.: FN …" */
+  idLines: string[]
+  /** How to pay: holder, bank, IBAN/BIC or account/routing. Empty = no bank details on file. */
+  paymentLines: string[]
+}
+
+/**
+ * Who the invoice is FROM, and where to pay — one builder for the screen and the PDF.
+ *
+ * The invoice's `issuer` (frozen when issued, the live company for a draft) wins; the
+ * organization profile is only the fallback for a screen that has no invoice yet.
+ */
+export function documentIssuer(issuer: IssuerSnapshot | null | undefined, fallback: LetterheadFallback | null | undefined, L: InvoiceDocumentLabels): DocumentIssuer {
+  if (issuer) {
+    const ids = [
+      issuer.vatId && `${L.vatId}: ${issuer.vatId}`,
+      issuer.taxId && `${L.taxId}: ${issuer.taxId}`,
+      issuer.registerNumber && `${L.register}: ${issuer.registerNumber}`,
+    ].filter((x): x is string => !!x)
+    const b = issuer.bank
+    const pay = b
+      ? [
+          b.holder && `${L.holder}: ${b.holder}`,
+          b.bankName,
+          b.iban && `IBAN ${b.iban.replace(/(.{4})/g, "$1 ").trim()}`,
+          b.bic && `BIC ${b.bic}`,
+          b.accountNumber && `${L.account} ${b.accountNumber}`,
+          b.routingNumber && `${L.routing} ${b.routingNumber}`,
+        ].filter((x): x is string => !!x)
+      : []
+    return { name: issuer.legalName, logoUrl: issuer.logoUrl, addressLines: issuerAddressLines(issuer), idLines: ids, paymentLines: pay }
+  }
+  const f = fallback ?? {}
+  const cityLine = [f.postalCode, f.city].filter(Boolean).join(" ")
+  return {
+    name: f.name ?? null,
+    logoUrl: f.logoUrl ?? null,
+    addressLines: [f.addressLine1 || f.address, f.addressLine2, [cityLine, f.state].filter(Boolean).join(", "), f.country]
+      .filter((x): x is string => !!x && x.trim().length > 0),
+    idLines: f.vatId ? [`${L.vatId}: ${f.vatId}`] : [],
+    paymentLines: [],
+  }
 }

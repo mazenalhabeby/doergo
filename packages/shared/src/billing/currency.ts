@@ -65,7 +65,7 @@ export function currencyOrNull(value: unknown): CurrencyCode | null {
   return p.ok ? p.currency : null;
 }
 
-export type CurrencySource = 'workspace' | 'client' | 'organization';
+export type CurrencySource = 'workspace' | 'client' | 'company' | 'organization';
 
 /**
  * The currency a new invoice starts in: the workspace's, then the client's,
@@ -74,12 +74,16 @@ export type CurrencySource = 'workspace' | 'client' | 'organization';
 export function resolveInvoiceCurrency(input: {
   space?: { currency?: string | null } | null;
   customer?: { currency?: string | null } | null;
+  /** The issuing company (Settings › Companies) — HBC USA bills in USD where nothing closer says. */
+  company?: { currency?: string | null } | null;
   organization?: { currency?: string | null } | null;
 }): { currency: CurrencyCode; source: CurrencySource } {
   const space = currencyOrNull(input.space?.currency);
   if (space) return { currency: space, source: 'workspace' };
   const client = currencyOrNull(input.customer?.currency);
   if (client) return { currency: client, source: 'client' };
+  const company = currencyOrNull(input.company?.currency);
+  if (company) return { currency: company, source: 'company' };
   return { currency: currencyOrNull(input.organization?.currency) ?? DEFAULT_CURRENCY, source: 'organization' };
 }
 

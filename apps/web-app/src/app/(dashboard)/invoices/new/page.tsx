@@ -32,8 +32,9 @@ import { InvoiceDocument, money, fmtDate } from "../_components/invoice-document
 import { LabourCostPanel } from "../_components/labour-cost-panel"
 import { labourCostRows } from "../_lib/labour-cost-rows"
 import {
-  ClientFields, TermsFields, LineEditor, num, type EditableLine,
+  ClientFields, TermsFields, LineEditor, IssuedByField, num, type EditableLine,
 } from "../_components/invoice-fields"
+import { useCompanies, useIssuerPreview } from "@/components/companies/company-select"
 import { useExchangeRate } from "../_lib/use-exchange-rate"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -265,7 +266,9 @@ function NewInvoiceInner() {
   const [clientAddress, setClientAddress] = useState("")
   const [currency, setCurrency] = useState(user?.orgCurrency ?? "EUR")
   // Where the currency came from (workspace → client → organization); cleared once somebody picks one.
-  const [currencySource, setCurrencySource] = useState<"workspace" | "client" | "organization" | null>(null)
+  const [currencySource, setCurrencySource] = useState<"workspace" | "client" | "company" | "organization" | null>(null)
+  // The company that issues it. null = automatic: the workspace's → the client's → the main one.
+  const [legalEntityId, setLegalEntityId] = useState<string | null>(null)
   const [issueDate, setIssueDate] = useState(todayIso())
   const [dueDate, setDueDate] = useState("")
   const [taxPct, setTaxPct] = useState("20")
@@ -430,6 +433,22 @@ function NewInvoiceInner() {
     picking a second workspace, or switching from a workspace to a client,
     filled in nothing at all and looked broken.
   */
+  const { companies, main: mainCompany } = useCompanies()
+  // Which company "automatic" means right now — the server answers it on the gather, the same way it will on create.
+  const autoCompanyId = gather?.legalEntityId ?? space?.legalEntityId ?? mainCompany?.id ?? null
+  const issuerPreview = useIssuerPreview(legalEntityId ?? autoCompanyId, currency)
+  /*
+    Choosing a company: where the currency only came from the company or the organization (nothing
+    closer chose it), follow the new company's — HBC USA invoices in USD unless the workspace says.
+  */
+  const chooseCompany = (id: string | null) => {
+    setLegalEntityId(id)
+    if (currencySource === "company" || currencySource === "organization") {
+      const c = companies.find((x) => x.id === (id ?? autoCompanyId))
+      setCurrency(c?.currency ?? user?.orgCurrency ?? "EUR")
+      setCurrencySource(c?.currency ? "company" : "organization")
+    }
+  }
   const seedKey = JSON.stringify(gatherSource)
   const lastSeedKey = useRef<string | null>(null)
   useEffect(() => {
@@ -757,6 +776,9 @@ function NewInvoiceInner() {
       }
       return invoicesApi.create({
         spaceId,
+        // Sent only when chosen — otherwise the server resolves it the same way the screen showed.
+        ...(legalEntityId ? { legalEntityId } : {}),
+        ...(source === "client" && customerId ? { customerId } : {}),
         clientName: clientName.trim(),
         clientEmail: clientEmail.trim() || undefined,
         clientAddress: clientAddress.trim() || undefined,
@@ -1184,6 +1206,7 @@ function NewInvoiceInner() {
                 taxPct={taxPct} setTaxPct={setTaxPct}
                 discount={discount} setDiscount={setDiscount}
               >
+                <IssuedByField value={legalEntityId} onChange={chooseCompany} autoId={autoCompanyId} />
                 {/*
                   The fallback hourly rate — this screen's own term, because
                   only this one derives lines from recorded hours. The edit
@@ -1241,6 +1264,7 @@ function NewInvoiceInner() {
               taxAmount={taxAmount}
               total={total}
               org={org}
+              issuer={issuerPreview}
             />
 
         {/*

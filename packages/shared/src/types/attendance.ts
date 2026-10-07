@@ -45,6 +45,8 @@ export interface CompanyLocation {
   billableRateCents?: number | null;
   /** What this workspace's client is billed in; null = the organization's. */
   currency?: string | null;
+  /** The company (legal entity) that invoices this workspace; null = the organization's main one. */
+  legalEntityId?: string | null;
   /** Read only (GET one): its own currency, else the organization's — what its rates are in. */
   effectiveCurrency?: string;
   /** Read only (GET one): the organization's currency — what costs here are in. */

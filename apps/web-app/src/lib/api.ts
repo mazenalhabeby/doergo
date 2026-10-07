@@ -15,6 +15,7 @@ import {
   buildUrlWithQuery,
 } from '@hbcfield/shared/client';
 import type { StepForm, StepFormField, StepFormAnswers } from '@hbcfield/shared/client';
+import type { BankAccountDetails, IssuerSnapshot, LegalEntityIdentity } from '@hbcfield/shared/client';
 import type {
   CompanyLocation,
   TimeEntry,
@@ -4481,6 +4482,8 @@ export interface OrgMember {
   lastName: string;
   role: string;
   isActive: boolean;
+  /** The company that employs them; null = the main one. */
+  employerEntityId?: string | null;
   /** Owns the organization. Cannot be removed or demoted until ownership moves. */
   isOwner?: boolean;
   avatarUrl?: string | null;
@@ -4552,6 +4555,8 @@ export interface UpdateMemberInput {
   firstName?: string;
   lastName?: string;
   position?: string;
+  /** The company that employs them (Settings › Companies); null = the main one. */
+  employerEntityId?: string | null;
   scheduleType?: string;
   monthlyHourBudget?: number;
   role?: string;
@@ -4864,6 +4869,8 @@ export interface UpdateLocationInput {
   name?: string;
   /** What the client here is billed in; null = the organization's. */
   currency?: string | null;
+  /** The company that invoices this workspace; null = the main one. */
+  legalEntityId?: string | null;
   address?: string | null;
   lat?: number | null;
   lng?: number | null;
@@ -6126,6 +6133,15 @@ export interface Invoice {
    * the server by the client-email rule. On the single-invoice read only.
    */
   documentLocale?: string | null;
+  /** The company that issues it (Settings › Companies). */
+  legalEntityId?: string | null;
+  /** On the list: the issuing company's names. */
+  legalEntity?: { id: string; legalName: string; label: string | null } | null;
+  /**
+   * The issuer as printed: FROZEN once issued, the live company for a draft.
+   * On the single-invoice read only.
+   */
+  issuer?: IssuerSnapshot | null;
   organizationId: string;
   createdById: string;
   items: InvoiceItem[];
@@ -6136,6 +6152,10 @@ export interface Invoice {
 /** What a new invoice needs; everything else is server-decided. */
 interface CreateInvoiceInput {
   spaceId?: string | null;
+  /** The company that issues it; omitted = the workspace's → the client's → the main one. */
+  legalEntityId?: string | null;
+  /** The client billed outside a workspace — so the client's company can issue it. */
+  customerId?: string | null;
   clientName: string;
   clientEmail?: string;
   clientAddress?: string;
@@ -6262,7 +6282,9 @@ interface InvoiceGatherResult {
   /** Null when the work was gathered by CLIENT rather than by workspace. */
   spaceId: string | null;
   /** Workspace → client → organization; where `currency` came from. */
-  currencySource?: 'workspace' | 'client' | 'organization';
+  currencySource?: 'workspace' | 'client' | 'company' | 'organization';
+  /** The company that would issue it — the create resolves it again, the same way. */
+  legalEntityId?: string | null;
   /** The organization's currency — what costs and the margin are in. */
   baseCurrency?: string;
   /** The service period this covers, echoed back. Null ends mean "everything". */
@@ -6298,8 +6320,60 @@ interface InvoiceGatherResult {
   outstandingDays?: string[];
 }
 
+// ── Companies (legal entities) ─────────────────────────────────────────────
+
+export interface LegalEntityBankAccount extends BankAccountDetails {
+  id?: string;
+  isDefault: boolean;
+}
+
+export interface LegalEntity extends LegalEntityIdentity {
+  isMain: boolean;
+  isActive: boolean;
+  /** Only for admins and whoever manages invoices. */
+  bankAccounts?: LegalEntityBankAccount[];
+  _count?: { workspaces: number; customers: number; invoices: number; employees: number };
+}
+
+export type LegalEntityInput = Partial<Omit<LegalEntity, 'id' | 'isMain' | 'isActive' | '_count' | 'bankAccounts'>> & {
+  bankAccounts?: LegalEntityBankAccount[];
+};
+
+export const legalEntitiesApi = {
+  list: async (opts?: { includeInactive?: boolean }) => {
+    const response = await api.get<{ success: boolean; data: LegalEntity[] }>(
+      buildUrlWithQuery('/legal-entities', { includeInactive: opts?.includeInactive ? 'true' : undefined }),
+    );
+    if (response.error) throw apiError(response);
+    return response.data?.data ?? [];
+  },
+  create: async (data: LegalEntityInput) => {
+    const response = await api.post<{ success: boolean; data: LegalEntity }>('/legal-entities', data);
+    if (response.error) throw apiError(response);
+    return response.data?.data;
+  },
+  update: async (id: string, data: LegalEntityInput) => {
+    const response = await api.patch<{ success: boolean; data: LegalEntity }>(`/legal-entities/${id}`, data);
+    if (response.error) throw apiError(response);
+    return response.data?.data;
+  },
+  setMain: async (id: string) => {
+    const response = await api.post<{ success: boolean; data: LegalEntity }>(`/legal-entities/${id}/main`, {});
+    if (response.error) throw apiError(response);
+    return response.data?.data;
+  },
+  setActive: async (id: string, active: boolean) => {
+    const response = await api.post<{ success: boolean; data: LegalEntity }>(
+      `/legal-entities/${id}/${active ? 'reactivate' : 'deactivate'}`,
+      {},
+    );
+    if (response.error) throw apiError(response);
+    return response.data?.data;
+  },
+};
+
 export const invoicesApi = {
-  list: async (params?: { status?: string; spaceId?: string; page?: number; limit?: number }) => {
+  list: async (params?: { status?: string; spaceId?: string; legalEntityId?: string; page?: number; limit?: number }) => {
     const endpoint = buildUrlWithQuery('/invoices', params ?? {});
     const response = await api.get<{ success: boolean; data: Invoice[]; meta?: PaginationMeta }>(endpoint);
     if (response.error) throw new Error(response.error);
@@ -6677,6 +6751,8 @@ export interface Customer {
   locale?: string | null;
   /** Invoice currency outside a workspace; null = the organization's. */
   currency?: string | null;
+  /** The company that invoices this client outside a workspace; null = the main one. */
+  legalEntityId?: string | null;
   details?: CustomerDetail[] | null;
   /**
    * The caller's CRM abilities ON THIS RECORD, resolved server-side and returned

@@ -11,6 +11,7 @@ import { notify } from "@/lib/toast"
 import { customersApi, locationsApi, type CompanyLocation, type Customer, type CustomerDetail } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { CurrencySelect } from "@/components/rates/currency-setting"
+import { CompanyField, companyName, useCompanies } from "@/components/companies/company-select"
 import { CLIENT_LOCALE_OPTIONS, clientLocaleFormValue, clientLocalePayload } from "@/lib/client-locale"
 import { customerStageLabel } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
@@ -268,6 +269,9 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
   const [locale, setLocale] = useState<string>(clientLocaleFormValue(existing))
   // null = the organization's currency (used for invoices outside a workspace).
   const [currency, setCurrency] = useState<string | null>(existing?.currency ?? null)
+  // null = the main company issues this client's invoices outside a workspace.
+  const [legalEntityId, setLegalEntityId] = useState<string | null>(existing?.legalEntityId ?? null)
+  const { main: mainCompany } = useCompanies()
 
   /*
     Workspaces this client could belong to — those with the CRM module on.
@@ -324,6 +328,8 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
         regNumber: isCompany ? form.regNumber : "",
         locale: clientLocalePayload(locale),
         currency,
+        // Only when it changed: a client still pointing at a since switched-off company must stay editable.
+        ...(legalEntityId !== (existing?.legalEntityId ?? null) ? { legalEntityId } : {}),
         details: cleanDetails,
       }
       return existing
@@ -448,6 +454,16 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
             />
             <p className="text-[11px] text-muted-foreground">{t("currency.clientHint")}</p>
           </div>
+
+          {/* Who invoices this client outside a workspace. Hidden while there is one company. */}
+          <CompanyField
+            id="client-company"
+            label={t("companies.issuedBy")}
+            help={t("companies.issuedByClientHelp")}
+            value={legalEntityId}
+            onChange={setLegalEntityId}
+            inheritLabel={t("companies.sameAsMain", { name: companyName(mainCompany) })}
+          />
 
           {/* Company-only fields */}
           {isCompany && (

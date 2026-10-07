@@ -27,6 +27,7 @@ import {
   Trash2,
   Receipt,
   CalendarDays,
+  Landmark,
 } from "lucide-react"
 import NextLink from "next/link"
 import { notify } from "@/lib/toast"
@@ -36,6 +37,7 @@ import { useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/auth-context"
 import { SettingCard } from "./_components/setting-card"
 import { HolidaysSection } from "./_components/holidays-section"
+import { CompaniesSection } from "./_components/companies-section"
 
 // Lazy-load sub-pages so they render inline in the settings content area
 const AuditLogPage = lazy(() => import("./audit-log/page"))
@@ -124,7 +126,7 @@ function allTimezones(): string[] {
 
 type SettingsSection =
   // Organization
-  | "general" | "members" | "modules" | "audit-log" | "holidays"
+  | "general" | "members" | "modules" | "audit-log" | "holidays" | "companies"
   // Personal
   | "profile" | "security" | "notifications" | "my-emails"
 
@@ -137,6 +139,8 @@ interface NavItem {
 const ORG_NAV_ITEMS: NavItem[] = [
   { key: "general", icon: Building2, labelKey: "settings.nav.general" },
   { key: "members", icon: Users, labelKey: "settings.nav.members" },
+  // The legal companies whose name goes on invoices and contracts. Admins only — their bank details live here.
+  { key: "companies", icon: Landmark, labelKey: "settings.nav.companies" },
   // Nothing about task types lives here any more — not the types, and not the
   // fields they collect. Both belong to the space that runs the work, on its
   // Task Types tab, where a field is attached to the type that needs it rather
@@ -1422,6 +1426,7 @@ export default function SettingsPage() {
   */
   const orgNavItems = ORG_NAV_ITEMS.filter((i) => {
     if (i.key === "holidays") return isAdmin || hasPermission("canManageWorkspaces")
+    if (i.key === "companies") return isAdmin
     const feat = SETTINGS_OPTION[i.key]
     return !feat || hasPlanFeature(feat)
   })
@@ -1543,6 +1548,7 @@ export default function SettingsPage() {
             {activeSection === "notifications" && <div data-tour="settings-notifications"><NotificationsSection /></div>}
             {/* Organization sections — lazy loaded from sub-pages */}
             {activeSection === "holidays" && <div data-tour="settings-holidays"><HolidaysSection /></div>}
+            {activeSection === "companies" && isAdmin && <div data-tour="settings-companies"><CompaniesSection /></div>}
             {activeSection === "audit-log" && <div data-tour="settings-audit"><LazyAuditLog /></div>}
             {/* Personal sections */}
             {activeSection === "profile" && <div data-tour="settings-profile"><ProfileSection /></div>}

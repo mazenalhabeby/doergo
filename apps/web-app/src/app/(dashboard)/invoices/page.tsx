@@ -1,5 +1,6 @@
 "use client"
 
+import { companyName, useCompanies } from "@/components/companies/company-select"
 import { PlanGate } from "@/components/plan-gate"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -133,6 +134,9 @@ function InvoicesPageInner() {
    */
   const [sendTarget, setSendTarget] = useState<{ inv: Invoice; step: LifecycleStep } | null>(null)
   const [statusFilter, setStatusFilter] = useState("__all__")
+  // Which company issued them — offered only when the organization invoices as more than one.
+  const [companyFilter, setCompanyFilter] = useState("__all__")
+  const { companies, hasSeveral: severalCompanies } = useCompanies()
   const [search, setSearch] = useState("")
   /**
    * One ageing band, chosen from the summary.
@@ -165,9 +169,10 @@ function InvoicesPageInner() {
     s.confirm ? setSendTarget({ inv, step: s }) : statusMutation.mutate({ id: inv.id, status: s.to })
 
   const { data, isLoading } = useQuery({
-    queryKey: ["invoices", statusFilter, scope.spaceId],
+    queryKey: ["invoices", statusFilter, companyFilter, scope.spaceId],
     queryFn: () => invoicesApi.list({
       status: statusFilter !== "__all__" ? statusFilter : undefined,
+      legalEntityId: companyFilter !== "__all__" ? companyFilter : undefined,
       spaceId: scope.spaceId ?? undefined,
       limit: 50,
     }),
@@ -254,7 +259,7 @@ function InvoicesPageInner() {
   }
 
   const groups = groupByBucket(rows)
-  const filtering = search.trim() !== "" || statusFilter !== "__all__" || bandFilter !== null
+  const filtering = search.trim() !== "" || statusFilter !== "__all__" || companyFilter !== "__all__" || bandFilter !== null
 
   return (
     <div className="min-h-full bg-background">
@@ -453,6 +458,19 @@ function InvoicesPageInner() {
                 <SelectItem value="CANCELED">{t("invoices.statuses.canceled")}</SelectItem>
               </SelectContent>
             </Select>
+            {severalCompanies && (
+              <Select value={companyFilter} onValueChange={setCompanyFilter}>
+                <SelectTrigger className="h-9 w-[170px] text-sm" aria-label={t("companies.column")}>
+                  <SelectValue placeholder={t("companies.column")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">{t("companies.filterAll")}</SelectItem>
+                  {companies.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{companyName(c)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
             <span className="flex-1" />
 
@@ -468,7 +486,7 @@ function InvoicesPageInner() {
             {filtering && (
               <Button
                 variant="ghost" size="sm" className="h-8 gap-1.5 text-xs text-muted-foreground"
-                onClick={() => { setSearch(""); setStatusFilter("__all__"); setBandFilter(null) }}
+                onClick={() => { setSearch(""); setStatusFilter("__all__"); setCompanyFilter("__all__"); setBandFilter(null) }}
               >
                 <XCircle className="size-3.5" /> {t("common.clear", "Clear")}
               </Button>
@@ -497,7 +515,7 @@ function InvoicesPageInner() {
               {filtering ? (
                 <Button
                   variant="outline" size="sm" className="mt-4"
-                  onClick={() => { setSearch(""); setStatusFilter("__all__"); setBandFilter(null) }}
+                  onClick={() => { setSearch(""); setStatusFilter("__all__"); setCompanyFilter("__all__"); setBandFilter(null) }}
                 >
                   {t("common.clear", "Clear")}
                 </Button>
@@ -589,6 +607,7 @@ function InvoicesPageInner() {
                         <p className="truncate text-sm font-medium text-foreground">{inv.clientName}</p>
                         <p className="truncate text-[11px] text-muted-foreground">
                           <span className="font-mono">{inv.invoiceNumber}</span>
+                          {severalCompanies && inv.legalEntity && <span> · {companyName(inv.legalEntity)}</span>}
                           {inv.clientEmail && <span className="opacity-60"> · {inv.clientEmail}</span>}
                         </p>
                       </div>

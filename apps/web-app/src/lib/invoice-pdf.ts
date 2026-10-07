@@ -1,12 +1,12 @@
 import { formatHoursMinutes } from "@hbcfield/shared/client"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
-import type { SupportedLocale } from "@hbcfield/shared/client"
+import type { IssuerSnapshot, SupportedLocale } from "@hbcfield/shared/client"
 import { invoiceStamp } from "./invoice-status"
 import { dayKeyOf, fileNamePart, pdfFileName, periodPart } from "./pdf-filename"
 import {
   documentUpper, fillLabel, formatDocumentDate, formatDocumentMoney, formatDocumentQuantity,
-  invoiceDocumentLabels, termsSentence, type InvoiceDocumentLabels,
+  invoiceDocumentLabels, termsSentence, documentIssuer, type InvoiceDocumentLabels,
 } from "./invoice-document-locale"
 
 /**
@@ -72,6 +72,8 @@ export interface InvoicePdfData {
    * Absent reads English.
    */
   locale?: SupportedLocale | null
+  /** Who it is from: the frozen issuer (issued) or the live company (draft). Wins over the branding. */
+  issuer?: IssuerSnapshot | null
 }
 
 const INK = { r: 30, g: 41, b: 59 } // slate-800
@@ -108,14 +110,6 @@ async function loadLogo(url?: string | null): Promise<{ dataUrl: string; w: numb
   }
 }
 
-function orgAddressLines(b: InvoiceBranding): string[] {
-  const line1 = b.addressLine1 || b.address || ""
-  const cityLine = [b.postalCode, b.city].filter(Boolean).join(" ")
-  const regionLine = [cityLine, b.state, b.country].filter(Boolean).join(", ")
-  const contact = [b.phone, b.email, b.website].filter(Boolean).join("  •  ")
-  return [line1, b.addressLine2 || "", regionLine, contact].filter((l) => l && l.trim().length > 0)
-}
-
 async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise<jsPDF> {
   const locale = inv.locale ?? null
   const L: InvoiceDocumentLabels = invoiceDocumentLabels(locale)
@@ -125,7 +119,9 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
   const pageW = doc.internal.pageSize.getWidth()
   const margin = 16
-  const logo = await loadLogo(branding.logoUrl)
+  // From whom — the invoice's company when it has one, the organization profile otherwise.
+  const from = documentIssuer(inv.issuer, branding, L)
+  const logo = await loadLogo(from.logoUrl ?? branding.logoUrl)
 
   // ── Letterhead ─────────────────────────────────────────────────────────────
   let logoW = 0
@@ -139,13 +135,15 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
   doc.setTextColor(INK.r, INK.g, INK.b)
   doc.setFont("helvetica", "bold")
   doc.setFontSize(15)
-  doc.text(branding.name || L.company, margin + logoW, margin + 5)
+  doc.text(from.name || L.company, margin + logoW, margin + 5)
   doc.setFont("helvetica", "normal")
   doc.setFontSize(8.5)
   doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
   let ly = margin + 10
-  for (const line of orgAddressLines(branding)) { doc.text(line, margin + logoW, ly); ly += 4 }
-  if (branding.vatId) { doc.text(`${L.vatId}: ${branding.vatId}`, margin + logoW, ly); ly += 4 }
+  const contact = inv.issuer
+    ? [inv.issuer.phone, inv.issuer.email, inv.issuer.website].filter(Boolean).join("  •  ")
+    : [branding.phone, branding.email, branding.website].filter(Boolean).join("  •  ")
+  for (const line of [...from.addressLines, contact, ...from.idLines].filter(Boolean)) { doc.text(line, margin + logoW, ly); ly += 4 }
 
   // ── "INVOICE" heading block (right-aligned) ─────────────────────────────────
   doc.setTextColor(ACCENT.r, ACCENT.g, ACCENT.b)
@@ -291,6 +289,15 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
     for (const l of doc.splitTextToSize(terms, pageW - margin * 2)) { doc.text(l, pageW - margin, ty, { align: "right" }); ty += 4 }
   }
 
+  // ── Pay to — the issuing company's bank, in the invoice's currency where it has one ──
+  if (from.paymentLines.length) {
+    ty += 6
+    doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(ACCENT.r, ACCENT.g, ACCENT.b)
+    doc.text(upper(L.payTo), margin, ty, { charSpace: 0.4 }); ty += 5
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(INK.r, INK.g, INK.b)
+    for (const l of from.paymentLines) { doc.text(l, margin, ty); ty += 4 }
+  }
+
   // ── Notes ─────────────────────────────────────────────────────────────────
   if (inv.notes && inv.notes.trim()) {
     ty += 6
@@ -308,7 +315,7 @@ async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise
   for (let p = 1; p <= pages; p++) {
     doc.setPage(p)
     doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(MUTED.r, MUTED.g, MUTED.b)
-    doc.text(`${branding.name || L.company} · ${inv.invoiceNumber}`, margin, pageH - 8)
+    doc.text(`${from.name || L.company} · ${inv.invoiceNumber}`, margin, pageH - 8)
     doc.text(fillLabel(L.page, { page: p, pages }), pageW - margin, pageH - 8, { align: "right" })
   }
 

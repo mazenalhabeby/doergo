@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils"
 import { locationsApi, rateHistoryApi, type CompanyLocation, type UpdateLocationInput } from "@/lib/api"
 import { DatedRateField } from "@/components/rates/dated-rate"
 import { CurrencySetting } from "@/components/rates/currency-setting"
+import { CompanyField, companyName, useCompanies } from "@/components/companies/company-select"
+import { serverErrorMessage } from "@/lib/server-error"
 import { ATTENDANCE_CONSTANTS, parseGeofencePolygon, type LatLng } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -435,6 +437,23 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
               </div>
             </div>
           )}
+          {/*
+            Who invoices this workspace — the legal company on its invoices (customer workspaces are
+            the ones invoiced). Saved on its own, like
+            the currency; issued invoices keep the company frozen on them. Hidden while the
+            organization has one company.
+          */}
+          {kind === "CUSTOMER" && <WorkspaceCompanyField
+            value={space.legalEntityId ?? null}
+            onSave={async (id) => {
+              try {
+                await saveSpaceRate({ legalEntityId: id })
+                notify.success(t("companies.saved"))
+              } catch (e) {
+                notify.error(serverErrorMessage(e, t))
+              }
+            }}
+          />}
         </CardContent>
       </Card>
 
@@ -556,5 +575,21 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
       {/* Danger zone — delete (archive) this space. */}
       <DangerZone space={space} />
     </div>
+  )
+}
+
+/** "Invoices issued by" for this workspace; null follows the main company. */
+function WorkspaceCompanyField({ value, onSave }: { value: string | null; onSave: (id: string | null) => void }) {
+  const { t } = useTranslation()
+  const { main } = useCompanies()
+  return (
+    <CompanyField
+      id="cfg-company"
+      label={t("companies.issuedBy")}
+      help={t("companies.issuedByWorkspaceHelp")}
+      value={value}
+      onChange={onSave}
+      inheritLabel={t("companies.sameAsMain", { name: companyName(main) })}
+    />
   )
 }

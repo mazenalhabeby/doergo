@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react"
 
 import { PlanGate } from "@/components/plan-gate"
 import { useAuth } from "@/contexts/auth-context"
-import { invoicesApi, organizationsApi, type InvoiceItem } from "@/lib/api"
+import { invoicesApi, locationsApi, organizationsApi, type InvoiceItem } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { errorMessage } from "@/lib/errors"
 import { Button } from "@/components/ui/button"
@@ -20,9 +20,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { InvoiceTopBar, InvoiceNotice, InvoiceWorkbench, RailSection } from "../../_components/invoice-shell"
 import { InvoiceDocument, fmtDate, type DocumentRow, type DocumentView } from "../../_components/invoice-document"
 import {
-  ClientFields, TermsFields, LineEditor, num,
+  ClientFields, TermsFields, LineEditor, IssuedByField, num,
   type EditableLine,
 } from "../../_components/invoice-fields"
+import { useIssuerPreview } from "@/components/companies/company-select"
 import { useExchangeRate } from "../../_lib/use-exchange-rate"
 
 /*
@@ -97,6 +98,14 @@ function EditInvoiceInner({ id }: { id: string }) {
   const [lines, setLines] = useState<EditableLine[]>([])
   const [seeded, setSeeded] = useState(false)
   const [showLineTags, setShowLineTags] = useState(true)
+  // The company that issues this draft. Changing it renumbers the draft in that company's series.
+  const [legalEntityId, setLegalEntityId] = useState<string | null>(null)
+  const { data: space } = useQuery({
+    queryKey: ["location", inv?.spaceId],
+    queryFn: () => locationsApi.getById(inv!.spaceId!),
+    enabled: !!inv?.spaceId,
+  })
+  const issuerPreview = useIssuerPreview(legalEntityId ?? space?.legalEntityId ?? inv?.legalEntityId, currency)
 
   // Seeded once. Re-seeding on every render of a refetched query would discard
   // whatever the person had typed.
@@ -113,6 +122,7 @@ function EditInvoiceInner({ id }: { id: string }) {
     setNotes(inv.notes ?? "")
     setLines((inv.items ?? []).map(toLine))
     setShowLineTags(inv.showLineTags !== false)
+    setLegalEntityId(inv.legalEntityId ?? null)
     setSeeded(true)
   }, [inv, seeded])
 
@@ -227,6 +237,8 @@ function EditInvoiceInner({ id }: { id: string }) {
         taxRate: taxPct.trim() === "" ? undefined : num(taxPct) / 100,
         discount: num(discount),
         notes: notes.trim() || undefined,
+        // Only when it changed: the server then renumbers it in the new company's series.
+        ...(legalEntityId !== (inv.legalEntityId ?? null) ? { legalEntityId } : {}),
       })
     },
     onSuccess: () => {
@@ -323,6 +335,7 @@ function EditInvoiceInner({ id }: { id: string }) {
                 taxPct={taxPct} setTaxPct={setTaxPct}
                 discount={discount} setDiscount={setDiscount}
               >
+                <IssuedByField value={legalEntityId} onChange={setLegalEntityId} autoId={space?.legalEntityId} />
                 {/* Saved with the invoice: the client's copy and the PDF follow it. */}
                 <div className="flex items-center justify-between gap-3">
                   <Label htmlFor="line-tags" className="text-xs">{t("invoices.create.lineTags")}</Label>
@@ -365,6 +378,7 @@ function EditInvoiceInner({ id }: { id: string }) {
           total={total}
           invoiceNumber={inv.invoiceNumber}
           org={org}
+          issuer={issuerPreview ?? inv.issuer ?? null}
         />
 
         <LineEditor

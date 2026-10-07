@@ -1,5 +1,6 @@
 "use client"
 
+import { CompanyField, companyName, useCompanies } from "@/components/companies/company-select"
 import { useState, useEffect, useMemo, memo } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { DatedRateField, currentOf } from "@/components/rates/dated-rate"
@@ -212,6 +213,9 @@ export function EditMemberDialog({
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
   const [position, setPosition] = useState("")
+  // The company named on their contracts; null = the main company.
+  const [employerEntityId, setEmployerEntityId] = useState<string | null>(null)
+  const { main: mainCompany } = useCompanies()
   // "YYYY-MM-DD", or "" when the record holds no birthday.
   const [dateOfBirth, setDateOfBirth] = useState("")
   const [scheduleType, setScheduleType] = useState("NONE")
@@ -256,6 +260,7 @@ export function EditMemberDialog({
     setLastName(member.lastName)
     setEmail(member.email)
     setPosition(member.position || "")
+    setEmployerEntityId(member.employerEntityId ?? null)
     setDateOfBirth((member.dateOfBirth || "").slice(0, 10))
     setScheduleType(member.scheduleType || "NONE")
     setMonthlyHourBudget(member.monthlyHourBudget ?? "")
@@ -412,6 +417,8 @@ export function EditMemberDialog({
         // Login email — only sent when edited (server re-checks uniqueness).
         ...(normalizedEmail && normalizedEmail !== member.email ? { email: normalizedEmail } : {}),
         position: position || undefined,
+        // Only when it changed — an employer since switched off must not block saving the rest.
+        ...(employerEntityId !== (member.employerEntityId ?? null) ? { employerEntityId } : {}),
         dateOfBirth: dateOfBirth || null,
         scheduleType,
         monthlyHourBudget:
@@ -543,6 +550,16 @@ export function EditMemberDialog({
               <Label className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.jobTitle", "Job title")}</Label>
               <PositionCombobox value={position} onChange={setPosition} usedPositions={usedPositions} />
             </div>
+
+            {/* The employer on their paperwork. Hidden while the organization has one company. */}
+            <CompanyField
+              id="member-employer"
+              label={t("companies.employer")}
+              help={t("companies.employerHelp")}
+              value={employerEntityId}
+              onChange={setEmployerEntityId}
+              inheritLabel={t("companies.sameAsMain", { name: companyName(mainCompany) })}
+            />
 
             {/*
               Date of birth.

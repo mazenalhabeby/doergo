@@ -98,6 +98,8 @@ export class InvoiceService {
     spaceId?: string;
     /** The company that issues it; omitted = the workspace's → the client's → the main one. */
     legalEntityId?: string | null;
+    /** The client being billed outside a workspace — only so its company can issue it. */
+    customerId?: string | null;
     clientName?: string;
     clientEmail?: string;
     clientAddress?: string;
@@ -208,7 +210,12 @@ export class InvoiceService {
     if (badWorker) return badWorker;
 
     // Who issues it — resolved once and stored, so the number series and the paper agree.
-    const issuer = await this.issuingEntity(data.organizationId, data.legalEntityId, spaceEntityId, spaceCustomerId);
+    const issuer = await this.issuingEntity(
+      data.organizationId,
+      data.legalEntityId,
+      spaceEntityId,
+      spaceCustomerId ?? (typeof data.customerId === 'string' ? data.customerId : null),
+    );
     if ('error' in issuer) return issuer.error;
 
     // The currency: what the screen sent, else the workspace's, else the company's, else the organization's.
@@ -812,6 +819,8 @@ export class InvoiceService {
             costRateCents: true,
             timezone: true,
             currency: true,
+            legalEntityId: true,
+            sourceCustomerId: true,
           },
         })
       : null;
@@ -840,7 +849,7 @@ export class InvoiceService {
     const customer = data.customerId
       ? await this.prisma.customer.findFirst({
           where: { id: data.customerId, organizationId: data.organizationId },
-          select: { id: true, name: true, email: true, address: true, currency: true },
+          select: { id: true, name: true, email: true, address: true, currency: true, legalEntityId: true },
         })
       : null;
     if (data.customerId && !customer) {
@@ -851,8 +860,11 @@ export class InvoiceService {
       where: { id: data.organizationId },
       select: { billableRateCents: true, costRateCents: true, currency: true },
     });
-    // Workspace → client → organization: the same order the rates follow.
-    const invoiceCurrency = resolveInvoiceCurrency({ space, customer, organization: org });
+    // Who would issue it — the same rule the create applies — so the screen can say so before it exists.
+    const issuer = await this.issuingEntity(data.organizationId, null, space?.legalEntityId ?? null, space?.sourceCustomerId ?? customer?.id ?? null);
+    const company = 'error' in issuer ? null : issuer.entity;
+    // Workspace → client → company → organization: the same order the rates follow.
+    const invoiceCurrency = resolveInvoiceCurrency({ space, customer, company, organization: org });
     const baseCurrency = currencyOrNull(org?.currency) ?? DEFAULT_CURRENCY;
     /*
       A client has no rate of its own, so it falls to the organization's. That is
@@ -1116,6 +1128,8 @@ export class InvoiceService {
         clientAddress: (space ? space.address : customer!.address) ?? null,
         currency: invoiceCurrency.currency,
         currencySource: invoiceCurrency.source,
+        /** The company that would issue it (the create resolves it again, the same way). */
+        legalEntityId: company?.id ?? null,
         /** What costs and the margin are in — the organization's. */
         baseCurrency,
         billableRateCents: rateCents,

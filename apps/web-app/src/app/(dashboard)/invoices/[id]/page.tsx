@@ -78,6 +78,7 @@ function toPdfData(inv: Invoice, locale: SupportedLocale): InvoicePdfData {
     showLineTags: inv.showLineTags,
     servicePeriodTo: inv.servicePeriodTo,
     notes: inv.notes,
+    issuer: inv.issuer ?? null,
     items: (inv.items || []).map((i) => ({
       description: i.description,
       quantity: i.quantity,
@@ -416,6 +417,7 @@ function InvoiceDetailInner({ id }: { id: string }) {
             total={inv.total}
             invoiceNumber={inv.invoiceNumber}
             org={org}
+            issuer={inv.issuer ?? null}
             logoUrl={branding.logoUrl}
           />
         </div>

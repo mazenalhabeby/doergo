@@ -7,7 +7,8 @@ import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import type { OrganizationProfile } from "@/lib/api"
 import { formatMoney } from "@/lib/money"
-import { hoursAndDaysTotals , formatHoursMinutes } from "@hbcfield/shared/client"
+import { hoursAndDaysTotals , formatHoursMinutes, type IssuerSnapshot } from "@hbcfield/shared/client"
+import { documentIssuer, invoiceDocumentLabels } from "@/lib/invoice-document-locale"
 
 /**
  * The invoice, as a document.
@@ -163,6 +164,11 @@ export interface InvoiceDocumentProps {
   /** The number, once it exists. A draft being created has none yet. */
   invoiceNumber?: string | null
   org?: OrganizationProfile
+  /**
+   * Who it is from — the invoice's company: frozen once issued, live for a draft. Wins over
+   * `org`, which is only the fallback for a screen that has no invoice yet.
+   */
+  issuer?: IssuerSnapshot | null
   /** The real letterhead, where the organisation has uploaded one. */
   logoUrl?: string | null
   /** The HOURS / DAYS tag before each labour line — saved with the invoice. Default shown. */
@@ -201,13 +207,16 @@ function ViewToggle({ view, onView }: { view: DocumentView; onView: (v: Document
 }
 
 export function InvoiceDocument(props: InvoiceDocumentProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const units = useUnits(props.showTags !== false)
   const {
     view, onView, frames = "both", clientName, clientEmail = "", clientAddress = "",
     issueDate, dueDate, periodLabel, currency, taxPct, discount, notes = "",
-    items, subtotal, taxAmount, total, invoiceNumber, org, logoUrl,
+    items, subtotal, taxAmount, total, invoiceNumber, org, issuer, logoUrl: orgLogo,
   } = props
+  // The same builder the PDF uses, in the screen's language.
+  const from = documentIssuer(issuer, org ?? null, invoiceDocumentLabels(i18n.language))
+  const logoUrl = from.logoUrl ?? orgLogo
   const showing: DocumentView = frames === "client" ? "client" : view
 
   const lineAmount = (row: DocumentRow) => (row.quantity || 0) * (row.unitPrice || 0)
@@ -371,17 +380,16 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
                   <img src={logoUrl} alt="" className="h-7 max-w-[9rem] object-contain" />
                 ) : (
                   <span className="grid size-7 place-items-center rounded-lg bg-brand-600 text-xs font-bold text-white">
-                    {(org?.name ?? "H").slice(0, 1).toUpperCase()}
+                    {(from.name ?? "H").slice(0, 1).toUpperCase()}
                   </span>
                 )}
                 <span className="text-[17px] font-bold tracking-tight text-foreground">
-                  {org?.name ?? t("invoices.create.yourCompany")}
+                  {from.name ?? t("invoices.create.yourCompany")}
                 </span>
               </div>
               <p className="mt-2.5 whitespace-pre-line text-[11.5px] leading-relaxed text-muted-foreground">
-                {[org?.addressLine1, [org?.postalCode, org?.city].filter(Boolean).join(" "), org?.country]
-                  .filter(Boolean).join("\n") || t("invoices.create.noCompanyAddress")}
-                {org?.vatId ? `\n${org.vatId}` : ""}
+                {from.addressLines.join("\n") || t("invoices.create.noCompanyAddress")}
+                {from.idLines.length ? `\n${from.idLines.join("\n")}` : ""}
               </p>
             </div>
             <div className="text-right">
@@ -537,13 +545,15 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
                 {t("invoices.create.payment")}
               </p>
               {/*
-                ⚠️ The organisation profile carries no bank details, so this
-                says where to add them rather than printing a blank line. An
-                invoice with an empty Payment block is worse than one that
-                admits the detail is missing — the client cannot pay either
-                way, and only one of the two tells anybody why.
+                The issuing company's bank, in the invoice's currency where it has one. With none
+                on file this says where to add them rather than printing a blank line — an empty
+                Payment block is worse than one that admits the detail is missing.
               */}
-              <p>{t("invoices.create.noBankDetails")}</p>
+              {from.paymentLines.length ? (
+                <p className="whitespace-pre-line text-foreground">{from.paymentLines.join("\n")}</p>
+              ) : (
+                <p>{t("invoices.create.noBankDetails")}</p>
+              )}
             </div>
             {notes.trim() && (
               <div>
