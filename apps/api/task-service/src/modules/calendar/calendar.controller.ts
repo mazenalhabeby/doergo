@@ -27,6 +27,9 @@ export class CalendarController {
   @MessagePattern({ cmd: 'calendar_holidays' }) holidaysList(@Payload() d: any) { return this.holidays.list(d); }
   @MessagePattern({ cmd: 'calendar_holiday_save' }) holidaySave(@Payload() d: any) { return this.holidays.save(d); }
   @MessagePattern({ cmd: 'calendar_holiday_remove' }) holidayRemove(@Payload() d: any) { return this.holidays.remove(d); }
+  // Internal only — the gateway's geocoder, never a client route.
+  @MessagePattern({ cmd: 'calendar_set_detected_place' }) setDetectedPlace(@Payload() d: any) { return this.holidays.setDetectedPlace(d); }
+  @MessagePattern({ cmd: 'calendar_places_to_detect' }) placesToDetect(@Payload() d: any) { return this.holidays.placesToDetect(d ?? {}); }
 
   @MessagePattern({ cmd: 'calendar_event_create' }) create(@Payload() d: Caller & { input: EventInput; clientId?: string }) { return this.events.create(d); }
   @MessagePattern({ cmd: 'calendar_event_update' }) update(@Payload() d: Caller & { eventId: string; input: EventInput }) { return this.events.update(d); }

@@ -9879,6 +9879,8 @@
     "feedBody": "Los miembros pueden ver su calendario en Google, Outlook o el iPhone con un enlace privado de un solo sentido.",
     "feedToggle": "Los miembros pueden crear un enlace privado",
     "feedOff": "Desactivarlo detiene todos los enlaces existentes al instante.",
-    "attribution": "Datos de festivos: date-holidays (CC BY 3.0)."
+    "attribution": "Datos de festivos: date-holidays (CC BY 3.0).",
+    "fromAddress": "según su dirección",
+    "useLocation": "Automático — según dónde está ({{place}})"
   }
 }

@@ -9,9 +9,10 @@ import {
   parseWeekendDays,
   resolveWeekend,
   success,
+  resolveHolidayPlace,
 } from '@hbcfield/shared';
 import { CalendarRulesService } from './calendar-rules.service';
-import { countryList, regionList, validCountry, validRegion } from './holiday-library';
+import { countryList, matchRegion, regionList, validCountry, validRegion } from './holiday-library';
 
 /** undefined = org-wide authority, [ids] = only these workspaces, [] = nowhere. */
 type Scope = string[] | undefined;
@@ -45,7 +46,7 @@ export class HolidaysService {
   }
 
   private async assertSpace(organizationId: string, spaceId: string) {
-    const s = await this.prisma.companyLocation.findFirst({ where: { id: spaceId, organizationId }, select: { id: true, holidayCountry: true } });
+    const s = await this.prisma.companyLocation.findFirst({ where: { id: spaceId, organizationId }, select: { id: true, holidayCountry: true, holidayRegion: true, detectedHolidayCountry: true, detectedHolidayRegion: true } });
     if (!s) throw new NotFoundException('Workspace not found');
     return s;
   }
@@ -64,7 +65,7 @@ export class HolidaysService {
         organizationId: dto.organizationId, isActive: true, isRemote: false,
         ...(dto.scopeSpaceIds !== undefined ? { id: { in: dto.scopeSpaceIds } } : {}),
       },
-      select: { id: true, name: true, weekendDays: true, holidayCountry: true, holidayRegion: true, _count: { select: { spaceAssignments: true } } },
+      select: { id: true, name: true, weekendDays: true, holidayCountry: true, holidayRegion: true, detectedHolidayCountry: true, detectedHolidayRegion: true, lat: true, _count: { select: { spaceAssignments: true } } },
       orderBy: { name: 'asc' },
     });
     const places = await this.rules.places(dto.organizationId, spaces.map((s) => s.id), from, to, dto.lang);
@@ -97,8 +98,45 @@ export class HolidaysService {
         people: s._count.spaceAssignments,
         ...summary(s.id),
         inherited: places.get(s.id)?.place.inherited ?? { weekend: true, holidays: true },
+        holidaySource: places.get(s.id)?.place.holidaySource ?? 'ORGANIZATION',
+        // Holiday changes made on this workspace apply to it alone (another country), else they are the organization's.
+        ownList: resolveHolidayPlace(org, s).ownLayer,
+        detectedCountry: s.detectedHolidayCountry,
+        detectedRegion: s.detectedHolidayRegion,
+        hasLocation: s.lat != null,
       })),
     });
+  }
+
+  /**
+   * Where a workspace IS, as the gateway's geocoder read its map point: a country code and the
+   * state as the geocoder names it. Stored once; the calendar never geocodes on a read.
+   *
+   * A country the holiday library does not know is stored as nothing (the organization's applies);
+   * a state it cannot match leaves the country alone. `country: null` (no answer, or the location was
+   * cleared) clears the detection and still stamps the attempt, so the backfill does not ask again.
+   */
+  async setDetectedPlace(dto: { organizationId: string; spaceId: string; country: string | null; stateCode?: string | null; stateName?: string | null }) {
+    const c = typeof dto.country === 'string' ? dto.country.trim().toUpperCase() : null;
+    const known = c && validCountry(c) && countryList('en').some((x) => x.code === c) ? c : null;
+    const region = known ? matchRegion(known, [dto.stateCode, dto.stateName]) : null;
+    const res = await this.prisma.companyLocation.updateMany({
+      where: { id: dto.spaceId, organizationId: dto.organizationId },
+      data: { detectedHolidayCountry: known, detectedHolidayRegion: region, holidayDetectedAt: new Date() },
+    });
+    return success({ updated: res.count, country: known, region });
+  }
+
+  /** Workspaces with a map point that were never looked up — the one-off backfill, a page at a time. */
+  async placesToDetect(dto: { limit?: number }) {
+    const take = Math.min(Math.max(Number(dto.limit) || 50, 1), 200);
+    const rows = await this.prisma.companyLocation.findMany({
+      where: { holidayDetectedAt: null, lat: { not: null }, lng: { not: null }, isRemote: false },
+      select: { id: true, organizationId: true, lat: true, lng: true },
+      orderBy: { createdAt: 'asc' },
+      take,
+    });
+    return success(rows);
   }
 
   async countries(dto: { lang?: string }) {
@@ -195,9 +233,12 @@ export class HolidaysService {
     if (spaceId) {
       this.assertSpaceScope(spaceId, dto.scopeSpaceIds);
       const space = await this.assertSpace(dto.organizationId, spaceId);
-      // A library change belongs to whoever chose the country: a workspace inheriting the
-      // organization's list cannot fork one holiday of it.
-      if (dto.libraryKey && !space.holidayCountry) {
+      // A library change belongs to whoever owns the list: a workspace sharing the organization's
+      // (same country) cannot fork one holiday of it; one in another country — chosen or detected — can.
+      const org = dto.libraryKey
+        ? await this.prisma.organization.findUnique({ where: { id: dto.organizationId }, select: { holidayCountry: true, holidayRegion: true, country: true } })
+        : null;
+      if (dto.libraryKey && !(org && resolveHolidayPlace(org, space).ownLayer)) {
         if (dto.scopeSpaceIds !== undefined) throw new ForbiddenException('This workspace uses the organization\'s holidays — ask an administrator, or give it its own country first.');
         spaceId = null;
       }

@@ -9879,6 +9879,8 @@
     "feedBody": "Mitglieder können ihren eigenen Kalender über einen privaten Link (nur lesend) in Google, Outlook oder auf dem iPhone zeigen.",
     "feedToggle": "Mitglieder dürfen einen privaten Kalender-Link erstellen",
     "feedOff": "Ausschalten beendet sofort alle bestehenden Links.",
-    "attribution": "Feiertagsdaten: date-holidays (CC BY 3.0)."
+    "attribution": "Feiertagsdaten: date-holidays (CC BY 3.0).",
+    "fromAddress": "aus der Adresse",
+    "useLocation": "Automatisch — nach Standort ({{place}})"
   }
 }

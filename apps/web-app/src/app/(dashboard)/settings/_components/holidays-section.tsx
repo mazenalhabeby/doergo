@@ -207,9 +207,10 @@ export function HolidaysSection() {
                   <tr key={w.id} className="border-t">
                     <td className="px-2 py-3 font-medium">{w.name}<span className="ml-2 text-xs font-normal text-muted-foreground">{t("holidays.people", { count: w.people })}</span></td>
                     <td className="px-2 py-3">
-                      <span className={cn(w.inherited.holidays && "text-muted-foreground")}>
+                      <span className={cn(w.holidaySource !== "CHOSEN" && "text-muted-foreground")}>
                         {w.country ?? "—"}{w.region ? ` · ${w.region}` : ""}
-                        {w.inherited.holidays && <span className="ml-1.5 text-xs italic">({t("holidays.inherited")})</span>}
+                        {w.holidaySource === "ORGANIZATION" && <span className="ml-1.5 text-xs italic">({t("holidays.inherited")})</span>}
+                        {w.holidaySource === "LOCATION" && <span className="ml-1.5 text-xs italic">({t("holidays.fromAddress")})</span>}
                       </span>
                     </td>
                     <td className="px-2 py-3">
@@ -287,7 +288,7 @@ function WorkspaceDialog({ ws, onClose, onSaved }: { ws: Ws | null; onClose: () 
           <DialogDescription>{t("holidays.workspaceDialogBody")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-5">
-          <PlacePicker country={country} region={region} onChange={(c, r) => { setCountry(c); setRegion(r) }} inheritLabel={t("holidays.useOrganization")} />
+          <PlacePicker country={country} region={region} onChange={(c, r) => { setCountry(c); setRegion(r) }} inheritLabel={ws?.detectedCountry ? t("holidays.useLocation", { place: `${ws.detectedCountry}${ws.detectedRegion ? ` · ${ws.detectedRegion}` : ""}` }) : t("holidays.useOrganization")} />
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>{t("holidays.weekend")}</Label>
@@ -319,7 +320,7 @@ function HolidayList({ settings, year: thisYear }: { settings: CalendarSettings;
     queryKey: ["calendar-holidays", scope, year, lang],
     queryFn: () => calendarApi.holidays({ spaceId: scope || null, year, lang }),
   })
-  const scopes = [{ id: "", name: t("holidays.organization") }, ...settings.workspaces.filter((w) => !w.inherited.holidays).map((w) => ({ id: w.id, name: w.name }))]
+  const scopes = [{ id: "", name: t("holidays.organization") }, ...settings.workspaces.filter((w) => w.ownList).map((w) => ({ id: w.id, name: w.name }))]
   const done = () => {
     qc.invalidateQueries({ queryKey: ["calendar-holidays"] })
     qc.invalidateQueries({ queryKey: ["calendar-settings"] })

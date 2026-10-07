@@ -9,6 +9,7 @@
 import type { DateKey } from '../attendance/cover';
 import { addDaysStr } from '../attendance/zoned-time';
 import type { HolidayDay } from './days';
+import type { HolidaySource } from './types';
 
 /**
  * Holidays fixed by the Hijri calendar are announced on a moon sighting, so any date computed in
@@ -145,3 +146,40 @@ export function holidayDays(list: readonly ResolvedHoliday[]): HolidayDay[] {
 /** What a holiday row may hold when somebody saves one. */
 export const HOLIDAY_NAME_MAX = 80;
 export const HOLIDAY_MAX_DAYS = 14;
+
+/**
+ * Which country and state a place takes its public holidays from.
+ *
+ *   1. chosen by hand on the workspace (CHOSEN)
+ *   2. where the workspace IS — its map point, looked up once when saved (LOCATION)
+ *   3. the organization's choice, else the organization's country (ORGANIZATION)
+ *
+ * The timezone is deliberately NOT a source: it defaults to Europe/Berlin when nobody set it, so it
+ * would label an office in Ohio German.
+ *
+ * `ownLayer` says whose holiday changes apply. A workspace in ANOTHER country keeps its own; one in
+ * the organization's country shares the organization's, so a holiday the office moved or removed
+ * stays moved everywhere it is the same holiday — a state only adds its own days on top.
+ */
+export function resolveHolidayPlace(
+  org: { holidayCountry: string | null; holidayRegion: string | null; country: string | null },
+  space?: {
+    holidayCountry: string | null;
+    holidayRegion: string | null;
+    detectedHolidayCountry?: string | null;
+    detectedHolidayRegion?: string | null;
+  } | null,
+): { country: string | null; region: string | null; source: HolidaySource; ownLayer: boolean } {
+  const orgCountry = (org.holidayCountry || org.country || null)?.toUpperCase() ?? null;
+  if (space?.holidayCountry) {
+    return { country: space.holidayCountry.toUpperCase(), region: space.holidayRegion ?? null, source: 'CHOSEN', ownLayer: true };
+  }
+  const detected = space?.detectedHolidayCountry?.toUpperCase() ?? null;
+  if (detected) {
+    if (detected !== orgCountry) {
+      return { country: detected, region: space?.detectedHolidayRegion ?? null, source: 'LOCATION', ownLayer: true };
+    }
+    return { country: detected, region: space?.detectedHolidayRegion ?? org.holidayRegion ?? null, source: 'LOCATION', ownLayer: false };
+  }
+  return { country: orgCountry, region: org.holidayRegion ?? null, source: 'ORGANIZATION', ownLayer: false };
+}

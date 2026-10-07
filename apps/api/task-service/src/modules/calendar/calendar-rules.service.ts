@@ -7,6 +7,7 @@ import {
   makeDayRules,
   mergeHolidays,
   personRoster,
+  resolveHolidayPlace,
   resolveWeekend,
   type CalendarPlace,
   type CoverPerson,
@@ -27,7 +28,7 @@ export interface PlaceCalendar {
 }
 
 type OrgRow = { id: string; name: string; weekendDays: number[]; holidayCountry: string | null; holidayRegion: string | null; country: string | null };
-type SpaceRow = { id: string; name: string; weekendDays: number[]; holidayCountry: string | null; holidayRegion: string | null };
+type SpaceRow = { id: string; name: string; weekendDays: number[]; holidayCountry: string | null; holidayRegion: string | null; detectedHolidayCountry?: string | null; detectedHolidayRegion?: string | null };
 
 function yearsOf(from: string, to: string): number[] {
   const a = Number(from.slice(0, 4)), b = Number(to.slice(0, 4));
@@ -69,9 +70,11 @@ export class CalendarRulesService {
     lang?: string,
     includeRemoved = false,
   ): PlaceCalendar {
-    const ownHolidays = !!space?.holidayCountry;
-    const country = ownHolidays ? space!.holidayCountry!.toUpperCase() : CalendarRulesService.orgCountry(org);
-    const region = ownHolidays ? space!.holidayRegion : (org.holidayRegion ?? null);
+    // Chosen by hand → where the workspace is → the organization (one rule, shared with the screens).
+    const resolved = resolveHolidayPlace(org, space);
+    const country = resolved.country;
+    const region = resolved.region;
+    const ownHolidays = !!space && resolved.ownLayer;
     const weekend = resolveWeekend(org.weekendDays, space?.weekendDays);
     const libraryLayer = ownHolidays ? space!.id : null;
     const relevant = overrides.filter((o) =>
@@ -86,7 +89,8 @@ export class CalendarRulesService {
         weekend,
         country,
         region,
-        inherited: { weekend: !(space?.weekendDays?.length), holidays: !ownHolidays },
+        inherited: { weekend: !(space?.weekendDays?.length), holidays: resolved.source === 'ORGANIZATION' },
+        holidaySource: space ? resolved.source : 'ORGANIZATION',
       },
       holidays,
       rules: makeDayRules(weekend, holidayDays(holidays.filter((h) => !(h as { removed?: boolean }).removed))),
@@ -115,7 +119,7 @@ export class CalendarRulesService {
       spaceId
         ? this.prisma.companyLocation.findFirst({
             where: { id: spaceId, organizationId },
-            select: { id: true, name: true, weekendDays: true, holidayCountry: true, holidayRegion: true },
+            select: { id: true, name: true, weekendDays: true, holidayCountry: true, holidayRegion: true, detectedHolidayCountry: true, detectedHolidayRegion: true },
           })
         : Promise.resolve(null),
     ]);
@@ -131,7 +135,7 @@ export class CalendarRulesService {
       spaceIds.length
         ? this.prisma.companyLocation.findMany({
             where: { id: { in: spaceIds }, organizationId },
-            select: { id: true, name: true, weekendDays: true, holidayCountry: true, holidayRegion: true },
+            select: { id: true, name: true, weekendDays: true, holidayCountry: true, holidayRegion: true, detectedHolidayCountry: true, detectedHolidayRegion: true },
           })
         : Promise.resolve([] as SpaceRow[]),
       this.overrides(organizationId, spaceIds, from, to),

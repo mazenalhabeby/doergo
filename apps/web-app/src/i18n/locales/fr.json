@@ -9888,6 +9888,8 @@
     "feedBody": "Les membres peuvent afficher leur calendrier dans Google, Outlook ou l’iPhone via un lien privé à sens unique.",
     "feedToggle": "Les membres peuvent créer un lien privé",
     "feedOff": "Le désactiver coupe immédiatement tous les liens existants.",
-    "attribution": "Données des jours fériés : date-holidays (CC BY 3.0)."
+    "attribution": "Données des jours fériés : date-holidays (CC BY 3.0).",
+    "fromAddress": "d’après son adresse",
+    "useLocation": "Automatique — selon son emplacement ({{place}})"
   }
 }

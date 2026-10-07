@@ -1,3 +1,4 @@
+import { CalendarModule } from '../calendar/calendar.module';
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { BullBoardModule } from '@bull-board/nestjs';
@@ -9,6 +10,8 @@ import { LocationsQueueService } from './locations.queue.service';
 
 @Module({
   imports: [
+    // Saving a workspace nudges the holiday-place lookup.
+    CalendarModule,
     // Microservice clients come from the GLOBAL MicroservicesModule — the
     // controller injects AUTH_SERVICE to tell billing a space change moved the
     // bill. Registering it again here would create a second connection.

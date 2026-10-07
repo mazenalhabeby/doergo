@@ -47,7 +47,12 @@ export interface CalendarPlace {
   region: string | null;
   /** Set on the workspace itself, or inherited from the organization. */
   inherited: { weekend: boolean; holidays: boolean };
+  /** Where the holiday country came from — see resolveHolidayPlace. */
+  holidaySource?: HolidaySource;
 }
+
+/** CHOSEN = picked by hand on the workspace; LOCATION = the workspace's map point; ORGANIZATION = the organization's. */
+export type HolidaySource = 'CHOSEN' | 'LOCATION' | 'ORGANIZATION';
 
 /** Bounds on any one calendar read — a range bigger than this is refused, not truncated. */
 export const CALENDAR_MAX_RANGE_DAYS = 62;

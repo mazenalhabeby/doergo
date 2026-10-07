@@ -9879,6 +9879,8 @@
     "feedBody": "Members can show their own calendar in Google, Outlook or the iPhone through a private one-way link.",
     "feedToggle": "Members may make a private calendar link",
     "feedOff": "Switching this off stops every existing link at once.",
-    "attribution": "Public holiday data: date-holidays (CC BY 3.0)."
+    "attribution": "Public holiday data: date-holidays (CC BY 3.0).",
+    "fromAddress": "from its address",
+    "useLocation": "Automatic — where it is ({{place}})"
   }
 }

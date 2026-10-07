@@ -9888,6 +9888,8 @@
     "feedBody": "I membri possono vedere il proprio calendario in Google, Outlook o sull’iPhone con un link privato a senso unico.",
     "feedToggle": "I membri possono creare un link privato",
     "feedOff": "Disattivarlo blocca subito tutti i link esistenti.",
-    "attribution": "Dati delle festività: date-holidays (CC BY 3.0)."
+    "attribution": "Dati delle festività: date-holidays (CC BY 3.0).",
+    "fromAddress": "dal suo indirizzo",
+    "useLocation": "Automatico — in base a dove si trova ({{place}})"
   }
 }

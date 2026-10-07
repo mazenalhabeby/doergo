@@ -8290,6 +8290,11 @@ export interface CalendarSettings {
     id: string; name: string; weekendDays: number[]; holidayCountry: string | null; holidayRegion: string | null; people: number;
     holidayCount: number; estimatedCount: number; country: string | null; region: string | null; weekend: number[];
     inherited: { weekend: boolean; holidays: boolean };
+    /** CHOSEN by hand · LOCATION from its map point · ORGANIZATION inherited. */
+    holidaySource: "CHOSEN" | "LOCATION" | "ORGANIZATION";
+    detectedCountry: string | null; detectedRegion: string | null; hasLocation: boolean;
+    /** Holiday changes on this workspace are its own (else the organization's). */
+    ownList: boolean;
   }[];
 }
 

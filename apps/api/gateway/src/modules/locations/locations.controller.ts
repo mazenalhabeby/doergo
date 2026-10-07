@@ -1,3 +1,4 @@
+import { WorkspacePlaceDetector } from '../calendar/workspace-place.detector';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
 import {
   Controller,
@@ -42,6 +43,7 @@ export class LocationsController {
     private readonly locationsService: LocationsService,
     private readonly locationsQueueService: LocationsQueueService,
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    private readonly placeDetector: WorkspacePlaceDetector,
   ) {}
 
   /**
@@ -75,6 +77,8 @@ export class LocationsController {
       organizationId: req.user.organizationId,
     });
     this.rebill(req.user.organizationId);
+    // Where is it? Looked up once for its public holidays (in the background).
+    this.placeDetector.nudge();
     return created;
   }
 
@@ -209,6 +213,8 @@ export class LocationsController {
     });
     // Modules may have changed — and an archived space stops being billed.
     this.rebill(req.user.organizationId);
+    // A moved workspace is looked up again for its public holidays (in the background).
+    if ((dto as any).lat !== undefined || (dto as any).lng !== undefined) this.placeDetector.nudge();
     return updated;
   }
 

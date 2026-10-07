@@ -20,14 +20,7 @@ const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
   gone every Google miss still spent a connection attempt and a timeout proving
   nothing was listening. Unset simply means Google is the only geocoder.
 */
-const PHOTON_URL = process.env.PHOTON_URL?.trim() || null;
-const GOOGLE_KEY = process.env.GOOGLE_PLACES_API_KEY || '';
-const GOOGLE_BASE = 'https://places.googleapis.com/v1';
-// Reverse geocoding is the Geocoding API, a different product from Places —
-// it must be enabled on the key separately, and it bills per request rather
-// than per session.
-const GOOGLE_GEOCODE_BASE = 'https://maps.googleapis.com/maps/api/geocode/json';
-const TIMEOUT_MS = 5000;
+import { GOOGLE_BASE, GOOGLE_GEOCODE_BASE, GOOGLE_KEY, PHOTON_URL, TIMEOUT_MS } from './geo-providers';
 
 interface GeoResult {
   label: string;

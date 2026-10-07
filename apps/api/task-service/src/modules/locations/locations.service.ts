@@ -453,6 +453,15 @@ export class LocationsService {
     if (data.address !== undefined) updateData.address = data.address;
     if (data.lat !== undefined) updateData.lat = data.lat;
     if (data.lng !== undefined) updateData.lng = data.lng;
+    // The workspace moved: where its public holidays come from is looked up again (the gateway's
+    // sweep picks up a NULL stamp). With no map point left, the detected place goes too.
+    if (data.lat !== undefined || data.lng !== undefined) {
+      updateData.holidayDetectedAt = null;
+      if (data.lat === null || data.lng === null) {
+        updateData.detectedHolidayCountry = null;
+        updateData.detectedHolidayRegion = null;
+      }
+    }
     if (data.geofenceRadius !== undefined) updateData.geofenceRadius = data.geofenceRadius;
     // Only touched when the caller actually sent the field: a PATCH that is
     // renaming the space must not wipe a boundary somebody drew.

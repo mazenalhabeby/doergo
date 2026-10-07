@@ -77,6 +77,44 @@ export function regionList(country: string, lang = 'en'): { code: string; name: 
   return Object.entries(states).map(([code, name]) => ({ code, name: String(name) })).sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/** A state name compared without accents, case, punctuation or the usual prefixes ("Canton of", "Land"…). */
+function plain(s: string): string {
+  return s
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/^(canton of|state of|free state of|province of|region of|land|hansestadt|freistaat|bundesland)\s+/, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+/**
+ * Which of a country's holiday regions a geocoder's answer names.
+ *
+ * A geocoder says "NV" / "Nevada", "BY" / "Bavaria", "Upper Austria" / "Oberösterreich"; the library
+ * keys regions by its own codes ("NV", "BY", "4"). Tried in order: a code, then a name in English, in
+ * the country's own language, or in German. No match is null — the country alone still applies.
+ */
+export function matchRegion(country: string, candidates: (string | null | undefined)[]): string | null {
+  if (!validCountry(country)) return null;
+  const hd = new Holidays();
+  const lists = [hd.getStates(country, 'en'), hd.getStates(country), hd.getStates(country, 'de')].filter(Boolean) as Record<string, string>[];
+  if (!lists.length) return null;
+  const codes = Object.keys(lists[0]!);
+  const asked = candidates.filter((c): c is string => typeof c === 'string' && c.trim().length > 0).map((c) => c.trim());
+  for (const c of asked) {
+    const code = codes.find((k) => k.toUpperCase() === c.toUpperCase());
+    if (code) return code;
+  }
+  for (const c of asked) {
+    const want = plain(c);
+    for (const list of lists) {
+      const hit = Object.entries(list).find(([, name]) => plain(String(name)) === want);
+      if (hit) return hit[0];
+    }
+  }
+  return null;
+}
+
 /** For tests. */
 export function clearHolidayCache() {
   cache.clear();

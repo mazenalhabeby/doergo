@@ -2426,9 +2426,15 @@ model CompanyLocation {
   minCover          Int       @default(0)
   /// Calendar: this workspace's own weekend (0 = Sunday … 6 = Saturday). EMPTY = the organization's.
   weekendDays       Int[]     @default([])
-  /// Public holidays from this country/region. NULL = the organization's.
+  /// Public holidays from this country/region, chosen by hand. NULL = not chosen (see detected* below).
   holidayCountry    String?
   holidayRegion     String?
+  /// Where the workspace's map point is (country + state), looked up ONCE when its location is saved —
+  /// never on a calendar read. Used when nothing was chosen by hand; beats the organization's country.
+  detectedHolidayCountry String?
+  detectedHolidayRegion  String?
+  /// When that lookup last ran (also with no result), so the backfill does not ask again.
+  holidayDetectedAt      DateTime?
   // Ownership classification (project / my company / customer company). Orthogonal
   // to physical-vs-workspace (derived from lat/lng). CUSTOMER spaces carry the
   // contact fields below and represent a customer you do work for.
