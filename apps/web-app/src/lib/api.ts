@@ -3884,8 +3884,8 @@ export const employeesApi = {
 
   // Get all time-off requests for the organization. Pending rows carry a cover
   // verdict, so the list can be decided without opening anything.
-  getOrgTimeOff: async (status?: TimeOffStatus) => {
-    const endpoint = buildUrlWithQuery('/employees/time-off', { status });
+  getOrgTimeOff: async (status?: TimeOffStatus, range?: { from: string; to: string }) => {
+    const endpoint = buildUrlWithQuery('/employees/time-off', { status, from: range?.from, to: range?.to });
 
     const response = await api.get<{
       success: boolean;

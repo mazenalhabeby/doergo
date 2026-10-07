@@ -205,6 +205,8 @@ export class EmployeesController {
   @Get('time-off')
   @ApiOperation({ summary: 'Time-off requests: the organization, or the spaces the caller leads' })
   @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'APPROVED', 'REJECTED', 'CANCELED'] })
+  @ApiQuery({ name: 'from', required: false, description: 'YYYY-MM-DD — with `to`: leave touching the window + every pending request' })
+  @ApiQuery({ name: 'to', required: false })
   @ApiResponse({ status: 200, description: 'Time-off requests retrieved' })
   /*
     Space-aware. Leave belongs to a person and `TimeOff` has no space column, so
@@ -216,6 +218,8 @@ export class EmployeesController {
   async getOrgTimeOff(
     @Query('status') status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED',
     @CurrentUser() user?: CurrentUserData,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
   ) {
     /*
       The cover verdict rides on this list, and it must not widen who reads it.
@@ -239,6 +243,9 @@ export class EmployeesController {
           scopeSpaceIds: isAdmin(user as never) ? undefined : spacesGranting(user?.access as never, 'canViewAllTasks') ?? undefined,
           withCover: canSeeCover,
           status,
+          // Validated in the service (a malformed day is ignored, not trusted).
+          from: typeof from === 'string' ? from.slice(0, 10) : undefined,
+          to: typeof to === 'string' ? to.slice(0, 10) : undefined,
         },
       ),
     );

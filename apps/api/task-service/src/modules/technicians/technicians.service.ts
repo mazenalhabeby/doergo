@@ -932,6 +932,23 @@ export class TechniciansService {
       };
     }
 
+    /*
+      A window, when the screen names one: what touches the dates on screen, plus
+      everything still waiting for a decision (it is decided wherever it falls).
+      Without it this read is the organization's whole leave history, bounded only
+      by the 500 below — slow as history grows, and past 500 rows the leave ON
+      screen could be the part cut off.
+    */
+    const day = /^\d{4}-\d{2}-\d{2}$/;
+    if (dto.from && dto.to && day.test(dto.from) && day.test(dto.to) && dto.from <= dto.to) {
+      where.AND = [{
+        OR: [
+          { status: 'PENDING' },
+          { startDate: { lte: new Date(`${dto.to}T23:59:59.999Z`) }, endDate: { gte: new Date(`${dto.from}T00:00:00.000Z`) } },
+        ],
+      }];
+    }
+
     const timeOffs = await this.prisma.timeOff.findMany({
       where,
       orderBy: [{ status: 'asc' }, { startDate: 'desc' }],

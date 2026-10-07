@@ -123,12 +123,13 @@ export default function ScheduleAndTimeOffPage() {
     [days],
   )
 
-  // Every leave record still on the books. The wallchart draws them; pending
-  // rows carry their cover verdict, computed server-side.
+  // The leave on screen, plus every request still waiting (decided wherever it falls).
+  // The wallchart draws them; pending rows carry their cover verdict, computed server-side.
   const leaveQuery = useQuery({
-    queryKey: ["orgTimeOff", "all"],
-    queryFn: () => employeesApi.getOrgTimeOff(),
+    queryKey: ["orgTimeOff", "window", window.start, window.end],
+    queryFn: () => employeesApi.getOrgTimeOff(undefined, { from: window.start, to: window.end }),
     staleTime: 30_000,
+    placeholderData: keepPreviousData,
     enabled: canManage,
   })
 

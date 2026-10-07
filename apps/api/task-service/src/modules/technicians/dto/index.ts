@@ -81,6 +81,9 @@ export class GetOrgTimeOffDto {
   /** Spaces the caller may read; undefined = org-wide, [] = none. */
   scopeSpaceIds?: string[];
   status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
+  /** A window (YYYY-MM-DD, inclusive): leave touching it, plus every request still PENDING. */
+  from?: string;
+  to?: string;
 }
 
 export class ApproveTimeOffDto {
