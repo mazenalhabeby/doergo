@@ -110,7 +110,8 @@ async function loadLogo(url?: string | null): Promise<{ dataUrl: string; w: numb
   }
 }
 
-async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise<jsPDF> {
+/** The document itself — exported so a test can read what a client receives. */
+export async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise<jsPDF> {
   const locale = inv.locale ?? null
   const L: InvoiceDocumentLabels = invoiceDocumentLabels(locale)
   const fmtMoney = (n: number, currency: string) => formatDocumentMoney(n, currency, locale)

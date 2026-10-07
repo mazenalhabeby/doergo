@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useId, useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Building2, MoreHorizontal, Pencil, Plus, Power, Star, Trash2 } from "lucide-react"
@@ -369,10 +369,11 @@ function CompanyDialog({ company, onClose, onSaved }: { company: LegalEntity | n
 function BankInput({
   label, value, onChange, placeholder, mono, className,
 }: { label: string; value: string | null; onChange: (v: string | null) => void; placeholder?: string; mono?: boolean; className?: string }) {
+  const id = useId()
   return (
     <div className={cn("space-y-1.5", className)}>
-      <Label>{label}</Label>
-      <Input value={value ?? ""} placeholder={placeholder} className={mono ? "font-mono" : undefined} onChange={(e) => onChange(e.target.value || null)} />
+      <Label htmlFor={id}>{label}</Label>
+      <Input id={id} value={value ?? ""} placeholder={placeholder} className={mono ? "font-mono" : undefined} onChange={(e) => onChange(e.target.value || null)} />
     </div>
   )
 }

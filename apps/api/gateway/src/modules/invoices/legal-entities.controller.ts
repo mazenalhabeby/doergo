@@ -12,6 +12,14 @@ import { DenyExternal } from '../../common/decorators';
 const READ_KEYS: AccessPermissionKey[] = ['canManageInvoices', 'canManageWorkspaces', 'crmEditInfo', 'crmManageClients'];
 
 /**
+ * Held by this caller: the user's own flag OR the resolved access (org-wide or in any workspace) —
+ * the same two sources PermissionsGuard reads. Reading only `access` refused a manager whose
+ * invoicing comes through the bridged flag, while the invoice routes let them in.
+ */
+const holds = (user: CurrentUserData, key: AccessPermissionKey) =>
+  (user as unknown as Record<string, unknown>)[key] === true || accessAllowsAnywhere(user.access as never, key);
+
+/**
  * COMPANIES — the legal entities whose name goes on an invoice (docs/plans/companies-legal-entities.md).
  *
  * ⚠️ Writes are ADMIN-only: this is the company's legal and BANK identity — an edit here changes
@@ -38,10 +46,10 @@ export class LegalEntitiesController {
   @ApiOperation({ summary: "The organization's companies (bank accounts only for invoicing)" })
   async list(@Query('includeInactive') includeInactive: string | undefined, @CurrentUser() user: CurrentUserData) {
     const admin = isAdmin(user);
-    if (!admin && !READ_KEYS.some((k) => accessAllowsAnywhere(user.access as any, k))) {
+    if (!admin && !READ_KEYS.some((k) => holds(user, k))) {
       throw new ForbiddenException('You do not have permission to see the companies');
     }
-    const withBank = admin || accessAllowsAnywhere(user.access as any, 'canManageInvoices');
+    const withBank = admin || holds(user, 'canManageInvoices');
     return this.call('legal_entity_list', {
       organizationId: user.organizationId,
       withBank,
