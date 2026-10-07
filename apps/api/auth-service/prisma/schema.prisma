@@ -2501,6 +2501,7 @@ model CompanyLocation {
   breakRules       BreakRule[] // Planned rests for everyone working here
   calendarHolidays CalendarHoliday[]
   calendarEvents   CalendarEvent[]
+  calendarEventsHere CalendarEvent[] @relation("CalendarEventPlace")
 
   // Time entries at this location
   timeEntries TimeEntry[]
@@ -5556,6 +5557,23 @@ enum CalendarRsvp {
 /// An appointment or a reminder somebody put in the calendar. Repeats as JSON (shared Repeat), never
 /// a free RRULE string. `seriesEndAt` = when the last occurrence ends (NULL = repeats for ever), so a
 /// range read is two indexed comparisons.
+enum CalendarMeetingMode {
+  IN_PERSON
+  ONLINE
+  PHONE
+}
+
+enum CalendarPlaceKind {
+  OFFICE
+  CLIENT_SITE
+  ADDRESS
+}
+
+enum CalendarCallDirection {
+  OUTGOING
+  INCOMING
+}
+
 model CalendarEvent {
   id              String             @id @default(cuid())
   organizationId  String
@@ -5566,6 +5584,15 @@ model CalendarEvent {
   description     String?
   location        String?
   meetingUrl      String?
+  /// How it happens (shared calendar/meeting.ts). NULL = an event from before modes, or a reminder.
+  meetingMode     CalendarMeetingMode?
+  /// In person: at our office (placeSpaceId), the client's site, or another address (location).
+  placeKind       CalendarPlaceKind?
+  placeSpaceId    String?
+  room            String?
+  /// Phone: the number, and who calls whom.
+  phone           String?
+  callDirection   CalendarCallDirection?
   customerId      String?
   startAt         DateTime
   endAt           DateTime
@@ -5581,6 +5608,7 @@ model CalendarEvent {
 
   organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   space        CompanyLocation?   @relation(fields: [spaceId], references: [id], onDelete: SetNull)
+  placeSpace   CompanyLocation?   @relation("CalendarEventPlace", fields: [placeSpaceId], references: [id], onDelete: SetNull)
   createdBy    User               @relation("CalendarEventCreator", fields: [createdById], references: [id], onDelete: Cascade)
   customer     Customer?          @relation(fields: [customerId], references: [id], onDelete: SetNull)
   attendees    CalendarAttendee[]

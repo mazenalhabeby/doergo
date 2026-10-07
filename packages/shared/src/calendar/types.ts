@@ -33,6 +33,10 @@ export interface CalendarItem {
   ref?: { type: 'task' | 'event' | 'customer' | 'timeOff' | 'document'; id: string } | null;
   location?: string | null;
   meetingUrl?: string | null;
+  /** An appointment's how (calendar/meeting.ts): the list shows Join for online, Call for phone. */
+  meetingMode?: 'IN_PERSON' | 'ONLINE' | 'PHONE' | null;
+  phone?: string | null;
+  room?: string | null;
   /** Free text kept short: leave type, holiday kind, event organizer, … */
   note?: string | null;
   halfDay?: boolean;

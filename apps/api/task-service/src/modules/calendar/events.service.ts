@@ -18,6 +18,13 @@ import {
   occurrences,
   parseReminderOffsets,
   parseRepeat,
+  cleanPhone,
+  meetingFieldsFor,
+  CALL_DIRECTIONS,
+  MEETING_MODES,
+  PLACE_KINDS,
+  ROOM_MAX,
+  type MeetingFields,
   success,
   zonedWallTimeToUtc,
   type CalendarItem,
@@ -65,7 +72,16 @@ export interface EventInput {
   reminders?: unknown;
   visibility?: 'BUSY' | 'DETAILS';
   attendeeIds?: string[];
+  /** How and where (shared calendar/meeting.ts). */
+  meetingMode?: 'IN_PERSON' | 'ONLINE' | 'PHONE' | null;
+  placeKind?: 'OFFICE' | 'CLIENT_SITE' | 'ADDRESS' | null;
+  placeSpaceId?: string | null;
+  room?: string | null;
+  phone?: string | null;
+  callDirection?: 'OUTGOING' | 'INCOMING' | null;
 }
+
+const MEETING_KEYS = ['meetingMode', 'placeKind', 'placeSpaceId', 'room', 'phone', 'callDirection', 'location', 'meetingUrl'] as const;
 
 type EventRow = {
   id: string; organizationId: string; spaceId: string | null; createdById: string; kind: 'APPOINTMENT' | 'REMINDER';
@@ -167,6 +183,53 @@ export class EventsService {
     return u.toString();
   }
 
+  /**
+   * How and where, as it will be saved. One rule (`meetingFieldsFor`) drops what the mode does not
+   * use; this adds what only the server may decide:
+   *  - OUR OFFICE is a workspace of this organization the caller works in (or anyone, for those who
+   *    see the whole organization), and its ADDRESS comes from the workspace — never from the form.
+   *  - the CLIENT'S SITE needs a client (and so CRM access, checked by assertRefs) and an address.
+   *  - a phone number must look like one; a link must be a web address.
+   * A reminder has no place at all.
+   */
+  private async meeting(caller: Caller, kind: 'APPOINTMENT' | 'REMINDER', f: MeetingFields, customerId: string | null): Promise<MeetingFields> {
+    if (kind === 'REMINDER') return meetingFieldsFor({ ...f, mode: null, location: null, meetingUrl: null });
+    const mode = f.mode && (MEETING_MODES as readonly string[]).includes(f.mode) ? f.mode : null;
+    const place = f.place && (PLACE_KINDS as readonly string[]).includes(f.place) ? f.place : null;
+    const out = meetingFieldsFor({
+      ...f, mode, place,
+      callDirection: f.callDirection && (CALL_DIRECTIONS as readonly string[]).includes(f.callDirection) ? f.callDirection : null,
+    });
+    // Any link that survives the mode is checked — an event without a mode keeps one too.
+    if (out.meetingUrl) out.meetingUrl = this.meetingUrl(out.meetingUrl);
+    if (out.mode === 'PHONE' && out.phone) {
+      const ph = cleanPhone(out.phone);
+      if (!ph) throw new BadRequestException({ code: 'EVENT_PHONE_INVALID', message: 'That does not look like a phone number.' });
+      out.phone = ph;
+    }
+    if (out.mode === 'IN_PERSON') {
+      out.location = clean(out.location, 200);
+      if (out.place === 'OFFICE') {
+        if (!out.placeSpaceId) throw new BadRequestException({ code: 'EVENT_OFFICE_REQUIRED', message: 'Choose which office.' });
+        const s = await this.prisma.companyLocation.findFirst({
+          where: { id: out.placeSpaceId, organizationId: caller.organizationId, isActive: true, isRemote: false },
+          select: { id: true, address: true, name: true },
+        });
+        if (!s) throw new BadRequestException({ code: 'EVENT_OFFICE_UNKNOWN', message: 'That office is not one of yours.' });
+        const wide = isAdmin({ role: caller.role } as any) || caller.canManageUsers || caller.orgWideView;
+        if (!wide && !(await this.rules.workspacesOf(caller.organizationId, caller.userId)).includes(s.id)) {
+          throw new ForbiddenException({ code: 'EVENT_OFFICE_NOT_YOURS', message: 'You can meet at a workspace you work in.' });
+        }
+        out.location = s.address || s.name;
+        out.room = clean(out.room, ROOM_MAX);
+      } else if (out.place === 'CLIENT_SITE') {
+        if (!customerId) throw new BadRequestException({ code: 'EVENT_CLIENT_REQUIRED', message: 'Choose the client.' });
+        if (!out.location) throw new BadRequestException({ code: 'EVENT_ADDRESS_REQUIRED', message: 'Choose or type the address.' });
+      }
+    }
+    return out;
+  }
+
   /** The colleagues this caller may put on an event: people they share a workspace with. */
   private async inviteable(caller: Caller, ids: string[]): Promise<Map<string, { id: string; firstName: string; lastName: string }>> {
     const unique = [...new Set(ids.filter((id) => typeof id === 'string' && id && id !== caller.userId))].slice(0, EVENT_MAX_ATTENDEES + 1);
@@ -265,8 +328,12 @@ export class EventsService {
     const customerId = input.customerId || null;
     await this.assertRefs(dto, spaceId, customerId);
     const invitees = await this.inviteable(dto, input.attendeeIds ?? []);
-    const meetingUrl = this.meetingUrl(input.meetingUrl);
     const kind = input.kind === 'REMINDER' ? 'REMINDER' : 'APPOINTMENT';
+    const where = await this.meeting(dto, kind, {
+      mode: input.meetingMode ?? null, place: input.placeKind ?? null, placeSpaceId: input.placeSpaceId ?? null,
+      room: input.room ?? null, location: input.location ?? null, meetingUrl: input.meetingUrl ?? null,
+      phone: input.phone ?? null, callDirection: input.callDirection ?? null,
+    }, customerId);
     const ev = { startAt, endAt, repeat, timezone: tz, reminderOffsets: offsets };
     const now = new Date();
     const first = firstReminder(reminderEventOf(ev), now);
@@ -287,8 +354,10 @@ export class EventsService {
         createdById: dto.userId,
         spaceId, customerId, kind, title,
         description: clean(input.description, EVENT_TEXT_MAX),
-        location: clean(input.location, 200),
-        meetingUrl,
+        location: clean(where.location, 200),
+        meetingUrl: where.meetingUrl,
+        meetingMode: where.mode, placeKind: where.place, placeSpaceId: where.placeSpaceId,
+        room: where.room, phone: where.phone, callDirection: where.callDirection,
         startAt, endAt, allDay, timezone: tz,
         repeat: (repeat as any) ?? undefined,
         seriesEndAt: seriesEndOf(startAt, endAt, repeat, tz),
@@ -351,6 +420,17 @@ export class EventsService {
     const spaceId = input.spaceId !== undefined ? input.spaceId || null : ev.spaceId;
     const customerId = input.customerId !== undefined ? input.customerId || null : ev.customerId;
     await this.assertRefs(dto, spaceId, customerId);
+    const kindNext = input.kind ? (input.kind === 'REMINDER' ? 'REMINDER' : 'APPOINTMENT') : ev.kind;
+    // How and where are recomputed together whenever any of them is sent (a mode switch clears the rest).
+    const touched = MEETING_KEYS.some((k) => input[k] !== undefined) || input.kind !== undefined || input.customerId !== undefined;
+    const pick = <T,>(k: (typeof MEETING_KEYS)[number], prev: T): T => (input[k] !== undefined ? (input[k] as unknown as T) : prev);
+    const where = touched
+      ? await this.meeting(dto, kindNext, {
+          mode: pick('meetingMode', ev.meetingMode), place: pick('placeKind', ev.placeKind), placeSpaceId: pick('placeSpaceId', ev.placeSpaceId),
+          room: pick('room', ev.room), location: pick('location', ev.location), meetingUrl: pick('meetingUrl', ev.meetingUrl),
+          phone: pick('phone', ev.phone), callDirection: pick('callDirection', ev.callDirection),
+        }, customerId)
+      : null;
 
     const before = new Set(ev.attendees.filter((a) => !a.isOrganizer).map((a) => a.userId));
     let added: string[] = [], removed: string[] = [];
@@ -372,8 +452,10 @@ export class EventsService {
           reminderOffsets: offsets,
           ...(input.kind ? { kind: input.kind === 'REMINDER' ? 'REMINDER' : 'APPOINTMENT' } : {}),
           ...(input.description !== undefined ? { description: clean(input.description, EVENT_TEXT_MAX) } : {}),
-          ...(input.location !== undefined ? { location: clean(input.location, 200) } : {}),
-          ...(input.meetingUrl !== undefined ? { meetingUrl: this.meetingUrl(input.meetingUrl) } : {}),
+          ...(where ? {
+            location: clean(where.location, 200), meetingUrl: where.meetingUrl, meetingMode: where.mode, placeKind: where.place,
+            placeSpaceId: where.placeSpaceId, room: where.room, phone: where.phone, callDirection: where.callDirection,
+          } : {}),
           ...(input.visibility ? { visibility: input.visibility === 'DETAILS' ? 'DETAILS' : 'BUSY' } : {}),
         },
       });
@@ -488,6 +570,7 @@ export class EventsService {
         attendees: { select: { userId: true, response: true, isOrganizer: true, user: { select: { firstName: true, lastName: true, avatarUrl: true } } }, orderBy: { createdAt: 'asc' } },
         customer: { select: { id: true, name: true } },
         space: { select: { id: true, name: true } },
+        placeSpace: { select: { id: true, name: true, address: true, lat: true, lng: true } },
       },
     });
     if (!ev) throw new NotFoundException('Not found');
@@ -497,6 +580,8 @@ export class EventsService {
       startAt: ev.startAt.toISOString(), endAt: ev.endAt.toISOString(), allDay: ev.allDay, timezone: ev.timezone,
       repeat: ev.repeat ?? null, reminders: ev.reminderOffsets, visibility: ev.visibility, canceled: !!ev.canceledAt,
       space: ev.space, customer: dto.crm ? ev.customer : null,
+      meetingMode: ev.meetingMode, placeKind: ev.placeKind, placeSpace: ev.placeSpace, room: ev.room,
+      phone: ev.phone, callDirection: ev.callDirection,
       organizerId: ev.createdById, canEdit: ev.createdById === dto.userId, myResponse: me.response,
       attendees: ev.attendees.map((a) => ({
         userId: a.userId, response: a.response, isOrganizer: a.isOrganizer,
@@ -558,6 +643,9 @@ export class EventsService {
           ref: { type: 'event', id: ev.id },
           location: ev.location,
           meetingUrl: ev.meetingUrl,
+          meetingMode: ev.meetingMode,
+          phone: ev.phone,
+          room: ev.room,
           note: mine?.isOrganizer ? null : `${ev.createdBy.firstName} ${ev.createdBy.lastName}`.trim(),
         });
         if (out.length >= 2000) return out;

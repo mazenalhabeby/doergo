@@ -6,3 +6,4 @@ export * from './quick-add';
 export * from './ics';
 export * from './free-slots';
 export * from './types';
+export * from './meeting';

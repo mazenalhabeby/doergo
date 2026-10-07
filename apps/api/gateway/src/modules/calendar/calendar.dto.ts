@@ -2,7 +2,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsISO8601, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateNested,
 } from 'class-validator';
-import { EVENT_MAX_ATTENDEES, EVENT_TEXT_MAX, EVENT_TITLE_MAX, HOLIDAY_MAX_DAYS, HOLIDAY_NAME_MAX, MAX_REMINDERS } from '@hbcfield/shared';
+import { CALL_DIRECTIONS, EVENT_MAX_ATTENDEES, EVENT_TEXT_MAX, EVENT_TITLE_MAX, HOLIDAY_MAX_DAYS, HOLIDAY_NAME_MAX, MAX_REMINDERS, MEETING_MODES, PLACE_KINDS, ROOM_MAX } from '@hbcfield/shared';
 import { CLIENT_ID } from '../../common/dto/upload.dto';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -35,6 +35,13 @@ export class EventDto {
   @IsOptional() @IsArray() @ArrayMaxSize(MAX_REMINDERS) @IsInt({ each: true }) reminders?: number[];
   @IsOptional() @IsIn(['BUSY', 'DETAILS']) visibility?: 'BUSY' | 'DETAILS';
   @IsOptional() @IsArray() @ArrayMaxSize(EVENT_MAX_ATTENDEES) @Matches(ID, { each: true }) attendeeIds?: string[];
+  /** How and where — combinations are decided by the service (shared meetingFieldsFor). */
+  @IsOptional() @IsIn([...MEETING_MODES, null]) meetingMode?: 'IN_PERSON' | 'ONLINE' | 'PHONE' | null;
+  @IsOptional() @IsIn([...PLACE_KINDS, null]) placeKind?: 'OFFICE' | 'CLIENT_SITE' | 'ADDRESS' | null;
+  @IsOptional() @IsString() @Matches(ID) placeSpaceId?: string | null;
+  @IsOptional() @IsString() @MaxLength(ROOM_MAX) room?: string | null;
+  @IsOptional() @IsString() @MaxLength(30) phone?: string | null;
+  @IsOptional() @IsIn([...CALL_DIRECTIONS, null]) callDirection?: 'OUTGOING' | 'INCOMING' | null;
 }
 
 export class CreateEventDto extends EventDto {
