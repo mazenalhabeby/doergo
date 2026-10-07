@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { useQuery, keepPreviousData } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import {
@@ -14,7 +15,7 @@ import {
   startOfWeek,
   subMonths,
 } from "date-fns"
-import { AlertCircle, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
+import { AlertCircle, CalendarDays, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { calendarApi, employeesApi, type OrgTimeOffRequest } from "@/lib/api"
@@ -257,6 +258,13 @@ export default function ScheduleAndTimeOffPage() {
                 ))}
               </div>
 
+              {/* The calendar's counterpart to its Team button — always here, opening on the period on screen. */}
+              <Button asChild variant="outline" size="sm" className="h-9 gap-1.5 rounded-lg bg-card">
+                <Link href={`/calendar?date=${format(anchor, "yyyy-MM-dd")}`}>
+                  <CalendarDays className="h-4 w-4" />
+                  {t("nav.sidebar.calendar")}
+                </Link>
+              </Button>
               <Button variant="outline" size="sm" className="h-9 rounded-lg bg-card" onClick={() => setAnchor(new Date())}>
                 {t("common.today")}
               </Button>
