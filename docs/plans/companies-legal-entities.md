@@ -62,3 +62,25 @@ two logins, split data and two bills. What actually differs is the identity on t
 3. Documents: `{{org.*}}` / `{{company.*}}` merge fields from the member's employer entity.
 4. HBC merge (operator, after the user's OK): keep HBC USA, add both companies, move HBC GmbH's
    clients — backup, dry run on a copy, then the real move.
+
+## Status (2026-10-07)
+
+- Phase 1 server — `8ffd871e`. Phase 2 web — `268f352c`. Phase 3 documents — `e051ce6c`. Phase 4 tool — this commit.
+  **Nothing deployed.** E2E: `python3 tools/companies-e2e.py` (36 checks, LOCAL only; leaves one
+  switched-off "HBC Test USA Inc." per run — delete it from the local DB).
+
+## Phase 4 runbook — moving HBC GmbH into HBC USA (needs the user's OK)
+
+`apps/api/auth-service/prisma/merge-org-into.js` — preview by default, `--apply` writes, one transaction,
+re-runnable, refuses (lists by name) any client still referenced by the source org's jobs, assets,
+reports, documents, portal logins or invitations.
+
+1. Deploy phases 1–3 (migration `20261007200000_legal_entities` creates each org's main company).
+2. In HBC USA › Settings › Companies: check the main company is "HBC USA Inc." (name, EIN, bank, USD,
+   prefix e.g. `US`). In HBC GmbH › Settings › Companies: fill its details + bank (they are copied).
+3. Backup: `pg_dump -U doergo doergo` → assert the table count.
+4. Preview in the auth container:
+   `docker exec hbcfield-auth-service node prisma/merge-org-into.js --from <HBC GmbH id> --into <HBC USA id> [--space <HBC USA workspace for them>]`
+5. Resolve any blockers it lists, then the same command with `--apply`.
+6. Check the clients in HBC USA (issued by HBC GmbH), set "Invoices issued by" on the workspaces,
+   set each member's Employer; then suspend HBC GmbH on admin.hbcfield.com.
