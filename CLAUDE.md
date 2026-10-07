@@ -621,6 +621,23 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 >
 > ⚠️ **ECB's static files, not its data API** — the data API took ~28 s for all currencies. `eurofxref-hist-90d.xml` (70 KB) for recent days, `eurofxref-hist.xml` (8 MB, cached a day) for older ones. Weekend/holiday = the last working day. Migration `20261004180000_currencies` (additive). E2E: `python3 tools/currency-e2e.py`.
 
+### Companies — several legal entities in one organization (`/legal-entities`)
+> One organization (people, clients, workspaces shared), several legal COMPANIES whose name goes on invoices and contracts (HBC GmbH + HBC USA Inc.). Rules: `packages/shared/src/billing/legal-entity.ts`; server: `auth-service/.../invoices/legal-entities.service.ts`. Migration `20261007200000_legal_entities` (backfills one MAIN company per org, prefix INV, freezes issued invoices). Plan + HBC merge runbook: `docs/plans/companies-legal-entities.md`. E2E: `python3 tools/companies-e2e.py` (LOCAL, 36 checks).
+
+| Method | Endpoint | Description | Gate |
+|--------|----------|-------------|------|
+| GET | `/legal-entities` | The companies; bank accounts only for canManageInvoices / admin | canManageInvoices, canManageWorkspaces or CRM edit (anywhere); `@DenyExternal` |
+| POST · PATCH | `/legal-entities[/:id]` | Add / edit (bank accounts replaced as a list, ≤5) | ADMIN |
+| POST | `/legal-entities/:id/main` · `/deactivate` · `/reactivate` | Main company (one transaction) · switch off/on — the main one never off | ADMIN |
+
+> ⚠️ **Who issues**: the invoice's choice → the workspace's (`CompanyLocation.legalEntityId`) → the client's (`Customer.legalEntityId`) → the main company. Stored on the invoice at create; a draft that changes company is RENUMBERED in that company's series (`{prefix}-{year}-{0001}`); an issued number never changes.
+>
+> ⚠️ **ISSUED freezes `Invoice.issuer`** (identity + the bank account in the invoice's currency); back to DRAFT clears it. Screen and PDF draw From/Bank details through ONE builder (`documentIssuer` in web `invoice-document-locale.ts`). Never read the org profile for a letterhead when an issuer exists.
+>
+> ⚠️ **Every link goes through `usableLegalEntityId`** (own org + active, or null) — workspace, client, member (`User.employerEntityId`), invoice. Forms send the field only when it changed, so a record pointing at a since switched-off company stays editable.
+>
+> ⚠️ Invoice currency: workspace → client → **company** → organization. Contracts: `{{org.*}}` = the member's EMPLOYER company, else main (+ `org.vatId/taxId/registerNumber`). Pickers render nothing while an org has one company.
+
 ### Users (`/users`) - Push Tokens
 | Method | Endpoint | Description | Roles |
 |--------|----------|-------------|-------|
