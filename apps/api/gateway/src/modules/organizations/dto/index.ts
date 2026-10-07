@@ -325,6 +325,12 @@ export class UpdateMemberDto {
   @IsString()
   position?: string;
 
+  @ApiPropertyOptional({ description: "The company (legal entity) that employs them — the employer on their contracts. Null or empty = the organization's main company." })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  employerEntityId?: string | null;
+
   /*
     A DATE, validated as one. `@IsDateString` would accept a full timestamp and
     let a browser's local midnight through as the previous day; the column is

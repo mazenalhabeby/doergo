@@ -214,6 +214,12 @@ export class CreateLocationDto {
   @MaxLength(3)
   currency?: string | null;
 
+  @ApiPropertyOptional({ description: "The company (legal entity) that invoices this workspace. Null or empty = the organization's main company." })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  legalEntityId?: string | null;
+
   @ApiPropertyOptional({ description: 'CUSTOMER kind: billable rate override (EUR cents/hour; null falls back to org default)' })
   @IsNumber()
   @Min(0)

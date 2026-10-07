@@ -16,7 +16,7 @@ import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_N
 import { isGeofencePolicy,
   isNoShiftPolicy,
   clampDailyMinutes, validateMinCover, writeRateChange, RateChangeError, parseCurrency, CURRENCY_INVALID_MESSAGE,
-  currencyOrNull, workspaceCurrency, DEFAULT_CURRENCY } from '@hbcfield/shared';
+  currencyOrNull, workspaceCurrency, DEFAULT_CURRENCY, usableLegalEntityId, COMPANY_UNKNOWN_MESSAGE } from '@hbcfield/shared';
 
 // tz-lookup: offline coords → IANA timezone (no types pkg).
 const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
@@ -43,6 +43,13 @@ function spaceCurrency(value: unknown): string | null {
 
 @Injectable()
 export class LocationsService {
+  /** A workspace's company: one of this organization's active companies, or null. Anything else is refused. */
+  private async spaceCompany(organizationId: string, value: unknown): Promise<string | null | undefined> {
+    const r = await usableLegalEntityId(this.prisma as any, organizationId, value);
+    if (!r.ok) throw new BadRequestException({ message: COMPANY_UNKNOWN_MESSAGE, code: 'COMPANY_UNKNOWN' });
+    return r.id;
+  }
+
   private readonly logger = new Logger(LocationsService.name);
 
   constructor(
@@ -86,6 +93,8 @@ export class LocationsService {
     billableRateCents?: number | null;
     costRateCents?: number | null;
     currency?: string | null;
+    /** The company that invoices this workspace; null = the organization's main one. */
+    legalEntityId?: string | null;
     enabledModules?: string[];
     workflowId?: string;
     organizationId: string;
@@ -138,6 +147,7 @@ export class LocationsService {
         contactEmail: data.contactEmail ?? undefined,
         contactPhone: data.contactPhone ?? undefined,
         currency: data.currency !== undefined ? spaceCurrency(data.currency) : undefined,
+        legalEntityId: await this.spaceCompany(data.organizationId, data.legalEntityId),
         organizationId: data.organizationId,
         isDefault: existingDefault === 0,
       },
@@ -433,6 +443,7 @@ export class LocationsService {
     costRateCents?: number | null;
     rateEffectiveFrom?: string;
     currency?: string | null;
+    legalEntityId?: string | null;
     notifyRoleIds?: string[];
     contactRoleIds?: string[];
   }) {
@@ -519,6 +530,8 @@ export class LocationsService {
       before it sends this. Issued invoices keep their own currency.
     */
     if (data.currency !== undefined) updateData.currency = spaceCurrency(data.currency);
+    // Who invoices it. Issued invoices keep the company frozen on them.
+    if (data.legalEntityId !== undefined) updateData.legalEntityId = await this.spaceCompany(data.organizationId, data.legalEntityId);
     /*
       Rates are NOT written here: they go through `writeSpaceRates` below — a
       dated history row and then the column — so a change never re-prices work

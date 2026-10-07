@@ -48,6 +48,13 @@ const ROUTE_ACTIONS: Record<string, string> = {
   'POST /calendar/holidays': 'HOLIDAY_SAVED',
   'PATCH /calendar/holidays/:id': 'HOLIDAY_SAVED',
   'DELETE /calendar/holidays/:id': 'HOLIDAY_REMOVED',
+  // Companies (legal entities). The body IS logged: who changed a bank account is the question
+  // after money goes to the wrong place.
+  'POST /legal-entities': 'COMPANY_CREATED',
+  'PATCH /legal-entities/:id': 'COMPANY_UPDATED',
+  'POST /legal-entities/:id/main': 'COMPANY_MADE_MAIN',
+  'POST /legal-entities/:id/deactivate': 'COMPANY_DEACTIVATED',
+  'POST /legal-entities/:id/reactivate': 'COMPANY_REACTIVATED',
   'POST /tasks': 'TASK_CREATED',
   'DELETE /tasks/:id': 'TASK_DELETED',
   'POST /tasks/:id/assign': 'TASK_ASSIGNED',

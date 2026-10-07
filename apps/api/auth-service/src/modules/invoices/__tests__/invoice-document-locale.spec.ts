@@ -51,7 +51,7 @@ function setup(opts: {
       }),
     },
   };
-  return { service: new InvoiceService(prisma as any, { rate: async () => null } as any), prisma };
+  return { service: new InvoiceService(prisma as any, { rate: async () => null } as any, { ensureMain: async () => 'le-main', entityWithBank: async () => null } as any), prisma };
 }
 
 describe('invoice documentLocale', () => {
@@ -102,7 +102,7 @@ describe('invoice documentLocale', () => {
     const { service } = setup({ country: 'IT' });
     const res: any = await service.findOne('inv-1', 'org-1');
     expect(res.data).toEqual({
-      id: 'inv-1', organizationId: 'org-1', clientEmail: 'buchhaltung@kunde.at', items: [], status: 'ISSUED', documentLocale: 'it',
+      id: 'inv-1', organizationId: 'org-1', clientEmail: 'buchhaltung@kunde.at', items: [], status: 'ISSUED', documentLocale: 'it', issuer: null,
     });
   });
 

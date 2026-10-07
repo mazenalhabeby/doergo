@@ -1,4 +1,4 @@
-import { parseAssignedHome, memberScopeFilter, writeRateChange, RateChangeError, normalizeLocale, MEMBER_EMAILS, MEMBER_NOTIFICATION_PREF_KEYS, orgAllowsEmail, pickBooleanPrefs , PRICE_ON_WORKSPACE_MESSAGE } from '@hbcfield/shared';
+import { usableLegalEntityId, COMPANY_UNKNOWN_MESSAGE, parseAssignedHome, memberScopeFilter, writeRateChange, RateChangeError, normalizeLocale, MEMBER_EMAILS, MEMBER_NOTIFICATION_PREF_KEYS, orgAllowsEmail, pickBooleanPrefs , PRICE_ON_WORKSPACE_MESSAGE } from '@hbcfield/shared';
 import {
   Injectable,
   Logger,
@@ -81,6 +81,7 @@ const MANAGER_CANDIDATE_SELECT = {
 
 const ORG_MEMBER_SELECT = {
   id: true,
+  employerEntityId: true,
   email: true,
   firstName: true,
   lastName: true,
@@ -1659,6 +1660,12 @@ export class UsersService implements OnApplicationBootstrap {
     if (dto.firstName !== undefined) data.firstName = dto.firstName;
     if (dto.lastName !== undefined) data.lastName = dto.lastName;
     if (dto.position !== undefined) data.position = dto.position;
+    // The employer on their paperwork: one of THIS organization's active companies, or null.
+    if ((dto as any).employerEntityId !== undefined) {
+      const employer = await usableLegalEntityId(this.prisma as any, organizationId, (dto as any).employerEntityId);
+      if (!employer.ok) throw new BadRequestException({ message: COMPANY_UNKNOWN_MESSAGE, code: 'COMPANY_UNKNOWN' });
+      data.employerEntityId = employer.id;
+    }
     /*
       A birthday is a DAY, and only a day.
 

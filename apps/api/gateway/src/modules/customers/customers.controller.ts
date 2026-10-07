@@ -45,6 +45,8 @@ interface CustomerDto {
   locale?: string | null;
   /** Invoice currency outside a workspace. null / "" = the organization's. */
   currency?: string | null;
+  /** The company that invoices this client outside a workspace. null / "" = the main one. */
+  legalEntityId?: string | null;
   details?: { label: string; value: string }[] | null;
 }
 

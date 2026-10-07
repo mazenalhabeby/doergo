@@ -1,0 +1,86 @@
+import {
+  Controller, Get, Post, Patch, Body, Param, Query, Inject, HttpException, HttpStatus, ForbiddenException,
+} from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { firstValueFrom } from 'rxjs';
+import { Role, CurrentUser, CurrentUserData, isAdmin, accessAllowsAnywhere, type AccessPermissionKey } from '@hbcfield/shared';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { DenyExternal } from '../../common/decorators';
+
+/** Who needs the NAMES of the companies: whoever invoices, or chooses who invoices a workspace or a client. */
+const READ_KEYS: AccessPermissionKey[] = ['canManageInvoices', 'canManageWorkspaces', 'crmEditInfo', 'crmManageClients'];
+
+/**
+ * COMPANIES — the legal entities whose name goes on an invoice (docs/plans/companies-legal-entities.md).
+ *
+ * ⚠️ Writes are ADMIN-only: this is the company's legal and BANK identity — an edit here changes
+ * where clients send money. ⚠️ Bank accounts leave only for `canManageInvoices` (or an admin); a
+ * workspace manager picking "invoices issued by" needs the names, not the IBANs. ⚠️ External
+ * members are refused outright. The organization always comes from the token.
+ */
+@ApiTags('companies')
+@Controller('legal-entities')
+@ApiBearerAuth()
+@DenyExternal()
+export class LegalEntitiesController {
+  constructor(@Inject('AUTH_SERVICE') private readonly authClient: ClientProxy) {}
+
+  private async call(cmd: string, payload: Record<string, unknown>) {
+    const result = await firstValueFrom(this.authClient.send({ cmd }, payload));
+    if (result && result.success === false) {
+      throw new HttpException({ message: result.message, ...(result.code ? { code: result.code } : {}) }, result.statusCode || HttpStatus.BAD_REQUEST);
+    }
+    return result;
+  }
+
+  @Get()
+  @ApiOperation({ summary: "The organization's companies (bank accounts only for invoicing)" })
+  async list(@Query('includeInactive') includeInactive: string | undefined, @CurrentUser() user: CurrentUserData) {
+    const admin = isAdmin(user);
+    if (!admin && !READ_KEYS.some((k) => accessAllowsAnywhere(user.access as any, k))) {
+      throw new ForbiddenException('You do not have permission to see the companies');
+    }
+    const withBank = admin || accessAllowsAnywhere(user.access as any, 'canManageInvoices');
+    return this.call('legal_entity_list', {
+      organizationId: user.organizationId,
+      withBank,
+      includeInactive: admin && includeInactive === 'true',
+    });
+  }
+
+  @Post()
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Add a company' })
+  create(@Body() body: Record<string, unknown>, @CurrentUser() user: CurrentUserData) {
+    return this.call('legal_entity_create', { organizationId: user.organizationId, input: body ?? {} });
+  }
+
+  @Patch(':id')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: "Edit a company's details or bank accounts" })
+  update(@Param('id') id: string, @Body() body: Record<string, unknown>, @CurrentUser() user: CurrentUserData) {
+    return this.call('legal_entity_update', { organizationId: user.organizationId, id, input: body ?? {} });
+  }
+
+  @Post(':id/main')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Make this the main company' })
+  setMain(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
+    return this.call('legal_entity_set_main', { organizationId: user.organizationId, id });
+  }
+
+  @Post(':id/deactivate')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Switch a company off (issued invoices keep it)' })
+  deactivate(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
+    return this.call('legal_entity_set_active', { organizationId: user.organizationId, id, active: false });
+  }
+
+  @Post(':id/reactivate')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Switch a company back on' })
+  reactivate(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
+    return this.call('legal_entity_set_active', { organizationId: user.organizationId, id, active: true });
+  }
+}

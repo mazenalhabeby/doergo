@@ -1,4 +1,5 @@
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   paginated, snapshotRates, usesTwoRates, cleanRateCents,
@@ -9,8 +10,10 @@ import {
   CURRENCY_INVALID_MESSAGE, EXCHANGE_RATE_INVALID_MESSAGE, effectiveHoursBasis, isHoursBasis,
   shiftLengthMinutes,
   labourCost,
+  nextInvoiceNumber, invoiceNumberPrefix, type IssuerSnapshot,
 } from '@hbcfield/shared';
 import { ExchangeRateService } from './exchange-rate.service';
+import { LegalEntitiesService } from './legal-entities.service';
 
 /** The invoice line kinds a caller may file. */
 const LINE_KINDS = new Set(['HOURS', 'DAYS', 'HEADING']);
@@ -24,6 +27,7 @@ export class InvoiceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly rates: ExchangeRateService,
+    private readonly entities: LegalEntitiesService,
   ) {}
 
   /** The organization's currency — what costs, statements and margins are in. */
@@ -92,6 +96,8 @@ export class InvoiceService {
     organizationId: string;
     createdById: string;
     spaceId?: string;
+    /** The company that issues it; omitted = the workspace's → the client's → the main one. */
+    legalEntityId?: string | null;
     clientName?: string;
     clientEmail?: string;
     clientAddress?: string;
@@ -135,12 +141,16 @@ export class InvoiceService {
     let clientEmail = data.clientEmail;
     let clientAddress = data.clientAddress;
     let spaceCurrencyValue: string | null = null;
+    let spaceEntityId: string | null = null;
+    let spaceCustomerId: string | null = null;
     if (data.spaceId) {
       const space = await this.prisma.companyLocation.findFirst({
         where: { id: data.spaceId, organizationId: data.organizationId },
-        select: { name: true, contactName: true, contactEmail: true, address: true, currency: true },
+        select: { name: true, contactName: true, contactEmail: true, address: true, currency: true, legalEntityId: true, sourceCustomerId: true },
       });
       spaceCurrencyValue = space?.currency ?? null;
+      spaceEntityId = space?.legalEntityId ?? null;
+      spaceCustomerId = space?.sourceCustomerId ?? null;
       if (space) {
         clientName = clientName || space.contactName || space.name;
         clientEmail = clientEmail ?? space.contactEmail ?? undefined;
@@ -197,8 +207,12 @@ export class InvoiceService {
     const badWorker = await this.unknownWorker(data.organizationId, items);
     if (badWorker) return badWorker;
 
-    // The currency: what the screen sent, else the workspace's, else the organization's.
-    const money = await this.currencyFields(data.organizationId, data, currencyOrNull(spaceCurrencyValue));
+    // Who issues it — resolved once and stored, so the number series and the paper agree.
+    const issuer = await this.issuingEntity(data.organizationId, data.legalEntityId, spaceEntityId, spaceCustomerId);
+    if ('error' in issuer) return issuer.error;
+
+    // The currency: what the screen sent, else the workspace's, else the company's, else the organization's.
+    const money = await this.currencyFields(data.organizationId, data, currencyOrNull(spaceCurrencyValue) ?? currencyOrNull(issuer.entity.currency));
     if ('error' in money) return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: money.error };
 
     const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
@@ -213,12 +227,13 @@ export class InvoiceService {
     // re-reading the latest number each pass, before surfacing the error.
     let invoice;
     for (let attempt = 0; ; attempt++) {
-      const invoiceNumber = await this.generateInvoiceNumber(data.organizationId);
+      const invoiceNumber = await this.generateInvoiceNumber(data.organizationId, issuer.entity.invoicePrefix);
       try {
         invoice = await this.prisma.invoice.create({
           data: {
             invoiceNumber,
             spaceId: data.spaceId,
+            legalEntityId: issuer.entity.id,
             clientName,
             clientEmail,
             clientAddress,
@@ -268,6 +283,7 @@ export class InvoiceService {
     organizationId: string;
     status?: string;
     spaceId?: string;
+    legalEntityId?: string;
     page?: number;
     limit?: number;
   }) {
@@ -282,6 +298,9 @@ export class InvoiceService {
     if (query.spaceId) {
       where.spaceId = query.spaceId;
     }
+    if (query.legalEntityId) {
+      where.legalEntityId = query.legalEntityId;
+    }
 
     const [invoices, total] = await Promise.all([
       this.prisma.invoice.findMany({
@@ -294,6 +313,7 @@ export class InvoiceService {
           createdBy: {
             select: { id: true, firstName: true, lastName: true, email: true },
           },
+          legalEntity: { select: { id: true, legalName: true, label: true } },
         },
       }),
       this.prisma.invoice.count({ where }),
@@ -321,7 +341,10 @@ export class InvoiceService {
       };
     }
 
-    return { success: true, data: { ...invoice, documentLocale: await this.documentLocale(invoice) } };
+    return {
+      success: true,
+      data: { ...invoice, issuer: await this.issuerFor(invoice), documentLocale: await this.documentLocale(invoice) },
+    };
   }
 
   /**
@@ -368,6 +391,8 @@ export class InvoiceService {
       servicePeriodFrom?: string | null;
       servicePeriodTo?: string | null;
       notes?: string;
+      /** Another company issues this draft; null = back to the workspace's / client's / main one. */
+      legalEntityId?: string | null;
     },
   ) {
     const invoice = await this.prisma.invoice.findFirst({
@@ -427,16 +452,42 @@ export class InvoiceService {
       updateData.total = total;
     }
 
-    const updated = await this.prisma.invoice.update({
-      where: { id },
-      data: updateData,
-      include: {
-        items: true,
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-      },
-    });
+    // Another company: a draft takes the new company's number series. An issued number never changes.
+    let renumber: string | null = null;
+    if (data.legalEntityId !== undefined) {
+      const space = invoice.spaceId
+        ? await this.prisma.companyLocation.findFirst({ where: { id: invoice.spaceId, organizationId }, select: { legalEntityId: true, sourceCustomerId: true } })
+        : null;
+      const issuer = await this.issuingEntity(organizationId, data.legalEntityId, space?.legalEntityId ?? null, space?.sourceCustomerId ?? null);
+      if ('error' in issuer) return issuer.error;
+      if (issuer.entity.id !== invoice.legalEntityId) {
+        updateData.legalEntityId = issuer.entity.id;
+        if (!invoice.invoiceNumber.startsWith(invoiceNumberPrefix(issuer.entity.invoicePrefix, new Date().getFullYear()))) {
+          renumber = issuer.entity.invoicePrefix;
+        }
+      }
+    }
+
+    let updated;
+    for (let attempt = 0; ; attempt++) {
+      if (renumber !== null) updateData.invoiceNumber = await this.generateInvoiceNumber(organizationId, renumber);
+      try {
+        updated = await this.prisma.invoice.update({
+          where: { id },
+          data: updateData,
+          include: {
+            items: true,
+            createdBy: {
+              select: { id: true, firstName: true, lastName: true, email: true },
+            },
+          },
+        });
+        break;
+      } catch (err: any) {
+        if (renumber !== null && err?.code === 'P2002' && attempt < 4) continue;
+        throw err;
+      }
+    }
 
     return { success: true, data: updated };
   }
@@ -504,6 +555,21 @@ export class InvoiceService {
     const updateData: any = { status };
     if (status === 'PAID') {
       updateData.paidAt = new Date();
+    }
+    /*
+      ⚠️ ISSUING FREEZES THE ISSUER. The company's name, address, tax ids and the bank account the
+      client is told to pay are copied onto the invoice, so moving the office next year never
+      rewrites a filed document. Back to draft clears it — the draft reads the live company again.
+    */
+    if (status === 'ISSUED') {
+      const live = await this.issuerFor({ ...invoice, issuer: null });
+      if (!live) {
+        return { success: false, statusCode: HttpStatus.BAD_REQUEST, code: 'COMPANY_MISSING', message: 'This invoice has no company to issue it — choose one first.' };
+      }
+      updateData.issuer = live;
+      updateData.legalEntityId = live.legalEntityId;
+    } else if (status === 'DRAFT') {
+      updateData.issuer = Prisma.DbNull;
     }
 
     const updated = await this.prisma.invoice.update({
@@ -1390,27 +1456,41 @@ export class InvoiceService {
     return { hourEntries, dayEntries, workDays: [...workDays] };
   }
 
-  private async generateInvoiceNumber(organizationId: string): Promise<string> {
+  /**
+   * `{prefix}-{year}-{0001}` — one series per company prefix per year (shared nextInvoiceNumber).
+   * Read-then-write: callers retry on P2002, which @@unique([organizationId, invoiceNumber]) raises.
+   */
+  private async generateInvoiceNumber(organizationId: string, entityPrefix: string | null): Promise<string> {
     const year = new Date().getFullYear();
-    const prefix = `INV-${year}-`;
-
     const lastInvoice = await this.prisma.invoice.findFirst({
-      where: {
-        organizationId,
-        invoiceNumber: { startsWith: prefix },
-      },
+      where: { organizationId, invoiceNumber: { startsWith: invoiceNumberPrefix(entityPrefix, year) } },
       orderBy: { invoiceNumber: 'desc' },
       select: { invoiceNumber: true },
     });
+    return nextInvoiceNumber(entityPrefix, year, lastInvoice?.invoiceNumber ?? null);
+  }
 
-    let nextSeq = 1;
-    if (lastInvoice) {
-      const lastSeq = parseInt(lastInvoice.invoiceNumber.slice(prefix.length), 10);
-      if (!isNaN(lastSeq)) {
-        nextSeq = lastSeq + 1;
-      }
-    }
+  /**
+   * The company that issues an invoice: the one chosen (must be this organization's and on) →
+   * the workspace's → its client's → the main one. A chosen id that is not usable is REFUSED,
+   * never silently replaced — the biller picked a name to go on the paper.
+   */
+  private async issuingEntity(organizationId: string, chosen: string | null | undefined, workspace: string | null, customerId: string | null) {
+    const refused = await this.entities.assertUsable(organizationId, chosen);
+    if (refused) return { error: refused };
+    const client = customerId
+      ? (await this.prisma.customer.findFirst({ where: { id: customerId, organizationId }, select: { legalEntityId: true } }))?.legalEntityId ?? null
+      : null;
+    const entity = await this.entities.resolveIssuer(organizationId, { invoice: chosen ?? null, workspace, client });
+    if (!entity) return { error: { success: false as const, statusCode: HttpStatus.BAD_REQUEST, code: 'COMPANY_MISSING', message: 'No company is set up to issue invoices.' } };
+    return { entity };
+  }
 
-    return `${prefix}${String(nextSeq).padStart(4, '0')}`;
+  /** The issuer as the invoice shows it: the frozen copy once issued, the live company for a draft. */
+  private async issuerFor(invoice: { organizationId: string; legalEntityId: string | null; issuer: unknown; currency: string; status?: string }): Promise<IssuerSnapshot | null> {
+    if (invoice.issuer && typeof invoice.issuer === 'object') return invoice.issuer as IssuerSnapshot;
+    const id = invoice.legalEntityId ?? (await this.entities.ensureMain(invoice.organizationId));
+    const entity = await this.entities.entityWithBank(invoice.organizationId, id);
+    return entity ? this.entities.snapshotOf(entity, invoice.currency) : null;
   }
 }

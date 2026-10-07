@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException 
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { resolveCrmCaps, ownsClient, parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, parseCurrency, CURRENCY_INVALID_MESSAGE, CRM_COLD_DAYS, CRM_CONTACT_TYPES, type CrmCaps } from '@hbcfield/shared';
-import { findPrior } from '@hbcfield/shared';
+import { findPrior, usableLegalEntityId, COMPANY_UNKNOWN_MESSAGE } from '@hbcfield/shared';
 
 /** An id a phone made (UUIDv7) — the same alphabet the gateway accepts. */
 const CLIENT_ID = /^[A-Za-z0-9_-]{16,64}$/;
@@ -55,6 +55,8 @@ export interface CustomerInput {
   locale?: string | null;
   /** Invoice currency outside a workspace; null / "" = the organization's. */
   currency?: string | null;
+  /** The company that invoices this client outside a workspace; null / "" = the main one. */
+  legalEntityId?: string | null;
   details?: CustomerDetail[] | null; // flexible custom key-value attributes
 }
 
@@ -81,6 +83,7 @@ const customerSelect = {
   regNumber: true,
   locale: true,
   currency: true,
+  legalEntityId: true,
   details: true,
   createdAt: true,
   updatedAt: true,
@@ -153,6 +156,13 @@ function sanitizeIds(ids: unknown): string[] | undefined {
 @Injectable()
 export class CustomersService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /** A client's company: one of this organization's active companies, or null. Anything else is refused. */
+  private async clientCompany(organizationId: string, value: unknown): Promise<string | null | undefined> {
+    const r = await usableLegalEntityId(this.prisma as any, organizationId, value);
+    if (!r.ok) throw new BadRequestException({ message: COMPANY_UNKNOWN_MESSAGE, code: 'COMPANY_UNKNOWN' });
+    return r.id;
+  }
 
   /** Resolve a caller's effective CRM abilities from their role (server-authoritative). */
   private async crmCapsFor(caller: CrmCaller | undefined, organizationId: string): Promise<CrmCaps> {
@@ -711,6 +721,7 @@ export class CustomersService {
     if (!name) throw new BadRequestException('Customer name is required');
     const locale = clientLocaleFrom(dto.locale) ?? null;
     const currency = clientCurrencyFrom(dto.currency) ?? null;
+    const legalEntityId = (await this.clientCompany(organizationId, dto.legalEntityId)) ?? null;
     await this.assertRefsInOrg(dto, organizationId);
     // ownerId must be a real member of this org (else drop it).
     const ownerId = dto.ownerId ? ((await this.keepOrgUserIds([dto.ownerId], organizationId))[0] ?? null) : null;
@@ -743,6 +754,7 @@ export class CustomersService {
         regNumber: dto.regNumber ?? null,
         locale,
         currency,
+        legalEntityId,
         details: (sanitizeDetails(dto.details) ?? undefined) as any,
       },
       select: customerSelect,
@@ -760,7 +772,7 @@ export class CustomersService {
     const touchesPortal = dto.isPortalResident !== undefined || dto.portalId !== undefined;
     const touchesOwnership = dto.ownerId !== undefined || dto.managerIds !== undefined;
     const touchesStatus = dto.status !== undefined;
-    const infoKeys = ['name', 'contactName', 'email', 'phone', 'address', 'notes', 'isActive', 'spaceId', 'type', 'details', 'legalName', 'website', 'industry', 'vatId', 'regNumber', 'locale', 'currency'] as const;
+    const infoKeys = ['name', 'contactName', 'email', 'phone', 'address', 'notes', 'isActive', 'spaceId', 'type', 'details', 'legalName', 'website', 'industry', 'vatId', 'regNumber', 'locale', 'currency', 'legalEntityId'] as const;
     const touchesInfo = infoKeys.some((k) => dto[k] !== undefined);
     const reach = this.canReach(caps, existing, caller);
     if (existing.isPortalResident || touchesPortal || touchesOwnership) {
@@ -800,6 +812,9 @@ export class CustomersService {
     if (locale !== undefined) data.locale = locale;
     const currency = clientCurrencyFrom(dto.currency);
     if (currency !== undefined) data.currency = currency;
+    // Who invoices this client — info, under the same editInfo gate as the currency.
+    const company = await this.clientCompany(organizationId, dto.legalEntityId);
+    if (company !== undefined) data.legalEntityId = company;
     if (dto.type !== undefined) data.type = dto.type === 'COMPANY' ? 'COMPANY' : 'PERSON';
     if (dto.details !== undefined) data.details = (sanitizeDetails(dto.details) ?? []) as any;
     if (dto.managerIds !== undefined) data.managerIds = await this.keepOrgUserIds(sanitizeIds(dto.managerIds) ?? [], organizationId);

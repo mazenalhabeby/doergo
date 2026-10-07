@@ -84,7 +84,7 @@ export class InvoicesController {
 
     if (result && result.success === false) {
       throw new HttpException(
-        { message: result.message },
+        { message: result.message, ...(result.code ? { code: result.code } : {}) },
         result.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -96,7 +96,7 @@ export class InvoicesController {
   @RequirePermission('canManageInvoices')
   @ApiOperation({ summary: 'List invoices' })
   async findAll(
-    @Query() query: { status?: string; spaceId?: string; page?: string; limit?: string },
+    @Query() query: { status?: string; spaceId?: string; legalEntityId?: string; page?: string; limit?: string },
     @CurrentUser() user: CurrentUserData,
   ) {
     return firstValueFrom(
@@ -104,6 +104,7 @@ export class InvoicesController {
         organizationId: user.organizationId,
         status: query.status,
         spaceId: query.spaceId,
+        legalEntityId: query.legalEntityId || undefined,
         page: query.page ? Number(query.page) : undefined,
         limit: query.limit ? Number(query.limit) : undefined,
       }),
@@ -131,7 +132,7 @@ export class InvoicesController {
       }),
     );
     if (result && result.success === false) {
-      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
+      throw new HttpException({ message: result.message, ...(result.code ? { code: result.code } : {}) }, result.statusCode || HttpStatus.BAD_REQUEST);
     }
     // Carries no cost — through the funnel anyway, so "every route" stays true.
     return this.forCaller(result, user);
@@ -169,7 +170,7 @@ export class InvoicesController {
     );
     if (result && result.success === false) {
       throw new HttpException(
-        { message: result.message },
+        { message: result.message, ...(result.code ? { code: result.code } : {}) },
         result.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -192,7 +193,7 @@ export class InvoicesController {
 
     if (result && result.success === false) {
       throw new HttpException(
-        { message: result.message },
+        { message: result.message, ...(result.code ? { code: result.code } : {}) },
         result.statusCode || HttpStatus.NOT_FOUND,
       );
     }
@@ -220,7 +221,7 @@ export class InvoicesController {
 
     if (result && result.success === false) {
       throw new HttpException(
-        { message: result.message },
+        { message: result.message, ...(result.code ? { code: result.code } : {}) },
         result.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -246,7 +247,7 @@ export class InvoicesController {
 
     if (result && result.success === false) {
       throw new HttpException(
-        { message: result.message },
+        { message: result.message, ...(result.code ? { code: result.code } : {}) },
         result.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -270,7 +271,7 @@ export class InvoicesController {
 
     if (result && result.success === false) {
       throw new HttpException(
-        { message: result.message },
+        { message: result.message, ...(result.code ? { code: result.code } : {}) },
         result.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -296,7 +297,7 @@ export class InvoicesController {
 
     if (result && result.success === false) {
       throw new HttpException(
-        { message: result.message },
+        { message: result.message, ...(result.code ? { code: result.code } : {}) },
         result.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -322,7 +323,7 @@ export class InvoicesController {
 
     if (result && result.success === false) {
       throw new HttpException(
-        { message: result.message },
+        { message: result.message, ...(result.code ? { code: result.code } : {}) },
         result.statusCode || HttpStatus.BAD_REQUEST,
       );
     }

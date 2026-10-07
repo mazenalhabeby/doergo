@@ -399,6 +399,8 @@ enum SprintStatus {
 // Table dropped in migration 20260807150000_drop_legacy_orgrole.
 
 model Organization {
+  /// The legal companies inside this organization (docs/plans/companies-legal-entities.md).
+  legalEntities LegalEntity[]
   id        String   @id @default(cuid())
   name      String
   // What the organization pays in: workers' own rates, statements, the default
@@ -744,6 +746,9 @@ model SpaceShareRequest {
 
 model User {
   id           String @id @default(cuid())
+  /// The legal company that employs this person — contracts and certificates carry its name.
+  employerEntityId String?
+  employerEntity   LegalEntity? @relation("LegalEntityEmployees", fields: [employerEntityId], references: [id], onDelete: SetNull)
   email        String @unique
   passwordHash String
   firstName    String
@@ -1854,6 +1859,9 @@ model Asset {
 // reports link here so reporting can group reliably by customer (vs free text).
 model Customer {
   id             String       @id @default(cuid())
+  /// Which company invoices this client when the workspace does not say (null = the main company).
+  legalEntityId  String?
+  legalEntity    LegalEntity? @relation("LegalEntityCustomers", fields: [legalEntityId], references: [id], onDelete: SetNull)
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -2449,6 +2457,9 @@ model CompanyLocation {
   // CUSTOMER kind: per-space override of the org's default billable labor rate
   // (integer EUR cents). Null → fall back to Organization.billableRateCents.
   billableRateCents Int?
+  /// Which company invoices this workspace's work (null = the client's, else the main company).
+  legalEntityId String?
+  legalEntity   LegalEntity? @relation("LegalEntityWorkspaces", fields: [legalEntityId], references: [id], onDelete: SetNull)
   /// CUSTOMER kind: what an hour at this client costs us, if that is a fact
   /// about the client rather than about the person. Usually null — cost
   /// normally lives on the member, and the BILL lives here.
@@ -4286,6 +4297,67 @@ enum InvoiceStatus {
   REFUNDED
 }
 
+/// A legal company inside an organization — whose name, tax ids and bank go on an invoice or a
+/// contract (docs/plans/companies-legal-entities.md). Exactly one `isMain` per organization.
+model LegalEntity {
+  id             String   @id @default(cuid())
+  organizationId String
+  legalName      String
+  label          String?
+  addressLine1   String?
+  addressLine2   String?
+  postalCode     String?
+  city           String?
+  state          String?
+  country        String?
+  vatId          String?
+  taxId          String?
+  registerNumber String?
+  email          String?
+  phone          String?
+  website        String?
+  logoUrl        String?
+  currency       String?
+  /// Invoice numbers: `{prefix}-{year}-{0001}`, one series per company per year.
+  invoicePrefix  String   @default("INV")
+  isMain         Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bankAccounts LegalEntityBankAccount[]
+  workspaces   CompanyLocation[]        @relation("LegalEntityWorkspaces")
+  customers    Customer[]               @relation("LegalEntityCustomers")
+  employees    User[]                   @relation("LegalEntityEmployees")
+  invoices     Invoice[]                @relation("LegalEntityInvoices")
+
+  @@index([organizationId])
+  @@map("legal_entities")
+}
+
+model LegalEntityBankAccount {
+  id             String   @id @default(cuid())
+  legalEntityId  String
+  organizationId String
+  label          String?
+  holder         String?
+  bankName       String?
+  iban           String?
+  bic            String?
+  accountNumber  String?
+  routingNumber  String?
+  currency       String?
+  isDefault      Boolean  @default(false)
+  position       Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  legalEntity LegalEntity @relation(fields: [legalEntityId], references: [id], onDelete: Cascade)
+
+  @@index([legalEntityId])
+  @@map("legal_entity_bank_accounts")
+}
+
 model Invoice {
   id            String        @id @default(cuid())
   invoiceNumber String // Auto-generated: INV-YYYY-XXXX
@@ -4294,6 +4366,12 @@ model Invoice {
   // The CUSTOMER-kind space this invoice bills (plain marker, no FK — mirrors
   // InvoiceItem.taskId/reportId). Null = ad-hoc invoice not tied to a space.
   spaceId String?
+
+  /// The company that issues it. `issuer` freezes its identity + bank when the invoice is ISSUED
+  /// (shared IssuerSnapshot) — a later edit of the company never rewrites a filed invoice.
+  legalEntityId String?
+  legalEntity   LegalEntity? @relation("LegalEntityInvoices", fields: [legalEntityId], references: [id], onDelete: SetNull)
+  issuer        Json?
 
   // Client info (auto-filled from the space's contact fields at create time,
   // then editable — snapshotted so the invoice is stable if the space changes)

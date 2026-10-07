@@ -329,6 +329,7 @@ export class OrganizationsController {
           firstName: dto.firstName,
           lastName: dto.lastName,
           position: dto.position,
+          employerEntityId: dto.employerEntityId,
           // Vacation entitlement. Forwarded even when null — null means "use
           // the organization's default" and has to reach the database as a
           // clear, not be dropped as an omitted field.
