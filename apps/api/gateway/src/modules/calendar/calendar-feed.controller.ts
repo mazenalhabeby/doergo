@@ -7,14 +7,9 @@ import { Public } from '../../common/decorators';
 import { CalendarGatewayService } from './calendar.service';
 
 /**
- * The private ICS link a member pastes into Google, Outlook or the iPhone. Public by nature — the
- * token IS the credential (32 random bytes, stored only as a hash). Throttled hard: calendar apps
- * poll every few hours, a guesser polls every millisecond. Every failure is the same 404.
- */
-/**
  * Per LINK, not per address: Google and Outlook fetch every subscriber's feed from a few shared
  * addresses, so a per-IP limit would refuse real subscriptions as more members switch it on. Each
- * link may be fetched 30 times a minute; the per-IP limit above only stops a flood.
+ * link may be fetched 30 times a minute; the per-IP limit on the route only stops a flood.
  */
 const PER_LINK_PER_MINUTE = 30;
 const hits = new Map<string, { at: number; n: number }>();
@@ -31,6 +26,12 @@ function allowLink(token: string): boolean {
   return h.n <= PER_LINK_PER_MINUTE;
 }
 
+/**
+ * The private ICS link a member pastes into Google, Outlook or the iPhone. Public by nature — the
+ * token IS the credential (32 random bytes, stored only as a hash). Throttled hard: calendar apps
+ * poll every few hours, a guesser polls every millisecond. Every refusal is the same 404; a
+ * failure on OUR side is a 503 (see the catch below).
+ */
 @ApiExcludeController()
 @Controller('calendar-feed')
 export class CalendarFeedController {
@@ -47,8 +48,17 @@ export class CalendarFeedController {
     try {
       const r: any = await this.svc.read('calendar_feed_render', { token: m[1] });
       ics = r?.data?.ics;
-    } catch {
-      throw new NotFoundException();
+    } catch (e) {
+      /*
+        A refused link and a failure on our side must not look alike. Outlook treats a 404 as "this
+        calendar is gone" and can drop the subscription — so a restart or a timeout answering 404
+        would quietly cut every Outlook user off. Anything that is not a refusal is "try again".
+      */
+      const status = e instanceof HttpException ? e.getStatus() : 0;
+      // Only a REFUSAL (bad, unknown, switched off) is 404 — a timeout (408) or a rate limit is not.
+      if (status === 400 || status === 401 || status === 403 || status === 404) throw new NotFoundException();
+      res.setHeader('Retry-After', '300');
+      throw new HttpException('Calendar temporarily unavailable', HttpStatus.SERVICE_UNAVAILABLE);
     }
     if (typeof ics !== 'string') throw new NotFoundException();
     res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
