@@ -53,6 +53,8 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
   calendar_canceled: CALENDAR,
   calendar_answer: CALENDAR,
   calendar_reminder: CALENDAR,
+  // "A new version is ready" opens the full-page update (the layout handles it before routing); no screen.
+  app_update: () => null,
 
   // Tasks
   task_assigned: TASK,

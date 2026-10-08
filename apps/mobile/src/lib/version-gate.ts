@@ -1,5 +1,7 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import i18next from 'i18next';
+import type { ReleaseNote } from '@hbcfield/shared/client';
 import { API_URL } from './api/client';
 import { IN_APP_UPDATES_SUPPORTED, checkStore } from './in-app-updates';
 
@@ -33,6 +35,8 @@ export interface VersionStatus {
   minimum: string | null;
   latest: string | null;
   downloadUrl: string | null;
+  /** What is new in `latest`, in this phone's language — from the server, never bundled (the page runs in the old app). */
+  whatsNew?: ReleaseNote | null;
 }
 
 /** Numeric compare of dotted versions. Returns <0, 0, >0 like a comparator. */
@@ -62,7 +66,8 @@ export async function checkVersion(): Promise<VersionStatus> {
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-    const res = await fetch(`${API_URL}/app/version`, { signal: controller.signal });
+    const lang = encodeURIComponent((i18next.language || 'en').slice(0, 2));
+    const res = await fetch(`${API_URL}/app/version?lang=${lang}`, { signal: controller.signal });
     clearTimeout(timer);
     if (!res.ok) return open; // 404 on an older API, 5xx, anything — let it run
 
@@ -70,6 +75,7 @@ export async function checkVersion(): Promise<VersionStatus> {
       minimum?: string | null;
       latest?: string | null;
       downloads?: { android?: string | null; ios?: string | null };
+      whatsNew?: ReleaseNote | null;
     };
 
     const minimum = data?.minimum ?? null;
@@ -109,6 +115,7 @@ export async function checkVersion(): Promise<VersionStatus> {
       minimum,
       latest,
       downloadUrl,
+      whatsNew: data?.whatsNew ?? null,
     };
   } catch {
     return open;

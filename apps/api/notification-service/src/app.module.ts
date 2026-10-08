@@ -22,6 +22,7 @@ import { CrmReminderHandler } from './handlers/crm-reminder.handler';
 import { DocumentNotificationHandler } from './handlers/document-notification.handler';
 import { TimeOffNotificationHandler } from './handlers/time-off-notification.handler';
 import { NotificationStore } from './common/notification-store.service';
+import { AppUpdateNotificationHandler } from './handlers/app-update-notification.handler';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { NotificationStore } from './common/notification-store.service';
     CrmReminderHandler,
     DocumentNotificationHandler,
     TimeOffNotificationHandler,
+    AppUpdateNotificationHandler,
   ],
   providers: [NotificationStore, RetentionService],
 })

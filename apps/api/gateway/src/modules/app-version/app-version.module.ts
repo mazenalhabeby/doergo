@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AppVersionController } from './app-version.controller';
+import { AppUpdateNoticeController, AppVersionController } from './app-version.controller';
 
-@Module({ controllers: [AppVersionController] })
+@Module({ controllers: [AppVersionController, AppUpdateNoticeController] })
 export class AppVersionModule {}

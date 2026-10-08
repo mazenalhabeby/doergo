@@ -115,6 +115,11 @@ export function pushRouting(type?: string | null): PushRouting {
   const t = (type ?? '').toLowerCase();
   const isAttendance = ATTENDANCE_PREFIXES.some((p) => t.startsWith(p));
   const isTimeSensitive = TIME_SENSITIVE_PREFIXES.some((p) => t.startsWith(p));
+  /*
+    "A new version is ready" is about the app, not a task: the DEFAULT channel, which every build
+    ever shipped registers. A new channel would be dropped by exactly the old phones it is for.
+  */
+  if (t.startsWith('app_update')) return { channelId: PUSH_CHANNELS.DEFAULT, interruptionLevel: 'active' };
   return {
     channelId: isAttendance ? PUSH_CHANNELS.ATTENDANCE : PUSH_CHANNELS.TASKS,
     interruptionLevel: isTimeSensitive ? 'time-sensitive' : 'active',

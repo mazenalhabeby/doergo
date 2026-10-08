@@ -147,3 +147,6 @@ export * from './tasks/handover';
 export * from './tasks/job-time';
 export * from './tasks/crew';
 export * from './tasks/checklist';
+
+// What is new in a store version of the phone app (the full-page update) — pure, client-safe
+export * from './app-release/release-notes';

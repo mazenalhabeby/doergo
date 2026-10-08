@@ -15,6 +15,7 @@ import { SocketProvider, useSocketContext } from '../../src/contexts/socket-cont
 import { LocationTrackingProvider } from '../../src/contexts/location-tracking-context';
 import { DocumentRequirementsProvider } from '../../src/contexts/document-requirements-context';
 import { useToast } from '../../src/island/island-context';
+import { showUpdatePageNow } from '../../src/components/update-page';
 import { useAuth } from '../../src/contexts/auth-context';
 import { activeChat } from '../../src/lib/active-chat';
 import { SocketEvents } from '@hbcfield/shared/client';
@@ -127,6 +128,8 @@ export default function AppLayout() {
   const calendarToast = useToast();
   const handleNotificationResponse = useCallback((response: NotificationResponse) => {
     const data = response.notification?.request?.content?.data as Record<string, unknown> | undefined;
+    // "A new version is ready": open the full-page update, even after "Later".
+    if (data?.type === 'app_update') { showUpdatePageNow(); return; }
     // A calendar button (Done, +10 min, Accept …) does its one thing and stays where the member is.
     if (isCalendarAction(response.actionIdentifier)) {
       void runCalendarAction(response.actionIdentifier, data).then((r) => {

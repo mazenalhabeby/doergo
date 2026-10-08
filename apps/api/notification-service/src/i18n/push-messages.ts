@@ -24,6 +24,9 @@ import type { SupportedLocale } from '@hbcfield/shared';
  *    apps, which address the member informally.
  */
 const en = {
+  // ── App updates ─────────────────────────────────────────────────────────
+  'app.update.title': 'HBCField {{version}} is ready',
+  'app.update.body': "See what's new. Updating takes about a minute.",
   // ── Common ──────────────────────────────────────────────────────────────
   'common.verbatim': '{{text}}',
   'common.aMember': 'A member',
@@ -267,6 +270,9 @@ export type PushPluralKey = PushKey extends infer K
   : never;
 
 const de: Record<PushKey, string> = {
+  // ── App updates ─────────────────────────────────────────────────────────
+  'app.update.title': 'HBCField {{version}} ist da',
+  'app.update.body': 'Sehen Sie, was neu ist. Das Update dauert etwa eine Minute.',
   'common.verbatim': '{{text}}',
   'common.aMember': 'Ein Mitglied',
   'common.someone': 'Jemand',
@@ -492,6 +498,9 @@ const de: Record<PushKey, string> = {
 };
 
 const es: Record<PushKey, string> = {
+  // ── App updates ─────────────────────────────────────────────────────────
+  'app.update.title': 'HBCField {{version}} está listo',
+  'app.update.body': 'Mira las novedades. Actualizar tarda un minuto.',
   'common.verbatim': '{{text}}',
   'common.aMember': 'Un miembro',
   'common.someone': 'Alguien',
@@ -717,6 +726,9 @@ const es: Record<PushKey, string> = {
 };
 
 const fr: Record<PushKey, string> = {
+  // ── App updates ─────────────────────────────────────────────────────────
+  'app.update.title': 'HBCField {{version}} est prêt',
+  'app.update.body': 'Découvrez les nouveautés. La mise à jour prend une minute.',
   'common.verbatim': '{{text}}',
   'common.aMember': 'Un membre',
   'common.someone': 'Quelqu’un',
@@ -942,6 +954,9 @@ const fr: Record<PushKey, string> = {
 };
 
 const it: Record<PushKey, string> = {
+  // ── App updates ─────────────────────────────────────────────────────────
+  'app.update.title': 'HBCField {{version}} è pronto',
+  'app.update.body': "Scopri le novità. L'aggiornamento richiede un minuto.",
   'common.verbatim': '{{text}}',
   'common.aMember': 'Un membro',
   'common.someone': 'Qualcuno',

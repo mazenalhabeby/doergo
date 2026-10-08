@@ -156,6 +156,36 @@ export class PushService {
     return { success: true, sent, failed };
   }
 
+  /**
+   * One notification per PERSON, to the phone they used most recently — for a message about the
+   * person rather than about a moment (a new app version). `sendToUsers` reaches every token, and
+   * a member who reinstalled ten times would get ten copies of the same news.
+   */
+  async sendToNewestDevice(userIds: string[], text: LocalizedText, data?: Record<string, any>) {
+    const ids = [...new Set(userIds.filter(Boolean))];
+    if (!ids.length) return { success: true, sent: 0, failed: 0 };
+    const rows: Array<{ userId: string; token: string }> = await this.prisma.userPushToken.findMany({
+      where: { userId: { in: ids } },
+      orderBy: { updatedAt: 'desc' },
+      select: { userId: true, token: true },
+    });
+    const newest = new Map<string, string>();
+    for (const r of rows) if (!newest.has(r.userId) && Expo.isExpoPushToken(r.token)) newest.set(r.userId, r.token);
+    const localeOf = await this.locales.localesFor([...newest.keys()]);
+    const byLocale = new Map<SupportedLocale, string[]>();
+    for (const [userId, token] of newest) {
+      const locale = localeOf.get(userId) ?? DEFAULT_LOCALE;
+      byLocale.set(locale, [...(byLocale.get(locale) ?? []), token]);
+    }
+    let sent = 0, failed = 0;
+    for (const [locale, tokens] of byLocale) {
+      const { title, body } = renderText(locale, text);
+      const r = await this.deliver(tokens, title, body, data);
+      sent += r.sent; failed += r.failed;
+    }
+    return { success: true, sent, failed, reached: [...newest.keys()] };
+  }
+
   async sendToUser(userId: string, text: LocalizedText, data?: Record<string, any>) {
     return this.sendToUsers([userId], text, data);
   }
