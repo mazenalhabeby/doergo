@@ -4659,6 +4659,14 @@
       "leave": "Time off",
       "holidays": "Holidays",
       "documents": "Documents"
-    }
+    },
+    "starts": "Starts",
+    "ends": "Ends",
+    "durationAuto": "Duration: {{value}}",
+    "endBeforeStart": "It must end after it starts.",
+    "tooLong": "At most {{days}} days.",
+    "durDays": "{{n}} d",
+    "durHours": "{{n}} h",
+    "durMinutes": "{{n}} min"
   }
 }

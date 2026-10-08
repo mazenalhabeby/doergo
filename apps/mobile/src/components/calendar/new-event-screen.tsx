@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'rea
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
-  MEETING_PROVIDER_NAMES, cleanPhone, meetingProvider, moduleAnywhere, parseQuickAdd,
+  MEETING_PROVIDER_NAMES, cleanPhone, meetingProvider, moduleAnywhere, localInstant, spanMinutes, spanProblem, moveEndWithStart, durationText,
   type CallDirection, type MeetingMode, type PlaceKind,
 } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
@@ -19,7 +19,6 @@ import { dayKey, forgetCalendarPages } from './calendar-data';
 import { calendarError } from './errors';
 import { offsetText } from './event-sheet';
 
-const DURATIONS = [15, 30, 60, 90, 120];
 const REMIND = [0, 10, 30, 60, 1440];
 type Kind = 'APPOINTMENT' | 'REMINDER';
 
@@ -46,11 +45,12 @@ export function NewEventScreen() {
   const startHour = typeof p.hour === 'string' && /^\d{1,2}$/.test(p.hour) ? Number(p.hour) : null;
 
   const [kind, setKind] = useState<Kind>('APPOINTMENT');
-  const [smart, setSmart] = useState('');
   const [title, setTitle] = useState('');
   const [day, setDay] = useState(startDay);
+  // No time = all day. The end is a day and a time too; the duration is worked out, never picked.
   const [time, setTime] = useState(startHour != null ? `${String(startHour).padStart(2, '0')}:00` : '');
-  const [duration, setDuration] = useState(60);
+  const [endDay, setEndDay] = useState(startDay);
+  const [endTime, setEndTime] = useState(startHour != null ? `${String(Math.min(startHour + 1, 23)).padStart(2, '0')}:00` : '');
   const [mode, setMode] = useState<MeetingMode>('IN_PERSON');
   const [place, setPlace] = useState<PlaceKind>('OFFICE');
   const [offices, setOffices] = useState<{ id: string; name: string }[]>([]);
@@ -68,7 +68,7 @@ export function NewEventScreen() {
   const [peopleQ, setPeopleQ] = useState('');
   const [found, setFound] = useState<CalendarPerson[]>([]);
   const [reminders, setReminders] = useState<number[]>([10]);
-  const [sheet, setSheet] = useState<'day' | 'time' | null>(null);
+  const [sheet, setSheet] = useState<'day' | 'time' | 'endDay' | 'endTime' | null>(null);
   const [busy, setBusy] = useState(false);
 
   // Our offices: the workspaces this member can see (the server re-checks they work there).
@@ -80,21 +80,6 @@ export function NewEventScreen() {
       if (pick) setOfficeId(pick.id); else setPlace('ADDRESS');
     }).catch(() => setPlace('ADDRESS'));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // The sentence fills the fields as it is typed; every field stays editable.
-  const parsed = useMemo(() => {
-    if (!smart.trim()) return null;
-    const now = new Date();
-    return parseQuickAdd(smart, dayKey(now), now.getHours() * 60 + now.getMinutes());
-  }, [smart]);
-  useEffect(() => {
-    if (!parsed) return;
-    setKind(parsed.kind);
-    if (parsed.title) setTitle(parsed.title);
-    if (parsed.date) setDay(parsed.date);
-    if (parsed.time) setTime(parsed.time);
-    if (parsed.durationMin) setDuration(parsed.durationMin);
-  }, [parsed]);
 
   useEffect(() => {
     if (!crm || !clientQ.trim()) { setClients([]); return; }
@@ -127,10 +112,20 @@ export function NewEventScreen() {
 
   const provider = meetingProvider(meetingUrl.trim());
   const phoneOk = !phone.trim() || !!cleanPhone(phone);
-  const start = time ? new Date(`${day}T${time}:00`) : null;
-  const end = start ? new Date(start.getTime() + duration * 60000) : null;
-  const dayLabel = new Date(`${day}T12:00:00`).toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' });
-  const canSave = !!title.trim() && !busy && phoneOk && !(kind === 'APPOINTMENT' && mode === 'IN_PERSON' && place === 'CLIENT_SITE' && (!client || !location.trim()));
+  const start = time ? localInstant(day, time) : null;
+  const end = time && endTime ? localInstant(endDay, endTime) : null;
+  // Shared with the web and the server (calendar/span.ts).
+  const problem = start && end ? spanProblem(start, end) : endDay < day ? 'END_BEFORE_START' : null;
+  const label = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' });
+  /** Moving the start carries the end with it, so the duration already set is kept. */
+  const pickStart = (d: string, tm: string) => {
+    if (!tm) { setDay(d); setTime(''); setEndTime(''); if (endDay < d) setEndDay(d); return; }
+    const next = localInstant(d, tm);
+    const prevEnd = start && end ? moveEndWithStart(start, end, next) : new Date(next.getTime() + 60 * 60000);
+    setDay(d); setTime(tm); setEndDay(dayKey(prevEnd));
+    setEndTime(`${String(prevEnd.getHours()).padStart(2, '0')}:${String(prevEnd.getMinutes()).padStart(2, '0')}`);
+  };
+  const canSave = !!title.trim() && !busy && phoneOk && !problem && !(kind === 'APPOINTMENT' && mode === 'IN_PERSON' && place === 'CLIENT_SITE' && (!client || !location.trim()));
 
   const save = async () => {
     if (!canSave) return;
@@ -138,7 +133,7 @@ export function NewEventScreen() {
     try {
       await calendarApi.create({
         kind, title: title.trim(), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        ...(start && end ? { startAt: start.toISOString(), endAt: end.toISOString() } : { allDay: true, startDate: day, endDate: day }),
+        ...(start && end ? { startAt: start.toISOString(), endAt: end.toISOString() } : { allDay: true, startDate: day, endDate: endDay < day ? day : endDay }),
         reminders, attendeeIds: people.map((x) => x.id),
         ...(crm ? { customerId: client?.id ?? null } : {}),
         ...(kind === 'APPOINTMENT' ? {
@@ -182,24 +177,31 @@ export function NewEventScreen() {
           </FilterRow>
 
           <View style={{ gap: amazen.space(1.5) }}>
-            <JobField value={smart} onChangeText={setSmart} placeholder={t('calendar.smartPlaceholder', 'Say it: “Visit BILLA Friday 9:00”')} autoFocus />
-            {parsed && parsed.parts.length ? (
-              <AText variant="caption" tone="muted" style={{ fontSize: 12 }}>{t('calendar.readAs', 'Read as')} {parsed.parts.map((x) => x.text).join(' · ')}</AText>
-            ) : null}
-          </View>
-
-          <View style={{ gap: amazen.space(1.5) }}>
             <SectionLabel>{t('calendar.titleLabel', 'Title')}</SectionLabel>
             <JobField value={title} onChangeText={setTitle} maxLength={140} placeholder={t('calendar.titlePlaceholder', 'What is it?')} />
           </View>
 
           <View style={{ gap: amazen.space(1.5) }}>
             <SectionLabel>{t('calendar.when', 'When')}</SectionLabel>
-            <FilterRow>
-              {pill(dayLabel, true, () => setSheet('day'))}
-              {pill(time || t('calendar.allDay', 'All day'), !!time, () => setSheet('time'))}
-              {time ? DURATIONS.map((m) => pill(offsetText(m, t), duration === m, () => setDuration(m))) : null}
-            </FilterRow>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
+              <AText variant="caption" tone="muted" style={{ width: 52 }}>{t('calendar.starts', 'Starts')}</AText>
+              <FilterRow>
+                {pill(label(day), true, () => setSheet('day'))}
+                {pill(time || t('calendar.allDay', 'All day'), !!time, () => setSheet('time'))}
+              </FilterRow>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
+              <AText variant="caption" tone="muted" style={{ width: 52 }}>{t('calendar.ends', 'Ends')}</AText>
+              <FilterRow>
+                {pill(label(endDay), true, () => setSheet('endDay'))}
+                {time ? pill(endTime || '—', !!endTime, () => setSheet('endTime')) : null}
+              </FilterRow>
+            </View>
+            {start && end ? (
+              <AText variant="caption" tone={problem ? 'critical' : 'muted'} style={{ fontSize: 12 }}>
+                {problem === 'END_BEFORE_START' ? t('calendar.endBeforeStart') : problem === 'TOO_LONG' ? t('calendar.tooLong', { days: 14 }) : t('calendar.durationAuto', { value: durationText(spanMinutes(start, end), (k, o) => t(k, o)) })}
+              </AText>
+            ) : problem ? <AText variant="caption" tone="critical" style={{ fontSize: 12 }}>{t('calendar.endBeforeStart')}</AText> : null}
           </View>
 
           {kind === 'APPOINTMENT' ? (
@@ -298,8 +300,10 @@ export function NewEventScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <DaySheet visible={sheet === 'day'} value={new Date(`${day}T12:00:00`)} onPick={(d) => { setDay(dayKey(d)); setSheet(null); }} onClear={() => setSheet(null)} onClose={() => setSheet(null)} />
-      <TimeSheet visible={sheet === 'time'} value={time} onPick={(hm) => { setTime(hm); setSheet(null); }} onClear={() => { setTime(''); setSheet(null); }} onClose={() => setSheet(null)} />
+      <DaySheet visible={sheet === 'day'} value={new Date(`${day}T12:00:00`)} onPick={(d) => { pickStart(dayKey(d), time); setSheet(null); }} onClear={() => setSheet(null)} onClose={() => setSheet(null)} />
+      <TimeSheet visible={sheet === 'time'} value={time} onPick={(hm) => { pickStart(day, hm); setSheet(null); }} onClear={() => { pickStart(day, ''); setSheet(null); }} onClose={() => setSheet(null)} />
+      <DaySheet visible={sheet === 'endDay'} value={new Date(`${endDay}T12:00:00`)} onPick={(d) => { setEndDay(dayKey(d)); setSheet(null); }} onClear={() => setSheet(null)} onClose={() => setSheet(null)} />
+      <TimeSheet visible={sheet === 'endTime'} value={endTime} onPick={(hm) => { setEndTime(hm); setSheet(null); }} onClear={() => setSheet(null)} onClose={() => setSheet(null)} />
     </Ground>
   );
 }

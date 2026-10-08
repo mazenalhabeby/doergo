@@ -9870,7 +9870,15 @@
     "call": {
       "OUTGOING": "I call them",
       "INCOMING": "They call me"
-    }
+    },
+    "starts": "Starts",
+    "ends": "Ends",
+    "durationAuto": "Duration: {{value}}",
+    "endBeforeStart": "It must end after it starts.",
+    "tooLong": "At most {{days}} days.",
+    "durDays": "{{n}} d",
+    "durHours": "{{n}} h",
+    "durMinutes": "{{n}} min"
   },
   "holidays": {
     "orgTitle": "Organization",

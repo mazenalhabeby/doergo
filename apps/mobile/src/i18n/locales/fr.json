@@ -4659,6 +4659,14 @@
       "leave": "Absences",
       "holidays": "Jours fériés",
       "documents": "Documents"
-    }
+    },
+    "starts": "Début",
+    "ends": "Fin",
+    "durationAuto": "Durée : {{value}}",
+    "endBeforeStart": "La fin doit être après le début.",
+    "tooLong": "{{days}} jours au maximum.",
+    "durDays": "{{n}} j",
+    "durHours": "{{n}} h",
+    "durMinutes": "{{n}} min"
   }
 }

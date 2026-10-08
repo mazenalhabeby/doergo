@@ -9879,7 +9879,15 @@
     "call": {
       "OUTGOING": "J’appelle",
       "INCOMING": "On m’appelle"
-    }
+    },
+    "starts": "Début",
+    "ends": "Fin",
+    "durationAuto": "Durée : {{value}}",
+    "endBeforeStart": "La fin doit être après le début.",
+    "tooLong": "{{days}} jours au maximum.",
+    "durDays": "{{n}} j",
+    "durHours": "{{n}} h",
+    "durMinutes": "{{n}} min"
   },
   "holidays": {
     "orgTitle": "Organisation",

@@ -4659,6 +4659,14 @@
       "leave": "Abwesenheit",
       "holidays": "Feiertage",
       "documents": "Dokumente"
-    }
+    },
+    "starts": "Beginn",
+    "ends": "Ende",
+    "durationAuto": "Dauer: {{value}}",
+    "endBeforeStart": "Das Ende muss nach dem Beginn liegen.",
+    "tooLong": "Höchstens {{days}} Tage.",
+    "durDays": "{{n}} T",
+    "durHours": "{{n}} Std.",
+    "durMinutes": "{{n}} Min."
   }
 }

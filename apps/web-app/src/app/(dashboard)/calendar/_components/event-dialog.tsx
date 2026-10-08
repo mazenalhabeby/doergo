@@ -5,10 +5,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import {
-  MEETING_PROVIDER_NAMES, REMINDER_OFFSETS, cleanPhone, meetingProvider, parseQuickAdd,
+  MEETING_PROVIDER_NAMES, REMINDER_OFFSETS, cleanPhone, meetingProvider, spanMinutes, spanProblem, moveEndWithStart, durationText,
   type CallDirection, type MeetingMode, type PlaceKind, type Repeat, type RepeatFreq, type EventVisibility,
 } from "@hbcfield/shared/client"
-import { AlertTriangle, Bell, Briefcase, Building2, CalendarDays, Link2, Lock, MapPin, Palmtree, Phone, Repeat as RepeatIcon, Search, Sparkles, UserPlus, Users, Video, X } from "lucide-react"
+import { AlertTriangle, Bell, Briefcase, Building2, CalendarDays, Link2, Lock, MapPin, Palmtree, Phone, Repeat as RepeatIcon, Search, UserPlus, Users, Video, X } from "lucide-react"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -56,23 +56,21 @@ function roundUp(d: Date): Date {
   return x
 }
 
-const DURATIONS = [15, 30, 45, 60, 90, 120]
-
-/** One form for an appointment or a reminder — type it as a sentence, or fill it in. */
+/** One form for an appointment or a reminder: a start and an end, the duration follows. */
 export function EventDialog({ open, onOpenChange, start, event, spaceId, offices = [], crm = false, onNewJob, onTimeOff }: Props) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const editing = !!event
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
 
-  const [smart, setSmart] = useState("")
   const [kind, setKind] = useState<"APPOINTMENT" | "REMINDER">("APPOINTMENT")
   const [title, setTitle] = useState("")
   const [allDay, setAllDay] = useState(false)
   const [date, setDate] = useState(dayKey(new Date()))
   const [time, setTime] = useState("09:00")
-  const [duration, setDuration] = useState(30)
+  // The end, as a day and a time. All-day uses the day alone (inclusive).
   const [endDate, setEndDate] = useState(dayKey(new Date()))
+  const [endTime, setEndTime] = useState("09:30")
   const [meetingUrl, setMeetingUrl] = useState("")
   const [location, setLocation] = useState("")
   const [description, setDescription] = useState("")
@@ -100,8 +98,8 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
     if (event) {
       const s = new Date(event.startAt), e = new Date(event.endAt)
       setKind(event.kind); setTitle(event.title); setAllDay(event.allDay)
-      setDate(dayKey(s)); setTime(hm(s)); setDuration(Math.max(5, Math.round((e.getTime() - s.getTime()) / 60000)))
-      setEndDate(dayKey(new Date(e.getTime() - 1))); setMeetingUrl(event.meetingUrl ?? ""); setLocation(event.location ?? "")
+      setDate(dayKey(s)); setTime(hm(s))
+      setEndDate(dayKey(event.allDay ? new Date(e.getTime() - 1) : e)); setEndTime(hm(e)); setMeetingUrl(event.meetingUrl ?? ""); setLocation(event.location ?? "")
       setDescription(event.description ?? ""); setReminders(event.reminders); setFreq(event.repeat?.freq ?? "NONE")
       setVisibility(event.visibility)
       setMode(event.meetingMode ?? (event.meetingUrl ? "ONLINE" : "IN_PERSON"))
@@ -109,33 +107,18 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
       setPlaceSpaceId(event.placeSpace?.id ?? ""); setRoom(event.room ?? ""); setPhone(event.phone ?? "")
       setCallDirection(event.callDirection ?? "OUTGOING"); setCustomer(event.customer); setAddressId("")
       setPeople(event.attendees.filter((a) => !a.isOrganizer).map((a) => ({ id: a.userId, firstName: a.firstName, lastName: a.lastName, avatarUrl: a.avatarUrl })))
-      setSmart("")
     } else {
       const s = start ?? roundUp(new Date())
-      setKind("APPOINTMENT"); setTitle(""); setAllDay(false); setDate(dayKey(s)); setTime(hm(s)); setDuration(30)
-      setEndDate(dayKey(s)); setMeetingUrl(""); setLocation(""); setDescription(""); setPeople([]); setReminders([10])
-      setFreq("NONE"); setVisibility("BUSY"); setSmart("")
+      const e = new Date(s.getTime() + 30 * 60000)
+      setKind("APPOINTMENT"); setTitle(""); setAllDay(false); setDate(dayKey(s)); setTime(hm(s))
+      setEndDate(dayKey(e)); setEndTime(hm(e)); setMeetingUrl(""); setLocation(""); setDescription(""); setPeople([]); setReminders([10])
+      setFreq("NONE"); setVisibility("BUSY")
       // A new appointment starts "in person at our office" — the workspace on screen, else the first.
       const office = offices.find((o) => o.id === spaceId) ?? offices[0]
       setMode("IN_PERSON"); setPlace(office ? "OFFICE" : "ADDRESS"); setPlaceSpaceId(office?.id ?? "")
       setRoom(""); setPhone(""); setCallDirection("OUTGOING"); setCustomer(null); setAddressId("")
     }
   }, [open, event, start]) // eslint-disable-line react-hooks/exhaustive-deps -- offices/spaceId seed a NEW form only
-
-  // The sentence fills the fields as it is typed; every field stays editable.
-  const parsed = useMemo(() => {
-    if (!smart.trim()) return null
-    const now = new Date()
-    return parseQuickAdd(smart, dayKey(now), now.getHours() * 60 + now.getMinutes())
-  }, [smart])
-  useEffect(() => {
-    if (!parsed) return
-    setKind(parsed.kind)
-    if (parsed.title) setTitle(parsed.title)
-    if (parsed.date) { setDate(parsed.date); setEndDate(parsed.date) }
-    if (parsed.time) { setTime(parsed.time); setAllDay(false) }
-    if (parsed.durationMin) setDuration(parsed.durationMin)
-  }, [parsed])
 
   const { data: clientPage } = useQuery({
     queryKey: ["customers", "calendar-pick", clientQ],
@@ -154,7 +137,17 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
   const phoneOk = !phone.trim() || !!cleanPhone(phone)
 
   const startAt = useMemo(() => at(date, time), [date, time])
-  const endAt = useMemo(() => new Date(startAt.getTime() + duration * 60000), [startAt, duration])
+  const endAt = useMemo(() => at(endDate, endTime), [endDate, endTime])
+  const duration = spanMinutes(startAt, endAt)
+  // Shared with the server (calendar/span.ts): it ends after it starts, and lasts at most 14 days.
+  const problem = allDay ? (endDate < date ? "END_BEFORE_START" : null) : spanProblem(startAt, endAt)
+  /** Moving the start carries the end with it, so the duration already set is kept. */
+  const setStart = (d: string, tm: string) => {
+    const next = at(d, tm)
+    if (Number.isNaN(next.getTime())) { setDate(d); setTime(tm); return }
+    const end = moveEndWithStart(startAt, endAt, next)
+    setDate(d); setTime(tm); setEndDate(dayKey(end)); setEndTime(hm(end))
+  }
 
   const { data: candidates = [] } = useQuery({
     queryKey: ["calendar-people", q],
@@ -183,7 +176,7 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
   }, [avail, date, startAt, endAt, allDay, ids])
 
   const findTime = useMutation({
-    mutationFn: () => calendarApi.freeSlots({ userIds: ids, durationMin: duration, from: new Date().toISOString(), days: 14, timezone: tz }),
+    mutationFn: () => calendarApi.freeSlots({ userIds: ids, durationMin: Math.min(Math.max(duration, 15), 480), from: new Date().toISOString(), days: 14, timezone: tz }),
     onError: (e) => toast.error(serverErrorMessage(e, t)),
   })
 
@@ -254,30 +247,6 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
             )}
           </div>
 
-          {!editing && (
-            <div className="rounded-xl bg-gradient-to-r from-blue-500/70 via-violet-500/60 to-emerald-500/60 p-px">
-              <div className="flex items-center gap-2.5 rounded-[11px] bg-background px-3">
-                <Sparkles className="h-4 w-4 shrink-0 text-blue-500" />
-                <input
-                  id="cal-smart"
-                  value={smart}
-                  onChange={(e) => setSmart(e.target.value)}
-                  placeholder={t("calendar.smartPlaceholder")}
-                  className="h-11 w-full bg-transparent text-[15px] outline-none placeholder:text-muted-foreground/70"
-                  autoFocus
-                />
-              </div>
-            </div>
-          )}
-          {parsed && parsed.parts.length > 0 && (
-            <div className="-mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-              {t("calendar.readAs")}
-              {parsed.parts.map((p, i) => (
-                <span key={i} className="rounded-md bg-primary/10 px-1.5 py-0.5 text-primary">{p.text}</span>
-              ))}
-            </div>
-          )}
-
           <div className="space-y-1.5">
             <Label htmlFor="cal-title">{t("calendar.titleLabel")}</Label>
             <Input id="cal-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={140} placeholder={t("calendar.titlePlaceholder")} />
@@ -288,38 +257,34 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
             <Switch id="cal-allday" checked={allDay} onCheckedChange={setAllDay} />
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="cal-date">{allDay ? t("calendar.from") : t("calendar.date")}</Label>
-              <Input id="cal-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-            </div>
-            {allDay ? (
+          {allDay ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="cal-date">{t("calendar.from")}</Label>
+                <Input id="cal-date" type="date" value={date} onChange={(e) => { setDate(e.target.value); if (endDate < e.target.value) setEndDate(e.target.value) }} />
+              </div>
               <div className="space-y-1.5">
                 <Label htmlFor="cal-end">{t("calendar.to")}</Label>
                 <Input id="cal-end" type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} />
               </div>
-            ) : (
-              <>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cal-time">{t("calendar.time")}</Label>
-                  <Input id="cal-time" type="time" step={300} value={time} onChange={(e) => setTime(e.target.value)} />
-                </div>
-                <div className="col-span-2 space-y-1.5 sm:col-span-1">
-                  <Label htmlFor="cal-dur">{t("calendar.duration")}</Label>
-                  <select
-                    id="cal-dur"
-                    value={duration}
-                    onChange={(e) => setDuration(Number(e.target.value))}
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  >
-                    {[...new Set([...DURATIONS, duration])].sort((a, b) => a - b).map((m) => (
-                      <option key={m} value={m}>{offsetLabel(m, t)}</option>
-                    ))}
-                  </select>
-                </div>
-              </>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="grid grid-cols-[4.5rem_1fr_7rem] items-center gap-2">
+                <Label htmlFor="cal-date">{t("calendar.starts")}</Label>
+                <Input id="cal-date" type="date" value={date} onChange={(e) => setStart(e.target.value, time)} />
+                <Input id="cal-time" aria-label={t("calendar.time")} type="time" step={300} value={time} onChange={(e) => setStart(date, e.target.value)} />
+              </div>
+              <div className="grid grid-cols-[4.5rem_1fr_7rem] items-center gap-2">
+                <Label htmlFor="cal-end-date">{t("calendar.ends")}</Label>
+                <Input id="cal-end-date" type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} />
+                <Input id="cal-end-time" aria-label={t("calendar.time")} type="time" step={300} value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+              </div>
+              <p className={cn("text-xs", problem ? "text-destructive" : "text-muted-foreground")} role={problem ? "alert" : undefined}>
+                {problem === "END_BEFORE_START" ? t("calendar.endBeforeStart") : problem === "TOO_LONG" ? t("calendar.tooLong", { days: 14 }) : t("calendar.durationAuto", { value: durationText(duration, (k, o) => t(k, o)) })}
+              </p>
+            </div>
+          )}
 
           {kind === "APPOINTMENT" && (
             <div className="space-y-3">
@@ -521,7 +486,7 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
                       <button
                         key={s.start}
                         type="button"
-                        onClick={() => { const d = new Date(s.start); setDate(dayKey(d)); setTime(hm(d)) }}
+                        onClick={() => { const d = new Date(s.start); setStart(dayKey(d), hm(d)) }}
                         className="rounded-lg bg-emerald-500/10 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-500/30 transition hover:bg-emerald-500/20 dark:text-emerald-300"
                       >
                         {fmtTime(s.start)}
@@ -584,7 +549,7 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
           <span className="hidden text-xs text-muted-foreground sm:block">{ids.length ? t("calendar.inviteeNote") : " "}</span>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)}>{t("common.cancel", "Cancel")}</Button>
-            <Button disabled={!title.trim() || save.isPending || (kind === "APPOINTMENT" && mode === "PHONE" && !phoneOk) || (kind === "APPOINTMENT" && mode === "IN_PERSON" && place === "CLIENT_SITE" && (!customer || !location.trim()))} onClick={() => save.mutate()}>
+            <Button disabled={!title.trim() || !!problem || save.isPending || (kind === "APPOINTMENT" && mode === "PHONE" && !phoneOk) || (kind === "APPOINTMENT" && mode === "IN_PERSON" && place === "CLIENT_SITE" && (!customer || !location.trim()))} onClick={() => save.mutate()}>
               {editing ? t("calendar.save") : ids.length ? t("calendar.saveAndInvite") : t("calendar.save")}
             </Button>
           </div>

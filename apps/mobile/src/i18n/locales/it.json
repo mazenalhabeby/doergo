@@ -4659,6 +4659,14 @@
       "leave": "Assenze",
       "holidays": "Festività",
       "documents": "Documenti"
-    }
+    },
+    "starts": "Inizio",
+    "ends": "Fine",
+    "durationAuto": "Durata: {{value}}",
+    "endBeforeStart": "Deve finire dopo l'inizio.",
+    "tooLong": "Al massimo {{days}} giorni.",
+    "durDays": "{{n}} g",
+    "durHours": "{{n}} h",
+    "durMinutes": "{{n}} min"
   }
 }
