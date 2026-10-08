@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1737 2000" width="1737" height="2000">
+  <title>HBCField</title>
+  <defs>
+    <linearGradient id="hbc-top" x1="0" y1="0" x2="0.15" y2="1">
+      <stop offset="0" stop-color="#059669"/>
+      <stop offset="1" stop-color="#10b981"/>
+    </linearGradient>
+    <linearGradient id="hbc-band" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2f8a73"/>
+      <stop offset="0.42" stop-color="#407b92"/>
+      <stop offset="1" stop-color="#4a68c4"/>
+    </linearGradient>
+    <linearGradient id="hbc-bottom" x1="0" y1="0" x2="0.15" y2="1">
+      <stop offset="0" stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#57a0fa"/>
+    </linearGradient>
+  </defs>
+  <polygon points="363,0 0,999 718,941" fill="#9dc1b4"/>
+  <polygon points="363,0 718,941 1737,999" fill="url(#hbc-top)"/>
+  <polygon points="0,999 718,941 1737,999 718,1059" fill="url(#hbc-band)"/>
+  <polygon points="0,999 718,1059 363,2000" fill="#c8cee3"/>
+  <polygon points="718,1059 1737,999 363,2000" fill="url(#hbc-bottom)"/>
+</svg>
