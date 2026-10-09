@@ -2094,7 +2094,9 @@
         "minutes": "{{m}} min",
         "hours": "{{h}} h",
         "hoursMinutes": "{{h}} h {{m}} min"
-      }
+      },
+      "notFinished": "El informe estará disponible cuando el trabajo esté terminado",
+      "notFinishedHint": "Termine primero el trabajo. Después el informe incluirá todo: fotos, el trabajo realizado y las firmas."
     }
   },
   "technicians": {

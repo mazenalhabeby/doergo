@@ -2094,7 +2094,9 @@
         "minutes": "{{m}} min",
         "hours": "{{h}} h",
         "hoursMinutes": "{{h}} h {{m}} min"
-      }
+      },
+      "notFinished": "Il rapporto sarà disponibile quando il lavoro sarà concluso",
+      "notFinishedHint": "Concludi prima il lavoro. Poi il rapporto conterrà tutto: foto, lavori eseguiti e firme."
     }
   },
   "technicians": {

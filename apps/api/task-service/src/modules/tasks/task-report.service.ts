@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   CRM_CAPS_SELECT,
   EVENT_PERSON_KEYS,
@@ -10,6 +10,9 @@ import {
   isAdmin,
   issuerAddressLines,
   parseReportCopy,
+  isJobFinished,
+  finishedStatusKeys,
+  REPORT_NOT_FINISHED,
   parseClientCopyInclude,
   REPORT_INCLUDE_INVALID,
   parseStoredStepForm,
@@ -179,10 +182,16 @@ export class TaskReportService {
     const on = (m: string) => modules.has(m);
     const byTask = { taskId: task.id, ...facts };
 
+    // ⚠️ A report is of a FINISHED job (the flow's final, non-canceled step).
+    // Asked first, from the cached flow, so an unfinished job costs one lookup.
+    const workflow = await this.workflows.getWorkflow(task.organizationId, task.workflowId ?? task.space?.workflowId ?? null);
+    if (!isJobFinished(task.status, ((workflow?.statuses ?? []) as any[]))) {
+      throw new ConflictException({ message: 'The report is ready once the job is finished.', code: REPORT_NOT_FINISHED });
+    }
+
     const [
-      workflow, history, created, time, submissions, checklist, attachments, report, comments, handovers, details, entities, clientShown,
+      history, created, time, submissions, checklist, attachments, report, comments, handovers, details, entities, clientShown,
     ] = await Promise.all([
-      this.workflows.getWorkflow(task.organizationId, task.workflowId ?? task.space?.workflowId ?? null),
       this.history(task.id),
       // The origin is the FIRST event, which a long history may have cut — asked on its own.
       this.prisma.taskEvent.findFirst({ where: { taskId: task.id, eventType: 'CREATED' }, orderBy: { createdAt: 'asc' }, select: { metadata: true } }),
@@ -349,9 +358,7 @@ export class TaskReportService {
     clientShown: boolean,
     workflowName: string | null,
   ): Promise<TaskReportHeader> {
-    const finals = statuses.length
-      ? new Set(statuses.filter((s) => s.isFinal && !s.isCanceled).map((s) => s.key))
-      : new Set(['COMPLETED', 'CLOSED']);
+    const finals = finishedStatusKeys(statuses);
     const moves = events.filter((e) => e.type === 'STATUS_CHANGED');
     const lastFinal = [...moves].reverse().find((e) => finals.has(String(e.data.newStatus)));
     const finishedAt = finals.has(task.status) ? (lastFinal?.at ?? work?.completedAt ?? null) : null;

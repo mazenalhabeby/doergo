@@ -2094,7 +2094,9 @@
         "minutes": "{{m}} min",
         "hours": "{{h}} h",
         "hoursMinutes": "{{h}} h {{m}} min"
-      }
+      },
+      "notFinished": "Le rapport sera disponible une fois l’intervention terminée",
+      "notFinishedHint": "Terminez d’abord l’intervention. Le rapport contiendra alors tout : photos, travaux réalisés et signatures."
     }
   },
   "technicians": {

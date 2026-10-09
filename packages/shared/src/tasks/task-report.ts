@@ -33,6 +33,26 @@ export function parseReportCopy(v: unknown): TaskReportCopy | null {
 }
 
 export const REPORT_COPY_INVALID = 'REPORT_COPY_INVALID';
+export const REPORT_NOT_FINISHED = 'REPORT_NOT_FINISHED';
+
+/**
+ * The steps that FINISH a job: its flow's final steps that are not a cancel —
+ * whatever the flow calls them ("Completed", "Done", "Delivered"). No flow = the
+ * built-in COMPLETED / CLOSED. One rule for the report's gate, its "finished"
+ * time and the button that offers it.
+ */
+export function finishedStatusKeys(statuses: ReadonlyArray<{ key: string; isFinal?: boolean | null; isCanceled?: boolean | null }>): Set<string> {
+  return statuses.length
+    ? new Set(statuses.filter((s) => s.isFinal && !s.isCanceled).map((s) => s.key))
+    : new Set(['COMPLETED', 'CLOSED']);
+}
+
+export function isJobFinished(
+  status: string | null | undefined,
+  statuses: ReadonlyArray<{ key: string; isFinal?: boolean | null; isCanceled?: boolean | null }>,
+): boolean {
+  return !!status && finishedStatusKeys(statuses).has(status);
+}
 
 /**
  * The sections, in the order the document prints them. Each key is also the

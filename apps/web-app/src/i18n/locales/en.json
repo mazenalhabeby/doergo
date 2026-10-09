@@ -2094,7 +2094,9 @@
         "minutes": "{{m}} min",
         "hours": "{{h}} h",
         "hoursMinutes": "{{h}} h {{m}} min"
-      }
+      },
+      "notFinished": "The report is ready once the job is finished",
+      "notFinishedHint": "Finish the job first. The report then has everything: photos, what was done and the signatures."
     }
   },
   "technicians": {

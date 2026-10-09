@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import {
   CLIENT_COPY_HIDDEN,
   CLIENT_SAFE_EVENT_TYPES,
@@ -277,6 +277,25 @@ describe('TaskReportService', () => {
 
   it('refuses an unknown copy with 400', async () => {
     await expect(svc.build({ id: 't-1', ...admin, copy: 'everything' })).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('an unfinished job has no report yet (409, coded) — and nothing else is read', async () => {
+    prisma.task.findUnique.mockResolvedValue(task({ status: 'IN_PROGRESS' }));
+    await expect(build()).rejects.toMatchObject({ response: { code: 'REPORT_NOT_FINISHED' } });
+    expect(deps.reports.findByTaskId).not.toHaveBeenCalled();
+  });
+
+  it('"finished" is the final step of the job’s flow, whatever it is called — a cancel is not', async () => {
+    deps.workflows.getWorkflow.mockResolvedValue({
+      statuses: [
+        { key: 'delivered', name: 'Delivered', isFinal: true, isCanceled: false },
+        { key: 'dropped', name: 'Dropped', isFinal: true, isCanceled: true },
+      ],
+    });
+    prisma.task.findUnique.mockResolvedValue(task({ status: 'delivered' }));
+    await expect(build()).resolves.toBeDefined();
+    prisma.task.findUnique.mockResolvedValue(task({ status: 'dropped' }));
+    await expect(build()).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('a member not on the job gets 404, not 403', async () => {

@@ -2094,7 +2094,9 @@
         "minutes": "{{m}} Min.",
         "hours": "{{h}} Std.",
         "hoursMinutes": "{{h}} Std. {{m}} Min."
-      }
+      },
+      "notFinished": "Der Bericht ist verfügbar, sobald der Auftrag abgeschlossen ist",
+      "notFinishedHint": "Schließen Sie den Auftrag zuerst ab. Danach enthält der Bericht alles: Fotos, ausgeführte Arbeiten und Unterschriften."
     }
   },
   "technicians": {

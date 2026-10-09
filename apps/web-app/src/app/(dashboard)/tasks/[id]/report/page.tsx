@@ -56,7 +56,7 @@ export default function JobReportPage({ params }: { params: Promise<{ id: string
     placeholderData: (prev: TaskReport | undefined) => (prev?.meta.copy === copy ? prev : undefined),
     // The client copy waits until this workspace's remembered choices are known.
     enabled: copy === "office" || prefsFor !== undefined,
-    retry: (count, err) => (err as { status?: number }).status !== 404 && count < 2,
+    retry: (count, err) => ![404, 409].includes((err as { status?: number }).status ?? 0) && count < 2,
   })
   const report = query.data
 
@@ -117,12 +117,15 @@ export default function JobReportPage({ params }: { params: Promise<{ id: string
   if (query.isLoading && !report && copy === "office") return <JobReportPageSkeleton />
 
   if (query.isError && !report) {
-    const notFound = (query.error as { status?: number }).status === 404
+    const status = (query.error as { status?: number }).status
+    // 409 = the job is not finished yet (REPORT_NOT_FINISHED): nothing to retry, just wait for it.
+    const notFinished = status === 409
+    const notFound = status === 404 || notFinished
     return (
       <div className="mx-auto flex max-w-md flex-col items-center px-6 py-24 text-center">
         {notFound ? <FileQuestion className="size-10 text-muted-foreground" /> : <AlertCircle className="size-10 text-red-500" />}
-        <h1 className="mt-4 text-lg font-semibold text-foreground">{notFound ? t("tasks.report.notAvailable") : t("tasks.report.loadFailed")}</h1>
-        {notFound ? <p className="mt-1 text-sm text-muted-foreground">{t("tasks.report.notAvailableHint")}</p> : null}
+        <h1 className="mt-4 text-lg font-semibold text-foreground">{notFinished ? t("tasks.report.notFinished") : notFound ? t("tasks.report.notAvailable") : t("tasks.report.loadFailed")}</h1>
+        {notFound ? <p className="mt-1 text-sm text-muted-foreground">{t(notFinished ? "tasks.report.notFinishedHint" : "tasks.report.notAvailableHint")}</p> : null}
         <div className="mt-6 flex gap-2">
           {!notFound ? (
             <Button variant="outline" onClick={() => query.refetch()}>
