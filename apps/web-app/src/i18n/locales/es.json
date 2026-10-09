@@ -2096,7 +2096,31 @@
         "hoursMinutes": "{{h}} h {{m}} min"
       },
       "notFinished": "El informe estará disponible cuando el trabajo esté terminado",
-      "notFinishedHint": "Termine primero el trabajo. Después el informe incluirá todo: fotos, el trabajo realizado y las firmas."
+      "notFinishedHint": "Termine primero el trabajo. Después el informe incluirá todo: fotos, el trabajo realizado y las firmas.",
+      "issuer": {
+        "label": "Emitido por",
+        "automatic": "Automático",
+        "hint": "La empresa cuyo nombre y datos encabezan este informe. Automático sigue al espacio de trabajo, luego al cliente y luego a la empresa principal."
+      },
+      "head": {
+        "title": "Encabezado del informe",
+        "hint": "Desactive una línea o un recuadro para omitirlo en la página y en el PDF. El nombre de la empresa siempre aparece. Un recuadro vacío nunca se imprime.",
+        "groups": {
+          "letterhead": "Membrete",
+          "labels": "Etiquetas",
+          "facts": "Recuadros de datos"
+        },
+        "items": {
+          "logo": "Logotipo",
+          "address": "Dirección",
+          "contact": "Teléfono, correo y sitio web",
+          "registration": "NIF/IVA, número fiscal y registro",
+          "status": "Estado",
+          "priority": "Prioridad",
+          "taskType": "Tipo de trabajo",
+          "origin": "Origen del trabajo"
+        }
+      }
     }
   },
   "technicians": {

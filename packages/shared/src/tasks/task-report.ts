@@ -34,6 +34,8 @@ export function parseReportCopy(v: unknown): TaskReportCopy | null {
 
 export const REPORT_COPY_INVALID = 'REPORT_COPY_INVALID';
 export const REPORT_NOT_FINISHED = 'REPORT_NOT_FINISHED';
+/** `?issuer=` named something that is not one of the caller's organization's ACTIVE companies. */
+export const REPORT_ISSUER_INVALID = 'REPORT_ISSUER_INVALID';
 
 /**
  * The steps that FINISH a job: its flow's final steps that are not a cancel —
@@ -191,6 +193,17 @@ export interface TaskReportFile {
   url: string | null;
   createdAt: string;
   by: TaskReportPerson | null;
+}
+
+/**
+ * One company the report may be issued by — for the "Issued by" picker. Only what a
+ * picker needs: never a bank account, a tax number or an address.
+ */
+export interface TaskReportIssuerOption {
+  id: string;
+  /** The short label when one is set, else the legal name. */
+  name: string;
+  isMain: boolean;
 }
 
 /** Who the document is from: the issuing company (or the organization profile). */
@@ -413,6 +426,12 @@ export interface TaskReport {
     historyTruncated: boolean;
     /** Client copy only: what the office chose to add back (`CLIENT_COPY_OPTIONS`). */
     include?: ClientCopyOption[];
+    /** The caller's organization's ACTIVE companies — the "Issued by" choices (id, name, main only). */
+    issuers?: TaskReportIssuerOption[];
+    /** The company the letterhead is from; null = no company, the organization profile. */
+    issuerId?: string | null;
+    /** The company the automatic rule picks (workspace → client → main), whatever was chosen. */
+    issuerDefaultId?: string | null;
   };
   header: TaskReportHeader;
   request: TaskReportRequest;
@@ -455,6 +474,18 @@ const SIGNATURE_SHAPE = /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/;
 export function safeSignatureDataUrl(v: unknown): string | null {
   if (typeof v !== 'string' || v.length > SIGNATURE_MAX_CHARS) return null;
   return SIGNATURE_SHAPE.test(v) ? v : null;
+}
+
+/**
+ * The "Issued by" choices, built from WHITELISTED fields — whatever else the rows
+ * carry (bank accounts, tax numbers) cannot reach the list. Main company first.
+ */
+export function reportIssuerOptions(
+  entities: ReadonlyArray<{ id: string; legalName: string; label?: string | null; isMain?: boolean | null }>,
+): TaskReportIssuerOption[] {
+  return entities
+    .map((e) => ({ id: e.id, name: (e.label && e.label.trim()) || e.legalName, isMain: !!e.isMain }))
+    .sort((a, b) => Number(b.isMain) - Number(a.isMain) || a.name.localeCompare(b.name));
 }
 
 /** The sections present in a bundle, in print order. */

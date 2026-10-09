@@ -55,4 +55,33 @@ describe("the job report PDF", () => {
     const doc = await buildJobReportPdf({ report: r, visible: visibleSections(r, new Set(["notes"])), showPrices: true, t, locale: "en", generatedBy: "x" })
     expect(doc.output()).not.toContain("Internal: client was rude")
   })
+
+  it("leaves a switched-off letterhead line, label and detail box out of the PDF", async () => {
+    const r = officeReport()
+    r.header.issuer = { ...r.header.issuer, phone: "+43 699 777", registerNumber: "FN 424242x" }
+    const base = { report: r, visible: visibleSections(r, new Set()), showPrices: true, t, locale: "en", generatedBy: "x" }
+    const on = (await buildJobReportPdf(base)).output()
+    expect(on).toContain("+43 699 777")
+    expect(on).toContain("FN 424242x")
+    expect(on).toContain("Field Service")
+    expect(on).toContain("Vienna")
+
+    const off = (await buildJobReportPdf({ ...base, headOff: new Set(["contact", "registration", "taskType", "workspace"] as const) })).output()
+    expect(off).toContain("HBC GmbH") // the name always prints
+    expect(off).not.toContain("+43 699 777")
+    expect(off).not.toContain("FN 424242x")
+    expect(off).not.toContain("ATU12345678")
+    expect(off).not.toContain("Field Service")
+    expect(off).not.toContain("Vienna")
+  })
+
+  it("never prints worked time of 0 on a finished job", async () => {
+    const r = officeReport()
+    const counted = await buildJobReportPdf({ report: r, visible: visibleSections(r, new Set()), showPrices: true, t, locale: "en", generatedBy: "x" })
+    expect(counted.output()).toMatch(/\(WORKED\)/)
+    r.header.totalMinutes = 0
+    const doc = await buildJobReportPdf({ report: r, visible: visibleSections(r, new Set()), showPrices: true, t, locale: "en", generatedBy: "x" })
+    // The box's label comes back as its key's last segment.
+    expect(doc.output()).not.toMatch(/\(WORKED\)/)
+  })
 })

@@ -68,12 +68,22 @@ export function CountryChip({ country, className }: { country?: string | null; c
 
 const INHERIT = "__inherit__"
 
+/** One choice in a company picker — what the picker draws, nothing more. */
+export interface CompanyOption {
+  id: string
+  name: string
+  isMain: boolean
+  country?: string | null
+}
+
 /**
- * Choose the company. `null` = "follow the default" (`inheritLabel` says which one), so a
- * workspace or client that never picked keeps following the main company if it changes.
+ * The picker itself, fed its choices — for a screen whose server already sent the list
+ * (the job report's `meta.issuers`), so it needs no permission to list companies.
+ * `null` = "follow the default" (`inheritLabel` says which one).
  */
-export function CompanySelect({
+export function CompanyOptionSelect({
   id,
+  companies,
   value,
   onChange,
   inheritLabel,
@@ -81,6 +91,7 @@ export function CompanySelect({
   className,
 }: {
   id?: string
+  companies: readonly CompanyOption[]
   value: string | null | undefined
   onChange: (id: string | null) => void
   /** Shown first; choosing it sends null. Omit to force a choice. */
@@ -89,7 +100,6 @@ export function CompanySelect({
   className?: string
 }) {
   const { t } = useTranslation()
-  const { companies } = useCompanies()
   // A chosen company that has since been switched off still shows what is saved.
   const known = !value || companies.some((c) => c.id === value)
   return (
@@ -108,7 +118,7 @@ export function CompanySelect({
           <SelectItem key={c.id} value={c.id}>
             <span className="flex items-center gap-2">
               <CountryChip country={c.country} />
-              <span>{companyName(c)}</span>
+              <span>{c.name}</span>
               {c.isMain && <span className="text-xs text-muted-foreground">· {t("companies.main")}</span>}
             </span>
           </SelectItem>
@@ -116,6 +126,27 @@ export function CompanySelect({
       </SelectContent>
     </Select>
   )
+}
+
+/**
+ * Choose the company. `null` = "follow the default" (`inheritLabel` says which one), so a
+ * workspace or client that never picked keeps following the main company if it changes.
+ */
+export function CompanySelect(props: {
+  id?: string
+  value: string | null | undefined
+  onChange: (id: string | null) => void
+  /** Shown first; choosing it sends null. Omit to force a choice. */
+  inheritLabel?: string
+  disabled?: boolean
+  className?: string
+}) {
+  const { companies } = useCompanies()
+  const options = useMemo(
+    () => companies.map((c) => ({ id: c.id, name: companyName(c), isMain: c.isMain, country: c.country })),
+    [companies],
+  )
+  return <CompanyOptionSelect {...props} companies={options} />
 }
 
 /**

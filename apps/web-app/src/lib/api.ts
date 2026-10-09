@@ -1284,12 +1284,14 @@ export const tasksApi = {
    * what the office chose to add back to it (`?include=`).
    * The thrown error carries `status` so a 404 can say "not available".
    */
-  getFullReport: async (id: string, copy: TaskReportCopy, include: readonly ClientCopyOption[] = []): Promise<TaskReport> => {
+  getFullReport: async (id: string, copy: TaskReportCopy, include: readonly ClientCopyOption[] = [], issuer: string | null = null): Promise<TaskReport> => {
     const response = await api.get<{ success: boolean; data: TaskReport }>(
       buildUrlWithQuery(`/tasks/${encodeURIComponent(id)}/full-report`, {
         copy,
         // What the office adds back to the client copy; the office copy ignores it.
         include: copy === 'client' && include.length ? [...include].sort().join(',') : undefined,
+        // "Issued by": a company from `meta.issuers`; absent = the automatic rule.
+        issuer: issuer || undefined,
       }),
     );
     if (response.error || !response.data?.data) {

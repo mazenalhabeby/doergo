@@ -55,6 +55,12 @@ describe('TaskReportController', () => {
     it.each(['CLIENT', 'everything', ''])('refuses %p', async (copy) => {
       await expect(pipe.transform({ copy }, { type: 'query', metatype: TaskReportQueryDto })).rejects.toBeDefined();
     });
+    it('accepts an issuer id, and refuses one that is not a short string', async () => {
+      const ok = await pipe.transform({ issuer: 'le-123' }, { type: 'query', metatype: TaskReportQueryDto });
+      expect(ok.issuer).toBe('le-123');
+      await expect(pipe.transform({ issuer: 'x'.repeat(41) }, { type: 'query', metatype: TaskReportQueryDto })).rejects.toBeDefined();
+      await expect(pipe.transform({ issuer: ['a', 'b'] }, { type: 'query', metatype: TaskReportQueryDto })).rejects.toBeDefined();
+    });
     it('refuses a stray parameter', async () => {
       await expect(pipe.transform({ copy: 'office', sharedSpaceIds: 'x' }, { type: 'query', metatype: TaskReportQueryDto })).rejects.toBeDefined();
     });
@@ -119,6 +125,13 @@ describe('TaskReportController', () => {
     const r = await call(admin);
     expect(r).not.toHaveProperty('route');
     expect(r.meta.sections).toEqual(['header', 'request', 'history']);
+  });
+
+  it('forwards the chosen issuer, and surfaces its refusal as a coded 400', async () => {
+    await controller.fullReport('t-1', { issuer: 'le-2' }, { user: admin, method: 'GET' });
+    expect(tasks.fullReport.mock.calls[0][0]).toMatchObject({ issuer: 'le-2' });
+    tasks.fullReport.mockResolvedValue({ success: false, statusCode: 400, message: 'no', code: 'REPORT_ISSUER_INVALID' });
+    await expect(controller.fullReport('t-1', { issuer: 'foreign' }, { user: admin, method: 'GET' })).rejects.toMatchObject({ status: 400 });
   });
 
   it('a service refusal surfaces as its HTTP error', async () => {

@@ -12,12 +12,13 @@ import { notify } from "@/lib/toast"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { InvoiceTopBar, InvoiceWorkbench } from "@/app/(dashboard)/invoices/_components/invoice-shell"
-import { CopySwitch, ReportRail } from "./_components/report-rail"
+import { CopySwitch, HeadSwitches, IssuerPicker, ReportRail } from "./_components/report-rail"
 import { ReportSheet } from "./_components/report-sheet"
 import { JobReportPageSkeleton, ReportSheetSkeleton } from "./_components/report-skeleton"
 import {
-  availableToggles, loadClientInclude, loadOffToggles, normalizeInclude, reportQueryKey, saveClientInclude,
-  saveOffToggles, showPrices, visibleSections, type ReportToggle, type Translate,
+  availableHeadToggles, availableToggles, loadClientInclude, loadHeadOff, loadIssuerChoice, loadOffToggles, normalizeInclude,
+  reportQueryKey, saveClientInclude, saveHeadOff, saveIssuerChoice, saveOffToggles, showPrices, visibleSections,
+  type HeadToggle, type ReportToggle, type Translate,
 } from "./_lib/report-model"
 
 /**
@@ -43,12 +44,15 @@ export default function JobReportPage({ params }: { params: Promise<{ id: string
   const [copy, setCopy] = useState<TaskReportCopy>("office")
   const [include, setInclude] = useState<ClientCopyOption[]>([])
   const [off, setOff] = useState<Set<ReportToggle>>(new Set())
+  const [headOff, setHeadOff] = useState<Set<HeadToggle>>(new Set())
+  // "Issued by": null = the automatic rule (workspace → client → main company).
+  const [issuer, setIssuer] = useState<string | null>(null)
   // The workspace whose remembered choices are loaded (undefined = not yet known).
   const [prefsFor, setPrefsFor] = useState<string | null | undefined>(undefined)
 
   const query = useQuery({
-    queryKey: reportQueryKey(id, copy, include),
-    queryFn: () => tasksApi.getFullReport(id, copy, include),
+    queryKey: reportQueryKey(id, copy, include, issuer),
+    queryFn: () => tasksApi.getFullReport(id, copy, include, issuer),
     // Photo, document and signature links are signed and short-lived.
     staleTime: 5 * 60_000,
     // Changing what the client sees keeps the client page up while it reloads —
@@ -65,9 +69,12 @@ export default function JobReportPage({ params }: { params: Promise<{ id: string
   useEffect(() => {
     if (spaceId === undefined || spaceId === prefsFor) return
     setOff(loadOffToggles(spaceId))
+    setHeadOff(loadHeadOff(spaceId))
     setInclude(loadClientInclude(spaceId, CLIENT_COPY_OPTIONS))
+    // Only a company still offered — a remembered one since switched off falls back to automatic.
+    setIssuer(loadIssuerChoice(spaceId, report?.meta.issuers))
     setPrefsFor(spaceId)
-  }, [spaceId, prefsFor])
+  }, [spaceId, prefsFor, report?.meta.issuers])
 
   const toggle = (tg: ReportToggle, on: boolean) => {
     const next = new Set(off)
@@ -76,6 +83,26 @@ export default function JobReportPage({ params }: { params: Promise<{ id: string
     setOff(next)
     saveOffToggles(prefsFor, next)
   }
+  // A remembered company switched off since: the server refuses it (400) — fall back to automatic, never a dead page.
+  const queryStatus = query.isError ? (query.error as { status?: number }).status : undefined
+  useEffect(() => {
+    if (queryStatus === 400 && issuer) {
+      setIssuer(null)
+      saveIssuerChoice(prefsFor, null)
+    }
+  }, [queryStatus, issuer, prefsFor])
+
+  const toggleHead = (tg: HeadToggle, on: boolean) => {
+    const next = new Set(headOff)
+    if (on) next.delete(tg)
+    else next.add(tg)
+    setHeadOff(next)
+    saveHeadOff(prefsFor, next)
+  }
+  const chooseIssuer = (next: string | null) => {
+    setIssuer(next)
+    saveIssuerChoice(prefsFor, next)
+  }
   const setIncluded = (opt: ClientCopyOption, on: boolean) => {
     const next = normalizeInclude(on ? [...include, opt] : include.filter((o) => o !== opt))
     setInclude(next)
@@ -83,6 +110,7 @@ export default function JobReportPage({ params }: { params: Promise<{ id: string
   }
 
   const available = useMemo(() => (report ? availableToggles(report) : []), [report])
+  const headAvailable = useMemo(() => (report ? availableHeadToggles(report, tt) : null), [report, tt])
   const visible = useMemo(() => (report ? visibleSections(report, off) : []), [report, off])
   const prices = report ? showPrices(report, off) : false
   const generatedBy = [user?.firstName, user?.lastName].filter(Boolean).join(" ")
@@ -99,6 +127,7 @@ export default function JobReportPage({ params }: { params: Promise<{ id: string
         report,
         visible,
         showPrices: prices,
+        headOff,
         t: tt,
         locale: i18n.language || "en",
         generatedBy,
@@ -157,20 +186,31 @@ export default function JobReportPage({ params }: { params: Promise<{ id: string
 
       <InvoiceWorkbench
         rail={
-          <ReportRail
-            copy={copy}
-            available={available}
-            off={off}
-            onToggle={toggle}
-            include={include}
-            onInclude={setIncluded}
-            canIncludeRoute={canViewTracking}
-          />
+          <>
+            {report ? (
+              <IssuerPicker
+                issuers={report.meta.issuers ?? []}
+                value={issuer}
+                defaultId={report.meta.issuerDefaultId ?? null}
+                onChange={chooseIssuer}
+              />
+            ) : null}
+            {headAvailable ? <HeadSwitches available={headAvailable} off={headOff} onToggle={toggleHead} /> : null}
+            <ReportRail
+              copy={copy}
+              available={available}
+              off={off}
+              onToggle={toggle}
+              include={include}
+              onInclude={setIncluded}
+              canIncludeRoute={canViewTracking}
+            />
+          </>
         }
       >
         {report ? (
           <div className={query.isFetching && query.isPlaceholderData ? "opacity-60 transition-opacity" : undefined}>
-            <ReportSheet report={report} visible={visible} showPrices={prices} generatedBy={generatedBy} />
+            <ReportSheet report={report} visible={visible} showPrices={prices} generatedBy={generatedBy} headOff={headOff} />
           </div>
         ) : (
           <ReportSheetSkeleton />

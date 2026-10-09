@@ -2096,7 +2096,31 @@
         "hoursMinutes": "{{h}} h {{m}} min"
       },
       "notFinished": "Le rapport sera disponible une fois l’intervention terminée",
-      "notFinishedHint": "Terminez d’abord l’intervention. Le rapport contiendra alors tout : photos, travaux réalisés et signatures."
+      "notFinishedHint": "Terminez d’abord l’intervention. Le rapport contiendra alors tout : photos, travaux réalisés et signatures.",
+      "issuer": {
+        "label": "Émis par",
+        "automatic": "Automatique",
+        "hint": "L’entreprise dont le nom et les coordonnées figurent en tête de ce rapport. Automatique suit l’espace de travail, puis le client, puis l’entreprise principale."
+      },
+      "head": {
+        "title": "En-tête du rapport",
+        "hint": "Désactivez une ligne ou un encadré pour l’omettre de la page et du PDF. Le nom de l’entreprise est toujours affiché. Un encadré vide n’est jamais imprimé.",
+        "groups": {
+          "letterhead": "En-tête",
+          "labels": "Étiquettes",
+          "facts": "Encadrés de détails"
+        },
+        "items": {
+          "logo": "Logo",
+          "address": "Adresse",
+          "contact": "Téléphone, e-mail et site web",
+          "registration": "N° TVA, fiscal et registre",
+          "status": "Statut",
+          "priority": "Priorité",
+          "taskType": "Type d’intervention",
+          "origin": "Origine de l’intervention"
+        }
+      }
     }
   },
   "technicians": {

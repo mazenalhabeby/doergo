@@ -498,4 +498,16 @@ export class TaskReportQueryDto {
   @IsString()
   @MaxLength(200)
   include?: string;
+
+  /**
+   * "Issued by": one of the caller's organization's ACTIVE companies (an id from
+   * `meta.issuers`). Absent = the automatic rule (workspace → client → main).
+   * Checked in task-service with the invoices' rule (shared usableLegalEntityId);
+   * anything else is 400 `REPORT_ISSUER_INVALID`, never a silent fall-back.
+   */
+  @ApiPropertyOptional({ description: 'Legal entity id to issue the report from' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  issuer?: string;
 }

@@ -13,6 +13,10 @@ import {
   isJobFinished,
   finishedStatusKeys,
   REPORT_NOT_FINISHED,
+  REPORT_ISSUER_INVALID,
+  COMPANY_UNKNOWN_MESSAGE,
+  reportIssuerOptions,
+  usableLegalEntityId,
   parseClientCopyInclude,
   REPORT_INCLUDE_INVALID,
   parseStoredStepForm,
@@ -110,7 +114,7 @@ const REPORT_TASK_SELECT = {
 
 /** The issuing company's letterhead fields — never its bank, never its rates. */
 const ISSUER_SELECT = {
-  id: true, isMain: true, legalName: true, addressLine1: true, addressLine2: true, postalCode: true, city: true,
+  id: true, isMain: true, legalName: true, label: true, addressLine1: true, addressLine2: true, postalCode: true, city: true,
   state: true, country: true, vatId: true, taxId: true, registerNumber: true, email: true, phone: true,
   website: true, logoUrl: true, currency: true,
 } as const;
@@ -158,7 +162,7 @@ export class TaskReportService {
     private readonly customFields: CustomFieldsService,
   ) {}
 
-  async build(data: TaskAccessFacts & { id: string; copy?: unknown; include?: unknown }) {
+  async build(data: TaskAccessFacts & { id: string; copy?: unknown; include?: unknown; issuer?: unknown }) {
     const copy = parseReportCopy(data.copy);
     if (!copy) throw new BadRequestException({ message: 'Choose the office or the client copy.', code: REPORT_COPY_INVALID });
     const include = parseClientCopyInclude(data.include);
@@ -187,6 +191,17 @@ export class TaskReportService {
     const workflow = await this.workflows.getWorkflow(task.organizationId, task.workflowId ?? task.space?.workflowId ?? null);
     if (!isJobFinished(task.status, ((workflow?.statuses ?? []) as any[]))) {
       throw new ConflictException({ message: 'The report is ready once the job is finished.', code: REPORT_NOT_FINISHED });
+    }
+
+    /*
+      ⚠️ "Issued by", chosen per report like an invoice's: the SAME rule a workspace,
+      client or member link is saved by (usableLegalEntityId — this organization's
+      ACTIVE companies). Anything else is a 400, never a silent fall-back that prints
+      a different company than the one chosen. Absent / empty = the automatic rule.
+    */
+    const chosen = await usableLegalEntityId(this.prisma as any, facts.organizationId, data.issuer);
+    if (!chosen.ok) {
+      throw new BadRequestException({ message: COMPANY_UNKNOWN_MESSAGE, code: REPORT_ISSUER_INVALID });
     }
 
     const [
@@ -264,10 +279,18 @@ export class TaskReportService {
     photos.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
     const events = await this.resolveEvents(history.rows);
-    const header = this.header(task, statuses, time, events, work, entities, clientShown, (workflow as any)?.name ?? null);
+    // The chosen company must also be one the JOB's organization prints from (same org, read in the same breath).
+    if (chosen.id && !entities.some((e) => e.id === chosen.id)) {
+      throw new BadRequestException({ message: COMPANY_UNKNOWN_MESSAGE, code: REPORT_ISSUER_INVALID });
+    }
+    const issuerIds = this.issuerIds(task, entities, chosen.id ?? null);
+    const header = this.header(task, statuses, time, events, work, entities, issuerIds.used, clientShown, (workflow as any)?.name ?? null);
 
     const bundle: TaskReport = {
-      meta: { copy: 'office', generatedAt: new Date().toISOString(), sections: [], historyTruncated: history.truncated },
+      meta: {
+        copy: 'office', generatedAt: new Date().toISOString(), sections: [], historyTruncated: history.truncated,
+        issuers: reportIssuerOptions(entities), issuerId: issuerIds.used, issuerDefaultId: issuerIds.automatic,
+      },
       header: await header,
       request: this.request(task, created?.metadata),
       ...(work !== undefined ? { work } : {}),
@@ -355,6 +378,7 @@ export class TaskReportService {
     events: TaskReportEvent[],
     work: TaskReportWork | null | undefined,
     entities: any[],
+    issuerId: string | null,
     clientShown: boolean,
     workflowName: string | null,
   ): Promise<TaskReportHeader> {
@@ -363,12 +387,6 @@ export class TaskReportService {
     const lastFinal = [...moves].reverse().find((e) => finals.has(String(e.data.newStatus)));
     const finishedAt = finals.has(task.status) ? (lastFinal?.at ?? work?.completedAt ?? null) : null;
 
-    const main = entities.find((e) => e.isMain)?.id ?? null;
-    const issuerId = resolveIssuerEntityId(
-      { workspace: task.space?.legalEntityId, client: task.customer?.legalEntityId },
-      main,
-      new Set(entities.map((e) => e.id)),
-    );
     const entity = entities.find((e) => e.id === issuerId) ?? null;
     // The LEAD row; a job assigned before crews existed names its lead only on `assignedToId`.
     const lead = (task.assignees.find((a: any) => a.role === 'LEAD') ?? task.assignees.find((a: any) => a.userId === task.assignedToId))?.user ?? null;
@@ -403,6 +421,21 @@ export class TaskReportService {
       crew: task.assignees.map((a: any) => ({ person: personOf(a.user)!, role: a.role === 'LEAD' ? 'LEAD' : 'MEMBER' })),
       statuses,
       currency: resolveInvoiceCurrency({ space: task.space, customer: task.customer, company: entity, organization: task.organization }).currency,
+    };
+  }
+
+  /**
+   * Which company the report is from: the CHOSEN one (already validated), else the
+   * invoice rule — workspace → client → main. `automatic` is what the rule alone
+   * picks, so the picker can say which company "automatic" means.
+   */
+  private issuerIds(task: any, entities: any[], chosen: string | null): { used: string | null; automatic: string | null } {
+    const main = entities.find((e) => e.isMain)?.id ?? null;
+    const active = new Set<string>(entities.map((e) => e.id));
+    const levels = { workspace: task.space?.legalEntityId, client: task.customer?.legalEntityId };
+    return {
+      used: resolveIssuerEntityId({ invoice: chosen, ...levels }, main, active),
+      automatic: resolveIssuerEntityId(levels, main, active),
     };
   }
 

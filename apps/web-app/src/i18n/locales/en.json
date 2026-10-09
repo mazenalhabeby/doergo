@@ -2096,7 +2096,31 @@
         "hoursMinutes": "{{h}} h {{m}} min"
       },
       "notFinished": "The report is ready once the job is finished",
-      "notFinishedHint": "Finish the job first. The report then has everything: photos, what was done and the signatures."
+      "notFinishedHint": "Finish the job first. The report then has everything: photos, what was done and the signatures.",
+      "issuer": {
+        "label": "Issued by",
+        "automatic": "Automatic",
+        "hint": "The company whose name and details head this report. Automatic follows the workspace, then the client, then the main company."
+      },
+      "head": {
+        "title": "Top of the report",
+        "hint": "Switch a line or box off to leave it out of the page and the PDF. The company name always shows. An empty box is never printed.",
+        "groups": {
+          "letterhead": "Letterhead",
+          "labels": "Labels",
+          "facts": "Detail boxes"
+        },
+        "items": {
+          "logo": "Logo",
+          "address": "Address",
+          "contact": "Phone, email & website",
+          "registration": "VAT, tax & register number",
+          "status": "Status",
+          "priority": "Priority",
+          "taskType": "Job type",
+          "origin": "Where the job came from"
+        }
+      }
     }
   },
   "technicians": {

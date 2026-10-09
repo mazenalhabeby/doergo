@@ -2096,7 +2096,31 @@
         "hoursMinutes": "{{h}} Std. {{m}} Min."
       },
       "notFinished": "Der Bericht ist verfügbar, sobald der Auftrag abgeschlossen ist",
-      "notFinishedHint": "Schließen Sie den Auftrag zuerst ab. Danach enthält der Bericht alles: Fotos, ausgeführte Arbeiten und Unterschriften."
+      "notFinishedHint": "Schließen Sie den Auftrag zuerst ab. Danach enthält der Bericht alles: Fotos, ausgeführte Arbeiten und Unterschriften.",
+      "issuer": {
+        "label": "Ausgestellt von",
+        "automatic": "Automatisch",
+        "hint": "Das Unternehmen, dessen Name und Angaben im Kopf dieses Berichts stehen. Automatisch folgt dem Arbeitsbereich, dann dem Kunden, dann dem Hauptunternehmen."
+      },
+      "head": {
+        "title": "Kopf des Berichts",
+        "hint": "Schalten Sie eine Zeile oder ein Feld aus, um es auf der Seite und im PDF wegzulassen. Der Firmenname wird immer angezeigt. Ein leeres Feld wird nie gedruckt.",
+        "groups": {
+          "letterhead": "Briefkopf",
+          "labels": "Kennzeichnungen",
+          "facts": "Angabenfelder"
+        },
+        "items": {
+          "logo": "Logo",
+          "address": "Adresse",
+          "contact": "Telefon, E-Mail & Website",
+          "registration": "UID, Steuer- & Firmenbuchnummer",
+          "status": "Status",
+          "priority": "Priorität",
+          "taskType": "Auftragsart",
+          "origin": "Herkunft des Auftrags"
+        }
+      }
     }
   },
   "technicians": {

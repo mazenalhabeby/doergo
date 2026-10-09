@@ -11,9 +11,9 @@ import { getPriorityConfig } from "@/lib/constants"
 import { stepFieldLabel } from "@/lib/step-forms"
 import {
   answerText, eventDotHex, eventSentence, fileTypeBadge, formatDayHeading, formatFileSize, formatReportDateTime,
-  formatReportDistance, formatReportMinutes, groupEventsByDay, isImageFile, originLabel, pairPhotos, partsTotal,
-  personName, routePath, safeImageUrl, sectionNumbers, signatureName, signatureRole, statusHex, statusLabel,
-  workSteps, type NumberedSection, type Translate,
+  formatReportDistance, formatReportMinutes, groupEventsByDay, isImageFile, pairPhotos, partsTotal,
+  personName, routePath, safeImageUrl, sectionNumbers, signatureName, signatureRole, statusLabel,
+  workSteps, letterhead, reportPills, reportFacts, type HeadToggle, type NumberedSection, type Translate,
 } from "../_lib/report-model"
 
 // The task page's own map, loaded only when a route is shown (Leaflet is not small).
@@ -31,11 +31,13 @@ const RouteMapView = dynamic(() => import("../../_components/route-map-view"), {
  * Everything is text through React; images come only from the response
  * (`safeImageUrl`: a signed http(s) link or a PNG/JPEG data URL).
  */
-export function ReportSheet({ report: r, visible, showPrices, generatedBy }: {
+export function ReportSheet({ report: r, visible, showPrices, generatedBy, headOff }: {
   report: TaskReport
   visible: readonly NumberedSection[]
   showPrices: boolean
   generatedBy: string
+  /** The top-of-report switches turned off (letterhead lines, labels, detail boxes). */
+  headOff: ReadonlySet<HeadToggle>
 }) {
   const { t, i18n } = useTranslation()
   const tt = t as unknown as Translate
@@ -44,7 +46,6 @@ export function ReportSheet({ report: r, visible, showPrices, generatedBy }: {
   const when = (iso: string | null | undefined) => formatReportDateTime(iso, tz, locale)
   const numbers = sectionNumbers(visible)
   const h = r.header
-  const issuer = h.issuer
 
   const section = (key: NumberedSection, title: string, body: ReactNode) => (
     <section key={key} className="break-inside-avoid-page pt-7" aria-labelledby={`report-${key}`}>
@@ -56,27 +57,23 @@ export function ReportSheet({ report: r, visible, showPrices, generatedBy }: {
     </section>
   )
 
-  const statusColor = statusHex(h.status, h.statuses)
   const priority = getPriorityConfig(h.priority)
-  const origin = originLabel(r, tt)
-  const logo = safeImageUrl(issuer.logoUrl)
+  const head = letterhead(h.issuer, headOff, tt)
+  const pills = reportPills(r, headOff, tt)
+  const facts = reportFacts(r, headOff, tt, when)
 
   return (
     <article className="mx-auto w-full rounded-sm bg-white px-6 py-8 text-slate-800 shadow-sm ring-1 ring-slate-200 sm:px-10 sm:py-10 [color-scheme:light]">
       {/* Letterhead */}
       <header className="flex flex-wrap items-start justify-between gap-6 border-b-[3px] border-blue-600 pb-5">
         <div className="flex min-w-0 items-start gap-3">
-          {logo ? (
+          {head.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logo} alt="" className="h-12 w-auto max-w-[140px] object-contain" />
+            <img src={head.logoUrl} alt="" className="h-12 w-auto max-w-[140px] object-contain" />
           ) : null}
           <div className="min-w-0 text-xs leading-relaxed text-slate-500">
-            <p className="text-base font-semibold text-slate-900">{issuer.name || t("tasks.report.companyFallback")}</p>
-            {issuer.addressLines.map((l, i) => <p key={i}>{l}</p>)}
-            {[issuer.phone, issuer.email, issuer.website].some(Boolean) ? (
-              <p>{[issuer.phone, issuer.email, issuer.website].filter(Boolean).join("  •  ")}</p>
-            ) : null}
-            {issuer.vatId ? <p>{t("tasks.report.vatId")}: {issuer.vatId}</p> : null}
+            <p className="text-base font-semibold text-slate-900">{head.name}</p>
+            {head.lines.map((l, i) => <p key={i}>{l}</p>)}
           </div>
         </div>
         <div className="text-right">
@@ -87,29 +84,31 @@ export function ReportSheet({ report: r, visible, showPrices, generatedBy }: {
         </div>
       </header>
 
-      {/* Title + pills */}
+      {/* Title + labels */}
       <h1 className="mt-6 text-2xl font-semibold leading-tight text-slate-900">{h.title}</h1>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold" style={{ backgroundColor: `${statusColor}1a`, color: statusColor }}>
-          <span className="size-1.5 rounded-full" style={{ backgroundColor: statusColor }} />
-          {statusLabel(h.status, h.statuses)}
-        </span>
-        <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium", priority.className)}>{t(`tasks.priority.${h.priority}`)}</span>
-        {h.taskType ? <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">{h.taskType}</span> : null}
-        {origin ? <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">{origin}</span> : null}
-      </div>
+      {pills.length ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {pills.map((p) =>
+            p.key === "status" ? (
+              <span key={p.key} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold" style={{ backgroundColor: `${p.hex}1a`, color: p.hex ?? undefined }}>
+                <span className="size-1.5 rounded-full" style={{ backgroundColor: p.hex ?? undefined }} />
+                {p.text}
+              </span>
+            ) : p.key === "priority" ? (
+              <span key={p.key} className={cn("rounded-full px-2.5 py-1 text-xs font-medium", priority.className)}>{p.text}</span>
+            ) : (
+              <span key={p.key} className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">{p.text}</span>
+            ),
+          )}
+        </div>
+      ) : null}
 
-      {/* Facts */}
-      <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 rounded-lg bg-slate-50 p-4 md:grid-cols-4">
-        {h.client ? <Fact label={t("tasks.report.facts.client")} value={h.client.name} sub={h.contact?.name ? [h.contact.name, h.contact.phone].filter(Boolean).join(" · ") : null} /> : null}
-        {h.site.address || h.unit ? <Fact label={t("tasks.report.facts.site")} value={h.unit?.name ?? h.site.address ?? ""} sub={h.unit ? (h.unit.address ?? h.site.address) : null} /> : null}
-        {h.asset ? <Fact label={t("tasks.report.facts.equipment")} value={h.asset.name} sub={h.asset.serialNumber ? t("tasks.report.facts.serial", { serial: h.asset.serialNumber }) : null} /> : null}
-        {h.workspace ? <Fact label={t("tasks.report.facts.workspace")} value={h.workspace.name} /> : null}
-        {h.dueDate ? <Fact label={t("tasks.report.facts.due")} value={when(h.dueDate)} /> : null}
-        <Fact label={t("tasks.report.facts.started")} value={h.startedAt ? when(h.startedAt) : "—"} sub={h.startedBy ? personName(h.startedBy) : null} />
-        <Fact label={t("tasks.report.facts.finished")} value={h.finishedAt ? when(h.finishedAt) : "—"} />
-        <Fact label={t("tasks.report.facts.worked")} value={formatReportMinutes(h.totalMinutes, tt)} />
-      </dl>
+      {/* Detail boxes — an empty one is never printed, so the grid closes up */}
+      {facts.length ? (
+        <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 rounded-lg bg-slate-50 p-4 md:grid-cols-4">
+          {facts.map((f) => <Fact key={f.key} label={f.label} value={f.value} sub={f.sub} />)}
+        </dl>
+      ) : null}
 
       {visible.map((key) => {
         switch (key) {
@@ -335,7 +334,7 @@ export function ReportSheet({ report: r, visible, showPrices, generatedBy }: {
       })}
 
       <footer className="mt-10 border-t border-slate-200 pt-3 text-[11px] text-slate-400">
-        {[issuer.name, h.reference, t("tasks.report.footer", { when: when(r.meta.generatedAt), who: generatedBy })].filter(Boolean).join(" · ")}
+        {[h.issuer.name, h.reference, t("tasks.report.footer", { when: when(r.meta.generatedAt), who: generatedBy })].filter(Boolean).join(" · ")}
       </footer>
     </article>
   )

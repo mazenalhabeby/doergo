@@ -204,7 +204,7 @@ describe('TaskReportService', () => {
       taskAssignee: { findFirst: jest.fn().mockResolvedValue(null) },
       taskEvent: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
       taskHandover: { findMany: jest.fn().mockResolvedValue([]) },
-      legalEntity: { findMany: jest.fn().mockResolvedValue([]) },
+      legalEntity: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
       user: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
       customerContact: { findFirst: jest.fn().mockResolvedValue(null) },
       taskStepSubmission: { findMany: jest.fn().mockResolvedValue([]) },
@@ -425,6 +425,71 @@ describe('TaskReportService', () => {
     }
     const select = JSON.stringify(prisma.task.findUnique.mock.calls[0][0].select);
     expect(select).not.toMatch(/costRate|billableRate/);
+  });
+
+  describe('"Issued by" — chosen per report, like an invoice', () => {
+    // Rows as Prisma would return them for ISSUER_SELECT — tax data included, bank never selected.
+    const company = (id: string, over: Record<string, unknown> = {}) => ({
+      id, isMain: false, legalName: `${id} GmbH`, label: null, addressLine1: 'Street', addressLine2: null, postalCode: '1010', city: 'Wien',
+      state: null, country: 'AT', vatId: `VAT-${id}`, taxId: `TAX-${id}`, registerNumber: `FN-${id}`, email: null, phone: null,
+      website: null, logoUrl: null, currency: 'EUR', ...over,
+    });
+    const active = [company('main', { isMain: true }), company('usa', { label: 'HBC USA', currency: 'USD' })];
+
+    beforeEach(() => {
+      prisma.legalEntity.findMany.mockResolvedValue(active);
+      // Honours the where clause, as Postgres would: this organization's ACTIVE companies only.
+      prisma.legalEntity.findFirst.mockImplementation(({ where }: any) =>
+        Promise.resolve(
+          [...active.map((c) => ({ ...c, organizationId: ORG, isActive: true })), { ...company('off'), organizationId: ORG, isActive: false }, { ...company('foreign'), organizationId: 'org-OTHER', isActive: true }]
+            .find((c) => c.id === where.id && c.organizationId === where.organizationId && c.isActive === where.isActive) ?? null,
+        ),
+      );
+    });
+
+    it('absent = the automatic rule (workspace → client → main), and says which it picked', async () => {
+      const r = await build();
+      expect(r.meta.issuerId).toBe('main');
+      expect(r.meta.issuerDefaultId).toBe('main');
+      expect(r.header.issuer.name).toBe('main GmbH');
+    });
+
+    it('a valid choice is the letterhead — and the currency follows the company', async () => {
+      const r = await svc.build({ id: 't-1', ...admin, issuer: 'usa' }).then((x) => x.data as TaskReport);
+      expect(r.meta.issuerId).toBe('usa');
+      expect(r.meta.issuerDefaultId).toBe('main');
+      expect(r.header.issuer).toMatchObject({ name: 'usa GmbH', vatId: 'VAT-usa' });
+      expect(r.header.currency).toBe('USD');
+    });
+
+    it.each(['foreign', 'off', 'nope', 42])('refuses %p with a coded 400 — never a silent fall-back', async (issuer) => {
+      await expect(svc.build({ id: 't-1', ...admin, issuer })).rejects.toMatchObject({ response: { code: 'REPORT_ISSUER_INVALID' } });
+      await expect(svc.build({ id: 't-1', ...admin, issuer })).rejects.toBeInstanceOf(BadRequestException);
+      expect(deps.reports.findByTaskId).not.toHaveBeenCalled();
+    });
+
+    it("a refusal is asked of the CALLER's organization", async () => {
+      await svc.build({ id: 't-1', ...admin, issuer: 'usa' });
+      expect(prisma.legalEntity.findFirst.mock.calls[0][0].where).toEqual({ id: 'usa', organizationId: ORG, isActive: true });
+    });
+
+    it('the choice list is id, name and main only — no bank, tax or address', async () => {
+      const r = await build();
+      expect(r.meta.issuers).toEqual([
+        { id: 'main', name: 'main GmbH', isMain: true },
+        { id: 'usa', name: 'HBC USA', isMain: false },
+      ]);
+      const list = JSON.stringify(r.meta.issuers);
+      expect(list).not.toMatch(/VAT-|TAX-|FN-|Street|iban|bank/i);
+      // And the client copy keeps the same list (the office chose who it is from).
+      const c = await build(admin, 'client');
+      expect(c.meta.issuers).toEqual(r.meta.issuers);
+    });
+
+    it('an empty issuer is the automatic rule', async () => {
+      const r = await svc.build({ id: 't-1', ...admin, issuer: '' }).then((x) => x.data as TaskReport);
+      expect(r.meta.issuerId).toBe('main');
+    });
   });
 
   it("a client's details only to a reader the CRM lets in; the name always", async () => {

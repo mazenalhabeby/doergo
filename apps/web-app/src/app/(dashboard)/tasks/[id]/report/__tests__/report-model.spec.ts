@@ -4,6 +4,8 @@ import {
   availableToggles, formatReportMinutes, groupEventsByDay, loadClientInclude, loadOffToggles, normalizeInclude,
   pairPhotos, reportFileName, reportQueryKey, safeImageUrl, saveClientInclude, saveOffToggles, sectionNumbers,
   showPrices, visibleSections, workSteps, type Translate,
+  HEAD_TOGGLES, availableHeadToggles, factRows, letterhead, loadHeadOff, loadIssuerChoice, reportFacts, reportPills,
+  saveHeadOff, saveIssuerChoice, type HeadToggle,
 } from "../_lib/report-model"
 import { officeReport } from "./fixture"
 
@@ -188,5 +190,105 @@ describe("the query key", () => {
     expect(reportQueryKey("t1", "client", ["route"])).not.toEqual(reportQueryKey("t1", "client", []))
     expect(reportQueryKey("t1", "office", ["route"])).toEqual(reportQueryKey("t1", "office", []))
     expect(normalizeInclude(["route", "comments", "route"])).toEqual(["comments", "route"])
+  })
+})
+
+describe("the query key carries the issuer", () => {
+  it("a different company is a different report, in both copies", () => {
+    expect(reportQueryKey("t1", "office", [], "le-2")).not.toEqual(reportQueryKey("t1", "office", []))
+    expect(reportQueryKey("t1", "client", ["route"], "le-2")).not.toEqual(reportQueryKey("t1", "client", ["route"], "le-3"))
+    expect(reportQueryKey("t1", "office", [], null)).toEqual(reportQueryKey("t1", "office", []))
+  })
+})
+
+describe("the top of the report", () => {
+  const when = (iso: string | null | undefined) => (iso ? `@${iso}` : "—")
+  const none = new Set<HeadToggle>()
+
+  it("every switch is ON by default (nothing stored = nothing off)", () => {
+    window.localStorage.clear()
+    expect(loadHeadOff("space-1").size).toBe(0)
+  })
+
+  it("is remembered per workspace, as a list of what is OFF, unknown keys dropped", () => {
+    window.localStorage.clear()
+    saveHeadOff("space-1", new Set<HeadToggle>(["logo", "worked"]))
+    expect(JSON.parse(window.localStorage.getItem("hbc.jobReport.headOff.space-1")!)).toEqual(["logo", "worked"])
+    window.localStorage.setItem("hbc.jobReport.headOff.space-2", JSON.stringify(["priority", "salary"]))
+    expect([...loadHeadOff("space-1")]).toEqual(["logo", "worked"])
+    expect([...loadHeadOff("space-2")]).toEqual(["priority"])
+    expect(HEAD_TOGGLES).toHaveLength(16)
+  })
+
+  it("the issuer choice is remembered per workspace, and only while it is still offered", () => {
+    window.localStorage.clear()
+    const issuers = [{ id: "a", name: "A GmbH", isMain: true }, { id: "b", name: "B Inc.", isMain: false }]
+    saveIssuerChoice("space-1", "b")
+    expect(loadIssuerChoice("space-1", issuers)).toBe("b")
+    expect(loadIssuerChoice("space-1", issuers.slice(0, 1))).toBeNull()
+    expect(loadIssuerChoice("space-2", issuers)).toBeNull()
+    saveIssuerChoice("space-1", null)
+    expect(window.localStorage.getItem("hbc.jobReport.issuer.space-1")).toBeNull()
+  })
+
+  it("the letterhead: the name always, each line only while switched on", () => {
+    const r = officeReport()
+    r.header.issuer = { ...r.header.issuer, logoUrl: "https://files.example.com/logo.png", phone: "+43 1", taxId: "TX-1", registerNumber: "FN 1a" }
+    const all = letterhead(r.header.issuer, none, t)
+    expect(all.name).toBe("HBC GmbH")
+    expect(all.logoUrl).toBe("https://files.example.com/logo.png")
+    expect(all.lines).toEqual([
+      "Hauptstrasse 1", "4663 Laakirchen", "+43 1  •  office@hbc.example",
+      "tasks.report.vatId: ATU12345678", "tasks.report.taxId: TX-1", "tasks.report.register: FN 1a",
+    ])
+    const bare = letterhead(r.header.issuer, new Set<HeadToggle>(["logo", "address", "contact", "registration"]), t)
+    expect(bare).toEqual({ name: "HBC GmbH", logoUrl: null, lines: [] })
+  })
+
+  it("labels: each one can be switched off, and an empty one is never a pill", () => {
+    const r = officeReport()
+    expect(reportPills(r, none, t).map((p) => p.key)).toEqual(["status", "priority", "taskType", "origin"])
+    expect(reportPills(r, new Set<HeadToggle>(["priority", "origin"]), t).map((p) => p.key)).toEqual(["status", "taskType"])
+    r.header.taskType = null
+    r.request.origin = { kind: "INTERNAL", portalReference: null, recurringTemplate: null, parent: null }
+    expect(reportPills(r, none, t).map((p) => p.key)).toEqual(["status", "priority"])
+  })
+
+  it("detail boxes: all eight for a full job, in grid order", () => {
+    expect(reportFacts(officeReport(), none, t, when).map((f) => f.key)).toEqual([
+      "client", "site", "equipment", "workspace", "due", "started", "finished", "worked",
+    ])
+  })
+
+  it("an empty box is never printed, whatever its switch — worked time 0 included", () => {
+    const r = officeReport()
+    Object.assign(r.header, { client: null, contact: null, asset: null, dueDate: null, startedAt: null, startedBy: null, totalMinutes: 0 })
+    r.header.site = { address: null, lat: null, lng: null }
+    const facts = reportFacts(r, none, t, when)
+    expect(facts.map((f) => f.key)).toEqual(["workspace", "finished"])
+    expect(JSON.stringify(facts)).not.toContain("0 min")
+  })
+
+  it("the grid reflows with no gaps: rows of four, from what is left", () => {
+    const r = officeReport()
+    const off = new Set<HeadToggle>(["site", "due", "worked"])
+    const facts = reportFacts(r, off, t, when)
+    expect(facts).toHaveLength(5)
+    const rows = factRows(facts, 4)
+    expect(rows.map((row) => row.length)).toEqual([4, 1])
+    expect(rows.flat().map((f) => f.key)).toEqual(["client", "equipment", "workspace", "started", "finished"])
+    // Everything off: no grid at all.
+    expect(factRows(reportFacts(r, new Set(HEAD_TOGGLES), t, when))).toEqual([])
+  })
+
+  it("offers a switch only for what this report has", () => {
+    const r = officeReport()
+    r.header.totalMinutes = 0
+    r.header.asset = null
+    const a = availableHeadToggles(r, t)
+    expect(a.letterhead).toEqual(["address", "contact", "registration"]) // no logo
+    expect(a.labels).toEqual(["status", "priority", "taskType", "origin"])
+    expect(a.facts).not.toContain("worked")
+    expect(a.facts).not.toContain("equipment")
   })
 })

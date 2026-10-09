@@ -54,7 +54,7 @@ export class TaskReportController {
     const mayAskRoute = wantsRoute && (tracking.canViewTracking || (tracking.trackingSpaceIds?.length ?? 0) > 0);
 
     const [res, route] = await Promise.all([
-      this.tasksService.fullReport({ id, copy, include: query.include, ...actor }),
+      this.tasksService.fullReport({ id, copy, include: query.include, issuer: query.issuer, ...actor }),
       mayAskRoute ? this.routeOf(id, actor.organizationId) : Promise.resolve(null),
     ]);
     const report = (assertServiceOk(res, HttpStatus.NOT_FOUND) as { data: TaskReport }).data;

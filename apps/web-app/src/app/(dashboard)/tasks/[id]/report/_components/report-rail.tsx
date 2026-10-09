@@ -1,12 +1,14 @@
 "use client"
 
 import { useTranslation } from "react-i18next"
-import { CLIENT_COPY_OPTIONS, type ClientCopyOption, type TaskReportCopy } from "@hbcfield/shared/client"
+import { CLIENT_COPY_OPTIONS, type ClientCopyOption, type TaskReportCopy, type TaskReportIssuerOption } from "@hbcfield/shared/client"
 
 import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { CompanyOptionSelect } from "@/components/companies/company-select"
 import { cn } from "@/lib/utils"
-import type { ReportToggle } from "../_lib/report-model"
+import type { HeadToggle, HeadToggleGroup, ReportToggle } from "../_lib/report-model"
 
 /** "Office copy / Client copy" — which copy the server is asked for. */
 export function CopySwitch({ copy, onChange }: { copy: TaskReportCopy; onChange: (c: TaskReportCopy) => void }) {
@@ -27,6 +29,86 @@ export function CopySwitch({ copy, onChange }: { copy: TaskReportCopy; onChange:
         >
           {t(`tasks.report.copy.${c}`)}
         </button>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * "Issued by" — the company on the letterhead, chosen per report like an invoice's.
+ * Renders NOTHING while the organization has one company (the invoice pickers' rule).
+ * The choices come with the report (`meta.issuers`), so no permission to list
+ * companies is needed; the server refuses anything not in that list.
+ */
+export function IssuerPicker({
+  issuers,
+  value,
+  defaultId,
+  onChange,
+}: {
+  issuers: readonly TaskReportIssuerOption[]
+  /** The chosen company; null = the automatic rule. */
+  value: string | null
+  /** What the automatic rule picks (workspace → client → main). */
+  defaultId: string | null
+  onChange: (id: string | null) => void
+}) {
+  const { t } = useTranslation()
+  if (issuers.length <= 1) return null
+  const auto = issuers.find((i) => i.id === defaultId)?.name
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor="report-issuer" className="text-sm font-semibold text-foreground">{t("tasks.report.issuer.label")}</Label>
+      <CompanyOptionSelect
+        id="report-issuer"
+        className="h-9 w-full"
+        companies={issuers}
+        value={value}
+        onChange={onChange}
+        inheritLabel={auto ? t("companies.sameAsDefault", { name: auto }) : t("tasks.report.issuer.automatic")}
+      />
+      <p className="text-[11px] leading-snug text-muted-foreground">{t("tasks.report.issuer.hint")}</p>
+    </div>
+  )
+}
+
+/**
+ * "Top of the report": the letterhead lines, the labels under the title and the
+ * detail boxes — a switch each, only for what this report has. Display only.
+ */
+export function HeadSwitches({
+  available,
+  off,
+  onToggle,
+}: {
+  available: Record<HeadToggleGroup, readonly HeadToggle[]>
+  off: ReadonlySet<HeadToggle>
+  onToggle: (tg: HeadToggle, on: boolean) => void
+}) {
+  const { t } = useTranslation()
+  const groups = (["letterhead", "labels", "facts"] as const).filter((g) => available[g].length)
+  if (!groups.length) return null
+  return (
+    <div>
+      <h2 className="text-sm font-semibold text-foreground">{t("tasks.report.head.title")}</h2>
+      <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{t("tasks.report.head.hint")}</p>
+      {groups.map((g) => (
+        <div key={g} className="mt-3">
+          <h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{t(`tasks.report.head.groups.${g}`)}</h3>
+          <ul className="mt-2 space-y-2">
+            {available[g].map((tg) => {
+              const id = `report-head-${tg}`
+              return (
+                <li key={tg} className="flex items-center gap-2.5">
+                  <Checkbox id={id} checked={!off.has(tg)} onCheckedChange={(v) => onToggle(tg, v === true)} />
+                  <label htmlFor={id} className="cursor-pointer text-sm text-foreground">
+                    {g === "facts" ? t(`tasks.report.facts.${tg}`) : t(`tasks.report.head.items.${tg}`)}
+                  </label>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
       ))}
     </div>
   )

@@ -4,6 +4,8 @@ import {
   type TaskReport,
   type TaskReportCopy,
   type TaskReportEvent,
+  type TaskReportIssuer,
+  type TaskReportIssuerOption,
   type TaskReportPerson,
   type TaskReportPhoto,
   type TaskReportRoute,
@@ -182,9 +184,134 @@ export function normalizeInclude(include: readonly ClientCopyOption[]): ClientCo
   return [...new Set(include)].sort()
 }
 
-/** The query key of one copy: the office copy ignores `include`, so it is not part of its key. */
-export function reportQueryKey(taskId: string, copy: TaskReportCopy, include: readonly ClientCopyOption[]) {
-  return copy === "client" ? (["task-full-report", taskId, copy, normalizeInclude(include).join(",")] as const) : (["task-full-report", taskId, copy] as const)
+/**
+ * The query key of one report: the office copy ignores `include`, so it is not
+ * part of its key; the issuer is part of both (it changes the letterhead).
+ */
+export function reportQueryKey(taskId: string, copy: TaskReportCopy, include: readonly ClientCopyOption[], issuer: string | null = null) {
+  return copy === "client"
+    ? (["task-full-report", taskId, copy, normalizeInclude(include).join(","), issuer ?? ""] as const)
+    : (["task-full-report", taskId, copy, issuer ?? ""] as const)
+}
+
+/** The "Issued by" choice remembered for this workspace — only while it is still one of the choices. */
+export function loadIssuerChoice(spaceId: string | null | undefined, issuers: readonly TaskReportIssuerOption[] | undefined): string | null {
+  const id = read(`${STORE_PREFIX}.issuer.${spaceId ?? "none"}`, (v) => (typeof v === "string" ? v : null))
+  return id && (issuers ?? []).some((i) => i.id === id) ? id : null
+}
+export function saveIssuerChoice(spaceId: string | null | undefined, issuer: string | null): void {
+  if (issuer) write(`${STORE_PREFIX}.issuer.${spaceId ?? "none"}`, issuer)
+  else {
+    try { window.localStorage.removeItem(`${STORE_PREFIX}.issuer.${spaceId ?? "none"}`) } catch { /* blocked storage */ }
+  }
+}
+
+// ─── the top of the report: letterhead, labels, detail boxes ────────────────
+
+/**
+ * Display switches on what the reader already has — nothing here changes what
+ * the server sent. The company NAME always prints.
+ */
+export const HEAD_TOGGLE_GROUPS = {
+  letterhead: ["logo", "address", "contact", "registration"],
+  labels: ["status", "priority", "taskType", "origin"],
+  facts: ["client", "site", "equipment", "workspace", "due", "started", "finished", "worked"],
+} as const
+export type HeadToggleGroup = keyof typeof HEAD_TOGGLE_GROUPS
+export type HeadToggle = (typeof HEAD_TOGGLE_GROUPS)[HeadToggleGroup][number]
+export type FactKey = (typeof HEAD_TOGGLE_GROUPS)["facts"][number]
+export type PillKey = (typeof HEAD_TOGGLE_GROUPS)["labels"][number]
+export const HEAD_TOGGLES: readonly HeadToggle[] = [
+  ...HEAD_TOGGLE_GROUPS.letterhead, ...HEAD_TOGGLE_GROUPS.labels, ...HEAD_TOGGLE_GROUPS.facts,
+]
+
+/** The top-of-report switches turned OFF in this workspace (all on by default). */
+export function loadHeadOff(spaceId: string | null | undefined): Set<HeadToggle> {
+  return new Set(read(`${STORE_PREFIX}.headOff.${spaceId ?? "none"}`, onlyKnown(HEAD_TOGGLES)) ?? [])
+}
+export function saveHeadOff(spaceId: string | null | undefined, off: ReadonlySet<HeadToggle>): void {
+  write(`${STORE_PREFIX}.headOff.${spaceId ?? "none"}`, [...off])
+}
+
+/** The letterhead as printed: the name always; each other line only when it exists and is switched on. */
+export function letterhead(issuer: TaskReportIssuer, off: ReadonlySet<HeadToggle>, t: Translate) {
+  const contact = [issuer.phone, issuer.email, issuer.website].filter(Boolean).join("  •  ")
+  const ids = [
+    issuer.vatId && `${t("tasks.report.vatId")}: ${issuer.vatId}`,
+    issuer.taxId && `${t("tasks.report.taxId")}: ${issuer.taxId}`,
+    issuer.registerNumber && `${t("tasks.report.register")}: ${issuer.registerNumber}`,
+  ].filter((x): x is string => !!x)
+  return {
+    name: issuer.name || t("tasks.report.companyFallback"),
+    logoUrl: off.has("logo") ? null : safeImageUrl(issuer.logoUrl),
+    lines: [
+      ...(off.has("address") ? [] : issuer.addressLines.filter(Boolean)),
+      ...(off.has("contact") || !contact ? [] : [contact]),
+      ...(off.has("registration") ? [] : ids),
+    ],
+  }
+}
+
+export interface ReportPill { key: PillKey; text: string; /** status only: the flow's colour */ hex: string | null }
+
+/** The labels under the title, in order — each only when it has words and is switched on. */
+export function reportPills(r: TaskReport, off: ReadonlySet<HeadToggle>, t: Translate): ReportPill[] {
+  const h = r.header
+  const all: ReportPill[] = [
+    { key: "status", text: statusLabel(h.status, h.statuses), hex: statusHex(h.status, h.statuses) },
+    { key: "priority", text: h.priority ? t(`tasks.priority.${h.priority}`) : "", hex: null },
+    { key: "taskType", text: h.taskType ?? "", hex: null },
+    { key: "origin", text: originLabel(r, t) ?? "", hex: null },
+  ]
+  return all.filter((p) => p.text && !off.has(p.key))
+}
+
+export interface ReportFact { key: FactKey; label: string; value: string; sub: string | null }
+
+/**
+ * The detail boxes, in grid order. A box with nothing to say is not printed,
+ * whatever its switch — and "Worked time" with a counted total of 0 says
+ * nothing a client should read ("0 min" on a finished job reads as wrong).
+ */
+export function reportFacts(r: TaskReport, off: ReadonlySet<HeadToggle>, t: Translate, when: (iso: string | null | undefined) => string): ReportFact[] {
+  const h = r.header
+  const all: Array<ReportFact | null> = [
+    h.client ? { key: "client", label: t("tasks.report.facts.client"), value: h.client.name, sub: h.contact?.name ? [h.contact.name, h.contact.phone].filter(Boolean).join(" · ") : null } : null,
+    h.site.address || h.unit ? { key: "site", label: t("tasks.report.facts.site"), value: h.unit?.name ?? h.site.address ?? "", sub: h.unit ? (h.unit.address ?? h.site.address ?? null) : null } : null,
+    h.asset ? { key: "equipment", label: t("tasks.report.facts.equipment"), value: h.asset.name, sub: h.asset.serialNumber ? t("tasks.report.facts.serial", { serial: h.asset.serialNumber }) : null } : null,
+    h.workspace ? { key: "workspace", label: t("tasks.report.facts.workspace"), value: h.workspace.name, sub: null } : null,
+    h.dueDate ? { key: "due", label: t("tasks.report.facts.due"), value: when(h.dueDate), sub: null } : null,
+    h.startedAt ? { key: "started", label: t("tasks.report.facts.started"), value: when(h.startedAt), sub: personName(h.startedBy) || null } : null,
+    h.finishedAt ? { key: "finished", label: t("tasks.report.facts.finished"), value: when(h.finishedAt), sub: null } : null,
+    h.totalMinutes > 0 ? { key: "worked", label: t("tasks.report.facts.worked"), value: formatReportMinutes(h.totalMinutes, t), sub: null } : null,
+  ]
+  return all.filter((f): f is ReportFact => !!f && !off.has(f.key))
+}
+
+/** Rows of a grid of `cols` boxes — the PDF lays out the same boxes the screen's grid flows. */
+export function factRows<T>(facts: readonly T[], cols = 4): T[][] {
+  const rows: T[][] = []
+  for (let i = 0; i < facts.length; i += cols) rows.push(facts.slice(i, i + cols))
+  return rows
+}
+
+/** The top-of-report switches this report offers — only for what it actually has. */
+export function availableHeadToggles(r: TaskReport, t: Translate): Record<HeadToggleGroup, HeadToggle[]> {
+  const none = new Set<HeadToggle>()
+  const i = r.header.issuer
+  const has: Record<string, boolean> = {
+    logo: !!safeImageUrl(i.logoUrl),
+    address: i.addressLines.some(Boolean),
+    contact: [i.phone, i.email, i.website].some(Boolean),
+    registration: [i.vatId, i.taxId, i.registerNumber].some(Boolean),
+  }
+  for (const p of reportPills(r, none, t)) has[p.key] = true
+  for (const f of reportFacts(r, none, t, () => "x")) has[f.key] = true
+  return {
+    letterhead: HEAD_TOGGLE_GROUPS.letterhead.filter((k) => has[k]),
+    labels: HEAD_TOGGLE_GROUPS.labels.filter((k) => has[k]),
+    facts: HEAD_TOGGLE_GROUPS.facts.filter((k) => has[k]),
+  }
 }
 
 // ─── words and numbers ──────────────────────────────────────────────────────

@@ -8,9 +8,9 @@ import { mapWithLimit } from "@/lib/pdf-text"
 import { stepFieldLabel } from "@/lib/step-forms"
 import {
   answerText, eventDotHex, eventSentence, fileTypeBadge, formatDayHeading, formatFileSize, formatReportDateTime,
-  formatReportDistance, formatReportMinutes, groupEventsByDay, originLabel, pairPhotos, partsTotal, personName,
-  reportFileName, routePath, safeImageUrl, sectionNumbers, signatureName, signatureRole, statusHex, statusLabel,
-  workSteps, type NumberedSection, type Translate,
+  formatReportDistance, formatReportMinutes, groupEventsByDay, pairPhotos, partsTotal, personName,
+  reportFileName, routePath, safeImageUrl, sectionNumbers, signatureName, signatureRole, statusLabel,
+  workSteps, letterhead, reportPills, reportFacts, factRows, type HeadToggle, type NumberedSection, type Translate,
 } from "./report-model"
 
 /**
@@ -38,6 +38,8 @@ export interface JobReportPdfInput {
   locale: string
   /** Who pressed the button — the footer says who generated it. */
   generatedBy: string
+  /** The top-of-report switches turned off on the screen (letterhead lines, labels, detail boxes). */
+  headOff?: ReadonlySet<HeadToggle>
   onProgress?: (done: number, total: number) => void
 }
 
@@ -64,6 +66,8 @@ export async function buildJobReportPdf(input: JobReportPdfInput): Promise<jsPDF
   const s = (v: string | null | undefined) => pdfSafeText(v ?? "")
   const visible = new Set(input.visible)
   const numbers = sectionNumbers(input.visible)
+  const headOff = input.headOff ?? new Set<HeadToggle>()
+  const head = letterhead(r.header.issuer, headOff, t)
 
   // ── images first, with progress — the only slow part ─────────────────────
   const photos = visible.has("photos") ? r.photos ?? [] : []
@@ -82,7 +86,7 @@ export async function buildJobReportPdf(input: JobReportPdfInput): Promise<jsPDF
     sigImgs.set(g, await loadImage(safeImageUrl(g.url), { format: "PNG", maxEdge: 800, timeoutMs: 15000 }))
     tick()
   })
-  const logo = await loadLogo(r.header.issuer.logoUrl)
+  const logo = head.logoUrl ? await loadLogo(head.logoUrl) : null
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
   const pageW = doc.internal.pageSize.getWidth()
@@ -139,8 +143,7 @@ export async function buildJobReportPdf(input: JobReportPdfInput): Promise<jsPDF
     doc.text(s(label), x + w / 2, yy + h / 2, { align: "center" })
   }
 
-  // ── letterhead ─────────────────────────────────────────────────────────────
-  const issuer = r.header.issuer
+  // ── letterhead (the same lines the screen prints: report-model letterhead) ──
   let logoW = 0
   if (logo) {
     const maxH = 16, maxW = 40, ratio = logo.w / logo.h
@@ -150,16 +153,10 @@ export async function buildJobReportPdf(input: JobReportPdfInput): Promise<jsPDF
     logoW = w + 4
   }
   font("bold", 15)
-  doc.text(s(issuer.name || t("tasks.report.companyFallback")), margin + logoW, margin + 5)
+  doc.text(s(head.name), margin + logoW, margin + 5)
   font("normal", 8.5, MUTED)
   let ly = margin + 10
-  const contact = [issuer.phone, issuer.email, issuer.website].filter(Boolean).join("  •  ")
-  const ids = [
-    issuer.vatId && `${t("tasks.report.vatId")}: ${issuer.vatId}`,
-    issuer.taxId && `${t("tasks.report.taxId")}: ${issuer.taxId}`,
-    issuer.registerNumber && `${t("tasks.report.register")}: ${issuer.registerNumber}`,
-  ]
-  for (const l of [...issuer.addressLines, contact, ...ids].filter(Boolean) as string[]) {
+  for (const l of head.lines) {
     doc.text(s(l), margin + logoW, ly); ly += 4
   }
   font("bold", 20, ACCENT)
@@ -174,17 +171,14 @@ export async function buildJobReportPdf(input: JobReportPdfInput): Promise<jsPDF
   doc.line(margin, y, pageW - margin, y)
   y += 8
 
-  // ── title + pills ─────────────────────────────────────────────────────────
+  // ── title + labels ────────────────────────────────────────────────────────
   font("bold", 16)
   for (const l of lines(r.header.title, contentW)) { doc.text(l, margin, y + 5); y += 7 }
   y += 1
-  const pills: Array<{ text: string; color: Rgb }> = [
-    { text: statusLabel(r.header.status, r.header.statuses), color: hexToRgb(statusHex(r.header.status, r.header.statuses)) },
-    { text: t(`tasks.priority.${r.header.priority}`), color: MUTED },
-  ]
-  if (r.header.taskType) pills.push({ text: r.header.taskType, color: ACCENT })
-  const origin = originLabel(r, t)
-  if (origin) pills.push({ text: origin, color: ACCENT })
+  const pills = reportPills(r, headOff, t).map((p) => ({
+    text: p.text,
+    color: p.key === "status" && p.hex ? hexToRgb(p.hex) : p.key === "priority" ? MUTED : ACCENT,
+  }))
   let px = margin
   font("bold", 8)
   for (const p of pills) {
@@ -197,22 +191,12 @@ export async function buildJobReportPdf(input: JobReportPdfInput): Promise<jsPDF
     doc.text(text, px + 3, y + 3.9)
     px += w + 2
   }
-  y += 11
+  y += pills.length ? 11 : 3
 
-  // ── facts grid (4 columns) ────────────────────────────────────────────────
-  const h = r.header
-  const facts: Array<{ label: string; value: string; sub?: string }> = []
-  if (h.client) facts.push({ label: t("tasks.report.facts.client"), value: h.client.name, sub: h.contact?.name ? [h.contact.name, h.contact.phone].filter(Boolean).join(" · ") : undefined })
-  if (h.site.address || h.unit) facts.push({ label: t("tasks.report.facts.site"), value: h.unit?.name ?? h.site.address ?? "", sub: h.unit ? h.unit.address ?? h.site.address ?? undefined : undefined })
-  if (h.asset) facts.push({ label: t("tasks.report.facts.equipment"), value: h.asset.name, sub: h.asset.serialNumber ? t("tasks.report.facts.serial", { serial: h.asset.serialNumber }) : undefined })
-  if (h.workspace) facts.push({ label: t("tasks.report.facts.workspace"), value: h.workspace.name })
-  if (h.dueDate) facts.push({ label: t("tasks.report.facts.due"), value: when(h.dueDate) })
-  facts.push({ label: t("tasks.report.facts.started"), value: h.startedAt ? when(h.startedAt) : "—", sub: personName(h.startedBy) || undefined })
-  facts.push({ label: t("tasks.report.facts.finished"), value: h.finishedAt ? when(h.finishedAt) : "—" })
-  facts.push({ label: t("tasks.report.facts.worked"), value: formatReportMinutes(h.totalMinutes, t) })
+  // ── detail boxes (4 columns; an empty box is never printed, so rows close up) ──
+  const facts = reportFacts(r, headOff, t, when)
   const colW = contentW / 4
-  for (let i = 0; i < facts.length; i += 4) {
-    const row = facts.slice(i, i + 4)
+  for (const row of factRows(facts, 4)) {
     const heights = row.map((f) => {
       font("bold", 9)
       const v = lines(f.value || "—", colW - 4).length
@@ -234,7 +218,7 @@ export async function buildJobReportPdf(input: JobReportPdfInput): Promise<jsPDF
     })
     y += rowH
   }
-  y += 2
+  if (facts.length) y += 2
 
   // ── sections ──────────────────────────────────────────────────────────────
   for (const section of input.visible) {
@@ -517,13 +501,13 @@ export async function buildJobReportPdf(input: JobReportPdfInput): Promise<jsPDF
     doc.setPage(p)
     if (p > 1) {
       font("normal", 7.5, MUTED)
-      doc.text(s(issuer.name ?? ""), margin, margin + 2)
+      doc.text(s(r.header.issuer.name ?? ""), margin, margin + 2)
       doc.text(s(`${t("tasks.report.documentTitle")} ${r.header.reference}`), pageW - margin, margin + 2, { align: "right" })
       doc.setDrawColor(LINE.r, LINE.g, LINE.b); doc.setLineWidth(0.3)
       doc.line(margin, margin + 4, pageW - margin, margin + 4)
     }
     font("normal", 7.5, MUTED)
-    doc.text(lines([issuer.name, r.header.reference, generated].filter(Boolean).join(" · "), contentW - 30)[0] ?? "", margin, pageH - 8)
+    doc.text(lines([r.header.issuer.name, r.header.reference, generated].filter(Boolean).join(" · "), contentW - 30)[0] ?? "", margin, pageH - 8)
     doc.text(s(t("tasks.report.page", { page: p, pages })), pageW - margin, pageH - 8, { align: "right" })
   }
   return doc

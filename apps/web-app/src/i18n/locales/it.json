@@ -2096,7 +2096,31 @@
         "hoursMinutes": "{{h}} h {{m}} min"
       },
       "notFinished": "Il rapporto sarà disponibile quando il lavoro sarà concluso",
-      "notFinishedHint": "Concludi prima il lavoro. Poi il rapporto conterrà tutto: foto, lavori eseguiti e firme."
+      "notFinishedHint": "Concludi prima il lavoro. Poi il rapporto conterrà tutto: foto, lavori eseguiti e firme.",
+      "issuer": {
+        "label": "Emesso da",
+        "automatic": "Automatico",
+        "hint": "L’azienda il cui nome e i cui dati compaiono in testa a questo rapporto. Automatico segue lo spazio di lavoro, poi il cliente, poi l’azienda principale."
+      },
+      "head": {
+        "title": "Intestazione del rapporto",
+        "hint": "Disattivi una riga o un riquadro per escluderlo dalla pagina e dal PDF. Il nome dell’azienda è sempre visibile. Un riquadro vuoto non viene mai stampato.",
+        "groups": {
+          "letterhead": "Carta intestata",
+          "labels": "Etichette",
+          "facts": "Riquadri dei dettagli"
+        },
+        "items": {
+          "logo": "Logo",
+          "address": "Indirizzo",
+          "contact": "Telefono, e-mail e sito web",
+          "registration": "P. IVA, codice fiscale e registro",
+          "status": "Stato",
+          "priority": "Priorità",
+          "taskType": "Tipo di lavoro",
+          "origin": "Origine del lavoro"
+        }
+      }
     }
   },
   "technicians": {
