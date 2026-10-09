@@ -14,6 +14,7 @@ import {
   MapPin,
   ChevronRight,
   Clock,
+  FileText,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -118,6 +119,13 @@ export function TaskDetailHeader({
             is no way to edit the task" is what that looks like from the outside.
             Cancel stays in the menu: it is destructive and belongs one step away.
           */}
+          {/* The job report — for anyone who can open the job; the server applies the same gate. */}
+          <Button variant="outline" size="sm" className="h-8" asChild>
+            <Link href={`/tasks/${task.id}/report`}>
+              <FileText className="size-3.5 mr-1.5" />
+              {t("tasks.report.open")}
+            </Link>
+          </Button>
           {!isCompleted && !isCanceled && canEdit && (
             <Button variant="outline" size="sm" className="h-8" onClick={onEditClick}>
               <Pencil className="size-3.5 mr-1.5" />

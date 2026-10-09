@@ -1932,6 +1932,169 @@
       "openExistingHint": "Anyone holding the role in this workspace can take it — the free ones are told now. People already on the task count as places taken.",
       "openNowButton": "Open to the role",
       "openedNow": "Opened to the role — the free ones are told now."
+    },
+    "report": {
+      "title": "Job report",
+      "documentTitle": "Job report",
+      "fileWord": "Job",
+      "open": "Report",
+      "companyFallback": "Company",
+      "vatId": "VAT ID",
+      "taxId": "Tax ID",
+      "register": "Register no.",
+      "issued": "Issued {{date}}",
+      "page": "Page {{page}} of {{pages}}",
+      "footer": "Generated {{when}} by {{who}}",
+      "copy": {
+        "label": "Which copy",
+        "office": "Office copy",
+        "client": "Client copy"
+      },
+      "download": "Download PDF",
+      "preparing": "Preparing PDF…",
+      "preparingPhotos": "Preparing photos {{done}}/{{total}}",
+      "downloadFailed": "The PDF could not be made. Please try again.",
+      "notAvailable": "This job is not available",
+      "notAvailableHint": "It may have been removed, or you no longer have access to it.",
+      "loadFailed": "The report could not be loaded.",
+      "retry": "Try again",
+      "back": "Back to the job",
+      "rail": {
+        "inThisReport": "In this report",
+        "inThisReportHint": "Switch a section off to leave it out of the page and the PDF.",
+        "clientHint": "By default the client copy leaves out each person's time, stop reasons, handover notes, comments, part prices and the route.",
+        "alsoShow": "Also show the client",
+        "alsoShowHint": "All off by default. Switching one on adds it to this client copy.",
+        "nothing": "This job has nothing more to show yet."
+      },
+      "toggles": {
+        "time": "Time on the job",
+        "photos": "Photos",
+        "checklist": "Checklist",
+        "stepAnswers": "Step answers",
+        "parts": "Parts used",
+        "partPrices": "Part prices",
+        "route": "Route driven",
+        "history": "What happened",
+        "notes": "Comments & handovers",
+        "documents": "Documents",
+        "details": "Job details",
+        "signatures": "Signatures"
+      },
+      "include": {
+        "personTime": "Each person's time",
+        "stopReasons": "Stop reasons",
+        "partPrices": "Part prices",
+        "route": "Route driven",
+        "comments": "Comments",
+        "handovers": "Handover notes",
+        "fullHistory": "Full history, incl. internal steps"
+      },
+      "sections": {
+        "request": "The request",
+        "work": "What was done",
+        "time": "Time on the job",
+        "photos": "Photos",
+        "checklist": "Checklist",
+        "stepAnswers": "Step answers",
+        "parts": "Parts used",
+        "route": "Route driven",
+        "history": "What happened",
+        "comments": "Comments",
+        "handovers": "Handover notes",
+        "documents": "Documents",
+        "details": "Job details",
+        "signatures": "Signatures"
+      },
+      "request": {
+        "none": "No description was written."
+      },
+      "work": {
+        "completed": "Completed by {{who}} · {{when}}",
+        "customer": "Signed off by {{name}}"
+      },
+      "facts": {
+        "client": "Client",
+        "site": "Site",
+        "equipment": "Equipment",
+        "serial": "S/N {{serial}}",
+        "workspace": "Workspace",
+        "due": "Booked for",
+        "started": "Started",
+        "finished": "Finished",
+        "worked": "Worked time",
+        "lead": "Lead: {{name}}"
+      },
+      "origin": {
+        "portal": "Created from a client request {{ref}}",
+        "recurring": "Created from a recurring plan",
+        "recurringNamed": "Created from the recurring plan \"{{name}}\"",
+        "subtask": "Subtask of \"{{title}}\""
+      },
+      "time": {
+        "total": "Total",
+        "stops": "Own stops",
+        "stopWho": "Who",
+        "stopAt": "Stopped",
+        "stopReason": "Reason",
+        "stopResumed": "Carried on",
+        "byPerson": "Each person"
+      },
+      "photos": {
+        "before": "Before",
+        "after": "After",
+        "unavailable": "Photo unavailable"
+      },
+      "checklist": {
+        "item": "Item",
+        "doneBy": "Done by",
+        "when": "When",
+        "owner": "Owner: {{name}}",
+        "done": "Done",
+        "open": "Open"
+      },
+      "answers": {
+        "photos_one": "{{count}} photo, see Photos",
+        "photos_other": "{{count}} photos, see Photos",
+        "signed": "Signed, see Signatures"
+      },
+      "parts": {
+        "part": "Part",
+        "number": "Part no.",
+        "qty": "Qty",
+        "unit": "Unit price",
+        "total": "Total",
+        "sum": "Total"
+      },
+      "route": {
+        "distance": "Distance",
+        "from": "Start → end",
+        "arrival": "Last point from the site",
+        "points": "GPS points"
+      },
+      "history": {
+        "truncated": "The earliest events are not shown: this job's history is longer than one report holds.",
+        "movedTo": "Moved to {{step}}",
+        "createdRecurring": "Created from a recurring plan"
+      },
+      "handovers": {
+        "worked": "worked {{time}}"
+      },
+      "documents": {
+        "type": "Type",
+        "name": "Name",
+        "size": "Size",
+        "by": "Added by"
+      },
+      "signatures": {
+        "technician": "Technician",
+        "customer": "Customer"
+      },
+      "units": {
+        "minutes": "{{m}} min",
+        "hours": "{{h}} h",
+        "hoursMinutes": "{{h}} h {{m}} min"
+      }
     }
   },
   "technicians": {

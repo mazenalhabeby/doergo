@@ -1932,6 +1932,169 @@
       "openExistingHint": "Cualquiera con este rol en este espacio puede tomarla; se avisa ya a los libres. Las personas que ya están en la tarea cuentan como puestos ocupados.",
       "openNowButton": "Abrir al rol",
       "openedNow": "Abierta al rol: se avisa ya a los libres."
+    },
+    "report": {
+      "title": "Informe del trabajo",
+      "documentTitle": "Informe del trabajo",
+      "fileWord": "Trabajo",
+      "open": "Informe",
+      "companyFallback": "Empresa",
+      "vatId": "NIF-IVA",
+      "taxId": "NIF",
+      "register": "N.º de registro",
+      "issued": "Emitido el {{date}}",
+      "page": "Página {{page}} de {{pages}}",
+      "footer": "Generado el {{when}} por {{who}}",
+      "copy": {
+        "label": "Qué copia",
+        "office": "Copia de oficina",
+        "client": "Copia del cliente"
+      },
+      "download": "Descargar PDF",
+      "preparing": "Preparando el PDF…",
+      "preparingPhotos": "Preparando fotos {{done}}/{{total}}",
+      "downloadFailed": "No se pudo generar el PDF. Inténtelo de nuevo.",
+      "notAvailable": "Este trabajo no está disponible",
+      "notAvailableHint": "Puede que se haya eliminado o que ya no tenga acceso a él.",
+      "loadFailed": "No se pudo cargar el informe.",
+      "retry": "Reintentar",
+      "back": "Volver al trabajo",
+      "rail": {
+        "inThisReport": "En este informe",
+        "inThisReportHint": "Desactive una sección para quitarla de la página y del PDF.",
+        "clientHint": "Por defecto, la copia del cliente no incluye el tiempo de cada persona, los motivos de parada, las notas de traspaso, los comentarios, los precios de las piezas ni la ruta.",
+        "alsoShow": "Mostrar también al cliente",
+        "alsoShowHint": "Todo desactivado por defecto. Lo que active se añade a esta copia del cliente.",
+        "nothing": "Este trabajo aún no tiene nada más que mostrar."
+      },
+      "toggles": {
+        "time": "Tiempo en el trabajo",
+        "photos": "Fotos",
+        "checklist": "Lista de control",
+        "stepAnswers": "Respuestas por paso",
+        "parts": "Piezas utilizadas",
+        "partPrices": "Precios de piezas",
+        "route": "Ruta recorrida",
+        "history": "Qué pasó",
+        "notes": "Comentarios y traspasos",
+        "documents": "Documentos",
+        "details": "Detalles del trabajo",
+        "signatures": "Firmas"
+      },
+      "include": {
+        "personTime": "Tiempo de cada persona",
+        "stopReasons": "Motivos de parada",
+        "partPrices": "Precios de piezas",
+        "route": "Ruta recorrida",
+        "comments": "Comentarios",
+        "handovers": "Notas de traspaso",
+        "fullHistory": "Historial completo, con pasos internos"
+      },
+      "sections": {
+        "request": "La solicitud",
+        "work": "Qué se hizo",
+        "time": "Tiempo en el trabajo",
+        "photos": "Fotos",
+        "checklist": "Lista de control",
+        "stepAnswers": "Respuestas por paso",
+        "parts": "Piezas utilizadas",
+        "route": "Ruta recorrida",
+        "history": "Qué pasó",
+        "comments": "Comentarios",
+        "handovers": "Notas de traspaso",
+        "documents": "Documentos",
+        "details": "Detalles del trabajo",
+        "signatures": "Firmas"
+      },
+      "request": {
+        "none": "No se escribió ninguna descripción."
+      },
+      "work": {
+        "completed": "Completado por {{who}} · {{when}}",
+        "customer": "Conforme: {{name}}"
+      },
+      "facts": {
+        "client": "Cliente",
+        "site": "Lugar",
+        "equipment": "Equipo",
+        "serial": "N.º de serie {{serial}}",
+        "workspace": "Espacio de trabajo",
+        "due": "Previsto para",
+        "started": "Iniciado",
+        "finished": "Terminado",
+        "worked": "Tiempo trabajado",
+        "lead": "Responsable: {{name}}"
+      },
+      "origin": {
+        "portal": "Creado a partir de una solicitud del cliente {{ref}}",
+        "recurring": "Creado a partir de un plan recurrente",
+        "recurringNamed": "Creado a partir del plan recurrente \"{{name}}\"",
+        "subtask": "Subtarea de \"{{title}}\""
+      },
+      "time": {
+        "total": "Total",
+        "stops": "Paradas propias",
+        "stopWho": "Quién",
+        "stopAt": "Parada",
+        "stopReason": "Motivo",
+        "stopResumed": "Continuó",
+        "byPerson": "Por persona"
+      },
+      "photos": {
+        "before": "Antes",
+        "after": "Después",
+        "unavailable": "Foto no disponible"
+      },
+      "checklist": {
+        "item": "Elemento",
+        "doneBy": "Hecho por",
+        "when": "Cuándo",
+        "owner": "Responsable: {{name}}",
+        "done": "Hecho",
+        "open": "Pendiente"
+      },
+      "answers": {
+        "photos_one": "{{count}} foto, ver Fotos",
+        "photos_other": "{{count}} fotos, ver Fotos",
+        "signed": "Firmado, ver Firmas"
+      },
+      "parts": {
+        "part": "Pieza",
+        "number": "Ref.",
+        "qty": "Cant.",
+        "unit": "Precio unitario",
+        "total": "Total",
+        "sum": "Total"
+      },
+      "route": {
+        "distance": "Distancia",
+        "from": "Inicio → fin",
+        "arrival": "Último punto desde el lugar",
+        "points": "Puntos GPS"
+      },
+      "history": {
+        "truncated": "No se muestran los eventos más antiguos: el historial de este trabajo es más largo de lo que cabe en un informe.",
+        "movedTo": "Pasado a {{step}}",
+        "createdRecurring": "Creado a partir de un plan recurrente"
+      },
+      "handovers": {
+        "worked": "{{time}} trabajado"
+      },
+      "documents": {
+        "type": "Tipo",
+        "name": "Nombre",
+        "size": "Tamaño",
+        "by": "Añadido por"
+      },
+      "signatures": {
+        "technician": "Técnico",
+        "customer": "Cliente"
+      },
+      "units": {
+        "minutes": "{{m}} min",
+        "hours": "{{h}} h",
+        "hoursMinutes": "{{h}} h {{m}} min"
+      }
     }
   },
   "technicians": {

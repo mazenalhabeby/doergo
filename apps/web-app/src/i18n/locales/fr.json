@@ -1932,6 +1932,169 @@
       "openExistingHint": "Toute personne ayant ce rôle dans cet espace peut la prendre — les personnes libres sont prévenues tout de suite. Celles déjà sur la tâche comptent comme places prises.",
       "openNowButton": "Ouvrir au rôle",
       "openedNow": "Ouverte au rôle — les personnes libres sont prévenues."
+    },
+    "report": {
+      "title": "Rapport d'intervention",
+      "documentTitle": "Rapport d'intervention",
+      "fileWord": "Intervention",
+      "open": "Rapport",
+      "companyFallback": "Entreprise",
+      "vatId": "N° TVA",
+      "taxId": "N° fiscal",
+      "register": "N° d'immatriculation",
+      "issued": "Émis le {{date}}",
+      "page": "Page {{page}} sur {{pages}}",
+      "footer": "Généré le {{when}} par {{who}}",
+      "copy": {
+        "label": "Quel exemplaire",
+        "office": "Exemplaire bureau",
+        "client": "Exemplaire client"
+      },
+      "download": "Télécharger le PDF",
+      "preparing": "Préparation du PDF…",
+      "preparingPhotos": "Préparation des photos {{done}}/{{total}}",
+      "downloadFailed": "Le PDF n'a pas pu être créé. Veuillez réessayer.",
+      "notAvailable": "Cette intervention n'est pas disponible",
+      "notAvailableHint": "Elle a peut-être été supprimée, ou vous n'y avez plus accès.",
+      "loadFailed": "Le rapport n'a pas pu être chargé.",
+      "retry": "Réessayer",
+      "back": "Retour à l'intervention",
+      "rail": {
+        "inThisReport": "Dans ce rapport",
+        "inThisReportHint": "Désactivez une section pour la retirer de la page et du PDF.",
+        "clientHint": "Par défaut, l'exemplaire client n'inclut ni le temps de chaque personne, ni les motifs d'arrêt, ni les notes de passation, ni les commentaires, ni le prix des pièces, ni le trajet.",
+        "alsoShow": "Montrer aussi au client",
+        "alsoShowHint": "Tout est désactivé par défaut. Ce que vous activez est ajouté à cet exemplaire client.",
+        "nothing": "Cette intervention n'a encore rien d'autre à montrer."
+      },
+      "toggles": {
+        "time": "Temps sur l'intervention",
+        "photos": "Photos",
+        "checklist": "Liste de contrôle",
+        "stepAnswers": "Réponses par étape",
+        "parts": "Pièces utilisées",
+        "partPrices": "Prix des pièces",
+        "route": "Trajet parcouru",
+        "history": "Déroulement",
+        "notes": "Commentaires et passations",
+        "documents": "Documents",
+        "details": "Détails de l'intervention",
+        "signatures": "Signatures"
+      },
+      "include": {
+        "personTime": "Temps de chaque personne",
+        "stopReasons": "Motifs d'arrêt",
+        "partPrices": "Prix des pièces",
+        "route": "Trajet parcouru",
+        "comments": "Commentaires",
+        "handovers": "Notes de passation",
+        "fullHistory": "Historique complet, étapes internes comprises"
+      },
+      "sections": {
+        "request": "La demande",
+        "work": "Travaux réalisés",
+        "time": "Temps sur l'intervention",
+        "photos": "Photos",
+        "checklist": "Liste de contrôle",
+        "stepAnswers": "Réponses par étape",
+        "parts": "Pièces utilisées",
+        "route": "Trajet parcouru",
+        "history": "Déroulement",
+        "comments": "Commentaires",
+        "handovers": "Notes de passation",
+        "documents": "Documents",
+        "details": "Détails de l'intervention",
+        "signatures": "Signatures"
+      },
+      "request": {
+        "none": "Aucune description n'a été saisie."
+      },
+      "work": {
+        "completed": "Terminé par {{who}} · {{when}}",
+        "customer": "Validé par {{name}}"
+      },
+      "facts": {
+        "client": "Client",
+        "site": "Site",
+        "equipment": "Équipement",
+        "serial": "N° de série {{serial}}",
+        "workspace": "Espace de travail",
+        "due": "Prévu le",
+        "started": "Commencé",
+        "finished": "Terminé",
+        "worked": "Temps travaillé",
+        "lead": "Responsable : {{name}}"
+      },
+      "origin": {
+        "portal": "Créé à partir d'une demande client {{ref}}",
+        "recurring": "Créé à partir d'un plan récurrent",
+        "recurringNamed": "Créé à partir du plan récurrent \"{{name}}\"",
+        "subtask": "Sous-tâche de \"{{title}}\""
+      },
+      "time": {
+        "total": "Total",
+        "stops": "Arrêts personnels",
+        "stopWho": "Qui",
+        "stopAt": "Arrêté",
+        "stopReason": "Motif",
+        "stopResumed": "Repris",
+        "byPerson": "Par personne"
+      },
+      "photos": {
+        "before": "Avant",
+        "after": "Après",
+        "unavailable": "Photo indisponible"
+      },
+      "checklist": {
+        "item": "Élément",
+        "doneBy": "Fait par",
+        "when": "Quand",
+        "owner": "Responsable : {{name}}",
+        "done": "Fait",
+        "open": "À faire"
+      },
+      "answers": {
+        "photos_one": "{{count}} photo, voir Photos",
+        "photos_other": "{{count}} photos, voir Photos",
+        "signed": "Signé, voir Signatures"
+      },
+      "parts": {
+        "part": "Pièce",
+        "number": "Réf.",
+        "qty": "Qté",
+        "unit": "Prix unitaire",
+        "total": "Total",
+        "sum": "Total"
+      },
+      "route": {
+        "distance": "Distance",
+        "from": "Départ → arrivée",
+        "arrival": "Dernier point depuis le site",
+        "points": "Points GPS"
+      },
+      "history": {
+        "truncated": "Les premiers événements ne sont pas affichés : l'historique de cette intervention dépasse ce qu'un rapport peut contenir.",
+        "movedTo": "Passé à {{step}}",
+        "createdRecurring": "Créé à partir d'un plan récurrent"
+      },
+      "handovers": {
+        "worked": "{{time}} travaillé"
+      },
+      "documents": {
+        "type": "Type",
+        "name": "Nom",
+        "size": "Taille",
+        "by": "Ajouté par"
+      },
+      "signatures": {
+        "technician": "Technicien",
+        "customer": "Client"
+      },
+      "units": {
+        "minutes": "{{m}} min",
+        "hours": "{{h}} h",
+        "hoursMinutes": "{{h}} h {{m}} min"
+      }
     }
   },
   "technicians": {

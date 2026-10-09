@@ -1,4 +1,5 @@
 import jsPDF from "jspdf"
+import { loadLogo } from "./pdf-common"
 import autoTable from "jspdf-autotable"
 import type { ReportResult } from "@/lib/api"
 import { formatHours } from "@hbcfield/shared/client"
@@ -203,33 +204,6 @@ function summarize(result: ReportResult): { label: string; value: string }[] {
     }
   }
   return cards
-}
-
-/** Load a (possibly cross-origin) logo into a PNG data URL. Resolves null on any failure. */
-async function loadLogo(url?: string | null): Promise<{ dataUrl: string; w: number; h: number } | null> {
-  if (!url) return null
-  try {
-    const img = new Image()
-    img.crossOrigin = "anonymous"
-    const loaded = new Promise<HTMLImageElement>((resolve, reject) => {
-      img.onload = () => resolve(img)
-      img.onerror = reject
-    })
-    img.src = url
-    const el = await Promise.race([
-      loaded,
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("logo timeout")), 4000)),
-    ])
-    const canvas = document.createElement("canvas")
-    canvas.width = el.naturalWidth || el.width
-    canvas.height = el.naturalHeight || el.height
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return null
-    ctx.drawImage(el, 0, 0)
-    return { dataUrl: canvas.toDataURL("image/png"), w: canvas.width, h: canvas.height }
-  } catch {
-    return null // remote logo blocked by CORS / missing → fall back to name only
-  }
 }
 
 function addressLines(b: ReportBranding): string[] {

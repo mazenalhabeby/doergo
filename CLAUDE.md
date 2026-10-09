@@ -556,6 +556,29 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 >
 > ⚠️ Mobile: "Open for your role" on the Jobs tab and Take/Hand back on the job page are ONLINE ONLY (a queued take would promise a place somebody else got). Needs an OTA.
 
+### The job report (`/tasks/:id/full-report`) — one job, start to finish, office or client copy
+> Header facts, the request, the service report's words, time, photos (report BEFORE/AFTER, task images, step-form photos), checklist, step answers with their form labels, parts, the route, the WHOLE history, comments + handover notes, documents, custom fields, signatures. Rules + types: `packages/shared/src/tasks/task-report.ts` (`TaskReport`, `TASK_REPORT_SECTIONS`, `toClientCopy`); server: `task-service/.../tasks/task-report.service.ts` (pattern `task_full_report`), gateway `modules/tasks/task-report.controller.ts`.
+
+| Method | Endpoint | Description | Gate |
+|--------|----------|-------------|------|
+| GET | `/tasks/:id/full-report?copy=office\|client` | The report bundle; absent copy = office, anything else 400 (`REPORT_COPY_INVALID`) | the NORMAL task gate, refused **404** |
+
+> ⚠️ **The client copy is cut ON THE SERVER** (`toClientCopy`, in task-service, before the bundle leaves it): no per-person time or own stops ("My issue"), no part prices, no route, no comments, no handover notes, and only `CLIENT_SAFE_EVENTS` with a whitelisted subset of their facts (no reason of any kind). Built from what it KEEPS — a field added to the office copy is absent from the client copy until somebody decides otherwise.
+>
+> ⚠️ **The office chooses what the client copy adds back**, per report: `&include=` any of `CLIENT_COPY_OPTIONS` (personTime, stopReasons, partPrices, route, comments, handovers, fullHistory), all OFF by default; unknown key → 400 (`REPORT_INCLUDE_INVALID`), `meta.include` echoes it. It can only add what the reader could already see in the office copy — the route still needs the tracking rule.
+>
+> ⚠️ **404, normal access only.** Not the open-role holder's read exemption, and never a cross-org guest: the gateway sends no `crossOrgRead` and task-service drops `sharedSpaceIds` anyway — the report carries comments, signatures and the service report, which a share does not grant.
+>
+> ⚠️ **It COMPOSES the existing reads** (service report, checklist, submissions, comments, attachments, custom fields, job time) — a section can never disagree with the job page. A module switched off in the workspace (`REPORT_SECTION_MODULE`) removes its section and its read is not made; `meta.sections` lists what is present.
+>
+> ⚠️ **The route is the gateway's**: task-service leaves `route: null` when the workspace tracks; the gateway fills it from `get_task_route` (in parallel) only for the office copy AND a reader with `canViewTracking` org-wide or in THIS workspace (`trackingVisibility`); otherwise, or on any tracking failure, the section is removed — never a failed report.
+>
+> ⚠️ **No labour cost, ever** — no rate column is selected; the spec scans both copies for `costRate`/`billableRate`. A client's contact details only to a reader the CRM reaches (`crmReachesClient`); the name always.
+>
+> ⚠️ **Signatures**: a ServiceReport signature is passed on only as a `data:image/png|jpeg;base64,` URL (`safeSignatureDataUrl`) — a URL or SVG is dropped. A step-form photo/signature keeps only THIS job's attachment ids (the value is filtered, not just unlinked).
+>
+> ⚠️ **The WHOLE history**, read newest-first in pages of 1,000 up to `REPORT_HISTORY_MAX` (5,000) and returned chronological; past the ceiling `meta.historyTruncated` and the EARLIEST events are the ones missing. People resolved in one query.
+
 ### The company calendar (`/calendar`) — our own, Google only as an optional window
 > One calendar for jobs, appointments, reminders, client follow-ups, shifts, leave, public holidays and document expiries. Rules: `packages/shared/src/calendar/*` (days, holidays, recurrence, reminders, ics, free-slots); server: `task-service/.../calendar/*`. Migration `20261007090000_company_calendar` (additive). E2E: `python3 tools/calendar-e2e.py` (LOCAL only, 39 checks). Web: `/calendar`, Settings → Holidays & weekends. Phone: Calendar (in More) + the Today home card.
 
@@ -1295,6 +1318,8 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `assertMemberInScope()`, `memberScopeFilter()` | "Is this person in my crew?" — one rule for both services |
 | `SUPPORTED_CURRENCIES`, `parseCurrency()`, `resolveInvoiceCurrency()`, `workspaceCurrency()`, `crossRate()`, `parseExchangeRate()`, `toOrganizationCurrency()` | Which currency an amount is in, and converting it only through a known rate (billing/currency.ts) |
 | `formatDistance()`, `distanceParts()`, `distanceRefusalParams()` | THE distance formatter — "85 m", "850 m", "1.2 km", "9,631 km", per locale, no-break space. Mobile `lib/distance`, web `useFormatDistance` only bind the locale. Distance refusals are CODED (`TOO_FAR_TO_ARRIVE`/`TOO_FAR_TO_START`/`OUTSIDE_GEOFENCE`/`AWAY_NOT_ALLOWED` + `params.distanceMetres/radiusMetres`); `distance-display-guard.spec.ts` fails on a hand-built km/m |
+| `toClientCopy()`, `parseReportCopy()`, `parseClientCopyInclude()`, `CLIENT_COPY_OPTIONS`, `safeSignatureDataUrl()`, `toReportRoute()`, `portalRequestReference()` | The job report (tasks/task-report.ts): the client copy cut from what it keeps, the copy parameter, a signature fit to draw, the tracked route as printed, the `#AB12CD` reference |
+| `effectiveSpaceModules()` | A workspace's modules: its own set, else the organization's, else none |
 | `activeAssignmentWhere()` | "Is this member assigned to this workspace RIGHT NOW?" — shared by the clock-in list and the clock-in check |
 | `crewPresence()`, `joinMoment()`, `effectiveLeader()`, `mayMoveStep()`, `pausesAtClockOut()`, `endOfLocalDay()` | A crew on one job (tasks/crew.ts): who is on it, when a join counts from, who leads now (acting included), who may move the step, does a clock-out pause it |
 | `mayChangeChecklistOwner()`, `checklistCompletion()`, `splitChecklist()`, `openChecklistOf()`, `tickedByOther()` | A crew's checklist: who may give an item to whom, what a tick writes, Mine-first grouping (tasks/checklist.ts) |

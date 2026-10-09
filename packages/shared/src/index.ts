@@ -167,6 +167,8 @@ export * from './tasks/handover';
 export * from './tasks/job-time';
 export * from './tasks/crew';
 export * from './tasks/checklist';
+// The full report for one job: its shape, its sections, and the client copy (tasks/task-report.ts).
+export * from './tasks/task-report';
 // A job somebody is working on right now — narrower than ACTIVE_STATUSES (tasks/working-statuses.ts).
 export * from './tasks/working-statuses';
 export * from './api/clamp-limit';

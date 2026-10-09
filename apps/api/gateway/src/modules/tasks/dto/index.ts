@@ -4,7 +4,7 @@ import { OmitType, PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import { OccurrenceEvidenceDto } from '../../../common/dto/occurrence.dto';
 import { CLIENT_ID } from '../../../common/dto/upload.dto';
-import { TaskPriority, TaskAssigneeRole, DependencyType, TASK_TITLE_MAX_LENGTH, TASK_DESCRIPTION_MAX_LENGTH, ATTENDANCE_CONSTANTS, HANDOVER_NOTE_MAX, HANDOVER_PHOTOS_MAX, OFFICE_START_REASON_MAX, CREW_REASON_MAX, LEAD_SCOPES, ROLE_SPOTS_MAX, type LeadScope } from '@hbcfield/shared';
+import { TaskPriority, TaskAssigneeRole, DependencyType, TASK_TITLE_MAX_LENGTH, TASK_DESCRIPTION_MAX_LENGTH, ATTENDANCE_CONSTANTS, HANDOVER_NOTE_MAX, HANDOVER_PHOTOS_MAX, OFFICE_START_REASON_MAX, CREW_REASON_MAX, LEAD_SCOPES, ROLE_SPOTS_MAX, REPORT_COPIES, CLIENT_COPY_OPTIONS, type LeadScope, type TaskReportCopy } from '@hbcfield/shared';
 
 /**
  * Create task request DTO
@@ -476,3 +476,26 @@ export class ChangeLeadDto {
 
 // Upload DTOs are shared by every route that stores a file.
 export { PresignUploadDto as PresignAttachmentDto, ConfirmUploadDto as ConfirmAttachmentDto } from '../../../common/dto/upload.dto';
+
+/**
+ * `GET /tasks/:id/full-report?copy=` — which copy of the job report. Absent =
+ * the office copy; anything else is refused here (400) and again in
+ * task-service (shared parseReportCopy), which is the one that cuts it.
+ */
+export class TaskReportQueryDto {
+  @ApiPropertyOptional({ enum: REPORT_COPIES, default: 'office' })
+  @IsOptional()
+  @IsIn(REPORT_COPIES as unknown as string[])
+  copy?: TaskReportCopy;
+
+  /**
+   * Client copy only: what the office adds back, comma-separated
+   * (`CLIENT_COPY_OPTIONS`). Parsed and refused on unknown keys in task-service
+   * (shared parseClientCopyInclude) — the one that cuts the copy.
+   */
+  @ApiPropertyOptional({ description: `Comma-separated: ${CLIENT_COPY_OPTIONS.join(', ')}` })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  include?: string;
+}

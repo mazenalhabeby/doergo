@@ -1932,6 +1932,169 @@
       "openExistingHint": "Jede Person mit dieser Rolle in diesem Arbeitsbereich kann ihn übernehmen — die Freien werden sofort benachrichtigt. Personen, die bereits dabei sind, zählen als besetzte Plätze.",
       "openNowButton": "Für die Rolle öffnen",
       "openedNow": "Für die Rolle geöffnet — die Freien werden jetzt benachrichtigt."
+    },
+    "report": {
+      "title": "Auftragsbericht",
+      "documentTitle": "Auftragsbericht",
+      "fileWord": "Auftrag",
+      "open": "Bericht",
+      "companyFallback": "Unternehmen",
+      "vatId": "USt-IdNr.",
+      "taxId": "Steuernummer",
+      "register": "Firmenbuchnr.",
+      "issued": "Erstellt am {{date}}",
+      "page": "Seite {{page}} von {{pages}}",
+      "footer": "Erstellt am {{when}} von {{who}}",
+      "copy": {
+        "label": "Welche Fassung",
+        "office": "Büro-Fassung",
+        "client": "Kunden-Fassung"
+      },
+      "download": "PDF herunterladen",
+      "preparing": "PDF wird erstellt…",
+      "preparingPhotos": "Fotos werden vorbereitet {{done}}/{{total}}",
+      "downloadFailed": "Das PDF konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+      "notAvailable": "Dieser Auftrag ist nicht verfügbar",
+      "notAvailableHint": "Er wurde möglicherweise entfernt, oder Sie haben keinen Zugriff mehr darauf.",
+      "loadFailed": "Der Bericht konnte nicht geladen werden.",
+      "retry": "Erneut versuchen",
+      "back": "Zurück zum Auftrag",
+      "rail": {
+        "inThisReport": "In diesem Bericht",
+        "inThisReportHint": "Schalten Sie einen Abschnitt aus, um ihn aus der Seite und dem PDF wegzulassen.",
+        "clientHint": "Standardmäßig enthält die Kunden-Fassung keine Zeiten pro Person, keine Unterbrechungsgründe, keine Übergabenotizen, keine Kommentare, keine Teilepreise und keine Route.",
+        "alsoShow": "Dem Kunden zusätzlich zeigen",
+        "alsoShowHint": "Standardmäßig alles aus. Was Sie einschalten, kommt in diese Kunden-Fassung.",
+        "nothing": "Zu diesem Auftrag gibt es noch nichts weiter zu zeigen."
+      },
+      "toggles": {
+        "time": "Zeit am Auftrag",
+        "photos": "Fotos",
+        "checklist": "Checkliste",
+        "stepAnswers": "Antworten je Schritt",
+        "parts": "Verwendete Teile",
+        "partPrices": "Teilepreise",
+        "route": "Gefahrene Route",
+        "history": "Was geschah",
+        "notes": "Kommentare & Übergaben",
+        "documents": "Dokumente",
+        "details": "Auftragsdetails",
+        "signatures": "Unterschriften"
+      },
+      "include": {
+        "personTime": "Zeit jeder Person",
+        "stopReasons": "Unterbrechungsgründe",
+        "partPrices": "Teilepreise",
+        "route": "Gefahrene Route",
+        "comments": "Kommentare",
+        "handovers": "Übergabenotizen",
+        "fullHistory": "Vollständiger Verlauf inkl. interner Schritte"
+      },
+      "sections": {
+        "request": "Der Auftrag",
+        "work": "Was erledigt wurde",
+        "time": "Zeit am Auftrag",
+        "photos": "Fotos",
+        "checklist": "Checkliste",
+        "stepAnswers": "Antworten je Schritt",
+        "parts": "Verwendete Teile",
+        "route": "Gefahrene Route",
+        "history": "Was geschah",
+        "comments": "Kommentare",
+        "handovers": "Übergabenotizen",
+        "documents": "Dokumente",
+        "details": "Auftragsdetails",
+        "signatures": "Unterschriften"
+      },
+      "request": {
+        "none": "Es wurde keine Beschreibung erfasst."
+      },
+      "work": {
+        "completed": "Abgeschlossen von {{who}} · {{when}}",
+        "customer": "Abgenommen von {{name}}"
+      },
+      "facts": {
+        "client": "Kunde",
+        "site": "Einsatzort",
+        "equipment": "Anlage",
+        "serial": "S/N {{serial}}",
+        "workspace": "Arbeitsbereich",
+        "due": "Termin",
+        "started": "Begonnen",
+        "finished": "Abgeschlossen",
+        "worked": "Gearbeitete Zeit",
+        "lead": "Leitung: {{name}}"
+      },
+      "origin": {
+        "portal": "Aus einer Kundenanfrage {{ref}} erstellt",
+        "recurring": "Aus einem wiederkehrenden Plan erstellt",
+        "recurringNamed": "Aus dem wiederkehrenden Plan \"{{name}}\" erstellt",
+        "subtask": "Teilaufgabe von \"{{title}}\""
+      },
+      "time": {
+        "total": "Gesamt",
+        "stops": "Eigene Unterbrechungen",
+        "stopWho": "Wer",
+        "stopAt": "Unterbrochen",
+        "stopReason": "Grund",
+        "stopResumed": "Fortgesetzt",
+        "byPerson": "Je Person"
+      },
+      "photos": {
+        "before": "Vorher",
+        "after": "Nachher",
+        "unavailable": "Foto nicht verfügbar"
+      },
+      "checklist": {
+        "item": "Punkt",
+        "doneBy": "Erledigt von",
+        "when": "Wann",
+        "owner": "Zuständig: {{name}}",
+        "done": "Erledigt",
+        "open": "Offen"
+      },
+      "answers": {
+        "photos_one": "{{count}} Foto, siehe Fotos",
+        "photos_other": "{{count}} Fotos, siehe Fotos",
+        "signed": "Unterschrieben, siehe Unterschriften"
+      },
+      "parts": {
+        "part": "Teil",
+        "number": "Teilenr.",
+        "qty": "Menge",
+        "unit": "Einzelpreis",
+        "total": "Summe",
+        "sum": "Gesamt"
+      },
+      "route": {
+        "distance": "Strecke",
+        "from": "Start → Ende",
+        "arrival": "Letzter Punkt vom Einsatzort",
+        "points": "GPS-Punkte"
+      },
+      "history": {
+        "truncated": "Die frühesten Ereignisse fehlen: Der Verlauf dieses Auftrags ist länger, als ein Bericht fasst.",
+        "movedTo": "Verschoben nach {{step}}",
+        "createdRecurring": "Aus einem wiederkehrenden Plan erstellt"
+      },
+      "handovers": {
+        "worked": "{{time}} gearbeitet"
+      },
+      "documents": {
+        "type": "Typ",
+        "name": "Name",
+        "size": "Größe",
+        "by": "Hinzugefügt von"
+      },
+      "signatures": {
+        "technician": "Techniker",
+        "customer": "Kunde"
+      },
+      "units": {
+        "minutes": "{{m}} Min.",
+        "hours": "{{h}} Std.",
+        "hoursMinutes": "{{h}} Std. {{m}} Min."
+      }
     }
   },
   "technicians": {

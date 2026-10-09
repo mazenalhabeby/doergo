@@ -16,6 +16,7 @@ import {
 } from '@hbcfield/shared/client';
 import type { StepForm, StepFormField, StepFormAnswers } from '@hbcfield/shared/client';
 import type { BankAccountDetails, IssuerSnapshot, LegalEntityIdentity } from '@hbcfield/shared/client';
+import type { ClientCopyOption, TaskReport, TaskReportCopy } from '@hbcfield/shared/client';
 import type {
   CompanyLocation,
   TimeEntry,
@@ -1275,6 +1276,28 @@ export const tasksApi = {
     const response = await api.get<{ success: boolean; data: TaskStepSubmission[] }>(`/tasks/${id}/submissions`);
     if (response.error) throw apiError(response);
     return response.data?.data ?? [];
+  },
+
+  /**
+   * The job report — one job start to finish (shared tasks/task-report.ts).
+   * The CLIENT copy is cut on the server; this only says which copy to send and
+   * what the office chose to add back to it (`?include=`).
+   * The thrown error carries `status` so a 404 can say "not available".
+   */
+  getFullReport: async (id: string, copy: TaskReportCopy, include: readonly ClientCopyOption[] = []): Promise<TaskReport> => {
+    const response = await api.get<{ success: boolean; data: TaskReport }>(
+      buildUrlWithQuery(`/tasks/${encodeURIComponent(id)}/full-report`, {
+        copy,
+        // What the office adds back to the client copy; the office copy ignores it.
+        include: copy === 'client' && include.length ? [...include].sort().join(',') : undefined,
+      }),
+    );
+    if (response.error || !response.data?.data) {
+      const err = apiError(response.error ? response : { error: 'Request failed' }) as Error & { status?: number };
+      err.status = response.status;
+      throw err;
+    }
+    return response.data.data;
   },
 
   // Get task timeline/activity

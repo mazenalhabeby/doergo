@@ -6,6 +6,7 @@ import { ClientRecordSkeleton, ClientsListSkeleton } from './crm';
 import { DashboardPageSkeleton, dashboardVariant } from '@/app/(dashboard)/dashboard/_components/dashboard-skeleton';
 import { TasksPageLoading } from '@/app/(dashboard)/tasks/_components/tasks-skeleton';
 import { TaskDetailPageSkeleton } from './page-skeletons';
+import { JobReportPageSkeleton } from '@/app/(dashboard)/tasks/[id]/report/_components/report-skeleton';
 import { useAuth } from '@/contexts/auth-context';
 
 import { GenericContentSkeleton } from './primitives';
@@ -26,6 +27,11 @@ import { GenericContentSkeleton } from './primitives';
 export function RouteSkeleton() {
   const pathname = usePathname();
   const { user } = useAuth();
+
+  // A job report — /tasks/<id>/report: the sheet, not the task page.
+  if (/^\/tasks\/[^/]+\/report\/?$/.test(pathname)) {
+    return <JobReportPageSkeleton />;
+  }
 
   // A task detail route — /tasks/<id>, but not /tasks/recurring.
   if (pathname.startsWith('/tasks/') && pathname !== '/tasks/recurring') {

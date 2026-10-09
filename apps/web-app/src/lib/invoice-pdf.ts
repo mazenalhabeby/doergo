@@ -3,6 +3,7 @@ import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import type { IssuerSnapshot, SupportedLocale } from "@hbcfield/shared/client"
 import { invoiceStamp } from "./invoice-status"
+import { PDF_PALETTE, PDF_TABLE_THEME, loadLogo } from "./pdf-common"
 import { dayKeyOf, fileNamePart, pdfFileName, periodPart } from "./pdf-filename"
 import {
   documentUpper, fillLabel, formatDocumentDate, formatDocumentMoney, formatDocumentQuantity,
@@ -76,39 +77,9 @@ export interface InvoicePdfData {
   issuer?: IssuerSnapshot | null
 }
 
-const INK = { r: 30, g: 41, b: 59 } // slate-800
-const MUTED = { r: 100, g: 116, b: 139 } // slate-500
-const ACCENT = { r: 37, g: 99, b: 235 } // brand-600
-const LINE = { r: 226, g: 232, b: 240 } // slate-200
-/** The document palette, shared with every PDF this product draws so they read as one family. */
-export const PDF_PALETTE = { INK, MUTED, ACCENT, LINE } as const
-
-/** Load a (possibly cross-origin) logo into a PNG data URL. Resolves null on any failure. */
-async function loadLogo(url?: string | null): Promise<{ dataUrl: string; w: number; h: number } | null> {
-  if (!url) return null
-  try {
-    const img = new Image()
-    img.crossOrigin = "anonymous"
-    const loaded = new Promise<HTMLImageElement>((resolve, reject) => {
-      img.onload = () => resolve(img)
-      img.onerror = reject
-    })
-    img.src = url
-    const el = await Promise.race([
-      loaded,
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("logo timeout")), 4000)),
-    ])
-    const canvas = document.createElement("canvas")
-    canvas.width = el.naturalWidth || el.width
-    canvas.height = el.naturalHeight || el.height
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return null
-    ctx.drawImage(el, 0, 0)
-    return { dataUrl: canvas.toDataURL("image/png"), w: canvas.width, h: canvas.height }
-  } catch {
-    return null
-  }
-}
+const { INK, MUTED, ACCENT, LINE } = PDF_PALETTE
+/** The document palette — lives in pdf-common.ts; re-exported for callers that import it from here. */
+export { PDF_PALETTE }
 
 /** The document itself — exported so a test can read what a client receives. */
 export async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise<jsPDF> {
@@ -247,9 +218,7 @@ export async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): 
             fmtMoney(it.amount, inv.currency),
           ],
     ),
-    theme: "grid",
-    styles: { font: "helvetica", fontSize: 9, cellPadding: 2.5, textColor: [INK.r, INK.g, INK.b], lineColor: [LINE.r, LINE.g, LINE.b], lineWidth: 0.2 },
-    headStyles: { fillColor: [ACCENT.r, ACCENT.g, ACCENT.b], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8.5 },
+    ...PDF_TABLE_THEME,
     columnStyles: {
       0: { cellWidth: "auto" },
       1: { halign: "right", cellWidth: 22 },

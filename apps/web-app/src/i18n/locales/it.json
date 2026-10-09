@@ -1932,6 +1932,169 @@
       "openExistingHint": "Chiunque abbia questo ruolo in questo spazio può prenderla: i liberi vengono avvisati subito. Chi è già sull'attività conta come posto occupato.",
       "openNowButton": "Apri al ruolo",
       "openedNow": "Aperta al ruolo: i liberi vengono avvisati ora."
+    },
+    "report": {
+      "title": "Rapporto di intervento",
+      "documentTitle": "Rapporto di intervento",
+      "fileWord": "Intervento",
+      "open": "Rapporto",
+      "companyFallback": "Azienda",
+      "vatId": "Partita IVA",
+      "taxId": "Codice fiscale",
+      "register": "N. di registro",
+      "issued": "Emesso il {{date}}",
+      "page": "Pagina {{page}} di {{pages}}",
+      "footer": "Generato il {{when}} da {{who}}",
+      "copy": {
+        "label": "Quale copia",
+        "office": "Copia ufficio",
+        "client": "Copia cliente"
+      },
+      "download": "Scarica PDF",
+      "preparing": "Preparazione del PDF…",
+      "preparingPhotos": "Preparazione foto {{done}}/{{total}}",
+      "downloadFailed": "Non è stato possibile creare il PDF. Riprova.",
+      "notAvailable": "Questo intervento non è disponibile",
+      "notAvailableHint": "Potrebbe essere stato rimosso, oppure non hai più accesso.",
+      "loadFailed": "Non è stato possibile caricare il rapporto.",
+      "retry": "Riprova",
+      "back": "Torna all'intervento",
+      "rail": {
+        "inThisReport": "In questo rapporto",
+        "inThisReportHint": "Disattiva una sezione per escluderla dalla pagina e dal PDF.",
+        "clientHint": "Per impostazione predefinita la copia cliente non include il tempo di ogni persona, i motivi di sosta, le note di passaggio, i commenti, i prezzi dei ricambi e il percorso.",
+        "alsoShow": "Mostra anche al cliente",
+        "alsoShowHint": "Tutto disattivato per impostazione predefinita. Ciò che attivi viene aggiunto a questa copia cliente.",
+        "nothing": "Questo intervento non ha ancora altro da mostrare."
+      },
+      "toggles": {
+        "time": "Tempo sull'intervento",
+        "photos": "Foto",
+        "checklist": "Checklist",
+        "stepAnswers": "Risposte per fase",
+        "parts": "Ricambi utilizzati",
+        "partPrices": "Prezzi dei ricambi",
+        "route": "Percorso effettuato",
+        "history": "Cosa è successo",
+        "notes": "Commenti e passaggi",
+        "documents": "Documenti",
+        "details": "Dettagli dell'intervento",
+        "signatures": "Firme"
+      },
+      "include": {
+        "personTime": "Tempo di ogni persona",
+        "stopReasons": "Motivi di sosta",
+        "partPrices": "Prezzi dei ricambi",
+        "route": "Percorso effettuato",
+        "comments": "Commenti",
+        "handovers": "Note di passaggio",
+        "fullHistory": "Cronologia completa, fasi interne incluse"
+      },
+      "sections": {
+        "request": "La richiesta",
+        "work": "Lavori eseguiti",
+        "time": "Tempo sull'intervento",
+        "photos": "Foto",
+        "checklist": "Checklist",
+        "stepAnswers": "Risposte per fase",
+        "parts": "Ricambi utilizzati",
+        "route": "Percorso effettuato",
+        "history": "Cosa è successo",
+        "comments": "Commenti",
+        "handovers": "Note di passaggio",
+        "documents": "Documenti",
+        "details": "Dettagli dell'intervento",
+        "signatures": "Firme"
+      },
+      "request": {
+        "none": "Non è stata scritta alcuna descrizione."
+      },
+      "work": {
+        "completed": "Completato da {{who}} · {{when}}",
+        "customer": "Approvato da {{name}}"
+      },
+      "facts": {
+        "client": "Cliente",
+        "site": "Luogo",
+        "equipment": "Apparecchiatura",
+        "serial": "N. di serie {{serial}}",
+        "workspace": "Area di lavoro",
+        "due": "Previsto per",
+        "started": "Iniziato",
+        "finished": "Terminato",
+        "worked": "Tempo lavorato",
+        "lead": "Responsabile: {{name}}"
+      },
+      "origin": {
+        "portal": "Creato da una richiesta del cliente {{ref}}",
+        "recurring": "Creato da un piano ricorrente",
+        "recurringNamed": "Creato dal piano ricorrente \"{{name}}\"",
+        "subtask": "Sottoattività di \"{{title}}\""
+      },
+      "time": {
+        "total": "Totale",
+        "stops": "Soste personali",
+        "stopWho": "Chi",
+        "stopAt": "Fermo",
+        "stopReason": "Motivo",
+        "stopResumed": "Ripreso",
+        "byPerson": "Per persona"
+      },
+      "photos": {
+        "before": "Prima",
+        "after": "Dopo",
+        "unavailable": "Foto non disponibile"
+      },
+      "checklist": {
+        "item": "Voce",
+        "doneBy": "Fatto da",
+        "when": "Quando",
+        "owner": "Responsabile: {{name}}",
+        "done": "Fatto",
+        "open": "Da fare"
+      },
+      "answers": {
+        "photos_one": "{{count}} foto, vedi Foto",
+        "photos_other": "{{count}} foto, vedi Foto",
+        "signed": "Firmato, vedi Firme"
+      },
+      "parts": {
+        "part": "Ricambio",
+        "number": "Codice",
+        "qty": "Q.tà",
+        "unit": "Prezzo unitario",
+        "total": "Totale",
+        "sum": "Totale"
+      },
+      "route": {
+        "distance": "Distanza",
+        "from": "Partenza → arrivo",
+        "arrival": "Ultimo punto dal luogo",
+        "points": "Punti GPS"
+      },
+      "history": {
+        "truncated": "Gli eventi più vecchi non sono mostrati: la cronologia di questo intervento è più lunga di quanto un rapporto possa contenere.",
+        "movedTo": "Spostato in {{step}}",
+        "createdRecurring": "Creato da un piano ricorrente"
+      },
+      "handovers": {
+        "worked": "{{time}} lavorato"
+      },
+      "documents": {
+        "type": "Tipo",
+        "name": "Nome",
+        "size": "Dimensione",
+        "by": "Aggiunto da"
+      },
+      "signatures": {
+        "technician": "Tecnico",
+        "customer": "Cliente"
+      },
+      "units": {
+        "minutes": "{{m}} min",
+        "hours": "{{h}} h",
+        "hoursMinutes": "{{h}} h {{m}} min"
+      }
     }
   },
   "technicians": {

@@ -319,6 +319,17 @@ export function resolveModuleDependencies(modules: string[]): string[] {
   return Array.from(set);
 }
 
+/**
+ * The modules in force for a workspace: its own set when it has one, else the
+ * organization's, else none. ONE rule — task-service's effective-modules read,
+ * the gateway's module cache and the job report all mean exactly this.
+ */
+export function effectiveSpaceModules(spaceModules: unknown, orgModules: unknown): string[] {
+  if (Array.isArray(spaceModules)) return spaceModules.filter((m): m is string => typeof m === 'string');
+  if (Array.isArray(orgModules)) return orgModules.filter((m): m is string => typeof m === 'string');
+  return [];
+}
+
 /** One-click module bundles by business type. */
 export const MODULE_PRESETS: { key: string; label: string; modules: string[] }[] = [
   { key: 'field_service', label: 'Field Service', modules: ['subtasks', 'checklists', 'attachments', 'tracking', 'service_reports', 'time_tracking'] },

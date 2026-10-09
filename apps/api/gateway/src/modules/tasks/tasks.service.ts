@@ -53,6 +53,11 @@ export class TasksService extends BaseGatewayService {
     return this.send({ cmd: 'get_task_submissions' }, data);
   }
 
+  /** The full report for one job (shared tasks/task-report.ts). */
+  async fullReport(data: Record<string, any>) {
+    return this.send({ cmd: 'task_full_report' }, data);
+  }
+
   /**
    * Get task timeline/activity
    */

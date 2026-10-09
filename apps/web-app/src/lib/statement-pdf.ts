@@ -3,7 +3,7 @@ import autoTable from "jspdf-autotable"
 
 import type { MemberStatement } from "./api"
 import { formatHoursMinutes } from "@hbcfield/shared/client"
-import { PDF_PALETTE } from "./invoice-pdf"
+import { PDF_PALETTE, PDF_TABLE_THEME } from "./pdf-common"
 import { fileNamePart, pdfFileName, periodPart } from "./pdf-filename"
 
 /**
@@ -33,7 +33,7 @@ export function exportStatementPdf(
   labels: StatementPdfLabels,
   fmt: { money: (cents: number) => string; period: string; today: string },
 ): void {
-  const { INK, MUTED, ACCENT, LINE } = PDF_PALETTE
+  const { INK, MUTED } = PDF_PALETTE
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
   const pageW = doc.internal.pageSize.getWidth()
   const margin = 16
@@ -72,9 +72,7 @@ export function exportStatementPdf(
       fmt.money(l.amountCents),
     ]),
     foot: [[labels.total, "", formatHoursMinutes(s.totalHours), "", fmt.money(s.totalCents)]],
-    theme: "grid",
-    styles: { font: "helvetica", fontSize: 9, cellPadding: 2.5, textColor: [INK.r, INK.g, INK.b], lineColor: [LINE.r, LINE.g, LINE.b], lineWidth: 0.2 },
-    headStyles: { fillColor: [ACCENT.r, ACCENT.g, ACCENT.b], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8.5 },
+    ...PDF_TABLE_THEME,
     footStyles: { fillColor: [248, 250, 252], textColor: [INK.r, INK.g, INK.b], fontStyle: "bold" },
     columnStyles: {
       0: { cellWidth: "auto" },

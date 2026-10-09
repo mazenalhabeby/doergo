@@ -3,7 +3,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { resolveSpaceDefaultWorkflowId } from '../../common/space-workflow.util';
-import { TaskStatus, TaskEventType, success, canReceiveTasks } from '@hbcfield/shared';
+import { TaskStatus, TaskEventType, success, canReceiveTasks, portalRequestReference } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import { TaskAssignmentService } from './task-assignment.service';
 
@@ -37,7 +37,7 @@ export class TaskPortalService {
     }));
     return {
       id: task.id,
-      reference: `#${String(task.id).slice(-6).toUpperCase()}`,
+      reference: portalRequestReference(task.id),
       title: task.title,
       status: task.status,
       priority: task.priority,

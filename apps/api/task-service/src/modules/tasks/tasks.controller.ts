@@ -3,6 +3,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JobPauseService } from './handover/job-pause.service';
 import { TasksService } from './tasks.service';
 import { RolePoolService } from './role-pool.service';
+import { TaskReportService } from './task-report.service';
 
 /**
  * Microservice Controller for Task READ Operations
@@ -19,6 +20,7 @@ export class TasksController {
     private readonly tasksService: TasksService,
     private readonly jobPause: JobPauseService,
     private readonly rolePool: RolePoolService,
+    private readonly taskReport: TaskReportService,
   ) {}
 
   // ============ A task open to a WORK role (shared tasks/role-pool.ts) ============
@@ -101,6 +103,15 @@ export class TasksController {
     },
   ) {
     return this.tasksService.findOne(data);
+  }
+
+  /**
+   * The full report for one job (shared tasks/task-report.ts) — `copy` office or
+   * client. The client copy is cut here, in the service, never by the reader.
+   */
+  @MessagePattern({ cmd: 'task_full_report' })
+  async fullReport(@Payload() data: any) {
+    return this.taskReport.build(data);
   }
 
   /** The step forms answered on this job — gated like reading the task. */

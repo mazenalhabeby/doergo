@@ -18,7 +18,7 @@ import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_N
 import { isGeofencePolicy,
   isNoShiftPolicy,
   clampDailyMinutes, validateMinCover, writeRateChange, RateChangeError, parseCurrency, CURRENCY_INVALID_MESSAGE,
-  currencyOrNull, workspaceCurrency, DEFAULT_CURRENCY, usableLegalEntityId, COMPANY_UNKNOWN_MESSAGE, clampListLimit, clampListPage, WORKING_NOW_STATUSES } from '@hbcfield/shared';
+  currencyOrNull, workspaceCurrency, DEFAULT_CURRENCY, usableLegalEntityId, COMPANY_UNKNOWN_MESSAGE, clampListLimit, clampListPage, WORKING_NOW_STATUSES, effectiveSpaceModules } from '@hbcfield/shared';
 
 // tz-lookup: offline coords → IANA timezone (no types pkg).
 const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
@@ -851,9 +851,7 @@ export class LocationsService {
     }
 
     // Space modules take priority over org modules
-    const effectiveModules = (location.enabledModules as string[] | null) ??
-      (location.organization.enabledModules as string[] | null) ??
-      [];
+    const effectiveModules = effectiveSpaceModules(location.enabledModules, location.organization.enabledModules);
 
     return success({
       spaceId: location.id,

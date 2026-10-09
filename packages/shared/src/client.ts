@@ -149,6 +149,8 @@ export * from './tasks/handover';
 export * from './tasks/job-time';
 export * from './tasks/crew';
 export * from './tasks/checklist';
+// The full report for one job: its shape, its sections, and the client copy (tasks/task-report.ts).
+export * from './tasks/task-report';
 
 // What is new in a store version of the phone app (the full-page update) — pure, client-safe
 export * from './app-release/release-notes';

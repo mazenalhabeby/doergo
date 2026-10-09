@@ -5,6 +5,7 @@ import { BullBoardModule } from '@bull-board/nestjs';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { QUEUE_NAMES } from '@hbcfield/shared';
 import { TasksController } from './tasks.controller';
+import { TaskReportController } from './task-report.controller';
 import { TasksQueueService } from './tasks.queue.service';
 import { TasksService } from './tasks.service';
 
@@ -19,7 +20,7 @@ import { TasksService } from './tasks.service';
       adapter: BullMQAdapter,
     }),
   ],
-  controllers: [TasksController],
+  controllers: [TasksController, TaskReportController],
   providers: [TasksQueueService, TasksService],
   exports: [TasksQueueService],
 })
