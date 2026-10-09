@@ -38,6 +38,8 @@ export * from './workflows/step-form';
 export * from './utils';
 // Reading a business card — pure rules, runs on the phone.
 export * from './crm/business-card';
+// Picking clients out of the phone's address book — the same rules, on the phone.
+export * from './crm/contact-import';
 
 // IANA timezone → country name (for attendance display labels)
 export * from './timezone-country';
@@ -105,6 +107,7 @@ export * from './notifications/locale';
 export * from './crm/client-locale';
 export * from './crm/client-filter';
 export * from './crm/reminder';
+export * from './crm/contact-keys';
 export * from './crm/card-extras';
 export * from './crm/card-merge';
 // Which member emails a person gets — the org ceiling and the member opt-out.

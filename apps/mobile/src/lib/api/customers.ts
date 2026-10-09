@@ -1,5 +1,8 @@
 import { fetchWithAuth } from './client';
-import { buildUrlWithQuery, type ClientTypeParam, type ContactsParam } from '@hbcfield/shared/client';
+import {
+  buildUrlWithQuery, type ClientTypeParam, type ContactsParam,
+  type ContactImportBody, type ContactImportSummary,
+} from '@hbcfield/shared/client';
 
 /** One custom fact about a client — the shape `Customer.details` holds. */
 export interface CustomerDetail {
@@ -190,6 +193,20 @@ export const customersApi = {
     details?: CustomerDetail[];
   }): Promise<MobileCustomer> =>
     fetchWithAuth<MobileCustomer>('/customers', { method: 'POST', body: JSON.stringify(input) }),
+
+  /**
+   * The organization's clients as hashed keys — how the contacts picker says
+   * "already a client" without sending a single contact. See `matchKeyMaterial`.
+   */
+  matchKeys: (): Promise<{ hashes: string[]; complete: boolean }> =>
+    fetchWithAuth<{ hashes: string[]; complete: boolean }>('/customers/match-keys'),
+  /**
+   * Import picked phone contacts — one transaction on the server, which decides
+   * what each one matches. ONLINE ONLY: a queued import would promise clients
+   * the duplicate check has not seen yet.
+   */
+  importContacts: (body: ContactImportBody): Promise<ContactImportSummary> =>
+    fetchWithAuth<ContactImportSummary>('/customers/import', { method: 'POST', body: JSON.stringify(body) }),
 
   get: (id: string): Promise<MobileCustomer> =>
     fetchWithAuth<MobileCustomer>(`/customers/${id}`),

@@ -3,6 +3,7 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 type LocalAuthenticationLib = typeof import('expo-local-authentication');
 type CryptoLib = typeof import('expo-crypto');
 type DocumentPickerLib = typeof import('expo-document-picker');
+type ContactsLib = typeof import('expo-contacts');
 
 /*
   ⚠️ NATIVE LIBRARIES ADDED AFTER A STORE BUILD ARE NEVER IMPORTED AT MODULE SCOPE.
@@ -50,4 +51,13 @@ export function expoCrypto(): CryptoLib | null {
 export function documentPicker(): DocumentPickerLib | null {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   return optional('ExpoDocumentPicker', () => require('expo-document-picker') as DocumentPickerLib);
+}
+
+/**
+ * The phone's address book, for the contacts import. Null on a build without
+ * it (1.0.7 and older) — the import is then simply not offered.
+ */
+export function expoContacts(): ContactsLib | null {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return optional('ExpoContacts', () => require('expo-contacts') as ContactsLib);
 }

@@ -16,9 +16,10 @@ import { OrgEventsService } from '../../common/events/org-events.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
+import { Throttle } from '@nestjs/throttler';
 import { RequirePermission, DenyExternal } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
-import { parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, parseCurrency, CURRENCY_INVALID_MESSAGE, moduleAnywhere } from '@hbcfield/shared';
+import { parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, parseCurrency, CURRENCY_INVALID_MESSAGE, moduleAnywhere, parseContactImport, CONTACT_IMPORT_MESSAGES } from '@hbcfield/shared';
 
 interface CustomerDto {
   /** Made on the phone when creating: a client added twice is one client. Ignored on update. */
@@ -188,6 +189,35 @@ export class CustomersController {
       dayEnd,
       limit: limit ? Number(limit) : undefined,
     });
+  }
+
+  /*
+    ── Clients from the phone's address book ──────────────────────────────────
+
+    Both gated in the SERVICE on the ability to create clients (the same gate as
+    adding one by hand) and closed to external members by the class decorator.
+    ⚠️ Declared BEFORE `:id` so "match-keys" / "import" are not read as ids.
+  */
+  @Get('match-keys')
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @ApiOperation({ summary: "Hashed keys of the organization's clients — the phone marks 'already a client' without sending a contact" })
+  matchKeys(@Request() req: any) {
+    return this.auth('customer_match_keys', { organizationId: req.user.organizationId, caller: this.caller(req) });
+  }
+
+  @Post('import')
+  // An import is up to 200 clients in one go; a member does this a few times, not a few hundred.
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Import picked phone contacts as clients — one transaction, duplicates matched on the server' })
+  async importContacts(@Body() body: unknown, @Request() req: any) {
+    // Refused here without a round trip; the service parses again — it is the boundary.
+    const parsed = parseContactImport(body);
+    if (!parsed.ok) {
+      throw new BadRequestException({ message: CONTACT_IMPORT_MESSAGES[parsed.problem], code: `CONTACT_IMPORT_${parsed.problem}` });
+    }
+    const orgId = req.user.organizationId;
+    await this.requireSpaceModule(parsed.value.spaceId, orgId, 'crm');
+    return this.authMutation('import_customer_contacts', { organizationId: orgId, body: parsed.value, caller: this.caller(req) }, orgId);
   }
 
   /*

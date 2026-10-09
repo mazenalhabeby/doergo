@@ -58,13 +58,15 @@ export interface MediaAccess {
 }
 
 /**
- * The one implementation. Everything below is a binding.
+ * The one implementation. Everything below is a binding — and the contacts
+ * import binds it to `useContactsPermission` (lib/phone-contacts) itself, so
+ * this file never loads the contacts module.
  *
  * Kept generic over the tuple rather than over the module, so a new permission
  * (microphone, contacts) is one more binding and no new logic — and so the
  * rules above cannot be re-derived slightly differently for the next one.
  */
-function useAccess<P extends { granted: boolean; canAskAgain: boolean }>(
+export function useAccess<P extends { granted: boolean; canAskAgain: boolean }>(
   tuple: PermissionTuple<P>,
 ): MediaAccess {
   const [permission, request, get] = tuple;

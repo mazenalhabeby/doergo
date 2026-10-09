@@ -27,6 +27,7 @@ const LOADED_ONLY_BY: Record<string, string[]> = {
   'expo-document-picker': ['src/lib/optional-native.ts'],
   'expo-mlkit-ocr': ['src/lib/ocr.ts'],
   'expo-in-app-updates': ['src/lib/in-app-updates.ts'],
+  'expo-contacts': ['src/lib/optional-native.ts'],
 };
 
 function* walk(dir: string): Generator<string> {

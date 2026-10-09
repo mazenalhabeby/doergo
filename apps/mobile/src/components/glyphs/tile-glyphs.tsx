@@ -123,6 +123,26 @@ export function AddClientGlyph({ size = 24, color, contrast = '#0b0f12' }: Glyph
   );
 }
 
+/**
+ * PEOPLE COMING IN FROM THE PHONE.
+ *
+ * Two people (the address book, `MembersGlyph`'s silhouette) with an arrow
+ * into a tray — it says "bring these in", not "add one". Distinct in outline
+ * from `AddClientGlyph`'s card, which is the single record typed by hand.
+ */
+export function ImportContactsGlyph({ size = 24, color }: GlyphProps) {
+  return (
+    <Svg {...svg(size)}>
+      <Circle cx={15.6} cy={5.2} r={2.6} fill={color} fillOpacity={0.34} />
+      <Path d="M15.6 8.8c-2.2 0-4 1.6-4 3.6v.8h8v-.8c0-2-1.8-3.6-4-3.6Z" fill={color} fillOpacity={0.34} />
+      <Circle cx={8.4} cy={4.8} r={3} fill={color} fillOpacity={0.95} />
+      <Path d="M8.4 8.8c-2.6 0-4.6 1.9-4.6 4.2v.6h9.2V13c0-2.3-2-4.2-4.6-4.2Z" fill={color} fillOpacity={0.95} />
+      <Path d="M3 16.4v2.8a2.4 2.4 0 0 0 2.4 2.4h13.2a2.4 2.4 0 0 0 2.4-2.4v-2.8" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      <Path d="M12 13.8v5M9.6 16.6 12 19l2.4-2.4" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
 /* ── Destinations that had no mark anywhere in the app ─────────────────────── */
 
 /**

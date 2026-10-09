@@ -3,6 +3,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { resolveCrmCaps, ownsClient, parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, parseCurrency, CURRENCY_INVALID_MESSAGE, CRM_COLD_DAYS, CRM_CONTACT_TYPES, type CrmCaps } from '@hbcfield/shared';
 import { findPrior, usableLegalEntityId, COMPANY_UNKNOWN_MESSAGE } from '@hbcfield/shared';
+import { contactMatchKeys } from '@hbcfield/shared';
 
 /** An id a phone made (UUIDv7) — the same alphabet the gateway accepts. */
 const CLIENT_ID = /^[A-Za-z0-9_-]{16,64}$/;
@@ -153,6 +154,23 @@ function sanitizeIds(ids: unknown): string[] | undefined {
   ).slice(0, 15);
 }
 
+/**
+ * The match keys that go with a write of `email` / `phone`.
+ *
+ * ⚠️ EVERY write of either column goes through this — create, update, a contact
+ * made from a company. The contacts import asks the index, not the columns, so
+ * a path that forgot the keys would make that client invisible to the duplicate
+ * check and the next import would add them a second time. Only the column that
+ * is being written gets its key recomputed.
+ */
+export function withContactKeys<T extends Record<string, unknown>>(data: T): T {
+  const out: Record<string, unknown> = { ...data };
+  const k = contactMatchKeys({ email: data.email, phone: data.phone });
+  if (data.email !== undefined) out.emailKey = k.emailKey;
+  if (data.phone !== undefined) out.phoneKey = k.phoneKey;
+  return out as T;
+}
+
 @Injectable()
 export class CustomersService {
   constructor(private readonly prisma: PrismaService) {}
@@ -165,7 +183,8 @@ export class CustomersService {
   }
 
   /** Resolve a caller's effective CRM abilities from their role (server-authoritative). */
-  private async crmCapsFor(caller: CrmCaller | undefined, organizationId: string): Promise<CrmCaps> {
+  /** Public: the contacts import (`ContactImportService`) asks the same rule. */
+  async crmCapsFor(caller: CrmCaller | undefined, organizationId: string): Promise<CrmCaps> {
     if (!caller?.userId) return NO_CRM;
     if (caller.role === 'ADMIN') return resolveCrmCaps('ADMIN', {});
     const u = await this.prisma.user.findFirst({
@@ -177,7 +196,7 @@ export class CustomersService {
   }
 
   /** Can this caller reach a specific client? All-scope OR owns/co-manages it. */
-  private canReach(caps: CrmCaps, client: { ownerId?: string | null; managerIds?: string[] }, caller: CrmCaller | undefined): boolean {
+  canReach(caps: CrmCaps, client: { ownerId?: string | null; managerIds?: string[] }, caller: CrmCaller | undefined): boolean {
     if (caps.view === 'all') return true;
     if (caps.view === 'own' && caller?.userId) return ownsClient(client, caller.userId);
     return false;
@@ -385,7 +404,7 @@ export class CustomersService {
       const name = (data.person?.name || '').trim();
       if (!name) throw new BadRequestException('A name is required');
       const created = await this.prisma.customer.create({
-        data: {
+        data: withContactKeys({
           organizationId: data.organizationId,
           name,
           email: data.person?.email?.trim() || null,
@@ -397,7 +416,7 @@ export class CustomersService {
           isContact: true,
           spaceId: company.spaceId,
           ownerId: data.caller?.userId ?? null,
-        },
+        }),
         select: { id: true },
       });
       personId = created.id;
@@ -731,7 +750,7 @@ export class CustomersService {
       organizationId,
     );
     const customer = await this.prisma.customer.create({
-      data: {
+      data: withContactKeys({
         ...(clientId ? { id: clientId } : {}),
         organizationId,
         name,
@@ -756,7 +775,7 @@ export class CustomersService {
         currency,
         legalEntityId,
         details: (sanitizeDetails(dto.details) ?? undefined) as any,
-      },
+      }),
       select: customerSelect,
     });
     return { data: customer };
@@ -833,7 +852,7 @@ export class CustomersService {
     }
 
     const finalStatus = (data.status as string | undefined) ?? existing.status;
-    const customer = await this.prisma.customer.update({ where: { id }, data, select: customerSelect });
+    const customer = await this.prisma.customer.update({ where: { id }, data: withContactKeys(data), select: customerSelect });
 
     // Auto-log a lifecycle-stage change onto the CRM timeline.
     if (data.status !== undefined && data.status !== existing.status) {

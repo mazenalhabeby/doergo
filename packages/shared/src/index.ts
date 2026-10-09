@@ -107,6 +107,7 @@ export * from './mail/email-locale';
 export * from './crm/client-locale';
 export * from './crm/client-filter';
 export * from './crm/reminder';
+export * from './crm/contact-keys';
 export * from './crm/card-extras';
 export * from './crm/card-merge';
 export * from './mail/client-email-locale';

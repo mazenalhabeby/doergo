@@ -11,4 +11,6 @@ module.exports = {
   requireNativeModule: () => {
     throw new Error('Cannot find native module');
   },
+  // A permission hook is a React hook; rule tests never render one, they only load the file.
+  createPermissionHook: () => () => [null, async () => null, async () => null],
 };

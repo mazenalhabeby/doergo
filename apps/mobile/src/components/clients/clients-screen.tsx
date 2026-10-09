@@ -6,7 +6,8 @@ import { CLIENT_FILTERS, CLIENT_FILTER_KEYS, clientFilterQuery, customerStageLab
 import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { holds } from '../../lib/permissions';
-import { customersApi, locationsApi, type MobileCustomer } from '../../lib/api';
+import { customersApi, type MobileCustomer } from '../../lib/api';
+import { useCrmSpaces } from '../../hooks/use-crm-spaces';
 import { useResponsive } from '../../lib/responsive';
 import { AText, FilterPill, FilterRow, Ground, HeaderBack, ScreenHeader, SearchField } from '../amazen';
 import { centeredContent } from '../screen-container';
@@ -48,7 +49,8 @@ export function ClientsScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [spaces, setSpaces] = useState<{ id: string; name: string }[]>([]);
+  /* Only workspaces that run CRM — a chip for one without it always returns nothing. */
+  const spaces = useCrmSpaces();
   const [spaceId, setSpaceId] = useState<string | null>(null);
   const [filter, setFilter] = useState<ClientFilter>('all');
   const [adding, setAdding] = useState(false);
@@ -68,12 +70,6 @@ export function ClientsScreen() {
     router.setParams({ new: undefined } as never);
   }, [startNew, canAdd]);
 
-  /* Only workspaces that run CRM — a chip for one without it always returns nothing. */
-  useEffect(() => {
-    locationsApi.list()
-      .then((rows) => setSpaces(rows.filter((x) => (x.enabledModules ?? []).includes('crm')).map((x) => ({ id: x.id, name: x.name }))))
-      .catch(() => { /* the filter simply does not appear */ });
-  }, []);
 
   const queryFor = useCallback((q: string, space: string | null, f: ClientFilter, page: number) => ({
     search: q.trim() || undefined,

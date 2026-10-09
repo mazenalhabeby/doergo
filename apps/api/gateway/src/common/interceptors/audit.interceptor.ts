@@ -30,6 +30,20 @@ const SKIP_PREFIXES = ['/tracking', '/auth', '/users/push-token', '/sync'];
 // row from here would only say the same thing worse.
 const SELF_AUDITED = new Set(['POST /documents/bulk/delete', 'POST /documents/bulk/visibility']);
 
+/*
+  Routes whose body is OTHER PEOPLE'S personal data in bulk. The log keeps what
+  happened, not a second copy of the data: a phone-contacts import is up to 200
+  names, numbers and addresses, and the audit log is kept far longer than any of
+  them should be. Each imported client carries its own provenance on its
+  timeline (who imported it, from where, when) — that is the record.
+*/
+const BODY_SUMMARY: Record<string, (body: any) => unknown> = {
+  'POST /customers/import': (b) => ({
+    spaceId: typeof b?.spaceId === 'string' ? b.spaceId : null,
+    contacts: Array.isArray(b?.items) ? b.items.length : 0,
+  }),
+};
+
 // Redact anything that looks secret from the logged body.
 const SENSITIVE_KEY = /pass|token|secret|otp|code|hash|authorization/i;
 
@@ -55,6 +69,8 @@ const ROUTE_ACTIONS: Record<string, string> = {
   'POST /legal-entities/:id/main': 'COMPANY_MADE_MAIN',
   'POST /legal-entities/:id/deactivate': 'COMPANY_DEACTIVATED',
   'POST /legal-entities/:id/reactivate': 'COMPANY_REACTIVATED',
+  // Clients from a phone's address book — body summarised, see BODY_SUMMARY.
+  'POST /customers/import': 'CLIENTS_IMPORTED_FROM_PHONE',
   'POST /tasks': 'TASK_CREATED',
   'DELETE /tasks/:id': 'TASK_DELETED',
   'POST /tasks/:id/assign': 'TASK_ASSIGNED',
@@ -274,7 +290,9 @@ export class AuditInterceptor implements NestInterceptor {
           path,
           status,
           ok,
-          ...(req.body && Object.keys(req.body).length ? { body: redact(req.body) } : {}),
+          ...(req.body && Object.keys(req.body).length
+            ? { body: BODY_SUMMARY[`${method} ${normalized}`]?.(req.body) ?? redact(req.body) }
+            : {}),
           ...(ok ? {} : { error: err?.message }),
         },
       };

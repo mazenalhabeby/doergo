@@ -1904,6 +1904,15 @@ model Customer {
   /// clears it the day they buy something.
   isContact Boolean @default(false)
 
+  /// Match keys — how "is this already a client?" is asked without a scan.
+  ///
+  /// The last 9 digits of `phone` and the lower-cased `email`, written by the
+  /// service on every create and update (`contactMatchKeys` in shared — the
+  /// phone computes the same keys, so the two ends cannot disagree about
+  /// "+43 664…" and "0664…"). Never set by a client; never shown.
+  phoneKey String?
+  emailKey String?
+
   // Flexible extra attributes the office adds themselves: [{ label, value }].
   // Keeps the record open-ended without a schema change per new field.
   details Json?
@@ -1970,6 +1979,8 @@ model Customer {
   @@index([organizationId, name])
   @@index([portalId])
   @@index([organizationId, spaceId]) // a space's Customers list
+  @@index([organizationId, phoneKey]) // the contacts import's duplicate check
+  @@index([organizationId, emailKey])
   @@map("customers")
 }
 

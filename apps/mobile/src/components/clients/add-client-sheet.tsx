@@ -6,16 +6,17 @@ import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
 import { customersApi } from '../../lib/api';
 import { canScanCards } from '../../lib/card-scan';
+import { canReadContacts } from '../../lib/phone-contacts';
 import { CLIENT_LOCALE_OPTIONS, newClientInput, type NewClientForm } from '../../lib/client-locale';
 import { useQueuedCreate } from '../../offline/actions/queued-create';
 import { AText, FilterPill, FilterRow, PrimaryButton } from '../amazen';
 import { JobField, JobSheet, SectionLabel, SheetOption } from '../job/job-ui';
-import { ScanCardGlyph } from '../glyphs/tile-glyphs';
+import { ImportContactsGlyph, ScanCardGlyph } from '../glyphs/tile-glyphs';
 
 const EMPTY: NewClientForm = { name: '', contactName: '', email: '', phone: '', type: 'COMPANY' };
 
 /**
- * Adding a client: scan a card, or type it in.
+ * Adding a client: scan a card, import from the phone's contacts, or type it in.
  *
  * ⚠️ ONE sheet, two steps — never two sheets. A sheet is a Modal that stays
  * mounted while it animates out; closing one and opening another in the same
@@ -50,7 +51,8 @@ export function AddClientSheet({
 
   useEffect(() => {
     if (!visible) return;
-    setStep(canScanCards() ? 'choose' : 'form');
+    // Only a build that can do something else offers the choice; otherwise straight to the form.
+    setStep(canScanCards() || canReadContacts() ? 'choose' : 'form');
     setSpaceId(startSpaceId);
   }, [visible, startSpaceId]);
 
@@ -66,6 +68,13 @@ export function AddClientSheet({
     */
     const target = spaceId;
     setTimeout(() => router.push({ pathname: '/(app)/scan-card', params: target ? { spaceId: target } : {} } as never), 280);
+  };
+
+  /** Several at once, from the address book — its own screen, which carries the workspace too. */
+  const importContacts = () => {
+    onClose();
+    const target = spaceId;
+    setTimeout(() => router.push({ pathname: '/(app)/import-contacts', params: target ? { spaceId: target } : {} } as never), 280);
   };
 
   const save = async () => {
@@ -94,7 +103,12 @@ export function AddClientSheet({
     <JobSheet visible={visible} onClose={onClose} busy={saving} title={step === 'choose' ? t('customers.add', 'Add client') : t('customers.newClient', 'New client')}>
       {step === 'choose' ? (
         <>
-          <SheetOption label={t('customers.scanCard', 'Scan a business card')} hint={t('customers.scanCardSub', 'Fills the form for you')} Glyph={ScanCardGlyph} onPress={scan} />
+          {canScanCards() ? (
+            <SheetOption label={t('customers.scanCard', 'Scan a business card')} hint={t('customers.scanCardSub', 'Fills the form for you')} Glyph={ScanCardGlyph} onPress={scan} />
+          ) : null}
+          {canReadContacts() ? (
+            <SheetOption label={t('contactsImport.option')} hint={t('contactsImport.optionSub')} Glyph={ImportContactsGlyph} onPress={importContacts} />
+          ) : null}
           <SheetOption label={t('customers.enterDetails', 'Enter details')} hint={t('customers.enterDetailsSub', 'Type it in')} onPress={() => setStep('form')} />
         </>
       ) : (

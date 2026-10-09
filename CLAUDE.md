@@ -434,6 +434,14 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 >
 > ⚠️ **`Customer.locale` is "Language for emails"** (migration `20260916170000_customer_locale`). Client info under the same `editInfo` gate as the phone number. NULL = "same as the organization": resolved at SEND time by `clientEmailLocales`, never written into the record. A portal client's own app language still wins over it.
 >
+> **Clients from the phone's address book** (`POST /customers/import`, `GET /customers/match-keys`; both need the ability to CREATE clients, `@DenyExternal`). Rules: `packages/shared/src/crm/contact-keys.ts` (keys + body, both ends) and `crm/contact-import.ts` (phone: classify, `pickModel`, `buildContactImport`); server `auth-service/.../customers/contact-import.service.ts`. Migration `20261009120000_customer_match_keys` (additive + backfill). E2E: `python3 tools/contacts-import-e2e.py` (LOCAL, 27 checks). Phone: Add client → Import from contacts (`import-contacts` route) — ⚠️ `expo-contacts` is NATIVE: 1.0.8 build, never an OTA; loaded only via `optional-native.ts`.
+>
+> ⚠️ **Match keys** `Customer.phoneKey` (last 9 digits — "+43 664…" = "0664…") / `emailKey` (lower-cased) are written by `withContactKeys` on EVERY create/update of phone or email. A write path that skips it makes that client invisible to the duplicate check.
+>
+> ⚠️ **The phone gets HASHES** (`sha256("hbc-match:{org}:{key}")[:20]`), never the numbers; the "already a client" marks are computed on the device. **The body never names an existing record** — the server matches by keys; a match is only FILLED where a field is EMPTY, on `fillMissing`, with `editInfo` + reach. One transaction, ≤200, refs (UUIDv7) make a retry the same import. People imported with their company are contact people (`isContact`, not billed).
+>
+> ⚠️ **The audit row is a SUMMARY** (`BODY_SUMMARY` in the audit interceptor: workspace + count) — 200 people's details do not belong in the audit log. Each new client's timeline says "Imported from {member}'s phone contacts" (`metadata.source = PHONE_CONTACTS`).
+>
 > ⚠️ **Linking is not gated on `Customer.type`.** A real book of clients reads "BILLA AG", "Siemens AG" — all saved as PERSON, because the Person/Company toggle is an afterthought. The two ends are told apart by their POSITION in the link; the panels split by type, the service does not. A↔B both ways round is refused.
 
 ### Custody & expenses (`/assets`) — who holds a thing, and what they spend on it

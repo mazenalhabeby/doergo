@@ -185,6 +185,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           apiKey: googleMapsApiKey,
         },
       },
+      /*
+        ⚠️ READ, NEVER WRITE. expo-contacts' config plugin asks for both
+        READ_CONTACTS and WRITE_CONTACTS; this app only ever reads an address
+        book (the contacts import), so holding the right to change one is a
+        permission it has no use for — and one Play review asks about.
+      */
+      blockedPermissions: ['android.permission.WRITE_CONTACTS'],
       permissions: [
         'android.permission.ACCESS_COARSE_LOCATION',
         'android.permission.ACCESS_FINE_LOCATION',
@@ -226,6 +233,20 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ],
       'expo-secure-store',
       'expo-font',
+      /*
+        Reading the address book for the contacts import. ⚠️ NATIVE: only a
+        build carries it. Over the air, older binaries do not have the module,
+        and `lib/phone-contacts` checks for it before the option is offered.
+        The sentence is what iOS shows in its prompt — it says what the screen
+        before it says.
+      */
+      [
+        'expo-contacts',
+        {
+          contactsPermission:
+            'HBCField reads the contacts you choose so you can add the people you work with as clients. Only the ones you tick are saved; the rest stay on this phone.',
+        },
+      ],
       // Android package visibility for the route planner's map-app detection.
       // See the plugin for why this is required and what happens without it.
       './plugins/with-nav-app-queries',

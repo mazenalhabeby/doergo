@@ -409,6 +409,11 @@ const SEGMENT_SIZE_SHARE = 1 / 3;
 /** Suffixes that mark a line as an organisation rather than a person. */
 const LEGAL_FORM = /\b(gmbh|ag|ges\.?m\.?b\.?h|kg|og|e\.?u\.?|ltd|limited|inc|llc|plc|s\.?r\.?o|sp\.?\s?z\.?o\.?o|bv|nv|sa|srl|spa|oy|ab|a\/s|aps)\b/i;
 
+/** Does this text carry a legal form ("GmbH", "AG", "Ltd")? The card reader's rule, for the contacts import too. */
+export function hasLegalForm(text: string): boolean {
+  return LEGAL_FORM.test(text);
+}
+
 /**
  * The same letters with their accents taken off.
  *

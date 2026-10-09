@@ -1,10 +1,25 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { CustomersService, CustomerInput, CrmCaller } from './customers.service';
+import { ContactImportService } from './contact-import.service';
 
 @Controller()
 export class CustomersController {
-  constructor(private readonly customersService: CustomersService) {}
+  constructor(
+    private readonly customersService: CustomersService,
+    private readonly contactImport: ContactImportService,
+  ) {}
+
+  // ── Clients from a phone's address book ──
+  @MessagePattern({ cmd: 'customer_match_keys' })
+  matchKeys(@Payload() d: { organizationId: string; caller?: CrmCaller }) {
+    return this.contactImport.matchKeys(d);
+  }
+
+  @MessagePattern({ cmd: 'import_customer_contacts' })
+  importContacts(@Payload() d: { organizationId: string; body: unknown; caller?: CrmCaller }) {
+    return this.contactImport.import(d);
+  }
 
   @MessagePattern({ cmd: 'list_customers' })
   async list(@Payload() data: { organizationId: string; search?: string; status?: 'active' | 'inactive' | 'all'; portalResident?: boolean; portalId?: string; spaceId?: string; page?: number; limit?: number; caller?: CrmCaller }) {
