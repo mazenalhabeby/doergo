@@ -1,5 +1,28 @@
 import { Controller, Get, Query } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Public } from '../../common/decorators';
+
+/*
+  ⚠️ WHY search / place / reverse ARE STILL @Public — and throttled hard.
+
+  They proxy the BILLED Google key, so anonymous access is spend anybody can
+  cause. They should require a session. They cannot today without breaking every
+  location picker: the web (components/location-picker.tsx, locations/_components/
+  location-picker.tsx, lib/geocode.ts) and the phone (location-search-picker.tsx)
+  call them with a bare \`fetch\` that carries no Authorization header, and the
+  phone's copy is in installed binaries. Removing @Public first would turn every
+  address search into a 401.
+
+  Until those callers send the token (web: the api client; phone: fetchWithAuth +
+  an OTA), each route carries a tight per-IP limit — far above one person
+  typing an address, far below anybody running a key-spend loop — and refuses
+  absurd input before a provider is called. Then drop @Public here.
+*/
+const GEO_SEARCH_LIMIT = { default: { limit: 40, ttl: 60_000 } };
+const GEO_PLACE_LIMIT = { default: { limit: 20, ttl: 60_000 } };
+const GEO_REVERSE_LIMIT = { default: { limit: 30, ttl: 60_000 } };
+/** Longer than any address a person types; a provider call is never spent on more. */
+const GEO_MAX_QUERY = 200;
 
 // tz-lookup: offline coords → IANA timezone (no types pkg).
 const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
@@ -84,6 +107,7 @@ export class GeoController {
    * Photon fallback rows return { id: '', label, lat, lon } (usable directly).
    */
   @Public()
+  @Throttle(GEO_SEARCH_LIMIT)
   @Get('search')
   async search(
     @Query('q') q?: string,
@@ -93,7 +117,7 @@ export class GeoController {
     @Query('limit') limit?: string,
   ): Promise<{ results: GeoSuggestion[]; provider: 'google' | 'photon' }> {
     const query = (q || '').trim();
-    if (query.length < 2) return { results: [], provider: GOOGLE_KEY ? 'google' : 'photon' };
+    if (query.length < 2 || query.length > GEO_MAX_QUERY) return { results: [], provider: GOOGLE_KEY ? 'google' : 'photon' };
     const max = Math.min(Number(limit) || 6, 10);
 
     // Primary: Google Places Autocomplete (New) — free with a session token.
@@ -154,9 +178,11 @@ export class GeoController {
    * GET /geo/place?id=&session=
    */
   @Public()
+  @Throttle(GEO_PLACE_LIMIT)
   @Get('place')
   async place(@Query('id') id?: string, @Query('session') session?: string): Promise<{ result: GeoResult | null }> {
-    if (!id || !GOOGLE_KEY) return { result: null };
+    // A Google place id is a few hundred characters at most.
+    if (!id || id.length > 512 || !GOOGLE_KEY) return { result: null };
     try {
       const url = new URL(`${GOOGLE_BASE}/places/${encodeURIComponent(id)}`);
       url.searchParams.set('languageCode', 'en');
@@ -193,6 +219,7 @@ export class GeoController {
 
   /** Reverse geocode (map taps). GET /geo/reverse?lat=&lon= — Photon (free). */
   @Public()
+  @Throttle(GEO_REVERSE_LIMIT)
   @Get('reverse')
   async reverse(@Query('lat') lat?: string, @Query('lon') lon?: string): Promise<{ result: GeoResult | null }> {
     if (!lat || !lon || Number.isNaN(Number(lat)) || Number.isNaN(Number(lon))) return { result: null };

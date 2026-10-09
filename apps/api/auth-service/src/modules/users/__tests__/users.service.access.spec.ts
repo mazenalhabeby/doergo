@@ -1,3 +1,4 @@
+import { SessionEvents } from '../../../common/session-events/session-events.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException, HttpStatus } from '@nestjs/common';
 import { UsersService } from '../users.service';
@@ -21,6 +22,7 @@ describe('UsersService access ceiling (C1)', () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: SessionEvents, useValue: { sessionsRevoked: jest.fn(), organizationSuspended: jest.fn() } },
         // Stub the task-service client: UsersService publishes a routing-cache
         // invalidation after a watcher change and nothing here listens for it.
         { provide: 'TASK_SERVICE', useValue: { emit: jest.fn() } },

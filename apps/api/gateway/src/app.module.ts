@@ -64,6 +64,7 @@ import { PlanGuard } from './common/guards/plan.guard';
 import { ModuleGuard } from './common/guards/module.guard';
 import { SpaceModulesModule } from './common/space-modules.service';
 import { OrgEventsModule } from './common/events/org-events.service';
+import { RebillModule } from './common/billing/rebill.service';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { AppVersionInterceptor } from './common/interceptors/app-version.interceptor';
 import { SyncModule } from './modules/sync/sync.module';
@@ -83,6 +84,8 @@ import { StorageModule } from './common/storage/storage.module';
     // module's injector and its dependency has to be reachable from all of them.
     SpaceModulesModule,
     OrgEventsModule,
+    // Global: every route that moves the bill re-prices through one provider.
+    RebillModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',

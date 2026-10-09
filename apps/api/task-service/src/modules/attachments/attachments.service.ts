@@ -5,6 +5,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  Optional,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
@@ -13,12 +14,11 @@ import {
   newObjectKey,
   requireObjectStore,
 } from '@hbcfield/shared/storage';
-import { holdsOpenRole } from '../tasks/role-holder';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { createOnce } from '../../common/create-once.util';
 import { MediaSigner } from '../../common/storage/media-signer.service';
-import { TaskEventType, AttachmentType, Role, success, canAccessTask } from '@hbcfield/shared';
-import type { TaskAccessFacts } from '../tasks/tasks.service';
+import { TaskEventType, AttachmentType, Role, success } from '@hbcfield/shared';
+import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 /** Upload links live an hour: a phone on a weak connection needs the time. */
@@ -69,7 +69,21 @@ export class AttachmentsService {
     @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
     private readonly media: MediaSigner,
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
+    @Optional() private readonly injectedTaskAccess?: TaskAccessService,
   ) {}
+
+  /*
+    The ONE task gate (common/task-access) — the same decision tasks.service
+    makes, co-assignee lookup and role-holder rule included. This file used to
+    carry its own copy that skipped the co-assignee lookup (a crew member could
+    comment on a job and was refused its photos) and asked the role-holder
+    question before the organization boundary. Optional only so a test that
+    builds this service by hand still gets it.
+  */
+  private _taskAccess?: TaskAccessService;
+  private get taskAccess(): TaskAccessService {
+    return (this._taskAccess ??= this.injectedTaskAccess ?? new TaskAccessService(this.prisma));
+  }
 
   async create(data: {
     /** Id made on the phone — see createOnce. */
@@ -97,7 +111,7 @@ export class AttachmentsService {
     }
     // The uploader IS the caller on this path — the payload names them
     // `uploadedById`, so the facts are assembled rather than passed straight.
-    this.checkTaskAccess(task, {
+    await this.taskAccess.assert(task, {
       ...(data as object),
       userId: data.uploadedById,
       userRole: data.userRole || '',
@@ -188,7 +202,7 @@ export class AttachmentsService {
       throw new NotFoundException('Task not found');
     }
     // A holder of the job's OPEN role may see its photos before taking it — read only (tasks/role-holder.ts).
-    if (!(await holdsOpenRole(this.prisma as never, task, data.userId))) this.checkTaskAccess(task, data);
+    await this.taskAccess.assert(task, data, { roleHolderMayRead: true });
 
     const attachments = await this.prisma.attachment.findMany({
       where: { taskId: data.taskId },
@@ -270,7 +284,7 @@ export class AttachmentsService {
     if (!task) {
       throw new NotFoundException('Task not found');
     }
-    this.checkTaskAccess(task, data);
+    await this.taskAccess.assert(task, data);
 
     // Validate file type format and allowed types
     if (!data.fileType || !/^[a-z]+\/[a-z0-9\-\.+]+$/i.test(data.fileType)) {
@@ -312,36 +326,5 @@ export class AttachmentsService {
       expiresIn: UPLOAD_TTL_SECONDS,
       maxFileSize: MAX_FILE_SIZE,
     });
-  }
-
-  /**
-   * May this caller touch this task's attachments?
-   *
-   * Delegates to the shared rule (@hbcfield/shared canAccessTask), which is the
-   * same decision tasks.service makes. This file used to carry its own copy
-   * that recognised only the LEAD assignee, so a member co-assigned to a task
-   * could comment on it but was refused when attaching a photo to it.
-   */
-  private checkTaskAccess(task: any, caller: TaskAccessFacts) {
-    /*
-      The caller in one piece — see the note on TaskAccessFacts.
-
-      The space grants the gateway resolves were not among the five positional
-      arguments this took, so a member whose authority comes from a space was
-      refused every attachment on a task they could otherwise open.
-    */
-    const { userId, userRole, organizationId, canViewAllTasks, sharedSpaceIds, viewAllSpaceIds } = caller;
-    if (
-      !canAccessTask(task, {
-        userId,
-        userRole,
-        organizationId,
-        canViewAllTasks,
-        sharedSpaceIds,
-        viewAllSpaceIds,
-      })
-    ) {
-      throw new ForbiddenException('Access denied');
-    }
   }
 }

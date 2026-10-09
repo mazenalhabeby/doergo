@@ -3,11 +3,9 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { BCRYPT_COST_FACTOR, PLATFORM_ROLES, platformCapsFor, isSupportSupervisor, type PlatformRole } from '@hbcfield/shared';
-import { generateBase32Secret, verifyTotp, otpauthUri } from './totp.util';
+import { BCRYPT_COST_FACTOR, PLATFORM_ROLES, platformCapsFor, isSupportSupervisor, type PlatformRole, normalizeEmail, tokenIssuedBeforeCutoff, maskEmail, nextLockStateAfterFailure } from '@hbcfield/shared';
+import { generateBase32Secret, matchTotpStep, otpauthUri } from './totp.util';
 
-const MAX_FAILED = 5;
-const LOCKOUT_MS = 15 * 60_000;
 const TOKEN_TTL = '12h';
 const ok = <T>(data: T) => ({ success: true, data });
 const fail = (message: string, statusCode = 400) => ({ success: false, statusCode, message });
@@ -39,7 +37,7 @@ export class PlatformAuthService {
 
   // ── Login (2FA-aware) ─────────────────────────────────────────────────────────
   async login(data: { email?: string; password?: string; code?: string }) {
-    const email = (data.email ?? '').trim().toLowerCase();
+    const email = normalizeEmail(data.email ?? '');
     const password = data.password ?? '';
     const invalid = fail('Invalid email or password', 401); // generic → no enumeration
     if (!email || !password) return invalid;
@@ -48,9 +46,10 @@ export class PlatformAuthService {
     if (!user || !user.isActive) return invalid;
     if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) return fail('Account temporarily locked. Try again later.', 423);
 
+    // Same rule as member sign-in: an EXPIRED lock starts the count again, so
+    // one wrong guess after a lock no longer re-locks the account forever.
     const bump = async () => {
-      const attempts = user.failedLoginAttempts + 1;
-      await this.prisma.platformUser.update({ where: { id: user.id }, data: { failedLoginAttempts: attempts, lockedUntil: attempts >= MAX_FAILED ? new Date(Date.now() + LOCKOUT_MS) : user.lockedUntil } });
+      await this.prisma.platformUser.update({ where: { id: user.id }, data: nextLockStateAfterFailure(user) });
     };
 
     if (!(await bcrypt.compare(password, user.passwordHash))) { await bump(); return invalid; }
@@ -58,7 +57,7 @@ export class PlatformAuthService {
     // Second factor.
     if (user.twoFactorEnabled) {
       if (!data.code) return ok({ needs2fa: true }); // password OK → prompt for the code
-      if (!verifyTotp(user.twoFactorSecret ?? '', data.code)) { await bump(); return fail('Invalid authentication code', 401); }
+      if (!(await this.consumeTotp(user.id, user.twoFactorSecret, data.code))) { await bump(); return fail('Invalid authentication code', 401); }
     }
 
     await this.prisma.platformUser.update({ where: { id: user.id }, data: { failedLoginAttempts: 0, lockedUntil: null, lastLoginAt: new Date() } });
@@ -68,14 +67,35 @@ export class PlatformAuthService {
     return ok({ token, user: { ...this.publicUser(user), ...scope }, permissions: platformCapsFor(user.role) });
   }
 
+  /**
+   * Accept a TOTP code ONCE.
+   *
+   * The step the code matched is written with a conditional update that only
+   * succeeds when it is newer than the last accepted step — so a code (or an
+   * older one still inside the ±1 window) cannot be used a second time, and two
+   * requests racing with the same code cannot both pass.
+   */
+  private async consumeTotp(userId: string, secret: string | null, code: string | undefined): Promise<boolean> {
+    const step = matchTotpStep(secret ?? '', code ?? '');
+    if (step === null) return false;
+    const claimed = await this.prisma.platformUser.updateMany({
+      where: { id: userId, OR: [{ twoFactorLastStep: null }, { twoFactorLastStep: { lt: step } }] },
+      data: { twoFactorLastStep: step },
+    });
+    return claimed.count === 1;
+  }
+
   // ── Self-service: change own password ─────────────────────────────────────────
   async changePassword(data: { userId: string; currentPassword?: string; newPassword?: string }) {
     const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId } });
     if (!user) return fail('Not found', 404);
     if (!(await bcrypt.compare(data.currentPassword ?? '', user.passwordHash))) return fail('Current password is incorrect', 401);
     if (!data.newPassword || data.newPassword.length < 10) return fail('New password must be at least 10 characters');
-    await this.prisma.platformUser.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(data.newPassword, BCRYPT_COST_FACTOR) } });
-    this.logger.log(`[PLATFORM] ${user.email} changed their password`);
+    // tokensValidAfter: every operator token already issued — on any machine —
+    // stops working now. Changing the password is the answer to "somebody has
+    // my session"; a 12-hour token outliving it would make that answer a lie.
+    await this.prisma.platformUser.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(data.newPassword, BCRYPT_COST_FACTOR), tokensValidAfter: new Date() } });
+    this.logger.log(`[PLATFORM] ${maskEmail(user.email)} changed their password`);
     return ok({ id: user.id });
   }
 
@@ -85,7 +105,7 @@ export class PlatformAuthService {
     const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId } });
     if (!user) return fail('Not found', 404);
     const secret = generateBase32Secret();
-    await this.prisma.platformUser.update({ where: { id: user.id }, data: { twoFactorSecret: secret, twoFactorEnabled: false } });
+    await this.prisma.platformUser.update({ where: { id: user.id }, data: { twoFactorSecret: secret, twoFactorEnabled: false, twoFactorLastStep: null } });
     return ok({ secret, otpauthUri: otpauthUri(user.email, secret) });
   }
 
@@ -93,7 +113,7 @@ export class PlatformAuthService {
   async enable2fa(data: { userId: string; code?: string }) {
     const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId } });
     if (!user || !user.twoFactorSecret) return fail('Start 2FA setup first', 400);
-    if (!verifyTotp(user.twoFactorSecret, data.code ?? '')) return fail('Invalid code', 400);
+    if (!(await this.consumeTotp(user.id, user.twoFactorSecret, data.code))) return fail('Invalid code', 400);
     await this.prisma.platformUser.update({ where: { id: user.id }, data: { twoFactorEnabled: true } });
     this.logger.warn(`[PLATFORM] ${user.email} enabled 2FA`);
     return ok({ twoFactorEnabled: true });
@@ -103,7 +123,7 @@ export class PlatformAuthService {
   async disable2fa(data: { userId: string; code?: string }) {
     const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId } });
     if (!user) return fail('Not found', 404);
-    if (user.twoFactorEnabled && !verifyTotp(user.twoFactorSecret ?? '', data.code ?? '')) return fail('Invalid code', 400);
+    if (user.twoFactorEnabled && !(await this.consumeTotp(user.id, user.twoFactorSecret, data.code))) return fail('Invalid code', 400);
     await this.prisma.platformUser.update({ where: { id: user.id }, data: { twoFactorEnabled: false, twoFactorSecret: null } });
     this.logger.warn(`[PLATFORM] ${user.email} disabled 2FA`);
     return ok({ twoFactorEnabled: false });
@@ -129,6 +149,8 @@ export class PlatformAuthService {
       if (payload?.typ !== 'platform' || !payload?.sub) return { valid: false };
       const user = await this.prisma.platformUser.findUnique({ where: { id: payload.sub } });
       if (!user || !user.isActive) return { valid: false };
+      // Issued before the operator's last password change/reset → dead.
+      if (tokenIssuedBeforeCutoff(payload.iat, user.tokensValidAfter)) return { valid: false };
       const scope = await this.supportScope(user.id, user.role);
       return { valid: true, user: { ...this.publicUser(user), ...scope }, permissions: platformCapsFor(user.role) };
     } catch {
@@ -155,7 +177,7 @@ export class PlatformAuthService {
   }
 
   async createUser(data: { email?: string; password?: string; firstName?: string; lastName?: string; role?: string; byUserId?: string }) {
-    const email = (data.email ?? '').trim().toLowerCase();
+    const email = normalizeEmail(data.email ?? '');
     const role = this.validRole(data.role);
     if (!email || !email.includes('@')) return fail('Valid email required');
     if (!data.password || data.password.length < 10) return fail('Password must be at least 10 characters');
@@ -191,8 +213,8 @@ export class PlatformAuthService {
     if (!data.password || data.password.length < 10) return fail('Password must be at least 10 characters');
     const user = await this.prisma.platformUser.findUnique({ where: { id: data.id } });
     if (!user) return fail('Not found', 404);
-    await this.prisma.platformUser.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(data.password, BCRYPT_COST_FACTOR), failedLoginAttempts: 0, lockedUntil: null } });
-    this.logger.warn(`[PLATFORM] password reset for ${user.email} by ${data.byUserId ?? 'operator'}`);
+    await this.prisma.platformUser.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(data.password, BCRYPT_COST_FACTOR), failedLoginAttempts: 0, lockedUntil: null, tokensValidAfter: new Date() } });
+    this.logger.warn(`[PLATFORM] password reset for ${maskEmail(user.email)} by ${data.byUserId ?? 'operator'}`);
     return ok({ id: user.id });
   }
 

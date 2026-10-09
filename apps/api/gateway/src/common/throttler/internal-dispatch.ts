@@ -1,4 +1,5 @@
-import { randomBytes, timingSafeEqual } from 'crypto';
+import { randomBytes } from 'crypto';
+import { safeEqual } from '@hbcfield/shared';
 
 /**
  * Marks a request the gateway sent to ITSELF while replaying a phone's queue.
@@ -23,6 +24,5 @@ export function internalDispatchSecret(): string {
 }
 
 export function isInternalDispatch(headerValue: unknown): boolean {
-  if (typeof headerValue !== 'string' || headerValue.length !== SECRET.length) return false;
-  return timingSafeEqual(Buffer.from(headerValue), Buffer.from(SECRET));
+  return typeof headerValue === 'string' && safeEqual(headerValue, SECRET);
 }

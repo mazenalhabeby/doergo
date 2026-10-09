@@ -8,6 +8,7 @@ import {
   daysUntil,
   reminderDueAt,
   credentialStanding,
+  visibleDocumentWhere,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
@@ -244,10 +245,27 @@ export class CredentialExpiryService {
    * rostered where they assign — undefined for an org-wide holder, and an empty
    * array (granted nowhere) matching nothing rather than everything.
    */
-  async listCompliance(data: { organizationId: string; scopeSpaceIds?: string[] }) {
+  async listCompliance(data: {
+    organizationId: string;
+    scopeSpaceIds?: string[];
+    /**
+     * Who is reading — the gateway's `documentActor(user)` fits. A restricted
+     * credential type stays off the board for a reader who may not see it.
+     *
+     * ⚠️ Absent fails CLOSED: read as a member with no role, who sees only the
+     * unrestricted types. Never as an administrator.
+     */
+    actor?: { userId?: string | null; roleId?: string | null; isAdmin?: boolean };
+  }) {
     if (data.scopeSpaceIds?.length === 0) return [];
+    const typeVisibility = visibleDocumentWhere({
+      roleId: data.actor?.roleId ?? null,
+      isAdmin: !!data.actor?.isAdmin,
+      userId: data.actor?.userId ?? null,
+    });
     const rows = await this.prisma.document.findMany({
       where: {
+        ...(typeVisibility ?? {}),
         organizationId: data.organizationId,
         ...(data.scopeSpaceIds
           ? {

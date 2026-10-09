@@ -908,7 +908,8 @@
     "signatureRequired": "Teamleiter-Unterschrift ist erforderlich",
     "approveOvertime": "Überstunden genehmigen",
     "approvedSuccess": "Überstunden erfolgreich genehmigt",
-    "failedToApprove": "Genehmigung der Überstunden fehlgeschlagen"
+    "failedToApprove": "Genehmigung der Überstunden fehlgeschlagen",
+    "signedAwaitingConfirm": "Unterschrieben — {{name}} bestätigt es auf dem eigenen Telefon, dann zählt es"
   },
   "timeOff": {
     "stats": {

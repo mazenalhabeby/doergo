@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { Role, activeAssignmentWhere } from '@hbcfield/shared';
+import { Role } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { spaceRoleHolders } from '../../common/space-leaders.util';
 
 /**
  * Who can actually ACT on the organization's equipment.
@@ -52,20 +53,8 @@ export class AssetResponsibleService {
    * runs the depot runs its vans. Two queries whatever the size of the roster.
    */
   async spaceManagers(organizationId: string, spaceId: string | null | undefined, now = new Date()): Promise<string[]> {
-    if (!spaceId) return [];
-    const assignments = await this.prisma.spaceAssignment.findMany({
-      where: {
-        organizationId,
-        spaceId,
-        roleId: { not: null },
-        effectiveFrom: { lte: now },
-        OR: activeAssignmentWhere('', now).OR,
-        user: { isActive: true, isExternal: false },
-      },
-      select: { userId: true, role: { select: { isActive: true, permissions: true } } },
-      take: 200,
-    });
-    return [...new Set(assignments.filter((a) => a.role?.isActive && grants(a.role.permissions)).map((a) => a.userId))];
+    // The same "who leads this workspace" query attendance asks (space-leaders.util).
+    return spaceRoleHolders(this.prisma as never, { organizationId, spaceId, grants, now });
   }
 }
 

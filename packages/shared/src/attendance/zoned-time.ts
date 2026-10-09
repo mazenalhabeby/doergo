@@ -39,7 +39,8 @@ export function tzOffsetMs(instant: Date, tz: string): number {
   try {
     const parts = formatterFor(tz).formatToParts(instant);
     const g = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? '0');
-    const asUTC = Date.UTC(g('year'), g('month') - 1, g('day'), g('hour'), g('minute'), g('second'));
+    // `% 24`: some engines print midnight as "24" under hour12:false.
+    const asUTC = Date.UTC(g('year'), g('month') - 1, g('day'), g('hour') % 24, g('minute'), g('second'));
     return asUTC - instant.getTime();
   } catch {
     return 0; // An invalid zone is treated as UTC rather than throwing mid-shift.

@@ -39,7 +39,23 @@ export interface Dataset {
   dateColumn: string; // default date column for granularity + range (trusted)
   dimensions: Record<string, Dimension>;
   measures: Record<string, Measure>;
+  /**
+   * The rows a SPACE-SCOPED reader may see, as a trusted SQL predicate over the
+   * bound parameter `p` (a text[] of granted space ids).
+   *
+   * ⚠️ Every dataset must say. Reports used to be org-scoped only, so a member
+   * granted reports — or canViewAllTasks — in ONE workspace read every hour,
+   * leave day and job in the organization. Work is narrowed by the space it was
+   * done in; a person's leave (which belongs to no space) by whether that
+   * person is in the reader's crew RIGHT NOW (an assignment with no end, or one
+   * ending in the future — the same window as `memberScopeFilter`).
+   */
+  spaceFilter: (p: string) => string;
 }
+
+/** A service report's space is its task's. */
+const reportInSpaces = (p: string) =>
+  `EXISTS (SELECT 1 FROM "tasks" st WHERE st.id = sr."taskId" AND st."spaceId" = ANY(${p}))`;
 
 export const DATASETS: Record<string, Dataset> = {
   attendance: {
@@ -50,6 +66,7 @@ export const DATASETS: Record<string, Dataset> = {
       LEFT JOIN "company_locations" cl ON cl.id = te."locationId"`,
     orgColumn: 'te."organizationId"',
     dateColumn: 'te."clockInAt"',
+    spaceFilter: (p) => `te."locationId" = ANY(${p})`,
     dimensions: {
       technician: { labelKey: 'col.technician', sql: `(u."firstName" || ' ' || u."lastName")`, type: 'string' },
       space: { labelKey: 'col.space', sql: `COALESCE(cl.name, '—')`, type: 'string' },
@@ -95,6 +112,7 @@ export const DATASETS: Record<string, Dataset> = {
       LEFT JOIN "customers" c ON c.id = sr."customerId"`,
     orgColumn: 'sr."organizationId"',
     dateColumn: 'sr."completedAt"',
+    spaceFilter: reportInSpaces,
     dimensions: {
       technician: { labelKey: 'col.technician', sql: `(u."firstName" || ' ' || u."lastName")`, type: 'string' },
       // Falls back to the legacy free-text name until customers are linked.
@@ -117,6 +135,7 @@ export const DATASETS: Record<string, Dataset> = {
       LEFT JOIN "customers" c ON c.id = t."customerId"`,
     orgColumn: 't."organizationId"',
     dateColumn: 't."createdAt"',
+    spaceFilter: (p) => `t."spaceId" = ANY(${p})`,
     dimensions: {
       status: { labelKey: 'col.status', sql: 't.status', type: 'string' },
       priority: { labelKey: 'col.priority', sql: 't.priority::text', type: 'string' },
@@ -137,6 +156,9 @@ export const DATASETS: Record<string, Dataset> = {
     from: `"time_off_requests" t JOIN "users" u ON u.id = t."technicianId"`,
     orgColumn: 'u."organizationId"', // time_off has no org column; scope via the user
     dateColumn: 't."startDate"',
+    spaceFilter: (p) =>
+      `EXISTS (SELECT 1 FROM "space_assignments" sa WHERE sa."userId" = u.id AND sa."spaceId" = ANY(${p})
+         AND sa."effectiveFrom" <= now() AND (sa."effectiveTo" IS NULL OR sa."effectiveTo" >= now()))`,
     dimensions: {
       technician: { labelKey: 'col.technician', sql: `(u."firstName" || ' ' || u."lastName")`, type: 'string' },
       reason: { labelKey: 'col.reason', sql: `COALESCE(NULLIF(t.reason, ''), '—')`, type: 'string' },
@@ -158,6 +180,7 @@ export const DATASETS: Record<string, Dataset> = {
       LEFT JOIN "customers" c ON c.id = sr."customerId"`,
     orgColumn: 'sr."organizationId"',
     dateColumn: 'sr."completedAt"',
+    spaceFilter: reportInSpaces,
     dimensions: {
       part: { labelKey: 'col.part', sql: 'p.name', type: 'string' },
       customer: { labelKey: 'col.customer', sql: `COALESCE(c.name, sr."customerName", 'Unassigned')`, type: 'string' },
@@ -178,6 +201,7 @@ export const DATASETS: Record<string, Dataset> = {
       JOIN "users" u ON u.id = sr."completedById"`,
     orgColumn: 'sr."organizationId"',
     dateColumn: 'sr."completedAt"',
+    spaceFilter: reportInSpaces,
     dimensions: {
       asset: { labelKey: 'col.asset', sql: 'a.name', type: 'string' },
       technician: { labelKey: 'col.technician', sql: `(u."firstName" || ' ' || u."lastName")`, type: 'string' },
@@ -199,6 +223,7 @@ export const DATASETS: Record<string, Dataset> = {
       LEFT JOIN "customers" c ON c.id = t."customerId"`,
     orgColumn: 'sr."organizationId"',
     dateColumn: 'sr."completedAt"',
+    spaceFilter: (p) => `t."spaceId" = ANY(${p})`,
     dimensions: {
       priority: { labelKey: 'col.priority', sql: 't.priority::text', type: 'string' },
       technician: { labelKey: 'col.assignee', sql: `COALESCE(u."firstName" || ' ' || u."lastName", 'Unassigned')`, type: 'string' },

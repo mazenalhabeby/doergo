@@ -4,15 +4,26 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
 import { success } from '@hbcfield/shared';
 
 @Injectable()
 export class CustomFieldsService {
   private readonly logger = new Logger(CustomFieldsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    // Optional only so a test that builds this service by hand still gets it.
+    @Optional() private readonly injectedTaskAccess?: TaskAccessService,
+  ) {}
+
+  private _taskAccess?: TaskAccessService;
+  private get taskAccess(): TaskAccessService {
+    return (this._taskAccess ??= this.injectedTaskAccess ?? new TaskAccessService(this.prisma));
+  }
 
   /**
    * List all custom field definitions for an organization
@@ -196,16 +207,18 @@ export class CustomFieldsService {
   /**
    * Get custom field values for a task
    */
-  async getTaskValues(data: { taskId: string; organizationId: string }) {
-    // Verify task belongs to org + read its Task Type
-    const task = await this.prisma.task.findUnique({
-      where: { id: data.taskId },
-      select: { organizationId: true, workflowId: true },
-    });
-
+  async getTaskValues(data: TaskAccessFacts & { taskId: string }) {
+    const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task || task.organizationId !== data.organizationId) {
       throw new NotFoundException('Task not found');
     }
+    /*
+      Being in the organization was the whole check, so any member could read
+      the values on ANY task — including one they cannot open — by id. The same
+      gate as the task page itself; a holder of the job's open role may read, as
+      they may read the job.
+    */
+    await this.taskAccess.assert(task, data, { roleHolderMayRead: true });
 
     // Applicable definitions = this task's Task Type fields + global fields.
     const where = task.workflowId
@@ -245,24 +258,16 @@ export class CustomFieldsService {
   /**
    * Set/update custom field values for a task (batch upsert)
    */
-  async setTaskValues(data: {
+  async setTaskValues(data: TaskAccessFacts & {
     taskId: string;
-    organizationId: string;
     values: { definitionId: string; value: string }[];
   }) {
-    // Verify task belongs to org
-    const task = await this.prisma.task.findUnique({
-      where: { id: data.taskId },
-      select: { organizationId: true },
-    });
-
-    if (!task) {
+    const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
+    if (!task || task.organizationId !== data.organizationId) {
       throw new NotFoundException('Task not found');
     }
-
-    if (task.organizationId !== data.organizationId) {
-      throw new NotFoundException('Task not found');
-    }
+    // Writing needs the task itself — never the read-only role-holder exemption.
+    await this.taskAccess.assert(task, data);
 
     // Validate all definitions exist and belong to the same org
     const definitionIds = data.values.map((v) => v.definitionId);

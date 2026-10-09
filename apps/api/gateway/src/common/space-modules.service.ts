@@ -1,7 +1,32 @@
-import { Global, Inject, Injectable, Logger, Module } from '@nestjs/common';
+import { Global, HttpException, HttpStatus, Inject, Injectable, Logger, Module, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
-import { SERVICE_NAMES } from '@hbcfield/shared';
+import { SERVICE_NAMES, formatCents, moduleMonthlyCents } from '@hbcfield/shared';
+
+/**
+ * The refusal for a module that is not on — ONE shape, 402, for ModuleGuard and
+ * for every controller that asks a space directly. The hand-rolled checks used
+ * to answer 403 with their own wording, so the web's upgrade prompt (which keys
+ * on 402 + `feature`) never fired for the portal, units, sharing or CRM.
+ */
+export function moduleRefusal(feature: string, fromSpace = false): HttpException {
+  // Both cases name a module and a price: switch it on in the space, and the
+  // space is billed for it. There is no tier to upgrade to any more.
+  const price = moduleMonthlyCents(feature);
+  const priced = price > 0 ? ` (${formatCents(price)}/month)` : '';
+  return new HttpException(
+    {
+      statusCode: HttpStatus.PAYMENT_REQUIRED,
+      message: fromSpace
+        ? `The "${feature}" module is switched off in this space.`
+        : `The "${feature}" module is not switched on${priced}.`,
+      error: 'ModuleDisabled',
+      feature,
+      moduleMonthlyCents: price,
+    },
+    HttpStatus.PAYMENT_REQUIRED,
+  );
+}
 
 /**
  * Which feature modules apply to a given SPACE.
@@ -42,31 +67,45 @@ export class SpaceModulesService {
    * — the caller then keeps whatever it would have done without a space.
    */
   async forSpace(spaceId: string, organizationId: string): Promise<string[] | null> {
+    const r = await this.lookup(spaceId, organizationId);
+    return typeof r === 'string' ? null : r.modules;
+  }
+
+  /**
+   * The space's modules, or WHY there are none: the space is not this
+   * organization's (`missing`), or the service could not be asked
+   * (`unavailable`). The guard treats both as "unknown"; an explicit check
+   * answers them differently — a wrong id is not a reason to "try again".
+   */
+  private async lookup(spaceId: string, organizationId: string): Promise<{ modules: string[] } | 'missing' | 'unavailable'> {
     const key = `${organizationId}:${spaceId}`;
     const hit = this.cache.get(key);
-    if (hit && hit.expires > Date.now()) return hit.modules;
+    if (hit && hit.expires > Date.now()) return { modules: hit.modules };
 
+    let res: any;
     try {
-      const res: any = await firstValueFrom(
+      res = await firstValueFrom(
         this.taskClient
           .send({ cmd: 'get_effective_modules' }, { id: spaceId, organizationId })
           // A guard must not hang a request while a service is slow. Falling
           // back to the org's modules is wrong-ish; blocking is worse.
           .pipe(timeout(1_500)),
       );
-      const modules: string[] | null = Array.isArray(res?.data?.enabledModules)
-        ? res.data.enabledModules
-        : Array.isArray(res?.data)
-          ? res.data
-          : null;
-      if (!modules) return null;
-
-      this.remember(key, modules);
-      return modules;
     } catch (err: any) {
+      const status = err?.status ?? err?.statusCode ?? err?.response?.statusCode;
+      if (status === 404) return 'missing';
       this.logger.warn(`Could not resolve modules for space ${spaceId}: ${err?.message ?? err}`);
-      return null;
+      return 'unavailable';
     }
+    if (res?.success === false) return res?.statusCode === 404 || res?.statusCode === 400 ? 'missing' : 'unavailable';
+    const modules: string[] | null = Array.isArray(res?.data?.enabledModules)
+      ? res.data.enabledModules
+      : Array.isArray(res?.data)
+        ? res.data
+        : null;
+    if (!modules) return 'missing';
+    this.remember(key, modules);
+    return { modules };
   }
 
   /**
@@ -159,6 +198,26 @@ export class SpaceModulesService {
       if (oldest) this.taskSpace.delete(oldest);
     }
     this.taskSpace.set(key, { spaceId, expires: Date.now() + SpaceModulesService.TASK_TTL_MS });
+  }
+
+  /**
+   * Refuse unless `feature` is switched on in THIS space.
+   *
+   * For routes whose whole surface IS one space's module (its portal, its
+   * units, sharing it, filing a client into it) — reads included, which is why
+   * they ask here rather than through @RequireModule, whose guard lets reads
+   * through. Four controllers each carried a copy of this lookup; they now share
+   * the cache and the 402 the guard answers with.
+   *
+   * Unlike the guard, an unresolvable space is NOT waved through on the
+   * organization's set: these routes name the space explicitly, so not knowing
+   * its modules is a failure to report (503), never a permission.
+   */
+  async assertEnabled(spaceId: string, organizationId: string, feature: string): Promise<void> {
+    const r = await this.lookup(spaceId, organizationId);
+    if (r === 'missing') throw new NotFoundException('Workspace not found');
+    if (r === 'unavailable') throw new ServiceUnavailableException('Could not check this workspace\'s modules — try again');
+    if (!r.modules.includes(feature)) throw moduleRefusal(feature, true);
   }
 
   /** Drop a space's entry so a module change is visible immediately. */

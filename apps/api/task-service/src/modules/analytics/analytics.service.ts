@@ -1,5 +1,5 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
-import { reportLabelEn, type ReportLabelKey } from '@hbcfield/shared';
+import { reportLabelEn, assertMemberInScope, type ReportLabelKey, type SpaceScopeIds } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { compile, ReportDefinition } from './query-engine';
 import { datasetCatalog } from './registry';
@@ -16,9 +16,13 @@ export class AnalyticsService {
     return { data: { datasets: datasetCatalog(), templates: TEMPLATES } };
   }
 
-  /** Run a report definition against the org's data. Always org-scoped. */
-  async run(data: { organizationId: string; definition: ReportDefinition }) {
-    const { sql, params, columns } = compile(data.definition, data.organizationId);
+  /**
+   * Run a report definition against the org's data. Always org-scoped, and
+   * narrowed to `scopeSpaceIds` when the reader was granted reports in some
+   * workspaces only (undefined/null = org-wide, [] = nothing).
+   */
+  async run(data: { organizationId: string; definition: ReportDefinition; scopeSpaceIds?: SpaceScopeIds }) {
+    const { sql, params, columns } = compile(data.definition, data.organizationId, data.scopeSpaceIds);
     const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(sql, ...params);
 
     // Coerce measure values (Decimal/bigint/string from raw SQL) → JS numbers.
@@ -39,7 +43,17 @@ export class AnalyticsService {
    * per-day status: Worked · <leave reason> · Absent (scheduled, no clock-in) ·
    * Off (not scheduled). All values are bound parameters; org scope enforced.
    */
-  async timesheetDetail(data: { organizationId: string; userId: string; from?: string; to?: string }) {
+  async timesheetDetail(data: { organizationId: string; userId: string; from?: string; to?: string; scopeSpaceIds?: SpaceScopeIds }) {
+    /*
+      ⚠️ A day-by-day sheet of ONE person — their hours, leave reasons and notes.
+      It was org-scoped only, so anybody admitted to reports, in any one
+      workspace, read anybody's. A space-scoped reader may open it for somebody
+      in their crew (an assignment in a granted space, still running), and then
+      sees only the shifts and jobs in THOSE spaces — a person working two
+      sites does not bring the other site's day along.
+    */
+    const scope = data.scopeSpaceIds ?? undefined;
+    await assertMemberInScope(this.prisma as any, { userId: data.userId, organizationId: data.organizationId, scopeSpaceIds: scope });
     const user = await this.prisma.user.findFirst({
       where: { id: data.userId, organizationId: data.organizationId },
       select: { firstName: true, lastName: true },
@@ -70,6 +84,7 @@ export class AnalyticsService {
         LEFT JOIN "company_locations" cl ON cl.id = te."locationId"
         LEFT JOIN "shifts" sh ON sh.id = te."shiftId"
         WHERE te."userId" = $1 AND te."organizationId" = $4
+          AND ($5::text[] IS NULL OR te."locationId" = ANY($5::text[]))
           AND te."clockInAt" >= ($2::date - 1) AND te."clockInAt" < ($3::date + 2)
       ),
       -- The ROTA window, as UTC instants: the stored start, else the shift's
@@ -137,6 +152,7 @@ export class AnalyticsService {
         SELECT (sr."completedAt")::date AS day, COUNT(*) AS n
         FROM "service_reports" sr
         WHERE sr."completedById" = $1 AND sr."organizationId" = $4
+          AND ($5::text[] IS NULL OR EXISTS (SELECT 1 FROM "tasks" st WHERE st.id = sr."taskId" AND st."spaceId" = ANY($5::text[])))
           AND sr."completedAt" >= $2::date AND sr."completedAt" < ($3::date + 1)
         GROUP BY 1
       ),
@@ -193,7 +209,7 @@ export class AnalyticsService {
       ORDER BY d.day ASC
     `;
 
-    const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(sql, data.userId, fromStr, toStr, data.organizationId);
+    const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(sql, data.userId, fromStr, toStr, data.organizationId, scope ?? null);
     const numKeys = ['hours', 'hoursInShift', 'plannedInShift', 'late', 'break', 'overtime', 'jobs'];
     const normalized = rows.map((r) => {
       const o = { ...r };
@@ -269,15 +285,27 @@ export class AnalyticsService {
     return { data: item };
   }
 
-  async updateSaved(data: {
-    id: string; organizationId: string; userId: string;
-    name?: string; description?: string; config?: ReportDefinition; isShared?: boolean;
-  }) {
+  /**
+   * A saved report is changed or removed by the person who made it, or by an
+   * administrator. A SHARED report is readable by everybody with reports — and
+   * was therefore editable and deletable by all of them: anybody could rewrite
+   * the "Payroll hours" report the office runs every month, under its name.
+   * Somebody else's report reads as not found, private or shared alike.
+   */
+  private async ownedSaved(data: { id: string; organizationId: string; userId?: string; isAdmin?: boolean }) {
     const existing = await this.prisma.reportDefinition.findFirst({
       where: { id: data.id, organizationId: data.organizationId },
       select: { id: true, createdById: true },
     });
-    if (!existing) throw new NotFoundException('Report not found');
+    if (!existing || (!data.isAdmin && existing.createdById !== data.userId)) throw new NotFoundException('Report not found');
+    return existing;
+  }
+
+  async updateSaved(data: {
+    id: string; organizationId: string; userId: string; isAdmin?: boolean;
+    name?: string; description?: string; config?: ReportDefinition; isShared?: boolean;
+  }) {
+    await this.ownedSaved(data);
     const patch: Record<string, unknown> = {};
     if (data.name !== undefined) {
       if (!data.name.trim()) throw new BadRequestException('Report name is required');
@@ -294,12 +322,8 @@ export class AnalyticsService {
     return { data: item };
   }
 
-  async deleteSaved(data: { id: string; organizationId: string }) {
-    const existing = await this.prisma.reportDefinition.findFirst({
-      where: { id: data.id, organizationId: data.organizationId },
-      select: { id: true },
-    });
-    if (!existing) throw new NotFoundException('Report not found');
+  async deleteSaved(data: { id: string; organizationId: string; userId?: string; isAdmin?: boolean }) {
+    await this.ownedSaved(data);
     await this.prisma.reportDefinition.delete({ where: { id: data.id } });
     return { success: true };
   }

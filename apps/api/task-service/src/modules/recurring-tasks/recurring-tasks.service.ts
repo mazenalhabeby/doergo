@@ -7,8 +7,9 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { assertSpaceInOrg, assertWorkflowInOrg, assertUsersInOrg } from '../../common/tenant-scope.util';
-import { success } from '@hbcfield/shared';
+import { assertSpaceInOrg, assertWorkflowInOrg, assertUsersInOrg, assertCustomerInOrg } from '../../common/tenant-scope.util';
+import { workspaceZone } from '../../common/zone.util';
+import { success, localPartsIn } from '@hbcfield/shared';
 
 @Injectable()
 export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
@@ -94,15 +95,20 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
     // Validate frequency-specific fields
     this.validateFrequencyFields(data.frequency, data);
 
-    // Validate space + task type belong to this org (if provided)
-    await this.assertSpaceAndWorkflow(data.organizationId, data.spaceId, data.workflowId, data.assigneeIds);
+    // Validate space + task type + client belong to this org (if provided)
+    await this.assertSpaceAndWorkflow(data.organizationId, data.spaceId, data.workflowId, data.assigneeIds, data.customerId);
 
     const startDate = new Date(data.startDate);
 
-    // Validate startDate is not in the past
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (startDate < today) {
+    /*
+      Validate startDate is not in the past — as CALENDAR DAYS in the
+      workspace's zone, never the server's. In UTC an organization in New York
+      was told at 22:00 that today's date "is in the past". A bare date is a day
+      as typed; a full timestamp is read as its local day there.
+    */
+    const zone = await workspaceZone(this.prisma, data);
+    const startDay = /^\d{4}-\d{2}-\d{2}$/.test(data.startDate) ? data.startDate : localPartsIn(startDate, zone).dateStr;
+    if (startDay < localPartsIn(new Date(), zone).dateStr) {
       throw new BadRequestException('Start date cannot be in the past');
     }
 
@@ -197,6 +203,7 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
       data.spaceId === undefined ? undefined : data.spaceId ?? undefined,
       data.workflowId === undefined ? undefined : data.workflowId ?? undefined,
       data.assigneeIds,
+      data.customerId ?? undefined,
     );
 
     // If frequency changed, validate and recalculate nextRunAt
@@ -458,10 +465,13 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
     spaceId?: string,
     workflowId?: string,
     assigneeIds?: string[],
+    customerId?: string,
   ) {
     await assertSpaceInOrg(this.prisma, spaceId, organizationId);
     await assertWorkflowInOrg(this.prisma, workflowId, organizationId);
     await assertUsersInOrg(this.prisma, assigneeIds, organizationId);
+    // The client every generated task will carry — an id from the body says nothing about whose it is.
+    await assertCustomerInOrg(this.prisma, customerId, organizationId);
   }
 
   /** First non-cancel status of a task type (the flow's starting point). */

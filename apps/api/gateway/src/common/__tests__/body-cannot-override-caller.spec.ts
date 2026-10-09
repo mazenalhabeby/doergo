@@ -32,8 +32,9 @@ function literals(source: string): string[] {
   return code.match(/\{[^{}]*\}/g) ?? [];
 }
 
-const IDENTITY = /(req\.user\b|request\.user\b|\buser\.(id|organizationId|role)\b|this\.ctx\(|\bctx\()/;
-const BODY_SPREAD = /\.\.\.(body|dto|input|payload)\b/;
+const IDENTITY = /(req\.user\b|\btaskActor\(|\btaskRequester\(|request\.user\b|\buser\.(id|organizationId|role)\b|this\.ctx\(|\bctx\()/;
+// `rest` included: a body with one key stripped (`const { x, ...rest } = body`) is still the body.
+const BODY_SPREAD = /\.\.\.(body|dto|input|payload|rest)\b/;
 
 describe('request bodies and the caller', () => {
   it('never spreads a body after the caller identity', () => {

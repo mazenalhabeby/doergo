@@ -1,5 +1,6 @@
+import { MemberOffboarding } from '../../common/member-offboarding/member-offboarding.service';
 import { readAssignedHome } from '@hbcfield/shared';
-import { Injectable, HttpStatus, Logger } from '@nestjs/common';
+import { Injectable, HttpStatus, Logger, Optional } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
@@ -11,11 +12,11 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { seedDefaultWorkflow } from '../../common/seed-default-workflow';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { BillingService } from '../billing/billing.service';
+import { SessionEvents } from '../../common/session-events/session-events.service';
 import { GraceTokenCache } from './grace-token-cache.service';
 import {
   MAX_SESSIONS_PER_USER,
   MAX_FAILED_ATTEMPTS,
-  LOCKOUT_DURATION_MINUTES,
   PASSWORD_RESET_EXPIRATION_HOURS,
   REFRESH_TOKEN_GRACE_PERIOD_SECONDS,
   DEFAULT_REFRESH_TOKEN_TTL,
@@ -28,7 +29,7 @@ import {
   buildResolvedAccess,
   accessAllows,
   resolveTaskCreationScope,
-  mailRoutes,
+  mailRoutesFromConfig,
   passwordResetEmail,
   sendViaFirstWorking,
   type MailRoute,
@@ -39,7 +40,28 @@ import {
   isOrganizationSuspended,
   ORG_SUSPENDED_MESSAGE,
   ORG_SUSPENDED_CODE,
+  LOGIN_FAILED_MESSAGE,
+  isLockActive,
+  nextLockStateAfterFailure,
+  tokenIssuedBeforeCutoff,
+  maskEmail,
+  normalizeEmail,
 } from '@hbcfield/shared';
+
+/*
+  A real bcrypt hash of nothing anybody knows, computed ONCE and lazily.
+
+  Compared against when the address is unknown, so a sign-in for an address
+  with no account costs the same ~250ms as one for a real account. Lazily so
+  the boot does not pay for it; once, so every unknown address shares it.
+*/
+let dummyHashPromise: Promise<string> | null = null;
+function dummyPasswordHash(): Promise<string> {
+  if (!dummyHashPromise) {
+    dummyHashPromise = bcrypt.hash(randomUUID(), BCRYPT_COST_FACTOR);
+  }
+  return dummyHashPromise;
+}
 
 // Hash a token using SHA-256 for secure storage
 function hashToken(token: string): string {
@@ -241,21 +263,12 @@ export class AuthService {
     private readonly auditLog: AuditLogService,
     private readonly billing: BillingService,
     private readonly graceCache: GraceTokenCache,
+    // Optional: socket revocation is best effort, and unit tests that do not
+    // exercise it need not wire it.
+    @Optional() private readonly sessionEvents?: SessionEvents,
+    @Optional() private readonly offboarding?: MemberOffboarding,
   ) {
-    this.mailRoutes = mailRoutes({
-      SMTP_HOST: this.configService.get('SMTP_HOST'),
-      SMTP_PORT: this.configService.get('SMTP_PORT'),
-      SMTP_USER: this.configService.get('SMTP_USER'),
-      SMTP_PASS: this.configService.get('SMTP_PASS'),
-      SMTP_SECURE: this.configService.get('SMTP_SECURE'),
-      SMTP_FROM: this.configService.get('SMTP_FROM'),
-      SMTP_FALLBACK_HOST: this.configService.get('SMTP_FALLBACK_HOST'),
-      SMTP_FALLBACK_PORT: this.configService.get('SMTP_FALLBACK_PORT'),
-      SMTP_FALLBACK_USER: this.configService.get('SMTP_FALLBACK_USER'),
-      SMTP_FALLBACK_PASS: this.configService.get('SMTP_FALLBACK_PASS'),
-      SMTP_FALLBACK_SECURE: this.configService.get('SMTP_FALLBACK_SECURE'),
-      SMTP_FALLBACK_FROM: this.configService.get('SMTP_FALLBACK_FROM'),
-    }).map((r) => ({
+    this.mailRoutes = mailRoutesFromConfig((key) => this.configService.get<string>(key)).map((r) => ({
       ...r,
       tx: nodemailer.createTransport(r.options),
     }));
@@ -423,9 +436,9 @@ export class AuthService {
           send: () => r.tx.sendMail({ from: r.from || fallbackFrom, to: user.email, subject, html }),
         })),
       );
-      this.logger.log(`Password reset email sent to ${user.email} via ${label}`);
+      this.logger.log(`Password reset email sent to ${maskEmail(user.email)} via ${label}`);
     } catch (err) {
-      this.logger.error(`Failed to send password reset email to ${user.email}: ${err}`);
+      this.logger.error(`Failed to send password reset email to ${maskEmail(user.email)}: ${err}`);
     }
   }
 
@@ -440,7 +453,7 @@ export class AuthService {
   }) {
     try {
       // Sanitize inputs: email to lowercase, names preserve case (capitalized by DTO)
-      const email = data.email.trim().toLowerCase();
+      const email = normalizeEmail(data.email);
       const firstName = data.firstName.trim();
       const lastName = data.lastName.trim();
       const companyName = data.companyName?.trim();
@@ -595,7 +608,7 @@ export class AuthService {
   async login(data: { email: string; password: string; rememberMe?: boolean; client?: string; clientPlatform?: string; userAgent?: string; ipAddress?: string }): Promise<AuthResult> {
     try {
       // Normalize email to lowercase for lookup
-      const email = data.email.trim().toLowerCase();
+      const email = normalizeEmail(data.email);
 
       const user = await this.prisma.user.findUnique({
         where: { email },
@@ -616,44 +629,48 @@ export class AuthService {
         },
       });
 
+      /*
+        ONE refusal for every way a sign-in can fail.
+
+        Unknown address, wrong password and a locked account all answer the
+        same 401 with the same sentence, and all of them spend one bcrypt
+        comparison. Before this an unknown address returned in a millisecond
+        while a real one took ~250ms, a real one counted down "N attempt(s)
+        remaining", and a locked one answered 429 — three separate ways to ask
+        "does this person have an account here?".
+      */
+      const refused = {
+        success: false as const,
+        statusCode: HttpStatus.UNAUTHORIZED,
+        message: LOGIN_FAILED_MESSAGE,
+      };
+
       if (!user || !user.isActive) {
-        return {
-          success: false,
-          statusCode: HttpStatus.UNAUTHORIZED,
-          message: 'Invalid email or password',
-        };
+        await bcrypt.compare(data.password, await dummyPasswordHash());
+        return refused;
       }
 
-      // SECURITY: Check if account is locked
-      if (user.lockedUntil && user.lockedUntil > new Date()) {
-        const remainingMinutes = Math.ceil(
-          (user.lockedUntil.getTime() - Date.now()) / 60000,
-        );
-        return {
-          success: false,
-          statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          message: `Account temporarily locked. Try again in ${remainingMinutes} minute(s).`,
-        };
+      // SECURITY: a locked account is refused even with the right password —
+      // otherwise the lock would cost an attacker nothing. Same answer, same cost.
+      if (isLockActive(user)) {
+        await bcrypt.compare(data.password, user.passwordHash);
+        return refused;
       }
 
       const isPasswordValid = await bcrypt.compare(data.password, user.passwordHash);
 
       if (!isPasswordValid) {
-        // SECURITY: Increment failed attempts
-        const newFailedAttempts = user.failedLoginAttempts + 1;
-        const updateData: any = { failedLoginAttempts: newFailedAttempts };
-
-        // Lock account after MAX_FAILED_ATTEMPTS
-        if (newFailedAttempts >= MAX_FAILED_ATTEMPTS) {
-          updateData.lockedUntil = new Date(
-            Date.now() + LOCKOUT_DURATION_MINUTES * 60 * 1000,
-          );
-          this.logger.warn(`Account locked for user: ${email} after ${newFailedAttempts} failed attempts`);
+        // SECURITY: count the failure. An EXPIRED lock starts the count again
+        // (see nextLockStateAfterFailure) — so a lock is a fifteen-minute window,
+        // never a permanent lock-out one wrong guess at a time.
+        const next = nextLockStateAfterFailure(user);
+        if (next.lockedUntil) {
+          this.logger.warn(`Account locked for ${maskEmail(email)} after ${next.failedLoginAttempts} failed attempts`);
         }
 
         await this.prisma.user.update({
           where: { id: user.id },
-          data: updateData,
+          data: next,
         });
 
         // Audit: failed login
@@ -664,24 +681,11 @@ export class AuthService {
             organizationId: user.organizationId,
             ipAddress: data.ipAddress,
             userAgent: data.userAgent,
-            metadata: { email, attemptsRemaining: MAX_FAILED_ATTEMPTS - newFailedAttempts },
+            metadata: { email, attemptsRemaining: Math.max(0, MAX_FAILED_ATTEMPTS - next.failedLoginAttempts) },
           });
         }
 
-        const attemptsRemaining = MAX_FAILED_ATTEMPTS - newFailedAttempts;
-        if (attemptsRemaining > 0) {
-          return {
-            success: false,
-            statusCode: HttpStatus.UNAUTHORIZED,
-            message: `Invalid email or password. ${attemptsRemaining} attempt(s) remaining.`,
-          };
-        }
-
-        return {
-          success: false,
-          statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          message: `Account locked for ${LOCKOUT_DURATION_MINUTES} minutes due to too many failed attempts.`,
-        };
+        return refused;
       }
 
       /*
@@ -703,7 +707,7 @@ export class AuthService {
         for why it now means "off" rather than "read-only".
       */
       if (isOrganizationSuspended(user.organization)) {
-        this.logger.warn(`[SUSPENDED] Sign-in refused for ${email} — organization ${user.organizationId} is deactivated`);
+        this.logger.warn(`[SUSPENDED] Sign-in refused for ${maskEmail(email)} — organization ${user.organizationId} is deactivated`);
         return {
           success: false,
           statusCode: HttpStatus.FORBIDDEN,
@@ -1061,7 +1065,7 @@ export class AuthService {
         };
       }
 
-      this.logger.log(`Found token for user: ${storedToken.user.email}, token ID: ${storedToken.id}`);
+      this.logger.log(`Found token for user: ${storedToken.userId}, token ID: ${storedToken.id}`);
       this.logger.log(`Token expires at: ${storedToken.expiresAt}, now: ${new Date()}`);
 
       if (storedToken.expiresAt < new Date()) {
@@ -1079,7 +1083,7 @@ export class AuthService {
       // refusing quietly: a refresh token that keeps being presented every few
       // minutes is a session that has not actually ended.
       if (isOrganizationSuspended(storedToken.user.organization)) {
-        this.logger.warn(`[SUSPENDED] Refresh refused for ${storedToken.user.email} — organization deactivated`);
+        this.logger.warn(`[SUSPENDED] Refresh refused for ${maskEmail(storedToken.user.email)} — organization deactivated`);
         await this.prisma.refreshToken.delete({ where: { id: storedToken.id } });
         return {
           success: false,
@@ -1427,7 +1431,7 @@ export class AuthService {
   async forgotPassword(data: { email: string }) {
     try {
       // Normalize email
-      const email = data.email.trim().toLowerCase();
+      const email = normalizeEmail(data.email);
 
       /*
         Is our own mail working? Asked first, and for every address, so the
@@ -1460,7 +1464,7 @@ export class AuthService {
 
       if (!user) {
         // Log attempt but return success to prevent enumeration
-        this.logger.log(`Password reset requested for non-existent email: ${email}`);
+        this.logger.log(`Password reset requested for non-existent email: ${maskEmail(email)}`);
         return successResponse;
       }
 
@@ -1488,7 +1492,7 @@ export class AuthService {
 
       // Send password reset email
       await this.sendPasswordResetEmail(user, resetToken);
-      this.logger.log(`Password reset token generated for user: ${email}`);
+      this.logger.log(`Password reset token generated for user: ${maskEmail(email)}`);
 
       return successResponse;
     } catch (error) {
@@ -1550,28 +1554,50 @@ export class AuthService {
       }
 
       // Hash new password with high cost factor
-      const newPasswordHash = await bcrypt.hash(data.newPassword, 12);
+      const newPasswordHash = await bcrypt.hash(data.newPassword, BCRYPT_COST_FACTOR);
 
-      // Update user's password and reset failed attempts
-      await this.prisma.user.update({
-        where: { id: resetToken.user.id },
-        data: {
-          passwordHash: newPasswordHash,
-          failedLoginAttempts: 0,
-          lockedUntil: null,
-        },
+      /*
+        CLAIM the link, then use it — in one transaction.
+
+        It used to be read ("used: false?"), then the password written, then the
+        link marked used: two requests carrying the same link in the same
+        instant both passed the read and both set a password. The claim is a
+        conditional update on `used = false`; exactly one request gets count 1,
+        and the loser's transaction is rolled back before it writes anything.
+      */
+      const claimed = await this.prisma.$transaction(async (tx) => {
+        const claim = await tx.passwordResetToken.updateMany({
+          where: { id: resetToken.id, used: false, expiresAt: { gt: new Date() } },
+          data: { used: true },
+        });
+        if (claim.count !== 1) return false;
+
+        await tx.user.update({
+          where: { id: resetToken.user.id },
+          data: {
+            passwordHash: newPasswordHash,
+            failedLoginAttempts: 0,
+            lockedUntil: null,
+            // Access tokens already issued die here too, not at their expiry.
+            tokensValidAfter: new Date(),
+          },
+        });
+
+        // SECURITY: Invalidate all refresh tokens for this user (force re-login everywhere)
+        await tx.refreshToken.deleteMany({
+          where: { userId: resetToken.user.id },
+        });
+        return true;
       });
 
-      // Mark token as used
-      await this.prisma.passwordResetToken.update({
-        where: { id: resetToken.id },
-        data: { used: true },
-      });
-
-      // SECURITY: Invalidate all refresh tokens for this user (force re-login everywhere)
-      await this.prisma.refreshToken.deleteMany({
-        where: { userId: resetToken.user.id },
-      });
+      if (!claimed) {
+        return {
+          success: false,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'This password reset link has already been used.',
+        };
+      }
+      this.sessionEvents?.sessionsRevoked(resetToken.user.id);
 
       /*
         ⚠️ Device keys too, not just refresh tokens.
@@ -1586,11 +1612,14 @@ export class AuthService {
         data: { revokedAt: new Date() },
       });
 
-      this.logger.log(`Password reset successful for user: ${resetToken.user.email}`);
+      this.logger.log(`Password reset successful for user: ${maskEmail(resetToken.user.email)}`);
 
       return {
         success: true,
         message: 'Password has been reset successfully. Please login with your new password.',
+        // For the gateway, which drops this member's cached session; it strips
+        // the id before answering the (unauthenticated) caller.
+        userId: resetToken.user.id,
       };
     } catch (error) {
       this.logger.error('Reset password error:', error);
@@ -1663,6 +1692,8 @@ export class AuthService {
           isExternal: true,
           avatarUrl: true,
           isActive: true,
+          // The session cut-off — see the check below.
+          tokensValidAfter: true,
           // Permission fields
           canCreateTasks: true,
           taskCreationScope: true,
@@ -1728,6 +1759,18 @@ export class AuthService {
       }
 
       /*
+        An access token minted before the account's session cut-off is dead.
+
+        A password change, a reset, an admin reset, "sign out everywhere" and a
+        deactivation all delete the refresh tokens — but an access token is a
+        signed statement that needs no row, and it went on working until it
+        expired. This is what ends it at the moment of the change.
+      */
+      if (tokenIssuedBeforeCutoff(payload.iat, user.tokensValidAfter)) {
+        return { valid: false };
+      }
+
+      /*
         The switch has to bite on the access token too.
 
         Login and refresh alone would let an already-signed-in member keep
@@ -1746,7 +1789,8 @@ export class AuthService {
         .update({ where: { id: user.id }, data: { lastActiveAt: new Date() } })
         .catch(() => undefined);
 
-      const { organization, profileBadges, enabledModules: userModules, memberRole, spaceAssignments, ...userData } = user;
+      // tokensValidAfter is read for the check above and stays off req.user.
+      const { organization, profileBadges, enabledModules: userModules, memberRole, spaceAssignments, tokensValidAfter: _cutoff, ...userData } = user;
 
       // Cross-org space shares RECEIVED by this user's org (ACTIVE only). Indexed
       // on [guestOrgId, status] → returns 0 rows for the vast majority of users
@@ -1953,7 +1997,9 @@ export class AuthService {
         ipAddress: deviceInfo?.ipAddress?.substring(0, 45),
       },
     });
-    this.logger.log(`NEW TOKEN CREATED in DB: id=${created.id}, hash=${tokenHash.substring(0, 20)}, expires=${expiresAt}`);
+    // No part of the hash in the log: a prefix narrows a stolen-database search and
+    // says nothing an operator needs — the row id identifies the session.
+    this.logger.log(`NEW TOKEN CREATED in DB: id=${created.id}, expires=${expiresAt}`);
 
     // Return the plain token to the client (they need it to authenticate)
     return { accessToken, refreshToken };
@@ -1996,13 +2042,49 @@ export class AuthService {
     return { success: true, data: null, message: 'Session revoked' };
   }
 
-  async revokeAllSessions(userId: string, exceptSessionId?: string) {
+  async revokeAllSessions(userId: string, exceptSessionId?: string, currentRefreshToken?: string) {
+    /*
+      The session to keep, found from the caller's own refresh token. The
+      gateway cannot know its row id (the access token carries no session
+      claim), but it holds the token itself — the cookie on the web, the body
+      on the phone — and the row is found by its hash, scoped to this user so
+      a token belonging to somebody else keeps nothing.
+    */
+    if (!exceptSessionId && typeof currentRefreshToken === 'string' && currentRefreshToken) {
+      const own = await this.prisma.refreshToken.findFirst({
+        where: { tokenHash: hashToken(currentRefreshToken), userId },
+        select: { id: true },
+      });
+      exceptSessionId = own?.id;
+    }
     const where: any = { userId };
     if (exceptSessionId) {
       where.id = { not: exceptSessionId };
     }
 
     const result = await this.prisma.refreshToken.deleteMany({ where });
+
+    /*
+      Signing the OTHER devices out has to reach their access tokens too, or
+      each keeps working for up to its full lifetime. There is no per-session
+      cut-off, so this one moves the account's: the caller's own access token
+      is refused on its next request and silently refreshed from the session
+      that was kept — a re-mint the clients already do on any 401.
+    */
+    if (result.count > 0) {
+      await this.prisma.user.update({ where: { id: userId }, data: { tokensValidAfter: new Date() } });
+      /*
+        "Sign out my other devices" must not close the caller's own live
+        connection — the socket event is per PERSON, not per session, so it is
+        sent only when no session of theirs was kept. The other devices' sockets
+        end at their token expiry, which notification-service enforces.
+        A kept id that is not actually theirs keeps nothing, so it emits.
+      */
+      const keptOwnSession =
+        !!exceptSessionId &&
+        (await this.prisma.refreshToken.count({ where: { id: exceptSessionId, userId } })) > 0;
+      if (!keptOwnSession) this.sessionEvents?.sessionsRevoked(userId);
+    }
 
     return { success: true, data: { revoked: result.count }, message: `${result.count} session(s) revoked` };
   }
@@ -2133,15 +2215,19 @@ export class AuthService {
       }
 
       // Hash and update
-      const newPasswordHash = await bcrypt.hash(data.newPassword, 12);
+      const newPasswordHash = await bcrypt.hash(data.newPassword, BCRYPT_COST_FACTOR);
       await this.prisma.user.update({
         where: { id: data.userId },
-        data: { passwordHash: newPasswordHash },
+        // tokensValidAfter: every access token already issued stops working now,
+        // including the one on this request — the member signs in again with
+        // the new password, which is the point of changing it.
+        data: { passwordHash: newPasswordHash, tokensValidAfter: new Date() },
       });
 
       // SECURITY: revoke all refresh tokens so other sessions/devices are signed
       // out after a password change (consistent with the reset-password flow).
       await this.prisma.refreshToken.deleteMany({ where: { userId: data.userId } });
+      this.sessionEvents?.sessionsRevoked(data.userId);
 
       /*
         ⚠️ Device keys too, not just refresh tokens.
@@ -2222,6 +2308,12 @@ export class AuthService {
         }
       }
 
+      // Their open jobs, workspace assignments and equipment are released by
+      // task-service first (it owns those tables). It used to be a raw update
+      // HERE that reset every task they had ever held to NEW — finished
+      // history included — and left their crew places and custody behind.
+      if (user.organizationId) await this.offboarding?.release(user.organizationId, user.id, user.id);
+
       // Anonymize and deactivate within a transaction
       const deletedEmail = `deleted_${user.id}@deleted.hbcfield.local`;
 
@@ -2238,12 +2330,6 @@ export class AuthService {
           tx.timeOff.deleteMany({ where: { technicianId: user.id } }),
           tx.joinRequest.deleteMany({ where: { userId: user.id } }),
         ]);
-
-        // 2. Unassign tasks (don't delete them)
-        await tx.task.updateMany({
-          where: { assignedToId: user.id },
-          data: { assignedToId: null, status: 'NEW' },
-        });
 
         // 3. Anonymize user record
         await tx.user.update({

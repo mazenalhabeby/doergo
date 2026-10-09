@@ -33,14 +33,21 @@ function hotp(secret: Buffer, counter: number): string {
   return (code % 1_000_000).toString().padStart(6, '0');
 }
 
-/** Verify a 6-digit code against the base32 secret (±1 time step). */
-export function verifyTotp(secretB32: string, token: string): boolean {
+/**
+ * The time step a 6-digit code matches (±1 step), or null.
+ *
+ * Returned rather than a yes/no so the caller can remember the step it
+ * accepted and refuse that step — and every earlier one — next time: a code
+ * is otherwise valid for ~90 seconds, plenty for one read over a shoulder or
+ * out of a log to be replayed.
+ */
+export function matchTotpStep(secretB32: string, token: string, nowMs: number = Date.now()): number | null {
   const t = (token ?? '').replace(/\s/g, '');
-  if (!/^\d{6}$/.test(t)) return false;
+  if (!/^\d{6}$/.test(t)) return null;
   const secret = base32Decode(secretB32);
-  const step = Math.floor(Date.now() / 1000 / 30);
-  for (let w = -1; w <= 1; w++) if (hotp(secret, step + w) === t) return true;
-  return false;
+  const step = Math.floor(nowMs / 1000 / 30);
+  for (let w = -1; w <= 1; w++) if (hotp(secret, step + w) === t) return step + w;
+  return null;
 }
 
 export function otpauthUri(email: string, secretB32: string, issuer = 'HBCField'): string {

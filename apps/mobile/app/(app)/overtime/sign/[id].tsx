@@ -93,7 +93,8 @@ export default function OvertimeSignatureScreen() {
         toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('overtime.failedToApprove'));
         return;
       }
-      toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('overtime.approvedSuccess'));
+      // A signature on this phone is a request: the person who signed confirms it from their own session.
+      toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('overtime.signedAwaitingConfirm', { name: body.leaderName }));
       router.back();
       router.back(); // Go back to attendance
     } catch (err) {

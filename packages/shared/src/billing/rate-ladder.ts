@@ -300,7 +300,13 @@ export function mayViewLabourCost(user: unknown): boolean {
   return u.access?.org?.canViewLabourCost === true || u.canViewLabourCost === true;
 }
 
-const COST_KEYS = new Set(['costRateCents', 'inheritedCostRateCents', 'costCents', 'profileCostRateCents', 'profileCostDayCents']);
+// ⚠️ Every name a cost travels under. `costDayCents` (a work role's / a member's
+// day COST) and the invoice line's hour/day cost rates were missing, so a record
+// carrying one passed this walk untouched.
+const COST_KEYS = new Set([
+  'costRateCents', 'inheritedCostRateCents', 'costCents', 'profileCostRateCents', 'profileCostDayCents',
+  'costDayCents', 'costHourRateCents', 'costDayRateCents',
+]);
 
 /**
  * Remove every cost rate from a response on its way to somebody who may not see

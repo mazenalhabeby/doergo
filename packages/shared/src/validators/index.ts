@@ -25,6 +25,7 @@ import {
   Matches,
   IsNotEmpty,
   IsOptional,
+  ValidateBy,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { applyDecorators } from '@nestjs/common';
@@ -44,6 +45,45 @@ export const sanitizeString = (value: unknown): string =>
  */
 export const toLowercase = (value: unknown): string =>
   typeof value === 'string' ? value.trim().toLowerCase() : String(value);
+
+/**
+ * THE canonical form of an email address, for storing AND for looking one up.
+ *
+ * Sign-in lowercases what it is given, so an address stored as typed
+ * ("Mike@Example.com") could never sign in, and a second account could be made
+ * for the same mailbox by changing its case. Every place that writes or reads
+ * `User.email` passes through this — one rule, not a `.trim().toLowerCase()`
+ * typed into each service.
+ */
+export function normalizeEmail(email: string): string;
+export function normalizeEmail(email: string | null | undefined): string | null | undefined;
+export function normalizeEmail(email: string | null | undefined): string | null | undefined {
+  return typeof email === 'string' ? email.trim().toLowerCase() : email;
+}
+
+/**
+ * bcrypt reads only the first 72 BYTES of a password and silently ignores the
+ * rest — so a 100-character passphrase is really its first 72 bytes, and two
+ * passwords sharing those bytes are the same password. Measured in UTF-8 bytes,
+ * not characters: "ü" is two, an emoji four.
+ */
+export const BCRYPT_MAX_PASSWORD_BYTES = 72;
+
+export const utf8ByteLength = (value: string): number =>
+  typeof TextEncoder !== 'undefined'
+    ? new TextEncoder().encode(value).length
+    : Buffer.byteLength(value, 'utf8');
+
+/** Refuse a value longer than `max` UTF-8 bytes. */
+export function MaxBytes(max: number, message: string) {
+  return ValidateBy({
+    name: 'maxBytes',
+    validator: {
+      validate: (value: unknown) => typeof value === 'string' && utf8ByteLength(value) <= max,
+      defaultMessage: () => message,
+    },
+  });
+}
 
 /**
  * Capitalize first letter, lowercase rest
@@ -110,6 +150,11 @@ export function EmailField(options?: { optional?: boolean }) {
  * - Required (non-empty)
  * - Min 8 characters
  * - Max 128 characters
+ *
+ * ⚠️ Deliberately NOT capped at 72 bytes: accounts created before the cap may
+ * hold a longer password, and bcrypt compares only its first 72 bytes, so the
+ * long form still signs in. The cap belongs where a password is CHOSEN
+ * (StrongPasswordField).
  */
 export function PasswordField() {
   return applyDecorators(
@@ -124,7 +169,7 @@ export function PasswordField() {
  * Strong password field validation (for registration/reset)
  * - Required (non-empty)
  * - Min 8 characters
- * - Max 128 characters
+ * - Max 128 characters AND at most 72 UTF-8 bytes (bcrypt's real limit)
  * - Must contain uppercase, lowercase, and number
  */
 export function StrongPasswordField() {
@@ -133,6 +178,12 @@ export function StrongPasswordField() {
     IsNotEmpty({ message: 'Password is required' }),
     MinLength(8, { message: 'Password must be at least 8 characters' }),
     MaxLength(128, { message: 'Password must not exceed 128 characters' }),
+    // bcrypt ignores everything past 72 bytes — refuse it rather than quietly
+    // storing a shorter password than the one the person believes they chose.
+    MaxBytes(
+      BCRYPT_MAX_PASSWORD_BYTES,
+      'Password is too long: use at most 72 bytes (about 72 letters, fewer with accents or emoji)',
+    ),
     Matches(PASSWORD_REGEX, {
       message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
     }),

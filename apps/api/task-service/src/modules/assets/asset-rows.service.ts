@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   success, paginated, normalizeKindShape, findKindList, normalizeListRow, listRowIsEmpty,
+  clampListLimit,
 } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 
@@ -41,7 +42,7 @@ export class AssetRowsService {
     const { list, owner } = await this.assetList(data.id, data.list, data.organizationId);
 
     const page = Math.max(1, data.page ?? 1);
-    const limit = Math.min(Math.max(data.limit ?? 50, 1), 200);
+    const limit = clampListLimit(data.limit, 50, 200);
     const search = data.search?.trim();
 
     const where: Prisma.AssetListRowWhereInput = {

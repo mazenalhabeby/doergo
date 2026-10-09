@@ -2,7 +2,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsNotEmpty,
-  IsEmail,
   IsOptional,
   IsNumber,
   Min,
@@ -10,14 +9,16 @@ import {
   MinLength,
   MaxLength,
 } from 'class-validator';
+import { EmailField, MaxBytes, BCRYPT_MAX_PASSWORD_BYTES } from '@hbcfield/shared';
 
 export class CreateEmployeeDto {
   @ApiProperty({
     example: 'john.doe@example.com',
     description: 'Email address (must be unique)',
   })
-  @IsEmail()
-  @IsNotEmpty()
+  // The shared rule: valid, ≤255, and LOWERCASED — sign-in lowercases, so an
+  // address kept as typed ("Mike@…") could never sign in.
+  @EmailField()
   email: string;
 
   @ApiProperty({
@@ -48,6 +49,8 @@ export class CreateEmployeeDto {
   @IsOptional()
   @MinLength(8)
   @MaxLength(100)
+  // bcrypt reads only the first 72 bytes — refuse more rather than store less.
+  @MaxBytes(BCRYPT_MAX_PASSWORD_BYTES, 'Password is too long: use at most 72 bytes (about 72 letters, fewer with accents or emoji)')
   password?: string;
 
   @ApiPropertyOptional({

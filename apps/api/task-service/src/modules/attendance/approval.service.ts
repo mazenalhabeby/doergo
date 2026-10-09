@@ -10,6 +10,9 @@ import { ClientProxy } from '@nestjs/microservices';
 import { JobPauseService } from '../tasks/handover/job-pause.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, paginated, ApprovalStatus, computeScheduleFlags, computeCountedTime, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, SERVICE_NAMES } from '@hbcfield/shared';
+import { clampListLimit, clampListPage } from '@hbcfield/shared';
+import { assertNotSelfDecision } from './self-decision';
+import { zonedWallTimeToUtc as sharedZonedWallTimeToUtc, localPartsIn, parseHm } from '@hbcfield/shared';
 import { scopeWhere, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
 import { CountedTimeService } from './counted-time.service';
 import { ShiftRematchService } from './shift-rematch.service';
@@ -59,8 +62,8 @@ export class ApprovalService {
     /** Just the counts — how many, and how many per workspace (the home's Crew card). */
     summary?: boolean;
   }) {
-    const page = data.page ?? 1;
-    const limit = data.limit ?? 20;
+    const page = clampListPage(data.page);
+    const limit = clampListLimit(data.limit, 20);
     const skip = (page - 1) * limit;
 
     const where = {
@@ -135,6 +138,14 @@ export class ApprovalService {
       throw new NotFoundException('Time entry not found');
     }
 
+    // A second party approves hours — the overtime rule (self-decision.ts).
+    await assertNotSelfDecision(this.prisma as never, {
+      deciderId: data.approverId,
+      subjectId: entry.userId,
+      organizationId: data.organizationId,
+      message: 'You cannot approve your own time entry. Ask a manager or an administrator.',
+    });
+
     if (entry.approvalStatus !== 'PENDING') {
       throw new BadRequestException(
         `Entry is already ${entry.approvalStatus.toLowerCase()}`,
@@ -195,6 +206,14 @@ export class ApprovalService {
     if (!entry) {
       throw new NotFoundException('Time entry not found');
     }
+
+    // Deciding your own entry, either way, needs somebody else (self-decision.ts).
+    await assertNotSelfDecision(this.prisma as never, {
+      deciderId: data.approverId,
+      subjectId: entry.userId,
+      organizationId: data.organizationId,
+      message: 'You cannot decide your own time entry. Ask a manager or an administrator.',
+    });
 
     if (entry.approvalStatus !== 'PENDING') {
       throw new BadRequestException(
@@ -266,6 +285,15 @@ export class ApprovalService {
     if (!entry) {
       throw new NotFoundException('Time entry not found');
     }
+
+    // Correcting your own clock times is the same as approving them: an edit
+    // is what payroll reads. Somebody else makes it (self-decision.ts).
+    await assertNotSelfDecision(this.prisma as never, {
+      deciderId: data.editorId,
+      subjectId: entry.userId,
+      organizationId: data.organizationId,
+      message: 'You cannot edit your own time entry. Ask a manager or an administrator.',
+    });
 
     const updateData: any = {
       isEdited: true,
@@ -561,6 +589,13 @@ export class ApprovalService {
     if (!scopeAllows(data.scopeSpaceIds, data.locationId)) {
       throw new NotFoundException('Work site not found');
     }
+    // Back-filling hours onto your OWN record is writing your own pay.
+    await assertNotSelfDecision(this.prisma as never, {
+      deciderId: data.editorId,
+      subjectId: data.userId,
+      organizationId: data.organizationId,
+      message: 'You cannot add hours to your own record. Ask a manager or an administrator.',
+    });
     if (!/^\d{4}-\d{2}-\d{2}$/.test(data.startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(data.endDate)) {
       throw new BadRequestException('Invalid date range');
     }
@@ -636,26 +671,15 @@ export class ApprovalService {
       throw new BadRequestException('Date range too large — back-fill at most one year at a time');
     }
 
-    // Timezone formatters are expensive to construct, so build them ONCE per
-    // request and reuse across every day (the real cost in a large backfill).
-    const wallFmt = new Intl.DateTimeFormat('en-US', {
-      timeZone: tz,
-      hour12: false,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-    const ymdFmt = new Intl.DateTimeFormat('en-CA', {
-      timeZone: tz,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-    const zonedWallTimeToUtc = (dateStr: string, timeStr: string): Date =>
-      this.zonedWallTimeToUtc(dateStr, timeStr, wallFmt);
-    const utcToZonedYmd = (date: Date): string => ymdFmt.format(date);
+    // Wall time in the site's zone → UTC, through the shared two-pass rule
+    // (attendance/zoned-time). The private copy this replaces read the offset
+    // ONCE, at a naive guess, so on a daylight-saving day a back-filled 06:00
+    // landed at 05:00 or 07:00 — exactly the night-shift days it matters.
+    const zonedWallTimeToUtc = (dateStr: string, timeStr: string): Date => {
+      const [h, m] = parseHm(timeStr);
+      return sharedZonedWallTimeToUtc(dateStr, h, m, tz);
+    };
+    const utcToZonedYmd = (date: Date): string => localPartsIn(date, tz).dateStr;
 
     // Target dates (weekday-filtered for a range; the single day is always included)
     const dates: string[] = [];
@@ -836,27 +860,6 @@ export class ApprovalService {
   }
 
   /**
-   * Wall-clock date+time in a timezone → the correct UTC Date.
-   * Takes a prebuilt formatter so callers can reuse one across many days
-   * (constructing an Intl.DateTimeFormat per call is the expensive part).
-   */
-  private zonedWallTimeToUtc(
-    dateStr: string,
-    timeStr: string,
-    wallFmt: Intl.DateTimeFormat,
-  ): Date {
-    const [y, mo, d] = dateStr.split('-').map(Number);
-    const [h, mi] = timeStr.split(':').map(Number);
-    const utcGuess = Date.UTC(y, mo - 1, d, h, mi);
-    const parts = wallFmt.formatToParts(new Date(utcGuess));
-    const m: Record<string, string> = {};
-    parts.forEach((p) => (m[p.type] = p.value));
-    const hour = m.hour === '24' ? 0 : Number(m.hour);
-    const asShown = Date.UTC(Number(m.year), Number(m.month) - 1, Number(m.day), hour, Number(m.minute));
-    return new Date(utcGuess - (asShown - utcGuess));
-  }
-
-  /**
    * Bulk approve entries
    */
   async bulkApprove(data: {
@@ -879,8 +882,10 @@ export class ApprovalService {
           approverId: data.approverId,
           organizationId: data.organizationId,
           // Only the caller's granted spaces — an entry outside them reads as
-          // 'not found', which is also the right thing to tell them.
-          ...scopeWhere(data.scopeSpaceIds),
+          // 'not found'. ⚠️ This used to spread `scopeWhere(...)` here, which
+          // passes `locationId: {in}` — a key approveEntry does not read — so
+          // scopeSpaceIds arrived undefined and bulk approval was ORG-WIDE.
+          scopeSpaceIds: data.scopeSpaceIds,
           notes: data.notes,
         });
         results.approved.push(entryId);

@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import * as nodemailer from 'nodemailer';
 import {
-  mailRoutes,
+  mailRoutesFromConfig,
   sendViaFirstWorking,
   runWithCronLock,
   canReissue,
@@ -14,6 +14,7 @@ import {
   type MailRoute,
   type RenderedEmail,
   type SupportedLocale,
+  normalizeEmail,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CustomerSignLinkService } from './customer-sign-link.service';
@@ -42,20 +43,7 @@ export class CustomerSignMailerService {
     private readonly config: ConfigService,
     private readonly links: CustomerSignLinkService,
   ) {
-    this.routes = mailRoutes({
-      SMTP_HOST: this.config.get('SMTP_HOST'),
-      SMTP_PORT: this.config.get('SMTP_PORT'),
-      SMTP_USER: this.config.get('SMTP_USER'),
-      SMTP_PASS: this.config.get('SMTP_PASS'),
-      SMTP_SECURE: this.config.get('SMTP_SECURE'),
-      SMTP_FROM: this.config.get('SMTP_FROM'),
-      SMTP_FALLBACK_HOST: this.config.get('SMTP_FALLBACK_HOST'),
-      SMTP_FALLBACK_PORT: this.config.get('SMTP_FALLBACK_PORT'),
-      SMTP_FALLBACK_USER: this.config.get('SMTP_FALLBACK_USER'),
-      SMTP_FALLBACK_PASS: this.config.get('SMTP_FALLBACK_PASS'),
-      SMTP_FALLBACK_SECURE: this.config.get('SMTP_FALLBACK_SECURE'),
-      SMTP_FALLBACK_FROM: this.config.get('SMTP_FALLBACK_FROM'),
-    }).map((r) => ({ ...r, tx: nodemailer.createTransport(r.options) }));
+    this.routes = mailRoutesFromConfig((key) => this.config.get<string>(key)).map((r) => ({ ...r, tx: nodemailer.createTransport(r.options) }));
 
     if (!this.routes.length) {
       this.logger.warn('SMTP not configured — clients cannot be sent signing links');
@@ -89,7 +77,7 @@ export class CustomerSignMailerService {
    * never reports success it did not achieve.
    */
   async sendPending(organizationId: string, email: string): Promise<boolean> {
-    const addr = email.trim().toLowerCase();
+    const addr = normalizeEmail(email);
 
     const link = await this.prisma.customerSignLink.findUnique({
       where: { organizationId_email: { organizationId, email: addr } },

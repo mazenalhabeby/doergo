@@ -11,6 +11,7 @@ import {
   ADD_ON_KEYS,
   DEFAULT_ORG_MODULES,
   collectionMethodFor,
+  billsThroughStripe,
   isMaterialDrop,
   agreementFrom,
   agreementEndsWithin,
@@ -539,7 +540,7 @@ export class BillingService {
       here on `billedExternally` would have blocked that, which is why the mode
       is read rather than the old boolean.
     */
-    if (org.billingMode === 'EXTERNAL') {
+    if (!billsThroughStripe(org.billingMode)) {
       return fail(HttpStatus.CONFLICT, 'This organization is billed by agreement — talk to us rather than paying by card.');
     }
 
@@ -734,7 +735,7 @@ export class BillingService {
       must track seats and modules like any other; the difference is only how it
       is collected, which is set on the subscription itself.
     */
-    if (org?.billingMode === 'EXTERNAL') return ok(bill);
+    if (org && !billsThroughStripe(org.billingMode)) return ok(bill);
 
     const sub = org?.subscription;
     if (!sub) return ok(bill);

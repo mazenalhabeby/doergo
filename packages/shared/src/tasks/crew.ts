@@ -1,4 +1,5 @@
 import { jobWindows, selfBlockWindows, type WorkTimelineEvent } from './job-time';
+import { tzOffsetMs } from '../attendance/zoned-time';
 
 /**
  * A CREW on one job — ONE rule for the server, the web and the phone.
@@ -164,14 +165,6 @@ export function pausesAtClockOut(args: { leaverId: string; joined: readonly stri
   return !args.joined.some((id) => id !== args.leaverId && args.onClock.has(id));
 }
 
-/** How far a zone's wall clock is ahead of UTC at an instant (ms). */
-function zoneOffset(at: number, timeZone: string): number {
-  const p = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' })
-    .formatToParts(new Date(at))
-    .reduce<Record<string, string>>((m, x) => ((m[x.type] = x.value), m), {});
-  return Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day), Number(p.hour), Number(p.minute), Number(p.second)) - Math.floor(at / 1000) * 1000;
-}
-
 /**
  * The end of a calendar day in a time zone — when a hand-over "for today" runs
  * out. The next local midnight, found from the zone's own offset, so a day
@@ -182,7 +175,8 @@ export function endOfLocalDay(at: Date, timeZone: string): Date {
     .formatToParts(at)
     .reduce<Record<string, string>>((m, x) => ((m[x.type] = x.value), m), {});
   const nextMidnightWall = Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day) + 1);
-  let utc = nextMidnightWall - zoneOffset(nextMidnightWall, timeZone);
-  utc = nextMidnightWall - zoneOffset(utc, timeZone); // settle across an offset change
+  // The one offset implementation (attendance/zoned-time) — this file kept its own copy.
+  let utc = nextMidnightWall - tzOffsetMs(new Date(nextMidnightWall), timeZone);
+  utc = nextMidnightWall - tzOffsetMs(new Date(utc), timeZone); // settle across an offset change
   return new Date(utc - 1);
 }

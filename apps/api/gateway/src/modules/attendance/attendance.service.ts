@@ -67,7 +67,8 @@ export class AttendanceService extends BaseGatewayService {
     page?: number;
     limit?: number;
     requesterId?: string;
-    requesterCanViewAll?: boolean;
+    /** Where the caller holds canViewSpaceAttendance; null = org-wide, [] = none. */
+    viewScopeSpaceIds: string[] | null;
     sortBy?: string;
     sortOrder?: string;
     sharedSpaceIds?: string[];
@@ -78,11 +79,10 @@ export class AttendanceService extends BaseGatewayService {
   async getLocationEntriesBatch(data: {
     locationIds: string[];
     organizationId: string;
-    /** Spaces the caller may see; null = org-wide, [] = none. */
-    scopeSpaceIds?: string[] | null;
     date?: string;
     requesterId?: string;
-    requesterCanViewAll?: boolean;
+    /** Where the caller holds canViewSpaceAttendance; null = org-wide, [] = none. */
+    viewScopeSpaceIds: string[] | null;
   }) {
     return this.send({ cmd: 'get_location_entries_batch' }, data);
   }
@@ -220,7 +220,7 @@ export class AttendanceService extends BaseGatewayService {
     return this.send({ cmd: 'update_break_rule' }, data);
   }
 
-  async deleteBreakRule(data: { id: string; organizationId: string }) {
+  async deleteBreakRule(data: { id: string; organizationId: string; scopeSpaceIds?: string[] | null }) {
     return this.send({ cmd: 'delete_break_rule' }, data);
   }
 
@@ -249,7 +249,7 @@ export class AttendanceService extends BaseGatewayService {
   /**
    * Get breaks for a time entry
    */
-  async getBreaksForEntry(data: { timeEntryId: string; organizationId: string }) {
+  async getBreaksForEntry(data: { timeEntryId: string; organizationId: string; requesterId: string; scopeSpaceIds: string[] | null }) {
     return this.send({ cmd: 'get_breaks_for_entry' }, data);
   }
 

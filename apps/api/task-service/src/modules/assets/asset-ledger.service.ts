@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, normalizeKindShape, findMoneyCategory } from '@hbcfield/shared';
+import { success, normalizeKindShape, findMoneyCategory, clampListLimit } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetExpenseService, EXPENSE_STATUS } from './asset-expense.service';
 import { AssetLogService } from './asset-log.service';
@@ -35,7 +35,7 @@ export class AssetLedgerService {
     this.access.assertMay(data as any, 'view assets');
     await this.access.assetInOrg(data.id, data.organizationId);
 
-    const take = Math.min(Math.max(data.limit ?? 100, 1), 200);
+    const take = clampListLimit(data.limit, 100, 200);
 
     const [entries, sums] = await Promise.all([
       this.prisma.assetMoney.findMany({

@@ -5,6 +5,8 @@ import {
   nextBreakRemindAt,
   parseBreakPlan,
   success,
+  scopeAllows,
+  type SpaceScopeIds,
   type BreakPlanItem,
   type BreakRuleLike,
 } from '@hbcfield/shared';
@@ -60,8 +62,9 @@ export class BreakRulesService {
     return success(rows);
   }
 
-  async create(data: BreakRuleInput & { organizationId: string }) {
+  async create(data: BreakRuleInput & { organizationId: string; scopeSpaceIds?: SpaceScopeIds }) {
     await this.assertScopeInOrg(data);
+    await this.assertMayManage(data, data.scopeSpaceIds);
     const patch = this.validate(data);
     const created = await this.prisma.breakRule.create({
       data: {
@@ -76,21 +79,26 @@ export class BreakRulesService {
     return success(created, 'Rest added');
   }
 
-  async update(data: BreakRuleInput & { id: string; organizationId: string }) {
+  async update(data: BreakRuleInput & { id: string; organizationId: string; scopeSpaceIds?: SpaceScopeIds }) {
     const existing = await this.prisma.breakRule.findFirst({
       where: { id: data.id, organizationId: data.organizationId },
     });
     if (!existing) throw new NotFoundException('Rest not found');
-    const patch = this.validate({ ...(existing as unknown as BreakRuleInput), ...data });
+    await this.assertMayManage(existing, data.scopeSpaceIds);
+    // The rule's place is fixed at creation (`validate` never returns spaceId or
+    // shiftId), so the check above on where it IS covers where it will be.
+    const { scopeSpaceIds: _scope, ...input } = data;
+    const patch = this.validate({ ...(existing as unknown as BreakRuleInput), ...input });
     const updated = await this.prisma.breakRule.update({ where: { id: existing.id }, data: patch as never });
     return success(updated, 'Rest updated');
   }
 
-  async remove(data: { id: string; organizationId: string }) {
+  async remove(data: { id: string; organizationId: string; scopeSpaceIds?: SpaceScopeIds }) {
     const existing = await this.prisma.breakRule.findFirst({
       where: { id: data.id, organizationId: data.organizationId },
     });
     if (!existing) throw new NotFoundException('Rest not found');
+    await this.assertMayManage(existing, data.scopeSpaceIds);
     /*
       Deactivated, not deleted.
 
@@ -147,6 +155,32 @@ export class BreakRulesService {
   }
 
   // ── Guards ──────────────────────────────────────────────────────────────
+
+  /**
+   * May a caller holding `canManageWorkspaces` in `scope` configure this rule?
+   *
+   * The gateway's `@RequirePermissionInSpace` passes anybody holding the
+   * permission in ANY workspace, because a rule's space is not in the URL. The
+   * narrowing is therefore here: a site manager in Linz otherwise edits the
+   * rests of Vienna. A rule on a shift belongs to that shift's workspace; a
+   * shift with no workspace is organization-wide and needs an org-wide grant.
+   * 404, not 403 — the same answer as a rule that does not exist.
+   */
+  private async assertMayManage(
+    rule: { spaceId?: string | null; shiftId?: string | null; organizationId: string },
+    scope: SpaceScopeIds,
+  ) {
+    if (scope === null || scope === undefined) return;
+    let spaceId = rule.spaceId ?? null;
+    if (!spaceId && rule.shiftId) {
+      const shift = await this.prisma.shift.findFirst({
+        where: { id: rule.shiftId, organizationId: rule.organizationId },
+        select: { spaceId: true },
+      });
+      spaceId = shift?.spaceId ?? null;
+    }
+    if (!scopeAllows(scope, spaceId)) throw new NotFoundException('Rest not found');
+  }
 
   private async assertScopeInOrg(data: { organizationId: string; spaceId?: string | null; shiftId?: string | null }) {
     if (!data.spaceId && !data.shiftId) {

@@ -1,3 +1,4 @@
+import { SessionEvents } from '../../../common/session-events/session-events.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from '../users.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
@@ -31,6 +32,7 @@ describe('recordAppVersion', () => {
     prisma.user.updateMany.mockResolvedValue({ count: 1 });
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: SessionEvents, useValue: { sessionsRevoked: jest.fn(), organizationSuspended: jest.fn() } },
         { provide: 'TASK_SERVICE', useValue: { emit: jest.fn() } },
         UsersService,
         { provide: PrismaService, useValue: prisma },

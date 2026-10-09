@@ -21,11 +21,6 @@ export class BillingController {
     return this.billing.setAddOns(d.organizationId, d.addOns);
   }
 
-  @MessagePattern({ cmd: 'billing_start_trial' })
-  startTrial(@Payload() d: { organizationId: string }) {
-    return this.billing.startTrial(d.organizationId);
-  }
-
   @MessagePattern({ cmd: 'billing_admin_list_orgs' })
   adminListOrgs() {
     return this.billing.adminListOrgs();

@@ -13,6 +13,9 @@ import {
   ForbiddenException,
   UseInterceptors,
 } from '@nestjs/common';
+import { RebillService } from '../../common/billing/rebill.service';
+import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
+import { trackingVisibility } from '../../common/tracking-visibility';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
 import { ClientProxy } from '@nestjs/microservices';
 import {
@@ -24,7 +27,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData, RequireAccessModule, RequirePermissionInSpace, isAdmin, spacesGranting } from '@hbcfield/shared';
+import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData, RequireAccessModule, RequirePermissionInSpace, isAdmin, spacesGranting, clampListLimit } from '@hbcfield/shared';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -45,14 +48,10 @@ import { LeaveCountQueryDto } from '../calendar/calendar.dto';
 export class EmployeesController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    private readonly billing: RebillService,
+    private readonly authCache: AuthTokenCache,
     @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
   ) {}
-
-  /** Fire-and-forget: re-sync billable seat counts to Stripe after a member change. */
-  private syncSeats(organizationId: string | null | undefined) {
-    if (!organizationId) return;
-    firstValueFrom(this.authClient.send({ cmd: 'billing_reconcile_seats' }, { organizationId })).catch(() => {});
-  }
 
   // ============================================================================
   // LIST & SEARCH
@@ -425,7 +424,7 @@ export class EmployeesController {
         },
       ),
     );
-    this.syncSeats(user.organizationId);
+    this.billing.rebill(user.organizationId);
     return result;
   }
 
@@ -473,8 +472,9 @@ export class EmployeesController {
                   ...(spacesGranting((user as any)?.access, 'canViewSpaceAttendance') ?? []),
                 ]),
               ),
-          // Coordinates are their own permission — see lastLocation in the service.
-          canViewTracking: isAdmin(user as any) || (user as any).canViewTracking === true,
+          // Coordinates are their own permission — see lastLocation in the
+          // service. Resolved access, not the flat column (common/tracking-visibility.ts).
+          ...trackingVisibility(user),
         },
       ),
     );
@@ -534,7 +534,14 @@ export class EmployeesController {
     );
     // employmentType (and access) changes can flip a member's billable seat type
     // (in-house ⇄ external field), so re-sync seats to Stripe after the edit.
-    this.syncSeats(user.organizationId);
+    this.billing.rebill(user.organizationId);
+    /*
+      Their sessions carry who they are (active, role, grants) in the gateway's
+      auth cache. A member switched off here kept working until it expired —
+      `isActive: false` must bite on their next request, and any other change
+      to their access should show there too.
+    */
+    await this.authCache.invalidateUser(id).catch(() => undefined);
     return result;
   }
 
@@ -565,7 +572,10 @@ export class EmployeesController {
         },
       ),
     );
-    this.syncSeats(user.organizationId);
+    this.billing.rebill(user.organizationId);
+    // A deactivated member is refused on their NEXT request, not when the
+    // gateway's cached copy of their session happens to expire.
+    await this.authCache.invalidateUser(id).catch(() => undefined);
     return result;
   }
 
@@ -634,7 +644,7 @@ export class EmployeesController {
           startDate,
           endDate,
           page: page ? Math.max(1, Number(page) || 1) : 1,
-          limit: Math.min(limit ? Math.max(1, Number(limit) || 20) : 20, 500),
+          limit: clampListLimit(limit, 20, 500),
         },
       ),
     );

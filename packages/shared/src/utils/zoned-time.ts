@@ -7,8 +7,12 @@
  * and a second copy of a DST-aware conversion is the kind of duplicate that
  * drifts silently, by exactly one hour, twice a year.
  *
- * The double-pass Intl-offset technique matches the backend shift resolver.
+ * The double-pass Intl-offset technique matches the backend shift resolver —
+ * and the offset itself IS the backend's (`tzOffsetMs` in attendance/zoned-time),
+ * imported rather than copied: this file kept a private second copy of it.
  */
+import { tzOffsetMs } from "../attendance/zoned-time"
+
 // =============================================================================
 // ZONE-AWARE DATETIME-LOCAL INPUT CONVERSION
 // A datetime-local input is a bare wall-clock string ("2026-08-05T06:00") with no
@@ -36,14 +40,6 @@ function getOffsetDtf(tz: string): Intl.DateTimeFormat {
     _offsetDtfCache.set(tz, fmt)
   }
   return fmt
-}
-
-// Offset (ms) of `tz` at the given UTC instant: (that instant's wall clock read
-// as if it were UTC) − the instant itself. East-of-UTC is positive.
-function tzOffsetMs(utcMs: number, tz: string): number {
-  const m = readParts(getOffsetDtf(tz), new Date(utcMs))
-  const asUtc = Date.UTC(m.year, m.month - 1, m.day, m.hour % 24, m.minute, m.second)
-  return asUtc - utcMs
 }
 
 /**
@@ -105,12 +101,15 @@ export function zonedInputToUtc(wall?: string | null, tz?: string | null): strin
     return isNaN(local.getTime()) ? "" : local.toISOString()
   }
   try {
+    // An unknown zone throws here and falls back to browser-local below (the
+    // shared offset reads an invalid zone as UTC, which is not what an input wants).
+    getOffsetDtf(tz)
     // Treat the wall time as UTC, then subtract the zone offset. A second pass
     // corrects the rare case where the guess and true instant straddle a DST flip.
     const guess = Date.UTC(y, mo - 1, d, h, mi)
-    const off1 = tzOffsetMs(guess, tz)
+    const off1 = tzOffsetMs(new Date(guess), tz)
     let utc = guess - off1
-    const off2 = tzOffsetMs(utc, tz)
+    const off2 = tzOffsetMs(new Date(utc), tz)
     if (off2 !== off1) utc = guess - off2
     return new Date(utc).toISOString()
   } catch {

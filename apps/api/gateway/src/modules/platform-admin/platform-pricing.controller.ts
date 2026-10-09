@@ -1,4 +1,5 @@
-import { Controller, Get, HttpException, HttpStatus, UseGuards } from '@nestjs/common';
+import { assertServiceOk } from '@hbcfield/shared';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { Public } from '../../common/decorators';
 import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/platform-auth.guard';
 import { PlatformAdminService } from './platform-admin.service';
@@ -18,8 +19,7 @@ import { PlatformAdminService } from './platform-admin.service';
 export class PlatformPricingController {
   constructor(private readonly svc: PlatformAdminService) {}
   private unwrap<T>(r: any): T {
-    if (r && r.success === false) throw new HttpException({ message: r.message ?? 'Error' }, r.statusCode ?? HttpStatus.BAD_REQUEST);
-    return r;
+    return assertServiceOk(r) as T;
   }
 
   @Get()

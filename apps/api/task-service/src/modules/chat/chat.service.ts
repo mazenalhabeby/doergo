@@ -10,6 +10,7 @@ import {
   type ChatParty,
   type ChatShareFacts,
   SPACE_LEADER_PERMISSION,
+  clampListLimit,
 } from '@hbcfield/shared';
 import { findPrior } from '../../common/create-once.util';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -561,7 +562,7 @@ export class ChatService {
   // ── message history (paginated, newest first then reversed) ─────────────────
   async history(data: { conversationId: string; userId: string; before?: string; limit?: number }) {
     await this.assertMember(data.conversationId, data.userId);
-    const limit = Math.min(Math.max(1, Number(data.limit) || 30), 100);
+    const limit = clampListLimit(data.limit, 30, 100);
     const rows = await this.prisma.message.findMany({
       where: { conversationId: data.conversationId, ...(data.before ? { createdAt: { lt: new Date(data.before) } } : {}) },
       orderBy: { createdAt: 'desc' },

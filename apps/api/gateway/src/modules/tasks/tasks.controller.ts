@@ -21,6 +21,7 @@ import { RequireModule } from '../../common/decorators/require-module.decorator'
 import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { isFeatureEntitled } from '../../common/entitlements';
+import { taskActor, taskRequester } from '../../common/task-actor';
 import {
   CreateTaskDto,
   UpdateTaskDto,
@@ -51,10 +52,18 @@ import { TasksService } from './tasks.service';
  * When multiple values are sent for the same parameter (e.g., ?status=NEW&status=COMPLETED),
  * NestJS creates an array. This function takes the first value to prevent errors.
  */
-function normalizeQueryParams(query: Record<string, any>): Record<string, any> {
-  const normalized: Record<string, any> = {};
-  for (const [key, value] of Object.entries(query)) {
-    normalized[key] = Array.isArray(value) ? value[0] : value;
+export function normalizeQueryParams(query: Record<string, any>): Record<string, string> {
+  /*
+    A query string only ever means strings. Express's parser also builds
+    OBJECTS from brackets — `?customerId[not]=x` arrives as { not: 'x' } — and
+    this whole object is spread into the task-service, where several filters go
+    straight into a Prisma where, in which an object is an OPERATOR. So: the
+    first value of a repeated param, and anything that is not a string dropped.
+  */
+  const normalized: Record<string, string> = {};
+  for (const [key, value] of Object.entries(query ?? {})) {
+    const first = Array.isArray(value) ? value[0] : value;
+    if (typeof first === 'string') normalized[key] = first;
   }
   return normalized;
 }
@@ -182,6 +191,14 @@ export class TasksController {
       userId: req.user.id,
       organizationId: req.user.organizationId,
       access: req.user.access, // server-authoritative; task-service enforces the real space
+      /*
+        The member's task-creation scope (NONE | SELF | SPACE | ORG), resolved
+        from their column and grants in validateToken. task-service has always
+        checked SPACE ("pick a workspace you are on") — and nothing ever sent
+        it, so the check was dead. After the spread, so a body field can never
+        set it. An administrator is never narrowed by a column.
+      */
+      taskCreationScope: isAdmin(req.user) ? 'ORG' : req.user.taskCreationScope,
     });
   }
 
@@ -243,20 +260,8 @@ export class TasksController {
         Narrowing only — it is ANDed with what the caller may see, so it can
         never widen anybody's visibility.
       */
-      assignedToMe: normalizedQuery.assignedToMe === 'true' || normalizedQuery.assignedToMe === true,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      organizationId: req.user.organizationId,
-      // Cross-org shared spaces the caller may view (server-authoritative, from
-      // the resolved token grant — never client input).
-      sharedSpaceIds: (req.user.access?.sharedSpaces ?? []).map((s: any) => s.spaceId),
+      assignedToMe: normalizedQuery.assignedToMe === 'true',
+      ...taskActor(req, { crossOrgRead: true }),
     });
   }
 
@@ -271,18 +276,9 @@ export class TasksController {
   ) {
     // READ operation - use direct microservice call (faster, no queue overhead)
     return this.tasksService.getStatusCounts({
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      organizationId: req.user.organizationId,
       ...(spaceId && { spaceId }),
       ...(groupBy && { groupBy }),
+      ...taskActor(req),
     });
   }
 
@@ -324,20 +320,11 @@ export class TasksController {
     // READ operation - use direct microservice call (faster, no queue overhead)
     return this.tasksService.getSuggestedEmployees({
       taskId: id,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
       // Where this caller may ASSIGN, resolved from their role grants. The
       // guard above accepts a grant held in any space; the service then checks
       // it against the task's own space, which is the real decision.
       assignSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canAssignTasks') ?? undefined),
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -421,20 +408,7 @@ export class TasksController {
     // READ operation - use direct microservice call (faster, no queue overhead)
     return this.tasksService.findOne({
       id,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      organizationId: req.user.organizationId,
-      // Cross-org spaces shared with this caller (server-authoritative, from the
-      // resolved token grant). GET /tasks forwards these, so a guest could LIST
-      // a shared space's tasks and then be refused when opening one.
-      sharedSpaceIds: (req.user.access?.sharedSpaces ?? []).map((sp: any) => sp.spaceId),
+      ...taskActor(req, { crossOrgRead: true }),
     });
   }
 
@@ -446,17 +420,14 @@ export class TasksController {
     return this.tasksQueueService.updateTask({
       id,
       ...updateTaskDto,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      organizationId: req.user.organizationId,
-      access: req.user.access, // task-service enforces the real space for foreign tasks
+      /*
+        The guard above passes on a canCreateTasks grant in ANY space when the
+        body names none. task-service makes the real decision on the task's
+        CURRENT space and on the destination when it moves — from these two.
+      */
+      canCreateTasks: req.user.canCreateTasks,
+      createSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canCreateTasks') ?? undefined),
+      ...taskActor(req),
     });
   }
 
@@ -467,17 +438,10 @@ export class TasksController {
     return this.tasksQueueService.assignTask({
       id,
       ...assignTaskDto,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      organizationId: req.user.organizationId,
-      access: req.user.access, // task-service enforces the real space for foreign tasks
+      // The task's own space decides (task-service assertMayAssign), exactly as
+      // for POST /tasks/:id/assignees — the guard only widened.
+      assignSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canAssignTasks') ?? undefined),
+      ...taskActor(req),
     });
   }
 
@@ -487,17 +451,7 @@ export class TasksController {
     return this.tasksQueueService.updateTaskStatus({
       id,
       ...updateStatusDto,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      organizationId: req.user.organizationId,
-      access: req.user.access, // server-authoritative; task-service enforces the real space for foreign tasks
+      ...taskActor(req),
     });
   }
 
@@ -508,10 +462,7 @@ export class TasksController {
     return this.tasksQueueService.resumeWork({
       id,
       ...body,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -522,8 +473,7 @@ export class TasksController {
     return this.tasksQueueService.addHandover({
       ...body,
       taskId: id,
-      userId: req.user.id,
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -532,51 +482,39 @@ export class TasksController {
   // authorization, checked in task-service. External members hold no clock
   // and work no job of ours.
 
-  /** The facts every crew route passes: who, and the grants the office acts on. */
-  private crewActor(req: any) {
-    return {
-      userId: req.user.id,
-      userRole: req.user.role,
-      organizationId: req.user.organizationId,
-      canViewAllTasks: req.user.canViewAllTasks,
-      canAssignTasks: req.user.canAssignTasks,
-      access: req.user.access,
-    };
-  }
-
   @Post(':id/crew/join')
   @DenyExternal()
   @ApiOperation({ summary: 'Join a crew job (own tap, "I\'m with him", or the office for somebody)' })
   async crewJoin(@Param('id') id: string, @Body() body: CrewJoinDto, @Request() req: any) {
-    return this.tasksQueueService.crewJoin({ ...body, taskId: id, ...this.crewActor(req) });
+    return this.tasksQueueService.crewJoin({ ...body, taskId: id, ...taskActor(req) });
   }
 
   @Post(':id/crew/leave')
   @DenyExternal()
   @ApiOperation({ summary: 'Leave a crew job' })
   async crewLeave(@Param('id') id: string, @Body() body: CrewLeaveDto, @Request() req: any) {
-    return this.tasksQueueService.crewLeave({ ...body, taskId: id, ...this.crewActor(req) });
+    return this.tasksQueueService.crewLeave({ ...body, taskId: id, ...taskActor(req) });
   }
 
   @Post(':id/crew/issue')
   @DenyExternal()
   @ApiOperation({ summary: '"My issue": only the caller\'s own time is blocked' })
   async crewIssue(@Param('id') id: string, @Body() body: CrewIssueDto, @Request() req: any) {
-    return this.tasksQueueService.crewSelfIssue({ ...body, taskId: id, ...this.crewActor(req) });
+    return this.tasksQueueService.crewSelfIssue({ ...body, taskId: id, ...taskActor(req) });
   }
 
   @Post(':id/crew/resume')
   @DenyExternal()
   @ApiOperation({ summary: 'Back to work after their own stop' })
   async crewResume(@Param('id') id: string, @Body() body: ResumeWorkDto, @Request() req: any) {
-    return this.tasksQueueService.crewSelfResume({ ...body, taskId: id, ...this.crewActor(req) });
+    return this.tasksQueueService.crewSelfResume({ ...body, taskId: id, ...taskActor(req) });
   }
 
   @Put(':id/lead')
   @DenyExternal()
   @ApiOperation({ summary: "Hand this job's lead to somebody on its crew — for today, or for good" })
   async changeLead(@Param('id') id: string, @Body() body: ChangeLeadDto, @Request() req: any) {
-    return this.tasksQueueService.crewChangeLead({ ...body, taskId: id, ...this.crewActor(req) });
+    return this.tasksQueueService.crewChangeLead({ ...body, taskId: id, ...taskActor(req) });
   }
 
   @Post(':id/decline')
@@ -584,16 +522,7 @@ export class TasksController {
   async declineTask(@Param('id') id: string, @Request() req: any) {
     return this.tasksQueueService.declineTask({
       id,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -603,16 +532,7 @@ export class TasksController {
   async remove(@Param('id') id: string, @Request() req: any) {
     return this.tasksQueueService.deleteTask({
       id,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -628,12 +548,7 @@ export class TasksController {
   async jobTime(@Param('id') id: string, @Request() req: any) {
     return this.tasksService.jobTime({
       id,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      sharedSpaceIds: (req.user.access?.sharedSpaces ?? []).map((s: any) => s.spaceId),
-      organizationId: req.user.organizationId,
+      ...taskActor(req, { crossOrgRead: true }),
     });
   }
 
@@ -642,12 +557,7 @@ export class TasksController {
   async getSubmissions(@Param('id') id: string, @Request() req: any) {
     return this.tasksService.getSubmissions({
       id,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      organizationId: req.user.organizationId,
-      sharedSpaceIds: (req.user.access?.sharedSpaces ?? []).map((sp: any) => sp.spaceId),
+      ...taskActor(req, { crossOrgRead: true }),
     });
   }
 
@@ -657,16 +567,7 @@ export class TasksController {
     // READ operation - use direct microservice call (faster, no queue overhead)
     return this.tasksService.getTimeline({
       id,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -676,16 +577,7 @@ export class TasksController {
     return this.tasksQueueService.addComment({
       taskId: id,
       ...body,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -695,16 +587,7 @@ export class TasksController {
     // READ operation - use direct microservice call (faster, no queue overhead)
     return this.tasksService.getComments({
       taskId: id,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -727,20 +610,11 @@ export class TasksController {
     return this.tasksQueueService.addAssignee({
       taskId: id,
       ...addAssigneeDto,
-      requestUserId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
       // Where this caller may ASSIGN, resolved from their role grants. The
       // guard above accepts a grant held in any space; the service then checks
       // it against the task's own space, which is the real decision.
       assignSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canAssignTasks') ?? undefined),
-      organizationId: req.user.organizationId,
+      ...taskRequester(req),
     });
   }
 
@@ -755,20 +629,11 @@ export class TasksController {
     return this.tasksQueueService.removeAssignee({
       taskId: id,
       userId,
-      requestUserId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
       // Where this caller may ASSIGN, resolved from their role grants. The
       // guard above accepts a grant held in any space; the service then checks
       // it against the task's own space, which is the real decision.
       assignSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canAssignTasks') ?? undefined),
-      organizationId: req.user.organizationId,
+      ...taskRequester(req),
     });
   }
 
@@ -797,18 +662,7 @@ export class TasksController {
     return this.tasksQueueService.addChecklistItem({
       taskId: id,
       ...addChecklistItemDto,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      // An owner change is judged on the resolved grants (shared tasks/checklist.ts) — never on the body.
-      access: req.user.access,
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -824,18 +678,7 @@ export class TasksController {
     return this.tasksQueueService.reorderChecklist({
       taskId: id,
       ...reorderChecklistDto,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      // An owner change is judged on the resolved grants (shared tasks/checklist.ts) — never on the body.
-      access: req.user.access,
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -853,18 +696,7 @@ export class TasksController {
       taskId: id,
       itemId,
       ...updateChecklistItemDto,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      // An owner change is judged on the resolved grants (shared tasks/checklist.ts) — never on the body.
-      access: req.user.access,
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -880,18 +712,7 @@ export class TasksController {
     return this.tasksQueueService.deleteChecklistItem({
       taskId: id,
       itemId,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      // Removing somebody else's item is judged on the resolved grants (shared mayEditChecklistItem).
-      access: req.user.access,
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -935,6 +756,13 @@ export class TasksController {
       createSpaceIds: isAdmin(req.user)
         ? undefined
         : (spacesGranting(req.user?.access, 'canCreateTasks') ?? undefined),
+      /*
+        A subtask may name its assignee, and assigning is its own right —
+        org-wide, or in the parent's space (task-service decides on the real
+        space). Without these a non-admin who named one was refused outright.
+      */
+      canAssignTasks: req.user.canAssignTasks,
+      assignSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canAssignTasks') ?? undefined),
       organizationId: req.user.organizationId,
     });
   }
@@ -944,16 +772,7 @@ export class TasksController {
   async getSubtasks(@Param('id') id: string, @Request() req: any) {
     return this.tasksService.getSubtasks({
       taskId: id,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -1033,16 +852,7 @@ export class TasksController {
       taskId: id,
       fileName: body.fileName,
       fileType: body.fileType,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -1063,15 +873,7 @@ export class TasksController {
       fileType: body.fileType ?? '',
       fileSize: body.fileSize ?? 0,
       uploadedById: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -1081,16 +883,7 @@ export class TasksController {
     // READ operation - use direct microservice call (faster, no queue overhead)
     return this.tasksService.getAttachments({
       taskId: id,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -1104,16 +897,7 @@ export class TasksController {
   ) {
     return this.tasksQueueService.deleteAttachment({
       id: attachmentId,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space. The
-      // flag above is the org-wide answer; without this a member granted it by
-      // a space role saw only what was assigned to them — including tasks they
-      // had just created themselves.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      canAssignTasks: req.user.canAssignTasks,
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 }

@@ -1,3 +1,4 @@
+import { SessionEvents } from '../../../common/session-events/session-events.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -63,6 +64,7 @@ describe('a deactivated organization', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: SessionEvents, useValue: { sessionsRevoked: jest.fn(), organizationSuspended: jest.fn() } },
         AuthService,
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: { sign: jest.fn(() => 'jwt'), verify: jest.fn() } },

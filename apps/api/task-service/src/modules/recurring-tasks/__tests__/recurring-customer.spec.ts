@@ -28,6 +28,9 @@ describe('RecurringTasksService — the client survives the repeat', () => {
     task: { create: jest.fn() },
     checklistItem: { createMany: jest.fn() },
     taskAssignee: { createMany: jest.fn() },
+    // The client must be the organization's (tenant-scope.util), and "today" is read in its zone.
+    customer: { findFirst: jest.fn().mockResolvedValue({ id: 'cust1' }) },
+    organization: { findUnique: jest.fn().mockResolvedValue({ timezone: 'Europe/Vienna' }) },
   };
 
   beforeEach(async () => {
@@ -49,7 +52,8 @@ describe('RecurringTasksService — the client survives the repeat', () => {
     frequency: 'MONTHLY',
     // MONTHLY insists on a day; the service validates before it writes.
     dayOfMonth: 1,
-    startDate: '2026-10-01T00:00:00.000Z',
+    // Far ahead: a fixed date near "now" rots into "in the past" and fails the create.
+    startDate: '2099-10-01T00:00:00.000Z',
   };
 
   it('stores the client on the template', async () => {

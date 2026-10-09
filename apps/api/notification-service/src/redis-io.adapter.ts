@@ -14,7 +14,7 @@ import Redis from 'ioredis';
  * client receives events no matter which node it (or the event producer) is on.
  */
 export class RedisIoAdapter extends IoAdapter {
-  private readonly logger = new Logger('RedisIoAdapter');
+  private readonly redisLogger = new Logger('RedisIoAdapter');
   private adapterConstructor?: ReturnType<typeof createAdapter>;
 
   constructor(app: INestApplicationContext) {
@@ -28,10 +28,10 @@ export class RedisIoAdapter extends IoAdapter {
     const password = process.env.REDIS_PASSWORD || undefined;
     const pubClient = new Redis({ host, port, password });
     const subClient = pubClient.duplicate();
-    pubClient.on('error', (e) => this.logger.warn(`pub client error: ${e.message}`));
-    subClient.on('error', (e) => this.logger.warn(`sub client error: ${e.message}`));
+    pubClient.on('error', (e) => this.redisLogger.warn(`pub client error: ${e.message}`));
+    subClient.on('error', (e) => this.redisLogger.warn(`sub client error: ${e.message}`));
     this.adapterConstructor = createAdapter(pubClient, subClient);
-    this.logger.log(`Socket.IO Redis adapter wired (${host}:${port})`);
+    this.redisLogger.log(`Socket.IO Redis adapter wired (${host}:${port})`);
   }
 
   createIOServer(port: number, options?: ServerOptions): any {

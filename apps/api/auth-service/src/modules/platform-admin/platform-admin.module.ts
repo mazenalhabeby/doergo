@@ -1,3 +1,4 @@
+import { SessionEventsModule } from '../../common/session-events/session-events.module';
 import { Module } from '@nestjs/common';
 import { PlatformAdminController } from './platform-admin.controller';
 import { PlatformAdminService } from './platform-admin.service';
@@ -20,7 +21,7 @@ import { BillingModule } from '../billing/billing.module';
 
 // PrismaService (global PrismaModule) + JwtService (global JwtModule) are available.
 @Module({
-  imports: [BillingModule],
+  imports: [SessionEventsModule, BillingModule],
   controllers: [PlatformAdminController, PlatformAuthController, PlatformPricingController, PlatformSupportTeamsController],
   providers: [PlatformAdminService, PlatformAuthService, PricingService, PlatformSupportTeamsService, StripeService],
   exports: [PlatformAdminService, PlatformAuthService, PricingService, PlatformSupportTeamsService],

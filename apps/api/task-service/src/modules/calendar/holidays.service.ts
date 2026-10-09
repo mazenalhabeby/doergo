@@ -10,6 +10,7 @@ import {
   resolveWeekend,
   success,
   resolveHolidayPlace,
+  clampListLimit,
 } from '@hbcfield/shared';
 import { CalendarRulesService } from './calendar-rules.service';
 import { countryList, matchRegion, regionList, validCountry, validRegion } from './holiday-library';
@@ -129,7 +130,7 @@ export class HolidaysService {
 
   /** Workspaces with a map point that were never looked up — the one-off backfill, a page at a time. */
   async placesToDetect(dto: { limit?: number }) {
-    const take = Math.min(Math.max(Number(dto.limit) || 50, 1), 200);
+    const take = clampListLimit(dto.limit, 50, 200);
     const rows = await this.prisma.companyLocation.findMany({
       where: { holidayDetectedAt: null, lat: { not: null }, lng: { not: null }, isRemote: false },
       select: { id: true, organizationId: true, lat: true, lng: true },

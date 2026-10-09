@@ -118,13 +118,15 @@ try:
           (g.get('currency'), g.get('currencySource')) == ('CHF', 'client'), (g.get('currency'), g.get('currencySource')))
     call('PATCH', f"/customers/{customer['id']}", ADMIN, {'currency': ''})
     g = data(call('GET', f"/invoices/gather?customerId={customer['id']}", ADMIN))
-    check('…cleared, it falls to the organization\'s', (g.get('currency'), g.get('currencySource')) == ('EUR', 'organization'), g.get('currency'))
+    # Since Companies (2026-10-07) the chain is client → company → organization: a client with no
+    # company of its own is invoiced by the MAIN company, so the source may read 'company'.
+    check('…cleared, it falls to the organization\'s', g.get('currency') == 'EUR' and g.get('currencySource') in ('organization', 'company'), (g.get('currency'), g.get('currencySource')))
 
     # ── Back to the organization's ───────────────────────────────────────────
     r = call('PATCH', f'/locations/{SPACE}', ADMIN, {'currency': None})
     check('a workspace currency clears back to the organization\'s', data(r).get('currency') is None, data(r))
     g = data(call('GET', f'/invoices/gather?spaceId={SPACE}', ADMIN))
-    check('…and its invoices start in EUR again', (g.get('currency'), g.get('currencySource')) == ('EUR', 'organization'), g.get('currency'))
+    check('…and its invoices start in EUR again', g.get('currency') == 'EUR' and g.get('currencySource') in ('organization', 'company'), (g.get('currency'), g.get('currencySource')))
     check('issued invoices keep their own currency', data(call('GET', f"/invoices/{made[0]}", ADMIN)).get('currency') == 'USD')
 finally:
     for i in made:

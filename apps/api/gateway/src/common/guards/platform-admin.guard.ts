@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createHash, timingSafeEqual } from 'crypto';
+import { safeEqual } from '@hbcfield/shared';
 
 /**
  * Fail-closed gate for PLATFORM-OPERATOR (company super-admin) routes. Verifies
@@ -29,11 +29,10 @@ export class PlatformAdminGuard implements CanActivate {
   assertKey(req: { headers?: Record<string, unknown> }): void {
     const expected = this.config.get<string>('PLATFORM_ADMIN_KEY') || '';
     if (!expected) throw new ForbiddenException('Forbidden');
-    const provided = (req.headers?.['x-platform-admin-key'] as string) || '';
-    // Hash both to a fixed length before comparing so neither the length nor the
-    // byte-by-byte match time reveals anything about the secret.
-    const a = createHash('sha256').update(expected).digest();
-    const b = createHash('sha256').update(provided).digest();
-    if (!timingSafeEqual(a, b)) throw new ForbiddenException('Forbidden');
+    const raw = req.headers?.['x-platform-admin-key'];
+    const provided = typeof raw === 'string' ? raw : '';
+    // The shared constant-time compare (SHA-256 both sides to a fixed length, then
+    // timingSafeEqual) — the same one the socket gate and Bull Board use.
+    if (!safeEqual(provided, expected)) throw new ForbiddenException('Forbidden');
   }
 }

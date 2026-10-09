@@ -6,10 +6,10 @@ import {
   ConflictException,
   Inject,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { OBJECT_STORE, ObjectStore, newObjectKey, requireObjectStore } from '@hbcfield/shared/storage';
-import { holdsOpenRole } from '../tasks/role-holder';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { createOnce } from '../../common/create-once.util';
 import { MediaSigner } from '../../common/storage/media-signer.service';
@@ -19,13 +19,11 @@ import {
   Role,
   success,
   paginated,
-  canAccessTask,
-  isTaskAssignee,
-  isWithinTaskBoundary,
   type OccurrenceEvidence,
+  clampListLimit,
 } from '@hbcfield/shared';
 import { judgeOccurrence } from '../../common/occurrence.util';
-import type { TaskAccessFacts } from '../tasks/tasks.service';
+import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
 
 // Report attachments are before/after photos + signatures only — an image
 // allow-list keeps active content (html/svg) out of the report gallery + PDF.
@@ -57,7 +55,21 @@ export class ReportsService {
     @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
     private readonly media: MediaSigner,
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
+    @Optional() private readonly injectedTaskAccess?: TaskAccessService,
   ) {}
+
+  /*
+    The ONE task gate (common/task-access) — the same decision tasks.service
+    makes, co-assignee lookup and role-holder rule included. This file used to
+    carry its own copy that skipped the co-assignee lookup (a crew member could
+    comment on a job and was refused its photos) and asked the role-holder
+    question before the organization boundary. Optional only so a test that
+    builds this service by hand still gets it.
+  */
+  private _taskAccess?: TaskAccessService;
+  private get taskAccess(): TaskAccessService {
+    return (this._taskAccess ??= this.injectedTaskAccess ?? new TaskAccessService(this.prisma));
+  }
 
   /** A report as a client receives it — photos behind signed links. */
   private async withSignedAttachments<T extends { attachments?: any[] } | null>(report: T): Promise<T> {
@@ -270,7 +282,7 @@ export class ReportsService {
     }
 
     // Authorization check — a holder of the job's OPEN role may read it too (tasks/role-holder.ts), never write.
-    if (!(await holdsOpenRole(this.prisma as never, task, data.userId))) await this.checkTaskAccess(task, data);
+    await this.taskAccess.assert(task, data, { roleHolderMayRead: true });
 
     const report = await this.prisma.serviceReport.findUnique({
       where: { taskId: data.taskId },
@@ -309,7 +321,7 @@ export class ReportsService {
     // arrived — so ?limit=100000 returned the table. Clamped here, like the
     // asset lists, because nothing upstream of this does it.
     const page = Math.max(1, Math.floor(Number(data.page)) || 1);
-    const limit = Math.min(50, Math.max(1, Math.floor(Number(data.limit)) || 10));
+    const limit = clampListLimit(data.limit, 10, 50);
     const skip = (page - 1) * limit;
 
     /*
@@ -746,37 +758,5 @@ export class ReportsService {
       fileUrl: store.privateUrl(fileKey),
       expiresIn: REPORT_UPLOAD_TTL_SECONDS,
     });
-  }
-
-  /**
-   * May this caller read this task's service report?
-   *
-   * Delegates to the shared rule — the same decision tasks.service and
-   * attachments.service make. This was a third private copy of it, and it had
-   * drifted in both directions: it knew nothing about SPACE grants, so the
-   * supervisor of a site could open a completed job and be refused the report
-   * of the work done there; and it restricted an ADMIN to tasks they had
-   * created themselves, so an owner could not read the report for a job their
-   * own dispatcher raised. Neither difference was intended — they are what a
-   * copy becomes.
-   */
-  private async checkTaskAccess(task: any, data: TaskAccessFacts) {
-    const { userId, userRole, organizationId, canViewAllTasks, sharedSpaceIds, viewAllSpaceIds } = data;
-    const caller = { userId, userRole, organizationId, canViewAllTasks, sharedSpaceIds, viewAllSpaceIds };
-
-    // Recognise BOTH the LEAD (legacy assignedToId) and multi-assignee MEMBER
-    // rows, so the member who completed the task can still edit its report.
-    let assignee = isTaskAssignee(task, userId);
-    if (assignee === null && isWithinTaskBoundary(task, caller)) {
-      const membership = await this.prisma.taskAssignee.findFirst({
-        where: { taskId: task.id, userId },
-        select: { id: true },
-      });
-      assignee = !!membership;
-    }
-
-    if (!canAccessTask(task, caller, assignee ?? false)) {
-      throw new ForbiddenException('Access denied');
-    }
   }
 }

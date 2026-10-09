@@ -95,10 +95,28 @@ export class NotificationController {
   // USER REMOVAL EVENTS
   // =========================================================================
 
+  // Revocation → live sockets. Event names are SOCKET_REVOCATION_EVENTS in
+  // websocket.gateway.ts; the auth service emits them. A socket authenticates
+  // once, so without these a removed / deactivated / suspended account would keep
+  // receiving the organization's live events until its connection dropped.
   @EventPattern('user_removed')
   async handleUserRemoved(@Payload() data: { userId: string; organizationId: string }) {
-    this.logger.log(`User removed: ${data.userId} from org ${data.organizationId}`);
-    this.websocketGateway.forceDisconnectUser(data.userId);
+    this.logger.log(`User removed: ${data?.userId} from org ${data?.organizationId}`);
+    if (data?.userId) this.websocketGateway.forceDisconnectUser(data.userId, 'removed_from_organization');
+  }
+
+  /** Deactivated, signed out everywhere, password reset — every session is gone. */
+  @EventPattern('user_sessions_revoked')
+  async handleUserSessionsRevoked(@Payload() data: { userId: string }) {
+    this.logger.log(`Sessions revoked: ${data?.userId}`);
+    if (data?.userId) this.websocketGateway.forceDisconnectUser(data.userId, 'sessions_revoked');
+  }
+
+  /** The operator switched the organization off. */
+  @EventPattern('organization_suspended')
+  async handleOrganizationSuspended(@Payload() data: { organizationId: string }) {
+    this.logger.log(`Organization suspended: ${data?.organizationId}`);
+    if (data?.organizationId) this.websocketGateway.disconnectOrganization(data.organizationId, 'organization_suspended');
   }
 
   // An admin changed this member's access/role. Signal the member's own sockets

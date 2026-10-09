@@ -154,3 +154,32 @@ export async function sendViaFirstWorking(
   }
   throw new Error(failures.join(' | '));
 }
+
+/** Every environment key the mail settings are read from — one list, both providers. */
+const SMTP_ENV_KEYS = [
+  'SMTP_HOST',
+  'SMTP_PORT',
+  'SMTP_USER',
+  'SMTP_PASS',
+  'SMTP_SECURE',
+  'SMTP_FROM',
+  'SMTP_FALLBACK_HOST',
+  'SMTP_FALLBACK_PORT',
+  'SMTP_FALLBACK_USER',
+  'SMTP_FALLBACK_PASS',
+  'SMTP_FALLBACK_SECURE',
+  'SMTP_FALLBACK_FROM',
+] as const satisfies ReadonlyArray<keyof SmtpEnv>;
+
+/**
+ * `mailRoutes`, read straight from a config getter (`(k) => config.get(k)`).
+ *
+ * Every sender used to spell out the twelve keys by hand; one that forgot the
+ * fallback block would have quietly sent through the primary only, and nothing
+ * would show it until the primary was blocked.
+ */
+export function mailRoutesFromConfig(get: (key: string) => string | undefined): MailRoute[] {
+  const env: SmtpEnv = {};
+  for (const key of SMTP_ENV_KEYS) env[key] = get(key);
+  return mailRoutes(env);
+}

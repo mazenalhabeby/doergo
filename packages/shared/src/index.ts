@@ -73,6 +73,8 @@ export * from './access/module-anywhere';
 // services that ask it. NOT exported from client.ts — it needs a Prisma client.
 export * from './access/member-scope';
 export * from './access/assignment-window';
+// Who may read a workspace's roster, and see a member's terms there.
+export * from './access/roster-access';
 export * from './access/document-visibility';
 export * from './access/cross-org-chat';
 export * from './access/legacy-flag-migration';
@@ -111,6 +113,8 @@ export * from './crm/contact-keys';
 export * from './crm/card-extras';
 export * from './crm/card-merge';
 export * from './mail/client-email-locale';
+// Who a scheduled report may be sent to: real addresses, de-duplicated, at most 20.
+export * from './mail/recipients';
 
 // One replica per scheduled job — see the note in the file.
 export * from './scheduling/cron-lock';
@@ -152,6 +156,7 @@ export * from './attendance/rota';
 // What should I work on next — one ordering, shared by the phone and the web.
 export * from './tasks/my-work';
 export * from './tasks/role-pool';
+export * from './tasks/open-role-holder';
 export * from './calendar';
 export * from './tasks/be-there';
 export * from './tasks/clock-gate';
@@ -159,3 +164,17 @@ export * from './tasks/handover';
 export * from './tasks/job-time';
 export * from './tasks/crew';
 export * from './tasks/checklist';
+export * from './api/clamp-limit';
+
+// Constant-time secret comparison (node-only — root entry, never client.ts).
+export * from './security/safe-equal';
+// A request URL with its bearer secrets removed, for logs.
+export * from './security/redact-url';
+// What a request body may change on a unit — one whitelist for every route.
+export * from './customer-portal/unit-fields';
+// Account guards: who may take over / grant / lock an account (security/account-guards.ts)
+export * from './security/account-guards';
+// One loader for a member's org-wide permission ceiling (security/org-permission-ceiling.ts)
+export * from './security/org-permission-ceiling';
+// Built-in roles follow their definition, additively, until an admin edits them (access/builtin-role-sync.ts)
+export * from './access/builtin-role-sync';

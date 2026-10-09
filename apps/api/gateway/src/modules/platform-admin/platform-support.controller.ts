@@ -1,4 +1,5 @@
-import { Body, Controller, Get, HttpException, HttpStatus, Param, Post, Query, Request, UseGuards } from '@nestjs/common';
+import { assertServiceOk } from '@hbcfield/shared';
+import { Body, Controller, Get, Param, Post, Query, Request, UseGuards } from '@nestjs/common';
 import { Public } from '../../common/decorators';
 import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/platform-auth.guard';
 import { PlatformSupportService } from './platform-support.service';
@@ -15,7 +16,9 @@ import { PlatformSupportService } from './platform-support.service';
 @RequirePlatformPerm('manageSupport')
 export class PlatformSupportController {
   constructor(private readonly svc: PlatformSupportService) {}
-  private unwrap<T>(r: any): T { if (r && r.success === false) throw new HttpException({ message: r.message ?? 'Error' }, r.statusCode ?? HttpStatus.BAD_REQUEST); return r; }
+  private unwrap<T>(r: any): T {
+    return assertServiceOk(r) as T;
+  }
   private agent(req: any): string { const u = req.platformUser; return `${u?.firstName ?? ''} ${u?.lastName ?? ''}`.trim() || u?.email || 'agent'; }
 
   @Get('inbox')

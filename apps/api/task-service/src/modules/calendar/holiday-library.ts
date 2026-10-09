@@ -63,7 +63,7 @@ export function libraryHolidaysForYears(country: string | null, region: string |
   return years.flatMap((y) => libraryHolidays(country, region, y, lang));
 }
 
-let countriesCache: Record<string, Record<string, string>> = {};
+const countriesCache: Record<string, Record<string, string>> = {};
 export function countryList(lang = 'en'): { code: string; name: string }[] {
   const l = LANGS.has(lang) ? lang : 'en';
   if (!countriesCache[l]) countriesCache[l] = new Holidays().getCountries(l) || {};
@@ -115,8 +115,3 @@ export function matchRegion(country: string, candidates: (string | null | undefi
   return null;
 }
 
-/** For tests. */
-export function clearHolidayCache() {
-  cache.clear();
-  countriesCache = {};
-}

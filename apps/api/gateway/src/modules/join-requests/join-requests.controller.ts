@@ -6,13 +6,12 @@ import {
   Param,
   Query,
   Inject,
-  HttpException,
   HttpStatus,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { CurrentUser, CurrentUserData } from '@hbcfield/shared';
+import { CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { OrgEventsService } from '../../common/events/org-events.service';
@@ -70,12 +69,7 @@ export class JoinRequestsController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
     // Approved user just got an org + onboardingCompleted — drop their cached
     // (pre-approval) user so their next /auth/me lets them into the app without
@@ -123,12 +117,7 @@ export class JoinRequestsController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
     // Emit notification event
     if (result?.data?.userId) {

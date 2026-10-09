@@ -9,8 +9,6 @@ import {
   Param,
   Query,
   Request,
-  HttpException,
-  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -24,10 +22,13 @@ import {
   isAdmin,
   spacesGranting,
   type AccessPermissionKey,
+  assertServiceOk,
+  clampListLimit,
 } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermissionInSpace } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
+import { attendanceAuthority, type AttendanceNeed } from '../../common/attendance-authority';
 import { AttendanceService } from './attendance.service';
 import { AttendanceQueueService } from './attendance.queue.service';
 import {
@@ -163,26 +164,12 @@ export class AttendanceController {
 
   // ── Session work-log ("what I did today") ──────────────────────────────────
   // Ownership is enforced in the service (a member manages their OWN session's
-  // log; managers with canManage may view/manage any session in their org).
-  private canManage(req: any): boolean {
-    return !!(req.user?.canManageUsers || req.user?.canViewAllTasks);
-  }
-
-  /**
-   * The spaces whose sessions this caller may manage the log of.
-   *
-   * `canManage` above is the ORG-wide answer, read from the flat columns, so a
-   * supervisor whose authority comes from a space role counted as nobody and
-   * was refused their own crew's work log. This carries the spaces they
-   * actually oversee — server-resolved from the token, never client-supplied —
-   * and the service accepts a session clocked at one of them.
-   *
-   * undefined for an admin (org-wide); [] means granted nowhere and must match
-   * nothing.
-   */
-  private manageSpaces(req: any): string[] | undefined {
-    if (isAdmin(req.user)) return undefined;
-    return spacesGranting(req.user?.access, 'canViewSpaceAttendance') ?? undefined;
+  // log). Anybody else's: reading needs canViewSpaceAttendance, changing needs
+  // canReconcileAttendance — org-wide or in the session's space
+  // (common/attendance-authority.ts). Server-resolved, never client-supplied.
+  private worklogCaller(req: any, need: AttendanceNeed) {
+    const { canManage, spaceIds } = attendanceAuthority(req, need);
+    return { organizationId: req.user.organizationId, callerUserId: req.user.id, canManage, manageSpaceIds: spaceIds };
   }
 
   @Post('entries/:entryId/worklog')
@@ -190,7 +177,7 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Add a work-log note to an attendance session' })
   async worklogAdd(@Param('entryId') entryId: string, @Body() body: AddWorklogNoteDto, @Request() req: any) {
     return this.attendanceService.worklogAddNote({
-      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req),
+      ...this.worklogCaller(req, 'write'),
       timeEntryId: entryId, id: body.id, body: body.body, at: body.at, taskId: body.taskId,
     });
   }
@@ -200,7 +187,7 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Batch-add work-log notes (offline flush)' })
   async worklogBatch(@Param('entryId') entryId: string, @Body() body: AddWorklogNotesBatchDto, @Request() req: any) {
     return this.attendanceService.worklogAddNotesBatch({
-      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req),
+      ...this.worklogCaller(req, 'write'),
       timeEntryId: entryId, notes: body?.notes ?? [],
     });
   }
@@ -210,7 +197,7 @@ export class AttendanceController {
   @ApiOperation({ summary: "An attendance session's work-log (notes + photos)" })
   async worklogList(@Param('entryId') entryId: string, @Request() req: any) {
     return this.attendanceService.worklogList({
-      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req),
+      ...this.worklogCaller(req, 'read'),
       timeEntryId: entryId,
     });
   }
@@ -220,7 +207,7 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Delete a work-log note' })
   async worklogDelete(@Param('noteId') noteId: string, @Request() req: any) {
     return this.attendanceService.worklogDeleteNote({
-      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req), noteId,
+      ...this.worklogCaller(req, 'write'), noteId,
     });
   }
 
@@ -229,7 +216,7 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Presigned upload URL for a work-log photo/file' })
   async worklogPresign(@Param('noteId') noteId: string, @Body() body: PresignWorklogAttachmentDto, @Request() req: any) {
     return this.attendanceService.worklogPresignAttachment({
-      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req),
+      ...this.worklogCaller(req, 'write'),
       noteId, fileName: body?.fileName, mimeType: body?.mimeType,
     });
   }
@@ -239,7 +226,7 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Confirm a work-log photo/file upload' })
   async worklogConfirm(@Param('noteId') noteId: string, @Body() body: ConfirmWorklogAttachmentDto, @Request() req: any) {
     return this.attendanceService.worklogConfirmAttachment({
-      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req),
+      ...this.worklogCaller(req, 'write'),
       noteId, id: body.id, fileKey: body?.fileKey, fileUrl: body?.fileUrl, fileName: body?.fileName,
       fileSize: body?.fileSize, mimeType: body?.mimeType, width: body?.width, height: body?.height,
     });
@@ -250,7 +237,7 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Delete a work-log attachment' })
   async worklogDeleteAttachment(@Param('attachmentId') attachmentId: string, @Request() req: any) {
     return this.attendanceService.worklogDeleteAttachment({
-      organizationId: req.user.organizationId, callerUserId: req.user.id, canManage: this.canManage(req), manageSpaceIds: this.manageSpaces(req), attachmentId,
+      ...this.worklogCaller(req, 'write'), attachmentId,
     });
   }
 
@@ -293,7 +280,10 @@ export class AttendanceController {
       organizationId: req.user.organizationId,
       date,
       requesterId: req.user.id,
-      requesterCanViewAll: !!req.user.canViewAllTasks,
+      // Same rule as GET locations/:id/entries — the attendance permission
+      // (org-wide, or in that space through an active assignment), never the
+      // roster and never "view all tasks". The service narrows per space.
+      viewScopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
     });
   }
 
@@ -317,8 +307,9 @@ export class AttendanceController {
     @Query('sortOrder') sortOrder?: string,
     @Request() req?: any,
   ) {
-    // Full-access roles see any location; otherwise the service verifies the
-    // requester is a roster member of the space.
+    // The service decides: org-wide canViewSpaceAttendance, or the permission
+    // in THIS workspace through an assignment active now (External Supervisor
+    // included, External Observer not). Being on the roster is not enough.
     return this.attendanceService.getLocationEntries({
       locationId,
       organizationId: req.user.organizationId,
@@ -331,7 +322,7 @@ export class AttendanceController {
       sortBy,
       sortOrder,
       requesterId: req.user.id,
-      requesterCanViewAll: !!req.user.canViewAllTasks,
+      viewScopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       // Cross-org shared spaces whose owner enabled "show attendance".
       sharedSpaceIds: (req.user.access?.sharedSpaces ?? [])
         .filter((s: any) => s.showAttendance)
@@ -365,7 +356,7 @@ export class AttendanceController {
     @Request() req?: any,
   ) {
     const parsedPage = page ? Math.max(1, Number(page) || 1) : 1;
-    const parsedLimit = Math.min(limit ? Math.max(1, Number(limit) || 20) : 20, 500);
+    const parsedLimit = clampListLimit(limit, 20, 500);
     return this.attendanceService.getAllEntries({
       organizationId: req.user.organizationId,
       scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
@@ -579,6 +570,9 @@ export class AttendanceController {
       ...dto,
       // Never from the body: the organization is whose token this is.
       organizationId: req.user.organizationId,
+      // The guard passes a grant in ANY workspace; the service narrows it to
+      // the rule's own workspace (`BreakRulesService.assertMayManage`).
+      scopeSpaceIds: this.scope(req, 'canManageWorkspaces'),
     });
   }
 
@@ -591,6 +585,7 @@ export class AttendanceController {
       ...dto,
       id,
       organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canManageWorkspaces'),
     });
   }
 
@@ -599,7 +594,11 @@ export class AttendanceController {
   @RequirePermissionInSpace('canManageWorkspaces')
   @ApiOperation({ summary: 'Remove a planned rest' })
   async deleteBreakRule(@Param('id') id: string, @Request() req: any) {
-    return this.attendanceService.deleteBreakRule({ id, organizationId: req.user.organizationId });
+    return this.attendanceService.deleteBreakRule({
+      id,
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canManageWorkspaces'),
+    });
   }
 
   @Post('breaks/end')
@@ -628,9 +627,14 @@ export class AttendanceController {
   @Get('entries/:id/breaks')
   @ApiOperation({ summary: 'Get breaks for a specific time entry' })
   async getBreaksForEntry(@Param('id') timeEntryId: string, @Request() req: any) {
+    // No permission gate on the route: a member reads the rests of their own
+    // shift. Anybody else's entry is narrowed in the service to the spaces
+    // where the caller holds canViewSpaceAttendance — the entry-read rule.
     return this.attendanceService.getBreaksForEntry({
       timeEntryId,
       organizationId: req.user.organizationId,
+      requesterId: req.user.id,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
     });
   }
 
@@ -701,10 +705,7 @@ export class AttendanceController {
       endedAt: dto.endedAt,
       reason: dto.reason,
     });
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
-    }
-    return result;
+    return assertServiceOk(result);
   }
 
   /**
@@ -724,10 +725,7 @@ export class AttendanceController {
       scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
       editorId: req.user.id,
     });
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
-    }
-    return result;
+    return assertServiceOk(result);
   }
 
   @Post('breaks/:id/end')

@@ -11,6 +11,8 @@ import {
   resolveTeamForOrg,
   type SupportAuthorType,
   type SupportStatus,
+  clampListLimit,
+  clampListPage,
 } from '@hbcfield/shared';
 import { findPrior } from '../../common/create-once.util';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -286,8 +288,8 @@ export class SupportService {
 
   // ── reads ──────────────────────────────────────────────────────────────────
   async listForCustomer(data: { createdById: string; status?: string; page?: number; limit?: number }) {
-    const page = Math.max(1, Number(data.page) || 1);
-    const limit = Math.min(Math.max(1, Number(data.limit) || 20), 100);
+    const page = clampListPage(data.page);
+    const limit = clampListLimit(data.limit, 20, 100);
     const where: any = { createdById: data.createdById };
     if (data.status) where.status = data.status;
     const [rows, total] = await this.prisma.$transaction([
@@ -356,8 +358,8 @@ export class SupportService {
     // Optional explicit view within what the caller is allowed to see.
     view?: 'all' | 'mine' | 'unassigned' | 'team';
   }) {
-    const page = Math.max(1, Number(data.page) || 1);
-    const limit = Math.min(Math.max(1, Number(data.limit) || 25), 100);
+    const page = clampListPage(data.page);
+    const limit = clampListLimit(data.limit, 25, 100);
     const where: any = {};
     if (data.status) where.status = data.status;
     else where.status = { in: ['OPEN', 'PENDING_AGENT', 'PENDING_CUSTOMER'] };

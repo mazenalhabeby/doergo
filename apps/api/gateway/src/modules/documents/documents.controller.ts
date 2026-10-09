@@ -342,6 +342,10 @@ export class DocumentsController {
   @ApiOperation({ summary: 'Credential validity for the people the caller assigns work to' })
   async compliance(@CurrentUser() user: CurrentUserData) {
     return this.documents.compliance({
+      // Who is asking, so a type restricted to certain roles shows on the board
+      // for exactly the people who may see it (and for administrators) — the
+      // board used to be read as nobody, which shows unrestricted types only.
+      actor: documentActor(user),
       organizationId: user.organizationId,
       scopeSpaceIds: isAdmin(user as never)
         ? undefined

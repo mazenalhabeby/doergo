@@ -5,7 +5,9 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success } from '@hbcfield/shared';
+import { assertSpaceInOrg } from '../../common/tenant-scope.util';
+import { success, clampListLimit, localPartsIn, addDaysStr, zonedWallTimeToUtc } from '@hbcfield/shared';
+import { workspaceZone } from '../../common/zone.util';
 
 @Injectable()
 export class SprintsService {
@@ -87,6 +89,9 @@ export class SprintsService {
     position?: number;
     organizationId: string;
   }) {
+    // The space id comes from the body: it must be this organization's, and live (tenant-scope.util).
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { activeOnly: true });
+
     const startDate = new Date(data.startDate);
     const endDate = new Date(data.endDate);
 
@@ -238,6 +243,9 @@ export class SprintsService {
       throw new BadRequestException('Only ACTIVE sprints can be completed');
     }
 
+    // The burndown's days are the sprint's WORKSPACE's days, never the server's (zone.util).
+    const timezone = await workspaceZone(this.prisma, { spaceId: existing.spaceId, organizationId: existing.organizationId });
+
     // Run sprint completion and report generation in a transaction
     const result = await this.prisma.$transaction(async (tx) => {
       // Complete the sprint
@@ -258,7 +266,7 @@ export class SprintsService {
       });
 
       // Generate sprint report
-      const report = await this.generateSprintReport(tx, sprint, existing);
+      const report = await this.generateSprintReport(tx, sprint, { ...existing, timezone });
 
       return { sprint: { ...sprint, tasks: undefined, report }, report };
     });
@@ -272,7 +280,7 @@ export class SprintsService {
   private async generateSprintReport(
     tx: any,
     sprint: any,
-    sprintMeta: { id: string; organizationId: string; startDate: Date; endDate: Date },
+    sprintMeta: { id: string; organizationId: string; startDate: Date; endDate: Date; timezone: string },
   ) {
     const tasks = sprint.tasks || [];
 
@@ -321,6 +329,7 @@ export class SprintsService {
       sprintMeta.startDate,
       sprintMeta.endDate,
       committedPoints,
+      sprintMeta.timezone,
     );
 
     const report = await tx.sprintReport.create({
@@ -353,6 +362,7 @@ export class SprintsService {
     startDate: Date,
     endDate: Date,
     totalPoints: number,
+    timezone = 'UTC',
   ): Promise<{ date: string; remaining: number; ideal: number }[]> {
     const taskIds = tasks.map((t: any) => t.id);
 
@@ -386,32 +396,32 @@ export class SprintsService {
     const COMPLETED_STATUSES = ['COMPLETED', 'CLOSED'];
     const burndown: { date: string; remaining: number; ideal: number }[] = [];
 
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
+    /*
+      Days are walked as LOCAL dates in the workspace's zone (shared zoned-time),
+      not with setHours on the server's clock: in UTC a Vienna sprint's "day"
+      ran 01:00–01:00 and a completion at 00:30 landed on the previous day.
+    */
+    const firstDay = localPartsIn(startDate, timezone).dateStr;
+    const lastDay = localPartsIn(endDate, timezone).dateStr;
+    const days: string[] = [];
+    for (let d = firstDay; d <= lastDay; d = addDaysStr(d, 1)) days.push(d);
 
     // Calculate total sprint days for ideal line
-    const totalDays = Math.max(
-      1,
-      Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
-    );
+    const totalDays = Math.max(1, days.length);
 
     // Track which tasks are completed by each day
     const completedTaskIds = new Set<string>();
     let eventIndex = 0;
-
-    const current = new Date(start);
     let dayCount = 0;
 
-    while (current <= end) {
-      const dayEnd = new Date(current);
-      dayEnd.setHours(23, 59, 59, 999);
+    for (const day of days) {
+      // The instant the local day ends (next local midnight, exclusive).
+      const dayEnd = zonedWallTimeToUtc(addDaysStr(day, 1), 0, 0, timezone);
 
       // Process events up to this day
       while (
         eventIndex < statusEvents.length &&
-        new Date(statusEvents[eventIndex]!.createdAt) <= dayEnd
+        new Date(statusEvents[eventIndex]!.createdAt) < dayEnd
       ) {
         const event = statusEvents[eventIndex]!;
         const metadata = event.metadata as any;
@@ -437,12 +447,11 @@ export class SprintsService {
       );
 
       burndown.push({
-        date: current.toISOString().split('T')[0]!,
+        date: day,
         remaining: Math.max(0, remaining),
         ideal: Math.round(ideal * 100) / 100,
       });
 
-      current.setDate(current.getDate() + 1);
       dayCount++;
     }
 
@@ -479,7 +488,8 @@ export class SprintsService {
    * Get velocity data for the last N completed sprints
    */
   async getVelocity(data: { organizationId: string; limit?: number }) {
-    const limit = data.limit || 6;
+    // Bounded: a chart of sprints, never "every report since the beginning".
+    const limit = clampListLimit(data.limit, 6);
 
     const reports = await this.prisma.sprintReport.findMany({
       where: { organizationId: data.organizationId },

@@ -5,7 +5,7 @@ import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/plat
 import { PlatformAdminService } from './platform-admin.service';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { IsBoolean } from 'class-validator';
-import { ADD_ON_KEYS, isAddOn, BILLING_MODES, type BillingMode } from '@hbcfield/shared';
+import { ADD_ON_KEYS, isAddOn, BILLING_MODES, type BillingMode, assertServiceOk } from '@hbcfield/shared';
 
 /*
   Offline mode on or off.
@@ -37,10 +37,7 @@ export class PlatformAdminController {
   ) {}
 
   private unwrap<T>(result: any): T {
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message ?? 'Error' }, result.statusCode ?? HttpStatus.BAD_REQUEST);
-    }
-    return result;
+    return assertServiceOk(result) as T;
   }
   private actor(req: any): string | undefined { return req.platformUser?.id; }
 

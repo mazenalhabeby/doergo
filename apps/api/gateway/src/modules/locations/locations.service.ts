@@ -29,7 +29,15 @@ export class LocationsService extends BaseGatewayService {
   /**
    * Get a single company location by ID
    */
-  async findOne(data: { id: string; organizationId: string; sharedSpaceIds?: string[] }) {
+  async findOne(data: {
+    id: string;
+    organizationId: string;
+    sharedSpaceIds?: string[];
+    /** Spaces the caller follows the work of; undefined = admin / org-wide. */
+    viewScopeSpaceIds?: string[];
+    /** Whether the caller manages THIS space's people (its terms travel only then). */
+    mayManage?: boolean;
+  }) {
     return this.send({ cmd: 'find_one_location' }, data);
   }
 
@@ -47,6 +55,9 @@ export class LocationsService extends BaseGatewayService {
     locationId: string;
     organizationId: string;
     sharedSpaceIds?: string[];
+    requesterId?: string;
+    spaceScope?: string;
+    canViewAll?: boolean;
   }) {
     return this.send({ cmd: 'get_location_assignments' }, data);
   }
@@ -57,6 +68,7 @@ export class LocationsService extends BaseGatewayService {
     requesterId?: string;
     spaceScope?: string;
     canViewAll?: boolean;
+    viewAllIds?: string[];
   }) {
     return this.send({ cmd: 'get_location_assignments_batch' }, data);
   }

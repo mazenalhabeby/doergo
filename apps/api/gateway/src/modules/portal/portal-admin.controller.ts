@@ -18,7 +18,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
-import { RequirePermission } from '@hbcfield/shared';
+import { RequirePermission, pickUnitFields } from '@hbcfield/shared';
 import { join } from 'path';
 import { mkdir, writeFile } from 'fs/promises';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
@@ -319,13 +319,19 @@ export class PortalAdminController {
   @Post('units')
   @RequirePermission('canManagePortals')
   createUnit(@Body() body: any, @Request() req: any) {
-    return this.auth('portal_create_unit', { ...body, organizationId: req.user.organizationId });
+    // Whitelisted like every unit route (pickUnitFields); identity last.
+    return this.auth('portal_create_unit', {
+      ...pickUnitFields(body),
+      name: (typeof body?.name === 'string' && body.name.trim()) || body?.address || 'Unit',
+      organizationId: req.user.organizationId, actorId: req.user.id,
+    });
   }
 
   @Patch('units/:id')
   @RequirePermission('canManagePortals')
   updateUnit(@Param('id') id: string, @Body() body: any, @Request() req: any) {
-    return this.auth('portal_update_unit', { ...body, id, organizationId: req.user.organizationId });
+    // Whitelisted: a spread body could carry scopeCustomerId, actorId or a CRM caller.
+    return this.auth('portal_update_unit', { ...pickUnitFields(body), id, organizationId: req.user.organizationId, actorId: req.user.id });
   }
 
   @Delete('units/:id')

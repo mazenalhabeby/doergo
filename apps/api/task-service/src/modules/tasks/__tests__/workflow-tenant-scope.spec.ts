@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { assertWorkflowInOrg, assertSpaceInOrg, assertUsersInOrg } from '../../../common/tenant-scope.util';
 
 /**
@@ -51,11 +51,11 @@ describe('tenant scope — an id must belong to the organization it claims', () 
     });
 
     it("refuses another tenant's workflow — the hole this closes", async () => {
-      await expect(assertWorkflowInOrg(prisma, 'wf-theirs', ORG)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(assertWorkflowInOrg(prisma, 'wf-theirs', ORG)).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('refuses an id that exists nowhere', async () => {
-      await expect(assertWorkflowInOrg(prisma, 'wf-invented', ORG)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(assertWorkflowInOrg(prisma, 'wf-invented', ORG)).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('says the same thing either way, so it cannot be used to probe', async () => {
@@ -81,7 +81,7 @@ describe('tenant scope — an id must belong to the organization it claims', () 
   describe('assertSpaceInOrg', () => {
     it('accepts our own space and refuses another tenant\'s', async () => {
       await expect(assertSpaceInOrg(prisma, 'sp-mine', ORG)).resolves.toBeUndefined();
-      await expect(assertSpaceInOrg(prisma, 'sp-theirs', ORG)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(assertSpaceInOrg(prisma, 'sp-theirs', ORG)).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 
@@ -93,7 +93,7 @@ describe('tenant scope — an id must belong to the organization it claims', () 
     it('refuses when ANY id is foreign, not just when all are', async () => {
       // An assignment is itself a grant — task access short-circuits on "is this
       // person assigned?" before comparing organizations.
-      await expect(assertUsersInOrg(prisma, ['u-mine', 'u-theirs'], ORG)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(assertUsersInOrg(prisma, ['u-mine', 'u-theirs'], ORG)).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('tolerates duplicates rather than miscounting them as missing', async () => {

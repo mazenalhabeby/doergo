@@ -1,3 +1,4 @@
+import { SessionEvents } from '../../../common/session-events/session-events.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpStatus } from '@nestjs/common';
 import { UsersService } from '../users.service';
@@ -51,6 +52,7 @@ describe('updateAccessRole — you cannot narrow your own role', () => {
     prisma.accessRole.update.mockResolvedValue({ id: ROLE });
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: SessionEvents, useValue: { sessionsRevoked: jest.fn(), organizationSuspended: jest.fn() } },
         { provide: 'TASK_SERVICE', useValue: { emit: jest.fn() } },
         UsersService,
         { provide: PrismaService, useValue: prisma },
@@ -59,7 +61,14 @@ describe('updateAccessRole — you cannot narrow your own role', () => {
     service = module.get(UsersService);
   });
 
-  const holder = (over = {}) => ({ role: 'EMPLOYEE', memberRoleId: ROLE, ...over });
+  // The editor's own permissions come from the role they hold — the ceiling
+  // check reads them, so an editor here holds exactly what the role grants.
+  const holder = (over = {}) => ({
+    role: 'EMPLOYEE',
+    memberRoleId: ROLE,
+    memberRole: { permissions: roleRow.permissions, isActive: true },
+    ...over,
+  });
 
   it('refuses removing a permission from the role the editor holds', async () => {
     findsRole();
@@ -102,11 +111,25 @@ describe('updateAccessRole — you cannot narrow your own role', () => {
   it('allows renaming your own role without touching permissions', async () => {
     // `permissions` undefined — the guard must not fire on an unrelated edit.
     findsRole();
+    prisma.user.findFirst.mockResolvedValue(holder());
     const r: any = await service.updateAccessRole({
       organizationId: ORG, requesterId: ME, roleId: ROLE, name: 'Dispatcher',
     });
     expect(r.success).not.toBe(false);
-    expect(prisma.user.findFirst).not.toHaveBeenCalled();
+    expect(prisma.accessRole.update).toHaveBeenCalled();
+  });
+
+  it('refuses editing a role whose CURRENT permissions exceed the editor’s', async () => {
+    // Checking only the new set let a non-admin rewrite a role above them.
+    findsRole({ ...roleRow, permissions: { canManageUsers: true, canViewAllTasks: true, canViewLabourCost: true } });
+    prisma.user.findFirst.mockResolvedValue(holder({ memberRoleId: 'some-other-role' }));
+
+    const r: any = await service.updateAccessRole({
+      organizationId: ORG, requesterId: ME, roleId: ROLE, name: 'Renamed',
+    });
+    expect(r.success).toBe(false);
+    expect(r.statusCode).toBe(HttpStatus.FORBIDDEN);
+    expect(prisma.accessRole.update).not.toHaveBeenCalled();
   });
 
   it('allows narrowing a role somebody ELSE holds', async () => {

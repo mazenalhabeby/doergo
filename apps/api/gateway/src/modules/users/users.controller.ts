@@ -15,6 +15,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { trackingVisibility } from '../../common/tracking-visibility';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiBody, ApiConsumes } from '@nestjs/swagger';
@@ -370,6 +371,13 @@ export class UsersController {
       this.authClient.send({ cmd: 'get_workers' }, {
         ...query,
         organizationId: user.organizationId,
+        /*
+          Coordinates travel only to somebody who may see where people are.
+          This list is the whole organization (the route asks "view all tasks"
+          org-wide), so the org-wide answer is the one that applies. After the
+          query spread, so a query parameter can never switch it on.
+        */
+        canViewTracking: trackingVisibility(user).canViewTracking,
       }),
     );
   }

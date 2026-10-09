@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { assertSpaceInOrg } from '../../common/tenant-scope.util';
 import { success } from '@hbcfield/shared';
 
 @Injectable()
@@ -69,6 +70,9 @@ export class PhasesService {
     position?: number;
     organizationId: string;
   }) {
+    // The space id comes from the body: it must be this organization's, and live (tenant-scope.util).
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { activeOnly: true });
+
     // Validate type
     if (data.type && !['phase', 'milestone'].includes(data.type)) {
       throw new BadRequestException('Type must be "phase" or "milestone"');

@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Res, UseGuards } from '@nestjs/common';
+import { assertServiceOk } from '@hbcfield/shared';
+import { Body, Controller, Delete, Get, HttpStatus, Param, Patch, Post, Res, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { Public } from '../../common/decorators';
@@ -18,10 +19,7 @@ export class BlogController {
   constructor(private readonly svc: BlogGatewayService) {}
 
   private unwrap<T>(result: any): T {
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message ?? 'Error' }, result.statusCode ?? HttpStatus.BAD_REQUEST);
-    }
-    return result;
+    return assertServiceOk(result) as T;
   }
 
   // ── Public reads ────────────────────────────────────────────────────────────
@@ -34,11 +32,12 @@ export class BlogController {
 
   @Get('blog/images/:id')
   async image(@Param('id') id: string, @Res() res: Response) {
-    const r: any = await this.svc.getImage(id);
-    if (r && r.success === false) {
-      res.status(r.statusCode ?? 404).json({ message: r.message ?? 'Not found' });
-      return;
-    }
+    /*
+      Thrown before a byte is written, so the exception filter still answers it
+      as JSON even though this route streams through `res` — one mapping for a
+      refusal, here too. 404 is the default: an unknown image id is not found.
+    */
+    const r: any = assertServiceOk(await this.svc.getImage(id), HttpStatus.NOT_FOUND);
     const { mime, dataBase64 } = r.data;
     const buf = Buffer.from(dataBase64, 'base64');
     res.setHeader('Content-Type', mime);

@@ -432,7 +432,7 @@ describe('TasksService', () => {
         id: 'task-123',
         title: 'Updated Title',
         userId: 'user-123',
-        userRole: Role.EMPLOYEE, canViewAllTasks: true,
+        userRole: Role.EMPLOYEE, canViewAllTasks: true, canCreateTasks: true,
         organizationId: 'org-123',
       }) as any;
 
@@ -448,7 +448,7 @@ describe('TasksService', () => {
           id: 'non-existent',
           title: 'Updated',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true, canCreateTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);
@@ -463,7 +463,7 @@ describe('TasksService', () => {
           id: 'task-123',
           title: 'Updated',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true, canCreateTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(ForbiddenException);
@@ -478,7 +478,7 @@ describe('TasksService', () => {
           id: 'task-123',
           title: 'Updated',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true, canCreateTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(BadRequestException);
@@ -493,7 +493,7 @@ describe('TasksService', () => {
           id: 'task-123',
           title: 'Updated',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true, canCreateTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(BadRequestException);
@@ -512,7 +512,7 @@ describe('TasksService', () => {
         id: 'task-123',
         workerId: 'tech-123',
         userId: 'user-123',
-        userRole: Role.EMPLOYEE, canViewAllTasks: true,
+        userRole: Role.EMPLOYEE, canViewAllTasks: true, canAssignTasks: true,
         organizationId: 'org-123',
       }) as any;
 
@@ -536,7 +536,7 @@ describe('TasksService', () => {
           id: 'non-existent',
           workerId: 'tech-123',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true, canAssignTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);
@@ -551,7 +551,7 @@ describe('TasksService', () => {
           id: 'task-123',
           workerId: 'tech-123',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true, canAssignTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(ForbiddenException);
@@ -567,7 +567,7 @@ describe('TasksService', () => {
           id: 'task-123',
           workerId: 'tech-123',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true, canAssignTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(BadRequestException);
@@ -582,7 +582,7 @@ describe('TasksService', () => {
           id: 'task-123',
           workerId: 'non-existent',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true, canAssignTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);

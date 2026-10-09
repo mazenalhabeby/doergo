@@ -216,7 +216,9 @@ export class AssetProposalService {
       held by a member, there is nothing to choose and asking the reviewer to
       pick from a list of one is ceremony.
     */
-    const categoryId = data.categoryId ?? (await this.onlyPossibleKind(data.organizationId));
+    const categoryId = data.categoryId
+      ? await this.chosenKind(data.categoryId, holderUserId, data.organizationId)
+      : await this.onlyPossibleKind(data.organizationId);
 
     const proposal = await this.prisma.assetProposal.create({
       data: {
@@ -236,6 +238,33 @@ export class AssetProposalService {
 
     await this.announce(proposal.id, data.organizationId, data.userId, fields);
     return success(proposal);
+  }
+
+  /**
+   * A kind the member CHOSE, checked before it is written.
+   *
+   * The id came from the body. Unchecked, it could name another organization's
+   * kind — or a kind in a workspace the holder is not in, which routes the
+   * proposal (and its review: `mayReviewProposal` decides by the kind's
+   * workspace) into a depot that has nothing to do with them. A kind must be
+   * this organization's, and either organization-wide or in a workspace the
+   * holder is assigned to now. Anything else reads as absent: 404.
+   */
+  private async chosenKind(categoryId: string, holderUserId: string, organizationId: string): Promise<string> {
+    const kind = await this.prisma.assetCategory.findFirst({
+      where: { id: categoryId, organizationId },
+      select: { id: true, spaceId: true },
+    });
+    if (kind?.spaceId) {
+      const here = await this.prisma.spaceAssignment.findFirst({
+        where: { ...activeAssignmentWhere(holderUserId), organizationId, spaceId: kind.spaceId },
+        select: { id: true },
+      });
+      if (here) return kind.id;
+    } else if (kind) {
+      return kind.id;
+    }
+    throw new NotFoundException('That kind of thing is not available here');
   }
 
   /** The one kind this could be, or nothing when it is a real choice. */

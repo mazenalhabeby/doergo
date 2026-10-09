@@ -32,7 +32,7 @@ import { TaskEventType } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CoverService } from '../technicians/cover.service';
 import { TasksService } from './tasks.service';
-import { holdsOpenRole as holdsOpenRoleRule } from './role-holder';
+import { holdsOpenRole as holdsOpenRoleRule } from '@hbcfield/shared';
 
 /** Statuses that are certainly over — the indexed half of "still open"; `isWorkOver` is the rest. */
 const OVER = [TaskStatus.COMPLETED, TaskStatus.CANCELED, TaskStatus.CLOSED];

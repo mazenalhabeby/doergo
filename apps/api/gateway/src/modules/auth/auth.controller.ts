@@ -10,7 +10,6 @@ import {
   Inject,
   HttpCode,
   HttpStatus,
-  HttpException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ClientProxy } from '@nestjs/microservices';
@@ -20,7 +19,49 @@ import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import { LoginDto, RegisterDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto, ChangePasswordDto, DeleteAccountDto } from './dto';
 import { Public } from '../../common/decorators';
-import { CurrentUser, CurrentUserData, SkipOnboardingCheck, AllowCustomer, SERVICE_NAMES } from '@hbcfield/shared';
+import { CurrentUser, CurrentUserData, SkipOnboardingCheck, AllowCustomer, SERVICE_NAMES, assertServiceOk } from '@hbcfield/shared';
+
+const REFRESH_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+/** The httpOnly refresh cookie — one definition for sign-in and rotation. */
+function setRefreshCookie(res: Response, refreshToken: string): void {
+  const isProduction = process.env.NODE_ENV === 'production';
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'strict' : 'lax',
+    path: '/',
+    maxAge: REFRESH_COOKIE_MAX_AGE_MS,
+  });
+}
+
+/**
+ * Is this request from the web app?
+ *
+ * The web names itself two ways: `client: 'web'` in the sign-in body (it picks
+ * the session length) and `X-Client-Platform: web` on every other request. The
+ * phone sends `mobile` or — older builds — nothing at all, and must keep
+ * receiving the refresh token in the body: it has no cookie jar and keeps the
+ * token in SecureStore. So the default is "not a browser".
+ */
+export function isBrowserClient(req: Request, body?: { client?: string } | null): boolean {
+  const header = String(req.headers['x-client-platform'] ?? '').toLowerCase().trim();
+  return header === 'web' || String(body?.client ?? '').toLowerCase().trim() === 'web';
+}
+
+/**
+ * Take the refresh token out of a JSON answer meant for a browser.
+ *
+ * The browser already holds it in the httpOnly cookie set beside this answer
+ * — the one place script cannot read it. Putting the same token in the body as
+ * well handed it to any script running on the page, which is exactly the XSS
+ * the cookie exists to defeat: a durable credential, readable for 30 days.
+ */
+export function withoutRefreshTokenForBrowser<T extends { data?: any } | null | undefined>(result: T, browser: boolean): T {
+  if (!browser || !result?.data || !('refreshToken' in result.data)) return result;
+  const { refreshToken: _omit, ...data } = result.data;
+  return { ...result, data } as T;
+}
 
 @ApiTags('auth')
 @Controller('auth')
@@ -52,12 +93,7 @@ export class AuthController {
     );
 
     // Check if the result is an error response
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
     return result;
   }
@@ -85,23 +121,11 @@ export class AuthController {
     );
 
     // Check if the result is an error response
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.UNAUTHORIZED,
-      );
-    }
+    assertServiceOk(result, HttpStatus.UNAUTHORIZED);
 
     // Set refresh token as httpOnly cookie (web clients)
     if (result?.data?.refreshToken) {
-      const isProduction = process.env.NODE_ENV === 'production';
-      res.cookie('refreshToken', result.data.refreshToken, {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'strict' : 'lax',
-        path: '/',
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      });
+      setRefreshCookie(res, result.data.refreshToken);
     }
 
     // Signing in sets the user Available + active (done in auth-service).
@@ -116,7 +140,7 @@ export class AuthController {
       });
     }
 
-    return result;
+    return withoutRefreshTokenForBrowser(result, isBrowserClient(req, loginDto));
   }
 
   @Public()
@@ -134,26 +158,17 @@ export class AuthController {
     );
 
     // Check if the result is an error response
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
     // Set new refresh token cookie (token rotation)
     if (result?.data?.refreshToken) {
-      const isProduction = process.env.NODE_ENV === 'production';
-      res.cookie('refreshToken', result.data.refreshToken, {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'strict' : 'lax',
-        path: '/',
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-      });
+      setRefreshCookie(res, result.data.refreshToken);
     }
 
-    return result;
+    // A token that ARRIVED in the cookie came from a browser: answer it the
+    // browser's way, whatever the headers say.
+    const cameFromCookie = !!req.cookies?.refreshToken && !refreshTokenDto.refreshToken;
+    return withoutRefreshTokenForBrowser(result, cameFromCookie || isBrowserClient(req));
   }
 
   @SkipOnboardingCheck()
@@ -208,12 +223,7 @@ export class AuthController {
       this.authClient.send({ cmd: 'forgot_password' }, forgotPasswordDto),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
     return result;
   }
@@ -232,14 +242,19 @@ export class AuthController {
       this.authClient.send({ cmd: 'reset_password' }, resetPasswordDto),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.BAD_REQUEST,
-      );
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
-    return result;
+    /*
+      A reset is what somebody does when they think their account is in
+      somebody else's hands. auth-service has moved the session cut-off; the
+      cached session would otherwise keep passing the guard chain for up to
+      AUTH_CACHE_TTL_SECONDS. The member id is for us only — this route is
+      public, so it is stripped before answering.
+    */
+    const { userId: resetUserId, ...answer } = result ?? {};
+    if (resetUserId) await this.authCache.invalidateUser(resetUserId);
+
+    return answer;
   }
 
   @Post('change-password')
@@ -264,12 +279,7 @@ export class AuthController {
     // Password change → drop the cached session (Sec audit H6).
     if (result?.success !== false) await this.authCache.invalidateUser(user.id);
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.BAD_REQUEST,
-      );
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
     return result;
   }
@@ -312,12 +322,7 @@ export class AuthController {
       this.authClient.send({ cmd: 'revoke_session' }, { userId: user.id, sessionId }),
     );
 
-    if (result?.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.NOT_FOUND,
-      );
-    }
+    assertServiceOk(result, HttpStatus.NOT_FOUND);
 
     return result;
   }
@@ -325,10 +330,32 @@ export class AuthController {
   @Delete('sessions')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Revoke all other sessions (keep current)' })
-  async revokeAllSessions(@CurrentUser() user: CurrentUserData) {
-    return firstValueFrom(
-      this.authClient.send({ cmd: 'revoke_all_sessions' }, { userId: user.id }),
+  async revokeAllSessions(
+    @CurrentUser() user: CurrentUserData,
+    @Req() req: Request,
+    @Body() body: RefreshTokenDto,
+  ) {
+    /*
+      "Keep current" needs to know which session is current, and the gateway
+      cannot name it: the access token carries no session claim, and a refresh
+      token row is found only by its hash, inside auth-service. So the caller's
+      own refresh token travels — the web's cookie, or the phone's body field,
+      exactly as on logout — and auth-service resolves it to the row it keeps
+      (`exceptSessionId` stays its parameter; this only supplies what it needs).
+      Never trusted as anybody else's: auth-service matches it against THIS
+      user's rows only.
+    */
+    const currentRefreshToken = req.cookies?.refreshToken || body?.refreshToken || undefined;
+    const result = await firstValueFrom(
+      this.authClient.send({ cmd: 'revoke_all_sessions' }, { userId: user.id, currentRefreshToken }),
     );
+    /*
+      The cut-off moved for the whole account, so the gateway's cached copy of
+      this person's session must go too — otherwise the other devices keep
+      being answered from the cache until it expires.
+    */
+    await this.authCache.invalidateUser(user.id).catch(() => undefined);
+    return result;
   }
 
   // =========================================================================
@@ -356,12 +383,7 @@ export class AuthController {
     // Account deleted → drop the cached session (Sec audit H6).
     if (result?.success !== false) await this.authCache.invalidateUser(user.id);
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.BAD_REQUEST,
-      );
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
     return result;
   }
@@ -381,9 +403,7 @@ export class AuthController {
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'biometric_enroll' }, { ...body, userId: user.id }),
     );
-    if (result?.success === false) {
-      throw new HttpException(result.message, result.statusCode ?? HttpStatus.BAD_REQUEST);
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return result;
   }
 
@@ -417,9 +437,7 @@ export class AuthController {
         ipAddress: req.ip || req.headers['x-forwarded-for'],
       }),
     );
-    if (result?.success === false) {
-      throw new HttpException(result.message, result.statusCode ?? HttpStatus.UNAUTHORIZED);
-    }
+    assertServiceOk(result, HttpStatus.UNAUTHORIZED);
     return result;
   }
 

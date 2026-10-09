@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { redactUrlForLog } from '@hbcfield/shared';
 
 interface ErrorResponse {
   statusCode: number;
@@ -123,9 +124,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       message = 'An unexpected error occurred';
     }
 
+    // A path can BE the credential (calendar feed token, invitation code, org
+    // join code): never written to a log nor echoed back in an error body.
+    const safePath = redactUrlForLog(request.url);
+
     // Log all errors for monitoring
     this.logger.warn(
-      `HTTP ${statusCode} ${request.method} ${request.url} - ${Array.isArray(message) ? message.join(', ') : message}`,
+      `HTTP ${statusCode} ${request.method} ${safePath} - ${Array.isArray(message) ? message.join(', ') : message}`,
     );
 
     const errorResponse: ErrorResponse = {
@@ -135,7 +140,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       ...(code ? { code } : {}),
       ...(params ? { params } : {}),
       timestamp: new Date().toISOString(),
-      path: request.url,
+      path: safePath,
     };
 
     response.status(statusCode).json(errorResponse);

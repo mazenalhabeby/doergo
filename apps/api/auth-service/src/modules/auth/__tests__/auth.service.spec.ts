@@ -1,3 +1,4 @@
+import { SessionEvents } from '../../../common/session-events/session-events.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -105,6 +106,7 @@ describe('AuthService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: SessionEvents, useValue: { sessionsRevoked: jest.fn(), organizationSuspended: jest.fn() } },
         AuthService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: JwtService, useValue: mockJwtService },
@@ -255,7 +257,7 @@ describe('AuthService', () => {
 
       expect(mockPrismaService.user.update).toHaveBeenCalledWith({
         where: { id: mockUser.id },
-        data: { failedLoginAttempts: 1 },
+        data: { failedLoginAttempts: 1, lockedUntil: null },
       });
     });
 
@@ -285,10 +287,15 @@ describe('AuthService', () => {
       };
       mockPrismaService.user.findUnique.mockResolvedValue(lockedUser);
 
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
       const result = await service.login(loginData);
 
+      // Refused even with the right password — and in the SAME words and
+      // status as a wrong password, so a lock does not confirm the account.
       expect(result.success).toBe(false);
-      expect(result.message).toContain('locked');
+      expect(result.statusCode).toBe(HttpStatus.UNAUTHORIZED);
+      expect(result.message).toBe('Invalid email or password');
     });
 
     it('should unlock account after lockout period expires', async () => {

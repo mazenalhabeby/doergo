@@ -22,9 +22,17 @@ export class SendMessageDto {
 
   @IsString() @MinLength(1) @MaxLength(5000) body!: string;
 
+  /*
+    ⚠️ Refused until chat has an upload path of its own. An attachment here is
+    a bare `fileUrl` the sender typed — any http(s) address — which every other
+    member of the conversation then opens as if the product had stored it: a
+    phishing link or a tracking pixel wearing our attachment card. Files reach
+    chat when there is a presign + confirm into our storage, as tasks and the
+    work log have; until then an empty list is the only one accepted.
+  */
   @IsOptional()
   @IsArray()
-  @ArrayMaxSize(10)
+  @ArrayMaxSize(0, { message: 'Attachments cannot be sent in chat yet' })
   @ValidateNested({ each: true })
   @Type(() => ChatAttachmentDto)
   attachments?: ChatAttachmentDto[];

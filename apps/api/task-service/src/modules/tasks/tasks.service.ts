@@ -25,8 +25,10 @@ import { ClockGateService } from './handover/clock-gate.service';
 import { CrewService } from './handover/crew.service';
 import { PresenceService } from '../attendance/presence/presence.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
-import { assertWorkflowInOrg } from '../../common/tenant-scope.util';
+import { assertWorkflowInOrg, assertSpaceInOrg } from '../../common/tenant-scope.util';
+import { workspaceZone } from '../../common/zone.util';
 import { resolveSpaceDefaultWorkflowId, listSpaceWorkflowIds } from '../../common/space-workflow.util';
 import { prepareStepSubmission, crmIntents, type PreparedStepSubmission } from './step-submission';
 import {
@@ -50,9 +52,6 @@ import {
   ATTENDANCE_CONSTANTS,
   getStatusCapabilities,
   accessAllowsInSpace,
-  canAccessTask,
-  isTaskAssignee,
-  isWithinTaskBoundary,
   mayChangeStatus,
   canReceiveTasks,
   credentialStanding,
@@ -73,6 +72,11 @@ import {
   stepCapabilities,
   stepStartsWork,
   isWorkOver,
+  clampListLimit,
+  clampListPage,
+  startOfDayIn,
+  endOfDayIn,
+  TERMINAL_STATUSES,
 } from '@hbcfield/shared';
 import { firstValueFrom, timeout } from 'rxjs';
 
@@ -93,17 +97,11 @@ const CHECKLIST_PEOPLE = {
 /** The grants an owner change is judged on — the gateway forwards them, never the client. */
 type ChecklistActor = { canAssignTasks?: boolean; access?: ResolvedAccess | null };
 
-export interface TaskAccessFacts {
-  userId: string;
-  userRole: string;
-  organizationId: string;
-  /** The ORG-wide resolution of canViewAllTasks. */
-  canViewAllTasks?: boolean;
-  /** Cross-org spaces shared with this caller (server-authoritative). */
-  sharedSpaceIds?: string[];
-  /** Spaces where the caller holds canViewAllTasks through a SPACE role. */
-  viewAllSpaceIds?: string[];
-}
+/*
+  The caller's identity for the task gate. Lives with the gate itself now
+  (common/task-access) — re-exported so existing imports keep working.
+*/
+export type { TaskAccessFacts } from '../../common/task-access/task-access.service';
 
 @Injectable()
 export class TasksService {
@@ -134,6 +132,9 @@ export class TasksService {
     // The CRM side of step forms (add_customer_activity). Optional: absent, the
     // answers are still stored — only the client-timeline echo is skipped.
     @Optional() @Inject('AUTH_SERVICE') private readonly authClient?: ClientProxy,
+    // The ONE task gate, shared with attachments, reports and custom fields.
+    // Optional only so a test that builds this service by hand still gets it.
+    @Optional() private readonly injectedTaskAccess?: TaskAccessService,
   ) {
     const redisHost = configService.get<string>('REDIS_HOST', 'localhost') || 'localhost';
     const redisPort = configService.get<number>('REDIS_PORT', 6379) || 6379;
@@ -191,9 +192,26 @@ export class TasksService {
       data.organizationId,
     );
 
-    // SPACE-scoped users MUST provide a spaceId
+    /*
+      SPACE-scoped users create inside a workspace they are assigned to.
+
+      ⚠️ The phone's New job may send NO workspace (it was never required, and
+      this rule was dead code until the gateway forwarded the scope). A member
+      assigned to exactly ONE workspace has an unambiguous answer, so it is
+      used; only somebody with a real choice is asked to make it. Refusing them
+      all would have broken job creation on every installed phone.
+    */
     if (data.taskCreationScope === 'SPACE' && !data.spaceId) {
-      throw new ForbiddenException('Task creation scope is SPACE — you must select a space');
+      const mine = await this.prisma.spaceAssignment.findMany({
+        where: activeAssignmentWhere(data.userId),
+        select: { spaceId: true },
+        distinct: ['spaceId'],
+        take: 2,
+      });
+      if (mine.length !== 1) {
+        throw new ForbiddenException('Task creation scope is SPACE — you must select a space');
+      }
+      data.spaceId = mine[0]!.spaceId;
     }
 
     // Un-triaged portal requests are intentionally space-less + flow-less: they
@@ -239,8 +257,10 @@ export class TasksService {
         effectiveOrgId = space.organizationId;
       } else if (data.taskCreationScope === 'SPACE') {
         // Native space, SPACE scope → user must be assigned to the space.
+        // Assigned NOW — a row whose window has closed is a former member.
         const assignment = await this.prisma.spaceAssignment.findFirst({
-          where: { userId: data.userId, spaceId: data.spaceId },
+          where: { ...activeAssignmentWhere(data.userId), spaceId: data.spaceId },
+          select: { id: true },
         });
         if (!assignment) {
           throw new ForbiddenException('You can only create tasks in spaces you are assigned to');
@@ -308,64 +328,29 @@ export class TasksService {
       if (firstStatus) initialStatus = firstStatus.key;
     }
 
-    // Portal requests: validate the unit belongs to THIS customer/org right here
-    // (single source of truth, no gateway round-trip, no TOCTOU). Silently drop
-    // an unowned/unknown unit rather than fail the whole submission.
-    let effUnitId: string | null = data.unitId || null;
-    if (data.source === 'CUSTOMER_PORTAL' && effUnitId) {
-      const ownUnit = await this.prisma.customerUnit.findFirst({
-        where: {
-          id: effUnitId,
-          customerId: data.customerId || undefined,
-          organizationId: data.organizationId,
-          isActive: true,
-        },
-        select: { id: true },
-      });
-      if (!ownUnit) effUnitId = null;
-    } else if (effUnitId) {
-      // Internal task tied to an apartment: the unit MUST belong to the org
-      // (cross-tenant guard, like customerId). Drop it if it doesn't.
-      const ownUnit = await this.prisma.customerUnit.findFirst({
-        where: { id: effUnitId, organizationId: effectiveOrgId },
-        select: { id: true },
-      });
-      if (!ownUnit) effUnitId = null;
-    }
-
-    // The same two guards for an ASSET, which had none: assetId went straight
-    // onto the task, so an id from another organization would have been stored
-    // and joined against. A portal client may only reference something they
-    // hold; internally it must at least belong to the org.
-    let effAssetId: string | null = data.assetId || null;
-    if (effAssetId) {
-      const ownAsset = await this.prisma.asset.findFirst({
-        where: {
-          id: effAssetId,
-          organizationId: effectiveOrgId,
-          // A portal client also cannot raise one against something RETIRED —
-          // the same rule their list of holdings follows. Internally it stays
-          // allowed: the office may still log work against a retired record.
-          ...(data.source === 'CUSTOMER_PORTAL'
-            ? { customerId: data.customerId || undefined, ...SELECTABLE_ASSET_WHERE }
-            : {}),
-        },
-        select: { id: true },
-      });
-      if (!ownAsset) effAssetId = null;
-    }
-
-    // Cross-tenant guard: a client-supplied customerId (internal "+ Task" flow)
-    // MUST belong to the caller's org — otherwise a task could reference another
-    // org's customer (dangling FK + analytics join leak). Drop it if it doesn't.
-    let effCustomerId: string | null = data.customerId || null;
-    if (effCustomerId) {
-      const ownCustomer = await this.prisma.customer.findFirst({
-        where: { id: effCustomerId, organizationId: effectiveOrgId },
-        select: { id: true },
-      });
-      if (!ownCustomer) effCustomerId = null;
-    }
+    /*
+      Every id the client named that points at another record — unit, asset,
+      customer, phase, sprint, epic — must belong to the org the task will live
+      in. One helper, shared with update(), so the two cannot disagree. Creation
+      DROPS an unowned id rather than fail the whole submission (a portal
+      request with a stale unit should still arrive).
+    */
+    const portal = data.source === 'CUSTOMER_PORTAL' ? { customerId: data.customerId || null } : undefined;
+    const owned = await this.resolveOwnedTaskRefs(
+      effectiveOrgId,
+      {
+        unitId: data.unitId,
+        assetId: data.assetId,
+        customerId: data.customerId,
+        phaseId: data.phaseId,
+        sprintId: data.sprintId,
+        epicId: data.epicId,
+      },
+      portal,
+    );
+    const effUnitId = owned.unitId ?? null;
+    const effAssetId = owned.assetId ?? null;
+    const effCustomerId = owned.customerId ?? null;
 
     // A role belongs to a workspace; an un-triaged request has none yet — say so rather than drop it.
     if (openRoleId && isUntriaged) {
@@ -404,9 +389,9 @@ export class TasksService {
           assignedToId: data.assignedToId || null,
           assetId: effAssetId,
           parentId: data.parentId || null,
-          phaseId: data.phaseId || null,
-          sprintId: data.sprintId || null,
-          epicId: data.epicId || null,
+          phaseId: owned.phaseId ?? null,
+          sprintId: owned.sprintId ?? null,
+          epicId: owned.epicId ?? null,
           storyPoints: data.storyPoints ?? null,
           spaceId: data.spaceId || null,
           // Customer link + origin (portal requests carry these; internal tasks
@@ -916,8 +901,8 @@ export class TasksService {
     } = query;
     // Is this a query for a foreign space shared with the caller's org?
     const isSharedSpace = !!spaceId && Array.isArray(sharedSpaceIds) && sharedSpaceIds.includes(spaceId);
-    const safePage = Math.max(1, Number(page) || 1);
-    const safeLimit = Math.min(Math.max(1, Number(limit) || 20), 500);
+    const safePage = clampListPage(page);
+    const safeLimit = clampListLimit(limit, 20, 500);
     const skip = (safePage - 1) * safeLimit;
     const take = safeLimit;
 
@@ -960,8 +945,19 @@ export class TasksService {
     if (priority) where.priority = priority;
 
     // Sprint / epic. "none" means explicitly unassigned — that is the backlog.
-    if (query.sprintId) where.sprintId = query.sprintId === 'none' ? null : query.sprintId;
-    if (query.epicId) where.epicId = query.epicId === 'none' ? null : query.epicId;
+    /*
+      Filter ids are STRINGS or nothing. A query string can carry an object —
+      `?customerId[not]=x` parses to { not: 'x' } — and these went straight into
+      the Prisma where, where an object is an OPERATOR. The gateway already keeps
+      only strings; this is the second lock, for any other caller.
+    */
+    const idFilter = (v: unknown): string | undefined => (typeof v === 'string' && v ? v : undefined);
+    const sprintFilter = idFilter(query.sprintId);
+    const epicFilter = idFilter(query.epicId);
+    const customerFilter = idFilter(query.customerId);
+    const unitFilter = idFilter(query.unitId);
+    if (sprintFilter) where.sprintId = sprintFilter === 'none' ? null : sprintFilter;
+    if (epicFilter) where.epicId = epicFilter === 'none' ? null : epicFilter;
 
     if (isSharedSpace) {
       // Cross-org shared space: the grant is server-authoritative (validated in
@@ -991,9 +987,9 @@ export class TasksService {
     }
 
     // Customer filter (CRM record → its tasks). Composes with org/visibility.
-    if (query.customerId) where.customerId = query.customerId;
+    if (customerFilter) where.customerId = customerFilter;
     // Unit filter (apartment → its tasks/requests, the apartment history).
-    if (query.unitId) where.unitId = query.unitId;
+    if (unitFilter) where.unitId = unitFilter;
 
     // Build AND conditions for date range and search
     const andConditions: any[] = [];
@@ -1140,7 +1136,7 @@ export class TasksService {
     }
 
     // Authorization check
-    await this.checkTaskAccess(task, data, { roleHolderMayRead: true });
+    await this.taskAccess.assert(task, data, { roleHolderMayRead: true });
 
     // Derive task-time anchors from the status history (no schema change), so the
     // timer is DB-backed and identical on web, mobile and the admin view:
@@ -1231,7 +1227,7 @@ export class TasksService {
   async getJobTime(data: TaskAccessFacts & { id: string }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.id } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data, { roleHolderMayRead: true });
+    await this.taskAccess.assert(task, data, { roleHolderMayRead: true });
     // The crew panel rides with the time: one request for the job page and the phone.
     const [time, crew] = await Promise.all([this.jobTime.forTask(task), this.crew.viewFor(task.id)]);
     return success({ ...time, crew });
@@ -1293,12 +1289,66 @@ export class TasksService {
   }
 
   /**
+   * Which of the record ids a client put on a task really belong to `orgId`?
+   *
+   * Returns, per key that was GIVEN (non-empty), the id when it is the org's
+   * and `null` when it is not; keys not given are absent. One query per kind,
+   * in parallel. Used by create() (which drops an unowned id) and update()
+   * (which refuses it) so the two paths cannot validate differently — update
+   * used to write all six straight through, so an id from another tenant was
+   * stored and joined against.
+   *
+   * `portal` narrows the unit and asset to what that CUSTOMER holds — the same
+   * rule their own list of holdings follows (and only active units / selectable
+   * assets). Internally the office may still log work against a retired record.
+   */
+  private async resolveOwnedTaskRefs(
+    orgId: string,
+    refs: Partial<Record<'unitId' | 'assetId' | 'customerId' | 'phaseId' | 'sprintId' | 'epicId', unknown>>,
+    portal?: { customerId: string | null },
+  ): Promise<Partial<Record<'unitId' | 'assetId' | 'customerId' | 'phaseId' | 'sprintId' | 'epicId', string | null>>> {
+    const id = (v: unknown): string | null => (typeof v === 'string' && v ? v : null);
+    const portalCustomer = portal ? { customerId: portal.customerId || undefined } : {};
+    const probes: Record<string, (v: string) => Promise<{ id: string } | null>> = {
+      unitId: (v) =>
+        this.prisma.customerUnit.findFirst({
+          where: { id: v, organizationId: orgId, ...(portal ? { ...portalCustomer, isActive: true } : {}) },
+          select: { id: true },
+        }),
+      assetId: (v) =>
+        this.prisma.asset.findFirst({
+          where: { id: v, organizationId: orgId, ...(portal ? { ...portalCustomer, ...SELECTABLE_ASSET_WHERE } : {}) },
+          select: { id: true },
+        }),
+      customerId: (v) => this.prisma.customer.findFirst({ where: { id: v, organizationId: orgId }, select: { id: true } }),
+      phaseId: (v) => this.prisma.phase.findFirst({ where: { id: v, organizationId: orgId }, select: { id: true } }),
+      sprintId: (v) => this.prisma.sprint.findFirst({ where: { id: v, organizationId: orgId }, select: { id: true } }),
+      epicId: (v) => this.prisma.epic.findFirst({ where: { id: v, organizationId: orgId }, select: { id: true } }),
+    };
+    const out: Partial<Record<keyof typeof refs, string | null>> = {};
+    await Promise.all(
+      (Object.keys(refs) as (keyof typeof refs)[]).map(async (key) => {
+        const v = id(refs[key]);
+        if (!v) return;
+        out[key] = (await probes[key](v)) ? v : null;
+      }),
+    );
+    return out;
+  }
+
+  /**
    * Update a task (CLIENT or DISPATCHER - any task in their org)
    */
   async update(data: any) {
     // `access` is the caller's resolved grant (for foreign-space authz) — pull it
     // out so it never leaks into the Prisma update payload.
-    const { id, userId, userRole, organizationId, access, ...updateData } = data;
+    // The caller's grants come out too, so they can never reach the write or
+    // the event's `changes` metadata.
+    const {
+      id, userId, userRole, organizationId, access,
+      canCreateTasks, createSpaceIds, canViewAllTasks, viewAllSpaceIds, canAssignTasks, sharedSpaceIds, taskCreationScope,
+      ...updateData
+    } = data;
     // The open-role columns have their own path (RolePoolService.setOpenRole) — never written raw. (The write
     // below lists its fields explicitly too; this is the belt to that braces.)
     for (const k of ['openRoleId', 'openSpots', 'openSpotsLeft', 'openedAt', 'openWave']) delete (updateData as any)[k];
@@ -1323,6 +1373,40 @@ export class TasksService {
       if (updateData.spaceId !== undefined && updateData.spaceId !== existingTask.spaceId) {
         throw new ForbiddenException('Cannot move a shared task to another space');
       }
+    } else {
+      /*
+        Own-org task: being in the organization is not enough.
+
+        The gateway's `@RequirePermissionInSpace('canCreateTasks')` is satisfied
+        by a grant in ANY space when the body names none, so this route let a
+        member who may create tasks at one site rewrite — and MOVE — any task in
+        the organization, including into a workspace they hold nothing in. The
+        same question subtasks and dependencies ask (assertMayCreateUnder), asked
+        of the task's CURRENT space and, when it moves, of the DESTINATION.
+      */
+      const grants = { userRole, canCreateTasks, createSpaceIds };
+      this.assertMayCreateUnder(existingTask, grants);
+      const destination = updateData.spaceId === undefined ? undefined : ((updateData.spaceId as string) || null);
+      if (destination !== undefined && destination !== existingTask.spaceId) {
+        this.assertMayCreateUnder({ spaceId: destination }, grants);
+        // An id from a client says nothing about whose it is — and an archived
+        // workspace takes no new work. The shared tenant check, not a copy of it.
+        await assertSpaceInOrg(this.prisma, destination, existingTask.organizationId, { activeOnly: true });
+      }
+    }
+
+    /*
+      Every linked record must be the task's organization's — the same helper
+      create() uses. Creation drops an unowned id; an EDIT refuses it, because
+      dropping would silently clear a link the caller meant to set.
+    */
+    const refKeys = ['assetId', 'customerId', 'unitId', 'phaseId', 'sprintId', 'epicId'] as const;
+    const owned = await this.resolveOwnedTaskRefs(
+      existingTask.organizationId,
+      Object.fromEntries(refKeys.filter((k) => updateData[k] !== undefined).map((k) => [k, updateData[k]])),
+    );
+    for (const k of refKeys) {
+      if (owned[k] === null) throw new NotFoundException(`${k.replace(/Id$/, '')} not found in this organization`);
     }
 
     // A role is a fact about ONE workspace: moving the task closes it to the role (who took it stays on it).
@@ -1384,7 +1468,7 @@ export class TasksService {
         ...(updateData.locationLat !== undefined && { locationLat: updateData.locationLat }),
         ...(updateData.locationLng !== undefined && { locationLng: updateData.locationLng }),
         ...(updateData.locationAddress !== undefined && { locationAddress: updateData.locationAddress }),
-        ...(updateData.assetId !== undefined && { assetId: updateData.assetId }),
+        ...(updateData.assetId !== undefined && { assetId: updateData.assetId || null }),
         ...(updateData.spaceId !== undefined && { spaceId: updateData.spaceId || null }),
         ...(updateData.phaseId !== undefined && { phaseId: updateData.phaseId || null }),
         ...(updateData.sprintId !== undefined && { sprintId: updateData.sprintId || null }),
@@ -1536,7 +1620,18 @@ export class TasksService {
     }
   }
 
-  async assign(data: { id: string; workerId: string; userId: string; userRole: string; canViewAllTasks?: boolean; organizationId: string }) {
+  async assign(data: {
+    id: string;
+    workerId: string;
+    userId: string;
+    userRole: string;
+    canViewAllTasks?: boolean;
+    /** The ORG-wide resolution of canAssignTasks. */
+    canAssignTasks?: boolean;
+    /** Spaces where the caller holds canAssignTasks through a SPACE role. */
+    assignSpaceIds?: string[];
+    organizationId: string;
+  }) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
     });
@@ -1552,6 +1647,15 @@ export class TasksService {
         this.logger.warn(`Authorization denied: assign task across orgs`, { userId: data.userId, taskId: data.id });
         throw new ForbiddenException('You can only assign tasks in your organization');
       }
+    } else {
+      /*
+        The same two questions addAssignee asks. This route skipped both, so a
+        member granted "assign" in ONE workspace could reassign any task in the
+        organization — to anybody in it — by id. May they assign on THIS task's
+        space, and is the person they name on that space's roster?
+      */
+      this.assertMayAssign(task, data);
+      await this.assertTargetIsInSpace(task, data.workerId, data);
     }
 
     // Admin/Dispatcher can reassign at any stage except completed/canceled/closed
@@ -2435,7 +2539,7 @@ export class TasksService {
   async getSubmissions(data: TaskAccessFacts & { id: string }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.id } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data, { roleHolderMayRead: true });
+    await this.taskAccess.assert(task, data, { roleHolderMayRead: true });
 
     const rows = await this.prisma.taskStepSubmission.findMany({
       where: { taskId: task.id },
@@ -2537,7 +2641,7 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    await this.checkTaskAccess(task, data, { roleHolderMayRead: true });
+    await this.taskAccess.assert(task, data, { roleHolderMayRead: true });
 
     const events = await this.prisma.taskEvent.findMany({
       where: { taskId: data.id },
@@ -2552,110 +2656,13 @@ export class TasksService {
   }
 
   /**
-   * Check if user has access to a task
+   * May this caller touch this task? — the shared gate (common/task-access),
+   * which this file, attachments, reports and custom fields all ask. It used to
+   * be three private copies that had drifted; see TaskAccessService.
    */
-  /**
-   * May this caller touch this task?
-   *
-   * The single gate for every per-task mutation — comments, checklist items,
-   * status, assignees, dependencies. Order matters: the ORGANIZATION BOUNDARY
-   * is checked first, before any relationship to the task can grant access.
-   *
-   * It used to be checked last, and two paths reached `return` without ever
-   * consulting it:
-   *
-   *   • being assigned to the task returned immediately, so a stale
-   *     TaskAssignee row — a member who has since moved to another
-   *     organization, or a guest whose space share was revoked — kept write
-   *     access to a task that is no longer theirs to touch;
-   *   • the ADMIN branch denied only when the caller was BOTH not the creator
-   *     AND out of org, so having created a task overrode org isolation
-   *     entirely.
-   *
-   * Neither needs a hostile actor to bite: an ordinary org transfer is enough.
-   * A relationship to a task is now something that grants access WITHIN the
-   * boundary, never something that crosses it.
-   *
-   * `sharedSpaceIds` is the one legitimate way across, and it is
-   * server-authoritative — resolved from the token grant in auth-service, never
-   * client input. Callers that do not forward it simply get same-org semantics.
-   */
-  /**
-   * May this caller touch this task?
-   *
-   * The gate for every per-task mutation — comments, checklist items, status,
-   * assignees, dependencies. The decision itself lives in @hbcfield/shared
-   * (canAccessTask) because attachments.service needs the same answer and used
-   * to compute a different one. This wrapper only supplies the facts: it loads
-   * the co-assignee rows when they were not included with the task, and turns a
-   * "no" into the exception the callers expect.
-   */
-  private async checkTaskAccess(task: any, data: TaskAccessFacts, opts: { roleHolderMayRead?: boolean } = {}) {
-    /*
-      The caller's whole identity, taken from the request payload in one piece.
-
-      This used to be seven positional arguments, and the last two — the
-      cross-org shares and the SPACE grants — were supplied by exactly one of
-      the eleven call sites. Every other read and write on a task therefore
-      asked the ORG-wide question: a member whose authority comes from a space
-      could open a task from their own list and then be refused its comments,
-      its timeline, its checklist, its assignees and its subtasks, all at once,
-      because the screen loads them together.
-
-      Passing the payload itself means a new fact reaches every check the moment
-      the gateway sends it. There is nothing left to forget.
-    */
-    const { userId, userRole, organizationId, canViewAllTasks, sharedSpaceIds, viewAllSpaceIds } = data;
-    const caller = { userId, userRole, organizationId, canViewAllTasks, sharedSpaceIds, viewAllSpaceIds };
-
-    // Only hit the database when the answer is genuinely unknown — and only
-    // once the task is known to be inside the boundary, so an out-of-org probe
-    // cannot make us query on its behalf.
-    let assignee = isTaskAssignee(task, userId);
-    if (assignee === null && isWithinTaskBoundary(task, caller)) {
-      const membership = await this.prisma.taskAssignee.findFirst({
-        where: { taskId: task.id, userId },
-        select: { id: true },
-      });
-      assignee = !!membership;
-    }
-
-    /*
-      A task OPEN TO A ROLE is also visible to whoever holds that role in its
-      workspace — the person who may take it. Asked only after the normal rule
-      said no, so nothing changes for any other task.
-
-      ⚠️ READ ONLY. Only the reads opt in (`roleHolderMayRead`): somebody who
-      has not taken the job must not comment on it or tick its checklist — five
-      Mechanics are offered a job, one ticks half of it and never takes it.
-    */
-    if (!canAccessTask(task, caller, assignee ?? false) && !(opts.roleHolderMayRead && task.openRoleId && task.organizationId === organizationId && (await this.rolePool.holdsOpenRole(task, userId)))) {
-      /*
-        Log WHY, not just that.
-
-        "Authorization denied for task" is true of every refusal and explains
-        none of them, so a correct denial and a bug look identical in the log —
-        and the only way to tell them apart was to read the database by hand.
-        These four fields are the whole rule: which space the task is in, which
-        spaces the caller holds, whether they hold it org-wide, and whether they
-        are on the task. Ids only; no titles, no names.
-      */
-      this.logger.warn(
-        `Authorization denied for task ${task.id}: user=${userId} taskSpace=${task.spaceId ?? 'none'} ` +
-          `grantedSpaces=${
-            /*
-              ABSENT and EMPTY are different failures and must not print the
-              same. Absent means the gateway sent no scope — it is on old code,
-              or the caller is an admin / holds the permission org-wide. Empty
-              means the scope was computed and found nothing, so the session
-              carries no space grant. `?? []` collapsed the two and hid which
-              one was happening.
-            */
-            viewAllSpaceIds === undefined ? 'absent' : `[${viewAllSpaceIds.join(',')}]`
-          } orgWide=${canViewAllTasks === true} assignee=${assignee === true}`,
-      );
-      throw new ForbiddenException('Access denied');
-    }
+  private _taskAccess?: TaskAccessService;
+  private get taskAccess(): TaskAccessService {
+    return (this._taskAccess ??= this.injectedTaskAccess ?? new TaskAccessService(this.prisma));
   }
 
   /**
@@ -2681,7 +2688,7 @@ export class TasksService {
     }
 
     // Authorization check
-    await this.checkTaskAccess(task, data);
+    await this.taskAccess.assert(task, data);
 
     const include = { user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } } as const;
     const { row: comment, created } = await createOnce({
@@ -2732,7 +2739,7 @@ export class TasksService {
     }
 
     // Authorization check
-    await this.checkTaskAccess(task, data, { roleHolderMayRead: true });
+    await this.taskAccess.assert(task, data, { roleHolderMayRead: true });
 
     const comments = await this.prisma.comment.findMany({
       where: { taskId: data.taskId },
@@ -3048,6 +3055,51 @@ export class TasksService {
    * `newlyAssigned` is the caller's answer to "who did not have this before" —
    * only they know, since only they know what the rows looked like going in.
    */
+  /**
+   * Take somebody who is leaving off every job that is still OPEN.
+   *
+   * Through the same writer as the office's picker (`afterAssigneesChanged`),
+   * so the lead, the role places, the today's-lead hand-over and the open
+   * checklist items all follow — the one path that knows every consequence of
+   * a crew changing. Finished, closed and canceled jobs keep the person: that
+   * is the record of who did the work, and a leaver does not unmake history.
+   *
+   * Called by `member_offboard` only (members/member-offboard.service.ts).
+   */
+  async releaseMemberFromOpenWork(organizationId: string, userId: string, actorId: string): Promise<number> {
+    const candidates = await this.prisma.task.findMany({
+      where: {
+        organizationId,
+        status: { notIn: TERMINAL_STATUSES },
+        OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }],
+      },
+      select: { id: true, status: true, workflowId: true },
+    });
+    /*
+      ⚠️ "Finished" is the WORKFLOW's word, not ours. The built-in flows end on
+      Delivered, Done, Outcome, Submitted — names TERMINAL_STATUSES has never
+      heard of. A job in one of those is history, and the person stays on it.
+    */
+    const flowIds = [...new Set(candidates.map((t) => t.workflowId).filter((x): x is string => !!x))];
+    const finished = new Set(
+      flowIds.length
+        ? (await this.prisma.workflowStatus.findMany({
+            where: { workflowId: { in: flowIds }, OR: [{ isFinal: true }, { isCanceled: true }] },
+            select: { workflowId: true, key: true },
+          })).map((s) => `${s.workflowId}:${s.key}`)
+        : [],
+    );
+    const tasks = candidates.filter((t) => !(t.workflowId && finished.has(`${t.workflowId}:${t.status}`)));
+    for (const { id } of tasks) {
+      await this.prisma.taskAssignee.deleteMany({ where: { taskId: id, userId } });
+      // The primary column too: a job assigned the old way has no crew row to remove.
+      await this.prisma.task.updateMany({ where: { id, assignedToId: userId }, data: { assignedToId: null } });
+      await this.afterAssigneesChanged(id, [], actorId);
+      await this.createTaskEvent(id, actorId, TaskEventType.ASSIGNEE_REMOVED, { assigneeId: userId, reason: 'MEMBER_LEFT' });
+    }
+    return tasks.length;
+  }
+
   private async afterAssigneesChanged(
     taskId: string,
     newlyAssigned: string[],
@@ -3174,7 +3226,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data);
+    await this.taskAccess.assert(task, data);
     const assigneeId = data.assigneeId ?? null;
     if (assigneeId) this.refuseChecklist(mayChangeChecklistOwner(await this.checklistAuthorityOnce(data)(), null, assigneeId));
 
@@ -3218,7 +3270,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data);
+    await this.taskAccess.assert(task, data);
 
     const existing = await this.prisma.checklistItem.findFirst({
       where: { id: data.itemId, taskId: data.taskId },
@@ -3316,7 +3368,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data);
+    await this.taskAccess.assert(task, data);
 
     const existing = await this.prisma.checklistItem.findFirst({
       where: { id: data.itemId, taskId: data.taskId },
@@ -3352,7 +3404,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data);
+    await this.taskAccess.assert(task, data);
 
     // Update positions in a transaction
     await this.prisma.$transaction(
@@ -3386,7 +3438,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data, { roleHolderMayRead: true });
+    await this.taskAccess.assert(task, data, { roleHolderMayRead: true });
 
     const assignees = await this.prisma.taskAssignee.findMany({
       where: { taskId: data.taskId },
@@ -3411,7 +3463,7 @@ export class TasksService {
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.checkTaskAccess(task, data, { roleHolderMayRead: true });
+    await this.taskAccess.assert(task, data, { roleHolderMayRead: true });
 
     const items = await this.prisma.checklistItem.findMany({
       where: { taskId: data.taskId },
@@ -3649,11 +3701,11 @@ export class TasksService {
       },
     });
 
-    // Get today's date range for workload calculation
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
+    // Today's range for workload — the task's WORKSPACE's day, never the server's (zone.util).
+    const zone = await workspaceZone(this.prisma, { spaceId: task.spaceId, organizationId: task.organizationId });
+    const now = new Date();
+    const todayStart = startOfDayIn(now, zone);
+    const todayEnd = endOfDayIn(now, zone);
 
     // Batch query: get today's completed task counts for all technicians at once (avoids N+1)
     const techIds = technicians.map((t) => t.id);
@@ -3664,7 +3716,7 @@ export class TasksService {
         status: TaskStatus.COMPLETED,
         updatedAt: {
           gte: todayStart,
-          lte: todayEnd,
+          lt: todayEnd,
         },
       },
       _count: { id: true },
@@ -3953,30 +4005,80 @@ export class TasksService {
     });
     const position = (lastSibling?.position ?? -1) + 1;
 
-    const hasAssignment = !!data.assignedToId;
+    /*
+      A subtask is part of its parent's job, so it lives where the parent lives:
+      the same workspace and the same task type. It used to be created with
+      neither — invisible to a space-scoped list and running on the canonical
+      flow beside a parent on "Field Service".
+    */
+    const spaceId = parent.spaceId ?? null;
+    const workflowId = parent.workflowId ?? null;
+
+    /*
+      Putting somebody on it is ASSIGNING, and is asked exactly as assign() asks
+      it: may this caller assign on the parent's workspace, and is the person on
+      that workspace's roster? Without it, "create tasks" in one site was an
+      assign right over the whole organization, by id.
+    */
+    const assignedToId: string | null = typeof data.assignedToId === 'string' && data.assignedToId ? data.assignedToId : null;
+    if (assignedToId) {
+      const grants = {
+        userRole: data.userRole,
+        canAssignTasks: data.canAssignTasks,
+        assignSpaceIds: Array.isArray(data.assignSpaceIds) ? data.assignSpaceIds : undefined,
+      };
+      this.assertMayAssign(parent, grants);
+      await this.assertTargetIsInSpace(parent, assignedToId, grants);
+      const worker = await this.prisma.user.findFirst({
+        where: { id: assignedToId, organizationId: parent.organizationId, isActive: true },
+        select: { id: true },
+      });
+      if (!worker) throw new NotFoundException('Worker not found in your organization');
+    }
+
+    // Every linked record must be the organization's — the helper create() and update() use.
+    const owned = await this.resolveOwnedTaskRefs(parent.organizationId, {
+      assetId: data.assetId,
+      phaseId: data.phaseId,
+      sprintId: data.sprintId,
+      epicId: data.epicId,
+    });
+
+    // The inherited flow decides the first step, exactly as create() does.
+    let initialStatus: string = assignedToId ? TaskStatus.ASSIGNED : TaskStatus.NEW;
+    if (workflowId) {
+      const firstStatus = await this.prisma.workflowStatus.findFirst({
+        where: { workflowId, isCanceled: false },
+        orderBy: { position: 'asc' },
+        select: { key: true },
+      });
+      if (firstStatus) initialStatus = firstStatus.key;
+    }
 
     const task = await this.prisma.task.create({
       data: {
         title: data.title,
         description: data.description,
         priority: data.priority || 'MEDIUM',
-        status: hasAssignment ? TaskStatus.ASSIGNED : TaskStatus.NEW,
+        status: initialStatus,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         startDate: data.startDate ? new Date(data.startDate) : null,
         estimatedHours: data.estimatedHours ?? null,
         locationLat: data.locationLat,
         locationLng: data.locationLng,
         locationAddress: data.locationAddress,
-        organizationId: data.organizationId,
+        organizationId: parent.organizationId,
+        spaceId,
+        workflowId,
         createdById: data.userId,
-        assignedToId: data.assignedToId || null,
-        assetId: data.assetId || null,
+        assignedToId,
+        assetId: owned.assetId ?? null,
         parentId: data.parentId,
         depth: newDepth,
         position,
-        phaseId: data.phaseId || null,
-        sprintId: data.sprintId || null,
-        epicId: data.epicId || null,
+        phaseId: owned.phaseId ?? null,
+        sprintId: owned.sprintId ?? null,
+        epicId: owned.epicId ?? null,
         storyPoints: data.storyPoints ?? null,
       },
       include: {
@@ -4015,7 +4117,7 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    await this.checkTaskAccess(task, data, { roleHolderMayRead: true });
+    await this.taskAccess.assert(task, data, { roleHolderMayRead: true });
 
     const subtasks = await this.prisma.task.findMany({
       where: { parentId: data.taskId },

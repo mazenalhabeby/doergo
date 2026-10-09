@@ -10,6 +10,7 @@ import {
   runWithCronLock,
   type SignLinkRefusal,
   type SignableDocument,
+  normalizeEmail,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
@@ -43,7 +44,7 @@ export class CustomerSignLinkService {
     email: string,
     opts: { force?: boolean; customerId?: string | null } = {},
   ): Promise<{ token: string | null; expiresAt: Date }> {
-    const addr = email.trim().toLowerCase();
+    const addr = normalizeEmail(email);
     if (!isUsableEmail(addr)) throw new BadRequestException('A usable email address is required');
 
     const existing = await this.prisma.customerSignLink.findUnique({
@@ -170,7 +171,7 @@ export class CustomerSignLinkService {
         organizationId: string; customerId: string | null;
       }
   > {
-    const addr = email.trim().toLowerCase();
+    const addr = normalizeEmail(email);
     if (!isUsableEmail(addr)) return { send: false };
 
     /*

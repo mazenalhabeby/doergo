@@ -19,6 +19,7 @@ import {
 } from '@hbcfield/shared';
 import { BreakType, ApprovalStatus } from '@prisma/client';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
+import { clampListLimit, clampListPage } from '@hbcfield/shared';
 import { CountedTimeService } from './counted-time.service';
 import type { OccurrenceEvidence } from '@hbcfield/shared';
 import { judgeOccurrence } from '../../common/occurrence.util';
@@ -634,13 +635,22 @@ export class BreakService {
   /**
    * Get breaks for a time entry
    */
-  async getBreaksForEntry(data: { timeEntryId: string; organizationId: string; scopeSpaceIds?: AttendanceScope }) {
+  async getBreaksForEntry(data: {
+    timeEntryId: string;
+    organizationId: string;
+    /** The caller — their OWN entry is always theirs to read. */
+    requesterId: string;
+    /** Where the caller holds canViewSpaceAttendance; null = org-wide, [] = none. */
+    scopeSpaceIds: AttendanceScope;
+  }) {
     const entry = await this.prisma.timeEntry.findFirst({
       where: {
         id: data.timeEntryId,
         organizationId: data.organizationId,
-        // An entry outside the caller's granted spaces reads as 'not found'.
-        ...scopeWhere(data.scopeSpaceIds),
+        // The same rule as reading the entry: the member's own, or one in a
+        // space where the caller may read attendance. Anything else reads as
+        // 'not found' — a 403 would confirm the entry exists.
+        OR: [{ userId: data.requesterId }, scopeWhere(data.scopeSpaceIds)],
       },
     });
 
@@ -733,8 +743,8 @@ export class BreakService {
     page?: number;
     limit?: number;
   }) {
-    const page = data.page || 1;
-    const limit = data.limit || 50;
+    const page = clampListPage(data.page);
+    const limit = clampListLimit(data.limit, 50);
     const skip = (page - 1) * limit;
 
     // Build date filter using shared utility

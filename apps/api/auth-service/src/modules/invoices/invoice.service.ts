@@ -145,6 +145,9 @@ export class InvoiceService {
     let spaceCurrencyValue: string | null = null;
     let spaceEntityId: string | null = null;
     let spaceCustomerId: string | null = null;
+    // Only a workspace the org-scoped lookup FOUND is written onto the invoice —
+    // an id from another tenant must not become this invoice's workspace.
+    let foundSpaceId: string | null = null;
     if (data.spaceId) {
       const space = await this.prisma.companyLocation.findFirst({
         where: { id: data.spaceId, organizationId: data.organizationId },
@@ -154,6 +157,7 @@ export class InvoiceService {
       spaceEntityId = space?.legalEntityId ?? null;
       spaceCustomerId = space?.sourceCustomerId ?? null;
       if (space) {
+        foundSpaceId = data.spaceId;
         clientName = clientName || space.contactName || space.name;
         clientEmail = clientEmail ?? space.contactEmail ?? undefined;
         clientAddress = clientAddress ?? space.address ?? undefined;
@@ -208,6 +212,8 @@ export class InvoiceService {
     });
     const badWorker = await this.unknownWorker(data.organizationId, items);
     if (badWorker) return badWorker;
+    const badRef = await this.unknownWorkRef(data.organizationId, items);
+    if (badRef) return badRef;
 
     // Who issues it — resolved once and stored, so the number series and the paper agree.
     const issuer = await this.issuingEntity(
@@ -239,7 +245,7 @@ export class InvoiceService {
         invoice = await this.prisma.invoice.create({
           data: {
             invoiceNumber,
-            spaceId: data.spaceId,
+            spaceId: foundSpaceId,
             legalEntityId: issuer.entity.id,
             clientName,
             clientEmail,
@@ -663,6 +669,8 @@ export class InvoiceService {
     const dayFields = this.dayLineFields(item);
     const badWorker = await this.unknownWorker(organizationId, [dayFields]);
     if (badWorker) return badWorker;
+    const badRef = await this.unknownWorkRef(organizationId, [item]);
+    if (badRef) return badRef;
 
     await this.prisma.invoiceItem.create({
       data: {
@@ -1219,6 +1227,28 @@ export class InvoiceService {
    * A DAYS line may only name somebody in THIS organization — otherwise a
    * crafted request could mark another tenant's days as billed. One query.
    */
+  /**
+   * Every job and service report a line points at must be this organization's.
+   * The ids arrive from a browser; a foreign one would link this invoice to —
+   * and read through it — another tenant's work.
+   */
+  private async unknownWorkRef(
+    organizationId: string,
+    items: Array<{ taskId?: string | null; reportId?: string | null }>,
+  ) {
+    const taskIds = [...new Set(items.map((i) => i.taskId).filter((x): x is string => !!x))];
+    const reportIds = [...new Set(items.map((i) => i.reportId).filter((x): x is string => !!x))];
+    const [tasks, reports] = await Promise.all([
+      taskIds.length ? this.prisma.task.count({ where: { id: { in: taskIds }, organizationId } }) : 0,
+      reportIds.length
+        ? this.prisma.serviceReport.count({ where: { id: { in: reportIds }, organizationId } })
+        : 0,
+    ]);
+    return tasks === taskIds.length && reports === reportIds.length
+      ? null
+      : { success: false as const, message: 'A line names a job or report outside this organization', statusCode: HttpStatus.BAD_REQUEST };
+  }
+
   private async unknownWorker(organizationId: string, items: Array<{ workerId: string | null }>) {
     const ids = [...new Set(items.map((i) => i.workerId).filter((x): x is string => !!x))];
     if (ids.length === 0) return null;

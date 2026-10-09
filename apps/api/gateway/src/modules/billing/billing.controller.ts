@@ -15,7 +15,7 @@ import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
-import { Role, CurrentUser, CurrentUserData, ADD_ON_KEYS } from '@hbcfield/shared';
+import { Role, CurrentUser, CurrentUserData, ADD_ON_KEYS, assertServiceOk } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators';
 import { SetAddOnsDto } from './dto';
@@ -41,9 +41,7 @@ export class BillingController {
   }
 
   private unwrap(result: any) {
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
     return result?.data ?? result;
   }
 
@@ -147,9 +145,7 @@ export class BillingController {
     const signature = (req.headers['stripe-signature'] as string) || '';
     const rawBody: string = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(req.body ?? {});
     const result = await firstValueFrom(this.authClient.send({ cmd: 'billing_webhook' }, { rawBody, signature }));
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return { received: true };
   }
 
@@ -212,9 +208,7 @@ export class BillingController {
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'billing_admin_set_addons' }, { organizationId: dto.organizationId, addOns }),
     );
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
     // The operator path changes the same thing from the other side — and is the
     // one somebody watches a customer's screen while using.
     await this.authCache.invalidateOrganization(dto.organizationId);

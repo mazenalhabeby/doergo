@@ -19,7 +19,8 @@ import { firstValueFrom } from 'rxjs';
 import { Throttle } from '@nestjs/throttler';
 import { RequirePermission, DenyExternal } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
-import { parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, parseCurrency, CURRENCY_INVALID_MESSAGE, moduleAnywhere, parseContactImport, CONTACT_IMPORT_MESSAGES } from '@hbcfield/shared';
+import { parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, parseCurrency, CURRENCY_INVALID_MESSAGE, moduleAnywhere, parseContactImport, CONTACT_IMPORT_MESSAGES, pickUnitFields } from '@hbcfield/shared';
+import { SpaceModulesService } from '../../common/space-modules.service';
 
 interface CustomerDto {
   /** Made on the phone when creating: a client added twice is one client. Ignored on update. */
@@ -90,7 +91,7 @@ function assertClientLocale(dto: CustomerDto): void {
 export class CustomersController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-    @Inject('TASK_SERVICE') private readonly taskClient: ClientProxy,
+    private readonly spaceModules: SpaceModulesService,
     private readonly authCache: AuthTokenCache,
     private readonly orgEvents: OrgEventsService,
   ) {}
@@ -121,14 +122,9 @@ export class CustomersController {
   /** Assert the space has a module enabled (per-space gate; defence in depth). */
   private async requireSpaceModule(spaceId: string | null | undefined, organizationId: string, mod: string) {
     if (!spaceId) throw new BadRequestException('spaceId is required');
-    const res: any = await firstValueFrom(
-      this.taskClient.send({ cmd: 'get_effective_modules' }, { id: spaceId, organizationId }),
-    );
-    const mods: string[] = res?.data?.enabledModules ?? res?.enabledModules ?? [];
-    if (!mods.includes(mod)) {
-      throw new ForbiddenException(`This space does not have the ${mod === 'crm' ? 'CRM' : 'B2C Portal'} module enabled`);
-    }
+    await this.spaceModules.assertEnabled(spaceId, organizationId, mod);
   }
+
 
   // CRM read/work endpoints are authorization-enforced IN the service against the
   // caller's CRM caps + per-record ownership (see customers.service). We pass the
@@ -344,36 +340,46 @@ export class CustomersController {
     return this.auth('portal_list_units', { organizationId: req.user.organizationId, customerId: id });
   }
 
+  /*
+    Address WRITES carry the caller as `crmCaller`: the portal service then asks
+    the CRM's own reach rule (view-all, or own / co-manage this client, plus
+    editInfo) before touching a unit. `crmEditInfo` alone let a rep scoped to
+    their own clients edit any client's addresses by id. Identity goes LAST and
+    the body is whitelisted (`pickUnitFields`, no relations): an address edits
+    its own text and pin, never which client, space or portal it belongs to.
+  */
   @Post(':id/addresses')
   @RequirePermission('crmEditInfo')
   addAddress(@Param('id') id: string, @Body() body: { name?: string; address?: string; lat?: number; lng?: number; isPrimary?: boolean; contactName?: string; contactPhone?: string }, @Request() req: any) {
+    const fields = pickUnitFields(body, { relations: false });
     return this.auth('portal_create_unit', {
-      organizationId: req.user.organizationId, customerId: id,
-      name: body.name?.trim() || body.address || 'Address',
-      address: body.address, lat: body.lat, lng: body.lng, isPrimary: body.isPrimary,
-      contactName: body.contactName, contactPhone: body.contactPhone,
+      ...fields,
+      name: body?.name?.trim() || body?.address || 'Address',
+      organizationId: req.user.organizationId, customerId: id, crmCaller: this.caller(req),
     });
   }
 
   @Patch(':id/addresses/:unitId')
   @RequirePermission('crmEditInfo')
   updateAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Body() body: any, @Request() req: any) {
-    // scopeCustomerId binds the unit to THIS customer (no cross-customer edits);
-    // strip any client-sent scope override before forwarding.
-    const { scopeCustomerId: _drop, ...rest } = body ?? {};
-    return this.auth('portal_update_unit', { id: unitId, organizationId: req.user.organizationId, scopeCustomerId: id, ...rest });
+    // scopeCustomerId binds the unit to THIS customer (no cross-customer edits).
+    return this.auth('portal_update_unit', {
+      ...pickUnitFields(body, { relations: false }),
+      id: unitId, organizationId: req.user.organizationId, scopeCustomerId: id,
+      actorId: req.user.id, crmCaller: this.caller(req),
+    });
   }
 
   @Post(':id/addresses/:unitId/primary')
   @RequirePermission('crmEditInfo')
   setPrimaryAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: any) {
-    return this.auth('portal_set_primary_unit', { id: unitId, organizationId: req.user.organizationId, customerId: id });
+    return this.auth('portal_set_primary_unit', { id: unitId, organizationId: req.user.organizationId, customerId: id, crmCaller: this.caller(req) });
   }
 
   @Delete(':id/addresses/:unitId')
   @RequirePermission('crmEditInfo')
   deleteAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: any) {
-    return this.auth('portal_delete_unit', { id: unitId, organizationId: req.user.organizationId, customerId: id });
+    return this.auth('portal_delete_unit', { id: unitId, organizationId: req.user.organizationId, customerId: id, crmCaller: this.caller(req) });
   }
 
   // ── CRM activity timeline (service enforces reach + work cap) ──
@@ -429,7 +435,15 @@ export class CustomersController {
   @ApiOperation({ summary: 'Invite this customer to the app (B2C Portal) — returns a code' })
   async invite(@Param('id') id: string, @Body() body: { email?: string; portalId?: string }, @Request() req: any) {
     const orgId = req.user.organizationId;
-    const custRes: any = await this.auth('get_customer', { id, organizationId: orgId });
+    /*
+      Both reads and the write below carry the CALLER, like every other CRM
+      route: customers.service decides with the caller's CRM caps and their
+      ownership of THIS record. Without it the invite was judged as nobody in
+      particular, so the route-level permission was the only check on whose
+      client could be flipped into a portal resident.
+    */
+    const caller = this.caller(req);
+    const custRes: any = await this.auth('get_customer', { id, organizationId: orgId, caller });
     const customer = custRes?.data ?? custRes;
     if (!customer) throw new BadRequestException('Customer not found');
     if (!customer.spaceId) throw new BadRequestException('Customer is not attached to a space');
@@ -467,7 +481,7 @@ export class CustomersController {
     });
     // Flip the CRM record into a portal resident + advance the stage to Customer
     // (an invited app user has converted). Status change is auto-logged.
-    await this.auth('update_customer', { id, organizationId: orgId, actorId: req.user.id, dto: { isPortalResident: true, portalId, status: 'CUSTOMER' } });
+    await this.auth('update_customer', { id, organizationId: orgId, actorId: req.user.id, caller, dto: { isPortalResident: true, portalId, status: 'CUSTOMER' } });
     return { data: { code: inviteRes?.data?.code, email } };
   }
 

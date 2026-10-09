@@ -4,7 +4,8 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { CurrentUser, CurrentUserData } from '@hbcfield/shared';
+import { CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
+import { SpaceModulesService } from '../../common/space-modules.service';
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { OrgEventsService } from '../../common/events/org-events.service';
@@ -21,15 +22,13 @@ import { OrgEventsService } from '../../common/events/org-events.service';
 export class SpaceSharingController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly auth: ClientProxy,
-    @Inject('TASK_SERVICE') private readonly taskClient: ClientProxy,
+    private readonly spaceModules: SpaceModulesService,
     private readonly orgEvents: OrgEventsService,
   ) {}
 
   private async send(cmd: string, payload: any) {
     const res = await firstValueFrom(this.auth.send({ cmd }, payload));
-    if (res && res.success === false) {
-      throw new HttpException({ message: res.message }, res.statusCode || HttpStatus.BAD_REQUEST);
-    }
+    assertServiceOk(res, HttpStatus.BAD_REQUEST);
     return res;
   }
 
@@ -66,12 +65,9 @@ export class SpaceSharingController {
   /** Sharing a space is a paid module — the OWNER space must have it enabled. */
   private async requireModule(spaceId: string, organizationId: string | null | undefined) {
     if (!organizationId) throw new HttpException({ message: 'No organization' }, HttpStatus.FORBIDDEN);
-    const res: any = await firstValueFrom(this.taskClient.send({ cmd: 'get_effective_modules' }, { id: spaceId, organizationId }));
-    const mods: string[] = res?.data?.enabledModules ?? res?.enabledModules ?? [];
-    if (!mods.includes('space_sharing')) {
-      throw new HttpException({ message: 'Enable the Space Sharing module for this space first.' }, HttpStatus.FORBIDDEN);
-    }
+    await this.spaceModules.assertEnabled(spaceId, organizationId, 'space_sharing');
   }
+
 
   // ── OWNER ──────────────────────────────────────────────────────────────────
   @Post('locations/:spaceId/shares')

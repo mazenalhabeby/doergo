@@ -6,7 +6,7 @@ import {
   geofenceAlertEmail,
   groupByLocale,
   invitationEmail,
-  mailRoutes,
+  mailRoutesFromConfig,
   normalizeLocale,
   sendViaFirstWorking,
   type MailRoute,
@@ -46,20 +46,12 @@ export class EmailService {
     // The same routes the auth service uses, resolved the same way: primary
     // first, then the fallback, so one provider refusing us does not stop the
     // product sending mail.
-    this.routes = mailRoutes({
-      SMTP_HOST: this.configService.get('SMTP_HOST'),
-      SMTP_PORT: this.configService.get('SMTP_PORT'),
-      SMTP_USER: this.configService.get('SMTP_USER'),
-      SMTP_PASS: this.configService.get('SMTP_PASS'),
-      SMTP_SECURE: this.configService.get('SMTP_SECURE'),
-      SMTP_FROM: this.configService.get('SMTP_FROM'),
-      SMTP_FALLBACK_HOST: this.configService.get('SMTP_FALLBACK_HOST'),
-      SMTP_FALLBACK_PORT: this.configService.get('SMTP_FALLBACK_PORT'),
-      SMTP_FALLBACK_USER: this.configService.get('SMTP_FALLBACK_USER'),
-      SMTP_FALLBACK_PASS: this.configService.get('SMTP_FALLBACK_PASS'),
-      SMTP_FALLBACK_SECURE: this.configService.get('SMTP_FALLBACK_SECURE'),
-      SMTP_FALLBACK_FROM: this.configService.get('SMTP_FALLBACK_FROM'),
-    }).map((r) => ({ ...r, tx: nodemailer.createTransport(r.options) }));
+    // Every key, both providers, read through the one shared list — a sender
+    // that spelled them out by hand could forget the fallback block.
+    this.routes = mailRoutesFromConfig((key) => this.configService.get<string>(key)).map((r) => ({
+      ...r,
+      tx: nodemailer.createTransport(r.options),
+    }));
     if (this.routes.length) {
       this.logger.log(`SMTP routes: ${this.routes.map((r) => r.label).join(' → ')}`);
     } else {

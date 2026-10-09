@@ -19,6 +19,10 @@ import {
   scopeWhere,
   type SpaceScopeIds,
 } from '@hbcfield/shared';
+import { clampListLimit, clampListPage } from '@hbcfield/shared';
+
+/** How long the person who signed on a technician's phone has to confirm it from their own. */
+const SIGNED_CONFIRM_WINDOW_MINUTES = 30;
 
 @Injectable()
 export class OvertimeService {
@@ -188,11 +192,16 @@ export class OvertimeService {
     organizationId: string;
   }) {
     const request = await this.findPendingApproval(data.overtimeRequestId, data.organizationId, data.scopeSpaceIds);
+    // Confirming a signature they drew on the technician's phone: the approval
+    // is the signed one — their signature, the minutes they agreed on there.
+    const confirmsOwnSignature = !!request.leaderSignature && request.signedById === data.approverId;
     return this.approveRequest(request, {
       approverId: data.approverId,
-      maxDurationMinutes: data.maxDurationMinutes,
-      notes: data.notes,
-      method: 'REMOTE',
+      maxDurationMinutes: data.maxDurationMinutes ?? request.maxDurationMinutes ?? 0,
+      notes: data.notes ?? request.approverNotes ?? undefined,
+      method: confirmsOwnSignature ? 'SIGNATURE' : 'REMOTE',
+      leaderName: confirmsOwnSignature ? request.leaderName ?? undefined : undefined,
+      leaderSignature: confirmsOwnSignature ? request.leaderSignature ?? undefined : undefined,
     });
   }
 
@@ -272,14 +281,43 @@ export class OvertimeService {
       }
     }
 
-    return this.approveRequest(request, {
-      approverId: data.approverId,
-      maxDurationMinutes: data.maxDurationMinutes,
-      notes: data.notes,
-      method: 'SIGNATURE',
-      leaderName: data.leaderName,
-      leaderSignature: data.leaderSignature,
+    /*
+      ⚠️ A SIGNATURE ON THIS PHONE IS A REQUEST, NOT AN APPROVAL.
+
+      The request is authenticated as the TECHNICIAN; the approver is only a
+      name they picked from a list and a drawing anybody can make. Approving
+      on that alone let a member approve their own overtime by naming a
+      supervisor. So the signature is kept, addressed to that person, and they
+      confirm it from their own session — the same route as a remote approval
+      (`leaderApprove`), which then records it as a signed approval. Nothing is
+      counted until they do. Works offline: the phone queues this call as before.
+    */
+    const signedAt = new Date();
+    await this.prisma.overtimeRequest.update({
+      where: { id: request.id },
+      data: {
+        leaderName: data.leaderName,
+        leaderSignature: data.leaderSignature,
+        maxDurationMinutes: Math.min(data.maxDurationMinutes, OVERTIME_CONSTANTS.MAX_OVERTIME_DURATION_MINUTES),
+        approverNotes: data.notes ?? null,
+        signedById: approver.id,
+        signedAt,
+        // The person who signed is standing there; give them time to confirm before the
+        // auto clock-out — ONCE. Signing again must not keep postponing the deadline.
+        ...(request.signedAt ? {} : { approvalTimeoutAt: new Date(signedAt.getTime() + SIGNED_CONFIRM_WINDOW_MINUTES * 60_000) }),
+      },
     });
+    // Asked once per signer: a repeated signature does not push them again.
+    if (!request.signedAt || request.signedById !== approver.id) this.notificationClient.emit('push_notification', {
+      userId: approver.id,
+      title: 'Confirm overtime',
+      body: `You signed overtime for this shift on a colleague's phone. Tap to confirm it.`,
+      data: { type: 'overtime.approval_request', overtimeRequestId: request.id },
+    });
+    return success(
+      { status: 'PENDING_APPROVAL', overtimeRequestId: request.id, awaitingConfirmationBy: approver.id },
+      'Signed — waiting for the approver to confirm',
+    );
   }
 
   /**
@@ -480,8 +518,8 @@ export class OvertimeService {
     page?: number;
     limit?: number;
   }) {
-    const page = data.page ?? 1;
-    const limit = data.limit ?? 20;
+    const page = clampListPage(data.page);
+    const limit = clampListLimit(data.limit, 20);
     const where: any = { organizationId: data.organizationId, ...scopeWhere(data.scopeSpaceIds) };
     if (data.technicianId) where.technicianId = data.technicianId;
     if (data.status) where.status = data.status;

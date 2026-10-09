@@ -290,6 +290,36 @@ export class AssetCustodyService {
   }
 
   /**
+   * Everything this person holds comes back to the organization — they are leaving.
+   *
+   * Through `apply`, the one writer for custody, so each asset's timeline gets
+   * its closing period and the `AssetHolder` mirror follows. Leaving custody
+   * open would keep attributing costs to somebody who no longer works here.
+   * A co-holder keeps their own period: only this person's ends.
+   */
+  async releaseAllHeldBy(organizationId: string, userId: string, actorId: string): Promise<number> {
+    const held = await this.prisma.assetCustody.findMany({
+      where: { organizationId, userId, endedAt: null },
+      select: { assetId: true, asset: { select: { category: { select: { config: true } } } } },
+    });
+    let released = 0;
+    for (const h of held) {
+      const limit = maxHolders(normalizeKindShape(h.asset?.category?.config));
+      const others = (await this.openFor(this.prisma as unknown as Db, h.assetId))
+        .filter((p) => p.userId !== userId)
+        .map((p) => (p.userId ? { userId: p.userId } : { customerId: p.customerId! })) as CustodyParty[];
+      await this.prisma.$transaction((tx) =>
+        this.apply(tx as unknown as Db, {
+          assetId: h.assetId, organizationId, actorId, to: others,
+          reason: 'Member left the organization', limit: Math.max(limit, others.length), strict: false,
+        }),
+      );
+      released++;
+    }
+    return released;
+  }
+
+  /**
    * Are these people ours, and does the kind allow them?
    *
    * Two queries however many arrive, and both scoped to the organization, so an

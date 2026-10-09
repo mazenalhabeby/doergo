@@ -39,7 +39,7 @@ describe('per-task access checks take the caller in one piece', () => {
   const files = walk(SRC).map((f) => ({ path: f, code: stripComments(readFileSync(f, 'utf8')) }));
 
   const callSites = files.flatMap(({ path, code }) =>
-    [...code.matchAll(/checkTaskAccess\(([^;]*?)\)\s*;/gs)].map((m) => ({
+    [...code.matchAll(/(?:checkTaskAccess|taskAccess\.assert)\(([^;]*?)\)\s*;/gs)].map((m) => ({
       path,
       args: m[1] ?? '',
     })),
@@ -65,5 +65,20 @@ describe('per-task access checks take the caller in one piece', () => {
     for (const site of callSites) {
       expect(site.args).not.toMatch(/canViewAllTasks\s*\)?\s*$/);
     }
+  });
+
+  /*
+    ONE gate, not three copies. The copies in attachments and reports had
+    drifted from the task's own (no co-assignee lookup; the role-holder question
+    asked before the organization boundary). The shared DECISION may only be
+    asked from common/task-access — anywhere else is a fourth copy starting.
+  */
+  it('only TaskAccessService asks canAccessTask — no private copies', () => {
+    const SRC_ROOT = join(__dirname, '..', '..', '..');
+    const all = walk(SRC_ROOT).map((f) => ({ path: f, code: stripComments(readFileSync(f, 'utf8')) }));
+    const askers = all.filter(({ code }) => /\bcanAccessTask\s*\(/.test(code)).map(({ path }) => path);
+    expect(askers.length).toBe(1);
+    expect(askers[0]).toMatch(/common[\\/]task-access[\\/]task-access\.service\.ts$/);
+    expect(all.some(({ code }) => /private (async )?checkTaskAccess\(/.test(code))).toBe(false);
   });
 });

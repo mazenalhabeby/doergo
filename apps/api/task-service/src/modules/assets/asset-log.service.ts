@@ -27,6 +27,7 @@ import {
   type AssetLogState,
   type KindShape,
   type LogDueState,
+  clampListLimit,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AssetAccessService } from './asset-access.service';
@@ -407,7 +408,7 @@ export class AssetLogService {
 
   /** What the caller has logged, newest first, with what happened to it. */
   async mine(data: { userId: string; organizationId: string; assetId?: string; limit?: number }) {
-    const take = Math.min(Math.max(Number(data.limit) || 50, 1), 100);
+    const take = clampListLimit(data.limit, 50, 100);
     const rows = await this.prisma.assetMoney.findMany({
       where: {
         organizationId: data.organizationId,

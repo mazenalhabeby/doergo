@@ -77,7 +77,7 @@ export class AuthController {
 
   @MessagePattern({ cmd: 'revoke_all_sessions' })
   async revokeAllSessions(@Payload() data: any) {
-    return this.authService.revokeAllSessions(data.userId, data.exceptSessionId);
+    return this.authService.revokeAllSessions(data.userId, data.exceptSessionId, data.currentRefreshToken);
   }
 
   @MessagePattern({ cmd: 'delete_account' })

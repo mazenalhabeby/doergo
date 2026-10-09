@@ -1,7 +1,7 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { SERVICE_NAMES, BaseGatewayService } from '@hbcfield/shared';
+import { SERVICE_NAMES, BaseGatewayService, assertServiceOk } from '@hbcfield/shared';
 import { Public } from '../../common/decorators';
 import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/platform-auth.guard';
 
@@ -34,7 +34,9 @@ export class PlatformSupportTeamsService extends BaseGatewayService {
 @RequirePlatformPerm('manageSupportTeams')
 export class PlatformSupportTeamsController {
   constructor(private readonly svc: PlatformSupportTeamsService) {}
-  private unwrap<T>(r: any): T { if (r && r.success === false) throw new HttpException({ message: r.message ?? 'Error' }, r.statusCode ?? HttpStatus.BAD_REQUEST); return r; }
+  private unwrap<T>(r: any): T {
+    return assertServiceOk(r) as T;
+  }
 
   @Get('staff')
   async staff() { return this.unwrap(await this.svc.listStaff()); }

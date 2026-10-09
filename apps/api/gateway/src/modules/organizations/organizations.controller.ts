@@ -14,13 +14,14 @@ import {
   ForbiddenException,
   UseInterceptors,
 } from '@nestjs/common';
+import { RebillService } from '../../common/billing/rebill.service';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
 import { ClientProxy } from '@nestjs/microservices';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { OrgEventsService } from '../../common/events/org-events.service';
-import { Role, CurrentUser, CurrentUserData, addOnDef } from '@hbcfield/shared';
+import { Role, CurrentUser, CurrentUserData, addOnDef, assertServiceOk } from '@hbcfield/shared';
 import { isFeatureEntitled } from '../../common/entitlements';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
@@ -34,16 +35,11 @@ import { SetMemberHomeDto, UpdateOrgSettingsDto, UpdateMemberDto, ListMembersQue
 export class OrganizationsController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    private readonly billing: RebillService,
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
     private readonly orgEvents: OrgEventsService,
     private readonly authCache: AuthTokenCache,
   ) {}
-
-  /** Fire-and-forget: re-sync billable seat counts to Stripe after a member change. */
-  private syncSeats(organizationId: string | null | undefined) {
-    if (!organizationId) return;
-    firstValueFrom(this.authClient.send({ cmd: 'billing_reconcile_seats' }, { organizationId })).catch(() => {});
-  }
 
   @Get('join-code')
   @RequirePermission('canManageUsers')
@@ -68,12 +64,7 @@ export class OrganizationsController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
     return result;
   }
@@ -91,9 +82,7 @@ export class OrganizationsController {
         defaultLeaveAllowance: dto.defaultLeaveAllowance,
       }),
     );
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
     return result;
   }
 
@@ -112,12 +101,7 @@ export class OrganizationsController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
     return result;
   }
@@ -152,12 +136,7 @@ export class OrganizationsController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
     return result;
   }
@@ -187,9 +166,7 @@ export class OrganizationsController {
         to: typeof to === 'string' ? to.slice(0, 10) : undefined,
       }),
     );
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return result;
   }
 
@@ -206,12 +183,7 @@ export class OrganizationsController {
         organizationId: user.organizationId,
       }),
     );
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.NOT_FOUND,
-      );
-    }
+    assertServiceOk(result, HttpStatus.NOT_FOUND);
     return result;
   }
 
@@ -249,9 +221,7 @@ export class OrganizationsController {
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'create_access_role' }, { ...body, organizationId: user.organizationId, requesterId: user.id }),
     );
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return result;
   }
 
@@ -266,9 +236,7 @@ export class OrganizationsController {
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'update_access_role' }, { ...body, roleId, organizationId: user.organizationId, requesterId: user.id }),
     );
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return result;
   }
 
@@ -291,9 +259,7 @@ export class OrganizationsController {
         newOwnerId: dto.newOwnerId,
       }),
     );
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return result;
   }
 
@@ -304,9 +270,7 @@ export class OrganizationsController {
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'delete_access_role' }, { roleId, organizationId: user.organizationId, requesterId: user.id }),
     );
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return result;
   }
 
@@ -355,12 +319,7 @@ export class OrganizationsController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.BAD_REQUEST,
-      );
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
     // Purge the member's cached session so the new access profile (modules,
     // platform, scope, permissions) takes effect on their next request — no
@@ -380,7 +339,7 @@ export class OrganizationsController {
     this.orgEvents.memberChanged(user.organizationId, memberId, 'member.updated');
 
     // Access/role change may flip this member between office and field seat.
-    this.syncSeats(user.organizationId);
+    this.billing.rebill(user.organizationId);
 
     return result;
   }
@@ -430,12 +389,11 @@ export class OrganizationsController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.BAD_REQUEST,
-      );
-    }
+    // The reset moved the member's session cut-off; drop their cached session
+    // so the old access token is refused now, not when the cache expires.
+    if (result?.success !== false) await this.authCache.invalidateUser(memberId);
+
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
     return result;
   }
@@ -493,12 +451,7 @@ export class OrganizationsController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.BAD_REQUEST,
-      );
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
     // Drop the removed user's cached session so their access token stops passing
     // the guard chain immediately, not after the cache TTL. (Sec audit H6.)
@@ -513,7 +466,7 @@ export class OrganizationsController {
     // Refresh every open admin screen in the org (audit M-D2).
     this.orgEvents.memberChanged(user.organizationId, memberId, 'member.removed');
 
-    this.syncSeats(user.organizationId);
+    this.billing.rebill(user.organizationId);
 
     return result;
   }
@@ -543,9 +496,7 @@ export class OrganizationsController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
     return result;
   }
@@ -575,9 +526,7 @@ export class OrganizationsController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
     // The currency rides on every session (orgCurrency); drop the cached ones so
     // screens read the new one on their next request, not a minute later.
@@ -588,9 +537,7 @@ export class OrganizationsController {
     // Toggling the in-house/external capability (or changing industry, which can
     // re-default it) changes how field seats are classified → re-sync to Stripe.
     if ((dto as any).usesExternalWorkers !== undefined || (dto as any).industry !== undefined) {
-      firstValueFrom(
-        this.authClient.send({ cmd: 'billing_reconcile_seats' }, { organizationId: user.organizationId }),
-      ).catch(() => {});
+      this.billing.rebill(user.organizationId);
     }
 
     return result;
@@ -610,9 +557,7 @@ export class OrganizationsController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
     return result;
   }
@@ -631,9 +576,7 @@ export class OrganizationsController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message }, result.statusCode || HttpStatus.BAD_REQUEST);
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
     return result;
   }

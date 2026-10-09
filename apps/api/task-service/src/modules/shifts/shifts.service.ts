@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException, Logger, Optional } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { assertSpaceInOrg, assertUserInOrg } from '../../common/tenant-scope.util';
 import { ShiftRematchService } from '../attendance/shift-rematch.service';
 import { success, shiftCrossesMidnight, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN , scopeWhereOn, scopeAllows, type SpaceScopeIds, rotaFor, planRotaDay, RotaDayRefused, dowOfDay } from '@hbcfield/shared';
 
@@ -74,7 +75,18 @@ export class ShiftsService {
     if (!name) throw new BadRequestException('Shift name is required');
     this.assertTime(data.startLocal, 'start');
     this.assertTime(data.endLocal, 'end');
-    if (data.spaceId) await this.assertSpaceInOrg(data.organizationId, data.spaceId, data.scopeSpaceIds);
+    if (data.spaceId) {
+      await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { scope: data.scopeSpaceIds, activeOnly: true });
+    } else if (data.scopeSpaceIds !== null && data.scopeSpaceIds !== undefined) {
+      /*
+        ⚠️ The scope used to be checked ONLY when a space was named, so a rota
+        manager for one workspace created an ORGANIZATION-WIDE shift simply by
+        leaving the space out — a template every workspace's rota then offers.
+        An org-wide shift is for somebody who manages every workspace; the rest
+        read it as absent, the same answer `getOwnedShift` gives them for one.
+      */
+      throw new NotFoundException('Space not found in this organization');
+    }
 
     const shift = await this.prisma.shift.create({
       data: {
@@ -167,7 +179,7 @@ export class ShiftsService {
 
   /** Active rota for a space (optionally including ended assignments). */
   async listAssignments(data: { organizationId: string; spaceId: string; includeEnded?: boolean; scopeSpaceIds?: SpaceScopeIds }) {
-    await this.assertSpaceInOrg(data.organizationId, data.spaceId, data.scopeSpaceIds);
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { scope: data.scopeSpaceIds });
     const where: any = { organizationId: data.organizationId, spaceId: data.spaceId };
     if (!data.includeEnded) where.isActive = true;
     const assignments = await this.prisma.shiftAssignment.findMany({
@@ -200,8 +212,8 @@ export class ShiftsService {
     priority?: number;
     createdById?: string;
   }) {
-    await this.assertSpaceInOrg(data.organizationId, data.spaceId, data.scopeSpaceIds);
-    await this.assertUserInOrg(data.organizationId, data.userId);
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { scope: data.scopeSpaceIds, activeOnly: true });
+    await assertUserInOrg(this.prisma, data.userId, data.organizationId);
     const shift = await this.getOwnedShift(data.organizationId, data.shiftId, data.scopeSpaceIds);
     // A space-scoped shift can only be rostered in its own space.
     if (shift.spaceId && shift.spaceId !== data.spaceId) {
@@ -261,7 +273,12 @@ export class ShiftsService {
     const existing = await this.prisma.shiftAssignment.findFirst({
       where: { id: data.assignmentId, organizationId: data.organizationId },
     });
-    if (!existing) throw new NotFoundException('Assignment not found');
+    /*
+      ⚠️ Same hole deleteAssignment had: loaded by id + organization only, so a
+      rota manager for one workspace could rewrite (or switch off) anybody's
+      rota line in any workspace. Outside their spaces it reads as not found.
+    */
+    if (!existing || !scopeAllows(data.scopeSpaceIds, existing.spaceId)) throw new NotFoundException('Assignment not found');
 
     // Validate against the EFFECTIVE (merged) state, not the patch alone, so you
     // can't end up with e.g. a WEEKLY assignment that has no weekdays.
@@ -279,7 +296,11 @@ export class ShiftsService {
 
     const patch: Record<string, unknown> = {};
     if (data.shiftId !== undefined) {
-      await this.getOwnedShift(data.organizationId, data.shiftId, data.scopeSpaceIds);
+      const shift = await this.getOwnedShift(data.organizationId, data.shiftId, data.scopeSpaceIds);
+      // The create rule, kept on an edit: a space's shift is rostered in its own space only.
+      if (shift.spaceId && shift.spaceId !== existing.spaceId) {
+        throw new BadRequestException('That shift belongs to a different space');
+      }
       patch.shiftId = data.shiftId;
     }
     if (data.recurrence !== undefined) patch.recurrence = data.recurrence;
@@ -462,8 +483,8 @@ export class ShiftsService {
   }) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(data.date ?? '')) throw new BadRequestException('Invalid date');
     if (data.repeat !== 'once' && data.repeat !== 'weekly') throw new BadRequestException('Invalid repeat');
-    await this.assertSpaceInOrg(data.organizationId, data.spaceId, data.editScope);
-    await this.assertUserInOrg(data.organizationId, data.userId);
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { scope: data.editScope, activeOnly: true });
+    await assertUserInOrg(this.prisma, data.userId, data.organizationId);
     if (data.shiftId) {
       const shift = await this.getOwnedShift(data.organizationId, data.shiftId, data.editScope);
       if (shift.spaceId && shift.spaceId !== data.spaceId) throw new BadRequestException('That shift belongs to a different space');
@@ -609,16 +630,6 @@ export class ShiftsService {
     return shift;
   }
 
-  private async assertSpaceInOrg(organizationId: string, spaceId: string, scope?: SpaceScopeIds) {
-    const space = await this.prisma.companyLocation.findFirst({ where: { id: spaceId, organizationId }, select: { id: true } });
-    // A space they were not granted reads as absent, not as forbidden.
-    if (!space || !scopeAllows(scope, spaceId)) throw new NotFoundException('Space not found');
-  }
-
-  private async assertUserInOrg(organizationId: string, userId: string) {
-    const user = await this.prisma.user.findFirst({ where: { id: userId, organizationId }, select: { id: true } });
-    if (!user) throw new NotFoundException('User not found in this organization');
-  }
 }
 
 /** The Monday-to-Sunday week holding `from` (default: today, UTC day), as YYYY-MM-DD. */

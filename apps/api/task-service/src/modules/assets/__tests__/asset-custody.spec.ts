@@ -355,7 +355,8 @@ describe('filing an expense is gated on custody', () => {
 
 describe('reviewing one', () => {
   let service: AssetExpenseService;
-  const prisma: any = { assetMoney: { updateMany: jest.fn() } };
+  // `findFirst` + `user`: the review reads the author first, so nobody accepts their own slip.
+  const prisma: any = { assetMoney: { updateMany: jest.fn(), findFirst: jest.fn().mockResolvedValue({ authorId: 'member' }) }, user: { findFirst: jest.fn().mockResolvedValue(null) } };
 
   beforeEach(async () => {
     jest.clearAllMocks();

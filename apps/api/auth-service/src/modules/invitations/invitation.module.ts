@@ -4,6 +4,7 @@ import { SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
 import { InvitationController } from './invitation.controller';
 import { InvitationService } from './invitation.service';
 import { DocumentsModule } from '../documents/documents.module';
+import { BillingModule } from '../billing/billing.module';
 
 @Module({
   imports: [
@@ -12,6 +13,8 @@ import { DocumentsModule } from '../documents/documents.module';
     // For the joining contract. DocumentsModule imports nothing from here, so
     // there is no cycle.
     DocumentsModule,
+    // A member who accepts is a seat — the bill is re-synced at once.
+    BillingModule,
   ],
   controllers: [InvitationController],
   providers: [InvitationService],

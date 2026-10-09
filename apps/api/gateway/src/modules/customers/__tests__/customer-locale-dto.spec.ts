@@ -13,19 +13,19 @@ import { CustomersController } from '../customers.controller';
 describe('customer body — locale', () => {
   function setup() {
     const authClient = { send: jest.fn(() => of({ data: { id: 'c1' } })) };
-    const taskClient = { send: jest.fn(() => of({ data: { enabledModules: ['crm'] } })) };
+    const spaceModules = { assertEnabled: jest.fn(async () => undefined) };
     const orgEvents = { customerChanged: jest.fn() };
-    const controller = new CustomersController(authClient as any, taskClient as any, {} as any, orgEvents as any);
+    const controller = new CustomersController(authClient as any, spaceModules as any, {} as any, orgEvents as any);
     const req = { user: { id: 'u1', role: 'ADMIN', organizationId: 'org-1' } };
-    return { controller, authClient, taskClient, req };
+    return { controller, authClient, spaceModules, req };
   }
 
   it.each(['pt', 'de-AT', 'German', 7])('refuses %p on create and on update, forwarding nothing', async (locale) => {
-    const { controller, authClient, taskClient, req } = setup();
+    const { controller, authClient, spaceModules, req } = setup();
     await expect(controller.create({ name: 'BILLA AG', locale: locale as any }, req)).rejects.toBeInstanceOf(BadRequestException);
     await expect(controller.update('c1', { locale: locale as any }, req)).rejects.toBeInstanceOf(BadRequestException);
     expect(authClient.send).not.toHaveBeenCalled();
-    expect(taskClient.send).not.toHaveBeenCalled();
+    expect(spaceModules.assertEnabled).not.toHaveBeenCalled();
   });
 
   it('forwards a supported language, a cleared one, and a body without one', async () => {

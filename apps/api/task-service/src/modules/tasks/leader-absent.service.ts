@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ClientProxy } from '@nestjs/microservices';
-import { runWithCronLock, TaskStatus } from '@hbcfield/shared';
+import { runWithCronLock, TaskStatus, localPartsIn } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { CrewService } from './handover/crew.service';
@@ -11,10 +11,9 @@ const OPEN = { notIn: [TaskStatus.DRAFT, TaskStatus.COMPLETED, TaskStatus.CLOSED
 /** The notice goes out from this local hour — a morning notice, not a midnight one. */
 const MORNING_HOUR = 6;
 
-const localDay = (at: Date, timeZone: string) =>
-  new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(at);
-const localHour = (at: Date, timeZone: string) =>
-  Number(new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', hourCycle: 'h23' }).format(at));
+// "Today" and "the hour" where the job is come from the shared zoned-time rule
+// (`localPartsIn`), not a formatter built here: one copy, cached, and an unknown
+// zone falls back to UTC instead of throwing a RangeError mid-sweep.
 
 /**
  * The morning notice: a job's leader has approved time off today.
@@ -87,8 +86,8 @@ export class LeaderAbsentService {
     let sent = 0;
     for (const job of jobs) {
       const tz = job.space?.timezone || job.organization?.timezone || 'UTC';
-      const today = localDay(now, tz);
-      if (job.leadNoticeOn === today || localHour(now, tz) < MORNING_HOUR) continue;
+      const { dateStr: today, minutesOfDay } = localPartsIn(now, tz);
+      if (job.leadNoticeOn === today || minutesOfDay < MORNING_HOUR * 60) continue;
       if (!(offBy.get(job.assignedToId!) ?? []).some((r) => r.from <= today && today <= r.to)) continue;
 
       // Claim the day first: two replicas, or a slow send, never tell the office twice.

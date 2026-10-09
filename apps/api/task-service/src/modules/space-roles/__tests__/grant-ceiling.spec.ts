@@ -199,4 +199,12 @@ describe('SpaceRolesService — the grant ceiling', () => {
       });
     });
   });
+
+  it('an admin unticking a permission on a BUILT-IN marks it customized, so the catch-up never re-grants it', async () => {
+    const builtIn = { ...powerfulRole, id: 'r-shift', isSystem: true, kind: 'MANAGEMENT', permissions: { canViewSpaceAttendance: true, canApproveOvertime: true } };
+    prisma.accessRole.findFirst.mockImplementation((args: any) => Promise.resolve(args?.where?.name ? null : builtIn));
+    await service.updateRole({ organizationId: 'org1', roleId: 'r-shift', permissions: { canApproveOvertime: false } as any });
+    expect(prisma.accessRole.update.mock.calls[0][0].data).toMatchObject({ isCustomized: true });
+  });
 });
+

@@ -8,6 +8,7 @@ import {
   type SyncMediaLink,
   type SyncPullResponse,
   type SyncPullScope,
+  clampListLimit,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { buildTaskVisibilityWhere, type TaskVisibilityFacts } from '../tasks/task-visibility';
@@ -157,7 +158,7 @@ export class SyncPullService {
   }
 
   private async tasks(req: PullRequest): Promise<SyncPullResponse> {
-    const limit = Math.min(Math.max(Number(req.limit) || SYNC_PULL_MAX_ROWS, 1), SYNC_PULL_MAX_ROWS);
+    const limit = clampListLimit(req.limit, SYNC_PULL_MAX_ROWS, SYNC_PULL_MAX_ROWS);
     const cursor = decodeCursor(req.cursor);
     const retentionEdge = Date.now() - SYNC_TOMBSTONE_RETENTION_DAYS * 86_400_000;
     // A cursor from before the tombstone window may have missed a deletion.
@@ -254,7 +255,7 @@ export class SyncPullService {
    * when online and shows cached images by attachment id when not.
    */
   private async taskChildren(req: PullRequest, scope: 'comments' | 'attachments'): Promise<SyncPullResponse> {
-    const limit = Math.min(Math.max(Number(req.limit) || SYNC_PULL_MAX_ROWS, 1), SYNC_PULL_MAX_ROWS);
+    const limit = clampListLimit(req.limit, SYNC_PULL_MAX_ROWS, SYNC_PULL_MAX_ROWS);
     const cursor = decodeCursor(req.cursor);
     const retentionEdge = Date.now() - SYNC_TOMBSTONE_RETENTION_DAYS * 86_400_000;
     const reset = !cursor || Date.parse(cursor.s) < retentionEdge;

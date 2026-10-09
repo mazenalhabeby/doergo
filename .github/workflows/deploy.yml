@@ -93,12 +93,15 @@ jobs:
           [ -n "$PROD_SSH_KEY" ] && [ -n "$PROD_HOST" ] || { echo "::error::secrets PROD_SSH_KEY and PROD_HOST are required"; exit 1; }
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
           printf '%s\n' "$PROD_SSH_KEY" > ~/.ssh/prod && chmod 600 ~/.ssh/prod
-          if [ -n "$PROD_KNOWN_HOSTS" ]; then
-            printf '%s\n' "$PROD_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          else
-            echo "::warning::PROD_KNOWN_HOSTS not set — trusting the host key on first use. Add it (ssh-keyscan the server) to pin it."
-            ssh-keyscan -T 15 "$PROD_HOST" > ~/.ssh/known_hosts 2>/dev/null
+          # The host key is PINNED, never learned. Trusting whatever key answers
+          # (ssh-keyscan) hands the deploy key and the production release to
+          # anybody who can sit between the runner and the server for one run.
+          if [ -z "$PROD_KNOWN_HOSTS" ]; then
+            echo "::error::PROD_KNOWN_HOSTS is not set. Add the server's host key line(s) as that secret (ssh-keyscan it once from a trusted machine and verify the fingerprint)."
+            exit 1
           fi
+          printf '%s\n' "$PROD_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
           cat > ~/.ssh/config <<EOF
           Host prod
             HostName $PROD_HOST

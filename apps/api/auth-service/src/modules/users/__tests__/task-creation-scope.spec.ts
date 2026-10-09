@@ -20,8 +20,12 @@ describe('resolveTaskCreationScope', () => {
     expect(resolveTaskCreationScope(undefined, inSpace)).toBe('SPACE');
   });
 
-  it('resolves to SPACE for an org-wide grant with no column set', () => {
-    expect(resolveTaskCreationScope('NONE', orgWide)).toBe('SPACE');
+  it('resolves to ORG for an org-wide grant with no column set', () => {
+    // It used to say SPACE, which did nothing while the gateway never forwarded
+    // the scope. Once it did, an org-wide Manager who joined with a profile that
+    // could not create was refused outside their own roster.
+    expect(resolveTaskCreationScope('NONE', orgWide)).toBe('ORG');
+    expect(resolveTaskCreationScope(null, orgWide)).toBe('ORG');
   });
 
   it('stays NONE when the permission is not held at all', () => {

@@ -1,3 +1,5 @@
+import { MemberOffboarding } from '../../common/member-offboarding/member-offboarding.service';
+import { SessionEvents } from '../../common/session-events/session-events.service';
 import { usableLegalEntityId, COMPANY_UNKNOWN_MESSAGE, parseAssignedHome, memberScopeFilter, writeRateChange, RateChangeError, normalizeLocale, MEMBER_EMAILS, MEMBER_NOTIFICATION_PREF_KEYS, orgAllowsEmail, pickBooleanPrefs , PRICE_ON_WORKSPACE_MESSAGE } from '@hbcfield/shared';
 import {
   Injectable,
@@ -8,19 +10,20 @@ import {
   ForbiddenException,
   HttpStatus,
   type OnApplicationBootstrap,
+  Optional,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { SERVICE_NAMES, Role, TaskStatus, getDefaultModules, BUILTIN_ROLES, PERMISSION_KEYS, permissionsFromUserFlags, permissionsFromOrgRole, mergePermissions, permissionsExceed, filterExternalModules, type PermissionSet } from '@hbcfield/shared';
+import { SERVICE_NAMES, Role, TaskStatus, getDefaultModules, BUILTIN_ROLES, PERMISSION_KEYS, permissionsFromUserFlags, permissionsFromOrgRole, mergePermissions, permissionsExceed, filterExternalModules, type PermissionSet, normalizeEmail, mayTakeOverAccount, loadOrgPermissionCeiling, builtInRoleGrants, builtInRoleCreateData } from '@hbcfield/shared';
 import * as bcrypt from 'bcryptjs';
+import { randomInt } from 'crypto';
 import {
   CreateEmployeeDto,
   UpdateEmployeeDto,
   ListEmployeesDto,
   GetEmployeeDetailDto,
-  GetEmployeePerformanceDto,
   ListOrgMembersDto,
   UpdateMemberProfileDto,
   RemoveMemberDto,
@@ -119,6 +122,9 @@ const ORG_MEMBER_SELECT = {
   isExternal: true,
 } as const;
 
+/** How far a task-creation scope reaches, for the grant ceiling. */
+const TASK_CREATION_SCOPE_RANK: Record<string, number> = { NONE: 0, SELF: 1, SPACE: 2, ORG: 3 };
+
 @Injectable()
 export class UsersService implements OnApplicationBootstrap {
   private readonly logger = new Logger(UsersService.name);
@@ -153,7 +159,9 @@ export class UsersService implements OnApplicationBootstrap {
   async syncBuiltInRoles(organizationId?: string): Promise<number> {
     let changed = 0;
     for (const p of BUILTIN_ROLES) {
-      const granted = Object.fromEntries(Object.entries(p.permissions).filter(([, v]) => v === true));
+      // The rule is shared with task-service's space-role panel (`builtin-role-sync` in shared);
+      // here it runs as one statement per built-in instead of a read per organization.
+      const granted = builtInRoleGrants(p);
       if (!Object.keys(granted).length) continue;
       const def = JSON.stringify(granted);
       changed += await this.prisma.$executeRaw(Prisma.sql`
@@ -172,6 +180,10 @@ export class UsersService implements OnApplicationBootstrap {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
+    // Optional: socket revocation is best effort, and unit tests that do not
+    // exercise it need not wire it.
+    @Optional() private readonly sessionEvents?: SessionEvents,
+    @Optional() private readonly offboarding?: MemberOffboarding,
   ) {}
 
   async findOne(id: string, organizationId?: string) {
@@ -213,7 +225,13 @@ export class UsersService implements OnApplicationBootstrap {
     return { success: true, data: user };
   }
 
-  async getWorkers(organizationId?: string) {
+  /**
+   * @param canViewTracking — coordinates only for a caller who may follow people
+   *   on a map. Absent/false keeps `lastLocation.updatedAt` (is somebody around)
+   *   and withholds where they are. Must be a real boolean; a query-string
+   *   "true" does not count.
+   */
+  async getWorkers(organizationId?: string, canViewTracking = false) {
     // Tenant floor (S3): never list users without an org scope. A missing org id
     // must fail closed, not fall through to every active user in every tenant.
     if (!organizationId) {
@@ -236,7 +254,14 @@ export class UsersService implements OnApplicationBootstrap {
       },
     });
 
-    return { success: true, data: workers };
+    if (canViewTracking === true) return { success: true, data: workers };
+    return {
+      success: true,
+      data: workers.map((w) => ({
+        ...w,
+        lastLocation: w.lastLocation ? { updatedAt: w.lastLocation.updatedAt } : null,
+      })),
+    };
   }
 
   async getWorkerTasks(workerId: string, organizationId?: string) {
@@ -451,10 +476,9 @@ export class UsersService implements OnApplicationBootstrap {
     const viewerSpaceIds = (dto as { viewerSpaceIds?: string[] | null }).viewerSpaceIds;
     const scoped = Array.isArray(viewerSpaceIds);
     // Coordinates need their own permission — see lastLocation below. Absent
-    // means an older caller that does not send it; only the scoped path (the
-    // one a plain member reaches) is restricted, so nothing internal changes.
-    const canSeeLocation =
-      !scoped || (dto as { canViewTracking?: boolean }).canViewTracking === true;
+    // fails CLOSED: an org-wide viewer of the roster is not, by that alone,
+    // somebody who may follow a colleague on a map.
+    const canSeeLocation = (dto as { canViewTracking?: boolean }).canViewTracking === true;
 
     const employee = await this.prisma.user.findFirst({
       where: {
@@ -531,7 +555,9 @@ export class UsersService implements OnApplicationBootstrap {
       // that site's work and not a career total.
       this.getTaskStatsForEmployee(id, scoped ? (viewerSpaceIds as string[]) : undefined),
       this.getAttendanceStatsForEmployee(id, scoped ? (viewerSpaceIds as string[]) : undefined),
-      this.getRecentActivityForEmployee(id),
+      // ⚠️ The activity feed too — it named every job and every site the person
+      // had been at, whatever the viewer's spaces. Same scope as the numbers.
+      this.getRecentActivityForEmployee(id, scoped ? (viewerSpaceIds as string[]) : undefined),
     ]);
 
     // Build response
@@ -573,9 +599,9 @@ export class UsersService implements OnApplicationBootstrap {
               updatedAt: employee.lastLocation.updatedAt.toISOString(),
             }
           : null,
-      lastLocationUpdatedAt: canSeeLocation
-        ? employee.lastLocation?.updatedAt?.toISOString() || null
-        : null,
+      // When they were last seen is not a position — it is what `isOnline` is
+      // made of, and a roster may show it without the map permission.
+      lastLocationUpdatedAt: employee.lastLocation?.updatedAt?.toISOString() || null,
       isOnline: this.isOnline(employee.lastLocation?.updatedAt),
       currentTaskCount: taskStats.inProgress,
       todayTaskCount: taskStats.todayTotal,
@@ -608,7 +634,7 @@ export class UsersService implements OnApplicationBootstrap {
    */
   async createEmployee(dto: CreateEmployeeDto) {
     const {
-      email,
+      email: rawEmail,
       firstName,
       lastName,
       password,
@@ -619,6 +645,10 @@ export class UsersService implements OnApplicationBootstrap {
       maxDailyJobs = 5,
       organizationId,
     } = dto;
+    // Stored and looked up in the ONE canonical form sign-in uses, or an
+    // address saved as typed ("Mike@…") can never sign in, and the same mailbox
+    // could hold a second account by changing its case.
+    const email = normalizeEmail(rawEmail);
 
     // Check if email already exists
     const existingUser = await this.prisma.user.findUnique({
@@ -742,6 +772,8 @@ export class UsersService implements OnApplicationBootstrap {
         */
         // Rates are written below through the ONE dated writer, never here.
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
+        // Switched off here is the same act as deactivateEmployee — see below.
+        ...(dto.isActive === false && { tokensValidAfter: new Date() }),
         ...(dto.rating !== undefined && { rating: dto.rating }),
         ...(dto.ratingCount !== undefined && { ratingCount: dto.ratingCount }),
         ...(dto.canCreateTasks !== undefined && { canCreateTasks: dto.canCreateTasks }),
@@ -768,6 +800,17 @@ export class UsersService implements OnApplicationBootstrap {
       },
     });
     await this.writeMemberRates(id, organizationId, dto as any);
+
+    /*
+      ⚠️ Deactivating through the edit form used to leave the person signed in:
+      their refresh token kept minting access tokens until it expired (90 days).
+      The same three effects as deactivateEmployee: cut-off, tokens gone, live
+      sessions told.
+    */
+    if (dto.isActive === false) {
+      await this.prisma.refreshToken.deleteMany({ where: { userId: id } });
+      this.sessionEvents?.sessionsRevoked(id);
+    }
 
     return { success: true, data: employee };
   }
@@ -848,120 +891,21 @@ export class UsersService implements OnApplicationBootstrap {
       );
     }
 
-    await this.prisma.user.update({
-      where: { id },
-      data: { isActive: false },
-    });
+    // Deactivated means signed out NOW: the refresh tokens go, and the cut-off
+    // kills the access tokens already in their hands (validateToken also
+    // refuses an inactive account, but only once the gateway's cache expires).
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id },
+        data: { isActive: false, tokensValidAfter: new Date() },
+      }),
+      this.prisma.refreshToken.deleteMany({ where: { userId: id } }),
+    ]);
+    this.sessionEvents?.sessionsRevoked(id);
 
     return { success: true, message: 'Employee deactivated successfully' };
   }
 
-  /**
-   * Get employee performance metrics
-   */
-  async getEmployeePerformance(dto: GetEmployeePerformanceDto) {
-    const { id, organizationId, startDate, endDate } = dto;
-
-    // Verify employee exists
-    const employee = await this.prisma.user.findFirst({
-      where: {
-        id,
-        organizationId,
-        role: Role.EMPLOYEE,
-      },
-      select: { rating: true, ratingCount: true },
-    });
-
-    if (!employee) {
-      throw new NotFoundException('Employee not found');
-    }
-
-    // Default to last 30 days if no date range provided, and clamp the span to a
-    // year so a far-back startDate can't load a member's entire history into an
-    // O(days × tasks) trend build (P5/P6).
-    const end = endDate ? new Date(endDate) : new Date();
-    let start = startDate
-      ? new Date(startDate)
-      : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const MAX_SPAN_MS = 366 * 24 * 60 * 60 * 1000;
-    if (end.getTime() - start.getTime() > MAX_SPAN_MS) {
-      start = new Date(end.getTime() - MAX_SPAN_MS);
-    }
-    const ROW_CAP = 5000;
-
-    // Get tasks in date range (capped)
-    const tasks = await this.prisma.task.findMany({
-      where: {
-        assignedToId: id,
-        organizationId,
-        createdAt: {
-          gte: start,
-          lte: end,
-        },
-      },
-      select: {
-        id: true,
-        status: true,
-        dueDate: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-      take: ROW_CAP,
-    });
-
-    // Get time entries in date range — org-scoped (defense-in-depth) + capped.
-    const timeEntries = await this.prisma.timeEntry.findMany({
-      where: {
-        userId: id,
-        organizationId,
-        clockInAt: {
-          gte: start,
-          lte: end,
-        },
-      },
-      select: {
-        totalMinutes: true,
-        clockInAt: true,
-      },
-      take: ROW_CAP,
-    });
-
-    // Calculate metrics
-    const completed = tasks.filter(
-      (t) => t.status === TaskStatus.COMPLETED || t.status === TaskStatus.CLOSED,
-    ).length;
-    const total = tasks.length;
-    const completedOnTime = tasks.filter((t) => {
-      if (t.status !== TaskStatus.COMPLETED && t.status !== TaskStatus.CLOSED)
-        return false;
-      if (!t.dueDate) return true; // No due date = on time
-      return new Date(t.updatedAt) <= new Date(t.dueDate);
-    }).length;
-
-    const totalHours =
-      timeEntries.reduce((sum, e) => sum + (e.totalMinutes || 0), 0) / 60;
-
-    // Build daily trends
-    const trends = this.buildDailyTrends(tasks, timeEntries, start, end);
-
-    return {
-      success: true,
-      data: {
-        period: {
-          startDate: start.toISOString(),
-          endDate: end.toISOString(),
-        },
-        summary: {
-          completionRate: total > 0 ? (completed / total) * 100 : 0,
-          onTimeRate: completed > 0 ? (completedOnTime / completed) * 100 : 0,
-          tasksCompleted: completed,
-          customerRating: employee.rating || 5.0,
-          totalHoursWorked: totalHours,
-        },
-        trends,
-      },
-    };
-  }
 
   // ============================================================================
   // ORGANIZATION MEMBERS METHODS
@@ -1217,28 +1161,11 @@ export class UsersService implements OnApplicationBootstrap {
     requesterId: string,
     organizationId: string,
   ): Promise<{ isAdmin: boolean; perms: PermissionSet }> {
-    const requester = await this.prisma.user.findFirst({
-      where: { id: requesterId, organizationId },
-      select: {
-        role: true,
-        canCreateTasks: true,
-        canViewAllTasks: true,
-        canAssignTasks: true,
-        canManageUsers: true,
-        canViewReports: true,
-        memberRole: { select: { permissions: true, isActive: true } },
-      },
-    });
-    if (!requester) {
+    const ceiling = await loadOrgPermissionCeiling(this.prisma, requesterId, organizationId);
+    if (!ceiling) {
       throw new ForbiddenException('Requester not found in organization');
     }
-    const perms = mergePermissions(
-      permissionsFromUserFlags(requester),
-      requester.memberRole?.isActive
-        ? permissionsFromOrgRole(requester.memberRole.permissions)
-        : undefined,
-    );
-    return { isAdmin: requester.role === Role.ADMIN, perms };
+    return { isAdmin: ceiling.isAdmin, perms: ceiling.perms };
   }
 
   /**
@@ -1248,6 +1175,50 @@ export class UsersService implements OnApplicationBootstrap {
    * role whose permission set is a SUBSET of their own; otherwise they could
    * escalate past their ceiling by selecting the built-in admin role.
    */
+  /**
+   * The flat permission columns obey the same ceiling as a role.
+   *
+   * ⚠️ `canManageUsers` was guarded and its four siblings were not, so a
+   * member holding only `canManageUsers` could hand somebody `canViewAllTasks`,
+   * `canAssignTasks`, `canViewReports` or an org-wide task-creation scope they
+   * do not hold themselves. Turning a flag OFF is never an escalation.
+   */
+  private async assertFlatPermsWithinCeiling(
+    requesterId: string,
+    organizationId: string,
+    data: {
+      canCreateTasks?: boolean;
+      canViewAllTasks?: boolean;
+      canAssignTasks?: boolean;
+      canViewReports?: boolean;
+      taskCreationScope?: string;
+    },
+  ) {
+    const flags = ['canCreateTasks', 'canViewAllTasks', 'canAssignTasks', 'canViewReports'] as const;
+    const granted = flags.filter((k) => data[k] === true);
+    const scopeRank = (s?: string | null) => TASK_CREATION_SCOPE_RANK[s ?? 'NONE'] ?? 0;
+    // SELF is the default every non-admin role change writes; only SPACE/ORG reach others.
+    const widensScope =
+      data.taskCreationScope !== undefined && scopeRank(data.taskCreationScope) > scopeRank('SELF');
+    if (granted.length === 0 && !widensScope) return;
+
+    const { isAdmin, perms } = await this.resolveRequesterOrgPerms(requesterId, organizationId);
+    if (isAdmin) return;
+    const over = granted.filter((k) => !(perms as Record<string, boolean | undefined>)[k]);
+    if (over.length > 0) {
+      throw new ForbiddenException('You cannot grant permissions beyond your own');
+    }
+    if (widensScope) {
+      const requester = await this.prisma.user.findFirst({
+        where: { id: requesterId, organizationId },
+        select: { taskCreationScope: true },
+      });
+      if (scopeRank(data.taskCreationScope) > scopeRank(requester?.taskCreationScope)) {
+        throw new ForbiddenException('You cannot grant a task-creation scope wider than your own');
+      }
+    }
+  }
+
   /** Does this member work for somebody else? One indexed lookup, one column. */
   private async isExternalMember(memberId: string): Promise<boolean> {
     const u = await this.prisma.user.findUnique({
@@ -1553,29 +1524,24 @@ export class UsersService implements OnApplicationBootstrap {
     }
 
     // Soft delete: detach from org + deactivate, keeping the row so historical
-    // FKs stay valid. Clean up org-scoped associations so the user no longer
-    // appears in space rosters, schedules, or dashboards.
+    // FKs stay valid. Their open jobs, workspace assignments and equipment are
+    // released by task-service FIRST (it owns those tables) — see MemberOffboarding.
+    await this.offboarding?.release(organizationId, memberId, requesterId);
     await this.prisma.$transaction([
-      this.prisma.spaceAssignment.deleteMany({ where: { userId: memberId } }),
       this.prisma.technicianSchedule.deleteMany({ where: { technicianId: memberId } }),
-      // Unassign their still-active tasks so they stop showing in activity/pending;
-      // completed/closed/canceled tasks keep the assignee for history.
-      this.prisma.task.updateMany({
-        where: {
-          assignedToId: memberId,
-          status: { notIn: ['COMPLETED', 'CLOSED', 'CANCELED'] },
-        },
-        data: { assignedToId: null },
-      }),
       this.prisma.user.update({
         where: { id: memberId },
         data: {
           organizationId: null,
           isActive: false,
           onboardingCompleted: false,
+          // Removed means signed out now, not when their tokens expire.
+          tokensValidAfter: new Date(),
         },
       }),
+      this.prisma.refreshToken.deleteMany({ where: { userId: memberId } }),
     ]);
+    this.sessionEvents?.sessionsRevoked(memberId);
 
     return { success: true, message: 'Member removed successfully' };
   }
@@ -1583,6 +1549,43 @@ export class UsersService implements OnApplicationBootstrap {
   /**
    * Update a member's profile and/or role/permissions (combined endpoint)
    */
+  /**
+   * May the requester take an action that amounts to CONTROLLING this account?
+   *
+   * Resetting a password hands the requester a working password; changing the
+   * login email hands them the reset link (forgot-password goes to the new
+   * address); marking somebody external locks them out of the organization's
+   * own property. Each is "becoming" the member, so each asks the same question
+   * — the owner never, an admin only by an admin, nobody whose permissions reach
+   * past the requester's (`mayTakeOverAccount` in shared).
+   */
+  private async assertMayControlAccount(
+    requesterId: string,
+    memberId: string,
+    organizationId: string,
+    action: 'reset' | 'email' | 'external',
+  ) {
+    const [requesterAccess, targetAccess, org] = await Promise.all([
+      this.resolveRequesterOrgPerms(requesterId, organizationId),
+      this.resolveRequesterOrgPerms(memberId, organizationId),
+      this.prisma.organization.findUnique({ where: { id: organizationId }, select: { ownerId: true } }),
+    ]);
+    const verdict = mayTakeOverAccount(
+      { id: requesterId, ...requesterAccess },
+      { id: memberId, ...targetAccess },
+      org?.ownerId,
+    );
+    if (verdict.ok) return;
+    const what = action === 'reset' ? 'reset the password of' : action === 'email' ? 'change the sign-in email of' : 'make external';
+    throw new ForbiddenException(
+      verdict.reason === 'OWNER'
+        ? `Only the organization owner can ${what} the owner.`
+        : verdict.reason === 'ADMIN_TARGET'
+          ? `Only an admin can ${what} an admin.`
+          : `You cannot ${what} somebody with permissions beyond your own.`,
+    );
+  }
+
   async updateMemberProfile(
     memberId: string,
     organizationId: string,
@@ -1641,9 +1644,11 @@ export class UsersService implements OnApplicationBootstrap {
     // login identifier), and a no-op when unchanged so re-saving the dialog
     // never trips the uniqueness guard.
     if ((dto as any).email !== undefined) {
-      const email = String((dto as any).email).trim().toLowerCase();
+      const email = normalizeEmail(String((dto as any).email));
       if (!email) throw new BadRequestException('Email is required');
       if (email !== member.email) {
+        // The new address receives the password reset link — see assertMayControlAccount.
+        if (memberId !== requesterId) await this.assertMayControlAccount(requesterId, memberId, organizationId, 'email');
         const taken = await this.prisma.user.findFirst({
           where: { email, id: { not: memberId } },
           select: { id: true },
@@ -1723,6 +1728,10 @@ export class UsersService implements OnApplicationBootstrap {
     */
     if ((dto as any).isExternal !== undefined) {
       const nextExternal = (dto as any).isExternal === true;
+      if (nextExternal && !member.isExternal) {
+        // Marking somebody external shuts them out of the organization's own property.
+        await this.assertMayControlAccount(requesterId, memberId, organizationId, 'external');
+      }
       if (nextExternal) {
         const clearingRole =
           (dto as any).memberRoleId !== undefined &&
@@ -1850,6 +1859,8 @@ export class UsersService implements OnApplicationBootstrap {
       if (dto.canManageUsers !== undefined) data.canManageUsers = dto.canManageUsers;
     }
 
+    await this.assertFlatPermsWithinCeiling(requesterId, organizationId, data);
+
     const updated = await this.prisma.user.update({
       where: { id: memberId },
       data,
@@ -1887,16 +1898,7 @@ export class UsersService implements OnApplicationBootstrap {
       await this.prisma.accessRole.upsert({
         where: { organizationId_slug: { organizationId: data.organizationId, slug: p.slug } },
         update: {},
-        create: {
-          organizationId: data.organizationId,
-          name: p.name,
-          slug: p.slug,
-          description: p.description,
-          color: p.color,
-          scope: p.scope as any,
-          isSystem: true,
-          permissions: p.permissions as any,
-        },
+        create: builtInRoleCreateData(data.organizationId, p) as any,
       });
     }
     await this.syncBuiltInRoles(data.organizationId);
@@ -2033,6 +2035,25 @@ export class UsersService implements OnApplicationBootstrap {
       where: { id: data.roleId, organizationId: data.organizationId },
     });
     if (!role) throw new NotFoundException('Role not found');
+
+    /*
+      Ceiling on what the role IS, not only on what it will be.
+
+      Checking the new set alone let a non-admin rename, recolour or strip the
+      admin-grade role — or rewrite a role above them down to their own level and
+      take everyone holding it with it. The same rule `deleteAccessRole` applies:
+      a role beyond your own is not yours to edit.
+    */
+    if (data.requesterId) {
+      const { isAdmin, perms } = await this.resolveRequesterOrgPerms(data.requesterId, data.organizationId);
+      if (!isAdmin && permissionsExceed(perms, permissionsFromOrgRole(role.permissions))) {
+        return {
+          success: false as const,
+          statusCode: HttpStatus.FORBIDDEN,
+          message: 'You cannot edit a role with permissions beyond your own',
+        };
+      }
+    }
 
     /*
       You cannot narrow a role you yourself hold.
@@ -2215,11 +2236,11 @@ export class UsersService implements OnApplicationBootstrap {
       throw new BadRequestException('Current password is incorrect');
     }
 
-    const newEmail = data.newEmail.trim().toLowerCase();
+    const newEmail = normalizeEmail(data.newEmail);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
       throw new BadRequestException('Invalid email address');
     }
-    if (newEmail === user.email.toLowerCase()) {
+    if (newEmail === normalizeEmail(user.email)) {
       throw new BadRequestException('That is already your email');
     }
 
@@ -2268,6 +2289,17 @@ export class UsersService implements OnApplicationBootstrap {
       throw new NotFoundException('Member not found');
     }
 
+    /*
+      A reset that hands back a temporary password IS signing in as the member,
+      so the requester must already be entitled to everything the member holds.
+
+      It was gated on `canManageUsers` alone, so any manager could reset the
+      owner's password, read the temporary one off the response and sign in as
+      the owner. The rule (owner never; an admin only by an admin; nobody whose
+      permissions reach past the requester's) lives in `mayTakeOverAccount`.
+    */
+    await this.assertMayControlAccount(requesterId, memberId, organizationId, 'reset');
+
     // Generate temporary password
     const temporaryPassword = this.generateRandomPassword();
     const passwordHash = await bcrypt.hash(temporaryPassword, BCRYPT_COST_FACTOR);
@@ -2278,10 +2310,12 @@ export class UsersService implements OnApplicationBootstrap {
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: memberId },
-        data: { passwordHash },
+        // …and the access tokens already issued, which need no row to work.
+        data: { passwordHash, tokensValidAfter: new Date() },
       }),
       this.prisma.refreshToken.deleteMany({ where: { userId: memberId } }),
     ]);
+    this.sessionEvents?.sessionsRevoked(memberId);
 
     return { success: true, temporaryPassword };
   }
@@ -2299,9 +2333,11 @@ export class UsersService implements OnApplicationBootstrap {
   private generateRandomPassword(): string {
     const chars =
       'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+    // crypto.randomInt, not Math.random: this string is a credential handed
+    // out by an admin reset, and Math.random is predictable from its outputs.
     let password = '';
     for (let i = 0; i < 12; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
+      password += chars.charAt(randomInt(chars.length));
     }
     return password;
   }
@@ -2333,6 +2369,7 @@ export class UsersService implements OnApplicationBootstrap {
         where: {
           assignedToId: employeeId,
           createdAt: { gte: todayStart },
+          ...spaceFilter,
         },
       }),
     ]);
@@ -2451,12 +2488,17 @@ export class UsersService implements OnApplicationBootstrap {
     };
   }
 
-  private async getRecentActivityForEmployee(employeeId: string) {
+  /**
+   * `spaceIds` undefined = org-wide viewer; a list = only jobs and clock-ins in
+   * those workspaces (the viewer's), so a supervisor of one site does not read
+   * the person's history at every other.
+   */
+  private async getRecentActivityForEmployee(employeeId: string, spaceIds?: string[]) {
     const activities: any[] = [];
 
     // Get recent task events
     const taskEvents = await this.prisma.taskEvent.findMany({
-      where: { userId: employeeId },
+      where: { userId: employeeId, ...(spaceIds ? { task: { spaceId: { in: spaceIds } } } : {}) },
       orderBy: { createdAt: 'desc' },
       take: 10,
       select: {
@@ -2480,7 +2522,7 @@ export class UsersService implements OnApplicationBootstrap {
 
     // Get recent time entries
     const timeEntries = await this.prisma.timeEntry.findMany({
-      where: { userId: employeeId },
+      where: { userId: employeeId, ...(spaceIds ? { locationId: { in: spaceIds } } : {}) },
       orderBy: { clockInAt: 'desc' },
       take: 5,
       select: {
@@ -2532,54 +2574,6 @@ export class UsersService implements OnApplicationBootstrap {
     }
   }
 
-  private buildDailyTrends(
-    tasks: any[],
-    timeEntries: any[],
-    start: Date,
-    end: Date,
-  ) {
-    const trends: any[] = [];
-    const current = new Date(start);
-
-    while (current <= end) {
-      const dateStr = current.toISOString().split('T')[0];
-      const dayStart = new Date(current);
-      const dayEnd = new Date(current);
-      dayEnd.setDate(dayEnd.getDate() + 1);
-
-      // Tasks completed on this day
-      const completedToday = tasks.filter((t) => {
-        const updated = new Date(t.updatedAt);
-        return (
-          (t.status === TaskStatus.COMPLETED || t.status === TaskStatus.CLOSED) &&
-          updated >= dayStart &&
-          updated < dayEnd
-        );
-      }).length;
-
-      // Hours worked on this day
-      const hoursToday =
-        timeEntries
-          .filter((e) => {
-            const clockIn = new Date(e.clockInAt);
-            return clockIn >= dayStart && clockIn < dayEnd;
-          })
-          .reduce((sum, e) => sum + (e.totalMinutes || 0), 0) / 60;
-
-      trends.push({
-        date: dateStr,
-        completedTasks: completedToday,
-        avgDurationMinutes: 0,
-        rating: null,
-        hoursWorked: hoursToday,
-        onTimeRate: 100,
-      });
-
-      current.setDate(current.getDate() + 1);
-    }
-
-    return trends;
-  }
 
   // ===========================================================================
   // NOTIFICATION ROUTING — per-employee watchers + per-recipient preferences

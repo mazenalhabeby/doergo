@@ -37,13 +37,35 @@ it('never approves more than the overtime ceiling', async () => {
   expect((attendance.approveExtraTime.mock.calls[0] as any)[0].minutes).toBe(OVERTIME_CONSTANTS.MAX_OVERTIME_DURATION_MINUTES);
 });
 
-it('a signature approval carries the signature and keeps the leader’s name', async () => {
+it('a signature on the technician’s phone approves NOTHING until the signer confirms it', async () => {
   const { service, attendance, prisma } = setup();
   prisma.overtimeRequest.findFirst.mockResolvedValue({ ...ROUND, technicianId: 'me' });
   await service.leaderApproveSignature({
     overtimeRequestId: 'ot1', approverId: 'leader', leaderName: 'Anna', leaderSignature: 'data:image/png;base64,AA',
     maxDurationMinutes: 60, userId: 'me', organizationId: 'o1',
   });
+  // Authenticated as the technician — the approver is only a name they picked.
+  expect(attendance.approveExtraTime).not.toHaveBeenCalled();
+  expect(prisma.overtimeRequest.update).toHaveBeenCalledWith(expect.objectContaining({
+    where: { id: 'ot1' },
+    data: expect.objectContaining({ signedById: 'leader', leaderSignature: 'data:image/png;base64,AA', leaderName: 'Anna', maxDurationMinutes: 60 }),
+  }));
+});
+
+it('the signer confirming from their own session approves it as the signed round', async () => {
+  const { service, attendance, prisma } = setup();
+  prisma.overtimeRequest.findFirst.mockResolvedValue({
+    ...ROUND, technicianId: 'me', signedById: 'leader', leaderName: 'Anna', leaderSignature: 'data:image/png;base64,AA', maxDurationMinutes: 60,
+  });
+  await service.leaderApprove({ overtimeRequestId: 'ot1', approverId: 'leader', organizationId: 'o1' } as any);
   expect((attendance.approveExtraTime.mock.calls[0] as any)[0]).toMatchObject({ entryId: 'entry-1', minutes: 60, signature: 'data:image/png;base64,AA' });
-  expect(prisma.overtimeRequest.update).toHaveBeenCalledWith({ where: { id: 'ot1' }, data: { leaderName: 'Anna' } });
+});
+
+it('somebody ELSE approving a signed round approves it remotely, without the signature', async () => {
+  const { service, attendance, prisma } = setup();
+  prisma.overtimeRequest.findFirst.mockResolvedValue({
+    ...ROUND, technicianId: 'me', signedById: 'leader', leaderSignature: 'data:image/png;base64,AA', maxDurationMinutes: 60,
+  });
+  await service.leaderApprove({ overtimeRequestId: 'ot1', approverId: 'other-boss', organizationId: 'o1', maxDurationMinutes: 30 });
+  expect((attendance.approveExtraTime.mock.calls[0] as any)[0]).toMatchObject({ minutes: 30, signature: null });
 });

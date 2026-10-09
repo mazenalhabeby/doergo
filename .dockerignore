@@ -8,6 +8,20 @@ node_modules
 .env
 .env.*
 !.env.example
+# Secrets at ANY depth. The two lines above only match the context root, so
+# every app's own .env (apps/api/*/.env, apps/web-app/.env.local, apps/mobile/.env)
+# and the store/signing credentials were copied into the build context — and
+# into any image layer whose COPY reached them.
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+**/play-store-key.json
+**/google-services.json
+**/*.p8
+**/*.p12
+**/*.jks
+**/*.key
 dist
 **/dist
 # ESM build of packages/shared — regenerated inside the image by

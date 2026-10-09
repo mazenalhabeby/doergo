@@ -32,12 +32,12 @@ export class CustomFieldsController {
   }
 
   @MessagePattern({ cmd: 'get_task_custom_fields' })
-  async getTaskValues(@Payload() data: { taskId: string; organizationId: string }) {
+  async getTaskValues(@Payload() data: Parameters<CustomFieldsService['getTaskValues']>[0]) {
     return this.customFieldsService.getTaskValues(data);
   }
 
   @MessagePattern({ cmd: 'set_task_custom_fields' })
-  async setTaskValues(@Payload() data: { taskId: string; organizationId: string; values: any[] }) {
+  async setTaskValues(@Payload() data: Parameters<CustomFieldsService['setTaskValues']>[0]) {
     return this.customFieldsService.setTaskValues(data);
   }
 }

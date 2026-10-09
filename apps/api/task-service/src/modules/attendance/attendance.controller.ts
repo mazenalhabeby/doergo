@@ -55,10 +55,14 @@ export class AttendanceController {
       search?: string;
       page?: number;
       limit?: number;
+      startDate?: string;
+      endDate?: string;
       requesterId?: string;
-      requesterCanViewAll?: boolean;
+      /** Where the caller holds canViewSpaceAttendance; null = org-wide, [] = none. */
+      viewScopeSpaceIds: string[] | null;
       sortBy?: string;
       sortOrder?: string;
+      sharedSpaceIds?: string[];
     },
   ) {
     return this.attendanceService.getLocationEntries(data);
@@ -70,11 +74,10 @@ export class AttendanceController {
     data: {
       locationIds: string[];
       organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
       date?: string;
       requesterId?: string;
-      requesterCanViewAll?: boolean;
+      /** Where the caller holds canViewSpaceAttendance; null = org-wide, [] = none. */
+      viewScopeSpaceIds: string[] | null;
     },
   ) {
     return this.attendanceService.getLocationEntriesBatch(data);
@@ -228,7 +231,7 @@ export class AttendanceController {
   }
 
   @MessagePattern({ cmd: 'delete_break_rule' })
-  async deleteBreakRule(@Payload() data: { id: string; organizationId: string }) {
+  async deleteBreakRule(@Payload() data: { id: string; organizationId: string; scopeSpaceIds?: string[] | null }) {
     return this.breakRules.remove(data);
   }
 
@@ -265,8 +268,9 @@ export class AttendanceController {
     data: {
       timeEntryId: string;
       organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
+      requesterId: string;
+      /** Spaces the caller may read attendance in; null = org-wide, [] = none. */
+      scopeSpaceIds: string[] | null;
     },
   ) {
     return this.breakService.getBreaksForEntry(data);

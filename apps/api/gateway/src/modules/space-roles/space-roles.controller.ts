@@ -3,10 +3,10 @@ import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.int
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import {
   isAdmin,
-  accessAllows,
   permissionsExceed,
   permissionsFromOrgRole,
   mayViewLabourCost,
+  mayManageSpaceMembers,
   type PermissionSet,
   type ResolvedAccess,
   type BillByValue,
@@ -16,20 +16,17 @@ import { MergeRoleDto, RateHistoryQueryDto, SetDayRateDto, UpdateMemberRateDto, 
 import { RequirePermission } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { SpaceRolesService } from './space-roles.service';
+import { RebillService } from '../../common/billing/rebill.service';
 
 /**
- * True if the caller may manage THIS space — org-wide `canManageUsers`, or the
- * space-manager delegation: `canManageUsers` granted within this exact space
- * (from their SpaceAssignment role, resolved into access.perSpace). The spaceId
- * is the route param = the resource being acted on, so this is not a
- * confused-deputy — permission is checked against the very space in the URL.
+ * May the caller manage THIS space's people — the one shared rule
+ * (`mayManageSpaceMembers`: admin, org-wide `canManageUsers`, or `canManageUsers`
+ * granted in this exact space). The spaceId is the route param = the resource
+ * being acted on, so this is not a confused-deputy. It was a local copy of the
+ * same rule; one definition means the roster's bill-rate strip and these routes
+ * cannot drift apart.
  */
-function canManageSpace(user: any, spaceId: string): boolean {
-  if (isAdmin(user)) return true;
-  if (user?.canManageUsers === true) return true;
-  const access = user?.access as ResolvedAccess | undefined;
-  return accessAllows(access, 'canManageUsers', spaceId);
-}
+const canManageSpace = (user: any, spaceId: string): boolean => mayManageSpaceMembers(user, spaceId);
 function assertCanManageSpace(user: any, spaceId: string) {
   if (!canManageSpace(user, spaceId)) {
     throw new ForbiddenException('You do not manage this space');
@@ -91,7 +88,25 @@ function assertMayGrant(user: any, rolePerms: unknown, spaceId?: string) {
 @UseInterceptors(LabourCostInterceptor)
 @Controller()
 export class SpaceRolesController {
-  constructor(private readonly service: SpaceRolesService) {}
+  constructor(
+    private readonly service: SpaceRolesService,
+    private readonly billing: RebillService,
+  ) {}
+
+  /**
+   * Run a change that can move the bill, then re-price the organization.
+   *
+   * An external member's seat is priced from the permissions their SPACE role
+   * grants (an Observer €2, a Supervisor €9.99), so giving, changing or taking a
+   * space role — or editing what a role grants — changes what is owed. These
+   * routes did not re-bill; the change reached Stripe only with the nightly
+   * sweep. Only after success: a refused change moved nothing.
+   */
+  private async thenRebill<T>(req: any, change: Promise<T>): Promise<T> {
+    const result = await change;
+    this.billing.rebill(req.user?.organizationId);
+    return result;
+  }
 
   @Get('space-roles')
   @RequirePermission('canManageWorkspaces')
@@ -146,7 +161,7 @@ export class SpaceRolesController {
     @Request() req: any,
   ) {
     if (body.permissions !== undefined) assertMayGrant(req.user, body.permissions);
-    return this.service.updateRole({
+    return this.thenRebill(req, this.service.updateRole({
       name: body.name,
       description: body.description,
       color: body.color,
@@ -159,14 +174,14 @@ export class SpaceRolesController {
       // you could not have authored would otherwise let you rename it, hand it
       // out, and keep every permission you were never allowed to give.
       requesterPerms: isAdmin(req.user) ? null : (req.user?.access?.org ?? {}),
-    });
+    }));
   }
 
   @Delete('space-roles/:id')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Delete a custom space sub-role' })
   deleteRole(@Param('id') roleId: string, @Request() req: any) {
-    return this.service.deleteRole({ roleId, organizationId: req.user.organizationId });
+    return this.thenRebill(req, this.service.deleteRole({ roleId, organizationId: req.user.organizationId }));
   }
 
   // Member endpoints allow EITHER org canManageUsers OR the space-manager
@@ -262,7 +277,7 @@ export class SpaceRolesController {
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Merge a work role into another (holders and day rates move; the role is deleted)' })
   mergeRole(@Param('roleId') roleId: string, @Body() body: MergeRoleDto, @Request() req: any) {
-    return this.service.mergeRole({ roleId, intoRoleId: body.intoRoleId, organizationId: req.user.organizationId });
+    return this.thenRebill(req, this.service.mergeRole({ roleId, intoRoleId: body.intoRoleId, organizationId: req.user.organizationId }));
   }
 
   /**
@@ -305,7 +320,7 @@ export class SpaceRolesController {
     @Request() req: any,
   ) {
     assertCanManageSpace(req.user, spaceId);
-    return this.service.updateMemberRoles({
+    return this.thenRebill(req, this.service.updateMemberRoles({
       spaceId,
       memberId,
       organizationId: req.user.organizationId,
@@ -316,7 +331,7 @@ export class SpaceRolesController {
       hoursBasis: body.hoursBasis,
       // The management role is authority: same ceiling as assigning one.
       requesterPerms: isAdmin(req.user) ? null : actorPermsForSpace(req.user, spaceId),
-    });
+    }));
   }
 
   @Post('spaces/:spaceId/members')
@@ -327,7 +342,7 @@ export class SpaceRolesController {
     @Request() req: any,
   ) {
     assertCanManageSpace(req.user, spaceId);
-    return this.service.assignMember({
+    return this.thenRebill(req, this.service.assignMember({
       spaceId,
       userId: body.userId,
       spaceRoleId: body.spaceRoleId ?? null,
@@ -337,7 +352,7 @@ export class SpaceRolesController {
       // checked there. Null means "no ceiling" and is set ONLY for an admin,
       // who holds everything and could never trip it.
       requesterPerms: isAdmin(req.user) ? null : actorPermsForSpace(req.user, spaceId),
-    });
+    }));
   }
 
   @Delete('spaces/:spaceId/members/:memberId')
@@ -348,7 +363,7 @@ export class SpaceRolesController {
     @Request() req: any,
   ) {
     assertCanManageSpace(req.user, spaceId);
-    return this.service.removeMember({ spaceId, memberId, organizationId: req.user.organizationId });
+    return this.thenRebill(req, this.service.removeMember({ spaceId, memberId, organizationId: req.user.organizationId }));
   }
 
   @Patch('spaces/:spaceId/members/:memberId/routing')

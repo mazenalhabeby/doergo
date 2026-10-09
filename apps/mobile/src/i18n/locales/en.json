@@ -908,7 +908,8 @@
     "signatureRequired": "Leader signature is required",
     "approveOvertime": "Approve Overtime",
     "approvedSuccess": "Overtime approved successfully",
-    "failedToApprove": "Failed to approve overtime"
+    "failedToApprove": "Failed to approve overtime",
+    "signedAwaitingConfirm": "Signed — {{name}} confirms it on their own phone, then it counts"
   },
   "timeOff": {
     "stats": {

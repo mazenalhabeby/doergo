@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { CustomersService, type CrmCaller } from '../customers/customers.service';
 import {
   PORTAL_TEMPLATES,
   templateToIntakeCategories,
@@ -46,7 +47,11 @@ function cacheConfig(portalId: string, data: unknown) {
  */
 @Injectable()
 export class PortalService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    // The CRM's own reach rule (caps + owner/co-manager), reused — never re-derived.
+    private readonly customers: CustomersService,
+  ) {}
 
   private shapeConfig(portal: any, categories: any[]) {
     return {
@@ -508,7 +513,11 @@ export class PortalService {
   }
 
   /** Make a unit the customer's primary address (unsets the siblings). */
-  async setPrimaryUnit(data: { id: string; organizationId: string; customerId?: string }) {
+  async setPrimaryUnit(data: { id: string; organizationId: string; customerId?: string; crmCaller?: CrmCaller }) {
+    if (data.crmCaller) {
+      if (!data.customerId) throw new BadRequestException('A client is required');
+      await this.assertClientAddressesEditable(data.organizationId, data.customerId, data.crmCaller);
+    }
     const unit = await this.prisma.customerUnit.findFirst({
       where: { id: data.id, organizationId: data.organizationId, ...(data.customerId ? { customerId: data.customerId } : {}) },
       select: { id: true, customerId: true },
@@ -587,6 +596,52 @@ export class PortalService {
     return c;
   }
 
+  /**
+   * Every reference a unit write names must belong to the caller's organization.
+   *
+   * ⚠️ The ids arrive from a request body. `customerId` was checked; `spaceId` and
+   * `portalId` were written as given, so a unit could be filed into ANOTHER
+   * organization's workspace or portal — and that organization's screens, which
+   * list units by space/portal, would then show it. 404 for all three, so the
+   * refusal confirms nothing about ids outside the tenant.
+   */
+  private async assertUnitRefsInOrg(organizationId: string, refs: { spaceId?: string | null; portalId?: string | null }) {
+    if (refs.spaceId) {
+      const space = await this.prisma.companyLocation.findFirst({ where: { id: refs.spaceId, organizationId }, select: { id: true } });
+      if (!space) throw new NotFoundException('Space not found');
+    }
+    if (refs.portalId) {
+      const portal = await this.prisma.portal.findFirst({ where: { id: refs.portalId, organizationId }, select: { id: true } });
+      if (!portal) throw new NotFoundException('Portal not found');
+    }
+  }
+
+  /**
+   * A CRM caller may change this client's addresses — the same rule a CRM write
+   * of the client's info obeys (`customers.service.update`): reach the record
+   * (view-all, or own / co-manage it) AND hold editInfo (or manage). A portal
+   * resident is manage-only, as everywhere else in the CRM.
+   *
+   * ⚠️ Only the CRM address routes pass `crmCaller`. Before this they checked
+   * `crmEditInfo` alone in the gateway, so a rep scoped to their OWN clients
+   * could edit, re-primary or delete the address of anybody's client by id.
+   * 404 when out of reach, like the rest of the CRM — never confirm the id.
+   */
+  async assertClientAddressesEditable(organizationId: string, customerId: string, caller: CrmCaller) {
+    const c = await this.prisma.customer.findFirst({
+      where: { id: customerId, organizationId },
+      select: { id: true, ownerId: true, managerIds: true, isPortalResident: true },
+    });
+    if (!c) throw new NotFoundException('Customer not found');
+    const caps = await this.customers.crmCapsFor(caller, organizationId);
+    if (c.isPortalResident) {
+      if (!caps.manage) throw new ForbiddenException('Not allowed');
+      return;
+    }
+    if (!caps.canAccess || !this.customers.canReach(caps, c, caller)) throw new NotFoundException('Customer not found');
+    if (!(caps.editInfo || caps.manage)) throw new ForbiddenException('Not allowed to edit client info');
+  }
+
   /** One home per member per space: when a member is set as an apartment's
    *  resident, clear them from every OTHER unit in the same space so a member
    *  never appears to live in two apartments at once. Single source of truth,
@@ -625,7 +680,13 @@ export class PortalService {
     residentUserId?: string | null;
     details?: any[];
     actorId?: string;
+    crmCaller?: CrmCaller; // set by the CRM address routes only — see assertClientAddressesEditable
   }) {
+    if (data.crmCaller) {
+      if (!data.customerId) throw new BadRequestException('A client is required');
+      await this.assertClientAddressesEditable(data.organizationId, data.customerId, data.crmCaller);
+    }
+    await this.assertUnitRefsInOrg(data.organizationId, { spaceId: data.spaceId, portalId: data.portalId });
     // Resident is a MEMBER or a CLIENT, never both. A valid member wins.
     const residentUserId = data.residentUserId ? ((await this.keepOrgUserIds([data.residentUserId], data.organizationId))[0] ?? null) : null;
     const clientId = residentUserId ? null : (data.customerId || null);
@@ -684,7 +745,14 @@ export class PortalService {
     details?: any[];
     actorId?: string;
     scopeCustomerId?: string; // when set, the unit must belong to this customer
+    crmCaller?: CrmCaller; // set by the CRM address routes only — see assertClientAddressesEditable
   }) {
+    if (data.crmCaller) {
+      // The CRM route always scopes to the client in its path; no scope, no edit.
+      if (!data.scopeCustomerId) throw new BadRequestException('A client is required');
+      await this.assertClientAddressesEditable(data.organizationId, data.scopeCustomerId, data.crmCaller);
+    }
+    await this.assertUnitRefsInOrg(data.organizationId, { spaceId: data.spaceId, portalId: data.portalId });
     const existing = await this.prisma.customerUnit.findFirst({
       where: { id: data.id, organizationId: data.organizationId, ...(data.scopeCustomerId ? { customerId: data.scopeCustomerId } : {}) },
       select: { id: true, customerId: true, residentUserId: true, spaceId: true },
@@ -852,7 +920,11 @@ export class PortalService {
     return { data: { success: true, deactivatedUserIds } };
   }
 
-  async deleteUnit(data: { id: string; organizationId: string; customerId?: string }) {
+  async deleteUnit(data: { id: string; organizationId: string; customerId?: string; crmCaller?: CrmCaller }) {
+    if (data.crmCaller) {
+      if (!data.customerId) throw new BadRequestException('A client is required');
+      await this.assertClientAddressesEditable(data.organizationId, data.customerId, data.crmCaller);
+    }
     const existing = await this.prisma.customerUnit.findFirst({
       where: { id: data.id, organizationId: data.organizationId, ...(data.customerId ? { customerId: data.customerId } : {}) },
       select: { id: true },
@@ -883,6 +955,8 @@ export class PortalService {
       select: { id: true },
     });
     if (!portal) throw new NotFoundException('Portal not found');
+    // The routing space is a body id too — same tenant check updateCategory makes.
+    await this.assertUnitRefsInOrg(data.organizationId, { spaceId: data.spaceId });
     const cat = await this.prisma.intakeCategory.create({
       data: {
         organizationId: data.organizationId,

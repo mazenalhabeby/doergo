@@ -10,10 +10,12 @@ import {
   QUEUE_NAMES,
 } from '@hbcfield/shared';
 import { PrismaModule } from './common/prisma/prisma.module';
+import { TaskAccessModule } from './common/task-access/task-access.module';
 import { ObjectStoreModule } from '@hbcfield/shared/storage';
 import { MediaSignerModule } from './common/storage/media-signer.service';
 import { WorkflowCacheModule } from './common/cache/workflow-cache.module';
 import { TasksModule } from './modules/tasks/tasks.module';
+import { MembersModule } from './modules/members/members.module';
 import { NotificationRoutingModule } from './common/notification-routing.module';
 import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { AssetsModule } from './modules/assets/assets.module';
@@ -74,11 +76,13 @@ import { RetentionService } from './common/retention/retention.service';
       createClientOptions(SERVICE_NAMES.NOTIFICATION),
     ]),
     PrismaModule,
+    TaskAccessModule, // the one task gate (tasks, attachments, reports, custom fields)
     // One object store for every module that touches the bucket.
     ObjectStoreModule,
     MediaSignerModule,
     WorkflowCacheModule,
     TasksModule,
+    MembersModule,
     AttachmentsModule,
     AssetsModule,
     ReportsModule,

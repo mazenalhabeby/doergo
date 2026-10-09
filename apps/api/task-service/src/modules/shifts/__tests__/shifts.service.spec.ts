@@ -36,6 +36,48 @@ describe('ShiftsService', () => {
     });
   });
 
+  describe('updateAssignment — scope (regression: loaded by org only)', () => {
+    it('refuses a rota line in a space outside the caller\'s scope — reads as not found, nothing written', async () => {
+      prisma.shiftAssignment.findFirst.mockResolvedValue({ id: 'a-1', spaceId: 'sp-OTHER', recurrence: 'DAILY', daysOfWeek: [], daysOfMonth: [], dates: [] });
+      await expect(
+        service.updateAssignment({ organizationId: 'org-1', assignmentId: 'a-1', isActive: false, scopeSpaceIds: ['sp-1'] }),
+      ).rejects.toThrow(NotFoundException);
+      expect(prisma.shiftAssignment.update).not.toHaveBeenCalled();
+    });
+    it('refuses moving a line onto another space\'s shift', async () => {
+      prisma.shiftAssignment.findFirst.mockResolvedValue({ id: 'a-1', spaceId: 'sp-1', recurrence: 'DAILY', daysOfWeek: [], daysOfMonth: [], dates: [] });
+      prisma.shift.findFirst.mockResolvedValue({ id: 'sh-9', spaceId: 'sp-9' });
+      await expect(
+        service.updateAssignment({ organizationId: 'org-1', assignmentId: 'a-1', shiftId: 'sh-9' }),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.shiftAssignment.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('createShift — scope (regression: org-wide shift by a scoped manager)', () => {
+    it('a space-scoped caller cannot create an organization-wide shift by leaving the space out', async () => {
+      await expect(
+        service.createShift({ organizationId: 'org-1', name: 'Sneaky', startLocal: '09:00', endLocal: '17:00', scopeSpaceIds: ['sp-1'] }),
+      ).rejects.toThrow(NotFoundException);
+      expect(prisma.shift.create).not.toHaveBeenCalled();
+    });
+    it('granted nowhere ([]) cannot either', async () => {
+      await expect(
+        service.createShift({ organizationId: 'org-1', name: 'Sneaky', startLocal: '09:00', endLocal: '17:00', scopeSpaceIds: [] }),
+      ).rejects.toThrow(NotFoundException);
+    });
+    it('refuses a space outside the scope, and an archived space', async () => {
+      await expect(
+        service.createShift({ organizationId: 'org-1', spaceId: 'sp-2', name: 'X', startLocal: '09:00', endLocal: '17:00', scopeSpaceIds: ['sp-1'] }),
+      ).rejects.toThrow(NotFoundException);
+      prisma.companyLocation.findFirst.mockResolvedValueOnce(null); // isActive: true filtered it out
+      await expect(
+        service.createShift({ organizationId: 'org-1', spaceId: 'sp-1', name: 'X', startLocal: '09:00', endLocal: '17:00' }),
+      ).rejects.toThrow(NotFoundException);
+      expect(prisma.companyLocation.findFirst.mock.calls.at(-1)[0].where.isActive).toBe(true);
+    });
+  });
+
   describe('createShift', () => {
     it('derives crossesMidnight for a night shift and clamps reminder params', async () => {
       prisma.shift.create.mockImplementation(({ data }: any) => Promise.resolve({ id: 's1', ...data }));

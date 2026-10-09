@@ -6,7 +6,6 @@ import {
   UpdateEmployeeDto,
   ListEmployeesDto,
   GetEmployeeDetailDto,
-  GetEmployeePerformanceDto,
   ListOrgMembersDto,
   UpdateMemberProfileDto,
 } from './dto';
@@ -30,8 +29,8 @@ export class UsersController {
   }
 
   @MessagePattern({ cmd: 'get_workers' })
-  async getWorkers(@Payload() data: { organizationId?: string }) {
-    return this.usersService.getWorkers(data.organizationId);
+  async getWorkers(@Payload() data: { organizationId?: string; canViewTracking?: boolean }) {
+    return this.usersService.getWorkers(data.organizationId, data.canViewTracking === true);
   }
 
   @MessagePattern({ cmd: 'get_worker_tasks' })
@@ -72,10 +71,14 @@ export class UsersController {
     return this.usersService.deactivateEmployee(data.id, data.organizationId);
   }
 
-  @MessagePattern({ cmd: 'get_technician_performance' })
-  async getEmployeePerformance(@Payload() data: GetEmployeePerformanceDto) {
-    return this.usersService.getEmployeePerformance(data);
-  }
+  /*
+    ⚠️ `get_technician_performance` is answered by TASK-SERVICE only.
+
+    It used to be registered here as well. Every service listens on the same
+    Redis bus, so both answered and the first reply won — and this copy ignored
+    `scopeSpaceIds`, so a supervisor whose authority is one workspace was
+    sometimes handed the whole organization's figures. One handler, one rule.
+  */
 
   // ============================================================================
   // ORGANIZATION MEMBERS

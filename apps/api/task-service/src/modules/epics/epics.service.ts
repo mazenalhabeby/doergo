@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { assertSpaceInOrg } from '../../common/tenant-scope.util';
 import { success } from '@hbcfield/shared';
 
 const VALID_EPIC_STATUSES = ['OPEN', 'IN_PROGRESS', 'DONE'];
@@ -70,6 +71,9 @@ export class EpicsService {
     position?: number;
     organizationId: string;
   }) {
+    // The space id comes from the body: it must be this organization's, and live (tenant-scope.util).
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { activeOnly: true });
+
     // Determine position if not provided
     let position = data.position;
     if (position === undefined || position === null) {

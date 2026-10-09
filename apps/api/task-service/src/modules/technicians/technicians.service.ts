@@ -7,6 +7,7 @@ import { findPrior } from '../../common/create-once.util';
 import { CoverService } from './cover.service';
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
 import { ShiftRematchService } from '../attendance/shift-rematch.service';
+import { assertNotSelfDecision } from '../attendance/self-decision';
 import {
   GetEmployeeStatsDto,
   GetEmployeePerformanceDto,
@@ -1047,6 +1048,16 @@ export class TechniciansService {
     if (timeOff.status !== 'PENDING') {
       throw new BadRequestException('Time-off request has already been processed');
     }
+
+    // Nobody decides their own leave, either way — the overtime rule
+    // (attendance/self-decision.ts). Withdrawing your own request is
+    // `cancelTimeOff`, not a decision.
+    await assertNotSelfDecision(this.prisma as never, {
+      deciderId: approverId,
+      subjectId: timeOff.technicianId,
+      organizationId,
+      message: 'You cannot decide your own time off. Ask a manager or an administrator.',
+    });
 
     // Recounted at the decision: a holiday confirmed since the request moves the number once, here.
     const workingDays = approved

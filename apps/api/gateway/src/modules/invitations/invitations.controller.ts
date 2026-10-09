@@ -7,7 +7,6 @@ import {
   Param,
   Query,
   Inject,
-  HttpException,
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
@@ -21,7 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
-import { CurrentUser, CurrentUserData } from '@hbcfield/shared';
+import { CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Public, RequirePermission } from '../../common/decorators';
@@ -61,12 +60,7 @@ export class InvitationsController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
     // No invitation email from here. auth-service sends it when `email` is in
     // the payload (it has done since client invites learned to email
@@ -123,12 +117,7 @@ export class InvitationsController {
       this.authClient.send({ cmd: 'accept_invitation' }, dto),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
     return result;
   }
@@ -153,12 +142,7 @@ export class InvitationsController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
     this.orgEvents.memberChanged(user.organizationId, undefined, 'invitation.revoked');
 

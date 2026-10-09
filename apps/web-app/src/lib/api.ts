@@ -91,7 +91,6 @@ interface ApiResponse<T = unknown> {
 
 interface AuthTokens {
   accessToken: string;
-  refreshToken: string;
 }
 
 // Token storage — the short-lived ACCESS token lives in localStorage (for page
@@ -190,10 +189,7 @@ function refreshAccessToken(): Promise<boolean> {
         return false;
       }
 
-      setTokens({
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
-      });
+      setTokens({ accessToken: data.accessToken });
 
       return true;
     } catch (error) {
@@ -347,19 +343,16 @@ export const authApi = {
       throw new Error(result.message || 'Login failed');
     }
 
-    // API returns { success: true, data: { user, accessToken, refreshToken } }.
-    // The refresh token is also set as an httpOnly cookie by the gateway; we only
-    // need the access token client-side.
+    // API returns { success: true, data: { user, accessToken } }. The refresh
+    // token is ONLY in the httpOnly cookie the gateway sets — the gateway strips
+    // it from a browser's JSON so no script on the page can ever read it.
     const data = result.data;
 
     if (!data?.accessToken) {
       throw new Error('Invalid server response');
     }
 
-    setTokens({
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
-    });
+    setTokens({ accessToken: data.accessToken });
 
     return data;
   },

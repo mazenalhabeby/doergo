@@ -57,8 +57,6 @@ interface AttendanceEventPayload {
   flagSummary?: string
   timeEntry?: {
     isRemote?: boolean
-    clockInPlace?: string | null
-    clockOutPlace?: string | null
     location?: { name?: string } | null
     user?: { firstName?: string; lastName?: string } | null
   } | null
@@ -82,13 +80,14 @@ const taskLink = (d: TaskEventPayload): string | undefined => {
 
 // Attendance events carry { userId, timeEntry }. Pull a readable name (from the
 // included user) and where the shift happened (site name, or "Remote · city").
-const attendanceInfo = (d: AttendanceEventPayload, remotePlace: string | null | undefined, t: TFunction) => {
+// The clock event no longer carries the reverse-geocoded clock-in/-out address
+// (a member's whereabouts do not travel to every screen in the organization):
+// away from a site reads "Remote", at a site its name.
+const attendanceInfo = (d: AttendanceEventPayload, t: TFunction) => {
   const te = d?.timeEntry
   const u = te?.user
   const name = d?.userName || (u ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() : "")
-  const place = te?.isRemote
-    ? `${t("attendance.my.remote", "Remote")}${remotePlace ? ` · ${remotePlace}` : ""}`
-    : te?.location?.name || ""
+  const place = te?.isRemote ? t("attendance.my.remote", "Remote") : te?.location?.name || ""
   return { name, place }
 }
 
@@ -382,11 +381,11 @@ export function NotificationBell() {
 
       // Attendance events
       subscribe<AttendanceEventPayload>("attendance.clockIn", (d) => {
-        const { name, place } = attendanceInfo(d, d?.timeEntry?.clockInPlace, t)
+        const { name, place } = attendanceInfo(d, t)
         add("clock_in", name || t("notifications.clockIn"), [t("notifications.clockInAction", "Clocked in"), place].filter(Boolean).join(" · "), attendanceHref)
       }),
       subscribe<AttendanceEventPayload>("attendance.clockOut", (d) => {
-        const { name, place } = attendanceInfo(d, d?.timeEntry?.clockOutPlace ?? d?.timeEntry?.clockInPlace, t)
+        const { name, place } = attendanceInfo(d, t)
         add("clock_out", name || t("notifications.clockOut"), [t("notifications.clockOutAction", "Clocked out"), place].filter(Boolean).join(" · "), attendanceHref)
       }),
       subscribe<AttendanceEventPayload>("attendance_geofence_alert", (d) => {

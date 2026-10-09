@@ -55,6 +55,7 @@ import {
   resolveMemberRouting,
   type DocumentSignerRole,
   type SignerStep,
+  normalizeEmail,
 } from '@hbcfield/shared';
 // Node-only: pulls the AWS SDK, so it lives behind its own subpath rather than
 // the root export. Services that never touch object storage stay free of it.
@@ -209,6 +210,12 @@ interface RequestContext {
 
 /** Uploads are capped well below anything that would strain a phone or a bill. */
 const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024;
+
+/**
+ * What a client's signing link may show AND open. One list for both: a list
+ * and a file route that disagree are how a revoked document stays downloadable.
+ */
+const CUSTOMER_LINK_STATUSES = ['AWAITING_SIGNATURE', 'SIGNED'] as const;
 
 /**
  * How long a staged batch is kept before it counts as abandoned.
@@ -427,6 +434,14 @@ export class DocumentsService {
       if (problem) throw new BadRequestException(problem);
     }
 
+    // Naming who may SEE a type is the same decision as naming who may see one
+    // document, so it asks the same permission — a template editor must not be
+    // able to hand the payslip register to a role of their choosing.
+    if (data.visibleToRoleIds && data.visibleToRoleIds.length > 0) {
+      this.assertCanManageVisibility(data.actor);
+    }
+    await this.assertTypeRefsInOrg(data.actor.organizationId, data);
+
     try {
       return await this.prisma.documentType.create({
         data: {
@@ -516,6 +531,16 @@ export class DocumentsService {
       if (problem) throw new BadRequestException(problem);
 
     }
+
+    // A form sends every field, so only a list that actually DIFFERS from the
+    // stored one is a change of who may see the type.
+    if (
+      data.patch.visibleToRoleIds !== undefined &&
+      !sameIdSet(data.patch.visibleToRoleIds, existing.visibleToRoleIds ?? [])
+    ) {
+      this.assertCanManageVisibility(data.actor);
+    }
+    await this.assertTypeRefsInOrg(data.actor.organizationId, data.patch);
 
     // `cadence` and `direction` are absent from the patch on purpose. Changing
     // either would re-interpret every document already filed under the type —
@@ -623,6 +648,9 @@ export class DocumentsService {
 
     const member = await this.assertMemberOfOrg(data.userId, data.actor.organizationId);
     const type = await this.findTypeOr404(data.typeId, data.actor.organizationId);
+    // A credential filed about yourself would skip verification entirely; your
+    // own goes through `/documents/mine` and waits for somebody else.
+    if (type.isCredential) this.assertNotOwnReview(data.actor, data.userId);
 
     let replaced: { id: string; title: string; userId: string } | null = null;
     if (data.replacesId) {
@@ -1838,7 +1866,20 @@ export class DocumentsService {
     if (!head.exists) {
       throw new BadRequestException('The upload did not complete — please try again');
     }
+    /*
+      ⚠️ Bounded BEFORE it is read into memory and decoded. This path ("read it
+      before I send it") had no size check at all — the presign caps what a
+      member DECLARES, not what lands in the bucket — so an oversized object was
+      pulled whole into the process and handed to sharp and the OCR. Same limit
+      as filing a document; the pixel bound is `openUntrustedImage`'s.
+    */
+    if (typeof head.sizeBytes === 'number' && head.sizeBytes > MAX_DOCUMENT_BYTES) {
+      throw new BadRequestException(`That file is larger than the ${Math.floor(MAX_DOCUMENT_BYTES / 1024 / 1024)} MB limit`);
+    }
     const raw = await this.withStorage('reading an upload', () => store.get(stagingKey));
+    if (raw.length > MAX_DOCUMENT_BYTES) {
+      throw new BadRequestException(`That file is larger than the ${Math.floor(MAX_DOCUMENT_BYTES / 1024 / 1024)} MB limit`);
+    }
     const bytes = await this.applyCrop(raw, crop);
     /*
       ⚠️ The type CAME BACK WITH THE OBJECT and was being thrown away, then
@@ -2098,8 +2139,9 @@ export class DocumentsService {
     const targetUserId = data.targetUserId ?? data.actor.userId;
     const isSelf = targetUserId === data.actor.userId;
 
+    // 404, not 403: a refusal would confirm the person exists here.
     if (!isSelf && !data.actor.canViewMemberDocuments) {
-      throw new ForbiddenException('You cannot see other members’ documents');
+      throw new NotFoundException('Member not found');
     }
 
     const member = await this.prisma.user.findFirst({
@@ -2442,7 +2484,23 @@ export class DocumentsService {
       },
     });
     if (!document) throw new NotFoundException('No document is waiting for review');
+    this.assertNotOwnReview(actor, document.userId);
     return document;
+  }
+
+  /**
+   * Nobody vouches for their own paperwork.
+   *
+   * ⚠️ A member who can issue documents could otherwise approve their own
+   * expired licence, or file their own "certificate" straight to ISSUED and
+   * past the dispatch gate. Administrators excepted — in a one-person
+   * organization there is nobody else to ask.
+   */
+  private assertNotOwnReview(actor: DocumentActor, subjectUserId: string) {
+    if (actor.isAdmin) return;
+    if (subjectUserId === actor.userId) {
+      throw new ForbiddenException('Somebody else has to review your own documents');
+    }
   }
 
   /** Tell the member what happened to what they sent. */
@@ -2650,7 +2708,7 @@ export class DocumentsService {
         email: data.email,
         document: {
           organizationId: data.organizationId,
-          status: { in: ['AWAITING_SIGNATURE', 'SIGNED'] },
+          status: { in: [...CUSTOMER_LINK_STATUSES] },
         },
       },
       select: {
@@ -2730,7 +2788,13 @@ export class DocumentsService {
       where: {
         id: data.signerId,
         email: data.email,
-        document: { organizationId: data.organizationId },
+        /*
+          ⚠️ The same statuses the link LISTS. This asked only the organization,
+          so a document revoked (or superseded) after the email went out still
+          minted a fresh download URL for anybody holding the live link and the
+          signer id — the list hid it, the file route served it.
+        */
+        document: { organizationId: data.organizationId, status: { in: [...CUSTOMER_LINK_STATUSES] } },
       },
       select: {
         id: true,
@@ -3787,7 +3851,7 @@ export class DocumentsService {
         the evidence trail records.
       */
       if (chosen?.email && !chosen.userId && !chosen.customerId) {
-        const addr = chosen.email.trim().toLowerCase();
+        const addr = normalizeEmail(chosen.email);
         if (!isUsableEmail(addr)) {
           throw new BadRequestException(`Step ${order} needs a usable email address`);
         }
@@ -3941,7 +4005,7 @@ export class DocumentsService {
             produce a row the link could never match, and a document waiting on
             a person who could never reach it.
           */
-          email: email ? email.trim().toLowerCase() : null,
+          email: email ? normalizeEmail(email) : null,
           contactName,
           status: 'PENDING',
         },
@@ -4085,8 +4149,9 @@ export class DocumentsService {
         (r.eligibleUserIds ?? []).includes(data.actor.userId),
     );
     const isSubject = document.userId === data.actor.userId;
+    // 404, not 403 — the same answer as a document that does not exist.
     if (!inChain && !isSubject && !data.actor.canViewMemberDocuments) {
-      throw new ForbiddenException('You cannot see this document');
+      throw new NotFoundException('Document not found');
     }
     // Read AFTER the chain is known: a signer routed onto this document reads it
     // through their step, not through the type.
@@ -4859,8 +4924,8 @@ export class DocumentsService {
     if (!isSigner && !data.actor.canOpenMemberDocuments) {
       // Distinct from the list permission on purpose: a dispatcher may need to
       // know a certificate exists and expires on Friday without being able to
-      // open a colleague's payslip.
-      throw new ForbiddenException('You cannot open other members’ documents');
+      // open a colleague's payslip. 404, not 403: a refusal confirms it exists.
+      throw new NotFoundException('Document not found');
     }
 
     /*
@@ -4938,16 +5003,29 @@ export class DocumentsService {
     assertTypeVisible(data.actor, document);
     const isSelf = document.userId === data.actor.userId;
     if (!isSelf && !data.actor.canViewMemberDocuments) {
-      throw new ForbiddenException('You cannot see other members’ documents');
+      throw new NotFoundException('Document not found');
     }
 
-    return this.prisma.documentEvent.findMany({
+    const events = await this.prisma.documentEvent.findMany({
       where: { documentId: document.id },
       orderBy: { at: 'asc' },
       include: {
         actor: { select: { id: true, firstName: true, lastName: true } },
       },
     });
+
+    /*
+      Where somebody ELSE was, and on what device, is evidence for the
+      organization — not something the subject or a list-only reader is owed.
+      Your own lines stay whole; other people's lose ip, device and position
+      unless you may open members' documents (or are an administrator).
+    */
+    if (data.actor.isAdmin || data.actor.canOpenMemberDocuments) return events;
+    return events.map((e) =>
+      e.actorId === data.actor.userId
+        ? e
+        : { ...e, ip: null, userAgent: null, lat: null, lng: null },
+    );
   }
 
   /**
@@ -4969,8 +5047,9 @@ export class DocumentsService {
   }) {
     const targetUserId = data.targetUserId ?? data.actor.userId;
     const isSelf = targetUserId === data.actor.userId;
+    // 404, not 403: a refusal would confirm the person has a file here.
     if (!isSelf && !data.actor.canOpenMemberDocuments) {
-      throw new ForbiddenException('You cannot export other members’ documents');
+      throw new NotFoundException('Member not found');
     }
     const store = this.requireStore();
 
@@ -5341,6 +5420,52 @@ export class DocumentsService {
   private assertCanManageTypes(actor: DocumentActor) {
     if (!actor.canManageDocumentTemplates) {
       throw new ForbiddenException('You cannot manage document types');
+    }
+  }
+
+  /** Who may see documents — per document or per type, one permission. */
+  private assertCanManageVisibility(actor: DocumentActor) {
+    if (actor.isAdmin) return;
+    if (!actor.canManageDocumentVisibility || actor.isExternal) {
+      throw new ForbiddenException('You cannot change who sees documents');
+    }
+  }
+
+  /**
+   * Every role and workflow a type names must be this organization's own.
+   *
+   * ⚠️ Without it a type could carry another tenant's role id — harmless to
+   * read, but a list nobody here can edit and an id that leaks across tenants.
+   */
+  private async assertTypeRefsInOrg(
+    organizationId: string,
+    refs: {
+      visibleToRoleIds?: string[];
+      requiredFromRoleIds?: string[];
+      requiredForWorkflowIds?: string[];
+    },
+  ) {
+    const roleIds = [
+      ...new Set([...(refs.visibleToRoleIds ?? []), ...(refs.requiredFromRoleIds ?? [])]),
+    ];
+    if (roleIds.length > 0) {
+      const found = await this.prisma.accessRole.count({
+        where: { id: { in: roleIds }, organizationId },
+      });
+      if (found !== roleIds.length) {
+        throw new BadRequestException('A role on this document type is not in your organization');
+      }
+    }
+    const workflowIds = [...new Set(refs.requiredForWorkflowIds ?? [])];
+    if (workflowIds.length > 0) {
+      const found = await this.prisma.statusWorkflow.count({
+        where: { id: { in: workflowIds }, organizationId },
+      });
+      if (found !== workflowIds.length) {
+        throw new BadRequestException(
+          'A workflow on this document type is not in your organization',
+        );
+      }
     }
   }
 
@@ -5805,4 +5930,11 @@ function eventContext(ctx?: RequestContext) {
     lat: ctx?.lat ?? null,
     lng: ctx?.lng ?? null,
   };
+}
+
+/** Two id lists naming the same set, whatever their order. */
+function sameIdSet(a: readonly string[], b: readonly string[]): boolean {
+  const left = new Set(a);
+  const right = new Set(b);
+  return left.size === right.size && [...left].every((id) => right.has(id));
 }

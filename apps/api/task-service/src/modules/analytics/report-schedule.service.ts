@@ -10,6 +10,7 @@ import {
   formatNumberFor,
   groupByLocale,
   localesByAddress,
+  normalizeRecipients,
   reportLabel,
   scheduledReportEmail,
   type SupportedLocale,
@@ -150,6 +151,21 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
     return s;
   }
 
+  /**
+   * The typed addresses, or a refusal naming what is wrong. Unvalidated, a
+   * schedule held any number of anything — a standing instruction to mail the
+   * organization's figures to an unbounded list nobody had checked.
+   */
+  private recipientsOrThrow(raw: unknown): string[] {
+    const r = normalizeRecipients(raw);
+    if (r.ok) return r.recipients;
+    const message =
+      r.code === 'RECIPIENTS_REQUIRED' ? 'At least one recipient is required'
+      : r.code === 'RECIPIENTS_TOO_MANY' ? 'Too many recipients (at most 20)'
+      : `Not a valid email address: ${r.invalid}`;
+    throw new BadRequestException({ message, code: r.code });
+  }
+
   // ── CRUD ────────────────────────────────────────────────────────────────────
   async list(data: { organizationId: string; reportDefinitionId?: string }) {
     const items = await this.prisma.reportSchedule.findMany({
@@ -160,13 +176,14 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
   }
 
   async create(data: { organizationId: string; userId: string; reportDefinitionId: string } & ScheduleInput) {
+    // Only a report the caller can see: shared, or their own private one.
     const report = await this.prisma.reportDefinition.findFirst({
-      where: { id: data.reportDefinitionId, organizationId: data.organizationId },
+      where: { id: data.reportDefinitionId, organizationId: data.organizationId, OR: [{ isShared: true }, { createdById: data.userId }] },
       select: { id: true },
     });
     if (!report) throw new NotFoundException('Report not found');
     if (!['daily', 'weekly', 'monthly'].includes(data.cadence)) throw new BadRequestException('Invalid cadence');
-    if (!(data.recipients || []).filter(Boolean).length) throw new BadRequestException('At least one recipient is required');
+    const recipients = this.recipientsOrThrow(data.recipients);
     const nextRunAt = this.computeNextRun(data.cadence, data.hour ?? 7, data.dayOfWeek, data.dayOfMonth);
     const item = await this.prisma.reportSchedule.create({
       data: {
@@ -176,7 +193,7 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
         hour: data.hour ?? 7,
         dayOfWeek: data.dayOfWeek ?? null,
         dayOfMonth: data.dayOfMonth ?? null,
-        recipients: data.recipients.filter(Boolean),
+        recipients,
         isActive: data.isActive ?? true,
         nextRunAt,
         createdById: data.userId,
@@ -189,11 +206,14 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
     const existing = await this.prisma.reportSchedule.findFirst({ where: { id: data.id, organizationId: data.organizationId } });
     if (!existing) throw new NotFoundException('Schedule not found');
     const patch: Record<string, unknown> = {};
-    if (data.cadence !== undefined) patch.cadence = data.cadence;
+    if (data.cadence !== undefined) {
+      if (!['daily', 'weekly', 'monthly'].includes(data.cadence)) throw new BadRequestException('Invalid cadence');
+      patch.cadence = data.cadence;
+    }
     if (data.hour !== undefined) patch.hour = data.hour;
     if (data.dayOfWeek !== undefined) patch.dayOfWeek = data.dayOfWeek;
     if (data.dayOfMonth !== undefined) patch.dayOfMonth = data.dayOfMonth;
-    if (data.recipients !== undefined) patch.recipients = data.recipients.filter(Boolean);
+    if (data.recipients !== undefined) patch.recipients = this.recipientsOrThrow(data.recipients);
     if (data.isActive !== undefined) patch.isActive = data.isActive;
     // Recompute next run when the cadence/time changed.
     if (['cadence', 'hour', 'dayOfWeek', 'dayOfMonth'].some((k) => k in patch)) {

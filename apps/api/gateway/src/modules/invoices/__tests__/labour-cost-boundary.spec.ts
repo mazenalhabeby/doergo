@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { stripLabourCost, cleanRateCents, MAX_RATE_CENTS } from '@hbcfield/shared';
+import { stripLabourCost, stripCostRates, cleanRateCents, MAX_RATE_CENTS } from '@hbcfield/shared';
 
 /**
  * What labour COSTS never leaves without permission.
@@ -104,6 +104,20 @@ describe('a rate on its way into the database', () => {
   });
 });
 
+describe('the cost walk knows every name a cost travels under', () => {
+  it('strips a day cost and the line cost rates, at any depth', () => {
+    // `costDayCents` was missing from COST_KEYS, so a member's day COST rode
+    // through stripCostRates untouched.
+    const out = stripCostRates(
+      { member: { costDayCents: 16000, billDayCents: 30000, rows: [{ costHourRateCents: 3000, costDayRateCents: 16000, hours: 8 }] } },
+      false,
+    ) as any;
+    expect(out.member.costDayCents).toBeUndefined();
+    expect(out.member.billDayCents).toBe(30000);
+    expect(Object.keys(out.member.rows[0])).toEqual(['hours']);
+  });
+});
+
 describe('a gather for somebody without the permission', () => {
   it('carries no cost on any line — hours lines included', () => {
     const line = { workerId: 'u', costCents: 100, costRateCents: 5, costHourRateCents: 3000, costDayRateCents: 16000, hours: 8 };
@@ -133,6 +147,22 @@ describe('the controller funnels every response', () => {
     // …and every route ends in the funnel instead.
     const funnelled = code.split('\n').filter((l) => l.includes('return this.forCaller(result, user)'));
     expect(funnelled.length).toBeGreaterThanOrEqual(8);
+  });
+
+  it('sends EVERY route through the funnel — the list included', () => {
+    /*
+      ⚠️ The check above counted funnelled returns and looked for a literal
+      \`return result;\`. GET /invoices returned \`firstValueFrom(...)\` directly
+      — neither pattern — so the list, whose items carry each line's
+      \`costRateCents\`, went out raw while the count still passed. Asked per
+      ROUTE instead: a handler that does not call the funnel is the leak.
+    */
+    const routes = code.split(/\n\s*@(?=(?:Get|Post|Patch|Delete|Put)\()/).slice(1);
+    expect(routes.length).toBeGreaterThanOrEqual(10);
+    const raw = routes
+      .filter((r) => !r.includes('this.forCaller('))
+      .map((r) => r.split('\n')[0]);
+    expect(raw).toEqual([]);
   });
 
   it('reads the permission rather than a role', () => {

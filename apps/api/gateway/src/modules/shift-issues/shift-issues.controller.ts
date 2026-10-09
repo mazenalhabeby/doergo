@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post, Query, Request } from '@nestjs/common';
-import { Role, spacesGranting } from '@hbcfield/shared';
+import { Role } from '@hbcfield/shared';
+import { attendanceAuthority, type AttendanceNeed } from '../../common/attendance-authority';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { ShiftIssuesService } from './shift-issues.service';
 import {
@@ -15,30 +16,24 @@ import {
 export class ShiftIssuesController {
   constructor(private readonly service: ShiftIssuesService) {}
 
-  // Managers/admins (responsible parties) — used for list scope + write gating.
-  private canManage(req: any) {
-    return !!(req.user?.canManageUsers || req.user?.canViewAllTasks);
-  }
   /*
-    The spaces where this caller oversees the work.
+    Who the caller is to somebody ELSE's issue. Their own (reported by them,
+    assigned to them) is decided in the service by `callerUserId`.
 
-    `canManage` reads the FLAT org columns, so a member whose authority comes
-    from a space counted as nobody here: a supervisor was notified the moment
-    somebody on their site hit a blocker, and then saw an empty list, because
-    the issue was neither reported by them nor assigned to them. Their spaces
-    travel with the request and the service widens the query by them —
-    server-resolved, never client-supplied.
+    This read the flat org columns (`canManageUsers || canViewAllTasks`), a
+    private copy of the work log's rule that asked neither attendance
+    permission. Resolved access now (common/attendance-authority.ts): reading
+    needs canViewSpaceAttendance, acting needs canReconcileAttendance —
+    `canManage` when held org-wide, otherwise the spaces it is held in travel as
+    `ledSpaceIds` and the service widens by exactly those.
   */
-  private ledSpaces(req: any): string[] | undefined {
-    if (this.canManage(req)) return undefined; // already org-wide
-    return spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined;
-  }
-  private ctx(req: any) {
+  private ctx(req: any, need: AttendanceNeed) {
+    const { canManage, spaceIds } = attendanceAuthority(req, need);
     return {
       organizationId: req.user?.organizationId,
       callerUserId: req.user?.id,
-      canManage: this.canManage(req),
-      ledSpaceIds: this.ledSpaces(req),
+      canManage,
+      ledSpaceIds: spaceIds,
     };
   }
 
@@ -52,42 +47,42 @@ export class ShiftIssuesController {
       timeEntryId: body.timeEntryId,
       spaceId: body.spaceId,
       // Last, so nothing in the body can stand in for who is asking.
-      ...this.ctx(req),
+      ...this.ctx(req, 'write'),
     });
   }
 
   @Get()
   list(@Query('status') status: string, @Query('scope') scope: string, @Request() req: any) {
-    return this.service.list({ ...this.ctx(req), status, scope });
+    return this.service.list({ ...this.ctx(req, 'read'), status, scope });
   }
 
   @Get(':id')
   get(@Param('id') id: string, @Request() req: any) {
-    return this.service.get({ ...this.ctx(req), issueId: id });
+    return this.service.get({ ...this.ctx(req, 'read'), issueId: id });
   }
 
   @Post(':id/messages')
   message(@Param('id') id: string, @Body() body: ShiftIssueMessageDto, @Request() req: any) {
-    return this.service.message({ id: body.id, body: body.body, attachments: body.attachments, issueId: id, ...this.ctx(req) });
+    return this.service.message({ id: body.id, body: body.body, attachments: body.attachments, issueId: id, ...this.ctx(req, 'write') });
   }
 
   @Post(':id/acknowledge')
   acknowledge(@Param('id') id: string, @Request() req: any) {
-    return this.service.acknowledge({ ...this.ctx(req), issueId: id });
+    return this.service.acknowledge({ ...this.ctx(req, 'write'), issueId: id });
   }
 
   @Post(':id/assign')
   assign(@Param('id') id: string, @Body() body: AssignShiftIssueDto, @Request() req: any) {
-    return this.service.assign({ ...this.ctx(req), issueId: id, assignToId: body.assignToId });
+    return this.service.assign({ ...this.ctx(req, 'write'), issueId: id, assignToId: body.assignToId });
   }
 
   @Post(':id/status')
   setStatus(@Param('id') id: string, @Body() body: ShiftIssueStatusDto, @Request() req: any) {
-    return this.service.setStatus({ ...this.ctx(req), issueId: id, status: body.status, note: body.note });
+    return this.service.setStatus({ ...this.ctx(req, 'write'), issueId: id, status: body.status, note: body.note });
   }
 
   @Post(':id/attachments/presign')
   presign(@Param('id') id: string, @Body() body: PresignShiftIssueAttachmentDto, @Request() req: any) {
-    return this.service.presign({ ...this.ctx(req), issueId: id, fileName: body.fileName, mimeType: body.mimeType });
+    return this.service.presign({ ...this.ctx(req, 'write'), issueId: id, fileName: body.fileName, mimeType: body.mimeType });
   }
 }

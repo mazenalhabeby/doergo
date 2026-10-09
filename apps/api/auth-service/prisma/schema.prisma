@@ -784,6 +784,11 @@ model User {
   // Security: Account lockout fields
   failedLoginAttempts Int       @default(0)
   lockedUntil         DateTime?
+  /// Access tokens issued (JWT `iat`) BEFORE this instant are refused by
+  /// validateToken. Set on a password change/reset, an admin reset, signing out
+  /// everywhere and deactivation/removal — refresh tokens are deleted at the same
+  /// moment, this is what makes the already-issued ACCESS tokens die with them.
+  tokensValidAfter    DateTime?
 
   // Permission fields (granular access control)
   canCreateTasks      Boolean           @default(false) // Can create new tasks
@@ -3799,6 +3804,15 @@ model OvertimeRequest {
   leaderName      String?
   leaderSignature String? @db.Text // base64 PNG
 
+  /// Path B: who SIGNED on the technician's phone, and when.
+  ///
+  /// A signature drawn on somebody else's phone proves nothing about who drew
+  /// it — anybody can pick a name from the list and scribble. So a signature is
+  /// a REQUEST addressed to that person: they confirm it from their own
+  /// session (`POST /overtime/:id/approve`), and only then is it approved.
+  signedById String?
+  signedAt   DateTime?
+
   // Overtime parameters
   maxDurationMinutes Int? // Max overtime allowed (set by leader)
   overtimeStartAt    DateTime? // When overtime period began
@@ -4915,6 +4929,12 @@ model PlatformUser {
   failedLoginAttempts Int       @default(0)
   lockedUntil         DateTime?
   lastLoginAt         DateTime?
+  /// The last TOTP time step accepted for this operator. A code at or below it
+  /// is refused, so a code seen over a shoulder cannot be replayed in its window.
+  twoFactorLastStep   Int?
+  /// Operator tokens issued (`iat`) before this instant are refused — set when
+  /// the operator's password changes or is reset.
+  tokensValidAfter    DateTime?
   createdById         String?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt

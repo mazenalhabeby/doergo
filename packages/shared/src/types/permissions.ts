@@ -752,6 +752,14 @@ export function resolveTaskCreationScope(
 ): 'NONE' | 'SELF' | 'SPACE' | 'ORG' {
   const set = (column ?? '').toUpperCase();
   if (set === 'SELF' || set === 'SPACE' || set === 'ORG') return set;
+  /*
+    No column set: the role decides. An ORG-WIDE grant creates anywhere — a
+    member given the Manager role after joining with a profile that could not
+    create still has NONE in the column, and reading that as SPACE refused them
+    in every workspace they were not rostered on. Only a grant held in spaces
+    alone narrows to those spaces.
+  */
+  if (access?.org?.canCreateTasks === true) return 'ORG';
   return accessAllowsAnywhere(access, 'canCreateTasks') ? 'SPACE' : 'NONE';
 }
 

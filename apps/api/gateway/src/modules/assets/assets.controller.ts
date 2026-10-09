@@ -17,7 +17,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { isAdmin, spacesGranting, assetManageSpaces } from '@hbcfield/shared';
+import { assetManageSpaces } from '@hbcfield/shared';
 import { RequirePermission, RequirePermissionInSpace, DenyExternal } from '../../common/decorators';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -32,6 +32,7 @@ import {
   CreateLogEntryDto, LogPresignDto, LogListQueryDto, LogSummaryQueryDto, MyLogQueryDto,
 } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
+import { taskActor } from '../../common/task-actor';
 
 @ApiTags('assets')
 @ApiBearerAuth()
@@ -98,11 +99,7 @@ export class AssetsController {
   async findAll(@Query() query: AssetQueryDto, @Request() req: any) {
     return this.assetsService.findAll({
       ...query,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -898,14 +895,7 @@ export class AssetsController {
 
   /** Everything the logbook's service needs to decide about the caller, in one place. */
   private reader(req: any) {
-    return {
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      canManageAssets: req.user.canManageAssets,
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      organizationId: req.user.organizationId,
-    };
+    return { ...taskActor(req), canManageAssets: req.user.canManageAssets };
   }
 
   @Get(':id/history')

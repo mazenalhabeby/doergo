@@ -18,9 +18,13 @@ import {
   hashCode,
   generateSecureCode,
   industryUsesExternalWorkers,
+  mayGrantBaseRole,
+  loadOrgPermissionCeiling,
+  permissionsExceed,
+  permissionsFromUserFlags,
 } from '@hbcfield/shared';
 import { defaultSpaceRoleId } from '../invitations/invitation-space-role';
-import { memberFieldsFromInvitation } from '../invitations/invitation-apply';
+import { memberFieldsFromInvitation, claimInvitation, InvitationAlreadyClaimedError } from '../invitations/invitation-apply';
 
 @Injectable()
 export class OnboardingService {
@@ -498,19 +502,26 @@ export class OnboardingService {
         }
       }
 
-      await tx.invitation.update({
-        where: { id: invitation.id },
-        data: {
-          status: 'ACCEPTED',
-          usedAt: new Date(),
-          acceptedById: userId,
-        },
-      });
+      // Claimed atomically, as the last write — see claimInvitation.
+      await claimInvitation(tx, invitation.id, userId);
 
       return updatedUser;
+    }).catch((e: unknown) => {
+      if (e instanceof InvitationAlreadyClaimedError) return null;
+      throw e;
     });
 
+    if (!result) {
+      return {
+        success: false as const,
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: 'This invitation has already been used or revoked',
+      };
+    }
+
     this.logger.log(`Invitation accepted by existing user ${userId} → org ${invitation.organizationId} as ${role}`);
+    // A new member is a new seat. Debounced, so a burst of joins is one sync.
+    this.billing.scheduleReconcile(invitation.organizationId);
 
     return { success: true, data: { user: result } };
   }
@@ -663,9 +674,48 @@ export class OnboardingService {
 
     const role = data.role as Role;
     const defaultPerms = DEFAULT_PERMISSIONS[role];
+    if (!defaultPerms) {
+      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'Role must be ADMIN or EMPLOYEE' };
+    }
     const isTechnician = role === Role.EMPLOYEE;
 
+    /*
+      The approver's ceiling — the same rule as an invitation, because approving
+      a join request IS inviting somebody, after the fact.
+
+      The DTO accepts ADMIN and the route asks only `canManageUsers`, so before
+      this a manager could approve a request from a second account of their own
+      as ADMIN and hold the whole organization. Only an admin mints an admin
+      (`mayGrantBaseRole`), and nobody grants permissions they do not hold.
+    */
+    const approver = await loadOrgPermissionCeiling(this.prisma, data.approverId, data.organizationId);
+    if (!approver) {
+      return { success: false, statusCode: HttpStatus.FORBIDDEN, message: 'Not authorized to manage this request' };
+    }
+    if (!mayGrantBaseRole(approver.role, role)) {
+      return { success: false, statusCode: HttpStatus.FORBIDDEN, message: 'Only an admin can approve somebody as an admin' };
+    }
+    if (!approver.isAdmin && permissionsExceed(approver.perms, permissionsFromUserFlags(defaultPerms))) {
+      return { success: false, statusCode: HttpStatus.FORBIDDEN, message: 'You cannot grant permissions beyond your own' };
+    }
+
     const result = await this.prisma.$transaction(async (tx) => {
+      /*
+        Claim the request first: a conditional update on PENDING, so two
+        approvers (or one double-click) cannot both act on it — the loser's
+        transaction stops here, before the member is touched.
+      */
+      const claim = await tx.joinRequest.updateMany({
+        where: { id: data.requestId, status: 'PENDING' },
+        data: {
+          status: 'APPROVED',
+          reviewedById: data.approverId,
+          reviewedAt: new Date(),
+          assignedRole: data.role as any,
+        },
+      });
+      if (claim.count !== 1) return null;
+
       // Update user with org membership + role + permissions
       const updatedUser = await tx.user.update({
         where: { id: request.userId },
@@ -689,17 +739,6 @@ export class OnboardingService {
         },
       });
 
-      // Mark request as approved
-      await tx.joinRequest.update({
-        where: { id: data.requestId },
-        data: {
-          status: 'APPROVED',
-          reviewedById: data.approverId,
-          reviewedAt: new Date(),
-          assignedRole: data.role as any,
-        },
-      });
-
       // Cancel any other pending requests from this user
       await tx.joinRequest.updateMany({
         where: {
@@ -713,7 +752,13 @@ export class OnboardingService {
       return updatedUser;
     });
 
+    if (!result) {
+      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'This request has already been handled' };
+    }
+
     this.logger.log(`Join request ${data.requestId} approved: user ${request.userId} → ${data.role}`);
+    // A new member is a new seat — the bill moves with them, not at the nightly sweep.
+    this.billing.scheduleReconcile(request.organizationId);
 
     return {
       success: true,

@@ -1,4 +1,5 @@
-import { Body, Controller, Get, HttpException, HttpStatus, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
+import { assertServiceOk } from '@hbcfield/shared';
+import { Body, Controller, Get, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Public } from '../../common/decorators';
 import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
@@ -11,8 +12,7 @@ export class PlatformAuthController {
   constructor(private readonly svc: PlatformAdminService) {}
 
   private unwrap<T>(result: any): T {
-    if (result && result.success === false) throw new HttpException({ message: result.message ?? 'Error' }, result.statusCode ?? HttpStatus.BAD_REQUEST);
-    return result;
+    return assertServiceOk(result) as T;
   }
   private actor(req: any): string | undefined { return req.platformUser?.id; }
 

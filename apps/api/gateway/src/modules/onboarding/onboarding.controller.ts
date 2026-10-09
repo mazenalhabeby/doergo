@@ -6,14 +6,13 @@ import {
   Body,
   Param,
   Inject,
-  HttpException,
   HttpStatus,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
-import { SkipOnboardingCheck, CurrentUser, CurrentUserData } from '@hbcfield/shared';
+import { SkipOnboardingCheck, CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import {
   CreateOrganizationDto,
@@ -47,12 +46,7 @@ export class OnboardingController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
     // Onboarding just completed — drop the cached (pre-onboarding) user so the
     // next /auth/me reflects the new org + onboardingCompleted immediately.
@@ -90,12 +84,7 @@ export class OnboardingController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
     // An OPEN join policy auto-approves and completes onboarding immediately —
     // drop the cached (pre-onboarding) user so the next /auth/me reflects the
@@ -124,12 +113,7 @@ export class OnboardingController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
     // Onboarding just completed — drop the cached (pre-onboarding) user so the
     // next /auth/me reflects the new org + onboardingCompleted immediately.
@@ -164,12 +148,7 @@ export class OnboardingController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message },
-        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
     return result;
   }

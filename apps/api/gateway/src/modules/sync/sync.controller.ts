@@ -1,11 +1,12 @@
 import { Body, Controller, Get, Header, HttpCode, NotFoundException, Post, Query, Request, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { timingSafeEqual } from 'crypto';
+import { safeEqual } from '@hbcfield/shared';
 import { Public, RequirePermission } from '../../common/decorators';
+import { taskActor } from '../../common/task-actor';
 import { SyncHealthStore } from './sync-health.store';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { AllowCustomer, isAdmin, spacesGranting, type SyncOperation } from '@hbcfield/shared';
+import { AllowCustomer, type SyncOperation } from '@hbcfield/shared';
 import { SyncMediaLinksDto, SyncPullQueryDto, SyncPushDto, SyncTelemetryDto } from './dto/sync-push.dto';
 import { SyncPullGatewayService } from './sync-pull.gateway.service';
 import { SyncPushService } from './sync-push.service';
@@ -61,11 +62,7 @@ export class SyncController {
       scope: query.scope,
       cursor: query.cursor ?? null,
       limit: query.limit,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -107,9 +104,7 @@ export class SyncController {
     const expected = this.config.get<string>('METRICS_TOKEN');
     if (!expected) throw new NotFoundException();
     const given = String(req.headers?.authorization ?? '').replace(/^Bearer\s+/i, '');
-    const a = Buffer.from(given);
-    const b = Buffer.from(expected);
-    if (a.length !== b.length || !timingSafeEqual(a, b)) throw new UnauthorizedException();
+    if (!safeEqual(given, expected)) throw new UnauthorizedException();
     return this.health.metrics();
   }
 
@@ -120,11 +115,7 @@ export class SyncController {
   async mediaLinks(@Body() dto: SyncMediaLinksDto, @Request() req: any) {
     return this.pullService.mediaLinks({
       ids: dto.ids,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 }

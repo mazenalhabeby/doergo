@@ -1,9 +1,12 @@
 import { Injectable, BadRequestException, NotFoundException, ForbiddenException, ConflictException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { assertSpaceInOrg, assertUserInOrg } from '../../common/tenant-scope.util';
 import {
   success,
   resolveRate,
   BUILTIN_ROLES,
+  builtInRoleCatchUp,
+  builtInRoleCreateData,
   ACCESS_PERMISSION_SCHEMA,
   permissionsExceed,
   permissionsFromOrgRole,
@@ -104,7 +107,7 @@ export class SpaceRolesService {
    * space's day-rate history), never one per role.
    */
   async listSpaceRoles(data: { organizationId: string; spaceId: string }) {
-    await this.assertSpaceInOrg(data.organizationId, data.spaceId);
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId);
     await this.ensureBuiltInRoles(data.organizationId);
     const usedHere = new Set(
       (await this.prisma.companyLocation.findUnique({ where: { id: data.spaceId }, select: { workRoleIds: true } }))?.workRoleIds ?? [],
@@ -170,7 +173,7 @@ export class SpaceRolesService {
     spaceId?: string;
   }) {
     const name = (data.name || '').trim();
-    if (data.spaceId) await this.assertSpaceInOrg(data.organizationId, data.spaceId);
+    if (data.spaceId) await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { activeOnly: true });
     if (!name) throw new BadRequestException('Role name is required');
     const kind: RoleKindValue = isRoleKind(data.kind) ? data.kind : 'MANAGEMENT';
     await this.assertNameFree(data.organizationId, name);
@@ -263,6 +266,18 @@ export class SpaceRolesService {
           ...(role.permissions as PermissionSet),
           ...data.permissions,
         }) as any;
+        /*
+          ⚠️ An admin's edit to a BUILT-IN makes it the organization's own.
+          The built-in catch-up (shared builtin-role-sync) re-grants what a
+          definition holds to every built-in NOT marked customized — and an
+          unticked permission is stored as absent, indistinguishable from
+          "never had it". Without the flag, unticking "approve overtime" on the
+          Shift Leader was undone the next time the list loaded. auth-service
+          sets the same flag on its own edit path.
+        */
+        if (role.isSystem && JSON.stringify(patch.permissions) !== JSON.stringify(role.permissions)) {
+          patch.isCustomized = true;
+        }
       }
     }
     const updated = await this.prisma.accessRole.update({ where: { id: role.id }, data: patch });
@@ -343,7 +358,7 @@ export class SpaceRolesService {
    * nobody here holds it — a person's trade must stay a role this workspace uses.
    */
   async setWorkRoleHere(data: { organizationId: string; spaceId: string; roleId: string; active: boolean }) {
-    await this.assertSpaceInOrg(data.organizationId, data.spaceId);
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { activeOnly: data.active });
     const role = await this.getOwnedRole(data.organizationId, data.roleId);
     if (role.kind !== 'WORK') throw new BadRequestException('Only a work role is switched on per workspace');
     if (data.active) {
@@ -407,7 +422,7 @@ export class SpaceRolesService {
     effectiveFrom?: string;
     createdById?: string;
   }) {
-    if (data.spaceId) await this.assertSpaceInOrg(data.organizationId, data.spaceId);
+    if (data.spaceId) await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { activeOnly: true });
     const role = await this.getOwnedRole(data.organizationId, data.roleId);
     if (role.kind !== 'WORK') throw new BadRequestException('Only a work role has a day rate');
     const result = await withRateErrors(() =>
@@ -435,7 +450,7 @@ export class SpaceRolesService {
   // ── Members (SpaceAssignment) ───────────────────────────────────────────────
 
   async listMembers(data: { organizationId: string; spaceId: string }) {
-    await this.assertSpaceInOrg(data.organizationId, data.spaceId);
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId);
     const members = await this.prisma.spaceAssignment.findMany({
       where: { organizationId: data.organizationId, spaceId: data.spaceId },
       include: {
@@ -546,8 +561,8 @@ export class SpaceRolesService {
      */
     requesterPerms?: PermissionSet | null;
   }) {
-    await this.assertSpaceInOrg(data.organizationId, data.spaceId);
-    const target = await this.assertUserInOrg(data.organizationId, data.userId);
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { activeOnly: true });
+    const target = await assertUserInOrg(this.prisma, data.userId, data.organizationId);
     /*
       ONE role picker, two columns: a trade lands in `workRoleId` (grants
       nothing), anything else in `roleId` (permissions). Re-assigning a member
@@ -928,23 +943,29 @@ export class SpaceRolesService {
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
+  /**
+   * Seed missing built-ins AND bring existing ones up to their definition — the
+   * shared rule (access/builtin-role-sync.ts) auth-service's access panel
+   * follows. This only ever inserted, so a built-in seeded before its
+   * definition gained a permission kept lacking it here while the other panel
+   * fixed it: what a Space Manager could do depended on which screen opened
+   * first. Add only, never remove; a role an admin edited is left alone.
+   */
   private async ensureBuiltInRoles(organizationId: string) {
-    // Seed any missing built-ins (idempotent by slug). Covers fresh orgs.
     for (const p of BUILTIN_ROLES) {
       await this.prisma.accessRole.upsert({
         where: { organizationId_slug: { organizationId, slug: p.slug } },
         update: {},
-        create: {
-          organizationId,
-          name: p.name,
-          slug: p.slug,
-          description: p.description,
-          color: p.color,
-          scope: p.scope as any,
-          isSystem: true,
-          permissions: p.permissions as any,
-        },
+        create: builtInRoleCreateData(organizationId, p) as any,
       });
+    }
+    const stored = await this.prisma.accessRole.findMany({
+      where: { organizationId, isSystem: true, isCustomized: false, slug: { in: BUILTIN_ROLES.map((r) => r.slug) } },
+      select: { id: true, slug: true, isSystem: true, isCustomized: true, permissions: true },
+    });
+    for (const role of stored) {
+      const next = builtInRoleCatchUp(role);
+      if (next) await this.prisma.accessRole.update({ where: { id: role.id }, data: { permissions: next as any } });
     }
   }
 
@@ -985,21 +1006,6 @@ export class SpaceRolesService {
     });
     if (!role) throw new NotFoundException('Space role not found');
     return role;
-  }
-
-  private async assertSpaceInOrg(organizationId: string, spaceId: string) {
-    const space = await this.prisma.companyLocation.findFirst({ where: { id: spaceId, organizationId }, select: { id: true } });
-    if (!space) throw new NotFoundException('Space not found');
-  }
-
-  /** Tenancy check that also answers who the member works for — one query, both facts. */
-  private async assertUserInOrg(organizationId: string, userId: string) {
-    const user = await this.prisma.user.findFirst({
-      where: { id: userId, organizationId },
-      select: { id: true, isExternal: true },
-    });
-    if (!user) throw new NotFoundException('User not found in this organization');
-    return user;
   }
 
   /**

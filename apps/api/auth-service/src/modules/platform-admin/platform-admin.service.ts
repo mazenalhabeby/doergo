@@ -1,9 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { SessionEvents } from '../../common/session-events/session-events.service';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { StripeService } from '../billing/stripe.service';
 import { BillingService } from '../billing/billing.service';
 import { OrgBillService } from '../billing/org-bill.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, validateAgreedPrice } from '@hbcfield/shared';
+import { success, validateAgreedPrice, modeRequiresBillingEmail } from '@hbcfield/shared';
 
 // Lean shapes — select only what billing/seat classification needs (perf).
 const ORG_SELECT = {
@@ -65,6 +66,10 @@ export class PlatformAdminService {
     // Moving a live subscription between collection methods — the one thing on
     // this console that reaches Stripe.
     private readonly stripe: StripeService,
+    // Suspending must also close the members' live connections, not only their next request.
+    // Optional: socket revocation is best effort, and unit tests that do not
+    // exercise it need not wire it.
+    @Optional() private readonly sessionEvents: SessionEvents | undefined,
     // What the price list says this organization owes — the number an agreed
     // price is struck against, and the baseline drift is later measured from.
     private readonly bill: OrgBillService,
@@ -237,6 +242,7 @@ export class PlatformAdminService {
     const org = await this.prisma.organization.findUnique({ where: { id: data.organizationId }, select: { id: true, name: true } });
     if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
     await this.prisma.organization.update({ where: { id: org.id }, data: { suspendedAt: new Date() } });
+    this.sessionEvents?.organizationSuspended(org.id);
     this.logger.warn(`[PLATFORM] Org "${org.name}" (${org.id}) SUSPENDED by ${data.byUserId ?? 'operator'}`);
     return success({ id: org.id, suspendedAt: new Date() });
   }
@@ -405,7 +411,7 @@ export class PlatformAdminService {
     });
     if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
 
-    if (data.mode === 'INVOICE' && !(org.billingEmail || org.email)) {
+    if (modeRequiresBillingEmail(data.mode) && !(org.billingEmail || org.email)) {
       return {
         success: false,
         statusCode: 400,

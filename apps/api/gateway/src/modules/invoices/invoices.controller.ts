@@ -8,13 +8,12 @@ import {
   Param,
   Query,
   Inject,
-  HttpException,
   HttpStatus,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role, CurrentUser, CurrentUserData, stripLabourCost } from '@hbcfield/shared';
+import { Role, CurrentUser, CurrentUserData, stripLabourCost, assertServiceOk } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
@@ -82,12 +81,7 @@ export class InvoicesController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message, ...(result.code ? { code: result.code } : {}) },
-        result.statusCode || HttpStatus.BAD_REQUEST,
-      );
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
     return this.forCaller(result, user);
   }
@@ -99,7 +93,12 @@ export class InvoicesController {
     @Query() query: { status?: string; spaceId?: string; legalEntityId?: string; page?: string; limit?: string },
     @CurrentUser() user: CurrentUserData,
   ) {
-    return firstValueFrom(
+    /*
+      ⚠️ Through the funnel like every other route. This returned the raw list,
+      whose items carry each line's `costRateCents` — so the one route a
+      bookkeeper opens first disclosed the margin the other eight hid.
+    */
+    const result = await firstValueFrom(
       this.authClient.send({ cmd: 'invoice_list' }, {
         organizationId: user.organizationId,
         status: query.status,
@@ -109,6 +108,7 @@ export class InvoicesController {
         limit: query.limit ? Number(query.limit) : undefined,
       }),
     );
+    return this.forCaller(result, user);
   }
 
   /**
@@ -131,9 +131,7 @@ export class InvoicesController {
         date: typeof date === 'string' ? date : undefined,
       }),
     );
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message, ...(result.code ? { code: result.code } : {}) }, result.statusCode || HttpStatus.BAD_REQUEST);
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
     // Carries no cost — through the funnel anyway, so "every route" stays true.
     return this.forCaller(result, user);
   }
@@ -168,12 +166,7 @@ export class InvoicesController {
         to: to || undefined,
       }),
     );
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message, ...(result.code ? { code: result.code } : {}) },
-        result.statusCode || HttpStatus.BAD_REQUEST,
-      );
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return this.forCaller(result, user);
   }
 
@@ -191,12 +184,7 @@ export class InvoicesController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message, ...(result.code ? { code: result.code } : {}) },
-        result.statusCode || HttpStatus.NOT_FOUND,
-      );
-    }
+    assertServiceOk(result, HttpStatus.NOT_FOUND);
 
     return this.forCaller(result, user);
   }
@@ -219,12 +207,7 @@ export class InvoicesController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message, ...(result.code ? { code: result.code } : {}) },
-        result.statusCode || HttpStatus.BAD_REQUEST,
-      );
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
     return this.forCaller(result, user);
   }
@@ -245,12 +228,7 @@ export class InvoicesController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message, ...(result.code ? { code: result.code } : {}) },
-        result.statusCode || HttpStatus.BAD_REQUEST,
-      );
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
     return this.forCaller(result, user);
   }
@@ -269,12 +247,7 @@ export class InvoicesController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message, ...(result.code ? { code: result.code } : {}) },
-        result.statusCode || HttpStatus.BAD_REQUEST,
-      );
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
     return this.forCaller(result, user);
   }
@@ -295,12 +268,7 @@ export class InvoicesController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message, ...(result.code ? { code: result.code } : {}) },
-        result.statusCode || HttpStatus.BAD_REQUEST,
-      );
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
     return this.forCaller(result, user);
   }
@@ -321,12 +289,7 @@ export class InvoicesController {
       }),
     );
 
-    if (result && result.success === false) {
-      throw new HttpException(
-        { message: result.message, ...(result.code ? { code: result.code } : {}) },
-        result.statusCode || HttpStatus.BAD_REQUEST,
-      );
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
     return this.forCaller(result, user);
   }

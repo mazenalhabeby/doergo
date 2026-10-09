@@ -3,7 +3,8 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, Inject, Request, For
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { RequirePermission } from '@hbcfield/shared';
+import { RequirePermission, pickUnitFields } from '@hbcfield/shared';
+import { SpaceModulesService } from '../../common/space-modules.service';
 
 /**
  * Per-space B2C portal: configuration + unit/apartment catalog. The portal lives
@@ -27,20 +28,17 @@ import { RequirePermission } from '@hbcfield/shared';
 export class SpacePortalController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-    @Inject('TASK_SERVICE') private readonly taskClient: ClientProxy,
+    private readonly spaceModules: SpaceModulesService,
   ) {}
   private auth(cmd: string, payload: any) {
     return firstValueFrom(this.authClient.send({ cmd }, payload));
   }
 
   /** The whole surface is a paid feature — the space MUST have b2c_portal on. */
-  private async requirePortalModule(spaceId: string, organizationId: string) {
-    const res: any = await firstValueFrom(this.taskClient.send({ cmd: 'get_effective_modules' }, { id: spaceId, organizationId }));
-    const mods: string[] = res?.data?.enabledModules ?? res?.enabledModules ?? [];
-    if (!mods.includes('b2c_portal')) {
-      throw new ForbiddenException('This space does not have the B2C Portal module enabled');
-    }
+  private requirePortalModule(spaceId: string, organizationId: string) {
+    return this.spaceModules.assertEnabled(spaceId, organizationId, 'b2c_portal');
   }
+
 
   @Get('portals')
   @RequirePermission('canManagePortals')
@@ -108,23 +106,12 @@ export class SpacePortalController {
     // id and edit org B's unit — a cross-tenant write, stopped only by having to
     // know two cuids. `body` is `any`, so ValidationPipe's whitelist never applied.
     // Same fix as `space-sharing.controller.updateShare`, which found this first.
+    // The field list lives in `pickUnitFields` now, shared by all three unit routes.
     return this.auth('portal_update_unit', {
+      ...pickUnitFields(body),
       id: unitId,
       organizationId: req.user.organizationId,
       actorId: req.user.id,
-      name: body.name,
-      label: body.label,
-      address: body.address,
-      lat: body.lat,
-      lng: body.lng,
-      isPrimary: body.isPrimary,
-      spaceId: body.spaceId,
-      portalId: body.portalId,
-      customerId: body.customerId,
-      contactName: body.contactName,
-      contactPhone: body.contactPhone,
-      residentUserId: body.residentUserId,
-      details: body.details,
     });
   }
 

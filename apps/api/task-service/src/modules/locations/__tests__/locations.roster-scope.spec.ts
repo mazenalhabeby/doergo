@@ -123,6 +123,37 @@ describe('LocationsService.getLocationAssignmentsBatch — space scope', () => {
     );
   });
 
+  it('reads ONLY the spaces a viewing grant names when the scope gives no path (external)', async () => {
+    await service.getLocationAssignmentsBatch({
+      locationIds: ['sp-1', 'sp-2'],
+      organizationId: 'org-1',
+      requesterId: 'ext-1',
+      spaceScope: 'tasks',
+      viewAllIds: ['sp-1'],
+    });
+
+    expect(prisma.companyLocation.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ id: { in: ['sp-1'] } }) }),
+    );
+  });
+
+  it('an "own"-scope member reads their own spaces PLUS the granted ones, nothing else', async () => {
+    scopeQueryFor(['sp-2']);
+    await service.getLocationAssignmentsBatch({
+      locationIds: ['sp-1', 'sp-2', 'sp-3'],
+      organizationId: 'org-1',
+      requesterId: 'u-1',
+      spaceScope: 'own',
+      viewAllIds: ['sp-1'],
+    });
+
+    // The scope lookup is asked only about the spaces the grant did not cover.
+    expect(prisma.spaceAssignment.findMany.mock.calls[0][0].where.spaceId).toEqual({ in: ['sp-2', 'sp-3'] });
+    expect(prisma.companyLocation.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ id: { in: ['sp-1', 'sp-2'] } }) }),
+    );
+  });
+
   it('credits the current task to a CO-ASSIGNEE, not only the lead', async () => {
     // Roster: two members on sp-1. The task is led by u-lead with u-co attached.
     prisma.spaceAssignment.findMany.mockResolvedValueOnce([

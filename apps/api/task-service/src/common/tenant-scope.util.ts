@@ -1,4 +1,5 @@
-import { BadRequestException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
+import { scopeAllows, type SpaceScopeIds } from '@hbcfield/shared';
 import type { PrismaService } from './prisma/prisma.service';
 
 /**
@@ -15,9 +16,12 @@ import type { PrismaService } from './prisma/prisma.service';
  * next path that takes an id from a client has the check to hand rather than a
  * precedent to copy and adapt.
  *
- * Deliberately BadRequest rather than NotFound: from the caller's side "this id
- * is not yours" and "this id does not exist" are the same fact, and saying
- * which would confirm the existence of another tenant's row.
+ * ONE status for every refusal: 404. "This id is not yours", "this id does not
+ * exist" and "this id is in a space you were not granted" are the same fact
+ * from the caller's side — saying which would confirm the existence of another
+ * tenant's row. (This file used to answer 400 while the private copies in the
+ * space-roles and shifts services answered 404; the copies are gone and the
+ * one rule answers what most of the product already did.)
  */
 
 /**
@@ -37,20 +41,57 @@ export async function assertWorkflowInOrg(
     where: { id: workflowId, organizationId },
     select: { id: true },
   });
-  if (!found) throw new BadRequestException('Task Type not found in this organization');
+  if (!found) throw new NotFoundException('Task Type not found in this organization');
+}
+
+export interface SpaceInOrgOptions {
+  /**
+   * The caller's granted spaces (`spacesGranting`): undefined = org-wide,
+   * [ids] = only those, [] = none. A space outside it reads as absent, not as
+   * forbidden.
+   */
+  scope?: SpaceScopeIds;
+  /**
+   * Refuse an ARCHIVED space (isActive = false). For WRITES that put something
+   * new into a space — a shift, a rota line, a role assignment — an archived
+   * workspace is somewhere nothing should arrive. Reads leave it off: the past
+   * still lives there.
+   */
+  activeOnly?: boolean;
 }
 
 export async function assertSpaceInOrg(
   prisma: PrismaService,
   spaceId: string | null | undefined,
   organizationId: string,
+  opts: SpaceInOrgOptions = {},
 ): Promise<void> {
   if (!spaceId) return;
   const found = await prisma.companyLocation.findFirst({
-    where: { id: spaceId, organizationId },
+    where: { id: spaceId, organizationId, ...(opts.activeOnly ? { isActive: true } : {}) },
     select: { id: true },
   });
-  if (!found) throw new BadRequestException('Space not found in this organization');
+  if (!found || !scopeAllows(opts.scope, spaceId)) {
+    throw new NotFoundException('Space not found in this organization');
+  }
+}
+
+/**
+ * One id must resolve to a member of this organization. Returns whether the
+ * member is external — one query, both facts (the space-role grant path needs
+ * the second to refuse an org-wide role to an outsider).
+ */
+export async function assertUserInOrg(
+  prisma: PrismaService,
+  userId: string,
+  organizationId: string,
+): Promise<{ id: string; isExternal: boolean }> {
+  const user = await prisma.user.findFirst({
+    where: { id: userId, organizationId },
+    select: { id: true, isExternal: true },
+  });
+  if (!user) throw new NotFoundException('User not found in this organization');
+  return user;
 }
 
 /**
@@ -72,6 +113,24 @@ export async function assertUsersInOrg(
     select: { id: true },
   });
   if (found.length !== unique.length) {
-    throw new BadRequestException('One or more assignees are not members of this organization');
+    throw new NotFoundException('One or more assignees are not members of this organization');
   }
+}
+
+/**
+ * A client (CRM record) id from a client must be this organization's. A
+ * template or a task carrying another tenant's customer id would join their
+ * name, address and contact onto every job generated from it.
+ */
+export async function assertCustomerInOrg(
+  prisma: PrismaService,
+  customerId: string | null | undefined,
+  organizationId: string,
+): Promise<void> {
+  if (!customerId) return;
+  const found = await prisma.customer.findFirst({
+    where: { id: customerId, organizationId },
+    select: { id: true },
+  });
+  if (!found) throw new NotFoundException('Client not found in this organization');
 }

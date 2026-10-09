@@ -167,7 +167,7 @@ describe('DocumentsService — who can reach whose documents', () => {
       });
       await expect(
         service.getDownloadUrl({ actor: actor({ canViewMemberDocuments: true }), documentId: 'd1' }),
-      ).rejects.toBeInstanceOf(ForbiddenException);
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('does not let canViewMemberDocuments stand in for opening', async () => {
@@ -179,7 +179,7 @@ describe('DocumentsService — who can reach whose documents', () => {
       });
       const viewer = actor({ canViewMemberDocuments: true, canOpenMemberDocuments: false });
       await expect(service.getDownloadUrl({ actor: viewer, documentId: 'd1' })).rejects.toBeInstanceOf(
-        ForbiddenException,
+        NotFoundException,
       );
     });
 

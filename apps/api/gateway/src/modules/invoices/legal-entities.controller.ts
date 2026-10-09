@@ -1,10 +1,19 @@
 import {
-  Controller, Get, Post, Patch, Body, Param, Query, Inject, HttpException, HttpStatus, ForbiddenException,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  Query,
+  Inject,
+  HttpStatus,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role, CurrentUser, CurrentUserData, isAdmin, accessAllowsAnywhere, type AccessPermissionKey } from '@hbcfield/shared';
+import { Role, CurrentUser, CurrentUserData, isAdmin, accessAllowsAnywhere, type AccessPermissionKey, assertServiceOk } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { DenyExternal } from '../../common/decorators';
 
@@ -36,9 +45,7 @@ export class LegalEntitiesController {
 
   private async call(cmd: string, payload: Record<string, unknown>) {
     const result = await firstValueFrom(this.authClient.send({ cmd }, payload));
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message, ...(result.code ? { code: result.code } : {}) }, result.statusCode || HttpStatus.BAD_REQUEST);
-    }
+    assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return result;
   }
 

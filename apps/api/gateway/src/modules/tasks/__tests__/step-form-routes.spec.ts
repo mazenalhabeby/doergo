@@ -48,8 +48,9 @@ describe('GET /tasks/:id/submissions', () => {
     };
     await controller.findOne('t1', req);
     await controller.getSubmissions('t1', req);
-    const { canAssignTasks: _ignored, ...readFacts } = tasks.findOne.mock.calls[0][0];
-    expect(tasks.getSubmissions.mock.calls[0][0]).toEqual(readFacts);
+    // Both routes forward the one task caller (common/task-actor.ts), so the
+    // facts are now identical — no field to set aside.
+    expect(tasks.getSubmissions.mock.calls[0][0]).toEqual(tasks.findOne.mock.calls[0][0]);
     expect(tasks.getSubmissions.mock.calls[0][0]).toMatchObject({ id: 't1', userId: 'u1', organizationId: 'o1', sharedSpaceIds: ['shared1'] });
   });
 

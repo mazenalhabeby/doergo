@@ -11,7 +11,7 @@ import { UsersService } from '../users.service';
  */
 describe('UsersService.setAssignedHome', () => {
   const prisma: any = { user: { findFirst: jest.fn(), update: jest.fn() } };
-  const service = new UsersService(prisma, { send: jest.fn(), emit: jest.fn() } as any);
+  const service = new UsersService(prisma, { send: jest.fn(), emit: jest.fn() } as any, { sessionsRevoked: jest.fn(), organizationSuspended: jest.fn() } as any);
 
   beforeEach(() => jest.clearAllMocks());
 

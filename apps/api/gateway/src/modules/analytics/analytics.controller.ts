@@ -1,15 +1,35 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Inject, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Inject, Request, UseGuards, ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { SERVICE_NAMES } from '@hbcfield/shared';
+import { SERVICE_NAMES, isAdmin } from '@hbcfield/shared';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
-import { ReportAccessGuard } from '../../common/guards/report-access.guard';
+import { DenyExternal } from '../../common/decorators/deny-external.decorator';
+import { ReportAccessGuard, reportSpaceScope } from '../../common/guards/report-access.guard';
+
+/**
+ * A scheduled delivery runs with NO reader — on a timer, mailed to addresses.
+ * It cannot be narrowed to a person's workspaces at send time, so only a reader
+ * who already sees the whole organization's figures may set one up or change
+ * it; otherwise a supervisor of one site schedules the org-wide report to
+ * their own inbox.
+ */
+function assertOrgWideReports(req: any): void {
+  if (reportSpaceScope(req.user) !== null) {
+    throw new ForbiddenException('Scheduling reports needs access to reports across the whole organization');
+  }
+}
 
 @ApiTags('analytics')
 @ApiBearerAuth()
 @Controller('analytics')
-@UseGuards(ReportAccessGuard) // admin OR canViewAllTasks OR canViewReports
+/*
+  The organization's figures — every person's hours, leave and jobs. An
+  external member holds canViewAllTasks in their space to follow the work they
+  supervise; that is not a claim on the organization's reports.
+*/
+@DenyExternal()
+@UseGuards(ReportAccessGuard) // admin OR canViewAllTasks OR canViewReports — narrowed by reportSpaceScope
 export class AnalyticsController {
   constructor(@Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy) {}
 
@@ -26,6 +46,7 @@ export class AnalyticsController {
       this.taskClient.send({ cmd: 'analytics_run' }, {
         organizationId: req.user.organizationId,
         definition: body?.definition,
+        scopeSpaceIds: reportSpaceScope(req.user),
       }),
     );
   }
@@ -34,7 +55,12 @@ export class AnalyticsController {
   @ApiOperation({ summary: 'Detailed daily timesheet for one user (calendar with clock-in/out, leave, days off)' })
   async timesheet(@Request() req: any, @Query('userId') userId: string, @Query('from') from?: string, @Query('to') to?: string) {
     return firstValueFrom(
-      this.taskClient.send({ cmd: 'analytics_timesheet' }, { organizationId: req.user.organizationId, userId, from, to }),
+      this.taskClient.send({ cmd: 'analytics_timesheet' }, {
+        organizationId: req.user.organizationId,
+        userId: typeof userId === 'string' ? userId : '',
+        from, to,
+        scopeSpaceIds: reportSpaceScope(req.user),
+      }),
     );
   }
 
@@ -65,7 +91,7 @@ export class AnalyticsController {
   async updateSaved(@Param('id') id: string, @Body() body: { name?: string; description?: string; config?: unknown; isShared?: boolean }, @Request() req: any) {
     return firstValueFrom(
       this.taskClient.send({ cmd: 'analytics_update_saved' }, {
-        id, organizationId: req.user.organizationId, userId: req.user.id,
+        id, organizationId: req.user.organizationId, userId: req.user.id, isAdmin: isAdmin(req.user),
         name: body?.name, description: body?.description, config: body?.config, isShared: body?.isShared,
       }),
     );
@@ -76,7 +102,7 @@ export class AnalyticsController {
   @ApiOperation({ summary: 'Delete a saved report (Pro+)' })
   async deleteSaved(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
-      this.taskClient.send({ cmd: 'analytics_delete_saved' }, { id, organizationId: req.user.organizationId }),
+      this.taskClient.send({ cmd: 'analytics_delete_saved' }, { id, organizationId: req.user.organizationId, userId: req.user.id, isAdmin: isAdmin(req.user) }),
     );
   }
 
@@ -93,6 +119,7 @@ export class AnalyticsController {
   @RequirePlan('report_scheduling')
   @ApiOperation({ summary: 'Schedule a report for email delivery (Business+)' })
   async createSchedule(@Body() body: any, @Request() req: any) {
+    assertOrgWideReports(req);
     return firstValueFrom(
       this.taskClient.send({ cmd: 'analytics_create_schedule' }, { ...body, organizationId: req.user.organizationId, userId: req.user.id }),
     );
@@ -102,6 +129,7 @@ export class AnalyticsController {
   @RequirePlan('report_scheduling')
   @ApiOperation({ summary: 'Update a report schedule (Business+)' })
   async updateSchedule(@Param('id') id: string, @Body() body: any, @Request() req: any) {
+    assertOrgWideReports(req);
     return firstValueFrom(
       this.taskClient.send({ cmd: 'analytics_update_schedule' }, { ...body, id, organizationId: req.user.organizationId }),
     );
@@ -111,6 +139,7 @@ export class AnalyticsController {
   @RequirePlan('report_scheduling')
   @ApiOperation({ summary: 'Delete a report schedule (Business+)' })
   async deleteSchedule(@Param('id') id: string, @Request() req: any) {
+    assertOrgWideReports(req);
     return firstValueFrom(
       this.taskClient.send({ cmd: 'analytics_delete_schedule' }, { id, organizationId: req.user.organizationId }),
     );

@@ -8,7 +8,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters';
-import { spacesGranting } from '@hbcfield/shared';
+import { spacesGranting, safeEqual, redactUrlForLog } from '@hbcfield/shared';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -24,19 +24,43 @@ async function bootstrap() {
   // client IP (X-Forwarded-For) instead of bucketing every client together.
   app.set('trust proxy', 1);
 
-  // Increase body size limit for base64 signatures
+  /*
+    Body size: 1 MB everywhere, 10 MB only where a body legitimately carries an
+    image as base64 — drawn signatures (report completion, step forms, overtime,
+    shift sign-off, document signing incl. the public signing link), the
+    offline queue that replays those (`/sync`), and the operator blog's image
+    upload. 10 MB for EVERY route let any caller — the public ones included —
+    make the gateway buffer and JSON-parse 10 MB per request.
+
+    ⚠️ Prefix list, not per-route decorators: a body parser runs before routing.
+    A route that starts sending an image in its body must be added here, or it
+    answers 413 — loud, which is the right failure. Prefixes are matched on the
+    path AFTER the global prefix.
+  */
   const express = require('express');
+  const apiPrefixForBodies = '/' + (process.env.API_PREFIX || 'api/v1').replace(/^\/+|\/+$/g, '');
+  const LARGE_BODY_PREFIXES = [
+    '/tasks', // complete-with-report signatures, step-form signatures/photos
+    '/reports', // report edits re-send signatures (24h window)
+    '/overtime', // leader signature on device
+    '/attendance', // overtime round signature on the shift
+    '/documents', // in-app signing + documents/sign (public signing link)
+    '/sync', // the phone's offline queue replays all of the above
+    '/platform/blog', // operator image upload (base64)
+  ].map((p) => apiPrefixForBodies + p);
+  const needsLargeBody = (path: string) =>
+    LARGE_BODY_PREFIXES.some((p) => path === p || path.startsWith(p + '/'));
   // Capture the exact raw request bytes so the Stripe webhook route can verify
   // its HMAC signature over the unparsed body (Stripe requires the raw payload).
-  app.use(
-    express.json({
-      limit: '10mb',
-      verify: (req: any, _res: any, buf: Buffer) => {
-        req.rawBody = buf;
-      },
-    }),
-  );
-  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  const keepRaw = (req: any, _res: any, buf: Buffer) => {
+    req.rawBody = buf;
+  };
+  const jsonSmall = express.json({ limit: '1mb', verify: keepRaw });
+  const jsonLarge = express.json({ limit: '10mb', verify: keepRaw });
+  const formSmall = express.urlencoded({ extended: true, limit: '1mb' });
+  const formLarge = express.urlencoded({ extended: true, limit: '10mb' });
+  app.use((req: any, res: any, next: any) => (needsLargeBody(req.path) ? jsonLarge : jsonSmall)(req, res, next));
+  app.use((req: any, res: any, next: any) => (needsLargeBody(req.path) ? formLarge : formSmall)(req, res, next));
 
   // Parse cookies (for httpOnly refresh token)
   app.use(cookieParser());
@@ -45,7 +69,10 @@ async function bootstrap() {
   const QUIET_ROUTES = ['/tracking/location'];
   app.use((req: any, res: any, next: any) => {
     const start = Date.now();
-    const { method, url, body } = req;
+    const { method, body } = req;
+    // ⚠️ Some paths ARE the credential (calendar feed token, invitation code,
+    // org join code, push token). Printed verbatim, every log sink held them.
+    const url = redactUrlForLog(req.originalUrl || req.url);
     const isQuiet = QUIET_ROUTES.some((r) => url.includes(r));
 
     // Log request (skip noisy polling endpoints). Never log bodies in
@@ -100,8 +127,16 @@ async function bootstrap() {
           res.setHeader('WWW-Authenticate', 'Basic realm="Bull Board"');
           return res.status(401).send('Authentication required');
         }
-        const [user, pass] = Buffer.from(auth.split(' ')[1], 'base64').toString().split(':');
-        if (user === bullBoardUser && pass === bullBoardPass) return next();
+        // Split on the FIRST colon only: a password may contain ':' (RFC 7617),
+        // and `split(':')` silently truncated it. Both halves compared in
+        // constant time — `===` leaks how much of the password matched.
+        const decoded = Buffer.from(auth.slice('Basic '.length), 'base64').toString();
+        const colon = decoded.indexOf(':');
+        const user = colon === -1 ? decoded : decoded.slice(0, colon);
+        const pass = colon === -1 ? '' : decoded.slice(colon + 1);
+        const userOk = safeEqual(user, bullBoardUser);
+        const passOk = safeEqual(pass, bullBoardPass);
+        if (userOk && passOk) return next();
         res.setHeader('WWW-Authenticate', 'Basic realm="Bull Board"');
         return res.status(401).send('Invalid credentials');
       });

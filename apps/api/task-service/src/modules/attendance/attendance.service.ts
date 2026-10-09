@@ -52,6 +52,10 @@ import {
   spaceRunsClock,
 } from '@hbcfield/shared';
 import { scopeWhere, scopeWhereOn, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
+import { clockEventEntry } from './clock-event';
+import { assertNotSelfDecision } from './self-decision';
+import { spaceRoleHolders } from '../../common/space-leaders.util';
+import { clampListLimit, clampListPage, localPartsIn } from '@hbcfield/shared';
 import { CountedTimeService } from './counted-time.service';
 import type { OccurrenceEvidence } from '@hbcfield/shared';
 import { fixOfTap, judgeOccurrence } from '../../common/occurrence.util';
@@ -619,7 +623,7 @@ export class AttendanceService {
       this.notificationClient.emit('attendance_clock_in', {
         userId: data.userId,
         organizationId: data.organizationId,
-        timeEntry: entry,
+        timeEntry: clockEventEntry(entry, 'in'),
       });
       return success(entry, place ? `Clocked in remotely · ${place}` : 'Clocked in remotely');
     }
@@ -901,7 +905,7 @@ export class AttendanceService {
     this.notificationClient.emit('attendance_clock_in', {
       userId: data.userId,
       organizationId: data.organizationId,
-      timeEntry: entry,
+      timeEntry: clockEventEntry(entry, 'in'),
     });
 
     return success(entry, `Clocked in at ${location.name}`);
@@ -1329,7 +1333,7 @@ export class AttendanceService {
     this.notificationClient.emit('attendance_clock_out', {
       userId: data.userId,
       organizationId: data.organizationId,
-      timeEntry: updatedEntry,
+      timeEntry: clockEventEntry({ ...entry, ...updatedEntry }, 'out'),
     });
 
     // Entry landed in the approvals queue → nudge managers (bell + push).
@@ -1468,7 +1472,7 @@ export class AttendanceService {
     this.notificationClient.emit('attendance_clock_out', {
       userId: data.userId,
       organizationId: data.organizationId,
-      timeEntry: updated,
+      timeEntry: clockEventEntry({ ...entry, ...updated }, 'out'),
     });
     await this.sendPendingApprovalAlert({
       entryId: updated.id,
@@ -1973,15 +1977,14 @@ export class AttendanceService {
     subjectId: string,
     organizationId: string,
   ): Promise<void> {
-    if (approverId !== subjectId) return;
-    const owner = await this.prisma.user.findFirst({
-      where: { id: approverId, organizationId, isActive: true, role: 'ADMIN' },
-      select: { id: true },
+    // The rule itself lives in self-decision.ts, shared with every other flow
+    // that decides somebody's item (entries, corrections, leave, expenses).
+    await assertNotSelfDecision(this.prisma as never, {
+      deciderId: approverId,
+      subjectId,
+      organizationId,
+      message: 'You cannot approve your own overtime. Ask a manager or an administrator.',
     });
-    if (owner) return;
-    throw new ForbiddenException(
-      'You cannot approve your own overtime. Ask a manager or an administrator.',
-    );
   }
 
   /** True if the user may approve overtime for a space (space sub-role grant, or org admin). */
@@ -2500,6 +2503,13 @@ export class AttendanceService {
     if (excursion.status !== 'PENDING') {
       throw new BadRequestException('This request is no longer pending');
     }
+    // Nobody sanctions their own time away from the site — the rule every other approval follows.
+    await assertNotSelfDecision(this.prisma as never, {
+      deciderId: data.approverId,
+      subjectId: excursion.userId,
+      organizationId: data.organizationId,
+      message: 'You cannot approve your own request to leave the site. Ask a manager or an administrator.',
+    });
     const minutes = this.clampExcursionMinutes(data.grantedMinutes ?? excursion.requestedMinutes ?? 0);
     const expiresAt = new Date(Date.now() + minutes * 60_000);
 
@@ -2540,6 +2550,12 @@ export class AttendanceService {
     if (excursion.status !== 'PENDING') {
       throw new BadRequestException('This request is no longer pending');
     }
+    await assertNotSelfDecision(this.prisma as never, {
+      deciderId: data.approverId,
+      subjectId: excursion.userId,
+      organizationId: data.organizationId,
+      message: 'You cannot decide your own request to leave the site. Ask a manager or an administrator.',
+    });
     const res = await this.prisma.geofenceExcursion.updateMany({
       where: { id: excursion.id, status: 'PENDING' },
       data: { status: 'REJECTED', decidedAt: new Date(), resolvedAt: new Date(), approvedById: data.approverId },
@@ -2823,8 +2839,8 @@ export class AttendanceService {
     page?: number;
     limit?: number;
   }) {
-    const page = data.page ?? 1;
-    const limit = data.limit ?? 20;
+    const page = clampListPage(data.page);
+    const limit = clampListLimit(data.limit, 20);
     const skip = (page - 1) * limit;
 
     const where: any = {
@@ -2887,7 +2903,12 @@ export class AttendanceService {
     page?: number;
     limit?: number;
     requesterId?: string;
-    requesterCanViewAll?: boolean;
+    /**
+     * Where the caller holds `canViewSpaceAttendance`: null = org-wide (admins
+     * included), [ids] = those workspaces, [] = none. Required, not optional —
+     * a forgotten scope must not read as "org-wide".
+     */
+    viewScopeSpaceIds: AttendanceScope;
     sortBy?: string;
     sortOrder?: string;
     sharedSpaceIds?: string[]; // shared spaces (with showAttendance) the caller may view
@@ -2903,21 +2924,22 @@ export class AttendanceService {
       throw new NotFoundException('Location not found');
     }
 
-    // Authorization: full-access roles see any location; a cross-org shared grant
-    // confers view-all for that space; otherwise the requester must be a roster
-    // member of this location (employees viewing their own space).
-    if (!data.requesterCanViewAll && !isShared) {
-      const member = await this.prisma.spaceAssignment.findFirst({
-        where: { spaceId: data.locationId, userId: data.requesterId },
-        select: { id: true },
-      });
-      if (!member) {
-        throw new ForbiddenException('Not a member of this space');
-      }
+    // Authorization. A cross-org shared grant (showAttendance) confers view for
+    // that space. Otherwise the caller must hold `canViewSpaceAttendance` —
+    // org-wide, or in THIS workspace through an assignment that is active now.
+    //
+    // ⚠️ It used to be "has any SpaceAssignment row here": an ended assignment
+    // (effectiveTo in the past) still read the roster's hours, and so did an
+    // External Observer, whose role grants no attendance at all. Being on a
+    // workspace is not the permission to read its people's clock-ins; the
+    // External Supervisor keeps access because its role grants exactly this.
+    if (!isShared && !(await this.mayViewSpaceAttendance(data.locationId, data.requesterId, data.viewScopeSpaceIds))) {
+      // 404, the answer for a workspace that does not exist — a 403 confirms it does.
+      throw new NotFoundException('Location not found');
     }
 
-    const page = data.page ?? 1;
-    const limit = data.limit ?? 50;
+    const page = clampListPage(data.page);
+    const limit = clampListLimit(data.limit, 50);
     const skip = (page - 1) * limit;
 
     // A startDate/endDate range takes precedence; otherwise a single day
@@ -2965,6 +2987,25 @@ export class AttendanceService {
   }
 
   /**
+   * May this caller read the attendance of one workspace?
+   *
+   * `scope` is where they hold `canViewSpaceAttendance` (null = org-wide). A
+   * space-scoped grant comes from a space assignment, so it is honoured only
+   * while that assignment is active (`activeAssignmentWhere` — the same window
+   * the clock-in uses): a supervisor whose engagement ended yesterday reads
+   * nothing today, whatever a cached session still says.
+   */
+  private async mayViewSpaceAttendance(spaceId: string, userId: string | undefined, scope: AttendanceScope): Promise<boolean> {
+    if (scope === null || scope === undefined) return true;
+    if (!userId || !scopeAllows(scope, spaceId)) return false;
+    const active = await this.prisma.spaceAssignment.findFirst({
+      where: { spaceId, ...activeAssignmentWhere(userId) },
+      select: { id: true },
+    });
+    return !!active;
+  }
+
+  /**
    * Who is clocked in RIGHT NOW, org-wide — answers the dashboard "on duty"
    * question independently of clock-in date. A shift that started before
    * midnight and is still open (overnight / long / forgot-to-clock-out) must
@@ -2996,32 +3037,48 @@ export class AttendanceService {
   }
 
   /**
-   * Today's entries for MANY locations in 2 queries (vs 4-per-location) — backs
-   * the dashboard. Full-access roles get all requested org spaces; otherwise the
-   * set is narrowed to the spaces the requester is a roster member of.
+   * Today's entries for MANY locations in 2-3 queries (vs 4-per-location) —
+   * backs the dashboard. The SAME rule as the single workspace read
+   * (`getLocationEntries` / `mayViewSpaceAttendance`): `canViewSpaceAttendance`
+   * org-wide, or in that workspace through an assignment active now.
+   *
+   * ⚠️ It used to be "has a roster row here" (ended assignments included), so an
+   * External Observer — whose role grants no attendance at all — and anybody
+   * rotated off a site read its people's clock-ins. A space the caller may not
+   * read is simply left out of the batch.
    */
   async getLocationEntriesBatch(data: {
     locationIds: string[];
     organizationId: string;
     date?: Date | string;
     requesterId?: string;
-    requesterCanViewAll?: boolean;
+    /**
+     * Where the caller holds `canViewSpaceAttendance`: null = org-wide (admins
+     * included), [ids] = those workspaces, [] = none. Required — a forgotten
+     * scope must not read as "org-wide".
+     */
+    viewScopeSpaceIds: AttendanceScope;
   }) {
     const ids = (data.locationIds || []).filter(Boolean);
     if (!ids.length) return success([]);
 
+    const scope = data.viewScopeSpaceIds;
+    const asked = scope === null ? ids : ids.filter((id) => scopeAllows(scope, id));
+    if (!asked.length || (scope !== null && !data.requesterId)) return success([]);
+
     const locs = await this.prisma.companyLocation.findMany({
-      where: { id: { in: ids }, organizationId: data.organizationId },
+      where: { id: { in: asked }, organizationId: data.organizationId },
       select: { id: true },
     });
     let validIds = locs.map((l) => l.id);
 
-    if (!data.requesterCanViewAll && validIds.length) {
-      const memberships = await this.prisma.spaceAssignment.findMany({
-        where: { userId: data.requesterId, spaceId: { in: validIds } },
+    if (scope !== null && validIds.length) {
+      // A space-scoped grant comes from an assignment: honoured only while it is active.
+      const active = await this.prisma.spaceAssignment.findMany({
+        where: { ...activeAssignmentWhere(data.requesterId!), spaceId: { in: validIds } },
         select: { spaceId: true },
       });
-      const allowed = new Set(memberships.map((m) => m.spaceId));
+      const allowed = new Set(active.map((m) => m.spaceId));
       validIds = validIds.filter((id) => allowed.has(id));
     }
     if (!validIds.length) return success([]);
@@ -3182,15 +3239,11 @@ export class AttendanceService {
 
   /** Local YYYY-MM-DD days (in tz) spanning [from, to] — a 2–3 element set. */
   private localDaysInWindow(from: Date, to: Date, tz: string): string[] {
-    let fmt: Intl.DateTimeFormat;
-    try {
-      fmt = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' });
-    } catch {
-      fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC', year: 'numeric', month: '2-digit', day: '2-digit' });
-    }
+    // The shared zoned-time reader (cached formatter, UTC on an unknown zone).
+    const day = (t: Date) => localPartsIn(t, tz).dateStr;
     const days = new Set<string>();
-    for (let t = from.getTime(); t <= to.getTime(); t += 6 * 3_600_000) days.add(fmt.format(new Date(t)));
-    days.add(fmt.format(to));
+    for (let t = from.getTime(); t <= to.getTime(); t += 6 * 3_600_000) days.add(day(new Date(t)));
+    days.add(day(to));
     return [...days];
   }
 
@@ -3552,16 +3605,19 @@ export class AttendanceService {
     organizationId: string,
     permission: 'canApproveOvertime' | 'canReconcileAttendance',
   ): Promise<string[]> {
-    const assignments = await this.prisma.spaceAssignment.findMany({
-      where: { spaceId, organizationId, role: { isActive: true } },
-      include: { role: { select: { permissions: true } } },
+    /*
+      The same query assets asks (space-leaders.util): an assignment active NOW,
+      an active member (external supervisors included), an active role granting
+      it. This read every row of the space, so somebody who had left the
+      workspace kept being told about its shifts.
+    */
+    return spaceRoleHolders(this.prisma as never, {
+      organizationId,
+      spaceId,
+      grants: (p) => p[permission] === true,
+      // The External Supervisor approves overtime and reconciles shifts here.
+      includeExternal: true,
     });
-    const leaderIds = assignments
-      .filter((a) => (a.role?.permissions as any)?.[permission] === true)
-      .map((a) => a.userId);
-    if (leaderIds.length > 0) return [...new Set(leaderIds)];
-
-    return [];
   }
 
   /**
@@ -3659,8 +3715,14 @@ export class AttendanceService {
     sortBy?: string;
     sortOrder?: string;
   }) {
-    const page = data.page ?? 1;
-    const limit = data.limit ?? 50;
+    const page = clampListPage(data.page);
+    /*
+      Capped at 500, not the usual 200: the phone's Crew card
+      (`getClockedInAll`) pages this at 500 and reads a SHORT page as the end.
+      A 200 cap would answer page 1 with 200 rows and the card would stop there
+      — silently counting 200 people on the clock when there are more.
+    */
+    const limit = clampListLimit(data.limit, 50, 500);
     const skip = (page - 1) * limit;
 
     const where: any = {

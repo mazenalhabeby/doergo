@@ -4,12 +4,13 @@ import { pdfToLines } from './pdf-lines';
 import { randomUUID } from 'crypto';
 import { findPrior } from '../../common/create-once.util';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, normalizeKindShape, findMoneyCategory, parseReceipt } from '@hbcfield/shared';
+import { success, normalizeKindShape, findMoneyCategory, parseReceipt, clampListLimit } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetCustodyService } from './asset-custody.service';
 import { AssetNotifier } from './asset-notifier.service';
 import { ASSET_FILE_MIMES, ASSET_FILE_MAX_BYTES, assetFilePrefix } from './asset-files';
 import { readAssetEntryDate } from './asset-entry-date';
+import { assertNotSelfDecision } from '../attendance/self-decision';
 
 /** A receipt is a photograph or a PDF — the one definition, shared with the logbook. */
 const ALLOWED = ASSET_FILE_MIMES;
@@ -312,7 +313,7 @@ export class AssetExpenseService {
 
   /** What the caller has sent in, newest first — the phone's "my expenses". */
   async mine(data: { userId: string; organizationId: string; limit?: number }) {
-    const take = Math.min(Math.max(data.limit ?? 50, 1), 100);
+    const take = clampListLimit(data.limit, 50, 100);
     const entries = await this.prisma.assetMoney.findMany({
       /*
         Money only. Logbook entries share the table, and an app built before the
@@ -340,7 +341,7 @@ export class AssetExpenseService {
   /** Everything waiting on a decision. */
   async pending(data: { userId: string; userRole: string; organizationId: string; limit?: number }) {
     this.access.assertMay(data as any, 'view assets');
-    const take = Math.min(Math.max(data.limit ?? 100, 1), 200);
+    const take = clampListLimit(data.limit, 100, 200);
 
     const entries = await this.prisma.assetMoney.findMany({
       where: { organizationId: data.organizationId, status: EXPENSE_STATUS.SUBMITTED },
@@ -391,6 +392,21 @@ export class AssetExpenseService {
     organizationId: string;
   }) {
     this.access.assertMay(data as any, 'update assets');
+
+    // A member's expense counts for nothing until SOMEBODY ELSE accepts it — an
+    // asset manager who filed a slip must not be the one to accept it. The
+    // overtime rule, shared (attendance/self-decision.ts). The read only feeds
+    // this check; the guarded update below still decides the race.
+    const filed = await this.prisma.assetMoney.findFirst({
+      where: { id: data.entryId, organizationId: data.organizationId },
+      select: { authorId: true },
+    });
+    await assertNotSelfDecision(this.prisma as never, {
+      deciderId: data.userId,
+      subjectId: filed?.authorId,
+      organizationId: data.organizationId,
+      message: 'You cannot decide your own expense. Ask a manager or an administrator.',
+    });
 
     const { count } = await this.prisma.assetMoney.updateMany({
       where: {

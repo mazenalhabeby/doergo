@@ -908,7 +908,8 @@
     "signatureRequired": "La firma del jefe es obligatoria",
     "approveOvertime": "Aprobar horas extra",
     "approvedSuccess": "Horas extra aprobadas correctamente",
-    "failedToApprove": "No se pudieron aprobar las horas extra"
+    "failedToApprove": "No se pudieron aprobar las horas extra",
+    "signedAwaitingConfirm": "Firmado: {{name}} lo confirma en su propio teléfono y entonces cuenta"
   },
   "timeOff": {
     "stats": {

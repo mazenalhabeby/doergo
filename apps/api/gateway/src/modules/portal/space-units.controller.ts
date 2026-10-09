@@ -2,7 +2,8 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, Inject, Request, For
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { RequirePermission, RequirePermissionInSpace, spacesGranting, isAdmin } from '@hbcfield/shared';
+import { RequirePermission, RequirePermissionInSpace, spacesGranting, isAdmin, pickUnitFields } from '@hbcfield/shared';
+import { SpaceModulesService } from '../../common/space-modules.service';
 
 /**
  * Apartments / Units directory for a space (the `apartments` module). The unit
@@ -16,25 +17,21 @@ import { RequirePermission, RequirePermissionInSpace, spacesGranting, isAdmin } 
 export class SpaceUnitsController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-    @Inject('TASK_SERVICE') private readonly taskClient: ClientProxy,
+    private readonly spaceModules: SpaceModulesService,
   ) {}
-  private auth(cmd: string, payload: any) {
-    return firstValueFrom(this.authClient.send({ cmd }, payload));
-  }
 
   /**
    * Units belong to the CLIENT PORTAL now, not to the retired Apartments
    * module. The portal is what still uses them — a client's own address inside
    * a portal — so it gates on its own module. Gating on a module that no longer
    * exists would have made every portal's units unreachable the moment
-   * Apartments was removed.
+   * Apartments was removed. Reads included (SpaceModulesService.assertEnabled).
    */
-  private async requireModule(spaceId: string, organizationId: string) {
-    const res: any = await firstValueFrom(this.taskClient.send({ cmd: 'get_effective_modules' }, { id: spaceId, organizationId }));
-    const mods: string[] = res?.data?.enabledModules ?? res?.enabledModules ?? [];
-    if (!mods.includes('b2c_portal')) {
-      throw new ForbiddenException('This space does not have the Client Portal module enabled');
-    }
+  private requireModule(spaceId: string, organizationId: string) {
+    return this.spaceModules.assertEnabled(spaceId, organizationId, 'b2c_portal');
+  }
+  private auth(cmd: string, payload: any) {
+    return firstValueFrom(this.authClient.send({ cmd }, payload));
   }
 
   @Get()
@@ -75,9 +72,10 @@ export class SpaceUnitsController {
   @ApiOperation({ summary: 'Update an apartment (name/address, resident, details)' })
   async update(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Body() body: any, @Request() req: any) {
     await this.requireModule(spaceId, req.user.organizationId);
-    // scopeCustomerId is a customer-record concern; strip any client override.
-    const { scopeCustomerId: _drop, ...rest } = body ?? {};
-    return this.auth('portal_update_unit', { id: unitId, organizationId: req.user.organizationId, actorId: req.user.id, ...rest });
+    // Whitelist, identity LAST. This spread the body after the token's
+    // organizationId, so a body naming another organization (or an actorId)
+    // replaced it — a cross-tenant write. One pick shared with every unit route.
+    return this.auth('portal_update_unit', { ...pickUnitFields(body), id: unitId, organizationId: req.user.organizationId, actorId: req.user.id });
   }
 
   @Delete(':unitId')

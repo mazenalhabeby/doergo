@@ -1,23 +1,32 @@
-import { canReceiveTasks, isOpenToRole } from '@hbcfield/shared';
+import { canReceiveTasks } from '../types/modules';
+import { isOpenToRole } from './role-pool';
 
-type Db = {
+/**
+ * The database shape the rule needs — any Prisma client (or transaction)
+ * satisfies it, so every service asks the SAME query.
+ */
+export interface OpenRoleHolderDb {
   spaceAssignment: {
     findFirst(args: unknown): Promise<{ user: { role: string; enabledModules: unknown; isExternal: boolean } } | null>;
   };
-};
+}
 
 /**
  * Does this person hold the task's OPEN role in its workspace, right now —
- * and may they be given a job at all? (shared tasks/role-pool.ts)
+ * and may they be given a job at all? (tasks/role-pool.ts)
  *
- * ONE rule, read by the task's own access check, its attachments and its
- * report, so the page, its photos and its report cannot disagree about who
- * may read an open job. Read-only: holding the role never lets anybody write.
+ * The read exemption for a task open to a work role: whoever may TAKE the job
+ * may read it before they do. ONE rule for every surface that shows the job —
+ * the API's task gate (`TaskAccessService`, `roleHolderMayRead`), its
+ * attachments and report, and the live task room in notification-service. The
+ * room used to refuse a holder the API let read, so the open job's page loaded
+ * and then never updated.
  *
- * An external member, or an access profile without Tasks, is never a holder.
+ * ⚠️ READ ONLY. Holding the role never lets anybody write. An external member,
+ * or an access profile without Tasks, is never a holder.
  */
 export async function holdsOpenRole(
-  db: Db,
+  db: OpenRoleHolderDb,
   task: { openRoleId?: string | null; spaceId?: string | null; openSpotsLeft?: number | null; status?: string | null },
   userId: string,
   now: Date = new Date(),

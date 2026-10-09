@@ -11,7 +11,8 @@ import { instrument } from '@socket.io/admin-ui';
 import { Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
-import { SocketEvents, PrismaService, platformCan } from '@hbcfield/shared';
+import { SocketEvents, PrismaService, platformCan, safeEqual } from '@hbcfield/shared';
+import { operatorMaySupport, resolveSocketAccess, socketMayOpenTask, type SocketAccess } from './socket-access';
 
 export interface ClientInfo {
   userId: string;
@@ -19,7 +20,39 @@ export interface ClientInfo {
   organizationId: string;
   connectedAt: Date;
   rooms: string[];
+  /** Access resolved from the database (not the token's claims) and when. */
+  access?: SocketAccess;
+  accessAt?: number;
+  /** The token's `iat` (seconds), checked against the account's session cut-off on every re-read. */
+  tokenIat?: number;
 }
+
+/**
+ * Revocation events this gateway listens for (notification.controller.ts).
+ * Emitted by the auth service; the names are a contract — change both sides.
+ *
+ *   'user_removed'            { userId, organizationId }  removed from the org
+ *   'user_sessions_revoked'   { userId }                  deactivated / signed out everywhere / password reset
+ *   'organization_suspended'  { organizationId }          the operator's off switch
+ *
+ * A socket authenticates ONCE; without these it would keep receiving the
+ * organization's live events until it happened to drop.
+ */
+export const SOCKET_REVOCATION_EVENTS = {
+  USER_REMOVED: 'user_removed',
+  USER_SESSIONS_REVOKED: 'user_sessions_revoked',
+  ORGANIZATION_SUSPENDED: 'organization_suspended',
+} as const;
+
+/** How long a resolved access is trusted on a socket before a task join re-reads it. */
+const ACCESS_TTL_MS = 60_000;
+/**
+ * Grace after the token's `exp` before the transport is cycled — time for the
+ * client's own refresh to land, so the reconnect presents the NEW token.
+ */
+const EXPIRY_GRACE_MS = 30_000;
+/** setTimeout's ceiling (~24.8 days); a longer wait is re-armed when it fires. */
+const MAX_TIMER_MS = 2_147_483_647;
 
 export interface SocketStats {
   totalConnections: number;
@@ -193,6 +226,7 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     }
 
     clearTimeout((client as unknown as { __authTimer?: NodeJS.Timeout }).__authTimer);
+    clearTimeout((client as unknown as { __expiryTimer?: NodeJS.Timeout }).__expiryTimer);
 
     // Clean up event listeners to prevent memory leaks
     client.offAny();
@@ -309,14 +343,40 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
       return { success: false, error: 'Token missing required claims' };
     }
 
+    /*
+      The account must still be able to be here — active, in this organization,
+      organization not suspended — and what it may see comes from the DATABASE,
+      resolved the way the API resolves a session. A token is a snapshot of the
+      moment it was minted.
+    */
+    let socketAccess: SocketAccess | null | undefined;
+    try {
+      socketAccess = await resolveSocketAccess(this.prisma, userId, organizationId, decoded.iat ?? 0);
+    } catch (e) {
+      // A database blip must not take realtime down for everybody: fall back to
+      // the token for THIS connection; the next join re-resolves.
+      this.logger.warn(`[AUTH] access resolution failed for ${userId}, using token claims: ${e}`);
+      socketAccess = undefined;
+    }
+    if (socketAccess === null) {
+      this.logger.warn(`[AUTH] Client ${client.id} rejected: account inactive, moved, organization suspended or token revoked`);
+      return { success: false, error: 'Account not active' };
+    }
+
+    // A token is a credential until `exp`, not forever: cycle the transport
+    // once it lapses so the client reconnects with its CURRENT token.
+    this.armExpiry(client, decoded.exp);
+
     this.logger.log(`[AUTH] Client ${client.id} authenticated as user ${userId} (${role})`);
 
     const clientInfo: ClientInfo = {
       userId,
       role,
       organizationId,
+      tokenIat: typeof decoded.iat === 'number' ? decoded.iat : 0,
       connectedAt: new Date(),
       rooms: [],
+      ...(socketAccess ? { access: socketAccess, accessAt: Date.now() } : {}),
     };
 
     // External CUSTOMER: confine to their OWN user room only. Never join the
@@ -349,7 +409,17 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     // "Task viewers" room — admins and members granted "view all tasks". Org-wide
     // task events go here instead of to the whole org, so plain employees don't
     // receive (or get the payload of) tasks they can't see.
-    if (role === 'ADMIN' || decoded.canViewAllTasks === true) {
+    //
+    // ⚠️ ORG-WIDE grant only, read from the resolved access — the org role, or
+    // the legacy column while ACCESS_IGNORE_LEGACY_FLAGS is off, exactly as the
+    // API decides. It used to read the token's `canViewAllTasks` claim, which is
+    // minted from the legacy column alone and frozen at sign-in. A grant held
+    // only in a SPACE does not qualify: this room carries every space's tasks.
+    // Only when the database could not be asked does the claim stand in.
+    const viewsAllTasks = socketAccess
+      ? socketAccess.access.org?.canViewAllTasks === true
+      : decoded.canViewAllTasks === true;
+    if (role === 'ADMIN' || viewsAllTasks) {
       client.join(`taskviewers:${organizationId}`);
       clientInfo.rooms.push(`taskviewers:${organizationId}`);
     }
@@ -408,17 +478,29 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   // — they are not app users. They join the `support-agents` room to receive every
   // ticket event (including internal notes) and drive live-chat presence.
   @SubscribeMessage('authenticate_agent')
-  handleAuthenticateAgent(client: Socket) {
+  async handleAuthenticateAgent(client: Socket) {
     const auth = client.handshake?.auth ?? {};
     let authed = false;
     // Path 1: legacy shared platform key (operator console).
-    if (this.platformAdminKey && auth.platformKey && auth.platformKey === this.platformAdminKey) authed = true;
-    // Path 2: platform-staff JWT (admin.hbcfield.com) — verify + require manageSupport.
+    // Constant-time: `===` leaks how much of the operator key matched.
+    if (this.platformAdminKey && typeof auth.platformKey === 'string' && safeEqual(auth.platformKey, this.platformAdminKey)) authed = true;
+    // Path 2: platform-staff JWT (admin.hbcfield.com) — verify, then ask the
+    // DATABASE: still active, minted after their cut-off, and their CURRENT
+    // role holds manageSupport (socket-access.ts operatorMaySupport). Like an
+    // app socket, it is cut when the token lapses.
     if (!authed && this.platformJwtSecret && auth.token) {
+      let p: any = null;
       try {
-        const p: any = jwt.verify(auth.token, this.platformJwtSecret, { algorithms: ['HS256'] });
-        if (p?.typ === 'platform' && platformCan(p.role, 'manageSupport')) authed = true;
+        p = jwt.verify(auth.token, this.platformJwtSecret, { algorithms: ['HS256'] });
       } catch { /* invalid token */ }
+      try {
+        if (p && (await operatorMaySupport(this.prisma, p, platformCan))) {
+          authed = true;
+          this.armExpiry(client, p.exp);
+        }
+      } catch (e) {
+        this.logger.warn(`[AUTH] operator check failed for agent socket ${client.id}: ${e}`);
+      }
     }
     if (!authed) {
       this.logger.warn(`[AUTH] Agent socket ${client.id} rejected`);
@@ -434,19 +516,54 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     return { success: true };
   }
 
-  // Live-chat typing indicator relay. Customer → agents; agent → the ticket owner.
+  /**
+   * Live-chat typing indicator relay. Customer → agents; agent → the ticket owner.
+   *
+   * ⚠️ Nothing here is taken from the client but the ticket id. It used to
+   * relay to any `customerId` the payload named and trust `from` — so ANY
+   * socket, authenticated or not, could put "…is typing" on any user's screen
+   * and into the operator inbox. Now:
+   *   - an AGENT socket (verified in authenticate_agent) reaches the ticket's
+   *     own creator, read from the ticket;
+   *   - an app user reaches the agents only for a ticket THEY raised;
+   *   - everyone else (unauthenticated, portal customers) is ignored.
+   */
   @SubscribeMessage('support_typing')
-  handleSupportTyping(client: Socket, payload: { ticketId: string; customerId?: string; from: 'CUSTOMER' | 'AGENT' }) {
-    // Portal customers have a live socket but no support surface — never let them
-    // drive typing indicators into the operator inbox (spoof defense).
-    if (this.connectedClients.get(client.id)?.role === 'CUSTOMER') return;
-    if (!payload?.ticketId) return;
-    const evt = { ticketId: payload.ticketId, from: payload.from };
-    if (payload.from === 'CUSTOMER') {
-      this.server.to('support-agents').emit(SocketEvents.SUPPORT_TYPING, evt);
-    } else if (payload.customerId) {
-      this.server.to(`user:${payload.customerId}`).emit(SocketEvents.SUPPORT_TYPING, evt);
+  async handleSupportTyping(client: Socket, payload: { ticketId: string }) {
+    const ticketId = payload?.ticketId;
+    if (!ticketId || typeof ticketId !== 'string' || ticketId.length > 64) return;
+
+    const isAgent = this.agentSockets.has(client.id);
+    const member = this.connectedClients.get(client.id);
+    // Portal customers have a live socket but no support surface.
+    if (!isAgent && (!member || member.role === 'CUSTOMER')) return;
+
+    const createdById = await this.ticketCreator(ticketId);
+    if (!createdById) return;
+
+    if (isAgent) {
+      this.server.to(`user:${createdById}`).emit(SocketEvents.SUPPORT_TYPING, { ticketId, from: 'AGENT' });
+    } else if (member && member.userId === createdById) {
+      this.server.to('support-agents').emit(SocketEvents.SUPPORT_TYPING, { ticketId, from: 'CUSTOMER' });
     }
+  }
+
+  /**
+   * Who raised a ticket — cached briefly, because typing fires per keystroke and
+   * a ticket's creator never changes. Bounded so a stream of made-up ids cannot
+   * grow it without limit.
+   */
+  private ticketCreatorCache = new Map<string, { id: string | null; exp: number }>();
+  private async ticketCreator(ticketId: string): Promise<string | null> {
+    const hit = this.ticketCreatorCache.get(ticketId);
+    if (hit && hit.exp > Date.now()) return hit.id;
+    const t = await (this.prisma as any).supportTicket
+      .findUnique({ where: { id: ticketId }, select: { createdById: true } })
+      .catch(() => null);
+    const id: string | null = t?.createdById ?? null;
+    if (this.ticketCreatorCache.size >= 1000) this.ticketCreatorCache.clear();
+    this.ticketCreatorCache.set(ticketId, { id, exp: Date.now() + 5 * 60_000 });
+    return id;
   }
 
   /**
@@ -515,18 +632,27 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
       return { success: false, error: 'Too many task subscriptions' };
     }
 
-    // Tenant isolation (L1): the task room carries task.created/updated/status
-    // events, so a client must only join rooms for tasks in its OWN org. Verify
-    // ownership before joining — a bare task id must never grant cross-org access.
-    if (!payload?.taskId || typeof payload.taskId !== 'string') {
+    // Tenant isolation (L1) AND visibility: the task room carries the task's
+    // full payload on every change, so joining it is READING the task. It used
+    // to check only the organization — any member could subscribe to any task
+    // in their company by id, including ones the API refuses them. Now the
+    // API's own rule (`canAccessTask`) is asked, with access resolved from the
+    // database. A refusal does not say whether the task exists.
+    if (!payload?.taskId || typeof payload.taskId !== 'string' || payload.taskId.length > 64) {
       return { success: false, error: 'taskId is required' };
     }
-    const task = await this.prisma.task.findFirst({
-      where: { id: payload.taskId, organizationId: clientInfo.organizationId },
-      select: { id: true },
-    });
-    if (!task) {
-      this.logger.warn(`[JOIN] Client ${client.id} (org: ${clientInfo.organizationId}) rejected: task ${payload.taskId} not in org`);
+    // Portal customers see their own requests through the portal, not task rooms.
+    if (clientInfo.role === 'CUSTOMER') return { success: false, error: 'Task not found' };
+    let allowed = false;
+    try {
+      const access = await this.freshAccess(clientInfo);
+      allowed = !!access && (await socketMayOpenTask(this.prisma, { userId: clientInfo.userId, organizationId: clientInfo.organizationId, ...access }, payload.taskId));
+    } catch (e) {
+      this.logger.warn(`[JOIN] visibility check failed for ${client.id}: ${e}`);
+      allowed = false; // fail closed
+    }
+    if (!allowed) {
+      this.logger.warn(`[JOIN] Client ${client.id} (org: ${clientInfo.organizationId}) refused task ${payload.taskId}`);
       return { success: false, error: 'Task not found' };
     }
 
@@ -586,24 +712,77 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   // =========================================================================
 
   /**
-   * Force-disconnect all sockets for a given user (e.g., after removal from org).
+   * Force-disconnect all sockets for a given user — removed from the
+   * organization, deactivated, or every session revoked. A HARD disconnect: the
+   * client does not auto-reconnect after a server-side disconnect, and if it
+   * reloads, its refresh is refused by the auth service.
    */
-  forceDisconnectUser(userId: string) {
+  forceDisconnectUser(userId: string, reason = 'removed_from_organization') {
+    this.disconnectWhere((c) => c.userId === userId, reason, `user ${userId}`);
+  }
+
+  /** Every socket of an organization — the operator's off switch. */
+  disconnectOrganization(organizationId: string, reason = 'organization_suspended') {
+    this.disconnectWhere((c) => c.organizationId === organizationId, reason, `org ${organizationId}`);
+  }
+
+  private disconnectWhere(match: (c: ClientInfo) => boolean, reason: string, label: string) {
     let disconnected = 0;
-    for (const [socketId, client] of this.connectedClients) {
-      if (client.userId === userId) {
-        const socket = this.server.sockets.sockets.get(socketId);
-        if (socket) {
-          socket.emit('force_disconnect', { reason: 'removed_from_organization' });
-          socket.disconnect(true);
-          disconnected++;
-        }
-        this.connectedClients.delete(socketId);
+    for (const [socketId, info] of this.connectedClients) {
+      if (!match(info)) continue;
+      const socket = this.server?.sockets?.sockets?.get(socketId);
+      if (socket) {
+        socket.emit('force_disconnect', { reason });
+        socket.disconnect(true);
+        disconnected++;
       }
+      this.connectedClients.delete(socketId);
     }
     if (disconnected > 0) {
-      this.logger.log(`[FORCE_DISCONNECT] Disconnected ${disconnected} socket(s) for user ${userId}`);
+      this.logger.log(`[FORCE_DISCONNECT] Disconnected ${disconnected} socket(s) for ${label} (${reason})`);
     }
+  }
+
+  /**
+   * Arm the token-expiry cut for one socket.
+   *
+   * The CHEAP option: one timer per authenticated socket (cleared on disconnect)
+   * rather than a periodic sweep over every client. It cycles the TRANSPORT
+   * (`conn.close()`), not the socket: the client sees a transport close, which
+   * socket.io reconnects from on its own, and both clients pass their CURRENT
+   * token on every reconnect (the `auth` callback) and re-authenticate on
+   * `connect`. A session that has since been revoked has no current token, so
+   * it does not come back. A server-side `disconnect(true)` here would have
+   * stopped realtime for every user every access-token lifetime.
+   */
+  private armExpiry(client: Socket, exp: unknown) {
+    const holder = client as unknown as { __expiryTimer?: NodeJS.Timeout };
+    clearTimeout(holder.__expiryTimer);
+    if (typeof exp !== 'number' || !Number.isFinite(exp)) return;
+    const wait = exp * 1000 + EXPIRY_GRACE_MS - Date.now();
+    holder.__expiryTimer = setTimeout(() => {
+      if (wait > MAX_TIMER_MS) return this.armExpiry(client, exp); // still far off: re-arm
+      this.logger.log(`[AUTH] Token expired on ${client.id} — cycling transport for re-authentication`);
+      // Out of every room at once; the disconnect that follows cleans up the rest.
+      for (const room of client.rooms) if (room !== client.id) client.leave(room);
+      client.emit('session_expired', { reason: 'token_expired' });
+      if (client.conn && typeof client.conn.close === 'function') client.conn.close();
+      else client.disconnect(true);
+    }, Math.max(0, Math.min(wait, MAX_TIMER_MS)));
+    holder.__expiryTimer.unref?.();
+  }
+
+  /** The socket's access, re-read from the database once it is a minute old. */
+  private async freshAccess(info: ClientInfo): Promise<SocketAccess | null> {
+    if (info.access && info.accessAt && Date.now() - info.accessAt < ACCESS_TTL_MS) return info.access;
+    // The token's `iat` rides along so a cut-off moved since authenticate (a
+    // password change, "sign out everywhere") also ends this socket's reads.
+    const access = await resolveSocketAccess(this.prisma, info.userId, info.organizationId, info.tokenIat);
+    if (access) {
+      info.access = access;
+      info.accessAt = Date.now();
+    }
+    return access;
   }
 
   // =========================================================================

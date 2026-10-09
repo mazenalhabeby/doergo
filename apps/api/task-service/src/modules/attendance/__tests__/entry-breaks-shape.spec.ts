@@ -49,7 +49,7 @@ describe('getBreaksForEntry — response shape', () => {
     prisma.timeEntry.findFirst.mockResolvedValue({ id: 'e1' });
     prisma.break.findMany.mockResolvedValue(rows);
 
-    const result: any = await service.getBreaksForEntry({ timeEntryId: 'e1', organizationId: 'org-1' });
+    const result: any = await service.getBreaksForEntry({ timeEntryId: 'e1', organizationId: 'org-1', requesterId: 'u-admin', scopeSpaceIds: null });
 
     // The exact path the client reads. If this moves, the client silently shows
     // an empty list again.
@@ -62,7 +62,7 @@ describe('getBreaksForEntry — response shape', () => {
     prisma.timeEntry.findFirst.mockResolvedValue({ id: 'e1' });
     prisma.break.findMany.mockResolvedValue(rows);
 
-    const result: any = await service.getBreaksForEntry({ timeEntryId: 'e1', organizationId: 'org-1' });
+    const result: any = await service.getBreaksForEntry({ timeEntryId: 'e1', organizationId: 'org-1', requesterId: 'u-admin', scopeSpaceIds: null });
     expect(result.data.totalBreakMinutes).toBe(75);
     expect(result.data.breakCount).toBe(2);
   });
@@ -73,7 +73,7 @@ describe('getBreaksForEntry — response shape', () => {
     prisma.timeEntry.findFirst.mockResolvedValue({ id: 'e1' });
     prisma.break.findMany.mockResolvedValue(rows);
 
-    await service.getBreaksForEntry({ timeEntryId: 'e1', organizationId: 'org-1' });
+    await service.getBreaksForEntry({ timeEntryId: 'e1', organizationId: 'org-1', requesterId: 'u-admin', scopeSpaceIds: null });
     expect(prisma.break.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ include: expect.objectContaining({ addedBy: expect.anything() }) }),
     );

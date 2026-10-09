@@ -3,6 +3,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { firstValueFrom, timeout, catchError, of } from 'rxjs';
 import { SERVICE_NAMES } from '@hbcfield/shared';
+import { taskActor } from '../../common/task-actor';
 
 /**
  * Unified global search for the web command palette. Fans out to the existing
@@ -52,9 +53,11 @@ export class SearchController {
     // auth-service: people+customers). People/spaces/customers are only queried
     // for users who can view all tasks; a basic employee only gets their own tasks.
     const [taskRes, authRes] = await Promise.all([
+      // The task gate's own caller (common/task-actor.ts): a supervisor granted
+      // "view all tasks" in a SPACE finds that space's tasks, and a guest the
+      // tasks of a space shared with them — the same set GET /tasks lists.
       call<{ tasks?: unknown[]; spaces?: unknown[] }>(this.taskClient, 'search_tasks_and_spaces', {
-        query, organizationId: org, userId: user.id, userRole: user.role,
-        canViewAllTasks: canAll, limit: LIMIT,
+        query, limit: LIMIT, ...taskActor(req, { crossOrgRead: true }),
       }, {}),
       canAll
         ? call<{ members?: unknown[]; customers?: unknown[] }>(this.authClient, 'search_people_and_customers', { query, organizationId: org, limit: LIMIT }, {})

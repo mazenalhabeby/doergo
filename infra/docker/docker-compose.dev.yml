@@ -11,7 +11,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hbcfield_secret}
       POSTGRES_DB: ${POSTGRES_DB:-hbcfield}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      # Loopback only: a dev database with a default password must not listen
+      # on every interface of a laptop on a shared network.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -25,7 +27,8 @@ services:
     container_name: hbcfield-redis
     restart: unless-stopped
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      # Loopback only: this Redis has no password.
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes

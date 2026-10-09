@@ -17,7 +17,6 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { isAdmin, spacesGranting } from '@hbcfield/shared';
 import { RequirePermission, RequirePermissionInSpace, DenyExternal } from '../../common/decorators';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -31,6 +30,7 @@ import {
   UpdateAssetTypeDto,
 } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
+import { taskActor } from '../../common/task-actor';
 
 @ApiTags('asset-categories')
 @ApiBearerAuth()
@@ -103,12 +103,8 @@ export class AssetCategoriesController {
   @ApiQuery({ name: 'spaceId', required: false, description: "Only this space's kinds" })
   async findAllCategories(@Request() req: any, @Query('spaceId') spaceId?: string) {
     return this.assetsService.findAllCategories({
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      organizationId: req.user.organizationId,
       spaceId,
+      ...taskActor(req),
     });
   }
 

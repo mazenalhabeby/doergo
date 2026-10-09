@@ -8,3 +8,4 @@ export {
 } from './redis.config';
 export { BaseGatewayService } from './base-gateway.service';
 export { RpcHttpExceptionFilter } from './rpc-exception.filter';
+export { assertServiceOk, unwrapServiceResult, isServiceRefusal, type ServiceRefusal } from './service-result';

@@ -1,7 +1,7 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Inject, Injectable, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Injectable, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Throttle } from '@nestjs/throttler';
-import { BaseGatewayService, SERVICE_NAMES } from '@hbcfield/shared';
+import { BaseGatewayService, SERVICE_NAMES, assertServiceOk } from '@hbcfield/shared';
 import { Public } from '../../common/decorators';
 import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/platform-auth.guard';
 
@@ -40,10 +40,7 @@ export class PlatformLibraryController {
   constructor(private readonly svc: PlatformLibraryService) {}
 
   private unwrap<T>(result: any): T {
-    if (result && result.success === false) {
-      throw new HttpException({ message: result.message ?? 'Error' }, result.statusCode ?? HttpStatus.BAD_REQUEST);
-    }
-    return result;
+    return assertServiceOk(result) as T;
   }
 
   @Get('templates')

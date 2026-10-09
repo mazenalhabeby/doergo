@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { ForbiddenException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { CredentialExpiryService } from '../credential-expiry.service';
@@ -165,7 +165,7 @@ describe('exporting a member’s file', () => {
     // their file, and reading it is the same act as opening one document.
     await expect(
       service.exportForMember({ actor: me, targetUserId: 'someone-else' }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('allows it with that permission', async () => {

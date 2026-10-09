@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Injectable, Logger, Inject, Optional } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Prisma } from '@prisma/client';
@@ -7,6 +7,7 @@ import * as bcrypt from 'bcryptjs';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { DocumentsService } from '../documents/documents.service';
+import { BillingService } from '../billing/billing.service';
 import {
   BCRYPT_COST_FACTOR,
   DEFAULT_PERMISSIONS,
@@ -18,16 +19,18 @@ import {
   INVITATION_MAX_EXPIRY_HOURS,
   INVITATION_MIN_EXPIRY_HOURS,
   INVITATION_MAX_PENDING_PER_ORG,
-  permissionsFromUserFlags,
   permissionsFromOrgRole,
   mergePermissions,
   permissionsExceed,
+  mayGrantBaseRole,
+  loadOrgPermissionCeiling,
+  normalizeEmail,
   clientEmailLocale,
   DEFAULT_LOCALE,
   type SupportedLocale,
 } from '@hbcfield/shared';
 import { defaultSpaceRoleId } from './invitation-space-role';
-import { memberFieldsFromInvitation } from './invitation-apply';
+import { memberFieldsFromInvitation, claimInvitation, InvitationAlreadyClaimedError } from './invitation-apply';
 
 function hashCode(code: string): string {
   return createHash('sha256').update(code).digest('hex');
@@ -43,6 +46,8 @@ export class InvitationService {
     // A local call, not a message: the contract belongs to the same service and
     // the same database as the member who just accepted.
     private readonly documents: DocumentsService,
+    // Optional so a unit test that never adds a member need not wire billing.
+    @Optional() private readonly billing?: BillingService,
   ) {}
 
   /**
@@ -141,7 +146,8 @@ export class InvitationService {
     const isCustomerInvite = data.targetRole === Role.CUSTOMER;
 
     // Non-admin creators may only invite employees (never admins or customers).
-    if (data.creatorRole !== Role.ADMIN && data.targetRole !== Role.EMPLOYEE) {
+    // The same rule join-request approval asks (`mayGrantBaseRole`).
+    if (!mayGrantBaseRole(data.creatorRole, data.targetRole)) {
       return {
         success: false,
         statusCode: HttpStatus.FORBIDDEN,
@@ -207,23 +213,9 @@ export class InvitationService {
     let creatorPerms: ReturnType<typeof mergePermissions> = {};
     const creatorIsAdmin = data.creatorRole === Role.ADMIN;
     if (!creatorIsAdmin) {
-      const creator = await this.prisma.user.findFirst({
-        where: { id: data.createdById, organizationId: data.organizationId },
-        select: {
-          canCreateTasks: true,
-          canViewAllTasks: true,
-          canAssignTasks: true,
-          canManageUsers: true,
-          canViewReports: true,
-          memberRole: { select: { permissions: true, isActive: true } },
-        },
-      });
-      creatorPerms = mergePermissions(
-        creator ? permissionsFromUserFlags(creator) : undefined,
-        creator?.memberRole?.isActive
-          ? permissionsFromOrgRole(creator.memberRole.permissions)
-          : undefined,
-      );
+      // The shared loader every grant door uses — not found = no permissions.
+      const creator = await loadOrgPermissionCeiling(this.prisma, data.createdById, data.organizationId);
+      creatorPerms = creator?.perms ?? {};
     }
 
     /*
@@ -627,7 +619,7 @@ export class InvitationService {
     }
 
     // Check email uniqueness
-    const email = data.email.trim().toLowerCase();
+    const email = normalizeEmail(data.email);
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -707,17 +699,22 @@ export class InvitationService {
       // Pre-assigned space: assign the new user to it (if it still exists in the org).
       await this.assignInvitationSpace(tx, newUser.id, invitation.organizationId, invitation.spaceId, invitation.isExternal, invitation.memberRoleId);
 
-      await tx.invitation.update({
-        where: { id: invitation.id },
-        data: {
-          status: 'ACCEPTED',
-          usedAt: new Date(),
-          acceptedById: newUser.id,
-        },
-      });
+      // Claimed atomically, as the last write — see claimInvitation.
+      await claimInvitation(tx, invitation.id, newUser.id);
 
       return newUser;
+    }).catch((e: unknown) => {
+      if (e instanceof InvitationAlreadyClaimedError) return null;
+      throw e;
     });
+
+    if (!user) {
+      return {
+        success: false as const,
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: 'This invitation has already been used or revoked',
+      };
+    }
 
     this.logger.log(`Invitation accepted: user ${user.id} joined org ${invitation.organizationId} as ${role}`);
 
@@ -734,6 +731,9 @@ export class InvitationService {
       whereas a signup that rolled back at the last step is not.
     */
     void this.issueJoiningContract(user.id, invitation.organizationId, invitation.createdById);
+
+    // A new member is a new seat. Debounced, so a burst of joins is one sync.
+    this.billing?.scheduleReconcile(invitation.organizationId);
 
     return {
       success: true,

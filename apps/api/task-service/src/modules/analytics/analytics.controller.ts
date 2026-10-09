@@ -3,6 +3,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AnalyticsService } from './analytics.service';
 import { ReportScheduleService } from './report-schedule.service';
 import { ReportDefinition } from './query-engine';
+import type { SpaceScopeIds } from '@hbcfield/shared';
 
 @Controller()
 export class AnalyticsController {
@@ -17,12 +18,12 @@ export class AnalyticsController {
   }
 
   @MessagePattern({ cmd: 'analytics_run' })
-  run(@Payload() data: { organizationId: string; definition: ReportDefinition }) {
+  run(@Payload() data: { organizationId: string; definition: ReportDefinition; scopeSpaceIds?: SpaceScopeIds }) {
     return this.analytics.run(data);
   }
 
   @MessagePattern({ cmd: 'analytics_timesheet' })
-  timesheet(@Payload() data: { organizationId: string; userId: string; from?: string; to?: string }) {
+  timesheet(@Payload() data: { organizationId: string; userId: string; from?: string; to?: string; scopeSpaceIds?: SpaceScopeIds }) {
     return this.analytics.timesheetDetail(data);
   }
 
@@ -37,12 +38,12 @@ export class AnalyticsController {
   }
 
   @MessagePattern({ cmd: 'analytics_update_saved' })
-  updateSaved(@Payload() data: { id: string; organizationId: string; userId: string; name?: string; description?: string; config?: ReportDefinition; isShared?: boolean }) {
+  updateSaved(@Payload() data: { id: string; organizationId: string; userId: string; isAdmin?: boolean; name?: string; description?: string; config?: ReportDefinition; isShared?: boolean }) {
     return this.analytics.updateSaved(data);
   }
 
   @MessagePattern({ cmd: 'analytics_delete_saved' })
-  deleteSaved(@Payload() data: { id: string; organizationId: string }) {
+  deleteSaved(@Payload() data: { id: string; organizationId: string; userId?: string; isAdmin?: boolean }) {
     return this.analytics.deleteSaved(data);
   }
 

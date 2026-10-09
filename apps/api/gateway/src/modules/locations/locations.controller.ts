@@ -10,12 +10,9 @@ import {
   Param,
   Query,
   Request,
-  Inject,
   ForbiddenException,
   UseInterceptors,
 } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -23,7 +20,9 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
-import { getSpaceScope, spacesGranting, isAdmin } from '@hbcfield/shared';
+import { getSpaceScope, spacesGranting, isAdmin, accessAllows, clampListLimit, mayViewSpaceRoster, mayManageSpaceMembers, stripSpaceTerms } from '@hbcfield/shared';
+import { RebillService } from '../../common/billing/rebill.service';
+import { SpaceModulesService } from '../../common/space-modules.service';
 import { capModulesToCatalogue } from '../../common/entitlements';
 import { LocationsService } from './locations.service';
 import { LocationsQueueService } from './locations.queue.service';
@@ -42,25 +41,18 @@ export class LocationsController {
   constructor(
     private readonly locationsService: LocationsService,
     private readonly locationsQueueService: LocationsQueueService,
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    private readonly billing: RebillService,
     private readonly placeDetector: WorkspacePlaceDetector,
+    private readonly spaceModules: SpaceModulesService,
   ) {}
 
   /**
-   * Tell billing the bill moved.
-   *
-   * A space IS a billable thing now: creating one, switching a module on in it,
-   * or archiving it changes what the organization owes as surely as hiring
-   * somebody does. Member changes already triggered this; space changes did not,
-   * which meant a module switched on would show on the billing screen and never
-   * reach Stripe until the next unrelated hire.
-   *
-   * Fire-and-forget, and debounced on the far side: a burst of toggles on the
-   * Modules tab collapses into one proration, and a billing hiccup must never
-   * stop somebody configuring their space.
+   * Tell billing the bill moved. A space IS a billable thing: creating one,
+   * switching a module on in it, archiving it, or changing who holds a role in
+   * it moves what the organization owes (see RebillService).
    */
   private rebill(organizationId: string): void {
-    firstValueFrom(this.authClient.send({ cmd: 'billing_reconcile_seats' }, { organizationId })).catch(() => {});
+    this.billing.rebill(organizationId);
   }
 
   @Post()
@@ -98,7 +90,8 @@ export class LocationsController {
     const result: any = await this.locationsService.findAll({
       organizationId: req.user.organizationId,
       page: page ? Math.max(1, Number(page) || 1) : 1,
-      limit: Math.min(limit ? Math.max(1, Number(limit) || 20) : 20, 500),
+      // The workspace pickers ask for the whole directory, hence the higher ceiling.
+      limit: clampListLimit(limit, 20, 500),
       includeInactive: includeInactive === true || includeInactive === 'true' as any,
       // Default (undefined) excludes CUSTOMER; the Spaces directory passes 'all'.
       kind: kind || undefined,
@@ -144,14 +137,32 @@ export class LocationsController {
   @Get('rosters')
   @ApiOperation({ summary: 'Rosters (with current task) for multiple spaces at once' })
   @ApiQuery({ name: 'ids', required: true, description: 'Comma-separated company-location IDs' })
+  //
+  // ⚠️ Same per-space rule as GET /locations/:id/members. It used to pass the
+  // org-wide column as ONE boolean and the raw profile scope: an external
+  // member (no profile → scope 'all') read every workspace's roster, and every
+  // colleague got each person's negotiated bill rate. Now the viewing grant is
+  // asked PER SPACE (`mayViewSpaceRoster`), an external member has no own/all
+  // path, and a bill rate leaves only for whoever manages that space's people.
+  // Cost rates stop at the LabourCostInterceptor on this class.
   async getRosters(@Query('ids') ids: string, @Request() req: any) {
-    return this.locationsService.getLocationAssignmentsBatch({
-      locationIds: (ids || '').split(',').map((s) => s.trim()).filter(Boolean),
+    const locationIds = (ids || '').split(',').map((s) => s.trim()).filter(Boolean);
+    const res: any = await this.locationsService.getLocationAssignmentsBatch({
+      locationIds,
       organizationId: req.user.organizationId,
       requesterId: req.user.id,
-      spaceScope: getSpaceScope(req.user),
-      canViewAll: !!req.user.canViewAllTasks,
+      spaceScope: req.user.isExternal === true ? 'tasks' : getSpaceScope(req.user),
+      viewAllIds: locationIds.filter((id) => mayViewSpaceRoster(req.user, id)),
     });
+    if (res && Array.isArray(res.data)) {
+      const manages = new Map<string, boolean>();
+      const may = (spaceId: string) => {
+        if (!manages.has(spaceId)) manages.set(spaceId, mayManageSpaceMembers(req.user, spaceId));
+        return manages.get(spaceId)!;
+      };
+      return { ...res, data: res.data.map((row: any) => stripSpaceTerms([row], may(row?.locationId))[0]) };
+    }
+    return res;
   }
 
   // No @RequirePermission: the service fully scopes this read to the caller's own
@@ -164,6 +175,19 @@ export class LocationsController {
       id,
       organizationId: req.user.organizationId,
       sharedSpaceIds: (req.user.access?.sharedSpaces ?? []).map((s: any) => s.spaceId),
+      /*
+        What leaked was the client's CONTACTS and the negotiated RATES — those
+        go only to somebody who manages this workspace (`mayManage`; task-service
+        strips them otherwise). The workspace itself is the organization's own
+        and is opened from many screens (a client, an invoice, a roster), by a
+        Shift Leader, a Sales Rep or invoice staff with no "view all tasks", so an
+        internal member reads it. An EXTERNAL member reads only the workspaces
+        they were given.
+      */
+      viewScopeSpaceIds: isAdmin(req.user) || !req.user?.isExternal
+        ? undefined
+        : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? []),
+      mayManage: isAdmin(req.user) || mayManageSpaceMembers(req.user, id) || accessAllows(req.user?.access, 'canManageWorkspaces', id),
     });
   }
 
@@ -213,6 +237,9 @@ export class LocationsController {
     });
     // Modules may have changed — and an archived space stops being billed.
     this.rebill(req.user.organizationId);
+    // …and the module gates read this space's list from a 30-second cache; a
+    // module switched on must not stay refused (or off stay allowed) until it lapses.
+    this.spaceModules.invalidate(id, req.user.organizationId);
     // A moved workspace is looked up again for its public holidays (in the background).
     if ((dto as any).lat !== undefined || (dto as any).lng !== undefined) this.placeDetector.nudge();
     return updated;
@@ -271,11 +298,26 @@ export class LocationsController {
   // ==================== MEMBER ASSIGNMENT ENDPOINTS ====================
 
   @Get(':id/members')
-  // Read-only roster of a space — any member of the org may view it (org-scoped
-  // in the service); employees use it for their own space view + Team.
+  /*
+    Read-only roster of a space, with each person's email and what they are
+    working on right now. ⚠️ It used to have NO gate — "any member of the org may
+    view it" — so anybody, an external member included, read any workspace's
+    people by id, and each person's negotiated bill rate there with them.
+
+    Now the rule GET /locations/rosters already followed: a viewing grant for
+    THIS space (admin, follow / assign its work, supervise its attendance,
+    manage its people) reads it whole; otherwise an internal member reads the
+    spaces their Access Profile allows (assigned → their own). An external
+    member has no "own" path — only the grant in the space they supervise, which
+    is what the External Supervisor's attendance screens read. Outside that the
+    space reads as not found.
+
+    A member's bill rate here leaves only for whoever manages this space's
+    people; cost rates already stop at the LabourCostInterceptor on this class.
+  */
   @ApiOperation({ summary: 'Get members assigned to a location' })
   async getLocationMembers(@Param('id') id: string, @Request() req: any) {
-    return this.locationsService.getLocationAssignments({
+    const res: any = await this.locationsService.getLocationAssignments({
       locationId: id,
       organizationId: req.user.organizationId,
       // Cross-org shared spaces whose owner enabled "show workers" — the only
@@ -283,7 +325,14 @@ export class LocationsController {
       sharedSpaceIds: (req.user.access?.sharedSpaces ?? [])
         .filter((s: any) => s.showWorkers)
         .map((s: any) => s.spaceId),
+      requesterId: req.user.id,
+      spaceScope: req.user.isExternal === true ? 'tasks' : getSpaceScope(req.user),
+      canViewAll: mayViewSpaceRoster(req.user, id),
     });
+    if (res && Array.isArray(res.data)) {
+      return { ...res, data: stripSpaceTerms(res.data, mayManageSpaceMembers(req.user, id)) };
+    }
+    return res;
   }
 
   // Space-aware: org member-managers add anyone in their org; a CONTROL guest may
@@ -297,6 +346,7 @@ export class LocationsController {
     @Body() dto: AssignMemberDto,
     @Request() req: any,
   ) {
+    this.assertMayManageMembersIn(req, locationId);
     const result = await this.locationsQueueService.assignMember({
       ...dto,
       locationId,
@@ -352,5 +402,26 @@ export class LocationsController {
     // Losing a space role can move an external member back to the full seat.
     this.rebill(req.user.organizationId);
     return result;
+  }
+
+  /**
+   * May the caller change who works in THIS workspace?
+   *
+   * The guard on `POST /locations/:id/members` reads a space id from
+   * `params.spaceId`, `params.locationId` or the body — never `:id` — so for
+   * this route it fell back to "granted in ANY space": a member who manages one
+   * site could add people (and their roles, and their seat price) to every
+   * other. Decided here against the space in the path.
+   *
+   * Two ways to hold it: the workspace grant the guard asks for, held org-wide
+   * or in this space; or managing this space's people (which is what a CONTROL
+   * guest holds in a space shared with them — the service then confines them
+   * to their own people).
+   */
+  private assertMayManageMembersIn(req: any, spaceId: string): void {
+    if (isAdmin(req.user)) return;
+    if (accessAllows(req.user?.access, 'canManageWorkspaces', spaceId)) return;
+    if (mayManageSpaceMembers(req.user, spaceId)) return;
+    throw new ForbiddenException('You do not have permission to manage the members of this workspace');
   }
 }

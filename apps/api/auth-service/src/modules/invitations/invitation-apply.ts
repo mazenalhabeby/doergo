@@ -142,3 +142,37 @@ export function memberFieldsFromInvitation(
 
   return base;
 }
+
+/**
+ * Thrown inside an accept transaction when the invitation was no longer
+ * PENDING at the moment of the claim — rolls the whole accept back.
+ */
+export class InvitationAlreadyClaimedError extends Error {
+  constructor() {
+    super('This invitation has already been used or revoked');
+    this.name = 'InvitationAlreadyClaimedError';
+  }
+}
+
+/**
+ * CLAIM an invitation for the member who just accepted it — inside the accept
+ * transaction, as its last write.
+ *
+ * Both accept paths used to read "status = PENDING" up front and write
+ * ACCEPTED at the end: two people holding the same code at the same instant
+ * both passed the read and both joined, on a code meant for one. This is a
+ * conditional update on PENDING; Postgres re-checks the condition after the
+ * row lock, so exactly one transaction gets count 1 and the other throws,
+ * rolling back the account it had just made.
+ */
+export async function claimInvitation(
+  tx: { invitation: { updateMany(args: any): Promise<{ count: number }> } },
+  invitationId: string,
+  acceptedById: string,
+): Promise<void> {
+  const claim = await tx.invitation.updateMany({
+    where: { id: invitationId, status: 'PENDING', expiresAt: { gt: new Date() } },
+    data: { status: 'ACCEPTED', usedAt: new Date(), acceptedById },
+  });
+  if (claim.count !== 1) throw new InvitationAlreadyClaimedError();
+}

@@ -1,3 +1,5 @@
+import { UsersService } from '../users.service';
+
 /**
  * Who may read a colleague's record, and how much of it.
  *
@@ -22,12 +24,17 @@ describe('employee detail visibility', () => {
     if (scoped && !target.spaces.some((s) => viewerSpaces.includes(s))) return 'not-found';
     return {
       statsScopedTo: scoped ? viewerSpaces : 'all',
-      location: !scoped || viewer.canViewTracking === true,
+      // Coordinates are their own permission for EVERY viewer (audit 2026-10-09).
+      location: viewer.canViewTracking === true,
     };
   };
 
-  it('an org-wide viewer sees the whole record, unchanged', () => {
+  it('an org-wide viewer sees the whole record — the position only with canViewTracking', () => {
     expect(decide({ orgWide: true }, { spaces: ['s1'] })).toEqual({
+      statsScopedTo: 'all',
+      location: false,
+    });
+    expect(decide({ orgWide: true, canViewTracking: true }, { spaces: ['s1'] })).toEqual({
       statsScopedTo: 'all',
       location: true,
     });
@@ -60,5 +67,45 @@ describe('employee detail visibility', () => {
       { spaces: ['s1'] },
     ) as { location: boolean };
     expect(r.location).toBe(true);
+  });
+});
+
+/** The service itself: the recent-activity feed follows the viewer's spaces. */
+describe('UsersService employee recent activity — narrowed to the viewer\'s spaces', () => {
+  function svc() {
+    const s = Object.create(UsersService.prototype) as any;
+    s.prisma = {
+      taskEvent: { findMany: jest.fn().mockResolvedValue([]) },
+      timeEntry: { findMany: jest.fn().mockResolvedValue([]) },
+    };
+    return s;
+  }
+
+  it('a space-scoped viewer reads jobs and clock-ins in their spaces only', async () => {
+    const s = svc();
+    await s.getRecentActivityForEmployee('emp', ['s1']);
+    expect(s.prisma.taskEvent.findMany.mock.calls[0][0].where).toEqual({ userId: 'emp', task: { spaceId: { in: ['s1'] } } });
+    expect(s.prisma.timeEntry.findMany.mock.calls[0][0].where).toEqual({ userId: 'emp', locationId: { in: ['s1'] } });
+  });
+
+  it('an org-wide viewer (undefined) is not narrowed', async () => {
+    const s = svc();
+    await s.getRecentActivityForEmployee('emp');
+    expect(s.prisma.taskEvent.findMany.mock.calls[0][0].where).toEqual({ userId: 'emp' });
+    expect(s.prisma.timeEntry.findMany.mock.calls[0][0].where).toEqual({ userId: 'emp' });
+  });
+
+  it('getEmployeeDetail passes the viewer\'s spaces to the feed', async () => {
+    const s = svc();
+    s.prisma.user = { findFirst: jest.fn().mockResolvedValue({ id: 'emp', createdAt: new Date(), updatedAt: new Date(), lastLocation: null }) };
+    s.prisma.spaceAssignment = { findFirst: jest.fn().mockResolvedValue({ id: 'sa' }) };
+    s.getTaskStatsForEmployee = jest.fn().mockResolvedValue({});
+    s.getAttendanceStatsForEmployee = jest.fn().mockResolvedValue({});
+    s.getRecentActivityForEmployee = jest.fn().mockResolvedValue([]);
+    s.isOnline = () => false;
+    await s.getEmployeeDetail({ id: 'emp', organizationId: 'org', viewerSpaceIds: ['s1'] });
+    expect(s.getRecentActivityForEmployee).toHaveBeenCalledWith('emp', ['s1']);
+    await s.getEmployeeDetail({ id: 'emp', organizationId: 'org', viewerSpaceIds: null });
+    expect(s.getRecentActivityForEmployee).toHaveBeenLastCalledWith('emp', undefined);
   });
 });

@@ -62,16 +62,6 @@ export interface GetEmployeeDetailDto {
   organizationId: string;
 }
 
-/**
- * DTO for getting employee performance
- */
-export interface GetEmployeePerformanceDto {
-  id: string;
-  organizationId: string;
-  startDate?: string;
-  endDate?: string;
-}
-
 // ============================================================================
 // ORGANIZATION MEMBERS DTOs
 // ============================================================================

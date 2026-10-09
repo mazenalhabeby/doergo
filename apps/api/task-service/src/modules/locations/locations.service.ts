@@ -7,16 +7,18 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_NAMES,
   ATTENDANCE_CONSTANTS,
   validateGeofencePolygon,
   type GeofencePolygonError,
-  COST_ON_PROFILE_MESSAGE
+  COST_ON_PROFILE_MESSAGE,
+  stripWorkspaceTerms,
 } from '@hbcfield/shared';
 import { isGeofencePolicy,
   isNoShiftPolicy,
   clampDailyMinutes, validateMinCover, writeRateChange, RateChangeError, parseCurrency, CURRENCY_INVALID_MESSAGE,
-  currencyOrNull, workspaceCurrency, DEFAULT_CURRENCY, usableLegalEntityId, COMPANY_UNKNOWN_MESSAGE } from '@hbcfield/shared';
+  currencyOrNull, workspaceCurrency, DEFAULT_CURRENCY, usableLegalEntityId, COMPANY_UNKNOWN_MESSAGE, clampListLimit, clampListPage } from '@hbcfield/shared';
 
 // tz-lookup: offline coords → IANA timezone (no types pkg).
 const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
@@ -102,6 +104,9 @@ export class LocationsService {
   }) {
     this.logger.log(`Creating company location: ${data.name}`);
 
+    // The task type is an id from the body — it must be this organization's (tenant-scope.util).
+    await assertWorkflowInOrg(this.prisma, data.workflowId, data.organizationId);
+
     // The org's first space becomes its default (holds otherwise-unassigned tasks).
     const existingDefault = await this.prisma.companyLocation.count({
       where: { organizationId: data.organizationId, isDefault: true },
@@ -186,8 +191,10 @@ export class LocationsService {
      */
     spaceScope?: 'own' | 'tasks' | 'all';
   }) {
-    const page = data.page ?? 1;
-    const limit = data.limit ?? 20;
+    // Request numbers — bounded (1..200, NaN → default) so `?limit=1000000`
+    // cannot page the whole directory out in one response.
+    const page = clampListPage(data.page);
+    const limit = clampListLimit(data.limit, 20);
     const skip = (page - 1) * limit;
 
     // 'tasks' means no workspace view at all — answer without touching the DB.
@@ -288,13 +295,38 @@ export class LocationsService {
   }
 
   /**
-   * Get a single company location by ID
+   * Get a single company location by ID.
+   *
+   * Two inputs from the gateway narrow it to what THIS caller may read:
+   *
+   * - `viewScopeSpaceIds` — the workspaces the caller may see (`spacesGranting`
+   *   of their view permission). `undefined`/`null` = org-wide (admin, an
+   *   org-wide grant, or a legacy caller); `[ids]` = only those; `[]` = none.
+   *   A workspace outside it is 404 — the same answer as one that does not
+   *   exist, so the id confirms nothing. A space SHARED with the caller's org
+   *   is reached through the share, not this scope.
+   * - `mayManage` — may the caller manage THIS workspace (`canManageSpace` /
+   *   `mayManageSpaceMembers` for the route's id)? When false, the client's
+   *   contact person and the workspace's rates are removed
+   *   (`stripWorkspaceTerms`, the roster rule's sibling). `undefined` keeps the
+   *   old full answer for an own-organization workspace (callers that predate
+   *   the field) and strips for a space shared IN from another organization,
+   *   whose client terms are the owner's business.
    */
-  async findOne(data: { id: string; organizationId: string; sharedSpaceIds?: string[] }) {
+  async findOne(data: {
+    id: string;
+    organizationId: string;
+    sharedSpaceIds?: string[];
+    viewScopeSpaceIds?: string[] | null;
+    mayManage?: boolean;
+  }) {
     // A guest org may open a space shared with it: if the id is in the caller's
     // server-authoritative received-shares set, scope by id alone (the space is
     // foreign); otherwise keep the strict org filter.
     const isShared = Array.isArray(data.sharedSpaceIds) && data.sharedSpaceIds.includes(data.id);
+    if (!isShared && Array.isArray(data.viewScopeSpaceIds) && !data.viewScopeSpaceIds.includes(data.id)) {
+      throw new NotFoundException('Company location not found');
+    }
     const location = await this.prisma.companyLocation.findFirst({
       where: isShared ? { id: data.id } : { id: data.id, organizationId: data.organizationId },
       include: {
@@ -327,12 +359,18 @@ export class LocationsService {
     const org = await this.prisma.organization.findUnique({ where: { id: location.organizationId }, select: { currency: true } });
     const organizationCurrency = currencyOrNull(org?.currency) ?? DEFAULT_CURRENCY;
 
-    return success({
-      ...location,
-      ratesSet,
-      organizationCurrency,
-      effectiveCurrency: workspaceCurrency(location, { currency: organizationCurrency }),
-    });
+    const mayManage = data.mayManage ?? !isShared;
+    return success(
+      stripWorkspaceTerms(
+        {
+          ...location,
+          ratesSet,
+          organizationCurrency,
+          effectiveCurrency: workspaceCurrency(location, { currency: organizationCurrency }),
+        },
+        mayManage,
+      ),
+    );
   }
 
   /**
@@ -481,7 +519,11 @@ export class LocationsService {
     }
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
     if (data.enabledModules !== undefined) updateData.enabledModules = data.enabledModules;
-    if (data.workflowId !== undefined) updateData.workflowId = data.workflowId || null;
+    if (data.workflowId !== undefined) {
+      // Another tenant's state machine must not become this workspace's default task type.
+      await assertWorkflowInOrg(this.prisma, data.workflowId || null, existing.organizationId);
+      updateData.workflowId = data.workflowId || null;
+    }
     if (data.workModel !== undefined) updateData.workModel = data.workModel;
     /*
       The ceiling on working away from this site.
@@ -1016,15 +1058,68 @@ export class LocationsService {
     return success([...byUser.values()]);
   }
 
+  /**
+   * Which of these spaces' rosters the caller may read — ONE rule for the
+   * single roster and the dashboard batch.
+   *
+   * Space-scope enforcement. The ids arrive from the client, so an org check
+   * alone let any member read the roster of ANY space in the org by passing its
+   * id — including members whose Access Profile grants them no spaces at all.
+   * Mirrors the scoping GET /locations already applies to the list.
+   * `canViewAll` is decided at the gateway (admin, or a viewing grant for the
+   * space); without it, Access-Profile scope 'tasks' reads none, 'own' only the
+   * spaces the caller is assigned to right now, 'all' every one.
+   */
+  private async rosterSpacesFor(
+    ids: string[],
+    data: { requesterId?: string; spaceScope?: string; canViewAll?: boolean; viewAllIds?: string[] },
+  ): Promise<string[]> {
+    if (data.canViewAll || !data.requesterId) return ids;
+    /*
+      `viewAllIds` = the spaces the gateway found a viewing grant for
+      (`mayViewSpaceRoster`, per space). The batch carries one list because a
+      grant is per workspace — a single boolean either over- or under-reads.
+    */
+    const granted = new Set(data.viewAllIds ?? []);
+    const rest = ids.filter((id) => !granted.has(id));
+    const viaGrant = ids.filter((id) => granted.has(id));
+    if (!rest.length || data.spaceScope === 'tasks') return viaGrant;
+    if (data.spaceScope === 'all') return ids;
+    const mine = await this.prisma.spaceAssignment.findMany({
+      where: {
+        userId: data.requesterId,
+        spaceId: { in: rest },
+        OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+      },
+      select: { spaceId: true },
+    });
+    const allowed = new Set(mine.map((a) => a.spaceId));
+    return ids.filter((id) => granted.has(id) || allowed.has(id));
+  }
+
   async getLocationAssignments(data: {
     locationId: string;
     organizationId: string;
     sharedSpaceIds?: string[]; // shared spaces (with showWorkers) the caller may view
+    /** Caller, for space-scope enforcement (same rule as the batch). */
+    requesterId?: string;
+    spaceScope?: string;
+    canViewAll?: boolean;
   }) {
     // A guest may view the roster of a space shared with them (showWorkers gated
     // at the gateway → only such spaces reach here in sharedSpaceIds). Otherwise
     // strict org scoping.
     const isShared = Array.isArray(data.sharedSpaceIds) && data.sharedSpaceIds.includes(data.locationId);
+    /*
+      ⚠️ This read had no scope at all: any member of the organization — an
+      external one included — read any workspace's roster by id, with emails
+      and what each person is working on right now. Same rule as the batch now;
+      a space the caller may not read is not found. (A shared space is
+      authorised by its share, decided above.)
+    */
+    if (!isShared && (await this.rosterSpacesFor([data.locationId], data)).length === 0) {
+      throw new NotFoundException('Company location not found');
+    }
     const location = await this.prisma.companyLocation.findFirst({
       where: isShared ? { id: data.locationId } : { id: data.locationId, organizationId: data.organizationId },
     });
@@ -1131,35 +1226,17 @@ export class LocationsService {
     spaceScope?: string;
     /** Admins/managers bypass scoping. */
     canViewAll?: boolean;
+    /** Spaces the caller holds a roster-viewing grant in (decided at the gateway). */
+    viewAllIds?: string[];
   }) {
     const ids = (data.locationIds || []).filter(Boolean);
     if (!ids.length) return success([]);
 
-    // Space-scope enforcement. The ids arrive from the client, so an org check
-    // alone let any member read the roster of ANY space in the org by passing
-    // its id — including members whose Access Profile grants them no spaces at
-    // all. Mirrors the scoping GET /locations already applies to the list.
-    if (!data.canViewAll && data.requesterId) {
-      if (data.spaceScope === 'tasks') return success([]);
-      if (data.spaceScope !== 'all') {
-        const mine = await this.prisma.spaceAssignment.findMany({
-          where: {
-            userId: data.requesterId,
-            spaceId: { in: ids },
-            OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
-          },
-          select: { spaceId: true },
-        });
-        const allowed = new Set(mine.map((a) => a.spaceId));
-        const scoped = ids.filter((id) => allowed.has(id));
-        if (!scoped.length) return success([]);
-        ids.length = 0;
-        ids.push(...scoped);
-      }
-    }
+    const scoped = await this.rosterSpacesFor(ids, data);
+    if (!scoped.length) return success([]);
 
     const locs = await this.prisma.companyLocation.findMany({
-      where: { id: { in: ids }, organizationId: data.organizationId },
+      where: { id: { in: scoped }, organizationId: data.organizationId },
       select: { id: true },
     });
     const validIds = locs.map((l) => l.id);

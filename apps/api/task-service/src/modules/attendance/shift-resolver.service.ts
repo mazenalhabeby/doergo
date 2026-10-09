@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { WorkModel, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, rotaRunsOn } from '@hbcfield/shared';
+// Wall time ↔ UTC comes from ONE place. This service used to carry a verbatim
+// private copy of all of it; two copies of "what time is 06:00 in Vienna" are
+// two chances to be an hour wrong twice a year.
+import { zonedWallTimeToUtc, localPartsIn, addDaysStr, parseHm, type LocalParts } from '@hbcfield/shared';
 
 /**
  * Space (CompanyLocation) fields the resolver needs.
@@ -81,7 +85,7 @@ export class ShiftResolverService {
     const tz = spaceIsPhysical
       ? space.timezone || 'UTC'
       : params.clockInTz || space.timezone || 'UTC';
-    const local = this.getLocal(clockInAt, tz);
+    const local = localPartsIn(clockInAt, tz);
 
     // ── 1. Rota assignment ──────────────────────────────────────────────
     const assignment = await this.resolveAssignment(userId, space.id, clockInAt, tz, local);
@@ -120,8 +124,8 @@ export class ShiftResolverService {
       if (!this.recurrenceMatches(a, local)) continue;
 
       const shift = a.shift;
-      const [startH, startM] = this.parseHm(shift.startLocal);
-      const [endH, endM] = this.parseHm(shift.endLocal);
+      const [startH, startM] = parseHm(shift.startLocal);
+      const [endH, endM] = parseHm(shift.endLocal);
       const expectedClockInAt = this.computeStart(local.dateStr, startH, startM, endH, endM, tz, shift.crossesMidnight, local.minutesOfDay);
       const expectedClockOutAt = this.computeEnd(local.dateStr, endH, endM, tz, shift.crossesMidnight, clockInAt, local.minutesOfDay);
       const graceMin = shift.graceMin ?? SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
@@ -152,8 +156,8 @@ export class ShiftResolverService {
     });
     if (!schedule?.endTime) return null;
 
-    const [startH, startM] = this.parseHm(schedule.startTime);
-    const [endH, endM] = this.parseHm(schedule.endTime);
+    const [startH, startM] = parseHm(schedule.startTime);
+    const [endH, endM] = parseHm(schedule.endTime);
     // Legacy schedules never cross midnight → start & end are on the clock-in's local day.
     const expectedClockInAt = this.computeStart(local.dateStr, startH, startM, endH, endM, tz, false, local.minutesOfDay);
     const expectedClockOutAt = this.computeEnd(local.dateStr, endH, endM, tz, false, clockInAt, local.minutesOfDay);
@@ -206,11 +210,11 @@ export class ShiftResolverService {
     const local: LocalDate = { dateStr, dow, dom: d!, minutesOfDay: 0 };
     if (!this.recurrenceMatches(assignment, local)) return null;
 
-    const [sH, sM] = this.parseHm(assignment.shift.startLocal);
-    const [eH, eM] = this.parseHm(assignment.shift.endLocal);
-    const expectedClockInAt = this.zonedWallTimeToUtc(dateStr, sH, sM, tz);
-    const endDateStr = assignment.shift.crossesMidnight ? this.addDays(dateStr, 1) : dateStr;
-    const expectedClockOutAt = this.zonedWallTimeToUtc(endDateStr, eH, eM, tz);
+    const [sH, sM] = parseHm(assignment.shift.startLocal);
+    const [eH, eM] = parseHm(assignment.shift.endLocal);
+    const expectedClockInAt = zonedWallTimeToUtc(dateStr, sH, sM, tz);
+    const endDateStr = assignment.shift.crossesMidnight ? addDaysStr(dateStr, 1) : dateStr;
+    const expectedClockOutAt = zonedWallTimeToUtc(endDateStr, eH, eM, tz);
     return { expectedClockInAt, expectedClockOutAt };
   }
 
@@ -244,16 +248,16 @@ export class ShiftResolverService {
     const endMinutes = endH * 60 + endM;
     let endDateStr = startDateStr;
     if (crossesMidnight) {
-      endDateStr = clockInLocalMinutes < endMinutes ? startDateStr : this.addDays(startDateStr, 1);
+      endDateStr = clockInLocalMinutes < endMinutes ? startDateStr : addDaysStr(startDateStr, 1);
     }
-    let end = this.zonedWallTimeToUtc(endDateStr, endH, endM, tz);
+    let end = zonedWallTimeToUtc(endDateStr, endH, endM, tz);
 
     // Safety: for cross-midnight shifts the end must be strictly after clock-in
     // (pathological inputs only — the branch above already picks the right day).
     let guard = 0;
     while (crossesMidnight && end.getTime() <= clockInAt.getTime() && guard < 2) {
-      endDateStr = this.addDays(endDateStr, 1);
-      end = this.zonedWallTimeToUtc(endDateStr, endH, endM, tz);
+      endDateStr = addDaysStr(endDateStr, 1);
+      end = zonedWallTimeToUtc(endDateStr, endH, endM, tz);
       guard++;
     }
     return end;
@@ -282,114 +286,14 @@ export class ShiftResolverService {
     const endMinutes = endH * 60 + endM;
     let dateStr = startDateStr;
     if (crossesMidnight && clockInLocalMinutes < endMinutes) {
-      dateStr = this.addDays(startDateStr, -1);
+      dateStr = addDaysStr(startDateStr, -1);
     }
-    return this.zonedWallTimeToUtc(dateStr, startH, startM, tz);
-  }
-
-  /** Convert a wall-clock time in a timezone (on a given calendar date) to a UTC instant. */
-  private zonedWallTimeToUtc(dateStr: string, hh: number, mm: number, tz: string): Date {
-    const [y, mo, d] = dateStr.split('-').map(Number);
-    const utcGuess = Date.UTC(y!, mo! - 1, d!, hh, mm, 0);
-    // First pass: offset at the naive guess. Second pass refines across a DST
-    // transition (the offset at the guess can differ from the offset at the result).
-    const o1 = this.tzOffsetMs(new Date(utcGuess), tz);
-    let result = utcGuess - o1;
-    const o2 = this.tzOffsetMs(new Date(result), tz);
-    if (o2 !== o1) result = utcGuess - o2;
-    return new Date(result);
-  }
-
-  /** Milliseconds to add to a UTC instant to get the given timezone's wall clock. */
-  private tzOffsetMs(instant: Date, tz: string): number {
-    try {
-      const parts = this.getOffsetFormatter(tz).formatToParts(instant);
-      const g = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? '0');
-      const asUTC = Date.UTC(g('year'), g('month') - 1, g('day'), g('hour'), g('minute'), g('second'));
-      return asUTC - instant.getTime();
-    } catch {
-      return 0; // Invalid timezone → treat as UTC
-    }
-  }
-
-  /** Local calendar parts (date string, day-of-week, day-of-month, minutes-of-day) in a timezone. */
-  private getLocal(instant: Date, tz: string): LocalDate {
-    let dateStr: string;
-    let minutesOfDay = 0;
-    try {
-      const parts = this.getOffsetFormatter(tz).formatToParts(instant);
-      const g = (t: string) => parts.find((p) => p.type === t)?.value ?? '00';
-      dateStr = `${g('year')}-${g('month')}-${g('day')}`;
-      minutesOfDay = Number(g('hour')) * 60 + Number(g('minute'));
-    } catch {
-      dateStr = instant.toISOString().slice(0, 10);
-      minutesOfDay = instant.getUTCHours() * 60 + instant.getUTCMinutes();
-    }
-    const dom = Number(dateStr.split('-')[2]);
-    return { dateStr, dow: this.getLocalDayOfWeek(instant, tz), dom, minutesOfDay };
-  }
-
-  private getLocalDayOfWeek(instant: Date, tz: string): number {
-    try {
-      const dayStr = this.getWeekdayFormatter(tz).format(instant);
-      const map: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-      return map[dayStr] ?? instant.getUTCDay();
-    } catch {
-      return instant.getUTCDay();
-    }
-  }
-
-  /** Add whole calendar days to a YYYY-MM-DD string (pure date math, tz-agnostic). */
-  private addDays(dateStr: string, days: number): string {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const dt = new Date(Date.UTC(y!, m! - 1, d!));
-    dt.setUTCDate(dt.getUTCDate() + days);
-    const yy = dt.getUTCFullYear();
-    const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
-    const dd = String(dt.getUTCDate()).padStart(2, '0');
-    return `${yy}-${mm}-${dd}`;
-  }
-
-  private parseHm(hm: string): [number, number] {
-    const [h, m] = hm.split(':').map(Number);
-    return [h ?? 0, m ?? 0];
-  }
-
-  // Cached Intl formatters (construction is expensive) keyed by timezone.
-  private readonly offsetFormatters = new Map<string, Intl.DateTimeFormat>();
-  private readonly weekdayFormatters = new Map<string, Intl.DateTimeFormat>();
-
-  private getOffsetFormatter(tz: string): Intl.DateTimeFormat {
-    let fmt = this.offsetFormatters.get(tz);
-    if (!fmt) {
-      fmt = new Intl.DateTimeFormat('en-US', {
-        timeZone: tz,
-        hourCycle: 'h23', // 00–23 (avoids the '24' midnight quirk)
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      });
-      this.offsetFormatters.set(tz, fmt);
-    }
-    return fmt;
-  }
-
-  private getWeekdayFormatter(tz: string): Intl.DateTimeFormat {
-    let fmt = this.weekdayFormatters.get(tz);
-    if (!fmt) {
-      fmt = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short' });
-      this.weekdayFormatters.set(tz, fmt);
-    }
-    return fmt;
+    return zonedWallTimeToUtc(dateStr, startH, startM, tz);
   }
 }
 
-interface LocalDate {
-  dateStr: string; // YYYY-MM-DD
-  dow: number; // 0=Sun..6=Sat
-  dom: number; // 1..31
-  minutesOfDay: number; // local wall-clock minutes since midnight (0..1439)
-}
+/**
+ * The local calendar parts of an instant — the shared shape
+ * (attendance/zoned-time), named here for the call sites that read it.
+ */
+type LocalDate = LocalParts;

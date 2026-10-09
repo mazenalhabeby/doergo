@@ -1,9 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, HttpException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { IS_PUBLIC_KEY, AVAILABLE_MODULES, moduleMonthlyCents, formatCents } from '@hbcfield/shared';
+import { IS_PUBLIC_KEY, AVAILABLE_MODULES } from '@hbcfield/shared';
 import { MODULE_KEY } from '../decorators/require-module.decorator';
 import { isFeatureEntitled } from '../entitlements';
-import { SpaceModulesService } from '../space-modules.service';
+import { SpaceModulesService, moduleRefusal } from '../space-modules.service';
 
 const MODULE_KEYS = new Set<string>(AVAILABLE_MODULES.map((m) => m.key));
 
@@ -167,22 +167,6 @@ export class ModuleGuard implements CanActivate {
   }
 
   private refuse(feature: string, fromSpace = false): HttpException {
-    // Both cases name a module and a price, because both are now answered the
-    // same way: switch it on in the space, and the space is billed for it.
-    // There is no tier to upgrade to any more, so nothing here says so.
-    const price = moduleMonthlyCents(feature);
-    const priced = price > 0 ? ` (${formatCents(price)}/month)` : '';
-    return new HttpException(
-      {
-        statusCode: HttpStatus.PAYMENT_REQUIRED,
-        message: fromSpace
-          ? `The "${feature}" module is switched off in this space.`
-          : `The "${feature}" module is not switched on${priced}.`,
-        error: 'ModuleDisabled',
-        feature,
-        moduleMonthlyCents: price,
-      },
-      HttpStatus.PAYMENT_REQUIRED,
-    );
+    return moduleRefusal(feature, fromSpace);
   }
 }

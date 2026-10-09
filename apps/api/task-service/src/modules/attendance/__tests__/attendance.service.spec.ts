@@ -459,7 +459,7 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findMany.mockResolvedValue([dueEntry({ reminderCount: 3 })]); // already at max=3
       mockPrismaService.timeEntry.update.mockResolvedValue({});
       mockPrismaService.spaceAssignment.findMany.mockResolvedValue([
-        { userId: 'leader-1', role: { permissions: { canReconcileAttendance: true } } },
+        { userId: 'leader-1', role: { isActive: true, permissions: { canReconcileAttendance: true } } },
         { userId: 'other', role: { permissions: { canReconcileAttendance: false } } },
       ]);
 
@@ -608,7 +608,7 @@ describe('AttendanceService', () => {
         mockPrismaService.timeEntry.findFirst.mockResolvedValue(openEntry());
         mockPrismaService.timeEntry.update.mockResolvedValue({});
         mockPrismaService.spaceAssignment.findMany.mockResolvedValue([
-          { userId: 'leader-1', role: { permissions: { canApproveOvertime: true } } },
+          { userId: 'leader-1', role: { isActive: true, permissions: { canApproveOvertime: true } } },
         ]);
 
         const result = (await service.requestExtraTime({

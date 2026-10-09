@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { reportLabelEn, type ReportLabelKey } from '@hbcfield/shared';
+import { reportLabelEn, type ReportLabelKey, type SpaceScopeIds, clampListLimit } from '@hbcfield/shared';
 import { DATASETS, Dataset } from './registry';
 
 export type Granularity = 'none' | 'day' | 'week' | 'month' | 'quarter' | 'year';
@@ -63,8 +63,15 @@ interface CompiledQuery {
   columns: Array<{ key: string; labelKey: ReportLabelKey; label: string; kind: 'dimension' | 'measure' | 'period'; format?: string }>;
 }
 
-/** Compile a report definition into safe parameterized SQL against a dataset. */
-export function compile(def: ReportDefinition, organizationId: string): CompiledQuery {
+/**
+ * Compile a report definition into safe parameterized SQL against a dataset.
+ *
+ * `spaceIds` is the reader's report scope (`spacesGranting` at the gateway):
+ * undefined/null = org-wide, [ids] = only those workspaces, [] = nothing. The
+ * three states stay distinct — `[]` binds an empty array, so `= ANY('{}')`
+ * matches no row, never "no filter".
+ */
+export function compile(def: ReportDefinition, organizationId: string, spaceIds?: SpaceScopeIds): CompiledQuery {
   const ds: Dataset | undefined = DATASETS[def.dataset];
   if (!ds) throw new BadRequestException(`Unknown dataset: ${def.dataset}`);
 
@@ -105,6 +112,10 @@ export function compile(def: ReportDefinition, organizationId: string): Compiled
   // WHERE — org scope is ALWAYS applied.
   const params: unknown[] = [organizationId];
   const where: string[] = [`${ds.orgColumn} = $1`];
+  if (spaceIds !== null && spaceIds !== undefined) {
+    params.push(spaceIds);
+    where.push(ds.spaceFilter(`$${params.length}::text[]`));
+  }
 
   const { from, to } = resolveRange(def.dateRange);
   if (from) { params.push(from); where.push(`${ds.dateColumn} >= $${params.length}`); }
@@ -132,7 +143,7 @@ export function compile(def: ReportDefinition, organizationId: string): Compiled
     orderBy = `"period" ASC`;
   }
 
-  const limit = Math.min(Math.max(def.limit || 500, 1), 5000);
+  const limit = clampListLimit(def.limit, 500, 5000);
 
   const sql = `
     SELECT ${selects.join(', ')}

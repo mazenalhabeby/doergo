@@ -30,11 +30,11 @@ export class CustomFieldsService extends BaseGatewayService {
     return this.send({ cmd: 'delete_custom_field' }, data);
   }
 
-  async getTaskValues(data: { taskId: string; organizationId: string }) {
+  async getTaskValues(data: { taskId: string; organizationId: string } & Record<string, unknown>) {
     return this.send({ cmd: 'get_task_custom_fields' }, data);
   }
 
-  async setTaskValues(data: { taskId: string; organizationId: string; values: any[] }) {
+  async setTaskValues(data: { taskId: string; organizationId: string; values: any[] } & Record<string, unknown>) {
     return this.send({ cmd: 'set_task_custom_fields' }, data);
   }
 }

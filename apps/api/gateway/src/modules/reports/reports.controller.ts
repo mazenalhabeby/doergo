@@ -17,8 +17,9 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Role, isAdmin, spacesGranting } from '@hbcfield/shared';
+import { Role } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
+import { taskActor } from '../../common/task-actor';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { ReportsService } from './reports.service';
@@ -49,15 +50,7 @@ export class ReportsController {
     return this.reportsQueueService.completeTask({
       taskId,
       ...dto,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space — the
-      // flag above is only the org-wide answer. Without this a member whose
-      // authority comes from a space was refused the service report for a job
-      // at their own site.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -70,15 +63,7 @@ export class ReportsController {
   async getTaskReport(@Param('taskId') taskId: string, @Request() req: any) {
     return this.reportsService.getTaskReport({
       taskId,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space — the
-      // flag above is only the org-wide answer. Without this a member whose
-      // authority comes from a space was refused the service report for a job
-      // at their own site.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -98,15 +83,7 @@ export class ReportsController {
       assetId,
       page,
       limit,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space — the
-      // flag above is only the org-wide answer. Without this a member whose
-      // authority comes from a space was refused the service report for a job
-      // at their own site.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -124,15 +101,7 @@ export class ReportsController {
     return this.reportsQueueService.updateReport({
       reportId: id,
       ...dto,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space — the
-      // flag above is only the org-wide answer. Without this a member whose
-      // authority comes from a space was refused the service report for a job
-      // at their own site.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -151,15 +120,7 @@ export class ReportsController {
       reportId: id,
       fileName: body.fileName,
       fileType: body.fileType,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space — the
-      // flag above is only the org-wide answer. Without this a member whose
-      // authority comes from a space was refused the service report for a job
-      // at their own site.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -182,15 +143,7 @@ export class ReportsController {
       fileUrl: body.fileUrl,
       fileType: body.fileType,
       caption: body.caption,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space — the
-      // flag above is only the org-wide answer. Without this a member whose
-      // authority comes from a space was refused the service report for a job
-      // at their own site.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -207,15 +160,7 @@ export class ReportsController {
     return this.reportsQueueService.deleteAttachment({
       reportId: id,
       attachmentId,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space — the
-      // flag above is only the org-wide answer. Without this a member whose
-      // authority comes from a space was refused the service report for a job
-      // at their own site.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -239,15 +184,7 @@ export class ReportsController {
     return this.reportsQueueService.addPart({
       reportId: id,
       ...body,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space — the
-      // flag above is only the org-wide answer. Without this a member whose
-      // authority comes from a space was refused the service report for a job
-      // at their own site.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -272,15 +209,7 @@ export class ReportsController {
       reportId: id,
       partId,
       ...body,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space — the
-      // flag above is only the org-wide answer. Without this a member whose
-      // authority comes from a space was refused the service report for a job
-      // at their own site.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 
@@ -297,15 +226,7 @@ export class ReportsController {
     return this.reportsQueueService.deletePart({
       reportId: id,
       partId,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      // "View all tasks" held in a SPACE means all tasks in THAT space — the
-      // flag above is only the org-wide answer. Without this a member whose
-      // authority comes from a space was refused the service report for a job
-      // at their own site.
-      viewAllSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
-      organizationId: req.user.organizationId,
+      ...taskActor(req),
     });
   }
 }

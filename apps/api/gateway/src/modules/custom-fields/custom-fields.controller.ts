@@ -12,6 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
+import { taskActor } from '../../common/task-actor';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
@@ -85,13 +86,23 @@ export class CustomFieldsController {
 export class TaskCustomFieldsController {
   constructor(private readonly customFieldsService: CustomFieldsService) {}
 
+  /**
+   * The caller as the task gate needs them — the same facts every other task
+   * route forwards. task-service asks its one gate (TaskAccessService); before
+   * this, the values on any task in the organization were readable and
+   * writable by any member who knew its id.
+   */
+  private taskCaller(req: any) {
+    return taskActor(req);
+  }
+
   @Get(':id/custom-fields')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: "Get a task's custom field values" })
   async getTaskValues(@Param('id') taskId: string, @Request() req: any) {
     return this.customFieldsService.getTaskValues({
+      ...this.taskCaller(req),
       taskId,
-      organizationId: req.user.organizationId,
     });
   }
 
@@ -104,8 +115,8 @@ export class TaskCustomFieldsController {
     @Request() req: any,
   ) {
     return this.customFieldsService.setTaskValues({
+      ...this.taskCaller(req),
       taskId,
-      organizationId: req.user.organizationId,
       values: dto.values,
     });
   }
