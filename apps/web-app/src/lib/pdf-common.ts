@@ -63,24 +63,37 @@ export function fitWithin(w: number, h: number, maxEdge?: number): { w: number; 
  * Load a (possibly cross-origin) image into a data URL a PDF can embed.
  * Resolves null on ANY failure — a refused CORS request, a dead link, a timeout
  * — so one missing picture never costs the whole document.
+ *
+ * ⚠️ FETCHED, NOT `<img crossOrigin>`. The page has usually shown the same photo
+ * already, through a plain `<img>`: the storage answered that request WITHOUT
+ * CORS headers (it only sends them when asked by an Origin), the browser cached
+ * that answer, and a later crossOrigin load of the same URL is served from the
+ * cache and refused — every photo then printed as "unavailable" while the screen
+ * showed them all. `cache: "no-store"` asks the storage again, in CORS mode, and
+ * the bytes come back as a same-origin blob, so the canvas is never tainted.
  */
 export async function loadImage(url: string | null | undefined, opts: LoadImageOptions = {}): Promise<LoadedImage | null> {
   if (!url) return null
   const format = opts.format ?? "PNG"
-  let timer: ReturnType<typeof setTimeout> | undefined
+  const abort = new AbortController()
+  const timer = setTimeout(() => abort.abort(), opts.timeoutMs ?? 4000)
+  let objectUrl: string | null = null
   try {
+    let src = url
+    if (!url.startsWith("data:")) {
+      const res = await fetch(url, { mode: "cors", cache: "no-store", credentials: "omit", signal: abort.signal })
+      if (!res.ok) return null
+      objectUrl = URL.createObjectURL(await res.blob())
+      src = objectUrl
+    }
     const img = new Image()
-    img.crossOrigin = "anonymous"
     img.decoding = "async"
-    const loaded = new Promise<HTMLImageElement>((resolve, reject) => {
+    const el = await new Promise<HTMLImageElement>((resolve, reject) => {
       img.onload = () => resolve(img)
       img.onerror = reject
+      abort.signal.addEventListener("abort", () => reject(new Error("image timeout")))
+      img.src = src
     })
-    img.src = url
-    const el = await Promise.race([
-      loaded,
-      new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error("image timeout")), opts.timeoutMs ?? 4000) }),
-    ])
     const natural = { w: el.naturalWidth || el.width, h: el.naturalHeight || el.height }
     if (!natural.w || !natural.h) return null
     const size = fitWithin(natural.w, natural.h, opts.maxEdge)
@@ -96,14 +109,15 @@ export async function loadImage(url: string | null | undefined, opts: LoadImageO
     }
     ctx.drawImage(el, 0, 0, size.w, size.h)
     const dataUrl = format === "JPEG" ? canvas.toDataURL("image/jpeg", opts.quality ?? 0.82) : canvas.toDataURL("image/png")
-    // A tainted canvas throws above; a blank result means the browser refused quietly.
+    // A blank result means the browser refused quietly.
     if (!dataUrl || dataUrl === "data:,") return null
     return { dataUrl, w: size.w, h: size.h, format }
   } catch {
     return null
   } finally {
     // A loaded image must not leave its timeout running (thirty photos = thirty timers).
-    if (timer) clearTimeout(timer)
+    clearTimeout(timer)
+    if (objectUrl) URL.revokeObjectURL(objectUrl)
   }
 }
 
