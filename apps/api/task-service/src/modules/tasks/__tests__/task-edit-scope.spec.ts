@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Role } from '@hbcfield/shared';
 
 import { TasksService } from '../tasks.service';
+import { TASK_SERVICE_PARTS } from '../task-service-parts';
 import { RolePoolService } from '../role-pool.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
@@ -76,7 +77,7 @@ describe('TasksService — edit / move / assign scope', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        TasksService,
+        TasksService, ...TASK_SERVICE_PARTS,
         { provide: JobTimeService, useValue: {} },
         ClockGateService,
         { provide: CrewService, useValue: {} },
@@ -93,7 +94,7 @@ describe('TasksService — edit / move / assign scope', () => {
     }).compile();
     service = module.get(TasksService);
     // The status-count cache is Redis; nothing to invalidate in a unit test.
-    (service as any).invalidateStatusCountsCache = jest.fn();
+    (service as any).support.invalidateStatusCountsCache = jest.fn();
   });
 
   describe('update (PUT /tasks/:id)', () => {

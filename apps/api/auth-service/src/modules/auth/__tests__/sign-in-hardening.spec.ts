@@ -5,6 +5,8 @@ import { ConfigService } from '@nestjs/config';
 import { HttpStatus } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { AuthService } from '../auth.service';
+import { AUTH_SERVICES } from '../auth-services';
+import { SessionTokensService } from '../session-tokens.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { AuditLogService } from '../../audit-log/audit-log.service';
 import { BillingService } from '../../billing/billing.service';
@@ -24,6 +26,7 @@ jest.mock('bcryptjs');
 */
 describe('sign-in hardening', () => {
   let service: AuthService;
+  let tokens: SessionTokensService;
   const jwt = { sign: jest.fn(() => 'jwt'), verify: jest.fn() };
 
   const member = {
@@ -61,7 +64,7 @@ describe('sign-in hardening', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         { provide: SessionEvents, useValue: { sessionsRevoked: jest.fn(), organizationSuspended: jest.fn() } },
-        AuthService,
+        ...AUTH_SERVICES,
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: jwt },
         { provide: ConfigService, useValue: { get: jest.fn(() => 'secret') } },
@@ -71,6 +74,7 @@ describe('sign-in hardening', () => {
       ],
     }).compile();
     service = module.get(AuthService);
+    tokens = module.get(SessionTokensService);
   });
 
   describe('one refusal for every failed sign-in', () => {
@@ -123,7 +127,8 @@ describe('sign-in hardening', () => {
     it('no part of the refresh-token hash is logged on a successful sign-in', async () => {
       prisma.user.findUnique.mockResolvedValue({ ...member });
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-      const log = jest.spyOn((service as any).logger, 'log');
+      // Tokens are minted by SessionTokensService, behind the AuthService facade.
+      const log = jest.spyOn((tokens as any).logger, 'log');
       await service.login(creds);
       const lines = log.mock.calls.map((c) => String(c[0]));
       expect(lines.some((l) => l.includes('NEW TOKEN CREATED'))).toBe(true);

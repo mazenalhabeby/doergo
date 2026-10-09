@@ -5,6 +5,7 @@ import { SERVICE_NAMES, mrzCheckDigit } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MrzOcrService } from '../mrz-ocr.service';
 import { DocumentsService, type DocumentActor } from '../documents.service';
+import { DOCUMENT_SERVICES } from '../document-services';
 import { OBJECT_STORE } from '../object-store.provider';
 
 /**
@@ -55,7 +56,7 @@ describe('DocumentsService — reading before filing', () => {
     jest.clearAllMocks();
     const module = await Test.createTestingModule({
       providers: [
-        DocumentsService,
+        ...DOCUMENT_SERVICES,
         { provide: MrzOcrService, useValue: ocr },
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },

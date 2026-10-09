@@ -3,6 +3,7 @@ import { ClientsModule } from '@nestjs/microservices';
 import { SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
 import { TasksController } from './tasks.controller';
 import { TasksService } from './tasks.service';
+import { TASK_SERVICE_PARTS } from './task-service-parts';
 import { DepartureReminderService } from './departure-reminder.service';
 import { LeaderAbsentService } from './leader-absent.service';
 import { TasksProcessor } from './tasks.processor';
@@ -28,6 +29,7 @@ import { TechniciansModule } from '../technicians/technicians.module';
   controllers: [TasksController], // Keep for backwards compatibility (Redis pub/sub)
   providers: [
     TasksService,
+    ...TASK_SERVICE_PARTS, // the collaborators behind the TasksService facade
     TasksProcessor, // BullMQ processor for exactly-once job processing
     DepartureReminderService, // sweep: tells a member when to set off
     LeaderAbsentService, // sweep: tells the office a job's leader is off today

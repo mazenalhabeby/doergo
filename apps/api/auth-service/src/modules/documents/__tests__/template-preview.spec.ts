@@ -6,6 +6,7 @@ import { SERVICE_NAMES, MERGE_FIELDS } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MrzOcrService } from '../mrz-ocr.service';
 import { DocumentsService, type DocumentActor } from '../documents.service';
+import { DOCUMENT_SERVICES } from '../document-services';
 import { OBJECT_STORE } from '../object-store.provider';
 
 /**
@@ -109,7 +110,7 @@ describe('DocumentsService — previewing a template', () => {
     jest.clearAllMocks();
     const module = await Test.createTestingModule({
       providers: [
-        DocumentsService,
+        ...DOCUMENT_SERVICES,
         // Stubbed: every test here is about who may file what, not about
         // reading pixels — and a real WASM engine per suite would add minutes.
         { provide: MrzOcrService, useValue: { read: jest.fn().mockResolvedValue(null) } },
@@ -208,7 +209,7 @@ describe('DocumentsService — previewing a template', () => {
     // from seeing their own draft.
     const module = await Test.createTestingModule({
       providers: [
-        DocumentsService,
+        ...DOCUMENT_SERVICES,
         // Stubbed: every test here is about who may file what, not about
         // reading pixels — and a real WASM engine per suite would add minutes.
         { provide: MrzOcrService, useValue: { read: jest.fn().mockResolvedValue(null) } },

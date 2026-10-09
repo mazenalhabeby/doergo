@@ -4,6 +4,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { SERVICE_NAMES, createClientOptions, QUEUE_NAMES } from '@hbcfield/shared';
 import { AttendanceController } from './attendance.controller';
 import { AttendanceService } from './attendance.service';
+import { ATTENDANCE_SERVICE_PARTS } from './attendance-service-parts';
 import { ShiftResolverService } from './shift-resolver.service';
 import { BreakService } from './break.service';
 import { AttendanceReportService } from './attendance-report.service';
@@ -29,6 +30,7 @@ import { HandoverModule } from '../tasks/handover/handover.module';
   controllers: [AttendanceController],
   providers: [
     AttendanceService,
+    ...ATTENDANCE_SERVICE_PARTS, // the collaborators behind the AttendanceService facade
     ShiftResolverService,
     // One answer to "what are these hours worth", shared by the clock-out, the
     // self-reported clock-out, the admin edit and the break services.

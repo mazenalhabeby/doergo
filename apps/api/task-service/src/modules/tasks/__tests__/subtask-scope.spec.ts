@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Role } from '@hbcfield/shared';
 
 import { TasksService } from '../tasks.service';
+import { TASK_SERVICE_PARTS } from '../task-service-parts';
 import { RolePoolService } from '../role-pool.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
@@ -62,7 +63,7 @@ describe('TasksService.createSubtask — inherits, checks, and assigns only with
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        TasksService,
+        TasksService, ...TASK_SERVICE_PARTS,
         { provide: JobTimeService, useValue: {} },
         ClockGateService,
         { provide: CrewService, useValue: {} },
@@ -78,7 +79,7 @@ describe('TasksService.createSubtask — inherits, checks, and assigns only with
       ],
     }).compile();
     service = module.get(TasksService);
-    (service as any).invalidateStatusCountsCache = jest.fn();
+    (service as any).support.invalidateStatusCountsCache = jest.fn();
   });
 
   it('inherits the parent’s workspace and task type, starting at that flow’s first step', async () => {

@@ -5,6 +5,7 @@ import { sha256 } from '@hbcfield/shared/storage';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MrzOcrService } from '../mrz-ocr.service';
 import { DocumentsService, CONSENT_TEXT, type DocumentActor } from '../documents.service';
+import { DOCUMENT_SERVICES } from '../document-services';
 import { OBJECT_STORE } from '../object-store.provider';
 import { renderContractPdf } from '../contract-pdf';
 
@@ -109,7 +110,7 @@ describe('DocumentsService — signing', () => {
 
     const module = await Test.createTestingModule({
       providers: [
-        DocumentsService,
+        ...DOCUMENT_SERVICES,
         // Stubbed: every test here is about who may file what, not about
         // reading pixels — and a real WASM engine per suite would add minutes.
         { provide: MrzOcrService, useValue: { read: jest.fn().mockResolvedValue(null) } },
@@ -426,7 +427,7 @@ describe('DocumentsService — template resolution', () => {
     jest.clearAllMocks();
     const module = await Test.createTestingModule({
       providers: [
-        DocumentsService,
+        ...DOCUMENT_SERVICES,
         // Stubbed: every test here is about who may file what, not about
         // reading pixels — and a real WASM engine per suite would add minutes.
         { provide: MrzOcrService, useValue: { read: jest.fn().mockResolvedValue(null) } },

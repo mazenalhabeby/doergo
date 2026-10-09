@@ -3,6 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { Role } from '@hbcfield/shared';
 import { UsersService } from '../users.service';
+import { USERS_SERVICES } from '../users-services';
+import { MemberAccessChecksService } from '../member-access-checks.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
 /**
@@ -14,6 +16,8 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
  */
 describe('users — audit corrections 2026-10-09', () => {
   let service: UsersService;
+  // The grant ceiling lives in its own collaborator behind the facade.
+  let checks: MemberAccessChecksService;
   const sessions = { sessionsRevoked: jest.fn(), organizationSuspended: jest.fn() };
 
   const prisma: Record<string, any> = {
@@ -27,11 +31,12 @@ describe('users — audit corrections 2026-10-09', () => {
       providers: [
         { provide: SessionEvents, useValue: sessions },
         { provide: 'TASK_SERVICE', useValue: { emit: jest.fn() } },
-        UsersService,
+        ...USERS_SERVICES,
         { provide: PrismaService, useValue: prisma },
       ],
     }).compile();
     service = module.get(UsersService);
+    checks = module.get(MemberAccessChecksService);
   });
 
   describe('GET /users/workers', () => {
@@ -57,7 +62,7 @@ describe('users — audit corrections 2026-10-09', () => {
 
   describe('flat permission columns are capped by the granter', () => {
     const check = (data: Record<string, unknown>) =>
-      (service as any).assertFlatPermsWithinCeiling('req', 'org-1', data);
+      checks.assertFlatPermsWithinCeiling('req', 'org-1', data);
 
     it('refuses granting canViewAllTasks the requester does not hold', async () => {
       prisma.user.findFirst.mockResolvedValue({ role: Role.EMPLOYEE, canManageUsers: true, memberRole: null });

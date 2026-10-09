@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DocumentsService } from '../documents.service';
+import { DOCUMENT_SERVICES } from '../document-services';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MrzOcrService } from '../mrz-ocr.service';
 
@@ -32,7 +33,7 @@ describe('listMatchCandidates', () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        DocumentsService,
+        ...DOCUMENT_SERVICES,
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         // Stubbed: this query touches neither storage nor the reader, and the

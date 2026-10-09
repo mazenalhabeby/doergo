@@ -10,6 +10,9 @@ import { Test } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import { QUEUE_NAMES, SERVICE_NAMES, TimeEntryStatus } from '@hbcfield/shared';
 import { AttendanceService } from '../attendance.service';
+import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
+import { AttendanceGeocoderService } from '../attendance-geocoder.service';
+import { AttendanceRoutingService } from '../attendance-routing.service';
 import { BreakService } from '../break.service';
 import { ShiftResolverService } from '../shift-resolver.service';
 import { CountedTimeService } from '../counted-time.service';
@@ -77,7 +80,7 @@ async function build() {
   const prisma = prismaDouble();
   const moduleRef = await Test.createTestingModule({
     providers: [
-      AttendanceService, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } }, BreakService, CountedTimeService, BreakRulesService, BreakReminderService,
+      AttendanceService, ...ATTENDANCE_SERVICE_PARTS, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } }, BreakService, CountedTimeService, BreakRulesService, BreakReminderService,
       { provide: PrismaService, useValue: prisma },
       { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
       { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn(), getRepeatableJobs: jest.fn().mockResolvedValue([]) } },
@@ -87,8 +90,18 @@ async function build() {
   }).compile();
   const service = moduleRef.get(AttendanceService);
   // The place name is a network call to the gateway; not what these tests are about.
-  jest.spyOn(service as any, 'reverseGeocode').mockResolvedValue(null);
-  return { service, breaks: moduleRef.get(BreakService), prisma };
+  jest.spyOn(moduleRef.get(AttendanceGeocoderService), 'reverseGeocode').mockResolvedValue(null);
+  /*
+    AttendanceService is a facade: who is told comes from AttendanceRoutingService,
+    and every emit goes through the one notification client the module provides.
+  */
+  return {
+    service,
+    breaks: moduleRef.get(BreakService),
+    prisma,
+    routing: moduleRef.get(AttendanceRoutingService),
+    notifications: moduleRef.get(SERVICE_NAMES.NOTIFICATION) as { emit: jest.Mock },
+  };
 }
 
 describe('attendance recorded offline', () => {
@@ -232,10 +245,10 @@ describe('attendance recorded offline', () => {
     });
 
     it('tells the supervisors who were alerted "still clocked in" that the clock-out has arrived', async () => {
-      const { service, prisma } = await build();
+      const { service, prisma, routing, notifications } = await build();
       prisma.timeEntry.findFirst.mockResolvedValue({ ...open(), reminderState: 'ESCALATED', timezone: 'Europe/Vienna' });
-      const targets = jest.spyOn(service as any, 'notifyTargetsFor').mockResolvedValue(['leader-1']);
-      const emit = (service as any).notificationClient.emit as jest.Mock;
+      const targets = jest.spyOn(routing, 'notifyTargetsFor').mockResolvedValue(['leader-1']);
+      const emit = notifications.emit;
       await service.clockOut(clockOut());
       expect(targets).toHaveBeenCalledWith(expect.objectContaining({ id: 'e1' }), 'canReconcileAttendance');
       expect(emit).toHaveBeenCalledWith('attendance_shift_escalation_resolved', expect.objectContaining({
@@ -244,9 +257,9 @@ describe('attendance recorded offline', () => {
     });
 
     it('says nothing extra when nobody had been alerted', async () => {
-      const { service, prisma } = await build();
+      const { service, prisma, notifications } = await build();
       prisma.timeEntry.findFirst.mockResolvedValue({ ...open(), reminderState: 'REMINDED' });
-      const emit = (service as any).notificationClient.emit as jest.Mock;
+      const emit = notifications.emit;
       await service.clockOut(clockOut());
       expect(emit.mock.calls.map((c) => c[0])).not.toContain('attendance_shift_escalation_resolved');
     });
@@ -271,11 +284,11 @@ describe('attendance recorded offline', () => {
     });
 
     it('a late clock-out with a reason asks a leader for the overtime', async () => {
-      const { service, prisma } = await build();
+      const { service, prisma, routing, notifications } = await build();
       prisma.timeEntry.findFirst.mockResolvedValue({ ...open(), expectedClockOutAt: new Date('2026-09-14T06:30:00Z') });
       prisma.overtimeRequest = { findMany: jest.fn().mockResolvedValue([]), create: jest.fn().mockResolvedValue({}) };
-      jest.spyOn(service as any, 'notifyTargetsFor').mockResolvedValue(['leader-1']);
-      const emit = (service as any).notificationClient.emit as jest.Mock;
+      jest.spyOn(routing, 'notifyTargetsFor').mockResolvedValue(['leader-1']);
+      const emit = notifications.emit;
       await service.clockOut(clockOut({ overtimeReason: 'Boiler part arrived late' }));
       expect(prisma.overtimeRequest.create).toHaveBeenCalledWith({ data: expect.objectContaining({
         status: 'PENDING_APPROVAL', technicianReason: 'Boiler part arrived late', technicianRespondedAt: TAP,

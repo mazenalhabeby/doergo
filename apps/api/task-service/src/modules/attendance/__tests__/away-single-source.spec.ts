@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
+import { readAttendanceServiceSource } from './attendance-service-source';
 
 /**
  * The ceiling and the grant are decided in ONE place.
@@ -12,10 +13,10 @@ import { join } from 'path';
  * a rule.
  */
 describe('working away is decided once', () => {
-  const SERVICE = join(__dirname, '..', 'attendance.service.ts');
+  // AttendanceService is a facade: the clock-in it guards lives in its collaborators.
 
   it('the clock-in asks the shared rule, and does not re-implement it', () => {
-    const src = readFileSync(SERVICE, 'utf8');
+    const src = readAttendanceServiceSource();
     expect(src).toContain('resolveAwayAccess(');
 
     // The shape of the bug: comparing the policy column by hand instead.
@@ -59,7 +60,7 @@ describe('working away is decided once', () => {
   it('the ceiling is checked before the grant, so a strict site refuses everybody', () => {
     // Ordering is the whole separation: read the grant first and an
     // administrator would clock in away from a factory floor.
-    const src = readFileSync(SERVICE, 'utf8');
+    const src = readAttendanceServiceSource();
     const call = src.slice(src.indexOf('resolveAwayAccess({'));
     const policyAt = call.indexOf('policy:');
     const grantAt = call.indexOf('userAllowRemote:');

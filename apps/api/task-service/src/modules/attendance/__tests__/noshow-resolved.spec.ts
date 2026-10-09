@@ -5,12 +5,13 @@
  * escalated at 08:30. The shift becomes PRESENT either way — the question here is
  * whether the supervisor who was told "hasn't clocked in" is told otherwise.
  */
-import { AttendanceService } from '../attendance.service';
+// AttendanceService hands this to ShiftSweepService; who is told comes from AttendanceRoutingService.
+import { ShiftSweepService } from '../shift-sweep.service';
 
 const TAP = new Date('2026-09-14T07:58:00.000Z');
 
 function service(escalated: { id: string }[]) {
-  const svc = Object.create(AttendanceService.prototype) as any;
+  const svc = Object.create(ShiftSweepService.prototype) as any;
   svc.prisma = {
     shiftInstance: {
       findMany: jest.fn().mockResolvedValue(escalated),
@@ -19,7 +20,7 @@ function service(escalated: { id: string }[]) {
     user: { findUnique: jest.fn().mockResolvedValue({ firstName: 'Karim', lastName: 'Ahmad' }) },
   };
   svc.notificationClient = { emit: jest.fn() };
-  svc.notifyTargetsFor = jest.fn().mockResolvedValue(['leader-1', 'leader-2']);
+  svc.routing = { notifyTargetsFor: jest.fn().mockResolvedValue(['leader-1', 'leader-2']) };
   return svc;
 }
 
@@ -34,7 +35,7 @@ describe('a late clock-in after a no-show escalation', () => {
       expect.objectContaining({ data: { state: 'PRESENT', nextRemindAt: null, timeEntryId: 'entry-1' } }),
     );
     // Same routing as the escalation: the space's reconcile-attendance people.
-    expect(svc.notifyTargetsFor).toHaveBeenCalledWith({ spaceId: 'space-1', organizationId: 'org-1', userId: 'u1' }, 'canReconcileAttendance');
+    expect(svc.routing.notifyTargetsFor).toHaveBeenCalledWith({ spaceId: 'space-1', organizationId: 'org-1', userId: 'u1' }, 'canReconcileAttendance');
     expect(svc.notificationClient.emit).toHaveBeenCalledWith(
       'attendance_noshow_resolved',
       expect.objectContaining({
@@ -52,7 +53,7 @@ describe('a late clock-in after a no-show escalation', () => {
     await svc.markShiftInstancePresent('u1', 'space-1', 'shift-1', 'entry-1', TAP, context);
     expect(svc.prisma.shiftInstance.updateMany).toHaveBeenCalled();
     expect(svc.notificationClient.emit).not.toHaveBeenCalled();
-    expect(svc.notifyTargetsFor).not.toHaveBeenCalled();
+    expect(svc.routing.notifyTargetsFor).not.toHaveBeenCalled();
   });
 
   it('matches the shift by the time of the TAP, not the time it arrived', async () => {

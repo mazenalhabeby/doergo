@@ -56,8 +56,9 @@ describe('listClockInLocations', () => {
   // The method under test, bound to a bare prisma double — it is a query and a
   // filter, and standing the whole AttendanceService up (queues, notifications,
   // shift resolver) to observe one `where` clause would test the harness.
-  const { AttendanceService } = require('../attendance.service');
-  const service = Object.create(AttendanceService.prototype);
+  // (AttendanceService hands listClockInLocations to ClockInService, where it lives.)
+  const { ClockInService } = require('../clock-in.service');
+  const service = Object.create(ClockInService.prototype);
   service.prisma = prisma;
 
   beforeEach(() => {
@@ -141,9 +142,9 @@ describe('listClockInLocations', () => {
 });
 
 describe('listClockInLocations — only where Time Tracking runs', () => {
-  const { AttendanceService } = require('../attendance.service');
+  const { ClockInService } = require('../clock-in.service');
   const build = (rows: unknown[]) => {
-    const service = Object.create(AttendanceService.prototype);
+    const service = Object.create(ClockInService.prototype);
     service.prisma = {
       user: { findFirst: jest.fn().mockResolvedValue({ allowRemote: false, role: 'EMPLOYEE' }) },
       spaceAssignment: { findMany: jest.fn().mockResolvedValue([{ spaceId: 'on' }, { spaceId: 'off' }, { spaceId: 'inherit' }]) },

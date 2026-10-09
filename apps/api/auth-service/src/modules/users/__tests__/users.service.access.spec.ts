@@ -2,6 +2,7 @@ import { SessionEvents } from '../../../common/session-events/session-events.ser
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException, HttpStatus } from '@nestjs/common';
 import { UsersService } from '../users.service';
+import { USERS_SERVICES } from '../users-services';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { Role, permissionsExceed } from '@hbcfield/shared';
 
@@ -26,7 +27,7 @@ describe('UsersService access ceiling (C1)', () => {
         // Stub the task-service client: UsersService publishes a routing-cache
         // invalidation after a watcher change and nothing here listens for it.
         { provide: 'TASK_SERVICE', useValue: { emit: jest.fn() } },
-        UsersService,
+        ...USERS_SERVICES,
         { provide: PrismaService, useValue: prisma },
       ],
     }).compile();

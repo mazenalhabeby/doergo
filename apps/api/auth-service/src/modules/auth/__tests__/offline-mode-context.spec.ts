@@ -11,7 +11,20 @@ import path from 'path';
  * organization select feeding them must read the column.
  */
 describe('offlineMode on the request context', () => {
-  const src = fs.readFileSync(path.join(__dirname, '../auth.service.ts'), 'utf8');
+  /*
+    Authentication is a facade over collaborators (sign-in, refresh, token
+    validation each build a context in their own file), so every service file
+    in the module is read — the counts must match across all of them.
+  */
+  const dir = path.join(__dirname, '..');
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.service.ts'));
+  const src = files.map((f) => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
+
+  it('reads the files that build a context', () => {
+    expect(files).toEqual(
+      expect.arrayContaining(['auth.service.ts', 'session-tokens.service.ts', 'sessions.service.ts', 'token-validation.service.ts']),
+    );
+  });
 
   it('is set wherever orgAddOns is', () => {
     const addOns = src.match(/^\s+orgAddOns:\s[a-zA-Z]/gm)?.length ?? 0;

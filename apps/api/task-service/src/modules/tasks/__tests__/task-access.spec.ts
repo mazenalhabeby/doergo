@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Role } from '@hbcfield/shared';
 
 import { TasksService } from '../tasks.service';
+import { TASK_SERVICE_PARTS } from '../task-service-parts';
 import { RolePoolService } from '../role-pool.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
@@ -82,7 +83,7 @@ describe('TasksService — per-task authorization', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        TasksService, { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
+        TasksService, ...TASK_SERVICE_PARTS, { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: notifications },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },

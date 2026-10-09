@@ -11,6 +11,7 @@ import { BadRequestException } from '@nestjs/common';
 import { OBJECT_STORE } from '@hbcfield/shared/storage';
 import { Role, TaskStatus, stepStartsWork, stepCapabilities, spaceRunsClock } from '@hbcfield/shared';
 import { TasksService } from '../tasks.service';
+import { TASK_SERVICE_PARTS } from '../task-service-parts';
 import { RolePoolService } from '../role-pool.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
@@ -93,7 +94,7 @@ describe('TasksService.updateStatus — clocked in to start work', () => {
     prisma.spaceAssignment.findMany.mockResolvedValue([]);
     const module = await Test.createTestingModule({
       providers: [
-        TasksService, { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
+        TasksService, ...TASK_SERVICE_PARTS, { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },
@@ -184,7 +185,7 @@ describe('TasksService.updateStatus — clocked in to start work', () => {
       prisma.task.findUnique.mockResolvedValue(task());
       await service.updateStatus({ ...office, status: TaskStatus.EN_ROUTE, onBehalf: { reason: 'Phone is dead, he called from site' } } as any);
       expect(prisma.taskEvent.create.mock.calls[0][0].data.metadata).toMatchObject({ byOffice: true, forUserId: 'mike', officeReason: 'Phone is dead, he called from site' });
-      const emit = (service as any).notificationClient.emit as jest.Mock;
+      const emit = (service as any).status.notificationClient.emit as jest.Mock;
       expect(emit.mock.calls.find((c: any[]) => c[0] === 'task_started_for_you')?.[1]).toMatchObject({ userId: 'mike', reason: 'Phone is dead, he called from site' });
     });
 

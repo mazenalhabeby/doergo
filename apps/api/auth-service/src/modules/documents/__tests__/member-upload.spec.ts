@@ -4,6 +4,7 @@ import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MrzOcrService } from '../mrz-ocr.service';
 import { DocumentsService, type DocumentActor } from '../documents.service';
+import { DOCUMENT_SERVICES } from '../document-services';
 import { OBJECT_STORE } from '../object-store.provider';
 
 /**
@@ -77,7 +78,7 @@ describe('DocumentsService — what the member supplies', () => {
     jest.clearAllMocks();
     const module = await Test.createTestingModule({
       providers: [
-        DocumentsService,
+        ...DOCUMENT_SERVICES,
         // Stubbed: every test here is about who may file what, not about
         // reading pixels — and a real WASM engine per suite would add minutes.
         { provide: MrzOcrService, useValue: { read: jest.fn().mockResolvedValue(null) } },
@@ -452,8 +453,9 @@ describe('DocumentsService — what the member supplies', () => {
  * invisible compliance hole — a licence filed, approved, and never chased.
  */
 describe('verification settles a missing expiry', () => {
+  // Verification lives in its own collaborator behind the DocumentsService facade.
   const src = require('fs').readFileSync(
-    require('path').join(__dirname, '..', 'documents.service.ts'),
+    require('path').join(__dirname, '..', 'document-verification.service.ts'),
     'utf8',
   );
 

@@ -3,6 +3,7 @@ import { ClientsModule } from '@nestjs/microservices';
 import { SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
 import { DocumentsController } from './documents.controller';
 import { DocumentsService } from './documents.service';
+import { DOCUMENT_SERVICES } from './document-services';
 import { CustomerSignLinkService } from './customer-sign-link.service';
 import { CustomerSignMailerService } from './customer-sign-mailer.service';
 import { MrzOcrService } from './mrz-ocr.service';
@@ -18,7 +19,8 @@ import { DocumentReadQueue } from './document-read-queue.service';
   ],
   controllers: [DocumentsController],
   providers: [
-    DocumentsService,
+    // The facade and its collaborators — see document-services.ts.
+    ...DOCUMENT_SERVICES,
     CustomerSignLinkService,
     CustomerSignMailerService,
     CredentialExpiryService,

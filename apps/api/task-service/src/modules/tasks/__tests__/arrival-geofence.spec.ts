@@ -1,5 +1,4 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readTaskServiceSource } from './task-service-source';
 import { isAtSite, ATTENDANCE_CONSTANTS } from '@hbcfield/shared';
 
 /**
@@ -77,7 +76,7 @@ describe('arriving at a job', () => {
 });
 
 describe('the task check asks the shared rule, not its own', () => {
-  const SRC = readFileSync(join(__dirname, '..', 'tasks.service.ts'), 'utf8');
+  const SRC = readTaskServiceSource();
 
   it('calls isAtSite for arrival', () => {
     expect(SRC).toContain('isAtSite(');

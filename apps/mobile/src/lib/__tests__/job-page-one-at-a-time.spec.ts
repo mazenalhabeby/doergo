@@ -18,7 +18,7 @@ describe('the slot', () => {
     expect(slotHeldBy('a', me, [job('a', 'IN_PROGRESS')])).toBeNull(); // itself never blocks
   });
   it('the server reads the same list', () => {
-    const server = fs.readFileSync(path.resolve(__dirname, '../../../../api/task-service/src/modules/tasks/tasks.service.ts'), 'utf8');
+    const server = fs.readFileSync(path.resolve(__dirname, '../../../../api/task-service/src/modules/tasks/task-status.service.ts'), 'utf8');
     expect(server).toMatch(/status: \{ in: \[\.\.\.ONE_AT_A_TIME_STATUSES\]/);
     expect([...ONE_AT_A_TIME_STATUSES]).toEqual(['ACCEPTED', 'EN_ROUTE', 'ARRIVED', 'IN_PROGRESS']);
   });

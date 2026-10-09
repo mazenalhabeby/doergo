@@ -264,7 +264,9 @@ check("rest", "postponing counts on the SERVER", sn.get("snoozeCount") == 1, str
 s, d = call("POST", "/attendance/breaks/start", TOK["dana@example.com"], {})
 br = (d.get("data") or {})
 check("rest", "starting a rest links it to the planned one", bool(br.get("ruleId")), str(br)[:90])
-st = sql("SELECT \"breakPlan\"->0->>'state' FROM time_entries WHERE \"userId\"='emp-dana' AND status='CLOCKED_IN'")
+# The rest that starts is the most due one — which item that is depends on the hour
+# the audit runs, so ask about the item the server linked, not the first in the list.
+st = sql(f"SELECT i->>'state' FROM time_entries, jsonb_array_elements(\"breakPlan\") i WHERE \"userId\"='emp-dana' AND status='CLOCKED_IN' AND i->>'ruleId'='{br.get('ruleId')}'")
 check("rest", "the plan records it as taken", st and st[0] == "TAKEN", str(st))
 s, _ = call("POST", "/attendance/breaks/start", TOK["dana@example.com"], {})
 check("rest", "a second rest cannot run while one is open", s >= 400, f"got {s}")

@@ -2,6 +2,7 @@ import { SessionEvents } from '../../../common/session-events/session-events.ser
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpStatus } from '@nestjs/common';
 import { UsersService } from '../users.service';
+import { USERS_SERVICES } from '../users-services';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
 /**
@@ -37,7 +38,7 @@ describe('organization ownership', () => {
       providers: [
         { provide: SessionEvents, useValue: { sessionsRevoked: jest.fn(), organizationSuspended: jest.fn() } },
         { provide: 'TASK_SERVICE', useValue: { emit: jest.fn() } },
-        UsersService,
+        ...USERS_SERVICES,
         { provide: PrismaService, useValue: prisma },
       ],
     }).compile();

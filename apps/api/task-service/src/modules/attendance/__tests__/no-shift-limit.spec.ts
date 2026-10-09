@@ -12,6 +12,8 @@ import {
   noShiftAllowance, noShiftAllowanceNow, countedMinutesBetween, startOfDayIn, endOfDayIn, clampDailyMinutes,
 } from '@hbcfield/shared';
 import { AttendanceService } from '../attendance.service';
+import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
+import { AttendanceGeocoderService } from '../attendance-geocoder.service';
 import { ShiftResolverService } from '../shift-resolver.service';
 import { CountedTimeService } from '../counted-time.service';
 import { BreakRulesService } from '../break-rules.service';
@@ -113,7 +115,7 @@ async function build(opts: { worked?: any[]; shift?: any; space?: Partial<typeof
   };
   const moduleRef = await Test.createTestingModule({
     providers: [
-      AttendanceService, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } }, BreakService, CountedTimeService, BreakRulesService, BreakReminderService,
+      AttendanceService, ...ATTENDANCE_SERVICE_PARTS, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } }, BreakService, CountedTimeService, BreakRulesService, BreakReminderService,
       { provide: PrismaService, useValue: prisma },
       { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
       { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn(), getRepeatableJobs: jest.fn().mockResolvedValue([]) } },
@@ -122,7 +124,7 @@ async function build(opts: { worked?: any[]; shift?: any; space?: Partial<typeof
     ],
   }).compile();
   const service = moduleRef.get(AttendanceService);
-  jest.spyOn(service as any, 'reverseGeocode').mockResolvedValue(null);
+  jest.spyOn(moduleRef.get(AttendanceGeocoderService), 'reverseGeocode').mockResolvedValue(null);
   return { service, prisma };
 }
 

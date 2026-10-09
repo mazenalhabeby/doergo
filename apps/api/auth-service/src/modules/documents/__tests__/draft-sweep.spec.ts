@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { DocumentsService } from '../documents.service';
+import { DOCUMENT_SERVICES } from '../document-services';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { OBJECT_STORE } from '../object-store.provider';
 import { MrzOcrService } from '../mrz-ocr.service';
@@ -40,7 +41,7 @@ describe('abandoned staged drafts', () => {
     };
     const mod = await Test.createTestingModule({
       providers: [
-        DocumentsService,
+        ...DOCUMENT_SERVICES,
         { provide: PrismaService, useValue: prisma },
         { provide: OBJECT_STORE, useValue: store },
         { provide: MrzOcrService, useValue: {} },
@@ -149,7 +150,7 @@ describe('discarding a draft by hand', () => {
     };
     const mod = await Test.createTestingModule({
       providers: [
-        DocumentsService,
+        ...DOCUMENT_SERVICES,
         { provide: PrismaService, useValue: prisma },
         { provide: OBJECT_STORE, useValue: store },
         { provide: MrzOcrService, useValue: {} },

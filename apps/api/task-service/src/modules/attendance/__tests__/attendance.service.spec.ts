@@ -3,6 +3,7 @@ import { getQueueToken } from '@nestjs/bullmq';
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { computeScheduleFlags } from '@hbcfield/shared';
 import { AttendanceService } from '../attendance.service';
+import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
 import { BreakService } from '../break.service';
 import { ApprovalService } from '../approval.service';
 import { AttendanceReportService } from '../attendance-report.service';
@@ -170,7 +171,7 @@ describe('AttendanceService', () => {
         BreakReminderService,
         BreakRulesService,
         CountedTimeService,
-        AttendanceService, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } },
+        AttendanceService, ...ATTENDANCE_SERVICE_PARTS, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } },
         BreakService,
         ApprovalService,
         AttendanceReportService,

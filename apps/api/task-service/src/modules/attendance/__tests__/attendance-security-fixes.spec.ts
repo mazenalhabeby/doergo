@@ -1,10 +1,10 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
 import { ApprovalService } from '../approval.service';
-import { AttendanceService } from '../attendance.service';
+// AttendanceService hands the entry reads to AttendanceReadService, where they live.
+import { AttendanceReadService } from '../attendance-read.service';
+import { readAttendanceServiceSource } from './attendance-service-source';
 import { BreakService } from '../break.service';
 import { BreakRulesService } from '../break-rules.service';
 import { BreakReminderService } from '../break-reminder.service';
@@ -64,7 +64,7 @@ describe('clock-in/out broadcast', () => {
   });
 
   it('every clock emit goes through the projector — never the raw row', () => {
-    const src = readFileSync(join(__dirname, '..', 'attendance.service.ts'), 'utf8');
+    const src = readAttendanceServiceSource();
     const emits = src.match(/emit\('attendance_clock_(in|out)',\s*\{[\s\S]*?\}\);/g) ?? [];
     expect(emits.length).toBeGreaterThanOrEqual(4);
     for (const e of emits) expect(e).toMatch(/timeEntry: clockEventEntry\(/);
@@ -110,7 +110,7 @@ describe('break-rule writes are narrowed to the rule\'s workspace', () => {
 // ── #8 A workspace's entries need the attendance permission there ───────────
 describe('GET /attendance/locations/:id/entries', () => {
   function svcWith(activeAssignment: boolean) {
-    const svc = Object.create(AttendanceService.prototype) as any;
+    const svc = Object.create(AttendanceReadService.prototype) as any;
     svc.prisma = {
       companyLocation: { findFirst: jest.fn().mockResolvedValue({ id: 'space-b' }) },
       spaceAssignment: { findFirst: jest.fn().mockResolvedValue(activeAssignment ? { id: 'sa' } : null) },
@@ -152,7 +152,7 @@ describe('GET /attendance/locations/:id/entries', () => {
 // ── The dashboard batch follows the SAME rule as the single workspace read ──
 describe('GET /attendance/entries (batch)', () => {
   function svcWith(activeIn: string[]) {
-    const svc = Object.create(AttendanceService.prototype) as any;
+    const svc = Object.create(AttendanceReadService.prototype) as any;
     svc.prisma = {
       companyLocation: { findMany: jest.fn(({ where }: any) => Promise.resolve(where.id.in.map((id: string) => ({ id })))) },
       spaceAssignment: {

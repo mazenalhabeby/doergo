@@ -266,8 +266,9 @@ describe('the position of a change stays in the presence service', () => {
 describe('getEntryPresence', () => {
   it('is "not found" outside the caller’s spaces, and asks the history nothing', async () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { AttendanceService } = require('../attendance.service');
-    const svc = Object.create(AttendanceService.prototype);
+    // AttendanceService hands getEntryPresence to AttendanceReadService, where it lives.
+    const { AttendanceReadService } = require('../attendance-read.service');
+    const svc = Object.create(AttendanceReadService.prototype);
     svc.prisma = { timeEntry: { findFirst: jest.fn().mockResolvedValue(null) } };
     svc.presence = { history: jest.fn() };
     await expect(svc.getEntryPresence({ entryId: 'e1', organizationId: 'org-1', scopeSpaceIds: ['loc-2'] })).rejects.toThrow('not found');

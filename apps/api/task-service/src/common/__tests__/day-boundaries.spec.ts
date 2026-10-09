@@ -3,6 +3,7 @@ import { join } from 'path';
 import { BadRequestException } from '@nestjs/common';
 import { workspaceZone } from '../zone.util';
 import { RecurringTasksService } from '../../modules/recurring-tasks/recurring-tasks.service';
+import { TASK_SERVICE_FILES } from '../../modules/tasks/__tests__/task-service-source';
 import { SprintsService } from '../../modules/sprints/sprints.service';
 
 /**
@@ -71,7 +72,8 @@ describe('day boundaries in the workspace’s zone', () => {
   });
 
   it.each([
-    'modules/tasks/tasks.service.ts',
+    // TasksService is a facade; its day logic lives in the collaborators beside it.
+    ...TASK_SERVICE_FILES.map((f) => `modules/tasks/${f}`),
     'modules/recurring-tasks/recurring-tasks.service.ts',
     'modules/sprints/sprints.service.ts',
   ])('%s draws no day boundary on the server clock', (file) => {

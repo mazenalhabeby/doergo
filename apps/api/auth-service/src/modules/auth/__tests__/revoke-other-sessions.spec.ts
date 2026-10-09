@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../auth.service';
+import { AUTH_SERVICES } from '../auth-services';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { AuditLogService } from '../../audit-log/audit-log.service';
 import { BillingService } from '../../billing/billing.service';
@@ -29,7 +30,7 @@ describe('revokeAllSessions — keeping the caller’s session', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         { provide: SessionEvents, useValue: sessions },
-        AuthService,
+        ...AUTH_SERVICES,
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: { sign: jest.fn(), verify: jest.fn() } },
         { provide: ConfigService, useValue: { get: jest.fn(() => undefined) } },

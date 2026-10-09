@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MrzOcrService } from '../mrz-ocr.service';
 import { DocumentsService } from '../documents.service';
+import { DOCUMENT_SERVICES } from '../document-services';
 import { OBJECT_STORE } from '../object-store.provider';
 
 /**
@@ -137,7 +138,7 @@ describe('the server resolves the same way the screen predicts', () => {
     jest.clearAllMocks();
     const mod = await Test.createTestingModule({
       providers: [
-        DocumentsService,
+        ...DOCUMENT_SERVICES,
         // Stubbed: every test here is about who may file what, not about
         // reading pixels — and a real WASM engine per suite would add minutes.
         { provide: MrzOcrService, useValue: { read: jest.fn().mockResolvedValue(null) } },

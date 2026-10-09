@@ -14,7 +14,23 @@ import { join } from 'path';
  * a deliberate act; forgetting the scope is not.
  */
 describe('every document read is scoped by type visibility', () => {
-  const SRC = readFileSync(join(__dirname, '..', 'documents.service.ts'), 'utf8');
+  /*
+    The personnel file is a facade over one collaborator per responsibility.
+    Every file `document-services.ts` registers is read — the list the module
+    itself provides from — so a collaborator added later is guarded the moment
+    it is wired in, and none can be left out of this check by forgetting it here.
+  */
+  const DIR = join(__dirname, '..');
+  const FILES = [
+    ...readFileSync(join(DIR, 'document-services.ts'), 'utf8').matchAll(/from '\.\/([\w.-]+)'/g),
+  ].map((m) => `${m[1]}.ts`);
+  const SOURCES = FILES.map((file) => ({ file, src: readFileSync(join(DIR, file), 'utf8') }));
+  const SRC = SOURCES.map((s) => s.src).join('\n');
+
+  it('reads the whole service, not only the facade', () => {
+    expect(FILES).toEqual(expect.arrayContaining(['documents.service.ts', 'document-registers.service.ts']));
+    expect(FILES.length).toBeGreaterThan(10);
+  });
 
   /**
    * Reads that are safe without the type scope, and why.
@@ -50,7 +66,14 @@ describe('every document read is scoped by type visibility', () => {
   const SCOPES = /typeScope\(/;
 
   it('scopes, asserts, or is a named exemption — no fourth option', () => {
-    const lines = SRC.split('\n');
+    const unscoped: string[] = [];
+    for (const { file, src } of SOURCES) unscoped.push(...unscopedReads(file, src));
+    expect(unscoped).toEqual([]);
+  });
+
+  /** The reads in ONE file that neither scope nor assert, and are not exempt. */
+  function unscopedReads(file: string, source: string): string[] {
+    const lines = source.split('\n');
 
     // Method boundaries: two-space indentation is a class member in this file.
     const starts: { name: string; line: number }[] = [];
@@ -82,11 +105,11 @@ describe('every document read is scoped by type visibility', () => {
       if (!method || EXEMPT[method.name]) return;
       const body = bodyOf(method.name);
       if (SCOPES.test(body) || ASSERTS.test(body)) return;
-      unscoped.push(`${method.name} (line ${i + 1})`);
+      unscoped.push(`${file}: ${method.name} (line ${i + 1})`);
     });
 
-    expect(unscoped).toEqual([]);
-  });
+    return unscoped;
+  }
 
   it('scopes the issued register on the BASE, so the tab counts agree with the rows', () => {
     // A filter applied to the rows but not the counts leaves the tabs counting

@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { UsersService } from '../users.service';
+import { MemberAdminService } from '../member-admin.service';
+import { MemberAccessChecksService } from '../member-access-checks.service';
 
 /**
  * Setting a member's phone home screen from the office.
@@ -11,7 +12,8 @@ import { UsersService } from '../users.service';
  */
 describe('UsersService.setAssignedHome', () => {
   const prisma: any = { user: { findFirst: jest.fn(), update: jest.fn() } };
-  const service = new UsersService(prisma, { send: jest.fn(), emit: jest.fn() } as any, { sessionsRevoked: jest.fn(), organizationSuspended: jest.fn() } as any);
+  // Member administration lives behind the UsersService facade.
+  const service = new MemberAdminService(prisma, new MemberAccessChecksService(prisma), { sessionsRevoked: jest.fn(), organizationSuspended: jest.fn() } as any);
 
   beforeEach(() => jest.clearAllMocks());
 

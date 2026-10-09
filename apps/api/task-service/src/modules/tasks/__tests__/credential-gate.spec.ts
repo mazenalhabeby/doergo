@@ -1,4 +1,5 @@
 import { credentialStanding, credentialBlocks, credentialTypesGating } from '@hbcfield/shared';
+import { readTaskServiceSource } from './task-service-source';
 
 /**
  * The dispatch gate.
@@ -133,12 +134,7 @@ describe('who is blocked', () => {
 });
 
 describe('the service still applies this rule', () => {
-  const fs = require('fs') as typeof import('fs');
-  const path = require('path') as typeof import('path');
-  const src = fs.readFileSync(
-    path.join(__dirname, '..', 'tasks.service.ts'),
-    'utf8',
-  );
+  const src = readTaskServiceSource();
 
   it('gates every entry point that can put a person on a task', () => {
     /*

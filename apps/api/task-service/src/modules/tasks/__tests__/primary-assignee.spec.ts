@@ -1,5 +1,4 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readTaskServiceSource } from './task-service-source';
 
 /**
  * Who a task is assigned TO, when the assignees live in their own table.
@@ -20,7 +19,7 @@ import { join } from 'path';
  * every display of WHO.
  */
 describe('the primary assignee follows the assignee rows', () => {
-  const SRC = readFileSync(join(__dirname, '..', 'tasks.service.ts'), 'utf8');
+  const SRC = readTaskServiceSource();
   const fn = (() => {
     const start = SRC.indexOf('private async syncPrimaryAssignee(');
     expect(start).toBeGreaterThan(-1);
@@ -61,7 +60,7 @@ describe('the primary assignee follows the assignee rows', () => {
  * assigned on the web could not be worked on at all.
  */
 describe('one writer owns what an assignment implies', () => {
-  const SRC = readFileSync(join(__dirname, '..', 'tasks.service.ts'), 'utf8');
+  const SRC = readTaskServiceSource();
   const writer = (() => {
     const start = SRC.indexOf('private async afterAssigneesChanged(');
     expect(start).toBeGreaterThan(-1);
@@ -120,7 +119,7 @@ describe('one writer owns what an assignment implies', () => {
  * above cost visibility of WHO rather than the task itself.
  */
 describe('a member sees work assigned either way', () => {
-  const SRC = readFileSync(join(__dirname, '..', 'tasks.service.ts'), 'utf8');
+  const SRC = readTaskServiceSource();
 
   it('matches on the column OR an assignee row', () => {
     expect(SRC).toContain('{ OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }] }');

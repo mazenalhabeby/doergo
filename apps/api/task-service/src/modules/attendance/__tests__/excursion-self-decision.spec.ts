@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import { ForbiddenException } from '@nestjs/common';
 import { AttendanceService } from '../attendance.service';
+import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
+import { ClockOutService } from '../clock-out.service';
 import { BreakService } from '../break.service';
 import { ApprovalService } from '../approval.service';
 import { AttendanceReportService } from '../attendance-report.service';
@@ -43,7 +45,7 @@ describe('out-of-ring requests: nobody decides their own', () => {
         BreakReminderService,
         BreakRulesService,
         CountedTimeService,
-        AttendanceService,
+        AttendanceService, ...ATTENDANCE_SERVICE_PARTS,
         { provide: PresenceService, useValue: {} },
         BreakService, ApprovalService, AttendanceReportService,
         { provide: PrismaService, useValue: prisma },
@@ -54,7 +56,8 @@ describe('out-of-ring requests: nobody decides their own', () => {
       ],
     }).compile();
     service = module.get(AttendanceService);
-    (service as any).clockOut = jest.fn().mockResolvedValue({});
+    // Rejecting an excursion clocks the member out — through ClockOutService, which is where the stub goes.
+    (module.get(ClockOutService) as any).clockOut = jest.fn().mockResolvedValue({});
   });
 
   it.each(['approveExcursion', 'rejectExcursion'] as const)('%s refuses a delegated approver on their own request', async (fn) => {

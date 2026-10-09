@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { AttendanceService } from '../attendance.service';
+import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
 import { CountedTimeService } from '../counted-time.service';
 import { BreakRulesService } from '../break-rules.service';
 import { ShiftResolverService } from '../shift-resolver.service';
@@ -56,7 +57,7 @@ describe('overtime rounds', () => {
     notify = { emit: jest.fn() };
     const mod = await Test.createTestingModule({
       providers: [
-        AttendanceService, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } },
+        AttendanceService, ...ATTENDANCE_SERVICE_PARTS, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } },
         CountedTimeService,
         BreakRulesService,
         { provide: ShiftResolverService, useValue: { resolveForClockIn: jest.fn().mockResolvedValue(null) } },

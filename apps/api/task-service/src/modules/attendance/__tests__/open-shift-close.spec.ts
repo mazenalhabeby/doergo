@@ -1,7 +1,9 @@
 /**
  * Shifts left open: closed with a temporary time, replaced by the real one.
  */
-import { AttendanceService } from '../attendance.service';
+// AttendanceService hands these to the collaborators that own them.
+import { ClockOutService } from '../clock-out.service';
+import { ExtraTimeService } from '../extra-time.service';
 import { isAbandoned, provisionalClockOut } from '../open-shift-close';
 
 const at = (iso: string) => new Date(`2026-09-${iso}:00.000Z`);
@@ -43,7 +45,7 @@ describe('the temporary clock-out', () => {
 describe('closeAbandonedShifts', () => {
   const now = at('15T06:00');
   function service(entries: any[], claimCount = 1) {
-    const svc = Object.create(AttendanceService.prototype) as any;
+    const svc = Object.create(ClockOutService.prototype) as any;
     svc.logger = { log: jest.fn(), debug: jest.fn(), warn: jest.fn() };
     const tx = {
       timeEntry: { updateMany: jest.fn().mockResolvedValue({ count: claimCount }) },
@@ -113,7 +115,7 @@ describe('closeAbandonedShifts', () => {
 
 describe('overtime added by a manager to a closed shift', () => {
   function service(entry: any) {
-    const svc = Object.create(AttendanceService.prototype) as any;
+    const svc = Object.create(ExtraTimeService.prototype) as any;
     svc.prisma = {
       timeEntry: { findFirst: jest.fn().mockResolvedValue(entry), update: jest.fn((a: any) => ({ kind: 'entry', a })) },
       overtimeRequest: { findFirst: jest.fn().mockResolvedValue({ cycle: 1 }), create: jest.fn((a: any) => ({ kind: 'round', a })) },
@@ -152,7 +154,7 @@ describe('overtime added by a manager to a closed shift', () => {
 
 describe('"when did you leave?" on a shift closed with a temporary time', () => {
   function service(entry: any, claim = 1) {
-    const svc = Object.create(AttendanceService.prototype) as any;
+    const svc = Object.create(ClockOutService.prototype) as any;
     svc.prisma = {
       timeEntry: {
         findFirst: jest.fn().mockResolvedValue(entry),

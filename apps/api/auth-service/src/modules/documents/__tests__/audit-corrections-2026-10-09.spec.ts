@@ -4,6 +4,7 @@ import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MrzOcrService } from '../mrz-ocr.service';
 import { DocumentsService, type DocumentActor } from '../documents.service';
+import { DOCUMENT_SERVICES } from '../document-services';
 import { CredentialExpiryService } from '../credential-expiry.service';
 import { OBJECT_STORE } from '../object-store.provider';
 
@@ -45,7 +46,7 @@ describe('documents — audit corrections 2026-10-09', () => {
     jest.clearAllMocks();
     const module = await Test.createTestingModule({
       providers: [
-        DocumentsService,
+        ...DOCUMENT_SERVICES,
         { provide: MrzOcrService, useValue: { read: jest.fn().mockResolvedValue(null) } },
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },

@@ -1,5 +1,4 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readTaskServiceSource } from './task-service-source';
 
 /**
  * A holder of a task's OPEN role who has not taken it may read THE TASK — enough
@@ -12,7 +11,7 @@ import { join } from 'path';
  * the exemption must be added here, with a reason.
  */
 describe('the open-role read exemption covers the task, not its work', () => {
-  const src = readFileSync(join(__dirname, '..', 'tasks.service.ts'), 'utf8');
+  const src = readTaskServiceSource();
 
   /** The body of one `async name(` method, up to the next method. */
   const body = (name: string): string => {

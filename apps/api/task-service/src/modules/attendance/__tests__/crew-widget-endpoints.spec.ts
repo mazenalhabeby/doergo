@@ -12,14 +12,18 @@
  * scope states: org-wide (null), some spaces, and none ([] = nothing).
  */
 import { AttendanceService } from '../attendance.service';
+import { ShiftSweepService } from '../shift-sweep.service';
+import { AttendanceReadService } from '../attendance-read.service';
 import { ApprovalService } from '../approval.service';
 import { BreakService } from '../break.service';
 
 const ORG = 'org-1';
 
+/** The facade over the two collaborators these reads live in, each given only the database. */
 function attendance(prisma: any) {
   const svc = Object.create(AttendanceService.prototype) as any;
-  svc.prisma = prisma;
+  svc.shiftSweeps = Object.assign(Object.create(ShiftSweepService.prototype), { prisma });
+  svc.reads = Object.assign(Object.create(AttendanceReadService.prototype), { prisma });
   return svc as AttendanceService;
 }
 function approvals(prisma: any) {

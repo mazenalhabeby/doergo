@@ -13,6 +13,7 @@ import { of, throwError } from 'rxjs';
 import { OBJECT_STORE } from '@hbcfield/shared/storage';
 import { Role, STEP_FORM_PRESETS } from '@hbcfield/shared';
 import { TasksService } from '../tasks.service';
+import { TASK_SERVICE_PARTS } from '../task-service-parts';
 import { RolePoolService } from '../role-pool.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
@@ -101,7 +102,7 @@ describe('status change into a step with a form', () => {
     auth = { send: jest.fn(() => of({ data: { id: 'act' } })) };
     const module = await Test.createTestingModule({
       providers: [
-        TasksService,
+        TasksService, ...TASK_SERVICE_PARTS,
         { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
@@ -323,7 +324,7 @@ describe('reading a job\'s submissions', () => {
     const store = { mediaUrl: jest.fn(async (key: string) => `https://signed/${key}`), keyFromUrl: () => null };
     const module = await Test.createTestingModule({
       providers: [
-        TasksService,
+        TasksService, ...TASK_SERVICE_PARTS,
         { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } }, { provide: PresenceService, useValue: {} },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },

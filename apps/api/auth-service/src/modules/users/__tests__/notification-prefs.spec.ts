@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
-import { UsersService } from '../users.service';
+import { OwnAccountService } from '../own-account.service';
 import { OnboardingService } from '../../onboarding/onboarding.service';
 
 /**
@@ -9,7 +9,7 @@ import { OnboardingService } from '../../onboarding/onboarding.service';
 
 describe('a member’s own notification switches', () => {
   function service(existing: unknown) {
-    const svc = Object.create(UsersService.prototype) as any;
+    const svc = Object.create(OwnAccountService.prototype) as any;
     svc.prisma = {
       user: {
         findUnique: jest.fn().mockResolvedValue({ notificationPrefs: existing }),
@@ -34,7 +34,7 @@ describe('a member’s own notification switches', () => {
 
 describe('reading a member’s switches', () => {
   it('says which emails the organization allows, so the screen can explain a switch that is off above them', async () => {
-    const svc = Object.create(UsersService.prototype) as any;
+    const svc = Object.create(OwnAccountService.prototype) as any;
     svc.prisma = {
       user: {
         findUnique: jest.fn().mockResolvedValue({

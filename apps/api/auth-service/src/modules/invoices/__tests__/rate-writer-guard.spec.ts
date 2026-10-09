@@ -41,7 +41,7 @@ describe('rates are written through the dated writer', () => {
 
   it.each([
     ['organization default', 'auth-service/src/modules/onboarding/onboarding.service.ts', "target: 'ORGANIZATION'"],
-    ['a member', 'auth-service/src/modules/users/users.service.ts', "target: 'MEMBER'"],
+    ['a member', 'auth-service/src/modules/users/employees.service.ts', "target: 'MEMBER'"],
     ['a workspace', 'task-service/src/modules/locations/locations.service.ts', "target: 'SPACE'"],
     ['a member at one client', 'task-service/src/modules/space-roles/space-roles.service.ts', "target: 'ASSIGNMENT'"],
     ['a work role\'s day rate', 'task-service/src/modules/space-roles/space-roles.service.ts', "target: 'ROLE'"],

@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { Role } from '@hbcfield/shared';
 import { UsersService } from '../users.service';
+import { USERS_SERVICES } from '../users-services';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
 /*
@@ -40,7 +41,7 @@ describe('adminResetMemberPassword — the takeover ceiling', () => {
       providers: [
         { provide: SessionEvents, useValue: { sessionsRevoked: jest.fn(), organizationSuspended: jest.fn() } },
         { provide: 'TASK_SERVICE', useValue: { emit: jest.fn() } },
-        UsersService,
+        ...USERS_SERVICES,
         { provide: PrismaService, useValue: prisma },
       ],
     }).compile();
@@ -110,7 +111,7 @@ describe('updateMemberProfile — email and external follow the takeover ceiling
       providers: [
         { provide: SessionEvents, useValue: { sessionsRevoked: jest.fn(), organizationSuspended: jest.fn() } },
         { provide: 'TASK_SERVICE', useValue: { emit: jest.fn(), send: jest.fn() } },
-        UsersService,
+        ...USERS_SERVICES,
         { provide: PrismaService, useValue: prisma },
       ],
     }).compile();

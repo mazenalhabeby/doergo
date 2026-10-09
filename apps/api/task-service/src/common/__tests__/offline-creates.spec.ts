@@ -6,7 +6,7 @@ import { ChatService } from '../../modules/chat/chat.service';
 import { SupportService } from '../../modules/support/support.service';
 import { TechniciansService } from '../../modules/technicians/technicians.service';
 import { AssetExpenseService } from '../../modules/assets/asset-expense.service';
-import { TasksService } from '../../modules/tasks/tasks.service';
+import { TaskRecordsService } from '../../modules/tasks/task-records.service';
 
 /** A service instance with only the collaborators a test gives it. */
 function withDeps<T extends object>(Cls: new (...a: any[]) => T, deps: Record<string, unknown>): T {
@@ -107,9 +107,9 @@ describe('expenses', () => {
 describe('tasks created on the phone', () => {
   it('returns the task a resend already made, before any other rule runs', async () => {
     const prisma: any = { task: { findUnique: jest.fn(async () => ({ id: 'task-phone-000000001', createdById: 'u1', organizationId: 'o1' })) } };
-    const svc = withDeps(TasksService, { prisma });
     const assert = jest.fn();
-    (svc as any).assertAssigneesCanReceiveTasks = assert;
+    // TasksService.create hands over to TaskRecordsService; the assignee gate is TaskAssignmentService's.
+    const svc = withDeps(TaskRecordsService, { prisma, assignment: { assertAssigneesCanReceiveTasks: assert } });
     const res: any = await svc.create({ id: 'task-phone-000000001', title: 'Leak', userId: 'u1', organizationId: 'o1' });
     expect(res.data.id).toBe('task-phone-000000001');
     expect(assert).not.toHaveBeenCalled();
@@ -117,7 +117,7 @@ describe('tasks created on the phone', () => {
 
   it("refuses an id that is somebody else's task", async () => {
     const prisma: any = { task: { findUnique: jest.fn(async () => ({ id: 'task-phone-000000001', createdById: 'u2', organizationId: 'o1' })) } };
-    const svc = withDeps(TasksService, { prisma });
+    const svc = withDeps(TaskRecordsService, { prisma });
     await expect(svc.create({ id: 'task-phone-000000001', title: 'Leak', userId: 'u1', organizationId: 'o1' })).rejects.toMatchObject({
       response: expect.objectContaining({ code: 'ID_IN_USE' }),
     });
