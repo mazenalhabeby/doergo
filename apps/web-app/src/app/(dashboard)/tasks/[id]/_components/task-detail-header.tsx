@@ -119,13 +119,19 @@ export function TaskDetailHeader({
             is no way to edit the task" is what that looks like from the outside.
             Cancel stays in the menu: it is destructive and belongs one step away.
           */}
-          {/* The job report — for anyone who can open the job; the server applies the same gate. */}
-          <Button variant="outline" size="sm" className="h-8" asChild>
-            <Link href={`/tasks/${task.id}/report`}>
-              <FileText className="size-3.5 mr-1.5" />
-              {t("tasks.report.open")}
-            </Link>
-          </Button>
+          {/*
+            The job report — offered once the job is DONE: its flow's final step
+            (not a canceled one), so a custom workflow's own "Delivered" counts.
+            The server applies the job's own read gate either way.
+          */}
+          {isCompleted && !isCanceled && (
+            <Button variant="outline" size="sm" className="h-8" asChild>
+              <Link href={`/tasks/${task.id}/report`}>
+                <FileText className="size-3.5 mr-1.5" />
+                {t("tasks.report.open")}
+              </Link>
+            </Button>
+          )}
           {!isCompleted && !isCanceled && canEdit && (
             <Button variant="outline" size="sm" className="h-8" onClick={onEditClick}>
               <Pencil className="size-3.5 mr-1.5" />
