@@ -1474,6 +1474,7 @@ export class TasksController {
 | Duplicate tasks created | Kill zombie processes: `pkill -f task-service`, restart API |
 | Job stuck in queue | Check Bull Board at `/admin/queues`, retry or remove |
 | BullMQ connection error | Verify Redis is running, check `REDIS_HOST` and `REDIS_PORT` |
+| Service image build fails on a package version the lockfile does not pin (e.g. `@aws-sdk/client-s3@3.1149.0`, 2026-10-09) | **`pnpm deploy` (pnpm 9) ignores the lockfile** and re-resolves against the registry — its `--frozen-lockfile` did nothing. The five API Dockerfiles no longer use it: a `prod-deps` stage runs `pnpm install --frozen-lockfile --prod --offline` from the `deps` stage's store (lockfile trimmed to root + shared + the service). Verify: the build log shows `Lockfile is up to date, resolution step is skipped` and no `prohibits to read or write a lockfile`; `docker run --rm --entrypoint node <image> -p "require('@aws-sdk/client-s3/package.json').version"` (in `/app`, or `/app/apps/api/auth-service`) equals `pnpm-lock.yaml`. ⚠️ Non-auth images keep the hoisted deps in **`/node_modules`** (service-local ones in `/app/node_modules`) |
 
 ### Monitoring Tools
 
