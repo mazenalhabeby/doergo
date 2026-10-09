@@ -17,6 +17,14 @@ import { Public } from '../../common/decorators';
   an OTA), each route carries a tight per-IP limit — far above one person
   typing an address, far below anybody running a key-spend loop — and refuses
   absurd input before a provider is called. Then drop @Public here.
+
+  TODO(geo-auth): the WEB half is done — every web /geo call goes through
+  `geoFetch` (web-app lib/geocode.ts), which sends the bearer token. Drop
+  @Public on search / place / reverse once NO installed phone app can still call
+  without a token: the phone's location-search-picker sends it (fetchWithAuth),
+  that JS has reached every runtime train in use by OTA, and `MOBILE_MIN_VERSION`
+  refuses any binary older than those trains.
+  /geo/timezone is authenticated and stays so.
 */
 const GEO_SEARCH_LIMIT = { default: { limit: 40, ttl: 60_000 } };
 const GEO_PLACE_LIMIT = { default: { limit: 20, ttl: 60_000 } };

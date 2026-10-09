@@ -1,10 +1,26 @@
 import { assertServiceOk } from '@hbcfield/shared';
-import { Body, Controller, Delete, Get, HttpStatus, Param, Patch, Post, Res, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, HttpStatus, Param, Patch, Post, Res, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { Public } from '../../common/decorators';
 import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
 import { BlogGatewayService } from './blog.service';
+
+/**
+ * The only kinds of picture a blog post may carry.
+ *
+ * ⚠️ No SVG and no HTML: the image is served from our own origin, and an SVG is
+ * a document that runs script. One uploaded "image" would be stored XSS on
+ * hbcfield.com for every visitor who opened its URL.
+ */
+export const BLOG_IMAGE_MIMES: ReadonlySet<string> = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
+
+/** The declared type, normalised — or null when it is not a picture we serve. */
+export function blogImageMime(mime: unknown): string | null {
+  const m = typeof mime === 'string' ? mime.split(';')[0].trim().toLowerCase() : '';
+  const normal = m === 'image/jpg' ? 'image/jpeg' : m;
+  return BLOG_IMAGE_MIMES.has(normal) ? normal : null;
+}
 
 /**
  * Public marketing blog.
@@ -40,7 +56,11 @@ export class BlogController {
     const r: any = assertServiceOk(await this.svc.getImage(id), HttpStatus.NOT_FOUND);
     const { mime, dataBase64 } = r.data;
     const buf = Buffer.from(dataBase64, 'base64');
-    res.setHeader('Content-Type', mime);
+    // Anything stored before the upload allow-list is served as a download, never rendered.
+    const safe = blogImageMime(mime);
+    res.setHeader('Content-Type', safe ?? 'application/octet-stream');
+    if (!safe) res.setHeader('Content-Disposition', 'attachment');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Content-Length', String(buf.length));
     // Image ids are immutable — cache hard so the DB is hit rarely.
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
@@ -72,6 +92,8 @@ export class BlogController {
   @UseGuards(PlatformAdminGuard)
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   async uploadImage(@Body() body: { dataBase64?: string; mime?: string; fileName?: string }) {
-    return this.unwrap(await this.svc.saveImage(body ?? {}));
+    const mime = blogImageMime(body?.mime);
+    if (!mime) throw new BadRequestException('A blog image must be PNG, JPEG, WebP or GIF.');
+    return this.unwrap(await this.svc.saveImage({ ...(body ?? {}), mime }));
   }
 }

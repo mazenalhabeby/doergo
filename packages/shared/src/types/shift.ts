@@ -227,14 +227,6 @@ export interface SpaceMember {
   approveUserIds?: string[];
 }
 
-// Whether a member (via their space role) holds a given space permission.
-export function spaceRoleAllows(
-  role: Pick<SpaceRole, 'permissions'> | null | undefined,
-  permission: SpaceRolePermissionKey,
-): boolean {
-  return role?.permissions?.[permission] === true;
-}
-
 // Built-in space roles seeded per org (isSystem). Editable but not deletable.
 // Slugs are stable identifiers used by seeds + routing.
 export const BUILTIN_SPACE_ROLES: {

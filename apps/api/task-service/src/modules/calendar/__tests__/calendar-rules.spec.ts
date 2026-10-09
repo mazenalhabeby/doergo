@@ -11,7 +11,6 @@ import {
   mergeHolidays,
   nextReminder,
   occurrences,
-  parseQuickAdd,
   parseRepeat,
   parseReminderOffsets,
   parseWeekendDays,
@@ -215,29 +214,6 @@ describe('reminders', () => {
     expect(parseReminderOffsets([10, 1440])).toEqual([1440, 10]);
     expect(() => parseReminderOffsets([7])).toThrow();
     expect(() => parseReminderOffsets([0, 5, 10, 15, 30, 60])).toThrow();
-  });
-});
-
-describe('quick add', () => {
-  const today = '2026-10-27'; // a Tuesday
-
-  it('"Remind me to call Müller at 2 for 30 min"', () => {
-    const r = parseQuickAdd('Remind me to call Müller at 2 for 30 min', today, 9 * 60);
-    expect(r).toMatchObject({ kind: 'REMINDER', title: 'Call Müller', date: today, time: '14:00', durationMin: 30, online: false });
-  });
-
-  it('"Client review with BILLA on Saturday 3pm for 30 min on Zoom"', () => {
-    const r = parseQuickAdd('Client review with BILLA on Saturday 3pm for 30 min on Zoom', today);
-    expect(r).toMatchObject({ kind: 'APPOINTMENT', title: 'Client review with BILLA', date: '2026-10-31', time: '15:00', durationMin: 30, online: true, withName: 'BILLA' });
-  });
-
-  it('German: "Erinnere mich an Rechnung morgen um 9 Uhr"', () => {
-    const r = parseQuickAdd('Erinnere mich an Rechnung morgen um 9 Uhr', today);
-    expect(r).toMatchObject({ kind: 'REMINDER', date: '2026-10-28', time: '09:00' });
-  });
-
-  it('a time already past today means tomorrow', () => {
-    expect(parseQuickAdd('Stand-up at 8:30', today, 10 * 60).date).toBe('2026-10-28');
   });
 });
 

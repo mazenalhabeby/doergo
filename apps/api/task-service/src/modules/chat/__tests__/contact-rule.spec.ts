@@ -1,4 +1,4 @@
-import { canContactColleagues } from '@hbcfield/shared';
+import { canContactColleagues, orgAllows } from '@hbcfield/shared';
 
 /**
  * The Messaging switch used to be tested AFTER the manager bypass, so "remove
@@ -16,7 +16,7 @@ describe('chat contact rule — order of checks', () => {
     if (me.role === 'CUSTOMER' || target.role === 'CUSTOMER') return false;
     if (!canContactColleagues({ enabledModules: me.enabledModules })) return false;
     if (!target.contactable) return false;
-    if (me.role === 'ADMIN' || me.canManageUsers === true) return true;
+    if (orgAllows(me, 'canManageUsers')) return true;
     if (me.contactScope === 'ALL') return true;
     if (spaceTargets.has(target.id)) return true;
     if (me.contactScope === 'SELECTED') return (me.contactAllowedIds ?? []).includes(target.id);

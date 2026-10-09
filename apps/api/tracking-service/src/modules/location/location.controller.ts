@@ -6,7 +6,9 @@ import { LocationService } from './location.service';
 export class LocationController {
   constructor(private readonly locationService: LocationService) {}
 
-  @MessagePattern({ cmd: 'health' })
+  // Its OWN pattern: on the shared Redis transport a common 'health' was answered
+  // by whichever service replied first, so the gateway could not tell who was up.
+  @MessagePattern({ cmd: 'tracking_health' })
   async health() {
     return { status: 'ok', service: 'tracking-service', timestamp: new Date().toISOString() };
   }

@@ -9,7 +9,7 @@ export class MembersController {
 
   /** Asked by auth-service whenever somebody leaves — see MemberOffboardService. */
   @MessagePattern({ cmd: 'member_offboard' })
-  async offboard(@Payload() data: { organizationId: string; userId: string; actorId: string }) {
+  async offboard(@Payload() data: { organizationId: string; userId: string; actorId: string; erase?: boolean }) {
     return success(await this.offboarding.offboard(data));
   }
 }

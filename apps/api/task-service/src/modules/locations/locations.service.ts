@@ -18,7 +18,7 @@ import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_N
 import { isGeofencePolicy,
   isNoShiftPolicy,
   clampDailyMinutes, validateMinCover, writeRateChange, RateChangeError, parseCurrency, CURRENCY_INVALID_MESSAGE,
-  currencyOrNull, workspaceCurrency, DEFAULT_CURRENCY, usableLegalEntityId, COMPANY_UNKNOWN_MESSAGE, clampListLimit, clampListPage } from '@hbcfield/shared';
+  currencyOrNull, workspaceCurrency, DEFAULT_CURRENCY, usableLegalEntityId, COMPANY_UNKNOWN_MESSAGE, clampListLimit, clampListPage, WORKING_NOW_STATUSES } from '@hbcfield/shared';
 
 // tz-lookup: offline coords → IANA timezone (no types pkg).
 const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
@@ -1173,7 +1173,8 @@ export class LocationsService {
     // Attach each member's current active task at this location, computed
     // server-side. Employees can only read their OWN tasks, so this is how their
     // dashboard learns which colleagues are working (presence parity with admin).
-    const ACTIVE_STATUSES = ['IN_PROGRESS', 'ARRIVED', 'EN_ROUTE', 'BLOCKED'];
+    // Working on it now (shared tasks/working-statuses.ts) — not "not finished".
+    const WORKING = WORKING_NOW_STATUSES;
     const TASK_PRIORITY: Record<string, number> = {
       IN_PROGRESS: 4,
       ARRIVED: 3,
@@ -1186,7 +1187,7 @@ export class LocationsService {
           where: {
             spaceId: data.locationId,
             assignedToId: { in: memberIds },
-            status: { in: ACTIVE_STATUSES as any },
+            status: { in: [...WORKING] },
           },
           select: { assignedToId: true, title: true, status: true },
         })
@@ -1253,14 +1254,14 @@ export class LocationsService {
       orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
     });
 
-    const ACTIVE_STATUSES = ['IN_PROGRESS', 'ARRIVED', 'EN_ROUTE', 'BLOCKED'];
+    const WORKING = WORKING_NOW_STATUSES;
     const TASK_PRIORITY: Record<string, number> = { IN_PROGRESS: 4, ARRIVED: 3, EN_ROUTE: 2, BLOCKED: 1 };
     const memberIds = [...new Set(assignments.map((a) => a.userId))];
     const activeTasks = memberIds.length
       ? await this.prisma.task.findMany({
           where: {
             spaceId: { in: validIds },
-            status: { in: ACTIVE_STATUSES as any },
+            status: { in: [...WORKING] },
             // Lead OR co-assignee: matching only assignedToId left every
             // multi-assigned member looking idle on the roster.
             OR: [

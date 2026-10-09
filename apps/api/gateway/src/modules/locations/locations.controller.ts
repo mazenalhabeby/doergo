@@ -20,7 +20,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
-import { getSpaceScope, spacesGranting, isAdmin, accessAllows, clampListLimit, mayViewSpaceRoster, mayManageSpaceMembers, stripSpaceTerms } from '@hbcfield/shared';
+import { getSpaceScope, spacesGranting, isAdmin, accessAllows, clampListLimit, mayViewSpaceRoster, mayManageSpaceMembers, stripSpaceTerms, stripWorkspaceTerms, type SpaceScope } from '@hbcfield/shared';
 import { RebillService } from '../../common/billing/rebill.service';
 import { SpaceModulesService } from '../../common/space-modules.service';
 import { capModulesToCatalogue } from '../../common/entitlements';
@@ -32,6 +32,34 @@ import {
   AssignMemberDto,
   UpdateAssignmentDto,
 } from './dto';
+
+/**
+ * Which workspaces `GET /locations` lists for this caller.
+ *
+ * ⚠️ An EXTERNAL member is never widened to the organization's directory. The
+ * org-wide `canViewAllTasks` column and an Access Profile left at "all" both
+ * meant "every workspace" — right for staff, wrong for a client's supervisor,
+ * whose whole authority is the space role they hold where they are assigned.
+ * So they get 'own' (the spaces they are assigned to — which is where their
+ * space role lives), or nothing if their profile says 'tasks'.
+ */
+export function locationListScope(user: any): SpaceScope {
+  if (user?.isExternal === true && !isAdmin(user)) {
+    return getSpaceScope(user) === 'tasks' ? 'tasks' : 'own';
+  }
+  return user?.canViewAllTasks ? 'all' : getSpaceScope(user ?? {});
+}
+
+/**
+ * The list as an external member receives it: no workspace rates or costs
+ * (`stripWorkspaceTerms`) — what the organization charges a site, and what it
+ * costs, is not a client's business. Staff rows pass unchanged.
+ */
+export function shapeLocationList<T>(result: T, user: any): T {
+  const r = result as any;
+  if (user?.isExternal !== true || isAdmin(user) || !Array.isArray(r?.data)) return result;
+  return { ...r, data: r.data.map((row: unknown) => stripWorkspaceTerms(row, false)) };
+}
 
 @ApiTags('locations')
 @ApiBearerAuth()
@@ -111,9 +139,9 @@ export class LocationsController {
         control that silently does nothing for them.
       */
       viewerId: req.user.id,
-      spaceScope: req.user.canViewAllTasks ? 'all' : getSpaceScope(req.user),
+      spaceScope: locationListScope(req.user),
     });
-    return result;
+    return shapeLocationList(result, req.user);
   }
 
   // NOTE: must be declared before @Get(':id') so 'team' isn't matched as an id.

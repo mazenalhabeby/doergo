@@ -83,3 +83,23 @@ export function taskRequester(req: { user?: any; method?: string }): Omit<TaskAc
   const { userId, ...rest } = taskActor(req);
   return { ...rest, requestUserId: userId };
 }
+
+/**
+ * Where this caller holds a task grant (`canAssignTasks`, `canCreateTasks`)
+ * through a role: `undefined` = an administrator or an org-wide grant (no
+ * narrowing), `[ids]` = only those spaces, `[]` = nowhere.
+ *
+ * The route guards accept a grant held in ANY space; task-service then checks
+ * this list against the task's own space, which is the real decision. It was
+ * written out by hand on every assign route — one rule, one place.
+ */
+export function grantedSpaceIds(
+  req: { user?: any },
+  permission: 'canAssignTasks' | 'canCreateTasks',
+): string[] | undefined {
+  const user = req.user ?? {};
+  return isAdmin(user) ? undefined : (spacesGranting(user.access, permission) ?? undefined);
+}
+
+/** Spaces where the caller may ASSIGN work — see `grantedSpaceIds`. */
+export const assignSpaceIds = (req: { user?: any }) => grantedSpaceIds(req, 'canAssignTasks');

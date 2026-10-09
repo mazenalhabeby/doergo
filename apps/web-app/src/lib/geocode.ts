@@ -1,3 +1,4 @@
+import { getAccessToken } from './api';
 // Helpers to turn raw geocoder payloads into a clean, human address like
 // "Kapellenstraße 30, 4664 Laakirchen" instead of the long hierarchy string
 // (…Oberweis, Bergham, …) that Nominatim's `display_name` returns.
@@ -71,6 +72,23 @@ export function formatPhotonFeature(p: PhotonProperties | undefined, fallback?: 
 export const geoBase = () => process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
 /**
+ * Every call to the gateway's `/geo/*` proxy goes through here, WITH the
+ * caller's bearer token.
+ *
+ * They were bare `fetch`es. search/place/reverse are still `@Public()` on the
+ * gateway — installed phone apps call them without a token — so they worked
+ * anonymously, which leaves a paid Google proxy open to anybody. Sending the
+ * token from the web is the first half of closing it; `/geo/timezone` is
+ * authenticated already and was refused without it.
+ */
+export function geoFetch(pathAndQuery: string, init: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(init.headers);
+  const token = getAccessToken();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  return fetch(`${geoBase()}${pathAndQuery}`, { ...init, headers });
+}
+
+/**
  * Turn a written address into a point, or null.
  *
  * For addresses the product already holds — a client's, typed by a person long
@@ -87,9 +105,8 @@ export async function geocodeAddress(
 ): Promise<{ lat: number; lng: number } | null> {
   const q = text.trim();
   if (q.length < 3) return null;
-  const base = geoBase();
   try {
-    const r = await fetch(`${base}/geo/search?q=${encodeURIComponent(q)}&limit=1`, {
+    const r = await geoFetch(`/geo/search?q=${encodeURIComponent(q)}&limit=1`, {
       signal: signal ?? AbortSignal.timeout(5000),
     });
     if (!r.ok) return null;
@@ -100,7 +117,7 @@ export async function geocodeAddress(
     }
     // A Google prediction carries no coordinates until it is resolved.
     if (hit.id) {
-      const pr = await fetch(`${base}/geo/place?id=${encodeURIComponent(hit.id)}`, {
+      const pr = await geoFetch(`/geo/place?id=${encodeURIComponent(hit.id)}`, {
         signal: signal ?? AbortSignal.timeout(5000),
       });
       if (!pr.ok) return null;

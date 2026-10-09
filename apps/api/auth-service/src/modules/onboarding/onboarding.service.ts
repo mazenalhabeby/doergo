@@ -23,8 +23,7 @@ import {
   permissionsExceed,
   permissionsFromUserFlags,
 } from '@hbcfield/shared';
-import { defaultSpaceRoleId } from '../invitations/invitation-space-role';
-import { memberFieldsFromInvitation, claimInvitation, InvitationAlreadyClaimedError } from '../invitations/invitation-apply';
+import { memberFieldsFromInvitation, claimInvitation, InvitationAlreadyClaimedError, applyInvitationPlacement } from '../invitations/invitation-apply';
 
 @Injectable()
 export class OnboardingService {
@@ -443,48 +442,10 @@ export class OnboardingService {
         },
       });
 
-      // Pre-set weekly schedule (FIXED invites): create the rows for the user.
-      if (isTechnician && invitation.scheduleType === 'FIXED' && Array.isArray(invitation.schedule)) {
-        const rows = (invitation.schedule as any[]).filter(
-          (r) => r && typeof r.dayOfWeek === 'number' && r.startTime && r.endTime,
-        );
-        if (rows.length > 0) {
-          await tx.technicianSchedule.createMany({
-            data: rows.map((r) => ({
-              technicianId: userId,
-              dayOfWeek: r.dayOfWeek,
-              startTime: r.startTime,
-              endTime: r.endTime,
-              isActive: r.isActive ?? true,
-            })),
-          });
-        }
-      }
-
-      // Pre-assigned space: assign the user to it (if it still exists in the org).
-      if (isTechnician && invitation.spaceId) {
-        const space = await tx.companyLocation.findFirst({
-          where: { id: invitation.spaceId, organizationId: invitation.organizationId, isActive: true },
-          select: { id: true },
-        });
-        if (space) {
-          // Same default the register path applies — an external member whose
-          // space assignment carries no role holds nothing at all. Resolved by
-          // the shared helper so the two accept paths cannot drift, which is
-          // exactly how `isExternal` went missing on this one before.
-          const roleId = await defaultSpaceRoleId(tx, invitation.organizationId, {
-            isExternal: invitation.isExternal,
-            // The role the invitation named, if the admin chose one — Observer
-            // or Supervisor. Falls back to the default when they did not.
-            chosenRoleId: invitation.memberRoleId,
-          });
-          await tx.spaceAssignment.upsert({
-            where: { userId_spaceId: { userId, spaceId: invitation.spaceId } },
-            update: { isPrimary: true, effectiveTo: null },
-            create: { organizationId: invitation.organizationId, userId, spaceId: invitation.spaceId, isPrimary: true, roleId },
-          });
-        }
-      }
+      // The rota and the workspace the invitation dictates — one function for
+      // both accept paths (invitation-apply.ts), with the member-only gate
+      // stated there rather than repeated here.
+      await applyInvitationPlacement(tx, invitation, userId);
 
       // Customer portal: the resident owns their identity. Sync the Customer
       // record's name from the account they just registered, so the office

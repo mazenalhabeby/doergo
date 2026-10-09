@@ -4,6 +4,7 @@ import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox"
 import { cityFromTz } from "@/lib/utils"
+import { geoFetch } from "@/lib/geocode"
 
 /** Full IANA timezone list (falls back to a curated set on old browsers). */
 const FALLBACK_TIMEZONES = [
@@ -85,8 +86,8 @@ export function TimezoneCombobox({
 /** Fetch the IANA timezone for a coordinate via the gateway geo proxy. */
 export async function fetchTimezone(lat: number, lng: number): Promise<string | null> {
   try {
-    const geoBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
-    const res = await fetch(`${geoBase}/geo/timezone?lat=${lat}&lon=${lng}`, {
+    // Authenticated on the gateway — geoFetch carries the token.
+    const res = await geoFetch(`/geo/timezone?lat=${lat}&lon=${lng}`, {
       signal: AbortSignal.timeout(5000),
     })
     if (!res.ok) return null

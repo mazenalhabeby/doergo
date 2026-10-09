@@ -18,9 +18,9 @@ export class MemberOffboarding {
 
   constructor(@Inject(SERVICE_NAMES.TASK) private readonly tasks: ClientProxy) {}
 
-  async release(organizationId: string, userId: string, actorId: string): Promise<void> {
+  async release(organizationId: string, userId: string, actorId: string, opts: { erase?: boolean } = {}): Promise<void> {
     try {
-      await firstValueFrom(this.tasks.send({ cmd: 'member_offboard' }, { organizationId, userId, actorId }).pipe(timeout(30_000)));
+      await firstValueFrom(this.tasks.send({ cmd: 'member_offboard' }, { organizationId, userId, actorId, erase: opts.erase === true }).pipe(timeout(30_000)));
     } catch (e) {
       this.logger.error(`member_offboard failed for ${userId}: ${(e as Error)?.message ?? e}`);
       throw new ServiceUnavailableException('Could not release this member’s jobs and equipment. Nothing was changed — try again.');

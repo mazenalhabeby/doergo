@@ -1,4 +1,4 @@
-import { ADD_ON_KEYS, orgHasAddOn } from './add-ons';
+import { ADD_ON_KEYS } from './add-ons';
 
 /**
  * Where each Option shows itself — one table, read by every surface.
@@ -51,27 +51,6 @@ export const SPACE_TAB_OPTION: Readonly<Record<string, string>> = {
 export const SETTINGS_OPTION: Readonly<Record<string, string>> = {
   'audit-log': 'audit_log',
 } as const;
-
-/**
- * Does this organization get to see this surface?
- *
- * `true` for anything the table does not claim — most of the product is not an
- * Option, and a helper that hid whatever it did not recognise would empty the
- * navigation the first time somebody renamed a route.
- *
- * ⚠️ The opposite default would be safer for revenue and disastrous for use, so
- * the fail-closed guarantee lives where it belongs: on the SERVER, in PlanGuard,
- * which refuses an unknown key. This only decides what is drawn.
- */
-export function surfaceAllowed(
-  table: Readonly<Record<string, string>>,
-  surface: string,
-  addOns: string[] | null | undefined,
-): boolean {
-  const option = table[surface];
-  if (!option) return true;
-  return orgHasAddOn(addOns, option);
-}
 
 /** Every Option that owns at least one surface — what the test walks. */
 export function optionsWithSurfaces(): string[] {

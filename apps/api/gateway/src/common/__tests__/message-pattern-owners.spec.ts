@@ -16,9 +16,9 @@ import * as path from 'path';
 */
 const API = path.resolve(__dirname, '../../../..');
 const SERVICES = ['auth-service', 'task-service', 'notification-service', 'tracking-service'];
-const ALLOWED_IN_SEVERAL: Record<string, string> = {
-  health: 'each service reports its own liveness; the gateway only asks "is anything up"',
-};
+// Nothing is shared any more: `health` was, and the gateway could not tell which
+// service answered. Each now has `<service>_health`.
+const ALLOWED_IN_SEVERAL: Record<string, string> = {};
 
 function* walk(dir: string): Generator<string> {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -53,5 +53,12 @@ describe('message patterns', () => {
       .filter(([cmd, svcs]) => svcs.size > 1 && !ALLOWED_IN_SEVERAL[cmd])
       .map(([cmd, svcs]) => `${cmd}: ${[...svcs].join(', ')}`);
     expect(shared).toEqual([]);
+  });
+
+  it('each service answers its own health pattern, and nobody the old shared one', () => {
+    expect([...(owners.get('auth_health') ?? [])]).toEqual(['auth-service']);
+    expect([...(owners.get('task_health') ?? [])]).toEqual(['task-service']);
+    expect([...(owners.get('tracking_health') ?? [])]).toEqual(['tracking-service']);
+    expect(owners.has('health')).toBe(false);
   });
 });

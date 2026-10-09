@@ -20,6 +20,7 @@ import {
   type JobTimeKind,
   type ShiftSpan,
   type WorkTimelineEvent,
+  TERMINAL_STATUSES,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
@@ -37,8 +38,8 @@ const CREW_EVENTS = [TaskEventType.CREW_JOINED, TaskEventType.CREW_LEFT, TaskEve
 const EVENTS_PER_TASK = 5000;
 /** Up to this many jobs are read one query each; more share one query. */
 const PER_TASK_READS = 20;
-/** Built-in closed steps — a custom flow's own final step simply counts nothing after it. */
-const CLOSED_KEYS = ['COMPLETED', 'CLOSED', 'CANCELED'];
+/** Built-in closed steps (shared TERMINAL_STATUSES) — a custom flow's own final step simply counts nothing after it. */
+const CLOSED_KEYS: string[] = TERMINAL_STATUSES;
 
 const PERSONAL_KIND: Record<string, WorkTimelineEvent['kind']> = {
   [TaskEventType.CREW_JOINED]: 'JOINED',

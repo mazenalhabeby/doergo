@@ -634,6 +634,8 @@ export class OrganizationsController {
     return firstValueFrom(
       this.authClient.send({ cmd: 'audit_log_list' }, {
         organizationId: user.organizationId,
+        // Who is reading: a document's trail follows the document's own visibility.
+        viewerId: user.id,
         eventType: query.eventType,
         userId: query.userId,
         resourceType: query.resourceType,

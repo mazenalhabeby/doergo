@@ -107,19 +107,6 @@ export function formatShortDate(dateInput: Date | string | null | undefined): st
 }
 
 /**
- * Format a date to full date (e.g., "January 27, 2026")
- */
-export function formatFullDate(dateInput: Date | string | null | undefined): string {
-  if (!dateInput) return '-';
-  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
-  return date.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
-/**
  * Get relative day label (Today, Yesterday, or formatted date)
  */
 export function getRelativeDayLabel(dateInput: Date | string): string {
@@ -132,15 +119,6 @@ export function getRelativeDayLabel(dateInput: Date | string): string {
   if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
 
   return formatShortDate(dateInput);
-}
-
-/**
- * Calculate minutes between two dates
- */
-export function calculateMinutesBetween(start: Date | string, end: Date | string): number {
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  return Math.floor((endDate.getTime() - startDate.getTime()) / 60000);
 }
 
 /**

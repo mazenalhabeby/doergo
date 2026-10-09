@@ -1,4 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { sanitizeLabelValueRows, CUSTOMER_DETAIL_LIMITS } from '../../common/records/label-value-rows';
+import { keepOrgUserIds } from '../../common/records/org-user-ids';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { resolveCrmCaps, ownsClient, parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, parseCurrency, CURRENCY_INVALID_MESSAGE, CRM_COLD_DAYS, CRM_CONTACT_TYPES, type CrmCaps } from '@hbcfield/shared';
@@ -90,15 +92,10 @@ const customerSelect = {
   updatedAt: true,
 } as const;
 
-// Keep only well-formed { label, value } rows with a non-empty label.
-function sanitizeDetails(details: unknown): CustomerDetail[] | undefined {
-  if (!Array.isArray(details)) return undefined;
-  return details
-    .filter((d): d is CustomerDetail => !!d && typeof d.label === 'string' && typeof d.value === 'string')
-    .map((d) => ({ label: d.label.trim().slice(0, 80), value: d.value.trim().slice(0, 2000) }))
-    .filter((d) => d.label.length > 0)
-    .slice(0, 30);
-}
+// Keep only well-formed { label, value } rows — the one sanitizer the portal
+// also uses, with the client record's own limits.
+const sanitizeDetails = (details: unknown): CustomerDetail[] | undefined =>
+  sanitizeLabelValueRows(details, CUSTOMER_DETAIL_LIMITS);
 
 /**
  * The client's language for emails, as a write may carry it: `undefined` leaves
@@ -193,6 +190,17 @@ export class CustomersService {
     });
     if (!u) return NO_CRM;
     return resolveCrmCaps(u.role, (u.memberRole?.permissions as Record<string, boolean> | null) ?? {});
+  }
+
+  /**
+   * `canReach` as a `where` fragment: every client for view 'all', the ones the
+   * caller owns or co-manages for 'own', nothing otherwise. One rule, so a list
+   * and a single-record check cannot disagree.
+   */
+  reachableWhere(caps: CrmCaps, caller: CrmCaller | undefined): Record<string, unknown> {
+    if (caps.view === 'all') return {};
+    if (caps.view === 'own' && caller?.userId) return ownedBy(caller.userId);
+    return { id: { in: [] as string[] } };
   }
 
   /** Can this caller reach a specific client? All-scope OR owns/co-manages it. */
@@ -894,13 +902,9 @@ export class CustomersService {
     return c;
   }
 
-  /** Keep only ids that are real users in THIS org (drops cross-tenant / stale
-   *  ids so manager assignment & reminder targeting never point out-of-org). */
-  private async keepOrgUserIds(ids: string[], organizationId: string): Promise<string[]> {
-    if (!ids.length) return [];
-    const rows = await this.prisma.user.findMany({ where: { id: { in: ids }, organizationId }, select: { id: true } });
-    const ok = new Set(rows.map((r) => r.id));
-    return ids.filter((id) => ok.has(id));
+  /** Keep only ids that are real users in THIS org — the shared helper, uncapped. */
+  private keepOrgUserIds(ids: string[], organizationId: string): Promise<string[]> {
+    return keepOrgUserIds(this.prisma, ids, organizationId);
   }
 
   /** A customer's spaceId/portalId MUST belong to the same org — otherwise a

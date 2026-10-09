@@ -1,4 +1,4 @@
-import { buildIcs, occurrences, parseQuickAdd, repeatToRrule } from '@hbcfield/shared';
+import { buildIcs, occurrences, repeatToRrule } from '@hbcfield/shared';
 import { EventsService } from '../events.service';
 
 /* Regressions found by the calendar audit (2026-10-06) — each one pinned. */
@@ -21,13 +21,6 @@ describe('the feed repeats at wall time', () => {
     const ics = buildIcs('O', [{ uid: 'u', title: 'Stand-up', start: new Date('2026-10-26T08:00:00Z'), end: new Date('2026-10-26T08:30:00Z'), allDay: false, tzid: 'Europe/Vienna', rrule: 'FREQ=WEEKLY' }]);
     expect(ics).toContain('DTSTART;TZID=Europe/Vienna:20261026T090000');
     expect(repeatToRrule({ freq: 'YEARLY', interval: 1, until: '2030-01-01' }, true)).toBe('FREQ=YEARLY;UNTIL=20300101');
-  });
-});
-
-describe('quick add edge cases', () => {
-  it('"next Friday" said on a Friday is a week away; 31.02 is not a date', () => {
-    expect(parseQuickAdd('Review next Friday', '2026-10-30').date).toBe('2026-11-06');
-    expect(parseQuickAdd('Review 31.02', '2026-10-30').date).toBeNull();
   });
 });
 

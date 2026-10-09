@@ -99,3 +99,30 @@ describe('CRM address writes obey the CRM reach rule', () => {
     ).resolves.toEqual(expect.objectContaining({ id: 'u1' }));
   });
 });
+
+/*
+  `spaces/:spaceId/units/:unitId` — the unit must belong to THAT workspace, not
+  merely to the organization, or a manager of one workspace edits any apartment
+  by putting its id under the path of the workspace they do manage.
+*/
+describe('workspace unit routes stay inside their workspace', () => {
+  it('update: a unit of another workspace is not found', async () => {
+    const { prisma, service } = setup();
+    prisma.customerUnit.findFirst.mockResolvedValue(null);
+    await expect(service.updateUnit({ id: 'u1', organizationId: ORG, scopeSpaceId: 'sp-A', name: 'x' })).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.customerUnit.findFirst.mock.calls[0][0].where).toEqual(
+      expect.objectContaining({ id: 'u1', organizationId: ORG, spaceId: 'sp-A' }),
+    );
+    expect(prisma.customerUnit.update).not.toHaveBeenCalled();
+  });
+
+  it('delete: a unit of another workspace is not found', async () => {
+    const { prisma, service } = setup();
+    prisma.customerUnit.findFirst.mockResolvedValue(null);
+    await expect(service.deleteUnit({ id: 'u1', organizationId: ORG, scopeSpaceId: 'sp-A' })).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.customerUnit.findFirst.mock.calls[0][0].where).toEqual(
+      expect.objectContaining({ id: 'u1', organizationId: ORG, spaceId: 'sp-A' }),
+    );
+    expect(prisma.customerUnit.update).not.toHaveBeenCalled();
+  });
+});

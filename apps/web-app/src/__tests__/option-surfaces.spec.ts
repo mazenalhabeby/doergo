@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { NAV_OPTION, SPACE_TAB_OPTION, SETTINGS_OPTION, surfaceAllowed, ADD_ON_KEYS } from '@hbcfield/shared/client';
+import { NAV_OPTION, SPACE_TAB_OPTION, SETTINGS_OPTION, ADD_ON_KEYS } from '@hbcfield/shared/client';
 
 /*
   An Option that is switched off has to disappear in three places: the server
@@ -82,30 +82,5 @@ describe('the workflow builder', () => {
     // …and the second way in, from inside the space form.
     const form = read('app/(dashboard)/locations/_components/space-form.tsx');
     expect(form).toContain('allowCreate={hasPlanFeature("workflows")}');
-  });
-});
-
-describe('surfaceAllowed', () => {
-  it('hides a surface the organization has not bought', () => {
-    expect(surfaceAllowed(NAV_OPTION, '/invoices', ['workflows'])).toBe(false);
-    expect(surfaceAllowed(NAV_OPTION, '/invoices', ['invoicing'])).toBe(true);
-  });
-
-  it('leaves alone anything the table does not claim', () => {
-    /*
-      Most of the product is not an Option. A helper that hid whatever it did not
-      recognise would empty the navigation the first time somebody renamed a
-      route — so the fail-closed guarantee lives on the SERVER, in PlanGuard,
-      which refuses an unknown key. This only decides what is drawn.
-    */
-    expect(surfaceAllowed(NAV_OPTION, '/tasks', [])).toBe(true);
-    expect(surfaceAllowed(NAV_OPTION, '/dashboard', null)).toBe(true);
-  });
-
-  it('treats no options at all as owning nothing', () => {
-    for (const href of Object.keys(NAV_OPTION)) {
-      expect(surfaceAllowed(NAV_OPTION, href, null)).toBe(false);
-      expect(surfaceAllowed(NAV_OPTION, href, [])).toBe(false);
-    }
   });
 });

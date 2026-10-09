@@ -1,4 +1,4 @@
-import { assertMemberInScope, countLeave as countLeaveDays } from '@hbcfield/shared';
+import { assertMemberInScope, countLeave as countLeaveDays, paginated } from '@hbcfield/shared';
 import { Inject, Injectable, NotFoundException, BadRequestException, ForbiddenException, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, SERVICE_NAMES, TaskStatus, success } from '@hbcfield/shared';
@@ -292,16 +292,7 @@ export class TechniciansService {
       this.prisma.task.count({ where }),
     ]);
 
-    return {
-      success: true,
-      data: tasks,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return paginated(tasks, { page, limit, total });
   }
 
   /**

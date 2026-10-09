@@ -237,6 +237,8 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@pgbouncer:6432/${POSTGRES_DB:-hbcfield}?schema=public&pgbouncer=true
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      # Read by the shared access resolver (chat, sockets): must match auth-service.
+      - ACCESS_IGNORE_LEGACY_FLAGS=${ACCESS_IGNORE_LEGACY_FLAGS:-false}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - S3_ENDPOINT=${S3_ENDPOINT:-}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY:-}
@@ -294,6 +296,8 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@pgbouncer:6432/${POSTGRES_DB:-hbcfield}?schema=public&pgbouncer=true
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      # Read by the shared access resolver (chat, sockets): must match auth-service.
+      - ACCESS_IGNORE_LEGACY_FLAGS=${ACCESS_IGNORE_LEGACY_FLAGS:-false}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       # Required by the websocket gateway to verify JWTs on socket connections.
       # Must match the auth-service / gateway value (same secret signs the tokens).

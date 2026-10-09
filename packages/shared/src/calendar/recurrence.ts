@@ -137,12 +137,6 @@ export function occurrences(
   return out;
 }
 
-/** The first occurrence starting at or after `after`, or null when the series has ended. */
-export function nextOccurrence(startAt: Date, repeat: Repeat | null, tz: string, after: Date, horizonDays = 800): Date | null {
-  const list = occurrences(startAt, 1, repeat, tz, after, new Date(after.getTime() + horizonDays * 86400000));
-  return list.find((d) => d.getTime() >= after.getTime()) ?? null;
-}
-
 /** RRULE text for the ICS feed. An all-day series ends on a DATE (RFC 5545 forbids a time there). */
 export function repeatToRrule(r: Repeat, allDay = false): string {
   const DAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];

@@ -13,6 +13,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { taskActor } from '../../common/task-actor';
+import { assertExternalMayWriteTask } from '../../common/external-task-write';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
@@ -114,6 +115,8 @@ export class TaskCustomFieldsController {
     @Body() dto: SetCustomFieldValuesDto,
     @Request() req: any,
   ) {
+    // An external member fills fields only on a job they raised.
+    await assertExternalMayWriteTask(req, taskId, (data) => this.customFieldsService.findTask(data));
     return this.customFieldsService.setTaskValues({
       ...this.taskCaller(req),
       taskId,

@@ -14,6 +14,11 @@ export class CustomFieldsService extends BaseGatewayService {
     super(taskClient, CustomFieldsService.name);
   }
 
+  /** One task through task-service's gate — for the external-member write check. */
+  async findTask(data: Record<string, any>) {
+    return this.send({ cmd: 'find_task' }, data);
+  }
+
   async findAll(data: { organizationId: string; forWorkflow?: string }) {
     return this.send({ cmd: 'find_all_custom_fields' }, data);
   }

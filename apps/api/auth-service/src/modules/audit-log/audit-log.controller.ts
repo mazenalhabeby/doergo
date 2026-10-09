@@ -33,6 +33,7 @@ export class AuditLogController {
     endDate?: string;
     page?: number;
     limit?: number;
+    viewerId?: string;
   }) {
     return this.auditLogService.findAll(query);
   }

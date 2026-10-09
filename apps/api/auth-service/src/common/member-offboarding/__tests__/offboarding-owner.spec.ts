@@ -11,7 +11,7 @@ import * as path from 'path';
   direct write to those tables comes back into them.
 */
 const FILES = ['../../../modules/users/users.service.ts', '../../../modules/auth/auth.service.ts'].map((f) => path.resolve(__dirname, f));
-const TASK_TABLE_WRITE = /\b(task|taskAssignee|assetCustody|assetHolder)\.(update|updateMany|delete|deleteMany|create|createMany|upsert)\(/;
+const TASK_TABLE_WRITE = /\b(task|taskAssignee|assetCustody|assetHolder|technicianSchedule|timeOff)\.(update|updateMany|delete|deleteMany|create|createMany|upsert)\(/;
 
 describe('member offboarding', () => {
   it('the account services never write task-service tables', () => {
@@ -23,6 +23,6 @@ describe('member offboarding', () => {
     const users = fs.readFileSync(FILES[0]!, 'utf8');
     const auth = fs.readFileSync(FILES[1]!, 'utf8');
     expect(users).toMatch(/offboarding\?\.release\(organizationId, memberId, requesterId\)/);
-    expect(auth).toMatch(/offboarding\?\.release\(user\.organizationId, user\.id, user\.id\)/);
+    expect(auth).toMatch(/offboarding\?\.release\(user\.organizationId, user\.id, user\.id, \{ erase: true \}\)/);
   });
 });

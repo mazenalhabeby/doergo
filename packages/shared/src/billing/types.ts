@@ -66,13 +66,6 @@ export interface SubscriptionView {
  */
 export type CheckoutRequest = Record<string, never>;
 
-/** Statuses that still allow full use of the product. */
-export function isBillingActive(status: SubStatus): boolean {
-  // past_due keeps access during the dunning grace period; the lock only lands
-  // once retries are exhausted (handled server-side by moving to canceled/incomplete).
-  return status === 'trialing' || status === 'active' || status === 'past_due';
-}
-
 /** Statuses that lock the org to read-only. */
 export function isLocked(status: SubStatus): boolean {
   return status === 'incomplete' || status === 'canceled';

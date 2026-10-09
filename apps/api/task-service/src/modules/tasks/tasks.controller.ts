@@ -60,7 +60,9 @@ export class TasksController {
     return this.rolePool.stats(data);
   }
 
-  @MessagePattern({ cmd: 'health' })
+  // Its OWN pattern: on the shared Redis transport a common 'health' was answered
+  // by whichever service replied first, so the gateway could not tell who was up.
+  @MessagePattern({ cmd: 'task_health' })
   async health() {
     return { status: 'ok', service: 'task-service', timestamp: new Date().toISOString() };
   }

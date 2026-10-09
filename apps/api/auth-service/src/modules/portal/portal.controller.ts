@@ -118,7 +118,7 @@ export class PortalController {
   }
 
   @MessagePattern({ cmd: 'portal_delete_unit' })
-  deleteUnit(@Payload() data: { id: string; organizationId: string }) {
+  deleteUnit(@Payload() data: { id: string; organizationId: string; scopeSpaceId?: string }) {
     return this.portalService.deleteUnit(data);
   }
 

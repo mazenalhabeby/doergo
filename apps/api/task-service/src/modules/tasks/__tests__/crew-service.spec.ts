@@ -7,6 +7,7 @@ import { BadRequestException, ForbiddenException, NotFoundException } from '@nes
 import { CREW_CODES } from '@hbcfield/shared';
 import { CrewService } from '../handover/crew.service';
 import { JobTimeService } from '../handover/job-time.service';
+import { TaskAccessService } from '../../../common/task-access/task-access.service';
 
 const T = (hhmm: string) => new Date(`2026-10-01T${hhmm}:00Z`);
 const ORG = 'org1';
@@ -36,6 +37,9 @@ function setup(opts: { task?: Record<string, unknown>; events?: any[]; onClock?:
       ]),
       updateMany: jest.fn().mockReturnValue('demote'),
       upsert: jest.fn().mockReturnValue('promote'),
+      // The task gate's co-assignee lookup (TaskAccessService).
+      findFirst: jest.fn().mockImplementation(async ({ where }: any) =>
+        ['tobias', 'priya', 'conor'].includes(where.userId) ? { id: `a-${where.userId}` } : null),
     },
     taskEvent: {
       findMany: jest.fn().mockImplementation(async ({ where }: any) => (where?.eventType === 'SELF_BLOCKED' ? [] : events)),
@@ -63,7 +67,7 @@ function setup(opts: { task?: Record<string, unknown>; events?: any[]; onClock?:
   const clockGate: any = { assertWorkerClockedIn: jest.fn().mockResolvedValue({ userId: 'x', clockInAt: T('07:00') }) };
   const jobPause: any = { workingJobsOf: jest.fn().mockResolvedValue([]), pauseOnLeave: jest.fn().mockResolvedValue(true) };
   const emit = jest.fn();
-  const service = new CrewService(prisma, workflows, clockGate, jobPause, new JobTimeService(prisma, workflows), { emit } as any);
+  const service = new CrewService(prisma, workflows, clockGate, jobPause, new JobTimeService(prisma, workflows), { emit } as any, new TaskAccessService(prisma));
   return { service, prisma, events, clockGate, jobPause, emit, task };
 }
 
@@ -78,9 +82,21 @@ describe('CrewService.join', () => {
     expect(joined).toMatchObject({ userId: 'priya', metadata: { at: T('07:30').toISOString(), viaLeaderAt: T('07:30').toISOString() } });
   });
 
-  it('a stranger to the crew cannot join', async () => {
+  it('a job the caller cannot SEE is a 404 — never "they are not on this job"', async () => {
     const { service } = setup();
-    await expect(service.join({ ...actor('stranger'), taskId: 'job1' })).rejects.toMatchObject({ response: { code: CREW_CODES.NOT_ON_CREW } });
+    // A 400 NOT_ON_CREW here confirmed the job exists to somebody who cannot open it.
+    await expect(service.join({ ...actor('stranger'), taskId: 'job1' })).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.leave({ ...actor('stranger'), taskId: 'job1' })).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.selfIssue({ ...actor('stranger'), taskId: 'job1', reason: 'x' })).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.view('job1', actor('stranger'))).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('somebody who CAN see the job but is not on its crew gets the rule they can act on', async () => {
+    const { service } = setup();
+    await expect(service.join({ ...actor('viewer', { canViewAllTasks: true }), taskId: 'job1' }))
+      .rejects.toMatchObject({ response: { code: CREW_CODES.NOT_ON_CREW } });
+    await expect(service.join({ ...actor('sitelead', { viewAllSpaceIds: ['sp1'] }), taskId: 'job1' }))
+      .rejects.toMatchObject({ response: { code: CREW_CODES.NOT_ON_CREW } });
   });
 
   it('an external member cannot join, even on the crew', async () => {

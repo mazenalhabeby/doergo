@@ -15,13 +15,19 @@ import {
   type CalendarLayer,
   type CalendarPlace,
   type DayKind,
+  TaskStatus,
 } from '@hbcfield/shared';
 import { shiftRuleOf } from '../technicians/cover.service';
 import { CalendarRulesService, type PlaceCalendar } from './calendar-rules.service';
 import { EventsService, type Caller } from './events.service';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-const CLOSED_TASK = ['CANCELED', 'CANCELLED'];
+/*
+  Jobs the calendar leaves OUT: canceled only — NOT the shared TERMINAL_STATUSES.
+  A finished job stays on the day it was done; a canceled one never happened.
+  'CANCELLED' is the spelling some custom workflows use for their step key.
+*/
+const CANCELED_TASK_KEYS: string[] = [TaskStatus.CANCELED, 'CANCELLED'];
 
 export interface ItemsQuery extends Caller {
   from: string;
@@ -122,7 +128,7 @@ export class CalendarService {
       where: {
         organizationId: q.organizationId,
         dueDate: { gte: new Date(fromAt.getTime() - 86400000), lt: toAt },
-        status: { notIn: CLOSED_TASK },
+        status: { notIn: CANCELED_TASK_KEYS },
         OR: [
           { assignedToId: q.userId },
           { assignees: { some: { userId: q.userId } } },

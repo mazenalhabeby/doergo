@@ -169,27 +169,6 @@ export function isValidScheduleEntry(entry: ScheduleEntryInput): { valid: boolea
   return { valid: true };
 }
 
-/** Check if two date ranges overlap */
-export function dateRangesOverlap(
-  startA: string | Date,
-  endA: string | Date,
-  startB: string | Date,
-  endB: string | Date,
-): boolean {
-  const a1 = new Date(startA).getTime();
-  const a2 = new Date(endA).getTime();
-  const b1 = new Date(startB).getTime();
-  const b2 = new Date(endB).getTime();
-  return a1 <= b2 && b1 <= a2;
-}
-
-/** Get the number of days in a date range (inclusive) */
-export function getDaysInRange(startDate: string | Date, endDate: string | Date): number {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-}
-
 /** Day of week labels */
 export const DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
 export const DAY_LABELS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;

@@ -204,11 +204,6 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
   },
 ];
 
-/** A starter by key. */
-export function starterTemplate(key: string): StarterTemplate | null {
-  return STARTER_TEMPLATES.find((t) => t.key === key) ?? null;
-}
-
 /**
  * How well a template's binding fits one person — the SAME arithmetic the
  * server uses to decide which contract somebody actually gets.

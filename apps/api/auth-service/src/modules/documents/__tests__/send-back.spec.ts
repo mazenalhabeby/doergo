@@ -130,4 +130,30 @@ describe('DocumentsService — sendBack', () => {
     prisma.document.findFirst.mockResolvedValue(null);
     await expect(send('anna')).rejects.toBeInstanceOf(NotFoundException);
   });
+
+  /*
+    Same door as sign / consent / acknowledge. A POOL step carries no userId
+    until somebody signs, so comparing `current.userId` locked every pool
+    member out; and the read was type-scoped with no routed-signer exemption.
+  */
+  it('lets anybody in a POOL step send it back', async () => {
+    prisma.documentSigner.findMany.mockResolvedValue([
+      { order: 1, role: 'MEMBER', status: 'SIGNED', userId: 'worker', customerId: null, signedAt: new Date() },
+      { order: 2, role: 'RESPONSIBLE', status: 'PENDING', userId: null, eligibleUserIds: ['anna', 'ben'], customerId: null, signedAt: null },
+    ]);
+    await expect(send('ben')).resolves.toEqual({ documentId: 'doc1', backToStep: 1 });
+    await expect(send('carl')).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('a routed signer sends back a document of a type they could not otherwise see', async () => {
+    prisma.document.findFirst.mockResolvedValue({
+      id: 'doc1', title: 'Time sheet', userId: 'worker', status: 'AWAITING_SIGNATURE',
+      hiddenFromMember: false, rolesOverridden: false, visibleToRoleIds: [],
+      type: { visibleToRoleIds: ['role-hr'] },
+    });
+    await expect(send('anna')).resolves.toEqual({ documentId: 'doc1', backToStep: 1 });
+    // The lookup is no longer narrowed by the type — the step authorises it.
+    expect(JSON.stringify(prisma.document.findFirst.mock.calls[0][0].where)).not.toContain('role-hr');
+  });
 });
+

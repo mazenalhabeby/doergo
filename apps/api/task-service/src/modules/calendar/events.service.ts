@@ -31,6 +31,11 @@ import {
   type Repeat,
   type ReminderEvent,
   type RsvpResponse,
+  personName,
+  personNameById,
+  CRM_CAPS_SELECT,
+  crmCapsOfRow,
+  crmReachesClient,
 } from '@hbcfield/shared';
 import { CalendarRulesService } from './calendar-rules.service';
 
@@ -295,9 +300,29 @@ export class EventsService {
     }
   }
 
-  private async nameOf(userId: string): Promise<string> {
-    const u = await this.prisma.user.findUnique({ where: { id: userId }, select: { firstName: true, lastName: true } });
-    return u ? `${u.firstName} ${u.lastName}`.trim() : '';
+  /**
+   * The event's client, as THIS viewer may see it — or null.
+   *
+   * "Reads the client book" (`crm`) was the whole test, so a rep with
+   * own-scope CRM invited by another rep read the name of a client that is not
+   * theirs. Now the CRM's own reach rule (crm/client-reach.ts): all-scope sees
+   * it, own-scope only a client they own or co-manage. The organizer is asked
+   * the same — handing a meeting over does not hand over the client.
+   */
+  private async clientShownTo(
+    caller: Caller,
+    client: { id: string; name: string; ownerId: string | null; managerIds: string[] } | null,
+  ): Promise<{ id: string; name: string } | null> {
+    if (!client || !caller.crm) return null;
+    const row = caller.role === 'ADMIN'
+      ? { role: 'ADMIN' }
+      : await this.prisma.user.findFirst({ where: { id: caller.userId, organizationId: caller.organizationId }, select: CRM_CAPS_SELECT });
+    return crmReachesClient(crmCapsOfRow(row), client, caller.userId) ? { id: client.id, name: client.name } : null;
+  }
+
+  /** One shared rule for a name (people/person-name.ts) — never "John null". */
+  private nameOf(userId: string): Promise<string> {
+    return personNameById(this.prisma as never, userId);
   }
 
   private notify(pattern: string, payload: Record<string, unknown>) {
@@ -568,18 +593,19 @@ export class EventsService {
       where: { id: dto.eventId, organizationId: dto.organizationId, attendees: { some: { userId: dto.userId } } },
       include: {
         attendees: { select: { userId: true, response: true, isOrganizer: true, user: { select: { firstName: true, lastName: true, avatarUrl: true } } }, orderBy: { createdAt: 'asc' } },
-        customer: { select: { id: true, name: true } },
+        customer: { select: { id: true, name: true, ownerId: true, managerIds: true } },
         space: { select: { id: true, name: true } },
         placeSpace: { select: { id: true, name: true, address: true, lat: true, lng: true } },
       },
     });
     if (!ev) throw new NotFoundException('Not found');
     const me = ev.attendees.find((a) => a.userId === dto.userId)!;
+    const customer = await this.clientShownTo(dto, ev.customer);
     return success({
       id: ev.id, kind: ev.kind, title: ev.title, description: ev.description, location: ev.location, meetingUrl: ev.meetingUrl,
       startAt: ev.startAt.toISOString(), endAt: ev.endAt.toISOString(), allDay: ev.allDay, timezone: ev.timezone,
       repeat: ev.repeat ?? null, reminders: ev.reminderOffsets, visibility: ev.visibility, canceled: !!ev.canceledAt,
-      space: ev.space, customer: dto.crm ? ev.customer : null,
+      space: ev.space, customer,
       meetingMode: ev.meetingMode, placeKind: ev.placeKind, placeSpace: ev.placeSpace, room: ev.room,
       phone: ev.phone, callDirection: ev.callDirection,
       organizerId: ev.createdById, canEdit: ev.createdById === dto.userId, myResponse: me.response,
@@ -646,7 +672,7 @@ export class EventsService {
           meetingMode: ev.meetingMode,
           phone: ev.phone,
           room: ev.room,
-          note: mine?.isOrganizer ? null : `${ev.createdBy.firstName} ${ev.createdBy.lastName}`.trim(),
+          note: mine?.isOrganizer ? null : personName(ev.createdBy),
         });
         if (out.length >= 2000) return out;
       }

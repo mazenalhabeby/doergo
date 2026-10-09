@@ -3,13 +3,12 @@ import { randomUUID } from 'crypto';
 import { OBJECT_STORE, ObjectStore, extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { MediaSigner } from '../../common/storage/media-signer.service';
-import { success } from '@hbcfield/shared';
+import { success, UPLOAD_RULES } from '@hbcfield/shared';
 import { createOnce } from '../../common/create-once.util';
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
-const ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
-const ALLOWED_FILE_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOCUMENT_TYPES];
+// What may be uploaded, and how big: ONE shared definition (constants/upload-rules.ts).
+const MAX_FILE_SIZE = UPLOAD_RULES.worklog.maxBytes;
+const ALLOWED_FILE_TYPES = UPLOAD_RULES.worklog.allTypes;
 const BODY_MAX = 5000;
 const BATCH_MAX = 200;
 const UPLOAD_TTL_SECONDS = 3600;

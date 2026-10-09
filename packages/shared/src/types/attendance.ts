@@ -501,30 +501,6 @@ export function isBreakActive(breakItem: Break): boolean {
 }
 
 /**
- * Get the display name for a break type
- */
-export function getBreakTypeLabel(type: BreakType): string {
-  const labels: Record<BreakType, string> = {
-    [BreakType.LUNCH]: 'Lunch',
-    [BreakType.SHORT]: 'Short',
-    [BreakType.OTHER]: 'Other',
-  };
-  return labels[type] || type;
-}
-
-/**
- * Get the display name for a time entry status
- */
-export function getTimeEntryStatusLabel(status: TimeEntryStatus): string {
-  const labels: Record<TimeEntryStatus, string> = {
-    [TimeEntryStatus.CLOCKED_IN]: 'Active',
-    [TimeEntryStatus.CLOCKED_OUT]: 'Completed',
-    [TimeEntryStatus.AUTO_OUT]: 'Auto Clock-Out',
-  };
-  return labels[status] || status;
-}
-
-/**
  * May this person clock in from anywhere, without a geofence?
  *
  * ONE rule, because it had already drifted. The server has always read

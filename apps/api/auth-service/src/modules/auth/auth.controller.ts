@@ -10,7 +10,9 @@ export class AuthController {
     private readonly biometric: BiometricService,
   ) {}
 
-  @MessagePattern({ cmd: 'health' })
+  // Its OWN pattern: on the shared Redis transport a common 'health' was answered
+  // by whichever service replied first, so the gateway could not tell who was up.
+  @MessagePattern({ cmd: 'auth_health' })
   async health() {
     return { status: 'ok', service: 'auth-service', timestamp: new Date().toISOString() };
   }

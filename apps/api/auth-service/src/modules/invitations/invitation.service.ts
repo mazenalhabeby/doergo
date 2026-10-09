@@ -29,8 +29,7 @@ import {
   DEFAULT_LOCALE,
   type SupportedLocale,
 } from '@hbcfield/shared';
-import { defaultSpaceRoleId } from './invitation-space-role';
-import { memberFieldsFromInvitation, claimInvitation, InvitationAlreadyClaimedError } from './invitation-apply';
+import { memberFieldsFromInvitation, claimInvitation, InvitationAlreadyClaimedError, applyInvitationPlacement } from './invitation-apply';
 
 function hashCode(code: string): string {
   return createHash('sha256').update(code).digest('hex');
@@ -537,37 +536,6 @@ export class InvitationService {
   }
 
   /**
-   * Assign an accepting user to the invitation's pre-set space (CompanyLocation).
-   * No-op if there is no spaceId or the space no longer belongs to the org. Runs
-   * inside the caller's transaction. Idempotent via the userId+locationId unique.
-   */
-  private async assignInvitationSpace(
-    tx: Prisma.TransactionClient,
-    userId: string,
-    organizationId: string,
-    spaceId: string | null | undefined,
-    isExternal = false,
-    /** The space role the invitation named, if any — it wins over the default. */
-    chosenRoleId?: string | null,
-  ) {
-    if (!spaceId) return;
-    const space = await tx.companyLocation.findFirst({
-      where: { id: spaceId, organizationId, isActive: true },
-      select: { id: true },
-    });
-    if (!space) return;
-    // An external member's authority is their SPACE role and nothing else, so
-    // arriving without one leaves them holding nothing at all. Only on create —
-    // `update` deliberately leaves an existing roleId alone.
-    const roleId = await defaultSpaceRoleId(tx, organizationId, { isExternal, chosenRoleId });
-    await tx.spaceAssignment.upsert({
-      where: { userId_spaceId: { userId, spaceId } },
-      update: { isPrimary: true, effectiveTo: null },
-      create: { organizationId, userId, spaceId, isPrimary: true, roleId },
-    });
-  }
-
-  /**
    * Accept an invitation and register a new user.
    * Creates the user under the invitation's org with the specified role.
    */
@@ -678,26 +646,9 @@ export class InvitationService {
         },
       });
 
-      // Pre-set weekly schedule (FIXED invites): create the rows for the new user.
-      if (invitation.scheduleType === 'FIXED' && Array.isArray(invitation.schedule)) {
-        const rows = (invitation.schedule as any[]).filter(
-          (r) => r && typeof r.dayOfWeek === 'number' && r.startTime && r.endTime,
-        );
-        if (rows.length > 0) {
-          await tx.technicianSchedule.createMany({
-            data: rows.map((r) => ({
-              technicianId: newUser.id,
-              dayOfWeek: r.dayOfWeek,
-              startTime: r.startTime,
-              endTime: r.endTime,
-              isActive: r.isActive ?? true,
-            })),
-          });
-        }
-      }
-
-      // Pre-assigned space: assign the new user to it (if it still exists in the org).
-      await this.assignInvitationSpace(tx, newUser.id, invitation.organizationId, invitation.spaceId, invitation.isExternal, invitation.memberRoleId);
+      // The rota and the workspace the invitation dictates — the same function
+      // the mobile onboarding path uses (invitation-apply.ts), members only.
+      await applyInvitationPlacement(tx, invitation, newUser.id);
 
       // Claimed atomically, as the last write — see claimInvitation.
       await claimInvitation(tx, invitation.id, newUser.id);

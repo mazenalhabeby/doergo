@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { Role } from '@hbcfield/shared';
 import { of } from 'rxjs';
-import { taskActor, taskRequester } from '../task-actor';
+import { taskActor, taskRequester, assignSpaceIds, grantedSpaceIds } from '../task-actor';
 import { SearchController } from '../../modules/search/search.controller';
 import { TasksController } from '../../modules/tasks/tasks.controller';
 
@@ -78,6 +78,21 @@ describe('task routes build no caller by hand', () => {
     const src = fs.readFileSync(path.join(__dirname, '../../modules', file), 'utf8');
     expect(src).not.toMatch(/viewAllSpaceIds\s*:/);
     expect(src).not.toMatch(/sharedSpaceIds\s*:/);
+    // The assign/create space lists come from grantedSpaceIds, not a copy.
+    expect(src).not.toMatch(/(assign|create)SpaceIds:\s*isAdmin/);
+  });
+});
+
+describe('grantedSpaceIds / assignSpaceIds', () => {
+  it('narrows a member to the spaces their roles grant it in', () => {
+    expect(assignSpaceIds(member())).toEqual(['s2']);
+    expect(grantedSpaceIds(member(), 'canCreateTasks')).toEqual([]);
+  });
+  it('does not narrow an administrator or an org-wide grant', () => {
+    expect(assignSpaceIds(member({ role: Role.ADMIN }))).toBeUndefined();
+    const orgWide = member();
+    (orgWide.user.access as any).org = { canAssignTasks: true };
+    expect(assignSpaceIds(orgWide)).toBeUndefined();
   });
 });
 

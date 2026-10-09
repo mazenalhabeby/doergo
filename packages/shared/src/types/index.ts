@@ -55,14 +55,6 @@ export function normalizeRole(role: string): Role {
   return Role.EMPLOYEE;
 }
 
-// Get display label for a role
-export function getRoleLabel(role: string): string {
-  const r = normalizeRole(role);
-  if (r === Role.ADMIN) return 'Admin';
-  if (r === Role.CUSTOMER) return 'Customer';
-  return 'Employee';
-}
-
 // Socket.IO Events
 export const SocketEvents = {
   // Task events

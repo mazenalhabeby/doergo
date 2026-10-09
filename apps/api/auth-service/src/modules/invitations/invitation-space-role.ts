@@ -30,7 +30,34 @@ export async function defaultSpaceRoleId(
   organizationId: string,
   opts: { isExternal: boolean; chosenRoleId?: string | null },
 ): Promise<string | null> {
-  if (opts.chosenRoleId) return opts.chosenRoleId;
+  /*
+    A space assignment references a SPACE role, or none.
+
+    `Invitation.memberRoleId` holds two different things: for an external
+    member it is the SPACE role the invite named; for our own staff it is their
+    ORG-wide role. Both accept paths passed it here unconditionally, so an
+    internal member's org role was copied onto their space assignment as well —
+    and when an admin later demoted them org-wide, the same permissions lived on
+    in that space, where no screen about their org role would ever show them.
+
+    So the chosen role is used only when it IS a space-scoped management role in
+    this organization. Anything else (an org role, a trade, another org's id, a
+    switched-off role) falls through to the default below — which is null for
+    our own staff.
+  */
+  if (opts.chosenRoleId) {
+    const chosen = await tx.accessRole.findFirst({
+      where: {
+        id: opts.chosenRoleId,
+        organizationId,
+        scope: 'SPACE',
+        kind: { not: 'WORK' },
+        isActive: true,
+      },
+      select: { id: true },
+    });
+    if (chosen) return chosen.id;
+  }
   if (!opts.isExternal) return null;
 
   const role = await tx.accessRole.findFirst({

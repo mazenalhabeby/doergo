@@ -7,7 +7,11 @@ import { MemberOffboardService } from '../member-offboard.service';
 */
 describe('MemberOffboardService', () => {
   const setup = () => {
-    const prisma: any = { spaceAssignment: { updateMany: jest.fn().mockResolvedValue({ count: 2 }) } };
+    const prisma: any = {
+      spaceAssignment: { updateMany: jest.fn().mockResolvedValue({ count: 2 }) },
+      technicianSchedule: { deleteMany: jest.fn().mockResolvedValue({ count: 5 }) },
+      timeOff: { deleteMany: jest.fn().mockResolvedValue({ count: 4 }) },
+    };
     const tasks: any = { releaseMemberFromOpenWork: jest.fn().mockResolvedValue(3) };
     const custody: any = { releaseAllHeldBy: jest.fn().mockResolvedValue(1) };
     return { prisma, tasks, custody, service: new MemberOffboardService(prisma, tasks, custody) };
@@ -16,12 +20,22 @@ describe('MemberOffboardService', () => {
   it('releases open jobs, returns equipment and ends assignments', async () => {
     const { prisma, tasks, custody, service } = setup();
     const r = await service.offboard({ organizationId: 'o1', userId: 'u1', actorId: 'admin' });
-    expect(r).toEqual({ tasksReleased: 3, assetsReturned: 1, assignmentsEnded: 2 });
+    expect(r).toEqual({ tasksReleased: 3, assetsReturned: 1, assignmentsEnded: 2, schedulesRemoved: 5, timeOffErased: 0 });
+    expect(prisma.technicianSchedule.deleteMany).toHaveBeenCalledWith({ where: { technicianId: 'u1' } });
+    // A removal keeps the leave record — only the person erasing their account takes it.
+    expect(prisma.timeOff.deleteMany).not.toHaveBeenCalled();
     expect(tasks.releaseMemberFromOpenWork).toHaveBeenCalledWith('o1', 'u1', 'admin');
     expect(custody.releaseAllHeldBy).toHaveBeenCalledWith('o1', 'u1', 'admin');
     const call = prisma.spaceAssignment.updateMany.mock.calls[0][0];
     expect(call.where).toMatchObject({ userId: 'u1', space: { organizationId: 'o1' } });
     expect(call.data.effectiveTo).toBeInstanceOf(Date);
+  });
+
+  it('an account deletion also erases the leave record', async () => {
+    const { prisma, service } = setup();
+    const r = await service.offboard({ organizationId: 'o1', userId: 'u1', actorId: 'u1', erase: true });
+    expect(prisma.timeOff.deleteMany).toHaveBeenCalledWith({ where: { technicianId: 'u1' } });
+    expect(r.timeOffErased).toBe(4);
   });
 });
 

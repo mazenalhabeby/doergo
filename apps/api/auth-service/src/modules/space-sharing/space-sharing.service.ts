@@ -124,6 +124,9 @@ export class SpaceSharingService {
     // Revocation severs the relationship fully: mark REVOKED and REMOVE any
     // cross-org members the guest added to this space (rows tagged with the guest
     // org), so they don't linger in the owner's roster / task-assign after revoke.
+    // ⚠️ OWNERSHIP: `spaceAssignment` is task-service's table, written here only
+    // so the revoke and the removal commit together. Follow-up: route it through
+    // task-service the way offboarding uses `member_offboard`.
     await this.prisma.$transaction([
       this.prisma.spaceShare.update({ where: { id: share.id }, data: { status: 'REVOKED' } }),
       this.prisma.spaceAssignment.deleteMany({

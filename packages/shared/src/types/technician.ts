@@ -394,50 +394,6 @@ export function isEmployeeOnline(
 }
 
 /**
- * Get availability status label
- */
-export function getAvailabilityStatus(
-  currentTasks: number,
-  maxDailyJobs: number
-): 'available' | 'busy' | 'at_capacity' {
-  if (currentTasks >= maxDailyJobs) return 'at_capacity';
-  if (currentTasks > 0) return 'busy';
-  return 'available';
-}
-
-/**
- * Get availability status label for display
- */
-export function getAvailabilityLabel(
-  status: 'available' | 'busy' | 'at_capacity'
-): string {
-  switch (status) {
-    case 'available':
-      return 'Available';
-    case 'busy':
-      return 'Busy';
-    case 'at_capacity':
-      return 'At Capacity';
-  }
-}
-
-/**
- * Get availability status color class
- */
-export function getAvailabilityColor(
-  status: 'available' | 'busy' | 'at_capacity'
-): string {
-  switch (status) {
-    case 'available':
-      return 'bg-green-100 text-green-700';
-    case 'busy':
-      return 'bg-amber-100 text-amber-700';
-    case 'at_capacity':
-      return 'bg-red-100 text-red-700';
-  }
-}
-
-/**
  * Format rating for display (e.g., "4.5" or "N/A")
  */
 export function formatRating(

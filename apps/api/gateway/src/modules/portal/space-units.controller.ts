@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { RequirePermission, RequirePermissionInSpace, spacesGranting, isAdmin, pickUnitFields } from '@hbcfield/shared';
 import { SpaceModulesService } from '../../common/space-modules.service';
+import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 
 /**
  * Apartments / Units directory for a space (the `apartments` module). The unit
@@ -11,8 +12,16 @@ import { SpaceModulesService } from '../../common/space-modules.service';
  * housing, or a CLIENT (customerId) when the space runs an Apartment-entity B2C
  * portal. Work on the unit is handled by tasks (no standing worker list).
  */
+/*
+  ⚠️ @DenyExternal on BOTH unit controllers: a unit carries the resident's name
+  and contact phone — the organization's own data about its clients. Neither
+  External Supervisor nor External Observer is granted anything about
+  residents; their `canViewAllTasks` is about following the WORK, and it was
+  the only thing between them and this directory.
+*/
 @ApiTags('space-units')
 @ApiBearerAuth()
+@DenyExternal()
 @Controller('spaces/:spaceId/units')
 export class SpaceUnitsController {
   constructor(
@@ -75,7 +84,8 @@ export class SpaceUnitsController {
     // Whitelist, identity LAST. This spread the body after the token's
     // organizationId, so a body naming another organization (or an actorId)
     // replaced it — a cross-tenant write. One pick shared with every unit route.
-    return this.auth('portal_update_unit', { ...pickUnitFields(body), id: unitId, organizationId: req.user.organizationId, actorId: req.user.id });
+    // scopeSpaceId: the unit must be THIS space's, not merely the organization's.
+    return this.auth('portal_update_unit', { ...pickUnitFields(body), id: unitId, organizationId: req.user.organizationId, actorId: req.user.id, scopeSpaceId: spaceId });
   }
 
   @Delete(':unitId')
@@ -83,7 +93,7 @@ export class SpaceUnitsController {
   @ApiOperation({ summary: 'Remove an apartment / unit' })
   async remove(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Request() req: any) {
     await this.requireModule(spaceId, req.user.organizationId);
-    return this.auth('portal_delete_unit', { id: unitId, organizationId: req.user.organizationId });
+    return this.auth('portal_delete_unit', { id: unitId, organizationId: req.user.organizationId, scopeSpaceId: spaceId });
   }
 
   /** Reverse-direction assignment: give a MEMBER an apartment from the member
@@ -103,6 +113,7 @@ export class SpaceUnitsController {
 /** A single apartment/unit by id (org-scoped) — for the apartment detail page. */
 @ApiTags('units')
 @ApiBearerAuth()
+@DenyExternal() // see the note above SpaceUnitsController
 @Controller('units')
 export class UnitDetailController {
   constructor(@Inject('AUTH_SERVICE') private readonly authClient: ClientProxy) {}

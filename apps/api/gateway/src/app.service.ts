@@ -14,9 +14,9 @@ export class AppService {
 
   async getHealth() {
     const [auth, task, tracking] = await Promise.all([
-      this.pingService(this.authClient, 'auth-service'),
-      this.pingService(this.taskClient, 'task-service'),
-      this.pingService(this.trackingClient, 'tracking-service'),
+      this.pingService(this.authClient, 'auth-service', 'auth_health'),
+      this.pingService(this.taskClient, 'task-service', 'task_health'),
+      this.pingService(this.trackingClient, 'tracking-service', 'tracking_health'),
     ]);
 
     const allOk = auth.status === 'ok' && task.status === 'ok' && tracking.status === 'ok';
@@ -32,22 +32,22 @@ export class AppService {
   /**
    * One dependency's answer.
    *
-   * ⚠️ Two things this cannot know, and says so rather than guessing:
-   *  - the three services all answer the SAME pattern (`{ cmd: 'health' }`) on
-   *    the shared Redis transport, so whichever replies first answers for the
-   *    one asked. The reply names its service; when it names another, the
-   *    dependency is reported `verified: false` with who answered. Unique
-   *    patterns need a change in each service (auth / task / tracking).
+   * ⚠️ Each service answers its OWN pattern (`auth_health`, `task_health`,
+   *    `tracking_health`). They used to share `{ cmd: 'health' }` on the shared
+   *    Redis transport, so whichever replied first answered for the one asked.
+   *    The reply still names its service and a mismatch is still reported
+   *    `verified: false` — a belt for a misrouted transport, not the mechanism.
    *  - a timeout used to be swallowed into `null` and reported "ok", so a dead
    *    service read healthy. No answer is now "down".
    */
   private async pingService(
     client: ClientProxy,
     name: string,
+    pattern: string,
   ): Promise<{ status: string; latencyMs?: number; verified?: boolean; answeredBy?: string }> {
     const start = Date.now();
     const reply: any = await firstValueFrom(
-      client.send({ cmd: 'health' }, {}).pipe(
+      client.send({ cmd: pattern }, {}).pipe(
         timeout(3000),
         catchError(() => of(null)),
       ),

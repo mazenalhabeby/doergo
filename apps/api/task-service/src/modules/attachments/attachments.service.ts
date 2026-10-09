@@ -17,15 +17,17 @@ import {
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { createOnce } from '../../common/create-once.util';
 import { MediaSigner } from '../../common/storage/media-signer.service';
-import { TaskEventType, AttachmentType, Role, success } from '@hbcfield/shared';
+import { TaskEventType, AttachmentType, Role, success, UPLOAD_RULES } from '@hbcfield/shared';
 import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 /** Upload links live an hour: a phone on a weak connection needs the time. */
 const UPLOAD_TTL_SECONDS = 3600;
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
-const ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
-const ALLOWED_FILE_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOCUMENT_TYPES];
+// What may be uploaded, and how big: ONE shared definition (constants/upload-rules.ts).
+const RULE = UPLOAD_RULES.taskAttachment;
+const MAX_FILE_SIZE = RULE.maxBytes;
+const ALLOWED_IMAGE_TYPES = RULE.imageTypes;
+const ALLOWED_DOCUMENT_TYPES = RULE.documentTypes;
+const ALLOWED_FILE_TYPES = RULE.allTypes;
 
 /**
  * The MIME type a client sends → the enum the column actually holds.
@@ -228,18 +230,20 @@ export class AttachmentsService {
       include: { task: true },
     });
 
-    if (!attachment) {
+    /*
+      The organization FIRST, and as a 404. The uploader check used to run
+      before it, so a caller from another organization was told 403 "only your
+      own attachments" — confirming the id exists — and the org check after it
+      was a second 403 saying the same. Another organization's attachment does
+      not exist to this caller.
+    */
+    if (!attachment || attachment.task.organizationId !== data.organizationId) {
       throw new NotFoundException('Attachment not found');
     }
 
-    // Only uploader or ADMIN can delete
+    // Only uploader or ADMIN can delete — a rule about an attachment they can see.
     if (attachment.uploadedById !== data.userId && data.userRole !== Role.ADMIN) {
       throw new ForbiddenException('You can only delete your own attachments');
-    }
-
-    // Verify org access
-    if (attachment.task.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Attachment is not in your organization');
     }
 
     // Remove the object first; a failed cleanup never blocks the delete — an

@@ -77,7 +77,19 @@ async function withRateErrors<T>(fn: () => Promise<T>): Promise<T> {
  *
  * Org-scoped: organizationId always from the caller's token; spaceId/userId are
  * verified in-org before use. Delegation (space-manager) is enforced at the
- * gateway against the resource's own spaceId.
+ * gateway against the resource's own spaceId. *
+ * ⚠️ WHY THIS SERVICE WRITES `AccessRole`, a table auth-service otherwise owns.
+ * Auth-service's `create/update/delete_access_role` patterns manage ORG roles
+ * for the Access panel. A SPACE role here carries rules those do not know —
+ * WORK vs MANAGEMENT kind (a work role's permissions forced to `{}`), the
+ * grant ceiling against the caller's own space authority, merging a role into
+ * another together with its assignments (one transaction with
+ * `SpaceAssignment`, which lives here), dated day rates — and every one of
+ * those writes must commit WITH the assignment rows. Routing them through RPC
+ * would split one transaction across two services. So the rule is the
+ * boundary instead: writes here touch `scope: SPACE | BOTH` rows of the
+ * caller's organization only, and built-in definitions come from the one
+ * shared sync (access/builtin-role-sync.ts) both services read.
  */
 @Injectable()
 export class SpaceRolesService {
@@ -917,7 +929,12 @@ export class SpaceRolesService {
       where: { id: data.memberId, organizationId: data.organizationId, spaceId: data.spaceId },
     });
     if (!member) throw new NotFoundException('Space member not found');
-    const arr = (v?: string[]) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : undefined);
+    const arr = (v?: string[]) =>
+      Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string'))] : undefined;
+    await this.assertRoutingInOrg(data.organizationId, {
+      roleIds: [data.notifyRoleIds, data.contactRoleIds, data.approveRoleIds].flatMap((v) => arr(v) ?? []),
+      userIds: [data.notifyUserIds, data.contactUserIds, data.approveUserIds].flatMap((v) => arr(v) ?? []),
+    });
     const updated = await this.prisma.spaceAssignment.update({
       where: { id: member.id },
       data: {
@@ -942,6 +959,31 @@ export class SpaceRolesService {
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
+
+  /**
+   * Every role and person named in a member's routing belongs to THIS
+   * organization.
+   *
+   * The ids were stored as sent. Routing is read back by the notification and
+   * chat resolvers, so a foreign user id here meant another organization's
+   * member was pushed about this one's shifts and could be offered as a contact
+   * — and a made-up id simply sat in the row. Refused as a whole (400), never
+   * filtered: a save that quietly drops half of what was chosen reads as saved.
+   */
+  private async assertRoutingInOrg(organizationId: string, ids: { roleIds: string[]; userIds: string[] }) {
+    const roleIds = [...new Set(ids.roleIds)];
+    const userIds = [...new Set(ids.userIds)];
+    const [roles, users] = await Promise.all([
+      roleIds.length
+        ? this.prisma.accessRole.count({ where: { id: { in: roleIds }, organizationId } })
+        : Promise.resolve(0),
+      userIds.length
+        ? this.prisma.user.count({ where: { id: { in: userIds }, organizationId } })
+        : Promise.resolve(0),
+    ]);
+    if (roles !== roleIds.length) throw new BadRequestException('A chosen role does not belong to this organization');
+    if (users !== userIds.length) throw new BadRequestException('A chosen person does not belong to this organization');
+  }
 
   /**
    * Seed missing built-ins AND bring existing ones up to their definition — the

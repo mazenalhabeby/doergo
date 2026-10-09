@@ -5,7 +5,7 @@
  * Includes status transitions, validation rules, and defaults.
  */
 
-import { TaskStatus, TaskPriority, Role } from '../types';
+import { TaskStatus, TaskPriority } from '../types';
 
 // =============================================================================
 // STATUS TRANSITIONS
@@ -34,59 +34,6 @@ export const STATUS_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
   [TaskStatus.CLOSED]: [],
 };
 
-/**
- * Check if a status transition is valid
- */
-export function isValidStatusTransition(
-  currentStatus: TaskStatus,
-  newStatus: TaskStatus,
-): boolean {
-  const allowedTransitions = STATUS_TRANSITIONS[currentStatus] || [];
-  return allowedTransitions.includes(newStatus);
-}
-
-/**
- * Get allowed next statuses for a given current status
- */
-export function getAllowedNextStatuses(currentStatus: TaskStatus): TaskStatus[] {
-  return STATUS_TRANSITIONS[currentStatus] || [];
-}
-
-// =============================================================================
-// ROLE-BASED STATUS PERMISSIONS
-// =============================================================================
-
-/**
- * Statuses that each role can transition TO
- */
-/**
- * Execution statuses that any assigned user can transition to
- */
-const EXECUTION_STATUSES: TaskStatus[] = [
-  TaskStatus.ACCEPTED,
-  TaskStatus.EN_ROUTE,
-  TaskStatus.ARRIVED,
-  TaskStatus.IN_PROGRESS,
-  TaskStatus.BLOCKED,
-  TaskStatus.COMPLETED,
-];
-
-export const ROLE_STATUS_PERMISSIONS: Record<Role, TaskStatus[]> = {
-  [Role.ADMIN]: [...EXECUTION_STATUSES, TaskStatus.ASSIGNED, TaskStatus.CANCELED],
-  [Role.EMPLOYEE]: EXECUTION_STATUSES,
-  // External customers never drive task execution — they only open requests.
-  [Role.CUSTOMER]: [],
-};
-
-/**
- * Check if a role can transition to a specific status.
- * Any legacy/admin string collapses to ADMIN; everything else to EMPLOYEE.
- */
-export function canRoleSetStatus(role: Role | string, status: TaskStatus): boolean {
-  const normalizedRole = role === 'ADMIN' || role === 'CLIENT' ? Role.ADMIN : Role.EMPLOYEE;
-  return ROLE_STATUS_PERMISSIONS[normalizedRole]?.includes(status) || false;
-}
-
 // =============================================================================
 // PRIORITY LEVELS
 // =============================================================================
@@ -105,20 +52,6 @@ export const PRIORITY_ORDER: Record<TaskPriority, number> = {
  * Default priority for new tasks
  */
 export const DEFAULT_PRIORITY = TaskPriority.MEDIUM;
-
-// =============================================================================
-// PAGINATION DEFAULTS
-// =============================================================================
-
-/**
- * Default page size for task lists
- */
-export const DEFAULT_PAGE_SIZE = 10;
-
-/**
- * Maximum page size for task lists
- */
-export const MAX_PAGE_SIZE = 100;
 
 // =============================================================================
 // VALIDATION LIMITS
@@ -143,11 +76,6 @@ export const COMMENT_MAX_LENGTH = 2000;
  * Maximum attachments per task
  */
 export const MAX_ATTACHMENTS_PER_TASK = 20;
-
-/**
- * Maximum file size in bytes (10MB)
- */
-export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
 // =============================================================================
 // ACTIVE/TERMINAL STATUSES
@@ -175,13 +103,6 @@ export const TERMINAL_STATUSES: TaskStatus[] = [
   TaskStatus.CANCELED,
   TaskStatus.CLOSED,
 ];
-
-/**
- * Check if a task is in an active (non-terminal) state
- */
-export function isActiveStatus(status: TaskStatus): boolean {
-  return ACTIVE_STATUSES.includes(status);
-}
 
 /**
  * Check if a task is in a terminal (finished) state

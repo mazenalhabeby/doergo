@@ -154,8 +154,3 @@ export function classifyDocument(lines: string[], now: Date = new Date()): Docum
     contract,
   };
 }
-
-/** Does this page name a thing well enough to be worth a manager's attention? */
-export function worthProposing(c: DocumentClassification): boolean {
-  return c.kind === 'asset-contract';
-}

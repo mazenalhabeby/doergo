@@ -21,7 +21,7 @@
 import { BullRootModuleOptions, RegisterQueueOptions } from '@nestjs/bullmq';
 import { ConfigService, ConfigModule } from '@nestjs/config';
 import { DEFAULT_REDIS_CONFIG } from '../microservices/constants';
-import { QUEUE_NAMES, QueueName, DEFAULT_JOB_OPTIONS } from './constants';
+import { QueueName, DEFAULT_JOB_OPTIONS } from './constants';
 
 /**
  * Get BullMQ Redis connection configuration
@@ -98,19 +98,3 @@ export function createQueueOptions(
   };
 }
 
-/**
- * Create multiple queue registration options at once
- */
-export function createMultipleQueueOptions(
-  queueNames: QueueName[],
-  options?: Partial<RegisterQueueOptions>,
-): RegisterQueueOptions[] {
-  return queueNames.map((name) => createQueueOptions(name, options));
-}
-
-/**
- * Get all queue names for registration
- */
-export function getAllQueueNames(): QueueName[] {
-  return Object.values(QUEUE_NAMES);
-}

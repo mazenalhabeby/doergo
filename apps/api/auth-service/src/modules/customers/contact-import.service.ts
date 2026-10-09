@@ -53,9 +53,25 @@ export class ContactImportService {
 
   /** Every client's keys, hashed with the organization — see `matchKeyMaterial`. */
   async matchKeys(data: { organizationId: string; caller?: CrmCaller }) {
-    await this.assertCanCreate(data.caller, data.organizationId);
+    const caps = await this.assertCanCreate(data.caller, data.organizationId);
+    /*
+      Only the clients this caller can REACH.
+
+      A hash of a phone number is not a secret: Austrian mobile numbers are a
+      few hundred million candidates, hashed with a key the phone also holds.
+      Handing an own-scope rep the whole organization's hashes handed them every
+      colleague's client list, one brute force away. So a member with CRM view
+      'all' gets every key; anybody else gets the keys of clients they own or
+      co-manage — the same rule as the client list. The import still dedupes
+      against the WHOLE organization on the server; this only decides which
+      "already a client" marks the phone may draw.
+    */
+    const reach = caps.view === 'all' ? {} : this.customers.reachableWhere(caps, data.caller);
     const rows = await this.prisma.customer.findMany({
-      where: { organizationId: data.organizationId, OR: [{ phoneKey: { not: null } }, { emailKey: { not: null } }] },
+      where: {
+        organizationId: data.organizationId,
+        AND: [{ OR: [{ phoneKey: { not: null } }, { emailKey: { not: null } }] }, reach],
+      },
       select: { phoneKey: true, emailKey: true },
       take: ContactImportService.MATCH_KEY_LIMIT,
     });

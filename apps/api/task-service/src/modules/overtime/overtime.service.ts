@@ -18,8 +18,11 @@ import {
   TimeEntryStatus,
   scopeWhere,
   type SpaceScopeIds,
+  OVERTIME_NOTICE_EVENT,
+  type OvertimeNotice,
+  paginated,
 } from '@hbcfield/shared';
-import { clampListLimit, clampListPage } from '@hbcfield/shared';
+import { clampListLimit, clampListPage, personName } from '@hbcfield/shared';
 
 /** How long the person who signed on a technician's phone has to confirm it from their own. */
 const SIGNED_CONFIRM_WINDOW_MINUTES = 30;
@@ -36,6 +39,16 @@ export class OvertimeService {
     private readonly overtimeQueue: Queue,
     private readonly attendance: AttendanceService,
   ) {}
+
+  /**
+   * Every push this flow sends, as a catalogue reference (shared
+   * attendance/overtime-notice.ts). Never a sentence: the notification service
+   * writes it in each reader's language. Nobody to tell → nothing emitted.
+   */
+  private notify(notice: Omit<OvertimeNotice, 'recipientIds'> & { recipientIds: string[] }): void {
+    if (notice.recipientIds.length === 0) return;
+    this.notificationClient.emit(OVERTIME_NOTICE_EVENT, notice satisfies OvertimeNotice);
+  }
 
   /**
    * Initiate an overtime request when shift ends.
@@ -79,16 +92,13 @@ export class OvertimeService {
       },
     });
 
-    // Send push notification to technician
-    this.notificationClient.emit('push_notification', {
-      userId: data.userId,
-      title: 'Shift Ended',
-      body: `Your shift at ${request.location.name} has ended. Do you need overtime?`,
-      data: {
-        type: 'overtime.shift_ended_prompt',
-        overtimeRequestId: request.id,
-        action: 'overtime_prompt',
-      },
+    // Ask the technician.
+    this.notify({
+      recipientIds: [data.userId],
+      organizationId: data.organizationId,
+      kind: 'shiftEnded',
+      params: { location: request.location.name },
+      data: { type: 'overtime.shift_ended_prompt', overtimeRequestId: request.id, action: 'overtime_prompt' },
     });
 
     this.logger.log(`Overtime request ${request.id} created, tech has ${OVERTIME_CONSTANTS.TECHNICIAN_RESPONSE_TIMEOUT_MS / 60000} min to respond`);
@@ -152,29 +162,38 @@ export class OvertimeService {
       },
     });
 
-    // Notify all admins and dispatchers in the org
-    const leaders = await this.prisma.user.findMany({
-      where: {
-        organizationId: data.organizationId,
-        OR: [{ role: 'ADMIN' }, { canViewAllTasks: true }],
-        isActive: true,
+    /*
+      Who is asked: the SAME routing every other attendance notification uses
+      (AttendanceService.notifyTargetsFor) — whoever holds canApproveOvertime in
+      this workspace by a space role, External Supervisor included; else the
+      member's own watchers / configured routing; else nobody.
+
+      It used to be every ADMIN plus everyone with the flat `canViewAllTasks`
+      column: the wrong permission (seeing tasks is not approving hours), read
+      from the legacy column, and org-wide — the owner was told about every
+      shift in every workspace, while the shift leader whose authority comes
+      from a space role was never told at all. An unrouted request still shows
+      as pending to anybody who looks; what stops is the blast.
+    */
+    const leaderIds = (
+      await this.attendance.notifyTargetsFor(
+        { locationId: request.locationId, organizationId: request.organizationId, userId: request.technicianId },
+        'canApproveOvertime',
+      )
+    ).filter((id) => id !== request.technicianId);
+
+    this.notify({
+      recipientIds: leaderIds,
+      organizationId: request.organizationId,
+      kind: 'approvalRequest',
+      params: {
+        name: personName(request.technician),
+        location: request.location.name,
       },
-      select: { id: true },
+      data: { type: 'overtime.approval_request', overtimeRequestId: request.id },
     });
 
-    for (const leader of leaders) {
-      this.notificationClient.emit('push_notification', {
-        userId: leader.id,
-        title: 'Overtime Request',
-        body: `${request.technician.firstName} ${request.technician.lastName} requests overtime at ${request.location.name}`,
-        data: {
-          type: 'overtime.approval_request',
-          overtimeRequestId: request.id,
-        },
-      });
-    }
-
-    this.logger.log(`Overtime ${request.id}: tech said YES, notified ${leaders.length} leaders`);
+    this.logger.log(`Overtime ${request.id}: tech said YES, notified ${leaderIds.length} approvers`);
 
     return success({ status: 'PENDING_APPROVAL', overtimeRequestId: request.id }, 'Overtime request sent for approval');
   }
@@ -308,12 +327,15 @@ export class OvertimeService {
       },
     });
     // Asked once per signer: a repeated signature does not push them again.
-    if (!request.signedAt || request.signedById !== approver.id) this.notificationClient.emit('push_notification', {
-      userId: approver.id,
-      title: 'Confirm overtime',
-      body: `You signed overtime for this shift on a colleague's phone. Tap to confirm it.`,
-      data: { type: 'overtime.approval_request', overtimeRequestId: request.id },
-    });
+    if (!request.signedAt || request.signedById !== approver.id) {
+      this.notify({
+        recipientIds: [approver.id],
+        organizationId: data.organizationId,
+        kind: 'confirmSignature',
+        params: {},
+        data: { type: 'overtime.approval_request', overtimeRequestId: request.id },
+      });
+    }
     return success(
       { status: 'PENDING_APPROVAL', overtimeRequestId: request.id, awaitingConfirmationBy: approver.id },
       'Signed — waiting for the approver to confirm',
@@ -348,10 +370,11 @@ export class OvertimeService {
     await this.clockOutEntry(request.timeEntryId, data.organizationId, `Overtime rejected: ${data.reason}`);
 
     // Notify technician
-    this.notificationClient.emit('push_notification', {
-      userId: request.technicianId,
-      title: 'Overtime Rejected',
-      body: `Your overtime request was rejected: ${data.reason}`,
+    this.notify({
+      recipientIds: [request.technicianId],
+      organizationId: data.organizationId,
+      kind: 'rejected',
+      params: { reason: data.reason },
       data: { type: 'overtime.rejected', overtimeRequestId: request.id },
     });
 
@@ -381,11 +404,12 @@ export class OvertimeService {
       });
       await this.clockOutEntry(req.timeEntryId, req.organizationId, 'Auto clock-out: no response to overtime prompt');
 
-      this.notificationClient.emit('push_notification', {
-        userId: req.technicianId,
-        title: 'Auto Clock-Out',
-        body: 'You were automatically clocked out because the overtime prompt expired.',
-        data: { type: 'overtime.expired' },
+      this.notify({
+        recipientIds: [req.technicianId],
+        organizationId: req.organizationId,
+        kind: 'expiredPrompt',
+        params: {},
+        data: { type: 'overtime.expired', overtimeRequestId: req.id },
       });
       processed++;
     }
@@ -405,11 +429,12 @@ export class OvertimeService {
       });
       await this.clockOutEntry(req.timeEntryId, req.organizationId, 'Auto clock-out: overtime approval expired');
 
-      this.notificationClient.emit('push_notification', {
-        userId: req.technicianId,
-        title: 'Auto Clock-Out',
-        body: 'You were automatically clocked out because the overtime approval expired.',
-        data: { type: 'overtime.expired' },
+      this.notify({
+        recipientIds: [req.technicianId],
+        organizationId: req.organizationId,
+        kind: 'expiredApproval',
+        params: {},
+        data: { type: 'overtime.expired', overtimeRequestId: req.id },
       });
       processed++;
     }
@@ -450,10 +475,11 @@ export class OvertimeService {
 
     await this.clockOutEntry(request.timeEntryId, request.organizationId, `Overtime completed: ${overtimeMinutes} minutes`);
 
-    this.notificationClient.emit('push_notification', {
-      userId: request.technicianId,
-      title: 'Overtime Ended',
-      body: `Your approved overtime has ended (${overtimeMinutes} min). You have been clocked out.`,
+    this.notify({
+      recipientIds: [request.technicianId],
+      organizationId: request.organizationId,
+      kind: 'ended',
+      params: { minutes: overtimeMinutes },
       data: { type: 'overtime.ended', overtimeRequestId: request.id },
     });
 
@@ -542,7 +568,9 @@ export class OvertimeService {
       this.prisma.overtimeRequest.count({ where }),
     ]);
 
-    return success({ data: requests, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+    // The shared meta (`paginated`), nested under `data` as this route always answered.
+    const { data: rows, meta } = paginated(requests, { page, limit, total });
+    return success({ data: rows, meta });
   }
 
   // =========================================================================

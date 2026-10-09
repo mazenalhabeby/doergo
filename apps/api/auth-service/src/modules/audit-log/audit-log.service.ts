@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { paginated } from '@hbcfield/shared';
+import { paginated, documentVisibleTo } from '@hbcfield/shared';
 
 @Injectable()
 export class AuditLogService {
@@ -43,6 +43,41 @@ export class AuditLogService {
   }
 
   /**
+   * May this viewer read the per-entity trail of `resourceId`?
+   *
+   * The gateway lets any org-wide `canViewAllTasks` holder read a trail by id —
+   * right for a task, wrong for a document: the trail of a payslip names it,
+   * who opened it and when, and a document TYPE may be restricted to HR. So
+   * when the id is a document, the document visibility rule decides — the one
+   * rule in shared (`documentVisibleTo`: administrators, the subject unless it
+   * was hidden from them, otherwise the type / the document's own override).
+   *
+   * Fails CLOSED for a document when the viewer is unknown. Any other resource
+   * is unchanged.
+   */
+  private async mayReadTrailOf(organizationId: string, resourceId: string, viewerId?: string): Promise<boolean> {
+    const doc = await this.prisma.document.findFirst({
+      where: { id: resourceId, organizationId },
+      select: {
+        userId: true, hiddenFromMember: true, rolesOverridden: true, visibleToRoleIds: true,
+        type: { select: { visibleToRoleIds: true } },
+      },
+    });
+    if (!doc) return true;
+    if (!viewerId) return false;
+    const viewer = await this.prisma.user.findFirst({
+      where: { id: viewerId, organizationId },
+      select: { role: true, memberRoleId: true },
+    });
+    if (!viewer) return false;
+    return documentVisibleTo(doc, {
+      isAdmin: viewer.role === 'ADMIN',
+      roleId: viewer.memberRoleId ?? null,
+      userId: viewerId,
+    });
+  }
+
+  /**
    * Query audit logs with filters and pagination
    */
   async findAll(query: {
@@ -55,10 +90,21 @@ export class AuditLogService {
     endDate?: string;
     page?: number;
     limit?: number;
+    /**
+     * Who is asking — the gateway's token user. Needed for the one resource
+     * whose trail is itself confidential (a document); see `mayReadTrailOf`.
+     */
+    viewerId?: string;
   }) {
     const page = Math.max(1, Number(query.page) || 1);
     const limit = Math.min(Math.max(1, Number(query.limit) || 50), 200);
     const skip = (page - 1) * limit;
+
+    if (query.resourceId && !(await this.mayReadTrailOf(query.organizationId, query.resourceId, query.viewerId))) {
+      // The same answer as a resource with no history: an empty trail says
+      // nothing about whether a payslip exists for that person.
+      return paginated([], { page, limit, total: 0 });
+    }
 
     const where: any = {
       organizationId: query.organizationId,

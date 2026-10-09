@@ -15,6 +15,7 @@ import { SupportNotificationHandler } from './handlers/support-notification.hand
 import { AssetProposalNotificationHandler } from './handlers/asset-proposal-notification.handler';
 import { AssetNotificationHandler } from './handlers/asset-notification.handler';
 import { AssetLogNotificationHandler } from './handlers/asset-log-notification.handler';
+import { OvertimeNotificationHandler } from './handlers/overtime-notification.handler';
 import { ShiftIssueNotificationHandler } from './handlers/shift-issue-notification.handler';
 import { ChatNotificationHandler } from './handlers/chat-notification.handler';
 import { ReportNotificationHandler } from './handlers/report-notification.handler';
@@ -47,6 +48,7 @@ import { AppUpdateNotificationHandler } from './handlers/app-update-notification
     AssetProposalNotificationHandler,
     AssetNotificationHandler,
     AssetLogNotificationHandler,
+    OvertimeNotificationHandler,
     ChatNotificationHandler,
     ReportNotificationHandler,
     CrmReminderHandler,

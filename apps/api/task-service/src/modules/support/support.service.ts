@@ -13,6 +13,7 @@ import {
   type SupportStatus,
   clampListLimit,
   clampListPage,
+  paginated,
 } from '@hbcfield/shared';
 import { findPrior } from '../../common/create-once.util';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -302,7 +303,7 @@ export class SupportService {
       this.prisma.supportTicket.count({ where }),
     ]);
     const enriched = await this.attachUnread(rows, 'CUSTOMER');
-    return { data: enriched, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+    return paginated(enriched, { page, limit, total });
   }
 
   async getThread(data: { ticketId: string; organizationId?: string; userId?: string; asAgent?: boolean }) {
@@ -404,7 +405,7 @@ export class SupportService {
       this.prisma.supportTicket.count({ where }),
     ]);
     const enriched = await this.attachUnread(rows, 'AGENT');
-    return { data: enriched, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+    return paginated(enriched, { page, limit, total });
   }
 
   // ── SLA breach (delayed BullMQ job) ─────────────────────────────────────────

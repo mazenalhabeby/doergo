@@ -457,14 +457,6 @@ export function mergePermissions(
   return out;
 }
 
-/** Whether a permission set grants a given key. */
-export function permissionAllows(
-  perms: PermissionSet | null | undefined,
-  key: AccessPermissionKey,
-): boolean {
-  return perms?.[key] === true;
-}
-
 /**
  * Ceiling check: does `targetPerms` grant any permission `requesterPerms` lacks?
  * Used to stop a non-admin from assigning/authoring a role that would grant more

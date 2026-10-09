@@ -183,6 +183,34 @@ describe('DocumentsService — who can reach whose documents', () => {
       );
     });
 
+    /*
+      A DRAFT is a staged batch, not yet anybody's document. Lists leave it
+      out; a by-id read let its SUBJECT open it (a payslip still being fixed).
+    */
+    it('404s the subject’s own unpublished DRAFT on every by-id read', async () => {
+      const draft = {
+        id: 'd1', userId: 'me', status: 'DRAFT', storageKey: 'k', mimeType: 'application/pdf',
+        title: 'Payslip', firstOpenedAt: null, hiddenFromMember: false, rolesOverridden: false,
+        visibleToRoleIds: [], type: { label: 'Payslip', visibleToRoleIds: [] },
+      };
+      prisma.document.findFirst.mockResolvedValue(draft);
+      await expect(service.getDownloadUrl({ actor: actor(), documentId: 'd1' })).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.listEvents({ actor: actor(), documentId: 'd1' })).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.documentChain({ actor: actor(), documentId: 'd1' })).rejects.toBeInstanceOf(NotFoundException);
+      // Whoever stages documents still reads it.
+      prisma.documentEvent.findMany.mockResolvedValue([]);
+      await expect(
+        service.listEvents({ actor: actor({ canIssueDocuments: true }), documentId: 'd1' }),
+      ).resolves.toEqual([]);
+    });
+
+    it('keeps drafts out of the subject’s own file even when archived rows are asked for', async () => {
+      ownDocuments([]);
+      await service.listForMember({ actor: actor(), includeArchived: true });
+      const call = prisma.document.findMany.mock.calls.find((c: any[]) => !c[0]?.where?.signers);
+      expect(call[0].where.status).toEqual({ not: 'DRAFT' });
+    });
+
     it('404s a document belonging to another organization', async () => {
       prisma.document.findFirst.mockResolvedValue(null);
       await expect(

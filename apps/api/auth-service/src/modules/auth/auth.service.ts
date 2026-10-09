@@ -2312,7 +2312,7 @@ export class AuthService {
       // task-service first (it owns those tables). It used to be a raw update
       // HERE that reset every task they had ever held to NEW — finished
       // history included — and left their crew places and custody behind.
-      if (user.organizationId) await this.offboarding?.release(user.organizationId, user.id, user.id);
+      if (user.organizationId) await this.offboarding?.release(user.organizationId, user.id, user.id, { erase: true });
 
       // Anonymize and deactivate within a transaction
       const deletedEmail = `deleted_${user.id}@deleted.hbcfield.local`;
@@ -2326,8 +2326,6 @@ export class AuthService {
           tx.workerLastLocation.deleteMany({ where: { userId: user.id } }),
           tx.locationHistory.deleteMany({ where: { userId: user.id } }),
           tx.comment.deleteMany({ where: { userId: user.id } }),
-          tx.technicianSchedule.deleteMany({ where: { technicianId: user.id } }),
-          tx.timeOff.deleteMany({ where: { technicianId: user.id } }),
           tx.joinRequest.deleteMany({ where: { userId: user.id } }),
         ]);
 

@@ -1,4 +1,4 @@
-import { classifyDocument, worthProposing } from '@hbcfield/shared/client';
+import { classifyDocument } from '@hbcfield/shared/client';
 
 /**
  * What IS this photograph?
@@ -25,7 +25,6 @@ describe('a rental agreement', () => {
 
   it('is recognised', () => {
     expect(c.kind).toBe('asset-contract');
-    expect(worthProposing(c)).toBe(true);
   });
 
   it('is certain when it also carries a term', () => {

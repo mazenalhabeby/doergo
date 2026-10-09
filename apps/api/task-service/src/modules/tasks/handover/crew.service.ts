@@ -20,6 +20,8 @@ import {
   type OccurrenceEvidence,
   type ResolvedAccess,
   type WorkTimelineEvent,
+  personName,
+  personNameById,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
@@ -28,6 +30,7 @@ import { judgeOccurrence } from '../../../common/occurrence.util';
 import { ClockGateService } from './clock-gate.service';
 import { JobPauseService } from './job-pause.service';
 import { JobTimeService } from './job-time.service';
+import { TaskAccessService } from '../../../common/task-access/task-access.service';
 
 /** Who is asking, as the gateway resolved it. */
 export interface CrewActor {
@@ -39,6 +42,10 @@ export interface CrewActor {
   /** Org-wide "assign tasks" — the office's authority over who leads. */
   canAssignTasks?: boolean;
   access?: ResolvedAccess | null;
+  /** Spaces where the caller holds canViewAllTasks by a SPACE role — the task gate reads them. */
+  viewAllSpaceIds?: string[];
+  /** Cross-org shared spaces (reads only; the gateway sends [] on writes). */
+  sharedSpaceIds?: string[];
 }
 
 type CrewTask = {
@@ -88,6 +95,7 @@ export class CrewService {
     private readonly jobPause: JobPauseService,
     private readonly jobTime: JobTimeService,
     @Inject('NOTIFICATION_SERVICE') private readonly notifications: ClientProxy,
+    private readonly taskAccess: TaskAccessService,
   ) {}
 
   // ─────────────────────────── reads ───────────────────────────
@@ -96,6 +104,26 @@ export class CrewService {
   private async taskOf(taskId: string, organizationId: string): Promise<CrewTask> {
     const task = await this.prisma.task.findUnique({ where: { id: taskId }, select: TASK_SELECT });
     if (!task || task.organizationId !== organizationId) throw new NotFoundException('Task not found');
+    return task;
+  }
+
+  /**
+   * A job the caller may SEE, or 404 — the crew routes' door.
+   *
+   * Being in the organization was the whole check, so a member probing a job
+   * id they cannot open was answered 400 NOT_ON_CREW ("They are not on this
+   * job") — which confirms the job exists and says who is not on it. The task
+   * gate (TaskAccessService, the one rule for every task read) is asked first
+   * — or the office's assign authority in the job's workspace, which acts on
+   * crews by definition: neither → 404, the same as the task page. Only a caller who can see
+   * the job gets the crew rules' 400 codes, which they can act on.
+   */
+  private async visibleTaskOf(taskId: string, actor: CrewActor): Promise<CrewTask> {
+    const task = await this.taskOf(taskId, actor.organizationId);
+    // The office with assign rights over this job's workspace may act on its
+    // crew (put somebody on, hand the lead) without holding "view all".
+    if (this.isOffice(actor, task, 'canAssignTasks')) return task;
+    if (!(await this.taskAccess.allows(task, actor))) throw new NotFoundException('Task not found');
     return task;
   }
 
@@ -170,7 +198,7 @@ export class CrewService {
    * clock read, one people read.
    */
   async view(taskId: string, actor: CrewActor) {
-    const task = await this.taskOf(taskId, actor.organizationId);
+    const task = await this.visibleTaskOf(taskId, actor);
     return success(await this.viewOf(task));
   }
 
@@ -223,7 +251,7 @@ export class CrewService {
    * (with a reason). Idempotent while joined. The clock gate applies.
    */
   async join(data: CrewActor & { taskId: string; evidence?: OccurrenceEvidence; viaLeaderStart?: boolean; forUserId?: string; reason?: string }) {
-    const task = await this.taskOf(data.taskId, data.organizationId);
+    const task = await this.visibleTaskOf(data.taskId, data);
     const forOther = !!data.forUserId && data.forUserId !== data.userId;
     // Putting somebody ON a job is a decision about who works it: assign rights, not "view all".
     if (forOther && !this.isOffice(data, task, 'canAssignTasks')) throw new NotFoundException('Task not found');
@@ -336,7 +364,7 @@ export class CrewService {
    * a clock-out makes.
    */
   async leave(data: CrewActor & { taskId: string; evidence?: OccurrenceEvidence; forUserId?: string; reason?: string }) {
-    const task = await this.taskOf(data.taskId, data.organizationId);
+    const task = await this.visibleTaskOf(data.taskId, data);
     const forOther = !!data.forUserId && data.forUserId !== data.userId;
     if (forOther && !this.isOffice(data, task, 'canAssignTasks')) throw new NotFoundException('Task not found');
     const who = forOther ? data.forUserId! : data.userId;
@@ -375,7 +403,7 @@ export class CrewService {
 
   /** "My issue": only this person's time is blocked — the job and the crew carry on. */
   async selfIssue(data: CrewActor & { taskId: string; reason?: string; evidence?: OccurrenceEvidence }) {
-    const task = await this.taskOf(data.taskId, data.organizationId);
+    const task = await this.visibleTaskOf(data.taskId, data);
     const reason = cleanReason(data.reason);
     if (!reason) throw new BadRequestException({ message: 'Say what stopped you.', code: 'REASON_REQUIRED' });
     const { presence } = await this.mustBeJoined(task, data.userId);
@@ -388,7 +416,7 @@ export class CrewService {
     const view = await this.viewOf(task);
     if (view.leader.userId && view.leader.userId !== data.userId) {
       const me = view.members.find((m) => m.user.id === data.userId)?.user;
-      this.notifications.emit('task_crew_issue', { taskId: task.id, taskTitle: task.title, leaderId: view.leader.userId, name: me ? `${me.firstName} ${me.lastName}`.trim() : '', reason });
+      this.notifications.emit('task_crew_issue', { taskId: task.id, taskTitle: task.title, leaderId: view.leader.userId, name: personName(me), reason });
     }
     this.changed(task, data.userId);
     return success(view);
@@ -396,7 +424,7 @@ export class CrewService {
 
   /** Back to work after their own stop — a move into work, so the clock gate applies. */
   async selfResume(data: CrewActor & { taskId: string; evidence?: OccurrenceEvidence }) {
-    const task = await this.taskOf(data.taskId, data.organizationId);
+    const task = await this.visibleTaskOf(data.taskId, data);
     const { presence } = await this.mustBeJoined(task, data.userId);
     if (presence.selfBlockedSince == null) return success(await this.viewOf(task));
     await this.clockGate.assertWorkerClockedIn(task, data.userId, task.organizationId, true);
@@ -426,7 +454,7 @@ export class CrewService {
    * here: that stays behind the assign path and its grant ceiling.
    */
   async changeLead(data: CrewActor & { taskId: string; toUserId: string; scope: LeadScope; reason?: string }) {
-    const task = await this.taskOf(data.taskId, data.organizationId);
+    const task = await this.visibleTaskOf(data.taskId, data);
     const crew = await this.crewOf(task);
     const ids = crew.map((c) => c.userId);
     const [timeline, onClock] = await Promise.all([
@@ -483,16 +511,16 @@ export class CrewService {
     });
     if (data.toUserId !== data.userId) {
       const by = await this.prisma.user.findUnique({ where: { id: data.userId }, select: { firstName: true, lastName: true } });
-      this.notifications.emit('task_lead_changed', { taskId: task.id, taskTitle: task.title, toUserId: data.toUserId, byName: by ? `${by.firstName} ${by.lastName}`.trim() : '', scope });
+      this.notifications.emit('task_lead_changed', { taskId: task.id, taskTitle: task.title, toUserId: data.toUserId, byName: personName(by), scope });
     }
     const fresh = await this.taskOf(task.id, task.organizationId);
     this.changed(fresh, data.userId);
     return success(await this.viewOf(fresh));
   }
 
-  private async nameOf(userId: string): Promise<string> {
-    const u = await this.prisma.user.findUnique({ where: { id: userId }, select: { firstName: true, lastName: true } });
-    return u ? `${u.firstName} ${u.lastName}`.trim() : '';
+  /** One shared rule for a name (people/person-name.ts) — never "John null". */
+  private nameOf(userId: string): Promise<string> {
+    return personNameById(this.prisma as never, userId);
   }
 
   /** The zone the work is in — what "today" means for a hand-over. */
@@ -551,7 +579,7 @@ export class CrewService {
       const memberIds = others.filter((id) => onClock.has(id) && !presence.get(id)?.joined);
       if (!memberIds.length) return;
       this.notifications.emit('task_crew_started', {
-        taskId: task.id, taskTitle: task.title, starterName: starter ? `${starter.firstName} ${starter.lastName}`.trim() : '',
+        taskId: task.id, taskTitle: task.title, starterName: personName(starter),
         startedAt: at.toISOString(), memberIds,
       });
     } catch (err) {

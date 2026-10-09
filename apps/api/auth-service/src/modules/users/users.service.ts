@@ -16,7 +16,7 @@ import { Prisma } from '@prisma/client';
 import { Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { SERVICE_NAMES, Role, TaskStatus, getDefaultModules, BUILTIN_ROLES, PERMISSION_KEYS, permissionsFromUserFlags, permissionsFromOrgRole, mergePermissions, permissionsExceed, filterExternalModules, type PermissionSet, normalizeEmail, mayTakeOverAccount, loadOrgPermissionCeiling, builtInRoleGrants, builtInRoleCreateData } from '@hbcfield/shared';
+import { SERVICE_NAMES, Role, TaskStatus, getDefaultModules, BUILTIN_ROLES, PERMISSION_KEYS, permissionsFromUserFlags, permissionsFromOrgRole, mergePermissions, permissionsExceed, filterExternalModules, type PermissionSet, normalizeEmail, mayTakeOverAccount, loadOrgPermissionCeiling, builtInRoleGrants, builtInRoleCreateData, whitelistPermissions, permissionsForKind } from '@hbcfield/shared';
 import * as bcrypt from 'bcryptjs';
 import { randomInt } from 'crypto';
 import {
@@ -1528,7 +1528,6 @@ export class UsersService implements OnApplicationBootstrap {
     // released by task-service FIRST (it owns those tables) — see MemberOffboarding.
     await this.offboarding?.release(organizationId, memberId, requesterId);
     await this.prisma.$transaction([
-      this.prisma.technicianSchedule.deleteMany({ where: { technicianId: memberId } }),
       this.prisma.user.update({
         where: { id: memberId },
         data: {
@@ -1938,14 +1937,13 @@ export class UsersService implements OnApplicationBootstrap {
     };
   }
 
-  /** Whitelist an incoming permissions object to the known keys (fail-closed). */
-  private sanitizeRolePermissions(input: unknown): PermissionSet {
-    const out: PermissionSet = {};
-    if (input && typeof input === 'object' && !Array.isArray(input)) {
-      const r = input as Record<string, unknown>;
-      for (const key of PERMISSION_KEYS) if (r[key] === true) out[key] = true;
-    }
-    return out;
+  /**
+   * Whitelist an incoming permissions object to the known keys (fail-closed).
+   * The list is the shared one task-service also reads (`whitelistPermissions`),
+   * so a role means the same thing whichever service saved it.
+   */
+  private sanitizeRolePermissions(input: unknown, scope: 'org' | 'space' = 'org'): PermissionSet {
+    return whitelistPermissions(input, scope);
   }
 
   private async uniqueRoleSlug(organizationId: string, name: string, excludeId?: string): Promise<string> {
@@ -1971,8 +1969,9 @@ export class UsersService implements OnApplicationBootstrap {
     input: unknown,
     requesterId: string | undefined,
     organizationId: string,
+    scope: 'org' | 'space' = 'org',
   ): Promise<PermissionSet> {
-    const requested = this.sanitizeRolePermissions(input);
+    const requested = this.sanitizeRolePermissions(input, scope);
     if (!requesterId) return requested; // no requester context → whitelist only
     const { isAdmin, perms } = await this.resolveRequesterOrgPerms(requesterId, organizationId);
     if (isAdmin) return requested;
@@ -2108,11 +2107,24 @@ export class UsersService implements OnApplicationBootstrap {
     if (data.description !== undefined) patch.description = data.description?.trim() || null;
     if (data.color !== undefined) patch.color = data.color;
     if (data.permissions !== undefined) {
-      patch.permissions = (await this.sanitizeRolePermissionsForRequester(
+      /*
+        A WORK role (a trade) grants NOTHING — its permissions are forced empty
+        on every write. task-service's own role routes already did that; this
+        door did not, so the same "Electrician" could be given canManageUsers
+        here and every holder would inherit it while every screen still
+        described it as a trade. `permissionsForKind` is the one rule.
+        A SPACE role is whitelisted to the keys that mean something in a space.
+      */
+      const sanitized = await this.sanitizeRolePermissionsForRequester(
         data.permissions,
         data.requesterId,
         data.organizationId,
-      )) as any;
+        role.scope === 'SPACE' ? 'space' : 'org',
+      );
+      patch.permissions = permissionsForKind(
+        role.kind === 'WORK' ? 'WORK' : 'MANAGEMENT',
+        sanitized as Record<string, boolean>,
+      ) as any;
       /*
         A built-in whose permissions an admin CHANGES becomes theirs: code never
         adds to it again (see syncBuiltInRoles). Saving the same set is not a

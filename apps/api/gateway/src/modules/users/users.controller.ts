@@ -20,7 +20,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { IsString, IsOptional, IsEmail, IsNotEmpty, IsIn, ValidateIf, IsBoolean, IsObject, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsNotEmpty, IsIn, ValidateIf, IsBoolean, IsObject, MaxLength, IsArray, ArrayMaxSize } from 'class-validator';
 import { join } from 'path';
 import { mkdir, writeFile, unlink } from 'fs/promises';
 import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData, AllowCustomer, SUPPORTED_LOCALES, type SupportedLocale } from '@hbcfield/shared';
@@ -104,6 +104,22 @@ class UpdateMyEmailDto {
  * all. Which KEYS may be stored is decided in auth-service against
  * MEMBER_NOTIFICATION_PREF_KEYS; anything else is dropped there.
  */
+/**
+ * Mark notifications read: all of them (no `ids`), or the ones named.
+ *
+ * This was a bare `{ ids?: string[] }` type, which the ValidationPipe cannot
+ * see — so `{"ids":"x"}` or `{"ids":[{}]}` reached the database query and came
+ * back a 500. A malformed body is the caller's mistake: a 400.
+ */
+export class MarkNotificationsReadDto {
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(500)
+  @IsString({ each: true })
+  @MaxLength(64, { each: true })
+  ids?: string[];
+}
+
 class UpdateMyNotificationPrefsDto {
   @IsOptional()
   @IsObject()
@@ -177,7 +193,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Mark notifications read (all, or the given ids)' })
   async markNotificationsRead(
     @CurrentUser() user: CurrentUserData,
-    @Body() dto: { ids?: string[] },
+    @Body() dto: MarkNotificationsReadDto,
   ) {
     return firstValueFrom(
       this.authClient.send({ cmd: 'mark_notifications_read' }, {

@@ -1,3 +1,4 @@
+import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 import {
   Controller,
   Get,
@@ -56,6 +57,9 @@ export class BillingController {
 
   @Get('bill')
   @ApiBearerAuth()
+  // What the organization pays, line by line, is the organization's business —
+  // not a client's or partner's supervisor's.
+  @DenyExternal()
   @ApiOperation({ summary: 'The itemised bill: seats, every space, and org add-ons' })
   async getBill(@CurrentUser() user: CurrentUserData) {
     return this.unwrap(

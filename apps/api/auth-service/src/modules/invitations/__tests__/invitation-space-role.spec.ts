@@ -33,11 +33,37 @@ describe('the role an accepting member gets in their space', () => {
   });
 
   it('is only a default — an explicit choice wins', async () => {
-    const t = tx(role);
+    const t = tx({ id: 'role_chosen' });
     await expect(
       defaultSpaceRoleId(t, 'org1', { isExternal: true, chosenRoleId: 'role_chosen' }),
     ).resolves.toBe('role_chosen');
-    expect(t.accessRole.findFirst).not.toHaveBeenCalled();
+    expect(t.accessRole.findFirst).toHaveBeenCalledTimes(1);
+  });
+
+  /*
+    An internal invitation's memberRoleId is their ORG role. Copied onto the
+    space assignment, its permissions survived an org-wide demotion. A space
+    assignment references a SPACE role, or none.
+  */
+  it('never puts an ORG role on a space assignment', async () => {
+    // The chosen id is an org role: the scoped lookup finds nothing.
+    const t = { accessRole: { findFirst: jest.fn().mockResolvedValue(null) } } as any;
+    await expect(
+      defaultSpaceRoleId(t, 'org1', { isExternal: false, chosenRoleId: 'org_role_manager' }),
+    ).resolves.toBeNull();
+    const where = t.accessRole.findFirst.mock.calls[0][0].where;
+    expect(where).toEqual(expect.objectContaining({
+      id: 'org_role_manager', organizationId: 'org1', scope: 'SPACE', kind: { not: 'WORK' },
+    }));
+  });
+
+  it('an external member whose chosen role is not a space role still gets the default', async () => {
+    const t = {
+      accessRole: { findFirst: jest.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(role) },
+    } as any;
+    await expect(
+      defaultSpaceRoleId(t, 'org1', { isExternal: true, chosenRoleId: 'org_role' }),
+    ).resolves.toBe('role_ext');
   });
 
   it('leaves our own staff alone', async () => {

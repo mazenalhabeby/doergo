@@ -9,4 +9,3 @@
 export * from './types';
 export * from './templates';
 export * from './helpers';
-export * from './constants';

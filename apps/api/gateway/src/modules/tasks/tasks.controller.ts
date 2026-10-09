@@ -21,7 +21,8 @@ import { RequireModule } from '../../common/decorators/require-module.decorator'
 import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { isFeatureEntitled } from '../../common/entitlements';
-import { taskActor, taskRequester } from '../../common/task-actor';
+import { taskActor, taskRequester, assignSpaceIds, grantedSpaceIds } from '../../common/task-actor';
+import { assertExternalMayWriteTask } from '../../common/external-task-write';
 import {
   CreateTaskDto,
   UpdateTaskDto,
@@ -323,7 +324,7 @@ export class TasksController {
       // Where this caller may ASSIGN, resolved from their role grants. The
       // guard above accepts a grant held in any space; the service then checks
       // it against the task's own space, which is the real decision.
-      assignSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canAssignTasks') ?? undefined),
+      assignSpaceIds: assignSpaceIds(req),
       ...taskActor(req),
     });
   }
@@ -391,8 +392,16 @@ export class TasksController {
       taskId: id, roleId: body.roleId ?? null, spots: body.spots,
       userId: req.user.id, userRole: req.user.role, organizationId: req.user.organizationId,
       canAssignTasks: req.user.canAssignTasks,
-      assignSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canAssignTasks') ?? undefined),
+      assignSpaceIds: assignSpaceIds(req),
     });
+  }
+
+  /**
+   * An external member writes (comment, attachment) only on a job they raised —
+   * see `assertExternalMayWriteTask`. Internal callers pass with no lookup.
+   */
+  private assertExternalMayWrite(req: any, taskId: string, opts?: { attachmentId?: string }) {
+    return assertExternalMayWriteTask(req, taskId, (data) => this.tasksService.findOne(data), opts);
   }
 
   /** May the caller assign work in this workspace? (org-wide, or a space grant there) */
@@ -426,7 +435,7 @@ export class TasksController {
         CURRENT space and on the destination when it moves — from these two.
       */
       canCreateTasks: req.user.canCreateTasks,
-      createSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canCreateTasks') ?? undefined),
+      createSpaceIds: grantedSpaceIds(req, 'canCreateTasks'),
       ...taskActor(req),
     });
   }
@@ -440,7 +449,7 @@ export class TasksController {
       ...assignTaskDto,
       // The task's own space decides (task-service assertMayAssign), exactly as
       // for POST /tasks/:id/assignees — the guard only widened.
-      assignSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canAssignTasks') ?? undefined),
+      assignSpaceIds: assignSpaceIds(req),
       ...taskActor(req),
     });
   }
@@ -574,6 +583,7 @@ export class TasksController {
   @Post(':id/comments')
   @ApiOperation({ summary: 'Add a comment to a task' })
   async addComment(@Param('id') id: string, @Body() body: AddCommentDto, @Request() req: any) {
+    await this.assertExternalMayWrite(req, id);
     return this.tasksQueueService.addComment({
       taskId: id,
       ...body,
@@ -613,7 +623,7 @@ export class TasksController {
       // Where this caller may ASSIGN, resolved from their role grants. The
       // guard above accepts a grant held in any space; the service then checks
       // it against the task's own space, which is the real decision.
-      assignSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canAssignTasks') ?? undefined),
+      assignSpaceIds: assignSpaceIds(req),
       ...taskRequester(req),
     });
   }
@@ -632,7 +642,7 @@ export class TasksController {
       // Where this caller may ASSIGN, resolved from their role grants. The
       // guard above accepts a grant held in any space; the service then checks
       // it against the task's own space, which is the real decision.
-      assignSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canAssignTasks') ?? undefined),
+      assignSpaceIds: assignSpaceIds(req),
       ...taskRequester(req),
     });
   }
@@ -753,16 +763,14 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canCreateTasks: req.user.canCreateTasks,
-      createSpaceIds: isAdmin(req.user)
-        ? undefined
-        : (spacesGranting(req.user?.access, 'canCreateTasks') ?? undefined),
+      createSpaceIds: grantedSpaceIds(req, 'canCreateTasks'),
       /*
         A subtask may name its assignee, and assigning is its own right —
         org-wide, or in the parent's space (task-service decides on the real
         space). Without these a non-admin who named one was refused outright.
       */
       canAssignTasks: req.user.canAssignTasks,
-      assignSpaceIds: isAdmin(req.user) ? undefined : (spacesGranting(req.user?.access, 'canAssignTasks') ?? undefined),
+      assignSpaceIds: assignSpaceIds(req),
       organizationId: req.user.organizationId,
     });
   }
@@ -799,9 +807,7 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canCreateTasks: req.user.canCreateTasks,
-      createSpaceIds: isAdmin(req.user)
-        ? undefined
-        : (spacesGranting(req.user?.access, 'canCreateTasks') ?? undefined),
+      createSpaceIds: grantedSpaceIds(req, 'canCreateTasks'),
       organizationId: req.user.organizationId,
     });
   }
@@ -824,9 +830,7 @@ export class TasksController {
       userId: req.user.id,
       userRole: req.user.role,
       canCreateTasks: req.user.canCreateTasks,
-      createSpaceIds: isAdmin(req.user)
-        ? undefined
-        : (spacesGranting(req.user?.access, 'canCreateTasks') ?? undefined),
+      createSpaceIds: grantedSpaceIds(req, 'canCreateTasks'),
       organizationId: req.user.organizationId,
     });
   }
@@ -848,6 +852,7 @@ export class TasksController {
     @Body() body: PresignAttachmentDto,
     @Request() req: any,
   ) {
+    await this.assertExternalMayWrite(req, id);
     return this.tasksQueueService.getPresignedUrl({
       taskId: id,
       fileName: body.fileName,
@@ -864,6 +869,7 @@ export class TasksController {
     @Body() body: ConfirmAttachmentDto,
     @Request() req: any,
   ) {
+    await this.assertExternalMayWrite(req, id);
     return this.tasksQueueService.addAttachment({
       taskId: id,
       attachmentId: body.id,
@@ -895,6 +901,7 @@ export class TasksController {
     @Param('attachmentId') attachmentId: string,
     @Request() req: any,
   ) {
+    await this.assertExternalMayWrite(req, id, { attachmentId });
     return this.tasksQueueService.deleteAttachment({
       id: attachmentId,
       ...taskActor(req),

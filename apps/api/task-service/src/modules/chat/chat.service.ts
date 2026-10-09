@@ -11,6 +11,9 @@ import {
   type ChatShareFacts,
   SPACE_LEADER_PERMISSION,
   clampListLimit,
+  ORG_ACCESS_SELECT,
+  orgAllows,
+  type OrgAccessRow,
 } from '@hbcfield/shared';
 import { findPrior } from '../../common/create-once.util';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -31,7 +34,7 @@ export class ChatService {
   async listContacts(data: { userId: string; organizationId: string }) {
     const me = await this.prisma.user.findUnique({
       where: { id: data.userId },
-      select: { role: true, enabledModules: true, contactScope: true, contactAllowedIds: true, canManageUsers: true },
+      select: { ...ORG_ACCESS_SELECT, enabledModules: true, contactScope: true, contactAllowedIds: true },
     });
     if (!me) throw new NotFoundException('User not found');
     const all = await this.prisma.user.findMany({
@@ -131,7 +134,7 @@ export class ChatService {
    * can't be spoofed.
    */
   private async canReach(
-    me: { role: string; enabledModules: unknown; contactScope: string; contactAllowedIds: string[]; canManageUsers?: boolean },
+    me: OrgAccessRow & { enabledModules: unknown; contactScope: string; contactAllowedIds: string[] },
     target: { id: string; role: string; contactable: boolean; canManageUsers?: boolean },
     // A thunk, not a Set: resolving space targets costs several queries, and
     // most calls are settled by the cheap checks above without ever needing it.
@@ -158,8 +161,11 @@ export class ChatService {
     if (!target.contactable) return false;
 
     // Admins and managers (canManageUsers) reach anyone who is IN chat, with no
-    // shared space or allow-list entry needed.
-    if (me.role === 'ADMIN' || me.canManageUsers === true) return true;
+    // shared space or allow-list entry needed. RESOLVED access — role ∪ the
+    // legacy columns while they are read, admin = everything — not the flat
+    // `User.canManageUsers` column, which missed every manager whose authority
+    // comes from their role and kept granting after a move to a narrower one.
+    if (orgAllows(me, 'canManageUsers')) return true;
     if (me.contactScope === 'ALL') return true;
     // Space-driven: a leader in a space we share is always reachable. Only this
     // branch and SELECTED need the space lookup.
@@ -422,7 +428,7 @@ export class ChatService {
     const [me, other] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: senderId },
-        select: { role: true, enabledModules: true, contactScope: true, contactAllowedIds: true, canManageUsers: true },
+        select: { ...ORG_ACCESS_SELECT, enabledModules: true, contactScope: true, contactAllowedIds: true },
       }),
       knownOther
         ? Promise.resolve(knownOther)

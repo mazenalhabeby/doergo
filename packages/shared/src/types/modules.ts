@@ -279,50 +279,6 @@ export function byAssignableFirst(
   return Number(canReceiveTasks(b)) - Number(canReceiveTasks(a));
 }
 
-// ── Unified access resolver ──────────────────────────────────────────────────
-// ONE object describing everything a user can do/see — merges the per-user
-// Access Profile (reach + feature tabs) with the enforced permission fields
-// (authorization). Every consumer (web nav, mobile nav, presets) reads this so
-// there is a single, coherent notion of "access" across the app.
-
-interface ResolvedAccess {
-  platforms: AccessPlatform;
-  spaceScope: SpaceScope;
-  canContact: boolean;
-  /** Feature tabs the user sees (tasks/clock/time_off + derived create_task/manage). */
-  modules: MobileModule[];
-  canCreateTasks: boolean;
-  canAssignTasks: boolean;
-  canViewAllTasks: boolean;
-  canManageUsers: boolean;
-  taskCreationScope: string;
-}
-
-export function resolveUserAccess(
-  user: { enabledModules?: unknown } & UserPermissionFields,
-): ResolvedAccess {
-  const featureTabs: MobileModule[] = (['tasks', 'clock', 'time_off'] as MobileModule[]).filter(
-    (m) => hasAccessModule(user, m),
-  );
-  const canCreateTasks = user.canCreateTasks === true;
-  const canManageUsers = user.canManageUsers === true;
-  const modules = [...featureTabs];
-  if (canCreateTasks) modules.push('create_task');
-  if (canManageUsers) modules.push('manage');
-
-  return {
-    platforms: getAccessPlatforms(user),
-    spaceScope: getSpaceScope(user),
-    canContact: canContactColleagues(user),
-    modules,
-    canCreateTasks,
-    canManageUsers,
-    canAssignTasks: user.canAssignTasks === true,
-    canViewAllTasks: user.canViewAllTasks === true,
-    taskCreationScope: (user.taskCreationScope as string) || 'NONE',
-  };
-}
-
 // ── Editable Access Draft ────────────────────────────────────────────────────
 // The full, editable set of access values an admin configures for a member.
 // The SAME shape is used whether EDITING an existing member (Access Builder) or

@@ -252,6 +252,27 @@ describe('ContactImportService', () => {
     expect(r.data.complete).toBe(true);
   });
 
+  /*
+    A phone hash is brute-forceable. An own-scope rep must receive only the
+    keys of clients they can reach — never the whole organization's book.
+  */
+  it("gives an own-scope member only their own clients' keys", async () => {
+    jest.spyOn(customers, 'crmCapsFor').mockResolvedValue(caps({ view: 'own' }));
+    prisma.customer.findMany.mockResolvedValueOnce([]);
+    await service.matchKeys({ organizationId: ORG, caller });
+    const where = prisma.customer.findMany.mock.calls[0][0].where;
+    expect(where.organizationId).toBe(ORG);
+    expect(where.AND).toContainEqual({ OR: [{ ownerId: 'u1' }, { managerIds: { has: 'u1' } }] });
+  });
+
+  it("gives an all-scope member every client's keys", async () => {
+    prisma.customer.findMany.mockResolvedValueOnce([]);
+    await service.matchKeys({ organizationId: ORG, caller });
+    const where = prisma.customer.findMany.mock.calls[0][0].where;
+    expect(where.AND).toContainEqual({});
+    expect(JSON.stringify(where)).not.toContain('ownerId');
+  });
+
   it('keys survive the trip: what the phone hashes is what the server stored', () => {
     expect(contactMatchKeys({ phone: '+43 664 812 3390', email: 'X@Y.at' })).toEqual({ phoneKey: '648123390', emailKey: 'x@y.at' });
   });

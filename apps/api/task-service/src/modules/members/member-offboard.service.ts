@@ -7,6 +7,8 @@ export interface OffboardResult {
   tasksReleased: number;
   assignmentsEnded: number;
   assetsReturned: number;
+  schedulesRemoved: number;
+  timeOffErased: number;
 }
 
 /**
@@ -31,7 +33,12 @@ export class MemberOffboardService {
     private readonly custody: AssetCustodyService,
   ) {}
 
-  async offboard(data: { organizationId: string; userId: string; actorId: string }): Promise<OffboardResult> {
+  /**
+   * @param erase  The person is deleting their ACCOUNT (right to erasure): their
+   *               leave records go too. A removal by an admin keeps them — the
+   *               organization's own record of absences outlives a departure.
+   */
+  async offboard(data: { organizationId: string; userId: string; actorId: string; erase?: boolean }): Promise<OffboardResult> {
     const { organizationId, userId, actorId } = data;
     const tasksReleased = await this.tasks.releaseMemberFromOpenWork(organizationId, userId, actorId);
     const assetsReturned = await this.custody.releaseAllHeldBy(organizationId, userId, actorId);
@@ -45,7 +52,12 @@ export class MemberOffboardService {
       where: { userId, space: { organizationId }, OR: [{ effectiveTo: null }, { effectiveTo: { gt: now } }] },
       data: { effectiveTo: now },
     });
-    this.logger.log(`Offboarded member ${userId}: ${tasksReleased} jobs released, ${assetsReturned} assets returned, ${assignmentsEnded} assignments ended`);
-    return { tasksReleased, assignmentsEnded, assetsReturned };
+    // The weekly working pattern belongs to a member who works here; a leaver has none.
+    const { count: schedulesRemoved } = await this.prisma.technicianSchedule.deleteMany({ where: { technicianId: userId } });
+    const { count: timeOffErased } = data.erase
+      ? await this.prisma.timeOff.deleteMany({ where: { technicianId: userId } })
+      : { count: 0 };
+    this.logger.log(`Offboarded member ${userId}: ${tasksReleased} jobs released, ${assetsReturned} assets returned, ${assignmentsEnded} assignments ended, ${schedulesRemoved} schedules removed${data.erase ? `, ${timeOffErased} leave records erased` : ''}`);
+    return { tasksReleased, assignmentsEnded, assetsReturned, schedulesRemoved, timeOffErased };
   }
 }

@@ -200,6 +200,21 @@ function typeScope(actor: DocumentActor) {
   });
 }
 
+/**
+ * An unpublished DRAFT is a staged batch — not yet anybody's document.
+ *
+ * Every list already leaves drafts out, but a by-id read let the SUBJECT open
+ * their own draft (the subject exemption admitted it): a payslip still being
+ * corrected, before payroll pressed Publish. Until it is published only the
+ * people who stage documents see it. 404, like every refusal here.
+ */
+function maySeeDrafts(actor: DocumentActor): boolean {
+  return !!actor.isAdmin || !!actor.canIssueDocuments;
+}
+function assertNotHiddenDraft(actor: DocumentActor, doc: { status?: string | null }): void {
+  if (doc.status === 'DRAFT' && !maySeeDrafts(actor)) throw new NotFoundException('Document not found');
+}
+
 interface RequestContext {
   ip?: string | null;
   userAgent?: string | null;
@@ -4065,18 +4080,39 @@ export class DocumentsService {
       throw new BadRequestException('Say why you are sending it back');
     }
 
+    /*
+      Same door as sign / consent / acknowledge.
+
+      This read was scoped by `typeScope`, which has no routed-signer
+      exemption — so a shift leader on the step of a restricted type could sign
+      it and not send it back. And it compared `current.userId`, which is null
+      on a POOL step ("whoever is free signs") until somebody signs, so nobody
+      in a pool could ever send back. Turn first (`maySignStep`, the rule the
+      signing path reads), then the type with the routed-signer exemption.
+    */
     const document = await this.prisma.document.findFirst({
-      where: { ...typeScope(data.actor), id: data.documentId, organizationId: data.actor.organizationId },
-      select: { id: true, title: true },
+      where: {
+        id: data.documentId,
+        organizationId: data.actor.organizationId,
+        // Hidden from its member means not theirs to act on, whatever the route.
+        NOT: { userId: data.actor.userId, hiddenFromMember: true },
+      },
+      select: {
+        id: true, title: true, userId: true, status: true, hiddenFromMember: true,
+        rolesOverridden: true, visibleToRoleIds: true, type: { select: { visibleToRoleIds: true } },
+      },
     });
     if (!document) throw new NotFoundException('Document not found');
+    assertNotHiddenDraft(data.actor, document);
 
     const steps = await this.signerSteps(document.id);
     const current = nextPendingStep(steps);
     if (!current) throw new BadRequestException('This document is not waiting for a signature.');
-    if (current.userId !== data.actor.userId) {
+    if (!maySignStep(current, data.actor.userId)) {
       throw new ForbiddenException('This document is waiting for somebody else.');
     }
+    // On the current step = routed onto it: that is the authorisation to read it.
+    assertTypeVisible(data.actor, document, true);
 
     // The nearest earlier step that actually signed. A skipped one cannot be
     // sent back to — nobody was ever asked.
@@ -4125,9 +4161,10 @@ export class DocumentsService {
   async documentChain(data: { actor: DocumentActor; documentId: string }) {
     const document = await this.prisma.document.findFirst({
       where: { id: data.documentId, organizationId: data.actor.organizationId },
-      select: { id: true, title: true, userId: true, hiddenFromMember: true, rolesOverridden: true, visibleToRoleIds: true, type: { select: { visibleToRoleIds: true } } },
+      select: { id: true, title: true, userId: true, status: true, hiddenFromMember: true, rolesOverridden: true, visibleToRoleIds: true, type: { select: { visibleToRoleIds: true } } },
     });
     if (!document) throw new NotFoundException('Document not found');
+    assertNotHiddenDraft(data.actor, document);
 
     const rows = await this.prisma.documentSigner.findMany({
       where: { documentId: document.id },
@@ -4736,7 +4773,8 @@ export class DocumentsService {
       userId: targetUserId,
       ...(data.typeId ? { typeId: data.typeId } : {}),
       ...(data.year ? { periodYear: data.year } : {}),
-      ...(data.includeArchived ? {} : { status: { not: 'DRAFT' as const } }),
+      // Drafts only for who stages them — never the subject (see assertNotHiddenDraft).
+      ...(data.includeArchived && maySeeDrafts(data.actor) ? {} : { status: { not: 'DRAFT' as const } }),
       ...(data.search
         ? { title: { contains: data.search.trim(), mode: 'insensitive' as const } }
         : {}),
@@ -4892,6 +4930,7 @@ export class DocumentsService {
       include: { type: { select: { label: true, visibleToRoleIds: true } } },
     });
     if (!document) throw new NotFoundException('Document not found');
+    assertNotHiddenDraft(data.actor, document);
 
     const isSelf = document.userId === data.actor.userId;
     /*
@@ -4996,9 +5035,10 @@ export class DocumentsService {
   async listEvents(data: { actor: DocumentActor; documentId: string }) {
     const document = await this.prisma.document.findFirst({
       where: { id: data.documentId, organizationId: data.actor.organizationId },
-      select: { id: true, userId: true, hiddenFromMember: true, rolesOverridden: true, visibleToRoleIds: true, type: { select: { visibleToRoleIds: true } } },
+      select: { id: true, userId: true, status: true, hiddenFromMember: true, rolesOverridden: true, visibleToRoleIds: true, type: { select: { visibleToRoleIds: true } } },
     });
     if (!document) throw new NotFoundException('Document not found');
+    assertNotHiddenDraft(data.actor, document);
 
     assertTypeVisible(data.actor, document);
     const isSelf = document.userId === data.actor.userId;

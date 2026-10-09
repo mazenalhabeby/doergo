@@ -77,7 +77,6 @@ export * from './access/assignment-window';
 export * from './access/roster-access';
 export * from './access/document-visibility';
 export * from './access/cross-org-chat';
-export * from './access/legacy-flag-migration';
 export * from './access/workflow-modules';
 export * from './access/workflow-validation';
 export * from './access/workflow-template';
@@ -109,6 +108,8 @@ export * from './mail/email-locale';
 export * from './crm/client-locale';
 export * from './crm/client-filter';
 export * from './crm/reminder';
+// May this member reach this client — the CRM's rule, for other services (crm/client-reach.ts).
+export * from './crm/client-reach';
 export * from './crm/contact-keys';
 export * from './crm/card-extras';
 export * from './crm/card-merge';
@@ -152,6 +153,8 @@ export * from './attendance/clock-in-choice';
 export * from './attendance/cover';
 // The rota — who works which shift which day — read by the clock-in and the Schedules page.
 export * from './attendance/rota';
+// The overtime-request flow's pushes as catalogue references (attendance/overtime-notice.ts).
+export * from './attendance/overtime-notice';
 
 // What should I work on next — one ordering, shared by the phone and the web.
 export * from './tasks/my-work';
@@ -164,6 +167,8 @@ export * from './tasks/handover';
 export * from './tasks/job-time';
 export * from './tasks/crew';
 export * from './tasks/checklist';
+// A job somebody is working on right now — narrower than ACTIVE_STATUSES (tasks/working-statuses.ts).
+export * from './tasks/working-statuses';
 export * from './api/clamp-limit';
 
 // Constant-time secret comparison (node-only — root entry, never client.ts).
@@ -178,3 +183,11 @@ export * from './security/account-guards';
 export * from './security/org-permission-ceiling';
 // Built-in roles follow their definition, additively, until an admin edits them (access/builtin-role-sync.ts)
 export * from './access/builtin-role-sync';
+// A person's name as one line, never "John null" (people/person-name.ts).
+export * from './people/person-name';
+// The permission keys a role may carry, org-wide or in a space — one list for both services (access/permission-whitelist.ts)
+export * from './access/permission-whitelist';
+// A member's org-wide access from their row, resolved like the session (access/org-access.ts).
+export * from './access/org-access';
+// What a member may upload, and how big — one definition (constants/upload-rules.ts).
+export * from './constants/upload-rules';

@@ -175,30 +175,7 @@ export const TIER_RANK: Record<PlanTier, number> = {
   enterprise: 3,
 };
 
-/** Feature modules a tier unlocks org-wide (what Organization.enabledModules is set to). */
-export function modulesForTier(tier: PlanTier): string[] {
-  return PLANS[tier].modules;
-}
-
-/** Whether a given feature module is included in a tier. */
-export function tierHasModule(tier: PlanTier, moduleKey: string): boolean {
-  return PLANS[tier].modules.includes(moduleKey);
-}
-
-/** The lowest tier that unlocks a given feature module (for "upgrade to X" CTAs). */
-export function minTierForModule(moduleKey: string): PlanTier | null {
-  for (const tier of PLAN_TIERS) {
-    if (PLANS[tier].modules.includes(moduleKey)) return tier;
-  }
-  return null;
-}
-
 // ── Entitlements (modules ∪ capabilities) — the tier's full premium surface ──────
-
-/** Every premium key a tier unlocks: task-modules AND non-module capabilities. */
-export function entitlementsForTier(tier: PlanTier): string[] {
-  return [...PLANS[tier].modules, ...PLANS[tier].capabilities];
-}
 
 /**
  * Whether a tier is entitled to a feature key (module OR capability). This is the
@@ -212,50 +189,6 @@ export function tierAllows(tier: PlanTier | null | undefined, key: string): bool
   if (tier === 'enterprise') return true;
   const p = PLANS[tier];
   return p.modules.includes(key) || p.capabilities.includes(key);
-}
-
-/** The lowest tier that unlocks a feature key (module or capability), for upgrade CTAs. */
-export function minTierForFeature(key: string): PlanTier | null {
-  for (const tier of PLAN_TIERS) {
-    if (PLANS[tier].modules.includes(key) || PLANS[tier].capabilities.includes(key)) return tier;
-  }
-  return null;
-}
-
-/** Per-office-seat price for a tier + interval, EUR cents (null for Enterprise). */
-export function officeSeatPriceCents(tier: PlanTier, interval: BillingInterval): number | null {
-  const p = PLANS[tier];
-  return interval === 'annual' ? p.officeAnnualCents : p.officeMonthlyCents;
-}
-
-/** External field-seat price, EUR cents (flat across tiers). */
-export function fieldSeatPriceCents(interval: BillingInterval): number {
-  return interval === 'annual' ? FIELD_SEAT_ANNUAL_CENTS : FIELD_SEAT_MONTHLY_CENTS;
-}
-
-/** In-house field-seat price, EUR cents (flat across tiers). */
-export function inHouseFieldSeatPriceCents(interval: BillingInterval): number {
-  return interval === 'annual' ? IN_HOUSE_FIELD_SEAT_ANNUAL_CENTS : IN_HOUSE_FIELD_SEAT_MONTHLY_CENTS;
-}
-
-/**
- * Compute the recurring total (EUR cents) for a subscription line-up.
- * Returns null for Enterprise (custom pricing).
- */
-export function subscriptionTotalCents(
-  tier: PlanTier,
-  interval: BillingInterval,
-  officeSeats: number,
-  fieldSeats: number,
-  fieldInhouseSeats = 0,
-): number | null {
-  const office = officeSeatPriceCents(tier, interval);
-  if (office === null) return null; // enterprise / custom
-  return (
-    office * officeSeats +
-    fieldSeatPriceCents(interval) * fieldSeats +
-    inHouseFieldSeatPriceCents(interval) * fieldInhouseSeats
-  );
 }
 
 /**

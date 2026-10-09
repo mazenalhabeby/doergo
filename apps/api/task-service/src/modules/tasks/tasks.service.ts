@@ -2539,7 +2539,13 @@ export class TasksService {
   async getSubmissions(data: TaskAccessFacts & { id: string }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.id } });
     if (!task) throw new NotFoundException('Task not found');
-    await this.taskAccess.assert(task, data, { roleHolderMayRead: true });
+    /*
+      NOT open to a holder of the job's open role. The role-holder exemption is
+      for deciding whether to TAKE the job — the task itself. A step submission
+      carries what somebody already did on site: answers, signed photo links, a
+      customer's signature. That belongs to the people on the job.
+    */
+    await this.taskAccess.assert(task, data);
 
     const rows = await this.prisma.taskStepSubmission.findMany({
       where: { taskId: task.id },
@@ -2738,8 +2744,9 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    // Authorization check
-    await this.taskAccess.assert(task, data, { roleHolderMayRead: true });
+    // Authorization check. NOT open to a holder of the open role who has not
+    // taken the job: the conversation on a job is the crew's, not the pool's.
+    await this.taskAccess.assert(task, data);
 
     const comments = await this.prisma.comment.findMany({
       where: { taskId: data.taskId },

@@ -163,7 +163,7 @@ Available from `@hbcfield/shared/guards`:
 
 ```typescript
 import {
-  hasRole, isAdmin, isDispatcher, isTechnician,
+  hasRole, isAdmin, isManager, isTechnician,
   canAccessPlatform, canAccessWeb, canAccessMobile,
   canCreateTasks, canViewAllTasks, canAssignTasks, canManageUsers
 } from '@hbcfield/shared';
@@ -171,7 +171,7 @@ import {
 // Role checks (with legacy CLIENT → ADMIN normalization)
 hasRole(user, Role.ADMIN, Role.DISPATCHER)  // true if user has any of these roles
 isAdmin(user)      // true for ADMIN or legacy CLIENT
-isDispatcher(user) // true for DISPATCHER
+isManager(user)    // true for MANAGER (formerly DISPATCHER)
 isTechnician(user) // true for TECHNICIAN
 
 // Platform access checks
@@ -557,7 +557,7 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 > ⚠️ Mobile: "Open for your role" on the Jobs tab and Take/Hand back on the job page are ONLINE ONLY (a queued take would promise a place somebody else got). Needs an OTA.
 
 ### The company calendar (`/calendar`) — our own, Google only as an optional window
-> One calendar for jobs, appointments, reminders, client follow-ups, shifts, leave, public holidays and document expiries. Rules: `packages/shared/src/calendar/*` (days, holidays, recurrence, reminders, quick-add, ics, free-slots); server: `task-service/.../calendar/*`. Migration `20261007090000_company_calendar` (additive). E2E: `python3 tools/calendar-e2e.py` (LOCAL only, 39 checks). Web: `/calendar`, Settings → Holidays & weekends. Phone: Calendar (in More) + the Today home card.
+> One calendar for jobs, appointments, reminders, client follow-ups, shifts, leave, public holidays and document expiries. Rules: `packages/shared/src/calendar/*` (days, holidays, recurrence, reminders, ics, free-slots); server: `task-service/.../calendar/*`. Migration `20261007090000_company_calendar` (additive). E2E: `python3 tools/calendar-e2e.py` (LOCAL only, 39 checks). Web: `/calendar`, Settings → Holidays & weekends. Phone: Calendar (in More) + the Today home card.
 
 | Method | Endpoint | Description | Gate |
 |--------|----------|-------------|------|
@@ -1267,12 +1267,12 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `AnimatedLogo` | Shared logo component (from `@hbcfield/shared/components`) |
 | `Roles`, `Public`, `CurrentUser` | NestJS decorators (from `@hbcfield/shared`) |
 | `RolesGuard`, `hasRole()` | Role-based access control guard |
-| `isAdmin()`, `isDispatcher()`, `isTechnician()` | Role check helpers with legacy normalization |
+| `isAdmin()`, `isManager()`, `isTechnician()` | Role check helpers with legacy normalization |
 | `canAccessPlatform()`, `canAccessWeb()`, `canAccessMobile()` | Platform access checks |
 | `canCreateTasks()`, `canViewAllTasks()`, `canAssignTasks()`, `canManageUsers()` | Permission checks with role fallback |
 | `LegacyRoleMap`, `normalizeRole()` | Backward compatibility for CLIENT → ADMIN |
 | `DEFAULT_PERMISSIONS` | Default permission values by role |
-| `STATUS_TRANSITIONS`, `isValidStatusTransition()` | Task status state machine |
+| `STATUS_TRANSITIONS` | Task status state machine |
 | `orgMonthlyCost()`, `spaceMonthlyCost()` | The whole bill / one space's bill (billing/module-pricing.ts) |
 | `usageCost()`, `marginalUnitCents()`, `nextUsageBreak()` | Volume ladders — what a count costs, what the NEXT one costs |
 | `AVAILABLE_ADD_ONS`, `orgHasAddOn()`, `addOnDef()` | Org-wide capabilities ("Options" to a customer) and the gate that reads them |
@@ -1304,12 +1304,25 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `custodyDays()`, `openPeriods()`, `partyKey()` | One custody, read for a screen |
 | `parseReceipt()`, `moneyToCents()`, `categoryForReceipt()` | A photographed slip → amount, date, vendor. On-device, nothing calls out |
 | `parseContract()`, `proposeFromContract()`, `canApply()`, `fieldsForKind()` | A contract → a reading, then the three things accepting it would do |
-| `classifyDocument()`, `worthProposing()` | Is this page a contract for a thing, or a fuel receipt? Needs BOTH signals |
+| `classifyDocument()` | Is this page a contract for a thing, or a fuel receipt? Needs BOTH signals |
 | `mayReviewProposal()`, `proposalReviewSpaces()`, `proposalInSpace()` | Who may decide a page a member sent in: a chosen kind decides by its workspace; with no kind, the member's workspaces. The queue, accept/reject, the page link and the routing all read it; `proposalInSpace` narrows a workspace tab's queue (`?spaceId=`) to its own and never widens |
 | `assetEntryDateProblem()`, `assetEntryDayBounds()`, `assetEntryOccurredAt()`, `assetEntryDateExempt()`, `assetEntryDateText()` | ONE date rule for everything filed against an asset (logbook, expense, Money tab): 120 days back unless org-wide `canManageAssets`, a day of grace forward, one sentence per refusal. Server door `readAssetEntryDate`; the `LOG_*` names are aliases |
 | `keepFieldsForKind()`, `fieldsDroppedByMove()` | Moving an asset to another kind — what survives, and what the warning names. One rule read two ways |
-| `NAV_OPTION`, `SPACE_TAB_OPTION`, `SETTINGS_OPTION`, `surfaceAllowed()` | Which surface each Option owns. The navbar, workspace tabs and settings list all read these — adding an Option is adding a row |
+| `NAV_OPTION`, `SPACE_TAB_OPTION`, `SETTINGS_OPTION` | Which surface each Option owns. The navbar, workspace tabs and settings list all read these — adding an Option is adding a row |
 | `joinCodeCandidates()`, `JOIN_CODE_MAX_LENGTH` | Telling an org join code from an invitation code |
+| `assertServiceOk()`, `unwrapServiceResult()` | A service's `{ success: false, … }` reply as the HTTP error it is — `code`/`params` always travel (microservices/service-result.ts) |
+| `safeEqual()` | Constant-time secret compare (both sides hashed first; empty expected never matches). Node only — not in `client.ts` |
+| `redactUrlForLog()` | A request URL safe to log: bearer secrets in the path (feed token, invitation/join code, push token) masked, query dropped |
+| `clampListLimit()`, `clampListPage()` | A request's `limit`/`page` made safe for Prisma (NaN → fallback, capped at 200) |
+| `mayTakeOverAccount()` | May this caller reset/take over that account? Owner never, admin only by admin, never past the caller's own permissions |
+| `loadOrgPermissionCeiling()` | One loader for a member's org-wide ceiling (legacy flags ∪ ACTIVE org role) for every "may X grant Y" door |
+| `builtInRoleGrants()`, `builtInRoleCatchUp()` | Built-in roles follow their definition ADD-ONLY, never re-granting what an admin removed (`isCustomized`) |
+| `holdsOpenRole()` | Does this person hold a task's OPEN work role in its workspace now — the read exemption, asked by API and socket room alike |
+| `mailRoutesFromConfig()` | The mail routes (primary + fallback) read from a config getter — no sender spells the keys out |
+| `contactMatchKeys()`, `parseContactImport()` | Address-book import: the phone/email match key both ends agree on, and the one parser for the import body |
+| `classifyContact()`, `pickModel()`, `buildContactImport()` | Sorting a phone's address book into likely clients, with a reason per verdict, and building the import body |
+| `pickUnitFields()` | The editable fields of a customer unit picked from a body (relations only when asked) |
+| `mayViewSpaceRoster()`, `mayManageSpaceMembers()`, `stripSpaceTerms()` | Who may read a workspace's roster, who manages its people, and removing members' bill terms for everyone else |
 | `moduleAllowedForExternal()`, `filterExternalModules()` | An external member holds no clock and no time_off |
 | `stripeCatalog()`, `stripeLinesForBill()`, `stripeLookupKey()` | What Stripe must hold, and a bill as subscription lines |
 | `BCRYPT_COST_FACTOR`, `MAX_FAILED_ATTEMPTS`, etc. | Auth constants |
@@ -1318,15 +1331,14 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `buildDateRangeFilter()`, `buildSingleDayFilter()` | Prisma-compatible date filters |
 | `getStartOfDay()`, `getEndOfDay()` | Date boundary calculations |
 | `getStartOfWeek()`, `getEndOfWeek()`, `getStartOfMonth()`, `getEndOfMonth()` | Period calculations |
-| `formatDuration()`, `formatTime()`, `formatShortDate()`, `formatFullDate()` | Date display formatting |
+| `formatDuration()`, `formatTime()`, `formatShortDate()` | Date display formatting |
 | `TimeEntry`, `Break`, `CompanyLocation`, `AttendanceStatus` | Attendance types (from `@hbcfield/shared`) |
 | `TimeEntryStatus`, `BreakType`, `ApprovalStatus` | Attendance enums |
-| `isBreakActive()`, `getBreakTypeLabel()`, `getTimeEntryStatusLabel()` | Attendance helper functions |
+| `isBreakActive()` | Attendance helper function |
 | `TechnicianProfile`, `TechnicianListItem`, `TechnicianStats` | Technician types (from `@hbcfield/shared`) |
 | `PerformanceMetrics`, `PerformanceTrendPoint` | Technician performance types |
 | `getTechnicianTypeLabel()`, `getTechnicianTypeColor()` | Technician type display helpers |
 | `isTechnicianOnline()` | Check if technician is online (location updated within 5 min) |
-| `getAvailabilityStatus()`, `getAvailabilityLabel()`, `getAvailabilityColor()` | Availability status helpers |
 | `SPECIALTY_OPTIONS` | Technician specialty options array |
 | `WorkMode` | WorkMode enum (ON_SITE, ON_ROAD, HYBRID) |
 | `getWorkModeLabel()`, `getWorkModeColor()` | WorkMode display helpers |

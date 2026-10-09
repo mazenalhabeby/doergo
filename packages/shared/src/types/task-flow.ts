@@ -257,10 +257,6 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
 /** The template seeded as a new organization's default task type. */
 export const DEFAULT_WORKFLOW_TEMPLATE: WorkflowTemplate = WORKFLOW_TEMPLATES[0]!;
 
-export function getWorkflowTemplate(id: string): WorkflowTemplate | undefined {
-  return WORKFLOW_TEMPLATES.find((t) => t.id === id);
-}
-
 /** Index of a status key within the flow (−1 if absent). */
 export function getFlowIndex(steps: FlowStatus[], statusKey: string): number {
   return steps.findIndex((s) => s.key === statusKey);

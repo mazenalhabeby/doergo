@@ -189,6 +189,15 @@ export class HolidaysService {
       // Switching feeds off revokes every existing link, not just new ones.
       if (!dto.calendarFeedsEnabled) await this.prisma.calendarFeedToken.deleteMany({ where: { organizationId: dto.organizationId } });
     }
+    /*
+      ⚠️ A write to `Organization`, which auth-service owns — deliberately here.
+      The columns are the calendar's own (weekendDays, holidayCountry/Region,
+      calendarFeedsEnabled), read only by this service, and switching feeds off
+      must happen with the token wipe above. auth-service's
+      `update_org_profile` is the profile contract (name, address, currency) and
+      knows none of them. `data` is built by `readPlace` + the feed switch only,
+      so nothing outside those four columns can be written through this path.
+    */
     await this.prisma.organization.update({ where: { id: dto.organizationId }, data });
     this.changed(dto.organizationId);
     return success({ ok: true });

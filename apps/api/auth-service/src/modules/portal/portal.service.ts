@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { sanitizeLabelValueRows, UNIT_DETAIL_LIMITS } from '../../common/records/label-value-rows';
+import { keepOrgUserIds } from '../../common/records/org-user-ids';
 import { CustomersService, type CrmCaller } from '../customers/customers.service';
 import {
   PORTAL_TEMPLATES,
@@ -8,15 +10,9 @@ import {
   SELECTABLE_ASSET_WHERE,
 } from '@hbcfield/shared';
 
-// Keep only well-formed { label, value } detail rows (trimmed, capped).
-function sanitizeUnitDetails(details: unknown): any[] | undefined {
-  if (!Array.isArray(details)) return undefined;
-  return details
-    .filter((d: any) => d && typeof d.label === 'string' && typeof d.value === 'string')
-    .map((d: any) => ({ label: d.label.trim().slice(0, 80), value: d.value.trim().slice(0, 500) }))
-    .filter((d: any) => d.label.length > 0)
-    .slice(0, 40);
-}
+// Keep only well-formed { label, value } detail rows — the one sanitizer the
+// CRM also uses, with an address's own limits.
+const sanitizeUnitDetails = (details: unknown) => sanitizeLabelValueRows(details, UNIT_DETAIL_LIMITS);
 
 // Per-portal TTL cache for the intake config (read on every customer submit +
 // GET config, which the mobile fans out across screens). Keyed by portalId.
@@ -654,14 +650,9 @@ export class PortalService {
     });
   }
 
-  /** Keep only ids that are real users in this org (drops cross-tenant/stale ids
-   *  so unit worker assignment never points out-of-org). Deduped, capped. */
-  private async keepOrgUserIds(ids: string[], organizationId: string): Promise<string[]> {
-    const clean = Array.from(new Set((ids || []).filter((x) => typeof x === 'string' && x.trim()))).slice(0, 20);
-    if (!clean.length) return [];
-    const rows = await this.prisma.user.findMany({ where: { id: { in: clean }, organizationId }, select: { id: true } });
-    const ok = new Set(rows.map((r) => r.id));
-    return clean.filter((id) => ok.has(id));
+  /** Keep only ids that are real users in this org — the shared helper, capped at 20. */
+  private keepOrgUserIds(ids: string[], organizationId: string): Promise<string[]> {
+    return keepOrgUserIds(this.prisma, ids, organizationId, { cap: 20 });
   }
 
   async createUnit(data: {
@@ -745,6 +736,13 @@ export class PortalService {
     details?: any[];
     actorId?: string;
     scopeCustomerId?: string; // when set, the unit must belong to this customer
+    /**
+     * Set by the workspace routes (`spaces/:spaceId/units/:unitId`): the unit
+     * must belong to THAT workspace. Checked against the org only, a manager of
+     * one workspace could edit any apartment in the organization by putting its
+     * id under the path of the workspace they do manage.
+     */
+    scopeSpaceId?: string;
     crmCaller?: CrmCaller; // set by the CRM address routes only — see assertClientAddressesEditable
   }) {
     if (data.crmCaller) {
@@ -754,7 +752,12 @@ export class PortalService {
     }
     await this.assertUnitRefsInOrg(data.organizationId, { spaceId: data.spaceId, portalId: data.portalId });
     const existing = await this.prisma.customerUnit.findFirst({
-      where: { id: data.id, organizationId: data.organizationId, ...(data.scopeCustomerId ? { customerId: data.scopeCustomerId } : {}) },
+      where: {
+        id: data.id,
+        organizationId: data.organizationId,
+        ...(data.scopeCustomerId ? { customerId: data.scopeCustomerId } : {}),
+        ...(data.scopeSpaceId ? { spaceId: data.scopeSpaceId } : {}),
+      },
       select: { id: true, customerId: true, residentUserId: true, spaceId: true },
     });
     if (!existing) throw new NotFoundException('Unit not found');
@@ -920,13 +923,25 @@ export class PortalService {
     return { data: { success: true, deactivatedUserIds } };
   }
 
-  async deleteUnit(data: { id: string; organizationId: string; customerId?: string; crmCaller?: CrmCaller }) {
+  async deleteUnit(data: {
+    id: string;
+    organizationId: string;
+    customerId?: string;
+    /** The workspace route's own workspace — see `updateUnit.scopeSpaceId`. */
+    scopeSpaceId?: string;
+    crmCaller?: CrmCaller;
+  }) {
     if (data.crmCaller) {
       if (!data.customerId) throw new BadRequestException('A client is required');
       await this.assertClientAddressesEditable(data.organizationId, data.customerId, data.crmCaller);
     }
     const existing = await this.prisma.customerUnit.findFirst({
-      where: { id: data.id, organizationId: data.organizationId, ...(data.customerId ? { customerId: data.customerId } : {}) },
+      where: {
+        id: data.id,
+        organizationId: data.organizationId,
+        ...(data.customerId ? { customerId: data.customerId } : {}),
+        ...(data.scopeSpaceId ? { spaceId: data.scopeSpaceId } : {}),
+      },
       select: { id: true },
     });
     if (!existing) throw new NotFoundException('Unit not found');

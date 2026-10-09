@@ -3634,7 +3634,9 @@ export class AttendanceService {
    * quietly wrong the moment it became per-member: everyone at that site would
    * have been routed to whichever member the sweep happened to look at first.
    */
-  private async notifyTargetsFor(
+  // Public: the overtime-request flow (OvertimeService) asks the SAME routing,
+  // rather than keeping its own "every admin" list.
+  async notifyTargetsFor(
     entry: { locationId?: string; spaceId?: string; organizationId: string; userId: string },
     permission: 'canApproveOvertime' | 'canReconcileAttendance',
     spaceCache?: Map<string, string[]>,

@@ -1,4 +1,5 @@
-import { Role as PrismaRole } from '@prisma/client';
+import { Prisma, Role as PrismaRole } from '@prisma/client';
+import { defaultSpaceRoleId } from './invitation-space-role';
 import {
   DEFAULT_PERMISSIONS,
   Role,
@@ -175,4 +176,87 @@ export async function claimInvitation(
     data: { status: 'ACCEPTED', usedAt: new Date(), acceptedById },
   });
   if (claim.count !== 1) throw new InvitationAlreadyClaimedError();
+}
+
+/** What an invitation row must carry for `applyInvitationPlacement`. */
+interface InvitationPlacementSource {
+  organizationId: string;
+  targetRole: PrismaRole | string;
+  isExternal: boolean;
+  memberRoleId: string | null;
+  spaceId: string | null;
+  scheduleType: string | null;
+  schedule: unknown;
+}
+
+/**
+ * Who an invitation PLACES — a weekly rota and a workspace.
+ *
+ * Only a member (EMPLOYEE). Stated here as the gate rather than left to how the
+ * invitation happened to be created: the register path relied on `create`
+ * never storing a schedule or a space for anybody else, the mobile path checked
+ * the role itself. A portal client given a rota raises no-shows; an admin needs
+ * no placement to reach everything.
+ */
+export function invitationPlacesMember(targetRole: PrismaRole | string): boolean {
+  return targetRole === 'EMPLOYEE';
+}
+
+/**
+ * The rota and the workspace an accepted invitation dictates — one function,
+ * both accept paths (`InvitationService.acceptInvitation`,
+ * `OnboardingService.acceptInvitationForExistingUser`). Each wrote this out by
+ * hand; two copies of the same placement is how `isExternal` went missing from
+ * one of them before. Runs inside the caller's accept transaction.
+ *
+ * ⚠️ OWNERSHIP: `technicianSchedule` and `spaceAssignment` belong to
+ * task-service. They are written here, directly, because they must commit in
+ * the same transaction as the account and the invitation claim. Follow-up: move
+ * behind a task-service message the way offboarding already goes through
+ * `member_offboard`.
+ */
+export async function applyInvitationPlacement(
+  tx: Prisma.TransactionClient,
+  invitation: InvitationPlacementSource,
+  userId: string,
+): Promise<void> {
+  if (!invitationPlacesMember(invitation.targetRole)) return;
+
+  // Pre-set weekly schedule (FIXED invites). Owner: task-service (see above).
+  if (invitation.scheduleType === 'FIXED' && Array.isArray(invitation.schedule)) {
+    const rows = (invitation.schedule as any[]).filter(
+      (r) => r && typeof r.dayOfWeek === 'number' && r.startTime && r.endTime,
+    );
+    if (rows.length > 0) {
+      await tx.technicianSchedule.createMany({
+        data: rows.map((r) => ({
+          technicianId: userId,
+          dayOfWeek: r.dayOfWeek,
+          startTime: r.startTime,
+          endTime: r.endTime,
+          isActive: r.isActive ?? true,
+        })),
+      });
+    }
+  }
+
+  // Pre-assigned space, if it still exists in the org. Owner: task-service.
+  if (!invitation.spaceId) return;
+  const space = await tx.companyLocation.findFirst({
+    where: { id: invitation.spaceId, organizationId: invitation.organizationId, isActive: true },
+    select: { id: true },
+  });
+  if (!space) return;
+  // An external member's authority is their SPACE role and nothing else; an
+  // internal member's org role is never copied here (see defaultSpaceRoleId).
+  // Only on create — `update` deliberately leaves an existing roleId alone.
+  const roleId = await defaultSpaceRoleId(tx, invitation.organizationId, {
+    isExternal: invitation.isExternal,
+    chosenRoleId: invitation.memberRoleId,
+  });
+  await tx.spaceAssignment.upsert({
+    where: { userId_spaceId: { userId, spaceId: invitation.spaceId } },
+    update: { isPrimary: true, effectiveTo: null },
+    create: { organizationId: invitation.organizationId, userId, spaceId: invitation.spaceId, isPrimary: true, roleId },
+  });
 }

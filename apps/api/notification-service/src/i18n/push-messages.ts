@@ -24,6 +24,21 @@ import type { SupportedLocale } from '@hbcfield/shared';
  *    apps, which address the member informally.
  */
 const en = {
+  // ── Overtime requests (OvertimeNotificationHandler) ────────────────────
+  'overtime.shiftEnded.title': 'Your shift has ended',
+  'overtime.shiftEnded.body': 'Still working at {{location}}? Ask for overtime, or clock out.',
+  'overtime.approvalRequest.title': 'Overtime request',
+  'overtime.approvalRequest.body': '{{name}} asks for overtime at {{location}}.',
+  'overtime.confirmSignature.title': 'Confirm overtime',
+  'overtime.confirmSignature.body': 'You signed overtime on a colleague\'s phone. Tap to confirm it.',
+  'overtime.rejected.title': 'Overtime declined',
+  'overtime.rejected.body': 'You were clocked out. {{reason}}',
+  'overtime.expiredPrompt.title': 'Clocked out',
+  'overtime.expiredPrompt.body': 'You were clocked out because the overtime question went unanswered.',
+  'overtime.expiredApproval.title': 'Clocked out',
+  'overtime.expiredApproval.body': 'You were clocked out because nobody approved the overtime in time.',
+  'overtime.ended.title': 'Overtime ended',
+  'overtime.ended.body': 'Your {{minutes}} approved minutes are over — you were clocked out.',
   // ── App updates ─────────────────────────────────────────────────────────
   'app.update.title': 'HBCField {{version}} is ready',
   'app.update.body': "See what's new. Updating takes about a minute.",
@@ -270,6 +285,21 @@ export type PushPluralKey = PushKey extends infer K
   : never;
 
 const de: Record<PushKey, string> = {
+  // ── Overtime requests (OvertimeNotificationHandler) ────────────────────
+  'overtime.shiftEnded.title': 'Ihre Schicht ist zu Ende',
+  'overtime.shiftEnded.body': 'Arbeiten Sie noch bei {{location}}? Beantragen Sie Überstunden oder stempeln Sie aus.',
+  'overtime.approvalRequest.title': 'Überstunden-Antrag',
+  'overtime.approvalRequest.body': '{{name}} beantragt Überstunden bei {{location}}.',
+  'overtime.confirmSignature.title': 'Überstunden bestätigen',
+  'overtime.confirmSignature.body': 'Sie haben Überstunden auf dem Telefon eines Kollegen unterschrieben. Tippen Sie zum Bestätigen.',
+  'overtime.rejected.title': 'Überstunden abgelehnt',
+  'overtime.rejected.body': 'Sie wurden ausgestempelt. {{reason}}',
+  'overtime.expiredPrompt.title': 'Ausgestempelt',
+  'overtime.expiredPrompt.body': 'Sie wurden ausgestempelt, weil die Überstunden-Frage unbeantwortet blieb.',
+  'overtime.expiredApproval.title': 'Ausgestempelt',
+  'overtime.expiredApproval.body': 'Sie wurden ausgestempelt, weil niemand die Überstunden rechtzeitig genehmigt hat.',
+  'overtime.ended.title': 'Überstunden beendet',
+  'overtime.ended.body': 'Ihre {{minutes}} genehmigten Minuten sind vorbei — Sie wurden ausgestempelt.',
   // ── App updates ─────────────────────────────────────────────────────────
   'app.update.title': 'HBCField {{version}} ist da',
   'app.update.body': 'Sehen Sie, was neu ist. Das Update dauert etwa eine Minute.',
@@ -498,6 +528,21 @@ const de: Record<PushKey, string> = {
 };
 
 const es: Record<PushKey, string> = {
+  // ── Overtime requests (OvertimeNotificationHandler) ────────────────────
+  'overtime.shiftEnded.title': 'Su turno ha terminado',
+  'overtime.shiftEnded.body': '¿Sigue trabajando en {{location}}? Pida horas extra o fiche la salida.',
+  'overtime.approvalRequest.title': 'Solicitud de horas extra',
+  'overtime.approvalRequest.body': '{{name}} pide horas extra en {{location}}.',
+  'overtime.confirmSignature.title': 'Confirmar horas extra',
+  'overtime.confirmSignature.body': 'Firmó horas extra en el teléfono de un compañero. Toque para confirmarlas.',
+  'overtime.rejected.title': 'Horas extra rechazadas',
+  'overtime.rejected.body': 'Se registró su salida. {{reason}}',
+  'overtime.expiredPrompt.title': 'Salida registrada',
+  'overtime.expiredPrompt.body': 'Se registró su salida porque la pregunta de horas extra quedó sin respuesta.',
+  'overtime.expiredApproval.title': 'Salida registrada',
+  'overtime.expiredApproval.body': 'Se registró su salida porque nadie aprobó las horas extra a tiempo.',
+  'overtime.ended.title': 'Horas extra terminadas',
+  'overtime.ended.body': 'Sus {{minutes}} minutos aprobados han terminado: se registró su salida.',
   // ── App updates ─────────────────────────────────────────────────────────
   'app.update.title': 'HBCField {{version}} está listo',
   'app.update.body': 'Mira las novedades. Actualizar tarda un minuto.',
@@ -726,6 +771,21 @@ const es: Record<PushKey, string> = {
 };
 
 const fr: Record<PushKey, string> = {
+  // ── Overtime requests (OvertimeNotificationHandler) ────────────────────
+  'overtime.shiftEnded.title': 'Votre service est terminé',
+  'overtime.shiftEnded.body': 'Vous travaillez encore chez {{location}} ? Demandez des heures supplémentaires ou pointez la sortie.',
+  'overtime.approvalRequest.title': 'Demande d\'heures supplémentaires',
+  'overtime.approvalRequest.body': '{{name}} demande des heures supplémentaires chez {{location}}.',
+  'overtime.confirmSignature.title': 'Confirmer les heures supplémentaires',
+  'overtime.confirmSignature.body': 'Vous avez signé des heures supplémentaires sur le téléphone d\'un collègue. Touchez pour confirmer.',
+  'overtime.rejected.title': 'Heures supplémentaires refusées',
+  'overtime.rejected.body': 'Votre sortie a été pointée. {{reason}}',
+  'overtime.expiredPrompt.title': 'Sortie pointée',
+  'overtime.expiredPrompt.body': 'Votre sortie a été pointée car la question des heures supplémentaires est restée sans réponse.',
+  'overtime.expiredApproval.title': 'Sortie pointée',
+  'overtime.expiredApproval.body': 'Votre sortie a été pointée car personne n\'a approuvé les heures supplémentaires à temps.',
+  'overtime.ended.title': 'Heures supplémentaires terminées',
+  'overtime.ended.body': 'Vos {{minutes}} minutes approuvées sont écoulées — votre sortie a été pointée.',
   // ── App updates ─────────────────────────────────────────────────────────
   'app.update.title': 'HBCField {{version}} est prêt',
   'app.update.body': 'Découvrez les nouveautés. La mise à jour prend une minute.',
@@ -954,6 +1014,21 @@ const fr: Record<PushKey, string> = {
 };
 
 const it: Record<PushKey, string> = {
+  // ── Overtime requests (OvertimeNotificationHandler) ────────────────────
+  'overtime.shiftEnded.title': 'Il tuo turno è finito',
+  'overtime.shiftEnded.body': 'Stai ancora lavorando presso {{location}}? Chiedi lo straordinario o timbra l\'uscita.',
+  'overtime.approvalRequest.title': 'Richiesta di straordinario',
+  'overtime.approvalRequest.body': '{{name}} chiede uno straordinario presso {{location}}.',
+  'overtime.confirmSignature.title': 'Conferma lo straordinario',
+  'overtime.confirmSignature.body': 'Hai firmato uno straordinario sul telefono di un collega. Tocca per confermarlo.',
+  'overtime.rejected.title': 'Straordinario rifiutato',
+  'overtime.rejected.body': 'È stata registrata la tua uscita. {{reason}}',
+  'overtime.expiredPrompt.title': 'Uscita registrata',
+  'overtime.expiredPrompt.body': 'È stata registrata la tua uscita perché la domanda sullo straordinario è rimasta senza risposta.',
+  'overtime.expiredApproval.title': 'Uscita registrata',
+  'overtime.expiredApproval.body': 'È stata registrata la tua uscita perché nessuno ha approvato lo straordinario in tempo.',
+  'overtime.ended.title': 'Straordinario finito',
+  'overtime.ended.body': 'I tuoi {{minutes}} minuti approvati sono finiti: è stata registrata la tua uscita.',
   // ── App updates ─────────────────────────────────────────────────────────
   'app.update.title': 'HBCField {{version}} è pronto',
   'app.update.body': "Scopri le novità. L'aggiornamento richiede un minuto.",

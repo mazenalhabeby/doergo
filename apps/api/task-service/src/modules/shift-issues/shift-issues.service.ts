@@ -1,16 +1,16 @@
 import { Injectable, Inject, Logger, NotFoundException, ForbiddenException, BadRequestException, ConflictException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { SERVICE_NAMES, success } from '@hbcfield/shared';
+import { SERVICE_NAMES, success, personName, personNameById, UPLOAD_RULES } from '@hbcfield/shared';
 import { OBJECT_STORE, ObjectStore, newObjectKey, requireObjectStore } from '@hbcfield/shared/storage';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { createOnce } from '../../common/create-once.util';
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
-const ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'text/plain'];
-const ALLOWED_FILE_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOCUMENT_TYPES];
+// What may be uploaded, and how big: ONE shared definition (constants/upload-rules.ts).
+// Shift-issue evidence takes no Word files — deliberate, and named there.
+const MAX_FILE_SIZE = UPLOAD_RULES.shiftIssue.maxBytes;
+const ALLOWED_FILE_TYPES = UPLOAD_RULES.shiftIssue.allTypes;
 const UPLOAD_TTL_SECONDS = 3600;
 const SEVERITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 const BODY_MAX = 5000;
@@ -66,10 +66,9 @@ export class ShiftIssuesService {
     throw new ForbiddenException('Not your issue');
   }
 
-  private async nameOf(userId: string | null | undefined): Promise<string> {
-    if (!userId) return '';
-    const u = await this.prisma.user.findUnique({ where: { id: userId }, select: { firstName: true, lastName: true } });
-    return u ? `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() : '';
+  /** One shared rule for a name (people/person-name.ts) — never "John null". */
+  private nameOf(userId: string | null | undefined): Promise<string> {
+    return personNameById(this.prisma as never, userId);
   }
 
   private issuePrefix(organizationId: string, issueId: string): string {
@@ -227,7 +226,7 @@ export class ShiftIssuesService {
     // Enrich with reporter/assignee names + a message count in one pass.
     const ids = Array.from(new Set(issues.flatMap((i) => [i.reportedById, i.assignedToId].filter(Boolean) as string[])));
     const users = ids.length ? await this.prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, firstName: true, lastName: true } }) : [];
-    const nameById = new Map(users.map((u) => [u.id, `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim()]));
+    const nameById = new Map(users.map((u) => [u.id, personName(u)]));
     const counts = await this.prisma.shiftIssueEvent.groupBy({ by: ['issueId'], where: { issueId: { in: issues.map((i) => i.id) } }, _count: { id: true } });
     const countById = new Map(counts.map((c) => [c.issueId, c._count.id]));
     return success(issues.map((i) => ({
@@ -246,7 +245,7 @@ export class ShiftIssuesService {
     const events = await this.prisma.shiftIssueEvent.findMany({ where: { issueId: issue.id }, orderBy: { at: 'asc' }, take: 1000 });
     const actorIds = Array.from(new Set([issue.reportedById, issue.assignedToId, ...events.map((e) => e.actorId)].filter(Boolean) as string[]));
     const users = actorIds.length ? await this.prisma.user.findMany({ where: { id: { in: actorIds } }, select: { id: true, firstName: true, lastName: true } }) : [];
-    const nameById = new Map(users.map((u) => [u.id, `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim()]));
+    const nameById = new Map(users.map((u) => [u.id, personName(u)]));
 
     const thread = await Promise.all(events.map(async (e) => ({
       ...e,

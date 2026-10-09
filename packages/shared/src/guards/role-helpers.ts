@@ -57,8 +57,6 @@ export function isStaff(user: { role: string }): boolean {
 // ── Legacy aliases (backward compat) ──
 /** @deprecated Use isAdmin() */
 export function isClient(user: { role: string }): boolean { return isAdmin(user); }
-/** @deprecated Use isManager() */
-export function isDispatcher(user: { role: string }): boolean { return isManager(user); }
 /** @deprecated Use isEmployee() */
 export function isTechnician(user: { role: string }): boolean { return isEmployee(user); }
 /** @deprecated Use isEmployee() */

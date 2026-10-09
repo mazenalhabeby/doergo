@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
+import { geoFetch } from "@/lib/geocode"
 import { useTranslation } from "react-i18next"
 import { useFormatDistance } from "@/hooks/use-format-distance"
 import { polygonAreaSqm, GEOFENCE_POLYGON_LIMITS, type LatLng } from "@hbcfield/shared/client"
@@ -204,13 +205,12 @@ export default function LocationPicker({
       // rate limits, no exposed key. Falls back to the public geocoders below if it
       // returns nothing (e.g. before the index finished loading, or a coverage gap).
       try {
-        const geoBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
         // One session token per search; reused across keystrokes until a pick.
         if (!sessionRef.current && typeof crypto !== "undefined" && crypto.randomUUID) {
           sessionRef.current = crypto.randomUUID()
         }
         const sess = sessionRef.current ? `&session=${encodeURIComponent(sessionRef.current)}` : ""
-        const gr = await fetch(`${geoBase}/geo/search?q=${encodeURIComponent(query)}&limit=6${sess}`, { signal: AbortSignal.timeout(5000) })
+        const gr = await geoFetch(`/geo/search?q=${encodeURIComponent(query)}&limit=6${sess}`, { signal: AbortSignal.timeout(5000) })
         if (gr.ok) {
           const gd = await gr.json()
           const geoResults: GeoResult[] = (gd?.results || []).map(
@@ -268,10 +268,9 @@ export default function LocationPicker({
     // Google row: resolve coordinates now (this closes the billed session).
     if (result.place_id) {
       try {
-        const geoBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
         const sess = sessionRef.current ? `&session=${encodeURIComponent(sessionRef.current)}` : ""
-        const res = await fetch(
-          `${geoBase}/geo/place?id=${encodeURIComponent(result.place_id)}${sess}`,
+        const res = await geoFetch(
+          `/geo/place?id=${encodeURIComponent(result.place_id)}${sess}`,
           { signal: AbortSignal.timeout(5000) }
         )
         if (res.ok) {
@@ -322,8 +321,7 @@ export default function LocationPicker({
       try {
         let formatted = ""
         try {
-          const geoBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
-          const gr = await fetch(`${geoBase}/geo/reverse?lat=${clickLat}&lon=${clickLng}`, {
+          const gr = await geoFetch(`/geo/reverse?lat=${clickLat}&lon=${clickLng}`, {
             signal: AbortSignal.timeout(5000),
           })
           if (gr.ok) formatted = (await gr.json())?.result?.label || ""
