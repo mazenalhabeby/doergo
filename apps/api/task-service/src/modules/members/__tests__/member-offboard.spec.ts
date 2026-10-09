@@ -78,3 +78,33 @@ describe('TasksService.releaseMemberFromOpenWork — a custom flow’s finish is
     expect(prisma.taskAssignee.deleteMany).toHaveBeenCalledWith({ where: { taskId: 'en-route', userId: 'u1' } });
   });
 });
+
+describe('MemberOffboardService.releaseSharedSpace', () => {
+  const build = (space: unknown) => {
+    const prisma: any = {
+      companyLocation: { findFirst: jest.fn().mockResolvedValue(space) },
+      spaceAssignment: { deleteMany: jest.fn().mockResolvedValue({ count: 3 }) },
+    };
+    return { prisma, service: new MemberOffboardService(prisma, {} as any, {} as any) };
+  };
+
+  it('removes only the guest organization’s people from that workspace', async () => {
+    const { prisma, service } = build({ id: 's1' });
+    const r = await service.releaseSharedSpace({ ownerOrgId: 'owner', spaceId: 's1', guestOrgId: 'guest' });
+    expect(prisma.companyLocation.findFirst.mock.calls[0][0].where).toEqual({ id: 's1', organizationId: 'owner' });
+    expect(prisma.spaceAssignment.deleteMany).toHaveBeenCalledWith({ where: { spaceId: 's1', organizationId: 'guest' } });
+    expect(r).toEqual({ assignmentsRemoved: 3 });
+  });
+
+  it('a workspace that is not the owner’s empties nothing', async () => {
+    const { prisma, service } = build(null);
+    expect(await service.releaseSharedSpace({ ownerOrgId: 'owner', spaceId: 's-other', guestOrgId: 'guest' })).toEqual({ assignmentsRemoved: 0 });
+    expect(prisma.spaceAssignment.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('never removes the owner’s own people', async () => {
+    const { prisma, service } = build({ id: 's1' });
+    await service.releaseSharedSpace({ ownerOrgId: 'owner', spaceId: 's1', guestOrgId: 'owner' });
+    expect(prisma.spaceAssignment.deleteMany).not.toHaveBeenCalled();
+  });
+});

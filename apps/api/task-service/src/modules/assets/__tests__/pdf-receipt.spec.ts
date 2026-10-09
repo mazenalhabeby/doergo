@@ -2,6 +2,16 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { pdfToLines } from '../pdf-lines';
 import { parseReceipt } from '@hbcfield/shared';
 
+// pdf.js handed in directly: the service's `new Function` import resolves, under
+// Jest, against whichever test file a worker ran first — torn down by now. A
+// DIRECT eval keeps this test file's own import hook, so it loads into this
+// file's environment every time.
+jest.mock('../pdfjs-loader', () => ({
+  // eslint-disable-next-line no-eval
+  loadPdfjs: () => eval("import('pdfjs-dist/legacy/build/pdf.mjs')"),
+}));
+
+
 /**
  * A PDF invoice, read end to end.
  *

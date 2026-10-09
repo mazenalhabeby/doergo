@@ -51,62 +51,6 @@ export class OvertimeService {
   }
 
   /**
-   * Initiate an overtime request when shift ends.
-   * Called by autoClockOut instead of immediate clock-out.
-   */
-  async initiateRequest(data: {
-    userId: string;
-    timeEntryId: string;
-    locationId: string;
-    organizationId: string;
-    scopeSpaceIds?: SpaceScopeIds;
-  }) {
-    this.logger.log(`Initiating overtime request for user ${data.userId}, entry ${data.timeEntryId}`);
-
-    // The newest round for this entry, if there is one. `findFirst` rather than
-    // `findUnique` since a shift may now carry several: overtime loops.
-    const existing = await this.prisma.overtimeRequest.findFirst({
-      where: { timeEntryId: data.timeEntryId },
-      orderBy: { cycle: 'desc' },
-    });
-    if (existing) {
-      this.logger.debug(`Overtime request already exists for entry ${data.timeEntryId}`);
-      return success(existing, 'Overtime request already exists');
-    }
-
-    const now = new Date();
-    const technicianTimeoutAt = new Date(now.getTime() + OVERTIME_CONSTANTS.TECHNICIAN_RESPONSE_TIMEOUT_MS);
-
-    const request = await this.prisma.overtimeRequest.create({
-      data: {
-        technicianId: data.userId,
-        timeEntryId: data.timeEntryId,
-        locationId: data.locationId,
-        organizationId: data.organizationId,
-        status: 'PENDING_TECHNICIAN',
-        technicianTimeoutAt,
-      },
-      include: {
-        location: { select: { name: true } },
-        technician: { select: { firstName: true, lastName: true } },
-      },
-    });
-
-    // Ask the technician.
-    this.notify({
-      recipientIds: [data.userId],
-      organizationId: data.organizationId,
-      kind: 'shiftEnded',
-      params: { location: request.location.name },
-      data: { type: 'overtime.shift_ended_prompt', overtimeRequestId: request.id, action: 'overtime_prompt' },
-    });
-
-    this.logger.log(`Overtime request ${request.id} created, tech has ${OVERTIME_CONSTANTS.TECHNICIAN_RESPONSE_TIMEOUT_MS / 60000} min to respond`);
-
-    return success(request, 'Overtime request initiated');
-  }
-
-  /**
    * Technician responds YES or NO to overtime prompt
    */
   async technicianRespond(data: {
@@ -444,48 +388,6 @@ export class OvertimeService {
     }
 
     return success({ processed }, `Timeout check complete`);
-  }
-
-  /**
-   * End an approved overtime session (called by delayed BullMQ job)
-   */
-  async endOvertime(data: { overtimeRequestId: string }) {
-    const request = await this.prisma.overtimeRequest.findUnique({
-      where: { id: data.overtimeRequestId },
-      include: { technician: { select: { id: true, firstName: true } } },
-    });
-
-    if (!request || request.status !== 'APPROVED') {
-      return success({ skipped: true }, 'Overtime already ended or not approved');
-    }
-
-    const now = new Date();
-    const overtimeMinutes = request.overtimeStartAt
-      ? Math.round((now.getTime() - request.overtimeStartAt.getTime()) / 60000)
-      : 0;
-
-    await this.prisma.overtimeRequest.update({
-      where: { id: request.id },
-      data: {
-        status: 'COMPLETED',
-        actualEndAt: now,
-        overtimeMinutes,
-      },
-    });
-
-    await this.clockOutEntry(request.timeEntryId, request.organizationId, `Overtime completed: ${overtimeMinutes} minutes`);
-
-    this.notify({
-      recipientIds: [request.technicianId],
-      organizationId: request.organizationId,
-      kind: 'ended',
-      params: { minutes: overtimeMinutes },
-      data: { type: 'overtime.ended', overtimeRequestId: request.id },
-    });
-
-    this.logger.log(`Overtime ${request.id} ended: ${overtimeMinutes} minutes`);
-
-    return success({ overtimeMinutes }, 'Overtime completed');
   }
 
   /**

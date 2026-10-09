@@ -25,9 +25,10 @@ const AUTH_FILES = fs
   .readdirSync(AUTH_DIR)
   .filter((f) => f.endsWith('.ts') && !f.endsWith('.spec.ts'))
   .map((f) => path.join(AUTH_DIR, f));
-const FILES = [...USERS_FILES, ...AUTH_FILES];
+const SHARING_FILE = path.resolve(__dirname, '../../../modules/space-sharing/space-sharing.service.ts');
+const FILES = [...USERS_FILES, ...AUTH_FILES, SHARING_FILE];
 const readAll = (files: string[]) => files.map((f) => fs.readFileSync(f, 'utf8')).join('\n');
-const TASK_TABLE_WRITE = /\b(task|taskAssignee|assetCustody|assetHolder|technicianSchedule|timeOff)\.(update|updateMany|delete|deleteMany|create|createMany|upsert)\(/;
+const TASK_TABLE_WRITE = /\b(task|taskAssignee|assetCustody|assetHolder|technicianSchedule|timeOff|spaceAssignment)\.(update|updateMany|delete|deleteMany|create|createMany|upsert)\(/;
 
 describe('member offboarding', () => {
   it('the account services never write task-service tables', () => {

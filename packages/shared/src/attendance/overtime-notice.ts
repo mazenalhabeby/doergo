@@ -15,8 +15,6 @@
 export const OVERTIME_NOTICE_EVENT = 'overtime_notice' as const;
 
 export const OVERTIME_NOTICE_KINDS = [
-  /** To the member: your shift ended — do you need overtime? `{ location }` */
-  'shiftEnded',
   /** To the routed approvers: a member asks for overtime. `{ name, location }` */
   'approvalRequest',
   /** To the person who signed on a colleague's phone: confirm it from yours. */
@@ -27,8 +25,6 @@ export const OVERTIME_NOTICE_KINDS = [
   'expiredPrompt',
   /** To the member: clocked out, nobody approved in time. */
   'expiredApproval',
-  /** To the member: approved overtime ended, clocked out. `{ minutes }` */
-  'ended',
 ] as const;
 
 export type OvertimeNoticeKind = (typeof OVERTIME_NOTICE_KINDS)[number];
@@ -37,7 +33,7 @@ export interface OvertimeNotice {
   recipientIds: string[];
   organizationId: string;
   kind: OvertimeNoticeKind;
-  params: { name?: string; location?: string; reason?: string; minutes?: number };
+  params: { name?: string; location?: string; reason?: string };
   /** Tap routing on the phone — the same `type` values the old payload carried. */
   data: { type: string; overtimeRequestId?: string; action?: string };
 }

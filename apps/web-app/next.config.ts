@@ -11,6 +11,9 @@ import type { NextConfig } from 'next';
     no <base> hijack, no framing by another site, no form posted elsewhere.
     'wasm-unsafe-eval' lets pdf.js compile its WebAssembly decoders; it does NOT
     allow JS eval. 'unsafe-eval' is added in development only (React refresh).
+    The one foreign script: Cloudflare Web Analytics, which Cloudflare (in front
+    of hbcfield.com) injects into the HTML itself — blocked, the dashboard goes
+    quiet with no error anywhere. Its beacon posts over https (connect-src).
   - Styles: 'unsafe-inline' — Leaflet, Recharts and Radix set inline styles.
     Fonts come through next/font, which self-hosts them ('self').
   - Images: map tiles (MapTiler/OSM, configurable), Leaflet's marker icons on
@@ -26,7 +29,7 @@ import type { NextConfig } from 'next';
 const isDev = process.env.NODE_ENV !== 'production';
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${isDev ? " 'unsafe-eval'" : ''}`,
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://static.cloudflareinsights.com${isDev ? " 'unsafe-eval'" : ''}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:" + (isDev ? ' http://localhost:*' : ''),
   "font-src 'self' data:",

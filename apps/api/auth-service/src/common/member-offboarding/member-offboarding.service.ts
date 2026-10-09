@@ -26,4 +26,18 @@ export class MemberOffboarding {
       throw new ServiceUnavailableException('Could not release this member’s jobs and equipment. Nothing was changed — try again.');
     }
   }
+
+  /**
+   * A revoked share: the guest organization's people leave the workspace. The
+   * share is already REVOKED when this runs (so nobody new can be added), and
+   * revoking again re-asks, so a failure here is repaired by pressing Revoke again.
+   */
+  async releaseSharedSpace(ownerOrgId: string, spaceId: string, guestOrgId: string): Promise<void> {
+    try {
+      await firstValueFrom(this.tasks.send({ cmd: 'space_share_release' }, { ownerOrgId, spaceId, guestOrgId }).pipe(timeout(30_000)));
+    } catch (e) {
+      this.logger.error(`space_share_release failed for ${spaceId}/${guestOrgId}: ${(e as Error)?.message ?? e}`);
+      throw new ServiceUnavailableException('The share is revoked, but its people could not be removed from the workspace yet — revoke it again.');
+    }
+  }
 }

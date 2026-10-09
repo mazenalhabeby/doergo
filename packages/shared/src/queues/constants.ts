@@ -122,13 +122,11 @@ export const ATTENDANCE_JOB_TYPES = {
 } as const;
 
 export const OVERTIME_JOB_TYPES = {
-  INITIATE: 'overtime.initiate',
   TECHNICIAN_RESPOND: 'overtime.technicianRespond',
   LEADER_APPROVE: 'overtime.leaderApprove',
   LEADER_APPROVE_SIGNATURE: 'overtime.leaderApproveSignature',
   LEADER_REJECT: 'overtime.leaderReject',
   CHECK_TIMEOUTS: 'overtime.checkTimeouts',
-  END_OVERTIME: 'overtime.endOvertime',
 } as const;
 
 export type OvertimeJobType = (typeof OVERTIME_JOB_TYPES)[keyof typeof OVERTIME_JOB_TYPES];

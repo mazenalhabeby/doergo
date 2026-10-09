@@ -34,6 +34,26 @@ export class MemberOffboardService {
   ) {}
 
   /**
+   * A shared workspace was revoked: the guest organization's people leave THAT
+   * workspace. Only their assignments there end — the guest org's other
+   * workspaces and the owner's own people are untouched. Asked by auth-service
+   * after it marks the share REVOKED; idempotent, so a retry of the revoke is safe.
+   */
+  async releaseSharedSpace(data: { ownerOrgId: string; spaceId: string; guestOrgId: string }): Promise<{ assignmentsRemoved: number }> {
+    // The space must be the OWNER's — a guest org id alone must never empty somebody else's workspace.
+    const space = await this.prisma.companyLocation.findFirst({
+      where: { id: data.spaceId, organizationId: data.ownerOrgId },
+      select: { id: true },
+    });
+    if (!space || data.guestOrgId === data.ownerOrgId) return { assignmentsRemoved: 0 };
+    const { count } = await this.prisma.spaceAssignment.deleteMany({
+      where: { spaceId: data.spaceId, organizationId: data.guestOrgId },
+    });
+    this.logger.log(`Share revoked on ${data.spaceId}: ${count} guest assignments removed`);
+    return { assignmentsRemoved: count };
+  }
+
+  /**
    * @param erase  The person is deleting their ACCOUNT (right to erasure): their
    *               leave records go too. A removal by an admin keeps them — the
    *               organization's own record of absences outlives a departure.

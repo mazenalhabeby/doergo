@@ -1,5 +1,6 @@
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { MemberOffboarding } from '../../common/member-offboarding/member-offboarding.service';
 
 type Level = 'VIEW' | 'CONTRIBUTE' | 'CONTROL';
 const LEVELS: Level[] = ['VIEW', 'CONTRIBUTE', 'CONTROL'];
@@ -13,7 +14,10 @@ const LEVELS: Level[] = ['VIEW', 'CONTRIBUTE', 'CONTROL'];
 @Injectable()
 export class SpaceSharingService {
   private readonly logger = new Logger(SpaceSharingService.name);
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly offboarding: MemberOffboarding,
+  ) {}
 
   private err(message: string, statusCode = HttpStatus.BAD_REQUEST) {
     return { success: false as const, message, statusCode };
@@ -124,15 +128,11 @@ export class SpaceSharingService {
     // Revocation severs the relationship fully: mark REVOKED and REMOVE any
     // cross-org members the guest added to this space (rows tagged with the guest
     // org), so they don't linger in the owner's roster / task-assign after revoke.
-    // ⚠️ OWNERSHIP: `spaceAssignment` is task-service's table, written here only
-    // so the revoke and the removal commit together. Follow-up: route it through
-    // task-service the way offboarding uses `member_offboard`.
-    await this.prisma.$transaction([
-      this.prisma.spaceShare.update({ where: { id: share.id }, data: { status: 'REVOKED' } }),
-      this.prisma.spaceAssignment.deleteMany({
-        where: { spaceId: share.spaceId, organizationId: share.guestOrgId },
-      }),
-    ]);
+    // The guest's people are task-service's to remove (`space_share_release`).
+    // REVOKED first: from that moment nobody new can be added, and a failed
+    // removal is repaired by revoking again (this lookup ignores the status).
+    await this.prisma.spaceShare.update({ where: { id: share.id }, data: { status: 'REVOKED' } });
+    await this.offboarding.releaseSharedSpace(data.ownerOrgId, share.spaceId, share.guestOrgId);
     return { success: true as const, guestOrgId: share.guestOrgId };
   }
 

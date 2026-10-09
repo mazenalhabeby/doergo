@@ -1,4 +1,5 @@
 import { pdfLines } from '@hbcfield/shared';
+import { loadPdfjs } from './pdfjs-loader';
 /**
  * A PDF invoice → the lines a receipt reader can work with.
  *
@@ -24,21 +25,6 @@ import { pdfLines } from '@hbcfield/shared';
 const MAX_PAGES = 3;
 
 
-/*
-  ⚠️ `import()` THROUGH `new Function`, DELIBERATELY.
-
-  This service compiles to CommonJS, and TypeScript rewrites a plain
-  `await import('x')` into `require('x')` — which throws on an ESM-only package,
-  at runtime, in production, with an error that says nothing about the cause.
-  pdf.js ships its legacy build as `.mjs`. Hiding the specifier inside a
-  constructed function is what keeps the compiler's hands off it, so the real
-  dynamic import survives to run.
-
-  Dynamic at all because pdf.js is about a megabyte: a service that files
-  expenses should not carry a PDF engine into memory at boot for the minority
-  of receipts that are PDFs.
-*/
-const esmImport = new Function('s', 'return import(s)') as (s: string) => Promise<any>;
 
 
 /**
@@ -58,7 +44,7 @@ const esmImport = new Function('s', 'return import(s)') as (s: string) => Promis
 export async function pdfToLines(bytes: Buffer): Promise<string[]> {
   let pdfjs: any;
   try {
-    pdfjs = await esmImport('pdfjs-dist/legacy/build/pdf.mjs');
+    pdfjs = await loadPdfjs();
   } catch {
     return [];
   }

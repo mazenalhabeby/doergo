@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { loadPdfjs } from './pdfjs-loader';
 import { checkScan, suggestExpiry, documentTitleFromLines, pdfLines, type ScanResult } from '@hbcfield/shared';
 import { MrzOcrService } from './mrz-ocr.service';
 
@@ -112,15 +113,6 @@ export class OcrRulesReader implements DocumentReader {
   }
 }
 
-/**
- * ⚠️ `import()` through `new Function`: this service compiles to CommonJS, and
- * TypeScript would rewrite a plain dynamic import into `require()`, which
- * throws on pdf.js's ESM-only build — at runtime, with an error that says
- * nothing about why. Loaded on first use, never at boot.
- */
-const esmImport = new Function('s', 'return import(s)') as (s: string) => Promise<any>;
-let pdfjsModule: Promise<any> | null = null;
-const loadPdfjs = () => (pdfjsModule ??= esmImport('pdfjs-dist/legacy/build/pdf.mjs').catch((e) => { pdfjsModule = null; throw e; }));
 
 /**
  * PDFs members upload: the text layer, read exactly — a certificate emailed as
@@ -131,6 +123,7 @@ const loadPdfjs = () => (pdfjsModule ??= esmImport('pdfjs-dist/legacy/build/pdf.
 @Injectable()
 export class PdfTextReader implements DocumentReader {
   readonly name = 'pdf-text';
+  private readonly logger = new Logger(PdfTextReader.name);
 
   async read({ bytes, mimeType, member }: ReadInput): Promise<DocumentReading> {
     const nothing = (unreadable: DocumentReading['unreadable']): DocumentReading => ({
@@ -140,7 +133,10 @@ export class PdfTextReader implements DocumentReader {
     let pdfjs: any;
     try {
       pdfjs = await loadPdfjs();
-    } catch {
+    } catch (e) {
+      // Not the PDF's fault: the reader itself is missing. Said out loud, or every
+      // PDF quietly reads as "no text layer" and nobody knows the reader is down.
+      this.logger.warn(`pdf.js could not be loaded: ${(e as Error)?.message ?? e}`);
       return nothing('NO_TEXT');
     }
     const lines = await pdfLines(pdfjs, bytes, { maxPages: 3 });

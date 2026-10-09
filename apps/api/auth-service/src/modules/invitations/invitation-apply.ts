@@ -209,11 +209,12 @@ export function invitationPlacesMember(targetRole: PrismaRole | string): boolean
  * hand; two copies of the same placement is how `isExternal` went missing from
  * one of them before. Runs inside the caller's accept transaction.
  *
- * ⚠️ OWNERSHIP: `technicianSchedule` and `spaceAssignment` belong to
- * task-service. They are written here, directly, because they must commit in
- * the same transaction as the account and the invitation claim. Follow-up: move
- * behind a task-service message the way offboarding already goes through
- * `member_offboard`.
+ * ⚠️ OWNERSHIP, by decision: `technicianSchedule` and `spaceAssignment` belong to
+ * task-service and are the ONE place auth-service writes them. Joining is the
+ * account, the invitation claim and the placement together — moved behind a
+ * message, a task-service outage would create an account that is in no workspace
+ * with a code already spent, which nothing on screen explains or repairs. Leaving
+ * has no such constraint and goes through `member_offboard`.
  */
 export async function applyInvitationPlacement(
   tx: Prisma.TransactionClient,

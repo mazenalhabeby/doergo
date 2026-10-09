@@ -17,7 +17,7 @@ describe('OvertimeNotificationHandler', () => {
   it('pushes each kind to its recipients, rendered from the catalogue, with the tap routing kept', async () => {
     for (const kind of OVERTIME_NOTICE_KINDS) {
       jest.clearAllMocks();
-      await handler.handle({ recipientIds: ['u1', 'u1', 'u2'], organizationId: 'o1', kind, params: { name: 'Anna', location: 'Warehouse', minutes: 30 }, data: { type: 'overtime.approval_request', overtimeRequestId: 'ot1' } });
+      await handler.handle({ recipientIds: ['u1', 'u1', 'u2'], organizationId: 'o1', kind, params: { name: 'Anna', location: 'Warehouse' }, data: { type: 'overtime.approval_request', overtimeRequestId: 'ot1' } });
       const [ids, text, data] = push.sendToUsers.mock.calls[0];
       expect(ids).toEqual(['u1', 'u2']);
       expect(data).toEqual({ type: 'overtime.approval_request', overtimeRequestId: 'ot1' });
@@ -33,7 +33,7 @@ describe('OvertimeNotificationHandler', () => {
   });
 
   it('ignores an unknown kind and an empty recipient list', async () => {
-    await handler.handle({ recipientIds: [], organizationId: 'o1', kind: 'ended', params: {}, data: { type: 'x' } } as any);
+    await handler.handle({ recipientIds: [], organizationId: 'o1', kind: 'expiredPrompt', params: {}, data: { type: 'x' } } as any);
     await handler.handle({ recipientIds: ['u1'], organizationId: 'o1', kind: 'nope', params: {}, data: { type: 'x' } } as any);
     expect(push.sendToUsers).not.toHaveBeenCalled();
   });

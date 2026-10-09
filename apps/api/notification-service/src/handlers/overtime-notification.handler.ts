@@ -31,7 +31,7 @@ export class OvertimeNotificationHandler {
     const keys = overtimeNoticeKeys(notice.kind);
     const p = notice.params ?? {};
     // A refusal reason is a person's own words: passed through as written.
-    const params = { name: p.name ?? '', location: p.location ?? '', reason: p.reason ?? '', minutes: p.minutes ?? 0 };
+    const params = { name: p.name ?? '', location: p.location ?? '', reason: p.reason ?? '' };
     const text: LocalizedText = { title: msg(keys.title as never, params), body: msg(keys.body as never, params) };
     try {
       await this.pushService.sendToUsers(ids, text, { ...notice.data });

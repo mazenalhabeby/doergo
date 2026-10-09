@@ -28,9 +28,6 @@ export class OvertimeProcessor extends WorkerHost {
     const { data } = job;
 
     switch (job.name) {
-      case OVERTIME_JOB_TYPES.INITIATE:
-        return this.overtimeService.initiateRequest(data);
-
       case OVERTIME_JOB_TYPES.TECHNICIAN_RESPOND:
         return this.overtimeService.technicianRespond(data);
 
@@ -45,9 +42,6 @@ export class OvertimeProcessor extends WorkerHost {
 
       case OVERTIME_JOB_TYPES.CHECK_TIMEOUTS:
         return this.overtimeService.checkTimeouts();
-
-      case OVERTIME_JOB_TYPES.END_OVERTIME:
-        return this.overtimeService.endOvertime(data);
 
       default:
         throw new Error(`Unknown job type: ${job.name}`);
