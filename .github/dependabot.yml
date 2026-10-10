@@ -1,0 +1,22 @@
+# Security updates arrive as PRs; CI (`security` job, `pnpm audit --audit-level=high`)
+# keeps gating. Version-bump noise is grouped so it does not bury the security PRs.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    # Majors are product decisions here (Expo SDK, Nest, Next, Prisma move together).
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
