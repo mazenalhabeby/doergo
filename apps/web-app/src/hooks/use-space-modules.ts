@@ -1,15 +1,31 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/auth-context"
-import { locationsApi } from "@/lib/api"
 import { useWorkflow } from "@/hooks/use-org-workflow"
 import { keys } from "@/lib/query-keys"
+import { loadSpaceModules } from "@/lib/space-directory"
 
 // Module/workflow resolution cascade:
 //   space.enabledModules (override) → org feature modules (default)
 //   space.workflowId (override)     → org default workflow
+//
+// Read from the shared workspace directory on first load (lib/space-directory):
+// a task list of nine workspaces used to ask `/locations/:id/modules` nine times
+// in the same second.
+
+/** The one query behind `keys.spaces.modules(spaceId)` — every caller shares it. */
+export function useSpaceModulesQuery(spaceId: string | null, opts: { enabled?: boolean; staleTime?: number } = {}) {
+  const qc = useQueryClient()
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: keys.spaces.modules(spaceId),
+    queryFn: () => loadSpaceModules(qc, spaceId!, user?.orgModules),
+    enabled: !!spaceId && (opts.enabled ?? true),
+    staleTime: opts.staleTime ?? 60000,
+  })
+}
 
 /**
  * Effective FEATURE modules for a space.
@@ -18,12 +34,7 @@ import { keys } from "@/lib/query-keys"
 export function useSpaceModules(spaceId: string | null) {
   const { user, hasModule: orgHasModule } = useAuth()
 
-  const { data: spaceModules, isSuccess, isError } = useQuery({
-    queryKey: keys.spaces.modules(spaceId),
-    queryFn: () => locationsApi.getEffectiveModules(spaceId!),
-    enabled: !!spaceId,
-    staleTime: 60000,
-  })
+  const { data: spaceModules, isSuccess, isError } = useSpaceModulesQuery(spaceId)
   /** The answer is the workspace's own (or there is no workspace) — not the org fallback used while it loads. */
   const isResolved = !spaceId || isSuccess || isError
 
@@ -49,12 +60,7 @@ export function useSpaceModules(spaceId: string | null) {
  * workflow, falling back to the org's default workflow.
  */
 export function useSpaceWorkflow(spaceId: string | null) {
-  const { data: spaceModules } = useQuery({
-    queryKey: keys.spaces.modules(spaceId),
-    queryFn: () => locationsApi.getEffectiveModules(spaceId!),
-    enabled: !!spaceId,
-    staleTime: 60000,
-  })
+  const { data: spaceModules } = useSpaceModulesQuery(spaceId)
 
   const { statuses, hasWorkflow, workflowId } = useWorkflow(spaceModules?.workflowId ?? null)
 

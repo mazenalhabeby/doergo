@@ -6,6 +6,9 @@ import { SERVICE_NAMES, BaseGatewayService } from '@hbcfield/shared';
  * Gateway → task-service proxy for support. Support ops are synchronous
  * request/reply (no BullMQ on the write path — the only delayed work is the
  * SLA-breach job, scheduled inside task-service).
+ *
+ * The member side only. The agent side (inbox, assign, status) is the
+ * operator console's — platform-admin/platform-support.service.ts.
  */
 @Injectable()
 export class SupportService extends BaseGatewayService {
@@ -19,12 +22,6 @@ export class SupportService extends BaseGatewayService {
   addMessage(data: any) {
     return this.sendOnce({ cmd: 'support.addMessage' }, data);
   }
-  assign(data: any) {
-    return this.send({ cmd: 'support.assign' }, data);
-  }
-  setStatus(data: any) {
-    return this.send({ cmd: 'support.setStatus' }, data);
-  }
   markRead(data: any) {
     return this.send({ cmd: 'support.markRead' }, data);
   }
@@ -33,8 +30,5 @@ export class SupportService extends BaseGatewayService {
   }
   thread(data: any) {
     return this.send({ cmd: 'support.thread' }, data);
-  }
-  inbox(data: any) {
-    return this.send({ cmd: 'support.inbox' }, data);
   }
 }

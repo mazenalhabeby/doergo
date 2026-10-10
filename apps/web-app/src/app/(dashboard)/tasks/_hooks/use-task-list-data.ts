@@ -6,7 +6,9 @@ import { useQuery } from "@tanstack/react-query"
 import { keys } from "@/lib/query-keys"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouteAccess } from "@/hooks/use-route-access"
-import { tasksApi, phasesApi, sprintsApi, epicsApi, locationsApi } from "@/lib/api"
+import { tasksApi, phasesApi, sprintsApi, epicsApi } from "@/lib/api"
+import { useSpaceDirectory } from "@/hooks/use-space-directory"
+import { effectiveSpaceModules } from "@hbcfield/shared/client"
 import { BOARD_FETCH_LIMIT, type TaskScope, type ViewMode } from "../_lib/task-list"
 
 const NO_SPACES: never[] = []
@@ -91,62 +93,76 @@ export function useTaskListData({
   })
 
   /*
-    How many are mine, and how many there are.
+    How many are mine, how many there are, and how many per workspace.
 
-    One cached reply carries both — counting rows the page has not fetched is
-    the only way a badge can be true. Asked only of somebody who has a scope to
-    switch; for everybody else the list is already the whole answer.
+    ONE reply carries all three: the per-workspace grouping also answers `all`
+    and `mine` (task-support getStatusCounts), so the "All / Mine" toggle reads
+    it too instead of asking the status grouping the same two numbers.
   */
-  const { data: myCounts } = useQuery({
-    queryKey: keys.tasks.counts(),
-    queryFn: () => tasksApi.getStatusCounts(),
-    staleTime: 30000,
-    enabled: canSeeOthers,
-  })
-
-  // Space tab counts, grouped server-side over everything the viewer may see.
-  // Computed from the loaded page before, which is why the same tab showed 7 on
-  // page 1 and 4 on page 2.
   const { data: spaceCounts } = useQuery({
     queryKey: keys.tasks.counts({ groupBy: "space" }),
     queryFn: () => tasksApi.getStatusCounts({ groupBy: "space" }),
     staleTime: 30000,
   })
+  const myCounts = useMemo(
+    () => (canSeeOthers && spaceCounts ? { all: spaceCounts.all, mine: spaceCounts.mine } : undefined),
+    [canSeeOthers, spaceCounts],
+  )
 
-  // Fetch phases
-  // GET /phases, /sprints, /epics are @RequirePermission('canViewAllTasks'): a member
-  // without it got three 403s on every visit to their own task list.
+  /*
+    The workspaces — from the shared directory (lib/space-directory), which the
+    shell and every row's module check read too. The directory includes archived
+    workspaces; the tabs show the active ones, which is what `GET /locations`
+    without `includeInactive` answered.
+  */
+  const { data: directory } = useSpaceDirectory()
+  const spacesData = useMemo(
+    () => (directory ? { data: directory.filter((s) => s.isActive !== false) } : undefined),
+    [directory],
+  )
+
+  /*
+    Sprints, phases and epics — only where the module is on SOMEWHERE (the
+    organization, or any workspace's own list). These lists exist for those
+    modules; asking for them in an organization that runs none of them was three
+    requests on every visit whose answers nothing drew.
+
+    GET /phases, /sprints, /epics are @RequirePermission('canViewAllTasks'): a
+    member without it got three 403s on every visit to their own task list.
+  */
   const { holds } = useRouteAccess()
   const readsPlanning = holds("org:canViewAllTasks")
+  const moduleInUse = useMemo(() => {
+    const on = new Set<string>(user?.orgModules ?? [])
+    for (const space of directory ?? []) {
+      for (const m of effectiveSpaceModules((space as { enabledModules?: unknown }).enabledModules, user?.orgModules ?? [])) on.add(m)
+    }
+    return (m: string) => on.has(m)
+  }, [directory, user?.orgModules])
+  // Until the directory arrives only the organization's own modules can say yes;
+  // a workspace that runs the module turns it on when the directory lands.
+
   const { data: phases } = useQuery({
     queryKey: keys.phases.lists(),
     queryFn: () => phasesApi.list(),
     staleTime: 60000,
-    enabled: readsPlanning,
+    enabled: readsPlanning && moduleInUse("phases"),
   })
 
-  // Fetch sprints
   const { data: sprints } = useQuery({
     queryKey: keys.sprints.lists(),
     queryFn: () => sprintsApi.list(),
     staleTime: 60000,
-    enabled: readsPlanning,
+    enabled: readsPlanning && moduleInUse("sprints"),
   })
 
-  // Fetch epics
   const { data: epics } = useQuery({
     queryKey: keys.epics.lists(),
     queryFn: () => epicsApi.list(),
     staleTime: 60000,
-    enabled: readsPlanning,
+    enabled: readsPlanning && moduleInUse("epics"),
   })
 
-  // Fetch spaces (company locations)
-  const { data: spacesData } = useQuery({
-    queryKey: keys.locations.list(),
-    queryFn: () => locationsApi.list(),
-    staleTime: 60000,
-  })
   // ⚠️ A STABLE empty list while loading — a fresh `[]` each render changes `spaces`, which the command
   // palette registration depends on (see command-palette-context: that was a render loop).
   const allSpaces = spacesData?.data ?? NO_SPACES

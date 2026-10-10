@@ -1,7 +1,7 @@
 'use client';
 
 import { personInitials, personName } from "@hbcfield/shared/client"
-import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, ChevronLeft, Send, Loader2, MessageSquare, PenSquare, Search, Phone, Video } from 'lucide-react';
@@ -13,34 +13,12 @@ import { useSocketContext } from '@/contexts/socket-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useTimeFormat } from '@/hooks';
 import { keys } from "@/lib/query-keys"
+import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 
-// ── imperative API for the rest of the app (contact "message" buttons) ────────
-interface ChatContextValue {
-  openMessages: () => void;
-  openChatWith: (userId: string) => void;
-  /**
-   * Can a conversation with this person be opened at all?
-   *
-   * Ask before rendering a Message button. Chat is between two people, so
-   * there is no conversation with yourself and none with nobody — and a button
-   * for either is a button that does nothing when pressed. That kept happening
-   * because each screen re-derived the rule, or forgot to: the task card
-   * offered a member a Message button pointing at themselves, and the employee
-   * panel did the same on your own card. One definition, so a screen can ask
-   * instead of guess.
-   */
-  canMessage: (userId?: string | null) => boolean;
-  unread: number;
-}
-const ChatContext = createContext<ChatContextValue>({
-  openMessages: () => {},
-  openChatWith: () => {},
-  canMessage: () => false,
-  unread: 0,
-});
-export function useChat() {
-  return useContext(ChatContext);
-}
+// The imperative API (useChat) lives in ./chat-context — a page that only needs
+// a "Message" button must not carry the drawer, its socket and its queries.
+import { ChatContext } from './chat-context';
+export { useChat } from './chat-context';
 
 // ── presentation helpers ──────────────────────────────────────────────────────
 function presenceColor(p?: string | null) {
@@ -122,10 +100,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // and available immediately, before the list query refetches.
   const [openedConv, setOpenedConv] = useState<ChatConversation | null>(null);
 
+  // The unread count waits for the page's first load; opening the drawer asks at once.
+  const afterFirstLoad = useAfterFirstLoad();
   const { data: conversations } = useQuery({
     queryKey: keys.chat.conversations(),
     queryFn: chatApi.conversations,
-    enabled,
+    enabled: enabled && (afterFirstLoad || open),
     staleTime: 15_000,
   });
   const activeConv =

@@ -4,6 +4,8 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { SyncAwareThrottlerGuard } from './common/throttler/sync-aware-throttler.guard';
 import { RedisThrottlerStorage } from './common/throttler/redis-throttler.storage';
+import { MemberThrottlerGuard } from './common/throttler/member-throttler.guard';
+import { ANONYMOUS_THROTTLERS } from './common/throttler/throttle-limits';
 import { BullModule } from '@nestjs/bullmq';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { ExpressAdapter } from '@bull-board/express';
@@ -90,15 +92,11 @@ import { StorageModule } from './common/storage/storage.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    // Rate limiting. The three global tiers below always apply per IP. The
-    // FOURTH throttler MUST be named 'default': every per-route @Throttle()
-    // decorator writes its override under the 'default' key, and @nestjs/throttler
-    // only reads an override for a throttler whose name matches. Without a
-    // throttler literally named 'default', all @Throttle overrides (login 5/min,
-    // forgot/reset-password, invitation validate/accept, operator endpoints) are
-    // silently ignored and fall back to the 200/min 'long' tier. Its base limit
-    // here matches 'long' so undecorated routes are unaffected; decorated routes
-    // tighten it to their own value.
+    // Rate limiting — two families, see common/throttler/throttle-limits.ts:
+    // ANONYMOUS (no token, or a @Public route) per IP with the strict limits, and
+    // MEMBER (a validated token) per USER, applied by MemberThrottlerGuard after
+    // JwtAuthGuard. The options below are the anonymous family; the member guard
+    // swaps in its own limits under the same names so every @Throttle() applies.
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -109,28 +107,7 @@ import { StorageModule } from './common/storage/storage.module';
       // behaviour that existed before, rather than taking the API down.
       useFactory: (config: ConfigService) => ({
         storage: new RedisThrottlerStorage(config),
-        throttlers: [
-      {
-        name: 'short',
-        ttl: 1000, // 1 second
-        limit: 10, // 10 requests per second
-      },
-      {
-        name: 'medium',
-        ttl: 10000, // 10 seconds
-        limit: 50, // 50 requests per 10 seconds
-      },
-      {
-        name: 'long',
-        ttl: 60000, // 1 minute
-        limit: 200, // 200 requests per minute
-      },
-      {
-        name: 'default',
-        ttl: 60000, // 1 minute
-        limit: 200, // fallback for undecorated routes; @Throttle() overrides this
-      },
-        ],
+        throttlers: ANONYMOUS_THROTTLERS,
       }),
     }),
     // BullMQ for reliable job processing
@@ -183,15 +160,21 @@ import { StorageModule } from './common/storage/storage.module';
   controllers: [AppController],
   providers: [
     AppService,
-    // Global guards - Throttler → JwtAuthGuard → RolesGuard → OnboardingCompleteGuard → PermissionsGuard → AccessModuleGuard
+    // Global guards - Throttler (anonymous per IP) → JwtAuthGuard → MemberThrottler (per user) → RolesGuard → OnboardingCompleteGuard → PermissionsGuard → AccessModuleGuard
     {
       provide: APP_GUARD,
-      // Skips only the gateway's own replays of a phone's queue (per-process secret).
+      // Anonymous requests per IP; a bearer request only meets the flood net here.
+      // Skips the gateway's own replays of a phone's queue (per-process secret).
       useClass: SyncAwareThrottlerGuard,
     },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    // A signed-in member's limit, per USER — needs the validated req.user.
+    {
+      provide: APP_GUARD,
+      useClass: MemberThrottlerGuard,
     },
     // Default-DENY for external CUSTOMER accounts: confines them to @Public,
     // @AllowCustomer, and the portal. Must run right after auth (needs req.user).

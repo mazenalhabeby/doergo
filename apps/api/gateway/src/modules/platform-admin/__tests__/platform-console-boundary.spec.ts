@@ -166,9 +166,17 @@ describe('operator console — server boundary', () => {
       }
     });
 
-    it('every static-key route carries it too (billing admin, support agent, blog writes, app-update notice)', () => {
+    it('the static key opens no support route — the agent side is the console\'s (staff login, 2FA, team scope)', () => {
+      const methods = Object.getOwnPropertyNames(SupportController.prototype).filter((m) => m !== 'constructor');
+      const paths = methods.map((m) => String(Reflect.getMetadata('path', (SupportController.prototype as any)[m]) ?? ''));
+      expect(paths.filter((p) => p.startsWith('agent'))).toEqual([]);
+      expect(methods.filter((m) => /assertPlatformKey|platformAdminGuard/.test(String((SupportController.prototype as any)[m])))).toEqual([]);
+      expect(methods).not.toContain('assertPlatformKey');
+    });
+
+    it('every static-key route carries it too (billing admin, blog writes, app-update notice)', () => {
       const keyRoutes: Array<[any, string]> = [];
-      for (const cls of [BillingController, SupportController, BlogController, AppUpdateNoticeController, PlatformAuthController] as any[]) {
+      for (const cls of [BillingController, BlogController, AppUpdateNoticeController, PlatformAuthController] as any[]) {
         for (const m of Object.getOwnPropertyNames(cls.prototype)) {
           if (m === 'constructor' || m === 'assertPlatformKey') continue;
           const src = String(cls.prototype[m]);
@@ -176,7 +184,8 @@ describe('operator console — server boundary', () => {
           if (guarded || /assertPlatformKey\(/.test(src)) keyRoutes.push([cls, m]);
         }
       }
-      expect(keyRoutes.length).toBeGreaterThanOrEqual(12);
+      // 9 since the six static-key support-agent routes were removed (the console has them behind staff login).
+      expect(keyRoutes.length).toBeGreaterThanOrEqual(9);
       expect(keyRoutes.filter(([c, m]) => !hasInterceptor(c, m)).map(([c, m]) => `${c.name}.${m}`)).toEqual([]);
       // ...and is rate-limited (THROTTLER limit metadata on the method).
       const unthrottled = keyRoutes.filter(([c, m]) => !Reflect.getMetadataKeys(c.prototype[m]).some((k: string) => String(k).startsWith('THROTTLER:LIMIT')));

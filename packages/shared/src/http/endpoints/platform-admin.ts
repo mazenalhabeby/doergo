@@ -203,6 +203,10 @@ export interface PlatformTicket {
   assignedTeamId?: string | null;
   assignedAgentId?: string | null;
   assignedAgentName?: string | null;
+  /** The first-response promise was missed — the inbox marks the row. */
+  slaBreached?: boolean;
+  /** When the first response is due (null once answered / no promise). */
+  slaFirstResponseDueAt?: string | null;
 }
 export interface PlatformTicketMessage {
   id: string;

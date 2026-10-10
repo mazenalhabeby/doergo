@@ -78,13 +78,3 @@ describe('a task open to a work role', () => {
   });
 });
 
-describe('a static-key agent socket is recorded in the operator audit trail', () => {
-  it('writes one STATIC_KEY row with the declared agent name', async () => {
-    const { recordStaticKeyAgentSocket } = require('../socket-access');
-    const create = jest.fn().mockResolvedValue({});
-    await recordStaticKeyAgentSocket({ platformAuditLog: { create } }, { agent: 'Lena', ip: '1.2.3.4', userAgent: 'ua' });
-    expect(create).toHaveBeenCalledWith({ data: expect.objectContaining({ actorType: 'STATIC_KEY', actorLabel: 'Lena', action: 'SUPPORT_AGENT_SOCKET_OPENED', ok: true }) });
-    await recordStaticKeyAgentSocket({ platformAuditLog: { create } }, {});
-    expect(create).toHaveBeenLastCalledWith({ data: expect.objectContaining({ actorLabel: 'static-key' }) });
-  });
-});

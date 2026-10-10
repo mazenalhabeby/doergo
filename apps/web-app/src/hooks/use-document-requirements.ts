@@ -5,6 +5,7 @@ import { documentsApi } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { summarisePending } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
+import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 
 /**
  * What the signed-in person still has to do about their own documents.
@@ -30,9 +31,15 @@ import { keys } from "@/lib/query-keys"
  * reminder that refetches on every navigation is a reminder that gets blamed for
  * the dashboard feeling slow.
  */
-export function useMyDocumentRequirements() {
+export function useMyDocumentRequirements({ withPage = false }: { withPage?: boolean } = {}) {
   const { user, hasPlanFeature } = useAuth()
-  const enabled = !!user && hasPlanFeature("documents")
+  /*
+    The navbar's count waits until the page has loaded (useAfterFirstLoad); the
+    dashboard's banner (`withPage`) is part of what that page shows, so it goes
+    out with it — and the count then reads the same cached reply.
+  */
+  const afterFirstLoad = useAfterFirstLoad(1)
+  const enabled = !!user && hasPlanFeature("documents") && (withPage || afterFirstLoad)
 
   const { data } = useQuery({
     queryKey: keys.documents.myPending(),

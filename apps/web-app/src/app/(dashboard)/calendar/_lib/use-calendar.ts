@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from "react"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { CALENDAR_LAYERS, type CalendarLayer } from "@hbcfield/shared/client"
 import { calendarApi } from "@/lib/api"
-import i18n from "@/i18n"
+// The global instance (initialised by the root layout), not `@/i18n` — that module
+// carries the whole English catalogue into this page's first load (see lib/format-date).
+import i18n from "i18next"
 import { keys } from "@/lib/query-keys"
 
 export type CalendarView = "day" | "week" | "month" | "agenda"

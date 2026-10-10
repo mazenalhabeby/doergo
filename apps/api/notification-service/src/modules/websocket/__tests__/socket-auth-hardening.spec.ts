@@ -106,15 +106,14 @@ describe('support_typing derives the target from the ticket', () => {
   });
 });
 
-describe('authenticate_agent compares the platform key in constant time', () => {
-  it('accepts the key, refuses a near miss and an empty one', async () => {
+describe('authenticate_agent no longer accepts the static platform key', () => {
+  it('the platform key alone is refused — only a console staff token opens an agent socket', async () => {
     const g = gatewayWith({});
-    g.platformAdminKey = 'operator-secret';
-    const sock = (platformKey: unknown) => ({ ...socket('a'), handshake: { auth: { platformKey } } });
-    expect((await g.handleAuthenticateAgent(sock('operator-secret'))).success).toBe(true);
-    expect((await g.handleAuthenticateAgent(sock('operator-secreT'))).success).toBe(false);
-    expect((await g.handleAuthenticateAgent(sock(''))).success).toBe(false);
-    expect((await g.handleAuthenticateAgent(sock({ toString: () => 'operator-secret' }))).success).toBe(false);
+    (g as any).platformAdminKey = 'operator-secret';
+    const sock = (auth: Record<string, unknown>) => ({ ...socket('a'), handshake: { auth } });
+    expect((await g.handleAuthenticateAgent(sock({ platformKey: 'operator-secret' }))).success).toBe(false);
+    expect((await g.handleAuthenticateAgent(sock({}))).success).toBe(false);
+    expect((await g.handleAuthenticateAgent(sock({ token: 'not-a-jwt' }))).success).toBe(false);
   });
 });
 

@@ -227,7 +227,7 @@ describe("refusals and the session", () => {
   it("auth:false sends no bearer token and does not refresh", async () => {
     setAccessToken("tok", { broadcast: false })
     global.fetch = jest.fn().mockResolvedValue(response(401, {})) as never
-    await raw(webClient().get("/support/agent/inbox", { auth: false }))
+    await raw(webClient().get("/invitations/validate/ABC", { auth: false }))
     expect(global.fetch).toHaveBeenCalledTimes(1)
     const [, init] = (global.fetch as jest.Mock).mock.calls[0]
     expect(init.headers.Authorization).toBeUndefined()

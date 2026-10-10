@@ -700,6 +700,8 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 
 > `/billing/bill` and `/billing/subscription` are deliberately separate: switching a module on moves the bill and not the status; a failed card moves the status and not the bill.
 
+> **Support agents work ONLY in the operator console** (`apps/admin` → Support: staff login + 2FA + team scope, `/platform/support/*`, agent socket `authenticate_agent` with the staff token). The web app's `/operator/support` page and the static-key `/support/agent/*` routes were REMOVED (2026-10-10); nginx answers 404 on `/api/v1/support/agent/` and the socket no longer accepts `platformKey`. ⚠️ Never bring back a support surface that opens on the platform key — it reads every organization's tickets, internal notes included.
+
 **Query Parameters for GET `/technicians`:**
 - `status`: `active` | `inactive` | `all` (default: `active`)
 - `type`: `FULL_TIME` | `FREELANCER` | `all` (default: `all`)
@@ -964,7 +966,7 @@ pnpm build            # Build all packages
 - [x] Web app: forgot-password + reset-password pages
 - [x] Web app: role-based dashboard views
 - [x] Account lockout (5 failed attempts = 15 min lockout)
-- [x] Rate limiting (Throttler: 3/sec, 20/10sec, 100/min)
+- [x] Rate limiting — two families since 2026-10-10, see §18
 - [x] Security headers (Helmet.js)
 - [x] Input validation (class-validator + Zod frontend)
 - [x] "Remember Me" functionality (24h default / 30d extended)
@@ -1458,6 +1460,7 @@ export class TasksController {
 ### Add new web page
 1. Create `src/app/{route}/page.tsx` (App Router)
 2. Use shared components from `src/components/`
+3. **Page-load budget (≤ 8 requests in the first second)**: a read the first paint does not need (badges, ribbons, a sidebar action, a list behind a tap) waits for `useAfterFirstLoad(wave)` (`hooks/use-after-first-load.ts`); the workspace list is `useSpaceDirectory()` (one shared request — also answers `keys.spaces.modules`, never `/locations/:id/modules` per row); dialogs and below-the-fold sections load with `next/dynamic` (+ `useLatched(open)`); import page components by FILE, not through a `_components` barrel; never import `@/i18n` from a module (it carries the English catalogue) — use the global `i18next` instance
 
 ---
 
@@ -1876,7 +1879,7 @@ The pricing model changed shape. `bill = seats × €9.99 + Σ spaces(modules + 
 
 | Feature | Implementation |
 |---------|---------------|
-| Rate Limiting | `@nestjs/throttler` - 3/sec, 20/10sec, 100/min |
+| Rate Limiting | `@nestjs/throttler`, two families (`gateway/src/common/throttler/throttle-limits.ts`). **Anonymous** (no token, or any `@Public` route — login, refresh, password, invitations, sign link, feeds): per IP (`req.ip` = CF-Connecting-IP via nginx realip → X-Forwarded-For), 10/1s · 50/10s · 200/60s per route + each route's `@Throttle`. **Signed-in member**: per USER (`MemberThrottlerGuard`, right AFTER `JwtAuthGuard` — never an id from an unverified token), 30/1s · 150/10s · 600/60s per route + the same `@Throttle` overrides. A bearer request meets only a per-IP flood net before validation (150/1s · 1000/10s · 4000/60s, all routes). Spec: `throttler-families.spec.ts` |
 | Account Lockout | 5 failed attempts = 15 min lockout |
 | Password Hashing | bcrypt with cost factor 12 |
 | Token Security | SHA-256 hashed refresh tokens in DB |

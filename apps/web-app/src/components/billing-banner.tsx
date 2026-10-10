@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { AlertTriangle, Clock, Lock, ArrowRight } from 'lucide-react';
 import { billingApi } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
-import type { SubscriptionView } from '@hbcfield/shared/client';
+import { keys } from '@/lib/query-keys';
+import { useAfterFirstLoad } from '@/hooks/use-after-first-load';
 
 /**
  * Premium status ribbon shown to ADMINS only when billing needs attention:
@@ -17,19 +18,19 @@ import type { SubscriptionView } from '@hbcfield/shared/client';
 export function BillingBanner() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
-  const [sub, setSub] = useState<SubscriptionView | null>(null);
-
-  useEffect(() => {
-    if (!isAdmin) return; // non-admins: no fetch, no banner
-    let alive = true;
-    billingApi
-      .getSubscription()
-      .then((s) => alive && setSub(s))
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [isAdmin]);
+  /*
+    Asked after the page's own first load: the ribbon matters (a locked account
+    says so here), but it is a status, not what the page was opened for — and
+    a healthy subscription, the normal case, draws nothing at all.
+  */
+  const afterFirstLoad = useAfterFirstLoad();
+  const { data: sub } = useQuery({
+    queryKey: keys.billing.subscription(),
+    queryFn: () => billingApi.getSubscription(),
+    enabled: isAdmin && afterFirstLoad, // non-admins: no fetch, no banner
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
 
   if (!isAdmin || !sub) return null;
 

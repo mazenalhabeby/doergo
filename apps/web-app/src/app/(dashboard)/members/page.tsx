@@ -1,6 +1,7 @@
 "use client"
 
 import { keys, membersPageParams } from "@/lib/query-keys"
+import { useSpaceDirectory } from "@/hooks/use-space-directory"
 import { useState, useMemo, useEffect } from "react"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import Link from "next/link"
@@ -124,14 +125,10 @@ export default function MembersPage() {
     queryFn: () => organizationsApi.getMembers(membersPageParams(debouncedSearch, roleFilter, page)),
   })
 
-  const { data: locationsData } = useQuery({
-    queryKey: keys.locations.list({ limit: 100 }),
-    queryFn: () => locationsApi.list({ limit: 100 }),
-    staleTime: 60000,
-  })
-
-  // Fetch all assignments to build member->spaces map
-  const locations = locationsData?.data || []
+  // The shared workspace directory (lib/space-directory) — the shell already
+  // holds it, so this costs no request; the active ones, as `GET /locations` answered.
+  const { data: directory } = useSpaceDirectory()
+  const locations = useMemo(() => (directory ?? []).filter((l) => l.isActive !== false), [directory])
 
   // Stable key = sorted location ids, so adding+removing a space (same count)
   // still busts the cache (was keyed on locations.length — fragile) (D3).

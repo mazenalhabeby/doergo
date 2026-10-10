@@ -18,7 +18,7 @@ import { useQuery } from "@tanstack/react-query"
 import { usersApi, type InboxNotification } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { useSocketContext } from "@/contexts/socket-context"
-import { useChat } from "@/components/chat/chat-drawer"
+import { useChat } from "@/components/chat/chat-context"
 import { Button } from "@/components/ui/button"
 import {
   Popover,
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { keys } from "@/lib/query-keys"
+import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 
 // ============================================================================
 // Socket payload helpers
@@ -207,10 +208,14 @@ export function NotificationBell() {
   const { isConnected, subscribe } = useSocketContext()
 
   // ── Load the persisted inbox once, then keep live events on top ──────
+  // After the page's own first load (live events still arrive on the socket
+  // meanwhile and are kept on top); opening the bell asks at once.
+  const afterFirstLoad = useAfterFirstLoad()
   const { data: inbox } = useQuery({
     queryKey: keys.notifications.inbox(),
     queryFn: () => usersApi.getNotifications(50),
     staleTime: 60_000,
+    enabled: afterFirstLoad || open,
   })
   useEffect(() => {
     if (!inbox || seededRef.current) return

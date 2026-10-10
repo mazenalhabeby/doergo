@@ -3,8 +3,6 @@
 import { keys } from "@/lib/query-keys"
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { useClockGate, useOfficeStart } from "@/hooks"
-import { OfficeStartDialog } from "@/components/office-start-dialog"
-import { ClockGateDialog } from "@/components/clock-gate-dialog"
 
 import { useState, use, useEffect, useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
@@ -28,7 +26,7 @@ import { getStatusConfig } from "@/lib/constants"
 import { useAuth } from "@/contexts/auth-context"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { useBreadcrumbOverride } from "@/contexts/breadcrumb-context"
-import { TaskDetailPageSkeleton } from "@/components/skeletons"
+import { TaskDetailPageSkeleton } from "@/components/skeletons/page-skeletons"
 import { useTaskPermissions } from "@/hooks/use-task-permissions"
 import { assigneeIds } from "@/lib/task-assignment"
 import { useWorkflow, getTransitionsForStatus } from "@/hooks/use-org-workflow"
@@ -36,33 +34,72 @@ import { tasksApi, trackingApi, sprintsApi, phasesApi, epicsApi, type WorkflowSt
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { notify } from "@/lib/toast"
-import { AssignMemberDialog } from "@/components/assign-member-dialog"
 import { useStepMove } from "@/components/step-forms/use-step-move"
-import { StepReportsSection } from "@/components/step-forms/step-reports-section"
 import { serverErrorMessage } from "@/lib/server-error"
 
-import {
-  TaskProgressCard,
-  RouteTrackingSection,
-  ServiceReportSection,
-  AttachmentsSection,
-  CommentsSection,
-  ActivitySection,
-  EditTaskDialog,
-  ChecklistSection,
-  SubtasksSection,
-  DependenciesSection,
-  CustomFieldsSection,
-  CollapsibleSection,
-  TaskDetailHeader,
-  TaskDetailSidebar,
-  DescriptionSection,
-  HandoverCard,
-  JobTimeCard,
-  TaskCrewCard,
-  OpenRoleCard,
-} from "./_components"
+// Each from its own file, not the `./_components` barrel: app code is assumed to
+// have side effects, so importing one name through the barrel kept EVERY section
+// (the lazily loaded ones below included) in the page bundle.
+import { TaskProgressCard } from "./_components/task-progress-card"
+import { CommentsSection } from "./_components/comments-section"
+import { CollapsibleSection } from "./_components/collapsible-section"
+import { TaskDetailHeader } from "./_components/task-detail-header"
+import { TaskDetailSidebar } from "./_components/task-detail-sidebar"
+import { DescriptionSection } from "./_components/description-section"
+import { HandoverCard } from "./_components/handover-card"
+import { JobTimeCard } from "./_components/job-time-card"
+import { TaskCrewCard } from "./_components/task-crew-card"
+import { OpenRoleCard } from "./_components/open-role-card"
 import { HandoverPendingNotice, useHandoverPendingText } from "@/components/handover-pending-notice"
+import { useLatched } from "@/hooks/use-latched"
+import dynamic from "next/dynamic"
+
+/*
+  Loaded when they are needed, not with the page.
+
+  The dialogs open on a click (or a refused move); the service report exists
+  only on a finished job and the route only where a route is recorded. Pulled in
+  through the page they made it the heaviest route in the app (~485 kB first
+  load); each now arrives as its own chunk the moment it is about to show.
+  Sections that draw in the page keep a sized placeholder, so nothing jumps.
+*/
+const EditTaskDialog = dynamic(() => import("./_components/edit-task-dialog").then((m) => m.EditTaskDialog), { ssr: false })
+const AssignMemberDialog = dynamic(() => import("@/components/assign-member-dialog").then((m) => m.AssignMemberDialog), { ssr: false })
+const ClockGateDialog = dynamic(() => import("@/components/clock-gate-dialog").then((m) => m.ClockGateDialog), { ssr: false })
+const OfficeStartDialog = dynamic(() => import("@/components/office-start-dialog").then((m) => m.OfficeStartDialog), { ssr: false })
+const ServiceReportSection = dynamic(() => import("./_components/service-report-section").then((m) => m.ServiceReportSection), {
+  ssr: false,
+  loading: () => <SectionPlaceholder rows={4} />,
+})
+const RouteTrackingSection = dynamic(() => import("./_components/route-tracking-section").then((m) => m.RouteTrackingSection), {
+  ssr: false,
+  loading: () => <SectionPlaceholder rows={6} />,
+})
+
+/*
+  The sections below the cards. Each sits in a CollapsibleSection whose header
+  is drawn at once (and whose body mounts only when open), so only the body
+  waits for its code, holding a placeholder. The two that hide themselves when
+  empty (custom fields, step reports) hold nothing.
+*/
+const SubtasksSection = dynamic(() => import("./_components/subtasks-section").then((m) => m.SubtasksSection), { ssr: false, loading: () => <SectionPlaceholder rows={3} /> })
+const ChecklistSection = dynamic(() => import("./_components/checklist-section").then((m) => m.ChecklistSection), { ssr: false, loading: () => <SectionPlaceholder rows={3} /> })
+const AttachmentsSection = dynamic(() => import("./_components/attachments-section").then((m) => m.AttachmentsSection), { ssr: false, loading: () => <SectionPlaceholder rows={3} /> })
+const DependenciesSection = dynamic(() => import("./_components/dependencies-section").then((m) => m.DependenciesSection), { ssr: false, loading: () => <SectionPlaceholder rows={2} /> })
+const ActivitySection = dynamic(() => import("./_components/activity-section").then((m) => m.ActivitySection), { ssr: false, loading: () => <SectionPlaceholder rows={4} /> })
+const CustomFieldsSection = dynamic(() => import("./_components/custom-fields-section").then((m) => m.CustomFieldsSection), { ssr: false })
+const StepReportsSection = dynamic(() => import("@/components/step-forms/step-reports-section").then((m) => m.StepReportsSection), { ssr: false })
+
+/** The shape a lazily loaded section holds while its code arrives. */
+function SectionPlaceholder({ rows }: { rows: number }) {
+  return (
+    <div className="space-y-2" aria-hidden>
+      {Array.from({ length: rows }).map((_, i) => (
+        <Skeleton key={i} className="h-4 w-full" />
+      ))}
+    </div>
+  )
+}
 
 export default function TaskDetailPage({
   params,
@@ -341,6 +378,12 @@ export default function TaskDetailPage({
     onError: (e: Error) => notify.error(e.message),
   })
 
+  // A lazily loaded dialog mounts the first time it opens and stays (its close animates).
+  const editMounted = useLatched(showEditDialog)
+  const assignMounted = useLatched(showAssignModal)
+  const clockGateMounted = useLatched(clockGate.dialogProps.open)
+  const officeStartMounted = useLatched(officeStart.dialogProps.open)
+
   // ─── Loading ────────────────────────────────────────────────────────────
   // The same skeleton the route loader shows, so the shape never changes
   // between the two waits.
@@ -391,7 +434,7 @@ export default function TaskDetailPage({
   return (
     <div className="min-h-full bg-background">
       {/* Dialogs */}
-      <AssignMemberDialog
+      {assignMounted && <AssignMemberDialog
         open={showAssignModal}
         onOpenChange={setShowAssignModal}
         taskId={id}
@@ -415,10 +458,10 @@ export default function TaskDetailPage({
           notify.success(t("tasks.detail.assigneesUpdated"))
           queryClient.invalidateQueries({ queryKey: keys.tasks.detail(id), refetchType: "all" })
         }}
-      />
-      <EditTaskDialog task={task} open={showEditDialog} onOpenChange={setShowEditDialog} />
-      <ClockGateDialog {...clockGate.dialogProps} />
-      <OfficeStartDialog {...officeStart.dialogProps} />
+      />}
+      {editMounted && <EditTaskDialog task={task} open={showEditDialog} onOpenChange={setShowEditDialog} />}
+      {clockGateMounted && <ClockGateDialog {...clockGate.dialogProps} />}
+      {officeStartMounted && <OfficeStartDialog {...officeStart.dialogProps} />}
       {stepMove.dialog}
 
       <div className="p-8 max-w-7xl mx-auto">

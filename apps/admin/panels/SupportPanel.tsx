@@ -113,6 +113,8 @@ export function SupportPanel({ onError, isSupervisor, hasTeams, canListTeams }: 
     const t = teamNames[id];
     return <span className="rounded-full px-1.5 py-0.5 text-[10px]" style={{ background: (t?.color ?? '#334155') + '33', color: t?.color ?? '#94a3b8' }}>{t?.name ?? 'team'}</span>;
   };
+  /** The first-response promise was missed — the one signal the old web inbox showed that this one did not. */
+  const slaChip = (t: Ticket) => (t.slaBreached ? <span className="rounded-full bg-red-500/15 px-1.5 py-0.5 text-[10px] text-red-400">SLA breached</span> : null);
   const views: InboxView[] = isSupervisor ? ['all', 'unassigned', 'mine'] : [...(hasTeams ? (['team'] as InboxView[]) : []), 'unassigned', 'mine'];
 
   return (
@@ -120,7 +122,8 @@ export function SupportPanel({ onError, isSupervisor, hasTeams, canListTeams }: 
       <aside className="flex w-80 shrink-0 flex-col overflow-hidden rounded-xl border border-slate-800">
         <div className="flex items-center gap-2 border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
           Inbox ({tickets.length})
-          <span className={`ml-auto flex items-center gap-1 normal-case ${live ? 'text-green-400' : 'text-slate-600'}`}><span className={`h-1.5 w-1.5 rounded-full ${live ? 'bg-green-400' : 'bg-slate-600'}`} />{live ? 'live' : 'polling'}</span>
+          <button onClick={refresh} className="ml-auto normal-case text-blue-400 hover:text-blue-300" title="Reload the inbox now">Refresh</button>
+          <span className={`flex items-center gap-1 normal-case ${live ? 'text-green-400' : 'text-slate-600'}`}><span className={`h-1.5 w-1.5 rounded-full ${live ? 'bg-green-400' : 'bg-slate-600'}`} />{live ? 'live' : 'polling'}</span>
         </div>
         <div className="flex gap-1 border-b border-slate-800 px-2 py-1.5 text-[11px]">
           {views.map((v) => <button key={v} onClick={() => setView(v)} className={`rounded px-2 py-0.5 ${view === v ? 'bg-slate-700 text-slate-100' : 'text-slate-400 hover:text-slate-200'}`}>{VIEW_LABEL[v]}</button>)}
@@ -128,7 +131,7 @@ export function SupportPanel({ onError, isSupervisor, hasTeams, canListTeams }: 
         <div className="min-h-0 flex-1 overflow-y-auto">
           {tickets.length === 0 ? <p className="p-4 text-sm text-slate-500">No tickets in this view.</p> : tickets.map((t) => (
             <button key={t.id} onClick={() => setSel(t.id)} className={`flex w-full flex-col gap-0.5 border-b border-slate-800/60 px-4 py-2.5 text-left hover:bg-slate-800/40 ${sel === t.id ? 'bg-slate-800/60' : ''}`}>
-              <div className="flex items-center gap-2"><span className={`rounded-full px-1.5 py-0.5 text-[10px] ${TSTATUS[t.status] ?? 'bg-slate-700'}`}>{t.status?.toLowerCase()}</span>{teamChip(t.assignedTeamId)}{t.assignedAgentId && <span className="truncate text-[10px] text-blue-400">@{t.assignedAgentName ?? t.assignedAgentId}</span>}</div>
+              <div className="flex items-center gap-2"><span className={`rounded-full px-1.5 py-0.5 text-[10px] ${TSTATUS[t.status] ?? 'bg-slate-700'}`}>{t.status?.toLowerCase()}</span>{teamChip(t.assignedTeamId)}{slaChip(t)}{t.assignedAgentId && <span className="truncate text-[10px] text-blue-400">@{t.assignedAgentName ?? t.assignedAgentId}</span>}</div>
               <span className="truncate text-sm font-medium">{t.subject}</span>
               <span className="truncate text-xs text-slate-500">{t.createdBy?.firstName} {t.createdBy?.lastName} · {dateTime(t.lastCustomerMessageAt)}</span>
             </button>
@@ -140,7 +143,7 @@ export function SupportPanel({ onError, isSupervisor, hasTeams, canListTeams }: 
           <>
             <div className="flex items-center justify-between gap-2 border-b border-slate-800 px-4 py-3">
               <div className="min-w-0">
-                <div className="flex items-center gap-2"><span className="truncate font-semibold">{thread.ticket.subject}</span>{teamChip(thread.ticket.assignedTeamId)}</div>
+                <div className="flex items-center gap-2"><span className="truncate font-semibold">{thread.ticket.subject}</span>{teamChip(thread.ticket.assignedTeamId)}{slaChip(thread.ticket)}</div>
                 <div className="text-xs text-slate-500">{thread.ticket.createdBy?.email} · {thread.ticket.status?.toLowerCase()}{thread.ticket.assignedAgentId && <span className="text-blue-400"> · @{thread.ticket.assignedAgentName ?? thread.ticket.assignedAgentId}</span>}</div>
               </div>
               <div className="flex shrink-0 items-center gap-1">

@@ -11,8 +11,8 @@ import { instrument } from '@socket.io/admin-ui';
 import { Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
-import { SocketEvents, PrismaService, platformCan, safeEqual } from '@hbcfield/shared';
-import { operatorMaySupport, recordStaticKeyAgentSocket, resolveSocketAccess, socketMayOpenTask, type SocketAccess } from './socket-access';
+import { SocketEvents, PrismaService, platformCan } from '@hbcfield/shared';
+import { operatorMaySupport, resolveSocketAccess, socketMayOpenTask, type SocketAccess } from './socket-access';
 
 export interface ClientInfo {
   userId: string;
@@ -99,7 +99,6 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   // Support live-chat: socket ids of connected human agents (operator staff).
   // Presence = "is any agent online" → drives the customer's live-chat availability.
   private agentSockets = new Set<string>();
-  private readonly platformAdminKey?: string;
   private readonly platformJwtSecret?: string;
 
   constructor(private readonly prisma: PrismaService, configService: ConfigService) {
@@ -108,9 +107,10 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
       throw new Error('CRITICAL: JWT_ACCESS_SECRET must be configured for socket authentication');
     }
     this.jwtSecret = secret;
-    // Agent sockets authenticate with EITHER the legacy platform key (operator
-    // console) OR a platform-staff JWT (admin.hbcfield.com) with manageSupport.
-    this.platformAdminKey = configService.get<string>('PLATFORM_ADMIN_KEY');
+    // Agent sockets authenticate with a platform-staff JWT (admin.hbcfield.com)
+    // holding manageSupport — and nothing else. The static platform key no
+    // longer opens one (its only user, the web app's /operator/support page,
+    // was removed).
     this.platformJwtSecret = configService.get<string>('PLATFORM_JWT_SECRET');
   }
 
@@ -474,29 +474,18 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     return { success: true, rooms: clientInfo.rooms };
   }
 
-  // Support agents (operator staff) authenticate with the platform key, NOT a JWT
-  // — they are not app users. They join the `support-agents` room to receive every
+  // Support agents (operator staff) authenticate with their CONSOLE token, not an
+  // app JWT — they are not app users. They join the `support-agents` room to receive every
   // ticket event (including internal notes) and drive live-chat presence.
   @SubscribeMessage('authenticate_agent')
   async handleAuthenticateAgent(client: Socket) {
     const auth = client.handshake?.auth ?? {};
     let authed = false;
-    // Path 1: legacy shared platform key (operator console).
-    // Constant-time: `===` leaks how much of the operator key matched.
-    if (this.platformAdminKey && typeof auth.platformKey === 'string' && safeEqual(auth.platformKey, this.platformAdminKey)) {
-      authed = true;
-      // Recorded like every static-key call (actor "static-key" + declared agent name).
-      recordStaticKeyAgentSocket(this.prisma as any, {
-        agent: auth.agent,
-        ip: client.handshake?.address ?? null,
-        userAgent: client.handshake?.headers?.['user-agent'],
-      }).catch((e) => this.logger.warn(`[AUTH] platform audit write failed for agent socket ${client.id}: ${e}`));
-    }
-    // Path 2: platform-staff JWT (admin.hbcfield.com) — verify, then ask the
+    // The platform-staff JWT (admin.hbcfield.com) — verify, then ask the
     // DATABASE: still active, minted after their cut-off, and their CURRENT
     // role holds manageSupport (socket-access.ts operatorMaySupport). Like an
     // app socket, it is cut when the token lapses.
-    if (!authed && this.platformJwtSecret && auth.token) {
+    if (this.platformJwtSecret && auth.token) {
       let p: any = null;
       try {
         p = jwt.verify(auth.token, this.platformJwtSecret, { algorithms: ['HS256'] });

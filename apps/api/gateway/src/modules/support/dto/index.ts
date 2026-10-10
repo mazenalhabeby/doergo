@@ -16,7 +16,7 @@ import {
 } from 'class-validator';
 import { CLIENT_ID } from '../../../common/dto/upload.dto';
 import { Type } from 'class-transformer';
-import { SUPPORT_CATEGORIES, SUPPORT_STATUSES } from '@hbcfield/shared';
+import { SUPPORT_CATEGORIES } from '@hbcfield/shared';
 
 class SupportAttachmentDto {
   @IsString() @MaxLength(255) fileName!: string;
@@ -71,19 +71,9 @@ export class AddMessageDto {
   @Type(() => SupportAttachmentDto)
   attachments?: SupportAttachmentDto[];
 
-  // Agent-only: private note not delivered to the customer.
+  // Accepted and IGNORED on the member route (the controller never forwards it):
+  // internal notes are written only from the operator console.
   @IsOptional()
   @IsBoolean()
   isInternalNote?: boolean;
-}
-
-export class SetStatusDto {
-  @IsIn(SUPPORT_STATUSES as unknown as string[])
-  status!: string;
-}
-
-export class AssignDto {
-  @IsOptional()
-  @IsString()
-  agentId?: string | null;
 }

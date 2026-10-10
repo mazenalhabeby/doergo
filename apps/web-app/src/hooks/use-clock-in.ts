@@ -15,6 +15,7 @@ import { getBrowserPosition, GeolocationError, type GeolocationFailure } from "@
 type BrowserPosition = Awaited<ReturnType<typeof getBrowserPosition>>
 import type { ClockLocation } from "@/components/clock-in-picker"
 import { keys } from "@/lib/query-keys"
+import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 
 /**
  * Turn a geolocation failure into something a person can act on.
@@ -65,7 +66,19 @@ export type ClockAction =
  * at once, and because they share query keys there is ONE status request and one
  * locations request between them, not two of each.
  */
-export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
+export function useClockIn({
+  enabled = true,
+  locationsNow = false,
+}: {
+  enabled?: boolean
+  /**
+   * Read the clock-in sites with the page, not after it. For a surface whose
+   * screen IS the clock (the shift page). The navbar pill only needs them at the
+   * tap, so it lets the page load first; `startClockIn` reads them itself if
+   * the tap comes sooner.
+   */
+  locationsNow?: boolean
+} = {}) {
   const { t, i18n } = useTranslation()
   const qc = useQueryClient()
   const { user } = useAuth()
@@ -102,11 +115,15 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
     whole directory, so a site could be offered that the clock-in then refuses
     with "You are not assigned to this location".
   */
-  const { data: locationsData } = useQuery({
+  const afterFirstLoad = useAfterFirstLoad(2)
+  const locationsQuery = {
     queryKey: keys.attendance.myClockInLocations(),
     queryFn: () => attendanceApi.getClockInLocations(),
-    enabled,
     staleTime: 5 * 60_000,
+  }
+  const { data: locationsData } = useQuery({
+    ...locationsQuery,
+    enabled: enabled && (locationsNow || afterFirstLoad),
   })
 
   const locations = (locationsData ?? []) as ClockLocation[]
@@ -115,9 +132,9 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
     ⚠️ No "away" choice any more. Whether a member may clock in away from a
     site is the server's (the workspace's ceiling × their grant), and where they
     are working is decided from evidence afterwards. A member with workspaces
-    picks one of them; the Remote bucket is only for somebody who has none.
+    picks one of them; the Remote bucket is only for somebody who has none
+    (`sites.length === 0` in startClockIn).
   */
-  const hasNoWorkspace = locations.length === 0
 
   const st = (status ?? {}) as Record<string, unknown>
   /*
@@ -225,7 +242,21 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
    */
   const startClockIn = async () => {
     if (clock.isPending || locating) return
-    if (hasNoWorkspace) {
+    /*
+      The sites are read after the page has loaded; a tap that comes first must
+      not be judged on an empty list — that would say "not assigned anywhere",
+      or clock somebody in away from a site they are assigned to.
+    */
+    let sites = locations
+    if (!locationsData) {
+      try {
+        sites = ((await qc.fetchQuery(locationsQuery)) ?? []) as ClockLocation[]
+      } catch (e) {
+        toast.error(serverErrorMessage(e, t, i18n.language))
+        return
+      }
+    }
+    if (sites.length === 0) {
       // Nowhere to be: the org's Remote bucket for somebody granted it; otherwise say what is wrong.
       if (canClockInRemotely) {
         clock.mutate("remote")
@@ -239,8 +270,8 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
       )
       return
     }
-    if (locations.length === 1) {
-      clock.mutate({ locationId: locations[0].id })
+    if (sites.length === 1) {
+      clock.mutate({ locationId: sites[0].id })
       return
     }
     setLocating(true)
@@ -252,7 +283,7 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
     } finally {
       setLocating(false)
     }
-    const choice = chooseClockInLocation(locations, pos)
+    const choice = chooseClockInLocation(sites, pos)
     if (choice.kind === "auto") {
       clock.mutate({ locationId: choice.location.id, pos, announce: true })
       return

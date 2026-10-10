@@ -7,12 +7,22 @@ import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
+import dynamic from "next/dynamic"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { timeOf, withTime, formatDue } from "@/lib/due-time"
 import { dateLocale } from "@/lib/format-date"
+
+/*
+  The month grid (react-day-picker) loads when the date popover opens — it is
+  never on screen before that, and it was ~16 kB of every task page's first load.
+  The placeholder is the grid's own size, so the popover does not resize.
+*/
+const Calendar = dynamic(() => import("@/components/ui/calendar").then((m) => m.Calendar), {
+  ssr: false,
+  loading: () => <div className="h-[298px] w-[252px]" aria-hidden />,
+})
 
 interface InlineEditFieldProps {
   /** `undefined` means the same as null here — the field is simply not set. */

@@ -23,7 +23,7 @@ import { useMyDocumentRequirements } from "@/hooks/use-document-requirements"
  */
 export function DocumentsReminderBanner({ className }: { className?: string }) {
   const { t } = useTranslation()
-  const p = useMyDocumentRequirements()
+  const p = useMyDocumentRequirements({ withPage: true })
 
   if (p.empty) return null
 

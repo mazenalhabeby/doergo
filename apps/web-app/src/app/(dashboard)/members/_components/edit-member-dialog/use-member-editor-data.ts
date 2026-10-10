@@ -3,6 +3,7 @@
 import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { keys } from "@/lib/query-keys"
+import { useSpaceDirectory } from "@/hooks/use-space-directory"
 import {
   organizationsApi,
   locationsApi,
@@ -40,13 +41,9 @@ export function useMemberEditorData(member: OrgMember | null, canViewLabourCost:
   }, [membersData])
 
 
-  const { data: locationsData } = useQuery({
-    queryKey: keys.locations.list({ limit: 100 }),
-    queryFn: () => locationsApi.list({ limit: 100 }),
-    staleTime: 60000,
-    enabled: !!member,
-  })
-  const locations = locationsData?.data || []
+  // The shared workspace directory (lib/space-directory), active ones.
+  const { data: directory } = useSpaceDirectory({ enabled: !!member })
+  const locations = useMemo(() => (directory ?? []).filter((l) => l.isActive !== false), [directory])
 
   // ONE batched read of every space's roster, under the same key the members
   // page reads it with (it was a request per space, keyed by how many there were).

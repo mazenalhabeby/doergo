@@ -168,7 +168,7 @@ export default function MyAttendancePage() {
   const {
     clockedIn, activeEntry, locations, pending, startClockIn, clockOut,
     pickerProps, earlyProps,
-  } = useClockIn({ enabled: canSee })
+  } = useClockIn({ enabled: canSee, locationsNow: true })
 
   /*
     Which stretch of time the page is about.

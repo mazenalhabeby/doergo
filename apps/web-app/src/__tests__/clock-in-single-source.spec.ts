@@ -71,7 +71,10 @@ describe('clocking in has one implementation', () => {
     const start = hook.indexOf('const startClockIn');
     expect(start).toBeGreaterThan(-1);
     const body = hook.slice(start, hook.indexOf('setPickerOpen(true)', start) + 20);
-    expect(body).toContain('locations.length === 1');
+    // `sites`: the tap's own copy of the clock-in sites — read on the spot when
+    // the tap comes before the page's deferred read of them (useAfterFirstLoad).
+    expect(body).toContain('sites.length === 1');
+    expect(body).toContain('if (!locationsData)');
     expect(body).toContain('choice.kind === "auto"');
     expect(body).toContain('setPickerOpen(true)');
   });

@@ -3,7 +3,7 @@
 import { useCallback } from "react"
 import { useTranslation } from "react-i18next"
 
-import { useChat } from "@/components/chat/chat-drawer"
+import { useChat } from "@/components/chat/chat-context"
 import { notify } from "@/lib/toast"
 
 /**

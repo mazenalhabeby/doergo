@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { keys } from "@/lib/query-keys"
+import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 
 /**
  * Tier-aware support entry point in the top navbar. Everyone can open tickets;
@@ -31,18 +32,22 @@ export function SupportButton() {
 
   // Only signed-in dashboard users get the widget.
   const enabled = !!user?.organizationId;
+  // The launcher and its unread badge wait for the page to load; opening the
+  // widget asks at once.
+  const afterFirstLoad = useAfterFirstLoad(1);
+  const readNow = enabled && (afterFirstLoad || open);
 
   const { data: config } = useQuery({
     queryKey: keys.support.config(),
     queryFn: supportApi.getConfig,
-    enabled,
+    enabled: readNow,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: tickets, isLoading: ticketsLoading } = useQuery({
     queryKey: keys.support.tickets(),
     queryFn: () => supportApi.list(),
-    enabled, // fetch even while closed so the launcher can show an unread badge
+    enabled: readNow, // fetch even while closed so the launcher can show an unread badge
   });
 
   // Total unread agent replies across the customer's tickets (drives the badge).

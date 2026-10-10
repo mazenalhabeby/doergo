@@ -37,7 +37,13 @@ export function useWorkflow(workflowId?: string | null) {
   const { defaultWorkflow, workflows, isLoading: loadingList, hasWorkflow } = useOrgWorkflow()
 
   const resolvedId = workflowId ?? defaultWorkflow?.id
-  const needsFetch = !!resolvedId && !workflows?.find((w) => w.id === resolvedId)?.statuses?.length
+  /*
+    Asked only once the organization's list has answered and does not carry this
+    one's steps. Asked while the list was still loading, every task row on the
+    board fetched its own workflow — five `/workflows/:id` in the same second as
+    the list that already holds them.
+  */
+  const needsFetch = !!resolvedId && !loadingList && !workflows?.find((w) => w.id === resolvedId)?.statuses?.length
 
   const { data: fetchedWorkflow, isLoading: loadingDetail } = useQuery({
     queryKey: keys.spaces.workflow(resolvedId),

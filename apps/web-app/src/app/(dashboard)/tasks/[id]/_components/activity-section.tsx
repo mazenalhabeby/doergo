@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next"
 import { Clock } from "lucide-react"
 
 import { tasksApi } from "@/lib/api"
+import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 import { EXCLUDED_EVENTS, getEventConfig, getEventDescription } from "./activity-events"
 import { cn } from "@/lib/utils"
 import { formatTimeAgo } from "@/lib/format-date"
@@ -22,10 +23,16 @@ interface ActivitySectionProps {
 
 export function ActivitySection({ taskId, onCountChange }: ActivitySectionProps) {
   const { t } = useTranslation()
-  const { data: events, isLoading, isError } = useQuery({
+  // The history sits at the foot of the page; it is read once the task itself
+  // and what it is doing have loaded (useAfterFirstLoad). Until then the
+  // skeleton below holds its place.
+  const afterFirstLoad = useAfterFirstLoad(1)
+  const { data: events, isLoading: loadingEvents, isError } = useQuery({
     queryKey: keys.tasks.timeline(taskId),
     queryFn: () => tasksApi.getTimeline(taskId),
+    enabled: afterFirstLoad,
   })
+  const isLoading = loadingEvents || (!afterFirstLoad && !events)
 
   const filteredEvents = events?.filter(
     (event) => !EXCLUDED_EVENTS.includes(event.eventType)

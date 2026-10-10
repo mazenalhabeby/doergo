@@ -7,7 +7,7 @@ import { auditAction, auditBody, declaredPath, resolveAuditRoute } from './audit
 
 const MUTATING = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
 
-/** The agent name a static-key caller declares (the operator page, scripts). Never trusted for access. */
+/** The agent name a static-key caller declares (scripts, the blog tool). Never trusted for access. */
 export function staticKeyAgent(req: any): string | null {
   const raw = req?.headers?.['x-support-agent'] ?? req?.headers?.['x-platform-agent'];
   return typeof raw === 'string' && raw.trim() ? raw.trim().slice(0, 80) : null;

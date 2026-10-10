@@ -423,6 +423,11 @@ const notificationsKeys = {
   inbox: () => named("inboxNotifications"),
 } as const
 
+const billingKeys = {
+  /** The Stripe-side status the billing ribbon and the billing page read. */
+  subscription: () => queryKey("billing.subscription"),
+}
+
 export const keys = {
   tasks: tasksKeys,
   members: membersKeys,
@@ -460,6 +465,7 @@ export const keys = {
   me: meKeys,
   search: searchKeys,
   notifications: notificationsKeys,
+  billing: billingKeys,
 } as const
 
 /**

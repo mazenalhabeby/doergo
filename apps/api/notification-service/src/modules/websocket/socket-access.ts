@@ -163,28 +163,3 @@ export async function operatorMaySupport(
   if (platformEnrolmentRequired(op)) return false;
   return can(op.role, 'manageSupport');
 }
-
-/**
- * The static PLATFORM_ADMIN_KEY opened an agent socket — written to the
- * operator audit trail like every other static-key call (the gateway's
- * PlatformAuditInterceptor writes the HTTP ones). Append-only; best effort:
- * a failed write is logged by the caller and never refuses the socket.
- */
-export async function recordStaticKeyAgentSocket(
-  prisma: { platformAuditLog: { create: (args: any) => Promise<any> } },
-  info: { agent?: unknown; ip?: string | null; userAgent?: unknown },
-): Promise<void> {
-  const label = typeof info.agent === 'string' && info.agent.trim() ? info.agent.trim().slice(0, 80) : 'static-key';
-  await prisma.platformAuditLog.create({
-    data: {
-      actorType: 'STATIC_KEY',
-      actorLabel: label,
-      ipAddress: info.ip ? String(info.ip).slice(0, 100) : null,
-      userAgent: typeof info.userAgent === 'string' ? info.userAgent.slice(0, 300) : null,
-      method: 'WS',
-      route: 'socket:authenticate_agent',
-      action: 'SUPPORT_AGENT_SOCKET_OPENED',
-      ok: true,
-    },
-  });
-}

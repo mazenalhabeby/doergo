@@ -10,7 +10,14 @@
 import { ArrowDown, ArrowUp, Minus, AlertTriangle, type LucideIcon } from "lucide-react"
 import { TaskPriority, TaskStatus } from "@hbcfield/shared/types"
 import { PRIORITY_COLORS, STATUS_COLORS } from "@hbcfield/shared/constants"
-import i18n from "@/i18n"
+/*
+  The GLOBAL i18next instance, not `@/i18n` (same as lib/format-date): that module
+  statically carries the whole English catalogue (~360 kB raw, ~115 kB gzipped),
+  and importing it here for `.t` put the catalogue into the first load of every
+  page that shows a toast or a priority label. The root layout's I18nProvider
+  initialises this same instance before anything here runs (event time / getters).
+*/
+import i18n from "i18next"
 
 // =============================================================================
 // TASK STATUS

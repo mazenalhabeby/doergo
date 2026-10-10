@@ -5,10 +5,8 @@ import {
   tasksApi,
   locationsApi,
   organizationsApi,
-  sprintsApi,
-  epicsApi,
-  phasesApi,
 } from "@/lib/api"
+import { fetchSpaceDirectory, spaceDirectoryKey } from "@/lib/space-directory"
 
 // ---------------------------------------------------------------------------
 // Prefetch helpers — warm React Query cache on nav link hover
@@ -24,12 +22,13 @@ export function usePrefetchRoutes(mayListOrg: boolean) {
   }, [qc])
 
   const prefetchTasks = useCallback(() => {
-    qc.prefetchQuery({ queryKey: keys.tasks.list({ status: "all", page: 1, limit: 20 }), queryFn: () => tasksApi.list({ status: "all", page: 1, limit: 20 }), staleTime: PREFETCH_STALE })
-    qc.prefetchQuery({ queryKey: keys.tasks.counts(), queryFn: () => tasksApi.getStatusCounts(), staleTime: PREFETCH_STALE })
-    qc.prefetchQuery({ queryKey: keys.sprints.lists(), queryFn: () => sprintsApi.list(), staleTime: PREFETCH_STALE })
-    qc.prefetchQuery({ queryKey: keys.epics.lists(), queryFn: () => epicsApi.list(), staleTime: PREFETCH_STALE })
-    qc.prefetchQuery({ queryKey: keys.phases.lists(), queryFn: () => phasesApi.list(), staleTime: PREFETCH_STALE })
-    qc.prefetchQuery({ queryKey: keys.locations.list(), queryFn: () => locationsApi.list(), staleTime: PREFETCH_STALE })
+    // The same keys the task page reads: its counts (one reply carries the
+    // workspace tabs AND All/Mine) and the shared workspace directory. The task
+    // list itself is keyed by the page's filters, and the planning lists are
+    // asked only where their module is on — warming either here would fetch
+    // something the page then asks again under another key, or never draws.
+    qc.prefetchQuery({ queryKey: keys.tasks.counts({ groupBy: "space" }), queryFn: () => tasksApi.getStatusCounts({ groupBy: "space" }), staleTime: PREFETCH_STALE })
+    qc.prefetchQuery({ queryKey: spaceDirectoryKey(), queryFn: fetchSpaceDirectory, staleTime: PREFETCH_STALE })
   }, [qc])
 
   const prefetchTeam = useCallback(() => {

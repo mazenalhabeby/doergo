@@ -14,6 +14,7 @@ import { notify } from "@/lib/toast"
 import { serverErrorMessage } from "@/lib/server-error"
 import { RoleAssignField, type RoleAssignValue } from "../../_components/role-assign-field"
 import { useWorkspaceWorkRoles } from "@/hooks/use-workspace-work-roles"
+import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 
 /**
  * "Open to a role" on an EXISTING task (shared tasks/role-pool.ts) — the case
@@ -31,7 +32,9 @@ export function OpenToRoleAction({ task, canAssign }: { task: Task & { spaceId?:
   const [value, setValue] = useState<RoleAssignValue>({ roleId: null, spots: 1 })
   // Only offered where the workspace HAS work roles — asked once per workspace (cached), and only of an assigner.
   const relevant = canAssign && !!task.spaceId && !task.openRoleId && !isWorkOver(task.status)
-  const { hasRoles } = useWorkspaceWorkRoles(task.spaceId, relevant)
+  // A small sidebar action, asked after the page has loaded (useAfterFirstLoad).
+  const afterFirstLoad = useAfterFirstLoad(2)
+  const { hasRoles } = useWorkspaceWorkRoles(task.spaceId, relevant && afterFirstLoad)
 
   const save = useMutation({
     mutationFn: () => tasksApi.setOpenRole(task.id, { roleId: value.roleId, spots: value.spots }),

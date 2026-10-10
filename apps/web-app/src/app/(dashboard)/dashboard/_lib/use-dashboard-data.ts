@@ -15,7 +15,8 @@ import {
   type OrgMember,
   type Task,
 } from "@/lib/api"
-import { fetchAllPages } from "@/lib/paginate"
+import { useSpaceDirectory } from "@/hooks/use-space-directory"
+import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 import { assigneeIds } from "@/lib/task-assignment"
 
 import { isClockedIn } from "../_components/helpers"
@@ -31,9 +32,6 @@ import { useAuth } from "@/contexts/auth-context"
  * cards, which panel. Each query is gated on the permission its endpoint
  * actually requires, so a viewer never fires a request that can only 403.
  */
-
-/** Server hard cap for /organizations/members and /locations (one page each). */
-const SPACES_PAGE_SIZE = 500
 
 /**
  * Newest tasks pulled for the activity feed, per-space alert counts and the
@@ -81,6 +79,8 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
     supervisor who holds attendance saw no presence at all.
   */
   const canReadAttendance = user?.role === "ADMIN" || hasPermission("canViewSpaceAttendance")
+  // Reads the first paint does not need wait for it (hooks/use-after-first-load).
+  const afterFirstLoad = useAfterFirstLoad(2)
   const showsSpaces = isAdminOrDispatcher || spaceScope !== "tasks"
 
   // ── Data Fetching ──────────────────────────────────────────────────────────
@@ -92,16 +92,15 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
     queryFn: () => tasksApi.list({ limit: DASHBOARD_TASK_LIMIT }),
   })
 
-  // Company spaces. Paged through to the end: /locations defaults to 20 per
-  // page, so requesting a single page silently dropped every space past the
-  // 20th from the grid, its alerts and its roster.
-  const { data: locationsData, isLoading: loadingLocations } = useQuery({
-    queryKey: keys.locations.list({ all: true, limit: SPACES_PAGE_SIZE }),
-    queryFn: () => fetchAllPages((page) => locationsApi.list({ page, limit: SPACES_PAGE_SIZE })),
-    // A 'tasks'-scope member sees no spaces by definition; the server ran the
-    // full query and then discarded every row for them. Don't ask.
-    enabled: showsSpaces,
-  })
+  // Company spaces — the shared workspace directory (lib/space-directory), paged
+  // through to the end, which the shell and the task page read too; the grid
+  // shows the active ones. A 'tasks'-scope member sees no spaces by definition,
+  // so don't ask.
+  const { data: directory, isLoading: loadingLocations } = useSpaceDirectory({ enabled: showsSpaces })
+  const locationsData = useMemo(
+    () => (directory ? directory.filter((l) => l.isActive !== false) : undefined),
+    [directory],
+  )
 
   // All org members (for worker info: name, avatar, workMode, role).
   //
@@ -141,20 +140,27 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
   // Active breaks — who is currently on break? (admin-only endpoint)
   // getActiveBreaks() already unwraps the envelope and resolves to Break[], so
   // the failure fallback must be an array too.
+  //
+  // After the first load: it only turns a present member's label into "On
+  // break", a moment after the grid has drawn them present.
   const { data: activeBreaks } = useQuery({
     queryKey: keys.attendance.dashboardBreaks(),
     queryFn: () => attendanceApi.getActiveBreaks().catch(() => []),
     staleTime: 30000,
-    enabled: canReadAttendance,
+    enabled: canReadAttendance && afterFirstLoad,
   })
 
   // Attendance entries awaiting approval — feeds the "Pending Actions" panel so
   // admins see payroll-blocking approvals from anywhere, not just the Attendance tab.
+  //
+  // After the first load (useAfterFirstLoad): the list it feeds sits in the side
+  // panel among the task-derived items and grows by these rows a moment later,
+  // while the grid and the presence it draws first go out with the page.
   const { data: pendingApprovalsData } = useQuery({
     queryKey: keys.attendance.pendingApprovals(),
     queryFn: () => attendanceApi.getPendingApprovals({ limit: 50 }).catch(() => ({ data: [] })),
     staleTime: 30000,
-    enabled: canReadAttendance,
+    enabled: canReadAttendance && afterFirstLoad,
   })
 
   // ── Derived Data ───────────────────────────────────────────────────────────

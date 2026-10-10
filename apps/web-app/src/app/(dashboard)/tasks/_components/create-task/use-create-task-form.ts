@@ -8,7 +8,7 @@ import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { useQuery } from "@tanstack/react-query"
 
 import { useAuth } from "@/contexts/auth-context"
-import { useSpaceModules } from "@/hooks/use-space-modules"
+import { useSpaceModules, useSpaceModulesQuery } from "@/hooks/use-space-modules"
 import {
   phasesApi,
   sprintsApi,
@@ -358,11 +358,9 @@ export function useCreateTaskForm({ open, onOpenChange, defaultSprintId, default
   // The task itself is always created with no explicit workflowId so the backend
   // inherits the space's; we only need the space's workflowId here to filter
   // which custom fields apply.
-  const { data: spaceModules } = useQuery({
-    queryKey: keys.spaces.modules(spaceId),
-    queryFn: () => locationsApi.getEffectiveModules(spaceId),
+  const { data: spaceModules } = useSpaceModulesQuery(spaceId !== "none" ? spaceId : null, {
     staleTime: 300000,
-    enabled: open && spaceId !== "none",
+    enabled: open,
   })
   const { visitClients, visitAddressOptions, pinnedClient, applyVisitAddress } = useVisitClient({
     open,

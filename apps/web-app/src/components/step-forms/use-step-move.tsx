@@ -9,7 +9,13 @@ import { tasksApi, type Task } from "@/lib/api"
 import { getStatusConfig } from "@/lib/constants"
 import { isAssignedTo } from "@/lib/task-assignment"
 import { isStepFormRefusal, stepFormForMove, type MoverWorkflow } from "@/lib/step-forms"
-import { StepMoveDialog } from "./step-move-dialog"
+import dynamic from "next/dynamic"
+
+/*
+  Loaded when a move actually asks for a form — the form renderer (photos,
+  signatures, every field type) is not part of opening a board or a task.
+*/
+const StepMoveDialog = dynamic(() => import("./step-move-dialog").then((m) => m.StepMoveDialog), { ssr: false })
 
 export type StepMoveResult = "moved" | "cancelled"
 
