@@ -6,12 +6,10 @@ import {
   agreementFrom,
   isObserverSeat,
   billsByUsage,
-  BILLABLE_ASSET_WHERE,
-  BILLABLE_CLIENT_WHERE,
-  BILLABLE_PORTAL_WHERE,
   AVAILABLE_MODULES,
   type OrgCostBreakdown,
   type SpaceModules,
+  countBillableUsage,
 } from '@hbcfield/shared';
 
 const MODULE_KEYS = new Set<string>(AVAILABLE_MODULES.map((m) => m.key));
@@ -47,7 +45,7 @@ export class OrgBillService {
    * round trips. These group once across the org and fold onto spaces in memory.
    */
   async compute(organizationId: string): Promise<OrgCostBreakdown> {
-    const [org, seatCount, externals, spaces, assetTypes, assetRows, clientRows, portalRows] = await Promise.all([
+    const [org, seatCount, externals, spaces, counted] = await Promise.all([
       this.prisma.organization.findUnique({
         where: { id: organizationId },
         // The agreed-price columns come along on a query that already runs —
@@ -89,41 +87,9 @@ export class OrgBillService {
         where: { organizationId, isActive: true },
         select: { id: true, name: true, enabledModules: true },
       }),
-      this.prisma.assetCategory.findMany({
-        where: { organizationId },
-        select: { id: true, spaceId: true },
-      }),
-      this.prisma.asset.groupBy({
-        by: ['categoryId'],
-        where: { ...BILLABLE_ASSET_WHERE, organizationId },
-        _count: { _all: true },
-      }),
-      this.prisma.customer.groupBy({
-        by: ['spaceId'],
-        where: { ...BILLABLE_CLIENT_WHERE, organizationId },
-        _count: { _all: true },
-      }),
-      this.prisma.portal.groupBy({
-        by: ['spaceId'],
-        where: { ...BILLABLE_PORTAL_WHERE, organizationId },
-        _count: { _all: true },
-      }),
+      // The SAME counts the space's Modules tab shows (shared countBillableUsage).
+      countBillableUsage(this.prisma, organizationId),
     ]);
-
-    // An asset reaches its space through its TYPE — Prisma cannot group by a
-    // relation's column, so fold the per-type counts onto spaces here.
-    const spaceOfType = new Map(assetTypes.map((t) => [t.id, t.spaceId]));
-    const assetsBySpace = new Map<string, number>();
-    for (const row of assetRows) {
-      const spaceId = row.categoryId ? spaceOfType.get(row.categoryId) ?? null : null;
-      if (spaceId) assetsBySpace.set(spaceId, (assetsBySpace.get(spaceId) ?? 0) + row._count._all);
-    }
-    const clientsBySpace = new Map(
-      clientRows.filter((r) => r.spaceId).map((r) => [r.spaceId as string, r._count._all]),
-    );
-    const portalsBySpace = new Map(
-      portalRows.filter((r) => r.spaceId).map((r) => [r.spaceId as string, r._count._all]),
-    );
 
     const spaceInput: SpaceModules[] = spaces.map((s) => {
       // A stale key left on a space must never reach an invoice as a line
@@ -136,9 +102,7 @@ export class OrgBillService {
       const usage: Record<string, number> = {};
       for (const key of enabled) {
         if (!billsByUsage(key)) continue;
-        if (key === 'assets') usage[key] = assetsBySpace.get(s.id) ?? 0;
-        else if (key === 'crm') usage[key] = clientsBySpace.get(s.id) ?? 0;
-        else if (key === 'b2c_portal') usage[key] = portalsBySpace.get(s.id) ?? 0;
+        if (key === 'assets' || key === 'crm' || key === 'b2c_portal') usage[key] = counted[key].spaces[s.id] ?? 0;
       }
 
       return { spaceId: s.id, spaceName: s.name, enabledModules: enabled, usage };

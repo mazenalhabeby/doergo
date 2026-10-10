@@ -23,6 +23,54 @@ import { DocumentRoutingService } from './document-routing.service';
  *
  * Part of the personnel file; `DocumentsService` is the facade every caller uses.
  */
+/** What a register row shows of a document — `type` is chosen per register. */
+const REGISTER_ROW_SELECT = {
+  id: true,
+  title: true,
+  status: true,
+  periodYear: true,
+  periodMonth: true,
+  issuedAt: true,
+  firstOpenedAt: true,
+  expiresOn: true,
+  sizeBytes: true,
+  mimeType: true,
+  hiddenFromMember: true,
+  rolesOverridden: true,
+  visibleToRoleIds: true,
+  _count: { select: { signatures: true } },
+  user: { select: { id: true, firstName: true, lastName: true } },
+  signatures: {
+    select: { signedAt: true },
+    orderBy: { signedAt: 'desc' as const },
+    take: 1,
+  },
+} as const;
+
+/** The fields every row of a member's document list carries, theirs or waiting on them. */
+function listRow(d: {
+  id: string; title: string; typeId: string; type: { key: string; label: string };
+  periodYear: number | null; periodMonth: number | null; status: string;
+  sizeBytes: number | null; mimeType: string | null; issuedAt: Date | null;
+  expiresOn: Date | null; firstOpenedAt: Date | null;
+}) {
+  return {
+    id: d.id,
+    title: d.title,
+    typeId: d.typeId,
+    typeKey: d.type.key,
+    typeLabel: d.type.label,
+    periodYear: d.periodYear,
+    periodMonth: d.periodMonth,
+    status: d.status,
+    sizeBytes: d.sizeBytes,
+    mimeType: d.mimeType,
+    issuedAt: d.issuedAt,
+    expiresOn: d.expiresOn,
+    unread: d.firstOpenedAt === null,
+  };
+}
+
 @Injectable()
 export class DocumentRegistersService {
   constructor(
@@ -147,20 +195,7 @@ export class DocumentRegistersService {
       // Every folder walked: this is the shelf, so return the documents.
       const docs = await this.prisma.document.findMany({
         where,
-        select: {
-          id: true, title: true, status: true,
-          periodYear: true, periodMonth: true, issuedAt: true,
-          firstOpenedAt: true, expiresOn: true, sizeBytes: true, mimeType: true,
-          hiddenFromMember: true, rolesOverridden: true, visibleToRoleIds: true,
-          _count: { select: { signatures: true } },
-          user: { select: { id: true, firstName: true, lastName: true } },
-          type: { select: { id: true, label: true } },
-          signatures: {
-            select: { signedAt: true },
-            orderBy: { signedAt: 'desc' },
-            take: 1,
-          },
-        },
+        select: { ...REGISTER_ROW_SELECT, type: { select: { id: true, label: true } } },
         orderBy: [{ periodMonth: 'desc' }, { issuedAt: 'desc' }],
         take: 500,
       });
@@ -308,27 +343,8 @@ export class DocumentRegistersService {
       this.prisma.document.findMany({
         where,
         select: {
-          id: true,
-          title: true,
-          status: true,
-          periodYear: true,
-          periodMonth: true,
-          issuedAt: true,
-          firstOpenedAt: true,
-          expiresOn: true,
-          sizeBytes: true,
-          mimeType: true,
-          hiddenFromMember: true,
-          rolesOverridden: true,
-          visibleToRoleIds: true,
-          _count: { select: { signatures: true } },
-          user: { select: { id: true, firstName: true, lastName: true } },
+          ...REGISTER_ROW_SELECT,
           type: { select: { id: true, label: true, signatureMode: true, isCredential: true } },
-          signatures: {
-            select: { signedAt: true },
-            orderBy: { signedAt: 'desc' },
-            take: 1,
-          },
           /*
             The chain. Selected with the row rather than fetched per row: a
             register of fifty documents would otherwise be fifty extra queries
@@ -527,19 +543,7 @@ export class DocumentRegistersService {
       // Theirs to sign, first: it is somebody else's document and it is holding
       // up that person's month.
       ...alsoWaiting.map((d) => ({
-        id: d.id,
-        title: d.title,
-        typeId: d.typeId,
-        typeKey: d.type.key,
-        typeLabel: d.type.label,
-        periodYear: d.periodYear,
-        periodMonth: d.periodMonth,
-        status: d.status,
-        sizeBytes: d.sizeBytes,
-        mimeType: d.mimeType,
-        issuedAt: d.issuedAt,
-        expiresOn: d.expiresOn,
-        unread: d.firstOpenedAt === null,
+        ...listRow(d),
         needsSignature: true,
         rejectionReason: null,
         standing: null as string | null,
@@ -548,19 +552,7 @@ export class DocumentRegistersService {
         forMember: `${d.user.firstName} ${d.user.lastName}`.trim(),
       })),
       ...documents.map((d) => ({
-      id: d.id,
-      title: d.title,
-      typeId: d.typeId,
-      typeKey: d.type.key,
-      typeLabel: d.type.label,
-      periodYear: d.periodYear,
-      periodMonth: d.periodMonth,
-      status: d.status,
-      sizeBytes: d.sizeBytes,
-      mimeType: d.mimeType,
-      issuedAt: d.issuedAt,
-      expiresOn: d.expiresOn,
-      unread: d.firstOpenedAt === null,
+      ...listRow(d),
       /*
         "Needs your signature" has to mean YOURS.
 

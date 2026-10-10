@@ -9,6 +9,7 @@ export * from './stripe-catalog';
 export * from './agreement';
 export * from './module-pricing';
 export * from './usage-pricing';
+export * from './billable-usage';
 export * from './seats';
 export * from './types';
 export * from './rate-ladder';
