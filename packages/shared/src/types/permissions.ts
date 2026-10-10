@@ -677,6 +677,7 @@ export function buildResolvedAccess(input: {
   return access;
 }
 
+
 /**
  * Does the resolved access grant `key` — org-wide, or (only when a
  * SERVER-AUTHORITATIVE spaceId is supplied) within that space? Callers must pass

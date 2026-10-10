@@ -5,7 +5,6 @@ import {
   DEFAULT_PERMISSIONS,
   DEFAULT_ORG_MODULES,
   Role,
-  buildResolvedAccess,
   canUsePlatform,
   isOrganizationSuspended,
   ORG_SUSPENDED_MESSAGE,
@@ -15,6 +14,7 @@ import {
   nextLockStateAfterFailure,
   maskEmail,
   normalizeEmail,
+  memberAccessOf,
 } from '@hbcfield/shared';
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -22,7 +22,7 @@ import { seedDefaultWorkflow } from '../../common/seed-default-workflow';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { BillingService } from '../billing/billing.service';
 import * as bcrypt from 'bcryptjs';
-import { dummyPasswordHash, ignoreLegacyFlags, type AuthResult } from './auth-common';
+import { dummyPasswordHash, type AuthResult } from './auth-common';
 import { SessionTokensService } from './session-tokens.service';
 
 /**
@@ -381,28 +381,11 @@ export class SignInService {
       /*
         Resolve access ONCE for this response.
 
-        The same switch as validateToken — see the note on ignoreLegacyFlags.
+        The same rule as validateToken — memberAccessOf in shared/access/org-access.
         Both must agree, or a member is handed permissions at sign-in that
         vanish on their very next request.
       */
-      const loginAccess = buildResolvedAccess({
-        // An admin holds everything by being one — see buildResolvedAccess.
-        isAdmin: user.role === Role.ADMIN,
-        userFlags: ignoreLegacyFlags()
-          ? undefined
-          : {
-              canCreateTasks: user.canCreateTasks,
-              canViewAllTasks: user.canViewAllTasks,
-              canAssignTasks: user.canAssignTasks,
-              canManageUsers: user.canManageUsers,
-              canViewReports: user.canViewReports,
-            },
-        memberRolePermissions: user.memberRole?.isActive ? user.memberRole.permissions : undefined,
-        spaces: user.spaceAssignments.map((a) => ({
-          spaceId: a.spaceId,
-          permissions: a.role?.isActive ? a.role.permissions : undefined,
-        })),
-      });
+      const loginAccess = memberAccessOf(user);
 
       return this.tokens.buildSession(user, loginAccess, {
         userAgent: data.userAgent,

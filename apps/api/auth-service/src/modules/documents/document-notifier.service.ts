@@ -2,9 +2,9 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   SERVICE_NAMES,
   Role,
-  buildResolvedAccess,
-  accessAllows,
   nextPendingStep,
+  ORG_ACCESS_SELECT,
+  orgAllows,
 } from '@hbcfield/shared';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -57,16 +57,8 @@ export class DocumentNotifierService {
           // runs over a handful of rows rather than the whole company.
           OR: [{ role: Role.ADMIN }, { memberRoleId: { not: null } }],
         },
-        select: {
-          id: true,
-          role: true,
-          canCreateTasks: true,
-          canViewAllTasks: true,
-          canAssignTasks: true,
-          canManageUsers: true,
-          canViewReports: true,
-          memberRole: { select: { permissions: true } },
-        },
+        // Everything the access rule reads — the role's isActive included.
+        select: { id: true, ...ORG_ACCESS_SELECT },
       });
 
       /*
@@ -78,19 +70,9 @@ export class DocumentNotifierService {
         granted the document permission on its own. Resolved with the same
         helper the request path uses, so this list and the guard agree.
       */
-      const reviewers = candidates.filter((u) =>
-        accessAllows(
-          buildResolvedAccess({
-            // Same rule as the request path: an admin holds every permission by
-            // being an admin, so an admin is always a valid reviewer even when
-            // their assigned role does not list the document keys.
-            isAdmin: u.role === 'ADMIN',
-            userFlags: u,
-            memberRolePermissions: u.memberRole?.permissions,
-          }),
-          'canIssueDocuments',
-        ),
-      );
+      // Same rule as the request path (memberAccessOf): an admin holds every
+      // permission by being one; an inactive role grants nothing.
+      const reviewers = candidates.filter((u) => orgAllows(u, 'canIssueDocuments'));
 
       this.notificationClient.emit('document_submitted', {
         documentId,

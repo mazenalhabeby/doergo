@@ -179,9 +179,6 @@ export function orgPermissionFields(
   };
 }
 
-export function ignoreLegacyFlags(): boolean {
-  return process.env.ACCESS_IGNORE_LEGACY_FLAGS === 'true';
-}
 
 /**
  * What the two sign-in doors return.

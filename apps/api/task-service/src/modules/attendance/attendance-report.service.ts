@@ -12,6 +12,7 @@ import {
 } from '@hbcfield/shared';
 import { format } from 'date-fns';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AttendanceReportService {
@@ -49,20 +50,7 @@ export class AttendanceReportService {
     startDate: Date | string;
     endDate: Date | string;
   }) {
-    const { startDate, endDate } = this.clampRange(data.startDate, data.endDate);
-    const dateFilter = buildDateRangeFilter(startDate, endDate);
-
-    const where: any = {
-      organizationId: data.organizationId,
-      // Only the caller's granted spaces — a report is the widest read there
-      // is, so an unnarrowed one hands over the whole organization at once.
-      ...scopeWhere(data.scopeSpaceIds),
-      clockInAt: dateFilter,
-    };
-
-    if (data.userId) {
-      where.userId = data.userId;
-    }
+    const where = this.reportWhere(data);
 
     const entries = await this.prisma.timeEntry.findMany({
       where,
@@ -211,6 +199,25 @@ export class AttendanceReportService {
     });
   }
 
+  /** The entries a report covers: the clamped period, the caller's granted spaces, optionally one member. */
+  private reportWhere(data: {
+    scopeSpaceIds?: AttendanceScope;
+    organizationId: string;
+    userId?: string;
+    startDate: Date | string;
+    endDate: Date | string;
+  }): Prisma.TimeEntryWhereInput {
+    const { startDate, endDate } = this.clampRange(data.startDate, data.endDate);
+    return {
+      organizationId: data.organizationId,
+      // Only the caller's granted spaces — a report is the widest read there
+      // is, so an unnarrowed one hands over the whole organization at once.
+      ...scopeWhere(data.scopeSpaceIds),
+      clockInAt: buildDateRangeFilter(startDate, endDate) ?? undefined,
+      ...(data.userId ? { userId: data.userId } : {}),
+    };
+  }
+
   async exportToCSV(data: {
     /** Spaces the caller may read; null = org-wide, [] = none. */
     scopeSpaceIds?: AttendanceScope;
@@ -219,20 +226,7 @@ export class AttendanceReportService {
     endDate: Date | string;
     userId?: string;
   }) {
-    const { startDate, endDate } = this.clampRange(data.startDate, data.endDate);
-    const dateFilter = buildDateRangeFilter(startDate, endDate);
-
-    const where: any = {
-      organizationId: data.organizationId,
-      // Only the caller's granted spaces — a report is the widest read there
-      // is, so an unnarrowed one hands over the whole organization at once.
-      ...scopeWhere(data.scopeSpaceIds),
-      clockInAt: dateFilter,
-    };
-
-    if (data.userId) {
-      where.userId = data.userId;
-    }
+    const where = this.reportWhere(data);
 
     const entries = await this.prisma.timeEntry.findMany({
       where,

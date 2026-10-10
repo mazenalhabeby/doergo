@@ -1,10 +1,22 @@
 import { Role } from '../types/enums';
-import { buildResolvedAccess, accessAllows, type AccessPermissionKey, type ResolvedAccess } from '../types/permissions';
+import {
+  buildResolvedAccess,
+  accessAllows,
+  type AccessPermissionKey,
+  type ResolvedAccess,
+  type SharedSpaceGrant,
+} from '../types/permissions';
 
 /**
- * A member's ORG-WIDE access, resolved from their database row the way the
- * session resolves it (auth-service `validateToken`) — for a service that holds
- * somebody OTHER than the caller, or a caller whose session it was not handed.
+ * A member's access, resolved from their database row — THE way, for every
+ * door: sign-in, refresh, token validation, the session builder, the socket
+ * gateway, and any service that holds somebody OTHER than the caller.
+ *
+ * ⚠️ Those doors each carried a copy of this mapping (five), and one had
+ * drifted — a document-reviewer lookup ignored an inactive role and the
+ * legacy-flag switch, so a member whose role was switched off could still be
+ * chosen to review. Sign-in and the next request must agree, or a member is
+ * handed permissions that vanish on their very next click.
  *
  * Reading one flat column (`User.canManageUsers`) instead answered a different
  * question: it ignored the member's ROLE, so a manager whose authority comes
@@ -32,23 +44,33 @@ export interface OrgAccessRow {
   canManageUsers?: boolean | null;
   canViewReports?: boolean | null;
   memberRole?: { permissions: unknown; isActive: boolean } | null;
+  /** Space roles; omit for an org-wide-only question. A role grants nothing while inactive. */
+  spaceAssignments?: Array<{ spaceId: string; role?: { permissions: unknown; isActive: boolean } | null }>;
 }
 
 /** The session's switch, read from the same variable. */
-export function legacyFlagsIgnored(env: Record<string, string | undefined> = process.env): boolean {
+export function legacyFlagsIgnored(env: Record<string, string | undefined> = typeof process !== 'undefined' ? process.env : {}): boolean {
   return env.ACCESS_IGNORE_LEGACY_FLAGS === 'true';
 }
 
-export function orgAccessOf(row: OrgAccessRow, opts: { ignoreLegacyFlags?: boolean } = {}): ResolvedAccess {
+export function memberAccessOf(
+  row: OrgAccessRow,
+  opts: { ignoreLegacyFlags?: boolean; sharedSpaces?: SharedSpaceGrant[] } = {},
+): ResolvedAccess {
   const ignore = opts.ignoreLegacyFlags ?? legacyFlagsIgnored();
   return buildResolvedAccess({
     isAdmin: row.role === Role.ADMIN,
     userFlags: ignore ? undefined : row,
     memberRolePermissions: row.memberRole?.isActive ? row.memberRole.permissions : undefined,
+    spaces: (row.spaceAssignments ?? []).map((a) => ({
+      spaceId: a.spaceId,
+      permissions: a.role?.isActive ? a.role.permissions : undefined,
+    })),
+    sharedSpaces: opts.sharedSpaces,
   });
 }
 
 /** Does this member hold `key` org-wide? */
 export function orgAllows(row: OrgAccessRow, key: AccessPermissionKey, opts?: { ignoreLegacyFlags?: boolean }): boolean {
-  return accessAllows(orgAccessOf(row, opts), key);
+  return accessAllows(memberAccessOf(row, opts), key);
 }

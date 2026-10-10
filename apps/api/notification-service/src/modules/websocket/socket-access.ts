@@ -1,4 +1,4 @@
-import { buildResolvedAccess, canAccessTask, holdsOpenRole, platformEnrolmentRequired, tokenIssuedBeforeCutoff, type ResolvedAccess } from '@hbcfield/shared';
+import { buildResolvedAccess, canAccessTask, holdsOpenRole, platformEnrolmentRequired, tokenIssuedBeforeCutoff, type ResolvedAccess, memberAccessOf } from '@hbcfield/shared';
 
 /**
  * What a socket's user may see — resolved from the DATABASE, the same way the
@@ -23,8 +23,6 @@ export interface SocketAccess {
   access: ResolvedAccess;
 }
 
-/** The same switch auth.service reads — both must agree, see ignoreLegacyFlags there. */
-const ignoreLegacyFlags = () => process.env.ACCESS_IGNORE_LEGACY_FLAGS === 'true';
 
 type PrismaLike = {
   user: { findUnique: (args: any) => Promise<any> };
@@ -64,23 +62,7 @@ export async function resolveSocketAccess(
   if (user.organization?.suspendedAt) return null;
   if (tokenIat !== undefined && tokenIssuedBeforeCutoff(tokenIat, user.tokensValidAfter)) return null;
 
-  const access = buildResolvedAccess({
-    isAdmin: user.role === 'ADMIN',
-    userFlags: ignoreLegacyFlags()
-      ? undefined
-      : {
-          canCreateTasks: user.canCreateTasks,
-          canViewAllTasks: user.canViewAllTasks,
-          canAssignTasks: user.canAssignTasks,
-          canManageUsers: user.canManageUsers,
-          canViewReports: user.canViewReports,
-        },
-    memberRolePermissions: user.memberRole?.isActive ? user.memberRole.permissions : undefined,
-    spaces: (user.spaceAssignments ?? []).map((a: any) => ({
-      spaceId: a.spaceId,
-      permissions: a.role?.isActive ? a.role.permissions : undefined,
-    })),
-  });
+  const access = memberAccessOf(user);
   return { role: user.role, access };
 }
 

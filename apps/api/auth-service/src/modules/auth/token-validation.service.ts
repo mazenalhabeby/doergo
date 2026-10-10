@@ -1,16 +1,15 @@
 import {
   readAssignedHome,
-  Role,
   normalizeRole,
-  buildResolvedAccess,
   isAdmin,
   isOrganizationSuspended,
   tokenIssuedBeforeCutoff,
+  memberAccessOf,
 } from '@hbcfield/shared';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { resolveProfileBadges, orgPermissionFields, ignoreLegacyFlags } from './auth-common';
+import { resolveProfileBadges, orgPermissionFields } from './auth-common';
 import { SessionTokensService } from './session-tokens.service';
 
 /**
@@ -186,44 +185,7 @@ export class TokenValidationService {
 
       // Resolve the member's access ONCE here (server-side, from their own
       // roles/assignments + any cross-org shares). Cached with the validated user.
-      const access = buildResolvedAccess({
-        // An admin holds everything by being one — see buildResolvedAccess. This
-        // must match the login path exactly or a session's permissions change
-        // between signing in and the next request.
-        isAdmin: user.role === Role.ADMIN,
-        /*
-          The per-member permission columns, on their way out.
-
-          While they are read, a permission can come from here OR from the
-          member's role, merged with a union — and a union cannot say no. That
-          is why moving someone to a narrower role removes nothing today, and
-          why "what can this person do?" cannot be answered by looking at their
-          role.
-
-          Once every member's role covers what their flags grant — which
-          `prisma/backfill-role-authority.js` reports on and performs — setting
-          ACCESS_IGNORE_LEGACY_FLAGS=true stops reading them and the role
-          becomes the whole answer. Kept as a switch rather than a deletion so
-          it can be turned back within seconds if it removes something the
-          backfill did not anticipate; the columns stay until it has run
-          quietly for a while.
-        */
-        userFlags: ignoreLegacyFlags()
-          ? undefined
-          : {
-              canCreateTasks: userData.canCreateTasks,
-              canViewAllTasks: userData.canViewAllTasks,
-              canAssignTasks: userData.canAssignTasks,
-              canManageUsers: userData.canManageUsers,
-              canViewReports: userData.canViewReports,
-            },
-        memberRolePermissions: memberRole?.isActive ? memberRole.permissions : undefined,
-        spaces: spaceAssignments.map((a) => ({
-          spaceId: a.spaceId,
-          permissions: a.role?.isActive ? a.role.permissions : undefined,
-        })),
-        sharedSpaces,
-      });
+      const access = memberAccessOf({ ...userData, memberRole, spaceAssignments }, { sharedSpaces });
       return {
         valid: true,
         user: {

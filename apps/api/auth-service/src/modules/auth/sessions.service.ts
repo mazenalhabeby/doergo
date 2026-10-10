@@ -1,15 +1,14 @@
 import {
   readAssignedHome,
   REFRESH_TOKEN_GRACE_PERIOD_SECONDS,
-  Role,
   normalizeRole,
-  buildResolvedAccess,
   runWithCronLock,
   isAdmin,
   isOrganizationSuspended,
   ORG_SUSPENDED_MESSAGE,
   ORG_SUSPENDED_CODE,
   maskEmail,
+  memberAccessOf,
 } from '@hbcfield/shared';
 import { Injectable, HttpStatus, Logger, Optional } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -21,7 +20,6 @@ import {
   hashToken,
   resolveProfileBadges,
   orgPermissionFields,
-  ignoreLegacyFlags,
 } from './auth-common';
 import { SessionTokensService } from './session-tokens.service';
 
@@ -337,25 +335,7 @@ export class SessionsService {
         // was previously used but is lost on restart/crash, orphaning rows.
       }
 
-      const refreshAccess = buildResolvedAccess({
-        isAdmin: storedToken.user.role === Role.ADMIN,
-        userFlags: ignoreLegacyFlags()
-          ? undefined
-          : {
-              canCreateTasks: storedToken.user.canCreateTasks,
-              canViewAllTasks: storedToken.user.canViewAllTasks,
-              canAssignTasks: storedToken.user.canAssignTasks,
-              canManageUsers: storedToken.user.canManageUsers,
-              canViewReports: storedToken.user.canViewReports,
-            },
-        memberRolePermissions: storedToken.user.memberRole?.isActive
-          ? storedToken.user.memberRole.permissions
-          : undefined,
-        spaces: storedToken.user.spaceAssignments.map((a) => ({
-          spaceId: a.spaceId,
-          permissions: a.role?.isActive ? a.role.permissions : undefined,
-        })),
-      });
+      const refreshAccess = memberAccessOf(storedToken.user);
 
       return {
         success: true,

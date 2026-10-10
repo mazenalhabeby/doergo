@@ -1,10 +1,6 @@
 import { Role } from '../types/enums';
-import {
-  mergePermissions,
-  permissionsFromOrgRole,
-  permissionsFromUserFlags,
-  type PermissionSet,
-} from '../types/permissions';
+import { type PermissionSet } from '../types/permissions';
+import { ORG_ACCESS_SELECT, memberAccessOf, type OrgAccessRow } from '../access/org-access';
 
 /**
  * The narrow slice of a Prisma client this needs — structural, so the shared
@@ -22,7 +18,13 @@ export interface OrgCeilingPrisma {
 export interface OrgPermissionCeiling {
   role: string;
   isAdmin: boolean;
-  /** Legacy user flags ∪ the ACTIVE org role — the member's org-wide ceiling. */
+  /**
+   * What the member holds org-wide — exactly what their session resolves
+   * (memberAccessOf). It used to merge the legacy columns itself, ALWAYS, so
+   * with ACCESS_IGNORE_LEGACY_FLAGS on (production) a stale column raised the
+   * ceiling above the member's real access: they could grant what they did not
+   * hold.
+   */
   perms: PermissionSet;
 }
 
@@ -42,30 +44,9 @@ export async function loadOrgPermissionCeiling(
 ): Promise<OrgPermissionCeiling | null> {
   const row = (await prisma.user.findFirst({
     where: { id: userId, organizationId },
-    select: {
-      role: true,
-      canCreateTasks: true,
-      canViewAllTasks: true,
-      canAssignTasks: true,
-      canManageUsers: true,
-      canViewReports: true,
-      memberRole: { select: { permissions: true, isActive: true } },
-    },
-  })) as
-    | {
-        role: string;
-        canCreateTasks?: boolean | null;
-        canViewAllTasks?: boolean | null;
-        canAssignTasks?: boolean | null;
-        canManageUsers?: boolean | null;
-        canViewReports?: boolean | null;
-        memberRole?: { permissions: unknown; isActive: boolean } | null;
-      }
-    | null;
+    select: ORG_ACCESS_SELECT,
+  })) as OrgAccessRow | null;
   if (!row) return null;
-  const perms = mergePermissions(
-    permissionsFromUserFlags(row),
-    row.memberRole?.isActive ? permissionsFromOrgRole(row.memberRole.permissions) : undefined,
-  );
+  const perms = memberAccessOf(row).org;
   return { role: row.role, isAdmin: row.role === Role.ADMIN, perms };
 }

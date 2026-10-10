@@ -1,11 +1,11 @@
 import {
   readAssignedHome,
   DEFAULT_REFRESH_TOKEN_TTL,
-  Role,
   normalizeRole,
   buildResolvedAccess,
   isAdmin,
   ORG_SUSPENDED_MESSAGE,
+  memberAccessOf,
 } from '@hbcfield/shared';
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -17,7 +17,6 @@ import {
   hashToken,
   resolveProfileBadges,
   orgPermissionFields,
-  ignoreLegacyFlags,
   type AuthResult,
 } from './auth-common';
 
@@ -252,23 +251,7 @@ export class SessionTokensService {
       return { success: false, statusCode: HttpStatus.FORBIDDEN, message: ORG_SUSPENDED_MESSAGE };
     }
 
-    const access = buildResolvedAccess({
-      isAdmin: user.role === Role.ADMIN,
-      userFlags: ignoreLegacyFlags()
-        ? undefined
-        : {
-            canCreateTasks: user.canCreateTasks,
-            canViewAllTasks: user.canViewAllTasks,
-            canAssignTasks: user.canAssignTasks,
-            canManageUsers: user.canManageUsers,
-            canViewReports: user.canViewReports,
-          },
-      memberRolePermissions: user.memberRole?.isActive ? user.memberRole.permissions : undefined,
-      spaces: user.spaceAssignments.map((a) => ({
-        spaceId: a.spaceId,
-        permissions: a.role?.isActive ? a.role.permissions : undefined,
-      })),
-    });
+    const access = memberAccessOf(user);
 
     return this.buildSession(user, access, opts);
   }
