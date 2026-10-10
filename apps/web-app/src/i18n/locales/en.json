@@ -4873,7 +4873,7 @@
     "newInvoice": "New Invoice",
     "totalRevenue": "Total Revenue",
     "pending": "Pending",
-    "paid": "Paid",
+    "paid": "Settled",
     "overdue": "Overdue",
     "invoicesCount": "{{count}} invoices",
     "searchPlaceholder": "Search invoices...",
@@ -4889,7 +4889,7 @@
     "statuses": {
       "draft": "Draft",
       "sent": "Sent",
-      "paid": "Paid",
+      "paid": "Settled",
       "overdue": "Overdue",
       "canceled": "Canceled",
       "refunded": "Refunded",
@@ -4900,7 +4900,7 @@
     "actions": {
       "view": "View",
       "send": "Mark as sent",
-      "markPaid": "Mark Paid",
+      "markPaid": "Mark settled",
       "print": "Print",
       "pdf": "PDF",
       "cancelInvoice": "Cancel invoice",
@@ -4919,8 +4919,8 @@
     "detail": {
       "billTo": "Bill to",
       "noItems": "No line items",
-      "amountPaid": "Amount paid",
-      "paidOn": "Paid on {{date}}",
+      "amountPaid": "Amount settled",
+      "paidOn": "Settled on {{date}}",
       "overdueBy_one": "{{count}} day overdue",
       "overdueBy_other": "{{count}} days overdue",
       "dueToday": "Due today",
@@ -5254,11 +5254,11 @@
     "title": "Payments",
     "subtitle": "Track payments received from invoices",
     "totalReceived": "Total Received",
-    "paidInvoices": "Paid Invoices",
+    "paidInvoices": "Settled invoices",
     "averageInvoice": "Average Invoice",
     "paymentHistory": "Payment History",
     "empty": "No payments recorded yet",
-    "emptyHint": "Payments appear here when invoices are marked as paid"
+    "emptyHint": "Payments appear here when invoices are marked as settled"
   },
   "employees": {
     "new": {
@@ -7593,7 +7593,7 @@
       "nextBreak": "{{count}} more and every one after that is {{price}}",
       "lastBand": "You are on the lowest rate there is",
       "effective": "Works out at {{price}} each",
-      "allIncluded": "All included so far — nothing extra to pay",
+      "allIncluded": "All included so far — nothing extra",
       "perUnitShort": "+{{price}} each",
       "count": {
         "asset_one": "{{count}} asset",
@@ -7653,11 +7653,11 @@
       "incomplete": "Inactive"
     },
     "title": "Billing",
-    "subtitle": "You pay for the people who use HBCField, what each workspace switches on, and any options.",
+    "subtitle": "Your bill covers the people who use HBCField, what each workspace switches on, and any options.",
     "paymentAndInvoices": "Payment & invoices",
     "cancel": "Cancel",
-    "adminOnly": "Only an organization admin can change what you pay for.",
-    "trialDaysLeft": "{{count}} days left in your trial — nothing to pay yet",
+    "adminOnly": "Only an organization admin can change what your bill covers.",
+    "trialDaysLeft": "{{count}} days left in your trial — no charge yet",
     "cancelsOn": "Cancels on {{date}}",
     "modulesElsewhere": "Modules belong to a workspace — switch them on in that workspace's Modules tab, next to the count they are priced by.",
     "byAgreement": "Billed by agreement",
@@ -7668,7 +7668,7 @@
       "perPerson": "Per person",
       "wholeOrg": "Whole organization"
     },
-    "byInvoice": "Paid by invoice",
+    "byInvoice": "Settled by invoice",
     "byInvoiceHint": "We email an invoice each month, due within {{days}} days. No card is charged.",
     "subscribe": "Set up payment",
     "subscribeInvoice": "Start monthly invoicing",
@@ -8024,7 +8024,7 @@
   "orphanAssets": {
     "title_one": "{{count}} asset is not in any workspace",
     "title_other": "{{count}} assets are not in any workspace",
-    "subtitle": "They appear on no Assets tab, but they still count towards what you pay. Move them here or delete them.",
+    "subtitle": "They appear on no Assets tab, but they still count towards your bill. Move them here or delete them.",
     "review": "Review them",
     "dialogTitle": "Assets without a workspace",
     "dialogHint": "Pick a type to move an asset into this workspace, or delete it. Its history and tasks come with it.",
@@ -8945,7 +8945,7 @@
           "description": "Issued on joining and signed in the app. Kept for a working lifetime."
         },
         "annual_statement": {
-          "label": "Annual pay statement",
+          "label": "Annual earnings statement",
           "description": "One per year, for the tax return."
         },
         "reference": {
@@ -9853,9 +9853,9 @@
     "perHourLabel": "Per hour",
     "perDayLabel": "Per day",
     "costNotSet": "Not set on the profile",
-    "costsMoreThanPrice": "Costs more than the client pays",
+    "costsMoreThanPrice": "Costs more than the client is charged",
     "marginEach": "{{amount}} left",
-    "costsYouHint": "What a person costs is set once, on their profile. What the client pays is set here.",
+    "costsYouHint": "What a person costs is set once, on their profile. What the client is charged is set here.",
     "otherWorkspaces": "Day rate in other workspaces"
   },
   "currency": {
@@ -9871,9 +9871,9 @@
     "ratesReread_other": "{{count}} rates here are set in {{from}}. After the switch they read as {{to}}: 85 {{from}} becomes 85 {{to}}. Check them on the Billing and Roles tabs.",
     "switchTo": "Switch to {{code}}",
     "orgLabel": "Currency",
-    "orgHint": "What you pay in: workers' rates with you, their statements, and invoices to clients that have no currency of their own.",
+    "orgHint": "Your organization's currency: workers' cost rates, their statements, and invoices to clients that have no currency of their own.",
     "spaceLabel": "Billing currency",
-    "spaceHint": "What this client is invoiced in. Every rate on this workspace is in it. What you pay workers stays in the organization's currency.",
+    "spaceHint": "What this client is invoiced in. Every rate on this workspace is in it. Workers' cost rates stay in the organization's currency.",
     "clientLabel": "Invoice currency",
     "clientHint": "For invoices to this client outside a workspace. A workspace's own currency comes first.",
     "from": {

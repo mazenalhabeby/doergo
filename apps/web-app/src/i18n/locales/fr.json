@@ -4882,7 +4882,7 @@
     "newInvoice": "Nouvelle facture",
     "totalRevenue": "Chiffre d'affaires total",
     "pending": "En attente",
-    "paid": "Payées",
+    "paid": "Réglées",
     "overdue": "En retard",
     "invoicesCount": "{{count}} factures",
     "searchPlaceholder": "Rechercher des factures...",
@@ -4898,7 +4898,7 @@
     "statuses": {
       "draft": "Brouillon",
       "sent": "Envoyée",
-      "paid": "Payée",
+      "paid": "Réglée",
       "overdue": "En retard",
       "canceled": "Annulée",
       "refunded": "Remboursée",
@@ -4909,7 +4909,7 @@
     "actions": {
       "view": "Voir",
       "send": "Marquer comme envoyée",
-      "markPaid": "Marquer comme payée",
+      "markPaid": "Marquer comme réglée",
       "print": "Imprimer",
       "pdf": "PDF",
       "cancelInvoice": "Annuler la facture",
@@ -4928,8 +4928,8 @@
     "detail": {
       "billTo": "Facturer à",
       "noItems": "Aucune ligne",
-      "amountPaid": "Montant payé",
-      "paidOn": "Payée le {{date}}",
+      "amountPaid": "Montant réglé",
+      "paidOn": "Réglée le {{date}}",
       "overdueBy_one": "{{count}} jour de retard",
       "overdueBy_other": "{{count}} jours de retard",
       "dueToday": "Échéance aujourd'hui",
@@ -5263,11 +5263,11 @@
     "title": "Paiements",
     "subtitle": "Suivez les paiements reçus depuis les factures",
     "totalReceived": "Total reçu",
-    "paidInvoices": "Factures payées",
+    "paidInvoices": "Factures réglées",
     "averageInvoice": "Facture moyenne",
     "paymentHistory": "Historique des paiements",
     "empty": "Aucun paiement enregistré pour l'instant",
-    "emptyHint": "Les paiements apparaissent ici lorsque les factures sont marquées comme payées"
+    "emptyHint": "Les encaissements apparaissent ici lorsque les factures sont marquées comme réglées"
   },
   "employees": {
     "new": {
@@ -7602,7 +7602,7 @@
       "nextBreak": "{{count}} de plus et chacun ensuite coûte {{price}}",
       "lastBand": "Vous êtes déjà au tarif le plus bas",
       "effective": "Revient à {{price}} chacun",
-      "allIncluded": "Tout est inclus pour l’instant — rien de plus à payer",
+      "allIncluded": "Tout est inclus pour l’instant — rien de plus",
       "perUnitShort": "+{{price}} chacun",
       "count": {
         "asset_one": "{{count}} actif",
@@ -7662,11 +7662,11 @@
       "incomplete": "Inactif"
     },
     "title": "Facturation",
-    "subtitle": "Vous payez pour les personnes qui utilisent HBCField, pour ce que chaque espace de travail active, et pour les options.",
+    "subtitle": "Votre facture couvre les personnes qui utilisent HBCField, ce que chaque espace de travail active, et les options.",
     "paymentAndInvoices": "Paiement et factures",
     "cancel": "Annuler",
-    "adminOnly": "Seul un administrateur de l’organisation peut modifier ce que vous payez.",
-    "trialDaysLeft": "{{count}} jours restants d’essai — rien à payer pour l’instant",
+    "adminOnly": "Seul un administrateur de l’organisation peut modifier ce que couvre votre facture.",
+    "trialDaysLeft": "{{count}} jours restants d’essai — aucun frais pour l’instant",
     "cancelsOn": "Se termine le {{date}}",
     "modulesElsewhere": "Les modules appartiennent à un espace de travail — activez-les dans l’onglet Modules de cet espace de travail, à côté du décompte qui les facture.",
     "byAgreement": "Facturation par accord",
@@ -7677,7 +7677,7 @@
       "perPerson": "Par personne",
       "wholeOrg": "Toute l’organisation"
     },
-    "byInvoice": "Paiement sur facture",
+    "byInvoice": "Règlement sur facture",
     "byInvoiceHint": "Nous envoyons une facture chaque mois, payable sous {{days}} jours. Aucune carte n’est débitée.",
     "subscribe": "Configurer le paiement",
     "subscribeInvoice": "Démarrer la facturation mensuelle",
@@ -8033,7 +8033,7 @@
   "orphanAssets": {
     "title_one": "{{count}} actif n’appartient à aucun espace de travail",
     "title_other": "{{count}} actifs n’appartiennent à aucun espace de travail",
-    "subtitle": "Ils n’apparaissent dans aucun onglet Actifs, mais comptent toujours dans ce que vous payez. Déplacez-les ici ou supprimez-les.",
+    "subtitle": "Ils n’apparaissent dans aucun onglet Actifs, mais comptent toujours dans votre facture. Déplacez-les ici ou supprimez-les.",
     "review": "Les examiner",
     "dialogTitle": "Actifs sans espace de travail",
     "dialogHint": "Choisissez un type pour déplacer un actif dans cet espace de travail, ou supprimez-le. Son historique et ses tâches le suivent.",
@@ -8954,7 +8954,7 @@
           "description": "Émis à l’arrivée et signé dans l’application. Conservé très longtemps."
         },
         "annual_statement": {
-          "label": "Récapitulatif annuel",
+          "label": "Récapitulatif annuel des revenus",
           "description": "Un par an, pour la déclaration."
         },
         "reference": {
@@ -9862,9 +9862,9 @@
     "perHourLabel": "Par heure",
     "perDayLabel": "Par jour",
     "costNotSet": "Non défini dans le profil",
-    "costsMoreThanPrice": "Coûte plus que ce que paie le client",
+    "costsMoreThanPrice": "Coûte plus que ce qui est facturé au client",
     "marginEach": "Reste {{amount}}",
-    "costsYouHint": "Ce que coûte une personne se définit une fois, dans son profil. Ce que paie le client se définit ici.",
+    "costsYouHint": "Ce que coûte une personne se définit une fois, dans son profil. Ce qui est facturé au client se définit ici.",
     "otherWorkspaces": "Tarif journalier dans les autres espaces de travail"
   },
   "currency": {
@@ -9882,7 +9882,7 @@
     "orgLabel": "Devise",
     "orgHint": "Votre devise : les tarifs de vos collaborateurs, leurs relevés et les factures aux clients sans devise propre.",
     "spaceLabel": "Devise de facturation",
-    "spaceHint": "La devise dans laquelle ce client est facturé. Tous les tarifs de cet espace de travail sont dans cette devise. Ce que vous versez aux collaborateurs reste dans la devise de l'organisation.",
+    "spaceHint": "La devise dans laquelle ce client est facturé. Tous les tarifs de cet espace de travail sont dans cette devise. Les taux de coût des collaborateurs restent dans la devise de l’organisation.",
     "clientLabel": "Devise de facture",
     "clientHint": "Pour les factures à ce client hors d'un espace de travail. La devise d'un espace de travail est prioritaire.",
     "from": {

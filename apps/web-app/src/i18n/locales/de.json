@@ -4873,7 +4873,7 @@
     "newInvoice": "Neue Rechnung",
     "totalRevenue": "Gesamtumsatz",
     "pending": "Ausstehend",
-    "paid": "Bezahlt",
+    "paid": "Beglichen",
     "overdue": "Überfällig",
     "invoicesCount": "{{count}} Rechnungen",
     "searchPlaceholder": "Rechnungen suchen...",
@@ -4889,7 +4889,7 @@
     "statuses": {
       "draft": "Entwurf",
       "sent": "Versendet",
-      "paid": "Bezahlt",
+      "paid": "Beglichen",
       "overdue": "Überfällig",
       "canceled": "Storniert",
       "refunded": "Erstattet",
@@ -4900,7 +4900,7 @@
     "actions": {
       "view": "Ansehen",
       "send": "Als versendet markieren",
-      "markPaid": "Als bezahlt markieren",
+      "markPaid": "Als beglichen markieren",
       "print": "Drucken",
       "pdf": "PDF",
       "cancelInvoice": "Rechnung stornieren",
@@ -4919,8 +4919,8 @@
     "detail": {
       "billTo": "Rechnungsempfänger",
       "noItems": "Keine Positionen",
-      "amountPaid": "Bezahlter Betrag",
-      "paidOn": "Bezahlt am {{date}}",
+      "amountPaid": "Beglichener Betrag",
+      "paidOn": "Beglichen am {{date}}",
       "overdueBy_one": "{{count}} Tag überfällig",
       "overdueBy_other": "{{count}} Tage überfällig",
       "dueToday": "Heute fällig",
@@ -5254,11 +5254,11 @@
     "title": "Zahlungen",
     "subtitle": "Eingegangene Zahlungen aus Rechnungen verfolgen",
     "totalReceived": "Gesamt erhalten",
-    "paidInvoices": "Bezahlte Rechnungen",
+    "paidInvoices": "Beglichene Rechnungen",
     "averageInvoice": "Durchschnittliche Rechnung",
     "paymentHistory": "Zahlungsverlauf",
     "empty": "Noch keine Zahlungen erfasst",
-    "emptyHint": "Zahlungen erscheinen hier, sobald Rechnungen als bezahlt markiert werden"
+    "emptyHint": "Zahlungen erscheinen hier, sobald Rechnungen als beglichen markiert werden"
   },
   "employees": {
     "new": {
@@ -7653,11 +7653,11 @@
       "incomplete": "Inaktiv"
     },
     "title": "Abrechnung",
-    "subtitle": "Sie zahlen für die Personen, die HBCField nutzen, für das, was jeder Arbeitsbereich aktiviert hat, und für Optionen.",
+    "subtitle": "Ihre Rechnung umfasst die Personen, die HBCField nutzen, das, was jeder Arbeitsbereich aktiviert hat, und Optionen.",
     "paymentAndInvoices": "Zahlung & Rechnungen",
     "cancel": "Kündigen",
-    "adminOnly": "Nur ein Organisations-Admin kann ändern, wofür Sie zahlen.",
-    "trialDaysLeft": "Noch {{count}} Tage in Ihrer Testphase — noch nichts zu zahlen",
+    "adminOnly": "Nur ein Organisations-Admin kann ändern, was Ihre Rechnung umfasst.",
+    "trialDaysLeft": "Noch {{count}} Tage in Ihrer Testphase — noch keine Kosten",
     "cancelsOn": "Endet am {{date}}",
     "modulesElsewhere": "Module gehören zu einem Arbeitsbereich — aktivieren Sie sie im Reiter „Module“ des Arbeitsbereichs, direkt neben der Anzahl, nach der sie berechnet werden.",
     "byAgreement": "Abrechnung nach Vereinbarung",
@@ -9853,9 +9853,9 @@
     "perHourLabel": "Pro Stunde",
     "perDayLabel": "Pro Tag",
     "costNotSet": "Im Profil nicht festgelegt",
-    "costsMoreThanPrice": "Kostet mehr, als der Kunde zahlt",
+    "costsMoreThanPrice": "Kostet mehr, als dem Kunden verrechnet wird",
     "marginEach": "{{amount}} bleiben",
-    "costsYouHint": "Was eine Person kostet, wird einmal im Profil festgelegt. Was der Kunde zahlt, wird hier festgelegt.",
+    "costsYouHint": "Was eine Person kostet, wird einmal im Profil festgelegt. Was dem Kunden verrechnet wird, wird hier festgelegt.",
     "otherWorkspaces": "Tagessatz in anderen Arbeitsbereichen"
   },
   "currency": {
@@ -9873,7 +9873,7 @@
     "orgLabel": "Währung",
     "orgHint": "Ihre Währung: die Sätze Ihrer Mitarbeitenden, ihre Abrechnungen und Rechnungen an Kunden ohne eigene Währung.",
     "spaceLabel": "Abrechnungswährung",
-    "spaceHint": "In dieser Währung wird dieser Kunde abgerechnet. Alle Sätze in diesem Arbeitsbereich gelten in ihr. Was Sie Mitarbeitenden zahlen, bleibt in der Währung der Organisation.",
+    "spaceHint": "In dieser Währung wird dieser Kunde abgerechnet. Alle Sätze in diesem Arbeitsbereich gelten in ihr. Die Kostensätze der Mitarbeitenden bleiben in der Währung der Organisation.",
     "clientLabel": "Rechnungswährung",
     "clientHint": "Für Rechnungen an diesen Kunden außerhalb eines Arbeitsbereichs. Die Währung eines Arbeitsbereichs hat Vorrang.",
     "from": {

@@ -4882,7 +4882,7 @@
     "newInvoice": "Nuova fattura",
     "totalRevenue": "Ricavi totali",
     "pending": "In sospeso",
-    "paid": "Pagata",
+    "paid": "Saldata",
     "overdue": "Scaduta",
     "invoicesCount": "{{count}} fatture",
     "searchPlaceholder": "Cerca fatture...",
@@ -4898,7 +4898,7 @@
     "statuses": {
       "draft": "Bozza",
       "sent": "Inviata",
-      "paid": "Pagata",
+      "paid": "Saldata",
       "overdue": "Scaduta",
       "canceled": "Annullata",
       "refunded": "Rimborsata",
@@ -4909,7 +4909,7 @@
     "actions": {
       "view": "Visualizza",
       "send": "Segna come inviata",
-      "markPaid": "Segna come pagata",
+      "markPaid": "Segna come saldata",
       "print": "Stampa",
       "pdf": "PDF",
       "cancelInvoice": "Annulla fattura",
@@ -4928,8 +4928,8 @@
     "detail": {
       "billTo": "Intestatario",
       "noItems": "Nessuna voce",
-      "amountPaid": "Importo pagato",
-      "paidOn": "Pagata il {{date}}",
+      "amountPaid": "Importo saldato",
+      "paidOn": "Saldata il {{date}}",
       "overdueBy_one": "{{count}} giorno di ritardo",
       "overdueBy_other": "{{count}} giorni di ritardo",
       "dueToday": "Scade oggi",
@@ -5263,11 +5263,11 @@
     "title": "Pagamenti",
     "subtitle": "Tieni traccia dei pagamenti ricevuti dalle fatture",
     "totalReceived": "Totale ricevuto",
-    "paidInvoices": "Fatture pagate",
+    "paidInvoices": "Fatture saldate",
     "averageInvoice": "Fattura media",
     "paymentHistory": "Cronologia pagamenti",
     "empty": "Ancora nessun pagamento registrato",
-    "emptyHint": "I pagamenti appaiono qui quando le fatture vengono segnate come pagate"
+    "emptyHint": "Gli incassi appaiono qui quando le fatture vengono segnate come saldate"
   },
   "employees": {
     "new": {
@@ -7602,7 +7602,7 @@
       "nextBreak": "Ancora {{count}} e ognuno successivo costa {{price}}",
       "lastBand": "Sei già alla tariffa più bassa",
       "effective": "Risulta {{price}} ciascuno",
-      "allIncluded": "Finora tutto incluso — non paghi nulla in più",
+      "allIncluded": "Finora tutto incluso — nulla in più",
       "perUnitShort": "+{{price}} ciascuno",
       "count": {
         "asset_one": "{{count}} bene",
@@ -7662,11 +7662,11 @@
       "incomplete": "Inattivo"
     },
     "title": "Fatturazione",
-    "subtitle": "Paghi per le persone che usano HBCField, per ciò che ogni spazio di lavoro attiva e per le opzioni.",
+    "subtitle": "La tua fattura comprende le persone che usano HBCField, ciò che ogni spazio di lavoro attiva e le opzioni.",
     "paymentAndInvoices": "Pagamenti e fatture",
     "cancel": "Annulla",
-    "adminOnly": "Solo un amministratore dell’organizzazione può cambiare ciò per cui si paga.",
-    "trialDaysLeft": "{{count}} giorni rimasti di prova — ancora nulla da pagare",
+    "adminOnly": "Solo un amministratore dell’organizzazione può cambiare ciò che comprende la fattura.",
+    "trialDaysLeft": "{{count}} giorni rimasti di prova — ancora nessun addebito",
     "cancelsOn": "Termina il {{date}}",
     "modulesElsewhere": "I moduli appartengono a uno spazio di lavoro: attivali nella scheda Moduli di quello spazio di lavoro, accanto al conteggio con cui vengono addebitati.",
     "byAgreement": "Fatturazione su accordo",
@@ -7677,7 +7677,7 @@
       "perPerson": "Per persona",
       "wholeOrg": "Intera organizzazione"
     },
-    "byInvoice": "Pagamento con fattura",
+    "byInvoice": "Saldo con fattura",
     "byInvoiceHint": "Inviamo una fattura ogni mese, con scadenza a {{days}} giorni. Nessuna carta viene addebitata.",
     "subscribe": "Configura il pagamento",
     "subscribeInvoice": "Avvia la fatturazione mensile",
@@ -8033,7 +8033,7 @@
   "orphanAssets": {
     "title_one": "{{count}} bene non è in nessuno spazio di lavoro",
     "title_other": "{{count}} beni non sono in nessuno spazio di lavoro",
-    "subtitle": "Non compaiono in nessuna scheda Beni, ma continuano a incidere su quanto paghi. Spostali qui oppure eliminali.",
+    "subtitle": "Non compaiono in nessuna scheda Beni, ma continuano a incidere sulla tua fattura. Spostali qui oppure eliminali.",
     "review": "Esaminali",
     "dialogTitle": "Beni senza spazio di lavoro",
     "dialogHint": "Scegli un tipo per spostare un bene in questo spazio di lavoro, oppure eliminalo. Cronologia e attività lo seguono.",
@@ -9862,9 +9862,9 @@
     "perHourLabel": "All'ora",
     "perDayLabel": "Al giorno",
     "costNotSet": "Non impostato nel profilo",
-    "costsMoreThanPrice": "Costa più di quanto paga il cliente",
+    "costsMoreThanPrice": "Costa più di quanto viene fatturato al cliente",
     "marginEach": "Restano {{amount}}",
-    "costsYouHint": "Quanto costa una persona si imposta una volta, nel suo profilo. Quanto paga il cliente si imposta qui.",
+    "costsYouHint": "Quanto costa una persona si imposta una volta, nel suo profilo. Quanto viene fatturato al cliente si imposta qui.",
     "otherWorkspaces": "Tariffa giornaliera negli altri spazi di lavoro"
   },
   "currency": {
@@ -9882,7 +9882,7 @@
     "orgLabel": "Valuta",
     "orgHint": "La vostra valuta: le tariffe dei collaboratori, i loro estratti e le fatture ai clienti senza una valuta propria.",
     "spaceLabel": "Valuta di fatturazione",
-    "spaceHint": "La valuta in cui viene fatturato questo cliente. Tutte le tariffe di questo spazio di lavoro sono in questa valuta. Ciò che corrispondete ai collaboratori resta nella valuta dell'organizzazione.",
+    "spaceHint": "La valuta in cui viene fatturato questo cliente. Tutte le tariffe di questo spazio di lavoro sono in questa valuta. Le tariffe di costo dei collaboratori restano nella valuta dell’organizzazione.",
     "clientLabel": "Valuta della fattura",
     "clientHint": "Per le fatture a questo cliente fuori da uno spazio di lavoro. La valuta di uno spazio di lavoro ha la precedenza.",
     "from": {

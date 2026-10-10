@@ -4873,7 +4873,7 @@
     "newInvoice": "Nueva factura",
     "totalRevenue": "Ingresos totales",
     "pending": "Pendiente",
-    "paid": "Pagada",
+    "paid": "Liquidada",
     "overdue": "Vencida",
     "invoicesCount": "{{count}} facturas",
     "searchPlaceholder": "Buscar facturas...",
@@ -4889,7 +4889,7 @@
     "statuses": {
       "draft": "Borrador",
       "sent": "Enviada",
-      "paid": "Pagada",
+      "paid": "Liquidada",
       "overdue": "Vencida",
       "canceled": "Cancelada",
       "refunded": "Reembolsada",
@@ -4900,7 +4900,7 @@
     "actions": {
       "view": "Ver",
       "send": "Marcar como enviada",
-      "markPaid": "Marcar como pagada",
+      "markPaid": "Marcar como liquidada",
       "print": "Imprimir",
       "pdf": "PDF",
       "cancelInvoice": "Anular factura",
@@ -4919,8 +4919,8 @@
     "detail": {
       "billTo": "Facturar a",
       "noItems": "Sin líneas",
-      "amountPaid": "Importe pagado",
-      "paidOn": "Pagada el {{date}}",
+      "amountPaid": "Importe liquidado",
+      "paidOn": "Liquidada el {{date}}",
       "overdueBy_one": "{{count}} día de retraso",
       "overdueBy_other": "{{count}} días de retraso",
       "dueToday": "Vence hoy",
@@ -5254,11 +5254,11 @@
     "title": "Pagos",
     "subtitle": "Da seguimiento a los pagos recibidos de las facturas",
     "totalReceived": "Total recibido",
-    "paidInvoices": "Facturas pagadas",
+    "paidInvoices": "Facturas liquidadas",
     "averageInvoice": "Factura promedio",
     "paymentHistory": "Historial de pagos",
     "empty": "Aún no hay pagos registrados",
-    "emptyHint": "Los pagos aparecen aquí cuando las facturas se marcan como pagadas"
+    "emptyHint": "Los cobros aparecen aquí cuando las facturas se marcan como liquidadas"
   },
   "employees": {
     "new": {
@@ -7593,7 +7593,7 @@
       "nextBreak": "{{count}} más y cada uno a partir de ahí cuesta {{price}}",
       "lastBand": "Ya tienes la tarifa más baja",
       "effective": "Sale a {{price}} cada uno",
-      "allIncluded": "Todo incluido por ahora: no pagas nada extra",
+      "allIncluded": "Todo incluido por ahora: nada extra",
       "perUnitShort": "+{{price}} cada uno",
       "count": {
         "asset_one": "{{count}} activo",
@@ -7653,11 +7653,11 @@
       "incomplete": "Inactivo"
     },
     "title": "Facturación",
-    "subtitle": "Pagas por las personas que usan HBCField, por lo que cada espacio de trabajo activa y por las opciones.",
+    "subtitle": "Tu factura cubre las personas que usan HBCField, lo que cada espacio de trabajo activa y las opciones.",
     "paymentAndInvoices": "Pago y facturas",
     "cancel": "Cancelar",
-    "adminOnly": "Solo un administrador de la organización puede cambiar lo que se paga.",
-    "trialDaysLeft": "Quedan {{count}} días de prueba — todavía no hay nada que pagar",
+    "adminOnly": "Solo un administrador de la organización puede cambiar lo que cubre tu factura.",
+    "trialDaysLeft": "Quedan {{count}} días de prueba — todavía sin cargo",
     "cancelsOn": "Se cancela el {{date}}",
     "modulesElsewhere": "Los módulos pertenecen a un espacio de trabajo: actívalos en la pestaña Módulos de ese espacio de trabajo, junto al recuento por el que se cobran.",
     "byAgreement": "Facturación por acuerdo",
@@ -7668,7 +7668,7 @@
       "perPerson": "Por persona",
       "wholeOrg": "Toda la organización"
     },
-    "byInvoice": "Pago por factura",
+    "byInvoice": "Liquidación por factura",
     "byInvoiceHint": "Enviamos una factura cada mes, con vencimiento a {{days}} días. No se cobra ninguna tarjeta.",
     "subscribe": "Configurar el pago",
     "subscribeInvoice": "Iniciar facturación mensual",
@@ -8024,7 +8024,7 @@
   "orphanAssets": {
     "title_one": "{{count}} activo no está en ningún espacio de trabajo",
     "title_other": "{{count}} activos no están en ningún espacio de trabajo",
-    "subtitle": "No aparecen en ninguna pestaña de Activos, pero siguen contando en lo que pagas. Muévelos aquí o elimínalos.",
+    "subtitle": "No aparecen en ninguna pestaña de Activos, pero siguen contando en tu factura. Muévelos aquí o elimínalos.",
     "review": "Revisarlos",
     "dialogTitle": "Activos sin espacio de trabajo",
     "dialogHint": "Elige un tipo para mover un activo a este espacio de trabajo, o elimínalo. Su historial y sus tareas van con él.",
@@ -8945,7 +8945,7 @@
           "description": "Se emite al incorporarse y se firma en la app. Se guarda muchísimo tiempo."
         },
         "annual_statement": {
-          "label": "Certificado anual de retenciones",
+          "label": "Certificado anual de ingresos",
           "description": "Uno al año, para la declaración."
         },
         "reference": {
@@ -9853,9 +9853,9 @@
     "perHourLabel": "Por hora",
     "perDayLabel": "Por día",
     "costNotSet": "Sin fijar en el perfil",
-    "costsMoreThanPrice": "Cuesta más de lo que paga el cliente",
+    "costsMoreThanPrice": "Cuesta más de lo que se factura al cliente",
     "marginEach": "Quedan {{amount}}",
-    "costsYouHint": "Lo que cuesta una persona se fija una vez, en su perfil. Lo que paga el cliente se fija aquí.",
+    "costsYouHint": "Lo que cuesta una persona se fija una vez, en su perfil. Lo que se factura al cliente se fija aquí.",
     "otherWorkspaces": "Tarifa diaria en otros espacios de trabajo"
   },
   "currency": {
@@ -9873,7 +9873,7 @@
     "orgLabel": "Moneda",
     "orgHint": "Su moneda: las tarifas de sus trabajadores, sus extractos y las facturas a clientes sin moneda propia.",
     "spaceLabel": "Moneda de facturación",
-    "spaceHint": "La moneda en la que se factura a este cliente. Todas las tarifas de este espacio de trabajo están en ella. Lo que paga a los trabajadores sigue en la moneda de la organización.",
+    "spaceHint": "La moneda en la que se factura a este cliente. Todas las tarifas de este espacio de trabajo están en ella. Las tarifas de coste de los trabajadores siguen en la moneda de la organización.",
     "clientLabel": "Moneda de factura",
     "clientHint": "Para facturas a este cliente fuera de un espacio de trabajo. La moneda de un espacio de trabajo tiene prioridad.",
     "from": {
