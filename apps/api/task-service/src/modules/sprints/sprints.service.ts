@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { assertSpaceInOrg } from '../../common/tenant-scope.util';
-import { success, clampListLimit, localPartsIn, addDaysStr, zonedWallTimeToUtc } from '@hbcfield/shared';
+import { success, clampListLimit, localPartsIn, addDaysStr, zonedWallTimeToUtc, assertFoundInOrg } from '@hbcfield/shared';
 import { workspaceZone } from '../../common/zone.util';
 
 @Injectable()
@@ -65,13 +65,7 @@ export class SprintsService {
       },
     });
 
-    if (!sprint) {
-      throw new NotFoundException('Sprint not found');
-    }
-
-    if (sprint.organizationId !== data.organizationId) {
-      throw new NotFoundException('Sprint not found');
-    }
+    assertFoundInOrg(sprint, data.organizationId, 'Sprint');
 
     return success(sprint);
   }
@@ -144,13 +138,7 @@ export class SprintsService {
       where: { id: data.id },
     });
 
-    if (!existing) {
-      throw new NotFoundException('Sprint not found');
-    }
-
-    if (existing.organizationId !== data.organizationId) {
-      throw new NotFoundException('Sprint not found');
-    }
+    assertFoundInOrg(existing, data.organizationId, 'Sprint');
 
     // Validate dates if provided
     const startDate = data.startDate ? new Date(data.startDate) : existing.startDate;
@@ -186,13 +174,7 @@ export class SprintsService {
       where: { id: data.id },
     });
 
-    if (!existing) {
-      throw new NotFoundException('Sprint not found');
-    }
-
-    if (existing.organizationId !== data.organizationId) {
-      throw new NotFoundException('Sprint not found');
-    }
+    assertFoundInOrg(existing, data.organizationId, 'Sprint');
 
     if (existing.status !== 'PLANNING') {
       throw new BadRequestException('Only sprints in PLANNING status can be started');
@@ -231,13 +213,7 @@ export class SprintsService {
       where: { id: data.id },
     });
 
-    if (!existing) {
-      throw new NotFoundException('Sprint not found');
-    }
-
-    if (existing.organizationId !== data.organizationId) {
-      throw new NotFoundException('Sprint not found');
-    }
+    assertFoundInOrg(existing, data.organizationId, 'Sprint');
 
     if (existing.status !== 'ACTIVE') {
       throw new BadRequestException('Only ACTIVE sprints can be completed');
@@ -469,13 +445,7 @@ export class SprintsService {
       },
     });
 
-    if (!sprint) {
-      throw new NotFoundException('Sprint not found');
-    }
-
-    if (sprint.organizationId !== data.organizationId) {
-      throw new NotFoundException('Sprint not found');
-    }
+    assertFoundInOrg(sprint, data.organizationId, 'Sprint');
 
     if (!sprint.report) {
       throw new NotFoundException('Sprint report not found. Reports are generated when a sprint is completed.');
@@ -519,13 +489,7 @@ export class SprintsService {
       where: { id: data.id },
     });
 
-    if (!existing) {
-      throw new NotFoundException('Sprint not found');
-    }
-
-    if (existing.organizationId !== data.organizationId) {
-      throw new NotFoundException('Sprint not found');
-    }
+    assertFoundInOrg(existing, data.organizationId, 'Sprint');
 
     if (existing.status === 'ACTIVE') {
       throw new BadRequestException('Cannot delete an active sprint. Complete it first.');

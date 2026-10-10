@@ -74,6 +74,7 @@ export * from './access/module-anywhere';
 // Per-member reads: the same "is this person in my crew?" rule for the two
 // services that ask it. NOT exported from client.ts — it needs a Prisma client.
 export * from './access/member-scope';
+export * from './access/found-in-org';
 export * from './access/assignment-window';
 // Who may read a workspace's roster, and see a member's terms there.
 export * from './access/roster-access';

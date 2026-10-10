@@ -1,15 +1,13 @@
 import {
   Injectable,
   Logger,
-  NotFoundException,
   BadRequestException,
   OnModuleInit,
-  OnModuleDestroy,
-} from '@nestjs/common';
+  OnModuleDestroy } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { assertSpaceInOrg, assertWorkflowInOrg, assertUsersInOrg, assertCustomerInOrg } from '../../common/tenant-scope.util';
 import { workspaceZone } from '../../common/zone.util';
-import { success, localPartsIn } from '@hbcfield/shared';
+import { success, localPartsIn, assertFoundInOrg } from '@hbcfield/shared';
 
 @Injectable()
 export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
@@ -52,17 +50,14 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
           undefined adds nothing (org-wide). `[]` — granted nowhere — becomes
           `in: []`, which matches nothing, and that is the intended answer.
         */
-        ...(data.scopeSpaceIds === undefined ? {} : { spaceId: { in: data.scopeSpaceIds } }),
-      },
+        ...(data.scopeSpaceIds === undefined ? {} : { spaceId: { in: data.scopeSpaceIds } }) },
       orderBy: { createdAt: 'desc' },
       take: data.limit || 100,
       skip: data.offset || 0,
       include: {
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         space: { select: { id: true, name: true } },
-        workflow: { select: { id: true, name: true } },
-      },
-    });
+        workflow: { select: { id: true, name: true } } } });
 
     return success(templates);
   }
@@ -150,12 +145,9 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
         endDate,
         nextRunAt,
         organizationId: data.organizationId,
-        createdById: data.createdById,
-      },
+        createdById: data.createdById },
       include: {
-        createdBy: { select: { id: true, firstName: true, lastName: true } },
-      },
-    });
+        createdBy: { select: { id: true, firstName: true, lastName: true } } } });
 
     return success(template);
   }
@@ -186,16 +178,9 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
     isActive?: boolean;
   }) {
     const existing = await this.prisma.recurringTaskTemplate.findUnique({
-      where: { id: data.id },
-    });
+      where: { id: data.id } });
 
-    if (!existing) {
-      throw new NotFoundException('Recurring task template not found');
-    }
-
-    if (existing.organizationId !== data.organizationId) {
-      throw new NotFoundException('Recurring task template not found');
-    }
+    assertFoundInOrg(existing, data.organizationId, 'Recurring task template');
 
     // Validate any newly-set space / task type belong to this org
     await this.assertSpaceAndWorkflow(
@@ -212,8 +197,7 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
       this.validateFrequencyFields(data.frequency, {
         customDays: data.customDays ?? existing.customDays ?? undefined,
         dayOfWeek: data.dayOfWeek ?? existing.dayOfWeek ?? undefined,
-        dayOfMonth: data.dayOfMonth ?? existing.dayOfMonth ?? undefined,
-      });
+        dayOfMonth: data.dayOfMonth ?? existing.dayOfMonth ?? undefined });
     }
 
     // Recalculate nextRunAt if frequency-related fields changed
@@ -250,12 +234,9 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
         ...(data.dayOfMonth !== undefined && { dayOfMonth: data.dayOfMonth }),
         ...(data.endDate !== undefined && { endDate: data.endDate ? new Date(data.endDate) : null }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
-        nextRunAt,
-      },
+        nextRunAt },
       include: {
-        createdBy: { select: { id: true, firstName: true, lastName: true } },
-      },
-    });
+        createdBy: { select: { id: true, firstName: true, lastName: true } } } });
 
     return success(template);
   }
@@ -265,16 +246,9 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
    */
   async remove(data: { id: string; organizationId: string }) {
     const existing = await this.prisma.recurringTaskTemplate.findUnique({
-      where: { id: data.id },
-    });
+      where: { id: data.id } });
 
-    if (!existing) {
-      throw new NotFoundException('Recurring task template not found');
-    }
-
-    if (existing.organizationId !== data.organizationId) {
-      throw new NotFoundException('Recurring task template not found');
-    }
+    assertFoundInOrg(existing, data.organizationId, 'Recurring task template');
 
     await this.prisma.recurringTaskTemplate.delete({ where: { id: data.id } });
 
@@ -286,16 +260,9 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
    */
   async generate(data: { id: string; organizationId: string; userId: string }) {
     const template = await this.prisma.recurringTaskTemplate.findUnique({
-      where: { id: data.id },
-    });
+      where: { id: data.id } });
 
-    if (!template) {
-      throw new NotFoundException('Recurring task template not found');
-    }
-
-    if (template.organizationId !== data.organizationId) {
-      throw new NotFoundException('Recurring task template not found');
-    }
+    assertFoundInOrg(template, data.organizationId, 'Recurring task template');
 
     if (!template.isActive) {
       throw new BadRequestException('Cannot generate task from inactive template');
@@ -329,9 +296,7 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
       where: { id: template.id },
       data: {
         lastGeneratedAt: now,
-        nextRunAt: finalNextRunAt,
-      },
-    });
+        nextRunAt: finalNextRunAt } });
 
     // Return the created task with includes
     const fullTask = await this.prisma.task.findUnique({
@@ -340,11 +305,8 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
         assignedTo: { select: { id: true, firstName: true, lastName: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         assignees: {
-          include: { user: { select: { id: true, firstName: true, lastName: true } } },
-        },
-        checklistItems: { orderBy: { position: 'asc' } },
-      },
-    });
+          include: { user: { select: { id: true, firstName: true, lastName: true } } } },
+        checklistItems: { orderBy: { position: 'asc' } } } });
 
     return success(fullTask, 'Task generated from recurring template');
   }
@@ -480,8 +442,7 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
     const first = await this.prisma.workflowStatus.findFirst({
       where: { workflowId, isCanceled: false },
       orderBy: { position: 'asc' },
-      select: { key: true },
-    });
+      select: { key: true } });
     return first?.key ?? 'NEW';
   }
 
@@ -532,23 +493,18 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
         estimatedHours: template.estimatedHours,
         organizationId: template.organizationId,
         createdById: userId,
-        ...(assigneeIds.length > 0 ? { assignedToId: assigneeIds[0] } : {}),
-      },
-    });
+        ...(assigneeIds.length > 0 ? { assignedToId: assigneeIds[0] } : {}) } });
 
     if (checklist.length > 0) {
       await this.prisma.checklistItem.createMany({
-        data: checklist.map((item, index) => ({ taskId: task.id, text: item.text, position: index })),
-      });
+        data: checklist.map((item, index) => ({ taskId: task.id, text: item.text, position: index })) });
     }
     if (assigneeIds.length > 0) {
       await this.prisma.taskAssignee.createMany({
         data: assigneeIds.map((uid, index) => ({
           taskId: task.id,
           userId: uid,
-          role: index === 0 ? 'LEAD' : 'MEMBER',
-        })),
-      });
+          role: index === 0 ? 'LEAD' : 'MEMBER' })) });
     }
     await this.prisma.taskEvent.create({
       data: {
@@ -558,10 +514,7 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
         metadata: {
           source: 'recurring_template',
           templateId: template.id,
-          templateTitle: template.title,
-        },
-      },
-    });
+          templateTitle: template.title } } });
 
     return task;
   }
@@ -577,10 +530,8 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
       where: {
         isActive: true,
         nextRunAt: { lte: now },
-        OR: [{ endDate: null }, { endDate: { gte: now } }],
-      },
-      take: 200,
-    });
+        OR: [{ endDate: null }, { endDate: { gte: now } }] },
+      take: 200 });
 
     let generated = 0;
     for (const template of due) {
@@ -597,8 +548,7 @@ export class RecurringTasksService implements OnModuleInit, OnModuleDestroy {
       // Claim: only proceed if nextRunAt is still exactly what we read.
       const claim = await this.prisma.recurringTaskTemplate.updateMany({
         where: { id: template.id, nextRunAt: template.nextRunAt },
-        data: { lastGeneratedAt: now, nextRunAt: finalNext },
-      });
+        data: { lastGeneratedAt: now, nextRunAt: finalNext } });
       if (claim.count !== 1) continue;
 
       try {

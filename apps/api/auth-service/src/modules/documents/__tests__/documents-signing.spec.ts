@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException, ConflictException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { sha256 } from '@hbcfield/shared/storage';
 import { PrismaService } from '../../../common/prisma/prisma.service';
@@ -267,13 +267,15 @@ describe('DocumentsService — signing', () => {
       expect(store.get).not.toHaveBeenCalled();
     });
 
-    it('refuses a key belonging to another organization', async () => {
+    it('refuses a key belonging to another organization — without saying whose it is', async () => {
       prisma.documentSignature.findUnique.mockResolvedValue({
         documentId: 'other',
         sealedAt: new Date(),
         document: { id: 'other', organizationId: 'org-other', status: 'SIGNED' },
       });
-      await expect(sign()).rejects.toBeInstanceOf(ForbiddenException);
+      const err = await sign().catch((e) => e);
+      expect(err).toBeInstanceOf(ConflictException);
+      expect(String(err.message)).not.toMatch(/organi[sz]ation/i);
     });
 
     it('requires a key long enough to actually be unique', async () => {

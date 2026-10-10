@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { assertSpaceInOrg } from '../../common/tenant-scope.util';
-import { success } from '@hbcfield/shared';
+import { success, assertFoundInOrg } from '@hbcfield/shared';
 
 @Injectable()
 export class PhasesService {
@@ -128,13 +128,7 @@ export class PhasesService {
       where: { id: data.id },
     });
 
-    if (!existing) {
-      throw new NotFoundException('Phase not found');
-    }
-
-    if (existing.organizationId !== data.organizationId) {
-      throw new NotFoundException('Phase not found');
-    }
+    assertFoundInOrg(existing, data.organizationId, 'Phase');
 
     if (data.type && !['phase', 'milestone'].includes(data.type)) {
       throw new BadRequestException('Type must be "phase" or "milestone"');
@@ -168,13 +162,7 @@ export class PhasesService {
       where: { id: data.id },
     });
 
-    if (!existing) {
-      throw new NotFoundException('Phase not found');
-    }
-
-    if (existing.organizationId !== data.organizationId) {
-      throw new NotFoundException('Phase not found');
-    }
+    assertFoundInOrg(existing, data.organizationId, 'Phase');
 
     // Unlink tasks from this phase before deleting
     await this.prisma.task.updateMany({

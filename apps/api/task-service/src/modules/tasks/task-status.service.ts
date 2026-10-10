@@ -40,7 +40,7 @@ import {
   OFFICE_START_REASON_MAX,
   stepCapabilities,
   stepStartsWork,
-  isWorkOver,
+  isWorkOver, assertFoundInOrg,
 } from '@hbcfield/shared';
 import { firstValueFrom, timeout } from 'rxjs';
 import { TaskSupportService } from './task-support.service';
@@ -80,12 +80,11 @@ export class TaskStatusService {
    */
   async resumeWork(data: TaskAccessFacts & { id: string; evidence?: OccurrenceEvidence }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.id } });
-    if (!task) throw new NotFoundException('Task not found');
+    // Before any other read: another organization's task is answered like a missing one.
+    assertFoundInOrg(task, data.organizationId, 'Task');
     const onTheJob =
       task.assignedToId === data.userId ||
       !!(await this.prisma.taskAssignee.findFirst({ where: { taskId: task.id, userId: data.userId }, select: { id: true } }));
-    // Another organization's task answers exactly like a missing one.
-    if (task.organizationId !== data.organizationId) throw new NotFoundException('Task not found');
     if (!onTheJob) {
       throw new ForbiddenException({ message: 'Only somebody on this job can resume it', code: 'TASK_REASSIGNED' });
     }
@@ -188,16 +187,13 @@ export class TaskStatusService {
     const hasManageAuthority = data.userRole === Role.ADMIN || !!data.canViewAllTasks;
 
     if (isCancelation) {
+      // Cancellation never crosses the organization — not for an ADMIN who once
+      // created the task (a member who moved orgs) and not as a 403 that would
+      // confirm the id. Another organization's task is answered like a missing one.
+      assertFoundInOrg(task, data.organizationId, 'Task');
       // Cancellation authorization (new access-flag model).
-      if (data.userRole === Role.ADMIN) {
-        if (task.createdById !== data.userId && task.organizationId !== data.organizationId) {
-          throw new NotFoundException('Task not found'); // another org's task: no existence oracle
-        }
-      } else if (data.canViewAllTasks) {
-        // "View all tasks" grant → can cancel any task in their org.
-        if (task.organizationId !== data.organizationId) {
-          throw new NotFoundException('Task not found'); // another org's task: no existence oracle
-        }
+      if (data.userRole === Role.ADMIN || data.canViewAllTasks) {
+        // ADMIN, or the "view all tasks" grant → can cancel any task in their org.
       } else {
         // No org-wide authority: cannot cancel (assigned users execute, they
         // don't cancel — they contact someone who can).

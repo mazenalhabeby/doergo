@@ -1,14 +1,12 @@
 import {
   Injectable,
   Logger,
-  NotFoundException,
   BadRequestException,
   ConflictException,
-  Optional,
-} from '@nestjs/common';
+  Optional } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
-import { success } from '@hbcfield/shared';
+import { success, assertFoundInOrg } from '@hbcfield/shared';
 
 @Injectable()
 export class CustomFieldsService {
@@ -47,16 +45,14 @@ export class CustomFieldsService {
       where = {
         organizationId: data.organizationId,
         isActive: true,
-        OR: [{ workflowId: data.forWorkflow }, { workflowId: null }],
-      };
+        OR: [{ workflowId: data.forWorkflow }, { workflowId: null }] };
     }
 
     const definitions = await this.prisma.customFieldDefinition.findMany({
       where,
       orderBy: { position: 'asc' },
       take: data.limit || 200,
-      skip: data.offset || 0,
-    });
+      skip: data.offset || 0 });
 
     return success(definitions);
   }
@@ -86,8 +82,7 @@ export class CustomFieldsService {
     if (workflowId) {
       const wf = await this.prisma.statusWorkflow.findFirst({
         where: { id: workflowId, organizationId: data.organizationId },
-        select: { id: true },
-      });
+        select: { id: true } });
       if (!wf) {
         throw new BadRequestException('Task Type not found in this organization');
       }
@@ -99,8 +94,7 @@ export class CustomFieldsService {
       const lastField = await this.prisma.customFieldDefinition.findFirst({
         where: { organizationId: data.organizationId, workflowId },
         orderBy: { position: 'desc' },
-        select: { position: true },
-      });
+        select: { position: true } });
       position = (lastField?.position ?? -1) + 1;
     }
 
@@ -111,8 +105,7 @@ export class CustomFieldsService {
     // Prisma "Unique constraint failed" would leak into the UI.
     const dup = await this.prisma.customFieldDefinition.findFirst({
       where: { organizationId: data.organizationId, workflowId, key },
-      select: { id: true },
-    });
+      select: { id: true } });
     if (dup) {
       throw new ConflictException(
         `A field named "${data.name}" already exists${workflowId ? ' for this task type' : ''}.`,
@@ -130,9 +123,7 @@ export class CustomFieldsService {
           isRequired: data.isRequired || false,
           position,
           workflowId,
-          organizationId: data.organizationId,
-        },
-      });
+          organizationId: data.organizationId } });
     } catch (err: any) {
       if (err?.code === 'P2002') {
         throw new ConflictException(
@@ -158,16 +149,9 @@ export class CustomFieldsService {
     isActive?: boolean;
   }) {
     const existing = await this.prisma.customFieldDefinition.findUnique({
-      where: { id: data.id },
-    });
+      where: { id: data.id } });
 
-    if (!existing) {
-      throw new NotFoundException('Custom field definition not found');
-    }
-
-    if (existing.organizationId !== data.organizationId) {
-      throw new NotFoundException('Custom field definition not found');
-    }
+    assertFoundInOrg(existing, data.organizationId, 'Custom field definition');
 
     const definition = await this.prisma.customFieldDefinition.update({
       where: { id: data.id },
@@ -176,9 +160,7 @@ export class CustomFieldsService {
         ...(data.options !== undefined && { options: data.options }),
         ...(data.isRequired !== undefined && { isRequired: data.isRequired }),
         ...(data.position !== undefined && { position: data.position }),
-        ...(data.isActive !== undefined && { isActive: data.isActive }),
-      },
-    });
+        ...(data.isActive !== undefined && { isActive: data.isActive }) } });
 
     return success(definition);
   }
@@ -188,16 +170,9 @@ export class CustomFieldsService {
    */
   async remove(data: { id: string; organizationId: string }) {
     const existing = await this.prisma.customFieldDefinition.findUnique({
-      where: { id: data.id },
-    });
+      where: { id: data.id } });
 
-    if (!existing) {
-      throw new NotFoundException('Custom field definition not found');
-    }
-
-    if (existing.organizationId !== data.organizationId) {
-      throw new NotFoundException('Custom field definition not found');
-    }
+    assertFoundInOrg(existing, data.organizationId, 'Custom field definition');
 
     await this.prisma.customFieldDefinition.delete({ where: { id: data.id } });
 
@@ -209,9 +184,7 @@ export class CustomFieldsService {
    */
   async getTaskValues(data: TaskAccessFacts & { taskId: string }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
-    if (!task || task.organizationId !== data.organizationId) {
-      throw new NotFoundException('Task not found');
-    }
+    assertFoundInOrg(task, data.organizationId, 'Task');
     /*
       Being in the organization was the whole check, so any member could read
       the values on ANY task — including one they cannot open — by id. The same
@@ -225,18 +198,15 @@ export class CustomFieldsService {
       ? {
           organizationId: data.organizationId,
           isActive: true,
-          OR: [{ workflowId: task.workflowId }, { workflowId: null }],
-        }
+          OR: [{ workflowId: task.workflowId }, { workflowId: null }] }
       : { organizationId: data.organizationId, isActive: true, workflowId: null };
 
     const definitions = await this.prisma.customFieldDefinition.findMany({
       where,
-      orderBy: { position: 'asc' },
-    });
+      orderBy: { position: 'asc' } });
 
     const stored = await this.prisma.customFieldValue.findMany({
-      where: { taskId: data.taskId },
-    });
+      where: { taskId: data.taskId } });
     const valueById = new Map(stored.map((v) => [v.definitionId, v]));
 
     // Return one row per applicable definition (value may be empty/unset), so
@@ -248,8 +218,7 @@ export class CustomFieldsService {
         definitionId: def.id,
         taskId: data.taskId,
         value: v?.value ?? '',
-        definition: def,
-      };
+        definition: def };
     });
 
     return success(merged);
@@ -263,9 +232,7 @@ export class CustomFieldsService {
     values: { definitionId: string; value: string }[];
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
-    if (!task || task.organizationId !== data.organizationId) {
-      throw new NotFoundException('Task not found');
-    }
+    assertFoundInOrg(task, data.organizationId, 'Task');
     // Writing needs the task itself — never the read-only role-holder exemption.
     await this.taskAccess.assert(task, data);
 
@@ -274,9 +241,7 @@ export class CustomFieldsService {
     const definitions = await this.prisma.customFieldDefinition.findMany({
       where: {
         id: { in: definitionIds },
-        organizationId: data.organizationId,
-      },
-    });
+        organizationId: data.organizationId } });
 
     if (definitions.length !== definitionIds.length) {
       throw new BadRequestException('One or more custom field definitions not found in this organization');
@@ -298,19 +263,14 @@ export class CustomFieldsService {
           where: {
             definitionId_taskId: {
               definitionId: val.definitionId,
-              taskId: data.taskId,
-            },
-          },
+              taskId: data.taskId } },
           create: {
             definitionId: val.definitionId,
             taskId: data.taskId,
-            value: val.value,
-          },
+            value: val.value },
           update: {
-            value: val.value,
-          },
-          include: { definition: true },
-        }),
+            value: val.value },
+          include: { definition: true } }),
       ),
     );
 

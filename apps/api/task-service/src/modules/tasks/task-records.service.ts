@@ -17,7 +17,7 @@ import {
   TaskEventType,
   success,
   accessAllowsInSpace,
-  activeAssignmentWhere,
+  activeAssignmentWhere, assertFoundInOrg,
 } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import { TaskAssignmentService } from './task-assignment.service';
@@ -129,6 +129,10 @@ export class TaskRecordsService {
         // CONTROL grant for THIS exact space (server-authoritative access, checked
         // against the resource's real spaceId). The task then belongs to the owner.
         if (!accessAllowsInSpace(data.access, 'canCreateTasks', data.spaceId)) {
+          // No relationship to this space at all → it does not exist for them
+          // (a 403 confirmed a real workspace of another organization). A guest
+          // who CAN see the shared space but not create in it keeps the 403.
+          if (!data.access?.perSpace?.[data.spaceId]) throw new NotFoundException('Space not found');
           throw new ForbiddenException('Cannot create task in a space outside your organization');
         }
         effectiveOrgId = space.organizationId;
@@ -639,15 +643,8 @@ export class TaskRecordsService {
       where: { id: data.id },
     });
 
-    if (!task) {
-      throw new NotFoundException('Task not found');
-    }
-
-    // Authorization: CLIENT (org owner) can delete any task in their organization
-    if (task.organizationId !== data.organizationId) {
-      // Another organization's task: the same answer as no task (no existence oracle).
-      throw new NotFoundException('Task not found');
-    }
+    // Authorization: an ADMIN may delete any task in their organization.
+    assertFoundInOrg(task, data.organizationId, 'Task');
 
     // Don't allow deleting in-progress or completed tasks
     if ([TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED, TaskStatus.CLOSED].includes(task.status as TaskStatus)) {

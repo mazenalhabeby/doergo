@@ -21,7 +21,7 @@ import {
   type ResolvedAccess,
   type WorkTimelineEvent,
   personName,
-  personNameById,
+  personNameById, assertFoundInOrg,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
@@ -103,7 +103,7 @@ export class CrewService {
   /** A job of the caller's organization, or 404. Crew actions never reach across organizations. */
   private async taskOf(taskId: string, organizationId: string): Promise<CrewTask> {
     const task = await this.prisma.task.findUnique({ where: { id: taskId }, select: TASK_SELECT });
-    if (!task || task.organizationId !== organizationId) throw new NotFoundException('Task not found');
+    assertFoundInOrg(task, organizationId, 'Task');
     return task;
   }
 

@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { workspaceZone } from '../../common/zone.util';
-import { TaskStatus, Role, success, startOfDayIn, endOfDayIn } from '@hbcfield/shared';
+import { TaskStatus, Role, success, startOfDayIn, endOfDayIn, assertFoundInOrg } from '@hbcfield/shared';
 import { assertMayAssign } from './task-scope';
 import {
   calculateDistanceScore,
@@ -49,14 +49,7 @@ export class TechnicianSuggestionService {
       where: { id: data.taskId },
     });
 
-    if (!task) {
-      throw new NotFoundException('Task not found');
-    }
-
-    if (task.organizationId !== data.organizationId) {
-      // Another organization's task: the same answer as no task (no existence oracle).
-      throw new NotFoundException('Task not found');
-    }
+    assertFoundInOrg(task, data.organizationId, 'Task');
 
     // The same authority the assignment itself needs — asked against THIS task's
     // space, so a space-granted assigner passes here and only here.

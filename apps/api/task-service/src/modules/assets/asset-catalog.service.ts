@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, normalizeKindShape } from '@hbcfield/shared';
+import { success, normalizeKindShape, assertFoundInOrg } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetLogService } from './asset-log.service';
 
@@ -166,13 +166,7 @@ export class AssetCatalogService {
       where: { id: data.id },
     });
 
-    if (!category) {
-      throw new NotFoundException('Category not found');
-    }
-
-    if (category.organizationId !== data.organizationId) {
-      throw new NotFoundException('Category not found'); // another org's: no existence oracle
-    }
+    assertFoundInOrg(category, data.organizationId, 'Category');
 
     // Renaming: the clash is with the OTHER kinds in the same space, not the
     // whole org — another space is free to have a kind by this name.
@@ -241,13 +235,7 @@ export class AssetCatalogService {
       include: { _count: { select: { assets: true } } },
     });
 
-    if (!category) {
-      throw new NotFoundException('Category not found');
-    }
-
-    if (category.organizationId !== data.organizationId) {
-      throw new NotFoundException('Category not found'); // another org's: no existence oracle
-    }
+    assertFoundInOrg(category, data.organizationId, 'Category');
 
     /*
       A type may only be deleted once it is empty.
@@ -295,13 +283,7 @@ export class AssetCatalogService {
       where: { id: data.categoryId },
     });
 
-    if (!category) {
-      throw new NotFoundException('Category not found');
-    }
-
-    if (category.organizationId !== data.organizationId) {
-      throw new NotFoundException('Category not found'); // another org's: no existence oracle
-    }
+    assertFoundInOrg(category, data.organizationId, 'Category');
 
     // Check for duplicate name in same category
     const existing = await this.prisma.assetType.findUnique({
@@ -348,13 +330,7 @@ export class AssetCatalogService {
       where: { id: query.categoryId },
     });
 
-    if (!category) {
-      throw new NotFoundException('Category not found');
-    }
-
-    if (category.organizationId !== query.organizationId) {
-      throw new NotFoundException('Category not found'); // another org's: no existence oracle
-    }
+    assertFoundInOrg(category, query.organizationId, 'Category');
 
     const types = await this.prisma.assetType.findMany({
       where: { categoryId: query.categoryId },

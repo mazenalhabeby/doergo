@@ -1,4 +1,4 @@
-import { ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { TaskEventType } from '@prisma/client';
 import {
@@ -11,7 +11,7 @@ import {
   createOnce,
   stepCapabilities,
   stepStartsWork,
-  success,
+  success, assertFoundInOrg,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
@@ -68,11 +68,9 @@ export class JobPauseService {
         organizationId,
         status: { notIn: NEVER_WORKING },
         ...(opts.includePaused ? {} : { pausedAt: null }),
-        OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }],
-      },
+        OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }] },
       select: { id: true, title: true, status: true, workflowId: true, spaceId: true, organizationId: true, assignedToId: true, pausedAt: true },
-      take: 50,
-    });
+      take: 50 });
     if (rows.length === 0) return [];
 
     // One workflow lookup per distinct flow, from the per-org cache.
@@ -127,14 +125,12 @@ export class JobPauseService {
     if (args.since) {
       await this.prisma.task.updateMany({
         where: { organizationId, pausedById: userId, pausedAt: { gte: args.since } },
-        data: { pausedAt: at },
-      });
+        data: { pausedAt: at } });
       // The leave this shift's end already wrote moves with it.
       const lefts = await this.prisma.taskEvent.findMany({
         where: { userId, eventType: TaskEventType.CREW_LEFT, createdAt: { gte: args.since }, task: { organizationId }, metadata: { path: ['why'], equals: 'CLOCK_OUT' } },
         select: { id: true, metadata: true },
-        take: 50,
-      });
+        take: 50 });
       for (const l of lefts) {
         await this.prisma.taskEvent.update({ where: { id: l.id }, data: { metadata: { ...((l.metadata ?? {}) as object), at: at.toISOString() } } });
       }
@@ -154,8 +150,7 @@ export class JobPauseService {
     const leftOn = jobs.filter((j) => (joinedOf.get(j.id) ?? []).includes(userId));
     if (leftOn.length) {
       await this.prisma.taskEvent.createMany({
-        data: leftOn.map((j) => ({ taskId: j.id, userId, eventType: TaskEventType.CREW_LEFT, metadata: { at: at.toISOString(), why: 'CLOCK_OUT' } })),
-      });
+        data: leftOn.map((j) => ({ taskId: j.id, userId, eventType: TaskEventType.CREW_LEFT, metadata: { at: at.toISOString(), why: 'CLOCK_OUT' } })) });
     }
 
     const notes = new Map<string, ClockOutHandover>();
@@ -167,14 +162,12 @@ export class JobPauseService {
     for (const job of toPause) {
       const claimed = await this.prisma.task.updateMany({
         where: { id: job.id, pausedAt: null, status: job.status },
-        data: { pausedAt: at, pausedById: userId, handoverDueById: notes.has(job.id) ? null : userId },
-      });
+        data: { pausedAt: at, pausedById: userId, handoverDueById: notes.has(job.id) ? null : userId } });
       if (claimed.count === 0) continue;
       paused.push(job.id);
       const workedMinutes = worked.get(job.id) ?? 0;
       await this.prisma.taskEvent.create({
-        data: { taskId: job.id, userId, eventType: TaskEventType.PAUSED, metadata: { reason: args.reason, at: at.toISOString(), workedMinutes } },
-      });
+        data: { taskId: job.id, userId, eventType: TaskEventType.PAUSED, metadata: { reason: args.reason, at: at.toISOString(), workedMinutes } } });
     }
 
     // The notes — for paused jobs, and for any job they are on that kept running.
@@ -236,12 +229,10 @@ export class JobPauseService {
     const workedMinutes = (await this.jobTime.workedForMany([job], userId, at)).get(job.id) ?? 0;
     const claimed = await this.prisma.task.updateMany({
       where: { id: job.id, pausedAt: null, status: job.status },
-      data: { pausedAt: at, pausedById: userId, handoverDueById: userId },
-    });
+      data: { pausedAt: at, pausedById: userId, handoverDueById: userId } });
     if (claimed.count === 0) return false;
     await this.prisma.taskEvent.create({
-      data: { taskId: job.id, userId, eventType: TaskEventType.PAUSED, metadata: { reason: 'LEFT', at: at.toISOString(), workedMinutes } },
-    });
+      data: { taskId: job.id, userId, eventType: TaskEventType.PAUSED, metadata: { reason: 'LEFT', at: at.toISOString(), workedMinutes } } });
     this.notifications.emit('tasks_paused', { taskIds: [job.id], userId, organizationId, reason: 'LEFT' });
     return true;
   }
@@ -262,10 +253,9 @@ export class JobPauseService {
     const note = cleanHandoverNote(data.note);
     const task = await this.prisma.task.findUnique({
       where: { id: data.taskId },
-      select: { id: true, title: true, organizationId: true, assignedToId: true, pausedById: true, handoverDueById: true },
-    });
+      select: { id: true, title: true, organizationId: true, assignedToId: true, pausedById: true, handoverDueById: true } });
     // Another organization's job is not there, as far as this caller knows.
-    if (!task || task.organizationId !== data.organizationId) throw new NotFoundException('Task not found');
+    assertFoundInOrg(task, data.organizationId, 'Task');
     const onTheJob =
       task.assignedToId === data.userId ||
       task.handoverDueById === data.userId ||
@@ -285,8 +275,7 @@ export class JobPauseService {
     const lastPause = await this.prisma.taskEvent.findFirst({
       where: { taskId: task.id, userId: data.userId, eventType: TaskEventType.PAUSED },
       orderBy: { createdAt: 'desc' },
-      select: { metadata: true },
-    });
+      select: { metadata: true } });
     const workedMinutes = (lastPause?.metadata as { workedMinutes?: number } | null)?.workedMinutes ?? null;
 
     const include = { author: AUTHOR } as const;
@@ -303,11 +292,8 @@ export class JobPauseService {
             authorId: data.userId,
             note,
             attachmentIds,
-            workedMinutes,
-          },
-          include,
-        }),
-    });
+            workedMinutes },
+          include }) });
     if (!created) return success(row);
 
     await this.prisma.task.updateMany({ where: { id: task.id, handoverDueById: data.userId }, data: { handoverDueById: null } });
@@ -316,9 +302,7 @@ export class JobPauseService {
         taskId: task.id,
         userId: data.userId,
         eventType: TaskEventType.HANDOVER_ADDED,
-        metadata: { handoverId: row.id, content: note.length > 100 ? `${note.slice(0, 100)}...` : note },
-      },
-    });
+        metadata: { handoverId: row.id, content: note.length > 100 ? `${note.slice(0, 100)}...` : note } } });
 
     // Whoever has the job now hears it — including a note written after they were given it.
     const crew = await this.prisma.taskAssignee.findMany({ where: { taskId: task.id }, select: { userId: true } });
@@ -329,8 +313,7 @@ export class JobPauseService {
       authorId: data.userId,
       authorName: `${row.author.firstName} ${row.author.lastName}`.trim(),
       recipientIds,
-      organizationId: task.organizationId,
-    });
+      organizationId: task.organizationId });
     return success(row);
   }
 
@@ -349,12 +332,10 @@ export class JobPauseService {
           organizationId: data.organizationId,
           pausedAt: { not: null },
           status: { notIn: NEVER_WORKING },
-          OR: [{ assignedToId: data.userId }, { assignees: { some: { userId: data.userId } } }],
-        },
+          OR: [{ assignedToId: data.userId }, { assignees: { some: { userId: data.userId } } }] },
         select,
         orderBy: { pausedAt: 'desc' },
-        take: 20,
-      }),
+        take: 20 }),
     ]);
     const open = working.length
       ? await this.prisma.task.findMany({ where: { id: { in: working.map((w) => w.id) } }, select, take: 50 })
@@ -362,8 +343,7 @@ export class JobPauseService {
     // "Working 2h 15m" on the clock-out sheet, "2h 15m so far" on a paused job — the member's own share.
     const refs = await this.prisma.task.findMany({
       where: { id: { in: [...new Set([...open, ...paused].map((t) => t.id))] } },
-      select: { id: true, workflowId: true, spaceId: true, organizationId: true },
-    });
+      select: { id: true, workflowId: true, spaceId: true, organizationId: true } });
     const mins = await this.jobTime.workedForMany(refs, data.userId);
     const withTime = <T extends { id: string }>(list: T[]) => list.map((t) => ({ ...t, workedMinutes: mins.get(t.id) ?? 0 }));
     // Which open jobs the crew carries on after this person clocks out (shared crew.ts) —
@@ -376,15 +356,13 @@ export class JobPauseService {
         ? this.prisma.checklistItem.groupBy({
             by: ['taskId'],
             where: { assigneeId: data.userId, isCompleted: false, taskId: { in: working.map((w) => w.id) } },
-            _count: { _all: true },
-          })
+            _count: { _all: true } })
         : Promise.resolve([] as Array<{ taskId: string; _count: { _all: number } }>),
     ]);
     const openOf = new Map(openItems.map((r) => [r.taskId, r._count._all]));
     return success({
       open: withTime(open).map((t) => ({ ...t, crewContinues: carriesOn.has(t.id), myOpenItems: openOf.get(t.id) ?? 0 })),
       owed,
-      paused: withTime(paused),
-    });
+      paused: withTime(paused) });
   }
 }

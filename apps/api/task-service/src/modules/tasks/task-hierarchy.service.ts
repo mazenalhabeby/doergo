@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { TaskStatus, TaskEventType, success } from '@hbcfield/shared';
+import { TaskStatus, TaskEventType, success, assertFoundInOrg } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import {
   resolveOwnedTaskRefs,
@@ -38,13 +38,7 @@ export class TaskHierarchyService {
       where: { id: data.parentId },
     });
 
-    if (!parent) {
-      throw new NotFoundException('Parent task not found');
-    }
-
-    if (parent.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Parent task is not in your organization');
-    }
+    assertFoundInOrg(parent, data.organizationId, 'Parent task');
 
     // The org is not the boundary for a space-granted member: their "create
     // tasks" applies inside their own spaces only.
@@ -224,19 +218,8 @@ export class TaskHierarchyService {
       this.prisma.task.findUnique({ where: { id: data.successorId } }),
     ]);
 
-    if (!predecessor) {
-      throw new NotFoundException('Predecessor task not found');
-    }
-    if (!successor) {
-      throw new NotFoundException('Successor task not found');
-    }
-
-    if (predecessor.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Predecessor task is not in your organization');
-    }
-    if (successor.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Successor task is not in your organization');
-    }
+    assertFoundInOrg(predecessor, data.organizationId, 'Predecessor task');
+    assertFoundInOrg(successor, data.organizationId, 'Successor task');
 
     /*
       BOTH ends, not just the one named in the route.
@@ -324,9 +307,8 @@ export class TaskHierarchyService {
       throw new NotFoundException('Dependency not found');
     }
 
-    if (dependency.predecessor.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Dependency is not in your organization');
-    }
+    // Another organization's dependency answers exactly like a missing one.
+    assertFoundInOrg(dependency.predecessor, data.organizationId, 'Dependency');
 
     assertMayCreateUnder(dependency.successor, data);
     assertMayCreateUnder(dependency.predecessor, data);

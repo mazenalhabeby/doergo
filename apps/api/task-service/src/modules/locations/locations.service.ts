@@ -13,8 +13,7 @@ import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_N
   validateGeofencePolygon,
   type GeofencePolygonError,
   COST_ON_PROFILE_MESSAGE,
-  stripWorkspaceTerms,
-} from '@hbcfield/shared';
+  stripWorkspaceTerms, assertFoundInOrg } from '@hbcfield/shared';
 import { isGeofencePolicy,
   isNoShiftPolicy,
   clampDailyMinutes, validateMinCover, writeRateChange, RateChangeError, parseCurrency, CURRENCY_INVALID_MESSAGE,
@@ -1368,9 +1367,7 @@ export class LocationsService {
       where: { id: data.assignmentId },
     });
 
-    if (!assignment || assignment.organizationId !== data.organizationId) {
-      throw new NotFoundException('Assignment not found');
-    }
+    assertFoundInOrg(assignment, data.organizationId, 'Assignment');
 
     // Validate schedule days if provided
     if (data.schedule && data.schedule.length > 0) {
@@ -1440,9 +1437,7 @@ export class LocationsService {
       where: { id: data.assignmentId },
     });
 
-    if (!assignment || assignment.organizationId !== data.organizationId) {
-      throw new NotFoundException('Assignment not found');
-    }
+    assertFoundInOrg(assignment, data.organizationId, 'Assignment');
 
     await this.prisma.spaceAssignment.delete({
       where: { id: data.assignmentId },

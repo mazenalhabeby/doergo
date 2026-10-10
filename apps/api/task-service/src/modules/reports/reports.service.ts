@@ -20,7 +20,7 @@ import {
   success,
   paginated,
   type OccurrenceEvidence,
-  clampListLimit,
+  clampListLimit, assertFoundInOrg,
 } from '@hbcfield/shared';
 import { judgeOccurrence } from '../../common/occurrence.util';
 import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
@@ -601,16 +601,13 @@ export class ReportsService {
       where: { id: data.reportId },
     });
 
-    if (!report) {
-      throw new NotFoundException('Service report not found');
-    }
+    // The organization comes FIRST: checking "did you write it?" before it told
+    // a stranger, with a 403, that this id is a real report.
+    assertFoundInOrg(report, data.organizationId, 'Service report');
 
     // Technician who completed or ADMIN/DISPATCHER in the same org can add attachments
     if (report.completedById !== data.userId && data.userRole === Role.EMPLOYEE) {
       throw new ForbiddenException('You can only add attachments to reports you created');
-    }
-    if (report.organizationId !== data.organizationId) {
-      throw new ForbiddenException('You can only add attachments to reports in your organization');
     }
 
     // The confirmed object must be the presigned one for THIS report — never an
@@ -716,16 +713,13 @@ export class ReportsService {
       where: { id: data.reportId },
     });
 
-    if (!report) {
-      throw new NotFoundException('Service report not found');
-    }
+    // The organization comes FIRST: checking "did you write it?" before it told
+    // a stranger, with a 403, that this id is a real report.
+    assertFoundInOrg(report, data.organizationId, 'Service report');
 
     // Technician who completed or ADMIN/DISPATCHER in the same org can upload
     if (report.completedById !== data.userId && data.userRole === Role.EMPLOYEE) {
       throw new ForbiddenException('You can only upload attachments to reports you created');
-    }
-    if (report.organizationId !== data.organizationId) {
-      throw new ForbiddenException('You can only upload attachments to reports in your organization');
     }
 
     // Validate content type BEFORE signing — a presigned PUT for text/html or

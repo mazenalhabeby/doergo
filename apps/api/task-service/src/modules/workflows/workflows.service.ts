@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
-import { success, missingModulesForWorkflow, explainModuleRequirement, validateWorkflow, summarizeWorkflowProblems, spaceMayOffer, isTypeCapability } from '@hbcfield/shared';
+import { success, missingModulesForWorkflow, explainModuleRequirement, validateWorkflow, summarizeWorkflowProblems, spaceMayOffer, isTypeCapability, assertFoundInOrg } from '@hbcfield/shared';
 import { assertSpaceInOrg, assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import { resolveSpaceDefaultWorkflowId } from '../../common/space-workflow.util';
 import { stepFormForSave } from '../../common/step-form.util';
@@ -55,13 +55,7 @@ export class WorkflowsService {
       },
     });
 
-    if (!workflow) {
-      throw new NotFoundException('Workflow not found');
-    }
-
-    if (workflow.organizationId !== data.organizationId) {
-      throw new NotFoundException('Workflow not found');
-    }
+    assertFoundInOrg(workflow, data.organizationId, 'Workflow');
 
     return success(workflow);
   }
@@ -207,13 +201,7 @@ export class WorkflowsService {
       where: { id: data.id },
     });
 
-    if (!existing) {
-      throw new NotFoundException('Workflow not found');
-    }
-
-    if (existing.organizationId !== data.organizationId) {
-      throw new NotFoundException('Workflow not found');
-    }
+    assertFoundInOrg(existing, data.organizationId, 'Workflow');
 
     const newName = data.name?.trim();
     // Friendly duplicate check on rename (skip if unchanged).
@@ -267,13 +255,7 @@ export class WorkflowsService {
       include: { _count: { select: { tasks: true } } },
     });
 
-    if (!existing) {
-      throw new NotFoundException('Workflow not found');
-    }
-
-    if (existing.organizationId !== data.organizationId) {
-      throw new NotFoundException('Workflow not found');
-    }
+    assertFoundInOrg(existing, data.organizationId, 'Workflow');
 
     if (existing.isDefault) {
       throw new BadRequestException('Cannot delete the default workflow. Set another workflow as default first.');
@@ -318,13 +300,7 @@ export class WorkflowsService {
       where: { id: data.id },
     });
 
-    if (!existing) {
-      throw new NotFoundException('Workflow not found');
-    }
-
-    if (existing.organizationId !== data.organizationId) {
-      throw new NotFoundException('Workflow not found');
-    }
+    assertFoundInOrg(existing, data.organizationId, 'Workflow');
 
     // The organization default is the fallback for anything with no other
     // answer, so it has to be a type every space could actually use.
@@ -379,13 +355,7 @@ export class WorkflowsService {
       where: { id: data.workflowId },
     });
 
-    if (!workflow) {
-      throw new NotFoundException('Workflow not found');
-    }
-
-    if (workflow.organizationId !== data.organizationId) {
-      throw new NotFoundException('Workflow not found');
-    }
+    assertFoundInOrg(workflow, data.organizationId, 'Workflow');
 
     const form = stepFormForSave(data.form, null);
 
@@ -442,13 +412,7 @@ export class WorkflowsService {
       where: { id: data.workflowId },
     });
 
-    if (!workflow) {
-      throw new NotFoundException('Workflow not found');
-    }
-
-    if (workflow.organizationId !== data.organizationId) {
-      throw new NotFoundException('Workflow not found');
-    }
+    assertFoundInOrg(workflow, data.organizationId, 'Workflow');
 
     const existing = await this.prisma.workflowStatus.findUnique({
       where: { id: data.statusId },
@@ -509,9 +473,7 @@ export class WorkflowsService {
       include: { statuses: { select: { id: true } } },
     });
 
-    if (!workflow || workflow.organizationId !== data.organizationId) {
-      throw new NotFoundException('Workflow not found');
-    }
+    assertFoundInOrg(workflow, data.organizationId, 'Workflow');
 
     const existingIds = new Set(workflow.statuses.map((s) => s.id));
     if (
@@ -589,13 +551,7 @@ export class WorkflowsService {
         where: { id: data.id },
       });
 
-      if (!existing) {
-        throw new NotFoundException('Definition of Done not found');
-      }
-
-      if (existing.organizationId !== data.organizationId) {
-        throw new NotFoundException('Definition of Done not found');
-      }
+      assertFoundInOrg(existing, data.organizationId, 'Definition of Done');
 
       const dod = await this.prisma.definitionOfDone.update({
         where: { id: data.id },
@@ -630,13 +586,7 @@ export class WorkflowsService {
       where: { id: data.id },
     });
 
-    if (!existing) {
-      throw new NotFoundException('Definition of Done not found');
-    }
-
-    if (existing.organizationId !== data.organizationId) {
-      throw new NotFoundException('Definition of Done not found');
-    }
+    assertFoundInOrg(existing, data.organizationId, 'Definition of Done');
 
     await this.prisma.definitionOfDone.delete({ where: { id: data.id } });
 
@@ -655,13 +605,7 @@ export class WorkflowsService {
       where: { id: data.workflowId },
     });
 
-    if (!workflow) {
-      throw new NotFoundException('Workflow not found');
-    }
-
-    if (workflow.organizationId !== data.organizationId) {
-      throw new NotFoundException('Workflow not found');
-    }
+    assertFoundInOrg(workflow, data.organizationId, 'Workflow');
 
     const existing = await this.prisma.workflowStatus.findUnique({
       where: { id: data.statusId },

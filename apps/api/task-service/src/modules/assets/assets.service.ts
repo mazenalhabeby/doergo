@@ -8,7 +8,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   success, paginated, TaskStatus, normalizeDetailRows, keepFieldsForKind,
-  isAssetStatus, assetDateProblems, SELECTABLE_ASSET_WHERE, type AssetDateProblem, type HandoverPlan,
+  isAssetStatus, assetDateProblems, SELECTABLE_ASSET_WHERE, type AssetDateProblem, type HandoverPlan, assertFoundInOrg,
 } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetHoldersService, type HolderInput } from './asset-holders.service';
@@ -422,13 +422,7 @@ export class AssetsService {
       },
     });
 
-    if (!asset) {
-      throw new NotFoundException('Asset not found');
-    }
-
-    if (asset.organizationId !== data.organizationId) {
-      throw new NotFoundException('Asset not found'); // another org's: no existence oracle
-    }
+    assertFoundInOrg(asset, data.organizationId, 'Asset');
 
     return success(await this.withHolders(asset));
   }
@@ -465,13 +459,7 @@ export class AssetsService {
       where: { id: data.id },
     });
 
-    if (!asset) {
-      throw new NotFoundException('Asset not found');
-    }
-
-    if (asset.organizationId !== data.organizationId) {
-      throw new NotFoundException('Asset not found'); // another org's: no existence oracle
-    }
+    assertFoundInOrg(asset, data.organizationId, 'Asset');
 
     this.assertDates(data, asset);
 
@@ -681,13 +669,7 @@ export class AssetsService {
       include: { _count: { select: { tasks: true } } },
     });
 
-    if (!asset) {
-      throw new NotFoundException('Asset not found');
-    }
-
-    if (asset.organizationId !== data.organizationId) {
-      throw new NotFoundException('Asset not found'); // another org's: no existence oracle
-    }
+    assertFoundInOrg(asset, data.organizationId, 'Asset');
 
     // An asset's VALUE is its history — the maintenance record attached to that
     // machine, vehicle or flat. Deleting one with work against it destroyed that
@@ -732,13 +714,7 @@ export class AssetsService {
       where: { id: data.id },
     });
 
-    if (!asset) {
-      throw new NotFoundException('Asset not found');
-    }
-
-    if (asset.organizationId !== data.organizationId) {
-      throw new NotFoundException('Asset not found'); // another org's: no existence oracle
-    }
+    assertFoundInOrg(asset, data.organizationId, 'Asset');
 
     const page = Math.max(1, data.page || 1);
     const limit = this.access.pageSize(data.limit);

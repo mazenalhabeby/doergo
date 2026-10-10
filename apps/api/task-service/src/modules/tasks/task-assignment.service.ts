@@ -19,7 +19,7 @@ import {
   canReceiveTasks,
   credentialStanding,
   credentialBlocks,
-  TERMINAL_STATUSES,
+  TERMINAL_STATUSES, assertFoundInOrg,
 } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import { assertMayAssign, assertTargetIsInSpace } from './task-scope';
@@ -431,11 +431,7 @@ export class TaskAssignmentService {
     organizationId: string;
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
-    if (!task) throw new NotFoundException('Task not found');
-    if (task.organizationId !== data.organizationId) {
-      // Another organization's task: the same answer as no task (no existence oracle).
-      throw new NotFoundException('Task not found');
-    }
+    assertFoundInOrg(task, data.organizationId, 'Task');
     assertMayAssign(task, data);
     await assertTargetIsInSpace(this.prisma, task, data.userId, data);
 
@@ -521,11 +517,7 @@ export class TaskAssignmentService {
     organizationId: string;
   }) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
-    if (!task) throw new NotFoundException('Task not found');
-    if (task.organizationId !== data.organizationId) {
-      // Another organization's task: the same answer as no task (no existence oracle).
-      throw new NotFoundException('Task not found');
-    }
+    assertFoundInOrg(task, data.organizationId, 'Task');
     // Taking somebody OFF a job is the same authority as putting them on it.
     assertMayAssign(task, data);
 

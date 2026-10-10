@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -95,7 +96,8 @@ export class DocumentSigningService {
     });
     if (existing) {
       if (existing.document.organizationId !== data.actor.organizationId) {
-        throw new ForbiddenException('That signature does not belong to your organization');
+        // Say nothing about whose it is: the key is simply taken.
+        throw new ConflictException('That idempotency key has already been used — send the request with a new one');
       }
       return { documentId: existing.documentId, alreadySigned: true, sealedAt: existing.sealedAt };
     }

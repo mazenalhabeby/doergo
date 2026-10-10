@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { assertSpaceInOrg } from '../../common/tenant-scope.util';
-import { success } from '@hbcfield/shared';
+import { success, assertFoundInOrg } from '@hbcfield/shared';
 
 const VALID_EPIC_STATUSES = ['OPEN', 'IN_PROGRESS', 'DONE'];
 
@@ -122,13 +122,7 @@ export class EpicsService {
       where: { id: data.id },
     });
 
-    if (!existing) {
-      throw new NotFoundException('Epic not found');
-    }
-
-    if (existing.organizationId !== data.organizationId) {
-      throw new NotFoundException('Epic not found');
-    }
+    assertFoundInOrg(existing, data.organizationId, 'Epic');
 
     if (data.status && !VALID_EPIC_STATUSES.includes(data.status)) {
       throw new BadRequestException(`Status must be one of: ${VALID_EPIC_STATUSES.join(', ')}`);
@@ -161,13 +155,7 @@ export class EpicsService {
       where: { id: data.id },
     });
 
-    if (!existing) {
-      throw new NotFoundException('Epic not found');
-    }
-
-    if (existing.organizationId !== data.organizationId) {
-      throw new NotFoundException('Epic not found');
-    }
+    assertFoundInOrg(existing, data.organizationId, 'Epic');
 
     // Unlink tasks from this epic before deleting
     await this.prisma.task.updateMany({
