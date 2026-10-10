@@ -6,13 +6,15 @@ import type { LucideIcon } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
-import { Check, User, Smartphone, Search, Ban, Plus, Trash2 } from "lucide-react"
+import { User, Smartphone, Search, Ban } from "lucide-react"
 
 import { spaceUnitsApi, customersApi, type SpaceUnit } from "@/lib/api"
-import { personInitials, personName } from "@hbcfield/shared/client"
+import { personName } from "@hbcfield/shared/client"
 import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
+import { DetailFields } from "@/components/detail-fields"
+import { PersonPickRow } from "@/components/person-pick-row"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -49,7 +51,6 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
   const [tab, setTab] = useState<"members" | "clients">("members")
   const [q, setQ] = useState("")
   const [details, setDetails] = useState<{ label: string; value: string }[]>(existing?.details ?? [])
-  const setDetail = (i: number, k: "label" | "value", v: string) => setDetails((d) => d.map((row, idx) => (idx === i ? { ...row, [k]: v } : row)))
 
   // The directory for whoever may read it, this workspace's roster otherwise.
   const membersQ = useAssignableMembers({ spaceId, enabled: open })
@@ -136,48 +137,21 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
                   <p className="py-6 text-center text-xs text-muted-foreground">
                     {tab === "clients" ? t("apartments.noAppResidents", "No app clients yet — invite one from the portal.") : t("apartments.noMembers", "No members")}
                   </p>
-                ) : rows.map((r) => {
-                  const sel = resident === r.value
-                  return (
-                    <button key={r.value} type="button" onClick={() => setResident(r.value)}
-                      className={cn("flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors",
-                        sel ? "bg-primary/10" : "hover:bg-muted")}>
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">{personInitials(r.name)}</span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-foreground">{r.name}</span>
-                        <span className="block text-[11px] text-muted-foreground">{r.sub}</span>
-                      </span>
-                      {sel && <Check className="h-4 w-4 shrink-0 text-primary" />}
-                    </button>
-                  )
-                })}
+                ) : rows.map((r) => (
+                  <PersonPickRow key={r.value} name={r.name} sub={r.sub} selected={resident === r.value} onClick={() => setResident(r.value)} />
+                ))}
               </div>
             </div>
           </div>
           )}
 
           {/* More info — flexible property attributes (floor, size, rent, access…). */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>{t("apartments.moreInfo", "More info")}</Label>
-              <button type="button" onClick={() => setDetails((d) => [...d, { label: "", value: "" }])} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-                <Plus className="h-3.5 w-3.5" /> {t("customers.addField", "Add field")}
-              </button>
-            </div>
-            {details.length === 0 ? (
-              <p className="text-xs text-muted-foreground">{t("apartments.moreInfoHint", "Floor, rooms, size, rent, access code, meter numbers…")}</p>
-            ) : (
-              <div className="space-y-2">
-                {details.map((d, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <Input value={d.label} onChange={(e) => setDetail(i, "label", e.target.value)} placeholder={t("customers.fieldLabel", "Label")} className="w-2/5" />
-                    <Input value={d.value} onChange={(e) => setDetail(i, "value", e.target.value)} placeholder={t("customers.fieldValue", "Value")} className="flex-1" />
-                    <button type="button" onClick={() => setDetails((arr) => arr.filter((_, idx) => idx !== i))} className="shrink-0 rounded p-1.5 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <DetailFields
+            title={t("apartments.moreInfo", "More info")}
+            hint={t("apartments.moreInfoHint", "Floor, rooms, size, rent, access code, meter numbers…")}
+            details={details}
+            setDetails={setDetails}
+          />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>{t("common.cancel", "Cancel")}</Button>

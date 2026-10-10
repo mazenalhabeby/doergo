@@ -4,12 +4,13 @@ import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
-import { Ban, Check, Search, Smartphone, User, X } from "lucide-react"
+import { Ban, Search, Smartphone, User, X } from "lucide-react"
 
 import { customersApi } from "@/lib/api"
 import { useAssignableMembers } from "@/hooks/use-assignable-members"
-import { personInitials, personName, type KindShape } from "@hbcfield/shared/client"
+import { personName, type KindShape } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
+import { PersonPickRow } from "@/components/person-pick-row"
 
 /**
  * Choosing who holds something.
@@ -172,29 +173,9 @@ export function HolderPicker({
                 ? t("assetRecords.noClients", "No clients in this workspace yet")
                 : t("assetRecords.noMembers", "No members to choose from")}
             </p>
-          ) : list.map((r) => {
-            const sel = value.includes(r.value)
-            return (
-              <button
-                key={r.value}
-                type="button"
-                onClick={() => toggle(r.value)}
-                className={cn(
-                  "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors",
-                  sel ? "bg-primary/10" : "hover:bg-muted",
-                )}
-              >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
-                  {personInitials(r.name)}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-foreground">{r.name}</span>
-                  <span className="block text-[11px] text-muted-foreground">{r.sub}</span>
-                </span>
-                {sel && <Check className="h-4 w-4 shrink-0 text-primary" />}
-              </button>
-            )
-          })}
+          ) : list.map((r) => (
+            <PersonPickRow key={r.value} name={r.name} sub={r.sub} selected={value.includes(r.value)} onClick={() => toggle(r.value)} />
+          ))}
         </div>
       </div>
     </div>

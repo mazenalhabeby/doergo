@@ -7,7 +7,7 @@ import type { LucideIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Contact, Plus, Smartphone, ChevronRight, User, Building2, Trash2, Globe, Hash, Landmark, Briefcase } from "lucide-react"
+import { Contact, Plus, Smartphone, ChevronRight, User, Building2, Globe, Hash, Landmark, Briefcase } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { customersApi, locationsApi, type CompanyLocation, type Customer, type CustomerDetail } from "@/lib/api"
@@ -17,6 +17,7 @@ import { CompanyField, companyName, useCompanies } from "@/components/companies/
 import { CLIENT_LOCALE_OPTIONS, clientLocaleFormValue, clientLocalePayload } from "@/lib/client-locale"
 import { customerStageLabel, personInitials } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
+import { DetailFields } from "@/components/detail-fields"
 import { Truncated } from "@/components/truncated"
 import { ClientRowsSkeleton } from "@/components/skeletons/crm"
 import { Button } from "@/components/ui/button"
@@ -24,7 +25,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog"
@@ -313,10 +313,6 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
   const emailInvalid = !!form.email && !isEmail(form.email)
   const isCompany = type === "COMPANY"
 
-  const setDetail = (i: number, k: "label" | "value", v: string) =>
-    setDetails((d) => d.map((row, idx) => (idx === i ? { ...row, [k]: v } : row)))
-  const addDetail = () => setDetails((d) => [...d, { label: "", value: "" }])
-  const removeDetail = (i: number) => setDetails((d) => d.filter((_, idx) => idx !== i))
 
   const save = useMutation({
     mutationFn: () => {
@@ -491,27 +487,12 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
           )}
 
           {/* Flexible custom details */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>{t("customers.moreInfo", "Additional info")}</Label>
-              <button type="button" onClick={addDetail} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-                <Plus className="h-3.5 w-3.5" /> {t("customers.addField", "Add field")}
-              </button>
-            </div>
-            {details.length === 0 ? (
-              <p className="text-xs text-muted-foreground">{t("customers.moreInfoHint", "Add anything else — payment terms, preferred contact, account manager…")}</p>
-            ) : (
-              <div className="space-y-2">
-                {details.map((d, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <Input value={d.label} onChange={(e) => setDetail(i, "label", e.target.value)} placeholder={t("customers.fieldLabel", "Label")} className="w-2/5" />
-                    <Input value={d.value} onChange={(e) => setDetail(i, "value", e.target.value)} placeholder={t("customers.fieldValue", "Value")} className="flex-1" />
-                    <button type="button" onClick={() => removeDetail(i)} className="shrink-0 rounded p-1.5 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <DetailFields
+            title={t("customers.moreInfo", "Additional info")}
+            hint={t("customers.moreInfoHint", "Add anything else — payment terms, preferred contact, account manager…")}
+            details={details}
+            setDetails={setDetails}
+          />
 
           <div className="space-y-1">
             <Label>{t("customers.notes", "Notes")}</Label>
