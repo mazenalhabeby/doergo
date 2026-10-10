@@ -10,7 +10,6 @@ jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }))
 
-// eslint-disable-next-line import/first
 import { ConfirmDialog, ConfirmTargetDialog, type ConfirmDialogProps } from '../confirm-dialog'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true

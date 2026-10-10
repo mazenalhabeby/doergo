@@ -1,6 +1,5 @@
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }))
 
-// eslint-disable-next-line import/first
 import { pageRange } from '../list-page'
 
 describe('pageRange — the rows a page shows, 1-based', () => {

@@ -3,7 +3,7 @@
 import { personName } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
 import { useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
@@ -74,7 +74,6 @@ const REQUEST_STATUS_STYLES: Record<SpaceShareRequestStatus, string> = {
 
 export default function SharedSpaceViewPage() {
   const { t } = useTranslation()
-  const router = useRouter()
   const params = useParams()
   const spaceId = params.id as string
   const { user } = useAuth()
