@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { openChecklistOf, splitChecklist, tickedByOther } from '@hbcfield/shared/client';
+import { openChecklistOf, splitChecklist, tickedByOther, personName } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { useToast } from '../../island/island-context';
@@ -13,7 +13,6 @@ import { JobSheet, SectionLabel, SheetOption } from './job-ui';
 import { patchOptimistic, tickOptimistic, type CheckItem, type ChecklistMode } from './job-logic';
 
 const firstName = (u?: { firstName: string } | null) => u?.firstName ?? '';
-const fullName = (u: { firstName: string; lastName: string }) => `${u.firstName} ${u.lastName}`.trim();
 
 /**
  * The checklist — TICKABLE by the person doing the job at a step that opens
@@ -215,7 +214,7 @@ export function JobChecklist({
           {members.map((m) => (
             <SheetOption
               key={m.user.id}
-              label={picking?.assigneeId === m.user.id ? `✓  ${fullName(m.user)}` : fullName(m.user)}
+              label={picking?.assigneeId === m.user.id ? `✓  ${personName(m.user)}` : personName(m.user)}
               tone={picking?.assigneeId === m.user.id ? 'accent' : 'strong'}
               hint={m.joined ? t('job.crew.onJobShort') : t('job.crew.notOnJob')}
               onPress={() => { if (picking) giveTo(picking, m.user.id); setPicking(null); }}

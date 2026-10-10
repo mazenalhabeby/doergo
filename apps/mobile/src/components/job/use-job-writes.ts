@@ -17,6 +17,7 @@ import type { PickedImage } from '../../hooks/useImagePicker';
 import type { JobState, JobTask } from './use-job';
 import { refusalText } from '../../lib/distance';
 import { prepareStepForm, reasonFromAnswers, signatureFile, refusalFieldErrors, type DraftPhoto, type FormDraft } from './step-form-logic';
+import { personName } from '@hbcfield/shared/client';
 
 /**
  * The one status write — `changeTaskStatus` through the outbox, with the GPS
@@ -492,7 +493,7 @@ export function useJobWrites(job: JobState, deps: { writeStatus: WriteStatus; on
       setBusy(true);
       const updated = await tasksApi.assign(task.id, member.id);
       setTask((prev) => ({ ...(prev ?? task), ...updated } as JobTask));
-      toast.success(t('job.assign.doneTitle'), t('job.assign.doneBody', { name: `${member.firstName} ${member.lastName}`.trim() }));
+      toast.success(t('job.assign.doneTitle'), t('job.assign.doneBody', { name: personName(member) }));
       return true;
     } catch (err) {
       fail(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToAssign'));

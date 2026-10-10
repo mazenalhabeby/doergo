@@ -8,10 +8,7 @@ import { useToast } from '../island/island-context';
 import { attendanceApi } from '../lib/api';
 import { useShiftActions } from '../offline/attendance/use-shift';
 import type { ActionOutcome } from '../offline/actions/outcome';
-import {
-  outstandingBreaks,
-  type BreakPlanItem,
-} from '@hbcfield/shared/client';
+import { outstandingBreaks, type BreakPlanItem, formatDuration } from '@hbcfield/shared/client';
 
 /**
  * The rests planned for the shift being worked right now.
@@ -26,11 +23,6 @@ import {
  * the right state.
  */
 
-function hm(mins: number): string {
-  const h = Math.floor(mins / 60);
-  const m = Math.round(mins % 60);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
-}
 
 interface RestCardProps {
   /** The shift these rests belong to — a rest recorded offline names it. */
@@ -90,15 +82,15 @@ export function RestCard({ entryId, plan, activeBreak, onChanged }: RestCardProp
           </Text>
         </View>
 
-        <Text style={[styles.big, { color: over ? '#B45309' : '#047857' }]}>{hm(elapsed)}</Text>
+        <Text style={[styles.big, { color: over ? '#B45309' : '#047857' }]}>{formatDuration(elapsed)}</Text>
         <Text style={[styles.sub, { color: '#047857' }]}>
           {target != null
             ? over
               ? t('attendance.rest.overBy', '{{over}} past your {{total}}', {
-                  over: hm(elapsed - target),
-                  total: hm(target),
+                  over: formatDuration(elapsed - target),
+                  total: formatDuration(target),
                 })
-              : t('attendance.rest.ofTotal', 'of {{total}}', { total: hm(target) })
+              : t('attendance.rest.ofTotal', 'of {{total}}', { total: formatDuration(target) })
             : t('attendance.rest.untimed', 'Untimed')}
           {planned && !planned.isPaid ? ` · ${t('attendance.rest.unpaid', 'not counted')}` : ''}
         </Text>
@@ -185,13 +177,13 @@ export function RestCard({ entryId, plan, activeBreak, onChanged }: RestCardProp
         </Text>
         {!isDue && (
           <Text style={[styles.badge, { color: colors.textMuted }]}>
-            {t('attendance.rest.dueIn', 'in {{gap}}', { gap: hm(dueIn) })}
+            {t('attendance.rest.dueIn', 'in {{gap}}', { gap: formatDuration(dueIn) })}
           </Text>
         )}
       </View>
 
       <Text style={[styles.sub, { color: isDue ? '#B45309' : colors.textMuted }]}>
-        {hm(next.durationMinutes)}
+        {formatDuration(next.durationMinutes)}
         {' · '}
         {next.isPaid
           ? t('attendance.rest.paidNote', 'counts as work')

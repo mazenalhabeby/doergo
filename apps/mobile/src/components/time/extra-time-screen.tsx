@@ -10,11 +10,11 @@ import { useToast } from '../../island/island-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { attendanceApi } from '../../lib/api/attendance';
 import { useResponsive } from '../../lib/responsive';
-import { formatDurationMinutes } from '../../lib/utils';
 import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Sunken, Well, useTabSafe } from '../amazen';
 import { centeredContent } from '../screen-container';
 import { Initials, JobSheet, SectionLabel, StateEyebrow } from '../job/job-ui';
 import { minutesPastEnd, stepExtra, suggestedExtra } from './time-logic';
+import { personName, formatDuration } from '@hbcfield/shared/client';
 
 /**
  * EXTRA TIME — who is working past their shift, by how much, and one tap to
@@ -136,7 +136,7 @@ export function ExtraTimeScreen() {
           <>
             <View style={{ flexDirection: 'row', gap: amazen.space(2) }}>
               <Figure value={String(list.length)} label={t('extraTime.waiting', { count: list.length, defaultValue: 'waiting for you' })} />
-              <Figure value={formatDurationMinutes(total)} label={t('extraTime.askedSoFar', 'asked for, so far')} />
+              <Figure value={formatDuration(total)} label={t('extraTime.askedSoFar', 'asked for, so far')} />
             </View>
             {working.length ? <SectionLabel tone="accent" style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(1) }}>{t('extraTime.stillWorking', { count: working.length, defaultValue: 'Still working · {{count}}' })}</SectionLabel> : null}
             {working.map((e) => <Request key={e.id} entry={e} now={now} onApprove={() => openApprove(e)} onReject={() => setReject(e)} />)}
@@ -188,7 +188,7 @@ function Request({ entry, now, onApprove, onReject }: { entry: TimeEntry; now: D
   const past = minutesPastEnd(entry, now);
   const start = entry.expectedClockInAt ?? entry.clockInAt;
   const shift = entry.expectedClockOutAt ? Math.max(1, (Date.parse(entry.expectedClockOutAt) - Date.parse(start)) / 60_000) : 1;
-  const name = `${entry.user?.firstName ?? ''} ${entry.user?.lastName ?? ''}`.trim() || t('shiftReminder.unknownWorker');
+  const name = personName(entry.user) || t('shiftReminder.unknownWorker');
 
   return (
     <Well style={{ padding: amazen.space(3.5), gap: amazen.space(3) }}>
@@ -224,7 +224,7 @@ function Request({ entry, now, onApprove, onReject }: { entry: TimeEntry; now: D
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: amazen.space(2) }}>
-        <AText numeric style={{ fontFamily: amazen.font.mono, fontSize: 26, lineHeight: 32, color: c.warn }}>{formatDurationMinutes(past)}</AText>
+        <AText numeric style={{ fontFamily: amazen.font.mono, fontSize: 26, lineHeight: 32, color: c.warn }}>{formatDuration(past)}</AText>
         <AText variant="caption" tone="ink" style={{ flex: 1, fontSize: 12.5 }}>
           {open ? t('extraTime.pastCounting', 'past the end, and counting') : t('extraTime.pastLeft', 'past the end when they left')}
         </AText>
@@ -238,7 +238,7 @@ function Request({ entry, now, onApprove, onReject }: { entry: TimeEntry; now: D
         >
           <AText variant="body" tone="ink" style={{ fontSize: 15 }}>{t('shiftReminder.reject', 'Reject')}</AText>
         </Pressable>
-        <PrimaryButton style={{ flex: 1 }} label={t('shiftReminder.approve', 'Approve')} detail={formatDurationMinutes(suggestedExtra(past))} onPress={onApprove} />
+        <PrimaryButton style={{ flex: 1 }} label={t('shiftReminder.approve', 'Approve')} detail={formatDuration(suggestedExtra(past))} onPress={onApprove} />
       </View>
     </Well>
   );
@@ -302,21 +302,21 @@ function ApproveSheet({
       </View>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(1.5) }}>
-        {[15, 30, 60].map((v) => chip(v, formatDurationMinutes(v)))}
-        {chip(until, `${open ? t('extraTime.untilNow', 'Until now') : t('extraTime.untilLeft', 'Until they left')} · ${formatDurationMinutes(until)}`)}
+        {[15, 30, 60].map((v) => chip(v, formatDuration(v)))}
+        {chip(until, `${open ? t('extraTime.untilNow', 'Until now') : t('extraTime.untilLeft', 'Until they left')} · ${formatDuration(until)}`)}
       </View>
 
       {entry.expectedClockOutAt && newEnd ? (
         <Sunken style={{ padding: amazen.space(3.5), gap: amazen.space(2) }}>
           <Row label={t('extraTime.shiftEnd', 'Shift end')} value={clock(entry.expectedClockOutAt, tz)} />
-          <Row label={t('extraTime.extra', 'Extra')} value={`+ ${formatDurationMinutes(minutes)}`} />
+          <Row label={t('extraTime.extra', 'Extra')} value={`+ ${formatDuration(minutes)}`} />
           <View style={{ borderTopWidth: 1, borderTopColor: c.lineWell, paddingTop: amazen.space(2) }}>
             <Row strong label={t('extraTime.countsUntil', 'Counts until')} value={clock(newEnd, tz)} />
           </View>
         </Sunken>
       ) : null}
 
-      <PrimaryButton label={t('shiftReminder.approve', 'Approve')} detail={formatDurationMinutes(minutes)} onPress={onConfirm} loading={busy} />
+      <PrimaryButton label={t('shiftReminder.approve', 'Approve')} detail={formatDuration(minutes)} onPress={onConfirm} loading={busy} />
       <Pressable onPress={onClose} disabled={busy} accessibilityRole="button" style={{ alignSelf: 'center', padding: amazen.space(2) }}>
         <AText variant="body" tone="muted" style={{ fontSize: 14 }}>{t('extraTime.notNow', 'Not now')}</AText>
       </Pressable>

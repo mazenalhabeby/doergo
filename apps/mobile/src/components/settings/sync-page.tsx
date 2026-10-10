@@ -19,16 +19,12 @@ import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { useToast } from '../../island/island-context';
 import { refusedShiftCopy, refusedSpaceId, SHIFT_OPS } from '../../offline/attendance/refused-shift';
 import { ReportIssueSheet } from '../shift-issue-sheet';
+import { formatFileSize } from '@hbcfield/shared/client';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const STORAGE_WARN_BYTES = 500 * 1024 * 1024;
 const STORAGE_URGENT_BYTES = 1024 * 1024 * 1024;
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024 * 1024) return `${Math.max(0, Math.round(bytes / 1024))} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-}
 
 /**
  * SYNC — "is my work on the server?", answered in the first line.
@@ -41,7 +37,8 @@ function formatBytes(bytes: number): string {
 export function SyncPage() {
   const { amazen } = useTheme();
   const c = amazen.color;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const formatBytes = (bytes: number) => formatFileSize(Math.max(0, bytes), i18n.language);
   const { user } = useAuth();
   const r = useResponsive();
   const wide = r.isTablet ? centeredContent(640) : null;

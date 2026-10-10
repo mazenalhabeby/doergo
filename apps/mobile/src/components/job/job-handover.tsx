@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { formatDuration, owesHandover } from '@hbcfield/shared/client';
+import { formatDuration, owesHandover, personName } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import type { Task } from '../../lib/api';
@@ -40,7 +40,7 @@ export function JobHandover({
   const latest = task.handovers?.[0] ?? null;
   const iOwe = owesHandover(task, meId);
   const due = task.handoverDue;
-  const name = (p?: { firstName: string; lastName: string } | null) => (p ? `${p.firstName} ${p.lastName}`.trim() : '');
+  const name = (p?: { firstName: string; lastName: string } | null) => personName(p);
 
   const pausedLine = task.pausedAt
     ? task.pausedById === meId

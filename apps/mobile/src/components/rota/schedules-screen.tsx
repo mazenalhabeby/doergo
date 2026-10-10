@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Animated, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { orgHasAddOn } from '@hbcfield/shared/client';
+import { orgHasAddOn, localDateKey, todayKey } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
@@ -97,15 +97,14 @@ export function SchedulesScreen() {
 
   const canEdit = !!week?.canEdit && orgHasAddOn(user?.orgAddOns ?? null, 'shift_scheduling');
   const shiftsById = useMemo(() => new Map((week?.shifts ?? []).map((s) => [s.id, s])), [week?.shifts]);
-  const today = new Date();
-  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const todayK = todayKey();
   const dayDate = (k: string) => new Date(`${k}T12:00:00`);
   const shiftWeek = (n: number) => {
     const first = shownDays[0];
     if (!first) return;
     const d = dayDate(first);
     d.setDate(d.getDate() + n * 7);
-    setFrom(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+    setFrom(localDateKey(d));
   };
   const fmt = (k: string, o: Intl.DateTimeFormatOptions) => dayDate(k).toLocaleDateString(i18n.language, o);
   /* The week the member CHOSE, drawn the moment they tap — not when the server answers. */
@@ -114,7 +113,7 @@ export function SchedulesScreen() {
     const d = dayDate(from);
     return Array.from({ length: 7 }, (_, i) => {
       const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + i);
-      return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+      return localDateKey(x);
     });
   })();
   const back = () => (router.canGoBack() ? router.back() : router.navigate('/(app)/(tabs)/more' as Href));
@@ -148,7 +147,7 @@ export function SchedulesScreen() {
             <RoundArrow label="‹" a11y={t('rota.prevWeek', 'Previous week')} onPress={() => shiftWeek(-1)} />
             <View style={{ flex: 1, alignItems: 'center' }}>
               <AText variant="body" tone="strong" style={{ fontSize: 15 }}>{`${fmt(shownDays[0]!, { day: 'numeric', month: 'short' })} – ${fmt(shownDays[6]!, { day: 'numeric', month: 'short' })}`}</AText>
-              {shownDays.includes(todayKey) ? <SectionLabel tone="accent">{t('rota.thisWeek', 'This week')}</SectionLabel> : null}
+              {shownDays.includes(todayK) ? <SectionLabel tone="accent">{t('rota.thisWeek', 'This week')}</SectionLabel> : null}
             </View>
             <RoundArrow label="›" a11y={t('rota.nextWeek', 'Next week')} onPress={() => shiftWeek(1)} />
           </View>
@@ -172,10 +171,10 @@ export function SchedulesScreen() {
                 <View style={{ width: NAME_W }} />
                 {week.days.map((k) => (
                   <View key={k} style={{ flex: 1, alignItems: 'center' }}>
-                    <AText numberOfLines={1} style={{ fontFamily: amazen.font.mono, fontSize: 9.5, letterSpacing: 0.8, color: k === todayKey ? c.accent : c.inkMuted, textTransform: 'uppercase' }}>
+                    <AText numberOfLines={1} style={{ fontFamily: amazen.font.mono, fontSize: 9.5, letterSpacing: 0.8, color: k === todayK ? c.accent : c.inkMuted, textTransform: 'uppercase' }}>
                       {fmt(k, { weekday: 'short' })}
                     </AText>
-                    <AText numberOfLines={1} style={{ fontFamily: amazen.font.mono, fontSize: 11, color: k === todayKey ? c.accent : c.ink }}>{dayDate(k).getDate()}</AText>
+                    <AText numberOfLines={1} style={{ fontFamily: amazen.font.mono, fontSize: 11, color: k === todayK ? c.accent : c.ink }}>{dayDate(k).getDate()}</AText>
                   </View>
                 ))}
               </View>

@@ -12,6 +12,7 @@ import { centeredContent } from '../screen-container';
 import { Banner, JobField, JobSheet, SectionLabel } from '../job/job-ui';
 import { timeAgo } from '../team/helpers';
 import { PersonAvatar } from './person-avatar';
+import { personName } from '@hbcfield/shared/client';
 
 /**
  * JOIN REQUESTS — people who used the join code, waiting to be let in.
@@ -88,7 +89,7 @@ export function JoinRequestsScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3) }}>
                 <PersonAvatar person={req.user} />
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 15 }}>{`${req.user.firstName} ${req.user.lastName}`}</AText>
+                  <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 15 }}>{personName(req.user)}</AText>
                   <AText variant="caption" tone="muted" numberOfLines={1}>{`${req.user.email} · ${t('joinRequests.asked', { defaultValue: 'asked {{when}}', when: timeAgo(req.createdAt) })}`}</AText>
                 </View>
               </View>

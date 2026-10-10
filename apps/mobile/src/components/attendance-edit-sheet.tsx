@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { utcToZonedInput, zonedInputToUtc } from '@hbcfield/shared/client';
+import { utcToZonedInput, zonedInputToUtc, localDateKey } from '@hbcfield/shared/client';
 import { useTheme } from '../contexts/theme-context';
 import { useToast } from '../island/island-context';
 import { attendanceApi } from '../lib/api';
@@ -44,9 +44,6 @@ function dateFromISO(d: string): Date | null {
   const [y, m, day] = d.split('-').map(Number);
   if (!y || !m || !day) return null;
   return new Date(y, m - 1, day);
-}
-function isoFromDate(d: Date): string {
-  return `${d.getFullYear()}-${`${d.getMonth() + 1}`.padStart(2, '0')}-${`${d.getDate()}`.padStart(2, '0')}`;
 }
 
 /** HH:MM, 24-hour — the format the field accepts however the app displays time. */
@@ -277,8 +274,8 @@ export function AttendanceEditSheet({
         visible={picking !== null}
         selectedDate={dateFromISO(picking === 'out' ? outDate : inDate)}
         onSelect={(d) => {
-          if (picking === 'out') setOutDate(isoFromDate(d));
-          else setInDate(isoFromDate(d));
+          if (picking === 'out') setOutDate(localDateKey(d));
+          else setInDate(localDateKey(d));
           setPicking(null);
         }}
         onClear={() => {

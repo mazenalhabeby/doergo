@@ -7,7 +7,7 @@ import { BlurView } from 'expo-blur';
 import { router, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { daysLate, getFlowSteps, hasAccessModule, hasCapability, hasFeatureModule, isJobPaused, spaceRunsClock, stepStartsWork, type TaskCapability } from '@hbcfield/shared/client';
+import { daysLate, getFlowSteps, hasAccessModule, hasCapability, hasFeatureModule, isJobPaused, spaceRunsClock, stepStartsWork, type TaskCapability, personName } from '@hbcfield/shared/client';
 import { TaskStatus } from '../../lib/api';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
@@ -418,7 +418,7 @@ export function JobPage({
 
   const stepLabel = blocked && !steps.some((s) => s.key === TaskStatus.BLOCKED) ? t('status.BLOCKED') : labelOf(task.status);
   const nextLabel = position.next ? labelOf(position.next.key) : null;
-  const who = task.assignedTo ? `${task.assignedTo.firstName} ${task.assignedTo.lastName}`.trim() : '';
+  const who = personName(task.assignedTo);
   const facts = [
     { label: t('job.facts.when'), value: task.dueDate ? `${formatDueDate(task.dueDate)}${hasHour(task.dueDate) ? ` ${formatTime(task.dueDate, null)}` : ''}` : '' },
     { label: t('job.facts.where'), value: task.locationAddress ?? '' },
@@ -426,7 +426,7 @@ export function JobPage({
     who
       ? { label: t('job.facts.who'), value: isMine ? `${who} ${t('job.facts.you')}` : who }
       : { label: t('job.facts.who'), value: t('job.facts.nobody'), tone: 'warn' as const },
-    { label: t('job.facts.from'), value: task.createdBy ? `${task.createdBy.firstName} ${task.createdBy.lastName}`.trim() : '' },
+    { label: t('job.facts.from'), value: personName(task.createdBy) },
   ];
 
   // The reason the job is blocked: said on this phone, or on the status event.

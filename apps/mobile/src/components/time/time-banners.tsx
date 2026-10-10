@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { noShiftAllowanceNow, type AttendanceStatus, type BreakPlanItem, type BreakStatus, type GeofenceExcursion } from '@hbcfield/shared/client';
+import { noShiftAllowanceNow, type AttendanceStatus, type BreakPlanItem, type BreakStatus, type GeofenceExcursion, formatDuration } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { formatDistance } from '../../lib/distance';
-import { formatDurationMinutes } from '../../lib/utils';
 import type { OvertimeRequest } from '../../lib/api';
 import { AText } from '../amazen';
 import { Banner, JobSheet, QuietButton, SheetOption } from '../job/job-ui';
@@ -145,13 +144,13 @@ export function TimeBanners({
           tone={allowance.kind === 'refused' ? 'critical' : 'neutral'}
           text={allowance.kind === 'limited'
             ? `${t('attendance.noShift.title', { location: location.name })}. ${t('attendance.noShift.left', {
-                worked: formatDurationMinutes(location.noShift?.workedTodayMinutes ?? 0),
-                left: formatDurationMinutes(allowance.remainingMinutes),
+                worked: formatDuration(location.noShift?.workedTodayMinutes ?? 0),
+                left: formatDuration(allowance.remainingMinutes),
                 time: formatTime(allowance.until.toISOString(), location.timezone),
               })}`
             : allowance.kind === 'refused' && allowance.reason === 'SHIFT_ONLY'
               ? `${t('attendance.noShift.shiftOnlyTitle')}. ${t('attendance.noShift.shiftOnlyBody', { location: location.name })}`
-              : `${t('attendance.noShift.noHoursTitle')}. ${t('attendance.noShift.noHoursBody', { location: location.name, hours: formatDurationMinutes(location.noShift?.dailyMinutes ?? 0) })}`}
+              : `${t('attendance.noShift.noHoursTitle')}. ${t('attendance.noShift.noHoursBody', { location: location.name, hours: formatDuration(location.noShift?.dailyMinutes ?? 0) })}`}
         />
       ))}
 

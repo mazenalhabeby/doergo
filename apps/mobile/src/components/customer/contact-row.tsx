@@ -5,9 +5,9 @@ import { AText } from '../amazen';
 import { Pill, RoundButton } from '../job/job-ui';
 import { CallGlyph } from '../glyphs/work-glyphs';
 import { EmailGlyph } from '../glyphs/crm-glyphs';
-import { initials } from './client-avatar';
 import type { MobileCustomerContact } from '../../lib/api/customers';
 import { mailtoUrl, openSafeUrl, telUrl } from '../../lib/safe-links';
+import { personInitials } from '@hbcfield/shared/client';
 
 
 /**
@@ -57,7 +57,7 @@ function ContactRowBase({ link, side, onOpen, onMore, labels, waiting, busy, fir
       >
         {/* A person is round and a company square — the rule `ClientAvatar` keeps everywhere. */}
         <View style={{ width: 38, height: 38, borderRadius: side === 'company' ? 12 : 19, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
-          <AText variant="caption" style={{ color: c.accent, fontFamily: amazen.font.sansMedium, fontSize: 12.5 }}>{initials(end.name) || '·'}</AText>
+          <AText variant="caption" style={{ color: c.accent, fontFamily: amazen.font.sansMedium, fontSize: 12.5 }}>{personInitials(end.name, '·')}</AText>
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>

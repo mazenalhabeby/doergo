@@ -4,7 +4,7 @@ import { CachedImage } from '../cached-image';
 import { useTranslation } from 'react-i18next';
 import { router, type Href, useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
-import { orgHasAddOn, Role } from '@hbcfield/shared/client';
+import { orgHasAddOn, Role, personName } from '@hbcfield/shared/client';
 import { uuidv7 } from '../../offline/ids';
 import type { AvatarChange } from '../../offline/profile/pending-avatar';
 import { updateOwnProfile } from '../../offline/profile/profile-actions';
@@ -20,18 +20,13 @@ import { useToast } from '../../island/island-context';
 import { useImagePicker } from '../../hooks/useImagePicker';
 import { avatarApi, userApi, resolveMediaUrl } from '../../lib/api';
 import { useResponsive } from '../../lib/responsive';
+import { initialsOf } from '../../lib/people';
 import { AText, GlassCard, Ground, HeaderBack, PrimaryButton, ScreenHeader, Well, WellDivider } from '../amazen';
 import { centeredContent } from '../screen-container';
 import { JobSheet, SectionLabel, SheetOption } from '../job/job-ui';
 import { CameraGlyph, CloseGlyph, GalleryGlyph } from '../job/job-glyphs';
 import { TourTarget, GuideSheet, useTourScroll } from '../tour';
 import { PROFILE_GLYPHS } from './profile-glyphs';
-
-function getInitials(firstName?: string, lastName?: string): string {
-  const f = (firstName || '').charAt(0).toUpperCase();
-  const l = (lastName || '').charAt(0).toUpperCase();
-  return f + l || '?';
-}
 
 const THEME_MODE_I18N: Record<ThemeMode, string> = {
   system: 'profile.theme.system',
@@ -255,7 +250,7 @@ export function ProfileScreen() {
                 ) : shownAvatarUri ? (
                   <CachedImage uri={shownAvatarUri} style={{ width: 96, height: 96 }} />
                 ) : (
-                  <AText variant="h2" tone="accent" style={{ fontSize: 32, lineHeight: 40 }}>{getInitials(user?.firstName, user?.lastName)}</AText>
+                  <AText variant="h2" tone="accent" style={{ fontSize: 32, lineHeight: 40 }}>{initialsOf(user)}</AText>
                 )}
               </View>
               <View style={{ position: 'absolute', right: -2, bottom: -2, width: 32, height: 32, borderRadius: 16, backgroundColor: c.accentSolid, borderWidth: 3, borderColor: c.well, alignItems: 'center', justifyContent: 'center' }}>
@@ -263,7 +258,7 @@ export function ProfileScreen() {
               </View>
             </Pressable>
             <View style={{ alignItems: 'center', gap: 2 }}>
-              <AText variant="h2" tone="strong" numberOfLines={1} style={{ fontSize: 22, lineHeight: 28 }}>{`${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim()}</AText>
+              <AText variant="h2" tone="strong" numberOfLines={1} style={{ fontSize: 22, lineHeight: 28 }}>{personName(user)}</AText>
               {roleLine ? <AText variant="caption" tone="onGlass" numberOfLines={1} style={{ fontSize: 13 }}>{roleLine}</AText> : null}
               {user?.organizationName ? <SectionLabel tone="accent" style={{ marginTop: 4 }}>{user.organizationName}</SectionLabel> : null}
             </View>

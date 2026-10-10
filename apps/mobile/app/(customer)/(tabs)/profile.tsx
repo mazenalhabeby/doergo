@@ -11,7 +11,9 @@ import { useTheme, type ThemeMode } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../src/lib/constants';
 import { portalApi } from '../../../src/lib/api/portal';
 import { userApi } from '../../../src/lib/api';
+import { initialOf } from '../../../src/lib/people';
 import { changeLanguage, getCurrentLanguage, supportedLanguages } from '../../../src/i18n';
+import { personName } from '@hbcfield/shared/client';
 
 const THEME_OPTIONS: { mode: ThemeMode; icon: any; key: string; fallback: string }[] = [
   { mode: 'system', icon: 'phone-portrait-outline', key: 'portal.themeSystem', fallback: 'System' },
@@ -42,7 +44,7 @@ export default function CustomerProfile() {
   const units = unitsQ.data ?? [];
   const unit = units[0];
   const entityLabel = configQ.data?.entityLabel || t('portal.unit', 'Unit');
-  const initial = user?.firstName?.[0]?.toUpperCase() || '?';
+  const initial = initialOf(user);
   const currentLang = supportedLanguages.find((l) => l.code === getCurrentLanguage());
   const appVersion = Constants.expoConfig?.version || '1.0.0';
 
@@ -71,7 +73,7 @@ export default function CustomerProfile() {
             <Text style={styles.avatarText}>{initial}</Text>
           </View>
           <Text style={[styles.name, { color: colors.textPrimary }]}>
-            {[user?.firstName, user?.lastName].filter(Boolean).join(' ') || t('portal.client', 'Client')}
+            {personName(user) || t('portal.client', 'Client')}
           </Text>
           <Text style={[styles.sub, { color: colors.textMuted }]}>
             {configQ.data?.name ? `${configQ.data.name}` : ''}

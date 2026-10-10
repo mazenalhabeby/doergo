@@ -2,10 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import {
-  MEETING_PROVIDER_NAMES, cleanPhone, meetingProvider, moduleAnywhere, localInstant, spanMinutes, spanProblem, moveEndWithStart, durationText,
-  type CallDirection, type MeetingMode, type PlaceKind,
-} from '@hbcfield/shared/client';
+import { MEETING_PROVIDER_NAMES, cleanPhone, meetingProvider, moduleAnywhere, localInstant, spanMinutes, spanProblem, moveEndWithStart, durationText, type CallDirection, type MeetingMode, type PlaceKind, personName } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { useToast } from '../../island/island-context';
@@ -282,10 +279,10 @@ export function NewEventScreen() {
 
           <View style={{ gap: amazen.space(1.5) }}>
             <SectionLabel>{t('calendar.invite', 'People')}</SectionLabel>
-            {people.length ? <FilterRow>{people.map((x) => pill(`${x.firstName} ${x.lastName}  ✕`, true, () => setPeople((cur) => cur.filter((y) => y.id !== x.id))))}</FilterRow> : null}
+            {people.length ? <FilterRow>{people.map((x) => pill(`${personName(x)}  ✕`, true, () => setPeople((cur) => cur.filter((y) => y.id !== x.id))))}</FilterRow> : null}
             <JobField value={peopleQ} onChangeText={setPeopleQ} placeholder={t('calendar.searchPeople', 'Add people…')} />
             {found.length ? (
-              <FilterRow>{found.filter((x) => !people.some((y) => y.id === x.id)).map((x) => pill(`${x.firstName} ${x.lastName}`, false, () => { setPeople((cur) => [...cur, x]); setPeopleQ(''); }))}</FilterRow>
+              <FilterRow>{found.filter((x) => !people.some((y) => y.id === x.id)).map((x) => pill(personName(x), false, () => { setPeople((cur) => [...cur, x]); setPeopleQ(''); }))}</FilterRow>
             ) : null}
           </View>
 

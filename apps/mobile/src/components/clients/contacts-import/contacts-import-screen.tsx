@@ -16,6 +16,7 @@ import { ExplainStep } from './explain-step';
 import { PickStep } from './pick-step';
 import { ReviewStep } from './review-step';
 import { DoneStep } from './done-step';
+import { personName } from '@hbcfield/shared/client';
 
 /**
  * Clients from the phone's address book: explain → pick → check → done.
@@ -78,7 +79,7 @@ export function ContactsImportScreen() {
     }
   };
 
-  const importerName = [user?.firstName, user?.lastName].filter(Boolean).join(' ');
+  const importerName = personName(user);
   const spaceName = spaces.find((s) => s.id === spaceId)?.name ?? '';
 
   return (

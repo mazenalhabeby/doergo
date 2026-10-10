@@ -25,6 +25,7 @@ import {
 } from '../../../src/lib/constants';
 import { ScreenContainer, ScreenHeader } from '../../../src/components';
 import { useQueuedCreate } from '../../../src/offline/actions/queued-create';
+import { formatDuration } from '@hbcfield/shared/client';
 
 export default function OvertimeRequestScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -222,7 +223,7 @@ export default function OvertimeRequestScreen() {
               <Text style={[styles.statusTitle, { color: '#065F46' }]}>{t('overtime.approved')}</Text>
               {remainingMinutes !== null && (
                 <Text style={[styles.countdownText, { color: '#059669' }]}>
-                  {Math.floor(remainingMinutes / 60)}h {remainingMinutes % 60}m {t('overtime.remaining')}
+                  {formatDuration(remainingMinutes)} {t('overtime.remaining')}
                 </Text>
               )}
               {request.maxDurationMinutes && (

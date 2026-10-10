@@ -4,13 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { useImagePicker, type PickedImage } from '../hooks/useImagePicker';
 import { useTimeFormat } from '../hooks/useTimeFormat';
-import { formatDurationMinutes } from '../lib/utils';
 import { AText, Sunken } from './amazen';
 import { JobField, JobSheet, Pill, RoundButton, StateEyebrow } from './job/job-ui';
 import { CameraGlyph, CloseGlyph, GalleryGlyph, SendGlyph } from './job/job-glyphs';
 import { DayBar } from './time/day-bar';
 import { useWorklog } from './worklog/use-worklog';
 import type { WorklogItem } from '../offline/attendance/worklog';
+import { formatDuration } from '@hbcfield/shared/client';
 
 const isImg = (m: string) => m.startsWith('image/');
 /** Phrases a note usually starts with — one tap puts them in the box, where they can still be edited. */
@@ -113,7 +113,7 @@ export function WorkLogSheet({
               <ReceiptRow label={t('shiftEnd.clockedOut', 'Clocked out')} value={clock(shift.clockOutAt!)} />
               {shift.countedMinutes != null ? (
                 <View style={{ borderTopWidth: 1, borderTopColor: c.lineWell, paddingTop: amazen.space(2) }}>
-                  <ReceiptRow strong label={t('shiftEnd.countedTotal', 'Counted')} value={formatDurationMinutes(shift.countedMinutes)} />
+                  <ReceiptRow strong label={t('shiftEnd.countedTotal', 'Counted')} value={formatDuration(shift.countedMinutes)} />
                 </View>
               ) : null}
               {shift.approval ? (

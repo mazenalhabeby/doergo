@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image, Pressable, View, type LayoutChangeEvent } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { parseStoredStepForm } from '@hbcfield/shared/client';
+import { parseStoredStepForm, personName } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import type { StepSubmission } from '../../lib/api';
@@ -47,7 +47,7 @@ export function JobSubmissions({
       ) : (
         submissions.map((s) => {
           const form = parseStoredStepForm(s.form);
-          const who = [s.submittedBy?.firstName, s.submittedBy?.lastName].filter(Boolean).join(' ');
+          const who = personName(s.submittedBy);
           const when = s.submittedAt ? `${formatDateFull(s.submittedAt, null)} ${formatTime(s.submittedAt, null)}` : '';
           const rows = (form?.fields ?? [])
             .map((f) => ({ f, a: shownAnswer(f, s.answers?.[f.id]) }))

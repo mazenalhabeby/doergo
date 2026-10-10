@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { localDateKey } from '@hbcfield/shared/client';
 
 /**
  * WHAT THIS PHONE WAS LAST TOLD — one store for every widget.
@@ -47,7 +48,7 @@ export const GOOD_FOR_MS = 18 * 60 * 60 * 1000;
 
 /** Today, as the member's own calendar reads it — never a UTC date. */
 export function localDay(now: Date = new Date()): string {
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  return localDateKey(now);
 }
 
 const keyFor = (name: string, userId: string) => `@hbcfield/kept/${name}/${userId}`;

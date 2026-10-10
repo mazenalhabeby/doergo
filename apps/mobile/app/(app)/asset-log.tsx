@@ -18,10 +18,7 @@ import { useToast } from '../../src/island/island-context';
 import { useImagePicker } from '../../src/hooks/useImagePicker';
 import { canScanReceipts, scanReceipt } from '../../src/lib/receipt-scan';
 import { assetsApi, uploadToPresignedUrl, type HeldAsset } from '../../src/lib/api';
-import {
-  normalizeKindShape, findLogType, validateLogValues, moneyToCents, assetEntryDateExempt, COST_LOG_KEY,
-  type KindLogField, type LogValueProblem,
-} from '@hbcfield/shared/client';
+import { normalizeKindShape, findLogType, validateLogValues, moneyToCents, assetEntryDateExempt, COST_LOG_KEY, type KindLogField, type LogValueProblem, fromCents } from '@hbcfield/shared/client';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import { logColor, logTypeLabel } from '../../src/lib/log-display';
 import { useOffline } from '../../src/offline/offline-context';
@@ -155,7 +152,7 @@ function AssetLogScreen() {
     setReading(true);
     try {
       const { receipt } = await scanReceipt(shot.uri);
-      if (receipt.totalCents) set(moneyField.key, (receipt.totalCents.value / 100).toFixed(2));
+      if (receipt.totalCents) set(moneyField.key, fromCents(receipt.totalCents.value).toFixed(2));
       else toast.info(tt('expenses.noTotal', 'Could not find a total — type it in.'));
       if (receipt.date) setWhen(receipt.date.value);
     } catch {

@@ -14,6 +14,7 @@ import {
   type BiometricFailure,
   type BiometricMethod,
 } from '../lib/biometrics';
+import { personName } from '@hbcfield/shared/client';
 
 /**
  * The whole biometric flow, in one place.
@@ -142,7 +143,7 @@ export function useBiometricUnlock(): BiometricUnlock {
 
       await biometricCredential.enroll({
         userId: user.id,
-        name: [user.firstName, user.lastName].filter(Boolean).join(' '),
+        name: personName(user),
         email: user.email,
       });
       setEnrolled(true);

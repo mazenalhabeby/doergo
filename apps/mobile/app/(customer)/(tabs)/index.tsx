@@ -11,6 +11,7 @@ import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../src/lib/constants';
 import { portalApi } from '../../../src/lib/api/portal';
 import { resolveMediaUrl } from '../../../src/lib/api';
+import { initialOf } from '../../../src/lib/people';
 import { RequestRow } from '../../../src/components/customer/request-bits';
 import { ReportGlyph, RequestsGlyph, ContactGlyph, AccountGlyph, CategoryGlyph } from '../../../src/components/customer/portal-glyphs';
 
@@ -98,7 +99,7 @@ export default function CustomerHome() {
                 <Text style={styles.name} numberOfLines={1}>{user?.firstName || t('portal.client', 'Client')}</Text>
               </View>
               <Pressable style={styles.avatar} onPress={() => router.push('/(customer)/(tabs)/profile')} hitSlop={8}>
-                <Text style={styles.avatarText}>{user?.firstName?.[0]?.toUpperCase() || '?'}</Text>
+                <Text style={styles.avatarText}>{initialOf(user)}</Text>
               </Pressable>
             </View>
             {cfg?.name ? <Text style={styles.propName} numberOfLines={1}>{cfg.name}</Text> : null}

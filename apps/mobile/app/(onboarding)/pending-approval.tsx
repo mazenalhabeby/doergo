@@ -11,6 +11,7 @@ import { ConfirmSheet } from '../../src/components';
 import { AText, PrimaryButton } from '../../src/components/amazen';
 import { PassBadge } from '../../src/components/onboarding/pass-badge';
 import { PassFrame } from '../../src/components/onboarding/pass-frame';
+import { personName } from '@hbcfield/shared/client';
 
 const POLL_INTERVAL = 30000;
 
@@ -84,7 +85,7 @@ export default function PendingApprovalScreen() {
   };
 
   const refused = status === 'rejected';
-  const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ');
+  const name = personName(user);
   const anotherCode = () => router.replace(`${ROUTES.choosePath}?fresh=1` as Href);
 
   return (

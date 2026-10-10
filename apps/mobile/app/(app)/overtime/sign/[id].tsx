@@ -26,6 +26,8 @@ import {
   FONT_WEIGHT,
 } from '../../../../src/lib/constants';
 import { useQueuedCreate } from '../../../../src/offline/actions/queued-create';
+import { personName } from '@hbcfield/shared/client';
+import { initialOf } from '../../../../src/lib/people';
 
 const DURATION_OPTIONS = [
   { label: '30 min', value: 30 },
@@ -82,7 +84,7 @@ export default function OvertimeSignatureScreen() {
     try {
       const body = {
         approverId: selectedLeader.id,
-        leaderName: `${selectedLeader.firstName} ${selectedLeader.lastName}`,
+        leaderName: personName(selectedLeader),
         leaderSignature: signature,
         maxDurationMinutes: duration,
         notes: notes.trim() || undefined,
@@ -137,11 +139,11 @@ export default function OvertimeSignatureScreen() {
                   onPress={() => setSelectedLeader(leader)}
                 >
                   <View style={[styles.leaderAvatar, { backgroundColor: selectedLeader?.id === leader.id ? COLORS.primary : colors.textMuted }]}>
-                    <Text style={styles.leaderInitial}>{leader.firstName[0] ?? '?'}</Text>
+                    <Text style={styles.leaderInitial}>{initialOf(leader)}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.leaderName, { color: colors.textPrimary }]}>
-                      {leader.firstName} {leader.lastName}
+                      {personName(leader)}
                     </Text>
                     {leader.subtitle ? <Text style={[styles.leaderRole, { color: colors.textSecondary }]}>{leader.subtitle}</Text> : null}
                   </View>
@@ -193,7 +195,7 @@ export default function OvertimeSignatureScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('overtime.leaderSignature')}</Text>
           <SignatureCapture
-            title={selectedLeader ? `${selectedLeader.firstName} ${selectedLeader.lastName}` : t('overtime.leaderSignature')}
+            title={selectedLeader ? personName(selectedLeader) : t('overtime.leaderSignature')}
             onSave={(base64: string) => setSignature(base64)}
             onClear={() => setSignature(null)}
             existingSignature={signature || undefined}

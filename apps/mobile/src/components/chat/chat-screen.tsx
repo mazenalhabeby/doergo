@@ -3,7 +3,7 @@ import { FlatList, KeyboardAvoidingView, Platform, Pressable, SectionList, TextI
 import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SocketEvents, conversationTitle, type ChatConversation, type ChatMessage, type ChatUserRef } from '@hbcfield/shared/client';
+import { SocketEvents, conversationTitle, type ChatConversation, type ChatMessage, type ChatUserRef, personName } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useSocketContext } from '../../contexts/socket-context';
@@ -549,7 +549,7 @@ const ContactRow = memo(function ContactRow({ person: u, first, last, onPick }: 
         style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.75), opacity: pressed ? 0.85 : 1 })}>
         <PersonAvatar person={u} presence={u.presence ?? null} />
         <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <AText variant="body" tone="strong" numberOfLines={1} style={{ flexShrink: 1, fontSize: 14.5 }}>{`${u.firstName} ${u.lastName}`}</AText>
+          <AText variant="body" tone="strong" numberOfLines={1} style={{ flexShrink: 1, fontSize: 14.5 }}>{personName(u)}</AText>
           {u.isExternal ? <Tag label={t('chat.external', 'External')} tone="warn" /> : null}
         </View>
       </Pressable>

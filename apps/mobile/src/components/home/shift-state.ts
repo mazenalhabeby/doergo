@@ -1,4 +1,4 @@
-import { computeCountedTime, parseBreakPlan, outstandingBreaks, type BreakPlanItem } from '@hbcfield/shared/client';
+import { computeCountedTime, parseBreakPlan, outstandingBreaks, type BreakPlanItem, formatDuration } from '@hbcfield/shared/client';
 import type { AttendanceStatus, BreakStatus, TimeEntry } from '@hbcfield/shared/client';
 
 /**
@@ -433,11 +433,7 @@ export function heroParts(minutes: number): { value: string; unit: string }[] {
  * clock-out sheet's own target, by up to half an hour.
  */
 export function targetLabel(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (m === 0) return `${h}h`;
-  if (h === 0) return `${m}m`;
-  return `${h}h ${m}m`;
+  return formatDuration(minutes);
 }
 
 /** `84` `h` `of 160h` — FLEXIBLE's hero, a month against its budget. */

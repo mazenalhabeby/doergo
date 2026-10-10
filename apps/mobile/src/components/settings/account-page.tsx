@@ -13,6 +13,7 @@ import { AText, PrimaryButton, Well } from '../amazen';
 import { BiometricIcon } from '../biometric-icon';
 import { JobSheet, SectionLabel, SheetOption } from '../job/job-ui';
 import { SettingsPage, SwitchRow } from './settings-ui';
+import { personName } from '@hbcfield/shared/client';
 
 const MIN_PASSWORD = 8;
 
@@ -121,7 +122,7 @@ export function AccountPage() {
 
       <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>{t('settings.account.you', 'You')}</SectionLabel>
       <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
-        {[[t('profile.account.nameLabel'), `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim()], [t('profile.account.emailLabel'), user?.email ?? '']].map(([k, v], i) => (
+        {[[t('profile.account.nameLabel'), personName(user)], [t('profile.account.emailLabel'), user?.email ?? '']].map(([k, v], i) => (
           <View key={k} style={{ paddingVertical: amazen.space(3), borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell, gap: 2 }}>
             <AText variant="caption" tone="muted">{k}</AText>
             <AText variant="body" tone="strong" selectable style={{ fontSize: 14.5 }}>{v}</AText>

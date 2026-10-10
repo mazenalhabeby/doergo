@@ -25,6 +25,7 @@ import {
   FONT_WEIGHT
 } from '../lib/constants';
 import { useTheme } from '../contexts/theme-context';
+import { personInitials, personName } from '@hbcfield/shared/client';
 
 interface TechnicianPickerProps {
   visible: boolean;
@@ -79,7 +80,7 @@ export function TechnicianPicker({
 
   const filtered = search.trim()
     ? technicians.filter((t) => {
-        const name = `${t.firstName} ${t.lastName}`.toLowerCase();
+        const name = personName(t).toLowerCase();
         return name.includes(search.toLowerCase());
       })
     : technicians;
@@ -94,12 +95,12 @@ export function TechnicianPicker({
       >
         <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised }, isSelected && styles.avatarSelected]}>
           <Text style={[styles.avatarText, { color: colors.textSecondary }, isSelected && styles.avatarTextSelected]}>
-            {item.firstName[0]}{item.lastName[0]}
+            {personInitials(item)}
           </Text>
         </View>
         <View style={styles.technicianInfo}>
           <Text style={[styles.technicianName, { color: colors.textPrimary }]}>
-            {item.firstName} {item.lastName}
+            {personName(item)}
           </Text>
           <View style={styles.technicianMeta}>
             {item.specialty && (

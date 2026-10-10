@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import { weekdayName } from '../../../lib/app-dates';
-import { formatDurationMinutes as formatDuration } from '../../../lib/utils';
 import type { readShiftState } from '../shift-state';
+import { formatDuration } from '@hbcfield/shared/client';
 
 type ShiftState = ReturnType<typeof readShiftState>;
 

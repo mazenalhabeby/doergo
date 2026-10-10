@@ -2,7 +2,7 @@ import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, SectionList, TextInput, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { SocketEvents } from '@hbcfield/shared/client';
+import { SocketEvents, personName } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useSocketContext } from '../../contexts/socket-context';
@@ -84,7 +84,7 @@ export function TeamScreen() {
   const q = query.trim().toLowerCase();
   const keep = useCallback((x: Colleague) =>
     (filter === 'all' || presenceKey(x.presence) === filter)
-    && (!q || `${x.firstName} ${x.lastName} ${x.position ?? ''} ${x.spaceName ?? ''}`.toLowerCase().includes(q)), [filter, q]);
+    && (!q || `${personName(x)} ${x.position ?? ''} ${x.spaceName ?? ''}`.toLowerCase().includes(q)), [filter, q]);
   const count = (k: Filter) => all.filter((x) => presenceKey(x.presence) === k).length;
   const tourScroll = useTourScroll();
   // Stable, so `memo(TeamRow)` holds: a presence change redraws one row, not the list.
@@ -216,7 +216,7 @@ const TeamRow = memo(function TeamRow({ person: x, canChat, onMessage, first, la
     >
       <PersonAvatar person={x} presence={x.presence} />
       <View style={{ flex: 1, minWidth: 0 }}>
-        <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>{`${x.firstName} ${x.lastName}`}</AText>
+        <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>{personName(x)}</AText>
         <AText variant="caption" tone="muted" numberOfLines={1}>{[x.position, x.spaceName].filter(Boolean).join(' · ') || presenceText(x.presence, t)}</AText>
       </View>
       {canChat ? <RoundButton Glyph={MessagesGlyph} tone="jade" size={40} label={t('team.message', { defaultValue: 'Message {{name}}', name: x.firstName })} onPress={() => onMessage(x.id)} /> : null}

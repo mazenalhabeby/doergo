@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { ClassifiedContact, PickSection } from '@hbcfield/shared/client';
 import { useTheme } from '../../../contexts/theme-context';
 import { AText, type Tone } from '../../amazen';
+import { personInitials } from '@hbcfield/shared/client';
 
 /** Fixed, so the list can be measured without rendering — see `ROW_HEIGHT` use in the pick step. */
 export const ROW_HEIGHT = 72;
@@ -39,7 +40,8 @@ export const ImportRow = memo(function ImportRow({
     : nested ? null
     : { text: t(`contactsImport.reason.${contact.reason}`), tone: section === 'suggested' ? 'accent' : 'muted' };
 
-  const initials = contact.name.replace(/^(dr|mag|ing|di)\.?\s+/i, '').split(/\s+/).slice(0, 2).map((w) => w[0] ?? '').join('').toUpperCase();
+  // An academic title is not a name: "Dr. Anna Berger" is AB, not DA.
+  const initials = personInitials(contact.name.replace(/^(dr|mag|ing|di)\.?\s+/i, ''), '');
 
   return (
     <Pressable

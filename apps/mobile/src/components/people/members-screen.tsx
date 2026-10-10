@@ -13,6 +13,7 @@ import { centeredContent } from '../screen-container';
 import { Banner, JobSheet } from '../job/job-ui';
 import { timeAgo } from '../team/helpers';
 import { PersonAvatar } from './person-avatar';
+import { personName } from '@hbcfield/shared/client';
 
 type Filter = { kind: 'all' } | { kind: 'role'; id: string } | { kind: 'none' } | { kind: 'external' };
 
@@ -75,8 +76,8 @@ export function MembersScreen() {
       || (filter.kind === 'role' && x.memberRole?.id === filter.id && !x.isExternal)
       || (filter.kind === 'none' && !x.memberRole && !x.isExternal)
       || (filter.kind === 'external' && !!x.isExternal))
-    && (!q || `${x.firstName} ${x.lastName} ${x.email}`.toLowerCase().includes(q)),
-  ).sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`));
+    && (!q || `${personName(x)} ${x.email}`.toLowerCase().includes(q)),
+  ).sort((a, b) => personName(a).localeCompare(personName(b)));
 
   const remove = async () => {
     if (!open) return;
@@ -144,7 +145,7 @@ export function MembersScreen() {
                   <PersonAvatar person={m} presence={m.presence ?? null} />
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <AText variant="body" tone="strong" numberOfLines={1} style={{ flexShrink: 1, fontSize: 14.5 }}>{`${m.firstName} ${m.lastName}`}</AText>
+                      <AText variant="body" tone="strong" numberOfLines={1} style={{ flexShrink: 1, fontSize: 14.5 }}>{personName(m)}</AText>
                       {m.id === user?.id ? <AText style={{ fontFamily: amazen.font.mono, fontSize: 10, color: c.accent }}>{t('manage.membersScreen.you', 'You').toUpperCase()}</AText> : null}
                     </View>
                     <AText variant="caption" tone="muted" numberOfLines={1}>
@@ -160,7 +161,7 @@ export function MembersScreen() {
         )}
       </ScrollView>
 
-      <JobSheet visible={!!open} onClose={() => setOpen(null)} busy={busy} title={open ? `${open.firstName} ${open.lastName}` : undefined}>
+      <JobSheet visible={!!open} onClose={() => setOpen(null)} busy={busy} title={open ? personName(open) : undefined}>
         {open ? (
           <>
             <Sunken style={{ padding: amazen.space(3.5), gap: amazen.space(2) }}>
@@ -170,7 +171,7 @@ export function MembersScreen() {
               {open.lastActiveAt ? <Line label={t('members.lastActive', 'Last active')} value={timeAgo(open.lastActiveAt)} /> : null}
             </Sunken>
             <AText variant="caption" tone="muted" style={{ textAlign: 'center' }}>{t('members.changeOnWeb', 'Change roles and access on the web.')}</AText>
-            {confirmRemove ? <Banner tone="critical" text={t('manage.membersScreen.removeMessage', { name: `${open.firstName} ${open.lastName}` })} /> : null}
+            {confirmRemove ? <Banner tone="critical" text={t('manage.membersScreen.removeMessage', { name: personName(open) })} /> : null}
             <PrimaryButton label={confirmRemove ? t('common.cancel', 'Cancel') : t('common.done', 'Done')} onPress={() => (confirmRemove ? setConfirmRemove(false) : setOpen(null))} />
             {open.id !== user?.id ? (
               <Pressable onPress={() => (confirmRemove ? void remove() : setConfirmRemove(true))} disabled={busy} accessibilityRole="button" style={{ alignSelf: 'center', padding: amazen.space(2) }}>

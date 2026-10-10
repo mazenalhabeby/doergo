@@ -7,7 +7,7 @@
  * draws what these return.
  */
 import {
-  getEndOfMonth, getStartOfMonth, hasAccessModule, rankMyWork, toISODateString, workBand,
+  getEndOfMonth, getStartOfMonth, hasAccessModule, rankMyWork, localDateKey, workBand,
   daysLate, normalizeRole, Role,
 } from '@hbcfield/shared/client';
 import type { Task } from '../../lib/api/types';
@@ -26,11 +26,11 @@ export const PERIODS: readonly Period[] = ['current', 'upcoming', 'history'];
 export function periodParams(period: Period, now: Date = new Date()): Pick<TasksListParams, 'startDate' | 'endDate' | 'includeNoDueDate'> {
   switch (period) {
     case 'current':
-      return { startDate: toISODateString(getStartOfMonth(now)), endDate: toISODateString(getEndOfMonth(now)), includeNoDueDate: true };
+      return { startDate: localDateKey(getStartOfMonth(now)), endDate: localDateKey(getEndOfMonth(now)), includeNoDueDate: true };
     case 'upcoming':
-      return { startDate: toISODateString(getStartOfMonth(new Date(now.getFullYear(), now.getMonth() + 1, 1))) };
+      return { startDate: localDateKey(getStartOfMonth(new Date(now.getFullYear(), now.getMonth() + 1, 1))) };
     case 'history':
-      return { endDate: toISODateString(getEndOfMonth(new Date(now.getFullYear(), now.getMonth() - 1, 1))) };
+      return { endDate: localDateKey(getEndOfMonth(new Date(now.getFullYear(), now.getMonth() - 1, 1))) };
   }
 }
 

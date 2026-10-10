@@ -17,6 +17,7 @@ import {
 } from '../../../src/lib/constants';
 import { Skeleton, ConfirmSheet, ScreenContainer, ScreenHeader } from '../../../src/components';
 import { getTimeOffStatusStyle } from '../../../src/lib/styles';
+import { personName } from '@hbcfield/shared/client';
 
 type StatusFilter = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL';
 
@@ -56,7 +57,7 @@ export default function TimeOffRequestsScreen() {
       const rows = await timeOffApi.listOrg();
       const allRequests = rows.map((r: any) => ({
         ...r,
-        techName: `${r.technician?.firstName ?? ''} ${r.technician?.lastName ?? ''}`.trim(),
+        techName: personName(r.technician),
         techId: r.technician?.id ?? r.technicianId,
       }));
 

@@ -1,10 +1,9 @@
 import React, { memo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
-import { isCompany } from '@hbcfield/shared/client';
+import { isCompany, personInitials } from '@hbcfield/shared/client';
 import type { MobileCustomer } from '../../lib/api';
 import { AText } from '../amazen';
-import { initials } from '../customer/client-avatar';
 import { CallGlyph } from '../glyphs/work-glyphs';
 import { openSafeUrl, telUrl } from '../../lib/safe-links';
 
@@ -60,7 +59,7 @@ export const ClientRow = memo(function ClientRow({
         })}
       >
         <View style={{ width: 42, height: 42, borderRadius: company ? 13 : 21, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
-          <AText variant="caption" style={{ fontSize: 13.5, color: c.accent, fontFamily: amazen.font.sansMedium }}>{initials(client.name) || '·'}</AText>
+          <AText variant="caption" style={{ fontSize: 13.5, color: c.accent, fontFamily: amazen.font.sansMedium }}>{personInitials(client.name, '·')}</AText>
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>{client.name}</AText>

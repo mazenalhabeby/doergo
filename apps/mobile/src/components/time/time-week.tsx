@@ -2,9 +2,9 @@ import React from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
-import { formatDurationMinutes } from '../../lib/utils';
 import { AText, Well } from '../amazen';
 import { SectionLabel } from '../job/job-ui';
+import { formatDuration } from '@hbcfield/shared/client';
 
 /**
  * THIS WEEK — seven bars and three figures.
@@ -54,7 +54,7 @@ export function TimeWeek({
         <SectionLabel tone="accent">{`${fmt(monday)} – ${fmt(sunday)}`}</SectionLabel>
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: amazen.space(1.5), height: 96 }} accessibilityLabel={t('time.week.a11y', { defaultValue: '{{time}} counted this week', time: formatDurationMinutes(total) })}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: amazen.space(1.5), height: 96 }} accessibilityLabel={t('time.week.a11y', { defaultValue: '{{time}} counted this week', time: formatDuration(total) })}>
         {days.map((m, i) => (
           <View key={i} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
             <View
@@ -73,9 +73,9 @@ export function TimeWeek({
       </View>
 
       <View style={{ flexDirection: 'row', gap: amazen.space(2) }}>
-        <Figure value={formatDurationMinutes(total)} label={t('time.week.counted', 'counted')} />
+        <Figure value={formatDuration(total)} label={t('time.week.counted', 'counted')} />
         <Figure value={String(worked)} label={t('time.week.days', { count: worked, defaultValue: 'days worked' })} />
-        <Figure value={monthMinutes == null ? '—' : formatDurationMinutes(monthMinutes + runningMinutes)} label={t('time.week.month', 'this month')} />
+        <Figure value={monthMinutes == null ? '—' : formatDuration(monthMinutes + runningMinutes)} label={t('time.week.month', 'this month')} />
       </View>
     </Well>
   );

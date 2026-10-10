@@ -6,10 +6,11 @@ import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import i18n from '../../i18n';
 import { useAuth } from '../../contexts/auth-context';
 import { calendarPageKey, calendarPages } from './calendar-pages';
+import { localDateKey } from '@hbcfield/shared/client';
 
 /** Local day key, YYYY-MM-DD. */
 export function dayKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return localDateKey(d);
 }
 export function fromKey(k: string): Date {
   const [y, m, d] = k.split('-').map(Number);

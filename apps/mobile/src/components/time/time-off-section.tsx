@@ -13,6 +13,7 @@ import {
   addDays, dayKey, dayOf, daysOff, leaveDays, monthGrid, overlapIn, upcomingLeave, usedThisYear, workWeekdays,
 } from './time-logic';
 import type { useMyTimeOff, MyTimeOffRequest } from './use-my-time-off';
+import { personName } from '@hbcfield/shared/client';
 
 const KINDS = ['vacation', 'sickLeave', 'family', 'other'] as const;
 type Kind = (typeof KINDS)[number];
@@ -101,7 +102,7 @@ function LeaveRow({ request, weekdays, onPress }: { request: MyTimeOffRequest; w
   const b = dayOf(request.endDate);
   const n = daysOff(a, b, weekdays);
   const approved = request.status === 'APPROVED';
-  const who = request.approvedBy ? `${request.approvedBy.firstName} ${request.approvedBy.lastName}` : null;
+  const who = request.approvedBy ? personName(request.approvedBy) : null;
   return (
     <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.5), opacity: pressed ? 0.8 : 1 })}>
       <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: c.tile, alignItems: 'center', justifyContent: 'center' }}>
@@ -405,7 +406,7 @@ function DetailSheet({ request, onClose, leave, weekdays }: { request: MyTimeOff
   const a = dayOf(request.startDate);
   const b = dayOf(request.endDate);
   const waiting = request.status === 'PENDING';
-  const who = request.approvedBy ? `${request.approvedBy.firstName} ${request.approvedBy.lastName}` : null;
+  const who = request.approvedBy ? personName(request.approvedBy) : null;
   const f = (d: Date) => d.toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' });
   const note = (request.reason ?? '').split(':').slice(1).join(':').trim();
 

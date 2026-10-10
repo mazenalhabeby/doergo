@@ -21,10 +21,7 @@ import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
 import { useCameraAccess } from '../../src/permissions/use-media-access';
 import { canScanReceipts, scanReceipt } from '../../src/lib/receipt-scan';
 import { assetsApi, uploadToPresignedUrl, type HeldAsset } from '../../src/lib/api';
-import {
-  normalizeKindShape, categoryForReceipt, moneyToCents, assetEntryDateExempt,
-  type KindMoneyCategory, type ParsedReceipt,
-} from '@hbcfield/shared/client';
+import { normalizeKindShape, categoryForReceipt, moneyToCents, assetEntryDateExempt, type KindMoneyCategory, type ParsedReceipt, fromCents } from '@hbcfield/shared/client';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../src/lib/constants';
 import { useOffline } from '../../src/offline/offline-context';
 import { submitExpenseFromPhone } from '../../src/offline/assets/expense-actions';
@@ -139,7 +136,7 @@ function AssetExpenseScreen() {
   /** Whatever the reader worked out, dropped into the form. */
   const applyRead = useCallback((receipt: ParsedReceipt) => {
     setRead(receipt);
-    if (receipt.totalCents) setAmount((receipt.totalCents.value / 100).toFixed(2));
+    if (receipt.totalCents) setAmount(fromCents(receipt.totalCents.value).toFixed(2));
     if (receipt.date) setWhen(receipt.date.value);
     if (receipt.vendor) setNote(receipt.vendor.value);
     const guess = categoryForReceipt(receipt, spendCategories);

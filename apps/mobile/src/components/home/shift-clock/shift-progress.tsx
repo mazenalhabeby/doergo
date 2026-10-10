@@ -3,9 +3,9 @@ import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../contexts/theme-context';
 import { monthName } from '../../../lib/app-dates';
-import { formatDurationMinutes as formatDuration } from '../../../lib/utils';
 import { AText, Eyebrow } from '../../amazen';
 import { targetLabel, type readShiftState } from '../shift-state';
+import { formatDuration } from '@hbcfield/shared/client';
 
 type ShiftState = ReturnType<typeof readShiftState>;
 

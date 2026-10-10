@@ -22,7 +22,7 @@ import { useToast } from '../../src/island/island-context';
 import { showUpdatePageNow } from '../../src/components/update-page';
 import { useAuth } from '../../src/contexts/auth-context';
 import { activeChat } from '../../src/lib/active-chat';
-import { SocketEvents } from '@hbcfield/shared/client';
+import { SocketEvents, personName } from '@hbcfield/shared/client';
 import { SubscriptionGate } from '../../src/components/SubscriptionGate';
 import { TourProvider } from '../../src/components/tour';
 import { useTheme } from '../../src/contexts/theme-context';
@@ -98,7 +98,7 @@ function GlobalChatNotifier() {
       const m = d?.message;
       if (!m || !m.senderId || m.senderId === user?.id) return;
       if (d.conversationId && d.conversationId === activeChat.conversationId) return; // already reading it
-      const name = m.sender ? `${m.sender.firstName} ${m.sender.lastName}`.trim() : t('chat.title', 'Messages');
+      const name = m.sender ? personName(m.sender) : t('chat.title', 'Messages');
       toast.info(name, (m.body || '').slice(0, 80));
     });
   }, [isAuthenticated, subscribe, user?.id, toast, t]);

@@ -2,6 +2,7 @@
  * Utility functions for the mobile app
  * Date formatting, time helpers, and common utilities
  */
+import { localDateKey } from '@hbcfield/shared/client';
 
 // =============================================================================
 // DATE FORMATTING
@@ -121,26 +122,6 @@ function getDateDtf(locale: string, timeZone?: string | null, withYear = false):
 }
 
 /**
- * Calendar day (YYYY-MM-DD) of an instant AS SEEN IN `timeZone`.
- *
- * Comparing these strings is how "is this today?" stays correct across zones —
- * a device in Vienna must not decide the day for an entry stamped in New York.
- * `en-CA` is used purely because it yields ISO-ordered output.
- */
-function dayKeyInZone(d: Date, timeZone?: string | null): string {
-  try {
-    return new Intl.DateTimeFormat('en-CA', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      ...(timeZone ? { timeZone } : {}),
-    }).format(d);
-  } catch {
-    return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
-  }
-}
-
-/**
  * Format a date (e.g. "15. Jan." / "Jan 15"), locale- AND timezone-aware.
  *
  * Pass the entry's zone so a date label agrees with the zoned time rendered
@@ -199,9 +180,9 @@ export function formatDateRelativeOf(
   if (Number.isNaN(d.getTime())) return '';
   const now = new Date();
   const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-  const key = dayKeyInZone(d, timeZone);
-  if (key === dayKeyInZone(now, timeZone)) return labels.today;
-  if (key === dayKeyInZone(yesterday, timeZone)) return labels.yesterday;
+  const key = localDateKey(d, timeZone);
+  if (key === localDateKey(now, timeZone)) return labels.today;
+  if (key === localDateKey(yesterday, timeZone)) return labels.yesterday;
   return formatDateOf(d, locale, timeZone);
 }
 
@@ -242,21 +223,6 @@ export function isSameDay(date1: Date, date2: Date): boolean {
     date1.getDate() === date2.getDate()
   );
 }
-
-// =============================================================================
-// DURATION & DATE FORMATTING (for attendance screens)
-// =============================================================================
-
-/**
- * Format duration from minutes to human-readable (e.g., "2h 30m")
- */
-export function formatDurationMinutes(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours === 0) return `${mins}m`;
-  return `${hours}h ${mins}m`;
-}
-
 
 // =============================================================================
 // TASK HELPERS

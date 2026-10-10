@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { formatDuration } from '@hbcfield/shared/client';
+import { formatDuration, personName } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import type { JobTimeSplit, JobTimeView } from '../../lib/api';
 import { AText, LiveDot } from '../amazen';
@@ -37,7 +37,7 @@ export function JobTimeCard({
   const sum = time.travel + time.working + time.blocked;
   const tone = { travel: c.inkMuted, working: c.accent, blocked: c.warn } as const;
   const kinds = (['travel', 'working', 'blocked'] as const).filter((k) => time[k] > 0);
-  const name = (p?: { firstName: string; lastName: string } | null) => (p ? `${p.firstName} ${p.lastName}`.trim() : '');
+  const name = (p?: { firstName: string; lastName: string } | null) => personName(p);
 
   return (
     <View style={{ backgroundColor: c.tile, borderRadius: amazen.radius.field, padding: amazen.space(4), gap: amazen.space(3) }}>

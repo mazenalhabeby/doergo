@@ -2,7 +2,7 @@
  * The Jobs tab's rules — `docs/design/job-flow.html`, `renderJobs()`.
  * Pure: `src/components/jobs-list/jobs-logic.ts` decides, the screen draws.
  */
-import { getEndOfMonth, getFlowSteps, getStartOfMonth, toISODateString } from '@hbcfield/shared/client';
+import { getFlowSteps } from '@hbcfield/shared/client';
 import {
   bandOf, blockedCount, canCreateJobs, chipsFor, effectiveFilter, emptyKind, filtersFor, groupJobs, nobodyOn, passesFilter, periodParams,
   pickNextUp, placeOf, rowRight, rowWho, showsNextUp, showsRouteRow,
@@ -219,12 +219,13 @@ describe('a row', () => {
 });
 
 describe('the rest of the screen', () => {
-  it('periods ask for the same windows as before', () => {
-    // The same shared helpers the old tab composed — this month, next month on, up to last month.
-    const iso = (d: Date) => toISODateString(d);
-    expect(periodParams('current', NOW)).toEqual({ startDate: iso(getStartOfMonth(NOW)), endDate: iso(getEndOfMonth(NOW)), includeNoDueDate: true });
-    expect(periodParams('upcoming', NOW)).toEqual({ startDate: iso(getStartOfMonth(new Date(2026, 9, 1))) });
-    expect(periodParams('history', NOW)).toEqual({ endDate: iso(getEndOfMonth(new Date(2026, 7, 1))) });
+  it('periods ask for the member\'s own calendar days — this month, next month on, up to last month', () => {
+    // ⚠️ Was `toISODateString(getStartOfMonth(now))`: local midnight on the 1st
+    // read through UTC, so anywhere east of Greenwich "this month" started on
+    // the last day of the previous one. The days asked for are local days.
+    expect(periodParams('current', NOW)).toEqual({ startDate: '2026-09-01', endDate: '2026-09-30', includeNoDueDate: true });
+    expect(periodParams('upcoming', NOW)).toEqual({ startDate: '2026-10-01' });
+    expect(periodParams('history', NOW)).toEqual({ endDate: '2026-08-31' });
   });
 
   it('the New job disc follows the tab bar\'s rule', () => {

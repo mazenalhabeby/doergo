@@ -13,6 +13,7 @@ import { COLORS, SPACING } from '../../../src/lib/constants';
 import { TourTarget } from '../../../src/components/tour';
 import { hasManageSurface } from '../../../src/lib/manage-rows';
 import { useProfileAvatar } from '../../../src/lib/use-profile-avatar';
+import { initialOf } from '../../../src/lib/people';
 
 /*
   Which tabs the tours spotlight.
@@ -54,7 +55,7 @@ function ProfileButton() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const initial = user?.firstName?.[0]?.toUpperCase() || '?';
+  const initial = initialOf(user);
   // The same picture and the same destination as every amazen header's avatar.
   const { avatarUrl, openProfile } = useProfileAvatar();
 

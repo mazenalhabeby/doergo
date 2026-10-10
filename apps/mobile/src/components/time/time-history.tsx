@@ -5,11 +5,11 @@ import type { TimeEntry } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { attendanceApi } from '../../lib/api/attendance';
-import { formatDurationMinutes } from '../../lib/utils';
 import { AText, Well, WellDivider } from '../amazen';
 import { JobSheet, SectionLabel } from '../job/job-ui';
 import { WorkLogSheet } from '../worklog-sheet';
 import { addDays, dayKey, statusOf } from './time-logic';
+import { formatDuration } from '@hbcfield/shared/client';
 
 /** Counted minutes on one entry — the figure payroll reads, never called "paid". */
 const countedOf = (e: TimeEntry) => e.paidMinutes ?? e.totalMinutes ?? 0;
@@ -100,7 +100,7 @@ function ShiftRow({ entry, onPress }: { entry: TimeEntry; onPress: () => void })
         </AText>
       </View>
       <View style={{ alignItems: 'flex-end' }}>
-        <AText variant="body" tone="strong" numeric style={{ fontSize: 14, lineHeight: 20 }}>{formatDurationMinutes(countedOf(entry))}</AText>
+        <AText variant="body" tone="strong" numeric style={{ fontSize: 14, lineHeight: 20 }}>{formatDuration(countedOf(entry))}</AText>
         <AText variant="caption" numberOfLines={1} style={{ color: statusColor }}>{t(`time.history.status.${status}`)}</AText>
       </View>
     </Pressable>
@@ -165,7 +165,7 @@ function AllShiftsSheet({ visible, onClose, now, onOpen }: { visible: boolean; o
 
       <View style={{ flexDirection: 'row', gap: amazen.space(2) }}>
         {[
-          [formatDurationMinutes(total), t('time.week.counted', 'counted')],
+          [formatDuration(total), t('time.week.counted', 'counted')],
           [String(approved), t('time.history.status.approved')],
           [String(waiting), t('time.history.status.waiting')],
         ].map(([v, l]) => (

@@ -4,6 +4,7 @@ import { CachedImage } from '../cached-image';
 import { useTheme } from '../../contexts/theme-context';
 import { resolveMediaUrl } from '../../lib/api';
 import { AText } from '../amazen';
+import { personInitials } from '@hbcfield/shared/client';
 
 export type Presence = 'AVAILABLE' | 'BUSY' | 'AWAY' | string | null | undefined;
 
@@ -35,7 +36,7 @@ export function PersonAvatar({
   const { amazen } = useTheme();
   const c = amazen.color;
   const img = resolveMediaUrl(person?.avatarUrl);
-  const initials = `${person?.firstName?.[0] ?? ''}${person?.lastName?.[0] ?? ''}`.toUpperCase() || '·';
+  const initials = personInitials(person, '·');
   const dot = Math.max(10, Math.round(size * 0.28));
   return (
     <View style={{ width: size, height: size }}>

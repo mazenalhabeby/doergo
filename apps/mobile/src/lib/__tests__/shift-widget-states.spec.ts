@@ -271,7 +271,7 @@ describe('⑤ — queued is a chip on ②, not a state', () => {
 
 // ── the labels ─────────────────────────────────────────────────────────────
 describe('what a target reads as', () => {
-  it.each([[480, '8h'], [450, '7h 30m'], [380, '6h 20m'], [600, '10h'], [45, '45m'], [0, '0h']])('%i → %s', (m, s) => {
+  it.each([[480, '8h'], [450, '7h 30m'], [380, '6h 20m'], [600, '10h'], [45, '45m'], [0, '0m']])('%i → %s', (m, s) => {
     expect(targetLabel(m)).toBe(s);
   });
   it('the card no longer rounds a target to whole hours', () => {

@@ -3,16 +3,14 @@ import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import {
-  normalizeKindShape, custodyDays, logTypesForKind, findLogType, kindMeters, COST_LOG_KEY, orgHasAddOn,
-} from '@hbcfield/shared/client';
+import { normalizeKindShape, custodyDays, logTypesForKind, findLogType, kindMeters, COST_LOG_KEY, orgHasAddOn, formatMoney } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { useToast } from '../../island/island-context';
 import { useResponsive } from '../../lib/responsive';
 import { assetsApi, assetProposalsApi, type HeldAsset, type MyExpense, type DueItem } from '../../lib/api';
 import { logColor, logTypeLabel } from '../../lib/log-display';
-import { formatDay, formatMoney } from '../../lib/money';
+import { formatDay } from '../../lib/money';
 import { sentIn, canTakeBack, type QueuedSend, type SentItem } from '../../lib/sent-in';
 import { forgetHeldAssets } from '../../hooks/use-held-assets';
 import { knownEquipment, rememberEquipment, type EquipmentLoaded } from '../../lib/equipment-cache';
@@ -53,7 +51,7 @@ export function EquipmentScreen() {
   const r = useResponsive();
   const wide = r.isTablet ? centeredContent(720) : null;
   const lang = i18n.language;
-  const money = useCallback((cents: number) => formatMoney(cents, lang), [lang]);
+  const money = useCallback((cents: number) => formatMoney(cents, 'EUR', lang), [lang]);
   const day = useCallback((iso: string) => formatDay(iso, lang), [lang]);
 
   const cached = knownEquipment(user?.id);

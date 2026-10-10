@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { accessAllowsAnywhere } from '@hbcfield/shared/client';
+import { accessAllowsAnywhere, personName } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
@@ -231,7 +231,7 @@ export function NewJobScreen() {
                   <View style={{ flex: 1 }}>
                     <QuietButton
                       tone="accent"
-                      label={`${assignee ? `${assignee.firstName} ${assignee.lastName}`.trim() : t('job.facts.nobody')} ›`}
+                      label={`${assignee ? personName(assignee) : t('job.facts.nobody')} ›`}
                       onPress={() => setSheet('assign')}
                     />
                   </View>

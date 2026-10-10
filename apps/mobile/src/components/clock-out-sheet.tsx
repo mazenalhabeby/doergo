@@ -113,8 +113,8 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
       */
       overtimeReason: late
         ? t('shiftEnd.overtimeReason', {
-            duration: dur(view.overBy),
-            defaultValue: `${dur(view.overBy)} past the rostered end`,
+            duration: formatDuration(view.overBy),
+            defaultValue: `${formatDuration(view.overBy)} past the rostered end`,
           })
         : undefined,
     };
@@ -225,8 +225,8 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
           <Strip tone="warn">
             {t('shiftEnd.askApproval', {
               who: shift.approver ?? t('shiftEnd.yourApprover', { defaultValue: 'your approver' }),
-              duration: dur(view.overBy),
-              defaultValue: `This asks ${shift.approver ?? 'your approver'} to approve ${dur(view.overBy)} of extra time. You are clocked out either way.`,
+              duration: formatDuration(view.overBy),
+              defaultValue: `This asks ${shift.approver ?? 'your approver'} to approve ${formatDuration(view.overBy)} of extra time. You are clocked out either way.`,
             })}
           </Strip>
         ) : null}
@@ -474,11 +474,11 @@ function Bar({ view, shift, clockOf }: { view: ReturnType<typeof readClockOut>; 
           </AText>
           {view.overBy > 0 ? (
             <AText variant="caption" tone="warn" numeric style={{ fontSize: 11 }}>
-              {t('shiftEnd.over', { duration: dur(view.overBy), defaultValue: `${dur(view.overBy)} over` })}
+              {t('shiftEnd.over', { duration: formatDuration(view.overBy), defaultValue: `${formatDuration(view.overBy)} over` })}
             </AText>
           ) : view.shortBy > 0 ? (
             <AText variant="caption" tone="muted" numeric style={{ fontSize: 11 }}>
-              {dur(view.shortBy)}
+              {formatDuration(view.shortBy)}
             </AText>
           ) : null}
         </View>
@@ -486,7 +486,7 @@ function Bar({ view, shift, clockOf }: { view: ReturnType<typeof readClockOut>; 
 
       {rest > 0 ? (
         <AText variant="caption" tone="muted" style={{ textAlign: 'center', fontSize: 11, marginTop: 2 }}>
-          {t('shiftEnd.restNotch', { duration: dur(rest), defaultValue: `${dur(rest)} rest` })}
+          {t('shiftEnd.restNotch', { duration: formatDuration(rest), defaultValue: `${formatDuration(rest)} rest` })}
         </AText>
       ) : null}
     </View>
@@ -545,7 +545,7 @@ function Receipt({ view, shift, clockOf }: { view: ReturnType<typeof readClockOu
     >
       <Row label={t('shiftEnd.clockedIn', { defaultValue: 'Clocked in' })} value={clockOf(shift.clockInAt)} />
       {view.bar.rest > 0 ? (
-        <Row label={t('shiftEnd.rest', { defaultValue: 'Rest' })} value={`− ${dur(view.bar.rest)}`} />
+        <Row label={t('shiftEnd.rest', { defaultValue: 'Rest' })} value={`− ${formatDuration(view.bar.rest)}`} />
       ) : null}
 
       {view.face === 'late' ? (
@@ -572,7 +572,7 @@ function Receipt({ view, shift, clockOf }: { view: ReturnType<typeof readClockOu
       {view.shortBy > 0 ? (
         <Row
           label={t('shiftEnd.short', { defaultValue: 'Short of your shift' })}
-          value={dur(view.shortBy)}
+          value={formatDuration(view.shortBy)}
           tone="warn"
         />
       ) : null}
@@ -591,7 +591,7 @@ function Receipt({ view, shift, clockOf }: { view: ReturnType<typeof readClockOu
         </AText>
         <View style={{ flex: 1 }} />
         <AText variant="body" tone="strong" numeric style={{ fontSize: 16 }}>
-          {dur(shift.countedMinutes)}
+          {formatDuration(shift.countedMinutes)}
         </AText>
       </View>
     </View>
@@ -633,9 +633,4 @@ function Strip({ children, tone }: { children: React.ReactNode; tone: 'warn' }) 
   );
 }
 
-/** `1h 08m` / `32m`. Never the word "paid". */
-function dur(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`;
-}
+

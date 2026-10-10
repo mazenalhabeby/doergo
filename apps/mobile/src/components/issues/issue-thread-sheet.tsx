@@ -14,6 +14,7 @@ import { SheetPanel } from '../sheet-panel';
 import { AText, Chip, Eyebrow } from '../amazen';
 import { lookFor, offeredTo, readThread, severityShown, severityTone, type IssueActions, type ThreadEntry } from '../home/issue-status';
 import { MAX_PHOTOS, uploadPhotos } from './photos';
+import { personName } from '@hbcfield/shared/client';
 
 /**
  * ⚠️ THE TWO ENDINGS DO NOT SHARE A LIST. "Fixed on site" is not a reason to
@@ -141,6 +142,7 @@ export function ShiftIssueThreadSheet({
   }, [visible, issueId, subscribe, load]);
 
   /* The server's thread, with what this phone has written and not yet sent on the end. */
+  const myName = personName(user);
   const thread = useMemo(() => {
     const server = issue?.thread ?? [];
     if (!issueId || !offline.files) return server;
@@ -148,10 +150,10 @@ export function ShiftIssueThreadSheet({
     const files = offline.files;
     const mine = pendingIssueEvents(issueId, operations, (id, mime) => files.uriFor(id, mime), {
       id: user?.id ?? '',
-      name: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim(),
+      name: myName,
     }).filter((e) => !known.has(e.id));
     return [...server, ...mine];
-  }, [issue?.thread, issueId, operations, offline.files, user?.id, user?.firstName, user?.lastName]);
+  }, [issue?.thread, issueId, operations, offline.files, user?.id, myName]);
 
   const send = useCallback(async () => {
     if (!issueId || (!draft.trim() && picked.length === 0)) return;

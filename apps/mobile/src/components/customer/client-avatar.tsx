@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { clientKind, type ClientKind } from '@hbcfield/shared/client';
+import { clientKind, type ClientKind, personInitials } from '@hbcfield/shared/client';
 import { COLORS, FONT_WEIGHT, RADIUS } from '../../lib/constants';
 
 /**
@@ -39,27 +39,10 @@ export function ClientAvatar({
       ]}
     >
       <Text style={[s.text, { fontSize: Math.round(size * 0.36) }]} numberOfLines={1}>
-        {initials(customer?.name ?? '')}
+        {personInitials(customer?.name, '')}
       </Text>
     </View>
   );
-}
-
-/**
- * Up to two initials.
- *
- * ⚠️ Filters empty words. "Siemens  AG" (a double space) and a trailing space
- * both produce an empty segment, and `w[0]` on it is `undefined` — which
- * renders the literal string "undefined" inside the avatar.
- */
-export function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((w) => w[0]!)
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 }
 
 const s = StyleSheet.create({

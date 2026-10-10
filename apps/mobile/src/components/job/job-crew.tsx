@@ -8,8 +8,8 @@ import { Banner, ChoiceRow, Dot, Initials, JobField, JobSheet, Pill, QuietButton
 import type { CrewControls, CrewMember } from './use-crew';
 import { useOffline, useSyncStatus } from '../../offline/offline-context';
 import { refusedCrewCopy, refusedCrewOps } from '../../offline/tasks/refused-crew';
+import { personName } from '@hbcfield/shared/client';
 
-const fullName = (u: { firstName: string; lastName: string }) => `${u.firstName} ${u.lastName}`.trim();
 
 /**
  * The crew on a job (shared tasks/crew.ts) — who is on it now, who has
@@ -85,11 +85,11 @@ export function JobCrewCard({
           const s = status(m);
           const leads = m.user.id === view.leader.userId;
           return (
-            <View key={m.user.id} style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3) }} accessibilityLabel={`${fullName(m.user)}. ${s.text}`}>
+            <View key={m.user.id} style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3) }} accessibilityLabel={`${personName(m.user)}. ${s.text}`}>
               <Initials first={m.user.firstName} last={m.user.lastName} size={30} />
               <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
                 <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>
-                  {fullName(m.user)}{m.user.id === me?.user.id ? ` ${t('job.facts.you')}` : ''}
+                  {personName(m.user)}{m.user.id === me?.user.id ? ` ${t('job.facts.you')}` : ''}
                 </AText>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1.5) }}>
                   <Dot tone={s.tone} size={6} />
@@ -158,7 +158,7 @@ export function HandOverLeadSheet({
         {others.map((m) => (
           <SheetOption
             key={m.user.id}
-            label={to === m.user.id ? `✓  ${fullName(m.user)}` : fullName(m.user)}
+            label={to === m.user.id ? `✓  ${personName(m.user)}` : personName(m.user)}
             tone={to === m.user.id ? 'accent' : 'strong'}
             hint={m.joined ? t('job.crew.onJobShort') : t('job.crew.notOnJob')}
             onPress={() => setTo(m.user.id)}

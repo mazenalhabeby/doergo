@@ -1,4 +1,5 @@
 import type { OptimizedRoute } from '@hbcfield/shared/client';
+import { localDateKey } from '@hbcfield/shared/client';
 
 /**
  * The day's planned route, kept on the phone.
@@ -28,8 +29,7 @@ interface KeyValueStorage {
 const SAVED_ROUTE_KEY = (memberId: string) => `route_plan_v1_${memberId}`;
 
 export function localDay(at: number): string {
-  const d = new Date(at);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return localDateKey(at);
 }
 
 export async function saveRoute(storage: KeyValueStorage, memberId: string, route: OptimizedRoute, now = Date.now()): Promise<void> {

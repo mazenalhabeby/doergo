@@ -19,10 +19,7 @@ import { isMyRouteStop, hasArrived } from '../../src/lib/my-route';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
-import {
-  buildGoogleMapsUrl, buildNavUrl, stopsAheadOf,
-  type NavApp, type RouteStop, type OptimizedRoute,
-} from '@hbcfield/shared/client';
+import { buildGoogleMapsUrl, buildNavUrl, stopsAheadOf, type NavApp, type RouteStop, type OptimizedRoute, formatDuration } from '@hbcfield/shared/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useOffline } from '../../src/offline/offline-context';
 import { overlayTask } from '../../src/offline/tasks/overlay';
@@ -33,13 +30,8 @@ import { formatDistance } from '../../src/lib/distance';
 
 type LatLng = { lat: number; lng: number; label?: string };
 
-const fmtDur = (s: number) => {
-  const min = Math.round(s / 60);
-  if (min < 60) return `${min} min`;
-  const h = Math.floor(min / 60);
-  const r = min % 60;
-  return r ? `${h}h ${r}m` : `${h}h`;
-};
+/** A drive time in seconds, said to the minute — "45m", "1h 5m". */
+const fmtDur = (s: number) => formatDuration(Math.round(s / 60));
 
 export default function RoutePlannerScreen() {
   const { colors } = useTheme();

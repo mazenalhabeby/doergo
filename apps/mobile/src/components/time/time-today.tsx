@@ -4,13 +4,13 @@ import { useTranslation } from 'react-i18next';
 import type { Break, TimeEntry } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { formatDurationMinutes } from '../../lib/utils';
 import { AText, Well } from '../amazen';
 import { SectionLabel } from '../job/job-ui';
 import { PlusGlyph } from '../job/job-glyphs';
 import { ActivityGlyph } from '../glyphs/glyphs';
 import { WorkLogSheet } from '../worklog-sheet';
 import { useWorklog } from '../worklog/use-worklog';
+import { formatDuration } from '@hbcfield/shared/client';
 
 /**
  * TODAY — the shift as it happened, with its work log on top.
@@ -77,7 +77,7 @@ export function TimeToday({
       at: entry.clockOutAt,
       kind: 'out',
       title: t('time.today.clockedOut', 'Clocked out'),
-      sub: t('time.today.counted', { defaultValue: '{{time}} counted', time: formatDurationMinutes(entry.paidMinutes ?? entry.totalMinutes ?? 0) }),
+      sub: t('time.today.counted', { defaultValue: '{{time}} counted', time: formatDuration(entry.paidMinutes ?? entry.totalMinutes ?? 0) }),
     });
   }
   rows.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));

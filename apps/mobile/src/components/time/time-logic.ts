@@ -1,7 +1,7 @@
 /**
  * The Time tab's rules — pure, so each is a test and none is a guess in JSX.
  */
-import { haversineDistance, isAtSite } from '@hbcfield/shared/client';
+import { haversineDistance, isAtSite, localDateKey } from '@hbcfield/shared/client';
 import type { CompanyLocation } from '@hbcfield/shared/client';
 
 /* ------------------------------------------------------------------ */
@@ -68,8 +68,7 @@ export function placesView(
 /* ------------------------------------------------------------------ */
 
 /** `2026-10-05` — the LOCAL calendar day. Never `toISOString`, which is UTC. */
-export const dayKey = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export const dayKey = (d: Date) => localDateKey(d);
 
 /** A request's date, whatever shape the server sent (`2026-10-05` or a full ISO). */
 export const dayOf = (s: string) => {

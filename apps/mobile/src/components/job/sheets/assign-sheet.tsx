@@ -6,6 +6,7 @@ import { locationsApi, techniciansApi, type TechnicianListItem } from '../../../
 import { knownOffline } from '../../../offline/connectivity';
 import { AText } from '../../amazen';
 import { Initials, JobField, JobSheet, Pill } from '../job-ui';
+import { personName } from '@hbcfield/shared/client';
 
 export interface AssignMember {
   id: string;
@@ -96,7 +97,7 @@ export function AssignSheet({
     if (!knownOffline()) void load();
   }, [visible, load]);
 
-  const shown = (rows ?? []).filter((r) => !q.trim() || `${r.firstName} ${r.lastName}`.toLowerCase().includes(q.trim().toLowerCase()));
+  const shown = (rows ?? []).filter((r) => !q.trim() || personName(r).toLowerCase().includes(q.trim().toLowerCase()));
 
   return (
     <JobSheet visible={visible} onClose={onClose} title={t('job.assign.title')} busy={busy}>
@@ -118,7 +119,7 @@ export function AssignSheet({
                 disabled={busy}
                 accessibilityRole="button"
                 accessibilityState={{ selected: sel, disabled: busy }}
-                accessibilityLabel={`${m.firstName} ${m.lastName}`}
+                accessibilityLabel={personName(m)}
                 style={({ pressed }) => ({
                   flexDirection: 'row', alignItems: 'center', gap: amazen.space(3),
                   paddingVertical: amazen.space(2.25), paddingHorizontal: amazen.space(1), borderRadius: 12,
@@ -127,7 +128,7 @@ export function AssignSheet({
               >
                 <Initials first={m.firstName} last={m.lastName} size={34} />
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5, lineHeight: 20 }}>{`${m.firstName} ${m.lastName}`.trim()}</AText>
+                  <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5, lineHeight: 20 }}>{personName(m)}</AText>
                   {m.role || m.state ? (
                     <AText variant="caption" tone="ink" numberOfLines={1}>{[m.role, m.state].filter(Boolean).join(' · ')}</AText>
                   ) : null}

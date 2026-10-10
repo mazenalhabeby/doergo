@@ -15,10 +15,7 @@
  * and whether the answers are acceptable (`validateStepAnswers`) are the
  * shared functions the server runs again — the phone never invents a rule.
  */
-import {
-  resolveStepForm, validateStepAnswers, STEP_FORM_PRESETS, STEP_FORM_REFUSAL,
-  type FlowStatus, type StepAnswerError, type StepForm, type StepFormField, type StepFormFieldType, type StepFormAnswers, type StepFormSource,
-} from '@hbcfield/shared/client';
+import { resolveStepForm, validateStepAnswers, STEP_FORM_PRESETS, STEP_FORM_REFUSAL, type FlowStatus, type StepAnswerError, type StepForm, type StepFormField, type StepFormFieldType, type StepFormAnswers, type StepFormSource, localDateKey } from '@hbcfield/shared/client';
 
 const BLOCKED = 'BLOCKED';
 
@@ -401,11 +398,10 @@ export function formCounts(form: Pick<StepForm, 'fields'>): { required: number; 
 
 /* ---------------- dates ---------------- */
 
-const two = (n: number) => String(n).padStart(2, '0');
 
 /** A local day as `yyyy-mm-dd` — the shape a date answer is stored in. */
 export function isoDay(d: Date): string {
-  return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}`;
+  return localDateKey(d);
 }
 
 /** `yyyy-mm-dd` back to a local day; null when it is not one. */

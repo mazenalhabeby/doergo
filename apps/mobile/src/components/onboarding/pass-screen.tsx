@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, TextInput, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { joinCodeCandidates } from '@hbcfield/shared/client';
+import { joinCodeCandidates, personName } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { useToast } from '../../island/island-context';
@@ -109,7 +109,7 @@ export function PassScreen({ initialCode }: { initialCode?: string }) {
     }
   };
 
-  const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ');
+  const name = personName(user);
   const company = found?.kind === 'invite' ? found.invite.organizationName : found?.kind === 'org' ? found.org.organizationName : undefined;
   const open = found?.kind === 'org' && found.org.joinPolicy === 'OPEN';
 

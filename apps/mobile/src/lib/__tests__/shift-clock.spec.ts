@@ -939,7 +939,7 @@ describe('the totals, and two silent ways they were always zero', () => {
       invisible in London and wrong everywhere else.
     */
     expect(hook).not.toMatch(/toISOString\(\)\.slice\(0, 10\)/);
-    expect(hook).toMatch(/d\.getFullYear\(\)/);
+    expect(hook).toMatch(/localDateKey\(d\)/);
   });
 
   it('a cancelled run forgets it asked', () => {

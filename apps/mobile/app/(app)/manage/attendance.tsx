@@ -14,8 +14,7 @@ import { useAuth } from '../../../src/contexts/auth-context';
 import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 import { attendanceApi, type NoShow } from '../../../src/lib/api';
 import type { TimeEntry } from '../../../src/lib/api/types';
-import { workedMinutes } from '@hbcfield/shared/client';
-import { formatDurationMinutes } from '../../../src/lib/utils';
+import { workedMinutes, personName, localDateKey, formatDuration } from '@hbcfield/shared/client';
 import { holds } from '../../../src/lib/permissions';
 import { FilterChip } from '../../../src/components/filter-chip';
 import {
@@ -292,7 +291,7 @@ export default function AttendanceReviewScreen() {
 
   const memberName = (e: TimeEntry) => {
     const u = (e as unknown as { user?: { firstName?: string; lastName?: string } }).user;
-    return u ? `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() : t('attendanceReview.someone');
+    return u ? personName(u) : t('attendanceReview.someone');
   };
   const spaceName = (e: TimeEntry) =>
     (e as unknown as { location?: { name?: string } }).location?.name ?? '';
@@ -351,7 +350,7 @@ export default function AttendanceReviewScreen() {
             </Text>
           </View>
           <Text style={[s.duration, { color: colors.textPrimary }]}>
-            {open ? t('attendanceReview.onTheClock') : formatDurationMinutes(workedMinutes(entry))}
+            {open ? t('attendanceReview.onTheClock') : formatDuration(workedMinutes(entry))}
           </Text>
         </View>
 
@@ -630,7 +629,7 @@ export default function AttendanceReviewScreen() {
         visible={pickingRange !== null}
         selectedDate={dateFromISO(pickingRange === 'to' ? customTo : customFrom)}
         onSelect={(d) => {
-          const iso = isoFromDate(d);
+          const iso = localDateKey(d);
           if (pickingRange === 'from') {
             setCustomFrom(iso);
             // A one-day window until the second half says otherwise, so the
@@ -675,9 +674,6 @@ function dateFromISO(d: string | null): Date | null {
   if (!y || !m || !day) return null;
   return new Date(y, m - 1, day);
 }
-function isoFromDate(d: Date): string {
-  return `${d.getFullYear()}-${`${d.getMonth() + 1}`.padStart(2, '0')}-${`${d.getDate()}`.padStart(2, '0')}`;
-}
 /** "2026-08-05" → "8/5" — short enough to sit inside a chip. */
 function shortDay(iso: string): string {
   const [, m = '', d = ''] = iso.split('-');
@@ -693,9 +689,7 @@ function shortDay(iso: string): string {
 function dayISO(back: number): string {
   const d = new Date();
   d.setDate(d.getDate() - back);
-  const m = `${d.getMonth() + 1}`.padStart(2, '0');
-  const day = `${d.getDate()}`.padStart(2, '0');
-  return `${d.getFullYear()}-${m}-${day}`;
+  return localDateKey(d);
 }
 
 const s = StyleSheet.create({

@@ -18,14 +18,12 @@ import { AddContactSheet } from '../add-contact-sheet';
 import { RecordHero } from './record-hero';
 import { RecordAbout } from './record-about';
 import { FILTERS, isWaiting, useClientRecord, type RecordTab } from './use-client-record';
+import { localDateKey } from '@hbcfield/shared/client';
 
 type FeedItem = { kind: 'day'; key: string; label: string } | { kind: 'act'; key: string; a: PendingActivity; continues: boolean };
 
 /** The local day an entry belongs to, as a stable key. */
-const dayKey = (iso: string) => {
-  const d = new Date(iso);
-  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-};
+const dayKey = (iso: string) => localDateKey(iso);
 
 /**
  * THE CLIENT RECORD — who they are and the four acts on top, then About,

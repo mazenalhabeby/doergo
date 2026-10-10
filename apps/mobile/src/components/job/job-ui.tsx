@@ -5,6 +5,7 @@ import { BlurSheet } from '../blur-sheet';
 import { SheetPanel } from '../sheet-panel';
 import { AText, LiveDot } from '../amazen';
 import type { GlyphProps } from '../glyphs/glyphs';
+import { personInitials } from '@hbcfield/shared/client';
 
 /**
  * The job page's small parts — `docs/design/job-flow.html`, `.disc`, `.banner`,
@@ -362,7 +363,7 @@ export function StateEyebrow({ label, tone = 'muted', live = false }: { label: s
 export function Initials({ first, last, size = 30 }: { first?: string | null; last?: string | null; size?: number }) {
   const { amazen } = useTheme();
   const c = amazen.color;
-  const text = `${(first ?? '').charAt(0)}${(last ?? '').charAt(0)}`.toUpperCase() || '·';
+  const text = personInitials({ firstName: first, lastName: last }, '·');
   return (
     <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
       <AText variant="caption" tone="accent" style={{ fontSize: 11, fontFamily: amazen.font.sansMedium }}>{text}</AText>

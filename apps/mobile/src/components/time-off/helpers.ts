@@ -1,5 +1,6 @@
 import type { Ionicons } from '@expo/vector-icons';
 import type { AvailabilityResponse, ScheduleEntry, TimeOffRequest } from '../../lib/api/types';
+import { personName, localDateKey } from '@hbcfield/shared/client';
 
 /*
   The Time off screen's RULES — plain functions, no React, so they are tested
@@ -38,10 +39,7 @@ export function getTypeLabelKey(reason?: string): string {
 
 /** YYYY-MM-DD in the phone's own zone. */
 export function toDateString(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+  return localDateKey(d);
 }
 
 export function formatLongDate(d: Date, locale: string): string {
@@ -194,7 +192,7 @@ export function availabilityInsights(
 
     data.technicians.forEach(tech => {
       if (tech.onTimeOff && tech.id !== userId) {
-        teamOnTimeOff[tech.id] = `${tech.firstName} ${tech.lastName}`;
+        teamOnTimeOff[tech.id] = personName(tech);
       }
     });
 

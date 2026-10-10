@@ -3,6 +3,7 @@ import type { TimeEntry } from '@hbcfield/shared/client';
 import { attendanceApi } from '../../lib/api/attendance';
 import { useRemembered } from '../../home/remember/use-remembered';
 import type { ScheduleKind } from './shift-state';
+import { localDateKey } from '@hbcfield/shared/client';
 
 /**
  * WHAT THIS MEMBER HAS COUNTED THIS MONTH, THIS WEEK, AND TODAY.
@@ -85,8 +86,7 @@ function countedOn(e: TimeEntry): number {
  * London and wrong everywhere else. The server compares calendar days, so it
  * must be given the member's own.
  */
-const iso = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const iso = (d: Date) => localDateKey(d);
 
 function startOfWeek(now: Date): Date {
   const d = new Date(now);

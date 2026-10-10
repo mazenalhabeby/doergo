@@ -8,6 +8,7 @@ import { AText } from '../amazen';
 import { SendGlyph } from './job-glyphs';
 import { Initials, JobField, RoundButton, SectionLabel } from './job-ui';
 import type { JobComment, LocalEvent } from './use-job';
+import { personName } from '@hbcfield/shared/client';
 
 type Row =
   | { kind: 'comment'; id: string; at: string; first: string; last: string; text: string; pending: boolean }
@@ -53,7 +54,7 @@ export function JobActivity({
   const [draft, setDraft] = useState('');
 
   const rows = useMemo<Row[]>(() => {
-    const name = (u?: { firstName?: string; lastName?: string } | null) => (u ? `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() : '');
+    const name = (u?: { firstName?: string; lastName?: string } | null) => personName(u);
     const describe = (type: string, meta: Record<string, any> | undefined, who: string): string | null => {
       const by = (s: string) => (who ? `${s} · ${who}` : s);
       switch (type) {

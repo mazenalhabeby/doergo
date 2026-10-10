@@ -3,6 +3,7 @@ import { AccessibilityInfo, Animated, Easing, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/theme-context';
 import { AText } from '../amazen';
+import { personInitials } from '@hbcfield/shared/client';
 
 /** What the front of the pass says — or `blank` for the side the code is typed onto. */
 type PassFace = 'blank' | 'staff' | 'visitor' | 'reception' | 'refused';
@@ -17,8 +18,7 @@ const INK = '#0b1f1a';
 const CARD = ['#f4f8f6', '#e3ebe8'] as const;
 
 /** Up to two letters for a company's mark. */
-const monogram = (name?: string | null) =>
-  (name ?? '').split(/\s+/).filter(Boolean).map((w) => w[0]!).slice(0, 2).join('').toUpperCase() || '·';
+const monogram = (name?: string | null) => personInitials(name, '·');
 
 /**
  * THE PASS — a badge on a lanyard. The code is typed onto its back; once the

@@ -16,6 +16,7 @@ import { useCrew } from './use-crew';
 import { GlyphTile } from './glyph-tile';
 import { usePitch } from '../../home/pitch';
 import { WellDoor } from './well-door';
+import { personInitials } from '@hbcfield/shared/client';
 
 /**
  * Crew — `docs/design/crew`. Who is on (§3.6), shifts waiting (§3.7) and
@@ -391,9 +392,7 @@ function RingSvg({ ring, tone }: { ring: Ring; tone: string }) {
   return <Svg width={RING} height={RING} viewBox="0 0 56 56">{body}</Svg>;
 }
 
-function initials(p: CrewPerson): string {
-  return `${(p.firstName ?? '').charAt(0)}${(p.lastName ?? '').charAt(0)}`.toUpperCase() || '·';
-}
+const initials = (p: CrewPerson): string => personInitials(p, '·');
 
 /* ================================================================ transitions */
 
