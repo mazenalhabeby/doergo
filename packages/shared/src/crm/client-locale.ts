@@ -1,4 +1,4 @@
-import { isSupportedLocale, SUPPORTED_LOCALES, type SupportedLocale } from '../notifications/locale';
+import { isSupportedLocale, LOCALE_NAMES, SUPPORTED_LOCALES, type SupportedLocale } from '../notifications/locale';
 
 /**
  * A CLIENT's language — what the office says a client reads.
@@ -52,13 +52,7 @@ export const CLIENT_LOCALE_INVALID_MESSAGE = 'Unsupported language for emails';
  * Each language named in itself, the way a language picker is read: the person
  * choosing may be setting it for a client whose language they do not speak.
  */
-export const CLIENT_LOCALE_NAMES: Record<SupportedLocale, string> = {
-  en: 'English',
-  de: 'Deutsch',
-  es: 'Español',
-  fr: 'Français',
-  it: 'Italiano',
-};
+export const CLIENT_LOCALE_NAMES: Record<SupportedLocale, string> = LOCALE_NAMES;
 
 /** The choices — exactly what the server accepts, so a form never offers a value the save refuses. */
 export const CLIENT_LOCALE_OPTIONS: ReadonlyArray<{ value: SupportedLocale; label: string }> = SUPPORTED_LOCALES.map(

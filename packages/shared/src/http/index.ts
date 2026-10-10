@@ -10,5 +10,6 @@ export * from './core/define';
 export * from './core/query-keys';
 export * from './core/create-client';
 export * from './core/result';
+export * from './core/upload';
 export * from './types';
 export * from './endpoints';

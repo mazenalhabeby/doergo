@@ -3,14 +3,30 @@
  *
  * One list for everything that has to AGREE on it: the gateway validating what a
  * phone sends, auth-service storing it on the member, notification-service
- * choosing which catalogue a push is written from. The two apps keep their own
- * copy beside their bundles (they decide what they can DISPLAY); this is what
- * the server will ACCEPT, and a language added to an app without a push
- * catalogue behind it must be refused here rather than stored and ignored.
+ * choosing which catalogue a push is written from — AND the web and phone
+ * language pickers (`LANGUAGE_CHOICES`). The apps used to keep their own copies
+ * of the list; they were identical, and a language an app offered without the
+ * server accepting it would only be refused on save. One list: adding a
+ * language means adding it here, with its push and email catalogues.
  */
 export const SUPPORTED_LOCALES = ['en', 'de', 'es', 'fr', 'it'] as const;
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
+
+/** Each language named in itself — the way a picker is read by someone who may not speak the current one. */
+export const LOCALE_NAMES: Record<SupportedLocale, string> = {
+  en: 'English',
+  de: 'Deutsch',
+  es: 'Español',
+  fr: 'Français',
+  it: 'Italiano',
+};
+
+const LOCALE_FLAGS: Record<SupportedLocale, string> = { en: '🇬🇧', de: '🇩🇪', es: '🇪🇸', fr: '🇫🇷', it: '🇮🇹' };
+
+/** The app language picker, web and phone alike. */
+export const LANGUAGE_CHOICES: ReadonlyArray<{ code: SupportedLocale; label: string; flag: string }> =
+  SUPPORTED_LOCALES.map((code) => ({ code, label: LOCALE_NAMES[code], flag: LOCALE_FLAGS[code] }));
 
 /** What a member who never told us reads. */
 export const DEFAULT_LOCALE: SupportedLocale = 'en';
