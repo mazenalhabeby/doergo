@@ -22,22 +22,26 @@
  * approximately never.
  */
 
+import {
+  LANGUAGE_CHOICES,
+  SUPPORTED_LOCALES,
+  isSupportedLocale,
+  type SupportedLocale,
+} from '@hbcfield/shared/client';
+
 export const LANGUAGE_KEY = 'hbcfield_language';
 
-export const SUPPORTED = ['en', 'de', 'es', 'fr', 'it'] as const;
-export type Supported = (typeof SUPPORTED)[number];
+// The list itself is shared with the phone and the server (notifications/locale.ts
+// in shared): a language offered here that the server refused would only fail on
+// save. The shared module is plain data, so this file stays catalogue-free.
+export const SUPPORTED = SUPPORTED_LOCALES;
+export type Supported = SupportedLocale;
 
 export function isSupported(lang: string): lang is Supported {
-  return (SUPPORTED as readonly string[]).includes(lang);
+  return isSupportedLocale(lang);
 }
 
-export const supportedLanguages = [
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
-  { code: 'es', label: 'Español', flag: '🇪🇸' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'it', label: 'Italiano', flag: '🇮🇹' },
-] as const;
+export const supportedLanguages = LANGUAGE_CHOICES;
 
 /**
  * Switch language, loading the machinery only when asked.

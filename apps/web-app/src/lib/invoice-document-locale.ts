@@ -1,4 +1,4 @@
-import { DEFAULT_LOCALE, normalizeLocale, issuerAddressLines, type IssuerSnapshot, type SupportedLocale } from "@hbcfield/shared/client"
+import { DEFAULT_LOCALE, normalizeLocale, issuerAddressLines, toISODateString, type IssuerSnapshot, type SupportedLocale } from "@hbcfield/shared/client"
 import { formatAmount } from "./money"
 
 /**
@@ -202,7 +202,7 @@ export function invoiceDayInstant(d: string | Date | null | undefined): Date | n
 /** The calendar day an invoice date stands for, `YYYY-MM-DD`. */
 export function invoiceDayKey(d: string | Date | null | undefined): string | null {
   const dt = invoiceDayInstant(d)
-  return dt ? dt.toISOString().slice(0, 10) : null
+  return dt ? toISODateString(dt) : null
 }
 
 export function formatDocumentDate(d: string | Date | null | undefined, locale: unknown): string {

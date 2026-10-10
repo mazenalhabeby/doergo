@@ -39,7 +39,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import { personName, localizeReportColumns, reportLabel, toCsv, localDateKey, todayKey } from "@hbcfield/shared/client"
+import { personName, localizeReportColumns, reportLabel, toCsv, localDateKey, todayKey, toISODateString } from "@hbcfield/shared/client"
 
 const DATE_PRESETS: { value: ReportDatePreset; label: string }[] = [
   { value: "last_7d", label: "Last 7 days" }, { value: "last_30d", label: "Last 30 days" },
@@ -279,7 +279,7 @@ export default function ReportsPage() {
 
   // Period control: "custom" when an explicit from/to range is set.
   const isCustomRange = !!(active?.def.dateRange?.from || active?.def.dateRange?.to)
-  const toDateInput = (iso?: string) => (iso ? new Date(iso).toISOString().slice(0, 10) : "")
+  const toDateInput = (iso?: string) => (iso ? toISODateString(new Date(iso)) : "")
 
   const supportsTime = active && (active.def.granularity !== undefined)
   // For the detailed timesheet, show only the user-selected columns.

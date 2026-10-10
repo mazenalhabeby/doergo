@@ -110,7 +110,7 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
       setMode(event.meetingMode ?? (event.meetingUrl ? "ONLINE" : "IN_PERSON"))
       setPlace(event.placeKind ?? (event.meetingMode ? "OFFICE" : "ADDRESS"))
       setPlaceSpaceId(event.placeSpace?.id ?? ""); setRoom(event.room ?? ""); setPhone(event.phone ?? "")
-      setCallDirection(event.callDirection ?? "OUTGOING"); setCustomer(event.customer); setAddressId("")
+      setCallDirection(event.callDirection ?? "OUTGOING"); setCustomer(event.customer ?? null); setAddressId("")
       setPeople(event.attendees.filter((a) => !a.isOrganizer).map((a) => ({ id: a.userId, firstName: a.firstName, lastName: a.lastName, avatarUrl: a.avatarUrl })))
     } else {
       const s = start ?? roundUp(new Date())

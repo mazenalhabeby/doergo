@@ -1,84 +1,15 @@
-import type { CalendarItem, CalendarPlace, DayKind, EventVisibility, Repeat, RsvpResponse } from '@hbcfield/shared/client';
+import type { DayKind } from '@hbcfield/shared/client';
 
-export interface CalendarRange {
-  from: string;
-  to: string;
-  timezone: string;
-  places: CalendarPlace[];
-  days: { day: string; kind: DayKind }[];
-  items: CalendarItem[];
-}
+// The range, event and people shapes are the shared HTTP layer's (http/types.ts),
+// so the web and the phone read one definition of what the API returns.
+export type {
+  CalendarAttendee,
+  CalendarEventDetail,
+  CalendarEventInput,
+  CalendarPerson,
+  CalendarRange,
+} from '@hbcfield/shared/client';
 
-
-export interface CalendarAttendee {
-  userId: string;
-  response: RsvpResponse;
-  isOrganizer: boolean;
-  firstName: string;
-  lastName: string;
-  avatarUrl?: string | null;
-}
-
-
-export interface CalendarEventDetail {
-  id: string;
-  kind: 'APPOINTMENT' | 'REMINDER';
-  title: string;
-  description: string | null;
-  location: string | null;
-  meetingUrl: string | null;
-  startAt: string;
-  endAt: string;
-  allDay: boolean;
-  timezone: string;
-  repeat: Repeat | null;
-  reminders: number[];
-  visibility: EventVisibility;
-  canceled: boolean;
-  space: { id: string; name: string } | null;
-  customer: { id: string; name: string } | null;
-  /** How and where (shared calendar/meeting.ts). */
-  meetingMode: 'IN_PERSON' | 'ONLINE' | 'PHONE' | null;
-  placeKind: 'OFFICE' | 'CLIENT_SITE' | 'ADDRESS' | null;
-  placeSpace: { id: string; name: string; address: string | null; lat: number | null; lng: number | null } | null;
-  room: string | null;
-  phone: string | null;
-  callDirection: 'OUTGOING' | 'INCOMING' | null;
-  organizerId: string;
-  canEdit: boolean;
-  myResponse: RsvpResponse;
-  attendees: CalendarAttendee[];
-}
-
-
-export interface CalendarEventInput {
-  kind?: 'APPOINTMENT' | 'REMINDER';
-  title?: string;
-  description?: string | null;
-  location?: string | null;
-  meetingUrl?: string | null;
-  customerId?: string | null;
-  spaceId?: string | null;
-  allDay?: boolean;
-  startAt?: string;
-  endAt?: string;
-  startDate?: string;
-  endDate?: string;
-  timezone?: string;
-  repeat?: Repeat | null;
-  reminders?: number[];
-  visibility?: EventVisibility;
-  attendeeIds?: string[];
-  meetingMode?: 'IN_PERSON' | 'ONLINE' | 'PHONE' | null;
-  placeKind?: 'OFFICE' | 'CLIENT_SITE' | 'ADDRESS' | null;
-  placeSpaceId?: string | null;
-  room?: string | null;
-  phone?: string | null;
-  callDirection?: 'OUTGOING' | 'INCOMING' | null;
-}
-
-
-export interface CalendarPerson { id: string; firstName: string; lastName: string; avatarUrl?: string | null; position?: string | null }
 
 export interface CalendarAvailability {
   userId: string;
