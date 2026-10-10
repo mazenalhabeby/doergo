@@ -5,12 +5,13 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useFormatDistance } from "@/hooks/use-format-distance"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { MapPin, Loader2 } from "lucide-react"
+import { MapPin } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { locationsApi } from "@/lib/api"
 import { DEFAULT_GEOFENCE_POLICY, type GeofencePolicy } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
+import { PolicyOptionContent } from "./policy-option"
 import { SectionHeader } from "./section-header"
 
 /**
@@ -111,19 +112,7 @@ export function AwayPolicySection({
                     : "border-border hover:border-muted-foreground/40",
                 )}
               >
-                <span
-                  className={cn(
-                    "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
-                    active ? "border-primary" : "border-border",
-                  )}
-                >
-                  {active && <span className="h-2 w-2 rounded-full bg-primary" />}
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium text-foreground">{o.title}</span>
-                  <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{o.body}</span>
-                </span>
-                {save.isPending && active && <Loader2 className="ml-auto h-4 w-4 animate-spin text-muted-foreground" />}
+                <PolicyOptionContent active={active} title={o.title} body={o.body} saving={save.isPending} />
               </button>
             )
           })}

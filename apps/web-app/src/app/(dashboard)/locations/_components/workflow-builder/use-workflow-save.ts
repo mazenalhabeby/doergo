@@ -80,6 +80,24 @@ export function useWorkflowSave({
       return
     }
 
+    // One step as the API takes it; its questions ride along only when the caller says so.
+    type Step = (typeof validStatuses)[number]
+    const stepBody = (s: Step, i: number, form: { form?: ReturnType<typeof draftToPayload> }) => ({
+      name: s.name.trim(),
+      key: toKey(s.name),
+      color: s.color,
+      position: i,
+      isFinal: s.isFinal,
+      isCanceled: s.isCanceled,
+      transitions: resolveTransitions(validStatuses, i),
+      capabilities: s.capabilities ?? [],
+      ...form,
+    })
+    // A new step carries its form when it has one.
+    const newStepForm = (s: Step) => (s.form !== null ? { form: draftToPayload(s.form) } : {})
+    // A refusal is tagged with the step it came from, so it lands on that step.
+    const onStep = (s: Step) => (err: unknown): never => { throw Object.assign(err as object, { stepIndex: statuses.indexOf(s) }) }
+
     setIsSaving(true)
     try {
       if (mode === "create") {
@@ -94,17 +112,7 @@ export function useWorkflowSave({
         // Add statuses sequentially
         for (let i = 0; i < validStatuses.length; i++) {
           const s = validStatuses[i]!
-          await workflowsApi.addStatus(workflow.id, {
-            name: s.name.trim(),
-            key: toKey(s.name),
-            color: s.color,
-            position: i,
-            isFinal: s.isFinal,
-            isCanceled: s.isCanceled,
-            transitions: resolveTransitions(validStatuses, i),
-            capabilities: s.capabilities ?? [],
-            ...(s.form !== null ? { form: draftToPayload(s.form) } : {}),
-          }).catch((err) => { throw Object.assign(err, { stepIndex: statuses.indexOf(s) }) })
+          await workflowsApi.addStatus(workflow.id, stepBody(s, i, newStepForm(s))).catch(onStep(s))
         }
 
         queryClient.invalidateQueries({ queryKey: keys.workflows.lists() })
@@ -151,31 +159,11 @@ export function useWorkflowSave({
                 original.position !== i ||
                 formChanged)
             ) {
-              await workflowsApi.updateStatus(workflowId, s.id, {
-                name: s.name.trim(),
-                key: toKey(s.name),
-                color: s.color,
-                position: i,
-                isFinal: s.isFinal,
-                isCanceled: s.isCanceled,
-                transitions: resolveTransitions(validStatuses, i),
-                capabilities: s.capabilities ?? [],
-                ...(formChanged ? { form: draftToPayload(s.form) } : {}),
-              }).catch((err) => { throw Object.assign(err, { stepIndex: statuses.indexOf(s) }) })
+              await workflowsApi.updateStatus(workflowId, s.id, stepBody(s, i, formChanged ? { form: draftToPayload(s.form) } : {})).catch(onStep(s))
             }
           } else {
             // Add new
-            await workflowsApi.addStatus(workflowId, {
-              name: s.name.trim(),
-              key: toKey(s.name),
-              color: s.color,
-              position: i,
-              isFinal: s.isFinal,
-              isCanceled: s.isCanceled,
-              transitions: resolveTransitions(validStatuses, i),
-              capabilities: s.capabilities ?? [],
-              ...(s.form !== null ? { form: draftToPayload(s.form) } : {}),
-            }).catch((err) => { throw Object.assign(err, { stepIndex: statuses.indexOf(s) }) })
+            await workflowsApi.addStatus(workflowId, stepBody(s, i, newStepForm(s))).catch(onStep(s))
           }
         }
 

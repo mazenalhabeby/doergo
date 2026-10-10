@@ -4,15 +4,13 @@ import { useTranslation } from "react-i18next"
 import { GitBranch, Layers } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PhaseSelectContent, SprintSelectContent } from "../planning-select-options"
 import { CollapsibleSection } from "./collapsible-section"
 import {
   Select,
-  SelectContent,
-  SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { type Phase, type Sprint } from "@/lib/api"
 import { type CreateTaskForm } from "./use-create-task-form"
 
 /** Phase, sprint and parent task. */
@@ -45,20 +43,7 @@ export function OrganizationSection({ form }: { form: CreateTaskForm }) {
               <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
                 <SelectValue placeholder={t("tasks.sidebar.noPhase")} />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">{t("tasks.sidebar.noPhase")}</SelectItem>
-                {(phases || []).map((phase: Phase) => (
-                  <SelectItem key={phase.id} value={phase.id}>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="size-2 rounded-full shrink-0"
-                        style={{ backgroundColor: phase.color }}
-                      />
-                      {phase.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
+              <PhaseSelectContent phases={phases} />
             </Select>
           </div>
         )}
@@ -70,14 +55,7 @@ export function OrganizationSection({ form }: { form: CreateTaskForm }) {
               <SelectTrigger className="h-9 rounded-lg border-border bg-card text-sm">
                 <SelectValue placeholder={t("tasks.sidebar.noSprint")} />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">{t("tasks.sidebar.noSprint")}</SelectItem>
-                {(sprints || []).map((sprint: Sprint) => (
-                  <SelectItem key={sprint.id} value={sprint.id}>
-                    {sprint.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
+              <SprintSelectContent sprints={sprints} />
             </Select>
           </div>
         )}

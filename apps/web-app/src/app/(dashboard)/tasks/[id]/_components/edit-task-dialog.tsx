@@ -11,10 +11,11 @@ import { format } from "date-fns"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react"
 
-import { tasksApi, phasesApi, sprintsApi, workflowsApi, type Task, type Phase, type Sprint, type UpdateTaskInput } from "@/lib/api"
+import { tasksApi, phasesApi, sprintsApi, workflowsApi, type Task, type UpdateTaskInput } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PhaseSelectContent, SprintSelectContent } from "../../_components/planning-select-options"
 import { Textarea } from "@/components/ui/textarea"
 import { timeOf, withTime } from "@/lib/due-time"
 import {
@@ -415,17 +416,7 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
                 <SelectTrigger className="h-10 rounded-lg border-border bg-card">
                   <SelectValue placeholder={t("tasks.sidebar.noPhase")} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t("tasks.sidebar.noPhase")}</SelectItem>
-                  {(phases || []).map((phase: Phase) => (
-                    <SelectItem key={phase.id} value={phase.id}>
-                      <div className="flex items-center gap-2">
-                        <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: phase.color }} />
-                        {phase.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+                <PhaseSelectContent phases={phases} />
               </Select>
             </div>
             )}
@@ -437,14 +428,7 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
                 <SelectTrigger className="h-10 rounded-lg border-border bg-card">
                   <SelectValue placeholder={t("tasks.sidebar.noSprint")} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t("tasks.sidebar.noSprint")}</SelectItem>
-                  {(sprints || []).map((sprint: Sprint) => (
-                    <SelectItem key={sprint.id} value={sprint.id}>
-                      {sprint.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+                <SprintSelectContent sprints={sprints} />
               </Select>
             </div>
             )}

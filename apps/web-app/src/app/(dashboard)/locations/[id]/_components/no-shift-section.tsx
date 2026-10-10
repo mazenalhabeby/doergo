@@ -9,6 +9,7 @@ import { Loader2, Timer } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { locationsApi } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { PolicyOptionContent } from "./policy-option"
 import {
   DEFAULT_NO_SHIFT_POLICY,
   NO_SHIFT_LIMIT,
@@ -113,19 +114,7 @@ export function NoShiftSection({
                 aria-pressed={active}
                 className="flex w-full items-start gap-3 p-4 text-left disabled:opacity-60"
               >
-                <span
-                  className={cn(
-                    "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
-                    active ? "border-primary" : "border-border",
-                  )}
-                >
-                  {active && <span className="h-2 w-2 rounded-full bg-primary" />}
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium text-foreground">{o.title}</span>
-                  <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{o.body}</span>
-                </span>
-                {save.isPending && active && <Loader2 className="ml-auto h-4 w-4 animate-spin text-muted-foreground" />}
+                <PolicyOptionContent active={active} title={o.title} body={o.body} saving={save.isPending} />
               </button>
 
               {o.value === "LIMIT" && active && (
